@@ -32,8 +32,6 @@ public final class CyclingIterator<T> implements Iterator<T> {
 
 	private int iterCount = 0;
 
-	private transient T lastNext = null;
-
 	public CyclingIterator(final Collection<T> coll) {
 		this.coll = coll;
 		this.decorated = coll.iterator();
@@ -74,7 +72,6 @@ public final class CyclingIterator<T> implements Iterator<T> {
 			resetIteration();
 		}
 		final T result = decorated.next();
-		lastNext = result;
 		iterCount++;
 		return result;
 	}
@@ -86,11 +83,7 @@ public final class CyclingIterator<T> implements Iterator<T> {
 	 */
 	@Override
 	public void remove() {
-		if (coll.remove(lastNext)) {
-			synchronized (decorated) {
-				decorated.remove();
-			}
-		}
+		decorated.remove();
 	}
 
 	/*
