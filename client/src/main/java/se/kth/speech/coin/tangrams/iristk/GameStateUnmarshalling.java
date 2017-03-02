@@ -1,0 +1,60 @@
+/*
+ *  This file is part of client.
+ *
+ *  tangrams is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+package se.kth.speech.coin.tangrams.iristk;
+
+import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import se.kth.speech.Integers;
+import se.kth.speech.Matrix;
+import se.kth.speech.coin.tangrams.game.Model;
+
+/**
+ * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
+ * @since 25 Jan 2017
+ *
+ */
+public final class GameStateUnmarshalling {
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(GameStateUnmarshalling.class);
+
+	private static final Function<String, Integer> NULLABLE_INTEGER_GETTER = Integers::valueOfNullable;
+
+	public static Model<Integer> createModel(final ModelDescription modelDesc) {
+		final List<Integer> coordOccupants = modelDesc.getCoordOccupants().stream().map(NULLABLE_INTEGER_GETTER)
+				.collect(Collectors.toList());
+		LOGGER.debug("Creating model with coord occupant vector: {}", coordOccupants);
+		final int colCount = modelDesc.getColCount();
+		return new Model<>(new Matrix<>(coordOccupants.toArray(new Integer[coordOccupants.size()]), colCount));
+	}
+
+	public static Model<Integer> createWinningModel(final GameStateDescription gameDesc) {
+		final ModelDescription modelDesc = gameDesc.getModelDescription();
+		final int colCount = modelDesc.getColCount();
+		final List<Integer> winningConfig = gameDesc.getWinningConfiguration().stream().map(NULLABLE_INTEGER_GETTER)
+				.collect(Collectors.toList());
+		return new Model<>(new Matrix<>(winningConfig.toArray(new Integer[winningConfig.size()]), colCount));
+	}
+
+	private GameStateUnmarshalling() {
+	}
+
+}
