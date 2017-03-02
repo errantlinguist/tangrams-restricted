@@ -39,16 +39,20 @@ enum GameManagementEvent {
 	 */
 	GAME_READY_RESPONSE("game.ready"),
 	/**
-	 * An event representing a request by the sending client for a current list
-	 * of the players active in a game.
+	 * An event representing a request by the sending client to add the given
+	 * player to the list of players in a game.
 	 */
-	PLAYER_JOIN_REQUEST("playerlist.update.request"),
+	PLAYER_JOIN_REQUEST("playerlist.add.request"),
 	/**
 	 * An event representing a response by the sending client to
 	 * {@link #PLAYER_LIST_UPDATE_REQUEST a request for a current list of the
 	 * players active in a game}.
 	 */
-	PLAYER_JOIN_RESPONSE("playerlist.update.response"),
+	PLAYER_JOIN_RESPONSE("playerlist.add.response"),
+	/**
+	 * An even representing a request by the sending client to leave a game;
+	 */
+	PLAYER_LEAVE_REQUEST("playerlist.remove.request"),
 	/**
 	 * An event representing a player's selection.
 	 */
