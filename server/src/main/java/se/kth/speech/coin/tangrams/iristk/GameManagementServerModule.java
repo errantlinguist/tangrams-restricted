@@ -187,6 +187,15 @@ public final class GameManagementServerModule extends IrisModule {
 
 				break;
 			}
+			case PLAYER_LEAVE_REQUEST : {
+				final String leavingPlayerId = event.getString(GameManagementEvent.Attribute.PLAYER_ID.toString());
+				LOGGER.debug("Received leave request from player \"{}\" for game \"{}\".",
+						new Object[] { leavingPlayerId, gameId });
+				final Pair<Game<Integer>, ActivePlayerTracker> gameState = gameStateGetter.apply(gameId);
+				final ActivePlayerTracker activePlayerTracker = gameState.getSecond();
+				// TODO: Finish
+				break;
+			}
 			case SELECTION_REQUEST: {
 				if (LOGGER.isDebugEnabled()) {
 					final String selectingPlayerId = event
