@@ -32,6 +32,8 @@ public final class CyclingIterator<T> implements Iterator<T> {
 
 	private int iterCount = 0;
 
+	private transient T lastNext = null;
+
 	public CyclingIterator(final Collection<T> coll) {
 		this.coll = coll;
 		this.decorated = coll.iterator();
@@ -41,9 +43,8 @@ public final class CyclingIterator<T> implements Iterator<T> {
 		final boolean result = coll.add(e);
 		if (result) {
 			// Reset iterator in order to avoid ConcurrentModificationException
-			resetDecorated();
-			for (int iter = 0; iter < iterCount; ++iter) {
-				decorated.next();
+			synchronized (decorated) {
+				decorated = createNewDecorated();
 			}
 		}
 		return result;
@@ -70,16 +71,31 @@ public final class CyclingIterator<T> implements Iterator<T> {
 		// longer, create a new Iterator for the Iterable backing the current
 		// one
 		if (hasNext() && !decorated.hasNext()) {
-			resetDecorated();
+			resetIteration();
 		}
 		final T result = decorated.next();
+		lastNext = result;
 		iterCount++;
 		return result;
 	}
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
+	 * @see java.util.Iterator#remove()
+	 */
+	@Override
+	public void remove() {
+		if (coll.remove(lastNext)) {
+			synchronized (decorated) {
+				decorated.remove();
+			}
+		}
+	}
+
+	/*
+	 * (non-Javadoc)
+	 *
 	 * @see java.lang.Object#toString()
 	 */
 	@Override
@@ -93,7 +109,16 @@ public final class CyclingIterator<T> implements Iterator<T> {
 		return builder.toString();
 	}
 
-	private void resetDecorated() {
+	private Iterator<T> createNewDecorated() {
+		final Iterator<T> result = coll.iterator();
+		// Iterate forward to where the old iterator was
+		for (int iter = 0; iter < iterCount; ++iter) {
+			result.next();
+		}
+		return result;
+	}
+
+	private void resetIteration() {
 		decorated = coll.iterator();
 		iterCount = 0;
 	}
