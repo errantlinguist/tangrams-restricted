@@ -198,39 +198,12 @@ public final class GameGUI<T> implements Runnable {
 	@Override
 	public void run() {
 		LOGGER.debug("Creating view components.");
-		final BiFunction<Model<T>, Dimension, ModelCoordinateGridPanel<?>> gridPanelFactory = new RowBackgroundPaintedModelCoordinateGridPanelFactory<>(
-				coordOccupantImageFactory, rowBackgroundImageFactory);
-		// TODO: Make size configurable
-		final JFrame winningConfigFrame = new WinningConfigurationViewFactory<>(gridPanelFactory, 75)
-				.apply(winningModel);
-		winningConfigFrame.pack();
-		winningConfigFrame.setDefaultCloseOperation(WindowConstants.HIDE_ON_CLOSE);
-		final boolean isWinningConfigViewVisible = true;
-		final GameViewFrame<T> gameViewFrame = new GameViewFrame<>(title, localController, remoteController,
-				gridPanelFactory, turnScreenshotLogger, selectionLogger, closeHook);
-		gameViewFrame.setJMenuBar(createMenuBar(winningConfigFrame, isWinningConfigViewVisible));
-		// Have the game view frame manage the lifetime of the winning config
-		// frame
-		gameViewFrame.getChildWindows().add(winningConfigFrame);
-
-		// Wait until another player has joined
+		final GameViewFrame<T> gameViewFrame = new GameViewFrame<>(coordOccupantImageFactory, localController);
 		// TODO: Add toggle for single-player mode
 		gameViewFrame.pack();
 		// gameViewFrame.setLocationByPlatform(true);
 		gameViewFrame.setLocation(viewLocation);
 		// gameViewFrame.setLocationRelativeTo(null);
 		gameViewFrame.setVisible(true);
-
-		winningConfigFrame.setLocationRelativeTo(gameViewFrame);
-		// final Point initialLocation = winningConfigFrame.getLocation();
-		// final Dimension gameViewFrameSize = gameViewFrame.getSize();
-		// final int xOffset = gameViewFrameSize.width + 10;
-		// final int yOffset = gameViewFrameSize.height + 10;
-		// winningConfigFrame.setLocation(initialLocation.x + xOffset,
-		// initialLocation.y + yOffset);
-
-		// Set winning config view to visible after the game view frame so the
-		// former loads after the latter
-		winningConfigFrame.setVisible(isWinningConfigViewVisible);
 	}
 }

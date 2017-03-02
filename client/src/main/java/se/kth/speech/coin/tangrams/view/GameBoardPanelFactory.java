@@ -16,34 +16,34 @@
 */
 package se.kth.speech.coin.tangrams.view;
 
-import java.awt.Canvas;
-import java.awt.Component;
 import java.awt.Image;
-import java.util.function.Function;
-
-import javax.swing.JPanel;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
  * @since 2 Mar 2017
  *
  */
-final class GameBoardPanel<T> extends JPanel {
-
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 6258829324465894025L;
+final class GameBoardPanelFactory {
 	
-	GameBoardPanel() {
-		// TODO Auto-generated constructor stub
+	GameBoardPanelFactory(){
+		
 	}
-
-	/**
-	 * @param coordOccupantImageFactory
-	 */
-	public GameBoardPanel(Function<? super T, ? extends Image> coordOccupantImageFactory) {
-		// TODO Auto-generated constructor stub
+	
+	private static double RATIO_TOLERANCE = 0.05;
+	
+	private void getImageCoordinateSize(int width, int height){
+		final boolean isPortrait;
+		final double ratio;
+		if (width < height){
+			isPortrait = true;
+			ratio = height / (double) width;
+		} else {
+			isPortrait = false;
+			ratio = width / (double) height;
+		}
+		long wholePart = (long) ratio;
+		double fractionPart = ratio - wholePart;
+		
 	}
 
 }
