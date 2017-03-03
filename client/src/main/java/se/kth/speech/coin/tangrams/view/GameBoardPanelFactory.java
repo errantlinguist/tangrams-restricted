@@ -31,6 +31,17 @@ final class GameBoardPanelFactory {
 	
 	private static double RATIO_TOLERANCE = 0.05;
 	
+	/**
+	 * @see <a href="http://stackoverflow.com/a/4009247/1391325">StackOverflow</a>
+	 * @param a
+	 * @param b
+	 * @return
+	 */
+	public static int GCD(int a, int b) {
+		   if (b==0) return a;
+		   return GCD(b,a%b);
+		}
+	
 	private void getImageCoordinateSize(int width, int height){
 		final boolean isPortrait;
 		final double ratio;
