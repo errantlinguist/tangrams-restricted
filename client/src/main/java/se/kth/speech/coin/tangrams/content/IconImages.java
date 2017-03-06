@@ -19,17 +19,22 @@ package se.kth.speech.coin.tangrams.content;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Properties;
 import java.util.TreeMap;
+import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 import com.github.errantlinguist.ClassProperties;
 
 import se.kth.speech.ClasspathDirResourceLocatorMapFactory;
+import se.kth.speech.FilenameBaseSplitter;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -78,8 +83,31 @@ final class IconImages {
 
 			};
 
+			final Predicate<String> imgFilter = new Predicate<String>() {
+
+				private final Pattern nonSvgImgTypePattern = Pattern.compile("image/(?!svg).+");
+
+				@Override
+				public boolean test(final String resourceLoc) {
+					final boolean result;
+					final Path resourceLocPath = Paths.get(resourceLoc);
+					if (Files.isDirectory(resourceLocPath)) {
+						result = false;
+					} else {
+						try {
+							final String mimeType = Files.probeContentType(resourceLocPath);
+							result = nonSvgImgTypePattern.matcher(mimeType).matches();
+						} catch (final IOException e) {
+							throw new UncheckedIOException(e);
+						}
+					}
+					return result;
+				}
+
+			};
 			ICON_IMAGE_RESOURCES = new ClasspathDirResourceLocatorMapFactory<>(IconImages.class,
-					() -> new TreeMap<>(ICON_NAME_COMPARATOR)).apply(ImageType.ICON.getDirLocator());
+					() -> new TreeMap<>(ICON_NAME_COMPARATOR), imgFilter, new FilenameBaseSplitter())
+							.apply(ImageType.ICON.getDirLocator());
 		} catch (final IOException e) {
 			throw new UncheckedIOException(e);
 		}

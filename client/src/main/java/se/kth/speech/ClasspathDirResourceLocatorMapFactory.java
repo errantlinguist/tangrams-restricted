@@ -23,8 +23,8 @@ import java.io.UncheckedIOException;
 import java.net.URL;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
-import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,23 +34,25 @@ import org.slf4j.LoggerFactory;
  * @since 21 Feb 2017
  *
  */
-public final class ClasspathDirResourceLocatorMapFactory<T extends Map<String, URL>> implements Function<String, T> {
-
-	/**
-	 * @see <a href=
-	 *      "http://stackoverflow.com/a/4546093/1391325">StackOverflow</a>
-	 */
-	private static final Pattern FILE_EXT_SPLITTING_PATTERN = Pattern.compile("\\.(?!.*\\.)");
+public final class ClasspathDirResourceLocatorMapFactory<K, R extends Map<K, URL>> implements Function<String, R> {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(ClasspathDirResourceLocatorMapFactory.class);
 
+	private final Function<? super String, ? extends K> fileResourceNameFactory;
+
 	private final Class<?> loadingClass;
 
-	private final Supplier<? extends T> supplier;
+	private final Predicate<? super String> pathFilter;
 
-	public ClasspathDirResourceLocatorMapFactory(final Class<?> loadingClass, final Supplier<? extends T> supplier) {
+	private final Supplier<? extends R> supplier;
+
+	public ClasspathDirResourceLocatorMapFactory(final Class<?> loadingClass, final Supplier<? extends R> supplier,
+			final Predicate<? super String> pathFilter,
+			final Function<? super String, ? extends K> fileResourceNameFactory) {
 		this.loadingClass = loadingClass;
 		this.supplier = supplier;
+		this.pathFilter = pathFilter;
+		this.fileResourceNameFactory = fileResourceNameFactory;
 	}
 
 	/*
@@ -59,17 +61,17 @@ public final class ClasspathDirResourceLocatorMapFactory<T extends Map<String, U
 	 * @see java.util.function.Function#apply(java.lang.Object)
 	 */
 	@Override
-	public T apply(final String dirToMap) {
-		final T result = supplier.get();
+	public R apply(final String dirToMap) {
+		final R result = supplier.get();
 
 		try (BufferedReader br = new BufferedReader(
 				new InputStreamReader(loadingClass.getResourceAsStream(dirToMap)))) {
 			for (String line = br.readLine(); line != null; line = br.readLine()) {
-				final String[] filenameParts = FILE_EXT_SPLITTING_PATTERN.split(line);
-				final String filenameBase = filenameParts[0];
-				assert !result.containsKey(filenameBase);
-				final URL resource = loadingClass.getResource(dirToMap + "/" + line);
-				result.put(filenameBase, resource);
+				if (pathFilter.test(line)) {
+					final K fileResourceName = fileResourceNameFactory.apply(line);
+					final URL resource = loadingClass.getResource(dirToMap + "/" + line);
+					result.put(fileResourceName, resource);
+				}
 			}
 		} catch (final IOException e) {
 			final UncheckedIOException ne = new UncheckedIOException(e);
