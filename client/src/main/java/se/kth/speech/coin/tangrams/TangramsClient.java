@@ -26,12 +26,12 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.EnumMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.Random;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 import javax.swing.JOptionPane;
@@ -54,7 +54,7 @@ import iristk.system.IrisSystem;
 import iristk.system.LoggingModule;
 import iristk.util.NameFilter;
 import se.kth.speech.coin.tangrams.content.ImageDatum;
-import se.kth.speech.coin.tangrams.content.RandomPieceIdImageManager;
+import se.kth.speech.coin.tangrams.content.RandomPieceImageManager;
 import se.kth.speech.coin.tangrams.game.LocalController;
 import se.kth.speech.coin.tangrams.game.Model;
 import se.kth.speech.coin.tangrams.iristk.GameManagementClientModule;
@@ -352,8 +352,8 @@ public final class TangramsClient implements Runnable {
 											final Model<Integer> model = localController.getModel();
 											final int pieceCount = model.getOccupiedCoordinateCount();
 											final Random rnd = new Random(gameState.getSeed());
-											final Function<Integer, ImageDatum> pieceImageDataFactory = new RandomPieceIdImageManager(
-													pieceCount).createImageDataFactory(rnd);
+											final List<ImageDatum> imageData = new RandomPieceImageManager(pieceCount)
+													.createImageData(rnd);
 											final Runnable closeHook = () -> {
 												LOGGER.info("Closing main window; Cleaning up background resources.");
 												recordingManager.getStopper().run();
@@ -361,7 +361,7 @@ public final class TangramsClient implements Runnable {
 											};
 											EventQueue.invokeLater(new GameGUI(title, viewLocation, localController,
 													gameState.getRemoteController(), gameState.getWinningModel(),
-													pieceImageDataFactory, () -> logDir.toPath(), closeHook));
+													imageData, () -> logDir.toPath(), closeHook));
 
 										});
 								system.addModule(gameClientModule);

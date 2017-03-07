@@ -18,7 +18,7 @@ package se.kth.speech.coin.tangrams.view;
 
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.util.function.Function;
+import java.util.List;
 
 import javax.swing.JFrame;
 
@@ -44,15 +44,14 @@ final class GameViewFrame extends JFrame {
 		// TODO Auto-generated constructor stub
 	}
 
-	GameViewFrame(final Function<? super Integer, ? extends ImageDatum> coordOccupantImageFactory,
-			final LocalController<? super Integer> localController) {
-		add(new GameBoardPanel(coordOccupantImageFactory));
+	GameViewFrame(final List<ImageDatum> imageData, final LocalController<? super Integer> localController) {
+		add(new GameBoardPanel(imageData));
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		addWindowListener(new WindowAdapter() {
 
 			/*
 			 * (non-Javadoc)
-			 * 
+			 *
 			 * @see java.awt.event.WindowAdapter#windowClosed(java.awt.event.
 			 * WindowEvent)
 			 */

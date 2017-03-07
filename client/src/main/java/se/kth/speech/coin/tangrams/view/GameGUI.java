@@ -17,45 +17,36 @@
 package se.kth.speech.coin.tangrams.view;
 
 import java.awt.Component;
-import java.awt.Dimension;
-import java.awt.Image;
 import java.awt.Point;
 import java.awt.Window;
 import java.awt.event.InputEvent;
 import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.awt.image.BufferedImage;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
-import java.util.function.Function;
-import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
 import javax.swing.JCheckBoxMenuItem;
-import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.KeyStroke;
-import javax.swing.WindowConstants;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import se.kth.speech.coin.tangrams.content.ImageDatum;
 import se.kth.speech.coin.tangrams.game.LocalController;
 import se.kth.speech.coin.tangrams.game.Model;
 import se.kth.speech.coin.tangrams.game.RemoteController;
 import se.kth.speech.coin.tangrams.iristk.events.Selection;
 import se.kth.speech.coin.tangrams.iristk.events.Turn;
 
-
-import se.kth.speech.coin.tangrams.content.ImageDatum;
 /**
  *
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -94,32 +85,27 @@ public final class GameGUI implements Runnable {
 		final String winningConfigItemDesc = "Show the winning board configuration.";
 		winningConfigItem.getAccessibleContext().setAccessibleDescription(winningConfigItemDesc);
 		winningConfigItem.setToolTipText(winningConfigItemDesc);
-		winningConfigItem.addItemListener(new ItemListener() {
+		winningConfigItem.addItemListener(e -> {
+			final boolean isNowVisible;
 
-			@Override
-			public void itemStateChanged(final ItemEvent e) {
-				final boolean isNowVisible;
-
-				final int event = e.getStateChange();
-				switch (event) {
-				case ItemEvent.DESELECTED: {
-					isNowVisible = false;
-					break;
-				}
-				case ItemEvent.SELECTED: {
-					isNowVisible = true;
-					break;
-				}
-				default: {
-					// Do nothing
-					isNowVisible = winningConfigurationView.isVisible();
-					break;
-				}
-				}
-
-				winningConfigurationView.setVisible(isNowVisible);
+			final int event = e.getStateChange();
+			switch (event) {
+			case ItemEvent.DESELECTED: {
+				isNowVisible = false;
+				break;
+			}
+			case ItemEvent.SELECTED: {
+				isNowVisible = true;
+				break;
+			}
+			default: {
+				// Do nothing
+				isNowVisible = winningConfigurationView.isVisible();
+				break;
+			}
 			}
 
+			winningConfigurationView.setVisible(isNowVisible);
 		});
 
 		winningConfigurationView.addWindowListener(new WindowAdapter() {
@@ -142,7 +128,7 @@ public final class GameGUI implements Runnable {
 
 	private final Runnable closeHook;
 
-	private final Function<? super Integer, ? extends ImageDatum> coordOccupantImageFactory;
+	private final List<ImageDatum> imageData;
 
 	private final LocalController<Integer> localController;
 
@@ -160,28 +146,24 @@ public final class GameGUI implements Runnable {
 
 	public GameGUI(final String title, final Point viewLocation, final LocalController<Integer> localController,
 			final RemoteController<Integer> remoteController, final Model<Integer> winningModel,
-			final Function<? super Integer, ? extends ImageDatum> coordOccupantImageFactory,
-			final Supplier<? extends Path> logOutdirSupplier, final Runnable closeHook) {
+			final List<ImageDatum> imageData, final Supplier<? extends Path> logOutdirSupplier,
+			final Runnable closeHook) {
 		this.title = title;
 		this.viewLocation = viewLocation;
 		this.localController = localController;
 		this.remoteController = remoteController;
 		this.winningModel = winningModel;
-		this.coordOccupantImageFactory = coordOccupantImageFactory;
+		this.imageData = imageData;
 		final ExecutorService screenshotLoggingExecutor = Executors.newSingleThreadExecutor();
 		{
 			final ScreenshotLogger screenshotLogger = new ScreenshotLogger(logOutdirSupplier,
 					localController::getPlayerId, screenshotLoggingExecutor);
-			this.turnScreenshotLogger = new BiConsumer<Component, Turn>() {
-
-				@Override
-				public void accept(final Component view, final Turn turn) {
-					final int turnNo = turn.getSequenceNumber();
-					final String filenamePrefix = "turn-" + Integer.toString(turnNo);
-					screenshotLogger.accept(view, filenamePrefix);
-				}
+			turnScreenshotLogger = (view, turn) -> {
+				final int turnNo = turn.getSequenceNumber();
+				final String filenamePrefix = "turn-" + Integer.toString(turnNo);
+				screenshotLogger.accept(view, filenamePrefix);
 			};
-			this.selectionLogger = new TimestampingSelectionLogger(screenshotLogger);
+			selectionLogger = new TimestampingSelectionLogger(screenshotLogger);
 		}
 		this.closeHook = () -> {
 			try {
@@ -196,7 +178,7 @@ public final class GameGUI implements Runnable {
 	@Override
 	public void run() {
 		LOGGER.debug("Creating view components.");
-		final GameViewFrame gameViewFrame = new GameViewFrame(coordOccupantImageFactory, localController);
+		final GameViewFrame gameViewFrame = new GameViewFrame(imageData, localController);
 		// TODO: Add toggle for single-player mode
 		gameViewFrame.pack();
 		// gameViewFrame.setLocationByPlatform(true);

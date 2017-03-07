@@ -27,7 +27,7 @@ import java.util.stream.Stream;
  * @since 7 Mar 2017
  *
  */
-public final class RandomPieceIdImageManager {
+public final class RandomPieceImageManager {
 
 	private final Function<Random, Stream<ImageDatum>> rndImgDataFactory = new RandomPieceImageDataFactory(
 			IconImages.getIconImageResources().entrySet(), 2);
@@ -36,22 +36,12 @@ public final class RandomPieceIdImageManager {
 	 * @param pieceCount
 	 *            The number of pieces to create image data for.
 	 */
-	public RandomPieceIdImageManager(final int pieceCount) {
+	public RandomPieceImageManager(final int pieceCount) {
 		// TODO Ensure even distribution of shapes, sizes and colors
 	}
 
-	public Function<Integer, ImageDatum> createImageDataFactory(final Random rnd) {
-		final List<ImageDatum> pieceImageData = rndImgDataFactory.apply(rnd).collect(Collectors.toList());
-		return id -> {
-			final ImageDatum result;
-			if (id == null) {
-				result = null;
-			} else {
-				result = pieceImageData.get(id);
-			}
-
-			return result;
-		};
+	public List<ImageDatum> createImageData(final Random rnd) {
+		return rndImgDataFactory.apply(rnd).collect(Collectors.toList());
 	}
 
 	// private Table<ImageSize, Color, Set<URL>> createColorSizeImageMap(final
