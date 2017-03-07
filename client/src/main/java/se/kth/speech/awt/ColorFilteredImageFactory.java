@@ -21,28 +21,22 @@ import java.awt.Image;
 import java.awt.Toolkit;
 import java.awt.image.FilteredImageSource;
 import java.net.URL;
-import java.util.List;
-import java.util.Map.Entry;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
  * @since 1 Jan 2017
  *
  */
-public final class ColorFilteredImageFactory implements Function<Integer, Image> {
-
-	private final List<? extends Entry<URL, ? extends Color>> imageIds;
+public final class ColorFilteredImageFactory implements BiFunction<URL, Color, Image> {
 
 	private final Toolkit toolkit;
 
-	public ColorFilteredImageFactory(final List<? extends Entry<URL, ? extends Color>> imageIds) {
-		this(imageIds, Toolkit.getDefaultToolkit());
+	public ColorFilteredImageFactory() {
+		this(Toolkit.getDefaultToolkit());
 	}
 
-	public ColorFilteredImageFactory(final List<? extends Entry<URL, ? extends Color>> imageIds,
-			final Toolkit toolkit) {
-		this.imageIds = imageIds;
+	public ColorFilteredImageFactory(final Toolkit toolkit) {
 		this.toolkit = toolkit;
 	}
 
@@ -52,22 +46,9 @@ public final class ColorFilteredImageFactory implements Function<Integer, Image>
 	 * @see java.util.function.Function#apply(java.lang.Object)
 	 */
 	@Override
-	public Image apply(final Integer imageId) {
-		final Image result;
-
-		if (imageId == null) {
-			result = null;
-		} else {
-			final Entry<URL, ? extends Color> coordOccupantImageResourceLocator = imageIds.get(imageId);
-			final Image origImg = toolkit.getImage(coordOccupantImageResourceLocator.getKey());
-			if (origImg == null) {
-				result = origImg;
-			} else {
-				result = toolkit.createImage(new FilteredImageSource(origImg.getSource(),
-						new ColorReplacementImageFilter(coordOccupantImageResourceLocator.getValue())));
-			}
-		}
-
-		return result;
+	public Image apply(final URL imgResourceLoc, final Color color) {
+		final Image origImg = toolkit.getImage(imgResourceLoc);
+		return toolkit
+				.createImage(new FilteredImageSource(origImg.getSource(), new ColorReplacementImageFilter(color)));
 	}
 }
