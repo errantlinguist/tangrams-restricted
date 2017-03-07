@@ -61,6 +61,13 @@ import org.w3c.dom.svg.SVGSVGElement;
  */
 public final class IconImageViewingTest {
 
+	/**
+	 * @see <a href="http://stackoverflow.com/q/32721467/1391325">StackOverflow</a>
+	 * @param doc
+	 * @return
+	 * @throws TranscoderException
+	 * @throws IOException
+	 */
 	public static BufferedImage convertSVGToPNG(Document doc) throws TranscoderException, IOException {
 		ByteArrayOutputStream resultByteStream = new ByteArrayOutputStream();
 
