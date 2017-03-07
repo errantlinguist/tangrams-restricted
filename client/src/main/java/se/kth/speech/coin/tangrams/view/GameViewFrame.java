@@ -30,7 +30,7 @@ import se.kth.speech.coin.tangrams.game.LocalController;
  * @since 2 Mar 2017
  *
  */
-final class GameViewFrame<T> extends JFrame {
+final class GameViewFrame extends JFrame {
 
 	/**
 	 *
@@ -40,13 +40,13 @@ final class GameViewFrame<T> extends JFrame {
 	/**
 	 * @param localController
 	 */
-	public GameViewFrame(final LocalController<T> localController) {
+	public GameViewFrame(final LocalController<Integer> localController) {
 		// TODO Auto-generated constructor stub
 	}
 
-	GameViewFrame(final Function<? super T, ? extends ImageDatum> coordOccupantImageFactory,
-			final LocalController<? super T> localController) {
-		add(new GameBoardPanel<>(coordOccupantImageFactory));
+	GameViewFrame(final Function<? super Integer, ? extends ImageDatum> coordOccupantImageFactory,
+			final LocalController<? super Integer> localController) {
+		add(new GameBoardPanel(coordOccupantImageFactory));
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		addWindowListener(new WindowAdapter() {
 

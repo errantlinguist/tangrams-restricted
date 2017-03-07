@@ -25,7 +25,7 @@ import java.util.function.Function;
  * @since 2 Mar 2017
  *
  */
-final class GameBoardPanelFactory<T> implements Function<Map<? super T, ? extends Image>, GameBoardPanel<T>> {
+final class GameBoardPanelFactory implements Function<Map<? super Integer, ? extends Image>, GameBoardPanel> {
 	
 	GameBoardPanelFactory(){
 		
@@ -63,7 +63,7 @@ final class GameBoardPanelFactory<T> implements Function<Map<? super T, ? extend
 	 * @see java.util.function.Function#apply(java.lang.Object)
 	 */
 	@Override
-	public GameBoardPanel<T> apply(Map<? super T, ? extends Image> t) {
+	public GameBoardPanel apply(Map<? super Integer, ? extends Image> t) {
 		// TODO Auto-generated method stub
 		return null;
 	}

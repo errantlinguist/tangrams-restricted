@@ -62,7 +62,7 @@ import se.kth.speech.coin.tangrams.content.ImageDatum;
  * @since 16 Nov 2016
  *
  */
-public final class GameGUI<T> implements Runnable {
+public final class GameGUI implements Runnable {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(GameGUI.class);
 
@@ -142,11 +142,11 @@ public final class GameGUI<T> implements Runnable {
 
 	private final Runnable closeHook;
 
-	private final Function<? super T, ? extends ImageDatum> coordOccupantImageFactory;
+	private final Function<? super Integer, ? extends ImageDatum> coordOccupantImageFactory;
 
-	private final LocalController<T> localController;
+	private final LocalController<Integer> localController;
 
-	private final RemoteController<T> remoteController;
+	private final RemoteController<Integer> remoteController;
 
 	private final BiConsumer<Component, Selection> selectionLogger;
 
@@ -156,11 +156,11 @@ public final class GameGUI<T> implements Runnable {
 
 	private final Point viewLocation;
 
-	private final Model<T> winningModel;
+	private final Model<Integer> winningModel;
 
-	public GameGUI(final String title, final Point viewLocation, final LocalController<T> localController,
-			final RemoteController<T> remoteController, final Model<T> winningModel,
-			final Function<? super T, ? extends ImageDatum> coordOccupantImageFactory,
+	public GameGUI(final String title, final Point viewLocation, final LocalController<Integer> localController,
+			final RemoteController<Integer> remoteController, final Model<Integer> winningModel,
+			final Function<? super Integer, ? extends ImageDatum> coordOccupantImageFactory,
 			final Supplier<? extends Path> logOutdirSupplier, final Runnable closeHook) {
 		this.title = title;
 		this.viewLocation = viewLocation;
@@ -196,7 +196,7 @@ public final class GameGUI<T> implements Runnable {
 	@Override
 	public void run() {
 		LOGGER.debug("Creating view components.");
-		final GameViewFrame<T> gameViewFrame = new GameViewFrame<>(coordOccupantImageFactory, localController);
+		final GameViewFrame gameViewFrame = new GameViewFrame(coordOccupantImageFactory, localController);
 		// TODO: Add toggle for single-player mode
 		gameViewFrame.pack();
 		// gameViewFrame.setLocationByPlatform(true);

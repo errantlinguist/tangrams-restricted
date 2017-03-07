@@ -33,8 +33,9 @@ import java.util.regex.Pattern;
 
 import com.github.errantlinguist.ClassProperties;
 
-import se.kth.speech.ClasspathDirResourceLocatorMapFactory;
 import se.kth.speech.FilenameBaseSplitter;
+import se.kth.speech.io.ClasspathDirResourceLocatorMapFactory;
+import se.kth.speech.io.FileResourceLocatorContentTypePatternFilter;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -83,28 +84,7 @@ final class IconImages {
 
 			};
 
-			final Predicate<String> imgFilter = new Predicate<String>() {
-
-				private final Pattern nonSvgImgTypePattern = Pattern.compile("image/(?!svg).+");
-
-				@Override
-				public boolean test(final String resourceLoc) {
-					final boolean result;
-					final Path resourceLocPath = Paths.get(resourceLoc);
-					if (Files.isDirectory(resourceLocPath)) {
-						result = false;
-					} else {
-						try {
-							final String mimeType = Files.probeContentType(resourceLocPath);
-							result = nonSvgImgTypePattern.matcher(mimeType).matches();
-						} catch (final IOException e) {
-							throw new UncheckedIOException(e);
-						}
-					}
-					return result;
-				}
-
-			};
+			final Predicate<String> imgFilter = new FileResourceLocatorContentTypePatternFilter(Pattern.compile("image/(?!svg).+"));
 			ICON_IMAGE_RESOURCES = new ClasspathDirResourceLocatorMapFactory<>(IconImages.class,
 					() -> new TreeMap<>(ICON_NAME_COMPARATOR), imgFilter, new FilenameBaseSplitter())
 							.apply(ImageType.ICON.getDirLocator());

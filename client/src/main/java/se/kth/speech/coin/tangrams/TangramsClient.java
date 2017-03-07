@@ -359,7 +359,7 @@ public final class TangramsClient implements Runnable {
 												recordingManager.getStopper().run();
 												irisSystemStopper.run();
 											};
-											EventQueue.invokeLater(new GameGUI<>(title, viewLocation, localController,
+											EventQueue.invokeLater(new GameGUI(title, viewLocation, localController,
 													gameState.getRemoteController(), gameState.getWinningModel(),
 													pieceImageDataFactory, () -> logDir.toPath(), closeHook));
 
