@@ -71,7 +71,7 @@ final class RandomPieceImageDataFactory implements Function<Random, Stream<Image
 	 * coloring the icon images. <strong>NOTE:</strong> This is ordered so that
 	 * the iteration order of image data is stable across invocations.
 	 */
-	private final List<Color> uniqueImgColors;
+	private final List<? extends Color> uniqueImgColors;
 
 	/**
 	 *
@@ -107,7 +107,7 @@ final class RandomPieceImageDataFactory implements Function<Random, Stream<Image
 	 *            another image.
 	 */
 	public RandomPieceImageDataFactory(final Collection<? extends Entry<String, URL>> imgResources,
-			final List<Color> uniqueImgColors, final List<ImageSize> sizes, final int maxSharedAttrCount) {
+			final List<? extends Color> uniqueImgColors, final List<ImageSize> sizes, final int maxSharedAttrCount) {
 		this.imgResources = imgResources;
 		this.uniqueImgColors = uniqueImgColors;
 		this.sizes = sizes;
