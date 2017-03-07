@@ -82,7 +82,7 @@ final class IconImages {
 			};
 
 			final Predicate<String> imgFilter = new FileResourceLocatorContentTypePatternFilter(
-					Pattern.compile("image/svg.+"));
+					Pattern.compile("image/(?!svg).+"));
 			ICON_IMAGE_RESOURCES = new ClasspathDirResourceLocatorMapFactory<>(IconImages.class,
 					() -> new TreeMap<>(ICON_NAME_COMPARATOR), imgFilter, new FilenameBaseSplitter())
 							.apply(ImageType.ICON.getDirLocator());
