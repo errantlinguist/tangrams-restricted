@@ -16,7 +16,10 @@
 */
 package se.kth.speech.coin.tangrams.view;
 
+import java.awt.Dimension;
 import java.util.function.Function;
+
+import javax.swing.JPanel;
 
 import org.apache.batik.swing.JSVGCanvas;
 import org.w3c.dom.Node;
@@ -30,7 +33,7 @@ import se.kth.speech.coin.tangrams.content.ImageDatum;
  * @since 2 Mar 2017
  *
  */
-final class GameBoardPanel extends JSVGCanvas {
+final class GameBoardPanel extends JPanel {
 
 	/**
 	 *
@@ -41,8 +44,10 @@ final class GameBoardPanel extends JSVGCanvas {
 	 * @param coordOccupantImageFactory
 	 */
 	public GameBoardPanel(final Function<? super Integer, ? extends ImageDatum> coordOccupantImageFactory) {
-		setDocumentState(ALWAYS_DYNAMIC);
-		setURI(coordOccupantImageFactory.apply(1).getResourceLoc().toString());
+		
+		setPreferredSize(new Dimension(1200,1200));
+//		setDocumentState(ALWAYS_DYNAMIC);
+//		setURI(coordOccupantImageFactory.apply(1).getResourceLoc().toString());
 		// TODO Auto-generated constructor stub
 	}
 

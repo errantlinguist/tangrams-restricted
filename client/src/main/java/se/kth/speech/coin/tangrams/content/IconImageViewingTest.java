@@ -16,17 +16,34 @@
 */
 package se.kth.speech.coin.tangrams.content;
 
+import java.awt.BorderLayout;
+import java.awt.Dimension;
 import java.awt.EventQueue;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.URL;
 import java.util.Map.Entry;
 import java.util.NavigableMap;
 
+import javax.imageio.ImageIO;
+import javax.swing.ImageIcon;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.WindowConstants;
 
 import org.apache.batik.swing.JSVGCanvas;
+import org.apache.batik.swing.svg.JSVGComponent;
 import org.apache.batik.swing.svg.SVGDocumentLoaderAdapter;
 import org.apache.batik.swing.svg.SVGDocumentLoaderEvent;
+import org.apache.batik.transcoder.SVGAbstractTranscoder;
+import org.apache.batik.transcoder.TranscoderException;
+import org.apache.batik.transcoder.TranscoderInput;
+import org.apache.batik.transcoder.TranscoderOutput;
+import org.apache.batik.transcoder.image.PNGTranscoder;
+import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -39,10 +56,31 @@ import org.w3c.dom.svg.SVGDocument;
  */
 public final class IconImageViewingTest {
 
+	public static BufferedImage convertSVGToPNG(Document doc) throws TranscoderException, IOException {
+		ByteArrayOutputStream resultByteStream = new ByteArrayOutputStream();
+
+		TranscoderInput transcoderInput = new TranscoderInput(doc);
+		TranscoderOutput transcoderOutput = new TranscoderOutput(resultByteStream);
+
+		PNGTranscoder pngTranscoder = new PNGTranscoder();
+		pngTranscoder.addTranscodingHint(SVGAbstractTranscoder.KEY_HEIGHT, 256f);
+		pngTranscoder.addTranscodingHint(SVGAbstractTranscoder.KEY_WIDTH, 256f);
+		pngTranscoder.transcode(transcoderInput, transcoderOutput);
+
+		resultByteStream.flush();
+
+		return ImageIO.read(new ByteArrayInputStream(resultByteStream.toByteArray()));
+	}
+
 	public static void main(final String[] args) {
 		final JFrame f = new JFrame("Image viewer");
+		// f.setLayout(new BorderLayout());
+		// f.setPreferredSize(new Dimension(1000,100));
 		final JSVGCanvas canvas = new JSVGCanvas();
-//		canvas.setDocumentState(JSVGComponent.ALWAYS_DYNAMIC);
+		// canvas.setPreferredSize(new Dimension(1000,100));
+		// canvas.set
+		// canvas.setLayout(new BorderLayout());
+		canvas.setDocumentState(JSVGComponent.ALWAYS_DYNAMIC);
 		f.add(canvas);
 		EventQueue.invokeLater(() -> {
 			final NavigableMap<String, URL> files = IconImages.getIconImageResources();
@@ -60,32 +98,63 @@ public final class IconImageViewingTest {
 				@Override
 				public void documentLoadingCompleted(final SVGDocumentLoaderEvent e) {
 					final SVGDocument doc = canvas.getSVGDocument();
-//					NodeList svgNodes = doc.getElementsByTagName("svg");
-//					for (int svgNodeIdx = 0; svgNodeIdx < svgNodes.getLength(); ++svgNodeIdx){
-//						Node svgNode = svgNodes.item(svgNodeIdx);
-//						NamedNodeMap svgAttrs = svgNode.getAttributes();
-//						Node widthAttrNode = svgAttrs.getNamedItem("width");
-//						String width = widthAttrNode.getTextContent();
-//						System.out.println(width);
-//						widthAttrNode.setTextContent("200mm");
-//						System.out.println(widthAttrNode.getTextContent());
-//						f.validate();
-//						Node heightAttrNode = svgAttrs.getNamedItem("height");
-//						String height = heightAttrNode.getTextContent();
-//						System.out.println(height);
-//					
-//					}
-					
+
 					final NodeList pathNodes = doc.getElementsByTagName("path");
 					for (int pathNodeIdx = 0; pathNodeIdx < pathNodes.getLength(); ++pathNodeIdx) {
 						final Node pathNode = pathNodes.item(pathNodeIdx);
 						final NamedNodeMap pathNodeAttrs = pathNode.getAttributes();
 						final Node styleAttrNode = pathNodeAttrs.getNamedItem("style");
 						final String styleStr = styleAttrNode.getTextContent();
-//						System.out.println(styleStr);
+						// System.out.println(styleStr);
 						styleAttrNode.setTextContent(styleStr + ";fill:purple");
-					}		
+					}
+					NodeList svgNodes = doc.getElementsByTagName("svg");
+					for (int svgNodeIdx = 0; svgNodeIdx < svgNodes.getLength(); ++svgNodeIdx) {
+						Node svgNode = svgNodes.item(svgNodeIdx);
+						NamedNodeMap svgAttrs = svgNode.getAttributes();
+						Node widthAttrNode = svgAttrs.getNamedItem("width");
+						String width = widthAttrNode.getTextContent();
+						System.out.println(width);
+						widthAttrNode.setTextContent("200mm");
+						System.out.println(widthAttrNode.getTextContent());
+						Node heightAttrNode = svgAttrs.getNamedItem("height");
+						String height = heightAttrNode.getTextContent();
+						System.out.println(height);
+					}
 					
+					
+					EventQueue.invokeLater(()-> {
+						JFrame conv = new JFrame("Converted");
+						JSVGCanvas convCanvas = new JSVGCanvas();
+						conv.add(convCanvas);
+						convCanvas.setDocumentState(JSVGComponent.ALWAYS_DYNAMIC);
+						convCanvas.setSVGDocument(doc);
+						convCanvas.addSVGDocumentLoaderListener(new SVGDocumentLoaderAdapter(){
+							
+						});
+						conv.pack();
+//						conv.setLocation(null);
+						conv.setVisible(true);
+					});
+
+//					try {
+//						BufferedImage img = convertSVGToPNG(doc);
+//						EventQueue.invokeLater(() -> {
+//							JFrame c = new JFrame("Converted");
+//							c.add(new JLabel(new ImageIcon(img)));
+//							c.pack();
+//							c.setLocationByPlatform(true);
+//							c.setVisible(true);
+//						});
+//					} catch (IOException e1) {
+//						throw new UncheckedIOException(e1);
+//					} catch (TranscoderException e1) {
+//						throw new RuntimeException(e1);
+//					}
+
+					// canvas.setSVGDocument(doc);
+					// f.invalidate();
+					// canvas.repaint();
 				}
 
 			});
