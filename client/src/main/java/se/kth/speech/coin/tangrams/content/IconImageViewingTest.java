@@ -25,6 +25,7 @@ import javax.swing.JFrame;
 import javax.swing.WindowConstants;
 
 import org.apache.batik.swing.JSVGCanvas;
+import org.apache.batik.swing.svg.JSVGComponent;
 import org.apache.batik.swing.svg.SVGDocumentLoaderAdapter;
 import org.apache.batik.swing.svg.SVGDocumentLoaderEvent;
 import org.w3c.dom.NamedNodeMap;
@@ -42,6 +43,7 @@ public final class IconImageViewingTest {
 	public static void main(final String[] args) {
 		final JFrame f = new JFrame("Image viewer");
 		final JSVGCanvas canvas = new JSVGCanvas();
+//		canvas.setDocumentState(JSVGComponent.ALWAYS_DYNAMIC);
 		f.add(canvas);
 		EventQueue.invokeLater(() -> {
 			final NavigableMap<String, URL> files = IconImages.getIconImageResources();
@@ -59,15 +61,32 @@ public final class IconImageViewingTest {
 				@Override
 				public void documentLoadingCompleted(final SVGDocumentLoaderEvent e) {
 					final SVGDocument doc = canvas.getSVGDocument();
+//					NodeList svgNodes = doc.getElementsByTagName("svg");
+//					for (int svgNodeIdx = 0; svgNodeIdx < svgNodes.getLength(); ++svgNodeIdx){
+//						Node svgNode = svgNodes.item(svgNodeIdx);
+//						NamedNodeMap svgAttrs = svgNode.getAttributes();
+//						Node widthAttrNode = svgAttrs.getNamedItem("width");
+//						String width = widthAttrNode.getTextContent();
+//						System.out.println(width);
+//						widthAttrNode.setTextContent("200mm");
+//						System.out.println(widthAttrNode.getTextContent());
+//						f.validate();
+//						Node heightAttrNode = svgAttrs.getNamedItem("height");
+//						String height = heightAttrNode.getTextContent();
+//						System.out.println(height);
+//					
+//					}
+					
 					final NodeList pathNodes = doc.getElementsByTagName("path");
-					for (int i = 0; i < pathNodes.getLength(); ++i) {
-						final Node pathNode = pathNodes.item(i);
-						final NamedNodeMap attrs = pathNode.getAttributes();
-						final Node styleAttrNode = attrs.getNamedItem("style");
+					for (int pathNodeIdx = 0; pathNodeIdx < pathNodes.getLength(); ++pathNodeIdx) {
+						final Node pathNode = pathNodes.item(pathNodeIdx);
+						final NamedNodeMap pathNodeAttrs = pathNode.getAttributes();
+						final Node styleAttrNode = pathNodeAttrs.getNamedItem("style");
 						final String styleStr = styleAttrNode.getTextContent();
-						System.out.println(styleStr);
+//						System.out.println(styleStr);
 						styleAttrNode.setTextContent(styleStr + ";fill:purple");
-					}
+					}		
+					
 				}
 
 			});
