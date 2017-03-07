@@ -12,6 +12,7 @@
 	<description>The game client.</description>
 
 	<properties>
+		<batik.version>1.8</batik.version>
 		<main-class>se.kth.speech.coin.tangrams.TangramsClient</main-class>
 	</properties>
 
@@ -29,13 +30,19 @@
 
 		<dependency>
 			<groupId>org.apache.xmlgraphics</groupId>
+			<artifactId>batik-codec</artifactId>
+			<version>${batik.version}</version>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.xmlgraphics</groupId>
 			<artifactId>batik-swing</artifactId>
-			<version>1.8</version>
+			<version>${batik.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.xmlgraphics</groupId>
 			<artifactId>batik-transcoder</artifactId>
-			<version>1.8</version>
+			<version>${batik.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.xmlgraphics</groupId>
