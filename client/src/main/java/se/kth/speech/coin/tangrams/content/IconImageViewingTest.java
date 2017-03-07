@@ -34,6 +34,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.WindowConstants;
 
+import org.apache.batik.anim.dom.SVGOMPathElement;
 import org.apache.batik.swing.JSVGCanvas;
 import org.apache.batik.swing.svg.JSVGComponent;
 import org.apache.batik.swing.svg.SVGDocumentLoaderAdapter;
@@ -47,7 +48,11 @@ import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+import org.w3c.dom.css.CSSStyleDeclaration;
+import org.w3c.dom.svg.SVGAnimatedRect;
 import org.w3c.dom.svg.SVGDocument;
+import org.w3c.dom.svg.SVGRect;
+import org.w3c.dom.svg.SVGSVGElement;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -71,6 +76,8 @@ public final class IconImageViewingTest {
 
 		return ImageIO.read(new ByteArrayInputStream(resultByteStream.toByteArray()));
 	}
+	
+//	private static final Pattern VALUE_PATTERn
 
 	public static void main(final String[] args) {
 		final JFrame f = new JFrame("Image viewer");
@@ -101,41 +108,77 @@ public final class IconImageViewingTest {
 
 					final NodeList pathNodes = doc.getElementsByTagName("path");
 					for (int pathNodeIdx = 0; pathNodeIdx < pathNodes.getLength(); ++pathNodeIdx) {
-						final Node pathNode = pathNodes.item(pathNodeIdx);
+						final SVGOMPathElement pathNode = (SVGOMPathElement)pathNodes.item(pathNodeIdx);
+//						CSSStyleDeclaration style = pathNode.getStyle();
+//						System.out.println(style);
 						final NamedNodeMap pathNodeAttrs = pathNode.getAttributes();
 						final Node styleAttrNode = pathNodeAttrs.getNamedItem("style");
 						final String styleStr = styleAttrNode.getTextContent();
 						// System.out.println(styleStr);
 						styleAttrNode.setTextContent(styleStr + ";fill:purple");
+						
+						final Node transformAttr = pathNodeAttrs.getNamedItem("transform");
+						final String transformStr = transformAttr.getTextContent();
+//						final String scaledTransformStr = transformStr + " scale(1.0)";
+//						transformAttr.setTextContent(scaledTransformStr);
 					}
 					NodeList svgNodes = doc.getElementsByTagName("svg");
 					for (int svgNodeIdx = 0; svgNodeIdx < svgNodes.getLength(); ++svgNodeIdx) {
-						Node svgNode = svgNodes.item(svgNodeIdx);
+						SVGSVGElement svgNode = (SVGSVGElement)svgNodes.item(svgNodeIdx);
+						SVGAnimatedRect viewBox = svgNode.getViewBox();
+						SVGRect viewBoxVal = viewBox.getBaseVal();
+						float newWidth = viewBoxVal.getWidth() * 2;
+						viewBoxVal.setWidth(newWidth);
+						float newHeight = viewBoxVal.getHeight() * 2;
+						viewBoxVal.setHeight(newHeight);
+//						svgNode.createSVGTransform().setScale(2.0f, 2.0f);
+						System.out.println(svgNode);
 						NamedNodeMap svgAttrs = svgNode.getAttributes();
 						Node widthAttrNode = svgAttrs.getNamedItem("width");
 						String width = widthAttrNode.getTextContent();
-						System.out.println(width);
-						widthAttrNode.setTextContent("200mm");
-						System.out.println(widthAttrNode.getTextContent());
+						System.out.println("old width:" + width);
+//						widthAttrNode.setTextContent("100%");
+//						widthAttrNode.setTextContent("1000mm");
+//						widthAttrNode.setTextContent(newWidth + "mm");
+						System.out.println("new width:" + widthAttrNode.getTextContent());
 						Node heightAttrNode = svgAttrs.getNamedItem("height");
 						String height = heightAttrNode.getTextContent();
-						System.out.println(height);
+						System.out.println("old height:" + height);
+//						heightAttrNode.setTextContent("100%");
+//						heightAttrNode.setTextContent("2000mm");
+//						heightAttrNode.setTextContent(newHeight + "mm");
+//						svgAttrs.removeNamedItem("height");
+						System.out.println("new height:" + heightAttrNode.getTextContent());
+//						Node viewBoxAttr = svgAttrs.getNamedItem("viewBox");
+//						String viewBoxAttrStr = viewBoxAttr.getTextContent();
+//						viewBoxAttr.setTextContent("0 0 " + width + " " +  height);
 					}
 					
+					SVGSVGElement rootElem = doc.getRootElement();
+					rootElem.createSVGTransform().setScale(2.0f, 2.0f);
+//					rootElem.trans
+//					rootElem.forceRedraw();
 					
-					EventQueue.invokeLater(()-> {
-						JFrame conv = new JFrame("Converted");
-						JSVGCanvas convCanvas = new JSVGCanvas();
-						conv.add(convCanvas);
-						convCanvas.setDocumentState(JSVGComponent.ALWAYS_DYNAMIC);
-						convCanvas.setSVGDocument(doc);
-						convCanvas.addSVGDocumentLoaderListener(new SVGDocumentLoaderAdapter(){
-							
-						});
-						conv.pack();
-//						conv.setLocation(null);
-						conv.setVisible(true);
-					});
+//					System.out.println("currentScale:" + rootElem.getCurrentScale());
+//					rootElem.
+//					rootElem.createSVGTransform()
+//					rootElem.getHeight();
+//					rootElem.setCurrentScale(2.0f);
+					
+					
+//					EventQueue.invokeLater(()-> {
+//						JFrame conv = new JFrame("Converted");
+//						JSVGCanvas convCanvas = new JSVGCanvas();
+//						conv.add(convCanvas);
+//						convCanvas.setDocumentState(JSVGComponent.ALWAYS_DYNAMIC);
+//						convCanvas.setSVGDocument(doc);
+//						convCanvas.addSVGDocumentLoaderListener(new SVGDocumentLoaderAdapter(){
+//							
+//						});
+//						conv.pack();
+////						conv.setLocation(null);
+//						conv.setVisible(true);
+//					});
 
 //					try {
 //						BufferedImage img = convertSVGToPNG(doc);
