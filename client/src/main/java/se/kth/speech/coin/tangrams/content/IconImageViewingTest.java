@@ -25,7 +25,6 @@ import javax.swing.JFrame;
 import javax.swing.WindowConstants;
 
 import org.apache.batik.swing.JSVGCanvas;
-import org.apache.batik.swing.svg.JSVGComponent;
 import org.apache.batik.swing.svg.SVGDocumentLoaderAdapter;
 import org.apache.batik.swing.svg.SVGDocumentLoaderEvent;
 import org.w3c.dom.NamedNodeMap;
