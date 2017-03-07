@@ -19,6 +19,9 @@ package se.kth.speech.coin.tangrams.view;
 import java.util.function.Function;
 
 import org.apache.batik.swing.JSVGCanvas;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.w3c.dom.svg.SVGDocument;
 
 import se.kth.speech.coin.tangrams.content.ImageDatum;
 
@@ -38,11 +41,8 @@ final class GameBoardPanel extends JSVGCanvas {
 	 * @param coordOccupantImageFactory
 	 */
 	public GameBoardPanel(final Function<? super Integer, ? extends ImageDatum> coordOccupantImageFactory) {
+		setDocumentState(ALWAYS_DYNAMIC);
 		setURI(coordOccupantImageFactory.apply(1).getResourceLoc().toString());
-		// TODO Auto-generated constructor stub
-	}
-
-	GameBoardPanel() {
 		// TODO Auto-generated constructor stub
 	}
 
