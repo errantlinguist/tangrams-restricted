@@ -146,8 +146,6 @@ public final class GameGUI<T> implements Runnable {
 
 	private final RemoteController<T> remoteController;
 
-	private final IntFunction<? extends BufferedImage> rowBackgroundImageFactory;
-
 	private final BiConsumer<Component, Selection> selectionLogger;
 
 	private final String title;
@@ -161,7 +159,6 @@ public final class GameGUI<T> implements Runnable {
 	public GameGUI(final String title, final Point viewLocation, final LocalController<T> localController,
 			final RemoteController<T> remoteController, final Model<T> winningModel,
 			final Function<? super T, ? extends Image> coordOccupantImageFactory,
-			final IntFunction<? extends BufferedImage> rowBackgroundImageFactory,
 			final Supplier<? extends Path> logOutdirSupplier, final Runnable closeHook) {
 		this.title = title;
 		this.viewLocation = viewLocation;
@@ -169,7 +166,6 @@ public final class GameGUI<T> implements Runnable {
 		this.remoteController = remoteController;
 		this.winningModel = winningModel;
 		this.coordOccupantImageFactory = coordOccupantImageFactory;
-		this.rowBackgroundImageFactory = rowBackgroundImageFactory;
 		final ExecutorService screenshotLoggingExecutor = Executors.newSingleThreadExecutor();
 		{
 			final ScreenshotLogger screenshotLogger = new ScreenshotLogger(logOutdirSupplier,
