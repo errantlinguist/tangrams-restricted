@@ -55,7 +55,6 @@ import iristk.system.IrisSystem;
 import iristk.system.LoggingModule;
 import iristk.util.NameFilter;
 import se.kth.speech.coin.tangrams.content.PieceIdImageFactoryFactory;
-import se.kth.speech.coin.tangrams.content.RowBackgroundImageFactoryFactory;
 import se.kth.speech.coin.tangrams.game.LocalController;
 import se.kth.speech.coin.tangrams.game.Model;
 import se.kth.speech.coin.tangrams.iristk.GameManagementClientModule;
@@ -363,8 +362,6 @@ public final class TangramsClient implements Runnable {
 											EventQueue.invokeLater(new GameGUI<>(title, viewLocation, localController,
 													gameState.getRemoteController(), gameState.getWinningModel(),
 													pieceIdImageFactory,
-													new RowBackgroundImageFactoryFactory()
-															.apply(model.getCoordinateDimensions()[0]),
 													() -> logDir.toPath(), closeHook));
 
 										});

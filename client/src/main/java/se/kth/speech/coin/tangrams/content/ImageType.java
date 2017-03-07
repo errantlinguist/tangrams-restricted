@@ -19,7 +19,7 @@ package se.kth.speech.coin.tangrams.content;
 import java.net.URL;
 
 enum ImageType {
-	BACKGROUND("backgrounds"), ICON("icons");
+	ICON("icons");
 
 	private static final String PARENT_DIR_LOCATOR = "images/";
 

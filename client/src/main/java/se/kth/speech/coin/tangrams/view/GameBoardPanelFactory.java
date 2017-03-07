@@ -17,13 +17,15 @@
 package se.kth.speech.coin.tangrams.view;
 
 import java.awt.Image;
+import java.util.Map;
+import java.util.function.Function;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
  * @since 2 Mar 2017
  *
  */
-final class GameBoardPanelFactory {
+final class GameBoardPanelFactory<T> implements Function<Map<? super T, ? extends Image>, GameBoardPanel<T>> {
 	
 	GameBoardPanelFactory(){
 		
@@ -55,6 +57,15 @@ final class GameBoardPanelFactory {
 		long wholePart = (long) ratio;
 		double fractionPart = ratio - wholePart;
 		
+	}
+
+	/* (non-Javadoc)
+	 * @see java.util.function.Function#apply(java.lang.Object)
+	 */
+	@Override
+	public GameBoardPanel<T> apply(Map<? super T, ? extends Image> t) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }
