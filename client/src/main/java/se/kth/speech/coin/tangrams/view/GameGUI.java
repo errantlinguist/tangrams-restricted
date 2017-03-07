@@ -54,6 +54,8 @@ import se.kth.speech.coin.tangrams.game.RemoteController;
 import se.kth.speech.coin.tangrams.iristk.events.Selection;
 import se.kth.speech.coin.tangrams.iristk.events.Turn;
 
+
+import se.kth.speech.coin.tangrams.content.ImageDatum;
 /**
  *
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -140,7 +142,7 @@ public final class GameGUI<T> implements Runnable {
 
 	private final Runnable closeHook;
 
-	private final Function<? super T, ? extends Image> coordOccupantImageFactory;
+	private final Function<? super T, ? extends ImageDatum> coordOccupantImageFactory;
 
 	private final LocalController<T> localController;
 
@@ -158,7 +160,7 @@ public final class GameGUI<T> implements Runnable {
 
 	public GameGUI(final String title, final Point viewLocation, final LocalController<T> localController,
 			final RemoteController<T> remoteController, final Model<T> winningModel,
-			final Function<? super T, ? extends Image> coordOccupantImageFactory,
+			final Function<? super T, ? extends ImageDatum> coordOccupantImageFactory,
 			final Supplier<? extends Path> logOutdirSupplier, final Runnable closeHook) {
 		this.title = title;
 		this.viewLocation = viewLocation;

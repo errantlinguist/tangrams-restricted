@@ -14,35 +14,15 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech.coin.tangrams.view;
-
-import java.util.function.Function;
-
-import javax.swing.JPanel;
-
-import se.kth.speech.coin.tangrams.content.ImageDatum;
+package se.kth.speech.coin.tangrams.content;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
- * @since 2 Mar 2017
+ * @since 7 Mar 2017
  *
  */
-final class GameBoardPanel<T> extends JPanel {
-
-	/**
-	 *
-	 */
-	private static final long serialVersionUID = 6258829324465894025L;
-
-	/**
-	 * @param coordOccupantImageFactory
-	 */
-	public GameBoardPanel(final Function<? super T, ? extends ImageDatum> coordOccupantImageFactory) {
-		// TODO Auto-generated constructor stub
-	}
-
-	GameBoardPanel() {
-		// TODO Auto-generated constructor stub
-	}
-
+public enum ImageSize {
+	LARGE,
+	NORMAL,
+	SMALL
 }

@@ -18,7 +18,6 @@ package se.kth.speech.coin.tangrams;
 
 import java.awt.Component;
 import java.awt.EventQueue;
-import java.awt.Image;
 import java.awt.Point;
 import java.io.File;
 import java.io.IOException;
@@ -54,7 +53,8 @@ import com.github.errantlinguist.ClassProperties;
 import iristk.system.IrisSystem;
 import iristk.system.LoggingModule;
 import iristk.util.NameFilter;
-import se.kth.speech.coin.tangrams.content.PieceIdImageFactoryFactory;
+import se.kth.speech.coin.tangrams.content.ImageDatum;
+import se.kth.speech.coin.tangrams.content.RandomPieceIdImageManager;
 import se.kth.speech.coin.tangrams.game.LocalController;
 import se.kth.speech.coin.tangrams.game.Model;
 import se.kth.speech.coin.tangrams.iristk.GameManagementClientModule;
@@ -352,8 +352,8 @@ public final class TangramsClient implements Runnable {
 											final Model<Integer> model = localController.getModel();
 											final int pieceCount = model.getOccupiedCoordinateCount();
 											final Random rnd = new Random(gameState.getSeed());
-											final Function<Integer, Image> pieceIdImageFactory = new PieceIdImageFactoryFactory(
-													rnd).apply(pieceCount);
+											final Function<Integer, ImageDatum> pieceImageDataFactory = new RandomPieceIdImageManager(
+													pieceCount).createImageDataFactory(rnd);
 											final Runnable closeHook = () -> {
 												LOGGER.info("Closing main window; Cleaning up background resources.");
 												recordingManager.getStopper().run();
@@ -361,8 +361,7 @@ public final class TangramsClient implements Runnable {
 											};
 											EventQueue.invokeLater(new GameGUI<>(title, viewLocation, localController,
 													gameState.getRemoteController(), gameState.getWinningModel(),
-													pieceIdImageFactory,
-													() -> logDir.toPath(), closeHook));
+													pieceImageDataFactory, () -> logDir.toPath(), closeHook));
 
 										});
 								system.addModule(gameClientModule);

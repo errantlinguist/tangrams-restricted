@@ -120,13 +120,6 @@ final class IconImages {
 		return ICON_IMAGE_RESOURCES;
 	}
 
-	/**
-	 * @return the nameComparator
-	 */
-	static Comparator<String> getIconNameComparator() {
-		return ICON_NAME_COMPARATOR;
-	}
-
 	private IconImages() {
 
 	}
