@@ -20,9 +20,9 @@ import java.awt.Color;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
 import java.util.function.Function;
@@ -52,7 +52,7 @@ final class RandomPieceImageDataFactory implements Function<Random, Stream<Image
 	 * A mapping of icon names mapped to their corresponding image {@link URL}
 	 * resource locators.
 	 */
-	private final Map<String, URL> imgResources;
+	private final Collection<? extends Entry<String, URL>> imgResources;
 
 	/**
 	 * The maximum number of attributes an image may share with another image.
@@ -82,7 +82,8 @@ final class RandomPieceImageDataFactory implements Function<Random, Stream<Image
 	 *            The maximum number of attributes an image may share with
 	 *            another image.
 	 */
-	public RandomPieceImageDataFactory(final Map<String, URL> imgResources, final int maxSharedAttrCount) {
+	public RandomPieceImageDataFactory(final Collection<? extends Entry<String, URL>> imgResources,
+			final int maxSharedAttrCount) {
 		this(imgResources, DEFAULT_UNIQUE_IMG_COLORS, DEFAULT_IMG_SIZES, maxSharedAttrCount);
 	}
 
@@ -105,8 +106,8 @@ final class RandomPieceImageDataFactory implements Function<Random, Stream<Image
 	 *            The maximum number of attributes an image may share with
 	 *            another image.
 	 */
-	public RandomPieceImageDataFactory(final Map<String, URL> imgResources, final List<Color> uniqueImgColors,
-			final List<ImageSize> sizes, final int maxSharedAttrCount) {
+	public RandomPieceImageDataFactory(final Collection<? extends Entry<String, URL>> imgResources,
+			final List<Color> uniqueImgColors, final List<ImageSize> sizes, final int maxSharedAttrCount) {
 		this.imgResources = imgResources;
 		this.uniqueImgColors = uniqueImgColors;
 		this.sizes = sizes;
@@ -125,8 +126,8 @@ final class RandomPieceImageDataFactory implements Function<Random, Stream<Image
 	 *            The maximum number of attributes an image may share with
 	 *            another image.
 	 */
-	public RandomPieceImageDataFactory(final Map<String, URL> imgResources, final List<ImageSize> sizes,
-			final int maxSharedAttrCount) {
+	public RandomPieceImageDataFactory(final Collection<? extends Entry<String, URL>> imgResources,
+			final List<ImageSize> sizes, final int maxSharedAttrCount) {
 		this(imgResources, DEFAULT_UNIQUE_IMG_COLORS, sizes, maxSharedAttrCount);
 	}
 
@@ -194,7 +195,7 @@ final class RandomPieceImageDataFactory implements Function<Random, Stream<Image
 	private List<ImageDatum> createImageDatumEnumerationList() {
 		final int colorSizeComboCount = uniqueImgColors.size() * sizes.size();
 		final List<ImageDatum> result = new ArrayList<>(colorSizeComboCount * imgResources.size());
-		for (final Entry<String, URL> namedImgResource : imgResources.entrySet()) {
+		for (final Entry<String, URL> namedImgResource : imgResources) {
 			for (final Color color : uniqueImgColors) {
 				for (final ImageSize size : sizes) {
 					final ImageDatum newDatum = new ImageDatum(namedImgResource.getValue(), color, size);
