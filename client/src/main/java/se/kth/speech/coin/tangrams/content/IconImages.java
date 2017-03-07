@@ -19,9 +19,6 @@ package se.kth.speech.coin.tangrams.content;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Map;
@@ -84,7 +81,8 @@ final class IconImages {
 
 			};
 
-			final Predicate<String> imgFilter = new FileResourceLocatorContentTypePatternFilter(Pattern.compile("image/(?!svg).+"));
+			final Predicate<String> imgFilter = new FileResourceLocatorContentTypePatternFilter(
+					Pattern.compile("image/(?!svg).+"));
 			ICON_IMAGE_RESOURCES = new ClasspathDirResourceLocatorMapFactory<>(IconImages.class,
 					() -> new TreeMap<>(ICON_NAME_COMPARATOR), imgFilter, new FilenameBaseSplitter())
 							.apply(ImageType.ICON.getDirLocator());
