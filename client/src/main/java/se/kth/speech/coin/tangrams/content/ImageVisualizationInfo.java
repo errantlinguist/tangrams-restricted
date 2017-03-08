@@ -24,7 +24,7 @@ import java.net.URL;
  * @since 7 Mar 2017
  *
  */
-public final class ImageDatum {
+public final class ImageVisualizationInfo {
 
 	private final Color color;
 
@@ -32,7 +32,7 @@ public final class ImageDatum {
 
 	private final ImageSize size;
 
-	ImageDatum(final URL resourceLoc, final Color color, final ImageSize size) {
+	ImageVisualizationInfo(final URL resourceLoc, final Color color, final ImageSize size) {
 		this.resourceLoc = resourceLoc;
 		this.color = color;
 		this.size = size;
@@ -51,10 +51,10 @@ public final class ImageDatum {
 		if (obj == null) {
 			return false;
 		}
-		if (!(obj instanceof ImageDatum)) {
+		if (!(obj instanceof ImageVisualizationInfo)) {
 			return false;
 		}
-		final ImageDatum other = (ImageDatum) obj;
+		final ImageVisualizationInfo other = (ImageVisualizationInfo) obj;
 		if (color == null) {
 			if (other.color != null) {
 				return false;
@@ -119,7 +119,7 @@ public final class ImageDatum {
 	@Override
 	public String toString() {
 		final StringBuilder builder = new StringBuilder();
-		builder.append("ImageDatum [resourceLoc=");
+		builder.append("ImageVisualizationInfo [resourceLoc=");
 		builder.append(resourceLoc);
 		builder.append(", color=");
 		builder.append(color);

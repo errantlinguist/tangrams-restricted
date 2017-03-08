@@ -22,7 +22,7 @@ import java.util.List;
 
 import javax.swing.JFrame;
 
-import se.kth.speech.coin.tangrams.content.ImageDatum;
+import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 import se.kth.speech.coin.tangrams.game.LocalController;
 
 /**
@@ -44,7 +44,7 @@ final class GameViewFrame extends JFrame {
 		// TODO Auto-generated constructor stub
 	}
 
-	GameViewFrame(final List<ImageDatum> imageData, final LocalController<? super Integer> localController) {
+	GameViewFrame(final List<ImageVisualizationInfo> imageData, final LocalController<? super Integer> localController) {
 		GameBoardPanel boardPanel = new GameBoardPanelFactory().apply(imageData);
 		add(boardPanel);
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);

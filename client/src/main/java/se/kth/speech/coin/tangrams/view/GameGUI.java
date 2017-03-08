@@ -40,7 +40,7 @@ import javax.swing.KeyStroke;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import se.kth.speech.coin.tangrams.content.ImageDatum;
+import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 import se.kth.speech.coin.tangrams.game.LocalController;
 import se.kth.speech.coin.tangrams.game.Model;
 import se.kth.speech.coin.tangrams.game.RemoteController;
@@ -128,7 +128,7 @@ public final class GameGUI implements Runnable {
 
 	private final Runnable closeHook;
 
-	private final List<ImageDatum> imageData;
+	private final List<ImageVisualizationInfo> imageData;
 
 	private final LocalController<Integer> localController;
 
@@ -146,7 +146,7 @@ public final class GameGUI implements Runnable {
 
 	public GameGUI(final String title, final Point viewLocation, final LocalController<Integer> localController,
 			final RemoteController<Integer> remoteController, final Model<Integer> winningModel,
-			final List<ImageDatum> imageData, final Supplier<? extends Path> logOutdirSupplier,
+			final List<ImageVisualizationInfo> imageData, final Supplier<? extends Path> logOutdirSupplier,
 			final Runnable closeHook) {
 		this.title = title;
 		this.viewLocation = viewLocation;

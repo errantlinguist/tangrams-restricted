@@ -53,7 +53,7 @@ import com.github.errantlinguist.ClassProperties;
 import iristk.system.IrisSystem;
 import iristk.system.LoggingModule;
 import iristk.util.NameFilter;
-import se.kth.speech.coin.tangrams.content.ImageDatum;
+import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 import se.kth.speech.coin.tangrams.content.RandomPieceImageManager;
 import se.kth.speech.coin.tangrams.game.LocalController;
 import se.kth.speech.coin.tangrams.game.Model;
@@ -352,7 +352,7 @@ public final class TangramsClient implements Runnable {
 											final Model<Integer> model = localController.getModel();
 											final int pieceCount = model.getOccupiedCoordinateCount();
 											final Random rnd = new Random(gameState.getSeed());
-											final List<ImageDatum> imageData = new RandomPieceImageManager(pieceCount)
+											final List<ImageVisualizationInfo> imageData = new RandomPieceImageManager(pieceCount)
 													.createImageData(rnd);
 											final Runnable closeHook = () -> {
 												LOGGER.info("Closing main window; Cleaning up background resources.");

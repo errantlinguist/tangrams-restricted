@@ -38,21 +38,34 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 import se.kth.speech.MathDenominators;
-import se.kth.speech.coin.tangrams.content.ImageDatum;
+import se.kth.speech.MutablePair;
+import se.kth.speech.coin.tangrams.content.ImageSize;
+import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
  * @since 2 Mar 2017
  *
  */
-final class GameBoardPanelFactory implements Function<Collection<ImageDatum>, GameBoardPanel> {
+final class GameBoardPanelFactory implements Function<Collection<ImageVisualizationInfo>, GameBoardPanel> {
 
 	private enum ImageOrientation {
-		LANDSCAPE, PORTRAIT;
+		LANDSCAPE, PORTRAIT, SQUARE;
+
+		private static ImageOrientation getOrientation(final int width, final int height) {
+			final ImageOrientation result;
+			if (width < height) {
+				result = ImageOrientation.PORTRAIT;
+			} else if (height < width) {
+				result = ImageOrientation.LANDSCAPE;
+			} else {
+				result = ImageOrientation.SQUARE;
+			}
+			return result;
+		}
 	}
 
-	private static class ImageValueDatum {
-		private final Set<?> comments;
+	private static class ImageRasterizationInfo {
 
 		private final int gcd;
 
@@ -60,11 +73,10 @@ final class GameBoardPanelFactory implements Function<Collection<ImageDatum>, Ga
 
 		private final int width;
 
-		private ImageValueDatum(final int width, final int height, final int gcd, final Set<?> comments) {
+		private ImageRasterizationInfo(final int width, final int height, final int gcd) {
 			this.width = width;
 			this.height = height;
 			this.gcd = gcd;
-			this.comments = comments;
 		}
 	}
 
@@ -102,44 +114,119 @@ final class GameBoardPanelFactory implements Function<Collection<ImageDatum>, Ga
 
 	private static final double RATIO_TOLERANCE = 0.05;
 
-	private static String createImageValueTable(final Collection<? extends Entry<?, ImageValueDatum>> namedImgValData) {
+	private static String createImageValueTable(
+			final Collection<? extends Entry<?, ? extends Entry<ImageRasterizationInfo, ?>>> namedImgValData) {
 		final String errorMsgPrefix = "One or more images failed validation:" + System.lineSeparator()
 				+ "PATH\tWIDTH\tHEIGHT\tGCD\tCOMMENT";
 		final StringBuilder sb = new StringBuilder(errorMsgPrefix.length() + 16 * namedImgValData.size());
 		sb.append(errorMsgPrefix);
-		for (final Entry<?, ImageValueDatum> namedImgValDatum : namedImgValData) {
+		for (final Entry<?, ? extends Entry<ImageRasterizationInfo, ?>> namedImgValDatumComments : namedImgValData) {
 			sb.append(System.lineSeparator());
-			sb.append(namedImgValDatum.getKey());
+			sb.append(namedImgValDatumComments.getKey());
 			sb.append('\t');
-			final ImageValueDatum imgValDatum = namedImgValDatum.getValue();
-			sb.append(imgValDatum.width);
+			final Entry<ImageRasterizationInfo, ?> imgValDatumComments = namedImgValDatumComments.getValue();
+			final ImageRasterizationInfo imgDatum = imgValDatumComments.getKey();
+			sb.append(imgDatum.width);
 			sb.append('\t');
-			sb.append(imgValDatum.height);
+			sb.append(imgDatum.height);
 			sb.append('\t');
-			sb.append(imgValDatum.gcd);
+			sb.append(imgDatum.gcd);
 			sb.append('\t');
-			sb.append(imgValDatum.comments);
+			sb.append(imgValDatumComments.getValue());
 		}
 		return sb.toString();
 	}
 
-	private static Image createScaledImage(final Image origImg, final int lesserDimVal, final int minDimLength,
-			final ImageOrientation orientation) {
+	private static Image createScaledImage(final Image origImg, final ImageSize size, final int lesserDimVal,
+			final int maxDimLength, final ImageOrientation orientation) {
 		final Image result;
-		if (lesserDimVal < minDimLength) {
+		if (lesserDimVal < maxDimLength) {
 			switch (orientation) {
 			case PORTRAIT: {
-				result = origImg.getScaledInstance(minDimLength, -1, IMG_SCALING_HINTS);
+				result = origImg.getScaledInstance(-1, maxDimLength, IMG_SCALING_HINTS);
 				break;
 			}
 			default: {
-				result = origImg.getScaledInstance(-1, minDimLength, IMG_SCALING_HINTS);
+				result = origImg.getScaledInstance(-1, maxDimLength, IMG_SCALING_HINTS);
 				break;
 			}
 			}
 		} else {
 			// Just use the original, unscaled image
 			result = origImg;
+		}
+		return result;
+	}
+
+	private static Map<BufferedImage, ImageVisualizationInfo> createValidatedImageDataMap(
+			final Collection<ImageVisualizationInfo> imgData) throws IOException {
+		final Map<BufferedImage, ImageVisualizationInfo> result = Maps.newLinkedHashMapWithExpectedSize(imgData.size());
+		final Set<Integer> dimensionValues = Sets.newHashSetWithExpectedSize(imgData.size() + 1);
+		final Map<URL, Entry<ImageRasterizationInfo, Set<SizeValidator.ValidationComment>>> badImgs = Maps
+				.newHashMapWithExpectedSize(0);
+		// The minimum accepted length of the shortest dimension for an image
+		final int minDimLength = 300;
+		final SizeValidator validator = new SizeValidator(minDimLength);
+		for (final ImageVisualizationInfo imgDatum : imgData) {
+			final URL imgResourceLoc = imgDatum.getResourceLoc();
+			final BufferedImage initialImg = ImageIO.read(imgResourceLoc);
+			result.put(initialImg, imgDatum);
+
+			{
+				// Size/aspect ratio calculation
+				final int width = initialImg.getWidth();
+				dimensionValues.add(width);
+				final int height = initialImg.getHeight();
+				dimensionValues.add(height);
+				// System.out.println(String.format("width: %d height: %d",
+				// width, height));
+				final int imgGcd = MathDenominators.gcd(width, height);
+				final Set<SizeValidator.ValidationComment> validationComments = validator.validate(width, height,
+						imgGcd);
+				if (!validationComments.isEmpty()) {
+					final ImageRasterizationInfo imgRasterizationInfo = new ImageRasterizationInfo(width, height,
+							imgGcd);
+					badImgs.put(imgResourceLoc, new MutablePair<>(imgRasterizationInfo, validationComments));
+				}
+			}
+
+		}
+
+		if (!badImgs.isEmpty()) {
+			throw new IllegalArgumentException(createImageValueTable(badImgs.entrySet()));
+		}
+
+		return result;
+	}
+
+	private static Image scaleImageByLongerDimension(final BufferedImage origImg, final int longerDimVal) {
+		final Image result;
+		final ImageOrientation orientation = ImageOrientation.getOrientation(origImg.getWidth(), origImg.getHeight());
+		switch (orientation) {
+		case PORTRAIT: {
+			result = origImg.getScaledInstance(-1, longerDimVal, IMG_SCALING_HINTS);
+			break;
+		}
+		default: {
+			result = origImg.getScaledInstance(longerDimVal, -1, IMG_SCALING_HINTS);
+			break;
+		}
+		}
+		return result;
+	}
+
+	private static Image scaleImageByShorterDimension(final BufferedImage origImg, final int shorterDimVal) {
+		final Image result;
+		final ImageOrientation orientation = ImageOrientation.getOrientation(origImg.getWidth(), origImg.getHeight());
+		switch (orientation) {
+		case PORTRAIT: {
+			result = origImg.getScaledInstance(shorterDimVal, -1, IMG_SCALING_HINTS);
+			break;
+		}
+		default: {
+			result = origImg.getScaledInstance(-1, shorterDimVal, IMG_SCALING_HINTS);
+			break;
+		}
 		}
 		return result;
 	}
@@ -154,51 +241,43 @@ final class GameBoardPanelFactory implements Function<Collection<ImageDatum>, Ga
 	 * @see java.util.function.Function#apply(java.lang.Object)
 	 */
 	@Override
-	public GameBoardPanel apply(final Collection<ImageDatum> imgData) {
+	public GameBoardPanel apply(final Collection<ImageVisualizationInfo> imgData) {
 		// Use linked map in order to preserve iteration order in provided
 		// sequence
-		final Map<BufferedImage, ImageDatum> imageDataMap = Maps.newLinkedHashMapWithExpectedSize(imgData.size());
+		final Map<BufferedImage, ImageVisualizationInfo> imageDataMap = Maps
+				.newLinkedHashMapWithExpectedSize(imgData.size());
 		final Set<Integer> dimensionValues = Sets.newHashSetWithExpectedSize(imgData.size() + 1);
-		final Map<URL, ImageValueDatum> badImgs = Maps.newHashMapWithExpectedSize(0);
+		final Map<URL, Entry<ImageRasterizationInfo, Set<SizeValidator.ValidationComment>>> badImgs = Maps
+				.newHashMapWithExpectedSize(0);
+		// The minimum accepted length of the shortest dimension for an image
 		final int minDimLength = 300;
 		final SizeValidator validator = new SizeValidator(minDimLength);
 		try {
-			for (final ImageDatum imgDatum : imgData) {
+			for (final ImageVisualizationInfo imgDatum : imgData) {
 				final URL imgResourceLoc = imgDatum.getResourceLoc();
 				final BufferedImage initialImg = ImageIO.read(imgResourceLoc);
 				imageDataMap.put(initialImg, imgDatum);
-				final int width = initialImg.getWidth();
-				dimensionValues.add(width);
-				final int height = initialImg.getHeight();
-				dimensionValues.add(height);
-				// System.out.println(String.format("width: %d height: %d",
-				// width, height));
-				final int imgGcd = MathDenominators.gcd(width, height);
-				final Set<SizeValidator.ValidationComment> validationComments = validator.validate(width, height,
-						imgGcd);
-				if (!validationComments.isEmpty()) {
-					badImgs.put(imgResourceLoc, new ImageValueDatum(width, height, imgGcd, validationComments));
-				}
-				{
-					// Image scaling
-					final ImageOrientation orientation;
-					final int lesserDimVal;
-					final boolean isSquare;
-					if (width < height) {
-						orientation = ImageOrientation.PORTRAIT;
-						lesserDimVal = width;
-						isSquare = false;
-					} else if (height < width) {
-						orientation = ImageOrientation.LANDSCAPE;
-						lesserDimVal = height;
-						isSquare = false;
-					} else {
-						orientation = ImageOrientation.LANDSCAPE;
-						lesserDimVal = width;
-						isSquare = true;
-					}
 
-					final Image scaledImg = createScaledImage(initialImg, lesserDimVal, minDimLength, orientation);
+				{
+					// Size/aspect ratio calculation
+					final int width = initialImg.getWidth();
+					dimensionValues.add(width);
+					final int height = initialImg.getHeight();
+					dimensionValues.add(height);
+					// System.out.println(String.format("width: %d height: %d",
+					// width, height));
+					final int imgGcd = MathDenominators.gcd(width, height);
+					final Set<SizeValidator.ValidationComment> validationComments = validator.validate(width, height,
+							imgGcd);
+					if (!validationComments.isEmpty()) {
+						final ImageRasterizationInfo imgRasterizationInfo = new ImageRasterizationInfo(width, height,
+								imgGcd);
+						badImgs.put(imgResourceLoc, new MutablePair<>(imgRasterizationInfo, validationComments));
+					}
+					// Set the longer dimension of each image to the minimum
+					// allowed length, thus scaling images down to this size
+					// so that no dimension of any image exceeds this value
+					final Image scaledImg = scaleImageByLongerDimension(initialImg, minDimLength);
 				}
 
 			}

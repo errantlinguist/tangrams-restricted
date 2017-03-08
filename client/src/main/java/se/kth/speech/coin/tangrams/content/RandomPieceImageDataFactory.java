@@ -39,7 +39,7 @@ import com.google.common.collect.Multimap;
  * @since 7 Mar 2017
  *
  */
-final class RandomPieceImageDataFactory implements Function<Random, Stream<ImageDatum>> {
+final class RandomPieceImageDataFactory implements Function<Random, Stream<ImageVisualizationInfo>> {
 
 	private static final List<ImageSize> DEFAULT_IMG_SIZES = Arrays.asList(ImageSize.values());
 
@@ -139,14 +139,14 @@ final class RandomPieceImageDataFactory implements Function<Random, Stream<Image
 	 *         {@link URL} and respective {@link Color} to use for filtering it.
 	 */
 	@Override
-	public Stream<ImageDatum> apply(final Random rnd) {
-		final List<ImageDatum> imgData = createImageDatumEnumerationList();
+	public Stream<ImageVisualizationInfo> apply(final Random rnd) {
+		final List<ImageVisualizationInfo> imgData = createImageDatumEnumerationList();
 		Collections.shuffle(imgData, rnd);
 
 		final Multimap<URL, ImageSize> imgSizes = HashMultimap.create(imgData.size(), sizes.size());
 		final Multimap<URL, Color> imgColors = HashMultimap.create(imgData.size(), uniqueImgColors.size());
-		final Stream.Builder<ImageDatum> resultBuilder = Stream.builder();
-		for (final ImageDatum imgDatum : imgData) {
+		final Stream.Builder<ImageVisualizationInfo> resultBuilder = Stream.builder();
+		for (final ImageVisualizationInfo imgDatum : imgData) {
 			final URL resourceLoc = imgDatum.getResourceLoc();
 			int commonAttrCount = 0;
 			{
@@ -192,13 +192,13 @@ final class RandomPieceImageDataFactory implements Function<Random, Stream<Image
 		return resultBuilder.build();
 	}
 
-	private List<ImageDatum> createImageDatumEnumerationList() {
+	private List<ImageVisualizationInfo> createImageDatumEnumerationList() {
 		final int colorSizeComboCount = uniqueImgColors.size() * sizes.size();
-		final List<ImageDatum> result = new ArrayList<>(colorSizeComboCount * imgResources.size());
+		final List<ImageVisualizationInfo> result = new ArrayList<>(colorSizeComboCount * imgResources.size());
 		for (final Entry<String, URL> namedImgResource : imgResources) {
 			for (final Color color : uniqueImgColors) {
 				for (final ImageSize size : sizes) {
-					final ImageDatum newDatum = new ImageDatum(namedImgResource.getValue(), color, size);
+					final ImageVisualizationInfo newDatum = new ImageVisualizationInfo(namedImgResource.getValue(), color, size);
 					result.add(newDatum);
 				}
 			}

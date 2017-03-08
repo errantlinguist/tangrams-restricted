@@ -27,7 +27,7 @@ import javax.swing.WindowConstants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import se.kth.speech.coin.tangrams.content.ImageDatum;
+import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 import se.kth.speech.coin.tangrams.content.RandomPieceImageManager;
 
 /**
@@ -69,7 +69,7 @@ public final class GameBoardPanelViewingTest implements Runnable {
 		frame.setLayout(new BorderLayout());
 		final int pieceCount = 20;
 		final RandomPieceImageManager imgManager = new RandomPieceImageManager(pieceCount);
-		final List<ImageDatum> imgData = imgManager.createImageData(rnd);
+		final List<ImageVisualizationInfo> imgData = imgManager.createImageData(rnd);
 		final GameBoardPanel boardPanel = new GameBoardPanelFactory().apply(imgData);
 		frame.add(boardPanel, BorderLayout.CENTER);
 

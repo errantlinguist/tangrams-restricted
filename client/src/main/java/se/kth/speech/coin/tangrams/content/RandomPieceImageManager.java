@@ -29,7 +29,7 @@ import java.util.stream.Stream;
  */
 public final class RandomPieceImageManager {
 
-	private final Function<Random, Stream<ImageDatum>> rndImgDataFactory = new RandomPieceImageDataFactory(
+	private final Function<Random, Stream<ImageVisualizationInfo>> rndImgDataFactory = new RandomPieceImageDataFactory(
 			IconImages.getIconImageResources().entrySet(), 2);
 
 	/**
@@ -40,15 +40,15 @@ public final class RandomPieceImageManager {
 		// TODO Ensure even distribution of shapes, sizes and colors
 	}
 
-	public List<ImageDatum> createImageData(final Random rnd) {
+	public List<ImageVisualizationInfo> createImageData(final Random rnd) {
 		return rndImgDataFactory.apply(rnd).collect(Collectors.toList());
 	}
 
 	// private Table<ImageSize, Color, Set<URL>> createColorSizeImageMap(final
-	// List<ImageDatum> imgData) {
+	// List<ImageVisualizationInfo> imgData) {
 	// final Table<ImageSize, Color, Set<URL>> result =
 	// HashBasedTable.create(sizes.size(), uniqueImgColors.size());
-	// for (final ImageDatum imgDatum : imgData) {
+	// for (final ImageVisualizationInfo imgDatum : imgData) {
 	// final URL resourceLoc = imgDatum.getResourceLoc();
 	// final ImageSize size = imgDatum.getSize();
 	// final Map<Color, Set<URL>> oldSizeColors = result.row(size);
@@ -81,20 +81,20 @@ public final class RandomPieceImageManager {
 	// return result;
 	// }
 	//
-	// private Map<URL, Table<ImageSize, Color, ImageDatum>>
-	// createImageDataAttrTableMap(final List<ImageDatum> imgData) {
-	// final Map<URL, Table<ImageSize, Color, ImageDatum>> result =
+	// private Map<URL, Table<ImageSize, Color, ImageVisualizationInfo>>
+	// createImageDataAttrTableMap(final List<ImageVisualizationInfo> imgData) {
+	// final Map<URL, Table<ImageSize, Color, ImageVisualizationInfo>> result =
 	// Maps.newHashMapWithExpectedSize(imgData.size());
 	//
-	// for (final ImageDatum imgDatum : imgData) {
+	// for (final ImageVisualizationInfo imgDatum : imgData) {
 	// final URL resourceLoc = imgDatum.getResourceLoc();
 	// int commonAttrCount = 0;
-	// final Table<ImageSize, Color, ImageDatum> oldResourceImgDataTable =
+	// final Table<ImageSize, Color, ImageVisualizationInfo> oldResourceImgDataTable =
 	// result.get(resourceLoc);
 	// if (oldResourceImgDataTable == null) {
 	// // The given resource locator has never been used
 	// // before
-	// final Table<ImageSize, Color, ImageDatum> newResourceImgDataTable =
+	// final Table<ImageSize, Color, ImageVisualizationInfo> newResourceImgDataTable =
 	// HashBasedTable.create(sizes.size(),
 	// uniqueImgColors.size());
 	// newResourceImgDataTable.put(imgDatum.getSize(), imgDatum.getColor(),
@@ -103,7 +103,7 @@ public final class RandomPieceImageManager {
 	// } else {
 	// // Check size
 	// final ImageSize size = imgDatum.getSize();
-	// final Map<Color, ImageDatum> imgDataByColor =
+	// final Map<Color, ImageVisualizationInfo> imgDataByColor =
 	// oldResourceImgDataTable.row(size);
 	// if (imgDataByColor == null) {
 	// // The given size has never been used for
@@ -112,7 +112,7 @@ public final class RandomPieceImageManager {
 	// resourceLoc);
 	// // Try looking up the image data by color instead
 	// final Color color = imgDatum.getColor();
-	// final Map<ImageSize, ImageDatum> imgDataBySize =
+	// final Map<ImageSize, ImageVisualizationInfo> imgDataBySize =
 	// oldResourceImgDataTable.column(color);
 	// if (imgDataBySize == null) {
 	// LOGGER.debug("Observed {} for resource \"{}\" for the first time.",

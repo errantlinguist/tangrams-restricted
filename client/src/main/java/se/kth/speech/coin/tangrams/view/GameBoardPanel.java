@@ -30,7 +30,7 @@ import javax.swing.JPanel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import se.kth.speech.coin.tangrams.content.ImageDatum;
+import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -46,9 +46,9 @@ final class GameBoardPanel extends JPanel {
 	 */
 	private static final long serialVersionUID = 6258829324465894025L;
 
-	private final Map<? extends BufferedImage, ImageDatum> imageData;
+	private final Map<? extends BufferedImage, ImageVisualizationInfo> imageData;
 
-	public GameBoardPanel(final Map<? extends BufferedImage, ImageDatum> imageData, final Dimension boardSize) {
+	public GameBoardPanel(final Map<? extends BufferedImage, ImageVisualizationInfo> imageData, final Dimension boardSize) {
 		this.imageData = imageData;
 		setSize(boardSize);
 		// setPreferredSize(boardSize);
