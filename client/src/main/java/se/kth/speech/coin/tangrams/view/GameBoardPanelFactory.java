@@ -265,11 +265,6 @@ final class GameBoardPanelFactory implements Function<Collection<ImageVisualizat
 			final Map<BufferedImage, ImageViewInfo> imgViewInfoData = createImageViewInfoMap(imgVisualizationInfoData,
 					validator);
 			final Set<Integer> dimensionValues = Sets.newHashSetWithExpectedSize(imgViewInfoData.size() + 1);
-			final int boardWidth = 500;
-			dimensionValues.add(boardWidth);
-			final int boardHeight = 500;
-			dimensionValues.add(boardHeight);
-
 			for (final Entry<BufferedImage, ImageViewInfo> imgViewInfoDatum : imgViewInfoData.entrySet()) {
 				final ImageViewInfo viewInfo = imgViewInfoDatum.getValue();
 				dimensionValues.add(viewInfo.rasterization.gcd);
@@ -277,10 +272,12 @@ final class GameBoardPanelFactory implements Function<Collection<ImageVisualizat
 			// Get the GCD for all components in the view
 			final int greatestCommonDenominator = MathDenominators.gcd(dimensionValues.iterator());
 			LOGGER.debug("GCD for all components is {}.", greatestCommonDenominator);
-			final Set<SizeValidator.ValidationComment> boardValidationComments = validator.validate(boardWidth,
-					boardHeight, greatestCommonDenominator);
+			final Dimension boardSize = new Dimension(600, 600);
+			dimensionValues.add(boardSize.width);
+			dimensionValues.add(boardSize.height);
+			final Set<SizeValidator.ValidationComment> boardValidationComments = validator.validate(boardSize.width,
+					boardSize.height, greatestCommonDenominator);
 			if (boardValidationComments.isEmpty()) {
-				final Dimension boardSize = new Dimension(imgViewInfoData.size() * 50, imgViewInfoData.size() * 50);
 				final int posMatrixRows = boardSize.width / greatestCommonDenominator;
 				final int posMatrixCols = boardSize.height / greatestCommonDenominator;
 				LOGGER.info("Creating a position matrix of size {}*{}.", posMatrixRows, posMatrixCols);
@@ -290,8 +287,8 @@ final class GameBoardPanelFactory implements Function<Collection<ImageVisualizat
 				result = new GameBoardPanel(boardSize);
 			} else {
 				throw new IllegalArgumentException(
-						String.format("The board as a whole failed validation: width %d; height %d; GCD %d: %s",
-								boardWidth, boardHeight, greatestCommonDenominator, boardValidationComments));
+						String.format("The board as a whole failed validation with dimensions %s; and GCD %d: %s",
+								boardSize, greatestCommonDenominator, boardValidationComments));
 			}
 
 		} catch (final IOException e) {
