@@ -234,7 +234,7 @@ public final class Matrix<T> {
 
 	public List<T> getRow(final int rowIdx) {
 		final int rowStartIdx = getRowValueArrayStartIdx(rowIdx);
-		return values.subList(rowStartIdx, rowStartIdx * getColCount());
+		return values.subList(rowStartIdx, rowStartIdx + getColCount());
 	}
 
 	public T getValue(final int[] coords) {
