@@ -38,6 +38,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 import se.kth.speech.MathDenominators;
+import se.kth.speech.Matrix;
 import se.kth.speech.MutablePair;
 import se.kth.speech.coin.tangrams.content.ImageSize;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
@@ -94,25 +95,28 @@ final class GameBoardPanelFactory implements Function<Collection<ImageVisualizat
 	private static class SizeValidator {
 
 		private enum ValidationComment {
-			BAD_GCD, HEIGHT_BELOW_MINIMUM, WIDTH_BELOW_MINIMUM;
+			GCD_BELOW_MIN, HEIGHT_BELOW_MIN, WIDTH_BELOW_MIN;
 		}
 
 		private final int minDimLength;
 
-		private SizeValidator(final int minDimLength) {
+		private final int minGcd;
+
+		private SizeValidator(final int minDimLength, final int minGcd) {
 			this.minDimLength = minDimLength;
+			this.minGcd = minGcd;
 		}
 
-		private Set<ValidationComment> validate(final int width, final int height, final int imgGcd) {
+		private EnumSet<ValidationComment> validate(final int width, final int height, final int imgGcd) {
 			final EnumSet<ValidationComment> result = EnumSet.noneOf(ValidationComment.class);
 			if (width < minDimLength) {
-				result.add(ValidationComment.WIDTH_BELOW_MINIMUM);
+				result.add(ValidationComment.WIDTH_BELOW_MIN);
 			}
 			if (height < minDimLength) {
-				result.add(ValidationComment.HEIGHT_BELOW_MINIMUM);
+				result.add(ValidationComment.HEIGHT_BELOW_MIN);
 			}
-			if (imgGcd < 2) {
-				result.add(ValidationComment.BAD_GCD);
+			if (imgGcd < minGcd) {
+				result.add(ValidationComment.GCD_BELOW_MIN);
 			}
 			return result;
 		}
@@ -149,7 +153,8 @@ final class GameBoardPanelFactory implements Function<Collection<ImageVisualizat
 	}
 
 	private static Map<BufferedImage, ImageViewInfo> createImageViewInfoMap(
-			final Collection<ImageVisualizationInfo> imgVisualizationInfoData) throws IOException {
+			final Collection<ImageVisualizationInfo> imgVisualizationInfoData, final SizeValidator validator)
+			throws IOException {
 		// Use linked map in order to preserve iteration order in provided
 		// sequence
 		final Map<BufferedImage, ImageViewInfo> result = Maps
@@ -157,9 +162,6 @@ final class GameBoardPanelFactory implements Function<Collection<ImageVisualizat
 
 		final Map<URL, Entry<ImageRasterizationInfo, Set<SizeValidator.ValidationComment>>> badImgs = Maps
 				.newHashMapWithExpectedSize(0);
-		// The minimum accepted length of the shortest dimension for an image
-		final int minDimLength = 300;
-		final SizeValidator validator = new SizeValidator(minDimLength);
 		for (final ImageVisualizationInfo imgVisualizationInfoDatum : imgVisualizationInfoData) {
 			final URL imgResourceLoc = imgVisualizationInfoDatum.getResourceLoc();
 			final BufferedImage initialImg = ImageIO.read(imgResourceLoc);
@@ -168,7 +170,7 @@ final class GameBoardPanelFactory implements Function<Collection<ImageVisualizat
 				// Size/aspect ratio calculation
 				final int width = initialImg.getWidth();
 				final int height = initialImg.getHeight();
-				LOGGER.debug("Image width: {}; height: {}", width, height);
+				LOGGER.debug("Image \"{}\" dims: {}*{}", new Object[] { imgResourceLoc, width, height });
 				final int imgGcd = MathDenominators.gcd(width, height);
 				final ImageRasterizationInfo imgRasterizationInfo = new ImageRasterizationInfo(width, height, imgGcd);
 				result.put(initialImg, new ImageViewInfo(imgVisualizationInfoDatum, imgRasterizationInfo));
@@ -184,11 +186,11 @@ final class GameBoardPanelFactory implements Function<Collection<ImageVisualizat
 
 		}
 
-		if (!badImgs.isEmpty()) {
+		if (badImgs.isEmpty()) {
+			return result;
+		} else {
 			throw new IllegalArgumentException(createImageValueTable(badImgs.entrySet()));
 		}
-
-		return result;
 	}
 
 	private static Image createScaledImage(final Image origImg, final ImageSize size, final int lesserDimVal,
@@ -255,8 +257,13 @@ final class GameBoardPanelFactory implements Function<Collection<ImageVisualizat
 	 */
 	@Override
 	public GameBoardPanel apply(final Collection<ImageVisualizationInfo> imgVisualizationInfoData) {
+		final GameBoardPanel result;
+		// The minimum accepted length of the shortest dimension for an image
+		final int minDimLength = 300;
+		final SizeValidator validator = new SizeValidator(minDimLength, 20);
 		try {
-			final Map<BufferedImage, ImageViewInfo> imgViewInfoData = createImageViewInfoMap(imgVisualizationInfoData);
+			final Map<BufferedImage, ImageViewInfo> imgViewInfoData = createImageViewInfoMap(imgVisualizationInfoData,
+					validator);
 			final Set<Integer> dimensionValues = Sets.newHashSetWithExpectedSize(imgViewInfoData.size() + 1);
 			final int boardWidth = 500;
 			dimensionValues.add(boardWidth);
@@ -270,14 +277,28 @@ final class GameBoardPanelFactory implements Function<Collection<ImageVisualizat
 			// Get the GCD for all components in the view
 			final int greatestCommonDenominator = MathDenominators.gcd(dimensionValues.iterator());
 			LOGGER.debug("GCD for all components is {}.", greatestCommonDenominator);
+			final Set<SizeValidator.ValidationComment> boardValidationComments = validator.validate(boardWidth,
+					boardHeight, greatestCommonDenominator);
+			if (boardValidationComments.isEmpty()) {
+				final Dimension boardSize = new Dimension(imgViewInfoData.size() * 50, imgViewInfoData.size() * 50);
+				final int posMatrixRows = boardSize.width / greatestCommonDenominator;
+				final int posMatrixCols = boardSize.height / greatestCommonDenominator;
+				LOGGER.info("Creating a position matrix of size {}*{}.", posMatrixRows, posMatrixCols);
+				final Integer[] posMatrixBackingArray = new Integer[posMatrixRows * posMatrixCols];
+				final Matrix<Integer> posMatrix = new Matrix<>(posMatrixBackingArray, posMatrixCols);
+				// TODO Auto-generated method stub
+				result = new GameBoardPanel(boardSize);
+			} else {
+				throw new IllegalArgumentException(
+						String.format("The board as a whole failed validation: width %d; height %d; GCD %d: %s",
+								boardWidth, boardHeight, greatestCommonDenominator, boardValidationComments));
+			}
 
-			final Dimension boardSize = new Dimension(imgViewInfoData.size() * 100, imgViewInfoData.size() * 100);
-			// TODO Auto-generated method stub
-			final GameBoardPanel result = new GameBoardPanel(boardSize);
-			return result;
 		} catch (final IOException e) {
 			throw new UncheckedIOException(e);
 		}
+
+		return result;
 	}
 
 	private void getImageCoordinateSize(final int width, final int height) {
