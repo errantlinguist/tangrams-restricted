@@ -16,6 +16,10 @@
 */
 package se.kth.speech.coin.tangrams.content;
 
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
  * @since 7 Mar 2017
@@ -24,5 +28,12 @@ package se.kth.speech.coin.tangrams.content;
 public enum ImageSize {
 	LARGE,
 	NORMAL,
-	SMALL
+	SMALL;
+	
+	public static final List<ImageSize> SIZE_ORDERING;
+	
+	static {
+		 SIZE_ORDERING = Arrays.asList(SMALL, NORMAL, LARGE);
+	}
+	
 }
