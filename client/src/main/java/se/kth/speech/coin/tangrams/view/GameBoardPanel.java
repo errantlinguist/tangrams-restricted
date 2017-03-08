@@ -18,7 +18,10 @@ package se.kth.speech.coin.tangrams.view;
 
 import java.awt.Dimension;
 import java.awt.Image;
+import java.awt.MediaTracker;
+import java.awt.image.BufferedImage;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
@@ -43,18 +46,13 @@ final class GameBoardPanel extends JPanel {
 	 */
 	private static final long serialVersionUID = 6258829324465894025L;
 
-	private final Map<Image, ImageDatum> imageData;
+	private final Map<? extends BufferedImage, ImageDatum> imageData;
 
-	public GameBoardPanel(final Map<Image, ImageDatum> imageData, final Dimension boardSize) {
+	public GameBoardPanel(final Map<? extends BufferedImage, ImageDatum> imageData, final Dimension boardSize) {
 		this.imageData = imageData;
 		setSize(boardSize);
 		// setPreferredSize(boardSize);
-
-		imageData.forEach((image, imgDatum) -> {
-			final ImageIcon imgIcon = new ImageIcon(image);
-			final JLabel imgLabel = new JLabel(imgIcon);
-		});
-
+		
 		// TODO Auto-generated constructor stub
 	}
 

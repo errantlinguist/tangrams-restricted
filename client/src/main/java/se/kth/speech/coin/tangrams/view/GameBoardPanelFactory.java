@@ -17,21 +17,24 @@
 package se.kth.speech.coin.tangrams.view;
 
 import java.awt.Dimension;
-import java.awt.Image;
+import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URL;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
-import java.util.stream.Collectors;
+
+import javax.imageio.ImageIO;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
-import se.kth.speech.awt.ColorFilteredImageFactory;
+import se.kth.speech.MathDenominators;
 import se.kth.speech.coin.tangrams.content.ImageDatum;
 
 /**
@@ -41,30 +44,14 @@ import se.kth.speech.coin.tangrams.content.ImageDatum;
  */
 final class GameBoardPanelFactory implements Function<Collection<ImageDatum>, GameBoardPanel> {
 
-	private static double RATIO_TOLERANCE = 0.05;
-
 	private static final Logger LOGGER = LoggerFactory.getLogger(GameBoardPanelFactory.class);
 
-	private static final ColorFilteredImageFactory COLORED_IMG_FACTORY = new ColorFilteredImageFactory();
+	private static final double RATIO_TOLERANCE = 0.05;
 
-	/**
-	 * @see <a href=
-	 *      "http://stackoverflow.com/a/4009247/1391325">StackOverflow</a>
-	 * @param a
-	 * @param b
-	 * @return
-	 */
-	public static int GCD(final int a, final int b) {
-		if (b == 0) {
-			return a;
-		}
-		return GCD(b, a % b);
-	}
-
-	private static Image createInitialImage(final ImageDatum imgDatum) throws IOException {
+	private static BufferedImage createInitialImage(final ImageDatum imgDatum) throws IOException {
 		final URL resourceLoc = imgDatum.getResourceLoc();
-		LOGGER.info("Reading image data at \"{}\".", resourceLoc);
-		return COLORED_IMG_FACTORY.apply(resourceLoc, imgDatum.getColor());
+		LOGGER.debug("Reading image data at \"{}\".", resourceLoc);
+		return ImageIO.read(resourceLoc);
 	}
 
 	GameBoardPanelFactory() {
@@ -78,19 +65,41 @@ final class GameBoardPanelFactory implements Function<Collection<ImageDatum>, Ga
 	 */
 	@Override
 	public GameBoardPanel apply(final Collection<ImageDatum> imgData) {
-		final Map<Image, ImageDatum> imageDataMap = imgData.stream().collect(Collectors.toMap(imgDatum -> {
-			final Image result;
-			try {
-				result = createInitialImage(imgDatum);
-			} catch (final IOException e) {
-				throw new UncheckedIOException(e);
+		// Use linked map in order to preserve iteration order in provided
+		// sequence
+		final Map<BufferedImage, ImageDatum> imageDataMap = Maps.newLinkedHashMapWithExpectedSize(imgData.size());
+		final Set<Integer> dimensionValues = Sets.newHashSetWithExpectedSize(imgData.size() + 1);
+		try {
+			for (final ImageDatum imgDatum : imgData) {
+				final BufferedImage initialImg = createInitialImage(imgDatum);
+				imageDataMap.put(initialImg, imgDatum);
+				final int width = initialImg.getWidth();
+				dimensionValues.add(width);
+				final int height = initialImg.getHeight();
+				dimensionValues.add(height);
+				System.out.println(String.format("width: %d height: %d", width, height));
+				final boolean isSquare;
+				if (width < height) {
+					isSquare = false;
+				} else if (height < width) {
+					isSquare = false;
+				} else {
+					isSquare = true;
+				}
+
 			}
-			return result;
-		}, Function.identity(), (u, v) -> {
-			throw new IllegalStateException(String.format("Duplicate key %s", u));
-		}, () -> Maps.newLinkedHashMapWithExpectedSize(imgData.size())));
-		// final SortedMap<Image, ImageDatum> imageDataBySizeDescending = new
-		// TreeMap<>((img1, img2)-> imageDataMap.get(img1).get);
+		} catch (final IOException e) {
+			throw new UncheckedIOException(e);
+		}
+
+		final int boardWidth = 500;
+		dimensionValues.add(boardWidth);
+		final int boardHeight = 500;
+		dimensionValues.add(boardHeight);
+		final int greatestCommonDenominator = MathDenominators.gcd(dimensionValues.iterator());
+		System.out.println("GCD: " + greatestCommonDenominator);
+		// System.out.println("GCD(300,1000,2000): " +
+		// MathDenominators.gcd(Arrays.asList(300,1000,200).iterator()));
 
 		final Dimension boardSize = new Dimension(imageDataMap.size() * 100, imageDataMap.size() * 100);
 		// TODO Auto-generated method stub
