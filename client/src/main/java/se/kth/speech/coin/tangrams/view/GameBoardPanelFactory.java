@@ -80,7 +80,7 @@ final class GameBoardPanelFactory implements Function<Collection<ImageDatum>, Ga
 				dimensionValues.add(width);
 				final int height = initialImg.getHeight();
 				dimensionValues.add(height);
-				System.out.println(String.format("width: %d height: %d", width, height));
+//				System.out.println(String.format("width: %d height: %d", width, height));
 				final int imgGcd = MathDenominators.gcd(width, height);
 				if (imgGcd < 2) {
 					badImgs.put(imgDatum.getResourceLoc().toString(), imgGcd);
