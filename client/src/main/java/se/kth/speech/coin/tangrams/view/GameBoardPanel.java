@@ -17,20 +17,11 @@
 package se.kth.speech.coin.tangrams.view;
 
 import java.awt.Dimension;
-import java.awt.Image;
-import java.awt.MediaTracker;
-import java.awt.image.BufferedImage;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
-import javax.swing.ImageIcon;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -46,13 +37,8 @@ final class GameBoardPanel extends JPanel {
 	 */
 	private static final long serialVersionUID = 6258829324465894025L;
 
-	private final Map<? extends BufferedImage, ImageVisualizationInfo> imgVisualizationInfoData;
-
-	public GameBoardPanel(final Map<? extends BufferedImage, ImageVisualizationInfo> imgVisualizationInfoData, final Dimension boardSize) {
-		this.imgVisualizationInfoData = imgVisualizationInfoData;
+	public GameBoardPanel(final Dimension boardSize) {
 		setSize(boardSize);
-		// setPreferredSize(boardSize);
-		
 		// TODO Auto-generated constructor stub
 	}
 

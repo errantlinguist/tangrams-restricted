@@ -80,6 +80,17 @@ final class GameBoardPanelFactory implements Function<Collection<ImageVisualizat
 		}
 	}
 
+	private static class ImageViewInfo {
+		private final ImageRasterizationInfo rasterization;
+
+		private final ImageVisualizationInfo visualization;
+
+		private ImageViewInfo(final ImageVisualizationInfo visualization, final ImageRasterizationInfo rasterization) {
+			this.visualization = visualization;
+			this.rasterization = rasterization;
+		}
+	}
+
 	private static class SizeValidator {
 
 		private enum ValidationComment {
@@ -137,6 +148,49 @@ final class GameBoardPanelFactory implements Function<Collection<ImageVisualizat
 		return sb.toString();
 	}
 
+	private static Map<BufferedImage, ImageViewInfo> createImageViewInfoMap(
+			final Collection<ImageVisualizationInfo> imgVisualizationInfoData) throws IOException {
+		// Use linked map in order to preserve iteration order in provided
+		// sequence
+		final Map<BufferedImage, ImageViewInfo> result = Maps
+				.newLinkedHashMapWithExpectedSize(imgVisualizationInfoData.size());
+
+		final Map<URL, Entry<ImageRasterizationInfo, Set<SizeValidator.ValidationComment>>> badImgs = Maps
+				.newHashMapWithExpectedSize(0);
+		// The minimum accepted length of the shortest dimension for an image
+		final int minDimLength = 300;
+		final SizeValidator validator = new SizeValidator(minDimLength);
+		for (final ImageVisualizationInfo imgVisualizationInfoDatum : imgVisualizationInfoData) {
+			final URL imgResourceLoc = imgVisualizationInfoDatum.getResourceLoc();
+			final BufferedImage initialImg = ImageIO.read(imgResourceLoc);
+
+			{
+				// Size/aspect ratio calculation
+				final int width = initialImg.getWidth();
+				final int height = initialImg.getHeight();
+				LOGGER.debug("Image width: {}; height: {}", width, height);
+				final int imgGcd = MathDenominators.gcd(width, height);
+				final ImageRasterizationInfo imgRasterizationInfo = new ImageRasterizationInfo(width, height, imgGcd);
+				result.put(initialImg, new ImageViewInfo(imgVisualizationInfoDatum, imgRasterizationInfo));
+				{
+					// Validate image
+					final Set<SizeValidator.ValidationComment> validationComments = validator.validate(width, height,
+							imgGcd);
+					if (!validationComments.isEmpty()) {
+						badImgs.put(imgResourceLoc, new MutablePair<>(imgRasterizationInfo, validationComments));
+					}
+				}
+			}
+
+		}
+
+		if (!badImgs.isEmpty()) {
+			throw new IllegalArgumentException(createImageValueTable(badImgs.entrySet()));
+		}
+
+		return result;
+	}
+
 	private static Image createScaledImage(final Image origImg, final ImageSize size, final int lesserDimVal,
 			final int maxDimLength, final ImageOrientation orientation) {
 		final Image result;
@@ -155,47 +209,6 @@ final class GameBoardPanelFactory implements Function<Collection<ImageVisualizat
 			// Just use the original, unscaled image
 			result = origImg;
 		}
-		return result;
-	}
-
-	private static Map<BufferedImage, ImageVisualizationInfo> createImageRasterizationInfoMap(
-			final Collection<ImageVisualizationInfo> imgVisualizationInfoData) throws IOException {
-		final Map<BufferedImage, ImageVisualizationInfo> result = Maps.newLinkedHashMapWithExpectedSize(imgVisualizationInfoData.size());
-		final Set<Integer> dimensionValues = Sets.newHashSetWithExpectedSize(imgVisualizationInfoData.size() + 1);
-		final Map<URL, Entry<ImageRasterizationInfo, Set<SizeValidator.ValidationComment>>> badImgs = Maps
-				.newHashMapWithExpectedSize(0);
-		// The minimum accepted length of the shortest dimension for an image
-		final int minDimLength = 300;
-		final SizeValidator validator = new SizeValidator(minDimLength);
-		for (final ImageVisualizationInfo imgVisualizationInfoDatum : imgVisualizationInfoData) {
-			final URL imgResourceLoc = imgVisualizationInfoDatum.getResourceLoc();
-			final BufferedImage initialImg = ImageIO.read(imgResourceLoc);
-			result.put(initialImg, imgVisualizationInfoDatum);
-
-			{
-				// Size/aspect ratio calculation
-				final int width = initialImg.getWidth();
-				dimensionValues.add(width);
-				final int height = initialImg.getHeight();
-				dimensionValues.add(height);
-				// System.out.println(String.format("width: %d height: %d",
-				// width, height));
-				final int imgGcd = MathDenominators.gcd(width, height);
-				final Set<SizeValidator.ValidationComment> validationComments = validator.validate(width, height,
-						imgGcd);
-				if (!validationComments.isEmpty()) {
-					final ImageRasterizationInfo imgRasterizationInfo = new ImageRasterizationInfo(width, height,
-							imgGcd);
-					badImgs.put(imgResourceLoc, new MutablePair<>(imgRasterizationInfo, validationComments));
-				}
-			}
-
-		}
-
-		if (!badImgs.isEmpty()) {
-			throw new IllegalArgumentException(createImageValueTable(badImgs.entrySet()));
-		}
-
 		return result;
 	}
 
@@ -242,66 +255,29 @@ final class GameBoardPanelFactory implements Function<Collection<ImageVisualizat
 	 */
 	@Override
 	public GameBoardPanel apply(final Collection<ImageVisualizationInfo> imgVisualizationInfoData) {
-		// Use linked map in order to preserve iteration order in provided
-		// sequence
-		final Map<BufferedImage, ImageVisualizationInfo> imageDataMap = Maps
-				.newLinkedHashMapWithExpectedSize(imgVisualizationInfoData.size());
-		final Set<Integer> dimensionValues = Sets.newHashSetWithExpectedSize(imgVisualizationInfoData.size() + 1);
-		final Map<URL, Entry<ImageRasterizationInfo, Set<SizeValidator.ValidationComment>>> badImgs = Maps
-				.newHashMapWithExpectedSize(0);
-		// The minimum accepted length of the shortest dimension for an image
-		final int minDimLength = 300;
-		final SizeValidator validator = new SizeValidator(minDimLength);
 		try {
-			for (final ImageVisualizationInfo imgVisualizationInfoDatum : imgVisualizationInfoData) {
-				final URL imgResourceLoc = imgVisualizationInfoDatum.getResourceLoc();
-				final BufferedImage initialImg = ImageIO.read(imgResourceLoc);
-				imageDataMap.put(initialImg, imgVisualizationInfoDatum);
+			final Map<BufferedImage, ImageViewInfo> imgViewInfoData = createImageViewInfoMap(imgVisualizationInfoData);
+			final Set<Integer> dimensionValues = Sets.newHashSetWithExpectedSize(imgViewInfoData.size() + 1);
+			final int boardWidth = 500;
+			dimensionValues.add(boardWidth);
+			final int boardHeight = 500;
+			dimensionValues.add(boardHeight);
 
-				{
-					// Size/aspect ratio calculation
-					final int width = initialImg.getWidth();
-					dimensionValues.add(width);
-					final int height = initialImg.getHeight();
-					dimensionValues.add(height);
-					// System.out.println(String.format("width: %d height: %d",
-					// width, height));
-					final int imgGcd = MathDenominators.gcd(width, height);
-					final Set<SizeValidator.ValidationComment> validationComments = validator.validate(width, height,
-							imgGcd);
-					if (!validationComments.isEmpty()) {
-						final ImageRasterizationInfo imgRasterizationInfo = new ImageRasterizationInfo(width, height,
-								imgGcd);
-						badImgs.put(imgResourceLoc, new MutablePair<>(imgRasterizationInfo, validationComments));
-					}
-					// Set the longer dimension of each image to the minimum
-					// allowed length, thus scaling images down to this size
-					// so that no dimension of any image exceeds this value
-					final Image scaledImg = scaleImageByLongerDimension(initialImg, minDimLength);
-				}
-
+			for (final Entry<BufferedImage, ImageViewInfo> imgViewInfoDatum : imgViewInfoData.entrySet()) {
+				final ImageViewInfo viewInfo = imgViewInfoDatum.getValue();
+				dimensionValues.add(viewInfo.rasterization.gcd);
 			}
+			// Get the GCD for all components in the view
+			final int greatestCommonDenominator = MathDenominators.gcd(dimensionValues.iterator());
+			LOGGER.debug("GCD for all components is {}.", greatestCommonDenominator);
+
+			final Dimension boardSize = new Dimension(imgViewInfoData.size() * 100, imgViewInfoData.size() * 100);
+			// TODO Auto-generated method stub
+			final GameBoardPanel result = new GameBoardPanel(boardSize);
+			return result;
 		} catch (final IOException e) {
 			throw new UncheckedIOException(e);
 		}
-
-		if (!badImgs.isEmpty()) {
-			throw new IllegalArgumentException(createImageValueTable(badImgs.entrySet()));
-		}
-
-		final int boardWidth = 500;
-		dimensionValues.add(boardWidth);
-		final int boardHeight = 500;
-		dimensionValues.add(boardHeight);
-		final int greatestCommonDenominator = MathDenominators.gcd(dimensionValues.iterator());
-		// System.out.println("GCD: " + greatestCommonDenominator);
-		// System.out.println("GCD(300,1000,2000): " +
-		// MathDenominators.gcd(Arrays.asList(300,1000,200).iterator()));
-
-		final Dimension boardSize = new Dimension(imageDataMap.size() * 100, imageDataMap.size() * 100);
-		// TODO Auto-generated method stub
-		final GameBoardPanel result = new GameBoardPanel(imageDataMap, boardSize);
-		return result;
 	}
 
 	private void getImageCoordinateSize(final int width, final int height) {
