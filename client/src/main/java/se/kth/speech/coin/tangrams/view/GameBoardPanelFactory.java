@@ -64,12 +64,12 @@ final class GameBoardPanelFactory implements Function<Collection<ImageDatum>, Ga
 
 	private static final double RATIO_TOLERANCE = 0.05;
 
-	private static String createImageValueTable(final Collection<? extends Entry<?, ImageValueDatum>> imgVals) {
+	private static String createImageValueTable(final Collection<? extends Entry<?, ImageValueDatum>> namedImgValData) {
 		final String errorMsgPrefix = "GCD for one or images was bad:" + System.lineSeparator()
 				+ "PATH\tWIDTH\tHEIGHT\tGCD";
-		final StringBuilder sb = new StringBuilder(errorMsgPrefix.length() + 16 * imgVals.size());
+		final StringBuilder sb = new StringBuilder(errorMsgPrefix.length() + 16 * namedImgValData.size());
 		sb.append(errorMsgPrefix);
-		for (final Entry<?, ImageValueDatum> namedImgValDatum : imgVals) {
+		for (final Entry<?, ImageValueDatum> namedImgValDatum : namedImgValData) {
 			sb.append(System.lineSeparator());
 			sb.append(namedImgValDatum.getKey());
 			sb.append('\t');
