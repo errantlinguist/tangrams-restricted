@@ -28,17 +28,34 @@ public final class MathDenominators {
 	/**
 	 * @see <a href=
 	 *      "http://stackoverflow.com/a/4009247/1391325">StackOverflow</a>
-	 * @param a
+	 * @param first
 	 *            The first value.
-	 * @param b
+	 * @param next
 	 *            The other value.
 	 * @return The greatest common denominator.
 	 */
-	public static final int gcd(final int a, final int b) {
-		if (b == 0) {
-			return a;
+	public static final int gcd(final int first, final int next) {
+		if (next == 0) {
+			return first;
 		}
-		return gcd(b, a % b);
+		return gcd(next, first % next);
+	}
+
+	/**
+	 * @see <a href=
+	 *      "http://stackoverflow.com/a/15351278/1391325">StackOverflow</a>
+	 * @param first
+	 *            The first value.
+	 * @param next
+	 *            The next values.
+	 * @return The greatest common denominator.
+	 */
+	public static final int gcd(final int first, final int... next) {
+		int result = first;
+		for (final int number : next) {
+			result = gcd(result, number);
+		}
+		return result;
 	}
 
 	/**

@@ -22,7 +22,9 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URL;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -69,6 +71,7 @@ final class GameBoardPanelFactory implements Function<Collection<ImageDatum>, Ga
 		// sequence
 		final Map<BufferedImage, ImageDatum> imageDataMap = Maps.newLinkedHashMapWithExpectedSize(imgData.size());
 		final Set<Integer> dimensionValues = Sets.newHashSetWithExpectedSize(imgData.size() + 1);
+		final Map<String, Integer> badImgs = new HashMap<>(1);
 		try {
 			for (final ImageDatum imgDatum : imgData) {
 				final BufferedImage initialImg = createInitialImage(imgDatum);
@@ -78,6 +81,10 @@ final class GameBoardPanelFactory implements Function<Collection<ImageDatum>, Ga
 				final int height = initialImg.getHeight();
 				dimensionValues.add(height);
 				System.out.println(String.format("width: %d height: %d", width, height));
+				final int imgGcd = MathDenominators.gcd(width, height);
+				if (imgGcd < 2) {
+					badImgs.put(imgDatum.getResourceLoc().toString(), imgGcd);
+				}
 				final boolean isSquare;
 				if (width < height) {
 					isSquare = false;
@@ -90,6 +97,19 @@ final class GameBoardPanelFactory implements Function<Collection<ImageDatum>, Ga
 			}
 		} catch (final IOException e) {
 			throw new UncheckedIOException(e);
+		}
+
+		if (!badImgs.isEmpty()) {
+			final String errorMsgPrefix = "GCD for one or images was bad:";
+			final StringBuilder sb = new StringBuilder(errorMsgPrefix.length() + 16 * badImgs.size());
+			sb.append(errorMsgPrefix);
+			for (final Entry<String, Integer> badImg : badImgs.entrySet()) {
+				sb.append(System.lineSeparator());
+				sb.append(badImg.getKey());
+				sb.append('\t');
+				sb.append(badImg.getValue());
+			}
+			throw new IllegalArgumentException(sb.toString());
 		}
 
 		final int boardWidth = 500;
