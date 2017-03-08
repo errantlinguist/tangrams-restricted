@@ -182,7 +182,7 @@ public final class Matrix<T> {
 			return false;
 		if (!(obj instanceof Matrix))
 			return false;
-		Matrix other = (Matrix) obj;
+		Matrix<?> other = (Matrix<?>) obj;
 		if (colCount != other.colCount)
 			return false;
 		if (values == null) {
