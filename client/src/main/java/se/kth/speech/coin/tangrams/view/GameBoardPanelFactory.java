@@ -95,16 +95,19 @@ final class GameBoardPanelFactory implements Function<Collection<ImageVisualizat
 	private static class SizeValidator {
 
 		private enum ValidationComment {
-			GCD_BELOW_MIN, HEIGHT_BELOW_MIN, WIDTH_BELOW_MIN;
+			GCD_BELOW_MIN, GCD_NOT_MULTIPLE_OF_LCD, HEIGHT_BELOW_MIN, WIDTH_BELOW_MIN;
 		}
+
+		private final int lcd;
 
 		private final int minDimLength;
 
 		private final int minGcd;
 
-		private SizeValidator(final int minDimLength, final int minGcd) {
+		private SizeValidator(final int minDimLength, final int minGcd, final int lcd) {
 			this.minDimLength = minDimLength;
 			this.minGcd = minGcd;
+			this.lcd = lcd;
 		}
 
 		private EnumSet<ValidationComment> validate(final int width, final int height, final int imgGcd) {
@@ -117,6 +120,9 @@ final class GameBoardPanelFactory implements Function<Collection<ImageVisualizat
 			}
 			if (imgGcd < minGcd) {
 				result.add(ValidationComment.GCD_BELOW_MIN);
+			}
+			if (imgGcd % lcd != 0) {
+				result.add(ValidationComment.GCD_NOT_MULTIPLE_OF_LCD);
 			}
 			return result;
 		}
@@ -260,7 +266,7 @@ final class GameBoardPanelFactory implements Function<Collection<ImageVisualizat
 		final GameBoardPanel result;
 		// The minimum accepted length of the shortest dimension for an image
 		final int minDimLength = 300;
-		final SizeValidator validator = new SizeValidator(minDimLength, 20);
+		final SizeValidator validator = new SizeValidator(minDimLength, 50, 50);
 		try {
 			final Map<BufferedImage, ImageViewInfo> imgViewInfoData = createImageViewInfoMap(imgVisualizationInfoData,
 					validator);
@@ -272,7 +278,7 @@ final class GameBoardPanelFactory implements Function<Collection<ImageVisualizat
 			// Get the GCD for all components in the view
 			final int greatestCommonDenominator = MathDenominators.gcd(dimensionValues.iterator());
 			LOGGER.debug("GCD for all components is {}.", greatestCommonDenominator);
-			final Dimension boardSize = new Dimension(600, 600);
+			final Dimension boardSize = new Dimension(minDimLength * 5, minDimLength * 4);
 			dimensionValues.add(boardSize.width);
 			dimensionValues.add(boardSize.height);
 			final Set<SizeValidator.ValidationComment> boardValidationComments = validator.validate(boardSize.width,
