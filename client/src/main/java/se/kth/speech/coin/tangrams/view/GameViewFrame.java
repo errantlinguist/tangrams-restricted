@@ -45,7 +45,8 @@ final class GameViewFrame extends JFrame {
 	}
 
 	GameViewFrame(final List<ImageDatum> imageData, final LocalController<? super Integer> localController) {
-		add(new GameBoardPanel(imageData));
+		GameBoardPanel boardPanel = new GameBoardPanelFactory().apply(imageData);
+		add(boardPanel);
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		addWindowListener(new WindowAdapter() {
 
