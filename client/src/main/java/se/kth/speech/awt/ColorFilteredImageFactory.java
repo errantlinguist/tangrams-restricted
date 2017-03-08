@@ -20,12 +20,8 @@ import java.awt.Color;
 import java.awt.Image;
 import java.awt.Toolkit;
 import java.awt.image.FilteredImageSource;
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.net.URL;
 import java.util.function.BiFunction;
-
-import javax.imageio.ImageIO;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -51,15 +47,8 @@ public final class ColorFilteredImageFactory implements BiFunction<URL, Color, I
 	 */
 	@Override
 	public Image apply(final URL imgResourceLoc, final Color color) {
-//		final Image origImg = toolkit.getImage(imgResourceLoc);
-		Image origImg;
-		try {
-			origImg = ImageIO.read(imgResourceLoc);
+		final Image origImg = toolkit.getImage(imgResourceLoc);
 			return toolkit
 					.createImage(new FilteredImageSource(origImg.getSource(), new ColorReplacementImageFilter(color)));
-		} catch (IOException e) {
-			throw new UncheckedIOException(e);
-		}
-	
 	}
 }
