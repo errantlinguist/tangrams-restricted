@@ -17,12 +17,13 @@
 package se.kth.speech.coin.tangrams.view;
 
 import java.awt.Dimension;
+import java.awt.Image;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URL;
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.EnumSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -46,27 +47,65 @@ import se.kth.speech.coin.tangrams.content.ImageDatum;
  */
 final class GameBoardPanelFactory implements Function<Collection<ImageDatum>, GameBoardPanel> {
 
+	private enum ImageOrientation {
+		LANDSCAPE, PORTRAIT;
+	}
+
 	private static class ImageValueDatum {
+		private final Set<?> comments;
+
 		private final int gcd;
 
 		private final int height;
 
 		private final int width;
 
-		private ImageValueDatum(final int width, final int height, final int gcd) {
+		private ImageValueDatum(final int width, final int height, final int gcd, final Set<?> comments) {
 			this.width = width;
 			this.height = height;
 			this.gcd = gcd;
+			this.comments = comments;
 		}
 	}
+
+	private static class SizeValidator {
+
+		private enum ValidationComment {
+			BAD_GCD, HEIGHT_BELOW_MINIMUM, WIDTH_BELOW_MINIMUM;
+		}
+
+		private final int minDimLength;
+
+		private SizeValidator(final int minDimLength) {
+			this.minDimLength = minDimLength;
+		}
+
+		private Set<ValidationComment> validate(final int width, final int height, final int imgGcd) {
+			final EnumSet<ValidationComment> result = EnumSet.noneOf(ValidationComment.class);
+			if (width < minDimLength) {
+				result.add(ValidationComment.WIDTH_BELOW_MINIMUM);
+			}
+			if (height < minDimLength) {
+				result.add(ValidationComment.HEIGHT_BELOW_MINIMUM);
+			}
+			// final int imgGcd = MathDenominators.gcd(width, height);
+			if (imgGcd < 2) {
+				result.add(ValidationComment.BAD_GCD);
+			}
+			return result;
+		}
+
+	}
+
+	private static final int IMG_SCALING_HINTS = Image.SCALE_SMOOTH;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(GameBoardPanelFactory.class);
 
 	private static final double RATIO_TOLERANCE = 0.05;
 
 	private static String createImageValueTable(final Collection<? extends Entry<?, ImageValueDatum>> namedImgValData) {
-		final String errorMsgPrefix = "GCD for one or images was bad:" + System.lineSeparator()
-				+ "PATH\tWIDTH\tHEIGHT\tGCD";
+		final String errorMsgPrefix = "One or more images failed validation:" + System.lineSeparator()
+				+ "PATH\tWIDTH\tHEIGHT\tGCD\tCOMMENT";
 		final StringBuilder sb = new StringBuilder(errorMsgPrefix.length() + 16 * namedImgValData.size());
 		sb.append(errorMsgPrefix);
 		for (final Entry<?, ImageValueDatum> namedImgValDatum : namedImgValData) {
@@ -79,14 +118,31 @@ final class GameBoardPanelFactory implements Function<Collection<ImageDatum>, Ga
 			sb.append(imgValDatum.height);
 			sb.append('\t');
 			sb.append(imgValDatum.gcd);
+			sb.append('\t');
+			sb.append(imgValDatum.comments);
 		}
 		return sb.toString();
 	}
 
-	private static BufferedImage createInitialImage(final ImageDatum imgDatum) throws IOException {
-		final URL resourceLoc = imgDatum.getResourceLoc();
-		LOGGER.debug("Reading image data at \"{}\".", resourceLoc);
-		return ImageIO.read(resourceLoc);
+	private static Image createScaledImage(final Image origImg, final int lesserDimVal, final int minDimLength,
+			final ImageOrientation orientation) {
+		final Image result;
+		if (lesserDimVal < minDimLength) {
+			switch (orientation) {
+			case PORTRAIT: {
+				result = origImg.getScaledInstance(minDimLength, -1, IMG_SCALING_HINTS);
+				break;
+			}
+			default: {
+				result = origImg.getScaledInstance(-1, minDimLength, IMG_SCALING_HINTS);
+				break;
+			}
+			}
+		} else {
+			// Just use the original, unscaled image
+			result = origImg;
+		}
+		return result;
 	}
 
 	GameBoardPanelFactory() {
@@ -104,10 +160,13 @@ final class GameBoardPanelFactory implements Function<Collection<ImageDatum>, Ga
 		// sequence
 		final Map<BufferedImage, ImageDatum> imageDataMap = Maps.newLinkedHashMapWithExpectedSize(imgData.size());
 		final Set<Integer> dimensionValues = Sets.newHashSetWithExpectedSize(imgData.size() + 1);
-		final Map<String, ImageValueDatum> badImgs = new HashMap<>(1);
+		final Map<URL, ImageValueDatum> badImgs = Maps.newHashMapWithExpectedSize(0);
+		final int minDimLength = 300;
+		final SizeValidator validator = new SizeValidator(minDimLength);
 		try {
 			for (final ImageDatum imgDatum : imgData) {
-				final BufferedImage initialImg = createInitialImage(imgDatum);
+				final URL imgResourceLoc = imgDatum.getResourceLoc();
+				final BufferedImage initialImg = ImageIO.read(imgResourceLoc);
 				imageDataMap.put(initialImg, imgDatum);
 				final int width = initialImg.getWidth();
 				dimensionValues.add(width);
@@ -116,16 +175,31 @@ final class GameBoardPanelFactory implements Function<Collection<ImageDatum>, Ga
 				// System.out.println(String.format("width: %d height: %d",
 				// width, height));
 				final int imgGcd = MathDenominators.gcd(width, height);
-				if (imgGcd < 2) {
-					badImgs.put(imgDatum.getResourceLoc().toString(), new ImageValueDatum(width, height, imgGcd));
+				final Set<SizeValidator.ValidationComment> validationComments = validator.validate(width, height,
+						imgGcd);
+				if (!validationComments.isEmpty()) {
+					badImgs.put(imgResourceLoc, new ImageValueDatum(width, height, imgGcd, validationComments));
 				}
-				final boolean isSquare;
-				if (width < height) {
-					isSquare = false;
-				} else if (height < width) {
-					isSquare = false;
-				} else {
-					isSquare = true;
+				{
+					// Image scaling
+					final ImageOrientation orientation;
+					final int lesserDimVal;
+					final boolean isSquare;
+					if (width < height) {
+						orientation = ImageOrientation.PORTRAIT;
+						lesserDimVal = width;
+						isSquare = false;
+					} else if (height < width) {
+						orientation = ImageOrientation.LANDSCAPE;
+						lesserDimVal = height;
+						isSquare = false;
+					} else {
+						orientation = ImageOrientation.LANDSCAPE;
+						lesserDimVal = width;
+						isSquare = true;
+					}
+
+					final Image scaledImg = createScaledImage(initialImg, lesserDimVal, minDimLength, orientation);
 				}
 
 			}
@@ -142,7 +216,7 @@ final class GameBoardPanelFactory implements Function<Collection<ImageDatum>, Ga
 		final int boardHeight = 500;
 		dimensionValues.add(boardHeight);
 		final int greatestCommonDenominator = MathDenominators.gcd(dimensionValues.iterator());
-//		System.out.println("GCD: " + greatestCommonDenominator);
+		// System.out.println("GCD: " + greatestCommonDenominator);
 		// System.out.println("GCD(300,1000,2000): " +
 		// MathDenominators.gcd(Arrays.asList(300,1000,200).iterator()));
 
