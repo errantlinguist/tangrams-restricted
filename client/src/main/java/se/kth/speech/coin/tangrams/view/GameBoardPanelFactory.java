@@ -28,6 +28,7 @@ import java.util.Collection;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
@@ -324,7 +325,10 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 				final Matrix<Integer> posMatrix = new Matrix<>(posMatrixBackingArray, posMatrixCols);
 
 				// Randomly place each image in the position matrix
-				imgViewInfoDataList.forEach(imgViewInfoDatum -> {
+				for (final ListIterator<Entry<BufferedImage, ImageViewInfo>> imgViewInfoDataListIter = imgViewInfoDataList
+						.listIterator(); imgViewInfoDataListIter.hasNext();) {
+					final int imgId = imgViewInfoDataListIter.nextIndex();
+					final Entry<BufferedImage, ImageViewInfo> imgViewInfoDatum = imgViewInfoDataListIter.next();
 					final ImageViewInfo viewInfo = imgViewInfoDatum.getValue();
 					final ImageRasterizationInfo rasterizationInfo = viewInfo.rasterization;
 					// The number of rows this image takes up in the
@@ -352,8 +356,13 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 					for (int rowIdx = matrixIdx[0]; rowIdx < endMatrixIdxs[0]; rowIdx++) {
 						final List<Integer> occupiedRow = posMatrix.getRow(rowIdx);
 						// TODO: set occupied column value for each occupied row
+						for (int colIdx = matrixIdx[1]; colIdx < endMatrixIdxs[1]; colIdx++) {
+							final Integer oldImgId = occupiedRow.set(colIdx, imgId);
+							assert oldImgId == null;
+						}
+						System.out.println(occupiedRow);
 					}
-				});
+				}
 
 				// TODO Auto-generated method stub
 				result = new GameBoardPanel(boardSize);
