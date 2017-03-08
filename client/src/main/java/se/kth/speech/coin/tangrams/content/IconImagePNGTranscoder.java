@@ -99,6 +99,8 @@ public final class IconImagePNGTranscoder {
 
 		}
 
+		// FIXME: Setting size of actual drawing doesn't work: Only extra
+		// whitespace is added
 		pngTranscoder.addTranscodingHint(SVGAbstractTranscoder.KEY_WIDTH, Float.valueOf(maxWidth));
 		pngTranscoder.addTranscodingHint(SVGAbstractTranscoder.KEY_HEIGHT, Float.valueOf(maxHeight));
 		pngTranscoder.transcode(transcoderInput, transcoderOutput);
