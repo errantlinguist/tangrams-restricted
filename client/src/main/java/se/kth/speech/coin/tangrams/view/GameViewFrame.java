@@ -37,16 +37,9 @@ final class GameViewFrame extends JFrame {
 	 */
 	private static final long serialVersionUID = -4129777933223228599L;
 
-	/**
-	 * @param localController
-	 */
-	public GameViewFrame(final LocalController<Integer> localController) {
-		// TODO Auto-generated constructor stub
-	}
-
 	GameViewFrame(final List<ImageVisualizationInfo> imgVisualizationInfoData, final LocalController<? super Integer> localController) {
-		GameBoardPanel boardPanel = new GameBoardPanelFactory().apply(imgVisualizationInfoData);
-		add(boardPanel);
+//		GameBoardPanel boardPanel = new GameBoardPanelFactory().apply(imgVisualizationInfoData);
+//		add(boardPanel);
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		addWindowListener(new WindowAdapter() {
 

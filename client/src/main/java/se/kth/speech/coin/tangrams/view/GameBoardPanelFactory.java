@@ -23,15 +23,19 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Random;
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.IntSupplier;
+import java.util.stream.IntStream;
 
 import javax.imageio.ImageIO;
 
@@ -52,7 +56,7 @@ import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
  * @since 2 Mar 2017
  *
  */
-final class GameBoardPanelFactory implements Function<Collection<ImageVisualizationInfo>, GameBoardPanel> {
+final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualizationInfo>, Random, GameBoardPanel> {
 
 	private enum ImageOrientation {
 		LANDSCAPE, PORTRAIT, SQUARE;
@@ -288,13 +292,8 @@ final class GameBoardPanelFactory implements Function<Collection<ImageVisualizat
 
 	}
 
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see java.util.function.Function#apply(java.lang.Object)
-	 */
 	@Override
-	public GameBoardPanel apply(final Collection<ImageVisualizationInfo> imgVisualizationInfoData) {
+	public GameBoardPanel apply(final Collection<ImageVisualizationInfo> imgVisualizationInfoData, Random rnd) {
 		final GameBoardPanel result;
 		// The minimum accepted length of the shortest dimension for an image
 		final int minDimLength = 300;
@@ -329,17 +328,28 @@ final class GameBoardPanelFactory implements Function<Collection<ImageVisualizat
 				imgViewInfoDataList.forEach(imgViewInfoDatum -> {
 					final ImageViewInfo viewInfo = imgViewInfoDatum.getValue();
 					final ImageRasterizationInfo rasterizationInfo = viewInfo.rasterization;
-					// The number of row cells this image takes up in the
+					// The number of rows this image takes up in the
 					// position matrix
-					final int posMatrixRowCellCount = rasterizationInfo.getWidth() / rasterizationInfo.getGcd();
-					// The number of column cells this image takes up in the
+					final int[] piecePosMatrixSize;
+					{
+					final int occupiedPosMatrixRowCount = rasterizationInfo.getWidth() / rasterizationInfo.getGcd();
+					// The number of columns this image takes up in the
 					// position matrix
-					final int posMatrixColCellCount = rasterizationInfo.getHeight() / rasterizationInfo.getGcd();
+					final int occupiedPosMatrixColCount = rasterizationInfo.getHeight() / rasterizationInfo.getGcd();
 					LOGGER.debug("Calculateed position grid size {}*{} for \"{}\".", new Object[] {
-							viewInfo.visualization.getResourceLoc(), posMatrixRowCellCount, posMatrixColCellCount });
+							viewInfo.visualization.getResourceLoc(), occupiedPosMatrixRowCount, occupiedPosMatrixColCount });
 					
+					piecePosMatrixSize = new int[]{occupiedPosMatrixRowCount, occupiedPosMatrixColCount};
+					}
+					int[] posDims = posMatrix.getDimensions();
+					final int[] maxPossibleMatrixIdxs = IntStream.range(0, posDims.length).map(i -> posDims[i] - piecePosMatrixSize[i]).toArray();
 					// Randomly pick a space in the matrix
-//					posMatrix.
+					final int[] matrixIdx = Arrays.stream(maxPossibleMatrixIdxs).map(rnd::nextInt).toArray();
+					final int[] endMatrixIdxs = IntStream.range(0, matrixIdx.length).map(i -> matrixIdx[i] +piecePosMatrixSize[i]).toArray();
+					for (int rowIdx = matrixIdx[0]; rowIdx < endMatrixIdxs[0]; rowIdx++){
+						List<Integer> occupiedRow = posMatrix.getRow(rowIdx);
+						// TODO: set occupied column value for each occupied row
+					}
 				});
 
 				// TODO Auto-generated method stub
