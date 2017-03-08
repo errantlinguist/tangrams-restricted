@@ -125,12 +125,12 @@ final class GameBoardPanelFactory implements Function<Collection<ImageVisualizat
 			sb.append(namedImgValDatumComments.getKey());
 			sb.append('\t');
 			final Entry<ImageRasterizationInfo, ?> imgValDatumComments = namedImgValDatumComments.getValue();
-			final ImageRasterizationInfo imgDatum = imgValDatumComments.getKey();
-			sb.append(imgDatum.width);
+			final ImageRasterizationInfo imgVisualizationInfoDatum = imgValDatumComments.getKey();
+			sb.append(imgVisualizationInfoDatum.width);
 			sb.append('\t');
-			sb.append(imgDatum.height);
+			sb.append(imgVisualizationInfoDatum.height);
 			sb.append('\t');
-			sb.append(imgDatum.gcd);
+			sb.append(imgVisualizationInfoDatum.gcd);
 			sb.append('\t');
 			sb.append(imgValDatumComments.getValue());
 		}
@@ -158,19 +158,19 @@ final class GameBoardPanelFactory implements Function<Collection<ImageVisualizat
 		return result;
 	}
 
-	private static Map<BufferedImage, ImageVisualizationInfo> createValidatedImageDataMap(
-			final Collection<ImageVisualizationInfo> imgData) throws IOException {
-		final Map<BufferedImage, ImageVisualizationInfo> result = Maps.newLinkedHashMapWithExpectedSize(imgData.size());
-		final Set<Integer> dimensionValues = Sets.newHashSetWithExpectedSize(imgData.size() + 1);
+	private static Map<BufferedImage, ImageVisualizationInfo> createImageRasterizationInfoMap(
+			final Collection<ImageVisualizationInfo> imgVisualizationInfoData) throws IOException {
+		final Map<BufferedImage, ImageVisualizationInfo> result = Maps.newLinkedHashMapWithExpectedSize(imgVisualizationInfoData.size());
+		final Set<Integer> dimensionValues = Sets.newHashSetWithExpectedSize(imgVisualizationInfoData.size() + 1);
 		final Map<URL, Entry<ImageRasterizationInfo, Set<SizeValidator.ValidationComment>>> badImgs = Maps
 				.newHashMapWithExpectedSize(0);
 		// The minimum accepted length of the shortest dimension for an image
 		final int minDimLength = 300;
 		final SizeValidator validator = new SizeValidator(minDimLength);
-		for (final ImageVisualizationInfo imgDatum : imgData) {
-			final URL imgResourceLoc = imgDatum.getResourceLoc();
+		for (final ImageVisualizationInfo imgVisualizationInfoDatum : imgVisualizationInfoData) {
+			final URL imgResourceLoc = imgVisualizationInfoDatum.getResourceLoc();
 			final BufferedImage initialImg = ImageIO.read(imgResourceLoc);
-			result.put(initialImg, imgDatum);
+			result.put(initialImg, imgVisualizationInfoDatum);
 
 			{
 				// Size/aspect ratio calculation
@@ -241,22 +241,22 @@ final class GameBoardPanelFactory implements Function<Collection<ImageVisualizat
 	 * @see java.util.function.Function#apply(java.lang.Object)
 	 */
 	@Override
-	public GameBoardPanel apply(final Collection<ImageVisualizationInfo> imgData) {
+	public GameBoardPanel apply(final Collection<ImageVisualizationInfo> imgVisualizationInfoData) {
 		// Use linked map in order to preserve iteration order in provided
 		// sequence
 		final Map<BufferedImage, ImageVisualizationInfo> imageDataMap = Maps
-				.newLinkedHashMapWithExpectedSize(imgData.size());
-		final Set<Integer> dimensionValues = Sets.newHashSetWithExpectedSize(imgData.size() + 1);
+				.newLinkedHashMapWithExpectedSize(imgVisualizationInfoData.size());
+		final Set<Integer> dimensionValues = Sets.newHashSetWithExpectedSize(imgVisualizationInfoData.size() + 1);
 		final Map<URL, Entry<ImageRasterizationInfo, Set<SizeValidator.ValidationComment>>> badImgs = Maps
 				.newHashMapWithExpectedSize(0);
 		// The minimum accepted length of the shortest dimension for an image
 		final int minDimLength = 300;
 		final SizeValidator validator = new SizeValidator(minDimLength);
 		try {
-			for (final ImageVisualizationInfo imgDatum : imgData) {
-				final URL imgResourceLoc = imgDatum.getResourceLoc();
+			for (final ImageVisualizationInfo imgVisualizationInfoDatum : imgVisualizationInfoData) {
+				final URL imgResourceLoc = imgVisualizationInfoDatum.getResourceLoc();
 				final BufferedImage initialImg = ImageIO.read(imgResourceLoc);
-				imageDataMap.put(initialImg, imgDatum);
+				imageDataMap.put(initialImg, imgVisualizationInfoDatum);
 
 				{
 					// Size/aspect ratio calculation

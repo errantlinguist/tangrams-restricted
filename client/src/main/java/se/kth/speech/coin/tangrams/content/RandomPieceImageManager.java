@@ -45,21 +45,21 @@ public final class RandomPieceImageManager {
 	}
 
 	// private Table<ImageSize, Color, Set<URL>> createColorSizeImageMap(final
-	// List<ImageVisualizationInfo> imgData) {
+	// List<ImageVisualizationInfo> imgVisualizationInfoData) {
 	// final Table<ImageSize, Color, Set<URL>> result =
 	// HashBasedTable.create(sizes.size(), uniqueImgColors.size());
-	// for (final ImageVisualizationInfo imgDatum : imgData) {
-	// final URL resourceLoc = imgDatum.getResourceLoc();
-	// final ImageSize size = imgDatum.getSize();
+	// for (final ImageVisualizationInfo imgVisualizationInfoDatum : imgVisualizationInfoData) {
+	// final URL resourceLoc = imgVisualizationInfoDatum.getResourceLoc();
+	// final ImageSize size = imgVisualizationInfoDatum.getSize();
 	// final Map<Color, Set<URL>> oldSizeColors = result.row(size);
 	// if (oldSizeColors == null) {
 	// // The given size has never been used before
 	// final Set<URL> resourceLocs =
 	// Sets.newHashSetWithExpectedSize(Math.min(imgResources.size(), 16));
 	// resourceLocs.add(resourceLoc);
-	// result.put(size, imgDatum.getColor(), resourceLocs);
+	// result.put(size, imgVisualizationInfoDatum.getColor(), resourceLocs);
 	// } else {
-	// final Color color = imgDatum.getColor();
+	// final Color color = imgVisualizationInfoDatum.getColor();
 	// final Set<URL> oldResourceLocs = oldSizeColors.get(color);
 	// if (oldResourceLocs == null) {
 	// // The given combination of color and size has never been
@@ -82,12 +82,12 @@ public final class RandomPieceImageManager {
 	// }
 	//
 	// private Map<URL, Table<ImageSize, Color, ImageVisualizationInfo>>
-	// createImageDataAttrTableMap(final List<ImageVisualizationInfo> imgData) {
+	// createImageDataAttrTableMap(final List<ImageVisualizationInfo> imgVisualizationInfoData) {
 	// final Map<URL, Table<ImageSize, Color, ImageVisualizationInfo>> result =
-	// Maps.newHashMapWithExpectedSize(imgData.size());
+	// Maps.newHashMapWithExpectedSize(imgVisualizationInfoData.size());
 	//
-	// for (final ImageVisualizationInfo imgDatum : imgData) {
-	// final URL resourceLoc = imgDatum.getResourceLoc();
+	// for (final ImageVisualizationInfo imgVisualizationInfoDatum : imgVisualizationInfoData) {
+	// final URL resourceLoc = imgVisualizationInfoDatum.getResourceLoc();
 	// int commonAttrCount = 0;
 	// final Table<ImageSize, Color, ImageVisualizationInfo> oldResourceImgDataTable =
 	// result.get(resourceLoc);
@@ -97,12 +97,12 @@ public final class RandomPieceImageManager {
 	// final Table<ImageSize, Color, ImageVisualizationInfo> newResourceImgDataTable =
 	// HashBasedTable.create(sizes.size(),
 	// uniqueImgColors.size());
-	// newResourceImgDataTable.put(imgDatum.getSize(), imgDatum.getColor(),
-	// imgDatum);
+	// newResourceImgDataTable.put(imgVisualizationInfoDatum.getSize(), imgVisualizationInfoDatum.getColor(),
+	// imgVisualizationInfoDatum);
 	// result.put(resourceLoc, newResourceImgDataTable);
 	// } else {
 	// // Check size
-	// final ImageSize size = imgDatum.getSize();
+	// final ImageSize size = imgVisualizationInfoDatum.getSize();
 	// final Map<Color, ImageVisualizationInfo> imgDataByColor =
 	// oldResourceImgDataTable.row(size);
 	// if (imgDataByColor == null) {
@@ -111,13 +111,13 @@ public final class RandomPieceImageManager {
 	// LOGGER.debug("Observed {} for resource \"{}\" for the first time.", size,
 	// resourceLoc);
 	// // Try looking up the image data by color instead
-	// final Color color = imgDatum.getColor();
+	// final Color color = imgVisualizationInfoDatum.getColor();
 	// final Map<ImageSize, ImageVisualizationInfo> imgDataBySize =
 	// oldResourceImgDataTable.column(color);
 	// if (imgDataBySize == null) {
 	// LOGGER.debug("Observed {} for resource \"{}\" for the first time.",
 	// color, resourceLoc);
-	// oldResourceImgDataTable.put(size, color, imgDatum);
+	// oldResourceImgDataTable.put(size, color, imgVisualizationInfoDatum);
 	// } else {
 	// // The given resource has been seen for the given color
 	// // but not the given size
@@ -127,7 +127,7 @@ public final class RandomPieceImageManager {
 	// \"{}\"; Skipping.",
 	// resourceLoc);
 	// break;
-	// } else if (!Objects.equals(imgDataBySize.put(size, imgDatum), imgDatum))
+	// } else if (!Objects.equals(imgDataBySize.put(size, imgVisualizationInfoDatum), imgVisualizationInfoDatum))
 	// {
 	// // Sanity check
 	// throw new IllegalArgumentException("Image data duplicate.");
@@ -143,8 +143,8 @@ public final class RandomPieceImageManager {
 	// \"{}\"; Skipping.",
 	// resourceLoc);
 	// break;
-	// } else if (!Objects.equals(imgDataByColor.put(imgDatum.getColor(),
-	// imgDatum), imgDatum)) {
+	// } else if (!Objects.equals(imgDataByColor.put(imgVisualizationInfoDatum.getColor(),
+	// imgVisualizationInfoDatum), imgVisualizationInfoDatum)) {
 	// // Sanity check
 	// throw new IllegalArgumentException("Image data duplicate.");
 	// }

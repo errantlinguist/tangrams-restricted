@@ -140,18 +140,18 @@ final class RandomPieceImageDataFactory implements Function<Random, Stream<Image
 	 */
 	@Override
 	public Stream<ImageVisualizationInfo> apply(final Random rnd) {
-		final List<ImageVisualizationInfo> imgData = createImageDatumEnumerationList();
-		Collections.shuffle(imgData, rnd);
+		final List<ImageVisualizationInfo> imgVisualizationInfoData = createImageDatumEnumerationList();
+		Collections.shuffle(imgVisualizationInfoData, rnd);
 
-		final Multimap<URL, ImageSize> imgSizes = HashMultimap.create(imgData.size(), sizes.size());
-		final Multimap<URL, Color> imgColors = HashMultimap.create(imgData.size(), uniqueImgColors.size());
+		final Multimap<URL, ImageSize> imgSizes = HashMultimap.create(imgVisualizationInfoData.size(), sizes.size());
+		final Multimap<URL, Color> imgColors = HashMultimap.create(imgVisualizationInfoData.size(), uniqueImgColors.size());
 		final Stream.Builder<ImageVisualizationInfo> resultBuilder = Stream.builder();
-		for (final ImageVisualizationInfo imgDatum : imgData) {
-			final URL resourceLoc = imgDatum.getResourceLoc();
+		for (final ImageVisualizationInfo imgVisualizationInfoDatum : imgVisualizationInfoData) {
+			final URL resourceLoc = imgVisualizationInfoDatum.getResourceLoc();
 			int commonAttrCount = 0;
 			{
 				// Check size
-				final ImageSize size = imgDatum.getSize();
+				final ImageSize size = imgVisualizationInfoDatum.getSize();
 				if (imgSizes.put(resourceLoc, size)) {
 					// The given size has never been used for this resource
 					// before
@@ -169,7 +169,7 @@ final class RandomPieceImageDataFactory implements Function<Random, Stream<Image
 			}
 			{
 				// Check color
-				final Color color = imgDatum.getColor();
+				final Color color = imgVisualizationInfoDatum.getColor();
 				if (imgColors.put(resourceLoc, color)) {
 					// The given color has never been used for this resource
 					// before
@@ -186,7 +186,7 @@ final class RandomPieceImageDataFactory implements Function<Random, Stream<Image
 				}
 			}
 			// If all attributes are okay, add it to the result stream
-			resultBuilder.accept(imgDatum);
+			resultBuilder.accept(imgVisualizationInfoDatum);
 		}
 
 		return resultBuilder.build();

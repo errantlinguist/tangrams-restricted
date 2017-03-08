@@ -352,7 +352,7 @@ public final class TangramsClient implements Runnable {
 											final Model<Integer> model = localController.getModel();
 											final int pieceCount = model.getOccupiedCoordinateCount();
 											final Random rnd = new Random(gameState.getSeed());
-											final List<ImageVisualizationInfo> imageData = new RandomPieceImageManager(pieceCount)
+											final List<ImageVisualizationInfo> imgVisualizationInfoData = new RandomPieceImageManager(pieceCount)
 													.createImageData(rnd);
 											final Runnable closeHook = () -> {
 												LOGGER.info("Closing main window; Cleaning up background resources.");
@@ -361,7 +361,7 @@ public final class TangramsClient implements Runnable {
 											};
 											EventQueue.invokeLater(new GameGUI(title, viewLocation, localController,
 													gameState.getRemoteController(), gameState.getWinningModel(),
-													imageData, () -> logDir.toPath(), closeHook));
+													imgVisualizationInfoData, () -> logDir.toPath(), closeHook));
 
 										});
 								system.addModule(gameClientModule);

@@ -44,8 +44,8 @@ final class GameViewFrame extends JFrame {
 		// TODO Auto-generated constructor stub
 	}
 
-	GameViewFrame(final List<ImageVisualizationInfo> imageData, final LocalController<? super Integer> localController) {
-		GameBoardPanel boardPanel = new GameBoardPanelFactory().apply(imageData);
+	GameViewFrame(final List<ImageVisualizationInfo> imgVisualizationInfoData, final LocalController<? super Integer> localController) {
+		GameBoardPanel boardPanel = new GameBoardPanelFactory().apply(imgVisualizationInfoData);
 		add(boardPanel);
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		addWindowListener(new WindowAdapter() {

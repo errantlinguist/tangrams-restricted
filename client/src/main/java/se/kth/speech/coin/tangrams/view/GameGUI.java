@@ -128,7 +128,7 @@ public final class GameGUI implements Runnable {
 
 	private final Runnable closeHook;
 
-	private final List<ImageVisualizationInfo> imageData;
+	private final List<ImageVisualizationInfo> imgVisualizationInfoData;
 
 	private final LocalController<Integer> localController;
 
@@ -146,14 +146,14 @@ public final class GameGUI implements Runnable {
 
 	public GameGUI(final String title, final Point viewLocation, final LocalController<Integer> localController,
 			final RemoteController<Integer> remoteController, final Model<Integer> winningModel,
-			final List<ImageVisualizationInfo> imageData, final Supplier<? extends Path> logOutdirSupplier,
+			final List<ImageVisualizationInfo> imgVisualizationInfoData, final Supplier<? extends Path> logOutdirSupplier,
 			final Runnable closeHook) {
 		this.title = title;
 		this.viewLocation = viewLocation;
 		this.localController = localController;
 		this.remoteController = remoteController;
 		this.winningModel = winningModel;
-		this.imageData = imageData;
+		this.imgVisualizationInfoData = imgVisualizationInfoData;
 		final ExecutorService screenshotLoggingExecutor = Executors.newSingleThreadExecutor();
 		{
 			final ScreenshotLogger screenshotLogger = new ScreenshotLogger(logOutdirSupplier,
@@ -178,7 +178,7 @@ public final class GameGUI implements Runnable {
 	@Override
 	public void run() {
 		LOGGER.debug("Creating view components.");
-		final GameViewFrame gameViewFrame = new GameViewFrame(imageData, localController);
+		final GameViewFrame gameViewFrame = new GameViewFrame(imgVisualizationInfoData, localController);
 		// TODO: Add toggle for single-player mode
 		gameViewFrame.pack();
 		// gameViewFrame.setLocationByPlatform(true);

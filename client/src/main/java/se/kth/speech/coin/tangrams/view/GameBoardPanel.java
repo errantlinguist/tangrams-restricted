@@ -46,10 +46,10 @@ final class GameBoardPanel extends JPanel {
 	 */
 	private static final long serialVersionUID = 6258829324465894025L;
 
-	private final Map<? extends BufferedImage, ImageVisualizationInfo> imageData;
+	private final Map<? extends BufferedImage, ImageVisualizationInfo> imgVisualizationInfoData;
 
-	public GameBoardPanel(final Map<? extends BufferedImage, ImageVisualizationInfo> imageData, final Dimension boardSize) {
-		this.imageData = imageData;
+	public GameBoardPanel(final Map<? extends BufferedImage, ImageVisualizationInfo> imgVisualizationInfoData, final Dimension boardSize) {
+		this.imgVisualizationInfoData = imgVisualizationInfoData;
 		setSize(boardSize);
 		// setPreferredSize(boardSize);
 		

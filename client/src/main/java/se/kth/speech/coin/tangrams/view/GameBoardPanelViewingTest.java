@@ -69,8 +69,8 @@ public final class GameBoardPanelViewingTest implements Runnable {
 		frame.setLayout(new BorderLayout());
 		final int pieceCount = 20;
 		final RandomPieceImageManager imgManager = new RandomPieceImageManager(pieceCount);
-		final List<ImageVisualizationInfo> imgData = imgManager.createImageData(rnd);
-		final GameBoardPanel boardPanel = new GameBoardPanelFactory().apply(imgData);
+		final List<ImageVisualizationInfo> imgVisualizationInfoData = imgManager.createImageData(rnd);
+		final GameBoardPanel boardPanel = new GameBoardPanelFactory().apply(imgVisualizationInfoData);
 		frame.add(boardPanel, BorderLayout.CENTER);
 
 		frame.pack();
