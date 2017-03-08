@@ -46,6 +46,20 @@ import se.kth.speech.coin.tangrams.content.ImageDatum;
  */
 final class GameBoardPanelFactory implements Function<Collection<ImageDatum>, GameBoardPanel> {
 
+	private static class ImageValues {
+		private final int gcd;
+		
+		private final int height;
+		
+		private final int width;
+
+		private ImageValues(final int width, final int height, final int gcd) {
+			this.width = width;
+			this.height = height;
+			this.gcd = gcd;
+		}
+	}
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(GameBoardPanelFactory.class);
 
 	private static final double RATIO_TOLERANCE = 0.05;
@@ -71,7 +85,7 @@ final class GameBoardPanelFactory implements Function<Collection<ImageDatum>, Ga
 		// sequence
 		final Map<BufferedImage, ImageDatum> imageDataMap = Maps.newLinkedHashMapWithExpectedSize(imgData.size());
 		final Set<Integer> dimensionValues = Sets.newHashSetWithExpectedSize(imgData.size() + 1);
-		final Map<String, Integer> badImgs = new HashMap<>(1);
+		final Map<String, ImageValues> badImgs = new HashMap<>(1);
 		try {
 			for (final ImageDatum imgDatum : imgData) {
 				final BufferedImage initialImg = createInitialImage(imgDatum);
@@ -80,10 +94,11 @@ final class GameBoardPanelFactory implements Function<Collection<ImageDatum>, Ga
 				dimensionValues.add(width);
 				final int height = initialImg.getHeight();
 				dimensionValues.add(height);
-//				System.out.println(String.format("width: %d height: %d", width, height));
+				// System.out.println(String.format("width: %d height: %d",
+				// width, height));
 				final int imgGcd = MathDenominators.gcd(width, height);
 				if (imgGcd < 2) {
-					badImgs.put(imgDatum.getResourceLoc().toString(), imgGcd);
+					badImgs.put(imgDatum.getResourceLoc().toString(), new ImageValues(width, height, imgGcd));
 				}
 				final boolean isSquare;
 				if (width < height) {
@@ -100,14 +115,20 @@ final class GameBoardPanelFactory implements Function<Collection<ImageDatum>, Ga
 		}
 
 		if (!badImgs.isEmpty()) {
-			final String errorMsgPrefix = "GCD for one or images was bad:";
+			final String errorMsgPrefix = "GCD for one or images was bad:" + System.lineSeparator()
+					+ "PATH\tWIDTH\tHEIGHT\tGCD";
 			final StringBuilder sb = new StringBuilder(errorMsgPrefix.length() + 16 * badImgs.size());
 			sb.append(errorMsgPrefix);
-			for (final Entry<String, Integer> badImg : badImgs.entrySet()) {
+			for (final Entry<String, ImageValues> badImg : badImgs.entrySet()) {
 				sb.append(System.lineSeparator());
 				sb.append(badImg.getKey());
 				sb.append('\t');
-				sb.append(badImg.getValue());
+				final ImageValues imgVals = badImg.getValue();
+				sb.append(imgVals.width);
+				sb.append('\t');
+				sb.append(imgVals.height);
+				sb.append('\t');
+				sb.append(imgVals.gcd);
 			}
 			throw new IllegalArgumentException(sb.toString());
 		}
