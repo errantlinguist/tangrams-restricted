@@ -24,6 +24,7 @@ import java.io.UncheckedIOException;
 import java.net.URL;
 import java.util.Collection;
 import java.util.EnumSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -158,12 +159,12 @@ final class GameBoardPanelFactory implements Function<Collection<ImageVisualizat
 		return sb.toString();
 	}
 
-	private static Map<BufferedImage, ImageViewInfo> createImageViewInfoMap(
+	private static LinkedHashMap<BufferedImage, ImageViewInfo> createImageViewInfoMap(
 			final Collection<ImageVisualizationInfo> imgVisualizationInfoData, final SizeValidator validator)
 			throws IOException {
 		// Use linked map in order to preserve iteration order in provided
 		// sequence
-		final Map<BufferedImage, ImageViewInfo> result = Maps
+		final LinkedHashMap<BufferedImage, ImageViewInfo> result = Maps
 				.newLinkedHashMapWithExpectedSize(imgVisualizationInfoData.size());
 
 		final Map<URL, Entry<ImageRasterizationInfo, Set<SizeValidator.ValidationComment>>> badImgs = Maps
@@ -271,7 +272,8 @@ final class GameBoardPanelFactory implements Function<Collection<ImageVisualizat
 			final Map<BufferedImage, ImageViewInfo> imgViewInfoData = createImageViewInfoMap(imgVisualizationInfoData,
 					validator);
 			final Set<Integer> dimensionValues = Sets.newHashSetWithExpectedSize(imgViewInfoData.size() + 1);
-			for (final ImageViewInfo viewInfo : imgViewInfoData.values()) {
+			for (final Entry<BufferedImage, ImageViewInfo> imgViewInfoDatum : imgViewInfoData.entrySet()) {
+				final ImageViewInfo viewInfo = imgViewInfoDatum.getValue();
 				dimensionValues.add(viewInfo.rasterization.gcd);
 			}
 			// Get the GCD for all components in the view
