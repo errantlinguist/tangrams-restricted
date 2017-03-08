@@ -38,9 +38,18 @@ public final class Matrix<T> {
 
 		private final int maxRowValArrStartIdx = getRowValueArrayStartIdxForValueArrayIdx(values.size());
 
-		private int nextRowIdx = 0;
+		private int nextRowIdx;
 
-		private int rowValArrStartIdx = 0;
+		private int rowValArrStartIdx;
+
+		protected AbstractRowIterator() {
+			this(0);
+		}
+
+		protected AbstractRowIterator(final int rowIdx) {
+			nextRowIdx = rowIdx;
+			rowValArrStartIdx = getRowValueArrayStartIdx(rowIdx);
+		}
 
 		@Override
 		public void add(final R e) {
@@ -123,9 +132,17 @@ public final class Matrix<T> {
 
 	private class RowListIterator extends AbstractRowIterator<List<T>> {
 
+		protected RowListIterator() {
+			super();
+		}
+
+		protected RowListIterator(final int rowIdx) {
+			super(rowIdx);
+		}
+
 		/*
 		 * (non-Javadoc)
-		 * 
+		 *
 		 * @see se.kth.speech.Matrix.AbstractRowIterator#getRow(int, int)
 		 */
 		@Override
@@ -135,7 +152,7 @@ public final class Matrix<T> {
 
 		/*
 		 * (non-Javadoc)
-		 * 
+		 *
 		 * @see se.kth.speech.Matrix.AbstractRowIterator#getRowLength(java.lang.
 		 * Iterable)
 		 */
@@ -180,7 +197,7 @@ public final class Matrix<T> {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#equals(java.lang.Object)
 	 */
 	@Override
@@ -247,7 +264,7 @@ public final class Matrix<T> {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#hashCode()
 	 */
 	@Override
@@ -261,6 +278,10 @@ public final class Matrix<T> {
 
 	public ListIterator<List<T>> rowIterator() {
 		return new RowListIterator();
+	}
+
+	public ListIterator<List<T>> rowIterator(final int rowIdx) {
+		return new RowListIterator(rowIdx);
 	}
 
 	public T setValue(final int[] coords, final T value) {
