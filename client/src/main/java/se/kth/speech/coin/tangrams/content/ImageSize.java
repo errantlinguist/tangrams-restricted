@@ -20,20 +20,37 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 
+import se.kth.speech.Lists;
+
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
  * @since 7 Mar 2017
  *
  */
 public enum ImageSize {
-	LARGE,
-	NORMAL,
-	SMALL;
-	
-	public static final List<ImageSize> SIZE_ORDERING;
-	
+	LARGE, NORMAL, SMALL;
+
+	private static final Comparator<ImageSize> SIZE_COMPARATOR;
+
+	private static final List<ImageSize> SIZE_ORDERING;
+
 	static {
-		 SIZE_ORDERING = Arrays.asList(SMALL, NORMAL, LARGE);
+		SIZE_ORDERING = Arrays.asList(SMALL, NORMAL, LARGE);
+		SIZE_COMPARATOR = Lists.comparingByIndex(SIZE_ORDERING);
 	}
-	
+
+	/**
+	 * @return the sizeComparator
+	 */
+	public static Comparator<ImageSize> getSizeComparator() {
+		return SIZE_COMPARATOR;
+	}
+
+	/**
+	 * @return the sizeOrdering
+	 */
+	public static List<ImageSize> getSizeOrdering() {
+		return SIZE_ORDERING;
+	}
+
 }
