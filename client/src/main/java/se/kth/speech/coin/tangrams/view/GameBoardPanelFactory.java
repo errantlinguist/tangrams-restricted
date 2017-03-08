@@ -88,7 +88,6 @@ final class GameBoardPanelFactory implements Function<Collection<ImageDatum>, Ga
 			if (height < minDimLength) {
 				result.add(ValidationComment.HEIGHT_BELOW_MINIMUM);
 			}
-			// final int imgGcd = MathDenominators.gcd(width, height);
 			if (imgGcd < 2) {
 				result.add(ValidationComment.BAD_GCD);
 			}
