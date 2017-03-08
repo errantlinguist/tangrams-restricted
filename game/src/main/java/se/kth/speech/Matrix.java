@@ -16,6 +16,7 @@
 */
 package se.kth.speech;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.ListIterator;
@@ -32,33 +33,9 @@ import java.util.NoSuchElementException;
  *            The type used to represent matrix cell data.
  */
 public final class Matrix<T> {
-	
-	private class RowListIterator extends AbstractRowIterator<List<T>> {
-		
-		/* (non-Javadoc)
-		 * @see se.kth.speech.Matrix.AbstractRowIterator#getRow(int, int)
-		 */
-		@Override
-		protected List<T> getRow(int rowValArrStartIdx, int rowValArrEndIdx) {
-			return values.subList(rowValArrStartIdx, rowValArrEndIdx);
-		}
-
-		/* (non-Javadoc)
-		 * @see se.kth.speech.Matrix.AbstractRowIterator#getRowLength(java.lang.Iterable)
-		 */
-		@Override
-		protected int getRowLength(List<T> row) {
-			return row.size();
-		}
-		
-	}
 
 	private abstract class AbstractRowIterator<R extends Iterable<T>> implements ListIterator<R> {
-		
-		protected abstract R getRow(int rowValArrStartIdx, final int rowValArrEndIdx);
-		
-		protected abstract int getRowLength(R row);
-		
+
 		private final int maxRowValArrStartIdx = getRowValueArrayStartIdxForValueArrayIdx(values.size());
 
 		private int nextRowIdx = 0;
@@ -87,8 +64,9 @@ public final class Matrix<T> {
 			}
 			final int cols = getColCount();
 			final int rowValArrEndIdx = rowValArrStartIdx + cols;
-//			final T[] result = Arrays.copyOfRange(values, rowValArrStartIdx, rowValArrEndIdx);
-			R result = getRow(rowValArrEndIdx, rowValArrEndIdx);
+			// final T[] result = Arrays.copyOfRange(values, rowValArrStartIdx,
+			// rowValArrEndIdx);
+			final R result = getRow(rowValArrEndIdx, rowValArrEndIdx);
 			rowValArrStartIdx = rowValArrEndIdx;
 			nextRowIdx++;
 			return result;
@@ -107,8 +85,9 @@ public final class Matrix<T> {
 			final int cols = getColCount();
 			final int rowValArrEndIdx = rowValArrStartIdx;
 			rowValArrStartIdx -= cols;
-//			final T[] result = Arrays.copyOfRange(values, rowValArrStartIdx, rowValArrEndIdx);
-			R result = getRow(rowValArrEndIdx, rowValArrEndIdx);
+			// final T[] result = Arrays.copyOfRange(values, rowValArrStartIdx,
+			// rowValArrEndIdx);
+			final R result = getRow(rowValArrEndIdx, rowValArrEndIdx);
 			nextRowIdx--;
 			return result;
 		}
@@ -126,7 +105,7 @@ public final class Matrix<T> {
 		@Override
 		public void set(final R e) {
 			final int cols = getColCount();
-			int rowLength = getRowLength(e);
+			final int rowLength = getRowLength(e);
 			if (getRowLength(e) != cols) {
 				throw new IllegalArgumentException(String.format(
 						"Supplied array length is %d but does not match matrix column count of %d.", rowLength, cols));
@@ -136,19 +115,40 @@ public final class Matrix<T> {
 				values.set(valArrIdx++, val);
 			}
 		}
+
+		protected abstract R getRow(int rowValArrStartIdx, final int rowValArrEndIdx);
+
+		protected abstract int getRowLength(R row);
+	}
+
+	private class RowListIterator extends AbstractRowIterator<List<T>> {
+
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see se.kth.speech.Matrix.AbstractRowIterator#getRow(int, int)
+		 */
+		@Override
+		protected List<T> getRow(final int rowValArrStartIdx, final int rowValArrEndIdx) {
+			return values.subList(rowValArrStartIdx, rowValArrEndIdx);
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see se.kth.speech.Matrix.AbstractRowIterator#getRowLength(java.lang.
+		 * Iterable)
+		 */
+		@Override
+		protected int getRowLength(final List<T> row) {
+			return row.size();
+		}
+
 	}
 
 	private final int colCount;
 
 	private final List<T> values;
-
-	public Matrix(final Matrix<T> copyee) {
-		this(copyee.getValues(), copyee.getDimensions()[1]);
-	}
-	
-	public Matrix(final T[] values, final int colCount) {
-		this(Arrays.asList(values), colCount);
-	}
 
 	public Matrix(final List<T> values, final int colCount) {
 		if (colCount < 1) {
@@ -170,26 +170,53 @@ public final class Matrix<T> {
 		this.values = values;
 	}
 
-	/* (non-Javadoc)
+	public Matrix(final Matrix<T> copyee) {
+		this(copyee.getValues(), copyee.getDimensions()[1]);
+	}
+
+	public Matrix(final T[] values, final int colCount) {
+		this(Arrays.asList(values), colCount);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see java.lang.Object#equals(java.lang.Object)
 	 */
 	@Override
-	public boolean equals(Object obj) {
-		if (this == obj)
+	public boolean equals(final Object obj) {
+		if (this == obj) {
 			return true;
-		if (obj == null)
+		}
+		if (obj == null) {
 			return false;
-		if (!(obj instanceof Matrix))
+		}
+		if (!(obj instanceof Matrix)) {
 			return false;
-		Matrix<?> other = (Matrix<?>) obj;
-		if (colCount != other.colCount)
+		}
+		final Matrix<?> other = (Matrix<?>) obj;
+		if (colCount != other.colCount) {
 			return false;
+		}
 		if (values == null) {
-			if (other.values != null)
+			if (other.values != null) {
 				return false;
-		} else if (!values.equals(other.values))
+			}
+		} else if (!values.equals(other.values)) {
 			return false;
+		}
 		return true;
+	}
+
+	public List<T> getColumn(final int colIdx) {
+		// Get the index of the last row in the matrix
+		final int rowCount = getRowIdx(values.size());
+		final List<T> result = new ArrayList<>(rowCount);
+		for (final RowListIterator rowIter = new RowListIterator(); rowIter.hasNext();) {
+			final List<T> nextRow = rowIter.next();
+			result.add(nextRow.get(colIdx));
+		}
+		return result;
 	}
 
 	/**
@@ -205,24 +232,22 @@ public final class Matrix<T> {
 		return new int[] { row, col };
 	}
 
+	public List<T> getRow(final int rowIdx) {
+		final int rowStartIdx = getRowValueArrayStartIdx(rowIdx);
+		return values.subList(rowStartIdx, rowStartIdx * getColCount());
+	}
+
 	public T getValue(final int[] coords) {
 		return values.get(getValueArrayIdx(coords));
 	}
-
-//	public T getColValues(final int colIdx) {
-//		// Get the index of the last row in the matrix
-//		int rowCount = getRowIdx(values.size());
-//		List<T> result = new ArrayList<>(rowCount);
-//		for (RowListIterator rowIter = new RowListIterator(); rowIter.hasNext();) {
-//			List<T> nextRow = rowIter.next();
-//		}
-//	}
 
 	public List<T> getValues() {
 		return values;
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see java.lang.Object#hashCode()
 	 */
 	@Override
@@ -230,7 +255,7 @@ public final class Matrix<T> {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + colCount;
-		result = prime * result + ((values == null) ? 0 : values.hashCode());
+		result = prime * result + (values == null ? 0 : values.hashCode());
 		return result;
 	}
 
@@ -275,13 +300,17 @@ public final class Matrix<T> {
 		return valueArrayIdx / cols;
 	}
 
+	private int getRowValueArrayStartIdx(final int rowIdx) {
+		return rowIdx * getColCount();
+	}
+
 	private int getRowValueArrayStartIdxForValueArrayIdx(final int valueArrayIdx) {
 		final int col = getColIdx(valueArrayIdx);
 		return valueArrayIdx - col;
 	}
 
 	private int getValueArrayIdx(final int[] coords) {
-		final int rowStartIdx = coords[0] * getColCount();
+		final int rowStartIdx = getRowValueArrayStartIdx(coords[0]);
 		return rowStartIdx + coords[1];
 	}
 
