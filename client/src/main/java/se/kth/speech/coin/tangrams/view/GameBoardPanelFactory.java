@@ -23,7 +23,6 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
@@ -347,10 +346,10 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 						piecePosMatrixSize = new int[] { occupiedPosMatrixRowCount, occupiedPosMatrixColCount };
 					}
 					final int[] posDims = posMatrix.getDimensions();
-					final int[] maxPossibleMatrixIdxs = IntStream.range(0, posDims.length)
-							.map(i -> posDims[i] - piecePosMatrixSize[i]).toArray();
+					final IntStream maxPossibleMatrixIdxs = IntStream.range(0, posDims.length)
+							.map(i -> posDims[i] - piecePosMatrixSize[i]);
 					// Randomly pick a space in the matrix
-					final int[] matrixIdx = Arrays.stream(maxPossibleMatrixIdxs).map(rnd::nextInt).toArray();
+					final int[] matrixIdx = maxPossibleMatrixIdxs.map(rnd::nextInt).toArray();
 					final int[] endMatrixIdxs = IntStream.range(0, matrixIdx.length)
 							.map(i -> matrixIdx[i] + piecePosMatrixSize[i]).toArray();
 					for (int rowIdx = matrixIdx[0]; rowIdx < endMatrixIdxs[0]; rowIdx++) {
