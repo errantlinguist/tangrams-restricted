@@ -271,8 +271,7 @@ final class GameBoardPanelFactory implements Function<Collection<ImageVisualizat
 			final Map<BufferedImage, ImageViewInfo> imgViewInfoData = createImageViewInfoMap(imgVisualizationInfoData,
 					validator);
 			final Set<Integer> dimensionValues = Sets.newHashSetWithExpectedSize(imgViewInfoData.size() + 1);
-			for (final Entry<BufferedImage, ImageViewInfo> imgViewInfoDatum : imgViewInfoData.entrySet()) {
-				final ImageViewInfo viewInfo = imgViewInfoDatum.getValue();
+			for (final ImageViewInfo viewInfo : imgViewInfoData.values()) {
 				dimensionValues.add(viewInfo.rasterization.gcd);
 			}
 			// Get the GCD for all components in the view
