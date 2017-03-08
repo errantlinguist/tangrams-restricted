@@ -255,6 +255,46 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 		return result;
 	}
 
+	private static void fillMatrix(final ListIterator<Entry<BufferedImage, ImageViewInfo>> imgViewInfoDataIter,
+			final Matrix<Integer> posMatrix, final Random rnd) {
+		// Randomly place each image in the position matrix
+		while (imgViewInfoDataIter.hasNext()) {
+			final int imgId = imgViewInfoDataIter.nextIndex();
+			final Entry<BufferedImage, ImageViewInfo> imgViewInfoDatum = imgViewInfoDataIter.next();
+			final ImageViewInfo viewInfo = imgViewInfoDatum.getValue();
+			final ImageRasterizationInfo rasterizationInfo = viewInfo.rasterization;
+			// The number of rows this image takes up in the
+			// position matrix
+			final int[] piecePosMatrixSize;
+			{
+				final int occupiedPosMatrixRowCount = rasterizationInfo.getWidth() / rasterizationInfo.getGcd();
+				// The number of columns this image takes up in the
+				// position matrix
+				final int occupiedPosMatrixColCount = rasterizationInfo.getHeight() / rasterizationInfo.getGcd();
+				LOGGER.debug("Calculateed position grid size {}*{} for \"{}\".",
+						new Object[] { viewInfo.visualization.getResourceLoc(), occupiedPosMatrixRowCount,
+								occupiedPosMatrixColCount });
+
+				piecePosMatrixSize = new int[] { occupiedPosMatrixRowCount, occupiedPosMatrixColCount };
+			}
+			final int[] posDims = posMatrix.getDimensions();
+			final IntStream maxPossibleMatrixIdxs = IntStream.range(0, posDims.length)
+					.map(i -> posDims[i] - piecePosMatrixSize[i]);
+			// Randomly pick a space in the matrix
+			final int[] matrixIdx = maxPossibleMatrixIdxs.map(rnd::nextInt).toArray();
+			final int[] endMatrixIdxs = IntStream.range(0, matrixIdx.length)
+					.map(i -> matrixIdx[i] + piecePosMatrixSize[i]).toArray();
+			for (int rowIdx = matrixIdx[0]; rowIdx < endMatrixIdxs[0]; rowIdx++) {
+				final List<Integer> occupiedRow = posMatrix.getRow(rowIdx);
+				for (int colIdx = matrixIdx[1]; colIdx < endMatrixIdxs[1]; colIdx++) {
+					final Integer oldImgId = occupiedRow.set(colIdx, imgId);
+					assert oldImgId == null;
+				}
+				System.out.println(occupiedRow);
+			}
+		}
+	}
+
 	private static Image scaleImageByLongerDimension(final BufferedImage origImg, final int longerDimVal) {
 		final Image result;
 		final ImageOrientation orientation = ImageOrientation.getOrientation(origImg.getWidth(), origImg.getHeight());
@@ -322,46 +362,7 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 				LOGGER.info("Creating a position matrix of size {}*{}.", posMatrixRows, posMatrixCols);
 				final Integer[] posMatrixBackingArray = new Integer[posMatrixRows * posMatrixCols];
 				final Matrix<Integer> posMatrix = new Matrix<>(posMatrixBackingArray, posMatrixCols);
-
-				// Randomly place each image in the position matrix
-				for (final ListIterator<Entry<BufferedImage, ImageViewInfo>> imgViewInfoDataListIter = imgViewInfoDataList
-						.listIterator(); imgViewInfoDataListIter.hasNext();) {
-					final int imgId = imgViewInfoDataListIter.nextIndex();
-					final Entry<BufferedImage, ImageViewInfo> imgViewInfoDatum = imgViewInfoDataListIter.next();
-					final ImageViewInfo viewInfo = imgViewInfoDatum.getValue();
-					final ImageRasterizationInfo rasterizationInfo = viewInfo.rasterization;
-					// The number of rows this image takes up in the
-					// position matrix
-					final int[] piecePosMatrixSize;
-					{
-						final int occupiedPosMatrixRowCount = rasterizationInfo.getWidth() / rasterizationInfo.getGcd();
-						// The number of columns this image takes up in the
-						// position matrix
-						final int occupiedPosMatrixColCount = rasterizationInfo.getHeight()
-								/ rasterizationInfo.getGcd();
-						LOGGER.debug("Calculateed position grid size {}*{} for \"{}\".",
-								new Object[] { viewInfo.visualization.getResourceLoc(), occupiedPosMatrixRowCount,
-										occupiedPosMatrixColCount });
-
-						piecePosMatrixSize = new int[] { occupiedPosMatrixRowCount, occupiedPosMatrixColCount };
-					}
-					final int[] posDims = posMatrix.getDimensions();
-					final IntStream maxPossibleMatrixIdxs = IntStream.range(0, posDims.length)
-							.map(i -> posDims[i] - piecePosMatrixSize[i]);
-					// Randomly pick a space in the matrix
-					final int[] matrixIdx = maxPossibleMatrixIdxs.map(rnd::nextInt).toArray();
-					final int[] endMatrixIdxs = IntStream.range(0, matrixIdx.length)
-							.map(i -> matrixIdx[i] + piecePosMatrixSize[i]).toArray();
-					for (int rowIdx = matrixIdx[0]; rowIdx < endMatrixIdxs[0]; rowIdx++) {
-						final List<Integer> occupiedRow = posMatrix.getRow(rowIdx);
-						for (int colIdx = matrixIdx[1]; colIdx < endMatrixIdxs[1]; colIdx++) {
-							final Integer oldImgId = occupiedRow.set(colIdx, imgId);
-							assert oldImgId == null;
-						}
-						System.out.println(occupiedRow);
-					}
-				}
-
+				fillMatrix(imgViewInfoDataList.listIterator(), posMatrix, rnd);
 				// TODO Auto-generated method stub
 				result = new GameBoardPanel(boardSize);
 			} else {
