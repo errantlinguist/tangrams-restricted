@@ -9,13 +9,16 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="79.375mm"
-   height="39.6875mm"
-   viewBox="0 0 79.375 39.6875"
+   width="158.75mm"
+   height="79.375mm"
+   viewBox="0 0 158.75 79.375"
    version="1.1"
    id="svg8"
    inkscape:version="0.92.0 r15299"
-   sodipodi:docname="boat.svg">
+   sodipodi:docname="boat.svg"
+   inkscape:export-filename="D:\Users\tcshore\src\com.github.errantlinguist\tangrams-restricted\client\src\main\resources\se\kth\speech\coin\tangrams\content\images\icons\boat.png"
+   inkscape:export-xdpi="96"
+   inkscape:export-ydpi="96">
   <defs
      id="defs2" />
   <sodipodi:namedview
@@ -25,9 +28,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="1.979899"
-     inkscape:cx="122.24749"
-     inkscape:cy="75.676435"
+     inkscape:zoom="0.70000001"
+     inkscape:cx="183.6066"
+     inkscape:cy="150.67643"
      inkscape:document-units="mm"
      inkscape:current-layer="layer-boat"
      showgrid="false"
@@ -37,8 +40,8 @@
      fit-margin-bottom="0"
      inkscape:window-width="1278"
      inkscape:window-height="1378"
-     inkscape:window-x="-7"
-     inkscape:window-y="0"
+     inkscape:window-x="1"
+     inkscape:window-y="136"
      inkscape:window-maximized="0" />
   <metadata
      id="metadata5">
@@ -56,10 +59,10 @@
      inkscape:label="Boat"
      inkscape:groupmode="layer"
      id="layer-boat"
-     transform="translate(57.6875,-128.65625)">
+     transform="translate(97.375,-108.8125)">
     <path
        style="fill:#000000;stroke-width:0"
-       d="m -30.627841,133.83288 3.607955,5.17663 L -18,128.65625 l 9.0198864,10.35326 3.6079545,-5.17663 H 21.6875 L -5.3721591,168.34375 H -30.627841 L -57.6875,133.83288"
+       d="m -43.255682,119.16576 7.21591,10.35326 L -18,108.8125 0.0397728,129.51902 7.2556818,119.16576 H 61.375 L 7.2556818,188.1875 H -43.255682 L -97.375,119.16576"
        id="path-boat"
        inkscape:connector-curvature="0"
        sodipodi:nodetypes="ccccccccc" />
