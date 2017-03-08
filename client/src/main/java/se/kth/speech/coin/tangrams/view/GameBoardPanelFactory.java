@@ -269,7 +269,7 @@ final class GameBoardPanelFactory implements Function<Collection<ImageVisualizat
 		final int minDimLength = 300;
 		final SizeValidator validator = new SizeValidator(minDimLength, 50, 50);
 		try {
-			final Map<BufferedImage, ImageViewInfo> imgViewInfoData = createImageViewInfoMap(imgVisualizationInfoData,
+			final LinkedHashMap<BufferedImage, ImageViewInfo> imgViewInfoData = createImageViewInfoMap(imgVisualizationInfoData,
 					validator);
 			final Set<Integer> dimensionValues = Sets.newHashSetWithExpectedSize(imgViewInfoData.size() + 1);
 			for (final Entry<BufferedImage, ImageViewInfo> imgViewInfoDatum : imgViewInfoData.entrySet()) {
