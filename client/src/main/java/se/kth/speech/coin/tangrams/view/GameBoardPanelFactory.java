@@ -47,6 +47,7 @@ import com.google.common.collect.Sets;
 import se.kth.speech.MathDenominators;
 import se.kth.speech.Matrix;
 import se.kth.speech.MutablePair;
+import se.kth.speech.SpatialMap;
 import se.kth.speech.coin.tangrams.content.ImageSize;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 
@@ -255,8 +256,15 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 		return result;
 	}
 
-	private static void fillMatrix(final ListIterator<Entry<BufferedImage, ImageViewInfo>> imgViewInfoDataIter,
+	private static SpatialMap.Region createSpatialRegion(final int[] startMatrixIdx, final int[] endMatrixIdx) {
+		return new SpatialMap.Region(startMatrixIdx[0], endMatrixIdx[0], startMatrixIdx[1], endMatrixIdx[1]);
+	}
+
+	private static void fillMatrix(final List<Entry<BufferedImage, ImageViewInfo>> imgViewInfoData,
 			final Matrix<Integer> posMatrix, final Random rnd) {
+		final ListIterator<Entry<BufferedImage, ImageViewInfo>> imgViewInfoDataIter = imgViewInfoData.listIterator();
+		final SpatialMap<Entry<BufferedImage, ImageViewInfo>> occupiedRegions = new SpatialMap<>(
+				imgViewInfoData.size());
 		// Randomly place each image in the position matrix
 		while (imgViewInfoDataIter.hasNext()) {
 			final int imgId = imgViewInfoDataIter.nextIndex();
@@ -281,17 +289,23 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 			final IntStream maxPossibleMatrixIdxs = IntStream.range(0, posDims.length)
 					.map(i -> posDims[i] - piecePosMatrixSize[i]);
 			// Randomly pick a space in the matrix
-			final int[] matrixIdx = maxPossibleMatrixIdxs.map(rnd::nextInt).toArray();
-			final int[] endMatrixIdxs = IntStream.range(0, matrixIdx.length)
-					.map(i -> matrixIdx[i] + piecePosMatrixSize[i]).toArray();
-			for (int rowIdx = matrixIdx[0]; rowIdx < endMatrixIdxs[0]; rowIdx++) {
-				final List<Integer> occupiedRow = posMatrix.getRow(rowIdx);
-				for (int colIdx = matrixIdx[1]; colIdx < endMatrixIdxs[1]; colIdx++) {
-					final Integer oldImgId = occupiedRow.set(colIdx, imgId);
-					assert oldImgId == null;
+			final int[] startMatrixIdx = maxPossibleMatrixIdxs.map(rnd::nextInt).toArray();
+			final int[] endMatrixIdx = IntStream.range(0, startMatrixIdx.length)
+					.map(i -> startMatrixIdx[i] + piecePosMatrixSize[i]).toArray();
+			final SpatialMap.Region imgRegion = createSpatialRegion(startMatrixIdx, endMatrixIdx);
+			if (occupiedRegions.isOccupied(imgRegion)) {
+				// TODO: create fallback logic for choosing a new region
+			} else {
+				for (int rowIdx = imgRegion.getXLowerBound(); rowIdx < imgRegion.getXUpperBound(); rowIdx++) {
+					final List<Integer> occupiedRow = posMatrix.getRow(rowIdx);
+					for (int colIdx = imgRegion.getYLowerBound(); colIdx < imgRegion.getYUpperBound(); colIdx++) {
+						final Integer oldImgId = occupiedRow.set(colIdx, imgId);
+						assert oldImgId == null;
+					}
+					System.out.println(occupiedRow);
 				}
-				System.out.println(occupiedRow);
 			}
+			occupiedRegions.put(imgRegion, imgViewInfoDatum);
 		}
 	}
 
@@ -362,7 +376,7 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 				LOGGER.info("Creating a position matrix of size {}*{}.", posMatrixRows, posMatrixCols);
 				final Integer[] posMatrixBackingArray = new Integer[posMatrixRows * posMatrixCols];
 				final Matrix<Integer> posMatrix = new Matrix<>(posMatrixBackingArray, posMatrixCols);
-				fillMatrix(imgViewInfoDataList.listIterator(), posMatrix, rnd);
+				fillMatrix(imgViewInfoDataList, posMatrix, rnd);
 				// TODO Auto-generated method stub
 				result = new GameBoardPanel(boardSize);
 			} else {
