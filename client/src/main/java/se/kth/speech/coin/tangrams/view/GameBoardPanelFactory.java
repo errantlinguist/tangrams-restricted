@@ -33,7 +33,6 @@ import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 import java.util.function.IntSupplier;
 import java.util.stream.IntStream;
 
@@ -293,7 +292,7 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 	}
 
 	@Override
-	public GameBoardPanel apply(final Collection<ImageVisualizationInfo> imgVisualizationInfoData, Random rnd) {
+	public GameBoardPanel apply(final Collection<ImageVisualizationInfo> imgVisualizationInfoData, final Random rnd) {
 		final GameBoardPanel result;
 		// The minimum accepted length of the shortest dimension for an image
 		final int minDimLength = 300;
@@ -332,22 +331,26 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 					// position matrix
 					final int[] piecePosMatrixSize;
 					{
-					final int occupiedPosMatrixRowCount = rasterizationInfo.getWidth() / rasterizationInfo.getGcd();
-					// The number of columns this image takes up in the
-					// position matrix
-					final int occupiedPosMatrixColCount = rasterizationInfo.getHeight() / rasterizationInfo.getGcd();
-					LOGGER.debug("Calculateed position grid size {}*{} for \"{}\".", new Object[] {
-							viewInfo.visualization.getResourceLoc(), occupiedPosMatrixRowCount, occupiedPosMatrixColCount });
-					
-					piecePosMatrixSize = new int[]{occupiedPosMatrixRowCount, occupiedPosMatrixColCount};
+						final int occupiedPosMatrixRowCount = rasterizationInfo.getWidth() / rasterizationInfo.getGcd();
+						// The number of columns this image takes up in the
+						// position matrix
+						final int occupiedPosMatrixColCount = rasterizationInfo.getHeight()
+								/ rasterizationInfo.getGcd();
+						LOGGER.debug("Calculateed position grid size {}*{} for \"{}\".",
+								new Object[] { viewInfo.visualization.getResourceLoc(), occupiedPosMatrixRowCount,
+										occupiedPosMatrixColCount });
+
+						piecePosMatrixSize = new int[] { occupiedPosMatrixRowCount, occupiedPosMatrixColCount };
 					}
-					int[] posDims = posMatrix.getDimensions();
-					final int[] maxPossibleMatrixIdxs = IntStream.range(0, posDims.length).map(i -> posDims[i] - piecePosMatrixSize[i]).toArray();
+					final int[] posDims = posMatrix.getDimensions();
+					final int[] maxPossibleMatrixIdxs = IntStream.range(0, posDims.length)
+							.map(i -> posDims[i] - piecePosMatrixSize[i]).toArray();
 					// Randomly pick a space in the matrix
 					final int[] matrixIdx = Arrays.stream(maxPossibleMatrixIdxs).map(rnd::nextInt).toArray();
-					final int[] endMatrixIdxs = IntStream.range(0, matrixIdx.length).map(i -> matrixIdx[i] +piecePosMatrixSize[i]).toArray();
-					for (int rowIdx = matrixIdx[0]; rowIdx < endMatrixIdxs[0]; rowIdx++){
-						List<Integer> occupiedRow = posMatrix.getRow(rowIdx);
+					final int[] endMatrixIdxs = IntStream.range(0, matrixIdx.length)
+							.map(i -> matrixIdx[i] + piecePosMatrixSize[i]).toArray();
+					for (int rowIdx = matrixIdx[0]; rowIdx < endMatrixIdxs[0]; rowIdx++) {
+						final List<Integer> occupiedRow = posMatrix.getRow(rowIdx);
 						// TODO: set occupied column value for each occupied row
 					}
 				});
