@@ -9,13 +9,16 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="45mm"
-   height="37mm"
-   viewBox="0 0 45 37"
+   width="79.375mm"
+   height="66.145844mm"
+   viewBox="0 0 79.375 66.145844"
    version="1.1"
    id="svg4504"
    inkscape:version="0.92.0 r15299"
-   sodipodi:docname="goose.svg">
+   sodipodi:docname="goose.svg"
+   inkscape:export-filename="D:\Users\tcshore\src\com.github.errantlinguist\tangrams-restricted\client\src\main\resources\se\kth\speech\coin\tangrams\content\images\icons\goose.png"
+   inkscape:export-xdpi="169.33"
+   inkscape:export-ydpi="169.33">
   <defs
      id="defs4498" />
   <sodipodi:namedview
@@ -25,9 +28,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="2.8"
-     inkscape:cx="53.299966"
-     inkscape:cy="92.033405"
+     inkscape:zoom="1.4"
+     inkscape:cx="205.0857"
+     inkscape:cy="241.47662"
      inkscape:document-units="mm"
      inkscape:current-layer="layer-goose"
      showgrid="false"
@@ -39,7 +42,8 @@
      inkscape:window-height="1378"
      inkscape:window-x="-7"
      inkscape:window-y="0"
-     inkscape:window-maximized="0" />
+     inkscape:window-maximized="0"
+     units="px" />
   <metadata
      id="metadata4501">
     <rdf:RDF>
@@ -56,10 +60,10 @@
      inkscape:label="Goose"
      inkscape:groupmode="layer"
      id="layer-goose"
-     transform="translate(40,-130)">
+     transform="translate(57.1875,-114.42708)">
     <path
        style="fill:#000000;stroke-width:0"
-       d="m -15,162 -10,5 h -15 l 15,-15 h -10 v -22 l 20,20 V 130 H 0 l -10,20 15,15 h -20 z"
+       d="m -13.090278,171.12351 -17.638889,9.44941 H -57.1875 l 26.458333,-28.34822 h -17.638889 v -37.79762 l 35.277778,37.79762 V 114.42708 H 13.368056 L -4.2708333,152.2247 22.1875,180.57292 h -35.277778 z"
        id="path-goose"
        inkscape:connector-curvature="0"
        sodipodi:nodetypes="ccccccccccccc" />

@@ -9,13 +9,16 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="38mm"
-   height="13mm"
-   viewBox="0 0 38 13"
+   width="79.375mm"
+   height="52.91666mm"
+   viewBox="0 0 79.375 52.91666"
    version="1.1"
    id="svg5619"
    inkscape:version="0.92.0 r15299"
-   sodipodi:docname="crown.svg">
+   sodipodi:docname="crown.svg"
+   inkscape:export-filename="D:\Users\tcshore\src\com.github.errantlinguist\tangrams-restricted\client\src\main\resources\se\kth\speech\coin\tangrams\content\images\icons\crown.png"
+   inkscape:export-xdpi="138.83"
+   inkscape:export-ydpi="138.83">
   <defs
      id="defs5613" />
   <sodipodi:namedview
@@ -25,16 +28,16 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="5.6"
-     inkscape:cx="59.204941"
-     inkscape:cy="10.153818"
+     inkscape:zoom="1.979899"
+     inkscape:cx="17.413745"
+     inkscape:cy="85.586859"
      inkscape:document-units="mm"
      inkscape:current-layer="layer-crown"
      showgrid="false"
      inkscape:window-width="1394"
-     inkscape:window-height="1378"
+     inkscape:window-height="992"
      inkscape:window-x="-7"
-     inkscape:window-y="0"
+     inkscape:window-y="386"
      inkscape:window-maximized="0"
      fit-margin-top="0"
      fit-margin-left="0"
@@ -56,10 +59,10 @@
      inkscape:label="Crown"
      inkscape:groupmode="layer"
      id="layer-crown"
-     transform="translate(-160,-233)">
+     transform="translate(-139.3125,-213.04167)">
     <path
        style="fill:#000000;stroke-width:0"
-       d="m 160,246 12,-13 v 6 l 5,-6 v 6 h 4 v -6 l 5,6 v -6 l 12,13 z"
+       d="m 139.3125,265.95833 25.06579,-52.91666 v 24.42307 l 10.44408,-24.42307 v 24.42307 h 8.35526 v -24.42307 l 10.44408,24.42307 v -24.42307 l 25.06579,52.91666 z"
        id="path-crown"
        inkscape:connector-curvature="0"
        sodipodi:nodetypes="ccccccccccc" />

@@ -142,7 +142,7 @@ final class GameBoardPanelFactory implements Function<Collection<ImageDatum>, Ga
 		final int boardHeight = 500;
 		dimensionValues.add(boardHeight);
 		final int greatestCommonDenominator = MathDenominators.gcd(dimensionValues.iterator());
-		System.out.println("GCD: " + greatestCommonDenominator);
+//		System.out.println("GCD: " + greatestCommonDenominator);
 		// System.out.println("GCD(300,1000,2000): " +
 		// MathDenominators.gcd(Arrays.asList(300,1000,200).iterator()));
 

@@ -9,9 +9,9 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="45mm"
-   height="35mm"
-   viewBox="0 0 45 35"
+   width="79.375mm"
+   height="79.375mm"
+   viewBox="0 0 79.375 79.375"
    version="1.1"
    id="svg5617"
    inkscape:version="0.92.0 r15299"
@@ -25,9 +25,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="1.979899"
-     inkscape:cx="113.58236"
-     inkscape:cy="154.90699"
+     inkscape:zoom="0.9899495"
+     inkscape:cx="89.902105"
+     inkscape:cy="238.76526"
      inkscape:document-units="mm"
      inkscape:current-layer="layer-rock"
      showgrid="false"
@@ -56,10 +56,10 @@
      inkscape:label="Rock"
      inkscape:groupmode="layer"
      id="layer-rock"
-     transform="translate(-150,-235)">
+     transform="translate(-132.8125,-212.8125)">
     <path
        style="fill:#000000;stroke-width:0"
-       d="m 150,250 v 0 -15 h 30 l 15,15 -10,10 h -15 l -10,10 z"
+       d="m 132.8125,246.83036 v 0 -34.01786 h 52.91667 l 26.45833,34.01786 -17.63889,22.67857 h -26.45833 l -17.63889,22.67857 z"
        id="path-rock"
        inkscape:connector-curvature="0"
        sodipodi:nodetypes="ccccccccc" />
