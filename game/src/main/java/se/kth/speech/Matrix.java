@@ -56,7 +56,7 @@ public final class Matrix<T> {
 	}
 
 	public Matrix(final Matrix<T> copyee) {
-		this(copyee.getValues(), copyee.getDimensions()[1]);
+		this(copyee.getValues(), copyee.getColCount());
 	}
 
 	public Matrix(final T[] values, final int colCount) {
