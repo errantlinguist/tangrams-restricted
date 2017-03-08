@@ -52,6 +52,7 @@ import se.kth.speech.coin.tangrams.iristk.events.Turn;
  * @since 16 Nov 2016
  *
  */
+@Deprecated
 public final class GameBoardPanelOld extends JPanel implements Observer {
 
 	private class LabelMovingMouseListenerHandler implements MouseListener.CallbackHandler {

@@ -62,6 +62,7 @@ import se.kth.speech.coin.tangrams.iristk.events.Turn;
  * @since 16 Nov 2016
  *
  */
+@Deprecated
 final class GameViewFrameOld<T> extends JFrame implements Observer {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(GameViewFrameOld.class);
