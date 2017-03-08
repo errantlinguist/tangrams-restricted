@@ -92,7 +92,7 @@ final class IconImages {
 	}
 
 	/**
-	 * @return the sortedImgResources
+	 * @return the named icon image resources
 	 */
 	static NavigableMap<String, URL> getIconImageResources() {
 		return ICON_IMAGE_RESOURCES;
