@@ -355,7 +355,6 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 							.map(i -> matrixIdx[i] + piecePosMatrixSize[i]).toArray();
 					for (int rowIdx = matrixIdx[0]; rowIdx < endMatrixIdxs[0]; rowIdx++) {
 						final List<Integer> occupiedRow = posMatrix.getRow(rowIdx);
-						// TODO: set occupied column value for each occupied row
 						for (int colIdx = matrixIdx[1]; colIdx < endMatrixIdxs[1]; colIdx++) {
 							final Integer oldImgId = occupiedRow.set(colIdx, imgId);
 							assert oldImgId == null;
