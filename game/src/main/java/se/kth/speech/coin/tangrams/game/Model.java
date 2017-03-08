@@ -16,7 +16,6 @@
 */
 package se.kth.speech.coin.tangrams.game;
 
-import java.util.Arrays;
 import java.util.Objects;
 
 import se.kth.speech.Matrix;
@@ -125,7 +124,7 @@ public final class Model<T> {
 	}
 
 	public int getOccupiedCoordinateCount() {
-		return (int) Arrays.stream(getCoordinateOccupants().getValues()).filter(Objects::nonNull).count();
+		return (int) getCoordinateOccupants().getValues().stream().filter(Objects::nonNull).count();
 	}
 
 	/*

@@ -16,7 +16,6 @@
 */
 package se.kth.speech.coin.tangrams;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -68,12 +67,12 @@ public final class GameFactoryTest {
 		Assert.assertEquals(expectedModel, actualModel);
 
 		final Set<Integer> expectedModelPieceSet = new HashSet<>(
-				Arrays.asList(expectedModel.getCoordinateOccupants().getValues()));
+				expectedModel.getCoordinateOccupants().getValues());
 		final Set<Integer> actualModelPieceSet = new HashSet<>(
-				Arrays.asList(actualModel.getCoordinateOccupants().getValues()));
+				actualModel.getCoordinateOccupants().getValues());
 		Assert.assertEquals(expectedModelPieceSet, actualModelPieceSet);
 		final Set<Integer> actualWinningModelPieceSet = new HashSet<>(
-				Arrays.asList(actualGame.getWinningModel().getCoordinateOccupants().getValues()));
+				actualGame.getWinningModel().getCoordinateOccupants().getValues());
 		Assert.assertEquals(expectedModelPieceSet, actualWinningModelPieceSet);
 	}
 

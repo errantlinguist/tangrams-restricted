@@ -70,9 +70,9 @@ public final class ModelCoordinateGridPanel<PHBF extends Consumer<? super String
 		 */
 		@Override
 		public Stream<ModelCoordinatePanel<PHBF>> apply(final Model<T> model) {
-			final T[] coordOccupants = model.getCoordinateOccupants().getValues();
-			return IntStream.range(0, coordOccupants.length).mapToObj(coordOccupantArrayIdx -> {
-				final T coordOccupant = coordOccupants[coordOccupantArrayIdx];
+			final List<T> coordOccupants = model.getCoordinateOccupants().getValues();
+			return IntStream.range(0, coordOccupants.size()).mapToObj(coordOccupantArrayIdx -> {
+				final T coordOccupant = coordOccupants.get(coordOccupantArrayIdx);
 				final int[] modelCoords = model.getCoordinatePoint(coordOccupantArrayIdx);
 				final PHBF borderFactory = highlightBorderFactorySupplier.get();
 				final ModelCoordinatePanel<PHBF> result = new ModelCoordinatePanel<>(modelCoords, new BorderLayout(),

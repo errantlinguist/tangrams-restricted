@@ -138,7 +138,7 @@ public final class MatrixTest {
 			@FromDataPoints("valArrayIdxs") final int valArrIdx,
 			@FromDataPoints("matrixIdxPositions") final int matrixIdxPosition) {
 		final int[] dims = m.getDimensions();
-		final int maxIdx = m.getValues().length;
+		final int maxIdx = m.getValues().size();
 		assumeTrue(String.format(
 				"Provided test array index is greater than the maximum (%d) for the %s instance under test.", maxIdx,
 				m.getClass().getSimpleName()), valArrIdx <= maxIdx);

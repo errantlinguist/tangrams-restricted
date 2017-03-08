@@ -16,7 +16,9 @@
 */
 package se.kth.speech;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.ListIterator;
 import java.util.NoSuchElementException;
 
@@ -31,17 +33,41 @@ import java.util.NoSuchElementException;
  *            The type used to represent matrix cell data.
  */
 public final class Matrix<T> {
+	
+	private class RowListIterator extends AbstractRowIterator<List<T>> {
+		
+		/* (non-Javadoc)
+		 * @see se.kth.speech.Matrix.AbstractRowIterator#getRow(int, int)
+		 */
+		@Override
+		protected List<T> getRow(int rowValArrStartIdx, int rowValArrEndIdx) {
+			return values.subList(rowValArrStartIdx, rowValArrEndIdx);
+		}
 
-	private class RowIterator implements ListIterator<T[]> {
+		/* (non-Javadoc)
+		 * @see se.kth.speech.Matrix.AbstractRowIterator#getRowLength(java.lang.Iterable)
+		 */
+		@Override
+		protected int getRowLength(List<T> row) {
+			return row.size();
+		}
+		
+	}
 
-		private final int maxRowValArrStartIdx = getRowValueArrayStartIdxForValueArrayIdx(values.length);
+	private abstract class AbstractRowIterator<R extends Iterable<T>> implements ListIterator<R> {
+		
+		protected abstract R getRow(int rowValArrStartIdx, final int rowValArrEndIdx);
+		
+		protected abstract int getRowLength(R row);
+		
+		private final int maxRowValArrStartIdx = getRowValueArrayStartIdxForValueArrayIdx(values.size());
 
 		private int nextRowIdx = 0;
 
 		private int rowValArrStartIdx = 0;
 
 		@Override
-		public void add(final T[] e) {
+		public void add(final R e) {
 			throw new UnsupportedOperationException();
 		}
 
@@ -56,13 +82,14 @@ public final class Matrix<T> {
 		}
 
 		@Override
-		public T[] next() {
+		public R next() {
 			if (!hasNext()) {
 				throw new NoSuchElementException();
 			}
 			final int cols = getColCount();
 			final int rowValArrEndIdx = rowValArrStartIdx + cols;
-			final T[] result = Arrays.copyOfRange(values, rowValArrStartIdx, rowValArrEndIdx);
+//			final T[] result = Arrays.copyOfRange(values, rowValArrStartIdx, rowValArrEndIdx);
+			R result = getRow(rowValArrEndIdx, rowValArrEndIdx);
 			rowValArrStartIdx = rowValArrEndIdx;
 			nextRowIdx++;
 			return result;
@@ -74,14 +101,15 @@ public final class Matrix<T> {
 		}
 
 		@Override
-		public T[] previous() {
+		public R previous() {
 			if (!hasPrevious()) {
 				throw new NoSuchElementException();
 			}
 			final int cols = getColCount();
 			final int rowValArrEndIdx = rowValArrStartIdx;
 			rowValArrStartIdx -= cols;
-			final T[] result = Arrays.copyOfRange(values, rowValArrStartIdx, rowValArrEndIdx);
+//			final T[] result = Arrays.copyOfRange(values, rowValArrStartIdx, rowValArrEndIdx);
+			R result = getRow(rowValArrEndIdx, rowValArrEndIdx);
 			nextRowIdx--;
 			return result;
 		}
@@ -97,41 +125,43 @@ public final class Matrix<T> {
 		}
 
 		@Override
-		public void set(final T[] e) {
+		public void set(final R e) {
 			final int cols = getColCount();
-			if (e.length != cols) {
+			int rowLength = getRowLength(e);
+			if (getRowLength(e) != cols) {
 				throw new IllegalArgumentException(String.format(
-						"Supplied array length is %d but does not match matrix column count of %d.", e.length, cols));
+						"Supplied array length is %d but does not match matrix column count of %d.", rowLength, cols));
 			}
 			int valArrIdx = rowValArrStartIdx;
 			for (final T val : e) {
-				values[valArrIdx++] = val;
+				values.set(valArrIdx++, val);
 			}
 		}
 	}
 
-	private static <T> T[] copy(final T[] arr) {
-		return Arrays.copyOf(arr, arr.length);
+	private final int colCount;
+
+	private final List<T> values;
+
+	public Matrix(final Matrix<T> copyee) {
+		this(copyee.getValues(), copyee.getDimensions()[1]);
 	}
-
-	private final int[] dims;
-
-	private final T[] values;
-
-	public Matrix(final Matrix<? extends T> copyee) {
-		this(copy(copyee.getValues()), copyee.getDimensions()[1]);
-	}
-
+	
 	public Matrix(final T[] values, final int colCount) {
+		this(Arrays.asList(values), colCount);
+	}
+
+	public Matrix(final List<T> values, final int colCount) {
 		if (colCount < 1) {
 			throw new IllegalArgumentException(String.format("Column count is %d but must be positive.", colCount));
 		}
-		if (values.length < colCount) {
+		if (values.size() < colCount) {
 			throw new IllegalArgumentException(
 					String.format("Column count (%d) is greater than the coordinate point vector length.", colCount));
 		}
+		this.colCount = colCount;
 		{
-			final int lengthRem = values.length % colCount;
+			final int lengthRem = values.size() % colCount;
 			if (lengthRem > 0) {
 				throw new IllegalArgumentException(String.format(
 						"The coordinate point vector length is invalid: It has %d too few elements in order to form a proper 2D matrix.",
@@ -139,32 +169,27 @@ public final class Matrix<T> {
 			}
 		}
 		this.values = values;
-		this.dims = new int[] { values.length / colCount, colCount };
 	}
 
-	/*
-	 * (non-Javadoc)
-	 *
+	/* (non-Javadoc)
 	 * @see java.lang.Object#equals(java.lang.Object)
 	 */
 	@Override
-	public boolean equals(final Object obj) {
-		if (this == obj) {
+	public boolean equals(Object obj) {
+		if (this == obj)
 			return true;
-		}
-		if (obj == null) {
+		if (obj == null)
 			return false;
-		}
-		if (!(obj instanceof Matrix)) {
+		if (!(obj instanceof Matrix))
 			return false;
-		}
-		final Matrix<?> other = (Matrix<?>) obj;
-		if (!Arrays.equals(dims, other.dims)) {
+		Matrix other = (Matrix) obj;
+		if (colCount != other.colCount)
 			return false;
-		}
-		if (!Arrays.equals(values, other.values)) {
+		if (values == null) {
+			if (other.values != null)
+				return false;
+		} else if (!values.equals(other.values))
 			return false;
-		}
 		return true;
 	}
 
@@ -172,7 +197,7 @@ public final class Matrix<T> {
 	 * @return a copy of the dims
 	 */
 	public int[] getDimensions() {
-		return Arrays.copyOf(dims, dims.length);
+		return new int[] { values.size() / colCount, colCount };
 	}
 
 	public int[] getMatrixIndices(final int valueArrayIdx) {
@@ -182,36 +207,42 @@ public final class Matrix<T> {
 	}
 
 	public T getValue(final int[] coords) {
-		return values[getValueArrayIdx(coords)];
+		return values.get(getValueArrayIdx(coords));
 	}
 
-	public T[] getValues() {
+//	public T getColValues(final int colIdx) {
+//		// Get the index of the last row in the matrix
+//		int rowCount = getRowIdx(values.size());
+//		List<T> result = new ArrayList<>(rowCount);
+//		for (RowListIterator rowIter = new RowListIterator(); rowIter.hasNext();) {
+//			List<T> nextRow = rowIter.next();
+//		}
+//	}
+
+	public List<T> getValues() {
 		return values;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 *
+	/* (non-Javadoc)
 	 * @see java.lang.Object#hashCode()
 	 */
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + Arrays.hashCode(dims);
-		result = prime * result + Arrays.hashCode(values);
+		result = prime * result + colCount;
+		result = prime * result + ((values == null) ? 0 : values.hashCode());
 		return result;
 	}
 
-	public ListIterator<T[]> rowIterator() {
-		return new RowIterator();
+	public ListIterator<List<T>> rowIterator() {
+		return new RowListIterator();
 	}
 
 	public T setValue(final int[] coords, final T value) {
-		final T[] values = getValues();
+		final List<T> values = getValues();
 		final int valueArrayIdx = getValueArrayIdx(coords);
-		final T result = values[valueArrayIdx];
-		values[valueArrayIdx] = value;
+		final T result = values.set(valueArrayIdx, value);
 		return result;
 	}
 
@@ -223,16 +254,16 @@ public final class Matrix<T> {
 	@Override
 	public String toString() {
 		final StringBuilder builder = new StringBuilder();
-		builder.append("Matrix [dims=");
-		builder.append(Arrays.toString(dims));
+		builder.append("Matrix [getDimensions()=");
+		builder.append(Arrays.toString(getDimensions()));
 		builder.append(", values=");
-		builder.append(Arrays.toString(values));
+		builder.append(values);
 		builder.append("]");
 		return builder.toString();
 	}
 
 	private int getColCount() {
-		return getDimensions()[1];
+		return colCount;
 	}
 
 	private int getColIdx(final int valueArrayIdx) {

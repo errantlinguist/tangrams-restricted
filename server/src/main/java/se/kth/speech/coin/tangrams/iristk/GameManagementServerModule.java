@@ -72,8 +72,7 @@ public final class GameManagementServerModule extends IrisModule {
 
 			final Game<Integer> game = gameState.getFirst();
 			gameDesc.setModelDescription(new ModelDescription(game.getRemoteController().getModel()));
-			final List<Integer> winningConfig = Arrays
-					.asList(game.getWinningModel().getCoordinateOccupants().getValues());
+			final List<Integer> winningConfig = game.getWinningModel().getCoordinateOccupants().getValues();
 			gameDesc.setWinningConfiguration(
 					winningConfig.stream().map(Objects::toString).collect(Collectors.toList()));
 			gameDesc.setSeed(game.getSeed());

@@ -300,10 +300,11 @@ final class GameBoardPanelFactory implements Function<Collection<ImageVisualizat
 		final int minDimLength = 300;
 		final SizeValidator validator = new SizeValidator(minDimLength, 50, 50);
 		try {
-			final LinkedHashMap<BufferedImage, ImageViewInfo> imgViewInfoDataMap = createImageViewInfoMap(imgVisualizationInfoData,
-					validator);
+			final LinkedHashMap<BufferedImage, ImageViewInfo> imgViewInfoDataMap = createImageViewInfoMap(
+					imgVisualizationInfoData, validator);
 			// Create a list for assigning an ID (i.e. index) to each image
-			final List<Entry<BufferedImage, ImageViewInfo>> imgViewInfoDataList = new ArrayList<>(imgViewInfoDataMap.entrySet());
+			final List<Entry<BufferedImage, ImageViewInfo>> imgViewInfoDataList = new ArrayList<>(
+					imgViewInfoDataMap.entrySet());
 			final Set<Integer> dimensionValues = Sets.newHashSetWithExpectedSize(imgViewInfoDataList.size() + 1);
 			for (final Entry<BufferedImage, ImageViewInfo> imgViewInfoDatum : imgViewInfoDataList) {
 				final ImageViewInfo viewInfo = imgViewInfoDatum.getValue();
@@ -328,10 +329,18 @@ final class GameBoardPanelFactory implements Function<Collection<ImageVisualizat
 				imgViewInfoDataList.forEach(imgViewInfoDatum -> {
 					final ImageViewInfo viewInfo = imgViewInfoDatum.getValue();
 					final ImageRasterizationInfo rasterizationInfo = viewInfo.rasterization;
-					// The number of row cells this image takes up in the position matrix
-//					final int posMatrixRowCellCount = rasterizationInfo
+					// The number of row cells this image takes up in the
+					// position matrix
+					final int posMatrixRowCellCount = rasterizationInfo.getWidth() / rasterizationInfo.getGcd();
+					// The number of column cells this image takes up in the
+					// position matrix
+					final int posMatrixColCellCount = rasterizationInfo.getHeight() / rasterizationInfo.getGcd();
+					LOGGER.debug("Calculateed position grid size {}*{} for \"{}\".", new Object[] {
+							viewInfo.visualization.getResourceLoc(), posMatrixRowCellCount, posMatrixColCellCount });
+					
+					// Randomly pick a space in the matrix
+//					posMatrix.
 				});
-
 
 				// TODO Auto-generated method stub
 				result = new GameBoardPanel(boardSize);

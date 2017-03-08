@@ -19,6 +19,7 @@ package se.kth.speech.coin.tangrams.view;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Graphics;
+import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -61,9 +62,9 @@ final class ModelCoordinatePanelFactory<T, PHBF extends Consumer<? super String>
 
 	@Override
 	public Stream<ModelCoordinatePanel<PHBF>> get() {
-		final T[] coordOccupants = model.getCoordinateOccupants().getValues();
-		return IntStream.range(0, coordOccupants.length).mapToObj(coordOccupantArrayIdx -> {
-			final T coordOccupant = coordOccupants[coordOccupantArrayIdx];
+		final List<T> coordOccupants = model.getCoordinateOccupants().getValues();
+		return IntStream.range(0, coordOccupants.size()).mapToObj(coordOccupantArrayIdx -> {
+			final T coordOccupant = coordOccupants.get(coordOccupantArrayIdx);
 			final int[] modelCoords = model.getCoordinatePoint(coordOccupantArrayIdx);
 			final PHBF borderFactory = highlightBorderFactorySupplier.get();
 			final ModelCoordinatePanel<PHBF> result = new ModelCoordinatePanel<>(modelCoords, new BorderLayout(),

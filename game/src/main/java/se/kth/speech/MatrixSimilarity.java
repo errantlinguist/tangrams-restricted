@@ -83,7 +83,7 @@ public final class MatrixSimilarity {
 		if (!Arrays.equals(dims, m2.getDimensions())) {
 			throw new IllegalArgumentException("Matrix dimensions not equal.");
 		}
-		final int valueCount = m1.getValues().length;
+		final int valueCount = m1.getValues().size();
 		final Map<T, List<T>> result = new HashMap<>(Math.min(valueCount + 1, 16), 1.0f);
 		// The number of possible substitutions already found
 		int possibleCellValueSubstitutionCount = 0;
