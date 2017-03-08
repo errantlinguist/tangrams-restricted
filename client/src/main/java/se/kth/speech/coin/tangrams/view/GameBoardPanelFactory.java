@@ -22,13 +22,16 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.IntSupplier;
 
 import javax.imageio.ImageIO;
 
@@ -69,16 +72,44 @@ final class GameBoardPanelFactory implements Function<Collection<ImageVisualizat
 
 	private static class ImageRasterizationInfo {
 
-		private final int gcd;
+		private static int getGcd(final int width, final int height) {
+			return MathDenominators.gcd(width, height);
+		}
 
-		private final int height;
+		private final IntSupplier heightGetter;
 
-		private final int width;
+		private final IntSupplier widthGetter;
 
-		private ImageRasterizationInfo(final int width, final int height, final int gcd) {
-			this.width = width;
-			this.height = height;
-			this.gcd = gcd;
+		private ImageRasterizationInfo(final IntSupplier widthGetter, final IntSupplier heightGetter) {
+			this.widthGetter = widthGetter;
+			this.heightGetter = heightGetter;
+		}
+
+		private final int[] getAspectRatio() {
+			final int width = getWidth();
+			final int height = getHeight();
+			final int gcd = getGcd(width, height);
+			return new int[] { width / gcd, height / gcd };
+		}
+
+		private int getGcd() {
+			return getGcd(getWidth(), getHeight());
+		}
+
+		private int getHeight() {
+			return heightGetter.getAsInt();
+		}
+
+		private ImageOrientation getOrientation() {
+			return ImageOrientation.getOrientation(getWidth(), getHeight());
+		}
+
+		private int getWidth() {
+			return widthGetter.getAsInt();
+		}
+
+		private int getWidthHeightQuotient() {
+			return widthGetter.getAsInt() / heightGetter.getAsInt();
 		}
 	}
 
@@ -148,11 +179,11 @@ final class GameBoardPanelFactory implements Function<Collection<ImageVisualizat
 			sb.append('\t');
 			final Entry<ImageRasterizationInfo, ?> imgValDatumComments = namedImgValDatumComments.getValue();
 			final ImageRasterizationInfo imgVisualizationInfoDatum = imgValDatumComments.getKey();
-			sb.append(imgVisualizationInfoDatum.width);
+			sb.append(imgVisualizationInfoDatum.getWidth());
 			sb.append('\t');
-			sb.append(imgVisualizationInfoDatum.height);
+			sb.append(imgVisualizationInfoDatum.getHeight());
 			sb.append('\t');
-			sb.append(imgVisualizationInfoDatum.gcd);
+			sb.append(imgVisualizationInfoDatum.getGcd());
 			sb.append('\t');
 			sb.append(imgValDatumComments.getValue());
 		}
@@ -175,16 +206,16 @@ final class GameBoardPanelFactory implements Function<Collection<ImageVisualizat
 
 			{
 				// Size/aspect ratio calculation
-				final int width = initialImg.getWidth();
-				final int height = initialImg.getHeight();
-				LOGGER.debug("Image \"{}\" dims: {}*{}", new Object[] { imgResourceLoc, width, height });
-				final int imgGcd = MathDenominators.gcd(width, height);
-				final ImageRasterizationInfo imgRasterizationInfo = new ImageRasterizationInfo(width, height, imgGcd);
+				final IntSupplier widthGetter = initialImg::getWidth;
+				final IntSupplier heightGetter = initialImg::getHeight;
+				final ImageRasterizationInfo imgRasterizationInfo = new ImageRasterizationInfo(widthGetter,
+						heightGetter);
 				result.put(initialImg, new ImageViewInfo(imgVisualizationInfoDatum, imgRasterizationInfo));
 				{
 					// Validate image
-					final Set<SizeValidator.ValidationComment> validationComments = validator.validate(width, height,
-							imgGcd);
+					final Set<SizeValidator.ValidationComment> validationComments = validator.validate(
+							widthGetter.getAsInt(), heightGetter.getAsInt(),
+							MathDenominators.gcd(widthGetter.getAsInt(), heightGetter.getAsInt()));
 					if (!validationComments.isEmpty()) {
 						badImgs.put(imgResourceLoc, new MutablePair<>(imgRasterizationInfo, validationComments));
 					}
@@ -269,12 +300,14 @@ final class GameBoardPanelFactory implements Function<Collection<ImageVisualizat
 		final int minDimLength = 300;
 		final SizeValidator validator = new SizeValidator(minDimLength, 50, 50);
 		try {
-			final LinkedHashMap<BufferedImage, ImageViewInfo> imgViewInfoData = createImageViewInfoMap(imgVisualizationInfoData,
+			final LinkedHashMap<BufferedImage, ImageViewInfo> imgViewInfoDataMap = createImageViewInfoMap(imgVisualizationInfoData,
 					validator);
-			final Set<Integer> dimensionValues = Sets.newHashSetWithExpectedSize(imgViewInfoData.size() + 1);
-			for (final Entry<BufferedImage, ImageViewInfo> imgViewInfoDatum : imgViewInfoData.entrySet()) {
+			// Create a list for assigning an ID (i.e. index) to each image
+			final List<Entry<BufferedImage, ImageViewInfo>> imgViewInfoDataList = new ArrayList<>(imgViewInfoDataMap.entrySet());
+			final Set<Integer> dimensionValues = Sets.newHashSetWithExpectedSize(imgViewInfoDataList.size() + 1);
+			for (final Entry<BufferedImage, ImageViewInfo> imgViewInfoDatum : imgViewInfoDataList) {
 				final ImageViewInfo viewInfo = imgViewInfoDatum.getValue();
-				dimensionValues.add(viewInfo.rasterization.gcd);
+				dimensionValues.add(viewInfo.rasterization.getGcd());
 			}
 			// Get the GCD for all components in the view
 			final int greatestCommonDenominator = MathDenominators.gcd(dimensionValues.iterator());
@@ -290,6 +323,16 @@ final class GameBoardPanelFactory implements Function<Collection<ImageVisualizat
 				LOGGER.info("Creating a position matrix of size {}*{}.", posMatrixRows, posMatrixCols);
 				final Integer[] posMatrixBackingArray = new Integer[posMatrixRows * posMatrixCols];
 				final Matrix<Integer> posMatrix = new Matrix<>(posMatrixBackingArray, posMatrixCols);
+
+				// Randomly place each image in the position matrix
+				imgViewInfoDataList.forEach(imgViewInfoDatum -> {
+					final ImageViewInfo viewInfo = imgViewInfoDatum.getValue();
+					final ImageRasterizationInfo rasterizationInfo = viewInfo.rasterization;
+					// The number of row cells this image takes up in the position matrix
+//					final int posMatrixRowCellCount = rasterizationInfo
+				});
+
+
 				// TODO Auto-generated method stub
 				result = new GameBoardPanel(boardSize);
 			} else {
