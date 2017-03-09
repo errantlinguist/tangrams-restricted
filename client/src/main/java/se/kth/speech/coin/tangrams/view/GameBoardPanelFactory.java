@@ -392,9 +392,11 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 		final ListIterator<List<Integer>> rowIter = posMatrix.rowIterator(occupiedRegion.getXLowerBound());
 		for (int rowIdx = rowIter.nextIndex(); rowIdx < occupiedRegion.getXUpperBound(); rowIdx++) {
 			final List<Integer> occupiedRow = rowIter.next();
-			for (int colIdx = occupiedRegion.getYLowerBound(); colIdx < occupiedRegion.getYUpperBound(); colIdx++) {
-				final Integer oldImgId = occupiedRow.set(colIdx, pieceId);
-				assert oldImgId == null;
+			final ListIterator<Integer> rowCellIter = occupiedRow.listIterator(occupiedRegion.getYLowerBound());
+			for (int colIdx = rowCellIter.nextIndex(); colIdx < occupiedRegion.getYUpperBound(); colIdx++) {
+				final Integer nextOldPieceId = rowCellIter.next();
+				assert nextOldPieceId == null;
+				rowCellIter.set(pieceId);
 			}
 		}
 	}
