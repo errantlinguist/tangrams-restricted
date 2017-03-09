@@ -172,8 +172,7 @@ public final class SpatialMap<V> {
 			// Intersection = Empty
 			// else:
 			// Intersection = Not Empty
-			return !(this.getXUpperBound() < other.getXLowerBound() || other.getXUpperBound() < this.getXLowerBound()
-					|| this.getYUpperBound() < other.getYLowerBound() || this.getYUpperBound() < this.getYLowerBound());
+			return intersectsX(other) && intersectsY(other);
 
 		}
 
