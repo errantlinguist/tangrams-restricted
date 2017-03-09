@@ -370,7 +370,7 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 
 		/*
 		 * (non-Javadoc)
-		 * 
+		 *
 		 * @see java.util.function.BiFunction#apply(java.lang.Object,
 		 * java.lang.Object)
 		 */
@@ -622,8 +622,8 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 	}
 
 	private String createFailedPlacementErrorMsg(final List<?> failedPlacements) {
-		final String errorMsgPrefix = String.format("Some images could not be placed successfully after %d retries:",
-				maxPlacementRetriesPerImg);
+		final String errorMsgPrefix = String.format("%d image(s) could not be placed successfully after %d retries:",
+				failedPlacements.size(), maxPlacementRetriesPerImg);
 		final StringBuilder sb = new StringBuilder(errorMsgPrefix.length() + failedPlacements.size() * 16);
 		sb.append(errorMsgPrefix);
 		for (final Object failedPlacement : failedPlacements) {
