@@ -185,13 +185,6 @@ public final class SpatialMap<V> {
 			return subsumes(this.getYLowerBound(), this.getYUpperBound(), y);
 		}
 
-		// private boolean intersectsX(Region other){
-		// if (this.get)
-		//
-		// return this.getXLowerBound() < other.getXLowerBound() &&
-		// other.getXUpperBound() < this.getXUpperBound();
-		// }
-
 		public boolean subsumesY(final Region other) {
 			return subsumesY(other.getYLowerBound()) && subsumesY(other.getYUpperBound());
 		}
