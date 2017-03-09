@@ -107,11 +107,6 @@ public final class SpatialMap<V> {
 			return getXUpperBound() - getXLowerBound();
 		}
 
-		// public boolean intersects(final Region other) {
-		// return subsumesX(other.getXLowerBound(), other.getXUpperBound())
-		// || subsumesY(other.getYLowerBound(), other.getYUpperBound());
-		// }
-
 		public int getLengthY() {
 			return getYUpperBound() - getYLowerBound();
 		}
