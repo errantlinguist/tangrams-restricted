@@ -45,12 +45,16 @@ public final class SpatialMap<V> {
 	 */
 	public static final class Region {
 
+		private static boolean subsumes(final int lower, final int upper, final int point) {
+			return lower <= point && point <= upper;
+		}
+
 		private final int xLowerBound;
 
 		private final int xUpperBound;
-		
+
 		private final int yLowerBound;
-		
+
 		private final int yUpperBound;
 
 		public Region(final int xLowerBound, final int xUpperBound, final int yLowerBound, final int yUpperBound) {
@@ -65,7 +69,7 @@ public final class SpatialMap<V> {
 
 		/*
 		 * (non-Javadoc)
-		 * 
+		 *
 		 * @see java.lang.Object#equals(java.lang.Object)
 		 */
 		@Override
@@ -103,14 +107,14 @@ public final class SpatialMap<V> {
 			return getXUpperBound() - getXLowerBound();
 		}
 
-		public int getLengthY() {
-			return getYUpperBound() - getYLowerBound();
-		}
-
 		// public boolean intersects(final Region other) {
 		// return subsumesX(other.getXLowerBound(), other.getXUpperBound())
 		// || subsumesY(other.getYLowerBound(), other.getYUpperBound());
 		// }
+
+		public int getLengthY() {
+			return getYUpperBound() - getYLowerBound();
+		}
 
 		/**
 		 * @return the xLowerBound
@@ -142,7 +146,7 @@ public final class SpatialMap<V> {
 
 		/*
 		 * (non-Javadoc)
-		 * 
+		 *
 		 * @see java.lang.Object#hashCode()
 		 */
 		@Override
@@ -170,9 +174,36 @@ public final class SpatialMap<V> {
 
 		}
 
+		public boolean subsumes(final Region other) {
+			return subsumesX(other) && subsumesY(other);
+		}
+
+		public boolean subsumesX(final int x) {
+			return subsumes(this.getXLowerBound(), this.getXUpperBound(), x);
+		}
+
+		public boolean subsumesX(final Region other) {
+			return subsumesX(other.getXLowerBound()) && subsumesX(other.getXUpperBound());
+		}
+
+		public boolean subsumesY(final int y) {
+			return subsumes(this.getYLowerBound(), this.getYUpperBound(), y);
+		}
+
+		// private boolean intersectsX(Region other){
+		// if (this.get)
+		//
+		// return this.getXLowerBound() < other.getXLowerBound() &&
+		// other.getXUpperBound() < this.getXUpperBound();
+		// }
+
+		public boolean subsumesY(final Region other) {
+			return subsumesY(other.getYLowerBound()) && subsumesY(other.getYUpperBound());
+		}
+
 		/*
 		 * (non-Javadoc)
-		 * 
+		 *
 		 * @see java.lang.Object#toString()
 		 */
 		@Override
@@ -192,6 +223,10 @@ public final class SpatialMap<V> {
 
 		private boolean areBoundariesValid() {
 			return getXLowerBound() <= getXUpperBound() && getYLowerBound() <= getYUpperBound();
+		}
+
+		private boolean intersectsY(final Region other) {
+			return this.getYLowerBound() < other.getYLowerBound() && other.getYUpperBound() < this.getYUpperBound();
 		}
 
 		// public boolean subsumes(final Region other) {

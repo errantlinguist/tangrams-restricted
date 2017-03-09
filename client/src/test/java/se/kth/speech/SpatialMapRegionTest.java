@@ -164,82 +164,82 @@ public final class SpatialMapRegionTest {
 	 * // * Test method for // *
 	 * {@link se.kth.speech.SpatialMap.Region#subsumes(SpatialMap.Region)}. //
 	 */
-	// @Test
-	// public final void testSubsumesNegative() {
-	// final Region superRegion = new Region(3, 6, 4, 6);
-	// final Region subRegion = new Region(3, 4, 5, 6);
-	// Assert.assertTrue(subRegion.subsumes(superRegion));
-	// }
-	//
-	// /**
-	// * Test method for
-	// * {@link se.kth.speech.SpatialMap.Region#subsumes(SpatialMap.Region)}.
-	// */
-	// @Test
-	// public final void testSubsumesNegativeIntersecting() {
-	// final Region r = new Region(0, 2, 0, 1);
-	// Assert.assertFalse(r.subsumes(new Region(0, 3, 1, 3)));
-	// }
-	//
-	// /**
-	// * Test method for
-	// * {@link se.kth.speech.SpatialMap.Region#subsumes(SpatialMap.Region)}.
-	// */
-	// @Test
-	// public final void testSubsumesPositive() {
-	// final Region superRegion = new Region(3, 6, 4, 6);
-	// final Region subRegion = new Region(3, 4, 5, 6);
-	// Assert.assertTrue(superRegion.subsumes(subRegion));
-	// }
-	//
-	// /**
-	// * Test method for
-	// * {@link se.kth.speech.SpatialMap.Region#subsumes(SpatialMap.Region)}.
-	// */
-	// @Test
-	// public final void testSubsumesSelf() {
-	// final Region superRegion = new Region(3, 6, 4, 6);
-	// Assert.assertTrue(superRegion.subsumes(superRegion));
-	// }
-	//
-	// /**
-	// * Test method for
-	// * {@link se.kth.speech.SpatialMap.Region#subsumesX(int, int[])}.
-	// */
-	// @Test
-	// public final void testSubsumesXNegative() {
-	// final Region r = new Region(0, 2, 3, 4);
-	// Assert.assertFalse(r.subsumesX(4));
-	// }
-	//
-	// /**
-	// * Test method for
-	// * {@link se.kth.speech.SpatialMap.Region#subsumesX(int, int[])}.
-	// */
-	// @Test
-	// public final void testSubsumesXPositive() {
-	// final Region r = new Region(0, 2, 3, 4);
-	// Assert.assertTrue(r.subsumesX(2));
-	// }
-	//
-	// /**
-	// * Test method for
-	// * {@link se.kth.speech.SpatialMap.Region#subsumesY(int, int[])}.
-	// */
-	// @Test
-	// public final void testSubsumesYNegative() {
-	// final Region r = new Region(0, 2, 3, 4);
-	// Assert.assertFalse(r.subsumesY(5));
-	// }
-	//
-	// /**
-	// * Test method for
-	// * {@link se.kth.speech.SpatialMap.Region#subsumesY(int, int[])}.
-	// */
-	// @Test
-	// public final void testSubsumesYPositive() {
-	// final Region r = new Region(0, 2, 3, 4);
-	// Assert.assertTrue(r.subsumesY(4));
-	// }
+	 @Test
+	 public final void testSubsumesNegative() {
+	 final Region superRegion = new Region(3, 6, 4, 6);
+	 final Region subRegion = new Region(3, 4, 5, 6);
+	 Assert.assertFalse(subRegion.subsumes(superRegion));
+	 }
+	
+	 /**
+	 * Test method for
+	 * {@link se.kth.speech.SpatialMap.Region#subsumes(SpatialMap.Region)}.
+	 */
+	 @Test
+	 public final void testSubsumesNegativeIntersecting() {
+	 final Region r = new Region(0, 2, 0, 1);
+	 Assert.assertFalse(r.subsumes(new Region(0, 3, 1, 3)));
+	 }
+	
+	 /**
+	 * Test method for
+	 * {@link se.kth.speech.SpatialMap.Region#subsumes(SpatialMap.Region)}.
+	 */
+	 @Test
+	 public final void testSubsumesPositive() {
+	 final Region superRegion = new Region(3, 6, 4, 6);
+	 final Region subRegion = new Region(3, 4, 5, 6);
+	 Assert.assertTrue(superRegion.subsumes(subRegion));
+	 }
+	
+	 /**
+	 * Test method for
+	 * {@link se.kth.speech.SpatialMap.Region#subsumes(SpatialMap.Region)}.
+	 */
+	 @Test
+	 public final void testSubsumesSelf() {
+	 final Region superRegion = new Region(3, 6, 4, 6);
+	 Assert.assertTrue(superRegion.subsumes(superRegion));
+	 }
+	
+	 /**
+	 * Test method for
+	 * {@link se.kth.speech.SpatialMap.Region#subsumesX(int, int[])}.
+	 */
+	 @Test
+	 public final void testSubsumesXNegative() {
+	 final Region r = new Region(0, 2, 3, 4);
+	 Assert.assertFalse(r.subsumesX(4));
+	 }
+	
+	 /**
+	 * Test method for
+	 * {@link se.kth.speech.SpatialMap.Region#subsumesX(int, int[])}.
+	 */
+	 @Test
+	 public final void testSubsumesXPositive() {
+	 final Region r = new Region(0, 2, 3, 4);
+	 Assert.assertTrue(r.subsumesX(2));
+	 }
+	
+	 /**
+	 * Test method for
+	 * {@link se.kth.speech.SpatialMap.Region#subsumesY(int, int[])}.
+	 */
+	 @Test
+	 public final void testSubsumesYNegative() {
+	 final Region r = new Region(0, 2, 3, 4);
+	 Assert.assertFalse(r.subsumesY(5));
+	 }
+	
+	 /**
+	 * Test method for
+	 * {@link se.kth.speech.SpatialMap.Region#subsumesY(int, int[])}.
+	 */
+	 @Test
+	 public final void testSubsumesYPositive() {
+	 final Region r = new Region(0, 2, 3, 4);
+	 Assert.assertTrue(r.subsumesY(4));
+	 }
 
 }
