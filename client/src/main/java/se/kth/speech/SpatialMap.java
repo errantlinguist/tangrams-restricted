@@ -44,10 +44,39 @@ public final class SpatialMap<V> {
 	 */
 	public static final class Region {
 
+		private static int getXLowerBound(final int[] boundaries) {
+			return boundaries[0];
+		}
+
+		private static int getXUpperBound(final int[] boundaries) {
+			return boundaries[1];
+		}
+
+		private static int getYLowerBound(final int[] boundaries) {
+			return boundaries[2];
+		}
+
+		private static int getYUpperBound(final int[] boundaries) {
+			return boundaries[3];
+		}
+
+		private static boolean isBoundaryArrayValid(final int[] boundaries) {
+			return getXLowerBound(boundaries) <= getXUpperBound(boundaries)
+					&& getYLowerBound(boundaries) <= getYUpperBound(boundaries);
+		}
+
 		private final int[] boundaries;
 
 		public Region(final int xLowerBound, final int xUpperBound, final int yLowerBound, final int yUpperBound) {
-			boundaries = new int[] { xLowerBound, xUpperBound, yLowerBound, yUpperBound };
+			this(new int[] { xLowerBound, xUpperBound, yLowerBound, yUpperBound });
+		}
+
+		Region(final int[] boundaries) {
+			if (!isBoundaryArrayValid(boundaries)) {
+				throw new IllegalArgumentException(
+						String.format("Boundary array is invalid: %s", Arrays.toString(boundaries)));
+			}
+			this.boundaries = boundaries;
 		}
 
 		/*
@@ -74,19 +103,19 @@ public final class SpatialMap<V> {
 		}
 
 		public int getXLowerBound() {
-			return boundaries[0];
+			return getXLowerBound(boundaries);
 		}
 
 		public int getXUpperBound() {
-			return boundaries[1];
+			return getXUpperBound(boundaries);
 		}
 
 		public int getYLowerBound() {
-			return boundaries[2];
+			return getYLowerBound(boundaries);
 		}
 
 		public int getYUpperBound() {
-			return boundaries[3];
+			return getYUpperBound(boundaries);
 		}
 
 		/*
@@ -103,15 +132,32 @@ public final class SpatialMap<V> {
 		}
 
 		public boolean intersects(final Region other) {
-			final int otherXLowerBound = other.getXLowerBound();
-			final int otherXUpperBound = other.getXUpperBound();
-			// if (otherXLowerBound > this.getXLowerBound() && otherXLowerBound
-			// < this.getXUpperBound()
-			// || ){
-			//
-			// }
-			// TODO: Finish implementation
-			return false;
+			return subsumesX(other.getXLowerBound(), other.getXUpperBound())
+					|| subsumesY(other.getYLowerBound(), other.getYUpperBound());
+		}
+
+		public boolean subsumesX(final int firstX, final int... nextXs) {
+			boolean result = subsumesX(firstX);
+			if (!result) {
+				for (final int nextX : nextXs) {
+					if (result = subsumesX(nextX)) {
+						break;
+					}
+				}
+			}
+			return result;
+		}
+
+		public boolean subsumesY(final int firstY, final int... nextYs) {
+			boolean result = subsumesY(firstY);
+			if (!result) {
+				for (final int nextY : nextYs) {
+					if (result = subsumesY(nextY)) {
+						break;
+					}
+				}
+			}
+			return result;
 		}
 
 		/*
@@ -121,7 +167,15 @@ public final class SpatialMap<V> {
 		 */
 		@Override
 		public String toString() {
-			return "SpatialRegion [boundaries=" + Arrays.toString(boundaries) + "]";
+			return "Region [boundaries=" + Arrays.toString(boundaries) + "]";
+		}
+
+		private boolean subsumesX(final int x) {
+			return getXLowerBound() <= x && x <= getXUpperBound();
+		}
+
+		private boolean subsumesY(final int y) {
+			return getYLowerBound() <= y && y <= getYUpperBound();
 		}
 
 	}
