@@ -105,14 +105,14 @@ final class GameBoardPanel extends Canvas {
 
 	}
 
+	private static final int IMG_SCALING_HINTS = Image.SCALE_SMOOTH;
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(GameBoardPanel.class);
 
 	/**
 	 *
 	 */
 	private static final long serialVersionUID = 6258829324465894025L;
-
-	private static final int IMG_SCALING_HINTS = Image.SCALE_SMOOTH;
 
 	private static void appendRowTableRepr(final Iterator<?> rowCellIter, final StringBuilder sb) {
 		final String nullValRepr = "-";
@@ -227,6 +227,16 @@ final class GameBoardPanel extends Canvas {
 		}
 		}
 		return result;
+	}
+
+	private static Image scaleImageToGridSize(final Image img, final SpatialMap.Region occupiedGridRegion, final int colWidth,
+			final int rowHeight) {
+		// NOTE: occupied region is denoted in matrix rows*columns
+		// "y" is matrix columns, thus left-to-right
+		final int imgWidth = colWidth * occupiedGridRegion.getLengthY();
+		// "x" is matrix rows, thus top-to-bottom
+		final int imgHeight = rowHeight * occupiedGridRegion.getLengthX();
+		return img.getScaledInstance(imgWidth, imgHeight, IMG_SCALING_HINTS);
 	}
 
 	private final SpatialMap<? extends Entry<? extends Image, ImageViewInfo>> imagePlacements;
@@ -456,16 +466,6 @@ final class GameBoardPanel extends Canvas {
 		final int rowHeight = getGridRowHeight();
 		// "x" is matrix rows, thus top-to-bottom
 		final int imgHeight = rowHeight * occupiedGridRegion.getLengthX();
-	}
-
-	private Image scaleImageToGridSize(final Image img, final SpatialMap.Region occupiedGridRegion, final int colWidth,
-			final int rowHeight) {
-		// NOTE: occupied region is denoted in matrix rows*columns
-		// "y" is matrix columns, thus left-to-right
-		final int imgWidth = colWidth * occupiedGridRegion.getLengthY();
-		// "x" is matrix rows, thus top-to-bottom
-		final int imgHeight = rowHeight * occupiedGridRegion.getLengthX();
-		return img.getScaledInstance(imgWidth, imgHeight, IMG_SCALING_HINTS);
 	}
 
 }
