@@ -16,7 +16,6 @@
 */
 package se.kth.speech;
 
-import java.util.Arrays;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -46,44 +45,25 @@ public final class SpatialMap<V> {
 	 */
 	public static final class Region {
 
-		private static int getXLowerBound(final int[] boundaries) {
-			return boundaries[0];
-		}
+		private final int xLowerBound;
 
-		private static int getXUpperBound(final int[] boundaries) {
-			return boundaries[1];
-		}
-
-		private static int getYLowerBound(final int[] boundaries) {
-			return boundaries[2];
-		}
-
-		private static int getYUpperBound(final int[] boundaries) {
-			return boundaries[3];
-		}
-
-		private static boolean isBoundaryArrayValid(final int[] boundaries) {
-			return getXLowerBound(boundaries) <= getXUpperBound(boundaries)
-					&& getYLowerBound(boundaries) <= getYUpperBound(boundaries);
-		}
-
-		private final int[] boundaries;
+		private final int xUpperBound;
+		private final int yLowerBound;
+		private final int yUpperBound;
 
 		public Region(final int xLowerBound, final int xUpperBound, final int yLowerBound, final int yUpperBound) {
-			this(new int[] { xLowerBound, xUpperBound, yLowerBound, yUpperBound });
-		}
-
-		Region(final int[] boundaries) {
-			if (!isBoundaryArrayValid(boundaries)) {
-				throw new IllegalArgumentException(
-						String.format("Boundary array is invalid: %s", Arrays.toString(boundaries)));
+			this.xLowerBound = xLowerBound;
+			this.xUpperBound = xUpperBound;
+			this.yLowerBound = yLowerBound;
+			this.yUpperBound = yUpperBound;
+			if (!areBoundariesValid()) {
+				throw new IllegalArgumentException("Boundary values are invalid.");
 			}
-			this.boundaries = boundaries;
 		}
 
 		/*
 		 * (non-Javadoc)
-		 *
+		 * 
 		 * @see java.lang.Object#equals(java.lang.Object)
 		 */
 		@Override
@@ -98,57 +78,81 @@ public final class SpatialMap<V> {
 				return false;
 			}
 			final Region other = (Region) obj;
-			if (!Arrays.equals(boundaries, other.boundaries)) {
+			if (xLowerBound != other.xLowerBound) {
+				return false;
+			}
+			if (xUpperBound != other.xUpperBound) {
+				return false;
+			}
+			if (yLowerBound != other.yLowerBound) {
+				return false;
+			}
+			if (yUpperBound != other.yUpperBound) {
 				return false;
 			}
 			return true;
 		}
-		
-		public int[] getDimensions(){
-			return new int[]{getLengthX(), getLengthY()};
+
+		public int[] getDimensions() {
+			return new int[] { getLengthX(), getLengthY() };
 		}
 
-		public int getLengthX(){
+		public int getLengthX() {
 			return getXUpperBound() - getXLowerBound();
 		}
 
-		public int getLengthY(){
+		public int getLengthY() {
 			return getYUpperBound() - getYLowerBound();
-		}
-
-		public int getXLowerBound() {
-			return getXLowerBound(boundaries);
-		}
-
-		public int getXUpperBound() {
-			return getXUpperBound(boundaries);
-		}
-		
-		public int getYLowerBound() {
-			return getYLowerBound(boundaries);
-		}
-		
-		public int getYUpperBound() {
-			return getYUpperBound(boundaries);
-		}
-
-		/*
-		 * (non-Javadoc)
-		 *
-		 * @see java.lang.Object#hashCode()
-		 */
-		@Override
-		public int hashCode() {
-			final int prime = 31;
-			int result = 1;
-			result = prime * result + Arrays.hashCode(boundaries);
-			return result;
 		}
 
 		// public boolean intersects(final Region other) {
 		// return subsumesX(other.getXLowerBound(), other.getXUpperBound())
 		// || subsumesY(other.getYLowerBound(), other.getYUpperBound());
 		// }
+
+		/**
+		 * @return the xLowerBound
+		 */
+		public int getXLowerBound() {
+			return xLowerBound;
+		}
+
+		/**
+		 * @return the xUpperBound
+		 */
+		public int getXUpperBound() {
+			return xUpperBound;
+		}
+
+		/**
+		 * @return the yLowerBound
+		 */
+		public int getYLowerBound() {
+			return yLowerBound;
+		}
+
+		/**
+		 * @return the yUpperBound
+		 */
+		public int getYUpperBound() {
+			return yUpperBound;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see java.lang.Object#hashCode()
+		 */
+		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + xLowerBound;
+			result = prime * result + xUpperBound;
+			result = prime * result + yLowerBound;
+			result = prime * result + yUpperBound;
+			return result;
+		}
 
 		public boolean intersects(final Region other) {
 			// http://stackoverflow.com/a/13390495/1391325
@@ -162,6 +166,30 @@ public final class SpatialMap<V> {
 			return !(this.getXUpperBound() < other.getXLowerBound() || other.getXUpperBound() < this.getXLowerBound()
 					|| this.getYUpperBound() < other.getYLowerBound() || this.getYUpperBound() < this.getYLowerBound());
 
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see java.lang.Object#toString()
+		 */
+		@Override
+		public String toString() {
+			final StringBuilder builder = new StringBuilder();
+			builder.append("Region [xLowerBound=");
+			builder.append(xLowerBound);
+			builder.append(", xUpperBound=");
+			builder.append(xUpperBound);
+			builder.append(", yLowerBound=");
+			builder.append(yLowerBound);
+			builder.append(", yUpperBound=");
+			builder.append(yUpperBound);
+			builder.append("]");
+			return builder.toString();
+		}
+
+		private boolean areBoundariesValid() {
+			return getXLowerBound() <= getXUpperBound() && getYLowerBound() <= getYUpperBound();
 		}
 
 		// public boolean subsumes(final Region other) {
@@ -196,16 +224,6 @@ public final class SpatialMap<V> {
 		// }
 		// return result;
 		// }
-
-		/*
-		 * (non-Javadoc)
-		 *
-		 * @see java.lang.Object#toString()
-		 */
-		@Override
-		public String toString() {
-			return "Region [boundaries=" + Arrays.toString(boundaries) + "]";
-		}
 
 		// private boolean subsumesX(final int x) {
 		// return getXLowerBound() <= x && x <= getXUpperBound();
