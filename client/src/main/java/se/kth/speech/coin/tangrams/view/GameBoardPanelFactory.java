@@ -303,7 +303,6 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 						final Integer oldImgId = occupiedRow.set(colIdx, imgId);
 						assert oldImgId == null;
 					}
-					System.out.println(occupiedRow);
 				}
 				occupiedRegions.put(imgRegion, imgViewInfoDatum);
 			}
@@ -379,6 +378,10 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 				final Integer[] posMatrixBackingArray = new Integer[posMatrixRows * posMatrixCols];
 				final Matrix<Integer> posMatrix = new Matrix<>(posMatrixBackingArray, posMatrixCols);
 				fillMatrix(imgViewInfoDataList, posMatrix, rnd);
+				for (int rowIdx = 0; rowIdx < posMatrix.getDimensions()[0]; rowIdx++){
+					List<Integer> row = posMatrix.getRow(rowIdx);
+					System.out.println(row);
+				}
 				// TODO Auto-generated method stub
 				result = new GameBoardPanel(boardSize);
 			} else {
