@@ -19,17 +19,16 @@ package se.kth.speech.coin.tangrams.view;
 import java.awt.BasicStroke;
 import java.awt.Canvas;
 import java.awt.Dimension;
+import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.Stroke;
-import java.awt.image.BufferedImage;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map.Entry;
-import java.util.Set;
+import java.util.Objects;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,23 +45,24 @@ final class GameBoardPanel extends Canvas {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(GameBoardPanel.class);
 
-	private static boolean isDimensionDivisibleIntoGrid(Dimension dim, Matrix<?> matrix) {
-		int[] matrixDims = matrix.getDimensions();
-		return dim.getHeight() % matrixDims[0] == 0 && dim.getWidth() % matrixDims[1] == 0;
-	}
-
 	/**
 	 *
 	 */
 	private static final long serialVersionUID = 6258829324465894025L;
+
+	private static boolean isDimensionDivisibleIntoGrid(final Dimension dim, final Matrix<?> matrix) {
+		final int[] matrixDims = matrix.getDimensions();
+		return dim.getHeight() % matrixDims[0] == 0 && dim.getWidth() % matrixDims[1] == 0;
+	}
 
 	private final Matrix<Integer> posMatrix;
 
 	private final SpatialMap<? extends Entry<? extends Image, ImageViewInfo>> imagePlacements;
 
 	public GameBoardPanel(final Dimension boardSize,
-			List<? extends Entry<? extends Image, ImageViewInfo>> imgViewInfoDataList, Matrix<Integer> posMatrix,
-			SpatialMap<? extends Entry<? extends Image, ImageViewInfo>> imagePlacements) {
+			final List<? extends Entry<? extends Image, ImageViewInfo>> imgViewInfoDataList,
+			final Matrix<Integer> posMatrix,
+			final SpatialMap<? extends Entry<? extends Image, ImageViewInfo>> imagePlacements) {
 		if (!isDimensionDivisibleIntoGrid(boardSize, posMatrix)) {
 			throw new IllegalArgumentException(String.format("Board %s not divisble into matrix with dimensions %s.",
 					boardSize, Arrays.toString(posMatrix.getDimensions())));
@@ -70,58 +70,89 @@ final class GameBoardPanel extends Canvas {
 		this.posMatrix = posMatrix;
 		this.imagePlacements = imagePlacements;
 		setSize(boardSize);
+
 	}
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.awt.Canvas#paint(java.awt.Graphics)
 	 */
 	@Override
-	public void paint(Graphics g) {
-		int[] matrixDims = posMatrix.getDimensions();
+	public void paint(final Graphics g) {
+		final int[] matrixDims = posMatrix.getDimensions();
 		final int rowHeight = getHeight() / matrixDims[0];
 		final int colWidth = getWidth() / matrixDims[1];
 
-		{
-			// Draw a grid (for debugging/devel)
-			int nextRowY = 0;
-			// http://stackoverflow.com/a/21989406/1391325
-			// creates a copy of the Graphics instance
-			Graphics2D gridDrawingG = (Graphics2D) g.create();
-			// set the stroke of the copy, not the original
-			Stroke dashed = new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[] { 1 }, 0);
-			gridDrawingG.setStroke(dashed);
-			for (ListIterator<List<Integer>> matrixRowIter = posMatrix.rowIterator(); matrixRowIter.hasNext();) {
-				int rowIdx = matrixRowIter.nextIndex();
-				gridDrawingG.drawLine(0, nextRowY, getWidth(), nextRowY);
-				final List<Integer> matrixRow = matrixRowIter.next();
-				for (ListIterator<Integer> matrixRowCellIter = matrixRow.listIterator(); matrixRowCellIter.hasNext();) {
-					int colIdx = matrixRowCellIter.nextIndex();
-					Integer pieceId = matrixRowCellIter.next();
-				}
-				nextRowY += rowHeight;
-			}
-			
-			int nextColX = 0;
-			for (int colIdx = 0; colIdx < matrixDims[1]; ++colIdx){
-				gridDrawingG.drawLine(nextColX, 0, nextColX, getHeight());
-				nextColX += colWidth;
-			}
-		}
+		// Draw a grid (for debugging/devel)
+		// drawGrid(g);
+		drawPieceIds(g);
 
-		Iterable<? extends Entry<? extends Entry<? extends Image, ImageViewInfo>, SpatialMap.Region>> elementRegions = imagePlacements
+		final Iterable<? extends Entry<? extends Entry<? extends Image, ImageViewInfo>, SpatialMap.Region>> elementRegions = imagePlacements
 				.elementRegions();
-		for (Entry<? extends Entry<? extends Image, ImageViewInfo>, SpatialMap.Region> elementRegion : elementRegions) {
-			Entry<? extends Image, ImageViewInfo> pieceDisplayInfo = elementRegion.getKey();
+		for (final Entry<? extends Entry<? extends Image, ImageViewInfo>, SpatialMap.Region> elementRegion : elementRegions) {
+			final Entry<? extends Image, ImageViewInfo> pieceDisplayInfo = elementRegion.getKey();
 			final Image img = pieceDisplayInfo.getKey();
-			SpatialMap.Region region = elementRegion.getValue();
+			final SpatialMap.Region region = elementRegion.getValue();
 
 			final int imgStartX = region.getXLowerBound() * colWidth;
 			final int imgStartY = region.getYLowerBound() * rowHeight;
 			// final int imgEndX = region.getXUpperBound() * colWidth;
 			// final int imgEndY = region.getYUpperBound() * rowHeight;
 			// g.drawImage(img, imgStartX, imgStartY, null);
+		}
+	}
+
+	private void drawGrid(final Graphics g) {
+		final int[] matrixDims = posMatrix.getDimensions();
+
+		// Row lines
+		final int rowHeight = getHeight() / matrixDims[0];
+		int nextRowY = 0;
+		// http://stackoverflow.com/a/21989406/1391325
+		// creates a copy of the Graphics instance
+		final Graphics2D gridDrawingG = (Graphics2D) g.create();
+		// set the stroke of the copy, not the original
+		final Stroke dashed = new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[] { 1 }, 0);
+		gridDrawingG.setStroke(dashed);
+		for (final ListIterator<List<Integer>> matrixRowIter = posMatrix.rowIterator(); matrixRowIter.hasNext();) {
+			gridDrawingG.drawLine(0, nextRowY, getWidth(), nextRowY);
+			nextRowY += rowHeight;
+		}
+
+		// Column lines
+		final int colWidth = getWidth() / matrixDims[1];
+		int nextColX = 0;
+		for (int colIdx = 0; colIdx < matrixDims[1]; ++colIdx) {
+			gridDrawingG.drawLine(nextColX, 0, nextColX, getHeight());
+			nextColX += colWidth;
+		}
+	}
+
+	private void drawPieceIds(final Graphics g) {
+		final int[] matrixDims = posMatrix.getDimensions();
+		final int rowHeight = getHeight() / matrixDims[0];
+		final int colWidth = getWidth() / matrixDims[1];
+		final FontMetrics fm = g.getFontMetrics();
+		int nextRowY = 0;
+		for (final ListIterator<List<Integer>> matrixRowIter = posMatrix.rowIterator(); matrixRowIter.hasNext();) {
+			final List<Integer> matrixRow = matrixRowIter.next();
+			final int rowIdx = matrixRowIter.nextIndex();
+
+			int nextColX = 0;
+			for (final ListIterator<Integer> matrixRowCellIter = matrixRow.listIterator(); matrixRowCellIter
+					.hasNext();) {
+				final int colIdx = matrixRowCellIter.nextIndex();
+				final Integer pieceId = matrixRowCellIter.next();
+				final String pieceText = Objects.toString(pieceId, "");
+				final int pieceTextWidth = fm.stringWidth(pieceText);
+				final int pieceTextHeight = fm.getAscent();
+				final int textXOffset = (colWidth - pieceTextWidth) / 2;
+				final int textYOffset = (rowHeight - pieceTextHeight) / 2;
+				g.drawString(pieceText, nextColX + textXOffset, nextRowY + textYOffset);
+				nextColX += colWidth;
+			}
+			nextRowY += rowHeight;
 		}
 	}
 
