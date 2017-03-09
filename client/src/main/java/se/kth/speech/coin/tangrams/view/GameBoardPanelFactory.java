@@ -289,10 +289,14 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 		final ImageViewInfo.RasterizationInfo rasterizationInfo = viewInfo.getRasterization();
 		// The number of rows this image takes up in the
 		// position matrix
-		final int occupiedPosMatrixRowCount = rasterizationInfo.getWidth() / rasterizationInfo.getGcd();
+		// final int occupiedPosMatrixRowCount = rasterizationInfo.getWidth() /
+		// rasterizationInfo.getGcd();
+		final int occupiedPosMatrixRowCount = rasterizationInfo.getHeight() / rasterizationInfo.getGcd();
 		// The number of columns this image takes up in the
 		// position matrix
-		final int occupiedPosMatrixColCount = rasterizationInfo.getHeight() / rasterizationInfo.getGcd();
+		// final int occupiedPosMatrixColCount = rasterizationInfo.getHeight() /
+		// rasterizationInfo.getGcd();
+		final int occupiedPosMatrixColCount = rasterizationInfo.getWidth() / rasterizationInfo.getGcd();
 		LOGGER.debug("Calculated position grid size {}*{} for \"{}\".", new Object[] {
 				viewInfo.getVisualization().getResourceLoc(), occupiedPosMatrixRowCount, occupiedPosMatrixColCount });
 
@@ -406,12 +410,13 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 				final ImageViewInfo viewInfo = imgViewInfoDatum.getValue();
 				dimensionValues.add(viewInfo.getRasterization().getGcd());
 			}
-			// Get the GCD for all components in the view
-			final int greatestCommonDenominator = MathDenominators.gcd(dimensionValues.iterator());
-			LOGGER.debug("GCD for all components is {}.", greatestCommonDenominator);
 			final Dimension boardSize = new Dimension(minDimLength * 5, minDimLength * 4);
 			dimensionValues.add(boardSize.width);
 			dimensionValues.add(boardSize.height);
+			// Get the GCD for all components in the view
+			final int greatestCommonDenominator = MathDenominators.gcd(dimensionValues.iterator());
+			LOGGER.debug("GCD for all components is {}.", greatestCommonDenominator);
+			// Validate the size and GCD of all components, including the board itself
 			final Set<SizeValidator.ValidationComment> boardValidationComments = validator.validate(boardSize.width,
 					boardSize.height, greatestCommonDenominator);
 			if (boardValidationComments.isEmpty()) {
@@ -420,7 +425,8 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 				LOGGER.info("Creating a position matrix of size {}*{}.", posMatrixRows, posMatrixCols);
 				final Integer[] posMatrixBackingArray = new Integer[posMatrixRows * posMatrixCols];
 				final Matrix<Integer> posMatrix = new Matrix<>(posMatrixBackingArray, posMatrixCols);
-				SpatialMap<Entry<BufferedImage, ImageViewInfo>> imagePlacements = fillMatrix(imgViewInfoDataList, posMatrix, rnd);
+				SpatialMap<Entry<BufferedImage, ImageViewInfo>> imagePlacements = fillMatrix(imgViewInfoDataList,
+						posMatrix, rnd);
 				final int cellCount = posMatrix.getValues().size();
 				final StringBuilder sb = new StringBuilder(cellCount * 4);
 				for (int rowIdx = 0; rowIdx < posMatrix.getDimensions()[0]; rowIdx++) {
@@ -456,11 +462,11 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 		return sb.toString();
 	}
 
-	private SpatialMap<Entry<BufferedImage, ImageViewInfo>> fillMatrix(final List<Entry<BufferedImage, ImageViewInfo>> imgViewInfoData,
-			final Matrix<Integer> posMatrix, final Random rnd) {
+	private SpatialMap<Entry<BufferedImage, ImageViewInfo>> fillMatrix(
+			final List<Entry<BufferedImage, ImageViewInfo>> imgViewInfoData, final Matrix<Integer> posMatrix,
+			final Random rnd) {
 		final ListIterator<Entry<BufferedImage, ImageViewInfo>> imgViewInfoDataIter = imgViewInfoData.listIterator();
-		final SpatialMap<Entry<BufferedImage, ImageViewInfo>> result = new SpatialMap<>(
-				imgViewInfoData.size());
+		final SpatialMap<Entry<BufferedImage, ImageViewInfo>> result = new SpatialMap<>(imgViewInfoData.size());
 		final int[] posDims = posMatrix.getDimensions();
 		// Randomly place each image in the position matrix
 		final Queue<ImageMatrixPositionInfo> retryStack = new ArrayDeque<>();
@@ -515,7 +521,7 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 				throw new IllegalArgumentException(errorMsg);
 			}
 		}
-		
+
 		return result;
 	}
 
