@@ -16,6 +16,7 @@
 */
 package se.kth.speech;
 
+import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.Random;
 
@@ -25,7 +26,25 @@ import java.util.Random;
  *
  */
 public final class ObjectArrays {
-	
+
+	/**
+	 * @see <a href="http://stackoverflow.com/a/80503/1391325">Source on SO</a>
+	 * @param a
+	 * @param b
+	 * @return
+	 */
+	public static <T> T[] concatenate(final T[] a, final T[] b) {
+		final int aLen = a.length;
+		final int bLen = b.length;
+
+		@SuppressWarnings("unchecked")
+		final T[] c = (T[]) Array.newInstance(a.getClass().getComponentType(), aLen + bLen);
+		System.arraycopy(a, 0, c, 0, aLen);
+		System.arraycopy(b, 0, c, aLen, bLen);
+
+		return c;
+	}
+
 	public static <T> T[] copy(final T[] arr) {
 		return Arrays.copyOf(arr, arr.length);
 	}
@@ -37,7 +56,7 @@ public final class ObjectArrays {
 	 * @param random
 	 *            The {@link Random} instance to use for generating random
 	 *            values.
-	 * @see <a href= "http://stackoverflow.com/a/1520212/1391325">Source on
+	 * @see <a href="http://stackoverflow.com/a/1520212/1391325">Source on
 	 *      SO</a>
 	 */
 	public static <T> void shuffle(final T[] array, final Random random) {

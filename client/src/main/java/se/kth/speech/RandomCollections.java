@@ -26,6 +26,10 @@ import java.util.Random;
  */
 public final class RandomCollections {
 
+	public static int getRandomElement(final int[] array, final Random rnd) {
+		return array[rnd.nextInt(array.length)];
+	}
+	
 	public static <T> T getRandomElement(final List<? extends T> list, final Random rnd) {
 		return list.get(rnd.nextInt(list.size()));
 	}

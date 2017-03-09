@@ -23,6 +23,21 @@ package se.kth.speech;
  */
 public final class IntArrays {
 
+	/**
+	 * @see <a href="http://stackoverflow.com/a/80503/1391325">Source on SO</a>
+	 * @param a
+	 * @param b
+	 * @return
+	 */
+	public static int[] concatenate(final int[] a, final int[] b) {
+		final int aLen = a.length;
+		final int bLen = b.length;
+		final int[] c = new int[aLen + bLen];
+		System.arraycopy(a, 0, c, 0, aLen);
+		System.arraycopy(b, 0, c, aLen, bLen);
+		return c;
+	}
+
 	public static int product(final int[] array) {
 		if (array.length < 1) {
 			throw new IllegalArgumentException("Array is empty.");
