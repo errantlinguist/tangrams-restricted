@@ -171,12 +171,11 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 
 	private static final double RATIO_TOLERANCE = 0.05;
 
-	private static String createImageValueTable(
+	private static String createImageInfoTable(
 			final Collection<? extends Entry<?, ? extends Entry<ImageRasterizationInfo, ?>>> namedImgValData) {
-		final String errorMsgPrefix = "One or more images failed validation:" + System.lineSeparator()
-				+ "PATH\tWIDTH\tHEIGHT\tGCD\tCOMMENT";
-		final StringBuilder sb = new StringBuilder(errorMsgPrefix.length() + 16 * namedImgValData.size());
-		sb.append(errorMsgPrefix);
+		final String header = "PATH\tWIDTH\tHEIGHT\tGCD\tCOMMENT";
+		final StringBuilder sb = new StringBuilder(header.length() + 16 * namedImgValData.size());
+		sb.append(header);
 		for (final Entry<?, ? extends Entry<ImageRasterizationInfo, ?>> namedImgValDatumComments : namedImgValData) {
 			sb.append(System.lineSeparator());
 			sb.append(namedImgValDatumComments.getKey());
@@ -231,7 +230,8 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 		if (badImgs.isEmpty()) {
 			return result;
 		} else {
-			throw new IllegalArgumentException(createImageValueTable(badImgs.entrySet()));
+			throw new IllegalArgumentException("One or more images failed validation:" + System.lineSeparator()
+					+ createImageInfoTable(badImgs.entrySet()));
 		}
 	}
 
