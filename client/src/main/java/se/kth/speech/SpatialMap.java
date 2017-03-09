@@ -45,10 +45,6 @@ public final class SpatialMap<V> {
 	 */
 	public static final class Region {
 
-		private static boolean intersects(int firstLower, int secondUpper){
-			return !(firstLower > secondUpper);
-		}
-		
 		private static boolean subsumes(final int lower, final int upper, final int point) {
 			return lower <= point && point <= upper;
 		}
@@ -158,48 +154,30 @@ public final class SpatialMap<V> {
 			result = prime * result + yUpperBound;
 			return result;
 		}
-		
-//		private static int intersection(int firstLower, int firstUpper, int secondLower, int secondUpper){
-//			int upperDiff = firstUpper - secondUpper;
-//			int lowerDiff = firstLower - secondLower;
-//		}
-		
+
 		public boolean intersects(final Region other) {
-//			finAL BOOLEAN RESULT;
-//			IF (THIS.GETXLOWERBOUND() <= OTHER.GETXUPPERBOUND()) {
-//				IF (THIS.GETYLOWERBOUND() <= OTHER.GETYLOWERBOUND()){
-//					// THIS SUBSUMES THE OTHER SO OF COURSE IT INTERSECT AS WELL
-//					RESULT = TRUE;
-//				} ELSE {
-//					
-//				}
-//			}
-			// http://stackoverflow.com/a/13390495/1391325
-			// If you have four coordinates – ((X,Y),(A,B)) and
-			// ((X1,Y1),(A1,B1)) – rather than two plus width and height, it
-			// would look like this:
-			// if (A<X1 or A1<X or B<Y1 or B1<Y):
-			// Intersection = Empty
-			// else:
-			// Intersection = Not Empty
 			return intersectsX(other) && intersectsY(other);
 
 		}
-		
-		public boolean intersectsX(Region other){
-			int thisLower = this.getXLowerBound();
-			int otherUpper = other.getXUpperBound();
-			final boolean result = intersects(thisLower, otherUpper);
-			System.out.println("X - thisLower: " + thisLower + " otherUpper: " + otherUpper + " intersects? " + result);
-			return result;
+
+		public boolean intersectsX(final int otherLower, final int otherUpper) {
+			final int thisLower = this.getXLowerBound();
+			final int thisUpper = this.getXUpperBound();
+			return subsumes(thisLower, thisUpper, otherLower) || subsumes(thisLower, thisUpper, otherUpper);
 		}
 
-		public boolean intersectsY(Region other){
-			int thisLower = this.getYLowerBound();
-			int otherUpper = other.getYUpperBound();
-			final boolean result = intersects(thisLower, otherUpper);
-			System.out.println("Y - thisLower: " + thisLower + " otherUpper: " + otherUpper + " intersects? " + result);
-			return result;
+		public boolean intersectsX(final Region other) {
+			return intersectsX(other.getXLowerBound(), other.getXUpperBound());
+		}
+
+		public boolean intersectsY(final int otherLower, final int otherUpper) {
+			final int thisLower = this.getYLowerBound();
+			final int thisUpper = this.getYUpperBound();
+			return subsumes(thisLower, thisUpper, otherLower) || subsumes(thisLower, thisUpper, otherUpper);
+		}
+
+		public boolean intersectsY(final Region other) {
+			return intersectsY(other.getYLowerBound(), other.getYUpperBound());
 		}
 
 		public boolean subsumes(final Region other) {
