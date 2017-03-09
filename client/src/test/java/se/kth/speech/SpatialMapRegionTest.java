@@ -79,12 +79,23 @@ public final class SpatialMapRegionTest {
 	 * Test method for
 	 * {@link se.kth.speech.SpatialMap.Region#intersects(se.kth.speech.SpatialMap.Region)}.
 	 */
+	@Theory
+	public final void testIntersectsCommutativity(Region r1, Region r2){
+		final boolean r1Test = r1.intersects(r2);
+		final boolean r2Test = r2.intersects(r1);
+		Assert.assertEquals(r1Test, r2Test);
+	}
+
+	/**
+	 * Test method for
+	 * {@link se.kth.speech.SpatialMap.Region#intersects(se.kth.speech.SpatialMap.Region)}.
+	 */
 	@Test
 	public final void testIntersectsIntersecting() {
 		final Region r = new Region(0, 2, 3, 5);
 		Assert.assertTrue(r.intersects(new Region(0, 2, 2, 5)));
 	}
-
+	
 	/**
 	 * Test method for
 	 * {@link se.kth.speech.SpatialMap.Region#intersects(se.kth.speech.SpatialMap.Region)}.
@@ -93,6 +104,25 @@ public final class SpatialMapRegionTest {
 	public final void testIntersectsNegative() {
 		final Region r = new Region(0, 2, 3, 5);
 		Assert.assertFalse(r.intersects(new Region(5, 6, 3, 4)));
+	}
+	
+	/**
+	 * Test method for
+	 * {@link se.kth.speech.SpatialMap.Region#intersects(se.kth.speech.SpatialMap.Region)}.
+	 */
+	@Test
+	public final void testIntersectsNegativeAdjacent() {
+		final Region r = new Region(0, 2, 3, 5);
+		Assert.assertFalse(r.intersects(new Region(0, 2, 1, 2)));
+	}
+	
+	/**
+	 * Test method for
+	 * {@link se.kth.speech.SpatialMap.Region#intersects(se.kth.speech.SpatialMap.Region)}.
+	 */
+	@Theory
+	public final void testIntersectsSelf(Region r){
+		Assert.assertTrue(r.intersects(r));
 	}
 
 	/**
