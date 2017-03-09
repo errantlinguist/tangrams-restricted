@@ -32,12 +32,25 @@ import java.util.NoSuchElementException;
  *            The type used to represent matrix cell data.
  */
 public final class Matrix<T> {
-	
+
 	private class RowIterator implements ListIterator<List<T>> {
 
-		private int nextRowIdx = 0;
+		private int nextRowIdx;
 
-		private int rowValArrStartIdx = 0;
+		private int rowValArrStartIdx;
+
+		public RowIterator() {
+			this(0);
+		}
+
+		/**
+		 * @param rowIdx
+		 *            The index of the row to start at.
+		 */
+		public RowIterator(final int rowIdx) {
+			this.nextRowIdx = rowIdx;
+			this.rowValArrStartIdx = getRowValueArrayStartIdx(rowIdx);
+		}
 
 		@Override
 		public void add(final List<T> e) {
@@ -215,6 +228,10 @@ public final class Matrix<T> {
 		return new RowIterator();
 	}
 
+	public ListIterator<List<T>> rowIterator(final int rowIdx) {
+		return new RowIterator(rowIdx);
+	}
+
 	public T setValue(final int[] coords, final T value) {
 		final List<T> values = getValues();
 		final int valueArrayIdx = getValueArrayIdx(coords);
@@ -254,11 +271,6 @@ public final class Matrix<T> {
 
 	private int getRowValueArrayStartIdx(final int rowIdx) {
 		return rowIdx * getColCount();
-	}
-
-	private int getRowValueArrayStartIdxForValueArrayIdx(final int valueArrayIdx) {
-		final int col = getColIdx(valueArrayIdx);
-		return valueArrayIdx - col;
 	}
 
 	private int getValueArrayIdx(final int[] coords) {

@@ -289,7 +289,7 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 		final int cellCount = matrix.getValues().size();
 		final StringBuilder sb = new StringBuilder(cellCount * 4);
 
-		final ListIterator<? extends List<?>> rowIter = matrix.rowIterator();
+		final Iterator<? extends List<?>> rowIter = matrix.rowIterator();
 		if (rowIter.hasNext()) {
 			final List<?> first = rowIter.next();
 			appendRowTableRepr(first.iterator(), sb);
@@ -387,11 +387,12 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 		return result;
 	}
 
-	private static void setMatrixPositionValues(final Matrix<Integer> posMatrix, final SpatialMap.Region imgRegion,
+	private static void setMatrixPositionValues(final Matrix<Integer> posMatrix, final SpatialMap.Region occupiedRegion,
 			final Integer pieceId) {
-		for (int rowIdx = imgRegion.getXLowerBound(); rowIdx < imgRegion.getXUpperBound(); rowIdx++) {
-			final List<Integer> occupiedRow = posMatrix.getRow(rowIdx);
-			for (int colIdx = imgRegion.getYLowerBound(); colIdx < imgRegion.getYUpperBound(); colIdx++) {
+		final ListIterator<List<Integer>> rowIter = posMatrix.rowIterator(occupiedRegion.getXLowerBound());
+		for (int rowIdx = rowIter.nextIndex(); rowIdx < occupiedRegion.getXUpperBound(); rowIdx++) {
+			final List<Integer> occupiedRow = rowIter.next();
+			for (int colIdx = occupiedRegion.getYLowerBound(); colIdx < occupiedRegion.getYUpperBound(); colIdx++) {
 				final Integer oldImgId = occupiedRow.set(colIdx, pieceId);
 				assert oldImgId == null;
 			}
@@ -481,20 +482,20 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 		// Randomly place each image in the position matrix
 		final Queue<ImageMatrixPositionInfo> retryStack = new ArrayDeque<>();
 		while (imgViewInfoDataIter.hasNext()) {
-			final int imgId = imgViewInfoDataIter.nextIndex();
+			final int pieceId = imgViewInfoDataIter.nextIndex();
 			final Entry<BufferedImage, ImageViewInfo> imgViewInfoDatum = imgViewInfoDataIter.next();
 			final ImageViewInfo viewInfo = imgViewInfoDatum.getValue();
 			// The number of rows and columns this image takes up in the
 			// position matrix
 			final int[] piecePosMatrixSize = createPosMatrixBoundsArray(viewInfo);
 			// Randomly pick a space in the matrix
-			final SpatialMap.Region imgRegion = createRandomSpatialRegion(piecePosMatrixSize, posDims, rnd);
-			if (result.isOccupied(imgRegion)) {
+			final SpatialMap.Region pieceRegion = createRandomSpatialRegion(piecePosMatrixSize, posDims, rnd);
+			if (result.isOccupied(pieceRegion)) {
 				LOGGER.debug("Cancelling placement of image because the target space is occupied.");
-				retryStack.add(new ImageMatrixPositionInfo(imgId, piecePosMatrixSize, imgViewInfoDatum));
+				retryStack.add(new ImageMatrixPositionInfo(pieceId, piecePosMatrixSize, imgViewInfoDatum));
 			} else {
-				setMatrixPositionValues(posMatrix, imgRegion, imgId);
-				result.put(imgRegion, imgViewInfoDatum);
+				setMatrixPositionValues(posMatrix, pieceRegion, pieceId);
+				result.put(pieceRegion, imgViewInfoDatum);
 			}
 
 		}
