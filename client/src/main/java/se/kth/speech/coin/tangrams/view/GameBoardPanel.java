@@ -223,8 +223,11 @@ final class GameBoardPanel extends Canvas {
 
 	private Image scaleImageToGridSize(Image img, SpatialMap.Region occupiedGridRegion) {
 		final int colWidth = getGridColWidth();
+		// NOTE: occupied region is denoted in matrix rows*columns
+		// "y" is matrix columns, thus left-to-right
 		final int imgWidth = colWidth * occupiedGridRegion.getLengthY();
 		final int rowHeight = getGridRowHeight();
+		// "x" is matrix rows, thus top-to-bottom
 		final int imgHeight = rowHeight * occupiedGridRegion.getLengthX();
 		return img.getScaledInstance(imgWidth, imgHeight, IMG_SCALING_HINTS);
 	}
@@ -233,10 +236,13 @@ final class GameBoardPanel extends Canvas {
 		RasterizationInfo rasterizationInfo = viewInfo.getRasterization();
 		ImageVisualizationInfo visualizationInfo = viewInfo.getVisualization();
 		ImageSize size = visualizationInfo.getSize();
+		// NOTE: occupied region is denoted in matrix rows*columns
+		// "y" is matrix columns, thus left-to-right
 		final int colWidth = getGridColWidth();
-		final int imgWidth = colWidth * occupiedGridRegion.getLengthX();
+		final int imgWidth = colWidth * occupiedGridRegion.getLengthY();
 		final int rowHeight = getGridRowHeight();
-		final int imgHeight = rowHeight * occupiedGridRegion.getLengthY();
+		// "x" is matrix rows, thus top-to-bottom
+		final int imgHeight = rowHeight * occupiedGridRegion.getLengthX();
 	}
 
 	GameBoardPanel(final Collection<ImageVisualizationInfo> imgVisualizationInfoData,
@@ -303,9 +309,9 @@ final class GameBoardPanel extends Canvas {
 	public void paint(final Graphics g) {
 		// Draw a grid (for debugging/devel)
 		drawGrid(g);
-		 drawPieceIds(g);
+		drawPieceIds(g);
 
-		 drawPieceImages(g);
+		drawPieceImages(g);
 
 	}
 
@@ -333,7 +339,8 @@ final class GameBoardPanel extends Canvas {
 			final Stroke dashed = new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[] { 1 },
 					0);
 			gridDrawingG.setStroke(dashed);
-			for (final ListIterator<List<Integer>> matrixRowIter = posMatrix.rowIterator(); matrixRowIter.hasNext(); matrixRowIter.next()) {
+			for (final ListIterator<List<Integer>> matrixRowIter = posMatrix.rowIterator(); matrixRowIter
+					.hasNext(); matrixRowIter.next()) {
 				gridDrawingG.drawLine(0, nextRowY, getWidth(), nextRowY);
 				nextRowY += rowHeight;
 			}
