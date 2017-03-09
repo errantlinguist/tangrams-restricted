@@ -27,6 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import se.kth.speech.Matrix;
+import se.kth.speech.SpatialMap;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -42,7 +43,7 @@ final class GameBoardPanel extends JPanel {
 	 */
 	private static final long serialVersionUID = 6258829324465894025L;
 
-	public GameBoardPanel(final Dimension boardSize, List<Entry<BufferedImage, ImageViewInfo>> imgViewInfoDataList, Matrix<Integer> posMatrix) {
+	public GameBoardPanel(final Dimension boardSize, List<Entry<BufferedImage, ImageViewInfo>> imgViewInfoDataList, Matrix<Integer> posMatrix, SpatialMap<Entry<BufferedImage, ImageViewInfo>> imagePlacements) {
 		setSize(boardSize);
 		// TODO Auto-generated constructor stub
 	}

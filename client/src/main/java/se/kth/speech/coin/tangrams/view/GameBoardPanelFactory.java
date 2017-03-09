@@ -420,7 +420,7 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 				LOGGER.info("Creating a position matrix of size {}*{}.", posMatrixRows, posMatrixCols);
 				final Integer[] posMatrixBackingArray = new Integer[posMatrixRows * posMatrixCols];
 				final Matrix<Integer> posMatrix = new Matrix<>(posMatrixBackingArray, posMatrixCols);
-				fillMatrix(imgViewInfoDataList, posMatrix, rnd);
+				SpatialMap<Entry<BufferedImage, ImageViewInfo>> imagePlacements = fillMatrix(imgViewInfoDataList, posMatrix, rnd);
 				final int cellCount = posMatrix.getValues().size();
 				final StringBuilder sb = new StringBuilder(cellCount * 4);
 				for (int rowIdx = 0; rowIdx < posMatrix.getDimensions()[0]; rowIdx++) {
@@ -428,9 +428,9 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 					appendRowTableRepr(row.iterator(), sb);
 					sb.append(System.lineSeparator());
 				}
+				System.out.println("IMAGE PLACEMENTS");
 				System.out.println(sb.toString());
-				// TODO Auto-generated method stub
-				result = new GameBoardPanel(boardSize, imgViewInfoDataList, posMatrix);
+				result = new GameBoardPanel(boardSize, imgViewInfoDataList, posMatrix, imagePlacements);
 			} else {
 				throw new IllegalArgumentException(
 						String.format("The board as a whole failed validation with dimensions %s; and GCD %d: %s",
@@ -456,10 +456,10 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 		return sb.toString();
 	}
 
-	private void fillMatrix(final List<Entry<BufferedImage, ImageViewInfo>> imgViewInfoData,
+	private SpatialMap<Entry<BufferedImage, ImageViewInfo>> fillMatrix(final List<Entry<BufferedImage, ImageViewInfo>> imgViewInfoData,
 			final Matrix<Integer> posMatrix, final Random rnd) {
 		final ListIterator<Entry<BufferedImage, ImageViewInfo>> imgViewInfoDataIter = imgViewInfoData.listIterator();
-		final SpatialMap<Entry<BufferedImage, ImageViewInfo>> occupiedRegions = new SpatialMap<>(
+		final SpatialMap<Entry<BufferedImage, ImageViewInfo>> result = new SpatialMap<>(
 				imgViewInfoData.size());
 		final int[] posDims = posMatrix.getDimensions();
 		// Randomly place each image in the position matrix
@@ -473,12 +473,12 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 			final int[] piecePosMatrixSize = createPosMatrixBoundsArray(viewInfo);
 			// Randomly pick a space in the matrix
 			final SpatialMap.Region imgRegion = createRandomSpatialRegion(piecePosMatrixSize, posDims, rnd);
-			if (occupiedRegions.isOccupied(imgRegion)) {
+			if (result.isOccupied(imgRegion)) {
 				LOGGER.debug("Cancelling placement of image because the target space is occupied.");
 				retryStack.add(new ImageMatrixPositionInfo(imgId, piecePosMatrixSize, imgViewInfoDatum));
 			} else {
 				setMatrixPositionValues(posMatrix, imgRegion, imgId);
-				occupiedRegions.put(imgRegion, imgViewInfoDatum);
+				result.put(imgRegion, imgViewInfoDatum);
 			}
 
 		}
@@ -492,7 +492,7 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 			final ImageMatrixPositionInfo imgPlacementInfo = retryStack.remove();
 			final SpatialMap.Region imgRegion = createRandomSpatialRegion(imgPlacementInfo.piecePosMatrixSize, posDims,
 					rnd);
-			if (occupiedRegions.isOccupied(imgRegion)) {
+			if (result.isOccupied(imgRegion)) {
 				final Integer tries = retryCounter.compute(imgPlacementInfo, INCREMENTING_REMAPPER);
 				if (tries > maxPlacementRetriesPerImg) {
 					failedPlacements.add(imgPlacementInfo.imgViewInfoDatum.getValue().getVisualization());
@@ -501,7 +501,7 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 				}
 			} else {
 				setMatrixPositionValues(posMatrix, imgRegion, imgPlacementInfo.pieceId);
-				occupiedRegions.put(imgRegion, imgPlacementInfo.imgViewInfoDatum);
+				result.put(imgRegion, imgPlacementInfo.imgViewInfoDatum);
 			}
 		}
 
@@ -515,6 +515,8 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 				throw new IllegalArgumentException(errorMsg);
 			}
 		}
+		
+		return result;
 	}
 
 }
