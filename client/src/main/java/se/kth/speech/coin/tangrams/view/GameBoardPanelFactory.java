@@ -145,188 +145,6 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 		}
 	}
 
-	private enum ImageOrientation {
-		LANDSCAPE, PORTRAIT, SQUARE;
-
-		private static ImageOrientation getOrientation(final int width, final int height) {
-			final ImageOrientation result;
-			if (width < height) {
-				result = ImageOrientation.PORTRAIT;
-			} else if (height < width) {
-				result = ImageOrientation.LANDSCAPE;
-			} else {
-				result = ImageOrientation.SQUARE;
-			}
-			return result;
-		}
-	}
-
-	private static class ImageRasterizationInfo {
-
-		private static int getGcd(final int width, final int height) {
-			return MathDenominators.gcd(width, height);
-		}
-
-		private final IntSupplier heightGetter;
-
-		private final IntSupplier widthGetter;
-
-		private ImageRasterizationInfo(final IntSupplier widthGetter, final IntSupplier heightGetter) {
-			this.widthGetter = widthGetter;
-			this.heightGetter = heightGetter;
-		}
-
-		/*
-		 * (non-Javadoc)
-		 *
-		 * @see java.lang.Object#equals(java.lang.Object)
-		 */
-		@Override
-		public boolean equals(final Object obj) {
-			if (this == obj) {
-				return true;
-			}
-			if (obj == null) {
-				return false;
-			}
-			if (!(obj instanceof ImageRasterizationInfo)) {
-				return false;
-			}
-			final ImageRasterizationInfo other = (ImageRasterizationInfo) obj;
-			if (heightGetter == null) {
-				if (other.heightGetter != null) {
-					return false;
-				}
-			} else if (!heightGetter.equals(other.heightGetter)) {
-				return false;
-			}
-			if (widthGetter == null) {
-				if (other.widthGetter != null) {
-					return false;
-				}
-			} else if (!widthGetter.equals(other.widthGetter)) {
-				return false;
-			}
-			return true;
-		}
-
-		/*
-		 * (non-Javadoc)
-		 *
-		 * @see java.lang.Object#hashCode()
-		 */
-		@Override
-		public int hashCode() {
-			final int prime = 31;
-			int result = 1;
-			result = prime * result + (heightGetter == null ? 0 : heightGetter.hashCode());
-			result = prime * result + (widthGetter == null ? 0 : widthGetter.hashCode());
-			return result;
-		}
-
-		private int[] getAspectRatio() {
-			final int width = getWidth();
-			final int height = getHeight();
-			final int gcd = getGcd(width, height);
-			return new int[] { width / gcd, height / gcd };
-		}
-
-		private int getGcd() {
-			return getGcd(getWidth(), getHeight());
-		}
-
-		private int getHeight() {
-			return heightGetter.getAsInt();
-		}
-
-		private ImageOrientation getOrientation() {
-			return ImageOrientation.getOrientation(getWidth(), getHeight());
-		}
-
-		private int getWidth() {
-			return widthGetter.getAsInt();
-		}
-
-		private int getWidthHeightQuotient() {
-			return widthGetter.getAsInt() / heightGetter.getAsInt();
-		}
-	}
-
-	private static class ImageViewInfo {
-		private final ImageRasterizationInfo rasterization;
-
-		private final ImageVisualizationInfo visualization;
-
-		private ImageViewInfo(final ImageVisualizationInfo visualization, final ImageRasterizationInfo rasterization) {
-			this.visualization = visualization;
-			this.rasterization = rasterization;
-		}
-
-		/*
-		 * (non-Javadoc)
-		 *
-		 * @see java.lang.Object#equals(java.lang.Object)
-		 */
-		@Override
-		public boolean equals(final Object obj) {
-			if (this == obj) {
-				return true;
-			}
-			if (obj == null) {
-				return false;
-			}
-			if (!(obj instanceof ImageViewInfo)) {
-				return false;
-			}
-			final ImageViewInfo other = (ImageViewInfo) obj;
-			if (rasterization == null) {
-				if (other.rasterization != null) {
-					return false;
-				}
-			} else if (!rasterization.equals(other.rasterization)) {
-				return false;
-			}
-			if (visualization == null) {
-				if (other.visualization != null) {
-					return false;
-				}
-			} else if (!visualization.equals(other.visualization)) {
-				return false;
-			}
-			return true;
-		}
-
-		/*
-		 * (non-Javadoc)
-		 *
-		 * @see java.lang.Object#hashCode()
-		 */
-		@Override
-		public int hashCode() {
-			final int prime = 31;
-			int result = 1;
-			result = prime * result + (rasterization == null ? 0 : rasterization.hashCode());
-			result = prime * result + (visualization == null ? 0 : visualization.hashCode());
-			return result;
-		}
-
-		/*
-		 * (non-Javadoc)
-		 *
-		 * @see java.lang.Object#toString()
-		 */
-		@Override
-		public String toString() {
-			final StringBuilder builder = new StringBuilder();
-			builder.append("ImageViewInfo [rasterization=");
-			builder.append(rasterization);
-			builder.append(", visualization=");
-			builder.append(visualization);
-			builder.append("]");
-			return builder.toString();
-		}
-	}
-
 	private static class SizeValidator {
 
 		private enum ValidationComment {
@@ -404,16 +222,16 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 	}
 
 	private static String createImageInfoTable(
-			final Collection<? extends Entry<?, ? extends Entry<ImageRasterizationInfo, ?>>> namedImgValData) {
+			final Collection<? extends Entry<?, ? extends Entry<ImageViewInfo.RasterizationInfo, ?>>> namedImgValData) {
 		final String header = "PATH\tWIDTH\tHEIGHT\tGCD\tCOMMENT";
 		final StringBuilder sb = new StringBuilder(header.length() + 16 * namedImgValData.size());
 		sb.append(header);
-		for (final Entry<?, ? extends Entry<ImageRasterizationInfo, ?>> namedImgValDatumComments : namedImgValData) {
+		for (final Entry<?, ? extends Entry<ImageViewInfo.RasterizationInfo, ?>> namedImgValDatumComments : namedImgValData) {
 			sb.append(System.lineSeparator());
 			sb.append(namedImgValDatumComments.getKey());
 			sb.append('\t');
-			final Entry<ImageRasterizationInfo, ?> imgValDatumComments = namedImgValDatumComments.getValue();
-			final ImageRasterizationInfo imgVisualizationInfoDatum = imgValDatumComments.getKey();
+			final Entry<ImageViewInfo.RasterizationInfo, ?> imgValDatumComments = namedImgValDatumComments.getValue();
+			final ImageViewInfo.RasterizationInfo imgVisualizationInfoDatum = imgValDatumComments.getKey();
 			sb.append(imgVisualizationInfoDatum.getWidth());
 			sb.append('\t');
 			sb.append(imgVisualizationInfoDatum.getHeight());
@@ -433,7 +251,7 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 		final LinkedHashMap<BufferedImage, ImageViewInfo> result = Maps
 				.newLinkedHashMapWithExpectedSize(imgVisualizationInfoData.size());
 
-		final Map<URL, Entry<ImageRasterizationInfo, Set<SizeValidator.ValidationComment>>> badImgs = Maps
+		final Map<URL, Entry<ImageViewInfo.RasterizationInfo, Set<SizeValidator.ValidationComment>>> badImgs = Maps
 				.newHashMapWithExpectedSize(0);
 		for (final ImageVisualizationInfo imgVisualizationInfoDatum : imgVisualizationInfoData) {
 			final URL imgResourceLoc = imgVisualizationInfoDatum.getResourceLoc();
@@ -443,8 +261,8 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 				// Size/aspect ratio calculation
 				final IntSupplier widthGetter = initialImg::getWidth;
 				final IntSupplier heightGetter = initialImg::getHeight;
-				final ImageRasterizationInfo imgRasterizationInfo = new ImageRasterizationInfo(widthGetter,
-						heightGetter);
+				final ImageViewInfo.RasterizationInfo imgRasterizationInfo = new ImageViewInfo.RasterizationInfo(
+						widthGetter, heightGetter);
 				result.put(initialImg, new ImageViewInfo(imgVisualizationInfoDatum, imgRasterizationInfo));
 				{
 					// Validate image
@@ -468,7 +286,7 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 	}
 
 	private static int[] createPosMatrixBoundsArray(final ImageViewInfo viewInfo) {
-		final ImageRasterizationInfo rasterizationInfo = viewInfo.rasterization;
+		final ImageViewInfo.RasterizationInfo rasterizationInfo = viewInfo.getRasterization();
 		// The number of rows this image takes up in the
 		// position matrix
 		final int occupiedPosMatrixRowCount = rasterizationInfo.getWidth() / rasterizationInfo.getGcd();
@@ -476,7 +294,7 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 		// position matrix
 		final int occupiedPosMatrixColCount = rasterizationInfo.getHeight() / rasterizationInfo.getGcd();
 		LOGGER.debug("Calculated position grid size {}*{} for \"{}\".", new Object[] {
-				viewInfo.visualization.getResourceLoc(), occupiedPosMatrixRowCount, occupiedPosMatrixColCount });
+				viewInfo.getVisualization().getResourceLoc(), occupiedPosMatrixRowCount, occupiedPosMatrixColCount });
 
 		return new int[] { occupiedPosMatrixRowCount, occupiedPosMatrixColCount };
 	}
@@ -493,7 +311,7 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 	}
 
 	private static Image createScaledImage(final Image origImg, final ImageSize size, final int lesserDimVal,
-			final int maxDimLength, final ImageOrientation orientation) {
+			final int maxDimLength, final ImageViewInfo.Orientation orientation) {
 		final Image result;
 		if (lesserDimVal < maxDimLength) {
 			switch (orientation) {
@@ -519,7 +337,8 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 
 	private static Image scaleImageByLongerDimension(final BufferedImage origImg, final int longerDimVal) {
 		final Image result;
-		final ImageOrientation orientation = ImageOrientation.getOrientation(origImg.getWidth(), origImg.getHeight());
+		final ImageViewInfo.Orientation orientation = ImageViewInfo.Orientation.getOrientation(origImg.getWidth(),
+				origImg.getHeight());
 		switch (orientation) {
 		case PORTRAIT: {
 			result = origImg.getScaledInstance(-1, longerDimVal, IMG_SCALING_HINTS);
@@ -535,7 +354,8 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 
 	private static Image scaleImageByShorterDimension(final BufferedImage origImg, final int shorterDimVal) {
 		final Image result;
-		final ImageOrientation orientation = ImageOrientation.getOrientation(origImg.getWidth(), origImg.getHeight());
+		final ImageViewInfo.Orientation orientation = ImageViewInfo.Orientation.getOrientation(origImg.getWidth(),
+				origImg.getHeight());
 		switch (orientation) {
 		case PORTRAIT: {
 			result = origImg.getScaledInstance(shorterDimVal, -1, IMG_SCALING_HINTS);
@@ -581,7 +401,7 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 			final Set<Integer> dimensionValues = Sets.newHashSetWithExpectedSize(imgViewInfoDataList.size() + 1);
 			for (final Entry<BufferedImage, ImageViewInfo> imgViewInfoDatum : imgViewInfoDataList) {
 				final ImageViewInfo viewInfo = imgViewInfoDatum.getValue();
-				dimensionValues.add(viewInfo.rasterization.getGcd());
+				dimensionValues.add(viewInfo.getRasterization().getGcd());
 			}
 			// Get the GCD for all components in the view
 			final int greatestCommonDenominator = MathDenominators.gcd(dimensionValues.iterator());
@@ -607,7 +427,7 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 				}
 				System.out.println(sb.toString());
 				// TODO Auto-generated method stub
-				result = new GameBoardPanel(boardSize);
+				result = new GameBoardPanel(boardSize, imgViewInfoDataList, posMatrix);
 			} else {
 				throw new IllegalArgumentException(
 						String.format("The board as a whole failed validation with dimensions %s; and GCD %d: %s",
@@ -672,7 +492,7 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 			if (occupiedRegions.isOccupied(imgRegion)) {
 				final Integer tries = retryCounter.compute(imgPlacementInfo, INCREMENTING_REMAPPER);
 				if (tries > maxPlacementRetriesPerImg) {
-					failedPlacements.add(imgPlacementInfo.imgViewInfoDatum.getValue().visualization);
+					failedPlacements.add(imgPlacementInfo.imgViewInfoDatum.getValue().getVisualization());
 				} else {
 					retryStack.add(imgPlacementInfo);
 				}

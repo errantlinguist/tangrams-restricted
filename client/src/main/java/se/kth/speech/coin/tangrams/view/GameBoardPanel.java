@@ -17,11 +17,16 @@
 package se.kth.speech.coin.tangrams.view;
 
 import java.awt.Dimension;
+import java.awt.image.BufferedImage;
+import java.util.List;
+import java.util.Map.Entry;
 
 import javax.swing.JPanel;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import se.kth.speech.Matrix;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -37,7 +42,7 @@ final class GameBoardPanel extends JPanel {
 	 */
 	private static final long serialVersionUID = 6258829324465894025L;
 
-	public GameBoardPanel(final Dimension boardSize) {
+	public GameBoardPanel(final Dimension boardSize, List<Entry<BufferedImage, ImageViewInfo>> imgViewInfoDataList, Matrix<Integer> posMatrix) {
 		setSize(boardSize);
 		// TODO Auto-generated constructor stub
 	}
