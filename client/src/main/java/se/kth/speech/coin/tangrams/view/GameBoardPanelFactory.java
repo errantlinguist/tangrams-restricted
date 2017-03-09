@@ -285,6 +285,23 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 		}
 	}
 
+	private static String createMatrixReprString(final Matrix<Integer> posMatrix) {
+		final int cellCount = posMatrix.getValues().size();
+		final StringBuilder sb = new StringBuilder(cellCount * 4);
+
+		final ListIterator<List<Integer>> rowIter = posMatrix.rowIterator();
+		if (rowIter.hasNext()) {
+			final List<Integer> first = rowIter.next();
+			appendRowTableRepr(first.iterator(), sb);
+			while (rowIter.hasNext()) {
+				sb.append(System.lineSeparator());
+				final List<Integer> next = rowIter.next();
+				appendRowTableRepr(next.iterator(), sb);
+			}
+		}
+		return sb.toString();
+	}
+
 	private static int[] createPosMatrixBoundsArray(final ImageViewInfo viewInfo) {
 		final ImageViewInfo.RasterizationInfo rasterizationInfo = viewInfo.getRasterization();
 		// NOTE: "rows" in the matrix go top-bottom and "cols" go left-right
@@ -427,16 +444,8 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 				final Matrix<Integer> posMatrix = new Matrix<>(posMatrixBackingArray, posMatrixCols);
 				final SpatialMap<Entry<BufferedImage, ImageViewInfo>> imagePlacements = fillMatrix(imgViewInfoDataList,
 						posMatrix, rnd);
-				final int cellCount = posMatrix.getValues().size();
-				final StringBuilder sb = new StringBuilder(cellCount * 4);
-				for (final ListIterator<List<Integer>> rowIter = posMatrix.rowIterator(); rowIter.hasNext();) {
-					sb.append(System.lineSeparator());
-					final List<Integer> row = rowIter.next();
-					appendRowTableRepr(row.iterator(), sb);
-
-				}
-				System.out.print("IMAGE PLACEMENTS");
-				System.out.println(sb.toString());
+				System.out.println("IMAGE PLACEMENTS");
+				System.out.println(createMatrixReprString(posMatrix));
 				result = new GameBoardPanel(boardSize, imgViewInfoDataList, posMatrix, imagePlacements);
 			} else {
 				throw new IllegalArgumentException(
