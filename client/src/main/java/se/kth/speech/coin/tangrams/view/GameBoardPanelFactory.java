@@ -89,7 +89,7 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 			this.heightGetter = heightGetter;
 		}
 
-		private final int[] getAspectRatio() {
+		private int[] getAspectRatio() {
 			final int width = getWidth();
 			final int height = getHeight();
 			final int gcd = getGcd(width, height);
