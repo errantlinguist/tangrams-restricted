@@ -18,6 +18,8 @@ package se.kth.speech;
 
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 import com.google.common.collect.Maps;
 
@@ -150,35 +152,38 @@ public final class SpatialMap<V> {
 
 		}
 
-//		public boolean subsumes(final Region other) {
-////			return subsumesX(other.getXLowerBound(), other.getXUpperBound())
-////					&& subsumesY(other.getYLowerBound(), other.getYUpperBound());
-//			return this.getXLowerBound() <= other.getXLowerBound() && this.getYLowerBound() <= other.getYLowerBound() && other.getXUpperBound() <= this.getXUpperBound() && other.getYUpperBound() <= this.getYUpperBound();
-//		}
+		// public boolean subsumes(final Region other) {
+		//// return subsumesX(other.getXLowerBound(), other.getXUpperBound())
+		//// && subsumesY(other.getYLowerBound(), other.getYUpperBound());
+		// return this.getXLowerBound() <= other.getXLowerBound() &&
+		// this.getYLowerBound() <= other.getYLowerBound() &&
+		// other.getXUpperBound() <= this.getXUpperBound() &&
+		// other.getYUpperBound() <= this.getYUpperBound();
+		// }
 
-//		public boolean subsumesX(final int firstX, final int... nextXs) {
-//			boolean result = subsumesX(firstX);
-//			if (!result) {
-//				for (final int nextX : nextXs) {
-//					if (result = subsumesX(nextX)) {
-//						break;
-//					}
-//				}
-//			}
-//			return result;
-//		}
-//
-//		public boolean subsumesY(final int firstY, final int... nextYs) {
-//			boolean result = subsumesY(firstY);
-//			if (!result) {
-//				for (final int nextY : nextYs) {
-//					if (result = subsumesY(nextY)) {
-//						break;
-//					}
-//				}
-//			}
-//			return result;
-//		}
+		// public boolean subsumesX(final int firstX, final int... nextXs) {
+		// boolean result = subsumesX(firstX);
+		// if (!result) {
+		// for (final int nextX : nextXs) {
+		// if (result = subsumesX(nextX)) {
+		// break;
+		// }
+		// }
+		// }
+		// return result;
+		// }
+		//
+		// public boolean subsumesY(final int firstY, final int... nextYs) {
+		// boolean result = subsumesY(firstY);
+		// if (!result) {
+		// for (final int nextY : nextYs) {
+		// if (result = subsumesY(nextY)) {
+		// break;
+		// }
+		// }
+		// }
+		// return result;
+		// }
 
 		/*
 		 * (non-Javadoc)
@@ -190,13 +195,13 @@ public final class SpatialMap<V> {
 			return "Region [boundaries=" + Arrays.toString(boundaries) + "]";
 		}
 
-//		private boolean subsumesX(final int x) {
-//			return getXLowerBound() <= x && x <= getXUpperBound();
-//		}
-//
-//		private boolean subsumesY(final int y) {
-//			return getYLowerBound() <= y && y <= getYUpperBound();
-//		}
+		// private boolean subsumesX(final int x) {
+		// return getXLowerBound() <= x && x <= getXUpperBound();
+		// }
+		//
+		// private boolean subsumesY(final int y) {
+		// return getYLowerBound() <= y && y <= getYUpperBound();
+		// }
 
 	}
 
@@ -212,6 +217,14 @@ public final class SpatialMap<V> {
 
 	private SpatialMap(final Map<V, Region> elementRegions) {
 		this.elementRegions = elementRegions;
+	}
+
+	public Set<Entry<V, Region>> elementRegions() {
+		return elementRegions.entrySet();
+	}
+
+	public Set<V> elements() {
+		return elementRegions.keySet();
 	}
 
 	/**
