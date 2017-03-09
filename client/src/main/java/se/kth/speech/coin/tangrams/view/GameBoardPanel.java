@@ -60,6 +60,7 @@ import se.kth.speech.SpatialMap;
 import se.kth.speech.awt.ColorReplacementImageFilter;
 import se.kth.speech.coin.tangrams.content.ImageSize;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
+import se.kth.speech.coin.tangrams.view.ImageViewInfo.RasterizationInfo;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -67,7 +68,7 @@ import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
  *
  */
 final class GameBoardPanel extends Canvas {
-	
+
 	private static class SizeValidator {
 
 		private enum ValidationComment {
@@ -104,8 +105,7 @@ final class GameBoardPanel extends Canvas {
 		}
 
 	}
-	
-	
+
 	private static void appendRowTableRepr(final Iterator<?> rowCellIter, final StringBuilder sb) {
 		final String nullValRepr = "-";
 		if (rowCellIter.hasNext()) {
@@ -121,7 +121,7 @@ final class GameBoardPanel extends Canvas {
 			}
 		}
 	}
-	
+
 	private static String createImageInfoTable(
 			final Collection<? extends Entry<?, ? extends Entry<ImageViewInfo.RasterizationInfo, ?>>> namedImgValData) {
 		final String header = "PATH\tWIDTH\tHEIGHT\tGCD\tCOMMENT";
@@ -143,7 +143,7 @@ final class GameBoardPanel extends Canvas {
 		}
 		return sb.toString();
 	}
-	
+
 	private static String createMatrixReprString(final Matrix<?> matrix) {
 		final int cellCount = matrix.getValues().size();
 		final StringBuilder sb = new StringBuilder(cellCount * 4);
@@ -160,7 +160,7 @@ final class GameBoardPanel extends Canvas {
 		}
 		return sb.toString();
 	}
-	
+
 	private LinkedHashMap<Image, ImageViewInfo> createImageViewInfoMap(
 			final Collection<ImageVisualizationInfo> imgVisualizationInfoData, final SizeValidator validator)
 			throws IOException {
@@ -176,13 +176,13 @@ final class GameBoardPanel extends Canvas {
 			final BufferedImage initialImg = ImageIO.read(imgResourceLoc);
 			final IntSupplier widthGetter = initialImg::getWidth;
 			final IntSupplier heightGetter = initialImg::getHeight;
-	
+
 			{
 				// Size/aspect ratio calculation
 				final ImageViewInfo.RasterizationInfo imgRasterizationInfo = new ImageViewInfo.RasterizationInfo(
 						widthGetter, heightGetter);
-				Image coloredImg = getToolkit()
-						.createImage(new FilteredImageSource(initialImg.getSource(), new ColorReplacementImageFilter(imgVisualizationInfoDatum.getColor())));
+				Image coloredImg = getToolkit().createImage(new FilteredImageSource(initialImg.getSource(),
+						new ColorReplacementImageFilter(imgVisualizationInfoDatum.getColor())));
 				result.put(coloredImg, new ImageViewInfo(imgVisualizationInfoDatum, imgRasterizationInfo));
 				{
 					// Validate image
@@ -221,8 +221,26 @@ final class GameBoardPanel extends Canvas {
 
 	private final Matrix<Integer> posMatrix;
 
-	
-	GameBoardPanel(final Collection<ImageVisualizationInfo> imgVisualizationInfoData, BiFunction<? super Matrix<? super Integer>, ? super List<? extends Entry<? extends Image, ImageViewInfo>>,SpatialMap<Entry<? extends Image, ImageViewInfo>>> matrixFiller) {
+	private Image scaleImageToGridSize(Image img, SpatialMap.Region occupiedGridRegion) {
+		final int colWidth = getGridColWidth();
+		final int imgWidth = colWidth * occupiedGridRegion.getLengthX();
+		final int rowHeight = getGridRowHeight();
+		final int imgHeight = rowHeight * occupiedGridRegion.getLengthY();
+		return img.getScaledInstance(imgWidth, imgHeight, IMG_SCALING_HINTS);
+	}
+
+	private void scaleImage(Image img, ImageViewInfo viewInfo, SpatialMap.Region occupiedGridRegion) {
+		RasterizationInfo rasterizationInfo = viewInfo.getRasterization();
+		ImageVisualizationInfo visualizationInfo = viewInfo.getVisualization();
+		ImageSize size = visualizationInfo.getSize();
+		final int colWidth = getGridColWidth();
+		final int imgWidth = colWidth * occupiedGridRegion.getLengthX();
+		final int rowHeight = getGridRowHeight();
+		final int imgHeight = rowHeight * occupiedGridRegion.getLengthY();
+	}
+
+	GameBoardPanel(final Collection<ImageVisualizationInfo> imgVisualizationInfoData,
+			BiFunction<? super Matrix<? super Integer>, ? super List<? extends Entry<? extends Image, ImageViewInfo>>, SpatialMap<Entry<? extends Image, ImageViewInfo>>> matrixFiller) {
 		// The minimum accepted length of the shortest dimension for an image
 		final int minDimLength = 300;
 		final SizeValidator validator = new SizeValidator(minDimLength, 50, 50);
@@ -238,7 +256,7 @@ final class GameBoardPanel extends Canvas {
 				dimensionValues.add(viewInfo.getRasterization().getGcd());
 			}
 			final Dimension boardSize = new Dimension(minDimLength * 5, minDimLength * 4);
-			setSize(boardSize);	
+			setSize(boardSize);
 			dimensionValues.add(boardSize.width);
 			dimensionValues.add(boardSize.height);
 			// Get the GCD for all components in the view
@@ -257,8 +275,9 @@ final class GameBoardPanel extends Canvas {
 				final Integer[] posMatrixBackingArray = new Integer[posMatrixRows * posMatrixCols];
 				this.posMatrix = new Matrix<>(posMatrixBackingArray, posMatrixCols);
 				if (!isDimensionDivisibleIntoGrid(boardSize, posMatrix)) {
-					throw new IllegalArgumentException(String.format("Board %s not divisble into matrix with dimensions %s.",
-							boardSize, Arrays.toString(posMatrix.getDimensions())));
+					throw new IllegalArgumentException(
+							String.format("Board %s not divisble into matrix with dimensions %s.", boardSize,
+									Arrays.toString(posMatrix.getDimensions())));
 				}
 				this.imagePlacements = matrixFiller.apply(posMatrix, imgViewInfoDataList);
 				// Finished with creating necessary data structures
@@ -272,9 +291,9 @@ final class GameBoardPanel extends Canvas {
 
 		} catch (final IOException e) {
 			throw new UncheckedIOException(e);
-		}		
+		}
 	}
-	
+
 	/*
 	 * (non-Javadoc)
 	 *
@@ -283,43 +302,61 @@ final class GameBoardPanel extends Canvas {
 	@Override
 	public void paint(final Graphics g) {
 		// Draw a grid (for debugging/devel)
-		// drawGrid(g);
-		drawPieceIds(g);
-		
-		drawPieceImages(g);
+		drawGrid(g);
+		 drawPieceIds(g);
 
+		 drawPieceImages(g);
+
+	}
+
+	private int getGridColWidth() {
+		final int[] matrixDims = posMatrix.getDimensions();
+		return getWidth() / matrixDims[1];
+	}
+
+	private int getGridRowHeight() {
+		final int[] matrixDims = posMatrix.getDimensions();
+		return getHeight() / matrixDims[0];
 	}
 
 	private void drawGrid(final Graphics g) {
+		LOGGER.debug("Drawing grid.");
 		final int[] matrixDims = posMatrix.getDimensions();
-
-		// Row lines
-		final int rowHeight = getHeight() / matrixDims[0];
-		int nextRowY = 0;
 		// http://stackoverflow.com/a/21989406/1391325
 		// creates a copy of the Graphics instance
 		final Graphics2D gridDrawingG = (Graphics2D) g.create();
-		// set the stroke of the copy, not the original
-		final Stroke dashed = new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[] { 1 }, 0);
-		gridDrawingG.setStroke(dashed);
-		for (final ListIterator<List<Integer>> matrixRowIter = posMatrix.rowIterator(); matrixRowIter.hasNext();) {
-			gridDrawingG.drawLine(0, nextRowY, getWidth(), nextRowY);
-			nextRowY += rowHeight;
-		}
+		try {
+			// Row lines
+			final int rowHeight = getGridRowHeight();
+			int nextRowY = 0;
+			// set the stroke of the copy, not the original
+			final Stroke dashed = new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[] { 1 },
+					0);
+			gridDrawingG.setStroke(dashed);
+			for (final ListIterator<List<Integer>> matrixRowIter = posMatrix.rowIterator(); matrixRowIter.hasNext(); matrixRowIter.next()) {
+				gridDrawingG.drawLine(0, nextRowY, getWidth(), nextRowY);
+				nextRowY += rowHeight;
+			}
+			LOGGER.debug("Finished drawing row lines.");
 
-		// Column lines
-		final int colWidth = getWidth() / matrixDims[1];
-		int nextColX = 0;
-		for (int colIdx = 0; colIdx < matrixDims[1]; ++colIdx) {
-			gridDrawingG.drawLine(nextColX, 0, nextColX, getHeight());
-			nextColX += colWidth;
+			// Column lines
+			final int colWidth = getGridColWidth();
+			int nextColX = 0;
+			for (int colIdx = 0; colIdx < matrixDims[1]; ++colIdx) {
+				gridDrawingG.drawLine(nextColX, 0, nextColX, getHeight());
+				nextColX += colWidth;
+			}
+			LOGGER.debug("Finished drawing column lines.");
+		} finally {
+			gridDrawingG.dispose();
 		}
+		LOGGER.debug("Finished drawing grid.");
 	}
 
 	private void drawPieceIds(final Graphics g) {
-		final int[] matrixDims = posMatrix.getDimensions();
-		final int rowHeight = getHeight() / matrixDims[0];
-		final int colWidth = getWidth() / matrixDims[1];
+		LOGGER.debug("Drawing piece IDs.");
+		final int rowHeight = getGridRowHeight();
+		final int colWidth = getGridColWidth();
 		final FontMetrics fm = g.getFontMetrics();
 		final int pieceTextHeight = fm.getAscent();
 		int nextRowY = 0;
@@ -343,10 +380,11 @@ final class GameBoardPanel extends Canvas {
 			}
 			nextRowY += rowHeight;
 		}
+		LOGGER.debug("Finished drawing piece IDs.");
 	}
-	
+
 	private static final int IMG_SCALING_HINTS = Image.SCALE_SMOOTH;
-	
+
 	private static Image scaleImageByLongerDimension(final BufferedImage origImg, final int longerDimVal) {
 		final Image result;
 		final ImageViewInfo.Orientation orientation = ImageViewInfo.Orientation.getOrientation(origImg.getWidth(),
@@ -380,7 +418,7 @@ final class GameBoardPanel extends Canvas {
 		}
 		return result;
 	}
-	
+
 	private static Image createScaledImage(final Image origImg, final ImageSize size, final int lesserDimVal,
 			final int maxDimLength, final ImageViewInfo.Orientation orientation) {
 		final Image result;
@@ -401,26 +439,26 @@ final class GameBoardPanel extends Canvas {
 		}
 		return result;
 	}
-	
+
 	private void drawPieceImages(final Graphics g) {
-		final int[] matrixDims = posMatrix.getDimensions();
-		final int rowHeight = getHeight() / matrixDims[0];
-		final int colWidth = getWidth() / matrixDims[1];
-		
+		final int rowHeight = getGridRowHeight();
+		final int colWidth = getGridColWidth();
+
 		final Iterable<? extends Entry<? extends Entry<? extends Image, ImageViewInfo>, SpatialMap.Region>> elementRegions = imagePlacements
 				.elementRegions();
 		for (final Entry<? extends Entry<? extends Image, ImageViewInfo>, SpatialMap.Region> elementRegion : elementRegions) {
 			final Entry<? extends Image, ImageViewInfo> pieceDisplayInfo = elementRegion.getKey();
-			final Image img = pieceDisplayInfo.getKey();
+			final Image initialImg = pieceDisplayInfo.getKey();
+			final SpatialMap.Region region = elementRegion.getValue();
+			final Image scaledImg = scaleImageToGridSize(initialImg, region);
 			ImageViewInfo viewInfo = pieceDisplayInfo.getValue();
 			ImageVisualizationInfo visualizationInfo = viewInfo.getVisualization();
-			final SpatialMap.Region region = elementRegion.getValue();
 
 			final int imgStartX = region.getXLowerBound() * colWidth;
 			final int imgStartY = region.getYLowerBound() * rowHeight;
 			// final int imgEndX = region.getXUpperBound() * colWidth;
 			// final int imgEndY = region.getYUpperBound() * rowHeight;
-			g.drawImage(img, imgStartX, imgStartY, null);
+			g.drawImage(scaledImg, imgStartX, imgStartY, null);
 		}
 	}
 
