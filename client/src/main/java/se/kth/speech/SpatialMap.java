@@ -45,8 +45,40 @@ public final class SpatialMap<V> {
 	 */
 	public static final class Region {
 
-		private static boolean subsumes(final int lower, final int upper, final int point) {
-			return lower <= point && point <= upper;
+		/**
+		 * @see <a href=
+		 *      "http://stackoverflow.com/a/17394265/1391325">StackOverflow</a>
+		 * @param r1x1
+		 * @param r1x2
+		 * @param r1y1
+		 * @param r1y2
+		 * @param r2x1
+		 * @param r2x2
+		 * @param r2y1
+		 * @param r2y2
+		 * @return
+		 */
+		private static boolean intersects(final int r1x1, final int r1x2, final int r1y1, final int r1y2,
+				final int r2x1, final int r2x2, final int r2y1, final int r2y2) {
+			return r1x1 < r2x2 && r1x2 > r2x1 && r1y1 < r2y2 && r1y2 > r2y1;
+		}
+
+		/**
+		 * @see <a href=
+		 *      "http://stackoverflow.com/q/17394089/1391325">StackOverflow</a>
+		 * @param r1x1
+		 * @param r1x2
+		 * @param r1y1
+		 * @param r1y2
+		 * @param r2x1
+		 * @param r2x2
+		 * @param r2y1
+		 * @param r2y2
+		 * @return
+		 */
+		private static boolean subsumes(final int r1x1, final int r1x2, final int r1y1, final int r1y2, final int r2x1,
+				final int r2x2, final int r2y1, final int r2y2) {
+			return r1x1 >= r2x1 && r1x2 >= r2x2 && r1y1 >= r2y1 && r1y2 <= r2y2;
 		}
 
 		private final int xLowerBound;
@@ -156,48 +188,14 @@ public final class SpatialMap<V> {
 		}
 
 		public boolean intersects(final Region other) {
-			return intersectsX(other) && intersectsY(other);
-
-		}
-
-		public boolean intersectsX(final int otherLower, final int otherUpper) {
-			final int thisLower = this.getXLowerBound();
-			final int thisUpper = this.getXUpperBound();
-			return subsumes(thisLower, thisUpper, otherLower) || subsumes(thisLower, thisUpper, otherUpper);
-		}
-
-		public boolean intersectsX(final Region other) {
-			return intersectsX(other.getXLowerBound(), other.getXUpperBound());
-		}
-
-		public boolean intersectsY(final int otherLower, final int otherUpper) {
-			final int thisLower = this.getYLowerBound();
-			final int thisUpper = this.getYUpperBound();
-			return subsumes(thisLower, thisUpper, otherLower) || subsumes(thisLower, thisUpper, otherUpper);
-		}
-
-		public boolean intersectsY(final Region other) {
-			return intersectsY(other.getYLowerBound(), other.getYUpperBound());
+			return intersects(this.getXLowerBound(), this.getXUpperBound(), this.getYLowerBound(),
+					this.getYUpperBound(), other.getXLowerBound(), other.getXUpperBound(), other.getYLowerBound(),
+					other.getYUpperBound());
 		}
 
 		public boolean subsumes(final Region other) {
-			return subsumesX(other) && subsumesY(other);
-		}
-
-		public boolean subsumesX(final int x) {
-			return subsumes(this.getXLowerBound(), this.getXUpperBound(), x);
-		}
-
-		public boolean subsumesX(final Region other) {
-			return subsumesX(other.getXLowerBound()) && subsumesX(other.getXUpperBound());
-		}
-
-		public boolean subsumesY(final int y) {
-			return subsumes(this.getYLowerBound(), this.getYUpperBound(), y);
-		}
-
-		public boolean subsumesY(final Region other) {
-			return subsumesY(other.getYLowerBound()) && subsumesY(other.getYUpperBound());
+			return subsumes(this.getXLowerBound(), this.getXUpperBound(), this.getYLowerBound(), this.getYUpperBound(),
+					other.getXLowerBound(), other.getXUpperBound(), other.getYLowerBound(), other.getYUpperBound());
 		}
 
 		/*
