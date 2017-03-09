@@ -166,8 +166,11 @@ final class RandomImagePositionMatrixFiller implements BiFunction<Matrix<? super
 			final ListIterator<T> rowCellIter = occupiedRow.listIterator(occupiedRegion.getYLowerBound());
 			for (int colIdx = rowCellIter.nextIndex(); colIdx < occupiedRegion.getYUpperBound(); colIdx++) {
 				final T nextOldPieceId = rowCellIter.next();
-				assert nextOldPieceId == null;
-				rowCellIter.set(pieceId);
+				if (nextOldPieceId == null) {
+					rowCellIter.set(pieceId);	
+				} else {
+					throw new IllegalArgumentException(String.format("Previous value at %d*%d not null.", rowIdx, colIdx));
+				}
 			}
 		}
 	}
