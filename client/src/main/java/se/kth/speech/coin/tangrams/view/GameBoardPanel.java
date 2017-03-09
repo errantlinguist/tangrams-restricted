@@ -105,16 +105,18 @@ final class GameBoardPanel extends Canvas {
 
 	}
 	
+	
 	private static void appendRowTableRepr(final Iterator<?> rowCellIter, final StringBuilder sb) {
+		final String nullValRepr = "-";
 		if (rowCellIter.hasNext()) {
 			final Object first = rowCellIter.next();
-			final String firstRepr = Objects.toString(first, "-");
+			final String firstRepr = Objects.toString(first, nullValRepr);
 			sb.append(firstRepr);
 
 			while (rowCellIter.hasNext()) {
 				sb.append('\t');
 				final Object next = rowCellIter.next();
-				final String nextRepr = Objects.toString(next, "-");
+				final String nextRepr = Objects.toString(next, nullValRepr);
 				sb.append(nextRepr);
 			}
 		}
