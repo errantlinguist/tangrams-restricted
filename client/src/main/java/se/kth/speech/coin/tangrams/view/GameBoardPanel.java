@@ -48,12 +48,16 @@ final class GameBoardPanel extends Canvas {
 	 *
 	 */
 	private static final long serialVersionUID = 6258829324465894025L;
+	
+	private final Matrix<Integer> posMatrix;
 
 	public GameBoardPanel(final Dimension boardSize, List<Entry<BufferedImage, ImageViewInfo>> imgViewInfoDataList, Matrix<Integer> posMatrix, SpatialMap<Entry<BufferedImage, ImageViewInfo>> imagePlacements) {
 		if (!isDimensionDivisibleIntoGrid(boardSize, posMatrix)){
 			throw new IllegalArgumentException(String.format("Board %s not divisble into matrix with dimensions %s.", boardSize, Arrays.toString(posMatrix.getDimensions())));
 		}
+		this.posMatrix = posMatrix;
 		setSize(boardSize);
+		
 		// TODO Auto-generated constructor stub
 	}
 
@@ -62,6 +66,8 @@ final class GameBoardPanel extends Canvas {
 	 */
 	@Override
 	public void paint(Graphics g) {
+//		posMatrix.get
+//		g.drawLine(x1, y1, x2, y2);
 	}
 
 }

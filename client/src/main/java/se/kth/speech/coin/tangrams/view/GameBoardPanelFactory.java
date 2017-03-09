@@ -413,11 +413,13 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 			// Get the GCD for all components in the view
 			final int greatestCommonDenominator = MathDenominators.gcd(dimensionValues.iterator());
 			LOGGER.debug("GCD for all components is {}.", greatestCommonDenominator);
-			// Validate the size and GCD of all components, including the board itself
+			// Validate the size and GCD of all components, including the board
+			// itself
 			final Set<SizeValidator.ValidationComment> boardValidationComments = validator.validate(boardSize.width,
 					boardSize.height, greatestCommonDenominator);
 			if (boardValidationComments.isEmpty()) {
-				// NOTE: "rows" in the matrix go top-bottom and "cols" go left-right
+				// NOTE: "rows" in the matrix go top-bottom and "cols" go
+				// left-right
 				final int posMatrixRows = boardSize.height / greatestCommonDenominator;
 				final int posMatrixCols = boardSize.width / greatestCommonDenominator;
 				LOGGER.info("Creating a position matrix of size {}*{}.", posMatrixRows, posMatrixCols);
@@ -427,12 +429,13 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 						posMatrix, rnd);
 				final int cellCount = posMatrix.getValues().size();
 				final StringBuilder sb = new StringBuilder(cellCount * 4);
-				for (int rowIdx = 0; rowIdx < posMatrix.getDimensions()[0]; rowIdx++) {
-					final List<Integer> row = posMatrix.getRow(rowIdx);
-					appendRowTableRepr(row.iterator(), sb);
+				for (final ListIterator<List<Integer>> rowIter = posMatrix.rowIterator(); rowIter.hasNext();) {
 					sb.append(System.lineSeparator());
+					final List<Integer> row = rowIter.next();
+					appendRowTableRepr(row.iterator(), sb);
+
 				}
-				System.out.println("IMAGE PLACEMENTS");
+				System.out.print("IMAGE PLACEMENTS");
 				System.out.println(sb.toString());
 				result = new GameBoardPanel(boardSize, imgViewInfoDataList, posMatrix, imagePlacements);
 			} else {
