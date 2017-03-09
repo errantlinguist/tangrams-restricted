@@ -48,7 +48,9 @@ public final class SpatialMap<V> {
 		private final int xLowerBound;
 
 		private final int xUpperBound;
+		
 		private final int yLowerBound;
+		
 		private final int yUpperBound;
 
 		public Region(final int xLowerBound, final int xUpperBound, final int yLowerBound, final int yUpperBound) {
