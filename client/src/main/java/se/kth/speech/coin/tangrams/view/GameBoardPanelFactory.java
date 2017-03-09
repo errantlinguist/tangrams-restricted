@@ -652,7 +652,6 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 			final SpatialMap.Region imgRegion = createRandomSpatialRegion(piecePosMatrixSize, posDims, rnd);
 			if (occupiedRegions.isOccupied(imgRegion)) {
 				LOGGER.debug("Cancelling placement of image because the target space is occupied.");
-				// TODO: create fallback logic for choosing a new region
 				retryStack.add(new ImageMatrixPositionInfo(imgId, piecePosMatrixSize, imgViewInfoDatum));
 			} else {
 				setMatrixPositionValues(posMatrix, imgRegion, imgId);
