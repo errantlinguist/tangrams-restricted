@@ -229,47 +229,6 @@ public final class SpatialMap<V> {
 			return this.getYLowerBound() < other.getYLowerBound() && other.getYUpperBound() < this.getYUpperBound();
 		}
 
-		// public boolean subsumes(final Region other) {
-		//// return subsumesX(other.getXLowerBound(), other.getXUpperBound())
-		//// && subsumesY(other.getYLowerBound(), other.getYUpperBound());
-		// return this.getXLowerBound() <= other.getXLowerBound() &&
-		// this.getYLowerBound() <= other.getYLowerBound() &&
-		// other.getXUpperBound() <= this.getXUpperBound() &&
-		// other.getYUpperBound() <= this.getYUpperBound();
-		// }
-
-		// public boolean subsumesX(final int firstX, final int... nextXs) {
-		// boolean result = subsumesX(firstX);
-		// if (!result) {
-		// for (final int nextX : nextXs) {
-		// if (result = subsumesX(nextX)) {
-		// break;
-		// }
-		// }
-		// }
-		// return result;
-		// }
-		//
-		// public boolean subsumesY(final int firstY, final int... nextYs) {
-		// boolean result = subsumesY(firstY);
-		// if (!result) {
-		// for (final int nextY : nextYs) {
-		// if (result = subsumesY(nextY)) {
-		// break;
-		// }
-		// }
-		// }
-		// return result;
-		// }
-
-		// private boolean subsumesX(final int x) {
-		// return getXLowerBound() <= x && x <= getXUpperBound();
-		// }
-		//
-		// private boolean subsumesY(final int y) {
-		// return getYLowerBound() <= y && y <= getYUpperBound();
-		// }
-
 	}
 
 	/**
@@ -302,10 +261,6 @@ public final class SpatialMap<V> {
 		return elementRegions.values().stream().anyMatch(elementRegion -> elementRegion.intersects(region));
 	}
 
-	/**
-	 * @param imgViewInfoDatum
-	 * @param imgRegion
-	 */
 	public void put(final Region region, final V element) {
 		elementRegions.put(element, region);
 	}
