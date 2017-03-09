@@ -89,7 +89,7 @@ public final class SpatialMapRegionTest {
 		final Region r = new Region(0, 2, 3, 5);
 		Assert.assertTrue(r.intersects(new Region(0, 2, 2, 5)));
 	}
-	
+
 	/**
 	 * Test method for
 	 * {@link se.kth.speech.SpatialMap.Region#intersects(se.kth.speech.SpatialMap.Region)}.
@@ -99,7 +99,7 @@ public final class SpatialMapRegionTest {
 		final Region r = new Region(0, 2, 3, 5);
 		Assert.assertFalse(r.intersects(new Region(5, 6, 3, 4)));
 	}
-	
+
 	/**
 	 * Test method for
 	 * {@link se.kth.speech.SpatialMap.Region#intersects(se.kth.speech.SpatialMap.Region)}.
@@ -133,6 +133,38 @@ public final class SpatialMapRegionTest {
 		Assume.assumeTrue("Lower bound of x not less than or equal to upper bound.", xLowerBound <= xUpperBound);
 		Assume.assumeTrue("Lower bound of y not less than or equal to upper bound.", yLowerBound <= yUpperBound);
 		new Region(xLowerBound, xUpperBound, yLowerBound, yUpperBound);
+	}
+
+	/**
+	 * Test method for
+	 * {@link se.kth.speech.SpatialMap.Region#subsumes(SpatialMap.Region)}.
+	 */
+	@Test
+	public final void testSubsumesNegative() {
+		final Region superRegion = new Region(3, 6, 4, 6);
+		final Region subRegion = new Region(3, 4, 5, 6);
+		Assert.assertTrue(subRegion.subsumes(superRegion));
+	}
+
+	/**
+	 * Test method for
+	 * {@link se.kth.speech.SpatialMap.Region#subsumes(SpatialMap.Region)}.
+	 */
+	@Test
+	public final void testSubsumesPositive() {
+		final Region superRegion = new Region(3, 6, 4, 6);
+		final Region subRegion = new Region(3, 4, 5, 6);
+		Assert.assertTrue(superRegion.subsumes(subRegion));
+	}
+
+	/**
+	 * Test method for
+	 * {@link se.kth.speech.SpatialMap.Region#subsumes(SpatialMap.Region)}.
+	 */
+	@Test
+	public final void testSubsumesSelf() {
+		final Region superRegion = new Region(3, 6, 4, 6);
+		Assert.assertTrue(superRegion.subsumes(superRegion));
 	}
 
 	/**

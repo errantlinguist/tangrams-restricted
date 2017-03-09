@@ -135,6 +135,11 @@ public final class SpatialMap<V> {
 			return subsumesX(other.getXLowerBound(), other.getXUpperBound())
 					|| subsumesY(other.getYLowerBound(), other.getYUpperBound());
 		}
+		
+		public boolean subsumes(final Region other) {
+			return subsumesX(other.getXLowerBound(), other.getXUpperBound())
+					&& subsumesY(other.getYLowerBound(), other.getYUpperBound());
+		}
 
 		public boolean subsumesX(final int firstX, final int... nextXs) {
 			boolean result = subsumesX(firstX);
