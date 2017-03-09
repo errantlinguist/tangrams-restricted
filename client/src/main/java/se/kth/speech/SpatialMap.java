@@ -154,6 +154,14 @@ public final class SpatialMap<V> {
 			result = prime * result + yUpperBound;
 			return result;
 		}
+		
+		public boolean intersectsX(Region other){
+			return !(this.getXUpperBound() < other.getXLowerBound());
+		}
+		
+		public boolean intersectsY(Region other){
+			return !(this.getYUpperBound() < other.getYLowerBound());
+		}
 
 		public boolean intersects(final Region other) {
 			// http://stackoverflow.com/a/13390495/1391325
@@ -211,10 +219,6 @@ public final class SpatialMap<V> {
 
 		private boolean areBoundariesValid() {
 			return getXLowerBound() <= getXUpperBound() && getYLowerBound() <= getYUpperBound();
-		}
-
-		private boolean intersectsY(final Region other) {
-			return this.getYLowerBound() < other.getYLowerBound() && other.getYUpperBound() < this.getYUpperBound();
 		}
 
 	}
