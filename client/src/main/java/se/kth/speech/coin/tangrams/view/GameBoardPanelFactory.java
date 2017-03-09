@@ -287,15 +287,12 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 
 	private static int[] createPosMatrixBoundsArray(final ImageViewInfo viewInfo) {
 		final ImageViewInfo.RasterizationInfo rasterizationInfo = viewInfo.getRasterization();
+		// NOTE: "rows" in the matrix go top-bottom and "cols" go left-right
 		// The number of rows this image takes up in the
 		// position matrix
-		// final int occupiedPosMatrixRowCount = rasterizationInfo.getWidth() /
-		// rasterizationInfo.getGcd();
 		final int occupiedPosMatrixRowCount = rasterizationInfo.getHeight() / rasterizationInfo.getGcd();
 		// The number of columns this image takes up in the
 		// position matrix
-		// final int occupiedPosMatrixColCount = rasterizationInfo.getHeight() /
-		// rasterizationInfo.getGcd();
 		final int occupiedPosMatrixColCount = rasterizationInfo.getWidth() / rasterizationInfo.getGcd();
 		LOGGER.debug("Calculated position grid size {}*{} for \"{}\".", new Object[] {
 				viewInfo.getVisualization().getResourceLoc(), occupiedPosMatrixRowCount, occupiedPosMatrixColCount });
@@ -420,12 +417,13 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 			final Set<SizeValidator.ValidationComment> boardValidationComments = validator.validate(boardSize.width,
 					boardSize.height, greatestCommonDenominator);
 			if (boardValidationComments.isEmpty()) {
-				final int posMatrixRows = boardSize.width / greatestCommonDenominator;
-				final int posMatrixCols = boardSize.height / greatestCommonDenominator;
+				// NOTE: "rows" in the matrix go top-bottom and "cols" go left-right
+				final int posMatrixRows = boardSize.height / greatestCommonDenominator;
+				final int posMatrixCols = boardSize.width / greatestCommonDenominator;
 				LOGGER.info("Creating a position matrix of size {}*{}.", posMatrixRows, posMatrixCols);
 				final Integer[] posMatrixBackingArray = new Integer[posMatrixRows * posMatrixCols];
 				final Matrix<Integer> posMatrix = new Matrix<>(posMatrixBackingArray, posMatrixCols);
-				SpatialMap<Entry<BufferedImage, ImageViewInfo>> imagePlacements = fillMatrix(imgViewInfoDataList,
+				final SpatialMap<Entry<BufferedImage, ImageViewInfo>> imagePlacements = fillMatrix(imgViewInfoDataList,
 						posMatrix, rnd);
 				final int cellCount = posMatrix.getValues().size();
 				final StringBuilder sb = new StringBuilder(cellCount * 4);
