@@ -45,6 +45,10 @@ public final class SpatialMap<V> {
 	 */
 	public static final class Region {
 
+		private static boolean intersects(int firstLower, int secondUpper){
+			return firstLower <= secondUpper;
+		}
+		
 		private static boolean subsumes(final int lower, final int upper, final int point) {
 			return lower <= point && point <= upper;
 		}
@@ -155,14 +159,6 @@ public final class SpatialMap<V> {
 			return result;
 		}
 		
-		public boolean intersectsX(Region other){
-			return !(this.getXUpperBound() < other.getXLowerBound());
-		}
-		
-		public boolean intersectsY(Region other){
-			return !(this.getYUpperBound() < other.getYLowerBound());
-		}
-
 		public boolean intersects(final Region other) {
 			// http://stackoverflow.com/a/13390495/1391325
 			// If you have four coordinates – ((X,Y),(A,B)) and
@@ -174,6 +170,14 @@ public final class SpatialMap<V> {
 			// Intersection = Not Empty
 			return intersectsX(other) && intersectsY(other);
 
+		}
+		
+		public boolean intersectsX(Region other){
+			return intersects(this.getXLowerBound(), other.getXUpperBound());
+		}
+
+		public boolean intersectsY(Region other){
+			return intersects(this.getYLowerBound(), other.getYUpperBound());
 		}
 
 		public boolean subsumes(final Region other) {
