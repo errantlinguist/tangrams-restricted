@@ -53,7 +53,7 @@ public final class SpatialMapRegionTest {
 		final int testPointCount = 10;
 		TEST_POINTS = createRandomIntArray(rnd, testPointCount);
 
-		final int testRegionCount = 100 / 4;
+		final int testRegionCount = testPointCount / 4;
 		TEST_REGIONS = Sets.newHashSetWithExpectedSize(testRegionCount);
 		do {
 			final int[] boundaries = createRandomBoundingBoxArray(rnd, TEST_POINTS);
