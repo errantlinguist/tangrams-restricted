@@ -151,6 +151,16 @@ public final class SpatialMapRegionTest {
 	 * {@link se.kth.speech.SpatialMap.Region#subsumes(SpatialMap.Region)}.
 	 */
 	@Test
+	public final void testSubsumesNegativeIntersecting() {
+		final Region r = new Region(0, 2, 0, 1);
+		Assert.assertFalse(r.subsumes(new Region(0, 3, 1, 3)));
+	}
+
+	/**
+	 * Test method for
+	 * {@link se.kth.speech.SpatialMap.Region#subsumes(SpatialMap.Region)}.
+	 */
+	@Test
 	public final void testSubsumesPositive() {
 		final Region superRegion = new Region(3, 6, 4, 6);
 		final Region subRegion = new Region(3, 4, 5, 6);
