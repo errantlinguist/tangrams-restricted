@@ -50,7 +50,7 @@ public final class SpatialMapRegionTest {
 
 	static {
 		final Random rnd = new Random();
-		final int testPointCount = 10;
+		final int testPointCount = 20;
 		TEST_POINTS = createRandomIntArray(rnd, testPointCount);
 
 		final int testRegionCount = testPointCount / 4;
