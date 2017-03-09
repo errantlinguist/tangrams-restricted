@@ -165,45 +165,45 @@ public final class SpatialMapRegionTest {
 		Assert.assertTrue(r.intersects(new Region(0, 1, 3, 4)));
 	}
 
-//	/**
-//	 * Test method for
-//	 * {@link se.kth.speech.SpatialMap.Region#intersectsX(se.kth.speech.SpatialMap.Region)}.
-//	 */
-//	@Test
-//	public final void testIntersectsXNegative() {
-//		final Region r = new Region(3, 4, 0, 2);
-//		Assert.assertFalse(r.intersectsX(new Region(5, 6, 0, 2)));
-//	}
-//
-//	/**
-//	 * Test method for
-//	 * {@link se.kth.speech.SpatialMap.Region#intersectsX(se.kth.speech.SpatialMap.Region)}.
-//	 */
-//	@Test
-//	public final void testIntersectsXPositive() {
-//		final Region r = new Region(3, 4, 0, 2);
-//		Assert.assertTrue(r.intersectsX(new Region(4, 5, 3, 5)));
-//	}
-//
-//	/**
-//	 * Test method for
-//	 * {@link se.kth.speech.SpatialMap.Region#intersectsY(se.kth.speech.SpatialMap.Region)}.
-//	 */
-//	@Test
-//	public final void testIntersectsYNegative() {
-//		final Region r = new Region(0, 2, 3, 4);
-//		Assert.assertFalse(r.intersectsY(new Region(0, 2, 5, 6)));
-//	}
-//
-//	/**
-//	 * Test method for
-//	 * {@link se.kth.speech.SpatialMap.Region#intersectsY(se.kth.speech.SpatialMap.Region)}.
-//	 */
-//	@Test
-//	public final void testIntersectsYPositive() {
-//		final Region r = new Region(0, 2, 3, 4);
-//		Assert.assertTrue(r.intersectsY(new Region(3, 5, 4, 5)));
-//	}
+	/**
+	 * Test method for
+	 * {@link se.kth.speech.SpatialMap.Region#intersectsX(se.kth.speech.SpatialMap.Region)}.
+	 */
+	@Test
+	public final void testIntersectsXNegative() {
+		final Region r = new Region(3, 4, 0, 2);
+		Assert.assertFalse(r.intersectsX(new Region(5, 6, 0, 2)));
+	}
+
+	/**
+	 * Test method for
+	 * {@link se.kth.speech.SpatialMap.Region#intersectsX(se.kth.speech.SpatialMap.Region)}.
+	 */
+	@Test
+	public final void testIntersectsXPositive() {
+		final Region r = new Region(3, 4, 0, 2);
+		Assert.assertTrue(r.intersectsX(new Region(4, 5, 3, 5)));
+	}
+
+	/**
+	 * Test method for
+	 * {@link se.kth.speech.SpatialMap.Region#intersectsY(se.kth.speech.SpatialMap.Region)}.
+	 */
+	@Test
+	public final void testIntersectsYNegative() {
+		final Region r = new Region(0, 2, 3, 4);
+		Assert.assertFalse(r.intersectsY(new Region(0, 2, 5, 6)));
+	}
+
+	/**
+	 * Test method for
+	 * {@link se.kth.speech.SpatialMap.Region#intersectsY(se.kth.speech.SpatialMap.Region)}.
+	 */
+	@Test
+	public final void testIntersectsYPositive() {
+		final Region r = new Region(0, 2, 3, 4);
+		Assert.assertTrue(r.intersectsY(new Region(3, 5, 4, 5)));
+	}
 
 	/**
 	 * Test method for
