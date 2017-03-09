@@ -87,7 +87,7 @@ public final class SpatialMapRegionTest {
 			StringBuilder sb = new StringBuilder();
 			sb.append(r1);
 			sb.append(" was evaluated");
-			if (r1Test){
+			if (!r1Test){
 				sb.append(" not");
 			}
 			sb.append(" to subsume ");
