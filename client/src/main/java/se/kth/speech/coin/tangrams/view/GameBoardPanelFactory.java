@@ -285,17 +285,17 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 		}
 	}
 
-	private static String createMatrixReprString(final Matrix<Integer> posMatrix) {
+	private static String createMatrixReprString(final Matrix<?> posMatrix) {
 		final int cellCount = posMatrix.getValues().size();
 		final StringBuilder sb = new StringBuilder(cellCount * 4);
 
-		final ListIterator<List<Integer>> rowIter = posMatrix.rowIterator();
+		final ListIterator<? extends List<?>> rowIter = posMatrix.rowIterator();
 		if (rowIter.hasNext()) {
-			final List<Integer> first = rowIter.next();
+			final List<?> first = rowIter.next();
 			appendRowTableRepr(first.iterator(), sb);
 			while (rowIter.hasNext()) {
 				sb.append(System.lineSeparator());
-				final List<Integer> next = rowIter.next();
+				final List<?> next = rowIter.next();
 				appendRowTableRepr(next.iterator(), sb);
 			}
 		}
