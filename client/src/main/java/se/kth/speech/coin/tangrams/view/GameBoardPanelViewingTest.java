@@ -46,7 +46,7 @@ public final class GameBoardPanelViewingTest implements Runnable {
 		} else {
 			final String gameId = args[0];
 			final int maxPlacementRetriesPerImg = args.length > 1 ? Integer.parseInt(args[1]) : 3;
-			final GameBoardPanelFactory panelFactory = new GameBoardPanelFactory(maxPlacementRetriesPerImg);
+			final GameBoardPanelFactory panelFactory = new GameBoardPanelFactory(maxPlacementRetriesPerImg, true);
 			LOGGER.info("Creating view for game \"{}\".", gameId);
 			final Random rnd = new Random(Long.parseLong(gameId));
 			final GameBoardPanelViewingTest testInstance = new GameBoardPanelViewingTest(panelFactory, rnd);

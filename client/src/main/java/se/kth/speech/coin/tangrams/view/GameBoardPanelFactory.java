@@ -380,10 +380,13 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 		}
 	}
 
+	private final boolean allowFailedPlacements;
+
 	private final int maxPlacementRetriesPerImg;
 
-	GameBoardPanelFactory(final int maxPlacementRetriesPerImg) {
+	GameBoardPanelFactory(final int maxPlacementRetriesPerImg, final boolean allowFailedPlacements) {
 		this.maxPlacementRetriesPerImg = maxPlacementRetriesPerImg;
+		this.allowFailedPlacements = allowFailedPlacements;
 	}
 
 	@Override
@@ -505,7 +508,12 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 		if (failedPlacements.isEmpty()) {
 			LOGGER.info("Successfully placed {} images.", imgViewInfoData.size());
 		} else {
-			throw new IllegalArgumentException(createFailedPlacementErrorMsg(failedPlacements));
+			final String errorMsg = createFailedPlacementErrorMsg(failedPlacements);
+			if (allowFailedPlacements) {
+				LOGGER.warn(errorMsg);
+			} else {
+				throw new IllegalArgumentException(errorMsg);
+			}
 		}
 	}
 
