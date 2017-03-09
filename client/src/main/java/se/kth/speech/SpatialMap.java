@@ -46,7 +46,7 @@ public final class SpatialMap<V> {
 	public static final class Region {
 
 		private static boolean intersects(int firstLower, int secondUpper){
-			return firstLower <= secondUpper;
+			return !(firstLower > secondUpper);
 		}
 		
 		private static boolean subsumes(final int lower, final int upper, final int point) {
@@ -159,7 +159,21 @@ public final class SpatialMap<V> {
 			return result;
 		}
 		
+//		private static int intersection(int firstLower, int firstUpper, int secondLower, int secondUpper){
+//			int upperDiff = firstUpper - secondUpper;
+//			int lowerDiff = firstLower - secondLower;
+//		}
+		
 		public boolean intersects(final Region other) {
+//			finAL BOOLEAN RESULT;
+//			IF (THIS.GETXLOWERBOUND() <= OTHER.GETXUPPERBOUND()) {
+//				IF (THIS.GETYLOWERBOUND() <= OTHER.GETYLOWERBOUND()){
+//					// THIS SUBSUMES THE OTHER SO OF COURSE IT INTERSECT AS WELL
+//					RESULT = TRUE;
+//				} ELSE {
+//					
+//				}
+//			}
 			// http://stackoverflow.com/a/13390495/1391325
 			// If you have four coordinates – ((X,Y),(A,B)) and
 			// ((X1,Y1),(A1,B1)) – rather than two plus width and height, it
@@ -173,11 +187,19 @@ public final class SpatialMap<V> {
 		}
 		
 		public boolean intersectsX(Region other){
-			return intersects(this.getXLowerBound(), other.getXUpperBound());
+			int thisLower = this.getXLowerBound();
+			int otherUpper = other.getXUpperBound();
+			final boolean result = intersects(thisLower, otherUpper);
+			System.out.println("X - thisLower: " + thisLower + " otherUpper: " + otherUpper + " intersects? " + result);
+			return result;
 		}
 
 		public boolean intersectsY(Region other){
-			return intersects(this.getYLowerBound(), other.getYUpperBound());
+			int thisLower = this.getYLowerBound();
+			int otherUpper = other.getYUpperBound();
+			final boolean result = intersects(thisLower, otherUpper);
+			System.out.println("Y - thisLower: " + thisLower + " otherUpper: " + otherUpper + " intersects? " + result);
+			return result;
 		}
 
 		public boolean subsumes(final Region other) {

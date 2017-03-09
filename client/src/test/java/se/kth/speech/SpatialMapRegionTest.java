@@ -103,7 +103,7 @@ public final class SpatialMapRegionTest {
 	@Test
 	public final void testIntersectsNegative() {
 		final Region r = new Region(0, 2, 3, 5);
-		Assert.assertFalse(r.intersects(new Region(5, 6, 3, 4)));
+		Assert.assertFalse(r.intersects(new Region(5, 6, 6, 7)));
 	}
 
 	/**
