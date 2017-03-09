@@ -223,9 +223,9 @@ final class GameBoardPanel extends Canvas {
 
 	private Image scaleImageToGridSize(Image img, SpatialMap.Region occupiedGridRegion) {
 		final int colWidth = getGridColWidth();
-		final int imgWidth = colWidth * occupiedGridRegion.getLengthX();
+		final int imgWidth = colWidth * occupiedGridRegion.getLengthY();
 		final int rowHeight = getGridRowHeight();
-		final int imgHeight = rowHeight * occupiedGridRegion.getLengthY();
+		final int imgHeight = rowHeight * occupiedGridRegion.getLengthX();
 		return img.getScaledInstance(imgWidth, imgHeight, IMG_SCALING_HINTS);
 	}
 
