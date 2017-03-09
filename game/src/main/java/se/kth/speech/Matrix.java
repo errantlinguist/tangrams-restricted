@@ -16,6 +16,7 @@
 */
 package se.kth.speech;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.ListIterator;
@@ -182,6 +183,16 @@ public final class Matrix<T> {
 			return false;
 		}
 		return true;
+	}
+
+	public List<T> getColumn(final int colIdx) {
+		final List<T> result = new ArrayList<>(getDimensions()[0]);
+		for (final ListIterator<List<T>> rowIter = rowIterator(); rowIter.hasNext();) {
+			final List<T> row = rowIter.next();
+			final T rowColValue = row.get(colIdx);
+			result.add(rowColValue);
+		}
+		return result;
 	}
 
 	/**
