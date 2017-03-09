@@ -103,6 +103,18 @@ public final class SpatialMap<V> {
 			}
 			return true;
 		}
+		
+		public int[] getDimensions(){
+			return new int[]{getLengthX(), getLengthY()};
+		}
+
+		public int getLengthX(){
+			return getXUpperBound() - getXLowerBound();
+		}
+
+		public int getLengthY(){
+			return getYUpperBound() - getYLowerBound();
+		}
 
 		public int getXLowerBound() {
 			return getXLowerBound(boundaries);
@@ -111,11 +123,11 @@ public final class SpatialMap<V> {
 		public int getXUpperBound() {
 			return getXUpperBound(boundaries);
 		}
-
+		
 		public int getYLowerBound() {
 			return getYLowerBound(boundaries);
 		}
-
+		
 		public int getYUpperBound() {
 			return getYUpperBound(boundaries);
 		}
