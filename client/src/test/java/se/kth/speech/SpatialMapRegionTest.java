@@ -95,6 +95,16 @@ public final class SpatialMapRegionTest {
 	 * {@link se.kth.speech.SpatialMap.Region#intersects(se.kth.speech.SpatialMap.Region)}.
 	 */
 	@Test
+	public final void testIntersectsNegative() {
+		final Region r = new Region(0, 2, 3, 5);
+		Assert.assertFalse(r.intersects(new Region(5, 6, 3, 4)));
+	}
+	
+	/**
+	 * Test method for
+	 * {@link se.kth.speech.SpatialMap.Region#intersects(se.kth.speech.SpatialMap.Region)}.
+	 */
+	@Test
 	public final void testIntersectsSubregion() {
 		final Region r = new Region(0, 2, 3, 5);
 		Assert.assertTrue(r.intersects(new Region(0, 1, 3, 4)));
