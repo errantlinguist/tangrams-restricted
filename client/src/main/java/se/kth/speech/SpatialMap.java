@@ -131,39 +131,54 @@ public final class SpatialMap<V> {
 			return result;
 		}
 
+		// public boolean intersects(final Region other) {
+		// return subsumesX(other.getXLowerBound(), other.getXUpperBound())
+		// || subsumesY(other.getYLowerBound(), other.getYUpperBound());
+		// }
+
 		public boolean intersects(final Region other) {
-			return subsumesX(other.getXLowerBound(), other.getXUpperBound())
-					|| subsumesY(other.getYLowerBound(), other.getYUpperBound());
-		}
-		
-		public boolean subsumes(final Region other) {
-			return subsumesX(other.getXLowerBound(), other.getXUpperBound())
-					&& subsumesY(other.getYLowerBound(), other.getYUpperBound());
+			// http://stackoverflow.com/a/13390495/1391325
+			// If you have four coordinates – ((X,Y),(A,B)) and
+			// ((X1,Y1),(A1,B1)) – rather than two plus width and height, it
+			// would look like this:
+			// if (A<X1 or A1<X or B<Y1 or B1<Y):
+			// Intersection = Empty
+			// else:
+			// Intersection = Not Empty
+			return !(this.getXUpperBound() < other.getXLowerBound() || other.getXUpperBound() < this.getXLowerBound()
+					|| this.getYUpperBound() < other.getYLowerBound() || this.getYUpperBound() < this.getYLowerBound());
+
 		}
 
-		public boolean subsumesX(final int firstX, final int... nextXs) {
-			boolean result = subsumesX(firstX);
-			if (!result) {
-				for (final int nextX : nextXs) {
-					if (result = subsumesX(nextX)) {
-						break;
-					}
-				}
-			}
-			return result;
-		}
+//		public boolean subsumes(final Region other) {
+////			return subsumesX(other.getXLowerBound(), other.getXUpperBound())
+////					&& subsumesY(other.getYLowerBound(), other.getYUpperBound());
+//			return this.getXLowerBound() <= other.getXLowerBound() && this.getYLowerBound() <= other.getYLowerBound() && other.getXUpperBound() <= this.getXUpperBound() && other.getYUpperBound() <= this.getYUpperBound();
+//		}
 
-		public boolean subsumesY(final int firstY, final int... nextYs) {
-			boolean result = subsumesY(firstY);
-			if (!result) {
-				for (final int nextY : nextYs) {
-					if (result = subsumesY(nextY)) {
-						break;
-					}
-				}
-			}
-			return result;
-		}
+//		public boolean subsumesX(final int firstX, final int... nextXs) {
+//			boolean result = subsumesX(firstX);
+//			if (!result) {
+//				for (final int nextX : nextXs) {
+//					if (result = subsumesX(nextX)) {
+//						break;
+//					}
+//				}
+//			}
+//			return result;
+//		}
+//
+//		public boolean subsumesY(final int firstY, final int... nextYs) {
+//			boolean result = subsumesY(firstY);
+//			if (!result) {
+//				for (final int nextY : nextYs) {
+//					if (result = subsumesY(nextY)) {
+//						break;
+//					}
+//				}
+//			}
+//			return result;
+//		}
 
 		/*
 		 * (non-Javadoc)
@@ -175,13 +190,13 @@ public final class SpatialMap<V> {
 			return "Region [boundaries=" + Arrays.toString(boundaries) + "]";
 		}
 
-		private boolean subsumesX(final int x) {
-			return getXLowerBound() <= x && x <= getXUpperBound();
-		}
-
-		private boolean subsumesY(final int y) {
-			return getYLowerBound() <= y && y <= getYUpperBound();
-		}
+//		private boolean subsumesX(final int x) {
+//			return getXLowerBound() <= x && x <= getXUpperBound();
+//		}
+//
+//		private boolean subsumesY(final int y) {
+//			return getYLowerBound() <= y && y <= getYUpperBound();
+//		}
 
 	}
 
