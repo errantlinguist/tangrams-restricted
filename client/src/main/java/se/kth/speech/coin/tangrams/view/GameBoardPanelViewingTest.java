@@ -70,7 +70,7 @@ public final class GameBoardPanelViewingTest implements Runnable {
 		final int pieceCount = 20;
 		final RandomPieceImageManager imgManager = new RandomPieceImageManager(pieceCount);
 		final List<ImageVisualizationInfo> imgVisualizationInfoData = imgManager.createImageData(rnd);
-		final GameBoardPanel boardPanel = new GameBoardPanelFactory().apply(imgVisualizationInfoData, rnd);
+		final GameBoardPanel boardPanel = new GameBoardPanelFactory(3).apply(imgVisualizationInfoData, rnd);
 		frame.add(boardPanel, BorderLayout.CENTER);
 
 		frame.pack();

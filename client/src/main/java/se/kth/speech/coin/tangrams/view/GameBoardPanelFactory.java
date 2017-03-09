@@ -366,6 +366,26 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 
 	private static final int IMG_SCALING_HINTS = Image.SCALE_SMOOTH;
 
+	private static final BiFunction<ImageMatrixPositionInfo, Integer, Integer> INCREMENTING_REMAPPER = new BiFunction<ImageMatrixPositionInfo, Integer, Integer>() {
+
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see java.util.function.BiFunction#apply(java.lang.Object,
+		 * java.lang.Object)
+		 */
+		@Override
+		public Integer apply(final ImageMatrixPositionInfo key, final Integer oldVal) {
+			final Integer newVal;
+			if (oldVal == null) {
+				newVal = 1;
+			} else {
+				newVal = oldVal + 1;
+			}
+			return newVal;
+		}
+	};
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(GameBoardPanelFactory.class);
 
 	private static void appendRowTableRepr(final Iterator<?> rowCellIter, final StringBuilder sb) {
@@ -497,48 +517,6 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 		return new SpatialMap.Region(startMatrixIdx[0], endMatrixIdx[0], startMatrixIdx[1], endMatrixIdx[1]);
 	}
 
-	private static void fillMatrix(final List<Entry<BufferedImage, ImageViewInfo>> imgViewInfoData,
-			final Matrix<Integer> posMatrix, final Random rnd) {
-		final ListIterator<Entry<BufferedImage, ImageViewInfo>> imgViewInfoDataIter = imgViewInfoData.listIterator();
-		final SpatialMap<Entry<BufferedImage, ImageViewInfo>> occupiedRegions = new SpatialMap<>(
-				imgViewInfoData.size());
-		final int[] posDims = posMatrix.getDimensions();
-		// Randomly place each image in the position matrix
-		final Queue<ImageMatrixPositionInfo> retryStack = new ArrayDeque<>();
-		while (imgViewInfoDataIter.hasNext()) {
-			final int imgId = imgViewInfoDataIter.nextIndex();
-			final Entry<BufferedImage, ImageViewInfo> imgViewInfoDatum = imgViewInfoDataIter.next();
-			final ImageViewInfo viewInfo = imgViewInfoDatum.getValue();
-			// The number of rows and columns this image takes up in the
-			// position matrix
-			final int[] piecePosMatrixSize = createPosMatrixBoundsArray(viewInfo);
-			// Randomly pick a space in the matrix
-			final SpatialMap.Region imgRegion = createRandomSpatialRegion(piecePosMatrixSize, posDims, rnd);
-			if (occupiedRegions.isOccupied(imgRegion)) {
-				LOGGER.debug("Cancelling placement of image because the target space is occupied.");
-				// TODO: create fallback logic for choosing a new region
-				retryStack.add(new ImageMatrixPositionInfo(imgId, piecePosMatrixSize, imgViewInfoDatum));
-			} else {
-				setMatrixPositionValues(posMatrix, imgRegion, imgId);
-				occupiedRegions.put(imgRegion, imgViewInfoDatum);
-			}
-
-		}
-
-		// Try to place images which didn't fit the first time
-//		while (!retryStack.isEmpty()) {
-//			final ImageMatrixPositionInfo imgPlacementInfo = retryStack.remove();
-//			final SpatialMap.Region imgRegion = createRandomSpatialRegion(imgPlacementInfo.piecePosMatrixSize, posDims,
-//					rnd);
-//			if (occupiedRegions.isOccupied(imgRegion)) {
-//				retryStack.add(imgPlacementInfo);
-//			} else {
-//				setMatrixPositionValues(posMatrix, imgRegion, imgPlacementInfo.pieceId);
-//				occupiedRegions.put(imgRegion, imgPlacementInfo.imgViewInfoDatum);
-//			}
-//		}
-	}
-
 	private static Image scaleImageByLongerDimension(final BufferedImage origImg, final int longerDimVal) {
 		final Image result;
 		final ImageOrientation orientation = ImageOrientation.getOrientation(origImg.getWidth(), origImg.getHeight());
@@ -582,8 +560,10 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 		}
 	}
 
-	GameBoardPanelFactory() {
+	private final int maxPlacementRetriesPerImg;
 
+	GameBoardPanelFactory(final int maxPlacementRetriesPerImg) {
+		this.maxPlacementRetriesPerImg = maxPlacementRetriesPerImg;
 	}
 
 	@Override
@@ -639,6 +619,73 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 		}
 
 		return result;
+	}
+
+	private String createFailedPlacementErrorMsg(final List<ImageMatrixPositionInfo> failedPlacements) {
+		final String errorMsgPrefix = String.format("Some images could not be placed successfully after %d retries:",
+				maxPlacementRetriesPerImg);
+		final StringBuilder sb = new StringBuilder(errorMsgPrefix.length() + failedPlacements.size() * 16);
+		sb.append(errorMsgPrefix);
+		for (final ImageMatrixPositionInfo failedPlacement : failedPlacements) {
+			sb.append(System.lineSeparator());
+			sb.append(failedPlacement);
+		}
+		return sb.toString();
+	}
+
+	private void fillMatrix(final List<Entry<BufferedImage, ImageViewInfo>> imgViewInfoData,
+			final Matrix<Integer> posMatrix, final Random rnd) {
+		final ListIterator<Entry<BufferedImage, ImageViewInfo>> imgViewInfoDataIter = imgViewInfoData.listIterator();
+		final SpatialMap<Entry<BufferedImage, ImageViewInfo>> occupiedRegions = new SpatialMap<>(
+				imgViewInfoData.size());
+		final int[] posDims = posMatrix.getDimensions();
+		// Randomly place each image in the position matrix
+		final Queue<ImageMatrixPositionInfo> retryStack = new ArrayDeque<>();
+		while (imgViewInfoDataIter.hasNext()) {
+			final int imgId = imgViewInfoDataIter.nextIndex();
+			final Entry<BufferedImage, ImageViewInfo> imgViewInfoDatum = imgViewInfoDataIter.next();
+			final ImageViewInfo viewInfo = imgViewInfoDatum.getValue();
+			// The number of rows and columns this image takes up in the
+			// position matrix
+			final int[] piecePosMatrixSize = createPosMatrixBoundsArray(viewInfo);
+			// Randomly pick a space in the matrix
+			final SpatialMap.Region imgRegion = createRandomSpatialRegion(piecePosMatrixSize, posDims, rnd);
+			if (occupiedRegions.isOccupied(imgRegion)) {
+				LOGGER.debug("Cancelling placement of image because the target space is occupied.");
+				// TODO: create fallback logic for choosing a new region
+				retryStack.add(new ImageMatrixPositionInfo(imgId, piecePosMatrixSize, imgViewInfoDatum));
+			} else {
+				setMatrixPositionValues(posMatrix, imgRegion, imgId);
+				occupiedRegions.put(imgRegion, imgViewInfoDatum);
+			}
+
+		}
+
+		// Try to place images which didn't fit the first time
+		final int estimatedNumberOfRetriedImgPlacements = retryStack.size() / 2;
+		final Map<ImageMatrixPositionInfo, Integer> retryCounter = Maps
+				.newHashMapWithExpectedSize(estimatedNumberOfRetriedImgPlacements);
+		final List<ImageMatrixPositionInfo> failedPlacements = new ArrayList<>(estimatedNumberOfRetriedImgPlacements);
+		while (!retryStack.isEmpty()) {
+			final ImageMatrixPositionInfo imgPlacementInfo = retryStack.remove();
+			final SpatialMap.Region imgRegion = createRandomSpatialRegion(imgPlacementInfo.piecePosMatrixSize, posDims,
+					rnd);
+			if (occupiedRegions.isOccupied(imgRegion)) {
+				final Integer tries = retryCounter.compute(imgPlacementInfo, INCREMENTING_REMAPPER);
+				if (tries > maxPlacementRetriesPerImg) {
+					failedPlacements.add(imgPlacementInfo);
+				} else {
+					retryStack.add(imgPlacementInfo);
+				}
+			} else {
+				setMatrixPositionValues(posMatrix, imgRegion, imgPlacementInfo.pieceId);
+				occupiedRegions.put(imgRegion, imgPlacementInfo.imgViewInfoDatum);
+			}
+		}
+
+		if (failedPlacements.isEmpty()) {
+			throw new IllegalArgumentException(createFailedPlacementErrorMsg(failedPlacements));
+		}
 	}
 
 }
