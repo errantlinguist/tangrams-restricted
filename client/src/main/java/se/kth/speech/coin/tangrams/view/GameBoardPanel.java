@@ -38,14 +38,13 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.IntSupplier;
 
 import javax.imageio.ImageIO;
-
-import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -106,6 +105,15 @@ final class GameBoardPanel extends Canvas {
 
 	}
 
+	private static final Logger LOGGER = LoggerFactory.getLogger(GameBoardPanel.class);
+
+	/**
+	 *
+	 */
+	private static final long serialVersionUID = 6258829324465894025L;
+
+	private static final int IMG_SCALING_HINTS = Image.SCALE_SMOOTH;
+
 	private static void appendRowTableRepr(final Iterator<?> rowCellIter, final StringBuilder sb) {
 		final String nullValRepr = "-";
 		if (rowCellIter.hasNext()) {
@@ -161,92 +169,72 @@ final class GameBoardPanel extends Canvas {
 		return sb.toString();
 	}
 
-	private LinkedHashMap<Image, ImageViewInfo> createImageViewInfoMap(
-			final Collection<ImageVisualizationInfo> imgVisualizationInfoData, final SizeValidator validator)
-			throws IOException {
-		// Use linked map in order to preserve iteration order in provided
-		// sequence
-		final LinkedHashMap<Image, ImageViewInfo> result = Maps
-				.newLinkedHashMapWithExpectedSize(imgVisualizationInfoData.size());
-
-		final Map<URL, Entry<ImageViewInfo.RasterizationInfo, Set<SizeValidator.ValidationComment>>> badImgs = Maps
-				.newHashMapWithExpectedSize(0);
-		for (final ImageVisualizationInfo imgVisualizationInfoDatum : imgVisualizationInfoData) {
-			final URL imgResourceLoc = imgVisualizationInfoDatum.getResourceLoc();
-			final BufferedImage initialImg = ImageIO.read(imgResourceLoc);
-			final IntSupplier widthGetter = initialImg::getWidth;
-			final IntSupplier heightGetter = initialImg::getHeight;
-
-			{
-				// Size/aspect ratio calculation
-				final ImageViewInfo.RasterizationInfo imgRasterizationInfo = new ImageViewInfo.RasterizationInfo(
-						widthGetter, heightGetter);
-				Image coloredImg = getToolkit().createImage(new FilteredImageSource(initialImg.getSource(),
-						new ColorReplacementImageFilter(imgVisualizationInfoDatum.getColor())));
-				result.put(coloredImg, new ImageViewInfo(imgVisualizationInfoDatum, imgRasterizationInfo));
-				{
-					// Validate image
-					final Set<SizeValidator.ValidationComment> validationComments = validator.validate(
-							widthGetter.getAsInt(), heightGetter.getAsInt(),
-							MathDenominators.gcd(widthGetter.getAsInt(), heightGetter.getAsInt()));
-					if (!validationComments.isEmpty()) {
-						badImgs.put(imgResourceLoc, new MutablePair<>(imgRasterizationInfo, validationComments));
-					}
-				}
+	private static Image createScaledImage(final Image origImg, final ImageSize size, final int lesserDimVal,
+			final int maxDimLength, final ImageViewInfo.Orientation orientation) {
+		final Image result;
+		if (lesserDimVal < maxDimLength) {
+			switch (orientation) {
+			case PORTRAIT: {
+				result = origImg.getScaledInstance(-1, maxDimLength, IMG_SCALING_HINTS);
+				break;
 			}
-
-		}
-
-		if (badImgs.isEmpty()) {
-			return result;
+			default: {
+				result = origImg.getScaledInstance(-1, maxDimLength, IMG_SCALING_HINTS);
+				break;
+			}
+			}
 		} else {
-			throw new IllegalArgumentException("One or more images failed validation:" + System.lineSeparator()
-					+ createImageInfoTable(badImgs.entrySet()));
+			// Just use the original, unscaled image
+			result = origImg;
 		}
+		return result;
 	}
-
-	private static final Logger LOGGER = LoggerFactory.getLogger(GameBoardPanel.class);
-
-	/**
-	 *
-	 */
-	private static final long serialVersionUID = 6258829324465894025L;
 
 	private static boolean isDimensionDivisibleIntoGrid(final Dimension dim, final Matrix<?> matrix) {
 		final int[] matrixDims = matrix.getDimensions();
 		return dim.getHeight() % matrixDims[0] == 0 && dim.getWidth() % matrixDims[1] == 0;
 	}
 
+	private static Image scaleImageByLongerDimension(final BufferedImage origImg, final int longerDimVal) {
+		final Image result;
+		final ImageViewInfo.Orientation orientation = ImageViewInfo.Orientation.getOrientation(origImg.getWidth(),
+				origImg.getHeight());
+		switch (orientation) {
+		case PORTRAIT: {
+			result = origImg.getScaledInstance(-1, longerDimVal, IMG_SCALING_HINTS);
+			break;
+		}
+		default: {
+			result = origImg.getScaledInstance(longerDimVal, -1, IMG_SCALING_HINTS);
+			break;
+		}
+		}
+		return result;
+	}
+
+	private static Image scaleImageByShorterDimension(final BufferedImage origImg, final int shorterDimVal) {
+		final Image result;
+		final ImageViewInfo.Orientation orientation = ImageViewInfo.Orientation.getOrientation(origImg.getWidth(),
+				origImg.getHeight());
+		switch (orientation) {
+		case PORTRAIT: {
+			result = origImg.getScaledInstance(shorterDimVal, -1, IMG_SCALING_HINTS);
+			break;
+		}
+		default: {
+			result = origImg.getScaledInstance(-1, shorterDimVal, IMG_SCALING_HINTS);
+			break;
+		}
+		}
+		return result;
+	}
+
 	private final SpatialMap<? extends Entry<? extends Image, ImageViewInfo>> imagePlacements;
 
 	private final Matrix<Integer> posMatrix;
 
-	private Image scaleImageToGridSize(Image img, SpatialMap.Region occupiedGridRegion) {
-		final int colWidth = getGridColWidth();
-		// NOTE: occupied region is denoted in matrix rows*columns
-		// "y" is matrix columns, thus left-to-right
-		final int imgWidth = colWidth * occupiedGridRegion.getLengthY();
-		final int rowHeight = getGridRowHeight();
-		// "x" is matrix rows, thus top-to-bottom
-		final int imgHeight = rowHeight * occupiedGridRegion.getLengthX();
-		return img.getScaledInstance(imgWidth, imgHeight, IMG_SCALING_HINTS);
-	}
-
-	private void scaleImage(Image img, ImageViewInfo viewInfo, SpatialMap.Region occupiedGridRegion) {
-		RasterizationInfo rasterizationInfo = viewInfo.getRasterization();
-		ImageVisualizationInfo visualizationInfo = viewInfo.getVisualization();
-		ImageSize size = visualizationInfo.getSize();
-		// NOTE: occupied region is denoted in matrix rows*columns
-		// "y" is matrix columns, thus left-to-right
-		final int colWidth = getGridColWidth();
-		final int imgWidth = colWidth * occupiedGridRegion.getLengthY();
-		final int rowHeight = getGridRowHeight();
-		// "x" is matrix rows, thus top-to-bottom
-		final int imgHeight = rowHeight * occupiedGridRegion.getLengthX();
-	}
-
 	GameBoardPanel(final Collection<ImageVisualizationInfo> imgVisualizationInfoData,
-			BiFunction<? super Matrix<? super Integer>, ? super List<? extends Entry<? extends Image, ImageViewInfo>>, SpatialMap<Entry<? extends Image, ImageViewInfo>>> matrixFiller) {
+			final BiFunction<? super Matrix<? super Integer>, ? super List<? extends Entry<? extends Image, ImageViewInfo>>, SpatialMap<Entry<? extends Image, ImageViewInfo>>> matrixFiller) {
 		// The minimum accepted length of the shortest dimension for an image
 		final int minDimLength = 300;
 		final SizeValidator validator = new SizeValidator(minDimLength, 50, 50);
@@ -279,13 +267,13 @@ final class GameBoardPanel extends Canvas {
 				final int posMatrixCols = boardSize.width / greatestCommonDenominator;
 				LOGGER.info("Creating a position matrix of size {}*{}.", posMatrixRows, posMatrixCols);
 				final Integer[] posMatrixBackingArray = new Integer[posMatrixRows * posMatrixCols];
-				this.posMatrix = new Matrix<>(posMatrixBackingArray, posMatrixCols);
+				posMatrix = new Matrix<>(posMatrixBackingArray, posMatrixCols);
 				if (!isDimensionDivisibleIntoGrid(boardSize, posMatrix)) {
 					throw new IllegalArgumentException(
 							String.format("Board %s not divisble into matrix with dimensions %s.", boardSize,
 									Arrays.toString(posMatrix.getDimensions())));
 				}
-				this.imagePlacements = matrixFiller.apply(posMatrix, imgViewInfoDataList);
+				imagePlacements = matrixFiller.apply(posMatrix, imgViewInfoDataList);
 				// Finished with creating necessary data structures
 				System.out.println("IMAGE PLACEMENTS");
 				System.out.println(createMatrixReprString(posMatrix));
@@ -315,14 +303,48 @@ final class GameBoardPanel extends Canvas {
 
 	}
 
-	private int getGridColWidth() {
-		final int[] matrixDims = posMatrix.getDimensions();
-		return getWidth() / matrixDims[1];
-	}
+	private LinkedHashMap<Image, ImageViewInfo> createImageViewInfoMap(
+			final Collection<ImageVisualizationInfo> imgVisualizationInfoData, final SizeValidator validator)
+			throws IOException {
+		// Use linked map in order to preserve iteration order in provided
+		// sequence
+		final LinkedHashMap<Image, ImageViewInfo> result = Maps
+				.newLinkedHashMapWithExpectedSize(imgVisualizationInfoData.size());
 
-	private int getGridRowHeight() {
-		final int[] matrixDims = posMatrix.getDimensions();
-		return getHeight() / matrixDims[0];
+		final Map<URL, Entry<ImageViewInfo.RasterizationInfo, Set<SizeValidator.ValidationComment>>> badImgs = Maps
+				.newHashMapWithExpectedSize(0);
+		for (final ImageVisualizationInfo imgVisualizationInfoDatum : imgVisualizationInfoData) {
+			final URL imgResourceLoc = imgVisualizationInfoDatum.getResourceLoc();
+			final BufferedImage initialImg = ImageIO.read(imgResourceLoc);
+			final IntSupplier widthGetter = initialImg::getWidth;
+			final IntSupplier heightGetter = initialImg::getHeight;
+
+			{
+				// Size/aspect ratio calculation
+				final ImageViewInfo.RasterizationInfo imgRasterizationInfo = new ImageViewInfo.RasterizationInfo(
+						widthGetter, heightGetter);
+				final Image coloredImg = getToolkit().createImage(new FilteredImageSource(initialImg.getSource(),
+						new ColorReplacementImageFilter(imgVisualizationInfoDatum.getColor())));
+				result.put(coloredImg, new ImageViewInfo(imgVisualizationInfoDatum, imgRasterizationInfo));
+				{
+					// Validate image
+					final Set<SizeValidator.ValidationComment> validationComments = validator.validate(
+							widthGetter.getAsInt(), heightGetter.getAsInt(),
+							MathDenominators.gcd(widthGetter.getAsInt(), heightGetter.getAsInt()));
+					if (!validationComments.isEmpty()) {
+						badImgs.put(imgResourceLoc, new MutablePair<>(imgRasterizationInfo, validationComments));
+					}
+				}
+			}
+
+		}
+
+		if (badImgs.isEmpty()) {
+			return result;
+		} else {
+			throw new IllegalArgumentException("One or more images failed validation:" + System.lineSeparator()
+					+ createImageInfoTable(badImgs.entrySet()));
+		}
 	}
 
 	private void drawGrid(final Graphics g) {
@@ -362,8 +384,8 @@ final class GameBoardPanel extends Canvas {
 
 	private void drawPieceIds(final Graphics g) {
 		LOGGER.debug("Drawing piece IDs.");
-		final int rowHeight = getGridRowHeight();
 		final int colWidth = getGridColWidth();
+		final int rowHeight = getGridRowHeight();
 		final FontMetrics fm = g.getFontMetrics();
 		final int pieceTextHeight = fm.getAscent();
 		int nextRowY = 0;
@@ -390,66 +412,9 @@ final class GameBoardPanel extends Canvas {
 		LOGGER.debug("Finished drawing piece IDs.");
 	}
 
-	private static final int IMG_SCALING_HINTS = Image.SCALE_SMOOTH;
-
-	private static Image scaleImageByLongerDimension(final BufferedImage origImg, final int longerDimVal) {
-		final Image result;
-		final ImageViewInfo.Orientation orientation = ImageViewInfo.Orientation.getOrientation(origImg.getWidth(),
-				origImg.getHeight());
-		switch (orientation) {
-		case PORTRAIT: {
-			result = origImg.getScaledInstance(-1, longerDimVal, IMG_SCALING_HINTS);
-			break;
-		}
-		default: {
-			result = origImg.getScaledInstance(longerDimVal, -1, IMG_SCALING_HINTS);
-			break;
-		}
-		}
-		return result;
-	}
-
-	private static Image scaleImageByShorterDimension(final BufferedImage origImg, final int shorterDimVal) {
-		final Image result;
-		final ImageViewInfo.Orientation orientation = ImageViewInfo.Orientation.getOrientation(origImg.getWidth(),
-				origImg.getHeight());
-		switch (orientation) {
-		case PORTRAIT: {
-			result = origImg.getScaledInstance(shorterDimVal, -1, IMG_SCALING_HINTS);
-			break;
-		}
-		default: {
-			result = origImg.getScaledInstance(-1, shorterDimVal, IMG_SCALING_HINTS);
-			break;
-		}
-		}
-		return result;
-	}
-
-	private static Image createScaledImage(final Image origImg, final ImageSize size, final int lesserDimVal,
-			final int maxDimLength, final ImageViewInfo.Orientation orientation) {
-		final Image result;
-		if (lesserDimVal < maxDimLength) {
-			switch (orientation) {
-			case PORTRAIT: {
-				result = origImg.getScaledInstance(-1, maxDimLength, IMG_SCALING_HINTS);
-				break;
-			}
-			default: {
-				result = origImg.getScaledInstance(-1, maxDimLength, IMG_SCALING_HINTS);
-				break;
-			}
-			}
-		} else {
-			// Just use the original, unscaled image
-			result = origImg;
-		}
-		return result;
-	}
-
 	private void drawPieceImages(final Graphics g) {
-		final int rowHeight = getGridRowHeight();
 		final int colWidth = getGridColWidth();
+		final int rowHeight = getGridRowHeight();
 
 		final Iterable<? extends Entry<? extends Entry<? extends Image, ImageViewInfo>, SpatialMap.Region>> elementRegions = imagePlacements
 				.elementRegions();
@@ -457,16 +422,50 @@ final class GameBoardPanel extends Canvas {
 			final Entry<? extends Image, ImageViewInfo> pieceDisplayInfo = elementRegion.getKey();
 			final Image initialImg = pieceDisplayInfo.getKey();
 			final SpatialMap.Region region = elementRegion.getValue();
-			final Image scaledImg = scaleImageToGridSize(initialImg, region);
-			ImageViewInfo viewInfo = pieceDisplayInfo.getValue();
-			ImageVisualizationInfo visualizationInfo = viewInfo.getVisualization();
+			final Image scaledImg = scaleImageToGridSize(initialImg, region, colWidth, rowHeight);
+			final ImageViewInfo viewInfo = pieceDisplayInfo.getValue();
+			final ImageVisualizationInfo visualizationInfo = viewInfo.getVisualization();
 
-			final int imgStartX = region.getXLowerBound() * colWidth;
-			final int imgStartY = region.getYLowerBound() * rowHeight;
-			// final int imgEndX = region.getXUpperBound() * colWidth;
-			// final int imgEndY = region.getYUpperBound() * rowHeight;
+			// NOTE: occupied region is denoted in matrix rows*columns
+			// "y" is matrix columns, thus left-to-right
+			final int imgStartX = colWidth * region.getYLowerBound();
+			// "x" is matrix rows, thus top-to-bottom
+			final int imgStartY = rowHeight * region.getXLowerBound();
 			g.drawImage(scaledImg, imgStartX, imgStartY, null);
 		}
+	}
+
+	private int getGridColWidth() {
+		final int[] matrixDims = posMatrix.getDimensions();
+		return getWidth() / matrixDims[1];
+	}
+
+	private int getGridRowHeight() {
+		final int[] matrixDims = posMatrix.getDimensions();
+		return getHeight() / matrixDims[0];
+	}
+
+	private void scaleImage(final Image img, final ImageViewInfo viewInfo, final SpatialMap.Region occupiedGridRegion) {
+		final RasterizationInfo rasterizationInfo = viewInfo.getRasterization();
+		final ImageVisualizationInfo visualizationInfo = viewInfo.getVisualization();
+		final ImageSize size = visualizationInfo.getSize();
+		// NOTE: occupied region is denoted in matrix rows*columns
+		// "y" is matrix columns, thus left-to-right
+		final int colWidth = getGridColWidth();
+		final int imgWidth = colWidth * occupiedGridRegion.getLengthY();
+		final int rowHeight = getGridRowHeight();
+		// "x" is matrix rows, thus top-to-bottom
+		final int imgHeight = rowHeight * occupiedGridRegion.getLengthX();
+	}
+
+	private Image scaleImageToGridSize(final Image img, final SpatialMap.Region occupiedGridRegion, final int colWidth,
+			final int rowHeight) {
+		// NOTE: occupied region is denoted in matrix rows*columns
+		// "y" is matrix columns, thus left-to-right
+		final int imgWidth = colWidth * occupiedGridRegion.getLengthY();
+		// "x" is matrix rows, thus top-to-bottom
+		final int imgHeight = rowHeight * occupiedGridRegion.getLengthX();
+		return img.getScaledInstance(imgWidth, imgHeight, IMG_SCALING_HINTS);
 	}
 
 }
