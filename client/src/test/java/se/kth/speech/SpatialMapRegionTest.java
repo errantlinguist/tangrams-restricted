@@ -83,7 +83,18 @@ public final class SpatialMapRegionTest {
 	public final void testIntersectsCommutativity(final Region r1, final Region r2) {
 		final boolean r1Test = r1.intersects(r2);
 		final boolean r2Test = r2.intersects(r1);
-		Assert.assertEquals(r1Test, r2Test);
+		if (!r1Test == r2Test){
+			StringBuilder sb = new StringBuilder();
+			sb.append(r1);
+			sb.append(" was evaluated");
+			if (r1Test){
+				sb.append(" not");
+			}
+			sb.append(" to subsume ");
+			sb.append(r2);
+			sb.append("but the inverse was not true.");
+			Assert.fail(sb.toString());
+		}
 	}
 
 	/**
