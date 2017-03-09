@@ -134,6 +134,7 @@ final class GameBoardPanel extends Canvas {
 		final int rowHeight = getHeight() / matrixDims[0];
 		final int colWidth = getWidth() / matrixDims[1];
 		final FontMetrics fm = g.getFontMetrics();
+		final int pieceTextHeight = fm.getAscent();
 		int nextRowY = 0;
 		for (final ListIterator<List<Integer>> matrixRowIter = posMatrix.rowIterator(); matrixRowIter.hasNext();) {
 			final List<Integer> matrixRow = matrixRowIter.next();
@@ -144,12 +145,13 @@ final class GameBoardPanel extends Canvas {
 					.hasNext();) {
 				final int colIdx = matrixRowCellIter.nextIndex();
 				final Integer pieceId = matrixRowCellIter.next();
-				final String pieceText = Objects.toString(pieceId, "");
-				final int pieceTextWidth = fm.stringWidth(pieceText);
-				final int pieceTextHeight = fm.getAscent();
-				final int textXOffset = (colWidth - pieceTextWidth) / 2;
-				final int textYOffset = (rowHeight - pieceTextHeight) / 2;
-				g.drawString(pieceText, nextColX + textXOffset, nextRowY + textYOffset);
+				if (pieceId != null){
+					final String pieceText = pieceId.toString();
+					final int pieceTextWidth = fm.stringWidth(pieceText);
+					final int textXOffset = (colWidth - pieceTextWidth) / 2;
+					final int textYOffset = (rowHeight - pieceTextHeight) / 2;
+					g.drawString(pieceText, nextColX + textXOffset, nextRowY + textYOffset);		
+				}
 				nextColX += colWidth;
 			}
 			nextRowY += rowHeight;
