@@ -92,7 +92,7 @@ public final class SpatialMapRegionTest {
 			}
 			sb.append(" to subsume ");
 			sb.append(r2);
-			sb.append("but the inverse was not true.");
+			sb.append(" but the inverse was not true.");
 			Assert.fail(sb.toString());
 		}
 	}
