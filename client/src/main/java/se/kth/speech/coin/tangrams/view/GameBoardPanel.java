@@ -55,9 +55,9 @@ final class GameBoardPanel extends Canvas {
 		return dim.getHeight() % matrixDims[0] == 0 && dim.getWidth() % matrixDims[1] == 0;
 	}
 
-	private final Matrix<Integer> posMatrix;
-
 	private final SpatialMap<? extends Entry<? extends Image, ImageViewInfo>> imagePlacements;
+
+	private final Matrix<Integer> posMatrix;
 
 	public GameBoardPanel(final Dimension boardSize,
 			final List<? extends Entry<? extends Image, ImageViewInfo>> imgViewInfoDataList,
@@ -80,27 +80,12 @@ final class GameBoardPanel extends Canvas {
 	 */
 	@Override
 	public void paint(final Graphics g) {
-		final int[] matrixDims = posMatrix.getDimensions();
-		final int rowHeight = getHeight() / matrixDims[0];
-		final int colWidth = getWidth() / matrixDims[1];
-
 		// Draw a grid (for debugging/devel)
 		// drawGrid(g);
 		drawPieceIds(g);
+		
+		drawPieceImages(g);
 
-		final Iterable<? extends Entry<? extends Entry<? extends Image, ImageViewInfo>, SpatialMap.Region>> elementRegions = imagePlacements
-				.elementRegions();
-		for (final Entry<? extends Entry<? extends Image, ImageViewInfo>, SpatialMap.Region> elementRegion : elementRegions) {
-			final Entry<? extends Image, ImageViewInfo> pieceDisplayInfo = elementRegion.getKey();
-			final Image img = pieceDisplayInfo.getKey();
-			final SpatialMap.Region region = elementRegion.getValue();
-
-			final int imgStartX = region.getXLowerBound() * colWidth;
-			final int imgStartY = region.getYLowerBound() * rowHeight;
-			// final int imgEndX = region.getXUpperBound() * colWidth;
-			// final int imgEndY = region.getYUpperBound() * rowHeight;
-			// g.drawImage(img, imgStartX, imgStartY, null);
-		}
 	}
 
 	private void drawGrid(final Graphics g) {
@@ -145,16 +130,36 @@ final class GameBoardPanel extends Canvas {
 					.hasNext();) {
 				final int colIdx = matrixRowCellIter.nextIndex();
 				final Integer pieceId = matrixRowCellIter.next();
-				if (pieceId != null){
+				if (pieceId != null) {
 					final String pieceText = pieceId.toString();
 					final int pieceTextWidth = fm.stringWidth(pieceText);
 					final int textXOffset = (colWidth - pieceTextWidth) / 2;
 					final int textYOffset = (rowHeight - pieceTextHeight) / 2;
-					g.drawString(pieceText, nextColX + textXOffset, nextRowY + textYOffset);		
+					g.drawString(pieceText, nextColX + textXOffset, nextRowY + textYOffset);
 				}
 				nextColX += colWidth;
 			}
 			nextRowY += rowHeight;
+		}
+	}
+
+	private void drawPieceImages(final Graphics g) {
+		final int[] matrixDims = posMatrix.getDimensions();
+		final int rowHeight = getHeight() / matrixDims[0];
+		final int colWidth = getWidth() / matrixDims[1];
+		
+		final Iterable<? extends Entry<? extends Entry<? extends Image, ImageViewInfo>, SpatialMap.Region>> elementRegions = imagePlacements
+				.elementRegions();
+		for (final Entry<? extends Entry<? extends Image, ImageViewInfo>, SpatialMap.Region> elementRegion : elementRegions) {
+			final Entry<? extends Image, ImageViewInfo> pieceDisplayInfo = elementRegion.getKey();
+			final Image img = pieceDisplayInfo.getKey();
+			final SpatialMap.Region region = elementRegion.getValue();
+
+			final int imgStartX = region.getXLowerBound() * colWidth;
+			final int imgStartY = region.getYLowerBound() * rowHeight;
+			// final int imgEndX = region.getXUpperBound() * colWidth;
+			// final int imgEndY = region.getYUpperBound() * rowHeight;
+			g.drawImage(img, imgStartX, imgStartY, null);
 		}
 	}
 
