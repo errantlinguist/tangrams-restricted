@@ -16,6 +16,7 @@
 */
 package se.kth.speech.coin.tangrams.view;
 
+import java.util.Arrays;
 import java.util.function.IntSupplier;
 
 import se.kth.speech.MathDenominators;
@@ -100,6 +101,28 @@ final class ImageViewInfo {
 			result = prime * result + (heightGetter == null ? 0 : heightGetter.hashCode());
 			result = prime * result + (widthGetter == null ? 0 : widthGetter.hashCode());
 			return result;
+		}
+
+		/* (non-Javadoc)
+		 * @see java.lang.Object#toString()
+		 */
+		@Override
+		public String toString() {
+			StringBuilder builder = new StringBuilder();
+			builder.append("RasterizationInfo [getWidth()=");
+			builder.append(getWidth());
+			builder.append(", getHeight()=");
+			builder.append(getHeight());
+			builder.append(", getOrientation()=");
+			builder.append(getOrientation());
+			builder.append(", getWidthHeightQuotient()=");
+			builder.append(getWidthHeightQuotient());
+			builder.append(", getAspectRatio()=");
+			builder.append(Arrays.toString(getAspectRatio()));
+			builder.append(", getGcd()=");
+			builder.append(getGcd());
+			builder.append("]");
+			return builder.toString();
 		}
 
 		int[] getAspectRatio() {
