@@ -25,11 +25,13 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.EnumSet;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
 import java.util.function.BiFunction;
@@ -170,6 +172,21 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 	private static final Logger LOGGER = LoggerFactory.getLogger(GameBoardPanelFactory.class);
 
 	private static final double RATIO_TOLERANCE = 0.05;
+
+	private static void appendRowTableRepr(final Iterator<?> rowCellIter, final StringBuilder sb) {
+		if (rowCellIter.hasNext()) {
+			final Object first = rowCellIter.next();
+			final String firstRepr = Objects.toString(first, "-");
+			sb.append(firstRepr);
+
+			while (rowCellIter.hasNext()) {
+				sb.append('\t');
+				final Object next = rowCellIter.next();
+				final String nextRepr = Objects.toString(next, "-");
+				sb.append(nextRepr);
+			}
+		}
+	}
 
 	private static String createImageInfoTable(
 			final Collection<? extends Entry<?, ? extends Entry<ImageRasterizationInfo, ?>>> namedImgValData) {
@@ -378,10 +395,14 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 				final Integer[] posMatrixBackingArray = new Integer[posMatrixRows * posMatrixCols];
 				final Matrix<Integer> posMatrix = new Matrix<>(posMatrixBackingArray, posMatrixCols);
 				fillMatrix(imgViewInfoDataList, posMatrix, rnd);
-				for (int rowIdx = 0; rowIdx < posMatrix.getDimensions()[0]; rowIdx++){
-					List<Integer> row = posMatrix.getRow(rowIdx);
-					System.out.println(row);
+				final int cellCount = posMatrix.getValues().size();
+				final StringBuilder sb = new StringBuilder(cellCount * 4);
+				for (int rowIdx = 0; rowIdx < posMatrix.getDimensions()[0]; rowIdx++) {
+					final List<Integer> row = posMatrix.getRow(rowIdx);
+					appendRowTableRepr(row.iterator(), sb);
+					sb.append(System.lineSeparator());
 				}
+				System.out.println(sb.toString());
 				// TODO Auto-generated method stub
 				result = new GameBoardPanel(boardSize);
 			} else {
