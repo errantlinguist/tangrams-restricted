@@ -684,6 +684,8 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 		}
 
 		if (failedPlacements.isEmpty()) {
+			LOGGER.info("Successfully placed {} images.", imgViewInfoData.size());
+		} else {
 			throw new IllegalArgumentException(createFailedPlacementErrorMsg(failedPlacements));
 		}
 	}
