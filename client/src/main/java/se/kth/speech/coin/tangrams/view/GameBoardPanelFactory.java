@@ -621,12 +621,12 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 		return result;
 	}
 
-	private String createFailedPlacementErrorMsg(final List<ImageMatrixPositionInfo> failedPlacements) {
+	private String createFailedPlacementErrorMsg(final List<?> failedPlacements) {
 		final String errorMsgPrefix = String.format("Some images could not be placed successfully after %d retries:",
 				maxPlacementRetriesPerImg);
 		final StringBuilder sb = new StringBuilder(errorMsgPrefix.length() + failedPlacements.size() * 16);
 		sb.append(errorMsgPrefix);
-		for (final ImageMatrixPositionInfo failedPlacement : failedPlacements) {
+		for (final Object failedPlacement : failedPlacements) {
 			sb.append(System.lineSeparator());
 			sb.append(failedPlacement);
 		}
@@ -665,7 +665,7 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 		final int estimatedNumberOfRetriedImgPlacements = retryStack.size() / 2;
 		final Map<ImageMatrixPositionInfo, Integer> retryCounter = Maps
 				.newHashMapWithExpectedSize(estimatedNumberOfRetriedImgPlacements);
-		final List<ImageMatrixPositionInfo> failedPlacements = new ArrayList<>(estimatedNumberOfRetriedImgPlacements);
+		final List<ImageVisualizationInfo> failedPlacements = new ArrayList<>(estimatedNumberOfRetriedImgPlacements);
 		while (!retryStack.isEmpty()) {
 			final ImageMatrixPositionInfo imgPlacementInfo = retryStack.remove();
 			final SpatialMap.Region imgRegion = createRandomSpatialRegion(imgPlacementInfo.piecePosMatrixSize, posDims,
@@ -673,7 +673,7 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 			if (occupiedRegions.isOccupied(imgRegion)) {
 				final Integer tries = retryCounter.compute(imgPlacementInfo, INCREMENTING_REMAPPER);
 				if (tries > maxPlacementRetriesPerImg) {
-					failedPlacements.add(imgPlacementInfo);
+					failedPlacements.add(imgPlacementInfo.imgViewInfoDatum.getValue().visualization);
 				} else {
 					retryStack.add(imgPlacementInfo);
 				}
