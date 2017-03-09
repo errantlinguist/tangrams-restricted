@@ -22,7 +22,9 @@ import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URL;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.EnumSet;
 import java.util.Iterator;
@@ -32,6 +34,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Queue;
 import java.util.Random;
 import java.util.Set;
 import java.util.function.BiFunction;
@@ -59,6 +62,88 @@ import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
  *
  */
 final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualizationInfo>, Random, GameBoardPanel> {
+
+	private static class ImageMatrixPositionInfo {
+
+		private final Entry<BufferedImage, ImageViewInfo> imgViewInfoDatum;
+
+		private final int pieceId;
+
+		private final int[] piecePosMatrixSize;
+
+		private ImageMatrixPositionInfo(final int pieceId, final int[] piecePosMatrixSize,
+				final Entry<BufferedImage, ImageViewInfo> imgViewInfoDatum) {
+			this.pieceId = pieceId;
+			this.piecePosMatrixSize = piecePosMatrixSize;
+			this.imgViewInfoDatum = imgViewInfoDatum;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see java.lang.Object#equals(java.lang.Object)
+		 */
+		@Override
+		public boolean equals(final Object obj) {
+			if (this == obj) {
+				return true;
+			}
+			if (obj == null) {
+				return false;
+			}
+			if (!(obj instanceof ImageMatrixPositionInfo)) {
+				return false;
+			}
+			final ImageMatrixPositionInfo other = (ImageMatrixPositionInfo) obj;
+			if (imgViewInfoDatum == null) {
+				if (other.imgViewInfoDatum != null) {
+					return false;
+				}
+			} else if (!imgViewInfoDatum.equals(other.imgViewInfoDatum)) {
+				return false;
+			}
+			if (pieceId != other.pieceId) {
+				return false;
+			}
+			if (!Arrays.equals(piecePosMatrixSize, other.piecePosMatrixSize)) {
+				return false;
+			}
+			return true;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see java.lang.Object#hashCode()
+		 */
+		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + (imgViewInfoDatum == null ? 0 : imgViewInfoDatum.hashCode());
+			result = prime * result + pieceId;
+			result = prime * result + Arrays.hashCode(piecePosMatrixSize);
+			return result;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see java.lang.Object#toString()
+		 */
+		@Override
+		public String toString() {
+			final StringBuilder builder = new StringBuilder();
+			builder.append("ImageMatrixPositionInfo [imgViewInfoDatum=");
+			builder.append(imgViewInfoDatum);
+			builder.append(", pieceId=");
+			builder.append(pieceId);
+			builder.append(", piecePosMatrixSize=");
+			builder.append(Arrays.toString(piecePosMatrixSize));
+			builder.append("]");
+			return builder.toString();
+		}
+	}
 
 	private enum ImageOrientation {
 		LANDSCAPE, PORTRAIT, SQUARE;
@@ -89,6 +174,54 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 		private ImageRasterizationInfo(final IntSupplier widthGetter, final IntSupplier heightGetter) {
 			this.widthGetter = widthGetter;
 			this.heightGetter = heightGetter;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see java.lang.Object#equals(java.lang.Object)
+		 */
+		@Override
+		public boolean equals(final Object obj) {
+			if (this == obj) {
+				return true;
+			}
+			if (obj == null) {
+				return false;
+			}
+			if (!(obj instanceof ImageRasterizationInfo)) {
+				return false;
+			}
+			final ImageRasterizationInfo other = (ImageRasterizationInfo) obj;
+			if (heightGetter == null) {
+				if (other.heightGetter != null) {
+					return false;
+				}
+			} else if (!heightGetter.equals(other.heightGetter)) {
+				return false;
+			}
+			if (widthGetter == null) {
+				if (other.widthGetter != null) {
+					return false;
+				}
+			} else if (!widthGetter.equals(other.widthGetter)) {
+				return false;
+			}
+			return true;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see java.lang.Object#hashCode()
+		 */
+		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + (heightGetter == null ? 0 : heightGetter.hashCode());
+			result = prime * result + (widthGetter == null ? 0 : widthGetter.hashCode());
+			return result;
 		}
 
 		private int[] getAspectRatio() {
@@ -127,6 +260,70 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 		private ImageViewInfo(final ImageVisualizationInfo visualization, final ImageRasterizationInfo rasterization) {
 			this.visualization = visualization;
 			this.rasterization = rasterization;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see java.lang.Object#equals(java.lang.Object)
+		 */
+		@Override
+		public boolean equals(final Object obj) {
+			if (this == obj) {
+				return true;
+			}
+			if (obj == null) {
+				return false;
+			}
+			if (!(obj instanceof ImageViewInfo)) {
+				return false;
+			}
+			final ImageViewInfo other = (ImageViewInfo) obj;
+			if (rasterization == null) {
+				if (other.rasterization != null) {
+					return false;
+				}
+			} else if (!rasterization.equals(other.rasterization)) {
+				return false;
+			}
+			if (visualization == null) {
+				if (other.visualization != null) {
+					return false;
+				}
+			} else if (!visualization.equals(other.visualization)) {
+				return false;
+			}
+			return true;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see java.lang.Object#hashCode()
+		 */
+		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + (rasterization == null ? 0 : rasterization.hashCode());
+			result = prime * result + (visualization == null ? 0 : visualization.hashCode());
+			return result;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see java.lang.Object#toString()
+		 */
+		@Override
+		public String toString() {
+			final StringBuilder builder = new StringBuilder();
+			builder.append("ImageViewInfo [rasterization=");
+			builder.append(rasterization);
+			builder.append(", visualization=");
+			builder.append(visualization);
+			builder.append("]");
+			return builder.toString();
 		}
 	}
 
@@ -170,8 +367,6 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 	private static final int IMG_SCALING_HINTS = Image.SCALE_SMOOTH;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(GameBoardPanelFactory.class);
-
-	private static final double RATIO_TOLERANCE = 0.05;
 
 	private static void appendRowTableRepr(final Iterator<?> rowCellIter, final StringBuilder sb) {
 		if (rowCellIter.hasNext()) {
@@ -252,6 +447,31 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 		}
 	}
 
+	private static int[] createPosMatrixBoundsArray(final ImageViewInfo viewInfo) {
+		final ImageRasterizationInfo rasterizationInfo = viewInfo.rasterization;
+		// The number of rows this image takes up in the
+		// position matrix
+		final int occupiedPosMatrixRowCount = rasterizationInfo.getWidth() / rasterizationInfo.getGcd();
+		// The number of columns this image takes up in the
+		// position matrix
+		final int occupiedPosMatrixColCount = rasterizationInfo.getHeight() / rasterizationInfo.getGcd();
+		LOGGER.debug("Calculated position grid size {}*{} for \"{}\".", new Object[] {
+				viewInfo.visualization.getResourceLoc(), occupiedPosMatrixRowCount, occupiedPosMatrixColCount });
+
+		return new int[] { occupiedPosMatrixRowCount, occupiedPosMatrixColCount };
+	}
+
+	private static SpatialMap.Region createRandomSpatialRegion(final int[] piecePosMatrixSize, final int[] matrixDims,
+			final Random rnd) {
+		final IntStream maxPossibleMatrixIdxs = IntStream.range(0, matrixDims.length)
+				.map(i -> matrixDims[i] - piecePosMatrixSize[i]);
+		// Randomly pick a space in the matrix
+		final int[] startMatrixIdx = maxPossibleMatrixIdxs.map(rnd::nextInt).toArray();
+		final int[] endMatrixIdx = IntStream.range(0, startMatrixIdx.length)
+				.map(i -> startMatrixIdx[i] + piecePosMatrixSize[i]).toArray();
+		return createSpatialRegion(startMatrixIdx, endMatrixIdx);
+	}
+
 	private static Image createScaledImage(final Image origImg, final ImageSize size, final int lesserDimVal,
 			final int maxDimLength, final ImageOrientation orientation) {
 		final Image result;
@@ -282,49 +502,41 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 		final ListIterator<Entry<BufferedImage, ImageViewInfo>> imgViewInfoDataIter = imgViewInfoData.listIterator();
 		final SpatialMap<Entry<BufferedImage, ImageViewInfo>> occupiedRegions = new SpatialMap<>(
 				imgViewInfoData.size());
+		final int[] posDims = posMatrix.getDimensions();
 		// Randomly place each image in the position matrix
+		final Queue<ImageMatrixPositionInfo> retryStack = new ArrayDeque<>();
 		while (imgViewInfoDataIter.hasNext()) {
 			final int imgId = imgViewInfoDataIter.nextIndex();
 			final Entry<BufferedImage, ImageViewInfo> imgViewInfoDatum = imgViewInfoDataIter.next();
 			final ImageViewInfo viewInfo = imgViewInfoDatum.getValue();
-			final ImageRasterizationInfo rasterizationInfo = viewInfo.rasterization;
-			// The number of rows this image takes up in the
+			// The number of rows and columns this image takes up in the
 			// position matrix
-			final int[] piecePosMatrixSize;
-			{
-				final int occupiedPosMatrixRowCount = rasterizationInfo.getWidth() / rasterizationInfo.getGcd();
-				// The number of columns this image takes up in the
-				// position matrix
-				final int occupiedPosMatrixColCount = rasterizationInfo.getHeight() / rasterizationInfo.getGcd();
-				LOGGER.debug("Calculateed position grid size {}*{} for \"{}\".",
-						new Object[] { viewInfo.visualization.getResourceLoc(), occupiedPosMatrixRowCount,
-								occupiedPosMatrixColCount });
-
-				piecePosMatrixSize = new int[] { occupiedPosMatrixRowCount, occupiedPosMatrixColCount };
-			}
-			final int[] posDims = posMatrix.getDimensions();
-			final IntStream maxPossibleMatrixIdxs = IntStream.range(0, posDims.length)
-					.map(i -> posDims[i] - piecePosMatrixSize[i]);
+			final int[] piecePosMatrixSize = createPosMatrixBoundsArray(viewInfo);
 			// Randomly pick a space in the matrix
-			final int[] startMatrixIdx = maxPossibleMatrixIdxs.map(rnd::nextInt).toArray();
-			final int[] endMatrixIdx = IntStream.range(0, startMatrixIdx.length)
-					.map(i -> startMatrixIdx[i] + piecePosMatrixSize[i]).toArray();
-			final SpatialMap.Region imgRegion = createSpatialRegion(startMatrixIdx, endMatrixIdx);
+			final SpatialMap.Region imgRegion = createRandomSpatialRegion(piecePosMatrixSize, posDims, rnd);
 			if (occupiedRegions.isOccupied(imgRegion)) {
 				LOGGER.debug("Cancelling placement of image because the target space is occupied.");
 				// TODO: create fallback logic for choosing a new region
+				retryStack.add(new ImageMatrixPositionInfo(imgId, piecePosMatrixSize, imgViewInfoDatum));
 			} else {
-				for (int rowIdx = imgRegion.getXLowerBound(); rowIdx < imgRegion.getXUpperBound(); rowIdx++) {
-					final List<Integer> occupiedRow = posMatrix.getRow(rowIdx);
-					for (int colIdx = imgRegion.getYLowerBound(); colIdx < imgRegion.getYUpperBound(); colIdx++) {
-						final Integer oldImgId = occupiedRow.set(colIdx, imgId);
-						assert oldImgId == null;
-					}
-				}
+				setMatrixPositionValues(posMatrix, imgRegion, imgId);
 				occupiedRegions.put(imgRegion, imgViewInfoDatum);
 			}
 
 		}
+
+		// Try to place images which didn't fit the first time
+//		while (!retryStack.isEmpty()) {
+//			final ImageMatrixPositionInfo imgPlacementInfo = retryStack.remove();
+//			final SpatialMap.Region imgRegion = createRandomSpatialRegion(imgPlacementInfo.piecePosMatrixSize, posDims,
+//					rnd);
+//			if (occupiedRegions.isOccupied(imgRegion)) {
+//				retryStack.add(imgPlacementInfo);
+//			} else {
+//				setMatrixPositionValues(posMatrix, imgRegion, imgPlacementInfo.pieceId);
+//				occupiedRegions.put(imgRegion, imgPlacementInfo.imgViewInfoDatum);
+//			}
+//		}
 	}
 
 	private static Image scaleImageByLongerDimension(final BufferedImage origImg, final int longerDimVal) {
@@ -357,6 +569,17 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 		}
 		}
 		return result;
+	}
+
+	private static void setMatrixPositionValues(final Matrix<Integer> posMatrix, final SpatialMap.Region imgRegion,
+			final Integer pieceId) {
+		for (int rowIdx = imgRegion.getXLowerBound(); rowIdx < imgRegion.getXUpperBound(); rowIdx++) {
+			final List<Integer> occupiedRow = posMatrix.getRow(rowIdx);
+			for (int colIdx = imgRegion.getYLowerBound(); colIdx < imgRegion.getYUpperBound(); colIdx++) {
+				final Integer oldImgId = occupiedRow.set(colIdx, pieceId);
+				assert oldImgId == null;
+			}
+		}
 	}
 
 	GameBoardPanelFactory() {
@@ -416,21 +639,6 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 		}
 
 		return result;
-	}
-
-	private void getImageCoordinateSize(final int width, final int height) {
-		final boolean isPortrait;
-		final double ratio;
-		if (width < height) {
-			isPortrait = true;
-			ratio = height / (double) width;
-		} else {
-			isPortrait = false;
-			ratio = width / (double) height;
-		}
-		final long wholePart = (long) ratio;
-		final double fractionPart = ratio - wholePart;
-
 	}
 
 }
