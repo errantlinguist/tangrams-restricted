@@ -90,7 +90,7 @@ public final class SpatialMapRegionTest {
 			if (!r1Test){
 				sb.append(" not");
 			}
-			sb.append(" to subsume ");
+			sb.append(" to intersect ");
 			sb.append(r2);
 			sb.append(" but the inverse was not true.");
 			Assert.fail(sb.toString());
