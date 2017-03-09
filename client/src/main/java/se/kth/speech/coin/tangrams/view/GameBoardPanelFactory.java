@@ -294,6 +294,7 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 					.map(i -> startMatrixIdx[i] + piecePosMatrixSize[i]).toArray();
 			final SpatialMap.Region imgRegion = createSpatialRegion(startMatrixIdx, endMatrixIdx);
 			if (occupiedRegions.isOccupied(imgRegion)) {
+				LOGGER.debug("Cancelling placement of image because the target space is occupied.");
 				// TODO: create fallback logic for choosing a new region
 			} else {
 				for (int rowIdx = imgRegion.getXLowerBound(); rowIdx < imgRegion.getXUpperBound(); rowIdx++) {
@@ -304,8 +305,9 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 					}
 					System.out.println(occupiedRow);
 				}
+				occupiedRegions.put(imgRegion, imgViewInfoDatum);
 			}
-			occupiedRegions.put(imgRegion, imgViewInfoDatum);
+
 		}
 	}
 
