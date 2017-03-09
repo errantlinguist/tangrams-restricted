@@ -41,7 +41,7 @@ public final class GameBoardPanelViewingTest implements Runnable {
 
 	public static void main(final String[] args) {
 		if (args.length < 1) {
-			System.err.println(String.format("Usage: %s <gameId> (maxPlacementRetriesPerImg)", GameBoardPanelViewingTest.class.getName()));
+			System.err.println(String.format("Usage: %s <gameId> [maxPlacementRetriesPerImg]", GameBoardPanelViewingTest.class.getName()));
 			System.exit(64);
 		} else {
 			final String gameId = args[0];
