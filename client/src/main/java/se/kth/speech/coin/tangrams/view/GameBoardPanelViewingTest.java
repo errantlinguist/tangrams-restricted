@@ -78,7 +78,6 @@ public final class GameBoardPanelViewingTest implements Runnable {
 		final GameBoardPanel boardPanel = panelFactory.apply(imgVisualizationInfoData, rnd);
 		frame.add(boardPanel, BorderLayout.CENTER);
 
-		frame.setResizable(false);
 		frame.pack();
 		frame.setLocationByPlatform(true);
 		frame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
