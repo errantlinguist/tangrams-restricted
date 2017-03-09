@@ -146,7 +146,7 @@ final class RandomImagePositionMatrixFiller implements BiFunction<Matrix<? super
 	private static SpatialMap.Region createRandomSpatialRegion(final int[] piecePosMatrixSize, final int[] matrixDims,
 			final Random rnd) {
 		final IntStream maxPossibleMatrixIdxs = IntStream.range(0, matrixDims.length)
-				.map(i -> matrixDims[i] - piecePosMatrixSize[i]);
+				.map(i -> matrixDims[i] - piecePosMatrixSize[i] + 1);
 		// Randomly pick a space in the matrix
 		final int[] startMatrixIdx = maxPossibleMatrixIdxs.map(rnd::nextInt).toArray();
 		final int[] endMatrixIdx = IntStream.range(0, startMatrixIdx.length)
