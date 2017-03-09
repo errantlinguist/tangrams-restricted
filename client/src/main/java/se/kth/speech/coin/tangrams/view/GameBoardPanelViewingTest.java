@@ -45,22 +45,27 @@ public final class GameBoardPanelViewingTest implements Runnable {
 			System.exit(64);
 		} else {
 			final String gameId = args[0];
+			final int maxPlacementRetriesPerImg = args.length > 1 ? Integer.parseInt(args[1]) : 3;
+			final GameBoardPanelFactory panelFactory = new GameBoardPanelFactory(maxPlacementRetriesPerImg);
 			LOGGER.info("Creating view for game \"{}\".", gameId);
 			final Random rnd = new Random(Long.parseLong(gameId));
-			final GameBoardPanelViewingTest testInstance = new GameBoardPanelViewingTest(rnd);
+			final GameBoardPanelViewingTest testInstance = new GameBoardPanelViewingTest(panelFactory, rnd);
 			EventQueue.invokeLater(testInstance);
 		}
 	}
 
+	private final GameBoardPanelFactory panelFactory;
+
 	private final Random rnd;
 
-	public GameBoardPanelViewingTest(final Random rnd) {
+	public GameBoardPanelViewingTest(final GameBoardPanelFactory panelFactory, final Random rnd) {
+		this.panelFactory = panelFactory;
 		this.rnd = rnd;
 	}
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Runnable#run()
 	 */
 	@Override
@@ -70,7 +75,7 @@ public final class GameBoardPanelViewingTest implements Runnable {
 		final int pieceCount = 20;
 		final RandomPieceImageManager imgManager = new RandomPieceImageManager(pieceCount);
 		final List<ImageVisualizationInfo> imgVisualizationInfoData = imgManager.createImageData(rnd);
-		final GameBoardPanel boardPanel = new GameBoardPanelFactory(3).apply(imgVisualizationInfoData, rnd);
+		final GameBoardPanel boardPanel = panelFactory.apply(imgVisualizationInfoData, rnd);
 		frame.add(boardPanel, BorderLayout.CENTER);
 
 		frame.pack();
