@@ -156,7 +156,7 @@ final class RandomImagePositionMatrixFiller implements
 	}
 
 	private String createFailedPlacementErrorMsg(final List<?> failedPlacements) {
-		final String errorMsgPrefix = String.format("%d image(s) could not be placed successfully after %d retries:",
+		final String errorMsgPrefix = String.format("%d image(s) could not be placed successfully after %d retries each:",
 				failedPlacements.size(), maxPlacementRetriesPerImg);
 		final StringBuilder sb = new StringBuilder(errorMsgPrefix.length() + failedPlacements.size() * 16);
 		sb.append(errorMsgPrefix);
