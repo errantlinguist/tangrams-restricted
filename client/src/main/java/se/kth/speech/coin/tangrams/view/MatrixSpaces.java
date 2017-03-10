@@ -16,12 +16,15 @@
 */
 package se.kth.speech.coin.tangrams.view;
 
+import java.util.List;
+import java.util.ListIterator;
 import java.util.Random;
 import java.util.stream.IntStream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import se.kth.speech.Matrix;
 import se.kth.speech.SpatialMap;
 
 /**
@@ -61,6 +64,24 @@ final class MatrixSpaces {
 		final int[] endMatrixIdx = IntStream.range(0, startMatrixIdx.length)
 				.map(i -> startMatrixIdx[i] + piecePosMatrixSize[i]).toArray();
 		return createSpatialRegion(startMatrixIdx, endMatrixIdx);
+	}
+
+	static <T> void setMatrixPositionValues(final Matrix<T> posMatrix, final SpatialMap.Region occupiedRegion,
+			final T pieceId) {
+		final ListIterator<List<T>> rowIter = posMatrix.rowIterator(occupiedRegion.getXLowerBound());
+		for (int rowIdx = rowIter.nextIndex(); rowIdx < occupiedRegion.getXUpperBound(); rowIdx++) {
+			final List<T> occupiedRow = rowIter.next();
+			final ListIterator<T> rowCellIter = occupiedRow.listIterator(occupiedRegion.getYLowerBound());
+			for (int colIdx = rowCellIter.nextIndex(); colIdx < occupiedRegion.getYUpperBound(); colIdx++) {
+				final T nextOldPieceId = rowCellIter.next();
+				if (nextOldPieceId == null) {
+					rowCellIter.set(pieceId);
+				} else {
+					throw new IllegalArgumentException(
+							String.format("Previous value at %d*%d not null.", rowIdx, colIdx));
+				}
+			}
+		}
 	}
 
 	private MatrixSpaces() {

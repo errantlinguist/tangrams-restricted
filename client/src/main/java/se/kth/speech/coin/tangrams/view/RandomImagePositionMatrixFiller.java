@@ -43,23 +43,6 @@ import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
  */
 final class RandomImagePositionMatrixFiller implements BiFunction<Matrix<? super Integer>, List<? extends Entry<? extends Image, ImageViewInfo>>,SpatialMap<Entry<? extends Image, ImageViewInfo>>> {
 
-	private static <T> void setMatrixPositionValues(final Matrix<T> posMatrix, final SpatialMap.Region occupiedRegion,
-			final T pieceId) {
-		final ListIterator<List<T>> rowIter = posMatrix.rowIterator(occupiedRegion.getXLowerBound());
-		for (int rowIdx = rowIter.nextIndex(); rowIdx < occupiedRegion.getXUpperBound(); rowIdx++) {
-			final List<T> occupiedRow = rowIter.next();
-			final ListIterator<T> rowCellIter = occupiedRow.listIterator(occupiedRegion.getYLowerBound());
-			for (int colIdx = rowCellIter.nextIndex(); colIdx < occupiedRegion.getYUpperBound(); colIdx++) {
-				final T nextOldPieceId = rowCellIter.next();
-				if (nextOldPieceId == null) {
-					rowCellIter.set(pieceId);	
-				} else {
-					throw new IllegalArgumentException(String.format("Previous value at %d*%d not null.", rowIdx, colIdx));
-				}
-			}
-		}
-	}
-	
 	private static final Logger LOGGER = LoggerFactory.getLogger(RandomImagePositionMatrixFiller.class);
 	
 	private static final BiFunction<ImageMatrixPositionInfo<Integer>, Integer, Integer> INCREMENTING_REMAPPER = new BiFunction<ImageMatrixPositionInfo<Integer>, Integer, Integer>() {
@@ -115,7 +98,7 @@ final class RandomImagePositionMatrixFiller implements BiFunction<Matrix<? super
 				LOGGER.debug("Cancelling placement of image because the target space is occupied.");
 				retryStack.add(new ImageMatrixPositionInfo<>(pieceId, piecePosMatrixSize, imgViewInfoDatum));
 			} else {
-				setMatrixPositionValues(posMatrix, pieceRegion, pieceId);
+				MatrixSpaces.setMatrixPositionValues(posMatrix, pieceRegion, pieceId);
 				result.put(pieceRegion, imgViewInfoDatum);
 			}
 
@@ -138,7 +121,7 @@ final class RandomImagePositionMatrixFiller implements BiFunction<Matrix<? super
 					retryStack.add(imgPlacementInfo);
 				}
 			} else {
-				setMatrixPositionValues(posMatrix, imgRegion, imgPlacementInfo.getPieceId());
+				MatrixSpaces.setMatrixPositionValues(posMatrix, imgRegion, imgPlacementInfo.getPieceId());
 				result.put(imgRegion, imgPlacementInfo.getImgViewInfoDatum());
 			}
 		}
