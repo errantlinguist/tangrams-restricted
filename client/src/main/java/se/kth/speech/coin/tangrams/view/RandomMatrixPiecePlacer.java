@@ -32,7 +32,9 @@ import se.kth.speech.SpatialMap;
 final class RandomMatrixPiecePlacer<T> {
 
 	private final Matrix<T> posMatrix;
+	
 	private final Random rnd;
+	
 	private final SpatialMap<Entry<? extends Image, ImageViewInfo>> occupiedPositions;
 
 	RandomMatrixPiecePlacer(final Matrix<T> posMatrix, final Random rnd,
