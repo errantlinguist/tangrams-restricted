@@ -40,8 +40,8 @@ public class RandomPieceImageDataFactoryTest {
 			IconImages.getIconImageResources().entrySet(), 2);
 
 	@DataPoints
-	public static final List<Random> TEST_RANDOMS = LongStream.generate(new Random()::nextLong).distinct()
-			.mapToObj(Random::new).limit(10).collect(Collectors.toList());
+	public static final Random[] TEST_RANDOMS = LongStream.generate(new Random()::nextLong).distinct()
+			.mapToObj(Random::new).limit(10).toArray(Random[]::new);
 
 	/**
 	 * Test method for
