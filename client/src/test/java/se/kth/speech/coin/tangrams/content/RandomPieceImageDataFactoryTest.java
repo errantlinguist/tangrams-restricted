@@ -21,7 +21,6 @@ import static org.junit.Assert.assertEquals;
 import java.util.List;
 import java.util.Random;
 import java.util.stream.Collectors;
-import java.util.stream.LongStream;
 
 import org.junit.experimental.theories.DataPoints;
 import org.junit.experimental.theories.Theories;
@@ -40,7 +39,7 @@ public final class RandomPieceImageDataFactoryTest {
 			IconImages.getIconImageResources().entrySet(), 2);
 
 	@DataPoints
-	public static final Random[] TEST_RANDOMS = LongStream.generate(new Random()::nextLong).distinct()
+	public static final Random[] TEST_RANDOMS = new Random().longs().distinct()
 			.mapToObj(Random::new).limit(10).toArray(Random[]::new);
 
 	/**
@@ -53,5 +52,5 @@ public final class RandomPieceImageDataFactoryTest {
 		final List<?> distinctResults = results.stream().distinct().collect(Collectors.toList());
 		assertEquals(distinctResults, results);
 	}
-
+	
 }

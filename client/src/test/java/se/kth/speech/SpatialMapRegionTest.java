@@ -18,7 +18,6 @@ package se.kth.speech;
 
 import java.util.Random;
 import java.util.Set;
-import java.util.stream.IntStream;
 
 import org.junit.Assert;
 import org.junit.Assume;
@@ -72,7 +71,7 @@ public final class SpatialMapRegionTest {
 	static {
 		final Random rnd = new Random();
 		final int testPointCount = 10;
-		TEST_POINTS = IntStream.generate(rnd::nextInt).distinct().limit(testPointCount).toArray();
+		TEST_POINTS = rnd.ints().distinct().limit(testPointCount).toArray();
 
 		final int testRegionCount = testPointCount / 4;
 		TEST_REGIONS = Sets.newHashSetWithExpectedSize(testRegionCount);
