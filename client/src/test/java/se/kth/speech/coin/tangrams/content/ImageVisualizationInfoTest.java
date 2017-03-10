@@ -17,9 +17,11 @@
 package se.kth.speech.coin.tangrams.content;
 
 import java.awt.Color;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Collection;
 import java.util.Random;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import org.junit.Assert;
@@ -28,6 +30,10 @@ import org.junit.experimental.theories.DataPoints;
 import org.junit.experimental.theories.Theories;
 import org.junit.experimental.theories.Theory;
 import org.junit.runner.RunWith;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import se.kth.speech.RandomStringFactory;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -37,6 +43,8 @@ import org.junit.runner.RunWith;
 @RunWith(Theories.class)
 public final class ImageVisualizationInfoTest {
 
+	private static final Logger LOGGER = LoggerFactory.getLogger(ImageVisualizationInfoTest.class);
+
 	@DataPoints
 	public static final Color[] TEST_COLORS = Stream.generate(() -> createRandomColor(new Random())).distinct().limit(5)
 			.toArray(Color[]::new);
@@ -45,7 +53,30 @@ public final class ImageVisualizationInfoTest {
 	public static final ImageSize[] TEST_SIZES = ImageSize.values();
 
 	@DataPoints
-	public static final Collection<URL> TEST_URLS = IconImages.getIconImageResources().values();
+	public static final Collection<URL> STANDARD_TEST_URLS;
+
+	@DataPoints
+	public static final URL[] RANDOM_TEST_URLS;
+
+	static {
+		STANDARD_TEST_URLS = IconImages.getIconImageResources().values();
+		final Supplier<String> randomStrFactory = new RandomStringFactory(5);
+		RANDOM_TEST_URLS = STANDARD_TEST_URLS.stream().map(url -> appendAnyString(url, randomStrFactory))
+				.toArray(URL[]::new);
+	}
+
+	private static URL appendAnyString(final URL url, final Supplier<String> strSupplier) {
+		URL result = null;
+		do {
+			final String suffix = strSupplier.get();
+			try {
+				result = new URL(url, suffix);
+			} catch (final MalformedURLException e) {
+				LOGGER.debug("Swallowing exception.", e);
+			}
+		} while (result == null);
+		return result;
+	}
 
 	private static Color createRandomColor(final Random rnd) {
 		final int r = rnd.nextInt(256);
@@ -110,14 +141,14 @@ public final class ImageVisualizationInfoTest {
 		final int h2 = o2.hashCode();
 		Assert.assertEquals(h1, h2);
 	}
-	
+
 	/**
 	 * Test method for
 	 * {@link se.kth.speech.coin.tangrams.content.ImageVisualizationInfo#hashCode()}.
 	 */
 	@Theory
-	public final void testHashCodeSameData(final URL u1, final Color c1, final ImageSize s1, final URL u2, final Color c2,
-			final ImageSize s2) {
+	public final void testHashCodeSameData(final URL u1, final Color c1, final ImageSize s1, final URL u2,
+			final Color c2, final ImageSize s2) {
 		Assume.assumeTrue(u1.equals(u2));
 		Assume.assumeTrue(c1.equals(c2));
 		Assume.assumeTrue(s1.equals(s2));
