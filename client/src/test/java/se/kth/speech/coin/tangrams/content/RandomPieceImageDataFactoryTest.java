@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.junit.Assert;
 import org.junit.experimental.theories.DataPoints;
@@ -40,7 +41,7 @@ public final class RandomPieceImageDataFactoryTest {
 	@DataPoints
 	public static final long[] TEST_SEEDS = new Random().longs().distinct().limit(10).toArray();
 
-	private static final IteratorEqualityAsserter<Object> ITER_EQUALITY_ASSERTER = new IteratorEqualityAsserter<>();
+	private static final IteratorEqualityAsserter<ImageVisualizationInfo> ITER_EQUALITY_ASSERTER = new IteratorEqualityAsserter<>();
 
 	private static final RandomPieceImageDataFactory TEST_FACTORY = new RandomPieceImageDataFactory(
 			IconImages.getIconImageResources().entrySet(), 2);
@@ -64,8 +65,8 @@ public final class RandomPieceImageDataFactoryTest {
 	public final void testApplyStable(final long s) {
 		final Random rnd1 = new Random(s);
 		final Random rnd2 = new Random(s);
-		final List<Object> results1 = TEST_FACTORY.apply(rnd1).collect(Collectors.toList());
-		final List<Object> results2 = TEST_FACTORY.apply(rnd2).collect(Collectors.toList());
+		final Stream<ImageVisualizationInfo> results1 = TEST_FACTORY.apply(rnd1);
+		final Stream<ImageVisualizationInfo> results2 = TEST_FACTORY.apply(rnd2);
 		ITER_EQUALITY_ASSERTER.accept(results1.iterator(), results2.iterator());
 	}
 
@@ -76,8 +77,8 @@ public final class RandomPieceImageDataFactoryTest {
 	@Theory
 	public final void testApplyUnique(final long seed) {
 		final Random rnd = new Random(seed);
-		final List<Object> results = TEST_FACTORY.apply(rnd).collect(Collectors.toList());
-		final List<Object> distinctResults = results.stream().distinct().collect(Collectors.toList());
+		final List<ImageVisualizationInfo> results = TEST_FACTORY.apply(rnd).collect(Collectors.toList());
+		final Stream<ImageVisualizationInfo> distinctResults = results.stream().distinct();
 		ITER_EQUALITY_ASSERTER.accept(results.iterator(), distinctResults.iterator());
 	}
 
