@@ -43,37 +43,6 @@ import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
  *
  */
 final class RandomImagePositionMatrixFiller implements BiFunction<Matrix<? super Integer>, List<? extends Entry<? extends Image, ImageViewInfo>>,SpatialMap<Entry<? extends Image, ImageViewInfo>>> {
-	
-	private static int[] createPosMatrixBoundsArray(final ImageViewInfo viewInfo) {
-		final ImageViewInfo.RasterizationInfo rasterizationInfo = viewInfo.getRasterization();
-		// NOTE: "rows" in the matrix go top-bottom and "cols" go left-right
-		// The number of rows this image takes up in the
-		// position matrix
-		final int occupiedPosMatrixRowCount = rasterizationInfo.getHeight() / rasterizationInfo.getGcd();
-		// The number of columns this image takes up in the
-		// position matrix
-		final int occupiedPosMatrixColCount = rasterizationInfo.getWidth() / rasterizationInfo.getGcd();
-		LOGGER.debug("Calculated position grid size {}*{} for \"{}\".", new Object[] {
-				viewInfo.getVisualization().getResourceLoc(), occupiedPosMatrixRowCount, occupiedPosMatrixColCount });
-
-		return new int[] { occupiedPosMatrixRowCount, occupiedPosMatrixColCount };
-	}
-
-	
-	private static SpatialMap.Region createRandomSpatialRegion(final int[] piecePosMatrixSize, final int[] matrixDims,
-			final Random rnd) {
-		final IntStream maxPossibleMatrixIdxs = IntStream.range(0, matrixDims.length)
-				.map(i -> matrixDims[i] - piecePosMatrixSize[i] + 1);
-		// Randomly pick a space in the matrix
-		final int[] startMatrixIdx = maxPossibleMatrixIdxs.map(rnd::nextInt).toArray();
-		final int[] endMatrixIdx = IntStream.range(0, startMatrixIdx.length)
-				.map(i -> startMatrixIdx[i] + piecePosMatrixSize[i]).toArray();
-		return createSpatialRegion(startMatrixIdx, endMatrixIdx);
-	}
-
-	private static SpatialMap.Region createSpatialRegion(final int[] startMatrixIdx, final int[] endMatrixIdx) {
-		return new SpatialMap.Region(startMatrixIdx[0], endMatrixIdx[0], startMatrixIdx[1], endMatrixIdx[1]);
-	}
 
 	private static <T> void setMatrixPositionValues(final Matrix<T> posMatrix, final SpatialMap.Region occupiedRegion,
 			final T pieceId) {
@@ -140,9 +109,9 @@ final class RandomImagePositionMatrixFiller implements BiFunction<Matrix<? super
 			final ImageViewInfo viewInfo = imgViewInfoDatum.getValue();
 			// The number of rows and columns this image takes up in the
 			// position matrix
-			final int[] piecePosMatrixSize = createPosMatrixBoundsArray(viewInfo);
+			final int[] piecePosMatrixSize = MatrixSpaces.createPosMatrixBoundsArray(viewInfo);
 			// Randomly pick a space in the matrix
-			final SpatialMap.Region pieceRegion = createRandomSpatialRegion(piecePosMatrixSize, posDims, rnd);
+			final SpatialMap.Region pieceRegion = MatrixSpaces.createRandomSpatialRegion(piecePosMatrixSize, posDims, rnd);
 			if (result.isOccupied(pieceRegion)) {
 				LOGGER.debug("Cancelling placement of image because the target space is occupied.");
 				retryStack.add(new ImageMatrixPositionInfo(pieceId, piecePosMatrixSize, imgViewInfoDatum));
@@ -160,7 +129,7 @@ final class RandomImagePositionMatrixFiller implements BiFunction<Matrix<? super
 		final List<ImageVisualizationInfo> failedPlacements = new ArrayList<>(estimatedNumberOfRetriedImgPlacements);
 		while (!retryStack.isEmpty()) {
 			final ImageMatrixPositionInfo imgPlacementInfo = retryStack.remove();
-			final SpatialMap.Region imgRegion = createRandomSpatialRegion(imgPlacementInfo.getPiecePosMatrixSize(), posDims,
+			final SpatialMap.Region imgRegion = MatrixSpaces.createRandomSpatialRegion(imgPlacementInfo.getPiecePosMatrixSize(), posDims,
 					rnd);
 			if (result.isOccupied(imgRegion)) {
 				final Integer tries = retryCounter.compute(imgPlacementInfo, INCREMENTING_REMAPPER);
@@ -176,7 +145,7 @@ final class RandomImagePositionMatrixFiller implements BiFunction<Matrix<? super
 		}
 
 		if (failedPlacements.isEmpty()) {
-			LOGGER.info("Successfully placed {} images.", imgViewInfoData.size());
+			LOGGER.info("Successfully placed {} image(s).", imgViewInfoData.size());
 		} else {
 			final String errorMsg = createFailedPlacementErrorMsg(failedPlacements);
 			if (allowFailedPlacements) {
