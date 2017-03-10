@@ -16,12 +16,10 @@
 */
 package se.kth.speech.coin.tangrams.view;
 
-import java.awt.BorderLayout;
 import java.awt.EventQueue;
 import java.util.List;
 import java.util.Random;
 
-import javax.swing.JFrame;
 import javax.swing.WindowConstants;
 
 import org.slf4j.Logger;
@@ -35,13 +33,13 @@ import se.kth.speech.coin.tangrams.content.RandomPieceImageManager;
  * @since 7 Mar 2017
  *
  */
-public final class GameBoardPanelViewingTest implements Runnable {
+public final class GameViewFrameViewingTest implements Runnable {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(GameBoardPanelViewingTest.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(GameViewFrameViewingTest.class);
 
 	public static void main(final String[] args) {
 		if (args.length < 1) {
-			System.err.println(String.format("Usage: %s <gameId> [maxPlacementRetriesPerImg]", GameBoardPanelViewingTest.class.getName()));
+			System.err.println(String.format("Usage: %s <gameId> [maxPlacementRetriesPerImg]", GameViewFrameViewingTest.class.getName()));
 			System.exit(64);
 		} else {
 			final String gameId = args[0];
@@ -49,7 +47,7 @@ public final class GameBoardPanelViewingTest implements Runnable {
 			final GameBoardPanelFactory panelFactory = new GameBoardPanelFactory(maxPlacementRetriesPerImg, true);
 			LOGGER.info("Creating view for game \"{}\".", gameId);
 			final Random rnd = new Random(Long.parseLong(gameId));
-			final GameBoardPanelViewingTest testInstance = new GameBoardPanelViewingTest(panelFactory, rnd);
+			final GameViewFrameViewingTest testInstance = new GameViewFrameViewingTest(panelFactory, rnd);
 			EventQueue.invokeLater(testInstance);
 		}
 	}
@@ -58,7 +56,7 @@ public final class GameBoardPanelViewingTest implements Runnable {
 
 	private final Random rnd;
 
-	public GameBoardPanelViewingTest(final GameBoardPanelFactory panelFactory, final Random rnd) {
+	public GameViewFrameViewingTest(final GameBoardPanelFactory panelFactory, final Random rnd) {
 		this.panelFactory = panelFactory;
 		this.rnd = rnd;
 	}
@@ -70,14 +68,10 @@ public final class GameBoardPanelViewingTest implements Runnable {
 	 */
 	@Override
 	public void run() {
-		final JFrame frame = new JFrame("Game board viewer");
-		frame.setLayout(new BorderLayout());
 		final int pieceCount = 20;
 		final RandomPieceImageManager imgManager = new RandomPieceImageManager(pieceCount);
 		final List<ImageVisualizationInfo> imgVisualizationInfoData = imgManager.createImageData(rnd);
-		final GameBoardPanel boardPanel = panelFactory.apply(imgVisualizationInfoData, rnd);
-		frame.add(boardPanel, BorderLayout.CENTER);
-
+		final GameViewFrame frame = new GameViewFrame(imgVisualizationInfoData, rnd, panelFactory);
 		frame.pack();
 		frame.setLocationByPlatform(true);
 		frame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);

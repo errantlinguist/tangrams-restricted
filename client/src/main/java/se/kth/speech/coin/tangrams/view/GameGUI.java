@@ -178,12 +178,11 @@ public final class GameGUI implements Runnable {
 	@Override
 	public void run() {
 		LOGGER.debug("Creating view components.");
-		final GameViewFrame gameViewFrame = new GameViewFrame(imgVisualizationInfoData, localController);
+//		GameBoardPanelFactory gameBoardPanelFactory = new GameBoardPanelFactory(3, false);
+//		final GameViewFrame gameViewFrame = new GameViewFrame(imgVisualizationInfoData, gameBoardPanelFactory);
 		// TODO: Add toggle for single-player mode
-		gameViewFrame.pack();
-		// gameViewFrame.setLocationByPlatform(true);
-		gameViewFrame.setLocation(viewLocation);
-		// gameViewFrame.setLocationRelativeTo(null);
-		gameViewFrame.setVisible(true);
+//		gameViewFrame.pack();
+//		gameViewFrame.setLocation(viewLocation);
+//		gameViewFrame.setVisible(true);
 	}
 }

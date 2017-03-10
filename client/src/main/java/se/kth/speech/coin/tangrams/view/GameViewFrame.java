@@ -16,14 +16,19 @@
 */
 package se.kth.speech.coin.tangrams.view;
 
+import java.awt.BorderLayout;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.util.Collection;
 import java.util.List;
+import java.util.Random;
+import java.util.function.BiFunction;
 
+import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JPanel;
 
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
-import se.kth.speech.coin.tangrams.game.LocalController;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -37,9 +42,18 @@ final class GameViewFrame extends JFrame {
 	 */
 	private static final long serialVersionUID = -4129777933223228599L;
 
-	GameViewFrame(final List<ImageVisualizationInfo> imgVisualizationInfoData, final LocalController<? super Integer> localController) {
-//		GameBoardPanel boardPanel = new GameBoardPanelFactory().apply(imgVisualizationInfoData);
-//		add(boardPanel);
+	GameViewFrame(final List<ImageVisualizationInfo> imgVisualizationInfoData, Random rnd, BiFunction<Collection<ImageVisualizationInfo>, Random, GameBoardPanel> gameBoardPanelFactory) {
+		setLayout(new BorderLayout());
+		GameBoardPanel boardPanel = gameBoardPanelFactory.apply(imgVisualizationInfoData, rnd);
+		add(boardPanel, BorderLayout.CENTER);
+		
+		JPanel buttonPanel = new JPanel();
+		add(buttonPanel, BorderLayout.SOUTH);
+		JButton undoButton = new JButton("undo");
+		buttonPanel.add(undoButton);
+		JButton continueButton = new JButton("continue");
+		buttonPanel.add(continueButton);
+		
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		addWindowListener(new WindowAdapter() {
 
