@@ -33,30 +33,29 @@ import se.kth.speech.SpatialMap;
 final class RandomMatrixPiecePlacer<I>
 		implements BiFunction<Entry<? extends Image, ImageViewInfo>, I, Entry<SpatialMap.Region, Boolean>> {
 
+	private final SpatialMap<Entry<? extends Image, ImageViewInfo>> occupiedPositions;
+
 	private final Matrix<I> posMatrix;
 
+	private final RandomImageMatrixSpatialRegionFactory regionFactory;
+	
 	private final Random rnd;
-
-	private final SpatialMap<Entry<? extends Image, ImageViewInfo>> occupiedPositions;
 
 	RandomMatrixPiecePlacer(final Matrix<I> posMatrix, final Random rnd,
 			final SpatialMap<Entry<? extends Image, ImageViewInfo>> occupiedPositions) {
 		this.posMatrix = posMatrix;
 		this.rnd = rnd;
 		this.occupiedPositions = occupiedPositions;
+	
+		regionFactory = new RandomImageMatrixSpatialRegionFactory(posMatrix.getDimensions());
 	}
 
 	@Override
 	public Entry<SpatialMap.Region, Boolean> apply(final Entry<? extends Image, ImageViewInfo> imgViewInfoDatum,
 			final I pieceId) {
-		final int[] posDims = posMatrix.getDimensions();
 		final ImageViewInfo viewInfo = imgViewInfoDatum.getValue();
-		// The number of rows and columns this image takes up in the
-		// position matrix
-		final int[] piecePosMatrixSize = MatrixSpaces.createPosMatrixBoundsArray(viewInfo);
 		// Randomly pick a space in the matrix
-		final SpatialMap.Region piecePosition = MatrixSpaces.createRandomSpatialRegion(piecePosMatrixSize, posDims,
-				rnd);
+		final SpatialMap.Region piecePosition = regionFactory.apply(viewInfo, rnd);
 		final boolean success;
 		if (occupiedPositions.isOccupied(piecePosition)) {
 			success = false;
