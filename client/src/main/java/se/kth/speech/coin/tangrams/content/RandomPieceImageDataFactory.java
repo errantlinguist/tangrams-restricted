@@ -39,7 +39,7 @@ import com.google.common.collect.Multimap;
  * @since 7 Mar 2017
  *
  */
-final class RandomPieceImageDataFactory implements Function<Random, Stream<ImageVisualizationInfo>> {
+public final class RandomPieceImageDataFactory implements Function<Random, Stream<ImageVisualizationInfo>> {
 
 	private static final List<ImageSize> DEFAULT_IMG_SIZES = Arrays.asList(ImageSize.values());
 
@@ -48,11 +48,15 @@ final class RandomPieceImageDataFactory implements Function<Random, Stream<Image
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(RandomPieceImageDataFactory.class);
 
+	private static final int DEFAULT_MAX_SHARED_ATTR_COUNT = 2;
+
+	private static final Collection<URL> DEFAULT_IMG_RESOURCES = IconImages.getImageResources().values();
+
 	/**
 	 * A mapping of icon names mapped to their corresponding image {@link URL}
 	 * resource locators.
 	 */
-	private final Collection<? extends Entry<String, URL>> imgResources;
+	private final Collection<? extends URL> imgResources;
 
 	/**
 	 * The maximum number of attributes an image may share with another image.
@@ -75,6 +79,22 @@ final class RandomPieceImageDataFactory implements Function<Random, Stream<Image
 
 	/**
 	 *
+	 */
+	public RandomPieceImageDataFactory() {
+		this(DEFAULT_IMG_RESOURCES, DEFAULT_MAX_SHARED_ATTR_COUNT);
+	}
+
+	/**
+	 * @param imgResources
+	 *            A mapping of icon names mapped to their corresponding image
+	 *            {@link URL} resource locators.
+	 */
+	public RandomPieceImageDataFactory(final Collection<? extends URL> imgResources) {
+		this(imgResources, DEFAULT_MAX_SHARED_ATTR_COUNT);
+	}
+
+	/**
+	 *
 	 * @param imgResources
 	 *            A mapping of icon names mapped to their corresponding image
 	 *            {@link URL} resource locators.
@@ -82,8 +102,7 @@ final class RandomPieceImageDataFactory implements Function<Random, Stream<Image
 	 *            The maximum number of attributes an image may share with
 	 *            another image.
 	 */
-	public RandomPieceImageDataFactory(final Collection<? extends Entry<String, URL>> imgResources,
-			final int maxSharedAttrCount) {
+	public RandomPieceImageDataFactory(final Collection<? extends URL> imgResources, final int maxSharedAttrCount) {
 		this(imgResources, DEFAULT_UNIQUE_IMG_COLORS, DEFAULT_IMG_SIZES, maxSharedAttrCount);
 	}
 
@@ -106,7 +125,7 @@ final class RandomPieceImageDataFactory implements Function<Random, Stream<Image
 	 *            The maximum number of attributes an image may share with
 	 *            another image.
 	 */
-	public RandomPieceImageDataFactory(final Collection<? extends Entry<String, URL>> imgResources,
+	public RandomPieceImageDataFactory(final Collection<? extends URL> imgResources,
 			final List<? extends Color> uniqueImgColors, final List<ImageSize> sizes, final int maxSharedAttrCount) {
 		this.imgResources = imgResources;
 		this.uniqueImgColors = uniqueImgColors;
@@ -126,9 +145,18 @@ final class RandomPieceImageDataFactory implements Function<Random, Stream<Image
 	 *            The maximum number of attributes an image may share with
 	 *            another image.
 	 */
-	public RandomPieceImageDataFactory(final Collection<? extends Entry<String, URL>> imgResources,
-			final List<ImageSize> sizes, final int maxSharedAttrCount) {
+	public RandomPieceImageDataFactory(final Collection<? extends URL> imgResources, final List<ImageSize> sizes,
+			final int maxSharedAttrCount) {
 		this(imgResources, DEFAULT_UNIQUE_IMG_COLORS, sizes, maxSharedAttrCount);
+	}
+
+	/**
+	 * @param maxSharedAttrCount
+	 *            The maximum number of attributes an image may share with
+	 *            another image.
+	 */
+	public RandomPieceImageDataFactory(final int maxSharedAttrCount) {
+		this(DEFAULT_IMG_RESOURCES, maxSharedAttrCount);
 	}
 
 	/**
@@ -140,11 +168,12 @@ final class RandomPieceImageDataFactory implements Function<Random, Stream<Image
 	 */
 	@Override
 	public Stream<ImageVisualizationInfo> apply(final Random rnd) {
-		final List<ImageVisualizationInfo> imgVisualizationInfoData = createImageDatumEnumerationList();
+		final List<ImageVisualizationInfo> imgVisualizationInfoData = createImageDataCombinations();
 		Collections.shuffle(imgVisualizationInfoData, rnd);
 
 		final Multimap<URL, ImageSize> imgSizes = HashMultimap.create(imgVisualizationInfoData.size(), sizes.size());
-		final Multimap<URL, Color> imgColors = HashMultimap.create(imgVisualizationInfoData.size(), uniqueImgColors.size());
+		final Multimap<URL, Color> imgColors = HashMultimap.create(imgVisualizationInfoData.size(),
+				uniqueImgColors.size());
 		final Stream.Builder<ImageVisualizationInfo> resultBuilder = Stream.builder();
 		for (final ImageVisualizationInfo imgVisualizationInfoDatum : imgVisualizationInfoData) {
 			final URL resourceLoc = imgVisualizationInfoDatum.getResourceLoc();
@@ -192,13 +221,16 @@ final class RandomPieceImageDataFactory implements Function<Random, Stream<Image
 		return resultBuilder.build();
 	}
 
-	private List<ImageVisualizationInfo> createImageDatumEnumerationList() {
+	private List<ImageVisualizationInfo> createImageDataCombinations() {
+		// NOTE: It is useful to have this method create a list of a concrete
+		// size rather than a Stream so that e.g. hashmaps based on this data
+		// can be initialized with an appropriate capacity
 		final int colorSizeComboCount = uniqueImgColors.size() * sizes.size();
 		final List<ImageVisualizationInfo> result = new ArrayList<>(colorSizeComboCount * imgResources.size());
-		for (final Entry<String, URL> namedImgResource : imgResources) {
+		for (final URL imgResource : imgResources) {
 			for (final Color color : uniqueImgColors) {
 				for (final ImageSize size : sizes) {
-					final ImageVisualizationInfo newDatum = new ImageVisualizationInfo(namedImgResource.getValue(), color, size);
+					final ImageVisualizationInfo newDatum = new ImageVisualizationInfo(imgResource, color, size);
 					result.add(newDatum);
 				}
 			}

@@ -19,6 +19,7 @@ package se.kth.speech.coin.tangrams.view;
 import java.awt.EventQueue;
 import java.util.List;
 import java.util.Random;
+import java.util.stream.Collectors;
 
 import javax.swing.WindowConstants;
 
@@ -26,7 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
-import se.kth.speech.coin.tangrams.content.RandomPieceImageManager;
+import se.kth.speech.coin.tangrams.content.RandomPieceImageDataFactory;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -53,11 +54,11 @@ public final class GameViewFrameViewingTest implements Runnable {
 		}
 	}
 
-	private final Random rnd;
+	private final boolean allowFailedPlacements;
 
 	private final int maxPlacementRetriesPerImg;
 
-	private final boolean allowFailedPlacements;
+	private final Random rnd;
 
 	public GameViewFrameViewingTest(final Random rnd, final int maxPlacementRetriesPerImg,
 			final boolean allowFailedPlacements) {
@@ -73,9 +74,9 @@ public final class GameViewFrameViewingTest implements Runnable {
 	 */
 	@Override
 	public void run() {
-		final int pieceCount = Integer.MAX_VALUE;
-		final RandomPieceImageManager imgManager = new RandomPieceImageManager(pieceCount);
-		final List<ImageVisualizationInfo> imgVisualizationInfoData = imgManager.createImageData(rnd);
+		final RandomPieceImageDataFactory imgDataFactory = new RandomPieceImageDataFactory();
+		final List<ImageVisualizationInfo> imgVisualizationInfoData = imgDataFactory.apply(rnd)
+				.collect(Collectors.toList());
 		final GameBoardPanel gameBoardPanel = new GameBoardPanel(imgVisualizationInfoData, rnd,
 				maxPlacementRetriesPerImg, allowFailedPlacements);
 		final GameViewFrame frame = new GameViewFrame(gameBoardPanel, rnd);

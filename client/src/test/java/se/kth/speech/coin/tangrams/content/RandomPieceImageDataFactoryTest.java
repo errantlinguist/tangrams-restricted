@@ -43,8 +43,7 @@ public final class RandomPieceImageDataFactoryTest {
 
 	private static final IteratorEqualityAsserter<ImageVisualizationInfo> ITER_EQUALITY_ASSERTER = new IteratorEqualityAsserter<>();
 
-	private static final RandomPieceImageDataFactory TEST_FACTORY = new RandomPieceImageDataFactory(
-			IconImages.getImageResources().entrySet(), 2);
+	private static final RandomPieceImageDataFactory TEST_INST = new RandomPieceImageDataFactory();
 
 	/**
 	 * Test method for
@@ -53,7 +52,7 @@ public final class RandomPieceImageDataFactoryTest {
 	@Theory
 	public final void testApplyNotEmpty(final long s) {
 		final Random rnd = new Random(s);
-		final Optional<ImageVisualizationInfo> any = TEST_FACTORY.apply(rnd).findAny();
+		final Optional<ImageVisualizationInfo> any = TEST_INST.apply(rnd).findAny();
 		Assert.assertTrue(any.isPresent());
 	}
 
@@ -65,8 +64,8 @@ public final class RandomPieceImageDataFactoryTest {
 	public final void testApplyStable(final long s) {
 		final Random rnd1 = new Random(s);
 		final Random rnd2 = new Random(s);
-		final Stream<ImageVisualizationInfo> results1 = TEST_FACTORY.apply(rnd1);
-		final Stream<ImageVisualizationInfo> results2 = TEST_FACTORY.apply(rnd2);
+		final Stream<ImageVisualizationInfo> results1 = TEST_INST.apply(rnd1);
+		final Stream<ImageVisualizationInfo> results2 = TEST_INST.apply(rnd2);
 		ITER_EQUALITY_ASSERTER.accept(results1.iterator(), results2.iterator());
 	}
 
@@ -77,7 +76,7 @@ public final class RandomPieceImageDataFactoryTest {
 	@Theory
 	public final void testApplyUnique(final long seed) {
 		final Random rnd = new Random(seed);
-		final List<ImageVisualizationInfo> results = TEST_FACTORY.apply(rnd).collect(Collectors.toList());
+		final List<ImageVisualizationInfo> results = TEST_INST.apply(rnd).collect(Collectors.toList());
 		final Stream<ImageVisualizationInfo> distinctResults = results.stream().distinct();
 		ITER_EQUALITY_ASSERTER.accept(results.iterator(), distinctResults.iterator());
 	}

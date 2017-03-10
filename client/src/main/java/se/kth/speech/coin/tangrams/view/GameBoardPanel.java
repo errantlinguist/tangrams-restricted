@@ -29,7 +29,6 @@ import java.awt.image.FilteredImageSource;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.EnumSet;
@@ -42,6 +41,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.IntSupplier;
 
 import javax.imageio.ImageIO;
@@ -256,22 +256,19 @@ final class GameBoardPanel extends Canvas {
 		final int maxImgPlacements = 20;
 		final Map<Entry<? extends Image, ImageViewInfo>, Integer> pieceIds = Maps
 				.newHashMapWithExpectedSize(imgVisualizationInfoData.size());
-		final RandomImagePositionMatrixFiller matrixFiller = new RandomImagePositionMatrixFiller(rnd, maxImgPlacements,
-				maxPlacementRetriesPerImg, allowFailedPlacements,
-				(imgViewInfoDatum, pieceId) -> pieceIds.put(imgViewInfoDatum, pieceId));
+		final Function<Entry<? extends Image, ImageViewInfo>, Integer> incrementingPieceIdGetter = piece -> pieceIds
+				.computeIfAbsent(piece, k -> pieceIds.size());
+		final RandomImagePositionMatrixFiller<Integer> matrixFiller = new RandomImagePositionMatrixFiller<>(
+				incrementingPieceIdGetter, rnd, maxImgPlacements, maxPlacementRetriesPerImg, allowFailedPlacements);
 		// The minimum accepted length of the shortest dimension for an image
 		final int minDimLength = 300;
 		final SizeValidator validator = new SizeValidator(minDimLength, 50, 50);
 		try {
-			final LinkedHashMap<Image, ImageViewInfo> imgViewInfoDataMap = createImageViewInfoMap(
-					imgVisualizationInfoData, validator);
-			// Create a list for assigning an ID (i.e. index) to each image
-			final List<Entry<Image, ImageViewInfo>> imgViewInfoDataList = new ArrayList<>(
-					imgViewInfoDataMap.entrySet());
-			final Set<Integer> dimensionValues = Sets.newHashSetWithExpectedSize(imgViewInfoDataList.size() + 1);
-			for (final Entry<Image, ImageViewInfo> imgViewInfoDatum : imgViewInfoDataList) {
-				final ImageViewInfo viewInfo = imgViewInfoDatum.getValue();
-				dimensionValues.add(viewInfo.getRasterization().getGcd());
+			final LinkedHashMap<Image, ImageViewInfo> imgViewInfoDataMap = createImageViewInfo(imgVisualizationInfoData,
+					validator);
+			final Set<Integer> dimensionValues = Sets.newHashSetWithExpectedSize(imgViewInfoDataMap.size() + 1);
+			for (final ImageViewInfo imgViewInfo : imgViewInfoDataMap.values()) {
+				dimensionValues.add(imgViewInfo.getRasterization().getGcd());
 			}
 			final Dimension boardSize = new Dimension(minDimLength * 5, minDimLength * 4);
 			setSize(boardSize);
@@ -297,7 +294,7 @@ final class GameBoardPanel extends Canvas {
 							String.format("Board %s not divisble into matrix with dimensions %s.", boardSize,
 									Arrays.toString(posMatrix.getDimensions())));
 				}
-				piecePlacements = matrixFiller.apply(posMatrix, imgViewInfoDataList);
+				piecePlacements = matrixFiller.apply(posMatrix, imgViewInfoDataMap.entrySet());
 				pieceMover = new RandomMatrixPieceMover<>(posMatrix, piecePlacements, pieceIds::get);
 				// Finished with creating necessary data structures
 				System.out.println("IMAGE PLACEMENTS");
@@ -328,7 +325,7 @@ final class GameBoardPanel extends Canvas {
 
 	}
 
-	private LinkedHashMap<Image, ImageViewInfo> createImageViewInfoMap(
+	private LinkedHashMap<Image, ImageViewInfo> createImageViewInfo(
 			final Collection<ImageVisualizationInfo> imgVisualizationInfoData, final SizeValidator validator)
 			throws IOException {
 		// Use linked map in order to preserve iteration order in provided
