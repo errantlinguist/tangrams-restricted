@@ -47,7 +47,6 @@ final class RandomMatrixPiecePlacer<T> {
 	public Entry<SpatialMap.Region, Boolean> apply(final Entry<? extends Image, ImageViewInfo> imgViewInfoDatum,
 			final T pieceId) {
 		final int[] posDims = posMatrix.getDimensions();
-		// Randomly place each image in the position matrix
 		final ImageViewInfo viewInfo = imgViewInfoDatum.getValue();
 		// The number of rows and columns this image takes up in the
 		// position matrix
