@@ -16,11 +16,14 @@
 */
 package se.kth.speech;
 
-import java.util.Map;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Map.Entry;
-import java.util.Set;
+import java.util.stream.Stream;
 
-import com.google.common.collect.Maps;
+import com.github.errantlinguist.collections.ReverseLookupList;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 
 /**
  * A very rudimentary data structure for searching a two-dimensional space.
@@ -29,7 +32,7 @@ import com.google.common.collect.Maps;
  * @since 9 Mar 2017
  *
  */
-public final class SpatialMap<V> {
+public final class SpatialMap<E> {
 
 	/**
 	 * A very rudimentary region of a geographic space, analogous to but much
@@ -58,8 +61,8 @@ public final class SpatialMap<V> {
 		 * @param r2y2
 		 * @return
 		 */
-		public static boolean intersects(final int r1x1, final int r1x2, final int r1y1, final int r1y2,
-				final int r2x1, final int r2x2, final int r2y1, final int r2y2) {
+		public static boolean intersects(final int r1x1, final int r1x2, final int r1y1, final int r1y2, final int r2x1,
+				final int r2x2, final int r2y1, final int r2y2) {
 			return r1x1 < r2x2 && r1x2 > r2x1 && r1y1 < r2y2 && r1y2 > r2y1;
 		}
 
@@ -224,26 +227,60 @@ public final class SpatialMap<V> {
 
 	}
 
+	private static int estimateRegionCount(final int expectedElementCount) {
+		// TODO: implement
+		return expectedElementCount;
+	}
+
 	/**
 	 * <strong>TODO:</strong> Reverse this so that the region is the key
 	 * pointing to another {@link SpatialMap} of sub-regions.
 	 */
-	private final Map<V, Region> elementRegions;
+	private final Multimap<Region, E> regionElements;
 
-	public SpatialMap(final int expectedSize) {
-		this(Maps.newHashMapWithExpectedSize(expectedSize));
+	/**
+	 * An ordered sequence of regions being used, e.g. for getting an ID for a
+	 * particular region
+	 */
+	private final ReverseLookupList<Region> regions;
+
+	public SpatialMap(final int expectedElementCount) {
+		this(HashMultimap.create(estimateRegionCount(expectedElementCount), expectedElementCount));
 	}
 
-	private SpatialMap(final Map<V, Region> elementRegions) {
-		this.elementRegions = elementRegions;
+	private SpatialMap(final Multimap<Region, E> regionElements) {
+		this.regionElements = regionElements;
+		this.regions = new ReverseLookupList<>(new ArrayList<>(Math.max(regionElements.size(), 16)));
 	}
 
-	public Set<Entry<V, Region>> elementRegions() {
-		return elementRegions.entrySet();
+	public Collection<E> getAllElements() {
+		return regionElements.values();
 	}
 
-	public Set<V> elements() {
-		return elementRegions.keySet();
+	public Stream<Entry<Region, E>> getIntersectedElements(final Region intersectingRegion) {
+		// TODO: When turning this class into an actual spatial-indexing system,
+		// create
+		// heuristic for judging the size of the set of elements contained in a
+		// given region (e.g. based on how big the region is)
+		return regionElements.entries().stream()
+				.filter(regionElementColl -> intersectingRegion.intersects(regionElementColl.getKey()));
+	}
+
+	public Multimap<Region, E> getMinimalRegionElements() {
+		return regionElements;
+	}
+
+	public ReverseLookupList<Region> getMinimalRegions() {
+		return regions;
+	}
+
+	public Stream<Entry<Region, E>> getSubsumedElements(final Region subsumingRegion) {
+		// TODO: When turning this class into an actual spatial-indexing system,
+		// create
+		// heuristic for judging the size of the set of elements contained in a
+		// given region (e.g. based on how big the region is)
+		return regionElements.entries().stream()
+				.filter(regionElementColl -> subsumingRegion.subsumes(regionElementColl.getKey()));
 	}
 
 	/**
@@ -251,11 +288,12 @@ public final class SpatialMap<V> {
 	 * @return
 	 */
 	public boolean isOccupied(final Region region) {
-		return elementRegions.values().stream().anyMatch(elementRegion -> elementRegion.intersects(region));
+		return regionElements.keys().stream().anyMatch(elementRegion -> elementRegion.intersects(region));
 	}
 
-	public void put(final Region region, final V element) {
-		elementRegions.put(element, region);
+	public void put(final E element, final Region region) {
+		regionElements.put(region, element);
+		regions.add(region);
 	}
 
 }

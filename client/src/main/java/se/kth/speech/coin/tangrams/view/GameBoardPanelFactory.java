@@ -16,9 +16,14 @@
 */
 package se.kth.speech.coin.tangrams.view;
 
+import java.awt.Image;
 import java.util.Collection;
+import java.util.Map;
 import java.util.Random;
+import java.util.Map.Entry;
 import java.util.function.BiFunction;
+
+import com.google.common.collect.Maps;
 
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 
@@ -40,9 +45,10 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 
 	@Override
 	public GameBoardPanel apply(final Collection<ImageVisualizationInfo> imgVisualizationInfoData, final Random rnd) {
+		final Map<Entry<? extends Image, ImageViewInfo>,Integer> pieceIds = Maps.newHashMapWithExpectedSize(imgVisualizationInfoData.size());
 		final RandomImagePositionMatrixFiller matrixFiller = new RandomImagePositionMatrixFiller(rnd,
-				maxPlacementRetriesPerImg, allowFailedPlacements);
-		return new GameBoardPanel(imgVisualizationInfoData, matrixFiller);
+				maxPlacementRetriesPerImg, allowFailedPlacements, (imgViewInfoDatum, pieceId) -> pieceIds.put(imgViewInfoDatum, pieceId));
+		return new GameBoardPanel(imgVisualizationInfoData, matrixFiller, pieceIds::get);
 	}
 
 }

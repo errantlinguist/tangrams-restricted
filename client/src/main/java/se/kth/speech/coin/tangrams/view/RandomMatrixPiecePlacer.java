@@ -19,6 +19,7 @@ package se.kth.speech.coin.tangrams.view;
 import java.awt.Image;
 import java.util.Map.Entry;
 import java.util.Random;
+import java.util.function.BiFunction;
 
 import se.kth.speech.Matrix;
 import se.kth.speech.MutablePair;
@@ -29,23 +30,25 @@ import se.kth.speech.SpatialMap;
  * @since 10 Mar 2017
  *
  */
-final class RandomMatrixPiecePlacer<T> {
+final class RandomMatrixPiecePlacer<I>
+		implements BiFunction<Entry<? extends Image, ImageViewInfo>, I, Entry<SpatialMap.Region, Boolean>> {
 
-	private final Matrix<T> posMatrix;
-	
+	private final Matrix<I> posMatrix;
+
 	private final Random rnd;
-	
+
 	private final SpatialMap<Entry<? extends Image, ImageViewInfo>> occupiedPositions;
 
-	RandomMatrixPiecePlacer(final Matrix<T> posMatrix, final Random rnd,
+	RandomMatrixPiecePlacer(final Matrix<I> posMatrix, final Random rnd,
 			final SpatialMap<Entry<? extends Image, ImageViewInfo>> occupiedPositions) {
 		this.posMatrix = posMatrix;
 		this.rnd = rnd;
 		this.occupiedPositions = occupiedPositions;
 	}
 
+	@Override
 	public Entry<SpatialMap.Region, Boolean> apply(final Entry<? extends Image, ImageViewInfo> imgViewInfoDatum,
-			final T pieceId) {
+			final I pieceId) {
 		final int[] posDims = posMatrix.getDimensions();
 		final ImageViewInfo viewInfo = imgViewInfoDatum.getValue();
 		// The number of rows and columns this image takes up in the
@@ -59,7 +62,7 @@ final class RandomMatrixPiecePlacer<T> {
 			success = false;
 		} else {
 			MatrixSpaces.setMatrixPositionValues(posMatrix, piecePosition, pieceId);
-			occupiedPositions.put(piecePosition, imgViewInfoDatum);
+			occupiedPositions.put(imgViewInfoDatum, piecePosition);
 			success = true;
 		}
 		return new MutablePair<>(piecePosition, success);

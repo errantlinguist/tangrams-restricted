@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Queue;
 import java.util.Random;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 
 import org.mozilla.javascript.edu.emory.mathcs.backport.java.util.Arrays;
@@ -74,11 +75,15 @@ final class RandomImagePositionMatrixFiller implements
 
 	private final Random rnd;
 
+	private final BiConsumer<? super Entry<? extends Image, ImageViewInfo>, ? super Integer> postPlacementHook;
+
 	RandomImagePositionMatrixFiller(final Random rnd, final int maxPlacementRetriesPerImg,
-			final boolean allowFailedPlacements) {
+			final boolean allowFailedPlacements,
+			final BiConsumer<? super Entry<? extends Image, ImageViewInfo>, ? super Integer> postPlacementHook) {
 		this.rnd = rnd;
 		this.maxPlacementRetriesPerImg = maxPlacementRetriesPerImg;
 		this.allowFailedPlacements = allowFailedPlacements;
+		this.postPlacementHook = postPlacementHook;
 	}
 
 	@Override
@@ -98,7 +103,7 @@ final class RandomImagePositionMatrixFiller implements
 			final Entry<Region, Boolean> placementResult = piecePlacer.apply(imgViewInfoDatum, pieceId);
 			final Region pieceRegion = placementResult.getKey();
 			if (placementResult.getValue()) {
-				result.put(pieceRegion, imgViewInfoDatum);
+				put(result, imgViewInfoDatum, pieceId, pieceRegion);
 			} else {
 				LOGGER.debug("Cancelling placement of image because the target space is occupied.");
 				final int[] piecePosMatrixSize = pieceRegion.getDimensions();
@@ -112,21 +117,21 @@ final class RandomImagePositionMatrixFiller implements
 		final Map<ImageMatrixPositionInfo<Integer>, Integer> retryCounter = Maps
 				.newHashMapWithExpectedSize(estimatedNumberOfRetriedImgPlacements);
 		final List<ImageVisualizationInfo> failedPlacements = new ArrayList<>(estimatedNumberOfRetriedImgPlacements);
-		final int[] posDims = posMatrix.getDimensions();
 		while (!retryStack.isEmpty()) {
 			final ImageMatrixPositionInfo<Integer> imgPlacementInfo = retryStack.remove();
-			final SpatialMap.Region imgRegion = MatrixSpaces
-					.createRandomSpatialRegion(imgPlacementInfo.getPiecePosMatrixSize(), posDims, rnd);
-			if (result.isOccupied(imgRegion)) {
+			final Entry<? extends Image, ImageViewInfo> imgViewInfoDatum = imgPlacementInfo.getImgViewInfoDatum();
+			final Integer pieceId = imgPlacementInfo.getPieceId();
+			final Entry<Region, Boolean> placementResult = piecePlacer.apply(imgViewInfoDatum, pieceId);
+			if (placementResult.getValue()) {
+				LOGGER.debug("Successfully placed piece \"{}\" after retrying.", pieceId);
+				result.put(imgViewInfoDatum, placementResult.getKey());
+			} else {
 				final Integer tries = retryCounter.compute(imgPlacementInfo, INCREMENTING_REMAPPER);
 				if (tries > maxPlacementRetriesPerImg) {
 					failedPlacements.add(imgPlacementInfo.getImgViewInfoDatum().getValue().getVisualization());
 				} else {
 					retryStack.add(imgPlacementInfo);
 				}
-			} else {
-				MatrixSpaces.setMatrixPositionValues(posMatrix, imgRegion, imgPlacementInfo.getPieceId());
-				result.put(imgRegion, imgPlacementInfo.getImgViewInfoDatum());
 			}
 		}
 
@@ -154,6 +159,13 @@ final class RandomImagePositionMatrixFiller implements
 			sb.append(failedPlacement);
 		}
 		return sb.toString();
+	}
+
+	private void put(final SpatialMap<Entry<? extends Image, ImageViewInfo>> result,
+			final Entry<? extends Image, ImageViewInfo> imgViewInfoDatum, final Integer pieceId,
+			final Region pieceRegion) {
+		result.put(imgViewInfoDatum, pieceRegion);
+		postPlacementHook.accept(imgViewInfoDatum, pieceId);
 	}
 
 }

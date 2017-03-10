@@ -58,7 +58,7 @@ final class GameViewFrame extends JFrame {
 		final JButton continueButton = new JButton("continue");
 		buttonPanel.add(continueButton);
 		continueButton.addActionListener(continueEvent -> {
-			boardPanel.notifyContinue();
+			boardPanel.notifyContinue(rnd);
 		});
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		addWindowListener(new WindowAdapter() {

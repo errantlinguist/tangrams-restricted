@@ -40,9 +40,13 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Random;
 import java.util.Set;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.IntSupplier;
+import java.util.function.Supplier;
 
 import javax.imageio.ImageIO;
 
@@ -55,7 +59,9 @@ import com.google.common.collect.Sets;
 import se.kth.speech.MathDenominators;
 import se.kth.speech.Matrix;
 import se.kth.speech.MutablePair;
+import se.kth.speech.RandomCollections;
 import se.kth.speech.SpatialMap;
+import se.kth.speech.SpatialMap.Region;
 import se.kth.speech.awt.ColorReplacementImageFilter;
 import se.kth.speech.coin.tangrams.content.ImageSize;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
@@ -243,12 +249,14 @@ final class GameBoardPanel extends Canvas {
 		return img.getScaledInstance(imgWidth, imgHeight, IMG_SCALING_HINTS);
 	}
 
-	private final SpatialMap<? extends Entry<? extends Image, ImageViewInfo>> piecePlacements;
+	private final RandomMatrixPieceMover<Integer> pieceMover;
+
+	private final SpatialMap<Entry<? extends Image, ImageViewInfo>> piecePlacements;
 
 	private final Matrix<Integer> posMatrix;
 
 	GameBoardPanel(final Collection<ImageVisualizationInfo> imgVisualizationInfoData,
-			final BiFunction<? super Matrix<? super Integer>, ? super List<? extends Entry<? extends Image, ImageViewInfo>>, SpatialMap<Entry<? extends Image, ImageViewInfo>>> matrixFiller) {
+			final BiFunction<? super Matrix<? super Integer>, ? super List<? extends Entry<? extends Image, ImageViewInfo>>, SpatialMap<Entry<? extends Image, ImageViewInfo>>> matrixFiller, Function<? super Entry<? extends Image, ImageViewInfo>, Integer> pieceIdGetter) {
 		// The minimum accepted length of the shortest dimension for an image
 		final int minDimLength = 300;
 		final SizeValidator validator = new SizeValidator(minDimLength, 50, 50);
@@ -288,6 +296,7 @@ final class GameBoardPanel extends Canvas {
 									Arrays.toString(posMatrix.getDimensions())));
 				}
 				piecePlacements = matrixFiller.apply(posMatrix, imgViewInfoDataList);
+				pieceMover = new RandomMatrixPieceMover<>(posMatrix, piecePlacements, pieceIdGetter);
 				// Finished with creating necessary data structures
 				System.out.println("IMAGE PLACEMENTS");
 				System.out.println(createMatrixReprString(posMatrix));
@@ -430,13 +439,13 @@ final class GameBoardPanel extends Canvas {
 		final int colWidth = getGridColWidth();
 		final int rowHeight = getGridRowHeight();
 
-		for (final Entry<? extends Entry<? extends Image, ImageViewInfo>, SpatialMap.Region> piecePlacement : piecePlacements
-				.elementRegions()) {
-			final Entry<? extends Image, ImageViewInfo> pieceDisplayInfo = piecePlacement.getKey();
-			final Image initialImg = pieceDisplayInfo.getKey();
-			final SpatialMap.Region region = piecePlacement.getValue();
+		for (final Entry<Region, Entry<? extends Image, ImageViewInfo>> piecePlacement : piecePlacements
+				.getMinimalRegionElements().entries()) {
+			final SpatialMap.Region region = piecePlacement.getKey();
+			final Entry<? extends Image, ImageViewInfo> pieceDisplayInfoDatum = piecePlacement.getValue();
+			final Image initialImg = pieceDisplayInfoDatum.getKey();
 			final Image scaledImg = scaleImageToGridSize(initialImg, region, colWidth, rowHeight);
-			final ImageViewInfo viewInfo = pieceDisplayInfo.getValue();
+			final ImageViewInfo viewInfo = pieceDisplayInfoDatum.getValue();
 			final ImageVisualizationInfo visualizationInfo = viewInfo.getVisualization();
 
 			// NOTE: occupied region is denoted in matrix rows*columns
@@ -457,7 +466,7 @@ final class GameBoardPanel extends Canvas {
 		final int[] matrixDims = posMatrix.getDimensions();
 		return getHeight() / matrixDims[0];
 	}
-
+	
 	private void scaleImage(final Image img, final ImageViewInfo viewInfo, final SpatialMap.Region occupiedGridRegion) {
 		final RasterizationInfo rasterizationInfo = viewInfo.getRasterization();
 		final ImageVisualizationInfo visualizationInfo = viewInfo.getVisualization();
@@ -478,8 +487,11 @@ final class GameBoardPanel extends Canvas {
 	/**
 	 *
 	 */
-	void notifyContinue() {
+	void notifyContinue(Random rnd) {
 		LOGGER.debug("Notified of continue event.");
+		LOGGER.info("Trying to move random piece.");
+		pieceMover.apply(rnd);
+		LOGGER.info("Finished moving random piece.");
 		// TODO Auto-generated method stub
 
 	}
