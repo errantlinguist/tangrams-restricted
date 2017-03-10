@@ -52,7 +52,8 @@ final class IconImages {
 			final Properties props = ClassProperties.load(IconImages.class);
 			final String imageOrderingStr = props.getProperty("image.ordering");
 			final String[] imageOrderingNames = MULTIVALUE_PROP_DELIM_PATTERN.split(imageOrderingStr);
-			final Map<String, Integer> imageOrderingIndices = Maps.newHashMapWithExpectedSize(imageOrderingNames.length + 1);
+			final Map<String, Integer> imageOrderingIndices = Maps
+					.newHashMapWithExpectedSize(imageOrderingNames.length + 1);
 			int idx = 0;
 			for (final String imageOrderingName : imageOrderingNames) {
 				imageOrderingIndices.put(imageOrderingName, idx++);
@@ -81,21 +82,31 @@ final class IconImages {
 
 			};
 
-			final Predicate<String> imgFilter = new FileResourceLocatorContentTypePatternFilter(
-					Pattern.compile("image/(?!svg).+"));
-			ICON_IMAGE_RESOURCES = new ClasspathDirResourceLocatorMapFactory<>(IconImages.class,
-					() -> new TreeMap<>(ICON_NAME_COMPARATOR), imgFilter, new FilenameBaseSplitter())
-							.apply(ImageType.ICON.getDirLocator());
+			ICON_IMAGE_RESOURCES = createImageResourceMap("image/(?!svg).+");
 		} catch (final IOException e) {
 			throw new UncheckedIOException(e);
 		}
 	}
 
+	private static NavigableMap<String, URL> createImageResourceMap(final String resourceContentTypeRegex) {
+		final Predicate<String> imgFilter = new FileResourceLocatorContentTypePatternFilter(
+				Pattern.compile(resourceContentTypeRegex));
+		return new ClasspathDirResourceLocatorMapFactory<>(IconImages.class, () -> new TreeMap<>(ICON_NAME_COMPARATOR),
+				imgFilter, new FilenameBaseSplitter()).apply(ImageType.ICON.getDirLocator());
+	}
+
 	/**
 	 * @return the named icon image resources
 	 */
-	static NavigableMap<String, URL> getIconImageResources() {
+	static NavigableMap<String, URL> getImageResources() {
 		return ICON_IMAGE_RESOURCES;
+	}
+
+	/**
+	 * @return the named icon image resources
+	 */
+	static NavigableMap<String, URL> getImageResources(final String resourceContentTypeRegex) {
+		return createImageResourceMap(resourceContentTypeRegex);
 	}
 
 	private IconImages() {

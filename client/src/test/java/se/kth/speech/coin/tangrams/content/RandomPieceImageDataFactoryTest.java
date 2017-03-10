@@ -44,7 +44,7 @@ public final class RandomPieceImageDataFactoryTest {
 	private static final IteratorEqualityAsserter<ImageVisualizationInfo> ITER_EQUALITY_ASSERTER = new IteratorEqualityAsserter<>();
 
 	private static final RandomPieceImageDataFactory TEST_FACTORY = new RandomPieceImageDataFactory(
-			IconImages.getIconImageResources().entrySet(), 2);
+			IconImages.getImageResources().entrySet(), 2);
 
 	/**
 	 * Test method for

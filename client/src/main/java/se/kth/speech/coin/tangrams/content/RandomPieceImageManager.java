@@ -30,7 +30,7 @@ import java.util.stream.Stream;
 public final class RandomPieceImageManager {
 
 	private final Function<Random, Stream<ImageVisualizationInfo>> rndImgDataFactory = new RandomPieceImageDataFactory(
-			IconImages.getIconImageResources().entrySet(), 2);
+			IconImages.getImageResources().entrySet(), 2);
 
 	/**
 	 * @param pieceCount

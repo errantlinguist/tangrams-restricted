@@ -56,6 +56,26 @@ public final class IconImagePNGTranscoder {
 
 	private static final Pattern LENGTH_MEASUREMENT_PATTERN = Pattern.compile("(\\d+(?:\\.\\d+)?)(\\S*)");
 
+	public static void main(final String[] args) throws TranscoderException, IOException, URISyntaxException {
+		if (args.length < 1) {
+			System.err.println(String.format("Usage: %s <outputDir>", IconImagePNGTranscoder.class.getName()));
+			System.exit(64);
+		} else {
+			// E.g.
+			// <src/main/resources/se/kth/speech/coin/tangrams/content/images/icons/>
+			final Path outputDir = Paths.get(args[0]);
+			final NavigableMap<String, URL> files = IconImages.getImageResources("image/svg.*");
+			for (final URL resourceLoc : files.values()) {
+				final Path inputPath = Paths.get(resourceLoc.toURI());
+				System.out.print(inputPath + " > ");
+				final Path outputPath = createOutputFilePath(inputPath, outputDir);
+				convertSVGToPNG(resourceLoc.toString(), outputPath);
+				System.out.println(outputPath);
+			}
+		}
+
+	}
+
 	/**
 	 * @see <a href=
 	 *      "http://stackoverflow.com/q/32721467/1391325">StackOverflow</a>
@@ -63,7 +83,7 @@ public final class IconImagePNGTranscoder {
 	 * @throws TranscoderException
 	 * @throws IOException
 	 */
-	public static void convertSVGToPNG(final String inputUri, final Path outpath)
+	private static void convertSVGToPNG(final String inputUri, final Path outpath)
 			throws TranscoderException, IOException {
 		final Document doc = createSVGDocument(inputUri);
 		final ByteArrayOutputStream resultByteStream = new ByteArrayOutputStream();
@@ -109,26 +129,6 @@ public final class IconImagePNGTranscoder {
 				Files.newOutputStream(outpath, StandardOpenOption.CREATE, StandardOpenOption.APPEND))) {
 			resultByteStream.writeTo(os);
 			// writer.flush();
-		}
-
-	}
-
-	public static void main(final String[] args) throws TranscoderException, IOException, URISyntaxException {
-		if (args.length < 1) {
-			System.err.println(String.format("Usage: %s <outputDir>", IconImagePNGTranscoder.class.getName()));
-			System.exit(64);
-		} else {
-			// E.g.
-			// <src/main/resources/se/kth/speech/coin/tangrams/content/images/icons/>
-			final Path outputDir = Paths.get(args[0]);
-			final NavigableMap<String, URL> files = IconImages.getIconImageResources();
-			for (final URL resourceLoc : files.values()) {
-				final Path inputPath = Paths.get(resourceLoc.toURI());
-				System.out.print(inputPath + " > ");
-				final Path outputPath = createOutputFilePath(inputPath, outputDir);
-				convertSVGToPNG(resourceLoc.toString(), outputPath);
-				System.out.println(outputPath);
-			}
 		}
 
 	}

@@ -59,7 +59,7 @@ public final class ImageVisualizationInfoTest {
 	public static final URL[] RANDOM_TEST_URLS;
 
 	static {
-		STANDARD_TEST_URLS = IconImages.getIconImageResources().values();
+		STANDARD_TEST_URLS = IconImages.getImageResources().values();
 		final Supplier<String> randomStrFactory = new RandomStringFactory(5);
 		RANDOM_TEST_URLS = STANDARD_TEST_URLS.stream().map(url -> appendAnyString(url, randomStrFactory))
 				.toArray(URL[]::new);
