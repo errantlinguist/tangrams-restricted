@@ -18,10 +18,10 @@ package se.kth.speech;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.stream.Stream;
 
-import com.github.errantlinguist.collections.ReverseLookupList;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
@@ -242,7 +242,7 @@ public final class SpatialMap<E> {
 	 * An ordered sequence of regions being used, e.g. for getting an ID for a
 	 * particular region
 	 */
-	private final ReverseLookupList<Region> regions;
+	private final List<Region> regions;
 
 	public SpatialMap(final int expectedElementCount) {
 		this(HashMultimap.create(estimateRegionCount(expectedElementCount), expectedElementCount));
@@ -250,7 +250,7 @@ public final class SpatialMap<E> {
 
 	private SpatialMap(final Multimap<Region, E> regionElements) {
 		this.regionElements = regionElements;
-		this.regions = new ReverseLookupList<>(new ArrayList<>(Math.max(regionElements.size(), 16)));
+		this.regions = new ArrayList<>(Math.max(regionElements.size(), 16));
 	}
 
 	public Collection<E> getAllElements() {
@@ -270,7 +270,7 @@ public final class SpatialMap<E> {
 		return regionElements;
 	}
 
-	public ReverseLookupList<Region> getMinimalRegions() {
+	public List<Region> getMinimalRegions() {
 		return regions;
 	}
 
