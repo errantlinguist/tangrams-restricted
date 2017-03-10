@@ -243,7 +243,7 @@ final class GameBoardPanel extends Canvas {
 		return img.getScaledInstance(imgWidth, imgHeight, IMG_SCALING_HINTS);
 	}
 
-	private final SpatialMap<? extends Entry<? extends Image, ImageViewInfo>> imagePlacements;
+	private final SpatialMap<? extends Entry<? extends Image, ImageViewInfo>> piecePlacements;
 
 	private final Matrix<Integer> posMatrix;
 
@@ -287,7 +287,7 @@ final class GameBoardPanel extends Canvas {
 							String.format("Board %s not divisble into matrix with dimensions %s.", boardSize,
 									Arrays.toString(posMatrix.getDimensions())));
 				}
-				imagePlacements = matrixFiller.apply(posMatrix, imgViewInfoDataList);
+				piecePlacements = matrixFiller.apply(posMatrix, imgViewInfoDataList);
 				// Finished with creating necessary data structures
 				System.out.println("IMAGE PLACEMENTS");
 				System.out.println(createMatrixReprString(posMatrix));
@@ -430,12 +430,12 @@ final class GameBoardPanel extends Canvas {
 		final int colWidth = getGridColWidth();
 		final int rowHeight = getGridRowHeight();
 
-		final Iterable<? extends Entry<? extends Entry<? extends Image, ImageViewInfo>, SpatialMap.Region>> elementRegions = imagePlacements
+		final Iterable<? extends Entry<? extends Entry<? extends Image, ImageViewInfo>, SpatialMap.Region>> piecePlacementIter = piecePlacements
 				.elementRegions();
-		for (final Entry<? extends Entry<? extends Image, ImageViewInfo>, SpatialMap.Region> elementRegion : elementRegions) {
-			final Entry<? extends Image, ImageViewInfo> pieceDisplayInfo = elementRegion.getKey();
+		for (final Entry<? extends Entry<? extends Image, ImageViewInfo>, SpatialMap.Region> piecePlacement : piecePlacementIter) {
+			final Entry<? extends Image, ImageViewInfo> pieceDisplayInfo = piecePlacement.getKey();
 			final Image initialImg = pieceDisplayInfo.getKey();
-			final SpatialMap.Region region = elementRegion.getValue();
+			final SpatialMap.Region region = piecePlacement.getValue();
 			final Image scaledImg = scaleImageToGridSize(initialImg, region, colWidth, rowHeight);
 			final ImageViewInfo viewInfo = pieceDisplayInfo.getValue();
 			final ImageVisualizationInfo visualizationInfo = viewInfo.getVisualization();
