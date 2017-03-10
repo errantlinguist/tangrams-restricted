@@ -430,9 +430,8 @@ final class GameBoardPanel extends Canvas {
 		final int colWidth = getGridColWidth();
 		final int rowHeight = getGridRowHeight();
 
-		final Iterable<? extends Entry<? extends Entry<? extends Image, ImageViewInfo>, SpatialMap.Region>> piecePlacementIter = piecePlacements
-				.elementRegions();
-		for (final Entry<? extends Entry<? extends Image, ImageViewInfo>, SpatialMap.Region> piecePlacement : piecePlacementIter) {
+		for (final Entry<? extends Entry<? extends Image, ImageViewInfo>, SpatialMap.Region> piecePlacement : piecePlacements
+				.elementRegions()) {
 			final Entry<? extends Image, ImageViewInfo> pieceDisplayInfo = piecePlacement.getKey();
 			final Image initialImg = pieceDisplayInfo.getKey();
 			final SpatialMap.Region region = piecePlacement.getValue();
