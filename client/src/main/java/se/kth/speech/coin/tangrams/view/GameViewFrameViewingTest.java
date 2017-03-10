@@ -39,26 +39,31 @@ public final class GameViewFrameViewingTest implements Runnable {
 
 	public static void main(final String[] args) {
 		if (args.length < 1) {
-			System.err.println(String.format("Usage: %s <gameId> [maxPlacementRetriesPerImg]", GameViewFrameViewingTest.class.getName()));
+			System.err.println(String.format("Usage: %s <gameId> [maxPlacementRetriesPerImg]",
+					GameViewFrameViewingTest.class.getName()));
 			System.exit(64);
 		} else {
 			final String gameId = args[0];
 			final int maxPlacementRetriesPerImg = args.length > 1 ? Integer.parseInt(args[1]) : 3;
-			final GameBoardPanelFactory panelFactory = new GameBoardPanelFactory(maxPlacementRetriesPerImg, true);
 			LOGGER.info("Creating view for game \"{}\".", gameId);
 			final Random rnd = new Random(Long.parseLong(gameId));
-			final GameViewFrameViewingTest testInstance = new GameViewFrameViewingTest(panelFactory, rnd);
+			final GameViewFrameViewingTest testInstance = new GameViewFrameViewingTest(rnd, maxPlacementRetriesPerImg,
+					true);
 			EventQueue.invokeLater(testInstance);
 		}
 	}
 
-	private final GameBoardPanelFactory panelFactory;
-
 	private final Random rnd;
 
-	public GameViewFrameViewingTest(final GameBoardPanelFactory panelFactory, final Random rnd) {
-		this.panelFactory = panelFactory;
+	private final int maxPlacementRetriesPerImg;
+
+	private final boolean allowFailedPlacements;
+
+	public GameViewFrameViewingTest(final Random rnd, final int maxPlacementRetriesPerImg,
+			final boolean allowFailedPlacements) {
 		this.rnd = rnd;
+		this.maxPlacementRetriesPerImg = maxPlacementRetriesPerImg;
+		this.allowFailedPlacements = allowFailedPlacements;
 	}
 
 	/*
@@ -68,10 +73,12 @@ public final class GameViewFrameViewingTest implements Runnable {
 	 */
 	@Override
 	public void run() {
-		final int pieceCount = 20;
+		final int pieceCount = Integer.MAX_VALUE;
 		final RandomPieceImageManager imgManager = new RandomPieceImageManager(pieceCount);
 		final List<ImageVisualizationInfo> imgVisualizationInfoData = imgManager.createImageData(rnd);
-		final GameViewFrame frame = new GameViewFrame(imgVisualizationInfoData, rnd, panelFactory);
+		final GameBoardPanel gameBoardPanel = new GameBoardPanel(imgVisualizationInfoData, rnd,
+				maxPlacementRetriesPerImg, allowFailedPlacements);
+		final GameViewFrame frame = new GameViewFrame(gameBoardPanel, rnd);
 		frame.pack();
 		frame.setLocationByPlatform(true);
 		frame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);

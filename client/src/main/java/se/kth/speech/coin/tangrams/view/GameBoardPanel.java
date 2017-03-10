@@ -42,11 +42,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
-import java.util.function.BiFunction;
-import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.IntSupplier;
-import java.util.function.Supplier;
 
 import javax.imageio.ImageIO;
 
@@ -59,7 +55,6 @@ import com.google.common.collect.Sets;
 import se.kth.speech.MathDenominators;
 import se.kth.speech.Matrix;
 import se.kth.speech.MutablePair;
-import se.kth.speech.RandomCollections;
 import se.kth.speech.SpatialMap;
 import se.kth.speech.SpatialMap.Region;
 import se.kth.speech.awt.ColorReplacementImageFilter;
@@ -255,8 +250,15 @@ final class GameBoardPanel extends Canvas {
 
 	private final Matrix<Integer> posMatrix;
 
-	GameBoardPanel(final Collection<ImageVisualizationInfo> imgVisualizationInfoData,
-			final BiFunction<? super Matrix<? super Integer>, ? super List<? extends Entry<? extends Image, ImageViewInfo>>, SpatialMap<Entry<? extends Image, ImageViewInfo>>> matrixFiller, Function<? super Entry<? extends Image, ImageViewInfo>, Integer> pieceIdGetter) {
+	GameBoardPanel(final Collection<ImageVisualizationInfo> imgVisualizationInfoData, final Random rnd,
+			final int maxPlacementRetriesPerImg, final boolean allowFailedPlacements) {
+		// TODO: make image count configurable
+		final int maxImgPlacements = 20;
+		final Map<Entry<? extends Image, ImageViewInfo>, Integer> pieceIds = Maps
+				.newHashMapWithExpectedSize(imgVisualizationInfoData.size());
+		final RandomImagePositionMatrixFiller matrixFiller = new RandomImagePositionMatrixFiller(rnd, maxImgPlacements,
+				maxPlacementRetriesPerImg, allowFailedPlacements,
+				(imgViewInfoDatum, pieceId) -> pieceIds.put(imgViewInfoDatum, pieceId));
 		// The minimum accepted length of the shortest dimension for an image
 		final int minDimLength = 300;
 		final SizeValidator validator = new SizeValidator(minDimLength, 50, 50);
@@ -296,7 +298,7 @@ final class GameBoardPanel extends Canvas {
 									Arrays.toString(posMatrix.getDimensions())));
 				}
 				piecePlacements = matrixFiller.apply(posMatrix, imgViewInfoDataList);
-				pieceMover = new RandomMatrixPieceMover<>(posMatrix, piecePlacements, pieceIdGetter);
+				pieceMover = new RandomMatrixPieceMover<>(posMatrix, piecePlacements, pieceIds::get);
 				// Finished with creating necessary data structures
 				System.out.println("IMAGE PLACEMENTS");
 				System.out.println(createMatrixReprString(posMatrix));
@@ -466,7 +468,7 @@ final class GameBoardPanel extends Canvas {
 		final int[] matrixDims = posMatrix.getDimensions();
 		return getHeight() / matrixDims[0];
 	}
-	
+
 	private void scaleImage(final Image img, final ImageViewInfo viewInfo, final SpatialMap.Region occupiedGridRegion) {
 		final RasterizationInfo rasterizationInfo = viewInfo.getRasterization();
 		final ImageVisualizationInfo visualizationInfo = viewInfo.getVisualization();
@@ -487,7 +489,7 @@ final class GameBoardPanel extends Canvas {
 	/**
 	 *
 	 */
-	void notifyContinue(Random rnd) {
+	void notifyContinue(final Random rnd) {
 		LOGGER.debug("Notified of continue event.");
 		LOGGER.info("Moving random piece.");
 		pieceMover.apply(rnd);
