@@ -47,8 +47,6 @@ import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 final class RandomImagePositionMatrixFiller implements
 		BiFunction<Matrix<? super Integer>, List<? extends Entry<? extends Image, ImageViewInfo>>, SpatialMap<Entry<? extends Image, ImageViewInfo>>> {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(RandomImagePositionMatrixFiller.class);
-
 	private static final BiFunction<ImageMatrixPositionInfo<Integer>, Integer, Integer> INCREMENTING_REMAPPER = new BiFunction<ImageMatrixPositionInfo<Integer>, Integer, Integer>() {
 
 		/*
@@ -69,18 +67,23 @@ final class RandomImagePositionMatrixFiller implements
 		}
 	};
 
+	private static final Logger LOGGER = LoggerFactory.getLogger(RandomImagePositionMatrixFiller.class);
+
 	private final boolean allowFailedPlacements;
 
 	private final int maxPlacementRetriesPerImg;
 
-	private final Random rnd;
+	private final int maxPlacements;
 
 	private final BiConsumer<? super Entry<? extends Image, ImageViewInfo>, ? super Integer> postPlacementHook;
 
-	RandomImagePositionMatrixFiller(final Random rnd, final int maxPlacementRetriesPerImg,
+	private final Random rnd;
+
+	RandomImagePositionMatrixFiller(final Random rnd, final int maxPlacements, final int maxPlacementRetriesPerImg,
 			final boolean allowFailedPlacements,
 			final BiConsumer<? super Entry<? extends Image, ImageViewInfo>, ? super Integer> postPlacementHook) {
 		this.rnd = rnd;
+		this.maxPlacements = maxPlacements;
 		this.maxPlacementRetriesPerImg = maxPlacementRetriesPerImg;
 		this.allowFailedPlacements = allowFailedPlacements;
 		this.postPlacementHook = postPlacementHook;
@@ -94,20 +97,22 @@ final class RandomImagePositionMatrixFiller implements
 		final SpatialMap<Entry<? extends Image, ImageViewInfo>> result = new SpatialMap<>(imgViewInfoData.size());
 		final RandomMatrixPiecePlacer<? super Integer> piecePlacer = new RandomMatrixPiecePlacer<>(posMatrix, rnd,
 				result);
-
+		
+		int placementCount = 0;
 		// Randomly place each image in the position matrix
 		final Queue<ImageMatrixPositionInfo<Integer>> retryStack = new ArrayDeque<>();
-		while (imgViewInfoDataIter.hasNext()) {
+		while (imgViewInfoDataIter.hasNext() && placementCount < maxPlacements) {
 			final int pieceId = imgViewInfoDataIter.nextIndex();
 			final Entry<? extends Image, ImageViewInfo> imgViewInfoDatum = imgViewInfoDataIter.next();
 			final Entry<Region, Boolean> placementResult = piecePlacer.apply(imgViewInfoDatum, pieceId);
 			final Region pieceRegion = placementResult.getKey();
 			if (placementResult.getValue()) {
 				put(result, imgViewInfoDatum, pieceId, pieceRegion);
+				placementCount++;
 			} else {
 				LOGGER.debug("Cancelling placement of image because the target space is occupied.");
 				final int[] piecePosMatrixSize = pieceRegion.getDimensions();
-				LOGGER.info("Adding image of grid dimensions {} to retry stack.", Arrays.toString(piecePosMatrixSize));
+				LOGGER.debug("Adding image of grid dimensions {} to retry stack.", Arrays.toString(piecePosMatrixSize));
 				retryStack.add(new ImageMatrixPositionInfo<>(pieceId, piecePosMatrixSize, imgViewInfoDatum));
 			}
 		}
@@ -117,14 +122,15 @@ final class RandomImagePositionMatrixFiller implements
 		final Map<ImageMatrixPositionInfo<Integer>, Integer> retryCounter = Maps
 				.newHashMapWithExpectedSize(estimatedNumberOfRetriedImgPlacements);
 		final List<ImageVisualizationInfo> failedPlacements = new ArrayList<>(estimatedNumberOfRetriedImgPlacements);
-		while (!retryStack.isEmpty()) {
+		while (!retryStack.isEmpty() && placementCount < maxPlacements) {
 			final ImageMatrixPositionInfo<Integer> imgPlacementInfo = retryStack.remove();
 			final Entry<? extends Image, ImageViewInfo> imgViewInfoDatum = imgPlacementInfo.getImgViewInfoDatum();
 			final Integer pieceId = imgPlacementInfo.getPieceId();
 			final Entry<Region, Boolean> placementResult = piecePlacer.apply(imgViewInfoDatum, pieceId);
 			if (placementResult.getValue()) {
 				LOGGER.debug("Successfully placed piece \"{}\" after retrying.", pieceId);
-				result.put(imgViewInfoDatum, placementResult.getKey());
+				put(result, imgViewInfoDatum, pieceId, placementResult.getKey());
+				placementCount++;
 			} else {
 				final Integer tries = retryCounter.compute(imgPlacementInfo, INCREMENTING_REMAPPER);
 				if (tries > maxPlacementRetriesPerImg) {
@@ -136,7 +142,7 @@ final class RandomImagePositionMatrixFiller implements
 		}
 
 		if (failedPlacements.isEmpty()) {
-			LOGGER.info("Successfully placed {} image(s).", imgViewInfoData.size());
+			LOGGER.info("Successfully placed {} image(s).", placementCount);
 		} else {
 			final String errorMsg = createFailedPlacementErrorMsg(failedPlacements);
 			if (allowFailedPlacements) {

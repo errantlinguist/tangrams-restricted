@@ -45,8 +45,10 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 
 	@Override
 	public GameBoardPanel apply(final Collection<ImageVisualizationInfo> imgVisualizationInfoData, final Random rnd) {
+		// TODO: make image count configurable
+		final int maxImgPlacements = 20;
 		final Map<Entry<? extends Image, ImageViewInfo>,Integer> pieceIds = Maps.newHashMapWithExpectedSize(imgVisualizationInfoData.size());
-		final RandomImagePositionMatrixFiller matrixFiller = new RandomImagePositionMatrixFiller(rnd,
+		final RandomImagePositionMatrixFiller matrixFiller = new RandomImagePositionMatrixFiller(rnd, maxImgPlacements,
 				maxPlacementRetriesPerImg, allowFailedPlacements, (imgViewInfoDatum, pieceId) -> pieceIds.put(imgViewInfoDatum, pieceId));
 		return new GameBoardPanel(imgVisualizationInfoData, matrixFiller, pieceIds::get);
 	}

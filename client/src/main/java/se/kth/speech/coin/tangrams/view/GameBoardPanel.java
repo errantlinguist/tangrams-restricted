@@ -489,7 +489,7 @@ final class GameBoardPanel extends Canvas {
 	 */
 	void notifyContinue(Random rnd) {
 		LOGGER.debug("Notified of continue event.");
-		LOGGER.info("Trying to move random piece.");
+		LOGGER.info("Moving random piece.");
 		pieceMover.apply(rnd);
 		LOGGER.info("Finished moving random piece.");
 		// TODO Auto-generated method stub

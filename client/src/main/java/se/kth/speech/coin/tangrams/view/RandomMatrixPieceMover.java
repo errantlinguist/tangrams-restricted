@@ -22,6 +22,9 @@ import java.util.Map.Entry;
 import java.util.Random;
 import java.util.function.Function;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import se.kth.speech.Matrix;
 import se.kth.speech.RandomCollections;
 import se.kth.speech.SpatialMap;
@@ -33,6 +36,8 @@ import se.kth.speech.SpatialMap.Region;
  *
  */
 final class RandomMatrixPieceMover<T> {
+	
+	private static final Logger LOGGER = LoggerFactory.getLogger(RandomMatrixPieceMover.class);
 
 	private final Matrix<T> posMatrix;
 
@@ -50,6 +55,7 @@ final class RandomMatrixPieceMover<T> {
 
 	public Entry<SpatialMap.Region, Boolean> apply(final Random rnd) {
 		final RandomMatrixPiecePlacer<T> piecePlacer = new RandomMatrixPiecePlacer<>(posMatrix, rnd, piecePlacements);
+		// TODO: Change probability of a piece being selected for moving based on if it was moved before: E.g. cannot move a given piece more than twice in a row
 		final Region occupiedRegion = RandomCollections.getRandomElement(piecePlacements.getMinimalRegions(), rnd);
 		final Collection<Entry<? extends Image, ImageViewInfo>> pieces = piecePlacements.getMinimalRegionElements()
 				.get(occupiedRegion);
@@ -58,6 +64,7 @@ final class RandomMatrixPieceMover<T> {
 			// NOTE: The collection should only have one element here
 			regionPieceMovement: for (final Entry<? extends Image, ImageViewInfo> piece : pieces) {
 				final T pieceId = pieceIdGetter.apply(piece);
+				LOGGER.info("Trying to move piece \"{}\" to a random location.", pieceId);
 				final Entry<SpatialMap.Region, Boolean> placementResult = piecePlacer.apply(piece, pieceId);
 				if (placementResult.getValue()) {
 					lastSuccessfulPlacementResult = placementResult;
