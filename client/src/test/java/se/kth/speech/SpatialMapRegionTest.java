@@ -72,7 +72,7 @@ public final class SpatialMapRegionTest {
 	static {
 		final Random rnd = new Random();
 		final int testPointCount = 10;
-		TEST_POINTS = createRandomIntArray(rnd, testPointCount);
+		TEST_POINTS = IntStream.generate(rnd::nextInt).distinct().limit(testPointCount).toArray();
 
 		final int testRegionCount = testPointCount / 4;
 		TEST_REGIONS = Sets.newHashSetWithExpectedSize(testRegionCount);
@@ -83,10 +83,6 @@ public final class SpatialMapRegionTest {
 			TEST_REGIONS.add(new Region(x[0], x[1], y[0], y[1]));
 			TEST_POINT_ARRAYS.add(IntArrays.concatenate(x, y));
 		} while (TEST_REGIONS.size() < testRegionCount);
-	}
-
-	private static int[] createRandomIntArray(final Random rnd, final int resultSetSize) {
-		return IntStream.generate(rnd::nextInt).distinct().limit(resultSetSize).toArray();
 	}
 
 	private static int[] createRandomIntervalArray(final Random rnd, final int[] points) {
