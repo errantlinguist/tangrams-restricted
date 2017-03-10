@@ -34,7 +34,7 @@ import org.junit.runner.RunWith;
  *
  */
 @RunWith(Theories.class)
-public class RandomPieceImageDataFactoryTest {
+public final class RandomPieceImageDataFactoryTest {
 
 	private static final RandomPieceImageDataFactory TEST_FACTORY = new RandomPieceImageDataFactory(
 			IconImages.getIconImageResources().entrySet(), 2);
