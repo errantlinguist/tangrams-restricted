@@ -26,6 +26,7 @@ import java.util.regex.Pattern;
 import java.util.stream.IntStream;
 
 import com.github.errantlinguist.ClassProperties;
+import com.google.common.collect.Maps;
 
 import se.kth.speech.IntArrays;
 import se.kth.speech.Integers;
@@ -104,7 +105,7 @@ final class GameTests {
 			final Function<String, HashMap<String, String>> propFamilyMapFactory = propName -> new HashMap<>(3, 1.0f);
 			final Map<String, Map<String, String>> testParams = new PropertyFamilyMapParser(propFamilyMapFactory,
 					"game").apply(props);
-			NAMED_TEST_DESC_MAP = new HashMap<>(testParams.size() + 1, 1.0f);
+			NAMED_TEST_DESC_MAP = Maps.newHashMapWithExpectedSize(testParams.size());
 			testParams.forEach(
 					(testName, params) -> NAMED_TEST_DESC_MAP.put(testName, createTestDescription(params)));
 		} catch (final IOException e) {

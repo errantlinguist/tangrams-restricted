@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URL;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Properties;
@@ -29,6 +28,7 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 import com.github.errantlinguist.ClassProperties;
+import com.google.common.collect.Maps;
 
 import se.kth.speech.FilenameBaseSplitter;
 import se.kth.speech.io.ClasspathDirResourceLocatorMapFactory;
@@ -52,7 +52,7 @@ final class IconImages {
 			final Properties props = ClassProperties.load(IconImages.class);
 			final String imageOrderingStr = props.getProperty("image.ordering");
 			final String[] imageOrderingNames = MULTIVALUE_PROP_DELIM_PATTERN.split(imageOrderingStr);
-			final Map<String, Integer> imageOrderingIndices = new HashMap<>(imageOrderingNames.length + 1);
+			final Map<String, Integer> imageOrderingIndices = Maps.newHashMapWithExpectedSize(imageOrderingNames.length + 1);
 			int idx = 0;
 			for (final String imageOrderingName : imageOrderingNames) {
 				imageOrderingIndices.put(imageOrderingName, idx++);
