@@ -17,10 +17,11 @@
 package se.kth.speech.coin.tangrams.content;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 import java.util.stream.Collectors;
 
-import org.junit.Assume;
+import org.junit.Assert;
 import org.junit.experimental.theories.DataPoints;
 import org.junit.experimental.theories.Theories;
 import org.junit.experimental.theories.Theory;
@@ -49,10 +50,20 @@ public final class RandomPieceImageDataFactoryTest {
 	 * {@link se.kth.speech.coin.tangrams.content.RandomPieceImageDataFactory#apply(java.util.Random)}.
 	 */
 	@Theory
-	public final void testApplyStable(final long s1, final long s2) {
-		Assume.assumeTrue(s1 == s2);
-		final Random rnd1 = new Random(s1);
-		final Random rnd2 = new Random(s2);
+	public final void testApplyNotEmpty(final long s) {
+		final Random rnd = new Random(s);
+		final Optional<ImageVisualizationInfo> any = TEST_FACTORY.apply(rnd).findAny();
+		Assert.assertTrue(any.isPresent());
+	}
+
+	/**
+	 * Test method for
+	 * {@link se.kth.speech.coin.tangrams.content.RandomPieceImageDataFactory#apply(java.util.Random)}.
+	 */
+	@Theory
+	public final void testApplyStable(final long s) {
+		final Random rnd1 = new Random(s);
+		final Random rnd2 = new Random(s);
 		final List<Object> results1 = TEST_FACTORY.apply(rnd1).collect(Collectors.toList());
 		final List<Object> results2 = TEST_FACTORY.apply(rnd2).collect(Collectors.toList());
 		ITER_EQUALITY_ASSERTER.accept(results1.iterator(), results2.iterator());
