@@ -19,7 +19,6 @@ package se.kth.speech.coin.tangrams.view;
 import java.awt.Image;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -44,88 +43,6 @@ import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
  *
  */
 final class RandomImagePositionMatrixFiller implements BiFunction<Matrix<? super Integer>, List<? extends Entry<? extends Image, ImageViewInfo>>,SpatialMap<Entry<? extends Image, ImageViewInfo>>> {
-	
-	private static class ImageMatrixPositionInfo {
-
-		private final Entry<? extends Image, ImageViewInfo> imgViewInfoDatum;
-
-		private final int pieceId;
-
-		private final int[] piecePosMatrixSize;
-
-		private ImageMatrixPositionInfo(final int pieceId, final int[] piecePosMatrixSize,
-				final Entry<? extends Image, ImageViewInfo> imgViewInfoDatum) {
-			this.pieceId = pieceId;
-			this.piecePosMatrixSize = piecePosMatrixSize;
-			this.imgViewInfoDatum = imgViewInfoDatum;
-		}
-
-		/*
-		 * (non-Javadoc)
-		 *
-		 * @see java.lang.Object#equals(java.lang.Object)
-		 */
-		@Override
-		public boolean equals(final Object obj) {
-			if (this == obj) {
-				return true;
-			}
-			if (obj == null) {
-				return false;
-			}
-			if (!(obj instanceof ImageMatrixPositionInfo)) {
-				return false;
-			}
-			final ImageMatrixPositionInfo other = (ImageMatrixPositionInfo) obj;
-			if (imgViewInfoDatum == null) {
-				if (other.imgViewInfoDatum != null) {
-					return false;
-				}
-			} else if (!imgViewInfoDatum.equals(other.imgViewInfoDatum)) {
-				return false;
-			}
-			if (pieceId != other.pieceId) {
-				return false;
-			}
-			if (!Arrays.equals(piecePosMatrixSize, other.piecePosMatrixSize)) {
-				return false;
-			}
-			return true;
-		}
-
-		/*
-		 * (non-Javadoc)
-		 *
-		 * @see java.lang.Object#hashCode()
-		 */
-		@Override
-		public int hashCode() {
-			final int prime = 31;
-			int result = 1;
-			result = prime * result + (imgViewInfoDatum == null ? 0 : imgViewInfoDatum.hashCode());
-			result = prime * result + pieceId;
-			result = prime * result + Arrays.hashCode(piecePosMatrixSize);
-			return result;
-		}
-
-		/*
-		 * (non-Javadoc)
-		 *
-		 * @see java.lang.Object#toString()
-		 */
-		@Override
-		public String toString() {
-			final StringBuilder builder = new StringBuilder();
-			builder.append("ImageMatrixPositionInfo [imgViewInfoDatum=");
-			builder.append(imgViewInfoDatum);
-			builder.append(", pieceId=");
-			builder.append(pieceId);
-			builder.append(", piecePosMatrixSize=");
-			builder.append(Arrays.toString(piecePosMatrixSize));
-			builder.append("]");
-			return builder.toString();
-		}
-	}
 	
 	private static int[] createPosMatrixBoundsArray(final ImageViewInfo viewInfo) {
 		final ImageViewInfo.RasterizationInfo rasterizationInfo = viewInfo.getRasterization();
@@ -243,18 +160,18 @@ final class RandomImagePositionMatrixFiller implements BiFunction<Matrix<? super
 		final List<ImageVisualizationInfo> failedPlacements = new ArrayList<>(estimatedNumberOfRetriedImgPlacements);
 		while (!retryStack.isEmpty()) {
 			final ImageMatrixPositionInfo imgPlacementInfo = retryStack.remove();
-			final SpatialMap.Region imgRegion = createRandomSpatialRegion(imgPlacementInfo.piecePosMatrixSize, posDims,
+			final SpatialMap.Region imgRegion = createRandomSpatialRegion(imgPlacementInfo.getPiecePosMatrixSize(), posDims,
 					rnd);
 			if (result.isOccupied(imgRegion)) {
 				final Integer tries = retryCounter.compute(imgPlacementInfo, INCREMENTING_REMAPPER);
 				if (tries > maxPlacementRetriesPerImg) {
-					failedPlacements.add(imgPlacementInfo.imgViewInfoDatum.getValue().getVisualization());
+					failedPlacements.add(imgPlacementInfo.getImgViewInfoDatum().getValue().getVisualization());
 				} else {
 					retryStack.add(imgPlacementInfo);
 				}
 			} else {
-				setMatrixPositionValues(posMatrix, imgRegion, imgPlacementInfo.pieceId);
-				result.put(imgRegion, imgPlacementInfo.imgViewInfoDatum);
+				setMatrixPositionValues(posMatrix, imgRegion, imgPlacementInfo.getPieceId());
+				result.put(imgRegion, imgPlacementInfo.getImgViewInfoDatum());
 			}
 		}
 
