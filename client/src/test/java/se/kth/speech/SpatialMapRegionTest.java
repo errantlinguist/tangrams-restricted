@@ -54,6 +54,9 @@ public final class SpatialMapRegionTest {
 	@DataPoints
 	public static final Set<Region> TEST_REGIONS;
 
+	@DataPoints
+	public static final Set<int[]> TEST_POINT_ARRAYS;
+
 	static {
 		final Random rnd = new Random();
 		final int testPointCount = 10;
@@ -61,10 +64,12 @@ public final class SpatialMapRegionTest {
 
 		final int testRegionCount = testPointCount / 4;
 		TEST_REGIONS = Sets.newHashSetWithExpectedSize(testRegionCount);
+		TEST_POINT_ARRAYS = Sets.newHashSetWithExpectedSize(testRegionCount);
 		do {
 			final int[] x = createRandomIntervalArray(rnd, TEST_POINTS);
 			final int[] y = createRandomIntervalArray(rnd, TEST_POINTS);
 			TEST_REGIONS.add(new Region(x[0], x[1], y[0], y[1]));
+			TEST_POINT_ARRAYS.add(IntArrays.concatenate(x, y));
 		} while (TEST_REGIONS.size() < testRegionCount);
 	}
 
@@ -83,10 +88,29 @@ public final class SpatialMapRegionTest {
 
 	/**
 	 * Test method for
+	 * {@link se.kth.speech.SpatialMap.Region#intersects(int,int,int,int,int,int,int,int)}.
+	 */
+	@Theory
+	public final void testIntersectsIntIntIntIntIntIntIntIntCommutativty(final int[] pointArray) {
+		final int r1x1 = pointArray[0];
+		final int r1x2 = pointArray[1];
+		final int r1y1 = pointArray[2];
+		final int r1y2 = pointArray[3];
+		final int r2x1 = pointArray[4];
+		final int r2x2 = pointArray[5];
+		final int r2y1 = pointArray[6];
+		final int r2y2 = pointArray[7];
+		final boolean orig = SpatialMap.Region.intersects(r1x1, r1x2, r1y1, r1y2, r2x1, r2x2, r2y1, r2y2);
+		final boolean inverse = SpatialMap.Region.intersects(r2x1, r2x2, r2y1, r2y2, r1x1, r1x2, r1y1, r1y2);
+		Assert.assertEquals(orig, inverse);
+	}
+
+	/**
+	 * Test method for
 	 * {@link se.kth.speech.SpatialMap.Region#intersects(se.kth.speech.SpatialMap.Region)}.
 	 */
 	@Theory
-	public final void testIntersectsCommutativity(final Region r1, final Region r2) {
+	public final void testIntersectsRegionCommutativity(final Region r1, final Region r2) {
 		final boolean r1Test = r1.intersects(r2);
 		final boolean r2Test = r2.intersects(r1);
 		if (!r1Test == r2Test) {
@@ -108,7 +132,7 @@ public final class SpatialMapRegionTest {
 	 * {@link se.kth.speech.SpatialMap.Region#intersects(se.kth.speech.SpatialMap.Region)}.
 	 */
 	@Test
-	public final void testIntersectsIntersecting() {
+	public final void testIntersectsRegionIntersecting() {
 		final Region r = new Region(0, 2, 3, 5);
 		Assert.assertTrue(r.intersects(new Region(0, 2, 2, 5)));
 	}
@@ -118,7 +142,7 @@ public final class SpatialMapRegionTest {
 	 * {@link se.kth.speech.SpatialMap.Region#intersects(se.kth.speech.SpatialMap.Region)}.
 	 */
 	@Test
-	public final void testIntersectsNegative() {
+	public final void testIntersectsRegionNegative() {
 		final Region r = new Region(0, 2, 3, 5);
 		Assert.assertFalse(r.intersects(new Region(5, 6, 6, 7)));
 	}
@@ -128,7 +152,7 @@ public final class SpatialMapRegionTest {
 	 * {@link se.kth.speech.SpatialMap.Region#intersects(se.kth.speech.SpatialMap.Region)}.
 	 */
 	@Test
-	public final void testIntersectsNegativeAdjacentXNonAdjacentY() {
+	public final void testIntersectsRegionNegativeAdjacentXNonAdjacentY() {
 		final Region r = new Region(3, 5, 0, 2);
 		Assert.assertFalse(r.intersects(new Region(1, 2, 5, 6)));
 	}
@@ -138,7 +162,7 @@ public final class SpatialMapRegionTest {
 	 * {@link se.kth.speech.SpatialMap.Region#intersects(se.kth.speech.SpatialMap.Region)}.
 	 */
 	@Test
-	public final void testIntersectsNegativeAdjacentXSameY() {
+	public final void testIntersectsRegionNegativeAdjacentXSameY() {
 		final Region r = new Region(3, 5, 0, 2);
 		Assert.assertFalse(r.intersects(new Region(1, 2, 0, 2)));
 	}
@@ -148,7 +172,7 @@ public final class SpatialMapRegionTest {
 	 * {@link se.kth.speech.SpatialMap.Region#intersects(se.kth.speech.SpatialMap.Region)}.
 	 */
 	@Test
-	public final void testIntersectsNegativeAdjacentYNonAdjacentX() {
+	public final void testIntersectsRegionNegativeAdjacentYNonAdjacentX() {
 		final Region r = new Region(0, 2, 3, 5);
 		Assert.assertFalse(r.intersects(new Region(5, 6, 1, 2)));
 	}
@@ -158,7 +182,7 @@ public final class SpatialMapRegionTest {
 	 * {@link se.kth.speech.SpatialMap.Region#intersects(se.kth.speech.SpatialMap.Region)}.
 	 */
 	@Test
-	public final void testIntersectsNegativeAdjacentYSameX() {
+	public final void testIntersectsRegionNegativeAdjacentYSameX() {
 		final Region r = new Region(0, 2, 3, 5);
 		Assert.assertFalse(r.intersects(new Region(0, 2, 1, 2)));
 	}
@@ -168,7 +192,7 @@ public final class SpatialMapRegionTest {
 	 * {@link se.kth.speech.SpatialMap.Region#intersects(se.kth.speech.SpatialMap.Region)}.
 	 */
 	@Theory
-	public final void testIntersectsSelf(final Region r) {
+	public final void testIntersectsRegionSelf(final Region r) {
 		Assert.assertTrue(r.intersects(r));
 	}
 
@@ -177,7 +201,7 @@ public final class SpatialMapRegionTest {
 	 * {@link se.kth.speech.SpatialMap.Region#intersects(se.kth.speech.SpatialMap.Region)}.
 	 */
 	@Test
-	public final void testIntersectsSubregion() {
+	public final void testIntersectsRegionSubregion() {
 		final Region r = new Region(0, 2, 3, 5);
 		Assert.assertTrue(r.intersects(new Region(0, 1, 3, 4)));
 	}
@@ -209,10 +233,29 @@ public final class SpatialMapRegionTest {
 
 	/**
 	 * Test method for
+	 * {@link se.kth.speech.SpatialMap.Region#subsumes(int,int,int,int,int,int,int,int)}.
+	 */
+	@Theory
+	public final void testSubsumesIntIntIntIntIntIntIntIntCommutativty(final int[] pointArray) {
+		final int r1x1 = pointArray[0];
+		final int r1x2 = pointArray[1];
+		final int r1y1 = pointArray[2];
+		final int r1y2 = pointArray[3];
+		final int r2x1 = pointArray[4];
+		final int r2x2 = pointArray[5];
+		final int r2y1 = pointArray[6];
+		final int r2y2 = pointArray[7];
+		final boolean orig = SpatialMap.Region.subsumes(r1x1, r1x2, r1y1, r1y2, r2x1, r2x2, r2y1, r2y2);
+		final boolean inverse = SpatialMap.Region.subsumes(r2x1, r2x2, r2y1, r2y2, r1x1, r1x2, r1y1, r1y2);
+		Assert.assertEquals(orig, inverse);
+	}
+
+	/**
+	 * Test method for
 	 * {@link se.kth.speech.SpatialMap.Region#subsumes(se.kth.speech.SpatialMap.Region)}.
 	 */
 	@Test
-	public final void testSubsumesNegative() {
+	public final void testSubsumesRegionNegative() {
 		final Region superRegion = new Region(3, 6, 4, 6);
 		final Region subRegion = new Region(3, 4, 5, 6);
 		Assert.assertFalse(subRegion.subsumes(superRegion));
@@ -223,7 +266,7 @@ public final class SpatialMapRegionTest {
 	 * {@link se.kth.speech.SpatialMap.Region#subsumes(se.kth.speech.SpatialMap.Region)}.
 	 */
 	@Test
-	public final void testSubsumesNegativeIntersecting() {
+	public final void testSubsumesRegionNegativeIntersecting() {
 		final Region r = new Region(0, 2, 0, 1);
 		Assert.assertFalse(r.subsumes(new Region(0, 3, 1, 3)));
 	}
@@ -233,7 +276,7 @@ public final class SpatialMapRegionTest {
 	 * {@link se.kth.speech.SpatialMap.Region#subsumes(se.kth.speech.SpatialMap.Region)}.
 	 */
 	@Test
-	public final void testSubsumesPositive() {
+	public final void testSubsumesRegionPositive() {
 		final Region superRegion = new Region(3, 6, 4, 6);
 		final Region subRegion = new Region(3, 4, 5, 6);
 		Assert.assertTrue(superRegion.subsumes(subRegion));
@@ -243,10 +286,9 @@ public final class SpatialMapRegionTest {
 	 * Test method for
 	 * {@link se.kth.speech.SpatialMap.Region#subsumes(se.kth.speech.SpatialMap.Region)}.
 	 */
-	@Test
-	public final void testSubsumesSelf() {
-		final Region superRegion = new Region(3, 6, 4, 6);
-		Assert.assertTrue(superRegion.subsumes(superRegion));
+	@Theory
+	public final void testSubsumesRegionSelf(final Region r) {
+		Assert.assertTrue(r.subsumes(r));
 	}
 
 }

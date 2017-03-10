@@ -58,7 +58,7 @@ public final class SpatialMap<V> {
 		 * @param r2y2
 		 * @return
 		 */
-		private static boolean intersects(final int r1x1, final int r1x2, final int r1y1, final int r1y2,
+		public static boolean intersects(final int r1x1, final int r1x2, final int r1y1, final int r1y2,
 				final int r2x1, final int r2x2, final int r2y1, final int r2y2) {
 			return r1x1 < r2x2 && r1x2 > r2x1 && r1y1 < r2y2 && r1y2 > r2y1;
 		}
@@ -76,7 +76,7 @@ public final class SpatialMap<V> {
 		 * @param r2y2
 		 * @return
 		 */
-		private static boolean subsumes(final int r1x1, final int r1x2, final int r1y1, final int r1y2, final int r2x1,
+		public static boolean subsumes(final int r1x1, final int r1x2, final int r1y1, final int r1y2, final int r2x1,
 				final int r2x2, final int r2y1, final int r2y2) {
 			return r1x1 >= r2x1 && r1x2 >= r2x2 && r1y1 >= r2y1 && r1y2 <= r2y2;
 		}
