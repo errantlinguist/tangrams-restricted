@@ -35,19 +35,6 @@ import se.kth.speech.SpatialMap.Region;
  */
 final class RandomImageMatrixSpatialRegionFactory implements BiFunction<ImageViewInfo, Random, SpatialMap.Region> {
 
-	private static SpatialMap.Region createSpatialRegion(final int[] startMatrixIdx, final int[] endMatrixIdx) {
-		return new SpatialMap.Region(startMatrixIdx[0], endMatrixIdx[0], startMatrixIdx[1], endMatrixIdx[1]);
-	}
-
-	private final int[] posDims;
-
-	private final Map<ImageViewInfo, int[]> piecePosMatrixSizes;
-
-	RandomImageMatrixSpatialRegionFactory(final int[] posDims) {
-		this.posDims = posDims;
-		piecePosMatrixSizes = new HashMap<>();
-	}
-	
 	private static final Logger LOGGER = LoggerFactory.getLogger(RandomImageMatrixSpatialRegionFactory.class);
 
 	private static int[] createPosMatrixBoundsArray(final ImageViewInfo viewInfo) {
@@ -63,6 +50,19 @@ final class RandomImageMatrixSpatialRegionFactory implements BiFunction<ImageVie
 				occupiedPosMatrixRowCount, occupiedPosMatrixColCount, viewInfo.getVisualization().getResourceLoc() });
 
 		return new int[] { occupiedPosMatrixRowCount, occupiedPosMatrixColCount };
+	}
+
+	private static SpatialMap.Region createSpatialRegion(final int[] startMatrixIdx, final int[] endMatrixIdx) {
+		return new SpatialMap.Region(startMatrixIdx[0], endMatrixIdx[0], startMatrixIdx[1], endMatrixIdx[1]);
+	}
+
+	private final Map<ImageViewInfo, int[]> piecePosMatrixSizes;
+	
+	private final int[] posDims;
+
+	RandomImageMatrixSpatialRegionFactory(final int[] posDims) {
+		this.posDims = posDims;
+		piecePosMatrixSizes = new HashMap<>();
 	}
 
 	/*
