@@ -20,15 +20,15 @@ import java.awt.Image;
 import java.util.Arrays;
 import java.util.Map.Entry;
 
-final class ImageMatrixPositionInfo {
+final class ImageMatrixPositionInfo<I> {
 
 	private final Entry<? extends Image, ImageViewInfo> imgViewInfoDatum;
 
-	private final int pieceId;
+	private final I pieceId;
 
 	private final int[] piecePosMatrixSize;
 
-	ImageMatrixPositionInfo(final int pieceId, final int[] piecePosMatrixSize,
+	ImageMatrixPositionInfo(final I pieceId, final int[] piecePosMatrixSize,
 			final Entry<? extends Image, ImageViewInfo> imgViewInfoDatum) {
 		this.pieceId = pieceId;
 		this.piecePosMatrixSize = piecePosMatrixSize;
@@ -37,7 +37,7 @@ final class ImageMatrixPositionInfo {
 
 	/*
 	 * (non-Javadoc)
-	 *
+	 * 
 	 * @see java.lang.Object#equals(java.lang.Object)
 	 */
 	@Override
@@ -51,7 +51,7 @@ final class ImageMatrixPositionInfo {
 		if (!(obj instanceof ImageMatrixPositionInfo)) {
 			return false;
 		}
-		final ImageMatrixPositionInfo other = (ImageMatrixPositionInfo) obj;
+		final ImageMatrixPositionInfo<?> other = (ImageMatrixPositionInfo<?>) obj;
 		if (imgViewInfoDatum == null) {
 			if (other.imgViewInfoDatum != null) {
 				return false;
@@ -59,7 +59,11 @@ final class ImageMatrixPositionInfo {
 		} else if (!imgViewInfoDatum.equals(other.imgViewInfoDatum)) {
 			return false;
 		}
-		if (pieceId != other.pieceId) {
+		if (pieceId == null) {
+			if (other.pieceId != null) {
+				return false;
+			}
+		} else if (!pieceId.equals(other.pieceId)) {
 			return false;
 		}
 		if (!Arrays.equals(piecePosMatrixSize, other.piecePosMatrixSize)) {
@@ -70,7 +74,7 @@ final class ImageMatrixPositionInfo {
 
 	/*
 	 * (non-Javadoc)
-	 *
+	 * 
 	 * @see java.lang.Object#hashCode()
 	 */
 	@Override
@@ -78,7 +82,7 @@ final class ImageMatrixPositionInfo {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + (imgViewInfoDatum == null ? 0 : imgViewInfoDatum.hashCode());
-		result = prime * result + pieceId;
+		result = prime * result + (pieceId == null ? 0 : pieceId.hashCode());
 		result = prime * result + Arrays.hashCode(piecePosMatrixSize);
 		return result;
 	}
@@ -111,7 +115,7 @@ final class ImageMatrixPositionInfo {
 	/**
 	 * @return the pieceId
 	 */
-	int getPieceId() {
+	I getPieceId() {
 		return pieceId;
 	}
 

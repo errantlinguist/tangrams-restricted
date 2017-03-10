@@ -62,7 +62,7 @@ final class RandomImagePositionMatrixFiller implements BiFunction<Matrix<? super
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(RandomImagePositionMatrixFiller.class);
 	
-	private static final BiFunction<ImageMatrixPositionInfo, Integer, Integer> INCREMENTING_REMAPPER = new BiFunction<ImageMatrixPositionInfo, Integer, Integer>() {
+	private static final BiFunction<ImageMatrixPositionInfo<Integer>, Integer, Integer> INCREMENTING_REMAPPER = new BiFunction<ImageMatrixPositionInfo<Integer>, Integer, Integer>() {
 
 		/*
 		 * (non-Javadoc)
@@ -71,7 +71,7 @@ final class RandomImagePositionMatrixFiller implements BiFunction<Matrix<? super
 		 * java.lang.Object)
 		 */
 		@Override
-		public Integer apply(final ImageMatrixPositionInfo key, final Integer oldVal) {
+		public Integer apply(final ImageMatrixPositionInfo<Integer> key, final Integer oldVal) {
 			final Integer newVal;
 			if (oldVal == null) {
 				newVal = 1;
@@ -101,7 +101,7 @@ final class RandomImagePositionMatrixFiller implements BiFunction<Matrix<? super
 		final SpatialMap<Entry<? extends Image, ImageViewInfo>> result = new SpatialMap<>(imgViewInfoData.size());
 		final int[] posDims = posMatrix.getDimensions();
 		// Randomly place each image in the position matrix
-		final Queue<ImageMatrixPositionInfo> retryStack = new ArrayDeque<>();
+		final Queue<ImageMatrixPositionInfo<Integer>> retryStack = new ArrayDeque<>();
 		while (imgViewInfoDataIter.hasNext()) {
 			final int pieceId = imgViewInfoDataIter.nextIndex();
 			final Entry<? extends Image, ImageViewInfo> imgViewInfoDatum = imgViewInfoDataIter.next();
@@ -113,7 +113,7 @@ final class RandomImagePositionMatrixFiller implements BiFunction<Matrix<? super
 			final SpatialMap.Region pieceRegion = MatrixSpaces.createRandomSpatialRegion(piecePosMatrixSize, posDims, rnd);
 			if (result.isOccupied(pieceRegion)) {
 				LOGGER.debug("Cancelling placement of image because the target space is occupied.");
-				retryStack.add(new ImageMatrixPositionInfo(pieceId, piecePosMatrixSize, imgViewInfoDatum));
+				retryStack.add(new ImageMatrixPositionInfo<>(pieceId, piecePosMatrixSize, imgViewInfoDatum));
 			} else {
 				setMatrixPositionValues(posMatrix, pieceRegion, pieceId);
 				result.put(pieceRegion, imgViewInfoDatum);
@@ -123,11 +123,11 @@ final class RandomImagePositionMatrixFiller implements BiFunction<Matrix<? super
 
 		// Try to place images which didn't fit the first time
 		final int estimatedNumberOfRetriedImgPlacements = retryStack.size() / 2;
-		final Map<ImageMatrixPositionInfo, Integer> retryCounter = Maps
+		final Map<ImageMatrixPositionInfo<Integer>, Integer> retryCounter = Maps
 				.newHashMapWithExpectedSize(estimatedNumberOfRetriedImgPlacements);
 		final List<ImageVisualizationInfo> failedPlacements = new ArrayList<>(estimatedNumberOfRetriedImgPlacements);
 		while (!retryStack.isEmpty()) {
-			final ImageMatrixPositionInfo imgPlacementInfo = retryStack.remove();
+			final ImageMatrixPositionInfo<Integer> imgPlacementInfo = retryStack.remove();
 			final SpatialMap.Region imgRegion = MatrixSpaces.createRandomSpatialRegion(imgPlacementInfo.getPiecePosMatrixSize(), posDims,
 					rnd);
 			if (result.isOccupied(imgRegion)) {
