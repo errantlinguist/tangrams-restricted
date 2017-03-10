@@ -143,6 +143,16 @@ public final class SpatialMapRegionTest {
 	 * Test method for
 	 * {@link se.kth.speech.SpatialMap.Region#intersects(se.kth.speech.SpatialMap.Region)}.
 	 */
+	@Theory
+	public final void testIntersectsRegionEqual(final Region r1, final Region r2) {
+		Assume.assumeTrue(r1.equals(r2));
+		Assert.assertTrue(r1.intersects(r2));
+	}
+
+	/**
+	 * Test method for
+	 * {@link se.kth.speech.SpatialMap.Region#intersects(se.kth.speech.SpatialMap.Region)}.
+	 */
 	@Test
 	public final void testIntersectsRegionIntersecting() {
 		final Region r = new Region(0, 2, 3, 5);
@@ -248,18 +258,31 @@ public final class SpatialMapRegionTest {
 	 * {@link se.kth.speech.SpatialMap.Region#subsumes(int,int,int,int,int,int,int,int)}.
 	 */
 	@Theory
-	public final void testSubsumesIntIntIntIntIntIntIntIntCommutativty(final int[] pointArray) {
+	public final void testSubsumesIntIntIntIntIntIntIntIntEqual(final int[] pointArray) {
 		final int r1x1 = pointArray[0];
 		final int r1x2 = pointArray[1];
 		final int r1y1 = pointArray[2];
 		final int r1y2 = pointArray[3];
 		final int r2x1 = pointArray[4];
+		Assume.assumeTrue(r1x1 == r2x1);
 		final int r2x2 = pointArray[5];
+		Assume.assumeTrue(r1x2 == r2x2);
 		final int r2y1 = pointArray[6];
+		Assume.assumeTrue(r1y1 == r2y1);
 		final int r2y2 = pointArray[7];
+		Assume.assumeTrue(r1y2 == r2y2);
 		final boolean orig = SpatialMap.Region.subsumes(r1x1, r1x2, r1y1, r1y2, r2x1, r2x2, r2y1, r2y2);
-		final boolean inverse = SpatialMap.Region.subsumes(r2x1, r2x2, r2y1, r2y2, r1x1, r1x2, r1y1, r1y2);
-		Assert.assertEquals(orig, inverse);
+		Assert.assertTrue(orig);
+	}
+
+	/**
+	 * Test method for
+	 * {@link se.kth.speech.SpatialMap.Region#subsumes(se.kth.speech.SpatialMap.Region)}.
+	 */
+	@Theory
+	public final void testSubsumesRegionEqual(final Region r1, final Region r2) {
+		Assume.assumeTrue(r1.equals(r2));
+		Assert.assertTrue(r1.subsumes(r2));
 	}
 
 	/**
