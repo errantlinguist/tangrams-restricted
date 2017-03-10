@@ -40,7 +40,8 @@ final class GameBoardPanelFactory implements BiFunction<Collection<ImageVisualiz
 
 	@Override
 	public GameBoardPanel apply(final Collection<ImageVisualizationInfo> imgVisualizationInfoData, final Random rnd) {
-		RandomImagePositionMatrixFiller matrixFiller = new RandomImagePositionMatrixFiller(rnd, maxPlacementRetriesPerImg, allowFailedPlacements);
+		final RandomImagePositionMatrixFiller matrixFiller = new RandomImagePositionMatrixFiller(rnd,
+				maxPlacementRetriesPerImg, allowFailedPlacements);
 		return new GameBoardPanel(imgVisualizationInfoData, matrixFiller);
 	}
 
