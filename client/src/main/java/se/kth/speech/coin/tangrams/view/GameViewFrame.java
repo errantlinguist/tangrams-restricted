@@ -52,9 +52,14 @@ final class GameViewFrame extends JFrame {
 		add(buttonPanel, BorderLayout.SOUTH);
 		final JButton undoButton = new JButton("undo");
 		buttonPanel.add(undoButton);
+		undoButton.addActionListener(continueEvent -> {
+			boardPanel.notifyUndo();
+		});
 		final JButton continueButton = new JButton("continue");
 		buttonPanel.add(continueButton);
-
+		continueButton.addActionListener(continueEvent -> {
+			boardPanel.notifyContinue();
+		});
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		addWindowListener(new WindowAdapter() {
 
