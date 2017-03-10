@@ -50,7 +50,7 @@ import se.kth.speech.FilenameBaseSplitter;
  * @since 7 Mar 2017
  *
  */
-public final class IconImagePNGTranscoder {
+public final class SVGIconImagePNGTranscoder {
 
 	private static final FilenameBaseSplitter FILENAME_BASE_SPLITTER = new FilenameBaseSplitter();
 
@@ -58,7 +58,7 @@ public final class IconImagePNGTranscoder {
 
 	public static void main(final String[] args) throws TranscoderException, IOException, URISyntaxException {
 		if (args.length < 1) {
-			System.err.println(String.format("Usage: %s <outputDir>", IconImagePNGTranscoder.class.getName()));
+			System.err.println(String.format("Usage: %s <outputDir>", SVGIconImagePNGTranscoder.class.getName()));
 			System.exit(64);
 		} else {
 			// E.g.
