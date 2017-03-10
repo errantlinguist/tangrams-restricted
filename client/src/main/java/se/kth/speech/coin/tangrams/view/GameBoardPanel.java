@@ -243,7 +243,7 @@ final class GameBoardPanel extends Canvas {
 		return img.getScaledInstance(imgWidth, imgHeight, IMG_SCALING_HINTS);
 	}
 
-	private final SpatialMap<? extends Entry<? extends Image, ImageViewInfo>> piecePlacements;
+	private final SpatialMap<? extends Entry<? extends Image, ImageViewInfo>> piecePlacementMap;
 
 	private final Matrix<Integer> posMatrix;
 
@@ -287,7 +287,7 @@ final class GameBoardPanel extends Canvas {
 							String.format("Board %s not divisble into matrix with dimensions %s.", boardSize,
 									Arrays.toString(posMatrix.getDimensions())));
 				}
-				piecePlacements = matrixFiller.apply(posMatrix, imgViewInfoDataList);
+				piecePlacementMap = matrixFiller.apply(posMatrix, imgViewInfoDataList);
 				// Finished with creating necessary data structures
 				System.out.println("IMAGE PLACEMENTS");
 				System.out.println(createMatrixReprString(posMatrix));
@@ -430,9 +430,9 @@ final class GameBoardPanel extends Canvas {
 		final int colWidth = getGridColWidth();
 		final int rowHeight = getGridRowHeight();
 
-		final Iterable<? extends Entry<? extends Entry<? extends Image, ImageViewInfo>, SpatialMap.Region>> piecePlacementIter = piecePlacements
+		final Iterable<? extends Entry<? extends Entry<? extends Image, ImageViewInfo>, SpatialMap.Region>> piecePlacements = piecePlacementMap
 				.elementRegions();
-		for (final Entry<? extends Entry<? extends Image, ImageViewInfo>, SpatialMap.Region> piecePlacement : piecePlacementIter) {
+		for (final Entry<? extends Entry<? extends Image, ImageViewInfo>, SpatialMap.Region> piecePlacement : piecePlacements) {
 			final Entry<? extends Image, ImageViewInfo> pieceDisplayInfo = piecePlacement.getKey();
 			final Image initialImg = pieceDisplayInfo.getKey();
 			final SpatialMap.Region region = piecePlacement.getValue();
