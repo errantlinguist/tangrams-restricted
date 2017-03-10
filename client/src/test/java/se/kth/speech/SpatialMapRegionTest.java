@@ -43,10 +43,13 @@ import se.kth.speech.SpatialMap.Region;
 public final class SpatialMapRegionTest {
 
 	@DataPoints
-	public static final Region[] PREVIOUS_FAILED_REGIONS = new Region[] {
-			new Region(1989523352, 2023725473, 1079495603, 1079495603),
-			new Region(-367670549, 1742426776, -582564738, 1954507817),
-			new Region(1661512450, 1661512450, -1470324477, 1742426776) };
+	public static final int[][] PREVIOUS_FAILED_REGION_POINT_ARRAYS;
+
+	@DataPoints
+	public static final Set<SpatialMap.Region> PREVIOUS_FAILED_REGIONS;
+
+	@DataPoints
+	public static final Set<int[]> TEST_POINT_ARRAYS;
 
 	@DataPoints
 	public static final int[] TEST_POINTS;
@@ -54,8 +57,17 @@ public final class SpatialMapRegionTest {
 	@DataPoints
 	public static final Set<Region> TEST_REGIONS;
 
-	@DataPoints
-	public static final Set<int[]> TEST_POINT_ARRAYS;
+	static {
+		PREVIOUS_FAILED_REGION_POINT_ARRAYS = new int[][] {
+				new int[] { 1989523352, 2023725473, 1079495603, 1079495603 },
+				new int[] { -367670549, 1742426776, -582564738, 1954507817 },
+				new int[] { 1661512450, 1661512450, -1470324477, 1742426776 } };
+		PREVIOUS_FAILED_REGIONS = Sets.newHashSetWithExpectedSize(PREVIOUS_FAILED_REGION_POINT_ARRAYS.length);
+		for (final int[] pointArray : PREVIOUS_FAILED_REGION_POINT_ARRAYS) {
+			PREVIOUS_FAILED_REGIONS
+					.add(new SpatialMap.Region(pointArray[0], pointArray[1], pointArray[2], pointArray[3]));
+		}
+	}
 
 	static {
 		final Random rnd = new Random();
