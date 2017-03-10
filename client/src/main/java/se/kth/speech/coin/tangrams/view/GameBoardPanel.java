@@ -229,13 +229,17 @@ final class GameBoardPanel extends Canvas {
 		return result;
 	}
 
-	private static Image scaleImageToGridSize(final Image img, final SpatialMap.Region occupiedGridRegion, final int colWidth,
-			final int rowHeight) {
+	private static Image scaleImageToGridSize(final Image img, final SpatialMap.Region occupiedGridRegion,
+			final int colWidth, final int rowHeight) {
 		// NOTE: occupied region is denoted in matrix rows*columns
 		// "y" is matrix columns, thus left-to-right
-		final int imgWidth = colWidth * occupiedGridRegion.getLengthY();
+		final int regionGridColCount = occupiedGridRegion.getLengthY();
+		LOGGER.debug("Image occupies {} grid column(s).", regionGridColCount);
+		final int imgWidth = colWidth * regionGridColCount;
 		// "x" is matrix rows, thus top-to-bottom
-		final int imgHeight = rowHeight * occupiedGridRegion.getLengthX();
+		final int regionGridRowCount = occupiedGridRegion.getLengthX();
+		LOGGER.debug("Image occupies {} grid row(s).", regionGridRowCount);
+		final int imgHeight = rowHeight * regionGridRowCount;
 		return img.getScaledInstance(imgWidth, imgHeight, IMG_SCALING_HINTS);
 	}
 
@@ -462,10 +466,32 @@ final class GameBoardPanel extends Canvas {
 		// NOTE: occupied region is denoted in matrix rows*columns
 		// "y" is matrix columns, thus left-to-right
 		final int colWidth = getGridColWidth();
-		final int imgWidth = colWidth * occupiedGridRegion.getLengthY();
+		final int regionGridColCount = occupiedGridRegion.getLengthY();
+		LOGGER.debug("Image occupies {} grid column(s).", regionGridColCount);
+		final int imgWidth = colWidth * regionGridColCount;
 		final int rowHeight = getGridRowHeight();
 		// "x" is matrix rows, thus top-to-bottom
-		final int imgHeight = rowHeight * occupiedGridRegion.getLengthX();
+		final int regionGridRowCount = occupiedGridRegion.getLengthX();
+		LOGGER.debug("Image occupies {} grid row(s).", regionGridRowCount);
+		final int imgHeight = rowHeight * regionGridRowCount;
+	}
+
+	/**
+	 *
+	 */
+	void notifyContinue() {
+		LOGGER.debug("Notified of continue event.");
+		// TODO Auto-generated method stub
+
+	}
+
+	/**
+	 *
+	 */
+	void notifyUndo() {
+		LOGGER.debug("Notified of undo event.");
+		// TODO Auto-generated method stub
+
 	}
 
 }
