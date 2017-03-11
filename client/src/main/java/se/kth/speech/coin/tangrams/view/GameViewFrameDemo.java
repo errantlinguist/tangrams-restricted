@@ -42,7 +42,7 @@ import se.kth.speech.coin.tangrams.content.RandomPieceImageDataFactory;
  * @since 7 Mar 2017
  *
  */
-public final class GameViewFrameViewingTest implements Runnable {
+public final class GameViewFrameDemo implements Runnable {
 
 	private enum Parameter implements Supplier<Option> {
 		ALLOW_FAILED_PLACEMENTS("f") {
@@ -106,7 +106,7 @@ public final class GameViewFrameViewingTest implements Runnable {
 
 	private static final Options OPTIONS = createOptions();
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(GameViewFrameViewingTest.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(GameViewFrameDemo.class);
 
 	private static int DEFAULT_MAX_PLACEMENT_RETRIES = 3;
 
@@ -124,7 +124,7 @@ public final class GameViewFrameViewingTest implements Runnable {
 				final boolean allowFailedPlacements = cl.hasOption(Parameter.ALLOW_FAILED_PLACEMENTS.optName);
 				LOGGER.info("Creating view for game \"{}\".", gameId);
 				final Random rnd = new Random(gameId);
-				final GameViewFrameViewingTest testInstance = new GameViewFrameViewingTest(rnd, imgPlacementCount,
+				final GameViewFrameDemo testInstance = new GameViewFrameDemo(rnd, imgPlacementCount,
 						maxPlacementRetries, allowFailedPlacements);
 				EventQueue.invokeLater(testInstance);
 			}
@@ -168,7 +168,7 @@ public final class GameViewFrameViewingTest implements Runnable {
 
 	private static void printHelp() {
 		final HelpFormatter formatter = new HelpFormatter();
-		formatter.printHelp(GameViewFrameViewingTest.class.getName(), OPTIONS);
+		formatter.printHelp(GameViewFrameDemo.class.getName(), OPTIONS);
 	}
 
 	private final boolean allowFailedPlacements;
@@ -179,7 +179,7 @@ public final class GameViewFrameViewingTest implements Runnable {
 
 	private final int imgPlacementCount;
 
-	public GameViewFrameViewingTest(final Random rnd, final int imgPlacementCount, final int maxPlacementRetriesPerImg,
+	public GameViewFrameDemo(final Random rnd, final int imgPlacementCount, final int maxPlacementRetriesPerImg,
 			final boolean allowFailedPlacements) {
 		this.rnd = rnd;
 		this.imgPlacementCount = imgPlacementCount;

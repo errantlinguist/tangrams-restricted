@@ -28,14 +28,14 @@ import se.kth.speech.Lists;
  *
  */
 public enum ImageSize {
-	LARGE, NORMAL, SMALL;
+	LARGE, MEDIUM, SMALL;
 
 	private static final Comparator<ImageSize> SIZE_COMPARATOR;
 
 	private static final List<ImageSize> SIZE_ORDERING;
 
 	static {
-		SIZE_ORDERING = Arrays.asList(SMALL, NORMAL, LARGE);
+		SIZE_ORDERING = Arrays.asList(SMALL, MEDIUM, LARGE);
 		SIZE_COMPARATOR = Lists.comparingByIndex(SIZE_ORDERING);
 	}
 
