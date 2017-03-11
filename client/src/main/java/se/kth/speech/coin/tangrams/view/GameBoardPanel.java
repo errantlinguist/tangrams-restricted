@@ -43,6 +43,7 @@ import java.util.Random;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.IntSupplier;
+import java.util.stream.Stream;
 
 import javax.imageio.ImageIO;
 
@@ -246,29 +247,29 @@ final class GameBoardPanel extends Canvas {
 
 	private final RandomMatrixPieceMover<Integer> pieceMover;
 
-	private final SpatialMap<Entry<? extends Image, ImageViewInfo>> piecePlacements;
+	private final SpatialMap<ImageViewInfo> piecePlacements;
 
 	private final Matrix<Integer> posMatrix;
+
+	private final Map<ImageViewInfo, Image> pieceImgs;
 
 	GameBoardPanel(final Collection<ImageVisualizationInfo> imgVisualizationInfoData, final Random rnd,
 			final int maxPlacementRetriesPerImg, final boolean allowFailedPlacements) {
 		// TODO: make image count configurable
 		final int maxImgPlacements = 20;
-		final Map<Entry<? extends Image, ImageViewInfo>, Integer> pieceIds = Maps
-				.newHashMapWithExpectedSize(imgVisualizationInfoData.size());
-		final Function<Entry<? extends Image, ImageViewInfo>, Integer> incrementingPieceIdGetter = piece -> pieceIds
-				.computeIfAbsent(piece, k -> pieceIds.size());
+		final Map<ImageViewInfo, Integer> pieceIds = Maps.newHashMapWithExpectedSize(maxImgPlacements * 2);
+		final Function<ImageViewInfo, Integer> incrementingPieceIdGetter = piece -> pieceIds.computeIfAbsent(piece,
+				k -> pieceIds.size());
 		final RandomImagePositionMatrixFiller<Integer> matrixFiller = new RandomImagePositionMatrixFiller<>(
 				incrementingPieceIdGetter, rnd, maxImgPlacements, maxPlacementRetriesPerImg, allowFailedPlacements);
 		// The minimum accepted length of the shortest dimension for an image
 		final int minDimLength = 300;
 		final SizeValidator validator = new SizeValidator(minDimLength, 50, 50);
 		try {
-			final LinkedHashMap<Image, ImageViewInfo> imgViewInfoDataMap = createImageViewInfo(imgVisualizationInfoData,
-					validator);
-			final Set<Integer> dimensionValues = Sets.newHashSetWithExpectedSize(imgViewInfoDataMap.size() + 1);
-			for (final ImageViewInfo imgViewInfo : imgViewInfoDataMap.values()) {
-				dimensionValues.add(imgViewInfo.getRasterization().getGcd());
+			pieceImgs = createImageViewInfoMap(imgVisualizationInfoData, validator);
+			final Set<Integer> dimensionValues = Sets.newHashSetWithExpectedSize(pieceImgs.size() + 1);
+			for (final ImageViewInfo pieceImgViewInfo : pieceImgs.keySet()) {
+				dimensionValues.add(pieceImgViewInfo.getRasterization().getGcd());
 			}
 			final Dimension boardSize = new Dimension(minDimLength * 5, minDimLength * 4);
 			setSize(boardSize);
@@ -294,7 +295,7 @@ final class GameBoardPanel extends Canvas {
 							String.format("Board %s not divisble into matrix with dimensions %s.", boardSize,
 									Arrays.toString(posMatrix.getDimensions())));
 				}
-				piecePlacements = matrixFiller.apply(posMatrix, imgViewInfoDataMap.entrySet());
+				piecePlacements = matrixFiller.apply(posMatrix, pieceImgs.keySet());
 				pieceMover = new RandomMatrixPieceMover<>(posMatrix, piecePlacements, pieceIds::get);
 				// Finished with creating necessary data structures
 				System.out.println("IMAGE PLACEMENTS");
@@ -325,12 +326,12 @@ final class GameBoardPanel extends Canvas {
 
 	}
 
-	private LinkedHashMap<Image, ImageViewInfo> createImageViewInfo(
+	private LinkedHashMap<ImageViewInfo, Image> createImageViewInfoMap(
 			final Collection<ImageVisualizationInfo> imgVisualizationInfoData, final SizeValidator validator)
 			throws IOException {
 		// Use linked map in order to preserve iteration order in provided
 		// sequence
-		final LinkedHashMap<Image, ImageViewInfo> result = Maps
+		final LinkedHashMap<ImageViewInfo, Image> result = Maps
 				.newLinkedHashMapWithExpectedSize(imgVisualizationInfoData.size());
 
 		final Map<URL, Entry<ImageViewInfo.RasterizationInfo, Set<SizeValidator.ValidationComment>>> badImgs = Maps
@@ -340,25 +341,28 @@ final class GameBoardPanel extends Canvas {
 			final BufferedImage initialImg = ImageIO.read(imgResourceLoc);
 			final IntSupplier widthGetter = initialImg::getWidth;
 			final IntSupplier heightGetter = initialImg::getHeight;
-
 			{
 				// Size/aspect ratio calculation
 				final ImageViewInfo.RasterizationInfo imgRasterizationInfo = new ImageViewInfo.RasterizationInfo(
 						widthGetter, heightGetter);
 				final Image coloredImg = getToolkit().createImage(new FilteredImageSource(initialImg.getSource(),
 						new ColorReplacementImageFilter(imgVisualizationInfoDatum.getColor())));
-				result.put(coloredImg, new ImageViewInfo(imgVisualizationInfoDatum, imgRasterizationInfo));
 				{
 					// Validate image
 					final Set<SizeValidator.ValidationComment> validationComments = validator.validate(
 							widthGetter.getAsInt(), heightGetter.getAsInt(),
 							MathDenominators.gcd(widthGetter.getAsInt(), heightGetter.getAsInt()));
-					if (!validationComments.isEmpty()) {
+					if (validationComments.isEmpty()) {
+						final ImageViewInfo imgInfo = new ImageViewInfo(imgVisualizationInfoDatum,
+								imgRasterizationInfo);
+						if (result.put(imgInfo, coloredImg) != null) {
+							throw new AssertionError(String.format("Key already found in map: %s", imgInfo));
+						}
+					} else {
 						badImgs.put(imgResourceLoc, new MutablePair<>(imgRasterizationInfo, validationComments));
 					}
 				}
 			}
-
 		}
 
 		if (badImgs.isEmpty()) {
@@ -367,6 +371,44 @@ final class GameBoardPanel extends Canvas {
 			throw new IllegalArgumentException("One or more images failed validation:" + System.lineSeparator()
 					+ createImageInfoTable(badImgs.entrySet()));
 		}
+	}
+
+	private Stream<Entry<Image, ImageViewInfo>> createImageViewInfoStream(
+			final Stream<ImageVisualizationInfo> imgVisualizationInfoData, final SizeValidator validator) {
+		return imgVisualizationInfoData.flatMap(imgVisualizationInfoDatum -> {
+			final Stream<Entry<Image, ImageViewInfo>> singleResult;
+
+			final URL imgResourceLoc = imgVisualizationInfoDatum.getResourceLoc();
+			try {
+				final BufferedImage initialImg = ImageIO.read(imgResourceLoc);
+				final IntSupplier widthGetter = initialImg::getWidth;
+				final IntSupplier heightGetter = initialImg::getHeight;
+
+				{
+					// Size/aspect ratio calculation
+					final ImageViewInfo.RasterizationInfo imgRasterizationInfo = new ImageViewInfo.RasterizationInfo(
+							widthGetter, heightGetter);
+					final Image coloredImg = getToolkit().createImage(new FilteredImageSource(initialImg.getSource(),
+							new ColorReplacementImageFilter(imgVisualizationInfoDatum.getColor())));
+					{
+						// Validate image
+						final Set<SizeValidator.ValidationComment> validationComments = validator.validate(
+								widthGetter.getAsInt(), heightGetter.getAsInt(),
+								MathDenominators.gcd(widthGetter.getAsInt(), heightGetter.getAsInt()));
+						if (validationComments.isEmpty()) {
+							singleResult = Stream.of(new MutablePair<>(coloredImg,
+									new ImageViewInfo(imgVisualizationInfoDatum, imgRasterizationInfo)));
+						} else {
+							singleResult = Stream.empty();
+						}
+					}
+				}
+			} catch (final IOException e) {
+				throw new UncheckedIOException(e);
+			}
+
+			return singleResult;
+		});
 	}
 
 	private void drawGrid(final Graphics g) {
@@ -438,14 +480,12 @@ final class GameBoardPanel extends Canvas {
 		final int colWidth = getGridColWidth();
 		final int rowHeight = getGridRowHeight();
 
-		for (final Entry<Region, Entry<? extends Image, ImageViewInfo>> piecePlacement : piecePlacements
-				.getMinimalRegionElements().entries()) {
+		for (final Entry<Region, ImageViewInfo> piecePlacement : piecePlacements.getMinimalRegionElements().entries()) {
 			final SpatialMap.Region region = piecePlacement.getKey();
-			final Entry<? extends Image, ImageViewInfo> pieceDisplayInfoDatum = piecePlacement.getValue();
-			final Image initialImg = pieceDisplayInfoDatum.getKey();
+			final ImageViewInfo pieceViewInfo = piecePlacement.getValue();
+			final Image initialImg = pieceImgs.get(pieceViewInfo);
 			final Image scaledImg = scaleImageToGridSize(initialImg, region, colWidth, rowHeight);
-			final ImageViewInfo viewInfo = pieceDisplayInfoDatum.getValue();
-			final ImageVisualizationInfo visualizationInfo = viewInfo.getVisualization();
+			final ImageVisualizationInfo visualizationInfo = pieceViewInfo.getVisualization();
 
 			// NOTE: occupied region is denoted in matrix rows*columns
 			// "y" is matrix columns, thus left-to-right

@@ -16,7 +16,6 @@
 */
 package se.kth.speech.coin.tangrams.view;
 
-import java.awt.Image;
 import java.util.Map.Entry;
 import java.util.Random;
 import java.util.function.BiFunction;
@@ -30,38 +29,35 @@ import se.kth.speech.SpatialMap;
  * @since 10 Mar 2017
  *
  */
-final class RandomMatrixPiecePlacer<I>
-		implements BiFunction<Entry<? extends Image, ImageViewInfo>, I, Entry<SpatialMap.Region, Boolean>> {
+final class RandomMatrixPiecePlacer<I> implements BiFunction<ImageViewInfo, I, Entry<SpatialMap.Region, Boolean>> {
 
-	private final SpatialMap<Entry<? extends Image, ImageViewInfo>> occupiedPositions;
+	private final SpatialMap<ImageViewInfo> occupiedPositions;
 
-	private final Matrix<I> posMatrix;
+	private final Matrix<? super I> posMatrix;
 
 	private final RandomImageMatrixSpatialRegionFactory regionFactory;
-	
+
 	private final Random rnd;
 
-	RandomMatrixPiecePlacer(final Matrix<I> posMatrix, final Random rnd,
-			final SpatialMap<Entry<? extends Image, ImageViewInfo>> occupiedPositions) {
+	RandomMatrixPiecePlacer(final Matrix<? super I> posMatrix, final Random rnd,
+			final SpatialMap<ImageViewInfo> occupiedPositions) {
 		this.posMatrix = posMatrix;
 		this.rnd = rnd;
 		this.occupiedPositions = occupiedPositions;
-	
+
 		regionFactory = new RandomImageMatrixSpatialRegionFactory(posMatrix.getDimensions());
 	}
 
 	@Override
-	public Entry<SpatialMap.Region, Boolean> apply(final Entry<? extends Image, ImageViewInfo> imgViewInfoDatum,
-			final I pieceId) {
-		final ImageViewInfo viewInfo = imgViewInfoDatum.getValue();
+	public Entry<SpatialMap.Region, Boolean> apply(final ImageViewInfo piece, final I pieceId) {
 		// Randomly pick a space in the matrix
-		final SpatialMap.Region piecePosition = regionFactory.apply(viewInfo, rnd);
+		final SpatialMap.Region piecePosition = regionFactory.apply(piece, rnd);
 		final boolean success;
 		if (occupiedPositions.isOccupied(piecePosition)) {
 			success = false;
 		} else {
 			MatrixSpaces.setMatrixPositionValues(posMatrix, piecePosition, pieceId);
-			occupiedPositions.put(imgViewInfoDatum, piecePosition);
+			occupiedPositions.put(piece, piecePosition);
 			success = true;
 		}
 		return new MutablePair<>(piecePosition, success);

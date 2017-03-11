@@ -16,20 +16,17 @@
 */
 package se.kth.speech.coin.tangrams.view;
 
-import java.awt.Image;
 import java.util.Arrays;
-import java.util.Map.Entry;
 
 final class ImageMatrixPositionInfo<I> {
 
-	private final Entry<? extends Image, ImageViewInfo> imgViewInfoDatum;
+	private final ImageViewInfo imgViewInfoDatum;
 
 	private final I pieceId;
 
 	private final int[] piecePosMatrixSize;
 
-	ImageMatrixPositionInfo(final I pieceId, final int[] piecePosMatrixSize,
-			final Entry<? extends Image, ImageViewInfo> imgViewInfoDatum) {
+	ImageMatrixPositionInfo(final I pieceId, final int[] piecePosMatrixSize, final ImageViewInfo imgViewInfoDatum) {
 		this.pieceId = pieceId;
 		this.piecePosMatrixSize = piecePosMatrixSize;
 		this.imgViewInfoDatum = imgViewInfoDatum;
@@ -37,7 +34,7 @@ final class ImageMatrixPositionInfo<I> {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#equals(java.lang.Object)
 	 */
 	@Override
@@ -74,7 +71,7 @@ final class ImageMatrixPositionInfo<I> {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#hashCode()
 	 */
 	@Override
@@ -108,7 +105,7 @@ final class ImageMatrixPositionInfo<I> {
 	/**
 	 * @return the imgViewInfoDatum
 	 */
-	Entry<? extends Image, ImageViewInfo> getImgViewInfoDatum() {
+	ImageViewInfo getImgViewInfoDatum() {
 		return imgViewInfoDatum;
 	}
 
