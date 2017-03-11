@@ -253,10 +253,8 @@ final class GameBoardPanel extends Canvas {
 
 	private final Map<ImageViewInfo, Image> pieceImgs;
 
-	GameBoardPanel(final Collection<ImageVisualizationInfo> imgVisualizationInfoData, final Random rnd,
+	GameBoardPanel(final Collection<ImageVisualizationInfo> imgVisualizationInfoData, final Random rnd, final int maxImgPlacements,
 			final int maxPlacementRetriesPerImg, final boolean allowFailedPlacements) {
-		// TODO: make image count configurable
-		final int maxImgPlacements = 20;
 		final Map<ImageViewInfo, Integer> pieceIds = Maps.newHashMapWithExpectedSize(maxImgPlacements * 2);
 		final Function<ImageViewInfo, Integer> incrementingPieceIdGetter = piece -> pieceIds.computeIfAbsent(piece,
 				k -> pieceIds.size());
