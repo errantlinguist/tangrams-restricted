@@ -78,7 +78,7 @@ public final class GameViewFrameViewingTest implements Runnable {
 			}
 
 		},
-		IMG_PLACEMENT_COUNT("p") {
+		IMG_PLACEMENT_COUNT("c") {
 
 			@Override
 			public Option get() {
