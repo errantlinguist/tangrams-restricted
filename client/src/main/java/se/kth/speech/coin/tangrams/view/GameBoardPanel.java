@@ -64,6 +64,7 @@ import se.kth.speech.MathDenominators;
 import se.kth.speech.Matrix;
 import se.kth.speech.MutablePair;
 import se.kth.speech.SpatialMap;
+import se.kth.speech.SpatialMatrix;
 import se.kth.speech.SpatialMap.Region;
 import se.kth.speech.awt.ColorReplacementImageFilter;
 import se.kth.speech.coin.tangrams.content.ImageSize;

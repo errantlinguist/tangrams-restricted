@@ -22,6 +22,7 @@ import java.util.function.BiFunction;
 
 import se.kth.speech.MutablePair;
 import se.kth.speech.SpatialMap;
+import se.kth.speech.SpatialMatrix;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>

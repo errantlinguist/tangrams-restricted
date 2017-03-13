@@ -14,7 +14,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech.coin.tangrams.view;
+package se.kth.speech;
 
 import java.util.List;
 import java.util.ListIterator;
@@ -24,21 +24,19 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import se.kth.speech.Matrix;
-import se.kth.speech.SpatialMap;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
  * @since 10 Mar 2017
  *
  */
-final class SpatialMatrix<T> {
+public final class SpatialMatrix<T> {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SpatialMatrix.class);
 
 	private final Matrix<T> posMatrix;
 
-	SpatialMatrix(final Matrix<T> posMatrix) {
+	public SpatialMatrix(final Matrix<T> posMatrix) {
 		this.posMatrix = posMatrix;
 	}
 
@@ -49,7 +47,7 @@ final class SpatialMatrix<T> {
 		return posMatrix.getDimensions();
 	}
 
-	Stream<T> getCells(final SpatialMap.Region region) {
+	public Stream<T> getCells(final SpatialMap.Region region) {
 		final Stream.Builder<T> resultBuilder = Stream.builder();
 		final ListIterator<List<T>> rowIter = posMatrix.rowIterator(region.getXLowerBound());
 		for (int rowIdx = rowIter.nextIndex(); rowIdx < region.getXUpperBound(); rowIdx++) {
@@ -64,7 +62,7 @@ final class SpatialMatrix<T> {
 	}
 	
 	// TODO: Finish
-//	void checkNext(final SpatialMap.Region region){
+//	public void checkNext(final SpatialMap.Region region){
 //		final ListIterator<List<T>> rowIter = posMatrix.rowIterator();
 //		final int contiguousRowCount = region.getXUpperBound();
 //		final int contiguousColCount = region.getYUpperBound();
@@ -94,11 +92,11 @@ final class SpatialMatrix<T> {
 	/**
 	 * @return the posMatrix
 	 */
-	Matrix<T> getPosMatrix() {
+	public Matrix<T> getPosMatrix() {
 		return posMatrix;
 	}
 
-	void setPositionValues(final SpatialMap.Region region, final T pieceId) {
+	public void setPositionValues(final SpatialMap.Region region, final T pieceId) {
 		LOGGER.debug("Setting {} to value \"{}\".", region, pieceId);
 		final ListIterator<List<T>> rowIter = posMatrix.rowIterator(region.getXLowerBound());
 		for (int rowIdx = rowIter.nextIndex(); rowIdx < region.getXUpperBound(); rowIdx++) {
@@ -111,7 +109,7 @@ final class SpatialMatrix<T> {
 		}
 	}
 
-	boolean testCells(final SpatialMap.Region region, final Predicate<? super T> cellPredicate) {
+	public boolean testCells(final SpatialMap.Region region, final Predicate<? super T> cellPredicate) {
 		boolean result = true;
 		LOGGER.debug("Checking {}.", region);
 		final ListIterator<List<T>> rowIter = posMatrix.rowIterator(region.getXLowerBound());

@@ -35,6 +35,7 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.Maps;
 
 import se.kth.speech.SpatialMap;
+import se.kth.speech.SpatialMatrix;
 import se.kth.speech.SpatialMap.Region;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 
