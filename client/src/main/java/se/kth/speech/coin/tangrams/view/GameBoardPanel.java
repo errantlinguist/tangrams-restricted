@@ -350,11 +350,6 @@ final class GameBoardPanel extends JPanel {
 		}
 	}
 
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see java.awt.Canvas#paint(java.awt.Graphics)
-	 */
 	@Override
 	public void paintComponent(final Graphics g) {
 		// Draw a grid (for debugging/devel)
