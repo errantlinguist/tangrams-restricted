@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.NoSuchElementException;
+import java.util.stream.Stream;
 
 /**
  * <strong>NOTE:</strong> This class is generic in order to emphasize the fact
@@ -219,6 +220,21 @@ public final class Matrix<T> {
 
 	public List<T> getValues() {
 		return values;
+	}
+
+	public Stream<T> getValues(final int xLowerBound, final int xUpperBound, final int yLowerBound,
+			final int yUpperBound) {
+		final Stream.Builder<T> resultBuilder = Stream.builder();
+		final ListIterator<List<T>> rowIter = rowIterator(xLowerBound);
+		for (int rowIdx = rowIter.nextIndex(); rowIdx < xUpperBound; rowIdx++) {
+			final List<T> row = rowIter.next();
+			final ListIterator<T> rowCellIter = row.listIterator(yLowerBound);
+			for (int colIdx = rowCellIter.nextIndex(); colIdx < yUpperBound; colIdx++) {
+				final T cellValue = rowCellIter.next();
+				resultBuilder.accept(cellValue);
+			}
+		}
+		return resultBuilder.build();
 	}
 
 	/*

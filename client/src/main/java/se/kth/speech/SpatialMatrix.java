@@ -48,17 +48,7 @@ public final class SpatialMatrix<T> {
 	}
 
 	public Stream<T> getCells(final SpatialMap.Region region) {
-		final Stream.Builder<T> resultBuilder = Stream.builder();
-		final ListIterator<List<T>> rowIter = posMatrix.rowIterator(region.getXLowerBound());
-		for (int rowIdx = rowIter.nextIndex(); rowIdx < region.getXUpperBound(); rowIdx++) {
-			final List<T> row = rowIter.next();
-			final ListIterator<T> rowCellIter = row.listIterator(region.getYLowerBound());
-			for (int colIdx = rowCellIter.nextIndex(); colIdx < region.getYUpperBound(); colIdx++) {
-				final T cellValue = rowCellIter.next();
-				resultBuilder.accept(cellValue);
-			}
-		}
-		return resultBuilder.build();
+		return posMatrix.getValues(region.getXLowerBound(), region.getXUpperBound(), region.getYLowerBound(), region.getYUpperBound());
 	}
 	
 	// TODO: Finish
