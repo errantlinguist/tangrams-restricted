@@ -343,7 +343,7 @@ public final class SpatialMap<E> {
 	 * @return
 	 */
 	public boolean isOccupied(final Region region) {
-		return regionElements.keys().stream().anyMatch(elementRegion -> elementRegion.intersects(region));
+		return regionElements.keySet().stream().anyMatch(elementRegion -> elementRegion.intersects(region));
 	}
 
 	public void put(final E element, final Region region) {
