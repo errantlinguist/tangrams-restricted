@@ -29,8 +29,10 @@ import java.awt.image.FilteredImageSource;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -227,37 +229,6 @@ final class GameBoardPanel extends JPanel {
 		return result;
 	}
 
-	private static Map<SpatialMap.Region, Set<SpatialMap.Region>> createValidMoveMap(final Matrix<?> posMatrix,
-			final Multimap<SpatialMap.Region, ImageViewInfo> regionElements) {
-		final Map<SpatialMap.Region, Set<SpatialMap.Region>> result = Maps
-				.newHashMapWithExpectedSize(regionElements.size());
-		final int[] matrixDims = posMatrix.getDimensions();
-
-		for (final SpatialMap.Region occupiedRegion : regionElements.keySet()) {
-			final Set<SpatialMap.Region> possibleMoveRegions = result.computeIfAbsent(occupiedRegion, r -> {
-				final int occupiedRegionArea = occupiedRegion.getLengthX() * occupiedRegion.getLengthY();
-				return Sets.newHashSetWithExpectedSize(posMatrix.getValues().size() / occupiedRegionArea);
-			});
-			final int maxXLowerBound = matrixDims[0] - occupiedRegion.getLengthX();
-			final int maxYLowerBound = matrixDims[1] - occupiedRegion.getLengthY();
-			for (int xLowerBound = 0; xLowerBound < maxXLowerBound; xLowerBound++) {
-				final int xUpperBound = xLowerBound + occupiedRegion.getLengthX();
-				for (int yLowerBound = 0; yLowerBound < maxYLowerBound; yLowerBound++) {
-					final int yUpperBound = yLowerBound + occupiedRegion.getLengthY();
-					final Stream<?> possibleMoveRegionValues = posMatrix.getValues(xLowerBound, xUpperBound,
-							yLowerBound, yUpperBound);
-					if (possibleMoveRegionValues.allMatch(Objects::isNull)) {
-						final SpatialMap.Region possibleMoveRegion = new SpatialMap.Region(xLowerBound, xUpperBound,
-								yLowerBound, yUpperBound);
-						possibleMoveRegions.add(possibleMoveRegion);
-					}
-				}
-
-			}
-		}
-		return result;
-	}
-
 	private static boolean isDimensionDivisibleIntoGrid(final Dimension dim, final Matrix<?> matrix) {
 		final int[] matrixDims = matrix.getDimensions();
 		return dim.getHeight() % matrixDims[0] == 0 && dim.getWidth() % matrixDims[1] == 0;
@@ -313,11 +284,13 @@ final class GameBoardPanel extends JPanel {
 
 	private final Map<ImageViewInfo, Image> pieceImgs;
 
-	private final SpatialMap<ImageViewInfo> piecePlacements;
+	private transient final SpatialMap<ImageViewInfo> piecePlacements;
 
 	private final SpatialMatrix<Integer> posMatrix;
 
 	private final BiFunction<? super Image, ? super GameBoardPanel, ? extends Image> postColoringImgTransformer;
+
+	private final Map<SpatialMap.Region, List<SpatialMap.Region>> validMoves;
 
 	// TODO: Finish
 	// private final Function<? super ImageViewInfo, int[]>
@@ -331,11 +304,11 @@ final class GameBoardPanel extends JPanel {
 	// }
 	//
 
-	private final Map<SpatialMap.Region, Set<SpatialMap.Region>> validMoves;
-
 	private final Map<ImageViewInfo, Integer> pieceIds;
 
 	private final Function<? super ImageViewInfo, int[]> piecePosMatrixSizeFactory;
+
+	private transient final Function<SpatialMap.Region, List<SpatialMap.Region>> newRegionPossibleMoveSetFactory;
 
 	GameBoardPanel(final Collection<ImageVisualizationInfo> imgVisualizationInfoData, final Random rnd,
 			final int maxImgPlacements, final int maxPlacementRetriesPerImg, final boolean allowFailedPlacements) {
@@ -388,6 +361,10 @@ final class GameBoardPanel extends JPanel {
 									Arrays.toString(backingPosMatrix.getDimensions())));
 				}
 				posMatrix = new SpatialMatrix<>(backingPosMatrix);
+				newRegionPossibleMoveSetFactory = region -> {
+					final int occupiedRegionArea = region.getLengthX() * region.getLengthY();
+					return new ArrayList<>(posMatrix.getPosMatrix().getValues().size() / occupiedRegionArea);
+				};
 				piecePlacements = matrixFiller.apply(posMatrix, pieceImgs.keySet());
 				validMoves = createValidMoveMap(backingPosMatrix, piecePlacements.getMinimalRegionElements());
 				// Finished with creating necessary data structures
@@ -461,7 +438,7 @@ final class GameBoardPanel extends JPanel {
 			throw new IllegalArgumentException("One or more images failed validation:" + System.lineSeparator()
 					+ createImageInfoTable(badImgs.entrySet()));
 		}
-	};
+	}
 
 	private Stream<Entry<Image, ImageViewInfo>> createImageViewInfoStream(
 			final Stream<ImageVisualizationInfo> imgVisualizationInfoData, final SizeValidator validator) {
@@ -499,6 +476,35 @@ final class GameBoardPanel extends JPanel {
 
 			return singleResult;
 		});
+	};
+
+	private Map<SpatialMap.Region, List<SpatialMap.Region>> createValidMoveMap(final Matrix<?> posMatrix,
+			final Multimap<SpatialMap.Region, ImageViewInfo> regionElements) {
+		final Map<SpatialMap.Region, List<SpatialMap.Region>> result = Maps
+				.newHashMapWithExpectedSize(regionElements.size());
+		final int[] matrixDims = posMatrix.getDimensions();
+
+		for (final SpatialMap.Region occupiedRegion : regionElements.keySet()) {
+			final List<SpatialMap.Region> possibleMoveRegions = result.computeIfAbsent(occupiedRegion,
+					newRegionPossibleMoveSetFactory);
+			final int maxXLowerBound = matrixDims[0] - occupiedRegion.getLengthX();
+			final int maxYLowerBound = matrixDims[1] - occupiedRegion.getLengthY();
+			for (int xLowerBound = 0; xLowerBound < maxXLowerBound; xLowerBound++) {
+				final int xUpperBound = xLowerBound + occupiedRegion.getLengthX();
+				for (int yLowerBound = 0; yLowerBound < maxYLowerBound; yLowerBound++) {
+					final int yUpperBound = yLowerBound + occupiedRegion.getLengthY();
+					final Stream<?> possibleMoveRegionValues = posMatrix.getValues(xLowerBound, xUpperBound,
+							yLowerBound, yUpperBound);
+					if (possibleMoveRegionValues.allMatch(Objects::isNull)) {
+						final SpatialMap.Region possibleMoveRegion = new SpatialMap.Region(xLowerBound, xUpperBound,
+								yLowerBound, yUpperBound);
+						possibleMoveRegions.add(possibleMoveRegion);
+					}
+				}
+
+			}
+		}
+		return result;
 	}
 
 	private void drawGrid(final Graphics g) {
@@ -598,40 +604,39 @@ final class GameBoardPanel extends JPanel {
 		return getHeight() / matrixDims[0];
 	}
 
-	private Entry<SpatialMap.Region, SpatialMap.Region> moveRandomPiece(final Random rnd) {
-		final RandomMatrixPiecePlacer<Integer> piecePlacer = new RandomMatrixPiecePlacer<>(posMatrix, rnd,
-				piecePlacements, piecePosMatrixSizeFactory);
+	private synchronized Entry<SpatialMap.Region, Map<Integer, SpatialMap.Region>> moveRandomPiece(final Random rnd) {
 		// TODO: Change probability of a piece being selected for moving based
 		// on if it was moved before: E.g. cannot move a given piece more than
 		// twice in a row
 		final SpatialMap.Region occupiedRegion = RandomCollections.getRandomElement(piecePlacements.getMinimalRegions(),
 				rnd);
-		Entry<SpatialMap.Region, Boolean> lastSuccessfulPlacementResult = null;
-		do {
-			final Iterator<ImageViewInfo> pieceIter = piecePlacements.getMinimalRegionElements().get(occupiedRegion)
-					.iterator();
+		final Map<Integer, SpatialMap.Region> newPositions;
+		final List<SpatialMap.Region> possibleMoves = validMoves.computeIfAbsent(occupiedRegion,
+				newRegionPossibleMoveSetFactory);
+		if (possibleMoves.isEmpty()) {
+			newPositions = Collections.emptyMap();
+		} else {
+			// Change the order of the possible moves in order to keep the
+			// movements from being predictable
+			Collections.shuffle(possibleMoves, rnd);
+			final Collection<ImageViewInfo> pieces = piecePlacements.getMinimalRegionElements().get(occupiedRegion);
+			final Iterator<ImageViewInfo> pieceIter = pieces.iterator();
 			// NOTE: The iterator should only have one element here
-			regionPieceMovement: while (pieceIter.hasNext()) {
+			newPositions = Maps.newHashMapWithExpectedSize(pieces.size());
+			while (pieceIter.hasNext()) {
 				final ImageViewInfo piece = pieceIter.next();
 				final Integer pieceId = pieceIds.get(piece);
-				LOGGER.info("Trying to move piece \"{}\" to a random location.", pieceId);
-				final Entry<SpatialMap.Region, Boolean> placementResult = piecePlacer.apply(piece, pieceId);
-				if (placementResult.getValue()) {
-					lastSuccessfulPlacementResult = placementResult;
-					LOGGER.debug(
-							"Successfully placed piece \"{}\"; Setting its previous region to point to a null element.",
-							pieceId);
-					posMatrix.setPositionValues(occupiedRegion, null);
-					pieceIter.remove();
-				} else {
-					lastSuccessfulPlacementResult = null;
-					LOGGER.info("Couldn't place piece \"{}\".", pieceId);
-					break regionPieceMovement;
-				}
+				LOGGER.info("Moving piece \"{}\" to a random location.", pieceId);
+				// FIXME: THe system is not detecting occupied areas correctly
+				final SpatialMap.Region moveTarget = RandomCollections.getRandomElement(possibleMoves, rnd);
+				posMatrix.setPositionValues(moveTarget, pieceId);
+				piecePlacements.put(piece, moveTarget);
+				posMatrix.setPositionValues(occupiedRegion, null);
+				newPositions.put(pieceId, moveTarget);
+				pieceIter.remove();
 			}
-		} while (lastSuccessfulPlacementResult == null);
-
-		return new MutablePair<>(occupiedRegion, lastSuccessfulPlacementResult.getKey());
+		}
+		return new MutablePair<>(occupiedRegion, newPositions);
 	}
 
 	private void scaleImage(final Image img, final ImageViewInfo viewInfo, final SpatialMap.Region occupiedGridRegion) {
@@ -657,7 +662,7 @@ final class GameBoardPanel extends JPanel {
 	void notifyContinue(final Random rnd) {
 		LOGGER.debug("Notified of continue event.");
 		LOGGER.info("Moving random piece.");
-		final Entry<SpatialMap.Region, SpatialMap.Region> newPlace = moveRandomPiece(rnd);
+		final Entry<Region, Map<Integer, Region>> newPlace = moveRandomPiece(rnd);
 		LOGGER.info("Finished randomly moving piece(s) at {} to {}.", newPlace.getKey(), newPlace.getValue());
 		repaint();
 		// TODO Auto-generated method stub
