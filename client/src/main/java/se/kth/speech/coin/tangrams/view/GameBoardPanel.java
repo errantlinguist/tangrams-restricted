@@ -366,7 +366,7 @@ final class GameBoardPanel extends JPanel {
 					return new ArrayList<>(posMatrix.getPosMatrix().getValues().size() / occupiedRegionArea);
 				};
 				piecePlacements = matrixFiller.apply(posMatrix, pieceImgs.keySet());
-				validMoves = createValidMoveMap(backingPosMatrix, piecePlacements.getMinimalRegionElements());
+				validMoves = createValidMoveMap(backingPosMatrix, piecePlacements.getMinimalRegionElements().keySet());
 				// Finished with creating necessary data structures
 				System.out.println("IMAGE PLACEMENTS");
 				System.out.println(createMatrixReprString(backingPosMatrix));
@@ -479,12 +479,12 @@ final class GameBoardPanel extends JPanel {
 	};
 
 	private Map<SpatialMap.Region, List<SpatialMap.Region>> createValidMoveMap(final Matrix<?> posMatrix,
-			final Multimap<SpatialMap.Region, ImageViewInfo> regionElements) {
+			final Collection<SpatialMap.Region> regionElements) {
 		final Map<SpatialMap.Region, List<SpatialMap.Region>> result = Maps
 				.newHashMapWithExpectedSize(regionElements.size());
 		final int[] matrixDims = posMatrix.getDimensions();
 
-		for (final SpatialMap.Region occupiedRegion : regionElements.keySet()) {
+		for (final SpatialMap.Region occupiedRegion : regionElements) {
 			final List<SpatialMap.Region> possibleMoveRegions = result.computeIfAbsent(occupiedRegion,
 					newRegionPossibleMoveSetFactory);
 			final int maxXLowerBound = matrixDims[0] - occupiedRegion.getLengthX();
