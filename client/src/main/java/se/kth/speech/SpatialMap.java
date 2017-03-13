@@ -210,14 +210,15 @@ public final class SpatialMap<E> {
 		@Override
 		public String toString() {
 			final StringBuilder builder = new StringBuilder();
-			builder.append("Region [xLowerBound=");
+			builder.append("Region [x=[");
 			builder.append(xLowerBound);
-			builder.append(", xUpperBound=");
+			builder.append(", ");
 			builder.append(xUpperBound);
-			builder.append(", yLowerBound=");
+			builder.append("], y=[");
 			builder.append(yLowerBound);
-			builder.append(", yUpperBound=");
+			builder.append(", ");
 			builder.append(yUpperBound);
+			builder.append("]");
 			builder.append("]");
 			return builder.toString();
 		}
