@@ -632,6 +632,7 @@ final class GameBoardPanel extends JPanel {
 				final Integer pieceId = pieceIds.get(piece);
 				LOGGER.info("Moving piece \"{}\" to a random location.", pieceId);
 				// FIXME: THe system is not detecting occupied areas correctly
+				// FIXME: Update map of occupied regions
 				final SpatialMap.Region moveTarget = RandomCollections.getRandomElement(possibleMoves, rnd);
 				posMatrix.setPositionValues(moveTarget, pieceId);
 				piecePlacements.put(piece, moveTarget);
