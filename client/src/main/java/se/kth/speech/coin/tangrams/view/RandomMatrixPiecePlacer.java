@@ -35,7 +35,7 @@ final class RandomMatrixPiecePlacer<I> implements BiFunction<ImageViewInfo, I, E
 
 	private final Matrix<? super I> posMatrix;
 
-	private final RandomImageMatrixSpatialRegionFactory regionFactory;
+	private final BiFunction<? super ImageViewInfo, ? super Random, ? extends SpatialMap.Region> regionFactory;
 
 	private final Random rnd;
 
