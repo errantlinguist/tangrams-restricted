@@ -479,7 +479,7 @@ final class GameBoardPanel extends JPanel {
 	};
 
 	private Map<SpatialMap.Region, List<SpatialMap.Region>> createValidMoveMap(final Matrix<?> posMatrix,
-			final Collection<SpatialMap.Region> regionElements) {
+			final Set<SpatialMap.Region> regionElements) {
 		final Map<SpatialMap.Region, List<SpatialMap.Region>> result = Maps
 				.newHashMapWithExpectedSize(regionElements.size());
 		final int[] matrixDims = posMatrix.getDimensions();
