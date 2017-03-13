@@ -24,6 +24,7 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.Stroke;
+import java.awt.Toolkit;
 import java.awt.image.BufferedImage;
 import java.awt.image.FilteredImageSource;
 import java.io.IOException;
@@ -267,10 +268,6 @@ final class GameBoardPanel extends Canvas {
 
 	private final BiFunction<? super Image, ? super GameBoardPanel, ? extends Image> postColoringImgTransformer;
 
-	private final BiFunction<BufferedImage, ImageVisualizationInfo, ? extends Image> imgColorFilterer = (img,
-			imgVisualizationInfoDatum) -> getToolkit().createImage(new FilteredImageSource(img.getSource(),
-					new ColorReplacementImageFilter(imgVisualizationInfoDatum.getColor())));
-
 	GameBoardPanel(final Collection<ImageVisualizationInfo> imgVisualizationInfoData, final Random rnd,
 			final int maxImgPlacements, final int maxPlacementRetriesPerImg, final boolean allowFailedPlacements) {
 		this(imgVisualizationInfoData, rnd, maxImgPlacements, maxPlacementRetriesPerImg, allowFailedPlacements,
@@ -360,6 +357,7 @@ final class GameBoardPanel extends Canvas {
 
 		final Map<URL, Entry<ImageViewInfo.RasterizationInfo, Set<SizeValidator.ValidationComment>>> badImgs = Maps
 				.newHashMapWithExpectedSize(0);
+		final Toolkit toolkit = getToolkit();
 		for (final ImageVisualizationInfo imgVisualizationInfoDatum : imgVisualizationInfoData) {
 			final URL imgResourceLoc = imgVisualizationInfoDatum.getResourceLoc();
 			final BufferedImage initialImg = ImageIO.read(imgResourceLoc);
@@ -375,7 +373,8 @@ final class GameBoardPanel extends Canvas {
 							widthGetter.getAsInt(), heightGetter.getAsInt(),
 							MathDenominators.gcd(widthGetter.getAsInt(), heightGetter.getAsInt()));
 					if (validationComments.isEmpty()) {
-						final Image coloredImg = imgColorFilterer.apply(initialImg, imgVisualizationInfoDatum);
+						final Image coloredImg = toolkit.createImage(new FilteredImageSource(initialImg.getSource(),
+								new ColorReplacementImageFilter(imgVisualizationInfoDatum.getColor())));
 						final ImageViewInfo imgInfo = new ImageViewInfo(imgVisualizationInfoDatum,
 								imgRasterizationInfo);
 						final Image transformedImg = postColoringImgTransformer.apply(coloredImg, this);
