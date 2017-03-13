@@ -35,8 +35,8 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.Maps;
 
 import se.kth.speech.SpatialMap;
-import se.kth.speech.SpatialMatrix;
 import se.kth.speech.SpatialMap.Region;
+import se.kth.speech.SpatialMatrix;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 
 /**
@@ -44,10 +44,10 @@ import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
  * @since 9 Mar 2017
  *
  */
-final class RandomImagePositionMatrixFiller<I> implements
+final class RandomMatrixImagePositionFiller<I> implements
 		BiFunction<SpatialMatrix<? super I>, Collection<? extends ImageViewInfo>, SpatialMap<ImageViewInfo>> {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(RandomImagePositionMatrixFiller.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(RandomMatrixImagePositionFiller.class);
 
 	private final boolean allowFailedPlacements;
 
@@ -69,20 +69,25 @@ final class RandomImagePositionMatrixFiller<I> implements
 
 	private final Random rnd;
 
-	RandomImagePositionMatrixFiller(final Function<? super ImageViewInfo, I> pieceIdGetter, final Random rnd,
-			final int maxPlacements, final int maxPlacementRetriesPerImg, final boolean allowFailedPlacements) {
+	private final Function<? super ImageViewInfo, int[]> piecePosMatrixSizeFactory;
+
+	RandomMatrixImagePositionFiller(final Function<? super ImageViewInfo, I> pieceIdGetter, final Random rnd,
+			final int maxPlacements, final int maxPlacementRetriesPerImg, final boolean allowFailedPlacements,
+			final Function<? super ImageViewInfo, int[]> piecePosMatrixSizeFactory) {
 		this.pieceIdGetter = pieceIdGetter;
 		this.rnd = rnd;
 		this.maxPlacements = maxPlacements;
 		this.maxPlacementRetriesPerImg = maxPlacementRetriesPerImg;
 		this.allowFailedPlacements = allowFailedPlacements;
+		this.piecePosMatrixSizeFactory = piecePosMatrixSizeFactory;
 	}
 
 	@Override
 	public SpatialMap<ImageViewInfo> apply(final SpatialMatrix<? super I> posMatrix,
 			final Collection<? extends ImageViewInfo> imgViewInfoData) {
 		final SpatialMap<ImageViewInfo> result = new SpatialMap<>(imgViewInfoData.size());
-		final RandomMatrixPiecePlacer<? super I> piecePlacer = new RandomMatrixPiecePlacer<>(posMatrix, rnd, result);
+		final RandomMatrixPiecePlacer<? super I> piecePlacer = new RandomMatrixPiecePlacer<>(posMatrix, rnd, result,
+				piecePosMatrixSizeFactory);
 		final Queue<ImageMatrixPositionInfo<I>> retryStack = new ArrayDeque<>();
 		int placementCount = 0;
 
