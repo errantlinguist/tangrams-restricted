@@ -58,7 +58,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Maps;
-import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
 import se.kth.speech.MathDenominators;
@@ -499,6 +498,11 @@ final class GameBoardPanel extends JPanel {
 						final SpatialMap.Region possibleMoveRegion = new SpatialMap.Region(xLowerBound, xUpperBound,
 								yLowerBound, yUpperBound);
 						possibleMoveRegions.add(possibleMoveRegion);
+					} else {
+						if (LOGGER.isDebugEnabled()) {
+							LOGGER.debug("Found occupied space at {}.",
+									Arrays.toString(new int[] { xLowerBound, xUpperBound, yLowerBound, yUpperBound }));
+						}
 					}
 				}
 
