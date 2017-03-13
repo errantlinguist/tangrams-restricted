@@ -600,7 +600,7 @@ final class GameBoardPanel extends JPanel {
 
 	private Entry<SpatialMap.Region, SpatialMap.Region> moveRandomPiece(final Random rnd) {
 		final RandomMatrixPiecePlacer<Integer> piecePlacer = new RandomMatrixPiecePlacer<>(posMatrix, rnd,
-				piecePlacements);
+				piecePlacements, piecePosMatrixSizeFactory);
 		// TODO: Change probability of a piece being selected for moving based
 		// on if it was moved before: E.g. cannot move a given piece more than
 		// twice in a row
