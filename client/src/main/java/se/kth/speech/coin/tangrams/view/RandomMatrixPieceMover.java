@@ -25,9 +25,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import se.kth.speech.Matrix;
+import se.kth.speech.MutablePair;
 import se.kth.speech.RandomCollections;
 import se.kth.speech.SpatialMap;
-import se.kth.speech.SpatialMap.Region;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -51,12 +51,13 @@ final class RandomMatrixPieceMover<I> {
 		this.pieceIdGetter = pieceIdGetter;
 	}
 
-	public Entry<SpatialMap.Region, Boolean> apply(final Random rnd) {
+	public Entry<SpatialMap.Region, SpatialMap.Region> apply(final Random rnd) {
 		final RandomMatrixPiecePlacer<I> piecePlacer = new RandomMatrixPiecePlacer<>(posMatrix, rnd, piecePlacements);
 		// TODO: Change probability of a piece being selected for moving based
 		// on if it was moved before: E.g. cannot move a given piece more than
 		// twice in a row
-		final Region occupiedRegion = RandomCollections.getRandomElement(piecePlacements.getMinimalRegions(), rnd);
+		final SpatialMap.Region occupiedRegion = RandomCollections.getRandomElement(piecePlacements.getMinimalRegions(),
+				rnd);
 		final Collection<ImageViewInfo> pieces = piecePlacements.getMinimalRegionElements().get(occupiedRegion);
 		Entry<SpatialMap.Region, Boolean> lastSuccessfulPlacementResult = null;
 		do {
@@ -74,6 +75,6 @@ final class RandomMatrixPieceMover<I> {
 			}
 		} while (lastSuccessfulPlacementResult == null);
 
-		return lastSuccessfulPlacementResult;
+		return new MutablePair<>(occupiedRegion, lastSuccessfulPlacementResult.getKey());
 	}
 }

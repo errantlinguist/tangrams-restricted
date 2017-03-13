@@ -41,6 +41,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.IntSupplier;
 import java.util.stream.Stream;
@@ -115,6 +116,17 @@ final class GameBoardPanel extends Canvas {
 	 *
 	 */
 	private static final long serialVersionUID = 6258829324465894025L;
+
+	private static final BiFunction<Image, GameBoardPanel, Image> DEFAULT_POST_COLORING_IMG_TRANSFORMER = new BiFunction<Image, GameBoardPanel, Image>() {
+
+		@Override
+		public Image apply(final Image img, final GameBoardPanel gameBoardPanel) {
+			// Do nothing
+			LOGGER.debug("Created instance {} for {}.", img, gameBoardPanel);
+			return img;
+		}
+
+	};
 
 	private static void appendRowTableRepr(final Iterator<?> rowCellIter, final StringBuilder sb) {
 		final String nullValRepr = "-";
@@ -253,8 +265,22 @@ final class GameBoardPanel extends Canvas {
 
 	private final Map<ImageViewInfo, Image> pieceImgs;
 
-	GameBoardPanel(final Collection<ImageVisualizationInfo> imgVisualizationInfoData, final Random rnd, final int maxImgPlacements,
-			final int maxPlacementRetriesPerImg, final boolean allowFailedPlacements) {
+	private final BiFunction<? super Image, ? super GameBoardPanel, ? extends Image> postColoringImgTransformer;
+
+	private final BiFunction<BufferedImage, ImageVisualizationInfo, ? extends Image> imgColorFilterer = (img,
+			imgVisualizationInfoDatum) -> getToolkit().createImage(new FilteredImageSource(img.getSource(),
+					new ColorReplacementImageFilter(imgVisualizationInfoDatum.getColor())));
+
+	GameBoardPanel(final Collection<ImageVisualizationInfo> imgVisualizationInfoData, final Random rnd,
+			final int maxImgPlacements, final int maxPlacementRetriesPerImg, final boolean allowFailedPlacements) {
+		this(imgVisualizationInfoData, rnd, maxImgPlacements, maxPlacementRetriesPerImg, allowFailedPlacements,
+				DEFAULT_POST_COLORING_IMG_TRANSFORMER);
+	}
+
+	GameBoardPanel(final Collection<ImageVisualizationInfo> imgVisualizationInfoData, final Random rnd,
+			final int maxImgPlacements, final int maxPlacementRetriesPerImg, final boolean allowFailedPlacements,
+			final BiFunction<? super Image, ? super GameBoardPanel, ? extends Image> postColoringImgTransformer) {
+		this.postColoringImgTransformer = postColoringImgTransformer;
 		final Map<ImageViewInfo, Integer> pieceIds = Maps.newHashMapWithExpectedSize(maxImgPlacements * 2);
 		final Function<ImageViewInfo, Integer> incrementingPieceIdGetter = piece -> pieceIds.computeIfAbsent(piece,
 				k -> pieceIds.size());
@@ -322,7 +348,7 @@ final class GameBoardPanel extends Canvas {
 
 		drawPieceImages(g);
 
-	}
+	};
 
 	private LinkedHashMap<ImageViewInfo, Image> createImageViewInfoMap(
 			final Collection<ImageVisualizationInfo> imgVisualizationInfoData, final SizeValidator validator)
@@ -343,19 +369,18 @@ final class GameBoardPanel extends Canvas {
 				// Size/aspect ratio calculation
 				final ImageViewInfo.RasterizationInfo imgRasterizationInfo = new ImageViewInfo.RasterizationInfo(
 						widthGetter, heightGetter);
-				final Image coloredImg = getToolkit().createImage(new FilteredImageSource(initialImg.getSource(),
-						new ColorReplacementImageFilter(imgVisualizationInfoDatum.getColor())));
 				{
 					// Validate image
 					final Set<SizeValidator.ValidationComment> validationComments = validator.validate(
 							widthGetter.getAsInt(), heightGetter.getAsInt(),
 							MathDenominators.gcd(widthGetter.getAsInt(), heightGetter.getAsInt()));
 					if (validationComments.isEmpty()) {
+						final Image coloredImg = imgColorFilterer.apply(initialImg, imgVisualizationInfoDatum);
 						final ImageViewInfo imgInfo = new ImageViewInfo(imgVisualizationInfoDatum,
 								imgRasterizationInfo);
-						if (result.put(imgInfo, coloredImg) != null) {
-							throw new AssertionError(String.format("Key already found in map: %s", imgInfo));
-						}
+						final Image transformedImg = postColoringImgTransformer.apply(coloredImg, this);
+						final Image oldImg = result.put(imgInfo, transformedImg);
+						assert oldImg == null : String.format("Key already found in map: %s", imgInfo);
 					} else {
 						badImgs.put(imgResourceLoc, new MutablePair<>(imgRasterizationInfo, validationComments));
 					}
@@ -527,8 +552,9 @@ final class GameBoardPanel extends Canvas {
 	void notifyContinue(final Random rnd) {
 		LOGGER.debug("Notified of continue event.");
 		LOGGER.info("Moving random piece.");
-		pieceMover.apply(rnd);
-		LOGGER.info("Finished moving random piece.");
+		final Entry<SpatialMap.Region, SpatialMap.Region> newPlace = pieceMover.apply(rnd);
+		LOGGER.info("Finished moving random piece(s) at {} to {}.", newPlace.getKey(), newPlace.getValue());
+		repaint();
 		// TODO Auto-generated method stub
 
 	}

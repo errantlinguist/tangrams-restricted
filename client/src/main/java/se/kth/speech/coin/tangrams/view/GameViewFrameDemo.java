@@ -17,6 +17,7 @@
 package se.kth.speech.coin.tangrams.view;
 
 import java.awt.EventQueue;
+import java.awt.image.FilteredImageSource;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
@@ -34,6 +35,7 @@ import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import se.kth.speech.awt.OpaqueTransparencyReplacementImageFilter;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 import se.kth.speech.coin.tangrams.content.RandomPieceImageDataFactory;
 
@@ -197,8 +199,10 @@ public final class GameViewFrameDemo implements Runnable {
 		final RandomPieceImageDataFactory imgDataFactory = new RandomPieceImageDataFactory();
 		final List<ImageVisualizationInfo> imgVisualizationInfoData = imgDataFactory.apply(rnd)
 				.collect(Collectors.toList());
+		OpaqueTransparencyReplacementImageFilter imgTranformer = new OpaqueTransparencyReplacementImageFilter(128);
 		final GameBoardPanel gameBoardPanel = new GameBoardPanel(imgVisualizationInfoData, rnd, imgPlacementCount,
-				maxPlacementRetriesPerImg, allowFailedPlacements);
+				maxPlacementRetriesPerImg, allowFailedPlacements, (img,
+						panel )-> panel.getToolkit().createImage(new FilteredImageSource(img.getSource(), imgTranformer)));
 		final GameViewFrame frame = new GameViewFrame(gameBoardPanel, rnd);
 		frame.pack();
 		frame.setLocationByPlatform(true);
