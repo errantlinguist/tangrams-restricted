@@ -16,7 +16,7 @@
 */
 package se.kth.speech.coin.tangrams.view;
 
-import java.util.Collection;
+import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.Random;
 import java.util.function.Function;
@@ -58,18 +58,23 @@ final class RandomMatrixPieceMover<I> {
 		// twice in a row
 		final SpatialMap.Region occupiedRegion = RandomCollections.getRandomElement(piecePlacements.getMinimalRegions(),
 				rnd);
-		final Collection<ImageViewInfo> pieces = piecePlacements.getMinimalRegionElements().get(occupiedRegion);
 		Entry<SpatialMap.Region, Boolean> lastSuccessfulPlacementResult = null;
 		do {
-			// NOTE: The collection should only have one element here
-			regionPieceMovement: for (final ImageViewInfo piece : pieces) {
+			final Iterator<ImageViewInfo> pieceIter = piecePlacements.getMinimalRegionElements().get(occupiedRegion)
+					.iterator();
+			// NOTE: The iterator should only have one element here
+			regionPieceMovement: while (pieceIter.hasNext()) {
+				final ImageViewInfo piece = pieceIter.next();
 				final I pieceId = pieceIdGetter.apply(piece);
 				LOGGER.info("Trying to move piece \"{}\" to a random location.", pieceId);
 				final Entry<SpatialMap.Region, Boolean> placementResult = piecePlacer.apply(piece, pieceId);
 				if (placementResult.getValue()) {
 					lastSuccessfulPlacementResult = placementResult;
-					LOGGER.debug("Successfully placed piece \"{}\"; Setting its previous region to point to a null element.", pieceId);
+					LOGGER.debug(
+							"Successfully placed piece \"{}\"; Setting its previous region to point to a null element.",
+							pieceId);
 					MatrixSpaces.setMatrixPositionValues(posMatrix, occupiedRegion, null);
+					pieceIter.remove();
 				} else {
 					lastSuccessfulPlacementResult = null;
 					LOGGER.info("Couldn't place piece \"{}\".", pieceId);
