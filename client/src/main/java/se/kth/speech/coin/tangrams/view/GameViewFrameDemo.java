@@ -199,10 +199,11 @@ public final class GameViewFrameDemo implements Runnable {
 		final RandomPieceImageDataFactory imgDataFactory = new RandomPieceImageDataFactory();
 		final List<ImageVisualizationInfo> imgVisualizationInfoData = imgDataFactory.apply(rnd)
 				.collect(Collectors.toList());
-		OpaqueTransparencyReplacementImageFilter imgTranformer = new OpaqueTransparencyReplacementImageFilter(128);
+		final OpaqueTransparencyReplacementImageFilter imgTranformer = new OpaqueTransparencyReplacementImageFilter(
+				128);
 		final GameBoardPanel gameBoardPanel = new GameBoardPanel(imgVisualizationInfoData, rnd, imgPlacementCount,
-				maxPlacementRetriesPerImg, allowFailedPlacements, (img,
-						panel )-> panel.getToolkit().createImage(new FilteredImageSource(img.getSource(), imgTranformer)));
+				maxPlacementRetriesPerImg, allowFailedPlacements, (img, panel) -> panel.getToolkit()
+						.createImage(new FilteredImageSource(img.getSource(), imgTranformer)));
 		final GameViewFrame frame = new GameViewFrame(gameBoardPanel, rnd);
 		frame.pack();
 		frame.setLocationByPlatform(true);
