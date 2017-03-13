@@ -70,6 +70,7 @@ final class RandomMatrixPieceMover<I> {
 					lastSuccessfulPlacementResult = placementResult;
 				} else {
 					lastSuccessfulPlacementResult = null;
+					LOGGER.info("Couldn't place piece \"{}\".", pieceId);
 					break regionPieceMovement;
 				}
 			}
