@@ -180,19 +180,20 @@ final class GameBoardPanel extends JPanel {
 	private static String createMatrixReprString(final Matrix<?> matrix) {
 		final Stream<String> colNames = Stream.of("ROW_IDX", "COL_IDXS...");
 		final String header = colNames.collect(TABLE_ROW_CELL_JOINER);
+
+		final int[] dims = matrix.getDimensions();
+		final Stream.Builder<String> subheaderBuilder = Stream.builder();
+		subheaderBuilder.accept("");
+		IntStream.range(0, dims[1]).mapToObj(Integer::toString).forEach(subheaderBuilder);
+		final String subHeader = TABLE_STRING_REPR_ROW_DELIMITER
+				+ subheaderBuilder.build().collect(TABLE_ROW_CELL_JOINER);
 		final int cellCount = matrix.getValues().size();
-		final StringBuilder sb = new StringBuilder(header.length() + cellCount * 16);
+		final StringBuilder sb = new StringBuilder(header.length() + subHeader.length() + cellCount * 16);
 		sb.append(header);
+		sb.append(subHeader);
 		final Iterator<? extends List<?>> rowIter = matrix.rowIterator();
 		int rowIdx = 0;
 		if (rowIter.hasNext()) {
-			sb.append(TABLE_STRING_REPR_ROW_DELIMITER);
-			final int[] dims = matrix.getDimensions();
-			final Stream.Builder<String> subheaderBuilder = Stream.builder();
-			subheaderBuilder.accept("");
-			IntStream.range(0, dims[1]).mapToObj(Integer::toString).forEach(subheaderBuilder);
-			final String subHeader = subheaderBuilder.build().collect(TABLE_ROW_CELL_JOINER);
-			sb.append(subHeader);
 			do {
 				sb.append(TABLE_STRING_REPR_ROW_DELIMITER);
 				final List<?> row = rowIter.next();
