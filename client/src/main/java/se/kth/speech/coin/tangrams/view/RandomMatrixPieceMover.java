@@ -68,6 +68,8 @@ final class RandomMatrixPieceMover<I> {
 				final Entry<SpatialMap.Region, Boolean> placementResult = piecePlacer.apply(piece, pieceId);
 				if (placementResult.getValue()) {
 					lastSuccessfulPlacementResult = placementResult;
+					LOGGER.debug("Successfully placed piece \"{}\"; Setting its previous region to point to a null element.", pieceId);
+					MatrixSpaces.setMatrixPositionValues(posMatrix, occupiedRegion, null);
 				} else {
 					lastSuccessfulPlacementResult = null;
 					LOGGER.info("Couldn't place piece \"{}\".", pieceId);
