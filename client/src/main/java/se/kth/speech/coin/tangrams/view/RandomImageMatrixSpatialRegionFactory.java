@@ -41,7 +41,7 @@ final class RandomImageMatrixSpatialRegionFactory implements BiFunction<ImageVie
 
 	RandomImageMatrixSpatialRegionFactory(final int[] posDims) {
 		this.posDims = posDims;
-		piecePosMatrixSizeFactory = new CachingMatrixBoundsArrayFactory();
+		piecePosMatrixSizeFactory = new CachingPieceMatrixBoundsArrayFactory();
 	}
 
 	/*

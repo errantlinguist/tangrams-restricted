@@ -28,9 +28,9 @@ import org.slf4j.LoggerFactory;
  * @since 10 Mar 2017
  *
  */
-final class CachingMatrixBoundsArrayFactory implements Function<ImageViewInfo, int[]> {
+final class CachingPieceMatrixBoundsArrayFactory implements Function<ImageViewInfo, int[]> {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(CachingMatrixBoundsArrayFactory.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(CachingPieceMatrixBoundsArrayFactory.class);
 
 	private static int[] createPosMatrixBoundsArray(final ImageViewInfo viewInfo) {
 		final ImageViewInfo.RasterizationInfo rasterizationInfo = viewInfo.getRasterization();
@@ -49,7 +49,7 @@ final class CachingMatrixBoundsArrayFactory implements Function<ImageViewInfo, i
 
 	private final Map<ImageViewInfo, int[]> piecePosMatrixSizes;
 
-	CachingMatrixBoundsArrayFactory() {
+	CachingPieceMatrixBoundsArrayFactory() {
 		piecePosMatrixSizes = new HashMap<>();
 	}
 
@@ -63,7 +63,7 @@ final class CachingMatrixBoundsArrayFactory implements Function<ImageViewInfo, i
 		// The number of rows and columns this image takes up in the
 		// position matrix
 		return piecePosMatrixSizes.computeIfAbsent(viewInfo,
-				CachingMatrixBoundsArrayFactory::createPosMatrixBoundsArray);
+				CachingPieceMatrixBoundsArrayFactory::createPosMatrixBoundsArray);
 	}
 
 }
