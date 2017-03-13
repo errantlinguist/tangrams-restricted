@@ -17,7 +17,6 @@
 package se.kth.speech.coin.tangrams.view;
 
 import java.awt.BasicStroke;
-import java.awt.Canvas;
 import java.awt.Dimension;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
@@ -45,9 +44,13 @@ import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.IntSupplier;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import javax.imageio.ImageIO;
+import javax.swing.JPanel;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -70,7 +73,7 @@ import se.kth.speech.coin.tangrams.view.ImageViewInfo.RasterizationInfo;
  * @since 2 Mar 2017
  *
  */
-final class GameBoardPanel extends Canvas {
+final class GameBoardPanel extends JPanel {
 
 	private static class SizeValidator {
 
@@ -109,15 +112,6 @@ final class GameBoardPanel extends Canvas {
 
 	}
 
-	private static final int IMG_SCALING_HINTS = Image.SCALE_SMOOTH;
-
-	private static final Logger LOGGER = LoggerFactory.getLogger(GameBoardPanel.class);
-
-	/**
-	 *
-	 */
-	private static final long serialVersionUID = 6258829324465894025L;
-
 	private static final BiFunction<Image, GameBoardPanel, Image> DEFAULT_POST_COLORING_IMG_TRANSFORMER = new BiFunction<Image, GameBoardPanel, Image>() {
 
 		@Override
@@ -129,57 +123,81 @@ final class GameBoardPanel extends Canvas {
 
 	};
 
-	private static void appendRowTableRepr(final Iterator<?> rowCellIter, final StringBuilder sb) {
-		final String nullValRepr = "-";
-		if (rowCellIter.hasNext()) {
-			final Object first = rowCellIter.next();
-			final String firstRepr = Objects.toString(first, nullValRepr);
-			sb.append(firstRepr);
+	private static final int IMG_SCALING_HINTS = Image.SCALE_SMOOTH;
 
-			while (rowCellIter.hasNext()) {
-				sb.append('\t');
-				final Object next = rowCellIter.next();
-				final String nextRepr = Objects.toString(next, nullValRepr);
-				sb.append(nextRepr);
-			}
+	private static final Logger LOGGER = LoggerFactory.getLogger(GameBoardPanel.class);
+
+	/**
+	 *
+	 */
+	private static final long serialVersionUID = 6258829324465894025L;
+
+	private static final Collector<CharSequence, ?, String> TABLE_ROW_CELL_JOINER;
+
+	private static final String TABLE_STRING_REPR_COL_DELIMITER;
+
+	private static final String TABLE_STRING_REPR_ROW_DELIMITER = System.lineSeparator();
+
+	static {
+		TABLE_STRING_REPR_COL_DELIMITER = "\t";
+		TABLE_ROW_CELL_JOINER = Collectors.joining(TABLE_STRING_REPR_COL_DELIMITER);
+	}
+
+	private static void appendRowTableRepr(final int rowIdx, final Iterator<?> rowCellIter, final StringBuilder sb) {
+		sb.append(rowIdx);
+		final String nullValRepr = "-";
+		while (rowCellIter.hasNext()) {
+			sb.append(TABLE_STRING_REPR_COL_DELIMITER);
+			final Object next = rowCellIter.next();
+			final String nextRepr = Objects.toString(next, nullValRepr);
+			sb.append(nextRepr);
 		}
 	}
 
 	private static String createImageInfoTable(
 			final Collection<? extends Entry<?, ? extends Entry<ImageViewInfo.RasterizationInfo, ?>>> namedImgValData) {
-		final String header = "PATH\tWIDTH\tHEIGHT\tGCD\tCOMMENT";
+		final Stream<String> colNames = Stream.of("PATH", "WIDTH", "HEIGHT", "GCD", "COMMENT");
+		final String header = colNames.collect(TABLE_ROW_CELL_JOINER);
 		final StringBuilder sb = new StringBuilder(header.length() + 16 * namedImgValData.size());
 		sb.append(header);
 		for (final Entry<?, ? extends Entry<ImageViewInfo.RasterizationInfo, ?>> namedImgValDatumComments : namedImgValData) {
-			sb.append(System.lineSeparator());
+			sb.append(TABLE_STRING_REPR_ROW_DELIMITER);
 			sb.append(namedImgValDatumComments.getKey());
-			sb.append('\t');
+			sb.append(TABLE_STRING_REPR_COL_DELIMITER);
 			final Entry<ImageViewInfo.RasterizationInfo, ?> imgValDatumComments = namedImgValDatumComments.getValue();
 			final ImageViewInfo.RasterizationInfo imgVisualizationInfoDatum = imgValDatumComments.getKey();
 			sb.append(imgVisualizationInfoDatum.getWidth());
-			sb.append('\t');
+			sb.append(TABLE_STRING_REPR_COL_DELIMITER);
 			sb.append(imgVisualizationInfoDatum.getHeight());
-			sb.append('\t');
+			sb.append(TABLE_STRING_REPR_COL_DELIMITER);
 			sb.append(imgVisualizationInfoDatum.getGcd());
-			sb.append('\t');
+			sb.append(TABLE_STRING_REPR_COL_DELIMITER);
 			sb.append(imgValDatumComments.getValue());
 		}
 		return sb.toString();
 	}
 
 	private static String createMatrixReprString(final Matrix<?> matrix) {
+		final Stream<String> colNames = Stream.of("ROW_IDX", "COL_IDXS...");
+		final String header = colNames.collect(TABLE_ROW_CELL_JOINER);
 		final int cellCount = matrix.getValues().size();
-		final StringBuilder sb = new StringBuilder(cellCount * 4);
-
+		final StringBuilder sb = new StringBuilder(header.length() + cellCount * 16);
+		sb.append(header);
 		final Iterator<? extends List<?>> rowIter = matrix.rowIterator();
+		int rowIdx = 0;
 		if (rowIter.hasNext()) {
-			final List<?> first = rowIter.next();
-			appendRowTableRepr(first.iterator(), sb);
-			while (rowIter.hasNext()) {
-				sb.append(System.lineSeparator());
-				final List<?> next = rowIter.next();
-				appendRowTableRepr(next.iterator(), sb);
-			}
+			sb.append(TABLE_STRING_REPR_ROW_DELIMITER);
+			final int[] dims = matrix.getDimensions();
+			final Stream.Builder<String> subheaderBuilder = Stream.builder();
+			subheaderBuilder.accept("");
+			IntStream.range(0, dims[1]).mapToObj(Integer::toString).forEach(subheaderBuilder);
+			final String subHeader = subheaderBuilder.build().collect(TABLE_ROW_CELL_JOINER);
+			sb.append(subHeader);
+			do {
+				sb.append(TABLE_STRING_REPR_ROW_DELIMITER);
+				final List<?> row = rowIter.next();
+				appendRowTableRepr(rowIdx++, row.iterator(), sb);
+			} while (rowIter.hasNext());
 		}
 		return sb.toString();
 	}
@@ -258,13 +276,13 @@ final class GameBoardPanel extends Canvas {
 		return img.getScaledInstance(imgWidth, imgHeight, IMG_SCALING_HINTS);
 	}
 
+	private final Map<ImageViewInfo, Image> pieceImgs;
+
 	private final RandomMatrixPieceMover<Integer> pieceMover;
 
 	private final SpatialMap<ImageViewInfo> piecePlacements;
 
 	private final Matrix<Integer> posMatrix;
-
-	private final Map<ImageViewInfo, Image> pieceImgs;
 
 	private final BiFunction<? super Image, ? super GameBoardPanel, ? extends Image> postColoringImgTransformer;
 
@@ -293,7 +311,7 @@ final class GameBoardPanel extends Canvas {
 				dimensionValues.add(pieceImgViewInfo.getRasterization().getGcd());
 			}
 			final Dimension boardSize = new Dimension(minDimLength * 5, minDimLength * 4);
-			setSize(boardSize);
+			setPreferredSize(boardSize);
 			dimensionValues.add(boardSize.width);
 			dimensionValues.add(boardSize.height);
 			// Get the GCD for all components in the view
@@ -338,8 +356,10 @@ final class GameBoardPanel extends Canvas {
 	 * @see java.awt.Canvas#paint(java.awt.Graphics)
 	 */
 	@Override
-	public void paint(final Graphics g) {
+	public void paintComponent(final Graphics g) {
 		// Draw a grid (for debugging/devel)
+		// g.setColor(Color.PINK);
+		// g.fillRect(0, 0, getWidth(), getWidth());
 		drawGrid(g);
 		drawPieceIds(g);
 
@@ -552,7 +572,7 @@ final class GameBoardPanel extends Canvas {
 		LOGGER.debug("Notified of continue event.");
 		LOGGER.info("Moving random piece.");
 		final Entry<SpatialMap.Region, SpatialMap.Region> newPlace = pieceMover.apply(rnd);
-		LOGGER.info("Finished moving random piece(s) at {} to {}.", newPlace.getKey(), newPlace.getValue());
+		LOGGER.info("Finished randomly moving piece(s) at {} to {}.", newPlace.getKey(), newPlace.getValue());
 		repaint();
 		// TODO Auto-generated method stub
 

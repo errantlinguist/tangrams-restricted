@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.google.common.collect.HashMultimap;
@@ -227,6 +228,19 @@ public final class SpatialMap<E> {
 
 	}
 
+	private static final String TABLE_STRING_REPR_ROW_DELIMITER = System.lineSeparator();
+
+	private static final String TABLE_STRING_REPR_COL_DELIMITER = "\t";
+
+	private static void appendOccupiedRegionRepr(final StringBuilder sb,
+			final Entry<Region, ? extends Iterable<?>> minimalRegionOccupyingElementSet) {
+		sb.append(minimalRegionOccupyingElementSet.getKey());
+		for (final Object occupyingElement : minimalRegionOccupyingElementSet.getValue()) {
+			sb.append(TABLE_STRING_REPR_COL_DELIMITER);
+			sb.append(occupyingElement);
+		}
+	}
+
 	private static int estimateRegionCount(final int expectedElementCount) {
 		// TODO: implement
 		return expectedElementCount;
@@ -242,7 +256,7 @@ public final class SpatialMap<E> {
 	 * An ordered sequence of regions being used, e.g. for getting an ID for a
 	 * particular region
 	 */
-	private final List<Region> regions;
+	private transient final List<Region> regions;
 
 	public SpatialMap(final int expectedElementCount) {
 		this(HashMultimap.create(estimateRegionCount(expectedElementCount), expectedElementCount));
@@ -251,6 +265,33 @@ public final class SpatialMap<E> {
 	private SpatialMap(final Multimap<Region, E> regionElements) {
 		this.regionElements = regionElements;
 		this.regions = new ArrayList<>(Math.max(regionElements.size(), 16));
+	}
+
+	/*
+	 * (non-Javadoc)
+	 *
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(final Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (!(obj instanceof SpatialMap)) {
+			return false;
+		}
+		final SpatialMap<?> other = (SpatialMap<?>) obj;
+		if (regionElements == null) {
+			if (other.regionElements != null) {
+				return false;
+			}
+		} else if (!regionElements.equals(other.regionElements)) {
+			return false;
+		}
+		return true;
 	}
 
 	public Collection<E> getAllElements() {
@@ -283,6 +324,19 @@ public final class SpatialMap<E> {
 				.filter(regionElementColl -> subsumingRegion.subsumes(regionElementColl.getKey()));
 	}
 
+	/*
+	 * (non-Javadoc)
+	 *
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + (regionElements == null ? 0 : regionElements.hashCode());
+		return result;
+	}
+
 	/**
 	 * @param region
 	 * @return
@@ -294,6 +348,34 @@ public final class SpatialMap<E> {
 	public void put(final E element, final Region region) {
 		regionElements.put(region, element);
 		regions.add(region);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 *
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		final StringBuilder builder = new StringBuilder();
+		builder.append("SpatialMap  - regionElements:");
+		builder.append(TABLE_STRING_REPR_ROW_DELIMITER);
+		builder.append(createRegionStringRepr());
+		return builder.toString();
+	}
+
+	private String createRegionStringRepr() {
+		final Stream<String> colNames = Stream.of(Region.class.getSimpleName(), "OCCUPANTS...");
+		final String header = colNames.collect(Collectors.joining(TABLE_STRING_REPR_COL_DELIMITER));
+		final Multimap<Region, E> minRegionElements = getMinimalRegionElements();
+		final StringBuilder sb = new StringBuilder(header.length() + minRegionElements.size() * 16);
+		sb.append(header);
+		for (final Entry<Region, Collection<E>> minimalRegionOccupyingElementSet : minRegionElements.asMap()
+				.entrySet()) {
+			sb.append(TABLE_STRING_REPR_ROW_DELIMITER);
+			appendOccupiedRegionRepr(sb, minimalRegionOccupyingElementSet);
+		}
+		return sb.toString();
 	}
 
 }
