@@ -50,7 +50,11 @@ final class CachingPieceMatrixBoundsArrayFactory implements Function<ImageViewIn
 	private final Map<ImageViewInfo, int[]> piecePosMatrixSizes;
 
 	CachingPieceMatrixBoundsArrayFactory() {
-		piecePosMatrixSizes = new HashMap<>();
+		this(new HashMap<>());
+	}
+	
+	CachingPieceMatrixBoundsArrayFactory(final Map<ImageViewInfo, int[]> piecePosMatrixSizes) {
+		this.piecePosMatrixSizes = piecePosMatrixSizes;
 	}
 
 	/*
