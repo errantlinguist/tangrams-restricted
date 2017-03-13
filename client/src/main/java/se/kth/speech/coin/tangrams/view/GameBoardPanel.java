@@ -294,6 +294,26 @@ final class GameBoardPanel extends JPanel {
 		this(imgVisualizationInfoData, rnd, maxImgPlacements, maxPlacementRetriesPerImg, allowFailedPlacements,
 				DEFAULT_POST_COLORING_IMG_TRANSFORMER);
 	}
+	
+	// TODO: Finish
+	// private final Function<? super ImageViewInfo, int[]>
+	// piecePosMatrixSizeFactory = new CachingPieceMatrixBoundsArrayFactory();
+
+//	private final Function<? super SpatialMap.Region, int[]> regionDimensionFactory;
+	
+//	private void findValidMoves(int[] regionDims){
+//		
+//	}
+//
+//	private void createValidMoveMap() {
+//		Multimap<SpatialMap.Region, ImageViewInfo> regionElements = piecePlacements.getMinimalRegionElements();
+//		for (SpatialMap.Region occupiedRegion : regionElements.keySet()) {
+//			boolean isUnoccupied = posMatrix.testCells(occupiedRegion, Objects::isNull);
+//			posMatrix.
+//			int[] regionDims = regionDimensionFactory.apply(occupiedRegion);
+//			
+//		}
+//	}
 
 	GameBoardPanel(final Collection<ImageVisualizationInfo> imgVisualizationInfoData, final Random rnd,
 			final int maxImgPlacements, final int maxPlacementRetriesPerImg, final boolean allowFailedPlacements,
