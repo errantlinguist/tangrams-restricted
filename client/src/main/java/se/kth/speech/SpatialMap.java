@@ -359,7 +359,7 @@ public final class SpatialMap<E> {
 	@Override
 	public String toString() {
 		final StringBuilder builder = new StringBuilder();
-		builder.append("SpatialMap  - regionElements:");
+		builder.append("SpatialMap - regionElements:");
 		builder.append(TABLE_STRING_REPR_ROW_DELIMITER);
 		builder.append(createRegionStringRepr());
 		return builder.toString();
