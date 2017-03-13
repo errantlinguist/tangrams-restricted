@@ -352,9 +352,8 @@ final class GameBoardPanel extends JPanel {
 
 	@Override
 	public void paintComponent(final Graphics g) {
+		super.paintComponent(g);
 		// Draw a grid (for debugging/devel)
-		// g.setColor(Color.PINK);
-		// g.fillRect(0, 0, getWidth(), getWidth());
 		drawGrid(g);
 		drawPieceIds(g);
 
