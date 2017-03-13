@@ -56,7 +56,7 @@ final class SpatialMatrix<T> {
 	}
 
 	void iterateByRegionSize(final SpatialMap.Region region) {
-
+		// TODO: implement
 	}
 
 	void setPositionValues(final SpatialMap.Region region, final T pieceId) {
