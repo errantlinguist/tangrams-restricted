@@ -16,14 +16,10 @@
 */
 package se.kth.speech.coin.tangrams.view;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Random;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.stream.IntStream;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import se.kth.speech.SpatialMap;
 import se.kth.speech.SpatialMap.Region;
@@ -35,39 +31,22 @@ import se.kth.speech.SpatialMap.Region;
  */
 final class RandomImageMatrixSpatialRegionFactory implements BiFunction<ImageViewInfo, Random, SpatialMap.Region> {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(RandomImageMatrixSpatialRegionFactory.class);
-
-	private static int[] createPosMatrixBoundsArray(final ImageViewInfo viewInfo) {
-		final ImageViewInfo.RasterizationInfo rasterizationInfo = viewInfo.getRasterization();
-		// NOTE: "rows" in the matrix go top-bottom and "cols" go left-right
-		// The number of rows this image takes up in the
-		// position matrix
-		final int occupiedPosMatrixRowCount = rasterizationInfo.getHeight() / rasterizationInfo.getGcd();
-		// The number of columns this image takes up in the
-		// position matrix
-		final int occupiedPosMatrixColCount = rasterizationInfo.getWidth() / rasterizationInfo.getGcd();
-		LOGGER.debug("Calculated position grid size {}*{} for \"{}\".", new Object[] {
-				occupiedPosMatrixRowCount, occupiedPosMatrixColCount, viewInfo.getVisualization().getResourceLoc() });
-
-		return new int[] { occupiedPosMatrixRowCount, occupiedPosMatrixColCount };
-	}
-
 	private static SpatialMap.Region createSpatialRegion(final int[] startMatrixIdx, final int[] endMatrixIdx) {
 		return new SpatialMap.Region(startMatrixIdx[0], endMatrixIdx[0], startMatrixIdx[1], endMatrixIdx[1]);
 	}
 
-	private final Map<ImageViewInfo, int[]> piecePosMatrixSizes;
-	
+	private final Function<? super ImageViewInfo, int[]> piecePosMatrixSizeFactory;
+
 	private final int[] posDims;
 
 	RandomImageMatrixSpatialRegionFactory(final int[] posDims) {
 		this.posDims = posDims;
-		piecePosMatrixSizes = new HashMap<>();
+		piecePosMatrixSizeFactory = new CachingMatrixBoundsArrayFactory();
 	}
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.util.function.BiFunction#apply(java.lang.Object,
 	 * java.lang.Object)
 	 */
@@ -75,7 +54,7 @@ final class RandomImageMatrixSpatialRegionFactory implements BiFunction<ImageVie
 	public Region apply(final ImageViewInfo viewInfo, final Random rnd) {
 		// The number of rows and columns this image takes up in the
 		// position matrix
-		final int[] piecePosMatrixSize = piecePosMatrixSizes.computeIfAbsent(viewInfo, RandomImageMatrixSpatialRegionFactory::createPosMatrixBoundsArray);
+		final int[] piecePosMatrixSize = piecePosMatrixSizeFactory.apply(viewInfo);
 		// Randomly pick a space in the matrix
 		return createRandomSpatialRegion(piecePosMatrixSize, rnd);
 	}
