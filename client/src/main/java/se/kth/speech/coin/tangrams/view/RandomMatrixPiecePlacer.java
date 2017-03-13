@@ -56,7 +56,7 @@ final class RandomMatrixPiecePlacer<I> implements BiFunction<ImageViewInfo, I, E
 		if (occupiedPositions.isOccupied(piecePosition)) {
 			success = false;
 		} else {
-			MatrixSpaces.setMatrixPositionValues(posMatrix, piecePosition, pieceId);
+			MatrixSpaces.setPositionValues(posMatrix, piecePosition, pieceId);
 			occupiedPositions.put(piece, piecePosition);
 			success = true;
 		}

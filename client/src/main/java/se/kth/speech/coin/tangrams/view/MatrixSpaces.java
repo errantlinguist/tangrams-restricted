@@ -34,7 +34,7 @@ final class MatrixSpaces {
 	
 	private static final Logger LOGGER = LoggerFactory.getLogger(MatrixSpaces.class);
 
-	static <T> void setMatrixPositionValues(final Matrix<T> posMatrix, final SpatialMap.Region occupiedRegion,
+	static <T> void setPositionValues(final Matrix<T> posMatrix, final SpatialMap.Region occupiedRegion,
 			final T pieceId) {
 		LOGGER.debug("Setting {} to value \"{}\".", occupiedRegion, pieceId);
 		final ListIterator<List<T>> rowIter = posMatrix.rowIterator(occupiedRegion.getXLowerBound());

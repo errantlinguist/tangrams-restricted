@@ -73,7 +73,7 @@ final class RandomMatrixPieceMover<I> {
 					LOGGER.debug(
 							"Successfully placed piece \"{}\"; Setting its previous region to point to a null element.",
 							pieceId);
-					MatrixSpaces.setMatrixPositionValues(posMatrix, occupiedRegion, null);
+					MatrixSpaces.setPositionValues(posMatrix, occupiedRegion, null);
 					pieceIter.remove();
 				} else {
 					lastSuccessfulPlacementResult = null;
