@@ -34,7 +34,6 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Maps;
 
-import se.kth.speech.Matrix;
 import se.kth.speech.SpatialMap;
 import se.kth.speech.SpatialMap.Region;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
@@ -44,8 +43,8 @@ import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
  * @since 9 Mar 2017
  *
  */
-final class RandomImagePositionMatrixFiller<I>
-		implements BiFunction<Matrix<? super I>, Collection<? extends ImageViewInfo>, SpatialMap<ImageViewInfo>> {
+final class RandomImagePositionMatrixFiller<I> implements
+		BiFunction<SpatialMatrix<? super I>, Collection<? extends ImageViewInfo>, SpatialMap<ImageViewInfo>> {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(RandomImagePositionMatrixFiller.class);
 
@@ -79,7 +78,7 @@ final class RandomImagePositionMatrixFiller<I>
 	}
 
 	@Override
-	public SpatialMap<ImageViewInfo> apply(final Matrix<? super I> posMatrix,
+	public SpatialMap<ImageViewInfo> apply(final SpatialMatrix<? super I> posMatrix,
 			final Collection<? extends ImageViewInfo> imgViewInfoData) {
 		final SpatialMap<ImageViewInfo> result = new SpatialMap<>(imgViewInfoData.size());
 		final RandomMatrixPiecePlacer<? super I> piecePlacer = new RandomMatrixPiecePlacer<>(posMatrix, rnd, result);

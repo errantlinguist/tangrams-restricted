@@ -32,6 +32,7 @@ import java.net.URL;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -56,6 +57,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 
 import se.kth.speech.MathDenominators;
@@ -283,7 +285,7 @@ final class GameBoardPanel extends JPanel {
 
 	private final SpatialMap<ImageViewInfo> piecePlacements;
 
-	private final Matrix<Integer> posMatrix;
+	private final SpatialMatrix<Integer> posMatrix;
 
 	private final BiFunction<? super Image, ? super GameBoardPanel, ? extends Image> postColoringImgTransformer;
 
@@ -329,17 +331,18 @@ final class GameBoardPanel extends JPanel {
 				final int posMatrixCols = boardSize.width / greatestCommonDenominator;
 				LOGGER.info("Creating a position matrix of size {}*{}.", posMatrixRows, posMatrixCols);
 				final Integer[] posMatrixBackingArray = new Integer[posMatrixRows * posMatrixCols];
-				posMatrix = new Matrix<>(posMatrixBackingArray, posMatrixCols);
-				if (!isDimensionDivisibleIntoGrid(boardSize, posMatrix)) {
+				final Matrix<Integer> backingPosMatrix = new Matrix<>(posMatrixBackingArray, posMatrixCols);
+				if (!isDimensionDivisibleIntoGrid(boardSize, backingPosMatrix)) {
 					throw new IllegalArgumentException(
 							String.format("Board %s not divisble into matrix with dimensions %s.", boardSize,
-									Arrays.toString(posMatrix.getDimensions())));
+									Arrays.toString(backingPosMatrix.getDimensions())));
 				}
+				posMatrix = new SpatialMatrix<>(backingPosMatrix);
 				piecePlacements = matrixFiller.apply(posMatrix, pieceImgs.keySet());
 				pieceMover = new RandomMatrixPieceMover<>(posMatrix, piecePlacements, pieceIds::get);
 				// Finished with creating necessary data structures
 				System.out.println("IMAGE PLACEMENTS");
-				System.out.println(createMatrixReprString(posMatrix));
+				System.out.println(createMatrixReprString(backingPosMatrix));
 			} else {
 				throw new IllegalArgumentException(
 						String.format("The board as a whole failed validation with dimensions %s; and GCD %d: %s",
@@ -450,6 +453,7 @@ final class GameBoardPanel extends JPanel {
 
 	private void drawGrid(final Graphics g) {
 		LOGGER.debug("Drawing grid.");
+		Matrix<Integer> posMatrix = this.posMatrix.getPosMatrix();
 		final int[] matrixDims = posMatrix.getDimensions();
 		// http://stackoverflow.com/a/21989406/1391325
 		// creates a copy of the Graphics instance
@@ -490,7 +494,7 @@ final class GameBoardPanel extends JPanel {
 		final FontMetrics fm = g.getFontMetrics();
 		final int pieceTextHeight = fm.getAscent();
 		int nextRowY = 0;
-		for (final ListIterator<List<Integer>> matrixRowIter = posMatrix.rowIterator(); matrixRowIter.hasNext();) {
+		for (final ListIterator<List<Integer>> matrixRowIter = posMatrix.getPosMatrix().rowIterator(); matrixRowIter.hasNext();) {
 			final List<Integer> matrixRow = matrixRowIter.next();
 			final int rowIdx = matrixRowIter.nextIndex();
 

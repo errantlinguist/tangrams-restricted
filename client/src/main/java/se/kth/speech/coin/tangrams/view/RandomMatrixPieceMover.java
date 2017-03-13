@@ -24,7 +24,6 @@ import java.util.function.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import se.kth.speech.Matrix;
 import se.kth.speech.MutablePair;
 import se.kth.speech.RandomCollections;
 import se.kth.speech.SpatialMap;
@@ -38,13 +37,13 @@ final class RandomMatrixPieceMover<I> {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(RandomMatrixPieceMover.class);
 
-	private final Matrix<? super I> posMatrix;
+	private final SpatialMatrix<? super I> posMatrix;
 
 	private final SpatialMap<ImageViewInfo> piecePlacements;
 
 	private final Function<? super ImageViewInfo, ? extends I> pieceIdGetter;
 
-	RandomMatrixPieceMover(final Matrix<? super I> posMatrix, final SpatialMap<ImageViewInfo> piecePlacements,
+	RandomMatrixPieceMover(final SpatialMatrix<? super I> posMatrix, final SpatialMap<ImageViewInfo> piecePlacements,
 			final Function<? super ImageViewInfo, ? extends I> pieceIdGetter) {
 		this.posMatrix = posMatrix;
 		this.piecePlacements = piecePlacements;
@@ -73,7 +72,7 @@ final class RandomMatrixPieceMover<I> {
 					LOGGER.debug(
 							"Successfully placed piece \"{}\"; Setting its previous region to point to a null element.",
 							pieceId);
-					MatrixSpaces.setPositionValues(posMatrix, occupiedRegion, null);
+					posMatrix.setPositionValues(occupiedRegion, null);
 					pieceIter.remove();
 				} else {
 					lastSuccessfulPlacementResult = null;

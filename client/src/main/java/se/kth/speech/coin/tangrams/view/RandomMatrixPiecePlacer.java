@@ -20,7 +20,6 @@ import java.util.Map.Entry;
 import java.util.Random;
 import java.util.function.BiFunction;
 
-import se.kth.speech.Matrix;
 import se.kth.speech.MutablePair;
 import se.kth.speech.SpatialMap;
 
@@ -33,13 +32,13 @@ final class RandomMatrixPiecePlacer<I> implements BiFunction<ImageViewInfo, I, E
 
 	private final SpatialMap<ImageViewInfo> occupiedPositions;
 
-	private final Matrix<? super I> posMatrix;
+	private final SpatialMatrix<? super I> posMatrix;
 
 	private final BiFunction<? super ImageViewInfo, ? super Random, ? extends SpatialMap.Region> regionFactory;
 
 	private final Random rnd;
 
-	RandomMatrixPiecePlacer(final Matrix<? super I> posMatrix, final Random rnd,
+	RandomMatrixPiecePlacer(final SpatialMatrix<? super I> posMatrix, final Random rnd,
 			final SpatialMap<ImageViewInfo> occupiedPositions) {
 		this.posMatrix = posMatrix;
 		this.rnd = rnd;
@@ -56,7 +55,7 @@ final class RandomMatrixPiecePlacer<I> implements BiFunction<ImageViewInfo, I, E
 		if (occupiedPositions.isOccupied(piecePosition)) {
 			success = false;
 		} else {
-			MatrixSpaces.setPositionValues(posMatrix, piecePosition, pieceId);
+			posMatrix.setPositionValues(piecePosition, pieceId);
 			occupiedPositions.put(piece, piecePosition);
 			success = true;
 		}
