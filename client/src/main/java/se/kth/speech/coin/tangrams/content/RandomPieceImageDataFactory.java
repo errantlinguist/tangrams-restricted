@@ -48,7 +48,7 @@ public final class RandomPieceImageDataFactory implements Function<Random, Strea
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(RandomPieceImageDataFactory.class);
 
-	private static final int DEFAULT_MAX_SHARED_ATTR_COUNT = 2;
+	private static final int DEFAULT_MAX_SHARED_ATTR_COUNT = 3;
 
 	private static final Collection<URL> DEFAULT_IMG_RESOURCES = IconImages.getImageResources().values();
 
