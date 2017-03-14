@@ -617,9 +617,7 @@ final class GameBoardPanel extends JPanel {
 				final Integer pieceId = pieceIds.get(piece);
 				LOGGER.info("Moving piece \"{}\" to a random location.", pieceId);
 				final SpatialMap.Region moveTarget = RandomCollections.getRandomElement(regionValidMoves, rnd);
-				if (piecePlacements.isOccupied(moveTarget)) {
-					throw new AssertionError("Target region already occupied.");
-				}
+				assert (!piecePlacements.isOccupied(moveTarget));
 				posMatrix.setPositionValues(moveTarget, pieceId);
 				piecePlacements.put(piece, moveTarget);
 				posMatrix.setPositionValues(occupiedRegion, null);
