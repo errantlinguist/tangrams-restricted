@@ -615,9 +615,9 @@ final class GameBoardPanel extends JPanel {
 		final SpatialMap.Region occupiedRegion = RandomCollections.getRandomElement(piecePlacements.getMinimalRegions(),
 				rnd);
 		final Map<Integer, SpatialMap.Region> newPositions;
-		final Set<SpatialMap.Region> possibleMoves = validMoves.computeIfAbsent(occupiedRegion,
+		final Set<SpatialMap.Region> regionValidMoves = validMoves.computeIfAbsent(occupiedRegion,
 				newRegionPossibleMoveSetFactory);
-		if (possibleMoves.isEmpty()) {
+		if (regionValidMoves.isEmpty()) {
 			newPositions = Collections.emptyMap();
 		} else {
 			final Collection<ImageViewInfo> pieces = piecePlacements.getMinimalRegionElements().get(occupiedRegion);
@@ -630,12 +630,16 @@ final class GameBoardPanel extends JPanel {
 				LOGGER.info("Moving piece \"{}\" to a random location.", pieceId);
 				// FIXME: THe system is not detecting occupied areas correctly
 				// FIXME: Update map of occupied regions
-				final SpatialMap.Region moveTarget = RandomCollections.getRandomElement(possibleMoves, rnd);
+				final SpatialMap.Region moveTarget = RandomCollections.getRandomElement(regionValidMoves, rnd);
 				posMatrix.setPositionValues(moveTarget, pieceId);
 				piecePlacements.put(piece, moveTarget);
 				posMatrix.setPositionValues(occupiedRegion, null);
 				newPositions.put(pieceId, moveTarget);
 				pieceIter.remove();
+				// Add the previously-occupied region because it's now clear
+				regionValidMoves.add(occupiedRegion);
+				// Remove the now-occupied region
+				regionValidMoves.remove(moveTarget);
 			}
 		}
 		return new MutablePair<>(occupiedRegion, newPositions);
