@@ -95,6 +95,8 @@ public final class SpatialMap<E> {
 
 		private final int yUpperBound;
 
+		private final transient int hashCode;
+
 		public Region(final int xLowerBound, final int xUpperBound, final int yLowerBound, final int yUpperBound) {
 			this.xLowerBound = xLowerBound;
 			this.xUpperBound = xUpperBound;
@@ -103,6 +105,8 @@ public final class SpatialMap<E> {
 			if (!areBoundariesValid()) {
 				throw new IllegalArgumentException("Boundary values are invalid.");
 			}
+
+			this.hashCode = calculateHashCode();
 		}
 
 		/*
@@ -184,13 +188,7 @@ public final class SpatialMap<E> {
 		 */
 		@Override
 		public int hashCode() {
-			final int prime = 31;
-			int result = 1;
-			result = prime * result + xLowerBound;
-			result = prime * result + xUpperBound;
-			result = prime * result + yLowerBound;
-			result = prime * result + yUpperBound;
-			return result;
+			return hashCode;
 		}
 
 		public boolean intersects(final Region other) {
@@ -229,6 +227,16 @@ public final class SpatialMap<E> {
 			return getXLowerBound() <= getXUpperBound() && getYLowerBound() <= getYUpperBound();
 		}
 
+		private int calculateHashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + xLowerBound;
+			result = prime * result + xUpperBound;
+			result = prime * result + yLowerBound;
+			result = prime * result + yUpperBound;
+			return result;
+		}
+
 	}
 
 	private static final String TABLE_STRING_REPR_ROW_DELIMITER = System.lineSeparator();
@@ -263,10 +271,7 @@ public final class SpatialMap<E> {
 	 */
 	private transient final List<Region> regions;
 
-	private final int expectedElementCount;
-
 	public SpatialMap(final int expectedElementCount) {
-		this.expectedElementCount = expectedElementCount;
 		this.regionElements = HashMultimap.create(estimateRegionCount(expectedElementCount), expectedElementCount);
 		this.elementRegions = Maps.newHashMapWithExpectedSize(expectedElementCount);
 		this.regions = new ArrayList<>(Math.max(regionElements.size(), 16));
