@@ -485,9 +485,7 @@ final class GameBoardPanel extends JPanel {
 								yLowerBound, yUpperBound);
 						possibleMoveRegions.add(possibleMoveRegion);
 					} else {
-						if (!piecePlacements.isOccupied(occupiedRegion)) {
-							throw new AssertionError("Region not actually occupied!");
-						}
+						assert (piecePlacements.isOccupied(occupiedRegion));
 						if (LOGGER.isDebugEnabled()) {
 							LOGGER.debug("Found occupied space at {}.",
 									Arrays.toString(new int[] { xLowerBound, xUpperBound, yLowerBound, yUpperBound }));
