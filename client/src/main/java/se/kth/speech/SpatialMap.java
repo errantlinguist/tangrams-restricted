@@ -346,10 +346,12 @@ public final class SpatialMap<E> {
 		return regionElements.keySet().stream().anyMatch(elementRegion -> elementRegion.intersects(region));
 	}
 
-	public void put(final E element, final Region region) {
-		if (regionElements.put(region, element)){
-			regions.add(region);	
+	public boolean put(final E element, final Region region) {
+		final boolean result;
+		if (result = regionElements.put(region, element)){
+			regions.add(region);
 		}
+		return result;
 	}
 
 	/*
