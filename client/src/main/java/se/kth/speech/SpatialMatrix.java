@@ -51,34 +51,6 @@ public final class SpatialMatrix<T> {
 		return posMatrix.getValues(region.getXLowerBound(), region.getXUpperBound(), region.getYLowerBound(), region.getYUpperBound());
 	}
 	
-	// TODO: Finish
-//	public void checkNext(final SpatialMap.Region region){
-//		final ListIterator<List<T>> rowIter = posMatrix.rowIterator();
-//		final int contiguousRowCount = region.getXUpperBound();
-//		final int contiguousColCount = region.getYUpperBound();
-//		rowSearch: while (rowIter.hasNext()){
-//			int rowIdx = rowIter.nextIndex();
-//			final List<T> row = rowIter.next();
-//			final ListIterator<T> rowCellIter = row.listIterator(region.getYLowerBound());
-//			colSearch: while (rowCellIter.hasNext()) {
-//				final int colIdx = rowCellIter.nextIndex();
-//				final T cellValue = rowCellIter.next();
-//				if (cellValue != null){
-//					// Stop
-//					break colSearch;
-//				}
-//			}
-//			
-//		}
-//		for (int rowIdx = rowIter.nextIndex(); rowIdx < ; rowIdx++) {
-//			
-//			final ListIterator<T> rowCellIter = row.listIterator(region.getYLowerBound());
-//			for (int colIdx = rowCellIter.nextIndex(); colIdx < region.getYUpperBound(); colIdx++) {
-//				final T cellValue = rowCellIter.next();
-//			}
-//		}		
-//	}
-
 	/**
 	 * @return the posMatrix
 	 */
