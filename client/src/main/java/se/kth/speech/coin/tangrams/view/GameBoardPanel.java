@@ -641,7 +641,7 @@ final class GameBoardPanel extends JPanel {
 	/**
 	 *
 	 */
-	void notifyContinue(final Random rnd) {
+	synchronized void notifyContinue(final Random rnd) {
 		LOGGER.debug("Notified of continue event.");
 		LOGGER.debug("Moving random piece.");
 		// TODO: Change probability of a piece being selected for moving based
@@ -680,7 +680,7 @@ final class GameBoardPanel extends JPanel {
 	/**
 	 *
 	 */
-	void notifyUndo() {
+	synchronized void notifyUndo() {
 		LOGGER.debug("Notified of undo event.");
 		// TODO Auto-generated method stub
 
