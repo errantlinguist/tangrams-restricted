@@ -47,7 +47,7 @@ import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
  *
  */
 final class RandomMatrixImagePositionFiller<I> implements
-		BiFunction<SpatialMatrix<? super I>, Collection<? extends ImageViewInfo>, SpatialMap<ImageViewInfo>> {
+		Function<Collection<? extends ImageViewInfo>, SpatialMap<ImageViewInfo>> {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(RandomMatrixImagePositionFiller.class);
 
@@ -89,8 +89,7 @@ final class RandomMatrixImagePositionFiller<I> implements
 	}
 
 	@Override
-	public SpatialMap<ImageViewInfo> apply(final SpatialMatrix<? super I> posMatrix,
-			final Collection<? extends ImageViewInfo> imgViewInfoData) {
+	public SpatialMap<ImageViewInfo> apply(final Collection<? extends ImageViewInfo> imgViewInfoData) {
 		final SpatialMap<ImageViewInfo> result = new SpatialMap<>(imgViewInfoData.size());
 		final Queue<ImageMatrixPositionInfo<I>> retryStack = new ArrayDeque<>();
 		int placementCount = 0;

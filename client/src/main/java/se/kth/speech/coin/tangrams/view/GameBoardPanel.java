@@ -371,7 +371,7 @@ final class GameBoardPanel extends JPanel {
 				final RandomMatrixImagePositionFiller<Integer> matrixFiller = new RandomMatrixImagePositionFiller<>(
 						posMatrix, incrementingPieceIdGetter, rnd, maxImgPlacements, maxPlacementRetriesPerImg,
 						allowFailedPlacements, piecePosMatrixSizeFactory);
-				piecePlacements = matrixFiller.apply(posMatrix, pieceImgs.keySet());
+				piecePlacements = matrixFiller.apply(pieceImgs.keySet());
 				// Finished with creating necessary data structures
 				System.out.println("IMAGE PLACEMENTS");
 				System.out.println(createMatrixReprString(backingPosMatrix));
