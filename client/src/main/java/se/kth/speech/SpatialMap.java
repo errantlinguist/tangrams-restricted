@@ -347,8 +347,9 @@ public final class SpatialMap<E> {
 	}
 
 	public void put(final E element, final Region region) {
-		regionElements.put(region, element);
-		regions.add(region);
+		if (regionElements.put(region, element)){
+			regions.add(region);	
+		}
 	}
 
 	/*
