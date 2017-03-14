@@ -651,9 +651,9 @@ final class GameBoardPanel extends JPanel {
 	 */
 	void notifyContinue(final Random rnd) {
 		LOGGER.debug("Notified of continue event.");
-		LOGGER.info("Moving random piece.");
+		LOGGER.debug("Moving random piece.");
 		final Entry<Region, Map<Integer, Region>> newPlace = moveRandomPiece(rnd);
-		LOGGER.info("Finished randomly moving piece(s) at {} to {}.", newPlace.getKey(), newPlace.getValue());
+		LOGGER.debug("Finished randomly moving piece(s) at {} to {}.", newPlace.getKey(), newPlace.getValue());
 		repaint();
 		// TODO Auto-generated method stub
 
