@@ -60,7 +60,8 @@ public final class SpatialMatrix<T> {
 		return posMatrix;
 	}
 
-	public Region getRegion(int xLowerBound, int xUpperBound, int yLowerBound, int yUpperBound) {
+	public Region getRegion(final int xLowerBound, final int xUpperBound, final int yLowerBound,
+			final int yUpperBound) {
 		// TODO Implement caching, i.e. use a flyweight pattern?
 		return new SpatialMap.Region(xLowerBound, xUpperBound, yLowerBound, yUpperBound);
 	}
@@ -78,14 +79,14 @@ public final class SpatialMatrix<T> {
 		}
 	}
 
-	public boolean testCells(final SpatialMap.Region region, final Predicate<? super T> cellPredicate) {
+	public boolean testCells(final int xLowerBound, final int xUpperBound, final int yLowerBound, final int yUpperBound,
+			final Predicate<? super T> cellPredicate) {
 		boolean result = true;
-		LOGGER.debug("Checking {}.", region);
-		final ListIterator<List<T>> rowIter = posMatrix.rowIterator(region.getXLowerBound());
-		for (int rowIdx = rowIter.nextIndex(); rowIdx < region.getXUpperBound(); rowIdx++) {
+		final ListIterator<List<T>> rowIter = posMatrix.rowIterator(xLowerBound);
+		for (int rowIdx = rowIter.nextIndex(); rowIdx < xUpperBound; rowIdx++) {
 			final List<T> row = rowIter.next();
-			final ListIterator<T> rowCellIter = row.listIterator(region.getYLowerBound());
-			for (int colIdx = rowCellIter.nextIndex(); colIdx < region.getYUpperBound(); colIdx++) {
+			final ListIterator<T> rowCellIter = row.listIterator(yLowerBound);
+			for (int colIdx = rowCellIter.nextIndex(); colIdx < yUpperBound; colIdx++) {
 				final T cellValue = rowCellIter.next();
 				if (!cellPredicate.test(cellValue)) {
 					result = false;
@@ -94,6 +95,12 @@ public final class SpatialMatrix<T> {
 			}
 		}
 		return result;
+	}
+
+	public boolean testCells(final SpatialMap.Region region, final Predicate<? super T> cellPredicate) {
+		LOGGER.debug("Checking {}.", region);
+		return testCells(region.getXLowerBound(), region.getXUpperBound(), region.getYLowerBound(),
+				region.getYUpperBound(), cellPredicate);
 	}
 
 }

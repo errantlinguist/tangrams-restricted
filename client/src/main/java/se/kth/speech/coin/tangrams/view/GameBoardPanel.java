@@ -501,9 +501,7 @@ final class GameBoardPanel extends JPanel {
 				final int xUpperBound = xLowerBound + occupiedRegion.getLengthX();
 				for (int yLowerBound = 0; yLowerBound < maxYLowerBound; yLowerBound++) {
 					final int yUpperBound = yLowerBound + occupiedRegion.getLengthY();
-					final Stream<?> possibleMoveRegionValues = backingMatrix.getValues(xLowerBound, xUpperBound,
-							yLowerBound, yUpperBound);
-					if (possibleMoveRegionValues.allMatch(Objects::isNull)) {
+					if (posMatrix.testCells(xLowerBound, xUpperBound, yLowerBound, yUpperBound, Objects::isNull)) {
 						final SpatialMap.Region possibleMoveRegion = posMatrix.getRegion(xLowerBound, xUpperBound,
 								yLowerBound, yUpperBound);
 						possibleMoveRegions.add(possibleMoveRegion);
