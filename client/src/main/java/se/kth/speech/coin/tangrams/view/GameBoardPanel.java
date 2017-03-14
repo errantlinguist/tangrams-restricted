@@ -621,10 +621,9 @@ final class GameBoardPanel extends JPanel {
 			newPositions = Collections.emptyMap();
 		} else {
 			final Collection<ImageViewInfo> pieces = piecePlacements.getMinimalRegionElements().get(occupiedRegion);
-			final Iterator<ImageViewInfo> pieceIter = pieces.iterator();
 			// NOTE: The iterator should only have one element here
 			newPositions = Maps.newHashMapWithExpectedSize(pieces.size());
-			while (pieceIter.hasNext()) {
+			for  (final Iterator<ImageViewInfo> pieceIter = pieces.iterator(); pieceIter.hasNext();) {
 				final ImageViewInfo piece = pieceIter.next();
 				final Integer pieceId = pieceIds.get(piece);
 				LOGGER.info("Moving piece \"{}\" to a random location.", pieceId);
