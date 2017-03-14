@@ -159,13 +159,6 @@ final class GameBoardPanel extends JPanel {
 		}
 	}
 
-	private static int[] createComponentCoordArray(final SpatialMap.Region region, final int colWidth,
-			final int rowHeight) {
-		final int[] startIdxs = createComponentCoordStartIdxArray(region, colWidth, rowHeight);
-		final int[] size = createComponentCoordSizeArray(region, colWidth, rowHeight);
-		return new int[] { startIdxs[0], size[0], startIdxs[1], size[1] };
-	}
-
 	private static int[] createComponentCoordSizeArray(final SpatialMap.Region region, final int colWidth,
 			final int rowHeight) {
 		final int regionGridColCount = region.getLengthY();
@@ -469,44 +462,6 @@ final class GameBoardPanel extends JPanel {
 			throw new IllegalArgumentException("One or more images failed validation:" + System.lineSeparator()
 					+ createImageInfoTable(badImgs.entrySet()));
 		}
-	}
-
-	private Stream<Entry<Image, ImageViewInfo>> createImageViewInfoStream(
-			final Stream<ImageVisualizationInfo> imgVisualizationInfoData, final SizeValidator validator) {
-		return imgVisualizationInfoData.flatMap(imgVisualizationInfoDatum -> {
-			final Stream<Entry<Image, ImageViewInfo>> singleResult;
-
-			final URL imgResourceLoc = imgVisualizationInfoDatum.getResourceLoc();
-			try {
-				final BufferedImage initialImg = ImageIO.read(imgResourceLoc);
-				final IntSupplier widthGetter = initialImg::getWidth;
-				final IntSupplier heightGetter = initialImg::getHeight;
-
-				{
-					// Size/aspect ratio calculation
-					final ImageViewInfo.RasterizationInfo imgRasterizationInfo = new ImageViewInfo.RasterizationInfo(
-							widthGetter, heightGetter);
-					final Image coloredImg = getToolkit().createImage(new FilteredImageSource(initialImg.getSource(),
-							new ColorReplacementImageFilter(imgVisualizationInfoDatum.getColor())));
-					{
-						// Validate image
-						final Set<SizeValidator.ValidationComment> validationComments = validator.validate(
-								widthGetter.getAsInt(), heightGetter.getAsInt(),
-								MathDenominators.gcd(widthGetter.getAsInt(), heightGetter.getAsInt()));
-						if (validationComments.isEmpty()) {
-							singleResult = Stream.of(new MutablePair<>(coloredImg,
-									new ImageViewInfo(imgVisualizationInfoDatum, imgRasterizationInfo)));
-						} else {
-							singleResult = Stream.empty();
-						}
-					}
-				}
-			} catch (final IOException e) {
-				throw new UncheckedIOException(e);
-			}
-
-			return singleResult;
-		});
 	}
 
 	private Map<ImageViewInfo, SpatialMap.Region> createRandomValidMoveTargetMap(final SpatialMap.Region occupiedRegion,
