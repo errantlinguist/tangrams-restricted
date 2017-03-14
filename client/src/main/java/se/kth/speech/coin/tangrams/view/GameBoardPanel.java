@@ -17,6 +17,7 @@
 package se.kth.speech.coin.tangrams.view;
 
 import java.awt.BasicStroke;
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
@@ -33,6 +34,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -51,6 +53,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import javax.imageio.ImageIO;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
 import org.slf4j.Logger;
@@ -398,6 +401,16 @@ final class GameBoardPanel extends JPanel {
 		drawPieceIds(g);
 
 		drawPieceImages(g);
+		{
+			final Graphics2D regionHighlightingG = (Graphics2D) g.create();
+			regionHighlightingG.setStroke(new BasicStroke(3.0f));
+			regionHighlightingG.setColor(Color.MAGENTA);
+			try {
+				drawRegionHighlights(regionHighlightingG);
+			} finally {
+				regionHighlightingG.dispose();
+			}
+		}
 
 	}
 
@@ -599,12 +612,12 @@ final class GameBoardPanel extends JPanel {
 		for (final ListIterator<List<Integer>> matrixRowIter = posMatrix.getPosMatrix().rowIterator(); matrixRowIter
 				.hasNext();) {
 			final List<Integer> matrixRow = matrixRowIter.next();
-			final int rowIdx = matrixRowIter.nextIndex();
+			// final int rowIdx = matrixRowIter.nextIndex();
 
 			int nextColX = 0;
 			for (final ListIterator<Integer> matrixRowCellIter = matrixRow.listIterator(); matrixRowCellIter
 					.hasNext();) {
-				final int colIdx = matrixRowCellIter.nextIndex();
+				// final int colIdx = matrixRowCellIter.nextIndex();
 				final Integer pieceId = matrixRowCellIter.next();
 				if (pieceId != null) {
 					final String pieceText = pieceId.toString();
@@ -638,8 +651,9 @@ final class GameBoardPanel extends JPanel {
 		final int colWidth = getGridColWidth();
 		final int rowHeight = getGridRowHeight();
 		highlightedRegions.forEach(region -> {
-			final int[] coords = createComponentCoordArray(region, colWidth, rowHeight);
-			g.drawLine(coords[0], coords[1], coords[2], coords[3]);
+			final int[] startIdxs = createComponentCoordStartIdxArray(region, colWidth, rowHeight);
+			final int[] size = createComponentCoordSizeArray(region, colWidth, rowHeight);
+			g.drawRect(startIdxs[0], startIdxs[1], size[0], size[1]);
 		});
 	}
 
@@ -651,6 +665,10 @@ final class GameBoardPanel extends JPanel {
 	private int getGridRowHeight() {
 		final int[] matrixDims = posMatrix.getDimensions();
 		return getHeight() / matrixDims[0];
+	}
+
+	private void notifyNoValidMoves() {
+		JOptionPane.showMessageDialog(this, "No more moves available.");
 	}
 
 	private void placePieces(final Map<ImageViewInfo, SpatialMap.Region> pieceMoveTargets) {
@@ -674,17 +692,34 @@ final class GameBoardPanel extends JPanel {
 		// TODO: Change probability of a piece being selected for moving based
 		// on if it was moved before: E.g. cannot move a given piece more than
 		// twice in a row
-		final SpatialMap.Region occupiedRegion = RandomCollections.getRandomElement(piecePlacements.getMinimalRegions(),
-				rnd);
-		highlightedRegions.add(occupiedRegion);
-		final Map<ImageViewInfo, SpatialMap.Region> pieceMoveTargets = createRandomValidMoveTargetMap(occupiedRegion,
-				rnd);
-		placePieces(pieceMoveTargets);
-		clearRegion(occupiedRegion);
-		LOGGER.debug("Finished randomly moving piece(s) at {}.", occupiedRegion);
-		repaint();
-		// TODO Auto-generated method stub
+		final List<SpatialMap.Region> regionsToTry = piecePlacements.getMinimalRegions();
+		// TODO: estimate number of failed tries
+		final Set<SpatialMap.Region> failedRegions = new HashSet<>();
+		Entry<SpatialMap.Region, Map<ImageViewInfo, SpatialMap.Region>> pieceMove = null;
+		do {
+			final SpatialMap.Region occupiedRegion = RandomCollections.getRandomElement(regionsToTry, rnd);
+			final Map<ImageViewInfo, SpatialMap.Region> pieceMoveTargets = createRandomValidMoveTargetMap(
+					occupiedRegion, rnd);
+			if (pieceMoveTargets.isEmpty()) {
+				LOGGER.debug("No valid moves for piece(s) from region {}.", occupiedRegion);
+				failedRegions.add(occupiedRegion);
+			} else {
+				pieceMove = new MutablePair<>(occupiedRegion, pieceMoveTargets);
+			}
+		} while (pieceMove == null && failedRegions.size() < regionsToTry.size());
 
+		if (pieceMove == null) {
+			// No pieces left to be moved; Game cannot continue
+			notifyNoValidMoves();
+		} else {
+			final SpatialMap.Region occupiedRegion = pieceMove.getKey();
+			final Map<ImageViewInfo, SpatialMap.Region> pieceMoveTargets = pieceMove.getValue();
+			highlightedRegions.add(occupiedRegion);
+			placePieces(pieceMoveTargets);
+			clearRegion(occupiedRegion);
+			LOGGER.debug("Finished randomly moving piece(s) at {}.", occupiedRegion);
+			repaint();
+		}
 	}
 
 	/**
