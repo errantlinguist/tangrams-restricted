@@ -41,7 +41,7 @@ public final class RandomCollections {
 	 * @return A random element.
 	 */
 	public static <T> T getRandomElement(final Collection<? extends T> coll, final Random rnd) {
-		if (coll instanceof List && coll instanceof RandomAccess) {
+		if (coll instanceof RandomAccess && coll instanceof List) {
 			final List<? extends T> downcast = (List<? extends T>) coll;
 			return getRandomElement(downcast, rnd);
 		} else {
