@@ -128,9 +128,15 @@ final class GameBoardPanel extends JPanel {
 
 	};
 
+	private static final int IMG_PADDING;
+
 	private static final int IMG_SCALING_HINTS = Image.SCALE_SMOOTH;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(GameBoardPanel.class);
+
+	private static final int MIN_GRID_SQUARE_LENGTH;
+
+	private static final int REGION_HIGHLIGHT_STROKE_WIDTH;
 
 	/**
 	 *
@@ -148,6 +154,12 @@ final class GameBoardPanel extends JPanel {
 		TABLE_ROW_CELL_JOINER = Collectors.joining(TABLE_STRING_REPR_COL_DELIMITER);
 	}
 
+	static {
+		REGION_HIGHLIGHT_STROKE_WIDTH = 2;
+		IMG_PADDING = REGION_HIGHLIGHT_STROKE_WIDTH * 2;
+		MIN_GRID_SQUARE_LENGTH = 10 + IMG_PADDING;
+	}
+
 	private static void appendRowTableRepr(final int rowIdx, final Iterator<?> rowCellIter, final StringBuilder sb) {
 		sb.append(rowIdx);
 		final String nullValRepr = "-";
@@ -157,6 +169,10 @@ final class GameBoardPanel extends JPanel {
 			final String nextRepr = Objects.toString(next, nullValRepr);
 			sb.append(nextRepr);
 		}
+	}
+
+	private static IntStream calculateMinimumDimLengths(final int[] dims) {
+		return Arrays.stream(dims).map(dim -> dim * MIN_GRID_SQUARE_LENGTH);
 	}
 
 	private static int[] createComponentCoordSizeArray(final SpatialMap.Region region, final int colWidth,
@@ -293,33 +309,34 @@ final class GameBoardPanel extends JPanel {
 	private static Image scaleImageToGridSize(final Image img, final SpatialMap.Region occupiedGridRegion,
 			final int colWidth, final int rowHeight) {
 		final int[] size = createComponentCoordSizeArray(occupiedGridRegion, colWidth, rowHeight);
-		return img.getScaledInstance(size[0], size[1], IMG_SCALING_HINTS);
+		return img.getScaledInstance(Math.max(MIN_GRID_SQUARE_LENGTH, size[0] - IMG_PADDING),
+				Math.max(MIN_GRID_SQUARE_LENGTH, size[1] - IMG_PADDING), IMG_SCALING_HINTS);
 	}
-
-	private final Map<ImageViewInfo, Image> pieceImgs;
-
-	private transient final SpatialMap<ImageViewInfo> piecePlacements;
-
-	private final SpatialMatrix<Integer> posMatrix;
-
-	private final BiFunction<? super Image, ? super GameBoardPanel, ? extends Image> postColoringImgTransformer;
-
-	private final Map<ImageViewInfo, Integer> pieceIds;
-
-	private final Function<? super ImageViewInfo, int[]> piecePosMatrixSizeFactory;
-
-	private transient final Function<SpatialMap.Region, Set<SpatialMap.Region>> newRegionPossibleMoveSetFactory;
 
 	/**
 	 * At most one region should be highlighted at a time per player
 	 */
 	private final Set<SpatialMap.Region> highlightedRegions = Sets.newHashSetWithExpectedSize(1);
 
+	private transient final Function<SpatialMap.Region, Set<SpatialMap.Region>> newRegionPossibleMoveSetFactory;
+
+	private final Map<ImageViewInfo, Integer> pieceIds;
+
+	private final Map<ImageViewInfo, Image> pieceImgs;;
+
+	private transient final SpatialMap<ImageViewInfo> piecePlacements;
+
+	private final Function<? super ImageViewInfo, int[]> piecePosMatrixSizeFactory;
+
+	private final SpatialMatrix<Integer> posMatrix;
+
+	private final BiFunction<? super Image, ? super GameBoardPanel, ? extends Image> postColoringImgTransformer;
+
 	GameBoardPanel(final Collection<ImageVisualizationInfo> imgVisualizationInfoData, final Random rnd,
 			final int maxImgPlacements, final int maxPlacementRetriesPerImg, final boolean allowFailedPlacements) {
 		this(imgVisualizationInfoData, rnd, maxImgPlacements, maxPlacementRetriesPerImg, allowFailedPlacements,
 				DEFAULT_POST_COLORING_IMG_TRANSFORMER);
-	};
+	}
 
 	GameBoardPanel(final Collection<ImageVisualizationInfo> imgVisualizationInfoData, final Random rnd,
 			final int maxImgPlacements, final int maxPlacementRetriesPerImg, final boolean allowFailedPlacements,
@@ -363,6 +380,10 @@ final class GameBoardPanel extends JPanel {
 									Arrays.toString(backingPosMatrix.getDimensions())));
 				}
 				posMatrix = new SpatialMatrix<>(backingPosMatrix);
+				final int[] minSizeDims = calculateMinimumDimLengths(posMatrix.getDimensions()).toArray();
+				// NOTE: "rows" in the matrix go top-bottom and "cols" go
+				// left-right
+				setMinimumSize(new Dimension(minSizeDims[1], minSizeDims[0]));
 				newRegionPossibleMoveSetFactory = region -> {
 					final int occupiedRegionArea = region.getLengthX() * region.getLengthY();
 					return Sets.newHashSetWithExpectedSize(
@@ -396,7 +417,7 @@ final class GameBoardPanel extends JPanel {
 		drawPieceImages(g);
 		{
 			final Graphics2D regionHighlightingG = (Graphics2D) g.create();
-			regionHighlightingG.setStroke(new BasicStroke(3.0f));
+			regionHighlightingG.setStroke(new BasicStroke(REGION_HIGHLIGHT_STROKE_WIDTH));
 			regionHighlightingG.setColor(Color.MAGENTA);
 			try {
 				drawRegionHighlights(regionHighlightingG);
@@ -596,7 +617,8 @@ final class GameBoardPanel extends JPanel {
 			final Image initialImg = pieceImgs.get(pieceViewInfo);
 			final Image scaledImg = scaleImageToGridSize(initialImg, region, colWidth, rowHeight);
 			final int[] startIdxs = createComponentCoordStartIdxArray(region, colWidth, rowHeight);
-			g.drawImage(scaledImg, startIdxs[0], startIdxs[1], null);
+			g.drawImage(scaledImg, startIdxs[0] + REGION_HIGHLIGHT_STROKE_WIDTH,
+					startIdxs[1] + REGION_HIGHLIGHT_STROKE_WIDTH, null);
 		}
 	}
 
