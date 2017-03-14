@@ -347,9 +347,9 @@ final class GameBoardPanel extends JPanel {
 					return Sets.newHashSetWithExpectedSize(
 							posMatrix.getPosMatrix().getValues().size() / occupiedRegionArea);
 				};
-				final RandomMatrixImagePositionFiller<Integer> matrixFiller = new RandomMatrixImagePositionFiller<>(posMatrix,
-						incrementingPieceIdGetter, rnd, maxImgPlacements, maxPlacementRetriesPerImg, allowFailedPlacements,
-						piecePosMatrixSizeFactory);
+				final RandomMatrixImagePositionFiller<Integer> matrixFiller = new RandomMatrixImagePositionFiller<>(
+						posMatrix, incrementingPieceIdGetter, rnd, maxImgPlacements, maxPlacementRetriesPerImg,
+						allowFailedPlacements, piecePosMatrixSizeFactory);
 				piecePlacements = matrixFiller.apply(posMatrix, pieceImgs.keySet());
 				// Finished with creating necessary data structures
 				System.out.println("IMAGE PLACEMENTS");
@@ -422,7 +422,7 @@ final class GameBoardPanel extends JPanel {
 			throw new IllegalArgumentException("One or more images failed validation:" + System.lineSeparator()
 					+ createImageInfoTable(badImgs.entrySet()));
 		}
-	}
+	};
 
 	private Stream<Entry<Image, ImageViewInfo>> createImageViewInfoStream(
 			final Stream<ImageVisualizationInfo> imgVisualizationInfoData, final SizeValidator validator) {
@@ -460,14 +460,14 @@ final class GameBoardPanel extends JPanel {
 
 			return singleResult;
 		});
-	};
+	}
 
 	private Map<SpatialMap.Region, Set<SpatialMap.Region>> createValidMoveMap() {
-		final Matrix<?> posMatrix = this.posMatrix.getPosMatrix();
+		final Matrix<?> backingMatrix = this.posMatrix.getPosMatrix();
 		final Set<SpatialMap.Region> regionElements = piecePlacements.getMinimalRegionElements().keySet();
 		final Map<SpatialMap.Region, Set<SpatialMap.Region>> result = Maps
 				.newHashMapWithExpectedSize(regionElements.size());
-		final int[] matrixDims = posMatrix.getDimensions();
+		final int[] matrixDims = backingMatrix.getDimensions();
 
 		for (final SpatialMap.Region occupiedRegion : regionElements) {
 			final Set<SpatialMap.Region> possibleMoveRegions = result.computeIfAbsent(occupiedRegion,
@@ -478,14 +478,14 @@ final class GameBoardPanel extends JPanel {
 				final int xUpperBound = xLowerBound + occupiedRegion.getLengthX();
 				for (int yLowerBound = 0; yLowerBound < maxYLowerBound; yLowerBound++) {
 					final int yUpperBound = yLowerBound + occupiedRegion.getLengthY();
-					final Stream<?> possibleMoveRegionValues = posMatrix.getValues(xLowerBound, xUpperBound,
+					final Stream<?> possibleMoveRegionValues = backingMatrix.getValues(xLowerBound, xUpperBound,
 							yLowerBound, yUpperBound);
 					if (possibleMoveRegionValues.allMatch(Objects::isNull)) {
-						final SpatialMap.Region possibleMoveRegion = new SpatialMap.Region(xLowerBound, xUpperBound,
+						final SpatialMap.Region possibleMoveRegion = posMatrix.getRegion(xLowerBound, xUpperBound,
 								yLowerBound, yUpperBound);
 						possibleMoveRegions.add(possibleMoveRegion);
 					} else {
-						assert (piecePlacements.isOccupied(occupiedRegion));
+						assert piecePlacements.isOccupied(occupiedRegion);
 						if (LOGGER.isDebugEnabled()) {
 							LOGGER.debug("Found occupied space at {}.",
 									Arrays.toString(new int[] { xLowerBound, xUpperBound, yLowerBound, yUpperBound }));
@@ -615,13 +615,15 @@ final class GameBoardPanel extends JPanel {
 				final Integer pieceId = pieceIds.get(piece);
 				LOGGER.info("Moving piece \"{}\" to a random location.", pieceId);
 				final SpatialMap.Region moveTarget = RandomCollections.getRandomElement(regionValidMoves, rnd);
-				assert (!piecePlacements.isOccupied(moveTarget));
+				assert !piecePlacements.isOccupied(moveTarget);
 				posMatrix.setPositionValues(moveTarget, pieceId);
 				piecePlacements.put(piece, moveTarget);
 				posMatrix.setPositionValues(occupiedRegion, null);
 				newPositions.put(pieceId, moveTarget);
 			}
-			// NOTE: Iterator.remove() for the instance returned by the multimap's collection iterator throws a ConcurrentModificationException 
+			// NOTE: Iterator.remove() for the instance returned by the
+			// multimap's collection iterator throws a
+			// ConcurrentModificationException
 			pieces.clear();
 		}
 		return new MutablePair<>(occupiedRegion, newPositions);

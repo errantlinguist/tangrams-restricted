@@ -51,10 +51,6 @@ final class RandomMatrixImagePositionFiller<I> implements
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(RandomMatrixImagePositionFiller.class);
 
-	private static SpatialMap.Region createSpatialRegion(final int[] startMatrixIdx, final int[] endMatrixIdx) {
-		return new SpatialMap.Region(startMatrixIdx[0], endMatrixIdx[0], startMatrixIdx[1], endMatrixIdx[1]);
-	}
-
 	private final boolean allowFailedPlacements;
 
 	private final BiFunction<ImageMatrixPositionInfo<I>, Integer, Integer> incrementingRemapper = (key, oldVal) -> {
@@ -73,11 +69,11 @@ final class RandomMatrixImagePositionFiller<I> implements
 
 	private final Function<? super ImageViewInfo, I> pieceIdGetter;
 
-	private final Random rnd;
-
 	private final Function<? super ImageViewInfo, int[]> piecePosMatrixSizeFactory;
 
 	private final SpatialMatrix<? super I> posMatrix;
+
+	private final Random rnd;
 
 	RandomMatrixImagePositionFiller(final SpatialMatrix<? super I> posMatrix,
 			final Function<? super ImageViewInfo, I> pieceIdGetter, final Random rnd, final int maxPlacements,
@@ -182,6 +178,10 @@ final class RandomMatrixImagePositionFiller<I> implements
 		final int[] endMatrixIdx = IntStream.range(0, startMatrixIdx.length)
 				.map(i -> startMatrixIdx[i] + piecePosMatrixSize[i]).toArray();
 		return createSpatialRegion(startMatrixIdx, endMatrixIdx);
+	}
+
+	private SpatialMap.Region createSpatialRegion(final int[] startMatrixIdx, final int[] endMatrixIdx) {
+		return posMatrix.getRegion(startMatrixIdx[0], endMatrixIdx[0], startMatrixIdx[1], endMatrixIdx[1]);
 	}
 
 	private Entry<SpatialMap.Region, Boolean> placePieceRandomly(final ImageViewInfo piece, final I pieceId,

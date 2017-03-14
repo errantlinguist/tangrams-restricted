@@ -24,6 +24,7 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import se.kth.speech.SpatialMap.Region;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -40,6 +41,11 @@ public final class SpatialMatrix<T> {
 		this.posMatrix = posMatrix;
 	}
 
+	public Stream<T> getCells(final SpatialMap.Region region) {
+		return posMatrix.getValues(region.getXLowerBound(), region.getXUpperBound(), region.getYLowerBound(),
+				region.getYUpperBound());
+	}
+
 	/**
 	 * @return
 	 */
@@ -47,15 +53,16 @@ public final class SpatialMatrix<T> {
 		return posMatrix.getDimensions();
 	}
 
-	public Stream<T> getCells(final SpatialMap.Region region) {
-		return posMatrix.getValues(region.getXLowerBound(), region.getXUpperBound(), region.getYLowerBound(), region.getYUpperBound());
-	}
-	
 	/**
 	 * @return the posMatrix
 	 */
 	public Matrix<T> getPosMatrix() {
 		return posMatrix;
+	}
+
+	public Region getRegion(int xLowerBound, int xUpperBound, int yLowerBound, int yUpperBound) {
+		// TODO Implement caching, i.e. use a flyweight pattern?
+		return new SpatialMap.Region(xLowerBound, xUpperBound, yLowerBound, yUpperBound);
 	}
 
 	public void setPositionValues(final SpatialMap.Region region, final T pieceId) {
