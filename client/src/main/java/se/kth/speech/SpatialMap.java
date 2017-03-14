@@ -367,6 +367,8 @@ public final class SpatialMap<E> {
 			// Add the element to its new region
 			final boolean wasPut = regionElements.put(region, element);
 			assert wasPut;
+			final boolean wasAdded = regions.add(region);
+			assert wasAdded;
 			// Remove the element from its old region
 			final Collection<E> oldRegionElements = regionElements.asMap().get(result);
 			final boolean wasRemoved = oldRegionElements.remove(element);
