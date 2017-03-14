@@ -69,7 +69,6 @@ import se.kth.speech.SpatialMatrix;
 import se.kth.speech.awt.ColorReplacementImageFilter;
 import se.kth.speech.coin.tangrams.content.ImageSize;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
-import se.kth.speech.coin.tangrams.view.ImageViewInfo.RasterizationInfo;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -155,6 +154,35 @@ final class GameBoardPanel extends JPanel {
 			final String nextRepr = Objects.toString(next, nullValRepr);
 			sb.append(nextRepr);
 		}
+	}
+
+	private static int[] createComponentCoordArray(final SpatialMap.Region region, final int colWidth,
+			final int rowHeight) {
+		final int[] startIdxs = createComponentCoordStartIdxArray(region, colWidth, rowHeight);
+		final int[] size = createComponentCoordSizeArray(region, colWidth, rowHeight);
+		return new int[] { startIdxs[0], size[0], startIdxs[1], size[1] };
+	}
+
+	private static int[] createComponentCoordSizeArray(final SpatialMap.Region region, final int colWidth,
+			final int rowHeight) {
+		final int regionGridColCount = region.getLengthY();
+		LOGGER.debug("Region occupies {} grid column(s).", regionGridColCount);
+		final int width = colWidth * regionGridColCount;
+		// "x" is matrix rows, thus top-to-bottom
+		final int regionGridRowCount = region.getLengthX();
+		LOGGER.debug("Region occupies {} grid row(s).", regionGridRowCount);
+		final int height = rowHeight * regionGridRowCount;
+		return new int[] { width, height };
+	}
+
+	private static int[] createComponentCoordStartIdxArray(final SpatialMap.Region region, final int colWidth,
+			final int rowHeight) {
+		// NOTE: occupied region is denoted in matrix rows*columns
+		// "y" is matrix columns, thus left-to-right
+		final int startX = colWidth * region.getYLowerBound();
+		// "x" is matrix rows, thus top-to-bottom
+		final int startY = rowHeight * region.getXLowerBound();
+		return new int[] { startX, startY };
 	}
 
 	private static String createImageInfoTable(
@@ -268,16 +296,8 @@ final class GameBoardPanel extends JPanel {
 
 	private static Image scaleImageToGridSize(final Image img, final SpatialMap.Region occupiedGridRegion,
 			final int colWidth, final int rowHeight) {
-		// NOTE: occupied region is denoted in matrix rows*columns
-		// "y" is matrix columns, thus left-to-right
-		final int regionGridColCount = occupiedGridRegion.getLengthY();
-		LOGGER.debug("Image occupies {} grid column(s).", regionGridColCount);
-		final int imgWidth = colWidth * regionGridColCount;
-		// "x" is matrix rows, thus top-to-bottom
-		final int regionGridRowCount = occupiedGridRegion.getLengthX();
-		LOGGER.debug("Image occupies {} grid row(s).", regionGridRowCount);
-		final int imgHeight = rowHeight * regionGridRowCount;
-		return img.getScaledInstance(imgWidth, imgHeight, IMG_SCALING_HINTS);
+		final int[] size = createComponentCoordSizeArray(occupiedGridRegion, colWidth, rowHeight);
+		return img.getScaledInstance(size[0], size[1], IMG_SCALING_HINTS);
 	}
 
 	private final Map<ImageViewInfo, Image> pieceImgs;
@@ -294,11 +314,16 @@ final class GameBoardPanel extends JPanel {
 
 	private transient final Function<SpatialMap.Region, Set<SpatialMap.Region>> newRegionPossibleMoveSetFactory;
 
+	/**
+	 * At most one region should be highlighted at a time per player
+	 */
+	private final Set<SpatialMap.Region> highlightedRegions = Sets.newHashSetWithExpectedSize(1);
+
 	GameBoardPanel(final Collection<ImageVisualizationInfo> imgVisualizationInfoData, final Random rnd,
 			final int maxImgPlacements, final int maxPlacementRetriesPerImg, final boolean allowFailedPlacements) {
 		this(imgVisualizationInfoData, rnd, maxImgPlacements, maxPlacementRetriesPerImg, allowFailedPlacements,
 				DEFAULT_POST_COLORING_IMG_TRANSFORMER);
-	}
+	};
 
 	GameBoardPanel(final Collection<ImageVisualizationInfo> imgVisualizationInfoData, final Random rnd,
 			final int maxImgPlacements, final int maxPlacementRetriesPerImg, final boolean allowFailedPlacements,
@@ -376,6 +401,15 @@ final class GameBoardPanel extends JPanel {
 
 	}
 
+	private void clearRegion(final SpatialMap.Region occupiedRegion) {
+		final Collection<ImageViewInfo> pieces = piecePlacements.getMinimalRegionElements().get(occupiedRegion);
+		// NOTE: Iterator.remove() for the instance returned by the
+		// multimap's collection iterator throws a
+		// ConcurrentModificationException
+		pieces.clear();
+		posMatrix.setPositionValues(occupiedRegion, null);
+	}
+
 	private LinkedHashMap<ImageViewInfo, Image> createImageViewInfoMap(
 			final Collection<ImageVisualizationInfo> imgVisualizationInfoData, final SizeValidator validator)
 			throws IOException {
@@ -422,7 +456,7 @@ final class GameBoardPanel extends JPanel {
 			throw new IllegalArgumentException("One or more images failed validation:" + System.lineSeparator()
 					+ createImageInfoTable(badImgs.entrySet()));
 		}
-	};
+	}
 
 	private Stream<Entry<Image, ImageViewInfo>> createImageViewInfoStream(
 			final Stream<ImageVisualizationInfo> imgVisualizationInfoData, final SizeValidator validator) {
@@ -462,8 +496,29 @@ final class GameBoardPanel extends JPanel {
 		});
 	}
 
+	private Map<ImageViewInfo, SpatialMap.Region> createRandomValidMoveTargetMap(final SpatialMap.Region occupiedRegion,
+			final Random rnd) {
+		final Map<Region, Set<Region>> validMoves = createValidMoveMap();
+		final Map<ImageViewInfo, SpatialMap.Region> result;
+		final Set<SpatialMap.Region> regionValidMoves = validMoves.computeIfAbsent(occupiedRegion,
+				newRegionPossibleMoveSetFactory);
+		if (regionValidMoves.isEmpty()) {
+			result = Collections.emptyMap();
+		} else {
+			final Collection<ImageViewInfo> pieces = piecePlacements.getMinimalRegionElements().get(occupiedRegion);
+			// NOTE: The iterator should only have one element here
+			result = Maps.newHashMapWithExpectedSize(pieces.size());
+			for (final ImageViewInfo piece : pieces) {
+				final SpatialMap.Region moveTarget = RandomCollections.getRandomElement(regionValidMoves, rnd);
+				assert !piecePlacements.isOccupied(moveTarget);
+				result.put(piece, moveTarget);
+			}
+		}
+		return result;
+	}
+
 	private Map<SpatialMap.Region, Set<SpatialMap.Region>> createValidMoveMap() {
-		final Matrix<?> backingMatrix = this.posMatrix.getPosMatrix();
+		final Matrix<?> backingMatrix = posMatrix.getPosMatrix();
 		final Set<SpatialMap.Region> regionElements = piecePlacements.getMinimalRegionElements().keySet();
 		final Map<SpatialMap.Region, Set<SpatialMap.Region>> result = Maps
 				.newHashMapWithExpectedSize(regionElements.size());
@@ -574,15 +629,18 @@ final class GameBoardPanel extends JPanel {
 			final ImageViewInfo pieceViewInfo = piecePlacement.getValue();
 			final Image initialImg = pieceImgs.get(pieceViewInfo);
 			final Image scaledImg = scaleImageToGridSize(initialImg, region, colWidth, rowHeight);
-			final ImageVisualizationInfo visualizationInfo = pieceViewInfo.getVisualization();
-
-			// NOTE: occupied region is denoted in matrix rows*columns
-			// "y" is matrix columns, thus left-to-right
-			final int imgStartX = colWidth * region.getYLowerBound();
-			// "x" is matrix rows, thus top-to-bottom
-			final int imgStartY = rowHeight * region.getXLowerBound();
-			g.drawImage(scaledImg, imgStartX, imgStartY, null);
+			final int[] startIdxs = createComponentCoordStartIdxArray(region, colWidth, rowHeight);
+			g.drawImage(scaledImg, startIdxs[0], startIdxs[1], null);
 		}
+	}
+
+	private void drawRegionHighlights(final Graphics g) {
+		final int colWidth = getGridColWidth();
+		final int rowHeight = getGridRowHeight();
+		highlightedRegions.forEach(region -> {
+			final int[] coords = createComponentCoordArray(region, colWidth, rowHeight);
+			g.drawLine(coords[0], coords[1], coords[2], coords[3]);
+		});
 	}
 
 	private int getGridColWidth() {
@@ -595,55 +653,16 @@ final class GameBoardPanel extends JPanel {
 		return getHeight() / matrixDims[0];
 	}
 
-	private synchronized Entry<SpatialMap.Region, Map<Integer, SpatialMap.Region>> moveRandomPiece(final Random rnd) {
-		final Map<Region, Set<Region>> validMoves = createValidMoveMap();
-		// TODO: Change probability of a piece being selected for moving based
-		// on if it was moved before: E.g. cannot move a given piece more than
-		// twice in a row
-		final SpatialMap.Region occupiedRegion = RandomCollections.getRandomElement(piecePlacements.getMinimalRegions(),
-				rnd);
-		final Map<Integer, SpatialMap.Region> newPositions;
-		final Set<SpatialMap.Region> regionValidMoves = validMoves.computeIfAbsent(occupiedRegion,
-				newRegionPossibleMoveSetFactory);
-		if (regionValidMoves.isEmpty()) {
-			newPositions = Collections.emptyMap();
-		} else {
-			final Collection<ImageViewInfo> pieces = piecePlacements.getMinimalRegionElements().get(occupiedRegion);
-			// NOTE: The iterator should only have one element here
-			newPositions = Maps.newHashMapWithExpectedSize(pieces.size());
-			for (final ImageViewInfo piece : pieces) {
-				final Integer pieceId = pieceIds.get(piece);
-				LOGGER.info("Moving piece \"{}\" to a random location.", pieceId);
-				final SpatialMap.Region moveTarget = RandomCollections.getRandomElement(regionValidMoves, rnd);
-				assert !piecePlacements.isOccupied(moveTarget);
-				posMatrix.setPositionValues(moveTarget, pieceId);
-				piecePlacements.put(piece, moveTarget);
-				posMatrix.setPositionValues(occupiedRegion, null);
-				newPositions.put(pieceId, moveTarget);
-			}
-			// NOTE: Iterator.remove() for the instance returned by the
-			// multimap's collection iterator throws a
-			// ConcurrentModificationException
-			pieces.clear();
+	private void placePieces(final Map<ImageViewInfo, SpatialMap.Region> pieceMoveTargets) {
+		for (final Entry<ImageViewInfo, SpatialMap.Region> pieceMoveTarget : pieceMoveTargets.entrySet()) {
+			final ImageViewInfo piece = pieceMoveTarget.getKey();
+			final Integer pieceId = pieceIds.get(piece);
+			final SpatialMap.Region moveTarget = pieceMoveTarget.getValue();
+			LOGGER.debug("Moving piece \"{}\" to {}.", pieceId, moveTarget);
+			assert !piecePlacements.isOccupied(moveTarget);
+			posMatrix.setPositionValues(moveTarget, pieceId);
+			piecePlacements.put(piece, moveTarget);
 		}
-		return new MutablePair<>(occupiedRegion, newPositions);
-	}
-
-	private void scaleImage(final Image img, final ImageViewInfo viewInfo, final SpatialMap.Region occupiedGridRegion) {
-		final RasterizationInfo rasterizationInfo = viewInfo.getRasterization();
-		final ImageVisualizationInfo visualizationInfo = viewInfo.getVisualization();
-		final ImageSize size = visualizationInfo.getSize();
-		// NOTE: occupied region is denoted in matrix rows*columns
-		// "y" is matrix columns, thus left-to-right
-		final int colWidth = getGridColWidth();
-		final int regionGridColCount = occupiedGridRegion.getLengthY();
-		LOGGER.debug("Image occupies {} grid column(s).", regionGridColCount);
-		final int imgWidth = colWidth * regionGridColCount;
-		final int rowHeight = getGridRowHeight();
-		// "x" is matrix rows, thus top-to-bottom
-		final int regionGridRowCount = occupiedGridRegion.getLengthX();
-		LOGGER.debug("Image occupies {} grid row(s).", regionGridRowCount);
-		final int imgHeight = rowHeight * regionGridRowCount;
 	}
 
 	/**
@@ -652,8 +671,17 @@ final class GameBoardPanel extends JPanel {
 	void notifyContinue(final Random rnd) {
 		LOGGER.debug("Notified of continue event.");
 		LOGGER.debug("Moving random piece.");
-		final Entry<Region, Map<Integer, Region>> newPlace = moveRandomPiece(rnd);
-		LOGGER.debug("Finished randomly moving piece(s) at {} to {}.", newPlace.getKey(), newPlace.getValue());
+		// TODO: Change probability of a piece being selected for moving based
+		// on if it was moved before: E.g. cannot move a given piece more than
+		// twice in a row
+		final SpatialMap.Region occupiedRegion = RandomCollections.getRandomElement(piecePlacements.getMinimalRegions(),
+				rnd);
+		highlightedRegions.add(occupiedRegion);
+		final Map<ImageViewInfo, SpatialMap.Region> pieceMoveTargets = createRandomValidMoveTargetMap(occupiedRegion,
+				rnd);
+		placePieces(pieceMoveTargets);
+		clearRegion(occupiedRegion);
+		LOGGER.debug("Finished randomly moving piece(s) at {}.", occupiedRegion);
 		repaint();
 		// TODO Auto-generated method stub
 
