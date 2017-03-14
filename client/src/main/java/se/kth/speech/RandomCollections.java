@@ -16,8 +16,11 @@
 */
 package se.kth.speech;
 
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
+import java.util.RandomAccess;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -26,14 +29,40 @@ import java.util.Random;
  */
 public final class RandomCollections {
 
+	/**
+	 * <strong>NOTE:</strong> The complexity of this method is linear to the
+	 * {@link Collection#size() size} of the given {@link Collection}.
+	 *
+	 * @param coll
+	 *            The {@code Collection} to get a random element from.
+	 * @param rnd
+	 *            The {@link Random} instance to use for getting a random
+	 *            element.
+	 * @return A random element.
+	 */
+	public static <T> T getRandomElement(final Collection<? extends T> coll, final Random rnd) {
+		if (coll instanceof List && coll instanceof RandomAccess) {
+			final List<? extends T> downcast = (List<? extends T>) coll;
+			return getRandomElement(downcast, rnd);
+		} else {
+			final Iterator<? extends T> iter = coll.iterator();
+			final int idx = rnd.nextInt(coll.size());
+			// Start at one because the last-iterated element should be returned
+			for (int i = 1; i < idx; ++i) {
+				iter.next();
+			}
+			return iter.next();
+		}
+	}
+
 	public static int getRandomElement(final int[] array, final Random rnd) {
 		return array[rnd.nextInt(array.length)];
 	}
-	
+
 	public static <T> T getRandomElement(final List<? extends T> list, final Random rnd) {
 		return list.get(rnd.nextInt(list.size()));
 	}
-	
+
 	public static <T> T getRandomElement(final T[] array, final Random rnd) {
 		return array[rnd.nextInt(array.length)];
 	}
