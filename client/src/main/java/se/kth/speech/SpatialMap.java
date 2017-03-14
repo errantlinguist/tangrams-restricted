@@ -19,11 +19,13 @@ package se.kth.speech;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 
 /**
@@ -253,18 +255,20 @@ public final class SpatialMap<E> {
 	 */
 	private final Multimap<Region, E> regionElements;
 
+	private final Map<E, Region> elementRegions;
+
 	/**
 	 * An ordered sequence of regions being used, e.g. for getting an ID for a
 	 * particular region
 	 */
 	private transient final List<Region> regions;
 
-	public SpatialMap(final int expectedElementCount) {
-		this(HashMultimap.create(estimateRegionCount(expectedElementCount), expectedElementCount));
-	}
+	private final int expectedElementCount;
 
-	private SpatialMap(final Multimap<Region, E> regionElements) {
-		this.regionElements = regionElements;
+	public SpatialMap(final int expectedElementCount) {
+		this.expectedElementCount = expectedElementCount;
+		this.regionElements = HashMultimap.create(estimateRegionCount(expectedElementCount), expectedElementCount);
+		this.elementRegions = Maps.newHashMapWithExpectedSize(expectedElementCount);
 		this.regions = new ArrayList<>(Math.max(regionElements.size(), 16));
 	}
 
@@ -346,10 +350,27 @@ public final class SpatialMap<E> {
 		return regionElements.keySet().stream().anyMatch(elementRegion -> elementRegion.intersects(region));
 	}
 
-	public boolean put(final E element, final Region region) {
-		final boolean result;
-		if (result = regionElements.put(region, element)){
-			regions.add(region);
+	public synchronized Region put(final E element, final Region region) {
+		final Region result = elementRegions.put(element, region);
+		if (result == null) {
+			// The element has never been seen by this instance before
+			final boolean wasPut = regionElements.put(region, element);
+			assert wasPut;
+			final boolean wasAdded = regions.add(region);
+			assert wasAdded;
+		} else {
+			// Add the element to its new region
+			final boolean wasPut = regionElements.put(region, element);
+			assert wasPut;
+			// Remove the element from its old region
+			final Collection<E> oldRegionElements = regionElements.asMap().get(result);
+			final boolean wasRemoved = oldRegionElements.remove(element);
+			assert wasRemoved;
+			if (oldRegionElements.isEmpty()) {
+				// Remove the old region from the set of all regions
+				final boolean wasRegionRemoved = regions.remove(result);
+				assert wasRegionRemoved;
+			}
 		}
 		return result;
 	}
