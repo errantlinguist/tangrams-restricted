@@ -143,7 +143,7 @@ final class RandomMatrixImagePositionFiller<I>
 			if (failedPlacements.isEmpty()) {
 				LOGGER.info("Successfully placed {} image(s).", placementCount);
 			} else {
-				final String errorMsg = createFailedPlacementErrorMsg(failedPlacements);
+				final String errorMsg = createFailedPlacementErrorMsg(failedPlacements, imgViewInfoData.size());
 				if (allowFailedPlacements) {
 					LOGGER.warn(errorMsg);
 				} else {
@@ -155,10 +155,10 @@ final class RandomMatrixImagePositionFiller<I>
 		return result;
 	}
 
-	private String createFailedPlacementErrorMsg(final List<?> failedPlacements) {
+	private String createFailedPlacementErrorMsg(final List<?> failedPlacements, final int totalElements) {
 		final String errorMsgPrefix = String.format(
-				"%d image(s) could not be placed successfully after %d retries each:", failedPlacements.size(),
-				maxPlacementRetriesPerImg);
+				"%d out of %d image(s) could not be placed successfully after %d retries each:",
+				failedPlacements.size(), totalElements, maxPlacementRetriesPerImg);
 		final StringBuilder sb = new StringBuilder(errorMsgPrefix.length() + failedPlacements.size() * 16);
 		sb.append(errorMsgPrefix);
 		for (final Object failedPlacement : failedPlacements) {
