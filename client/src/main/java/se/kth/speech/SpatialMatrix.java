@@ -19,6 +19,7 @@ package se.kth.speech;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -111,21 +112,27 @@ public final class SpatialMatrix<I, E> {
 		return result;
 	}
 
-	public Table<Integer, Integer, SpatialMap.Region> createSizeIndexedRegionPowerSet() {
+	public Table<Integer, Integer, Set<SpatialMap.Region>> createSizeIndexedRegionPowerSet() {
 		final int dims[] = positionMatrix.getDimensions();
 		final int x = dims[0];
 		final int y = dims[1];
-		final Table<Integer, Integer, SpatialMap.Region> result = ArrayTable.create(
-				IntStream.range(1, x + 1).boxed().collect(Collectors.toCollection(() -> new ArrayList<>(x))),
-				IntStream.range(1, y + 1).boxed().collect(Collectors.toCollection(() -> new ArrayList<>(y))));
+		final Table<Integer, Integer, Set<SpatialMap.Region>> result = ArrayTable.create(
+				IntStream.range(0, x + 1).boxed().collect(Collectors.toCollection(() -> new ArrayList<>(x))),
+				IntStream.range(0, y + 1).boxed().collect(Collectors.toCollection(() -> new ArrayList<>(y))));
 		for (int xLowerBound = 0; xLowerBound <= x; ++xLowerBound) {
 			for (int xUpperBound = xLowerBound; xUpperBound <= x; ++xUpperBound) {
 				final int xLength = xUpperBound - xLowerBound;
 				for (int yLowerBound = 0; yLowerBound < y; ++yLowerBound) {
 					for (int yUpperBound = yLowerBound; yUpperBound <= y; ++yUpperBound) {
 						final int yLength = yUpperBound - yLowerBound;
+						Set<SpatialMap.Region> regions = result.get(xLength, yLength);
+						if (regions == null) {
+							// TODO: set capacity
+							regions = new HashSet<>();
+							result.put(xLength, yLength, regions);
+						}
 						final SpatialMap.Region region = getRegion(xLowerBound, xUpperBound, yLowerBound, yUpperBound);
-						result.put(xLength, yLength, region);
+						regions.add(region);
 					}
 				}
 			}
