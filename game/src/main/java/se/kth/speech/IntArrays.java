@@ -16,19 +16,14 @@
 */
 package se.kth.speech;
 
+import java.util.function.IntBinaryOperator;
+
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
  * @since 3 Jan 2017
  *
  */
 public final class IntArrays {
-
-	public static void add(final int[] augend, final int[] addend) {
-		final int minDimCount = Math.min(augend.length, addend.length);
-		for (int i = 0; i < minDimCount; ++i) {
-			augend[i] += addend[i];
-		}
-	}
 
 	/**
 	 * @see <a href="http://stackoverflow.com/a/80503/1391325">Source on SO</a>
@@ -43,6 +38,13 @@ public final class IntArrays {
 		System.arraycopy(a, 0, c, 0, aLen);
 		System.arraycopy(b, 0, c, aLen, bLen);
 		return c;
+	}
+
+	public static void mutate(final int[] mutand, final int[] applicand, final IntBinaryOperator operator) {
+		final int minDimCount = Math.min(mutand.length, mutand.length);
+		for (int i = 0; i < minDimCount; ++i) {
+			mutand[i] = operator.applyAsInt(mutand[i], applicand[i]);
+		}
 	}
 
 	public static int product(final int[] array) {
