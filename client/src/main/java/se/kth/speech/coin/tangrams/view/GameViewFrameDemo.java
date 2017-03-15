@@ -85,7 +85,18 @@ public final class GameViewFrameDemo implements Runnable {
 			@Override
 			public Option get() {
 				return Option.builder(optName).longOpt("img-placements")
-						.desc("The number of images to place on the board").hasArg().argName("count")
+						.desc("The number of images to place on the board.").hasArg().argName("count")
+						// See http://stackoverflow.com/a/5955893/1391325
+						.type(Number.class).build();
+			}
+
+		},
+		OCCUPIED_GRID_AREA("o") {
+
+			@Override
+			public Option get() {
+				return Option.builder(optName).longOpt("img-placements")
+						.desc("The percentage of the board to occupy with pieces.").hasArg().argName("percent")
 						// See http://stackoverflow.com/a/5955893/1391325
 						.type(Number.class).build();
 			}
@@ -110,7 +121,9 @@ public final class GameViewFrameDemo implements Runnable {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(GameViewFrameDemo.class);
 
-	private static int DEFAULT_MAX_PLACEMENT_RETRIES = 3;
+	private static final int DEFAULT_MAX_PLACEMENT_RETRIES = 3;
+
+	private static final double DEFAULT_OCCUPIED_GRID_AREA = 0.67;
 
 	private static final int DEFAULT_IMG_PLACEMENT_COUNT = 20;
 
@@ -122,11 +135,12 @@ public final class GameViewFrameDemo implements Runnable {
 			} else {
 				final long gameId = ((Number) cl.getParsedOptionValue(Parameter.GAME_ID.optName)).longValue();
 				final int imgPlacementCount = parseImgPlacementCount(cl);
+				final double occupiedGridArea = parseOccupiedGridArea(cl);
 				final int maxPlacementRetries = parseMaxPlacementRetries(cl);
 				final boolean allowFailedPlacements = cl.hasOption(Parameter.ALLOW_FAILED_PLACEMENTS.optName);
 				LOGGER.info("Creating view for game \"{}\".", gameId);
 				final Random rnd = new Random(gameId);
-				final GameViewFrameDemo testInstance = new GameViewFrameDemo(rnd, imgPlacementCount,
+				final GameViewFrameDemo testInstance = new GameViewFrameDemo(rnd, imgPlacementCount, occupiedGridArea,
 						maxPlacementRetries, allowFailedPlacements);
 				EventQueue.invokeLater(testInstance);
 			}
@@ -150,6 +164,9 @@ public final class GameViewFrameDemo implements Runnable {
 			LOGGER.info("No max image placement count supplied; Using default ({}).", result);
 		} else {
 			result = parsedVal.intValue();
+			if (result < 1) {
+				throw new IllegalArgumentException("Max image placement count must be positive.");
+			}
 			LOGGER.info("Set max image placement count to {}.", result);
 		}
 		return result;
@@ -168,6 +185,22 @@ public final class GameViewFrameDemo implements Runnable {
 		return result;
 	}
 
+	private static double parseOccupiedGridArea(final CommandLine cl) throws ParseException {
+		final double result;
+		final Number parsedVal = (Number) cl.getParsedOptionValue(Parameter.OCCUPIED_GRID_AREA.optName);
+		if (parsedVal == null) {
+			result = DEFAULT_OCCUPIED_GRID_AREA;
+			LOGGER.info("No occupied grid area supplied; Using default ({}).", result);
+		} else {
+			result = parsedVal.doubleValue();
+			if (result < 0 || result > 1.0) {
+				throw new IllegalArgumentException("Occupied grid area must be between 0 and 1.");
+			}
+			LOGGER.info("Set occupied grid area to {}.", result);
+		}
+		return result;
+	}
+
 	private static void printHelp() {
 		final HelpFormatter formatter = new HelpFormatter();
 		formatter.printHelp(GameViewFrameDemo.class.getName(), OPTIONS);
@@ -181,10 +214,13 @@ public final class GameViewFrameDemo implements Runnable {
 
 	private final int imgPlacementCount;
 
-	public GameViewFrameDemo(final Random rnd, final int imgPlacementCount, final int maxPlacementRetriesPerImg,
-			final boolean allowFailedPlacements) {
+	private final double occupiedGridArea;
+
+	public GameViewFrameDemo(final Random rnd, final int imgPlacementCount, final double occupiedGridArea,
+			final int maxPlacementRetriesPerImg, final boolean allowFailedPlacements) {
 		this.rnd = rnd;
 		this.imgPlacementCount = imgPlacementCount;
+		this.occupiedGridArea = occupiedGridArea;
 		this.maxPlacementRetriesPerImg = maxPlacementRetriesPerImg;
 		this.allowFailedPlacements = allowFailedPlacements;
 	}
@@ -202,8 +238,8 @@ public final class GameViewFrameDemo implements Runnable {
 		final OpaqueTransparencyReplacementImageFilter imgTranformer = new OpaqueTransparencyReplacementImageFilter(
 				128);
 		final GameBoardPanel gameBoardPanel = new GameBoardPanel(imgVisualizationInfoData, rnd, imgPlacementCount,
-				maxPlacementRetriesPerImg, allowFailedPlacements, imgDataFactory.getImgResources().size(),
-				(img, panel) -> panel.getToolkit()
+				maxPlacementRetriesPerImg, occupiedGridArea, allowFailedPlacements,
+				imgDataFactory.getImgResources().size(), (img, panel) -> panel.getToolkit()
 						.createImage(new FilteredImageSource(img.getSource(), imgTranformer)));
 		final GameViewFrame frame = new GameViewFrame(gameBoardPanel, rnd);
 		frame.pack();
