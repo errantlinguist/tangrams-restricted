@@ -9,9 +9,9 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="79.375mm"
-   height="105.83334mm"
-   viewBox="0 0 79.375 105.83334"
+   width="317.49997mm"
+   height="423.33334mm"
+   viewBox="0 0 317.49997 423.33333"
    version="1.1"
    id="svg4489"
    sodipodi:docname="head.svg"
@@ -25,9 +25,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="1.979899"
-     inkscape:cx="60.088025"
-     inkscape:cy="213.85828"
+     inkscape:zoom="0.49497475"
+     inkscape:cx="387.60699"
+     inkscape:cy="813.85826"
      inkscape:document-units="mm"
      inkscape:current-layer="layer-head"
      showgrid="false"
@@ -56,10 +56,10 @@
      inkscape:label="Head"
      inkscape:groupmode="layer"
      id="layer-head"
-     transform="translate(66.1875,-99.583333)">
+     transform="translate(185.24999,59.166665)">
     <path
        style="fill:#000000;stroke-width:0"
-       d="m -66.1875,205.41667 19.242424,-23.51852 V 99.583333 H 1.1609848 v 47.037037 0 0 L 13.1875,158.37963 H 1.1609848 v 23.51852 l -24.0530298,11.75926 v 11.75926 z"
+       d="m -185.24999,364.16667 76.96969,-94.07408 V -59.166665 H 84.143935 v 188.148145 0 0 l 48.106055,47.03703 H 84.143935 v 94.07408 l -96.212116,47.03704 v 47.03704 z"
        id="path-head"
        inkscape:connector-curvature="0"
        sodipodi:nodetypes="ccccccccccccc" />

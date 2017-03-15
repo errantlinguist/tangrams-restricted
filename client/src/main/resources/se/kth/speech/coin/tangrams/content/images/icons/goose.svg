@@ -9,9 +9,9 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="105.83334mm"
-   height="79.375mm"
-   viewBox="0 0 105.83334 79.375001"
+   width="423.33334mm"
+   height="317.5mm"
+   viewBox="0 0 423.33333 317.5"
    version="1.1"
    id="svg4504"
    inkscape:version="0.92.0 r15299"
@@ -29,8 +29,8 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="1.4"
-     inkscape:cx="129.72856"
-     inkscape:cy="266.47659"
+     inkscape:cx="556.51429"
+     inkscape:cy="716.47659"
      inkscape:document-units="mm"
      inkscape:current-layer="layer-goose"
      showgrid="false"
@@ -60,10 +60,10 @@
      inkscape:label="Goose"
      inkscape:groupmode="layer"
      id="layer-goose"
-     transform="translate(70.416667,-107.8125)">
+     transform="translate(229.16667,11.25)">
     <path
        style="fill:#000000;stroke-width:0"
-       d="M -11.62037,175.84821 -35.13889,187.1875 H -70.416667 L -35.13889,153.16964 H -58.657408 V 107.8125 l 47.037038,45.35714 V 107.8125 H 23.657408 L 0.13888896,153.16964 35.416667,187.1875 H -11.62037 Z"
+       d="M 6.01852,260.89284 -88.05556,306.25 H -229.16667 L -88.05556,170.17856 h -94.07407 V -11.25 L 6.01852,170.17856 V -11.25 H 147.12963 L 53.055556,170.17856 194.16667,306.25 H 6.01852 Z"
        id="path-goose"
        inkscape:connector-curvature="0"
        sodipodi:nodetypes="ccccccccccccc" />

@@ -9,9 +9,9 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="79.375mm"
-   height="79.375mm"
-   viewBox="0 0 79.375 79.375"
+   width="317.5mm"
+   height="317.5mm"
+   viewBox="0 0 317.5 317.5"
    version="1.1"
    id="svg5617"
    inkscape:version="0.92.0 r15299"
@@ -28,16 +28,16 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="0.9899495"
-     inkscape:cx="-87.379665"
-     inkscape:cy="238.76526"
+     inkscape:zoom="0.175"
+     inkscape:cx="277.23331"
+     inkscape:cy="688.76526"
      inkscape:document-units="mm"
      inkscape:current-layer="layer-rock"
      showgrid="false"
      inkscape:window-width="1278"
      inkscape:window-height="1378"
-     inkscape:window-x="-46"
-     inkscape:window-y="104"
+     inkscape:window-x="-7"
+     inkscape:window-y="0"
      inkscape:window-maximized="0"
      fit-margin-top="0"
      fit-margin-left="0"
@@ -51,7 +51,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title />
+        <dc:title></dc:title>
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -59,10 +59,10 @@
      inkscape:label="Rock"
      inkscape:groupmode="layer"
      id="layer-rock"
-     transform="translate(-132.8125,-212.8125)">
+     transform="translate(-13.75,-93.75)">
     <path
        style="fill:#000000;stroke-width:0"
-       d="m 132.8125,246.83036 v 0 -34.01786 h 52.91667 l 26.45833,34.01786 -17.63889,22.67857 h -26.45833 l -17.63889,22.67857 z"
+       d="m 13.75,229.82144 v 0 V 93.75 H 225.41668 L 331.25,229.82144 260.69444,320.53572 H 154.86112 L 84.30556,411.25 Z"
        id="path-rock"
        inkscape:connector-curvature="0"
        sodipodi:nodetypes="ccccccccc" />

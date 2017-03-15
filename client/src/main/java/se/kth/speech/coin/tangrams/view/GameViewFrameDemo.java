@@ -197,7 +197,7 @@ public final class GameViewFrameDemo implements Runnable {
 	@Override
 	public void run() {
 		final RandomPieceImageDataFactory imgDataFactory = new RandomPieceImageDataFactory();
-		final List<ImageVisualizationInfo> imgVisualizationInfoData = imgDataFactory.apply(rnd)
+		final List<ImageVisualizationInfo> imgVisualizationInfoData = imgDataFactory.apply(rnd).limit(imgPlacementCount)
 				.collect(Collectors.toList());
 		final OpaqueTransparencyReplacementImageFilter imgTranformer = new OpaqueTransparencyReplacementImageFilter(
 				128);

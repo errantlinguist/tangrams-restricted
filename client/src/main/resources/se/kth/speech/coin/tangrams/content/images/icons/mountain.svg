@@ -9,9 +9,9 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="158.75mm"
-   height="79.375mm"
-   viewBox="0 0 158.75 79.375"
+   width="635mm"
+   height="317.5mm"
+   viewBox="0 0 635 317.5"
    version="1.1"
    id="svg5053"
    inkscape:version="0.92.0 r15299"
@@ -28,9 +28,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="3.959798"
-     inkscape:cx="248.73918"
-     inkscape:cy="144.96063"
+     inkscape:zoom="0.70000001"
+     inkscape:cx="1087.4987"
+     inkscape:cy="594.96063"
      inkscape:document-units="mm"
      inkscape:current-layer="layer-mountain"
      showgrid="false"
@@ -40,8 +40,8 @@
      fit-margin-bottom="0"
      inkscape:window-width="1278"
      inkscape:window-height="1378"
-     inkscape:window-x="161"
-     inkscape:window-y="243"
+     inkscape:window-x="-7"
+     inkscape:window-y="0"
      inkscape:window-maximized="0" />
   <metadata
      id="metadata5050">
@@ -59,10 +59,10 @@
      inkscape:label="Mountain"
      inkscape:groupmode="layer"
      id="layer-mountain"
-     transform="translate(104.375,-107.8125)">
+     transform="translate(342.5,11.25)">
     <path
        style="fill:#000000;stroke-width:0"
-       d="m -104.375,187.1875 31.75,-47.625 15.875,15.875 31.75,-47.625 31.75,47.625 15.875,-15.875 31.75,47.625 z"
+       d="m -342.5,306.25 127,-190.5 63.5,63.5 127,-190.5 127,190.5 63.5,-63.5 127,190.5 z"
        id="path-mountain"
        inkscape:connector-curvature="0"
        sodipodi:nodetypes="cccccccc" />
