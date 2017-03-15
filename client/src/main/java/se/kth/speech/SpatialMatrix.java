@@ -71,6 +71,23 @@ public final class SpatialMatrix<I, E> {
 		setPositionValues(occupiedRegion, null);
 	}
 
+	public Set<SpatialMap.Region> createRegionPowerSet() {
+		final int dims[] = positionMatrix.getDimensions();
+		final int area = IntArrays.product(dims);
+		final Set<SpatialMap.Region> result = Sets.newHashSetWithExpectedSize(area * area / 2);
+		for (int xLowerBound = 0; xLowerBound <= dims[0]; ++xLowerBound) {
+			for (int xUpperBound = xLowerBound; xUpperBound <= dims[0]; ++xUpperBound) {
+				for (int yLowerBound = 0; yLowerBound < dims[1]; ++yLowerBound) {
+					for (int yUpperBound = yLowerBound; yUpperBound <= dims[1]; ++yUpperBound) {
+						final SpatialMap.Region region = getRegion(xLowerBound, xUpperBound, yLowerBound, yUpperBound);
+						result.add(region);
+					}
+				}
+			}
+		}
+		return result;
+	}
+
 	public Map<SpatialMap.Region, Set<SpatialMap.Region>> createValidMoveMap() {
 		final Set<SpatialMap.Region> regionElements = elementPlacements.getMinimalRegionElements().keySet();
 		final Map<SpatialMap.Region, Set<SpatialMap.Region>> result = Maps
