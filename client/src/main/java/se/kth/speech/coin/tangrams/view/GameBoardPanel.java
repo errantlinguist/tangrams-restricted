@@ -399,7 +399,7 @@ final class GameBoardPanel extends JPanel {
 				// http://stackoverflow.com/a/1936582/1391325
 				final Dimension screenSize = getToolkit().getScreenSize();
 				final Dimension maxSize = Dimensions.createScaledDimension(boardSize, screenSize);
-				LOGGER.info("Setting maximum component size to {}.", maxSize);
+				LOGGER.debug("Setting maximum component size to {}.", maxSize);
 				setMaximumSize(maxSize);
 			}
 			{
@@ -407,7 +407,7 @@ final class GameBoardPanel extends JPanel {
 				// NOTE: "rows" in the matrix go top-bottom and "cols" go
 				// left-right
 				final Dimension minSize = new Dimension(minSizeDims[1], minSizeDims[0]);
-				LOGGER.info("Setting minimum component size to {}.", minSize);
+				LOGGER.debug("Setting minimum component size to {}.", minSize);
 				setMinimumSize(minSize);
 			}
 			newRegionPossibleMoveSetFactory = region -> {
