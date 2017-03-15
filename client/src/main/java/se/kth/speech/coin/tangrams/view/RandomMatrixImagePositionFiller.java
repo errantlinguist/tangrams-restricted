@@ -46,8 +46,8 @@ import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
  * @since 9 Mar 2017
  *
  */
-final class RandomMatrixImagePositionFiller<I> implements
-		Function<Collection<? extends ImageViewInfo>, SpatialMap<ImageViewInfo>> {
+final class RandomMatrixImagePositionFiller<I>
+		implements Function<Collection<? extends ImageViewInfo>, SpatialMap<ImageViewInfo>> {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(RandomMatrixImagePositionFiller.class);
 
@@ -71,11 +71,11 @@ final class RandomMatrixImagePositionFiller<I> implements
 
 	private final Function<? super ImageViewInfo, int[]> piecePosMatrixSizeFactory;
 
-	private final SpatialMatrix<? super I> posMatrix;
+	private final SpatialMatrix<? super I, ImageViewInfo> posMatrix;
 
 	private final Random rnd;
 
-	RandomMatrixImagePositionFiller(final SpatialMatrix<? super I> posMatrix,
+	RandomMatrixImagePositionFiller(final SpatialMatrix<? super I, ImageViewInfo> posMatrix,
 			final Function<? super ImageViewInfo, I> pieceIdGetter, final Random rnd, final int maxPlacements,
 			final int maxPlacementRetriesPerImg, final boolean allowFailedPlacements,
 			final Function<? super ImageViewInfo, int[]> piecePosMatrixSizeFactory) {

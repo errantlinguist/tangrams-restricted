@@ -16,33 +16,96 @@
 */
 package se.kth.speech;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import se.kth.speech.SpatialMap.Region;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
  * @since 10 Mar 2017
  *
  */
-public final class SpatialMatrix<T> {
+public final class SpatialMatrix<I, E> {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SpatialMatrix.class);
 
-	private final Matrix<T> posMatrix;
+	private final Function<? super E, ? extends I> elementIdGetter;
 
-	public SpatialMatrix(final Matrix<T> posMatrix) {
-		this.posMatrix = posMatrix;
+	private final SpatialMap<E> elementPlacements;
+
+	private transient final Function<SpatialMap.Region, Set<SpatialMap.Region>> newRegionPossibleMoveSetFactory;
+
+	private final Matrix<I> positionMatrix;
+
+	public SpatialMatrix(final Matrix<I> posMatrix, final Function<? super E, ? extends I> elementIdGetter,
+			final Function<? super SpatialMatrix<I, E>, ? extends SpatialMap<E>> elementPosMapFactory) {
+		this.positionMatrix = posMatrix;
+		this.elementIdGetter = elementIdGetter;
+		this.elementPlacements = elementPosMapFactory.apply(this);
+		newRegionPossibleMoveSetFactory = region -> {
+			final int occupiedRegionArea = region.getLengthX() * region.getLengthY();
+			return Sets.newHashSetWithExpectedSize(posMatrix.getValues().size() / occupiedRegionArea);
+		};
 	}
 
-	public Stream<T> getCells(final SpatialMap.Region region) {
-		return posMatrix.getValues(region.getXLowerBound(), region.getXUpperBound(), region.getYLowerBound(),
+	public void clearRegion(final SpatialMap.Region occupiedRegion) {
+		final Collection<?> elements = elementPlacements.getMinimalRegionElements().get(occupiedRegion);
+		// NOTE: Iterator.remove() for the instance returned by the
+		// multimap's collection iterator throws a
+		// ConcurrentModificationException
+		elements.clear();
+		setPositionValues(occupiedRegion, null);
+	}
+
+	public Map<SpatialMap.Region, Set<SpatialMap.Region>> createValidMoveMap() {
+		final Set<SpatialMap.Region> regionElements = elementPlacements.getMinimalRegionElements().keySet();
+		final Map<SpatialMap.Region, Set<SpatialMap.Region>> result = Maps
+				.newHashMapWithExpectedSize(regionElements.size());
+		final int[] matrixDims = getDimensions();
+
+		for (final SpatialMap.Region occupiedRegion : regionElements) {
+			final Set<SpatialMap.Region> possibleMoveRegions = result.computeIfAbsent(occupiedRegion,
+					newRegionPossibleMoveSetFactory);
+			final int maxXLowerBound = matrixDims[0] - occupiedRegion.getLengthX();
+			final int maxYLowerBound = matrixDims[1] - occupiedRegion.getLengthY();
+			for (int xLowerBound = 0; xLowerBound < maxXLowerBound; xLowerBound++) {
+				final int xUpperBound = xLowerBound + occupiedRegion.getLengthX();
+				for (int yLowerBound = 0; yLowerBound < maxYLowerBound; yLowerBound++) {
+					final int yUpperBound = yLowerBound + occupiedRegion.getLengthY();
+					if (testCells(xLowerBound, xUpperBound, yLowerBound, yUpperBound, Objects::isNull)) {
+						final SpatialMap.Region possibleMoveRegion = getRegion(xLowerBound, xUpperBound, yLowerBound,
+								yUpperBound);
+						possibleMoveRegions.add(possibleMoveRegion);
+					} else {
+						assert elementPlacements.isOccupied(occupiedRegion);
+						if (LOGGER.isDebugEnabled()) {
+							LOGGER.debug("Found occupied space at {}.",
+									Arrays.toString(new int[] { xLowerBound, xUpperBound, yLowerBound, yUpperBound }));
+						}
+					}
+				}
+
+			}
+		}
+		return result;
+	}
+
+	public Stream<I> getCells(final SpatialMap.Region region) {
+		return positionMatrix.getValues(region.getXLowerBound(), region.getXUpperBound(), region.getYLowerBound(),
 				region.getYUpperBound());
 	}
 
@@ -50,44 +113,63 @@ public final class SpatialMatrix<T> {
 	 * @return
 	 */
 	public int[] getDimensions() {
-		return posMatrix.getDimensions();
+		return positionMatrix.getDimensions();
 	}
 
 	/**
-	 * @return the posMatrix
+	 * @return the elementPlacements
 	 */
-	public Matrix<T> getPosMatrix() {
-		return posMatrix;
+	public SpatialMap<E> getElementPlacements() {
+		return elementPlacements;
 	}
 
-	public Region getRegion(final int xLowerBound, final int xUpperBound, final int yLowerBound,
+	/**
+	 * @return the position matrix
+	 */
+	public Matrix<I> getPositionMatrix() {
+		return positionMatrix;
+	}
+
+	public SpatialMap.Region getRegion(final int xLowerBound, final int xUpperBound, final int yLowerBound,
 			final int yUpperBound) {
 		// TODO Implement caching, i.e. use a flyweight pattern?
 		return new SpatialMap.Region(xLowerBound, xUpperBound, yLowerBound, yUpperBound);
 	}
 
-	public void setPositionValues(final SpatialMap.Region region, final T pieceId) {
-		LOGGER.debug("Setting {} to value \"{}\".", region, pieceId);
-		final ListIterator<List<T>> rowIter = posMatrix.rowIterator(region.getXLowerBound());
+	public void placeElements(final Map<E, SpatialMap.Region> elementMoveTargets) {
+		for (final Entry<E, SpatialMap.Region> elementMoveTarget : elementMoveTargets.entrySet()) {
+			final E element = elementMoveTarget.getKey();
+			final I elementId = elementIdGetter.apply(element);
+			final SpatialMap.Region moveTarget = elementMoveTarget.getValue();
+			LOGGER.debug("Moving element \"{}\" to {}.", elementId, moveTarget);
+			assert !elementPlacements.isOccupied(moveTarget);
+			setPositionValues(moveTarget, elementId);
+			elementPlacements.put(element, moveTarget);
+		}
+	}
+
+	public void setPositionValues(final SpatialMap.Region region, final I elementId) {
+		LOGGER.debug("Setting {} to value \"{}\".", region, elementId);
+		final ListIterator<List<I>> rowIter = positionMatrix.rowIterator(region.getXLowerBound());
 		for (int rowIdx = rowIter.nextIndex(); rowIdx < region.getXUpperBound(); rowIdx++) {
-			final List<T> row = rowIter.next();
-			final ListIterator<T> rowCellIter = row.listIterator(region.getYLowerBound());
+			final List<I> row = rowIter.next();
+			final ListIterator<I> rowCellIter = row.listIterator(region.getYLowerBound());
 			for (int colIdx = rowCellIter.nextIndex(); colIdx < region.getYUpperBound(); colIdx++) {
 				rowCellIter.next();
-				rowCellIter.set(pieceId);
+				rowCellIter.set(elementId);
 			}
 		}
 	}
 
 	public boolean testCells(final int xLowerBound, final int xUpperBound, final int yLowerBound, final int yUpperBound,
-			final Predicate<? super T> cellPredicate) {
+			final Predicate<? super I> cellPredicate) {
 		boolean result = true;
-		final ListIterator<List<T>> rowIter = posMatrix.rowIterator(xLowerBound);
+		final ListIterator<List<I>> rowIter = positionMatrix.rowIterator(xLowerBound);
 		for (int rowIdx = rowIter.nextIndex(); rowIdx < xUpperBound; rowIdx++) {
-			final List<T> row = rowIter.next();
-			final ListIterator<T> rowCellIter = row.listIterator(yLowerBound);
+			final List<I> row = rowIter.next();
+			final ListIterator<I> rowCellIter = row.listIterator(yLowerBound);
 			for (int colIdx = rowCellIter.nextIndex(); colIdx < yUpperBound; colIdx++) {
-				final T cellValue = rowCellIter.next();
+				final I cellValue = rowCellIter.next();
 				if (!cellPredicate.test(cellValue)) {
 					result = false;
 					break;
@@ -97,7 +179,7 @@ public final class SpatialMatrix<T> {
 		return result;
 	}
 
-	public boolean testCells(final SpatialMap.Region region, final Predicate<? super T> cellPredicate) {
+	public boolean testCells(final SpatialMap.Region region, final Predicate<? super I> cellPredicate) {
 		LOGGER.debug("Checking {}.", region);
 		return testCells(region.getXLowerBound(), region.getXUpperBound(), region.getYLowerBound(),
 				region.getYUpperBound(), cellPredicate);
