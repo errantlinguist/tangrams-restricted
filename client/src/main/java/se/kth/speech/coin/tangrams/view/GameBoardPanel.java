@@ -64,7 +64,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 import se.kth.speech.IntArrays;
-import se.kth.speech.MathDenominators;
+import se.kth.speech.MathDivisors;
 import se.kth.speech.Matrix;
 import se.kth.speech.MutablePair;
 import se.kth.speech.RandomCollections;
@@ -270,7 +270,7 @@ final class GameBoardPanel extends JPanel {
 		dimensionValues.add(boardSize.width);
 		dimensionValues.add(boardSize.height);
 		// Get the GCD for all components in the view
-		final int greatestCommonDenominator = MathDenominators.gcd(dimensionValues.iterator());
+		final int greatestCommonDenominator = MathDivisors.gcd(dimensionValues.iterator());
 		LOGGER.debug("GCD for all components is {}.", greatestCommonDenominator);
 		// Validate the size and GCD of all components, including the board
 		// itself
@@ -346,7 +346,7 @@ final class GameBoardPanel extends JPanel {
 				}
 				final Function<SpatialMatrix<Integer, ImageViewInfo>, SpatialMap<ImageViewInfo>> spatialMatrixPosMapFactory = matrix -> {
 					final Function<? super ImageViewInfo, int[]> piecePosMatrixSizeFactory = new CachingPieceMatrixBoundsArrayFactory(
-							Maps.newHashMapWithExpectedSize(pieceImgs.size()), IMAGE_SIZE_FACTORS);
+							Maps.newHashMapWithExpectedSize(pieceImgs.size()));
 					final RandomMatrixImagePositionFiller<Integer> matrixFiller = new RandomMatrixImagePositionFiller<>(
 							matrix, incrementingPieceIdGetter, rnd, maxImgPlacements, maxPlacementRetriesPerImg,
 							allowFailedPlacements, piecePosMatrixSizeFactory);
@@ -424,7 +424,7 @@ final class GameBoardPanel extends JPanel {
 					// Validate image
 					final Set<SizeValidator.ValidationComment> validationComments = validator.validate(
 							widthGetter.getAsInt(), heightGetter.getAsInt(),
-							MathDenominators.gcd(widthGetter.getAsInt(), heightGetter.getAsInt()));
+							MathDivisors.gcd(widthGetter.getAsInt(), heightGetter.getAsInt()));
 					if (validationComments.isEmpty()) {
 						final Image coloredImg = toolkit.createImage(new FilteredImageSource(initialImg.getSource(),
 								new ColorReplacementImageFilter(imgVisualizationInfoDatum.getColor())));

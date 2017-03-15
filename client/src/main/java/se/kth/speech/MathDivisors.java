@@ -16,14 +16,51 @@
 */
 package se.kth.speech;
 
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
  * @since 8 Mar 2017
  *
  */
-public final class MathDenominators {
+public final class MathDivisors {
+
+	public static final List<Integer> createCommonDivisorList(final int first, final int... next) {
+		final List<Integer> result = createDivisorList(first);
+		for (final int value : next) {
+			removeNonDivisors(result.iterator(), value);
+		}
+		return result;
+	}
+
+	public static final List<Integer> createCommonDivisorList(final Iterator<Integer> values) {
+		final Integer first = values.next();
+		final List<Integer> result = createDivisorList(first);
+		while (values.hasNext()) {
+			final Integer next = values.next();
+			removeNonDivisors(values, next);
+		}
+		return result;
+	}
+
+	/**
+	 * @see <a href=
+	 *      "http://codereview.stackexchange.com/a/58711">StackExchange</a>
+	 * @param value
+	 * @return
+	 */
+	public static final List<Integer> createDivisorList(final int value) {
+		final int maxPossible = value / 2;
+		final List<Integer> result = new ArrayList<>(maxPossible);
+		for (int i = 1; i <= maxPossible; i++) {
+			if (value % i == 0) {
+				result.add(i);
+			}
+		}
+		return result;
+	}
 
 	/**
 	 * @see <a href=
@@ -52,8 +89,8 @@ public final class MathDenominators {
 	 */
 	public static final int gcd(final int first, final int... next) {
 		int result = first;
-		for (final int number : next) {
-			result = gcd(result, number);
+		for (final int value : next) {
+			result = gcd(result, value);
 		}
 		return result;
 	}
@@ -90,9 +127,30 @@ public final class MathDenominators {
 	}
 
 	/**
+	 * @see <a href=
+	 *      "http://codereview.stackexchange.com/a/58711">StackExchange</a>
+	 * @param first
+	 * @return
+	 */
+	public static final void removeNonDivisors(final Iterator<Integer> divisors, final int first, final int... next) {
+		while (divisors.hasNext()) {
+			final Integer divisor = divisors.next();
+			if (first % divisor == 0) {
+				for (final int value : next) {
+					if (value % divisor != 0) {
+						divisors.remove();
+					}
+				}
+			} else {
+				divisors.remove();
+			}
+		}
+	}
+
+	/**
 	 *
 	 */
-	private MathDenominators() {
+	private MathDivisors() {
 	}
 
 }

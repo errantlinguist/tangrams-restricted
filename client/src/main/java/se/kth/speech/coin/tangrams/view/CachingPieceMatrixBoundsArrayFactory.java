@@ -22,8 +22,6 @@ import java.util.function.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import se.kth.speech.coin.tangrams.content.ImageSize;
-
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
  * @since 10 Mar 2017
@@ -35,12 +33,8 @@ final class CachingPieceMatrixBoundsArrayFactory implements Function<ImageViewIn
 
 	private final Map<ImageViewInfo, int[]> instances;
 
-	private final Map<ImageSize, Integer> sizeFactors;
-
-	CachingPieceMatrixBoundsArrayFactory(final Map<ImageViewInfo, int[]> instances,
-			final Map<ImageSize, Integer> sizeFactors) {
+	CachingPieceMatrixBoundsArrayFactory(final Map<ImageViewInfo, int[]> instances) {
 		this.instances = instances;
-		this.sizeFactors = sizeFactors;
 	}
 
 	/*
@@ -57,15 +51,13 @@ final class CachingPieceMatrixBoundsArrayFactory implements Function<ImageViewIn
 
 	private int[] createPosMatrixBoundsArray(final ImageViewInfo viewInfo) {
 		final ImageViewInfo.RasterizationInfo rasterizationInfo = viewInfo.getRasterization();
-		final ImageSize size = viewInfo.getVisualization().getSize();
-		final int sizeFactor = sizeFactors.get(size);
 		// NOTE: "rows" in the matrix go top-bottom and "cols" go left-right
 		// The number of rows this image takes up in the
 		// position matrix
-		final int occupiedPosMatrixRowCount = rasterizationInfo.getHeight() / rasterizationInfo.getGcd() * sizeFactor;
+		final int occupiedPosMatrixRowCount = rasterizationInfo.getHeight() / rasterizationInfo.getGcd();
 		// The number of columns this image takes up in the
 		// position matrix
-		final int occupiedPosMatrixColCount = rasterizationInfo.getWidth() / rasterizationInfo.getGcd() * sizeFactor;
+		final int occupiedPosMatrixColCount = rasterizationInfo.getWidth() / rasterizationInfo.getGcd();
 		LOGGER.debug("Calculated position grid size {}*{} for \"{}\".", new Object[] { occupiedPosMatrixRowCount,
 				occupiedPosMatrixColCount, viewInfo.getVisualization().getResourceLoc() });
 

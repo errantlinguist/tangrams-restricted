@@ -20,7 +20,7 @@ import java.util.Arrays;
 import java.util.function.Function;
 import java.util.function.IntSupplier;
 
-import se.kth.speech.MathDenominators;
+import se.kth.speech.MathDivisors;
 import se.kth.speech.coin.tangrams.content.ImageSize;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 
@@ -45,7 +45,7 @@ final class ImageViewInfo {
 	static final class RasterizationInfo {
 
 		private static int getGcd(final int width, final int height) {
-			return MathDenominators.gcd(width, height);
+			return MathDivisors.gcd(width, height);
 		}
 
 		private final IntSupplier heightGetter;
