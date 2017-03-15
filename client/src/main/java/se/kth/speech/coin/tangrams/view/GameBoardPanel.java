@@ -221,7 +221,7 @@ final class GameBoardPanel extends JPanel {
 		return sb.toString();
 	}
 
-	private static final Map<ImageSize, Integer> createImageSizeFactorMap() {
+	private static Map<ImageSize, Integer> createImageSizeFactorMap() {
 		final Map<ImageSize, Integer> result = new EnumMap<>(ImageSize.class);
 		final Iterator<ImageSize> sizes = ImageSize.getSizeOrdering().iterator();
 		result.put(sizes.next(), 1);
