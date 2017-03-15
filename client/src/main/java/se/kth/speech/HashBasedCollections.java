@@ -29,7 +29,7 @@ public final class HashBasedCollections {
 	 * @see <a href="https://github.com/google/guava">Google Core Libraries for
 	 *      Java</a>
 	 */
-	public static final int MAX_POWER_OF_TWO = 1 << Integer.SIZE - 2;
+	public static final int INT_MAX_POWER_OF_TWO = 1 << Integer.SIZE - 2;
 
 	/**
 	 * @see <a href="https://github.com/google/guava">Google Core Libraries for
@@ -39,7 +39,7 @@ public final class HashBasedCollections {
 		if (expectedSize < 3) {
 			return expectedSize + 1;
 		}
-		if (expectedSize < MAX_POWER_OF_TWO) {
+		if (expectedSize < INT_MAX_POWER_OF_TWO) {
 			return expectedSize + expectedSize / 3;
 		}
 		return Integer.MAX_VALUE; // any large value
