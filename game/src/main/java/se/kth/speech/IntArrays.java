@@ -16,6 +16,7 @@
 */
 package se.kth.speech;
 
+import java.util.Arrays;
 import java.util.function.IntBinaryOperator;
 
 /**
@@ -38,6 +39,10 @@ public final class IntArrays {
 		System.arraycopy(a, 0, c, 0, aLen);
 		System.arraycopy(b, 0, c, aLen, bLen);
 		return c;
+	}
+	
+	public static int[] copy(final int[] arr) {
+		return Arrays.copyOf(arr, arr.length);
 	}
 
 	public static void mutate(final int[] mutand, final int[] applicand, final IntBinaryOperator operator) {
