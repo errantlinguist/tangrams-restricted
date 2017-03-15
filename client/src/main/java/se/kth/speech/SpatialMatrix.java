@@ -88,7 +88,9 @@ public final class SpatialMatrix<I, E> {
 	public int calculateRegionPowerSetSize() {
 		final int dims[] = positionMatrix.getDimensions();
 		// m(m+1)n(n+1)/4 http://stackoverflow.com/a/17927830/1391325
-		return Arrays.stream(dims).map(dim -> dim * (dim + 1)).reduce(1, (a, b) -> a * b) / dims.length * 2;
+		final int m = dims[0];
+		final int n = dims[1];
+		return m * (m + 1) * n *(n + 1) / 4;
 	}
 
 	public void clearRegion(final SpatialMap.Region occupiedRegion) {
