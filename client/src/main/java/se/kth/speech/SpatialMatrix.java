@@ -16,6 +16,7 @@
 */
 package se.kth.speech;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -27,13 +28,17 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.collect.ArrayTable;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.google.common.collect.Table;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -65,10 +70,12 @@ public final class SpatialMatrix<I, E> {
 
 	public void addRegionPowerSet(final Collection<? super SpatialMap.Region> regions) {
 		final int dims[] = positionMatrix.getDimensions();
-		for (int xLowerBound = 0; xLowerBound <= dims[0]; ++xLowerBound) {
-			for (int xUpperBound = xLowerBound; xUpperBound <= dims[0]; ++xUpperBound) {
-				for (int yLowerBound = 0; yLowerBound < dims[1]; ++yLowerBound) {
-					for (int yUpperBound = yLowerBound; yUpperBound <= dims[1]; ++yUpperBound) {
+		final int x = dims[0];
+		final int y = dims[1];
+		for (int xLowerBound = 0; xLowerBound <= x; ++xLowerBound) {
+			for (int xUpperBound = xLowerBound; xUpperBound <= x; ++xUpperBound) {
+				for (int yLowerBound = 0; yLowerBound < y; ++yLowerBound) {
+					for (int yUpperBound = yLowerBound; yUpperBound <= y; ++yUpperBound) {
 						final SpatialMap.Region region = getRegion(xLowerBound, xUpperBound, yLowerBound, yUpperBound);
 						regions.add(region);
 					}
@@ -101,6 +108,28 @@ public final class SpatialMatrix<I, E> {
 		final int subRegionCount = calculateRegionPowerSetSize();
 		final C result = collFactory.apply(subRegionCount);
 		addRegionPowerSet(result);
+		return result;
+	}
+
+	public Table<Integer, Integer, SpatialMap.Region> createSizeIndexedRegionPowerSet() {
+		final int dims[] = positionMatrix.getDimensions();
+		final int x = dims[0];
+		final int y = dims[1];
+		final Table<Integer, Integer, SpatialMap.Region> result = ArrayTable.create(
+				IntStream.range(1, x + 1).boxed().collect(Collectors.toCollection(() -> new ArrayList<>(x))),
+				IntStream.range(1, y + 1).boxed().collect(Collectors.toCollection(() -> new ArrayList<>(y))));
+		for (int xLowerBound = 0; xLowerBound <= x; ++xLowerBound) {
+			for (int xUpperBound = xLowerBound; xUpperBound <= x; ++xUpperBound) {
+				final int xLength = xUpperBound - xLowerBound;
+				for (int yLowerBound = 0; yLowerBound < y; ++yLowerBound) {
+					for (int yUpperBound = yLowerBound; yUpperBound <= y; ++yUpperBound) {
+						final int yLength = yUpperBound - yLowerBound;
+						final SpatialMap.Region region = getRegion(xLowerBound, xUpperBound, yLowerBound, yUpperBound);
+						result.put(xLength, yLength, region);
+					}
+				}
+			}
+		}
 		return result;
 	}
 
