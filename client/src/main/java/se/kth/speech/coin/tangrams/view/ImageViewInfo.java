@@ -17,13 +17,15 @@
 package se.kth.speech.coin.tangrams.view;
 
 import java.util.Arrays;
+import java.util.function.Function;
 import java.util.function.IntSupplier;
 
 import se.kth.speech.MathDenominators;
+import se.kth.speech.coin.tangrams.content.ImageSize;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 
 final class ImageViewInfo {
-	
+
 	enum Orientation {
 		LANDSCAPE, PORTRAIT, SQUARE;
 
@@ -103,12 +105,14 @@ final class ImageViewInfo {
 			return result;
 		}
 
-		/* (non-Javadoc)
+		/*
+		 * (non-Javadoc)
+		 * 
 		 * @see java.lang.Object#toString()
 		 */
 		@Override
 		public String toString() {
-			StringBuilder builder = new StringBuilder();
+			final StringBuilder builder = new StringBuilder();
 			builder.append("RasterizationInfo [getWidth()=");
 			builder.append(getWidth());
 			builder.append(", getHeight()=");
@@ -194,6 +198,12 @@ final class ImageViewInfo {
 			return false;
 		}
 		return true;
+	}
+
+	public int[] getGridSize(final Function<ImageSize, Integer> sizeFactors) {
+		final int factor = sizeFactors.apply(getVisualization().getSize());
+		final int[] aspectRatio = getRasterization().getAspectRatio();
+		return new int[] { aspectRatio[0] * factor, aspectRatio[1] * factor };
 	}
 
 	/*
