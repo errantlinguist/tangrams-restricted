@@ -28,28 +28,28 @@
 			<artifactId>commons-cli</artifactId>
 		</dependency>
 
-		<dependency>
-			<groupId>org.apache.xmlgraphics</groupId>
-			<artifactId>batik-codec</artifactId>
-			<version>${batik.version}</version>
-			<scope>runtime</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.xmlgraphics</groupId>
-			<artifactId>batik-swing</artifactId>
-			<version>${batik.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.xmlgraphics</groupId>
-			<artifactId>batik-transcoder</artifactId>
-			<version>${batik.version}</version>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.xmlgraphics</groupId>
-			<artifactId>xmlgraphics-commons</artifactId>
-			<version>2.1</version>
-			<scope>runtime</scope>
-		</dependency>
+<!-- 		<dependency> -->
+<!-- 			<groupId>org.apache.xmlgraphics</groupId> -->
+<!-- 			<artifactId>batik-codec</artifactId> -->
+<!-- 			<version>${batik.version}</version> -->
+<!-- 			<scope>runtime</scope> -->
+<!-- 		</dependency> -->
+<!-- 		<dependency> -->
+<!-- 			<groupId>org.apache.xmlgraphics</groupId> -->
+<!-- 			<artifactId>batik-swing</artifactId> -->
+<!-- 			<version>${batik.version}</version> -->
+<!-- 		</dependency> -->
+<!-- 		<dependency> -->
+<!-- 			<groupId>org.apache.xmlgraphics</groupId> -->
+<!-- 			<artifactId>batik-transcoder</artifactId> -->
+<!-- 			<version>${batik.version}</version> -->
+<!-- 		</dependency> -->
+<!-- 		<dependency> -->
+<!-- 			<groupId>org.apache.xmlgraphics</groupId> -->
+<!-- 			<artifactId>xmlgraphics-commons</artifactId> -->
+<!-- 			<version>2.1</version> -->
+<!-- 			<scope>runtime</scope> -->
+<!-- 		</dependency> -->
 
 		<!-- Testing -->
 		<dependency>
