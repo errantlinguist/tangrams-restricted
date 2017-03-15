@@ -36,6 +36,7 @@ public enum ImageSize {
 
 	static {
 		SIZE_ORDERING = Arrays.asList(SMALL, MEDIUM, LARGE);
+		assert SIZE_ORDERING.size() == ImageSize.values().length;
 		SIZE_COMPARATOR = Lists.comparingByIndex(SIZE_ORDERING);
 	}
 
