@@ -348,8 +348,6 @@ final class GameBoardPanel extends JPanel {
 	 */
 	private final Set<SpatialMap.Region> highlightedRegions = Sets.newHashSetWithExpectedSize(1);;
 
-	private transient final Function<SpatialMap.Region, Set<SpatialMap.Region>> newRegionPossibleMoveSetFactory;
-
 	private final Map<ImageViewInfo, Integer> pieceIds;
 
 	private final Map<ImageViewInfo, Image> pieceImgs;
@@ -415,11 +413,6 @@ final class GameBoardPanel extends JPanel {
 				LOGGER.debug("Setting minimum component size to {}.", minSize);
 				setMinimumSize(minSize);
 			}
-			newRegionPossibleMoveSetFactory = region -> {
-				final int occupiedRegionArea = region.getLengthX() * region.getLengthY();
-				return Sets.newHashSetWithExpectedSize(
-						posMatrix.getPositionMatrix().getValues().size() / occupiedRegionArea);
-			};
 			// Finished with creating necessary data structures
 			System.out.println("IMAGE PLACEMENTS");
 			System.out.println(createMatrixReprString(posMatrix.getPositionMatrix()));
@@ -502,8 +495,7 @@ final class GameBoardPanel extends JPanel {
 			final Random rnd) {
 		final Map<Region, Set<Region>> validMoves = posMatrix.createValidMoveMap();
 		final Map<ImageViewInfo, SpatialMap.Region> result;
-		final Set<SpatialMap.Region> regionValidMoves = validMoves.computeIfAbsent(occupiedRegion,
-				newRegionPossibleMoveSetFactory);
+		final Set<SpatialMap.Region> regionValidMoves = validMoves.get(occupiedRegion);
 		if (regionValidMoves.isEmpty()) {
 			result = Collections.emptyMap();
 		} else {
