@@ -73,8 +73,10 @@ public final class SpatialMatrix<I, E> {
 
 	public Set<SpatialMap.Region> createRegionPowerSet() {
 		final int dims[] = positionMatrix.getDimensions();
-		final int area = IntArrays.product(dims);
-		final Set<SpatialMap.Region> result = Sets.newHashSetWithExpectedSize(area * area / 2);
+		// m(m+1)n(n+1)/4 http://stackoverflow.com/a/17927830/1391325
+		final int subRegionCount = Arrays.stream(dims).map(dim -> dim * (dim + 1)).reduce(1, (a, b) -> a * b)
+				/ dims.length * 2;
+		final Set<SpatialMap.Region> result = Sets.newHashSetWithExpectedSize(subRegionCount);
 		for (int xLowerBound = 0; xLowerBound <= dims[0]; ++xLowerBound) {
 			for (int xUpperBound = xLowerBound; xUpperBound <= dims[0]; ++xUpperBound) {
 				for (int yLowerBound = 0; yLowerBound < dims[1]; ++yLowerBound) {
