@@ -657,7 +657,7 @@ final class GameBoardPanel extends JPanel {
 			piecePlacements.put(piece, moveTarget);
 		}
 	}
-
+	
 	/**
 	 *
 	 */
@@ -687,14 +687,18 @@ final class GameBoardPanel extends JPanel {
 			// No pieces left to be moved; Game cannot continue
 			notifyNoValidMoves();
 		} else {
-			final SpatialMap.Region occupiedRegion = pieceMove.getKey();
-			final Map<ImageViewInfo, SpatialMap.Region> pieceMoveTargets = pieceMove.getValue();
-			highlightedRegions.add(occupiedRegion);
-			placePieces(pieceMoveTargets);
-			clearRegion(occupiedRegion);
-			LOGGER.debug("Finished randomly moving piece(s) at {}.", occupiedRegion);
-			repaint();
+			notifyMove(pieceMove);
+			LOGGER.debug("Finished randomly moving piece(s) at {}.", pieceMove.getKey());
 		}
+	}
+
+	void notifyMove(final Entry<SpatialMap.Region, Map<ImageViewInfo, SpatialMap.Region>> pieceMove){
+		final SpatialMap.Region occupiedRegion = pieceMove.getKey();
+		final Map<ImageViewInfo, SpatialMap.Region> pieceMoveTargets = pieceMove.getValue();
+		highlightedRegions.add(occupiedRegion);
+		placePieces(pieceMoveTargets);
+		clearRegion(occupiedRegion);
+		repaint();		
 	}
 
 	/**
