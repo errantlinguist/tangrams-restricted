@@ -32,7 +32,7 @@ public final class MathDenominators {
 	 *            The first value.
 	 * @param next
 	 *            The other value.
-	 * @return The greatest common denominator.
+	 * @return The greatest common divisor.
 	 */
 	public static final int gcd(final int first, final int next) {
 		if (next == 0) {
@@ -48,7 +48,7 @@ public final class MathDenominators {
 	 *            The first value.
 	 * @param next
 	 *            The next values.
-	 * @return The greatest common denominator.
+	 * @return The greatest common divisor.
 	 */
 	public static final int gcd(final int first, final int... next) {
 		int result = first;
@@ -62,8 +62,24 @@ public final class MathDenominators {
 	 * @see <a href=
 	 *      "http://stackoverflow.com/a/15351278/1391325">StackOverflow</a>
 	 * @param values
+	 *            The values to calculate the greatest common divisor for.
+	 * @return The greatest common divisor.
+	 */
+	public static final int gcd(final int[] values) {
+		int result = values[0];
+		for (int i = 1; i < values.length; ++i) {
+			final int value = values[i];
+			result = gcd(result, value);
+		}
+		return result;
+	}
+
+	/**
+	 * @see <a href=
+	 *      "http://stackoverflow.com/a/15351278/1391325">StackOverflow</a>
+	 * @param values
 	 *            The values to get the GCD of.
-	 * @return The greatest common denominator.
+	 * @return The greatest common divisor.
 	 */
 	public static final int gcd(final Iterator<Integer> values) {
 		int result = values.next();
