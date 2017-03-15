@@ -49,7 +49,7 @@ public final class IntArrays {
 		return result;
 	}
 
-	public static void sum(final int[] augend, final int[] addend) {
+	public static void add(final int[] augend, final int[] addend) {
 		final int minDimCount = Math.min(augend.length, addend.length);
 		for (int i = 0; i < minDimCount; ++i) {
 			augend[i] += addend[i];
