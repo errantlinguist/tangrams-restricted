@@ -106,7 +106,7 @@ public final class SpatialMap<E> {
 				throw new IllegalArgumentException("Boundary values are invalid.");
 			}
 
-			this.hashCode = calculateHashCode();
+			this.hashCode = createHashCode();
 		}
 
 		/*
@@ -227,7 +227,7 @@ public final class SpatialMap<E> {
 			return getXLowerBound() <= getXUpperBound() && getYLowerBound() <= getYUpperBound();
 		}
 
-		private int calculateHashCode() {
+		private int createHashCode() {
 			final int prime = 31;
 			int result = 1;
 			result = prime * result + xLowerBound;
