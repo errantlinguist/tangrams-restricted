@@ -62,6 +62,7 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
+import se.kth.speech.IntArrays;
 import se.kth.speech.MathDenominators;
 import se.kth.speech.Matrix;
 import se.kth.speech.MutablePair;
@@ -171,10 +172,6 @@ final class GameBoardPanel extends JPanel {
 		}
 	}
 
-	private static IntStream calculateMinimumDimLengths(final int[] dims) {
-		return Arrays.stream(dims).map(dim -> dim * MIN_GRID_SQUARE_LENGTH);
-	}
-
 	private static int[] createComponentCoordSizeArray(final SpatialMap.Region region, final int colWidth,
 			final int rowHeight) {
 		final int regionGridColCount = region.getLengthY();
@@ -244,6 +241,38 @@ final class GameBoardPanel extends JPanel {
 			} while (rowIter.hasNext());
 		}
 		return sb.toString();
+	}
+
+	private static IntStream createMinimumDimLengths(final int[] dims) {
+		return Arrays.stream(dims).map(dim -> dim * MIN_GRID_SQUARE_LENGTH);
+	}
+
+	private static int[] createPositionGridSize(final Collection<ImageViewInfo> imageViewInfoData,
+			final Dimension boardSize, final SizeValidator validator) {
+		final Set<Integer> dimensionValues = Sets.newHashSetWithExpectedSize(imageViewInfoData.size() + 1);
+		for (final ImageViewInfo pieceImgViewInfo : imageViewInfoData) {
+			dimensionValues.add(pieceImgViewInfo.getRasterization().getGcd());
+		}
+		dimensionValues.add(boardSize.width);
+		dimensionValues.add(boardSize.height);
+		// Get the GCD for all components in the view
+		final int greatestCommonDenominator = MathDenominators.gcd(dimensionValues.iterator());
+		LOGGER.debug("GCD for all components is {}.", greatestCommonDenominator);
+		// Validate the size and GCD of all components, including the board
+		// itself
+		final Set<SizeValidator.ValidationComment> boardValidationComments = validator.validate(boardSize.width,
+				boardSize.height, greatestCommonDenominator);
+		if (boardValidationComments.isEmpty()) {
+			// NOTE: "rows" in the matrix go top-bottom and "cols" go
+			// left-right
+			final int rows = boardSize.height / greatestCommonDenominator;
+			final int cols = boardSize.width / greatestCommonDenominator;
+			return new int[] { rows, cols };
+		} else {
+			throw new IllegalArgumentException(
+					String.format("The board as a whole failed validation with dimensions %s; and GCD %d: %s",
+							boardSize, greatestCommonDenominator, boardValidationComments));
+		}
 	}
 
 	private static Image createScaledImage(final Image origImg, final ImageSize size, final int lesserDimVal,
@@ -316,13 +345,13 @@ final class GameBoardPanel extends JPanel {
 	/**
 	 * At most one region should be highlighted at a time per player
 	 */
-	private final Set<SpatialMap.Region> highlightedRegions = Sets.newHashSetWithExpectedSize(1);
+	private final Set<SpatialMap.Region> highlightedRegions = Sets.newHashSetWithExpectedSize(1);;
 
 	private transient final Function<SpatialMap.Region, Set<SpatialMap.Region>> newRegionPossibleMoveSetFactory;
 
 	private final Map<ImageViewInfo, Integer> pieceIds;
 
-	private final Map<ImageViewInfo, Image> pieceImgs;;
+	private final Map<ImageViewInfo, Image> pieceImgs;
 
 	private transient final SpatialMap<ImageViewInfo> piecePlacements;
 
@@ -351,56 +380,34 @@ final class GameBoardPanel extends JPanel {
 		final SizeValidator validator = new SizeValidator(minDimLength, 50, 50);
 		try {
 			pieceImgs = createImageViewInfoMap(imgVisualizationInfoData, validator);
-			final Set<Integer> dimensionValues = Sets.newHashSetWithExpectedSize(pieceImgs.size() + 1);
-			for (final ImageViewInfo pieceImgViewInfo : pieceImgs.keySet()) {
-				dimensionValues.add(pieceImgViewInfo.getRasterization().getGcd());
-			}
 			final Dimension boardSize = new Dimension(minDimLength * 5, minDimLength * 4);
+			final int[] gridSize = createPositionGridSize(pieceImgs.keySet(), boardSize, validator);
 			setPreferredSize(boardSize);
-			dimensionValues.add(boardSize.width);
-			dimensionValues.add(boardSize.height);
-			// Get the GCD for all components in the view
-			final int greatestCommonDenominator = MathDenominators.gcd(dimensionValues.iterator());
-			LOGGER.debug("GCD for all components is {}.", greatestCommonDenominator);
-			// Validate the size and GCD of all components, including the board
-			// itself
-			final Set<SizeValidator.ValidationComment> boardValidationComments = validator.validate(boardSize.width,
-					boardSize.height, greatestCommonDenominator);
-			if (boardValidationComments.isEmpty()) {
-				// NOTE: "rows" in the matrix go top-bottom and "cols" go
-				// left-right
-				final int posMatrixRows = boardSize.height / greatestCommonDenominator;
-				final int posMatrixCols = boardSize.width / greatestCommonDenominator;
-				LOGGER.info("Creating a position matrix of size {}*{}.", posMatrixRows, posMatrixCols);
-				final Integer[] posMatrixBackingArray = new Integer[posMatrixRows * posMatrixCols];
-				final Matrix<Integer> backingPosMatrix = new Matrix<>(posMatrixBackingArray, posMatrixCols);
-				if (!isDimensionDivisibleIntoGrid(boardSize, backingPosMatrix)) {
-					throw new IllegalArgumentException(
-							String.format("Board %s not divisble into matrix with dimensions %s.", boardSize,
-									Arrays.toString(backingPosMatrix.getDimensions())));
-				}
-				posMatrix = new SpatialMatrix<>(backingPosMatrix);
-				final int[] minSizeDims = calculateMinimumDimLengths(posMatrix.getDimensions()).toArray();
-				// NOTE: "rows" in the matrix go top-bottom and "cols" go
-				// left-right
-				setMinimumSize(new Dimension(minSizeDims[1], minSizeDims[0]));
-				newRegionPossibleMoveSetFactory = region -> {
-					final int occupiedRegionArea = region.getLengthX() * region.getLengthY();
-					return Sets.newHashSetWithExpectedSize(
-							posMatrix.getPosMatrix().getValues().size() / occupiedRegionArea);
-				};
-				final RandomMatrixImagePositionFiller<Integer> matrixFiller = new RandomMatrixImagePositionFiller<>(
-						posMatrix, incrementingPieceIdGetter, rnd, maxImgPlacements, maxPlacementRetriesPerImg,
-						allowFailedPlacements, piecePosMatrixSizeFactory);
-				piecePlacements = matrixFiller.apply(pieceImgs.keySet());
-				// Finished with creating necessary data structures
-				System.out.println("IMAGE PLACEMENTS");
-				System.out.println(createMatrixReprString(backingPosMatrix));
-			} else {
+			LOGGER.info("Creating a position matrix of size {}.", gridSize);
+			final Integer[] posMatrixBackingArray = new Integer[IntArrays.product(gridSize)];
+			final Matrix<Integer> backingPosMatrix = new Matrix<>(posMatrixBackingArray, gridSize[1]);
+			if (!isDimensionDivisibleIntoGrid(boardSize, backingPosMatrix)) {
 				throw new IllegalArgumentException(
-						String.format("The board as a whole failed validation with dimensions %s; and GCD %d: %s",
-								boardSize, greatestCommonDenominator, boardValidationComments));
+						String.format("Board %s not divisble into matrix with dimensions %s.", boardSize,
+								Arrays.toString(backingPosMatrix.getDimensions())));
 			}
+			posMatrix = new SpatialMatrix<>(backingPosMatrix);
+			final int[] minSizeDims = createMinimumDimLengths(posMatrix.getDimensions()).toArray();
+			// NOTE: "rows" in the matrix go top-bottom and "cols" go
+			// left-right
+			setMinimumSize(new Dimension(minSizeDims[1], minSizeDims[0]));
+			newRegionPossibleMoveSetFactory = region -> {
+				final int occupiedRegionArea = region.getLengthX() * region.getLengthY();
+				return Sets
+						.newHashSetWithExpectedSize(posMatrix.getPosMatrix().getValues().size() / occupiedRegionArea);
+			};
+			final RandomMatrixImagePositionFiller<Integer> matrixFiller = new RandomMatrixImagePositionFiller<>(
+					posMatrix, incrementingPieceIdGetter, rnd, maxImgPlacements, maxPlacementRetriesPerImg,
+					allowFailedPlacements, piecePosMatrixSizeFactory);
+			piecePlacements = matrixFiller.apply(pieceImgs.keySet());
+			// Finished with creating necessary data structures
+			System.out.println("IMAGE PLACEMENTS");
+			System.out.println(createMatrixReprString(backingPosMatrix));
 
 		} catch (final IOException e) {
 			throw new UncheckedIOException(e);
@@ -657,7 +664,7 @@ final class GameBoardPanel extends JPanel {
 			piecePlacements.put(piece, moveTarget);
 		}
 	}
-	
+
 	/**
 	 *
 	 */
@@ -692,13 +699,13 @@ final class GameBoardPanel extends JPanel {
 		}
 	}
 
-	void notifyMove(final Entry<SpatialMap.Region, Map<ImageViewInfo, SpatialMap.Region>> pieceMove){
+	void notifyMove(final Entry<SpatialMap.Region, Map<ImageViewInfo, SpatialMap.Region>> pieceMove) {
 		final SpatialMap.Region occupiedRegion = pieceMove.getKey();
 		final Map<ImageViewInfo, SpatialMap.Region> pieceMoveTargets = pieceMove.getValue();
 		highlightedRegions.add(occupiedRegion);
 		placePieces(pieceMoveTargets);
 		clearRegion(occupiedRegion);
-		repaint();		
+		repaint();
 	}
 
 	/**
