@@ -25,6 +25,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.IntFunction;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
@@ -62,6 +63,26 @@ public final class SpatialMatrix<I, E> {
 		};
 	}
 
+	public void addRegionPowerSet(final Collection<? super SpatialMap.Region> regions) {
+		final int dims[] = positionMatrix.getDimensions();
+		for (int xLowerBound = 0; xLowerBound <= dims[0]; ++xLowerBound) {
+			for (int xUpperBound = xLowerBound; xUpperBound <= dims[0]; ++xUpperBound) {
+				for (int yLowerBound = 0; yLowerBound < dims[1]; ++yLowerBound) {
+					for (int yUpperBound = yLowerBound; yUpperBound <= dims[1]; ++yUpperBound) {
+						final SpatialMap.Region region = getRegion(xLowerBound, xUpperBound, yLowerBound, yUpperBound);
+						regions.add(region);
+					}
+				}
+			}
+		}
+	}
+
+	public int calculateRegionPowerSetSize() {
+		final int dims[] = positionMatrix.getDimensions();
+		// m(m+1)n(n+1)/4 http://stackoverflow.com/a/17927830/1391325
+		return Arrays.stream(dims).map(dim -> dim * (dim + 1)).reduce(1, (a, b) -> a * b) / dims.length * 2;
+	}
+
 	public void clearRegion(final SpatialMap.Region occupiedRegion) {
 		final Collection<?> elements = elementPlacements.getMinimalRegionElements().get(occupiedRegion);
 		// NOTE: Iterator.remove() for the instance returned by the
@@ -72,21 +93,14 @@ public final class SpatialMatrix<I, E> {
 	}
 
 	public Set<SpatialMap.Region> createRegionPowerSet() {
-		final int dims[] = positionMatrix.getDimensions();
-		// m(m+1)n(n+1)/4 http://stackoverflow.com/a/17927830/1391325
-		final int subRegionCount = Arrays.stream(dims).map(dim -> dim * (dim + 1)).reduce(1, (a, b) -> a * b)
-				/ dims.length * 2;
-		final Set<SpatialMap.Region> result = Sets.newHashSetWithExpectedSize(subRegionCount);
-		for (int xLowerBound = 0; xLowerBound <= dims[0]; ++xLowerBound) {
-			for (int xUpperBound = xLowerBound; xUpperBound <= dims[0]; ++xUpperBound) {
-				for (int yLowerBound = 0; yLowerBound < dims[1]; ++yLowerBound) {
-					for (int yUpperBound = yLowerBound; yUpperBound <= dims[1]; ++yUpperBound) {
-						final SpatialMap.Region region = getRegion(xLowerBound, xUpperBound, yLowerBound, yUpperBound);
-						result.add(region);
-					}
-				}
-			}
-		}
+		return createRegionPowerSet(Sets::newHashSetWithExpectedSize);
+	}
+
+	public <C extends Collection<? super SpatialMap.Region>> C createRegionPowerSet(
+			final IntFunction<? extends C> collFactory) {
+		final int subRegionCount = calculateRegionPowerSetSize();
+		final C result = collFactory.apply(subRegionCount);
+		addRegionPowerSet(result);
 		return result;
 	}
 
