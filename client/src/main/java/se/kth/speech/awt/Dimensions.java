@@ -37,31 +37,30 @@ public final class Dimensions {
 	 *         ratio of the supplied image dimensions.
 	 */
 	public static Dimension createScaledDimension(final Dimension imgSize, final Dimension boundary) {
-
-		final int original_width = imgSize.width;
-		final int original_height = imgSize.height;
-		final int bound_width = boundary.width;
-		final int bound_height = boundary.height;
-		int new_width = original_width;
-		int new_height = original_height;
+		final int originalWidth = imgSize.width;
+		final int originalHeight = imgSize.height;
+		final int boundWidth = boundary.width;
+		final int boundHeight = boundary.height;
+		int newWidth = originalWidth;
+		int newHeight = originalHeight;
 
 		// first check if we need to scale width
-		if (original_width > bound_width) {
+		if (originalWidth > boundWidth) {
 			// scale width to fit
-			new_width = bound_width;
+			newWidth = boundWidth;
 			// scale height to maintain aspect ratio
-			new_height = new_width * original_height / original_width;
+			newHeight = newWidth * originalHeight / originalWidth;
 		}
 
 		// then check if we need to scale even with the new height
-		if (new_height > bound_height) {
+		if (newHeight > boundHeight) {
 			// scale height to fit instead
-			new_height = bound_height;
+			newHeight = boundHeight;
 			// scale width to maintain aspect ratio
-			new_width = new_height * original_width / original_height;
+			newWidth = newHeight * originalWidth / originalHeight;
 		}
 
-		return new Dimension(new_width, new_height);
+		return new Dimension(newWidth, newHeight);
 	}
 
 	private Dimensions() {
