@@ -71,6 +71,7 @@ import se.kth.speech.SpatialMap;
 import se.kth.speech.SpatialMap.Region;
 import se.kth.speech.SpatialMatrix;
 import se.kth.speech.awt.ColorReplacementImageFilter;
+import se.kth.speech.awt.Dimensions;
 import se.kth.speech.coin.tangrams.content.ImageSize;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 
@@ -381,21 +382,34 @@ final class GameBoardPanel extends JPanel {
 		try {
 			pieceImgs = createImageViewInfoMap(imgVisualizationInfoData, validator);
 			final Dimension boardSize = new Dimension(minDimLength * 5, minDimLength * 4);
-			final int[] gridSize = createPositionGridSize(pieceImgs.keySet(), boardSize, validator);
 			setPreferredSize(boardSize);
-			LOGGER.info("Creating a position matrix of size {}.", gridSize);
-			final Integer[] posMatrixBackingArray = new Integer[IntArrays.product(gridSize)];
-			final Matrix<Integer> backingPosMatrix = new Matrix<>(posMatrixBackingArray, gridSize[1]);
-			if (!isDimensionDivisibleIntoGrid(boardSize, backingPosMatrix)) {
-				throw new IllegalArgumentException(
-						String.format("Board %s not divisble into matrix with dimensions %s.", boardSize,
-								Arrays.toString(backingPosMatrix.getDimensions())));
+			{
+				final int[] gridSize = createPositionGridSize(pieceImgs.keySet(), boardSize, validator);
+				LOGGER.info("Creating a position matrix of size {}.", gridSize);
+				final Integer[] posMatrixBackingArray = new Integer[IntArrays.product(gridSize)];
+				final Matrix<Integer> backingPosMatrix = new Matrix<>(posMatrixBackingArray, gridSize[1]);
+				if (!isDimensionDivisibleIntoGrid(boardSize, backingPosMatrix)) {
+					throw new IllegalArgumentException(
+							String.format("Board %s not divisble into matrix with dimensions %s.", boardSize,
+									Arrays.toString(backingPosMatrix.getDimensions())));
+				}
+				posMatrix = new SpatialMatrix<>(backingPosMatrix);
 			}
-			posMatrix = new SpatialMatrix<>(backingPosMatrix);
-			final int[] minSizeDims = createMinimumDimLengths(posMatrix.getDimensions()).toArray();
-			// NOTE: "rows" in the matrix go top-bottom and "cols" go
-			// left-right
-			setMinimumSize(new Dimension(minSizeDims[1], minSizeDims[0]));
+			{
+				// http://stackoverflow.com/a/1936582/1391325
+				final Dimension screenSize = getToolkit().getScreenSize();
+				final Dimension maxSize = Dimensions.createScaledDimension(boardSize, screenSize);
+				LOGGER.info("Setting maximum component size to {}.", maxSize);
+				setMaximumSize(maxSize);
+			}
+			{
+				final int[] minSizeDims = createMinimumDimLengths(posMatrix.getDimensions()).toArray();
+				// NOTE: "rows" in the matrix go top-bottom and "cols" go
+				// left-right
+				final Dimension minSize = new Dimension(minSizeDims[1], minSizeDims[0]);
+				LOGGER.info("Setting minimum component size to {}.", minSize);
+				setMinimumSize(minSize);
+			}
 			newRegionPossibleMoveSetFactory = region -> {
 				final int occupiedRegionArea = region.getLengthX() * region.getLengthY();
 				return Sets
@@ -407,7 +421,7 @@ final class GameBoardPanel extends JPanel {
 			piecePlacements = matrixFiller.apply(pieceImgs.keySet());
 			// Finished with creating necessary data structures
 			System.out.println("IMAGE PLACEMENTS");
-			System.out.println(createMatrixReprString(backingPosMatrix));
+			System.out.println(createMatrixReprString(posMatrix.getPosMatrix()));
 
 		} catch (final IOException e) {
 			throw new UncheckedIOException(e);
