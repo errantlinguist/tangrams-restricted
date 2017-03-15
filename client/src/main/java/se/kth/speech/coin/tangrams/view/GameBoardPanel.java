@@ -33,6 +33,7 @@ import java.net.URL;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -162,6 +163,8 @@ final class GameBoardPanel extends JPanel {
 		MIN_GRID_SQUARE_LENGTH = 10 + IMG_PADDING;
 	}
 
+	private static final Map<ImageSize, Integer> IMAGE_SIZE_FACTORS = createImageSizeFactorMap();
+
 	private static void appendRowTableRepr(final int rowIdx, final Iterator<?> rowCellIter, final StringBuilder sb) {
 		sb.append(rowIdx);
 		final String nullValRepr = "-";
@@ -216,6 +219,16 @@ final class GameBoardPanel extends JPanel {
 			sb.append(imgValDatumComments.getValue());
 		}
 		return sb.toString();
+	}
+
+	private static final Map<ImageSize, Integer> createImageSizeFactorMap() {
+		final Map<ImageSize, Integer> result = new EnumMap<>(ImageSize.class);
+		final Iterator<ImageSize> sizes = ImageSize.getSizeOrdering().iterator();
+		result.put(sizes.next(), 1);
+		result.put(sizes.next(), 2);
+		result.put(sizes.next(), 3);
+		assert result.size() == ImageSize.values().length;
+		return result;
 	}
 
 	private static String createMatrixReprString(final Matrix<?> matrix) {
@@ -276,64 +289,9 @@ final class GameBoardPanel extends JPanel {
 		}
 	}
 
-	private static Image createScaledImage(final Image origImg, final ImageSize size, final int lesserDimVal,
-			final int maxDimLength, final ImageViewInfo.Orientation orientation) {
-		final Image result;
-		if (lesserDimVal < maxDimLength) {
-			switch (orientation) {
-			case PORTRAIT: {
-				result = origImg.getScaledInstance(-1, maxDimLength, IMG_SCALING_HINTS);
-				break;
-			}
-			default: {
-				result = origImg.getScaledInstance(-1, maxDimLength, IMG_SCALING_HINTS);
-				break;
-			}
-			}
-		} else {
-			// Just use the original, unscaled image
-			result = origImg;
-		}
-		return result;
-	}
-
 	private static boolean isDimensionDivisibleIntoGrid(final Dimension dim, final Matrix<?> matrix) {
 		final int[] matrixDims = matrix.getDimensions();
 		return dim.getHeight() % matrixDims[0] == 0 && dim.getWidth() % matrixDims[1] == 0;
-	}
-
-	private static Image scaleImageByLongerDimension(final BufferedImage origImg, final int longerDimVal) {
-		final Image result;
-		final ImageViewInfo.Orientation orientation = ImageViewInfo.Orientation.getOrientation(origImg.getWidth(),
-				origImg.getHeight());
-		switch (orientation) {
-		case PORTRAIT: {
-			result = origImg.getScaledInstance(-1, longerDimVal, IMG_SCALING_HINTS);
-			break;
-		}
-		default: {
-			result = origImg.getScaledInstance(longerDimVal, -1, IMG_SCALING_HINTS);
-			break;
-		}
-		}
-		return result;
-	}
-
-	private static Image scaleImageByShorterDimension(final BufferedImage origImg, final int shorterDimVal) {
-		final Image result;
-		final ImageViewInfo.Orientation orientation = ImageViewInfo.Orientation.getOrientation(origImg.getWidth(),
-				origImg.getHeight());
-		switch (orientation) {
-		case PORTRAIT: {
-			result = origImg.getScaledInstance(shorterDimVal, -1, IMG_SCALING_HINTS);
-			break;
-		}
-		default: {
-			result = origImg.getScaledInstance(-1, shorterDimVal, IMG_SCALING_HINTS);
-			break;
-		}
-		}
-		return result;
 	}
 
 	private static Image scaleImageToGridSize(final Image img, final SpatialMap.Region occupiedGridRegion,
@@ -346,13 +304,11 @@ final class GameBoardPanel extends JPanel {
 	/**
 	 * At most one region should be highlighted at a time per player
 	 */
-	private final Set<SpatialMap.Region> highlightedRegions = Sets.newHashSetWithExpectedSize(1);;
+	private final Set<SpatialMap.Region> highlightedRegions = Sets.newHashSetWithExpectedSize(1);
 
 	private final Map<ImageViewInfo, Integer> pieceIds;
 
 	private final Map<ImageViewInfo, Image> pieceImgs;
-
-	private final Function<? super ImageViewInfo, int[]> piecePosMatrixSizeFactory;
 
 	private final SpatialMatrix<Integer, ImageViewInfo> posMatrix;
 
@@ -369,7 +325,6 @@ final class GameBoardPanel extends JPanel {
 			final BiFunction<? super Image, ? super GameBoardPanel, ? extends Image> postColoringImgTransformer) {
 		this.postColoringImgTransformer = postColoringImgTransformer;
 		pieceIds = Maps.newHashMapWithExpectedSize(maxImgPlacements * 2);
-		piecePosMatrixSizeFactory = new CachingPieceMatrixBoundsArrayFactory();
 		final Function<ImageViewInfo, Integer> incrementingPieceIdGetter = piece -> pieceIds.computeIfAbsent(piece,
 				k -> pieceIds.size());
 		// The minimum accepted length of the shortest dimension for an image
@@ -390,6 +345,8 @@ final class GameBoardPanel extends JPanel {
 									Arrays.toString(backingPosMatrix.getDimensions())));
 				}
 				final Function<SpatialMatrix<Integer, ImageViewInfo>, SpatialMap<ImageViewInfo>> spatialMatrixPosMapFactory = matrix -> {
+					final Function<? super ImageViewInfo, int[]> piecePosMatrixSizeFactory = new CachingPieceMatrixBoundsArrayFactory(
+							Maps.newHashMapWithExpectedSize(pieceImgs.size()), IMAGE_SIZE_FACTORS);
 					final RandomMatrixImagePositionFiller<Integer> matrixFiller = new RandomMatrixImagePositionFiller<>(
 							matrix, incrementingPieceIdGetter, rnd, maxImgPlacements, maxPlacementRetriesPerImg,
 							allowFailedPlacements, piecePosMatrixSizeFactory);
