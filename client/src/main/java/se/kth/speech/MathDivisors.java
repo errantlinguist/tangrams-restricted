@@ -148,6 +148,30 @@ public final class MathDivisors {
 	}
 
 	/**
+	 * @see <a href=
+	 *      "http://codereview.stackexchange.com/a/58711">StackExchange</a>
+	 * @param first
+	 * @return
+	 */
+	public static final void removeNonDivisors(final Iterator<Integer> divisors, final Iterable<Integer> values) {
+		while (divisors.hasNext()) {
+			final Integer divisor = divisors.next();
+			final Iterator<Integer> valueIter = values.iterator();
+			final int first = valueIter.next();
+			if (first % divisor == 0) {
+				while (valueIter.hasNext()) {
+					final int next = valueIter.next();
+					if (next % divisor != 0) {
+						divisors.remove();
+					}
+				}
+			} else {
+				divisors.remove();
+			}
+		}
+	}
+
+	/**
 	 *
 	 */
 	private MathDivisors() {
