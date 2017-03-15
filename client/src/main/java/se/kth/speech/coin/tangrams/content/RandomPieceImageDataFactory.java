@@ -41,16 +41,16 @@ import com.google.common.collect.Multimap;
  */
 public final class RandomPieceImageDataFactory implements Function<Random, Stream<ImageVisualizationInfo>> {
 
+	private static final Collection<URL> DEFAULT_IMG_RESOURCES = IconImages.getImageResources().values();
+
 	private static final List<ImageSize> DEFAULT_IMG_SIZES = Arrays.asList(ImageSize.values());
+
+	private static final int DEFAULT_MAX_SHARED_ATTR_COUNT = 3;
 
 	private static final List<Color> DEFAULT_UNIQUE_IMG_COLORS = Arrays.asList(Color.RED, Color.YELLOW, Color.GREEN,
 			Color.BLUE);
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(RandomPieceImageDataFactory.class);
-
-	private static final int DEFAULT_MAX_SHARED_ATTR_COUNT = 3;
-
-	private static final Collection<URL> DEFAULT_IMG_RESOURCES = IconImages.getImageResources().values();
 
 	/**
 	 * A mapping of icon names mapped to their corresponding image {@link URL}
@@ -219,6 +219,34 @@ public final class RandomPieceImageDataFactory implements Function<Random, Strea
 		}
 
 		return resultBuilder.build();
+	}
+
+	/**
+	 * @return the imgResources
+	 */
+	public Collection<? extends URL> getImgResources() {
+		return imgResources;
+	}
+
+	/**
+	 * @return the maxSharedAttrCount
+	 */
+	public int getMaxSharedAttrCount() {
+		return maxSharedAttrCount;
+	}
+
+	/**
+	 * @return the sizes
+	 */
+	public List<ImageSize> getSizes() {
+		return sizes;
+	}
+
+	/**
+	 * @return the uniqueImgColors
+	 */
+	public List<? extends Color> getUniqueImgColors() {
+		return uniqueImgColors;
 	}
 
 	private List<ImageVisualizationInfo> createImageDataCombinations() {
