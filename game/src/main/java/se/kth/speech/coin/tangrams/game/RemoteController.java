@@ -25,7 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import se.kth.speech.coin.tangrams.iristk.events.ActivePlayerChange;
-import se.kth.speech.coin.tangrams.iristk.events.CoordinatePoint;
+import se.kth.speech.coin.tangrams.iristk.events.CoordinatePoint2D;
 import se.kth.speech.coin.tangrams.iristk.events.GameEnding;
 import se.kth.speech.coin.tangrams.iristk.events.Move;
 import se.kth.speech.coin.tangrams.iristk.events.Selection;
@@ -103,7 +103,7 @@ public final class RemoteController<T> extends Observable {
 		final String selectingPlayerId = playerSelection.getPlayerId();
 		LOGGER.debug("The remote controller was notified that \"{}\" has performed a selection.", selectingPlayerId);
 		if (playerIdFilter.test(selectingPlayerId)) {
-			final CoordinatePoint coords = playerSelection.getCoords();
+			final CoordinatePoint2D coords = playerSelection.getCoords();
 			LOGGER.debug("Updating coordinate selection {} from \"{}\".", Arrays.toString(coords.getCoords()),
 					selectingPlayerId);
 			// Notify local, lower-level listeners which e.g. update the user's

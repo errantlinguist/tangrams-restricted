@@ -23,22 +23,22 @@ import iristk.util.Record;
  * @since 4 Jan 2017
  *
  */
-public final class CoordinatePoint extends Record {
+public final class CoordinatePoint2D extends Record {
 
 	private int x;
 
 	private int y;
 
-	public CoordinatePoint() {
+	public CoordinatePoint2D() {
 		// Default constructor is required for JSON (un-)marshalling
 	}
 
-	public CoordinatePoint(final int x, final int y) {
+	public CoordinatePoint2D(final int x, final int y) {
 		setX(x);
 		setY(y);
 	}
 
-	public CoordinatePoint(final int[] coords) {
+	public CoordinatePoint2D(final int[] coords) {
 		this(coords[0], coords[1]);
 	}
 
@@ -88,7 +88,7 @@ public final class CoordinatePoint extends Record {
 	@Override
 	public String toString() {
 		final StringBuilder builder = new StringBuilder();
-		builder.append("CoordinatePoint [x=");
+		builder.append("CoordinatePoint2D [x=");
 		builder.append(x);
 		builder.append(", y=");
 		builder.append(y);

@@ -25,7 +25,7 @@ import iristk.util.Record;
  */
 public final class Selection extends Record {
 
-	private CoordinatePoint coords;
+	private CoordinatePoint2D coords;
 
 	private String playerId;
 
@@ -33,7 +33,7 @@ public final class Selection extends Record {
 		// Default constructor is required for JSON (un-)marshalling
 	}
 
-	public Selection(final String playerId, final CoordinatePoint coords) {
+	public Selection(final String playerId, final CoordinatePoint2D coords) {
 		setPlayerId(playerId);
 		setCoords(coords);
 	}
@@ -42,7 +42,7 @@ public final class Selection extends Record {
 	 * @return the coords
 	 */
 	@RecordField(name = "coords")
-	public CoordinatePoint getCoords() {
+	public CoordinatePoint2D getCoords() {
 		return coords;
 	}
 
@@ -59,7 +59,7 @@ public final class Selection extends Record {
 	 *            the coords to set
 	 */
 	@RecordField(name = "coords")
-	public void setCoords(final CoordinatePoint coords) {
+	public void setCoords(final CoordinatePoint2D coords) {
 		this.coords = coords;
 	}
 

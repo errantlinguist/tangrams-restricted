@@ -25,15 +25,15 @@ import iristk.util.Record;
  */
 public final class Move extends Record {
 
-	private CoordinatePoint source;
+	private CoordinatePoint2D source;
 
-	private CoordinatePoint target;
+	private CoordinatePoint2D target;
 
 	public Move() {
 		// Default constructor is required for JSON (un-)marshalling
 	}
 
-	public Move(final CoordinatePoint source, final CoordinatePoint target) {
+	public Move(final CoordinatePoint2D source, final CoordinatePoint2D target) {
 		setSource(source);
 		setTarget(target);
 	}
@@ -46,7 +46,7 @@ public final class Move extends Record {
 	 * @return the source
 	 */
 	@RecordField(name = "source")
-	public CoordinatePoint getSource() {
+	public CoordinatePoint2D getSource() {
 		return source;
 	}
 
@@ -54,7 +54,7 @@ public final class Move extends Record {
 	 * @return the target
 	 */
 	@RecordField(name = "target")
-	public CoordinatePoint getTarget() {
+	public CoordinatePoint2D getTarget() {
 		return target;
 	}
 
@@ -63,7 +63,7 @@ public final class Move extends Record {
 	 *            the source to set
 	 */
 	@RecordField(name = "source")
-	public void setSource(final CoordinatePoint source) {
+	public void setSource(final CoordinatePoint2D source) {
 		this.source = source;
 	}
 
@@ -72,7 +72,7 @@ public final class Move extends Record {
 	 *            the target to set
 	 */
 	@RecordField(name = "target")
-	public void setTarget(final CoordinatePoint target) {
+	public void setTarget(final CoordinatePoint2D target) {
 		this.target = target;
 	}
 

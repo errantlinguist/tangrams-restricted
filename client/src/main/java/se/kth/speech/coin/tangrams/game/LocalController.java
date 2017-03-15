@@ -23,7 +23,7 @@ import java.util.function.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import se.kth.speech.coin.tangrams.iristk.events.CoordinatePoint;
+import se.kth.speech.coin.tangrams.iristk.events.CoordinatePoint2D;
 import se.kth.speech.coin.tangrams.iristk.events.Move;
 import se.kth.speech.coin.tangrams.iristk.events.Selection;
 
@@ -50,12 +50,12 @@ public final class LocalController<T> extends Observable {
 
 	private final String playerId;
 
-	private final Consumer<? super CoordinatePoint> selectionHook;
+	private final Consumer<? super CoordinatePoint2D> selectionHook;
 
 	private final Consumer<? super Move> turnCompletionHook;
 
 	public LocalController(final Model<T> model, final String playerId, final boolean isEnabled,
-			final Consumer<? super Move> turnCompletionHook, final Consumer<? super CoordinatePoint> selectionHook) {
+			final Consumer<? super Move> turnCompletionHook, final Consumer<? super CoordinatePoint2D> selectionHook) {
 		this.model = model;
 		this.playerId = playerId;
 		this.isEnabled = isEnabled;
@@ -128,7 +128,7 @@ public final class LocalController<T> extends Observable {
 
 		final ValidationStatus result = validateMove(sourceCoords, targetCoords);
 		if (ValidationStatus.OK.equals(result)) {
-			nextTurnMove = new Move(new CoordinatePoint(sourceCoords), new CoordinatePoint(targetCoords));
+			nextTurnMove = new Move(new CoordinatePoint2D(sourceCoords), new CoordinatePoint2D(targetCoords));
 		}
 		return result;
 	}
@@ -139,7 +139,7 @@ public final class LocalController<T> extends Observable {
 		// stays selected rather than being "toggled" off
 		LOGGER.debug("Toggling coordinate selection {}.", Arrays.toString(coords));
 
-		final CoordinatePoint coordRecord = new CoordinatePoint(coords);
+		final CoordinatePoint2D coordRecord = new CoordinatePoint2D(coords);
 		final Selection selection = new Selection(playerId, coordRecord);
 		// Notify local listeners of (de-)selected coords, e.g. update player's
 		// own view and notify the player's own game action module

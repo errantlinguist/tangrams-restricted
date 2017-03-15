@@ -36,7 +36,7 @@ import se.kth.speech.coin.tangrams.Game;
 import se.kth.speech.coin.tangrams.game.PlayerJoinTime;
 import se.kth.speech.coin.tangrams.game.RemoteController;
 import se.kth.speech.coin.tangrams.iristk.events.ActivePlayerChange;
-import se.kth.speech.coin.tangrams.iristk.events.CoordinatePoint;
+import se.kth.speech.coin.tangrams.iristk.events.CoordinatePoint2D;
 import se.kth.speech.coin.tangrams.iristk.events.GameEnding;
 import se.kth.speech.coin.tangrams.iristk.events.Move;
 import se.kth.speech.coin.tangrams.iristk.events.Turn;
@@ -199,7 +199,7 @@ public final class GameManagementServerModule extends IrisModule {
 				if (LOGGER.isDebugEnabled()) {
 					final String selectingPlayerId = event
 							.getString(GameManagementEvent.Attribute.PLAYER_ID.toString());
-					final CoordinatePoint coords = (CoordinatePoint) event
+					final CoordinatePoint2D coords = (CoordinatePoint2D) event
 							.get(GameManagementEvent.Attribute.COORDS.toString());
 					LOGGER.debug("Received game event denoting that \"{}\" toggled selection at {}.", selectingPlayerId,
 							Arrays.toString(coords.getCoords()));
