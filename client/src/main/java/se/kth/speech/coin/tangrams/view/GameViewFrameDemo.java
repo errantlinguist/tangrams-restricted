@@ -202,7 +202,8 @@ public final class GameViewFrameDemo implements Runnable {
 		final OpaqueTransparencyReplacementImageFilter imgTranformer = new OpaqueTransparencyReplacementImageFilter(
 				128);
 		final GameBoardPanel gameBoardPanel = new GameBoardPanel(imgVisualizationInfoData, rnd, imgPlacementCount,
-				maxPlacementRetriesPerImg, allowFailedPlacements, (img, panel) -> panel.getToolkit()
+				maxPlacementRetriesPerImg, allowFailedPlacements, imgDataFactory.getImgResources().size(),
+				(img, panel) -> panel.getToolkit()
 						.createImage(new FilteredImageSource(img.getSource(), imgTranformer)));
 		final GameViewFrame frame = new GameViewFrame(gameBoardPanel, rnd);
 		frame.pack();

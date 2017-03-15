@@ -315,13 +315,15 @@ final class GameBoardPanel extends JPanel {
 	private final BiFunction<? super Image, ? super GameBoardPanel, ? extends Image> postColoringImgTransformer;
 
 	GameBoardPanel(final Collection<ImageVisualizationInfo> imgVisualizationInfoData, final Random rnd,
-			final int maxImgPlacements, final int maxPlacementRetriesPerImg, final boolean allowFailedPlacements) {
+			final int maxImgPlacements, final int maxPlacementRetriesPerImg, final boolean allowFailedPlacements,
+			final int uniqueImgResourceCount) {
 		this(imgVisualizationInfoData, rnd, maxImgPlacements, maxPlacementRetriesPerImg, allowFailedPlacements,
-				DEFAULT_POST_COLORING_IMG_TRANSFORMER);
+				uniqueImgResourceCount, DEFAULT_POST_COLORING_IMG_TRANSFORMER);
 	}
 
 	GameBoardPanel(final Collection<ImageVisualizationInfo> imgVisualizationInfoData, final Random rnd,
 			final int maxImgPlacements, final int maxPlacementRetriesPerImg, final boolean allowFailedPlacements,
+			final int uniqueImgResourceCount,
 			final BiFunction<? super Image, ? super GameBoardPanel, ? extends Image> postColoringImgTransformer) {
 		this.postColoringImgTransformer = postColoringImgTransformer;
 		pieceIds = Maps.newHashMapWithExpectedSize(maxImgPlacements * 2);
@@ -330,53 +332,48 @@ final class GameBoardPanel extends JPanel {
 		// The minimum accepted length of the shortest dimension for an image
 		final int minDimLength = 300;
 		final SizeValidator validator = new SizeValidator(minDimLength, 50, 50);
-		try {
-			pieceImgs = createImageViewInfoMap(imgVisualizationInfoData, validator);
-			final Dimension boardSize = new Dimension(minDimLength * 5, minDimLength * 4);
-			setPreferredSize(boardSize);
-			{
-				final int[] gridSize = createPositionGridSize(pieceImgs.keySet(), boardSize, validator);
-				LOGGER.info("Creating a position matrix of size {}.", gridSize);
-				final Integer[] posMatrixBackingArray = new Integer[IntArrays.product(gridSize)];
-				final Matrix<Integer> backingPosMatrix = new Matrix<>(posMatrixBackingArray, gridSize[1]);
-				if (!isDimensionDivisibleIntoGrid(boardSize, backingPosMatrix)) {
-					throw new IllegalArgumentException(
-							String.format("Board %s not divisble into matrix with dimensions %s.", boardSize,
-									Arrays.toString(backingPosMatrix.getDimensions())));
-				}
-				final Function<SpatialMatrix<Integer, ImageViewInfo>, SpatialMap<ImageViewInfo>> spatialMatrixPosMapFactory = matrix -> {
-					final Function<? super ImageViewInfo, int[]> piecePosMatrixSizeFactory = new CachingPieceMatrixBoundsArrayFactory(
-							Maps.newHashMapWithExpectedSize(pieceImgs.size()));
-					final RandomMatrixImagePositionFiller<Integer> matrixFiller = new RandomMatrixImagePositionFiller<>(
-							matrix, incrementingPieceIdGetter, rnd, maxImgPlacements, maxPlacementRetriesPerImg,
-							allowFailedPlacements, piecePosMatrixSizeFactory);
-					return matrixFiller.apply(pieceImgs.keySet());
-				};
+		pieceImgs = createImageViewInfoMap(imgVisualizationInfoData, validator, uniqueImgResourceCount);
+		final Dimension boardSize = new Dimension(minDimLength * 5, minDimLength * 4);
+		setPreferredSize(boardSize);
+		{
+			final int[] gridSize = createPositionGridSize(pieceImgs.keySet(), boardSize, validator);
+			LOGGER.info("Creating a position matrix of size {}.", gridSize);
+			final Integer[] posMatrixBackingArray = new Integer[IntArrays.product(gridSize)];
+			final Matrix<Integer> backingPosMatrix = new Matrix<>(posMatrixBackingArray, gridSize[1]);
+			if (!isDimensionDivisibleIntoGrid(boardSize, backingPosMatrix)) {
+				throw new IllegalArgumentException(
+						String.format("Board %s not divisble into matrix with dimensions %s.", boardSize,
+								Arrays.toString(backingPosMatrix.getDimensions())));
+			}
+			final Function<SpatialMatrix<Integer, ImageViewInfo>, SpatialMap<ImageViewInfo>> spatialMatrixPosMapFactory = matrix -> {
+				final Function<? super ImageViewInfo, int[]> piecePosMatrixSizeFactory = new CachingPieceMatrixBoundsArrayFactory(
+						Maps.newHashMapWithExpectedSize(pieceImgs.size()));
+				final RandomMatrixImagePositionFiller<Integer> matrixFiller = new RandomMatrixImagePositionFiller<>(
+						matrix, incrementingPieceIdGetter, rnd, maxImgPlacements, maxPlacementRetriesPerImg,
+						allowFailedPlacements, piecePosMatrixSizeFactory);
+				return matrixFiller.apply(pieceImgs.keySet());
+			};
 
-				posMatrix = new SpatialMatrix<>(backingPosMatrix, pieceIds::get, spatialMatrixPosMapFactory);
-			}
-			{
-				// http://stackoverflow.com/a/1936582/1391325
-				final Dimension screenSize = getToolkit().getScreenSize();
-				final Dimension maxSize = Dimensions.createScaledDimension(boardSize, screenSize);
-				LOGGER.debug("Setting maximum component size to {}.", maxSize);
-				setMaximumSize(maxSize);
-			}
-			{
-				final int[] minSizeDims = createMinimumDimLengths(posMatrix.getDimensions()).toArray();
-				// NOTE: "rows" in the matrix go top-bottom and "cols" go
-				// left-right
-				final Dimension minSize = new Dimension(minSizeDims[1], minSizeDims[0]);
-				LOGGER.debug("Setting minimum component size to {}.", minSize);
-				setMinimumSize(minSize);
-			}
-			// Finished with creating necessary data structures
-			System.out.println("IMAGE PLACEMENTS");
-			System.out.println(createMatrixReprString(posMatrix.getPositionMatrix()));
-
-		} catch (final IOException e) {
-			throw new UncheckedIOException(e);
+			posMatrix = new SpatialMatrix<>(backingPosMatrix, pieceIds::get, spatialMatrixPosMapFactory);
 		}
+		{
+			// http://stackoverflow.com/a/1936582/1391325
+			final Dimension screenSize = getToolkit().getScreenSize();
+			final Dimension maxSize = Dimensions.createScaledDimension(boardSize, screenSize);
+			LOGGER.debug("Setting maximum component size to {}.", maxSize);
+			setMaximumSize(maxSize);
+		}
+		{
+			final int[] minSizeDims = createMinimumDimLengths(posMatrix.getDimensions()).toArray();
+			// NOTE: "rows" in the matrix go top-bottom and "cols" go
+			// left-right
+			final Dimension minSize = new Dimension(minSizeDims[1], minSizeDims[0]);
+			LOGGER.debug("Setting minimum component size to {}.", minSize);
+			setMinimumSize(minSize);
+		}
+		// Finished with creating necessary data structures
+		System.out.println("IMAGE PLACEMENTS");
+		System.out.println(createMatrixReprString(posMatrix.getPositionMatrix()));
 	}
 
 	@Override
@@ -401,8 +398,8 @@ final class GameBoardPanel extends JPanel {
 	}
 
 	private LinkedHashMap<ImageViewInfo, Image> createImageViewInfoMap(
-			final Collection<ImageVisualizationInfo> imgVisualizationInfoData, final SizeValidator validator)
-			throws IOException {
+			final Collection<ImageVisualizationInfo> imgVisualizationInfoData, final SizeValidator validator,
+			final int uniqueImgResourceCount) {
 		// Use linked map in order to preserve iteration order in provided
 		// sequence
 		final LinkedHashMap<ImageViewInfo, Image> result = Maps
@@ -411,9 +408,16 @@ final class GameBoardPanel extends JPanel {
 		final Map<URL, Entry<ImageViewInfo.RasterizationInfo, Set<SizeValidator.ValidationComment>>> badImgs = Maps
 				.newHashMapWithExpectedSize(0);
 		final Toolkit toolkit = getToolkit();
+		final Map<URL, BufferedImage> resourceImgs = Maps.newHashMapWithExpectedSize(uniqueImgResourceCount);
 		for (final ImageVisualizationInfo imgVisualizationInfoDatum : imgVisualizationInfoData) {
 			final URL imgResourceLoc = imgVisualizationInfoDatum.getResourceLoc();
-			final BufferedImage initialImg = ImageIO.read(imgResourceLoc);
+			final BufferedImage initialImg = resourceImgs.computeIfAbsent(imgResourceLoc, loc -> {
+				try {
+					return ImageIO.read(loc);
+				} catch (final IOException e) {
+					throw new UncheckedIOException(e);
+				}
+			});
 			final IntSupplier widthGetter = initialImg::getWidth;
 			final IntSupplier heightGetter = initialImg::getHeight;
 			{
