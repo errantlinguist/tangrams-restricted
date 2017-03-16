@@ -23,7 +23,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -149,16 +148,15 @@ public final class SpatialMatrix<I, E> {
 				final int xUpperBound = xLowerBound + movablePieceRegion.getLengthX();
 				for (int yLowerBound = 0; yLowerBound < maxYLowerBound; yLowerBound++) {
 					final int yUpperBound = yLowerBound + movablePieceRegion.getLengthY();
-					if (getCells(xLowerBound, xUpperBound, yLowerBound, yUpperBound).allMatch(Objects::isNull)) {
-						final SpatialMap.Region possibleMoveRegion = getRegion(xLowerBound, xUpperBound, yLowerBound,
-								yUpperBound);
-						assert !elementPlacements.isOccupied(possibleMoveRegion);
-						possibleMoveRegions.add(possibleMoveRegion);
-					} else {
+					final SpatialMap.Region possibleMoveRegion = getRegion(xLowerBound, xUpperBound, yLowerBound,
+							yUpperBound);
+					if (elementPlacements.isOccupied(possibleMoveRegion)) {
 						if (LOGGER.isDebugEnabled()) {
 							LOGGER.debug("Found occupied space at {}.",
 									Arrays.toString(new int[] { xLowerBound, xUpperBound, yLowerBound, yUpperBound }));
 						}
+					} else {
+						possibleMoveRegions.add(possibleMoveRegion);
 					}
 				}
 
@@ -274,11 +272,6 @@ public final class SpatialMatrix<I, E> {
 		assert !elementPlacements.isOccupied(target);
 		setPositionValues(target, elementId);
 		elementPlacements.put(element, target);
-	}
-
-	private Stream<I> getCells(final int xLowerBound, final int xUpperBound, final int yLowerBound,
-			final int yUpperBound) {
-		return positionMatrix.getValues(xLowerBound, xUpperBound, yLowerBound, yUpperBound);
 	}
 
 	private void setPositionValues(final SpatialMap.Region region, final I elementId) {
