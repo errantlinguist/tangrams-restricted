@@ -25,6 +25,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.mozilla.javascript.edu.emory.mathcs.backport.java.util.Collections;
 
+import com.google.common.base.Objects;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Table;
 
@@ -65,6 +66,21 @@ public final class SpatialMatrixTest {
 	// Assert.assertEquals(matrix.calculateRegionPowerSetSize(),
 	// powerSet.size());
 	// }
+
+	@Test
+	public final void testCheckCellsRegion() {
+		final SpatialMap<int[]> piecePositions = new SpatialMap<>(TEST_PIECES.size());
+		final int[] gridSize = new int[] { 10, 10 };
+		final Integer[] posMatrixBackingArray = new Integer[IntArrays.product(gridSize)];
+		final Matrix<Integer> backingPosMatrix = new Matrix<>(posMatrixBackingArray, gridSize[1]);
+
+		final SpatialMatrix<Integer, int[]> matrix = new SpatialMatrix<>(backingPosMatrix, TEST_PIECE_IDS::get,
+				piecePositions);
+		final Integer expected = 1;
+		final SpatialMap.Region r = matrix.getRegion(0, 10, 5, 16);
+		matrix.setPositionValues(r, expected);
+		Assert.assertTrue(matrix.testCells(r, val -> Objects.equal(expected, val)));
+	}
 
 	/**
 	 * Test method for
