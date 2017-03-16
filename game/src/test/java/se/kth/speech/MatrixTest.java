@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.ToIntFunction;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import org.junit.Rule;
 import org.junit.experimental.theories.DataPoints;
@@ -39,6 +40,7 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import se.kth.speech.hat.xsd.Transcription.T;
+import se.kth.speech.junit.IteratorEqualityAsserter;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -79,6 +81,8 @@ public final class MatrixTest {
 		MATRIX_IDX_POSITIONS = IntStream.range(0, maxMatrixIdxPosition).toArray();
 	}
 
+	private static final IteratorEqualityAsserter<Object> ITER_ASSERTER = new IteratorEqualityAsserter<>();
+
 	private static <V> Map<Matrix<V>, V[]> createMatrixValueArrayMap(final Collection<? extends V[]> valArrays) {
 		final int collSize = valArrays.size();
 		final int initialResultCapacity = collSize * (collSize / 2) + 1;
@@ -107,8 +111,7 @@ public final class MatrixTest {
 	public final ExpectedException thrown = ExpectedException.none();
 
 	/**
-	 * Test method for
-	 * {@link se.kth.speech.Matrix#getMatrixIndices(int)}.
+	 * Test method for {@link se.kth.speech.Matrix#getMatrixIndices(int)}.
 	 */
 	@Theory
 	public void testGetMatrixIndicesMonotonicRow(final Matrix<Object> m,
@@ -130,8 +133,7 @@ public final class MatrixTest {
 	}
 
 	/**
-	 * Test method for
-	 * {@link se.kth.speech.Matrix#getMatrixIndices(int)}.
+	 * Test method for {@link se.kth.speech.Matrix#getMatrixIndices(int)}.
 	 */
 	@Theory
 	public void testGetMatrixIndicesUpperBound(final Matrix<Object> m,
@@ -154,7 +156,18 @@ public final class MatrixTest {
 
 	/**
 	 * Test method for
-	 * {@link se.kth.speech.Matrix#Matrix(T[], int)}.
+	 * {@link se.kth.speech.Matrix#getValues(int, int, int, int)}.
+	 */
+	@Theory
+	public void testGetValuesIntIntIntInt(final Matrix<Object> m) {
+		final List<Object> expected = m.getValues();
+		final int[] dims = m.getDimensions();
+		final Stream<Object> actual = m.getValues(0, dims[0], 0, dims[1]);
+		ITER_ASSERTER.accept(expected.iterator(), actual.iterator());
+	}
+
+	/**
+	 * Test method for {@link se.kth.speech.Matrix#Matrix(T[], int)}.
 	 */
 	@Theory
 	public void testMatrixIllformed(final Object[] vals, final int colCount) {
@@ -165,8 +178,7 @@ public final class MatrixTest {
 	}
 
 	/**
-	 * Test method for
-	 * {@link se.kth.speech.Matrix#Matrix(T[], int)}.
+	 * Test method for {@link se.kth.speech.Matrix#Matrix(T[], int)}.
 	 */
 	@Theory
 	public void testMatrixNonPositiveColCount(final Object[] vals, final int colCount) {
@@ -176,8 +188,7 @@ public final class MatrixTest {
 	}
 
 	/**
-	 * Test method for
-	 * {@link se.kth.speech.Matrix#Matrix(T[], int)}.
+	 * Test method for {@link se.kth.speech.Matrix#Matrix(T[], int)}.
 	 */
 	@Theory
 	public void testMatrixPositive(final Object[] vals, final int colCount) {
@@ -188,8 +199,7 @@ public final class MatrixTest {
 	}
 
 	/**
-	 * Test method for
-	 * {@link se.kth.speech.Matrix#Matrix(T[], int)}.
+	 * Test method for {@link se.kth.speech.Matrix#Matrix(T[], int)}.
 	 */
 	@Theory
 	public void testMatrixTooFewValues(final Object[] vals, final int colCount) {

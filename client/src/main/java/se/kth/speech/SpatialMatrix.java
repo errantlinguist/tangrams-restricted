@@ -116,21 +116,23 @@ public final class SpatialMatrix<I, E> {
 
 	public Table<Integer, Integer, Set<SpatialMap.Region>> createSizeIndexedRegionPowerSet() {
 		final int dims[] = positionMatrix.getDimensions();
+		LOGGER.info("Dims: {}", dims);
 		final int x = dims[0];
 		final int y = dims[1];
 		final Table<Integer, Integer, Set<SpatialMap.Region>> result = ArrayTable.create(
-				IntStream.range(0, x + 1).boxed().collect(Collectors.toCollection(() -> new ArrayList<>(x))),
-				IntStream.range(0, y + 1).boxed().collect(Collectors.toCollection(() -> new ArrayList<>(y))));
-		for (int xLowerBound = 0; xLowerBound <= x; ++xLowerBound) {
-			for (int xUpperBound = xLowerBound; xUpperBound <= x; ++xUpperBound) {
-				final int xLength = xUpperBound - xLowerBound;
+				IntStream.rangeClosed(1, x).boxed().collect(Collectors.toCollection(() -> new ArrayList<>(x))),
+				IntStream.rangeClosed(1, y).boxed().collect(Collectors.toCollection(() -> new ArrayList<>(y))));
+		for (int xLowerBound = 0; xLowerBound < x; ++xLowerBound) {
+			for (int xUpperBound = xLowerBound; xUpperBound < x; ++xUpperBound) {
+				final int xLength = xUpperBound - xLowerBound + 1;
 				for (int yLowerBound = 0; yLowerBound < y; ++yLowerBound) {
-					for (int yUpperBound = yLowerBound; yUpperBound <= y; ++yUpperBound) {
-						final int yLength = yUpperBound - yLowerBound;
+					for (int yUpperBound = yLowerBound; yUpperBound < y; ++yUpperBound) {
+						final int yLength = yUpperBound - yLowerBound + 1;
 						Set<SpatialMap.Region> regions = result.get(xLength, yLength);
 						if (regions == null) {
 							// TODO: set capacity
 							regions = new HashSet<>();
+							LOGGER.info("putting {}*{}", xLength, yLength);
 							result.put(xLength, yLength, regions);
 						}
 						final SpatialMap.Region region = getRegion(xLowerBound, xUpperBound, yLowerBound, yUpperBound);
