@@ -80,12 +80,16 @@ public final class SpatialMatrixTest {
 		final SpatialMatrix<Integer, int[]> matrix = new SpatialMatrix<>(backingPosMatrix, TEST_PIECE_IDS::get,
 				piecePositions);
 		final int[] dims = matrix.getDimensions();
-		final SpatialMap.Region totalRegion = matrix.getRegion(0, dims[1], 0, dims[1]);
+		final int x = dims[0];
+		final int y = dims[1];
+		final SpatialMap.Region totalRegion = matrix.getRegion(0, x, 0, y);
 		final Table<Integer, Integer, Set<SpatialMap.Region>> regionPowerSet = matrix.createSizeIndexedRegionPowerSet();
-		Assert.assertEquals(dims[0], Collections.max(regionPowerSet.rowKeySet()));
-		Assert.assertEquals(dims[0], regionPowerSet.rowKeySet().size());
-		Assert.assertEquals(dims[1], Collections.max(regionPowerSet.columnKeySet()));
-		Assert.assertEquals(dims[1], regionPowerSet.columnKeySet().size());
+		final Set<Integer> rows = regionPowerSet.rowKeySet();
+		Assert.assertEquals(x, Collections.max(rows));
+		Assert.assertEquals(x, rows.size());
+		final Set<Integer> cols = regionPowerSet.columnKeySet();
+		Assert.assertEquals(y, Collections.max(cols));
+		Assert.assertEquals(y, cols.size());
 		regionPowerSet.values().stream().forEach(size -> {
 			Assert.assertFalse(size.isEmpty());
 		});
