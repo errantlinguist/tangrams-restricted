@@ -45,10 +45,12 @@ public final class SpatialMapTest {
 	@Test
 	public final void testIsOccupiedIntersecting() {
 		final SpatialMap<Object> testMap = new SpatialMap<>(2);
-		final SpatialMap.Region superRegion = new SpatialMap.Region(0, 20, 10, 30);
-		Assert.assertNull(testMap.put("superRegion", superRegion));
-		final SpatialMap.Region subRegion = new SpatialMap.Region(18, 22, 0, 5);
-		Assert.assertTrue(testMap.isOccupied(subRegion));
+		final SpatialMap.Region r1 = new SpatialMap.Region(0, 9, 0, 2);
+		Assert.assertNull(testMap.put("r1", r1));
+		final SpatialMap.Region r2 = new SpatialMap.Region(8, 12, 0, 3);
+		Assert.assertFalse(r1.subsumes(r2));
+		Assert.assertFalse(r2.subsumes(r1));
+		Assert.assertTrue(testMap.isOccupied(r2));
 	}
 
 	/**

@@ -66,7 +66,25 @@ public final class SpatialMap<E> {
 		 */
 		public static boolean intersects(final int r1x1, final int r1x2, final int r1y1, final int r1y2, final int r2x1,
 				final int r2x2, final int r2y1, final int r2y2) {
-			return r1x1 <= r2x2 && r1x2 >= r2x1 && r1y1 <= r2y2 && r1y2 >= r2y1;
+			final boolean result;
+			if (r1x1 <= r2x2) {
+				if (r1x2 >= r2x1) {
+					if (r1y1 <= r2y2) {
+						if (r1y2 >= r2y1) {
+							result = true;
+						} else {
+							result = false;
+						}
+					} else {
+						result = false;
+					}
+				} else {
+					result = false;
+				}
+			} else {
+				result = false;
+			}
+			return result;
 		}
 
 		/**
@@ -84,7 +102,25 @@ public final class SpatialMap<E> {
 		 */
 		public static boolean subsumes(final int r1x1, final int r1x2, final int r1y1, final int r1y2, final int r2x1,
 				final int r2x2, final int r2y1, final int r2y2) {
-			return r1x1 >= r2x1 && r1x2 >= r2x2 && r1y1 >= r2y1 && r1y2 <= r2y2;
+			final boolean result;
+			if (r1x1 <= r2x1) {
+				if (r1x2 >= r2x2) {
+					if (r1y1 <= r2y1) {
+						if (r1y2 >= r2y2) {
+							result = true;
+						} else {
+							result = false;
+						}
+					} else {
+						result = false;
+					}
+				} else {
+					result = false;
+				}
+			} else {
+				result = false;
+			}
+			return result;
 		}
 
 		private final int xLowerBound;
@@ -352,7 +388,14 @@ public final class SpatialMap<E> {
 	 * @return
 	 */
 	public boolean isOccupied(final Region region) {
-		return regionElements.keySet().stream().anyMatch(elementRegion -> elementRegion.intersects(region));
+		boolean result = false;
+		for (final Region elementRegion : regionElements.keySet()) {
+			if(elementRegion.intersects(region)){
+				result = true;
+				break;
+			}
+		}
+		return result;
 	}
 
 	public synchronized Region put(final E element, final Region region) {

@@ -208,6 +208,20 @@ public final class SpatialMapRegionTest {
 	 * Test method for
 	 * {@link se.kth.speech.SpatialMap.Region#intersects(se.kth.speech.SpatialMap.Region)}.
 	 */
+	@Test
+	public final void testIntersectsRegionNotSubregion() {
+		final SpatialMap.Region r1 = new SpatialMap.Region(0, 9, 0, 2);
+		final SpatialMap.Region r2 = new SpatialMap.Region(8, 12, 0, 3);
+		Assert.assertFalse(r1.subsumes(r2));
+		Assert.assertFalse(r2.subsumes(r1));
+		Assert.assertTrue(r1.intersects(r2));
+		Assert.assertTrue(r2.intersects(r1));
+	}
+
+	/**
+	 * Test method for
+	 * {@link se.kth.speech.SpatialMap.Region#intersects(se.kth.speech.SpatialMap.Region)}.
+	 */
 	@Theory
 	public final void testIntersectsRegionSelf(final Region r) {
 		Assert.assertTrue(r.intersects(r));
@@ -219,8 +233,10 @@ public final class SpatialMapRegionTest {
 	 */
 	@Test
 	public final void testIntersectsRegionSubregion() {
-		final Region r = new Region(0, 2, 3, 5);
-		Assert.assertTrue(r.intersects(new Region(0, 1, 3, 4)));
+		final Region superRegion = new Region(0, 2, 3, 5);
+		final Region subRegion = new Region(0, 1, 3, 4);
+		Assert.assertTrue(superRegion.subsumes(subRegion));
+		Assert.assertTrue(superRegion.intersects(subRegion));
 	}
 
 	/**
@@ -297,8 +313,10 @@ public final class SpatialMapRegionTest {
 	 */
 	@Test
 	public final void testSubsumesRegionNegativeIntersecting() {
-		final Region r = new Region(0, 2, 0, 1);
-		Assert.assertFalse(r.subsumes(new Region(0, 3, 1, 3)));
+		final Region r1 = new Region(0, 2, 0, 1);
+		final Region r2 = new Region(0, 3, 1, 3);
+		Assert.assertTrue(r1.intersects(r2));
+		Assert.assertFalse(r1.subsumes(r2));
 	}
 
 	/**
@@ -306,9 +324,20 @@ public final class SpatialMapRegionTest {
 	 * {@link se.kth.speech.SpatialMap.Region#subsumes(se.kth.speech.SpatialMap.Region)}.
 	 */
 	@Test
-	public final void testSubsumesRegionPositive() {
+	public final void testSubsumesRegionPositive1() {
 		final Region superRegion = new Region(3, 6, 4, 6);
 		final Region subRegion = new Region(3, 4, 5, 6);
+		Assert.assertTrue(superRegion.subsumes(subRegion));
+	}
+
+	/**
+	 * Test method for
+	 * {@link se.kth.speech.SpatialMap.Region#subsumes(se.kth.speech.SpatialMap.Region)}.
+	 */
+	@Test
+	public final void testSubsumesRegionPositive2() {
+		final Region superRegion = new Region(0, 2, 3, 5);
+		final Region subRegion = new Region(0, 1, 3, 4);
 		Assert.assertTrue(superRegion.subsumes(subRegion));
 	}
 
