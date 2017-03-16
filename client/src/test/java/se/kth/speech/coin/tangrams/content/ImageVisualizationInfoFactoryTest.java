@@ -48,7 +48,7 @@ public final class ImageVisualizationInfoFactoryTest {
 	 * Test method for
 	 * {@link se.kth.speech.coin.tangrams.content.ImageVisualizationInfoFactory#next()}.
 	 */
-	@Theory @Ignore
+	@Theory
 	public final void testNextNotEmpty(final long s) {
 		final Random rnd = new Random(s);
 		final Optional<ImageVisualizationInfo> any = Stream.of(new ImageVisualizationInfoFactory(rnd).next()).findAny();
