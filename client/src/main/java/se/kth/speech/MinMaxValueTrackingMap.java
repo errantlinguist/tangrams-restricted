@@ -58,8 +58,6 @@ public final class MinMaxValueTrackingMap<K, V> implements Map<K, V> {
 		this.nullsLastComp = Comparator.nullsLast(comp);
 		this.nullsFirstComp = Comparator.nullsFirst(comp);
 
-		minValue = null;
-		maxValue = null;
 		updateExtrema(decorated.entrySet());
 	}
 
