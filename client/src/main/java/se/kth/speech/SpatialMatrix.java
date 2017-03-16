@@ -19,7 +19,6 @@ package se.kth.speech;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.ListIterator;
@@ -86,10 +85,10 @@ public final class SpatialMatrix<I, E> {
 		final Table<Integer, Integer, Set<SpatialMap.Region>> result = ArrayTable.create(
 				IntStream.rangeClosed(1, x).boxed().collect(Collectors.toCollection(() -> new ArrayList<>(x))),
 				IntStream.rangeClosed(1, y).boxed().collect(Collectors.toCollection(() -> new ArrayList<>(y))));
-		for (int xLowerBound = 0; xLowerBound < x; ++xLowerBound) {
+		for (int xLowerBound = 1; xLowerBound <= x; ++xLowerBound) {
 			for (int xUpperBound = xLowerBound; xUpperBound < x; ++xUpperBound) {
 				final int xLength = xUpperBound - xLowerBound + 1;
-				for (int yLowerBound = 0; yLowerBound < y; ++yLowerBound) {
+				for (int yLowerBound = 1; yLowerBound <= y; ++yLowerBound) {
 					for (int yUpperBound = yLowerBound; yUpperBound < y; ++yUpperBound) {
 						final int yLength = yUpperBound - yLowerBound + 1;
 						Set<SpatialMap.Region> regions = result.get(xLength, yLength);
@@ -183,7 +182,7 @@ public final class SpatialMatrix<I, E> {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#equals(java.lang.Object)
 	 */
 	@Override
@@ -249,7 +248,7 @@ public final class SpatialMatrix<I, E> {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#hashCode()
 	 */
 	@Override
