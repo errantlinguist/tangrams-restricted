@@ -29,7 +29,7 @@ import com.google.common.collect.Sets;
  * @since 16 Mar 2017
  *
  */
-public class MinMaxValueTrackingMapTest {
+public final class MinMaxValueTrackingMapTest {
 
 	/**
 	 * Test method for
