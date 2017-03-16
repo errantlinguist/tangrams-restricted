@@ -64,7 +64,7 @@ public final class RandomMatrixPositionFillerTest {
 			TEST_PIECE_IDS.put(piece, id);
 		});
 
-		TEST_SEEDS = new Random().longs().limit(10).toArray();
+		TEST_SEEDS = new Random().longs().limit(100).toArray();
 	}
 
 	private static MutablePair<SpatialMatrix<Integer, int[]>, Set<Integer>> apply(final long seed) {

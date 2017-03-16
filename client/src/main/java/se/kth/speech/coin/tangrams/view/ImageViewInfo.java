@@ -203,7 +203,8 @@ final class ImageViewInfo {
 	public int[] getGridSize(final Function<ImageSize, Integer> sizeFactors) {
 		final int factor = sizeFactors.apply(getVisualization().getSize());
 		final int[] aspectRatio = getRasterization().getAspectRatio();
-		return new int[] { aspectRatio[0] * factor, aspectRatio[1] * factor };
+		// NOTE: Grid rows go top-bottom and cols go left-right
+		return new int[] { aspectRatio[1] * factor, aspectRatio[0] * factor };
 	}
 
 	/*
