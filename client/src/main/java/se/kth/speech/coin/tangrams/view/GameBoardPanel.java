@@ -630,7 +630,7 @@ final class GameBoardPanel extends JPanel {
 		final SpatialMap.Region occupiedRegion = pieceMove.getKey();
 		final Map<ImageViewInfo, SpatialMap.Region> pieceMoveTargets = pieceMove.getValue();
 		highlightedRegions.add(occupiedRegion);
-		posMatrix.placeElements(pieceMoveTargets);
+		pieceMoveTargets.forEach((piece, moveTarget) -> posMatrix.placeElement(piece, moveTarget));
 		posMatrix.clearRegion(occupiedRegion);
 		repaint();
 	}

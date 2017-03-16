@@ -19,7 +19,6 @@ package se.kth.speech.coin.tangrams.view;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
 import java.util.function.Function;
@@ -64,7 +63,6 @@ final class RandomMatrixPositionFiller<I, E> implements Function<Collection<? ex
 		LOGGER.info("Trying to place {} pieces.", pieces.size());
 		final Table<Integer, Integer, Set<SpatialMap.Region>> subRegionsToTry = posMatrix
 				.createSizeIndexedRegionPowerSet();
-		final SpatialMap<E> piecePositions = posMatrix.getElementPlacements();
 		final Set<I> result = Sets.newHashSetWithExpectedSize(pieces.size());
 		{
 			// Randomly place each image in the position matrix
@@ -73,8 +71,7 @@ final class RandomMatrixPositionFiller<I, E> implements Function<Collection<? ex
 				final E piece = pieceIter.next();
 				LOGGER.debug("Adding {}.", piece);
 				final I pieceId = pieceIdGetter.apply(piece);
-				final SpatialMap.Region placementResult = placePieceRandomly(piece, pieceId, piecePositions,
-						subRegionsToTry);
+				final SpatialMap.Region placementResult = placePieceRandomly(piece, pieceId, subRegionsToTry);
 				LOGGER.debug("Added {} (with ID \"{}\") to {}.", new Object[] { piece, pieceId, placementResult });
 				result.add(pieceId);
 			}
@@ -83,7 +80,7 @@ final class RandomMatrixPositionFiller<I, E> implements Function<Collection<? ex
 		return result;
 	}
 
-	private SpatialMap.Region placePieceRandomly(final E piece, final I pieceId, final SpatialMap<E> occupiedPositions,
+	private SpatialMap.Region placePieceRandomly(final E piece, final I pieceId,
 			final Table<? super Integer, ? super Integer, ? extends Collection<SpatialMap.Region>> subRegionsToTry) {
 		// The number of rows and columns this image takes up in the
 		// position matrix
@@ -96,15 +93,13 @@ final class RandomMatrixPositionFiller<I, E> implements Function<Collection<? ex
 			// Randomly pick a space in the matrix
 			result = RandomCollections.getRandomElement(allFittingSubRegions, rnd);
 			LOGGER.debug("Result size: {}", result.getDimensions());
-			if (occupiedPositions.isOccupied(result)) {
+			if (posMatrix.isOccupied(result)) {
 				LOGGER.debug("Region {} is already occupied.", result);
 				allFittingSubRegions.remove(result);
 				result = null;
 			} else {
-				assert posMatrix.testCells(result, Objects::isNull);
-				posMatrix.setPositionValues(result, pieceId);
-				assert posMatrix.testCells(result, Objects::nonNull);
-				occupiedPositions.put(piece, result);
+				posMatrix.placeElement(piece, result);
+				assert posMatrix.isOccupied(result);
 			}
 		} while (result == null && !allFittingSubRegions.isEmpty());
 

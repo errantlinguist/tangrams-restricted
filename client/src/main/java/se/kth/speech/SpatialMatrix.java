@@ -23,11 +23,9 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -151,7 +149,7 @@ public final class SpatialMatrix<I, E> {
 				final int xUpperBound = xLowerBound + movablePieceRegion.getLengthX();
 				for (int yLowerBound = 0; yLowerBound < maxYLowerBound; yLowerBound++) {
 					final int yUpperBound = yLowerBound + movablePieceRegion.getLengthY();
-					if (testCells(xLowerBound, xUpperBound, yLowerBound, yUpperBound, Objects::isNull)) {
+					if (getCells(xLowerBound, xUpperBound, yLowerBound, yUpperBound).allMatch(Objects::isNull)) {
 						final SpatialMap.Region possibleMoveRegion = getRegion(xLowerBound, xUpperBound, yLowerBound,
 								yUpperBound);
 						assert !elementPlacements.isOccupied(possibleMoveRegion);
@@ -262,19 +260,28 @@ public final class SpatialMatrix<I, E> {
 		return result;
 	}
 
-	public void placeElements(final Map<E, SpatialMap.Region> elementMoveTargets) {
-		for (final Entry<E, SpatialMap.Region> elementMoveTarget : elementMoveTargets.entrySet()) {
-			final E element = elementMoveTarget.getKey();
-			final I elementId = elementIdGetter.apply(element);
-			final SpatialMap.Region moveTarget = elementMoveTarget.getValue();
-			LOGGER.debug("Moving element \"{}\" to {}.", elementId, moveTarget);
-			assert !elementPlacements.isOccupied(moveTarget);
-			setPositionValues(moveTarget, elementId);
-			elementPlacements.put(element, moveTarget);
-		}
+	/**
+	 * @param result
+	 * @return
+	 */
+	public boolean isOccupied(final SpatialMap.Region result) {
+		return elementPlacements.isOccupied(result);
 	}
 
-	public void setPositionValues(final SpatialMap.Region region, final I elementId) {
+	public void placeElement(final E element, final SpatialMap.Region target) {
+		final I elementId = elementIdGetter.apply(element);
+		LOGGER.debug("Placing element \"{}\" at {}.", elementId, target);
+		assert !elementPlacements.isOccupied(target);
+		setPositionValues(target, elementId);
+		elementPlacements.put(element, target);
+	}
+
+	private Stream<I> getCells(final int xLowerBound, final int xUpperBound, final int yLowerBound,
+			final int yUpperBound) {
+		return positionMatrix.getValues(xLowerBound, xUpperBound, yLowerBound, yUpperBound);
+	}
+
+	private void setPositionValues(final SpatialMap.Region region, final I elementId) {
 		LOGGER.debug("Setting {} to value \"{}\".", region, elementId);
 		final ListIterator<List<I>> rowIter = positionMatrix.rowIterator(region.getXLowerBound());
 		for (int rowIdx = rowIter.nextIndex(); rowIdx < region.getXUpperBound(); rowIdx++) {
@@ -285,30 +292,6 @@ public final class SpatialMatrix<I, E> {
 				rowCellIter.set(elementId);
 			}
 		}
-	}
-
-	public boolean testCells(final int xLowerBound, final int xUpperBound, final int yLowerBound, final int yUpperBound,
-			final Predicate<? super I> cellPredicate) {
-		boolean result = true;
-		final ListIterator<List<I>> rowIter = positionMatrix.rowIterator(xLowerBound);
-		rowCheck: for (int rowIdx = rowIter.nextIndex(); rowIdx < xUpperBound; rowIdx++) {
-			final List<I> row = rowIter.next();
-			final ListIterator<I> rowCellIter = row.listIterator(yLowerBound);
-			for (int colIdx = rowCellIter.nextIndex(); colIdx < yUpperBound; colIdx++) {
-				final I cellValue = rowCellIter.next();
-				if (!cellPredicate.test(cellValue)) {
-					result = false;
-					break rowCheck;
-				}
-			}
-		}
-		return result;
-	}
-
-	public boolean testCells(final SpatialMap.Region region, final Predicate<? super I> cellPredicate) {
-		LOGGER.debug("Checking {}.", region);
-		return testCells(region.getXLowerBound(), region.getXUpperBound(), region.getYLowerBound(),
-				region.getYUpperBound(), cellPredicate);
 	}
 
 }

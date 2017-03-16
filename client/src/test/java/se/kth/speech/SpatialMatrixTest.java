@@ -23,6 +23,10 @@ import java.util.Set;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.experimental.theories.DataPoints;
+import org.junit.experimental.theories.Theories;
+import org.junit.experimental.theories.Theory;
+import org.junit.runner.RunWith;
 import org.mozilla.javascript.edu.emory.mathcs.backport.java.util.Collections;
 
 import com.google.common.base.Objects;
@@ -34,9 +38,11 @@ import com.google.common.collect.Table;
  * @since 16 Mar 2017
  *
  */
+@RunWith(Theories.class)
 public final class SpatialMatrixTest {
 
-	private static final List<int[]> TEST_PIECES;
+	@DataPoints
+	public static final List<int[]> TEST_PIECES;
 
 	private static final Map<int[], Integer> TEST_PIECE_IDS;
 
@@ -66,21 +72,6 @@ public final class SpatialMatrixTest {
 	// Assert.assertEquals(matrix.calculateRegionPowerSetSize(),
 	// powerSet.size());
 	// }
-
-	@Test
-	public final void testCheckCellsRegion() {
-		final SpatialMap<int[]> piecePositions = new SpatialMap<>(TEST_PIECES.size());
-		final int[] gridSize = new int[] { 16, 16 };
-		final Integer[] posMatrixBackingArray = new Integer[IntArrays.product(gridSize)];
-		final Matrix<Integer> backingPosMatrix = new Matrix<>(posMatrixBackingArray, gridSize[1]);
-
-		final SpatialMatrix<Integer, int[]> matrix = new SpatialMatrix<>(backingPosMatrix, TEST_PIECE_IDS::get,
-				piecePositions);
-		final Integer expected = 1;
-		final SpatialMap.Region r = matrix.getRegion(1, 11, 5, 16);
-		matrix.setPositionValues(r, expected);
-		Assert.assertTrue(matrix.testCells(r, val -> Objects.equal(expected, val)));
-	}
 
 	/**
 	 * Test method for
@@ -113,6 +104,20 @@ public final class SpatialMatrixTest {
 			Assert.assertTrue(String.format("%s not subsumed by total %s.", region, totalRegion),
 					totalRegion.subsumes(region));
 		});
+	}
+
+	@Theory
+	public final void testGetCellsRegion(final int[] expected) {
+		final SpatialMap<int[]> piecePositions = new SpatialMap<>(TEST_PIECES.size());
+		final int[] gridSize = Arrays.stream(expected).map(val -> val * 2).toArray();
+		final Integer[] posMatrixBackingArray = new Integer[IntArrays.product(gridSize)];
+		final Matrix<Integer> backingPosMatrix = new Matrix<>(posMatrixBackingArray, gridSize[1]);
+
+		final SpatialMatrix<Integer, int[]> matrix = new SpatialMatrix<>(backingPosMatrix, TEST_PIECE_IDS::get,
+				piecePositions);
+		final SpatialMap.Region r = matrix.getRegion(1, 11, 5, 16);
+		matrix.placeElement(expected, r);
+		Assert.assertTrue(matrix.getCells(r).allMatch(val -> Objects.equal(expected, val)));
 	}
 
 	@Test
