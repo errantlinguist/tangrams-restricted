@@ -23,7 +23,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.experimental.theories.DataPoints;
 import org.junit.experimental.theories.Theories;
 import org.junit.experimental.theories.Theory;
@@ -63,8 +62,10 @@ public final class ImageVisualizationInfoFactoryTest {
 	public final void testNextStable(final long s) {
 		final Random rnd1 = new Random(s);
 		final Random rnd2 = new Random(s);
-		final Stream<ImageVisualizationInfo> results1 = Stream.generate(new ImageVisualizationInfoFactory(rnd1)::next);
-		final Stream<ImageVisualizationInfo> results2 = Stream.generate(new ImageVisualizationInfoFactory(rnd2)::next);
+		final ImageVisualizationInfoFactory f1 = new ImageVisualizationInfoFactory(rnd1);
+		final Stream<ImageVisualizationInfo> results1 = Stream.generate(f1::next).limit(f1.combinationCount());
+		final ImageVisualizationInfoFactory f2 = new ImageVisualizationInfoFactory(rnd2);
+		final Stream<ImageVisualizationInfo> results2 = Stream.generate(f2::next).limit(f2.combinationCount());
 		ITER_EQUALITY_ASSERTER.accept(results1.iterator(), results2.iterator());
 	}
 
@@ -75,7 +76,8 @@ public final class ImageVisualizationInfoFactoryTest {
 	@Theory
 	public final void testNextUnique(final long seed) {
 		final Random rnd = new Random(seed);
-		final List<ImageVisualizationInfo> results = Stream.generate(new ImageVisualizationInfoFactory(rnd)::next)
+		final ImageVisualizationInfoFactory f = new ImageVisualizationInfoFactory(rnd);
+		final List<ImageVisualizationInfo> results = Stream.generate(f::next).limit(f.combinationCount())
 				.collect(Collectors.toList());
 		final Stream<ImageVisualizationInfo> distinctResults = results.stream().distinct();
 		ITER_EQUALITY_ASSERTER.accept(results.iterator(), distinctResults.iterator());

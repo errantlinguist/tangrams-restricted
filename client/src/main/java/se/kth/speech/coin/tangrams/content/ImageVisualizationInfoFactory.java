@@ -199,6 +199,11 @@ public final class ImageVisualizationInfoFactory implements Iterator<ImageVisual
 		this(DEFAULT_IMG_RESOURCES, DEFAULT_MAX_SHARED_ATTR_COUNT, rnd);
 	}
 
+	public int combinationCount() {
+		final int colorSizeComboCount = colorUsageCounts.keySet().size() * sizeUsageCounts.keySet().size();
+		return imgResourceUsageCounts.keySet().size() * colorSizeComboCount;
+	}
+
 	/**
 	 * @return the coloredSizedImageResources
 	 */
@@ -267,6 +272,10 @@ public final class ImageVisualizationInfoFactory implements Iterator<ImageVisual
 
 	@Override
 	public ImageVisualizationInfo next() {
+		if (!hasNext()) {
+			throw new NoSuchElementException(
+					String.format("Created all %d possible combinations.", combinationCount()));
+		}
 		final ImageVisualizationInfo result;
 		final Optional<URL> resourceLoc = nextImgResourceLocator();
 		if (resourceLoc.isPresent()) {
@@ -301,12 +310,8 @@ public final class ImageVisualizationInfoFactory implements Iterator<ImageVisual
 		this.createdInstanceCount = createdInstanceCount;
 	}
 
-	private int combinationCount() {
-		final int colorSizeComboCount = colorUsageCounts.keySet().size() * sizeUsageCounts.keySet().size();
-		return imgResourceUsageCounts.keySet().size() * colorSizeComboCount;
-	}
-
 	private ImageVisualizationInfo createInstance(final URL resourceLoc, final Color color, final ImageSize size) {
+		LOGGER.info("Creating instance number {}.", createdInstanceCount);
 		final ImageVisualizationInfo result = new ImageVisualizationInfo(resourceLoc, color, size);
 		incrementImageResourceCount(resourceLoc);
 		incrementColorCount(color);
