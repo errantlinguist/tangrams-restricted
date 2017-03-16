@@ -65,4 +65,44 @@ public final class SpatialMapTest {
 		Assert.assertTrue(testMap.isOccupied(subRegion));
 	}
 
+	/**
+	 * Test method for
+	 * {@link se.kth.speech.SpatialMap#put(Object, se.kth.speech.SpatialMap.Region)}
+	 */
+	@Test
+	public final void testPutExistingElement() {
+		final SpatialMap<Object> testMap = new SpatialMap<>(2);
+		final SpatialMap.Region r1 = new SpatialMap.Region(0, 1, 2, 3);
+		final String elem = "foo";
+		final SpatialMap.Region oldRegion1 = testMap.put(elem, r1);
+		Assert.assertNull(oldRegion1);
+		final SpatialMap.Region r2 = new SpatialMap.Region(20, 21, 22, 23);
+		final SpatialMap.Region oldRegion2 = testMap.put(elem, r2);
+		Assert.assertNotNull(oldRegion2);
+		Assert.assertTrue(testMap.getAllElements().contains(elem));
+		Assert.assertFalse(testMap.isOccupied(r1));
+		Assert.assertTrue(testMap.isOccupied(r2));
+		Assert.assertFalse(testMap.getMinimalRegions().contains(r1));
+		Assert.assertTrue(testMap.getMinimalRegions().contains(r2));
+		Assert.assertFalse(testMap.getMinimalRegionElements().get(r1).contains(elem));
+		Assert.assertTrue(testMap.getMinimalRegionElements().get(r2).contains(elem));
+	}
+
+	/**
+	 * Test method for
+	 * {@link se.kth.speech.SpatialMap#put(Object, se.kth.speech.SpatialMap.Region)}
+	 */
+	@Test
+	public final void testPutNewElement() {
+		final SpatialMap<Object> testMap = new SpatialMap<>(2);
+		final SpatialMap.Region r = new SpatialMap.Region(0, 1, 2, 3);
+		final String elem = "foo";
+		final SpatialMap.Region oldRegion = testMap.put(elem, r);
+		Assert.assertNull(oldRegion);
+		Assert.assertTrue(testMap.getAllElements().contains(elem));
+		Assert.assertTrue(testMap.isOccupied(r));
+		Assert.assertTrue(testMap.getMinimalRegions().contains(r));
+		Assert.assertTrue(testMap.getMinimalRegionElements().get(r).contains(elem));
+	}
+
 }
