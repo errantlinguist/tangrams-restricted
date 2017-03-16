@@ -95,7 +95,7 @@ final class RandomMatrixPositionFiller<I, E> implements Function<Collection<? ex
 		do {
 			// Randomly pick a space in the matrix
 			result = RandomCollections.getRandomElement(allFittingSubRegions, rnd);
-				LOGGER.debug("Result size: {}", result.getDimensions());
+			LOGGER.debug("Result size: {}", result.getDimensions());
 			if (occupiedPositions.isOccupied(result)) {
 				LOGGER.debug("Region {} is already occupied.", result);
 				allFittingSubRegions.remove(result);

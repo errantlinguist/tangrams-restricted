@@ -49,7 +49,7 @@ public final class SpatialMatrix<I, E> {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SpatialMatrix.class);
 
-	private final Function<? super E, ? extends I> elementIdGetter;
+	private transient final Function<? super E, ? extends I> elementIdGetter;
 
 	private final SpatialMap<E> elementPlacements;
 
@@ -68,32 +68,6 @@ public final class SpatialMatrix<I, E> {
 		};
 	}
 
-	// public void addRegionPowerSet(final Collection<? super SpatialMap.Region>
-	// regions) {
-	// final int dims[] = positionMatrix.getDimensions();
-	// final int x = dims[0];
-	// final int y = dims[1];
-	// for (int xLowerBound = 0; xLowerBound <= x; ++xLowerBound) {
-	// for (int xUpperBound = xLowerBound; xUpperBound <= x; ++xUpperBound) {
-	// for (int yLowerBound = 0; yLowerBound <= y; ++yLowerBound) {
-	// for (int yUpperBound = yLowerBound; yUpperBound <= y; ++yUpperBound) {
-	// final SpatialMap.Region region = getRegion(xLowerBound, xUpperBound,
-	// yLowerBound, yUpperBound);
-	// regions.add(region);
-	// }
-	// }
-	// }
-	// }
-	// }
-	//
-	// public int calculateRegionPowerSetSize() {
-	// final int dims[] = positionMatrix.getDimensions();
-	// // m(m+1)n(n+1)/4 http://stackoverflow.com/a/17927830/1391325
-	// final int m = dims[0];
-	// final int n = dims[1];
-	// return m * (m + 1) * n * (n + 1) / 4;
-	// }
-
 	public void clearRegion(final SpatialMap.Region occupiedRegion) {
 		final Collection<?> elements = elementPlacements.getMinimalRegionElements().get(occupiedRegion);
 		// NOTE: Iterator.remove() for the instance returned by the
@@ -102,19 +76,6 @@ public final class SpatialMatrix<I, E> {
 		elements.clear();
 		setPositionValues(occupiedRegion, null);
 	}
-
-	// public Set<SpatialMap.Region> createRegionPowerSet() {
-	// return createRegionPowerSet(Sets::newHashSetWithExpectedSize);
-	// }
-	//
-	// public <C extends Collection<? super SpatialMap.Region>> C
-	// createRegionPowerSet(
-	// final IntFunction<? extends C> collFactory) {
-	// final int subRegionCount = calculateRegionPowerSetSize();
-	// final C result = collFactory.apply(subRegionCount);
-	// addRegionPowerSet(result);
-	// return result;
-	// }
 
 	public Table<Integer, Integer, Set<SpatialMap.Region>> createSizeIndexedRegionPowerSet() {
 		final int dims[] = positionMatrix.getDimensions();
@@ -145,6 +106,32 @@ public final class SpatialMatrix<I, E> {
 		}
 		return result;
 	}
+
+	// public void addRegionPowerSet(final Collection<? super SpatialMap.Region>
+	// regions) {
+	// final int dims[] = positionMatrix.getDimensions();
+	// final int x = dims[0];
+	// final int y = dims[1];
+	// for (int xLowerBound = 0; xLowerBound <= x; ++xLowerBound) {
+	// for (int xUpperBound = xLowerBound; xUpperBound <= x; ++xUpperBound) {
+	// for (int yLowerBound = 0; yLowerBound <= y; ++yLowerBound) {
+	// for (int yUpperBound = yLowerBound; yUpperBound <= y; ++yUpperBound) {
+	// final SpatialMap.Region region = getRegion(xLowerBound, xUpperBound,
+	// yLowerBound, yUpperBound);
+	// regions.add(region);
+	// }
+	// }
+	// }
+	// }
+	// }
+	//
+	// public int calculateRegionPowerSetSize() {
+	// final int dims[] = positionMatrix.getDimensions();
+	// // m(m+1)n(n+1)/4 http://stackoverflow.com/a/17927830/1391325
+	// final int m = dims[0];
+	// final int n = dims[1];
+	// return m * (m + 1) * n * (n + 1) / 4;
+	// }
 
 	public Map<SpatialMap.Region, Set<SpatialMap.Region>> createValidMoveMap() {
 		final Set<SpatialMap.Region> regionElements = elementPlacements.getMinimalRegionElements().keySet();
@@ -179,6 +166,53 @@ public final class SpatialMatrix<I, E> {
 		return result;
 	}
 
+	// public Set<SpatialMap.Region> createRegionPowerSet() {
+	// return createRegionPowerSet(Sets::newHashSetWithExpectedSize);
+	// }
+	//
+	// public <C extends Collection<? super SpatialMap.Region>> C
+	// createRegionPowerSet(
+	// final IntFunction<? extends C> collFactory) {
+	// final int subRegionCount = calculateRegionPowerSetSize();
+	// final C result = collFactory.apply(subRegionCount);
+	// addRegionPowerSet(result);
+	// return result;
+	// }
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(final Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (!(obj instanceof SpatialMatrix)) {
+			return false;
+		}
+		final SpatialMatrix<?, ?> other = (SpatialMatrix<?, ?>) obj;
+		if (elementPlacements == null) {
+			if (other.elementPlacements != null) {
+				return false;
+			}
+		} else if (!elementPlacements.equals(other.elementPlacements)) {
+			return false;
+		}
+		if (positionMatrix == null) {
+			if (other.positionMatrix != null) {
+				return false;
+			}
+		} else if (!positionMatrix.equals(other.positionMatrix)) {
+			return false;
+		}
+		return true;
+	}
+
 	public Stream<I> getCells(final SpatialMap.Region region) {
 		return positionMatrix.getValues(region.getXLowerBound(), region.getXUpperBound(), region.getYLowerBound(),
 				region.getYUpperBound());
@@ -209,6 +243,20 @@ public final class SpatialMatrix<I, E> {
 			final int yUpperBound) {
 		// TODO Implement caching, i.e. use a flyweight pattern?
 		return new SpatialMap.Region(xLowerBound, xUpperBound, yLowerBound, yUpperBound);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + (elementPlacements == null ? 0 : elementPlacements.hashCode());
+		result = prime * result + (positionMatrix == null ? 0 : positionMatrix.hashCode());
+		return result;
 	}
 
 	public void placeElements(final Map<E, SpatialMap.Region> elementMoveTargets) {

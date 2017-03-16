@@ -182,11 +182,11 @@ public final class SpatialMap<E> {
 		}
 
 		public int getLengthX() {
-			return getXUpperBound() - getXLowerBound();
+			return getXUpperBound() - getXLowerBound() + 1;
 		}
 
 		public int getLengthY() {
-			return getYUpperBound() - getYLowerBound();
+			return getYUpperBound() - getYLowerBound() + 1;
 		}
 
 		/**
