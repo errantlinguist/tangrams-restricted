@@ -38,13 +38,16 @@ public final class MinMaxValueTrackingMapTest {
 	@Test
 	public final void testGetMaxKeys() {
 		final MinMaxValueTrackingMap<Object, Integer> m = MinMaxValueTrackingMap.create(new HashMap<>());
-		final Set<Object> expected = Sets.newHashSet("three", "tres", "drei");
-		expected.stream().forEach(e -> m.put(e, 3));
+		final Set<Object> expected1 = Sets.newHashSet("three", "tres", "drei");
+		expected1.stream().forEach(e -> m.put(e, 3));
 		m.put("one", 1);
 		m.put("two", 2);
 		m.put("dos", 2);
 		m.put("minus one", -1);
-		Assert.assertEquals(expected, m.getMaxKeys());
+		Assert.assertEquals(expected1, m.getMaxKeys());
+		final Set<Object> expected2 = Sets.newHashSet("eight", "ocho", "acht", "åtta");
+		expected2.stream().forEach(e -> m.put(e, 8));
+		Assert.assertEquals(expected2, m.getMaxKeys());
 	}
 
 	/**
@@ -54,13 +57,16 @@ public final class MinMaxValueTrackingMapTest {
 	@Test
 	public final void testGetMaxValue() {
 		final MinMaxValueTrackingMap<Object, Integer> m = MinMaxValueTrackingMap.create(new HashMap<>());
-		final Integer expected = 3;
-		Sets.newHashSet("three", "tres", "drei").stream().forEach(e -> m.put(e, expected));
+		final Integer expected1 = 3;
+		Sets.newHashSet("three", "tres", "drei").stream().forEach(e -> m.put(e, expected1));
 		m.put("one", 1);
 		m.put("two", 2);
 		m.put("dos", 2);
 		m.put("minus one", -1);
-		Assert.assertEquals(expected, m.getMaxValue());
+		Assert.assertEquals(expected1, m.getMaxValue());
+		final Integer expected2 = 8;
+		Sets.newHashSet("eight", "ocho", "acht", "åtta").stream().forEach(e -> m.put(e, expected2));
+		Assert.assertEquals(expected2, m.getMaxValue());
 	}
 
 	/**
@@ -73,9 +79,12 @@ public final class MinMaxValueTrackingMapTest {
 		Sets.newHashSet("one", "uno", "eins", "ett", "odin").stream().forEach(e -> m.put(e, 1));
 		m.put("two", 2);
 		m.put("dos", 2);
-		final Set<Object> expected = Sets.newHashSet("minus one", "minus eins");
-		expected.stream().forEach(e -> m.put(e, -1));
-		Assert.assertEquals(expected, m.getMinKeys());
+		final Set<Object> expected1 = Sets.newHashSet("minus one", "minus eins");
+		expected1.stream().forEach(e -> m.put(e, -1));
+		Assert.assertEquals(expected1, m.getMinKeys());
+		final Set<Object> expected2 = Sets.newHashSet("minus three", "minus drei");
+		expected2.stream().forEach(e -> m.put(e, -3));
+		Assert.assertEquals(expected2, m.getMinKeys());
 	}
 
 	/**
@@ -88,9 +97,12 @@ public final class MinMaxValueTrackingMapTest {
 		Sets.newHashSet("one", "uno", "eins", "ett", "odin").stream().forEach(e -> m.put(e, 1));
 		m.put("two", 2);
 		m.put("dos", 2);
-		final Integer expected = -1;
-		Sets.newHashSet("minus one", "minus eins").stream().forEach(e -> m.put(e, expected));
-		Assert.assertEquals(expected, m.getMinValue());
+		final Integer expected1 = -1;
+		Sets.newHashSet("minus one", "minus eins").stream().forEach(e -> m.put(e, expected1));
+		Assert.assertEquals(expected1, m.getMinValue());
+		final Integer expected2 = -3;
+		Sets.newHashSet("minus three", "minus drei").stream().forEach(e -> m.put(e, expected2));
+		Assert.assertEquals(expected2, m.getMinValue());
 	}
 
 }
