@@ -95,12 +95,15 @@ final class RandomMatrixPositionFiller<I, E> implements Function<Collection<? ex
 		do {
 			// Randomly pick a space in the matrix
 			result = RandomCollections.getRandomElement(allFittingSubRegions, rnd);
+				LOGGER.debug("Result size: {}", result.getDimensions());
 			if (occupiedPositions.isOccupied(result)) {
 				LOGGER.debug("Region {} is already occupied.", result);
 				allFittingSubRegions.remove(result);
+				result = null;
 			} else {
 				assert posMatrix.testCells(result, Objects::isNull);
 				posMatrix.setPositionValues(result, pieceId);
+				assert posMatrix.testCells(result, Objects::nonNull);
 				occupiedPositions.put(piece, result);
 			}
 		} while (result == null && !allFittingSubRegions.isEmpty());
