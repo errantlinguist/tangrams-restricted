@@ -17,11 +17,12 @@
 package se.kth.speech;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
-
-import com.google.api.client.repackaged.com.google.common.base.Objects;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -49,16 +50,24 @@ public final class MinMaxValueTrackingMap<K, V> implements Map<K, V> {
 
 	private transient V minValue;
 
-	private transient K maxKey;
+	private transient final Set<K> maxKeys;
 
-	private transient K minKey;
+	private transient final Set<K> minKeys;
 
 	private MinMaxValueTrackingMap(final Map<K, V> decorated, final Comparator<? super V> comp) {
 		this.decorated = decorated;
 		this.nullsLastComp = Comparator.nullsLast(comp);
 		this.nullsFirstComp = Comparator.nullsFirst(comp);
 
-		updateExtrema(decorated.entrySet());
+		if (decorated.isEmpty()) {
+			this.minKeys = new HashSet<>();
+			this.maxKeys = new HashSet<>();
+		} else {
+			final int initialCapacity = Math.min(16, decorated.size());
+			this.minKeys = new HashSet<>(initialCapacity);
+			this.maxKeys = new HashSet<>(initialCapacity);
+			updateExtrema(decorated.entrySet());
+		}
 	}
 
 	/*
@@ -140,10 +149,10 @@ public final class MinMaxValueTrackingMap<K, V> implements Map<K, V> {
 	}
 
 	/**
-	 * @return the maxKey
+	 * @return the maxKeys
 	 */
-	public K getMaxKey() {
-		return maxKey;
+	public Set<K> getMaxKeys() {
+		return Collections.unmodifiableSet(maxKeys);
 	}
 
 	/**
@@ -154,10 +163,10 @@ public final class MinMaxValueTrackingMap<K, V> implements Map<K, V> {
 	}
 
 	/**
-	 * @return the minKey
+	 * @return the minKeys
 	 */
-	public K getMinKey() {
-		return minKey;
+	public Set<K> getMinKeys() {
+		return Collections.unmodifiableSet(minKeys);
 	}
 
 	/**
@@ -231,15 +240,15 @@ public final class MinMaxValueTrackingMap<K, V> implements Map<K, V> {
 	@Override
 	public V remove(final Object key) {
 		final V result = decorated.remove(key);
-		if (Objects.equal(minValue, result)) {
-			if (Objects.equal(maxValue, result)) {
+		if (Objects.equals(minValue, result)) {
+			if (Objects.equals(maxValue, result)) {
 				// Update both min and max
 				updateExtrema();
 			} else {
 				// Value was not max so only the min needs to be updated
 				updateMin();
 			}
-		} else if (Objects.equal(maxValue, result)) {
+		} else if (Objects.equals(maxValue, result)) {
 			// Value was not min so only the max needs to be updated
 			updateMax();
 		}
@@ -258,7 +267,7 @@ public final class MinMaxValueTrackingMap<K, V> implements Map<K, V> {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#toString()
 	 */
 	@Override
@@ -266,12 +275,12 @@ public final class MinMaxValueTrackingMap<K, V> implements Map<K, V> {
 		final StringBuilder builder = new StringBuilder();
 		builder.append("MinMaxValueTrackingMap [decorated=");
 		builder.append(decorated);
-		builder.append(", minKey=");
-		builder.append(minKey);
+		builder.append(", minKeys=");
+		builder.append(minKeys);
 		builder.append(", minValue=");
 		builder.append(minValue);
-		builder.append(", maxKey=");
-		builder.append(maxKey);
+		builder.append(", maxKeys=");
+		builder.append(maxKeys);
 		builder.append(", maxValue=");
 		builder.append(maxValue);
 		builder.append("]");
@@ -324,8 +333,11 @@ public final class MinMaxValueTrackingMap<K, V> implements Map<K, V> {
 	private void updateMax(final K key, final V value) {
 		final int cmp = nullsFirstComp.compare(maxValue, value);
 		if (cmp < 0) {
-			maxKey = key;
+			maxKeys.clear();
+			maxKeys.add(key);
 			maxValue = value;
+		} else if (cmp == 0) {
+			maxKeys.add(key);
 		}
 	}
 
@@ -346,8 +358,11 @@ public final class MinMaxValueTrackingMap<K, V> implements Map<K, V> {
 	private void updateMin(final K key, final V value) {
 		final int cmp = nullsLastComp.compare(value, minValue);
 		if (cmp < 0) {
-			minKey = key;
+			minKeys.clear();
+			minKeys.add(key);
 			minValue = value;
+		} else if (cmp == 0) {
+			minKeys.add(key);
 		}
 	}
 
