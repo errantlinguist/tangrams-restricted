@@ -19,10 +19,12 @@ package se.kth.speech.coin.tangrams.view;
 import java.awt.EventQueue;
 import java.awt.image.FilteredImageSource;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.swing.WindowConstants;
 
@@ -36,8 +38,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import se.kth.speech.awt.OpaqueTransparencyReplacementImageFilter;
+import se.kth.speech.coin.tangrams.content.ImageSize;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
-import se.kth.speech.coin.tangrams.content.RandomPieceImageDataFactory;
+import se.kth.speech.coin.tangrams.content.ImageVisualizationInfoFactory;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -232,14 +235,20 @@ public final class GameViewFrameDemo implements Runnable {
 	 */
 	@Override
 	public void run() {
-		final RandomPieceImageDataFactory imgDataFactory = new RandomPieceImageDataFactory();
-		final List<ImageVisualizationInfo> imgVisualizationInfoData = imgDataFactory.apply(rnd).limit(imgPlacementCount)
-				.collect(Collectors.toList());
+		final ImageVisualizationInfoFactory imgDataFactory = new ImageVisualizationInfoFactory(rnd);
+		final List<ImageVisualizationInfo> imgVisualizationInfoDataList = Stream.generate(imgDataFactory::next)
+				.limit(imgPlacementCount).collect(Collectors.toList());
+		// Sort the list so that the biggest images come first
+		imgVisualizationInfoDataList.sort(Comparator.comparing(ImageVisualizationInfo::getSize, ImageSize.getSizeComparator().reversed()));
+		LOGGER.info("Image resource usage counts: {}", imgDataFactory.getImgResourceUsageCounts());
+		LOGGER.info("Image size usage counts: {}", imgDataFactory.getSizeUsageCounts());
+		LOGGER.info("Image color usage counts: {}", imgDataFactory.getColorUsageCounts());
+		LOGGER.info("Total used image count: {}", imgVisualizationInfoDataList.size());
 		final OpaqueTransparencyReplacementImageFilter imgTranformer = new OpaqueTransparencyReplacementImageFilter(
 				128);
-		final GameBoardPanel gameBoardPanel = new GameBoardPanel(imgVisualizationInfoData, rnd, imgPlacementCount,
+		final GameBoardPanel gameBoardPanel = new GameBoardPanel(imgVisualizationInfoDataList, rnd, imgPlacementCount,
 				maxPlacementRetriesPerImg, occupiedGridArea, allowFailedPlacements,
-				imgDataFactory.getImgResources().size(), (img, panel) -> panel.getToolkit()
+				imgDataFactory.getImgResourceUsageCounts().keySet().size(), (img, panel) -> panel.getToolkit()
 						.createImage(new FilteredImageSource(img.getSource(), imgTranformer)));
 		final GameViewFrame frame = new GameViewFrame(gameBoardPanel, rnd);
 		frame.pack();

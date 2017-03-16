@@ -1,0 +1,375 @@
+/*
+ *  This file is part of client.
+ *
+ *  client is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+package se.kth.speech.coin.tangrams.content;
+
+import java.awt.Color;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.EnumMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.NoSuchElementException;
+import java.util.Optional;
+import java.util.Random;
+import java.util.Set;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.google.common.collect.ArrayTable;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Multimaps;
+import com.google.common.collect.Sets;
+import com.google.common.collect.Table;
+import com.google.common.collect.Tables;
+
+import se.kth.speech.ComparableValueMaps;
+
+/**
+ * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
+ * @since 7 Mar 2017
+ *
+ */
+public final class ImageVisualizationInfoFactory implements Iterator<ImageVisualizationInfo> {
+
+	private static final Collection<URL> DEFAULT_IMG_RESOURCES = IconImages.getImageResources().values();
+
+	private static final List<ImageSize> DEFAULT_IMG_SIZES = Arrays.asList(ImageSize.values());
+
+	private static final int DEFAULT_MAX_SHARED_ATTR_COUNT = 3;
+
+	private static final List<Color> DEFAULT_UNIQUE_IMG_COLORS = Arrays.asList(Color.RED, Color.YELLOW, Color.GREEN,
+			Color.BLUE);
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(ImageVisualizationInfoFactory.class);
+
+	/**
+	 * The maximum number of attributes an image may share with another image.
+	 */
+	private final int maxSharedAttrCount;
+
+	private final Multimap<URL, ImageSize> imgSizes;
+
+	private final Multimap<URL, Color> imgColors;
+
+	/**
+	 * The {@link Random} instance to use for randomization.
+	 */
+	private final Random rnd;
+
+	private final Map<URL, Integer> imgResourceUsageCounts;
+
+	private final Map<Color, Integer> colorUsageCounts;
+
+	private final Map<ImageSize, Integer> sizeUsageCounts;
+
+	private final Table<Color, ImageSize, Set<URL>> coloredSizedImageResources;
+
+	private int createdInstanceCount;
+
+	private Color lastColor;
+
+	private URL lastImgResource;
+
+	private ImageSize lastSize;
+
+	/**
+	 *
+	 * @param imgResources
+	 *            A mapping of icon names mapped to their corresponding image
+	 *            {@link URL} resource locators.
+	 * @param maxSharedAttrCount
+	 *            The maximum number of attributes an image may share with
+	 *            another image.
+	 * @param rnd
+	 *            The {@link Random} instance to use for randomization.
+	 */
+	public ImageVisualizationInfoFactory(final Collection<? extends URL> imgResources, final int maxSharedAttrCount,
+			final Random rnd) {
+		this(imgResources, DEFAULT_UNIQUE_IMG_COLORS, DEFAULT_IMG_SIZES, maxSharedAttrCount, rnd);
+	}
+
+	/**
+	 *
+	 * @param imgResources
+	 *            A mapping of icon names mapped to their corresponding image
+	 *            {@link URL} resource locators.
+	 * @param uniqueImgColors
+	 *            An ordered sequence of the unique {@link Color} instances to
+	 *            use for coloring the icon images. <strong>NOTE:</strong> This
+	 *            is ordered so that the iteration order of image data is stable
+	 *            across invocations.
+	 * @param sizes
+	 *            An ordered sequence of the {@link ImageSize sizes} to present
+	 *            each image in. <strong>NOTE:</strong> This is ordered so that
+	 *            the iteration order of image data is stable across
+	 *            invocations.
+	 * @param maxSharedAttrCount
+	 *            The maximum number of attributes an image may share with
+	 *            another image.
+	 * @param rnd
+	 *            The {@link Random} instance to use for randomization.
+	 */
+	public ImageVisualizationInfoFactory(final Collection<? extends URL> imgResources,
+			final List<? extends Color> uniqueImgColors, final List<ImageSize> sizes, final int maxSharedAttrCount,
+			final Random rnd) {
+		this.maxSharedAttrCount = maxSharedAttrCount;
+		this.rnd = rnd;
+		createdInstanceCount = 0;
+
+		imgSizes = HashMultimap.create(imgResources.size(), sizes.size());
+		imgColors = HashMultimap.create(imgResources.size(), uniqueImgColors.size());
+		imgResourceUsageCounts = Maps.newHashMapWithExpectedSize(imgResources.size());
+		imgResources.forEach(loc -> imgResourceUsageCounts.put(loc, 0));
+		colorUsageCounts = Maps.newHashMapWithExpectedSize(uniqueImgColors.size());
+		uniqueImgColors.forEach(color -> colorUsageCounts.put(color, 0));
+		sizeUsageCounts = new EnumMap<>(ImageSize.class);
+		sizes.forEach(size -> sizeUsageCounts.put(size, 0));
+		coloredSizedImageResources = ArrayTable.create(uniqueImgColors, sizes);
+	}
+
+	/**
+	 *
+	 * @param imgResources
+	 *            A mapping of icon names mapped to their corresponding image
+	 *            {@link URL} resource locators.
+	 * @param sizes
+	 *            An ordered sequence of the {@link ImageSize sizes} to present
+	 *            each image in.
+	 * @param maxSharedAttrCount
+	 *            The maximum number of attributes an image may share with
+	 *            another image.
+	 * @param rnd
+	 *            The {@link Random} instance to use for randomization.
+	 */
+	public ImageVisualizationInfoFactory(final Collection<? extends URL> imgResources, final List<ImageSize> sizes,
+			final int maxSharedAttrCount, final Random rnd) {
+		this(imgResources, DEFAULT_UNIQUE_IMG_COLORS, sizes, maxSharedAttrCount, rnd);
+	}
+
+	/**
+	 * @param imgResources
+	 *            A mapping of icon names mapped to their corresponding image
+	 *            {@link URL} resource locators.
+	 * @param rnd
+	 *            The {@link Random} instance to use for randomization.
+	 */
+	public ImageVisualizationInfoFactory(final Collection<? extends URL> imgResources, final Random rnd) {
+		this(imgResources, DEFAULT_MAX_SHARED_ATTR_COUNT, rnd);
+	}
+
+	/**
+	 * @param maxSharedAttrCount
+	 *            The maximum number of attributes an image may share with
+	 *            another image.
+	 * @param rnd
+	 *            The {@link Random} instance to use for randomization.
+	 *
+	 */
+	public ImageVisualizationInfoFactory(final int maxSharedAttrCount, final Random rnd) {
+		this(DEFAULT_IMG_RESOURCES, maxSharedAttrCount, rnd);
+	}
+
+	/**
+	 * @param rnd
+	 *            The {@link Random} instance to use for randomization.
+	 */
+	public ImageVisualizationInfoFactory(final Random rnd) {
+		this(DEFAULT_IMG_RESOURCES, DEFAULT_MAX_SHARED_ATTR_COUNT, rnd);
+	}
+
+	/**
+	 * @return the coloredSizedImageResources
+	 */
+	public Table<Color, ImageSize, Set<URL>> getColoredSizedImageResources() {
+		return Tables.unmodifiableTable(coloredSizedImageResources);
+	}
+
+	/**
+	 * @return the colorUsageCounts
+	 */
+	public Map<Color, Integer> getColorUsageCounts() {
+		return Collections.unmodifiableMap(colorUsageCounts);
+	}
+
+	/**
+	 * @return the createdInstanceCount
+	 */
+	public int getCreatedInstanceCount() {
+		return createdInstanceCount;
+	}
+
+	/**
+	 * @return the imgColors
+	 */
+	public Multimap<URL, Color> getImgColors() {
+		return Multimaps.unmodifiableMultimap(imgColors);
+	}
+
+	/**
+	 * @return the imgResourceUsageCounts
+	 */
+	public Map<URL, Integer> getImgResourceUsageCounts() {
+		return Collections.unmodifiableMap(imgResourceUsageCounts);
+	}
+
+	/**
+	 * @return the imgSizes
+	 */
+	public Multimap<URL, ImageSize> getImgSizes() {
+		return Multimaps.unmodifiableMultimap(imgSizes);
+	}
+
+	/**
+	 * @return the maxSharedAttrCount
+	 */
+	public int getMaxSharedAttrCount() {
+		return maxSharedAttrCount;
+	}
+
+	/**
+	 * @return the sizeUsageCounts
+	 */
+	public Map<ImageSize, Integer> getSizeUsageCounts() {
+		return Collections.unmodifiableMap(sizeUsageCounts);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 *
+	 * @see java.util.Iterator#hasNext()
+	 */
+	@Override
+	public boolean hasNext() {
+		return getCreatedInstanceCount() < combinationCount();
+	}
+
+	@Override
+	public ImageVisualizationInfo next() {
+		final ImageVisualizationInfo result;
+		final Optional<URL> resourceLoc = nextImgResourceLocator();
+		if (resourceLoc.isPresent()) {
+			final URL r = resourceLoc.get();
+			LOGGER.debug("Next img resource is {}.", r);
+			final Optional<Color> color = nextColor();
+			if (color.isPresent()) {
+				final Color c = color.get();
+				LOGGER.debug("Next color is {}.", c);
+				final Optional<ImageSize> size = nextSize();
+				if (size.isPresent()) {
+					final ImageSize s = size.get();
+					LOGGER.debug("Next size is {}.", s);
+					result = createInstance(r, c, s);
+				} else {
+					throw new NoSuchElementException("No more sizes.");
+				}
+			} else {
+				throw new NoSuchElementException("No more colors.");
+			}
+		} else {
+			throw new NoSuchElementException("No more image resources.");
+		}
+		return result;
+	}
+
+	/**
+	 * @param createdInstanceCount
+	 *            the createdInstanceCount to set
+	 */
+	public void setCreatedInstanceCount(final int createdInstanceCount) {
+		this.createdInstanceCount = createdInstanceCount;
+	}
+
+	private int combinationCount() {
+		final int colorSizeComboCount = colorUsageCounts.keySet().size() * sizeUsageCounts.keySet().size();
+		return imgResourceUsageCounts.keySet().size() * colorSizeComboCount;
+	}
+
+	private ImageVisualizationInfo createInstance(final URL resourceLoc, final Color color, final ImageSize size) {
+		final ImageVisualizationInfo result = new ImageVisualizationInfo(resourceLoc, color, size);
+		incrementImageResourceCount(resourceLoc);
+		incrementColorCount(color);
+		imgColors.put(resourceLoc, color);
+		incrementSizeCount(size);
+		imgSizes.put(resourceLoc, size);
+		Set<URL> coloredSizedImageResourceSet = coloredSizedImageResources.get(color, size);
+		if (coloredSizedImageResourceSet == null) {
+			coloredSizedImageResourceSet = Sets.newHashSetWithExpectedSize(imgResourceUsageCounts.keySet().size());
+			coloredSizedImageResources.put(color, size, coloredSizedImageResourceSet);
+		}
+		coloredSizedImageResourceSet.add(resourceLoc);
+		createdInstanceCount++;
+		LOGGER.debug("size usages: {}", sizeUsageCounts);
+		return result;
+	}
+
+	private void incrementColorCount(final Color key) {
+		ComparableValueMaps.incrementCount(colorUsageCounts, key);
+	}
+
+	private void incrementImageResourceCount(final URL key) {
+		ComparableValueMaps.incrementCount(imgResourceUsageCounts, key);
+	}
+
+	private void incrementSizeCount(final ImageSize key) {
+		ComparableValueMaps.incrementCount(sizeUsageCounts, key);
+	}
+
+	private Optional<Color> nextColor() {
+		final Map.Entry<Set<Color>, Integer> c = ComparableValueMaps.findMinValues(colorUsageCounts);
+		final List<Color> keys = new ArrayList<>(c.getKey());
+		Collections.shuffle(keys, rnd);
+		LOGGER.debug("Min colors: {}; value: {}", keys, c.getValue());
+		final Optional<Color> result = keys.stream().filter(key -> !key.equals(lastColor)).findFirst();
+		if (result.isPresent()) {
+			lastColor = result.get();
+		}
+		return result;
+	}
+
+	private Optional<URL> nextImgResourceLocator() {
+		final Entry<Set<URL>, Integer> i = ComparableValueMaps.findMinValues(imgResourceUsageCounts);
+		final List<URL> keys = new ArrayList<>(i.getKey());
+		Collections.shuffle(keys, rnd);
+		LOGGER.debug("Min img resources: {}; value: {}", keys, i.getValue());
+		final Optional<URL> result = keys.stream().filter(key -> !key.equals(lastImgResource)).findFirst();
+		if (result.isPresent()) {
+			lastImgResource = result.get();
+		}
+		return result;
+	}
+
+	private Optional<ImageSize> nextSize() {
+		final Entry<Set<ImageSize>, Integer> s = ComparableValueMaps.findMinValues(sizeUsageCounts);
+		final List<ImageSize> keys = new ArrayList<>(s.getKey());
+		Collections.shuffle(keys, rnd);
+		LOGGER.debug("Min sizes: {}; value: {}", keys, s.getValue());
+		final Optional<ImageSize> result = keys.stream().filter(key -> !key.equals(lastSize)).findFirst();
+		if (result.isPresent()) {
+			lastSize = result.get();
+		}
+		return result;
+	}
+
+}

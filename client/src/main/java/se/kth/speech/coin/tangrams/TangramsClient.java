@@ -34,6 +34,7 @@ import java.util.Random;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.swing.JOptionPane;
 import javax.swing.UIManager;
@@ -55,7 +56,7 @@ import iristk.system.IrisSystem;
 import iristk.system.LoggingModule;
 import iristk.util.NameFilter;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
-import se.kth.speech.coin.tangrams.content.RandomPieceImageDataFactory;
+import se.kth.speech.coin.tangrams.content.ImageVisualizationInfoFactory;
 import se.kth.speech.coin.tangrams.game.LocalController;
 import se.kth.speech.coin.tangrams.game.Model;
 import se.kth.speech.coin.tangrams.iristk.GameManagementClientModule;
@@ -353,8 +354,7 @@ public final class TangramsClient implements Runnable {
 											final Model<Integer> model = localController.getModel();
 											final int pieceCount = model.getOccupiedCoordinateCount();
 											final Random rnd = new Random(gameState.getSeed());
-											final List<ImageVisualizationInfo> imgVisualizationInfoData = new RandomPieceImageDataFactory()
-													.apply(rnd).limit(pieceCount).collect(Collectors.toList());
+											final List<ImageVisualizationInfo> imgVisualizationInfoData = Stream.generate(new ImageVisualizationInfoFactory(rnd)::next).limit(pieceCount).collect(Collectors.toList());
 											final Runnable closeHook = () -> {
 												LOGGER.info("Closing main window; Cleaning up background resources.");
 												recordingManager.getStopper().run();

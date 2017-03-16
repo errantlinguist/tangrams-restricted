@@ -120,16 +120,6 @@ final class GameBoardPanel extends JPanel {
 			return builder.toString();
 		}
 
-		private PositionGridSizeSummary union(final PositionGridSizeSummary other) {
-			final int[] minImgGridSize = IntArrays.copy(this.minImgGridSize);
-			IntArrays.mutate(minImgGridSize, other.minImgGridSize, Math::min);
-			final int[] maxImgGridSize = IntArrays.copy(this.maxImgGridSize);
-			IntArrays.mutate(maxImgGridSize, other.maxImgGridSize, Math::max);
-			final List<Integer> commonDivisors = new ArrayList<>(this.commonDivisors);
-			MathDivisors.removeNonDivisors(commonDivisors.iterator(), other.commonDivisors);
-			return new PositionGridSizeSummary(minImgGridSize, maxImgGridSize,
-					totalImgGridArea + other.totalImgGridArea, commonDivisors);
-		}
 	}
 
 	private static final BiFunction<Image, GameBoardPanel, Image> DEFAULT_POST_COLORING_IMG_TRANSFORMER = new BiFunction<Image, GameBoardPanel, Image>() {
@@ -479,8 +469,6 @@ final class GameBoardPanel extends JPanel {
 	 */
 	private final Set<SpatialMap.Region> highlightedRegions = Sets.newHashSetWithExpectedSize(1);
 
-	private final Map<ImageViewInfo, Integer> pieceIds;
-
 	private final Map<ImageViewInfo, Image> pieceImgs;
 
 	private final SpatialMatrix<Integer, ImageViewInfo> posMatrix;
@@ -499,10 +487,9 @@ final class GameBoardPanel extends JPanel {
 			final boolean allowFailedPlacements, final int uniqueImgResourceCount,
 			final BiFunction<? super Image, ? super GameBoardPanel, ? extends Image> postColoringImgTransformer) {
 		this.postColoringImgTransformer = postColoringImgTransformer;
-		pieceIds = Maps.newHashMapWithExpectedSize(maxImgPlacements * 2);
+		final Map<ImageViewInfo, Integer> pieceIds = Maps.newHashMapWithExpectedSize(maxImgPlacements);
 		final Function<ImageViewInfo, Integer> incrementingPieceIdGetter = piece -> pieceIds.computeIfAbsent(piece,
 				k -> pieceIds.size());
-		// The minimum accepted length of the shortest dimension for an image
 		pieceImgs = createImageViewInfoMap(imgVisualizationInfoData, uniqueImgResourceCount);
 		// http://stackoverflow.com/a/1936582/1391325
 		final Dimension screenSize = getToolkit().getScreenSize();
@@ -511,7 +498,7 @@ final class GameBoardPanel extends JPanel {
 		LOGGER.debug("Setting maximum component size to {}.", screenSize);
 		setMaximumSize(screenSize);
 		{
-			final int shortestScreenLength = Math.min(screenSize.width, screenSize.height);
+			final int shortestScreenLength = (int) (Math.min(screenSize.width, screenSize.height) * 0.75);
 			final Dimension boardSize = new Dimension(shortestScreenLength, shortestScreenLength);
 			setPreferredSize(boardSize);
 			final PositionGridSizeSummary posGridSizeSummary = createPositionGridSizeSummary(
@@ -526,20 +513,17 @@ final class GameBoardPanel extends JPanel {
 						String.format("Board %s not divisble into matrix with dimensions %s.", boardSize,
 								Arrays.toString(backingPosMatrix.getDimensions())));
 			}
-			final Function<SpatialMatrix<Integer, ImageViewInfo>, SpatialMap<ImageViewInfo>> spatialMatrixPosMapFactory = matrix -> {
-				// final Function<? super ImageViewInfo, int[]>
-				// piecePosMatrixSizeFactory = new
-				// CachingPieceMatrixBoundsArrayFactory(
-				// Maps.newHashMapWithExpectedSize(pieceImgs.size()));
-				final Function<? super ImageViewInfo, int[]> piecePosMatrixSizeFactory = imgViewInfo -> imgViewInfo
-						.getGridSize(IMAGE_SIZE_FACTORS);
-				final RandomMatrixImagePositionFiller<Integer> matrixFiller = new RandomMatrixImagePositionFiller<>(
-						matrix, incrementingPieceIdGetter, rnd, maxImgPlacements, maxPlacementRetriesPerImg,
-						allowFailedPlacements, piecePosMatrixSizeFactory);
-				return matrixFiller.apply(pieceImgs.keySet());
-			};
-
-			posMatrix = new SpatialMatrix<>(backingPosMatrix, pieceIds::get, spatialMatrixPosMapFactory);
+			final Function<? super ImageViewInfo, int[]> piecePosMatrixSizeFactory = imgViewInfo -> imgViewInfo
+					.getGridSize(IMAGE_SIZE_FACTORS);
+			final Collection<ImageViewInfo> pieces = pieceImgs.keySet();
+			final SpatialMap<ImageViewInfo> posMap = new SpatialMap<>(pieces.size());
+			posMatrix = new SpatialMatrix<>(backingPosMatrix, pieceIds::get, posMap);
+			final RandomMatrixPositionFiller<Integer, ImageViewInfo> matrixFiller = new RandomMatrixPositionFiller<>(
+					posMatrix, incrementingPieceIdGetter, rnd, piecePosMatrixSizeFactory);
+			matrixFiller.apply(pieces);
+			final Collection<ImageViewInfo> allElements = posMap.getAllElements();
+			LOGGER.info("Created a spatial map with element IDs {}.", allElements.stream().map(pieceIds::get)
+					.collect(Collectors.toCollection(() -> new ArrayList<>(allElements.size()))));
 		}
 		{
 			final int[] minSizeDims = createMinimumDimLengths(posMatrix.getDimensions()).toArray();

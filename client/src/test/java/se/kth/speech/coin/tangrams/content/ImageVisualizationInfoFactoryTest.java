@@ -23,6 +23,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.experimental.theories.DataPoints;
 import org.junit.experimental.theories.Theories;
 import org.junit.experimental.theories.Theory;
@@ -36,47 +37,46 @@ import se.kth.speech.junit.IteratorEqualityAsserter;
  *
  */
 @RunWith(Theories.class)
-public final class RandomPieceImageDataFactoryTest {
+public final class ImageVisualizationInfoFactoryTest {
 
 	@DataPoints
 	public static final long[] TEST_SEEDS = new Random().longs().distinct().limit(10).toArray();
 
 	private static final IteratorEqualityAsserter<ImageVisualizationInfo> ITER_EQUALITY_ASSERTER = new IteratorEqualityAsserter<>();
 
-	private static final RandomPieceImageDataFactory TEST_INST = new RandomPieceImageDataFactory();
-
 	/**
 	 * Test method for
-	 * {@link se.kth.speech.coin.tangrams.content.RandomPieceImageDataFactory#apply(java.util.Random)}.
+	 * {@link se.kth.speech.coin.tangrams.content.ImageVisualizationInfoFactory#next()}.
 	 */
-	@Theory
-	public final void testApplyNotEmpty(final long s) {
+	@Theory @Ignore
+	public final void testNextNotEmpty(final long s) {
 		final Random rnd = new Random(s);
-		final Optional<ImageVisualizationInfo> any = TEST_INST.apply(rnd).findAny();
+		final Optional<ImageVisualizationInfo> any = Stream.of(new ImageVisualizationInfoFactory(rnd).next()).findAny();
 		Assert.assertTrue(any.isPresent());
 	}
 
 	/**
 	 * Test method for
-	 * {@link se.kth.speech.coin.tangrams.content.RandomPieceImageDataFactory#apply(java.util.Random)}.
+	 * {@link se.kth.speech.coin.tangrams.content.ImageVisualizationInfoFactory#next()}.
 	 */
 	@Theory
-	public final void testApplyStable(final long s) {
+	public final void testNextStable(final long s) {
 		final Random rnd1 = new Random(s);
 		final Random rnd2 = new Random(s);
-		final Stream<ImageVisualizationInfo> results1 = TEST_INST.apply(rnd1);
-		final Stream<ImageVisualizationInfo> results2 = TEST_INST.apply(rnd2);
+		final Stream<ImageVisualizationInfo> results1 = Stream.generate(new ImageVisualizationInfoFactory(rnd1)::next);
+		final Stream<ImageVisualizationInfo> results2 = Stream.generate(new ImageVisualizationInfoFactory(rnd2)::next);
 		ITER_EQUALITY_ASSERTER.accept(results1.iterator(), results2.iterator());
 	}
 
 	/**
 	 * Test method for
-	 * {@link se.kth.speech.coin.tangrams.content.RandomPieceImageDataFactory#apply(java.util.Random)}.
+	 * {@link se.kth.speech.coin.tangrams.content.ImageVisualizationInfoFactory#next()}.
 	 */
 	@Theory
-	public final void testApplyUnique(final long seed) {
+	public final void testNextUnique(final long seed) {
 		final Random rnd = new Random(seed);
-		final List<ImageVisualizationInfo> results = TEST_INST.apply(rnd).collect(Collectors.toList());
+		final List<ImageVisualizationInfo> results = Stream.generate(new ImageVisualizationInfoFactory(rnd)::next)
+				.collect(Collectors.toList());
 		final Stream<ImageVisualizationInfo> distinctResults = results.stream().distinct();
 		ITER_EQUALITY_ASSERTER.accept(results.iterator(), distinctResults.iterator());
 	}

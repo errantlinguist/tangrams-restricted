@@ -59,10 +59,10 @@ public final class SpatialMatrix<I, E> {
 	private final Matrix<I> positionMatrix;
 
 	public SpatialMatrix(final Matrix<I> posMatrix, final Function<? super E, ? extends I> elementIdGetter,
-			final Function<? super SpatialMatrix<I, E>, ? extends SpatialMap<E>> elementPosMapFactory) {
+			final SpatialMap<E> elementPlacements) {
 		this.positionMatrix = posMatrix;
 		this.elementIdGetter = elementIdGetter;
-		this.elementPlacements = elementPosMapFactory.apply(this);
+		this.elementPlacements = elementPlacements;
 		newRegionPossibleMoveSetFactory = region -> {
 			final int occupiedRegionArea = region.getLengthX() * region.getLengthY();
 			return Sets.newHashSetWithExpectedSize(posMatrix.getValues().size() / occupiedRegionArea);
@@ -90,7 +90,7 @@ public final class SpatialMatrix<I, E> {
 		// m(m+1)n(n+1)/4 http://stackoverflow.com/a/17927830/1391325
 		final int m = dims[0];
 		final int n = dims[1];
-		return m * (m + 1) * n *(n + 1) / 4;
+		return m * (m + 1) * n * (n + 1) / 4;
 	}
 
 	public void clearRegion(final SpatialMap.Region occupiedRegion) {
