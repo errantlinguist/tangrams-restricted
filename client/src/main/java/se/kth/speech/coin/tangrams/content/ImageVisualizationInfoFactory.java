@@ -311,7 +311,7 @@ public final class ImageVisualizationInfoFactory implements Iterator<ImageVisual
 	}
 
 	private ImageVisualizationInfo createInstance(final URL resourceLoc, final Color color, final ImageSize size) {
-		LOGGER.info("Creating instance number {}.", createdInstanceCount);
+		LOGGER.debug("Creating instance number {}.", createdInstanceCount);
 		final ImageVisualizationInfo result = new ImageVisualizationInfo(resourceLoc, color, size);
 		incrementImageResourceCount(resourceLoc);
 		incrementColorCount(color);

@@ -19,6 +19,7 @@ package se.kth.speech.coin.tangrams.content;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -27,6 +28,8 @@ import org.junit.experimental.theories.DataPoints;
 import org.junit.experimental.theories.Theories;
 import org.junit.experimental.theories.Theory;
 import org.junit.runner.RunWith;
+
+import com.google.common.collect.Sets;
 
 import se.kth.speech.junit.IteratorEqualityAsserter;
 
@@ -79,8 +82,10 @@ public final class ImageVisualizationInfoFactoryTest {
 		final ImageVisualizationInfoFactory f = new ImageVisualizationInfoFactory(rnd);
 		final List<ImageVisualizationInfo> results = Stream.generate(f::next).limit(f.combinationCount())
 				.collect(Collectors.toList());
-		final Stream<ImageVisualizationInfo> distinctResults = results.stream().distinct();
-		ITER_EQUALITY_ASSERTER.accept(results.iterator(), distinctResults.iterator());
+		final Set<ImageVisualizationInfo> distinctResults = results.stream()
+				.collect(Collectors.toCollection(() -> Sets.newHashSetWithExpectedSize(results.size())));
+		results.removeAll(distinctResults);
+		Assert.assertTrue("Some elements were duplicated: " + results, results.isEmpty());
 	}
 
 }
