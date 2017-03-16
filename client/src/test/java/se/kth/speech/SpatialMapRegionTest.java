@@ -98,15 +98,15 @@ public final class SpatialMapRegionTest {
 	 * {@link se.kth.speech.SpatialMap.Region#intersects(int,int,int,int,int,int,int,int)}.
 	 */
 	@Theory
-	public final void testIntersectsIntIntIntIntIntIntIntIntCommutativty(final int[] pointArray) {
-		final int r1x1 = pointArray[0];
-		final int r1x2 = pointArray[1];
-		final int r1y1 = pointArray[2];
-		final int r1y2 = pointArray[3];
-		final int r2x1 = pointArray[4];
-		final int r2x2 = pointArray[5];
-		final int r2y1 = pointArray[6];
-		final int r2y2 = pointArray[7];
+	public final void testIntersectsIntIntIntIntIntIntIntIntCommutativty(final int[] r1, final int[] r2) {
+		final int r1x1 = r1[0];
+		final int r1x2 = r1[1];
+		final int r1y1 = r1[2];
+		final int r1y2 = r1[3];
+		final int r2x1 = r2[0];
+		final int r2x2 = r2[2];
+		final int r2y1 = r2[2];
+		final int r2y2 = r2[3];
 		final boolean orig = SpatialMap.Region.intersects(r1x1, r1x2, r1y1, r1y2, r2x1, r2x2, r2y1, r2y2);
 		final boolean inverse = SpatialMap.Region.intersects(r2x1, r2x2, r2y1, r2y2, r1x1, r1x2, r1y1, r1y2);
 		Assert.assertEquals(orig, inverse);
@@ -253,18 +253,18 @@ public final class SpatialMapRegionTest {
 	 * {@link se.kth.speech.SpatialMap.Region#subsumes(int,int,int,int,int,int,int,int)}.
 	 */
 	@Theory
-	public final void testSubsumesIntIntIntIntIntIntIntIntEqual(final int[] pointArray) {
-		final int r1x1 = pointArray[0];
-		final int r1x2 = pointArray[1];
-		final int r1y1 = pointArray[2];
-		final int r1y2 = pointArray[3];
-		final int r2x1 = pointArray[4];
+	public final void testSubsumesIntIntIntIntIntIntIntIntEqual(final int[] r1, final int[] r2) {
+		final int r1x1 = r1[0];
+		final int r1x2 = r1[1];
+		final int r1y1 = r1[2];
+		final int r1y2 = r1[3];
+		final int r2x1 = r2[0];
 		Assume.assumeTrue(r1x1 == r2x1);
-		final int r2x2 = pointArray[5];
+		final int r2x2 = r2[1];
 		Assume.assumeTrue(r1x2 == r2x2);
-		final int r2y1 = pointArray[6];
+		final int r2y1 = r2[2];
 		Assume.assumeTrue(r1y1 == r2y1);
-		final int r2y2 = pointArray[7];
+		final int r2y2 = r2[3];
 		Assume.assumeTrue(r1y2 == r2y2);
 		final boolean orig = SpatialMap.Region.subsumes(r1x1, r1x2, r1y1, r1y2, r2x1, r2x2, r2y1, r2y2);
 		Assert.assertTrue(orig);
