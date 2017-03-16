@@ -41,7 +41,9 @@ public final class MinMaxValueTrackingMap<K, V> implements Map<K, V> {
 
 	private final Map<K, V> decorated;
 
-	private transient final Comparator<? super V> comp;
+	private transient final Comparator<? super V> nullsFirstComp;
+
+	private transient final Comparator<? super V> nullsLastComp;
 
 	private transient V maxValue;
 
@@ -49,7 +51,8 @@ public final class MinMaxValueTrackingMap<K, V> implements Map<K, V> {
 
 	private MinMaxValueTrackingMap(final Map<K, V> decorated, final Comparator<? super V> comp) {
 		this.decorated = decorated;
-		this.comp = Comparator.nullsFirst(comp);
+		this.nullsLastComp = Comparator.nullsLast(comp);
+		this.nullsFirstComp = Comparator.nullsFirst(comp);
 
 		minValue = null;
 		maxValue = null;
@@ -247,8 +250,6 @@ public final class MinMaxValueTrackingMap<K, V> implements Map<K, V> {
 		final StringBuilder builder = new StringBuilder();
 		builder.append("MinMaxValueTrackingMap [decorated=");
 		builder.append(decorated);
-		builder.append(", comp=");
-		builder.append(comp);
 		builder.append(", minValue=");
 		builder.append(minValue);
 		builder.append(", maxValue=");
@@ -293,7 +294,7 @@ public final class MinMaxValueTrackingMap<K, V> implements Map<K, V> {
 	}
 
 	private void updateMax(final V value) {
-		final int cmp = comp.compare(maxValue, value);
+		final int cmp = nullsFirstComp.compare(maxValue, value);
 		if (cmp < 0) {
 			maxValue = value;
 		}
@@ -310,7 +311,7 @@ public final class MinMaxValueTrackingMap<K, V> implements Map<K, V> {
 	}
 
 	private void updateMin(final V value) {
-		final int cmp = comp.compare(value, minValue);
+		final int cmp = nullsLastComp.compare(value, minValue);
 		if (cmp < 0) {
 			minValue = value;
 		}
