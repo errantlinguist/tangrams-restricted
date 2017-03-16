@@ -27,7 +27,6 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.function.IntFunction;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -69,29 +68,31 @@ public final class SpatialMatrix<I, E> {
 		};
 	}
 
-	public void addRegionPowerSet(final Collection<? super SpatialMap.Region> regions) {
-		final int dims[] = positionMatrix.getDimensions();
-		final int x = dims[0];
-		final int y = dims[1];
-		for (int xLowerBound = 0; xLowerBound <= x; ++xLowerBound) {
-			for (int xUpperBound = xLowerBound; xUpperBound <= x; ++xUpperBound) {
-				for (int yLowerBound = 0; yLowerBound < y; ++yLowerBound) {
-					for (int yUpperBound = yLowerBound; yUpperBound <= y; ++yUpperBound) {
-						final SpatialMap.Region region = getRegion(xLowerBound, xUpperBound, yLowerBound, yUpperBound);
-						regions.add(region);
-					}
-				}
-			}
-		}
-	}
-
-	public int calculateRegionPowerSetSize() {
-		final int dims[] = positionMatrix.getDimensions();
-		// m(m+1)n(n+1)/4 http://stackoverflow.com/a/17927830/1391325
-		final int m = dims[0];
-		final int n = dims[1];
-		return m * (m + 1) * n * (n + 1) / 4;
-	}
+	// public void addRegionPowerSet(final Collection<? super SpatialMap.Region>
+	// regions) {
+	// final int dims[] = positionMatrix.getDimensions();
+	// final int x = dims[0];
+	// final int y = dims[1];
+	// for (int xLowerBound = 0; xLowerBound <= x; ++xLowerBound) {
+	// for (int xUpperBound = xLowerBound; xUpperBound <= x; ++xUpperBound) {
+	// for (int yLowerBound = 0; yLowerBound <= y; ++yLowerBound) {
+	// for (int yUpperBound = yLowerBound; yUpperBound <= y; ++yUpperBound) {
+	// final SpatialMap.Region region = getRegion(xLowerBound, xUpperBound,
+	// yLowerBound, yUpperBound);
+	// regions.add(region);
+	// }
+	// }
+	// }
+	// }
+	// }
+	//
+	// public int calculateRegionPowerSetSize() {
+	// final int dims[] = positionMatrix.getDimensions();
+	// // m(m+1)n(n+1)/4 http://stackoverflow.com/a/17927830/1391325
+	// final int m = dims[0];
+	// final int n = dims[1];
+	// return m * (m + 1) * n * (n + 1) / 4;
+	// }
 
 	public void clearRegion(final SpatialMap.Region occupiedRegion) {
 		final Collection<?> elements = elementPlacements.getMinimalRegionElements().get(occupiedRegion);
@@ -102,21 +103,22 @@ public final class SpatialMatrix<I, E> {
 		setPositionValues(occupiedRegion, null);
 	}
 
-	public Set<SpatialMap.Region> createRegionPowerSet() {
-		return createRegionPowerSet(Sets::newHashSetWithExpectedSize);
-	}
+	// public Set<SpatialMap.Region> createRegionPowerSet() {
+	// return createRegionPowerSet(Sets::newHashSetWithExpectedSize);
+	// }
+	//
+	// public <C extends Collection<? super SpatialMap.Region>> C
+	// createRegionPowerSet(
+	// final IntFunction<? extends C> collFactory) {
+	// final int subRegionCount = calculateRegionPowerSetSize();
+	// final C result = collFactory.apply(subRegionCount);
+	// addRegionPowerSet(result);
+	// return result;
+	// }
 
-	public <C extends Collection<? super SpatialMap.Region>> C createRegionPowerSet(
-			final IntFunction<? extends C> collFactory) {
-		final int subRegionCount = calculateRegionPowerSetSize();
-		final C result = collFactory.apply(subRegionCount);
-		addRegionPowerSet(result);
-		return result;
-	}
-	
 	public Table<Integer, Integer, Set<SpatialMap.Region>> createSizeIndexedRegionPowerSet() {
 		final int dims[] = positionMatrix.getDimensions();
-		LOGGER.info("Dims: {}", dims);
+		LOGGER.debug("Dims: {}", dims);
 		final int x = dims[0];
 		final int y = dims[1];
 		final Table<Integer, Integer, Set<SpatialMap.Region>> result = ArrayTable.create(

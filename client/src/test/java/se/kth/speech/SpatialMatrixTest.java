@@ -23,6 +23,7 @@ import java.util.Set;
 
 import org.junit.Assert;
 import org.junit.Test;
+import org.mozilla.javascript.edu.emory.mathcs.backport.java.util.Collections;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Table;
@@ -47,6 +48,24 @@ public final class SpatialMatrixTest {
 		});
 	}
 
+	// @Test
+	// public final void testCreateRegionPowerSetSize() {
+	// final SpatialMap<int[]> piecePositions = new
+	// SpatialMap<>(TEST_PIECES.size());
+	// final int[] gridSize = new int[] { 10, 10 };
+	// final Integer[] posMatrixBackingArray = new
+	// Integer[IntArrays.product(gridSize)];
+	// final Matrix<Integer> backingPosMatrix = new
+	// Matrix<>(posMatrixBackingArray, gridSize[1]);
+	//
+	// final SpatialMatrix<Integer, int[]> matrix = new
+	// SpatialMatrix<>(backingPosMatrix, TEST_PIECE_IDS::get,
+	// piecePositions);
+	// final Set<SpatialMap.Region> powerSet = matrix.createRegionPowerSet();
+	// Assert.assertEquals(matrix.calculateRegionPowerSetSize(),
+	// powerSet.size());
+	// }
+
 	/**
 	 * Test method for
 	 * {@link se.kth.speech.SpatialMatrix#createSizeIndexedRegionPowerSet()}.
@@ -54,7 +73,7 @@ public final class SpatialMatrixTest {
 	@Test
 	public final void testCreateSizeIndexedRegionPowerSet() {
 		final SpatialMap<int[]> piecePositions = new SpatialMap<>(TEST_PIECES.size());
-		final int[] gridSize = new int[] { 10, 10 };
+		final int[] gridSize = new int[] { 10, 11 };
 		final Integer[] posMatrixBackingArray = new Integer[IntArrays.product(gridSize)];
 		final Matrix<Integer> backingPosMatrix = new Matrix<>(posMatrixBackingArray, gridSize[1]);
 
@@ -63,6 +82,13 @@ public final class SpatialMatrixTest {
 		final int[] dims = matrix.getDimensions();
 		final SpatialMap.Region totalRegion = matrix.getRegion(0, dims[1], 0, dims[1]);
 		final Table<Integer, Integer, Set<SpatialMap.Region>> regionPowerSet = matrix.createSizeIndexedRegionPowerSet();
+		Assert.assertEquals(dims[0], Collections.max(regionPowerSet.rowKeySet()));
+		Assert.assertEquals(dims[0], regionPowerSet.rowKeySet().size());
+		Assert.assertEquals(dims[1], Collections.max(regionPowerSet.columnKeySet()));
+		Assert.assertEquals(dims[1], regionPowerSet.columnKeySet().size());
+		regionPowerSet.values().stream().forEach(size -> {
+			Assert.assertFalse(size.isEmpty());
+		});
 		regionPowerSet.values().stream().flatMap(Set::stream).forEach(region -> {
 			Assert.assertTrue(String.format("%s not subsumed by total %s.", region, totalRegion),
 					totalRegion.subsumes(region));
