@@ -16,7 +16,9 @@
 */
 package se.kth.speech;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -90,7 +92,8 @@ public final class SpatialMatrixTest {
 		final int x = dims[0];
 		final int y = dims[1];
 		final SpatialMap.Region totalRegion = matrix.getRegion(0, x, 0, y);
-		final Table<Integer, Integer, Set<SpatialMap.Region>> regionPowerSet = matrix.createSizeIndexedRegionPowerSet();
+		final Table<Integer, Integer, Collection<SpatialMap.Region>> regionPowerSet = matrix
+				.createSizeIndexedRegionPowerSet(ArrayList::new);
 		final Set<Integer> rows = regionPowerSet.rowKeySet();
 		Assert.assertEquals(x, Collections.max(rows));
 		Assert.assertEquals(x, rows.size());
@@ -100,7 +103,7 @@ public final class SpatialMatrixTest {
 		regionPowerSet.values().stream().forEach(size -> {
 			Assert.assertFalse(size.isEmpty());
 		});
-		regionPowerSet.values().stream().flatMap(Set::stream).forEach(region -> {
+		regionPowerSet.values().stream().flatMap(Collection::stream).forEach(region -> {
 			Assert.assertTrue(String.format("%s not subsumed by total %s.", region, totalRegion),
 					totalRegion.subsumes(region));
 		});
@@ -108,14 +111,16 @@ public final class SpatialMatrixTest {
 
 	@Theory
 	public final void testGetCellsRegion(final int[] expected) {
+		final int[] regionCoords = new int[] { 1, 11, 5, 16 };
 		final SpatialMap<int[]> piecePositions = new SpatialMap<>(TEST_PIECES.size());
-		final int[] gridSize = Arrays.stream(expected).map(val -> val * 2).toArray();
+		final int[] gridSize = new int[] { regionCoords[1], regionCoords[3] };
 		final Integer[] posMatrixBackingArray = new Integer[IntArrays.product(gridSize)];
 		final Matrix<Integer> backingPosMatrix = new Matrix<>(posMatrixBackingArray, gridSize[1]);
 
 		final SpatialMatrix<Integer, int[]> matrix = new SpatialMatrix<>(backingPosMatrix, TEST_PIECE_IDS::get,
 				piecePositions);
-		final SpatialMap.Region r = matrix.getRegion(1, 11, 5, 16);
+		final SpatialMap.Region r = matrix.getRegion(regionCoords[0], regionCoords[1], regionCoords[2],
+				regionCoords[3]);
 		matrix.placeElement(expected, r);
 		Assert.assertTrue(matrix.getCells(r).allMatch(val -> Objects.equal(expected, val)));
 	}
