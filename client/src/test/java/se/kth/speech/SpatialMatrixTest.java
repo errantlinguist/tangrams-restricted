@@ -19,9 +19,12 @@ package se.kth.speech;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -29,9 +32,7 @@ import org.junit.experimental.theories.DataPoints;
 import org.junit.experimental.theories.Theories;
 import org.junit.experimental.theories.Theory;
 import org.junit.runner.RunWith;
-import org.mozilla.javascript.edu.emory.mathcs.backport.java.util.Collections;
 
-import com.google.common.base.Objects;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Table;
 
@@ -117,10 +118,10 @@ public final class SpatialMatrixTest {
 		final Table<Integer, Integer, Collection<SpatialMap.Region>> regionPowerSet = matrix
 				.createSizeIndexedRegionPowerSet(ArrayList::new);
 		final Set<Integer> rows = regionPowerSet.rowKeySet();
-		Assert.assertEquals(x, Collections.max(rows));
+		Assert.assertEquals(Integer.valueOf(x), Collections.max(rows));
 		Assert.assertEquals(x, rows.size());
 		final Set<Integer> cols = regionPowerSet.columnKeySet();
-		Assert.assertEquals(y, Collections.max(cols));
+		Assert.assertEquals(Integer.valueOf(y), Collections.max(cols));
 		Assert.assertEquals(y, cols.size());
 		regionPowerSet.values().stream().forEach(size -> {
 			Assert.assertFalse(size.isEmpty());
@@ -133,19 +134,22 @@ public final class SpatialMatrixTest {
 	}
 
 	@Theory
-	public final void testGetCellsRegion(final int[] expected) {
+	public final void testGetCellsRegion(final int[] piece) {
 		final int[] regionCoords = new int[] { 1, 11, 5, 16 };
 		final SpatialMap<int[]> piecePositions = new SpatialMap<>(TEST_PIECES.size());
 		final int[] gridSize = new int[] { regionCoords[1], regionCoords[3] };
 		final Integer[] posMatrixBackingArray = new Integer[IntArrays.product(gridSize)];
 		final Matrix<Integer> backingPosMatrix = new Matrix<>(posMatrixBackingArray, gridSize[1]);
 
-		final SpatialMatrix<Integer, int[]> matrix = new SpatialMatrix<>(backingPosMatrix, TEST_PIECE_IDS::get,
+		final Function<int[], Integer> pieceIdGetter = TEST_PIECE_IDS::get;
+		final SpatialMatrix<Integer, int[]> matrix = new SpatialMatrix<>(backingPosMatrix, pieceIdGetter,
 				piecePositions);
 		final SpatialMap.Region r = matrix.getRegion(regionCoords[0], regionCoords[1], regionCoords[2],
 				regionCoords[3]);
-		matrix.placeElement(expected, r);
-		Assert.assertTrue(matrix.getCells(r).allMatch(val -> Objects.equal(expected, val)));
+		matrix.placeElement(piece, r);
+		final Set<Integer> expected = Collections.singleton(pieceIdGetter.apply(piece));
+		final Set<Integer> actual = matrix.getCells(r).collect(Collectors.toSet());
+		Assert.assertEquals(expected, actual);
 	}
 
 	@Test
