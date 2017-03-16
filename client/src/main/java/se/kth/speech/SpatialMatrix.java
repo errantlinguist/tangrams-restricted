@@ -113,7 +113,7 @@ public final class SpatialMatrix<I, E> {
 		addRegionPowerSet(result);
 		return result;
 	}
-
+	
 	public Table<Integer, Integer, Set<SpatialMap.Region>> createSizeIndexedRegionPowerSet() {
 		final int dims[] = positionMatrix.getDimensions();
 		LOGGER.info("Dims: {}", dims);
@@ -132,7 +132,7 @@ public final class SpatialMatrix<I, E> {
 						if (regions == null) {
 							// TODO: set capacity
 							regions = new HashSet<>();
-							LOGGER.info("putting {}*{}", xLength, yLength);
+							LOGGER.debug("putting {}*{}", xLength, yLength);
 							result.put(xLength, yLength, regions);
 						}
 						final SpatialMap.Region region = getRegion(xLowerBound, xUpperBound, yLowerBound, yUpperBound);
