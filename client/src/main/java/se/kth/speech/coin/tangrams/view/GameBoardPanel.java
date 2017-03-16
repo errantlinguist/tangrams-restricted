@@ -73,7 +73,6 @@ import se.kth.speech.SpatialMap;
 import se.kth.speech.SpatialMap.Region;
 import se.kth.speech.SpatialMatrix;
 import se.kth.speech.awt.ColorReplacementImageFilter;
-import se.kth.speech.awt.Dimensions;
 import se.kth.speech.coin.tangrams.content.ImageSize;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 import se.kth.speech.coin.tangrams.view.ImageViewInfo.RasterizationInfo;
@@ -375,7 +374,7 @@ final class GameBoardPanel extends JPanel {
 	// }
 
 	private static int[] createPositionGridSize(final PositionGridSizeSummary posGridSizeSummary,
-			final Dimension maxBoardSize) {
+			final Dimension maxBoardSize, final double occupiedGridArea) {
 		// NOTE: "rows" in the matrix go top-bottom and "cols" go
 		// left-right
 		// final PositionGridSizeSummary boardSizeSummary = new
@@ -395,85 +394,104 @@ final class GameBoardPanel extends JPanel {
 		LOGGER.info("Trying common divisors {} for board dimensions {}.", commonDivisors, maxBoardSize);
 		for (final ListIterator<Integer> imgCommonDivisorIter = commonDivisors
 				.listIterator(posGridSizeSummary.commonDivisors.size()); imgCommonDivisorIter.hasPrevious();) {
-			// Also both the row and column count of the board being created
 			final int nextGreatestCommonDivisor = imgCommonDivisorIter.previous();
-			final int rows = maxBoardSize.height / nextGreatestCommonDivisor;
-			final int cols = maxBoardSize.width / nextGreatestCommonDivisor;
-			LOGGER.info("Trying to size the board using a grid of size {}*{}.", rows, cols);
-			if (rows < posGridSizeSummary.maxImgGridSize[0]) {
-				LOGGER.info("Too few rows ({}) to accommodate biggest image (with a row count of {}).", rows,
-						posGridSizeSummary.maxImgGridSize[0]);
-			} else if (cols < posGridSizeSummary.maxImgGridSize[1]) {
-				LOGGER.info("Too few columns ({}) to accommodate biggest image (with a column count of {}).",
-						posGridSizeSummary.maxImgGridSize[1]);
+			if (maxBoardSize.height % nextGreatestCommonDivisor != 0) {
+				LOGGER.info("Board height ({}) not divisible by {}.", maxBoardSize.height, nextGreatestCommonDivisor);
 			} else {
-				final int totalBoardGridArea = rows * cols;
-				if (totalBoardGridArea < posGridSizeSummary.totalImgGridArea) {
-					LOGGER.info("Too few grid cells ({}) to accommodate all images (required minimum of {}).",
-							totalBoardGridArea, posGridSizeSummary.totalImgGridArea);
+				final int rows = maxBoardSize.height / nextGreatestCommonDivisor;
+				if (maxBoardSize.width % nextGreatestCommonDivisor != 0) {
+					LOGGER.info("Board width ({}) not divisible by {}.", maxBoardSize.width, nextGreatestCommonDivisor);
 				} else {
-					LOGGER.info("Found valid board size {}*{} (with a common divisor of {}).",
-							new Object[] { rows, cols, nextGreatestCommonDivisor });
-					result = new int[] { rows, cols };
-					break;
+					final int cols = maxBoardSize.width / nextGreatestCommonDivisor;
+					LOGGER.info("Trying to size the board using a grid of size {}*{}.", rows, cols);
+					if (rows < posGridSizeSummary.maxImgGridSize[0]) {
+						LOGGER.info("Too few rows ({}) to accommodate biggest image (with a row count of {}).", rows,
+								posGridSizeSummary.maxImgGridSize[0]);
+					} else if (cols < posGridSizeSummary.maxImgGridSize[1]) {
+						LOGGER.info("Too few columns ({}) to accommodate biggest image (with a column count of {}).",
+								cols, posGridSizeSummary.maxImgGridSize[1]);
+					} else {
+						final int totalBoardGridArea = rows * cols;
+						final int allowedOccupiedBoardArea = (int) (totalBoardGridArea * occupiedGridArea);
+						if (allowedOccupiedBoardArea < posGridSizeSummary.totalImgGridArea) {
+							LOGGER.info(
+									"Too few grid cells ({} = {} * {}) to accommodate all images (required minimum of {}).",
+									new Object[] { allowedOccupiedBoardArea, totalBoardGridArea, occupiedGridArea,
+											posGridSizeSummary.totalImgGridArea, });
+						} else {
+							LOGGER.info("Found valid board size {}*{} (with a common divisor of {}).",
+									new Object[] { rows, cols, nextGreatestCommonDivisor });
+							result = new int[] { rows, cols };
+							break;
+						}
+					}
 				}
 			}
+
 		}
 		if (result == null) {
 			throw new IllegalArgumentException("Could not find a valid board size.");
 		}
 		return result;
 	}
-	
-//	private static int[] createMinPositionGridSize(final PositionGridSizeSummary posGridSizeSummary) {
-//		// NOTE: "rows" in the matrix go top-bottom and "cols" go
-//		// left-right
-//		// final PositionGridSizeSummary boardSizeSummary = new
-//		// PositionGridSizeSummary(
-//		// new int[] { boardSize.height, boardSize.width }, new int[] {
-//		// boardSize.height, boardSize.width },
-//		// boardSize.height * boardSize.width,
-//		// MathDivisors.createCommonDivisorList(boardSize.height,
-//		// boardSize.width));
-//		// LOGGER.info("Board size summary: {}", boardSizeSummary);
-//		// final PositionGridSizeSummary totalComponentSummary =
-//		// posGridSizeSummary.union(boardSizeSummary);
-//		// LOGGER.info("Size summary for all components: {}",
-//		// totalComponentSummary);
-//		int[] result = null;
-//		final List<Integer> commonDivisors = posGridSizeSummary.commonDivisors;
-//		LOGGER.info("Trying common divisors {} for board dimensions {}.", commonDivisors, maxBoardSize);
-//		for (final ListIterator<Integer> imgCommonDivisorIter = commonDivisors
-//				.listIterator(posGridSizeSummary.commonDivisors.size()); imgCommonDivisorIter.hasPrevious();) {
-//			// Also both the row and column count of the board being created
-//			final int nextGreatestCommonDivisor = imgCommonDivisorIter.previous();
-//			final int rows = maxBoardSize.height / nextGreatestCommonDivisor;
-//			final int cols = maxBoardSize.width / nextGreatestCommonDivisor;
-//			LOGGER.info("Trying to size the board using a grid of size {}*{}.", rows, cols);
-//			if (rows < posGridSizeSummary.maxImgGridSize[0]) {
-//				LOGGER.info("Too few rows ({}) to accommodate biggest image (with a row count of {}).", rows,
-//						posGridSizeSummary.maxImgGridSize[0]);
-//			} else if (cols < posGridSizeSummary.maxImgGridSize[1]) {
-//				LOGGER.info("Too few columns ({}) to accommodate biggest image (with a column count of {}).",
-//						posGridSizeSummary.maxImgGridSize[1]);
-//			} else {
-//				final int totalBoardGridArea = rows * cols;
-//				if (totalBoardGridArea < posGridSizeSummary.totalImgGridArea) {
-//					LOGGER.info("Too few grid cells ({}) to accommodate all images (required minimum of {}).",
-//							totalBoardGridArea, posGridSizeSummary.totalImgGridArea);
-//				} else {
-//					LOGGER.info("Found valid board size {}*{} (with a common divisor of {}).",
-//							new Object[] { rows, cols, nextGreatestCommonDivisor });
-//					result = new int[] { rows, cols };
-//					break;
-//				}
-//			}
-//		}
-//		if (result == null) {
-//			throw new IllegalArgumentException("Could not find a valid board size.");
-//		}
-//		return result;
-//	}
+
+	// private static int[] createMinPositionGridSize(final
+	// PositionGridSizeSummary posGridSizeSummary) {
+	// // NOTE: "rows" in the matrix go top-bottom and "cols" go
+	// // left-right
+	// // final PositionGridSizeSummary boardSizeSummary = new
+	// // PositionGridSizeSummary(
+	// // new int[] { boardSize.height, boardSize.width }, new int[] {
+	// // boardSize.height, boardSize.width },
+	// // boardSize.height * boardSize.width,
+	// // MathDivisors.createCommonDivisorList(boardSize.height,
+	// // boardSize.width));
+	// // LOGGER.info("Board size summary: {}", boardSizeSummary);
+	// // final PositionGridSizeSummary totalComponentSummary =
+	// // posGridSizeSummary.union(boardSizeSummary);
+	// // LOGGER.info("Size summary for all components: {}",
+	// // totalComponentSummary);
+	// int[] result = null;
+	// final List<Integer> commonDivisors = posGridSizeSummary.commonDivisors;
+	// LOGGER.info("Trying common divisors {} for board dimensions {}.",
+	// commonDivisors, maxBoardSize);
+	// for (final ListIterator<Integer> imgCommonDivisorIter = commonDivisors
+	// .listIterator(posGridSizeSummary.commonDivisors.size());
+	// imgCommonDivisorIter.hasPrevious();) {
+	// // Also both the row and column count of the board being created
+	// final int nextGreatestCommonDivisor = imgCommonDivisorIter.previous();
+	// final int rows = maxBoardSize.height / nextGreatestCommonDivisor;
+	// final int cols = maxBoardSize.width / nextGreatestCommonDivisor;
+	// LOGGER.info("Trying to size the board using a grid of size {}*{}.", rows,
+	// cols);
+	// if (rows < posGridSizeSummary.maxImgGridSize[0]) {
+	// LOGGER.info("Too few rows ({}) to accommodate biggest image (with a row
+	// count of {}).", rows,
+	// posGridSizeSummary.maxImgGridSize[0]);
+	// } else if (cols < posGridSizeSummary.maxImgGridSize[1]) {
+	// LOGGER.info("Too few columns ({}) to accommodate biggest image (with a
+	// column count of {}).",
+	// posGridSizeSummary.maxImgGridSize[1]);
+	// } else {
+	// final int totalBoardGridArea = rows * cols;
+	// if (totalBoardGridArea < posGridSizeSummary.totalImgGridArea) {
+	// LOGGER.info("Too few grid cells ({}) to accommodate all images (required
+	// minimum of {}).",
+	// totalBoardGridArea, posGridSizeSummary.totalImgGridArea);
+	// } else {
+	// LOGGER.info("Found valid board size {}*{} (with a common divisor of
+	// {}).",
+	// new Object[] { rows, cols, nextGreatestCommonDivisor });
+	// result = new int[] { rows, cols };
+	// break;
+	// }
+	// }
+	// }
+	// if (result == null) {
+	// throw new IllegalArgumentException("Could not find a valid board size.");
+	// }
+	// return result;
+	// }
 
 	private static PositionGridSizeSummary createPositionGridSizeSummary(
 			final Iterator<ImageViewInfo> imageViewInfoData) {
@@ -531,15 +549,15 @@ final class GameBoardPanel extends JPanel {
 	private final BiFunction<? super Image, ? super GameBoardPanel, ? extends Image> postColoringImgTransformer;
 
 	GameBoardPanel(final Collection<ImageVisualizationInfo> imgVisualizationInfoData, final Random rnd,
-			final int maxImgPlacements, final int maxPlacementRetriesPerImg, final boolean allowFailedPlacements,
-			final int uniqueImgResourceCount) {
-		this(imgVisualizationInfoData, rnd, maxImgPlacements, maxPlacementRetriesPerImg, allowFailedPlacements,
-				uniqueImgResourceCount, DEFAULT_POST_COLORING_IMG_TRANSFORMER);
+			final int maxImgPlacements, final int maxPlacementRetriesPerImg, final double occupiedGridArea,
+			final boolean allowFailedPlacements, final int uniqueImgResourceCount) {
+		this(imgVisualizationInfoData, rnd, maxImgPlacements, maxPlacementRetriesPerImg, occupiedGridArea,
+				allowFailedPlacements, uniqueImgResourceCount, DEFAULT_POST_COLORING_IMG_TRANSFORMER);
 	}
 
 	GameBoardPanel(final Collection<ImageVisualizationInfo> imgVisualizationInfoData, final Random rnd,
-			final int maxImgPlacements, final int maxPlacementRetriesPerImg, final boolean allowFailedPlacements,
-			final int uniqueImgResourceCount,
+			final int maxImgPlacements, final int maxPlacementRetriesPerImg, final double occupiedGridArea,
+			final boolean allowFailedPlacements, final int uniqueImgResourceCount,
 			final BiFunction<? super Image, ? super GameBoardPanel, ? extends Image> postColoringImgTransformer) {
 		this.postColoringImgTransformer = postColoringImgTransformer;
 		pieceIds = Maps.newHashMapWithExpectedSize(maxImgPlacements * 2);
@@ -549,13 +567,20 @@ final class GameBoardPanel extends JPanel {
 		final int minDimLength = 300;
 		final SizeValidator validator = new SizeValidator(minDimLength, 50, 50);
 		pieceImgs = createImageViewInfoMap(imgVisualizationInfoData, validator, uniqueImgResourceCount);
-		final Dimension boardSize = new Dimension(minDimLength * 5, minDimLength * 4);
-		setPreferredSize(boardSize);
+		// http://stackoverflow.com/a/1936582/1391325
+		final Dimension screenSize = getToolkit().getScreenSize();
+		// final Dimension maxSize = Dimensions.createScaledDimension(boardSize,
+		// screenSize);
+		LOGGER.debug("Setting maximum component size to {}.", screenSize);
+		setMaximumSize(screenSize);
 		{
+			final int shortestScreenLength = Math.min(screenSize.width, screenSize.height);
+			final Dimension boardSize = new Dimension(shortestScreenLength, shortestScreenLength);
+			setPreferredSize(boardSize);
 			final PositionGridSizeSummary posGridSizeSummary = createPositionGridSizeSummary(
 					pieceImgs.keySet().iterator());
 			LOGGER.info("Position grid size summary: {}", posGridSizeSummary);
-			final int[] gridSize = createPositionGridSize(posGridSizeSummary, boardSize);
+			final int[] gridSize = createPositionGridSize(posGridSizeSummary, boardSize, occupiedGridArea);
 			LOGGER.info("Creating a position matrix of size {}.", gridSize);
 			final Integer[] posMatrixBackingArray = new Integer[IntArrays.product(gridSize)];
 			final Matrix<Integer> backingPosMatrix = new Matrix<>(posMatrixBackingArray, gridSize[1]);
@@ -578,13 +603,6 @@ final class GameBoardPanel extends JPanel {
 			};
 
 			posMatrix = new SpatialMatrix<>(backingPosMatrix, pieceIds::get, spatialMatrixPosMapFactory);
-		}
-		{
-			// http://stackoverflow.com/a/1936582/1391325
-			final Dimension screenSize = getToolkit().getScreenSize();
-			final Dimension maxSize = Dimensions.createScaledDimension(boardSize, screenSize);
-			LOGGER.debug("Setting maximum component size to {}.", maxSize);
-			setMaximumSize(maxSize);
 		}
 		{
 			final int[] minSizeDims = createMinimumDimLengths(posMatrix.getDimensions()).toArray();
