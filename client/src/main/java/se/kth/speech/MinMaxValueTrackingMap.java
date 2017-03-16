@@ -30,6 +30,15 @@ import com.google.api.client.repackaged.com.google.common.base.Objects;
  */
 public final class MinMaxValueTrackingMap<K, V> implements Map<K, V> {
 
+	public static <K, V extends Comparable<? super V>> MinMaxValueTrackingMap<K, V> create(final Map<K, V> decorated) {
+		return new MinMaxValueTrackingMap<>(decorated, Comparator.naturalOrder());
+	}
+
+	public static <K, V> MinMaxValueTrackingMap<K, V> create(final Map<K, V> decorated,
+			final Comparator<? super V> comp) {
+		return new MinMaxValueTrackingMap<>(decorated, comp);
+	}
+
 	private final Map<K, V> decorated;
 
 	private transient final Comparator<? super V> comp;
@@ -38,7 +47,7 @@ public final class MinMaxValueTrackingMap<K, V> implements Map<K, V> {
 
 	private transient V minValue;
 
-	public MinMaxValueTrackingMap(final Map<K, V> decorated, final Comparator<? super V> comp) {
+	private MinMaxValueTrackingMap(final Map<K, V> decorated, final Comparator<? super V> comp) {
 		this.decorated = decorated;
 		this.comp = Comparator.nullsFirst(comp);
 
