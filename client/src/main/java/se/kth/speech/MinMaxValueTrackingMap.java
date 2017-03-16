@@ -90,7 +90,7 @@ public final class MinMaxValueTrackingMap<K, V> implements Map<K, V> {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#equals(java.lang.Object)
 	 */
 	@Override
@@ -104,7 +104,7 @@ public final class MinMaxValueTrackingMap<K, V> implements Map<K, V> {
 		if (!(obj instanceof MinMaxValueTrackingMap)) {
 			return false;
 		}
-		final MinMaxValueTrackingMap other = (MinMaxValueTrackingMap) obj;
+		final MinMaxValueTrackingMap<?, ?> other = (MinMaxValueTrackingMap<?, ?>) obj;
 		if (decorated == null) {
 			if (other.decorated != null) {
 				return false;
@@ -141,7 +141,7 @@ public final class MinMaxValueTrackingMap<K, V> implements Map<K, V> {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#hashCode()
 	 */
 	@Override
