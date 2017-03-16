@@ -200,7 +200,8 @@ public final class Matrix<T> {
 	 * @return a copy of the dims
 	 */
 	public int[] getDimensions() {
-		return new int[] { values.size() / colCount, colCount };
+		final int cellCount = values.size();
+		return new int[] { cellCount / colCount, colCount };
 	}
 
 	public int[] getMatrixIndices(final int valueArrayIdx) {
