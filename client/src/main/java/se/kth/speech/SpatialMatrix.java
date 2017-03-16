@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -94,7 +95,8 @@ public final class SpatialMatrix<I, E> {
 						Set<SpatialMap.Region> regions = result.get(xLength, yLength);
 						if (regions == null) {
 							// TODO: set capacity
-							regions = new HashSet<>();
+							// Linked in order to preserve iteration order
+							regions = new LinkedHashSet<>();
 							LOGGER.debug("putting {}*{}", xLength, yLength);
 							result.put(xLength, yLength, regions);
 						}
