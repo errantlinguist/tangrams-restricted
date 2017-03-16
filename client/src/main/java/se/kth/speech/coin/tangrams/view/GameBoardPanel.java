@@ -302,7 +302,7 @@ final class GameBoardPanel extends JPanel {
 			IntArrays.mutate(minImgGridSize, imgGridSize, Math::min);
 			IntArrays.mutate(maxImgGridSize, imgGridSize, Math::max);
 			final RasterizationInfo rasterInfo = imgViewInfoDatum.getRasterization();
-			commonDivisors = MathDivisors.createCommonDivisorList(rasterInfo.getWidth(), rasterInfo.getWidth());
+			commonDivisors = MathDivisors.createCommonDivisorList(rasterInfo.getWidth(), rasterInfo.getHeight());
 			final int imgGridArea = IntArrays.product(imgGridSize);
 			totalImgGridArea += imgGridArea;
 		}
