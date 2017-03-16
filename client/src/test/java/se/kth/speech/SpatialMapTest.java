@@ -17,6 +17,7 @@
 package se.kth.speech;
 
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Test;
 
 /**
@@ -25,6 +26,17 @@ import org.junit.Test;
  *
  */
 public final class SpatialMapTest {
+
+	private static <T> void assertPutNewElement(final SpatialMap<? super T> testMap, final T elem,
+			final SpatialMap.Region r) {
+		Assume.assumeFalse(testMap.isOccupied(r));
+		final SpatialMap.Region oldRegion = testMap.put(elem, r);
+		Assert.assertNull(oldRegion);
+		Assert.assertTrue(testMap.getAllElements().contains(elem));
+		Assert.assertTrue(testMap.isOccupied(r));
+		Assert.assertTrue(testMap.getMinimalRegions().contains(r));
+		Assert.assertTrue(testMap.getMinimalRegionElements().get(r).contains(elem));
+	}
 
 	/**
 	 * Test method for
@@ -95,14 +107,8 @@ public final class SpatialMapTest {
 	@Test
 	public final void testPutNewElement() {
 		final SpatialMap<Object> testMap = new SpatialMap<>(2);
-		final SpatialMap.Region r = new SpatialMap.Region(0, 1, 2, 3);
-		final String elem = "foo";
-		final SpatialMap.Region oldRegion = testMap.put(elem, r);
-		Assert.assertNull(oldRegion);
-		Assert.assertTrue(testMap.getAllElements().contains(elem));
-		Assert.assertTrue(testMap.isOccupied(r));
-		Assert.assertTrue(testMap.getMinimalRegions().contains(r));
-		Assert.assertTrue(testMap.getMinimalRegionElements().get(r).contains(elem));
+		assertPutNewElement(testMap, "foo", new SpatialMap.Region(0, 1, 2, 3));
+		assertPutNewElement(testMap, new int[]{3, 3}, new SpatialMap.Region(2, 3, 4, 5));
 	}
 
 }
