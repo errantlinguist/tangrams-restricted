@@ -531,12 +531,9 @@ final class GameBoardPanel extends JPanel {
 		for (final ListIterator<List<Integer>> matrixRowIter = posMatrix.getPositionMatrix()
 				.rowIterator(); matrixRowIter.hasNext();) {
 			final List<Integer> matrixRow = matrixRowIter.next();
-			// final int rowIdx = matrixRowIter.nextIndex();
-
 			int nextColX = 0;
 			for (final ListIterator<Integer> matrixRowCellIter = matrixRow.listIterator(); matrixRowCellIter
 					.hasNext();) {
-				// final int colIdx = matrixRowCellIter.nextIndex();
 				final Integer pieceId = matrixRowCellIter.next();
 				if (pieceId != null) {
 					final String pieceText = pieceId.toString();
