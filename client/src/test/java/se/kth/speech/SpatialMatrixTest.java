@@ -70,14 +70,14 @@ public final class SpatialMatrixTest {
 	@Test
 	public final void testCheckCellsRegion() {
 		final SpatialMap<int[]> piecePositions = new SpatialMap<>(TEST_PIECES.size());
-		final int[] gridSize = new int[] { 10, 10 };
+		final int[] gridSize = new int[] { 16, 16 };
 		final Integer[] posMatrixBackingArray = new Integer[IntArrays.product(gridSize)];
 		final Matrix<Integer> backingPosMatrix = new Matrix<>(posMatrixBackingArray, gridSize[1]);
 
 		final SpatialMatrix<Integer, int[]> matrix = new SpatialMatrix<>(backingPosMatrix, TEST_PIECE_IDS::get,
 				piecePositions);
 		final Integer expected = 1;
-		final SpatialMap.Region r = matrix.getRegion(0, 10, 5, 16);
+		final SpatialMap.Region r = matrix.getRegion(1, 11, 5, 16);
 		matrix.setPositionValues(r, expected);
 		Assert.assertTrue(matrix.testCells(r, val -> Objects.equal(expected, val)));
 	}

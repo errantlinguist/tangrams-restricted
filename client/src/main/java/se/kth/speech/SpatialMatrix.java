@@ -139,22 +139,24 @@ public final class SpatialMatrix<I, E> {
 		final Map<SpatialMap.Region, Set<SpatialMap.Region>> result = Maps
 				.newHashMapWithExpectedSize(regionElements.size());
 		final int[] matrixDims = getDimensions();
+		final int x = matrixDims[0];
+		final int y = matrixDims[1];
 
-		for (final SpatialMap.Region occupiedRegion : regionElements) {
-			final Set<SpatialMap.Region> possibleMoveRegions = result.computeIfAbsent(occupiedRegion,
+		for (final SpatialMap.Region movablePieceRegion : regionElements) {
+			final Set<SpatialMap.Region> possibleMoveRegions = result.computeIfAbsent(movablePieceRegion,
 					newRegionPossibleMoveSetFactory);
-			final int maxXLowerBound = matrixDims[0] - occupiedRegion.getLengthX();
-			final int maxYLowerBound = matrixDims[1] - occupiedRegion.getLengthY();
+			final int maxXLowerBound = x - movablePieceRegion.getLengthX();
+			final int maxYLowerBound = y - movablePieceRegion.getLengthY();
 			for (int xLowerBound = 0; xLowerBound < maxXLowerBound; xLowerBound++) {
-				final int xUpperBound = xLowerBound + occupiedRegion.getLengthX();
+				final int xUpperBound = xLowerBound + movablePieceRegion.getLengthX();
 				for (int yLowerBound = 0; yLowerBound < maxYLowerBound; yLowerBound++) {
-					final int yUpperBound = yLowerBound + occupiedRegion.getLengthY();
+					final int yUpperBound = yLowerBound + movablePieceRegion.getLengthY();
 					if (testCells(xLowerBound, xUpperBound, yLowerBound, yUpperBound, Objects::isNull)) {
 						final SpatialMap.Region possibleMoveRegion = getRegion(xLowerBound, xUpperBound, yLowerBound,
 								yUpperBound);
+						assert !elementPlacements.isOccupied(possibleMoveRegion);
 						possibleMoveRegions.add(possibleMoveRegion);
 					} else {
-						assert elementPlacements.isOccupied(occupiedRegion);
 						if (LOGGER.isDebugEnabled()) {
 							LOGGER.debug("Found occupied space at {}.",
 									Arrays.toString(new int[] { xLowerBound, xUpperBound, yLowerBound, yUpperBound }));
@@ -275,10 +277,10 @@ public final class SpatialMatrix<I, E> {
 	public void setPositionValues(final SpatialMap.Region region, final I elementId) {
 		LOGGER.debug("Setting {} to value \"{}\".", region, elementId);
 		final ListIterator<List<I>> rowIter = positionMatrix.rowIterator(region.getXLowerBound());
-		for (int rowIdx = rowIter.nextIndex(); rowIdx <= region.getXUpperBound(); rowIdx++) {
+		for (int rowIdx = rowIter.nextIndex(); rowIdx < region.getXUpperBound(); rowIdx++) {
 			final List<I> row = rowIter.next();
 			final ListIterator<I> rowCellIter = row.listIterator(region.getYLowerBound());
-			for (int colIdx = rowCellIter.nextIndex(); colIdx <= region.getYUpperBound(); colIdx++) {
+			for (int colIdx = rowCellIter.nextIndex(); colIdx < region.getYUpperBound(); colIdx++) {
 				rowCellIter.next();
 				rowCellIter.set(elementId);
 			}
@@ -289,14 +291,14 @@ public final class SpatialMatrix<I, E> {
 			final Predicate<? super I> cellPredicate) {
 		boolean result = true;
 		final ListIterator<List<I>> rowIter = positionMatrix.rowIterator(xLowerBound);
-		for (int rowIdx = rowIter.nextIndex(); rowIdx < xUpperBound; rowIdx++) {
+		rowCheck: for (int rowIdx = rowIter.nextIndex(); rowIdx < xUpperBound; rowIdx++) {
 			final List<I> row = rowIter.next();
 			final ListIterator<I> rowCellIter = row.listIterator(yLowerBound);
 			for (int colIdx = rowCellIter.nextIndex(); colIdx < yUpperBound; colIdx++) {
 				final I cellValue = rowCellIter.next();
 				if (!cellPredicate.test(cellValue)) {
 					result = false;
-					break;
+					break rowCheck;
 				}
 			}
 		}
