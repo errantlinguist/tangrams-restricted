@@ -165,4 +165,42 @@ public final class SpatialMatrixTest {
 		Assert.assertArrayEquals(gridSize, dims);
 	}
 
+	@Theory
+	public final void testPlaceElement(final int[] piece) {
+		final int xUpperBound = 5;
+		final int xLowerBound = 1;
+		final int yUpperBound = 6;
+		final int yLowerBound = 2;
+		final SpatialMap<int[]> piecePositions = new SpatialMap<>(TEST_PIECES.size());
+		final int[] gridSize = new int[] { xUpperBound, yUpperBound };
+		final Integer[] posMatrixBackingArray = new Integer[IntArrays.product(gridSize)];
+		final Matrix<Integer> backingPosMatrix = new Matrix<>(posMatrixBackingArray, gridSize[1]);
+
+		final Function<int[], Integer> pieceIdGetter = TEST_PIECE_IDS::get;
+		final SpatialMatrix<Integer, int[]> matrix = new SpatialMatrix<>(backingPosMatrix, pieceIdGetter,
+				piecePositions);
+		final SpatialMap.Region r = matrix.getRegion(xLowerBound, yUpperBound, yLowerBound, yUpperBound);
+		matrix.placeElement(piece, r);
+		final Set<Integer> pieceId = Collections.singleton(pieceIdGetter.apply(piece));
+		final SpatialMap.Region totalRegion = matrix.getRegion(0, xUpperBound, 0, yUpperBound);
+		final Map<Integer, Integer> cellValueCounts = Maps.newHashMapWithExpectedSize(2);
+		matrix.getCells(totalRegion).forEach(cell -> cellValueCounts.compute(cell, (key, oldCount) -> {
+			final Integer newCount;
+			if (oldCount == null) {
+				newCount = 1;
+			} else {
+				newCount = oldCount + 1;
+			}
+			return newCount;
+		}));
+		final Integer pieceCount = cellValueCounts.get(pieceId);
+		Assert.assertNotNull(pieceCount);
+		final int regionArea = IntArrays.product(r.getDimensions());
+		Assert.assertEquals(regionArea, pieceCount.intValue());
+		final Integer nullCount = cellValueCounts.get(null);
+		Assert.assertNotNull(nullCount);
+		final int totalArea = IntArrays.product(matrix.getDimensions());
+		Assert.assertEquals(totalArea - pieceCount, nullCount.intValue());
+	}
+
 }
