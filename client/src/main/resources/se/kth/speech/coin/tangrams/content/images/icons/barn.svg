@@ -9,16 +9,13 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="317.5mm"
-   height="317.5mm"
-   viewBox="0 0 317.5 317.5"
+   width="166.77617mm"
+   height="166.77647mm"
+   viewBox="0 0 166.77617 166.77647"
    version="1.1"
    id="svg8"
    inkscape:version="0.92.0 r15299"
-   sodipodi:docname="barn.svg"
-   inkscape:export-filename="D:\Users\tcshore\src\com.github.errantlinguist\tangrams-restricted\client\src\main\resources\se\kth\speech\coin\tangrams\content\images\icons\barn.png"
-   inkscape:export-xdpi="96"
-   inkscape:export-ydpi="96">
+   sodipodi:docname="barn.svg">
   <defs
      id="defs2" />
   <sodipodi:namedview
@@ -28,17 +25,17 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="0.24748737"
-     inkscape:cx="-793.27841"
-     inkscape:cy="908.13545"
+     inkscape:zoom="0.98994949"
+     inkscape:cx="-128.73457"
+     inkscape:cy="623.47358"
      inkscape:document-units="mm"
      inkscape:current-layer="layer-barn"
      showgrid="false"
-     inkscape:window-width="737"
-     inkscape:window-height="435"
-     inkscape:window-x="1136"
-     inkscape:window-y="472"
-     inkscape:window-maximized="0"
+     inkscape:window-width="2560"
+     inkscape:window-height="1387"
+     inkscape:window-x="-8"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1"
      fit-margin-top="0"
      fit-margin-left="0"
      fit-margin-right="0"
@@ -51,7 +48,7 @@
         <dc:format>image/svg+xml</dc:format>
         <dc:type
            rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
+        <dc:title />
       </cc:Work>
     </rdf:RDF>
   </metadata>
@@ -59,10 +56,11 @@
      inkscape:label="Barn"
      inkscape:groupmode="layer"
      id="layer-barn"
-     transform="translate(90.105952,101.0008)">
+     transform="translate(14.699818,25.59446)">
     <path
        style="stroke:none;stroke-width:0;stroke-opacity:1"
-       d="m 15.727381,-101.0008 -52.916668,52.916667 -52.916666,52.9166664 v 52.9166676 52.916669 52.91667 52.91666 h 52.916666 52.916668 52.916667 52.916672 52.91666 52.91667 V 163.58254 110.66587 57.749201 4.8325334 L 174.47738,-48.084133 121.56072,-101.0008 H 68.644048 Z"
+       d="M 210,0 105,105 0,210 V 315 420 525 630 H 105 210 315 420 525 630 V 525 420 315 210 L 525,105 420,0 H 315 Z"
+       transform="matrix(0.26458333,0,0,0.26458333,-14.699818,-25.59446)"
        id="path-barn"
        inkscape:connector-curvature="0" />
   </g>

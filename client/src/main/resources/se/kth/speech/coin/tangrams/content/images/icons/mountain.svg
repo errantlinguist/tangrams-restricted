@@ -9,16 +9,13 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="635mm"
-   height="317.5mm"
-   viewBox="0 0 635 317.5"
+   width="50mm"
+   height="25mm"
+   viewBox="0 0 50 25"
    version="1.1"
    id="svg5053"
    inkscape:version="0.92.0 r15299"
-   sodipodi:docname="mountain.svg"
-   inkscape:export-filename="D:\Users\tcshore\src\com.github.errantlinguist\tangrams-restricted\client\src\main\resources\se\kth\speech\coin\tangrams\content\images\icons\mountain.png"
-   inkscape:export-xdpi="96"
-   inkscape:export-ydpi="96">
+   sodipodi:docname="mountain.svg">
   <defs
      id="defs5047" />
   <sodipodi:namedview
@@ -28,9 +25,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="0.70000001"
-     inkscape:cx="1087.4987"
-     inkscape:cy="594.96063"
+     inkscape:zoom="3.959798"
+     inkscape:cx="87.547807"
+     inkscape:cy="42.204724"
      inkscape:document-units="mm"
      inkscape:current-layer="layer-mountain"
      showgrid="false"
@@ -59,10 +56,10 @@
      inkscape:label="Mountain"
      inkscape:groupmode="layer"
      id="layer-mountain"
-     transform="translate(342.5,11.25)">
+     transform="translate(50,-135)">
     <path
        style="fill:#000000;stroke-width:0"
-       d="m -342.5,306.25 127,-190.5 63.5,63.5 127,-190.5 127,190.5 63.5,-63.5 127,190.5 z"
+       d="m -50,160 10,-15 5,5 10,-15 10,15 5,-5 10,15 z"
        id="path-mountain"
        inkscape:connector-curvature="0"
        sodipodi:nodetypes="cccccccc" />
