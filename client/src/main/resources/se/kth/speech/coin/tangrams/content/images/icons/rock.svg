@@ -9,13 +9,16 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="45mm"
-   height="35mm"
-   viewBox="0 0 45 35"
+   width="317.5mm"
+   height="317.5mm"
+   viewBox="0 0 317.5 317.5"
    version="1.1"
    id="svg5617"
    inkscape:version="0.92.0 r15299"
-   sodipodi:docname="rock.svg">
+   sodipodi:docname="rock.svg"
+   inkscape:export-filename="D:\Users\tcshore\src\com.github.errantlinguist\tangrams-restricted\client\src\main\resources\se\kth\speech\coin\tangrams\content\images\icons\rock.png"
+   inkscape:export-xdpi="96"
+   inkscape:export-ydpi="96">
   <defs
      id="defs5611" />
   <sodipodi:namedview
@@ -25,9 +28,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="1.979899"
-     inkscape:cx="113.58236"
-     inkscape:cy="154.90699"
+     inkscape:zoom="0.175"
+     inkscape:cx="277.23331"
+     inkscape:cy="688.76526"
      inkscape:document-units="mm"
      inkscape:current-layer="layer-rock"
      showgrid="false"
@@ -56,10 +59,10 @@
      inkscape:label="Rock"
      inkscape:groupmode="layer"
      id="layer-rock"
-     transform="translate(-150,-235)">
+     transform="translate(-13.75,-93.75)">
     <path
        style="fill:#000000;stroke-width:0"
-       d="m 150,250 v 0 -15 h 30 l 15,15 -10,10 h -15 l -10,10 z"
+       d="m 13.75,229.82144 v 0 V 93.75 H 225.41668 L 331.25,229.82144 260.69444,320.53572 H 154.86112 L 84.30556,411.25 Z"
        id="path-rock"
        inkscape:connector-curvature="0"
        sodipodi:nodetypes="ccccccccc" />

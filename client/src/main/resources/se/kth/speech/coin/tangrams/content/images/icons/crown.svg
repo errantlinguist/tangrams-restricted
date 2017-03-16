@@ -9,13 +9,16 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="38mm"
-   height="13mm"
-   viewBox="0 0 38 13"
+   width="476.25mm"
+   height="317.5mm"
+   viewBox="0 0 476.25 317.5"
    version="1.1"
    id="svg5619"
    inkscape:version="0.92.0 r15299"
-   sodipodi:docname="crown.svg">
+   sodipodi:docname="crown.svg"
+   inkscape:export-filename="D:\Users\tcshore\src\com.github.errantlinguist\tangrams-restricted\client\src\main\resources\se\kth\speech\coin\tangrams\content\images\icons\crown.png"
+   inkscape:export-xdpi="96"
+   inkscape:export-ydpi="96">
   <defs
      id="defs5613" />
   <sodipodi:namedview
@@ -25,13 +28,13 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="5.6"
-     inkscape:cx="59.204941"
-     inkscape:cy="10.153818"
+     inkscape:zoom="0.9899495"
+     inkscape:cx="621.49576"
+     inkscape:cy="585.58687"
      inkscape:document-units="mm"
      inkscape:current-layer="layer-crown"
      showgrid="false"
-     inkscape:window-width="1394"
+     inkscape:window-width="1278"
      inkscape:window-height="1378"
      inkscape:window-x="-7"
      inkscape:window-y="0"
@@ -56,10 +59,10 @@
      inkscape:label="Crown"
      inkscape:groupmode="layer"
      id="layer-crown"
-     transform="translate(-160,-233)">
+     transform="translate(59.125,-80.75)">
     <path
        style="fill:#000000;stroke-width:0"
-       d="m 160,246 12,-13 v 6 l 5,-6 v 6 h 4 v -6 l 5,6 v -6 l 12,13 z"
+       d="M -59.125,398.25 91.26972,80.75 V 227.28844 L 153.9342,80.75 v 146.53844 h 50.1316 V 80.75 l 62.66448,146.53844 V 80.75 L 417.125,398.25 Z"
        id="path-crown"
        inkscape:connector-curvature="0"
        sodipodi:nodetypes="ccccccccccc" />

@@ -9,13 +9,16 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="45mm"
-   height="37mm"
-   viewBox="0 0 45 37"
+   width="423.33334mm"
+   height="317.5mm"
+   viewBox="0 0 423.33333 317.5"
    version="1.1"
    id="svg4504"
    inkscape:version="0.92.0 r15299"
-   sodipodi:docname="goose.svg">
+   sodipodi:docname="goose.svg"
+   inkscape:export-filename="D:\Users\tcshore\src\com.github.errantlinguist\tangrams-restricted\client\src\main\resources\se\kth\speech\coin\tangrams\content\images\icons\goose.png"
+   inkscape:export-xdpi="96"
+   inkscape:export-ydpi="96">
   <defs
      id="defs4498" />
   <sodipodi:namedview
@@ -25,9 +28,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="2.8"
-     inkscape:cx="53.299966"
-     inkscape:cy="92.033405"
+     inkscape:zoom="1.4"
+     inkscape:cx="556.51429"
+     inkscape:cy="716.47659"
      inkscape:document-units="mm"
      inkscape:current-layer="layer-goose"
      showgrid="false"
@@ -39,7 +42,8 @@
      inkscape:window-height="1378"
      inkscape:window-x="-7"
      inkscape:window-y="0"
-     inkscape:window-maximized="0" />
+     inkscape:window-maximized="0"
+     units="px" />
   <metadata
      id="metadata4501">
     <rdf:RDF>
@@ -56,10 +60,10 @@
      inkscape:label="Goose"
      inkscape:groupmode="layer"
      id="layer-goose"
-     transform="translate(40,-130)">
+     transform="translate(229.16667,11.25)">
     <path
        style="fill:#000000;stroke-width:0"
-       d="m -15,162 -10,5 h -15 l 15,-15 h -10 v -22 l 20,20 V 130 H 0 l -10,20 15,15 h -20 z"
+       d="M 6.01852,260.89284 -88.05556,306.25 H -229.16667 L -88.05556,170.17856 h -94.07407 V -11.25 L 6.01852,170.17856 V -11.25 H 147.12963 L 53.055556,170.17856 194.16667,306.25 H 6.01852 Z"
        id="path-goose"
        inkscape:connector-curvature="0"
        sodipodi:nodetypes="ccccccccccccc" />

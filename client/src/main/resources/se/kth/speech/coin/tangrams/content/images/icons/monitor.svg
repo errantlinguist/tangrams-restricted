@@ -9,13 +9,16 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="50mm"
-   height="45mm"
-   viewBox="0 0 49.999999 45"
+   width="317.5mm"
+   height="317.5mm"
+   viewBox="0 0 317.49999 317.5"
    version="1.1"
    id="svg5068"
    inkscape:version="0.92.0 r15299"
-   sodipodi:docname="monitor.svg">
+   sodipodi:docname="monitor.svg"
+   inkscape:export-filename="D:\Users\tcshore\src\com.github.errantlinguist\tangrams-restricted\client\src\main\resources\se\kth\speech\coin\tangrams\content\images\icons\monitor.png"
+   inkscape:export-xdpi="96"
+   inkscape:export-ydpi="96">
   <defs
      id="defs5062" />
   <sodipodi:namedview
@@ -25,9 +28,9 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="3.959798"
-     inkscape:cx="28.407497"
-     inkscape:cy="116.77023"
+     inkscape:zoom="1.979899"
+     inkscape:cx="489.59887"
+     inkscape:cy="631.73086"
      inkscape:document-units="mm"
      inkscape:current-layer="layer-monitor"
      showgrid="false"
@@ -35,11 +38,11 @@
      fit-margin-left="0"
      fit-margin-right="0"
      fit-margin-bottom="0"
-     inkscape:window-width="2560"
-     inkscape:window-height="1387"
-     inkscape:window-x="-8"
-     inkscape:window-y="-8"
-     inkscape:window-maximized="1" />
+     inkscape:window-width="1278"
+     inkscape:window-height="1378"
+     inkscape:window-x="-7"
+     inkscape:window-y="0"
+     inkscape:window-maximized="0" />
   <metadata
      id="metadata5065">
     <rdf:RDF>
@@ -56,10 +59,10 @@
      inkscape:label="Monitor"
      inkscape:groupmode="layer"
      id="layer-monitor"
-     transform="translate(15,30)">
+     transform="translate(148.75,166.25)">
     <path
        style="fill:#000000;stroke-width:0"
-       d="M 0,0 H -15 V -30 H 35 V 0 H 20 l 15,15 h -50 z"
+       d="m -53.5,45.416667 h -95.25 V -166.25 h 317.5 V 45.416667 H 73.5 L 168.75,151.25 h -317.5 z"
        id="path-monitor"
        inkscape:connector-curvature="0"
        sodipodi:nodetypes="ccccccccc" />
