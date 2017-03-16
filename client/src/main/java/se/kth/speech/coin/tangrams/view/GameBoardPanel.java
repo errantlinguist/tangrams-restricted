@@ -35,7 +35,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumMap;
-import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
@@ -133,43 +132,6 @@ final class GameBoardPanel extends JPanel {
 		}
 	}
 
-	private static class SizeValidator {
-
-		private enum ValidationComment {
-			GCD_BELOW_MIN, GCD_NOT_MULTIPLE_OF_LCD, HEIGHT_BELOW_MIN, WIDTH_BELOW_MIN;
-		}
-
-		private final int lcd;
-
-		private final int minDimLength;
-
-		private final int minGcd;
-
-		private SizeValidator(final int minDimLength, final int minGcd, final int lcd) {
-			this.minDimLength = minDimLength;
-			this.minGcd = minGcd;
-			this.lcd = lcd;
-		}
-
-		private EnumSet<ValidationComment> validate(final int width, final int height, final int imgGcd) {
-			final EnumSet<ValidationComment> result = EnumSet.noneOf(ValidationComment.class);
-			if (width < minDimLength) {
-				result.add(ValidationComment.WIDTH_BELOW_MIN);
-			}
-			if (height < minDimLength) {
-				result.add(ValidationComment.HEIGHT_BELOW_MIN);
-			}
-			if (imgGcd < minGcd) {
-				result.add(ValidationComment.GCD_BELOW_MIN);
-			}
-			if (imgGcd % lcd != 0) {
-				result.add(ValidationComment.GCD_NOT_MULTIPLE_OF_LCD);
-			}
-			return result;
-		}
-
-	}
-
 	private static final BiFunction<Image, GameBoardPanel, Image> DEFAULT_POST_COLORING_IMG_TRANSFORMER = new BiFunction<Image, GameBoardPanel, Image>() {
 
 		@Override
@@ -246,29 +208,6 @@ final class GameBoardPanel extends JPanel {
 		// "x" is matrix rows, thus top-to-bottom
 		final int startY = rowHeight * region.getXLowerBound();
 		return new int[] { startX, startY };
-	}
-
-	private static String createImageInfoTable(
-			final Collection<? extends Entry<?, ? extends Entry<ImageViewInfo.RasterizationInfo, ?>>> namedImgValData) {
-		final Stream<String> colNames = Stream.of("PATH", "WIDTH", "HEIGHT", "GCD", "COMMENT");
-		final String header = colNames.collect(TABLE_ROW_CELL_JOINER);
-		final StringBuilder sb = new StringBuilder(header.length() + 16 * namedImgValData.size());
-		sb.append(header);
-		for (final Entry<?, ? extends Entry<ImageViewInfo.RasterizationInfo, ?>> namedImgValDatumComments : namedImgValData) {
-			sb.append(TABLE_STRING_REPR_ROW_DELIMITER);
-			sb.append(namedImgValDatumComments.getKey());
-			sb.append(TABLE_STRING_REPR_COL_DELIMITER);
-			final Entry<ImageViewInfo.RasterizationInfo, ?> imgValDatumComments = namedImgValDatumComments.getValue();
-			final ImageViewInfo.RasterizationInfo imgVisualizationInfoDatum = imgValDatumComments.getKey();
-			sb.append(imgVisualizationInfoDatum.getWidth());
-			sb.append(TABLE_STRING_REPR_COL_DELIMITER);
-			sb.append(imgVisualizationInfoDatum.getHeight());
-			sb.append(TABLE_STRING_REPR_COL_DELIMITER);
-			sb.append(imgVisualizationInfoDatum.getGcd());
-			sb.append(TABLE_STRING_REPR_COL_DELIMITER);
-			sb.append(imgValDatumComments.getValue());
-		}
-		return sb.toString();
 	}
 
 	private static Map<ImageSize, Integer> createImageSizeFactorMap() {
@@ -564,9 +503,7 @@ final class GameBoardPanel extends JPanel {
 		final Function<ImageViewInfo, Integer> incrementingPieceIdGetter = piece -> pieceIds.computeIfAbsent(piece,
 				k -> pieceIds.size());
 		// The minimum accepted length of the shortest dimension for an image
-		final int minDimLength = 300;
-		final SizeValidator validator = new SizeValidator(minDimLength, 50, 50);
-		pieceImgs = createImageViewInfoMap(imgVisualizationInfoData, validator, uniqueImgResourceCount);
+		pieceImgs = createImageViewInfoMap(imgVisualizationInfoData, uniqueImgResourceCount);
 		// http://stackoverflow.com/a/1936582/1391325
 		final Dimension screenSize = getToolkit().getScreenSize();
 		// final Dimension maxSize = Dimensions.createScaledDimension(boardSize,
@@ -639,15 +576,12 @@ final class GameBoardPanel extends JPanel {
 	}
 
 	private LinkedHashMap<ImageViewInfo, Image> createImageViewInfoMap(
-			final Collection<ImageVisualizationInfo> imgVisualizationInfoData, final SizeValidator validator,
-			final int uniqueImgResourceCount) {
+			final Collection<ImageVisualizationInfo> imgVisualizationInfoData, final int uniqueImgResourceCount) {
 		// Use linked map in order to preserve iteration order in provided
 		// sequence
 		final LinkedHashMap<ImageViewInfo, Image> result = Maps
 				.newLinkedHashMapWithExpectedSize(imgVisualizationInfoData.size());
 
-		final Map<URL, Entry<ImageViewInfo.RasterizationInfo, Set<SizeValidator.ValidationComment>>> badImgs = Maps
-				.newHashMapWithExpectedSize(0);
 		final Toolkit toolkit = getToolkit();
 		final Map<URL, BufferedImage> resourceImgs = Maps.newHashMapWithExpectedSize(uniqueImgResourceCount);
 		for (final ImageVisualizationInfo imgVisualizationInfoDatum : imgVisualizationInfoData) {
@@ -666,31 +600,16 @@ final class GameBoardPanel extends JPanel {
 				final ImageViewInfo.RasterizationInfo imgRasterizationInfo = new ImageViewInfo.RasterizationInfo(
 						widthGetter, heightGetter);
 				{
-					// Validate image
-					final Set<SizeValidator.ValidationComment> validationComments = validator.validate(
-							widthGetter.getAsInt(), heightGetter.getAsInt(),
-							MathDivisors.gcd(widthGetter.getAsInt(), heightGetter.getAsInt()));
-					if (validationComments.isEmpty()) {
-						final Image coloredImg = toolkit.createImage(new FilteredImageSource(initialImg.getSource(),
-								new ColorReplacementImageFilter(imgVisualizationInfoDatum.getColor())));
-						final ImageViewInfo imgInfo = new ImageViewInfo(imgVisualizationInfoDatum,
-								imgRasterizationInfo);
-						final Image transformedImg = postColoringImgTransformer.apply(coloredImg, this);
-						final Image oldImg = result.put(imgInfo, transformedImg);
-						assert oldImg == null : String.format("Key already found in map: %s", imgInfo);
-					} else {
-						badImgs.put(imgResourceLoc, new MutablePair<>(imgRasterizationInfo, validationComments));
-					}
+					final Image coloredImg = toolkit.createImage(new FilteredImageSource(initialImg.getSource(),
+							new ColorReplacementImageFilter(imgVisualizationInfoDatum.getColor())));
+					final ImageViewInfo imgInfo = new ImageViewInfo(imgVisualizationInfoDatum, imgRasterizationInfo);
+					final Image transformedImg = postColoringImgTransformer.apply(coloredImg, this);
+					final Image oldImg = result.put(imgInfo, transformedImg);
+					assert oldImg == null : String.format("Key already found in map: %s", imgInfo);
 				}
 			}
 		}
-
-		if (badImgs.isEmpty()) {
-			return result;
-		} else {
-			throw new IllegalArgumentException("One or more images failed validation:" + System.lineSeparator()
-					+ createImageInfoTable(badImgs.entrySet()));
-		}
+		return result;
 	}
 
 	private Map<ImageViewInfo, SpatialMap.Region> createRandomValidMoveTargetMap(final SpatialMap.Region occupiedRegion,
