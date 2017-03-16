@@ -41,7 +41,7 @@ import se.kth.speech.SpatialMatrix;
  * @since 16 Mar 2017
  *
  */
-public class RandomMatrixPositionFillerTest {
+public final class RandomMatrixPositionFillerTest {
 
 	private static final List<int[]> TEST_PIECES;
 
