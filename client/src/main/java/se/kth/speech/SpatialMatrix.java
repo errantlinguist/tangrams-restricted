@@ -277,10 +277,10 @@ public final class SpatialMatrix<I, E> {
 	private void setPositionValues(final SpatialMap.Region region, final I elementId) {
 		LOGGER.debug("Setting {} to value \"{}\".", region, elementId);
 		final ListIterator<List<I>> rowIter = positionMatrix.rowIterator(region.getXLowerBound());
-		for (int rowIdx = rowIter.nextIndex(); rowIdx < region.getXUpperBound(); rowIdx++) {
+		for (int rowIdx = rowIter.nextIndex(); rowIdx <= region.getXUpperBound(); rowIdx++) {
 			final List<I> row = rowIter.next();
 			final ListIterator<I> rowCellIter = row.listIterator(region.getYLowerBound());
-			for (int colIdx = rowCellIter.nextIndex(); colIdx < region.getYUpperBound(); colIdx++) {
+			for (int colIdx = rowCellIter.nextIndex(); colIdx <= region.getYUpperBound(); colIdx++) {
 				rowCellIter.next();
 				rowCellIter.set(elementId);
 			}
