@@ -19,12 +19,12 @@ package se.kth.speech;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.IntFunction;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -45,6 +45,14 @@ import com.google.common.collect.Table;
 public final class SpatialMatrix<I, E> {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SpatialMatrix.class);
+
+	private static int calculateSubRegionCount(final int x, final int xLength, final int y, final int yLength) {
+		// TODO: calculate number of sub-regions of given size and pass it to
+		// factory function
+		// final int estimatedSize = IntArrays.product(dims)
+		// (rows-xLength) * (cols-yLength)
+		return (x - xLength) * (y - yLength);
+	}
 
 	private transient final Function<? super E, ? extends I> elementIdGetter;
 
@@ -74,12 +82,13 @@ public final class SpatialMatrix<I, E> {
 		setPositionValues(occupiedRegion, null);
 	}
 
-	public Table<Integer, Integer, Set<SpatialMap.Region>> createSizeIndexedRegionPowerSet() {
+	public <C extends Collection<? super SpatialMap.Region>> Table<Integer, Integer, C> createSizeIndexedRegionPowerSet(
+			final IntFunction<? extends C> setFactory) {
 		final int dims[] = positionMatrix.getDimensions();
 		LOGGER.debug("Dims: {}", dims);
 		final int x = dims[0];
 		final int y = dims[1];
-		final Table<Integer, Integer, Set<SpatialMap.Region>> result = ArrayTable.create(
+		final Table<Integer, Integer, C> result = ArrayTable.create(
 				IntStream.rangeClosed(1, x).boxed().collect(Collectors.toCollection(() -> new ArrayList<>(x))),
 				IntStream.rangeClosed(1, y).boxed().collect(Collectors.toCollection(() -> new ArrayList<>(y))));
 		for (int xLowerBound = 0; xLowerBound < x; ++xLowerBound) {
@@ -88,12 +97,11 @@ public final class SpatialMatrix<I, E> {
 				for (int yLowerBound = 0; yLowerBound < y; ++yLowerBound) {
 					for (int yUpperBound = yLowerBound; yUpperBound < y; ++yUpperBound) {
 						final int yLength = yUpperBound - yLowerBound + 1;
-						Set<SpatialMap.Region> regions = result.get(xLength, yLength);
+						C regions = result.get(xLength, yLength);
 						if (regions == null) {
-							// TODO: set capacity
-							// Linked in order to preserve iteration order
-							regions = new LinkedHashSet<>();
-							LOGGER.debug("putting {}*{}", xLength, yLength);
+							final int setSize = calculateSubRegionCount(xLength, yLength);
+							regions = setFactory.apply(setSize);
+							LOGGER.debug("Adding new set for size {}*{}", xLength, yLength);
 							result.put(xLength, yLength, regions);
 						}
 						final SpatialMap.Region region = getRegion(xLowerBound, xUpperBound, yLowerBound, yUpperBound);
@@ -272,6 +280,11 @@ public final class SpatialMatrix<I, E> {
 		assert !elementPlacements.isOccupied(target);
 		setPositionValues(target, elementId);
 		elementPlacements.put(element, target);
+	}
+
+	private int calculateSubRegionCount(final int xLength, final int yLength) {
+		final int[] dims = positionMatrix.getDimensions();
+		return calculateSubRegionCount(dims[0], xLength, dims[1], yLength);
 	}
 
 	private void setPositionValues(final SpatialMap.Region region, final I elementId) {

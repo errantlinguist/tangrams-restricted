@@ -19,9 +19,11 @@ package se.kth.speech.coin.tangrams.view;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.Random;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.IntFunction;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,6 +44,12 @@ final class RandomMatrixPositionFiller<I, E> implements Function<Collection<? ex
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(RandomMatrixPositionFiller.class);
 
+	/**
+	 * <strong>NOTE:</strong> This creates a {@link LinkedHashSet} in order to
+	 * ensure that iteration order is stable across invokations.
+	 */
+	private static final IntFunction<LinkedHashSet<SpatialMap.Region>> SUB_REGION_SET_FACTORY = LinkedHashSet::new;
+
 	private final Function<? super E, I> pieceIdGetter;
 
 	private final Function<? super E, int[]> piecePosMatrixSizeFactory;
@@ -61,8 +69,8 @@ final class RandomMatrixPositionFiller<I, E> implements Function<Collection<? ex
 	@Override
 	public Set<I> apply(final Collection<? extends E> pieces) {
 		LOGGER.info("Trying to place {} pieces.", pieces.size());
-		final Table<Integer, Integer, Set<SpatialMap.Region>> subRegionsToTry = posMatrix
-				.createSizeIndexedRegionPowerSet();
+		final Table<Integer, Integer, LinkedHashSet<SpatialMap.Region>> subRegionsToTry = posMatrix
+				.createSizeIndexedRegionPowerSet(SUB_REGION_SET_FACTORY);
 		final Set<I> result = Sets.newHashSetWithExpectedSize(pieces.size());
 		{
 			// Randomly place each image in the position matrix
