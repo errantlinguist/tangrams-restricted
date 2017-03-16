@@ -49,6 +49,10 @@ public final class MinMaxValueTrackingMap<K, V> implements Map<K, V> {
 
 	private transient V minValue;
 
+	private transient K maxKey;
+
+	private transient K minKey;
+
 	private MinMaxValueTrackingMap(final Map<K, V> decorated, final Comparator<? super V> comp) {
 		this.decorated = decorated;
 		this.nullsLastComp = Comparator.nullsLast(comp);
@@ -56,7 +60,7 @@ public final class MinMaxValueTrackingMap<K, V> implements Map<K, V> {
 
 		minValue = null;
 		maxValue = null;
-		updateExtrema(decorated.values());
+		updateExtrema(decorated.entrySet());
 	}
 
 	/*
@@ -138,10 +142,24 @@ public final class MinMaxValueTrackingMap<K, V> implements Map<K, V> {
 	}
 
 	/**
+	 * @return the maxKey
+	 */
+	public K getMaxKey() {
+		return maxKey;
+	}
+
+	/**
 	 * @return the maxValue
 	 */
 	public V getMaxValue() {
 		return maxValue;
+	}
+
+	/**
+	 * @return the minKey
+	 */
+	public K getMinKey() {
+		return minKey;
 	}
 
 	/**
@@ -192,7 +210,7 @@ public final class MinMaxValueTrackingMap<K, V> implements Map<K, V> {
 	@Override
 	public V put(final K key, final V value) {
 		final V result = decorated.put(key, value);
-		updateExtrema(value);
+		updateExtrema(key, value);
 		return result;
 	}
 
@@ -204,7 +222,7 @@ public final class MinMaxValueTrackingMap<K, V> implements Map<K, V> {
 	@Override
 	public void putAll(final Map<? extends K, ? extends V> m) {
 		decorated.putAll(m);
-		updateExtrema(m.values());
+		updateExtrema(m.entrySet());
 	}
 
 	/*
@@ -242,7 +260,7 @@ public final class MinMaxValueTrackingMap<K, V> implements Map<K, V> {
 
 	/*
 	 * (non-Javadoc)
-	 *
+	 * 
 	 * @see java.lang.Object#toString()
 	 */
 	@Override
@@ -250,8 +268,12 @@ public final class MinMaxValueTrackingMap<K, V> implements Map<K, V> {
 		final StringBuilder builder = new StringBuilder();
 		builder.append("MinMaxValueTrackingMap [decorated=");
 		builder.append(decorated);
+		builder.append(", minKey=");
+		builder.append(minKey);
 		builder.append(", minValue=");
 		builder.append(minValue);
+		builder.append(", maxKey=");
+		builder.append(maxKey);
 		builder.append(", maxValue=");
 		builder.append(maxValue);
 		builder.append("]");
@@ -269,50 +291,64 @@ public final class MinMaxValueTrackingMap<K, V> implements Map<K, V> {
 	}
 
 	private void updateExtrema() {
-		updateExtrema(values());
+		updateExtrema(entrySet());
 	}
 
-	private void updateExtrema(final Iterable<? extends V> values) {
-		for (final V value : values) {
-			updateExtrema(value);
+	private void updateExtrema(final Entry<? extends K, ? extends V> entry) {
+		updateExtrema(entry.getKey(), entry.getValue());
+	}
+
+	private void updateExtrema(final Iterable<? extends Entry<? extends K, ? extends V>> entries) {
+		for (final Entry<? extends K, ? extends V> entry : entries) {
+			updateExtrema(entry);
 		}
 	}
 
-	private void updateExtrema(final V value) {
-		updateMin(value);
-		updateMax(value);
+	private void updateExtrema(final K key, final V value) {
+		updateMin(key, value);
+		updateMax(key, value);
 	}
 
 	private void updateMax() {
-		updateMax(values());
+		updateMax(entrySet());
 	}
 
-	private void updateMax(final Iterable<? extends V> values) {
-		for (final V value : values) {
-			updateMax(value);
+	private void updateMax(final Entry<? extends K, ? extends V> entry) {
+		updateMax(entry.getKey(), entry.getValue());
+	}
+
+	private void updateMax(final Iterable<? extends Entry<? extends K, ? extends V>> entries) {
+		for (final Entry<? extends K, ? extends V> entry : entries) {
+			updateMax(entry);
 		}
 	}
 
-	private void updateMax(final V value) {
+	private void updateMax(final K key, final V value) {
 		final int cmp = nullsFirstComp.compare(maxValue, value);
 		if (cmp < 0) {
+			maxKey = key;
 			maxValue = value;
 		}
 	}
 
 	private void updateMin() {
-		updateMin(values());
+		updateMin(entrySet());
 	}
 
-	private void updateMin(final Iterable<? extends V> values) {
-		for (final V value : values) {
-			updateMin(value);
+	private void updateMin(final Entry<? extends K, ? extends V> entry) {
+		updateMin(entry.getKey(), entry.getValue());
+	}
+
+	private void updateMin(final Iterable<? extends Entry<? extends K, ? extends V>> entries) {
+		for (final Entry<? extends K, ? extends V> entry : entries) {
+			updateMin(entry);
 		}
 	}
 
-	private void updateMin(final V value) {
+	private void updateMin(final K key, final V value) {
 		final int cmp = nullsLastComp.compare(value, minValue);
 		if (cmp < 0) {
+			minKey = key;
 			minValue = value;
 		}
 	}
