@@ -282,11 +282,6 @@ public final class SpatialMatrix<I, E> {
 		elementPlacements.put(element, target);
 	}
 
-	private int calculateSubRegionCount(final int xLength, final int yLength) {
-		final int[] dims = positionMatrix.getDimensions();
-		return calculateSubRegionCount(dims[0], xLength, dims[1], yLength);
-	}
-
 	private void setPositionValues(final SpatialMap.Region region, final I elementId) {
 		LOGGER.debug("Setting {} to value \"{}\".", region, elementId);
 		final ListIterator<List<I>> rowIter = positionMatrix.rowIterator(region.getXLowerBound());
@@ -298,6 +293,11 @@ public final class SpatialMatrix<I, E> {
 				rowCellIter.set(elementId);
 			}
 		}
+	}
+
+	int calculateSubRegionCount(final int xLength, final int yLength) {
+		final int[] dims = positionMatrix.getDimensions();
+		return calculateSubRegionCount(dims[0], xLength, dims[1], yLength);
 	}
 
 }

@@ -77,6 +77,29 @@ public final class SpatialMatrixTest {
 
 	/**
 	 * Test method for
+	 * {@link se.kth.speech.SpatialMatrix#calculateSubRegionCount()}.
+	 */
+	@Test
+	public final void testCalculateSubRegionCount() {
+		final SpatialMap<int[]> piecePositions = new SpatialMap<>(TEST_PIECES.size());
+		final int[] gridSize = new int[] { 10, 11 };
+		final Integer[] posMatrixBackingArray = new Integer[IntArrays.product(gridSize)];
+		final Matrix<Integer> backingPosMatrix = new Matrix<>(posMatrixBackingArray, gridSize[1]);
+
+		final SpatialMatrix<Integer, int[]> matrix = new SpatialMatrix<>(backingPosMatrix, TEST_PIECE_IDS::get,
+				piecePositions);
+		final Table<Integer, Integer, Collection<SpatialMap.Region>> regionPowerSet = matrix
+				.createSizeIndexedRegionPowerSet(ArrayList::new);
+		regionPowerSet.rowMap().forEach((xLength, yLengths) -> {
+			yLengths.forEach((yLength, subRegionSet) -> {
+				final int expectedCount = matrix.calculateSubRegionCount(xLength, yLength);
+				Assert.assertEquals(expectedCount, subRegionSet.size());
+			});
+		});
+	}
+
+	/**
+	 * Test method for
 	 * {@link se.kth.speech.SpatialMatrix#createSizeIndexedRegionPowerSet()}.
 	 */
 	@Test
@@ -91,7 +114,6 @@ public final class SpatialMatrixTest {
 		final int[] dims = matrix.getDimensions();
 		final int x = dims[0];
 		final int y = dims[1];
-		final SpatialMap.Region totalRegion = matrix.getRegion(0, x, 0, y);
 		final Table<Integer, Integer, Collection<SpatialMap.Region>> regionPowerSet = matrix
 				.createSizeIndexedRegionPowerSet(ArrayList::new);
 		final Set<Integer> rows = regionPowerSet.rowKeySet();
@@ -103,6 +125,7 @@ public final class SpatialMatrixTest {
 		regionPowerSet.values().stream().forEach(size -> {
 			Assert.assertFalse(size.isEmpty());
 		});
+		final SpatialMap.Region totalRegion = matrix.getRegion(0, x, 0, y);
 		regionPowerSet.values().stream().flatMap(Collection::stream).forEach(region -> {
 			Assert.assertTrue(String.format("%s not subsumed by total %s.", region, totalRegion),
 					totalRegion.subsumes(region));
