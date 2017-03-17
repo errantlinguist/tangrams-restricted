@@ -291,12 +291,15 @@ final class GameBoardPanelFactory implements Function<Collection<ImageVisualizat
 
 	private int uniqueImgResourceCount = -1;
 
+	private final boolean allowFailedPlacements;
+
 	/**
 	 *
 	 */
-	GameBoardPanelFactory(final Random rnd, final double occupiedGridArea) {
+	GameBoardPanelFactory(final Random rnd, final double occupiedGridArea, final boolean allowFailedPlacements) {
 		this.rnd = rnd;
 		this.occupiedGridArea = occupiedGridArea;
+		this.allowFailedPlacements = allowFailedPlacements;
 		postColoringImgTransformer = DEFAULT_POST_COLORING_IMG_TRANSFORMER;
 	}
 
@@ -399,7 +402,7 @@ final class GameBoardPanelFactory implements Function<Collection<ImageVisualizat
 					"Grid size of %s is not enough to hold %d pieces with the given occupied-space ratio of %d.",
 					Arrays.toString(gridSize), pieces.size(), occupiedGridArea));
 		} else {
-			String matrixStrRepr = new MatrixStringReprFactory().apply(posMatrix.getPositionMatrix());
+			final String matrixStrRepr = new MatrixStringReprFactory().apply(posMatrix.getPositionMatrix());
 			System.out.println("PIECE PLACEMENTS" + System.lineSeparator() + matrixStrRepr);
 		}
 
@@ -411,7 +414,7 @@ final class GameBoardPanelFactory implements Function<Collection<ImageVisualizat
 		final Function<ImageViewInfo, Integer> incrementingPieceIdGetter = piece -> pieceIds.computeIfAbsent(piece,
 				k -> pieceIds.size());
 		final RandomMatrixPositionFiller<Integer, ImageViewInfo> matrixFiller = new RandomMatrixPositionFiller<>(
-				posMatrix, incrementingPieceIdGetter, rnd, PIECE_GRID_SIZE_FACTORY);
+				posMatrix, incrementingPieceIdGetter, rnd, PIECE_GRID_SIZE_FACTORY, allowFailedPlacements);
 		matrixFiller.apply(pieces);
 	}
 

@@ -276,7 +276,7 @@ public final class GameViewFrameDemo implements Runnable {
 		LOGGER.info("Image size usage counts: {}", imgDataFactory.getSizeUsageCounts());
 		LOGGER.info("Image color usage counts: {}", imgDataFactory.getColorUsageCounts());
 		LOGGER.info("Total used image count: {}", imgVisualizationInfoDataList.size());
-		final GameBoardPanelFactory factory = new GameBoardPanelFactory(rnd, occupiedGridArea);
+		final GameBoardPanelFactory factory = new GameBoardPanelFactory(rnd, occupiedGridArea, allowFailedPlacements);
 		factory.setGridSize(gridDims);
 		final int uniqueImgResourceCount = imgDataFactory.getImgResourceUsageCounts().keySet().size();
 		factory.setUniqueImgResourceCount(uniqueImgResourceCount);

@@ -58,12 +58,16 @@ final class RandomMatrixPositionFiller<I, E> implements Function<Collection<? ex
 
 	private final Random rnd;
 
+	private final boolean allowFailedPlacements;
+
 	RandomMatrixPositionFiller(final SpatialMatrix<? super I, E> posMatrix, final Function<? super E, I> pieceIdGetter,
-			final Random rnd, final Function<? super E, int[]> piecePosMatrixSizeFactory) {
+			final Random rnd, final Function<? super E, int[]> piecePosMatrixSizeFactory,
+			final boolean allowFailedPlacements) {
 		this.posMatrix = posMatrix;
 		this.pieceIdGetter = pieceIdGetter;
 		this.rnd = rnd;
 		this.piecePosMatrixSizeFactory = piecePosMatrixSizeFactory;
+		this.allowFailedPlacements = allowFailedPlacements;
 	}
 
 	@Override
@@ -116,12 +120,16 @@ final class RandomMatrixPositionFiller<I, E> implements Function<Collection<? ex
 			} while (result == null && !allFittingSubRegions.isEmpty());
 
 			if (result == null) {
-				throw new IllegalStateException(String.format(
+				final String msg = String.format(
 						"Could not place piece \"%s\" (with ID \"%s\") because all regions of size %s are already occupied.",
-						piece, pieceId, Arrays.toString(piecePosMatrixSize)));
-			} else {
-				return result;
+						piece, pieceId, Arrays.toString(piecePosMatrixSize));
+				if (allowFailedPlacements) {
+					LOGGER.warn(msg);
+				} else {
+					throw new IllegalArgumentException(msg);
+				}
 			}
+			return result;
 		}
 	}
 
