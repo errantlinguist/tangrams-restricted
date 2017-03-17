@@ -71,18 +71,6 @@ public final class GameViewFrameDemo implements Runnable {
 			}
 
 		},
-		MAX_PLACEMENT_RETRIES("r") {
-
-			@Override
-			public Option get() {
-				return Option.builder(optName).longOpt("max-placement-retries")
-						.desc("The number of times to re-try placing any image which could not be placed on the board the first time.")
-						.hasArg().argName("count")
-						// See http://stackoverflow.com/a/5955893/1391325
-						.type(Number.class).build();
-			}
-
-		},
 		IMG_PLACEMENT_COUNT("c") {
 
 			@Override
@@ -124,8 +112,6 @@ public final class GameViewFrameDemo implements Runnable {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(GameViewFrameDemo.class);
 
-	private static final int DEFAULT_MAX_PLACEMENT_RETRIES = 3;
-
 	private static final double DEFAULT_OCCUPIED_GRID_AREA = 0.67;
 
 	private static final int DEFAULT_IMG_PLACEMENT_COUNT = 20;
@@ -139,12 +125,11 @@ public final class GameViewFrameDemo implements Runnable {
 				final long gameId = ((Number) cl.getParsedOptionValue(Parameter.GAME_ID.optName)).longValue();
 				final int imgPlacementCount = parseImgPlacementCount(cl);
 				final double occupiedGridArea = parseOccupiedGridArea(cl);
-				final int maxPlacementRetries = parseMaxPlacementRetries(cl);
 				final boolean allowFailedPlacements = cl.hasOption(Parameter.ALLOW_FAILED_PLACEMENTS.optName);
 				LOGGER.info("Creating view for game \"{}\".", gameId);
 				final Random rnd = new Random(gameId);
 				final GameViewFrameDemo testInstance = new GameViewFrameDemo(rnd, imgPlacementCount, occupiedGridArea,
-						maxPlacementRetries, allowFailedPlacements);
+						allowFailedPlacements);
 				EventQueue.invokeLater(testInstance);
 			}
 		} catch (final ParseException e) {
@@ -175,19 +160,6 @@ public final class GameViewFrameDemo implements Runnable {
 		return result;
 	}
 
-	private static int parseMaxPlacementRetries(final CommandLine cl) throws ParseException {
-		final int result;
-		final Number parsedVal = (Number) cl.getParsedOptionValue(Parameter.MAX_PLACEMENT_RETRIES.optName);
-		if (parsedVal == null) {
-			result = DEFAULT_MAX_PLACEMENT_RETRIES;
-			LOGGER.info("No max placement retry count supplied; Using default ({}).", result);
-		} else {
-			result = parsedVal.intValue();
-			LOGGER.info("Set max placement retry count to {}.", result);
-		}
-		return result;
-	}
-
 	private static double parseOccupiedGridArea(final CommandLine cl) throws ParseException {
 		final double result;
 		final Number parsedVal = (Number) cl.getParsedOptionValue(Parameter.OCCUPIED_GRID_AREA.optName);
@@ -211,8 +183,6 @@ public final class GameViewFrameDemo implements Runnable {
 
 	private final boolean allowFailedPlacements;
 
-	private final int maxPlacementRetriesPerImg;
-
 	private final Random rnd;
 
 	private final int imgPlacementCount;
@@ -220,11 +190,10 @@ public final class GameViewFrameDemo implements Runnable {
 	private final double occupiedGridArea;
 
 	public GameViewFrameDemo(final Random rnd, final int imgPlacementCount, final double occupiedGridArea,
-			final int maxPlacementRetriesPerImg, final boolean allowFailedPlacements) {
+			final boolean allowFailedPlacements) {
 		this.rnd = rnd;
 		this.imgPlacementCount = imgPlacementCount;
 		this.occupiedGridArea = occupiedGridArea;
-		this.maxPlacementRetriesPerImg = maxPlacementRetriesPerImg;
 		this.allowFailedPlacements = allowFailedPlacements;
 	}
 
