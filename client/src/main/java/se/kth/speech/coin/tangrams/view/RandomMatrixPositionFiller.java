@@ -32,8 +32,8 @@ import com.google.common.collect.Sets;
 import com.google.common.collect.Table;
 
 import se.kth.speech.RandomCollections;
-import se.kth.speech.SpatialRegion;
 import se.kth.speech.SpatialMatrix;
+import se.kth.speech.SpatialRegion;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -95,28 +95,33 @@ final class RandomMatrixPositionFiller<I, E> implements Function<Collection<? ex
 		final int[] piecePosMatrixSize = piecePosMatrixSizeFactory.apply(piece);
 		final Collection<SpatialRegion> allFittingSubRegions = subRegionsToTry.get(piecePosMatrixSize[0],
 				piecePosMatrixSize[1]);
-
-		SpatialRegion result = null;
-		do {
-			// Randomly pick a space in the matrix
-			result = RandomCollections.getRandomElement(allFittingSubRegions, rnd);
-			LOGGER.debug("Result size: {}", result.getDimensions());
-			if (posMatrix.isOccupied(result)) {
-				LOGGER.debug("Region {} is already occupied.", result);
-				allFittingSubRegions.remove(result);
-				result = null;
-			} else {
-				posMatrix.placeElement(piece, result);
-				assert posMatrix.isOccupied(result);
-			}
-		} while (result == null && !allFittingSubRegions.isEmpty());
-
-		if (result == null) {
-			throw new IllegalStateException(String.format(
-					"Could not place piece \"%s\" (with ID \"%s\") because all regions of size %s are already occupied.",
-					piece, pieceId, Arrays.toString(piecePosMatrixSize)));
+		if (allFittingSubRegions == null) {
+			throw new IllegalArgumentException(String.format(
+					"Found no subregions of matrix of dimensions %s of sufficient size to hold piece of dimenions %s.",
+					Arrays.toString(posMatrix.getDimensions()), Arrays.toString(piecePosMatrixSize)));
 		} else {
-			return result;
+			SpatialRegion result = null;
+			do {
+				// Randomly pick a space in the matrix
+				result = RandomCollections.getRandomElement(allFittingSubRegions, rnd);
+				LOGGER.debug("Result size: {}", result.getDimensions());
+				if (posMatrix.isOccupied(result)) {
+					LOGGER.debug("Region {} is already occupied.", result);
+					allFittingSubRegions.remove(result);
+					result = null;
+				} else {
+					posMatrix.placeElement(piece, result);
+					assert posMatrix.isOccupied(result);
+				}
+			} while (result == null && !allFittingSubRegions.isEmpty());
+
+			if (result == null) {
+				throw new IllegalStateException(String.format(
+						"Could not place piece \"%s\" (with ID \"%s\") because all regions of size %s are already occupied.",
+						piece, pieceId, Arrays.toString(piecePosMatrixSize)));
+			} else {
+				return result;
+			}
 		}
 	}
 
