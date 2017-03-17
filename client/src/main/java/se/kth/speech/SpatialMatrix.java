@@ -289,9 +289,7 @@ public final class SpatialMatrix<I, E> {
 	@Override
 	public String toString() {
 		final StringBuilder builder = new StringBuilder();
-		builder.append("SpatialMatrix [elementPlacements=");
-		builder.append(elementPlacements);
-		builder.append(", positionMatrix=");
+		builder.append("SpatialMatrix [positionMatrix=");
 		builder.append(positionMatrix);
 		builder.append("]");
 		return builder.toString();
