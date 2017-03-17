@@ -180,6 +180,7 @@ final class GameBoardPanel extends JPanel {
 
 	private static int[] createComponentCoordSizeArray(final SpatialMap.Region region, final int colWidth,
 			final int rowHeight) {
+		// "y" is matrix columns, thus left-right
 		final int regionGridColCount = region.getLengthY();
 		LOGGER.debug("Region occupies {} grid column(s).", regionGridColCount);
 		final int width = colWidth * regionGridColCount;
