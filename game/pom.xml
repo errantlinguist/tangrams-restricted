@@ -25,5 +25,19 @@
 				<artifactId>maven-jar-plugin</artifactId>
 			</plugin>
 		</plugins>
+
+		<resources>
+			<resource>
+				<directory>src/main/resources</directory>
+				<filtering>true</filtering>
+			</resource>
+			<resource>
+				<directory />
+				<filtering>true</filtering>
+				<includes>
+					<include>**/project.properties</include>
+				</includes>
+			</resource>
+		</resources>
 	</build>
 </project>
