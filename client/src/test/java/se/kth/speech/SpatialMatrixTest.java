@@ -80,7 +80,7 @@ public final class SpatialMatrixTest {
 
 	private static void testGetCellsRegion(final int xLowerBound, final int xUpperBound, final int yLowerBound,
 			final int yUpperBound) {
-		final int[] gridDims = new int[]{xUpperBound, yUpperBound};
+		final int[] gridDims = new int[] { xUpperBound, yUpperBound };
 		final SpatialMatrixConstructionData<Object> matrixConstData = new SpatialMatrixConstructionData<>(gridDims, 1);
 		final SpatialMatrix<Integer, Object> matrix = matrixConstData.matrix;
 		final String piece = "testpiece";
@@ -96,12 +96,13 @@ public final class SpatialMatrixTest {
 
 	private static <E> void testPlaceElement(final E piece, final int xLowerBound, final int xUpperBound,
 			final int yLowerBound, final int yUpperBound) {
-		final SpatialMatrixConstructionData<Object> matrixConstData = new SpatialMatrixConstructionData<>(
-				SpatialRegion.getDimensions(xLowerBound, xUpperBound, yLowerBound, yUpperBound), 1);
+		final int[] gridDims = SpatialRegion.getDimensions(xLowerBound, xUpperBound, yLowerBound, yUpperBound);
+		final SpatialMatrixConstructionData<Object> matrixConstData = new SpatialMatrixConstructionData<>(gridDims, 1);
 		final SpatialMatrix<Integer, Object> matrix = matrixConstData.matrix;
 		final Map<Object, Integer> pieceIds = matrixConstData.pieceIds;
 
-		final SpatialRegion r = matrix.getRegion(xLowerBound, yUpperBound, yLowerBound, yUpperBound);
+		final SpatialRegion r = matrix.getRegion(xLowerBound, xUpperBound, yLowerBound, yUpperBound);
+		Assert.assertArrayEquals(gridDims, r.getDimensions());
 		matrix.placeElement(piece, r);
 		final Integer pieceId = pieceIds.get(piece);
 		Assert.assertNotNull(pieceId);
@@ -113,8 +114,7 @@ public final class SpatialMatrixTest {
 		Assert.assertNotNull(pieceOccupiedCellCount);
 		final int regionArea = IntArrays.product(r.getDimensions());
 		Assert.assertEquals(regionArea, pieceOccupiedCellCount.intValue());
-		final Integer nullCount = cellValueCounts.get(null);
-		Assert.assertNotNull(nullCount);
+		final Integer nullCount = cellValueCounts.getOrDefault(null, 0);
 		final int totalArea = IntArrays.product(matrix.getDimensions());
 		Assert.assertEquals(totalArea - pieceOccupiedCellCount, nullCount.intValue());
 	}
