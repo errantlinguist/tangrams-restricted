@@ -47,10 +47,6 @@ public final class SpatialMatrix<I, E> {
 	private static final Logger LOGGER = LoggerFactory.getLogger(SpatialMatrix.class);
 
 	private static int calculateSubRegionCount(final int x, final int xLength, final int y, final int yLength) {
-		// TODO: calculate number of sub-regions of given size and pass it to
-		// factory function
-		// final int estimatedSize = IntArrays.product(dims)
-		// (rows-xLength) * (cols-yLength)
 		return (x - xLength + 1) * (y - yLength + 1);
 	}
 
