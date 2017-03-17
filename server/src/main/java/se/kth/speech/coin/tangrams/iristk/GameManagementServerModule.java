@@ -72,10 +72,10 @@ public final class GameManagementServerModule extends IrisModule {
 
 			final Game<Integer> game = gameState.getFirst();
 			gameDesc.setModelDescription(new ModelDescription(game.getRemoteController().getModel()));
-			final List<Integer> winningConfig = game.getWinningModel().getCoordinateOccupants().getValues();
-			gameDesc.setWinningConfiguration(
-					winningConfig.stream().map(Objects::toString).collect(Collectors.toList()));
-			gameDesc.setSeed(game.getSeed());
+//			final List<Integer> winningConfig = game.getWinningModel().getCoordinateOccupants().getValues();
+//			gameDesc.setWinningConfiguration(
+//					winningConfig.stream().map(Objects::toString).collect(Collectors.toList()));
+//			gameDesc.setSeed(game.getSeed());
 		}
 
 		final Event result = GameManagementEvent.GAME_READY_RESPONSE.createEvent(gameId);
@@ -236,11 +236,11 @@ public final class GameManagementServerModule extends IrisModule {
 					final String newActivePlayerId;
 					// If the game has been won, don't allow any player to
 					// become active again
-					if (game.isWon()) {
-						newActivePlayerId = null;
-					} else {
+//					if (game.isWon()) {
+//						newActivePlayerId = null;
+//					} else {
 						newActivePlayerId = activePlayerTracker.cycleActivePlayer();
-					}
+//					}
 					turnResponse.put(GameManagementEvent.Attribute.ACTIVE_PLAYER_CHANGE.toString(),
 							new ActivePlayerChange(oldActivePlayerId, newActivePlayerId));
 					LOGGER.info(
@@ -250,13 +250,13 @@ public final class GameManagementServerModule extends IrisModule {
 				}
 
 				// Check if the game has now been won
-				if (game.isWon()) {
-					final Event gameOverResponse = GameManagementEvent.GAME_OVER_RESPONSE.createEvent(gameId);
-					gameOverResponse.put(GameManagementEvent.Attribute.GAME_STATE.toString(), new GameEnding(
-							turnPlayerId, game.getRemoteController().getMoveCount(), GameEnding.Outcome.WIN));
-					LOGGER.info("Sending broker event for game \"{}\" signalling that the game is over.", gameId);
-					send(gameOverResponse);
-				}
+//				if (game.isWon()) {
+//					final Event gameOverResponse = GameManagementEvent.GAME_OVER_RESPONSE.createEvent(gameId);
+//					gameOverResponse.put(GameManagementEvent.Attribute.GAME_STATE.toString(), new GameEnding(
+//							turnPlayerId, game.getRemoteController().getMoveCount(), GameEnding.Outcome.WIN));
+//					LOGGER.info("Sending broker event for game \"{}\" signalling that the game is over.", gameId);
+//					send(gameOverResponse);
+//				}
 				break;
 			}
 			default: {

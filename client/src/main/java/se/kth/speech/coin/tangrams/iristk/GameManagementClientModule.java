@@ -191,7 +191,7 @@ public final class GameManagementClientModule extends IrisModule {
 		final Model<Integer> model = GameStateUnmarshalling.createModel(modelDesc);
 		final Model<Integer> winningModel = GameStateUnmarshalling.createWinningModel(gameDesc);
 		final boolean isActive = playerId.equals(gameDesc.getActivePlayerId());
-		final LocalController<Integer> localController = new LocalController<>(model, playerId, isActive,
+		final LocalController<ImageV> localController = new LocalController<>(model, playerId, isActive,
 				this::requestTurnCompletion, this::requestUserSelection);
 		final Consumer<ActivePlayerChange> controllerActivationHook = handoff -> {
 			final boolean shouldControllerBeEnabled = localController.getPlayerId()

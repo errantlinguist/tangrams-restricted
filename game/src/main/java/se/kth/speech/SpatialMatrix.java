@@ -42,7 +42,7 @@ import com.google.common.collect.Table;
  * @since 10 Mar 2017
  *
  */
-public final class SpatialMatrix<I, E> {
+public final class SpatialMatrix<E> {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SpatialMatrix.class);
 
@@ -50,18 +50,14 @@ public final class SpatialMatrix<I, E> {
 		return (x - xLength + 1) * (y - yLength + 1);
 	}
 
-	private transient final Function<? super E, ? extends I> elementIdGetter;
-
 	private final SpatialMap<E> elementPlacements;
 
 	private transient final Function<SpatialRegion, Set<SpatialRegion>> newRegionPossibleMoveSetFactory;
 
-	private final Matrix<I> positionMatrix;
+	private final Matrix<E> positionMatrix;
 
-	public SpatialMatrix(final Matrix<I> posMatrix, final Function<? super E, ? extends I> elementIdGetter,
-			final SpatialMap<E> elementPlacements) {
+	public SpatialMatrix(final Matrix<E> posMatrix, final SpatialMap<E> elementPlacements) {
 		this.positionMatrix = posMatrix;
-		this.elementIdGetter = elementIdGetter;
 		this.elementPlacements = elementPlacements;
 		newRegionPossibleMoveSetFactory = region -> {
 			final int count = calculateSubRegionCount(region) - 1;
@@ -157,7 +153,7 @@ public final class SpatialMatrix<I, E> {
 		final Set<SpatialRegion> regionElements = elementPlacements.getMinimalRegionElements().keySet();
 		final Map<SpatialRegion, Set<SpatialRegion>> result = Maps.newHashMapWithExpectedSize(regionElements.size());
 		final int[] matrixDims = getDimensions();
-//		System.out.println("matrixDims = " + Arrays.toString(matrixDims));
+		// System.out.println("matrixDims = " + Arrays.toString(matrixDims));
 		final int x = matrixDims[0];
 		final int y = matrixDims[1];
 
@@ -165,16 +161,18 @@ public final class SpatialMatrix<I, E> {
 			final Set<SpatialRegion> possibleMoveRegions = result.computeIfAbsent(movablePieceRegion,
 					newRegionPossibleMoveSetFactory);
 			final int maxStartingRowIdx = x - movablePieceRegion.getLengthX() + 1;
-//			System.out.println("maxStartingRowIdx = " + maxStartingRowIdx);
+			// System.out.println("maxStartingRowIdx = " + maxStartingRowIdx);
 			final int maxStartingColIdx = y - movablePieceRegion.getLengthY() + 1;
-//			System.out.println("maxStartingColIdx = " + maxStartingColIdx);
+			// System.out.println("maxStartingColIdx = " + maxStartingColIdx);
 			for (int startingRowIdx = 0; startingRowIdx < maxStartingRowIdx; startingRowIdx++) {
 				final int endingRowIdx = startingRowIdx + movablePieceRegion.getLengthX();
 				for (int startingColIdx = 0; startingColIdx < maxStartingColIdx; startingColIdx++) {
 					final int endingColIdx = startingColIdx + movablePieceRegion.getLengthY();
 					final SpatialRegion possibleMoveRegion = getRegion(startingRowIdx, endingRowIdx, startingColIdx,
 							endingColIdx);
-//					System.out.println(String.format("coords : %d %d %d %d", startingRowIdx, endingRowIdx, startingColIdx, endingColIdx));
+					// System.out.println(String.format("coords : %d %d %d %d",
+					// startingRowIdx, endingRowIdx, startingColIdx,
+					// endingColIdx));
 					if (elementPlacements.isOccupied(possibleMoveRegion)) {
 						LOGGER.debug("Found occupied space at {}.", Arrays
 								.toString(new int[] { startingRowIdx, endingRowIdx, startingColIdx, startingColIdx }));
@@ -204,7 +202,7 @@ public final class SpatialMatrix<I, E> {
 		if (!(obj instanceof SpatialMatrix)) {
 			return false;
 		}
-		final SpatialMatrix<?, ?> other = (SpatialMatrix<?, ?>) obj;
+		final SpatialMatrix<?> other = (SpatialMatrix<?>) obj;
 		if (elementPlacements == null) {
 			if (other.elementPlacements != null) {
 				return false;
@@ -222,11 +220,11 @@ public final class SpatialMatrix<I, E> {
 		return true;
 	}
 
-	public Stream<I> getCells() {
+	public Stream<E> getCells() {
 		return positionMatrix.getValues().stream();
 	}
 
-	public Stream<I> getCells(final SpatialRegion region) {
+	public Stream<E> getCells(final SpatialRegion region) {
 		return positionMatrix.getValues(region.getRowStartIdx(), region.getRowEndIdx(), region.getColumnStartIdx(),
 				region.getColumnEndIdx());
 	}
@@ -248,7 +246,7 @@ public final class SpatialMatrix<I, E> {
 	/**
 	 * @return the position matrix
 	 */
-	public Matrix<I> getPositionMatrix() {
+	public Matrix<E> getPositionMatrix() {
 		return positionMatrix;
 	}
 
@@ -281,10 +279,9 @@ public final class SpatialMatrix<I, E> {
 	}
 
 	public void placeElement(final E element, final SpatialRegion target) {
-		final I elementId = elementIdGetter.apply(element);
-		LOGGER.debug("Placing element \"{}\" at {}.", elementId, target);
+		LOGGER.debug("Placing element \"{}\" at {}.", element, target);
 		assert !elementPlacements.isOccupied(target);
-		setPositionValues(target, elementId);
+		setPositionValues(target, element);
 		elementPlacements.put(element, target);
 	}
 
@@ -302,12 +299,12 @@ public final class SpatialMatrix<I, E> {
 		return builder.toString();
 	}
 
-	private void setPositionValues(final SpatialRegion region, final I elementId) {
+	private void setPositionValues(final SpatialRegion region, final E elementId) {
 		LOGGER.debug("Setting {} to value \"{}\".", region, elementId);
-		final ListIterator<List<I>> rowIter = positionMatrix.rowIterator(region.getRowStartIdx());
+		final ListIterator<List<E>> rowIter = positionMatrix.rowIterator(region.getRowStartIdx());
 		for (int rowIdx = rowIter.nextIndex(); rowIdx < region.getRowEndIdx(); rowIdx++) {
-			final List<I> row = rowIter.next();
-			final ListIterator<I> rowCellIter = row.listIterator(region.getColumnStartIdx());
+			final List<E> row = rowIter.next();
+			final ListIterator<E> rowCellIter = row.listIterator(region.getColumnStartIdx());
 			for (int colIdx = rowCellIter.nextIndex(); colIdx < region.getColumnEndIdx(); colIdx++) {
 				rowCellIter.next();
 				rowCellIter.set(elementId);

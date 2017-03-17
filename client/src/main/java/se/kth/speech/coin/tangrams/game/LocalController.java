@@ -17,12 +17,17 @@
 package se.kth.speech.coin.tangrams.game;
 
 import java.util.Arrays;
+import java.util.Iterator;
+import java.util.Map.Entry;
 import java.util.Observable;
 import java.util.function.Consumer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import se.kth.speech.SpatialMatrix;
+import se.kth.speech.SpatialRegion;
+import se.kth.speech.coin.tangrams.iristk.events.Area2D;
 import se.kth.speech.coin.tangrams.iristk.events.CoordinatePoint2D;
 import se.kth.speech.coin.tangrams.iristk.events.Move;
 import se.kth.speech.coin.tangrams.iristk.events.Selection;
@@ -32,17 +37,29 @@ import se.kth.speech.coin.tangrams.iristk.events.Selection;
  * @since 14 Nov 2016
  *
  */
-public final class LocalController<T> extends Observable {
+public final class LocalController<E> extends Observable {
 
 	public enum ValidationStatus {
-		OK, SOURCE_EMPTY, SOURCE_TARGET_SAME, TARGET_NONADJACENT, TARGET_OCCUPIED;
+		OK, SOURCE_EMPTY, SOURCE_TARGET_SAME, TARGET_OCCUPIED;
 	}
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(LocalController.class);
 
+	private static Area2D createArea(final SpatialRegion region) {
+		return new Area2D(createStartCoords(region), createEndCoords(region));
+	}
+
+	private static CoordinatePoint2D createEndCoords(final SpatialRegion region) {
+		return new CoordinatePoint2D(region.getXUpperBound(), region.getYUpperBound());
+	}
+
+	private static CoordinatePoint2D createStartCoords(final SpatialRegion region) {
+		return new CoordinatePoint2D(region.getXLowerBound(), region.getYLowerBound());
+	}
+
 	private boolean isEnabled;
 
-	private final Model<T> model;
+	private final SpatialMatrix<Integer, E> model;
 
 	private int moveCount = 0;
 
@@ -54,7 +71,7 @@ public final class LocalController<T> extends Observable {
 
 	private final Consumer<? super Move> turnCompletionHook;
 
-	public LocalController(final Model<T> model, final String playerId, final boolean isEnabled,
+	public LocalController(final SpatialMatrix<Integer, E> model, final String playerId, final boolean isEnabled,
 			final Consumer<? super Move> turnCompletionHook, final Consumer<? super CoordinatePoint2D> selectionHook) {
 		this.model = model;
 		this.playerId = playerId;
@@ -77,10 +94,10 @@ public final class LocalController<T> extends Observable {
 		LOGGER.info("Ending turn.");
 		{
 			final Move move = nextTurnMove;
-			final int[] sourceCoords = move.getSource().getCoords();
-			final int[] targetCoords = move.getTarget().getCoords();
-			LOGGER.info("Moving the piece at {} to {}.", Arrays.toString(sourceCoords), Arrays.toString(targetCoords));
-			updateModel(sourceCoords, targetCoords);
+			final SpatialRegion sourceRegion = createSpatialRegion(move.getSource());
+			final SpatialRegion targetRegion = createSpatialRegion(move.getTarget());
+			LOGGER.info("Moving the piece at {} to {}.", sourceRegion, targetRegion);
+			updateModel(sourceRegion, targetRegion);
 			turnCompletionHook.accept(move);
 		}
 		nextTurnMove = null;
@@ -91,7 +108,7 @@ public final class LocalController<T> extends Observable {
 	/**
 	 * @return the model
 	 */
-	public Model<T> getModel() {
+	public SpatialMatrix<Integer, E> getModel() {
 		return model;
 	}
 
@@ -121,27 +138,29 @@ public final class LocalController<T> extends Observable {
 		this.isEnabled = isEnabled;
 	}
 
-	public ValidationStatus submitMove(final int[] sourceCoords, final int[] targetCoords) {
+	public ValidationStatus submitMove(final SpatialRegion sourceRegion, final SpatialRegion targetRegion) {
 		if (!isEnabled) {
 			throw new IllegalStateException("Controller not active.");
 		}
 
-		final ValidationStatus result = validateMove(sourceCoords, targetCoords);
+		final ValidationStatus result = validateMove(sourceRegion, targetRegion);
 		if (ValidationStatus.OK.equals(result)) {
-			nextTurnMove = new Move(new CoordinatePoint2D(sourceCoords), new CoordinatePoint2D(targetCoords));
+			nextTurnMove = new Move(createArea(sourceRegion), createArea(targetRegion));
+		} else {
+			LOGGER.info("Invalid move: {}", result);
 		}
 		return result;
 	}
 
-	public void toggleSelection(final int[] coords) {
+	public void toggleSelection(final int[] region) {
 		// FIXME: Make sure that the controller distinguishes between the
 		// different users' selections, e.g. if they click the same box, it
 		// stays selected rather than being "toggled" off
-		LOGGER.debug("Toggling coordinate selection {}.", Arrays.toString(coords));
+		LOGGER.debug("Toggling coordinate selection {}.", Arrays.toString(region));
 
-		final CoordinatePoint2D coordRecord = new CoordinatePoint2D(coords);
+		final CoordinatePoint2D coordRecord = new CoordinatePoint2D(region);
 		final Selection selection = new Selection(playerId, coordRecord);
-		// Notify local listeners of (de-)selected coords, e.g. update player's
+		// Notify local listeners of (de-)selected region, e.g. update player's
 		// own view and notify the player's own game action module
 		setChanged();
 		notifyObservers(selection);
@@ -149,28 +168,36 @@ public final class LocalController<T> extends Observable {
 		selectionHook.accept(coordRecord);
 	}
 
-	private void updateModel(final int[] sourceCoords, final int[] targetCoords) {
-		if (model.areCoordinatesOccupied(targetCoords)) {
-			throw new IllegalStateException(String.format(
-					"Coordinates %s are already occupied; Not a valid move target.", Arrays.toString(targetCoords)));
-		}
-		final T occupant = model.getCoordinateOccupant(sourceCoords);
-		model.setCoordinateOccupant(targetCoords, occupant);
-		model.setCoordinateOccupant(sourceCoords, null);
+	private SpatialRegion createSpatialRegion(final Area2D area) {
+		return createSpatialRegion(area.getStart(), area.getEnd());
 	}
 
-	private ValidationStatus validateMove(final int[] sourceCoords, final int[] targetCoords) {
+	private SpatialRegion createSpatialRegion(final CoordinatePoint2D start, final CoordinatePoint2D end) {
+		return model.getRegion(start.getX(), end.getX(), start.getY(), end.getY());
+	}
+
+	private void updateModel(final SpatialRegion sourceRegion, final SpatialRegion targetRegion) {
+		if (model.isOccupied(targetRegion)) {
+			throw new IllegalStateException(
+					String.format("%s is already occupied; Not a valid move target.", targetRegion));
+		}
+		final Iterator<E> occupantIter = model.getElementPlacements().getSubsumedElements(sourceRegion)
+				.map(Entry::getValue).iterator();
+		final E occupant = occupantIter.next();
+		assert !occupantIter.hasNext();
+		model.placeElement(occupant, targetRegion);
+	}
+
+	private ValidationStatus validateMove(final SpatialRegion sourceRegion, final SpatialRegion targetRegion) {
 		final ValidationStatus result;
 
-		if (Arrays.equals(sourceCoords, targetCoords)) {
+		if (sourceRegion.equals(targetRegion)) {
 			result = ValidationStatus.SOURCE_TARGET_SAME;
-		} else if (model.areCoordinatesOccupied(sourceCoords)) {
-			if (model.areCoordinatesOccupied(targetCoords)) {
+		} else if (model.isOccupied(sourceRegion)) {
+			if (model.isOccupied(targetRegion)) {
 				result = ValidationStatus.TARGET_OCCUPIED;
-			} else if (model.areCoordinatesAdjacent(sourceCoords, targetCoords)) {
-				result = ValidationStatus.OK;
 			} else {
-				result = ValidationStatus.TARGET_NONADJACENT;
+				result = ValidationStatus.OK;
 			}
 		} else {
 			result = ValidationStatus.SOURCE_EMPTY;

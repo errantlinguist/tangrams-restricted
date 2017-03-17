@@ -71,9 +71,9 @@ public final class GameFactoryTest {
 		final Set<Integer> actualModelPieceSet = new HashSet<>(
 				actualModel.getCoordinateOccupants().getValues());
 		Assert.assertEquals(expectedModelPieceSet, actualModelPieceSet);
-		final Set<Integer> actualWinningModelPieceSet = new HashSet<>(
-				actualGame.getWinningModel().getCoordinateOccupants().getValues());
-		Assert.assertEquals(expectedModelPieceSet, actualWinningModelPieceSet);
+//		final Set<Integer> actualWinningModelPieceSet = new HashSet<>(
+//				actualGame.getWinningModel().getCoordinateOccupants().getValues());
+//		Assert.assertEquals(expectedModelPieceSet, actualWinningModelPieceSet);
 	}
 
 	/**

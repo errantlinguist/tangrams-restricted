@@ -80,20 +80,4 @@ public final class CoordinatePoint2D extends Record {
 		this.y = y;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see java.lang.Object#toString()
-	 */
-	@Override
-	public String toString() {
-		final StringBuilder builder = new StringBuilder();
-		builder.append("CoordinatePoint2D [x=");
-		builder.append(x);
-		builder.append(", y=");
-		builder.append(y);
-		builder.append("]");
-		return builder.toString();
-	}
-
 }

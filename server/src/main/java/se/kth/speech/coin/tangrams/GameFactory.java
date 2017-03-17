@@ -44,8 +44,6 @@ final class GameFactory implements Function<String, Game<Integer>> {
 
 	private static final Properties PROPS;
 
-	private static final String TEST_GAME_NAME = "test";
-
 	static {
 		try {
 			PROPS = ClassProperties.load(GameFactory.class);
@@ -92,35 +90,17 @@ final class GameFactory implements Function<String, Game<Integer>> {
 	@Override
 	public Game<Integer> apply(final String name) {
 		final Model<Integer> model;
-		final Model<Integer> winningModel;
 		final long seed;
-		if (TEST_GAME_NAME.equals(name)) {
-			// FIXME: This will break if you change the model dimension
-			// properties
-			final Integer[] coordOccupants = new Integer[] { 0, 7, 12, 9, 6, 5, 10, 4, 3, 1, 2, null, 8, null, null,
-					11 };
-			model = new Model<>(new Matrix<>(coordOccupants, colCount));
-			final Integer[] winningCoordOccupants = new Integer[] { 0, 7, 12, 9, 6, 5, 10, 4, 3, 1, 2, null, 8, null,
-					11, null };
-			winningModel = new Model<>(new Matrix<>(winningCoordOccupants, colCount));
-			seed = name.hashCode();
-		} else {
-			try {
-				seed = Long.parseLong(name);
-				final Random rnd = new Random(seed);
-				model = modelFactory.apply(rnd);
-				winningModel = modelFactory.apply(rnd);
+		try {
+			seed = Long.parseLong(name);
+			final Random rnd = new Random(seed);
+			model = modelFactory.apply(rnd);
 
-			} catch (final NumberFormatException e) {
-				throw new IllegalArgumentException("Invalid game name.", e);
-			}
-		}
-		if (model.equals(winningModel)) {
-			throw new AssertionError(
-					"Supposedly-randomized winning configuration is equal to the original configuration.");
+		} catch (final NumberFormatException e) {
+			throw new IllegalArgumentException("Invalid game name.", e);
 		}
 		return new Game<>(new RemoteController<>(model, handoff -> {
-		}, playerId -> true), winningModel, seed);
+		}, playerId -> true), seed);
 	}
 
 }

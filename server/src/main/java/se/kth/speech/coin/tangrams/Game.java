@@ -16,10 +16,6 @@
 */
 package se.kth.speech.coin.tangrams;
 
-import java.util.Arrays;
-import java.util.Objects;
-
-import se.kth.speech.coin.tangrams.game.Model;
 import se.kth.speech.coin.tangrams.game.RemoteController;
 
 public final class Game<T> {
@@ -28,15 +24,8 @@ public final class Game<T> {
 
 	private final long seed;
 
-	private final Model<T> winningModel;
-
-	Game(final RemoteController<T> remoteController, final Model<T> winningModel, final long seed) {
-		if (!Arrays.equals(remoteController.getModel().getCoordinateDimensions(),
-				winningModel.getCoordinateDimensions())) {
-			throw new IllegalArgumentException("The dimensions of the model and the winning model are not equal.");
-		}
+	Game(final RemoteController<T> remoteController, final long seed) {
 		this.remoteController = remoteController;
-		this.winningModel = winningModel;
 		this.seed = seed;
 	}
 
@@ -64,13 +53,6 @@ public final class Game<T> {
 		} else if (!remoteController.equals(other.remoteController)) {
 			return false;
 		}
-		if (winningModel == null) {
-			if (other.winningModel != null) {
-				return false;
-			}
-		} else if (!winningModel.equals(other.winningModel)) {
-			return false;
-		}
 		return true;
 	}
 
@@ -88,13 +70,6 @@ public final class Game<T> {
 		return seed;
 	}
 
-	/**
-	 * @return the winningModel
-	 */
-	public Model<T> getWinningModel() {
-		return winningModel;
-	}
-
 	/*
 	 * (non-Javadoc)
 	 *
@@ -105,12 +80,7 @@ public final class Game<T> {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + (remoteController == null ? 0 : remoteController.hashCode());
-		result = prime * result + (winningModel == null ? 0 : winningModel.hashCode());
 		return result;
-	}
-
-	public boolean isWon() {
-		return Objects.equals(remoteController.getModel(), winningModel);
 	}
 
 	/*
@@ -123,8 +93,6 @@ public final class Game<T> {
 		final StringBuilder builder = new StringBuilder();
 		builder.append("Game [remoteController=");
 		builder.append(remoteController);
-		builder.append(", winningModel=");
-		builder.append(winningModel);
 		builder.append("]");
 		return builder.toString();
 	}

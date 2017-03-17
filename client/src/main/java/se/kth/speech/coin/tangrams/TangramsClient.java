@@ -55,6 +55,7 @@ import com.github.errantlinguist.ClassProperties;
 import iristk.system.IrisSystem;
 import iristk.system.LoggingModule;
 import iristk.util.NameFilter;
+import se.kth.speech.SpatialMatrix;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfoFactory;
 import se.kth.speech.coin.tangrams.game.LocalController;
@@ -313,6 +314,7 @@ public final class TangramsClient implements Runnable {
 						// Try clause for ensuring that the recorder gets
 						// properly stopped even in the case an exception occurs
 						try {
+							
 							final ConnectionStatusFrame connectionStatusView = createConnectionStatusView(gameId,
 									irisSystemStopper);
 							// Display the connection status view
@@ -351,7 +353,7 @@ public final class TangramsClient implements Runnable {
 
 											// Set up game GUI
 											final String title = "Tangrams: " + playerId;
-											final Model<Integer> model = localController.getModel();
+											final SpatialMatrix<Integer, Integer> model = localController.getModel();
 											final int pieceCount = model.getOccupiedCoordinateCount();
 											final Random rnd = new Random(gameState.getSeed());
 											final List<ImageVisualizationInfo> imgVisualizationInfoData = Stream.generate(new ImageVisualizationInfoFactory(rnd)::next).limit(pieceCount).collect(Collectors.toList());

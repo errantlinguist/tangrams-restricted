@@ -14,7 +14,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech.coin.tangrams.view;
+package se.kth.speech;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -40,69 +40,69 @@ import se.kth.speech.SpatialRegion;
  * @since 9 Mar 2017
  *
  */
-final class RandomMatrixPositionFiller<I, E> implements Function<Collection<? extends E>, Set<I>> {
+public final class RandomMatrixPositionFiller<I, E> implements Function<Collection<? extends E>, Set<I>> {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(RandomMatrixPositionFiller.class);
 
 	/**
 	 * <strong>NOTE:</strong> This creates a {@link LinkedHashSet} in order to
-	 * ensure that iteration order is stable across invokations.
+	 * ensure that iteration order is stable across invocations.
 	 */
 	private static final IntFunction<LinkedHashSet<SpatialRegion>> SUB_REGION_SET_FACTORY = Sets::newLinkedHashSetWithExpectedSize;
 
-	private final Function<? super E, I> pieceIdGetter;
+	private final Function<? super E, I> elementIdGetter;
 
-	private final Function<? super E, int[]> piecePosMatrixSizeFactory;
+	private final Function<? super E, int[]> elementPosMatrixSizeFactory;
 
-	private final SpatialMatrix<? super I, E> posMatrix;
+	private final SpatialMatrix<? super I> posMatrix;
 
 	private final Random rnd;
 
 	private final boolean allowFailedPlacements;
 
-	RandomMatrixPositionFiller(final SpatialMatrix<? super I, E> posMatrix, final Function<? super E, I> pieceIdGetter,
-			final Random rnd, final Function<? super E, int[]> piecePosMatrixSizeFactory,
+	public RandomMatrixPositionFiller(final SpatialMatrix<? super I> posMatrix, final Function<? super E, I> elementIdGetter,
+			final Random rnd, final Function<? super E, int[]> elementPosMatrixSizeFactory,
 			final boolean allowFailedPlacements) {
 		this.posMatrix = posMatrix;
-		this.pieceIdGetter = pieceIdGetter;
+		this.elementIdGetter = elementIdGetter;
 		this.rnd = rnd;
-		this.piecePosMatrixSizeFactory = piecePosMatrixSizeFactory;
+		this.elementPosMatrixSizeFactory = elementPosMatrixSizeFactory;
 		this.allowFailedPlacements = allowFailedPlacements;
 	}
 
 	@Override
-	public Set<I> apply(final Collection<? extends E> pieces) {
-		LOGGER.info("Trying to place {} pieces.", pieces.size());
+	public Set<I> apply(final Collection<? extends E> elements) {
+		LOGGER.info("Trying to place {} elements.", elements.size());
 		final Table<Integer, Integer, LinkedHashSet<SpatialRegion>> subRegionsToTry = posMatrix
 				.createSizeIndexedRegionPowerSet(SUB_REGION_SET_FACTORY);
-		final Set<I> result = Sets.newHashSetWithExpectedSize(pieces.size());
+		final Set<I> result = Sets.newHashSetWithExpectedSize(elements.size());
 		{
-			// Randomly place each image in the position matrix
-			final Iterator<? extends E> pieceIter = pieces.iterator();
-			while (pieceIter.hasNext()) {
-				final E piece = pieceIter.next();
-				LOGGER.debug("Adding {}.", piece);
-				final I pieceId = pieceIdGetter.apply(piece);
-				final SpatialRegion placementResult = placePieceRandomly(piece, pieceId, subRegionsToTry);
-				LOGGER.debug("Added {} (with ID \"{}\") to {}.", new Object[] { piece, pieceId, placementResult });
-				result.add(pieceId);
+			// Randomly place each element in the position matrix
+			final Iterator<? extends E> elementIter = elements.iterator();
+			while (elementIter.hasNext()) {
+				final E element = elementIter.next();
+				LOGGER.debug("Adding {}.", element);
+				final I elementId = elementIdGetter.apply(element);
+				final SpatialRegion placementResult = placePieceRandomly(element, elementId, subRegionsToTry);
+				LOGGER.debug("Added {} (with ID \"{}\") to {}.", new Object[] { element, elementId, placementResult });
+				result.add(elementId);
 			}
 		}
-		LOGGER.info("Added piece IDs {}.", result);
+		LOGGER.info("Added element IDs {}.", result);
 		return result;
 	}
 
-	private SpatialRegion placePieceRandomly(final E piece, final I pieceId,
+	private SpatialRegion placePieceRandomly(final E element, final I elementId,
 			final Table<? super Integer, ? super Integer, ? extends Collection<SpatialRegion>> subRegionsToTry) {
-		// The number of rows and columns this image takes up in the
+		// The number of rows and columns this element takes up in the
 		// position matrix
-		final int[] piecePosMatrixSize = piecePosMatrixSizeFactory.apply(piece);
-		final Collection<SpatialRegion> allFittingSubRegions = subRegionsToTry.get(piecePosMatrixSize[0],
-				piecePosMatrixSize[1]);
+		final int[] elementPosMatrixSize = elementPosMatrixSizeFactory.apply(element);
+		final Collection<SpatialRegion> allFittingSubRegions = subRegionsToTry.get(elementPosMatrixSize[0],
+				elementPosMatrixSize[1]);
 		if (allFittingSubRegions == null) {
 			throw new IllegalArgumentException(String.format(
-					"Found no subregions of matrix of dimensions %s of sufficient size to hold piece of dimenions %s.",
-					Arrays.toString(posMatrix.getDimensions()), Arrays.toString(piecePosMatrixSize)));
+					"Found no subregions of matrix of dimensions %s of sufficient size to hold element of dimenions %s.",
+					Arrays.toString(posMatrix.getDimensions()), Arrays.toString(elementPosMatrixSize)));
 		} else {
 			SpatialRegion result = null;
 			do {
@@ -114,15 +114,15 @@ final class RandomMatrixPositionFiller<I, E> implements Function<Collection<? ex
 					allFittingSubRegions.remove(result);
 					result = null;
 				} else {
-					posMatrix.placeElement(piece, result);
+					posMatrix.placeElement(elementId, result);
 					assert posMatrix.isOccupied(result);
 				}
 			} while (result == null && !allFittingSubRegions.isEmpty());
 
 			if (result == null) {
 				final String msg = String.format(
-						"Could not place piece \"%s\" (with ID \"%s\") because all regions of size %s are already occupied.",
-						piece, pieceId, Arrays.toString(piecePosMatrixSize));
+						"Could not place element \"%s\" (with ID \"%s\") because all regions of size %s are already occupied.",
+						element, elementId, Arrays.toString(elementPosMatrixSize));
 				if (allowFailedPlacements) {
 					LOGGER.warn(msg);
 				} else {

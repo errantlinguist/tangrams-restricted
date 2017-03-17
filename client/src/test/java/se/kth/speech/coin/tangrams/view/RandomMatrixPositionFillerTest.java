@@ -38,6 +38,7 @@ import com.google.common.collect.Maps;
 import se.kth.speech.IntArrays;
 import se.kth.speech.Matrix;
 import se.kth.speech.MutablePair;
+import se.kth.speech.RandomMatrixPositionFiller;
 import se.kth.speech.SpatialMap;
 import se.kth.speech.SpatialMatrix;
 
@@ -100,7 +101,7 @@ public final class RandomMatrixPositionFillerTest {
 
 	/**
 	 * Test method for
-	 * {@link se.kth.speech.coin.tangrams.view.RandomMatrixPositionFiller#apply(Collection)}.
+	 * {@link se.kth.speech.RandomMatrixPositionFiller#apply(Collection)}.
 	 */
 	@Test
 	public final void testApply() {
@@ -155,7 +156,7 @@ public final class RandomMatrixPositionFillerTest {
 
 	/**
 	 * Test method for
-	 * {@link se.kth.speech.coin.tangrams.view.RandomMatrixPositionFiller#apply(Collection)}.
+	 * {@link se.kth.speech.RandomMatrixPositionFiller#apply(Collection)}.
 	 */
 	@Theory
 	public final void testApplyStable(final long seed) {
