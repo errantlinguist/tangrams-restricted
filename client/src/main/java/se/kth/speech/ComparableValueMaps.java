@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 /**
@@ -29,6 +30,16 @@ import java.util.stream.Collectors;
  *
  */
 public final class ComparableValueMaps {
+
+	public static final BiFunction<Object, Integer, Integer> NULLABLE_INTEGER_VALUE_INCREMENTER = (key, oldValue) -> {
+		final Integer newValue;
+		if (oldValue == null) {
+			newValue = 1;
+		} else {
+			newValue = oldValue + 1;
+		}
+		return newValue;
+	};
 
 	public static <K, V extends Comparable<? super V>> Entry<Set<K>, V> findMaxValues(final Map<K, V> counts) {
 		final V val = Collections.max(counts.values());
