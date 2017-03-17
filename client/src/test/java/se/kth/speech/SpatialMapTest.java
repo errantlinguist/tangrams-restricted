@@ -75,7 +75,7 @@ public final class SpatialMapTest {
 		final SpatialMap<Object> testMap = new SpatialMap<>(2);
 		final SpatialRegion superRegion = new SpatialRegion(0, 20, 10, 30);
 		testMap.put("superRegion", superRegion);
-		final SpatialRegion subRegion = new SpatialRegion(5, 5, 15, 25);
+		final SpatialRegion subRegion = new SpatialRegion(5, 6, 15, 26);
 		Assert.assertTrue(testMap.isOccupied(subRegion));
 	}
 

@@ -56,9 +56,9 @@ public final class SpatialRegionTest {
 
 	static {
 		PREVIOUS_FAILED_REGION_POINT_ARRAYS = new int[][] {
-				new int[] { 1989523352, 2023725473, 1079495603, 1079495603 },
+				new int[] { 1989523352, 2023725473, 1079495603, 1079495604 },
 				new int[] { -367670549, 1742426776, -582564738, 1954507817 },
-				new int[] { 1661512450, 1661512450, -1470324477, 1742426776 } };
+				new int[] { 1661512450, 1661512451, -1470324477, 1742426776 } };
 		PREVIOUS_FAILED_REGIONS = Sets.newHashSetWithExpectedSize(PREVIOUS_FAILED_REGION_POINT_ARRAYS.length);
 		for (final int[] pointArray : PREVIOUS_FAILED_REGION_POINT_ARRAYS) {
 			PREVIOUS_FAILED_REGIONS.add(new SpatialRegion(pointArray[0], pointArray[1], pointArray[2], pointArray[3]));
@@ -84,7 +84,7 @@ public final class SpatialRegionTest {
 	private static int[] createRandomIntervalArray(final Random rnd, final int[] points) {
 		final int first = RandomCollections.getRandomElement(points, rnd);
 		final int second = RandomCollections.getRandomElement(points, rnd);
-		return first <= second ? new int[] { first, second } : new int[] { second, first };
+		return first < second ? new int[] { first, second } : new int[] { second, first };
 	}
 
 	@Rule
@@ -99,19 +99,19 @@ public final class SpatialRegionTest {
 
 	@Test
 	public final void testGetGridArea1() {
-		final SpatialRegion r = new SpatialRegion(1, 1, 1, 2);
-		Assert.assertEquals(2, r.getGridArea());
+		final SpatialRegion r = new SpatialRegion(0, 1, 1, 2);
+		Assert.assertEquals(1, r.getGridArea());
 	}
 
 	@Test
 	public final void testGetGridArea2() {
 		final SpatialRegion r = new SpatialRegion(3, 5, 6, 8);
-		Assert.assertEquals(9, r.getGridArea());
+		Assert.assertEquals(4, r.getGridArea());
 	}
 
 	@Test
 	public final void testGetGridArea3() {
-		final SpatialRegion r = new SpatialRegion(0, 0, 0, 0);
+		final SpatialRegion r = new SpatialRegion(0, 1, 0, 1);
 		Assert.assertEquals(1, r.getGridArea());
 	}
 
@@ -281,8 +281,8 @@ public final class SpatialRegionTest {
 	@Theory
 	public final void testRegionPositive(final int xLowerBound, final int xUpperBound, final int yLowerBound,
 			final int yUpperBound) {
-		Assume.assumeTrue("Lower bound of x not less than or equal to upper bound.", xLowerBound <= xUpperBound);
-		Assume.assumeTrue("Lower bound of y not less than or equal to upper bound.", yLowerBound <= yUpperBound);
+		Assume.assumeTrue("Lower bound of x not less than upper bound.", xLowerBound < xUpperBound);
+		Assume.assumeTrue("Lower bound of y not less than upper bound.", yLowerBound < yUpperBound);
 		new SpatialRegion(xLowerBound, xUpperBound, yLowerBound, yUpperBound);
 	}
 
@@ -335,7 +335,7 @@ public final class SpatialRegionTest {
 	 */
 	@Test
 	public final void testSubsumesRegionNegativeIntersecting() {
-		final SpatialRegion r1 = new SpatialRegion(0, 2, 0, 1);
+		final SpatialRegion r1 = new SpatialRegion(0, 2, 0, 2);
 		final SpatialRegion r2 = new SpatialRegion(0, 3, 1, 3);
 		Assert.assertTrue(r1.intersects(r2));
 		Assert.assertFalse(r1.subsumes(r2));

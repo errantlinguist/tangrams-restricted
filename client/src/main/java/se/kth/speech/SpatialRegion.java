@@ -46,10 +46,10 @@ public final class SpatialRegion {
 	public static boolean intersects(final int r1x1, final int r1x2, final int r1y1, final int r1y2, final int r2x1,
 			final int r2x2, final int r2y1, final int r2y2) {
 		final boolean result;
-		if (r1x1 <= r2x2) {
-			if (r1x2 >= r2x1) {
-				if (r1y1 <= r2y2) {
-					if (r1y2 >= r2y1) {
+		if (r1x1 < r2x2) {
+			if (r1x2 > r2x1) {
+				if (r1y1 < r2y2) {
+					if (r1y2 > r2y1) {
 						result = true;
 					} else {
 						result = false;
@@ -107,7 +107,7 @@ public final class SpatialRegion {
 	}
 
 	static int getLength(final int lowerBound, final int upperBound) {
-		return upperBound - lowerBound + 1;
+		return upperBound - lowerBound;
 	}
 
 	private final int xLowerBound;
@@ -249,13 +249,13 @@ public final class SpatialRegion {
 		builder.append(yLowerBound);
 		builder.append(", ");
 		builder.append(yUpperBound);
-		builder.append("]");
+		builder.append(")");
 		builder.append("]");
 		return builder.toString();
 	}
 
 	private boolean areBoundariesValid() {
-		return getXLowerBound() <= getXUpperBound() && getYLowerBound() <= getYUpperBound();
+		return getXLowerBound() < getXUpperBound() && getYLowerBound() < getYUpperBound();
 	}
 
 	private int createHashCode() {
@@ -269,7 +269,7 @@ public final class SpatialRegion {
 	}
 
 	int getColumnEndIdx() {
-		return getYLowerBound() + 1;
+		return getYLowerBound();
 	}
 
 	int getColumnStartIdx() {
@@ -277,7 +277,7 @@ public final class SpatialRegion {
 	}
 
 	int getRowEndIdx() {
-		return getXUpperBound() + 1;
+		return getXUpperBound();
 	}
 
 	int getRowStartIdx() {

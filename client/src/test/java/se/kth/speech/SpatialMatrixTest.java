@@ -51,7 +51,7 @@ public final class SpatialMatrixTest {
 
 	static {
 		TEST_DIMENSIONS = Arrays.asList(new int[] { 1, 2 }, new int[] { 3, 3 }, new int[] { 5, 2 },
-				new int[] { 10, 11 }, new int[] { 10, 20 });
+				new int[] { 10, 11 }, new int[] { 10, 50 });
 	}
 
 	// @Test
@@ -143,8 +143,8 @@ public final class SpatialMatrixTest {
 				.createSizeIndexedRegionPowerSet(ArrayList::new);
 		regionPowerSet.rowMap().forEach((xLength, yLengths) -> {
 			yLengths.forEach((yLength, subRegionSet) -> {
-				final int expectedCount = matrix.calculateSubRegionCount(xLength, yLength);
-				Assert.assertEquals(expectedCount, subRegionSet.size());
+				final int actual = matrix.calculateSubRegionCount(xLength, yLength);
+				Assert.assertEquals(subRegionSet.size(), actual);
 			});
 		});
 	}
@@ -171,6 +171,7 @@ public final class SpatialMatrixTest {
 		Assert.assertEquals(Integer.valueOf(y), Collections.max(cols));
 		Assert.assertEquals(y, cols.size());
 		regionPowerSet.values().stream().forEach(size -> {
+			Assert.assertNotNull(size);
 			Assert.assertFalse(size.isEmpty());
 		});
 		final SpatialRegion totalRegion = matrix.getRegion(0, x, 0, y);
@@ -196,12 +197,22 @@ public final class SpatialMatrixTest {
 
 	@Test
 	public final void testGetCellsRegion1() {
-		testGetCellsRegion(0, 0, 0, 0);
+		testGetCellsRegion(0, 1, 0, 1);
 	}
 
 	@Test
 	public final void testGetCellsRegion2() {
 		testGetCellsRegion(1, 11, 5, 16);
+	}
+
+	@Test
+	public final void testGetCellsRegion3() {
+		testGetCellsRegion(1, 10, 5, 10);
+	}
+
+	@Test
+	public final void testGetCellsRegion4() {
+		testGetCellsRegion(1, 2, 1, 2);
 	}
 
 	@Theory
