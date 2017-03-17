@@ -48,7 +48,7 @@ final class RandomMatrixPositionFiller<I, E> implements Function<Collection<? ex
 	 * <strong>NOTE:</strong> This creates a {@link LinkedHashSet} in order to
 	 * ensure that iteration order is stable across invokations.
 	 */
-	private static final IntFunction<LinkedHashSet<SpatialRegion>> SUB_REGION_SET_FACTORY = LinkedHashSet::new;
+	private static final IntFunction<LinkedHashSet<SpatialRegion>> SUB_REGION_SET_FACTORY = Sets::newLinkedHashSetWithExpectedSize;
 
 	private final Function<? super E, I> pieceIdGetter;
 
