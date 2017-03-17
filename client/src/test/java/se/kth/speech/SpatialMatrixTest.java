@@ -46,7 +46,7 @@ import com.google.common.collect.Table;
 @RunWith(Theories.class)
 public final class SpatialMatrixTest {
 
-	@DataPoints
+	@DataPoints("gridDims")
 	public static final List<int[]> TEST_DIMENSIONS;
 
 	static {
