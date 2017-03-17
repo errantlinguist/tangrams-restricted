@@ -78,7 +78,7 @@ public final class RandomMatrixPositionFillerTest {
 		final SpatialMatrix<Integer, int[]> matrix = new SpatialMatrix<>(backingPosMatrix, TEST_PIECE_IDS::get,
 				piecePositions);
 		final RandomMatrixPositionFiller<Integer, int[]> filler = new RandomMatrixPositionFiller<>(matrix,
-				TEST_PIECE_IDS::get, rnd, piecePosMatrixSizeFactory);
+				TEST_PIECE_IDS::get, rnd, piecePosMatrixSizeFactory, false);
 		final Set<Integer> addedIds = filler.apply(TEST_PIECES);
 		return new MutablePair<>(matrix, addedIds);
 	}
@@ -114,7 +114,7 @@ public final class RandomMatrixPositionFillerTest {
 		final SpatialMatrix<Integer, int[]> matrix = new SpatialMatrix<>(backingPosMatrix, TEST_PIECE_IDS::get,
 				piecePositions);
 		final RandomMatrixPositionFiller<Integer, int[]> filler = new RandomMatrixPositionFiller<>(matrix,
-				TEST_PIECE_IDS::get, rnd, piecePosMatrixSizeFactory);
+				TEST_PIECE_IDS::get, rnd, piecePosMatrixSizeFactory, false);
 		final Set<Integer> addedIds = filler.apply(TEST_PIECES);
 		// Test added IDs
 		Assert.assertEquals(TEST_PIECE_IDS.values().size(), addedIds.size());
