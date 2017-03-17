@@ -126,7 +126,8 @@ public final class SpatialRegion {
 		this.yLowerBound = yLowerBound;
 		this.yUpperBound = yUpperBound;
 		if (!areBoundariesValid()) {
-			throw new IllegalArgumentException("Boundary values are invalid.");
+			throw new IllegalArgumentException(String.format("Boundary values are invalid: %d, %d, %,d %d,",
+					xLowerBound, xUpperBound, yLowerBound, yUpperBound));
 		}
 
 		hashCode = createHashCode();
@@ -167,10 +168,10 @@ public final class SpatialRegion {
 	public int[] getDimensions() {
 		return new int[] { getLengthX(), getLengthY() };
 	}
-	
+
 	static int[] getDimensions(final int xLowerBound, final int xUpperBound, final int yLowerBound,
 			final int yUpperBound) {
-		return new int[]{ getLength(xLowerBound, xUpperBound), getLength(yLowerBound, yUpperBound)};
+		return new int[] { getLength(xLowerBound, xUpperBound), getLength(yLowerBound, yUpperBound) };
 	}
 
 	public int getGridArea() {

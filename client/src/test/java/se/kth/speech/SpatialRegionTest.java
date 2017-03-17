@@ -83,7 +83,10 @@ public final class SpatialRegionTest {
 
 	private static int[] createRandomIntervalArray(final Random rnd, final int[] points) {
 		final int first = RandomCollections.getRandomElement(points, rnd);
-		final int second = RandomCollections.getRandomElement(points, rnd);
+		int second = RandomCollections.getRandomElement(points, rnd);
+		while (first == second) {
+			second = RandomCollections.getRandomElement(points, rnd);
+		}
 		return first < second ? new int[] { first, second } : new int[] { second, first };
 	}
 
