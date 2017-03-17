@@ -239,18 +239,23 @@ public final class GameViewFrameDemo implements Runnable {
 		final List<ImageVisualizationInfo> imgVisualizationInfoDataList = Stream.generate(imgDataFactory::next)
 				.limit(imgPlacementCount).collect(Collectors.toList());
 		// Sort the list so that the biggest images come first
-		imgVisualizationInfoDataList.sort(Comparator.comparing(ImageVisualizationInfo::getSize, ImageSize.getSizeComparator().reversed()));
+		imgVisualizationInfoDataList
+				.sort(Comparator.comparing(ImageVisualizationInfo::getSize, ImageSize.getSizeComparator().reversed()));
 		LOGGER.info("Image resource usage counts: {}", imgDataFactory.getImgResourceUsageCounts());
 		LOGGER.info("Image size usage counts: {}", imgDataFactory.getSizeUsageCounts());
 		LOGGER.info("Image color usage counts: {}", imgDataFactory.getColorUsageCounts());
 		LOGGER.info("Total used image count: {}", imgVisualizationInfoDataList.size());
+		final GameBoardPanelFactory factory = new GameBoardPanelFactory(rnd, occupiedGridArea);
+		final int[] gridSize = new int[] { 40, 40 };
+		factory.setGridSize(gridSize);
+		final int uniqueImgResourceCount = imgDataFactory.getImgResourceUsageCounts().keySet().size();
+		factory.setUniqueImgResourceCount(uniqueImgResourceCount);
 		final OpaqueTransparencyReplacementImageFilter imgTranformer = new OpaqueTransparencyReplacementImageFilter(
 				128);
-		final GameBoardPanel gameBoardPanel = new GameBoardPanel(imgVisualizationInfoDataList, rnd, imgPlacementCount,
-				maxPlacementRetriesPerImg, occupiedGridArea, allowFailedPlacements,
-				imgDataFactory.getImgResourceUsageCounts().keySet().size(), (img, panel) -> panel.getToolkit()
-						.createImage(new FilteredImageSource(img.getSource(), imgTranformer)));
-		final GameViewFrame frame = new GameViewFrame(gameBoardPanel, rnd);
+		factory.setPostColoringImgTransformer(
+				(img, toolkit) -> toolkit.createImage(new FilteredImageSource(img.getSource(), imgTranformer)));
+		final GameBoardPanel panel = factory.apply(imgVisualizationInfoDataList);
+		final GameViewFrame frame = new GameViewFrame(panel, rnd);
 		frame.pack();
 		frame.setLocationByPlatform(true);
 		frame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);

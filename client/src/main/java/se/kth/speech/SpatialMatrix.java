@@ -64,9 +64,14 @@ public final class SpatialMatrix<I, E> {
 		this.elementIdGetter = elementIdGetter;
 		this.elementPlacements = elementPlacements;
 		newRegionPossibleMoveSetFactory = region -> {
-			final int occupiedRegionArea = region.getGridArea();
-			return Sets.newHashSetWithExpectedSize(posMatrix.getValues().size() / occupiedRegionArea);
+			final int count = calculateSubRegionCount(region) - 1;
+			return Sets.newHashSetWithExpectedSize(count);
 		};
+	}
+
+	public int calculateSubRegionCount(final SpatialRegion region) {
+		final int[] dims = positionMatrix.getDimensions();
+		return calculateSubRegionCount(dims[0], region.getLengthX(), dims[1], region.getLengthY());
 	}
 
 	public void clearRegion(final SpatialRegion occupiedRegion) {
@@ -77,6 +82,32 @@ public final class SpatialMatrix<I, E> {
 		elements.clear();
 		setPositionValues(occupiedRegion, null);
 	}
+
+	// public void addRegionPowerSet(final Collection<? super SpatialMap.Region>
+	// regions) {
+	// final int dims[] = positionMatrix.getDimensions();
+	// final int x = dims[0];
+	// final int y = dims[1];
+	// for (int xLowerBound = 0; xLowerBound <= x; ++xLowerBound) {
+	// for (int xUpperBound = xLowerBound; xUpperBound <= x; ++xUpperBound) {
+	// for (int yLowerBound = 0; yLowerBound <= y; ++yLowerBound) {
+	// for (int yUpperBound = yLowerBound; yUpperBound <= y; ++yUpperBound) {
+	// final SpatialMap.Region region = getRegion(xLowerBound, xUpperBound,
+	// yLowerBound, yUpperBound);
+	// regions.add(region);
+	// }
+	// }
+	// }
+	// }
+	// }
+	//
+	// public int calculateRegionPowerSetSize() {
+	// final int dims[] = positionMatrix.getDimensions();
+	// // m(m+1)n(n+1)/4 http://stackoverflow.com/a/17927830/1391325
+	// final int m = dims[0];
+	// final int n = dims[1];
+	// return m * (m + 1) * n * (n + 1) / 4;
+	// }
 
 	public <C extends Collection<? super SpatialRegion>> Table<Integer, Integer, C> createSizeIndexedRegionPowerSet(
 			final IntFunction<? extends C> setFactory) {
@@ -109,65 +140,6 @@ public final class SpatialMatrix<I, E> {
 		return result;
 	}
 
-	// public void addRegionPowerSet(final Collection<? super SpatialMap.Region>
-	// regions) {
-	// final int dims[] = positionMatrix.getDimensions();
-	// final int x = dims[0];
-	// final int y = dims[1];
-	// for (int xLowerBound = 0; xLowerBound <= x; ++xLowerBound) {
-	// for (int xUpperBound = xLowerBound; xUpperBound <= x; ++xUpperBound) {
-	// for (int yLowerBound = 0; yLowerBound <= y; ++yLowerBound) {
-	// for (int yUpperBound = yLowerBound; yUpperBound <= y; ++yUpperBound) {
-	// final SpatialMap.Region region = getRegion(xLowerBound, xUpperBound,
-	// yLowerBound, yUpperBound);
-	// regions.add(region);
-	// }
-	// }
-	// }
-	// }
-	// }
-	//
-	// public int calculateRegionPowerSetSize() {
-	// final int dims[] = positionMatrix.getDimensions();
-	// // m(m+1)n(n+1)/4 http://stackoverflow.com/a/17927830/1391325
-	// final int m = dims[0];
-	// final int n = dims[1];
-	// return m * (m + 1) * n * (n + 1) / 4;
-	// }
-
-	public Map<SpatialRegion, Set<SpatialRegion>> createValidMoveMap() {
-		final Set<SpatialRegion> regionElements = elementPlacements.getMinimalRegionElements().keySet();
-		final Map<SpatialRegion, Set<SpatialRegion>> result = Maps.newHashMapWithExpectedSize(regionElements.size());
-		final int[] matrixDims = getDimensions();
-		final int x = matrixDims[0];
-		final int y = matrixDims[1];
-
-		for (final SpatialRegion movablePieceRegion : regionElements) {
-			final Set<SpatialRegion> possibleMoveRegions = result.computeIfAbsent(movablePieceRegion,
-					newRegionPossibleMoveSetFactory);
-			final int maxRowIdx = x - movablePieceRegion.getRowEndIdx();
-			final int maxColIdx = y - movablePieceRegion.getColumnEndIdx();
-			for (int xLowerBound = 0; xLowerBound < maxRowIdx; xLowerBound++) {
-				final int xUpperBound = xLowerBound + movablePieceRegion.getXUpperBound();
-				for (int yLowerBound = 0; yLowerBound < maxColIdx; yLowerBound++) {
-					final int yUpperBound = yLowerBound + movablePieceRegion.getYUpperBound();
-					final SpatialRegion possibleMoveRegion = getRegion(xLowerBound, xUpperBound, yLowerBound,
-							yUpperBound);
-					if (elementPlacements.isOccupied(possibleMoveRegion)) {
-						if (LOGGER.isDebugEnabled()) {
-							LOGGER.debug("Found occupied space at {}.",
-									Arrays.toString(new int[] { xLowerBound, xUpperBound, yLowerBound, yUpperBound }));
-						}
-					} else {
-						possibleMoveRegions.add(possibleMoveRegion);
-					}
-				}
-
-			}
-		}
-		return result;
-	}
-
 	// public Set<SpatialMap.Region> createRegionPowerSet() {
 	// return createRegionPowerSet(Sets::newHashSetWithExpectedSize);
 	// }
@@ -180,6 +152,41 @@ public final class SpatialMatrix<I, E> {
 	// addRegionPowerSet(result);
 	// return result;
 	// }
+
+	public Map<SpatialRegion, Set<SpatialRegion>> createValidMoveMap() {
+		final Set<SpatialRegion> regionElements = elementPlacements.getMinimalRegionElements().keySet();
+		final Map<SpatialRegion, Set<SpatialRegion>> result = Maps.newHashMapWithExpectedSize(regionElements.size());
+		final int[] matrixDims = getDimensions();
+//		System.out.println("matrixDims = " + Arrays.toString(matrixDims));
+		final int x = matrixDims[0];
+		final int y = matrixDims[1];
+
+		for (final SpatialRegion movablePieceRegion : regionElements) {
+			final Set<SpatialRegion> possibleMoveRegions = result.computeIfAbsent(movablePieceRegion,
+					newRegionPossibleMoveSetFactory);
+			final int maxStartingRowIdx = x - movablePieceRegion.getLengthX() + 1;
+//			System.out.println("maxStartingRowIdx = " + maxStartingRowIdx);
+			final int maxStartingColIdx = y - movablePieceRegion.getLengthY() + 1;
+//			System.out.println("maxStartingColIdx = " + maxStartingColIdx);
+			for (int startingRowIdx = 0; startingRowIdx < maxStartingRowIdx; startingRowIdx++) {
+				final int endingRowIdx = startingRowIdx + movablePieceRegion.getLengthX();
+				for (int startingColIdx = 0; startingColIdx < maxStartingColIdx; startingColIdx++) {
+					final int endingColIdx = startingColIdx + movablePieceRegion.getLengthY();
+					final SpatialRegion possibleMoveRegion = getRegion(startingRowIdx, endingRowIdx, startingColIdx,
+							endingColIdx);
+//					System.out.println(String.format("coords : %d %d %d %d", startingRowIdx, endingRowIdx, startingColIdx, endingColIdx));
+					if (elementPlacements.isOccupied(possibleMoveRegion)) {
+						LOGGER.debug("Found occupied space at {}.", Arrays
+								.toString(new int[] { startingRowIdx, endingRowIdx, startingColIdx, startingColIdx }));
+					} else {
+						possibleMoveRegions.add(possibleMoveRegion);
+					}
+				}
+
+			}
+		}
+		return result;
+	}
 
 	/*
 	 * (non-Javadoc)

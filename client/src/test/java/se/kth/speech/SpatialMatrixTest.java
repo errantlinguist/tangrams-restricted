@@ -136,6 +136,39 @@ public final class SpatialMatrixTest {
 		});
 	}
 
+	@Test
+	public final void testCeateValidMoveMap1() {
+		final SpatialMatrix<Integer, Object> matrix = new SpatialMatrixConstructionData<>(new int[] { 1, 2 }, 1).matrix;
+		final SpatialRegion r = matrix.getRegion(0, 1, 0, 1);
+		matrix.placeElement("testvalidmoves", r);
+		Assert.assertTrue(matrix.isOccupied(r));
+		final Map<SpatialRegion, Set<SpatialRegion>> validMoves = matrix.createValidMoveMap();
+		Assert.assertNotNull(validMoves);
+		Assert.assertFalse(validMoves.isEmpty());
+		final Set<SpatialRegion> possibleTargets = validMoves.get(r);
+		Assert.assertNotNull(possibleTargets);
+		Assert.assertFalse(possibleTargets.isEmpty());
+		final int expectedSize = 1;
+		Assert.assertEquals(expectedSize, possibleTargets.size());
+	}
+
+	@Test
+	public final void testCeateValidMoveMap2() {
+		final SpatialMatrix<Integer, Object> matrix = new SpatialMatrixConstructionData<>(new int[] { 5, 10 },
+				1).matrix;
+		final SpatialRegion r = matrix.getRegion(0, 5, 0, 5);
+		matrix.placeElement("testvalidmoves", r);
+		Assert.assertTrue(matrix.isOccupied(r));
+		final Map<SpatialRegion, Set<SpatialRegion>> validMoves = matrix.createValidMoveMap();
+		Assert.assertNotNull(validMoves);
+		Assert.assertFalse(validMoves.isEmpty());
+		final Set<SpatialRegion> possibleTargets = validMoves.get(r);
+		Assert.assertNotNull(possibleTargets);
+		Assert.assertFalse(possibleTargets.isEmpty());
+		final int expectedSize = 1;
+		Assert.assertEquals(expectedSize, possibleTargets.size());
+	}
+
 	/**
 	 * Test method for
 	 * {@link se.kth.speech.SpatialMatrix#createSizeIndexedRegionPowerSet()}.

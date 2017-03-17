@@ -71,5 +71,9 @@ final class GameViewFrame extends JFrame {
 		});
 		// TODO Auto-generated constructor stub
 	}
+	
+	void addBoardPanel(final GameBoardPanel boardPanel){
+		
+	}
 
 }

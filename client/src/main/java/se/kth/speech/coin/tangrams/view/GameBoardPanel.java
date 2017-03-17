@@ -24,36 +24,19 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.Stroke;
-import java.awt.Toolkit;
-import java.awt.image.BufferedImage;
-import java.awt.image.FilteredImageSource;
-import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.net.URL;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.EnumMap;
 import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
-import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.function.IntSupplier;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
-import javax.imageio.ImageIO;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
@@ -64,17 +47,12 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 import se.kth.speech.IntArrays;
-import se.kth.speech.MathDivisors;
 import se.kth.speech.Matrix;
 import se.kth.speech.MutablePair;
 import se.kth.speech.RandomCollections;
-import se.kth.speech.SpatialRegion;
 import se.kth.speech.SpatialMap;
 import se.kth.speech.SpatialMatrix;
-import se.kth.speech.awt.ColorReplacementImageFilter;
-import se.kth.speech.coin.tangrams.content.ImageSize;
-import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
-import se.kth.speech.coin.tangrams.view.ImageViewInfo.RasterizationInfo;
+import se.kth.speech.SpatialRegion;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -82,56 +60,6 @@ import se.kth.speech.coin.tangrams.view.ImageViewInfo.RasterizationInfo;
  *
  */
 final class GameBoardPanel extends JPanel {
-
-	private static class PositionGridSizeSummary {
-		private final int[] maxImgGridSize;
-
-		private final int[] minImgGridSize;
-
-		private final int totalImgGridArea;
-
-		private final List<Integer> commonDivisors;
-
-		private PositionGridSizeSummary(final int[] minImgGridSize, final int[] maxImgGridSize,
-				final int totalImgGridArea, final List<Integer> commonDivisors) {
-			this.minImgGridSize = minImgGridSize;
-			this.maxImgGridSize = maxImgGridSize;
-			this.totalImgGridArea = totalImgGridArea;
-			this.commonDivisors = commonDivisors;
-		}
-
-		/*
-		 * (non-Javadoc)
-		 *
-		 * @see java.lang.Object#toString()
-		 */
-		@Override
-		public String toString() {
-			final StringBuilder builder = new StringBuilder();
-			builder.append("PositionGridSizeSummary [minImgGridSize=");
-			builder.append(Arrays.toString(minImgGridSize));
-			builder.append(", maxImgGridSize=");
-			builder.append(Arrays.toString(maxImgGridSize));
-			builder.append(", totalImgGridArea=");
-			builder.append(totalImgGridArea);
-			builder.append(", commonDivisors=");
-			builder.append(commonDivisors);
-			builder.append("]");
-			return builder.toString();
-		}
-
-	}
-
-	private static final BiFunction<Image, GameBoardPanel, Image> DEFAULT_POST_COLORING_IMG_TRANSFORMER = new BiFunction<Image, GameBoardPanel, Image>() {
-
-		@Override
-		public Image apply(final Image img, final GameBoardPanel gameBoardPanel) {
-			// Do nothing
-			LOGGER.debug("Created instance {} for {}.", img, gameBoardPanel);
-			return img;
-		}
-
-	};
 
 	private static final int IMG_PADDING;
 
@@ -148,34 +76,10 @@ final class GameBoardPanel extends JPanel {
 	 */
 	private static final long serialVersionUID = 6258829324465894025L;
 
-	private static final Collector<CharSequence, ?, String> TABLE_ROW_CELL_JOINER;
-
-	private static final String TABLE_STRING_REPR_COL_DELIMITER;
-
-	private static final String TABLE_STRING_REPR_ROW_DELIMITER = System.lineSeparator();
-
-	static {
-		TABLE_STRING_REPR_COL_DELIMITER = "\t";
-		TABLE_ROW_CELL_JOINER = Collectors.joining(TABLE_STRING_REPR_COL_DELIMITER);
-	}
-
 	static {
 		REGION_HIGHLIGHT_STROKE_WIDTH = 2;
 		IMG_PADDING = REGION_HIGHLIGHT_STROKE_WIDTH * 2;
 		MIN_GRID_SQUARE_LENGTH = 10 + IMG_PADDING;
-	}
-
-	private static final Function<ImageSize, Integer> IMAGE_SIZE_FACTORS = createImageSizeFactorMap()::get;
-
-	private static void appendRowTableRepr(final int rowIdx, final Iterator<?> rowCellIter, final StringBuilder sb) {
-		sb.append(rowIdx);
-		final String nullValRepr = "-";
-		while (rowCellIter.hasNext()) {
-			sb.append(TABLE_STRING_REPR_COL_DELIMITER);
-			final Object next = rowCellIter.next();
-			final String nextRepr = Objects.toString(next, nullValRepr);
-			sb.append(nextRepr);
-		}
 	}
 
 	private static int[] createComponentCoordSizeArray(final SpatialRegion region, final int colWidth,
@@ -201,129 +105,16 @@ final class GameBoardPanel extends JPanel {
 		return new int[] { startX, startY };
 	}
 
-	private static Map<ImageSize, Integer> createImageSizeFactorMap() {
-		final Map<ImageSize, Integer> result = new EnumMap<>(ImageSize.class);
-		final Iterator<ImageSize> sizes = ImageSize.getSizeOrdering().iterator();
-		result.put(sizes.next(), 1);
-		result.put(sizes.next(), 2);
-		result.put(sizes.next(), 3);
-		assert result.size() == ImageSize.values().length;
-		return result;
-	}
-
-	private static String createMatrixReprString(final Matrix<?> matrix) {
-		final Stream<String> colNames = Stream.of("ROW_IDX", "COL_IDXS...");
-		final String header = colNames.collect(TABLE_ROW_CELL_JOINER);
-
-		final int[] dims = matrix.getDimensions();
-		final Stream.Builder<String> subheaderBuilder = Stream.builder();
-		subheaderBuilder.accept("");
-		IntStream.range(0, dims[1]).mapToObj(Integer::toString).forEach(subheaderBuilder);
-		final String subHeader = TABLE_STRING_REPR_ROW_DELIMITER
-				+ subheaderBuilder.build().collect(TABLE_ROW_CELL_JOINER);
-		final int cellCount = matrix.getValues().size();
-		final StringBuilder sb = new StringBuilder(header.length() + subHeader.length() + cellCount * 16);
-		sb.append(header);
-		sb.append(subHeader);
-		final Iterator<? extends List<?>> rowIter = matrix.rowIterator();
-		int rowIdx = 0;
-		if (rowIter.hasNext()) {
-			do {
-				sb.append(TABLE_STRING_REPR_ROW_DELIMITER);
-				final List<?> row = rowIter.next();
-				appendRowTableRepr(rowIdx++, row.iterator(), sb);
-			} while (rowIter.hasNext());
-		}
-		return sb.toString();
-	}
-
 	private static IntStream createMinimumDimLengths(final int[] dims) {
 		return Arrays.stream(dims).map(dim -> dim * MIN_GRID_SQUARE_LENGTH);
 	}
 
-	private static int[] createPositionGridSize(final PositionGridSizeSummary posGridSizeSummary,
-			final Dimension maxBoardSize, final double occupiedGridArea) {
-		// NOTE: "rows" in the matrix go top-bottom and "cols" go
-		// left-right
-		int[] result = null;
-		final List<Integer> commonDivisors = posGridSizeSummary.commonDivisors;
-		LOGGER.info("Trying common divisors {} for board dimensions {}.", commonDivisors, maxBoardSize);
-		for (final ListIterator<Integer> imgCommonDivisorIter = commonDivisors
-				.listIterator(posGridSizeSummary.commonDivisors.size()); imgCommonDivisorIter.hasPrevious();) {
-			final int nextGreatestCommonDivisor = imgCommonDivisorIter.previous();
-			if (maxBoardSize.height % nextGreatestCommonDivisor != 0) {
-				LOGGER.info("Board height ({}) not divisible by {}.", maxBoardSize.height, nextGreatestCommonDivisor);
-			} else {
-				final int rows = maxBoardSize.height / nextGreatestCommonDivisor;
-				if (maxBoardSize.width % nextGreatestCommonDivisor != 0) {
-					LOGGER.info("Board width ({}) not divisible by {}.", maxBoardSize.width, nextGreatestCommonDivisor);
-				} else {
-					final int cols = maxBoardSize.width / nextGreatestCommonDivisor;
-					LOGGER.info("Trying to size the board using a grid of size {}*{}.", rows, cols);
-					if (rows < posGridSizeSummary.maxImgGridSize[0]) {
-						LOGGER.info("Too few rows ({}) to accommodate biggest image (with a row count of {}).", rows,
-								posGridSizeSummary.maxImgGridSize[0]);
-					} else if (cols < posGridSizeSummary.maxImgGridSize[1]) {
-						LOGGER.info("Too few columns ({}) to accommodate biggest image (with a column count of {}).",
-								cols, posGridSizeSummary.maxImgGridSize[1]);
-					} else {
-						final int totalBoardGridArea = rows * cols;
-						final int allowedOccupiedBoardArea = (int) (totalBoardGridArea * occupiedGridArea);
-						if (allowedOccupiedBoardArea < posGridSizeSummary.totalImgGridArea) {
-							LOGGER.info(
-									"Too few grid cells ({} = {} * {}) to accommodate all images (required minimum of {}).",
-									new Object[] { allowedOccupiedBoardArea, totalBoardGridArea, occupiedGridArea,
-											posGridSizeSummary.totalImgGridArea, });
-						} else {
-							LOGGER.info("Found valid board size {}*{} (with a common divisor of {}).",
-									new Object[] { rows, cols, nextGreatestCommonDivisor });
-							result = new int[] { rows, cols };
-							break;
-						}
-					}
-				}
-			}
-
-		}
-		if (result == null) {
-			throw new IllegalArgumentException("Could not find a valid board size.");
-		}
-		return result;
-	}
-
-	private static PositionGridSizeSummary createPositionGridSizeSummary(
-			final Iterator<ImageViewInfo> imageViewInfoData) {
-		final int[] maxImgGridSize = new int[] { Integer.MIN_VALUE, Integer.MIN_VALUE };
-		final int[] minImgGridSize = new int[] { Integer.MAX_VALUE, Integer.MAX_VALUE };
-		int totalImgGridArea = 0;
-		final List<Integer> commonDivisors;
-		{
-			final ImageViewInfo imgViewInfoDatum = imageViewInfoData.next();
-			final int[] imgGridSize = imgViewInfoDatum.getGridSize(IMAGE_SIZE_FACTORS);
-			IntArrays.mutate(minImgGridSize, imgGridSize, Math::min);
-			IntArrays.mutate(maxImgGridSize, imgGridSize, Math::max);
-			final RasterizationInfo rasterInfo = imgViewInfoDatum.getRasterization();
-			commonDivisors = MathDivisors.createCommonDivisorList(rasterInfo.getWidth(), rasterInfo.getHeight());
-			final int imgGridArea = IntArrays.product(imgGridSize);
-			totalImgGridArea += imgGridArea;
-		}
-		while (imageViewInfoData.hasNext()) {
-			final ImageViewInfo imgViewInfoDatum = imageViewInfoData.next();
-			final int[] imgGridSize = imgViewInfoDatum.getGridSize(IMAGE_SIZE_FACTORS);
-			IntArrays.mutate(minImgGridSize, imgGridSize, Math::min);
-			IntArrays.mutate(maxImgGridSize, imgGridSize, Math::max);
-			final RasterizationInfo rasterInfo = imgViewInfoDatum.getRasterization();
-			MathDivisors.removeNonDivisors(commonDivisors.iterator(), rasterInfo.getWidth(), rasterInfo.getHeight());
-			final int imgGridArea = IntArrays.product(imgGridSize);
-			totalImgGridArea += imgGridArea;
-		}
-		LOGGER.debug("Common divisors for all images are {}.", commonDivisors);
-		return new PositionGridSizeSummary(minImgGridSize, maxImgGridSize, totalImgGridArea, commonDivisors);
-	}
-
-	private static boolean isDimensionDivisibleIntoGrid(final Dimension dim, final Matrix<?> matrix) {
-		final int[] matrixDims = matrix.getDimensions();
-		return dim.getHeight() % matrixDims[0] == 0 && dim.getWidth() % matrixDims[1] == 0;
+	private static <E> SpatialMatrix<Integer, E> createPosMatrix(final int[] gridSize,
+			final Function<? super E, Integer> pieceIdGetter, final SpatialMap<E> posMap) {
+		LOGGER.info("Creating a position matrix of size {}.", gridSize);
+		final Integer[] posMatrixBackingArray = new Integer[IntArrays.product(gridSize)];
+		final Matrix<Integer> backingPosMatrix = new Matrix<>(posMatrixBackingArray, gridSize[1]);
+		return new SpatialMatrix<>(backingPosMatrix, pieceIdGetter, posMap);
 	}
 
 	private static Image scaleImageToGridSize(final Image img, final SpatialRegion occupiedGridRegion,
@@ -340,26 +131,81 @@ final class GameBoardPanel extends JPanel {
 
 	private final Map<ImageViewInfo, Image> pieceImgs;
 
+	// GameBoardPanel(final Map<ImageViewInfo, Image> pieceImgs, final Random
+	// rnd, final double occupiedGridArea) {
+	// this.pieceImgs = pieceImgs;
+	// final Map<ImageViewInfo, Integer> pieceIds =
+	// Maps.newHashMapWithExpectedSize(pieceImgs.size());
+	// final Function<ImageViewInfo, Integer> incrementingPieceIdGetter = piece
+	// -> pieceIds.computeIfAbsent(piece,
+	// k -> pieceIds.size());
+	// // http://stackoverflow.com/a/1936582/1391325
+	// final Dimension screenSize = getToolkit().getScreenSize();
+	// // final Dimension maxSize = Dimensions.createScaledDimension(boardSize,
+	// // screenSize);
+	// LOGGER.debug("Setting maximum component size to {}.", screenSize);
+	// setMaximumSize(screenSize);
+	// {
+	// final int shortestScreenLength = (int) (Math.min(screenSize.width,
+	// screenSize.height) * 0.75);
+	// final Dimension boardSize = new Dimension(shortestScreenLength,
+	// shortestScreenLength);
+	// setPreferredSize(boardSize);
+	// final PositionGridSizeSummary posGridSizeSummary =
+	// createPositionGridSizeSummary(
+	// pieceImgs.keySet().iterator());
+	// LOGGER.info("Position grid size summary: {}", posGridSizeSummary);
+	// final int[] gridSize = createPositionGridSize(posGridSizeSummary,
+	// boardSize, occupiedGridArea);
+	// LOGGER.info("Creating a position matrix of size {}.", gridSize);
+	// final Integer[] posMatrixBackingArray = new
+	// Integer[IntArrays.product(gridSize)];
+	// final Matrix<Integer> backingPosMatrix = new
+	// Matrix<>(posMatrixBackingArray, gridSize[1]);
+	// if (!isDimensionDivisibleIntoGrid(boardSize, backingPosMatrix)) {
+	// throw new IllegalArgumentException(
+	// String.format("Board %s not divisble into matrix with dimensions %s.",
+	// boardSize,
+	// Arrays.toString(backingPosMatrix.getDimensions())));
+	// }
+	// final Function<? super ImageViewInfo, int[]> piecePosMatrixSizeFactory =
+	// imgViewInfo -> imgViewInfo
+	// .getGridSize(IMAGE_SIZE_FACTORS);
+	// final Collection<ImageViewInfo> pieces = pieceImgs.keySet();
+	// final SpatialMap<ImageViewInfo> posMap = new SpatialMap<>(pieces.size());
+	// posMatrix = new SpatialMatrix<>(backingPosMatrix, pieceIds::get, posMap);
+	// final RandomMatrixPositionFiller<Integer, ImageViewInfo> matrixFiller =
+	// new RandomMatrixPositionFiller<>(
+	// posMatrix, incrementingPieceIdGetter, rnd, piecePosMatrixSizeFactory);
+	// matrixFiller.apply(pieces);
+	// final Collection<ImageViewInfo> allElements = posMap.getAllElements();
+	// LOGGER.info("Created a spatial map with element IDs {}.",
+	// allElements.stream().map(pieceIds::get)
+	// .collect(Collectors.toCollection(() -> new
+	// ArrayList<>(allElements.size()))));
+	// }
+	// {
+	// final int[] minSizeDims =
+	// createMinimumDimLengths(posMatrix.getDimensions()).toArray();
+	// // NOTE: "rows" in the matrix go top-bottom and "cols" go
+	// // left-right
+	// final Dimension minSize = new Dimension(minSizeDims[1], minSizeDims[0]);
+	// LOGGER.debug("Setting minimum component size to {}.", minSize);
+	// setMinimumSize(minSize);
+	// }
+	// // Finished with creating necessary data structures
+	// System.out.println("IMAGE PLACEMENTS");
+	// System.out.println(createMatrixReprString(posMatrix.getPositionMatrix()));
+	// }
+
 	private final SpatialMatrix<Integer, ImageViewInfo> posMatrix;
 
-	private final BiFunction<? super Image, ? super GameBoardPanel, ? extends Image> postColoringImgTransformer;
-
-	GameBoardPanel(final Collection<ImageVisualizationInfo> imgVisualizationInfoData, final Random rnd,
-			final int maxImgPlacements, final int maxPlacementRetriesPerImg, final double occupiedGridArea,
-			final boolean allowFailedPlacements, final int uniqueImgResourceCount) {
-		this(imgVisualizationInfoData, rnd, maxImgPlacements, maxPlacementRetriesPerImg, occupiedGridArea,
-				allowFailedPlacements, uniqueImgResourceCount, DEFAULT_POST_COLORING_IMG_TRANSFORMER);
-	}
-
-	GameBoardPanel(final Collection<ImageVisualizationInfo> imgVisualizationInfoData, final Random rnd,
-			final int maxImgPlacements, final int maxPlacementRetriesPerImg, final double occupiedGridArea,
-			final boolean allowFailedPlacements, final int uniqueImgResourceCount,
-			final BiFunction<? super Image, ? super GameBoardPanel, ? extends Image> postColoringImgTransformer) {
-		this.postColoringImgTransformer = postColoringImgTransformer;
-		final Map<ImageViewInfo, Integer> pieceIds = Maps.newHashMapWithExpectedSize(maxImgPlacements);
-		final Function<ImageViewInfo, Integer> incrementingPieceIdGetter = piece -> pieceIds.computeIfAbsent(piece,
-				k -> pieceIds.size());
-		pieceImgs = createImageViewInfoMap(imgVisualizationInfoData, uniqueImgResourceCount);
+	GameBoardPanel(final int[] gridSize, final Function<? super ImageViewInfo, Integer> pieceIdGetter,
+			final int uniqueImgResourceCount) {
+		posMatrix = createPosMatrix(gridSize, pieceIdGetter, new SpatialMap<>(uniqueImgResourceCount));
+		// Use linked map in order to preserve iteration order in provided
+		// sequence
+		pieceImgs = Maps.newLinkedHashMapWithExpectedSize(uniqueImgResourceCount);
 		// http://stackoverflow.com/a/1936582/1391325
 		final Dimension screenSize = getToolkit().getScreenSize();
 		// final Dimension maxSize = Dimensions.createScaledDimension(boardSize,
@@ -370,29 +216,6 @@ final class GameBoardPanel extends JPanel {
 			final int shortestScreenLength = (int) (Math.min(screenSize.width, screenSize.height) * 0.75);
 			final Dimension boardSize = new Dimension(shortestScreenLength, shortestScreenLength);
 			setPreferredSize(boardSize);
-			final PositionGridSizeSummary posGridSizeSummary = createPositionGridSizeSummary(
-					pieceImgs.keySet().iterator());
-			LOGGER.info("Position grid size summary: {}", posGridSizeSummary);
-			final int[] gridSize = createPositionGridSize(posGridSizeSummary, boardSize, occupiedGridArea);
-			LOGGER.info("Creating a position matrix of size {}.", gridSize);
-			final Integer[] posMatrixBackingArray = new Integer[IntArrays.product(gridSize)];
-			final Matrix<Integer> backingPosMatrix = new Matrix<>(posMatrixBackingArray, gridSize[1]);
-			if (!isDimensionDivisibleIntoGrid(boardSize, backingPosMatrix)) {
-				throw new IllegalArgumentException(
-						String.format("Board %s not divisble into matrix with dimensions %s.", boardSize,
-								Arrays.toString(backingPosMatrix.getDimensions())));
-			}
-			final Function<? super ImageViewInfo, int[]> piecePosMatrixSizeFactory = imgViewInfo -> imgViewInfo
-					.getGridSize(IMAGE_SIZE_FACTORS);
-			final Collection<ImageViewInfo> pieces = pieceImgs.keySet();
-			final SpatialMap<ImageViewInfo> posMap = new SpatialMap<>(pieces.size());
-			posMatrix = new SpatialMatrix<>(backingPosMatrix, pieceIds::get, posMap);
-			final RandomMatrixPositionFiller<Integer, ImageViewInfo> matrixFiller = new RandomMatrixPositionFiller<>(
-					posMatrix, incrementingPieceIdGetter, rnd, piecePosMatrixSizeFactory);
-			matrixFiller.apply(pieces);
-			final Collection<ImageViewInfo> allElements = posMap.getAllElements();
-			LOGGER.info("Created a spatial map with element IDs {}.", allElements.stream().map(pieceIds::get)
-					.collect(Collectors.toCollection(() -> new ArrayList<>(allElements.size()))));
 		}
 		{
 			final int[] minSizeDims = createMinimumDimLengths(posMatrix.getDimensions()).toArray();
@@ -402,9 +225,56 @@ final class GameBoardPanel extends JPanel {
 			LOGGER.debug("Setting minimum component size to {}.", minSize);
 			setMinimumSize(minSize);
 		}
-		// Finished with creating necessary data structures
-		System.out.println("IMAGE PLACEMENTS");
-		System.out.println(createMatrixReprString(posMatrix.getPositionMatrix()));
+	}
+
+	GameBoardPanel(final SpatialMatrix<Integer, ImageViewInfo> posMatrix, final int uniqueImgResourceCount) {
+		this.posMatrix = posMatrix;
+		// Use linked map in order to preserve iteration order in provided
+		// sequence
+		pieceImgs = Maps.newLinkedHashMapWithExpectedSize(uniqueImgResourceCount);
+		// http://stackoverflow.com/a/1936582/1391325
+		final Dimension screenSize = getToolkit().getScreenSize();
+		// final Dimension maxSize = Dimensions.createScaledDimension(boardSize,
+		// screenSize);
+		LOGGER.debug("Setting maximum component size to {}.", screenSize);
+		setMaximumSize(screenSize);
+		{
+			final int shortestScreenLength = (int) (Math.min(screenSize.width, screenSize.height) * 0.75);
+			final Dimension boardSize = new Dimension(shortestScreenLength, shortestScreenLength);
+			setPreferredSize(boardSize);
+		}
+		{
+			final int[] minSizeDims = createMinimumDimLengths(posMatrix.getDimensions()).toArray();
+			// NOTE: "rows" in the matrix go top-bottom and "cols" go
+			// left-right
+			final Dimension minSize = new Dimension(minSizeDims[1], minSizeDims[0]);
+			LOGGER.debug("Setting minimum component size to {}.", minSize);
+			setMinimumSize(minSize);
+		}
+	}
+
+	GameBoardPanel(final SpatialMatrix<Integer, ImageViewInfo> posMatrix, final Map<ImageViewInfo, Image> pieceImgs) {
+		this.posMatrix = posMatrix;
+		this.pieceImgs = pieceImgs;
+		// http://stackoverflow.com/a/1936582/1391325
+		final Dimension screenSize = getToolkit().getScreenSize();
+		// final Dimension maxSize = Dimensions.createScaledDimension(boardSize,
+		// screenSize);
+		LOGGER.debug("Setting maximum component size to {}.", screenSize);
+		setMaximumSize(screenSize);
+		{
+			final int shortestScreenLength = (int) (Math.min(screenSize.width, screenSize.height) * 0.75);
+			final Dimension boardSize = new Dimension(shortestScreenLength, shortestScreenLength);
+			setPreferredSize(boardSize);
+		}
+		{
+			final int[] minSizeDims = createMinimumDimLengths(posMatrix.getDimensions()).toArray();
+			// NOTE: "rows" in the matrix go top-bottom and "cols" go
+			// left-right
+			final Dimension minSize = new Dimension(minSizeDims[1], minSizeDims[0]);
+			LOGGER.debug("Setting minimum component size to {}.", minSize);
+			setMinimumSize(minSize);
+		}
 	}
 
 	@Override
@@ -426,43 +296,6 @@ final class GameBoardPanel extends JPanel {
 			}
 		}
 
-	}
-
-	private LinkedHashMap<ImageViewInfo, Image> createImageViewInfoMap(
-			final Collection<ImageVisualizationInfo> imgVisualizationInfoData, final int uniqueImgResourceCount) {
-		// Use linked map in order to preserve iteration order in provided
-		// sequence
-		final LinkedHashMap<ImageViewInfo, Image> result = Maps
-				.newLinkedHashMapWithExpectedSize(imgVisualizationInfoData.size());
-
-		final Toolkit toolkit = getToolkit();
-		final Map<URL, BufferedImage> resourceImgs = Maps.newHashMapWithExpectedSize(uniqueImgResourceCount);
-		for (final ImageVisualizationInfo imgVisualizationInfoDatum : imgVisualizationInfoData) {
-			final URL imgResourceLoc = imgVisualizationInfoDatum.getResourceLoc();
-			final BufferedImage initialImg = resourceImgs.computeIfAbsent(imgResourceLoc, loc -> {
-				try {
-					return ImageIO.read(loc);
-				} catch (final IOException e) {
-					throw new UncheckedIOException(e);
-				}
-			});
-			final IntSupplier widthGetter = initialImg::getWidth;
-			final IntSupplier heightGetter = initialImg::getHeight;
-			{
-				// Size/aspect ratio calculation
-				final ImageViewInfo.RasterizationInfo imgRasterizationInfo = new ImageViewInfo.RasterizationInfo(
-						widthGetter, heightGetter);
-				{
-					final Image coloredImg = toolkit.createImage(new FilteredImageSource(initialImg.getSource(),
-							new ColorReplacementImageFilter(imgVisualizationInfoDatum.getColor())));
-					final ImageViewInfo imgInfo = new ImageViewInfo(imgVisualizationInfoDatum, imgRasterizationInfo);
-					final Image transformedImg = postColoringImgTransformer.apply(coloredImg, this);
-					final Image oldImg = result.put(imgInfo, transformedImg);
-					assert oldImg == null : String.format("Key already found in map: %s", imgInfo);
-				}
-			}
-		}
-		return result;
 	}
 
 	private Map<ImageViewInfo, SpatialRegion> createRandomValidMoveTargetMap(final SpatialRegion occupiedRegion,
@@ -591,6 +424,20 @@ final class GameBoardPanel extends JPanel {
 	}
 
 	/**
+	 * @return the pieceImgs
+	 */
+	Map<ImageViewInfo, Image> getPieceImgs() {
+		return pieceImgs;
+	}
+
+	/**
+	 * @return the posMatrix
+	 */
+	SpatialMatrix<Integer, ImageViewInfo> getPosMatrix() {
+		return posMatrix;
+	}
+
+	/**
 	 *
 	 */
 	synchronized void notifyContinue(final Random rnd) {
@@ -605,8 +452,8 @@ final class GameBoardPanel extends JPanel {
 		Entry<SpatialRegion, Map<ImageViewInfo, SpatialRegion>> pieceMove = null;
 		do {
 			final SpatialRegion occupiedRegion = RandomCollections.getRandomElement(regionsToTry, rnd);
-			final Map<ImageViewInfo, SpatialRegion> pieceMoveTargets = createRandomValidMoveTargetMap(
-					occupiedRegion, rnd);
+			final Map<ImageViewInfo, SpatialRegion> pieceMoveTargets = createRandomValidMoveTargetMap(occupiedRegion,
+					rnd);
 			if (pieceMoveTargets.isEmpty()) {
 				LOGGER.debug("No valid moves for piece(s) from region {}.", occupiedRegion);
 				failedRegions.add(occupiedRegion);
@@ -627,9 +474,27 @@ final class GameBoardPanel extends JPanel {
 	void notifyMove(final Entry<SpatialRegion, Map<ImageViewInfo, SpatialRegion>> pieceMove) {
 		final SpatialRegion occupiedRegion = pieceMove.getKey();
 		final Map<ImageViewInfo, SpatialRegion> pieceMoveTargets = pieceMove.getValue();
+		// System.out.println("BEFORE" + System.lineSeparator() +
+		// System.lineSeparator()
+		// + new
+		// MatrixStringReprFactory().apply(posMatrix.getPositionMatrix()));
 		highlightedRegions.add(occupiedRegion);
-		pieceMoveTargets.forEach((piece, moveTarget) -> posMatrix.placeElement(piece, moveTarget));
+		for (final Entry<ImageViewInfo, SpatialRegion> pieceMoveTarget : pieceMoveTargets.entrySet()) {
+			final ImageViewInfo piece = pieceMoveTarget.getKey();
+			final SpatialRegion moveTarget = pieceMoveTarget.getValue();
+			if (!Arrays.equals(occupiedRegion.getDimensions(), moveTarget.getDimensions())) {
+				throw new IllegalArgumentException(String.format(
+						"Target region does not have the same dimensions (%s) as the source (%s).",
+						Arrays.toString(occupiedRegion.getDimensions()), Arrays.toString(moveTarget.getDimensions())));
+			}
+
+			posMatrix.placeElement(piece, moveTarget);
+		}
 		posMatrix.clearRegion(occupiedRegion);
+		// System.out.println(System.lineSeparator() + System.lineSeparator() +
+		// "AFTER" + System.lineSeparator() + System.lineSeparator()
+		// + new
+		// MatrixStringReprFactory().apply(posMatrix.getPositionMatrix()));
 		repaint();
 	}
 
