@@ -133,7 +133,7 @@ public final class SpatialMap<E> {
 
 		private final transient int hashCode;
 
-		public Region(final int xLowerBound, final int xUpperBound, final int yLowerBound, final int yUpperBound) {
+		Region(final int xLowerBound, final int xUpperBound, final int yLowerBound, final int yUpperBound) {
 			this.xLowerBound = xLowerBound;
 			this.xUpperBound = xUpperBound;
 			this.yLowerBound = yLowerBound;
@@ -179,6 +179,10 @@ public final class SpatialMap<E> {
 
 		public int[] getDimensions() {
 			return new int[] { getLengthX(), getLengthY() };
+		}
+		
+		public int getGridArea(){
+			return getLengthX() * getLengthY();
 		}
 
 		public int getLengthX() {
