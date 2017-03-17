@@ -284,6 +284,22 @@ public final class SpatialMatrix<I, E> {
 		setPositionValues(target, elementId);
 		elementPlacements.put(element, target);
 	}
+	
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		final StringBuilder builder = new StringBuilder();
+		builder.append("SpatialMatrix [elementPlacements=");
+		builder.append(elementPlacements);
+		builder.append(", positionMatrix=");
+		builder.append(positionMatrix);
+		builder.append("]");
+		return builder.toString();
+	}
 
 	private void setPositionValues(final SpatialRegion region, final I elementId) {
 		LOGGER.debug("Setting {} to value \"{}\".", region, elementId);
