@@ -9,9 +9,9 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="423.33334mm"
-   height="317.5mm"
-   viewBox="0 0 423.33333 317.5"
+   width="1200"
+   height="1200"
+   viewBox="0 0 317.5 317.5"
    version="1.1"
    id="svg5055"
    inkscape:version="0.92.0 r15299"
@@ -28,21 +28,22 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="1.4"
-     inkscape:cx="610.85725"
-     inkscape:cy="594.96067"
+     inkscape:zoom="0.24748737"
+     inkscape:cx="-562.23876"
+     inkscape:cy="394.96074"
      inkscape:document-units="mm"
      inkscape:current-layer="svg5055"
      showgrid="false"
-     inkscape:window-width="1797"
-     inkscape:window-height="1330"
-     inkscape:window-x="-755"
-     inkscape:window-y="275"
+     inkscape:window-width="1278"
+     inkscape:window-height="1378"
+     inkscape:window-x="-91"
+     inkscape:window-y="129"
      inkscape:window-maximized="0"
      fit-margin-top="0"
      fit-margin-left="0"
      fit-margin-right="0"
-     fit-margin-bottom="0" />
+     fit-margin-bottom="0"
+     units="px" />
   <metadata
      id="metadata5052">
     <rdf:RDF>
@@ -58,7 +59,7 @@
   <g
      inkscape:label="Chicken"
      id="layer-chicken"
-     transform="matrix(8.466667,0,0,9.0714286,338.66668,-1179.2857)">
+     transform="matrix(6.35,0,0,9.0714286,254,-1179.2857)">
     <path
        style="fill:#000000;stroke-width:0"
        d="m -25,165 5,-5 -20,-20 h 15 l 5,5 h 15 v -15 h 15 l -5,5 5,5 -15,20 5,5 z"

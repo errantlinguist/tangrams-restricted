@@ -9,9 +9,9 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="635mm"
+   width="317.5mm"
    height="317.5mm"
-   viewBox="0 0 635 317.5"
+   viewBox="0 0 317.5 317.5"
    version="1.1"
    id="svg4504"
    inkscape:version="0.92.0 r15299"
@@ -29,8 +29,8 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="0.087500001"
-     inkscape:cx="-1647.558"
-     inkscape:cy="595.74455"
+     inkscape:cx="-3318.5624"
+     inkscape:cy="1602.473"
      inkscape:document-units="mm"
      inkscape:current-layer="layer-bridge"
      showgrid="false"
@@ -40,8 +40,8 @@
      fit-margin-bottom="0"
      inkscape:window-width="1278"
      inkscape:window-height="1378"
-     inkscape:window-x="-7"
-     inkscape:window-y="0"
+     inkscape:window-x="-115"
+     inkscape:window-y="128"
      inkscape:window-maximized="0" />
   <metadata
      id="metadata4501">
@@ -59,10 +59,10 @@
      inkscape:label="Bridge"
      inkscape:groupmode="layer"
      id="layer-bridge"
-     transform="translate(387.5,18.75)">
+     transform="translate(228.75,177.5)">
     <path
        style="fill:#000000;stroke-width:0"
-       d="m -387.5,140 158.75,-158.75 79.375,79.375 H 9.375 L 88.75,-18.75 247.5,140 V 298.75 L 88.75,140 9.375,219.375 h -158.75 L -228.75,140 -387.5,298.75"
+       d="m -228.75,-18.75 79.375,-158.75 39.6875,79.375 h 79.375 L 9.375,-177.5 88.75,-18.75 V 140 L 9.375,-18.75 -30.3125,60.625 h -79.375 L -149.375,-18.75 -228.75,140"
        id="path-bridge"
        inkscape:connector-curvature="0"
        sodipodi:nodetypes="cccccccccccc" />

@@ -9,9 +9,9 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="423.33334mm"
+   width="317.5mm"
    height="317.5mm"
-   viewBox="0 0 423.33333 317.5"
+   viewBox="0 0 317.49999 317.5"
    version="1.1"
    id="svg6745"
    inkscape:version="0.92.0 r15299"
@@ -28,8 +28,8 @@
      borderopacity="1.0"
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
-     inkscape:zoom="0.7"
-     inkscape:cx="698.94737"
+     inkscape:zoom="0.24748737"
+     inkscape:cx="152.51879"
      inkscape:cy="583.62205"
      inkscape:document-units="mm"
      inkscape:current-layer="layer-temple"
@@ -59,10 +59,10 @@
      inkscape:label="Temple"
      inkscape:groupmode="layer"
      id="layer-temple"
-     transform="translate(241.66667,14.25)">
+     transform="translate(188.75,14.25)">
     <path
        style="fill:#000000;stroke-width:0"
-       d="m -241.66667,227.65476 h 105.83334 L -188.75,136.94048 H -82.916668 L -30,-14.25 22.916668,136.94048 H 128.75 L 75.833333,212.53572 H 181.66667 L 128.75,303.25 H 75.833333 L 22.916668,227.65476 -30,303.25 -82.916668,227.65476 -135.83333,303.25 H -188.75 Z"
+       d="m -188.75,227.65476 h 79.375 l -39.6875,-90.71428 h 79.375 L -30,-14.25 9.6875004,136.94048 H 89.062498 L 49.374999,212.53572 H 128.75 L 89.062498,303.25 H 49.374999 L 9.6875004,227.65476 -30,303.25 -69.6875,227.65476 -109.375,303.25 h -39.6875 z"
        id="path-temple"
        inkscape:connector-curvature="0"
        sodipodi:nodetypes="ccccccccccccccccc" />

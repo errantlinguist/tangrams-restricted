@@ -9,9 +9,9 @@
    xmlns="http://www.w3.org/2000/svg"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
-   width="635mm"
+   width="317.5mm"
    height="317.5mm"
-   viewBox="0 0 635 317.5"
+   viewBox="0 0 317.5 317.5"
    version="1.1"
    id="svg7311"
    inkscape:version="0.92.0 r15299"
@@ -29,7 +29,7 @@
      inkscape:pageopacity="0.0"
      inkscape:pageshadow="2"
      inkscape:zoom="0.24748737"
-     inkscape:cx="1202.282"
+     inkscape:cx="-377.56598"
      inkscape:cy="565.93926"
      inkscape:document-units="mm"
      inkscape:current-layer="layer-wedge"
@@ -59,10 +59,10 @@
      inkscape:label="Wedge"
      inkscape:groupmode="layer"
      id="layer-wedge"
-     transform="translate(342.5,-3.75)">
+     transform="translate(183.75,-3.75)">
     <path
        style="fill:#000000;stroke-width:0"
-       d="M -342.5,3.75 H -152 l 127,127 127,-127 H 292.5 L -25,321.25 Z"
+       d="m -183.75,3.75 h 95.25 l 63.5,127 63.5,-127 h 95.25 L -25,321.25 Z"
        id="path-wedge"
        inkscape:connector-curvature="0"
        sodipodi:nodetypes="ccccccc" />
