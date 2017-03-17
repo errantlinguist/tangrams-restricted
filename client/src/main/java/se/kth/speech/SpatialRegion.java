@@ -245,7 +245,7 @@ public final class SpatialRegion {
 		builder.append(xLowerBound);
 		builder.append(", ");
 		builder.append(xUpperBound);
-		builder.append("], y=[");
+		builder.append("), y=[");
 		builder.append(yLowerBound);
 		builder.append(", ");
 		builder.append(yUpperBound);
@@ -269,7 +269,7 @@ public final class SpatialRegion {
 	}
 
 	int getColumnEndIdx() {
-		return getYLowerBound();
+		return getYUpperBound();
 	}
 
 	int getColumnStartIdx() {
