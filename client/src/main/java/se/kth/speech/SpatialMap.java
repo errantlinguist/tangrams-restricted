@@ -37,254 +37,12 @@ import com.google.common.collect.Multimap;
  */
 public final class SpatialMap<E> {
 
-	/**
-	 * A very rudimentary region of a geographic space, analogous to but much
-	 * cruder than the regions of a
-	 * <a href="https://en.wikipedia.org/wiki/Quadtree">quadtree</a>.
-	 *
-	 * @see <a href=
-	 *      "https://en.wikipedia.org/wiki/Binary_space_partitioning">Binary
-	 *      space partitioning</a>
-	 * @author <a href="mailto:tcshore@kth.se>Todd Shore</a>
-	 * @since 8 Mar 2017
-	 *
-	 */
-	public static final class Region {
-
-		/**
-		 * @see <a href=
-		 *      "http://stackoverflow.com/a/17394265/1391325">StackOverflow</a>
-		 * @param r1x1
-		 * @param r1x2
-		 * @param r1y1
-		 * @param r1y2
-		 * @param r2x1
-		 * @param r2x2
-		 * @param r2y1
-		 * @param r2y2
-		 * @return
-		 */
-		public static boolean intersects(final int r1x1, final int r1x2, final int r1y1, final int r1y2, final int r2x1,
-				final int r2x2, final int r2y1, final int r2y2) {
-			final boolean result;
-			if (r1x1 <= r2x2) {
-				if (r1x2 >= r2x1) {
-					if (r1y1 <= r2y2) {
-						if (r1y2 >= r2y1) {
-							result = true;
-						} else {
-							result = false;
-						}
-					} else {
-						result = false;
-					}
-				} else {
-					result = false;
-				}
-			} else {
-				result = false;
-			}
-			return result;
-		}
-
-		/**
-		 * @see <a href=
-		 *      "http://stackoverflow.com/q/17394089/1391325">StackOverflow</a>
-		 * @param r1x1
-		 * @param r1x2
-		 * @param r1y1
-		 * @param r1y2
-		 * @param r2x1
-		 * @param r2x2
-		 * @param r2y1
-		 * @param r2y2
-		 * @return
-		 */
-		public static boolean subsumes(final int r1x1, final int r1x2, final int r1y1, final int r1y2, final int r2x1,
-				final int r2x2, final int r2y1, final int r2y2) {
-			final boolean result;
-			if (r1x1 <= r2x1) {
-				if (r1x2 >= r2x2) {
-					if (r1y1 <= r2y1) {
-						if (r1y2 >= r2y2) {
-							result = true;
-						} else {
-							result = false;
-						}
-					} else {
-						result = false;
-					}
-				} else {
-					result = false;
-				}
-			} else {
-				result = false;
-			}
-			return result;
-		}
-
-		private final int xLowerBound;
-
-		private final int xUpperBound;
-
-		private final int yLowerBound;
-
-		private final int yUpperBound;
-
-		private final transient int hashCode;
-
-		Region(final int xLowerBound, final int xUpperBound, final int yLowerBound, final int yUpperBound) {
-			this.xLowerBound = xLowerBound;
-			this.xUpperBound = xUpperBound;
-			this.yLowerBound = yLowerBound;
-			this.yUpperBound = yUpperBound;
-			if (!areBoundariesValid()) {
-				throw new IllegalArgumentException("Boundary values are invalid.");
-			}
-
-			this.hashCode = createHashCode();
-		}
-
-		/*
-		 * (non-Javadoc)
-		 *
-		 * @see java.lang.Object#equals(java.lang.Object)
-		 */
-		@Override
-		public boolean equals(final Object obj) {
-			if (this == obj) {
-				return true;
-			}
-			if (obj == null) {
-				return false;
-			}
-			if (!(obj instanceof Region)) {
-				return false;
-			}
-			final Region other = (Region) obj;
-			if (xLowerBound != other.xLowerBound) {
-				return false;
-			}
-			if (xUpperBound != other.xUpperBound) {
-				return false;
-			}
-			if (yLowerBound != other.yLowerBound) {
-				return false;
-			}
-			if (yUpperBound != other.yUpperBound) {
-				return false;
-			}
-			return true;
-		}
-
-		public int[] getDimensions() {
-			return new int[] { getLengthX(), getLengthY() };
-		}
-		
-		public int getGridArea(){
-			return getLengthX() * getLengthY();
-		}
-
-		public int getLengthX() {
-			return getXUpperBound() - getXLowerBound() + 1;
-		}
-
-		public int getLengthY() {
-			return getYUpperBound() - getYLowerBound() + 1;
-		}
-
-		/**
-		 * @return the xLowerBound
-		 */
-		public int getXLowerBound() {
-			return xLowerBound;
-		}
-
-		/**
-		 * @return the xUpperBound
-		 */
-		public int getXUpperBound() {
-			return xUpperBound;
-		}
-
-		/**
-		 * @return the yLowerBound
-		 */
-		public int getYLowerBound() {
-			return yLowerBound;
-		}
-
-		/**
-		 * @return the yUpperBound
-		 */
-		public int getYUpperBound() {
-			return yUpperBound;
-		}
-
-		/*
-		 * (non-Javadoc)
-		 *
-		 * @see java.lang.Object#hashCode()
-		 */
-		@Override
-		public int hashCode() {
-			return hashCode;
-		}
-
-		public boolean intersects(final Region other) {
-			return intersects(this.getXLowerBound(), this.getXUpperBound(), this.getYLowerBound(),
-					this.getYUpperBound(), other.getXLowerBound(), other.getXUpperBound(), other.getYLowerBound(),
-					other.getYUpperBound());
-		}
-
-		public boolean subsumes(final Region other) {
-			return subsumes(this.getXLowerBound(), this.getXUpperBound(), this.getYLowerBound(), this.getYUpperBound(),
-					other.getXLowerBound(), other.getXUpperBound(), other.getYLowerBound(), other.getYUpperBound());
-		}
-
-		/*
-		 * (non-Javadoc)
-		 *
-		 * @see java.lang.Object#toString()
-		 */
-		@Override
-		public String toString() {
-			final StringBuilder builder = new StringBuilder();
-			builder.append("Region [x=[");
-			builder.append(xLowerBound);
-			builder.append(", ");
-			builder.append(xUpperBound);
-			builder.append("], y=[");
-			builder.append(yLowerBound);
-			builder.append(", ");
-			builder.append(yUpperBound);
-			builder.append("]");
-			builder.append("]");
-			return builder.toString();
-		}
-
-		private boolean areBoundariesValid() {
-			return getXLowerBound() <= getXUpperBound() && getYLowerBound() <= getYUpperBound();
-		}
-
-		private int createHashCode() {
-			final int prime = 31;
-			int result = 1;
-			result = prime * result + xLowerBound;
-			result = prime * result + xUpperBound;
-			result = prime * result + yLowerBound;
-			result = prime * result + yUpperBound;
-			return result;
-		}
-
-	}
-
 	private static final String TABLE_STRING_REPR_ROW_DELIMITER = System.lineSeparator();
 
 	private static final String TABLE_STRING_REPR_COL_DELIMITER = "\t";
 
 	private static void appendOccupiedRegionRepr(final StringBuilder sb,
-			final Entry<Region, ? extends Iterable<?>> minimalRegionOccupyingElementSet) {
+			final Entry<SpatialRegion, ? extends Iterable<?>> minimalRegionOccupyingElementSet) {
 		sb.append(minimalRegionOccupyingElementSet.getKey());
 		for (final Object occupyingElement : minimalRegionOccupyingElementSet.getValue()) {
 			sb.append(TABLE_STRING_REPR_COL_DELIMITER);
@@ -301,15 +59,15 @@ public final class SpatialMap<E> {
 	 * <strong>TODO:</strong> Reverse this so that the region is the key
 	 * pointing to another {@link SpatialMap} of sub-regions.
 	 */
-	private final Multimap<Region, E> regionElements;
+	private final Multimap<SpatialRegion, E> regionElements;
 
-	private final Map<E, Region> elementRegions;
+	private final Map<E, SpatialRegion> elementRegions;
 
 	/**
 	 * An ordered sequence of regions being used, e.g. for getting an ID for a
 	 * particular region
 	 */
-	private transient final List<Region> regions;
+	private transient final List<SpatialRegion> regions;
 
 	public SpatialMap(final int expectedElementCount) {
 		this.regionElements = HashMultimap.create(estimateRegionCount(expectedElementCount), expectedElementCount);
@@ -348,7 +106,7 @@ public final class SpatialMap<E> {
 		return regionElements.values();
 	}
 
-	public Stream<Entry<Region, E>> getIntersectedElements(final Region intersectingRegion) {
+	public Stream<Entry<SpatialRegion, E>> getIntersectedElements(final SpatialRegion intersectingRegion) {
 		// TODO: When turning this class into an actual spatial-indexing system,
 		// create
 		// heuristic for judging the size of the set of elements contained in a
@@ -357,15 +115,15 @@ public final class SpatialMap<E> {
 				.filter(regionElementColl -> intersectingRegion.intersects(regionElementColl.getKey()));
 	}
 
-	public Multimap<Region, E> getMinimalRegionElements() {
+	public Multimap<SpatialRegion, E> getMinimalRegionElements() {
 		return regionElements;
 	}
 
-	public List<Region> getMinimalRegions() {
+	public List<SpatialRegion> getMinimalRegions() {
 		return regions;
 	}
 
-	public Stream<Entry<Region, E>> getSubsumedElements(final Region subsumingRegion) {
+	public Stream<Entry<SpatialRegion, E>> getSubsumedElements(final SpatialRegion subsumingRegion) {
 		// TODO: When turning this class into an actual spatial-indexing system,
 		// create
 		// heuristic for judging the size of the set of elements contained in a
@@ -391,9 +149,9 @@ public final class SpatialMap<E> {
 	 * @param region
 	 * @return
 	 */
-	public boolean isOccupied(final Region region) {
+	public boolean isOccupied(final SpatialRegion region) {
 		boolean result = false;
-		for (final Region elementRegion : regionElements.keySet()) {
+		for (final SpatialRegion elementRegion : regionElements.keySet()) {
 			if(elementRegion.intersects(region)){
 				result = true;
 				break;
@@ -402,8 +160,8 @@ public final class SpatialMap<E> {
 		return result;
 	}
 
-	public synchronized Region put(final E element, final Region region) {
-		final Region result = elementRegions.put(element, region);
+	public synchronized SpatialRegion put(final E element, final SpatialRegion region) {
+		final SpatialRegion result = elementRegions.put(element, region);
 		if (result == null) {
 			// The element has never been seen by this instance before
 			final boolean wasPut = regionElements.put(region, element);
@@ -444,12 +202,12 @@ public final class SpatialMap<E> {
 	}
 
 	private String createRegionStringRepr() {
-		final Stream<String> colNames = Stream.of(Region.class.getSimpleName(), "OCCUPANTS...");
+		final Stream<String> colNames = Stream.of(SpatialRegion.class.getSimpleName(), "OCCUPANTS...");
 		final String header = colNames.collect(Collectors.joining(TABLE_STRING_REPR_COL_DELIMITER));
-		final Multimap<Region, E> minRegionElements = getMinimalRegionElements();
+		final Multimap<SpatialRegion, E> minRegionElements = getMinimalRegionElements();
 		final StringBuilder sb = new StringBuilder(header.length() + minRegionElements.size() * 16);
 		sb.append(header);
-		for (final Entry<Region, Collection<E>> minimalRegionOccupyingElementSet : minRegionElements.asMap()
+		for (final Entry<SpatialRegion, Collection<E>> minimalRegionOccupyingElementSet : minRegionElements.asMap()
 				.entrySet()) {
 			sb.append(TABLE_STRING_REPR_ROW_DELIMITER);
 			appendOccupiedRegionRepr(sb, minimalRegionOccupyingElementSet);

@@ -32,7 +32,7 @@ import com.google.common.collect.Sets;
 import com.google.common.collect.Table;
 
 import se.kth.speech.RandomCollections;
-import se.kth.speech.SpatialMap;
+import se.kth.speech.SpatialRegion;
 import se.kth.speech.SpatialMatrix;
 
 /**
@@ -48,7 +48,7 @@ final class RandomMatrixPositionFiller<I, E> implements Function<Collection<? ex
 	 * <strong>NOTE:</strong> This creates a {@link LinkedHashSet} in order to
 	 * ensure that iteration order is stable across invokations.
 	 */
-	private static final IntFunction<LinkedHashSet<SpatialMap.Region>> SUB_REGION_SET_FACTORY = LinkedHashSet::new;
+	private static final IntFunction<LinkedHashSet<SpatialRegion>> SUB_REGION_SET_FACTORY = LinkedHashSet::new;
 
 	private final Function<? super E, I> pieceIdGetter;
 
@@ -69,7 +69,7 @@ final class RandomMatrixPositionFiller<I, E> implements Function<Collection<? ex
 	@Override
 	public Set<I> apply(final Collection<? extends E> pieces) {
 		LOGGER.info("Trying to place {} pieces.", pieces.size());
-		final Table<Integer, Integer, LinkedHashSet<SpatialMap.Region>> subRegionsToTry = posMatrix
+		final Table<Integer, Integer, LinkedHashSet<SpatialRegion>> subRegionsToTry = posMatrix
 				.createSizeIndexedRegionPowerSet(SUB_REGION_SET_FACTORY);
 		final Set<I> result = Sets.newHashSetWithExpectedSize(pieces.size());
 		{
@@ -79,7 +79,7 @@ final class RandomMatrixPositionFiller<I, E> implements Function<Collection<? ex
 				final E piece = pieceIter.next();
 				LOGGER.debug("Adding {}.", piece);
 				final I pieceId = pieceIdGetter.apply(piece);
-				final SpatialMap.Region placementResult = placePieceRandomly(piece, pieceId, subRegionsToTry);
+				final SpatialRegion placementResult = placePieceRandomly(piece, pieceId, subRegionsToTry);
 				LOGGER.debug("Added {} (with ID \"{}\") to {}.", new Object[] { piece, pieceId, placementResult });
 				result.add(pieceId);
 			}
@@ -88,15 +88,15 @@ final class RandomMatrixPositionFiller<I, E> implements Function<Collection<? ex
 		return result;
 	}
 
-	private SpatialMap.Region placePieceRandomly(final E piece, final I pieceId,
-			final Table<? super Integer, ? super Integer, ? extends Collection<SpatialMap.Region>> subRegionsToTry) {
+	private SpatialRegion placePieceRandomly(final E piece, final I pieceId,
+			final Table<? super Integer, ? super Integer, ? extends Collection<SpatialRegion>> subRegionsToTry) {
 		// The number of rows and columns this image takes up in the
 		// position matrix
 		final int[] piecePosMatrixSize = piecePosMatrixSizeFactory.apply(piece);
-		final Collection<SpatialMap.Region> allFittingSubRegions = subRegionsToTry.get(piecePosMatrixSize[0],
+		final Collection<SpatialRegion> allFittingSubRegions = subRegionsToTry.get(piecePosMatrixSize[0],
 				piecePosMatrixSize[1]);
 
-		SpatialMap.Region result = null;
+		SpatialRegion result = null;
 		do {
 			// Randomly pick a space in the matrix
 			result = RandomCollections.getRandomElement(allFittingSubRegions, rnd);

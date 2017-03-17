@@ -89,7 +89,7 @@ public final class SpatialMatrixTest {
 
 		final SpatialMatrix<Integer, int[]> matrix = new SpatialMatrix<>(backingPosMatrix, TEST_PIECE_IDS::get,
 				piecePositions);
-		final Table<Integer, Integer, Collection<SpatialMap.Region>> regionPowerSet = matrix
+		final Table<Integer, Integer, Collection<SpatialRegion>> regionPowerSet = matrix
 				.createSizeIndexedRegionPowerSet(ArrayList::new);
 		regionPowerSet.rowMap().forEach((xLength, yLengths) -> {
 			yLengths.forEach((yLength, subRegionSet) -> {
@@ -115,7 +115,7 @@ public final class SpatialMatrixTest {
 		final int[] dims = matrix.getDimensions();
 		final int x = dims[0];
 		final int y = dims[1];
-		final Table<Integer, Integer, Collection<SpatialMap.Region>> regionPowerSet = matrix
+		final Table<Integer, Integer, Collection<SpatialRegion>> regionPowerSet = matrix
 				.createSizeIndexedRegionPowerSet(ArrayList::new);
 		final Set<Integer> rows = regionPowerSet.rowKeySet();
 		Assert.assertEquals(Integer.valueOf(x), Collections.max(rows));
@@ -126,7 +126,7 @@ public final class SpatialMatrixTest {
 		regionPowerSet.values().stream().forEach(size -> {
 			Assert.assertFalse(size.isEmpty());
 		});
-		final SpatialMap.Region totalRegion = matrix.getRegion(0, x, 0, y);
+		final SpatialRegion totalRegion = matrix.getRegion(0, x, 0, y);
 		regionPowerSet.values().stream().flatMap(Collection::stream).forEach(region -> {
 			Assert.assertTrue(String.format("%s not subsumed by total %s.", region, totalRegion),
 					totalRegion.subsumes(region));
@@ -144,7 +144,7 @@ public final class SpatialMatrixTest {
 		final Function<int[], Integer> pieceIdGetter = TEST_PIECE_IDS::get;
 		final SpatialMatrix<Integer, int[]> matrix = new SpatialMatrix<>(backingPosMatrix, pieceIdGetter,
 				piecePositions);
-		final SpatialMap.Region r = matrix.getRegion(regionCoords[0], regionCoords[1], regionCoords[2],
+		final SpatialRegion r = matrix.getRegion(regionCoords[0], regionCoords[1], regionCoords[2],
 				regionCoords[3]);
 		matrix.placeElement(piece, r);
 		final Set<Integer> expected = Collections.singleton(pieceIdGetter.apply(piece));
@@ -179,10 +179,10 @@ public final class SpatialMatrixTest {
 		final Function<int[], Integer> pieceIdGetter = TEST_PIECE_IDS::get;
 		final SpatialMatrix<Integer, int[]> matrix = new SpatialMatrix<>(backingPosMatrix, pieceIdGetter,
 				piecePositions);
-		final SpatialMap.Region r = matrix.getRegion(xLowerBound, yUpperBound, yLowerBound, yUpperBound);
+		final SpatialRegion r = matrix.getRegion(xLowerBound, yUpperBound, yLowerBound, yUpperBound);
 		matrix.placeElement(piece, r);
 		final Set<Integer> pieceId = Collections.singleton(pieceIdGetter.apply(piece));
-		final SpatialMap.Region totalRegion = matrix.getRegion(0, xUpperBound, 0, yUpperBound);
+		final SpatialRegion totalRegion = matrix.getRegion(0, xUpperBound, 0, yUpperBound);
 		final Map<Integer, Integer> cellValueCounts = Maps.newHashMapWithExpectedSize(2);
 		matrix.getCells(totalRegion).forEach(cell -> cellValueCounts.compute(cell, (key, oldCount) -> {
 			final Integer newCount;
