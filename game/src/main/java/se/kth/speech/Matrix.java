@@ -30,12 +30,12 @@ import java.util.stream.Stream;
  *
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
  * @since 13 Jan 2017
- * @param <T>
+ * @param <E>
  *            The type used to represent matrix cell data.
  */
-public final class Matrix<T> {
+public final class Matrix<E> {
 
-	private class RowIterator implements ListIterator<List<T>> {
+	private class RowIterator implements ListIterator<List<E>> {
 
 		private int nextRowIdx;
 
@@ -55,7 +55,7 @@ public final class Matrix<T> {
 		}
 
 		@Override
-		public void add(final List<T> e) {
+		public void add(final List<E> e) {
 			throw new UnsupportedOperationException();
 		}
 
@@ -70,13 +70,13 @@ public final class Matrix<T> {
 		}
 
 		@Override
-		public List<T> next() {
+		public List<E> next() {
 			if (!hasNext()) {
 				throw new NoSuchElementException();
 			}
 			final int cols = getColCount();
 			final int rowValArrEndIdx = rowValArrStartIdx + cols;
-			final List<T> result = values.subList(rowValArrStartIdx, rowValArrEndIdx);
+			final List<E> result = values.subList(rowValArrStartIdx, rowValArrEndIdx);
 			rowValArrStartIdx = rowValArrEndIdx;
 			nextRowIdx++;
 			return result;
@@ -88,14 +88,14 @@ public final class Matrix<T> {
 		}
 
 		@Override
-		public List<T> previous() {
+		public List<E> previous() {
 			if (!hasPrevious()) {
 				throw new NoSuchElementException();
 			}
 			final int cols = getColCount();
 			final int rowValArrEndIdx = rowValArrStartIdx;
 			rowValArrStartIdx -= cols;
-			final List<T> result = values.subList(rowValArrStartIdx, rowValArrEndIdx);
+			final List<E> result = values.subList(rowValArrStartIdx, rowValArrEndIdx);
 			nextRowIdx--;
 			return result;
 		}
@@ -111,14 +111,14 @@ public final class Matrix<T> {
 		}
 
 		@Override
-		public void set(final List<T> e) {
+		public void set(final List<E> e) {
 			final int cols = getColCount();
 			if (e.size() != cols) {
 				throw new IllegalArgumentException(String.format(
 						"Supplied array length is %d but does not match matrix column count of %d.", e.size(), cols));
 			}
 			int valArrIdx = rowValArrStartIdx;
-			for (final T val : e) {
+			for (final E val : e) {
 				values.set(valArrIdx++, val);
 			}
 		}
@@ -126,9 +126,9 @@ public final class Matrix<T> {
 
 	private final int colCount;
 
-	private final List<T> values;
+	private final List<E> values;
 
-	public Matrix(final List<T> values, final int colCount) {
+	public Matrix(final List<E> values, final int colCount) {
 		if (colCount < 1) {
 			throw new IllegalArgumentException(String.format("Column count is %d but must be positive.", colCount));
 		}
@@ -148,11 +148,11 @@ public final class Matrix<T> {
 		this.values = values;
 	}
 
-	public Matrix(final Matrix<T> copyee) {
+	public Matrix(final Matrix<E> copyee) {
 		this(copyee.getValues(), copyee.getColCount());
 	}
 
-	public Matrix(final T[] values, final int colCount) {
+	public Matrix(final E[] values, final int colCount) {
 		this(Arrays.asList(values), colCount);
 	}
 
@@ -186,11 +186,11 @@ public final class Matrix<T> {
 		return true;
 	}
 
-	public List<T> getColumn(final int colIdx) {
-		final List<T> result = new ArrayList<>(getDimensions()[0]);
-		for (final ListIterator<List<T>> rowIter = rowIterator(); rowIter.hasNext();) {
-			final List<T> row = rowIter.next();
-			final T rowColValue = row.get(colIdx);
+	public List<E> getColumn(final int colIdx) {
+		final List<E> result = new ArrayList<>(getDimensions()[0]);
+		for (final ListIterator<List<E>> rowIter = rowIterator(); rowIter.hasNext();) {
+			final List<E> row = rowIter.next();
+			final E rowColValue = row.get(colIdx);
 			result.add(rowColValue);
 		}
 		return result;
@@ -210,28 +210,28 @@ public final class Matrix<T> {
 		return new int[] { row, col };
 	}
 
-	public List<T> getRow(final int rowIdx) {
+	public List<E> getRow(final int rowIdx) {
 		final int rowStartIdx = getRowValueArrayStartIdx(rowIdx);
 		return values.subList(rowStartIdx, rowStartIdx + getColCount());
 	}
 
-	public T getValue(final int[] coords) {
+	public E getValue(final int[] coords) {
 		return values.get(getValueArrayIdx(coords));
 	}
 
-	public List<T> getValues() {
+	public List<E> getValues() {
 		return values;
 	}
 
-	public Stream<T> getValues(final int xLowerBound, final int xUpperBound, final int yLowerBound,
+	public Stream<E> getValues(final int xLowerBound, final int xUpperBound, final int yLowerBound,
 			final int yUpperBound) {
-		final Stream.Builder<T> resultBuilder = Stream.builder();
-		final ListIterator<List<T>> rowIter = rowIterator(xLowerBound);
+		final Stream.Builder<E> resultBuilder = Stream.builder();
+		final ListIterator<List<E>> rowIter = rowIterator(xLowerBound);
 		for (int rowIdx = rowIter.nextIndex(); rowIdx < xUpperBound; rowIdx++) {
-			final List<T> row = rowIter.next();
-			final ListIterator<T> rowCellIter = row.listIterator(yLowerBound);
+			final List<E> row = rowIter.next();
+			final ListIterator<E> rowCellIter = row.listIterator(yLowerBound);
 			for (int colIdx = rowCellIter.nextIndex(); colIdx < yUpperBound; colIdx++) {
-				final T cellValue = rowCellIter.next();
+				final E cellValue = rowCellIter.next();
 				resultBuilder.accept(cellValue);
 			}
 		}
@@ -252,18 +252,18 @@ public final class Matrix<T> {
 		return result;
 	}
 
-	public ListIterator<List<T>> rowIterator() {
+	public ListIterator<List<E>> rowIterator() {
 		return new RowIterator();
 	}
 
-	public ListIterator<List<T>> rowIterator(final int rowIdx) {
+	public ListIterator<List<E>> rowIterator(final int rowIdx) {
 		return new RowIterator(rowIdx);
 	}
 
-	public T setValue(final int[] coords, final T value) {
-		final List<T> values = getValues();
+	public E setValue(final int[] coords, final E value) {
+		final List<E> values = getValues();
 		final int valueArrayIdx = getValueArrayIdx(coords);
-		final T result = values.set(valueArrayIdx, value);
+		final E result = values.set(valueArrayIdx, value);
 		return result;
 	}
 
