@@ -16,20 +16,14 @@
 */
 package se.kth.speech;
 
-import java.util.Random;
-import java.util.Set;
-
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.experimental.theories.DataPoints;
 import org.junit.experimental.theories.Theories;
 import org.junit.experimental.theories.Theory;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
-
-import com.google.common.collect.Sets;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -37,59 +31,35 @@ import com.google.common.collect.Sets;
  *
  */
 @RunWith(Theories.class)
-public final class SpatialRegionTest {
-
-	@DataPoints
-	public static final int[][] PREVIOUS_FAILED_REGION_POINT_ARRAYS;
-
-	@DataPoints
-	public static final Set<SpatialRegion> PREVIOUS_FAILED_REGIONS;
-
-	@DataPoints
-	public static final Set<int[]> TEST_POINT_ARRAYS;
-
-	@DataPoints
-	public static final int[] TEST_POINTS;
-
-	@DataPoints
-	public static final Set<SpatialRegion> TEST_REGIONS;
-
-	static {
-		PREVIOUS_FAILED_REGION_POINT_ARRAYS = new int[][] {
-				new int[] { 1989523352, 2023725473, 1079495603, 1079495603 },
-				new int[] { -367670549, 1742426776, -582564738, 1954507817 },
-				new int[] { 1661512450, 1661512450, -1470324477, 1742426776 } };
-		PREVIOUS_FAILED_REGIONS = Sets.newHashSetWithExpectedSize(PREVIOUS_FAILED_REGION_POINT_ARRAYS.length);
-		for (final int[] pointArray : PREVIOUS_FAILED_REGION_POINT_ARRAYS) {
-			PREVIOUS_FAILED_REGIONS
-					.add(new SpatialRegion(pointArray[0], pointArray[1], pointArray[2], pointArray[3]));
-		}
-	}
-
-	static {
-		final Random rnd = new Random();
-		final int testPointCount = 10;
-		TEST_POINTS = rnd.ints().distinct().limit(testPointCount).toArray();
-
-		final int testRegionCount = testPointCount / 4;
-		TEST_REGIONS = Sets.newHashSetWithExpectedSize(testRegionCount);
-		TEST_POINT_ARRAYS = Sets.newHashSetWithExpectedSize(testRegionCount);
-		do {
-			final int[] x = createRandomIntervalArray(rnd, TEST_POINTS);
-			final int[] y = createRandomIntervalArray(rnd, TEST_POINTS);
-			TEST_REGIONS.add(new SpatialRegion(x[0], x[1], y[0], y[1]));
-			TEST_POINT_ARRAYS.add(IntArrays.concatenate(x, y));
-		} while (TEST_REGIONS.size() < testRegionCount);
-	}
-
-	private static int[] createRandomIntervalArray(final Random rnd, final int[] points) {
-		final int first = RandomCollections.getRandomElement(points, rnd);
-		final int second = RandomCollections.getRandomElement(points, rnd);
-		return first <= second ? new int[] { first, second } : new int[] { second, first };
-	}
+public final class SpatialRegionTest extends SpatialTest {
 
 	@Rule
 	public final ExpectedException exception = ExpectedException.none();
+
+	@Theory
+	public final void testGetDimensionsFactorOfGridArea(final SpatialRegion r) {
+		final int[] dims = r.getDimensions();
+		final int prod = IntArrays.product(dims);
+		Assert.assertEquals(r.getGridArea(), prod);
+	}
+
+	@Test
+	public final void testGetGridArea1() {
+		final SpatialRegion r = new SpatialRegion(1, 1, 1, 2);
+		Assert.assertEquals(2, r.getGridArea());
+	}
+
+	@Test
+	public final void testGetGridArea2() {
+		final SpatialRegion r = new SpatialRegion(3, 5, 6, 8);
+		Assert.assertEquals(9, r.getGridArea());
+	}
+
+	@Test
+	public final void testGetGridArea3() {
+		final SpatialRegion r = new SpatialRegion(0, 0, 0, 0);
+		Assert.assertEquals(1, r.getGridArea());
+	}
 
 	/**
 	 * Test method for
