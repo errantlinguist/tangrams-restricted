@@ -9,7 +9,7 @@
 	</parent>
 	<artifactId>game</artifactId>
 	<description>The game mechanics.</description>
-	
+
 	<dependencies>
 		<dependency>
 			<groupId>junit</groupId>
@@ -17,4 +17,13 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+			</plugin>
+		</plugins>
+	</build>
 </project>
