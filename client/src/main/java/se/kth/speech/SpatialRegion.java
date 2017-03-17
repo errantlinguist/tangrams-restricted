@@ -102,6 +102,14 @@ public final class SpatialRegion {
 		return result;
 	}
 
+	static int getGridArea(final int xLowerBound, final int xUpperBound, final int yLowerBound, final int yUpperBound) {
+		return getLength(xLowerBound, xUpperBound) * getLength(yLowerBound, yUpperBound);
+	}
+
+	static int getLength(final int lowerBound, final int upperBound) {
+		return upperBound - lowerBound + 1;
+	}
+
 	private final int xLowerBound;
 
 	private final int xUpperBound;
@@ -159,17 +167,22 @@ public final class SpatialRegion {
 	public int[] getDimensions() {
 		return new int[] { getLengthX(), getLengthY() };
 	}
+	
+	static int[] getDimensions(final int xLowerBound, final int xUpperBound, final int yLowerBound,
+			final int yUpperBound) {
+		return new int[]{ getLength(xLowerBound, xUpperBound), getLength(yLowerBound, yUpperBound)};
+	}
 
 	public int getGridArea() {
 		return getLengthX() * getLengthY();
 	}
 
 	public int getLengthX() {
-		return getXUpperBound() - getXLowerBound() + 1;
+		return getLength(getXLowerBound(), getXUpperBound());
 	}
 
 	public int getLengthY() {
-		return getYUpperBound() - getYLowerBound() + 1;
+		return getLength(getYLowerBound(), getYUpperBound());
 	}
 
 	/**
@@ -253,6 +266,22 @@ public final class SpatialRegion {
 		result = prime * result + yLowerBound;
 		result = prime * result + yUpperBound;
 		return result;
+	}
+
+	int getColumnEndIdx() {
+		return getYLowerBound() + 1;
+	}
+
+	int getColumnStartIdx() {
+		return getYLowerBound();
+	}
+
+	int getRowEndIdx() {
+		return getXUpperBound() + 1;
+	}
+
+	int getRowStartIdx() {
+		return getXLowerBound();
 	}
 
 }
