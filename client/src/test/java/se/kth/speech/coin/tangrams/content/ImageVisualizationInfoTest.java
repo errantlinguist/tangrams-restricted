@@ -46,7 +46,7 @@ public final class ImageVisualizationInfoTest {
 	private static final Logger LOGGER = LoggerFactory.getLogger(ImageVisualizationInfoTest.class);
 
 	@DataPoints
-	public static final Color[] TEST_COLORS = Stream.generate(() -> createRandomColor(new Random())).distinct().limit(5)
+	public static final Color[] TEST_COLORS = Stream.generate(() -> createRandomColor(new Random())).distinct().limit(4)
 			.toArray(Color[]::new);
 
 	@DataPoints
@@ -60,7 +60,7 @@ public final class ImageVisualizationInfoTest {
 
 	static {
 		STANDARD_TEST_URLS = IconImages.getImageResources().values();
-		final Supplier<String> randomStrFactory = new RandomStringFactory(5);
+		final Supplier<String> randomStrFactory = new RandomStringFactory(4);
 		RANDOM_TEST_URLS = STANDARD_TEST_URLS.stream().map(url -> appendAnyString(url, randomStrFactory))
 				.toArray(URL[]::new);
 	}
