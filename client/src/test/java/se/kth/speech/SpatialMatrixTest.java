@@ -22,7 +22,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -46,6 +45,25 @@ import com.google.common.collect.Table;
 @RunWith(Theories.class)
 public final class SpatialMatrixTest {
 
+	private static class SpatialMatrixConstructionData<E> {
+
+		private final Map<E, Integer> pieceIds;
+
+		private final Function<E, Integer> incrementingIdGetter;
+
+		private final Matrix<Integer> backingPosMatrix;
+
+		private final SpatialMatrix<Integer, E> matrix;
+
+		private SpatialMatrixConstructionData(final int[] gridDims, final int expectedPieceCount) {
+			this.pieceIds = Maps.newHashMapWithExpectedSize(expectedPieceCount);
+			this.incrementingIdGetter = p -> pieceIds.computeIfAbsent(p, k -> pieceIds.size());
+			this.backingPosMatrix = createBackingMatrix(gridDims);
+			this.matrix = new SpatialMatrix<>(backingPosMatrix, incrementingIdGetter,
+					new SpatialMap<>(expectedPieceCount));
+		}
+	}
+
 	@DataPoints("gridDims")
 	public static final List<int[]> TEST_DIMENSIONS;
 
@@ -54,62 +72,34 @@ public final class SpatialMatrixTest {
 				new int[] { 10, 11 }, new int[] { 10, 50 });
 	}
 
-	// @Test
-	// public final void testCreateRegionPowerSetSize() {
-	// final SpatialMap<int[]> piecePositions = new
-	// SpatialMap<>(TEST_PIECES.size());
-	// final int[] gridDims = new int[] { 10, 10 };
-	// final Integer[] posMatrixBackingArray = new
-	// Integer[IntArrays.product(gridDims)];
-	// final Matrix<Integer> backingPosMatrix = new
-	// Matrix<>(posMatrixBackingArray, gridDims[1]);
-	//
-	// final SpatialMatrix<Integer, int[]> matrix = new
-	// SpatialMatrix<>(backingPosMatrix, TEST_PIECE_IDS::get,
-	// piecePositions);
-	// final Set<SpatialMap.Region> powerSet = matrix.createRegionPowerSet();
-	// Assert.assertEquals(matrix.calculateRegionPowerSetSize(),
-	// powerSet.size());
-	// }
-
 	private static Matrix<Integer> createBackingMatrix(final int[] gridDims) {
 		final Integer[] posMatrixBackingArray = new Integer[IntArrays.product(gridDims)];
 		Assert.assertEquals(IntArrays.product(gridDims), posMatrixBackingArray.length);
 		return new Matrix<>(posMatrixBackingArray, gridDims[1]);
 	}
 
-	private static <E> Entry<SpatialMatrix<Integer, E>, Map<E, Integer>> createSpatialMatrixMap(final int[] gridDims,
-			final int expectedPieceCount) {
-		final Map<E, Integer> pieceIds = Maps.newHashMapWithExpectedSize(expectedPieceCount);
-		final Function<E, Integer> incrementingIdGetter = p -> pieceIds.computeIfAbsent(p, k -> pieceIds.size());
-		final Matrix<Integer> backingPosMatrix = createBackingMatrix(gridDims);
-		return new MutablePair<>(
-				new SpatialMatrix<>(backingPosMatrix, incrementingIdGetter, new SpatialMap<>(expectedPieceCount)),
-				pieceIds);
-	}
-
 	private static void testGetCellsRegion(final int xLowerBound, final int xUpperBound, final int yLowerBound,
 			final int yUpperBound) {
-		final Entry<SpatialMatrix<Integer, Object>, Map<Object, Integer>> matrixMap = createSpatialMatrixMap(
-				SpatialRegion.getDimensions(xLowerBound, xUpperBound, yLowerBound, yUpperBound), 1);
-		final SpatialMatrix<Integer, Object> matrix = matrixMap.getKey();
-		final Map<Object, Integer> pieceIds = matrixMap.getValue();
-
+		final int[] gridDims = SpatialRegion.getDimensions(xLowerBound, xUpperBound, yLowerBound, yUpperBound);
+		final SpatialMatrixConstructionData<Object> matrixConstData = new SpatialMatrixConstructionData<>(gridDims, 1);
+		final SpatialMatrix<Integer, Object> matrix = matrixConstData.matrix;
 		final String piece = "testpiece";
-		final SpatialRegion r = matrix.getRegion(xLowerBound, yUpperBound, yLowerBound, yUpperBound);
-		matrix.placeElement(piece, r);
-		final Integer pieceId = pieceIds.get(piece);
+		final Integer pieceId = matrixConstData.incrementingIdGetter.apply(piece);
 		Assert.assertNotNull(pieceId);
+		final List<Integer> cells = matrix.getPositionMatrix().getValues();
+		Collections.fill(cells, pieceId);
+
+		final SpatialRegion r = matrix.getRegion(xLowerBound, yUpperBound, yLowerBound, yUpperBound);
 		final Set<Integer> actual = matrix.getCells(r).collect(Collectors.toSet());
 		Assert.assertEquals(Collections.singleton(pieceId), actual);
 	}
 
 	private static <E> void testPlaceElement(final E piece, final int xLowerBound, final int xUpperBound,
 			final int yLowerBound, final int yUpperBound) {
-		final Entry<SpatialMatrix<Integer, Object>, Map<Object, Integer>> matrixMap = createSpatialMatrixMap(
+		final SpatialMatrixConstructionData<Object> matrixConstData = new SpatialMatrixConstructionData<>(
 				SpatialRegion.getDimensions(xLowerBound, xUpperBound, yLowerBound, yUpperBound), 1);
-		final SpatialMatrix<Integer, Object> matrix = matrixMap.getKey();
-		final Map<Object, Integer> pieceIds = matrixMap.getValue();
+		final SpatialMatrix<Integer, Object> matrix = matrixConstData.matrix;
+		final Map<Object, Integer> pieceIds = matrixConstData.pieceIds;
 
 		final SpatialRegion r = matrix.getRegion(xLowerBound, yUpperBound, yLowerBound, yUpperBound);
 		matrix.placeElement(piece, r);
@@ -135,9 +125,7 @@ public final class SpatialMatrixTest {
 	 */
 	@Theory
 	public final void testCalculateSubRegionCount(final int[] gridDims) {
-		final Entry<SpatialMatrix<Integer, Object>, Map<Object, Integer>> matrixMap = createSpatialMatrixMap(gridDims,
-				1);
-		final SpatialMatrix<Integer, Object> matrix = matrixMap.getKey();
+		final SpatialMatrix<Integer, Object> matrix = new SpatialMatrixConstructionData<>(gridDims, 1).matrix;
 
 		final Table<Integer, Integer, Collection<SpatialRegion>> regionPowerSet = matrix
 				.createSizeIndexedRegionPowerSet(ArrayList::new);
@@ -155,9 +143,7 @@ public final class SpatialMatrixTest {
 	 */
 	@Theory
 	public final void testCreateSizeIndexedRegionPowerSet(final int[] gridDims) {
-		final Entry<SpatialMatrix<Integer, Object>, Map<Object, Integer>> matrixMap = createSpatialMatrixMap(gridDims,
-				1);
-		final SpatialMatrix<Integer, Object> matrix = matrixMap.getKey();
+		final SpatialMatrix<Integer, Object> matrix = new SpatialMatrixConstructionData<>(gridDims, 1).matrix;
 
 		final int[] dims = matrix.getDimensions();
 		final int x = dims[0];
@@ -185,10 +171,8 @@ public final class SpatialMatrixTest {
 	 * Test method for {@link se.kth.speech.SpatialMatrix#getCells()}.
 	 */
 	@Theory
-	public final void testGetCells(final int[] gridDims) {
-		final Entry<SpatialMatrix<Integer, Object>, Map<Object, Integer>> matrixMap = createSpatialMatrixMap(gridDims,
-				1);
-		final SpatialMatrix<Integer, Object> matrix = matrixMap.getKey();
+	public final void testGetCellsCount(final int[] gridDims) {
+		final SpatialMatrix<Integer, Object> matrix = new SpatialMatrixConstructionData<>(gridDims, 1).matrix;
 		final long expected = IntArrays.product(gridDims);
 		final Stream<Integer> cells = matrix.getCells();
 		final long actual = cells.count();
@@ -217,7 +201,7 @@ public final class SpatialMatrixTest {
 
 	@Theory
 	public final void testGetDimensions(final int[] gridDims) {
-		final SpatialMatrix<Integer, Object> matrix = createSpatialMatrixMap(gridDims, 1).getKey();
+		final SpatialMatrix<Integer, Object> matrix = new SpatialMatrixConstructionData<>(gridDims, 1).matrix;
 		final int[] dims = matrix.getDimensions();
 		Assert.assertArrayEquals(gridDims, dims);
 	}
