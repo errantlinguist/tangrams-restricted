@@ -141,8 +141,7 @@ public final class SpatialMatrix<I, E> {
 
 	public Map<SpatialRegion, Set<SpatialRegion>> createValidMoveMap() {
 		final Set<SpatialRegion> regionElements = elementPlacements.getMinimalRegionElements().keySet();
-		final Map<SpatialRegion, Set<SpatialRegion>> result = Maps
-				.newHashMapWithExpectedSize(regionElements.size());
+		final Map<SpatialRegion, Set<SpatialRegion>> result = Maps.newHashMapWithExpectedSize(regionElements.size());
 		final int[] matrixDims = getDimensions();
 		final int x = matrixDims[0];
 		final int y = matrixDims[1];
@@ -150,12 +149,12 @@ public final class SpatialMatrix<I, E> {
 		for (final SpatialRegion movablePieceRegion : regionElements) {
 			final Set<SpatialRegion> possibleMoveRegions = result.computeIfAbsent(movablePieceRegion,
 					newRegionPossibleMoveSetFactory);
-			final int maxXLowerBound = x - movablePieceRegion.getLengthX();
-			final int maxYLowerBound = y - movablePieceRegion.getLengthY();
-			for (int xLowerBound = 0; xLowerBound < maxXLowerBound; xLowerBound++) {
-				final int xUpperBound = xLowerBound + movablePieceRegion.getLengthX();
-				for (int yLowerBound = 0; yLowerBound < maxYLowerBound; yLowerBound++) {
-					final int yUpperBound = yLowerBound + movablePieceRegion.getLengthY();
+			final int maxRowIdx = x - movablePieceRegion.getRowEndIdx();
+			final int maxColIdx = y - movablePieceRegion.getColumnEndIdx();
+			for (int xLowerBound = 0; xLowerBound < maxRowIdx; xLowerBound++) {
+				final int xUpperBound = xLowerBound + movablePieceRegion.getXUpperBound();
+				for (int yLowerBound = 0; yLowerBound < maxColIdx; yLowerBound++) {
+					final int yUpperBound = yLowerBound + movablePieceRegion.getYUpperBound();
 					final SpatialRegion possibleMoveRegion = getRegion(xLowerBound, xUpperBound, yLowerBound,
 							yUpperBound);
 					if (elementPlacements.isOccupied(possibleMoveRegion)) {
@@ -220,9 +219,13 @@ public final class SpatialMatrix<I, E> {
 		return true;
 	}
 
+	public Stream<I> getCells() {
+		return positionMatrix.getValues().stream();
+	}
+
 	public Stream<I> getCells(final SpatialRegion region) {
-		return positionMatrix.getValues(region.getXLowerBound(), region.getXUpperBound(), region.getYLowerBound(),
-				region.getYUpperBound());
+		return positionMatrix.getValues(region.getRowStartIdx(), region.getRowEndIdx(), region.getColumnStartIdx(),
+				region.getColumnEndIdx());
 	}
 
 	/**
@@ -284,11 +287,11 @@ public final class SpatialMatrix<I, E> {
 
 	private void setPositionValues(final SpatialRegion region, final I elementId) {
 		LOGGER.debug("Setting {} to value \"{}\".", region, elementId);
-		final ListIterator<List<I>> rowIter = positionMatrix.rowIterator(region.getXLowerBound());
-		for (int rowIdx = rowIter.nextIndex(); rowIdx < region.getXUpperBound(); rowIdx++) {
+		final ListIterator<List<I>> rowIter = positionMatrix.rowIterator(region.getRowStartIdx());
+		for (int rowIdx = rowIter.nextIndex(); rowIdx < region.getRowEndIdx(); rowIdx++) {
 			final List<I> row = rowIter.next();
-			final ListIterator<I> rowCellIter = row.listIterator(region.getYLowerBound());
-			for (int colIdx = rowCellIter.nextIndex(); colIdx < region.getYUpperBound(); colIdx++) {
+			final ListIterator<I> rowCellIter = row.listIterator(region.getColumnStartIdx());
+			for (int colIdx = rowCellIter.nextIndex(); colIdx < region.getColumnEndIdx(); colIdx++) {
 				rowCellIter.next();
 				rowCellIter.set(elementId);
 			}
