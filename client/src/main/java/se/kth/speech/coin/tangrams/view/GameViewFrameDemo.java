@@ -82,6 +82,28 @@ public final class GameViewFrameDemo implements Runnable {
 			}
 
 		},
+		GRID_WIDTH("w") {
+
+			@Override
+			public Option get() {
+				return Option.builder(optName).longOpt("width")
+						.desc("The grid width of the board, i.e the number of columns.").hasArg().argName("size")
+						// See http://stackoverflow.com/a/5955893/1391325
+						.type(Number.class).build();
+			}
+
+		},
+		GRID_HEIGHT("h") {
+
+			@Override
+			public Option get() {
+				return Option.builder(optName).longOpt("height")
+						.desc("The grid height of the board, i.e. the number of rows.").hasArg().argName("size")
+						// See http://stackoverflow.com/a/5955893/1391325
+						.type(Number.class).build();
+			}
+
+		},
 		OCCUPIED_GRID_AREA("o") {
 
 			@Override
@@ -112,9 +134,11 @@ public final class GameViewFrameDemo implements Runnable {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(GameViewFrameDemo.class);
 
-	private static final double DEFAULT_OCCUPIED_GRID_AREA = 0.67;
+	private static final double DEFAULT_OCCUPIED_GRID_AREA = 0.75;
 
 	private static final int DEFAULT_IMG_PLACEMENT_COUNT = 20;
+	
+	private final int[] gridDims;
 
 	public static void main(final String[] args) {
 		try {
@@ -128,7 +152,8 @@ public final class GameViewFrameDemo implements Runnable {
 				final boolean allowFailedPlacements = cl.hasOption(Parameter.ALLOW_FAILED_PLACEMENTS.optName);
 				LOGGER.info("Creating view for game \"{}\".", gameId);
 				final Random rnd = new Random(gameId);
-				final GameViewFrameDemo testInstance = new GameViewFrameDemo(rnd, imgPlacementCount, occupiedGridArea,
+				final int[] gridDims = new int[] { parseHeight(cl), parseWidth(cl) };
+				final GameViewFrameDemo testInstance = new GameViewFrameDemo(rnd, imgPlacementCount, occupiedGridArea, gridDims,
 						allowFailedPlacements);
 				EventQueue.invokeLater(testInstance);
 			}
@@ -141,6 +166,42 @@ public final class GameViewFrameDemo implements Runnable {
 	private static Options createOptions() {
 		final Options result = new Options();
 		Arrays.stream(Parameter.values()).map(Parameter::get).forEach(opt -> result.addOption(opt));
+		return result;
+	}
+
+	private static final int DEFAULT_GRID_WIDTH = 20;
+
+	private static final int DEFAULT_GRID_HEIGHT = 20;
+
+	private static int parseWidth(final CommandLine cl) throws ParseException {
+		final int result;
+		final Number parsedVal = (Number) cl.getParsedOptionValue(Parameter.GRID_WIDTH.optName);
+		if (parsedVal == null) {
+			result = DEFAULT_GRID_WIDTH;
+			LOGGER.info("No grid width supplied; Using default ({}).", result);
+		} else {
+			result = parsedVal.intValue();
+			if (result < 1) {
+				throw new IllegalArgumentException("Grid width must be positive.");
+			}
+			LOGGER.info("Set grid width to {}.", result);
+		}
+		return result;
+	}
+
+	private static int parseHeight(final CommandLine cl) throws ParseException {
+		final int result;
+		final Number parsedVal = (Number) cl.getParsedOptionValue(Parameter.GRID_HEIGHT.optName);
+		if (parsedVal == null) {
+			result = DEFAULT_GRID_HEIGHT;
+			LOGGER.info("No grid height supplied; Using default ({}).", result);
+		} else {
+			result = parsedVal.intValue();
+			if (result < 1) {
+				throw new IllegalArgumentException("Grid height must be positive.");
+			}
+			LOGGER.info("Set grid height to {}.", result);
+		}
 		return result;
 	}
 
@@ -189,11 +250,12 @@ public final class GameViewFrameDemo implements Runnable {
 
 	private final double occupiedGridArea;
 
-	public GameViewFrameDemo(final Random rnd, final int imgPlacementCount, final double occupiedGridArea,
+	public GameViewFrameDemo(final Random rnd, final int imgPlacementCount, final double occupiedGridArea, final int[] gridDims,
 			final boolean allowFailedPlacements) {
 		this.rnd = rnd;
 		this.imgPlacementCount = imgPlacementCount;
 		this.occupiedGridArea = occupiedGridArea;
+		this.gridDims = gridDims;
 		this.allowFailedPlacements = allowFailedPlacements;
 	}
 
@@ -215,8 +277,7 @@ public final class GameViewFrameDemo implements Runnable {
 		LOGGER.info("Image color usage counts: {}", imgDataFactory.getColorUsageCounts());
 		LOGGER.info("Total used image count: {}", imgVisualizationInfoDataList.size());
 		final GameBoardPanelFactory factory = new GameBoardPanelFactory(rnd, occupiedGridArea);
-		final int[] gridSize = new int[] { 40, 40 };
-		factory.setGridSize(gridSize);
+		factory.setGridSize(gridDims);
 		final int uniqueImgResourceCount = imgDataFactory.getImgResourceUsageCounts().keySet().size();
 		factory.setUniqueImgResourceCount(uniqueImgResourceCount);
 		final OpaqueTransparencyReplacementImageFilter imgTranformer = new OpaqueTransparencyReplacementImageFilter(
