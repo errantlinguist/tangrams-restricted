@@ -51,7 +51,7 @@ public final class SpatialMatrix<I, E> {
 		// factory function
 		// final int estimatedSize = IntArrays.product(dims)
 		// (rows-xLength) * (cols-yLength)
-		return (x - xLength) * (y - yLength);
+		return (x - xLength + 1) * (y - yLength + 1);
 	}
 
 	private transient final Function<? super E, ? extends I> elementIdGetter;
@@ -92,11 +92,11 @@ public final class SpatialMatrix<I, E> {
 				IntStream.rangeClosed(1, x).boxed().collect(Collectors.toCollection(() -> new ArrayList<>(x))),
 				IntStream.rangeClosed(1, y).boxed().collect(Collectors.toCollection(() -> new ArrayList<>(y))));
 		for (int xLowerBound = 0; xLowerBound < x; ++xLowerBound) {
-			for (int xUpperBound = xLowerBound; xUpperBound < x; ++xUpperBound) {
-				final int xLength = xUpperBound - xLowerBound + 1;
+			for (int xUpperBound = xLowerBound + 1; xUpperBound <= x; ++xUpperBound) {
+				final int xLength = SpatialRegion.getLength(xLowerBound, xUpperBound);
 				for (int yLowerBound = 0; yLowerBound < y; ++yLowerBound) {
-					for (int yUpperBound = yLowerBound; yUpperBound < y; ++yUpperBound) {
-						final int yLength = yUpperBound - yLowerBound + 1;
+					for (int yUpperBound = yLowerBound + 1; yUpperBound <= y; ++yUpperBound) {
+						final int yLength = SpatialRegion.getLength(yLowerBound, yUpperBound);
 						C regions = result.get(xLength, yLength);
 						if (regions == null) {
 							final int setSize = calculateSubRegionCount(xLength, yLength);
@@ -284,10 +284,10 @@ public final class SpatialMatrix<I, E> {
 		setPositionValues(target, elementId);
 		elementPlacements.put(element, target);
 	}
-	
+
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#toString()
 	 */
 	@Override
