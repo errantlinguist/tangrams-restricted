@@ -80,7 +80,7 @@ public final class SpatialMatrixTest {
 
 	private static void testGetCellsRegion(final int xLowerBound, final int xUpperBound, final int yLowerBound,
 			final int yUpperBound) {
-		final int[] gridDims = SpatialRegion.getDimensions(xLowerBound, xUpperBound, yLowerBound, yUpperBound);
+		final int[] gridDims = new int[]{xUpperBound, yUpperBound};
 		final SpatialMatrixConstructionData<Object> matrixConstData = new SpatialMatrixConstructionData<>(gridDims, 1);
 		final SpatialMatrix<Integer, Object> matrix = matrixConstData.matrix;
 		final String piece = "testpiece";
@@ -89,7 +89,7 @@ public final class SpatialMatrixTest {
 		final List<Integer> cells = matrix.getPositionMatrix().getValues();
 		Collections.fill(cells, pieceId);
 
-		final SpatialRegion r = matrix.getRegion(xLowerBound, yUpperBound, yLowerBound, yUpperBound);
+		final SpatialRegion r = matrix.getRegion(xLowerBound, xUpperBound, yLowerBound, yUpperBound);
 		final Set<Integer> actual = matrix.getCells(r).collect(Collectors.toSet());
 		Assert.assertEquals(Collections.singleton(pieceId), actual);
 	}
