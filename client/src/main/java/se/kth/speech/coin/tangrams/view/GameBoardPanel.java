@@ -131,126 +131,17 @@ final class GameBoardPanel extends JPanel {
 
 	private final Map<ImageViewInfo, Image> pieceImgs;
 
-	// GameBoardPanel(final Map<ImageViewInfo, Image> pieceImgs, final Random
-	// rnd, final double occupiedGridArea) {
-	// this.pieceImgs = pieceImgs;
-	// final Map<ImageViewInfo, Integer> pieceIds =
-	// Maps.newHashMapWithExpectedSize(pieceImgs.size());
-	// final Function<ImageViewInfo, Integer> incrementingPieceIdGetter = piece
-	// -> pieceIds.computeIfAbsent(piece,
-	// k -> pieceIds.size());
-	// // http://stackoverflow.com/a/1936582/1391325
-	// final Dimension screenSize = getToolkit().getScreenSize();
-	// // final Dimension maxSize = Dimensions.createScaledDimension(boardSize,
-	// // screenSize);
-	// LOGGER.debug("Setting maximum component size to {}.", screenSize);
-	// setMaximumSize(screenSize);
-	// {
-	// final int shortestScreenLength = (int) (Math.min(screenSize.width,
-	// screenSize.height) * 0.75);
-	// final Dimension boardSize = new Dimension(shortestScreenLength,
-	// shortestScreenLength);
-	// setPreferredSize(boardSize);
-	// final PositionGridSizeSummary posGridSizeSummary =
-	// createPositionGridSizeSummary(
-	// pieceImgs.keySet().iterator());
-	// LOGGER.info("Position grid size summary: {}", posGridSizeSummary);
-	// final int[] gridSize = createPositionGridSize(posGridSizeSummary,
-	// boardSize, occupiedGridArea);
-	// LOGGER.info("Creating a position matrix of size {}.", gridSize);
-	// final Integer[] posMatrixBackingArray = new
-	// Integer[IntArrays.product(gridSize)];
-	// final Matrix<Integer> backingPosMatrix = new
-	// Matrix<>(posMatrixBackingArray, gridSize[1]);
-	// if (!isDimensionDivisibleIntoGrid(boardSize, backingPosMatrix)) {
-	// throw new IllegalArgumentException(
-	// String.format("Board %s not divisble into matrix with dimensions %s.",
-	// boardSize,
-	// Arrays.toString(backingPosMatrix.getDimensions())));
-	// }
-	// final Function<? super ImageViewInfo, int[]> piecePosMatrixSizeFactory =
-	// imgViewInfo -> imgViewInfo
-	// .getGridSize(IMAGE_SIZE_FACTORS);
-	// final Collection<ImageViewInfo> pieces = pieceImgs.keySet();
-	// final SpatialMap<ImageViewInfo> posMap = new SpatialMap<>(pieces.size());
-	// posMatrix = new SpatialMatrix<>(backingPosMatrix, pieceIds::get, posMap);
-	// final RandomMatrixPositionFiller<Integer, ImageViewInfo> matrixFiller =
-	// new RandomMatrixPositionFiller<>(
-	// posMatrix, incrementingPieceIdGetter, rnd, piecePosMatrixSizeFactory);
-	// matrixFiller.apply(pieces);
-	// final Collection<ImageViewInfo> allElements = posMap.getAllElements();
-	// LOGGER.info("Created a spatial map with element IDs {}.",
-	// allElements.stream().map(pieceIds::get)
-	// .collect(Collectors.toCollection(() -> new
-	// ArrayList<>(allElements.size()))));
-	// }
-	// {
-	// final int[] minSizeDims =
-	// createMinimumDimLengths(posMatrix.getDimensions()).toArray();
-	// // NOTE: "rows" in the matrix go top-bottom and "cols" go
-	// // left-right
-	// final Dimension minSize = new Dimension(minSizeDims[1], minSizeDims[0]);
-	// LOGGER.debug("Setting minimum component size to {}.", minSize);
-	// setMinimumSize(minSize);
-	// }
-	// // Finished with creating necessary data structures
-	// System.out.println("IMAGE PLACEMENTS");
-	// System.out.println(createMatrixReprString(posMatrix.getPositionMatrix()));
-	// }
-
 	private final SpatialMatrix<Integer, ImageViewInfo> posMatrix;
 
 	GameBoardPanel(final int[] gridSize, final Function<? super ImageViewInfo, Integer> pieceIdGetter,
 			final int uniqueImgResourceCount) {
-		posMatrix = createPosMatrix(gridSize, pieceIdGetter, new SpatialMap<>(uniqueImgResourceCount));
-		// Use linked map in order to preserve iteration order in provided
-		// sequence
-		pieceImgs = Maps.newLinkedHashMapWithExpectedSize(uniqueImgResourceCount);
-		// http://stackoverflow.com/a/1936582/1391325
-		final Dimension screenSize = getToolkit().getScreenSize();
-		// final Dimension maxSize = Dimensions.createScaledDimension(boardSize,
-		// screenSize);
-		LOGGER.debug("Setting maximum component size to {}.", screenSize);
-		setMaximumSize(screenSize);
-		{
-			final int shortestScreenLength = (int) (Math.min(screenSize.width, screenSize.height) * 0.75);
-			final Dimension boardSize = new Dimension(shortestScreenLength, shortestScreenLength);
-			setPreferredSize(boardSize);
-		}
-		{
-			final int[] minSizeDims = createMinimumDimLengths(posMatrix.getDimensions()).toArray();
-			// NOTE: "rows" in the matrix go top-bottom and "cols" go
-			// left-right
-			final Dimension minSize = new Dimension(minSizeDims[1], minSizeDims[0]);
-			LOGGER.debug("Setting minimum component size to {}.", minSize);
-			setMinimumSize(minSize);
-		}
+		this(createPosMatrix(gridSize, pieceIdGetter, new SpatialMap<>(uniqueImgResourceCount)), uniqueImgResourceCount);
 	}
 
 	GameBoardPanel(final SpatialMatrix<Integer, ImageViewInfo> posMatrix, final int uniqueImgResourceCount) {
-		this.posMatrix = posMatrix;
 		// Use linked map in order to preserve iteration order in provided
-		// sequence
-		pieceImgs = Maps.newLinkedHashMapWithExpectedSize(uniqueImgResourceCount);
-		// http://stackoverflow.com/a/1936582/1391325
-		final Dimension screenSize = getToolkit().getScreenSize();
-		// final Dimension maxSize = Dimensions.createScaledDimension(boardSize,
-		// screenSize);
-		LOGGER.debug("Setting maximum component size to {}.", screenSize);
-		setMaximumSize(screenSize);
-		{
-			final int shortestScreenLength = (int) (Math.min(screenSize.width, screenSize.height) * 0.75);
-			final Dimension boardSize = new Dimension(shortestScreenLength, shortestScreenLength);
-			setPreferredSize(boardSize);
-		}
-		{
-			final int[] minSizeDims = createMinimumDimLengths(posMatrix.getDimensions()).toArray();
-			// NOTE: "rows" in the matrix go top-bottom and "cols" go
-			// left-right
-			final Dimension minSize = new Dimension(minSizeDims[1], minSizeDims[0]);
-			LOGGER.debug("Setting minimum component size to {}.", minSize);
-			setMinimumSize(minSize);
-		}
+				// sequence
+		this(posMatrix,  Maps.newLinkedHashMapWithExpectedSize(uniqueImgResourceCount));
 	}
 
 	GameBoardPanel(final SpatialMatrix<Integer, ImageViewInfo> posMatrix, final Map<ImageViewInfo, Image> pieceImgs) {
