@@ -96,13 +96,12 @@ public final class SpatialMatrixTest {
 
 	private static <E> void testPlaceElement(final E piece, final int xLowerBound, final int xUpperBound,
 			final int yLowerBound, final int yUpperBound) {
-		final int[] gridDims = SpatialRegion.getDimensions(xLowerBound, xUpperBound, yLowerBound, yUpperBound);
+		final int[] gridDims = new int[] { xUpperBound, yUpperBound };
 		final SpatialMatrixConstructionData<Object> matrixConstData = new SpatialMatrixConstructionData<>(gridDims, 1);
 		final SpatialMatrix<Integer, Object> matrix = matrixConstData.matrix;
 		final Map<Object, Integer> pieceIds = matrixConstData.pieceIds;
 
 		final SpatialRegion r = matrix.getRegion(xLowerBound, xUpperBound, yLowerBound, yUpperBound);
-		Assert.assertArrayEquals(gridDims, r.getDimensions());
 		matrix.placeElement(piece, r);
 		final Integer pieceId = pieceIds.get(piece);
 		Assert.assertNotNull(pieceId);
