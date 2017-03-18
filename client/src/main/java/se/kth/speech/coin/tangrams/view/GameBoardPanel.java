@@ -24,7 +24,6 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.Stroke;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -46,7 +45,6 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
-import se.kth.speech.IntArrays;
 import se.kth.speech.Matrix;
 import se.kth.speech.MutablePair;
 import se.kth.speech.RandomCollections;
@@ -109,13 +107,6 @@ final class GameBoardPanel<I> extends JPanel {
 		return Arrays.stream(dims).map(dim -> dim * MIN_GRID_SQUARE_LENGTH);
 	}
 
-	private static <E> SpatialMatrix<E> createPosMatrix(final int[] gridSize, final SpatialMap<E> posMap) {
-		LOGGER.info("Creating a position matrix of size {}.", gridSize);
-		final List<E> posMatrixBackingArray = new ArrayList<>(IntArrays.product(gridSize));
-		final Matrix<E> backingPosMatrix = new Matrix<>(posMatrixBackingArray, gridSize[1]);
-		return new SpatialMatrix<>(backingPosMatrix, posMap);
-	}
-
 	private static Image scaleImageToGridSize(final Image img, final SpatialRegion occupiedGridRegion,
 			final int colWidth, final int rowHeight) {
 		final int[] size = createComponentCoordSizeArray(occupiedGridRegion, colWidth, rowHeight);
@@ -131,10 +122,6 @@ final class GameBoardPanel<I> extends JPanel {
 	private final Map<I, Image> pieceImgs;
 
 	private final SpatialMatrix<I> posMatrix;
-
-	GameBoardPanel(final int[] gridSize, final int uniqueImgResourceCount) {
-		this(createPosMatrix(gridSize, new SpatialMap<>(uniqueImgResourceCount)), uniqueImgResourceCount);
-	}
 
 	GameBoardPanel(final SpatialMatrix<I> posMatrix, final int uniqueImgResourceCount) {
 		// Use linked map in order to preserve iteration order in provided
