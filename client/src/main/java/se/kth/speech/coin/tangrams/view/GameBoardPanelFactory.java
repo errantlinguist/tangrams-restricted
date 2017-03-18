@@ -29,15 +29,16 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.EnumMap;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Random;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.IntSupplier;
+import java.util.stream.Collectors;
 
 import javax.imageio.ImageIO;
 
@@ -50,6 +51,7 @@ import se.kth.speech.IntArrays;
 import se.kth.speech.MathDivisors;
 import se.kth.speech.Matrix;
 import se.kth.speech.MatrixStringReprFactory;
+import se.kth.speech.MutablePair;
 import se.kth.speech.RandomMatrixPositionFiller;
 import se.kth.speech.SpatialMap;
 import se.kth.speech.SpatialMatrix;
@@ -129,18 +131,6 @@ final class GameBoardPanelFactory implements Function<Collection<ImageVisualizat
 		result.put(sizes.next(), 2);
 		result.put(sizes.next(), 3);
 		assert result.size() == ImageSize.values().length;
-		return result;
-	}
-
-	private static <I> LinkedHashMap<I, Image> createImageViewInfoMap(final Function<? super ImageViewInfo, ? extends I> pieceIdGetter,
-			final Collection<ImageVisualizationInfo> imgVisualizationInfoData, final int uniqueImgResourceCount,
-			final Toolkit toolkit,
-			final BiFunction<? super Image, ? super Toolkit, ? extends Image> postColoringImgTransformer) {
-		// Use linked map in order to preserve iteration order in provided
-		// sequence
-		final LinkedHashMap<ImageViewInfo, Image> result = Maps
-				.newLinkedHashMapWithExpectedSize(imgVisualizationInfoData.size());
-		putImageViewInfo(result, pieceIdGetter, imgVisualizationInfoData, uniqueImgResourceCount, toolkit, postColoringImgTransformer);
 		return result;
 	}
 
@@ -231,6 +221,30 @@ final class GameBoardPanelFactory implements Function<Collection<ImageVisualizat
 		return new SpatialMatrix<>(backingPosMatrix, posMap);
 	}
 
+	private static <I> Entry<ImageViewInfo, Image> createViewInfo(
+			final ImageVisualizationInfo imgVisualizationInfoDatum, final Toolkit toolkit,
+			final BiFunction<? super Image, ? super Toolkit, ? extends Image> postColoringImgTransformer,
+			final Map<URL, BufferedImage> resourceImgs) {
+		final URL imgResourceLoc = imgVisualizationInfoDatum.getResourceLoc();
+		final BufferedImage initialImg = resourceImgs.computeIfAbsent(imgResourceLoc, loc -> {
+			try {
+				return ImageIO.read(loc);
+			} catch (final IOException e) {
+				throw new UncheckedIOException(e);
+			}
+		});
+		final IntSupplier widthGetter = initialImg::getWidth;
+		final IntSupplier heightGetter = initialImg::getHeight;
+		// Size/aspect ratio calculation
+		final ImageViewInfo.RasterizationInfo imgRasterizationInfo = new ImageViewInfo.RasterizationInfo(widthGetter,
+				heightGetter);
+		final Image coloredImg = toolkit.createImage(new FilteredImageSource(initialImg.getSource(),
+				new ColorReplacementImageFilter(imgVisualizationInfoDatum.getColor())));
+		final ImageViewInfo imgInfo = new ImageViewInfo(imgVisualizationInfoDatum, imgRasterizationInfo);
+		final Image transformedImg = postColoringImgTransformer.apply(coloredImg, toolkit);
+		return new MutablePair<>(imgInfo, transformedImg);
+	}
+
 	private static Dimension estimatePreferredBoardSize(final Toolkit toolkit) {
 		// http://stackoverflow.com/a/1936582/1391325
 		final Dimension screenSize = toolkit.getScreenSize();
@@ -241,39 +255,6 @@ final class GameBoardPanelFactory implements Function<Collection<ImageVisualizat
 	private static boolean isDimensionDivisibleIntoGrid(final Dimension dim, final Matrix<?> matrix) {
 		final int[] matrixDims = matrix.getDimensions();
 		return dim.getHeight() % matrixDims[0] == 0 && dim.getWidth() % matrixDims[1] == 0;
-	}
-
-	private static <I> void putImageViewInfo(final Map<? super I, Image> pieceImgs, final Function<? super ImageViewInfo, ? extends I> pieceIdGetter,
-			final Collection<ImageVisualizationInfo> imgVisualizationInfoData, final int uniqueImgResourceCount,
-			final Toolkit toolkit,
-			final BiFunction<? super Image, ? super Toolkit, ? extends Image> postColoringImgTransformer) {
-		final Map<URL, BufferedImage> resourceImgs = Maps.newHashMapWithExpectedSize(uniqueImgResourceCount);
-		for (final ImageVisualizationInfo imgVisualizationInfoDatum : imgVisualizationInfoData) {
-			final URL imgResourceLoc = imgVisualizationInfoDatum.getResourceLoc();
-			final BufferedImage initialImg = resourceImgs.computeIfAbsent(imgResourceLoc, loc -> {
-				try {
-					return ImageIO.read(loc);
-				} catch (final IOException e) {
-					throw new UncheckedIOException(e);
-				}
-			});
-			final IntSupplier widthGetter = initialImg::getWidth;
-			final IntSupplier heightGetter = initialImg::getHeight;
-			{
-				// Size/aspect ratio calculation
-				final ImageViewInfo.RasterizationInfo imgRasterizationInfo = new ImageViewInfo.RasterizationInfo(
-						widthGetter, heightGetter);
-				{
-					final Image coloredImg = toolkit.createImage(new FilteredImageSource(initialImg.getSource(),
-							new ColorReplacementImageFilter(imgVisualizationInfoDatum.getColor())));
-					final ImageViewInfo imgInfo = new ImageViewInfo(imgVisualizationInfoDatum, imgRasterizationInfo);
-					final Image transformedImg = postColoringImgTransformer.apply(coloredImg, toolkit);
-					final I pieceId = pieceIdGetter.apply(imgInfo);
-					final Image oldImg = pieceImgs.put(pieceId, transformedImg);
-					assert oldImg == null : String.format("Key already found in map: %s", pieceId);
-				}
-			}
-		}
 	}
 
 	private Dimension boardSize;
@@ -380,16 +361,32 @@ final class GameBoardPanelFactory implements Function<Collection<ImageVisualizat
 
 	private GameBoardPanel<Integer> createWithDefinedGridSize(final int[] gridSize,
 			final Collection<ImageVisualizationInfo> imgVisualizationInfoData, final int expectedPieceCount) {
-		final Map<ImageViewInfo, Integer> pieceIds = Maps.newHashMapWithExpectedSize(expectedPieceCount);
 		final SpatialMatrix<Integer> posMatrix = createPosMatrix(gridSize, new SpatialMap<>(expectedPieceCount));
 		final GameBoardPanel<Integer> result = new GameBoardPanel<>(posMatrix, expectedPieceCount);
 		final Toolkit toolkit = result.getToolkit();
 		final Map<Integer, Image> pieceImgs = result.getPieceImgs();
-		putImageViewInfo(pieceImgs, imgVisualizationInfoData, expectedPieceCount, toolkit, postColoringImgTransformer);
-		final PositionGridSizeSummary posGridSizeSummary = createPositionGridSizeSummary(pieceImgs.keySet().iterator());
+
+		// A cache mapping unique resource locators to the Image instances
+		// created for them
+		final Map<URL, BufferedImage> resourceImgs = Maps.newHashMapWithExpectedSize(uniqueImgResourceCount);
+		final List<Entry<ImageViewInfo, Image>> imgViewInfoLoadedImgs = imgVisualizationInfoData.stream()
+				.map(imgVisualizationInfoDatum -> createViewInfo(imgVisualizationInfoDatum, toolkit,
+						postColoringImgTransformer, resourceImgs))
+				.collect(Collectors.toCollection(() -> new ArrayList<>(imgVisualizationInfoData.size())));
+		// Add the mapping of image to piece ID to the mapping for the game
+		// board panel
+		final Map<ImageViewInfo, Integer> pieceIds = Maps.newHashMapWithExpectedSize(expectedPieceCount);
+		imgViewInfoLoadedImgs.stream().forEach(imgViewInfoLoadedImg -> {
+			final ImageViewInfo imgViewInfo = imgViewInfoLoadedImg.getKey();
+			final Integer pieceId = pieceIds.computeIfAbsent(imgViewInfo, k -> pieceIds.size());
+			final Image img = imgViewInfoLoadedImg.getValue();
+			pieceImgs.put(pieceId, img);
+		});
+
+		final PositionGridSizeSummary posGridSizeSummary = createPositionGridSizeSummary(pieceIds.keySet().iterator());
 		LOGGER.info("Position grid size summary: {}", posGridSizeSummary);
-		final Collection<ImageViewInfo> pieces = pieceImgs.keySet();
-		fillMatrix(posMatrix, pieces, pieceIds);
+		final Collection<Integer> pieces = pieceImgs.keySet();
+		fillMatrix(posMatrix, pieceIds.entrySet());
 		if (moreOccupiedSpaceThanExpected(posMatrix)) {
 			throw new IllegalArgumentException(String.format(
 					"Grid size of %s is not enough to hold %d pieces with the given occupied-space ratio of %d.",
@@ -402,13 +399,14 @@ final class GameBoardPanelFactory implements Function<Collection<ImageVisualizat
 		return result;
 	}
 
-	private void fillMatrix(final SpatialMatrix<Integer> posMatrix, final Collection<ImageViewInfo> pieces,
-			final Map<ImageViewInfo, Integer> pieceIds) {
-		final Function<ImageViewInfo, Integer> incrementingPieceIdGetter = piece -> pieceIds.computeIfAbsent(piece,
-				k -> pieceIds.size());
-		final RandomMatrixPositionFiller<Integer,ImageViewInfo> matrixFiller = new RandomMatrixPositionFiller<>(posMatrix,
-				incrementingPieceIdGetter, rnd, PIECE_GRID_SIZE_FACTORY, allowFailedPlacements);
-		matrixFiller.apply(pieces);
+	private void fillMatrix(final SpatialMatrix<Integer> posMatrix,
+			final Collection<? extends Entry<ImageViewInfo, Integer>> pieceIds) {
+		// final Function<ImageViewInfo, Integer> incrementingPieceIdGetter =
+		// piece -> pieceIds.computeIfAbsent(piece,
+		// k -> pieceIds.size());
+		final RandomMatrixPositionFiller<Integer, ImageViewInfo> matrixFiller = new RandomMatrixPositionFiller<>(
+				posMatrix, rnd, PIECE_GRID_SIZE_FACTORY, allowFailedPlacements);
+		matrixFiller.apply(pieceIds);
 	}
 
 	private boolean moreOccupiedSpaceThanExpected(final SpatialMatrix<Integer> posMatrix) {

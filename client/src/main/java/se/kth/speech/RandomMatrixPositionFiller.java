@@ -18,8 +18,8 @@ package se.kth.speech;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
+import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
 import java.util.function.Function;
@@ -31,16 +31,13 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Table;
 
-import se.kth.speech.RandomCollections;
-import se.kth.speech.SpatialMatrix;
-import se.kth.speech.SpatialRegion;
-
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
  * @since 9 Mar 2017
  *
  */
-public final class RandomMatrixPositionFiller<I, E> implements Function<Collection<? extends E>, Set<I>> {
+public final class RandomMatrixPositionFiller<I, E>
+		implements Function<Collection<? extends Entry<? extends E, ? extends I>>, Set<I>> {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(RandomMatrixPositionFiller.class);
 
@@ -50,8 +47,6 @@ public final class RandomMatrixPositionFiller<I, E> implements Function<Collecti
 	 */
 	private static final IntFunction<LinkedHashSet<SpatialRegion>> SUB_REGION_SET_FACTORY = Sets::newLinkedHashSetWithExpectedSize;
 
-	private final Function<? super E, I> elementIdGetter;
-
 	private final Function<? super E, int[]> elementPosMatrixSizeFactory;
 
 	private final SpatialMatrix<? super I> posMatrix;
@@ -60,39 +55,36 @@ public final class RandomMatrixPositionFiller<I, E> implements Function<Collecti
 
 	private final boolean allowFailedPlacements;
 
-	public RandomMatrixPositionFiller(final SpatialMatrix<? super I> posMatrix, final Function<? super E, I> elementIdGetter,
-			final Random rnd, final Function<? super E, int[]> elementPosMatrixSizeFactory,
-			final boolean allowFailedPlacements) {
+	public RandomMatrixPositionFiller(final SpatialMatrix<? super I> posMatrix, final Random rnd,
+			final Function<? super E, int[]> elementPosMatrixSizeFactory, final boolean allowFailedPlacements) {
 		this.posMatrix = posMatrix;
-		this.elementIdGetter = elementIdGetter;
 		this.rnd = rnd;
 		this.elementPosMatrixSizeFactory = elementPosMatrixSizeFactory;
 		this.allowFailedPlacements = allowFailedPlacements;
 	}
 
 	@Override
-	public Set<I> apply(final Collection<? extends E> elements) {
-		LOGGER.info("Trying to place {} elements.", elements.size());
+	public Set<I> apply(final Collection<? extends Entry<? extends E, ? extends I>> elementIds) {
+		LOGGER.info("Trying to place {} elements.", elementIds.size());
 		final Table<Integer, Integer, LinkedHashSet<SpatialRegion>> subRegionsToTry = posMatrix
 				.createSizeIndexedRegionPowerSet(SUB_REGION_SET_FACTORY);
-		final Set<I> result = Sets.newHashSetWithExpectedSize(elements.size());
+		final Set<I> result = Sets.newHashSetWithExpectedSize(elementIds.size());
 		{
 			// Randomly place each element in the position matrix
-			final Iterator<? extends E> elementIter = elements.iterator();
-			while (elementIter.hasNext()) {
-				final E element = elementIter.next();
+			for (final Entry<? extends E, ? extends I> elementId : elementIds) {
+				final E element = elementId.getKey();
 				LOGGER.debug("Adding {}.", element);
-				final I elementId = elementIdGetter.apply(element);
-				final SpatialRegion placementResult = placePieceRandomly(element, elementId, subRegionsToTry);
-				LOGGER.debug("Added {} (with ID \"{}\") to {}.", new Object[] { element, elementId, placementResult });
-				result.add(elementId);
+				final I id = elementId.getValue();
+				final SpatialRegion placementResult = placePieceRandomly(element, id, subRegionsToTry);
+				LOGGER.debug("Added {} (with ID \"{}\") to {}.", new Object[] { element, id, placementResult });
+				result.add(id);
 			}
 		}
 		LOGGER.info("Added element IDs {}.", result);
 		return result;
 	}
 
-	private SpatialRegion placePieceRandomly(final E element, final I elementId,
+	private SpatialRegion placePieceRandomly(final E element, final I id,
 			final Table<? super Integer, ? super Integer, ? extends Collection<SpatialRegion>> subRegionsToTry) {
 		// The number of rows and columns this element takes up in the
 		// position matrix
@@ -114,7 +106,7 @@ public final class RandomMatrixPositionFiller<I, E> implements Function<Collecti
 					allFittingSubRegions.remove(result);
 					result = null;
 				} else {
-					posMatrix.placeElement(elementId, result);
+					posMatrix.placeElement(id, result);
 					assert posMatrix.isOccupied(result);
 				}
 			} while (result == null && !allFittingSubRegions.isEmpty());
@@ -122,7 +114,7 @@ public final class RandomMatrixPositionFiller<I, E> implements Function<Collecti
 			if (result == null) {
 				final String msg = String.format(
 						"Could not place element \"%s\" (with ID \"%s\") because all regions of size %s are already occupied.",
-						element, elementId, Arrays.toString(elementPosMatrixSize));
+						element, id, Arrays.toString(elementPosMatrixSize));
 				if (allowFailedPlacements) {
 					LOGGER.warn(msg);
 				} else {

@@ -16,6 +16,7 @@
 */
 package se.kth.speech.coin.tangrams.view;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -23,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
-import java.util.StringJoiner;
 import java.util.function.Function;
 
 import org.junit.Assert;
@@ -50,6 +50,19 @@ import se.kth.speech.SpatialMatrix;
 @RunWith(Theories.class)
 public final class RandomMatrixPositionFillerTest {
 
+	private static class SpatialMatrixConstructionData {
+
+		private final Function<int[], int[]> piecePosMatrixSizeFactory = Function.identity();
+
+		private final SpatialMatrix<Integer> matrix;
+
+		private SpatialMatrixConstructionData(final int[] gridSize) {
+			final List<Integer> posMatrixBackingList = new ArrayList<>(IntArrays.product(gridSize));
+			final Matrix<Integer> backingPosMatrix = new Matrix<>(posMatrixBackingList, gridSize[1]);
+			matrix = new SpatialMatrix<>(backingPosMatrix, new SpatialMap<>(TEST_PIECE_IDS.size()));
+		}
+	}
+
 	private static final List<int[]> TEST_PIECES;
 
 	private static final Map<int[], Integer> TEST_PIECE_IDS;
@@ -68,28 +81,17 @@ public final class RandomMatrixPositionFillerTest {
 		TEST_SEEDS = new Random().longs().limit(100).toArray();
 	}
 
-	private static MutablePair<SpatialMatrix<Integer, int[]>, Set<Integer>> apply(final long seed) {
-		final SpatialMap<int[]> piecePositions = new SpatialMap<>(TEST_PIECES.size());
-		final int[] gridSize = new int[] { 10, 10 };
-		final Integer[] posMatrixBackingArray = new Integer[IntArrays.product(gridSize)];
-		final Matrix<Integer> backingPosMatrix = new Matrix<>(posMatrixBackingArray, gridSize[1]);
-
-		final Random rnd = new Random(seed);
-		final Function<int[], int[]> piecePosMatrixSizeFactory = Function.identity();
-		final SpatialMatrix<Integer, int[]> matrix = new SpatialMatrix<>(backingPosMatrix, TEST_PIECE_IDS::get,
-				piecePositions);
-		final RandomMatrixPositionFiller<Integer, int[]> filler = new RandomMatrixPositionFiller<>(matrix,
-				TEST_PIECE_IDS::get, rnd, piecePosMatrixSizeFactory, false);
-		final Set<Integer> addedIds = filler.apply(TEST_PIECES);
-		return new MutablePair<>(matrix, addedIds);
+	private static MutablePair<SpatialMatrix<Integer>, Set<Integer>> apply(final long seed) {
+		return apply(new Random(seed));
 	}
 
-	private static String createArrayCollString(final Iterable<int[]> arrs) {
-		final StringJoiner sb = new StringJoiner(", ", "[", "]");
-		arrs.forEach(arr -> {
-			sb.add(Arrays.toString(arr));
-		});
-		return sb.toString();
+	private static MutablePair<SpatialMatrix<Integer>, Set<Integer>> apply(final Random rnd) {
+		final SpatialMatrixConstructionData constData = new SpatialMatrixConstructionData(new int[] { 10, 10 });
+
+		final RandomMatrixPositionFiller<Integer, int[]> filler = new RandomMatrixPositionFiller<>(constData.matrix,
+				rnd, constData.piecePosMatrixSizeFactory, false);
+		final Set<Integer> addedIds = filler.apply(TEST_PIECE_IDS.entrySet());
+		return new MutablePair<>(constData.matrix, addedIds);
 	}
 
 	private static <SuperT, SubT extends SuperT> Set<SuperT> createSetDiff(final Collection<SubT> minuend,
@@ -105,18 +107,11 @@ public final class RandomMatrixPositionFillerTest {
 	 */
 	@Test
 	public final void testApply() {
-		final SpatialMap<int[]> piecePositions = new SpatialMap<>(TEST_PIECES.size());
-		final int[] gridSize = new int[] { 10, 10 };
-		final Integer[] posMatrixBackingArray = new Integer[IntArrays.product(gridSize)];
-		final Matrix<Integer> backingPosMatrix = new Matrix<>(posMatrixBackingArray, gridSize[1]);
+		final SpatialMatrixConstructionData constData = new SpatialMatrixConstructionData(new int[] { 10, 10 });
 
-		final Random rnd = new Random();
-		final Function<int[], int[]> piecePosMatrixSizeFactory = Function.identity();
-		final SpatialMatrix<Integer, int[]> matrix = new SpatialMatrix<>(backingPosMatrix, TEST_PIECE_IDS::get,
-				piecePositions);
-		final RandomMatrixPositionFiller<Integer, int[]> filler = new RandomMatrixPositionFiller<>(matrix,
-				TEST_PIECE_IDS::get, rnd, piecePosMatrixSizeFactory, false);
-		final Set<Integer> addedIds = filler.apply(TEST_PIECES);
+		final RandomMatrixPositionFiller<Integer, int[]> filler = new RandomMatrixPositionFiller<>(constData.matrix,
+				new Random(), constData.piecePosMatrixSizeFactory, false);
+		final Set<Integer> addedIds = filler.apply(TEST_PIECE_IDS.entrySet());
 		// Test added IDs
 		Assert.assertEquals(TEST_PIECE_IDS.values().size(), addedIds.size());
 		{
@@ -132,25 +127,29 @@ public final class RandomMatrixPositionFillerTest {
 
 		// Test spatial matrix
 		{
-			final Set<int[]> setDiff = createSetDiff(piecePositions.getAllElements(), TEST_PIECES);
-			Assert.assertTrue("The spatial map contains some pieces not present in the test piece set: "
-					+ createArrayCollString(setDiff), setDiff.isEmpty());
-		}
-		{
-			final Set<int[]> setDiff = createSetDiff(TEST_PIECES, piecePositions.getAllElements());
-			Assert.assertTrue(
-					"Some test pieces are missing from the spatial map element set: " + createArrayCollString(setDiff),
+			final Set<Integer> setDiff = createSetDiff(constData.matrix.getElementPlacements().getAllElements(),
+					TEST_PIECE_IDS.values());
+			Assert.assertTrue("The spatial map contains some pieces not present in the test piece set: " + setDiff,
 					setDiff.isEmpty());
 		}
 		{
-			final Set<int[]> setDiff = createSetDiff(TEST_PIECES, piecePositions.getAllElements());
-			Assert.assertTrue("The spatial map region mapping does not contain all test pieces: "
-					+ createArrayCollString(setDiff), setDiff.isEmpty());
+			final Set<Integer> setDiff = createSetDiff(TEST_PIECE_IDS.values(),
+					constData.matrix.getElementPlacements().getAllElements());
+			Assert.assertTrue("Some test pieces are missing from the spatial map element set: " + setDiff,
+					setDiff.isEmpty());
 		}
 		{
-			final Set<int[]> setDiff = createSetDiff(piecePositions.getAllElements(), TEST_PIECES);
-			Assert.assertTrue("The spatial map region mapping contains pieces not in the set of test pieces: "
-					+ createArrayCollString(setDiff), setDiff.isEmpty());
+			final Set<Integer> setDiff = createSetDiff(TEST_PIECE_IDS.values(),
+					constData.matrix.getElementPlacements().getAllElements());
+			Assert.assertTrue("The spatial map region mapping does not contain all test pieces: " + setDiff,
+					setDiff.isEmpty());
+		}
+		{
+			final Set<Integer> setDiff = createSetDiff(constData.matrix.getElementPlacements().getAllElements(),
+					TEST_PIECE_IDS.values());
+			Assert.assertTrue(
+					"The spatial map region mapping contains pieces not in the set of test pieces: " + setDiff,
+					setDiff.isEmpty());
 		}
 	}
 
@@ -160,8 +159,8 @@ public final class RandomMatrixPositionFillerTest {
 	 */
 	@Theory
 	public final void testApplyStable(final long seed) {
-		final MutablePair<SpatialMatrix<Integer, int[]>, Set<Integer>> result1 = apply(seed);
-		final MutablePair<SpatialMatrix<Integer, int[]>, Set<Integer>> result2 = apply(seed);
+		final MutablePair<SpatialMatrix<Integer>, Set<Integer>> result1 = apply(seed);
+		final MutablePair<SpatialMatrix<Integer>, Set<Integer>> result2 = apply(seed);
 		Assert.assertEquals(result1, result2);
 	}
 

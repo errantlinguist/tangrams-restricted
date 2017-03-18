@@ -37,7 +37,7 @@ import se.kth.speech.coin.tangrams.iristk.events.Selection;
  * @since 14 Nov 2016
  *
  */
-public final class LocalController<E> extends Observable {
+public final class LocalController<I> extends Observable {
 
 	public enum ValidationStatus {
 		OK, SOURCE_EMPTY, SOURCE_TARGET_SAME, TARGET_OCCUPIED;
@@ -59,7 +59,7 @@ public final class LocalController<E> extends Observable {
 
 	private boolean isEnabled;
 
-	private final SpatialMatrix<Integer, E> model;
+	private final SpatialMatrix<I> model;
 
 	private int moveCount = 0;
 
@@ -71,7 +71,7 @@ public final class LocalController<E> extends Observable {
 
 	private final Consumer<? super Move> turnCompletionHook;
 
-	public LocalController(final SpatialMatrix<Integer, E> model, final String playerId, final boolean isEnabled,
+	public LocalController(final SpatialMatrix<I> model, final String playerId, final boolean isEnabled,
 			final Consumer<? super Move> turnCompletionHook, final Consumer<? super CoordinatePoint2D> selectionHook) {
 		this.model = model;
 		this.playerId = playerId;
@@ -108,7 +108,7 @@ public final class LocalController<E> extends Observable {
 	/**
 	 * @return the model
 	 */
-	public SpatialMatrix<Integer, E> getModel() {
+	public SpatialMatrix<I> getModel() {
 		return model;
 	}
 
@@ -181,9 +181,9 @@ public final class LocalController<E> extends Observable {
 			throw new IllegalStateException(
 					String.format("%s is already occupied; Not a valid move target.", targetRegion));
 		}
-		final Iterator<E> occupantIter = model.getElementPlacements().getSubsumedElements(sourceRegion)
+		final Iterator<I> occupantIter = model.getElementPlacements().getSubsumedElements(sourceRegion)
 				.map(Entry::getValue).iterator();
-		final E occupant = occupantIter.next();
+		final I occupant = occupantIter.next();
 		assert !occupantIter.hasNext();
 		model.placeElement(occupant, targetRegion);
 	}

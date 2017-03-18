@@ -59,7 +59,6 @@ import se.kth.speech.SpatialMatrix;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfoFactory;
 import se.kth.speech.coin.tangrams.game.LocalController;
-import se.kth.speech.coin.tangrams.game.Model;
 import se.kth.speech.coin.tangrams.iristk.GameManagementClientModule;
 import se.kth.speech.coin.tangrams.iristk.IrisSystemStopper;
 import se.kth.speech.coin.tangrams.iristk.LogDirectoryFactory;
@@ -314,7 +313,7 @@ public final class TangramsClient implements Runnable {
 						// Try clause for ensuring that the recorder gets
 						// properly stopped even in the case an exception occurs
 						try {
-							
+
 							final ConnectionStatusFrame connectionStatusView = createConnectionStatusView(gameId,
 									irisSystemStopper);
 							// Display the connection status view
@@ -353,10 +352,12 @@ public final class TangramsClient implements Runnable {
 
 											// Set up game GUI
 											final String title = "Tangrams: " + playerId;
-											final SpatialMatrix<Integer, Integer> model = localController.getModel();
-											final int pieceCount = model.getOccupiedCoordinateCount();
+											final SpatialMatrix<Integer> model = localController.getModel();
+											final int pieceCount = model.getElementPlacements().getAllElements().size();
 											final Random rnd = new Random(gameState.getSeed());
-											final List<ImageVisualizationInfo> imgVisualizationInfoData = Stream.generate(new ImageVisualizationInfoFactory(rnd)::next).limit(pieceCount).collect(Collectors.toList());
+											final List<ImageVisualizationInfo> imgVisualizationInfoData = Stream
+													.generate(new ImageVisualizationInfoFactory(rnd)::next)
+													.limit(pieceCount).collect(Collectors.toList());
 											final Runnable closeHook = () -> {
 												LOGGER.info("Closing main window; Cleaning up background resources.");
 												recordingManager.getStopper().run();
