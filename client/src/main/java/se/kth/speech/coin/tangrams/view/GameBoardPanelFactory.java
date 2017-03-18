@@ -216,8 +216,12 @@ final class GameBoardPanelFactory implements Function<Collection<ImageVisualizat
 
 	private static <E> SpatialMatrix<E> createPosMatrix(final int[] gridSize, final SpatialMap<E> posMap) {
 		LOGGER.info("Creating a position matrix of size {}.", gridSize);
-		final List<E> posMatrixBackingArray = new ArrayList<>(IntArrays.product(gridSize));
-		final Matrix<E> backingPosMatrix = new Matrix<>(posMatrixBackingArray, gridSize[1]);
+		final int gridArea = IntArrays.product(gridSize);
+		final List<E> posMatrixBackingList = new ArrayList<>(gridArea);
+		for (int i = 0; i < gridArea; ++i) {
+			posMatrixBackingList.add(null);
+		}
+		final Matrix<E> backingPosMatrix = new Matrix<>(posMatrixBackingList, gridSize[1]);
 		return new SpatialMatrix<>(backingPosMatrix, posMap);
 	}
 
