@@ -119,14 +119,14 @@ public final class SpatialMatrixTest {
 
 	/**
 	 * Test method for
-	 * {@link se.kth.speech.SpatialMatrix#calculateSubRegionCount()}.
+	 * {@link se.kth.speech.SpatialMatrix#calculateSubRegionCount(int, int)}.
 	 */
 	@Theory
 	public final void testCalculateSubRegionCount(final int[] gridDims) {
 		final SpatialMatrix<Integer> matrix = new SpatialMatrixConstructionData<>(gridDims, 1).matrix;
 
 		final Table<Integer, Integer, Collection<SpatialRegion>> regionPowerSet = matrix
-				.createSizeIndexedRegionPowerSet(ArrayList::new);
+				.createSizeIndexedRegionTable(ArrayList::new);
 		regionPowerSet.rowMap().forEach((xLength, yLengths) -> {
 			yLengths.forEach((yLength, subRegionSet) -> {
 				final int actual = matrix.calculateSubRegionCount(xLength, yLength);
@@ -187,7 +187,7 @@ public final class SpatialMatrixTest {
 		final int x = dims[0];
 		final int y = dims[1];
 		final Table<Integer, Integer, Collection<SpatialRegion>> regionPowerSet = matrix
-				.createSizeIndexedRegionPowerSet(ArrayList::new);
+				.createSizeIndexedRegionTable(ArrayList::new);
 		final Set<Integer> rows = regionPowerSet.rowKeySet();
 		Assert.assertEquals(Integer.valueOf(x), Collections.max(rows));
 		Assert.assertEquals(x, rows.size());

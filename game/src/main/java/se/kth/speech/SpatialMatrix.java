@@ -65,18 +65,32 @@ public final class SpatialMatrix<E> {
 		};
 	}
 
+	public void addValidMoves(final Collection<? super SpatialRegion> possibleMoveRegions,
+			final SpatialRegion movablePieceRegion) {
+		final int[] matrixDims = getDimensions();
+		final int x = matrixDims[0];
+		final int y = matrixDims[1];
+		final int maxStartingRowIdx = x - movablePieceRegion.getLengthX() + 1;
+		final int maxStartingColIdx = y - movablePieceRegion.getLengthY() + 1;
+		for (int startingRowIdx = 0; startingRowIdx < maxStartingRowIdx; startingRowIdx++) {
+			final int endingRowIdx = startingRowIdx + movablePieceRegion.getLengthX();
+			for (int startingColIdx = 0; startingColIdx < maxStartingColIdx; startingColIdx++) {
+				final int endingColIdx = startingColIdx + movablePieceRegion.getLengthY();
+				final SpatialRegion possibleMoveRegion = getRegion(startingRowIdx, endingRowIdx, startingColIdx,
+						endingColIdx);
+				if (elementPlacements.isOccupied(possibleMoveRegion)) {
+					LOGGER.debug("Found occupied space at {}.", Arrays
+							.toString(new int[] { startingRowIdx, endingRowIdx, startingColIdx, startingColIdx }));
+				} else {
+					possibleMoveRegions.add(possibleMoveRegion);
+				}
+			}
+		}
+	}
+
 	public int calculateSubRegionCount(final SpatialRegion region) {
 		final int[] dims = positionMatrix.getDimensions();
 		return calculateSubRegionCount(dims[0], region.getLengthX(), dims[1], region.getLengthY());
-	}
-
-	public void clearRegion(final SpatialRegion occupiedRegion) {
-		final Collection<?> elements = elementPlacements.getMinimalRegionElements().get(occupiedRegion);
-		// NOTE: Iterator.remove() for the instance returned by the
-		// multimap's collection iterator throws a
-		// ConcurrentModificationException
-		elements.clear();
-		setPositionValues(occupiedRegion, null);
 	}
 
 	// public void addRegionPowerSet(final Collection<? super SpatialMap.Region>
@@ -105,7 +119,29 @@ public final class SpatialMatrix<E> {
 	// return m * (m + 1) * n * (n + 1) / 4;
 	// }
 
-	public <C extends Collection<? super SpatialRegion>> Table<Integer, Integer, C> createSizeIndexedRegionPowerSet(
+	public void clearRegion(final SpatialRegion occupiedRegion) {
+		final Collection<?> elements = elementPlacements.getMinimalRegionElements().get(occupiedRegion);
+		// NOTE: Iterator.remove() for the instance returned by the
+		// multimap's collection iterator throws a
+		// ConcurrentModificationException
+		elements.clear();
+		setPositionValues(occupiedRegion, null);
+	}
+
+	// public Set<SpatialMap.Region> createRegionPowerSet() {
+	// return createRegionPowerSet(Sets::newHashSetWithExpectedSize);
+	// }
+	//
+	// public <C extends Collection<? super SpatialMap.Region>> C
+	// createRegionPowerSet(
+	// final IntFunction<? extends C> collFactory) {
+	// final int subRegionCount = calculateRegionPowerSetSize();
+	// final C result = collFactory.apply(subRegionCount);
+	// addRegionPowerSet(result);
+	// return result;
+	// }
+
+	public <C extends Collection<? super SpatialRegion>> Table<Integer, Integer, C> createSizeIndexedRegionTable(
 			final IntFunction<? extends C> setFactory) {
 		final int dims[] = positionMatrix.getDimensions();
 		LOGGER.debug("Dims: {}", dims);
@@ -136,24 +172,10 @@ public final class SpatialMatrix<E> {
 		return result;
 	}
 
-	// public Set<SpatialMap.Region> createRegionPowerSet() {
-	// return createRegionPowerSet(Sets::newHashSetWithExpectedSize);
-	// }
-	//
-	// public <C extends Collection<? super SpatialMap.Region>> C
-	// createRegionPowerSet(
-	// final IntFunction<? extends C> collFactory) {
-	// final int subRegionCount = calculateRegionPowerSetSize();
-	// final C result = collFactory.apply(subRegionCount);
-	// addRegionPowerSet(result);
-	// return result;
-	// }
-
 	public Map<SpatialRegion, Set<SpatialRegion>> createValidMoveMap() {
 		final Set<SpatialRegion> regionElements = elementPlacements.getMinimalRegionElements().keySet();
 		final Map<SpatialRegion, Set<SpatialRegion>> result = Maps.newHashMapWithExpectedSize(regionElements.size());
 		final int[] matrixDims = getDimensions();
-		// System.out.println("matrixDims = " + Arrays.toString(matrixDims));
 		final int x = matrixDims[0];
 		final int y = matrixDims[1];
 
@@ -161,18 +183,13 @@ public final class SpatialMatrix<E> {
 			final Set<SpatialRegion> possibleMoveRegions = result.computeIfAbsent(movablePieceRegion,
 					newRegionPossibleMoveSetFactory);
 			final int maxStartingRowIdx = x - movablePieceRegion.getLengthX() + 1;
-			// System.out.println("maxStartingRowIdx = " + maxStartingRowIdx);
 			final int maxStartingColIdx = y - movablePieceRegion.getLengthY() + 1;
-			// System.out.println("maxStartingColIdx = " + maxStartingColIdx);
 			for (int startingRowIdx = 0; startingRowIdx < maxStartingRowIdx; startingRowIdx++) {
 				final int endingRowIdx = startingRowIdx + movablePieceRegion.getLengthX();
 				for (int startingColIdx = 0; startingColIdx < maxStartingColIdx; startingColIdx++) {
 					final int endingColIdx = startingColIdx + movablePieceRegion.getLengthY();
 					final SpatialRegion possibleMoveRegion = getRegion(startingRowIdx, endingRowIdx, startingColIdx,
 							endingColIdx);
-					// System.out.println(String.format("coords : %d %d %d %d",
-					// startingRowIdx, endingRowIdx, startingColIdx,
-					// endingColIdx));
 					if (elementPlacements.isOccupied(possibleMoveRegion)) {
 						LOGGER.debug("Found occupied space at {}.", Arrays
 								.toString(new int[] { startingRowIdx, endingRowIdx, startingColIdx, startingColIdx }));
@@ -183,6 +200,12 @@ public final class SpatialMatrix<E> {
 
 			}
 		}
+		return result;
+	}
+
+	public Set<SpatialRegion> createValidMoveSet(final SpatialRegion movablePieceRegion) {
+		final Set<SpatialRegion> result = newRegionPossibleMoveSetFactory.apply(movablePieceRegion);
+		addValidMoves(result, movablePieceRegion);
 		return result;
 	}
 
@@ -283,6 +306,13 @@ public final class SpatialMatrix<E> {
 		assert !elementPlacements.isOccupied(target);
 		setPositionValues(target, element);
 		elementPlacements.put(element, target);
+	}
+
+	public void putValidMoves(final Map<SpatialRegion, Collection<? super SpatialRegion>> validMoves,
+			final SpatialRegion movablePieceRegion) {
+		final Collection<? super SpatialRegion> possibleMoveRegions = validMoves.computeIfAbsent(movablePieceRegion,
+				newRegionPossibleMoveSetFactory);
+		addValidMoves(possibleMoveRegions, movablePieceRegion);
 	}
 
 	/*
