@@ -175,9 +175,8 @@ final class GameBoardPanel<I> extends JPanel {
 	}
 
 	private Map<I, SpatialRegion> createRandomValidMoveTargetMap(final SpatialRegion occupiedRegion, final Random rnd) {
-		final Map<SpatialRegion, Set<SpatialRegion>> validMoves = posMatrix.createValidMoveMap();
+		final Set<SpatialRegion> regionValidMoves = posMatrix.createValidMoveSet(occupiedRegion);
 		final Map<I, SpatialRegion> result;
-		final Set<SpatialRegion> regionValidMoves = validMoves.get(occupiedRegion);
 		if (regionValidMoves.isEmpty()) {
 			result = Collections.emptyMap();
 		} else {
