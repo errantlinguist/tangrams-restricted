@@ -284,7 +284,7 @@ public final class GameViewFrameDemo implements Runnable {
 				128);
 		factory.setPostColoringImgTransformer(
 				(img, toolkit) -> toolkit.createImage(new FilteredImageSource(img.getSource(), imgTranformer)));
-		final GameBoardPanel panel = factory.apply(imgVisualizationInfoDataList);
+		final GameBoardPanel<Integer> panel = factory.apply(imgVisualizationInfoDataList);
 		final GameViewFrame frame = new GameViewFrame(panel, rnd);
 		frame.pack();
 		frame.setLocationByPlatform(true);
