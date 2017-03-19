@@ -378,8 +378,8 @@ final class GameBoardPanelFactory implements Function<Collection<ImageVisualizat
 						postColoringImgTransformer, resourceImgs))
 				.collect(Collectors.toCollection(() -> new ArrayList<>(imgVisualizationInfoData.size())));
 		// Add the mapping of image to piece ID to the mapping for the game
-		// board panel
-		final Map<ImageViewInfo, Integer> pieceIds = Maps.newHashMapWithExpectedSize(expectedPieceCount);
+		// board panel. LinkedHashSet in order to preserve iteration order across instances
+		final Map<ImageViewInfo, Integer> pieceIds = Maps.newLinkedHashMapWithExpectedSize(expectedPieceCount);
 		imgViewInfoLoadedImgs.stream().forEach(imgViewInfoLoadedImg -> {
 			final ImageViewInfo imgViewInfo = imgViewInfoLoadedImg.getKey();
 			final Integer pieceId = pieceIds.computeIfAbsent(imgViewInfo, k -> pieceIds.size());
