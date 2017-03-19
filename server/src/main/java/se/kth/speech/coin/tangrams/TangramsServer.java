@@ -141,7 +141,7 @@ public final class TangramsServer implements Runnable {
 						LOGGER.info("No broker hostname provided; Starting local IrisTK broker.");
 						final Broker broker = new Broker(brokerPort);
 						// broker.setUncaughtExceptionHandler(brokerExceptionHandler);
-						// FIXME: This is copied from
+						// TODO: This is copied from
 						// "Broker.main(String[])";
 						// Ensure that this thread is killed gracefully when
 						// this
