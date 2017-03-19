@@ -19,7 +19,6 @@ package se.kth.speech.coin.tangrams.iristk;
 import java.util.List;
 
 import se.kth.speech.coin.tangrams.game.LocalController;
-import se.kth.speech.coin.tangrams.game.Model;
 import se.kth.speech.coin.tangrams.game.RemoteController;
 
 public final class GameState {
@@ -32,13 +31,10 @@ public final class GameState {
 
 	private final long seed;
 
-	private final Model<Integer> winningModel;
-
 	GameState(final LocalController<Integer> localController, final RemoteController<Integer> remoteController,
-			final Model<Integer> winningModel, final List<String> playerIds, final long seed) {
+			final List<String> playerIds, final long seed) {
 		this.localController = localController;
 		this.remoteController = remoteController;
-		this.winningModel = winningModel;
 		this.playerIds = playerIds;
 		this.seed = seed;
 	}
@@ -84,13 +80,6 @@ public final class GameState {
 		if (seed != other.seed) {
 			return false;
 		}
-		if (winningModel == null) {
-			if (other.winningModel != null) {
-				return false;
-			}
-		} else if (!winningModel.equals(other.winningModel)) {
-			return false;
-		}
 		return true;
 	}
 
@@ -122,13 +111,6 @@ public final class GameState {
 		return seed;
 	}
 
-	/**
-	 * @return the winningModel
-	 */
-	public Model<Integer> getWinningModel() {
-		return winningModel;
-	}
-
 	/*
 	 * (non-Javadoc)
 	 *
@@ -142,7 +124,6 @@ public final class GameState {
 		result = prime * result + (playerIds == null ? 0 : playerIds.hashCode());
 		result = prime * result + (remoteController == null ? 0 : remoteController.hashCode());
 		result = prime * result + (int) (seed ^ seed >>> 32);
-		result = prime * result + (winningModel == null ? 0 : winningModel.hashCode());
 		return result;
 	}
 
@@ -158,8 +139,6 @@ public final class GameState {
 		builder.append(localController);
 		builder.append(", remoteController=");
 		builder.append(remoteController);
-		builder.append(", winningModel=");
-		builder.append(winningModel);
 		builder.append(", playerIds=");
 		builder.append(playerIds);
 		builder.append(", seed=");

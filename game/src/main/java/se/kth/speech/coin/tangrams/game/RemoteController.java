@@ -17,14 +17,20 @@
 package se.kth.speech.coin.tangrams.game;
 
 import java.util.Arrays;
+import java.util.Iterator;
+import java.util.Map.Entry;
 import java.util.Observable;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import se.kth.speech.SpatialMatrix;
+import se.kth.speech.SpatialRegion;
 import se.kth.speech.coin.tangrams.iristk.events.ActivePlayerChange;
+import se.kth.speech.coin.tangrams.iristk.events.Area2D;
 import se.kth.speech.coin.tangrams.iristk.events.CoordinatePoint2D;
 import se.kth.speech.coin.tangrams.iristk.events.GameEnding;
 import se.kth.speech.coin.tangrams.iristk.events.Move;
@@ -36,21 +42,24 @@ import se.kth.speech.coin.tangrams.iristk.events.Turn;
  * @since 14 Nov 2016
  *
  */
-public final class RemoteController<T> extends Observable {
+public final class RemoteController<I> extends Observable {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(RemoteController.class);
 
 	private final Consumer<ActivePlayerChange> activePlayerChangeHook;
 
-	private final Model<T> model;
+	private final SpatialMatrix<I> model;
 
 	private int moveCount = 0;
 
 	private final Predicate<? super String> playerIdFilter;
 
-	public RemoteController(final Model<T> model, final Consumer<ActivePlayerChange> activePlayerChangeHook,
+	private final Function<Area2D, SpatialRegion> areaSpatialRegionFactory;
+
+	public RemoteController(final SpatialMatrix<I> model, final Consumer<ActivePlayerChange> activePlayerChangeHook,
 			final Predicate<? super String> playerIdFilter) {
 		this.model = model;
+		this.areaSpatialRegionFactory = new AreaSpatialRegionFactory(model);
 		this.activePlayerChangeHook = activePlayerChangeHook;
 		this.playerIdFilter = playerIdFilter;
 	}
@@ -58,7 +67,7 @@ public final class RemoteController<T> extends Observable {
 	/**
 	 * @return the model
 	 */
-	public Model<T> getModel() {
+	public SpatialMatrix<I> getModel() {
 		return model;
 	}
 
@@ -121,10 +130,10 @@ public final class RemoteController<T> extends Observable {
 		LOGGER.debug("The remote controller was notified that \"{}\" has completed a turn.", turnPlayerId);
 		if (playerIdFilter.test(turnPlayerId)) {
 			final Move move = turn.getMove();
-			final int[] sourceCoords = move.getSource().getCoords();
-			final int[] targetCoords = move.getTarget().getCoords();
-			LOGGER.info("Moving the piece at {} to {}.", Arrays.toString(sourceCoords), Arrays.toString(targetCoords));
-			updateModel(sourceCoords, targetCoords);
+			final SpatialRegion sourceRegion = areaSpatialRegionFactory.apply(move.getSource());
+			final SpatialRegion targetRegion = areaSpatialRegionFactory.apply(move.getTarget());
+			LOGGER.info("Moving the piece at {} to {}.", sourceRegion, targetRegion);
+			updateModel(sourceRegion, targetRegion);
 
 		} else {
 			LOGGER.debug("Skipping model update for remote notification about player's own turn.");
@@ -138,14 +147,16 @@ public final class RemoteController<T> extends Observable {
 		moveCount = Math.max(turn.getSequenceNumber(), moveCount);
 	}
 
-	private void updateModel(final int[] sourceCoords, final int[] targetCoords) {
-		if (model.areCoordinatesOccupied(targetCoords)) {
-			throw new IllegalStateException(String.format(
-					"Coordinates %s are already occupied; Not a valid move target.", Arrays.toString(targetCoords)));
+	private void updateModel(final SpatialRegion sourceRegion, final SpatialRegion targetRegion) {
+		if (model.isOccupied(targetRegion)) {
+			throw new IllegalStateException(
+					String.format("%s is already occupied; Not a valid move target.", targetRegion));
 		}
-		final T occupant = model.getCoordinateOccupant(sourceCoords);
-		model.setCoordinateOccupant(targetCoords, occupant);
-		model.setCoordinateOccupant(sourceCoords, null);
+		final Iterator<I> occupantIter = model.getElementPlacements().getSubsumedElements(sourceRegion)
+				.map(Entry::getValue).iterator();
+		final I occupant = occupantIter.next();
+		assert !occupantIter.hasNext();
+		model.placeElement(occupant, targetRegion);
 	}
 
 }

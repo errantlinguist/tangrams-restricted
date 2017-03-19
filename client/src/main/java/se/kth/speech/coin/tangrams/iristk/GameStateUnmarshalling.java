@@ -25,7 +25,7 @@ import org.slf4j.LoggerFactory;
 
 import se.kth.speech.Integers;
 import se.kth.speech.Matrix;
-import se.kth.speech.coin.tangrams.game.Model;
+import se.kth.speech.SpatialMatrix;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -38,20 +38,13 @@ public final class GameStateUnmarshalling {
 
 	private static final Function<String, Integer> NULLABLE_INTEGER_GETTER = Integers::valueOfNullable;
 
-	public static Model<Integer> createModel(final ModelDescription modelDesc) {
+	public static SpatialMatrix<Integer> createModel(final ModelDescription modelDesc) {
 		final List<Integer> coordOccupants = modelDesc.getCoordOccupants().stream().map(NULLABLE_INTEGER_GETTER)
 				.collect(Collectors.toList());
 		LOGGER.debug("Creating model with coord occupant vector: {}", coordOccupants);
 		final int colCount = modelDesc.getColCount();
-		return new Model<>(new Matrix<>(coordOccupants.toArray(new Integer[coordOccupants.size()]), colCount));
-	}
-
-	public static Model<Integer> createWinningModel(final GameStateDescription gameDesc) {
-		final ModelDescription modelDesc = gameDesc.getModelDescription();
-		final int colCount = modelDesc.getColCount();
-		final List<Integer> winningConfig = gameDesc.getWinningConfiguration().stream().map(NULLABLE_INTEGER_GETTER)
-				.collect(Collectors.toList());
-		return new Model<>(new Matrix<>(winningConfig.toArray(new Integer[winningConfig.size()]), colCount));
+		final Matrix<Integer> backingMatrix = new Matrix<>(coordOccupants, colCount);
+		return new SpatialMatrix<>(backingMatrix);
 	}
 
 	private GameStateUnmarshalling() {

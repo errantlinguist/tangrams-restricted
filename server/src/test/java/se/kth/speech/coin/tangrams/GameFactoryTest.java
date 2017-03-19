@@ -17,8 +17,7 @@
 package se.kth.speech.coin.tangrams;
 
 import java.util.Collection;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.stream.Stream;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -27,8 +26,9 @@ import org.junit.experimental.theories.Theories;
 import org.junit.experimental.theories.Theory;
 import org.junit.runner.RunWith;
 
+import se.kth.speech.SpatialMatrix;
 import se.kth.speech.coin.tangrams.GameTests.TestDescription;
-import se.kth.speech.coin.tangrams.game.Model;
+import se.kth.speech.junit.IteratorEqualityAsserter;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -42,7 +42,7 @@ public final class GameFactoryTest {
 	public static Collection<TestDescription> getGameTestDescs() {
 		return GameTests.getNamedTestDescMap().values();
 	}
-	
+
 	private static GameFactory createGameFactory(final TestDescription testDesc) {
 		final int[] modelDims = testDesc.getModelDims();
 		final RandomModelFactory<Integer> modelFactory = new RandomModelFactory<>(modelDims,
@@ -62,18 +62,13 @@ public final class GameFactoryTest {
 		final Game<Integer> actualGame = gameFactory.apply(gameName);
 		// NOTE: This is only a partial (i.e. sanity) check
 		Assert.assertEquals(seed, actualGame.getSeed());
-		final Model<Integer> expectedModel = RandomModelFactoryTest.createExpectedModel(testDesc);
-		final Model<Integer> actualModel = actualGame.getRemoteController().getModel();
+		final SpatialMatrix<Integer> expectedModel = RandomModelFactoryTest.createExpectedModel(testDesc);
+		final SpatialMatrix<Integer> actualModel = actualGame.getRemoteController().getModel();
 		Assert.assertEquals(expectedModel, actualModel);
 
-		final Set<Integer> expectedModelPieceSet = new HashSet<>(
-				expectedModel.getCoordinateOccupants().getValues());
-		final Set<Integer> actualModelPieceSet = new HashSet<>(
-				actualModel.getCoordinateOccupants().getValues());
-		Assert.assertEquals(expectedModelPieceSet, actualModelPieceSet);
-//		final Set<Integer> actualWinningModelPieceSet = new HashSet<>(
-//				actualGame.getWinningModel().getCoordinateOccupants().getValues());
-//		Assert.assertEquals(expectedModelPieceSet, actualWinningModelPieceSet);
+		final Stream<Integer> expectedModelPieces = expectedModel.getCells();
+		final Stream<Integer> actualModelPieces = actualModel.getCells();
+		new IteratorEqualityAsserter<Integer>().accept(expectedModelPieces.iterator(), actualModelPieces.iterator());
 	}
 
 	/**

@@ -28,9 +28,8 @@ import java.util.stream.IntStream;
 import com.github.errantlinguist.ClassProperties;
 
 import se.kth.speech.IntArrays;
-import se.kth.speech.Matrix;
 import se.kth.speech.MutablePair;
-import se.kth.speech.coin.tangrams.game.Model;
+import se.kth.speech.SpatialMatrix;
 import se.kth.speech.coin.tangrams.game.RemoteController;
 
 /**
@@ -65,9 +64,7 @@ final class GameFactory implements Function<String, Game<Integer>> {
 		return new MutablePair<>(new RandomModelFactory<>(modelDims, coordOccupants), modelDims);
 	}
 
-	private final int colCount;
-
-	private final Function<? super Random, ? extends Model<Integer>> modelFactory;
+	private final Function<? super Random, ? extends SpatialMatrix<Integer>> modelFactory;
 
 	public GameFactory() {
 		this(createModelFactory());
@@ -77,9 +74,8 @@ final class GameFactory implements Function<String, Game<Integer>> {
 		this(modelFactoryDims.getKey(), modelFactoryDims.getValue()[1]);
 	}
 
-	GameFactory(final Function<? super Random, ? extends Model<Integer>> modelFactory, final int colCount) {
+	GameFactory(final Function<? super Random, ? extends SpatialMatrix<Integer>> modelFactory, final int colCount) {
 		this.modelFactory = modelFactory;
-		this.colCount = colCount;
 	}
 
 	/*
@@ -89,7 +85,7 @@ final class GameFactory implements Function<String, Game<Integer>> {
 	 */
 	@Override
 	public Game<Integer> apply(final String name) {
-		final Model<Integer> model;
+		final SpatialMatrix<Integer> model;
 		final long seed;
 		try {
 			seed = Long.parseLong(name);

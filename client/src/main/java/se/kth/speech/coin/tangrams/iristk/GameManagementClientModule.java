@@ -27,8 +27,8 @@ import org.slf4j.LoggerFactory;
 
 import iristk.system.Event;
 import iristk.system.IrisModule;
+import se.kth.speech.SpatialMatrix;
 import se.kth.speech.coin.tangrams.game.LocalController;
-import se.kth.speech.coin.tangrams.game.Model;
 import se.kth.speech.coin.tangrams.game.PlayerJoinTime;
 import se.kth.speech.coin.tangrams.game.RemoteController;
 import se.kth.speech.coin.tangrams.iristk.events.ActivePlayerChange;
@@ -188,8 +188,7 @@ public final class GameManagementClientModule extends IrisModule {
 
 	private void setupGame(final GameStateDescription gameDesc) {
 		final ModelDescription modelDesc = gameDesc.getModelDescription();
-		final Model<Integer> model = GameStateUnmarshalling.createModel(modelDesc);
-		final Model<Integer> winningModel = GameStateUnmarshalling.createWinningModel(gameDesc);
+		final SpatialMatrix<Integer> model = GameStateUnmarshalling.createModel(modelDesc);
 		final boolean isActive = playerId.equals(gameDesc.getActivePlayerId());
 		final LocalController<Integer> localController = new LocalController<>(model, playerId, isActive,
 				this::requestTurnCompletion, this::requestUserSelection);
@@ -205,8 +204,7 @@ public final class GameManagementClientModule extends IrisModule {
 				foreignPlayerIdPredicate);
 		addNewGameRemoteController(remoteController);
 		final List<String> playerIds = gameDesc.getPlayerIds();
-		newGameHandler
-				.accept(new GameState(localController, remoteController, winningModel, playerIds, gameDesc.getSeed()));
+		newGameHandler.accept(new GameState(localController, remoteController, playerIds, gameDesc.getSeed()));
 	}
 
 }

@@ -66,8 +66,9 @@ public final class RandomMatrixPositionFiller<I, E>
 	@Override
 	public Set<I> apply(final Collection<? extends Entry<? extends E, ? extends I>> elementIds) {
 		LOGGER.info("Trying to place {} elements.", elementIds.size());
+		// FIXME: Create the element position sizes here and then only get the sub-regions of appropriate size in order to avoid a combinatorial explosion
 		final Table<Integer, Integer, LinkedHashSet<SpatialRegion>> subRegionsToTry = posMatrix
-				.createSizeIndexedRegionPowerSet(SUB_REGION_SET_FACTORY);
+				.createSizeIndexedRegionTable(SUB_REGION_SET_FACTORY);
 		final Set<I> result = Sets.newHashSetWithExpectedSize(elementIds.size());
 		{
 			// Randomly place each element in the position matrix

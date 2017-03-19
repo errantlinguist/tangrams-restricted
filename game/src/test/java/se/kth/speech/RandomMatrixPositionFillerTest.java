@@ -14,9 +14,8 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech.coin.tangrams.view;
+package se.kth.speech;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -35,13 +34,6 @@ import org.junit.runner.RunWith;
 
 import com.google.common.collect.Maps;
 
-import se.kth.speech.IntArrays;
-import se.kth.speech.Matrix;
-import se.kth.speech.MutablePair;
-import se.kth.speech.RandomMatrixPositionFiller;
-import se.kth.speech.SpatialMap;
-import se.kth.speech.SpatialMatrix;
-
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
  * @since 16 Mar 2017
@@ -57,8 +49,8 @@ public final class RandomMatrixPositionFillerTest {
 		private final SpatialMatrix<Integer> matrix;
 
 		private SpatialMatrixConstructionData(final int[] gridSize) {
-			final List<Integer> posMatrixBackingList = new ArrayList<>(IntArrays.product(gridSize));
-			final Matrix<Integer> backingPosMatrix = new Matrix<>(posMatrixBackingList, gridSize[1]);
+			final Integer[] posMatrixBackingArray = new Integer[IntArrays.product(gridSize)];
+			final Matrix<Integer> backingPosMatrix = new Matrix<>(posMatrixBackingArray, gridSize[1]);
 			matrix = new SpatialMatrix<>(backingPosMatrix, new SpatialMap<>(TEST_PIECE_IDS.size()));
 		}
 	}

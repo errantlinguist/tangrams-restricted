@@ -40,12 +40,6 @@ public final class GameStateDescription extends Record {
 	@RecordField(name = "seed")
 	private String seed;
 
-	/**
-	 * This is a {@link List} of {@link String} instead of {@link Integer}
-	 * instances in order to support (un-)marshalling of null objects.
-	 */
-	private List<String> winningConfiguration;
-
 	public GameStateDescription() {
 		// Default constructor is required for JSON (un-)marshalling
 	}
@@ -82,14 +76,6 @@ public final class GameStateDescription extends Record {
 	}
 
 	/**
-	 * @return the winningConfiguration
-	 */
-	@RecordField(name = "winningConfiguration")
-	public List<String> getWinningConfiguration() {
-		return winningConfiguration;
-	}
-
-	/**
 	 * @param activePlayerId
 	 *            the activePlayerId to set
 	 */
@@ -123,15 +109,6 @@ public final class GameStateDescription extends Record {
 	public void setSeed(final long seed) {
 		this.seed = Long.toString(seed);
 
-	}
-
-	/**
-	 * @param winningConfiguration
-	 *            the winningConfiguration to set
-	 */
-	@RecordField(name = "winningConfiguration")
-	public void setWinningConfiguration(final List<String> winningConfiguration) {
-		this.winningConfiguration = winningConfiguration;
 	}
 
 }

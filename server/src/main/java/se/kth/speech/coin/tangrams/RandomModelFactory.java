@@ -23,14 +23,14 @@ import java.util.function.Function;
 import se.kth.speech.IntArrays;
 import se.kth.speech.Matrix;
 import se.kth.speech.ObjectArrays;
-import se.kth.speech.coin.tangrams.game.Model;
+import se.kth.speech.SpatialMatrix;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
  * @since 3 Jan 2017
  *
  */
-final class RandomModelFactory<T> implements Function<Random, Model<T>> {
+final class RandomModelFactory<T> implements Function<Random, SpatialMatrix<T>> {
 
 	/**
 	 * The dimensions of the model (i.e.&nbsp;row and column count) of the board
@@ -61,10 +61,13 @@ final class RandomModelFactory<T> implements Function<Random, Model<T>> {
 	}
 
 	@Override
-	public Model<T> apply(final Random rnd) {
+	public SpatialMatrix<T> apply(final Random rnd) {
+		// FIXME: This creates a lot of pieces sized only 1*1; Need to calculate
+		// size of each piece first!
 		final T[] possibleCoordOccupants = createCoordPointArray();
 		ObjectArrays.shuffle(possibleCoordOccupants, rnd);
-		return new Model<>(new Matrix<>(possibleCoordOccupants, coordDims[1]));
+		final Matrix<T> backingMatrix = new Matrix<>(possibleCoordOccupants, coordDims[1]);
+		return new SpatialMatrix<>(backingMatrix);
 	}
 
 	private T[] createCoordPointArray() {

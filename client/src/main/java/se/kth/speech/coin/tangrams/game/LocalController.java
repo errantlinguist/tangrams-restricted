@@ -21,6 +21,7 @@ import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.Observable;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -71,9 +72,12 @@ public final class LocalController<I> extends Observable {
 
 	private final Consumer<? super Move> turnCompletionHook;
 
+	private final Function<Area2D, SpatialRegion> areaSpatialRegionFactory;
+
 	public LocalController(final SpatialMatrix<I> model, final String playerId, final boolean isEnabled,
 			final Consumer<? super Move> turnCompletionHook, final Consumer<? super CoordinatePoint2D> selectionHook) {
 		this.model = model;
+		this.areaSpatialRegionFactory = new AreaSpatialRegionFactory(model);
 		this.playerId = playerId;
 		this.isEnabled = isEnabled;
 		this.turnCompletionHook = turnCompletionHook;
@@ -94,8 +98,8 @@ public final class LocalController<I> extends Observable {
 		LOGGER.info("Ending turn.");
 		{
 			final Move move = nextTurnMove;
-			final SpatialRegion sourceRegion = createSpatialRegion(move.getSource());
-			final SpatialRegion targetRegion = createSpatialRegion(move.getTarget());
+			final SpatialRegion sourceRegion = areaSpatialRegionFactory.apply(move.getSource());
+			final SpatialRegion targetRegion = areaSpatialRegionFactory.apply(move.getTarget());
 			LOGGER.info("Moving the piece at {} to {}.", sourceRegion, targetRegion);
 			updateModel(sourceRegion, targetRegion);
 			turnCompletionHook.accept(move);
@@ -166,14 +170,6 @@ public final class LocalController<I> extends Observable {
 		notifyObservers(selection);
 
 		selectionHook.accept(coordRecord);
-	}
-
-	private SpatialRegion createSpatialRegion(final Area2D area) {
-		return createSpatialRegion(area.getStart(), area.getEnd());
-	}
-
-	private SpatialRegion createSpatialRegion(final CoordinatePoint2D start, final CoordinatePoint2D end) {
-		return model.getRegion(start.getX(), end.getX(), start.getY(), end.getY());
 	}
 
 	private void updateModel(final SpatialRegion sourceRegion, final SpatialRegion targetRegion) {

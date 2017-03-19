@@ -30,8 +30,8 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import se.kth.speech.Matrix;
+import se.kth.speech.SpatialMatrix;
 import se.kth.speech.coin.tangrams.GameTests.TestDescription;
-import se.kth.speech.coin.tangrams.game.Model;
 import se.kth.speech.hat.xsd.Transcription.T;
 
 /**
@@ -47,8 +47,8 @@ public final class RandomModelFactoryTest {
 		return GameTests.getNamedTestDescMap().values();
 	}
 
-	static Model<Integer> createExpectedModel(final TestDescription testDesc) {
-		return new Model<>(new Matrix<>(testDesc.getCoords(), testDesc.getModelDims()[1]));
+	static SpatialMatrix<Integer> createExpectedModel(final TestDescription testDesc) {
+		return new SpatialMatrix<>(new Matrix<>(testDesc.getCoords(), testDesc.getModelDims()[1]));
 	}
 
 	@Rule
@@ -67,8 +67,8 @@ public final class RandomModelFactoryTest {
 		final RandomModelFactory<Integer> testFactory = new RandomModelFactory<>(testDesc.getModelDims(),
 				coordOccupants);
 		final Random rnd = new Random(testDesc.getSeed());
-		final Model<Integer> actual = testFactory.apply(rnd);
-		final Model<Integer> expected = createExpectedModel(testDesc);
+		final SpatialMatrix<Integer> actual = testFactory.apply(rnd);
+		final SpatialMatrix<Integer> expected = createExpectedModel(testDesc);
 		assertEquals(expected, actual);
 	}
 

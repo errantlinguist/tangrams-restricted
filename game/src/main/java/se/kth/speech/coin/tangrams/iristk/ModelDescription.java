@@ -21,7 +21,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import iristk.util.Record;
-import se.kth.speech.coin.tangrams.game.Model;
+import se.kth.speech.Matrix;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -42,7 +42,7 @@ final class ModelDescription extends Record {
 		// Default constructor is required for JSON (un-)marshalling
 	}
 
-	public ModelDescription(final Model<Integer> model) {
+	public ModelDescription(final Matrix<Integer> model) {
 		setModel(model);
 	}
 
@@ -79,10 +79,10 @@ final class ModelDescription extends Record {
 	/**
 	 * @param model
 	 */
-	public void setModel(final Model<Integer> model) {
-		final List<Integer> coordOccupants = model.getCoordinateOccupants().getValues();
+	public void setModel(final Matrix<Integer> model) {
+		final List<Integer> coordOccupants = model.getValues();
 		setCoordOccupants(coordOccupants.stream().map(Objects::toString).collect(Collectors.toList()));
-		setColCount(model.getCoordinateDimensions()[1]);
+		setColCount(model.getDimensions()[1]);
 	}
 
 }

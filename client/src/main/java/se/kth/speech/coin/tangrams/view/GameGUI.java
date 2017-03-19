@@ -42,7 +42,6 @@ import org.slf4j.LoggerFactory;
 
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 import se.kth.speech.coin.tangrams.game.LocalController;
-import se.kth.speech.coin.tangrams.game.Model;
 import se.kth.speech.coin.tangrams.game.RemoteController;
 import se.kth.speech.coin.tangrams.iristk.events.Selection;
 import se.kth.speech.coin.tangrams.iristk.events.Turn;
@@ -142,17 +141,14 @@ public final class GameGUI implements Runnable {
 
 	private final Point viewLocation;
 
-	private final Model<Integer> winningModel;
-
 	public GameGUI(final String title, final Point viewLocation, final LocalController<Integer> localController,
-			final RemoteController<Integer> remoteController, final Model<Integer> winningModel,
-			final List<ImageVisualizationInfo> imgVisualizationInfoData, final Supplier<? extends Path> logOutdirSupplier,
-			final Runnable closeHook) {
+			final RemoteController<Integer> remoteController,
+			final List<ImageVisualizationInfo> imgVisualizationInfoData,
+			final Supplier<? extends Path> logOutdirSupplier, final Runnable closeHook) {
 		this.title = title;
 		this.viewLocation = viewLocation;
 		this.localController = localController;
 		this.remoteController = remoteController;
-		this.winningModel = winningModel;
 		this.imgVisualizationInfoData = imgVisualizationInfoData;
 		final ExecutorService screenshotLoggingExecutor = Executors.newSingleThreadExecutor();
 		{
@@ -178,11 +174,13 @@ public final class GameGUI implements Runnable {
 	@Override
 	public void run() {
 		LOGGER.debug("Creating view components.");
-//		GameBoardPanelFactory gameBoardPanelFactory = new GameBoardPanelFactory(3, false);
-//		final GameViewFrame gameViewFrame = new GameViewFrame(imgVisualizationInfoData, gameBoardPanelFactory);
+		// GameBoardPanelFactory gameBoardPanelFactory = new
+		// GameBoardPanelFactory(3, false);
+		// final GameViewFrame gameViewFrame = new
+		// GameViewFrame(imgVisualizationInfoData, gameBoardPanelFactory);
 		// TODO: Add toggle for single-player mode
-//		gameViewFrame.pack();
-//		gameViewFrame.setLocation(viewLocation);
-//		gameViewFrame.setVisible(true);
+		// gameViewFrame.pack();
+		// gameViewFrame.setLocation(viewLocation);
+		// gameViewFrame.setVisible(true);
 	}
 }

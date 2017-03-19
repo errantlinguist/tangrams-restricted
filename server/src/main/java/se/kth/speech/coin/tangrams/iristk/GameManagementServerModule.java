@@ -19,7 +19,6 @@ package se.kth.speech.coin.tangrams.iristk;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
@@ -37,7 +36,6 @@ import se.kth.speech.coin.tangrams.game.PlayerJoinTime;
 import se.kth.speech.coin.tangrams.game.RemoteController;
 import se.kth.speech.coin.tangrams.iristk.events.ActivePlayerChange;
 import se.kth.speech.coin.tangrams.iristk.events.CoordinatePoint2D;
-import se.kth.speech.coin.tangrams.iristk.events.GameEnding;
 import se.kth.speech.coin.tangrams.iristk.events.Move;
 import se.kth.speech.coin.tangrams.iristk.events.Turn;
 
@@ -71,11 +69,8 @@ public final class GameManagementServerModule extends IrisModule {
 			gameDesc.setActivePlayerId(startingPlayerId);
 
 			final Game<Integer> game = gameState.getFirst();
-			gameDesc.setModelDescription(new ModelDescription(game.getRemoteController().getModel()));
-//			final List<Integer> winningConfig = game.getWinningModel().getCoordinateOccupants().getValues();
-//			gameDesc.setWinningConfiguration(
-//					winningConfig.stream().map(Objects::toString).collect(Collectors.toList()));
-//			gameDesc.setSeed(game.getSeed());
+			gameDesc.setModelDescription(
+					new ModelDescription(game.getRemoteController().getModel().getPositionMatrix()));
 		}
 
 		final Event result = GameManagementEvent.GAME_READY_RESPONSE.createEvent(gameId);
@@ -186,7 +181,7 @@ public final class GameManagementServerModule extends IrisModule {
 
 				break;
 			}
-			case PLAYER_LEAVE_REQUEST : {
+			case PLAYER_LEAVE_REQUEST: {
 				final String leavingPlayerId = event.getString(GameManagementEvent.Attribute.PLAYER_ID.toString());
 				LOGGER.debug("Received leave request from player \"{}\" for game \"{}\".",
 						new Object[] { leavingPlayerId, gameId });
@@ -236,11 +231,11 @@ public final class GameManagementServerModule extends IrisModule {
 					final String newActivePlayerId;
 					// If the game has been won, don't allow any player to
 					// become active again
-//					if (game.isWon()) {
-//						newActivePlayerId = null;
-//					} else {
-						newActivePlayerId = activePlayerTracker.cycleActivePlayer();
-//					}
+					// if (game.isWon()) {
+					// newActivePlayerId = null;
+					// } else {
+					newActivePlayerId = activePlayerTracker.cycleActivePlayer();
+					// }
 					turnResponse.put(GameManagementEvent.Attribute.ACTIVE_PLAYER_CHANGE.toString(),
 							new ActivePlayerChange(oldActivePlayerId, newActivePlayerId));
 					LOGGER.info(
@@ -250,13 +245,17 @@ public final class GameManagementServerModule extends IrisModule {
 				}
 
 				// Check if the game has now been won
-//				if (game.isWon()) {
-//					final Event gameOverResponse = GameManagementEvent.GAME_OVER_RESPONSE.createEvent(gameId);
-//					gameOverResponse.put(GameManagementEvent.Attribute.GAME_STATE.toString(), new GameEnding(
-//							turnPlayerId, game.getRemoteController().getMoveCount(), GameEnding.Outcome.WIN));
-//					LOGGER.info("Sending broker event for game \"{}\" signalling that the game is over.", gameId);
-//					send(gameOverResponse);
-//				}
+				// if (game.isWon()) {
+				// final Event gameOverResponse =
+				// GameManagementEvent.GAME_OVER_RESPONSE.createEvent(gameId);
+				// gameOverResponse.put(GameManagementEvent.Attribute.GAME_STATE.toString(),
+				// new GameEnding(
+				// turnPlayerId, game.getRemoteController().getMoveCount(),
+				// GameEnding.Outcome.WIN));
+				// LOGGER.info("Sending broker event for game \"{}\" signalling
+				// that the game is over.", gameId);
+				// send(gameOverResponse);
+				// }
 				break;
 			}
 			default: {
