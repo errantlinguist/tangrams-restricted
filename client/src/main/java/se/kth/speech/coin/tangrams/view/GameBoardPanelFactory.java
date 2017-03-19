@@ -109,12 +109,16 @@ final class GameBoardPanelFactory implements Function<Collection<ImageVisualizat
 
 	};
 
-	private static final Function<ImageSize, Integer> IMAGE_SIZE_FACTORS = createImageSizeFactorMap()::get;
+	private static final Function<ImageSize, Integer> IMAGE_SIZE_FACTORS;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(GameBoardPanelFactory.class);
 
-	private static final Function<? super ImageViewInfo, int[]> PIECE_GRID_SIZE_FACTORY = imgViewInfo -> imgViewInfo
-			.getGridSize(IMAGE_SIZE_FACTORS);
+	private static final Function<? super ImageViewInfo, int[]> PIECE_GRID_SIZE_FACTORY;
+
+	static {
+		IMAGE_SIZE_FACTORS = createImageSizeFactorMap()::get;
+		PIECE_GRID_SIZE_FACTORY = imgViewInfo -> imgViewInfo.getGridSize(IMAGE_SIZE_FACTORS);
+	}
 
 	private static Map<ImageSize, Integer> createImageSizeFactorMap() {
 		final Map<ImageSize, Integer> result = new EnumMap<>(ImageSize.class);
