@@ -56,6 +56,20 @@ public final class SpatialMatrix<E> {
 
 	private final Matrix<E> positionMatrix;
 
+	/**
+	 * <strong>NOTE:</strong> This constructor entails iterating through the
+	 * entire backing matrix, so it could be extremely costly given a matrix of
+	 * great enough size.
+	 *
+	 * @param posMatrix
+	 *            The {@link Matrix} of values to create a corresponding
+	 *            {@link SpatialMatrix} for.
+	 *
+	 */
+	public SpatialMatrix(final Matrix<E> posMatrix) {
+		this(posMatrix, new MatrixSpatialMapFactory<E>().apply(posMatrix));
+	}
+
 	public SpatialMatrix(final Matrix<E> posMatrix, final SpatialMap<E> elementPlacements) {
 		this.positionMatrix = posMatrix;
 		this.elementPlacements = elementPlacements;
