@@ -43,6 +43,12 @@ import se.kth.speech.awt.ColorReplacementImageFilter;
 public final class ImageLoadingImageViewInfoFactory
 		implements Function<ImageVisualizationInfo, Entry<ImageViewInfo, Image>> {
 
+	private static final BiFunction<Image, Toolkit, Image> DEFAULT_IMG_POST_TRANSFORMER = (
+			img, tk) -> {
+		// Do nothing
+		return img;
+	};
+
 	private final Toolkit toolkit;
 
 	private final BiFunction<? super Image, ? super Toolkit, ? extends Image> postColoringImgTransformer;
@@ -50,10 +56,7 @@ public final class ImageLoadingImageViewInfoFactory
 	private final Map<URL, BufferedImage> resourceImgs;
 
 	public ImageLoadingImageViewInfoFactory(final Toolkit toolkit) {
-		this(toolkit, (img, tk) -> {
-			// Do nothing
-			return img;
-		}, new HashMap<>());
+		this(toolkit, DEFAULT_IMG_POST_TRANSFORMER);
 	}
 
 	public ImageLoadingImageViewInfoFactory(final Toolkit toolkit,
@@ -67,6 +70,10 @@ public final class ImageLoadingImageViewInfoFactory
 		this.toolkit = toolkit;
 		this.postColoringImgTransformer = postColoringImgTransformer;
 		this.resourceImgs = resourceImgs;
+	}
+
+	public ImageLoadingImageViewInfoFactory(final Toolkit toolkit, final Map<URL, BufferedImage> resourceImgs) {
+		this(toolkit, DEFAULT_IMG_POST_TRANSFORMER, resourceImgs);
 	}
 
 	@Override
