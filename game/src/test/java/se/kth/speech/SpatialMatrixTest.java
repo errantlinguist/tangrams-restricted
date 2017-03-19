@@ -206,7 +206,8 @@ public final class SpatialMatrixTest {
 	}
 
 	/**
-	 * Test method for {@link se.kth.speech.SpatialMatrix#getCells()}.
+	 * Test method for
+	 * {@link se.kth.speech.SpatialMatrix#getCells()}.
 	 */
 	@Theory
 	public final void testGetCellsCount(final int[] gridDims) {
@@ -217,21 +218,37 @@ public final class SpatialMatrixTest {
 		Assert.assertEquals(expected, actual);
 	}
 
+	/**
+	 * Test method for
+	 * {@link se.kth.speech.SpatialMatrix#getCells(se.kth.speech.SpatialRegion)}.
+	 */
 	@Test
 	public final void testGetCellsRegion1() {
 		testGetCellsRegion(0, 1, 0, 1);
 	}
 
+	/**
+	 * Test method for
+	 * {@link se.kth.speech.SpatialMatrix#getCells(se.kth.speech.SpatialRegion)}.
+	 */
 	@Test
 	public final void testGetCellsRegion2() {
 		testGetCellsRegion(1, 11, 5, 16);
 	}
 
+	/**
+	 * Test method for
+	 * {@link se.kth.speech.SpatialMatrix#getCells(se.kth.speech.SpatialRegion)}.
+	 */
 	@Test
 	public final void testGetCellsRegion3() {
 		testGetCellsRegion(1, 10, 5, 10);
 	}
 
+	/**
+	 * Test method for
+	 * {@link se.kth.speech.SpatialMatrix#getCells(se.kth.speech.SpatialRegion)}.
+	 */
 	@Test
 	public final void testGetCellsRegion4() {
 		testGetCellsRegion(1, 2, 1, 2);
