@@ -119,7 +119,7 @@ public final class ImageVisualizationInfoFactory implements Iterator<ImageVisual
 	 *            An ordered sequence of the unique {@link Color} instances to
 	 *            use for coloring the icon images. <strong>NOTE:</strong> This
 	 *            is ordered so that the iteration order of image data is stable
-	 *            across invocations.
+	 *            across instances.
 	 * @param sizes
 	 *            An ordered sequence of the {@link ImageSize sizes} to present
 	 *            each image in. <strong>NOTE:</strong> This is ordered so that
@@ -140,9 +140,10 @@ public final class ImageVisualizationInfoFactory implements Iterator<ImageVisual
 
 		imgSizes = HashMultimap.create(imgResources.size(), sizes.size());
 		imgColors = HashMultimap.create(imgResources.size(), uniqueImgColors.size());
-		imgResourceUsageCounts = Maps.newHashMapWithExpectedSize(imgResources.size());
+		// LinkedHashMap in order to preserve iteration order across instances
+		imgResourceUsageCounts = Maps.newLinkedHashMapWithExpectedSize(imgResources.size());
 		imgResources.forEach(loc -> imgResourceUsageCounts.put(loc, 0));
-		colorUsageCounts = Maps.newHashMapWithExpectedSize(uniqueImgColors.size());
+		colorUsageCounts = Maps.newLinkedHashMapWithExpectedSize(uniqueImgColors.size());
 		uniqueImgColors.forEach(color -> colorUsageCounts.put(color, 0));
 		sizeUsageCounts = new EnumMap<>(ImageSize.class);
 		sizes.forEach(size -> sizeUsageCounts.put(size, 0));
