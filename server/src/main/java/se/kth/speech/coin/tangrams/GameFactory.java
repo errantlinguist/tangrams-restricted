@@ -29,8 +29,8 @@ import com.github.errantlinguist.ClassProperties;
 
 import se.kth.speech.IntArrays;
 import se.kth.speech.MutablePair;
+import se.kth.speech.SpatialMatrix;
 import se.kth.speech.coin.tangrams.game.RemoteController;
-import se.kth.speech.matrix.SpatialMatrix;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>

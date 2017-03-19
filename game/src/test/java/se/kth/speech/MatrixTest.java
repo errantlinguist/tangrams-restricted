@@ -14,7 +14,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech.matrix;
+package se.kth.speech;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.not;
@@ -41,7 +41,6 @@ import org.junit.runner.RunWith;
 
 import se.kth.speech.hat.xsd.Transcription.T;
 import se.kth.speech.junit.IteratorEqualityAsserter;
-import se.kth.speech.matrix.Matrix;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -112,7 +111,7 @@ public final class MatrixTest {
 	public final ExpectedException thrown = ExpectedException.none();
 
 	/**
-	 * Test method for {@link se.kth.speech.matrix.Matrix#getMatrixIndices(int)}.
+	 * Test method for {@link se.kth.speech.Matrix#getMatrixIndices(int)}.
 	 */
 	@Theory
 	public void testGetMatrixIndicesMonotonicRow(final Matrix<Object> m,
@@ -134,7 +133,7 @@ public final class MatrixTest {
 	}
 
 	/**
-	 * Test method for {@link se.kth.speech.matrix.Matrix#getMatrixIndices(int)}.
+	 * Test method for {@link se.kth.speech.Matrix#getMatrixIndices(int)}.
 	 */
 	@Theory
 	public void testGetMatrixIndicesUpperBound(final Matrix<Object> m,
@@ -157,7 +156,7 @@ public final class MatrixTest {
 
 	/**
 	 * Test method for
-	 * {@link se.kth.speech.matrix.Matrix#getValues(int, int, int, int)}.
+	 * {@link se.kth.speech.Matrix#getValues(int, int, int, int)}.
 	 */
 	@Theory
 	public void testGetValuesIntIntIntInt(final Matrix<Object> m) {
@@ -168,7 +167,7 @@ public final class MatrixTest {
 	}
 
 	/**
-	 * Test method for {@link se.kth.speech.matrix.Matrix#Matrix(T[], int)}.
+	 * Test method for {@link se.kth.speech.Matrix#Matrix(T[], int)}.
 	 */
 	@Theory
 	public void testMatrixIllformed(final Object[] vals, final int colCount) {
@@ -179,7 +178,7 @@ public final class MatrixTest {
 	}
 
 	/**
-	 * Test method for {@link se.kth.speech.matrix.Matrix#Matrix(T[], int)}.
+	 * Test method for {@link se.kth.speech.Matrix#Matrix(T[], int)}.
 	 */
 	@Theory
 	public void testMatrixNonPositiveColCount(final Object[] vals, final int colCount) {
@@ -189,7 +188,7 @@ public final class MatrixTest {
 	}
 
 	/**
-	 * Test method for {@link se.kth.speech.matrix.Matrix#Matrix(T[], int)}.
+	 * Test method for {@link se.kth.speech.Matrix#Matrix(T[], int)}.
 	 */
 	@Theory
 	public void testMatrixPositive(final Object[] vals, final int colCount) {
@@ -200,7 +199,7 @@ public final class MatrixTest {
 	}
 
 	/**
-	 * Test method for {@link se.kth.speech.matrix.Matrix#Matrix(T[], int)}.
+	 * Test method for {@link se.kth.speech.Matrix#Matrix(T[], int)}.
 	 */
 	@Theory
 	public void testMatrixTooFewValues(final Object[] vals, final int colCount) {

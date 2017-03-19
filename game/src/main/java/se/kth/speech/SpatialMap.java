@@ -28,8 +28,6 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 
-import se.kth.speech.matrix.SpatialRegion;
-
 /**
  * A very rudimentary data structure for searching a two-dimensional space.
  *

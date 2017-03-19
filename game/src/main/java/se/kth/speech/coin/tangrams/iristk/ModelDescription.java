@@ -21,7 +21,7 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 import iristk.util.Record;
-import se.kth.speech.matrix.Matrix;
+import se.kth.speech.Matrix;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>

@@ -18,7 +18,7 @@ package se.kth.speech.coin.tangrams.game;
 
 import java.util.Objects;
 
-import se.kth.speech.matrix.Matrix;
+import se.kth.speech.Matrix;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>

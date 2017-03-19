@@ -18,10 +18,10 @@ package se.kth.speech.coin.tangrams.game;
 
 import java.util.function.Function;
 
+import se.kth.speech.SpatialMatrix;
+import se.kth.speech.SpatialRegion;
 import se.kth.speech.coin.tangrams.iristk.events.Area2D;
 import se.kth.speech.coin.tangrams.iristk.events.CoordinatePoint2D;
-import se.kth.speech.matrix.SpatialMatrix;
-import se.kth.speech.matrix.SpatialRegion;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>

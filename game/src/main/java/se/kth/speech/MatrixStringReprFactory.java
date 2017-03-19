@@ -14,7 +14,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech.matrix;
+package se.kth.speech;
 
 import java.util.Iterator;
 import java.util.List;

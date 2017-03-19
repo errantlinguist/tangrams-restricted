@@ -14,7 +14,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech.matrix;
+package se.kth.speech;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -33,13 +33,6 @@ import org.junit.experimental.theories.Theory;
 import org.junit.runner.RunWith;
 
 import com.google.common.collect.Maps;
-
-import se.kth.speech.IntArrays;
-import se.kth.speech.MutablePair;
-import se.kth.speech.SpatialMap;
-import se.kth.speech.matrix.Matrix;
-import se.kth.speech.matrix.RandomMatrixPositionFiller;
-import se.kth.speech.matrix.SpatialMatrix;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -102,7 +95,7 @@ public final class RandomMatrixPositionFillerTest {
 
 	/**
 	 * Test method for
-	 * {@link se.kth.speech.matrix.RandomMatrixPositionFiller#apply(Collection)}.
+	 * {@link se.kth.speech.RandomMatrixPositionFiller#apply(Collection)}.
 	 */
 	@Test
 	public final void testApply() {
@@ -154,7 +147,7 @@ public final class RandomMatrixPositionFillerTest {
 
 	/**
 	 * Test method for
-	 * {@link se.kth.speech.matrix.RandomMatrixPositionFiller#apply(Collection)}.
+	 * {@link se.kth.speech.RandomMatrixPositionFiller#apply(Collection)}.
 	 */
 	@Theory
 	public final void testApplyStable(final long seed) {

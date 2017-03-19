@@ -27,6 +27,7 @@ import org.slf4j.LoggerFactory;
 
 import iristk.system.Event;
 import iristk.system.IrisModule;
+import se.kth.speech.SpatialMatrix;
 import se.kth.speech.coin.tangrams.game.LocalController;
 import se.kth.speech.coin.tangrams.game.PlayerJoinTime;
 import se.kth.speech.coin.tangrams.game.RemoteController;
@@ -36,7 +37,6 @@ import se.kth.speech.coin.tangrams.iristk.events.GameEnding;
 import se.kth.speech.coin.tangrams.iristk.events.Move;
 import se.kth.speech.coin.tangrams.iristk.events.Selection;
 import se.kth.speech.coin.tangrams.iristk.events.Turn;
-import se.kth.speech.matrix.SpatialMatrix;
 
 public final class GameManagementClientModule extends IrisModule {
 
