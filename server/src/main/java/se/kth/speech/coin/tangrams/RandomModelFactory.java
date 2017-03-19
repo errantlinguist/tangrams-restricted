@@ -21,9 +21,9 @@ import java.util.Random;
 import java.util.function.Function;
 
 import se.kth.speech.IntArrays;
-import se.kth.speech.Matrix;
 import se.kth.speech.ObjectArrays;
-import se.kth.speech.SpatialMatrix;
+import se.kth.speech.matrix.Matrix;
+import se.kth.speech.matrix.SpatialMatrix;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>

@@ -14,13 +14,15 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech;
+package se.kth.speech.matrix;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.function.Function;
+
+import se.kth.speech.SpatialMap;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>

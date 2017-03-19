@@ -14,7 +14,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech;
+package se.kth.speech.matrix;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -36,6 +36,13 @@ import org.junit.runner.RunWith;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Table;
+
+import se.kth.speech.ComparableValueMaps;
+import se.kth.speech.IntArrays;
+import se.kth.speech.SpatialMap;
+import se.kth.speech.matrix.Matrix;
+import se.kth.speech.matrix.SpatialMatrix;
+import se.kth.speech.matrix.SpatialRegion;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -119,7 +126,7 @@ public final class SpatialMatrixTest {
 
 	/**
 	 * Test method for
-	 * {@link se.kth.speech.SpatialMatrix#calculateSubRegionCount(int, int)}.
+	 * {@link se.kth.speech.matrix.SpatialMatrix#calculateSubRegionCount(int, int)}.
 	 */
 	@Theory
 	public final void testCalculateSubRegionCount(final int[] gridDims) {
@@ -177,7 +184,7 @@ public final class SpatialMatrixTest {
 
 	/**
 	 * Test method for
-	 * {@link se.kth.speech.SpatialMatrix#createSizeIndexedRegionPowerSet()}.
+	 * {@link se.kth.speech.matrix.SpatialMatrix#createSizeIndexedRegionPowerSet()}.
 	 */
 	@Theory
 	public final void testCreateSizeIndexedRegionPowerSet(final int[] gridDims) {
@@ -207,7 +214,7 @@ public final class SpatialMatrixTest {
 
 	/**
 	 * Test method for
-	 * {@link se.kth.speech.SpatialMatrix#getCells()}.
+	 * {@link se.kth.speech.matrix.SpatialMatrix#getCells()}.
 	 */
 	@Theory
 	public final void testGetCellsCount(final int[] gridDims) {
@@ -220,7 +227,7 @@ public final class SpatialMatrixTest {
 
 	/**
 	 * Test method for
-	 * {@link se.kth.speech.SpatialMatrix#getCells(se.kth.speech.SpatialRegion)}.
+	 * {@link se.kth.speech.matrix.SpatialMatrix#getCells(se.kth.speech.matrix.SpatialRegion)}.
 	 */
 	@Test
 	public final void testGetCellsRegion1() {
@@ -229,7 +236,7 @@ public final class SpatialMatrixTest {
 
 	/**
 	 * Test method for
-	 * {@link se.kth.speech.SpatialMatrix#getCells(se.kth.speech.SpatialRegion)}.
+	 * {@link se.kth.speech.matrix.SpatialMatrix#getCells(se.kth.speech.matrix.SpatialRegion)}.
 	 */
 	@Test
 	public final void testGetCellsRegion2() {
@@ -238,7 +245,7 @@ public final class SpatialMatrixTest {
 
 	/**
 	 * Test method for
-	 * {@link se.kth.speech.SpatialMatrix#getCells(se.kth.speech.SpatialRegion)}.
+	 * {@link se.kth.speech.matrix.SpatialMatrix#getCells(se.kth.speech.matrix.SpatialRegion)}.
 	 */
 	@Test
 	public final void testGetCellsRegion3() {
@@ -247,7 +254,7 @@ public final class SpatialMatrixTest {
 
 	/**
 	 * Test method for
-	 * {@link se.kth.speech.SpatialMatrix#getCells(se.kth.speech.SpatialRegion)}.
+	 * {@link se.kth.speech.matrix.SpatialMatrix#getCells(se.kth.speech.matrix.SpatialRegion)}.
 	 */
 	@Test
 	public final void testGetCellsRegion4() {

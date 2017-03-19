@@ -29,10 +29,10 @@ import org.junit.experimental.theories.Theory;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
-import se.kth.speech.Matrix;
-import se.kth.speech.SpatialMatrix;
 import se.kth.speech.coin.tangrams.GameTests.TestDescription;
 import se.kth.speech.hat.xsd.Transcription.T;
+import se.kth.speech.matrix.Matrix;
+import se.kth.speech.matrix.SpatialMatrix;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>

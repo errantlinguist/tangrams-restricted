@@ -55,7 +55,6 @@ import com.github.errantlinguist.ClassProperties;
 import iristk.system.IrisSystem;
 import iristk.system.LoggingModule;
 import iristk.util.NameFilter;
-import se.kth.speech.SpatialMatrix;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfoFactory;
 import se.kth.speech.coin.tangrams.game.LocalController;
@@ -64,6 +63,7 @@ import se.kth.speech.coin.tangrams.iristk.IrisSystemStopper;
 import se.kth.speech.coin.tangrams.iristk.LogDirectoryFactory;
 import se.kth.speech.coin.tangrams.view.ConnectionStatusFrame;
 import se.kth.speech.coin.tangrams.view.GameGUI;
+import se.kth.speech.matrix.SpatialMatrix;
 
 /**
  *

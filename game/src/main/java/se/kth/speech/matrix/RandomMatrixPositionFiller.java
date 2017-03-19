@@ -14,7 +14,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech;
+package se.kth.speech.matrix;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -30,6 +30,8 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Sets;
 import com.google.common.collect.Table;
+
+import se.kth.speech.RandomCollections;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>

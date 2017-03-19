@@ -49,16 +49,16 @@ import com.google.common.collect.Maps;
 
 import se.kth.speech.IntArrays;
 import se.kth.speech.MathDivisors;
-import se.kth.speech.Matrix;
-import se.kth.speech.MatrixStringReprFactory;
 import se.kth.speech.MutablePair;
-import se.kth.speech.RandomMatrixPositionFiller;
 import se.kth.speech.SpatialMap;
-import se.kth.speech.SpatialMatrix;
 import se.kth.speech.awt.ColorReplacementImageFilter;
 import se.kth.speech.coin.tangrams.content.ImageSize;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 import se.kth.speech.coin.tangrams.view.ImageViewInfo.RasterizationInfo;
+import se.kth.speech.matrix.Matrix;
+import se.kth.speech.matrix.MatrixStringReprFactory;
+import se.kth.speech.matrix.RandomMatrixPositionFiller;
+import se.kth.speech.matrix.SpatialMatrix;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>

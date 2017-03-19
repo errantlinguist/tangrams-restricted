@@ -26,9 +26,9 @@ import org.junit.experimental.theories.Theories;
 import org.junit.experimental.theories.Theory;
 import org.junit.runner.RunWith;
 
-import se.kth.speech.SpatialMatrix;
 import se.kth.speech.coin.tangrams.GameTests.TestDescription;
 import se.kth.speech.junit.IteratorEqualityAsserter;
+import se.kth.speech.matrix.SpatialMatrix;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>

@@ -14,11 +14,14 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech;
+package se.kth.speech.matrix;
 
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Test;
+
+import se.kth.speech.SpatialMap;
+import se.kth.speech.matrix.SpatialRegion;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>

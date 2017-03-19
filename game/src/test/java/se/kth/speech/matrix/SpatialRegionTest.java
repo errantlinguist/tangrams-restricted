@@ -14,7 +14,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech;
+package se.kth.speech.matrix;
 
 import java.util.Random;
 import java.util.Set;
@@ -30,6 +30,10 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import com.google.common.collect.Sets;
+
+import se.kth.speech.IntArrays;
+import se.kth.speech.RandomCollections;
+import se.kth.speech.matrix.SpatialRegion;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -120,7 +124,7 @@ public final class SpatialRegionTest {
 
 	/**
 	 * Test method for
-	 * {@link se.kth.speech.SpatialRegion#intersects(int,int,int,int,int,int,int,int)}.
+	 * {@link se.kth.speech.matrix.SpatialRegion#intersects(int,int,int,int,int,int,int,int)}.
 	 */
 	@Theory
 	public final void testIntersectsIntIntIntIntIntIntIntIntCommutativty(final int[] r1, final int[] r2) {
@@ -139,7 +143,7 @@ public final class SpatialRegionTest {
 
 	/**
 	 * Test method for
-	 * {@link se.kth.speech.SpatialRegion#intersects(se.kth.speech.SpatialMap.SpatialRegion)}.
+	 * {@link se.kth.speech.matrix.SpatialRegion#intersects(se.kth.speech.SpatialMap.SpatialRegion)}.
 	 */
 	@Theory
 	public final void testIntersectsRegionCommutativity(final SpatialRegion r1, final SpatialRegion r2) {
@@ -161,7 +165,7 @@ public final class SpatialRegionTest {
 
 	/**
 	 * Test method for
-	 * {@link se.kth.speech.SpatialRegion#intersects(se.kth.speech.SpatialMap.SpatialRegion)}.
+	 * {@link se.kth.speech.matrix.SpatialRegion#intersects(se.kth.speech.SpatialMap.SpatialRegion)}.
 	 */
 	@Theory
 	public final void testIntersectsRegionEqual(final SpatialRegion r1, final SpatialRegion r2) {
@@ -171,7 +175,7 @@ public final class SpatialRegionTest {
 
 	/**
 	 * Test method for
-	 * {@link se.kth.speech.SpatialRegion#intersects(se.kth.speech.SpatialMap.SpatialRegion)}.
+	 * {@link se.kth.speech.matrix.SpatialRegion#intersects(se.kth.speech.SpatialMap.SpatialRegion)}.
 	 */
 	@Test
 	public final void testIntersectsRegionIntersecting() {
@@ -181,7 +185,7 @@ public final class SpatialRegionTest {
 
 	/**
 	 * Test method for
-	 * {@link se.kth.speech.SpatialRegion#intersects(se.kth.speech.SpatialMap.SpatialRegion)}.
+	 * {@link se.kth.speech.matrix.SpatialRegion#intersects(se.kth.speech.SpatialMap.SpatialRegion)}.
 	 */
 	@Test
 	public final void testIntersectsRegionNegative() {
@@ -191,7 +195,7 @@ public final class SpatialRegionTest {
 
 	/**
 	 * Test method for
-	 * {@link se.kth.speech.SpatialRegion#intersects(se.kth.speech.SpatialMap.SpatialRegion)}.
+	 * {@link se.kth.speech.matrix.SpatialRegion#intersects(se.kth.speech.SpatialMap.SpatialRegion)}.
 	 */
 	@Test
 	public final void testIntersectsRegionNegativeAdjacentXNonAdjacentY() {
@@ -201,7 +205,7 @@ public final class SpatialRegionTest {
 
 	/**
 	 * Test method for
-	 * {@link se.kth.speech.SpatialRegion#intersects(se.kth.speech.SpatialMap.SpatialRegion)}.
+	 * {@link se.kth.speech.matrix.SpatialRegion#intersects(se.kth.speech.SpatialMap.SpatialRegion)}.
 	 */
 	@Test
 	public final void testIntersectsRegionNegativeAdjacentXSameY() {
@@ -211,7 +215,7 @@ public final class SpatialRegionTest {
 
 	/**
 	 * Test method for
-	 * {@link se.kth.speech.SpatialRegion#intersects(se.kth.speech.SpatialMap.SpatialRegion)}.
+	 * {@link se.kth.speech.matrix.SpatialRegion#intersects(se.kth.speech.SpatialMap.SpatialRegion)}.
 	 */
 	@Test
 	public final void testIntersectsRegionNegativeAdjacentYNonAdjacentX() {
@@ -221,7 +225,7 @@ public final class SpatialRegionTest {
 
 	/**
 	 * Test method for
-	 * {@link se.kth.speech.SpatialRegion#intersects(se.kth.speech.SpatialMap.SpatialRegion)}.
+	 * {@link se.kth.speech.matrix.SpatialRegion#intersects(se.kth.speech.SpatialMap.SpatialRegion)}.
 	 */
 	@Test
 	public final void testIntersectsRegionNegativeAdjacentYSameX() {
@@ -231,7 +235,7 @@ public final class SpatialRegionTest {
 
 	/**
 	 * Test method for
-	 * {@link se.kth.speech.SpatialRegion#intersects(se.kth.speech.SpatialMap.SpatialRegion)}.
+	 * {@link se.kth.speech.matrix.SpatialRegion#intersects(se.kth.speech.SpatialMap.SpatialRegion)}.
 	 */
 	@Test
 	public final void testIntersectsRegionNegativeRegression1(){
@@ -243,7 +247,7 @@ public final class SpatialRegionTest {
 
 	/**
 	 * Test method for
-	 * {@link se.kth.speech.SpatialRegion#intersects(se.kth.speech.SpatialMap.SpatialRegion)}.
+	 * {@link se.kth.speech.matrix.SpatialRegion#intersects(se.kth.speech.SpatialMap.SpatialRegion)}.
 	 */
 	@Test
 	public final void testIntersectsRegionNotSubregion() {
@@ -257,7 +261,7 @@ public final class SpatialRegionTest {
 
 	/**
 	 * Test method for
-	 * {@link se.kth.speech.SpatialRegion#intersects(se.kth.speech.SpatialMap.SpatialRegion)}.
+	 * {@link se.kth.speech.matrix.SpatialRegion#intersects(se.kth.speech.SpatialMap.SpatialRegion)}.
 	 */
 	@Theory
 	public final void testIntersectsRegionSelf(final SpatialRegion r) {
@@ -266,7 +270,7 @@ public final class SpatialRegionTest {
 
 	/**
 	 * Test method for
-	 * {@link se.kth.speech.SpatialRegion#intersects(se.kth.speech.SpatialMap.SpatialRegion)}.
+	 * {@link se.kth.speech.matrix.SpatialRegion#intersects(se.kth.speech.SpatialMap.SpatialRegion)}.
 	 */
 	@Test
 	public final void testIntersectsRegionSubregion() {
@@ -278,7 +282,7 @@ public final class SpatialRegionTest {
 
 	/**
 	 * Test method for
-	 * {@link se.kth.speech.SpatialRegion#Region(int, int, int, int)}.
+	 * {@link se.kth.speech.matrix.SpatialRegion#Region(int, int, int, int)}.
 	 */
 	@Theory
 	public final void testRegionNegative(final int xLowerBound, final int xUpperBound, final int yLowerBound,
@@ -291,7 +295,7 @@ public final class SpatialRegionTest {
 
 	/**
 	 * Test method for
-	 * {@link se.kth.speech.SpatialRegion#Region(int, int, int, int)}.
+	 * {@link se.kth.speech.matrix.SpatialRegion#Region(int, int, int, int)}.
 	 */
 	@Theory
 	public final void testRegionPositive(final int xLowerBound, final int xUpperBound, final int yLowerBound,
@@ -303,7 +307,7 @@ public final class SpatialRegionTest {
 
 	/**
 	 * Test method for
-	 * {@link se.kth.speech.SpatialRegion#subsumes(int,int,int,int,int,int,int,int)}.
+	 * {@link se.kth.speech.matrix.SpatialRegion#subsumes(int,int,int,int,int,int,int,int)}.
 	 */
 	@Theory
 	public final void testSubsumesIntIntIntIntIntIntIntIntEqual(final int[] r1, final int[] r2) {
@@ -325,7 +329,7 @@ public final class SpatialRegionTest {
 
 	/**
 	 * Test method for
-	 * {@link se.kth.speech.SpatialRegion#subsumes(se.kth.speech.SpatialMap.SpatialRegion)}.
+	 * {@link se.kth.speech.matrix.SpatialRegion#subsumes(se.kth.speech.SpatialMap.SpatialRegion)}.
 	 */
 	@Theory
 	public final void testSubsumesRegionEqual(final SpatialRegion r1, final SpatialRegion r2) {
@@ -335,7 +339,7 @@ public final class SpatialRegionTest {
 
 	/**
 	 * Test method for
-	 * {@link se.kth.speech.SpatialRegion#subsumes(se.kth.speech.SpatialMap.SpatialRegion)}.
+	 * {@link se.kth.speech.matrix.SpatialRegion#subsumes(se.kth.speech.SpatialMap.SpatialRegion)}.
 	 */
 	@Test
 	public final void testSubsumesRegionNegative() {
@@ -346,7 +350,7 @@ public final class SpatialRegionTest {
 
 	/**
 	 * Test method for
-	 * {@link se.kth.speech.SpatialRegion#subsumes(se.kth.speech.SpatialMap.SpatialRegion)}.
+	 * {@link se.kth.speech.matrix.SpatialRegion#subsumes(se.kth.speech.SpatialMap.SpatialRegion)}.
 	 */
 	@Test
 	public final void testSubsumesRegionNegativeIntersecting() {
@@ -358,7 +362,7 @@ public final class SpatialRegionTest {
 
 	/**
 	 * Test method for
-	 * {@link se.kth.speech.SpatialRegion#subsumes(se.kth.speech.SpatialMap.SpatialRegion)}.
+	 * {@link se.kth.speech.matrix.SpatialRegion#subsumes(se.kth.speech.SpatialMap.SpatialRegion)}.
 	 */
 	@Test
 	public final void testSubsumesRegionPositive1() {
@@ -369,7 +373,7 @@ public final class SpatialRegionTest {
 
 	/**
 	 * Test method for
-	 * {@link se.kth.speech.SpatialRegion#subsumes(se.kth.speech.SpatialMap.SpatialRegion)}.
+	 * {@link se.kth.speech.matrix.SpatialRegion#subsumes(se.kth.speech.SpatialMap.SpatialRegion)}.
 	 */
 	@Test
 	public final void testSubsumesRegionPositive2() {
@@ -380,7 +384,7 @@ public final class SpatialRegionTest {
 
 	/**
 	 * Test method for
-	 * {@link se.kth.speech.SpatialRegion#subsumes(se.kth.speech.SpatialMap.SpatialRegion)}.
+	 * {@link se.kth.speech.matrix.SpatialRegion#subsumes(se.kth.speech.SpatialMap.SpatialRegion)}.
 	 */
 	@Theory
 	public final void testSubsumesRegionSelf(final SpatialRegion r) {

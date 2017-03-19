@@ -14,7 +14,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech;
+package se.kth.speech.matrix;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -36,6 +36,8 @@ import com.google.common.collect.ArrayTable;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.common.collect.Table;
+
+import se.kth.speech.SpatialMap;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>

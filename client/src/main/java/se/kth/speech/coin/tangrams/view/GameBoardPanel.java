@@ -45,12 +45,12 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
-import se.kth.speech.Matrix;
 import se.kth.speech.MutablePair;
 import se.kth.speech.RandomCollections;
 import se.kth.speech.SpatialMap;
-import se.kth.speech.SpatialMatrix;
-import se.kth.speech.SpatialRegion;
+import se.kth.speech.matrix.Matrix;
+import se.kth.speech.matrix.SpatialMatrix;
+import se.kth.speech.matrix.SpatialRegion;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
