@@ -20,9 +20,6 @@ import java.awt.Dimension;
 import java.awt.Image;
 import java.awt.Toolkit;
 import java.awt.image.BufferedImage;
-import java.awt.image.FilteredImageSource;
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -37,10 +34,7 @@ import java.util.Objects;
 import java.util.Random;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.function.IntSupplier;
 import java.util.stream.Collectors;
-
-import javax.imageio.ImageIO;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,14 +45,14 @@ import se.kth.speech.IntArrays;
 import se.kth.speech.MathDivisors;
 import se.kth.speech.Matrix;
 import se.kth.speech.MatrixStringReprFactory;
-import se.kth.speech.MutablePair;
 import se.kth.speech.RandomMatrixPositionFiller;
 import se.kth.speech.SpatialMap;
 import se.kth.speech.SpatialMatrix;
-import se.kth.speech.awt.ColorReplacementImageFilter;
+import se.kth.speech.coin.tangrams.content.ImageLoadingImageViewInfoFactory;
 import se.kth.speech.coin.tangrams.content.ImageSize;
+import se.kth.speech.coin.tangrams.content.ImageViewInfo;
+import se.kth.speech.coin.tangrams.content.ImageViewInfo.RasterizationInfo;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
-import se.kth.speech.coin.tangrams.view.ImageViewInfo.RasterizationInfo;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -225,30 +219,6 @@ final class GameBoardPanelFactory implements Function<Collection<ImageVisualizat
 		return new SpatialMatrix<>(backingPosMatrix, posMap);
 	}
 
-	private static <I> Entry<ImageViewInfo, Image> createViewInfo(
-			final ImageVisualizationInfo imgVisualizationInfoDatum, final Toolkit toolkit,
-			final BiFunction<? super Image, ? super Toolkit, ? extends Image> postColoringImgTransformer,
-			final Map<URL, BufferedImage> resourceImgs) {
-		final URL imgResourceLoc = imgVisualizationInfoDatum.getResourceLoc();
-		final BufferedImage initialImg = resourceImgs.computeIfAbsent(imgResourceLoc, loc -> {
-			try {
-				return ImageIO.read(loc);
-			} catch (final IOException e) {
-				throw new UncheckedIOException(e);
-			}
-		});
-		final IntSupplier widthGetter = initialImg::getWidth;
-		final IntSupplier heightGetter = initialImg::getHeight;
-		// Size/aspect ratio calculation
-		final ImageViewInfo.RasterizationInfo imgRasterizationInfo = new ImageViewInfo.RasterizationInfo(widthGetter,
-				heightGetter);
-		final Image coloredImg = toolkit.createImage(new FilteredImageSource(initialImg.getSource(),
-				new ColorReplacementImageFilter(imgVisualizationInfoDatum.getColor())));
-		final ImageViewInfo imgInfo = new ImageViewInfo(imgVisualizationInfoDatum, imgRasterizationInfo);
-		final Image transformedImg = postColoringImgTransformer.apply(coloredImg, toolkit);
-		return new MutablePair<>(imgInfo, transformedImg);
-	}
-
 	private static Dimension estimatePreferredBoardSize(final Toolkit toolkit) {
 		// http://stackoverflow.com/a/1936582/1391325
 		final Dimension screenSize = toolkit.getScreenSize();
@@ -373,12 +343,14 @@ final class GameBoardPanelFactory implements Function<Collection<ImageVisualizat
 		// A cache mapping unique resource locators to the Image instances
 		// created for them
 		final Map<URL, BufferedImage> resourceImgs = Maps.newHashMapWithExpectedSize(uniqueImgResourceCount);
+		final ImageLoadingImageViewInfoFactory imgViewInfoFactory = new ImageLoadingImageViewInfoFactory(toolkit,
+				postColoringImgTransformer, resourceImgs);
 		final List<Entry<ImageViewInfo, Image>> imgViewInfoLoadedImgs = imgVisualizationInfoData.stream()
-				.map(imgVisualizationInfoDatum -> createViewInfo(imgVisualizationInfoDatum, toolkit,
-						postColoringImgTransformer, resourceImgs))
+				.map(imgViewInfoFactory)
 				.collect(Collectors.toCollection(() -> new ArrayList<>(imgVisualizationInfoData.size())));
 		// Add the mapping of image to piece ID to the mapping for the game
-		// board panel. LinkedHashSet in order to preserve iteration order across instances
+		// board panel. LinkedHashSet in order to preserve iteration order
+		// across instances
 		final Map<ImageViewInfo, Integer> pieceIds = Maps.newLinkedHashMapWithExpectedSize(expectedPieceCount);
 		imgViewInfoLoadedImgs.stream().forEach(imgViewInfoLoadedImg -> {
 			final ImageViewInfo imgViewInfo = imgViewInfoLoadedImg.getKey();

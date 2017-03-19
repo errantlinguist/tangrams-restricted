@@ -14,19 +14,17 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech.coin.tangrams.view;
+package se.kth.speech.coin.tangrams.content;
 
 import java.util.Arrays;
 import java.util.function.Function;
 import java.util.function.IntSupplier;
 
 import se.kth.speech.MathDivisors;
-import se.kth.speech.coin.tangrams.content.ImageSize;
-import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 
-final class ImageViewInfo {
+public final class ImageViewInfo {
 
-	enum Orientation {
+	public enum Orientation {
 		LANDSCAPE, PORTRAIT, SQUARE;
 
 		static Orientation getOrientation(final int width, final int height) {
@@ -42,7 +40,7 @@ final class ImageViewInfo {
 		}
 	}
 
-	static final class RasterizationInfo {
+	public static final class RasterizationInfo {
 
 		private static int getGcd(final int width, final int height) {
 			return MathDivisors.gcd(width, height);
@@ -91,6 +89,33 @@ final class ImageViewInfo {
 			return true;
 		}
 
+		public int[] getAspectRatio() {
+			final int width = getWidth();
+			final int height = getHeight();
+			final int gcd = getGcd(width, height);
+			return new int[] { width / gcd, height / gcd };
+		}
+
+		public int getGcd() {
+			return getGcd(getWidth(), getHeight());
+		}
+
+		public int getHeight() {
+			return heightGetter.getAsInt();
+		}
+
+		public Orientation getOrientation() {
+			return Orientation.getOrientation(getWidth(), getHeight());
+		}
+
+		public int getWidth() {
+			return widthGetter.getAsInt();
+		}
+
+		public int getWidthHeightQuotient() {
+			return widthGetter.getAsInt() / heightGetter.getAsInt();
+		}
+
 		/*
 		 * (non-Javadoc)
 		 *
@@ -107,7 +132,7 @@ final class ImageViewInfo {
 
 		/*
 		 * (non-Javadoc)
-		 * 
+		 *
 		 * @see java.lang.Object#toString()
 		 */
 		@Override
@@ -127,33 +152,6 @@ final class ImageViewInfo {
 			builder.append(getGcd());
 			builder.append("]");
 			return builder.toString();
-		}
-
-		int[] getAspectRatio() {
-			final int width = getWidth();
-			final int height = getHeight();
-			final int gcd = getGcd(width, height);
-			return new int[] { width / gcd, height / gcd };
-		}
-
-		int getGcd() {
-			return getGcd(getWidth(), getHeight());
-		}
-
-		int getHeight() {
-			return heightGetter.getAsInt();
-		}
-
-		Orientation getOrientation() {
-			return Orientation.getOrientation(getWidth(), getHeight());
-		}
-
-		int getWidth() {
-			return widthGetter.getAsInt();
-		}
-
-		int getWidthHeightQuotient() {
-			return widthGetter.getAsInt() / heightGetter.getAsInt();
 		}
 	}
 
@@ -207,6 +205,20 @@ final class ImageViewInfo {
 		return new int[] { aspectRatio[1] * factor, aspectRatio[0] * factor };
 	}
 
+	/**
+	 * @return the rasterization
+	 */
+	public RasterizationInfo getRasterization() {
+		return rasterization;
+	}
+
+	/**
+	 * @return the visualization
+	 */
+	public ImageVisualizationInfo getVisualization() {
+		return visualization;
+	}
+
 	/*
 	 * (non-Javadoc)
 	 *
@@ -235,19 +247,5 @@ final class ImageViewInfo {
 		builder.append(visualization);
 		builder.append("]");
 		return builder.toString();
-	}
-
-	/**
-	 * @return the rasterization
-	 */
-	RasterizationInfo getRasterization() {
-		return rasterization;
-	}
-
-	/**
-	 * @return the visualization
-	 */
-	ImageVisualizationInfo getVisualization() {
-		return visualization;
 	}
 }
