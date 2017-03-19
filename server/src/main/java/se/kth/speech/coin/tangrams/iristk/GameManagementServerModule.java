@@ -185,10 +185,11 @@ public final class GameManagementServerModule extends IrisModule {
 				final String leavingPlayerId = event.getString(GameManagementEvent.Attribute.PLAYER_ID.toString());
 				LOGGER.debug("Received leave request from player \"{}\" for game \"{}\".",
 						new Object[] { leavingPlayerId, gameId });
-				final Pair<Game<Integer>, ActivePlayerTracker> gameState = gameStateGetter.apply(gameId);
-				final ActivePlayerTracker activePlayerTracker = gameState.getSecond();
+//				final Pair<Game<Integer>, ActivePlayerTracker> gameState = gameStateGetter.apply(gameId);
+//				final ActivePlayerTracker activePlayerTracker = gameState.getSecond();
+				throw new UnsupportedOperationException("not yet implemented");
 				// TODO: Finish
-				break;
+//				break;
 			}
 			case SELECTION_REQUEST: {
 				if (LOGGER.isDebugEnabled()) {
