@@ -45,7 +45,7 @@ public final class GameFactoryTest {
 
 	private static GameFactory createGameFactory(final TestDescription testDesc) {
 		final int[] modelDims = testDesc.getModelDims();
-		final RandomModelFactory<Integer> modelFactory = new RandomModelFactory<>(modelDims,
+		final RandomModelPopulator<Integer> modelFactory = new RandomModelPopulator<>(modelDims,
 				testDesc.createCoordOccupantArray());
 		return new GameFactory(modelFactory, modelDims[1]);
 	}

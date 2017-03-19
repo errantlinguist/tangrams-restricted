@@ -51,7 +51,7 @@ final class GameFactory implements Function<String, Game<Integer>> {
 		}
 	}
 
-	private static MutablePair<RandomModelFactory<Integer>, int[]> createModelFactory() {
+	private static MutablePair<RandomModelPopulator, int[]> createModelFactory() {
 		final int[] modelDims = MULTIVALUE_PROP_DELIM_PATTERN.splitAsStream(PROPS.getProperty("model.dims"))
 				.mapToInt(Integer::parseInt).toArray();
 		final int emptyCells = Integer.parseInt(PROPS.getProperty("model.emptyCells"));
@@ -61,7 +61,7 @@ final class GameFactory implements Function<String, Game<Integer>> {
 		// Create a piece ID array just big enough to fill all the occupied
 		// cells rather than every cell in the matrix
 		final Integer[] coordOccupants = IntStream.range(0, occupiedCellCount).boxed().toArray(Integer[]::new);
-		return new MutablePair<>(new RandomModelFactory<>(modelDims, coordOccupants), modelDims);
+		return new MutablePair<>(new RandomModelPopulator(), modelDims);
 	}
 
 	private final Function<? super Random, ? extends SpatialMatrix<Integer>> modelFactory;
@@ -70,7 +70,7 @@ final class GameFactory implements Function<String, Game<Integer>> {
 		this(createModelFactory());
 	}
 
-	private GameFactory(final Map.Entry<RandomModelFactory<Integer>, int[]> modelFactoryDims) {
+	private GameFactory(final Map.Entry<RandomModelPopulator, int[]> modelFactoryDims) {
 		this(modelFactoryDims.getKey(), modelFactoryDims.getValue()[1]);
 	}
 

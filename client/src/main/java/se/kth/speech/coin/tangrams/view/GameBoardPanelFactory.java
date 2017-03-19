@@ -22,16 +22,12 @@ import java.awt.Toolkit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Objects;
 import java.util.Random;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,16 +35,11 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.Maps;
 
 import se.kth.speech.IntArrays;
-import se.kth.speech.MathDivisors;
 import se.kth.speech.Matrix;
-import se.kth.speech.MatrixStringReprFactory;
-import se.kth.speech.RandomMatrixPositionFiller;
 import se.kth.speech.SpatialMap;
 import se.kth.speech.SpatialMatrix;
+import se.kth.speech.coin.tangrams.RandomModelPopulator;
 import se.kth.speech.coin.tangrams.content.ImageLoadingImageViewInfoFactory;
-import se.kth.speech.coin.tangrams.content.ImageSize;
-import se.kth.speech.coin.tangrams.content.ImageViewInfo;
-import se.kth.speech.coin.tangrams.content.ImageViewInfo.RasterizationInfo;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 
 /**
@@ -108,16 +99,7 @@ final class GameBoardPanelFactory implements Function<Collection<ImageVisualizat
 
 	};
 
-	private static final Function<ImageSize, Integer> IMAGE_SIZE_FACTORS;
-
 	private static final Logger LOGGER = LoggerFactory.getLogger(GameBoardPanelFactory.class);
-
-	private static final Function<? super ImageViewInfo, int[]> PIECE_GRID_SIZE_FACTORY;
-
-	static {
-		IMAGE_SIZE_FACTORS = ImageSize.createDefaultImageSizeFactorMap()::get;
-		PIECE_GRID_SIZE_FACTORY = imgViewInfo -> imgViewInfo.getGridSize(IMAGE_SIZE_FACTORS);
-	}
 
 	private static int[] createPositionGridSize(final PositionGridSizeSummary posGridSizeSummary,
 			final Dimension maxBoardSize, final double occupiedGridArea) {
@@ -167,36 +149,6 @@ final class GameBoardPanelFactory implements Function<Collection<ImageVisualizat
 			throw new IllegalArgumentException("Could not find a valid board size.");
 		}
 		return result;
-	}
-
-	private static PositionGridSizeSummary createPositionGridSizeSummary(
-			final Iterator<ImageViewInfo> imageViewInfoData) {
-		final int[] maxImgGridSize = new int[] { Integer.MIN_VALUE, Integer.MIN_VALUE };
-		final int[] minImgGridSize = new int[] { Integer.MAX_VALUE, Integer.MAX_VALUE };
-		int totalImgGridArea = 0;
-		final List<Integer> commonDivisors;
-		{
-			final ImageViewInfo imgViewInfoDatum = imageViewInfoData.next();
-			final int[] imgGridSize = imgViewInfoDatum.getGridSize(IMAGE_SIZE_FACTORS);
-			IntArrays.mutate(minImgGridSize, imgGridSize, Math::min);
-			IntArrays.mutate(maxImgGridSize, imgGridSize, Math::max);
-			final RasterizationInfo rasterInfo = imgViewInfoDatum.getRasterization();
-			commonDivisors = MathDivisors.createCommonDivisorList(rasterInfo.getWidth(), rasterInfo.getHeight());
-			final int imgGridArea = IntArrays.product(imgGridSize);
-			totalImgGridArea += imgGridArea;
-		}
-		while (imageViewInfoData.hasNext()) {
-			final ImageViewInfo imgViewInfoDatum = imageViewInfoData.next();
-			final int[] imgGridSize = imgViewInfoDatum.getGridSize(IMAGE_SIZE_FACTORS);
-			IntArrays.mutate(minImgGridSize, imgGridSize, Math::min);
-			IntArrays.mutate(maxImgGridSize, imgGridSize, Math::max);
-			final RasterizationInfo rasterInfo = imgViewInfoDatum.getRasterization();
-			MathDivisors.removeNonDivisors(commonDivisors.iterator(), rasterInfo.getWidth(), rasterInfo.getHeight());
-			final int imgGridArea = IntArrays.product(imgGridSize);
-			totalImgGridArea += imgGridArea;
-		}
-		LOGGER.debug("Common divisors for all images are {}.", commonDivisors);
-		return new PositionGridSizeSummary(minImgGridSize, maxImgGridSize, totalImgGridArea, commonDivisors);
 	}
 
 	private static <E> SpatialMatrix<E> createPosMatrix(final int[] gridSize, final SpatialMap<E> posMap) {
@@ -330,54 +282,12 @@ final class GameBoardPanelFactory implements Function<Collection<ImageVisualizat
 		final GameBoardPanel<Integer> result = new GameBoardPanel<>(posMatrix, expectedPieceCount);
 		final Toolkit toolkit = result.getToolkit();
 		final Map<Integer, Image> pieceImgs = result.getPieceImgs();
-
-		// A cache mapping unique resource locators to the Image instances
-		// created for them
 		final ImageLoadingImageViewInfoFactory imgViewInfoFactory = new ImageLoadingImageViewInfoFactory(toolkit,
 				postColoringImgTransformer, Maps.newHashMapWithExpectedSize(uniqueImgResourceCount));
-		final List<Entry<ImageViewInfo, Image>> imgViewInfoLoadedImgs = imgVisualizationInfoData.stream()
-				.map(imgViewInfoFactory)
-				.collect(Collectors.toCollection(() -> new ArrayList<>(imgVisualizationInfoData.size())));
-		// Add the mapping of image to piece ID to the mapping for the game
-		// board panel. LinkedHashSet in order to preserve iteration order
-		// across instances
-		final Map<ImageViewInfo, Integer> pieceIds = Maps.newLinkedHashMapWithExpectedSize(expectedPieceCount);
-		imgViewInfoLoadedImgs.stream().forEach(imgViewInfoLoadedImg -> {
-			final ImageViewInfo imgViewInfo = imgViewInfoLoadedImg.getKey();
-			final Integer pieceId = pieceIds.computeIfAbsent(imgViewInfo, k -> pieceIds.size());
-			final Image img = imgViewInfoLoadedImg.getValue();
-			pieceImgs.put(pieceId, img);
-		});
-
-		final PositionGridSizeSummary posGridSizeSummary = createPositionGridSizeSummary(pieceIds.keySet().iterator());
-		LOGGER.info("Position grid size summary: {}", posGridSizeSummary);
-		final Collection<Integer> pieces = pieceImgs.keySet();
-		fillMatrix(posMatrix, pieceIds.entrySet());
-		if (moreOccupiedSpaceThanExpected(posMatrix)) {
-			throw new IllegalArgumentException(String.format(
-					"Grid size of %s is not enough to hold %d pieces with the given occupied-space ratio of %d.",
-					Arrays.toString(gridSize), pieces.size(), occupiedGridArea));
-		} else {
-			final String matrixStrRepr = new MatrixStringReprFactory().apply(posMatrix.getPositionMatrix());
-			System.out.println("PIECE PLACEMENTS" + System.lineSeparator() + matrixStrRepr);
-		}
-
+		final RandomModelPopulator modelPopulator = new RandomModelPopulator(posMatrix, imgVisualizationInfoData,
+				occupiedGridArea, allowFailedPlacements, expectedPieceCount, pieceImgs::put, imgViewInfoFactory);
+		modelPopulator.accept(rnd);
 		return result;
-	}
-
-	private void fillMatrix(final SpatialMatrix<Integer> posMatrix,
-			final Collection<? extends Entry<ImageViewInfo, Integer>> pieceIds) {
-		final RandomMatrixPositionFiller<Integer, ImageViewInfo> matrixFiller = new RandomMatrixPositionFiller<>(
-				posMatrix, rnd, PIECE_GRID_SIZE_FACTORY, allowFailedPlacements);
-		matrixFiller.apply(pieceIds);
-	}
-
-	private boolean moreOccupiedSpaceThanExpected(final SpatialMatrix<Integer> posMatrix) {
-		final double gridSize = posMatrix.getPositionMatrix().getValues().size();
-		final double nonNullCells = posMatrix.getCells().filter(Objects::nonNull).count();
-		final double occupiedCellRatio = nonNullCells / gridSize;
-		LOGGER.info("Created matrix with {} occupied space.", occupiedCellRatio);
-		return occupiedCellRatio > occupiedGridArea;
 	}
 
 }

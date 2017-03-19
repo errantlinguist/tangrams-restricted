@@ -56,7 +56,7 @@ public final class RandomModelFactoryTest {
 
 	/**
 	 * Test method for
-	 * {@link se.kth.speech.coin.tangrams.RandomModelFactory#apply(java.util.Random)}.
+	 * {@link se.kth.speech.coin.tangrams.RandomModelPopulator#apply(java.util.Random)}.
 	 */
 	@Theory
 	public final void testApply(final TestDescription testDesc) {
@@ -64,7 +64,7 @@ public final class RandomModelFactoryTest {
 		// cells rather than every cell in the matrix
 		final Integer[] coordOccupants = IntStream.range(0, testDesc.calculateOccupiedCellCount()).boxed()
 				.toArray(Integer[]::new);
-		final RandomModelFactory<Integer> testFactory = new RandomModelFactory<>(testDesc.getModelDims(),
+		final RandomModelPopulator<Integer> testFactory = new RandomModelPopulator<>(testDesc.getModelDims(),
 				coordOccupants);
 		final Random rnd = new Random(testDesc.getSeed());
 		final SpatialMatrix<Integer> actual = testFactory.apply(rnd);
@@ -74,22 +74,22 @@ public final class RandomModelFactoryTest {
 
 	/**
 	 * Test method for
-	 * {@link se.kth.speech.coin.tangrams.RandomModelFactory#RandomModelFactory(int[], T[])}.
+	 * {@link se.kth.speech.coin.tangrams.RandomModelPopulator#RandomModelFactory(int[], T[])}.
 	 */
 	@Theory
 	public final void testRandomModelFactoryInvalidModelDims(final TestDescription testDesc) {
 		final int[] invalidModelDims = new int[0];
 		thrown.expect(IllegalArgumentException.class);
-		new RandomModelFactory<>(invalidModelDims, testDesc.createCoordOccupantArray());
+		new RandomModelPopulator<>(invalidModelDims, testDesc.createCoordOccupantArray());
 	}
 
 	/**
 	 * Test method for
-	 * {@link se.kth.speech.coin.tangrams.RandomModelFactory#RandomModelFactory(int[], T[])}.
+	 * {@link se.kth.speech.coin.tangrams.RandomModelPopulator#RandomModelFactory(int[], T[])}.
 	 */
 	@Theory
 	public final void testRandomModelFactoryPositive(final TestDescription testDesc) {
-		new RandomModelFactory<>(testDesc.getModelDims(), testDesc.createCoordOccupantArray());
+		new RandomModelPopulator<>(testDesc.getModelDims(), testDesc.createCoordOccupantArray());
 	}
 
 }
