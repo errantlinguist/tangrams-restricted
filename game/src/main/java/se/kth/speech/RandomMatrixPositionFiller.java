@@ -43,7 +43,7 @@ public final class RandomMatrixPositionFiller<I, E>
 
 	/**
 	 * <strong>NOTE:</strong> This creates a {@link LinkedHashSet} in order to
-	 * ensure that iteration order is stable across invocations.
+	 * ensure that iteration order is stable across instances.
 	 */
 	private static final IntFunction<LinkedHashSet<SpatialRegion>> SUB_REGION_SET_FACTORY = Sets::newLinkedHashSetWithExpectedSize;
 
