@@ -126,7 +126,7 @@ public final class SpatialRegion {
 		this.yLowerBound = yLowerBound;
 		this.yUpperBound = yUpperBound;
 		if (!areBoundariesValid()) {
-			throw new IllegalArgumentException(String.format("Boundary values are invalid: %d, %d, %,d %d,",
+			throw new IllegalArgumentException(String.format("Boundary values are invalid: %d, %d, %d, %d,",
 					xLowerBound, xUpperBound, yLowerBound, yUpperBound));
 		}
 
