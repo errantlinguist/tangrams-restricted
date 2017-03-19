@@ -19,8 +19,6 @@ package se.kth.speech.coin.tangrams.view;
 import java.awt.Dimension;
 import java.awt.Image;
 import java.awt.Toolkit;
-import java.awt.image.BufferedImage;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -342,9 +340,8 @@ final class GameBoardPanelFactory implements Function<Collection<ImageVisualizat
 
 		// A cache mapping unique resource locators to the Image instances
 		// created for them
-		final Map<URL, BufferedImage> resourceImgs = Maps.newHashMapWithExpectedSize(uniqueImgResourceCount);
 		final ImageLoadingImageViewInfoFactory imgViewInfoFactory = new ImageLoadingImageViewInfoFactory(toolkit,
-				postColoringImgTransformer, resourceImgs);
+				postColoringImgTransformer, Maps.newHashMapWithExpectedSize(uniqueImgResourceCount));
 		final List<Entry<ImageViewInfo, Image>> imgViewInfoLoadedImgs = imgVisualizationInfoData.stream()
 				.map(imgViewInfoFactory)
 				.collect(Collectors.toCollection(() -> new ArrayList<>(imgVisualizationInfoData.size())));
