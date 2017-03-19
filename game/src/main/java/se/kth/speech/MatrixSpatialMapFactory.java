@@ -47,8 +47,8 @@ public final class MatrixSpatialMapFactory<E> implements Function<Matrix<? exten
 					} else {
 						// Update the upper bounds to the row and col on which
 						// this ID was now seen
-						oldVal[1] = rowEndIdx;
-						oldVal[3] = colEndIdx;
+						oldVal[1] = Math.max(oldVal[1], rowEndIdx);
+						oldVal[3] = Math.max(oldVal[3], colEndIdx);
 						newVal = oldVal;
 					}
 					return newVal;
