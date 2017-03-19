@@ -22,7 +22,6 @@ import java.awt.Toolkit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.EnumMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
@@ -116,18 +115,8 @@ final class GameBoardPanelFactory implements Function<Collection<ImageVisualizat
 	private static final Function<? super ImageViewInfo, int[]> PIECE_GRID_SIZE_FACTORY;
 
 	static {
-		IMAGE_SIZE_FACTORS = createImageSizeFactorMap()::get;
+		IMAGE_SIZE_FACTORS = ImageSize.createDefaultImageSizeFactorMap()::get;
 		PIECE_GRID_SIZE_FACTORY = imgViewInfo -> imgViewInfo.getGridSize(IMAGE_SIZE_FACTORS);
-	}
-
-	private static Map<ImageSize, Integer> createImageSizeFactorMap() {
-		final Map<ImageSize, Integer> result = new EnumMap<>(ImageSize.class);
-		final Iterator<ImageSize> sizes = ImageSize.getSizeOrdering().iterator();
-		result.put(sizes.next(), 1);
-		result.put(sizes.next(), 2);
-		result.put(sizes.next(), 3);
-		assert result.size() == ImageSize.values().length;
-		return result;
 	}
 
 	private static int[] createPositionGridSize(final PositionGridSizeSummary posGridSizeSummary,

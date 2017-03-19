@@ -18,7 +18,10 @@ package se.kth.speech.coin.tangrams.content;
 
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.EnumMap;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import se.kth.speech.Lists;
 
@@ -38,6 +41,16 @@ public enum ImageSize {
 		SIZE_ORDERING = Arrays.asList(SMALL, MEDIUM, LARGE);
 		assert SIZE_ORDERING.size() == ImageSize.values().length;
 		SIZE_COMPARATOR = Lists.comparingByIndex(SIZE_ORDERING);
+	}
+
+	public static Map<ImageSize, Integer> createDefaultImageSizeFactorMap() {
+		final Map<ImageSize, Integer> result = new EnumMap<>(ImageSize.class);
+		final Iterator<ImageSize> sizes = ImageSize.getSizeOrdering().iterator();
+		result.put(sizes.next(), 1);
+		result.put(sizes.next(), 2);
+		result.put(sizes.next(), 3);
+		assert result.size() == ImageSize.values().length;
+		return result;
 	}
 
 	/**
