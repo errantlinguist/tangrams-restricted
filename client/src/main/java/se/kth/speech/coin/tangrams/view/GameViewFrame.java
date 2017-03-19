@@ -37,7 +37,7 @@ final class GameViewFrame extends JFrame {
 	 */
 	private static final long serialVersionUID = -4129777933223228599L;
 
-	GameViewFrame(final GameBoardPanel boardPanel, final Random rnd) {
+	GameViewFrame(final GameBoardPanel<?> boardPanel, final Random rnd) {
 		setLayout(new BorderLayout());
 		add(boardPanel, BorderLayout.CENTER);
 
@@ -72,7 +72,7 @@ final class GameViewFrame extends JFrame {
 		// TODO Auto-generated constructor stub
 	}
 	
-	void addBoardPanel(final GameBoardPanel boardPanel){
+	void addBoardPanel(final GameBoardPanel<?> boardPanel){
 		
 	}
 
