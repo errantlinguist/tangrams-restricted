@@ -367,9 +367,6 @@ final class GameBoardPanelFactory implements Function<Collection<ImageVisualizat
 
 	private void fillMatrix(final SpatialMatrix<Integer> posMatrix,
 			final Collection<? extends Entry<ImageViewInfo, Integer>> pieceIds) {
-		// final Function<ImageViewInfo, Integer> incrementingPieceIdGetter =
-		// piece -> pieceIds.computeIfAbsent(piece,
-		// k -> pieceIds.size());
 		final RandomMatrixPositionFiller<Integer, ImageViewInfo> matrixFiller = new RandomMatrixPositionFiller<>(
 				posMatrix, rnd, PIECE_GRID_SIZE_FACTORY, allowFailedPlacements);
 		matrixFiller.apply(pieceIds);
