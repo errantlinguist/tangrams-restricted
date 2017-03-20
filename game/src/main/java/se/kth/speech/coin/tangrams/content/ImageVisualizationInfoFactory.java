@@ -35,14 +35,7 @@ import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.ArrayTable;
-import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Multimap;
-import com.google.common.collect.Multimaps;
-import com.google.common.collect.Sets;
-import com.google.common.collect.Table;
-import com.google.common.collect.Tables;
 
 import se.kth.speech.ComparableValueMaps;
 
@@ -57,21 +50,21 @@ public final class ImageVisualizationInfoFactory implements Iterator<ImageVisual
 
 	private static final List<ImageSize> DEFAULT_IMG_SIZES = Arrays.asList(ImageSize.values());
 
-	private static final int DEFAULT_MAX_SHARED_ATTR_COUNT = 3;
+//	private static final int DEFAULT_MAX_SHARED_ATTR_COUNT = 3;
 
 	private static final List<Color> DEFAULT_UNIQUE_IMG_COLORS = Arrays.asList(Color.RED, Color.YELLOW, Color.GREEN,
 			Color.BLUE);
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(ImageVisualizationInfoFactory.class);
 
-	/**
-	 * The maximum number of attributes an image may share with another image.
-	 */
-	private final int maxSharedAttrCount;
+	// /**
+	// * The maximum number of attributes an image may share with another image.
+	// */
+	// private final int maxSharedAttrCount;
 
-	private final Multimap<URL, ImageSize> imgSizes;
-
-	private final Multimap<URL, Color> imgColors;
+	// private final Multimap<URL, ImageSize> imgSizes;
+	//
+	// private final Multimap<URL, Color> imgColors;
 
 	/**
 	 * The {@link Random} instance to use for randomization.
@@ -84,7 +77,8 @@ public final class ImageVisualizationInfoFactory implements Iterator<ImageVisual
 
 	private final Map<ImageSize, Integer> sizeUsageCounts;
 
-	private final Table<Color, ImageSize, Set<URL>> coloredSizedImageResources;
+	// private final Table<Color, ImageSize, Set<URL>>
+	// coloredSizedImageResources;
 
 	private int createdInstanceCount;
 
@@ -93,22 +87,6 @@ public final class ImageVisualizationInfoFactory implements Iterator<ImageVisual
 	private URL lastImgResource;
 
 	private ImageSize lastSize;
-
-	/**
-	 *
-	 * @param imgResources
-	 *            A mapping of icon names mapped to their corresponding image
-	 *            {@link URL} resource locators.
-	 * @param maxSharedAttrCount
-	 *            The maximum number of attributes an image may share with
-	 *            another image.
-	 * @param rnd
-	 *            The {@link Random} instance to use for randomization.
-	 */
-	public ImageVisualizationInfoFactory(final Collection<? extends URL> imgResources, final int maxSharedAttrCount,
-			final Random rnd) {
-		this(imgResources, DEFAULT_UNIQUE_IMG_COLORS, DEFAULT_IMG_SIZES, maxSharedAttrCount, rnd);
-	}
 
 	/**
 	 *
@@ -125,21 +103,18 @@ public final class ImageVisualizationInfoFactory implements Iterator<ImageVisual
 	 *            each image in. <strong>NOTE:</strong> This is ordered so that
 	 *            the iteration order of image data is stable across
 	 *            invocations.
-	 * @param maxSharedAttrCount
-	 *            The maximum number of attributes an image may share with
-	 *            another image.
 	 * @param rnd
 	 *            The {@link Random} instance to use for randomization.
 	 */
 	public ImageVisualizationInfoFactory(final Collection<? extends URL> imgResources,
-			final List<? extends Color> uniqueImgColors, final List<ImageSize> sizes, final int maxSharedAttrCount,
-			final Random rnd) {
-		this.maxSharedAttrCount = maxSharedAttrCount;
+			final List<? extends Color> uniqueImgColors, final List<ImageSize> sizes, final Random rnd) {
+		// this.maxSharedAttrCount = maxSharedAttrCount;
 		this.rnd = rnd;
 		createdInstanceCount = 0;
 
-		imgSizes = HashMultimap.create(imgResources.size(), sizes.size());
-		imgColors = HashMultimap.create(imgResources.size(), uniqueImgColors.size());
+		// imgSizes = HashMultimap.create(imgResources.size(), sizes.size());
+		// imgColors = HashMultimap.create(imgResources.size(),
+		// uniqueImgColors.size());
 		// LinkedHashMap in order to preserve iteration order across instances
 		imgResourceUsageCounts = Maps.newLinkedHashMapWithExpectedSize(imgResources.size());
 		imgResources.forEach(loc -> imgResourceUsageCounts.put(loc, 0));
@@ -147,7 +122,8 @@ public final class ImageVisualizationInfoFactory implements Iterator<ImageVisual
 		uniqueImgColors.forEach(color -> colorUsageCounts.put(color, 0));
 		sizeUsageCounts = new EnumMap<>(ImageSize.class);
 		sizes.forEach(size -> sizeUsageCounts.put(size, 0));
-		coloredSizedImageResources = ArrayTable.create(uniqueImgColors, sizes);
+		// coloredSizedImageResources = ArrayTable.create(uniqueImgColors,
+		// sizes);
 	}
 
 	/**
@@ -158,18 +134,16 @@ public final class ImageVisualizationInfoFactory implements Iterator<ImageVisual
 	 * @param sizes
 	 *            An ordered sequence of the {@link ImageSize sizes} to present
 	 *            each image in.
-	 * @param maxSharedAttrCount
-	 *            The maximum number of attributes an image may share with
-	 *            another image.
 	 * @param rnd
 	 *            The {@link Random} instance to use for randomization.
 	 */
 	public ImageVisualizationInfoFactory(final Collection<? extends URL> imgResources, final List<ImageSize> sizes,
-			final int maxSharedAttrCount, final Random rnd) {
-		this(imgResources, DEFAULT_UNIQUE_IMG_COLORS, sizes, maxSharedAttrCount, rnd);
+			final Random rnd) {
+		this(imgResources, DEFAULT_UNIQUE_IMG_COLORS, sizes, rnd);
 	}
 
 	/**
+	 *
 	 * @param imgResources
 	 *            A mapping of icon names mapped to their corresponding image
 	 *            {@link URL} resource locators.
@@ -177,7 +151,7 @@ public final class ImageVisualizationInfoFactory implements Iterator<ImageVisual
 	 *            The {@link Random} instance to use for randomization.
 	 */
 	public ImageVisualizationInfoFactory(final Collection<? extends URL> imgResources, final Random rnd) {
-		this(imgResources, DEFAULT_MAX_SHARED_ATTR_COUNT, rnd);
+		this(imgResources, DEFAULT_UNIQUE_IMG_COLORS, DEFAULT_IMG_SIZES, rnd);
 	}
 
 	/**
@@ -188,16 +162,8 @@ public final class ImageVisualizationInfoFactory implements Iterator<ImageVisual
 	 *            The {@link Random} instance to use for randomization.
 	 *
 	 */
-	public ImageVisualizationInfoFactory(final int maxSharedAttrCount, final Random rnd) {
-		this(DEFAULT_IMG_RESOURCES, maxSharedAttrCount, rnd);
-	}
-
-	/**
-	 * @param rnd
-	 *            The {@link Random} instance to use for randomization.
-	 */
 	public ImageVisualizationInfoFactory(final Random rnd) {
-		this(DEFAULT_IMG_RESOURCES, DEFAULT_MAX_SHARED_ATTR_COUNT, rnd);
+		this(DEFAULT_IMG_RESOURCES, rnd);
 	}
 
 	public int combinationCount() {
@@ -205,12 +171,13 @@ public final class ImageVisualizationInfoFactory implements Iterator<ImageVisual
 		return imgResourceUsageCounts.keySet().size() * colorSizeComboCount;
 	}
 
-	/**
-	 * @return the coloredSizedImageResources
-	 */
-	public Table<Color, ImageSize, Set<URL>> getColoredSizedImageResources() {
-		return Tables.unmodifiableTable(coloredSizedImageResources);
-	}
+	// /**
+	// * @return the coloredSizedImageResources
+	// */
+	// public Table<Color, ImageSize, Set<URL>> getColoredSizedImageResources()
+	// {
+	// return Tables.unmodifiableTable(coloredSizedImageResources);
+	// }
 
 	/**
 	 * @return the colorUsageCounts
@@ -226,33 +193,26 @@ public final class ImageVisualizationInfoFactory implements Iterator<ImageVisual
 		return createdInstanceCount;
 	}
 
-	/**
-	 * @return the imgColors
-	 */
-	public Multimap<URL, Color> getImgColors() {
-		return Multimaps.unmodifiableMultimap(imgColors);
-	}
-
-	/**
-	 * @return the imgResourceUsageCounts
-	 */
-	public Map<URL, Integer> getImgResourceUsageCounts() {
-		return Collections.unmodifiableMap(imgResourceUsageCounts);
-	}
-
-	/**
-	 * @return the imgSizes
-	 */
-	public Multimap<URL, ImageSize> getImgSizes() {
-		return Multimaps.unmodifiableMultimap(imgSizes);
-	}
-
-	/**
-	 * @return the maxSharedAttrCount
-	 */
-	public int getMaxSharedAttrCount() {
-		return maxSharedAttrCount;
-	}
+	// /**
+	// * @return the imgColors
+	// */
+	// public Multimap<URL, Color> getImgColors() {
+	// return Multimaps.unmodifiableMultimap(imgColors);
+	// }
+	//
+	// /**
+	// * @return the imgResourceUsageCounts
+	// */
+	// public Map<URL, Integer> getImgResourceUsageCounts() {
+	// return Collections.unmodifiableMap(imgResourceUsageCounts);
+	// }
+	//
+	// /**
+	// * @return the imgSizes
+	// */
+	// public Multimap<URL, ImageSize> getImgSizes() {
+	// return Multimaps.unmodifiableMultimap(imgSizes);
+	// }
 
 	/**
 	 * @return the sizeUsageCounts
@@ -316,15 +276,18 @@ public final class ImageVisualizationInfoFactory implements Iterator<ImageVisual
 		final ImageVisualizationInfo result = new ImageVisualizationInfo(resourceLoc, color, size);
 		incrementImageResourceCount(resourceLoc);
 		incrementColorCount(color);
-		imgColors.put(resourceLoc, color);
+		// imgColors.put(resourceLoc, color);
 		incrementSizeCount(size);
-		imgSizes.put(resourceLoc, size);
-		Set<URL> coloredSizedImageResourceSet = coloredSizedImageResources.get(color, size);
-		if (coloredSizedImageResourceSet == null) {
-			coloredSizedImageResourceSet = Sets.newHashSetWithExpectedSize(imgResourceUsageCounts.keySet().size());
-			coloredSizedImageResources.put(color, size, coloredSizedImageResourceSet);
-		}
-		coloredSizedImageResourceSet.add(resourceLoc);
+		// imgSizes.put(resourceLoc, size);
+		// Set<URL> coloredSizedImageResourceSet =
+		// coloredSizedImageResources.get(color, size);
+		// if (coloredSizedImageResourceSet == null) {
+		// coloredSizedImageResourceSet =
+		// Sets.newHashSetWithExpectedSize(imgResourceUsageCounts.keySet().size());
+		// coloredSizedImageResources.put(color, size,
+		// coloredSizedImageResourceSet);
+		// }
+		// coloredSizedImageResourceSet.add(resourceLoc);
 		createdInstanceCount++;
 		LOGGER.debug("size usages: {}", sizeUsageCounts);
 		return result;
