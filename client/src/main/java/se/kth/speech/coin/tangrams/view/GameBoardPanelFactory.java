@@ -19,7 +19,6 @@ package se.kth.speech.coin.tangrams.view;
 import java.awt.Dimension;
 import java.awt.Image;
 import java.awt.Toolkit;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -34,7 +33,6 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Maps;
 
-import se.kth.speech.IntArrays;
 import se.kth.speech.Matrix;
 import se.kth.speech.SpatialMap;
 import se.kth.speech.SpatialMatrix;
@@ -149,17 +147,6 @@ final class GameBoardPanelFactory implements Function<Collection<ImageVisualizat
 			throw new IllegalArgumentException("Could not find a valid board size.");
 		}
 		return result;
-	}
-
-	private static <E> SpatialMatrix<E> createPosMatrix(final int[] gridSize, final SpatialMap<E> posMap) {
-		LOGGER.info("Creating a position matrix of size {}.", gridSize);
-		final int gridArea = IntArrays.product(gridSize);
-		final List<E> posMatrixBackingList = new ArrayList<>(gridArea);
-		for (int i = 0; i < gridArea; ++i) {
-			posMatrixBackingList.add(null);
-		}
-		final Matrix<E> backingPosMatrix = new Matrix<>(posMatrixBackingList, gridSize[1]);
-		return new SpatialMatrix<>(backingPosMatrix, posMap);
 	}
 
 	private static Dimension estimatePreferredBoardSize(final Toolkit toolkit) {
@@ -278,7 +265,8 @@ final class GameBoardPanelFactory implements Function<Collection<ImageVisualizat
 
 	private GameBoardPanel<Integer> createWithDefinedGridSize(final int[] gridSize,
 			final Collection<ImageVisualizationInfo> imgVisualizationInfoData, final int expectedPieceCount) {
-		final SpatialMatrix<Integer> posMatrix = createPosMatrix(gridSize, new SpatialMap<>(expectedPieceCount));
+		LOGGER.info("Creating a position matrix of size {}.", gridSize);
+		final SpatialMatrix<Integer> posMatrix = new SpatialMatrix<>(gridSize, new SpatialMap<>(expectedPieceCount));
 		final GameBoardPanel<Integer> result = new GameBoardPanel<>(posMatrix, expectedPieceCount);
 		final Toolkit toolkit = result.getToolkit();
 		final Map<Integer, Image> pieceImgs = result.getPieceImgs();

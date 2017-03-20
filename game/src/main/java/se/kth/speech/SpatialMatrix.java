@@ -50,11 +50,24 @@ public final class SpatialMatrix<E> {
 		return (x - xLength + 1) * (y - yLength + 1);
 	}
 
+	private static <E> List<E> createMatrixBackingList(final int[] gridSize) {
+		final int gridArea = IntArrays.product(gridSize);
+		final List<E> result = new ArrayList<>(gridArea);
+		for (int i = 0; i < gridArea; ++i) {
+			result.add(null);
+		}
+		return result;
+	}
+
 	private final SpatialMap<E> elementPlacements;
 
 	private transient final Function<SpatialRegion, Set<SpatialRegion>> newRegionPossibleMoveSetFactory;
 
 	private final Matrix<E> positionMatrix;
+
+	public SpatialMatrix(final int[] gridSize, final SpatialMap<E> posMap) {
+		this(new Matrix<>(createMatrixBackingList(gridSize), gridSize[1]), posMap);
+	}
 
 	/**
 	 * <strong>NOTE:</strong> This constructor entails iterating through the
