@@ -48,6 +48,8 @@ public final class GameManagementServerModule extends IrisModule {
 	private static Event createGameStateDescriptionEvent(final String gameId,
 			final Pair<Game<Integer>, ActivePlayerTracker> gameState) {
 		final GameStateDescription gameDesc = new GameStateDescription();
+		gameDesc.setSeed(Long.parseLong(gameId));
+		
 		{
 			final ActivePlayerTracker activePlayerTracker = gameState.getSecond();
 			final Collection<PlayerJoinTime> joinedPlayers = activePlayerTracker.getJoinedPlayers();
