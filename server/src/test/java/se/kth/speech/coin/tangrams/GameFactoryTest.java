@@ -62,7 +62,7 @@ public final class GameFactoryTest {
 		final Game<Integer> actualGame = gameFactory.apply(gameName);
 		// NOTE: This is only a partial (i.e. sanity) check
 		Assert.assertEquals(seed, actualGame.getSeed());
-		final SpatialMatrix<Integer> expectedModel = RandomModelFactoryTest.createExpectedModel(testDesc);
+		final SpatialMatrix<Integer> expectedModel = RandomModelPopulatorTest.createExpectedModel(testDesc);
 		final SpatialMatrix<Integer> actualModel = actualGame.getRemoteController().getModel();
 		Assert.assertEquals(expectedModel, actualModel);
 
