@@ -29,6 +29,8 @@ import java.util.function.Consumer;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 
+import com.google.common.collect.Maps;
+
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
  * @since 11 Jan 2017
@@ -67,7 +69,7 @@ public final class ConnectionStatusFrame extends JFrame {
 
 		label = new JLabel(statusLabels.get(initialStatus));
 		{
-			final Map<Attribute, Object> fontAttrs = new HashMap<>(4, 1.0f);
+			final Map<Attribute, Object> fontAttrs = Maps.newHashMapWithExpectedSize(3);
 			fontAttrs.put(TextAttribute.FAMILY, Font.SANS_SERIF);
 			fontAttrs.put(TextAttribute.WEIGHT, TextAttribute.WEIGHT_BOLD);
 			fontAttrs.put(TextAttribute.SIZE, 36.0f);
