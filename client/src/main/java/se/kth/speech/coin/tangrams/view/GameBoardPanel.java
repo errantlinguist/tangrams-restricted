@@ -78,14 +78,14 @@ import se.kth.speech.coin.tangrams.iristk.events.Turn;
  *
  */
 final class GameBoardPanel<I> extends JPanel implements Observer {
-
+	
 	private class SelectingMouseAdapter extends MouseAdapter {
 		@Override
 		public void mouseClicked(final MouseEvent e) {
 			final int x = e.getX();
 			final int y = e.getY();
 			final Component foundComponent = findComponentAt(e.getX(), e.getY());
-			if (foundComponent instanceof GameBoardPanel<?>) {
+			if (foundComponent == GameBoardPanel.this) {
 				LOGGER.info("Finding selected piece on the board.");
 				final int rowIdx = getRowIdx(y);
 				final int colIdx = getColIdx(x);
