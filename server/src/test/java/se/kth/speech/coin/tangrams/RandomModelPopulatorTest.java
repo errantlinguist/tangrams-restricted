@@ -18,12 +18,9 @@ package se.kth.speech.coin.tangrams;
 
 import java.awt.Image;
 import java.awt.Toolkit;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
@@ -33,14 +30,12 @@ import java.util.stream.Stream;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.junit.experimental.theories.DataPoints;
 import org.junit.experimental.theories.Theories;
 import org.junit.runner.RunWith;
 
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
-import se.kth.speech.RandomCollections;
 import se.kth.speech.SpatialMap;
 import se.kth.speech.SpatialMatrix;
 import se.kth.speech.coin.tangrams.content.ImageLoadingImageViewInfoFactory;
@@ -56,47 +51,53 @@ import se.kth.speech.coin.tangrams.content.ImageVisualizationInfoFactory;
 @RunWith(Theories.class)
 public final class RandomModelPopulatorTest {
 
-	@DataPoints("seeds")
-	public static final long[] TEST_SEEDS;
-
-	@DataPoints("imgPlacementCounts")
-	public static final int[] TEST_IMG_PLACEMENT_COUNTS;
-
-	@DataPoints("gridDims")
-	public static final Set<int[]> TEST_GRID_DIMS;
-
-	@DataPoints("imgVisInfoFactories")
-	public static final Collection<Entry<Random, ImageVisualizationInfoFactory>> TEST_IMG_VIS_INFO_FACTORIES;
-
-	static {
-
-		final Random rnd = new Random();
-
-		TEST_SEEDS = rnd.longs().distinct().limit(10).toArray();
-		final Map<Random, ImageVisualizationInfoFactory> testImgVisInfoFactories = Maps
-				.newHashMapWithExpectedSize(TEST_SEEDS.length);
-		Arrays.stream(TEST_SEEDS).forEach(testSeed -> {
-			final Random factoryRnd = new Random(testSeed);
-			final ImageVisualizationInfoFactory factory = new ImageVisualizationInfoFactory(factoryRnd);
-			testImgVisInfoFactories.put(factoryRnd, factory);
-		});
-		TEST_IMG_VIS_INFO_FACTORIES = testImgVisInfoFactories.entrySet();
-
-		final int maxImgPlacementCount = TEST_IMG_VIS_INFO_FACTORIES.stream().map(Entry::getValue)
-				.mapToInt(ImageVisualizationInfoFactory::combinationCount).min().getAsInt();
-		TEST_IMG_PLACEMENT_COUNTS = rnd.ints().filter(val -> val <= maxImgPlacementCount).distinct().limit(10)
-				.toArray();
-		final int[] testDimLengths = rnd.ints(1, 21).distinct().limit(10).toArray();
-		final int testGridDimCount = 5;
-
-		// TODO: Make sure that the grid is big enough to add all the pieces
-		TEST_GRID_DIMS = Sets.newHashSetWithExpectedSize(testGridDimCount);
-		do {
-			final int x = RandomCollections.getRandomElement(testDimLengths, rnd);
-			final int y = RandomCollections.getRandomElement(testDimLengths, rnd);
-			TEST_GRID_DIMS.add(new int[] { x, y });
-		} while (TEST_GRID_DIMS.size() < testGridDimCount);
-	}
+	// @DataPoints("seeds")
+	// public static final long[] TEST_SEEDS;
+	//
+	// @DataPoints("imgPlacementCounts")
+	// public static final int[] TEST_IMG_PLACEMENT_COUNTS;
+	//
+	// @DataPoints("gridDims")
+	// public static final Set<int[]> TEST_GRID_DIMS;
+	//
+	// @DataPoints("imgVisInfoFactories")
+	// public static final Collection<Entry<Random,
+	// ImageVisualizationInfoFactory>> TEST_IMG_VIS_INFO_FACTORIES;
+	//
+	// static {
+	//
+	// final Random rnd = new Random();
+	//
+	// TEST_SEEDS = rnd.longs().distinct().limit(10).toArray();
+	// final Map<Random, ImageVisualizationInfoFactory> testImgVisInfoFactories
+	// = Maps
+	// .newHashMapWithExpectedSize(TEST_SEEDS.length);
+	// Arrays.stream(TEST_SEEDS).forEach(testSeed -> {
+	// final Random factoryRnd = new Random(testSeed);
+	// final ImageVisualizationInfoFactory factory = new
+	// ImageVisualizationInfoFactory(factoryRnd);
+	// testImgVisInfoFactories.put(factoryRnd, factory);
+	// });
+	// TEST_IMG_VIS_INFO_FACTORIES = testImgVisInfoFactories.entrySet();
+	//
+	// final int maxImgPlacementCount =
+	// TEST_IMG_VIS_INFO_FACTORIES.stream().map(Entry::getValue)
+	// .mapToInt(ImageVisualizationInfoFactory::combinationCount).min().getAsInt();
+	// TEST_IMG_PLACEMENT_COUNTS = rnd.ints().filter(val -> val <=
+	// maxImgPlacementCount).distinct().limit(10)
+	// .toArray();
+	// final int[] testDimLengths = rnd.ints(1,
+	// 21).distinct().limit(10).toArray();
+	// final int testGridDimCount = 5;
+	//
+	// // TODO: Make sure that the grid is big enough to add all the pieces
+	// TEST_GRID_DIMS = Sets.newHashSetWithExpectedSize(testGridDimCount);
+	// do {
+	// final int x = RandomCollections.getRandomElement(testDimLengths, rnd);
+	// final int y = RandomCollections.getRandomElement(testDimLengths, rnd);
+	// TEST_GRID_DIMS.add(new int[] { x, y });
+	// } while (TEST_GRID_DIMS.size() < testGridDimCount);
+	// }
 
 	private static final BiFunction<Image, Toolkit, Image> DEFAULT_POST_COLORING_IMG_TRANSFORMER = new BiFunction<Image, Toolkit, Image>() {
 
