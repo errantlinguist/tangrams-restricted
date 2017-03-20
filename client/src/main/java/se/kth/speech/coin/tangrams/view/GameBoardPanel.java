@@ -157,8 +157,8 @@ final class GameBoardPanel<I> extends JPanel {
 	public void paintComponent(final Graphics g) {
 		super.paintComponent(g);
 		// Draw a grid (for debugging/devel)
-		drawGrid(g);
-		drawPieceIds(g);
+//		drawGrid(g);
+//		drawPieceIds(g);
 
 		drawPieceImages(g);
 		{

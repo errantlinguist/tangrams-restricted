@@ -29,7 +29,11 @@ public final class GameStateDescription extends Record {
 
 	private String activePlayerId;
 
+	private boolean allowFailedPlacements;
+
 	private ModelDescription modelDescription;
+
+	private double occupiedGridArea;
 
 	private List<String> playerIds;
 
@@ -42,6 +46,14 @@ public final class GameStateDescription extends Record {
 
 	public GameStateDescription() {
 		// Default constructor is required for JSON (un-)marshalling
+	}
+
+	/**
+	 * @return the allowFailedPlacements
+	 */
+	@RecordField(name = "allowFailedPlacements")
+	public boolean allowFailedPlacements() {
+		return allowFailedPlacements;
 	}
 
 	/**
@@ -58,6 +70,14 @@ public final class GameStateDescription extends Record {
 	@RecordField(name = "modelDescription")
 	public ModelDescription getModelDescription() {
 		return modelDescription;
+	}
+
+	/**
+	 * @return the occupiedGridArea
+	 */
+	@RecordField(name = "occupiedGridArea")
+	public double getOccupiedGridArea() {
+		return occupiedGridArea;
 	}
 
 	/**
@@ -85,12 +105,30 @@ public final class GameStateDescription extends Record {
 	}
 
 	/**
+	 * @param allowFailedPlacements
+	 *            the allowFailedPlacements to set
+	 */
+	@RecordField(name = "allowFailedPlacements")
+	public void setAllowFailedPlacements(final boolean allowFailedPlacements) {
+		this.allowFailedPlacements = allowFailedPlacements;
+	}
+
+	/**
 	 * @param modelDescription
 	 *            the modelDescription to set
 	 */
 	@RecordField(name = "modelDescription")
 	public void setModelDescription(final ModelDescription modelDescription) {
 		this.modelDescription = modelDescription;
+	}
+
+	/**
+	 * @param occupiedGridArea
+	 *            the occupiedGridArea to set
+	 */
+	@RecordField(name = "occupiedGridArea")
+	public void setOccupiedGridArea(final double occupiedGridArea) {
+		this.occupiedGridArea = occupiedGridArea;
 	}
 
 	/**

@@ -17,7 +17,9 @@
 package se.kth.speech.coin.tangrams.view;
 
 import java.awt.Component;
+import java.awt.Image;
 import java.awt.Point;
+import java.awt.Toolkit;
 import java.awt.Window;
 import java.awt.event.InputEvent;
 import java.awt.event.ItemEvent;
@@ -25,11 +27,17 @@ import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.swing.JCheckBoxMenuItem;
 import javax.swing.JMenu;
@@ -40,9 +48,16 @@ import javax.swing.KeyStroke;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.collect.Maps;
+
+import se.kth.speech.SpatialMatrix;
+import se.kth.speech.coin.tangrams.RandomModelPopulator;
+import se.kth.speech.coin.tangrams.content.ImageLoadingImageViewInfoFactory;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
+import se.kth.speech.coin.tangrams.content.ImageVisualizationInfoFactory;
 import se.kth.speech.coin.tangrams.game.LocalController;
 import se.kth.speech.coin.tangrams.game.RemoteController;
+import se.kth.speech.coin.tangrams.iristk.GameState;
 import se.kth.speech.coin.tangrams.iristk.events.Selection;
 import se.kth.speech.coin.tangrams.iristk.events.Turn;
 
@@ -127,12 +142,6 @@ public final class GameGUI implements Runnable {
 
 	private final Runnable closeHook;
 
-	private final List<ImageVisualizationInfo> imgVisualizationInfoData;
-
-	private final LocalController<Integer> localController;
-
-	private final RemoteController<Integer> remoteController;
-
 	private final BiConsumer<Component, Selection> selectionLogger;
 
 	private final String title;
@@ -141,19 +150,17 @@ public final class GameGUI implements Runnable {
 
 	private final Point viewLocation;
 
-	public GameGUI(final String title, final Point viewLocation, final LocalController<Integer> localController,
-			final RemoteController<Integer> remoteController,
-			final List<ImageVisualizationInfo> imgVisualizationInfoData,
+	private final GameState gameState;
+
+	public GameGUI(final String title, final Point viewLocation, final GameState gameState,
 			final Supplier<? extends Path> logOutdirSupplier, final Runnable closeHook) {
 		this.title = title;
 		this.viewLocation = viewLocation;
-		this.localController = localController;
-		this.remoteController = remoteController;
-		this.imgVisualizationInfoData = imgVisualizationInfoData;
+		this.gameState = gameState;
 		final ExecutorService screenshotLoggingExecutor = Executors.newSingleThreadExecutor();
 		{
 			final ScreenshotLogger screenshotLogger = new ScreenshotLogger(logOutdirSupplier,
-					localController::getPlayerId, screenshotLoggingExecutor);
+					() -> gameState.getLocalController().getPlayerId(), screenshotLoggingExecutor);
 			turnScreenshotLogger = (view, turn) -> {
 				final int turnNo = turn.getSequenceNumber();
 				final String filenamePrefix = "turn-" + Integer.toString(turnNo);
@@ -171,16 +178,41 @@ public final class GameGUI implements Runnable {
 
 	}
 
+	private static final BiFunction<Image, Toolkit, Image> DEFAULT_POST_COLORING_IMG_TRANSFORMER = new BiFunction<Image, Toolkit, Image>() {
+
+		@Override
+		public Image apply(final Image img, final Toolkit toolkit) {
+			// Do nothing
+			LOGGER.debug("Created instance {}.", img);
+			return img;
+		}
+
+	};
+
 	@Override
 	public void run() {
 		LOGGER.debug("Creating view components.");
-		// GameBoardPanelFactory gameBoardPanelFactory = new
-		// GameBoardPanelFactory(3, false);
-		// final GameViewFrame gameViewFrame = new
-		// GameViewFrame(imgVisualizationInfoData, gameBoardPanelFactory);
-		// TODO: Add toggle for single-player mode
-		// gameViewFrame.pack();
-		// gameViewFrame.setLocation(viewLocation);
-		// gameViewFrame.setVisible(true);
+		LocalController<Integer> localController = gameState.getLocalController();
+		final SpatialMatrix<Integer> model = localController.getModel();
+		final int pieceCount = model.getElementPlacements().getAllElements().size();
+		final Random rnd = gameState.getRnd();
+		ImageVisualizationInfoFactory imgVisInfoFactory = new ImageVisualizationInfoFactory(rnd);
+		final Map<Integer, Image> pieceImgs = Maps.newHashMapWithExpectedSize(pieceCount);
+		GameBoardPanel<Integer> gameBoardPanel = new GameBoardPanel<>(model, pieceImgs);
+		final ImageLoadingImageViewInfoFactory imgViewInfoFactory = new ImageLoadingImageViewInfoFactory(
+				gameBoardPanel.getToolkit(), DEFAULT_POST_COLORING_IMG_TRANSFORMER,
+				Maps.newHashMapWithExpectedSize(imgVisInfoFactory.getImgResourceUsageCounts().keySet().size()));
+		final Stream<ImageVisualizationInfo> imgVisualizationInfoData = Stream.generate(imgVisInfoFactory::next)
+				.limit(pieceCount);
+		
+		imgVisualizationInfoData.map(imgViewInfoFactory::apply).forEach(imgViewInfoDatum -> {
+			Image oldImg = pieceImgs.put(pieceImgs.size(), imgViewInfoDatum.getValue());
+			assert oldImg == null;
+		});
+		
+		final GameViewFrame gameViewFrame = new GameViewFrame(gameBoardPanel, rnd);
+		gameViewFrame.pack();
+		gameViewFrame.setLocation(viewLocation);
+		gameViewFrame.setVisible(true);
 	}
 }

@@ -37,22 +37,25 @@ public final class MatrixSpatialMapFactory<E> implements Function<Matrix<? exten
 			for (final ListIterator<? extends E> rowCellIter = row.listIterator(); rowCellIter.hasNext();) {
 				final int colStartIdx = rowCellIter.nextIndex();
 				final E elemId = rowCellIter.next();
-				result.compute(elemId, (k, oldVal) -> {
-					int[] newVal;
-					final int rowEndIdx = rowStartIdx + 1;
-					final int colEndIdx = colStartIdx + 1;
-					if (oldVal == null) {
-						// The element ID was seen for the first time
-						newVal = new int[] { rowStartIdx, rowEndIdx, colStartIdx, colEndIdx };
-					} else {
-						// Update the upper bounds to the row and col on which
-						// this ID was now seen
-						oldVal[1] = rowEndIdx;
-						oldVal[3] = Math.max(oldVal[3], colEndIdx);
-						newVal = oldVal;
-					}
-					return newVal;
-				});
+				if (elemId != null) {
+					result.compute(elemId, (k, oldVal) -> {
+						int[] newVal;
+						final int rowEndIdx = rowStartIdx + 1;
+						final int colEndIdx = colStartIdx + 1;
+						if (oldVal == null) {
+							// The element ID was seen for the first time
+							newVal = new int[] { rowStartIdx, rowEndIdx, colStartIdx, colEndIdx };
+						} else {
+							// Update the upper bounds to the row and col on
+							// which
+							// this ID was now seen
+							oldVal[1] = rowEndIdx;
+							oldVal[3] = Math.max(oldVal[3], colEndIdx);
+							newVal = oldVal;
+						}
+						return newVal;
+					});
+				}
 			}
 		}
 		return result;

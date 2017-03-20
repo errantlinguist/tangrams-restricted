@@ -17,31 +17,46 @@
 package se.kth.speech.coin.tangrams.iristk;
 
 import java.util.List;
+import java.util.Random;
 
 import se.kth.speech.coin.tangrams.game.LocalController;
 import se.kth.speech.coin.tangrams.game.RemoteController;
 
 public final class GameState {
 
+	private final boolean allowFailedPlacements;
+
 	private final LocalController<Integer> localController;
+
+	private final double occupiedGridArea;
 
 	private final List<String> playerIds;
 
 	private final RemoteController<Integer> remoteController;
 
-	private final long seed;
+	private final Random rnd;
 
 	GameState(final LocalController<Integer> localController, final RemoteController<Integer> remoteController,
-			final List<String> playerIds, final long seed) {
+			final List<String> playerIds, final Random rnd, final double occupiedGridArea,
+			final boolean allowFailedPlacements) {
 		this.localController = localController;
 		this.remoteController = remoteController;
 		this.playerIds = playerIds;
-		this.seed = seed;
+		this.rnd = rnd;
+		this.occupiedGridArea = occupiedGridArea;
+		this.allowFailedPlacements = allowFailedPlacements;
+	}
+
+	/**
+	 * @return the allowFailedPlacements
+	 */
+	public boolean allowFailedPlacements() {
+		return allowFailedPlacements;
 	}
 
 	/*
 	 * (non-Javadoc)
-	 *
+	 * 
 	 * @see java.lang.Object#equals(java.lang.Object)
 	 */
 	@Override
@@ -56,11 +71,17 @@ public final class GameState {
 			return false;
 		}
 		final GameState other = (GameState) obj;
+		if (allowFailedPlacements != other.allowFailedPlacements) {
+			return false;
+		}
 		if (localController == null) {
 			if (other.localController != null) {
 				return false;
 			}
 		} else if (!localController.equals(other.localController)) {
+			return false;
+		}
+		if (Double.doubleToLongBits(occupiedGridArea) != Double.doubleToLongBits(other.occupiedGridArea)) {
 			return false;
 		}
 		if (playerIds == null) {
@@ -77,7 +98,11 @@ public final class GameState {
 		} else if (!remoteController.equals(other.remoteController)) {
 			return false;
 		}
-		if (seed != other.seed) {
+		if (rnd == null) {
+			if (other.rnd != null) {
+				return false;
+			}
+		} else if (!rnd.equals(other.rnd)) {
 			return false;
 		}
 		return true;
@@ -88,6 +113,13 @@ public final class GameState {
 	 */
 	public LocalController<Integer> getLocalController() {
 		return localController;
+	}
+
+	/**
+	 * @return the occupiedGridArea
+	 */
+	public double getOccupiedGridArea() {
+		return occupiedGridArea;
 	}
 
 	/**
@@ -105,31 +137,35 @@ public final class GameState {
 	}
 
 	/**
-	 * @return the seed
+	 * @return the rnd
 	 */
-	public long getSeed() {
-		return seed;
+	public Random getRnd() {
+		return rnd;
 	}
 
 	/*
 	 * (non-Javadoc)
-	 *
+	 * 
 	 * @see java.lang.Object#hashCode()
 	 */
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
+		result = prime * result + (allowFailedPlacements ? 1231 : 1237);
 		result = prime * result + (localController == null ? 0 : localController.hashCode());
+		long temp;
+		temp = Double.doubleToLongBits(occupiedGridArea);
+		result = prime * result + (int) (temp ^ temp >>> 32);
 		result = prime * result + (playerIds == null ? 0 : playerIds.hashCode());
 		result = prime * result + (remoteController == null ? 0 : remoteController.hashCode());
-		result = prime * result + (int) (seed ^ seed >>> 32);
+		result = prime * result + (rnd == null ? 0 : rnd.hashCode());
 		return result;
 	}
 
 	/*
 	 * (non-Javadoc)
-	 *
+	 * 
 	 * @see java.lang.Object#toString()
 	 */
 	@Override
@@ -137,12 +173,16 @@ public final class GameState {
 		final StringBuilder builder = new StringBuilder();
 		builder.append("GameState [localController=");
 		builder.append(localController);
-		builder.append(", remoteController=");
-		builder.append(remoteController);
 		builder.append(", playerIds=");
 		builder.append(playerIds);
-		builder.append(", seed=");
-		builder.append(seed);
+		builder.append(", remoteController=");
+		builder.append(remoteController);
+		builder.append(", occupiedGridArea=");
+		builder.append(occupiedGridArea);
+		builder.append(", allowFailedPlacements=");
+		builder.append(allowFailedPlacements);
+		builder.append(", rnd=");
+		builder.append(rnd);
 		builder.append("]");
 		return builder.toString();
 	}

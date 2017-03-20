@@ -19,6 +19,7 @@ package se.kth.speech.coin.tangrams.iristk;
 import java.sql.Timestamp;
 import java.util.List;
 import java.util.Objects;
+import java.util.Random;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -204,7 +205,8 @@ public final class GameManagementClientModule extends IrisModule {
 				foreignPlayerIdPredicate);
 		addNewGameRemoteController(remoteController);
 		final List<String> playerIds = gameDesc.getPlayerIds();
-		newGameHandler.accept(new GameState(localController, remoteController, playerIds, gameDesc.getSeed()));
+		newGameHandler.accept(new GameState(localController, remoteController, playerIds,
+				new Random(gameDesc.getSeed()), gameDesc.getOccupiedGridArea(), gameDesc.allowFailedPlacements()));
 	}
 
 }

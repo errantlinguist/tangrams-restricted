@@ -26,15 +26,11 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.EnumMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
-import java.util.Random;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javax.swing.JOptionPane;
 import javax.swing.UIManager;
@@ -55,9 +51,6 @@ import com.github.errantlinguist.ClassProperties;
 import iristk.system.IrisSystem;
 import iristk.system.LoggingModule;
 import iristk.util.NameFilter;
-import se.kth.speech.SpatialMatrix;
-import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
-import se.kth.speech.coin.tangrams.content.ImageVisualizationInfoFactory;
 import se.kth.speech.coin.tangrams.game.LocalController;
 import se.kth.speech.coin.tangrams.iristk.GameManagementClientModule;
 import se.kth.speech.coin.tangrams.iristk.IrisSystemStopper;
@@ -352,19 +345,25 @@ public final class TangramsClient implements Runnable {
 
 											// Set up game GUI
 											final String title = "Tangrams: " + playerId;
-											final SpatialMatrix<Integer> model = localController.getModel();
-											final int pieceCount = model.getElementPlacements().getAllElements().size();
-											final Random rnd = new Random(gameState.getSeed());
-											final List<ImageVisualizationInfo> imgVisualizationInfoData = Stream
-													.generate(new ImageVisualizationInfoFactory(rnd)::next)
-													.limit(pieceCount).collect(Collectors.toList());
+											// final SpatialMatrix<Integer>
+											// model =
+											// localController.getModel();
+											// final int pieceCount =
+											// model.getElementPlacements().getAllElements().size();
+											// final Random rnd = new
+											// Random(gameState.getSeed());
+											// final
+											// List<ImageVisualizationInfo>
+											// imgVisualizationInfoData = Stream
+											// .generate(new
+											// ImageVisualizationInfoFactory(rnd)::next)
+											// .limit(pieceCount).collect(Collectors.toList());
 											final Runnable closeHook = () -> {
 												LOGGER.info("Closing main window; Cleaning up background resources.");
 												recordingManager.getStopper().run();
 												irisSystemStopper.run();
 											};
-											EventQueue.invokeLater(new GameGUI(title, viewLocation, localController,
-													gameState.getRemoteController(), imgVisualizationInfoData,
+											EventQueue.invokeLater(new GameGUI(title, viewLocation, gameState,
 													() -> logDir.toPath(), closeHook));
 
 										});
