@@ -16,19 +16,18 @@
 */
 package se.kth.speech.coin.tangrams;
 
+import java.awt.Image;
+import java.awt.Toolkit;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.regex.Pattern;
-import java.util.stream.IntStream;
 
 import com.github.errantlinguist.ClassProperties;
 
-import se.kth.speech.IntArrays;
-import se.kth.speech.MutablePair;
 import se.kth.speech.SpatialMatrix;
 import se.kth.speech.coin.tangrams.game.RemoteController;
 
@@ -51,17 +50,24 @@ final class GameFactory implements Function<String, Game<Integer>> {
 		}
 	}
 
-	private static MutablePair<RandomModelPopulator, int[]> createModelFactory() {
-		final int[] modelDims = MULTIVALUE_PROP_DELIM_PATTERN.splitAsStream(PROPS.getProperty("model.dims"))
-				.mapToInt(Integer::parseInt).toArray();
-		final int emptyCells = Integer.parseInt(PROPS.getProperty("model.emptyCells"));
-		final int cellCount = IntArrays.product(modelDims);
-		final int occupiedCellCount = cellCount - emptyCells;
+	private static final BiFunction<Image, Toolkit, Image> DEFAULT_POST_COLORING_IMG_TRANSFORMER = new BiFunction<Image, Toolkit, Image>() {
 
-		// Create a piece ID array just big enough to fill all the occupied
-		// cells rather than every cell in the matrix
-		final Integer[] coordOccupants = IntStream.range(0, occupiedCellCount).boxed().toArray(Integer[]::new);
-		return new MutablePair<>(new RandomModelPopulator(), modelDims);
+		@Override
+		public Image apply(final Image img, final Toolkit toolkit) {
+			// Do nothing
+			return img;
+		}
+
+	};
+
+	private static RandomPopulatedModelFactory createModelFactory() {
+		final int[] gridDims = MULTIVALUE_PROP_DELIM_PATTERN.splitAsStream(PROPS.getProperty("model.gridDims"))
+				.mapToInt(Integer::parseInt).toArray();
+		final double occupiedGridArea = Double.parseDouble(PROPS.getProperty("model.occupiedGridArea"));
+		final int piecePlacementCount = Integer.parseInt(PROPS.getProperty("model.piecePlacementCount"));
+
+		return new RandomPopulatedModelFactory(gridDims, Toolkit.getDefaultToolkit(), piecePlacementCount,
+				occupiedGridArea, DEFAULT_POST_COLORING_IMG_TRANSFORMER);
 	}
 
 	private final Function<? super Random, ? extends SpatialMatrix<Integer>> modelFactory;
@@ -70,11 +76,7 @@ final class GameFactory implements Function<String, Game<Integer>> {
 		this(createModelFactory());
 	}
 
-	private GameFactory(final Map.Entry<RandomModelPopulator, int[]> modelFactoryDims) {
-		this(modelFactoryDims.getKey(), modelFactoryDims.getValue()[1]);
-	}
-
-	GameFactory(final Function<? super Random, ? extends SpatialMatrix<Integer>> modelFactory, final int colCount) {
+	GameFactory(final Function<? super Random, SpatialMatrix<Integer>> modelFactory) {
 		this.modelFactory = modelFactory;
 	}
 
