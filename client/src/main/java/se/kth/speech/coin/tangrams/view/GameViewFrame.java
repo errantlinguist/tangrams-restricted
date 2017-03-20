@@ -50,7 +50,6 @@ import com.google.common.collect.Maps;
 import se.kth.speech.awt.ColorIcon;
 import se.kth.speech.coin.tangrams.game.LocalController;
 import se.kth.speech.coin.tangrams.game.PlayerJoinTime;
-import se.kth.speech.coin.tangrams.game.PlayerRole;
 import se.kth.speech.coin.tangrams.game.RemoteController;
 import se.kth.speech.coin.tangrams.iristk.events.ActivePlayerChange;
 import se.kth.speech.coin.tangrams.iristk.events.GameEnding;
@@ -187,7 +186,7 @@ final class GameViewFrame extends JFrame implements Observer {
 		setLayout(new BorderLayout());
 		add(boardPanel, BorderLayout.CENTER);
 
-		final PlayerTurnStatus initialTurnStatus = getPlayerTurnStatus(localController.getRoles().contains(PlayerRole.MOVER));
+		final PlayerTurnStatus initialTurnStatus = getPlayerTurnStatus(localController.isActive());
 		turnLabel = createTurnLabel(initialTurnStatus);
 		{
 			final JPanel turnLabelPanel = new JPanel();
@@ -224,20 +223,20 @@ final class GameViewFrame extends JFrame implements Observer {
 			LOGGER.debug("Observed event representing a change in the currently-active player.");
 			final ActivePlayerChange change = (ActivePlayerChange) arg;
 			final String playerId = playerIdGetter.get();
-			if (playerId.equals(change.getOldInstructingPlayerId())) {
+			if (playerId.equals(change.getOldActivePlayerId())) {
 				// This client initiated the handover
-				final String newInstructingPlayerId = change.getNewInstructingPlayerId();
-				if (playerId.equals(newInstructingPlayerId)) {
+				final String newActivePlayerId = change.getNewActivePlayerId();
+				if (playerId.equals(newActivePlayerId)) {
 					// No change in active player
 				} else {
 					// Some other client's user is now active
 					LOGGER.debug("Player \"{}\" is now active; Changing view to show the local player is not ready.",
-							newInstructingPlayerId);
+							newActivePlayerId);
 					setPlayerReady(false);
 				}
 			} else {
 				// Some other client initiated the handover
-				if (playerId.equals(change.getNewInstructingPlayerId())) {
+				if (playerId.equals(change.getNewActivePlayerId())) {
 					// This client's user is now active
 					LOGGER.debug(
 							"Foreign player \"{}\" is no longer active; Changing view to show the local player is now ready.",

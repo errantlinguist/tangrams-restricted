@@ -66,7 +66,6 @@ import se.kth.speech.SpatialRegion;
 import se.kth.speech.awt.DisablingMouseAdapter;
 import se.kth.speech.coin.tangrams.game.AreaSpatialRegionFactory;
 import se.kth.speech.coin.tangrams.game.LocalController;
-import se.kth.speech.coin.tangrams.game.PlayerRole;
 import se.kth.speech.coin.tangrams.iristk.events.ActivePlayerChange;
 import se.kth.speech.coin.tangrams.iristk.events.GameEnding;
 import se.kth.speech.coin.tangrams.iristk.events.Move;
@@ -87,16 +86,30 @@ final class GameBoardPanel<I> extends JPanel implements Observer {
 			final int y = e.getY();
 			final Component foundComponent = findComponentAt(e.getX(), e.getY());
 			if (foundComponent == GameBoardPanel.this) {
-
 				final Entry<I, SpatialRegion> biggestPieceRegionUnderSelection = findBiggestPieceRegionUnderSelection(x,
 						y);
 				if (biggestPieceRegionUnderSelection == null) {
 					LOGGER.info("Nothing to select.");
 				} else {
 					LOGGER.info("Selected {}.", biggestPieceRegionUnderSelection);
-					toggleHighlightedRegion(biggestPieceRegionUnderSelection.getValue());
-					repaint();
+					final SpatialRegion region = biggestPieceRegionUnderSelection.getValue();
+					toggleHighlightedRegion(region);
+					final int moveConfirmation = MoveDialogs.showSelectConfirmDialog(GameBoardPanel.this);
+					switch (moveConfirmation) {
+					case JOptionPane.YES_OPTION: {
+						localController.submitSelection(biggestPieceRegionUnderSelection.getKey());
+						break;
+
+					}
+					default: {
+						break;
+					}
+					}
+					// Remove the highlighting either after submitting the
+					// selection or cancelling it
+					toggleHighlightedRegion(region);
 				}
+
 			} else {
 				LOGGER.info("The user clicked on an instance of \"{}\", which cannot be selected.",
 						foundComponent.getClass());
@@ -177,8 +190,6 @@ final class GameBoardPanel<I> extends JPanel implements Observer {
 
 	private final LocalController<I> localController;
 
-	private final List<DisablingMouseAdapter> mouseListeners = new ArrayList<>();
-
 	private final AreaSpatialRegionFactory areaRegionFactory;
 
 	GameBoardPanel(final SpatialMatrix<I> posMatrix, final Map<I, Image> pieceImgs,
@@ -193,6 +204,9 @@ final class GameBoardPanel<I> extends JPanel implements Observer {
 		this.playerIdGetter = localController::getPlayerId;
 		this.localTurnCompletionHook = localTurnCompletionHook;
 		this.localSelectionHook = localSelectionHook;
+		selectingMouseListener =  new DisablingMouseAdapter(new SelectingMouseAdapter());
+		addDisablingMouseListener(selectingMouseListener);
+
 		// http://stackoverflow.com/a/1936582/1391325
 		final Dimension screenSize = getToolkit().getScreenSize();
 		// final Dimension maxSize = Dimensions.createScaledDimension(boardSize,
@@ -223,7 +237,7 @@ final class GameBoardPanel<I> extends JPanel implements Observer {
 
 		drawPieceImages(g);
 		{
-			final Graphics2D regionHighlightingG = (Graphics2D) g.create();
+			final Graphics2D regionHighlightingG = createRegionHighlightDrawingGraphics(g);
 			regionHighlightingG.setStroke(new BasicStroke(REGION_HIGHLIGHT_STROKE_WIDTH));
 			regionHighlightingG.setColor(Color.MAGENTA);
 			try {
@@ -264,7 +278,14 @@ final class GameBoardPanel<I> extends JPanel implements Observer {
 	private void addDisablingMouseListener(final DisablingMouseAdapter mouseListener) {
 		addMouseListener(mouseListener);
 		addMouseMotionListener(mouseListener);
-		mouseListeners.add(mouseListener);
+	}
+
+	private void clearRegionHighlights(final Graphics g, final SpatialRegion region) {
+		final int colWidth = getGridColWidth();
+		final int rowHeight = getGridRowHeight();
+		final int[] startIdxs = createComponentCoordStartIdxArray(region, colWidth, rowHeight);
+		final int[] size = createComponentCoordSizeArray(region, colWidth, rowHeight);
+		g.clearRect(startIdxs[0], startIdxs[1], size[0], size[1]);
 	}
 
 	private Map<I, SpatialRegion> createRandomValidMoveTargetMap(final SpatialRegion occupiedRegion, final Random rnd) {
@@ -285,6 +306,22 @@ final class GameBoardPanel<I> extends JPanel implements Observer {
 		}
 		return result;
 	}
+
+	private Graphics2D createRegionHighlightClearingGraphics(final Graphics g) {
+		final Graphics2D result = (Graphics2D) g.create();
+		result.setStroke(new BasicStroke(REGION_HIGHLIGHT_STROKE_WIDTH));
+		result.setColor(getBackground());
+		return result;
+	}
+
+	private Graphics2D createRegionHighlightDrawingGraphics(final Graphics g) {
+		final Graphics2D result = (Graphics2D) g.create();
+		result.setStroke(new BasicStroke(REGION_HIGHLIGHT_STROKE_WIDTH));
+		result.setColor(Color.MAGENTA);
+		return result;
+	}
+	
+	private final DisablingMouseAdapter selectingMouseListener;
 
 	private void drawGrid(final Graphics g) {
 		LOGGER.debug("Drawing grid.");
@@ -366,13 +403,17 @@ final class GameBoardPanel<I> extends JPanel implements Observer {
 	}
 
 	private void drawRegionHighlights(final Graphics g) {
+		highlightedRegions.forEach(region -> {
+			drawRegionHighlights(g, region);
+		});
+	}
+
+	private void drawRegionHighlights(final Graphics g, final SpatialRegion region) {
 		final int colWidth = getGridColWidth();
 		final int rowHeight = getGridRowHeight();
-		highlightedRegions.forEach(region -> {
-			final int[] startIdxs = createComponentCoordStartIdxArray(region, colWidth, rowHeight);
-			final int[] size = createComponentCoordSizeArray(region, colWidth, rowHeight);
-			g.drawRect(startIdxs[0], startIdxs[1], size[0], size[1]);
-		});
+		final int[] startIdxs = createComponentCoordStartIdxArray(region, colWidth, rowHeight);
+		final int[] size = createComponentCoordSizeArray(region, colWidth, rowHeight);
+		g.drawRect(startIdxs[0], startIdxs[1], size[0], size[1]);
 	}
 
 	private boolean equalsPlayerId(final String str) {
@@ -441,34 +482,34 @@ final class GameBoardPanel<I> extends JPanel implements Observer {
 		if (arg instanceof ActivePlayerChange) {
 			LOGGER.debug("Observed event representing a change in the currently-active player.");
 			final ActivePlayerChange change = (ActivePlayerChange) arg;
-			if (equalsPlayerId(change.getOldInstructingPlayerId())) {
+			if (equalsPlayerId(change.getOldActivePlayerId())) {
 				// This client initiated the handover
-				final String newInstructingPlayerId = change.getNewInstructingPlayerId();
-				if (equalsPlayerId(newInstructingPlayerId)) {
+				final String newActivePlayerId = change.getNewActivePlayerId();
+				if (equalsPlayerId(newActivePlayerId)) {
 					// No change in active player
-					LOGGER.debug("Player \"{}\" is still active; Ignoring update event.", newInstructingPlayerId);
+					LOGGER.debug("Player \"{}\" is still active; Ignoring update event.", newActivePlayerId);
 				} else {
 					// Some other client's user is now active
-					LOGGER.debug("Player \"{}\" is now active; Disabling mouse listeners.", newInstructingPlayerId);
+					LOGGER.debug("Player \"{}\" is now active; Disabling mouse listeners.", newActivePlayerId);
 					// JOptionPane.showMessageDialog(this, String.format("%s's
-					// turn.", newInstructingPlayerId));
-					setMouseEnabled(false);
+					// turn.", newActivePlayerId));
+					selectingMouseListener.setEnabled(false);
 				}
 			} else {
 				// Some other client initiated the handover
-				final String newInstructingPlayerId = change.getNewInstructingPlayerId();
-				if (equalsPlayerId(newInstructingPlayerId)) {
+				final String newActivePlayerId = change.getNewActivePlayerId();
+				if (equalsPlayerId(newActivePlayerId)) {
 					// This client's user is now active
 					LOGGER.debug("The local player (\"{}\") is now active; Enabling mouse listeners.",
-							newInstructingPlayerId);
+							newActivePlayerId);
 					// JOptionPane.showMessageDialog(this, "Your turn!");
-					setMouseEnabled(true);
+					selectingMouseListener.setEnabled(true);
 				} else {
 					// Some other client's user is now active
-					LOGGER.debug("Player \"{}\" is now active; Disabling mouse listeners.", newInstructingPlayerId);
+					LOGGER.debug("Player \"{}\" is now active; Disabling mouse listeners.", newActivePlayerId);
 					// JOptionPane.showMessageDialog(this,
-					// String.format("\"%s\"'s turn.", newInstructingPlayerId));
-					setMouseEnabled(false);
+					// String.format("\"%s\"'s turn.", newActivePlayerId));
+					selectingMouseListener.setEnabled(false);
 					// TODO: Add notification of 3rd user now being active
 				}
 			}
@@ -479,10 +520,10 @@ final class GameBoardPanel<I> extends JPanel implements Observer {
 			final GameEnding.Outcome outcome = ending.getOutcome();
 			switch (outcome) {
 			case ABORT:
-				setMouseEnabled(false);
+				selectingMouseListener.setEnabled(false);
 				break;
 			case WIN: {
-				setMouseEnabled(false);
+				selectingMouseListener.setEnabled(false);
 				break;
 			}
 			default:
@@ -526,21 +567,28 @@ final class GameBoardPanel<I> extends JPanel implements Observer {
 
 	private void registerController(final LocalController<?> localController) {
 		localController.addObserver(this);
-
-		final DisablingMouseAdapter mouseListener = new DisablingMouseAdapter(new SelectingMouseAdapter());
-		mouseListener.setEnabled(localController.getRoles().contains(PlayerRole.MOVER));
-		addDisablingMouseListener(mouseListener);
-	}
-
-	private void setMouseEnabled(final boolean enabled) {
-		mouseListeners.stream().forEach(listener -> listener.setEnabled(enabled));
 	}
 
 	private boolean toggleHighlightedRegion(final SpatialRegion region) {
-		boolean result = false;
-		if (result = !highlightedRegions.add(region)) {
-			result = highlightedRegions.remove(region);
+		boolean result;
+
+		if (result = highlightedRegions.add(region)) {
+			final Graphics2D regionHighlightingG = createRegionHighlightDrawingGraphics(getGraphics());
+			try {
+				drawRegionHighlights(regionHighlightingG, region);
+			} finally {
+				regionHighlightingG.dispose();
+			}
+		} else if (result = highlightedRegions.remove(region)) {
+			final Graphics2D regionHighlightingG = createRegionHighlightClearingGraphics(getGraphics());
+			try {
+				clearRegionHighlights(regionHighlightingG, region);
+			} finally {
+				regionHighlightingG.dispose();
+			}
+
 		}
+
 		return result;
 	}
 
@@ -594,6 +642,7 @@ final class GameBoardPanel<I> extends JPanel implements Observer {
 	 *
 	 */
 	synchronized void notifyContinue(final Random rnd) {
+//		if(loca)
 		LOGGER.debug("Notified of continue event.");
 		LOGGER.debug("Moving random piece.");
 		// TODO: Change probability of a piece being selected for moving based
@@ -618,6 +667,14 @@ final class GameBoardPanel<I> extends JPanel implements Observer {
 			// No pieces left to be moved; Game cannot continue
 			notifyNoValidMoves();
 		} else {
+			final SpatialRegion sourceRegion = pieceMove.getKey();
+			final Collection<SpatialRegion> targetRegions = pieceMove.getValue().values();
+			if (targetRegions.size() > 1) {
+				throw new UnsupportedOperationException("Cannot notify multiple moved pieces in one turn.");
+			} else {
+				final SpatialRegion targetRegion = targetRegions.iterator().next();
+				localController.submitMove(sourceRegion, targetRegion);
+			}
 			updatePiecePositions(pieceMove);
 			LOGGER.debug("Finished randomly moving piece(s) at {}.", pieceMove.getKey());
 			repaint();

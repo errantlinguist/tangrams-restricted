@@ -25,9 +25,9 @@ import iristk.util.Record;
  */
 public final class ActivePlayerChange extends Record {
 
-	private String newInstructingPlayerId;
+	private String newActivePlayerId;
 
-	private String oldInstructingPlayerId;
+	private String oldActivePlayerId;
 
 	public ActivePlayerChange() {
 		// Default constructor is required for JSON (un-)marshalling
@@ -40,43 +40,43 @@ public final class ActivePlayerChange extends Record {
 		super(copyee);
 	}
 
-	public ActivePlayerChange(final String oldInstructingPlayerId, final String newInstructingPlayerId) {
-		setOldInstructingPlayerId(oldInstructingPlayerId);
-		setNewInstructingPlayerId(newInstructingPlayerId);
+	public ActivePlayerChange(final String oldActivePlayerId, final String newActivePlayerId) {
+		setOldActivePlayerId(oldActivePlayerId);
+		setNewActivePlayerId(newActivePlayerId);
 	}
 
 	/**
-	 * @return the newInstructingPlayerId
+	 * @return the newActivePlayerId
 	 */
-	@RecordField(name = "newInstructingPlayerId")
-	public String getNewInstructingPlayerId() {
-		return newInstructingPlayerId;
+	@RecordField(name = "newActivePlayerId")
+	public String getNewActivePlayerId() {
+		return newActivePlayerId;
 	}
 
 	/**
-	 * @return the oldInstructingPlayerId
+	 * @return the oldActivePlayerId
 	 */
-	@RecordField(name = "oldInstructingPlayerId")
-	public String getOldInstructingPlayerId() {
-		return oldInstructingPlayerId;
+	@RecordField(name = "oldActivePlayerId")
+	public String getOldActivePlayerId() {
+		return oldActivePlayerId;
 	}
 
 	/**
-	 * @param newInstructingPlayerId
-	 *            the newInstructingPlayerId to set
+	 * @param newActivePlayerId
+	 *            the newActivePlayerId to set
 	 */
-	@RecordField(name = "newInstructingPlayerId")
-	public void setNewInstructingPlayerId(final String newInstructingPlayerId) {
-		this.newInstructingPlayerId = newInstructingPlayerId;
+	@RecordField(name = "newActivePlayerId")
+	public void setNewActivePlayerId(final String newActivePlayerId) {
+		this.newActivePlayerId = newActivePlayerId;
 	}
 
 	/**
-	 * @param oldInstructingPlayerId
-	 *            the oldInstructingPlayerId to set
+	 * @param oldActivePlayerId
+	 *            the oldActivePlayerId to set
 	 */
-	@RecordField(name = "oldInstructingPlayerId")
-	public void setOldInstructingPlayerId(final String oldInstructingPlayerId) {
-		this.oldInstructingPlayerId = oldInstructingPlayerId;
+	@RecordField(name = "oldActivePlayerId")
+	public void setOldActivePlayerId(final String oldActivePlayerId) {
+		this.oldActivePlayerId = oldActivePlayerId;
 	}
 
 }

@@ -19,7 +19,6 @@ package se.kth.speech.coin.tangrams.game;
 import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.Observable;
-import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -72,14 +71,23 @@ public final class LocalController<I> extends Observable {
 
 	private final Function<Area2D, SpatialRegion> areaSpatialRegionFactory;
 
-	private final Set<PlayerRole> roles;
+	private boolean isActive;
 
-	public LocalController(final SpatialMatrix<I> model, final String playerId, final Set<PlayerRole> roles,
+	/**
+	 * @param isActive the isActive to set
+	 */
+	public void setActive(boolean isActive) {
+		this.isActive = isActive;
+	}
+
+	private I selectedPiece;
+
+	public LocalController(final SpatialMatrix<I> model, final String playerId, final boolean isActive,
 			final Consumer<? super Move> turnCompletionHook, final Consumer<? super Area2D> selectionHook) {
 		this.model = model;
 		this.areaSpatialRegionFactory = new AreaSpatialRegionFactory(model);
 		this.playerId = playerId;
-		this.roles = roles;
+		this.isActive = isActive;
 		this.turnCompletionHook = turnCompletionHook;
 		this.selectionHook = selectionHook;
 	}
@@ -89,23 +97,6 @@ public final class LocalController<I> extends Observable {
 	 * {@link LocalController} instance has ended their turn.
 	 */
 	public void endTurn() {
-		if (!roles.contains(PlayerRole.MOVER)) {
-			throw new IllegalStateException("Controller not active.");
-		}
-		if (nextTurnMove == null) {
-			throw new IllegalStateException("No move has been submitted.");
-		}
-		LOGGER.info("Ending turn.");
-		{
-			final Move move = nextTurnMove;
-			final SpatialRegion sourceRegion = areaSpatialRegionFactory.apply(move.getSource());
-			final SpatialRegion targetRegion = areaSpatialRegionFactory.apply(move.getTarget());
-			LOGGER.info("Moving the piece at {} to {}.", sourceRegion, targetRegion);
-			updateModel(sourceRegion, targetRegion);
-			turnCompletionHook.accept(move);
-		}
-		nextTurnMove = null;
-		moveCount++;
 
 	}
 
@@ -127,15 +118,12 @@ public final class LocalController<I> extends Observable {
 		return playerId;
 	}
 
-	/**
-	 * @return the roles
-	 */
-	public Set<PlayerRole> getRoles() {
-		return roles;
+	public boolean isActive() {
+		return isActive;
 	}
 
 	public ValidationStatus submitMove(final SpatialRegion sourceRegion, final SpatialRegion targetRegion) {
-		if (!roles.contains(PlayerRole.MOVER)) {
+		if (!isActive) {
 			throw new IllegalStateException("Controller not active.");
 		}
 
@@ -146,6 +134,29 @@ public final class LocalController<I> extends Observable {
 			LOGGER.info("Invalid move: {}", result);
 		}
 		return result;
+	}
+
+	/**
+	 * @param key
+	 */
+	public void submitSelection(final I selectedPiece) {
+		if (!isActive) {
+			throw new IllegalStateException("Controller not active.");
+		}
+		if (selectedPiece == null) {
+			throw new IllegalStateException("No selection has been submitted.");
+		}
+		LOGGER.info("Ending turn.");
+		{
+			final Move move = nextTurnMove;
+			final SpatialRegion sourceRegion = areaSpatialRegionFactory.apply(move.getSource());
+			final SpatialRegion targetRegion = areaSpatialRegionFactory.apply(move.getTarget());
+			LOGGER.info("Moving the piece at {} to {}.", sourceRegion, targetRegion);
+			updateModel(sourceRegion, targetRegion);
+			turnCompletionHook.accept(move);
+		}
+		nextTurnMove = null;
+		moveCount++;
 	}
 
 	public void toggleSelection(final SpatialRegion region) {

@@ -27,7 +27,7 @@ import iristk.util.Record;
  */
 public final class GameStateDescription extends Record {
 
-	private String instructingPlayerId;
+	private String activePlayerId;
 
 	private boolean allowFailedPlacements;
 
@@ -57,11 +57,11 @@ public final class GameStateDescription extends Record {
 	}
 
 	/**
-	 * @return the instructingPlayerId
+	 * @return the activePlayerId
 	 */
-	@RecordField(name = "instructingPlayerId")
-	public String getInstructingPlayerId() {
-		return instructingPlayerId;
+	@RecordField(name = "activePlayerId")
+	public String getActivePlayerId() {
+		return activePlayerId;
 	}
 
 	/**
@@ -96,12 +96,12 @@ public final class GameStateDescription extends Record {
 	}
 
 	/**
-	 * @param instructingPlayerId
-	 *            the instructingPlayerId to set
+	 * @param activePlayerId
+	 *            the activePlayerId to set
 	 */
-	@RecordField(name = "instructingPlayerId")
-	public void setInstructingPlayerId(final String instructingPlayerId) {
-		this.instructingPlayerId = instructingPlayerId;
+	@RecordField(name = "activePlayerId")
+	public void setActivePlayerId(final String activePlayerId) {
+		this.activePlayerId = activePlayerId;
 	}
 
 	/**

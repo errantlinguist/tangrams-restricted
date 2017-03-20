@@ -17,11 +17,9 @@
 package se.kth.speech.coin.tangrams.iristk;
 
 import java.sql.Timestamp;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Random;
-import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -33,7 +31,6 @@ import iristk.system.IrisModule;
 import se.kth.speech.SpatialMatrix;
 import se.kth.speech.coin.tangrams.game.LocalController;
 import se.kth.speech.coin.tangrams.game.PlayerJoinTime;
-import se.kth.speech.coin.tangrams.game.PlayerRole;
 import se.kth.speech.coin.tangrams.game.RemoteController;
 import se.kth.speech.coin.tangrams.iristk.events.ActivePlayerChange;
 import se.kth.speech.coin.tangrams.iristk.events.Area2D;
@@ -137,8 +134,8 @@ public final class GameManagementClientModule extends IrisModule {
 					remoteController.notifyPlayerTurn(turn);
 					final ActivePlayerChange playerIds = (ActivePlayerChange) event
 							.get(GameManagementEvent.Attribute.ACTIVE_PLAYER_CHANGE.toString());
-					final String newInstructingPlayerId = playerIds.getNewInstructingPlayerId();
-					LOGGER.debug("The server notified that player \"{}\" is now active.", newInstructingPlayerId);
+					final String newActivePlayerId = playerIds.getNewActivePlayerId();
+					LOGGER.debug("The server notified that player \"{}\" is now active.", newActivePlayerId);
 					remoteController.notifyNewActivePlayer(playerIds);
 					break;
 				}
@@ -192,17 +189,13 @@ public final class GameManagementClientModule extends IrisModule {
 	private void setupGame(final GameStateDescription gameDesc) {
 		final ModelDescription modelDesc = gameDesc.getModelDescription();
 		final SpatialMatrix<Integer> model = GameStateUnmarshalling.createModel(modelDesc);
-		final PlayerRole role = playerId.equals(gameDesc.getInstructingPlayerId()) ? PlayerRole.INSTRUCTOR
-				: PlayerRole.MOVER;
-		final LocalController<Integer> localController = new LocalController<>(model, playerId, EnumSet.of(role),
+		final boolean isActive = playerId.equals(gameDesc.getActivePlayerId());
+		final LocalController<Integer> localController = new LocalController<>(model, playerId, isActive,
 				this::requestTurnCompletion, this::requestUserSelection);
 		final Consumer<ActivePlayerChange> controllerActivationHook = handoff -> {
-			final Set<PlayerRole> oldRoles = localController.getRoles();
-			final PlayerRole newRole = localController.getPlayerId().equals(handoff.getNewInstructingPlayerId())
-					? PlayerRole.INSTRUCTOR : PlayerRole.MOVER;
-			oldRoles.clear();
-			oldRoles.add(newRole);
-			LOGGER.debug("Setting role for player \"{}\" to {}.", new Object[] { playerId, role });
+			final boolean isNowActive = localController.getPlayerId().equals(handoff.getNewActivePlayerId());
+			localController.setActive(isNowActive);
+			LOGGER.debug("Setting active role for player \"{}\" to {}.", new Object[] { playerId, isNowActive });
 		};
 		final Predicate<String> foreignPlayerIdPredicate = pid -> !playerId.equals(pid);
 		final RemoteController<Integer> remoteController = new RemoteController<>(model, controllerActivationHook,

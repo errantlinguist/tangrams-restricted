@@ -58,7 +58,7 @@ public final class GameManagementServerModule extends IrisModule {
 
 			final String startingPlayerId;
 			{
-				String activePlayerId = activePlayerTracker.getInstructingPlayerId();
+				String activePlayerId = activePlayerTracker.getActivePlayerId();
 				if (activePlayerId == null) {
 					// The game has not started yet; Cycle to the
 					// first-joined
@@ -67,7 +67,7 @@ public final class GameManagementServerModule extends IrisModule {
 				}
 				startingPlayerId = activePlayerId;
 			}
-			gameDesc.setInstructingPlayerId(startingPlayerId);
+			gameDesc.setActivePlayerId(startingPlayerId);
 
 			final Game<Integer> game = gameState.getFirst();
 			gameDesc.setModelDescription(
@@ -212,8 +212,8 @@ public final class GameManagementServerModule extends IrisModule {
 				final ActivePlayerTracker activePlayerTracker = gameState.getSecond();
 				final String playerIdField = GameManagementEvent.Attribute.PLAYER_ID.toString();
 				final String turnPlayerId = event.getString(playerIdField);
-				final String oldInstructingPlayerId = activePlayerTracker.getInstructingPlayerId();
-				if (!turnPlayerId.equals(oldInstructingPlayerId)) {
+				final String oldActivePlayerId = activePlayerTracker.getActivePlayerId();
+				if (!turnPlayerId.equals(oldActivePlayerId)) {
 					throw new IllegalStateException("Models of server and client(s) have gone out of sync.");
 				}
 
@@ -231,19 +231,19 @@ public final class GameManagementServerModule extends IrisModule {
 						}
 					}
 
-					final String newInstructingPlayerId;
+					final String newActivePlayerId;
 					// If the game has been won, don't allow any player to
 					// become active again
 					// if (game.isWon()) {
-					// newInstructingPlayerId = null;
+					// newActivePlayerId = null;
 					// } else {
-					newInstructingPlayerId = activePlayerTracker.cycleActivePlayer();
+					newActivePlayerId = activePlayerTracker.cycleActivePlayer();
 					// }
 					turnResponse.put(GameManagementEvent.Attribute.ACTIVE_PLAYER_CHANGE.toString(),
-							new ActivePlayerChange(oldInstructingPlayerId, newInstructingPlayerId));
+							new ActivePlayerChange(oldActivePlayerId, newActivePlayerId));
 					LOGGER.info(
 							"Sending broker event for game \"{}\" signalling a move, after which player \"{}\" is now active.",
-							new Object[] { gameId, newInstructingPlayerId });
+							new Object[] { gameId, newActivePlayerId });
 					send(turnResponse);
 				}
 
