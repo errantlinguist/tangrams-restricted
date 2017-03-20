@@ -199,14 +199,14 @@ public final class ImageVisualizationInfoFactory implements Iterator<ImageVisual
 	// public Multimap<URL, Color> getImgColors() {
 	// return Multimaps.unmodifiableMultimap(imgColors);
 	// }
-	//
-	// /**
-	// * @return the imgResourceUsageCounts
-	// */
-	// public Map<URL, Integer> getImgResourceUsageCounts() {
-	// return Collections.unmodifiableMap(imgResourceUsageCounts);
-	// }
-	//
+	
+	 /**
+	 * @return the imgResourceUsageCounts
+	 */
+	 public Map<URL, Integer> getImgResourceUsageCounts() {
+	 return Collections.unmodifiableMap(imgResourceUsageCounts);
+	 }
+	
 	// /**
 	// * @return the imgSizes
 	// */
