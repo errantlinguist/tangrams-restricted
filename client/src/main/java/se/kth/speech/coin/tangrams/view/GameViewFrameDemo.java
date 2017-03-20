@@ -22,6 +22,8 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -41,6 +43,8 @@ import se.kth.speech.awt.OpaqueTransparencyReplacementImageFilter;
 import se.kth.speech.coin.tangrams.content.ImageSize;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfoFactory;
+import se.kth.speech.coin.tangrams.game.RemoteController;
+import se.kth.speech.coin.tangrams.iristk.events.ActivePlayerChange;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -276,16 +280,24 @@ public final class GameViewFrameDemo implements Runnable {
 		LOGGER.info("Image size usage counts: {}", imgDataFactory.getSizeUsageCounts());
 		LOGGER.info("Image color usage counts: {}", imgDataFactory.getColorUsageCounts());
 		LOGGER.info("Total used image count: {}", imgVisualizationInfoDataList.size());
-		final GameBoardPanelFactory factory = new GameBoardPanelFactory(rnd, occupiedGridArea, allowFailedPlacements);
+		final GameBoardPanelFactory factory = new GameBoardPanelFactory(rnd, occupiedGridArea, allowFailedPlacements, (panel, turn) -> {}, (panel, selection) -> {});
 		factory.setGridSize(gridDims);
 		final int uniqueImgResourceCount = imgDataFactory.getImgResourceUsageCounts().keySet().size();
 		factory.setUniqueImgResourceCount(uniqueImgResourceCount);
-		final OpaqueTransparencyReplacementImageFilter imgTranformer = new OpaqueTransparencyReplacementImageFilter(
-				128);
-		factory.setPostColoringImgTransformer(
-				(img, toolkit) -> toolkit.createImage(new FilteredImageSource(img.getSource(), imgTranformer)));
+//		final OpaqueTransparencyReplacementImageFilter imgTranformer = new OpaqueTransparencyReplacementImageFilter(
+//				128);
+//		factory.setPostColoringImgTransformer(
+//				(img, toolkit) -> toolkit.createImage(new FilteredImageSource(img.getSource(), imgTranformer)));
 		final GameBoardPanel<Integer> panel = factory.apply(imgVisualizationInfoDataList);
-		final GameViewFrame frame = new GameViewFrame(panel, rnd);
+		final Consumer<ActivePlayerChange> controllerActivationHook = handoff -> {
+			// Do nothing
+		};
+		final Predicate<String> foreignPlayerIdPredicate = pid -> true;
+		final RemoteController<Integer> remoteController = new RemoteController<>(panel.getPosMatrix(), controllerActivationHook,
+				foreignPlayerIdPredicate);
+		final GameViewFrame frame = new GameViewFrame(panel, rnd, panel.getLocalController(), remoteController, () -> {
+			// Do nothing
+		});
 		frame.pack();
 		frame.setLocationByPlatform(true);
 		frame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);

@@ -28,7 +28,7 @@ import se.kth.speech.coin.tangrams.iristk.events.CoordinatePoint2D;
  * @since Mar 18, 2017
  *
  */
-final class AreaSpatialRegionFactory implements Function<Area2D, SpatialRegion> {
+public final class AreaSpatialRegionFactory implements Function<Area2D, SpatialRegion> {
 
 	private final SpatialMatrix<?> model;
 

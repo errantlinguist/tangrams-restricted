@@ -67,7 +67,7 @@ enum GameManagementEvent {
 	TURN_RESPONSE("activeplayer.change");
 
 	enum Attribute {
-		ACTIVE_PLAYER_CHANGE, COORDS, GAME_ID, GAME_STATE, MOVE, PLAYER_ID, TIMESTAMP, TURN;
+		ACTIVE_PLAYER_CHANGE, AREA, GAME_ID, GAME_STATE, MOVE, PLAYER_ID, TIMESTAMP, TURN;
 	}
 
 	public static final String EVENT_NAME_QUALIFIER = "tangrams.action";

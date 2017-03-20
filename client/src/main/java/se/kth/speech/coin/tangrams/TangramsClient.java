@@ -51,7 +51,6 @@ import com.github.errantlinguist.ClassProperties;
 import iristk.system.IrisSystem;
 import iristk.system.LoggingModule;
 import iristk.util.NameFilter;
-import se.kth.speech.coin.tangrams.game.LocalController;
 import se.kth.speech.coin.tangrams.iristk.GameManagementClientModule;
 import se.kth.speech.coin.tangrams.iristk.IrisSystemStopper;
 import se.kth.speech.coin.tangrams.iristk.LogDirectoryFactory;
@@ -332,32 +331,15 @@ public final class TangramsClient implements Runnable {
 											LOGGER.info(
 													"Handling game state data received from server for game \"{}\".",
 													gameId);
-											final LocalController<Integer> localController = gameState
-													.getLocalController();
 											EventQueue.invokeLater(new SuccessfulConnectionHook(connectionStatusView,
 													recordingManager, playerId));
 											// Get the position of the
-											// connection
-											// view
-											// for
+											// connection view for
 											// use for positioning the new views
 											final Point viewLocation = connectionStatusView.getLocation();
 
 											// Set up game GUI
 											final String title = "Tangrams: " + playerId;
-											// final SpatialMatrix<Integer>
-											// model =
-											// localController.getModel();
-											// final int pieceCount =
-											// model.getElementPlacements().getAllElements().size();
-											// final Random rnd = new
-											// Random(gameState.getSeed());
-											// final
-											// List<ImageVisualizationInfo>
-											// imgVisualizationInfoData = Stream
-											// .generate(new
-											// ImageVisualizationInfoFactory(rnd)::next)
-											// .limit(pieceCount).collect(Collectors.toList());
 											final Runnable closeHook = () -> {
 												LOGGER.info("Closing main window; Cleaning up background resources.");
 												recordingManager.getStopper().run();

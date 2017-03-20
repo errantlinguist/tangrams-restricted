@@ -16,7 +16,6 @@
 */
 package se.kth.speech.coin.tangrams.game;
 
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.Observable;
@@ -31,7 +30,6 @@ import se.kth.speech.SpatialMatrix;
 import se.kth.speech.SpatialRegion;
 import se.kth.speech.coin.tangrams.iristk.events.ActivePlayerChange;
 import se.kth.speech.coin.tangrams.iristk.events.Area2D;
-import se.kth.speech.coin.tangrams.iristk.events.CoordinatePoint2D;
 import se.kth.speech.coin.tangrams.iristk.events.GameEnding;
 import se.kth.speech.coin.tangrams.iristk.events.Move;
 import se.kth.speech.coin.tangrams.iristk.events.Selection;
@@ -112,9 +110,8 @@ public final class RemoteController<I> extends Observable {
 		final String selectingPlayerId = playerSelection.getPlayerId();
 		LOGGER.debug("The remote controller was notified that \"{}\" has performed a selection.", selectingPlayerId);
 		if (playerIdFilter.test(selectingPlayerId)) {
-			final CoordinatePoint2D coords = playerSelection.getCoords();
-			LOGGER.debug("Updating coordinate selection {} from \"{}\".", Arrays.toString(coords.getCoords()),
-					selectingPlayerId);
+			final Area2D region = playerSelection.getRegion();
+			LOGGER.debug("Updating region selection {} from \"{}\".", region, selectingPlayerId);
 			// Notify local, lower-level listeners which e.g. update the user's
 			// own
 			// view

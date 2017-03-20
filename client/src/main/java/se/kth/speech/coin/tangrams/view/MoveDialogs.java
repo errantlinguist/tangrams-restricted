@@ -27,22 +27,10 @@ import javax.swing.JOptionPane;
  */
 final class MoveDialogs {
 
-	public static int showMoveConfirmDialog(final Component parentComponent) {
+	public static int showSelectConfirmDialog(final Component parentComponent) {
 		return JOptionPane.showConfirmDialog(parentComponent,
-				"Are you sure you want to move the selected piece to the given position?", "Move piece",
+				"Are you sure you want to choose the selected piece?", "Select piece",
 				JOptionPane.YES_NO_OPTION);
-	}
-
-	public static void showTargetNonAdjacentErrorMessage(final Component parentComponent) {
-		JOptionPane.showMessageDialog(parentComponent,
-				"Cannot move the selected piece because the target space is not adjacent to the source space.",
-				"Invalid move", JOptionPane.ERROR_MESSAGE);
-	}
-
-	public static void showTargetOccupiedErrorMessage(final Component parentComponent) {
-		JOptionPane.showMessageDialog(parentComponent,
-				"Cannot move the selected piece because the target space is already occupied.", "Invalid move",
-				JOptionPane.ERROR_MESSAGE);
 	}
 
 	private MoveDialogs() {

@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Random;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
@@ -39,6 +40,9 @@ import se.kth.speech.SpatialMatrix;
 import se.kth.speech.coin.tangrams.RandomModelPopulator;
 import se.kth.speech.coin.tangrams.content.ImageLoadingImageViewInfoFactory;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
+import se.kth.speech.coin.tangrams.game.LocalController;
+import se.kth.speech.coin.tangrams.iristk.events.Selection;
+import se.kth.speech.coin.tangrams.iristk.events.Turn;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -175,13 +179,21 @@ final class GameBoardPanelFactory implements Function<Collection<ImageVisualizat
 
 	private final boolean allowFailedPlacements;
 
+	private final BiConsumer<? super GameBoardPanel<? super Integer>, ? super Turn> localTurnCompletionHook;
+
+	private final BiConsumer<? super GameBoardPanel<? super Integer>, ? super Selection> localSelectionHook;
+
 	/**
 	 *
 	 */
-	GameBoardPanelFactory(final Random rnd, final double occupiedGridArea, final boolean allowFailedPlacements) {
+	GameBoardPanelFactory(final Random rnd, final double occupiedGridArea, final boolean allowFailedPlacements,
+			final BiConsumer<? super GameBoardPanel<? super Integer>, ? super Turn> localTurnCompletionHook,
+			final BiConsumer<? super GameBoardPanel<? super Integer>, ? super Selection> localSelectionHook) {
 		this.rnd = rnd;
 		this.occupiedGridArea = occupiedGridArea;
 		this.allowFailedPlacements = allowFailedPlacements;
+		this.localTurnCompletionHook = localTurnCompletionHook;
+		this.localSelectionHook = localSelectionHook;
 		postColoringImgTransformer = DEFAULT_POST_COLORING_IMG_TRANSFORMER;
 	}
 
@@ -267,9 +279,14 @@ final class GameBoardPanelFactory implements Function<Collection<ImageVisualizat
 			final Collection<ImageVisualizationInfo> imgVisualizationInfoData, final int expectedPieceCount) {
 		LOGGER.info("Creating a position matrix of size {}.", gridSize);
 		final SpatialMatrix<Integer> posMatrix = new SpatialMatrix<>(gridSize, new SpatialMap<>(expectedPieceCount));
-		final GameBoardPanel<Integer> result = new GameBoardPanel<>(posMatrix, expectedPieceCount);
+		final LocalController<Integer> localController = new LocalController<>(posMatrix, "", true, move -> {
+		}, selection -> {
+		});
+		final Map<Integer, Image> pieceImgs = Maps.newHashMapWithExpectedSize(expectedPieceCount);
+		final GameBoardPanel<Integer> result = new GameBoardPanel<>(posMatrix, pieceImgs, localController,
+				localTurnCompletionHook, localSelectionHook);
 		final Toolkit toolkit = result.getToolkit();
-		final Map<Integer, Image> pieceImgs = result.getPieceImgs();
+
 		final ImageLoadingImageViewInfoFactory imgViewInfoFactory = new ImageLoadingImageViewInfoFactory(toolkit,
 				postColoringImgTransformer, Maps.newHashMapWithExpectedSize(uniqueImgResourceCount));
 		final RandomModelPopulator modelPopulator = new RandomModelPopulator(posMatrix, imgVisualizationInfoData,

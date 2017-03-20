@@ -33,6 +33,7 @@ import se.kth.speech.coin.tangrams.game.LocalController;
 import se.kth.speech.coin.tangrams.game.PlayerJoinTime;
 import se.kth.speech.coin.tangrams.game.RemoteController;
 import se.kth.speech.coin.tangrams.iristk.events.ActivePlayerChange;
+import se.kth.speech.coin.tangrams.iristk.events.Area2D;
 import se.kth.speech.coin.tangrams.iristk.events.CoordinatePoint2D;
 import se.kth.speech.coin.tangrams.iristk.events.GameEnding;
 import se.kth.speech.coin.tangrams.iristk.events.Move;
@@ -125,9 +126,9 @@ public final class GameManagementClientModule extends IrisModule {
 					final String selectingPlayerId = event
 							.getString(GameManagementEvent.Attribute.PLAYER_ID.toString());
 					LOGGER.debug("Received game event reporting selection info for \"{}\".", selectingPlayerId);
-					final CoordinatePoint2D coords = (CoordinatePoint2D) event
-							.get(GameManagementEvent.Attribute.COORDS.toString());
-					remoteController.notifyPlayerSelection(new Selection(selectingPlayerId, coords));
+					final Area2D region = (Area2D) event
+							.get(GameManagementEvent.Attribute.AREA.toString());
+					remoteController.notifyPlayerSelection(new Selection(selectingPlayerId, region));
 					break;
 				}
 				case TURN_RESPONSE: {
@@ -162,10 +163,10 @@ public final class GameManagementClientModule extends IrisModule {
 		send(request);
 	}
 
-	public void requestUserSelection(final CoordinatePoint2D coords) {
+	public void requestUserSelection(final Area2D area) {
 		final Event request = createPlayerEvent(GameManagementEvent.SELECTION_REQUEST);
-		request.put(GameManagementEvent.Attribute.COORDS.toString(), coords);
-		LOGGER.info("Sending broker event for selecting {} by \"{}\".", new Object[] { coords.getCoords(), playerId });
+		request.put(GameManagementEvent.Attribute.AREA.toString(), area);
+		LOGGER.info("Sending broker event for selecting {} by \"{}\".", new Object[] { area, playerId });
 		send(request);
 	}
 

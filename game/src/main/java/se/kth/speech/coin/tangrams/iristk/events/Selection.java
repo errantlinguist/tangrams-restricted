@@ -25,7 +25,7 @@ import iristk.util.Record;
  */
 public final class Selection extends Record {
 
-	private CoordinatePoint2D coords;
+	private Area2D region;
 
 	private String playerId;
 
@@ -33,17 +33,17 @@ public final class Selection extends Record {
 		// Default constructor is required for JSON (un-)marshalling
 	}
 
-	public Selection(final String playerId, final CoordinatePoint2D coords) {
+	public Selection(final String playerId, final Area2D region) {
 		setPlayerId(playerId);
-		setCoords(coords);
+		setRegion(region);
 	}
 
 	/**
-	 * @return the coords
+	 * @return the region
 	 */
-	@RecordField(name = "coords")
-	public CoordinatePoint2D getCoords() {
-		return coords;
+	@RecordField(name = "region")
+	public Area2D getRegion() {
+		return region;
 	}
 
 	/**
@@ -55,12 +55,12 @@ public final class Selection extends Record {
 	}
 
 	/**
-	 * @param coords
-	 *            the coords to set
+	 * @param region
+	 *            the region to set
 	 */
-	@RecordField(name = "coords")
-	public void setCoords(final CoordinatePoint2D coords) {
-		this.coords = coords;
+	@RecordField(name = "region")
+	public void setRegion(final Area2D region) {
+		this.region = region;
 	}
 
 	/**

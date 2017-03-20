@@ -16,7 +16,6 @@
 */
 package se.kth.speech.coin.tangrams.iristk;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -35,7 +34,7 @@ import se.kth.speech.coin.tangrams.Game;
 import se.kth.speech.coin.tangrams.game.PlayerJoinTime;
 import se.kth.speech.coin.tangrams.game.RemoteController;
 import se.kth.speech.coin.tangrams.iristk.events.ActivePlayerChange;
-import se.kth.speech.coin.tangrams.iristk.events.CoordinatePoint2D;
+import se.kth.speech.coin.tangrams.iristk.events.Area2D;
 import se.kth.speech.coin.tangrams.iristk.events.Move;
 import se.kth.speech.coin.tangrams.iristk.events.Turn;
 
@@ -49,7 +48,7 @@ public final class GameManagementServerModule extends IrisModule {
 			final Pair<Game<Integer>, ActivePlayerTracker> gameState) {
 		final GameStateDescription gameDesc = new GameStateDescription();
 		gameDesc.setSeed(Long.parseLong(gameId));
-		
+
 		{
 			final ActivePlayerTracker activePlayerTracker = gameState.getSecond();
 			final Collection<PlayerJoinTime> joinedPlayers = activePlayerTracker.getJoinedPlayers();
@@ -187,20 +186,21 @@ public final class GameManagementServerModule extends IrisModule {
 				final String leavingPlayerId = event.getString(GameManagementEvent.Attribute.PLAYER_ID.toString());
 				LOGGER.debug("Received leave request from player \"{}\" for game \"{}\".",
 						new Object[] { leavingPlayerId, gameId });
-//				final Pair<Game<Integer>, ActivePlayerTracker> gameState = gameStateGetter.apply(gameId);
-//				final ActivePlayerTracker activePlayerTracker = gameState.getSecond();
+				// final Pair<Game<Integer>, ActivePlayerTracker> gameState =
+				// gameStateGetter.apply(gameId);
+				// final ActivePlayerTracker activePlayerTracker =
+				// gameState.getSecond();
 				throw new UnsupportedOperationException("not yet implemented");
 				// TODO: Finish
-//				break;
+				// break;
 			}
 			case SELECTION_REQUEST: {
 				if (LOGGER.isDebugEnabled()) {
 					final String selectingPlayerId = event
 							.getString(GameManagementEvent.Attribute.PLAYER_ID.toString());
-					final CoordinatePoint2D coords = (CoordinatePoint2D) event
-							.get(GameManagementEvent.Attribute.COORDS.toString());
+					final Area2D area = (Area2D) event.get(GameManagementEvent.Attribute.AREA.toString());
 					LOGGER.debug("Received game event denoting that \"{}\" toggled selection at {}.", selectingPlayerId,
-							Arrays.toString(coords.getCoords()));
+							area);
 				}
 				break;
 			}

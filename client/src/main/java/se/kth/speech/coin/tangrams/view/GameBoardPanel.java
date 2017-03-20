@@ -18,23 +18,35 @@ package se.kth.speech.coin.tangrams.view;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.Stroke;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.Observable;
+import java.util.Observer;
 import java.util.Random;
 import java.util.Set;
+import java.util.function.BiConsumer;
+import java.util.function.Supplier;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -51,13 +63,75 @@ import se.kth.speech.RandomCollections;
 import se.kth.speech.SpatialMap;
 import se.kth.speech.SpatialMatrix;
 import se.kth.speech.SpatialRegion;
+import se.kth.speech.awt.DisablingMouseAdapter;
+import se.kth.speech.coin.tangrams.game.AreaSpatialRegionFactory;
+import se.kth.speech.coin.tangrams.game.LocalController;
+import se.kth.speech.coin.tangrams.iristk.events.ActivePlayerChange;
+import se.kth.speech.coin.tangrams.iristk.events.GameEnding;
+import se.kth.speech.coin.tangrams.iristk.events.Move;
+import se.kth.speech.coin.tangrams.iristk.events.Selection;
+import se.kth.speech.coin.tangrams.iristk.events.Turn;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
  * @since 2 Mar 2017
  *
  */
-final class GameBoardPanel<I> extends JPanel {
+final class GameBoardPanel<I> extends JPanel implements Observer {
+
+	private class SelectingMouseAdapter extends MouseAdapter {
+		@Override
+		public void mouseClicked(final MouseEvent e) {
+			final int x = e.getX();
+			final int y = e.getY();
+			final Component foundComponent = findComponentAt(e.getX(), e.getY());
+			if (foundComponent instanceof GameBoardPanel<?>) {
+				LOGGER.info("Finding selected piece on the board.");
+				final int rowIdx = getRowIdx(y);
+				final int colIdx = getColIdx(x);
+				final Stream<Entry<SpatialRegion, I>> selectedRegionPieceIds = posMatrix
+						.getIntersectedRegions(rowIdx, colIdx)
+						.filter(selectedRegionPieceId -> selectedRegionPieceId.getValue() != null);
+				final Map<I, SpatialRegion> pieceBiggestRegions = Maps.newHashMapWithExpectedSize(1);
+				selectedRegionPieceIds.forEach(selectedRegionPieceId -> {
+					final SpatialRegion region = selectedRegionPieceId.getKey();
+					final I pieceId = selectedRegionPieceId.getValue();
+					pieceBiggestRegions.compute(pieceId, (k, oldVal) -> {
+						SpatialRegion newVal;
+						if (oldVal == null) {
+							newVal = region;
+						} else {
+							if (oldVal.getGridArea() < region.getGridArea()) {
+								newVal = region;
+							} else {
+								newVal = oldVal;
+							}
+						}
+						return newVal;
+					});
+				});
+				if (pieceBiggestRegions.isEmpty()) {
+					LOGGER.info("Nothing to select.");
+				} else {
+					final List<Entry<I, SpatialRegion>> pieceBiggestRegionsDescendingSize = new ArrayList<>(
+							pieceBiggestRegions.entrySet());
+					final Comparator<Entry<I, SpatialRegion>> sizeComparator = Comparator
+							.comparing(piece -> piece.getValue().getGridArea());
+					Collections.sort(pieceBiggestRegionsDescendingSize, sizeComparator.reversed());
+					final Entry<I, SpatialRegion> biggestPieceRegionUnderSelection = pieceBiggestRegionsDescendingSize
+							.iterator().next();
+					LOGGER.info("Selected {}.", biggestPieceRegionUnderSelection);
+					toggleHighlightedRegion(biggestPieceRegionUnderSelection.getValue());
+					repaint();
+				}
+
+			} else {
+				LOGGER.info("The user clicked on an instance of \"{}\", which cannot be selected.",
+						foundComponent.getClass());
+			}
+		}
+
+	}
 
 	private static final int IMG_PADDING;
 
@@ -114,6 +188,8 @@ final class GameBoardPanel<I> extends JPanel {
 				Math.max(MIN_GRID_SQUARE_LENGTH, size[1] - IMG_PADDING), IMG_SCALING_HINTS);
 	}
 
+	private transient final Supplier<String> playerIdGetter;
+
 	/**
 	 * At most one region should be highlighted at a time per player
 	 */
@@ -123,15 +199,28 @@ final class GameBoardPanel<I> extends JPanel {
 
 	private final SpatialMatrix<I> posMatrix;
 
-	GameBoardPanel(final SpatialMatrix<I> posMatrix, final int uniqueImgResourceCount) {
-		// Use linked map in order to preserve iteration order in provided
-		// sequence
-		this(posMatrix, Maps.newLinkedHashMapWithExpectedSize(uniqueImgResourceCount));
-	}
+	private final BiConsumer<? super GameBoardPanel<? super I>, ? super Turn> localTurnCompletionHook;
 
-	GameBoardPanel(final SpatialMatrix<I> posMatrix, final Map<I, Image> pieceImgs) {
+	private final BiConsumer<? super GameBoardPanel<? super I>, ? super Selection> localSelectionHook;
+
+	private final LocalController<I> localController;
+
+	private final List<DisablingMouseAdapter> mouseListeners = new ArrayList<>();
+
+	private final AreaSpatialRegionFactory areaRegionFactory;
+
+	GameBoardPanel(final SpatialMatrix<I> posMatrix, final Map<I, Image> pieceImgs,
+			final LocalController<I> localController,
+			final BiConsumer<? super GameBoardPanel<? super I>, ? super Turn> localTurnCompletionHook,
+			final BiConsumer<? super GameBoardPanel<? super I>, ? super Selection> localSelectionHook) {
 		this.posMatrix = posMatrix;
+		this.areaRegionFactory = new AreaSpatialRegionFactory(this.posMatrix);
 		this.pieceImgs = pieceImgs;
+		this.localController = localController;
+		registerController(this.localController);
+		this.playerIdGetter = localController::getPlayerId;
+		this.localTurnCompletionHook = localTurnCompletionHook;
+		this.localSelectionHook = localSelectionHook;
 		// http://stackoverflow.com/a/1936582/1391325
 		final Dimension screenSize = getToolkit().getScreenSize();
 		// final Dimension maxSize = Dimensions.createScaledDimension(boardSize,
@@ -157,8 +246,8 @@ final class GameBoardPanel<I> extends JPanel {
 	public void paintComponent(final Graphics g) {
 		super.paintComponent(g);
 		// Draw a grid (for debugging/devel)
-//		drawGrid(g);
-//		drawPieceIds(g);
+		// drawGrid(g);
+		// drawPieceIds(g);
 
 		drawPieceImages(g);
 		{
@@ -172,6 +261,38 @@ final class GameBoardPanel<I> extends JPanel {
 			}
 		}
 
+	}
+
+	/*
+	 * (non-Javadoc)
+	 *
+	 * @see java.util.Observer#update(java.util.Observable, java.lang.Object)
+	 */
+	@Override
+	public void update(final Observable o, final Object arg) {
+		final Stream<?> args;
+		if (arg instanceof Stream<?>) {
+			args = (Stream<?>) arg;
+		} else if (arg instanceof Collection<?>) {
+			args = ((Collection<?>) arg).stream();
+		} else if (arg instanceof Iterable<?>) {
+			final Iterable<?> iter = (Iterable<?>) arg;
+			args = StreamSupport.stream(iter.spliterator(), false);
+		} else {
+			args = Stream.of(arg);
+		}
+		synchronized (this) {
+			// Synchronize once for the whole set of events so that multiple
+			// event streams don't interleave in cases where this is still
+			// processing one set when another update notification is received
+			args.forEach(this::handleUpdateArg);
+		}
+	}
+
+	private void addDisablingMouseListener(final DisablingMouseAdapter mouseListener) {
+		addMouseListener(mouseListener);
+		addMouseMotionListener(mouseListener);
+		mouseListeners.add(mouseListener);
 	}
 
 	private Map<I, SpatialRegion> createRandomValidMoveTargetMap(final SpatialRegion occupiedRegion, final Random rnd) {
@@ -282,6 +403,15 @@ final class GameBoardPanel<I> extends JPanel {
 		});
 	}
 
+	private boolean equalsPlayerId(final String str) {
+		return Objects.equals(playerIdGetter.get(), str);
+	}
+
+	private int getColIdx(final int x) {
+		final int colWidth = getGridColWidth();
+		return x / colWidth;
+	}
+
 	private int getGridColWidth() {
 		final int[] matrixDims = posMatrix.getDimensions();
 		return getWidth() / matrixDims[1];
@@ -292,15 +422,155 @@ final class GameBoardPanel<I> extends JPanel {
 		return getHeight() / matrixDims[0];
 	}
 
+	private int getRowIdx(final int y) {
+		final int rowHeight = getGridRowHeight();
+		return y / rowHeight;
+	}
+
+	private void handleUpdateArg(final Object arg) {
+		if (arg instanceof ActivePlayerChange) {
+			LOGGER.debug("Observed event representing a change in the currently-active player.");
+			final ActivePlayerChange change = (ActivePlayerChange) arg;
+			if (equalsPlayerId(change.getOldActivePlayerId())) {
+				// This client initiated the handover
+				final String newActivePlayerId = change.getNewActivePlayerId();
+				if (equalsPlayerId(newActivePlayerId)) {
+					// No change in active player
+					LOGGER.debug("Player \"{}\" is still active; Ignoring update event.", newActivePlayerId);
+				} else {
+					// Some other client's user is now active
+					LOGGER.debug("Player \"{}\" is now active; Disabling mouse listeners.", newActivePlayerId);
+					// JOptionPane.showMessageDialog(this, String.format("%s's
+					// turn.", newActivePlayerId));
+					setMouseEnabled(false);
+				}
+			} else {
+				// Some other client initiated the handover
+				final String newActivePlayerId = change.getNewActivePlayerId();
+				if (equalsPlayerId(newActivePlayerId)) {
+					// This client's user is now active
+					LOGGER.debug("The local player (\"{}\") is now active; Enabling mouse listeners.",
+							newActivePlayerId);
+					// JOptionPane.showMessageDialog(this, "Your turn!");
+					setMouseEnabled(true);
+				} else {
+					// Some other client's user is now active
+					LOGGER.debug("Player \"{}\" is now active; Disabling mouse listeners.", newActivePlayerId);
+					// JOptionPane.showMessageDialog(this,
+					// String.format("\"%s\"'s turn.", newActivePlayerId));
+					setMouseEnabled(false);
+					// TODO: Add notification of 3rd user now being active
+				}
+			}
+
+		} else if (arg instanceof GameEnding) {
+			LOGGER.debug("Observed event representing a game ending.");
+			final GameEnding ending = (GameEnding) arg;
+			final GameEnding.Outcome outcome = ending.getOutcome();
+			switch (outcome) {
+			case ABORT:
+				setMouseEnabled(false);
+				break;
+			case WIN: {
+				setMouseEnabled(false);
+				break;
+			}
+			default:
+				throw new AssertionError(String.format("No logic for handling outcome %s.", outcome));
+			}
+
+		} else if (arg instanceof Selection) {
+			LOGGER.debug("Observed event representing a user selection.");
+			// Highlight region
+			final Selection selection = (Selection) arg;
+			final SpatialRegion region = areaRegionFactory.apply(selection.getRegion());
+			final String selectingPlayerId = selection.getPlayerId();
+			LOGGER.debug("Toggling highlighting of coordinates {} for \"{}\".",
+					new Object[] { region, selectingPlayerId });
+
+			if (toggleHighlightedRegion(region) && equalsPlayerId(selectingPlayerId)) {
+				localSelectionHook.accept(this, selection);
+			}
+
+		} else if (arg instanceof Turn) {
+			final Turn turn = (Turn) arg;
+			final String turnPlayerId = turn.getPlayerId();
+			LOGGER.debug("Observed event representing a turn completed by \"{}\".", turnPlayerId);
+			if (equalsPlayerId(turnPlayerId)) {
+				LOGGER.debug("Skipping view update for remote notification about player's own turn.");
+				localTurnCompletionHook.accept(this, turn);
+			} else {
+				final Move move = turn.getMove();
+				updatePiecePositions(move);
+				repaint();
+			}
+
+		} else {
+			LOGGER.debug("Ignoring observed event arg object of type \"{}\".", arg.getClass().getName());
+		}
+	}
+
 	private void notifyNoValidMoves() {
 		JOptionPane.showMessageDialog(this, "No more moves available.");
 	}
 
+	private void registerController(final LocalController<?> localController) {
+		localController.addObserver(this);
+
+		final DisablingMouseAdapter mouseListener = new DisablingMouseAdapter(new SelectingMouseAdapter());
+		mouseListener.setEnabled(localController.isEnabled());
+		addDisablingMouseListener(mouseListener);
+	}
+
+	private void setMouseEnabled(final boolean enabled) {
+		mouseListeners.stream().forEach(listener -> listener.setEnabled(enabled));
+	}
+
+	private boolean toggleHighlightedRegion(final SpatialRegion region) {
+		boolean result = false;
+		if (result = !highlightedRegions.add(region)) {
+			result = highlightedRegions.remove(region);
+		}
+		return result;
+	}
+
+	private void updatePiecePositions(final Entry<SpatialRegion, Map<I, SpatialRegion>> pieceMove) {
+		final SpatialRegion occupiedRegion = pieceMove.getKey();
+		final Map<I, SpatialRegion> pieceMoveTargets = pieceMove.getValue();
+		for (final Entry<I, SpatialRegion> pieceMoveTarget : pieceMoveTargets.entrySet()) {
+			final I pieceId = pieceMoveTarget.getKey();
+			final SpatialRegion moveTarget = pieceMoveTarget.getValue();
+			if (!Arrays.equals(occupiedRegion.getDimensions(), moveTarget.getDimensions())) {
+				throw new IllegalArgumentException(String.format(
+						"Target region does not have the same dimensions (%s) as the source (%s).",
+						Arrays.toString(occupiedRegion.getDimensions()), Arrays.toString(moveTarget.getDimensions())));
+			}
+
+			posMatrix.placeElement(pieceId, moveTarget);
+		}
+		posMatrix.clearRegion(occupiedRegion);
+	}
+
+	private void updatePiecePositions(final Move move) {
+		final SpatialRegion source = areaRegionFactory.apply(move.getSource());
+		final SpatialRegion target = areaRegionFactory.apply(move.getTarget());
+		updatePiecePositions(source, target);
+	}
+
+	private void updatePiecePositions(final SpatialRegion source, final SpatialRegion target) {
+		final SpatialMap<I> piecePlacements = posMatrix.getElementPlacements();
+		final Collection<I> pieceIds = piecePlacements.getMinimalRegionElements().get(source);
+		for (final I pieceId : pieceIds) {
+			posMatrix.placeElement(pieceId, target);
+		}
+		posMatrix.clearRegion(source);
+	}
+
 	/**
-	 * @return the pieceImgs
+	 * @return the localController
 	 */
-	Map<I, Image> getPieceImgs() {
-		return pieceImgs;
+	LocalController<I> getLocalController() {
+		return localController;
 	}
 
 	/**
@@ -338,36 +608,10 @@ final class GameBoardPanel<I> extends JPanel {
 			// No pieces left to be moved; Game cannot continue
 			notifyNoValidMoves();
 		} else {
-			notifyMove(pieceMove);
+			updatePiecePositions(pieceMove);
 			LOGGER.debug("Finished randomly moving piece(s) at {}.", pieceMove.getKey());
+			repaint();
 		}
-	}
-
-	void notifyMove(final Entry<SpatialRegion, Map<I, SpatialRegion>> pieceMove) {
-		final SpatialRegion occupiedRegion = pieceMove.getKey();
-		final Map<I, SpatialRegion> pieceMoveTargets = pieceMove.getValue();
-		// System.out.println("BEFORE" + System.lineSeparator() +
-		// System.lineSeparator()
-		// + new
-		// MatrixStringReprFactory().apply(posMatrix.getPositionMatrix()));
-		highlightedRegions.add(occupiedRegion);
-		for (final Entry<I, SpatialRegion> pieceMoveTarget : pieceMoveTargets.entrySet()) {
-			final I pieceId = pieceMoveTarget.getKey();
-			final SpatialRegion moveTarget = pieceMoveTarget.getValue();
-			if (!Arrays.equals(occupiedRegion.getDimensions(), moveTarget.getDimensions())) {
-				throw new IllegalArgumentException(String.format(
-						"Target region does not have the same dimensions (%s) as the source (%s).",
-						Arrays.toString(occupiedRegion.getDimensions()), Arrays.toString(moveTarget.getDimensions())));
-			}
-
-			posMatrix.placeElement(pieceId, moveTarget);
-		}
-		posMatrix.clearRegion(occupiedRegion);
-		// System.out.println(System.lineSeparator() + System.lineSeparator() +
-		// "AFTER" + System.lineSeparator() + System.lineSeparator()
-		// + new
-		// MatrixStringReprFactory().apply(posMatrix.getPositionMatrix()));
-		repaint();
 	}
 
 	/**

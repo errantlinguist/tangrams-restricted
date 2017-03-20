@@ -16,7 +16,6 @@
 */
 package se.kth.speech.coin.tangrams.game;
 
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.Observable;
@@ -68,14 +67,14 @@ public final class LocalController<I> extends Observable {
 
 	private final String playerId;
 
-	private final Consumer<? super CoordinatePoint2D> selectionHook;
+	private final Consumer<? super Area2D> selectionHook;
 
 	private final Consumer<? super Move> turnCompletionHook;
 
 	private final Function<Area2D, SpatialRegion> areaSpatialRegionFactory;
 
 	public LocalController(final SpatialMatrix<I> model, final String playerId, final boolean isEnabled,
-			final Consumer<? super Move> turnCompletionHook, final Consumer<? super CoordinatePoint2D> selectionHook) {
+			final Consumer<? super Move> turnCompletionHook, final Consumer<? super Area2D> selectionHook) {
 		this.model = model;
 		this.areaSpatialRegionFactory = new AreaSpatialRegionFactory(model);
 		this.playerId = playerId;
@@ -156,20 +155,19 @@ public final class LocalController<I> extends Observable {
 		return result;
 	}
 
-	public void toggleSelection(final int[] region) {
+	public void toggleSelection(final SpatialRegion region) {
 		// FIXME: Make sure that the controller distinguishes between the
 		// different users' selections, e.g. if they click the same box, it
 		// stays selected rather than being "toggled" off
-		LOGGER.debug("Toggling coordinate selection {}.", Arrays.toString(region));
-
-		final CoordinatePoint2D coordRecord = new CoordinatePoint2D(region);
-		final Selection selection = new Selection(playerId, coordRecord);
+		LOGGER.debug("Toggling coordinate selection {}.", region);
+		final Area2D selectedArea = createArea(region);
+		final Selection selection = new Selection(playerId, selectedArea);
 		// Notify local listeners of (de-)selected region, e.g. update player's
 		// own view and notify the player's own game action module
 		setChanged();
 		notifyObservers(selection);
 
-		selectionHook.accept(coordRecord);
+		selectionHook.accept(selectedArea);
 	}
 
 	private void updateModel(final SpatialRegion sourceRegion, final SpatialRegion targetRegion) {

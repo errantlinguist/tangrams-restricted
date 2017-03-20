@@ -22,6 +22,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.IntFunction;
@@ -300,10 +301,19 @@ public final class SpatialMatrix<E> {
 		return positionMatrix;
 	}
 
+	public SpatialRegion getRegion(final int rowIdx, final int colIdx) {
+		return getRegion(rowIdx, rowIdx + 1, colIdx, colIdx + 1);
+	}
+
 	public SpatialRegion getRegion(final int xLowerBound, final int xUpperBound, final int yLowerBound,
 			final int yUpperBound) {
 		// TODO Implement caching, i.e. use a flyweight pattern?
 		return new SpatialRegion(xLowerBound, xUpperBound, yLowerBound, yUpperBound);
+	}
+
+	public Stream<Entry<SpatialRegion, E>> getIntersectedRegions(final int rowIdx, final int colIdx) {
+		final SpatialRegion region = getRegion(rowIdx, colIdx);
+		return elementPlacements.getIntersectedElements(region);
 	}
 
 	/*
