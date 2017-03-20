@@ -53,14 +53,18 @@ public final class RandomPopulatedModelFactory implements Function<Random, Spati
 
 	private final int[] gridSize;
 
+	private final boolean allowFailedPlacements;
+
 	RandomPopulatedModelFactory(final int[] gridSize, final Toolkit toolkit, final int piecePlacementCount,
 			final double occupiedGridArea,
-			final BiFunction<? super Image, ? super Toolkit, ? extends Image> postColoringImgTransformer) {
+			final BiFunction<? super Image, ? super Toolkit, ? extends Image> postColoringImgTransformer,
+			final boolean allowFailedPlacements) {
 		this.gridSize = gridSize;
 		this.toolkit = toolkit;
 		this.piecePlacementCount = piecePlacementCount;
 		this.occupiedGridArea = occupiedGridArea;
 		this.postColoringImgTransformer = postColoringImgTransformer;
+		this.allowFailedPlacements = allowFailedPlacements;
 	}
 
 	@Override
@@ -78,7 +82,7 @@ public final class RandomPopulatedModelFactory implements Function<Random, Spati
 				.sort(Comparator.comparing(ImageVisualizationInfo::getSize, ImageSize.getSizeComparator().reversed()));
 
 		final RandomModelPopulator modelPopulator = new RandomModelPopulator(result, imgVisualizationInfo,
-				occupiedGridArea, false, piecePlacementCount, pieceImgs::put, imgViewInfoFactory);
+				occupiedGridArea, allowFailedPlacements, piecePlacementCount, pieceImgs::put, imgViewInfoFactory);
 		modelPopulator.accept(rnd);
 		return result;
 	}

@@ -61,13 +61,14 @@ final class GameFactory implements Function<String, Game<Integer>> {
 	};
 
 	private static RandomPopulatedModelFactory createModelFactory() {
-		final int[] gridDims = MULTIVALUE_PROP_DELIM_PATTERN.splitAsStream(PROPS.getProperty("model.gridDims"))
+		final boolean allowFailedPlacements = Boolean.parseBoolean(PROPS.getProperty("allowFailedPlacements"));
+		final int[] gridDims = MULTIVALUE_PROP_DELIM_PATTERN.splitAsStream(PROPS.getProperty("gridDims"))
 				.mapToInt(Integer::parseInt).toArray();
-		final double occupiedGridArea = Double.parseDouble(PROPS.getProperty("model.occupiedGridArea"));
-		final int piecePlacementCount = Integer.parseInt(PROPS.getProperty("model.piecePlacementCount"));
+		final double occupiedGridArea = Double.parseDouble(PROPS.getProperty("occupiedGridArea"));
+		final int piecePlacementCount = Integer.parseInt(PROPS.getProperty("piecePlacementCount"));
 
 		return new RandomPopulatedModelFactory(gridDims, Toolkit.getDefaultToolkit(), piecePlacementCount,
-				occupiedGridArea, DEFAULT_POST_COLORING_IMG_TRANSFORMER);
+				occupiedGridArea, DEFAULT_POST_COLORING_IMG_TRANSFORMER, allowFailedPlacements);
 	}
 
 	private final Function<? super Random, ? extends SpatialMatrix<Integer>> modelFactory;
