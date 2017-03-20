@@ -235,7 +235,6 @@ final class GameBoardPanel<I> extends JPanel implements Observer {
 		// drawGrid(g);
 		// drawPieceIds(g);
 
-		drawPieceImages(g);
 		{
 			final Graphics2D regionHighlightingG = createRegionHighlightDrawingGraphics(g);
 			regionHighlightingG.setStroke(new BasicStroke(REGION_HIGHLIGHT_STROKE_WIDTH));
@@ -246,7 +245,7 @@ final class GameBoardPanel<I> extends JPanel implements Observer {
 				regionHighlightingG.dispose();
 			}
 		}
-
+		drawPieceImages(g);
 	}
 
 	/*
@@ -280,13 +279,13 @@ final class GameBoardPanel<I> extends JPanel implements Observer {
 		addMouseMotionListener(mouseListener);
 	}
 
-	private void clearRegionHighlights(final Graphics g, final SpatialRegion region) {
-		final int colWidth = getGridColWidth();
-		final int rowHeight = getGridRowHeight();
-		final int[] startIdxs = createComponentCoordStartIdxArray(region, colWidth, rowHeight);
-		final int[] size = createComponentCoordSizeArray(region, colWidth, rowHeight);
-		g.clearRect(startIdxs[0], startIdxs[1], size[0], size[1]);
-	}
+//	private void clearRegionHighlights(final Graphics g, final SpatialRegion region) {
+//		final int colWidth = getGridColWidth();
+//		final int rowHeight = getGridRowHeight();
+//		final int[] startIdxs = createComponentCoordStartIdxArray(region, colWidth, rowHeight);
+//		final int[] size = createComponentCoordSizeArray(region, colWidth, rowHeight);
+//		g.clearRect(startIdxs[0], startIdxs[1], size[0], size[1]);
+//	}
 
 	private Map<I, SpatialRegion> createRandomValidMoveTargetMap(final SpatialRegion occupiedRegion, final Random rnd) {
 		final Set<SpatialRegion> regionValidMoves = posMatrix.createValidMoveSet(occupiedRegion);
@@ -307,12 +306,12 @@ final class GameBoardPanel<I> extends JPanel implements Observer {
 		return result;
 	}
 
-	private Graphics2D createRegionHighlightClearingGraphics(final Graphics g) {
-		final Graphics2D result = (Graphics2D) g.create();
-		result.setStroke(new BasicStroke(REGION_HIGHLIGHT_STROKE_WIDTH));
-		result.setColor(getBackground());
-		return result;
-	}
+//	private Graphics2D createRegionHighlightClearingGraphics(final Graphics g) {
+//		final Graphics2D result = (Graphics2D) g.create();
+//		result.setStroke(new BasicStroke(REGION_HIGHLIGHT_STROKE_WIDTH));
+//		result.setColor(getBackground());
+//		return result;
+//	}
 
 	private Graphics2D createRegionHighlightDrawingGraphics(final Graphics g) {
 		final Graphics2D result = (Graphics2D) g.create();
@@ -580,12 +579,13 @@ final class GameBoardPanel<I> extends JPanel implements Observer {
 				regionHighlightingG.dispose();
 			}
 		} else if (result = highlightedRegions.remove(region)) {
-			final Graphics2D regionHighlightingG = createRegionHighlightClearingGraphics(getGraphics());
-			try {
-				clearRegionHighlights(regionHighlightingG, region);
-			} finally {
-				regionHighlightingG.dispose();
-			}
+			repaint();
+//			final Graphics2D regionHighlightingG = createRegionHighlightClearingGraphics(getGraphics());
+//			try {
+//				clearRegionHighlights(regionHighlightingG, region);
+//			} finally {
+//				regionHighlightingG.dispose();
+//			}
 
 		}
 
