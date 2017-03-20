@@ -285,7 +285,7 @@ final class GameBoardPanel<I> extends JPanel implements Observer {
 		final int rowHeight = getGridRowHeight();
 		final int[] startIdxs = createComponentCoordStartIdxArray(region, colWidth, rowHeight);
 		final int[] size = createComponentCoordSizeArray(region, colWidth, rowHeight);
-		g.fillRect(startIdxs[0], startIdxs[1], size[0], size[1]);
+		g.clearRect(startIdxs[0], startIdxs[1], size[0], size[1]);
 	}
 
 	private Map<I, SpatialRegion> createRandomValidMoveTargetMap(final SpatialRegion occupiedRegion, final Random rnd) {
