@@ -21,6 +21,7 @@ import java.awt.Image;
 import java.awt.Toolkit;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -41,6 +42,7 @@ import se.kth.speech.coin.tangrams.RandomModelPopulator;
 import se.kth.speech.coin.tangrams.content.ImageLoadingImageViewInfoFactory;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 import se.kth.speech.coin.tangrams.game.LocalController;
+import se.kth.speech.coin.tangrams.game.PlayerRole;
 import se.kth.speech.coin.tangrams.iristk.events.Selection;
 import se.kth.speech.coin.tangrams.iristk.events.Turn;
 
@@ -279,7 +281,8 @@ final class GameBoardPanelFactory implements Function<Collection<ImageVisualizat
 			final Collection<ImageVisualizationInfo> imgVisualizationInfoData, final int expectedPieceCount) {
 		LOGGER.info("Creating a position matrix of size {}.", gridSize);
 		final SpatialMatrix<Integer> posMatrix = new SpatialMatrix<>(gridSize, new SpatialMap<>(expectedPieceCount));
-		final LocalController<Integer> localController = new LocalController<>(posMatrix, "", true, move -> {
+		final EnumSet<PlayerRole> roles = EnumSet.of(PlayerRole.INSTRUCTOR, PlayerRole.MOVER);
+		final LocalController<Integer> localController = new LocalController<>(posMatrix, "", roles, move -> {
 		}, selection -> {
 		});
 		final Map<Integer, Image> pieceImgs = Maps.newHashMapWithExpectedSize(expectedPieceCount);

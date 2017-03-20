@@ -19,6 +19,7 @@ package se.kth.speech.coin.tangrams.game;
 import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.Observable;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -57,8 +58,6 @@ public final class LocalController<I> extends Observable {
 		return new CoordinatePoint2D(region.getXLowerBound(), region.getYLowerBound());
 	}
 
-	private boolean isEnabled;
-
 	private final SpatialMatrix<I> model;
 
 	private int moveCount = 0;
@@ -73,12 +72,14 @@ public final class LocalController<I> extends Observable {
 
 	private final Function<Area2D, SpatialRegion> areaSpatialRegionFactory;
 
-	public LocalController(final SpatialMatrix<I> model, final String playerId, final boolean isEnabled,
+	private final Set<PlayerRole> roles;
+
+	public LocalController(final SpatialMatrix<I> model, final String playerId, final Set<PlayerRole> roles,
 			final Consumer<? super Move> turnCompletionHook, final Consumer<? super Area2D> selectionHook) {
 		this.model = model;
 		this.areaSpatialRegionFactory = new AreaSpatialRegionFactory(model);
 		this.playerId = playerId;
-		this.isEnabled = isEnabled;
+		this.roles = roles;
 		this.turnCompletionHook = turnCompletionHook;
 		this.selectionHook = selectionHook;
 	}
@@ -88,7 +89,7 @@ public final class LocalController<I> extends Observable {
 	 * {@link LocalController} instance has ended their turn.
 	 */
 	public void endTurn() {
-		if (!isEnabled) {
+		if (!roles.contains(PlayerRole.MOVER)) {
 			throw new IllegalStateException("Controller not active.");
 		}
 		if (nextTurnMove == null) {
@@ -127,22 +128,14 @@ public final class LocalController<I> extends Observable {
 	}
 
 	/**
-	 * @return the isEnabled
+	 * @return the roles
 	 */
-	public boolean isEnabled() {
-		return isEnabled;
-	}
-
-	/**
-	 * @param isEnabled
-	 *            the isEnabled to set
-	 */
-	public void setEnabled(final boolean isEnabled) {
-		this.isEnabled = isEnabled;
+	public Set<PlayerRole> getRoles() {
+		return roles;
 	}
 
 	public ValidationStatus submitMove(final SpatialRegion sourceRegion, final SpatialRegion targetRegion) {
-		if (!isEnabled) {
+		if (!roles.contains(PlayerRole.MOVER)) {
 			throw new IllegalStateException("Controller not active.");
 		}
 

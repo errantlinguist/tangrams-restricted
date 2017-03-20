@@ -89,7 +89,7 @@ public final class RemoteController<I> extends Observable {
 	 */
 	public void notifyNewActivePlayer(final ActivePlayerChange handoff) {
 		LOGGER.debug("The remote controller was notified that player \"{}\" is now active.",
-				handoff.getNewActivePlayerId());
+				handoff.getNewInstructingPlayerId());
 		// Notify local, lower-level listeners which e.g. update the user's own
 		// view
 		setChanged();

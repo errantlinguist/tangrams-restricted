@@ -64,7 +64,7 @@ final class ActivePlayerTracker {
 		return result;
 	}
 
-	public String getActivePlayerId() {
+	public String getInstructingPlayerId() {
 		return activePlayerId;
 	}
 

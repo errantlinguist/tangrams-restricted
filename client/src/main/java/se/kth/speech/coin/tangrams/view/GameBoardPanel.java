@@ -66,6 +66,7 @@ import se.kth.speech.SpatialRegion;
 import se.kth.speech.awt.DisablingMouseAdapter;
 import se.kth.speech.coin.tangrams.game.AreaSpatialRegionFactory;
 import se.kth.speech.coin.tangrams.game.LocalController;
+import se.kth.speech.coin.tangrams.game.PlayerRole;
 import se.kth.speech.coin.tangrams.iristk.events.ActivePlayerChange;
 import se.kth.speech.coin.tangrams.iristk.events.GameEnding;
 import se.kth.speech.coin.tangrams.iristk.events.Move;
@@ -440,33 +441,33 @@ final class GameBoardPanel<I> extends JPanel implements Observer {
 		if (arg instanceof ActivePlayerChange) {
 			LOGGER.debug("Observed event representing a change in the currently-active player.");
 			final ActivePlayerChange change = (ActivePlayerChange) arg;
-			if (equalsPlayerId(change.getOldActivePlayerId())) {
+			if (equalsPlayerId(change.getOldInstructingPlayerId())) {
 				// This client initiated the handover
-				final String newActivePlayerId = change.getNewActivePlayerId();
-				if (equalsPlayerId(newActivePlayerId)) {
+				final String newInstructingPlayerId = change.getNewInstructingPlayerId();
+				if (equalsPlayerId(newInstructingPlayerId)) {
 					// No change in active player
-					LOGGER.debug("Player \"{}\" is still active; Ignoring update event.", newActivePlayerId);
+					LOGGER.debug("Player \"{}\" is still active; Ignoring update event.", newInstructingPlayerId);
 				} else {
 					// Some other client's user is now active
-					LOGGER.debug("Player \"{}\" is now active; Disabling mouse listeners.", newActivePlayerId);
+					LOGGER.debug("Player \"{}\" is now active; Disabling mouse listeners.", newInstructingPlayerId);
 					// JOptionPane.showMessageDialog(this, String.format("%s's
-					// turn.", newActivePlayerId));
+					// turn.", newInstructingPlayerId));
 					setMouseEnabled(false);
 				}
 			} else {
 				// Some other client initiated the handover
-				final String newActivePlayerId = change.getNewActivePlayerId();
-				if (equalsPlayerId(newActivePlayerId)) {
+				final String newInstructingPlayerId = change.getNewInstructingPlayerId();
+				if (equalsPlayerId(newInstructingPlayerId)) {
 					// This client's user is now active
 					LOGGER.debug("The local player (\"{}\") is now active; Enabling mouse listeners.",
-							newActivePlayerId);
+							newInstructingPlayerId);
 					// JOptionPane.showMessageDialog(this, "Your turn!");
 					setMouseEnabled(true);
 				} else {
 					// Some other client's user is now active
-					LOGGER.debug("Player \"{}\" is now active; Disabling mouse listeners.", newActivePlayerId);
+					LOGGER.debug("Player \"{}\" is now active; Disabling mouse listeners.", newInstructingPlayerId);
 					// JOptionPane.showMessageDialog(this,
-					// String.format("\"%s\"'s turn.", newActivePlayerId));
+					// String.format("\"%s\"'s turn.", newInstructingPlayerId));
 					setMouseEnabled(false);
 					// TODO: Add notification of 3rd user now being active
 				}
@@ -527,7 +528,7 @@ final class GameBoardPanel<I> extends JPanel implements Observer {
 		localController.addObserver(this);
 
 		final DisablingMouseAdapter mouseListener = new DisablingMouseAdapter(new SelectingMouseAdapter());
-		mouseListener.setEnabled(localController.isEnabled());
+		mouseListener.setEnabled(localController.getRoles().contains(PlayerRole.MOVER));
 		addDisablingMouseListener(mouseListener);
 	}
 
