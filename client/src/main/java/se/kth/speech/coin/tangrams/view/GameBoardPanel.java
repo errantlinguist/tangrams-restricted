@@ -78,7 +78,7 @@ import se.kth.speech.coin.tangrams.iristk.events.Turn;
  *
  */
 final class GameBoardPanel<I> extends JPanel implements Observer {
-	
+
 	private class SelectingMouseAdapter extends MouseAdapter {
 		@Override
 		public void mouseClicked(final MouseEvent e) {
@@ -86,45 +86,16 @@ final class GameBoardPanel<I> extends JPanel implements Observer {
 			final int y = e.getY();
 			final Component foundComponent = findComponentAt(e.getX(), e.getY());
 			if (foundComponent == GameBoardPanel.this) {
-				LOGGER.info("Finding selected piece on the board.");
-				final int rowIdx = getRowIdx(y);
-				final int colIdx = getColIdx(x);
-				final Stream<Entry<SpatialRegion, I>> selectedRegionPieceIds = posMatrix
-						.getIntersectedRegions(rowIdx, colIdx)
-						.filter(selectedRegionPieceId -> selectedRegionPieceId.getValue() != null);
-				final Map<I, SpatialRegion> pieceBiggestRegions = Maps.newHashMapWithExpectedSize(1);
-				selectedRegionPieceIds.forEach(selectedRegionPieceId -> {
-					final SpatialRegion region = selectedRegionPieceId.getKey();
-					final I pieceId = selectedRegionPieceId.getValue();
-					pieceBiggestRegions.compute(pieceId, (k, oldVal) -> {
-						SpatialRegion newVal;
-						if (oldVal == null) {
-							newVal = region;
-						} else {
-							if (oldVal.getGridArea() < region.getGridArea()) {
-								newVal = region;
-							} else {
-								newVal = oldVal;
-							}
-						}
-						return newVal;
-					});
-				});
-				if (pieceBiggestRegions.isEmpty()) {
+
+				final Entry<I, SpatialRegion> biggestPieceRegionUnderSelection = findBiggestPieceRegionUnderSelection(x,
+						y);
+				if (biggestPieceRegionUnderSelection == null) {
 					LOGGER.info("Nothing to select.");
 				} else {
-					final List<Entry<I, SpatialRegion>> pieceBiggestRegionsDescendingSize = new ArrayList<>(
-							pieceBiggestRegions.entrySet());
-					final Comparator<Entry<I, SpatialRegion>> sizeComparator = Comparator
-							.comparing(piece -> piece.getValue().getGridArea());
-					Collections.sort(pieceBiggestRegionsDescendingSize, sizeComparator.reversed());
-					final Entry<I, SpatialRegion> biggestPieceRegionUnderSelection = pieceBiggestRegionsDescendingSize
-							.iterator().next();
 					LOGGER.info("Selected {}.", biggestPieceRegionUnderSelection);
 					toggleHighlightedRegion(biggestPieceRegionUnderSelection.getValue());
 					repaint();
 				}
-
 			} else {
 				LOGGER.info("The user clicked on an instance of \"{}\", which cannot be selected.",
 						foundComponent.getClass());
@@ -405,6 +376,44 @@ final class GameBoardPanel<I> extends JPanel implements Observer {
 
 	private boolean equalsPlayerId(final String str) {
 		return Objects.equals(playerIdGetter.get(), str);
+	}
+
+	private Entry<I, SpatialRegion> findBiggestPieceRegionUnderSelection(final int x, final int y) {
+		final int rowIdx = getRowIdx(y);
+		final int colIdx = getColIdx(x);
+		final Stream<Entry<SpatialRegion, I>> selectedRegionPieceIds = posMatrix.getIntersectedRegions(rowIdx, colIdx)
+				.filter(selectedRegionPieceId -> selectedRegionPieceId.getValue() != null);
+		final Map<I, SpatialRegion> pieceBiggestRegions = Maps.newHashMapWithExpectedSize(1);
+		selectedRegionPieceIds.forEach(selectedRegionPieceId -> {
+			final SpatialRegion region = selectedRegionPieceId.getKey();
+			final I pieceId = selectedRegionPieceId.getValue();
+			pieceBiggestRegions.compute(pieceId, (k, oldVal) -> {
+				SpatialRegion newVal;
+				if (oldVal == null) {
+					newVal = region;
+				} else {
+					if (oldVal.getGridArea() < region.getGridArea()) {
+						newVal = region;
+					} else {
+						newVal = oldVal;
+					}
+				}
+				return newVal;
+			});
+		});
+
+		final Entry<I, SpatialRegion> result;
+		if (pieceBiggestRegions.isEmpty()) {
+			result = null;
+		} else {
+			final List<Entry<I, SpatialRegion>> pieceBiggestRegionsDescendingSize = new ArrayList<>(
+					pieceBiggestRegions.entrySet());
+			final Comparator<Entry<I, SpatialRegion>> sizeComparator = Comparator
+					.comparing(piece -> piece.getValue().getGridArea());
+			Collections.sort(pieceBiggestRegionsDescendingSize, sizeComparator.reversed());
+			result = pieceBiggestRegionsDescendingSize.iterator().next();
+		}
+		return result;
 	}
 
 	private int getColIdx(final int x) {
