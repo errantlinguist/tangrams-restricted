@@ -22,7 +22,6 @@ import java.awt.event.WindowEvent;
 import java.awt.font.TextAttribute;
 import java.text.AttributedCharacterIterator.Attribute;
 import java.util.EnumMap;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 
