@@ -186,7 +186,7 @@ public final class RandomModelPopulator implements Consumer<Random> {
 					Arrays.toString(posMatrix.getDimensions()), pieceIds.size(), occupiedGridArea));
 		} else {
 			final String matrixStrRepr = new MatrixStringReprFactory().apply(posMatrix.getPositionMatrix());
-			System.out.println("PIECE PLACEMENTS" + System.lineSeparator() + matrixStrRepr);
+			LOGGER.debug("PIECE PLACEMENTS" + System.lineSeparator() + matrixStrRepr);
 		}
 	}
 
