@@ -60,18 +60,25 @@ public final class ImageVisualizationInfoFactoryTest {
 	/**
 	 * Test method for
 	 * {@link se.kth.speech.coin.tangrams.content.ImageVisualizationInfoFactory#next()}.
-	 * @throws InterruptedException 
+	 * 
+	 * @throws InterruptedException
 	 */
 	@Theory
 	public final void testNextStable(final long s) throws InterruptedException {
 		final Random rnd1 = new Random(s);
-		final Random rnd2 = new Random(s);
 		final ImageVisualizationInfoFactory f1 = new ImageVisualizationInfoFactory(rnd1);
-		final Stream<ImageVisualizationInfo> results1 = Stream.generate(f1::next).limit(f1.combinationCount());
-		Thread.sleep(300);
+		final List<ImageVisualizationInfo> results1 = Stream.generate(f1::next).limit(f1.combinationCount())
+				.collect(Collectors.toList());
+		Thread.sleep(100);
+		final Random rnd2 = new Random(s);
 		final ImageVisualizationInfoFactory f2 = new ImageVisualizationInfoFactory(rnd2);
 		final Stream<ImageVisualizationInfo> results2 = Stream.generate(f2::next).limit(f2.combinationCount());
 		ITER_EQUALITY_ASSERTER.accept(results1.iterator(), results2.iterator());
+		Thread.sleep(100);
+		final Random rnd3 = new Random(s);
+		final ImageVisualizationInfoFactory f3 = new ImageVisualizationInfoFactory(rnd3);
+		final Stream<ImageVisualizationInfo> results3 = Stream.generate(f3::next).limit(f3.combinationCount());
+		ITER_EQUALITY_ASSERTER.accept(results1.iterator(), results3.iterator());
 	}
 
 	/**
