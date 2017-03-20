@@ -19,8 +19,9 @@ package se.kth.speech.coin.tangrams.content;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.Comparator;
-import java.util.Map;
+import java.util.List;
 import java.util.NavigableMap;
 import java.util.Properties;
 import java.util.TreeMap;
@@ -28,9 +29,9 @@ import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
 import com.github.errantlinguist.ClassProperties;
-import com.google.common.collect.Maps;
 
 import se.kth.speech.FilenameBaseSplitter;
+import se.kth.speech.Lists;
 import se.kth.speech.io.ClasspathDirResourceLocatorMapFactory;
 import se.kth.speech.io.FileResourceLocatorContentTypePatternFilter;
 
@@ -51,36 +52,10 @@ final class IconImages {
 		try {
 			final Properties props = ClassProperties.load(IconImages.class);
 			final String imageOrderingStr = props.getProperty("image.ordering");
-			final String[] imageOrderingNames = MULTIVALUE_PROP_DELIM_PATTERN.split(imageOrderingStr);
-			final Map<String, Integer> imageOrderingIndices = Maps
-					.newHashMapWithExpectedSize(imageOrderingNames.length + 1);
-			int idx = 0;
-			for (final String imageOrderingName : imageOrderingNames) {
-				imageOrderingIndices.put(imageOrderingName, idx++);
-			}
-			ICON_NAME_COMPARATOR = new Comparator<String>() {
-
-				private final Comparator<Integer> idxComparator = Comparator.nullsLast(Comparator.naturalOrder());
-
-				/*
-				 * (non-Javadoc)
-				 *
-				 * @see java.util.Comparator#compare(java.lang.Object,
-				 * java.lang.Object)
-				 */
-				@Override
-				public int compare(final String o1, final String o2) {
-					final Integer idx1 = imageOrderingIndices.get(o1);
-					final Integer idx2 = imageOrderingIndices.get(o2);
-					int result = idxComparator.compare(idx1, idx2);
-					if (result == 0) {
-						// Fall back to alphanumeric ordering
-						result = o1.compareTo(o2);
-					}
-					return result;
-				}
-
-			};
+			final List<String> imageOrderingNames = Arrays
+					.asList(MULTIVALUE_PROP_DELIM_PATTERN.split(imageOrderingStr));
+			ICON_NAME_COMPARATOR = Comparator
+					.nullsLast(Lists.comparingByIndex(imageOrderingNames).thenComparing(Comparator.naturalOrder()));
 
 			ICON_IMAGE_RESOURCES = createImageResourceMap("image/(?!svg).+");
 		} catch (final IOException e) {
