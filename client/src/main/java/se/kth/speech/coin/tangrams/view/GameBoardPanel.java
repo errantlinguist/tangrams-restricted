@@ -381,7 +381,7 @@ final class GameBoardPanel<I> extends JPanel implements Observer {
 	private Entry<I, SpatialRegion> findBiggestPieceRegionUnderSelection(final int x, final int y) {
 		final int rowIdx = getRowIdx(y);
 		final int colIdx = getColIdx(x);
-		final Stream<Entry<SpatialRegion, I>> selectedRegionPieceIds = posMatrix.getIntersectedRegions(rowIdx, colIdx)
+		final Stream<Entry<SpatialRegion, I>> selectedRegionPieceIds = posMatrix.getIntersectedElements(rowIdx, colIdx)
 				.filter(selectedRegionPieceId -> selectedRegionPieceId.getValue() != null);
 		final Map<I, SpatialRegion> pieceBiggestRegions = Maps.newHashMapWithExpectedSize(1);
 		selectedRegionPieceIds.forEach(selectedRegionPieceId -> {

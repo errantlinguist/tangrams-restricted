@@ -311,7 +311,7 @@ public final class SpatialMatrix<E> {
 		return new SpatialRegion(xLowerBound, xUpperBound, yLowerBound, yUpperBound);
 	}
 
-	public Stream<Entry<SpatialRegion, E>> getIntersectedRegions(final int rowIdx, final int colIdx) {
+	public Stream<Entry<SpatialRegion, E>> getIntersectedElements(final int rowIdx, final int colIdx) {
 		final SpatialRegion region = getRegion(rowIdx, colIdx);
 		return elementPlacements.getIntersectedElements(region);
 	}
