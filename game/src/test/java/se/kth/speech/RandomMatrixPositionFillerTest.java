@@ -148,10 +148,12 @@ public final class RandomMatrixPositionFillerTest {
 	/**
 	 * Test method for
 	 * {@link se.kth.speech.RandomMatrixPositionFiller#apply(Collection)}.
+	 * @throws InterruptedException 
 	 */
 	@Theory
-	public final void testApplyStable(final long seed) {
+	public final void testApplyStable(final long seed) throws InterruptedException {
 		final MutablePair<SpatialMatrix<Integer>, Set<Integer>> result1 = apply(seed);
+		Thread.sleep(100);
 		final MutablePair<SpatialMatrix<Integer>, Set<Integer>> result2 = apply(seed);
 		Assert.assertEquals(result1, result2);
 	}
