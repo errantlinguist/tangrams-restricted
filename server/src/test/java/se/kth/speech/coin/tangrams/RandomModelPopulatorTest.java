@@ -54,7 +54,7 @@ public final class RandomModelPopulatorTest {
 	// @DataPoints("seeds")
 	// public static final long[] TEST_SEEDS;
 	//
-	// @DataPoints("imgPlacementCounts")
+	// @DataPoints("piecePlacementCounts")
 	// public static final int[] TEST_IMG_PLACEMENT_COUNTS;
 	//
 	// @DataPoints("gridDims")
@@ -80,11 +80,11 @@ public final class RandomModelPopulatorTest {
 	// });
 	// TEST_IMG_VIS_INFO_FACTORIES = testImgVisInfoFactories.entrySet();
 	//
-	// final int maxImgPlacementCount =
+	// final int maxPiecePlacementCount =
 	// TEST_IMG_VIS_INFO_FACTORIES.stream().map(Entry::getValue)
 	// .mapToInt(ImageVisualizationInfoFactory::combinationCount).min().getAsInt();
 	// TEST_IMG_PLACEMENT_COUNTS = rnd.ints().filter(val -> val <=
-	// maxImgPlacementCount).distinct().limit(10)
+	// maxPiecePlacementCount).distinct().limit(10)
 	// .toArray();
 	// final int[] testDimLengths = rnd.ints(1,
 	// 21).distinct().limit(10).toArray();
@@ -120,37 +120,37 @@ public final class RandomModelPopulatorTest {
 		final Random rnd = new Random();
 		final ImageVisualizationInfoFactory imgDataFactory = new ImageVisualizationInfoFactory(rnd);
 		final int maxImgVisualizationInfoDatumCount = imgDataFactory.combinationCount();
-		// final int imgPlacementCount = rnd.ints().filter(val -> val <=
+		// final int piecePlacementCount = rnd.ints().filter(val -> val <=
 		// maxImgVisualizationInfoDatumCount).findAny().getAsInt();
-		final int imgPlacementCount = 2;
+		final int piecePlacementCount = 2;
 		// Sanity check to ensure that the test hasn't been constructed wrong
-		Assert.assertTrue(imgPlacementCount <= maxImgVisualizationInfoDatumCount);
+		Assert.assertTrue(piecePlacementCount <= maxImgVisualizationInfoDatumCount);
 		final int[] gridSize = new int[] { 20, 20 };
-		final SpatialMatrix<Integer> result = new SpatialMatrix<>(gridSize, new SpatialMap<>(imgPlacementCount));
+		final SpatialMatrix<Integer> result = new SpatialMatrix<>(gridSize, new SpatialMap<>(piecePlacementCount));
 
-		final Map<Integer, Image> pieceImgs = Maps.newHashMapWithExpectedSize(imgPlacementCount);
+		final Map<Integer, Image> pieceImgs = Maps.newHashMapWithExpectedSize(piecePlacementCount);
 		final ImageLoadingImageViewInfoFactory imgViewInfoFactory = new ImageLoadingImageViewInfoFactory(
 				Toolkit.getDefaultToolkit(), DEFAULT_POST_COLORING_IMG_TRANSFORMER,
-				Maps.newHashMapWithExpectedSize(imgPlacementCount));
+				Maps.newHashMapWithExpectedSize(piecePlacementCount));
 		final List<ImageVisualizationInfo> imgVisualizationInfo = Stream.generate(imgDataFactory::next)
-				.limit(imgPlacementCount).collect(Collectors.toList());
+				.limit(piecePlacementCount).collect(Collectors.toList());
 		// Sort the list so that the biggest images come first
 		imgVisualizationInfo
 				.sort(Comparator.comparing(ImageVisualizationInfo::getSize, ImageSize.getSizeComparator().reversed()));
 
 		final RandomModelPopulator modelPopulator = new RandomModelPopulator(result, imgVisualizationInfo,
-				DEFAULT_OCCUPIED_GRID_AREA, false, imgPlacementCount, pieceImgs::put, imgViewInfoFactory);
+				DEFAULT_OCCUPIED_GRID_AREA, false, piecePlacementCount, pieceImgs::put, imgViewInfoFactory);
 		modelPopulator.accept(rnd);
 
-		Assert.assertEquals(imgPlacementCount, result.createValidMoveMap().size());
+		Assert.assertEquals(piecePlacementCount, result.createValidMoveMap().size());
 		final Set<Integer> pieceIds = result.getCells().filter(Objects::nonNull)
-				.collect(Collectors.toCollection(() -> Sets.newHashSetWithExpectedSize(imgPlacementCount)));
-		Assert.assertEquals(imgPlacementCount, pieceIds.size());
+				.collect(Collectors.toCollection(() -> Sets.newHashSetWithExpectedSize(piecePlacementCount)));
+		Assert.assertEquals(piecePlacementCount, pieceIds.size());
 
 		final SpatialMap<Integer> posMap = result.getElementPlacements();
-		Assert.assertEquals(imgPlacementCount, posMap.getAllElements().size());
-		Assert.assertEquals(imgPlacementCount, posMap.getMinimalRegionElements().size());
-		Assert.assertEquals(imgPlacementCount, posMap.getMinimalRegions().size());
+		Assert.assertEquals(piecePlacementCount, posMap.getAllElements().size());
+		Assert.assertEquals(piecePlacementCount, posMap.getMinimalRegionElements().size());
+		Assert.assertEquals(piecePlacementCount, posMap.getMinimalRegions().size());
 	}
 
 }
