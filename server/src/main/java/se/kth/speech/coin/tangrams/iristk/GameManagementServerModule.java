@@ -178,6 +178,7 @@ public final class GameManagementServerModule extends IrisModule {
 
 				break;
 			}
+			/*
 			case NEXT_TURN_REQUEST: {
 				LOGGER.debug("Received broker \"next turn\" event for game \"{}\".", gameId);
 				final Game<Integer> gameState = gameStateGetter.apply(gameId);
@@ -202,6 +203,7 @@ public final class GameManagementServerModule extends IrisModule {
 				}
 				break;
 			}
+			*/
 			case COMPLETED_TURN_REQUEST: {
 				LOGGER.debug("Received broker \"next turn\" event for game \"{}\".", gameId);
 				final Game<Integer> gameState = gameStateGetter.apply(gameId);

@@ -39,7 +39,8 @@ import se.kth.speech.coin.tangrams.iristk.events.Turn;
 
 public final class GameManagementClientModule extends IrisModule {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(GameManagementClientModule.class);
+	//private static final Logger LOGGER = LoggerFactory.getLogger(GameManagementClientModule.class);
+	private static final MyLogger LOGGER = new MyLogger();
 
 	private final Consumer<? super GameEnding> gameEndingHook;
 
@@ -88,7 +89,7 @@ public final class GameManagementClientModule extends IrisModule {
 
 		} else {
 			final String gameId = event.getString(GameManagementEvent.Attribute.GAME_ID.toString());
-			if (Objects.equals(gameId, this.gameId)) {
+			if (Objects.equals(gameId, this.gameId) && !event.getString(GameManagementEvent.Attribute.PLAYER_ID.toString(), "").equals(playerId)) {
 				switch (gameEventType) {
 				case COMPLETED_TURN_RESPONSE: {
 					final Turn turn = (Turn) event.get(GameManagementEvent.Attribute.TURN.toString());
@@ -110,8 +111,8 @@ public final class GameManagementClientModule extends IrisModule {
 					setupGame(gameDesc);
 					break;
 				}
-				case NEXT_TURN_RESPONSE: {
-					final Turn turn = (Turn) event.get(GameManagementEvent.Attribute.TURN.toString());
+				case NEXT_TURN_REQUEST: {
+					final Move move = (Move) event.get(GameManagementEvent.Attribute.MOVE.toString());
 					controller.notifyNextTurn(turn);
 					break;
 				}
@@ -150,10 +151,10 @@ public final class GameManagementClientModule extends IrisModule {
 					LOGGER.debug("Ignoring received game event type \"{}\".", gameEventType);
 					break;
 				}
-				case NEXT_TURN_REQUEST: {
-					LOGGER.debug("Ignoring received game event type \"{}\".", gameEventType);
-					break;
-				}
+				//case NEXT_TURN_REQUEST: {
+				//	LOGGER.debug("Ignoring received game event type \"{}\".", gameEventType);
+				//	break;
+				//}
 				case PLAYER_JOIN_REQUEST: {
 					LOGGER.debug("Ignoring received game event type \"{}\".", gameEventType);
 					break;

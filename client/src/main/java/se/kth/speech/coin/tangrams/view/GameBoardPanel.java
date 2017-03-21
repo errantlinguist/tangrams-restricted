@@ -91,22 +91,22 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 					LOGGER.info("Nothing to select.");
 				} else {
 					LOGGER.info("Selected {}.", biggestPieceRegionUnderSelection);
-					final SpatialRegion region = biggestPieceRegionUnderSelection.getValue();
-					toggleHighlightedRegion(region);
-					final int moveConfirmation = MoveDialogs.showSelectConfirmDialog(GameBoardPanel.this);
-					switch (moveConfirmation) {
-					case JOptionPane.YES_OPTION: {
+					//final SpatialRegion region = biggestPieceRegionUnderSelection.getValue();
+					//toggleHighlightedRegion(region);
+					//final int moveConfirmation = MoveDialogs.showSelectConfirmDialog(GameBoardPanel.this);
+					//switch (moveConfirmation) {
+					//case JOptionPane.YES_OPTION: {
 						controller.submitSelection(biggestPieceRegionUnderSelection);
-						break;
+					//	break;
 
-					}
-					default: {
-						break;
-					}
-					}
+					//}
+					//default: {
+					//	break;
+					//}
+					//}
 					// Remove the highlighting either after submitting the
 					// selection or cancelling it
-					toggleHighlightedRegion(region);
+					//toggleHighlightedRegion(region);
 				}
 
 			} else {
