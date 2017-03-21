@@ -21,27 +21,22 @@ import java.util.Random;
 import com.google.common.collect.BiMap;
 
 import se.kth.speech.coin.tangrams.game.PlayerRole;
-import se.kth.speech.coin.tangrams.game.RemoteController;
 
 public final class GameState {
 
 	private final boolean allowFailedPlacements;
 
-	private final LocalController localController;
+	private final Controller controller;
 
 	private final double occupiedGridArea;
 
 	private final BiMap<PlayerRole, String> playerRoles;
 
-	private final RemoteController<Integer> remoteController;
-
 	private final Random rnd;
 
-	GameState(final LocalController localController, final RemoteController<Integer> remoteController,
-			final BiMap<PlayerRole, String> playerRoles, final Random rnd, final double occupiedGridArea,
-			final boolean allowFailedPlacements) {
-		this.localController = localController;
-		this.remoteController = remoteController;
+	GameState(final Controller controller, final BiMap<PlayerRole, String> playerRoles, final Random rnd,
+			final double occupiedGridArea, final boolean allowFailedPlacements) {
+		this.controller = controller;
 		this.playerRoles = playerRoles;
 		this.rnd = rnd;
 		this.occupiedGridArea = occupiedGridArea;
@@ -57,7 +52,7 @@ public final class GameState {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#equals(java.lang.Object)
 	 */
 	@Override
@@ -75,11 +70,11 @@ public final class GameState {
 		if (allowFailedPlacements != other.allowFailedPlacements) {
 			return false;
 		}
-		if (localController == null) {
-			if (other.localController != null) {
+		if (controller == null) {
+			if (other.controller != null) {
 				return false;
 			}
-		} else if (!localController.equals(other.localController)) {
+		} else if (!controller.equals(other.controller)) {
 			return false;
 		}
 		if (Double.doubleToLongBits(occupiedGridArea) != Double.doubleToLongBits(other.occupiedGridArea)) {
@@ -90,13 +85,6 @@ public final class GameState {
 				return false;
 			}
 		} else if (!playerRoles.equals(other.playerRoles)) {
-			return false;
-		}
-		if (remoteController == null) {
-			if (other.remoteController != null) {
-				return false;
-			}
-		} else if (!remoteController.equals(other.remoteController)) {
 			return false;
 		}
 		if (rnd == null) {
@@ -110,10 +98,10 @@ public final class GameState {
 	}
 
 	/**
-	 * @return the localController
+	 * @return the controller
 	 */
-	public LocalController getLocalController() {
-		return localController;
+	public Controller getController() {
+		return controller;
 	}
 
 	/**
@@ -131,13 +119,6 @@ public final class GameState {
 	}
 
 	/**
-	 * @return the remoteController
-	 */
-	public RemoteController<Integer> getRemoteController() {
-		return remoteController;
-	}
-
-	/**
 	 * @return the rnd
 	 */
 	public Random getRnd() {
@@ -146,7 +127,7 @@ public final class GameState {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#hashCode()
 	 */
 	@Override
@@ -154,19 +135,18 @@ public final class GameState {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + (allowFailedPlacements ? 1231 : 1237);
-		result = prime * result + (localController == null ? 0 : localController.hashCode());
+		result = prime * result + (controller == null ? 0 : controller.hashCode());
 		long temp;
 		temp = Double.doubleToLongBits(occupiedGridArea);
 		result = prime * result + (int) (temp ^ temp >>> 32);
 		result = prime * result + (playerRoles == null ? 0 : playerRoles.hashCode());
-		result = prime * result + (remoteController == null ? 0 : remoteController.hashCode());
 		result = prime * result + (rnd == null ? 0 : rnd.hashCode());
 		return result;
 	}
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#toString()
 	 */
 	@Override
@@ -174,14 +154,12 @@ public final class GameState {
 		final StringBuilder builder = new StringBuilder();
 		builder.append("GameState [allowFailedPlacements=");
 		builder.append(allowFailedPlacements);
-		builder.append(", localController=");
-		builder.append(localController);
+		builder.append(", controller=");
+		builder.append(controller);
 		builder.append(", occupiedGridArea=");
 		builder.append(occupiedGridArea);
 		builder.append(", playerRoles=");
 		builder.append(playerRoles);
-		builder.append(", remoteController=");
-		builder.append(remoteController);
 		builder.append(", rnd=");
 		builder.append(rnd);
 		builder.append("]");

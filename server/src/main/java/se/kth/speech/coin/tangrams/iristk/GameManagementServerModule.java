@@ -262,7 +262,7 @@ public final class GameManagementServerModule extends IrisModule {
 				// });
 				// event.put(GameManagementEvent.Attribute.PLAYER_ROLE_CHANGE.toString(),
 				// roleChanges);
-				// remoteController.notifySelectionRejected(new
+				// controller.notifySelectionRejected(new
 				// Selection(rejectingPlayerId, pieceId));
 				break;
 			}

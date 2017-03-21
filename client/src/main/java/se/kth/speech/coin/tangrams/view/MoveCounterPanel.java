@@ -65,7 +65,7 @@ final class MoveCounterLabel extends JLabel implements Observer {
 		}
 	}
 
-	private void update(final int newTurnCount) {
+	void update(final int newTurnCount) {
 		// FIXME: Indicator goes blank sometimes for some unknown reason
 		setText(Integer.toString(newTurnCount));
 		setToolTipText(String.format("%d move(s) taken in this game.", newTurnCount));

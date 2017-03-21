@@ -20,7 +20,6 @@ import java.sql.Timestamp;
 import java.util.Objects;
 import java.util.Random;
 import java.util.function.Consumer;
-import java.util.function.Predicate;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,7 +31,6 @@ import iristk.system.IrisModule;
 import se.kth.speech.SpatialMatrix;
 import se.kth.speech.coin.tangrams.game.PlayerJoinTime;
 import se.kth.speech.coin.tangrams.game.PlayerRole;
-import se.kth.speech.coin.tangrams.game.RemoteController;
 import se.kth.speech.coin.tangrams.iristk.events.Area2D;
 import se.kth.speech.coin.tangrams.iristk.events.GameEnding;
 import se.kth.speech.coin.tangrams.iristk.events.Move;
@@ -58,7 +56,7 @@ public final class GameManagementClientModule extends IrisModule {
 
 	private final String playerId;
 
-	private RemoteController<?> remoteController;
+	private Controller controller;
 
 	public GameManagementClientModule(final String gameId, final String playerId,
 			final Consumer<? super GameEnding> gameEndingHook, final Consumer<? super GameState> newGameHandler) {
@@ -94,14 +92,14 @@ public final class GameManagementClientModule extends IrisModule {
 				switch (gameEventType) {
 				case COMPLETED_TURN_RESPONSE: {
 					final Turn turn = (Turn) event.get(GameManagementEvent.Attribute.TURN.toString());
-					remoteController.notifyTurnComplete(turn);
+					controller.notifyTurnComplete(turn);
 					break;
 				}
 				case GAME_OVER_RESPONSE: {
 					LOGGER.info("The server notified that game \"{}\" is over.", gameId);
 					final GameEnding gameEnding = (GameEnding) event
 							.get(GameManagementEvent.Attribute.GAME_STATE.toString());
-					remoteController.notifyGameOver(gameEnding);
+					controller.notifyGameOver(gameEnding);
 					gameEndingHook.accept(gameEnding);
 					break;
 				}
@@ -114,7 +112,7 @@ public final class GameManagementClientModule extends IrisModule {
 				}
 				case NEXT_TURN_RESPONSE: {
 					final Turn turn = (Turn) event.get(GameManagementEvent.Attribute.TURN.toString());
-					remoteController.notifyNextTurn(turn);
+					controller.notifyNextTurn(turn);
 					break;
 				}
 				case PLAYER_JOIN_RESPONSE: {
@@ -122,10 +120,10 @@ public final class GameManagementClientModule extends IrisModule {
 					final String joinTime = event.getString(GameManagementEvent.Attribute.TIMESTAMP.toString());
 					LOGGER.debug("Received game event reporting that \"{}\" has joined the game at {}.", joinedPlayerId,
 							joinTime);
-					if (remoteController == null) {
+					if (controller == null) {
 						LOGGER.debug("Game controller not yet set; Not notifying controller of joined player.");
 					} else {
-						remoteController.notifyPlayerJoined(
+						controller.notifyPlayerJoined(
 								new PlayerJoinTime(joinedPlayerId, Timestamp.valueOf(joinTime).getTime()));
 					}
 					break;
@@ -136,7 +134,7 @@ public final class GameManagementClientModule extends IrisModule {
 					LOGGER.debug("Received game event reporting selection info for \"{}\".", rejectingPlayerId);
 					final Integer pieceId = (Integer) event.get(GameManagementEvent.Attribute.PIECE.toString());
 					final Area2D area = (Area2D) event.get(GameManagementEvent.Attribute.AREA.toString());
-					remoteController.notifySelectionRejected(new Selection(rejectingPlayerId, pieceId, area));
+					controller.notifySelectionRejected(new Selection(rejectingPlayerId, pieceId, area));
 					break;
 				}
 				case SELECTION_REQUEST: {
@@ -145,13 +143,24 @@ public final class GameManagementClientModule extends IrisModule {
 					LOGGER.debug("Received game event reporting selection info for \"{}\".", selectingPlayerId);
 					final Integer pieceId = (Integer) event.get(GameManagementEvent.Attribute.PIECE.toString());
 					final Area2D area = (Area2D) event.get(GameManagementEvent.Attribute.AREA.toString());
-					remoteController.notifyPlayerSelection(new Selection(selectingPlayerId, pieceId, area));
+					controller.notifyPlayerSelection(new Selection(selectingPlayerId, pieceId, area));
+					break;
+				}
+				case COMPLETED_TURN_REQUEST: {
+					LOGGER.debug("Ignoring received game event type \"{}\".", gameEventType);
+					break;
+				}
+				case NEXT_TURN_REQUEST: {
+					LOGGER.debug("Ignoring received game event type \"{}\".", gameEventType);
+					break;
+				}
+				case PLAYER_JOIN_REQUEST: {
+					LOGGER.debug("Ignoring received game event type \"{}\".", gameEventType);
 					break;
 				}
 				default: {
 					LOGGER.debug("Ignoring received game event type \"{}\".", gameEventType);
 					break;
-				}
 				}
 
 				// // Check if the local player's role has changed
@@ -162,8 +171,9 @@ public final class GameManagementClientModule extends IrisModule {
 				// if (playerRoles != null){
 				// playerRoles.stream().filter(playerRole ->
 				// playerRole.getPlayerId().equals(playerId))
-				// .forEach(remoteController::notifyPlayerRoleChange);
+				// .forEach(controller::notifyPlayerRoleChange);
 				// }
+				}
 			}
 		}
 	}
@@ -205,45 +215,33 @@ public final class GameManagementClientModule extends IrisModule {
 		send(request);
 	}
 
-	/**
-	 * @param controller
-	 *            the controller to set
-	 */
-	private void addNewGameRemoteController(final RemoteController<?> controller) {
-		if (remoteController == null) {
-			remoteController = controller;
-		} else {
-			throw new IllegalStateException("The remote controller reference can be set only once.");
-		}
-	}
-
 	private Event createPlayerEvent(final GameManagementEvent eventType) {
 		final Event result = eventType.createEvent(gameId);
 		result.put(GameManagementEvent.Attribute.PLAYER_ID.toString(), playerId);
 		return result;
 	}
 
+	/**
+	 * @param controller
+	 *            the controller to set
+	 */
+	private void setController(final Controller controller) {
+		if (this.controller == null) {
+			this.controller = controller;
+		} else {
+			throw new IllegalStateException("The controller reference can be set only once.");
+		}
+	}
+
 	private void setupGame(final GameStateDescription gameDesc) {
 		final ModelDescription modelDesc = gameDesc.getModelDescription();
 		final SpatialMatrix<Integer> model = GameStateUnmarshalling.createModel(modelDesc);
 		final PlayerRole role = gameDesc.getPlayerRoles().inverse().get(playerId);
-		final LocalController localController = new LocalController(model, playerId, role, this);
-		// final Consumer<SelectingPlayerChange> controllerActivationHook =
-		// handoff -> {
-		// final PlayerRole newRole =
-		// localController.getPlayerId().equals(handoff.getNewSelectingPlayerId())
-		// ? PlayerRole.SELECTING : PlayerRole.TURN_SUBMISSION;
-		// localController.setRole(newRole);
-		// LOGGER.debug("Setting active role for player \"{}\" to {}.", new
-		// Object[] { playerId, isNowActive });
-		// };
-		final Predicate<String> foreignPlayerIdPredicate = pid -> !playerId.equals(pid);
-		final RemoteController<Integer> remoteController = new RemoteController<>(model, localController,
-				foreignPlayerIdPredicate);
-		addNewGameRemoteController(remoteController);
+		final Controller controller = new Controller(model, playerId, role, this);
+		setController(controller);
 		final BiMap<PlayerRole, String> playerRoles = gameDesc.getPlayerRoles();
-		newGameHandler.accept(new GameState(localController, remoteController, playerRoles,
-				new Random(gameDesc.getSeed()), gameDesc.getOccupiedGridArea(), gameDesc.allowFailedPlacements()));
+		newGameHandler.accept(new GameState(controller, playerRoles, new Random(gameDesc.getSeed()),
+				gameDesc.getOccupiedGridArea(), gameDesc.allowFailedPlacements()));
 	}
 
 }

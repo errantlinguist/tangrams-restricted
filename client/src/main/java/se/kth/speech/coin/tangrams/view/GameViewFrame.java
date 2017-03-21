@@ -29,8 +29,6 @@ import java.text.AttributedCharacterIterator.Attribute;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Observable;
-import java.util.Observer;
 import java.util.Random;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -48,19 +46,19 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.Maps;
 
 import se.kth.speech.awt.ColorIcon;
-import se.kth.speech.coin.tangrams.game.PlayerJoinTime;
 import se.kth.speech.coin.tangrams.game.PlayerRole;
-import se.kth.speech.coin.tangrams.game.RemoteController;
-import se.kth.speech.coin.tangrams.iristk.events.PlayerRoleChange;
-import se.kth.speech.coin.tangrams.iristk.LocalController;
+import se.kth.speech.coin.tangrams.iristk.Controller;
 import se.kth.speech.coin.tangrams.iristk.events.GameEnding;
+import se.kth.speech.coin.tangrams.iristk.events.PlayerRoleChange;
+import se.kth.speech.coin.tangrams.iristk.events.Selection;
+import se.kth.speech.coin.tangrams.iristk.events.Turn;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
  * @since 2 Mar 2017
  *
  */
-final class GameViewFrame extends JFrame implements Observer {
+final class GameViewFrame extends JFrame implements Controller.Listener {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(GameViewFrame.class);
 
@@ -104,7 +102,7 @@ final class GameViewFrame extends JFrame implements Observer {
 	}
 
 	private static JPanel createStatusPanel(final GameBoardPanel boardPanel, final Random rnd,
-			final Dimension gameBoardPanelSize, final Component sidePanel, final RemoteController<?> controller) {
+			final Dimension gameBoardPanelSize, final Component sidePanel, final Controller controller) {
 		final JPanel result = new JPanel();
 		final BoxLayout layout = new BoxLayout(result, BoxLayout.LINE_AXIS);
 		result.setLayout(layout);
@@ -163,11 +161,10 @@ final class GameViewFrame extends JFrame implements Observer {
 
 	private final MoveCounterLabel moveCounterLabel;
 
-	GameViewFrame(final GameBoardPanel boardPanel, final Random rnd, final LocalController localController,
-			final RemoteController<Integer> remoteController, final Runnable closeHook) {
-		localController.addObserver(this);
-//		remoteController.addObserver(this);
-		playerIdGetter = localController::getPlayerId;
+	GameViewFrame(final GameBoardPanel boardPanel, final Random rnd, final Controller controller,
+			final Runnable closeHook) {
+		playerIdGetter = controller::getPlayerId;
+		controller.getListeners().add(this);
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		addWindowListener(new WindowAdapter() {
 
@@ -187,7 +184,7 @@ final class GameViewFrame extends JFrame implements Observer {
 		setLayout(new BorderLayout());
 		add(boardPanel, BorderLayout.CENTER);
 
-		final PlayerTurnStatus initialTurnStatus = getPlayerTurnStatus(localController.getRole());
+		final PlayerTurnStatus initialTurnStatus = getPlayerTurnStatus(controller.getRole());
 		turnLabel = createTurnLabel(initialTurnStatus);
 		{
 			final JPanel turnLabelPanel = new JPanel();
@@ -204,62 +201,123 @@ final class GameViewFrame extends JFrame implements Observer {
 			sidePanel.setLayout(layout);
 			sidePanel.add(playerReadiness);
 
-			moveCounterLabel = createMoveCounterLabel(localController.getMoveCount(),
+			moveCounterLabel = createMoveCounterLabel(controller.getMoveCount(),
 					playerReadiness.getPreferredSize().width);
-			localController.addObserver(moveCounterLabel);
-//			remoteController.addObserver(moveCounterLabel);
 			sidePanel.add(moveCounterLabel);
 		}
-		add(createStatusPanel(boardPanel, rnd, gameBoardPanelSize, sidePanel, remoteController), BorderLayout.PAGE_END);
+		add(createStatusPanel(boardPanel, rnd, gameBoardPanelSize, sidePanel, controller), BorderLayout.PAGE_END);
 
 	}
 
 	/*
 	 * (non-Javadoc)
 	 *
-	 * @see java.util.Observer#update(java.util.Observable, java.lang.Object)
+	 * @see
+	 * se.kth.speech.coin.tangrams.iristk.Controller.Listener#updateGameOver(se.
+	 * kth.speech.coin.tangrams.iristk.events.GameEnding)
 	 */
 	@Override
-	public void update(final Observable o, final Object arg) {
-		if (arg instanceof PlayerRoleChange) {
-			LOGGER.debug("Observed event representing a change in the currently-active player.");
-			final PlayerRoleChange change = (PlayerRoleChange) arg;
-			final String playerId = playerIdGetter.get();
-			if (playerId.equals(change.getPlayerId())) {
-				// This client initiated the handover
-				final PlayerRole newRole = change.getRole();
-				setPlayerReady(newRole);
-		}
-
-		} else if (arg instanceof GameEnding) {
-			LOGGER.debug("Observed event representing a game ending.");
-			final GameEnding ending = (GameEnding) arg;
-			final GameEnding.Outcome outcome = ending.getOutcome();
-			switch (outcome) {
-			case ABORT:
-				JOptionPane.showMessageDialog(this, String.format("The game was aborted by \"%s\" after %d move(s).",
-						ending.getPlayerId(), ending.getMoveCount()), "Aborted!", JOptionPane.WARNING_MESSAGE);
-				// setEnabled(false);
-				break;
-			case WIN: {
-				JOptionPane.showMessageDialog(this,
-						String.format("The game was won after %d move(s).", ending.getMoveCount()), "Win!",
-						JOptionPane.INFORMATION_MESSAGE);
-				// setEnabled(false);
-				break;
-			}
-			default:
-				throw new AssertionError(String.format("No logic for handling outcome %s.", outcome));
-			}
-
-		} else if (arg instanceof PlayerJoinTime) {
-			LOGGER.debug("Observed event representing the joining of a player to the game.");
+	public void updateGameOver(final GameEnding gameEnding) {
+		LOGGER.debug("Observed event representing a game ending.");
+		final GameEnding.Outcome outcome = gameEnding.getOutcome();
+		switch (outcome) {
+		case ABORT:
+			JOptionPane.showMessageDialog(this, String.format("The game was aborted by \"%s\" after %d move(s).",
+					gameEnding.getPlayerId(), gameEnding.getMoveCount()), "Aborted!", JOptionPane.WARNING_MESSAGE);
+			// setEnabled(false);
+			break;
+		case WIN: {
 			JOptionPane.showMessageDialog(this,
-					String.format("Player \"%s\" joined the game.", ((PlayerJoinTime) arg).getPlayerId()),
-					"Player joined", JOptionPane.INFORMATION_MESSAGE);
-		} else {
-			LOGGER.debug("Ignoring observed event arg object of type \"{}\".", arg.getClass().getName());
+					String.format("The game was won after %d move(s).", gameEnding.getMoveCount()), "Win!",
+					JOptionPane.INFORMATION_MESSAGE);
+			// setEnabled(false);
+			break;
 		}
+		default:
+			throw new AssertionError(String.format("No logic for handling outcome %s.", outcome));
+		}
+
+	}
+
+	/*
+	 * (non-Javadoc)
+	 *
+	 * @see
+	 * se.kth.speech.coin.tangrams.iristk.Controller.Listener#updateNextTurn(se.
+	 * kth.speech.coin.tangrams.iristk.events.Turn)
+	 */
+	@Override
+	public void updateNextTurn(final Turn turn) {
+		// TODO Auto-generated method stub
+
+	}
+
+	/*
+	 * (non-Javadoc)
+	 *
+	 * @see
+	 * se.kth.speech.coin.tangrams.iristk.Controller.Listener#updatePlayerRole(
+	 * se.kth.speech.coin.tangrams.iristk.events.PlayerRoleChange)
+	 */
+	@Override
+	public void updatePlayerRole(final PlayerRoleChange change) {
+		LOGGER.debug("Observed event representing a change in the currently-active player.");
+		final String playerId = playerIdGetter.get();
+		if (playerId.equals(change.getPlayerId())) {
+			// This client initiated the handover
+			final PlayerRole newRole = change.getRole();
+			setPlayerReady(newRole);
+		}
+	}
+
+	/*
+	 * (non-Javadoc)
+	 *
+	 * @see se.kth.speech.coin.tangrams.iristk.Controller.Listener#
+	 * updatePlayerSelection(se.kth.speech.coin.tangrams.iristk.events.
+	 * Selection)
+	 */
+	@Override
+	public void updatePlayerSelection(final Selection selection) {
+		// TODO Auto-generated method stub
+
+	}
+
+	/*
+	 * (non-Javadoc)
+	 *
+	 * @see se.kth.speech.coin.tangrams.iristk.Controller.Listener#
+	 * updateSelectionAccepted(se.kth.speech.coin.tangrams.iristk.events.
+	 * Selection)
+	 */
+	@Override
+	public void updateSelectionAccepted(final Selection selection) {
+		// TODO Auto-generated method stub
+
+	}
+
+	/*
+	 * (non-Javadoc)
+	 *
+	 * @see se.kth.speech.coin.tangrams.iristk.Controller.Listener#
+	 * updateSelectionRejected(se.kth.speech.coin.tangrams.iristk.events.
+	 * Selection)
+	 */
+	@Override
+	public void updateSelectionRejected(final Selection selection) {
+		// TODO Auto-generated method stub
+
+	}
+
+	/*
+	 * (non-Javadoc)
+	 *
+	 * @see se.kth.speech.coin.tangrams.iristk.Controller.Listener#
+	 * updateTurnCompletion(se.kth.speech.coin.tangrams.iristk.events.Turn)
+	 */
+	@Override
+	public void updateTurnCompletion(final Turn turn) {
+		moveCounterLabel.update(turn.getSequenceNumber());
 	}
 
 	private void setPlayerReady(final PlayerRole role) {

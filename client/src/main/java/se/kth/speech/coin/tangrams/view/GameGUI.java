@@ -40,7 +40,7 @@ import se.kth.speech.coin.tangrams.content.ImageLoadingImageViewInfoFactory;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfoFactory;
 import se.kth.speech.coin.tangrams.iristk.GameState;
-import se.kth.speech.coin.tangrams.iristk.LocalController;
+import se.kth.speech.coin.tangrams.iristk.Controller;
 import se.kth.speech.coin.tangrams.iristk.events.Selection;
 import se.kth.speech.coin.tangrams.iristk.events.Turn;
 
@@ -129,7 +129,7 @@ public final class GameGUI implements Runnable {
 		final ExecutorService screenshotLoggingExecutor = Executors.newSingleThreadExecutor();
 		{
 			final ScreenshotLogger screenshotLogger = new ScreenshotLogger(logOutdirSupplier,
-					() -> gameState.getLocalController().getPlayerId(), screenshotLoggingExecutor);
+					() -> gameState.getController().getPlayerId(), screenshotLoggingExecutor);
 			turnScreenshotLogger = (view, turn) -> {
 				final int turnNo = turn.getSequenceNumber();
 				final String filenamePrefix = "turn-" + Integer.toString(turnNo);
@@ -150,13 +150,13 @@ public final class GameGUI implements Runnable {
 	@Override
 	public void run() {
 		LOGGER.debug("Creating view components.");
-		final LocalController localController = gameState.getLocalController();
-		final SpatialMatrix<Integer> model = localController.getModel();
+		final Controller controller = gameState.getController();
+		final SpatialMatrix<Integer> model = controller.getModel();
 		final int pieceCount = model.getElementPlacements().getAllElements().size();
 		final Random rnd = gameState.getRnd();
 		final ImageVisualizationInfoFactory imgVisInfoFactory = new ImageVisualizationInfoFactory(rnd);
 		final Map<Integer, Image> pieceImgs = Maps.newHashMapWithExpectedSize(pieceCount);
-		final GameBoardPanel gameBoardPanel = new GameBoardPanel(model, pieceImgs, localController,
+		final GameBoardPanel gameBoardPanel = new GameBoardPanel(model, pieceImgs, controller,
 				turnScreenshotLogger, selectionLogger);
 		final ImageLoadingImageViewInfoFactory imgViewInfoFactory = new ImageLoadingImageViewInfoFactory(
 				gameBoardPanel.getToolkit(), DEFAULT_POST_COLORING_IMG_TRANSFORMER,
@@ -169,8 +169,7 @@ public final class GameGUI implements Runnable {
 			assert oldImg == null;
 		});
 
-		final GameViewFrame gameViewFrame = new GameViewFrame(gameBoardPanel, rnd, localController,
-				gameState.getRemoteController(), closeHook);
+		final GameViewFrame gameViewFrame = new GameViewFrame(gameBoardPanel, rnd, controller, closeHook);
 		gameViewFrame.setTitle(title);
 		// gameViewFrame.setJMenuBar(createMenuBar(gameViewFrame));
 

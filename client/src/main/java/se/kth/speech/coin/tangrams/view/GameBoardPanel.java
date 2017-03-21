@@ -38,15 +38,12 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.Observable;
-import java.util.Observer;
 import java.util.Random;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -66,7 +63,7 @@ import se.kth.speech.SpatialRegion;
 import se.kth.speech.awt.DisablingMouseAdapter;
 import se.kth.speech.coin.tangrams.game.AreaSpatialRegionFactory;
 import se.kth.speech.coin.tangrams.game.PlayerRole;
-import se.kth.speech.coin.tangrams.iristk.LocalController;
+import se.kth.speech.coin.tangrams.iristk.Controller;
 import se.kth.speech.coin.tangrams.iristk.events.Area2D;
 import se.kth.speech.coin.tangrams.iristk.events.GameEnding;
 import se.kth.speech.coin.tangrams.iristk.events.Move;
@@ -79,7 +76,7 @@ import se.kth.speech.coin.tangrams.iristk.events.Turn;
  * @since 2 Mar 2017
  *
  */
-final class GameBoardPanel extends JPanel implements Observer {
+final class GameBoardPanel extends JPanel implements Controller.Listener {
 
 	private class SelectingMouseAdapter extends MouseAdapter {
 		@Override
@@ -99,7 +96,7 @@ final class GameBoardPanel extends JPanel implements Observer {
 					final int moveConfirmation = MoveDialogs.showSelectConfirmDialog(GameBoardPanel.this);
 					switch (moveConfirmation) {
 					case JOptionPane.YES_OPTION: {
-						localController.submitSelection(biggestPieceRegionUnderSelection);
+						controller.submitSelection(biggestPieceRegionUnderSelection);
 						break;
 
 					}
@@ -190,7 +187,7 @@ final class GameBoardPanel extends JPanel implements Observer {
 
 	private final BiConsumer<? super GameBoardPanel, ? super Selection> localSelectionHook;
 
-	private final LocalController localController;
+	private final Controller controller;
 
 	private final AreaSpatialRegionFactory areaRegionFactory;
 
@@ -199,19 +196,18 @@ final class GameBoardPanel extends JPanel implements Observer {
 	private Entry<SpatialRegion, Map<Integer, SpatialRegion>> nextMove;
 
 	GameBoardPanel(final SpatialMatrix<Integer> posMatrix, final Map<Integer, Image> pieceImgs,
-			final LocalController localController,
-			final BiConsumer<? super GameBoardPanel, ? super Turn> localTurnCompletionHook,
+			final Controller controller, final BiConsumer<? super GameBoardPanel, ? super Turn> localTurnCompletionHook,
 			final BiConsumer<? super GameBoardPanel, ? super Selection> localSelectionHook) {
 		this.posMatrix = posMatrix;
 		areaRegionFactory = new AreaSpatialRegionFactory(this.posMatrix);
 		this.pieceImgs = pieceImgs;
-		this.localController = localController;
-		localController.addObserver(this);
-		playerIdGetter = localController::getPlayerId;
+		this.controller = controller;
+		controller.getListeners().add(this);
+		playerIdGetter = controller::getPlayerId;
 		this.localTurnCompletionHook = localTurnCompletionHook;
 		this.localSelectionHook = localSelectionHook;
 		selectingMouseListener = new DisablingMouseAdapter(new SelectingMouseAdapter());
-		updateMouseListener(localController.getRole());
+		updateMouseListener(controller.getRole());
 		addDisablingMouseListener(selectingMouseListener);
 
 		// http://stackoverflow.com/a/1936582/1391325
@@ -266,32 +262,6 @@ final class GameBoardPanel extends JPanel implements Observer {
 	// g.clearRect(startIdxs[0], startIdxs[1], size[0], size[1]);
 	// }
 
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see java.util.Observer#update(java.util.Observable, java.lang.Object)
-	 */
-	@Override
-	public void update(final Observable o, final Object arg) {
-		final Stream<?> args;
-		if (arg instanceof Stream<?>) {
-			args = (Stream<?>) arg;
-		} else if (arg instanceof Collection<?>) {
-			args = ((Collection<?>) arg).stream();
-		} else if (arg instanceof Iterable<?>) {
-			final Iterable<?> iter = (Iterable<?>) arg;
-			args = StreamSupport.stream(iter.spliterator(), false);
-		} else {
-			args = Stream.of(arg);
-		}
-		synchronized (this) {
-			// Synchronize once for the whole set of events so that multiple
-			// event streams don't interleave in cases where this is still
-			// processing one set when another update notification is received
-			args.forEach(this::handleUpdateArg);
-		}
-	}
-
 	// private Graphics2D createRegionHighlightClearingGraphics(final Graphics
 	// g) {
 	// final Graphics2D result = (Graphics2D) g.create();
@@ -299,6 +269,135 @@ final class GameBoardPanel extends JPanel implements Observer {
 	// result.setColor(getBackground());
 	// return result;
 	// }
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * se.kth.speech.coin.tangrams.iristk.Controller.Listener#updateGameOver(se.
+	 * kth.speech.coin.tangrams.iristk.events.GameEnding)
+	 */
+	@Override
+	public void updateGameOver(final GameEnding gameEnding) {
+		LOGGER.debug("Observed event representing a game ending.");
+		final GameEnding.Outcome outcome = gameEnding.getOutcome();
+		switch (outcome) {
+		case ABORT:
+			selectingMouseListener.setEnabled(false);
+			break;
+		case WIN: {
+			selectingMouseListener.setEnabled(false);
+			break;
+		}
+		default:
+			throw new AssertionError(String.format("No logic for handling outcome %s.", outcome));
+		}
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * se.kth.speech.coin.tangrams.iristk.Controller.Listener#updateNextTurn(se.
+	 * kth.speech.coin.tangrams.iristk.events.Turn)
+	 */
+	@Override
+	public void updateNextTurn(final Turn turn) {
+		// TODO Auto-generated method stub
+
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * se.kth.speech.coin.tangrams.iristk.Controller.Listener#updatePlayerRole(
+	 * se.kth.speech.coin.tangrams.iristk.events.PlayerRoleChange)
+	 */
+	@Override
+	public void updatePlayerRole(final PlayerRoleChange change) {
+		LOGGER.debug("Observed event representing a change in the currently-active player.");
+		if (equalsPlayerId(change.getPlayerId())) {
+			// This client initiated the handover
+			final PlayerRole newRole = change.getRole();
+			updateMouseListener(newRole);
+		}
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see se.kth.speech.coin.tangrams.iristk.Controller.Listener#
+	 * updatePlayerSelection(se.kth.speech.coin.tangrams.iristk.events.
+	 * Selection)
+	 */
+	@Override
+	public void updatePlayerSelection(final Selection selection) {
+		LOGGER.debug("Observed event representing a user selection.");
+		if (controller.getRole().equals(PlayerRole.WAITING_FOR_SELECTION)) {
+			if (equalsPlayerId(selection.getPlayerId())) {
+				localSelectionHook.accept(this, selection);
+			}
+			final boolean isSelectionCorrect = controller.isSelectionCorrect();
+			if (isSelectionCorrect) {
+				JOptionPane.showMessageDialog(this, "Correct move!", "Good selection", JOptionPane.INFORMATION_MESSAGE);
+				controller.confirmSelection();
+			} else {
+				JOptionPane.showMessageDialog(this, "Incorrect move!", "Bad selection", JOptionPane.ERROR_MESSAGE);
+				controller.rejectSelection();
+			}
+
+			final Area2D area = selection.getArea();
+			final SpatialRegion region = areaRegionFactory.apply(area);
+			toggleHighlightedRegion(region);
+		}
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see se.kth.speech.coin.tangrams.iristk.Controller.Listener#
+	 * updateSelectionAccepted(se.kth.speech.coin.tangrams.iristk.events.
+	 * Selection)
+	 */
+	@Override
+	public void updateSelectionAccepted(final Selection selection) {
+		// TODO Auto-generated method stub
+
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see se.kth.speech.coin.tangrams.iristk.Controller.Listener#
+	 * updateSelectionRejected(se.kth.speech.coin.tangrams.iristk.events.
+	 * Selection)
+	 */
+	@Override
+	public void updateSelectionRejected(final Selection selection) {
+		// TODO Auto-generated method stub
+
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see se.kth.speech.coin.tangrams.iristk.Controller.Listener#
+	 * updateTurnCompletion(se.kth.speech.coin.tangrams.iristk.events.Turn)
+	 */
+	@Override
+	public void updateTurnCompletion(final Turn turn) {
+		final String turnPlayerId = turn.getPlayerId();
+		LOGGER.debug("Observed event representing a turn completed by \"{}\".", turnPlayerId);
+		if (equalsPlayerId(turnPlayerId)) {
+			LOGGER.debug("Skipping view update for remote notification about player's own turn.");
+			localTurnCompletionHook.accept(this, turn);
+		} else {
+			final Move move = turn.getMove();
+			updatePiecePositions(move);
+			repaint();
+		}
+	}
 
 	private void addDisablingMouseListener(final DisablingMouseAdapter mouseListener) {
 		addMouseListener(mouseListener);
@@ -510,73 +609,6 @@ final class GameBoardPanel extends JPanel implements Observer {
 		final int rowHeight = getGridRowHeight();
 		return y / rowHeight;
 	}
-	
-	private void updateMouseListener(PlayerRole role){
-		final boolean canSelect = role.equals(PlayerRole.SELECTING);
-		selectingMouseListener.setEnabled(canSelect);		
-	}
-
-	private void handleUpdateArg(final Object arg) {
-		if (arg instanceof PlayerRoleChange) {
-			LOGGER.debug("Observed event representing a change in the currently-active player.");
-			final PlayerRoleChange change = (PlayerRoleChange) arg;
-			if (equalsPlayerId(change.getPlayerId())) {
-				// This client initiated the handover
-				final PlayerRole newRole = change.getRole();
-				updateMouseListener(newRole);
-			}
-		} else if (arg instanceof GameEnding) {
-			LOGGER.debug("Observed event representing a game ending.");
-			final GameEnding ending = (GameEnding) arg;
-			final GameEnding.Outcome outcome = ending.getOutcome();
-			switch (outcome) {
-			case ABORT:
-				selectingMouseListener.setEnabled(false);
-				break;
-			case WIN: {
-				selectingMouseListener.setEnabled(false);
-				break;
-			}
-			default:
-				throw new AssertionError(String.format("No logic for handling outcome %s.", outcome));
-			}
-
-		} else if (arg instanceof Selection) {
-			LOGGER.debug("Observed event representing a user selection.");
-			if (localController.getRole().equals(PlayerRole.WAITING_FOR_SELECTION)) {
-				final boolean isSelectionCorrect = localController.isSelectionCorrect();
-				if (isSelectionCorrect) {
-					JOptionPane.showMessageDialog(this, "Correct move!", "Good selection",
-							JOptionPane.INFORMATION_MESSAGE);
-					localController.confirmSelection();
-				} else {
-					JOptionPane.showMessageDialog(this, "Incorrect move!", "Bad selection", JOptionPane.ERROR_MESSAGE);
-					localController.rejectSelection();
-				}
-				Selection selection = (Selection) arg;
-				Integer pieceId = selection.getPieceId();
-				Area2D area = selection.getArea();
-				SpatialRegion region = areaRegionFactory.apply(area);
-				toggleHighlightedRegion(region);
-			}
-
-		} else if (arg instanceof Turn) {
-			final Turn turn = (Turn) arg;
-			final String turnPlayerId = turn.getPlayerId();
-			LOGGER.debug("Observed event representing a turn completed by \"{}\".", turnPlayerId);
-			if (equalsPlayerId(turnPlayerId)) {
-				LOGGER.debug("Skipping view update for remote notification about player's own turn.");
-				localTurnCompletionHook.accept(this, turn);
-			} else {
-				final Move move = turn.getMove();
-				updatePiecePositions(move);
-				repaint();
-			}
-
-		} else {
-			LOGGER.debug("Ignoring observed event arg object of type \"{}\".", arg.getClass().getName());
-		}
-	}
 
 	private void notifyNoValidMoves() {
 		JOptionPane.showMessageDialog(this, "No more moves available.");
@@ -605,6 +637,11 @@ final class GameBoardPanel extends JPanel implements Observer {
 		}
 
 		return result;
+	}
+
+	private void updateMouseListener(final PlayerRole role) {
+		final boolean canSelect = role.equals(PlayerRole.SELECTING);
+		selectingMouseListener.setEnabled(canSelect);
 	}
 
 	private void updatePiecePositions(final Entry<SpatialRegion, Map<Integer, SpatialRegion>> pieceMove) {
@@ -640,10 +677,10 @@ final class GameBoardPanel extends JPanel implements Observer {
 	}
 
 	/**
-	 * @return the localController
+	 * @return the controller
 	 */
-	LocalController getLocalController() {
-		return localController;
+	Controller getController() {
+		return controller;
 	}
 
 	/**
@@ -658,7 +695,7 @@ final class GameBoardPanel extends JPanel implements Observer {
 	 */
 	synchronized void notifyContinue(final Random rnd) {
 		LOGGER.debug("Notified of continue event.");
-		switch (localController.getRole()) {
+		switch (controller.getRole()) {
 		case SELECTING: {
 			JOptionPane.showMessageDialog(this, "You must choose which piece is to be moved before continuing.");
 			break;
@@ -677,8 +714,7 @@ final class GameBoardPanel extends JPanel implements Observer {
 				} else {
 					toggleHighlightedRegion(sourceRegion);
 					final Entry<Integer, SpatialRegion> pieceTargetRegion = pieceTargetRegions.iterator().next();
-					localController.submitNextMove(sourceRegion, pieceTargetRegion.getValue(),
-							pieceTargetRegion.getKey());
+					controller.submitNextMove(sourceRegion, pieceTargetRegion.getValue(), pieceTargetRegion.getKey());
 				}
 			}
 			break;
@@ -694,7 +730,7 @@ final class GameBoardPanel extends JPanel implements Observer {
 			break;
 		}
 		default: {
-			throw new AssertionError("No logic for case: " + localController.getRole());
+			throw new AssertionError("No logic for case: " + controller.getRole());
 		}
 
 		}
