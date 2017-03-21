@@ -19,7 +19,6 @@ package se.kth.speech.coin.tangrams.game;
 import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.Observable;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -28,10 +27,10 @@ import org.slf4j.LoggerFactory;
 
 import se.kth.speech.SpatialMatrix;
 import se.kth.speech.SpatialRegion;
-import se.kth.speech.coin.tangrams.iristk.events.ActivePlayerChange;
 import se.kth.speech.coin.tangrams.iristk.events.Area2D;
 import se.kth.speech.coin.tangrams.iristk.events.GameEnding;
 import se.kth.speech.coin.tangrams.iristk.events.Move;
+import se.kth.speech.coin.tangrams.iristk.events.PlayerRoleChange;
 import se.kth.speech.coin.tangrams.iristk.events.Selection;
 import se.kth.speech.coin.tangrams.iristk.events.Turn;
 
@@ -40,26 +39,40 @@ import se.kth.speech.coin.tangrams.iristk.events.Turn;
  * @since 14 Nov 2016
  *
  */
-public final class RemoteController<I> extends Observable {
+public final class RemoteController<I> {
+
+	public interface Listener {
+
+		void updateNextTurn(Turn turn);
+
+		void updatePlayerRole(PlayerRoleChange change);
+
+		void updatePlayerSelection(Selection selection);
+		
+		void updateSelectionRejected(Selection selection);
+		
+		void updateSelectionAccepted(Selection selection);
+
+		void updateTurnCompletion(Turn turn);
+
+	}
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(RemoteController.class);
-
-	private final Consumer<ActivePlayerChange> activePlayerChangeHook;
 
 	private final SpatialMatrix<I> model;
 
 	private int moveCount = 0;
 
-	private final Predicate<? super String> playerIdFilter;
 
 	private final Function<Area2D, SpatialRegion> areaSpatialRegionFactory;
 
-	public RemoteController(final SpatialMatrix<I> model, final Consumer<ActivePlayerChange> activePlayerChangeHook,
+	private final Listener listener;
+
+	public RemoteController(final SpatialMatrix<I> model, final Listener listener,
 			final Predicate<? super String> playerIdFilter) {
 		this.model = model;
 		this.areaSpatialRegionFactory = new AreaSpatialRegionFactory(model);
-		this.activePlayerChangeHook = activePlayerChangeHook;
-		this.playerIdFilter = playerIdFilter;
+		this.listener = listener;
 	}
 
 	/**
@@ -80,21 +93,32 @@ public final class RemoteController<I> extends Observable {
 		LOGGER.info("The remote controller was notified that the game has ended.");
 		// Notify local, lower-level listeners which e.g. update the user's own
 		// view
-		setChanged();
-		notifyObservers(gameEnding);
+//		setChanged();
+//		notifyObservers(gameEnding);
 	}
 
-	/**
-	 * @param handoff
-	 */
-	public void notifyNewActivePlayer(final ActivePlayerChange handoff) {
-		LOGGER.debug("The remote controller was notified that player \"{}\" is now active.",
-				handoff.getNewActivePlayerId());
-		// Notify local, lower-level listeners which e.g. update the user's own
-		// view
-		setChanged();
-		notifyObservers(handoff);
-		activePlayerChangeHook.accept(handoff);
+	public void notifyNextTurn(final Turn turn) {
+		final String turnPlayerId = turn.getPlayerId();
+		LOGGER.debug("The remote controller was notified that \"{}\" has submitted a turn.", turnPlayerId);
+//		if (playerIdFilter.test(turnPlayerId)) {
+			listener.updateNextTurn(turn);
+			final Move move = turn.getMove();
+			final SpatialRegion sourceRegion = areaSpatialRegionFactory.apply(move.getSource());
+			final SpatialRegion targetRegion = areaSpatialRegionFactory.apply(move.getTarget());
+			// LOGGER.info("Moving the piece at {} to {}.", sourceRegion,
+			// targetRegion);
+			// updateModel(sourceRegion, targetRegion);
+
+//		} else {
+//			LOGGER.debug("Skipping model update for remote notification about player's own turn.");
+//		}
+		// Notify local, lower-level listeners which e.g. update the user's
+		// own view
+//		setChanged();
+//		notifyObservers(turn);
+		// Take the greater of the two because it may be possible for two turns
+		// to arrive in the wrong order
+		moveCount = Math.max(turn.getSequenceNumber(), moveCount);
 	}
 
 	public void notifyPlayerJoined(final PlayerJoinTime playerJoinTime) {
@@ -102,43 +126,63 @@ public final class RemoteController<I> extends Observable {
 		LOGGER.debug("The remote controller was notified that \"{}\" has joined the current game.", joinedPlayerId);
 		// Notify local, lower-level listeners which e.g. update the user's own
 		// view
-		setChanged();
-		notifyObservers(playerJoinTime);
+//		setChanged();
+//		notifyObservers(playerJoinTime);
 	}
 
 	public void notifyPlayerSelection(final Selection playerSelection) {
 		final String selectingPlayerId = playerSelection.getPlayerId();
 		LOGGER.debug("The remote controller was notified that \"{}\" has performed a selection.", selectingPlayerId);
-		if (playerIdFilter.test(selectingPlayerId)) {
-			final Area2D region = playerSelection.getRegion();
-			LOGGER.debug("Updating region selection {} from \"{}\".", region, selectingPlayerId);
+//		if (playerIdFilter.test(selectingPlayerId)) {
+			listener.updatePlayerSelection(playerSelection);
+			final Integer pieceId = playerSelection.getPieceId();
+			LOGGER.debug("Updating piece selection {} from \"{}\".", pieceId, selectingPlayerId);
 			// Notify local, lower-level listeners which e.g. update the user's
 			// own
 			// view
-			setChanged();
-			notifyObservers(playerSelection);
-		} else {
-			LOGGER.debug("Ignoring remote notification about player's own selection.");
-		}
+//			setChanged();
+//			notifyObservers(playerSelection);
+//		} else {
+//			LOGGER.debug("Ignoring remote notification about player's own selection.");
+//		}
 	}
 
-	public void notifyPlayerTurn(final Turn turn) {
+	public void notifySelectionRejected(final Selection playerSelection) {
+		final String rejectingPlayerId = playerSelection.getPlayerId();
+		LOGGER.debug("The remote controller was notified that \"{}\" has rejected a selection.", rejectingPlayerId);
+		listener.updateSelectionRejected(playerSelection);
+//		if (playerIdFilter.test(rejectingPlayerId)) {
+			final Integer pieceId = playerSelection.getPieceId();
+			LOGGER.debug("Updating piece selection {} from \"{}\".", pieceId, rejectingPlayerId);
+			// Notify local, lower-level listeners which e.g. update the user's
+			// own
+			// view
+//			setChanged();
+//			notifyObservers(playerSelection);
+//		} else {
+//			LOGGER.debug("Procesing remote notification about player's own selection.");
+//		}
+	}
+
+	public void notifyTurnComplete(final Turn turn) {
 		final String turnPlayerId = turn.getPlayerId();
 		LOGGER.debug("The remote controller was notified that \"{}\" has completed a turn.", turnPlayerId);
-		if (playerIdFilter.test(turnPlayerId)) {
+//		if (playerIdFilter.test(turnPlayerId)) {
+			listener.updateTurnCompletion(turn);
 			final Move move = turn.getMove();
 			final SpatialRegion sourceRegion = areaSpatialRegionFactory.apply(move.getSource());
 			final SpatialRegion targetRegion = areaSpatialRegionFactory.apply(move.getTarget());
-			LOGGER.info("Moving the piece at {} to {}.", sourceRegion, targetRegion);
-			updateModel(sourceRegion, targetRegion);
+			// LOGGER.info("Moving the piece at {} to {}.", sourceRegion,
+			// targetRegion);
+			// updateModel(sourceRegion, targetRegion);
 
-		} else {
-			LOGGER.debug("Skipping model update for remote notification about player's own turn.");
-		}
+//		} else {
+//			LOGGER.debug("Skipping model update for remote notification about player's own turn.");
+//		}
 		// Notify local, lower-level listeners which e.g. update the user's
 		// own view
-		setChanged();
-		notifyObservers(turn);
+//		setChanged();
+//		notifyObservers(turn);
 		// Take the greater of the two because it may be possible for two turns
 		// to arrive in the wrong order
 		moveCount = Math.max(turn.getSequenceNumber(), moveCount);

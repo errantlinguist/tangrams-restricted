@@ -48,10 +48,11 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.Maps;
 
 import se.kth.speech.awt.ColorIcon;
-import se.kth.speech.coin.tangrams.game.LocalController;
 import se.kth.speech.coin.tangrams.game.PlayerJoinTime;
+import se.kth.speech.coin.tangrams.game.PlayerRole;
 import se.kth.speech.coin.tangrams.game.RemoteController;
-import se.kth.speech.coin.tangrams.iristk.events.ActivePlayerChange;
+import se.kth.speech.coin.tangrams.iristk.events.PlayerRoleChange;
+import se.kth.speech.coin.tangrams.iristk.LocalController;
 import se.kth.speech.coin.tangrams.iristk.events.GameEnding;
 
 /**
@@ -102,8 +103,8 @@ final class GameViewFrame extends JFrame implements Observer {
 		return result;
 	}
 
-	private static JPanel createStatusPanel(final GameBoardPanel<?> boardPanel, final Random rnd, final Dimension gameBoardPanelSize, final Component sidePanel,
-			final RemoteController<?> controller) {
+	private static JPanel createStatusPanel(final GameBoardPanel boardPanel, final Random rnd,
+			final Dimension gameBoardPanelSize, final Component sidePanel, final RemoteController<?> controller) {
 		final JPanel result = new JPanel();
 		final BoxLayout layout = new BoxLayout(result, BoxLayout.LINE_AXIS);
 		result.setLayout(layout);
@@ -118,7 +119,7 @@ final class GameViewFrame extends JFrame implements Observer {
 
 		final Component sidePanelRightMargin = Box.createRigidArea(marginDim);
 		result.add(sidePanelRightMargin);
-		
+
 		final JPanel buttonPanel = new JPanel();
 		result.add(buttonPanel);
 		final JButton undoButton = new JButton("undo");
@@ -150,8 +151,8 @@ final class GameViewFrame extends JFrame implements Observer {
 		return result;
 	}
 
-	private static PlayerTurnStatus getPlayerTurnStatus(final boolean ready) {
-		return ready ? PlayerTurnStatus.READY : PlayerTurnStatus.NOT_READY;
+	private static PlayerTurnStatus getPlayerTurnStatus(final PlayerRole role) {
+		return PlayerRole.SELECTING.equals(role) ? PlayerTurnStatus.READY : PlayerTurnStatus.NOT_READY;
 	}
 
 	private final Supplier<String> playerIdGetter;
@@ -162,10 +163,10 @@ final class GameViewFrame extends JFrame implements Observer {
 
 	private final MoveCounterLabel moveCounterLabel;
 
-	GameViewFrame(final GameBoardPanel<?> boardPanel, final Random rnd, final LocalController<Integer> localController,
+	GameViewFrame(final GameBoardPanel boardPanel, final Random rnd, final LocalController localController,
 			final RemoteController<Integer> remoteController, final Runnable closeHook) {
 		localController.addObserver(this);
-		remoteController.addObserver(this);
+//		remoteController.addObserver(this);
 		playerIdGetter = localController::getPlayerId;
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		addWindowListener(new WindowAdapter() {
@@ -186,7 +187,7 @@ final class GameViewFrame extends JFrame implements Observer {
 		setLayout(new BorderLayout());
 		add(boardPanel, BorderLayout.CENTER);
 
-		final PlayerTurnStatus initialTurnStatus = getPlayerTurnStatus(localController.isActive());
+		final PlayerTurnStatus initialTurnStatus = getPlayerTurnStatus(localController.getRole());
 		turnLabel = createTurnLabel(initialTurnStatus);
 		{
 			final JPanel turnLabelPanel = new JPanel();
@@ -205,7 +206,8 @@ final class GameViewFrame extends JFrame implements Observer {
 
 			moveCounterLabel = createMoveCounterLabel(localController.getMoveCount(),
 					playerReadiness.getPreferredSize().width);
-			remoteController.addObserver(moveCounterLabel);
+			localController.addObserver(moveCounterLabel);
+//			remoteController.addObserver(moveCounterLabel);
 			sidePanel.add(moveCounterLabel);
 		}
 		add(createStatusPanel(boardPanel, rnd, gameBoardPanelSize, sidePanel, remoteController), BorderLayout.PAGE_END);
@@ -219,36 +221,15 @@ final class GameViewFrame extends JFrame implements Observer {
 	 */
 	@Override
 	public void update(final Observable o, final Object arg) {
-		if (arg instanceof ActivePlayerChange) {
+		if (arg instanceof PlayerRoleChange) {
 			LOGGER.debug("Observed event representing a change in the currently-active player.");
-			final ActivePlayerChange change = (ActivePlayerChange) arg;
+			final PlayerRoleChange change = (PlayerRoleChange) arg;
 			final String playerId = playerIdGetter.get();
-			if (playerId.equals(change.getOldActivePlayerId())) {
+			if (playerId.equals(change.getPlayerId())) {
 				// This client initiated the handover
-				final String newActivePlayerId = change.getNewActivePlayerId();
-				if (playerId.equals(newActivePlayerId)) {
-					// No change in active player
-				} else {
-					// Some other client's user is now active
-					LOGGER.debug("Player \"{}\" is now active; Changing view to show the local player is not ready.",
-							newActivePlayerId);
-					setPlayerReady(false);
-				}
-			} else {
-				// Some other client initiated the handover
-				if (playerId.equals(change.getNewActivePlayerId())) {
-					// This client's user is now active
-					LOGGER.debug(
-							"Foreign player \"{}\" is no longer active; Changing view to show the local player is now ready.",
-							playerId);
-					setPlayerReady(true);
-				} else {
-					// Some other client's user is now active
-					// TODO: Add notification of 3rd user now being active
-					LOGGER.debug("Changing view to show the local player is not ready.");
-					setPlayerReady(false);
-				}
-			}
+				final PlayerRole newRole = change.getRole();
+				setPlayerReady(newRole);
+		}
 
 		} else if (arg instanceof GameEnding) {
 			LOGGER.debug("Observed event representing a game ending.");
@@ -281,8 +262,8 @@ final class GameViewFrame extends JFrame implements Observer {
 		}
 	}
 
-	private void setPlayerReady(final boolean ready) {
-		final PlayerTurnStatus newTurnStatus = getPlayerTurnStatus(ready);
+	private void setPlayerReady(final PlayerRole role) {
+		final PlayerTurnStatus newTurnStatus = getPlayerTurnStatus(role);
 		LOGGER.debug("Setting player readiness indicator status to {}.", newTurnStatus);
 		playerReadiness.setStatus(newTurnStatus);
 		turnLabel.setStatus(newTurnStatus);

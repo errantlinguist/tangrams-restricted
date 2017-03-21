@@ -16,26 +16,26 @@
 */
 package se.kth.speech.coin.tangrams.iristk;
 
-import java.util.Collection;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.collect.BiMap;
+
 import iristk.system.Event;
 import iristk.system.IrisModule;
-import iristk.util.Pair;
 import se.kth.speech.coin.tangrams.Game;
-import se.kth.speech.coin.tangrams.game.PlayerJoinTime;
-import se.kth.speech.coin.tangrams.game.RemoteController;
-import se.kth.speech.coin.tangrams.iristk.events.ActivePlayerChange;
-import se.kth.speech.coin.tangrams.iristk.events.Area2D;
+import se.kth.speech.coin.tangrams.game.PlayerRole;
 import se.kth.speech.coin.tangrams.iristk.events.Move;
+import se.kth.speech.coin.tangrams.iristk.events.PlayerRoleChange;
+import se.kth.speech.coin.tangrams.iristk.events.Selection;
 import se.kth.speech.coin.tangrams.iristk.events.Turn;
 
 public final class GameManagementServerModule extends IrisModule {
@@ -44,34 +44,18 @@ public final class GameManagementServerModule extends IrisModule {
 
 	private static final int MIN_GAME_PLAYER_COUNT = 2;
 
-	private static Event createGameStateDescriptionEvent(final String gameId,
-			final Pair<Game<Integer>, ActivePlayerTracker> gameState) {
+	private static final List<PlayerRole> PLAYER_ROLE_FILL_ORDER = Arrays.asList(PlayerRole.TURN_SUBMISSION,
+			PlayerRole.SELECTING);
+
+	private static Event createGameStateDescriptionEvent(final String gameId, final Game<Integer> gameState) {
 		final GameStateDescription gameDesc = new GameStateDescription();
 		gameDesc.setSeed(Long.parseLong(gameId));
 
 		{
-			final ActivePlayerTracker activePlayerTracker = gameState.getSecond();
-			final Collection<PlayerJoinTime> joinedPlayers = activePlayerTracker.getJoinedPlayers();
-			final Stream<String> playerIdStream = joinedPlayers.stream().map(PlayerJoinTime::getPlayerId);
-			final List<String> playerIdList = playerIdStream.collect(Collectors.toList());
-			gameDesc.setPlayerIds(playerIdList);
+			final Map<PlayerRole, String> playerRoles = gameState.getPlayerRoles();
+			gameDesc.setPlayerRoles(playerRoles);
 
-			final String startingPlayerId;
-			{
-				String activePlayerId = activePlayerTracker.getActivePlayerId();
-				if (activePlayerId == null) {
-					// The game has not started yet; Cycle to the
-					// first-joined
-					// player as the first active player
-					activePlayerId = activePlayerTracker.cycleActivePlayer();
-				}
-				startingPlayerId = activePlayerId;
-			}
-			gameDesc.setActivePlayerId(startingPlayerId);
-
-			final Game<Integer> game = gameState.getFirst();
-			gameDesc.setModelDescription(
-					new ModelDescription(game.getRemoteController().getModel().getPositionMatrix()));
+			gameDesc.setModelDescription(new ModelDescription(gameState.getModel().getPositionMatrix()));
 		}
 
 		final Event result = GameManagementEvent.GAME_READY_RESPONSE.createEvent(gameId);
@@ -80,25 +64,25 @@ public final class GameManagementServerModule extends IrisModule {
 		return result;
 	}
 
-	private static boolean isReady(final Pair<? extends Game<?>, ActivePlayerTracker> gameState) {
-		return gameState.getSecond().getPlayerCount() >= MIN_GAME_PLAYER_COUNT;
+	private static boolean isReady(final Game<?> gameState) {
+		return gameState.getPlayerRoles().keySet().size() >= MIN_GAME_PLAYER_COUNT;
 	}
 
-	private final Function<String, Pair<Game<Integer>, ActivePlayerTracker>> gameStateGetter;
+	private final Function<String, Game<Integer>> gameStateGetter;
 
 	public GameManagementServerModule(final Function<String, Game<Integer>> gameFactory) {
-		gameStateGetter = new Function<String, Pair<Game<Integer>, ActivePlayerTracker>>() {
+		gameStateGetter = new Function<String, Game<Integer>>() {
 
-			private final ConcurrentMap<String, Pair<Game<Integer>, ActivePlayerTracker>> gamePlayers = new ConcurrentHashMap<>();
+			private final ConcurrentMap<String, Game<Integer>> gamePlayers = new ConcurrentHashMap<>();
 
 			@Override
-			public Pair<Game<Integer>, ActivePlayerTracker> apply(final String gameId) {
+			public Game<Integer> apply(final String gameId) {
 				return gamePlayers.compute(gameId, (key, oldValue) -> {
-					final Pair<Game<Integer>, ActivePlayerTracker> result;
+					final Game<Integer> result;
 					if (oldValue == null) {
 						final Game<Integer> joinedGame = gameFactory.apply(key);
 						LOGGER.info("No known state for game \"{}\"; Creating new managed state.", key);
-						result = new Pair<>(joinedGame, new ActivePlayerTracker());
+						result = joinedGame;
 					} else {
 						result = oldValue;
 					}
@@ -129,136 +113,153 @@ public final class GameManagementServerModule extends IrisModule {
 
 		} else {
 			final String gameId = event.getString(GameManagementEvent.Attribute.GAME_ID.toString());
-
 			switch (gameEventType) {
 			case PLAYER_JOIN_REQUEST: {
 				final String joinedPlayerId = event.getString(GameManagementEvent.Attribute.PLAYER_ID.toString());
 				LOGGER.debug("Received join request from player \"{}\" for game \"{}\".",
 						new Object[] { joinedPlayerId, gameId });
-				final Pair<Game<Integer>, ActivePlayerTracker> gameState = gameStateGetter.apply(gameId);
+				final Game<Integer> gameState = gameStateGetter.apply(gameId);
 				final boolean isGameAlreadyReady = isReady(gameState);
-
 				final long joinTime = System.currentTimeMillis();
-				final ActivePlayerTracker activePlayerTracker = gameState.getSecond();
-				if (activePlayerTracker.addPlayer(new PlayerJoinTime(joinedPlayerId, joinTime))) {
-					LOGGER.debug("Added player \"{}\" to game \"{}\".", new Object[] { joinedPlayerId, gameId });
-					{
-						final Event joinResponse = GameManagementEvent.PLAYER_JOIN_RESPONSE.createEvent(gameId);
-						joinResponse.put(GameManagementEvent.Attribute.PLAYER_ID.toString(), joinedPlayerId);
-						final String joinTimestamp = getSystem().getTimestamp(joinTime);
-						joinResponse.put(GameManagementEvent.Attribute.TIMESTAMP.toString(), joinTimestamp);
-						LOGGER.info("Sending broker event acknowledging the joining of player \"{}\" to game \"{}\".",
-								new Object[] { joinedPlayerId, gameId });
-						send(joinResponse);
-					}
-
-					if (isGameAlreadyReady) {
-						if (isReady(gameState)) {
-							// TODO: add logic for adding users to an
-							// already-running game
-							throw new RuntimeException(
-									"Adding new players to already-running games is (currently) not supported.");
-						} else {
-							throw new AssertionError("A previously-ready game should never become unready.");
-						}
-					} else {
-						// Check if the game is now ready
-						if (isReady(gameState)) {
-							// Send a broker event signalling "game (now) ready"
-							final Event readySignal = createGameStateDescriptionEvent(gameId, gameState);
-							LOGGER.info("Sending broker event signalling that game \"{}\" is ready.", gameId);
-							send(readySignal);
-						} else {
-							LOGGER.debug("Game \"{}\" (still) not ready: {} already-joined player(s).", gameId,
-									activePlayerTracker.getPlayerCount());
-						}
-					}
-
-				} else {
+				final Map<PlayerRole, String> playerRoles = gameState.getPlayerRoles();
+				PlayerRole filledRole = null;
+				if (playerRoles.containsValue(joinedPlayerId)) {
 					LOGGER.warn(
 							"Player \"{}\" requested to join game \"{}\" but has already joined; Ignoring broker event.",
 							joinedPlayerId, gameId);
-				}
-
-				break;
-			}
-			case PLAYER_LEAVE_REQUEST: {
-				final String leavingPlayerId = event.getString(GameManagementEvent.Attribute.PLAYER_ID.toString());
-				LOGGER.debug("Received leave request from player \"{}\" for game \"{}\".",
-						new Object[] { leavingPlayerId, gameId });
-				// final Pair<Game<Integer>, ActivePlayerTracker> gameState =
-				// gameStateGetter.apply(gameId);
-				// final ActivePlayerTracker activePlayerTracker =
-				// gameState.getSecond();
-				throw new UnsupportedOperationException("not yet implemented");
-				// TODO: Finish
-				// break;
-			}
-			case SELECTION_REQUEST: {
-				if (LOGGER.isDebugEnabled()) {
-					final String selectingPlayerId = event
-							.getString(GameManagementEvent.Attribute.PLAYER_ID.toString());
-					final Area2D area = (Area2D) event.get(GameManagementEvent.Attribute.AREA.toString());
-					LOGGER.debug("Received game event denoting that \"{}\" toggled selection at {}.", selectingPlayerId,
-							area);
-				}
-				break;
-			}
-			case TURN_REQUEST: {
-				LOGGER.debug("Received broker turn event for game \"{}\".", gameId);
-				final Pair<Game<Integer>, ActivePlayerTracker> gameState = gameStateGetter.apply(gameId);
-				final Game<Integer> game = gameState.getFirst();
-
-				final ActivePlayerTracker activePlayerTracker = gameState.getSecond();
-				final String playerIdField = GameManagementEvent.Attribute.PLAYER_ID.toString();
-				final String turnPlayerId = event.getString(playerIdField);
-				final String oldActivePlayerId = activePlayerTracker.getActivePlayerId();
-				if (!turnPlayerId.equals(oldActivePlayerId)) {
-					throw new IllegalStateException("Models of server and client(s) have gone out of sync.");
-				}
-
-				{
-					final Event turnResponse = GameManagementEvent.TURN_RESPONSE.createEvent(gameId);
-					{
-						turnResponse.put(playerIdField, turnPlayerId);
-						{
-							final Move move = (Move) event.get(GameManagementEvent.Attribute.MOVE.toString());
-							final RemoteController<Integer> controller = game.getRemoteController();
-							final int turnNo = controller.getMoveCount() + 1;
-							final Turn turn = new Turn(turnPlayerId, move, turnNo);
-							controller.notifyPlayerTurn(turn);
-							turnResponse.put(GameManagementEvent.Attribute.TURN.toString(), turn);
+				} else {
+					for (final PlayerRole roleToFill : PLAYER_ROLE_FILL_ORDER) {
+						if (!playerRoles.containsKey(roleToFill)) {
+							filledRole = roleToFill;
+							break;
 						}
 					}
+					if (filledRole == null) {
+						throw new RuntimeException(
+								String.format("No more player roles to assign for game \"%s\".", gameId));
+					} else {
+						playerRoles.put(filledRole, joinedPlayerId);
+						LOGGER.debug("Added player \"{}\" to game \"{}\" with role {}.",
+								new Object[] { joinedPlayerId, gameId, filledRole });
 
-					final String newActivePlayerId;
-					// If the game has been won, don't allow any player to
-					// become active again
-					// if (game.isWon()) {
-					// newActivePlayerId = null;
-					// } else {
-					newActivePlayerId = activePlayerTracker.cycleActivePlayer();
-					// }
-					turnResponse.put(GameManagementEvent.Attribute.ACTIVE_PLAYER_CHANGE.toString(),
-							new ActivePlayerChange(oldActivePlayerId, newActivePlayerId));
-					LOGGER.info(
-							"Sending broker event for game \"{}\" signalling a move, after which player \"{}\" is now active.",
-							new Object[] { gameId, newActivePlayerId });
-					send(turnResponse);
+						{
+							final Event joinResponse = GameManagementEvent.PLAYER_JOIN_RESPONSE.createEvent(gameId);
+							joinResponse.put(GameManagementEvent.Attribute.PLAYER_ID.toString(), joinedPlayerId);
+							final String joinTimestamp = getSystem().getTimestamp(joinTime);
+							joinResponse.put(GameManagementEvent.Attribute.TIMESTAMP.toString(), joinTimestamp);
+							LOGGER.info(
+									"Sending broker event acknowledging the joining of player \"{}\" to game \"{}\".",
+									new Object[] { joinedPlayerId, gameId });
+							send(joinResponse);
+						}
+						if (isGameAlreadyReady) {
+							if (isReady(gameState)) {
+								// TODO: add logic for adding users to an
+								// already-running game
+								throw new RuntimeException(
+										"Adding new players to already-running games is (currently) not supported.");
+							} else {
+								throw new AssertionError("A previously-ready game should never become unready.");
+							}
+						} else {
+							// Check if the game is now ready
+							if (isReady(gameState)) {
+								// Send a broker event signalling "game (now)
+								// ready"
+								final Event readySignal = createGameStateDescriptionEvent(gameId, gameState);
+								LOGGER.info("Sending broker event signalling that game \"{}\" is ready.", gameId);
+								send(readySignal);
+							} else {
+								LOGGER.debug("Game \"{}\" (still) not ready: {} already-joined player(s).", gameId,
+										playerRoles.keySet().size());
+							}
+						}
+					}
 				}
 
-				// Check if the game has now been won
-				// if (game.isWon()) {
-				// final Event gameOverResponse =
-				// GameManagementEvent.GAME_OVER_RESPONSE.createEvent(gameId);
-				// gameOverResponse.put(GameManagementEvent.Attribute.GAME_STATE.toString(),
-				// new GameEnding(
-				// turnPlayerId, game.getRemoteController().getMoveCount(),
-				// GameEnding.Outcome.WIN));
-				// LOGGER.info("Sending broker event for game \"{}\" signalling
-				// that the game is over.", gameId);
-				// send(gameOverResponse);
-				// }
+				break;
+			}
+			case NEXT_TURN_REQUEST: {
+				LOGGER.debug("Received broker \"next turn\" event for game \"{}\".", gameId);
+				final Game<Integer> gameState = gameStateGetter.apply(gameId);
+				final String playerIdField = GameManagementEvent.Attribute.PLAYER_ID.toString();
+				final String requestingPlayerId = event.getString(playerIdField);
+				final Map<String, PlayerRole> playerRoles = gameState.getPlayerRoles().inverse();
+				final PlayerRole role = playerRoles.get(requestingPlayerId);
+				if (PlayerRole.TURN_SUBMISSION.equals(role)) {
+					final Event response = GameManagementEvent.NEXT_TURN_RESPONSE.createEvent(gameId);
+					response.put(playerIdField, requestingPlayerId);
+					final Move move = (Move) event.get(GameManagementEvent.Attribute.MOVE.toString());
+					final int turnNo = gameState.getTurnCount().get();
+					final Turn turn = new Turn(requestingPlayerId, move, turnNo);
+					response.put(GameManagementEvent.Attribute.TURN.toString(), turn);
+					LOGGER.info("Sending broker event for game \"{}\" signalling the next move (move no. {}).",
+							new Object[] { gameId, turn.getSequenceNumber() });
+					send(response);
+				} else {
+					LOGGER.warn(
+							"The player does not have the appropriate role ({}) to request the submission of the next move; Ignoring.",
+							role);
+				}
+				break;
+			}
+			case COMPLETED_TURN_REQUEST: {
+				LOGGER.debug("Received broker \"next turn\" event for game \"{}\".", gameId);
+				final Game<Integer> gameState = gameStateGetter.apply(gameId);
+				final String playerIdField = GameManagementEvent.Attribute.PLAYER_ID.toString();
+				final String requestingPlayerId = event.getString(playerIdField);
+				final BiMap<PlayerRole, String> playerRoles = gameState.getPlayerRoles();
+				final PlayerRole oldRole = playerRoles.inverse().get(requestingPlayerId);
+				if (PlayerRole.WAITING_FOR_SELECTION.equals(oldRole)) {
+					final Event response = GameManagementEvent.COMPLETED_TURN_RESPONSE.createEvent(gameId);
+					response.put(playerIdField, requestingPlayerId);
+					final Move move = (Move) event.get(GameManagementEvent.Attribute.MOVE.toString());
+					final int turnNo = gameState.getTurnCount().incrementAndGet();
+					final Turn turn = new Turn(requestingPlayerId, move, turnNo);
+					response.put(GameManagementEvent.Attribute.TURN.toString(), turn);
+					LOGGER.info("Sending broker event for game \"{}\" signalling the next move (move no. {}).",
+							new Object[] { gameId, turn.getSequenceNumber() });
+					send(response);
+
+					// Change roles
+					final PlayerRole switchedRole = PlayerRole.SELECTING;
+					final String otherPlayerId = playerRoles.get(switchedRole);
+					playerRoles.put(switchedRole, requestingPlayerId);
+					playerRoles.put(PlayerRole.TURN_SUBMISSION, otherPlayerId);
+					final List<PlayerRoleChange> roleChanges = new ArrayList<>(playerRoles.size());
+					playerRoles.forEach((role, playerId) -> {
+						final PlayerRoleChange roleChange = new PlayerRoleChange(playerId, role);
+						roleChanges.add(roleChange);
+					});
+					event.put(GameManagementEvent.Attribute.PLAYER_ROLE_CHANGE.toString(), roleChanges);
+
+				} else {
+					LOGGER.warn(
+							"The player does not have the appropriate role ({}) to request the submission of the next move; Ignoring.",
+							oldRole);
+				}
+				break;
+			}
+			case SELECTION_REJECTION : {
+				LOGGER.debug("Received broker \"selection rejected\" event for game \"{}\".", gameId);
+				final Game<Integer> gameState = gameStateGetter.apply(gameId);
+				final String rejectingPlayerId = event
+						.getString(GameManagementEvent.Attribute.PLAYER_ID.toString());
+				LOGGER.debug("Received game event reporting selection info for \"{}\".", rejectingPlayerId);
+				final Integer pieceId = (Integer) event.get(GameManagementEvent.Attribute.PIECE.toString());
+				
+				// Change roles
+//				final BiMap<PlayerRole, String> playerRoles = gameState.getPlayerRoles();
+//				final String otherPlayerId = playerRoles.get(switchedRole);
+//				playerRoles.put(switchedRole, rejectingPlayerId);
+//				playerRoles.put(PlayerRole.TURN_SUBMISSION, otherPlayerId);
+//				final List<PlayerRoleChange> roleChanges = new ArrayList<>(playerRoles.size());
+//				playerRoles.forEach((role, playerId) -> {
+//					final PlayerRoleChange roleChange = new PlayerRoleChange(playerId, role);
+//					roleChanges.add(roleChange);
+//				});
+//				event.put(GameManagementEvent.Attribute.PLAYER_ROLE_CHANGE.toString(), roleChanges);
+//				remoteController.notifySelectionRejected(new Selection(rejectingPlayerId, pieceId));
 				break;
 			}
 			default: {

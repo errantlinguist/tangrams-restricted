@@ -16,9 +16,16 @@
 */
 package se.kth.speech.coin.tangrams.iristk;
 
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
 
 import iristk.util.Record;
+import se.kth.speech.coin.tangrams.game.PlayerRole;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -27,15 +34,14 @@ import iristk.util.Record;
  */
 public final class GameStateDescription extends Record {
 
-	private String activePlayerId;
-
 	private boolean allowFailedPlacements;
 
 	private ModelDescription modelDescription;
 
 	private double occupiedGridArea;
 
-	private List<String> playerIds;
+	@RecordField(name = "playerRoles")
+	private List<List<String>> jsonPlayerRoles;
 
 	/**
 	 * This is a {@link String} instead of an {@link Long} reference in order to
@@ -57,14 +63,6 @@ public final class GameStateDescription extends Record {
 	}
 
 	/**
-	 * @return the activePlayerId
-	 */
-	@RecordField(name = "activePlayerId")
-	public String getActivePlayerId() {
-		return activePlayerId;
-	}
-
-	/**
 	 * @return the modelDescription
 	 */
 	@RecordField(name = "modelDescription")
@@ -81,11 +79,15 @@ public final class GameStateDescription extends Record {
 	}
 
 	/**
-	 * @return the playerIds
+	 * @return the playerRoles
 	 */
-	@RecordField(name = "playerIds")
-	public List<String> getPlayerIds() {
-		return playerIds;
+	public BiMap<PlayerRole, String> getPlayerRoles() {
+		final BiMap<PlayerRole, String> result = HashBiMap.create(jsonPlayerRoles.size());
+		jsonPlayerRoles.stream().forEach(jsonPlayerRole -> {
+			final Iterator<String> valIter = jsonPlayerRole.iterator();
+			result.put(PlayerRole.valueOf(valIter.next()), valIter.next());
+		});
+		return result;
 	}
 
 	/**
@@ -93,15 +95,6 @@ public final class GameStateDescription extends Record {
 	 */
 	public long getSeed() {
 		return Long.parseLong(seed);
-	}
-
-	/**
-	 * @param activePlayerId
-	 *            the activePlayerId to set
-	 */
-	@RecordField(name = "activePlayerId")
-	public void setActivePlayerId(final String activePlayerId) {
-		this.activePlayerId = activePlayerId;
 	}
 
 	/**
@@ -131,13 +124,15 @@ public final class GameStateDescription extends Record {
 		this.occupiedGridArea = occupiedGridArea;
 	}
 
-	/**
-	 * @param playerIds
-	 *            the playerIds to set
-	 */
-	@RecordField(name = "playerIds")
-	public void setPlayerIds(final List<String> playerIds) {
-		this.playerIds = playerIds;
+	public void setPlayerRoles(final Map<PlayerRole, String> playerRoles) {
+		final List<List<String>> jsonPlayerRoles = new ArrayList<>(playerRoles.size());
+		playerRoles.forEach((role, playerId) -> {
+			final List<String> pair = new ArrayList<>(2);
+			pair.add(role.toString());
+			pair.add(playerId);
+			jsonPlayerRoles.add(pair);
+		});
+		this.jsonPlayerRoles = jsonPlayerRoles;
 	}
 
 	/**

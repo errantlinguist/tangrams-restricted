@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory;
 import se.kth.speech.Integers;
 import se.kth.speech.Matrix;
 import se.kth.speech.SpatialMatrix;
+import se.kth.speech.coin.tangrams.iristk.ModelDescription;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>

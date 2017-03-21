@@ -30,6 +30,14 @@ import iristk.system.Event;
  */
 enum GameManagementEvent {
 	/**
+	 * An event requesting the completion of a turn.
+	 */
+	COMPLETED_TURN_REQUEST("completedturn.request"),
+	/**
+	 * An event confirming the completion of a turn.
+	 */
+	COMPLETED_TURN_RESPONSE("completedturn.response"),
+	/**
 	 * An event signalling that the game is over.
 	 */
 	GAME_OVER_RESPONSE("game.over"),
@@ -38,6 +46,14 @@ enum GameManagementEvent {
 	 * e.g.&nbsp;enough players have joined.
 	 */
 	GAME_READY_RESPONSE("game.ready"),
+	/**
+	 * An event representing the submission of the next turn to be completed.
+	 */
+	NEXT_TURN_REQUEST("nextturn.request"),
+	/**
+	 * An event representing the notification of the next turn to be completed.
+	 */
+	NEXT_TURN_RESPONSE("nextturn.response"),
 	/**
 	 * An event representing a request by the sending client to add the given
 	 * player to the list of players in a game.
@@ -50,24 +66,16 @@ enum GameManagementEvent {
 	 */
 	PLAYER_JOIN_RESPONSE("playerlist.add.response"),
 	/**
-	 * An even representing a request by the sending client to leave a game;
-	 */
-	PLAYER_LEAVE_REQUEST("playerlist.remove.request"),
-	/**
 	 * An event representing a player's selection.
 	 */
-	SELECTION_REQUEST("selection"),
+	SELECTION_REQUEST("selection.request"),
 	/**
-	 * An event representing a completed turn.
+	 * An event representing the rejection of a player's selection.
 	 */
-	TURN_REQUEST("turn"),
-	/**
-	 * An event representing a change of which player is active.
-	 */
-	TURN_RESPONSE("activeplayer.change");
+	SELECTION_REJECTION("selection.rejection");
 
 	enum Attribute {
-		ACTIVE_PLAYER_CHANGE, AREA, GAME_ID, GAME_STATE, MOVE, PLAYER_ID, TIMESTAMP, TURN;
+		AREA, PLAYER_ROLE_CHANGE, PIECE, GAME_ID, GAME_STATE, MOVE, PLAYER_ID, TIMESTAMP, TURN;
 	}
 
 	public static final String EVENT_NAME_QUALIFIER = "tangrams.action";

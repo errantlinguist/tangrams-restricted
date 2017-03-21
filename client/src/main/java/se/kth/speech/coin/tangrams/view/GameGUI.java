@@ -39,8 +39,8 @@ import se.kth.speech.SpatialMatrix;
 import se.kth.speech.coin.tangrams.content.ImageLoadingImageViewInfoFactory;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfoFactory;
-import se.kth.speech.coin.tangrams.game.LocalController;
 import se.kth.speech.coin.tangrams.iristk.GameState;
+import se.kth.speech.coin.tangrams.iristk.LocalController;
 import se.kth.speech.coin.tangrams.iristk.events.Selection;
 import se.kth.speech.coin.tangrams.iristk.events.Turn;
 
@@ -150,13 +150,13 @@ public final class GameGUI implements Runnable {
 	@Override
 	public void run() {
 		LOGGER.debug("Creating view components.");
-		final LocalController<Integer> localController = gameState.getLocalController();
+		final LocalController localController = gameState.getLocalController();
 		final SpatialMatrix<Integer> model = localController.getModel();
 		final int pieceCount = model.getElementPlacements().getAllElements().size();
 		final Random rnd = gameState.getRnd();
 		final ImageVisualizationInfoFactory imgVisInfoFactory = new ImageVisualizationInfoFactory(rnd);
 		final Map<Integer, Image> pieceImgs = Maps.newHashMapWithExpectedSize(pieceCount);
-		final GameBoardPanel<Integer> gameBoardPanel = new GameBoardPanel<>(model, pieceImgs, localController,
+		final GameBoardPanel gameBoardPanel = new GameBoardPanel(model, pieceImgs, localController,
 				turnScreenshotLogger, selectionLogger);
 		final ImageLoadingImageViewInfoFactory imgViewInfoFactory = new ImageLoadingImageViewInfoFactory(
 				gameBoardPanel.getToolkit(), DEFAULT_POST_COLORING_IMG_TRANSFORMER,

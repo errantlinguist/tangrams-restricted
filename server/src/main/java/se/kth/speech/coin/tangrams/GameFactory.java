@@ -27,9 +27,9 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 
 import com.github.errantlinguist.ClassProperties;
+import com.google.common.collect.HashBiMap;
 
 import se.kth.speech.SpatialMatrix;
-import se.kth.speech.coin.tangrams.game.RemoteController;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -37,18 +37,6 @@ import se.kth.speech.coin.tangrams.game.RemoteController;
  *
  */
 final class GameFactory implements Function<String, Game<Integer>> {
-
-	private static final Pattern MULTIVALUE_PROP_DELIM_PATTERN = Pattern.compile("\\s*,\\s*");;
-
-	private static final Properties PROPS;
-
-	static {
-		try {
-			PROPS = ClassProperties.load(GameFactory.class);
-		} catch (final IOException e) {
-			throw new UncheckedIOException(e);
-		}
-	}
 
 	private static final BiFunction<Image, Toolkit, Image> DEFAULT_POST_COLORING_IMG_TRANSFORMER = new BiFunction<Image, Toolkit, Image>() {
 
@@ -58,7 +46,22 @@ final class GameFactory implements Function<String, Game<Integer>> {
 			return img;
 		}
 
-	};
+	};;
+
+	private static final int MAX_PLAYER_COUNT;
+
+	private static final Pattern MULTIVALUE_PROP_DELIM_PATTERN = Pattern.compile("\\s*,\\s*");
+
+	private static final Properties PROPS;
+
+	static {
+		try {
+			PROPS = ClassProperties.load(GameFactory.class);
+			MAX_PLAYER_COUNT = Integer.parseInt(PROPS.getProperty("maxPlayers"));
+		} catch (final IOException e) {
+			throw new UncheckedIOException(e);
+		}
+	}
 
 	private static RandomPopulatedModelFactory createModelFactory() {
 		final boolean allowFailedPlacements = Boolean.parseBoolean(PROPS.getProperty("allowFailedPlacements"));
@@ -98,8 +101,7 @@ final class GameFactory implements Function<String, Game<Integer>> {
 		} catch (final NumberFormatException e) {
 			throw new IllegalArgumentException("Invalid game name.", e);
 		}
-		return new Game<>(new RemoteController<>(model, handoff -> {
-		}, playerId -> true), seed);
+		return new Game<>(seed, model, HashBiMap.create(MAX_PLAYER_COUNT));
 	}
 
 }

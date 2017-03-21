@@ -65,10 +65,12 @@ import se.kth.speech.SpatialMatrix;
 import se.kth.speech.SpatialRegion;
 import se.kth.speech.awt.DisablingMouseAdapter;
 import se.kth.speech.coin.tangrams.game.AreaSpatialRegionFactory;
-import se.kth.speech.coin.tangrams.game.LocalController;
-import se.kth.speech.coin.tangrams.iristk.events.ActivePlayerChange;
+import se.kth.speech.coin.tangrams.game.PlayerRole;
+import se.kth.speech.coin.tangrams.iristk.LocalController;
+import se.kth.speech.coin.tangrams.iristk.events.Area2D;
 import se.kth.speech.coin.tangrams.iristk.events.GameEnding;
 import se.kth.speech.coin.tangrams.iristk.events.Move;
+import se.kth.speech.coin.tangrams.iristk.events.PlayerRoleChange;
 import se.kth.speech.coin.tangrams.iristk.events.Selection;
 import se.kth.speech.coin.tangrams.iristk.events.Turn;
 
@@ -77,7 +79,7 @@ import se.kth.speech.coin.tangrams.iristk.events.Turn;
  * @since 2 Mar 2017
  *
  */
-final class GameBoardPanel<I> extends JPanel implements Observer {
+final class GameBoardPanel extends JPanel implements Observer {
 
 	private class SelectingMouseAdapter extends MouseAdapter {
 		@Override
@@ -86,8 +88,8 @@ final class GameBoardPanel<I> extends JPanel implements Observer {
 			final int y = e.getY();
 			final Component foundComponent = findComponentAt(e.getX(), e.getY());
 			if (foundComponent == GameBoardPanel.this) {
-				final Entry<I, SpatialRegion> biggestPieceRegionUnderSelection = findBiggestPieceRegionUnderSelection(x,
-						y);
+				final Entry<Integer, SpatialRegion> biggestPieceRegionUnderSelection = findBiggestPieceRegionUnderSelection(
+						x, y);
 				if (biggestPieceRegionUnderSelection == null) {
 					LOGGER.info("Nothing to select.");
 				} else {
@@ -97,7 +99,7 @@ final class GameBoardPanel<I> extends JPanel implements Observer {
 					final int moveConfirmation = MoveDialogs.showSelectConfirmDialog(GameBoardPanel.this);
 					switch (moveConfirmation) {
 					case JOptionPane.YES_OPTION: {
-						localController.submitSelection(biggestPieceRegionUnderSelection.getKey());
+						localController.submitSelection(biggestPieceRegionUnderSelection);
 						break;
 
 					}
@@ -180,31 +182,36 @@ final class GameBoardPanel<I> extends JPanel implements Observer {
 	 */
 	private final Set<SpatialRegion> highlightedRegions = Sets.newHashSetWithExpectedSize(1);
 
-	private final Map<I, Image> pieceImgs;
+	private final Map<Integer, Image> pieceImgs;
 
-	private final SpatialMatrix<I> posMatrix;
+	private final SpatialMatrix<Integer> posMatrix;
 
-	private final BiConsumer<? super GameBoardPanel<? super I>, ? super Turn> localTurnCompletionHook;
+	private final BiConsumer<? super GameBoardPanel, ? super Turn> localTurnCompletionHook;
 
-	private final BiConsumer<? super GameBoardPanel<? super I>, ? super Selection> localSelectionHook;
+	private final BiConsumer<? super GameBoardPanel, ? super Selection> localSelectionHook;
 
-	private final LocalController<I> localController;
+	private final LocalController localController;
 
 	private final AreaSpatialRegionFactory areaRegionFactory;
 
-	GameBoardPanel(final SpatialMatrix<I> posMatrix, final Map<I, Image> pieceImgs,
-			final LocalController<I> localController,
-			final BiConsumer<? super GameBoardPanel<? super I>, ? super Turn> localTurnCompletionHook,
-			final BiConsumer<? super GameBoardPanel<? super I>, ? super Selection> localSelectionHook) {
+	private final DisablingMouseAdapter selectingMouseListener;
+
+	private Entry<SpatialRegion, Map<Integer, SpatialRegion>> nextMove;
+
+	GameBoardPanel(final SpatialMatrix<Integer> posMatrix, final Map<Integer, Image> pieceImgs,
+			final LocalController localController,
+			final BiConsumer<? super GameBoardPanel, ? super Turn> localTurnCompletionHook,
+			final BiConsumer<? super GameBoardPanel, ? super Selection> localSelectionHook) {
 		this.posMatrix = posMatrix;
-		this.areaRegionFactory = new AreaSpatialRegionFactory(this.posMatrix);
+		areaRegionFactory = new AreaSpatialRegionFactory(this.posMatrix);
 		this.pieceImgs = pieceImgs;
 		this.localController = localController;
-		registerController(this.localController);
-		this.playerIdGetter = localController::getPlayerId;
+		localController.addObserver(this);
+		playerIdGetter = localController::getPlayerId;
 		this.localTurnCompletionHook = localTurnCompletionHook;
 		this.localSelectionHook = localSelectionHook;
-		selectingMouseListener =  new DisablingMouseAdapter(new SelectingMouseAdapter());
+		selectingMouseListener = new DisablingMouseAdapter(new SelectingMouseAdapter());
+		updateMouseListener(localController.getRole());
 		addDisablingMouseListener(selectingMouseListener);
 
 		// http://stackoverflow.com/a/1936582/1391325
@@ -248,6 +255,17 @@ final class GameBoardPanel<I> extends JPanel implements Observer {
 		drawPieceImages(g);
 	}
 
+	// private void clearRegionHighlights(final Graphics g, final SpatialRegion
+	// region) {
+	// final int colWidth = getGridColWidth();
+	// final int rowHeight = getGridRowHeight();
+	// final int[] startIdxs = createComponentCoordStartIdxArray(region,
+	// colWidth, rowHeight);
+	// final int[] size = createComponentCoordSizeArray(region, colWidth,
+	// rowHeight);
+	// g.clearRect(startIdxs[0], startIdxs[1], size[0], size[1]);
+	// }
+
 	/*
 	 * (non-Javadoc)
 	 *
@@ -274,30 +292,53 @@ final class GameBoardPanel<I> extends JPanel implements Observer {
 		}
 	}
 
+	// private Graphics2D createRegionHighlightClearingGraphics(final Graphics
+	// g) {
+	// final Graphics2D result = (Graphics2D) g.create();
+	// result.setStroke(new BasicStroke(REGION_HIGHLIGHT_STROKE_WIDTH));
+	// result.setColor(getBackground());
+	// return result;
+	// }
+
 	private void addDisablingMouseListener(final DisablingMouseAdapter mouseListener) {
 		addMouseListener(mouseListener);
 		addMouseMotionListener(mouseListener);
 	}
 
-//	private void clearRegionHighlights(final Graphics g, final SpatialRegion region) {
-//		final int colWidth = getGridColWidth();
-//		final int rowHeight = getGridRowHeight();
-//		final int[] startIdxs = createComponentCoordStartIdxArray(region, colWidth, rowHeight);
-//		final int[] size = createComponentCoordSizeArray(region, colWidth, rowHeight);
-//		g.clearRect(startIdxs[0], startIdxs[1], size[0], size[1]);
-//	}
+	private Entry<SpatialRegion, Map<Integer, SpatialRegion>> createRandomMove(final Random rnd) {
+		// TODO: Change probability of a piece being selected for moving based
+		// on if it was moved before: E.g. cannot move a given piece more than
+		// twice in a row
+		final List<SpatialRegion> regionsToTry = posMatrix.getElementPlacements().getMinimalRegions();
+		// TODO: estimate number of failed tries
+		final Set<SpatialRegion> failedRegions = new HashSet<>();
+		Entry<SpatialRegion, Map<Integer, SpatialRegion>> pieceMove = null;
+		do {
+			final SpatialRegion occupiedRegion = RandomCollections.getRandomElement(regionsToTry, rnd);
+			final Map<Integer, SpatialRegion> pieceMoveTargets = createRandomValidMoveTargetMap(occupiedRegion, rnd);
+			if (pieceMoveTargets.isEmpty()) {
+				LOGGER.debug("No valid moves for piece(s) from region {}.", occupiedRegion);
+				failedRegions.add(occupiedRegion);
+			} else {
+				pieceMove = new MutablePair<>(occupiedRegion, pieceMoveTargets);
+			}
+		} while (pieceMove == null && failedRegions.size() < regionsToTry.size());
 
-	private Map<I, SpatialRegion> createRandomValidMoveTargetMap(final SpatialRegion occupiedRegion, final Random rnd) {
+		return pieceMove;
+	}
+
+	private Map<Integer, SpatialRegion> createRandomValidMoveTargetMap(final SpatialRegion occupiedRegion,
+			final Random rnd) {
 		final Set<SpatialRegion> regionValidMoves = posMatrix.createValidMoveSet(occupiedRegion);
-		final Map<I, SpatialRegion> result;
+		final Map<Integer, SpatialRegion> result;
 		if (regionValidMoves.isEmpty()) {
 			result = Collections.emptyMap();
 		} else {
-			final SpatialMap<I> piecePlacements = posMatrix.getElementPlacements();
-			final Collection<I> pieceIds = piecePlacements.getMinimalRegionElements().get(occupiedRegion);
+			final SpatialMap<Integer> piecePlacements = posMatrix.getElementPlacements();
+			final Collection<Integer> pieceIds = piecePlacements.getMinimalRegionElements().get(occupiedRegion);
 			// NOTE: The iterator should only have one element here
 			result = Maps.newHashMapWithExpectedSize(pieceIds.size());
-			for (final I pieceId : pieceIds) {
+			for (final Integer pieceId : pieceIds) {
 				final SpatialRegion moveTarget = RandomCollections.getRandomElement(regionValidMoves, rnd);
 				assert !piecePlacements.isOccupied(moveTarget);
 				result.put(pieceId, moveTarget);
@@ -306,25 +347,16 @@ final class GameBoardPanel<I> extends JPanel implements Observer {
 		return result;
 	}
 
-//	private Graphics2D createRegionHighlightClearingGraphics(final Graphics g) {
-//		final Graphics2D result = (Graphics2D) g.create();
-//		result.setStroke(new BasicStroke(REGION_HIGHLIGHT_STROKE_WIDTH));
-//		result.setColor(getBackground());
-//		return result;
-//	}
-
 	private Graphics2D createRegionHighlightDrawingGraphics(final Graphics g) {
 		final Graphics2D result = (Graphics2D) g.create();
 		result.setStroke(new BasicStroke(REGION_HIGHLIGHT_STROKE_WIDTH));
 		result.setColor(Color.MAGENTA);
 		return result;
 	}
-	
-	private final DisablingMouseAdapter selectingMouseListener;
 
 	private void drawGrid(final Graphics g) {
 		LOGGER.debug("Drawing grid.");
-		final Matrix<I> posMatrix = this.posMatrix.getPositionMatrix();
+		final Matrix<Integer> posMatrix = this.posMatrix.getPositionMatrix();
 		final int[] matrixDims = posMatrix.getDimensions();
 		// http://stackoverflow.com/a/21989406/1391325
 		// creates a copy of the Graphics instance
@@ -337,7 +369,7 @@ final class GameBoardPanel<I> extends JPanel implements Observer {
 			final Stroke dashed = new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[] { 1 },
 					0);
 			gridDrawingG.setStroke(dashed);
-			for (final ListIterator<List<I>> matrixRowIter = posMatrix.rowIterator(); matrixRowIter
+			for (final ListIterator<List<Integer>> matrixRowIter = posMatrix.rowIterator(); matrixRowIter
 					.hasNext(); matrixRowIter.next()) {
 				gridDrawingG.drawLine(0, nextRowY, getWidth(), nextRowY);
 				nextRowY += rowHeight;
@@ -365,12 +397,13 @@ final class GameBoardPanel<I> extends JPanel implements Observer {
 		final FontMetrics fm = g.getFontMetrics();
 		final int pieceTextHeight = fm.getAscent();
 		int nextRowY = 0;
-		for (final ListIterator<List<I>> matrixRowIter = posMatrix.getPositionMatrix().rowIterator(); matrixRowIter
-				.hasNext();) {
-			final List<I> matrixRow = matrixRowIter.next();
+		for (final ListIterator<List<Integer>> matrixRowIter = posMatrix.getPositionMatrix()
+				.rowIterator(); matrixRowIter.hasNext();) {
+			final List<Integer> matrixRow = matrixRowIter.next();
 			int nextColX = 0;
-			for (final ListIterator<I> matrixRowCellIter = matrixRow.listIterator(); matrixRowCellIter.hasNext();) {
-				final I pieceId = matrixRowCellIter.next();
+			for (final ListIterator<Integer> matrixRowCellIter = matrixRow.listIterator(); matrixRowCellIter
+					.hasNext();) {
+				final Integer pieceId = matrixRowCellIter.next();
 				if (pieceId != null) {
 					final String pieceText = pieceId.toString();
 					final int pieceTextWidth = fm.stringWidth(pieceText);
@@ -389,10 +422,10 @@ final class GameBoardPanel<I> extends JPanel implements Observer {
 		final int colWidth = getGridColWidth();
 		final int rowHeight = getGridRowHeight();
 
-		for (final Entry<SpatialRegion, I> piecePlacement : posMatrix.getElementPlacements().getMinimalRegionElements()
-				.entries()) {
+		for (final Entry<SpatialRegion, Integer> piecePlacement : posMatrix.getElementPlacements()
+				.getMinimalRegionElements().entries()) {
 			final SpatialRegion region = piecePlacement.getKey();
-			final I pieceId = piecePlacement.getValue();
+			final Integer pieceId = piecePlacement.getValue();
 			final Image initialImg = pieceImgs.get(pieceId);
 			final Image scaledImg = scaleImageToGridSize(initialImg, region, colWidth, rowHeight);
 			final int[] startIdxs = createComponentCoordStartIdxArray(region, colWidth, rowHeight);
@@ -419,15 +452,16 @@ final class GameBoardPanel<I> extends JPanel implements Observer {
 		return Objects.equals(playerIdGetter.get(), str);
 	}
 
-	private Entry<I, SpatialRegion> findBiggestPieceRegionUnderSelection(final int x, final int y) {
+	private Entry<Integer, SpatialRegion> findBiggestPieceRegionUnderSelection(final int x, final int y) {
 		final int rowIdx = getRowIdx(y);
 		final int colIdx = getColIdx(x);
-		final Stream<Entry<SpatialRegion, I>> selectedRegionPieceIds = posMatrix.getIntersectedElements(rowIdx, colIdx)
+		final Stream<Entry<SpatialRegion, Integer>> selectedRegionPieceIds = posMatrix
+				.getIntersectedElements(rowIdx, colIdx)
 				.filter(selectedRegionPieceId -> selectedRegionPieceId.getValue() != null);
-		final Map<I, SpatialRegion> pieceBiggestRegions = Maps.newHashMapWithExpectedSize(1);
+		final Map<Integer, SpatialRegion> pieceBiggestRegions = Maps.newHashMapWithExpectedSize(1);
 		selectedRegionPieceIds.forEach(selectedRegionPieceId -> {
 			final SpatialRegion region = selectedRegionPieceId.getKey();
-			final I pieceId = selectedRegionPieceId.getValue();
+			final Integer pieceId = selectedRegionPieceId.getValue();
 			pieceBiggestRegions.compute(pieceId, (k, oldVal) -> {
 				SpatialRegion newVal;
 				if (oldVal == null) {
@@ -443,13 +477,13 @@ final class GameBoardPanel<I> extends JPanel implements Observer {
 			});
 		});
 
-		final Entry<I, SpatialRegion> result;
+		final Entry<Integer, SpatialRegion> result;
 		if (pieceBiggestRegions.isEmpty()) {
 			result = null;
 		} else {
-			final List<Entry<I, SpatialRegion>> pieceBiggestRegionsDescendingSize = new ArrayList<>(
+			final List<Entry<Integer, SpatialRegion>> pieceBiggestRegionsDescendingSize = new ArrayList<>(
 					pieceBiggestRegions.entrySet());
-			final Comparator<Entry<I, SpatialRegion>> sizeComparator = Comparator
+			final Comparator<Entry<Integer, SpatialRegion>> sizeComparator = Comparator
 					.comparing(piece -> piece.getValue().getGridArea());
 			Collections.sort(pieceBiggestRegionsDescendingSize, sizeComparator.reversed());
 			result = pieceBiggestRegionsDescendingSize.iterator().next();
@@ -476,43 +510,21 @@ final class GameBoardPanel<I> extends JPanel implements Observer {
 		final int rowHeight = getGridRowHeight();
 		return y / rowHeight;
 	}
+	
+	private void updateMouseListener(PlayerRole role){
+		final boolean canSelect = role.equals(PlayerRole.SELECTING);
+		selectingMouseListener.setEnabled(canSelect);		
+	}
 
 	private void handleUpdateArg(final Object arg) {
-		if (arg instanceof ActivePlayerChange) {
+		if (arg instanceof PlayerRoleChange) {
 			LOGGER.debug("Observed event representing a change in the currently-active player.");
-			final ActivePlayerChange change = (ActivePlayerChange) arg;
-			if (equalsPlayerId(change.getOldActivePlayerId())) {
+			final PlayerRoleChange change = (PlayerRoleChange) arg;
+			if (equalsPlayerId(change.getPlayerId())) {
 				// This client initiated the handover
-				final String newActivePlayerId = change.getNewActivePlayerId();
-				if (equalsPlayerId(newActivePlayerId)) {
-					// No change in active player
-					LOGGER.debug("Player \"{}\" is still active; Ignoring update event.", newActivePlayerId);
-				} else {
-					// Some other client's user is now active
-					LOGGER.debug("Player \"{}\" is now active; Disabling mouse listeners.", newActivePlayerId);
-					// JOptionPane.showMessageDialog(this, String.format("%s's
-					// turn.", newActivePlayerId));
-					selectingMouseListener.setEnabled(false);
-				}
-			} else {
-				// Some other client initiated the handover
-				final String newActivePlayerId = change.getNewActivePlayerId();
-				if (equalsPlayerId(newActivePlayerId)) {
-					// This client's user is now active
-					LOGGER.debug("The local player (\"{}\") is now active; Enabling mouse listeners.",
-							newActivePlayerId);
-					// JOptionPane.showMessageDialog(this, "Your turn!");
-					selectingMouseListener.setEnabled(true);
-				} else {
-					// Some other client's user is now active
-					LOGGER.debug("Player \"{}\" is now active; Disabling mouse listeners.", newActivePlayerId);
-					// JOptionPane.showMessageDialog(this,
-					// String.format("\"%s\"'s turn.", newActivePlayerId));
-					selectingMouseListener.setEnabled(false);
-					// TODO: Add notification of 3rd user now being active
-				}
+				final PlayerRole newRole = change.getRole();
+				updateMouseListener(newRole);
 			}
-
 		} else if (arg instanceof GameEnding) {
 			LOGGER.debug("Observed event representing a game ending.");
 			final GameEnding ending = (GameEnding) arg;
@@ -531,15 +543,21 @@ final class GameBoardPanel<I> extends JPanel implements Observer {
 
 		} else if (arg instanceof Selection) {
 			LOGGER.debug("Observed event representing a user selection.");
-			// Highlight region
-			final Selection selection = (Selection) arg;
-			final SpatialRegion region = areaRegionFactory.apply(selection.getRegion());
-			final String selectingPlayerId = selection.getPlayerId();
-			LOGGER.debug("Toggling highlighting of coordinates {} for \"{}\".",
-					new Object[] { region, selectingPlayerId });
-
-			if (toggleHighlightedRegion(region) && equalsPlayerId(selectingPlayerId)) {
-				localSelectionHook.accept(this, selection);
+			if (localController.getRole().equals(PlayerRole.WAITING_FOR_SELECTION)) {
+				final boolean isSelectionCorrect = localController.isSelectionCorrect();
+				if (isSelectionCorrect) {
+					JOptionPane.showMessageDialog(this, "Correct move!", "Good selection",
+							JOptionPane.INFORMATION_MESSAGE);
+					localController.confirmSelection();
+					Selection selection = (Selection) arg;
+					Integer pieceId = selection.getPieceId();
+					Area2D area = selection.getArea();
+					SpatialRegion region = areaRegionFactory.apply(area);
+					toggleHighlightedRegion(region);
+				} else {
+					JOptionPane.showMessageDialog(this, "Incorrect move!", "Bad selection", JOptionPane.ERROR_MESSAGE);
+					localController.rejectSelection();
+				}
 			}
 
 		} else if (arg instanceof Turn) {
@@ -564,10 +582,6 @@ final class GameBoardPanel<I> extends JPanel implements Observer {
 		JOptionPane.showMessageDialog(this, "No more moves available.");
 	}
 
-	private void registerController(final LocalController<?> localController) {
-		localController.addObserver(this);
-	}
-
 	private boolean toggleHighlightedRegion(final SpatialRegion region) {
 		boolean result;
 
@@ -580,23 +594,24 @@ final class GameBoardPanel<I> extends JPanel implements Observer {
 			}
 		} else if (result = highlightedRegions.remove(region)) {
 			repaint();
-//			final Graphics2D regionHighlightingG = createRegionHighlightClearingGraphics(getGraphics());
-//			try {
-//				clearRegionHighlights(regionHighlightingG, region);
-//			} finally {
-//				regionHighlightingG.dispose();
-//			}
+			// final Graphics2D regionHighlightingG =
+			// createRegionHighlightClearingGraphics(getGraphics());
+			// try {
+			// clearRegionHighlights(regionHighlightingG, region);
+			// } finally {
+			// regionHighlightingG.dispose();
+			// }
 
 		}
 
 		return result;
 	}
 
-	private void updatePiecePositions(final Entry<SpatialRegion, Map<I, SpatialRegion>> pieceMove) {
+	private void updatePiecePositions(final Entry<SpatialRegion, Map<Integer, SpatialRegion>> pieceMove) {
 		final SpatialRegion occupiedRegion = pieceMove.getKey();
-		final Map<I, SpatialRegion> pieceMoveTargets = pieceMove.getValue();
-		for (final Entry<I, SpatialRegion> pieceMoveTarget : pieceMoveTargets.entrySet()) {
-			final I pieceId = pieceMoveTarget.getKey();
+		final Map<Integer, SpatialRegion> pieceMoveTargets = pieceMove.getValue();
+		for (final Entry<Integer, SpatialRegion> pieceMoveTarget : pieceMoveTargets.entrySet()) {
+			final Integer pieceId = pieceMoveTarget.getKey();
 			final SpatialRegion moveTarget = pieceMoveTarget.getValue();
 			if (!Arrays.equals(occupiedRegion.getDimensions(), moveTarget.getDimensions())) {
 				throw new IllegalArgumentException(String.format(
@@ -616,9 +631,9 @@ final class GameBoardPanel<I> extends JPanel implements Observer {
 	}
 
 	private void updatePiecePositions(final SpatialRegion source, final SpatialRegion target) {
-		final SpatialMap<I> piecePlacements = posMatrix.getElementPlacements();
-		final Collection<I> pieceIds = piecePlacements.getMinimalRegionElements().get(source);
-		for (final I pieceId : pieceIds) {
+		final SpatialMap<Integer> piecePlacements = posMatrix.getElementPlacements();
+		final Collection<Integer> pieceIds = piecePlacements.getMinimalRegionElements().get(source);
+		for (final Integer pieceId : pieceIds) {
 			posMatrix.placeElement(pieceId, target);
 		}
 		posMatrix.clearRegion(source);
@@ -627,14 +642,14 @@ final class GameBoardPanel<I> extends JPanel implements Observer {
 	/**
 	 * @return the localController
 	 */
-	LocalController<I> getLocalController() {
+	LocalController getLocalController() {
 		return localController;
 	}
 
 	/**
 	 * @return the posMatrix
 	 */
-	SpatialMatrix<I> getPosMatrix() {
+	SpatialMatrix<Integer> getPosMatrix() {
 		return posMatrix;
 	}
 
@@ -642,42 +657,46 @@ final class GameBoardPanel<I> extends JPanel implements Observer {
 	 *
 	 */
 	synchronized void notifyContinue(final Random rnd) {
-//		if(loca)
 		LOGGER.debug("Notified of continue event.");
-		LOGGER.debug("Moving random piece.");
-		// TODO: Change probability of a piece being selected for moving based
-		// on if it was moved before: E.g. cannot move a given piece more than
-		// twice in a row
-		final List<SpatialRegion> regionsToTry = posMatrix.getElementPlacements().getMinimalRegions();
-		// TODO: estimate number of failed tries
-		final Set<SpatialRegion> failedRegions = new HashSet<>();
-		Entry<SpatialRegion, Map<I, SpatialRegion>> pieceMove = null;
-		do {
-			final SpatialRegion occupiedRegion = RandomCollections.getRandomElement(regionsToTry, rnd);
-			final Map<I, SpatialRegion> pieceMoveTargets = createRandomValidMoveTargetMap(occupiedRegion, rnd);
-			if (pieceMoveTargets.isEmpty()) {
-				LOGGER.debug("No valid moves for piece(s) from region {}.", occupiedRegion);
-				failedRegions.add(occupiedRegion);
+		switch (localController.getRole()) {
+		case SELECTING: {
+			JOptionPane.showMessageDialog(this, "You must choose which piece is to be moved before continuing.");
+			break;
+		}
+		case TURN_SUBMISSION: {
+			LOGGER.debug("Generating random move for next turn.");
+			nextMove = createRandomMove(rnd);
+			if (nextMove == null) {
+				// No pieces left to be moved; Game cannot continue
+				notifyNoValidMoves();
 			} else {
-				pieceMove = new MutablePair<>(occupiedRegion, pieceMoveTargets);
+				final SpatialRegion sourceRegion = nextMove.getKey();
+				final Collection<Entry<Integer, SpatialRegion>> pieceTargetRegions = nextMove.getValue().entrySet();
+				if (pieceTargetRegions.size() > 1) {
+					throw new UnsupportedOperationException("Cannot notify multiple moved pieces in one turn.");
+				} else {
+					toggleHighlightedRegion(sourceRegion);
+					final Entry<Integer, SpatialRegion> pieceTargetRegion = pieceTargetRegions.iterator().next();
+					localController.submitNextMove(sourceRegion, pieceTargetRegion.getValue(),
+							pieceTargetRegion.getKey());
+				}
 			}
-		} while (pieceMove == null && failedRegions.size() < regionsToTry.size());
+			break;
+		}
+		case WAITING_FOR_SELECTION: {
+			JOptionPane.showMessageDialog(this, "The other player must choose a piece before continuing.");
+			LOGGER.debug("Still waiting for the other player to select a piece; Cannot continue to the next turn.");
+			break;
+		}
+		case WAITING_FOR_SELECTION_CONFIRMATION: {
+			JOptionPane.showMessageDialog(this, "The other player must confirm the piece selection before continuing.");
+			LOGGER.debug("Still waiting for the other player to confirm move.");
+			break;
+		}
+		default: {
+			throw new AssertionError("No logic for case: " + localController.getRole());
+		}
 
-		if (pieceMove == null) {
-			// No pieces left to be moved; Game cannot continue
-			notifyNoValidMoves();
-		} else {
-			final SpatialRegion sourceRegion = pieceMove.getKey();
-			final Collection<SpatialRegion> targetRegions = pieceMove.getValue().values();
-			if (targetRegions.size() > 1) {
-				throw new UnsupportedOperationException("Cannot notify multiple moved pieces in one turn.");
-			} else {
-				final SpatialRegion targetRegion = targetRegions.iterator().next();
-				localController.submitMove(sourceRegion, targetRegion);
-			}
-			updatePiecePositions(pieceMove);
-			LOGGER.debug("Finished randomly moving piece(s) at {}.", pieceMove.getKey());
-			repaint();
 		}
 	}
 

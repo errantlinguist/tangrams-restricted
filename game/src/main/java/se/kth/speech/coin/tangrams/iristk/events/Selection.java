@@ -25,25 +25,28 @@ import iristk.util.Record;
  */
 public final class Selection extends Record {
 
-	private Area2D region;
+	private Integer pieceId;
 
 	private String playerId;
+
+	private Area2D area;
 
 	public Selection() {
 		// Default constructor is required for JSON (un-)marshalling
 	}
 
-	public Selection(final String playerId, final Area2D region) {
+	public Selection(final String playerId, final Integer pieceId, final Area2D area) {
 		setPlayerId(playerId);
-		setRegion(region);
+		setPieceId(pieceId);
+		setArea(area);
 	}
 
 	/**
-	 * @return the region
+	 * @return the pieceId
 	 */
-	@RecordField(name = "region")
-	public Area2D getRegion() {
-		return region;
+	@RecordField(name = "pieceId")
+	public Integer getPieceId() {
+		return pieceId;
 	}
 
 	/**
@@ -55,12 +58,20 @@ public final class Selection extends Record {
 	}
 
 	/**
-	 * @param region
-	 *            the region to set
+	 * @return the area
 	 */
-	@RecordField(name = "region")
-	public void setRegion(final Area2D region) {
-		this.region = region;
+	@RecordField(name = "area")
+	public Area2D getArea() {
+		return area;
+	}
+
+	/**
+	 * @param pieceId
+	 *            the pieceId to set
+	 */
+	@RecordField(name = "pieceId")
+	public void setPieceId(final Integer pieceId) {
+		this.pieceId = pieceId;
 	}
 
 	/**
@@ -70,6 +81,15 @@ public final class Selection extends Record {
 	@RecordField(name = "playerId")
 	public void setPlayerId(final String playerId) {
 		this.playerId = playerId;
+	}
+
+	/**
+	 * @param area
+	 *            the area to set
+	 */
+	@RecordField(name = "area")
+	public void setArea(final Area2D area) {
+		this.area = area;
 	}
 
 }

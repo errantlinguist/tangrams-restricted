@@ -29,17 +29,28 @@ public final class Move extends Record {
 
 	private Area2D target;
 
+	private Integer pieceId;
+
 	public Move() {
 		// Default constructor is required for JSON (un-)marshalling
 	}
 
-	public Move(final Area2D source, final Area2D target) {
+	public Move(final Area2D source, final Area2D target, final Integer pieceId) {
 		setSource(source);
 		setTarget(target);
+		setPieceId(pieceId);
 	}
 
 	public Move(final Move copyee) {
 		super(copyee);
+	}
+
+	/**
+	 * @return the pieceId
+	 */
+	@RecordField(name = "pieceId")
+	public Integer getPieceId() {
+		return pieceId;
 	}
 
 	/**
@@ -56,6 +67,15 @@ public final class Move extends Record {
 	@RecordField(name = "target")
 	public Area2D getTarget() {
 		return target;
+	}
+
+	/**
+	 * @param pieceId
+	 *            the pieceId to set
+	 */
+	@RecordField(name = "pieceId")
+	public void setPieceId(final Integer pieceId) {
+		this.pieceId = pieceId;
 	}
 
 	/**

@@ -24,7 +24,7 @@ import java.util.TreeSet;
 import se.kth.speech.CyclingIterator;
 import se.kth.speech.coin.tangrams.game.PlayerJoinTime;
 
-final class ActivePlayerTracker {
+final class SelectingPlayerTracker {
 
 	private static final Comparator<PlayerJoinTime> TIMESTAMP_COMPARATOR = Comparator
 			.comparing(PlayerJoinTime::getJoinTime).thenComparing(PlayerJoinTime::getPlayerId);
@@ -33,38 +33,38 @@ final class ActivePlayerTracker {
 
 	private final NavigableSet<PlayerJoinTime> joinedPlayers;
 
-	private final CyclingIterator<PlayerJoinTime> nextActivePlayerIter;
+	private final CyclingIterator<PlayerJoinTime> nextSelectingPlayerIter;
 
-	public ActivePlayerTracker() {
+	public SelectingPlayerTracker() {
 		this(new TreeSet<>(TIMESTAMP_COMPARATOR));
 	}
 
-	private ActivePlayerTracker(final NavigableSet<PlayerJoinTime> joinedPlayers) {
+	private SelectingPlayerTracker(final NavigableSet<PlayerJoinTime> joinedPlayers) {
 		this.joinedPlayers = joinedPlayers;
-		nextActivePlayerIter = new CyclingIterator<>(joinedPlayers);
+		nextSelectingPlayerIter = new CyclingIterator<>(joinedPlayers);
 	}
 
 	public boolean addPlayer(final PlayerJoinTime joinedPlayer) {
 		final boolean result;
-		synchronized (nextActivePlayerIter) {
+		synchronized (nextSelectingPlayerIter) {
 			// Add through the iterator in order to ensure that it is in the
 			// right
 			// position
-			result = nextActivePlayerIter.add(joinedPlayer);
+			result = nextSelectingPlayerIter.add(joinedPlayer);
 		}
 		return result;
 	}
 
-	public String cycleActivePlayer() {
+	public String cycleSelectingPlayer() {
 		final String result;
-		synchronized (nextActivePlayerIter) {
-			activePlayerId = nextActivePlayerIter.next().getPlayerId();
+		synchronized (nextSelectingPlayerIter) {
+			activePlayerId = nextSelectingPlayerIter.next().getPlayerId();
 			result = activePlayerId;
 		}
 		return result;
 	}
 
-	public String getActivePlayerId() {
+	public String getSelectingPlayerId() {
 		return activePlayerId;
 	}
 
@@ -87,7 +87,7 @@ final class ActivePlayerTracker {
 	@Override
 	public String toString() {
 		final StringBuilder builder = new StringBuilder();
-		builder.append("ActivePlayerTracker [activePlayerId=");
+		builder.append("SelectingPlayerTracker [activePlayerId=");
 		builder.append(activePlayerId);
 		builder.append(", joinedPlayers=");
 		builder.append(joinedPlayers);

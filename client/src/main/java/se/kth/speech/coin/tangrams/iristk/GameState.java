@@ -16,32 +16,33 @@
 */
 package se.kth.speech.coin.tangrams.iristk;
 
-import java.util.List;
 import java.util.Random;
 
-import se.kth.speech.coin.tangrams.game.LocalController;
+import com.google.common.collect.BiMap;
+
+import se.kth.speech.coin.tangrams.game.PlayerRole;
 import se.kth.speech.coin.tangrams.game.RemoteController;
 
 public final class GameState {
 
 	private final boolean allowFailedPlacements;
 
-	private final LocalController<Integer> localController;
+	private final LocalController localController;
 
 	private final double occupiedGridArea;
 
-	private final List<String> playerIds;
+	private final BiMap<PlayerRole, String> playerRoles;
 
 	private final RemoteController<Integer> remoteController;
 
 	private final Random rnd;
 
-	GameState(final LocalController<Integer> localController, final RemoteController<Integer> remoteController,
-			final List<String> playerIds, final Random rnd, final double occupiedGridArea,
+	GameState(final LocalController localController, final RemoteController<Integer> remoteController,
+			final BiMap<PlayerRole, String> playerRoles, final Random rnd, final double occupiedGridArea,
 			final boolean allowFailedPlacements) {
 		this.localController = localController;
 		this.remoteController = remoteController;
-		this.playerIds = playerIds;
+		this.playerRoles = playerRoles;
 		this.rnd = rnd;
 		this.occupiedGridArea = occupiedGridArea;
 		this.allowFailedPlacements = allowFailedPlacements;
@@ -84,11 +85,11 @@ public final class GameState {
 		if (Double.doubleToLongBits(occupiedGridArea) != Double.doubleToLongBits(other.occupiedGridArea)) {
 			return false;
 		}
-		if (playerIds == null) {
-			if (other.playerIds != null) {
+		if (playerRoles == null) {
+			if (other.playerRoles != null) {
 				return false;
 			}
-		} else if (!playerIds.equals(other.playerIds)) {
+		} else if (!playerRoles.equals(other.playerRoles)) {
 			return false;
 		}
 		if (remoteController == null) {
@@ -111,7 +112,7 @@ public final class GameState {
 	/**
 	 * @return the localController
 	 */
-	public LocalController<Integer> getLocalController() {
+	public LocalController getLocalController() {
 		return localController;
 	}
 
@@ -123,10 +124,10 @@ public final class GameState {
 	}
 
 	/**
-	 * @return the playerIds
+	 * @return the playerRoles
 	 */
-	public List<String> getPlayerIds() {
-		return playerIds;
+	public BiMap<PlayerRole, String> getPlayerRoles() {
+		return playerRoles;
 	}
 
 	/**
@@ -157,7 +158,7 @@ public final class GameState {
 		long temp;
 		temp = Double.doubleToLongBits(occupiedGridArea);
 		result = prime * result + (int) (temp ^ temp >>> 32);
-		result = prime * result + (playerIds == null ? 0 : playerIds.hashCode());
+		result = prime * result + (playerRoles == null ? 0 : playerRoles.hashCode());
 		result = prime * result + (remoteController == null ? 0 : remoteController.hashCode());
 		result = prime * result + (rnd == null ? 0 : rnd.hashCode());
 		return result;
@@ -171,16 +172,16 @@ public final class GameState {
 	@Override
 	public String toString() {
 		final StringBuilder builder = new StringBuilder();
-		builder.append("GameState [localController=");
+		builder.append("GameState [allowFailedPlacements=");
+		builder.append(allowFailedPlacements);
+		builder.append(", localController=");
 		builder.append(localController);
-		builder.append(", playerIds=");
-		builder.append(playerIds);
-		builder.append(", remoteController=");
-		builder.append(remoteController);
 		builder.append(", occupiedGridArea=");
 		builder.append(occupiedGridArea);
-		builder.append(", allowFailedPlacements=");
-		builder.append(allowFailedPlacements);
+		builder.append(", playerRoles=");
+		builder.append(playerRoles);
+		builder.append(", remoteController=");
+		builder.append(remoteController);
 		builder.append(", rnd=");
 		builder.append(rnd);
 		builder.append("]");
