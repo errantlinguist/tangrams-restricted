@@ -68,7 +68,7 @@ public final class Lists {
 			} else {
 				throw new IllegalArgumentException(String.format(
 						"Could not create a new, longer list because the size of the new list is not divisible by the number of any subsequence of the original list (size %d).",
-						resultSize, orig.size()));
+						orig.size()));
 			}
 		} else {
 			// Exactly the same total number of specified elements in the new
