@@ -18,9 +18,7 @@ package se.kth.speech.coin.tangrams.iristk;
 
 import java.util.Collections;
 import java.util.IdentityHashMap;
-import java.util.Iterator;
 import java.util.Map.Entry;
-import java.util.Observable;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -249,8 +247,8 @@ public final class Controller {
 		final String submittingPlayerId = selection.getPlayerId();
 		LOGGER.debug("Controller was notified of a selection, submitted by \"{}\".", submittingPlayerId);
 		selectedPiece = new MutablePair<>(selection.getPieceId(), selection.getArea());
-//		setChanged();
-//		notifyObservers(selection);
+		// setChanged();
+		// notifyObservers(selection);
 		if (playerId.equals(submittingPlayerId)) {
 			role = PlayerRole.WAITING_FOR_SELECTION_CONFIRMATION;
 		} else {
@@ -299,9 +297,11 @@ public final class Controller {
 		final PlayerRoleChange roleChange = new PlayerRoleChange(submittingPlayerId, role);
 		updatePlayerRole(roleChange);
 		listeners.forEach(listener -> listener.updateTurnCompletion(turn));
-//		final Move move = turn.getMove();
-//		final SpatialRegion sourceRegion = areaSpatialRegionFactory.apply(move.getSource());
-//		final SpatialRegion targetRegion = areaSpatialRegionFactory.apply(move.getTarget());
+		// final Move move = turn.getMove();
+		// final SpatialRegion sourceRegion =
+		// areaSpatialRegionFactory.apply(move.getSource());
+		// final SpatialRegion targetRegion =
+		// areaSpatialRegionFactory.apply(move.getTarget());
 		// LOGGER.info("Moving the piece at {} to {}.", sourceRegion,
 		// targetRegion);
 		// updateModel(sourceRegion, targetRegion);
@@ -317,7 +317,7 @@ public final class Controller {
 		// Take the greater of the two because it may be possible for two turns
 		// to arrive in the wrong order
 		moveCount = Math.max(turn.getSequenceNumber(), moveCount);
-		
+
 	}
 
 	public void rejectSelection() {
@@ -343,8 +343,8 @@ public final class Controller {
 			// Notify local listeners of (de-)selected region, e.g. update
 			// player's
 			// own view and notify the player's own game action module
-//			setChanged();
-//			notifyObservers(nextTurnMove);
+			// setChanged();
+			// notifyObservers(nextTurnMove);
 			clientModule.requestNextTurn(nextTurnMove);
 			role = PlayerRole.WAITING_FOR_SELECTION;
 			final PlayerRoleChange roleChange = new PlayerRoleChange(playerId, role);
@@ -386,25 +386,28 @@ public final class Controller {
 	}
 
 	public void updatePlayerRole(final PlayerRoleChange roleChange) {
-//		if (roleChange.getPlayerId().equals(playerId)) {
-			role = roleChange.getRole();
-			listeners.forEach(listener -> listener.updatePlayerRole(roleChange));
-//			setChanged();
-//			notifyObservers(roleChange);
-//		}
+		// if (roleChange.getPlayerId().equals(playerId)) {
+		role = roleChange.getRole();
+		listeners.forEach(listener -> listener.updatePlayerRole(roleChange));
+		// setChanged();
+		// notifyObservers(roleChange);
+		// }
 	}
 
-//	private void updateModel(final SpatialRegion sourceRegion, final SpatialRegion targetRegion) {
-//		if (model.isOccupied(targetRegion)) {
-//			throw new IllegalStateException(
-//					String.format("%s is already occupied; Not a valid move target.", targetRegion));
-//		}
-//		final Iterator<Integer> occupantIter = model.getElementPlacements().getSubsumedElements(sourceRegion)
-//				.map(Entry::getValue).iterator();
-//		final Integer occupant = occupantIter.next();
-//		assert !occupantIter.hasNext();
-//		model.placeElement(occupant, targetRegion);
-//	}
+	// private void updateModel(final SpatialRegion sourceRegion, final
+	// SpatialRegion targetRegion) {
+	// if (model.isOccupied(targetRegion)) {
+	// throw new IllegalStateException(
+	// String.format("%s is already occupied; Not a valid move target.",
+	// targetRegion));
+	// }
+	// final Iterator<Integer> occupantIter =
+	// model.getElementPlacements().getSubsumedElements(sourceRegion)
+	// .map(Entry::getValue).iterator();
+	// final Integer occupant = occupantIter.next();
+	// assert !occupantIter.hasNext();
+	// model.placeElement(occupant, targetRegion);
+	// }
 
 	private ValidationStatus validateMove(final SpatialRegion sourceRegion, final SpatialRegion targetRegion) {
 		final ValidationStatus result;
