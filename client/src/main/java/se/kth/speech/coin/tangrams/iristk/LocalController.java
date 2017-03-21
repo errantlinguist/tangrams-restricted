@@ -162,6 +162,8 @@ public final class LocalController extends Observable implements RemoteControlle
 			notifyObservers(nextTurnMove);
 			clientModule.requestNextTurn(nextTurnMove);
 			role = PlayerRole.WAITING_FOR_SELECTION;
+			PlayerRoleChange roleChange = new PlayerRoleChange(playerId, role);
+			updatePlayerRole(roleChange);
 		} else {
 			throw new IllegalArgumentException("Invalid move: " + result);
 		}

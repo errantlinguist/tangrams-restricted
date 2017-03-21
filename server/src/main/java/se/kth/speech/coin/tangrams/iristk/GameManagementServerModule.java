@@ -35,7 +35,6 @@ import se.kth.speech.coin.tangrams.Game;
 import se.kth.speech.coin.tangrams.game.PlayerRole;
 import se.kth.speech.coin.tangrams.iristk.events.Move;
 import se.kth.speech.coin.tangrams.iristk.events.PlayerRoleChange;
-import se.kth.speech.coin.tangrams.iristk.events.Selection;
 import se.kth.speech.coin.tangrams.iristk.events.Turn;
 
 public final class GameManagementServerModule extends IrisModule {
@@ -210,7 +209,8 @@ public final class GameManagementServerModule extends IrisModule {
 				final String requestingPlayerId = event.getString(playerIdField);
 				final BiMap<PlayerRole, String> playerRoles = gameState.getPlayerRoles();
 				final PlayerRole oldRole = playerRoles.inverse().get(requestingPlayerId);
-				if (PlayerRole.WAITING_FOR_SELECTION.equals(oldRole)) {
+				final PlayerRole requiredRole = PlayerRole.WAITING_FOR_SELECTION;
+				if (requiredRole.equals(oldRole)) {
 					final Event response = GameManagementEvent.COMPLETED_TURN_RESPONSE.createEvent(gameId);
 					response.put(playerIdField, requestingPlayerId);
 					final Move move = (Move) event.get(GameManagementEvent.Attribute.MOVE.toString());
@@ -235,31 +235,35 @@ public final class GameManagementServerModule extends IrisModule {
 
 				} else {
 					LOGGER.warn(
-							"The player does not have the appropriate role ({}) to request the submission of the next move; Ignoring.",
-							oldRole);
+							"Player \"{}\" does not have the appropriate role to request the submission of the next move: The role is {} but should be {}; Ignoring.",
+							new Object[] { requestingPlayerId, oldRole, requiredRole });
 				}
 				break;
 			}
-			case SELECTION_REJECTION : {
+			case SELECTION_REJECTION: {
 				LOGGER.debug("Received broker \"selection rejected\" event for game \"{}\".", gameId);
 				final Game<Integer> gameState = gameStateGetter.apply(gameId);
-				final String rejectingPlayerId = event
-						.getString(GameManagementEvent.Attribute.PLAYER_ID.toString());
+				final String rejectingPlayerId = event.getString(GameManagementEvent.Attribute.PLAYER_ID.toString());
 				LOGGER.debug("Received game event reporting selection info for \"{}\".", rejectingPlayerId);
 				final Integer pieceId = (Integer) event.get(GameManagementEvent.Attribute.PIECE.toString());
-				
+
 				// Change roles
-//				final BiMap<PlayerRole, String> playerRoles = gameState.getPlayerRoles();
-//				final String otherPlayerId = playerRoles.get(switchedRole);
-//				playerRoles.put(switchedRole, rejectingPlayerId);
-//				playerRoles.put(PlayerRole.TURN_SUBMISSION, otherPlayerId);
-//				final List<PlayerRoleChange> roleChanges = new ArrayList<>(playerRoles.size());
-//				playerRoles.forEach((role, playerId) -> {
-//					final PlayerRoleChange roleChange = new PlayerRoleChange(playerId, role);
-//					roleChanges.add(roleChange);
-//				});
-//				event.put(GameManagementEvent.Attribute.PLAYER_ROLE_CHANGE.toString(), roleChanges);
-//				remoteController.notifySelectionRejected(new Selection(rejectingPlayerId, pieceId));
+				// final BiMap<PlayerRole, String> playerRoles =
+				// gameState.getPlayerRoles();
+				// final String otherPlayerId = playerRoles.get(switchedRole);
+				// playerRoles.put(switchedRole, rejectingPlayerId);
+				// playerRoles.put(PlayerRole.TURN_SUBMISSION, otherPlayerId);
+				// final List<PlayerRoleChange> roleChanges = new
+				// ArrayList<>(playerRoles.size());
+				// playerRoles.forEach((role, playerId) -> {
+				// final PlayerRoleChange roleChange = new
+				// PlayerRoleChange(playerId, role);
+				// roleChanges.add(roleChange);
+				// });
+				// event.put(GameManagementEvent.Attribute.PLAYER_ROLE_CHANGE.toString(),
+				// roleChanges);
+				// remoteController.notifySelectionRejected(new
+				// Selection(rejectingPlayerId, pieceId));
 				break;
 			}
 			default: {

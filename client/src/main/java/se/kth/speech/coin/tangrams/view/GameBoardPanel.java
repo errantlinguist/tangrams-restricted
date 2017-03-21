@@ -549,15 +549,15 @@ final class GameBoardPanel extends JPanel implements Observer {
 					JOptionPane.showMessageDialog(this, "Correct move!", "Good selection",
 							JOptionPane.INFORMATION_MESSAGE);
 					localController.confirmSelection();
-					Selection selection = (Selection) arg;
-					Integer pieceId = selection.getPieceId();
-					Area2D area = selection.getArea();
-					SpatialRegion region = areaRegionFactory.apply(area);
-					toggleHighlightedRegion(region);
 				} else {
 					JOptionPane.showMessageDialog(this, "Incorrect move!", "Bad selection", JOptionPane.ERROR_MESSAGE);
 					localController.rejectSelection();
 				}
+				Selection selection = (Selection) arg;
+				Integer pieceId = selection.getPieceId();
+				Area2D area = selection.getArea();
+				SpatialRegion region = areaRegionFactory.apply(area);
+				toggleHighlightedRegion(region);
 			}
 
 		} else if (arg instanceof Turn) {
