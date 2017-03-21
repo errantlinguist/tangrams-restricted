@@ -46,9 +46,9 @@ public enum ImageSize {
 	public static Map<ImageSize, Integer> createDefaultImageSizeFactorMap() {
 		final Map<ImageSize, Integer> result = new EnumMap<>(ImageSize.class);
 		final Iterator<ImageSize> sizes = ImageSize.getSizeOrdering().iterator();
-		result.put(sizes.next(), 1);
 		result.put(sizes.next(), 2);
 		result.put(sizes.next(), 3);
+		result.put(sizes.next(), 4);
 		assert result.size() == ImageSize.values().length;
 		return result;
 	}
