@@ -298,8 +298,7 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 	 */
 	@Override
 	public void updatePlayerSelection(final Selection selection) {
-		// TODO Auto-generated method stub
-
+		LOGGER.debug("Observed event representing a user selection.");
 	}
 
 	/*
@@ -311,8 +310,7 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 	 */
 	@Override
 	public void updateSelectionRejected(final Selection selection) {
-		// TODO Auto-generated method stub
-
+		LOGGER.debug("Observed event representing the rejection of the last selection.");
 	}
 
 	/*
@@ -323,7 +321,18 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 	 */
 	@Override
 	public void updateTurnCompleted(final Turn turn) {
-//		moveCounterLabel.update(turn.getSequenceNumber());
+		LOGGER.debug("Observed event representing a completed turn.");
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * se.kth.speech.coin.tangrams.game.Controller.Listener#updateMoveCount(int)
+	 */
+	@Override
+	public void updateTurnCount(final int newCount) {
+		moveCounterLabel.update(newCount);
 	}
 
 	/**
@@ -331,14 +340,6 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 	 */
 	Set<Window> getChildWindows() {
 		return childWindows;
-	}
-
-	/* (non-Javadoc)
-	 * @see se.kth.speech.coin.tangrams.game.Controller.Listener#updateMoveCount(int)
-	 */
-	@Override
-	public void updateTurnCount(int newCount) {
-		moveCounterLabel.update(newCount);
 	}
 
 }
