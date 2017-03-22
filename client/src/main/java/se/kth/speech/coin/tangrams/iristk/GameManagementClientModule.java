@@ -113,7 +113,7 @@ public final class GameManagementClientModule extends IrisModule {
 				}
 				case NEXT_TURN_REQUEST: {
 					final Move move = (Move) event.get(GameManagementEvent.Attribute.MOVE.toString());
-					controller.notifyNextTurn(turn);
+					controller.notifyNextTurn(move);
 					break;
 				}
 				case PLAYER_JOIN_RESPONSE: {
