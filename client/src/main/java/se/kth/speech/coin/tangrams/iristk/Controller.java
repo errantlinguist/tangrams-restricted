@@ -68,7 +68,8 @@ public final class Controller {
 		OK, SOURCE_EMPTY, SOURCE_TARGET_SAME, TARGET_OCCUPIED;
 	}
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(Controller.class);
+	//private static final Logger LOGGER = LoggerFactory.getLogger(Controller.class);
+	private static final MyLogger LOGGER = new MyLogger();
 
 	private static Area2D createArea(final SpatialRegion region) {
 		return new Area2D(createStartCoords(region), createEndCoords(region));
@@ -184,11 +185,11 @@ public final class Controller {
 		// notifyObservers(gameEnding);
 	}
 
-	public void notifyNextTurn(final Turn turn) {
-		final String submittingPlayerId = turn.getPlayerId();
+	public void notifyNextTurn(final Move move) {
+		final String submittingPlayerId = move.getPlayerId();
 		LOGGER.debug("The controller was notified that \"{}\" has submitted a turn.", submittingPlayerId);
 		// if (playerIdFilter.test(turnPlayerId)) {
-		nextTurnMove = turn.getMove();
+		nextTurnMove = move.getMove();
 		if (playerId.equals(submittingPlayerId)) {
 			role = PlayerRole.WAITING_FOR_SELECTION;
 		} else {
@@ -196,7 +197,7 @@ public final class Controller {
 		}
 		final PlayerRoleChange roleChange = new PlayerRoleChange(submittingPlayerId, role);
 		updatePlayerRole(roleChange);
-		listeners.forEach(listener -> listener.updateNextTurn(turn));
+		listeners.forEach(listener -> listener.updateNextTurn(move));
 		// final Move move = turn.getMove();
 		// final SpatialRegion sourceRegion =
 		// areaSpatialRegionFactory.apply(move.getSource());
@@ -216,7 +217,7 @@ public final class Controller {
 		// notifyObservers(turn);
 		// Take the greater of the two because it may be possible for two turns
 		// to arrive in the wrong order
-		moveCount = Math.max(turn.getSequenceNumber(), moveCount);
+		moveCount = Math.max(move.getSequenceNumber(), moveCount);
 	}
 
 	public void notifyPlayerJoined(final PlayerJoinTime playerJoinTime) {
@@ -244,17 +245,15 @@ public final class Controller {
 		// LOGGER.debug("Ignoring remote notification about player's own
 		// selection.");
 		// }
-		final String submittingPlayerId = selection.getPlayerId();
-		LOGGER.debug("Controller was notified of a selection, submitted by \"{}\".", submittingPlayerId);
 		selectedPiece = new MutablePair<>(selection.getPieceId(), selection.getArea());
 		// setChanged();
 		// notifyObservers(selection);
-		if (playerId.equals(submittingPlayerId)) {
+		if (playerId.equals(selectingPlayerId)) {
 			role = PlayerRole.WAITING_FOR_SELECTION_CONFIRMATION;
 		} else {
 			role = PlayerRole.TURN_SUBMISSION;
 		}
-		final PlayerRoleChange roleChange = new PlayerRoleChange(submittingPlayerId, role);
+		final PlayerRoleChange roleChange = new PlayerRoleChange(selectingPlayerId, role);
 		updatePlayerRole(roleChange);
 	}
 
