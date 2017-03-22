@@ -185,8 +185,10 @@ public final class RandomModelPopulator implements Consumer<Random> {
 					"Grid size of %s is not enough to hold %d pieces with the given occupied-space ratio of %f.",
 					Arrays.toString(posMatrix.getDimensions()), pieceIds.size(), occupiedGridArea));
 		} else {
-			final String matrixStrRepr = new MatrixStringReprFactory().apply(posMatrix.getPositionMatrix());
-			LOGGER.debug("PIECE PLACEMENTS" + System.lineSeparator() + matrixStrRepr);
+			if (LOGGER.isDebugEnabled()) {
+				final String matrixStrRepr = new MatrixStringReprFactory().apply(posMatrix.getPositionMatrix());
+				LOGGER.debug("PIECE PLACEMENTS" + System.lineSeparator() + matrixStrRepr);
+			}
 		}
 	}
 
