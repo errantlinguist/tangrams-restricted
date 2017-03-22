@@ -325,9 +325,7 @@ public final class TangramsClient implements Runnable {
 									loggingModule.startLogging(systemLoggingStartTime.getTime());
 								}
 								final GameManagementClientModule gameClientModule = new GameManagementClientModule(
-										gameId, playerId, gameEnding -> {
-											// Do nothing extra on game over
-										}, gameState -> {
+										gameId, playerId, gameState -> {
 											LOGGER.info(
 													"Handling game state data received from server for game \"{}\".",
 													gameId);

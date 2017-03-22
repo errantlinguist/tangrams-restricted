@@ -58,7 +58,6 @@ import se.kth.speech.awt.DisablingMouseAdapter;
 import se.kth.speech.coin.tangrams.game.Controller;
 import se.kth.speech.coin.tangrams.game.PlayerRole;
 import se.kth.speech.coin.tangrams.game.Turn;
-import se.kth.speech.coin.tangrams.iristk.events.GameEnding;
 import se.kth.speech.coin.tangrams.iristk.events.Move;
 import se.kth.speech.coin.tangrams.iristk.events.Selection;
 
@@ -247,30 +246,6 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 		drawPieceImages(g);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see
-	 * se.kth.speech.coin.tangrams.iristk.Controller.Listener#updateGameOver(se.
-	 * kth.speech.coin.tangrams.iristk.events.GameEnding)
-	 */
-	@Override
-	public void updateGameOver(final GameEnding gameEnding) {
-		LOGGER.debug("Observed event representing a game ending.");
-		final GameEnding.Outcome outcome = gameEnding.getOutcome();
-		switch (outcome) {
-		case ABORT:
-			selectingMouseListener.setEnabled(false);
-			break;
-		case WIN: {
-			selectingMouseListener.setEnabled(false);
-			break;
-		}
-		default:
-			throw new AssertionError(String.format("No logic for handling outcome %s.", outcome));
-		}
-	}
-
 	@Override
 	public void updateNextMove(final Move move) {
 		LOGGER.debug("Observed event representing the subbmission of a move by a player.");
@@ -311,7 +286,7 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see
 	 * se.kth.speech.coin.tangrams.game.Controller.Listener#updateScore(int)
 	 */

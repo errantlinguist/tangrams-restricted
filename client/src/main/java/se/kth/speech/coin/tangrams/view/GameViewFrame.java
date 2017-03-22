@@ -36,7 +36,6 @@ import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTable;
 
@@ -49,7 +48,6 @@ import se.kth.speech.awt.ColorIcon;
 import se.kth.speech.coin.tangrams.game.Controller;
 import se.kth.speech.coin.tangrams.game.PlayerRole;
 import se.kth.speech.coin.tangrams.game.Turn;
-import se.kth.speech.coin.tangrams.iristk.events.GameEnding;
 import se.kth.speech.coin.tangrams.iristk.events.Move;
 import se.kth.speech.coin.tangrams.iristk.events.Selection;
 
@@ -62,12 +60,12 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(GameViewFrame.class);
 
+	private static final Map<PlayerRole, String> PLAYER_ROLE_STATUS_LABEL_TEXT = createPlayerRoleStatusLabelTextMap();
+
 	/**
 	 *
 	 */
 	private static final long serialVersionUID = -4129777933223228599L;
-
-	private static final Map<PlayerRole, String> PLAYER_ROLE_STATUS_LABEL_TEXT = createPlayerRoleStatusLabelTextMap();
 
 	private static Map<Attribute, Object> createMoveCounterFontAttrMap() {
 		final Map<Attribute, Object> result = Maps.newHashMapWithExpectedSize(3);
@@ -204,34 +202,6 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 			continueButton.addActionListener(continueEvent -> {
 				boardPanel.notifyContinue(rnd);
 			});
-		}
-
-	}
-
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see
-	 * se.kth.speech.coin.tangrams.iristk.Controller.Listener#updateGameOver(se.
-	 * kth.speech.coin.tangrams.iristk.events.GameEnding)
-	 */
-	@Override
-	public void updateGameOver(final GameEnding gameEnding) {
-		LOGGER.debug("Observed event representing a game ending.");
-		final GameEnding.Outcome outcome = gameEnding.getOutcome();
-		switch (outcome) {
-		case ABORT:
-			JOptionPane.showMessageDialog(this, String.format("The game was aborted by \"%s\" after %d move(s).",
-					gameEnding.getPlayerId(), gameEnding.getMoveCount()), "Aborted!", JOptionPane.WARNING_MESSAGE);
-			break;
-		case WIN: {
-			JOptionPane.showMessageDialog(this,
-					String.format("The game was won after %d move(s).", gameEnding.getMoveCount()), "Win!",
-					JOptionPane.INFORMATION_MESSAGE);
-			break;
-		}
-		default:
-			throw new AssertionError(String.format("No logic for handling outcome %s.", outcome));
 		}
 
 	}

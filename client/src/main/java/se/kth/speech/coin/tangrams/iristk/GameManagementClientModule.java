@@ -29,7 +29,6 @@ import se.kth.speech.SpatialMatrix;
 import se.kth.speech.coin.tangrams.game.Controller;
 import se.kth.speech.coin.tangrams.game.PlayerRole;
 import se.kth.speech.coin.tangrams.iristk.events.Area2D;
-import se.kth.speech.coin.tangrams.iristk.events.GameEnding;
 import se.kth.speech.coin.tangrams.iristk.events.Move;
 import se.kth.speech.coin.tangrams.iristk.events.Selection;
 
@@ -39,7 +38,7 @@ public final class GameManagementClientModule extends IrisModule {
 	// LoggerFactory.getLogger(GameManagementClientModule.class);
 	private static final MyLogger LOGGER = new MyLogger();
 
-	private final Consumer<? super GameEnding> gameEndingHook;
+	private Controller controller;
 
 	private final String gameId;
 
@@ -54,15 +53,11 @@ public final class GameManagementClientModule extends IrisModule {
 
 	private final String playerId;
 
-	private Controller controller;
-
 	public GameManagementClientModule(final String gameId, final String playerId,
-			final Consumer<? super GameEnding> gameEndingHook, final Consumer<? super GameState> newGameHandler) {
+			final Consumer<? super GameState> newGameHandler) {
 		this.gameId = gameId;
 		this.playerId = playerId;
-		this.gameEndingHook = gameEndingHook;
 		this.newGameHandler = newGameHandler;
-
 	}
 
 	@Override
@@ -98,16 +93,6 @@ public final class GameManagementClientModule extends IrisModule {
 					controller.notifyTurnComplete(submittingPlayerId, move);
 					break;
 				}
-				/*
-				case GAME_OVER_RESPONSE: {
-					LOGGER.info("The server notified that game \"{}\" is over.", gameId);
-					final GameEnding gameEnding = (GameEnding) event
-							.get(GameManagementEvent.Attribute.GAME_STATE.toString());
-					controller.notifyGameOver(gameEnding);
-					gameEndingHook.accept(gameEnding);
-					break;
-				}
-				*/
 				case GAME_READY_RESPONSE: {
 					LOGGER.info("The server notified that game \"{}\" is ready.", gameId);
 					final GameStateDescription gameDesc = (GameStateDescription) event
@@ -132,8 +117,7 @@ public final class GameManagementClientModule extends IrisModule {
 					if (controller == null) {
 						LOGGER.debug("Game controller not yet set; Not notifying controller of joined player.");
 					} else {
-						controller.notifyPlayerJoined(
-								joinedPlayerId, Timestamp.valueOf(joinTime).getTime());
+						controller.notifyPlayerJoined(joinedPlayerId, Timestamp.valueOf(joinTime).getTime());
 					}
 					break;
 				}
@@ -159,17 +143,6 @@ public final class GameManagementClientModule extends IrisModule {
 					LOGGER.debug("Ignoring received game event type \"{}\".", gameEventType);
 					break;
 				}
-
-				// // Check if the local player's role has changed
-				// @SuppressWarnings("unchecked")
-				// final Collection<PlayerRoleChange> playerRoles =
-				// (Collection<PlayerRoleChange>) event
-				// .get(GameManagementEvent.Attribute.PLAYER_ROLE_CHANGE.toString());
-				// if (playerRoles != null){
-				// playerRoles.stream().filter(playerRole ->
-				// playerRole.getPlayerId().equals(playerId))
-				// .forEach(controller::notifyPlayerRoleChange);
-				// }
 				}
 			}
 		}

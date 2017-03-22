@@ -31,7 +31,6 @@ import se.kth.speech.coin.tangrams.iristk.GameManagementClientModule;
 import se.kth.speech.coin.tangrams.iristk.MyLogger;
 import se.kth.speech.coin.tangrams.iristk.events.Area2D;
 import se.kth.speech.coin.tangrams.iristk.events.CoordinatePoint2D;
-import se.kth.speech.coin.tangrams.iristk.events.GameEnding;
 import se.kth.speech.coin.tangrams.iristk.events.Move;
 import se.kth.speech.coin.tangrams.iristk.events.Selection;
 
@@ -43,8 +42,6 @@ import se.kth.speech.coin.tangrams.iristk.events.Selection;
 public final class Controller {
 
 	public interface Listener {
-
-		void updateGameOver(GameEnding gameEnding);
 
 		void updateNextMove(Move move);
 
@@ -167,14 +164,6 @@ public final class Controller {
 
 	public boolean isSelectionCorrect() {
 		return nextMove.getPieceId().equals(selectedPiece.getKey());
-	}
-
-	/**
-	 * @param gameEnding
-	 */
-	public void notifyGameOver(final GameEnding gameEnding) {
-		LOGGER.info("The controller was notified that the game has ended.");
-		listeners.forEach(listener -> listener.updateGameOver(gameEnding));
 	}
 
 	public void notifyNextMove(final String submittingPlayerId, final Move move) {

@@ -29,18 +29,17 @@ import se.kth.speech.MutablePair;
 import se.kth.speech.coin.tangrams.game.Controller;
 import se.kth.speech.coin.tangrams.game.PlayerRole;
 import se.kth.speech.coin.tangrams.game.Turn;
-import se.kth.speech.coin.tangrams.iristk.events.GameEnding;
 import se.kth.speech.coin.tangrams.iristk.events.Move;
 import se.kth.speech.coin.tangrams.iristk.events.Selection;
 
 final class ControllerInfoTableModel extends AbstractTableModel implements Controller.Listener {
 
+	private static final int CONTROLLER_DATA_ROW = 0;
+
 	/**
 	 *
 	 */
 	private static final long serialVersionUID = -2397331318460560614L;
-
-	private static final int CONTROLLER_DATA_ROW = 0;
 
 	private final List<Entry<String, Supplier<Object>>> columns;
 
@@ -105,18 +104,6 @@ final class ControllerInfoTableModel extends AbstractTableModel implements Contr
 		}
 		}
 		return result;
-	}
-
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see
-	 * se.kth.speech.coin.tangrams.game.Controller.Listener#updateGameOver(se.
-	 * kth.speech.coin.tangrams.iristk.events.GameEnding)
-	 */
-	@Override
-	public void updateGameOver(final GameEnding gameEnding) {
-		// Do nothing
 	}
 
 	/*
