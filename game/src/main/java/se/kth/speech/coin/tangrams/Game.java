@@ -27,8 +27,6 @@ public final class Game<T> {
 
 	private final long seed;
 
-	private final AtomicInteger turnCount = new AtomicInteger(0);
-
 	private final SpatialMatrix<T> model;
 
 	private final BiMap<PlayerRole, String> playerRoles;
@@ -60,13 +58,6 @@ public final class Game<T> {
 		return seed;
 	}
 
-	/**
-	 * @return the turnCount
-	 */
-	public AtomicInteger getTurnCount() {
-		return turnCount;
-	}
-
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -77,8 +68,6 @@ public final class Game<T> {
 		final StringBuilder builder = new StringBuilder();
 		builder.append("Game [seed=");
 		builder.append(seed);
-		builder.append(", turnCount=");
-		builder.append(turnCount);
 		builder.append(", model=");
 		builder.append(model);
 		builder.append(", playerRoles=");
