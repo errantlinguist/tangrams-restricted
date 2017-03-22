@@ -339,8 +339,10 @@ public final class SpatialMatrix<E> {
 	}
 
 	public void placeElement(final E element, final SpatialRegion target) {
+		if (elementPlacements.isOccupied(target)){
+			throw new IllegalArgumentException("Target region already occupied.");
+		}
 		LOGGER.debug("Placing element \"{}\" at {}.", element, target);
-		assert !elementPlacements.isOccupied(target);
 		setPositionValues(target, element);
 		elementPlacements.put(element, target);
 	}
