@@ -54,6 +54,8 @@ public final class Controller {
 
 		void updatePlayerSelection(Selection selection);
 
+		void updateScore(int score);
+
 		void updateSelectionRejected(Selection selection);
 
 		void updateTurnCompleted(Turn turn);
@@ -72,6 +74,10 @@ public final class Controller {
 	private enum ValidationStatus {
 		OK, SOURCE_EMPTY, SOURCE_TARGET_SAME, TARGET_OCCUPIED;
 	}
+
+	private static final int BAD_TURN_SCORE_DIFF = -2;
+
+	private static final int GOOD_TURN_SCORE_DIFF = 1;
 
 	// private static final Logger LOGGER =
 	// LoggerFactory.getLogger(Controller.class);
@@ -96,8 +102,6 @@ public final class Controller {
 	private final Set<Listener> listeners;
 
 	private final SpatialMatrix<Integer> model;
-	
-	private int turnCount = 0;
 
 	private Move nextMove;
 
@@ -105,7 +109,11 @@ public final class Controller {
 
 	private PlayerRole role;
 
+	private int score = 0;
+
 	private Entry<Integer, SpatialRegion> selectedPiece;
+
+	private int turnCount = 0;
 
 	public Controller(final SpatialMatrix<Integer> model, final String playerId, final PlayerRole role,
 			final GameManagementClientModule clientModule) {
@@ -144,6 +152,13 @@ public final class Controller {
 	 */
 	public PlayerRole getRole() {
 		return role;
+	}
+
+	/**
+	 * @return the score
+	 */
+	public int getScore() {
+		return score;
 	}
 
 	public int getTurnCount() {
@@ -212,6 +227,8 @@ public final class Controller {
 
 		listeners.forEach(listener -> listener.updateSelectionRejected(selection));
 
+		updateScore(BAD_TURN_SCORE_DIFF);
+
 		// Go back to selecting a new piece
 		updatePlayerRole(PlayerRole.SELECTING);
 	}
@@ -226,18 +243,13 @@ public final class Controller {
 
 		updatePiecePositions(move);
 
-		
 		final Entry<SpatialRegion, SpatialRegion> regionMove = createRegionMovePair(move);
 		final Turn turn = new Turn(submittingPlayerId, regionMove, turnCount);
 		listeners.forEach(listener -> listener.updateTurnCompleted(turn));
 		nextMove = null;
-		LOGGER.debug("Old turn count was {}.", turnCount);
-		// NOTE: increment here, OUTSIDE of the listener notification loop!
-		turnCount++;
-		LOGGER.debug("New turn count is {}.", turnCount);
-		// Update listeners for current turn count (i.e. the sequence number of
-		// the next turn to be completed)
-		listeners.forEach(listener -> listener.updateTurnCount(turnCount));
+
+		incrementTurnCount();
+		updateScore(GOOD_TURN_SCORE_DIFF);
 
 		// Now it's this player's turn to submit a move
 		updatePlayerRole(PlayerRole.MOVE_SUBMISSION);
@@ -283,6 +295,9 @@ public final class Controller {
 					String.format("Role is currently not %s but rather %s.", requiredRole, role));
 		}
 		clientModule.rejectSelection(selectedPiece.getKey(), createArea(selectedPiece.getValue()));
+
+		updateScore(BAD_TURN_SCORE_DIFF);
+
 		updatePlayerRole(PlayerRole.WAITING_FOR_SELECTION);
 	}
 
@@ -297,13 +312,8 @@ public final class Controller {
 		nextMove = null;
 		selectedPiece = null;
 
-		LOGGER.debug("Old turn count was {}.", turnCount);
-		// NOTE: increment here, OUTSIDE of the listener notification loop!
-		turnCount++;
-		LOGGER.debug("New turn is {}.", turnCount);
-		// Update listeners for current turn count (i.e. the sequence number of
-		// the next turn to be completed)
-		listeners.forEach(listener -> listener.updateTurnCount(turnCount));
+		incrementTurnCount();
+		updateScore(GOOD_TURN_SCORE_DIFF);
 
 		// Now it's this player's turn to wait for the other player to submit a
 		// move
@@ -314,6 +324,16 @@ public final class Controller {
 		final SpatialRegion source = areaRegionFactory.apply(move.getSource());
 		final SpatialRegion target = areaRegionFactory.apply(move.getTarget());
 		return new MutablePair<>(source, target);
+	}
+
+	private void incrementTurnCount() {
+		LOGGER.debug("Old turn count was {}.", turnCount);
+		// NOTE: increment here, OUTSIDE of the listener notification loop!
+		turnCount++;
+		LOGGER.debug("New turn count is {}.", turnCount);
+		// Update listeners for current turn count (i.e. the sequence number of
+		// the next turn to be completed)
+		listeners.forEach(listener -> listener.updateTurnCount(turnCount));
 	}
 
 	private void updatePiecePositions(final Move move) {
@@ -334,6 +354,15 @@ public final class Controller {
 	private void updatePlayerRole(final PlayerRole newRole) {
 		role = newRole;
 		listeners.forEach(listener -> listener.updatePlayerRole(newRole));
+	}
+
+	private void updateScore(final int diff) {
+		LOGGER.debug("Old score was {}.", score);
+		// NOTE: set here, OUTSIDE of the listener notification loop!
+		score += diff;
+		LOGGER.debug("New score is {}.", score);
+		// Update listeners for current score
+		listeners.forEach(listener -> listener.updateScore(score));
 	}
 
 	private ValidationStatus validateMove(final SpatialRegion sourceRegion, final SpatialRegion targetRegion) {

@@ -148,8 +148,6 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 		g.drawRect(startIdxs[0], startIdxs[1], size[0], size[1]);
 	}
 
-	// private transient final Supplier<String> playerIdGetter;
-
 	private static Image scaleImageToGridSize(final Image img, final SpatialRegion occupiedGridRegion,
 			final int colWidth, final int rowHeight) {
 		final int[] size = createComponentCoordSizeArray(occupiedGridRegion, colWidth, rowHeight);
@@ -176,25 +174,6 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 
 	private final DisablingMouseAdapter selectingMouseListener;
 
-	// private void clearRegionHighlights(final Graphics g, final SpatialRegion
-	// region) {
-	// final int colWidth = getGridColWidth();
-	// final int rowHeight = getGridRowHeight();
-	// final int[] startIdxs = createComponentCoordStartIdxArray(region,
-	// colWidth, rowHeight);
-	// final int[] size = createComponentCoordSizeArray(region, colWidth,
-	// rowHeight);
-	// g.clearRect(startIdxs[0], startIdxs[1], size[0], size[1]);
-	// }
-
-	// private Graphics2D createRegionHighlightClearingGraphics(final Graphics
-	// g) {
-	// final Graphics2D result = (Graphics2D) g.create();
-	// result.setStroke(new BasicStroke(REGION_HIGHLIGHT_STROKE_WIDTH));
-	// result.setColor(getBackground());
-	// return result;
-	// }
-
 	GameBoardPanel(final SpatialMatrix<Integer> posMatrix, final Map<Integer, Image> pieceImgs,
 			final Controller controller, final BiConsumer<? super GameBoardPanel, ? super Turn> localTurnCompletionHook,
 			final BiConsumer<? super GameBoardPanel, ? super Selection> localSelectionHook) {
@@ -202,7 +181,6 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 		this.pieceImgs = pieceImgs;
 		this.controller = controller;
 		controller.getListeners().add(this);
-		// playerIdGetter = controller::getPlayerId;
 		this.localTurnCompletionHook = localTurnCompletionHook;
 		this.localSelectionHook = localSelectionHook;
 		selectingMouseListener = new DisablingMouseAdapter(new SelectingMouseAdapter());
@@ -229,6 +207,25 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 			setMinimumSize(minSize);
 		}
 	}
+
+	// private void clearRegionHighlights(final Graphics g, final SpatialRegion
+	// region) {
+	// final int colWidth = getGridColWidth();
+	// final int rowHeight = getGridRowHeight();
+	// final int[] startIdxs = createComponentCoordStartIdxArray(region,
+	// colWidth, rowHeight);
+	// final int[] size = createComponentCoordSizeArray(region, colWidth,
+	// rowHeight);
+	// g.clearRect(startIdxs[0], startIdxs[1], size[0], size[1]);
+	// }
+
+	// private Graphics2D createRegionHighlightClearingGraphics(final Graphics
+	// g) {
+	// final Graphics2D result = (Graphics2D) g.create();
+	// result.setStroke(new BasicStroke(REGION_HIGHLIGHT_STROKE_WIDTH));
+	// result.setColor(getBackground());
+	// return result;
+	// }
 
 	@Override
 	public void paintComponent(final Graphics g) {
@@ -274,18 +271,6 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 		}
 	}
 
-	// /* (non-Javadoc)
-	// * @see
-	// se.kth.speech.coin.tangrams.game.Controller.Listener#updatePieceMoved(se.kth.speech.SpatialRegion,
-	// se.kth.speech.SpatialRegion)
-	// */
-	// @Override
-	// public void updatePieceMoved(SpatialRegion source, SpatialRegion target)
-	// {
-	// LOGGER.debug("Observed event notifying of a moved piece.");
-	// repaint();
-	// }
-
 	@Override
 	public void updateNextMove(final Move move) {
 		LOGGER.debug("Observed event representing the subbmission of a move by a player.");
@@ -316,20 +301,23 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 		// localSelectionHook.accept(this, selection);
 		final boolean isSelectionCorrect = controller.isSelectionCorrect();
 		if (isSelectionCorrect) {
-			// JOptionPane.showMessageDialog(this, "Correct move!", "Good
-			// selection", JOptionPane.INFORMATION_MESSAGE);
 			controller.submitTurnComplete();
 			highlightedRegions.clear();
 			repaint();
 		} else {
-			// JOptionPane.showMessageDialog(this, "Incorrect move!", "Bad
-			// selection", JOptionPane.ERROR_MESSAGE);
 			controller.submitSelectionRejection();
 		}
+	}
 
-		// final Area2D area = selection.getArea();
-		// final SpatialRegion region = areaRegionFactory.apply(area);
-		// toggleHighlightedRegion(region);
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * se.kth.speech.coin.tangrams.game.Controller.Listener#updateScore(int)
+	 */
+	@Override
+	public void updateScore(final int score) {
+		LOGGER.debug("Notified of new score.");
 	}
 
 	/*

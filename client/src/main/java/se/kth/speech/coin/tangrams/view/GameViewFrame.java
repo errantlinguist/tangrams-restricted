@@ -20,13 +20,11 @@ import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
-import java.awt.FontMetrics;
 import java.awt.Window;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.font.TextAttribute;
 import java.text.AttributedCharacterIterator.Attribute;
-import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -40,6 +38,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JTable;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -102,49 +101,6 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 		return result;
 	}
 
-	private static JPanel createStatusPanel(final GameBoardPanel boardPanel, final Random rnd,
-			final Dimension gameBoardPanelSize, final Component sidePanel, final Controller controller) {
-		final JPanel result = new JPanel();
-		final BoxLayout layout = new BoxLayout(result, BoxLayout.LINE_AXIS);
-		result.setLayout(layout);
-
-		final int marginSize = 2;
-		final Dimension marginDim = new Dimension(marginSize, 0);
-
-		final Component sidePanelLeftMargin = Box.createRigidArea(marginDim);
-		result.add(sidePanelLeftMargin);
-
-		result.add(sidePanel);
-
-		final Component sidePanelRightMargin = Box.createRigidArea(marginDim);
-		result.add(sidePanelRightMargin);
-
-		final JPanel buttonPanel = new JPanel();
-		result.add(buttonPanel);
-		final JButton continueButton = new JButton("continue");
-		buttonPanel.add(continueButton);
-		continueButton.addActionListener(continueEvent -> {
-			boardPanel.notifyContinue(rnd);
-		});
-
-		return result;
-	}
-
-	private static JLabel createTurnCounterLabel(final int initialTurnCount, final int siblingWidth) {
-		final JLabel result = new JLabel(Integer.toString(initialTurnCount));
-		result.setAlignmentX(Component.CENTER_ALIGNMENT);
-		final Font font = Font.getFont(createMoveCounterFontAttrMap());
-		result.setFont(font);
-		{
-			final FontMetrics fontMetrics = result.getFontMetrics(font);
-			final int maxFontWidth = Arrays.stream(fontMetrics.getWidths()).max().getAsInt();
-			final int preferredWidth = Math.max(siblingWidth, maxFontWidth * 3);
-			final int preferredHeight = fontMetrics.getHeight();
-			result.setPreferredSize(new Dimension(preferredWidth, preferredHeight));
-		}
-		return result;
-	}
-
 	private static JLabel createTurnLabel(final PlayerRole initialRole) {
 		final String title = PLAYER_ROLE_STATUS_LABEL_TEXT.get(initialRole);
 		final JLabel result = new JLabel(title);
@@ -171,7 +127,7 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 
 	private final JLabel roleStatusLabel;
 
-	private final JLabel turnCounterLabel;
+	// private final JLabel turnCounterLabel;
 
 	GameViewFrame(final GameBoardPanel boardPanel, final Random rnd, final Controller controller,
 			final Runnable closeHook) {
@@ -206,18 +162,49 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 		final Dimension gameBoardPanelSize = boardPanel.getPreferredSize();
 		final PlayerTurnStatus initialTurnStatus = getPlayerTurnStatus(initialRole);
 		playerReadiness = createPlayerReadinessIndicator(gameBoardPanelSize.width, initialTurnStatus);
-		final JPanel sidePanel;
-		{
-			sidePanel = new JPanel();
-			final BoxLayout layout = new BoxLayout(sidePanel, BoxLayout.PAGE_AXIS);
-			sidePanel.setLayout(layout);
-			sidePanel.add(playerReadiness);
 
-			turnCounterLabel = createTurnCounterLabel(controller.getTurnCount(),
-					playerReadiness.getPreferredSize().width);
-			sidePanel.add(turnCounterLabel);
+		{
+			final JPanel statusPanel = new JPanel();
+			add(statusPanel, BorderLayout.PAGE_END);
+			final BoxLayout layout = new BoxLayout(statusPanel, BoxLayout.LINE_AXIS);
+			statusPanel.setLayout(layout);
+
+			final int marginSize = 2;
+			final Dimension marginDim = new Dimension(marginSize, 0);
+
+			final Component sidePanelLeftMargin = Box.createRigidArea(marginDim);
+			statusPanel.add(sidePanelLeftMargin);
+
+			{
+				final JPanel sidePanel = new JPanel();
+				statusPanel.add(sidePanel);
+				sidePanel.setLayout(new BoxLayout(sidePanel, BoxLayout.PAGE_AXIS));
+				sidePanel.add(playerReadiness);
+			}
+
+			final Component sidePanelRightMargin = Box.createRigidArea(marginDim);
+			statusPanel.add(sidePanelRightMargin);
+
+			{
+				final JTable controllerInfoTable = new JTable(new ControllerInfoTableModel(controller));
+				controllerInfoTable.setCellSelectionEnabled(false);
+				// controllerInfoTable.setAutoCreateColumnsFromModel(true);
+				// controllerInfoTable.createDefaultColumnsFromModel();
+				final JPanel tablePanel = new JPanel();
+				statusPanel.add(tablePanel);
+				tablePanel.setLayout(new BoxLayout(tablePanel, BoxLayout.PAGE_AXIS));
+				tablePanel.add(controllerInfoTable.getTableHeader());
+				tablePanel.add(controllerInfoTable);
+			}
+
+			final JPanel buttonPanel = new JPanel();
+			statusPanel.add(buttonPanel);
+			final JButton continueButton = new JButton("Next turn");
+			buttonPanel.add(continueButton);
+			continueButton.addActionListener(continueEvent -> {
+				boardPanel.notifyContinue(rnd);
+			});
 		}
-		add(createStatusPanel(boardPanel, rnd, gameBoardPanelSize, sidePanel, controller), BorderLayout.PAGE_END);
 
 	}
 
@@ -287,6 +274,17 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 	/*
 	 * (non-Javadoc)
 	 *
+	 * @see
+	 * se.kth.speech.coin.tangrams.game.Controller.Listener#updateScore(int)
+	 */
+	@Override
+	public void updateScore(final int score) {
+		LOGGER.debug("Notified of new score.");
+	}
+
+	/*
+	 * (non-Javadoc)
+	 *
 	 * @see se.kth.speech.coin.tangrams.iristk.Controller.Listener#
 	 * updateSelectionRejected(se.kth.speech.coin.tangrams.iristk.events.
 	 * Selection)
@@ -316,7 +314,6 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 	@Override
 	public void updateTurnCount(final int newCount) {
 		LOGGER.debug("Notified of new turn count.");
-		turnCounterLabel.setText(Integer.toString(newCount));
 	}
 
 	/**
