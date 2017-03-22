@@ -74,6 +74,7 @@ final class ReadinessIndicator extends JLabel {
 		if (!oldStatus.equals(newStatus)) {
 			final Color newColor = getStatusColor(newStatus);
 			icon.setColor(newColor);
+			// NOTE: This is necessary in order to force the new color to be used
 			repaint();
 		}
 	}
