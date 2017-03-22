@@ -72,7 +72,7 @@ public final class ConnectionStatusFrame extends JFrame {
 			fontAttrs.put(TextAttribute.FAMILY, Font.SANS_SERIF);
 			fontAttrs.put(TextAttribute.WEIGHT, TextAttribute.WEIGHT_BOLD);
 			fontAttrs.put(TextAttribute.SIZE, 36.0f);
-			label.setFont(Font.getFont(fontAttrs));
+			label.setFont(label.getFont().deriveFont(fontAttrs));
 		}
 		add(label);
 		setResizable(false);

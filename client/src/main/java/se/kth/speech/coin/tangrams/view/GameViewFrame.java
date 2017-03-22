@@ -67,10 +67,10 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 	 */
 	private static final long serialVersionUID = -4129777933223228599L;
 
-	private static Map<Attribute, Object> createMoveCounterFontAttrMap() {
+	private static Map<Attribute, Object> createControllerInfoFontAttrMap() {
 		final Map<Attribute, Object> result = Maps.newHashMapWithExpectedSize(3);
 		result.put(TextAttribute.FAMILY, Font.SANS_SERIF);
-		result.put(TextAttribute.WEIGHT, TextAttribute.WEIGHT_BOLD);
+//		result.put(TextAttribute.WEIGHT, TextAttribute.WEIGHT_BOLD);
 		result.put(TextAttribute.SIZE, 20.0f);
 		return result;
 	}
@@ -102,7 +102,7 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 	private static JLabel createTurnLabel(final PlayerRole initialRole) {
 		final String title = PLAYER_ROLE_STATUS_LABEL_TEXT.get(initialRole);
 		final JLabel result = new JLabel(title);
-		final Font font = Font.getFont(createTurnLabelFontAttrMap());
+		final Font font = result.getFont().deriveFont(createTurnLabelFontAttrMap());
 		result.setFont(font);
 		return result;
 	}
