@@ -25,6 +25,7 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.font.TextAttribute;
 import java.text.AttributedCharacterIterator.Attribute;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -38,6 +39,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTable;
+import javax.swing.table.JTableHeader;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -68,9 +70,8 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 	private static final long serialVersionUID = -4129777933223228599L;
 
 	private static Map<Attribute, Object> createControllerInfoFontAttrMap() {
-		final Map<Attribute, Object> result = Maps.newHashMapWithExpectedSize(3);
+		final Map<Attribute, Object> result = Maps.newHashMapWithExpectedSize(2);
 		result.put(TextAttribute.FAMILY, Font.SANS_SERIF);
-//		result.put(TextAttribute.WEIGHT, TextAttribute.WEIGHT_BOLD);
 		result.put(TextAttribute.SIZE, 20.0f);
 		return result;
 	}
@@ -185,13 +186,17 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 
 			{
 				final JTable controllerInfoTable = new JTable(new ControllerInfoTableModel(controller));
+				Font infoFont = controllerInfoTable.getFont().deriveFont(createControllerInfoFontAttrMap());
+				controllerInfoTable.setFont(infoFont);
+				controllerInfoTable.setRowSelectionAllowed(false);
+				controllerInfoTable.setColumnSelectionAllowed(false);
 				controllerInfoTable.setCellSelectionEnabled(false);
-				// controllerInfoTable.setAutoCreateColumnsFromModel(true);
-				// controllerInfoTable.createDefaultColumnsFromModel();
 				final JPanel tablePanel = new JPanel();
 				statusPanel.add(tablePanel);
 				tablePanel.setLayout(new BoxLayout(tablePanel, BoxLayout.PAGE_AXIS));
-				tablePanel.add(controllerInfoTable.getTableHeader());
+				JTableHeader tableHeader = controllerInfoTable.getTableHeader();
+				tableHeader.setFont(infoFont.deriveFont(Collections.singletonMap(TextAttribute.WEIGHT, TextAttribute.WEIGHT_BOLD)));
+				tablePanel.add(tableHeader);
 				tablePanel.add(controllerInfoTable);
 			}
 
