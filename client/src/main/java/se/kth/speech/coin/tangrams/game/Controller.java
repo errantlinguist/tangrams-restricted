@@ -96,7 +96,7 @@ public final class Controller {
 	private final Set<Listener> listeners;
 
 	private final SpatialMatrix<Integer> model;
-
+	
 	private int turnCount = 0;
 
 	private Move nextMove;
@@ -226,12 +226,13 @@ public final class Controller {
 
 		updatePiecePositions(move);
 
-		LOGGER.debug("Old turn count was {}.", turnCount);
-
+		
 		final Entry<SpatialRegion, SpatialRegion> regionMove = createRegionMovePair(move);
 		final Turn turn = new Turn(submittingPlayerId, regionMove, turnCount);
 		listeners.forEach(listener -> listener.updateTurnCompleted(turn));
 		nextMove = null;
+		LOGGER.debug("Old turn count was {}.", turnCount);
+		// NOTE: increment here, OUTSIDE of the listener notification loop!
 		turnCount++;
 		LOGGER.debug("New turn count is {}.", turnCount);
 		// Update listeners for current turn count (i.e. the sequence number of
@@ -297,6 +298,7 @@ public final class Controller {
 		selectedPiece = null;
 
 		LOGGER.debug("Old turn count was {}.", turnCount);
+		// NOTE: increment here, OUTSIDE of the listener notification loop!
 		turnCount++;
 		LOGGER.debug("New turn is {}.", turnCount);
 		// Update listeners for current turn count (i.e. the sequence number of
