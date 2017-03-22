@@ -122,7 +122,7 @@ public final class SpatialMatrixTest {
 	 * {@link se.kth.speech.SpatialMatrix#calculateSubRegionCount(int, int)}.
 	 */
 	@Theory
-	public final void testCalculateSubRegionCount(final int[] gridDims) {
+	public void testCalculateSubRegionCount(final int[] gridDims) {
 		final SpatialMatrix<Integer> matrix = new SpatialMatrixConstructionData<>(gridDims, 1).matrix;
 
 		final Table<Integer, Integer, Collection<SpatialRegion>> regionPowerSet = matrix
@@ -136,7 +136,7 @@ public final class SpatialMatrixTest {
 	}
 
 	@Test
-	public final void testCeateValidMoveMap1() {
+	public void testCeateValidMoveMap1() {
 		final SpatialMatrixConstructionData<Object> constData = new SpatialMatrixConstructionData<>(new int[] { 1, 2 },
 				1);
 		final SpatialMatrix<Integer> matrix = constData.matrix;
@@ -156,7 +156,7 @@ public final class SpatialMatrixTest {
 	}
 
 	@Test
-	public final void testCeateValidMoveMap2() {
+	public void testCeateValidMoveMap2() {
 		final SpatialMatrixConstructionData<Object> constData = new SpatialMatrixConstructionData<>(new int[] { 5, 10 },
 				1);
 		final SpatialMatrix<Integer> matrix = constData.matrix;
@@ -180,7 +180,7 @@ public final class SpatialMatrixTest {
 	 * {@link se.kth.speech.SpatialMatrix#createSizeIndexedRegionPowerSet()}.
 	 */
 	@Theory
-	public final void testCreateSizeIndexedRegionPowerSet(final int[] gridDims) {
+	public void testCreateSizeIndexedRegionPowerSet(final int[] gridDims) {
 		final SpatialMatrix<Integer> matrix = new SpatialMatrixConstructionData<>(gridDims, 1).matrix;
 
 		final int[] dims = matrix.getDimensions();
@@ -210,7 +210,7 @@ public final class SpatialMatrixTest {
 	 * {@link se.kth.speech.SpatialMatrix#getCells()}.
 	 */
 	@Theory
-	public final void testGetCellsCount(final int[] gridDims) {
+	public void testGetCellsCount(final int[] gridDims) {
 		final SpatialMatrix<Integer> matrix = new SpatialMatrixConstructionData<>(gridDims, 1).matrix;
 		final long expected = IntArrays.product(gridDims);
 		final Stream<Integer> cells = matrix.getCells();
@@ -223,7 +223,7 @@ public final class SpatialMatrixTest {
 	 * {@link se.kth.speech.SpatialMatrix#getCells(se.kth.speech.SpatialRegion)}.
 	 */
 	@Test
-	public final void testGetCellsRegion1() {
+	public void testGetCellsRegion1() {
 		testGetCellsRegion(0, 1, 0, 1);
 	}
 
@@ -232,7 +232,7 @@ public final class SpatialMatrixTest {
 	 * {@link se.kth.speech.SpatialMatrix#getCells(se.kth.speech.SpatialRegion)}.
 	 */
 	@Test
-	public final void testGetCellsRegion2() {
+	public void testGetCellsRegion2() {
 		testGetCellsRegion(1, 11, 5, 16);
 	}
 
@@ -241,7 +241,7 @@ public final class SpatialMatrixTest {
 	 * {@link se.kth.speech.SpatialMatrix#getCells(se.kth.speech.SpatialRegion)}.
 	 */
 	@Test
-	public final void testGetCellsRegion3() {
+	public void testGetCellsRegion3() {
 		testGetCellsRegion(1, 10, 5, 10);
 	}
 
@@ -250,19 +250,19 @@ public final class SpatialMatrixTest {
 	 * {@link se.kth.speech.SpatialMatrix#getCells(se.kth.speech.SpatialRegion)}.
 	 */
 	@Test
-	public final void testGetCellsRegion4() {
+	public void testGetCellsRegion4() {
 		testGetCellsRegion(1, 2, 1, 2);
 	}
 
 	@Theory
-	public final void testGetDimensions(final int[] gridDims) {
+	public void testGetDimensions(final int[] gridDims) {
 		final SpatialMatrix<Integer> matrix = new SpatialMatrixConstructionData<>(gridDims, 1).matrix;
 		final int[] dims = matrix.getDimensions();
 		Assert.assertArrayEquals(gridDims, dims);
 	}
 
 	@Test
-	public final void testPlaceElement1() {
+	public void testPlaceElement1() {
 		final int xUpperBound = 1;
 		final int xLowerBound = 0;
 		final int yUpperBound = 1;
@@ -271,7 +271,7 @@ public final class SpatialMatrixTest {
 	}
 
 	@Test
-	public final void testPlaceElement2() {
+	public void testPlaceElement2() {
 		final int xUpperBound = 5;
 		final int xLowerBound = 1;
 		final int yUpperBound = 6;

@@ -98,7 +98,7 @@ public final class RandomMatrixPositionFillerTest {
 	 * {@link se.kth.speech.RandomMatrixPositionFiller#apply(Collection)}.
 	 */
 	@Test
-	public final void testApply() {
+	public void testApply() {
 		final SpatialMatrixConstructionData constData = new SpatialMatrixConstructionData(new int[] { 10, 10 });
 
 		final RandomMatrixPositionFiller<Integer, int[]> filler = new RandomMatrixPositionFiller<>(constData.matrix,
@@ -151,7 +151,7 @@ public final class RandomMatrixPositionFillerTest {
 	 * @throws InterruptedException 
 	 */
 	@Theory
-	public final void testApplyStable(final long seed) throws InterruptedException {
+	public void testApplyStable(final long seed) throws InterruptedException {
 		final MutablePair<SpatialMatrix<Integer>, Set<Integer>> result1 = apply(seed);
 		Thread.sleep(100);
 		final MutablePair<SpatialMatrix<Integer>, Set<Integer>> result2 = apply(seed);

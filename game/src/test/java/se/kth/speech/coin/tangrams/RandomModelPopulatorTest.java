@@ -116,7 +116,7 @@ public final class RandomModelPopulatorTest {
 	 * {@link se.kth.speech.coin.tangrams.RandomModelPopulator#accept(java.util.Random)}.
 	 */
 	@Test
-	public final void testAccept() {
+	public void testAccept() {
 		final Random rnd = new Random();
 		final ImageVisualizationInfoFactory imgDataFactory = new ImageVisualizationInfoFactory(rnd);
 		final int maxImgVisualizationInfoDatumCount = imgDataFactory.combinationCount();

@@ -43,7 +43,7 @@ public final class SpatialMapTest {
 	 * {@link se.kth.speech.SpatialMap#isOccupied(se.kth.speech.SpatialMap.SpatialRegion)}.
 	 */
 	@Test
-	public final void testIsOccupiedIntersecting() {
+	public void testIsOccupiedIntersecting() {
 		final SpatialMap<Object> testMap = new SpatialMap<>(2);
 		final SpatialRegion r1 = new SpatialRegion(0, 9, 0, 2);
 		Assert.assertNull(testMap.put("r1", r1));
@@ -58,7 +58,7 @@ public final class SpatialMapTest {
 	 * {@link se.kth.speech.SpatialMap#isOccupied(se.kth.speech.SpatialMap.SpatialRegion)}.
 	 */
 	@Test
-	public final void testIsOccupiedNegative() {
+	public void testIsOccupiedNegative() {
 		final SpatialMap<Object> testMap = new SpatialMap<>(2);
 		final SpatialRegion superRegion = new SpatialRegion(0, 1, 2, 3);
 		Assert.assertNull(testMap.put("region", superRegion));
@@ -71,7 +71,7 @@ public final class SpatialMapTest {
 	 * {@link se.kth.speech.SpatialMap#isOccupied(se.kth.speech.SpatialMap.SpatialRegion)}.
 	 */
 	@Test
-	public final void testIsOccupiedSubregion() {
+	public void testIsOccupiedSubregion() {
 		final SpatialMap<Object> testMap = new SpatialMap<>(2);
 		final SpatialRegion superRegion = new SpatialRegion(0, 20, 10, 30);
 		testMap.put("superRegion", superRegion);
@@ -84,7 +84,7 @@ public final class SpatialMapTest {
 	 * {@link se.kth.speech.SpatialMap#put(Object, se.kth.speech.SpatialMap.SpatialRegion)}
 	 */
 	@Test
-	public final void testPutExistingElement() {
+	public void testPutExistingElement() {
 		final SpatialMap<Object> testMap = new SpatialMap<>(2);
 		final SpatialRegion r1 = new SpatialRegion(0, 1, 2, 3);
 		final String elem = "foo";
@@ -107,7 +107,7 @@ public final class SpatialMapTest {
 	 * {@link se.kth.speech.SpatialMap#put(Object, se.kth.speech.SpatialMap.SpatialRegion)}
 	 */
 	@Test
-	public final void testPutNewElement() {
+	public void testPutNewElement() {
 		final SpatialMap<Object> testMap = new SpatialMap<>(2);
 		assertPutNewElement(testMap, "foo", new SpatialRegion(0, 1, 2, 3));
 		assertPutNewElement(testMap, new int[] { 3, 3 }, new SpatialRegion(2, 3, 4, 5));

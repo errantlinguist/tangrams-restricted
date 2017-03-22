@@ -90,7 +90,7 @@ public final class ImageVisualizationInfoTest {
 	 * {@link se.kth.speech.coin.tangrams.content.ImageVisualizationInfo#equals(java.lang.Object)}.
 	 */
 	@Theory
-	public final void testEqualsObjectCommutativity(final URL u1, final Color c1, final ImageSize s1, final URL u2,
+	public void testEqualsObjectCommutativity(final URL u1, final Color c1, final ImageSize s1, final URL u2,
 			final Color c2, final ImageSize s2) {
 		final ImageVisualizationInfo o1 = new ImageVisualizationInfo(u1, c1, s1);
 		final ImageVisualizationInfo o2 = new ImageVisualizationInfo(u2, c2, s2);
@@ -104,7 +104,7 @@ public final class ImageVisualizationInfoTest {
 	 * {@link se.kth.speech.coin.tangrams.content.ImageVisualizationInfo#equals(java.lang.Object)}.
 	 */
 	@Theory
-	public final void testEqualsObjectNegative(final URL u1, final Color c1, final ImageSize s1, final URL u2,
+	public void testEqualsObjectNegative(final URL u1, final Color c1, final ImageSize s1, final URL u2,
 			final Color c2, final ImageSize s2) {
 		Assume.assumeFalse(u1.equals(u2) && c1.equals(c2) && s1.equals(s2));
 		final ImageVisualizationInfo o1 = new ImageVisualizationInfo(u1, c1, s1);
@@ -117,7 +117,7 @@ public final class ImageVisualizationInfoTest {
 	 * {@link se.kth.speech.coin.tangrams.content.ImageVisualizationInfo#equals(java.lang.Object)}.
 	 */
 	@Theory
-	public final void testEqualsObjectPositive(final URL u1, final Color c1, final ImageSize s1, final URL u2,
+	public void testEqualsObjectPositive(final URL u1, final Color c1, final ImageSize s1, final URL u2,
 			final Color c2, final ImageSize s2) {
 		Assume.assumeTrue(u1.equals(u2));
 		Assume.assumeTrue(c1.equals(c2));
@@ -132,7 +132,7 @@ public final class ImageVisualizationInfoTest {
 	 * {@link se.kth.speech.coin.tangrams.content.ImageVisualizationInfo#hashCode()}.
 	 */
 	@Theory
-	public final void testHashCodeEqual(final URL u1, final Color c1, final ImageSize s1, final URL u2, final Color c2,
+	public void testHashCodeEqual(final URL u1, final Color c1, final ImageSize s1, final URL u2, final Color c2,
 			final ImageSize s2) {
 		final ImageVisualizationInfo o1 = new ImageVisualizationInfo(u1, c1, s1);
 		final ImageVisualizationInfo o2 = new ImageVisualizationInfo(u2, c2, s2);
@@ -147,7 +147,7 @@ public final class ImageVisualizationInfoTest {
 	 * {@link se.kth.speech.coin.tangrams.content.ImageVisualizationInfo#hashCode()}.
 	 */
 	@Theory
-	public final void testHashCodeSameData(final URL u1, final Color c1, final ImageSize s1, final URL u2,
+	public void testHashCodeSameData(final URL u1, final Color c1, final ImageSize s1, final URL u2,
 			final Color c2, final ImageSize s2) {
 		Assume.assumeTrue(u1.equals(u2));
 		Assume.assumeTrue(c1.equals(c2));
@@ -164,7 +164,7 @@ public final class ImageVisualizationInfoTest {
 	 * {@link se.kth.speech.coin.tangrams.content.ImageVisualizationInfo#ImageVisualizationInfo(java.net.URL, java.awt.Color, se.kth.speech.coin.tangrams.content.ImageSize)}.
 	 */
 	@Theory
-	public final void testImageVisualizationInfo(final URL u, final Color c, final ImageSize s) {
+	public void testImageVisualizationInfo(final URL u, final Color c, final ImageSize s) {
 		new ImageVisualizationInfo(u, c, s);
 	}
 
