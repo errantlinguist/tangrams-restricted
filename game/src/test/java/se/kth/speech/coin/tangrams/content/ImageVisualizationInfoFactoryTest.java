@@ -51,7 +51,7 @@ public final class ImageVisualizationInfoFactoryTest {
 	 * {@link se.kth.speech.coin.tangrams.content.ImageVisualizationInfoFactory#next()}.
 	 */
 	@Theory
-	public final void testNextNotEmpty(final long s) {
+	public void testNextNotEmpty(final long s) {
 		final Random rnd = new Random(s);
 		final Optional<ImageVisualizationInfo> any = Stream.of(new ImageVisualizationInfoFactory(rnd).next()).findAny();
 		Assert.assertTrue(any.isPresent());
@@ -64,7 +64,7 @@ public final class ImageVisualizationInfoFactoryTest {
 	 * @throws InterruptedException
 	 */
 	@Theory
-	public final void testNextStable(final long s) throws InterruptedException {
+	public void testNextStable(final long s) throws InterruptedException {
 		final Random rnd1 = new Random(s);
 		final ImageVisualizationInfoFactory f1 = new ImageVisualizationInfoFactory(rnd1);
 		final List<ImageVisualizationInfo> results1 = Stream.generate(f1::next).limit(f1.combinationCount())
@@ -86,7 +86,7 @@ public final class ImageVisualizationInfoFactoryTest {
 	 * {@link se.kth.speech.coin.tangrams.content.ImageVisualizationInfoFactory#next()}.
 	 */
 	@Theory
-	public final void testNextUnique(final long seed) {
+	public void testNextUnique(final long seed) {
 		final Random rnd = new Random(seed);
 		final ImageVisualizationInfoFactory f = new ImageVisualizationInfoFactory(rnd);
 		final List<ImageVisualizationInfo> results = Stream.generate(f::next).limit(f.combinationCount())
