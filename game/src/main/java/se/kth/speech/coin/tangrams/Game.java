@@ -33,24 +33,6 @@ public final class Game<T> {
 
 	private final BiMap<PlayerRole, String> playerRoles;
 
-	/* (non-Javadoc)
-	 * @see java.lang.Object#toString()
-	 */
-	@Override
-	public String toString() {
-		StringBuilder builder = new StringBuilder();
-		builder.append("Game [seed=");
-		builder.append(seed);
-		builder.append(", turnCount=");
-		builder.append(turnCount);
-		builder.append(", model=");
-		builder.append(model);
-		builder.append(", playerRoles=");
-		builder.append(playerRoles);
-		builder.append("]");
-		return builder.toString();
-	}
-
 	Game(final long seed, final SpatialMatrix<T> model, final BiMap<PlayerRole, String> playerRoles) {
 		this.seed = seed;
 		this.model = model;
@@ -83,6 +65,26 @@ public final class Game<T> {
 	 */
 	public AtomicInteger getTurnCount() {
 		return turnCount;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		final StringBuilder builder = new StringBuilder();
+		builder.append("Game [seed=");
+		builder.append(seed);
+		builder.append(", turnCount=");
+		builder.append(turnCount);
+		builder.append(", model=");
+		builder.append(model);
+		builder.append(", playerRoles=");
+		builder.append(playerRoles);
+		builder.append("]");
+		return builder.toString();
 	}
 
 }
