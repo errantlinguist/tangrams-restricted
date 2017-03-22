@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
+import javax.swing.AbstractButton;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
@@ -69,7 +70,7 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 	 */
 	private static final long serialVersionUID = -4129777933223228599L;
 
-	private static Map<Attribute, Object> createControllerInfoFontAttrMap() {
+	private static Map<Attribute, Object> createInfoFontAttrMap() {
 		final Map<Attribute, Object> result = Maps.newHashMapWithExpectedSize(2);
 		result.put(TextAttribute.FAMILY, Font.SANS_SERIF);
 		result.put(TextAttribute.SIZE, 20.0f);
@@ -120,13 +121,19 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 		return PlayerRole.SELECTING.equals(role) ? PlayerTurnStatus.READY : PlayerTurnStatus.NOT_READY;
 	}
 
+	private static void updateMoveButtonEnabled(final AbstractButton button, final PlayerRole role) {
+		button.setEnabled(PlayerRole.MOVE_SUBMISSION.equals(role));
+	}
+
 	private final Set<Window> childWindows = new HashSet<>();
+
+	private final JButton continueButton;
+
+	// private final JLabel turnCounterLabel;
 
 	private final ReadinessIndicator playerReadiness;
 
 	private final JLabel roleStatusLabel;
-
-	// private final JLabel turnCounterLabel;
 
 	GameViewFrame(final GameBoardPanel boardPanel, final Random rnd, final Controller controller,
 			final Runnable closeHook) {
@@ -184,9 +191,10 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 			final Component sidePanelRightMargin = Box.createRigidArea(marginDim);
 			statusPanel.add(sidePanelRightMargin);
 
+			final Map<Attribute, Object> infoFontAttrMap = createInfoFontAttrMap();
 			{
 				final JTable controllerInfoTable = new JTable(new ControllerInfoTableModel(controller));
-				Font infoFont = controllerInfoTable.getFont().deriveFont(createControllerInfoFontAttrMap());
+				final Font infoFont = controllerInfoTable.getFont().deriveFont(createInfoFontAttrMap());
 				controllerInfoTable.setFont(infoFont);
 				controllerInfoTable.setRowSelectionAllowed(false);
 				controllerInfoTable.setColumnSelectionAllowed(false);
@@ -194,16 +202,19 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 				final JPanel tablePanel = new JPanel();
 				statusPanel.add(tablePanel);
 				tablePanel.setLayout(new BoxLayout(tablePanel, BoxLayout.PAGE_AXIS));
-				JTableHeader tableHeader = controllerInfoTable.getTableHeader();
-				tableHeader.setFont(infoFont.deriveFont(Collections.singletonMap(TextAttribute.WEIGHT, TextAttribute.WEIGHT_BOLD)));
+				final JTableHeader tableHeader = controllerInfoTable.getTableHeader();
+				tableHeader.setFont(
+						infoFont.deriveFont(Collections.singletonMap(TextAttribute.WEIGHT, TextAttribute.WEIGHT_BOLD)));
 				tablePanel.add(tableHeader);
 				tablePanel.add(controllerInfoTable);
 			}
 
 			final JPanel buttonPanel = new JPanel();
 			statusPanel.add(buttonPanel);
-			final JButton continueButton = new JButton("Next turn");
+			continueButton = new JButton("Next turn");
 			buttonPanel.add(continueButton);
+			continueButton.setFont(continueButton.getFont().deriveFont(infoFontAttrMap));
+			updateMoveButtonEnabled(continueButton, initialRole);
 			continueButton.addActionListener(continueEvent -> {
 				boardPanel.notifyContinue(rnd);
 			});
@@ -225,13 +236,17 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 	public void updatePlayerRole(final PlayerRole newRole) {
 		LOGGER.debug("Observed event representing a change in player role.");
 		final PlayerTurnStatus newTurnStatus = getPlayerTurnStatus(newRole);
+
 		LOGGER.debug("Setting player readiness indicator status to {}.", newTurnStatus);
 		playerReadiness.setStatus(newTurnStatus);
+
 		final String roleStatusText = PLAYER_ROLE_STATUS_LABEL_TEXT.get(newRole);
 		LOGGER.info("Setting player state label for role {}: \"{}\"", newRole);
 		roleStatusLabel.setText(roleStatusText);
 		final String labelText = roleStatusLabel.getText();
 		assert labelText != null && !labelText.isEmpty();
+
+		updateMoveButtonEnabled(continueButton, newRole);
 	}
 
 	/*
