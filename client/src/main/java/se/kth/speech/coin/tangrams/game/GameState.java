@@ -21,6 +21,7 @@ import java.util.Random;
 import com.google.common.collect.BiMap;
 
 import se.kth.speech.coin.tangrams.game.PlayerRole;
+import se.kth.speech.coin.tangrams.iristk.Controller;
 
 public final class GameState {
 
@@ -34,7 +35,7 @@ public final class GameState {
 
 	private final Random rnd;
 
-	public GameState(final Controller controller, final BiMap<PlayerRole, String> playerRoles, final Random rnd,
+	GameState(final Controller controller, final BiMap<PlayerRole, String> playerRoles, final Random rnd,
 			final double occupiedGridArea, final boolean allowFailedPlacements) {
 		this.controller = controller;
 		this.playerRoles = playerRoles;
