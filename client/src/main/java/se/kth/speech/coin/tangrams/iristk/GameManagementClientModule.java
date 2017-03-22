@@ -98,7 +98,7 @@ public final class GameManagementClientModule extends IrisModule {
 					controller.notifyTurnComplete(submittingPlayerId, move);
 					break;
 				}
-
+				/*
 				case GAME_OVER_RESPONSE: {
 					LOGGER.info("The server notified that game \"{}\" is over.", gameId);
 					final GameEnding gameEnding = (GameEnding) event
@@ -107,6 +107,7 @@ public final class GameManagementClientModule extends IrisModule {
 					gameEndingHook.accept(gameEnding);
 					break;
 				}
+				*/
 				case GAME_READY_RESPONSE: {
 					LOGGER.info("The server notified that game \"{}\" is ready.", gameId);
 					final GameStateDescription gameDesc = (GameStateDescription) event
@@ -131,7 +132,8 @@ public final class GameManagementClientModule extends IrisModule {
 					if (controller == null) {
 						LOGGER.debug("Game controller not yet set; Not notifying controller of joined player.");
 					} else {
-						controller.notifyPlayerJoined(joinedPlayerId, Timestamp.valueOf(joinTime).getTime());
+						controller.notifyPlayerJoined(
+								joinedPlayerId, Timestamp.valueOf(joinTime).getTime());
 					}
 					break;
 				}
