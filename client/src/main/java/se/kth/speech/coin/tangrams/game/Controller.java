@@ -16,30 +16,24 @@
 */
 package se.kth.speech.coin.tangrams.game;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.function.Function;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import se.kth.speech.MutablePair;
+import se.kth.speech.SpatialMap;
 import se.kth.speech.SpatialMatrix;
 import se.kth.speech.SpatialRegion;
-import se.kth.speech.coin.tangrams.game.AreaSpatialRegionFactory;
-import se.kth.speech.coin.tangrams.game.PlayerJoinTime;
-import se.kth.speech.coin.tangrams.game.PlayerRole;
+import se.kth.speech.coin.tangrams.AreaSpatialRegionFactory;
 import se.kth.speech.coin.tangrams.iristk.GameManagementClientModule;
 import se.kth.speech.coin.tangrams.iristk.MyLogger;
 import se.kth.speech.coin.tangrams.iristk.events.Area2D;
 import se.kth.speech.coin.tangrams.iristk.events.CoordinatePoint2D;
 import se.kth.speech.coin.tangrams.iristk.events.GameEnding;
 import se.kth.speech.coin.tangrams.iristk.events.Move;
-import se.kth.speech.coin.tangrams.iristk.events.PlayerRoleChange;
 import se.kth.speech.coin.tangrams.iristk.events.Selection;
-import se.kth.speech.coin.tangrams.iristk.events.Turn;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -52,17 +46,28 @@ public final class Controller {
 
 		void updateGameOver(GameEnding gameEnding);
 
-		void updateNextTurn(Turn turn);
+		void updateNextMove(Move move);
 
-		void updatePlayerRole(PlayerRoleChange change);
+		void updatePieceMoved(SpatialRegion source, SpatialRegion target);
+
+		void updatePlayerJoined(String joinedPlayerId, long time);
+
+		void updatePlayerRole(PlayerRole newRole);
 
 		void updatePlayerSelection(Selection selection);
 
-		void updateSelectionAccepted(Selection selection);
-
 		void updateSelectionRejected(Selection selection);
 
-		void updateTurnCompletion(Turn turn);
+		void updateTurnCompleted(Turn turn);
+
+		/**
+		 * A hook for updating listeners for a new turn count, i.e. the sequence
+		 * number of the next turn to be completed.
+		 *
+		 * @param newCount
+		 *            The new turn count.
+		 */
+		void updateTurnCount(int newCount);
 
 	}
 
@@ -70,7 +75,8 @@ public final class Controller {
 		OK, SOURCE_EMPTY, SOURCE_TARGET_SAME, TARGET_OCCUPIED;
 	}
 
-	//private static final Logger LOGGER = LoggerFactory.getLogger(Controller.class);
+	// private static final Logger LOGGER =
+	// LoggerFactory.getLogger(Controller.class);
 	private static final MyLogger LOGGER = new MyLogger();
 
 	private static Area2D createArea(final SpatialRegion region) {
@@ -85,44 +91,33 @@ public final class Controller {
 		return new CoordinatePoint2D(region.getXLowerBound(), region.getYLowerBound());
 	}
 
-	private final Function<Area2D, SpatialRegion> areaSpatialRegionFactory;
-
-	private final Set<Listener> listeners;
+	private transient final AreaSpatialRegionFactory areaRegionFactory;
 
 	private final GameManagementClientModule clientModule;
 
+	private final Set<Listener> listeners;
+
 	private final SpatialMatrix<Integer> model;
 
-	private int moveCount = 0;
+	private int turnCount = 0;
 
-	private Move nextTurnMove;
+	private Move nextMove;
 
 	private final String playerId;
 
 	private PlayerRole role;
 
-	private Entry<Integer, Area2D> selectedPiece;
+	private Entry<Integer, SpatialRegion> selectedPiece;
 
 	public Controller(final SpatialMatrix<Integer> model, final String playerId, final PlayerRole role,
 			final GameManagementClientModule clientModule) {
 		this.model = model;
+		areaRegionFactory = new AreaSpatialRegionFactory(model);
 		this.playerId = playerId;
 		this.role = role;
 		this.clientModule = clientModule;
 
-		areaSpatialRegionFactory = new AreaSpatialRegionFactory(model);
 		listeners = Collections.newSetFromMap(new IdentityHashMap<>());
-	}
-
-	public void confirmSelection() {
-		final PlayerRole requiredRole = PlayerRole.WAITING_FOR_SELECTION;
-		if (!requiredRole.equals(role)) {
-			throw new IllegalStateException(
-					String.format("Role is currently not %s but rather %s.", requiredRole, role));
-		}
-		clientModule.requestTurnCompletion(nextTurnMove);
-		moveCount++;
-		role = PlayerRole.SELECTING;
 	}
 
 	/**
@@ -139,17 +134,6 @@ public final class Controller {
 		return model;
 	}
 
-	public int getMoveCount() {
-		return moveCount;
-	}
-
-	/**
-	 * @return the nextTurnMove
-	 */
-	public Move getNextTurnMove() {
-		return nextTurnMove;
-	}
-
 	/**
 	 * @return the playerId
 	 */
@@ -164,15 +148,12 @@ public final class Controller {
 		return role;
 	}
 
-	/**
-	 * @return the selectedPiece
-	 */
-	public Entry<Integer, Area2D> getSelectedPiece() {
-		return selectedPiece;
+	public int getTurnCount() {
+		return turnCount;
 	}
 
 	public boolean isSelectionCorrect() {
-		return nextTurnMove.getPieceId().equals(selectedPiece.getKey());
+		return nextMove.getPieceId().equals(selectedPiece.getKey());
 	}
 
 	/**
@@ -181,179 +162,99 @@ public final class Controller {
 	public void notifyGameOver(final GameEnding gameEnding) {
 		LOGGER.info("The controller was notified that the game has ended.");
 		listeners.forEach(listener -> listener.updateGameOver(gameEnding));
-		// Notify local, lower-level listeners which e.g. update the user's own
-		// view
-		// setChanged();
-		// notifyObservers(gameEnding);
 	}
 
-	public void notifyNextTurn(final Move move) {
-		final String submittingPlayerId = move.getPlayerId();
-		LOGGER.debug("The controller was notified that \"{}\" has submitted a turn.", submittingPlayerId);
-		// if (playerIdFilter.test(turnPlayerId)) {
-		nextTurnMove = move.getMove();
-		if (playerId.equals(submittingPlayerId)) {
-			role = PlayerRole.WAITING_FOR_SELECTION;
-		} else {
-			role = PlayerRole.SELECTING;
+	public void notifyNextMove(final String submittingPlayerId, final Move move) {
+		LOGGER.debug("The controller was notified that \"{}\" has submitted a new move.", submittingPlayerId);
+		final PlayerRole requiredRole = PlayerRole.WAITING_FOR_NEXT_MOVE;
+		if (!requiredRole.equals(role)) {
+			throw new IllegalStateException(
+					String.format("Wrong role for notifying selection: Should be %s but is %s.", requiredRole, role));
 		}
-		final PlayerRoleChange roleChange = new PlayerRoleChange(submittingPlayerId, role);
-		updatePlayerRole(roleChange);
-		listeners.forEach(listener -> listener.updateNextTurn(move));
-		// final Move move = turn.getMove();
-		// final SpatialRegion sourceRegion =
-		// areaSpatialRegionFactory.apply(move.getSource());
-		// final SpatialRegion targetRegion =
-		// areaSpatialRegionFactory.apply(move.getTarget());
-		// LOGGER.info("Moving the piece at {} to {}.", sourceRegion,
-		// targetRegion);
-		// updateModel(sourceRegion, targetRegion);
 
-		// } else {
-		// LOGGER.debug("Skipping model update for remote notification about
-		// player's own turn.");
-		// }
-		// Notify local, lower-level listeners which e.g. update the user's
-		// own view
-		// setChanged();
-		// notifyObservers(turn);
-		// Take the greater of the two because it may be possible for two turns
-		// to arrive in the wrong order
-		moveCount = Math.max(move.getSequenceNumber(), moveCount);
+		nextMove = move;
+		listeners.forEach(listener -> listener.updateNextMove(nextMove));
+
+		updatePlayerRole(PlayerRole.SELECTING);
 	}
 
-	public void notifyPlayerJoined(final PlayerJoinTime playerJoinTime) {
-		final String joinedPlayerId = playerJoinTime.getPlayerId();
+	public void notifyPlayerJoined(final String joinedPlayerId, final long time) {
 		LOGGER.debug("The controller was notified that \"{}\" has joined the current game.", joinedPlayerId);
-		// Notify local, lower-level listeners which e.g. update the user's own
-		// view
-		// setChanged();
-		// notifyObservers(playerJoinTime);
+		listeners.forEach(listener -> listener.updatePlayerJoined(joinedPlayerId, time));
 	}
 
-	public void notifyPlayerSelection(final Selection selection) {
-		final String selectingPlayerId = selection.getPlayerId();
+	public void notifyPlayerSelection(final String selectingPlayerId, final Selection selection) {
 		LOGGER.debug("The controller was notified that \"{}\" has performed a selection.", selectingPlayerId);
-		// if (playerIdFilter.test(selectingPlayerId)) {
-		listeners.forEach(listener -> listener.updatePlayerSelection(selection));
-		final Integer pieceId = selection.getPieceId();
-		LOGGER.debug("Updating piece selection {} from \"{}\".", pieceId, selectingPlayerId);
-		// Notify local, lower-level listeners which e.g. update the user's
-		// own
-		// view
-		// setChanged();
-		// notifyObservers(playerSelection);
-		// } else {
-		// LOGGER.debug("Ignoring remote notification about player's own
-		// selection.");
-		// }
-		selectedPiece = new MutablePair<>(selection.getPieceId(), selection.getArea());
-		// setChanged();
-		// notifyObservers(selection);
-		if (playerId.equals(selectingPlayerId)) {
-			role = PlayerRole.WAITING_FOR_SELECTION_CONFIRMATION;
-		} else {
-			role = PlayerRole.TURN_SUBMISSION;
-		}
-		final PlayerRoleChange roleChange = new PlayerRoleChange(selectingPlayerId, role);
-		updatePlayerRole(roleChange);
-	}
-
-	public void notifySelectionRejected(final Selection playerSelection) {
-		final String rejectingPlayerId = playerSelection.getPlayerId();
-		LOGGER.debug("The controller was notified that \"{}\" has rejected a selection.", rejectingPlayerId);
-		listeners.forEach(listener -> listener.updateSelectionRejected(playerSelection));
-		// if (playerIdFilter.test(rejectingPlayerId)) {
-		final Integer pieceId = playerSelection.getPieceId();
-		LOGGER.debug("Updating piece selection {} from \"{}\".", pieceId, rejectingPlayerId);
-		// Notify local, lower-level listeners which e.g. update the user's
-		// own
-		// view
-		// setChanged();
-		// notifyObservers(playerSelection);
-		// } else {
-		// LOGGER.debug("Procesing remote notification about player's own
-		// selection.");
-		// }
-		LOGGER.debug("The local controller was notified that \"{}\" has rejected a selection.", rejectingPlayerId);
-		if (playerId.equals(rejectingPlayerId)) {
-			role = PlayerRole.WAITING_FOR_SELECTION;
-		} else {
-			role = PlayerRole.SELECTING;
-		}
-		final PlayerRoleChange roleChange = new PlayerRoleChange(rejectingPlayerId, role);
-		updatePlayerRole(roleChange);
-	}
-
-	public void notifyTurnComplete(final Turn turn) {
-		final String submittingPlayerId = turn.getPlayerId();
-		LOGGER.debug("The controller was notified that \"{}\" has completed a turn.", submittingPlayerId);
-		// if (playerIdFilter.test(turnPlayerId)) {
-		nextTurnMove = null;
-		if (playerId.equals(submittingPlayerId)) {
-			role = PlayerRole.SELECTING;
-		} else {
-			role = PlayerRole.TURN_SUBMISSION;
-		}
-		final PlayerRoleChange roleChange = new PlayerRoleChange(submittingPlayerId, role);
-		updatePlayerRole(roleChange);
-		listeners.forEach(listener -> listener.updateTurnCompletion(turn));
-		// final Move move = turn.getMove();
-		// final SpatialRegion sourceRegion =
-		// areaSpatialRegionFactory.apply(move.getSource());
-		// final SpatialRegion targetRegion =
-		// areaSpatialRegionFactory.apply(move.getTarget());
-		// LOGGER.info("Moving the piece at {} to {}.", sourceRegion,
-		// targetRegion);
-		// updateModel(sourceRegion, targetRegion);
-
-		// } else {
-		// LOGGER.debug("Skipping model update for remote notification about
-		// player's own turn.");
-		// }
-		// Notify local, lower-level listeners which e.g. update the user's
-		// own view
-		// setChanged();
-		// notifyObservers(turn);
-		// Take the greater of the two because it may be possible for two turns
-		// to arrive in the wrong order
-		moveCount = Math.max(turn.getSequenceNumber(), moveCount);
-
-	}
-
-	public void rejectSelection() {
 		final PlayerRole requiredRole = PlayerRole.WAITING_FOR_SELECTION;
 		if (!requiredRole.equals(role)) {
 			throw new IllegalStateException(
-					String.format("Role is currently not %s but rather %s.", requiredRole, role));
+					String.format("Wrong role for notifying selection: Should be %s but is %s.", requiredRole, role));
 		}
-		clientModule.rejectSelection(selectedPiece.getKey(), selectedPiece.getValue());
+
+		final Integer pieceId = selection.getPieceId();
+		LOGGER.debug("Updating selection of piece \"{}\" from \"{}\".", pieceId, selectingPlayerId);
+		selectedPiece = new MutablePair<>(selection.getPieceId(), areaRegionFactory.apply(selection.getArea()));
+
+		// NOTE: The update methods for the listeners call methods on this
+		// instance, so the role needs to be changed before calling the listener
+		// update methods
+		updatePlayerRole(PlayerRole.SELECTION_CONFIRMATION);
+
+		listeners.forEach(listener -> listener.updatePlayerSelection(selection));
+
 	}
 
-	public ValidationStatus submitNextMove(final SpatialRegion sourceRegion, final SpatialRegion targetRegion,
+	public void notifySelectionRejected(final String rejectingPlayerId, final Selection selection) {
+		LOGGER.debug("The controller was notified that \"{}\" has rejected a selection.", rejectingPlayerId);
+		final PlayerRole requiredRole = PlayerRole.WAITING_FOR_SELECTION_CONFIRMATION;
+		if (!requiredRole.equals(role)) {
+			throw new IllegalStateException(
+					String.format("Wrong role for notifying selection: Should be %s but is %s.", requiredRole, role));
+		}
+
+		listeners.forEach(listener -> listener.updateSelectionRejected(selection));
+
+		// Go back to selecting a new piece
+		updatePlayerRole(PlayerRole.SELECTING);
+	}
+
+	public void notifyTurnComplete(final String submittingPlayerId, final Move move) {
+		LOGGER.debug("The controller was notified that \"{}\" has completed a turn.", submittingPlayerId);
+		final PlayerRole requiredRole = PlayerRole.WAITING_FOR_SELECTION_CONFIRMATION;
+		if (!requiredRole.equals(role)) {
+			throw new IllegalStateException(
+					String.format("Wrong role for notifying selection: Should be %s but is %s.", requiredRole, role));
+		}
+
+		updatePiecePositions(move);
+
+		final Turn turn = new Turn(submittingPlayerId, move, turnCount++);
+		listeners.forEach(listener -> listener.updateTurnCompleted(turn));
+		nextMove = null;
+		// Update listeners for current turn count (i.e. the sequence number of
+		// the next turn to be completed)
+		listeners.forEach(listener -> listener.updateTurnCount(turnCount));
+
+		// Now it's this player's turn to submit a move
+		updatePlayerRole(PlayerRole.MOVE_SUBMISSION);
+	}
+
+	public void submitNextMove(final SpatialRegion sourceRegion, final SpatialRegion targetRegion,
 			final Integer pieceId) {
-		final PlayerRole requiredRole = PlayerRole.TURN_SUBMISSION;
+		final PlayerRole requiredRole = PlayerRole.MOVE_SUBMISSION;
 		if (!requiredRole.equals(role)) {
 			throw new IllegalStateException(
 					String.format("Role is currently not %s but rather %s.", requiredRole, role));
 		}
 
-		final ValidationStatus result = validateMove(sourceRegion, targetRegion);
-		if (ValidationStatus.OK.equals(result)) {
-			nextTurnMove = new Move(createArea(sourceRegion), createArea(targetRegion), pieceId);
-			// Notify local listeners of (de-)selected region, e.g. update
-			// player's
-			// own view and notify the player's own game action module
-			// setChanged();
-			// notifyObservers(nextTurnMove);
-			clientModule.requestNextMove(nextTurnMove);
-			role = PlayerRole.WAITING_FOR_SELECTION;
-			final PlayerRoleChange roleChange = new PlayerRoleChange(playerId, role);
-			updatePlayerRole(roleChange);
-		} else {
-			throw new IllegalArgumentException("Invalid move: " + result);
+		final ValidationStatus validationStatus = validateMove(sourceRegion, targetRegion);
+		if (!ValidationStatus.OK.equals(validationStatus)) {
+			throw new IllegalArgumentException("Invalid move: " + validationStatus);
 		}
-		return result;
+		nextMove = new Move(createArea(sourceRegion), createArea(targetRegion), pieceId);
+		clientModule.requestNextMove(nextMove);
+
+		updatePlayerRole(PlayerRole.WAITING_FOR_SELECTION);
 	}
 
 	/**
@@ -365,50 +266,62 @@ public final class Controller {
 			throw new IllegalStateException(
 					String.format("Role is currently not %s but rather %s.", requiredRole, role));
 		}
-		selectedPiece = new MutablePair<>(pieceRegion.getKey(), createArea(pieceRegion.getValue()));
-		clientModule.requestUserSelection(selectedPiece.getKey(), selectedPiece.getValue());
-		role = PlayerRole.WAITING_FOR_SELECTION_CONFIRMATION;
-		// if (selectedPiece == null) {
-		// throw new IllegalStateException("No selection has been submitted.");
-		// }
-		// LOGGER.info("Submitting selection.");
-		// {
-		// final Move move = nextTurnMove;
-		// final SpatialRegion sourceRegion =
-		// areaSpatialRegionFactory.apply(move.getSource());
-		// final SpatialRegion targetRegion =
-		// areaSpatialRegionFactory.apply(move.getTarget());
-		// LOGGER.info("Moving the piece at {} to {}.", sourceRegion,
-		// targetRegion);
-		// // updateModel(sourceRegion, targetRegion);
-		// nextMoveSubmissionHook.accept(move);
-		// }
-		// moveCount++;
+		selectedPiece = pieceRegion;
+		clientModule.requestSelection(selectedPiece.getKey(), createArea(selectedPiece.getValue()));
+
+		updatePlayerRole(PlayerRole.WAITING_FOR_SELECTION_CONFIRMATION);
 	}
 
-	public void updatePlayerRole(final PlayerRoleChange roleChange) {
-		// if (roleChange.getPlayerId().equals(playerId)) {
-		role = roleChange.getRole();
-		listeners.forEach(listener -> listener.updatePlayerRole(roleChange));
-		// setChanged();
-		// notifyObservers(roleChange);
-		// }
+	public void submitSelectionRejection() {
+		final PlayerRole requiredRole = PlayerRole.SELECTION_CONFIRMATION;
+		if (!requiredRole.equals(role)) {
+			throw new IllegalStateException(
+					String.format("Role is currently not %s but rather %s.", requiredRole, role));
+		}
+		clientModule.rejectSelection(selectedPiece.getKey(), createArea(selectedPiece.getValue()));
+		updatePlayerRole(PlayerRole.WAITING_FOR_SELECTION);
 	}
 
-	// private void updateModel(final SpatialRegion sourceRegion, final
-	// SpatialRegion targetRegion) {
-	// if (model.isOccupied(targetRegion)) {
-	// throw new IllegalStateException(
-	// String.format("%s is already occupied; Not a valid move target.",
-	// targetRegion));
-	// }
-	// final Iterator<Integer> occupantIter =
-	// model.getElementPlacements().getSubsumedElements(sourceRegion)
-	// .map(Entry::getValue).iterator();
-	// final Integer occupant = occupantIter.next();
-	// assert !occupantIter.hasNext();
-	// model.placeElement(occupant, targetRegion);
-	// }
+	public void submitTurnComplete() {
+		final PlayerRole requiredRole = PlayerRole.SELECTION_CONFIRMATION;
+		if (!requiredRole.equals(role)) {
+			throw new IllegalStateException(
+					String.format("Role is currently not %s but rather %s.", requiredRole, role));
+		}
+		clientModule.requestTurnCompletion(nextMove);
+		updatePiecePositions(nextMove);
+		nextMove = null;
+		selectedPiece = null;
+
+		// Update listeners for current turn count (i.e. the sequence number of
+		// the next turn to be completed)
+		listeners.forEach(listener -> listener.updateTurnCount(++turnCount));
+
+		// Now it's this player's turn to wait for the other player to submit a
+		// move
+		updatePlayerRole(PlayerRole.WAITING_FOR_NEXT_MOVE);
+	}
+
+	private void updatePiecePositions(final Move move) {
+		final SpatialRegion source = areaRegionFactory.apply(move.getSource());
+		final SpatialRegion target = areaRegionFactory.apply(move.getTarget());
+		updatePiecePositions(source, target);
+	}
+
+	private void updatePiecePositions(final SpatialRegion source, final SpatialRegion target) {
+		final SpatialMap<Integer> piecePlacements = model.getElementPlacements();
+		final Collection<Integer> pieceIds = piecePlacements.getMinimalRegionElements().get(source);
+		for (final Integer pieceId : pieceIds) {
+			model.placeElement(pieceId, target);
+		}
+		model.clearRegion(source);
+		listeners.forEach(listener -> listener.updatePieceMoved(source, target));
+	}
+
+	private void updatePlayerRole(final PlayerRole newRole) {
+		role = newRole;
+		listeners.forEach(listener -> listener.updatePlayerRole(newRole));
+	}
 
 	private ValidationStatus validateMove(final SpatialRegion sourceRegion, final SpatialRegion targetRegion) {
 		final ValidationStatus result;

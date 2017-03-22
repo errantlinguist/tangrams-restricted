@@ -27,10 +27,19 @@ public enum PlayerRole {
 	 */
 	SELECTING,
 	/**
-	 * In this role, the player is to confirm a previously-selected piece for
-	 * moving and to submit the turn with the confirmed move.
+	 * In this role, the player is to submit the next move to be played.
 	 */
-	TURN_SUBMISSION,
+	MOVE_SUBMISSION,
+	/**
+	 * In this role, the player is to confirm a previously-selected piece for
+	 * moving in the turn.
+	 */
+	SELECTION_CONFIRMATION,
+	/**
+	 * In this role, the player is waiting for the other player to
+	 * {@link #MOVE_SUBMISSION submit the next move to be played}.
+	 */
+	WAITING_FOR_NEXT_MOVE,
 	/**
 	 * In this role, the player is waiting for the other player to
 	 * {@link #SELECTING select a candidate piece for moving}.
@@ -38,8 +47,8 @@ public enum PlayerRole {
 	WAITING_FOR_SELECTION,
 	/**
 	 * In this role, the player is waiting for the other player to
-	 * {@link #TURN_SUBMISSION confirm a previously-selected candidate piece for
-	 * moving}.
+	 * {@link #SELECTION_CONFIRMATION confirm a previously-selected candidate
+	 * piece for moving}.
 	 */
 	WAITING_FOR_SELECTION_CONFIRMATION;
 }

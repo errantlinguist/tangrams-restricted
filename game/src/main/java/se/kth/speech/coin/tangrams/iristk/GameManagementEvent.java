@@ -66,16 +66,16 @@ enum GameManagementEvent {
 	 */
 	PLAYER_JOIN_RESPONSE("playerlist.add.response"),
 	/**
-	 * An event representing a player's selection.
-	 */
-	SELECTION_REQUEST("selection.request"),
-	/**
 	 * An event representing the rejection of a player's selection.
 	 */
-	SELECTION_REJECTION("selection.rejection");
+	SELECTION_REJECTION("selection.rejection"),
+	/**
+	 * An event representing a player's selection.
+	 */
+	SELECTION_REQUEST("selection.request");
 
 	enum Attribute {
-		AREA, PLAYER_ROLE_CHANGE, PIECE, GAME_ID, GAME_STATE, MOVE, PLAYER_ID, TIMESTAMP, TURN;
+		GAME_ID, GAME_STATE, MOVE, PLAYER_ID, SELECTION, TIMESTAMP;
 	}
 
 	public static final String EVENT_NAME_QUALIFIER = "tangrams.action";

@@ -14,37 +14,48 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech.coin.tangrams.view;
+package se.kth.speech.coin.tangrams.game;
 
-import javax.swing.JLabel;
+import se.kth.speech.coin.tangrams.iristk.events.Move;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
- * @since 9 Jan 2017
+ * @since 12 Jan 2017
  *
  */
-final class MoveCounterLabel extends JLabel {
+public final class Turn {
 
-	/**
-	 *
-	 */
-	private static final long serialVersionUID = -4867110204206142268L;
+	private final Move move;
 
-	private int currentTurnCount = -1;
+	private final String playerId;
 
-	MoveCounterLabel(final int initialCount) {
-		setAlignmentX(CENTER_ALIGNMENT);
-		update(initialCount);
+	private final int sequenceNumber;
+
+	Turn(final String playerId, final Move move, final int sequenceNumber) {
+		this.playerId = playerId;
+		this.move = move;
+		this.sequenceNumber = sequenceNumber;
 	}
 
-	void update(final int newTurnCount) {
-		if (currentTurnCount != newTurnCount) {
-			// FIXME: Indicator goes blank sometimes for some unknown reason
-			setText(Integer.toString(newTurnCount));
-			setToolTipText(String.format("%d move(s) taken in this game.", newTurnCount));
-			currentTurnCount = newTurnCount;
-			repaint();
-		}
+	/**
+	 * @return the move
+	 */
+	public Move getMove() {
+		return move;
+	}
+
+	/**
+	 * @return the playerId
+	 */
+	public String getPlayerId() {
+		return playerId;
+	}
+
+	/**
+	 * @return the sequenceNumber
+	 */
+	public int getSequenceNumber() {
+		return sequenceNumber;
 	}
 
 }

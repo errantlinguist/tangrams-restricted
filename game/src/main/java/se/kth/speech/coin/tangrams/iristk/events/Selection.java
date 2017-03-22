@@ -27,34 +27,15 @@ public final class Selection extends Record {
 
 	private Integer pieceId;
 
-	private String playerId;
-
 	private Area2D area;
 
 	public Selection() {
 		// Default constructor is required for JSON (un-)marshalling
 	}
 
-	public Selection(final String playerId, final Integer pieceId, final Area2D area) {
-		setPlayerId(playerId);
+	public Selection(final Integer pieceId, final Area2D area) {
 		setPieceId(pieceId);
 		setArea(area);
-	}
-
-	/**
-	 * @return the pieceId
-	 */
-	@RecordField(name = "pieceId")
-	public Integer getPieceId() {
-		return pieceId;
-	}
-
-	/**
-	 * @return the playerId
-	 */
-	@RecordField(name = "playerId")
-	public String getPlayerId() {
-		return playerId;
 	}
 
 	/**
@@ -66,21 +47,11 @@ public final class Selection extends Record {
 	}
 
 	/**
-	 * @param pieceId
-	 *            the pieceId to set
+	 * @return the pieceId
 	 */
 	@RecordField(name = "pieceId")
-	public void setPieceId(final Integer pieceId) {
-		this.pieceId = pieceId;
-	}
-
-	/**
-	 * @param playerId
-	 *            the playerId to set
-	 */
-	@RecordField(name = "playerId")
-	public void setPlayerId(final String playerId) {
-		this.playerId = playerId;
+	public Integer getPieceId() {
+		return pieceId;
 	}
 
 	/**
@@ -90,6 +61,15 @@ public final class Selection extends Record {
 	@RecordField(name = "area")
 	public void setArea(final Area2D area) {
 		this.area = area;
+	}
+
+	/**
+	 * @param pieceId
+	 *            the pieceId to set
+	 */
+	@RecordField(name = "pieceId")
+	public void setPieceId(final Integer pieceId) {
+		this.pieceId = pieceId;
 	}
 
 }

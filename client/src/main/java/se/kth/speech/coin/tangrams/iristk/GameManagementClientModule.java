@@ -21,26 +21,22 @@ import java.util.Objects;
 import java.util.Random;
 import java.util.function.Consumer;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.google.common.collect.BiMap;
 
 import iristk.system.Event;
 import iristk.system.IrisModule;
 import se.kth.speech.SpatialMatrix;
 import se.kth.speech.coin.tangrams.game.Controller;
-import se.kth.speech.coin.tangrams.game.PlayerJoinTime;
 import se.kth.speech.coin.tangrams.game.PlayerRole;
 import se.kth.speech.coin.tangrams.iristk.events.Area2D;
 import se.kth.speech.coin.tangrams.iristk.events.GameEnding;
 import se.kth.speech.coin.tangrams.iristk.events.Move;
 import se.kth.speech.coin.tangrams.iristk.events.Selection;
-import se.kth.speech.coin.tangrams.iristk.events.Turn;
 
 public final class GameManagementClientModule extends IrisModule {
 
-	//private static final Logger LOGGER = LoggerFactory.getLogger(GameManagementClientModule.class);
+	// private static final Logger LOGGER =
+	// LoggerFactory.getLogger(GameManagementClientModule.class);
 	private static final MyLogger LOGGER = new MyLogger();
 
 	private final Consumer<? super GameEnding> gameEndingHook;
@@ -90,13 +86,19 @@ public final class GameManagementClientModule extends IrisModule {
 
 		} else {
 			final String gameId = event.getString(GameManagementEvent.Attribute.GAME_ID.toString());
-			if (Objects.equals(gameId, this.gameId) && !event.getString(GameManagementEvent.Attribute.PLAYER_ID.toString(), "").equals(playerId)) {
+			if (Objects.equals(gameId, this.gameId)
+					&& !event.getString(GameManagementEvent.Attribute.PLAYER_ID.toString(), "").equals(playerId)) {
 				switch (gameEventType) {
-				case COMPLETED_TURN_RESPONSE: {
-					final Turn turn = (Turn) event.get(GameManagementEvent.Attribute.TURN.toString());
-					controller.notifyTurnComplete(turn);
+				case COMPLETED_TURN_REQUEST: {
+					final String submittingPlayerId = event
+							.getString(GameManagementEvent.Attribute.PLAYER_ID.toString());
+					LOGGER.debug("Received game event reporting a completed turn, submitted by \"{}\".",
+							submittingPlayerId);
+					final Move move = (Move) event.get(GameManagementEvent.Attribute.MOVE.toString());
+					controller.notifyTurnComplete(submittingPlayerId, move);
 					break;
 				}
+				/*
 				case GAME_OVER_RESPONSE: {
 					LOGGER.info("The server notified that game \"{}\" is over.", gameId);
 					final GameEnding gameEnding = (GameEnding) event
@@ -105,6 +107,7 @@ public final class GameManagementClientModule extends IrisModule {
 					gameEndingHook.accept(gameEnding);
 					break;
 				}
+				*/
 				case GAME_READY_RESPONSE: {
 					LOGGER.info("The server notified that game \"{}\" is ready.", gameId);
 					final GameStateDescription gameDesc = (GameStateDescription) event
@@ -113,8 +116,12 @@ public final class GameManagementClientModule extends IrisModule {
 					break;
 				}
 				case NEXT_TURN_REQUEST: {
+					final String submittingPlayerId = event
+							.getString(GameManagementEvent.Attribute.PLAYER_ID.toString());
+					LOGGER.debug("Received game event reporting the submission of a new move, submitted by \"{}\".",
+							submittingPlayerId);
 					final Move move = (Move) event.get(GameManagementEvent.Attribute.MOVE.toString());
-					controller.notifyNextTurn(move);
+					controller.notifyNextMove(submittingPlayerId, move);
 					break;
 				}
 				case PLAYER_JOIN_RESPONSE: {
@@ -126,38 +133,26 @@ public final class GameManagementClientModule extends IrisModule {
 						LOGGER.debug("Game controller not yet set; Not notifying controller of joined player.");
 					} else {
 						controller.notifyPlayerJoined(
-								new PlayerJoinTime(joinedPlayerId, Timestamp.valueOf(joinTime).getTime()));
+								joinedPlayerId, Timestamp.valueOf(joinTime).getTime());
 					}
 					break;
 				}
 				case SELECTION_REJECTION: {
 					final String rejectingPlayerId = event
 							.getString(GameManagementEvent.Attribute.PLAYER_ID.toString());
-					LOGGER.debug("Received game event reporting selection info for \"{}\".", rejectingPlayerId);
-					final Integer pieceId = (Integer) event.get(GameManagementEvent.Attribute.PIECE.toString());
-					final Area2D area = (Area2D) event.get(GameManagementEvent.Attribute.AREA.toString());
-					controller.notifySelectionRejected(new Selection(rejectingPlayerId, pieceId, area));
+					LOGGER.debug("Received game event reporting that \"{}\" rejected a selection.", rejectingPlayerId);
+					final Selection selection = (Selection) event
+							.get(GameManagementEvent.Attribute.SELECTION.toString());
+					controller.notifySelectionRejected(rejectingPlayerId, selection);
 					break;
 				}
 				case SELECTION_REQUEST: {
 					final String selectingPlayerId = event
 							.getString(GameManagementEvent.Attribute.PLAYER_ID.toString());
 					LOGGER.debug("Received game event reporting selection info for \"{}\".", selectingPlayerId);
-					final Integer pieceId = (Integer) event.get(GameManagementEvent.Attribute.PIECE.toString());
-					final Area2D area = (Area2D) event.get(GameManagementEvent.Attribute.AREA.toString());
-					controller.notifyPlayerSelection(new Selection(selectingPlayerId, pieceId, area));
-					break;
-				}
-				case COMPLETED_TURN_REQUEST: {
-					LOGGER.debug("Ignoring received game event type \"{}\".", gameEventType);
-					break;
-				}
-				//case NEXT_TURN_REQUEST: {
-				//	LOGGER.debug("Ignoring received game event type \"{}\".", gameEventType);
-				//	break;
-				//}
-				case PLAYER_JOIN_REQUEST: {
-					LOGGER.debug("Ignoring received game event type \"{}\".", gameEventType);
+					final Selection selection = (Selection) event
+							.get(GameManagementEvent.Attribute.SELECTION.toString());
+					controller.notifyPlayerSelection(selectingPlayerId, selection);
 					break;
 				}
 				default: {
@@ -182,8 +177,7 @@ public final class GameManagementClientModule extends IrisModule {
 
 	public void rejectSelection(final Integer pieceId, final Area2D area) {
 		final Event request = createPlayerEvent(GameManagementEvent.SELECTION_REJECTION);
-		request.put(GameManagementEvent.Attribute.PIECE.toString(), pieceId);
-		request.put(GameManagementEvent.Attribute.AREA.toString(), area);
+		request.put(GameManagementEvent.Attribute.SELECTION.toString(), new Selection(pieceId, area));
 		LOGGER.info("Sending broker event for rejecting selection of piece \"{}\" by \"{}\".",
 				new Object[] { pieceId, playerId });
 		send(request);
@@ -202,18 +196,17 @@ public final class GameManagementClientModule extends IrisModule {
 		send(request);
 	}
 
+	public void requestSelection(final Integer pieceId, final Area2D area) {
+		final Event request = createPlayerEvent(GameManagementEvent.SELECTION_REQUEST);
+		request.put(GameManagementEvent.Attribute.SELECTION.toString(), new Selection(pieceId, area));
+		LOGGER.info("Sending broker event for selecting piece \"{}\" by \"{}\".", new Object[] { pieceId, playerId });
+		send(request);
+	}
+
 	public void requestTurnCompletion(final Move move) {
 		final Event request = createPlayerEvent(GameManagementEvent.COMPLETED_TURN_REQUEST);
 		request.put(GameManagementEvent.Attribute.MOVE.toString(), move);
 		LOGGER.info("Sending broker event for requesting to complete turn by player \"{}\".", playerId);
-		send(request);
-	}
-
-	public void requestUserSelection(final Integer pieceId, final Area2D area) {
-		final Event request = createPlayerEvent(GameManagementEvent.SELECTION_REQUEST);
-		request.put(GameManagementEvent.Attribute.PIECE.toString(), pieceId);
-		request.put(GameManagementEvent.Attribute.AREA.toString(), area);
-		LOGGER.info("Sending broker event for selecting piece \"{}\" by \"{}\".", new Object[] { pieceId, playerId });
 		send(request);
 	}
 

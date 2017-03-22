@@ -27,16 +27,17 @@ import java.awt.event.WindowEvent;
 import java.awt.font.TextAttribute;
 import java.text.AttributedCharacterIterator.Attribute;
 import java.util.Arrays;
+import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Random;
 import java.util.Set;
-import java.util.function.Supplier;
 
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
@@ -45,13 +46,14 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Maps;
 
+import se.kth.speech.SpatialRegion;
 import se.kth.speech.awt.ColorIcon;
 import se.kth.speech.coin.tangrams.game.Controller;
 import se.kth.speech.coin.tangrams.game.PlayerRole;
+import se.kth.speech.coin.tangrams.game.Turn;
 import se.kth.speech.coin.tangrams.iristk.events.GameEnding;
-import se.kth.speech.coin.tangrams.iristk.events.PlayerRoleChange;
+import se.kth.speech.coin.tangrams.iristk.events.Move;
 import se.kth.speech.coin.tangrams.iristk.events.Selection;
-import se.kth.speech.coin.tangrams.iristk.events.Turn;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -66,6 +68,8 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 	 *
 	 */
 	private static final long serialVersionUID = -4129777933223228599L;
+
+	private static final Map<PlayerRole, String> PLAYER_ROLE_STATUS_LABEL_TEXT = createPlayerRoleStatusLabelTextMap();
 
 	private static Map<Attribute, Object> createMoveCounterFontAttrMap() {
 		final Map<Attribute, Object> result = Maps.newHashMapWithExpectedSize(3);
@@ -98,6 +102,18 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 		final String desc = "An indicator showing if it's your turn or not: Green means \"ready\" and red means \"not ready\".";
 		result.getAccessibleContext().setAccessibleDescription(desc);
 		result.setToolTipText(desc);
+		return result;
+	}
+
+	private static Map<PlayerRole, String> createPlayerRoleStatusLabelTextMap() {
+		final Map<PlayerRole, String> result = new EnumMap<>(PlayerRole.class);
+		result.put(PlayerRole.SELECTING, "Select piece to move.");
+		result.put(PlayerRole.MOVE_SUBMISSION, "Continue to the next turn.");
+		result.put(PlayerRole.SELECTION_CONFIRMATION, "Checking the other player's selection...");
+		result.put(PlayerRole.WAITING_FOR_NEXT_MOVE, "Waiting for other player to submit next turn...");
+		result.put(PlayerRole.WAITING_FOR_SELECTION, "Waiting for other player to select a piece to move...");
+		result.put(PlayerRole.WAITING_FOR_SELECTION_CONFIRMATION, "Waiting for other player to confirm selection...");
+		assert result.size() == PlayerRole.values().length;
 		return result;
 	}
 
@@ -134,8 +150,9 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 		return result;
 	}
 
-	private static TurnLabel createTurnLabel(final PlayerTurnStatus initialStatus) {
-		final TurnLabel result = new TurnLabel(initialStatus);
+	private static JLabel createTurnLabel(final PlayerRole initialRole) {
+		final String title = PLAYER_ROLE_STATUS_LABEL_TEXT.get(initialRole);
+		final JLabel result = new JLabel(title);
 		final Font font = Font.getFont(createTurnLabelFontAttrMap());
 		result.setFont(font);
 		return result;
@@ -145,7 +162,7 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 		final Map<Attribute, Object> result = Maps.newHashMapWithExpectedSize(3);
 		result.put(TextAttribute.FAMILY, Font.SANS_SERIF);
 		result.put(TextAttribute.WEIGHT, TextAttribute.WEIGHT_BOLD);
-		result.put(TextAttribute.SIZE, 36.0f);
+		result.put(TextAttribute.SIZE, 32.0f);
 		return result;
 	}
 
@@ -153,17 +170,16 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 		return PlayerRole.SELECTING.equals(role) ? PlayerTurnStatus.READY : PlayerTurnStatus.NOT_READY;
 	}
 
-	private final Supplier<String> playerIdGetter;
 	private final Set<Window> childWindows = new HashSet<>();
+
 	private final ReadinessIndicator playerReadiness;
 
-	private final TurnLabel turnLabel;
+	private final JLabel roleStatusLabel;
 
 	private final MoveCounterLabel moveCounterLabel;
 
 	GameViewFrame(final GameBoardPanel boardPanel, final Random rnd, final Controller controller,
 			final Runnable closeHook) {
-		playerIdGetter = controller::getPlayerId;
 		controller.getListeners().add(this);
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		addWindowListener(new WindowAdapter() {
@@ -184,15 +200,16 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 		setLayout(new BorderLayout());
 		add(boardPanel, BorderLayout.CENTER);
 
-		final PlayerTurnStatus initialTurnStatus = getPlayerTurnStatus(controller.getRole());
-		turnLabel = createTurnLabel(initialTurnStatus);
+		final PlayerRole initialRole = controller.getRole();
+		roleStatusLabel = createTurnLabel(initialRole);
 		{
 			final JPanel turnLabelPanel = new JPanel();
-			turnLabelPanel.add(turnLabel);
+			turnLabelPanel.add(roleStatusLabel);
 			add(turnLabelPanel, BorderLayout.PAGE_START);
 		}
 
 		final Dimension gameBoardPanelSize = boardPanel.getPreferredSize();
+		final PlayerTurnStatus initialTurnStatus = getPlayerTurnStatus(initialRole);
 		playerReadiness = createPlayerReadinessIndicator(gameBoardPanelSize.width, initialTurnStatus);
 		final JPanel sidePanel;
 		{
@@ -201,7 +218,7 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 			sidePanel.setLayout(layout);
 			sidePanel.add(playerReadiness);
 
-			moveCounterLabel = createMoveCounterLabel(controller.getMoveCount(),
+			moveCounterLabel = createMoveCounterLabel(controller.getTurnCount(),
 					playerReadiness.getPreferredSize().width);
 			sidePanel.add(moveCounterLabel);
 		}
@@ -224,13 +241,11 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 		case ABORT:
 			JOptionPane.showMessageDialog(this, String.format("The game was aborted by \"%s\" after %d move(s).",
 					gameEnding.getPlayerId(), gameEnding.getMoveCount()), "Aborted!", JOptionPane.WARNING_MESSAGE);
-			// setEnabled(false);
 			break;
 		case WIN: {
 			JOptionPane.showMessageDialog(this,
 					String.format("The game was won after %d move(s).", gameEnding.getMoveCount()), "Win!",
 					JOptionPane.INFORMATION_MESSAGE);
-			// setEnabled(false);
 			break;
 		}
 		default:
@@ -239,35 +254,39 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 
 	}
 
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see
-	 * se.kth.speech.coin.tangrams.iristk.Controller.Listener#updateNextTurn(se.
-	 * kth.speech.coin.tangrams.iristk.events.Turn)
-	 */
 	@Override
-	public void updateNextTurn(final Turn turn) {
-		// TODO Auto-generated method stub
-
+	public void updateNextMove(final Move move) {
+		LOGGER.debug("Observed event representing the subbmission of a move by a player.");
 	}
 
 	/*
 	 * (non-Javadoc)
 	 *
 	 * @see
-	 * se.kth.speech.coin.tangrams.iristk.Controller.Listener#updatePlayerRole(
-	 * se.kth.speech.coin.tangrams.iristk.events.PlayerRoleChange)
+	 * se.kth.speech.coin.tangrams.game.Controller.Listener#updatePieceMoved(se.
+	 * kth.speech.SpatialRegion, se.kth.speech.SpatialRegion)
 	 */
 	@Override
-	public void updatePlayerRole(final PlayerRoleChange change) {
-		LOGGER.debug("Observed event representing a change in the currently-active player.");
-		final String playerId = playerIdGetter.get();
-		if (playerId.equals(change.getPlayerId())) {
-			// This client initiated the handover
-			final PlayerRole newRole = change.getRole();
-			setPlayerReady(newRole);
-		}
+	public void updatePieceMoved(final SpatialRegion source, final SpatialRegion target) {
+		LOGGER.debug("Observed event notifying of a moved piece.");
+	}
+
+	@Override
+	public void updatePlayerJoined(final String joinedPlayerId, final long time) {
+		LOGGER.debug("Observed event representing the joining of a player.");
+	}
+
+	@Override
+	public void updatePlayerRole(final PlayerRole newRole) {
+		LOGGER.debug("Observed event representing a change in player role.");
+		final PlayerTurnStatus newTurnStatus = getPlayerTurnStatus(newRole);
+		LOGGER.debug("Setting player readiness indicator status to {}.", newTurnStatus);
+		playerReadiness.setStatus(newTurnStatus);
+		final String roleStatusText = PLAYER_ROLE_STATUS_LABEL_TEXT.get(newRole);
+		LOGGER.info("Setting player state label for role {}: \"{}\"", newRole);
+		roleStatusLabel.setText(roleStatusText);
+		final String labelText = roleStatusLabel.getText();
+		assert labelText != null && !labelText.isEmpty();
 	}
 
 	/*
@@ -279,19 +298,6 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 	 */
 	@Override
 	public void updatePlayerSelection(final Selection selection) {
-		// TODO Auto-generated method stub
-
-	}
-
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see se.kth.speech.coin.tangrams.iristk.Controller.Listener#
-	 * updateSelectionAccepted(se.kth.speech.coin.tangrams.iristk.events.
-	 * Selection)
-	 */
-	@Override
-	public void updateSelectionAccepted(final Selection selection) {
 		// TODO Auto-generated method stub
 
 	}
@@ -316,15 +322,8 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 	 * updateTurnCompletion(se.kth.speech.coin.tangrams.iristk.events.Turn)
 	 */
 	@Override
-	public void updateTurnCompletion(final Turn turn) {
-		moveCounterLabel.update(turn.getSequenceNumber());
-	}
-
-	private void setPlayerReady(final PlayerRole role) {
-		final PlayerTurnStatus newTurnStatus = getPlayerTurnStatus(role);
-		LOGGER.debug("Setting player readiness indicator status to {}.", newTurnStatus);
-		playerReadiness.setStatus(newTurnStatus);
-		turnLabel.setStatus(newTurnStatus);
+	public void updateTurnCompleted(final Turn turn) {
+//		moveCounterLabel.update(turn.getSequenceNumber());
 	}
 
 	/**
@@ -332,6 +331,14 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 	 */
 	Set<Window> getChildWindows() {
 		return childWindows;
+	}
+
+	/* (non-Javadoc)
+	 * @see se.kth.speech.coin.tangrams.game.Controller.Listener#updateMoveCount(int)
+	 */
+	@Override
+	public void updateTurnCount(int newCount) {
+		moveCounterLabel.update(newCount);
 	}
 
 }
