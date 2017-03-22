@@ -22,5 +22,24 @@ package se.kth.speech.coin.tangrams.game;
  *
  */
 public enum PlayerRole {
-	SELECTING, TURN_SUBMISSION, WAITING_FOR_SELECTION, WAITING_FOR_SELECTION_CONFIRMATION;
+	/**
+	 * In this role, the player is to select a candidate piece for moving.
+	 */
+	SELECTING,
+	/**
+	 * In this role, the player is to confirm a previously-selected piece for
+	 * moving and to submit the turn with the confirmed move.
+	 */
+	TURN_SUBMISSION,
+	/**
+	 * In this role, the player is waiting for the other player to
+	 * {@link #SELECTING select a candidate piece for moving}.
+	 */
+	WAITING_FOR_SELECTION,
+	/**
+	 * In this role, the player is waiting for the other player to
+	 * {@link #TURN_SUBMISSION confirm a previously-selected candidate piece for
+	 * moving}.
+	 */
+	WAITING_FOR_SELECTION_CONFIRMATION;
 }
