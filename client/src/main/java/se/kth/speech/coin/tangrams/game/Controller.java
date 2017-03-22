@@ -346,7 +346,7 @@ public final class Controller {
 			// own view and notify the player's own game action module
 			// setChanged();
 			// notifyObservers(nextTurnMove);
-			clientModule.requestNextTurn(nextTurnMove);
+			clientModule.requestNextMove(nextTurnMove);
 			role = PlayerRole.WAITING_FOR_SELECTION;
 			final PlayerRoleChange roleChange = new PlayerRoleChange(playerId, role);
 			updatePlayerRole(roleChange);

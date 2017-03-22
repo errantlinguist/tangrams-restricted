@@ -195,7 +195,7 @@ public final class GameManagementClientModule extends IrisModule {
 		send(request);
 	}
 
-	public void requestNextTurn(final Move move) {
+	public void requestNextMove(final Move move) {
 		final Event request = createPlayerEvent(GameManagementEvent.NEXT_TURN_REQUEST);
 		request.put(GameManagementEvent.Attribute.MOVE.toString(), move);
 		LOGGER.info("Sending broker event for requesting to complete turn by player \"{}\".", playerId);
