@@ -228,9 +228,12 @@ public final class Controller {
 
 		updatePiecePositions(move);
 
-		final Turn turn = new Turn(submittingPlayerId, move, turnCount++);
+		LOGGER.debug("Old turn count was {}.", turnCount);
+		final Turn turn = new Turn(submittingPlayerId, move, turnCount);
 		listeners.forEach(listener -> listener.updateTurnCompleted(turn));
 		nextMove = null;
+		turnCount++;
+		LOGGER.debug("New turn count is {}.", turnCount);
 		// Update listeners for current turn count (i.e. the sequence number of
 		// the next turn to be completed)
 		listeners.forEach(listener -> listener.updateTurnCount(turnCount));
@@ -293,9 +296,12 @@ public final class Controller {
 		nextMove = null;
 		selectedPiece = null;
 
+		LOGGER.debug("Old turn count was {}.", turnCount);
+		turnCount++;
+		LOGGER.debug("New turn is {}.", turnCount);
 		// Update listeners for current turn count (i.e. the sequence number of
 		// the next turn to be completed)
-		listeners.forEach(listener -> listener.updateTurnCount(++turnCount));
+		listeners.forEach(listener -> listener.updateTurnCount(turnCount));
 
 		// Now it's this player's turn to wait for the other player to submit a
 		// move
