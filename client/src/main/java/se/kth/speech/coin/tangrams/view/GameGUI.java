@@ -16,11 +16,14 @@
 */
 package se.kth.speech.coin.tangrams.view;
 
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Image;
 import java.awt.Point;
 import java.awt.Toolkit;
 import java.nio.file.Path;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
@@ -36,6 +39,7 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.Maps;
 
 import se.kth.speech.SpatialMatrix;
+import se.kth.speech.coin.tangrams.content.IconColors;
 import se.kth.speech.coin.tangrams.content.ImageLoadingImageViewInfoFactory;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfoFactory;
@@ -52,8 +56,6 @@ import se.kth.speech.coin.tangrams.iristk.events.Selection;
  */
 public final class GameGUI implements Runnable {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(GameGUI.class);
-
 	private static final BiFunction<Image, Toolkit, Image> DEFAULT_POST_COLORING_IMG_TRANSFORMER = new BiFunction<Image, Toolkit, Image>() {
 
 		@Override
@@ -64,6 +66,8 @@ public final class GameGUI implements Runnable {
 		}
 
 	};
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(GameGUI.class);
 
 	// private static JMenu createFileMenu(final Window view) {
 	// final JMenu result = new JMenu("File");
@@ -111,6 +115,8 @@ public final class GameGUI implements Runnable {
 
 	private final Runnable closeHook;
 
+	private final GameState gameState;
+
 	private final BiConsumer<Component, Selection> selectionLogger;
 
 	private final String title;
@@ -118,8 +124,6 @@ public final class GameGUI implements Runnable {
 	private final BiConsumer<Component, Turn> turnScreenshotLogger;
 
 	private final Point viewLocation;
-
-	private final GameState gameState;
 
 	public GameGUI(final String title, final Point viewLocation, final GameState gameState,
 			final Supplier<? extends Path> logOutdirSupplier, final Runnable closeHook) {
@@ -154,10 +158,12 @@ public final class GameGUI implements Runnable {
 		final SpatialMatrix<Integer> model = controller.getModel();
 		final int pieceCount = model.getElementPlacements().getAllElements().size();
 		final Random rnd = gameState.getRnd();
-		final ImageVisualizationInfoFactory imgVisInfoFactory = new ImageVisualizationInfoFactory(rnd);
 		final Map<Integer, Image> pieceImgs = Maps.newHashMapWithExpectedSize(pieceCount);
-		final GameBoardPanel gameBoardPanel = new GameBoardPanel(model, pieceImgs, controller,
-				turnScreenshotLogger, selectionLogger);
+		final GameBoardPanel gameBoardPanel = new GameBoardPanel(model, pieceImgs, controller, turnScreenshotLogger,
+				selectionLogger);
+		final List<Color> colors = IconColors.createDefaultLengthRandomColorList(rnd,
+				Collections.singleton(gameBoardPanel.getBackground()));
+		final ImageVisualizationInfoFactory imgVisInfoFactory = new ImageVisualizationInfoFactory(rnd, colors);
 		final ImageLoadingImageViewInfoFactory imgViewInfoFactory = new ImageLoadingImageViewInfoFactory(
 				gameBoardPanel.getToolkit(), DEFAULT_POST_COLORING_IMG_TRANSFORMER,
 				Maps.newHashMapWithExpectedSize(imgVisInfoFactory.getImgResourceUsageCounts().keySet().size()));

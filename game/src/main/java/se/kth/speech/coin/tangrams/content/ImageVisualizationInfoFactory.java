@@ -50,23 +50,13 @@ public final class ImageVisualizationInfoFactory implements Iterator<ImageVisual
 
 	private static final List<ImageSize> DEFAULT_IMG_SIZES = Arrays.asList(ImageSize.values());
 
-	private static final List<Color> DEFAULT_UNIQUE_IMG_COLORS = Arrays.asList(Color.RED, Color.YELLOW, Color.GREEN,
-			Color.BLUE);
-
 	private static final Logger LOGGER = LoggerFactory.getLogger(ImageVisualizationInfoFactory.class);
-
-	/**
-	 * The {@link Random} instance to use for randomization.
-	 */
-	private final Random rnd;
-
-	private final Map<URL, Integer> imgResourceUsageCounts;
 
 	private final Map<Color, Integer> colorUsageCounts;
 
-	private final Map<ImageSize, Integer> sizeUsageCounts;
-
 	private int createdInstanceCount;
+
+	private final Map<URL, Integer> imgResourceUsageCounts;
 
 	private Color lastColor;
 
@@ -75,10 +65,46 @@ public final class ImageVisualizationInfoFactory implements Iterator<ImageVisual
 	private ImageSize lastSize;
 
 	/**
+	 * The {@link Random} instance to use for randomization.
+	 */
+	private final Random rnd;
+
+	private final Map<ImageSize, Integer> sizeUsageCounts;
+
+	/**
+	 * @param maxSharedAttrCount
+	 *            The maximum number of attributes an image may share with
+	 *            another image.
+	 * @param rnd
+	 *            The {@link Random} instance to use for randomization.
 	 *
+	 */
+	public ImageVisualizationInfoFactory(final Random rnd, final List<? extends Color> uniqueImgColors) {
+		this(rnd, uniqueImgColors, DEFAULT_IMG_SIZES);
+	}
+
+	/**
+	 *
+	 * @param rnd
+	 *            The {@link Random} instance to use for randomization.
+	 * @param uniqueImgColors
+	 *            An ordered sequence of the unique {@link Color} instances to
+	 *            use for coloring the icon images. <strong>NOTE:</strong> This
+	 *            is ordered so that the iteration order of image data is stable
+	 *            across instances.
 	 * @param imgResources
 	 *            A mapping of icon names mapped to their corresponding image
 	 *            {@link URL} resource locators.
+	 */
+	public ImageVisualizationInfoFactory(final Random rnd, final List<? extends Color> uniqueImgColors,
+			final Collection<? extends URL> imgResources) {
+		this(rnd, uniqueImgColors, DEFAULT_IMG_SIZES, imgResources);
+	}
+
+	/**
+	 *
+	 * @param rnd
+	 *            The {@link Random} instance to use for randomization.
 	 * @param uniqueImgColors
 	 *            An ordered sequence of the unique {@link Color} instances to
 	 *            use for coloring the icon images. <strong>NOTE:</strong> This
@@ -89,11 +115,32 @@ public final class ImageVisualizationInfoFactory implements Iterator<ImageVisual
 	 *            each image in. <strong>NOTE:</strong> This is ordered so that
 	 *            the iteration order of image data is stable across
 	 *            invocations.
+	 */
+	public ImageVisualizationInfoFactory(final Random rnd, final List<? extends Color> uniqueImgColors,
+			final List<ImageSize> sizes) {
+		this(rnd, uniqueImgColors, sizes, DEFAULT_IMG_RESOURCES);
+	}
+
+	/**
+	 *
 	 * @param rnd
 	 *            The {@link Random} instance to use for randomization.
+	 * @param uniqueImgColors
+	 *            An ordered sequence of the unique {@link Color} instances to
+	 *            use for coloring the icon images. <strong>NOTE:</strong> This
+	 *            is ordered so that the iteration order of image data is stable
+	 *            across instances.
+	 * @param sizes
+	 *            An ordered sequence of the {@link ImageSize sizes} to present
+	 *            each image in. <strong>NOTE:</strong> This is ordered so that
+	 *            the iteration order of image data is stable across
+	 *            invocations.
+	 * @param imgResources
+	 *            A mapping of icon names mapped to their corresponding image
+	 *            {@link URL} resource locators.
 	 */
-	public ImageVisualizationInfoFactory(final Collection<? extends URL> imgResources,
-			final List<? extends Color> uniqueImgColors, final List<ImageSize> sizes, final Random rnd) {
+	public ImageVisualizationInfoFactory(final Random rnd, final List<? extends Color> uniqueImgColors,
+			final List<ImageSize> sizes, final Collection<? extends URL> imgResources) {
 		this.rnd = rnd;
 		createdInstanceCount = 0;
 		imgResourceUsageCounts = Maps.newLinkedHashMapWithExpectedSize(imgResources.size());
@@ -102,46 +149,6 @@ public final class ImageVisualizationInfoFactory implements Iterator<ImageVisual
 		uniqueImgColors.forEach(color -> colorUsageCounts.put(color, 0));
 		sizeUsageCounts = new EnumMap<>(ImageSize.class);
 		sizes.forEach(size -> sizeUsageCounts.put(size, 0));
-	}
-
-	/**
-	 *
-	 * @param imgResources
-	 *            A mapping of icon names mapped to their corresponding image
-	 *            {@link URL} resource locators.
-	 * @param sizes
-	 *            An ordered sequence of the {@link ImageSize sizes} to present
-	 *            each image in.
-	 * @param rnd
-	 *            The {@link Random} instance to use for randomization.
-	 */
-	public ImageVisualizationInfoFactory(final Collection<? extends URL> imgResources, final List<ImageSize> sizes,
-			final Random rnd) {
-		this(imgResources, DEFAULT_UNIQUE_IMG_COLORS, sizes, rnd);
-	}
-
-	/**
-	 *
-	 * @param imgResources
-	 *            A mapping of icon names mapped to their corresponding image
-	 *            {@link URL} resource locators.
-	 * @param rnd
-	 *            The {@link Random} instance to use for randomization.
-	 */
-	public ImageVisualizationInfoFactory(final Collection<? extends URL> imgResources, final Random rnd) {
-		this(imgResources, DEFAULT_UNIQUE_IMG_COLORS, DEFAULT_IMG_SIZES, rnd);
-	}
-
-	/**
-	 * @param maxSharedAttrCount
-	 *            The maximum number of attributes an image may share with
-	 *            another image.
-	 * @param rnd
-	 *            The {@link Random} instance to use for randomization.
-	 *
-	 */
-	public ImageVisualizationInfoFactory(final Random rnd) {
-		this(DEFAULT_IMG_RESOURCES, rnd);
 	}
 
 	public int combinationCount() {
@@ -163,13 +170,13 @@ public final class ImageVisualizationInfoFactory implements Iterator<ImageVisual
 		return createdInstanceCount;
 	}
 
-	 /**
+	/**
 	 * @return the imgResourceUsageCounts
 	 */
-	 public Map<URL, Integer> getImgResourceUsageCounts() {
-	 return Collections.unmodifiableMap(imgResourceUsageCounts);
-	 }
-	
+	public Map<URL, Integer> getImgResourceUsageCounts() {
+		return Collections.unmodifiableMap(imgResourceUsageCounts);
+	}
+
 	/**
 	 * @return the sizeUsageCounts
 	 */

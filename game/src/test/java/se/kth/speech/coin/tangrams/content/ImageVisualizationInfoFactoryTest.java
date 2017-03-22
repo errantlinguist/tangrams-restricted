@@ -16,6 +16,8 @@
 */
 package se.kth.speech.coin.tangrams.content;
 
+import java.awt.Color;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
@@ -46,6 +48,8 @@ public final class ImageVisualizationInfoFactoryTest {
 
 	private static final IteratorEqualityAsserter<ImageVisualizationInfo> ITER_EQUALITY_ASSERTER = new IteratorEqualityAsserter<>();
 
+	private static final List<Color> TEST_COLORS = Arrays.asList(Color.RED, Color.YELLOW, Color.GREEN, Color.BLUE);
+
 	/**
 	 * Test method for
 	 * {@link se.kth.speech.coin.tangrams.content.ImageVisualizationInfoFactory#next()}.
@@ -53,30 +57,31 @@ public final class ImageVisualizationInfoFactoryTest {
 	@Theory
 	public void testNextNotEmpty(final long s) {
 		final Random rnd = new Random(s);
-		final Optional<ImageVisualizationInfo> any = Stream.of(new ImageVisualizationInfoFactory(rnd).next()).findAny();
+		final Optional<ImageVisualizationInfo> any = Stream
+				.of(new ImageVisualizationInfoFactory(rnd, TEST_COLORS).next()).findAny();
 		Assert.assertTrue(any.isPresent());
 	}
 
 	/**
 	 * Test method for
 	 * {@link se.kth.speech.coin.tangrams.content.ImageVisualizationInfoFactory#next()}.
-	 * 
+	 *
 	 * @throws InterruptedException
 	 */
 	@Theory
 	public void testNextStable(final long s) throws InterruptedException {
 		final Random rnd1 = new Random(s);
-		final ImageVisualizationInfoFactory f1 = new ImageVisualizationInfoFactory(rnd1);
+		final ImageVisualizationInfoFactory f1 = new ImageVisualizationInfoFactory(rnd1, TEST_COLORS);
 		final List<ImageVisualizationInfo> results1 = Stream.generate(f1::next).limit(f1.combinationCount())
 				.collect(Collectors.toList());
 		Thread.sleep(100);
 		final Random rnd2 = new Random(s);
-		final ImageVisualizationInfoFactory f2 = new ImageVisualizationInfoFactory(rnd2);
+		final ImageVisualizationInfoFactory f2 = new ImageVisualizationInfoFactory(rnd2, TEST_COLORS);
 		final Stream<ImageVisualizationInfo> results2 = Stream.generate(f2::next).limit(f2.combinationCount());
 		ITER_EQUALITY_ASSERTER.accept(results1.iterator(), results2.iterator());
 		Thread.sleep(100);
 		final Random rnd3 = new Random(s);
-		final ImageVisualizationInfoFactory f3 = new ImageVisualizationInfoFactory(rnd3);
+		final ImageVisualizationInfoFactory f3 = new ImageVisualizationInfoFactory(rnd3, TEST_COLORS);
 		final Stream<ImageVisualizationInfo> results3 = Stream.generate(f3::next).limit(f3.combinationCount());
 		ITER_EQUALITY_ASSERTER.accept(results1.iterator(), results3.iterator());
 	}
@@ -88,7 +93,7 @@ public final class ImageVisualizationInfoFactoryTest {
 	@Theory
 	public void testNextUnique(final long seed) {
 		final Random rnd = new Random(seed);
-		final ImageVisualizationInfoFactory f = new ImageVisualizationInfoFactory(rnd);
+		final ImageVisualizationInfoFactory f = new ImageVisualizationInfoFactory(rnd, TEST_COLORS);
 		final List<ImageVisualizationInfo> results = Stream.generate(f::next).limit(f.combinationCount())
 				.collect(Collectors.toList());
 		final Set<ImageVisualizationInfo> distinctResults = results.stream()

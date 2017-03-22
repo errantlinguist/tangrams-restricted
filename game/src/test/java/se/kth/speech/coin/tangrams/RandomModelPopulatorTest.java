@@ -16,8 +16,10 @@
 */
 package se.kth.speech.coin.tangrams;
 
+import java.awt.Color;
 import java.awt.Image;
 import java.awt.Toolkit;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -99,6 +101,8 @@ public final class RandomModelPopulatorTest {
 	// } while (TEST_GRID_DIMS.size() < testGridDimCount);
 	// }
 
+	private static final double DEFAULT_OCCUPIED_GRID_AREA = 0.75;
+
 	private static final BiFunction<Image, Toolkit, Image> DEFAULT_POST_COLORING_IMG_TRANSFORMER = new BiFunction<Image, Toolkit, Image>() {
 
 		@Override
@@ -109,7 +113,7 @@ public final class RandomModelPopulatorTest {
 
 	};
 
-	private static final double DEFAULT_OCCUPIED_GRID_AREA = 0.75;
+	private static final List<Color> TEST_COLORS = Arrays.asList(Color.RED, Color.YELLOW, Color.GREEN, Color.BLUE);
 
 	/**
 	 * Test method for
@@ -118,7 +122,7 @@ public final class RandomModelPopulatorTest {
 	@Test
 	public void testAccept() {
 		final Random rnd = new Random();
-		final ImageVisualizationInfoFactory imgDataFactory = new ImageVisualizationInfoFactory(rnd);
+		final ImageVisualizationInfoFactory imgDataFactory = new ImageVisualizationInfoFactory(rnd, TEST_COLORS);
 		final int maxImgVisualizationInfoDatumCount = imgDataFactory.combinationCount();
 		// final int piecePlacementCount = rnd.ints().filter(val -> val <=
 		// maxImgVisualizationInfoDatumCount).findAny().getAsInt();

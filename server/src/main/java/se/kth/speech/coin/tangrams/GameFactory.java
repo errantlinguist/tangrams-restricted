@@ -16,20 +16,27 @@
 */
 package se.kth.speech.coin.tangrams;
 
+import java.awt.Color;
 import java.awt.Image;
 import java.awt.Toolkit;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.Collections;
 import java.util.EnumMap;
+import java.util.List;
 import java.util.Properties;
 import java.util.Random;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
+import javax.swing.UIManager;
+
 import com.github.errantlinguist.ClassProperties;
 
 import se.kth.speech.SpatialMatrix;
+import se.kth.speech.coin.tangrams.content.IconColors;
+import se.kth.speech.coin.tangrams.content.ImageVisualizationInfoFactory;
 import se.kth.speech.coin.tangrams.game.PlayerRole;
 
 /**
@@ -68,8 +75,15 @@ final class GameFactory implements Function<String, Game<Integer>> {
 		final double occupiedGridArea = Double.parseDouble(PROPS.getProperty("occupiedGridArea"));
 		final int piecePlacementCount = Integer.parseInt(PROPS.getProperty("piecePlacementCount"));
 
-		return new RandomPopulatedModelFactory(gridDims, Toolkit.getDefaultToolkit(), piecePlacementCount,
-				occupiedGridArea, DEFAULT_POST_COLORING_IMG_TRANSFORMER, allowFailedPlacements);
+		final Function<Random, ImageVisualizationInfoFactory> imgVisInfoFactory = rnd -> {
+			// http://stackoverflow.com/a/9993139/1391325
+			final Color backgroundColor = UIManager.getColor("Panel.background");
+			final List<Color> colors = IconColors.createDefaultLengthRandomColorList(rnd,
+					Collections.singleton(backgroundColor));
+			return new ImageVisualizationInfoFactory(rnd, colors);
+		};
+		return new RandomPopulatedModelFactory(gridDims, imgVisInfoFactory, Toolkit.getDefaultToolkit(),
+				piecePlacementCount, occupiedGridArea, DEFAULT_POST_COLORING_IMG_TRANSFORMER, allowFailedPlacements);
 	}
 
 	private final Function<? super Random, ? extends SpatialMatrix<Integer>> modelFactory;
