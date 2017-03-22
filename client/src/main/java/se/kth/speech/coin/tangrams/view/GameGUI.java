@@ -39,7 +39,7 @@ import se.kth.speech.SpatialMatrix;
 import se.kth.speech.coin.tangrams.content.ImageLoadingImageViewInfoFactory;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfoFactory;
-import se.kth.speech.coin.tangrams.iristk.GameState;
+import se.kth.speech.coin.tangrams.game.GameState;
 import se.kth.speech.coin.tangrams.iristk.Controller;
 import se.kth.speech.coin.tangrams.iristk.events.Selection;
 import se.kth.speech.coin.tangrams.iristk.events.Turn;
