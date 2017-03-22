@@ -27,7 +27,7 @@ import java.util.List;
  */
 public final class MathDivisors {
 
-	public static final List<Integer> createCommonDivisorList(final int first, final int... next) {
+	public static List<Integer> createCommonDivisorList(final int first, final int... next) {
 		final List<Integer> result = createDivisorList(first);
 		for (final int value : next) {
 			removeNonDivisors(result.iterator(), value);
@@ -35,7 +35,7 @@ public final class MathDivisors {
 		return result;
 	}
 
-	public static final List<Integer> createCommonDivisorList(final Iterator<Integer> values) {
+	public static List<Integer> createCommonDivisorList(final Iterator<Integer> values) {
 		final Integer first = values.next();
 		final List<Integer> result = createDivisorList(first);
 		while (values.hasNext()) {
@@ -51,7 +51,7 @@ public final class MathDivisors {
 	 * @param value
 	 * @return
 	 */
-	public static final List<Integer> createDivisorList(final int value) {
+	public static List<Integer> createDivisorList(final int value) {
 		final int maxPossible = value / 2;
 		final List<Integer> result = new ArrayList<>(maxPossible);
 		for (int i = 1; i <= maxPossible; i++) {
@@ -71,7 +71,7 @@ public final class MathDivisors {
 	 *            The other value.
 	 * @return The greatest common divisor.
 	 */
-	public static final int gcd(final int first, final int next) {
+	public static int gcd(final int first, final int next) {
 		if (next == 0) {
 			return first;
 		}
@@ -87,7 +87,7 @@ public final class MathDivisors {
 	 *            The next values.
 	 * @return The greatest common divisor.
 	 */
-	public static final int gcd(final int first, final int... next) {
+	public static int gcd(final int first, final int... next) {
 		int result = first;
 		for (final int value : next) {
 			result = gcd(result, value);
@@ -102,7 +102,7 @@ public final class MathDivisors {
 	 *            The values to calculate the greatest common divisor for.
 	 * @return The greatest common divisor.
 	 */
-	public static final int gcd(final int[] values) {
+	public static int gcd(final int[] values) {
 		int result = values[0];
 		for (int i = 1; i < values.length; ++i) {
 			final int value = values[i];
@@ -118,7 +118,7 @@ public final class MathDivisors {
 	 *            The values to get the GCD of.
 	 * @return The greatest common divisor.
 	 */
-	public static final int gcd(final Iterator<Integer> values) {
+	public static int gcd(final Iterator<Integer> values) {
 		int result = values.next();
 		while (values.hasNext()) {
 			result = gcd(result, values.next());
@@ -132,7 +132,7 @@ public final class MathDivisors {
 	 * @param first
 	 * @return
 	 */
-	public static final void removeNonDivisors(final Iterator<Integer> divisors, final int first, final int... next) {
+	public static void removeNonDivisors(final Iterator<Integer> divisors, final int first, final int... next) {
 		while (divisors.hasNext()) {
 			final Integer divisor = divisors.next();
 			if (first % divisor == 0) {
@@ -153,7 +153,7 @@ public final class MathDivisors {
 	 * @param first
 	 * @return
 	 */
-	public static final void removeNonDivisors(final Iterator<Integer> divisors, final Iterable<Integer> values) {
+	public static void removeNonDivisors(final Iterator<Integer> divisors, final Iterable<Integer> values) {
 		while (divisors.hasNext()) {
 			final Integer divisor = divisors.next();
 			final Iterator<Integer> valueIter = values.iterator();
