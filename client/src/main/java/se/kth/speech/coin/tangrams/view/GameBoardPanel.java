@@ -57,7 +57,6 @@ import se.kth.speech.SpatialRegion;
 import se.kth.speech.awt.DisablingMouseAdapter;
 import se.kth.speech.coin.tangrams.AreaSpatialRegionFactory;
 import se.kth.speech.coin.tangrams.game.Controller;
-import se.kth.speech.coin.tangrams.game.PlayerJoinTime;
 import se.kth.speech.coin.tangrams.game.PlayerRole;
 import se.kth.speech.coin.tangrams.game.Turn;
 import se.kth.speech.coin.tangrams.iristk.events.GameEnding;
