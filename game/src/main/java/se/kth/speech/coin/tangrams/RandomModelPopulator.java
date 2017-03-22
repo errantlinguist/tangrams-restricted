@@ -182,7 +182,7 @@ public final class RandomModelPopulator implements Consumer<Random> {
 		fillMatrix(posMatrix, pieceIds.entrySet(), rnd);
 		if (moreOccupiedSpaceThanExpected(posMatrix)) {
 			throw new IllegalArgumentException(String.format(
-					"Grid size of %s is not enough to hold %d pieces with the given occupied-space ratio of %d.",
+					"Grid size of %s is not enough to hold %d pieces with the given occupied-space ratio of %f.",
 					Arrays.toString(posMatrix.getDimensions()), pieceIds.size(), occupiedGridArea));
 		} else {
 			final String matrixStrRepr = new MatrixStringReprFactory().apply(posMatrix.getPositionMatrix());
