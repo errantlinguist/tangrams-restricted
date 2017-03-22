@@ -20,6 +20,7 @@ import java.util.Random;
 
 import com.google.common.collect.BiMap;
 
+import se.kth.speech.coin.tangrams.game.Controller;
 import se.kth.speech.coin.tangrams.game.PlayerRole;
 
 public final class GameState {

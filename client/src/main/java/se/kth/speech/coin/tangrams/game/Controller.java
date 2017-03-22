@@ -14,7 +14,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech.coin.tangrams.iristk;
+package se.kth.speech.coin.tangrams.game;
 
 import java.util.Collections;
 import java.util.IdentityHashMap;
@@ -31,6 +31,8 @@ import se.kth.speech.SpatialRegion;
 import se.kth.speech.coin.tangrams.game.AreaSpatialRegionFactory;
 import se.kth.speech.coin.tangrams.game.PlayerJoinTime;
 import se.kth.speech.coin.tangrams.game.PlayerRole;
+import se.kth.speech.coin.tangrams.iristk.GameManagementClientModule;
+import se.kth.speech.coin.tangrams.iristk.MyLogger;
 import se.kth.speech.coin.tangrams.iristk.events.Area2D;
 import se.kth.speech.coin.tangrams.iristk.events.CoordinatePoint2D;
 import se.kth.speech.coin.tangrams.iristk.events.GameEnding;
