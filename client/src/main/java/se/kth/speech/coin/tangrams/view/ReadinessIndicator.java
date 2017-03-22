@@ -68,15 +68,13 @@ final class ReadinessIndicator extends JLabel {
 		currentStatus = initialStatus;
 	}
 
-	void setStatus(final PlayerTurnStatus newStatus) {
-		synchronized (currentStatus) {
-			final PlayerTurnStatus oldStatus = currentStatus;
-			currentStatus = newStatus;
-			if (!oldStatus.equals(newStatus)) {
-				final Color newColor = getStatusColor(newStatus);
-				icon.setColor(newColor);
-				repaint();
-			}
+	synchronized void setStatus(final PlayerTurnStatus newStatus) {
+		final PlayerTurnStatus oldStatus = currentStatus;
+		currentStatus = newStatus;
+		if (!oldStatus.equals(newStatus)) {
+			final Color newColor = getStatusColor(newStatus);
+			icon.setColor(newColor);
+			repaint();
 		}
 	}
 

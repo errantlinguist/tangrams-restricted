@@ -54,13 +54,11 @@ public final class TurnLabel extends JLabel {
 		}
 	}
 
-	void setStatus(final PlayerTurnStatus newStatus) {
-		synchronized (currentStatus) {
-			final PlayerTurnStatus oldStatus = currentStatus;
-			currentStatus = newStatus;
-			if (!oldStatus.equals(newStatus)) {
-				updateStatus(newStatus);
-			}
+	synchronized void setStatus(final PlayerTurnStatus newStatus) {
+		final PlayerTurnStatus oldStatus = currentStatus;
+		currentStatus = newStatus;
+		if (!oldStatus.equals(newStatus)) {
+			updateStatus(newStatus);
 		}
 	}
 
