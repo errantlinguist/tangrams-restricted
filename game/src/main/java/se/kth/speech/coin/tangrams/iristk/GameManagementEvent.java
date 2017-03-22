@@ -38,10 +38,6 @@ enum GameManagementEvent {
 	 */
 	COMPLETED_TURN_RESPONSE("completedturn.response"),
 	/**
-	 * An event signalling that the game is over.
-	 */
-	GAME_OVER_RESPONSE("game.over"),
-	/**
 	 * An event denoting that a given game is ready to be played,
 	 * e.g.&nbsp;enough players have joined.
 	 */
