@@ -39,7 +39,6 @@ import org.junit.experimental.theories.Theory;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
-import se.kth.speech.hat.xsd.Transcription.T;
 import se.kth.speech.junit.IteratorEqualityAsserter;
 
 /**
@@ -167,7 +166,7 @@ public final class MatrixTest {
 	}
 
 	/**
-	 * Test method for {@link se.kth.speech.Matrix#Matrix(T[], int)}.
+	 * Test method for {@link se.kth.speech.Matrix#Matrix(E[], int)}.
 	 */
 	@Theory
 	public void testMatrixIllformed(final Object[] vals, final int colCount) {
@@ -178,7 +177,7 @@ public final class MatrixTest {
 	}
 
 	/**
-	 * Test method for {@link se.kth.speech.Matrix#Matrix(T[], int)}.
+	 * Test method for {@link se.kth.speech.Matrix#Matrix(E[], int)}.
 	 */
 	@Theory
 	public void testMatrixNonPositiveColCount(final Object[] vals, final int colCount) {
@@ -188,7 +187,7 @@ public final class MatrixTest {
 	}
 
 	/**
-	 * Test method for {@link se.kth.speech.Matrix#Matrix(T[], int)}.
+	 * Test method for {@link se.kth.speech.Matrix#Matrix(E[], int)}.
 	 */
 	@Theory
 	public void testMatrixPositive(final Object[] vals, final int colCount) {
@@ -199,7 +198,7 @@ public final class MatrixTest {
 	}
 
 	/**
-	 * Test method for {@link se.kth.speech.Matrix#Matrix(T[], int)}.
+	 * Test method for {@link se.kth.speech.Matrix#Matrix(E[], int)}.
 	 */
 	@Theory
 	public void testMatrixTooFewValues(final Object[] vals, final int colCount) {
