@@ -263,8 +263,7 @@ public final class Matrix<E> {
 	public E setValue(final int[] coords, final E value) {
 		final List<E> values = getValues();
 		final int valueArrayIdx = getValueArrayIdx(coords);
-		final E result = values.set(valueArrayIdx, value);
-		return result;
+		return values.set(valueArrayIdx, value);
 	}
 
 	/*
