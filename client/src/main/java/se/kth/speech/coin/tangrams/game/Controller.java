@@ -66,7 +66,7 @@ public final class Controller {
 
 	}
 
-	public enum ValidationStatus {
+	private enum ValidationStatus {
 		OK, SOURCE_EMPTY, SOURCE_TARGET_SAME, TARGET_OCCUPIED;
 	}
 
