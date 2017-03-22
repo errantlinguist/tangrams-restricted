@@ -51,7 +51,7 @@ import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
  * @since 3 Jan 2017
  *
  */
-public final class RandomModelPopulator implements Consumer<Random> {
+final class RandomModelPopulator implements Consumer<Random> {
 
 	private static class PositionGridSizeSummary {
 		private final List<Integer> commonDivisors;
@@ -147,7 +147,7 @@ public final class RandomModelPopulator implements Consumer<Random> {
 
 	private final SpatialMatrix<Integer> posMatrix;
 
-	public RandomModelPopulator(final SpatialMatrix<Integer> posMatrix,
+	RandomModelPopulator(final SpatialMatrix<Integer> posMatrix,
 			final Collection<ImageVisualizationInfo> imgVisualizationInfoData, final double occupiedGridArea,
 			final boolean allowFailedPlacements, final int uniqueImgResourceCount,
 			final BiConsumer<? super Integer, ? super Image> pieceImgHook,

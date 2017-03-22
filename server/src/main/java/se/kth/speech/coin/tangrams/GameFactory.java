@@ -80,7 +80,7 @@ final class GameFactory implements Function<String, Game<Integer>> {
 		this(createModelFactory());
 	}
 
-	GameFactory(final Function<? super Random, SpatialMatrix<Integer>> modelFactory) {
+	private GameFactory(final Function<? super Random, SpatialMatrix<Integer>> modelFactory) {
 		this.modelFactory = modelFactory;
 	}
 

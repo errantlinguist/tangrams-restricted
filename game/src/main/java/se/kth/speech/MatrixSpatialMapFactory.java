@@ -27,7 +27,7 @@ import java.util.function.Function;
  * @since Mar 18, 2017
  *
  */
-public final class MatrixSpatialMapFactory<E> implements Function<Matrix<? extends E>, SpatialMap<E>> {
+final class MatrixSpatialMapFactory<E> implements Function<Matrix<? extends E>, SpatialMap<E>> {
 
 	private static <E> Map<E, int[]> createElementMatrixIndexMap(final Matrix<? extends E> posMatrix) {
 		final Map<E, int[]> result = new HashMap<>();

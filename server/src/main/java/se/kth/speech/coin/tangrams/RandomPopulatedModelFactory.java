@@ -41,7 +41,7 @@ import se.kth.speech.coin.tangrams.content.ImageVisualizationInfoFactory;
  * @since 20 Mar 2017
  *
  */
-public final class RandomPopulatedModelFactory implements Function<Random, SpatialMatrix<Integer>> {
+final class RandomPopulatedModelFactory implements Function<Random, SpatialMatrix<Integer>> {
 
 	private final int piecePlacementCount;
 

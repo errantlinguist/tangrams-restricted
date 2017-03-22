@@ -32,7 +32,7 @@ import se.kth.speech.coin.tangrams.game.PlayerRole;
  * @since 10 Jan 2017
  *
  */
-public final class GameStateDescription extends Record {
+final class GameStateDescription extends Record {
 
 	private boolean allowFailedPlacements;
 
