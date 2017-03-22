@@ -55,7 +55,6 @@ import se.kth.speech.SpatialMap;
 import se.kth.speech.SpatialMatrix;
 import se.kth.speech.SpatialRegion;
 import se.kth.speech.awt.DisablingMouseAdapter;
-import se.kth.speech.coin.tangrams.AreaSpatialRegionFactory;
 import se.kth.speech.coin.tangrams.game.Controller;
 import se.kth.speech.coin.tangrams.game.PlayerRole;
 import se.kth.speech.coin.tangrams.game.Turn;
@@ -158,8 +157,6 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 				Math.max(MIN_GRID_SQUARE_LENGTH, size[1] - IMG_PADDING), IMG_SCALING_HINTS);
 	}
 
-	private final AreaSpatialRegionFactory areaRegionFactory;
-
 	private final Controller controller;
 
 	/**
@@ -179,11 +176,29 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 
 	private final DisablingMouseAdapter selectingMouseListener;
 
+	// private void clearRegionHighlights(final Graphics g, final SpatialRegion
+	// region) {
+	// final int colWidth = getGridColWidth();
+	// final int rowHeight = getGridRowHeight();
+	// final int[] startIdxs = createComponentCoordStartIdxArray(region,
+	// colWidth, rowHeight);
+	// final int[] size = createComponentCoordSizeArray(region, colWidth,
+	// rowHeight);
+	// g.clearRect(startIdxs[0], startIdxs[1], size[0], size[1]);
+	// }
+
+	// private Graphics2D createRegionHighlightClearingGraphics(final Graphics
+	// g) {
+	// final Graphics2D result = (Graphics2D) g.create();
+	// result.setStroke(new BasicStroke(REGION_HIGHLIGHT_STROKE_WIDTH));
+	// result.setColor(getBackground());
+	// return result;
+	// }
+
 	GameBoardPanel(final SpatialMatrix<Integer> posMatrix, final Map<Integer, Image> pieceImgs,
 			final Controller controller, final BiConsumer<? super GameBoardPanel, ? super Turn> localTurnCompletionHook,
 			final BiConsumer<? super GameBoardPanel, ? super Selection> localSelectionHook) {
 		this.posMatrix = posMatrix;
-		areaRegionFactory = new AreaSpatialRegionFactory(this.posMatrix);
 		this.pieceImgs = pieceImgs;
 		this.controller = controller;
 		controller.getListeners().add(this);
@@ -214,25 +229,6 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 			setMinimumSize(minSize);
 		}
 	}
-
-	// private void clearRegionHighlights(final Graphics g, final SpatialRegion
-	// region) {
-	// final int colWidth = getGridColWidth();
-	// final int rowHeight = getGridRowHeight();
-	// final int[] startIdxs = createComponentCoordStartIdxArray(region,
-	// colWidth, rowHeight);
-	// final int[] size = createComponentCoordSizeArray(region, colWidth,
-	// rowHeight);
-	// g.clearRect(startIdxs[0], startIdxs[1], size[0], size[1]);
-	// }
-
-	// private Graphics2D createRegionHighlightClearingGraphics(final Graphics
-	// g) {
-	// final Graphics2D result = (Graphics2D) g.create();
-	// result.setStroke(new BasicStroke(REGION_HIGHLIGHT_STROKE_WIDTH));
-	// result.setColor(getBackground());
-	// return result;
-	// }
 
 	@Override
 	public void paintComponent(final Graphics g) {
@@ -278,22 +274,25 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 		}
 	}
 
+	// /* (non-Javadoc)
+	// * @see
+	// se.kth.speech.coin.tangrams.game.Controller.Listener#updatePieceMoved(se.kth.speech.SpatialRegion,
+	// se.kth.speech.SpatialRegion)
+	// */
+	// @Override
+	// public void updatePieceMoved(SpatialRegion source, SpatialRegion target)
+	// {
+	// LOGGER.debug("Observed event notifying of a moved piece.");
+	// repaint();
+	// }
+
 	@Override
 	public void updateNextMove(final Move move) {
 		LOGGER.debug("Observed event representing the subbmission of a move by a player.");
 	}
 
-	/* (non-Javadoc)
-	 * @see se.kth.speech.coin.tangrams.game.Controller.Listener#updatePieceMoved(se.kth.speech.SpatialRegion, se.kth.speech.SpatialRegion)
-	 */
 	@Override
-	public void updatePieceMoved(SpatialRegion source, SpatialRegion target) {
-		LOGGER.debug("Observed event notifying of a moved piece.");
-		repaint();
-	}
-
-	@Override
-	public void updatePlayerJoined(final String joinedPlayerId, long time) {
+	public void updatePlayerJoined(final String joinedPlayerId, final long time) {
 		LOGGER.debug("Observed event representing the joining of a player.");
 	}
 
@@ -314,13 +313,14 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 	public void updatePlayerSelection(final Selection selection) {
 		LOGGER.debug("Observed event representing a user selection.");
 		// FIXME: NPE on repaint???
-//		localSelectionHook.accept(this, selection);
+		// localSelectionHook.accept(this, selection);
 		final boolean isSelectionCorrect = controller.isSelectionCorrect();
 		if (isSelectionCorrect) {
 			// JOptionPane.showMessageDialog(this, "Correct move!", "Good
 			// selection", JOptionPane.INFORMATION_MESSAGE);
 			controller.submitTurnComplete();
 			highlightedRegions.clear();
+			repaint();
 		} else {
 			// JOptionPane.showMessageDialog(this, "Incorrect move!", "Bad
 			// selection", JOptionPane.ERROR_MESSAGE);
@@ -355,8 +355,21 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 		final String turnPlayerId = turn.getPlayerId();
 		LOGGER.debug("Observed event representing a turn completed by \"{}\".", turnPlayerId);
 		// FIXME: NPE at FilteredImageSource.java:181
-//		localTurnCompletionHook.accept(this, turn);
-		highlightedRegions.clear();
+		// localTurnCompletionHook.accept(this, turn);
+		final SpatialRegion moveSource = turn.getMove().getKey();
+		highlightedRegions.remove(moveSource);
+		repaint();
+	}
+
+	/*
+	 * (non-Javadoc)
+	 *
+	 * @see
+	 * se.kth.speech.coin.tangrams.game.Controller.Listener#updateMoveCount(int)
+	 */
+	@Override
+	public void updateTurnCount(final int newCount) {
+		LOGGER.debug("Notified of new turn count.");
 	}
 
 	private void addDisablingMouseListener(final DisablingMouseAdapter mouseListener) {
@@ -384,26 +397,6 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 		} while (pieceMove == null && failedRegions.size() < regionsToTry.size());
 
 		return pieceMove;
-	}
-
-	private Map<Integer, SpatialRegion> createRandomValidMoveTargetMap(final SpatialRegion occupiedRegion,
-			final Random rnd) {
-		final Set<SpatialRegion> regionValidMoves = posMatrix.createValidMoveSet(occupiedRegion);
-		final Map<Integer, SpatialRegion> result;
-		if (regionValidMoves.isEmpty()) {
-			result = Collections.emptyMap();
-		} else {
-			final SpatialMap<Integer> piecePlacements = posMatrix.getElementPlacements();
-			final Collection<Integer> pieceIds = piecePlacements.getMinimalRegionElements().get(occupiedRegion);
-			// NOTE: The iterator should only have one element here
-			result = Maps.newHashMapWithExpectedSize(pieceIds.size());
-			for (final Integer pieceId : pieceIds) {
-				final SpatialRegion moveTarget = RandomCollections.getRandomElement(regionValidMoves, rnd);
-				assert !piecePlacements.isOccupied(moveTarget);
-				result.put(pieceId, moveTarget);
-			}
-		}
-		return result;
 	}
 
 	// private void drawGrid(final Graphics g) {
@@ -473,6 +466,26 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 	// }
 	// LOGGER.debug("Finished drawing piece IDs.");
 	// }
+
+	private Map<Integer, SpatialRegion> createRandomValidMoveTargetMap(final SpatialRegion occupiedRegion,
+			final Random rnd) {
+		final Set<SpatialRegion> regionValidMoves = posMatrix.createValidMoveSet(occupiedRegion);
+		final Map<Integer, SpatialRegion> result;
+		if (regionValidMoves.isEmpty()) {
+			result = Collections.emptyMap();
+		} else {
+			final SpatialMap<Integer> piecePlacements = posMatrix.getElementPlacements();
+			final Collection<Integer> pieceIds = piecePlacements.getMinimalRegionElements().get(occupiedRegion);
+			// NOTE: The iterator should only have one element here
+			result = Maps.newHashMapWithExpectedSize(pieceIds.size());
+			for (final Integer pieceId : pieceIds) {
+				final SpatialRegion moveTarget = RandomCollections.getRandomElement(regionValidMoves, rnd);
+				assert !piecePlacements.isOccupied(moveTarget);
+				result.put(pieceId, moveTarget);
+			}
+		}
+		return result;
+	}
 
 	private Graphics2D createRegionHighlightDrawingGraphics(final Graphics g) {
 		final Graphics2D result = (Graphics2D) g.create();
@@ -649,15 +662,6 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 		}
 
 		}
-	}
-
-	/* (non-Javadoc)
-	 * @see se.kth.speech.coin.tangrams.game.Controller.Listener#updateMoveCount(int)
-	 */
-	@Override
-	public void updateTurnCount(int newCount) {
-		LOGGER.debug("Notified of new move count.");
-		
 	}
 
 }

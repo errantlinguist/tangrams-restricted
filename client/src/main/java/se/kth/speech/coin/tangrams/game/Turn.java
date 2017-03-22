@@ -16,7 +16,9 @@
 */
 package se.kth.speech.coin.tangrams.game;
 
-import se.kth.speech.coin.tangrams.iristk.events.Move;
+import java.util.Map.Entry;
+
+import se.kth.speech.SpatialRegion;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -25,13 +27,13 @@ import se.kth.speech.coin.tangrams.iristk.events.Move;
  */
 public final class Turn {
 
-	private final Move move;
+	private final Entry<SpatialRegion, SpatialRegion> move;
 
 	private final String playerId;
 
 	private final int sequenceNumber;
 
-	Turn(final String playerId, final Move move, final int sequenceNumber) {
+	Turn(final String playerId, final Entry<SpatialRegion, SpatialRegion> move, final int sequenceNumber) {
 		this.playerId = playerId;
 		this.move = move;
 		this.sequenceNumber = sequenceNumber;
@@ -40,7 +42,7 @@ public final class Turn {
 	/**
 	 * @return the move
 	 */
-	public Move getMove() {
+	public Entry<SpatialRegion, SpatialRegion> getMove() {
 		return move;
 	}
 

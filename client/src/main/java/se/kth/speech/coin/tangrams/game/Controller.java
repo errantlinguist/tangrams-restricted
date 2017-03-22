@@ -48,8 +48,6 @@ public final class Controller {
 
 		void updateNextMove(Move move);
 
-		void updatePieceMoved(SpatialRegion source, SpatialRegion target);
-
 		void updatePlayerJoined(String joinedPlayerId, long time);
 
 		void updatePlayerRole(PlayerRole newRole);
@@ -229,7 +227,9 @@ public final class Controller {
 		updatePiecePositions(move);
 
 		LOGGER.debug("Old turn count was {}.", turnCount);
-		final Turn turn = new Turn(submittingPlayerId, move, turnCount);
+
+		final Entry<SpatialRegion, SpatialRegion> regionMove = createRegionMovePair(move);
+		final Turn turn = new Turn(submittingPlayerId, regionMove, turnCount);
 		listeners.forEach(listener -> listener.updateTurnCompleted(turn));
 		nextMove = null;
 		turnCount++;
@@ -308,6 +308,12 @@ public final class Controller {
 		updatePlayerRole(PlayerRole.WAITING_FOR_NEXT_MOVE);
 	}
 
+	private Entry<SpatialRegion, SpatialRegion> createRegionMovePair(final Move move) {
+		final SpatialRegion source = areaRegionFactory.apply(move.getSource());
+		final SpatialRegion target = areaRegionFactory.apply(move.getTarget());
+		return new MutablePair<>(source, target);
+	}
+
 	private void updatePiecePositions(final Move move) {
 		final SpatialRegion source = areaRegionFactory.apply(move.getSource());
 		final SpatialRegion target = areaRegionFactory.apply(move.getTarget());
@@ -321,7 +327,6 @@ public final class Controller {
 			model.placeElement(pieceId, target);
 		}
 		model.clearRegion(source);
-		listeners.forEach(listener -> listener.updatePieceMoved(source, target));
 	}
 
 	private void updatePlayerRole(final PlayerRole newRole) {

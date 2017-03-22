@@ -46,7 +46,6 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Maps;
 
-import se.kth.speech.SpatialRegion;
 import se.kth.speech.awt.ColorIcon;
 import se.kth.speech.coin.tangrams.game.Controller;
 import se.kth.speech.coin.tangrams.game.PlayerRole;
@@ -76,20 +75,6 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 		result.put(TextAttribute.FAMILY, Font.SANS_SERIF);
 		result.put(TextAttribute.WEIGHT, TextAttribute.WEIGHT_BOLD);
 		result.put(TextAttribute.SIZE, 20.0f);
-		return result;
-	}
-
-	private static MoveCounterLabel createMoveCounterLabel(final int initialMoveCount, final int siblingWidth) {
-		final MoveCounterLabel result = new MoveCounterLabel(initialMoveCount);
-		final Font font = Font.getFont(createMoveCounterFontAttrMap());
-		result.setFont(font);
-		{
-			final FontMetrics fontMetrics = result.getFontMetrics(font);
-			final int maxFontWidth = Arrays.stream(fontMetrics.getWidths()).max().getAsInt();
-			final int preferredWidth = Math.max(siblingWidth, maxFontWidth * 3);
-			final int preferredHeight = fontMetrics.getHeight();
-			result.setPreferredSize(new Dimension(preferredWidth, preferredHeight));
-		}
 		return result;
 	}
 
@@ -145,6 +130,21 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 		return result;
 	}
 
+	private static JLabel createTurnCounterLabel(final int initialTurnCount, final int siblingWidth) {
+		final JLabel result = new JLabel(Integer.toString(initialTurnCount));
+		result.setAlignmentX(Component.CENTER_ALIGNMENT);
+		final Font font = Font.getFont(createMoveCounterFontAttrMap());
+		result.setFont(font);
+		{
+			final FontMetrics fontMetrics = result.getFontMetrics(font);
+			final int maxFontWidth = Arrays.stream(fontMetrics.getWidths()).max().getAsInt();
+			final int preferredWidth = Math.max(siblingWidth, maxFontWidth * 3);
+			final int preferredHeight = fontMetrics.getHeight();
+			result.setPreferredSize(new Dimension(preferredWidth, preferredHeight));
+		}
+		return result;
+	}
+
 	private static JLabel createTurnLabel(final PlayerRole initialRole) {
 		final String title = PLAYER_ROLE_STATUS_LABEL_TEXT.get(initialRole);
 		final JLabel result = new JLabel(title);
@@ -171,7 +171,7 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 
 	private final JLabel roleStatusLabel;
 
-	private final MoveCounterLabel moveCounterLabel;
+	private final JLabel turnCounterLabel;
 
 	GameViewFrame(final GameBoardPanel boardPanel, final Random rnd, final Controller controller,
 			final Runnable closeHook) {
@@ -213,9 +213,9 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 			sidePanel.setLayout(layout);
 			sidePanel.add(playerReadiness);
 
-			moveCounterLabel = createMoveCounterLabel(controller.getTurnCount(),
+			turnCounterLabel = createTurnCounterLabel(controller.getTurnCount(),
 					playerReadiness.getPreferredSize().width);
-			sidePanel.add(moveCounterLabel);
+			sidePanel.add(turnCounterLabel);
 		}
 		add(createStatusPanel(boardPanel, rnd, gameBoardPanelSize, sidePanel, controller), BorderLayout.PAGE_END);
 
@@ -252,18 +252,6 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 	@Override
 	public void updateNextMove(final Move move) {
 		LOGGER.debug("Observed event representing the subbmission of a move by a player.");
-	}
-
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see
-	 * se.kth.speech.coin.tangrams.game.Controller.Listener#updatePieceMoved(se.
-	 * kth.speech.SpatialRegion, se.kth.speech.SpatialRegion)
-	 */
-	@Override
-	public void updatePieceMoved(final SpatialRegion source, final SpatialRegion target) {
-		LOGGER.debug("Observed event notifying of a moved piece.");
 	}
 
 	@Override
@@ -321,13 +309,14 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see
 	 * se.kth.speech.coin.tangrams.game.Controller.Listener#updateMoveCount(int)
 	 */
 	@Override
 	public void updateTurnCount(final int newCount) {
-		moveCounterLabel.update(newCount);
+		LOGGER.debug("Notified of new turn count.");
+		turnCounterLabel.setText(Integer.toString(newCount));
 	}
 
 	/**
