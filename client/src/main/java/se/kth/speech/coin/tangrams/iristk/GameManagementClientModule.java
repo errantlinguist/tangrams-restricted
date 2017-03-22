@@ -29,7 +29,6 @@ import com.google.common.collect.BiMap;
 import iristk.system.Event;
 import iristk.system.IrisModule;
 import se.kth.speech.SpatialMatrix;
-import se.kth.speech.coin.tangrams.game.GameState;
 import se.kth.speech.coin.tangrams.game.PlayerJoinTime;
 import se.kth.speech.coin.tangrams.game.PlayerRole;
 import se.kth.speech.coin.tangrams.iristk.events.Area2D;

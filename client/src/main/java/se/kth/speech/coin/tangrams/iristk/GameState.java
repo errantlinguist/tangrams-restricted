@@ -14,14 +14,13 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech.coin.tangrams.game;
+package se.kth.speech.coin.tangrams.iristk;
 
 import java.util.Random;
 
 import com.google.common.collect.BiMap;
 
 import se.kth.speech.coin.tangrams.game.PlayerRole;
-import se.kth.speech.coin.tangrams.iristk.Controller;
 
 public final class GameState {
 
