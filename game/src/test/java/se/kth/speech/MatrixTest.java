@@ -19,8 +19,6 @@ package se.kth.speech;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.not;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assume.assumeThat;
-import static org.junit.Assume.assumeTrue;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -31,6 +29,7 @@ import java.util.function.ToIntFunction;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import org.junit.Assume;
 import org.junit.Rule;
 import org.junit.experimental.theories.DataPoints;
 import org.junit.experimental.theories.FromDataPoints;
@@ -140,11 +139,13 @@ public final class MatrixTest {
 			@FromDataPoints("matrixIdxPositions") final int matrixIdxPosition) {
 		final int[] dims = m.getDimensions();
 		final int maxIdx = m.getValues().size();
-		assumeTrue(String.format(
+		Assume.assumeTrue(String.format(
 				"Provided test array index is greater than the maximum (%d) for the %s instance under test.", maxIdx,
 				m.getClass().getSimpleName()), valArrIdx <= maxIdx);
-		assumeTrue(String.format("The matrix index position to test is too great for the %s instance under test.",
-				m.getClass().getSimpleName()), matrixIdxPosition <= dims.length);
+		Assume.assumeTrue(
+				String.format("The matrix index position to test is too great for the %s instance under test.",
+						m.getClass().getSimpleName()),
+				matrixIdxPosition <= dims.length);
 		final int[] mIdxs = m.getMatrixIndices(valArrIdx);
 		final int mIdx = mIdxs[matrixIdxPosition];
 		final int mIdxUpperBound = dims[matrixIdxPosition];
@@ -170,8 +171,8 @@ public final class MatrixTest {
 	 */
 	@Theory
 	public void testMatrixIllformed(final Object[] vals, final int colCount) {
-		assumeTrue(colCount > 0);
-		assumeThat(vals.length % colCount, not(0));
+		Assume.assumeTrue(colCount > 0);
+		Assume.assumeThat(vals.length % colCount, not(0));
 		thrown.expect(IllegalArgumentException.class);
 		new Matrix<>(vals, colCount);
 	}
@@ -181,7 +182,7 @@ public final class MatrixTest {
 	 */
 	@Theory
 	public void testMatrixNonPositiveColCount(final Object[] vals, final int colCount) {
-		assumeTrue(colCount < 1);
+		Assume.assumeTrue(colCount < 1);
 		thrown.expect(IllegalArgumentException.class);
 		new Matrix<>(vals, colCount);
 	}
@@ -191,9 +192,9 @@ public final class MatrixTest {
 	 */
 	@Theory
 	public void testMatrixPositive(final Object[] vals, final int colCount) {
-		assumeTrue(colCount > 0);
-		assumeTrue(vals.length >= colCount);
-		assumeThat(vals.length % colCount, equalTo(0));
+		Assume.assumeTrue(colCount > 0);
+		Assume.assumeTrue(vals.length >= colCount);
+		Assume.assumeThat(vals.length % colCount, equalTo(0));
 		new Matrix<>(vals, colCount);
 	}
 
@@ -202,7 +203,7 @@ public final class MatrixTest {
 	 */
 	@Theory
 	public void testMatrixTooFewValues(final Object[] vals, final int colCount) {
-		assumeTrue(vals.length < colCount);
+		Assume.assumeTrue(vals.length < colCount);
 		thrown.expect(IllegalArgumentException.class);
 		new Matrix<>(vals, colCount);
 	}
