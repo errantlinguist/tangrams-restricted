@@ -40,8 +40,7 @@ public final class FilenameBaseSplitter implements Function<String, String> {
 	@Override
 	public String apply(final String path) {
 		final String[] filenameParts = FILE_EXT_SPLITTING_PATTERN.split(path);
-		final String filenameBase = filenameParts[0];
-		return filenameBase;
+		return filenameParts[0];
 	}
 
 }
