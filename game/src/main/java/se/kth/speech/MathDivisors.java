@@ -72,10 +72,13 @@ public final class MathDivisors {
 	 * @return The greatest common divisor.
 	 */
 	public static int gcd(final int first, final int next) {
+		final int result;
 		if (next == 0) {
-			return first;
+			result = first;
+		} else {
+			result = gcd(next, first % next);
 		}
-		return gcd(next, first % next);
+		return result;
 	}
 
 	/**
