@@ -23,9 +23,9 @@ package se.kth.speech;
  */
 public final class Integers {
 
-	public static final Integer valueOfNullable(final String s) {
+	public static Integer valueOfNullable(final String s) {
 		final Integer result;
-		if (s.equals("null")) {
+		if ("null".equals(s)) {
 			result = null;
 		} else {
 			result = Integer.valueOf(s);
