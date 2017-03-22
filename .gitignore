@@ -147,6 +147,8 @@ dependency-reduced-pom.xml
 buildNumber.properties
 .mvn/timing.properties
 
+## PMD <https://pmd.github.io/>
+.pmd
 
 ## PROJECT-SPECIFIC IGNORE STATEMENTS
 log/
