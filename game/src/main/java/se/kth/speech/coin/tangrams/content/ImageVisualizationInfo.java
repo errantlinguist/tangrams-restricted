@@ -125,7 +125,7 @@ public final class ImageVisualizationInfo {
 		builder.append(color);
 		builder.append(", size=");
 		builder.append(size);
-		builder.append("]");
+		builder.append(']');
 		return builder.toString();
 	}
 

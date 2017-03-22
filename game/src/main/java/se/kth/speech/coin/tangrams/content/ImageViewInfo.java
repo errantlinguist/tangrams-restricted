@@ -150,7 +150,7 @@ public final class ImageViewInfo {
 			builder.append(Arrays.toString(getAspectRatio()));
 			builder.append(", getGcd()=");
 			builder.append(getGcd());
-			builder.append("]");
+			builder.append(']');
 			return builder.toString();
 		}
 	}
@@ -245,7 +245,7 @@ public final class ImageViewInfo {
 		builder.append(rasterization);
 		builder.append(", visualization=");
 		builder.append(visualization);
-		builder.append("]");
+		builder.append(']');
 		return builder.toString();
 	}
 }

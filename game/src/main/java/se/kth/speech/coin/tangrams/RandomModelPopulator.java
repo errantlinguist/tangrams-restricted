@@ -86,7 +86,7 @@ public final class RandomModelPopulator implements Consumer<Random> {
 			builder.append(totalImgGridArea);
 			builder.append(", commonDivisors=");
 			builder.append(commonDivisors);
-			builder.append("]");
+			builder.append(']');
 			return builder.toString();
 		}
 

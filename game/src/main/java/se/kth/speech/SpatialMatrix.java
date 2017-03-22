@@ -362,7 +362,7 @@ public final class SpatialMatrix<E> {
 		final StringBuilder builder = new StringBuilder();
 		builder.append("SpatialMatrix [positionMatrix=");
 		builder.append(positionMatrix);
-		builder.append("]");
+		builder.append(']');
 		return builder.toString();
 	}
 

@@ -112,7 +112,7 @@ public final class PlayerJoinTime implements Serializable {
 		builder.append(playerId);
 		builder.append(", joinTime=");
 		builder.append(joinTime);
-		builder.append("]");
+		builder.append(']');
 		return builder.toString();
 	}
 

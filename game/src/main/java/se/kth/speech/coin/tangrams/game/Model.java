@@ -154,7 +154,7 @@ public final class Model<T> {
 		final StringBuilder builder = new StringBuilder();
 		builder.append("Model [coordOccupants=");
 		builder.append(coordOccupants);
-		builder.append("]");
+		builder.append(']');
 		return builder.toString();
 	}
 

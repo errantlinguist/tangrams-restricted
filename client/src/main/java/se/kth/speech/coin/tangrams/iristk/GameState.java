@@ -162,7 +162,7 @@ public final class GameState {
 		builder.append(playerRoles);
 		builder.append(", rnd=");
 		builder.append(rnd);
-		builder.append("]");
+		builder.append(']');
 		return builder.toString();
 	}
 

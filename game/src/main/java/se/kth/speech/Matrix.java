@@ -278,7 +278,7 @@ public final class Matrix<E> {
 		builder.append(Arrays.toString(getDimensions()));
 		builder.append(", values=");
 		builder.append(values);
-		builder.append("]");
+		builder.append(']');
 		return builder.toString();
 	}
 

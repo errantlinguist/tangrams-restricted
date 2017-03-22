@@ -250,8 +250,8 @@ public final class SpatialRegion {
 		builder.append(yLowerBound);
 		builder.append(", ");
 		builder.append(yUpperBound);
-		builder.append(")");
-		builder.append("]");
+		builder.append(')');
+		builder.append(']');
 		return builder.toString();
 	}
 

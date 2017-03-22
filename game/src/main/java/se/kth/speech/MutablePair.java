@@ -156,7 +156,7 @@ public final class MutablePair<L, R> implements Entry<L, R> {
 		builder.append(getLeft());
 		builder.append(", getRight()=");
 		builder.append(getRight());
-		builder.append("]");
+		builder.append(']');
 		return builder.toString();
 	}
 

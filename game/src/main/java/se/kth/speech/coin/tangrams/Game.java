@@ -83,7 +83,7 @@ public final class Game<T> {
 		builder.append(model);
 		builder.append(", playerRoles=");
 		builder.append(playerRoles);
-		builder.append("]");
+		builder.append(']');
 		return builder.toString();
 	}
 
