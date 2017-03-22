@@ -16,8 +16,6 @@
 */
 package se.kth.speech.coin.tangrams;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
 import com.google.common.collect.BiMap;
 
 import se.kth.speech.SpatialMatrix;
