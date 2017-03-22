@@ -20,6 +20,7 @@ import java.awt.Image;
 import java.awt.Toolkit;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.util.EnumMap;
 import java.util.Properties;
 import java.util.Random;
 import java.util.function.BiFunction;
@@ -27,9 +28,9 @@ import java.util.function.Function;
 import java.util.regex.Pattern;
 
 import com.github.errantlinguist.ClassProperties;
-import com.google.common.collect.HashBiMap;
 
 import se.kth.speech.SpatialMatrix;
+import se.kth.speech.coin.tangrams.game.PlayerRole;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -48,8 +49,6 @@ final class GameFactory implements Function<String, Game<Integer>> {
 
 	};;
 
-	private static final int MAX_PLAYER_COUNT;
-
 	private static final Pattern MULTIVALUE_PROP_DELIM_PATTERN = Pattern.compile("\\s*,\\s*");
 
 	private static final Properties PROPS;
@@ -57,7 +56,6 @@ final class GameFactory implements Function<String, Game<Integer>> {
 	static {
 		try {
 			PROPS = ClassProperties.load(GameFactory.class);
-			MAX_PLAYER_COUNT = Integer.parseInt(PROPS.getProperty("maxPlayers"));
 		} catch (final IOException e) {
 			throw new UncheckedIOException(e);
 		}
@@ -101,7 +99,7 @@ final class GameFactory implements Function<String, Game<Integer>> {
 		} catch (final NumberFormatException e) {
 			throw new IllegalArgumentException("Invalid game name.", e);
 		}
-		return new Game<>(seed, model, HashBiMap.create(MAX_PLAYER_COUNT));
+		return new Game<>(seed, model, new EnumMap<>(PlayerRole.class));
 	}
 
 }

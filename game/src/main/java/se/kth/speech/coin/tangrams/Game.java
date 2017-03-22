@@ -16,7 +16,7 @@
 */
 package se.kth.speech.coin.tangrams;
 
-import com.google.common.collect.BiMap;
+import java.util.Map;
 
 import se.kth.speech.SpatialMatrix;
 import se.kth.speech.coin.tangrams.game.PlayerRole;
@@ -27,9 +27,9 @@ public final class Game<T> {
 
 	private final SpatialMatrix<T> model;
 
-	private final BiMap<PlayerRole, String> playerRoles;
+	private final Map<PlayerRole, String> playerRoles;
 
-	Game(final long seed, final SpatialMatrix<T> model, final BiMap<PlayerRole, String> playerRoles) {
+	Game(final long seed, final SpatialMatrix<T> model, final Map<PlayerRole, String> playerRoles) {
 		this.seed = seed;
 		this.model = model;
 		this.playerRoles = playerRoles;
@@ -45,7 +45,7 @@ public final class Game<T> {
 	/**
 	 * @return the playerRoles
 	 */
-	public BiMap<PlayerRole, String> getPlayerRoles() {
+	public Map<PlayerRole, String> getPlayerRoles() {
 		return playerRoles;
 	}
 
@@ -58,7 +58,7 @@ public final class Game<T> {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#toString()
 	 */
 	@Override
