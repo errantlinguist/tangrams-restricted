@@ -106,7 +106,7 @@ public final class ImageVisualizationInfoTest {
 	@Theory
 	public final void testEqualsObjectNegative(final URL u1, final Color c1, final ImageSize s1, final URL u2,
 			final Color c2, final ImageSize s2) {
-		Assume.assumeFalse(u1.equals(u2) && c1.equals(c2) && c1.equals(c2));
+		Assume.assumeFalse(u1.equals(u2) && c1.equals(c2) && s1.equals(s2));
 		final ImageVisualizationInfo o1 = new ImageVisualizationInfo(u1, c1, s1);
 		final ImageVisualizationInfo o2 = new ImageVisualizationInfo(u2, c2, s2);
 		Assert.assertNotEquals(o1, o2);
