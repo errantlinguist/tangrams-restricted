@@ -94,22 +94,14 @@ public final class ImageVisualizationInfoFactory implements Iterator<ImageVisual
 	 */
 	public ImageVisualizationInfoFactory(final Collection<? extends URL> imgResources,
 			final List<? extends Color> uniqueImgColors, final List<ImageSize> sizes, final Random rnd) {
-		// this.maxSharedAttrCount = maxSharedAttrCount;
 		this.rnd = rnd;
 		createdInstanceCount = 0;
-
-		// imgSizes = HashMultimap.create(imgResources.size(), sizes.size());
-		// imgColors = HashMultimap.create(imgResources.size(),
-		// uniqueImgColors.size());
-		// LinkedHashMap in order to preserve iteration order across instances
 		imgResourceUsageCounts = Maps.newLinkedHashMapWithExpectedSize(imgResources.size());
 		imgResources.forEach(loc -> imgResourceUsageCounts.put(loc, 0));
 		colorUsageCounts = Maps.newLinkedHashMapWithExpectedSize(uniqueImgColors.size());
 		uniqueImgColors.forEach(color -> colorUsageCounts.put(color, 0));
 		sizeUsageCounts = new EnumMap<>(ImageSize.class);
 		sizes.forEach(size -> sizeUsageCounts.put(size, 0));
-		// coloredSizedImageResources = ArrayTable.create(uniqueImgColors,
-		// sizes);
 	}
 
 	/**
