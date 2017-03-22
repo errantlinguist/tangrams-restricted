@@ -314,7 +314,8 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 	@Override
 	public void updatePlayerSelection(final Selection selection) {
 		LOGGER.debug("Observed event representing a user selection.");
-		localSelectionHook.accept(this, selection);
+		// FIXME: NPE on repaint???
+//		localSelectionHook.accept(this, selection);
 		final boolean isSelectionCorrect = controller.isSelectionCorrect();
 		if (isSelectionCorrect) {
 			// JOptionPane.showMessageDialog(this, "Correct move!", "Good
@@ -342,8 +343,6 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 	@Override
 	public void updateSelectionRejected(final Selection selection) {
 		LOGGER.debug("Observed event representing the rejection of the last selection.");
-		// TODO Auto-generated method stub
-
 	}
 
 	/*
@@ -651,15 +650,6 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 		}
 
 		}
-	}
-
-	/**
-	 *
-	 */
-	synchronized void notifyUndo() {
-		LOGGER.debug("Notified of undo event.");
-		// TODO Auto-generated method stub
-
 	}
 
 	/* (non-Javadoc)
