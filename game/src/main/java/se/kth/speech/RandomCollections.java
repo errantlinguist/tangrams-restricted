@@ -41,9 +41,10 @@ public final class RandomCollections {
 	 * @return A random element.
 	 */
 	public static <T> T getRandomElement(final Collection<? extends T> coll, final Random rnd) {
+		final T result;
 		if (coll instanceof RandomAccess && coll instanceof List) {
 			final List<? extends T> downcast = (List<? extends T>) coll;
-			return getRandomElement(downcast, rnd);
+			result = getRandomElement(downcast, rnd);
 		} else {
 			final Iterator<? extends T> iter = coll.iterator();
 			final int idx = rnd.nextInt(coll.size());
@@ -51,8 +52,9 @@ public final class RandomCollections {
 			for (int i = 1; i < idx; ++i) {
 				iter.next();
 			}
-			return iter.next();
+			result = iter.next();
 		}
+		return result;
 	}
 
 	public static int getRandomElement(final int[] array, final Random rnd) {
