@@ -66,10 +66,6 @@ public final class Controller {
 
 	}
 
-	public enum ValidationStatus {
-		OK, SOURCE_EMPTY, SOURCE_TARGET_SAME, TARGET_OCCUPIED;
-	}
-
 	//private static final Logger LOGGER = LoggerFactory.getLogger(Controller.class);
 	private static final MyLogger LOGGER = new MyLogger();
 
@@ -409,23 +405,5 @@ public final class Controller {
 	// assert !occupantIter.hasNext();
 	// model.placeElement(occupant, targetRegion);
 	// }
-
-	private ValidationStatus validateMove(final SpatialRegion sourceRegion, final SpatialRegion targetRegion) {
-		final ValidationStatus result;
-
-		if (sourceRegion.equals(targetRegion)) {
-			result = ValidationStatus.SOURCE_TARGET_SAME;
-		} else if (model.isOccupied(sourceRegion)) {
-			if (model.isOccupied(targetRegion)) {
-				result = ValidationStatus.TARGET_OCCUPIED;
-			} else {
-				result = ValidationStatus.OK;
-			}
-		} else {
-			result = ValidationStatus.SOURCE_EMPTY;
-		}
-
-		return result;
-	}
 
 }
