@@ -38,7 +38,7 @@ public final class DisablingMouseAdapter implements MouseListener, MouseWheelLis
 
 	private final MouseAdapter decorated;
 
-	private final boolean isEnabled = true;
+	private boolean isEnabled = true;
 
 	public DisablingMouseAdapter(final MouseAdapter decorated) {
 		this.decorated = decorated;
@@ -132,7 +132,12 @@ public final class DisablingMouseAdapter implements MouseListener, MouseWheelLis
 	}
 
 	public void setEnabled(final boolean enabled) {
-		if (isEnabled == enabled) {
+		isEnabled = enabled;
+		updateEnabled();
+	}
+
+	private void updateEnabled() {
+		if (isEnabled) {
 			current = decorated;
 		} else {
 			current = NULL_OBJECT;
