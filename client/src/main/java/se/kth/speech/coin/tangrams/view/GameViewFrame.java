@@ -136,11 +136,6 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 
 		final JPanel buttonPanel = new JPanel();
 		result.add(buttonPanel);
-		final JButton undoButton = new JButton("undo");
-		buttonPanel.add(undoButton);
-		undoButton.addActionListener(continueEvent -> {
-			boardPanel.notifyUndo();
-		});
 		final JButton continueButton = new JButton("continue");
 		buttonPanel.add(continueButton);
 		continueButton.addActionListener(continueEvent -> {
