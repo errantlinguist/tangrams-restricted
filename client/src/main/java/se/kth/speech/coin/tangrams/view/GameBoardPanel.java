@@ -156,7 +156,7 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 
 	private final Controller controller;
 
-	private final boolean debugEnabled;
+	private final boolean analysisEnabled;
 
 	private final Color highlightColor;
 
@@ -205,7 +205,7 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 			final Controller controller, final Color highlightColor,
 			final BiConsumer<? super GameBoardPanel, ? super Turn> localTurnCompletionHook,
 			final BiConsumer<? super GameBoardPanel, ? super Selection> localSelectionHook,
-			final boolean debugEnabled) {
+			final boolean analysisEnabled) {
 		this.posMatrix = posMatrix;
 		this.pieceImgs = pieceImgs;
 		this.controller = controller;
@@ -213,7 +213,7 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 		controller.getListeners().add(this);
 		this.localTurnCompletionHook = localTurnCompletionHook;
 		this.localSelectionHook = localSelectionHook;
-		this.debugEnabled = debugEnabled;
+		this.analysisEnabled = analysisEnabled;
 		selectingMouseListener = new DisablingMouseAdapter(new SelectingMouseAdapter());
 		updateMouseListener(controller.getRole());
 		addDisablingMouseListener(selectingMouseListener);
@@ -240,7 +240,7 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 			try {
 				drawBorder(gridDrawingG);
 				// Draw a grid (for debugging/devel)
-				if (debugEnabled) {
+				if (analysisEnabled) {
 					drawGrid(gridDrawingG);
 					drawPieceIds(g);
 				}

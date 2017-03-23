@@ -90,10 +90,10 @@ public final class TangramsClient implements Runnable {
 			}
 
 		},
-		DEBUG("d") {
+		ANALYSIS("a") {
 			@Override
 			public Option get() {
-				return Option.builder(optName).longOpt("debug").desc("Start the client in debugging mode.").build();
+				return Option.builder(optName).longOpt("analysis").desc("Start the client in analysis mode.").build();
 			}
 		},
 		HELP("?") {
@@ -132,12 +132,12 @@ public final class TangramsClient implements Runnable {
 			if (cl.hasOption(Parameter.HELP.optName)) {
 				printHelp();
 			} else {
-				final boolean debugEnabled = cl.hasOption(Parameter.DEBUG.optName);
+				final boolean analysisEnabled = cl.hasOption(Parameter.ANALYSIS.optName);
 				final String brokerHost = parseBrokerHost(cl);
 				try {
 					final int brokerPort = parseBrokerPort(cl);
 					final TangramsClient client = new TangramsClient(PROPS.getProperty("broker.ticket"), brokerHost,
-							brokerPort, debugEnabled);
+							brokerPort, analysisEnabled);
 					client.run();
 
 				} catch (final ParseException e) {
@@ -281,14 +281,14 @@ public final class TangramsClient implements Runnable {
 
 	private final String brokerTicket;
 
-	private final boolean debugEnabled;
+	private final boolean analysisEnabled;
 
 	public TangramsClient(final String brokerTicket, final String brokerHost, final int brokerPort,
-			final boolean debugEnabled) {
+			final boolean analysisEnabled) {
 		this.brokerTicket = brokerTicket;
 		this.brokerHost = brokerHost;
 		this.brokerPort = brokerPort;
-		this.debugEnabled = debugEnabled;
+		this.analysisEnabled = analysisEnabled;
 	}
 
 	@Override
@@ -360,7 +360,7 @@ public final class TangramsClient implements Runnable {
 												irisSystemStopper.run();
 											};
 											EventQueue.invokeLater(new GameGUI(title, viewLocation, gameState,
-													() -> logDir.toPath(), closeHook, debugEnabled));
+													() -> logDir.toPath(), closeHook, analysisEnabled));
 
 										});
 								system.addModule(gameClientModule);
