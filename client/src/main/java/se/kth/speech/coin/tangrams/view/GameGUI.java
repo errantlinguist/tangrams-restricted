@@ -136,7 +136,7 @@ public final class GameGUI implements Runnable {
 
 	private final Consumer<Iterator<Entry<Integer, ImageVisualizationInfo.Datum>>> imgVizInfoWriter;
 
-	private final boolean isDebugEnabled;
+	private final boolean analysisEnabled;
 
 	private final BiConsumer<Component, Selection> selectionLogger;
 
@@ -147,11 +147,11 @@ public final class GameGUI implements Runnable {
 	private final Point viewLocation;
 
 	public GameGUI(final String title, final Point viewLocation, final GameState gameState,
-			final Supplier<? extends Path> logOutdirSupplier, final Runnable closeHook, final boolean isDebugEnabled) {
+			final Supplier<? extends Path> logOutdirSupplier, final Runnable closeHook, final boolean analysisEnabled) {
 		this.title = title;
 		this.viewLocation = viewLocation;
 		this.gameState = gameState;
-		this.isDebugEnabled = isDebugEnabled;
+		this.analysisEnabled = analysisEnabled;
 		final ExecutorService screenshotLoggingExecutor = Executors.newSingleThreadExecutor();
 		{
 			final ScreenshotLogger screenshotLogger = new ScreenshotLogger(logOutdirSupplier,
@@ -232,7 +232,7 @@ public final class GameGUI implements Runnable {
 		final Map<Integer, Image> pieceImgs = Maps.newHashMapWithExpectedSize(imgVizInfoData.size());
 
 		final int uniqueImageResourceCount = imgVizInfo.getUniqueImageResourceCount();
-		final Entry<GameBoardPanel, ImageLoadingImageViewInfoFactory> gameBoardImgViewInfoFactory = isDebugEnabled
+		final Entry<GameBoardPanel, ImageLoadingImageViewInfoFactory> gameBoardImgViewInfoFactory = analysisEnabled
 				? createDebugGameBoardImgViewInfoFactory(controller, pieceImgs, uniqueImageResourceCount,
 						boardAreaColors)
 				: createProdGameBoardImgViewInfoFactory(controller, pieceImgs, uniqueImageResourceCount,
