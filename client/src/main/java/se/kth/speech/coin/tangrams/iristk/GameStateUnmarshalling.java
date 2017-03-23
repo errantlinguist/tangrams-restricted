@@ -16,6 +16,7 @@
 */
 package se.kth.speech.coin.tangrams.iristk;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -39,8 +40,9 @@ final class GameStateUnmarshalling {
 	private static final Function<String, Integer> NULLABLE_INTEGER_GETTER = Integers::valueOfNullable;
 
 	public static SpatialMatrix<Integer> createModel(final ModelDescription modelDesc) {
-		final List<Integer> coordOccupants = modelDesc.getCoordOccupants().stream().map(NULLABLE_INTEGER_GETTER)
-				.collect(Collectors.toList());
+		final List<String> nullableCoordOccupants = modelDesc.getCoordOccupants();
+		final List<Integer> coordOccupants = nullableCoordOccupants.stream().map(NULLABLE_INTEGER_GETTER)
+				.collect(Collectors.toCollection(()-> new ArrayList<>(nullableCoordOccupants.size())));
 		LOGGER.debug("Creating model with coord occupant vector: {}", coordOccupants);
 		final int colCount = modelDesc.getColCount();
 		final Matrix<Integer> backingMatrix = new Matrix<>(coordOccupants, colCount);
