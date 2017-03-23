@@ -98,8 +98,6 @@ public final class GameFactory implements Function<String, Game<Integer>> {
 	 */
 	@Override
 	public Game<Integer> apply(final String name) {
-		final Properties props = loadClassProps();
-
 		final SpatialMatrix<Integer> imgModel;
 		final ImageVisualizationInfo imgVisualizationInfo;
 		final long seed;
@@ -109,6 +107,7 @@ public final class GameFactory implements Function<String, Game<Integer>> {
 			final List<Color> colors = createDefaultLengthRandomColorList(rnd, blacklistedColors);
 			final RandomImageVisualizationInfoFactory imgDataFactory = new RandomImageVisualizationInfoFactory(rnd,
 					colors);
+			final Properties props = loadClassProps();
 			final int pieceCount = Integer.parseInt(props.getProperty("pieceCount"));
 			imgVisualizationInfo = imgDataFactory.apply(pieceCount);
 			final RandomPopulatedModelFactory modelFactory = createModelFactory(imgVisualizationInfo, props);
