@@ -20,9 +20,11 @@ import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
+import java.awt.Stroke;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
@@ -32,6 +34,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
@@ -49,6 +52,7 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
+import se.kth.speech.Matrix;
 import se.kth.speech.MutablePair;
 import se.kth.speech.RandomCollections;
 import se.kth.speech.SpatialMap;
@@ -156,6 +160,8 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 
 	private final Controller controller;
 
+	private final boolean debugEnabled;
+
 	/**
 	 * At most one region should be highlighted at a time per player
 	 */
@@ -176,12 +182,20 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 	GameBoardPanel(final SpatialMatrix<Integer> posMatrix, final Map<Integer, Image> pieceImgs,
 			final Controller controller, final BiConsumer<? super GameBoardPanel, ? super Turn> localTurnCompletionHook,
 			final BiConsumer<? super GameBoardPanel, ? super Selection> localSelectionHook) {
+		this(posMatrix, pieceImgs, controller, localTurnCompletionHook, localSelectionHook, false);
+	}
+
+	GameBoardPanel(final SpatialMatrix<Integer> posMatrix, final Map<Integer, Image> pieceImgs,
+			final Controller controller, final BiConsumer<? super GameBoardPanel, ? super Turn> localTurnCompletionHook,
+			final BiConsumer<? super GameBoardPanel, ? super Selection> localSelectionHook,
+			final boolean debugEnabled) {
 		this.posMatrix = posMatrix;
 		this.pieceImgs = pieceImgs;
 		this.controller = controller;
 		controller.getListeners().add(this);
 		this.localTurnCompletionHook = localTurnCompletionHook;
 		this.localSelectionHook = localSelectionHook;
+		this.debugEnabled = debugEnabled;
 		selectingMouseListener = new DisablingMouseAdapter(new SelectingMouseAdapter());
 		updateMouseListener(controller.getRole());
 		addDisablingMouseListener(selectingMouseListener);
@@ -230,8 +244,10 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 	public void paintComponent(final Graphics g) {
 		super.paintComponent(g);
 		// Draw a grid (for debugging/devel)
-		// drawGrid(g);
-		// drawPieceIds(g);
+		if (debugEnabled) {
+			drawGrid(g);
+			drawPieceIds(g);
+		}
 
 		{
 			final Graphics2D regionHighlightingG = createRegionHighlightDrawingGraphics(g);
@@ -362,74 +378,6 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 		return pieceMove;
 	}
 
-	// private void drawGrid(final Graphics g) {
-	// LOGGER.debug("Drawing grid.");
-	// final Matrix<Integer> posMatrix = this.posMatrix.getPositionMatrix();
-	// final int[] matrixDims = posMatrix.getDimensions();
-	// // http://stackoverflow.com/a/21989406/1391325
-	// // creates a copy of the Graphics instance
-	// final Graphics2D gridDrawingG = (Graphics2D) g.create();
-	// try {
-	// // Row lines
-	// final int rowHeight = getGridRowHeight();
-	// int nextRowY = 0;
-	// // set the stroke of the copy, not the original
-	// final Stroke dashed = new BasicStroke(1, BasicStroke.CAP_BUTT,
-	// BasicStroke.JOIN_BEVEL, 0, new float[] { 1 },
-	// 0);
-	// gridDrawingG.setStroke(dashed);
-	// for (final ListIterator<List<Integer>> matrixRowIter =
-	// posMatrix.rowIterator(); matrixRowIter
-	// .hasNext(); matrixRowIter.next()) {
-	// gridDrawingG.drawLine(0, nextRowY, getWidth(), nextRowY);
-	// nextRowY += rowHeight;
-	// }
-	// LOGGER.debug("Finished drawing row lines.");
-	//
-	// // Column lines
-	// final int colWidth = getGridColWidth();
-	// int nextColX = 0;
-	// for (int colIdx = 0; colIdx < matrixDims[1]; ++colIdx) {
-	// gridDrawingG.drawLine(nextColX, 0, nextColX, getHeight());
-	// nextColX += colWidth;
-	// }
-	// LOGGER.debug("Finished drawing column lines.");
-	// } finally {
-	// gridDrawingG.dispose();
-	// }
-	// LOGGER.debug("Finished drawing grid.");
-	// }
-	//
-	// private void drawPieceIds(final Graphics g) {
-	// LOGGER.debug("Drawing piece IDs.");
-	// final int colWidth = getGridColWidth();
-	// final int rowHeight = getGridRowHeight();
-	// final FontMetrics fm = g.getFontMetrics();
-	// final int pieceTextHeight = fm.getAscent();
-	// int nextRowY = 0;
-	// for (final ListIterator<List<Integer>> matrixRowIter =
-	// posMatrix.getPositionMatrix()
-	// .rowIterator(); matrixRowIter.hasNext();) {
-	// final List<Integer> matrixRow = matrixRowIter.next();
-	// int nextColX = 0;
-	// for (final ListIterator<Integer> matrixRowCellIter =
-	// matrixRow.listIterator(); matrixRowCellIter
-	// .hasNext();) {
-	// final Integer pieceId = matrixRowCellIter.next();
-	// if (pieceId != null) {
-	// final String pieceText = pieceId.toString();
-	// final int pieceTextWidth = fm.stringWidth(pieceText);
-	// final int textXOffset = (colWidth - pieceTextWidth) / 2;
-	// final int textYOffset = (rowHeight - pieceTextHeight) / 2;
-	// g.drawString(pieceText, nextColX + textXOffset, nextRowY + textYOffset);
-	// }
-	// nextColX += colWidth;
-	// }
-	// nextRowY += rowHeight;
-	// }
-	// LOGGER.debug("Finished drawing piece IDs.");
-	// }
-
 	private Map<Integer, SpatialRegion> createRandomValidMoveTargetMap(final SpatialRegion occupiedRegion,
 			final Random rnd) {
 		final Set<SpatialRegion> regionValidMoves = posMatrix.createValidMoveSet(occupiedRegion);
@@ -455,6 +403,70 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 		result.setStroke(new BasicStroke(REGION_HIGHLIGHT_STROKE_WIDTH));
 		result.setColor(Color.MAGENTA);
 		return result;
+	}
+
+	private void drawGrid(final Graphics g) {
+		LOGGER.debug("Drawing grid.");
+		final Matrix<Integer> posMatrix = this.posMatrix.getPositionMatrix();
+		final int[] matrixDims = posMatrix.getDimensions();
+		// http://stackoverflow.com/a/21989406/1391325
+		// creates a copy of the Graphics instance
+		final Graphics2D gridDrawingG = (Graphics2D) g.create();
+		try {
+			// Row lines
+			final int rowHeight = getGridRowHeight();
+			int nextRowY = 0;
+			// set the stroke of the copy, not the original
+			final Stroke dashed = new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[] { 1 },
+					0);
+			gridDrawingG.setStroke(dashed);
+			for (final ListIterator<List<Integer>> matrixRowIter = posMatrix.rowIterator(); matrixRowIter
+					.hasNext(); matrixRowIter.next()) {
+				gridDrawingG.drawLine(0, nextRowY, getWidth(), nextRowY);
+				nextRowY += rowHeight;
+			}
+			LOGGER.debug("Finished drawing row lines.");
+
+			// Column lines
+			final int colWidth = getGridColWidth();
+			int nextColX = 0;
+			for (int colIdx = 0; colIdx < matrixDims[1]; ++colIdx) {
+				gridDrawingG.drawLine(nextColX, 0, nextColX, getHeight());
+				nextColX += colWidth;
+			}
+			LOGGER.debug("Finished drawing column lines.");
+		} finally {
+			gridDrawingG.dispose();
+		}
+		LOGGER.debug("Finished drawing grid.");
+	}
+
+	private void drawPieceIds(final Graphics g) {
+		LOGGER.debug("Drawing piece IDs.");
+		final int colWidth = getGridColWidth();
+		final int rowHeight = getGridRowHeight();
+		final FontMetrics fm = g.getFontMetrics();
+		final int pieceTextHeight = fm.getAscent();
+		int nextRowY = 0;
+		for (final ListIterator<List<Integer>> matrixRowIter = posMatrix.getPositionMatrix()
+				.rowIterator(); matrixRowIter.hasNext();) {
+			final List<Integer> matrixRow = matrixRowIter.next();
+			int nextColX = 0;
+			for (final ListIterator<Integer> matrixRowCellIter = matrixRow.listIterator(); matrixRowCellIter
+					.hasNext();) {
+				final Integer pieceId = matrixRowCellIter.next();
+				if (pieceId != null) {
+					final String pieceText = pieceId.toString();
+					final int pieceTextWidth = fm.stringWidth(pieceText);
+					final int textXOffset = (colWidth - pieceTextWidth) / 2;
+					final int textYOffset = (rowHeight - pieceTextHeight) / 2;
+					g.drawString(pieceText, nextColX + textXOffset, nextRowY + textYOffset);
+				}
+				nextColX += colWidth;
+			}
+			nextRowY += rowHeight;
+		}
+		LOGGER.debug("Finished drawing piece IDs.");
 	}
 
 	private void drawPieceImages(final Graphics g) {
