@@ -157,7 +157,6 @@ final class RandomModelPopulator implements Consumer<Random> {
 
 	@Override
 	public void accept(final Random rnd) {
-		// FIXME: IT's possible that the IDs of the server don't match up with
 		final List<ImageVisualizationInfo.Datum> imgVizInfoData = imgVizInfo.getData();
 		final List<? extends Entry<ImageViewInfo, ? extends Image>> imgViewInfoLoadedImgs = imgVizInfoData.stream()
 				.map(imgViewInfoFactory).collect(Collectors.toCollection(() -> new ArrayList<>(imgVizInfoData.size())));
