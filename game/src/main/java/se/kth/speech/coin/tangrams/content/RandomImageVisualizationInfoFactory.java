@@ -211,8 +211,7 @@ public final class RandomImageVisualizationInfoFactory implements IntFunction<Im
 				.limit(pieceCount);
 		final List<ImageVisualizationInfo.Datum> imgVisualizationInfoDataList = imgVisualizationInfoData
 				.collect(Collectors.toCollection(() -> new ArrayList<>(pieceCount)));
-		return new ImageVisualizationInfo(imgVisualizationInfoDataList, imgResourceUsageCounts.size(),
-				colorUsageCounts.keySet());
+		return new ImageVisualizationInfo(imgVisualizationInfoDataList, imgResourceUsageCounts.size());
 	}
 
 	public int combinationCount() {
