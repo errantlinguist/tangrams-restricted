@@ -129,8 +129,6 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 
 	private final JButton continueButton;
 
-	// private final JLabel turnCounterLabel;
-
 	private final ReadinessIndicator playerReadiness;
 
 	private final JLabel roleStatusLabel;
