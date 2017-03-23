@@ -59,16 +59,6 @@ public final class GameFactory implements Function<String, Game<Integer>> {
 
 	private static final Pattern MULTIVALUE_PROP_DELIM_PATTERN = Pattern.compile("\\s*,\\s*");
 
-	private static final Properties PROPS;
-
-	static {
-		try {
-			PROPS = ClassProperties.load(GameFactory.class);
-		} catch (final IOException e) {
-			throw new UncheckedIOException(e);
-		}
-	}
-
 	private static List<Color> createDefaultLengthRandomColorList(final Random rnd,
 			final Collection<? super Color> blacklistedColors) {
 		final RandomHueColorFactory colorFactory = new RandomHueColorFactory(rnd);
@@ -77,13 +67,22 @@ public final class GameFactory implements Function<String, Game<Integer>> {
 				.collect(Collectors.toCollection(() -> new ArrayList<>(size)));
 	}
 
-	private static RandomPopulatedModelFactory createModelFactory(final ImageVisualizationInfo imgVizInfo) {
-		final boolean allowFailedPlacements = Boolean.parseBoolean(PROPS.getProperty("allowFailedPlacements"));
-		final int[] gridDims = MULTIVALUE_PROP_DELIM_PATTERN.splitAsStream(PROPS.getProperty("gridDims"))
+	private static RandomPopulatedModelFactory createModelFactory(final ImageVisualizationInfo imgVizInfo,
+			final Properties props) {
+		final boolean allowFailedPlacements = Boolean.parseBoolean(props.getProperty("allowFailedPlacements"));
+		final int[] gridDims = MULTIVALUE_PROP_DELIM_PATTERN.splitAsStream(props.getProperty("gridDims"))
 				.mapToInt(Integer::parseInt).toArray();
-		final double occupiedGridArea = Double.parseDouble(PROPS.getProperty("occupiedGridArea"));
+		final double occupiedGridArea = Double.parseDouble(props.getProperty("occupiedGridArea"));
 		return new RandomPopulatedModelFactory(gridDims, imgVizInfo, Toolkit.getDefaultToolkit(), occupiedGridArea,
 				DEFAULT_POST_COLORING_IMG_TRANSFORMER, allowFailedPlacements);
+	}
+
+	private static Properties loadClassProps() {
+		try {
+			return ClassProperties.load(GameFactory.class);
+		} catch (final IOException e) {
+			throw new UncheckedIOException(e);
+		}
 	}
 
 	private final Collection<? super Color> blacklistedColors;
@@ -99,6 +98,8 @@ public final class GameFactory implements Function<String, Game<Integer>> {
 	 */
 	@Override
 	public Game<Integer> apply(final String name) {
+		final Properties props = loadClassProps();
+
 		final SpatialMatrix<Integer> imgModel;
 		final ImageVisualizationInfo imgVisualizationInfo;
 		final long seed;
@@ -108,9 +109,9 @@ public final class GameFactory implements Function<String, Game<Integer>> {
 			final List<Color> colors = createDefaultLengthRandomColorList(rnd, blacklistedColors);
 			final RandomImageVisualizationInfoFactory imgDataFactory = new RandomImageVisualizationInfoFactory(rnd,
 					colors);
-			final int pieceCount = Integer.parseInt(PROPS.getProperty("pieceCount"));
+			final int pieceCount = Integer.parseInt(props.getProperty("pieceCount"));
 			imgVisualizationInfo = imgDataFactory.apply(pieceCount);
-			final RandomPopulatedModelFactory modelFactory = createModelFactory(imgVisualizationInfo);
+			final RandomPopulatedModelFactory modelFactory = createModelFactory(imgVisualizationInfo, props);
 			imgModel = modelFactory.apply(rnd);
 
 		} catch (final NumberFormatException e) {
