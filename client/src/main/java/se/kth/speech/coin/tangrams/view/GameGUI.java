@@ -48,7 +48,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Maps;
 
-import se.kth.speech.SpatialMatrix;
+import se.kth.speech.MutablePair;
 import se.kth.speech.URLFilenameBaseSplitter;
 import se.kth.speech.awt.OpaqueTransparencyReplacementImageFilter;
 import se.kth.speech.coin.tangrams.content.BoardArea;
@@ -134,6 +134,8 @@ public final class GameGUI implements Runnable {
 
 	private final Consumer<Iterator<Entry<Integer, ImageVisualizationInfo.Datum>>> imgVizInfoWriter;
 
+	private final boolean isDebugEnabled;
+
 	private final BiConsumer<Component, Selection> selectionLogger;
 
 	private final String title;
@@ -143,10 +145,11 @@ public final class GameGUI implements Runnable {
 	private final Point viewLocation;
 
 	public GameGUI(final String title, final Point viewLocation, final GameState gameState,
-			final Supplier<? extends Path> logOutdirSupplier, final Runnable closeHook) {
+			final Supplier<? extends Path> logOutdirSupplier, final Runnable closeHook, final boolean isDebugEnabled) {
 		this.title = title;
 		this.viewLocation = viewLocation;
 		this.gameState = gameState;
+		this.isDebugEnabled = isDebugEnabled;
 		final ExecutorService screenshotLoggingExecutor = Executors.newSingleThreadExecutor();
 		{
 			final ScreenshotLogger screenshotLogger = new ScreenshotLogger(logOutdirSupplier,
@@ -185,11 +188,38 @@ public final class GameGUI implements Runnable {
 		}
 	}
 
+	public Entry<GameBoardPanel, ImageLoadingImageViewInfoFactory> createDebugGameBoardImgViewInfoFactory(
+			final Controller controller, final Map<Integer, Image> pieceImgs, final int uniqueImageResourceCount,
+			final Map<BoardArea, Color> boardAreaColors) {
+		final GameBoardPanel gameBoardPanel = new GameBoardPanel(controller.getModel(), pieceImgs, controller,
+				boardAreaColors.get(BoardArea.HIGHLIGHT), turnScreenshotLogger, selectionLogger, true);
+		gameBoardPanel.setBackground(boardAreaColors.get(BoardArea.BACKGROUND));
+		final OpaqueTransparencyReplacementImageFilter imgFilter = new OpaqueTransparencyReplacementImageFilter(128);
+		final BiFunction<Image, Toolkit, Image> tranparencyFilterer = (img, toolkit) -> {
+			return toolkit.createImage(new FilteredImageSource(img.getSource(), imgFilter));
+		};
+		final ImageLoadingImageViewInfoFactory imgViewInfoFactory = new ImageLoadingImageViewInfoFactory(
+				gameBoardPanel.getToolkit(), tranparencyFilterer,
+				Maps.newHashMapWithExpectedSize(uniqueImageResourceCount));
+		return new MutablePair<>(gameBoardPanel, imgViewInfoFactory);
+	}
+
+	public Entry<GameBoardPanel, ImageLoadingImageViewInfoFactory> createProdGameBoardImgViewInfoFactory(
+			final Controller controller, final Map<Integer, Image> pieceImgs, final int uniqueImageResourceCount,
+			final Map<BoardArea, Color> boardAreaColors) {
+		final GameBoardPanel gameBoardPanel = new GameBoardPanel(controller.getModel(), pieceImgs, controller,
+				boardAreaColors.get(BoardArea.HIGHLIGHT), turnScreenshotLogger, selectionLogger);
+		gameBoardPanel.setBackground(boardAreaColors.get(BoardArea.BACKGROUND));
+		final ImageLoadingImageViewInfoFactory imgViewInfoFactory = new ImageLoadingImageViewInfoFactory(
+				gameBoardPanel.getToolkit(), DEFAULT_POST_COLORING_IMG_TRANSFORMER,
+				Maps.newHashMapWithExpectedSize(uniqueImageResourceCount));
+		return new MutablePair<>(gameBoardPanel, imgViewInfoFactory);
+	}
+
 	@Override
 	public void run() {
 		LOGGER.debug("Creating view components.");
 		final Controller controller = gameState.getController();
-		final SpatialMatrix<Integer> model = controller.getModel();
 		// String matrixStrRepr = new
 		// MatrixStringReprFactory().apply(model.getPositionMatrix());
 		// System.out.println(matrixStrRepr);
@@ -199,28 +229,14 @@ public final class GameGUI implements Runnable {
 		final Random rnd = gameState.getRnd();
 		final Map<Integer, Image> pieceImgs = Maps.newHashMapWithExpectedSize(imgVizInfoData.size());
 
-		// @formatter:off
-		// DEBUG CONFIGURATION ---------------------------------------------------------------------
-		final GameBoardPanel gameBoardPanel = new GameBoardPanel(model, pieceImgs, controller,
-				boardAreaColors.get(BoardArea.HIGHLIGHT), turnScreenshotLogger, selectionLogger, true);
-		gameBoardPanel.setBackground(boardAreaColors.get(BoardArea.BACKGROUND));
-		final OpaqueTransparencyReplacementImageFilter imgFilter = new OpaqueTransparencyReplacementImageFilter(128);
-		final BiFunction<Image, Toolkit, Image> tranparencyFilterer = (img, toolkit) -> {
-			return toolkit.createImage(new FilteredImageSource(img.getSource(), imgFilter));
-		};
-		final ImageLoadingImageViewInfoFactory imgViewInfoFactory = new ImageLoadingImageViewInfoFactory(
-				gameBoardPanel.getToolkit(), tranparencyFilterer,
-				Maps.newHashMapWithExpectedSize(imgVizInfo.getUniqueImageResourceCount()));
-		// ------------------------------------------------------------------------------------------
-		// PRODUCTION CONFIGURATION -----------------------------------------------------------------
-//		final GameBoardPanel gameBoardPanel = new GameBoardPanel(model, pieceImgs, controller,
-//				boardAreaColors.get(BoardArea.HIGHLIGHT), turnScreenshotLogger, selectionLogger);
-//		gameBoardPanel.setBackground(boardAreaColors.get(BoardArea.BACKGROUND));
-//		final ImageLoadingImageViewInfoFactory imgViewInfoFactory = new ImageLoadingImageViewInfoFactory(
-//				gameBoardPanel.getToolkit(), DEFAULT_POST_COLORING_IMG_TRANSFORMER,
-//				Maps.newHashMapWithExpectedSize(imgVizInfo.getUniqueImageResourceCount()));
-		// ------------------------------------------------------------------------------------------
-		// @formatter:on
+		final int uniqueImageResourceCount = imgVizInfo.getUniqueImageResourceCount();
+		final Entry<GameBoardPanel, ImageLoadingImageViewInfoFactory> gameBoardImgViewInfoFactory = isDebugEnabled
+				? createDebugGameBoardImgViewInfoFactory(controller, pieceImgs, uniqueImageResourceCount,
+						boardAreaColors)
+				: createProdGameBoardImgViewInfoFactory(controller, pieceImgs, uniqueImageResourceCount,
+						boardAreaColors);
+		final GameBoardPanel gameBoardPanel = gameBoardImgViewInfoFactory.getKey();
+		final ImageLoadingImageViewInfoFactory imgViewInfoFactory = gameBoardImgViewInfoFactory.getValue();
 
 		final SortedMap<Integer, ImageVisualizationInfo.Datum> imgVisualizationInfoDataById = new TreeMap<>();
 

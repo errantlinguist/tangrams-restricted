@@ -90,6 +90,12 @@ public final class TangramsClient implements Runnable {
 			}
 
 		},
+		DEBUG("d") {
+			@Override
+			public Option get() {
+				return Option.builder(optName).longOpt("debug").desc("Start the client in debugging mode.").build();
+			}
+		},
 		HELP("?") {
 			@Override
 			public Option get() {
@@ -126,11 +132,12 @@ public final class TangramsClient implements Runnable {
 			if (cl.hasOption(Parameter.HELP.optName)) {
 				printHelp();
 			} else {
+				final boolean debugEnabled = cl.hasOption(Parameter.DEBUG.optName);
 				final String brokerHost = parseBrokerHost(cl);
 				try {
 					final int brokerPort = parseBrokerPort(cl);
 					final TangramsClient client = new TangramsClient(PROPS.getProperty("broker.ticket"), brokerHost,
-							brokerPort);
+							brokerPort, debugEnabled);
 					client.run();
 
 				} catch (final ParseException e) {
@@ -274,10 +281,14 @@ public final class TangramsClient implements Runnable {
 
 	private final String brokerTicket;
 
-	public TangramsClient(final String brokerTicket, final String brokerHost, final int brokerPort) {
+	private final boolean debugEnabled;
+
+	public TangramsClient(final String brokerTicket, final String brokerHost, final int brokerPort,
+			final boolean debugEnabled) {
 		this.brokerTicket = brokerTicket;
 		this.brokerHost = brokerHost;
 		this.brokerPort = brokerPort;
+		this.debugEnabled = debugEnabled;
 	}
 
 	@Override
@@ -327,7 +338,8 @@ public final class TangramsClient implements Runnable {
 									system.addModule(loggingModule);
 									loggingModule.startLogging(systemLoggingStartTime.getTime());
 								}
-								final Function<String,URL> localResourceLocGetter = IconImages.getImageResources()::get;
+								final Function<String, URL> localResourceLocGetter = IconImages
+										.getImageResources()::get;
 								final GameManagementClientModule gameClientModule = new GameManagementClientModule(
 										gameId, playerId, localResourceLocGetter, gameState -> {
 											LOGGER.info(
@@ -348,7 +360,7 @@ public final class TangramsClient implements Runnable {
 												irisSystemStopper.run();
 											};
 											EventQueue.invokeLater(new GameGUI(title, viewLocation, gameState,
-													() -> logDir.toPath(), closeHook));
+													() -> logDir.toPath(), closeHook, debugEnabled));
 
 										});
 								system.addModule(gameClientModule);
