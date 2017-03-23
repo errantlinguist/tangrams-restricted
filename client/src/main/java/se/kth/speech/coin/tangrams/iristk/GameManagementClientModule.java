@@ -23,6 +23,9 @@ import java.util.Random;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.google.common.collect.BiMap;
 
 import iristk.system.Event;
@@ -37,9 +40,7 @@ import se.kth.speech.coin.tangrams.iristk.events.Selection;
 
 public final class GameManagementClientModule extends IrisModule {
 
-	// private static final Logger LOGGER =
-	// LoggerFactory.getLogger(GameManagementClientModule.class);
-	private static final MyLogger LOGGER = new MyLogger();
+	private static final Logger LOGGER = LoggerFactory.getLogger(GameManagementClientModule.class);
 
 	private Controller controller;
 

@@ -22,13 +22,15 @@ import java.util.IdentityHashMap;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import se.kth.speech.MutablePair;
 import se.kth.speech.SpatialMap;
 import se.kth.speech.SpatialMatrix;
 import se.kth.speech.SpatialRegion;
 import se.kth.speech.coin.tangrams.AreaSpatialRegionFactory;
 import se.kth.speech.coin.tangrams.iristk.GameManagementClientModule;
-import se.kth.speech.coin.tangrams.iristk.MyLogger;
 import se.kth.speech.coin.tangrams.iristk.events.Area2D;
 import se.kth.speech.coin.tangrams.iristk.events.CoordinatePoint2D;
 import se.kth.speech.coin.tangrams.iristk.events.Move;
@@ -76,9 +78,7 @@ public final class Controller {
 
 	private static final int GOOD_TURN_SCORE_DIFF = 1;
 
-	// private static final Logger LOGGER =
-	// LoggerFactory.getLogger(Controller.class);
-	private static final MyLogger LOGGER = new MyLogger();
+	private static final Logger LOGGER = LoggerFactory.getLogger(Controller.class);
 
 	private static Area2D createArea(final SpatialRegion region) {
 		return new Area2D(createStartCoords(region), createEndCoords(region));
