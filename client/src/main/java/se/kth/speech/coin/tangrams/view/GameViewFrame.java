@@ -79,8 +79,9 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 
 	private static ReadinessIndicator createPlayerReadinessIndicator(final int gameBoardPanelWidth,
 			final PlayerTurnStatus initialStatus) {
+		final int size = gameBoardPanelWidth / 20;
 		final ReadinessIndicator result = new ReadinessIndicator(
-				new ColorIcon(gameBoardPanelWidth / 20, ReadinessIndicator.getStatusColor(initialStatus)),
+				new ColorIcon(size, size, ReadinessIndicator.getStatusColor(initialStatus)),
 				initialStatus);
 		result.setAlignmentX(CENTER_ALIGNMENT);
 		final String desc = "An indicator showing if it's your turn or not: Green means \"ready\" and red means \"not ready\".";

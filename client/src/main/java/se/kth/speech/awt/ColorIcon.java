@@ -35,10 +35,13 @@ public final class ColorIcon implements Icon {
 
 	private Color color;
 
-	private final int size;
+	private int iconHeight;
 
-	public ColorIcon(final int size, final Color color) {
-		this.size = size;
+	private int iconWidth;
+
+	public ColorIcon(final int iconWidth, final int iconHeight, final Color color) {
+		this.iconWidth = iconWidth;
+		this.iconHeight = iconHeight;
 		this.color = color;
 	}
 
@@ -51,12 +54,19 @@ public final class ColorIcon implements Icon {
 
 	@Override
 	public int getIconHeight() {
-		return size;
+		return iconHeight;
 	}
 
 	@Override
 	public int getIconWidth() {
-		return size;
+		return iconWidth;
+	}
+
+	/**
+	 * @return the iconWidth
+	 */
+	public int getWidth() {
+		return iconWidth;
 	}
 
 	@Override
@@ -64,7 +74,7 @@ public final class ColorIcon implements Icon {
 		final Graphics2D g2d = (Graphics2D) g;
 		g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 		g2d.setColor(color);
-		g2d.fillOval(x, y, size, size);
+		g2d.fillOval(x, y, iconWidth, iconHeight);
 	}
 
 	/**
@@ -73,5 +83,21 @@ public final class ColorIcon implements Icon {
 	 */
 	public void setColor(final Color color) {
 		this.color = color;
+	}
+
+	/**
+	 * @param iconHeight
+	 *            the iconHeight to set
+	 */
+	public void setIconHeight(final int iconHeight) {
+		this.iconHeight = iconHeight;
+	}
+
+	/**
+	 * @param iconWidth
+	 *            the iconWidth to set
+	 */
+	public void setIconWidth(final int iconWidth) {
+		this.iconWidth = iconWidth;
 	}
 }
