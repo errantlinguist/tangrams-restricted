@@ -42,7 +42,7 @@ final class GameStateUnmarshalling {
 	public static SpatialMatrix<Integer> createModel(final ModelDescription modelDesc) {
 		final List<String> nullableCoordOccupants = modelDesc.getCoordOccupants();
 		final List<Integer> coordOccupants = nullableCoordOccupants.stream().map(NULLABLE_INTEGER_GETTER)
-				.collect(Collectors.toCollection(()-> new ArrayList<>(nullableCoordOccupants.size())));
+				.collect(Collectors.toCollection(() -> new ArrayList<>(nullableCoordOccupants.size())));
 		LOGGER.debug("Creating model with coord occupant vector: {}", coordOccupants);
 		final int colCount = modelDesc.getColCount();
 		final Matrix<Integer> backingMatrix = new Matrix<>(coordOccupants, colCount);
