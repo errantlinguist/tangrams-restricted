@@ -16,10 +16,12 @@
 */
 package se.kth.speech.coin.tangrams;
 
+import java.awt.Color;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Properties;
 import java.util.function.Supplier;
 
@@ -39,6 +41,8 @@ import iristk.system.Broker;
 import iristk.system.IrisSystem;
 import iristk.system.LoggingModule;
 import iristk.util.NameFilter;
+import se.kth.speech.coin.tangrams.content.BoardArea;
+import se.kth.speech.coin.tangrams.game.GameFactory;
 import se.kth.speech.coin.tangrams.iristk.GameManagementServerModule;
 import se.kth.speech.coin.tangrams.iristk.IrisSystemStopper;
 
@@ -218,7 +222,8 @@ public final class TangramsServer implements Runnable {
 			// properly shut down in the case an exception occurs
 			try {
 				system.connectToBroker(brokerTicket, brokerHost, brokerPort);
-				system.addModule(new GameManagementServerModule(new GameFactory()));
+				final Collection<Color> uiReservedColors = BoardArea.getDefaultBoardAreaColorMap().values();
+				system.addModule(new GameManagementServerModule(new GameFactory(uiReservedColors)));
 				system.addModule(new LoggingModule(new File("log", "server"), NameFilter.ALL, true));
 				system.sendStartSignal();
 

@@ -24,25 +24,18 @@ import se.kth.speech.coin.tangrams.game.PlayerRole;
  * @since 12 Jan 2017
  *
  */
-public final class PlayerRoleChange extends Record {
+public final class PlayerRoleUpdate extends Record {
 
 	private String playerId;
 
 	@RecordField(name = "role")
 	private String role;
 
-	public PlayerRoleChange() {
+	public PlayerRoleUpdate() {
 		// Default constructor is required for JSON (un-)marshalling
 	}
 
-	/**
-	 * @param playerIdsToUndo
-	 */
-	public PlayerRoleChange(final PlayerRoleChange copyee) {
-		super(copyee);
-	}
-
-	public PlayerRoleChange(final String playerId,final PlayerRole role) {
+	public PlayerRoleUpdate(final String playerId, final PlayerRole role) {
 		setPlayerId(playerId);
 		setRole(role);
 	}

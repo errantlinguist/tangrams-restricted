@@ -29,7 +29,8 @@ import org.slf4j.LoggerFactory;
 
 import iristk.system.Event;
 import iristk.system.IrisModule;
-import se.kth.speech.coin.tangrams.Game;
+import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
+import se.kth.speech.coin.tangrams.game.Game;
 import se.kth.speech.coin.tangrams.game.PlayerRole;
 
 public final class GameManagementServerModule extends IrisModule {
@@ -43,14 +44,17 @@ public final class GameManagementServerModule extends IrisModule {
 
 	private static Event createGameStateDescriptionEvent(final String gameId, final Game<Integer> gameState) {
 		final GameStateDescription gameDesc = new GameStateDescription();
+
 		gameDesc.setSeed(Long.parseLong(gameId));
 
-		{
-			final Map<PlayerRole, String> playerRoles = gameState.getPlayerRoles();
-			gameDesc.setPlayerRoles(playerRoles);
+		final Map<PlayerRole, String> playerRoles = gameState.getPlayerRoles();
+		gameDesc.setPlayerRoles(playerRoles);
 
-			gameDesc.setModelDescription(new ModelDescription(gameState.getModel().getPositionMatrix()));
-		}
+		gameDesc.setModelDescription(new ModelDescription(gameState.getModel().getPositionMatrix()));
+
+		final ImageVisualizationInfo imgVizInfo = gameState.getImgVisualizationInfo();
+		final ImageVisualizationInfoDescription imgVizInfoDesc = new ImageVisualizationInfoDescription(imgVizInfo);
+		gameDesc.setImageVisualizationInfoDescription(imgVizInfoDesc);
 
 		final Event result = GameManagementEvent.GAME_READY_RESPONSE.createEvent(gameId);
 		result.put(GameManagementEvent.Attribute.GAME_STATE.toString(), gameDesc);
@@ -62,9 +66,9 @@ public final class GameManagementServerModule extends IrisModule {
 		return gameState.getPlayerRoles().keySet().size() >= MIN_GAME_PLAYER_COUNT;
 	}
 
-	private final ConcurrentMap<String, Game<Integer>> newGames;
-
 	private final Function<? super String, ? extends Game<Integer>> gameFactory;
+
+	private final ConcurrentMap<String, Game<Integer>> newGames;
 
 	public GameManagementServerModule(final Function<? super String, ? extends Game<Integer>> gameFactory) {
 		this(gameFactory, new ConcurrentHashMap<>());

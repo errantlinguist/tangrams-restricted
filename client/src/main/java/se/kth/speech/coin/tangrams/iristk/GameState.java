@@ -20,6 +20,7 @@ import java.util.Random;
 
 import com.google.common.collect.BiMap;
 
+import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 import se.kth.speech.coin.tangrams.game.Controller;
 import se.kth.speech.coin.tangrams.game.PlayerRole;
 
@@ -29,15 +30,19 @@ public final class GameState {
 
 	private final Controller controller;
 
+	private final ImageVisualizationInfo imgVizInfo;
+
 	private final double occupiedGridArea;
 
 	private final BiMap<PlayerRole, String> playerRoles;
 
 	private final Random rnd;
 
-	GameState(final Controller controller, final BiMap<PlayerRole, String> playerRoles, final Random rnd,
-			final double occupiedGridArea, final boolean allowFailedPlacements) {
+	GameState(final Controller controller, final ImageVisualizationInfo imgVizInfo,
+			final BiMap<PlayerRole, String> playerRoles, final Random rnd, final double occupiedGridArea,
+			final boolean allowFailedPlacements) {
 		this.controller = controller;
+		this.imgVizInfo = imgVizInfo;
 		this.playerRoles = playerRoles;
 		this.rnd = rnd;
 		this.occupiedGridArea = occupiedGridArea;
@@ -78,6 +83,13 @@ public final class GameState {
 		} else if (!controller.equals(other.controller)) {
 			return false;
 		}
+		if (imgVizInfo == null) {
+			if (other.imgVizInfo != null) {
+				return false;
+			}
+		} else if (!imgVizInfo.equals(other.imgVizInfo)) {
+			return false;
+		}
 		if (Double.doubleToLongBits(occupiedGridArea) != Double.doubleToLongBits(other.occupiedGridArea)) {
 			return false;
 		}
@@ -103,6 +115,13 @@ public final class GameState {
 	 */
 	public Controller getController() {
 		return controller;
+	}
+
+	/**
+	 * @return the imgVizInfo
+	 */
+	public ImageVisualizationInfo getImageVisualizationInfo() {
+		return imgVizInfo;
 	}
 
 	/**
@@ -137,6 +156,7 @@ public final class GameState {
 		int result = 1;
 		result = prime * result + (allowFailedPlacements ? 1231 : 1237);
 		result = prime * result + (controller == null ? 0 : controller.hashCode());
+		result = prime * result + (imgVizInfo == null ? 0 : imgVizInfo.hashCode());
 		long temp;
 		temp = Double.doubleToLongBits(occupiedGridArea);
 		result = prime * result + (int) (temp ^ temp >>> 32);
@@ -163,7 +183,9 @@ public final class GameState {
 		builder.append(playerRoles);
 		builder.append(", rnd=");
 		builder.append(rnd);
-		builder.append(']');
+		builder.append(", imgVizInfo=");
+		builder.append(imgVizInfo);
+		builder.append("]");
 		return builder.toString();
 	}
 

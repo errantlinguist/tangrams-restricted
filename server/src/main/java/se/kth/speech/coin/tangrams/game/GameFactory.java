@@ -14,14 +14,15 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech.coin.tangrams;
+package se.kth.speech.coin.tangrams.game;
 
 import java.awt.Color;
 import java.awt.Image;
 import java.awt.Toolkit;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.util.Collections;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Properties;
@@ -29,22 +30,22 @@ import java.util.Random;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.regex.Pattern;
-
-import javax.swing.UIManager;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import com.github.errantlinguist.ClassProperties;
 
 import se.kth.speech.SpatialMatrix;
-import se.kth.speech.coin.tangrams.content.IconColors;
-import se.kth.speech.coin.tangrams.content.ImageVisualizationInfoFactory;
-import se.kth.speech.coin.tangrams.game.PlayerRole;
+import se.kth.speech.awt.RandomHueColorFactory;
+import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
+import se.kth.speech.coin.tangrams.content.RandomImageVisualizationInfoFactory;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
  * @since 9 Jan 2017
  *
  */
-final class GameFactory implements Function<String, Game<Integer>> {
+public final class GameFactory implements Function<String, Game<Integer>> {
 
 	private static final BiFunction<Image, Toolkit, Image> DEFAULT_POST_COLORING_IMG_TRANSFORMER = new BiFunction<Image, Toolkit, Image>() {
 
@@ -54,7 +55,7 @@ final class GameFactory implements Function<String, Game<Integer>> {
 			return img;
 		}
 
-	};;
+	};
 
 	private static final Pattern MULTIVALUE_PROP_DELIM_PATTERN = Pattern.compile("\\s*,\\s*");
 
@@ -68,32 +69,27 @@ final class GameFactory implements Function<String, Game<Integer>> {
 		}
 	}
 
-	private static RandomPopulatedModelFactory createModelFactory() {
+	private static List<Color> createDefaultLengthRandomColorList(final Random rnd,
+			final Collection<? super Color> blacklistedColors) {
+		final RandomHueColorFactory colorFactory = new RandomHueColorFactory(rnd);
+		final int size = 4;
+		return Stream.generate(colorFactory).filter(color -> !blacklistedColors.contains(color)).distinct().limit(size)
+				.collect(Collectors.toCollection(() -> new ArrayList<>(size)));
+	}
+
+	private static RandomPopulatedModelFactory createModelFactory(final ImageVisualizationInfo imgVizInfo) {
 		final boolean allowFailedPlacements = Boolean.parseBoolean(PROPS.getProperty("allowFailedPlacements"));
 		final int[] gridDims = MULTIVALUE_PROP_DELIM_PATTERN.splitAsStream(PROPS.getProperty("gridDims"))
 				.mapToInt(Integer::parseInt).toArray();
 		final double occupiedGridArea = Double.parseDouble(PROPS.getProperty("occupiedGridArea"));
-		final int piecePlacementCount = Integer.parseInt(PROPS.getProperty("piecePlacementCount"));
-
-		final Function<Random, ImageVisualizationInfoFactory> imgVisInfoFactory = rnd -> {
-			// http://stackoverflow.com/a/9993139/1391325
-			final Color backgroundColor = UIManager.getColor("Panel.background");
-			final List<Color> colors = IconColors.createDefaultLengthRandomColorList(rnd,
-					Collections.singleton(backgroundColor));
-			return new ImageVisualizationInfoFactory(rnd, colors);
-		};
-		return new RandomPopulatedModelFactory(gridDims, imgVisInfoFactory, Toolkit.getDefaultToolkit(),
-				piecePlacementCount, occupiedGridArea, DEFAULT_POST_COLORING_IMG_TRANSFORMER, allowFailedPlacements);
+		return new RandomPopulatedModelFactory(gridDims, imgVizInfo, Toolkit.getDefaultToolkit(), occupiedGridArea,
+				DEFAULT_POST_COLORING_IMG_TRANSFORMER, allowFailedPlacements);
 	}
 
-	private final Function<? super Random, ? extends SpatialMatrix<Integer>> modelFactory;
+	private final Collection<? super Color> blacklistedColors;
 
-	public GameFactory() {
-		this(createModelFactory());
-	}
-
-	private GameFactory(final Function<? super Random, SpatialMatrix<Integer>> modelFactory) {
-		this.modelFactory = modelFactory;
+	public GameFactory(final Collection<? super Color> blacklistedColors) {
+		this.blacklistedColors = blacklistedColors;
 	}
 
 	/*
@@ -103,17 +99,24 @@ final class GameFactory implements Function<String, Game<Integer>> {
 	 */
 	@Override
 	public Game<Integer> apply(final String name) {
-		final SpatialMatrix<Integer> model;
+		final SpatialMatrix<Integer> imgModel;
+		final ImageVisualizationInfo imgVisualizationInfo;
 		final long seed;
 		try {
 			seed = Long.parseLong(name);
 			final Random rnd = new Random(seed);
-			model = modelFactory.apply(rnd);
+			final List<Color> colors = createDefaultLengthRandomColorList(rnd, blacklistedColors);
+			final RandomImageVisualizationInfoFactory imgDataFactory = new RandomImageVisualizationInfoFactory(rnd,
+					colors);
+			final int pieceCount = Integer.parseInt(PROPS.getProperty("pieceCount"));
+			imgVisualizationInfo = imgDataFactory.apply(pieceCount);
+			final RandomPopulatedModelFactory modelFactory = createModelFactory(imgVisualizationInfo);
+			imgModel = modelFactory.apply(rnd);
 
 		} catch (final NumberFormatException e) {
 			throw new IllegalArgumentException("Invalid game name.", e);
 		}
-		return new Game<>(seed, model, new EnumMap<>(PlayerRole.class));
+		return new Game<>(seed, imgModel, imgVisualizationInfo, new EnumMap<>(PlayerRole.class));
 	}
 
 }

@@ -157,9 +157,9 @@ public final class ImageViewInfo {
 
 	private final RasterizationInfo rasterization;
 
-	private final ImageVisualizationInfo visualization;
+	private final ImageVisualizationInfo.Datum visualization;
 
-	ImageViewInfo(final ImageVisualizationInfo visualization, final RasterizationInfo rasterization) {
+	ImageViewInfo(final ImageVisualizationInfo.Datum visualization, final RasterizationInfo rasterization) {
 		this.visualization = visualization;
 		this.rasterization = rasterization;
 	}
@@ -200,7 +200,7 @@ public final class ImageViewInfo {
 
 	public int[] getGridSize(final Function<ImageSize, Integer> sizeFactors) {
 		final int factor = sizeFactors.apply(getVisualization().getSize());
-//		final int[] aspectRatio = getRasterization().getAspectRatio();
+		// final int[] aspectRatio = getRasterization().getAspectRatio();
 		// NOTE: Grid rows go top-bottom and cols go left-right
 		return new int[] { 1 * factor, 1 * factor };
 	}
@@ -215,7 +215,7 @@ public final class ImageViewInfo {
 	/**
 	 * @return the visualization
 	 */
-	public ImageVisualizationInfo getVisualization() {
+	public ImageVisualizationInfo.Datum getVisualization() {
 		return visualization;
 	}
 

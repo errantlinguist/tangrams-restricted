@@ -31,6 +31,9 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
+import java.util.function.IntFunction;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,17 +47,68 @@ import se.kth.speech.ComparableValueMaps;
  * @since 7 Mar 2017
  *
  */
-public final class ImageVisualizationInfoFactory implements Iterator<ImageVisualizationInfo> {
+public final class RandomImageVisualizationInfoFactory implements IntFunction<ImageVisualizationInfo> {
 
 	private static final Collection<URL> DEFAULT_IMG_RESOURCES = IconImages.getImageResources().values();
 
 	private static final List<ImageSize> DEFAULT_IMG_SIZES = Arrays.asList(ImageSize.values());
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(ImageVisualizationInfoFactory.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(RandomImageVisualizationInfoFactory.class);
 
 	private final Map<Color, Integer> colorUsageCounts;
 
 	private int createdInstanceCount;
+
+	private final Iterator<ImageVisualizationInfo.Datum> datumIter = new Iterator<ImageVisualizationInfo.Datum>() {
+		@Override
+		public boolean hasNext() {
+			return getCreatedInstanceCount() < combinationCount();
+		}
+
+		@Override
+		public ImageVisualizationInfo.Datum next() {
+			if (!hasNext()) {
+				throw new NoSuchElementException(
+						String.format("Created all %d possible combinations.", combinationCount()));
+			}
+			final ImageVisualizationInfo.Datum result;
+			final Optional<URL> resourceLoc = nextImgResourceLocator();
+			if (resourceLoc.isPresent()) {
+				final URL r = resourceLoc.get();
+				LOGGER.debug("Next img resource is {}.", r);
+				final Optional<Color> color = nextColor();
+				if (color.isPresent()) {
+					final Color c = color.get();
+					LOGGER.debug("Next color is {}.", c);
+					final Optional<ImageSize> size = nextSize();
+					if (size.isPresent()) {
+						final ImageSize s = size.get();
+						LOGGER.debug("Next size is {}.", s);
+						result = createInstance(r, c, s);
+					} else {
+						throw new NoSuchElementException("No more sizes.");
+					}
+				} else {
+					throw new NoSuchElementException("No more colors.");
+				}
+			} else {
+				throw new NoSuchElementException("No more image resources.");
+			}
+			return result;
+		}
+
+		private ImageVisualizationInfo.Datum createInstance(final URL resourceLoc, final Color color,
+				final ImageSize size) {
+			LOGGER.debug("Creating instance number {}.", createdInstanceCount);
+			final ImageVisualizationInfo.Datum result = new ImageVisualizationInfo.Datum(resourceLoc, color, size);
+			incrementImageResourceCount(resourceLoc);
+			incrementColorCount(color);
+			incrementSizeCount(size);
+			createdInstanceCount++;
+			LOGGER.debug("size usages: {}", sizeUsageCounts);
+			return result;
+		}
+	};
 
 	private final Map<URL, Integer> imgResourceUsageCounts;
 
@@ -79,7 +133,7 @@ public final class ImageVisualizationInfoFactory implements Iterator<ImageVisual
 	 *            The {@link Random} instance to use for randomization.
 	 *
 	 */
-	public ImageVisualizationInfoFactory(final Random rnd, final List<? extends Color> uniqueImgColors) {
+	public RandomImageVisualizationInfoFactory(final Random rnd, final List<? extends Color> uniqueImgColors) {
 		this(rnd, uniqueImgColors, DEFAULT_IMG_SIZES);
 	}
 
@@ -96,7 +150,7 @@ public final class ImageVisualizationInfoFactory implements Iterator<ImageVisual
 	 *            A mapping of icon names mapped to their corresponding image
 	 *            {@link URL} resource locators.
 	 */
-	public ImageVisualizationInfoFactory(final Random rnd, final List<? extends Color> uniqueImgColors,
+	public RandomImageVisualizationInfoFactory(final Random rnd, final List<? extends Color> uniqueImgColors,
 			final Collection<? extends URL> imgResources) {
 		this(rnd, uniqueImgColors, DEFAULT_IMG_SIZES, imgResources);
 	}
@@ -116,7 +170,7 @@ public final class ImageVisualizationInfoFactory implements Iterator<ImageVisual
 	 *            the iteration order of image data is stable across
 	 *            invocations.
 	 */
-	public ImageVisualizationInfoFactory(final Random rnd, final List<? extends Color> uniqueImgColors,
+	public RandomImageVisualizationInfoFactory(final Random rnd, final List<? extends Color> uniqueImgColors,
 			final List<ImageSize> sizes) {
 		this(rnd, uniqueImgColors, sizes, DEFAULT_IMG_RESOURCES);
 	}
@@ -139,7 +193,7 @@ public final class ImageVisualizationInfoFactory implements Iterator<ImageVisual
 	 *            A mapping of icon names mapped to their corresponding image
 	 *            {@link URL} resource locators.
 	 */
-	public ImageVisualizationInfoFactory(final Random rnd, final List<? extends Color> uniqueImgColors,
+	public RandomImageVisualizationInfoFactory(final Random rnd, final List<? extends Color> uniqueImgColors,
 			final List<ImageSize> sizes, final Collection<? extends URL> imgResources) {
 		this.rnd = rnd;
 		createdInstanceCount = 0;
@@ -149,6 +203,16 @@ public final class ImageVisualizationInfoFactory implements Iterator<ImageVisual
 		uniqueImgColors.forEach(color -> colorUsageCounts.put(color, 0));
 		sizeUsageCounts = new EnumMap<>(ImageSize.class);
 		sizes.forEach(size -> sizeUsageCounts.put(size, 0));
+	}
+
+	@Override
+	public ImageVisualizationInfo apply(final int pieceCount) {
+		final Stream<ImageVisualizationInfo.Datum> imgVisualizationInfoData = Stream.generate(datumIter::next)
+				.limit(pieceCount);
+		final List<ImageVisualizationInfo.Datum> imgVisualizationInfoDataList = imgVisualizationInfoData
+				.collect(Collectors.toCollection(() -> new ArrayList<>(pieceCount)));
+		return new ImageVisualizationInfo(imgVisualizationInfoDataList, imgResourceUsageCounts.size(),
+				colorUsageCounts.keySet());
 	}
 
 	public int combinationCount() {
@@ -184,65 +248,12 @@ public final class ImageVisualizationInfoFactory implements Iterator<ImageVisual
 		return Collections.unmodifiableMap(sizeUsageCounts);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see java.util.Iterator#hasNext()
-	 */
-	@Override
-	public boolean hasNext() {
-		return getCreatedInstanceCount() < combinationCount();
-	}
-
-	@Override
-	public ImageVisualizationInfo next() {
-		if (!hasNext()) {
-			throw new NoSuchElementException(
-					String.format("Created all %d possible combinations.", combinationCount()));
-		}
-		final ImageVisualizationInfo result;
-		final Optional<URL> resourceLoc = nextImgResourceLocator();
-		if (resourceLoc.isPresent()) {
-			final URL r = resourceLoc.get();
-			LOGGER.debug("Next img resource is {}.", r);
-			final Optional<Color> color = nextColor();
-			if (color.isPresent()) {
-				final Color c = color.get();
-				LOGGER.debug("Next color is {}.", c);
-				final Optional<ImageSize> size = nextSize();
-				if (size.isPresent()) {
-					final ImageSize s = size.get();
-					LOGGER.debug("Next size is {}.", s);
-					result = createInstance(r, c, s);
-				} else {
-					throw new NoSuchElementException("No more sizes.");
-				}
-			} else {
-				throw new NoSuchElementException("No more colors.");
-			}
-		} else {
-			throw new NoSuchElementException("No more image resources.");
-		}
-		return result;
-	}
-
 	/**
 	 * @param createdInstanceCount
 	 *            the createdInstanceCount to set
 	 */
 	public void setCreatedInstanceCount(final int createdInstanceCount) {
 		this.createdInstanceCount = createdInstanceCount;
-	}
-
-	private ImageVisualizationInfo createInstance(final URL resourceLoc, final Color color, final ImageSize size) {
-		LOGGER.debug("Creating instance number {}.", createdInstanceCount);
-		final ImageVisualizationInfo result = new ImageVisualizationInfo(resourceLoc, color, size);
-		incrementImageResourceCount(resourceLoc);
-		incrementColorCount(color);
-		incrementSizeCount(size);
-		createdInstanceCount++;
-		LOGGER.debug("size usages: {}", sizeUsageCounts);
-		return result;
 	}
 
 	private void incrementColorCount(final Color key) {

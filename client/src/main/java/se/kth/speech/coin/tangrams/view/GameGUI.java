@@ -21,12 +21,13 @@ import java.awt.Component;
 import java.awt.Image;
 import java.awt.Point;
 import java.awt.Toolkit;
+import java.awt.image.FilteredImageSource;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -39,8 +40,8 @@ import java.util.concurrent.Executors;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,11 +49,12 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.Maps;
 
 import se.kth.speech.SpatialMatrix;
-import se.kth.speech.coin.tangrams.content.IconColors;
+import se.kth.speech.URLFilenameBaseSplitter;
+import se.kth.speech.awt.OpaqueTransparencyReplacementImageFilter;
+import se.kth.speech.coin.tangrams.content.BoardArea;
 import se.kth.speech.coin.tangrams.content.ImageLoadingImageViewInfoFactory;
 import se.kth.speech.coin.tangrams.content.ImageViewInfo;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
-import se.kth.speech.coin.tangrams.content.ImageVisualizationInfoFactory;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfoTableWriter;
 import se.kth.speech.coin.tangrams.game.Controller;
 import se.kth.speech.coin.tangrams.game.Turn;
@@ -78,7 +80,7 @@ public final class GameGUI implements Runnable {
 
 	};
 
-	private static final String IMAGE_INFO_LOGFILE_NAME = "img-info.tsv";
+	private static final String IMAGE_INFO_LOGFILE_NAME = "img-info.txt";
 
 	// private static JMenu createFileMenu(final Window view) {
 	// final JMenu result = new JMenu("File");
@@ -130,7 +132,7 @@ public final class GameGUI implements Runnable {
 
 	private final GameState gameState;
 
-	private final Consumer<Iterator<Entry<Integer, ImageVisualizationInfo>>> imgVizInfoWriter;
+	private final Consumer<Iterator<Entry<Integer, ImageVisualizationInfo.Datum>>> imgVizInfoWriter;
 
 	private final BiConsumer<Component, Selection> selectionLogger;
 
@@ -164,19 +166,23 @@ public final class GameGUI implements Runnable {
 			}
 		};
 
-		imgVizInfoWriter = imgVizInfoData -> {
-			final ExecutorService imgInfoWritingExecutor = Executors.newSingleThreadExecutor();
-			imgInfoWritingExecutor.submit(() -> {
-				final Path outdir = logOutdirSupplier.get();
-				final Path outfile = outdir.resolve(IMAGE_INFO_LOGFILE_NAME);
-				try (final BufferedWriter writer = Files.newBufferedWriter(outfile)) {
-					final ImageVisualizationInfoTableWriter infoWriter = new ImageVisualizationInfoTableWriter(writer);
-					infoWriter.accept(imgVizInfoData);
-				} catch (final IOException e) {
-					throw new UncheckedIOException(e);
-				}
-			});
-		};
+		{
+			final Function<URL, String> imgNameFactory = new URLFilenameBaseSplitter();
+			imgVizInfoWriter = imgVizInfoData -> {
+				final ExecutorService imgInfoWritingExecutor = Executors.newSingleThreadExecutor();
+				imgInfoWritingExecutor.submit(() -> {
+					final Path outdir = logOutdirSupplier.get();
+					final Path outfile = outdir.resolve(IMAGE_INFO_LOGFILE_NAME);
+					try (final BufferedWriter writer = Files.newBufferedWriter(outfile)) {
+						final ImageVisualizationInfoTableWriter infoWriter = new ImageVisualizationInfoTableWriter(
+								writer, imgNameFactory);
+						infoWriter.accept(imgVizInfoData);
+					} catch (final IOException e) {
+						throw new UncheckedIOException(e);
+					}
+				});
+			};
+		}
 	}
 
 	@Override
@@ -184,26 +190,44 @@ public final class GameGUI implements Runnable {
 		LOGGER.debug("Creating view components.");
 		final Controller controller = gameState.getController();
 		final SpatialMatrix<Integer> model = controller.getModel();
-//		String matrixStrRepr = new MatrixStringReprFactory().apply(model.getPositionMatrix());
-//		System.out.println(matrixStrRepr);
-		final int pieceCount = model.getElementPlacements().getAllElements().size();
+		// String matrixStrRepr = new
+		// MatrixStringReprFactory().apply(model.getPositionMatrix());
+		// System.out.println(matrixStrRepr);
+		final ImageVisualizationInfo imgVizInfo = gameState.getImageVisualizationInfo();
+		final List<ImageVisualizationInfo.Datum> imgVizInfoData = imgVizInfo.getData();
+		final Map<BoardArea, Color> boardAreaColors = BoardArea.getDefaultBoardAreaColorMap();
 		final Random rnd = gameState.getRnd();
-		final Map<Integer, Image> pieceImgs = Maps.newHashMapWithExpectedSize(pieceCount);
-		final GameBoardPanel gameBoardPanel = new GameBoardPanel(model, pieceImgs, controller, turnScreenshotLogger,
-				selectionLogger);
-		final List<Color> colors = IconColors.createDefaultLengthRandomColorList(rnd,
-				Collections.singleton(gameBoardPanel.getBackground()));
-		final ImageVisualizationInfoFactory imgVisInfoFactory = new ImageVisualizationInfoFactory(rnd, colors);
-		final ImageLoadingImageViewInfoFactory imgViewInfoFactory = new ImageLoadingImageViewInfoFactory(
-				gameBoardPanel.getToolkit(), DEFAULT_POST_COLORING_IMG_TRANSFORMER,
-				Maps.newHashMapWithExpectedSize(imgVisInfoFactory.getImgResourceUsageCounts().keySet().size()));
-		final Stream<ImageVisualizationInfo> imgVisualizationInfoData = Stream.generate(imgVisInfoFactory::next)
-				.limit(pieceCount);
+		final Map<Integer, Image> pieceImgs = Maps.newHashMapWithExpectedSize(imgVizInfoData.size());
 
-		final SortedMap<Integer, ImageVisualizationInfo> imgVisualizationInfoDataById = new TreeMap<>();
-		imgVisualizationInfoData.forEach(imgVisualizationInfoDatum -> {
+		// @formatter:off
+		// DEBUG CONFIGURATION ---------------------------------------------------------------------
+		final GameBoardPanel gameBoardPanel = new GameBoardPanel(model, pieceImgs, controller,
+				boardAreaColors.get(BoardArea.HIGHLIGHT), turnScreenshotLogger, selectionLogger, true);
+		gameBoardPanel.setBackground(boardAreaColors.get(BoardArea.BACKGROUND));
+		final OpaqueTransparencyReplacementImageFilter imgFilter = new OpaqueTransparencyReplacementImageFilter(128);
+		final BiFunction<Image, Toolkit, Image> tranparencyFilterer = (img, toolkit) -> {
+			return toolkit.createImage(new FilteredImageSource(img.getSource(), imgFilter));
+		};
+		final ImageLoadingImageViewInfoFactory imgViewInfoFactory = new ImageLoadingImageViewInfoFactory(
+				gameBoardPanel.getToolkit(), tranparencyFilterer,
+				Maps.newHashMapWithExpectedSize(imgVizInfo.getUniqueImageResourceCount()));
+		// ------------------------------------------------------------------------------------------
+		// PRODUCTION CONFIGURATION -----------------------------------------------------------------
+//		final GameBoardPanel gameBoardPanel = new GameBoardPanel(model, pieceImgs, controller,
+//				boardAreaColors.get(BoardArea.HIGHLIGHT), turnScreenshotLogger, selectionLogger);
+//		gameBoardPanel.setBackground(boardAreaColors.get(BoardArea.BACKGROUND));
+//		final ImageLoadingImageViewInfoFactory imgViewInfoFactory = new ImageLoadingImageViewInfoFactory(
+//				gameBoardPanel.getToolkit(), DEFAULT_POST_COLORING_IMG_TRANSFORMER,
+//				Maps.newHashMapWithExpectedSize(imgVizInfo.getUniqueImageResourceCount()));
+		// ------------------------------------------------------------------------------------------
+		// @formatter:on
+
+		final SortedMap<Integer, ImageVisualizationInfo.Datum> imgVisualizationInfoDataById = new TreeMap<>();
+
+		imgVizInfoData.forEach(imgVisualizationInfoDatum -> {
 			final Integer id = imgVisualizationInfoDataById.size();
-			final ImageVisualizationInfo oldVizInfo = imgVisualizationInfoDataById.put(id, imgVisualizationInfoDatum);
+			final ImageVisualizationInfo.Datum oldVizInfo = imgVisualizationInfoDataById.put(id,
+					imgVisualizationInfoDatum);
 			assert oldVizInfo == null;
 
 			final Entry<ImageViewInfo, Image> imgViewInfoDatum = imgViewInfoFactory.apply(imgVisualizationInfoDatum);

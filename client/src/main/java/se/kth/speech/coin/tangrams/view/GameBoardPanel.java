@@ -162,6 +162,8 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 
 	private final boolean debugEnabled;
 
+	private final Color highlightColor;
+
 	/**
 	 * At most one region should be highlighted at a time per player
 	 */
@@ -180,18 +182,21 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 	private final DisablingMouseAdapter selectingMouseListener;
 
 	GameBoardPanel(final SpatialMatrix<Integer> posMatrix, final Map<Integer, Image> pieceImgs,
-			final Controller controller, final BiConsumer<? super GameBoardPanel, ? super Turn> localTurnCompletionHook,
+			final Controller controller, final Color highlightColor,
+			final BiConsumer<? super GameBoardPanel, ? super Turn> localTurnCompletionHook,
 			final BiConsumer<? super GameBoardPanel, ? super Selection> localSelectionHook) {
-		this(posMatrix, pieceImgs, controller, localTurnCompletionHook, localSelectionHook, false);
+		this(posMatrix, pieceImgs, controller, highlightColor, localTurnCompletionHook, localSelectionHook, false);
 	}
 
 	GameBoardPanel(final SpatialMatrix<Integer> posMatrix, final Map<Integer, Image> pieceImgs,
-			final Controller controller, final BiConsumer<? super GameBoardPanel, ? super Turn> localTurnCompletionHook,
+			final Controller controller, final Color highlightColor,
+			final BiConsumer<? super GameBoardPanel, ? super Turn> localTurnCompletionHook,
 			final BiConsumer<? super GameBoardPanel, ? super Selection> localSelectionHook,
 			final boolean debugEnabled) {
 		this.posMatrix = posMatrix;
 		this.pieceImgs = pieceImgs;
 		this.controller = controller;
+		this.highlightColor = highlightColor;
 		controller.getListeners().add(this);
 		this.localTurnCompletionHook = localTurnCompletionHook;
 		this.localSelectionHook = localSelectionHook;
@@ -252,7 +257,7 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 		{
 			final Graphics2D regionHighlightingG = createRegionHighlightDrawingGraphics(g);
 			regionHighlightingG.setStroke(new BasicStroke(REGION_HIGHLIGHT_STROKE_WIDTH));
-			regionHighlightingG.setColor(Color.MAGENTA);
+			regionHighlightingG.setColor(highlightColor);
 			try {
 				drawRegionHighlights(regionHighlightingG);
 			} finally {

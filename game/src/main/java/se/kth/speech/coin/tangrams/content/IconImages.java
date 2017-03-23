@@ -41,7 +41,7 @@ import se.kth.speech.io.FileResourceLocatorContentTypePatternFilter;
  * @since 21 Feb 2017
  *
  */
-final class IconImages {
+public final class IconImages {
 
 	private static final NavigableMap<String, URL> ICON_IMAGE_RESOURCES;
 
@@ -64,25 +64,25 @@ final class IconImages {
 		}
 	}
 
-	private static NavigableMap<String, URL> createImageResourceMap(final String resourceContentTypeRegex) {
-		final Predicate<String> imgFilter = new FileResourceLocatorContentTypePatternFilter(
-				Pattern.compile(resourceContentTypeRegex));
-		return new ClasspathDirResourceLocatorMapFactory<>(IconImages.class, () -> new TreeMap<>(ICON_NAME_COMPARATOR),
-				imgFilter, new FilenameBaseSplitter()).apply(ImageType.ICON.getDirLocator());
-	}
-
 	/**
 	 * @return the named icon image resources
 	 */
-	static NavigableMap<String, URL> getImageResources() {
+	public static NavigableMap<String, URL> getImageResources() {
 		return Collections.unmodifiableNavigableMap(ICON_IMAGE_RESOURCES);
 	}
 
 	/**
 	 * @return the named icon image resources
 	 */
-	static NavigableMap<String, URL> getImageResources(final String resourceContentTypeRegex) {
+	public static NavigableMap<String, URL> getImageResources(final String resourceContentTypeRegex) {
 		return createImageResourceMap(resourceContentTypeRegex);
+	}
+
+	private static NavigableMap<String, URL> createImageResourceMap(final String resourceContentTypeRegex) {
+		final Predicate<String> imgFilter = new FileResourceLocatorContentTypePatternFilter(
+				Pattern.compile(resourceContentTypeRegex));
+		return new ClasspathDirResourceLocatorMapFactory<>(IconImages.class, () -> new TreeMap<>(ICON_NAME_COMPARATOR),
+				imgFilter, new FilenameBaseSplitter()).apply(ImageType.ICON.getDirLocator());
 	}
 
 	private IconImages() {

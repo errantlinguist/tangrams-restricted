@@ -18,6 +18,9 @@ package se.kth.speech.coin.tangrams.content;
 
 import java.awt.Color;
 import java.net.URL;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -26,107 +29,132 @@ import java.net.URL;
  */
 public final class ImageVisualizationInfo {
 
-	private final Color color;
+	public static final class Datum {
+		private final Color color;
 
-	private final URL resourceLoc;
+		private final URL resourceLoc;
 
-	private final ImageSize size;
+		private final ImageSize size;
 
-	ImageVisualizationInfo(final URL resourceLoc, final Color color, final ImageSize size) {
-		this.resourceLoc = resourceLoc;
-		this.color = color;
-		this.size = size;
-	}
+		public Datum(final URL resourceLoc, final Color color, final ImageSize size) {
+			this.resourceLoc = resourceLoc;
+			this.color = color;
+			this.size = size;
+		}
 
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see java.lang.Object#equals(java.lang.Object)
-	 */
-	@Override
-	public boolean equals(final Object obj) {
-		if (this == obj) {
+		/* (non-Javadoc)
+		 * @see java.lang.Object#equals(java.lang.Object)
+		 */
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj)
+				return true;
+			if (obj == null)
+				return false;
+			if (!(obj instanceof Datum))
+				return false;
+			Datum other = (Datum) obj;
+			if (color == null) {
+				if (other.color != null)
+					return false;
+			} else if (!color.equals(other.color))
+				return false;
+			if (resourceLoc == null) {
+				if (other.resourceLoc != null)
+					return false;
+			} else if (!resourceLoc.equals(other.resourceLoc))
+				return false;
+			if (size != other.size)
+				return false;
 			return true;
 		}
-		if (obj == null) {
-			return false;
+
+		/**
+		 * @return the color
+		 */
+		public Color getColor() {
+			return color;
 		}
-		if (!(obj instanceof ImageVisualizationInfo)) {
-			return false;
+
+		/**
+		 * @return the resourceLoc
+		 */
+		public URL getResourceLoc() {
+			return resourceLoc;
 		}
-		final ImageVisualizationInfo other = (ImageVisualizationInfo) obj;
-		if (color == null) {
-			if (other.color != null) {
-				return false;
-			}
-		} else if (!color.equals(other.color)) {
-			return false;
+
+		/**
+		 * @return the size
+		 */
+		public ImageSize getSize() {
+			return size;
 		}
-		if (resourceLoc == null) {
-			if (other.resourceLoc != null) {
-				return false;
-			}
-		} else if (!resourceLoc.equals(other.resourceLoc)) {
-			return false;
+
+		/* (non-Javadoc)
+		 * @see java.lang.Object#hashCode()
+		 */
+		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + ((color == null) ? 0 : color.hashCode());
+			result = prime * result + ((resourceLoc == null) ? 0 : resourceLoc.hashCode());
+			result = prime * result + ((size == null) ? 0 : size.hashCode());
+			return result;
 		}
-		if (size != other.size) {
-			return false;
+
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see java.lang.Object#toString()
+		 */
+		@Override
+		public String toString() {
+			final StringBuilder builder = new StringBuilder();
+			builder.append("Datum [resourceLoc=");
+			builder.append(resourceLoc);
+			builder.append(", color=");
+			builder.append(color);
+			builder.append(", size=");
+			builder.append(size);
+			builder.append(']');
+			return builder.toString();
 		}
-		return true;
+
+	}
+
+	private final Set<? extends Color> colors;
+
+	private final List<Datum> data;
+
+	private final int uniqueImgResourceCount;
+
+	public ImageVisualizationInfo(final List<Datum> data, final int uniqueImgResourceCount,
+			final Set<? extends Color> colors) {
+		this.data = data;
+		this.uniqueImgResourceCount = uniqueImgResourceCount;
+		this.colors = colors;
 	}
 
 	/**
-	 * @return the color
+	 * @return the colors
 	 */
-	public Color getColor() {
-		return color;
+	public Set<? extends Color> getColors() {
+		return Collections.unmodifiableSet(colors);
 	}
 
 	/**
-	 * @return the resourceLoc
+	 * @return the data
 	 */
-	public URL getResourceLoc() {
-		return resourceLoc;
+	public List<Datum> getData() {
+		return Collections.unmodifiableList(data);
 	}
 
 	/**
-	 * @return the size
+	 * @return the uniqueImgResourceCount
 	 */
-	public ImageSize getSize() {
-		return size;
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see java.lang.Object#hashCode()
-	 */
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + (color == null ? 0 : color.hashCode());
-		result = prime * result + (resourceLoc == null ? 0 : resourceLoc.hashCode());
-		result = prime * result + (size == null ? 0 : size.hashCode());
-		return result;
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see java.lang.Object#toString()
-	 */
-	@Override
-	public String toString() {
-		final StringBuilder builder = new StringBuilder();
-		builder.append("ImageVisualizationInfo [resourceLoc=");
-		builder.append(resourceLoc);
-		builder.append(", color=");
-		builder.append(color);
-		builder.append(", size=");
-		builder.append(size);
-		builder.append(']');
-		return builder.toString();
+	public int getUniqueImageResourceCount() {
+		return uniqueImgResourceCount;
 	}
 
 }

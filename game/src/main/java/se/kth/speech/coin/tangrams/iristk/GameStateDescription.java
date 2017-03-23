@@ -36,12 +36,14 @@ final class GameStateDescription extends Record {
 
 	private boolean allowFailedPlacements;
 
-	private ModelDescription modelDescription;
-
-	private double occupiedGridArea;
+	private ImageVisualizationInfoDescription imgVizInfoDesc;
 
 	@RecordField(name = "playerRoles")
 	private List<List<String>> jsonPlayerRoles;
+
+	private ModelDescription modelDescription;
+
+	private double occupiedGridArea;
 
 	/**
 	 * This is a {@link String} instead of an {@link Long} reference in order to
@@ -60,6 +62,14 @@ final class GameStateDescription extends Record {
 	@RecordField(name = "allowFailedPlacements")
 	public boolean allowFailedPlacements() {
 		return allowFailedPlacements;
+	}
+
+	/**
+	 * @return the imgVisualizationInfo
+	 */
+	@RecordField(name = "imgVizInfoDesc")
+	public ImageVisualizationInfoDescription getImageVisualizationInfoDescription() {
+		return imgVizInfoDesc;
 	}
 
 	/**
@@ -104,6 +114,11 @@ final class GameStateDescription extends Record {
 	@RecordField(name = "allowFailedPlacements")
 	public void setAllowFailedPlacements(final boolean allowFailedPlacements) {
 		this.allowFailedPlacements = allowFailedPlacements;
+	}
+
+	@RecordField(name = "imgVizInfoDesc")
+	public void setImageVisualizationInfoDescription(final ImageVisualizationInfoDescription imgVizInfoDesc) {
+		this.imgVizInfoDesc = imgVizInfoDesc;
 	}
 
 	/**

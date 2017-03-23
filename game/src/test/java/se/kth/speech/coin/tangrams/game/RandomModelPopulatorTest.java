@@ -14,21 +14,18 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech.coin.tangrams;
+package se.kth.speech.coin.tangrams.game;
 
 import java.awt.Color;
 import java.awt.Image;
 import java.awt.Toolkit;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.Random;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -41,9 +38,8 @@ import com.google.common.collect.Sets;
 import se.kth.speech.SpatialMap;
 import se.kth.speech.SpatialMatrix;
 import se.kth.speech.coin.tangrams.content.ImageLoadingImageViewInfoFactory;
-import se.kth.speech.coin.tangrams.content.ImageSize;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
-import se.kth.speech.coin.tangrams.content.ImageVisualizationInfoFactory;
+import se.kth.speech.coin.tangrams.content.RandomImageVisualizationInfoFactory;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -117,12 +113,12 @@ public final class RandomModelPopulatorTest {
 
 	/**
 	 * Test method for
-	 * {@link se.kth.speech.coin.tangrams.RandomModelPopulator#accept(java.util.Random)}.
+	 * {@link se.kth.speech.coin.tangrams.game.RandomModelPopulator#accept(java.util.Random)}.
 	 */
 	@Test
 	public void testAccept() {
 		final Random rnd = new Random();
-		final ImageVisualizationInfoFactory imgDataFactory = new ImageVisualizationInfoFactory(rnd, TEST_COLORS);
+		final RandomImageVisualizationInfoFactory imgDataFactory = new RandomImageVisualizationInfoFactory(rnd, TEST_COLORS);
 		final int maxImgVisualizationInfoDatumCount = imgDataFactory.combinationCount();
 		// final int piecePlacementCount = rnd.ints().filter(val -> val <=
 		// maxImgVisualizationInfoDatumCount).findAny().getAsInt();
@@ -132,18 +128,12 @@ public final class RandomModelPopulatorTest {
 		final int[] gridSize = new int[] { 20, 20 };
 		final SpatialMatrix<Integer> result = new SpatialMatrix<>(gridSize, new SpatialMap<>(piecePlacementCount));
 
-		final Map<Integer, Image> pieceImgs = Maps.newHashMapWithExpectedSize(piecePlacementCount);
 		final ImageLoadingImageViewInfoFactory imgViewInfoFactory = new ImageLoadingImageViewInfoFactory(
 				Toolkit.getDefaultToolkit(), DEFAULT_POST_COLORING_IMG_TRANSFORMER,
 				Maps.newHashMapWithExpectedSize(piecePlacementCount));
-		final List<ImageVisualizationInfo> imgVisualizationInfo = Stream.generate(imgDataFactory::next)
-				.limit(piecePlacementCount).collect(Collectors.toList());
-		// Sort the list so that the biggest images come first
-		imgVisualizationInfo
-				.sort(Comparator.comparing(ImageVisualizationInfo::getSize, ImageSize.getSizeComparator().reversed()));
-
+		final ImageVisualizationInfo imgVisualizationInfo = imgDataFactory.apply(piecePlacementCount);
 		final RandomModelPopulator modelPopulator = new RandomModelPopulator(result, imgVisualizationInfo,
-				DEFAULT_OCCUPIED_GRID_AREA, false, piecePlacementCount, pieceImgs::put, imgViewInfoFactory);
+				DEFAULT_OCCUPIED_GRID_AREA, false, imgViewInfoFactory);
 		modelPopulator.accept(rnd);
 
 		Assert.assertEquals(piecePlacementCount, result.createValidMoveMap().size());

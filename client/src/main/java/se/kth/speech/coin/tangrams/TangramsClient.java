@@ -22,6 +22,7 @@ import java.awt.Point;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.URL;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Date;
@@ -30,6 +31,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import javax.swing.JOptionPane;
@@ -51,6 +53,7 @@ import com.github.errantlinguist.ClassProperties;
 import iristk.system.IrisSystem;
 import iristk.system.LoggingModule;
 import iristk.util.NameFilter;
+import se.kth.speech.coin.tangrams.content.IconImages;
 import se.kth.speech.coin.tangrams.iristk.GameManagementClientModule;
 import se.kth.speech.coin.tangrams.iristk.IrisSystemStopper;
 import se.kth.speech.coin.tangrams.iristk.LogDirectoryFactory;
@@ -324,8 +327,9 @@ public final class TangramsClient implements Runnable {
 									system.addModule(loggingModule);
 									loggingModule.startLogging(systemLoggingStartTime.getTime());
 								}
+								final Function<String,URL> localResourceLocGetter = IconImages.getImageResources()::get;
 								final GameManagementClientModule gameClientModule = new GameManagementClientModule(
-										gameId, playerId, gameState -> {
+										gameId, playerId, localResourceLocGetter, gameState -> {
 											LOGGER.info(
 													"Handling game state data received from server for game \"{}\".",
 													gameId);

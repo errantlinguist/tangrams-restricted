@@ -41,9 +41,13 @@ import se.kth.speech.RandomStringFactory;
  *
  */
 @RunWith(Theories.class)
-public final class ImageVisualizationInfoTest {
+public final class ImageVisualizationInfoDatumTest {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(ImageVisualizationInfoTest.class);
+	@DataPoints
+	public static final URL[] RANDOM_TEST_URLS;
+
+	@DataPoints
+	public static final Collection<URL> STANDARD_TEST_URLS;
 
 	@DataPoints
 	public static final Color[] TEST_COLORS = Stream.generate(() -> createRandomColor(new Random())).distinct().limit(4)
@@ -52,11 +56,7 @@ public final class ImageVisualizationInfoTest {
 	@DataPoints
 	public static final ImageSize[] TEST_SIZES = ImageSize.values();
 
-	@DataPoints
-	public static final Collection<URL> STANDARD_TEST_URLS;
-
-	@DataPoints
-	public static final URL[] RANDOM_TEST_URLS;
+	private static final Logger LOGGER = LoggerFactory.getLogger(ImageVisualizationInfoDatumTest.class);
 
 	static {
 		STANDARD_TEST_URLS = IconImages.getImageResources().values();
@@ -87,13 +87,13 @@ public final class ImageVisualizationInfoTest {
 
 	/**
 	 * Test method for
-	 * {@link se.kth.speech.coin.tangrams.content.ImageVisualizationInfo#equals(java.lang.Object)}.
+	 * {@link se.kth.speech.coin.tangrams.content.ImageVisualizationInfo.Datum#equals(java.lang.Object)}.
 	 */
 	@Theory
 	public void testEqualsObjectCommutativity(final URL u1, final Color c1, final ImageSize s1, final URL u2,
 			final Color c2, final ImageSize s2) {
-		final ImageVisualizationInfo o1 = new ImageVisualizationInfo(u1, c1, s1);
-		final ImageVisualizationInfo o2 = new ImageVisualizationInfo(u2, c2, s2);
+		final ImageVisualizationInfo.Datum o1 = new ImageVisualizationInfo.Datum(u1, c1, s1);
+		final ImageVisualizationInfo.Datum o2 = new ImageVisualizationInfo.Datum(u2, c2, s2);
 		final boolean o1Test = o1.equals(o2);
 		final boolean o2Test = o2.equals(o1);
 		Assert.assertEquals(o1Test, o2Test);
@@ -101,41 +101,41 @@ public final class ImageVisualizationInfoTest {
 
 	/**
 	 * Test method for
-	 * {@link se.kth.speech.coin.tangrams.content.ImageVisualizationInfo#equals(java.lang.Object)}.
+	 * {@link se.kth.speech.coin.tangrams.content.ImageVisualizationInfo.Datum#equals(java.lang.Object)}.
 	 */
 	@Theory
-	public void testEqualsObjectNegative(final URL u1, final Color c1, final ImageSize s1, final URL u2,
-			final Color c2, final ImageSize s2) {
+	public void testEqualsObjectNegative(final URL u1, final Color c1, final ImageSize s1, final URL u2, final Color c2,
+			final ImageSize s2) {
 		Assume.assumeFalse(u1.equals(u2) && c1.equals(c2) && s1.equals(s2));
-		final ImageVisualizationInfo o1 = new ImageVisualizationInfo(u1, c1, s1);
-		final ImageVisualizationInfo o2 = new ImageVisualizationInfo(u2, c2, s2);
+		final ImageVisualizationInfo.Datum o1 = new ImageVisualizationInfo.Datum(u1, c1, s1);
+		final ImageVisualizationInfo.Datum o2 = new ImageVisualizationInfo.Datum(u2, c2, s2);
 		Assert.assertNotEquals(o1, o2);
 	}
 
 	/**
 	 * Test method for
-	 * {@link se.kth.speech.coin.tangrams.content.ImageVisualizationInfo#equals(java.lang.Object)}.
+	 * {@link se.kth.speech.coin.tangrams.content.ImageVisualizationInfo.Datum#equals(java.lang.Object)}.
 	 */
 	@Theory
-	public void testEqualsObjectPositive(final URL u1, final Color c1, final ImageSize s1, final URL u2,
-			final Color c2, final ImageSize s2) {
+	public void testEqualsObjectPositive(final URL u1, final Color c1, final ImageSize s1, final URL u2, final Color c2,
+			final ImageSize s2) {
 		Assume.assumeTrue(u1.equals(u2));
 		Assume.assumeTrue(c1.equals(c2));
 		Assume.assumeTrue(s1.equals(s2));
-		final ImageVisualizationInfo o1 = new ImageVisualizationInfo(u1, c1, s1);
-		final ImageVisualizationInfo o2 = new ImageVisualizationInfo(u2, c2, s2);
+		final ImageVisualizationInfo.Datum o1 = new ImageVisualizationInfo.Datum(u1, c1, s1);
+		final ImageVisualizationInfo.Datum o2 = new ImageVisualizationInfo.Datum(u2, c2, s2);
 		Assert.assertEquals(o1, o2);
 	}
 
 	/**
 	 * Test method for
-	 * {@link se.kth.speech.coin.tangrams.content.ImageVisualizationInfo#hashCode()}.
+	 * {@link se.kth.speech.coin.tangrams.content.ImageVisualizationInfo.Datum#hashCode()}.
 	 */
 	@Theory
 	public void testHashCodeEqual(final URL u1, final Color c1, final ImageSize s1, final URL u2, final Color c2,
 			final ImageSize s2) {
-		final ImageVisualizationInfo o1 = new ImageVisualizationInfo(u1, c1, s1);
-		final ImageVisualizationInfo o2 = new ImageVisualizationInfo(u2, c2, s2);
+		final ImageVisualizationInfo.Datum o1 = new ImageVisualizationInfo.Datum(u1, c1, s1);
+		final ImageVisualizationInfo.Datum o2 = new ImageVisualizationInfo.Datum(u2, c2, s2);
 		Assume.assumeTrue(o1.equals(o2));
 		final int h1 = o1.hashCode();
 		final int h2 = o2.hashCode();
@@ -144,16 +144,16 @@ public final class ImageVisualizationInfoTest {
 
 	/**
 	 * Test method for
-	 * {@link se.kth.speech.coin.tangrams.content.ImageVisualizationInfo#hashCode()}.
+	 * {@link se.kth.speech.coin.tangrams.content.ImageVisualizationInfo.Datum#hashCode()}.
 	 */
 	@Theory
-	public void testHashCodeSameData(final URL u1, final Color c1, final ImageSize s1, final URL u2,
-			final Color c2, final ImageSize s2) {
+	public void testHashCodeSameData(final URL u1, final Color c1, final ImageSize s1, final URL u2, final Color c2,
+			final ImageSize s2) {
 		Assume.assumeTrue(u1.equals(u2));
 		Assume.assumeTrue(c1.equals(c2));
 		Assume.assumeTrue(s1.equals(s2));
-		final ImageVisualizationInfo o1 = new ImageVisualizationInfo(u1, c1, s1);
-		final ImageVisualizationInfo o2 = new ImageVisualizationInfo(u2, c2, s2);
+		final ImageVisualizationInfo.Datum o1 = new ImageVisualizationInfo.Datum(u1, c1, s1);
+		final ImageVisualizationInfo.Datum o2 = new ImageVisualizationInfo.Datum(u2, c2, s2);
 		final int h1 = o1.hashCode();
 		final int h2 = o2.hashCode();
 		Assert.assertEquals(h1, h2);
@@ -161,11 +161,11 @@ public final class ImageVisualizationInfoTest {
 
 	/**
 	 * Test method for
-	 * {@link se.kth.speech.coin.tangrams.content.ImageVisualizationInfo#ImageVisualizationInfo(java.net.URL, java.awt.Color, se.kth.speech.coin.tangrams.content.ImageSize)}.
+	 * {@link se.kth.speech.coin.tangrams.content.ImageVisualizationInfo.Datum#Datum(java.net.URL, java.awt.Color, se.kth.speech.coin.tangrams.content.ImageSize)}.
 	 */
 	@Theory
-	public void testImageVisualizationInfo(final URL u, final Color c, final ImageSize s) {
-		new ImageVisualizationInfo(u, c, s);
+	public void testImageVisualizationInfoDatum(final URL u, final Color c, final ImageSize s) {
+		new ImageVisualizationInfo.Datum(u, c, s);
 	}
 
 }

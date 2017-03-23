@@ -16,16 +16,19 @@
 */
 package se.kth.speech.coin.tangrams.iristk;
 
+import java.net.URL;
 import java.sql.Timestamp;
 import java.util.Objects;
 import java.util.Random;
 import java.util.function.Consumer;
+import java.util.function.Function;
 
 import com.google.common.collect.BiMap;
 
 import iristk.system.Event;
 import iristk.system.IrisModule;
 import se.kth.speech.SpatialMatrix;
+import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 import se.kth.speech.coin.tangrams.game.Controller;
 import se.kth.speech.coin.tangrams.game.PlayerRole;
 import se.kth.speech.coin.tangrams.iristk.events.Area2D;
@@ -42,6 +45,8 @@ public final class GameManagementClientModule extends IrisModule {
 
 	private final String gameId;
 
+	private final ImageVisualizationInfoUnmarshaller imgVizInfoUnmarshaller;
+
 	/**
 	 * <strong>NOTE:</strong> It is better to pass the new game-handling logic
 	 * as a separate object so that this class needn't be abstract, which means
@@ -54,9 +59,11 @@ public final class GameManagementClientModule extends IrisModule {
 	private final String playerId;
 
 	public GameManagementClientModule(final String gameId, final String playerId,
+			final Function<? super String, ? extends URL> localResourceLocFactory,
 			final Consumer<? super GameState> newGameHandler) {
 		this.gameId = gameId;
 		this.playerId = playerId;
+		imgVizInfoUnmarshaller = new ImageVisualizationInfoUnmarshaller(localResourceLocFactory);
 		this.newGameHandler = newGameHandler;
 	}
 
@@ -204,11 +211,17 @@ public final class GameManagementClientModule extends IrisModule {
 	private void setupGame(final GameStateDescription gameDesc) {
 		final ModelDescription modelDesc = gameDesc.getModelDescription();
 		final SpatialMatrix<Integer> model = GameStateUnmarshalling.createModel(modelDesc);
+
 		final PlayerRole role = gameDesc.getPlayerRoles().inverse().get(playerId);
+
 		final Controller controller = new Controller(model, playerId, role, this);
 		setController(controller);
+
+		final ImageVisualizationInfoDescription imgVizDesc = gameDesc.getImageVisualizationInfoDescription();
+		final ImageVisualizationInfo imgVizInfo = imgVizInfoUnmarshaller.apply(imgVizDesc);
+
 		final BiMap<PlayerRole, String> playerRoles = gameDesc.getPlayerRoles();
-		newGameHandler.accept(new GameState(controller, playerRoles, new Random(gameDesc.getSeed()),
+		newGameHandler.accept(new GameState(controller, imgVizInfo, playerRoles, new Random(gameDesc.getSeed()),
 				gameDesc.getOccupiedGridArea(), gameDesc.allowFailedPlacements()));
 	}
 

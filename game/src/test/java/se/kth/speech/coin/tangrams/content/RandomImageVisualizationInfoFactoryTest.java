@@ -17,6 +17,7 @@
 package se.kth.speech.coin.tangrams.content;
 
 import java.awt.Color;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -33,6 +34,7 @@ import org.junit.runner.RunWith;
 
 import com.google.common.collect.Sets;
 
+import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo.Datum;
 import se.kth.speech.junit.IteratorEqualityAsserter;
 
 /**
@@ -41,62 +43,60 @@ import se.kth.speech.junit.IteratorEqualityAsserter;
  *
  */
 @RunWith(Theories.class)
-public final class ImageVisualizationInfoFactoryTest {
+public final class RandomImageVisualizationInfoFactoryTest {
 
 	@DataPoints
 	public static final long[] TEST_SEEDS = new Random().longs().distinct().limit(10).toArray();
 
-	private static final IteratorEqualityAsserter<ImageVisualizationInfo> ITER_EQUALITY_ASSERTER = new IteratorEqualityAsserter<>();
+	private static final IteratorEqualityAsserter<Object> ITER_EQUALITY_ASSERTER = new IteratorEqualityAsserter<>();
 
 	private static final List<Color> TEST_COLORS = Arrays.asList(Color.RED, Color.YELLOW, Color.GREEN, Color.BLUE);
 
 	/**
 	 * Test method for
-	 * {@link se.kth.speech.coin.tangrams.content.ImageVisualizationInfoFactory#next()}.
+	 * {@link se.kth.speech.coin.tangrams.content.RandomImageVisualizationInfoFactory#next()}.
 	 */
 	@Theory
 	public void testNextNotEmpty(final long s) {
 		final Random rnd = new Random(s);
 		final Optional<ImageVisualizationInfo> any = Stream
-				.of(new ImageVisualizationInfoFactory(rnd, TEST_COLORS).next()).findAny();
+				.of(new RandomImageVisualizationInfoFactory(rnd, TEST_COLORS).apply(1)).findAny();
 		Assert.assertTrue(any.isPresent());
 	}
 
 	/**
 	 * Test method for
-	 * {@link se.kth.speech.coin.tangrams.content.ImageVisualizationInfoFactory#next()}.
+	 * {@link se.kth.speech.coin.tangrams.content.RandomImageVisualizationInfoFactory#next()}.
 	 *
 	 * @throws InterruptedException
 	 */
 	@Theory
 	public void testNextStable(final long s) throws InterruptedException {
 		final Random rnd1 = new Random(s);
-		final ImageVisualizationInfoFactory f1 = new ImageVisualizationInfoFactory(rnd1, TEST_COLORS);
-		final List<ImageVisualizationInfo> results1 = Stream.generate(f1::next).limit(f1.combinationCount())
-				.collect(Collectors.toList());
+		final RandomImageVisualizationInfoFactory f1 = new RandomImageVisualizationInfoFactory(rnd1, TEST_COLORS);
+		final List<Datum> results1 = f1.apply(f1.combinationCount()).getData();
 		Thread.sleep(100);
 		final Random rnd2 = new Random(s);
-		final ImageVisualizationInfoFactory f2 = new ImageVisualizationInfoFactory(rnd2, TEST_COLORS);
-		final Stream<ImageVisualizationInfo> results2 = Stream.generate(f2::next).limit(f2.combinationCount());
+		final RandomImageVisualizationInfoFactory f2 = new RandomImageVisualizationInfoFactory(rnd2, TEST_COLORS);
+		final List<Datum> results2 = f2.apply(f2.combinationCount()).getData();
 		ITER_EQUALITY_ASSERTER.accept(results1.iterator(), results2.iterator());
 		Thread.sleep(100);
 		final Random rnd3 = new Random(s);
-		final ImageVisualizationInfoFactory f3 = new ImageVisualizationInfoFactory(rnd3, TEST_COLORS);
-		final Stream<ImageVisualizationInfo> results3 = Stream.generate(f3::next).limit(f3.combinationCount());
+		final RandomImageVisualizationInfoFactory f3 = new RandomImageVisualizationInfoFactory(rnd3, TEST_COLORS);
+		final List<Datum> results3 = f3.apply(f3.combinationCount()).getData();
 		ITER_EQUALITY_ASSERTER.accept(results1.iterator(), results3.iterator());
 	}
 
 	/**
 	 * Test method for
-	 * {@link se.kth.speech.coin.tangrams.content.ImageVisualizationInfoFactory#next()}.
+	 * {@link se.kth.speech.coin.tangrams.content.RandomImageVisualizationInfoFactory#next()}.
 	 */
 	@Theory
 	public void testNextUnique(final long seed) {
 		final Random rnd = new Random(seed);
-		final ImageVisualizationInfoFactory f = new ImageVisualizationInfoFactory(rnd, TEST_COLORS);
-		final List<ImageVisualizationInfo> results = Stream.generate(f::next).limit(f.combinationCount())
-				.collect(Collectors.toList());
-		final Set<ImageVisualizationInfo> distinctResults = results.stream()
+		final RandomImageVisualizationInfoFactory f = new RandomImageVisualizationInfoFactory(rnd, TEST_COLORS);
+		final List<Datum> results = new ArrayList<>(f.apply(f.combinationCount()).getData());
+		final Set<ImageVisualizationInfo.Datum> distinctResults = results.stream()
 				.collect(Collectors.toCollection(() -> Sets.newHashSetWithExpectedSize(results.size())));
 		results.removeAll(distinctResults);
 		Assert.assertTrue("Some elements were duplicated: " + results, results.isEmpty());

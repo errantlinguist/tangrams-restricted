@@ -14,23 +14,25 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech.coin.tangrams;
+package se.kth.speech.coin.tangrams.game;
 
 import java.awt.Image;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Random;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import org.mozilla.javascript.edu.emory.mathcs.backport.java.util.Collections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -92,9 +94,9 @@ final class RandomModelPopulator implements Consumer<Random> {
 
 	}
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(RandomModelPopulator.class);
-
 	private static final Function<ImageSize, Integer> IMAGE_SIZE_FACTORS;
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(RandomModelPopulator.class);
 
 	private static final Function<? super ImageViewInfo, int[]> PIECE_GRID_SIZE_FACTORY;
 
@@ -133,49 +135,51 @@ final class RandomModelPopulator implements Consumer<Random> {
 		return new PositionGridSizeSummary(minImgGridSize, maxImgGridSize, totalImgGridArea, commonDivisors);
 	}
 
-	private final Function<? super ImageVisualizationInfo, ? extends Entry<ImageViewInfo, ? extends Image>> imgViewInfoFactory;
-
 	private final boolean allowFailedPlacements;
 
-	private final Collection<ImageVisualizationInfo> imgVisualizationInfoData;
+	private final Function<? super ImageVisualizationInfo.Datum, ? extends Entry<ImageViewInfo, ? extends Image>> imgViewInfoFactory;
 
-	private final int uniqueImgResourceCount;
+	private final ImageVisualizationInfo imgVizInfo;
 
 	private final double occupiedGridArea;
 
-	private final BiConsumer<? super Integer, ? super Image> pieceImgHook;
-
 	private final SpatialMatrix<Integer> posMatrix;
 
-	RandomModelPopulator(final SpatialMatrix<Integer> posMatrix,
-			final Collection<ImageVisualizationInfo> imgVisualizationInfoData, final double occupiedGridArea,
-			final boolean allowFailedPlacements, final int uniqueImgResourceCount,
-			final BiConsumer<? super Integer, ? super Image> pieceImgHook,
-			final Function<? super ImageVisualizationInfo, ? extends Entry<ImageViewInfo, ? extends Image>> imgViewInfoFactory) {
+	RandomModelPopulator(final SpatialMatrix<Integer> posMatrix, final ImageVisualizationInfo imgVizInfo,
+			final double occupiedGridArea, final boolean allowFailedPlacements,
+			final Function<? super ImageVisualizationInfo.Datum, ? extends Entry<ImageViewInfo, ? extends Image>> imgViewInfoFactory) {
 		this.posMatrix = posMatrix;
-		this.imgVisualizationInfoData = imgVisualizationInfoData;
+		this.imgVizInfo = imgVizInfo;
 		this.occupiedGridArea = occupiedGridArea;
-		this.uniqueImgResourceCount = uniqueImgResourceCount;
 		this.allowFailedPlacements = allowFailedPlacements;
-		this.pieceImgHook = pieceImgHook;
 		this.imgViewInfoFactory = imgViewInfoFactory;
 	}
 
 	@Override
 	public void accept(final Random rnd) {
-		final List<? extends Entry<ImageViewInfo, ? extends Image>> imgViewInfoLoadedImgs = imgVisualizationInfoData
-				.stream().map(imgViewInfoFactory)
-				.collect(Collectors.toCollection(() -> new ArrayList<>(imgVisualizationInfoData.size())));
+		// FIXME: IT's possible that the IDs of the server don't match up with
+		final List<ImageVisualizationInfo.Datum> imgVizInfoData = imgVizInfo.getData();
+		final List<? extends Entry<ImageViewInfo, ? extends Image>> imgViewInfoLoadedImgs = imgVizInfoData.stream()
+				.map(imgViewInfoFactory).collect(Collectors.toCollection(() -> new ArrayList<>(imgVizInfoData.size())));
 		// Add the mapping of image to piece ID to the mapping for the game
 		// board panel. LinkedHashSet in order to preserve iteration order
 		// across instances
-		final Map<ImageViewInfo, Integer> pieceIds = Maps.newLinkedHashMapWithExpectedSize(uniqueImgResourceCount);
-		imgViewInfoLoadedImgs.stream().forEach(imgViewInfoLoadedImg -> {
-			final ImageViewInfo imgViewInfo = imgViewInfoLoadedImg.getKey();
-			final Integer pieceId = pieceIds.computeIfAbsent(imgViewInfo, k -> pieceIds.size());
-			final Image img = imgViewInfoLoadedImg.getValue();
-			pieceImgHook.accept(pieceId, img);
-		});
+		final Map<ImageViewInfo, Integer> pieceIds = Maps
+				.newLinkedHashMapWithExpectedSize(imgViewInfoLoadedImgs.size());
+		for (final ListIterator<? extends Entry<ImageViewInfo, ? extends Image>> imgViewInfoIter = imgViewInfoLoadedImgs
+				.listIterator(); imgViewInfoIter.hasNext();) {
+			final int pieceId = imgViewInfoIter.nextIndex();
+			final Entry<ImageViewInfo, ? extends Image> datum = imgViewInfoIter.next();
+			final Integer oldId = pieceIds.put(datum.getKey(), pieceId);
+			assert oldId == null;
+		}
+		// Now that the ID map has been created, sort the list so that the
+		// biggest images come first
+		final Comparator<? extends Entry<ImageViewInfo, ? extends Image>> imgViewInfoSizeComparatorDesc = Comparator
+				.comparing(imgViewInfoLoadedImg -> imgViewInfoLoadedImg.getKey().getVisualization().getSize(),
+						ImageSize.getSizeComparator().reversed());
+		Collections.sort(imgViewInfoLoadedImgs, imgViewInfoSizeComparatorDesc);
+
 		final PositionGridSizeSummary posGridSizeSummary = createPositionGridSizeSummary(pieceIds.keySet().iterator());
 		LOGGER.info("Position grid size summary: {}", posGridSizeSummary);
 

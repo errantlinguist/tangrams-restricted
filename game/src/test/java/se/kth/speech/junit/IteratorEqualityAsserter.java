@@ -26,7 +26,7 @@ import org.junit.Assert;
  * @since 22 Feb 2017
  *
  */
-public final class IteratorEqualityAsserter<T> implements BiConsumer<Iterator<T>, Iterator<T>> {
+public final class IteratorEqualityAsserter<T> implements BiConsumer<Iterator<? extends T>, Iterator<? extends T>> {
 
 	private final BiConsumer<? super T, ? super T> assertion;
 
@@ -47,7 +47,7 @@ public final class IteratorEqualityAsserter<T> implements BiConsumer<Iterator<T>
 	 *            The {@code Iterator} to compare against.
 	 */
 	@Override
-	public void accept(final Iterator<T> iter1, final Iterator<T> iter2) {
+	public void accept(final Iterator<? extends T> iter1, final Iterator<? extends T> iter2) {
 		if (!iter1.equals(iter2)) {
 			while (iter1.hasNext()) {
 				if (iter2.hasNext()) {

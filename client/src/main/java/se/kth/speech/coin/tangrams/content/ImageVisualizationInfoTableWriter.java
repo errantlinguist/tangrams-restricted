@@ -118,7 +118,7 @@ public final class ImageVisualizationInfoTableWriter {
 		colorInfoWriter = new ColorInfoWriter();
 	}
 
-	public void accept(final Iterator<? extends Entry<?, ImageVisualizationInfo>> imgVisualizationInfoDataIter)
+	public void accept(final Iterator<? extends Entry<?, ImageVisualizationInfo.Datum>> imgVisualizationInfoDataIter)
 			throws IOException {
 		final String colorColName = "COLOR";
 		final List<String> colNames = Stream.of("ID", "IMAGE", "SIZE", colorColName).collect(Collectors.toList());
@@ -132,12 +132,12 @@ public final class ImageVisualizationInfoTableWriter {
 		writer.append(colorInfoWriter.createHeader());
 		while (imgVisualizationInfoDataIter.hasNext()) {
 			writer.append(TABLE_STRING_REPR_ROW_DELIMITER);
-			final Entry<?, ImageVisualizationInfo> datumForId = imgVisualizationInfoDataIter.next();
+			final Entry<?, ImageVisualizationInfo.Datum> datumForId = imgVisualizationInfoDataIter.next();
 			appendRowTableRepr(datumForId.getKey(), datumForId.getValue());
 		}
 	}
 
-	private void appendRowTableRepr(final Object rowId, final ImageVisualizationInfo datum) throws IOException {
+	private void appendRowTableRepr(final Object rowId, final ImageVisualizationInfo.Datum datum) throws IOException {
 		writer.write(rowId.toString());
 		writer.write(TABLE_STRING_REPR_COL_DELIMITER);
 		final URL resourceLoc = datum.getResourceLoc();

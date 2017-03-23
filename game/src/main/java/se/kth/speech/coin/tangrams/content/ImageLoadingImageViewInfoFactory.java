@@ -41,7 +41,7 @@ import se.kth.speech.awt.ColorReplacementImageFilter;
  *
  */
 public final class ImageLoadingImageViewInfoFactory
-		implements Function<ImageVisualizationInfo, Entry<ImageViewInfo, Image>> {
+		implements Function<ImageVisualizationInfo.Datum, Entry<ImageViewInfo, Image>> {
 
 	private static final BiFunction<Image, Toolkit, Image> DEFAULT_IMG_POST_TRANSFORMER = (
 			img, tk) -> {
@@ -77,7 +77,7 @@ public final class ImageLoadingImageViewInfoFactory
 	}
 
 	@Override
-	public Entry<ImageViewInfo, Image> apply(final ImageVisualizationInfo imgVisualizationInfoDatum) {
+	public Entry<ImageViewInfo, Image> apply(final ImageVisualizationInfo.Datum imgVisualizationInfoDatum) {
 		final URL imgResourceLoc = imgVisualizationInfoDatum.getResourceLoc();
 		final BufferedImage initialImg = resourceImgs.computeIfAbsent(imgResourceLoc, loc -> {
 			try {
