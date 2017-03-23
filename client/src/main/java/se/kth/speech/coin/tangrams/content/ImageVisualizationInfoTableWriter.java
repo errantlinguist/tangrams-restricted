@@ -39,6 +39,52 @@ import se.kth.speech.awt.Colors;
  */
 public final class ImageVisualizationInfoTableWriter {
 
+	private class ColorInfoWriter {
+
+		private final List<String> subColNames = Stream
+				.of("RED", "GREEN", "BLUE", "ALPHA", "HUE", "SATURATION", "BRIGHTNESS", "JAVA_NAME")
+				.collect(Collectors.toList());
+
+		public void accept(final Color color) throws IOException {
+			write(color.getRed());
+			writer.write(TABLE_STRING_REPR_COL_DELIMITER);
+			write(color.getGreen());
+			writer.write(TABLE_STRING_REPR_COL_DELIMITER);
+			write(color.getBlue());
+			writer.write(TABLE_STRING_REPR_COL_DELIMITER);
+			write(color.getAlpha());
+			writer.write(TABLE_STRING_REPR_COL_DELIMITER);
+			{
+				final float[] hsbVals = Color.RGBtoHSB(color.getRed(), color.getGreen(), color.getBlue(), null);
+				write(hsbVals[0]);
+				writer.write(TABLE_STRING_REPR_COL_DELIMITER);
+				write(hsbVals[1]);
+				writer.write(TABLE_STRING_REPR_COL_DELIMITER);
+				write(hsbVals[2]);
+				writer.write(TABLE_STRING_REPR_COL_DELIMITER);
+			}
+			{
+				final Set<String> colorNames = COLOR_NAMES.get(color.getRGB());
+				final String nullVal = "-";
+				final String colorNameRepr;
+				if (colorNames == null) {
+					colorNameRepr = nullVal;
+				} else {
+					final StringJoiner colorNameJoiner = new StringJoiner(", ");
+					colorNameJoiner.setEmptyValue(nullVal);
+					colorNames.forEach(colorNameJoiner::add);
+					colorNameRepr = colorNameJoiner.toString();
+				}
+				writer.write(colorNameRepr);
+			}
+		}
+
+		private String createHeader() {
+			return subColNames.stream().collect(TABLE_ROW_CELL_JOINER);
+		}
+
+	}
+
 	private static final Map<Integer, Set<String>> COLOR_NAMES = Colors.createColorNameMap(String::toUpperCase,
 			TreeSet::new);
 
@@ -53,10 +99,13 @@ public final class ImageVisualizationInfoTableWriter {
 		TABLE_ROW_CELL_JOINER = Collectors.joining(TABLE_STRING_REPR_COL_DELIMITER);
 	}
 
+	private final ColorInfoWriter colorInfoWriter;
+
 	private final Writer writer;
 
 	public ImageVisualizationInfoTableWriter(final Writer writer) {
 		this.writer = writer;
+		colorInfoWriter = new ColorInfoWriter();
 	}
 
 	public void accept(final Iterator<? extends Entry<?, ImageVisualizationInfo>> imgVisualizationInfoDataIter)
@@ -66,42 +115,15 @@ public final class ImageVisualizationInfoTableWriter {
 		final String header = colNames.stream().collect(TABLE_ROW_CELL_JOINER);
 		writer.append(header);
 		writer.append(TABLE_STRING_REPR_ROW_DELIMITER);
-		final Stream<String> subColNames = Stream.of("RED", "GREEN", "BLUE", "ALPHA", "JAVA_NAME");
 		final int colorHeaderIdx = colNames.indexOf(colorColName);
 		for (int i = 0; i < colorHeaderIdx; ++i) {
 			writer.append(TABLE_STRING_REPR_COL_DELIMITER);
 		}
-		final String subHeader = subColNames.collect(TABLE_ROW_CELL_JOINER);
-		writer.append(subHeader);
+		writer.append(colorInfoWriter.createHeader());
 		while (imgVisualizationInfoDataIter.hasNext()) {
 			writer.append(TABLE_STRING_REPR_ROW_DELIMITER);
 			final Entry<?, ImageVisualizationInfo> datumForId = imgVisualizationInfoDataIter.next();
 			appendRowTableRepr(datumForId.getKey(), datumForId.getValue());
-		}
-	}
-
-	private void appendRowTableRepr(final Color color) throws IOException {
-		write(color.getRed());
-		writer.write(TABLE_STRING_REPR_COL_DELIMITER);
-		write(color.getGreen());
-		writer.write(TABLE_STRING_REPR_COL_DELIMITER);
-		write(color.getBlue());
-		writer.write(TABLE_STRING_REPR_COL_DELIMITER);
-		write(color.getAlpha());
-		writer.write(TABLE_STRING_REPR_COL_DELIMITER);
-		{
-			final Set<String> colorNames = COLOR_NAMES.get(color.getRGB());
-			final String nullVal = "-";
-			final String colorNameRepr;
-			if (colorNames == null) {
-				colorNameRepr = nullVal;
-			} else {
-				final StringJoiner colorNameJoiner = new StringJoiner(", ");
-				colorNameJoiner.setEmptyValue(nullVal);
-				colorNames.forEach(colorNameJoiner::add);
-				colorNameRepr = colorNameJoiner.toString();
-			}
-			writer.write(colorNameRepr);
 		}
 	}
 
@@ -112,7 +134,11 @@ public final class ImageVisualizationInfoTableWriter {
 		writer.write(TABLE_STRING_REPR_COL_DELIMITER);
 		writer.write(datum.getSize().toString());
 		writer.write(TABLE_STRING_REPR_COL_DELIMITER);
-		appendRowTableRepr(datum.getColor());
+		colorInfoWriter.accept(datum.getColor());
+	}
+
+	private void write(final float val) throws IOException {
+		writer.write(Float.toString(val));
 	}
 
 	private void write(final int val) throws IOException {
