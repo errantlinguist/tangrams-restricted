@@ -18,6 +18,7 @@ package se.kth.speech.coin.tangrams.view;
 
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.Dimension;
 import java.awt.Image;
 import java.awt.Point;
 import java.awt.Toolkit;
@@ -252,9 +253,16 @@ public final class GameGUI implements Runnable {
 		});
 		imgVizInfoWriter.accept(imgVisualizationInfoDataById.entrySet().iterator());
 
-		final GameViewFrame gameViewFrame = new GameViewFrame(gameBoardPanel, rnd, controller, closeHook);
+		// http://stackoverflow.com/a/1936582/1391325
+		final Dimension screenSize = gameBoardPanel.getToolkit().getScreenSize();
+		LOGGER.debug("Setting maximum component size to {}.", screenSize);
+		final int shortestScreenLength = (int) (Math.min(screenSize.width, screenSize.height) * 0.8);
+		final Dimension preferredSize = new Dimension(shortestScreenLength, shortestScreenLength);
+		final GameViewFrame gameViewFrame = new GameViewFrame(gameBoardPanel, rnd, controller, closeHook,
+				preferredSize);
 		gameViewFrame.setTitle(title);
 		// gameViewFrame.setJMenuBar(createMenuBar(gameViewFrame));
+		gameViewFrame.setMaximumSize(screenSize);
 
 		gameViewFrame.pack();
 		// gameViewFrame.setLocationByPlatform(true);

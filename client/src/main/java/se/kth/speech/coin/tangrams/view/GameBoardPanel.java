@@ -205,17 +205,6 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 		updateMouseListener(controller.getRole());
 		addDisablingMouseListener(selectingMouseListener);
 
-		// http://stackoverflow.com/a/1936582/1391325
-		final Dimension screenSize = getToolkit().getScreenSize();
-		// final Dimension maxSize = Dimensions.createScaledDimension(boardSize,
-		// screenSize);
-		LOGGER.debug("Setting maximum component size to {}.", screenSize);
-		setMaximumSize(screenSize);
-		{
-			final int shortestScreenLength = (int) (Math.min(screenSize.width, screenSize.height) * 0.75);
-			final Dimension boardSize = new Dimension(shortestScreenLength, shortestScreenLength);
-			setPreferredSize(boardSize);
-		}
 		{
 			final int[] minSizeDims = createMinimumDimLengths(posMatrix.getDimensions()).toArray();
 			// NOTE: "rows" in the matrix go top-bottom and "cols" go

@@ -135,8 +135,9 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 	private final JLabel roleStatusLabel;
 
 	GameViewFrame(final GameBoardPanel boardPanel, final Random rnd, final Controller controller,
-			final Runnable closeHook) {
+			final Runnable closeHook, final Dimension preferredSize) {
 		controller.getListeners().add(this);
+		setPreferredSize(preferredSize);
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		addWindowListener(new WindowAdapter() {
 
@@ -164,9 +165,8 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 			add(turnLabelPanel, BorderLayout.PAGE_START);
 		}
 
-		final Dimension gameBoardPanelSize = boardPanel.getPreferredSize();
 		final PlayerTurnStatus initialTurnStatus = getPlayerTurnStatus(initialRole);
-		playerReadiness = createPlayerReadinessIndicator(gameBoardPanelSize.width, initialTurnStatus);
+		playerReadiness = createPlayerReadinessIndicator(Math.min(preferredSize.width, preferredSize.height), initialTurnStatus);
 
 		{
 			final JPanel statusPanel = new JPanel();
