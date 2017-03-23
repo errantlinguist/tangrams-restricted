@@ -18,7 +18,6 @@ package se.kth.speech.coin.tangrams.iristk;
 
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -44,7 +43,7 @@ final class ImageVisualizationInfoUnmarshaller
 		final List<ImageVisualizationInfoDescription.Datum> descData = desc.getData();
 		final List<ImageVisualizationInfo.Datum> data = descData.stream().map(this::createImageVisualizationInfo)
 				.collect(Collectors.toCollection(() -> new ArrayList<>(descData.size())));
-		return new ImageVisualizationInfo(data, desc.getUniqueImgResourceCount(), new HashSet<>(desc.getColors()));
+		return new ImageVisualizationInfo(data, desc.getUniqueImgResourceCount());
 	}
 
 	private ImageVisualizationInfo.Datum createImageVisualizationInfo(

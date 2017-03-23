@@ -98,8 +98,6 @@ public final class ImageVisualizationInfoDescription extends Record {
 
 	private static final Function<URL, String> RESOURCE_NAME_FACTORY = new URLFilenameBaseSplitter();
 
-	private List<? extends Color> colors;
-
 	private List<Datum> data;
 
 	private int uniqueImgResourceCount;
@@ -114,22 +112,11 @@ public final class ImageVisualizationInfoDescription extends Record {
 				.collect(Collectors.toCollection(() -> new ArrayList<>(imgVizInfoData.size())));
 		setData(data);
 		setUniqueImgResourceCount(imgVizInfo.getUniqueImageResourceCount());
-		setColors(new ArrayList<>(imgVizInfo.getColors()));
 	}
 
-	public ImageVisualizationInfoDescription(final List<Datum> data, final int uniqueImgResourceCount,
-			final List<? extends Color> colors) {
+	public ImageVisualizationInfoDescription(final List<Datum> data, final int uniqueImgResourceCount) {
 		setData(data);
 		setUniqueImgResourceCount(uniqueImgResourceCount);
-		setColors(colors);
-	}
-
-	/**
-	 * @return the colors
-	 */
-	@RecordField(name = "colors")
-	public List<? extends Color> getColors() {
-		return colors;
 	}
 
 	/**
@@ -146,15 +133,6 @@ public final class ImageVisualizationInfoDescription extends Record {
 	@RecordField(name = "uniqueImgResourceCount")
 	public int getUniqueImgResourceCount() {
 		return uniqueImgResourceCount;
-	}
-
-	/**
-	 * @param colors
-	 *            the colors to set
-	 */
-	@RecordField(name = "colors")
-	public void setColors(final List<? extends Color> colors) {
-		this.colors = colors;
 	}
 
 	/**

@@ -20,7 +20,6 @@ import java.awt.Color;
 import java.net.URL;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -42,30 +41,40 @@ public final class ImageVisualizationInfo {
 			this.size = size;
 		}
 
-		/* (non-Javadoc)
+		/*
+		 * (non-Javadoc)
+		 * 
 		 * @see java.lang.Object#equals(java.lang.Object)
 		 */
 		@Override
-		public boolean equals(Object obj) {
-			if (this == obj)
+		public boolean equals(final Object obj) {
+			if (this == obj) {
 				return true;
-			if (obj == null)
+			}
+			if (obj == null) {
 				return false;
-			if (!(obj instanceof Datum))
+			}
+			if (!(obj instanceof Datum)) {
 				return false;
-			Datum other = (Datum) obj;
+			}
+			final Datum other = (Datum) obj;
 			if (color == null) {
-				if (other.color != null)
+				if (other.color != null) {
 					return false;
-			} else if (!color.equals(other.color))
+				}
+			} else if (!color.equals(other.color)) {
 				return false;
+			}
 			if (resourceLoc == null) {
-				if (other.resourceLoc != null)
+				if (other.resourceLoc != null) {
 					return false;
-			} else if (!resourceLoc.equals(other.resourceLoc))
+				}
+			} else if (!resourceLoc.equals(other.resourceLoc)) {
 				return false;
-			if (size != other.size)
+			}
+			if (size != other.size) {
 				return false;
+			}
 			return true;
 		}
 
@@ -90,16 +99,18 @@ public final class ImageVisualizationInfo {
 			return size;
 		}
 
-		/* (non-Javadoc)
+		/*
+		 * (non-Javadoc)
+		 * 
 		 * @see java.lang.Object#hashCode()
 		 */
 		@Override
 		public int hashCode() {
 			final int prime = 31;
 			int result = 1;
-			result = prime * result + ((color == null) ? 0 : color.hashCode());
-			result = prime * result + ((resourceLoc == null) ? 0 : resourceLoc.hashCode());
-			result = prime * result + ((size == null) ? 0 : size.hashCode());
+			result = prime * result + (color == null ? 0 : color.hashCode());
+			result = prime * result + (resourceLoc == null ? 0 : resourceLoc.hashCode());
+			result = prime * result + (size == null ? 0 : size.hashCode());
 			return result;
 		}
 
@@ -123,24 +134,13 @@ public final class ImageVisualizationInfo {
 
 	}
 
-	private final Set<? extends Color> colors;
-
 	private final List<Datum> data;
 
 	private final int uniqueImgResourceCount;
 
-	public ImageVisualizationInfo(final List<Datum> data, final int uniqueImgResourceCount,
-			final Set<? extends Color> colors) {
+	public ImageVisualizationInfo(final List<Datum> data, final int uniqueImgResourceCount) {
 		this.data = data;
 		this.uniqueImgResourceCount = uniqueImgResourceCount;
-		this.colors = colors;
-	}
-
-	/**
-	 * @return the colors
-	 */
-	public Set<? extends Color> getColors() {
-		return Collections.unmodifiableSet(colors);
 	}
 
 	/**
