@@ -96,6 +96,9 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 
 	}
 
+	private static final Stroke GRID_STROKE = new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0,
+			new float[] { 1 }, 0);
+
 	private static final int IMG_PADDING;
 
 	private static final int IMG_SCALING_HINTS = Image.SCALE_SMOOTH;
@@ -188,6 +191,25 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 		this(posMatrix, pieceImgs, controller, highlightColor, localTurnCompletionHook, localSelectionHook, false);
 	}
 
+	// private void clearRegionHighlights(final Graphics g, final SpatialRegion
+	// region) {
+	// final int colWidth = getGridColWidth();
+	// final int rowHeight = getGridRowHeight();
+	// final int[] startIdxs = createComponentCoordStartIdxArray(region,
+	// colWidth, rowHeight);
+	// final int[] size = createComponentCoordSizeArray(region, colWidth,
+	// rowHeight);
+	// g.clearRect(startIdxs[0], startIdxs[1], size[0], size[1]);
+	// }
+
+	// private Graphics2D createRegionHighlightClearingGraphics(final Graphics
+	// g) {
+	// final Graphics2D result = (Graphics2D) g.create();
+	// result.setStroke(new BasicStroke(REGION_HIGHLIGHT_STROKE_WIDTH));
+	// result.setColor(getBackground());
+	// return result;
+	// }
+
 	GameBoardPanel(final SpatialMatrix<Integer> posMatrix, final Map<Integer, Image> pieceImgs,
 			final Controller controller, final Color highlightColor,
 			final BiConsumer<? super GameBoardPanel, ? super Turn> localTurnCompletionHook,
@@ -215,32 +237,25 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 		}
 	}
 
-	// private void clearRegionHighlights(final Graphics g, final SpatialRegion
-	// region) {
-	// final int colWidth = getGridColWidth();
-	// final int rowHeight = getGridRowHeight();
-	// final int[] startIdxs = createComponentCoordStartIdxArray(region,
-	// colWidth, rowHeight);
-	// final int[] size = createComponentCoordSizeArray(region, colWidth,
-	// rowHeight);
-	// g.clearRect(startIdxs[0], startIdxs[1], size[0], size[1]);
-	// }
-
-	// private Graphics2D createRegionHighlightClearingGraphics(final Graphics
-	// g) {
-	// final Graphics2D result = (Graphics2D) g.create();
-	// result.setStroke(new BasicStroke(REGION_HIGHLIGHT_STROKE_WIDTH));
-	// result.setColor(getBackground());
-	// return result;
-	// }
-
 	@Override
 	public void paintComponent(final Graphics g) {
 		super.paintComponent(g);
-		// Draw a grid (for debugging/devel)
-		if (debugEnabled) {
-			drawGrid(g);
-			drawPieceIds(g);
+
+		// http://stackoverflow.com/a/21989406/1391325
+		{
+			final Graphics2D gridDrawingG = (Graphics2D) g.create();
+			// set the stroke of the copy, not the original
+			gridDrawingG.setStroke(GRID_STROKE);
+			try {
+				drawBorder(gridDrawingG);
+				// Draw a grid (for debugging/devel)
+				if (debugEnabled) {
+					drawGrid(gridDrawingG);
+					drawPieceIds(g);
+				}
+			} finally {
+				gridDrawingG.dispose();
+			}
 		}
 
 		{
@@ -399,21 +414,19 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 		return result;
 	}
 
-	private void drawGrid(final Graphics g) {
+	private void drawBorder(final Graphics2D gridDrawingG) {
+		final Dimension size = getSize();
+		gridDrawingG.drawRect(0, 0, size.width - 1, size.height - 1);
+	}
+
+	private void drawGrid(final Graphics2D gridDrawingG) {
 		LOGGER.debug("Drawing grid.");
 		final Matrix<Integer> posMatrix = this.posMatrix.getPositionMatrix();
 		final int[] matrixDims = posMatrix.getDimensions();
-		// http://stackoverflow.com/a/21989406/1391325
-		// creates a copy of the Graphics instance
-		final Graphics2D gridDrawingG = (Graphics2D) g.create();
 		try {
 			// Row lines
 			final int rowHeight = getGridRowHeight();
 			int nextRowY = 0;
-			// set the stroke of the copy, not the original
-			final Stroke dashed = new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[] { 1 },
-					0);
-			gridDrawingG.setStroke(dashed);
 			for (final ListIterator<List<Integer>> matrixRowIter = posMatrix.rowIterator(); matrixRowIter
 					.hasNext(); matrixRowIter.next()) {
 				gridDrawingG.drawLine(0, nextRowY, getWidth(), nextRowY);
