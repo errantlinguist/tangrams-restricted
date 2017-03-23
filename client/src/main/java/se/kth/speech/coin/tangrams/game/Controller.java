@@ -16,6 +16,7 @@
 */
 package se.kth.speech.coin.tangrams.game;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.IdentityHashMap;
@@ -42,6 +43,63 @@ import se.kth.speech.coin.tangrams.iristk.events.Selection;
  *
  */
 public final class Controller {
+
+	public final class History {
+
+		private final int[] lastPieceMoveTurnsById;
+
+		private final int[] pieceMoveCounts;
+
+		private History() {
+			final int pieceCount = getModel().getElementPlacements().getAllElements().size();
+			lastPieceMoveTurnsById = new int[pieceCount];
+			Arrays.fill(lastPieceMoveTurnsById, -1);
+			pieceMoveCounts = new int[pieceCount];
+		}
+
+		public int getLastPieceMoveTurn(final int pieceId) {
+			return lastPieceMoveTurnsById[pieceId];
+		}
+
+		/**
+		 * @return the lastPieceMoveTurnsById
+		 */
+		public int[] getLastPieceMoveTurnsById() {
+			return lastPieceMoveTurnsById;
+		}
+
+		public int getPieceMoveCount(final int pieceId) {
+			return pieceMoveCounts[pieceId];
+		}
+
+		/**
+		 * @return the pieceMoveCounts
+		 */
+		public int[] getPieceMoveCounts() {
+			return pieceMoveCounts;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see java.lang.Object#toString()
+		 */
+		@Override
+		public String toString() {
+			final StringBuilder builder = new StringBuilder();
+			builder.append("History [lastPieceMoveTurnsById=");
+			builder.append(Arrays.toString(lastPieceMoveTurnsById));
+			builder.append(", pieceMoveCounts=");
+			builder.append(Arrays.toString(pieceMoveCounts));
+			builder.append("]");
+			return builder.toString();
+		}
+
+		private void updatePieceMovementInfo(final int pieceId) {
+			lastPieceMoveTurnsById[pieceId] = turnCount;
+			pieceMoveCounts[pieceId] += 1;
+		}
+	}
 
 	public interface Listener {
 
@@ -96,6 +154,8 @@ public final class Controller {
 
 	private final GameManagementClientModule clientModule;
 
+	private final History history;
+
 	private final Set<Listener> listeners;
 
 	private final SpatialMatrix<Integer> model;
@@ -121,6 +181,14 @@ public final class Controller {
 		this.clientModule = clientModule;
 
 		listeners = Collections.newSetFromMap(new IdentityHashMap<>());
+		history = new History();
+	}
+
+	/**
+	 * @return the history
+	 */
+	public History getHistory() {
+		return history;
 	}
 
 	/**
@@ -237,6 +305,8 @@ public final class Controller {
 		listeners.forEach(listener -> listener.updateTurnCompleted(turn));
 		nextMove = null;
 
+		history.updatePieceMovementInfo(move.getPieceId());
+
 		incrementTurnCount();
 		updateScore(GOOD_TURN_SCORE_DIFF);
 
@@ -298,6 +368,7 @@ public final class Controller {
 		}
 		clientModule.requestTurnCompletion(nextMove);
 		updatePiecePositions(nextMove);
+		history.updatePieceMovementInfo(nextMove.getPieceId());
 		nextMove = null;
 		selectedPiece = null;
 

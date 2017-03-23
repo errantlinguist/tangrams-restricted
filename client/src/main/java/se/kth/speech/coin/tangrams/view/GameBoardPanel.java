@@ -29,21 +29,17 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Random;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
 import org.slf4j.Logger;
@@ -53,9 +49,6 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 import se.kth.speech.Matrix;
-import se.kth.speech.MutablePair;
-import se.kth.speech.RandomCollections;
-import se.kth.speech.SpatialMap;
 import se.kth.speech.SpatialMatrix;
 import se.kth.speech.SpatialRegion;
 import se.kth.speech.awt.DisablingMouseAdapter;
@@ -175,8 +168,6 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 	private final BiConsumer<? super GameBoardPanel, ? super Selection> localSelectionHook;
 
 	private final BiConsumer<? super GameBoardPanel, ? super Turn> localTurnCompletionHook;
-
-	private Entry<SpatialRegion, Map<Integer, SpatialRegion>> nextMove;
 
 	private final Map<Integer, Image> pieceImgs;
 
@@ -365,48 +356,6 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 		addMouseMotionListener(mouseListener);
 	}
 
-	private Entry<SpatialRegion, Map<Integer, SpatialRegion>> createRandomMove(final Random rnd) {
-		// TODO: Change probability of a piece being selected for moving based
-		// on if it was moved before: E.g. cannot move a given piece more than
-		// twice in a row
-		final List<SpatialRegion> regionsToTry = posMatrix.getElementPlacements().getMinimalRegions();
-		// TODO: estimate number of failed tries
-		final Set<SpatialRegion> failedRegions = new HashSet<>();
-		Entry<SpatialRegion, Map<Integer, SpatialRegion>> pieceMove = null;
-		do {
-			final SpatialRegion occupiedRegion = RandomCollections.getRandomElement(regionsToTry, rnd);
-			final Map<Integer, SpatialRegion> pieceMoveTargets = createRandomValidMoveTargetMap(occupiedRegion, rnd);
-			if (pieceMoveTargets.isEmpty()) {
-				LOGGER.debug("No valid moves for piece(s) from region {}.", occupiedRegion);
-				failedRegions.add(occupiedRegion);
-			} else {
-				pieceMove = new MutablePair<>(occupiedRegion, pieceMoveTargets);
-			}
-		} while (pieceMove == null && failedRegions.size() < regionsToTry.size());
-
-		return pieceMove;
-	}
-
-	private Map<Integer, SpatialRegion> createRandomValidMoveTargetMap(final SpatialRegion occupiedRegion,
-			final Random rnd) {
-		final Set<SpatialRegion> regionValidMoves = posMatrix.createValidMoveSet(occupiedRegion);
-		final Map<Integer, SpatialRegion> result;
-		if (regionValidMoves.isEmpty()) {
-			result = Collections.emptyMap();
-		} else {
-			final SpatialMap<Integer> piecePlacements = posMatrix.getElementPlacements();
-			final Collection<Integer> pieceIds = piecePlacements.getMinimalRegionElements().get(occupiedRegion);
-			// NOTE: The iterator should only have one element here
-			result = Maps.newHashMapWithExpectedSize(pieceIds.size());
-			for (final Integer pieceId : pieceIds) {
-				final SpatialRegion moveTarget = RandomCollections.getRandomElement(regionValidMoves, rnd);
-				assert !piecePlacements.isOccupied(moveTarget);
-				result.put(pieceId, moveTarget);
-			}
-		}
-		return result;
-	}
-
 	private Graphics2D createRegionHighlightDrawingGraphics(final Graphics g) {
 		final Graphics2D result = (Graphics2D) g.create();
 		result.setStroke(new BasicStroke(REGION_HIGHLIGHT_STROKE_WIDTH));
@@ -565,10 +514,6 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 		return y / rowHeight;
 	}
 
-	private void notifyNoValidMoves() {
-		JOptionPane.showMessageDialog(this, "No more moves available.");
-	}
-
 	private boolean toggleHighlightedRegion(final SpatialRegion region) {
 		boolean result;
 
@@ -616,31 +561,17 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 	/**
 	 *
 	 */
-	synchronized void notifyContinue(final Random rnd) {
+	synchronized void notifyNextMove(final SpatialRegion source, final SpatialRegion target, final Integer pieceId) {
 		LOGGER.debug("Notified of continue event.");
 		final PlayerRole role = controller.getRole();
 		switch (role) {
 		case MOVE_SUBMISSION: {
-			LOGGER.debug("Generating random move for next turn.");
-			nextMove = createRandomMove(rnd);
-			if (nextMove == null) {
-				// No pieces left to be moved; Game cannot continue
-				notifyNoValidMoves();
-			} else {
-				final SpatialRegion sourceRegion = nextMove.getKey();
-				final Collection<Entry<Integer, SpatialRegion>> pieceTargetRegions = nextMove.getValue().entrySet();
-				if (pieceTargetRegions.size() > 1) {
-					throw new UnsupportedOperationException("Cannot notify multiple moved pieces in one turn.");
-				} else {
-					toggleHighlightedRegion(sourceRegion);
-					final Entry<Integer, SpatialRegion> pieceTargetRegion = pieceTargetRegions.iterator().next();
-					controller.submitNextMove(sourceRegion, pieceTargetRegion.getValue(), pieceTargetRegion.getKey());
-				}
-			}
+			toggleHighlightedRegion(source);
+			controller.submitNextMove(source, target, pieceId);
 			break;
 		}
 		default: {
-			JOptionPane.showMessageDialog(this, String.format("Cannot continue while in role %s.", role));
+			throw new IllegalStateException(String.format("Cannot continue while in role %s.", role));
 		}
 
 		}

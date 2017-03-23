@@ -58,6 +58,7 @@ import se.kth.speech.coin.tangrams.content.ImageViewInfo;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfoTableWriter;
 import se.kth.speech.coin.tangrams.game.Controller;
+import se.kth.speech.coin.tangrams.game.ProbabilisticMoveFactory;
 import se.kth.speech.coin.tangrams.game.Turn;
 import se.kth.speech.coin.tangrams.iristk.GameState;
 import se.kth.speech.coin.tangrams.iristk.events.Selection;
@@ -258,7 +259,8 @@ public final class GameGUI implements Runnable {
 		LOGGER.debug("Setting maximum component size to {}.", screenSize);
 		final int shortestScreenLength = (int) (Math.min(screenSize.width, screenSize.height) * 0.8);
 		final Dimension preferredSize = new Dimension(shortestScreenLength, shortestScreenLength);
-		final GameViewFrame gameViewFrame = new GameViewFrame(gameBoardPanel, rnd, controller, closeHook,
+		final ProbabilisticMoveFactory moveFactory = new ProbabilisticMoveFactory(rnd, controller.getModel(), controller.getHistory());
+		final GameViewFrame gameViewFrame = new GameViewFrame(gameBoardPanel, controller, moveFactory, closeHook,
 				preferredSize);
 		gameViewFrame.setTitle(title);
 		// gameViewFrame.setJMenuBar(createMenuBar(gameViewFrame));

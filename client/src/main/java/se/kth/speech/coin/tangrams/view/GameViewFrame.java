@@ -29,8 +29,9 @@ import java.util.Collections;
 import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Random;
+import java.util.Map.Entry;
 import java.util.Set;
+import java.util.function.Supplier;
 
 import javax.swing.AbstractButton;
 import javax.swing.Box;
@@ -38,6 +39,7 @@ import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTable;
 import javax.swing.table.JTableHeader;
@@ -47,6 +49,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Maps;
 
+import se.kth.speech.SpatialRegion;
 import se.kth.speech.awt.ColorIcon;
 import se.kth.speech.coin.tangrams.game.Controller;
 import se.kth.speech.coin.tangrams.game.PlayerRole;
@@ -81,8 +84,7 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 			final PlayerTurnStatus initialStatus) {
 		final int size = gameBoardPanelWidth / 20;
 		final ReadinessIndicator result = new ReadinessIndicator(
-				new ColorIcon(size, size, ReadinessIndicator.getStatusColor(initialStatus)),
-				initialStatus);
+				new ColorIcon(size, size, ReadinessIndicator.getStatusColor(initialStatus)), initialStatus);
 		result.setAlignmentX(CENTER_ALIGNMENT);
 		final String desc = "An indicator showing if it's your turn or not: Green means \"ready\" and red means \"not ready\".";
 		result.getAccessibleContext().setAccessibleDescription(desc);
@@ -134,7 +136,8 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 
 	private final JLabel roleStatusLabel;
 
-	GameViewFrame(final GameBoardPanel boardPanel, final Random rnd, final Controller controller,
+	GameViewFrame(final GameBoardPanel boardPanel, final Controller controller,
+			final Supplier<? extends Entry<SpatialRegion, ? extends Entry<Integer, SpatialRegion>>> moveFactory,
 			final Runnable closeHook, final Dimension preferredSize) {
 		controller.getListeners().add(this);
 		setPreferredSize(preferredSize);
@@ -166,7 +169,8 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 		}
 
 		final PlayerTurnStatus initialTurnStatus = getPlayerTurnStatus(initialRole);
-		playerReadiness = createPlayerReadinessIndicator(Math.min(preferredSize.width, preferredSize.height), initialTurnStatus);
+		playerReadiness = createPlayerReadinessIndicator(Math.min(preferredSize.width, preferredSize.height),
+				initialTurnStatus);
 
 		{
 			final JPanel statusPanel = new JPanel();
@@ -215,7 +219,16 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 			continueButton.setFont(continueButton.getFont().deriveFont(infoFontAttrMap));
 			updateMoveButtonEnabled(continueButton, initialRole);
 			continueButton.addActionListener(continueEvent -> {
-				boardPanel.notifyContinue(rnd);
+				final Entry<SpatialRegion, ? extends Entry<Integer, SpatialRegion>> nextMove = moveFactory.get();
+				if (nextMove == null) {
+					// No pieces left to be moved; Game cannot continue
+					notifyNoValidMoves();
+				} else {
+					final SpatialRegion source = nextMove.getKey();
+					final Entry<Integer, SpatialRegion> target = nextMove.getValue();
+					boardPanel.notifyNextMove(source, target.getValue(), target.getKey());
+				}
+
 			});
 		}
 
@@ -303,6 +316,10 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 	@Override
 	public void updateTurnCount(final int newCount) {
 		LOGGER.debug("Notified of new turn count.");
+	}
+
+	private void notifyNoValidMoves() {
+		JOptionPane.showMessageDialog(this, "No more moves available.");
 	}
 
 	/**
