@@ -82,7 +82,8 @@ final class ModelDescription extends Record {
 	 */
 	public void setModel(final Matrix<Integer> model) {
 		final List<Integer> coordOccupants = model.getValues();
-		setCoordOccupants(coordOccupants.stream().map(Objects::toString).collect(Collectors.toCollection(()-> new ArrayList<>(coordOccupants.size()))));
+		setCoordOccupants(coordOccupants.stream().map(Objects::toString)
+				.collect(Collectors.toCollection(() -> new ArrayList<>(coordOccupants.size()))));
 		setColCount(model.getDimensions()[1]);
 	}
 
