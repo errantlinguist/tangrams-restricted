@@ -19,6 +19,7 @@ package se.kth.speech.coin.tangrams.content;
 import java.awt.Color;
 import java.io.IOException;
 import java.io.Writer;
+import java.net.URL;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -26,6 +27,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.StringJoiner;
 import java.util.TreeSet;
+import java.util.function.Function;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -99,12 +101,20 @@ public final class ImageVisualizationInfoTableWriter {
 		TABLE_ROW_CELL_JOINER = Collectors.joining(TABLE_STRING_REPR_COL_DELIMITER);
 	}
 
-	private final ColorInfoWriter colorInfoWriter;
+	private transient final ColorInfoWriter colorInfoWriter;
+
+	private final Function<? super URL, String> resourceNameFactory;
 
 	private final Writer writer;
 
 	public ImageVisualizationInfoTableWriter(final Writer writer) {
+		this(writer, Object::toString);
+	}
+
+	public ImageVisualizationInfoTableWriter(final Writer writer,
+			final Function<? super URL, String> resourceNameFactory) {
 		this.writer = writer;
+		this.resourceNameFactory = resourceNameFactory;
 		colorInfoWriter = new ColorInfoWriter();
 	}
 
@@ -130,7 +140,9 @@ public final class ImageVisualizationInfoTableWriter {
 	private void appendRowTableRepr(final Object rowId, final ImageVisualizationInfo datum) throws IOException {
 		writer.write(rowId.toString());
 		writer.write(TABLE_STRING_REPR_COL_DELIMITER);
-		writer.write(datum.getResourceLoc().toString());
+		final URL resourceLoc = datum.getResourceLoc();
+		final String resourceName = resourceNameFactory.apply(resourceLoc);
+		writer.write(resourceName);
 		writer.write(TABLE_STRING_REPR_COL_DELIMITER);
 		writer.write(datum.getSize().toString());
 		writer.write(TABLE_STRING_REPR_COL_DELIMITER);
