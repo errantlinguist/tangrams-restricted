@@ -89,6 +89,7 @@ public final class RandomMatrixPositionFiller<I, E>
 			final Table<? super Integer, ? super Integer, ? extends Collection<SpatialRegion>> subRegionsToTry) {
 		// The number of rows and columns this element takes up in the
 		// position matrix
+		// FIXME: This is somehow giving random dims to the sizes!
 		final int[] elementPosMatrixSize = elementPosMatrixSizeFactory.apply(element);
 		final Collection<SpatialRegion> allFittingSubRegions = subRegionsToTry.get(elementPosMatrixSize[0],
 				elementPosMatrixSize[1]);
