@@ -21,15 +21,24 @@ import java.awt.Component;
 import java.awt.Image;
 import java.awt.Point;
 import java.awt.Toolkit;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Random;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -41,8 +50,10 @@ import com.google.common.collect.Maps;
 import se.kth.speech.SpatialMatrix;
 import se.kth.speech.coin.tangrams.content.IconColors;
 import se.kth.speech.coin.tangrams.content.ImageLoadingImageViewInfoFactory;
+import se.kth.speech.coin.tangrams.content.ImageViewInfo;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfoFactory;
+import se.kth.speech.coin.tangrams.content.ImageVisualizationInfoTableWriter;
 import se.kth.speech.coin.tangrams.game.Controller;
 import se.kth.speech.coin.tangrams.game.Turn;
 import se.kth.speech.coin.tangrams.iristk.GameState;
@@ -67,7 +78,7 @@ public final class GameGUI implements Runnable {
 
 	};
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(GameGUI.class);
+	private static final String IMAGE_INFO_LOGFILE_NAME = "img-info.tsv";
 
 	// private static JMenu createFileMenu(final Window view) {
 	// final JMenu result = new JMenu("File");
@@ -113,9 +124,13 @@ public final class GameGUI implements Runnable {
 	// return result;
 	// }
 
+	private static final Logger LOGGER = LoggerFactory.getLogger(GameGUI.class);
+
 	private final Runnable closeHook;
 
 	private final GameState gameState;
+
+	private final Consumer<Iterator<Entry<Integer, ImageVisualizationInfo>>> imgVizInfoWriter;
 
 	private final BiConsumer<Component, Selection> selectionLogger;
 
@@ -149,6 +164,19 @@ public final class GameGUI implements Runnable {
 			}
 		};
 
+		imgVizInfoWriter = imgVizInfoData -> {
+			final ExecutorService imgInfoWritingExecutor = Executors.newSingleThreadExecutor();
+			imgInfoWritingExecutor.submit(() -> {
+				final Path outdir = logOutdirSupplier.get();
+				final Path outfile = outdir.resolve(IMAGE_INFO_LOGFILE_NAME);
+				try (final BufferedWriter writer = Files.newBufferedWriter(outfile)) {
+					final ImageVisualizationInfoTableWriter infoWriter = new ImageVisualizationInfoTableWriter(writer);
+					infoWriter.accept(imgVizInfoData);
+				} catch (final IOException e) {
+					throw new UncheckedIOException(e);
+				}
+			});
+		};
 	}
 
 	@Override
@@ -156,6 +184,8 @@ public final class GameGUI implements Runnable {
 		LOGGER.debug("Creating view components.");
 		final Controller controller = gameState.getController();
 		final SpatialMatrix<Integer> model = controller.getModel();
+//		String matrixStrRepr = new MatrixStringReprFactory().apply(model.getPositionMatrix());
+//		System.out.println(matrixStrRepr);
 		final int pieceCount = model.getElementPlacements().getAllElements().size();
 		final Random rnd = gameState.getRnd();
 		final Map<Integer, Image> pieceImgs = Maps.newHashMapWithExpectedSize(pieceCount);
@@ -170,18 +200,21 @@ public final class GameGUI implements Runnable {
 		final Stream<ImageVisualizationInfo> imgVisualizationInfoData = Stream.generate(imgVisInfoFactory::next)
 				.limit(pieceCount);
 
-		imgVisualizationInfoData.map(imgViewInfoFactory::apply).forEach(imgViewInfoDatum -> {
-			final Image oldImg = pieceImgs.put(pieceImgs.size(), imgViewInfoDatum.getValue());
+		final SortedMap<Integer, ImageVisualizationInfo> imgVisualizationInfoDataById = new TreeMap<>();
+		imgVisualizationInfoData.forEach(imgVisualizationInfoDatum -> {
+			final Integer id = imgVisualizationInfoDataById.size();
+			final ImageVisualizationInfo oldVizInfo = imgVisualizationInfoDataById.put(id, imgVisualizationInfoDatum);
+			assert oldVizInfo == null;
+
+			final Entry<ImageViewInfo, Image> imgViewInfoDatum = imgViewInfoFactory.apply(imgVisualizationInfoDatum);
+			final Image oldImg = pieceImgs.put(id, imgViewInfoDatum.getValue());
 			assert oldImg == null;
 		});
+		imgVizInfoWriter.accept(imgVisualizationInfoDataById.entrySet().iterator());
 
 		final GameViewFrame gameViewFrame = new GameViewFrame(gameBoardPanel, rnd, controller, closeHook);
 		gameViewFrame.setTitle(title);
 		// gameViewFrame.setJMenuBar(createMenuBar(gameViewFrame));
-
-		// Have the game view frame manage the lifetime of the frames accessed
-		// via menu
-		// gameViewFrame.getChildWindows().add(winningConfigFrame);
 
 		gameViewFrame.pack();
 		// gameViewFrame.setLocationByPlatform(true);
