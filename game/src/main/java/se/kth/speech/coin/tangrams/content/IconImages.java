@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URL;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.NavigableMap;
@@ -74,7 +75,7 @@ final class IconImages {
 	 * @return the named icon image resources
 	 */
 	static NavigableMap<String, URL> getImageResources() {
-		return ICON_IMAGE_RESOURCES;
+		return Collections.unmodifiableNavigableMap(ICON_IMAGE_RESOURCES);
 	}
 
 	/**
