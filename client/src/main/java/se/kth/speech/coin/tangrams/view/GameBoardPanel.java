@@ -205,6 +205,8 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 	 */
 	private final Set<SpatialRegion> highlightedRegions = Sets.newHashSetWithExpectedSize(1);
 
+	private final Map<Image, Image> imgsScaledToGridSize;
+
 	private final BiConsumer<? super GameBoardPanel, ? super Turn> localTurnCompletionViewLogger;
 
 	private final Map<Integer, Image> pieceImgs;
@@ -238,10 +240,14 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 		updateMouseListener(controller.getRole());
 		addDisablingMouseListener(selectingMouseListener);
 
+		// Caching of elements which are dependent on the (current) size of this
+		// component
 		compCoordStartIdxs = Maps.newHashMapWithExpectedSize(posMatrix.getUniqueElementCount());
 		addComponentListener(new ResizingEventListener(() -> compCoordStartIdxs.clear()));
 		compCoordSizes = Maps.newHashMapWithExpectedSize(posMatrix.getUniqueElementCount());
 		addComponentListener(new ResizingEventListener(() -> compCoordSizes.clear()));
+		imgsScaledToGridSize = Maps.newHashMapWithExpectedSize(posMatrix.getUniqueElementCount());
+		addComponentListener(new ResizingEventListener(() -> imgsScaledToGridSize.clear()));
 
 		{
 			final int[] minSizeDims = createMinimumDimLengths(posMatrix.getDimensions()).toArray();
@@ -476,8 +482,8 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 			final SpatialRegion region = piecePlacement.getKey();
 			final Integer pieceId = piecePlacement.getValue();
 			final Image initialImg = pieceImgs.get(pieceId);
-			final Image scaledImg = scaleImageToGridSize(initialImg, region, colWidth, rowHeight);
-			final int[] startIdxs = createComponentCoordStartIdxArray(region, colWidth, rowHeight);
+			final Image scaledImg = fetchImageScaledToGridSize(initialImg, region, colWidth, rowHeight);
+			final int[] startIdxs = fetchComponentCoordStartIdxArray(region, colWidth, rowHeight);
 			g.drawImage(scaledImg, startIdxs[0] + IMG_SIDE_PADDING, startIdxs[1] + IMG_SIDE_PADDING, null);
 		}
 	}
@@ -511,6 +517,12 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 			final int rowHeight) {
 		return compCoordStartIdxs.computeIfAbsent(region,
 				k -> createComponentCoordStartIdxArray(k, colWidth, rowHeight));
+	}
+
+	private Image fetchImageScaledToGridSize(final Image img, final SpatialRegion occupiedGridRegion,
+			final int colWidth, final int rowHeight) {
+		return imgsScaledToGridSize.computeIfAbsent(img,
+				k -> scaleImageToGridSize(k, occupiedGridRegion, colWidth, rowHeight));
 	}
 
 	private Entry<Integer, SpatialRegion> findBiggestPieceRegionUnderSelection(final int x, final int y) {
