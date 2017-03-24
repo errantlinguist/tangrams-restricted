@@ -14,7 +14,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech.coin.tangrams.game;
+package se.kth.speech.coin.tangrams;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -34,10 +34,10 @@ import se.kth.speech.SpatialRegion;
  * @since 24 Mar 2017
  *
  */
-final class SpatialMatrixTests {
+public final class SpatialMatrixTests {
 
-	static Entry<SpatialRegion, Entry<Integer, SpatialRegion>> createRandomValidMove(final SpatialMatrix<Integer> model,
-			final Random rnd) {
+	public static Entry<SpatialRegion, Entry<Integer, SpatialRegion>> createRandomValidMove(
+			final SpatialMatrix<Integer> model, final Random rnd) {
 		final SpatialMap<Integer> elemPlacements = model.getElementPlacements();
 		final List<SpatialRegion> occupiedRegions = elemPlacements.getMinimalRegions();
 		SpatialRegion sourceRegion = null;
