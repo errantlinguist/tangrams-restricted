@@ -114,8 +114,6 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 
 	private static final Stroke HIGHLIGHTING_STROKE;
 
-	private static final int IMG_SCALING_HINTS = Image.SCALE_SMOOTH;
-
 	private static final int IMG_SIDE_PADDING;
 
 	private static final int IMG_TOTAL_PADDING;
@@ -592,7 +590,7 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 			final int rowHeight) {
 		final int[] size = fetchComponentCoordSizeArray(occupiedGridRegion, colWidth, rowHeight);
 		return img.getScaledInstance(Math.max(MIN_GRID_SQUARE_LENGTH, size[0] - IMG_TOTAL_PADDING),
-				Math.max(MIN_GRID_SQUARE_LENGTH, size[1] - IMG_TOTAL_PADDING), IMG_SCALING_HINTS);
+				Math.max(MIN_GRID_SQUARE_LENGTH, size[1] - IMG_TOTAL_PADDING), Image.SCALE_SMOOTH);
 	}
 
 	private boolean toggleHighlightedRegion(final SpatialRegion region) {
