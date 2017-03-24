@@ -34,7 +34,7 @@ import org.slf4j.LoggerFactory;
  * @since 21 Feb 2017
  *
  */
-public final class ClasspathDirResourceLocatorMapFactory<K, R extends Map<K, URL>> implements Function<String, R> {
+public final class ClasspathDirResourceLocatorMapFactory<K, M extends Map<K, URL>> implements Function<String, M> {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(ClasspathDirResourceLocatorMapFactory.class);
 
@@ -44,9 +44,9 @@ public final class ClasspathDirResourceLocatorMapFactory<K, R extends Map<K, URL
 
 	private final Predicate<? super String> pathFilter;
 
-	private final Supplier<? extends R> supplier;
+	private final Supplier<? extends M> supplier;
 
-	public ClasspathDirResourceLocatorMapFactory(final Class<?> loadingClass, final Supplier<? extends R> supplier,
+	public ClasspathDirResourceLocatorMapFactory(final Class<?> loadingClass, final Supplier<? extends M> supplier,
 			final Predicate<? super String> pathFilter,
 			final Function<? super String, ? extends K> fileResourceNameFactory) {
 		this.loadingClass = loadingClass;
@@ -61,8 +61,8 @@ public final class ClasspathDirResourceLocatorMapFactory<K, R extends Map<K, URL
 	 * @see java.util.function.Function#apply(java.lang.Object)
 	 */
 	@Override
-	public R apply(final String dirToMap) {
-		final R result = supplier.get();
+	public M apply(final String dirToMap) {
+		final M result = supplier.get();
 
 		try (BufferedReader br = new BufferedReader(
 				new InputStreamReader(loadingClass.getResourceAsStream(dirToMap)))) {
