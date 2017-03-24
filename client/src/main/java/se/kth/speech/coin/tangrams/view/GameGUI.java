@@ -17,7 +17,6 @@
 package se.kth.speech.coin.tangrams.view;
 
 import java.awt.Color;
-import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Image;
 import java.awt.Point;
@@ -38,7 +37,6 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -59,9 +57,7 @@ import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfoTableWriter;
 import se.kth.speech.coin.tangrams.game.Controller;
 import se.kth.speech.coin.tangrams.game.ProbabilisticMoveFactory;
-import se.kth.speech.coin.tangrams.game.Turn;
 import se.kth.speech.coin.tangrams.iristk.GameState;
-import se.kth.speech.coin.tangrams.iristk.events.Selection;
 
 /**
  *
@@ -130,19 +126,17 @@ public final class GameGUI implements Runnable {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(GameGUI.class);
 
+	private final boolean analysisEnabled;
+
 	private final Runnable closeHook;
 
 	private final GameState gameState;
 
 	private final Consumer<Iterator<Entry<Integer, ImageVisualizationInfo.Datum>>> imgVizInfoWriter;
 
-	private final boolean analysisEnabled;
-
-	private final BiConsumer<Component, Selection> selectionLogger;
+	private final ScreenshotLogger screenshotLogger;
 
 	private final String title;
-
-	private final BiConsumer<Component, Turn> turnScreenshotLogger;
 
 	private final Point viewLocation;
 
@@ -153,16 +147,8 @@ public final class GameGUI implements Runnable {
 		this.gameState = gameState;
 		this.analysisEnabled = analysisEnabled;
 		final ExecutorService screenshotLoggingExecutor = Executors.newSingleThreadExecutor();
-		{
-			final ScreenshotLogger screenshotLogger = new ScreenshotLogger(logOutdirSupplier,
-					() -> gameState.getController().getPlayerId(), screenshotLoggingExecutor);
-			turnScreenshotLogger = (view, turn) -> {
-				final int turnNo = turn.getSequenceNumber();
-				final String filenamePrefix = "turn-" + Integer.toString(turnNo);
-				screenshotLogger.accept(view, filenamePrefix);
-			};
-			selectionLogger = new TimestampingSelectionLogger(screenshotLogger);
-		}
+		screenshotLogger = new ScreenshotLogger(logOutdirSupplier, () -> gameState.getController().getPlayerId(),
+				screenshotLoggingExecutor);
 		this.closeHook = () -> {
 			try {
 				closeHook.run();
@@ -194,7 +180,7 @@ public final class GameGUI implements Runnable {
 			final Controller controller, final Map<Integer, Image> pieceImgs, final int uniqueImageResourceCount,
 			final Map<BoardArea, Color> boardAreaColors) {
 		final GameBoardPanel gameBoardPanel = new GameBoardPanel(controller.getModel(), pieceImgs, controller,
-				boardAreaColors.get(BoardArea.HIGHLIGHT), turnScreenshotLogger, selectionLogger, true);
+				boardAreaColors.get(BoardArea.HIGHLIGHT), screenshotLogger, true);
 		gameBoardPanel.setBackground(boardAreaColors.get(BoardArea.BACKGROUND));
 		final OpaqueTransparencyReplacementImageFilter imgFilter = new OpaqueTransparencyReplacementImageFilter(128);
 		final BiFunction<Image, Toolkit, Image> tranparencyFilterer = (img, toolkit) -> {
@@ -210,7 +196,7 @@ public final class GameGUI implements Runnable {
 			final Controller controller, final Map<Integer, Image> pieceImgs, final int uniqueImageResourceCount,
 			final Map<BoardArea, Color> boardAreaColors) {
 		final GameBoardPanel gameBoardPanel = new GameBoardPanel(controller.getModel(), pieceImgs, controller,
-				boardAreaColors.get(BoardArea.HIGHLIGHT), turnScreenshotLogger, selectionLogger);
+				boardAreaColors.get(BoardArea.HIGHLIGHT), screenshotLogger);
 		gameBoardPanel.setBackground(boardAreaColors.get(BoardArea.BACKGROUND));
 		final ImageLoadingImageViewInfoFactory imgViewInfoFactory = new ImageLoadingImageViewInfoFactory(
 				gameBoardPanel.getToolkit(), DEFAULT_POST_COLORING_IMG_TRANSFORMER,
@@ -259,7 +245,8 @@ public final class GameGUI implements Runnable {
 		LOGGER.debug("Setting maximum component size to {}.", screenSize);
 		final int shortestScreenLength = (int) (Math.min(screenSize.width, screenSize.height) * 0.8);
 		final Dimension preferredSize = new Dimension(shortestScreenLength, shortestScreenLength);
-		final ProbabilisticMoveFactory moveFactory = new ProbabilisticMoveFactory(rnd, controller.getModel(), controller.getHistory());
+		final ProbabilisticMoveFactory moveFactory = new ProbabilisticMoveFactory(rnd, controller.getModel(),
+				controller.getHistory());
 		final GameViewFrame gameViewFrame = new GameViewFrame(gameBoardPanel, controller, moveFactory, closeHook,
 				preferredSize);
 		gameViewFrame.setTitle(title);

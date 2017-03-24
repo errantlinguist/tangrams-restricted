@@ -27,6 +27,7 @@ import java.awt.Image;
 import java.awt.Stroke;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -37,6 +38,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -78,6 +80,8 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 					LOGGER.info("Nothing to select.");
 				} else {
 					LOGGER.info("Selected {}.", biggestPieceRegionUnderSelection);
+//					toggleHighlightedRegion(biggestPieceRegionUnderSelection.getValue());
+					logScreenshotSelectedPiece(biggestPieceRegionUnderSelection.getKey());
 					controller.submitSelection(biggestPieceRegionUnderSelection);
 				}
 
@@ -106,6 +110,20 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 	 *
 	 */
 	private static final long serialVersionUID = 6258829324465894025L;
+
+	private static final ThreadLocal<SimpleDateFormat> TIME_FORMAT = new ThreadLocal<SimpleDateFormat>() {
+
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see java.lang.ThreadLocal#initialValue()
+		 */
+		@Override
+		protected SimpleDateFormat initialValue() {
+			return new SimpleDateFormat("HHmmssSSS");
+		}
+
+	};
 
 	static {
 		REGION_HIGHLIGHT_STROKE_WIDTH = 2;
@@ -154,9 +172,9 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 				Math.max(MIN_GRID_SQUARE_LENGTH, size[1] - IMG_PADDING), IMG_SCALING_HINTS);
 	}
 
-	private final Controller controller;
-
 	private final boolean analysisEnabled;
+
+	private final Controller controller;
 
 	private final Color highlightColor;
 
@@ -165,9 +183,7 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 	 */
 	private final Set<SpatialRegion> highlightedRegions = Sets.newHashSetWithExpectedSize(1);
 
-	private final BiConsumer<? super GameBoardPanel, ? super Selection> localSelectionHook;
-
-	private final BiConsumer<? super GameBoardPanel, ? super Turn> localTurnCompletionHook;
+	private final BiConsumer<? super GameBoardPanel, ? super Turn> localTurnCompletionViewLogger;
 
 	private final Map<Integer, Image> pieceImgs;
 
@@ -175,11 +191,12 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 
 	private final DisablingMouseAdapter selectingMouseListener;
 
+	private final BiConsumer<Component, String> viewLogger;
+
 	GameBoardPanel(final SpatialMatrix<Integer> posMatrix, final Map<Integer, Image> pieceImgs,
 			final Controller controller, final Color highlightColor,
-			final BiConsumer<? super GameBoardPanel, ? super Turn> localTurnCompletionHook,
-			final BiConsumer<? super GameBoardPanel, ? super Selection> localSelectionHook) {
-		this(posMatrix, pieceImgs, controller, highlightColor, localTurnCompletionHook, localSelectionHook, false);
+			final BiConsumer<Component, String> screenshotLogger) {
+		this(posMatrix, pieceImgs, controller, highlightColor, screenshotLogger, false);
 	}
 
 	// private void clearRegionHighlights(final Graphics g, final SpatialRegion
@@ -203,16 +220,16 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 
 	GameBoardPanel(final SpatialMatrix<Integer> posMatrix, final Map<Integer, Image> pieceImgs,
 			final Controller controller, final Color highlightColor,
-			final BiConsumer<? super GameBoardPanel, ? super Turn> localTurnCompletionHook,
-			final BiConsumer<? super GameBoardPanel, ? super Selection> localSelectionHook,
-			final boolean analysisEnabled) {
+			final BiConsumer<Component, String> screenshotLogger, final boolean analysisEnabled) {
 		this.posMatrix = posMatrix;
 		this.pieceImgs = pieceImgs;
 		this.controller = controller;
 		this.highlightColor = highlightColor;
 		controller.getListeners().add(this);
-		this.localTurnCompletionHook = localTurnCompletionHook;
-		this.localSelectionHook = localSelectionHook;
+
+		final Supplier<SimpleDateFormat> dateFormatSupplier = TIME_FORMAT::get;
+		localTurnCompletionViewLogger = new TimestampingCompletedTurnLogger(screenshotLogger, dateFormatSupplier);
+		viewLogger = new TimestampingScreenshotLogger(screenshotLogger, dateFormatSupplier);
 		this.analysisEnabled = analysisEnabled;
 		selectingMouseListener = new DisablingMouseAdapter(new SelectingMouseAdapter());
 		updateMouseListener(controller.getRole());
@@ -288,8 +305,6 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 	@Override
 	public void updatePlayerSelection(final Selection selection) {
 		LOGGER.debug("Observed event representing a user selection.");
-		// FIXME: NPE on repaint???
-		// localSelectionHook.accept(this, selection);
 		final boolean isSelectionCorrect = controller.isSelectionCorrect();
 		if (isSelectionCorrect) {
 			controller.submitTurnComplete();
@@ -333,11 +348,10 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 	public void updateTurnCompleted(final Turn turn) {
 		final String turnPlayerId = turn.getPlayerId();
 		LOGGER.debug("Observed event representing a turn completed by \"{}\".", turnPlayerId);
-		// FIXME: NPE at FilteredImageSource.java:181
-		// localTurnCompletionHook.accept(this, turn);
 		final SpatialRegion moveSource = turn.getMove().getKey();
 		highlightedRegions.remove(moveSource);
 		repaint();
+		localTurnCompletionViewLogger.accept(this, turn);
 	}
 
 	/*
@@ -512,6 +526,10 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 	private int getRowIdx(final int y) {
 		final int rowHeight = getGridRowHeight();
 		return y / rowHeight;
+	}
+
+	private void logScreenshotSelectedPiece(final Integer pieceId) {
+		viewLogger.accept(this, "selection-piece-id" + pieceId + "-");
 	}
 
 	private boolean toggleHighlightedRegion(final SpatialRegion region) {
