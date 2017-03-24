@@ -73,14 +73,14 @@ public class ControllerTest {
 
 	@Theory
 	public void testGetTurnCountNoMoves(final SpatialMatrix<Integer> model, final long seed) {
-		final Controller controller = new Controller(model, "testController", PlayerRole.MOVE_SUBMISSION,
+		final Controller controller = new Controller(model, "localPlayer", PlayerRole.MOVE_SUBMISSION,
 				CLIENT_MODULE);
 		Assert.assertEquals(0, controller.getTurnCount());
 	}
 
 	@Theory
 	public void testGetTurnCountOneMove(final SpatialMatrix<Integer> model, final long seed) {
-		final Controller controller = new Controller(model, "testController", PlayerRole.MOVE_SUBMISSION,
+		final Controller controller = new Controller(model, "localPlayer", PlayerRole.MOVE_SUBMISSION,
 				CLIENT_MODULE);
 		final Random rnd = new Random(seed);
 		final Entry<SpatialRegion, Entry<Integer, SpatialRegion>> move = SpatialMatrixTests.createRandomValidMove(model,
@@ -99,7 +99,7 @@ public class ControllerTest {
 
 	@Theory
 	public void testNotifyPlayerSelectionPositive(final SpatialMatrix<Integer> model, final long seed) {
-		final Controller controller = new Controller(model, "testController", PlayerRole.MOVE_SUBMISSION,
+		final Controller controller = new Controller(model, "localPlayer", PlayerRole.MOVE_SUBMISSION,
 				CLIENT_MODULE);
 		final SpatialMap<Integer> elemPlacements = model.getElementPlacements();
 		final List<SpatialRegion> occupiedRegions = elemPlacements.getMinimalRegions();
@@ -120,7 +120,7 @@ public class ControllerTest {
 
 	@Theory
 	public void testSubmitNextMovePositive(final SpatialMatrix<Integer> model, final long seed) {
-		final Controller controller = new Controller(model, "testController", PlayerRole.MOVE_SUBMISSION,
+		final Controller controller = new Controller(model, "localPlayer", PlayerRole.MOVE_SUBMISSION,
 				CLIENT_MODULE);
 		final Random rnd = new Random(seed);
 		final Entry<SpatialRegion, Entry<Integer, SpatialRegion>> move = SpatialMatrixTests.createRandomValidMove(model,
@@ -139,7 +139,7 @@ public class ControllerTest {
 
 	@Theory
 	public void testSubmitTurnCompletePositive(final SpatialMatrix<Integer> model, final long seed) {
-		final Controller controller = new Controller(model, "testController", PlayerRole.MOVE_SUBMISSION,
+		final Controller controller = new Controller(model, "localPlayer", PlayerRole.MOVE_SUBMISSION,
 				CLIENT_MODULE);
 		final Random rnd = new Random(seed);
 		final Entry<SpatialRegion, Entry<Integer, SpatialRegion>> move = SpatialMatrixTests.createRandomValidMove(model,
