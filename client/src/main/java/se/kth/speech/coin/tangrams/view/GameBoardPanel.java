@@ -93,8 +93,10 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 
 	}
 
-	private static final Stroke GRID_STROKE = new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0,
-			new float[] { 1 }, 0);
+	private static final Stroke GRID_STROKE = new BasicStroke(1.0f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 1.0f,
+			new float[] { 1.0f }, 0);
+	
+	private static final Stroke HIGHLIGHTING_STROKE;
 
 	private static final int IMG_SCALING_HINTS = Image.SCALE_SMOOTH;
 	
@@ -105,8 +107,6 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 	private static final Logger LOGGER = LoggerFactory.getLogger(GameBoardPanel.class);
 
 	private static final int MIN_GRID_SQUARE_LENGTH;
-
-	private static final int REGION_HIGHLIGHT_STROKE_WIDTH;
 
 	/**
 	 *
@@ -128,9 +128,10 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 	};
 
 	static {
-		REGION_HIGHLIGHT_STROKE_WIDTH = 4;
+		final int highlightingStrokeWidth = 4;
+		HIGHLIGHTING_STROKE = new BasicStroke(highlightingStrokeWidth, BasicStroke.CAP_SQUARE, BasicStroke.JOIN_MITER, 10.0f, new float[]{5.0f, 5.0f}, 0);
 		final int spaceBetweenImgAndHighlight = 5;
-		IMG_SIDE_PADDING = REGION_HIGHLIGHT_STROKE_WIDTH + spaceBetweenImgAndHighlight;
+		IMG_SIDE_PADDING = highlightingStrokeWidth + spaceBetweenImgAndHighlight;
 		IMG_TOTAL_PADDING = IMG_SIDE_PADDING * 2;
 		MIN_GRID_SQUARE_LENGTH = 10 + IMG_TOTAL_PADDING;
 	}
@@ -272,7 +273,7 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 
 		{
 			final Graphics2D regionHighlightingG = createRegionHighlightDrawingGraphics(g);
-			regionHighlightingG.setStroke(new BasicStroke(REGION_HIGHLIGHT_STROKE_WIDTH));
+			regionHighlightingG.setStroke(HIGHLIGHTING_STROKE);
 			regionHighlightingG.setColor(highlightColor);
 			try {
 				drawRegionHighlights(regionHighlightingG);
@@ -377,7 +378,7 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 
 	private Graphics2D createRegionHighlightDrawingGraphics(final Graphics g) {
 		final Graphics2D result = (Graphics2D) g.create();
-		result.setStroke(new BasicStroke(REGION_HIGHLIGHT_STROKE_WIDTH));
+		result.setStroke(HIGHLIGHTING_STROKE);
 		result.setColor(Color.MAGENTA);
 		return result;
 	}
