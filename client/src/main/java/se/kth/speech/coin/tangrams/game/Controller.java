@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.function.Function;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,7 +34,6 @@ import se.kth.speech.SpatialRegion;
 import se.kth.speech.coin.tangrams.AreaSpatialRegionFactory;
 import se.kth.speech.coin.tangrams.iristk.GameManagementClientModule;
 import se.kth.speech.coin.tangrams.iristk.events.Area2D;
-import se.kth.speech.coin.tangrams.iristk.events.CoordinatePoint2D;
 import se.kth.speech.coin.tangrams.iristk.events.Move;
 import se.kth.speech.coin.tangrams.iristk.events.Selection;
 
@@ -142,17 +142,7 @@ public final class Controller {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(Controller.class);
 
-	private static Area2D createArea(final SpatialRegion region) {
-		return new Area2D(createStartCoords(region), createEndCoords(region));
-	}
-
-	private static CoordinatePoint2D createEndCoords(final SpatialRegion region) {
-		return new CoordinatePoint2D(region.getXUpperBound(), region.getYUpperBound());
-	}
-
-	private static CoordinatePoint2D createStartCoords(final SpatialRegion region) {
-		return new CoordinatePoint2D(region.getXLowerBound(), region.getYLowerBound());
-	}
+	private static final Function<SpatialRegion, Area2D> REGION_AREA_FACTORY = new SpatialRegionAreaFactory();
 
 	private transient final AreaSpatialRegionFactory areaRegionFactory;
 
@@ -330,7 +320,7 @@ public final class Controller {
 		if (!ValidationStatus.OK.equals(validationStatus)) {
 			throw new IllegalArgumentException("Invalid move: " + validationStatus);
 		}
-		nextMove = new Move(createArea(sourceRegion), createArea(targetRegion), pieceId);
+		nextMove = new Move(REGION_AREA_FACTORY.apply(sourceRegion), REGION_AREA_FACTORY.apply(targetRegion), pieceId);
 		clientModule.requestNextMove(nextMove);
 
 		updatePlayerRole(PlayerRole.WAITING_FOR_SELECTION);
@@ -346,7 +336,7 @@ public final class Controller {
 					String.format("Role is currently not %s but rather %s.", requiredRole, role));
 		}
 		selectedPiece = pieceRegion;
-		clientModule.requestSelection(selectedPiece.getKey(), createArea(selectedPiece.getValue()));
+		clientModule.requestSelection(selectedPiece.getKey(), REGION_AREA_FACTORY.apply(selectedPiece.getValue()));
 
 		updatePlayerRole(PlayerRole.WAITING_FOR_SELECTION_CONFIRMATION);
 	}
@@ -357,7 +347,7 @@ public final class Controller {
 			throw new IllegalStateException(
 					String.format("Role is currently not %s but rather %s.", requiredRole, role));
 		}
-		clientModule.rejectSelection(selectedPiece.getKey(), createArea(selectedPiece.getValue()));
+		clientModule.rejectSelection(selectedPiece.getKey(), REGION_AREA_FACTORY.apply(selectedPiece.getValue()));
 
 		updateScore(BAD_TURN_SCORE_DIFF);
 
