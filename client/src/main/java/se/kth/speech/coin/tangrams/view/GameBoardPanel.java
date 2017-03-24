@@ -96,9 +96,11 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 	private static final Stroke GRID_STROKE = new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0,
 			new float[] { 1 }, 0);
 
-	private static final int IMG_PADDING;
-
 	private static final int IMG_SCALING_HINTS = Image.SCALE_SMOOTH;
+	
+	private static final int IMG_SIDE_PADDING;
+
+	private static final int IMG_TOTAL_PADDING;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(GameBoardPanel.class);
 
@@ -126,9 +128,11 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 	};
 
 	static {
-		REGION_HIGHLIGHT_STROKE_WIDTH = 2;
-		IMG_PADDING = REGION_HIGHLIGHT_STROKE_WIDTH * 2;
-		MIN_GRID_SQUARE_LENGTH = 10 + IMG_PADDING;
+		REGION_HIGHLIGHT_STROKE_WIDTH = 4;
+		final int spaceBetweenImgAndHighlight = 5;
+		IMG_SIDE_PADDING = REGION_HIGHLIGHT_STROKE_WIDTH + spaceBetweenImgAndHighlight;
+		IMG_TOTAL_PADDING = IMG_SIDE_PADDING * 2;
+		MIN_GRID_SQUARE_LENGTH = 10 + IMG_TOTAL_PADDING;
 	}
 
 	private static int[] createComponentCoordSizeArray(final SpatialRegion region, final int colWidth,
@@ -168,8 +172,8 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 	private static Image scaleImageToGridSize(final Image img, final SpatialRegion occupiedGridRegion,
 			final int colWidth, final int rowHeight) {
 		final int[] size = createComponentCoordSizeArray(occupiedGridRegion, colWidth, rowHeight);
-		return img.getScaledInstance(Math.max(MIN_GRID_SQUARE_LENGTH, size[0] - IMG_PADDING),
-				Math.max(MIN_GRID_SQUARE_LENGTH, size[1] - IMG_PADDING), IMG_SCALING_HINTS);
+		return img.getScaledInstance(Math.max(MIN_GRID_SQUARE_LENGTH, size[0] - IMG_TOTAL_PADDING),
+				Math.max(MIN_GRID_SQUARE_LENGTH, size[1] - IMG_TOTAL_PADDING), IMG_SCALING_HINTS);
 	}
 
 	private final boolean analysisEnabled;
@@ -451,8 +455,8 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 			final Image initialImg = pieceImgs.get(pieceId);
 			final Image scaledImg = scaleImageToGridSize(initialImg, region, colWidth, rowHeight);
 			final int[] startIdxs = createComponentCoordStartIdxArray(region, colWidth, rowHeight);
-			g.drawImage(scaledImg, startIdxs[0] + REGION_HIGHLIGHT_STROKE_WIDTH,
-					startIdxs[1] + REGION_HIGHLIGHT_STROKE_WIDTH, null);
+			g.drawImage(scaledImg, startIdxs[0] + IMG_SIDE_PADDING,
+					startIdxs[1] + IMG_SIDE_PADDING, null);
 		}
 	}
 
