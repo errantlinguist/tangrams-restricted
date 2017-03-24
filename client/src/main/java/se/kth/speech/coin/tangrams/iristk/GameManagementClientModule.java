@@ -38,7 +38,7 @@ import se.kth.speech.coin.tangrams.iristk.events.Area2D;
 import se.kth.speech.coin.tangrams.iristk.events.Move;
 import se.kth.speech.coin.tangrams.iristk.events.Selection;
 
-public final class GameManagementClientModule extends IrisModule {
+public class GameManagementClientModule extends IrisModule {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(GameManagementClientModule.class);
 
