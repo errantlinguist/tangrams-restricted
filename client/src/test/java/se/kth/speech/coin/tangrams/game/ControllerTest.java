@@ -18,11 +18,9 @@ package se.kth.speech.coin.tangrams.game;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Random;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -36,8 +34,6 @@ import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 
 import se.kth.speech.Matrix;
-import se.kth.speech.MutablePair;
-import se.kth.speech.RandomCollections;
 import se.kth.speech.SpatialMap;
 import se.kth.speech.SpatialMatrix;
 import se.kth.speech.SpatialRegion;
@@ -71,22 +67,6 @@ public class ControllerTest {
 				.collect(Collectors.toCollection(() -> new ArrayList<>(testDescs.size())));
 	}
 
-	private static Entry<SpatialRegion, Entry<Integer, SpatialRegion>> createRandomValidMove(
-			final SpatialMatrix<Integer> model, final Random rnd) {
-		final SpatialMap<Integer> elemPlacements = model.getElementPlacements();
-		final List<SpatialRegion> occupiedRegions = elemPlacements.getMinimalRegions();
-		SpatialRegion sourceRegion = null;
-		Set<SpatialRegion> regionValidMoves = Collections.emptySet();
-		do {
-			sourceRegion = RandomCollections.getRandomElement(occupiedRegions, rnd);
-			regionValidMoves = model.createValidMoveSet(sourceRegion);
-		} while (regionValidMoves.isEmpty());
-		final Collection<Integer> pieceIds = elemPlacements.getMinimalRegionElements().get(sourceRegion);
-		final Integer pieceId = RandomCollections.getRandomElement(pieceIds, rnd);
-		final SpatialRegion targetRegion = RandomCollections.getRandomElement(regionValidMoves, rnd);
-		return new MutablePair<>(sourceRegion, new MutablePair<>(pieceId, targetRegion));
-	}
-
 	@Rule
 	public final ExpectedException thrown = ExpectedException.none();
 
@@ -102,7 +82,8 @@ public class ControllerTest {
 		final Controller controller = new Controller(model, "testController", PlayerRole.MOVE_SUBMISSION,
 				CLIENT_MODULE);
 		final Random rnd = new Random(seed);
-		final Entry<SpatialRegion, Entry<Integer, SpatialRegion>> move = createRandomValidMove(model, rnd);
+		final Entry<SpatialRegion, Entry<Integer, SpatialRegion>> move = SpatialMatrixTests.createRandomValidMove(model,
+				rnd);
 		final SpatialRegion sourceRegion = move.getKey();
 		final Entry<Integer, SpatialRegion> pieceIdTargets = move.getValue();
 		final Integer pieceId = pieceIdTargets.getKey();
@@ -124,7 +105,8 @@ public class ControllerTest {
 		Assert.assertTrue(occupiedRegions.size() > 1);
 
 		final Random rnd = new Random(seed);
-		final Entry<SpatialRegion, Entry<Integer, SpatialRegion>> move = createRandomValidMove(model, rnd);
+		final Entry<SpatialRegion, Entry<Integer, SpatialRegion>> move = SpatialMatrixTests.createRandomValidMove(model,
+				rnd);
 		final SpatialRegion sourceRegion = move.getKey();
 		final Entry<Integer, SpatialRegion> pieceIdTargets = move.getValue();
 		final Integer pieceId = pieceIdTargets.getKey();
@@ -140,7 +122,8 @@ public class ControllerTest {
 		final Controller controller = new Controller(model, "testController", PlayerRole.MOVE_SUBMISSION,
 				CLIENT_MODULE);
 		final Random rnd = new Random(seed);
-		final Entry<SpatialRegion, Entry<Integer, SpatialRegion>> move = createRandomValidMove(model, rnd);
+		final Entry<SpatialRegion, Entry<Integer, SpatialRegion>> move = SpatialMatrixTests.createRandomValidMove(model,
+				rnd);
 		final SpatialRegion sourceRegion = move.getKey();
 		final Entry<Integer, SpatialRegion> pieceIdTargets = move.getValue();
 		final Integer pieceId = pieceIdTargets.getKey();
@@ -158,7 +141,8 @@ public class ControllerTest {
 		final Controller controller = new Controller(model, "testController", PlayerRole.MOVE_SUBMISSION,
 				CLIENT_MODULE);
 		final Random rnd = new Random(seed);
-		final Entry<SpatialRegion, Entry<Integer, SpatialRegion>> move = createRandomValidMove(model, rnd);
+		final Entry<SpatialRegion, Entry<Integer, SpatialRegion>> move = SpatialMatrixTests.createRandomValidMove(model,
+				rnd);
 		final SpatialRegion sourceRegion = move.getKey();
 		final Entry<Integer, SpatialRegion> pieceIdTargets = move.getValue();
 		final Integer pieceId = pieceIdTargets.getKey();
