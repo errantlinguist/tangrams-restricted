@@ -71,7 +71,7 @@ public class ControllerTest {
 				.collect(Collectors.toCollection(() -> new ArrayList<>(testDescs.size())));
 	}
 
-	private static Entry<SpatialRegion, Entry<Integer, SpatialRegion>> createValidRandomMove(
+	private static Entry<SpatialRegion, Entry<Integer, SpatialRegion>> createRandomValidMove(
 			final SpatialMatrix<Integer> model, final Random rnd) {
 		final SpatialMap<Integer> elemPlacements = model.getElementPlacements();
 		final List<SpatialRegion> occupiedRegions = elemPlacements.getMinimalRegions();
@@ -102,7 +102,7 @@ public class ControllerTest {
 		final Controller controller = new Controller(model, "testController", PlayerRole.MOVE_SUBMISSION,
 				CLIENT_MODULE);
 		final Random rnd = new Random(seed);
-		final Entry<SpatialRegion, Entry<Integer, SpatialRegion>> move = createValidRandomMove(model, rnd);
+		final Entry<SpatialRegion, Entry<Integer, SpatialRegion>> move = createRandomValidMove(model, rnd);
 		final SpatialRegion sourceRegion = move.getKey();
 		final Entry<Integer, SpatialRegion> pieceIdTargets = move.getValue();
 		final Integer pieceId = pieceIdTargets.getKey();
@@ -124,7 +124,7 @@ public class ControllerTest {
 		Assert.assertTrue(occupiedRegions.size() > 1);
 
 		final Random rnd = new Random(seed);
-		final Entry<SpatialRegion, Entry<Integer, SpatialRegion>> move = createValidRandomMove(model, rnd);
+		final Entry<SpatialRegion, Entry<Integer, SpatialRegion>> move = createRandomValidMove(model, rnd);
 		final SpatialRegion sourceRegion = move.getKey();
 		final Entry<Integer, SpatialRegion> pieceIdTargets = move.getValue();
 		final Integer pieceId = pieceIdTargets.getKey();
@@ -140,7 +140,7 @@ public class ControllerTest {
 		final Controller controller = new Controller(model, "testController", PlayerRole.MOVE_SUBMISSION,
 				CLIENT_MODULE);
 		final Random rnd = new Random(seed);
-		final Entry<SpatialRegion, Entry<Integer, SpatialRegion>> move = createValidRandomMove(model, rnd);
+		final Entry<SpatialRegion, Entry<Integer, SpatialRegion>> move = createRandomValidMove(model, rnd);
 		final SpatialRegion sourceRegion = move.getKey();
 		final Entry<Integer, SpatialRegion> pieceIdTargets = move.getValue();
 		final Integer pieceId = pieceIdTargets.getKey();
@@ -158,7 +158,7 @@ public class ControllerTest {
 		final Controller controller = new Controller(model, "testController", PlayerRole.MOVE_SUBMISSION,
 				CLIENT_MODULE);
 		final Random rnd = new Random(seed);
-		final Entry<SpatialRegion, Entry<Integer, SpatialRegion>> move = createValidRandomMove(model, rnd);
+		final Entry<SpatialRegion, Entry<Integer, SpatialRegion>> move = createRandomValidMove(model, rnd);
 		final SpatialRegion sourceRegion = move.getKey();
 		final Entry<Integer, SpatialRegion> pieceIdTargets = move.getValue();
 		final Integer pieceId = pieceIdTargets.getKey();
