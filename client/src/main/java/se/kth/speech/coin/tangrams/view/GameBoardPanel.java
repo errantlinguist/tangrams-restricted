@@ -25,6 +25,8 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.Stroke;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.text.SimpleDateFormat;
@@ -67,6 +69,20 @@ import se.kth.speech.coin.tangrams.iristk.events.Move;
  */
 final class GameBoardPanel extends JPanel implements Controller.Listener {
 
+	private static class ResizingEventListener extends ComponentAdapter {
+
+		private final Runnable hook;
+
+		private ResizingEventListener(final Runnable hook) {
+			this.hook = hook;
+		}
+
+		@Override
+		public void componentResized(final ComponentEvent e) {
+			hook.run();
+		}
+	}
+
 	private class SelectingMouseAdapter extends MouseAdapter {
 		@Override
 		public void mouseClicked(final MouseEvent e) {
@@ -95,11 +111,11 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 
 	private static final Stroke GRID_STROKE = new BasicStroke(1.0f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 1.0f,
 			new float[] { 1.0f }, 0);
-	
+
 	private static final Stroke HIGHLIGHTING_STROKE;
 
 	private static final int IMG_SCALING_HINTS = Image.SCALE_SMOOTH;
-	
+
 	private static final int IMG_SIDE_PADDING;
 
 	private static final int IMG_TOTAL_PADDING;
@@ -129,7 +145,8 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 
 	static {
 		final int highlightingStrokeWidth = 4;
-		HIGHLIGHTING_STROKE = new BasicStroke(highlightingStrokeWidth, BasicStroke.CAP_SQUARE, BasicStroke.JOIN_MITER, 10.0f, new float[]{5.0f, 5.0f}, 0);
+		HIGHLIGHTING_STROKE = new BasicStroke(highlightingStrokeWidth, BasicStroke.CAP_SQUARE, BasicStroke.JOIN_MITER,
+				10.0f, new float[] { 5.0f, 5.0f }, 0);
 		final int spaceBetweenImgAndHighlight = 5;
 		IMG_SIDE_PADDING = highlightingStrokeWidth + spaceBetweenImgAndHighlight;
 		IMG_TOTAL_PADDING = IMG_SIDE_PADDING * 2;
@@ -163,21 +180,21 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 		return Arrays.stream(dims).map(dim -> dim * MIN_GRID_SQUARE_LENGTH);
 	}
 
-	private static void drawRegionHighlights(final Graphics g, final SpatialRegion region, final int colWidth,
-			final int rowHeight) {
-		final int[] startIdxs = createComponentCoordStartIdxArray(region, colWidth, rowHeight);
-		final int[] size = createComponentCoordSizeArray(region, colWidth, rowHeight);
-		g.drawRect(startIdxs[0], startIdxs[1], size[0], size[1]);
-	}
-
-	private static Image scaleImageToGridSize(final Image img, final SpatialRegion occupiedGridRegion,
-			final int colWidth, final int rowHeight) {
-		final int[] size = createComponentCoordSizeArray(occupiedGridRegion, colWidth, rowHeight);
-		return img.getScaledInstance(Math.max(MIN_GRID_SQUARE_LENGTH, size[0] - IMG_TOTAL_PADDING),
-				Math.max(MIN_GRID_SQUARE_LENGTH, size[1] - IMG_TOTAL_PADDING), IMG_SCALING_HINTS);
-	}
-
 	private final boolean analysisEnabled;
+
+	private final Map<SpatialRegion, int[]> compCoordSizes;
+
+	// private static void drawRegionHighlights(final Graphics g, final
+	// SpatialRegion region, final int colWidth,
+	// final int rowHeight) {
+	// final int[] startIdxs = createComponentCoordStartIdxArray(region,
+	// colWidth, rowHeight);
+	// final int[] size = createComponentCoordSizeArray(region, colWidth,
+	// rowHeight);
+	// g.drawRect(startIdxs[0], startIdxs[1], size[0], size[1]);
+	// }
+
+	private final Map<SpatialRegion, int[]> compCoordStartIdxs;
 
 	private final Controller controller;
 
@@ -204,25 +221,6 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 		this(posMatrix, pieceImgs, controller, highlightColor, screenshotLogger, false);
 	}
 
-	// private void clearRegionHighlights(final Graphics g, final SpatialRegion
-	// region) {
-	// final int colWidth = getGridColWidth();
-	// final int rowHeight = getGridRowHeight();
-	// final int[] startIdxs = createComponentCoordStartIdxArray(region,
-	// colWidth, rowHeight);
-	// final int[] size = createComponentCoordSizeArray(region, colWidth,
-	// rowHeight);
-	// g.clearRect(startIdxs[0], startIdxs[1], size[0], size[1]);
-	// }
-
-	// private Graphics2D createRegionHighlightClearingGraphics(final Graphics
-	// g) {
-	// final Graphics2D result = (Graphics2D) g.create();
-	// result.setStroke(new BasicStroke(REGION_HIGHLIGHT_STROKE_WIDTH));
-	// result.setColor(getBackground());
-	// return result;
-	// }
-
 	GameBoardPanel(final SpatialMatrix<Integer> posMatrix, final Map<Integer, Image> pieceImgs,
 			final Controller controller, final Color highlightColor,
 			final BiConsumer<Component, String> screenshotLogger, final boolean analysisEnabled) {
@@ -239,6 +237,11 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 		selectingMouseListener = new DisablingMouseAdapter(new SelectingMouseAdapter());
 		updateMouseListener(controller.getRole());
 		addDisablingMouseListener(selectingMouseListener);
+
+		compCoordStartIdxs = Maps.newHashMapWithExpectedSize(posMatrix.getUniqueElementCount());
+		addComponentListener(new ResizingEventListener(() -> compCoordStartIdxs.clear()));
+		compCoordSizes = Maps.newHashMapWithExpectedSize(posMatrix.getUniqueElementCount());
+		addComponentListener(new ResizingEventListener(() -> compCoordSizes.clear()));
 
 		{
 			final int[] minSizeDims = createMinimumDimLengths(posMatrix.getDimensions()).toArray();
@@ -289,6 +292,25 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 		LOGGER.debug("Observed event representing the subbmission of a move by a player.");
 	}
 
+	// private void clearRegionHighlights(final Graphics g, final SpatialRegion
+	// region) {
+	// final int colWidth = getGridColWidth();
+	// final int rowHeight = getGridRowHeight();
+	// final int[] startIdxs = createComponentCoordStartIdxArray(region,
+	// colWidth, rowHeight);
+	// final int[] size = createComponentCoordSizeArray(region, colWidth,
+	// rowHeight);
+	// g.clearRect(startIdxs[0], startIdxs[1], size[0], size[1]);
+	// }
+
+	// private Graphics2D createRegionHighlightClearingGraphics(final Graphics
+	// g) {
+	// final Graphics2D result = (Graphics2D) g.create();
+	// result.setStroke(new BasicStroke(REGION_HIGHLIGHT_STROKE_WIDTH));
+	// result.setColor(getBackground());
+	// return result;
+	// }
+
 	@Override
 	public void updatePlayerJoined(final String joinedPlayerId, final long time) {
 		LOGGER.debug("Observed event representing the joining of a player.");
@@ -308,7 +330,7 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 	 * Selection)
 	 */
 	@Override
-	public void updatePlayerSelection(final Integer pieceId, SpatialRegion region) {
+	public void updatePlayerSelection(final Integer pieceId, final SpatialRegion region) {
 		LOGGER.debug("Observed event representing a user selection.");
 		final boolean isSelectionCorrect = controller.isSelectionCorrect();
 		if (isSelectionCorrect) {
@@ -336,7 +358,7 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 	}
 
 	@Override
-	public void updateSelectionRejected(final Integer pieceId, SpatialRegion region) {
+	public void updateSelectionRejected(final Integer pieceId, final SpatialRegion region) {
 		LOGGER.debug("Observed event representing the rejection of the last selection.");
 		final boolean wasRemoved = highlightedRegions.remove(region);
 		assert wasRemoved;
@@ -456,8 +478,7 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 			final Image initialImg = pieceImgs.get(pieceId);
 			final Image scaledImg = scaleImageToGridSize(initialImg, region, colWidth, rowHeight);
 			final int[] startIdxs = createComponentCoordStartIdxArray(region, colWidth, rowHeight);
-			g.drawImage(scaledImg, startIdxs[0] + IMG_SIDE_PADDING,
-					startIdxs[1] + IMG_SIDE_PADDING, null);
+			g.drawImage(scaledImg, startIdxs[0] + IMG_SIDE_PADDING, startIdxs[1] + IMG_SIDE_PADDING, null);
 		}
 	}
 
@@ -473,6 +494,23 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 		final int colWidth = getGridColWidth();
 		final int rowHeight = getGridRowHeight();
 		drawRegionHighlights(g, region, colWidth, rowHeight);
+	}
+
+	private void drawRegionHighlights(final Graphics g, final SpatialRegion region, final int colWidth,
+			final int rowHeight) {
+		final int[] startIdxs = fetchComponentCoordStartIdxArray(region, colWidth, rowHeight);
+		final int[] size = fetchComponentCoordSizeArray(region, colWidth, rowHeight);
+		g.drawRect(startIdxs[0], startIdxs[1], size[0], size[1]);
+	}
+
+	private int[] fetchComponentCoordSizeArray(final SpatialRegion region, final int colWidth, final int rowHeight) {
+		return compCoordSizes.computeIfAbsent(region, k -> createComponentCoordSizeArray(k, colWidth, rowHeight));
+	}
+
+	private int[] fetchComponentCoordStartIdxArray(final SpatialRegion region, final int colWidth,
+			final int rowHeight) {
+		return compCoordStartIdxs.computeIfAbsent(region,
+				k -> createComponentCoordStartIdxArray(k, colWidth, rowHeight));
 	}
 
 	private Entry<Integer, SpatialRegion> findBiggestPieceRegionUnderSelection(final int x, final int y) {
@@ -536,6 +574,13 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 
 	private void logScreenshotSelectedPiece(final Integer pieceId) {
 		viewLogger.accept(this, "selection-piece-id" + pieceId + "-");
+	}
+
+	private Image scaleImageToGridSize(final Image img, final SpatialRegion occupiedGridRegion, final int colWidth,
+			final int rowHeight) {
+		final int[] size = fetchComponentCoordSizeArray(occupiedGridRegion, colWidth, rowHeight);
+		return img.getScaledInstance(Math.max(MIN_GRID_SQUARE_LENGTH, size[0] - IMG_TOTAL_PADDING),
+				Math.max(MIN_GRID_SQUARE_LENGTH, size[1] - IMG_TOTAL_PADDING), IMG_SCALING_HINTS);
 	}
 
 	private boolean toggleHighlightedRegion(final SpatialRegion region) {
