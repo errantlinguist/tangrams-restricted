@@ -104,7 +104,7 @@ public final class GameManagementServerModule extends IrisModule {
 			switch (gameEventType) {
 			case PLAYER_JOIN_REQUEST: {
 				final String joinedPlayerId = event.getString(GameManagementEvent.Attribute.PLAYER_ID.toString());
-				LOGGER.debug("Received join request from player \"{}\" for game \"{}\".",
+				LOGGER.info("Received join request from player \"{}\" for game \"{}\".",
 						new Object[] { joinedPlayerId, gameId });
 				newGames.compute(gameId, (key, oldVal) -> {
 					final Game<Integer> newVal;
