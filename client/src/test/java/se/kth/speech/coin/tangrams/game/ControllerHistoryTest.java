@@ -18,7 +18,6 @@ package se.kth.speech.coin.tangrams.game;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map.Entry;
 import java.util.Random;
 import java.util.function.Function;
@@ -34,7 +33,6 @@ import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 
 import se.kth.speech.Matrix;
-import se.kth.speech.SpatialMap;
 import se.kth.speech.SpatialMatrix;
 import se.kth.speech.SpatialRegion;
 import se.kth.speech.coin.tangrams.MatrixTests;
@@ -49,26 +47,17 @@ import se.kth.speech.coin.tangrams.iristk.events.Selection;
  *
  */
 @RunWith(Theories.class)
-public class ControllerTest {
+public class ControllerHistoryTest {
 
-	// @DataPoints("historyLengths")
-	// public static final int[] TEST_HISTORY_LENGTHS;
-
-	@DataPoints("matrices")
+	@DataPoints("testMatrices")
 	public static final Collection<SpatialMatrix<Integer>> TEST_MODELS;
 
 	@DataPoints("seeds")
-	public static final long[] TEST_SEEDS;
+	public static final long[] TEST_SEEDS = new Random().longs().limit(5).toArray();
 
 	private static final GameManagementClientModule CLIENT_MODULE = Mockito.mock(GameManagementClientModule.class);
 
 	private static final Function<SpatialRegion, Area2D> REGION_AREA_FACTORY = new SpatialRegionAreaFactory();
-
-	static {
-		final Random rnd = new Random();
-		TEST_SEEDS = rnd.longs().distinct().limit(5).toArray();
-		// TEST_HISTORY_LENGTHS = rnd.ints(0, 10).distinct().limit(5).toArray();
-	}
 
 	static {
 		final Collection<MatrixTests.Description> testDescs = MatrixTests.getNamedTestDescMap().values();
@@ -99,7 +88,8 @@ public class ControllerTest {
 	@Theory
 	public void testGetTurnCountNoMoves(final SpatialMatrix<Integer> model, final long seed) {
 		final Controller controller = new Controller(model, "localPlayer", PlayerRole.MOVE_SUBMISSION, CLIENT_MODULE);
-		Assert.assertEquals(0, controller.getTurnCount());
+		final Controller.History history = controller.getHistory();
+		Assert.assertEquals(0, history.getTurnCount());
 	}
 
 	@Theory
@@ -107,62 +97,8 @@ public class ControllerTest {
 		final Controller controller = new Controller(model, "localPlayer", PlayerRole.MOVE_SUBMISSION, CLIENT_MODULE);
 		final Random rnd = new Random(seed);
 		submitRandomTurn(controller, rnd);
-		Assert.assertEquals(1, controller.getTurnCount());
-	}
-
-	@Theory
-	public void testNotifyPlayerSelectionPositive(final SpatialMatrix<Integer> model, final long seed) {
-		final Controller controller = new Controller(model, "localPlayer", PlayerRole.MOVE_SUBMISSION, CLIENT_MODULE);
-		final SpatialMap<Integer> elemPlacements = model.getElementPlacements();
-		final List<SpatialRegion> occupiedRegions = elemPlacements.getMinimalRegions();
-		Assert.assertTrue(occupiedRegions.size() > 1);
-
-		final Random rnd = new Random(seed);
-		final Entry<SpatialRegion, Entry<Integer, SpatialRegion>> move = SpatialMatrixTests.createRandomValidMove(model,
-				rnd);
-		final SpatialRegion sourceRegion = move.getKey();
-		final Entry<Integer, SpatialRegion> pieceIdTargets = move.getValue();
-		final Integer pieceId = pieceIdTargets.getKey();
-		final SpatialRegion targetRegion = pieceIdTargets.getValue();
-
-		controller.submitNextMove(sourceRegion, targetRegion, pieceId);
-		controller.notifyPlayerSelection("otherPlayer",
-				new Selection(pieceId, REGION_AREA_FACTORY.apply(sourceRegion)));
-	}
-
-	@Theory
-	public void testSubmitNextMovePositive(final SpatialMatrix<Integer> model, final long seed) {
-		final Controller controller = new Controller(model, "localPlayer", PlayerRole.MOVE_SUBMISSION, CLIENT_MODULE);
-		final Random rnd = new Random(seed);
-		final Entry<SpatialRegion, Entry<Integer, SpatialRegion>> move = SpatialMatrixTests.createRandomValidMove(model,
-				rnd);
-		final SpatialRegion sourceRegion = move.getKey();
-		final Entry<Integer, SpatialRegion> pieceIdTargets = move.getValue();
-		final Integer pieceId = pieceIdTargets.getKey();
-		final SpatialRegion targetRegion = pieceIdTargets.getValue();
-
-		controller.submitNextMove(sourceRegion, targetRegion, pieceId);
-		controller.notifyPlayerSelection("otherPlayer",
-				new Selection(pieceId, REGION_AREA_FACTORY.apply(sourceRegion)));
-		controller.submitTurnComplete();
-		Assert.assertEquals(1, controller.getTurnCount());
-	}
-
-	@Theory
-	public void testSubmitTurnCompletePositive(final SpatialMatrix<Integer> model, final long seed) {
-		final Controller controller = new Controller(model, "localPlayer", PlayerRole.MOVE_SUBMISSION, CLIENT_MODULE);
-		final Random rnd = new Random(seed);
-		final Entry<SpatialRegion, Entry<Integer, SpatialRegion>> move = SpatialMatrixTests.createRandomValidMove(model,
-				rnd);
-		final SpatialRegion sourceRegion = move.getKey();
-		final Entry<Integer, SpatialRegion> pieceIdTargets = move.getValue();
-		final Integer pieceId = pieceIdTargets.getKey();
-		final SpatialRegion targetRegion = pieceIdTargets.getValue();
-
-		controller.submitNextMove(sourceRegion, targetRegion, pieceId);
-		controller.notifyPlayerSelection("otherPlayer",
-				new Selection(pieceId, REGION_AREA_FACTORY.apply(sourceRegion)));
-		controller.submitTurnComplete();
+		final Controller.History history = controller.getHistory();
+		Assert.assertEquals(1, history.getTurnCount());
 	}
 
 }

@@ -52,6 +52,21 @@ public final class SpatialMatrixTests {
 		return new MutablePair<>(sourceRegion, new MutablePair<>(pieceId, targetRegion));
 	}
 
+	public static Entry<SpatialRegion, Integer> findRandomMovableElement(final SpatialMatrix<Integer> model,
+			final Random rnd) {
+		final SpatialMap<Integer> elemPlacements = model.getElementPlacements();
+		final List<SpatialRegion> occupiedRegions = elemPlacements.getMinimalRegions();
+		SpatialRegion sourceRegion = null;
+		Set<SpatialRegion> regionValidMoves = Collections.emptySet();
+		do {
+			sourceRegion = RandomCollections.getRandomElement(occupiedRegions, rnd);
+			regionValidMoves = model.createValidMoveSet(sourceRegion);
+		} while (regionValidMoves.isEmpty());
+		final Collection<Integer> pieceIds = elemPlacements.getMinimalRegionElements().get(sourceRegion);
+		final Integer pieceId = RandomCollections.getRandomElement(pieceIds, rnd);
+		return new MutablePair<>(sourceRegion, pieceId);
+	}
+
 	private SpatialMatrixTests() {
 
 	}
