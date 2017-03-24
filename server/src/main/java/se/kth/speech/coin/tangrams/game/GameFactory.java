@@ -59,14 +59,6 @@ public final class GameFactory implements Function<String, Game<Integer>> {
 
 	private static final Pattern MULTIVALUE_PROP_DELIM_PATTERN = Pattern.compile("\\s*,\\s*");
 
-	private static List<Color> createDefaultLengthRandomColorList(final Random rnd,
-			final Collection<? super Color> blacklistedColors) {
-		final RandomHueColorFactory colorFactory = new RandomHueColorFactory(rnd);
-		final int size = 4;
-		return Stream.generate(colorFactory).filter(color -> !blacklistedColors.contains(color)).distinct().limit(size)
-				.collect(Collectors.toCollection(() -> new ArrayList<>(size)));
-	}
-
 	private static RandomPopulatedModelFactory createModelFactory(final ImageVisualizationInfo imgVizInfo,
 			final Properties props) {
 		final boolean allowFailedPlacements = Boolean.parseBoolean(props.getProperty("allowFailedPlacements"));
@@ -75,6 +67,13 @@ public final class GameFactory implements Function<String, Game<Integer>> {
 		final double occupiedGridArea = Double.parseDouble(props.getProperty("occupiedGridArea"));
 		return new RandomPopulatedModelFactory(gridDims, imgVizInfo, Toolkit.getDefaultToolkit(), occupiedGridArea,
 				DEFAULT_POST_COLORING_IMG_TRANSFORMER, allowFailedPlacements);
+	}
+
+	private static List<Color> createRandomColorList(final Random rnd,
+			final Collection<? super Color> blacklistedColors, final int size) {
+		final RandomHueColorFactory colorFactory = new RandomHueColorFactory(rnd);
+		return Stream.generate(colorFactory).filter(color -> !blacklistedColors.contains(color)).distinct().limit(size)
+				.collect(Collectors.toCollection(() -> new ArrayList<>(size)));
 	}
 
 	private static Properties loadClassProps() {
@@ -104,10 +103,12 @@ public final class GameFactory implements Function<String, Game<Integer>> {
 		try {
 			seed = Long.parseLong(name);
 			final Random rnd = new Random(seed);
-			final List<Color> colors = createDefaultLengthRandomColorList(rnd, blacklistedColors);
+			final Properties props = loadClassProps();
+			final List<Color> colors = createRandomColorList(rnd, blacklistedColors,
+					Integer.parseInt(props.getProperty("colorCount")));
 			final RandomImageVisualizationInfoFactory imgDataFactory = new RandomImageVisualizationInfoFactory(rnd,
 					colors);
-			final Properties props = loadClassProps();
+
 			final int pieceCount = Integer.parseInt(props.getProperty("pieceCount"));
 			imgVisualizationInfo = imgDataFactory.apply(pieceCount);
 			final RandomPopulatedModelFactory modelFactory = createModelFactory(imgVisualizationInfo, props);
