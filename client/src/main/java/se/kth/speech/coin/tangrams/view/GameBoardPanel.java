@@ -42,6 +42,7 @@ import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
 import org.slf4j.Logger;
@@ -307,10 +308,12 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 		LOGGER.debug("Observed event representing a user selection.");
 		final boolean isSelectionCorrect = controller.isSelectionCorrect();
 		if (isSelectionCorrect) {
+			JOptionPane.showMessageDialog(this, "The other player selected the right piece!", "Good selection", JOptionPane.INFORMATION_MESSAGE);
 			controller.submitTurnComplete();
 			highlightedRegions.clear();
 			repaint();
 		} else {
+			JOptionPane.showMessageDialog(this, "The other player selected the wrong piece!", "Bad selection", JOptionPane.ERROR_MESSAGE);
 			controller.submitSelectionRejection();
 		}
 	}
