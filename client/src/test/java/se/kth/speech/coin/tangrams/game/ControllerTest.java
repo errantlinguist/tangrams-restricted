@@ -18,7 +18,6 @@ package se.kth.speech.coin.tangrams.game;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map.Entry;
 import java.util.Random;
 import java.util.function.Function;
@@ -34,7 +33,6 @@ import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 
 import se.kth.speech.Matrix;
-import se.kth.speech.SpatialMap;
 import se.kth.speech.SpatialMatrix;
 import se.kth.speech.SpatialRegion;
 import se.kth.speech.coin.tangrams.MatrixTests;
