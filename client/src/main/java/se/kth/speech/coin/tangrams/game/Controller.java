@@ -277,7 +277,7 @@ public final class Controller {
 					String.format("Wrong role for notifying selection: Should be %s but is %s.", requiredRole, role));
 		}
 
-		listeners.forEach(listener -> listener.updatePlayerSelection(selection.getPieceId(),
+		listeners.forEach(listener -> listener.updateSelectionRejected(selection.getPieceId(),
 				areaRegionFactory.apply(selection.getArea())));
 
 		updateScore(BAD_TURN_SCORE_DIFF);

@@ -80,7 +80,7 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 					LOGGER.info("Nothing to select.");
 				} else {
 					LOGGER.info("Selected {}.", biggestPieceRegionUnderSelection);
-//					toggleHighlightedRegion(biggestPieceRegionUnderSelection.getValue());
+					toggleHighlightedRegion(biggestPieceRegionUnderSelection.getValue());
 					logScreenshotSelectedPiece(biggestPieceRegionUnderSelection.getKey());
 					controller.submitSelection(biggestPieceRegionUnderSelection);
 				}
@@ -307,12 +307,14 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 		LOGGER.debug("Observed event representing a user selection.");
 		final boolean isSelectionCorrect = controller.isSelectionCorrect();
 		if (isSelectionCorrect) {
-			JOptionPane.showMessageDialog(this, "The other player selected the right piece!", "Good selection", JOptionPane.INFORMATION_MESSAGE);
+			JOptionPane.showMessageDialog(this, "The other player selected the right piece!", "Good selection",
+					JOptionPane.INFORMATION_MESSAGE);
 			controller.submitTurnComplete();
 			highlightedRegions.clear();
 			repaint();
 		} else {
-			JOptionPane.showMessageDialog(this, "The other player selected the wrong piece!", "Bad selection", JOptionPane.ERROR_MESSAGE);
+			JOptionPane.showMessageDialog(this, "The other player selected the wrong piece!", "Bad selection",
+					JOptionPane.ERROR_MESSAGE);
 			controller.submitSelectionRejection();
 		}
 	}
@@ -331,6 +333,9 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 	@Override
 	public void updateSelectionRejected(final Integer pieceId, SpatialRegion region) {
 		LOGGER.debug("Observed event representing the rejection of the last selection.");
+		final boolean wasRemoved = highlightedRegions.remove(region);
+		assert wasRemoved;
+		repaint();
 	}
 
 	/*
@@ -344,7 +349,8 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 		final String turnPlayerId = turn.getPlayerId();
 		LOGGER.debug("Observed event representing a turn completed by \"{}\".", turnPlayerId);
 		final SpatialRegion moveSource = turn.getMove().getKey();
-		highlightedRegions.remove(moveSource);
+		final boolean wasRemoved = highlightedRegions.remove(moveSource);
+		assert wasRemoved;
 		repaint();
 		localTurnCompletionViewLogger.accept(this, turn);
 	}
