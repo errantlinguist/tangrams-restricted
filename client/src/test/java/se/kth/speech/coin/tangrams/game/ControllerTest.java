@@ -145,7 +145,6 @@ public final class ControllerTest {
 		controller.notifyPlayerSelection("otherPlayer",
 				new Selection(pieceId, REGION_AREA_FACTORY.apply(sourceRegion)));
 		controller.submitTurnComplete();
-		Assert.assertEquals(1, controller.getTurnCount());
 	}
 
 	@Theory
