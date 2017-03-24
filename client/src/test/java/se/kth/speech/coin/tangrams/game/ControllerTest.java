@@ -49,7 +49,7 @@ import se.kth.speech.coin.tangrams.iristk.events.Selection;
  *
  */
 @RunWith(Theories.class)
-public class ControllerTest {
+public final class ControllerTest {
 
 	// @DataPoints("historyLengths")
 	// public static final int[] TEST_HISTORY_LENGTHS;

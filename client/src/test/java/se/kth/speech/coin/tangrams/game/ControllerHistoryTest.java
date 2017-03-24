@@ -47,7 +47,7 @@ import se.kth.speech.coin.tangrams.iristk.events.Selection;
  *
  */
 @RunWith(Theories.class)
-public class ControllerHistoryTest {
+public final class ControllerHistoryTest {
 
 	@DataPoints("testMatrices")
 	public static final Collection<SpatialMatrix<Integer>> TEST_MODELS;
