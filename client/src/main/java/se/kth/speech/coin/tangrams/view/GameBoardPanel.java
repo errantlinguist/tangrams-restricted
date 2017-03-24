@@ -59,7 +59,6 @@ import se.kth.speech.coin.tangrams.game.Controller;
 import se.kth.speech.coin.tangrams.game.PlayerRole;
 import se.kth.speech.coin.tangrams.game.Turn;
 import se.kth.speech.coin.tangrams.iristk.events.Move;
-import se.kth.speech.coin.tangrams.iristk.events.Selection;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -304,7 +303,7 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 	 * Selection)
 	 */
 	@Override
-	public void updatePlayerSelection(final Selection selection) {
+	public void updatePlayerSelection(final Integer pieceId, SpatialRegion region) {
 		LOGGER.debug("Observed event representing a user selection.");
 		final boolean isSelectionCorrect = controller.isSelectionCorrect();
 		if (isSelectionCorrect) {
@@ -329,15 +328,8 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 		LOGGER.debug("Notified of new score.");
 	}
 
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see se.kth.speech.coin.tangrams.iristk.Controller.Listener#
-	 * updateSelectionRejected(se.kth.speech.coin.tangrams.iristk.events.
-	 * Selection)
-	 */
 	@Override
-	public void updateSelectionRejected(final Selection selection) {
+	public void updateSelectionRejected(final Integer pieceId, SpatialRegion region) {
 		LOGGER.debug("Observed event representing the rejection of the last selection.");
 	}
 

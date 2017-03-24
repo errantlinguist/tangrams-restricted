@@ -113,11 +113,11 @@ public final class Controller {
 
 		void updatePlayerRole(PlayerRole newRole);
 
-		void updatePlayerSelection(Selection selection);
+		void updatePlayerSelection(Integer pieceId, SpatialRegion region);
 
 		void updateScore(int score);
 
-		void updateSelectionRejected(Selection selection);
+		void updateSelectionRejected(Integer pieceId, SpatialRegion region);
 
 		void updateTurnCompleted(Turn turn);
 
@@ -264,7 +264,8 @@ public final class Controller {
 		// update methods
 		updatePlayerRole(PlayerRole.SELECTION_CONFIRMATION);
 
-		listeners.forEach(listener -> listener.updatePlayerSelection(selection));
+		listeners.forEach(
+				listener -> listener.updatePlayerSelection(pieceId, areaRegionFactory.apply(selection.getArea())));
 
 	}
 
@@ -276,7 +277,8 @@ public final class Controller {
 					String.format("Wrong role for notifying selection: Should be %s but is %s.", requiredRole, role));
 		}
 
-		listeners.forEach(listener -> listener.updateSelectionRejected(selection));
+		listeners.forEach(listener -> listener.updatePlayerSelection(selection.getPieceId(),
+				areaRegionFactory.apply(selection.getArea())));
 
 		updateScore(BAD_TURN_SCORE_DIFF);
 

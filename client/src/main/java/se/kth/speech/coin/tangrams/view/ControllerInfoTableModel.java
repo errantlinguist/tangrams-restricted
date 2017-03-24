@@ -26,11 +26,11 @@ import java.util.function.Supplier;
 import javax.swing.table.AbstractTableModel;
 
 import se.kth.speech.MutablePair;
+import se.kth.speech.SpatialRegion;
 import se.kth.speech.coin.tangrams.game.Controller;
 import se.kth.speech.coin.tangrams.game.PlayerRole;
 import se.kth.speech.coin.tangrams.game.Turn;
 import se.kth.speech.coin.tangrams.iristk.events.Move;
-import se.kth.speech.coin.tangrams.iristk.events.Selection;
 
 final class ControllerInfoTableModel extends AbstractTableModel implements Controller.Listener {
 
@@ -142,15 +142,8 @@ final class ControllerInfoTableModel extends AbstractTableModel implements Contr
 		// Do nothing
 	}
 
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see se.kth.speech.coin.tangrams.game.Controller.Listener#
-	 * updatePlayerSelection(se.kth.speech.coin.tangrams.iristk.events.
-	 * Selection)
-	 */
 	@Override
-	public void updatePlayerSelection(final Selection selection) {
+	public void updatePlayerSelection(final Integer pieceId, SpatialRegion region) {
 		// Do nothing
 	}
 
@@ -175,15 +168,8 @@ final class ControllerInfoTableModel extends AbstractTableModel implements Contr
 		fireTableCellUpdated(CONTROLLER_DATA_ROW, updatedColIdx);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see se.kth.speech.coin.tangrams.game.Controller.Listener#
-	 * updateSelectionRejected(se.kth.speech.coin.tangrams.iristk.events.
-	 * Selection)
-	 */
 	@Override
-	public void updateSelectionRejected(final Selection selection) {
+	public void updateSelectionRejected(final Integer pieceId, SpatialRegion region) {
 		// Do nothing
 	}
 
