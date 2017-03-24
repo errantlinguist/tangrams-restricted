@@ -138,12 +138,12 @@ public final class GameGUI implements Runnable {
 
 	private final String title;
 
-	private final Point viewLocation;
+	private final Point viewCenterpoint;
 
-	public GameGUI(final String title, final Point viewLocation, final GameState gameState,
+	public GameGUI(final String title, final Point viewCenterpoint, final GameState gameState,
 			final Supplier<? extends Path> logOutdirSupplier, final Runnable closeHook, final boolean analysisEnabled) {
 		this.title = title;
-		this.viewLocation = viewLocation;
+		this.viewCenterpoint = viewCenterpoint;
 		this.gameState = gameState;
 		this.analysisEnabled = analysisEnabled;
 		final ExecutorService screenshotLoggingExecutor = Executors.newSingleThreadExecutor();
@@ -247,17 +247,17 @@ public final class GameGUI implements Runnable {
 		final Dimension preferredSize = new Dimension(shortestScreenLength, shortestScreenLength);
 		final ProbabilisticMoveFactory moveFactory = new ProbabilisticMoveFactory(rnd, controller.getModel(),
 				controller.getHistory());
-		final GameViewFrame gameViewFrame = new GameViewFrame(gameBoardPanel, controller, moveFactory, closeHook,
-				preferredSize);
-		gameViewFrame.setTitle(title);
+		final GameViewFrame view = new GameViewFrame(gameBoardPanel, controller, moveFactory, closeHook, preferredSize);
+		view.setTitle(title);
 		// gameViewFrame.setJMenuBar(createMenuBar(gameViewFrame));
-		gameViewFrame.setMaximumSize(screenSize);
+		view.setMaximumSize(screenSize);
 
-		gameViewFrame.pack();
-		// gameViewFrame.setLocationByPlatform(true);
-		gameViewFrame.setLocation(viewLocation);
-		// gameViewFrame.setLocationRelativeTo(null);
-		gameViewFrame.setVisible(true);
+		view.pack();
+
+		final Point viewLocation = new Point(viewCenterpoint.x - (view.getWidth() / 2),
+				viewCenterpoint.y - (view.getHeight() / 2));
+		view.setLocation(viewLocation);
+		view.setVisible(true);
 
 	}
 }

@@ -69,6 +69,12 @@ import se.kth.speech.coin.tangrams.view.GameGUI;
 public final class TangramsClient implements Runnable {
 
 	private enum Parameter implements Supplier<Option> {
+		ANALYSIS("a") {
+			@Override
+			public Option get() {
+				return Option.builder(optName).longOpt("analysis").desc("Start the client in analysis mode.").build();
+			}
+		},
 		BROKER_HOST("h") {
 
 			@Override
@@ -89,12 +95,6 @@ public final class TangramsClient implements Runnable {
 						.type(Number.class).build();
 			}
 
-		},
-		ANALYSIS("a") {
-			@Override
-			public Option get() {
-				return Option.builder(optName).longOpt("analysis").desc("Start the client in analysis mode.").build();
-			}
 		},
 		HELP("?") {
 			@Override
@@ -275,13 +275,13 @@ public final class TangramsClient implements Runnable {
 		}
 	}
 
+	private final boolean analysisEnabled;
+
 	private final String brokerHost;
 
 	private final int brokerPort;
 
 	private final String brokerTicket;
-
-	private final boolean analysisEnabled;
 
 	public TangramsClient(final String brokerTicket, final String brokerHost, final int brokerPort,
 			final boolean analysisEnabled) {
@@ -350,7 +350,10 @@ public final class TangramsClient implements Runnable {
 											// Get the position of the
 											// connection view for
 											// use for positioning the new views
-											final Point viewLocation = connectionStatusView.getLocation();
+											final Point viewLocation = connectionStatusView.getLocationOnScreen();
+											final Point viewCenterpoint = new Point(
+													viewLocation.x + connectionStatusView.getWidth() / 2,
+													viewLocation.y + connectionStatusView.getHeight() / 2);
 
 											// Set up game GUI
 											final String title = "Tangrams: " + playerId;
@@ -359,7 +362,7 @@ public final class TangramsClient implements Runnable {
 												recordingManager.getStopper().run();
 												irisSystemStopper.run();
 											};
-											EventQueue.invokeLater(new GameGUI(title, viewLocation, gameState,
+											EventQueue.invokeLater(new GameGUI(title, viewCenterpoint, gameState,
 													() -> logDir.toPath(), closeHook, analysisEnabled));
 
 										});
