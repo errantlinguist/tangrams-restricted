@@ -79,9 +79,13 @@ public final class Controller {
 			return pieceMoveCounts;
 		}
 
+		public int getTurnCount() {
+			return Controller.this.getTurnCount();
+		}
+
 		/*
 		 * (non-Javadoc)
-		 * 
+		 *
 		 * @see java.lang.Object#toString()
 		 */
 		@Override
