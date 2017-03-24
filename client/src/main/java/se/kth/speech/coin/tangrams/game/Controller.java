@@ -51,7 +51,7 @@ public final class Controller {
 		private final int[] pieceMoveCounts;
 
 		private History() {
-			final int pieceCount = getModel().getElementPlacements().getAllElements().size();
+			final int pieceCount = getModel().getUniqueElementCount();
 			lastPieceMoveTurnsById = new int[pieceCount];
 			Arrays.fill(lastPieceMoveTurnsById, -1);
 			pieceMoveCounts = new int[pieceCount];

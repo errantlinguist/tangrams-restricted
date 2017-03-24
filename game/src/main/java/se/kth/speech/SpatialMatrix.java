@@ -59,7 +59,7 @@ public final class SpatialMatrix<E> {
 		}
 		return result;
 	}
-
+	
 	private final SpatialMap<E> elementPlacements;
 
 	private transient final Function<SpatialRegion, Set<SpatialRegion>> newRegionPossibleMoveSetFactory;
@@ -121,6 +121,15 @@ public final class SpatialMatrix<E> {
 		return calculateSubRegionCount(dims[0], region.getLengthX(), dims[1], region.getLengthY());
 	}
 
+	public void clearRegion(final SpatialRegion occupiedRegion) {
+		final Collection<?> elements = elementPlacements.getMinimalRegionElements().get(occupiedRegion);
+		// NOTE: Iterator.remove() for the instance returned by the
+		// multimap's collection iterator throws a
+		// ConcurrentModificationException
+		elements.clear();
+		setPositionValues(occupiedRegion, null);
+	}
+
 	// public void addRegionPowerSet(final Collection<? super SpatialMap.Region>
 	// regions) {
 	// final int dims[] = positionMatrix.getDimensions();
@@ -145,28 +154,6 @@ public final class SpatialMatrix<E> {
 	// final int m = dims[0];
 	// final int n = dims[1];
 	// return m * (m + 1) * n * (n + 1) / 4;
-	// }
-
-	public void clearRegion(final SpatialRegion occupiedRegion) {
-		final Collection<?> elements = elementPlacements.getMinimalRegionElements().get(occupiedRegion);
-		// NOTE: Iterator.remove() for the instance returned by the
-		// multimap's collection iterator throws a
-		// ConcurrentModificationException
-		elements.clear();
-		setPositionValues(occupiedRegion, null);
-	}
-
-	// public Set<SpatialMap.Region> createRegionPowerSet() {
-	// return createRegionPowerSet(Sets::newHashSetWithExpectedSize);
-	// }
-	//
-	// public <C extends Collection<? super SpatialMap.Region>> C
-	// createRegionPowerSet(
-	// final IntFunction<? extends C> collFactory) {
-	// final int subRegionCount = calculateRegionPowerSetSize();
-	// final C result = collFactory.apply(subRegionCount);
-	// addRegionPowerSet(result);
-	// return result;
 	// }
 
 	public <C extends Collection<? super SpatialRegion>> Table<Integer, Integer, C> createSizeIndexedRegionTable(
@@ -199,6 +186,19 @@ public final class SpatialMatrix<E> {
 		}
 		return result;
 	}
+
+	// public Set<SpatialMap.Region> createRegionPowerSet() {
+	// return createRegionPowerSet(Sets::newHashSetWithExpectedSize);
+	// }
+	//
+	// public <C extends Collection<? super SpatialMap.Region>> C
+	// createRegionPowerSet(
+	// final IntFunction<? extends C> collFactory) {
+	// final int subRegionCount = calculateRegionPowerSetSize();
+	// final C result = collFactory.apply(subRegionCount);
+	// addRegionPowerSet(result);
+	// return result;
+	// }
 
 	public Map<SpatialRegion, Set<SpatialRegion>> createValidMoveMap() {
 		final Set<SpatialRegion> regionElements = elementPlacements.getMinimalRegionElements().keySet();
@@ -294,6 +294,11 @@ public final class SpatialMatrix<E> {
 		return elementPlacements;
 	}
 
+	public Stream<Entry<SpatialRegion, E>> getIntersectedElements(final int rowIdx, final int colIdx) {
+		final SpatialRegion region = getRegion(rowIdx, colIdx);
+		return elementPlacements.getIntersectedElements(region);
+	}
+
 	/**
 	 * @return the position matrix
 	 */
@@ -311,9 +316,8 @@ public final class SpatialMatrix<E> {
 		return new SpatialRegion(xLowerBound, xUpperBound, yLowerBound, yUpperBound);
 	}
 
-	public Stream<Entry<SpatialRegion, E>> getIntersectedElements(final int rowIdx, final int colIdx) {
-		final SpatialRegion region = getRegion(rowIdx, colIdx);
-		return elementPlacements.getIntersectedElements(region);
+	public int getUniqueElementCount(){
+		return getElementPlacements().getAllElements().size();
 	}
 
 	/*
