@@ -25,8 +25,6 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.Stroke;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.text.SimpleDateFormat;
@@ -57,6 +55,7 @@ import se.kth.speech.Matrix;
 import se.kth.speech.SpatialMatrix;
 import se.kth.speech.SpatialRegion;
 import se.kth.speech.awt.DisablingMouseAdapter;
+import se.kth.speech.awt.ResizingEventListener;
 import se.kth.speech.coin.tangrams.game.Controller;
 import se.kth.speech.coin.tangrams.game.PlayerRole;
 import se.kth.speech.coin.tangrams.game.Turn;
@@ -68,20 +67,6 @@ import se.kth.speech.coin.tangrams.iristk.events.Move;
  *
  */
 final class GameBoardPanel extends JPanel implements Controller.Listener {
-
-	private static class ResizingEventListener extends ComponentAdapter {
-
-		private final Runnable hook;
-
-		private ResizingEventListener(final Runnable hook) {
-			this.hook = hook;
-		}
-
-		@Override
-		public void componentResized(final ComponentEvent e) {
-			hook.run();
-		}
-	}
 
 	private class SelectingMouseAdapter extends MouseAdapter {
 		@Override
