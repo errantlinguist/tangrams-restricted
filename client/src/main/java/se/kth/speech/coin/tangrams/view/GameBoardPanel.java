@@ -225,7 +225,7 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 
 		// Caching of elements which are dependent on the (current) size of this
 		// component
-		final int uniqueRegionCount = posMatrix.getElementPlacements().getMinimalRegions().size();
+		int uniqueRegionCount = posMatrix.getElementPlacements().getMinimalRegions().size();
 		compCoordStartIdxs = Maps.newHashMapWithExpectedSize(uniqueRegionCount);
 		addComponentListener(new ResizingEventListener(() -> compCoordStartIdxs.clear()));
 		compCoordSizes = Maps.newHashMapWithExpectedSize(uniqueRegionCount);
@@ -435,6 +435,7 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 		final int rowHeight = getGridRowHeight();
 		final FontMetrics fm = g.getFontMetrics();
 		final int pieceTextHeight = fm.getAscent();
+		final int textYOffset = (rowHeight - pieceTextHeight);
 		int nextRowY = 0;
 		for (final ListIterator<List<Integer>> matrixRowIter = posMatrix.getPositionMatrix()
 				.rowIterator(); matrixRowIter.hasNext();) {
@@ -447,7 +448,6 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 					final String pieceText = pieceId.toString();
 					final int pieceTextWidth = fm.stringWidth(pieceText);
 					final int textXOffset = (colWidth - pieceTextWidth) / 2;
-					final int textYOffset = (rowHeight - pieceTextHeight) / 2;
 					g.drawString(pieceText, nextColX + textXOffset, nextRowY + textYOffset);
 				}
 				nextColX += colWidth;
