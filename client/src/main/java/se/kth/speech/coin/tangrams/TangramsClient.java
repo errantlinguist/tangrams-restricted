@@ -28,6 +28,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.EnumMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.function.Consumer;
@@ -53,6 +54,7 @@ import com.github.errantlinguist.ClassProperties;
 import iristk.system.IrisSystem;
 import iristk.system.LoggingModule;
 import iristk.util.NameFilter;
+import se.kth.speech.MutablePair;
 import se.kth.speech.coin.tangrams.content.IconImages;
 import se.kth.speech.coin.tangrams.iristk.GameManagementClientModule;
 import se.kth.speech.coin.tangrams.iristk.IrisSystemStopper;
@@ -101,6 +103,12 @@ public final class TangramsClient implements Runnable {
 			public Option get() {
 				return Option.builder(optName).longOpt("help").desc("Prints this message.").build();
 			}
+		},
+		RECORDING_DISABLED("r") {
+			@Override
+			public Option get() {
+				return Option.builder(optName).longOpt("norec").desc("Disable audio recording.").build();
+			}
 		};
 
 		protected final String optName;
@@ -133,11 +141,12 @@ public final class TangramsClient implements Runnable {
 				printHelp();
 			} else {
 				final boolean analysisEnabled = cl.hasOption(Parameter.ANALYSIS.optName);
+				final boolean recordingEnabled = !cl.hasOption(Parameter.RECORDING_DISABLED.optName);
 				final String brokerHost = parseBrokerHost(cl);
 				try {
 					final int brokerPort = parseBrokerPort(cl);
 					final TangramsClient client = new TangramsClient(PROPS.getProperty("broker.ticket"), brokerHost,
-							brokerPort, analysisEnabled);
+							brokerPort, analysisEnabled, recordingEnabled);
 					client.run();
 
 				} catch (final ParseException e) {
@@ -283,12 +292,15 @@ public final class TangramsClient implements Runnable {
 
 	private final String brokerTicket;
 
+	private final boolean recordingEnabled;
+
 	public TangramsClient(final String brokerTicket, final String brokerHost, final int brokerPort,
-			final boolean analysisEnabled) {
+			final boolean analysisEnabled, final boolean recordingEnabled) {
 		this.brokerTicket = brokerTicket;
 		this.brokerHost = brokerHost;
 		this.brokerPort = brokerPort;
 		this.analysisEnabled = analysisEnabled;
+		this.recordingEnabled = recordingEnabled;
 	}
 
 	@Override
@@ -315,11 +327,20 @@ public final class TangramsClient implements Runnable {
 						final Date systemLoggingStartTime = new Date();
 						final File logDir = new LogDirectoryFactory(logOutdir, systemLoggingStartTime).get();
 						logDir.mkdirs();
-						final RecordingManager recordingManager = new RecordingManager(() -> logDir);
+						final Entry<Consumer<String>, Runnable> recordingHooks;
+						if (recordingEnabled) {
+							recordingHooks = RecordingManagement.createRecordingHooks(() -> logDir);
+						} else {
+							LOGGER.warn("Audio recording is disabled; Are you sure you want to do this?");
+							recordingHooks = new MutablePair<>(id -> {
+								// Dummy recording starter
+							}, () -> {
+								// Dummy recording stopper
+							});
+						}
 						// Try clause for ensuring that the recorder gets
 						// properly stopped even in the case an exception occurs
 						try {
-
 							final ConnectionStatusFrame connectionStatusView = createConnectionStatusView(gameId,
 									irisSystemStopper);
 							// Display the connection status view
@@ -346,7 +367,7 @@ public final class TangramsClient implements Runnable {
 													"Handling game state data received from server for game \"{}\".",
 													gameId);
 											EventQueue.invokeLater(new SuccessfulConnectionHook(connectionStatusView,
-													recordingManager, playerId));
+													recordingHooks.getKey(), playerId));
 											// Get the position of the
 											// connection view for
 											// use for positioning the new views
@@ -359,7 +380,7 @@ public final class TangramsClient implements Runnable {
 											final String title = "Tangrams: " + playerId;
 											final Runnable closeHook = () -> {
 												LOGGER.info("Closing main window; Cleaning up background resources.");
-												recordingManager.getStopper().run();
+												recordingHooks.getValue().run();
 												irisSystemStopper.run();
 											};
 											EventQueue.invokeLater(new GameGUI(title, viewCenterpoint, gameState,
@@ -384,8 +405,8 @@ public final class TangramsClient implements Runnable {
 							// even though the recording should continue
 							LOGGER.error(String.format(
 									"An exception occurred sometime after starting the %s instance; Cleaning up gracefully and re-throwing exception.",
-									recordingManager.getClass().getSimpleName()), exAfterRecorderConst);
-							recordingManager.getStopper().run();
+									recordingHooks.getClass().getSimpleName()), exAfterRecorderConst);
+							recordingHooks.getValue().run();
 							throw exAfterRecorderConst;
 						}
 					} catch (final Exception exAfterIrisTKConst) {

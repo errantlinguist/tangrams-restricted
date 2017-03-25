@@ -17,6 +17,7 @@
 package se.kth.speech.coin.tangrams;
 
 import java.awt.event.WindowEvent;
+import java.util.function.Consumer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,10 +32,10 @@ final class SuccessfulConnectionHook implements Runnable {
 
 	private final String playerId;
 
-	private final RecordingManager recordingManager;
+	private final Consumer<? super String> recordingManager;
 
-	SuccessfulConnectionHook(final ConnectionStatusFrame connectionStatusView, final RecordingManager recordingManager,
-			final String playerId) {
+	SuccessfulConnectionHook(final ConnectionStatusFrame connectionStatusView,
+			final Consumer<? super String> recordingManager, final String playerId) {
 		this.connectionStatusView = connectionStatusView;
 		this.recordingManager = recordingManager;
 		this.playerId = playerId;
@@ -53,6 +54,6 @@ final class SuccessfulConnectionHook implements Runnable {
 		connectionStatusView.dispatchEvent(new WindowEvent(connectionStatusView, WindowEvent.WINDOW_CLOSING));
 		// Create recording output file and start
 		// recording
-		recordingManager.start(playerId);
+		recordingManager.accept(playerId);
 	}
 }
