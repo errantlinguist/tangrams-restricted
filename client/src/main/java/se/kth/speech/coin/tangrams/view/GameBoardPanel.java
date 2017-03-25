@@ -225,9 +225,10 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 
 		// Caching of elements which are dependent on the (current) size of this
 		// component
-		compCoordStartIdxs = Maps.newHashMapWithExpectedSize(posMatrix.getUniqueElementCount());
+		final int uniqueRegionCount = posMatrix.getElementPlacements().getMinimalRegions().size();
+		compCoordStartIdxs = Maps.newHashMapWithExpectedSize(uniqueRegionCount);
 		addComponentListener(new ResizingEventListener(() -> compCoordStartIdxs.clear()));
-		compCoordSizes = Maps.newHashMapWithExpectedSize(posMatrix.getUniqueElementCount());
+		compCoordSizes = Maps.newHashMapWithExpectedSize(uniqueRegionCount);
 		addComponentListener(new ResizingEventListener(() -> compCoordSizes.clear()));
 		imgsScaledToGridSize = Maps.newHashMapWithExpectedSize(posMatrix.getUniqueElementCount());
 		addComponentListener(new ResizingEventListener(() -> imgsScaledToGridSize.clear()));
