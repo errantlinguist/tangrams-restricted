@@ -16,6 +16,7 @@
 */
 package se.kth.speech.coin.tangrams;
 
+import java.awt.Point;
 import java.awt.event.WindowEvent;
 import java.util.function.Consumer;
 
@@ -34,11 +35,20 @@ final class SuccessfulConnectionHook implements Runnable {
 
 	private final Consumer<? super String> recordingManager;
 
+	private volatile Point viewLocationOnScreen = null;
+
 	SuccessfulConnectionHook(final ConnectionStatusFrame connectionStatusView,
 			final Consumer<? super String> recordingManager, final String playerId) {
 		this.connectionStatusView = connectionStatusView;
 		this.recordingManager = recordingManager;
 		this.playerId = playerId;
+	}
+
+	/**
+	 * @return the viewLocationOnScreen
+	 */
+	public Point getViewLocationOnScreen() {
+		return viewLocationOnScreen;
 	}
 
 	/*
@@ -50,6 +60,7 @@ final class SuccessfulConnectionHook implements Runnable {
 	public void run() {
 		LOGGER.debug("Closing connection status view.");
 		connectionStatusView.setStatus(ConnectionStatusFrame.Status.CONNECTED);
+		viewLocationOnScreen = connectionStatusView.getLocationOnScreen();
 		// http://stackoverflow.com/a/1235994/1391325
 		connectionStatusView.dispatchEvent(new WindowEvent(connectionStatusView, WindowEvent.WINDOW_CLOSING));
 		// Create recording output file and start

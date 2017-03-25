@@ -22,6 +22,7 @@ import java.awt.Point;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -366,26 +367,42 @@ public final class TangramsClient implements Runnable {
 											LOGGER.info(
 													"Handling game state data received from server for game \"{}\".",
 													gameId);
-											EventQueue.invokeLater(new SuccessfulConnectionHook(connectionStatusView,
-													recordingHooks.getKey(), playerId));
-											// Get the position of the
-											// connection view for
-											// use for positioning the new views
-											final Point viewLocation = connectionStatusView.getLocationOnScreen();
-											final Point viewCenterpoint = new Point(
-													viewLocation.x + connectionStatusView.getWidth() / 2,
-													viewLocation.y + connectionStatusView.getHeight() / 2);
+											final SuccessfulConnectionHook connectionHook = new SuccessfulConnectionHook(
+													connectionStatusView, recordingHooks.getKey(), playerId);
+											try {
+												EventQueue.invokeAndWait(connectionHook);
 
-											// Set up game GUI
-											final String title = "Tangrams: " + playerId;
-											final Runnable closeHook = () -> {
-												LOGGER.info("Closing main window; Cleaning up background resources.");
-												recordingHooks.getValue().run();
-												irisSystemStopper.run();
-											};
-											EventQueue.invokeLater(new GameGUI(title, viewCenterpoint, gameState,
-													() -> logDir.toPath(), closeHook, analysisEnabled));
+												// Get the position of the
+												// connection view for
+												// use for positioning the new
+												// views
+												final Point viewLocation = connectionHook.getViewLocationOnScreen();
+												final Point viewCenterpoint = new Point(
+														viewLocation.x + connectionStatusView.getWidth() / 2,
+														viewLocation.y + connectionStatusView.getHeight() / 2);
 
+												// Set up game GUI
+												final String title = "Tangrams: " + playerId;
+												final Runnable closeHook = () -> {
+													LOGGER.info(
+															"Closing main window; Cleaning up background resources.");
+													recordingHooks.getValue().run();
+													irisSystemStopper.run();
+												};
+												EventQueue.invokeLater(new GameGUI(title, viewCenterpoint, gameState,
+														() -> logDir.toPath(), closeHook, analysisEnabled));
+
+											} catch (final InvocationTargetException e) {
+												final RuntimeException wrapper = new RuntimeException(e);
+												LOGGER.error(String.format(
+														"An %s occurred while running the successful connection hook; Re-throwing as a(n) %s.",
+														e.getClass().getSimpleName(),
+														wrapper.getClass().getSimpleName()), e);
+												throw wrapper;
+											} catch (final InterruptedException e) {
+												LOGGER.warn(
+														"The successful connection hook was interrupted; Not starting the game because it's not possible to determine if everything was set up correctly or not.");
+											}
 										});
 								system.addModule(gameClientModule);
 								system.sendStartSignal();
