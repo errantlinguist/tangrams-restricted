@@ -16,20 +16,20 @@
 */
 package se.kth.speech.awt;
 
-import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
  * @since 24 Mar 2017
  * @see <a href="http://stackoverflow.com/a/8184372/1391325">StackOverflow</a>
  */
-public final class MaximumFontSizeFactory implements BiFunction<Dimension, String, Font> {
+public final class MaximumSizeFontFactory implements BiFunction<Dimension, String, Font> {
 
-	private final Component component;
+	private final Function<? super Font, FontMetrics> fmFactory;
 
 	private final float endSize;
 
@@ -43,9 +43,10 @@ public final class MaximumFontSizeFactory implements BiFunction<Dimension, Strin
 
 	private final int widthPadding;
 
-	public MaximumFontSizeFactory(final Component component, final Font oldFont, final float startSize,
-			final float endSize, final float increment, final int widthPadding, final int heightPadding) {
-		this.component = component;
+	public MaximumSizeFontFactory(final Function<? super Font, FontMetrics> fmFactory, final Font oldFont,
+			final float startSize, final float endSize, final float increment, final int widthPadding,
+			final int heightPadding) {
+		this.fmFactory = fmFactory;
 		this.oldFont = oldFont;
 		this.startSize = startSize;
 		this.endSize = endSize;
@@ -59,7 +60,7 @@ public final class MaximumFontSizeFactory implements BiFunction<Dimension, Strin
 		Font result = oldFont;
 		for (float i = startSize; startSize < endSize; i += increment) {
 			final Font newFont = oldFont.deriveFont(i);
-			final Dimension d = getFontSize(component.getFontMetrics(newFont), text);
+			final Dimension d = getFontSize(fmFactory.apply(newFont), text);
 			if (d.width <= componentSize.width && d.height <= componentSize.height) {
 				result = newFont;
 			} else {
