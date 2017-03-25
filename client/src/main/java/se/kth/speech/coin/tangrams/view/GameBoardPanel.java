@@ -24,6 +24,7 @@ import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
+import java.awt.RenderingHints;
 import java.awt.Stroke;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -136,6 +137,9 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 		MIN_GRID_SQUARE_LENGTH = 10 + IMG_TOTAL_PADDING;
 	}
 
+	private static final RenderingHints RENDERING_HINTS = new RenderingHints(RenderingHints.KEY_RENDERING,
+			RenderingHints.VALUE_RENDER_QUALITY);
+
 	private static int[] createComponentCoordSizeArray(final SpatialRegion region, final int colWidth,
 			final int rowHeight) {
 		// "y" is matrix columns, thus left-right
@@ -165,8 +169,6 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 
 	private final boolean analysisEnabled;
 
-	private final Map<SpatialRegion, int[]> compCoordSizes;
-
 	// private static void drawRegionHighlights(final Graphics g, final
 	// SpatialRegion region, final int colWidth,
 	// final int rowHeight) {
@@ -176,6 +178,8 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 	// rowHeight);
 	// g.drawRect(startIdxs[0], startIdxs[1], size[0], size[1]);
 	// }
+
+	private final Map<SpatialRegion, int[]> compCoordSizes;
 
 	private final Map<SpatialRegion, int[]> compCoordStartIdxs;
 
@@ -225,7 +229,7 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 
 		// Caching of elements which are dependent on the (current) size of this
 		// component
-		int uniqueRegionCount = posMatrix.getElementPlacements().getMinimalRegions().size();
+		final int uniqueRegionCount = posMatrix.getElementPlacements().getMinimalRegions().size();
 		compCoordStartIdxs = Maps.newHashMapWithExpectedSize(uniqueRegionCount);
 		addComponentListener(new ResizingEventListener(() -> compCoordStartIdxs.clear()));
 		compCoordSizes = Maps.newHashMapWithExpectedSize(uniqueRegionCount);
@@ -246,7 +250,7 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 	@Override
 	public void paintComponent(final Graphics g) {
 		super.paintComponent(g);
-
+		((Graphics2D) g).addRenderingHints(RENDERING_HINTS);
 		// http://stackoverflow.com/a/21989406/1391325
 		{
 			final Graphics2D gridDrawingG = (Graphics2D) g.create();
@@ -435,7 +439,7 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 		final int rowHeight = getGridRowHeight();
 		final FontMetrics fm = g.getFontMetrics();
 		final int pieceTextHeight = fm.getAscent();
-		final int textYOffset = (rowHeight - pieceTextHeight);
+		final int textYOffset = rowHeight - pieceTextHeight;
 		int nextRowY = 0;
 		for (final ListIterator<List<Integer>> matrixRowIter = posMatrix.getPositionMatrix()
 				.rowIterator(); matrixRowIter.hasNext();) {
