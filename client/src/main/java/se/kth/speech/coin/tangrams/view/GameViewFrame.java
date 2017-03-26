@@ -81,6 +81,8 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 
 	private static final int MIN_ROLE_STATUS_LABEL_PADDING = 10;
 
+	private static final float FONT_SIZE_SEARCH_INCREMENT = 1.0f;
+
 	private static Map<Attribute, Object> createInfoFontAttrMap() {
 		final Map<Attribute, Object> result = Maps.newHashMapWithExpectedSize(2);
 		result.put(TextAttribute.FAMILY, Font.SANS_SERIF);
@@ -167,10 +169,13 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 			final String labelText = PLAYER_ROLE_STATUS_LABEL_TEXT.get(initialRole);
 			roleStatusLabel = new JLabel(labelText);
 			final Font initialFont = roleStatusLabel.getFont().deriveFont(createRoleStatusFontAttrMap());
-			// Initialize the list to a size equal to the size of the font
-			// because when re-sizing the font the font sizes are searched with
-			// an increment of 1 point per iteration
-			roleStatusLabelIncrementingSizeFonts = new ArrayList<>(initialFont.getSize());
+			// Initialize the list to a size which is a function of the size of
+			// the font as an estimate of the amount of fonts to search through:
+			// Works for making the view smaller, but making the view bigger can
+			// still involve increasing the list capacity
+			final int estimatedFontSizeSearchIterCount = (int) Math.ceil(initialFont.getSize2D())
+					/ (int) FONT_SIZE_SEARCH_INCREMENT;
+			roleStatusLabelIncrementingSizeFonts = new ArrayList<>(estimatedFontSizeSearchIterCount);
 			roleStatusLabel.setFont(initialFont);
 
 			updateRoleStatusLabelFontSize(preferredSize.width);
@@ -346,7 +351,7 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 		final float endSize = Float.MAX_VALUE;
 		final int padding = Math.max(newWidth / 24, MIN_ROLE_STATUS_LABEL_PADDING);
 		final MaximumWidthFontFactory fontFactory = new MaximumWidthFontFactory(newWidth, this::getFontMetrics,
-				roleStatusLabel.getFont(), 1.0f, endSize, 1.0f, padding,
+				roleStatusLabel.getFont(), FONT_SIZE_SEARCH_INCREMENT, endSize, 1.0f, padding,
 				roleStatusLabelIncrementingSizeFonts::listIterator);
 		final Font smallestRoleStatusLabelFont = PLAYER_ROLE_STATUS_LABEL_TEXT.values().stream().map(fontFactory)
 				.collect(Collectors.minBy(Comparator.comparing(Font::getSize2D))).get();
