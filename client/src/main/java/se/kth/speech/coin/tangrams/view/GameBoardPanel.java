@@ -465,15 +465,15 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 		final int colWidth = getGridColWidth();
 		final int rowHeight = getGridRowHeight();
 
-		for (final Entry<SpatialRegion, Integer> piecePlacement : posMatrix.getElementPlacements()
-				.getMinimalRegionElements().entries()) {
+		posMatrix.getElementPlacements()
+		.getMinimalRegionElements().entries().parallelStream().forEach(piecePlacement -> {
 			final SpatialRegion region = piecePlacement.getKey();
 			final Integer pieceId = piecePlacement.getValue();
 			final Image initialImg = pieceImgs.get(pieceId);
 			final Image scaledImg = fetchImageScaledToGridSize(initialImg, region, colWidth, rowHeight);
 			final int[] startIdxs = fetchComponentCoordStartIdxArray(region, colWidth, rowHeight);
-			g.drawImage(scaledImg, startIdxs[0] + IMG_SIDE_PADDING, startIdxs[1] + IMG_SIDE_PADDING, null);
-		}
+			g.drawImage(scaledImg, startIdxs[0] + IMG_SIDE_PADDING, startIdxs[1] + IMG_SIDE_PADDING, null);			
+		});
 	}
 
 	private void drawRegionHighlights(final Graphics g) {
