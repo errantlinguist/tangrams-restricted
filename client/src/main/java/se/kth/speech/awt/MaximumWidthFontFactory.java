@@ -18,7 +18,12 @@ package se.kth.speech.awt;
 
 import java.awt.Font;
 import java.awt.FontMetrics;
+import java.util.ListIterator;
+import java.util.Map.Entry;
 import java.util.function.Function;
+import java.util.function.Supplier;
+
+import se.kth.speech.MutablePair;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -41,9 +46,12 @@ public final class MaximumWidthFontFactory implements Function<String, Font> {
 
 	private final int maxWidth;
 
+	private final Supplier<? extends ListIterator<Entry<Font, FontMetrics>>> incrementingSizeFonts;
+
 	public MaximumWidthFontFactory(final int maxWidth, final Function<? super Font, FontMetrics> fmFactory,
 			final Font oldFont, final float startSize, final float endSize, final float increment,
-			final int widthPadding) {
+			final int widthPadding,
+			final Supplier<? extends ListIterator<Entry<Font, FontMetrics>>> incrementingSizeFonts) {
 		this.maxWidth = maxWidth;
 		this.fmFactory = fmFactory;
 		this.oldFont = oldFont;
@@ -51,16 +59,26 @@ public final class MaximumWidthFontFactory implements Function<String, Font> {
 		this.endSize = endSize;
 		this.increment = increment;
 		this.widthPadding = widthPadding;
+		this.incrementingSizeFonts = incrementingSizeFonts;
 	}
 
 	@Override
 	public Font apply(final String text) {
 		Font result = oldFont;
+		final ListIterator<Entry<Font, FontMetrics>> cachedFontIter = incrementingSizeFonts.get();
 		for (float i = startSize; startSize < endSize; i += increment) {
-			final Font newFont = oldFont.deriveFont(i);
-			final int w = getFontWidth(fmFactory.apply(newFont), text);
+			final Entry<Font, FontMetrics> newFontMetrics;
+			if (cachedFontIter.hasNext()) {
+				newFontMetrics = cachedFontIter.next();
+			} else {
+				final Font newFont = oldFont.deriveFont(i);
+				final FontMetrics fm = fmFactory.apply(newFont);
+				newFontMetrics = new MutablePair<>(newFont, fm);
+				cachedFontIter.add(newFontMetrics);
+			}
+			final int w = getFontWidth(newFontMetrics.getValue(), text);
 			if (w <= maxWidth) {
-				result = newFont;
+				result = newFontMetrics.getKey();
 			} else {
 				break;
 			}
