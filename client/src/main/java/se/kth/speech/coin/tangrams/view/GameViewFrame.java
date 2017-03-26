@@ -35,6 +35,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.function.IntConsumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -55,8 +57,8 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.Maps;
 
 import se.kth.speech.SpatialRegion;
-import se.kth.speech.awt.ColorIcon;
 import se.kth.speech.awt.CachingMaximumWidthFontFactory;
+import se.kth.speech.awt.ColorIcon;
 import se.kth.speech.awt.ResizingEventListener;
 import se.kth.speech.coin.tangrams.game.Controller;
 import se.kth.speech.coin.tangrams.game.PlayerRole;
@@ -80,8 +82,6 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 	private static final long serialVersionUID = -4129777933223228599L;
 
 	private static final int MIN_ROLE_STATUS_LABEL_PADDING = 10;
-
-	private static final float FONT_SIZE_SEARCH_INCREMENT = 1.0f;
 
 	private static Map<Attribute, Object> createInfoFontAttrMap() {
 		final Map<Attribute, Object> result = Maps.newHashMapWithExpectedSize(2);
@@ -122,6 +122,25 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 		return result;
 	}
 
+	private static IntConsumer createRoleStatusLabelFontSizeUpdater(final Component comp,
+			final float searchSizeIncrement, final Function<? super Font, FontMetrics> fmFactory) {
+		// Initialize the list to a size which is a function of the size of
+		// the font as an estimate of the amount of fonts to search through
+		final double maxSmallerFontCount = Math.ceil(comp.getFont().getSize2D());
+		final double estBiggerFontCount = Math.ceil(maxSmallerFontCount / Math.log(maxSmallerFontCount));
+		final List<Entry<Font, FontMetrics>> incrementingSizeFonts = new ArrayList<>(
+				(int) (maxSmallerFontCount + estBiggerFontCount));
+		return newWidth -> {
+			final float endSize = Float.MAX_VALUE;
+			final int padding = Math.max(newWidth / 24, MIN_ROLE_STATUS_LABEL_PADDING);
+			final CachingMaximumWidthFontFactory fontFactory = new CachingMaximumWidthFontFactory(newWidth, fmFactory,
+					comp.getFont(), 1.0f, endSize, searchSizeIncrement, padding, incrementingSizeFonts::listIterator);
+			final Font smallestRoleStatusLabelFont = PLAYER_ROLE_STATUS_LABEL_TEXT.values().stream().map(fontFactory)
+					.collect(Collectors.minBy(Comparator.comparing(Font::getSize2D))).get();
+			comp.setFont(smallestRoleStatusLabelFont);
+		};
+	}
+
 	private static PlayerTurnStatus getPlayerTurnStatus(final PlayerRole role) {
 		return PlayerRole.SELECTING.equals(role) ? PlayerTurnStatus.READY : PlayerTurnStatus.NOT_READY;
 	}
@@ -138,7 +157,7 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 
 	private final JLabel roleStatusLabel;
 
-	private final List<Entry<Font, FontMetrics>> roleStatusLabelIncrementingSizeFonts;
+	private final IntConsumer roleStatusLabelFontSizeUpdater;
 
 	GameViewFrame(final GameBoardPanel boardPanel, final Controller controller,
 			final Supplier<? extends Entry<SpatialRegion, ? extends Entry<Integer, SpatialRegion>>> moveFactory,
@@ -169,33 +188,11 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 			final String labelText = PLAYER_ROLE_STATUS_LABEL_TEXT.get(initialRole);
 			roleStatusLabel = new JLabel(labelText);
 			final Font initialFont = roleStatusLabel.getFont().deriveFont(createRoleStatusFontAttrMap());
-			// Initialize the list to a size which is a function of the size of
-			// the font as an estimate of the amount of fonts to search through:
-			// Works for making the view smaller, but making the view bigger can
-			// still involve increasing the list capacity
-			final int estimatedFontSizeSearchIterCount = (int) Math.ceil(initialFont.getSize2D())
-					/ (int) FONT_SIZE_SEARCH_INCREMENT;
-			roleStatusLabelIncrementingSizeFonts = new ArrayList<>(estimatedFontSizeSearchIterCount);
 			roleStatusLabel.setFont(initialFont);
-
-			updateRoleStatusLabelFontSize(preferredSize.width);
+			roleStatusLabelFontSizeUpdater = createRoleStatusLabelFontSizeUpdater(roleStatusLabel, 1.0f,
+					this::getFontMetrics);
+			roleStatusLabelFontSizeUpdater.accept(preferredSize.width);
 			addComponentListener(new ResizingEventListener(this::updateRoleStatusLabelFontSize));
-			// addComponentListener(new ResizingEventListener(new Runnable() {
-			//
-			// private int lastSeenWidth = preferredSize.width;
-			//
-			// private float lastFontSize = fontSize;
-			//
-			// @Override
-			// public void run() {
-			// // Get the new width
-			// final int newWidth = getWidth();
-			// lastFontSize = updateRoleStatusLabelFontSize(newWidth,
-			// lastSeenWidth, lastFontSize);
-			// lastSeenWidth = newWidth;
-			// }
-			//
-			// }));
 		}
 		{
 			final JPanel roleStatusPanel = new JPanel();
@@ -344,41 +341,8 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 	}
 
 	private void updateRoleStatusLabelFontSize() {
-		updateRoleStatusLabelFontSize(getWidth());
+		roleStatusLabelFontSizeUpdater.accept(getWidth());
 	}
-
-	private void updateRoleStatusLabelFontSize(final int newWidth) {
-		final float endSize = Float.MAX_VALUE;
-		final int padding = Math.max(newWidth / 24, MIN_ROLE_STATUS_LABEL_PADDING);
-		final CachingMaximumWidthFontFactory fontFactory = new CachingMaximumWidthFontFactory(newWidth, this::getFontMetrics,
-				roleStatusLabel.getFont(), FONT_SIZE_SEARCH_INCREMENT, endSize, 1.0f, padding,
-				roleStatusLabelIncrementingSizeFonts::listIterator);
-		final Font smallestRoleStatusLabelFont = PLAYER_ROLE_STATUS_LABEL_TEXT.values().stream().map(fontFactory)
-				.collect(Collectors.minBy(Comparator.comparing(Font::getSize2D))).get();
-		roleStatusLabel.setFont(smallestRoleStatusLabelFont);
-	}
-	
-	// private float updateRoleStatusLabelFontSize(final int newWidth, final int
-	// oldWidth, final float oldSize) {
-	// final float result;
-	// if (newWidth == oldWidth) {
-	// result = oldSize;
-	// } else {
-	// final float endSize = newWidth < oldWidth ? 1.0f : Float.MAX_VALUE;
-	// final int padding = Math.max(newWidth / 24,
-	// MIN_ROLE_STATUS_LABEL_PADDING);
-	// final float defaultStep = 1.0f;
-	// final float step = oldSize < defaultStep ? 0.1f : defaultStep;
-	// final BiFunction<Integer, String, Font> fontFactory = new
-	// MaximumWidthFontFactory(this::getFontMetrics,
-	// roleStatusLabel.getFont(), 1.0f, endSize, step, padding);
-	// final Font roleStatusLabelFont = fontFactory.apply(newWidth,
-	// roleStatusLabel.getText());
-	// roleStatusLabel.setFont(roleStatusLabelFont);
-	// result = roleStatusLabelFont.getSize2D();
-	// }
-	// return result;
-	// }
 
 	/**
 	 * @return the childWindows
