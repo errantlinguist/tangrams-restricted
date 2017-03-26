@@ -56,6 +56,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Maps;
 
+import se.kth.speech.MutablePair;
 import se.kth.speech.SpatialRegion;
 import se.kth.speech.awt.CachingMaximumWidthFontFactory;
 import se.kth.speech.awt.ColorIcon;
@@ -124,17 +125,29 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 
 	private static IntConsumer createRoleStatusLabelFontSizeUpdater(final Component comp,
 			final float searchSizeIncrement, final Function<? super Font, FontMetrics> fmFactory) {
+		final Font initialFont = comp.getFont();
 		// Initialize the list to a size which is a function of the size of
 		// the font as an estimate of the amount of fonts to search through
 		final double maxSmallerFontCount = Math.ceil(comp.getFont().getSize2D());
 		final double estBiggerFontCount = Math.ceil(maxSmallerFontCount / Math.log(maxSmallerFontCount));
-		final List<Entry<Font, FontMetrics>> incrementingSizeFonts = new ArrayList<>(
-				(int) (maxSmallerFontCount + estBiggerFontCount));
+		final int initialCapacity = (int) (maxSmallerFontCount + estBiggerFontCount);
+		final List<Entry<Font, FontMetrics>> incrementingSizeFonts = new ArrayList<>(initialCapacity);
+		final float startSize = 1.0f;
+		{
+			// Pre-populate expected possible re-sized fonts
+			float size = startSize;
+			while (incrementingSizeFonts.size() < initialCapacity) {
+				final Font font = initialFont.deriveFont(size);
+				final FontMetrics fm = fmFactory.apply(font);
+				incrementingSizeFonts.add(new MutablePair<>(font, fm));
+				size += searchSizeIncrement;
+			}
+		}
 		return newWidth -> {
 			final float endSize = Float.MAX_VALUE;
 			final int padding = Math.max(newWidth / 24, MIN_ROLE_STATUS_LABEL_PADDING);
 			final CachingMaximumWidthFontFactory fontFactory = new CachingMaximumWidthFontFactory(newWidth, fmFactory,
-					comp.getFont(), 1.0f, endSize, searchSizeIncrement, padding, incrementingSizeFonts::listIterator);
+					initialFont, startSize, endSize, searchSizeIncrement, padding, incrementingSizeFonts::listIterator);
 			final Font smallestRoleStatusLabelFont = PLAYER_ROLE_STATUS_LABEL_TEXT.values().stream().map(fontFactory)
 					.collect(Collectors.minBy(Comparator.comparing(Font::getSize2D))).get();
 			comp.setFont(smallestRoleStatusLabelFont);
