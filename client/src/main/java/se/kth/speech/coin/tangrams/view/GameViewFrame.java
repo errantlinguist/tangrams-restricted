@@ -56,7 +56,7 @@ import com.google.common.collect.Maps;
 
 import se.kth.speech.SpatialRegion;
 import se.kth.speech.awt.ColorIcon;
-import se.kth.speech.awt.MaximumWidthFontFactory;
+import se.kth.speech.awt.CachingMaximumWidthFontFactory;
 import se.kth.speech.awt.ResizingEventListener;
 import se.kth.speech.coin.tangrams.game.Controller;
 import se.kth.speech.coin.tangrams.game.PlayerRole;
@@ -350,14 +350,14 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 	private void updateRoleStatusLabelFontSize(final int newWidth) {
 		final float endSize = Float.MAX_VALUE;
 		final int padding = Math.max(newWidth / 24, MIN_ROLE_STATUS_LABEL_PADDING);
-		final MaximumWidthFontFactory fontFactory = new MaximumWidthFontFactory(newWidth, this::getFontMetrics,
+		final CachingMaximumWidthFontFactory fontFactory = new CachingMaximumWidthFontFactory(newWidth, this::getFontMetrics,
 				roleStatusLabel.getFont(), FONT_SIZE_SEARCH_INCREMENT, endSize, 1.0f, padding,
 				roleStatusLabelIncrementingSizeFonts::listIterator);
 		final Font smallestRoleStatusLabelFont = PLAYER_ROLE_STATUS_LABEL_TEXT.values().stream().map(fontFactory)
 				.collect(Collectors.minBy(Comparator.comparing(Font::getSize2D))).get();
 		roleStatusLabel.setFont(smallestRoleStatusLabelFont);
 	}
-
+	
 	// private float updateRoleStatusLabelFontSize(final int newWidth, final int
 	// oldWidth, final float oldSize) {
 	// final float result;

@@ -30,7 +30,7 @@ import se.kth.speech.MutablePair;
  * @since 24 Mar 2017
  * @see <a href="http://stackoverflow.com/a/8184372/1391325">StackOverflow</a>
  */
-public final class MaximumWidthFontFactory implements Function<String, Font> {
+public final class CachingMaximumWidthFontFactory implements Function<String, Font> {
 
 	private final Function<? super Font, FontMetrics> fmFactory;
 
@@ -48,7 +48,7 @@ public final class MaximumWidthFontFactory implements Function<String, Font> {
 
 	private final Supplier<? extends ListIterator<Entry<Font, FontMetrics>>> incrementingSizeFonts;
 
-	public MaximumWidthFontFactory(final int maxWidth, final Function<? super Font, FontMetrics> fmFactory,
+	public CachingMaximumWidthFontFactory(final int maxWidth, final Function<? super Font, FontMetrics> fmFactory,
 			final Font oldFont, final float startSize, final float endSize, final float increment,
 			final int widthPadding,
 			final Supplier<? extends ListIterator<Entry<Font, FontMetrics>>> incrementingSizeFonts) {
