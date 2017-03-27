@@ -60,7 +60,7 @@ public final class ControllerHistoryTest {
 	private static final Function<SpatialRegion, Area2D> REGION_AREA_FACTORY = new SpatialRegionAreaFactory();
 
 	static {
-		final Collection<MatrixTests.Description> testDescs = MatrixTests.getNamedTestDescMap().values();
+		final Collection<MatrixTests.Description> testDescs = MatrixTests.getNamedTestDescs().values();
 		TEST_MODELS = testDescs.stream().map(desc -> new Matrix<>(desc.getValues(), desc.getColCount()))
 				.map(SpatialMatrix<Integer>::new)
 				.collect(Collectors.toCollection(() -> new ArrayList<>(testDescs.size())));

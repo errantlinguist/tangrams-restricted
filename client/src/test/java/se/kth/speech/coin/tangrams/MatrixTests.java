@@ -77,7 +77,7 @@ public final class MatrixTests {
 	/**
 	 * @return the namedTestDescMap
 	 */
-	public static Map<String, Description> getNamedTestDescMap() {
+	public static Map<String, Description> getNamedTestDescs() {
 		return NAMED_TEST_DESC_MAP;
 	}
 
