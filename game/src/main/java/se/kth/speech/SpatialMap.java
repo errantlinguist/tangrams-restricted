@@ -18,6 +18,7 @@ package se.kth.speech;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -37,9 +38,9 @@ import com.google.common.collect.Multimap;
  */
 public final class SpatialMap<E> {
 
-	private static final String TABLE_STRING_REPR_ROW_DELIMITER = System.lineSeparator();
-
 	private static final String TABLE_STRING_REPR_COL_DELIMITER = "\t";
+
+	private static final String TABLE_STRING_REPR_ROW_DELIMITER = System.lineSeparator();
 
 	private static void appendOccupiedRegionRepr(final StringBuilder sb,
 			final Entry<SpatialRegion, ? extends Iterable<?>> minimalRegionOccupyingElementSet) {
@@ -55,13 +56,13 @@ public final class SpatialMap<E> {
 		return expectedElementCount;
 	}
 
+	private final Map<E, SpatialRegion> elementRegions;
+
 	/**
 	 * <strong>TODO:</strong> Reverse this so that the region is the key
 	 * pointing to another {@link SpatialMap} of sub-regions.
 	 */
 	private final Multimap<SpatialRegion, E> regionElements;
-
-	private final Map<E, SpatialRegion> elementRegions;
 
 	/**
 	 * An ordered sequence of regions being used, e.g. for getting an ID for a
@@ -104,6 +105,10 @@ public final class SpatialMap<E> {
 
 	public Collection<E> getAllElements() {
 		return regionElements.values();
+	}
+
+	public Map<E, SpatialRegion> getElementMinimalRegions() {
+		return Collections.unmodifiableMap(elementRegions);
 	}
 
 	public Stream<Entry<SpatialRegion, E>> getIntersectedElements(final SpatialRegion intersectingRegion) {
@@ -152,7 +157,7 @@ public final class SpatialMap<E> {
 	public boolean isOccupied(final SpatialRegion region) {
 		boolean result = false;
 		for (final SpatialRegion elementRegion : regionElements.keySet()) {
-			if(elementRegion.intersects(region)){
+			if (elementRegion.intersects(region)) {
 				result = true;
 				break;
 			}
