@@ -16,15 +16,10 @@
 */
 package se.kth.speech.coin.tangrams.game;
 
-import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Deque;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
-import java.util.Queue;
+import java.util.NoSuchElementException;
 import java.util.Random;
 import java.util.Set;
 import java.util.function.Predicate;
@@ -33,7 +28,6 @@ import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 import se.kth.speech.MapEntryRemapping;
@@ -48,48 +42,28 @@ import se.kth.speech.SpatialRegion;
  */
 public final class PatternMoveFactory implements Supplier<MapEntryRemapping<Integer, SpatialRegion>> {
 
-	private enum PieceChoice {
-		HISTORY_LONG_TERM, HISTORY_SHORT_TERM, NEW_PIECE;
-	}
-
 	private static final Logger LOGGER = LoggerFactory.getLogger(PatternMoveFactory.class);
-
-	private final Set<Integer> longTermHistory;
-
-	private final PieceChoice nextChoiceType;
 
 	private final SpatialMatrix<Integer> posMatrix;
 
 	private final Random rnd;
 
-	private final Set<Integer> shortTermHistory;
-	
-	
-	private final Set<Integer> history;
-	
-	public PatternMoveFactory(final Random rnd, final SpatialMatrix<Integer> posMatrix) {
+	private final List<Integer> history;
+
+	private final int initialRndOnsetLength;
+
+	private final int nthElemRandom;
+
+	public PatternMoveFactory(final Random rnd, final SpatialMatrix<Integer> posMatrix, final int initialRndOnsetLength,
+			final int nthElemRandom) {
+		if (nthElemRandom == 0) {
+			throw new IllegalArgumentException("n-th random element parameter cannot be zero.");
+		}
 		this.rnd = rnd;
 		this.posMatrix = posMatrix;
-
-		nextChoiceType = PieceChoice.NEW_PIECE;
-		this.history = new HashSet<>();
-		shortTermHistory = new HashSet<>();
-		longTermHistory = new HashSet<>();
-	}
-	
-	private MapEntryRemapping<Integer, SpatialRegion> pick(){
-		MapEntryRemapping<Integer, SpatialRegion> result;
-		if (history.size() < 4 || history.size() % 2 == 0){
-			// The first four pieces should be picked random as well as every other piece
-			Collection<Integer> pieceIds = posMatrix.getElementPlacements().getAllElements();
-			result = createRandomMove(pieceIds, pieceId -> !history.contains(pieceId));
-		} else if (history.size() % 2 == 0) {
-			// Every other 
-		}
-
-		Integer pieceId = result.getKey();
-		history.add(pieceId);
-		return result;
+		this.initialRndOnsetLength = initialRndOnsetLength;
+		this.nthElemRandom = nthElemRandom;
+		history = new LinkedList<>();
 	}
 
 	/*
@@ -98,84 +72,97 @@ public final class PatternMoveFactory implements Supplier<MapEntryRemapping<Inte
 	 * @see java.util.function.Supplier#get()
 	 */
 	@Override
-	public MapEntryRemapping<Integer, SpatialRegion> get() {
-		MapEntryRemapping<Integer, SpatialRegion> result = null;
-		switch (nextChoiceType) {
-		case HISTORY_LONG_TERM: {
-//			MapEntryRemapping<Integer, SpatialRegion> move = createRandomMove(longTermHistory);
-			break;
+	public MapEntryRemapping<Integer, SpatialRegion> get() throws NoSuchElementException {
+		MapEntryRemapping<Integer, SpatialRegion> result;
+		if (history.size() < initialRndOnsetLength) {
+			LOGGER.info("Still creating initial random onset: {}", history);
+			// The first n pieces should be picked randomly as well as every
+			// m-th piece
+			final Collection<Integer> pieceIds = posMatrix.getElementPlacements().getAllElements();
+			result = createRandomMove(pieceIds, pieceId -> !history.contains(pieceId));
+		} else {
+			final int turnCount = history.size() + 1;
+			if (turnCount % nthElemRandom == 0) {
+				LOGGER.info("Found turn count {} % {} == 0: {}; Picking unseen piece.",
+						new Object[] { turnCount, nthElemRandom, history });
+				// The first n pieces should be picked randomly as well as every
+				// m-th piece
+				final Collection<Integer> pieceIds = posMatrix.getElementPlacements().getAllElements();
+				result = createRandomMove(pieceIds, pieceId -> !history.contains(pieceId));
+			} else {
+				LOGGER.info("Picking already-seen piece from history: {}", history);
+				// Pick a random element from the turns before the last one
+				final Collection<Integer> pieceIds = history.subList(0, history.size() - 1);
+				result = createRandomMove(pieceIds, pieceId -> true);
+				// "pop" the result from its current position in the history
+				history.remove(result.getKey());
+			}
 		}
-		case HISTORY_SHORT_TERM: {
-//			MapEntryRemapping<Integer, SpatialRegion> move = createRandomMove(shortTermHistory);
-			break;
+		if (result == null) {
+			throw new NoSuchElementException("Could not find any valid moves.");
+		} else {
+			// (Re-)add the result to the end of the history
+			history.add(result.getKey());
+			return result;
 		}
-		case NEW_PIECE: {
-			result = findNewRandomMove();
-			break;
-		}
-		default: {
-			throw new AssertionError("No logic for handling " + nextChoiceType + ".");
-		}
-
-		}
-
-		return result;
 	}
 
-	private MapEntryRemapping<Integer, SpatialRegion> createRandomMove(final Collection<Integer> pieceIds, Predicate<? super Integer> pieceIdFilter) {
-		final Integer pieceId = RandomCollections.getRandomElement(pieceIds, rnd);
-		final SpatialRegion sourceRegion = posMatrix.getElementPlacements().getElementMinimalRegions().get(pieceId);
-		final Set<SpatialRegion> possibleTargetRegions = posMatrix.createValidMoveSet(sourceRegion);
-		final SpatialRegion targetRegion = RandomCollections.getRandomElement(possibleTargetRegions, rnd);
-		return new MapEntryRemapping<>(pieceId, sourceRegion, targetRegion);
+	/*
+	 * (non-Javadoc)
+	 *
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		final StringBuilder builder = new StringBuilder();
+		builder.append("PatternMoveFactory [posMatrix=");
+		builder.append(posMatrix);
+		builder.append(", rnd=");
+		builder.append(rnd);
+		builder.append(", history=");
+		builder.append(history);
+		builder.append(", initialRndOnsetLength=");
+		builder.append(initialRndOnsetLength);
+		builder.append(", nthElemRandom=");
+		builder.append(nthElemRandom);
+		builder.append("]");
+		return builder.toString();
 	}
 
-	private MapEntryRemapping<Integer, SpatialRegion> findNewRandomMove() {
+	private MapEntryRemapping<Integer, SpatialRegion> createRandomMove(final Collection<Integer> pieceIds,
+			final Predicate<? super Integer> pieceIdFilter) {
 		LOGGER.debug("Creating random move.");
-		final List<SpatialRegion> regionsToTry = posMatrix.getElementPlacements().getMinimalRegions();
 		// TODO: estimate number of failed tries better
-		final Set<SpatialRegion> failedRegions = Sets.newHashSetWithExpectedSize(Math.min(regionsToTry.size(), 16));
-
+		final Set<Integer> failedIds = Sets.newHashSetWithExpectedSize(Math.min(pieceIds.size(), 16));
 		MapEntryRemapping<Integer, SpatialRegion> result = null;
 		do {
-			final SpatialRegion occupiedRegion = RandomCollections.getRandomElement(regionsToTry, rnd);
-			final Set<SpatialRegion> regionValidMoves = posMatrix.createValidMoveSet(occupiedRegion);
-			if (regionValidMoves.isEmpty()) {
-				// The pieces at the region cannot be moved anywhere else; Give
-				// up
-				LOGGER.debug("Not valid moves for piece at occupied {}.", occupiedRegion);
-				failedRegions.add(occupiedRegion);
-			} else {
-				final Collection<Integer> pieceIds = posMatrix.getElementPlacements().getMinimalRegionElements()
-						.get(occupiedRegion);
-				switch (pieceIds.size()) {
-				case 0: {
-					throw new AssertionError("Piece ID set for extant region should not be empty but is.");
-				}
-				case 1: {
-					final int pieceId = pieceIds.iterator().next();
-					final SpatialRegion moveTarget = RandomCollections.getRandomElement(regionValidMoves, rnd);
-					assert !posMatrix.isOccupied(moveTarget);
-					if (wasPieceAlreadyMoved(pieceId)) {
-						LOGGER.debug("Piece ID \"{}\" was already moved at least once.");
-					} else {
-						result = new MapEntryRemapping<>(pieceId, occupiedRegion, moveTarget);
-					}
+			final Integer pieceId = RandomCollections.getRandomElement(pieceIds, rnd);
+			if (pieceIdFilter.test(pieceId)) {
+				result = createRandomMove(pieceId);
+				if (result != null) {
 					break;
 				}
-				default: {
-					throw new UnsupportedOperationException("Cannot move multiple pieces in one turn.");
-				}
-				}
+			} else {
+				LOGGER.debug("Piece ID \"{}\" failed filter test; Cannot move again (yet).");
+				failedIds.add(pieceId);
 			}
 
-		} while (result == null && failedRegions.size() < regionsToTry.size());
-
+		} while (result == null && failedIds.size() < pieceIds.size());
 		return result;
 	}
 
-	private boolean wasPieceAlreadyMoved(final int pieceId) {
-		return shortTermHistory.contains(pieceId) || longTermHistory.contains(pieceId);
+	private MapEntryRemapping<Integer, SpatialRegion> createRandomMove(final Integer pieceId) {
+		final MapEntryRemapping<Integer, SpatialRegion> result;
+		final SpatialRegion sourceRegion = posMatrix.getElementPlacements().getElementMinimalRegions().get(pieceId);
+		final Set<SpatialRegion> possibleTargetRegions = posMatrix.createValidMoveSet(sourceRegion);
+		if (possibleTargetRegions.isEmpty()) {
+			LOGGER.debug("No valid moves for piece \"{}\", at {}.", pieceId, sourceRegion);
+			result = null;
+		} else {
+			final SpatialRegion targetRegion = RandomCollections.getRandomElement(possibleTargetRegions, rnd);
+			result = new MapEntryRemapping<>(pieceId, sourceRegion, targetRegion);
+		}
+		return result;
 	}
 
 }

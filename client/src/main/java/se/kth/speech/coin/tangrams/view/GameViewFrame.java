@@ -34,6 +34,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.IntConsumer;
@@ -265,17 +266,18 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 			continueButton.setFont(continueButton.getFont().deriveFont(infoFontAttrMap));
 			updateMoveButtonEnabled(continueButton, initialRole);
 			continueButton.addActionListener(continueEvent -> {
-				final MapEntryRemapping<Integer, SpatialRegion> nextMove = moveFactory.get();
-				if (nextMove == null) {
-					// No pieces left to be moved; Game cannot continue
-					notifyNoValidMoves();
-				} else {
+				try {
+					final MapEntryRemapping<Integer, SpatialRegion> nextMove = moveFactory.get();
 					final Integer pieceId = nextMove.getKey();
 					final SpatialRegion source = nextMove.getOldValue();
 					final SpatialRegion target = nextMove.getNewValue();
 					boardPanel.notifyNextMove(source, target, pieceId);
+				} catch (final NoSuchElementException e) {
+					// No pieces left to be moved; Game cannot continue
+					JOptionPane.showMessageDialog(this, "No more moves available.", "No more moves",
+							JOptionPane.WARNING_MESSAGE);
+					LOGGER.warn("No more moves available.", e);
 				}
-
 			});
 		}
 
@@ -349,10 +351,6 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 	@Override
 	public void updateTurnCount(final int newCount) {
 		LOGGER.debug("Notified of new turn count.");
-	}
-
-	private void notifyNoValidMoves() {
-		JOptionPane.showMessageDialog(this, "No more moves available.");
 	}
 
 	private void updateRoleStatusLabelFontSize() {
