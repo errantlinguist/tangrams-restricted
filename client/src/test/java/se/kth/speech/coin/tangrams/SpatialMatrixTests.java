@@ -23,6 +23,7 @@ import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
 
+import se.kth.speech.MapEntryRemapping;
 import se.kth.speech.MutablePair;
 import se.kth.speech.RandomCollections;
 import se.kth.speech.SpatialMap;
@@ -36,8 +37,8 @@ import se.kth.speech.SpatialRegion;
  */
 public final class SpatialMatrixTests {
 
-	public static Entry<SpatialRegion, Entry<Integer, SpatialRegion>> createRandomValidMove(
-			final SpatialMatrix<Integer> model, final Random rnd) {
+	public static MapEntryRemapping<Integer, SpatialRegion> createRandomValidMove(final SpatialMatrix<Integer> model,
+			final Random rnd) {
 		final SpatialMap<Integer> elemPlacements = model.getElementPlacements();
 		final List<SpatialRegion> occupiedRegions = elemPlacements.getMinimalRegions();
 		SpatialRegion sourceRegion = null;
@@ -49,7 +50,7 @@ public final class SpatialMatrixTests {
 		final Collection<Integer> pieceIds = elemPlacements.getMinimalRegionElements().get(sourceRegion);
 		final Integer pieceId = RandomCollections.getRandomElement(pieceIds, rnd);
 		final SpatialRegion targetRegion = RandomCollections.getRandomElement(regionValidMoves, rnd);
-		return new MutablePair<>(sourceRegion, new MutablePair<>(pieceId, targetRegion));
+		return new MapEntryRemapping<>(pieceId, sourceRegion, targetRegion);
 	}
 
 	public static Entry<SpatialRegion, Integer> findRandomMovableElement(final SpatialMatrix<Integer> model,

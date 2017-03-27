@@ -18,7 +18,6 @@ package se.kth.speech.coin.tangrams.game;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Map.Entry;
 import java.util.Random;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -32,6 +31,7 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 
+import se.kth.speech.MapEntryRemapping;
 import se.kth.speech.Matrix;
 import se.kth.speech.SpatialMatrix;
 import se.kth.speech.SpatialRegion;
@@ -66,14 +66,13 @@ public final class ControllerHistoryTest {
 				.collect(Collectors.toCollection(() -> new ArrayList<>(testDescs.size())));
 	}
 
-	private static Entry<SpatialRegion, Entry<Integer, SpatialRegion>> submitRandomTurn(final Controller controller,
+	private static MapEntryRemapping<Integer, SpatialRegion> submitRandomTurn(final Controller controller,
 			final Random rnd) {
-		final Entry<SpatialRegion, Entry<Integer, SpatialRegion>> result = SpatialMatrixTests
+		final MapEntryRemapping<Integer, SpatialRegion> result = SpatialMatrixTests
 				.createRandomValidMove(controller.getModel(), rnd);
-		final SpatialRegion sourceRegion = result.getKey();
-		final Entry<Integer, SpatialRegion> pieceIdTargets = result.getValue();
-		final Integer pieceId = pieceIdTargets.getKey();
-		final SpatialRegion targetRegion = pieceIdTargets.getValue();
+		final SpatialRegion sourceRegion = result.getOldValue();
+		final Integer pieceId = result.getKey();
+		final SpatialRegion targetRegion = result.getNewValue();
 
 		controller.submitNextMove(sourceRegion, targetRegion, pieceId);
 		controller.notifyPlayerSelection("otherPlayer",

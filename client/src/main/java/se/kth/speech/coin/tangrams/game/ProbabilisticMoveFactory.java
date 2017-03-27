@@ -18,7 +18,6 @@ package se.kth.speech.coin.tangrams.game;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -28,7 +27,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Sets;
 
-import se.kth.speech.MutablePair;
+import se.kth.speech.MapEntryRemapping;
 import se.kth.speech.RandomCollections;
 import se.kth.speech.SpatialMatrix;
 import se.kth.speech.SpatialRegion;
@@ -38,7 +37,7 @@ import se.kth.speech.SpatialRegion;
  * @since 23 Mar 2017
  *
  */
-public final class ProbabilisticMoveFactory implements Supplier<Entry<SpatialRegion, Entry<Integer, SpatialRegion>>> {
+public final class ProbabilisticMoveFactory implements Supplier<MapEntryRemapping<Integer, SpatialRegion>> {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(ProbabilisticMoveFactory.class);
 
@@ -63,13 +62,13 @@ public final class ProbabilisticMoveFactory implements Supplier<Entry<SpatialReg
 	 * @see java.util.function.Supplier#get()
 	 */
 	@Override
-	public Entry<SpatialRegion, Entry<Integer, SpatialRegion>> get() {
+	public MapEntryRemapping<Integer, SpatialRegion> get() {
 		LOGGER.debug("Generating random move.");
 		final List<SpatialRegion> regionsToTry = posMatrix.getElementPlacements().getMinimalRegions();
 		// TODO: estimate number of failed tries better
 		final Set<SpatialRegion> failedRegions = Sets.newHashSetWithExpectedSize(Math.min(regionsToTry.size(), 16));
 
-		Entry<SpatialRegion, Entry<Integer, SpatialRegion>> result = null;
+		MapEntryRemapping<Integer, SpatialRegion> result = null;
 		do {
 			final SpatialRegion occupiedRegion = RandomCollections.getRandomElement(regionsToTry, rnd);
 			final Set<SpatialRegion> regionValidMoves = posMatrix.createValidMoveSet(occupiedRegion);
@@ -90,7 +89,7 @@ public final class ProbabilisticMoveFactory implements Supplier<Entry<SpatialReg
 					final SpatialRegion moveTarget = RandomCollections.getRandomElement(regionValidMoves, rnd);
 					assert !posMatrix.isOccupied(moveTarget);
 					if (shouldMove(occupiedRegion, moveTarget, pieceId)) {
-						result = new MutablePair<>(occupiedRegion, new MutablePair<>(pieceId, moveTarget));
+						result = new MapEntryRemapping<>(pieceId, occupiedRegion, moveTarget);
 					} else {
 						LOGGER.debug("Piece ID \"{}\" was probabilistically ruled out.");
 					}
@@ -106,22 +105,24 @@ public final class ProbabilisticMoveFactory implements Supplier<Entry<SpatialReg
 
 		return result;
 	}
-	
+
 	private double calculateMoveProb(final int pieceId) {
 		final int lastPieceMoveTurn = history.getLastPieceMoveTurn(pieceId);
 		final double currentTurn = turnCount;
 		// Add 1 to the denominator to avoid the last moved piece from being
-		// picked again, and add to the denominator in order to avoid dividing by zero
+		// picked again, and add to the denominator in order to avoid dividing
+		// by zero
 		final double quotient = lastPieceMoveTurn + 1 / currentTurn + 1;
-		// TODO: Convert this into integer arithmetic in the case you have to sum probs later
+		// TODO: Convert this into integer arithmetic in the case you have to
+		// sum probs later
 		return 1.0 - quotient;
 	}
 
 	private int calculateRndMaxVal(final int pieceId) {
-		double prob = calculateMoveProb(pieceId);
+		final double prob = calculateMoveProb(pieceId);
 		// Subtract one because the Random.nextInt(bound) returns ints in the
 		// range of 0 to bound-1
-		return ((int) (prob * 100)) - 1;
+		return (int) (prob * 100) - 1;
 	}
 
 	private boolean shouldMove(final SpatialRegion region, final SpatialRegion target, final int pieceId) {

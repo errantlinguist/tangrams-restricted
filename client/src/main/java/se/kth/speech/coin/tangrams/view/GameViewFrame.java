@@ -56,6 +56,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Maps;
 
+import se.kth.speech.MapEntryRemapping;
 import se.kth.speech.MutablePair;
 import se.kth.speech.SpatialRegion;
 import se.kth.speech.awt.CachingMaximumWidthFontFactory;
@@ -75,14 +76,14 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(GameViewFrame.class);
 
+	private static final int MIN_ROLE_STATUS_LABEL_PADDING = 10;
+
 	private static final Map<PlayerRole, String> PLAYER_ROLE_STATUS_LABEL_TEXT = createPlayerRoleStatusLabelTextMap();
 
 	/**
 	 *
 	 */
 	private static final long serialVersionUID = -4129777933223228599L;
-
-	private static final int MIN_ROLE_STATUS_LABEL_PADDING = 10;
 
 	private static Map<Attribute, Object> createInfoFontAttrMap() {
 		final Map<Attribute, Object> result = Maps.newHashMapWithExpectedSize(2);
@@ -173,8 +174,8 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 	private final IntConsumer roleStatusLabelFontSizeUpdater;
 
 	GameViewFrame(final GameBoardPanel boardPanel, final Controller controller,
-			final Supplier<? extends Entry<SpatialRegion, ? extends Entry<Integer, SpatialRegion>>> moveFactory,
-			final Runnable closeHook, final Dimension preferredSize) {
+			final Supplier<? extends MapEntryRemapping<Integer, SpatialRegion>> moveFactory, final Runnable closeHook,
+			final Dimension preferredSize) {
 		controller.getListeners().add(this);
 		setPreferredSize(preferredSize);
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
@@ -264,14 +265,15 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 			continueButton.setFont(continueButton.getFont().deriveFont(infoFontAttrMap));
 			updateMoveButtonEnabled(continueButton, initialRole);
 			continueButton.addActionListener(continueEvent -> {
-				final Entry<SpatialRegion, ? extends Entry<Integer, SpatialRegion>> nextMove = moveFactory.get();
+				final MapEntryRemapping<Integer, SpatialRegion> nextMove = moveFactory.get();
 				if (nextMove == null) {
 					// No pieces left to be moved; Game cannot continue
 					notifyNoValidMoves();
 				} else {
-					final SpatialRegion source = nextMove.getKey();
-					final Entry<Integer, SpatialRegion> target = nextMove.getValue();
-					boardPanel.notifyNextMove(source, target.getValue(), target.getKey());
+					final Integer pieceId = nextMove.getKey();
+					final SpatialRegion source = nextMove.getOldValue();
+					final SpatialRegion target = nextMove.getNewValue();
+					boardPanel.notifyNextMove(source, target, pieceId);
 				}
 
 			});

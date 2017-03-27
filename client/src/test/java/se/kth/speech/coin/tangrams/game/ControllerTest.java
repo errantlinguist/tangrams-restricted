@@ -18,7 +18,6 @@ package se.kth.speech.coin.tangrams.game;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Map.Entry;
 import java.util.Random;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -32,6 +31,7 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 
+import se.kth.speech.MapEntryRemapping;
 import se.kth.speech.Matrix;
 import se.kth.speech.SpatialMatrix;
 import se.kth.speech.SpatialRegion;
@@ -75,14 +75,13 @@ public final class ControllerTest {
 				.collect(Collectors.toCollection(() -> new ArrayList<>(testDescs.size())));
 	}
 
-	private static Entry<SpatialRegion, Entry<Integer, SpatialRegion>> submitRandomTurn(final Controller controller,
+	private static MapEntryRemapping<Integer, SpatialRegion> submitRandomTurn(final Controller controller,
 			final Random rnd) {
-		final Entry<SpatialRegion, Entry<Integer, SpatialRegion>> result = SpatialMatrixTests
+		final MapEntryRemapping<Integer, SpatialRegion> result = SpatialMatrixTests
 				.createRandomValidMove(controller.getModel(), rnd);
-		final SpatialRegion sourceRegion = result.getKey();
-		final Entry<Integer, SpatialRegion> pieceIdTargets = result.getValue();
-		final Integer pieceId = pieceIdTargets.getKey();
-		final SpatialRegion targetRegion = pieceIdTargets.getValue();
+		final SpatialRegion sourceRegion = result.getOldValue();
+		final Integer pieceId = result.getKey();
+		final SpatialRegion targetRegion = result.getNewValue();
 
 		controller.submitNextMove(sourceRegion, targetRegion, pieceId);
 		controller.notifyPlayerSelection("otherPlayer",
@@ -112,12 +111,10 @@ public final class ControllerTest {
 	public void testNotifyPlayerSelectionPositive(final SpatialMatrix<Integer> model, final long seed) {
 		final Controller controller = new Controller(model, "localPlayer", PlayerRole.MOVE_SUBMISSION, CLIENT_MODULE);
 		final Random rnd = new Random(seed);
-		final Entry<SpatialRegion, Entry<Integer, SpatialRegion>> move = SpatialMatrixTests.createRandomValidMove(model,
-				rnd);
-		final SpatialRegion sourceRegion = move.getKey();
-		final Entry<Integer, SpatialRegion> pieceIdTargets = move.getValue();
-		final Integer pieceId = pieceIdTargets.getKey();
-		final SpatialRegion targetRegion = pieceIdTargets.getValue();
+		final MapEntryRemapping<Integer, SpatialRegion> move = SpatialMatrixTests.createRandomValidMove(model, rnd);
+		final SpatialRegion sourceRegion = move.getOldValue();
+		final Integer pieceId = move.getKey();
+		final SpatialRegion targetRegion = move.getNewValue();
 
 		controller.submitNextMove(sourceRegion, targetRegion, pieceId);
 		controller.notifyPlayerSelection("otherPlayer",
@@ -128,12 +125,10 @@ public final class ControllerTest {
 	public void testSubmitNextMovePositive(final SpatialMatrix<Integer> model, final long seed) {
 		final Controller controller = new Controller(model, "localPlayer", PlayerRole.MOVE_SUBMISSION, CLIENT_MODULE);
 		final Random rnd = new Random(seed);
-		final Entry<SpatialRegion, Entry<Integer, SpatialRegion>> move = SpatialMatrixTests.createRandomValidMove(model,
-				rnd);
-		final SpatialRegion sourceRegion = move.getKey();
-		final Entry<Integer, SpatialRegion> pieceIdTargets = move.getValue();
-		final Integer pieceId = pieceIdTargets.getKey();
-		final SpatialRegion targetRegion = pieceIdTargets.getValue();
+		final MapEntryRemapping<Integer, SpatialRegion> move = SpatialMatrixTests.createRandomValidMove(model, rnd);
+		final SpatialRegion sourceRegion = move.getOldValue();
+		final Integer pieceId = move.getKey();
+		final SpatialRegion targetRegion = move.getNewValue();
 
 		controller.submitNextMove(sourceRegion, targetRegion, pieceId);
 		controller.notifyPlayerSelection("otherPlayer",
@@ -145,12 +140,10 @@ public final class ControllerTest {
 	public void testSubmitTurnCompletePositive(final SpatialMatrix<Integer> model, final long seed) {
 		final Controller controller = new Controller(model, "localPlayer", PlayerRole.MOVE_SUBMISSION, CLIENT_MODULE);
 		final Random rnd = new Random(seed);
-		final Entry<SpatialRegion, Entry<Integer, SpatialRegion>> move = SpatialMatrixTests.createRandomValidMove(model,
-				rnd);
-		final SpatialRegion sourceRegion = move.getKey();
-		final Entry<Integer, SpatialRegion> pieceIdTargets = move.getValue();
-		final Integer pieceId = pieceIdTargets.getKey();
-		final SpatialRegion targetRegion = pieceIdTargets.getValue();
+		final MapEntryRemapping<Integer, SpatialRegion> move = SpatialMatrixTests.createRandomValidMove(model, rnd);
+		final SpatialRegion sourceRegion = move.getOldValue();
+		final Integer pieceId = move.getKey();
+		final SpatialRegion targetRegion = move.getNewValue();
 
 		controller.submitNextMove(sourceRegion, targetRegion, pieceId);
 		controller.notifyPlayerSelection("otherPlayer",
