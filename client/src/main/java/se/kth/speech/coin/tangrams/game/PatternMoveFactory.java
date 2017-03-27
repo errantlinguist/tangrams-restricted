@@ -16,19 +16,27 @@
 */
 package se.kth.speech.coin.tangrams.game;
 
+import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Deque;
+import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.List;
-import java.util.Map.Entry;
+import java.util.Map;
+import java.util.Queue;
 import java.util.Random;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
-import se.kth.speech.MutablePair;
+import se.kth.speech.MapEntryRemapping;
 import se.kth.speech.RandomCollections;
 import se.kth.speech.SpatialMatrix;
 import se.kth.speech.SpatialRegion;
@@ -38,23 +46,50 @@ import se.kth.speech.SpatialRegion;
  * @since 23 Mar 2017
  *
  */
-public final class PatternMoveFactory implements Supplier<Entry<SpatialRegion, Entry<Integer, SpatialRegion>>> {
+public final class PatternMoveFactory implements Supplier<MapEntryRemapping<Integer, SpatialRegion>> {
+
+	private enum PieceChoice {
+		HISTORY_LONG_TERM, HISTORY_SHORT_TERM, NEW_PIECE;
+	}
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(PatternMoveFactory.class);
 
-	private final Controller.History history;
+	private final Set<Integer> longTermHistory;
+
+	private final PieceChoice nextChoiceType;
 
 	private final SpatialMatrix<Integer> posMatrix;
 
 	private final Random rnd;
 
-	private final int turnCount = 0;
-
-	public PatternMoveFactory(final Random rnd, final SpatialMatrix<Integer> posMatrix,
-			final Controller.History history) {
+	private final Set<Integer> shortTermHistory;
+	
+	
+	private final Set<Integer> history;
+	
+	public PatternMoveFactory(final Random rnd, final SpatialMatrix<Integer> posMatrix) {
 		this.rnd = rnd;
 		this.posMatrix = posMatrix;
-		this.history = history;
+
+		nextChoiceType = PieceChoice.NEW_PIECE;
+		this.history = new HashSet<>();
+		shortTermHistory = new HashSet<>();
+		longTermHistory = new HashSet<>();
+	}
+	
+	private MapEntryRemapping<Integer, SpatialRegion> pick(){
+		MapEntryRemapping<Integer, SpatialRegion> result;
+		if (history.size() < 4 || history.size() % 2 == 0){
+			// The first four pieces should be picked random as well as every other piece
+			Collection<Integer> pieceIds = posMatrix.getElementPlacements().getAllElements();
+			result = createRandomMove(pieceIds, pieceId -> !history.contains(pieceId));
+		} else if (history.size() % 2 == 0) {
+			// Every other 
+		}
+
+		Integer pieceId = result.getKey();
+		history.add(pieceId);
+		return result;
 	}
 
 	/*
@@ -63,13 +98,45 @@ public final class PatternMoveFactory implements Supplier<Entry<SpatialRegion, E
 	 * @see java.util.function.Supplier#get()
 	 */
 	@Override
-	public Entry<SpatialRegion, Entry<Integer, SpatialRegion>> get() {
-		LOGGER.debug("Generating random move.");
+	public MapEntryRemapping<Integer, SpatialRegion> get() {
+		MapEntryRemapping<Integer, SpatialRegion> result = null;
+		switch (nextChoiceType) {
+		case HISTORY_LONG_TERM: {
+//			MapEntryRemapping<Integer, SpatialRegion> move = createRandomMove(longTermHistory);
+			break;
+		}
+		case HISTORY_SHORT_TERM: {
+//			MapEntryRemapping<Integer, SpatialRegion> move = createRandomMove(shortTermHistory);
+			break;
+		}
+		case NEW_PIECE: {
+			result = findNewRandomMove();
+			break;
+		}
+		default: {
+			throw new AssertionError("No logic for handling " + nextChoiceType + ".");
+		}
+
+		}
+
+		return result;
+	}
+
+	private MapEntryRemapping<Integer, SpatialRegion> createRandomMove(final Collection<Integer> pieceIds, Predicate<? super Integer> pieceIdFilter) {
+		final Integer pieceId = RandomCollections.getRandomElement(pieceIds, rnd);
+		final SpatialRegion sourceRegion = posMatrix.getElementPlacements().getElementMinimalRegions().get(pieceId);
+		final Set<SpatialRegion> possibleTargetRegions = posMatrix.createValidMoveSet(sourceRegion);
+		final SpatialRegion targetRegion = RandomCollections.getRandomElement(possibleTargetRegions, rnd);
+		return new MapEntryRemapping<>(pieceId, sourceRegion, targetRegion);
+	}
+
+	private MapEntryRemapping<Integer, SpatialRegion> findNewRandomMove() {
+		LOGGER.debug("Creating random move.");
 		final List<SpatialRegion> regionsToTry = posMatrix.getElementPlacements().getMinimalRegions();
 		// TODO: estimate number of failed tries better
 		final Set<SpatialRegion> failedRegions = Sets.newHashSetWithExpectedSize(Math.min(regionsToTry.size(), 16));
 
-		Entry<SpatialRegion, Entry<Integer, SpatialRegion>> result = null;
+		MapEntryRemapping<Integer, SpatialRegion> result = null;
 		do {
 			final SpatialRegion occupiedRegion = RandomCollections.getRandomElement(regionsToTry, rnd);
 			final Set<SpatialRegion> regionValidMoves = posMatrix.createValidMoveSet(occupiedRegion);
@@ -89,10 +156,10 @@ public final class PatternMoveFactory implements Supplier<Entry<SpatialRegion, E
 					final int pieceId = pieceIds.iterator().next();
 					final SpatialRegion moveTarget = RandomCollections.getRandomElement(regionValidMoves, rnd);
 					assert !posMatrix.isOccupied(moveTarget);
-					if (shouldMove(occupiedRegion, moveTarget, pieceId)) {
-						result = new MutablePair<>(occupiedRegion, new MutablePair<>(pieceId, moveTarget));
+					if (wasPieceAlreadyMoved(pieceId)) {
+						LOGGER.debug("Piece ID \"{}\" was already moved at least once.");
 					} else {
-						LOGGER.debug("Piece ID \"{}\" was probabilistically ruled out.");
+						result = new MapEntryRemapping<>(pieceId, occupiedRegion, moveTarget);
 					}
 					break;
 				}
@@ -106,35 +173,9 @@ public final class PatternMoveFactory implements Supplier<Entry<SpatialRegion, E
 
 		return result;
 	}
-	
-	private int calculateRndMaxVal(final int pieceId) {
-		double prob = calculateMoveProb(pieceId);
-		// Subtract one because the Random.nextInt(bound) returns ints in the
-		// range of 0 to bound-1
-		return ((int) (prob * 100)) - 1;
-	}
 
-	private boolean shouldMovePiece(final int pieceId) {
-		final int rndMaxVal = calculateRndMaxVal(pieceId);
-		final int rndVal = rnd.nextInt(100);
-		return rndVal <= rndMaxVal;
-	}
-
-	double calculateMoveProb(final int pieceId) {
-		final int lastPieceMoveTurn = history.getLastPieceMoveTurn(pieceId);
-		final double currentTurn = turnCount;
-		// Add 1 to the denominator to avoid the last moved piece from being
-		// picked again, and add to the denominator in order to avoid dividing by zero
-		final double quotient = lastPieceMoveTurn + 1 / currentTurn + 1;
-		// TODO: Convert this into integer arithmetic in the case you have to sum probs later
-		return 1.0 - quotient;
-	}
-
-	boolean shouldMove(final SpatialRegion region, final SpatialRegion target, final int pieceId) {
-		// TODO: implement probability of moving from a given region and/or
-		// moving a given piece from a given region (all possible combinations?)
-		// see: Bayes' theorem
-		return shouldMovePiece(pieceId);
+	private boolean wasPieceAlreadyMoved(final int pieceId) {
+		return shortTermHistory.contains(pieceId) || longTermHistory.contains(pieceId);
 	}
 
 }
