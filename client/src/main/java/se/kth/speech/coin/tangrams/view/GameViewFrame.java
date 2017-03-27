@@ -300,7 +300,7 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 		playerReadiness.setStatus(newTurnStatus);
 
 		final String roleStatusText = PLAYER_ROLE_STATUS_LABEL_TEXT.get(newRole);
-		LOGGER.info("Setting player state label for role {}: \"{}\"", newRole);
+		LOGGER.info("Setting player state label for role {}.", newRole);
 		roleStatusLabel.setText(roleStatusText);
 		final String labelText = roleStatusLabel.getText();
 		assert labelText != null && !labelText.isEmpty();
