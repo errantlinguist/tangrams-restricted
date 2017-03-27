@@ -59,7 +59,7 @@ public final class SpatialMatrix<E> {
 		}
 		return result;
 	}
-	
+
 	private final SpatialMap<E> elementPlacements;
 
 	private transient final Function<SpatialRegion, Set<SpatialRegion>> newRegionPossibleMoveSetFactory;
@@ -122,11 +122,7 @@ public final class SpatialMatrix<E> {
 	}
 
 	public void clearRegion(final SpatialRegion occupiedRegion) {
-		final Collection<?> elements = elementPlacements.getMinimalRegionElements().get(occupiedRegion);
-		// NOTE: Iterator.remove() for the instance returned by the
-		// multimap's collection iterator throws a
-		// ConcurrentModificationException
-		elements.clear();
+		elementPlacements.clearRegion(occupiedRegion);
 		setPositionValues(occupiedRegion, null);
 	}
 
@@ -316,7 +312,7 @@ public final class SpatialMatrix<E> {
 		return new SpatialRegion(xLowerBound, xUpperBound, yLowerBound, yUpperBound);
 	}
 
-	public int getUniqueElementCount(){
+	public int getUniqueElementCount() {
 		return getElementPlacements().getAllElements().size();
 	}
 
@@ -343,7 +339,7 @@ public final class SpatialMatrix<E> {
 	}
 
 	public void placeElement(final E element, final SpatialRegion target) {
-		if (elementPlacements.isOccupied(target)){
+		if (elementPlacements.isOccupied(target)) {
 			throw new IllegalArgumentException("Target region already occupied.");
 		}
 		LOGGER.debug("Placing element \"{}\" at {}.", element, target);

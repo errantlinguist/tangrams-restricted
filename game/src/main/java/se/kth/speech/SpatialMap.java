@@ -28,6 +28,7 @@ import java.util.stream.Stream;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.Multimaps;
 
 /**
  * A very rudimentary data structure for searching a two-dimensional space.
@@ -76,6 +77,14 @@ public final class SpatialMap<E> {
 		this.regions = new ArrayList<>(Math.max(regionElements.size(), 16));
 	}
 
+	public void clearRegion(final SpatialRegion region) {
+		final Collection<?> elements = regionElements.get(region);
+		// NOTE: Iterator.remove() for the instance returned by the
+		// multimap's collection iterator throws a
+		// ConcurrentModificationException
+		elements.clear();
+	}
+
 	/*
 	 * (non-Javadoc)
 	 *
@@ -104,7 +113,7 @@ public final class SpatialMap<E> {
 	}
 
 	public Collection<E> getAllElements() {
-		return regionElements.values();
+		return Collections.unmodifiableCollection(regionElements.values());
 	}
 
 	public Map<E, SpatialRegion> getElementMinimalRegions() {
@@ -121,11 +130,11 @@ public final class SpatialMap<E> {
 	}
 
 	public Multimap<SpatialRegion, E> getMinimalRegionElements() {
-		return regionElements;
+		return Multimaps.unmodifiableMultimap(regionElements);
 	}
 
 	public List<SpatialRegion> getMinimalRegions() {
-		return regions;
+		return Collections.unmodifiableList(regions);
 	}
 
 	public Stream<Entry<SpatialRegion, E>> getSubsumedElements(final SpatialRegion subsumingRegion) {
