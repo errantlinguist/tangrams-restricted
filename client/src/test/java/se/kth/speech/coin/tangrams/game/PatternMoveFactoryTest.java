@@ -41,7 +41,7 @@ public final class PatternMoveFactoryTest {
 				.collect(Collectors.toCollection(() -> new ArrayList<>(testDescs.size())));
 		final Random rnd = new Random();
 		TEST_SEEDS = rnd.longs().distinct().limit(5).toArray();
-		TEST_POSITIVE_INTS = rnd.ints(1, 10).distinct().limit(5).toArray();
+		TEST_POSITIVE_INTS = rnd.ints(2, 10).distinct().limit(5).toArray();
 	}
 
 	private static MapEntryRemapping<Integer, SpatialRegion> findFirstPostInitialMoveWithRandomPieceId(

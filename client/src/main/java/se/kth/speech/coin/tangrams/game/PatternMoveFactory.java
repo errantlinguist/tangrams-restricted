@@ -56,8 +56,9 @@ public final class PatternMoveFactory implements Supplier<MapEntryRemapping<Inte
 
 	public PatternMoveFactory(final Random rnd, final SpatialMatrix<Integer> posMatrix, final int initialRndOnsetLength,
 			final int nthElemRandom) {
-		if (nthElemRandom == 0) {
-			throw new IllegalArgumentException("n-th random element parameter cannot be zero.");
+		final int minValidNthElemRandom = 2;
+		if (nthElemRandom < minValidNthElemRandom) {
+			throw new IllegalArgumentException("n-th random element parameter must be at least " + minValidNthElemRandom + ".");
 		}
 		this.rnd = rnd;
 		this.posMatrix = posMatrix;
