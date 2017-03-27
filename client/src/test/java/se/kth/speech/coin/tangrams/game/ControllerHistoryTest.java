@@ -53,7 +53,7 @@ public final class ControllerHistoryTest {
 	public static final Collection<SpatialMatrix<Integer>> TEST_MODELS;
 
 	@DataPoints("seeds")
-	public static final long[] TEST_SEEDS = new Random().longs().limit(5).toArray();
+	public static final long[] TEST_SEEDS = new Random().longs().distinct().limit(5).toArray();
 
 	private static final GameManagementClientModule CLIENT_MODULE = Mockito.mock(GameManagementClientModule.class);
 
