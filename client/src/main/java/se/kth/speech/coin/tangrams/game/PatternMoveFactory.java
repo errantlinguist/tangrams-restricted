@@ -34,13 +34,15 @@ import se.kth.speech.MapEntryRemapping;
 import se.kth.speech.RandomCollections;
 import se.kth.speech.SpatialMatrix;
 import se.kth.speech.SpatialRegion;
+import se.kth.speech.coin.tangrams.iristk.events.Move;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
  * @since 23 Mar 2017
  *
  */
-public final class PatternMoveFactory implements Supplier<MapEntryRemapping<Integer, SpatialRegion>> {
+public final class PatternMoveFactory
+		implements Supplier<MapEntryRemapping<Integer, SpatialRegion>>, Controller.Listener {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(PatternMoveFactory.class);
 
@@ -69,6 +71,10 @@ public final class PatternMoveFactory implements Supplier<MapEntryRemapping<Inte
 		this.initialRndOnsetLength = initialRndOnsetLength;
 		history = new LinkedList<>();
 	}
+	
+	private boolean isStillBuildingInitialOnset(){
+		return history.size() < initialRndOnsetLength;
+	}
 
 	/*
 	 * (non-Javadoc)
@@ -78,7 +84,7 @@ public final class PatternMoveFactory implements Supplier<MapEntryRemapping<Inte
 	@Override
 	public MapEntryRemapping<Integer, SpatialRegion> get() throws NoSuchElementException {
 		MapEntryRemapping<Integer, SpatialRegion> result;
-		if (history.size() < initialRndOnsetLength) {
+		if (isStillBuildingInitialOnset()) {
 			LOGGER.debug("Still creating initial random onset: {}", history);
 			// The first n pieces should be picked randomly
 			final Collection<Integer> pieceIds = posMatrix.getElementPlacements().getAllElements();
@@ -126,6 +132,107 @@ public final class PatternMoveFactory implements Supplier<MapEntryRemapping<Inte
 		builder.append(initialRndOnsetLength);
 		builder.append("]");
 		return builder.toString();
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * se.kth.speech.coin.tangrams.game.Controller.Listener#updateNextMove(se.
+	 * kth.speech.coin.tangrams.iristk.events.Move)
+	 */
+	@Override
+	public void updateNextMove(final Move move) {
+		final Integer pieceId = move.getPieceId();
+		LOGGER.debug("Notified of piece ID \"{}\" being moved; (Re-)adding to history.", pieceId);
+		if (isStillBuildingInitialOnset()){
+			LOGGER.debug("Still building initial random onset: {}", history);
+		} else {
+			final boolean wasSeenBefore = history.remove(pieceId);
+			assert wasSeenBefore != shouldPickNewPiece;
+			shouldPickNewPiece = !shouldPickNewPiece;
+		}
+		history.add(pieceId);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * se.kth.speech.coin.tangrams.game.Controller.Listener#updatePlayerJoined(
+	 * java.lang.String, long)
+	 */
+	@Override
+	public void updatePlayerJoined(final String joinedPlayerId, final long time) {
+		LOGGER.debug("Ignoring event.");
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * se.kth.speech.coin.tangrams.game.Controller.Listener#updatePlayerRole(se.
+	 * kth.speech.coin.tangrams.game.PlayerRole)
+	 */
+	@Override
+	public void updatePlayerRole(final PlayerRole newRole) {
+		LOGGER.debug("Ignoring event.");
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see se.kth.speech.coin.tangrams.game.Controller.Listener#
+	 * updatePlayerSelection(java.lang.Integer, se.kth.speech.SpatialRegion)
+	 */
+	@Override
+	public void updatePlayerSelection(final Integer pieceId, final SpatialRegion region) {
+		LOGGER.debug("Ignoring event.");
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * se.kth.speech.coin.tangrams.game.Controller.Listener#updateScore(int)
+	 */
+	@Override
+	public void updateScore(final int score) {
+		LOGGER.debug("Ignoring event.");
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see se.kth.speech.coin.tangrams.game.Controller.Listener#
+	 * updateSelectionRejected(java.lang.Integer, se.kth.speech.SpatialRegion)
+	 */
+	@Override
+	public void updateSelectionRejected(final Integer pieceId, final SpatialRegion region) {
+		LOGGER.debug("Ignoring event.");
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * se.kth.speech.coin.tangrams.game.Controller.Listener#updateTurnCompleted(
+	 * se.kth.speech.coin.tangrams.game.Turn)
+	 */
+	@Override
+	public void updateTurnCompleted(final Turn turn) {
+		LOGGER.debug("Ignoring event.");
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * se.kth.speech.coin.tangrams.game.Controller.Listener#updateTurnCount(int)
+	 */
+	@Override
+	public void updateTurnCount(final int newCount) {
+		LOGGER.debug("Ignoring event.");
 	}
 
 	private MapEntryRemapping<Integer, SpatialRegion> createRandomMove(final Collection<Integer> pieceIds,
