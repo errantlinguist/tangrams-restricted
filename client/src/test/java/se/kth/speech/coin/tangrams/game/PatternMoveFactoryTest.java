@@ -41,93 +41,77 @@ public final class PatternMoveFactoryTest {
 				.collect(Collectors.toCollection(() -> new ArrayList<>(testDescs.size())));
 		final Random rnd = new Random();
 		TEST_SEEDS = rnd.longs().distinct().limit(5).toArray();
-		TEST_POSITIVE_INTS = rnd.ints(2, 10).distinct().limit(5).toArray();
+		TEST_POSITIVE_INTS = rnd.ints(2, 12).distinct().limit(10).toArray();
 	}
 
-	private static MapEntryRemapping<Integer, SpatialRegion> findFirstPostInitialMoveWithRandomPieceId(
-			final PatternMoveFactory moveFactory, final int initialRndOnsetLength, final int nthElemRandom) {
-		MapEntryRemapping<Integer, SpatialRegion> result = null;
-		int turnNo = initialRndOnsetLength + 1;
-		for (;; turnNo++) {
-			final MapEntryRemapping<Integer, SpatialRegion> nextMove = moveFactory.get();
-			if (turnNo % nthElemRandom == 0) {
-				result = nextMove;
-				break;
-			}
-		}
-		Assert.assertNotNull(result);
-		return result;
-	}
-
-	private static void runTestGetFirstNthMoveUnseen(final SpatialMatrix<Integer> model, final long seed,
-			final int initialRndOnsetLength, final int nthElemRandom) {
+	private static void runTestGetFirstNthPieceIdSeen(final SpatialMatrix<Integer> model, final long seed,
+			final int initialRndOnsetLength) {
 		final Random rnd = new Random(seed);
-		final PatternMoveFactory moveFactory = new PatternMoveFactory(rnd, model, initialRndOnsetLength, nthElemRandom);
-		final Set<MapEntryRemapping<Integer, SpatialRegion>> intialMoves = Stream.generate(moveFactory)
-				.limit(initialRndOnsetLength)
-				.collect(Collectors.toCollection(() -> Sets.newHashSetWithExpectedSize(initialRndOnsetLength)));
-		final MapEntryRemapping<Integer, SpatialRegion> firstPostInitialMoveWithRandomPieceId = findFirstPostInitialMoveWithRandomPieceId(
-				moveFactory, initialRndOnsetLength, nthElemRandom);
-		Assert.assertFalse(intialMoves.contains(firstPostInitialMoveWithRandomPieceId));
-	}
-
-	@Theory
-	public void testGetFirstNthMoveUnseen(final SpatialMatrix<Integer> model, final long seed,
-			final int initialRndOnsetLength, final int nthElemRandom) {
-		runTestGetFirstNthMoveUnseen(model, seed, initialRndOnsetLength, nthElemRandom);
-	}
-
-	@Test
-	public void testGetFirstNthMoveUnseenDivisbleVals() {
-		final SpatialMatrix<Integer> model = TEST_MODELS.iterator().next();
-		final int initialRndOnsetLength = 4;
-		final int nthElemRandom = 8;
-		runTestGetFirstNthMoveUnseen(model, 1, initialRndOnsetLength, nthElemRandom);
-	}
-
-	@Test
-	public void testGetFirstNthMoveUnseenRegression() {
-		final SpatialMatrix<Integer> model = TEST_MODELS.iterator().next();
-		final int initialRndOnsetLength = 3;
-		final int nthElemRandom = 7;
-		runTestGetFirstNthMoveUnseen(model, -1808198854872016138l, initialRndOnsetLength, nthElemRandom);
-	}
-
-	@Test
-	public void testGetFirstNthMoveUnseenSameVals() {
-		final SpatialMatrix<Integer> model = TEST_MODELS.iterator().next();
-		final int initialRndOnsetLength = 4;
-		final int nthElemRandom = 4;
-		runTestGetFirstNthMoveUnseen(model, 1, initialRndOnsetLength, nthElemRandom);
-	}
-
-	@Test
-	public void testGetFirstNthMoveUnseenUnseen() {
-		final SpatialMatrix<Integer> model = TEST_MODELS.iterator().next();
-		final int initialRndOnsetLength = 4;
-		final int nthElemRandom = 5;
-		runTestGetFirstNthMoveUnseen(model, 1, initialRndOnsetLength, nthElemRandom);
-	}
-
-	@Theory
-	public void testGetFirstNthPieceIdUnseen(final SpatialMatrix<Integer> model, final long seed,
-			final int initialRndOnsetLength, final int nthElemRandom) {
-		final Random rnd = new Random(seed);
-		final PatternMoveFactory moveFactory = new PatternMoveFactory(rnd, model, initialRndOnsetLength, nthElemRandom);
-		final Set<Integer> initialMovePieceIds = Stream.generate(moveFactory).limit(initialRndOnsetLength)
+		final PatternMoveFactory moveFactory = new PatternMoveFactory(rnd, model, initialRndOnsetLength);
+		final Set<Integer> intialPieceIds = Stream.generate(moveFactory).limit(initialRndOnsetLength)
 				.map(MapEntryRemapping::getKey)
 				.collect(Collectors.toCollection(() -> Sets.newHashSetWithExpectedSize(initialRndOnsetLength)));
-		final MapEntryRemapping<Integer, SpatialRegion> firstPostInitialMoveWithRandomPieceId = findFirstPostInitialMoveWithRandomPieceId(
-				moveFactory, initialRndOnsetLength, nthElemRandom);
-		final Integer pieceId = firstPostInitialMoveWithRandomPieceId.getKey();
-		Assert.assertFalse(initialMovePieceIds.contains(pieceId));
+		final MapEntryRemapping<Integer, SpatialRegion> firstPostInitialMove = moveFactory.get();
+		Assert.assertNotNull(firstPostInitialMove);
+		final Integer pieceId = firstPostInitialMove.getKey();
+		Assert.assertTrue(intialPieceIds.contains(pieceId));
+	}
+
+	@Theory
+	public void testGetAlternatingPieceIdsSeen(final SpatialMatrix<Integer> model, final long seed,
+			final int initialRndOnsetLength, final int testMoveCount) {
+		final Random rnd = new Random(seed);
+		final PatternMoveFactory moveFactory = new PatternMoveFactory(rnd, model, initialRndOnsetLength);
+		final int expectedUniqueIdCount = initialRndOnsetLength + testMoveCount / 2;
+		final Set<Integer> seenPieceIds = Stream.generate(moveFactory).limit(initialRndOnsetLength)
+				.map(MapEntryRemapping::getKey)
+				.collect(Collectors.toCollection(() -> Sets.newHashSetWithExpectedSize(expectedUniqueIdCount)));
+		for (int nextMoveNo = 0; nextMoveNo < testMoveCount; nextMoveNo++) {
+			final MapEntryRemapping<Integer, SpatialRegion> nextMove = moveFactory.get();
+			Assert.assertNotNull(nextMove);
+			final Integer pieceId = nextMove.getKey();
+			final boolean shouldBeAlreadySeen = nextMoveNo % 2 == 0;
+			Assert.assertEquals(shouldBeAlreadySeen, seenPieceIds.contains(pieceId));
+			seenPieceIds.add(pieceId);
+		}
+		Assert.assertEquals(expectedUniqueIdCount, seenPieceIds.size());
+	}
+
+	@Test
+	public void testGetFirstNthPieceIdSeen() {
+		final SpatialMatrix<Integer> model = TEST_MODELS.iterator().next();
+		final int initialRndOnsetLength = 4;
+		// final int nthElemRandom = 5;
+		runTestGetFirstNthPieceIdSeen(model, 1, initialRndOnsetLength);
+	}
+
+	@Theory
+	public void testGetFirstNthPieceIdSeen(final SpatialMatrix<Integer> model, final long seed,
+			final int initialRndOnsetLength) {
+		runTestGetFirstNthPieceIdSeen(model, seed, initialRndOnsetLength);
+	}
+
+	@Test
+	public void testGetFirstNthPieceIdSeenRegression() {
+		final SpatialMatrix<Integer> model = TEST_MODELS.iterator().next();
+		final int initialRndOnsetLength = 3;
+		// final int nthElemRandom = 7;
+		runTestGetFirstNthPieceIdSeen(model, -1808198854872016138l, initialRndOnsetLength);
+	}
+
+	@Test
+	public void testGetFirstNthPieceIdSeenSameVals() {
+		final SpatialMatrix<Integer> model = TEST_MODELS.iterator().next();
+		final int initialRndOnsetLength = 4;
+		// final int nthElemRandom = 4;
+		runTestGetFirstNthPieceIdSeen(model, 1, initialRndOnsetLength);
 	}
 
 	@Theory
 	public void testGetRndOnsetUniqueMoves(final SpatialMatrix<Integer> model, final long seed,
-			final int initialRndOnsetLength, final int nthElemRandom) {
+			final int initialRndOnsetLength) {
 		final Random rnd = new Random(seed);
-		final PatternMoveFactory moveFactory = new PatternMoveFactory(rnd, model, initialRndOnsetLength, nthElemRandom);
+		final PatternMoveFactory moveFactory = new PatternMoveFactory(rnd, model, initialRndOnsetLength);
 		final Set<MapEntryRemapping<Integer, SpatialRegion>> distinctMoves = Stream.generate(moveFactory)
 				.limit(initialRndOnsetLength)
 				.collect(Collectors.toCollection(() -> Sets.newHashSetWithExpectedSize(initialRndOnsetLength)));
@@ -136,9 +120,9 @@ public final class PatternMoveFactoryTest {
 
 	@Theory
 	public void testGetRndOnsetUniquePieceIds(final SpatialMatrix<Integer> model, final long seed,
-			final int initialRndOnsetLength, final int nthElemRandom) {
+			final int initialRndOnsetLength) {
 		final Random rnd = new Random(seed);
-		final PatternMoveFactory moveFactory = new PatternMoveFactory(rnd, model, initialRndOnsetLength, nthElemRandom);
+		final PatternMoveFactory moveFactory = new PatternMoveFactory(rnd, model, initialRndOnsetLength);
 		final Set<Integer> distinctMovePieceIds = Stream.generate(moveFactory).limit(initialRndOnsetLength)
 				.map(MapEntryRemapping::getKey)
 				.collect(Collectors.toCollection(() -> Sets.newHashSetWithExpectedSize(initialRndOnsetLength)));

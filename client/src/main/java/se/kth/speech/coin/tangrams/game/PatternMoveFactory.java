@@ -44,26 +44,27 @@ public final class PatternMoveFactory implements Supplier<MapEntryRemapping<Inte
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(PatternMoveFactory.class);
 
-	private final SpatialMatrix<Integer> posMatrix;
-
-	private final Random rnd;
-
 	private final List<Integer> history;
 
 	private final int initialRndOnsetLength;
 
-	private final int nthElemRandom;
+	private final SpatialMatrix<Integer> posMatrix;
 
-	public PatternMoveFactory(final Random rnd, final SpatialMatrix<Integer> posMatrix, final int initialRndOnsetLength,
-			final int nthElemRandom) {
-		final int minValidNthElemRandom = 2;
-		if (nthElemRandom < minValidNthElemRandom) {
-			throw new IllegalArgumentException("n-th random element parameter must be at least " + minValidNthElemRandom + ".");
+	private final Random rnd;
+
+	private boolean shouldPickNewPiece = false;
+
+	public PatternMoveFactory(final Random rnd, final SpatialMatrix<Integer> posMatrix,
+			final int initialRndOnsetLength) {
+		final int minInitialRndOnsetLength = 2;
+		if (initialRndOnsetLength < minInitialRndOnsetLength) {
+			throw new IllegalArgumentException(
+					String.format("Initial random onset length was %d but must be at least %d.", initialRndOnsetLength,
+							minInitialRndOnsetLength));
 		}
 		this.rnd = rnd;
 		this.posMatrix = posMatrix;
 		this.initialRndOnsetLength = initialRndOnsetLength;
-		this.nthElemRandom = nthElemRandom;
 		history = new LinkedList<>();
 	}
 
@@ -76,28 +77,24 @@ public final class PatternMoveFactory implements Supplier<MapEntryRemapping<Inte
 	public MapEntryRemapping<Integer, SpatialRegion> get() throws NoSuchElementException {
 		MapEntryRemapping<Integer, SpatialRegion> result;
 		if (history.size() < initialRndOnsetLength) {
-			LOGGER.info("Still creating initial random onset: {}", history);
-			// The first n pieces should be picked randomly as well as every
-			// m-th piece
+			LOGGER.debug("Still creating initial random onset: {}", history);
+			// The first n pieces should be picked randomly
 			final Collection<Integer> pieceIds = posMatrix.getElementPlacements().getAllElements();
 			result = createRandomMove(pieceIds, pieceId -> !history.contains(pieceId));
 		} else {
-			final int turnCount = history.size() + 1;
-			if (turnCount % nthElemRandom == 0) {
-				LOGGER.info("Found turn count {} % {} == 0: {}; Picking unseen piece.",
-						new Object[] { turnCount, nthElemRandom, history });
-				// The first n pieces should be picked randomly as well as every
-				// m-th piece
+			if (shouldPickNewPiece) {
+				LOGGER.debug("Picking previously-unmoved piece.");
 				final Collection<Integer> pieceIds = posMatrix.getElementPlacements().getAllElements();
 				result = createRandomMove(pieceIds, pieceId -> !history.contains(pieceId));
 			} else {
-				LOGGER.info("Picking already-seen piece from history: {}", history);
+				LOGGER.debug("Picking already-seen piece from history: {}", history);
 				// Pick a random element from the turns before the last one
 				final Collection<Integer> pieceIds = history.subList(0, history.size() - 1);
 				result = createRandomMove(pieceIds, pieceId -> true);
 				// "pop" the result from its current position in the history
 				history.remove(result.getKey());
 			}
+			shouldPickNewPiece = !shouldPickNewPiece;
 		}
 		if (result == null) {
 			throw new NoSuchElementException("Could not find any valid moves.");
@@ -124,8 +121,6 @@ public final class PatternMoveFactory implements Supplier<MapEntryRemapping<Inte
 		builder.append(history);
 		builder.append(", initialRndOnsetLength=");
 		builder.append(initialRndOnsetLength);
-		builder.append(", nthElemRandom=");
-		builder.append(nthElemRandom);
 		builder.append("]");
 		return builder.toString();
 	}

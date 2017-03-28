@@ -245,7 +245,7 @@ public final class GameGUI implements Runnable {
 		LOGGER.debug("Setting maximum component size to {}.", screenSize);
 		final int shortestScreenLength = (int) (Math.min(screenSize.width, screenSize.height) * 0.8);
 		final Dimension preferredSize = new Dimension(shortestScreenLength, shortestScreenLength);
-		final PatternMoveFactory moveFactory = new PatternMoveFactory(rnd, controller.getModel(), 4, 2);
+		final PatternMoveFactory moveFactory = new PatternMoveFactory(rnd, controller.getModel(), 4);
 		final GameViewFrame view = new GameViewFrame(gameBoardPanel, controller, moveFactory, closeHook, preferredSize);
 		view.setTitle(title);
 		// gameViewFrame.setJMenuBar(createMenuBar(gameViewFrame));
