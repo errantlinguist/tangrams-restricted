@@ -17,6 +17,7 @@
 package se.kth.speech.coin.tangrams.view;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
@@ -85,6 +86,19 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 	 *
 	 */
 	private static final long serialVersionUID = -4129777933223228599L;
+
+	private static Map<PlayerRole, Font> createContinueButtonPlayerRoleMap(final Font initialFont) {
+		final Map<PlayerRole, Font> result = new EnumMap<>(PlayerRole.class);
+		for (final PlayerRole role : PlayerRole.values()) {
+			result.put(role, initialFont);
+		}
+		final Map<TextAttribute, Object> highlightedTextAttrs = Maps.newHashMapWithExpectedSize(2);
+		highlightedTextAttrs.put(TextAttribute.WEIGHT, TextAttribute.WEIGHT_EXTRABOLD);
+		highlightedTextAttrs.put(TextAttribute.FOREGROUND, Color.RED);
+		result.put(PlayerRole.MOVE_SUBMISSION, initialFont.deriveFont(highlightedTextAttrs));
+		assert result.size() == PlayerRole.values().length;
+		return result;
+	}
 
 	private static Map<Attribute, Object> createInfoFontAttrMap() {
 		final Map<Attribute, Object> result = Maps.newHashMapWithExpectedSize(2);
@@ -167,6 +181,8 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 	private final Set<Window> childWindows = new HashSet<>();
 
 	private final JButton continueButton;
+
+	private final Map<PlayerRole, Font> continueButtonRoleFonts;
 
 	private final ReadinessIndicator playerReadiness;
 
@@ -263,7 +279,9 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 			statusPanel.add(buttonPanel);
 			continueButton = new JButton("Next turn");
 			buttonPanel.add(continueButton);
-			continueButton.setFont(continueButton.getFont().deriveFont(infoFontAttrMap));
+			final Font initialContinueButtonFont = continueButton.getFont().deriveFont(infoFontAttrMap);
+			continueButtonRoleFonts = createContinueButtonPlayerRoleMap(initialContinueButtonFont);
+			continueButton.setFont(continueButtonRoleFonts.get(initialRole));
 			updateMoveButtonEnabled(continueButton, initialRole);
 			continueButton.addActionListener(continueEvent -> {
 				try {
@@ -308,6 +326,9 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 		assert labelText != null && !labelText.isEmpty();
 
 		updateMoveButtonEnabled(continueButton, newRole);
+
+		final Font newContinueButtonFont = continueButtonRoleFonts.get(newRole);
+		continueButton.setFont(newContinueButtonFont);
 	}
 
 	@Override
