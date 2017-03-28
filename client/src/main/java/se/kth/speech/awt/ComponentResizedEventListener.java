@@ -3,11 +3,11 @@ package se.kth.speech.awt;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 
-public final class ResizingEventListener extends ComponentAdapter {
+public final class ComponentResizedEventListener extends ComponentAdapter {
 
 	private final Runnable hook;
 
-	public ResizingEventListener(final Runnable hook) {
+	public ComponentResizedEventListener(final Runnable hook) {
 		this.hook = hook;
 	}
 

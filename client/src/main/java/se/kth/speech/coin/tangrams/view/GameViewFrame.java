@@ -62,7 +62,7 @@ import se.kth.speech.MutablePair;
 import se.kth.speech.SpatialRegion;
 import se.kth.speech.awt.CachingMaximumWidthFontFactory;
 import se.kth.speech.awt.ColorIcon;
-import se.kth.speech.awt.ResizingEventListener;
+import se.kth.speech.awt.ComponentResizedEventListener;
 import se.kth.speech.coin.tangrams.game.Controller;
 import se.kth.speech.coin.tangrams.game.PlayerRole;
 import se.kth.speech.coin.tangrams.game.Turn;
@@ -207,7 +207,7 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 			roleStatusLabelFontSizeUpdater = createRoleStatusLabelFontSizeUpdater(roleStatusLabel, 1.0f,
 					this::getFontMetrics);
 			roleStatusLabelFontSizeUpdater.accept(preferredSize.width);
-			addComponentListener(new ResizingEventListener(this::updateRoleStatusLabelFontSize));
+			addComponentListener(new ComponentResizedEventListener(this::updateRoleStatusLabelFontSize));
 		}
 		{
 			final JPanel roleStatusPanel = new JPanel();

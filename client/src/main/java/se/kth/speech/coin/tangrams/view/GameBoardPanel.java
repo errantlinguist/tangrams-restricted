@@ -56,7 +56,7 @@ import se.kth.speech.Matrix;
 import se.kth.speech.SpatialMatrix;
 import se.kth.speech.SpatialRegion;
 import se.kth.speech.awt.DisablingMouseAdapter;
-import se.kth.speech.awt.ResizingEventListener;
+import se.kth.speech.awt.ComponentResizedEventListener;
 import se.kth.speech.coin.tangrams.game.Controller;
 import se.kth.speech.coin.tangrams.game.PlayerRole;
 import se.kth.speech.coin.tangrams.game.Turn;
@@ -231,11 +231,11 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 		// component
 		final int uniqueRegionCount = posMatrix.getElementPlacements().getMinimalRegions().size();
 		compCoordStartIdxs = Maps.newHashMapWithExpectedSize(uniqueRegionCount);
-		addComponentListener(new ResizingEventListener(() -> compCoordStartIdxs.clear()));
+		addComponentListener(new ComponentResizedEventListener(() -> compCoordStartIdxs.clear()));
 		compCoordSizes = Maps.newHashMapWithExpectedSize(uniqueRegionCount);
-		addComponentListener(new ResizingEventListener(() -> compCoordSizes.clear()));
+		addComponentListener(new ComponentResizedEventListener(() -> compCoordSizes.clear()));
 		imgsScaledToGridSize = Maps.newHashMapWithExpectedSize(posMatrix.getUniqueElementCount());
-		addComponentListener(new ResizingEventListener(() -> imgsScaledToGridSize.clear()));
+		addComponentListener(new ComponentResizedEventListener(() -> imgsScaledToGridSize.clear()));
 
 		{
 			final int[] minSizeDims = createMinimumDimLengths(posMatrix.getDimensions()).toArray();
