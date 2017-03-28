@@ -44,6 +44,8 @@ public final class PatternMoveFactory implements Supplier<MapEntryRemapping<Inte
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(PatternMoveFactory.class);
 
+	private static final int PIECE_ID_LAST_SEEN_TURN_COUNT_OFFSET = 1;
+
 	private final List<Integer> history;
 
 	private final int initialRndOnsetLength;
@@ -56,7 +58,7 @@ public final class PatternMoveFactory implements Supplier<MapEntryRemapping<Inte
 
 	public PatternMoveFactory(final Random rnd, final SpatialMatrix<Integer> posMatrix,
 			final int initialRndOnsetLength) {
-		final int minInitialRndOnsetLength = 2;
+		final int minInitialRndOnsetLength = PIECE_ID_LAST_SEEN_TURN_COUNT_OFFSET + 1;
 		if (initialRndOnsetLength < minInitialRndOnsetLength) {
 			throw new IllegalArgumentException(
 					String.format("Initial random onset length was %d but must be at least %d.", initialRndOnsetLength,
@@ -89,7 +91,8 @@ public final class PatternMoveFactory implements Supplier<MapEntryRemapping<Inte
 			} else {
 				LOGGER.debug("Picking already-seen piece from history: {}", history);
 				// Pick a random element from the turns before the last one
-				final Collection<Integer> pieceIds = history.subList(0, history.size() - 1);
+				final Collection<Integer> pieceIds = history.subList(0,
+						history.size() - PIECE_ID_LAST_SEEN_TURN_COUNT_OFFSET);
 				result = createRandomMove(pieceIds, pieceId -> true);
 				// "pop" the result from its current position in the history
 				history.remove(result.getKey());
