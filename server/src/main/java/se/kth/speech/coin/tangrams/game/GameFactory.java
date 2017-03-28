@@ -23,8 +23,11 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.EnumMap;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Random;
 import java.util.function.BiFunction;
@@ -34,8 +37,10 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.github.errantlinguist.ClassProperties;
+import com.google.common.collect.Maps;
 
 import se.kth.speech.SpatialMatrix;
+import se.kth.speech.URLQueryParamMapFactory;
 import se.kth.speech.awt.RandomHueColorFactory;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 import se.kth.speech.coin.tangrams.content.RandomImageVisualizationInfoFactory;
@@ -47,6 +52,105 @@ import se.kth.speech.coin.tangrams.content.RandomImageVisualizationInfoFactory;
  */
 public final class GameFactory implements Function<String, Game<Integer>> {
 
+	public enum Parameter {
+		ALLOW_FAILED_PLACEMENTS("allowFailedPlacements") {
+			@Override
+			protected Object parseValue(final String value) {
+				return Boolean.valueOf(value);
+			}
+		},
+		COLOR_COUNT("colorCount") {
+			@Override
+			protected Object parseValue(final String value) {
+				return Integer.valueOf(value);
+			}
+		},
+		GRID_DIMENSIONS("gridDims") {
+			@Override
+			protected Object parseValue(final String value) {
+				return MULTIVALUE_PROP_DELIM_PATTERN.splitAsStream(value).mapToInt(Integer::parseInt).toArray();
+			}
+		},
+		OCCUPIED_GRID_AREA("occupiedGridArea") {
+			@Override
+			protected Object parseValue(final String value) {
+				return Double.valueOf(value);
+			}
+		},
+		PIECE_COUNT("pieceCount") {
+			@Override
+			protected Object parseValue(final String value) {
+				return Integer.valueOf(value);
+			}
+		},
+		SEED("seed") {
+			@Override
+			protected Object parseValue(final String value) {
+				return Long.valueOf(value);
+			}
+		};
+
+		private static final Pattern MULTIVALUE_PROP_DELIM_PATTERN = Pattern.compile("\\s*,\\s*");
+
+		final String paramName;
+
+		private Parameter(final String paramName) {
+			this.paramName = paramName;
+		}
+
+		protected Object parseValue(final Properties props) {
+			final String val = props.getProperty(paramName);
+			return parseValue(val);
+		}
+
+		protected abstract Object parseValue(String value);
+
+	}
+
+	private static class GameParamMapFactory implements Function<String, Map<Parameter, Object>> {
+
+		private final Properties defaultProps;
+
+		private GameParamMapFactory(final Properties defaultProps) {
+			this.defaultProps = defaultProps;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see java.util.function.Function#apply(java.lang.Object)
+		 */
+		@Override
+		public Map<Parameter, Object> apply(final String name) {
+			final Map<Parameter, Object> result = new EnumMap<>(Parameter.class);
+			try {
+				final Parameter singleParam = Parameter.SEED;
+				final Object seed = singleParam.parseValue(name);
+				result.put(singleParam, seed);
+				for (final Parameter param : EnumSet.complementOf(EnumSet.of(Parameter.SEED))) {
+					result.put(param, param.parseValue(defaultProps));
+				}
+			} catch (final NumberFormatException nfe) {
+				final Map<Parameter, String> gameParams = GAME_PARAM_PARSER.apply(name);
+				if (gameParams.isEmpty()) {
+					throw new IllegalArgumentException("Invalid game name \"" + name + "\".", nfe);
+				} else {
+					for (final Parameter param : Parameter.values()) {
+						String paramVal = gameParams.get(param);
+						if (paramVal == null) {
+							paramVal = defaultProps.getProperty(param.paramName);
+						}
+						final Object parsedVal = param.parseValue(paramVal);
+						result.put(param, parsedVal);
+					}
+				}
+			}
+			assert result.size() == Parameter.values().length;
+			return result;
+		}
+
+	}
+
 	private static final BiFunction<Image, Toolkit, Image> DEFAULT_POST_COLORING_IMG_TRANSFORMER = new BiFunction<Image, Toolkit, Image>() {
 
 		@Override
@@ -57,16 +161,49 @@ public final class GameFactory implements Function<String, Game<Integer>> {
 
 	};
 
-	private static final Pattern MULTIVALUE_PROP_DELIM_PATTERN = Pattern.compile("\\s*,\\s*");
+	private static final Function<String, Map<Parameter, String>> GAME_PARAM_PARSER;
+
+	static {
+		final Map<String, Parameter> namedParams = createNamedParamMap(Parameter.values(),
+				Collections.singleton(Function.identity()));
+		GAME_PARAM_PARSER = new URLQueryParamMapFactory(Function.identity()).andThen(params -> {
+			final Map<Parameter, String> result = new EnumMap<>(Parameter.class);
+			params.forEach((paramName, paramValue) -> {
+				final Parameter param = namedParams.get(paramName);
+				if (param == null) {
+					throw new IllegalArgumentException("Could not parse parameter named \"" + paramName + "\".");
+				}
+				result.put(param, paramValue);
+			});
+			return result;
+		});
+	}
+
+	private static Function<String, Map<Parameter, Object>> createGameParamMapFactory() {
+		final Properties props = loadClassProps();
+		return new GameParamMapFactory(props);
+	}
 
 	private static RandomPopulatedModelFactory createModelFactory(final ImageVisualizationInfo imgVizInfo,
-			final Properties props) {
-		final boolean allowFailedPlacements = Boolean.parseBoolean(props.getProperty("allowFailedPlacements"));
-		final int[] gridDims = MULTIVALUE_PROP_DELIM_PATTERN.splitAsStream(props.getProperty("gridDims"))
-				.mapToInt(Integer::parseInt).toArray();
-		final double occupiedGridArea = Double.parseDouble(props.getProperty("occupiedGridArea"));
+			final Map<Parameter, Object> gameParams) {
+		final Boolean allowFailedPlacements = (Boolean) gameParams.get(Parameter.ALLOW_FAILED_PLACEMENTS);
+		final int[] gridDims = (int[]) gameParams.get(Parameter.GRID_DIMENSIONS);
+		final Double occupiedGridArea = (Double) gameParams.get(Parameter.OCCUPIED_GRID_AREA);
 		return new RandomPopulatedModelFactory(gridDims, imgVizInfo, Toolkit.getDefaultToolkit(), occupiedGridArea,
 				DEFAULT_POST_COLORING_IMG_TRANSFORMER, allowFailedPlacements);
+	}
+
+	private static Map<String, Parameter> createNamedParamMap(final Parameter[] params,
+			final Collection<? extends Function<? super String, String>> keyFactories) {
+		final int resultSize = params.length * keyFactories.size();
+		final Map<String, Parameter> result = Maps.newHashMapWithExpectedSize(resultSize);
+		for (final Parameter param : params) {
+			for (final Function<? super String, String> keyFactory : keyFactories) {
+				final String key = keyFactory.apply(param.paramName);
+				result.put(key, param);
+			}
+		}
+		return result;
 	}
 
 	private static List<Color> createRandomColorList(final Random rnd,
@@ -86,6 +223,8 @@ public final class GameFactory implements Function<String, Game<Integer>> {
 
 	private final Collection<? super Color> blacklistedColors;
 
+	private final Function<String, Map<Parameter, Object>> gameParamMapFactory = createGameParamMapFactory();
+
 	public GameFactory(final Collection<? super Color> blacklistedColors) {
 		this.blacklistedColors = blacklistedColors;
 	}
@@ -97,27 +236,26 @@ public final class GameFactory implements Function<String, Game<Integer>> {
 	 */
 	@Override
 	public Game<Integer> apply(final String name) {
-		final SpatialMatrix<Integer> imgModel;
-		final ImageVisualizationInfo imgVisualizationInfo;
-		final long seed;
-		try {
-			seed = Long.parseLong(name);
-			final Random rnd = new Random(seed);
-			final Properties props = loadClassProps();
-			final List<Color> colors = createRandomColorList(rnd, blacklistedColors,
-					Integer.parseInt(props.getProperty("colorCount")));
-			final RandomImageVisualizationInfoFactory imgDataFactory = new RandomImageVisualizationInfoFactory(rnd,
-					colors);
+		final Map<Parameter, Object> gameParams = gameParamMapFactory.apply(name);
 
-			final int pieceCount = Integer.parseInt(props.getProperty("pieceCount"));
-			imgVisualizationInfo = imgDataFactory.apply(pieceCount);
-			final RandomPopulatedModelFactory modelFactory = createModelFactory(imgVisualizationInfo, props);
-			imgModel = modelFactory.apply(rnd);
+		final Long seed = (Long) gameParams.get(Parameter.SEED);
+		final Random rnd = new Random(seed);
 
-		} catch (final NumberFormatException e) {
-			throw new IllegalArgumentException("Invalid game name.", e);
-		}
-		return new Game<>(seed, imgModel, imgVisualizationInfo, new EnumMap<>(PlayerRole.class));
+		final Integer colorCount = (Integer) gameParams.get(Parameter.COLOR_COUNT);
+		final List<Color> colors = createRandomColorList(rnd, blacklistedColors, colorCount);
+
+		final RandomImageVisualizationInfoFactory imgDataFactory = new RandomImageVisualizationInfoFactory(rnd, colors);
+		final Integer pieceCount = (Integer) gameParams.get(Parameter.PIECE_COUNT);
+		final ImageVisualizationInfo imgVisualizationInfo = imgDataFactory.apply(pieceCount);
+
+		final RandomPopulatedModelFactory modelFactory = createModelFactory(imgVisualizationInfo, gameParams);
+		final SpatialMatrix<Integer> model = modelFactory.apply(rnd);
+
+		return new Game<>(seed, model, imgVisualizationInfo, new EnumMap<>(PlayerRole.class));
+	}
+
+	public Function<String, Map<Parameter, Object>> getGameParamMapFactory() {
+		return gameParamMapFactory;
 	}
 
 }
