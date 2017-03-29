@@ -17,7 +17,6 @@
 package se.kth.speech.coin.tangrams.view;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
@@ -42,10 +41,8 @@ import java.util.function.IntConsumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import javax.swing.AbstractButton;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
-import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -86,19 +83,6 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 	 *
 	 */
 	private static final long serialVersionUID = -4129777933223228599L;
-
-	private static Map<PlayerRole, Font> createContinueButtonPlayerRoleMap(final Font initialFont) {
-		final Map<PlayerRole, Font> result = new EnumMap<>(PlayerRole.class);
-		for (final PlayerRole role : PlayerRole.values()) {
-			result.put(role, initialFont);
-		}
-		final Map<TextAttribute, Object> highlightedTextAttrs = Maps.newHashMapWithExpectedSize(2);
-		highlightedTextAttrs.put(TextAttribute.WEIGHT, TextAttribute.WEIGHT_EXTRABOLD);
-		highlightedTextAttrs.put(TextAttribute.FOREGROUND, Color.RED);
-		result.put(PlayerRole.MOVE_SUBMISSION, initialFont.deriveFont(highlightedTextAttrs));
-		assert result.size() == PlayerRole.values().length;
-		return result;
-	}
 
 	private static Map<Attribute, Object> createInfoFontAttrMap() {
 		final Map<Attribute, Object> result = Maps.newHashMapWithExpectedSize(2);
@@ -174,21 +158,15 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 		return PlayerRole.SELECTING.equals(role) ? PlayerTurnStatus.READY : PlayerTurnStatus.NOT_READY;
 	}
 
-	private static void updateMoveButtonEnabled(final AbstractButton button, final PlayerRole role) {
-		button.setEnabled(PlayerRole.MOVE_SUBMISSION.equals(role));
-	}
-
 	private final Set<Window> childWindows = new HashSet<>();
-
-	private final JButton continueButton;
-
-	private final Map<PlayerRole, Font> continueButtonRoleFonts;
 
 	private final ReadinessIndicator playerReadiness;
 
 	private final JLabel roleStatusLabel;
 
 	private final IntConsumer roleStatusLabelFontSizeUpdater;
+
+	private final Runnable nextTurnHook;
 
 	GameViewFrame(final GameBoardPanel boardPanel, final Controller controller,
 			final Supplier<? extends MapEntryRemapping<Integer, SpatialRegion>> moveFactory, final Runnable closeHook,
@@ -257,7 +235,6 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 			final Component sidePanelRightMargin = Box.createRigidArea(marginDim);
 			statusPanel.add(sidePanelRightMargin);
 
-			final Map<Attribute, Object> infoFontAttrMap = createInfoFontAttrMap();
 			{
 				final JTable controllerInfoTable = new JTable(new ControllerInfoTableModel(controller));
 				final Font infoFont = controllerInfoTable.getFont().deriveFont(createInfoFontAttrMap());
@@ -275,15 +252,7 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 				tablePanel.add(controllerInfoTable);
 			}
 
-			final JPanel buttonPanel = new JPanel();
-			statusPanel.add(buttonPanel);
-			continueButton = new JButton("Next turn");
-			buttonPanel.add(continueButton);
-			final Font initialContinueButtonFont = continueButton.getFont().deriveFont(infoFontAttrMap);
-			continueButtonRoleFonts = createContinueButtonPlayerRoleMap(initialContinueButtonFont);
-			continueButton.setFont(continueButtonRoleFonts.get(initialRole));
-			updateMoveButtonEnabled(continueButton, initialRole);
-			continueButton.addActionListener(continueEvent -> {
+			nextTurnHook = () -> {
 				try {
 					final MapEntryRemapping<Integer, SpatialRegion> nextMove = moveFactory.get();
 					final Integer pieceId = nextMove.getKey();
@@ -296,9 +265,9 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 							JOptionPane.WARNING_MESSAGE);
 					LOGGER.warn("No more moves available.", e);
 				}
-			});
+			};
+			updateNextTurnResponsibility(initialRole);
 		}
-
 	}
 
 	@Override
@@ -325,10 +294,7 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 		final String labelText = roleStatusLabel.getText();
 		assert labelText != null && !labelText.isEmpty();
 
-		updateMoveButtonEnabled(continueButton, newRole);
-
-		final Font newContinueButtonFont = continueButtonRoleFonts.get(newRole);
-		continueButton.setFont(newContinueButtonFont);
+		updateNextTurnResponsibility(newRole);
 	}
 
 	@Override
@@ -372,6 +338,14 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 	@Override
 	public void updateTurnCount(final int newCount) {
 		LOGGER.debug("Notified of new turn count.");
+	}
+
+	private void updateNextTurnResponsibility(final PlayerRole role) {
+		if (PlayerRole.MOVE_SUBMISSION.equals(role)) {
+			JOptionPane.showMessageDialog(this, "Press \"OK\" to continue to the next turn.", "Next turn",
+					JOptionPane.INFORMATION_MESSAGE);
+			nextTurnHook.run();
+		}
 	}
 
 	private void updateRoleStatusLabelFontSize() {
