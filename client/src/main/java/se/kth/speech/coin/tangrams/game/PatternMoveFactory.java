@@ -153,9 +153,10 @@ public final class PatternMoveFactory
 		if (isStillBuildingInitialOnset()) {
 			LOGGER.debug("Still building initial random onset --- curent history: {}", history);
 		} else {
-			final boolean wasSeenBefore = history.remove(pieceId);
-			assert wasSeenBefore != shouldPickNewPiece;
-			shouldPickNewPiece = !shouldPickNewPiece;
+			history.remove(pieceId);
+//			final boolean wasSeenBefore = history.remove(pieceId);
+//			assert wasSeenBefore != shouldPickNewPiece;
+//			shouldPickNewPiece = !shouldPickNewPiece;
 		}
 		addSeenPiece(pieceId);
 	}
