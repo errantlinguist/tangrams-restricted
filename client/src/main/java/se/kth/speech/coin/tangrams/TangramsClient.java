@@ -384,7 +384,7 @@ public final class TangramsClient implements Runnable {
 
 												// Set up game GUI
 												final String title = "Tangrams: " + playerId;
-												final Supplier<Path> timestampedLogOutdirPathSupplier = () -> timestampedLogDir.toPath();
+												final Supplier<Path> timestampedLogDirPathSupplier = () -> timestampedLogDir.toPath();
 												final Runnable closeHook = () -> {
 													LOGGER.info(
 															"Closing main window; Cleaning up background resources.");
@@ -392,7 +392,7 @@ public final class TangramsClient implements Runnable {
 													irisSystemStopper.run();
 												};
 												EventQueue.invokeLater(new GameGUI(title, viewCenterpoint, gameState,
-														timestampedLogOutdirPathSupplier, closeHook, analysisEnabled));
+														timestampedLogDirPathSupplier, closeHook, analysisEnabled));
 
 											} catch (final InvocationTargetException e) {
 												final RuntimeException wrapper = new RuntimeException(e);
