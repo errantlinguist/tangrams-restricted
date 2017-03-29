@@ -17,7 +17,6 @@
 package se.kth.speech.coin.tangrams.iristk;
 
 import java.io.File;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.function.Supplier;
 
@@ -27,34 +26,6 @@ import java.util.function.Supplier;
  *
  */
 public final class LogDirectoryFactory implements Supplier<File> {
-
-	private static final ThreadLocal<SimpleDateFormat> DATE_FORMAT = new ThreadLocal<SimpleDateFormat>() {
-
-		/*
-		 * (non-Javadoc)
-		 *
-		 * @see java.lang.ThreadLocal#initialValue()
-		 */
-		@Override
-		protected SimpleDateFormat initialValue() {
-			return new SimpleDateFormat("yyyy-MM-dd");
-		}
-
-	};
-
-	private static final ThreadLocal<SimpleDateFormat> TIME_FORMAT = new ThreadLocal<SimpleDateFormat>() {
-
-		/*
-		 * (non-Javadoc)
-		 *
-		 * @see java.lang.ThreadLocal#initialValue()
-		 */
-		@Override
-		protected SimpleDateFormat initialValue() {
-			return new SimpleDateFormat("HH-mm-ss");
-		}
-
-	};
 
 	private final File outdir;
 
@@ -72,8 +43,8 @@ public final class LogDirectoryFactory implements Supplier<File> {
 	 */
 	@Override
 	public File get() {
-		final File dateSubdir = new File(outdir, DATE_FORMAT.get().format(systemLoggingStartTime));
-		return new File(dateSubdir, TIME_FORMAT.get().format(systemLoggingStartTime));
+		final File dateSubdir = new File(outdir, LoggingFormats.DATE_FORMAT.get().format(systemLoggingStartTime));
+		return new File(dateSubdir, LoggingFormats.TIME_FORMAT.get().format(systemLoggingStartTime));
 	}
 
 }
