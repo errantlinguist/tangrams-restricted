@@ -26,6 +26,7 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.font.TextAttribute;
 import java.text.AttributedCharacterIterator.Attribute;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -35,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
+import java.util.Queue;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.IntConsumer;
@@ -160,13 +162,15 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 
 	private final Set<Window> childWindows = new HashSet<>();
 
+	private final Runnable nextTurnHook;
+
 	private final ReadinessIndicator playerReadiness;
 
 	private final JLabel roleStatusLabel;
 
 	private final IntConsumer roleStatusLabelFontSizeUpdater;
 
-	private final Runnable nextTurnHook;
+	private final Queue<Runnable> componentShownHooks;
 
 	GameViewFrame(final GameBoardPanel boardPanel, final Controller controller,
 			final Supplier<? extends MapEntryRemapping<Integer, SpatialRegion>> moveFactory, final Runnable closeHook,
@@ -266,7 +270,16 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 					LOGGER.warn("No more moves available.", e);
 				}
 			};
-			updateNextTurnResponsibility(initialRole);
+			componentShownHooks = new ArrayDeque<>(1);
+			componentShownHooks.add(() -> updateNextTurnResponsibility(initialRole));
+		}
+	}
+
+	@Override
+	public void setVisible(final boolean visible) {
+		super.setVisible(visible);
+		if (visible && !componentShownHooks.isEmpty()) {
+			componentShownHooks.remove().run();
 		}
 	}
 
