@@ -141,13 +141,13 @@ public final class GameGUI implements Runnable {
 	private final Point viewCenterpoint;
 
 	public GameGUI(final String title, final Point viewCenterpoint, final GameState gameState,
-			final Supplier<? extends Path> logOutdirSupplier, final Runnable closeHook, final boolean analysisEnabled) {
+			final Supplier<? extends Path> logOutdirPathSupplier, final Runnable closeHook, final boolean analysisEnabled) {
 		this.title = title;
 		this.viewCenterpoint = viewCenterpoint;
 		this.gameState = gameState;
 		this.analysisEnabled = analysisEnabled;
 		final ExecutorService screenshotLoggingExecutor = Executors.newSingleThreadExecutor();
-		screenshotLogger = new ScreenshotLogger(logOutdirSupplier, () -> gameState.getController().getPlayerId(),
+		screenshotLogger = new ScreenshotLogger(logOutdirPathSupplier, () -> gameState.getController().getPlayerId(),
 				screenshotLoggingExecutor);
 		this.closeHook = () -> {
 			try {
@@ -162,7 +162,7 @@ public final class GameGUI implements Runnable {
 			imgVizInfoWriter = imgVizInfoData -> {
 				final ExecutorService imgInfoWritingExecutor = Executors.newSingleThreadExecutor();
 				imgInfoWritingExecutor.submit(() -> {
-					final Path outdir = logOutdirSupplier.get();
+					final Path outdir = logOutdirPathSupplier.get();
 					final Path outfile = outdir.resolve(IMAGE_INFO_LOGFILE_NAME);
 					try (final BufferedWriter writer = Files.newBufferedWriter(outfile)) {
 						final ImageVisualizationInfoTableWriter infoWriter = new ImageVisualizationInfoTableWriter(

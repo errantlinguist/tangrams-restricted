@@ -45,13 +45,13 @@ final class ScreenshotLogger implements BiConsumer<Component, String> {
 
 	private final ExecutorService executor;
 
-	private final Supplier<? extends Path> outdirSupplier;
+	private final Supplier<? extends Path> outdirPathSupplier;
 
 	private final Supplier<String> playerIdGetter;
 
-	ScreenshotLogger(final Supplier<? extends Path> outdirSupplier, final Supplier<String> playerIdGetter,
+	ScreenshotLogger(final Supplier<? extends Path> outdirPathSupplier, final Supplier<String> playerIdGetter,
 			final ExecutorService executor) {
-		this.outdirSupplier = outdirSupplier;
+		this.outdirPathSupplier = outdirPathSupplier;
 		this.playerIdGetter = playerIdGetter;
 		this.executor = executor;
 	}
@@ -66,7 +66,7 @@ final class ScreenshotLogger implements BiConsumer<Component, String> {
 	public void accept(final Component view, final String filenamePrefix) {
 		final BufferedImage img = ComponentImageCapture.createScreenshot(view);
 		executor.submit(() -> {
-			final Path outdir = outdirSupplier.get();
+			final Path outdir = outdirPathSupplier.get();
 			final String playerId = playerIdGetter.get();
 			LOGGER.debug("Creating and saving screenshot \"{}\", taken by \"{}\".",
 					new Object[] { filenamePrefix, playerId });
