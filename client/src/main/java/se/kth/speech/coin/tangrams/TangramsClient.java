@@ -26,6 +26,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.EnumMap;
@@ -33,6 +34,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -63,6 +66,7 @@ import se.kth.speech.coin.tangrams.iristk.IrisSystemStopper;
 import se.kth.speech.coin.tangrams.iristk.LogDirectoryFactory;
 import se.kth.speech.coin.tangrams.view.ConnectionStatusFrame;
 import se.kth.speech.coin.tangrams.view.GameGUI;
+import se.kth.speech.io.DirectoryZipArchiver;
 
 /**
  *
@@ -186,6 +190,20 @@ public final class TangramsClient implements Runnable {
 		final Options result = new Options();
 		Arrays.stream(Parameter.values()).map(Parameter::get).forEach(opt -> result.addOption(opt));
 		return result;
+	}
+
+	private static Runnable createSessionLogArchiver(final Path rootLogDirPath, final Date systemLoggingStartTime,
+			final Supplier<? extends Path> timestampedLogDirPathSupplier, final String playerId) {
+		return () -> {
+			final String archiveFilename = new SimpleDateFormat("yyyyMMdd-HHmm").format(systemLoggingStartTime) + "-"
+					+ playerId + ".zip";
+			final Path archiveFilePath = rootLogDirPath.resolve(archiveFilename);
+			System.out.println(String.format("Archiving session logs to \"%s\"...", archiveFilePath));
+			LOGGER.info("Archiving session logs to \"{}\"...", archiveFilePath);
+			new DirectoryZipArchiver().accept(timestampedLogDirPathSupplier.get(), archiveFilePath);
+			LOGGER.info("Finished archiving session logs to \"{}\".", archiveFilePath);
+			System.out.println(String.format("Finished archiving session logs to \"%s\".", archiveFilePath));
+		};
 	}
 
 	private static String parseBrokerHost(final CommandLine cl) {
@@ -324,11 +342,14 @@ public final class TangramsClient implements Runnable {
 					// properly shut down in the case an exception occurs
 					try {
 						Runtime.getRuntime().addShutdownHook(new Thread(irisSystemStopper));
-						final String rootLogDirPath = PROPS.getProperty("log.outdir");
-						final File rootLogDir = Paths.get(rootLogDirPath).toFile();
+						final Path rootLogDirPath = Paths.get(PROPS.getProperty("log.outdir"));
+						final File rootLogDir = rootLogDirPath.toFile();
 						final Date systemLoggingStartTime = new Date();
-						final File timestampedLogDir = new LogDirectoryFactory(rootLogDir, systemLoggingStartTime).get();
+						final File timestampedLogDir = new LogDirectoryFactory(rootLogDir, systemLoggingStartTime)
+								.get();
 						timestampedLogDir.mkdirs();
+						final Supplier<Path> timestampedLogDirPathSupplier = () -> timestampedLogDir.toPath();
+
 						final Entry<Consumer<String>, Runnable> recordingHooks;
 						if (recordingEnabled) {
 							recordingHooks = RecordingManagement.createRecordingHooks(() -> timestampedLogDir);
@@ -383,16 +404,24 @@ public final class TangramsClient implements Runnable {
 														viewLocation.y + connectionStatusView.getHeight() / 2);
 
 												// Set up game GUI
-												final String title = "Tangrams: " + playerId;
-												final Supplier<Path> timestampedLogDirPathSupplier = () -> timestampedLogDir.toPath();
+												final ExecutorService backgroundJobService = Executors
+														.newCachedThreadPool();
 												final Runnable closeHook = () -> {
 													LOGGER.info(
 															"Closing main window; Cleaning up background resources.");
-													recordingHooks.getValue().run();
-													irisSystemStopper.run();
+													backgroundJobService.execute(recordingHooks.getValue());
+													backgroundJobService.execute(irisSystemStopper);
+
+													final Runnable sessionLogArchiver = createSessionLogArchiver(
+															rootLogDirPath, systemLoggingStartTime,
+															timestampedLogDirPathSupplier, playerId);
+													backgroundJobService.execute(sessionLogArchiver);
+													backgroundJobService.shutdown();
 												};
+												final String title = "Tangrams: " + playerId;
 												EventQueue.invokeLater(new GameGUI(title, viewCenterpoint, gameState,
-														timestampedLogDirPathSupplier, closeHook, analysisEnabled));
+														timestampedLogDirPathSupplier, backgroundJobService, closeHook,
+														analysisEnabled));
 
 											} catch (final InvocationTargetException e) {
 												final RuntimeException wrapper = new RuntimeException(e);
@@ -428,6 +457,7 @@ public final class TangramsClient implements Runnable {
 							recordingHooks.getValue().run();
 							throw exAfterRecorderConst;
 						}
+
 					} catch (final Exception exAfterIrisTKConst) {
 						// NOTE: Finally doesn't work because of the threads
 						// running in the background: A "finally" block will

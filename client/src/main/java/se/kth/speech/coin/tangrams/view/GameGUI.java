@@ -36,7 +36,6 @@ import java.util.Random;
 import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -141,27 +140,20 @@ public final class GameGUI implements Runnable {
 	private final Point viewCenterpoint;
 
 	public GameGUI(final String title, final Point viewCenterpoint, final GameState gameState,
-			final Supplier<? extends Path> logOutdirPathSupplier, final Runnable closeHook, final boolean analysisEnabled) {
+			final Supplier<? extends Path> logOutdirPathSupplier, final ExecutorService backgroundJobService,
+			final Runnable closeHook, final boolean analysisEnabled) {
 		this.title = title;
 		this.viewCenterpoint = viewCenterpoint;
 		this.gameState = gameState;
 		this.analysisEnabled = analysisEnabled;
-		final ExecutorService screenshotLoggingExecutor = Executors.newSingleThreadExecutor();
 		screenshotLogger = new ScreenshotLogger(logOutdirPathSupplier, () -> gameState.getController().getPlayerId(),
-				screenshotLoggingExecutor);
-		this.closeHook = () -> {
-			try {
-				closeHook.run();
-			} finally {
-				screenshotLoggingExecutor.shutdown();
-			}
-		};
+				backgroundJobService);
+		this.closeHook = closeHook;
 
 		{
 			final Function<URL, String> imgNameFactory = new URLFilenameBaseSplitter();
 			imgVizInfoWriter = imgVizInfoData -> {
-				final ExecutorService imgInfoWritingExecutor = Executors.newSingleThreadExecutor();
-				imgInfoWritingExecutor.submit(() -> {
+				backgroundJobService.submit(() -> {
 					final Path outdir = logOutdirPathSupplier.get();
 					final Path outfile = outdir.resolve(IMAGE_INFO_LOGFILE_NAME);
 					try (final BufferedWriter writer = Files.newBufferedWriter(outfile)) {
@@ -254,8 +246,8 @@ public final class GameGUI implements Runnable {
 
 		view.pack();
 
-		final Point viewLocation = new Point(viewCenterpoint.x - (view.getWidth() / 2),
-				viewCenterpoint.y - (view.getHeight() / 2));
+		final Point viewLocation = new Point(viewCenterpoint.x - view.getWidth() / 2,
+				viewCenterpoint.y - view.getHeight() / 2);
 		view.setLocation(viewLocation);
 		view.setVisible(true);
 
