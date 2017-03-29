@@ -17,6 +17,7 @@
 package se.kth.speech.coin.tangrams.game;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -248,26 +249,25 @@ public final class PatternMoveFactory
 	private Optional<MapEntryRemapping<Integer, SpatialRegion>> createRandomMove(final Collection<Integer> pieceIds,
 			final Predicate<? super Integer> pieceIdFilter) {
 		LOGGER.debug("Creating random move.");
-		// TODO: estimate number of failed tries better
-		final Set<Integer> failedIds = Sets.newHashSetWithExpectedSize(Math.min(pieceIds.size(), 16));
-
+		final LinkedList<Integer> idsToTry = new LinkedList<>(pieceIds);
+		Collections.shuffle(idsToTry, rnd);
+		
 		Optional<MapEntryRemapping<Integer, SpatialRegion>> result = Optional.empty();
 		do {
-			final Integer pieceId = RandomCollections.getRandomElement(pieceIds, rnd);
-			if (pieceIdFilter.test(pieceId)) {
-				result = createRandomMove(pieceId);
+			final Integer idToTry = idsToTry.pop();
+			if (pieceIdFilter.test(idToTry)) {
+				result = createRandomMove(idToTry);
 				if (result.isPresent()) {
-					LOGGER.debug("Found a valid move for piece ID \"{}\".", pieceId);
+					LOGGER.debug("Found a valid move for piece ID \"{}\".", idToTry);
 					break;
 				} else {
-					LOGGER.debug("Could not find a valid move for piece ID \"{}\".", pieceId);
+					LOGGER.debug("Could not find a valid move for piece ID \"{}\".", idToTry);
 				}
 			} else {
-				LOGGER.debug("Piece ID \"{}\" failed filter test; Cannot move again (yet).", pieceId);
-				failedIds.add(pieceId);
+				LOGGER.debug("Piece ID \"{}\" failed filter test; Cannot move again (yet).", idToTry);
 			}
 
-		} while (!result.isPresent() && failedIds.size() < pieceIds.size());
+		} while (!result.isPresent() && !idsToTry.isEmpty());
 		return result;
 	}
 
