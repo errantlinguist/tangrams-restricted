@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Date;
@@ -323,14 +324,14 @@ public final class TangramsClient implements Runnable {
 					// properly shut down in the case an exception occurs
 					try {
 						Runtime.getRuntime().addShutdownHook(new Thread(irisSystemStopper));
-						final String logOutdirPath = PROPS.getProperty("log.outdir");
-						final File logOutdir = Paths.get(logOutdirPath).toFile();
+						final String rootLogDirPath = PROPS.getProperty("log.outdir");
+						final File rootLogDir = Paths.get(rootLogDirPath).toFile();
 						final Date systemLoggingStartTime = new Date();
-						final File logDir = new LogDirectoryFactory(logOutdir, systemLoggingStartTime).get();
-						logDir.mkdirs();
+						final File timestampedLogDir = new LogDirectoryFactory(rootLogDir, systemLoggingStartTime).get();
+						timestampedLogDir.mkdirs();
 						final Entry<Consumer<String>, Runnable> recordingHooks;
 						if (recordingEnabled) {
-							recordingHooks = RecordingManagement.createRecordingHooks(() -> logDir);
+							recordingHooks = RecordingManagement.createRecordingHooks(() -> timestampedLogDir);
 						} else {
 							LOGGER.warn("Audio recording is disabled; Are you sure you want to do this?");
 							recordingHooks = new MutablePair<>(id -> {
@@ -355,7 +356,7 @@ public final class TangramsClient implements Runnable {
 							try {
 								system.connectToBroker(brokerTicket, brokerHost, brokerPort);
 								{
-									final LoggingModule loggingModule = new LoggingModule(logOutdir, NameFilter.ALL,
+									final LoggingModule loggingModule = new LoggingModule(rootLogDir, NameFilter.ALL,
 											false);
 									system.addModule(loggingModule);
 									loggingModule.startLogging(systemLoggingStartTime.getTime());
@@ -383,6 +384,7 @@ public final class TangramsClient implements Runnable {
 
 												// Set up game GUI
 												final String title = "Tangrams: " + playerId;
+												final Supplier<Path> timestampedLogOutdirPathSupplier = () -> timestampedLogDir.toPath();
 												final Runnable closeHook = () -> {
 													LOGGER.info(
 															"Closing main window; Cleaning up background resources.");
@@ -390,7 +392,7 @@ public final class TangramsClient implements Runnable {
 													irisSystemStopper.run();
 												};
 												EventQueue.invokeLater(new GameGUI(title, viewCenterpoint, gameState,
-														() -> logDir.toPath(), closeHook, analysisEnabled));
+														timestampedLogOutdirPathSupplier, closeHook, analysisEnabled));
 
 											} catch (final InvocationTargetException e) {
 												final RuntimeException wrapper = new RuntimeException(e);
