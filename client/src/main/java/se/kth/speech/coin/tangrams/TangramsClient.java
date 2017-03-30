@@ -426,7 +426,7 @@ public final class TangramsClient implements Runnable {
 											} catch (final InvocationTargetException e) {
 												final RuntimeException wrapper = new RuntimeException(e);
 												LOGGER.error(String.format(
-														"An %s occurred while running the successful connection hook; Re-throwing as a(n) %s.",
+														"A(n) %s occurred while running the successful connection hook; Re-throwing as a(n) %s.",
 														e.getClass().getSimpleName(),
 														wrapper.getClass().getSimpleName()), e);
 												throw wrapper;
