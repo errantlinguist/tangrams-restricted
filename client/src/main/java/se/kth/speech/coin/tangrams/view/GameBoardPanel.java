@@ -86,7 +86,7 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 		 * @see javax.swing.SwingWorker#doInBackground()
 		 */
 		@Override
-		protected Void doInBackground() throws Exception {
+		protected Void doInBackground() {
 			delegate.run();
 			return null;
 		}
