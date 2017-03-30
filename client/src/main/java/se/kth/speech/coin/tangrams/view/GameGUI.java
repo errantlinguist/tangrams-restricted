@@ -169,9 +169,9 @@ public final class GameGUI implements Runnable {
 	}
 
 	public Entry<GameBoardPanel, ImageLoadingImageViewInfoFactory> createDebugGameBoardImgViewInfoFactory(
-			final Controller controller, final Map<Integer, Image> pieceImgs, final int uniqueImageResourceCount,
-			final Map<BoardArea, Color> boardAreaColors) {
-		final GameBoardPanel gameBoardPanel = new GameBoardPanel(controller.getModel(), pieceImgs, controller,
+			final Controller controller, final Function<? super Integer, ? extends Image> pieceIdImageFactory,
+			final int uniqueImageResourceCount, final Map<BoardArea, Color> boardAreaColors) {
+		final GameBoardPanel gameBoardPanel = new GameBoardPanel(controller.getModel(), pieceIdImageFactory, controller,
 				boardAreaColors.get(BoardArea.HIGHLIGHT), screenshotLogger, true);
 		gameBoardPanel.setBackground(boardAreaColors.get(BoardArea.BACKGROUND));
 		final OpaqueTransparencyReplacementImageFilter imgFilter = new OpaqueTransparencyReplacementImageFilter(128);
@@ -185,9 +185,9 @@ public final class GameGUI implements Runnable {
 	}
 
 	public Entry<GameBoardPanel, ImageLoadingImageViewInfoFactory> createProdGameBoardImgViewInfoFactory(
-			final Controller controller, final Map<Integer, Image> pieceImgs, final int uniqueImageResourceCount,
-			final Map<BoardArea, Color> boardAreaColors) {
-		final GameBoardPanel gameBoardPanel = new GameBoardPanel(controller.getModel(), pieceImgs, controller,
+			final Controller controller, final Function<? super Integer, ? extends Image> pieceIdImageFactory,
+			final int uniqueImageResourceCount, final Map<BoardArea, Color> boardAreaColors) {
+		final GameBoardPanel gameBoardPanel = new GameBoardPanel(controller.getModel(), pieceIdImageFactory, controller,
 				boardAreaColors.get(BoardArea.HIGHLIGHT), screenshotLogger);
 		gameBoardPanel.setBackground(boardAreaColors.get(BoardArea.BACKGROUND));
 		final ImageLoadingImageViewInfoFactory imgViewInfoFactory = new ImageLoadingImageViewInfoFactory(
@@ -209,11 +209,12 @@ public final class GameGUI implements Runnable {
 		final Random rnd = gameState.getRnd();
 		final Map<Integer, Image> pieceImgs = Maps.newHashMapWithExpectedSize(imgVizInfoData.size());
 
+		final Function<Integer, Image> pieceIdImgGetter = pieceImgs::get;
 		final int uniqueImageResourceCount = imgVizInfo.getUniqueImageResourceCount();
 		final Entry<GameBoardPanel, ImageLoadingImageViewInfoFactory> gameBoardImgViewInfoFactory = analysisEnabled
-				? createDebugGameBoardImgViewInfoFactory(controller, pieceImgs, uniqueImageResourceCount,
+				? createDebugGameBoardImgViewInfoFactory(controller, pieceIdImgGetter, uniqueImageResourceCount,
 						boardAreaColors)
-				: createProdGameBoardImgViewInfoFactory(controller, pieceImgs, uniqueImageResourceCount,
+				: createProdGameBoardImgViewInfoFactory(controller, pieceIdImgGetter, uniqueImageResourceCount,
 						boardAreaColors);
 		final GameBoardPanel gameBoardPanel = gameBoardImgViewInfoFactory.getKey();
 		final ImageLoadingImageViewInfoFactory imgViewInfoFactory = gameBoardImgViewInfoFactory.getValue();

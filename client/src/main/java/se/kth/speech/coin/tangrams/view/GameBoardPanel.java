@@ -39,6 +39,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -55,8 +56,8 @@ import com.google.common.collect.Sets;
 import se.kth.speech.Matrix;
 import se.kth.speech.SpatialMatrix;
 import se.kth.speech.SpatialRegion;
-import se.kth.speech.awt.DisablingMouseAdapter;
 import se.kth.speech.awt.ComponentResizedEventListener;
+import se.kth.speech.awt.DisablingMouseAdapter;
 import se.kth.speech.coin.tangrams.game.Controller;
 import se.kth.speech.coin.tangrams.game.PlayerRole;
 import se.kth.speech.coin.tangrams.game.Turn;
@@ -108,6 +109,9 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 
 	private static final int MIN_GRID_SQUARE_LENGTH;
 
+	private static final RenderingHints RENDERING_HINTS = new RenderingHints(RenderingHints.KEY_RENDERING,
+			RenderingHints.VALUE_RENDER_QUALITY);
+
 	/**
 	 *
 	 */
@@ -136,9 +140,6 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 		IMG_TOTAL_PADDING = IMG_SIDE_PADDING * 2;
 		MIN_GRID_SQUARE_LENGTH = 10 + IMG_TOTAL_PADDING;
 	}
-
-	private static final RenderingHints RENDERING_HINTS = new RenderingHints(RenderingHints.KEY_RENDERING,
-			RenderingHints.VALUE_RENDER_QUALITY);
 
 	private static int[] createComponentCoordSizeArray(final SpatialRegion region, final int colWidth,
 			final int rowHeight) {
@@ -196,7 +197,7 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 
 	private final BiConsumer<? super GameBoardPanel, ? super Turn> localTurnCompletionViewLogger;
 
-	private final Map<Integer, Image> pieceImgs;
+	private final Function<? super Integer, ? extends Image> pieceIdImageFactory;
 
 	private final SpatialMatrix<Integer> posMatrix;
 
@@ -204,17 +205,18 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 
 	private final BiConsumer<Component, String> viewLogger;
 
-	GameBoardPanel(final SpatialMatrix<Integer> posMatrix, final Map<Integer, Image> pieceImgs,
-			final Controller controller, final Color highlightColor,
-			final BiConsumer<Component, String> screenshotLogger) {
-		this(posMatrix, pieceImgs, controller, highlightColor, screenshotLogger, false);
+	GameBoardPanel(final SpatialMatrix<Integer> posMatrix,
+			final Function<? super Integer, ? extends Image> pieceIdImageFactory, final Controller controller,
+			final Color highlightColor, final BiConsumer<? super Component, ? super String> screenshotLogger) {
+		this(posMatrix, pieceIdImageFactory, controller, highlightColor, screenshotLogger, false);
 	}
 
-	GameBoardPanel(final SpatialMatrix<Integer> posMatrix, final Map<Integer, Image> pieceImgs,
-			final Controller controller, final Color highlightColor,
-			final BiConsumer<Component, String> screenshotLogger, final boolean analysisEnabled) {
+	GameBoardPanel(final SpatialMatrix<Integer> posMatrix,
+			final Function<? super Integer, ? extends Image> pieceIdImageFactory, final Controller controller,
+			final Color highlightColor, final BiConsumer<? super Component, ? super String> screenshotLogger,
+			final boolean analysisEnabled) {
 		this.posMatrix = posMatrix;
-		this.pieceImgs = pieceImgs;
+		this.pieceIdImageFactory = pieceIdImageFactory;
 		this.controller = controller;
 		this.highlightColor = highlightColor;
 		controller.getListeners().add(this);
@@ -465,15 +467,15 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 		final int colWidth = getGridColWidth();
 		final int rowHeight = getGridRowHeight();
 
-		posMatrix.getElementPlacements()
-		.getMinimalRegionElements().entries().parallelStream().forEach(piecePlacement -> {
-			final SpatialRegion region = piecePlacement.getKey();
-			final Integer pieceId = piecePlacement.getValue();
-			final Image initialImg = pieceImgs.get(pieceId);
-			final Image scaledImg = fetchImageScaledToGridSize(initialImg, region, colWidth, rowHeight);
-			final int[] startIdxs = fetchComponentCoordStartIdxArray(region, colWidth, rowHeight);
-			g.drawImage(scaledImg, startIdxs[0] + IMG_SIDE_PADDING, startIdxs[1] + IMG_SIDE_PADDING, null);			
-		});
+		posMatrix.getElementPlacements().getMinimalRegionElements().entries().parallelStream()
+				.forEach(piecePlacement -> {
+					final SpatialRegion region = piecePlacement.getKey();
+					final Integer pieceId = piecePlacement.getValue();
+					final Image initialImg = pieceIdImageFactory.apply(pieceId);
+					final Image scaledImg = fetchImageScaledToGridSize(initialImg, region, colWidth, rowHeight);
+					final int[] startIdxs = fetchComponentCoordStartIdxArray(region, colWidth, rowHeight);
+					g.drawImage(scaledImg, startIdxs[0] + IMG_SIDE_PADDING, startIdxs[1] + IMG_SIDE_PADDING, null);
+				});
 	}
 
 	private void drawRegionHighlights(final Graphics g) {
