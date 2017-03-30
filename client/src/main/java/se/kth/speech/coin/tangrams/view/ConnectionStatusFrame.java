@@ -46,11 +46,7 @@ public final class ConnectionStatusFrame extends JFrame {
 	 */
 	private static final long serialVersionUID = 371624346692039531L;
 
-	private final JLabel label;
-
 	private Status status;
-
-	private final Map<Status, String> statusLabels;
 
 	public ConnectionStatusFrame(final String gameId, final Status initialStatus,
 			final Map<Status, ? extends Consumer<? super ConnectionStatusFrame>> closeHooks) {
@@ -61,12 +57,12 @@ public final class ConnectionStatusFrame extends JFrame {
 		}
 		status = initialStatus;
 
-		statusLabels = new EnumMap<>(Status.class);
+		final Map<Status, String> statusLabels = new EnumMap<>(Status.class);
 		statusLabels.put(Status.CONNECTED, "Connected!");
 		statusLabels.put(Status.NOT_CONNECTED, String.format("Connecting to game \"%s\"...", gameId));
 		assert statusLabels.size() == Status.values().length;
 
-		label = new JLabel(statusLabels.get(initialStatus));
+		final JLabel label = new JLabel(statusLabels.get(initialStatus));
 		{
 			final Map<Attribute, Object> fontAttrs = Maps.newHashMapWithExpectedSize(3);
 			fontAttrs.put(TextAttribute.FAMILY, Font.SANS_SERIF);
