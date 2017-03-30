@@ -21,23 +21,18 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.FontMetrics;
-import java.awt.Window;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 import java.awt.font.TextAttribute;
 import java.text.AttributedCharacterIterator.Attribute;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.function.IntConsumer;
 import java.util.function.Supplier;
@@ -160,8 +155,6 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 		return PlayerRole.SELECTING.equals(role) ? PlayerTurnStatus.READY : PlayerTurnStatus.NOT_READY;
 	}
 
-	private final Set<Window> childWindows = new HashSet<>();
-
 	private final Runnable nextTurnHook;
 
 	private final ReadinessIndicator playerReadiness;
@@ -176,21 +169,6 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 		controller.getListeners().add(this);
 		setPreferredSize(preferredSize);
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-		addWindowListener(new WindowAdapter() {
-
-			/*
-			 * (non-Javadoc)
-			 *
-			 * @see java.awt.event.WindowAdapter#windowClosed(java.awt.event.
-			 * WindowEvent)
-			 */
-			@Override
-			public void windowClosed(final WindowEvent e) {
-				childWindows.forEach(childWindow -> childWindow.dispose());
-				closeHook.run();
-			}
-
-		});
 		setLayout(new BorderLayout());
 		add(boardPanel, BorderLayout.CENTER);
 
@@ -367,13 +345,6 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 
 	private void updateRoleStatusLabelFontSize() {
 		roleStatusLabelFontSizeUpdater.accept(getWidth());
-	}
-
-	/**
-	 * @return the childWindows
-	 */
-	Set<Window> getChildWindows() {
-		return childWindows;
 	}
 
 }
