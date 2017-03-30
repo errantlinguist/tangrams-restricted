@@ -447,7 +447,7 @@ public final class TangramsClient implements Runnable {
 								throw exAfterConnectionViewConst;
 							}
 						} catch (final Exception exAfterRecorderConst) {
-							// NOTE: Finally doesn't work because of the threads
+							// NOTE: Finally block doesn't work here because of the threads
 							// running in the background: A "finally" block will
 							// kill the recorder right after exiting this method
 							// even though the recording should continue
@@ -459,7 +459,7 @@ public final class TangramsClient implements Runnable {
 						}
 
 					} catch (final Exception exAfterIrisTKConst) {
-						// NOTE: Finally doesn't work because of the threads
+						// NOTE: Finally block doesn't work here because of the threads
 						// running in the background: A "finally" block will
 						// kill the IrisTK system right after exiting this
 						// method
