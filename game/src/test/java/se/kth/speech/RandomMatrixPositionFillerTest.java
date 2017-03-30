@@ -44,23 +44,24 @@ public final class RandomMatrixPositionFillerTest {
 
 	private static class SpatialMatrixConstructionData {
 
-		private final Function<int[], int[]> piecePosMatrixSizeFactory = Function.identity();
-
 		private final SpatialMatrix<Integer> matrix;
+
+		private final Function<int[], int[]> piecePosMatrixSizeFactory = Function.identity();
 
 		private SpatialMatrixConstructionData(final int[] gridSize) {
 			final Integer[] posMatrixBackingArray = new Integer[IntArrays.product(gridSize)];
 			final Matrix<Integer> backingPosMatrix = new Matrix<>(posMatrixBackingArray, gridSize[1]);
-			matrix = new SpatialMatrix<>(backingPosMatrix, new SpatialMap<>(TEST_PIECE_IDS.size()));
+			matrix = new SpatialMatrix<>(backingPosMatrix,
+					SpatialMap.createStableIterationOrder(TEST_PIECE_IDS.size()));
 		}
 	}
 
-	private static final List<int[]> TEST_PIECES;
+	@DataPoints
+	public static final long[] TEST_SEEDS;
 
 	private static final Map<int[], Integer> TEST_PIECE_IDS;
 
-	@DataPoints
-	public static final long[] TEST_SEEDS;
+	private static final List<int[]> TEST_PIECES;
 
 	static {
 		TEST_PIECES = Arrays.asList(new int[] { 1, 2 }, new int[] { 3, 3 }, new int[] { 5, 2 });
@@ -148,7 +149,8 @@ public final class RandomMatrixPositionFillerTest {
 	/**
 	 * Test method for
 	 * {@link se.kth.speech.RandomMatrixPositionFiller#apply(Collection)}.
-	 * @throws InterruptedException 
+	 * 
+	 * @throws InterruptedException
 	 */
 	@Theory
 	public void testApplyStable(final long seed) throws InterruptedException {

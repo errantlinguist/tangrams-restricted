@@ -26,6 +26,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.google.common.collect.HashMultimap;
+import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
@@ -42,6 +43,20 @@ public final class SpatialMap<E> {
 	private static final String TABLE_STRING_REPR_COL_DELIMITER = "\t";
 
 	private static final String TABLE_STRING_REPR_ROW_DELIMITER = System.lineSeparator();
+
+	public static <E> SpatialMap<E> create(final int expectedElementCount) {
+		final Multimap<SpatialRegion, E> regionElements = HashMultimap.create(estimateRegionCount(expectedElementCount),
+				expectedElementCount);
+		return new SpatialMap<>(regionElements, Maps.newHashMapWithExpectedSize(expectedElementCount),
+				new ArrayList<>(Math.max(regionElements.size(), 16)));
+	}
+
+	public static <E> SpatialMap<E> createStableIterationOrder(final int expectedElementCount) {
+		final Multimap<SpatialRegion, E> regionElements = LinkedHashMultimap
+				.create(estimateRegionCount(expectedElementCount), expectedElementCount);
+		return new SpatialMap<>(regionElements, Maps.newLinkedHashMapWithExpectedSize(expectedElementCount),
+				new ArrayList<>(Math.max(regionElements.size(), 16)));
+	}
 
 	private static void appendOccupiedRegionRepr(final StringBuilder sb,
 			final Entry<SpatialRegion, ? extends Iterable<?>> minimalRegionOccupyingElementSet) {
@@ -71,10 +86,11 @@ public final class SpatialMap<E> {
 	 */
 	private transient final List<SpatialRegion> regions;
 
-	public SpatialMap(final int expectedElementCount) {
-		this.regionElements = HashMultimap.create(estimateRegionCount(expectedElementCount), expectedElementCount);
-		this.elementRegions = Maps.newHashMapWithExpectedSize(expectedElementCount);
-		this.regions = new ArrayList<>(Math.max(regionElements.size(), 16));
+	private SpatialMap(final Multimap<SpatialRegion, E> regionElements, final Map<E, SpatialRegion> elementRegions,
+			final List<SpatialRegion> regions) {
+		this.regionElements = regionElements;
+		this.elementRegions = elementRegions;
+		this.regions = regions;
 	}
 
 	public void clearRegion(final SpatialRegion region) {

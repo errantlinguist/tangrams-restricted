@@ -59,7 +59,7 @@ public final class SpatialMatrixTest {
 			this.pieceIds = Maps.newHashMapWithExpectedSize(expectedPieceCount);
 			this.incrementingIdGetter = p -> pieceIds.computeIfAbsent(p, k -> pieceIds.size());
 			this.backingPosMatrix = createBackingMatrix(gridDims);
-			this.matrix = new SpatialMatrix<>(backingPosMatrix, new SpatialMap<>(expectedPieceCount));
+			this.matrix = new SpatialMatrix<>(backingPosMatrix, SpatialMap.createStableIterationOrder(expectedPieceCount));
 		}
 	}
 
