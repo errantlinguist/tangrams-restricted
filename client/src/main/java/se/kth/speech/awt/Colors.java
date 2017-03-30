@@ -18,6 +18,7 @@ package se.kth.speech.awt;
 
 import java.awt.Color;
 import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -47,7 +48,7 @@ public final class Colors {
 		final Map<Integer, C> result = new HashMap<>();
 
 		for (final Field field : Color.class.getFields()) {
-			if (Color.class.isAssignableFrom(field.getType())) {
+			if (Modifier.isStatic(field.getModifiers()) && Color.class.isAssignableFrom(field.getType())) {
 				final String name = field.getName();
 				try {
 					final Color color = (Color) field.get(null);
