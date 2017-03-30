@@ -16,11 +16,12 @@
 */
 package se.kth.speech;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.function.Function;
+
+import com.google.common.collect.Maps;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -30,7 +31,8 @@ import java.util.function.Function;
 final class MatrixSpatialMapFactory<E> implements Function<Matrix<? extends E>, SpatialMap<E>> {
 
 	private static <E> Map<E, int[]> createElementMatrixIndexMap(final Matrix<? extends E> posMatrix) {
-		final Map<E, int[]> result = new HashMap<>();
+		// TODO: better estimate number of elements in the positional matrix
+		final Map<E, int[]> result = Maps.newHashMapWithExpectedSize(posMatrix.getValues().size() / 4);
 		for (final ListIterator<? extends List<? extends E>> rowIter = posMatrix.rowIterator(); rowIter.hasNext();) {
 			final int rowStartIdx = rowIter.nextIndex();
 			final List<? extends E> row = rowIter.next();
