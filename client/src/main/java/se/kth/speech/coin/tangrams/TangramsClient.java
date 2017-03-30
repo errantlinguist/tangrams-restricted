@@ -410,6 +410,8 @@ public final class TangramsClient implements Runnable {
 												final Runnable closeHook = () -> {
 													LOGGER.info(
 															"Closing main window; Cleaning up background resources.");
+													System.out.println(
+															"Closing main window; Cleaning up background resources.");
 													final CompletableFuture<Void> recordingStopperResult = CompletableFuture
 															.runAsync(recordingHooks.getValue(), backgroundJobService);
 													final CompletableFuture<Void> irisSystemStopperResult = CompletableFuture
