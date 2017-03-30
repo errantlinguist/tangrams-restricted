@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
@@ -409,14 +410,25 @@ public final class TangramsClient implements Runnable {
 												final Runnable closeHook = () -> {
 													LOGGER.info(
 															"Closing main window; Cleaning up background resources.");
-													backgroundJobService.execute(recordingHooks.getValue());
-													backgroundJobService.execute(irisSystemStopper);
-
-													final Runnable sessionLogArchiver = createSessionLogArchiver(
-															rootLogDirPath, systemLoggingStartTime,
-															timestampedLogDirPathSupplier, playerId);
-													backgroundJobService.execute(sessionLogArchiver);
-													backgroundJobService.shutdown();
+													final CompletableFuture<Void> recordingStopperResult = CompletableFuture
+															.runAsync(recordingHooks.getValue(), backgroundJobService);
+													final CompletableFuture<Void> irisSystemStopperResult = CompletableFuture
+															.runAsync(irisSystemStopper, backgroundJobService);
+													final CompletableFuture<Void> loggedServiceStopperResult = CompletableFuture
+															.allOf(recordingStopperResult, irisSystemStopperResult);
+													loggedServiceStopperResult.thenRun(() -> {
+														// Submit the log
+														// archiver job as the
+														// very last job before
+														// requesting that the
+														// background job
+														// executor be shut down
+														final Runnable sessionLogArchiver = createSessionLogArchiver(
+																rootLogDirPath, systemLoggingStartTime,
+																timestampedLogDirPathSupplier, playerId);
+														backgroundJobService.execute(sessionLogArchiver);
+														backgroundJobService.shutdown();
+													});
 												};
 												final String title = "Tangrams: " + playerId;
 												EventQueue.invokeLater(new GameGUI(title, viewCenterpoint, gameState,
@@ -447,7 +459,8 @@ public final class TangramsClient implements Runnable {
 								throw exAfterConnectionViewConst;
 							}
 						} catch (final Exception exAfterRecorderConst) {
-							// NOTE: Finally block doesn't work here because of the threads
+							// NOTE: Finally block doesn't work here because of
+							// the threads
 							// running in the background: A "finally" block will
 							// kill the recorder right after exiting this method
 							// even though the recording should continue
@@ -459,7 +472,8 @@ public final class TangramsClient implements Runnable {
 						}
 
 					} catch (final Exception exAfterIrisTKConst) {
-						// NOTE: Finally block doesn't work here because of the threads
+						// NOTE: Finally block doesn't work here because of the
+						// threads
 						// running in the background: A "finally" block will
 						// kill the IrisTK system right after exiting this
 						// method
