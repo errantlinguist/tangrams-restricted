@@ -38,6 +38,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.ExecutorService;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -46,6 +47,7 @@ import java.util.stream.Stream;
 
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.SwingWorker;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -70,6 +72,26 @@ import se.kth.speech.coin.tangrams.iristk.events.Move;
  */
 final class GameBoardPanel extends JPanel implements Controller.Listener {
 
+	private static class DelegatingSwingWorker extends SwingWorker<Void, Void> {
+
+		private final Runnable delegate;
+
+		private DelegatingSwingWorker(final Runnable delegate) {
+			this.delegate = delegate;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see javax.swing.SwingWorker#doInBackground()
+		 */
+		@Override
+		protected Void doInBackground() throws Exception {
+			delegate.run();
+			return null;
+		}
+	}
+
 	private class SelectingMouseAdapter extends MouseAdapter {
 		@Override
 		public void mouseClicked(final MouseEvent e) {
@@ -85,7 +107,8 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 					LOGGER.info("Selected {}.", biggestPieceRegionUnderSelection);
 					toggleHighlightedRegion(biggestPieceRegionUnderSelection.getValue());
 					logScreenshotSelectedPiece(biggestPieceRegionUnderSelection.getKey());
-					controller.submitSelection(biggestPieceRegionUnderSelection);
+					backgroundJobService.execute(new DelegatingSwingWorker(
+							() -> controller.submitSelection(biggestPieceRegionUnderSelection)));
 				}
 
 			} else {
@@ -168,8 +191,6 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 		return Arrays.stream(dims).map(dim -> dim * MIN_GRID_SQUARE_LENGTH);
 	}
 
-	private final boolean analysisEnabled;
-
 	// private static void drawRegionHighlights(final Graphics g, final
 	// SpatialRegion region, final int colWidth,
 	// final int rowHeight) {
@@ -179,6 +200,10 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 	// rowHeight);
 	// g.drawRect(startIdxs[0], startIdxs[1], size[0], size[1]);
 	// }
+
+	private final boolean analysisEnabled;
+
+	private final ExecutorService backgroundJobService;
 
 	private final Map<SpatialRegion, int[]> compCoordSizes;
 
@@ -207,18 +232,20 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 
 	GameBoardPanel(final SpatialMatrix<Integer> posMatrix,
 			final Function<? super Integer, ? extends Image> pieceIdImageFactory, final Controller controller,
-			final Color highlightColor, final BiConsumer<? super Component, ? super String> screenshotLogger) {
-		this(posMatrix, pieceIdImageFactory, controller, highlightColor, screenshotLogger, false);
+			final Color highlightColor, final BiConsumer<? super Component, ? super String> screenshotLogger,
+			final ExecutorService backgroundJobService) {
+		this(posMatrix, pieceIdImageFactory, controller, highlightColor, screenshotLogger, backgroundJobService, false);
 	}
 
 	GameBoardPanel(final SpatialMatrix<Integer> posMatrix,
 			final Function<? super Integer, ? extends Image> pieceIdImageFactory, final Controller controller,
 			final Color highlightColor, final BiConsumer<? super Component, ? super String> screenshotLogger,
-			final boolean analysisEnabled) {
+			final ExecutorService backgroundJobService, final boolean analysisEnabled) {
 		this.posMatrix = posMatrix;
 		this.pieceIdImageFactory = pieceIdImageFactory;
 		this.controller = controller;
 		this.highlightColor = highlightColor;
+		this.backgroundJobService = backgroundJobService;
 		controller.getListeners().add(this);
 
 		final Supplier<SimpleDateFormat> dateFormatSupplier = TIME_FORMAT::get;
@@ -283,11 +310,6 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 		drawPieceImages(g);
 	}
 
-	@Override
-	public void updateNextMove(final Move move) {
-		LOGGER.debug("Observed event representing the subbmission of a move by a player.");
-	}
-
 	// private void clearRegionHighlights(final Graphics g, final SpatialRegion
 	// region) {
 	// final int colWidth = getGridColWidth();
@@ -306,6 +328,11 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 	// result.setColor(getBackground());
 	// return result;
 	// }
+
+	@Override
+	public void updateNextMove(final Move move) {
+		LOGGER.debug("Observed event representing the subbmission of a move by a player.");
+	}
 
 	@Override
 	public void updatePlayerJoined(final String joinedPlayerId, final long time) {
@@ -332,13 +359,14 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 		if (isSelectionCorrect) {
 			JOptionPane.showMessageDialog(this, "The other player selected the right piece!", "Good selection",
 					JOptionPane.INFORMATION_MESSAGE);
-			controller.submitTurnComplete();
+			backgroundJobService.execute(new DelegatingSwingWorker(controller::submitTurnComplete));
+
 			highlightedRegions.clear();
 			repaint();
 		} else {
 			JOptionPane.showMessageDialog(this, "The other player selected the wrong piece!", "Bad selection",
 					JOptionPane.ERROR_MESSAGE);
-			controller.submitSelectionRejection();
+			backgroundJobService.execute(new DelegatingSwingWorker(controller::submitSelectionRejection));
 		}
 	}
 
@@ -632,13 +660,14 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 	/**
 	 *
 	 */
-	synchronized void notifyNextMove(final SpatialRegion source, final SpatialRegion target, final Integer pieceId) {
+	void notifyNextMove(final SpatialRegion source, final SpatialRegion target, final Integer pieceId) {
 		LOGGER.debug("Notified of continue event.");
 		final PlayerRole role = controller.getRole();
 		switch (role) {
 		case MOVE_SUBMISSION: {
 			toggleHighlightedRegion(source);
-			controller.submitNextMove(source, target, pieceId);
+			backgroundJobService
+					.execute(new DelegatingSwingWorker(() -> controller.submitNextMove(source, target, pieceId)));
 			break;
 		}
 		default: {

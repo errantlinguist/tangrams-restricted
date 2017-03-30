@@ -138,6 +138,8 @@ public final class GameGUI implements Runnable {
 	private final String title;
 
 	private final Point viewCenterpoint;
+	
+	private final ExecutorService backgroundJobService;
 
 	public GameGUI(final String title, final Point viewCenterpoint, final GameState gameState,
 			final Supplier<? extends Path> logOutdirPathSupplier, final ExecutorService backgroundJobService,
@@ -149,6 +151,7 @@ public final class GameGUI implements Runnable {
 		screenshotLogger = new ScreenshotLogger(logOutdirPathSupplier, () -> gameState.getController().getPlayerId(),
 				backgroundJobService);
 		this.closeHook = closeHook;
+		this.backgroundJobService = backgroundJobService;
 
 		{
 			final Function<URL, String> imgNameFactory = new URLFilenameBaseSplitter();
@@ -172,7 +175,7 @@ public final class GameGUI implements Runnable {
 			final Controller controller, final Function<? super Integer, ? extends Image> pieceIdImageFactory,
 			final int uniqueImageResourceCount, final Map<BoardArea, Color> boardAreaColors) {
 		final GameBoardPanel gameBoardPanel = new GameBoardPanel(controller.getModel(), pieceIdImageFactory, controller,
-				boardAreaColors.get(BoardArea.HIGHLIGHT), screenshotLogger, true);
+				boardAreaColors.get(BoardArea.HIGHLIGHT), screenshotLogger, backgroundJobService, true);
 		gameBoardPanel.setBackground(boardAreaColors.get(BoardArea.BACKGROUND));
 		final OpaqueTransparencyReplacementImageFilter imgFilter = new OpaqueTransparencyReplacementImageFilter(128);
 		final BiFunction<Image, Toolkit, Image> tranparencyFilterer = (img, toolkit) -> {
@@ -188,7 +191,7 @@ public final class GameGUI implements Runnable {
 			final Controller controller, final Function<? super Integer, ? extends Image> pieceIdImageFactory,
 			final int uniqueImageResourceCount, final Map<BoardArea, Color> boardAreaColors) {
 		final GameBoardPanel gameBoardPanel = new GameBoardPanel(controller.getModel(), pieceIdImageFactory, controller,
-				boardAreaColors.get(BoardArea.HIGHLIGHT), screenshotLogger);
+				boardAreaColors.get(BoardArea.HIGHLIGHT), screenshotLogger, backgroundJobService);
 		gameBoardPanel.setBackground(boardAreaColors.get(BoardArea.BACKGROUND));
 		final ImageLoadingImageViewInfoFactory imgViewInfoFactory = new ImageLoadingImageViewInfoFactory(
 				gameBoardPanel.getToolkit(), DEFAULT_POST_COLORING_IMG_TRANSFORMER,

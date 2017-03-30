@@ -272,7 +272,7 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 
 				/*
 				 * (non-Javadoc)
-				 * 
+				 *
 				 * @see
 				 * java.awt.event.ComponentAdapter#componentShown(java.awt.event
 				 * .ComponentEvent)
