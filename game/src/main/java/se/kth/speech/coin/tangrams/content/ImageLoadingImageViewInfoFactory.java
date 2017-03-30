@@ -23,7 +23,6 @@ import java.awt.image.FilteredImageSource;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URL;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.BiFunction;
@@ -43,26 +42,11 @@ import se.kth.speech.awt.ColorReplacementImageFilter;
 public final class ImageLoadingImageViewInfoFactory
 		implements Function<ImageVisualizationInfo.Datum, Entry<ImageViewInfo, Image>> {
 
-	private static final BiFunction<Image, Toolkit, Image> DEFAULT_IMG_POST_TRANSFORMER = (
-			img, tk) -> {
-		// Do nothing
-		return img;
-	};
-
-	private final Toolkit toolkit;
-
 	private final BiFunction<? super Image, ? super Toolkit, ? extends Image> postColoringImgTransformer;
 
 	private final Map<URL, BufferedImage> resourceImgs;
 
-	public ImageLoadingImageViewInfoFactory(final Toolkit toolkit) {
-		this(toolkit, DEFAULT_IMG_POST_TRANSFORMER);
-	}
-
-	public ImageLoadingImageViewInfoFactory(final Toolkit toolkit,
-			final BiFunction<? super Image, ? super Toolkit, ? extends Image> postColoringImgTransformer) {
-		this(toolkit, postColoringImgTransformer, new HashMap<>());
-	}
+	private final Toolkit toolkit;
 
 	public ImageLoadingImageViewInfoFactory(final Toolkit toolkit,
 			final BiFunction<? super Image, ? super Toolkit, ? extends Image> postColoringImgTransformer,
@@ -70,10 +54,6 @@ public final class ImageLoadingImageViewInfoFactory
 		this.toolkit = toolkit;
 		this.postColoringImgTransformer = postColoringImgTransformer;
 		this.resourceImgs = resourceImgs;
-	}
-
-	public ImageLoadingImageViewInfoFactory(final Toolkit toolkit, final Map<URL, BufferedImage> resourceImgs) {
-		this(toolkit, DEFAULT_IMG_POST_TRANSFORMER, resourceImgs);
 	}
 
 	@Override
