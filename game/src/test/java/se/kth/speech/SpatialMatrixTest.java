@@ -47,19 +47,20 @@ public final class SpatialMatrixTest {
 
 	private static class SpatialMatrixConstructionData<E> {
 
-		private final Map<E, Integer> pieceIds;
+		private final Matrix<Integer> backingPosMatrix;
 
 		private final Function<E, Integer> incrementingIdGetter;
 
-		private final Matrix<Integer> backingPosMatrix;
-
 		private final SpatialMatrix<Integer> matrix;
+
+		private final Map<E, Integer> pieceIds;
 
 		private SpatialMatrixConstructionData(final int[] gridDims, final int expectedPieceCount) {
 			this.pieceIds = Maps.newHashMapWithExpectedSize(expectedPieceCount);
 			this.incrementingIdGetter = p -> pieceIds.computeIfAbsent(p, k -> pieceIds.size());
 			this.backingPosMatrix = createBackingMatrix(gridDims);
-			this.matrix = new SpatialMatrix<>(backingPosMatrix, SpatialMap.createStableIterationOrder(expectedPieceCount));
+			final SpatialMap<Integer> posMap = SpatialMap.create(expectedPieceCount);
+			this.matrix = SpatialMatrix.Factory.STABLE_ITER_ORDER.create(backingPosMatrix, posMap);
 		}
 	}
 
@@ -206,8 +207,7 @@ public final class SpatialMatrixTest {
 	}
 
 	/**
-	 * Test method for
-	 * {@link se.kth.speech.SpatialMatrix#getCells()}.
+	 * Test method for {@link se.kth.speech.SpatialMatrix#getCells()}.
 	 */
 	@Theory
 	public void testGetCellsCount(final int[] gridDims) {

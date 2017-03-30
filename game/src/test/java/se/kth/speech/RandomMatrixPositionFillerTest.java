@@ -49,10 +49,10 @@ public final class RandomMatrixPositionFillerTest {
 		private final Function<int[], int[]> piecePosMatrixSizeFactory = Function.identity();
 
 		private SpatialMatrixConstructionData(final int[] gridSize) {
-			final Integer[] posMatrixBackingArray = new Integer[IntArrays.product(gridSize)];
-			final Matrix<Integer> backingPosMatrix = new Matrix<>(posMatrixBackingArray, gridSize[1]);
-			matrix = new SpatialMatrix<>(backingPosMatrix,
-					SpatialMap.createStableIterationOrder(TEST_PIECE_IDS.size()));
+			final Matrix<Integer> backingPosMatrix = new Matrix<>(new Integer[IntArrays.product(gridSize)],
+					gridSize[1]);
+			final SpatialMap<Integer> posMap = SpatialMap.createStableIterationOrder(TEST_PIECE_IDS.size());
+			matrix = SpatialMatrix.Factory.STABLE_ITER_ORDER.create(backingPosMatrix, posMap);
 		}
 	}
 
@@ -149,7 +149,7 @@ public final class RandomMatrixPositionFillerTest {
 	/**
 	 * Test method for
 	 * {@link se.kth.speech.RandomMatrixPositionFiller#apply(Collection)}.
-	 * 
+	 *
 	 * @throws InterruptedException
 	 */
 	@Theory

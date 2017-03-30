@@ -37,7 +37,7 @@ public final class PatternMoveFactoryTest {
 	static {
 		final Collection<MatrixTests.Description> testDescs = MatrixTests.getNamedTestDescs().values();
 		TEST_MODELS = testDescs.stream().map(desc -> new Matrix<>(desc.getValues(), desc.getColCount()))
-				.map(SpatialMatrix<Integer>::new)
+				.map(matrix -> SpatialMatrix.Factory.STABLE_ITER_ORDER.create(matrix))
 				.collect(Collectors.toCollection(() -> new ArrayList<>(testDescs.size())));
 		final Random rnd = new Random();
 		TEST_SEEDS = rnd.longs().distinct().limit(5).toArray();

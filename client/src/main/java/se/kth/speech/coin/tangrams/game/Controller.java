@@ -16,8 +16,8 @@
 */
 package se.kth.speech.coin.tangrams.game;
 
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.Map.Entry;
@@ -400,8 +400,9 @@ public final class Controller {
 
 	private void updatePiecePositions(final SpatialRegion source, final SpatialRegion target) {
 		final SpatialMap<Integer> piecePlacements = model.getElementPlacements();
-		final Collection<Integer> pieceIds = piecePlacements.getMinimalRegionElements().get(source);
-		for (final Integer pieceId : pieceIds) {
+		final Iterable<Integer> pieceIdsToMove = new ArrayList<>(
+				piecePlacements.getMinimalRegionElements().get(source));
+		for (final Integer pieceId : pieceIdsToMove) {
 			model.placeElement(pieceId, target);
 		}
 		model.clearRegion(source);

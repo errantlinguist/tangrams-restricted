@@ -71,7 +71,7 @@ public final class ControllerTest {
 	static {
 		final Collection<MatrixTests.Description> testDescs = MatrixTests.getNamedTestDescs().values();
 		TEST_MODELS = testDescs.stream().map(desc -> new Matrix<>(desc.getValues(), desc.getColCount()))
-				.map(SpatialMatrix<Integer>::new)
+				.map(matrix -> SpatialMatrix.Factory.STABLE_ITER_ORDER.create(matrix))
 				.collect(Collectors.toCollection(() -> new ArrayList<>(testDescs.size())));
 	}
 

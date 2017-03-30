@@ -45,10 +45,54 @@ import com.google.common.collect.Table;
  */
 public final class SpatialMatrix<E> {
 
+	public enum Factory {
+		STABLE_ITER_ORDER(Sets::newLinkedHashSetWithExpectedSize,
+				Maps::newLinkedHashMapWithExpectedSize), UNSTABLE_ITER_ORDER(Sets::newHashSetWithExpectedSize,
+						Maps::newHashMapWithExpectedSize);
+
+		private final IntFunction<? extends Map<SpatialRegion, Set<SpatialRegion>>> regionMapFactory;
+
+		private final IntFunction<? extends Set<SpatialRegion>> regionSetFactory;
+
+		private Factory(final IntFunction<? extends Set<SpatialRegion>> regionSetFactory,
+				final IntFunction<? extends Map<SpatialRegion, Set<SpatialRegion>>> regionMapFactory) {
+			this.regionSetFactory = regionSetFactory;
+			this.regionMapFactory = regionMapFactory;
+		}
+
+		public <E> SpatialMatrix<E> create(final int[] gridSize, final SpatialMap<E> posMap) {
+			final Matrix<E> backingMatrix = new Matrix<>(createMatrixBackingList(gridSize), gridSize[1]);
+			return create(backingMatrix, posMap);
+		}
+
+		/**
+		 * <strong>NOTE:</strong> This factory method entails iterating through
+		 * the entire backing matrix, so it could be extremely costly given a
+		 * matrix of great enough size.
+		 *
+		 * @param posMatrix
+		 *            The {@link Matrix} of values to create a corresponding
+		 *            {@link SpatialMatrix} for.
+		 *
+		 */
+		public <E> SpatialMatrix<E> create(final Matrix<E> posMatrix) {
+			final SpatialMap<E> posMap = new MatrixSpatialMapFactory<E>().apply(posMatrix);
+			return create(posMatrix, posMap);
+		}
+
+		public <E> SpatialMatrix<E> create(final Matrix<E> posMatrix, final SpatialMap<E> posMap) {
+			return new SpatialMatrix<>(posMatrix, posMap, regionSetFactory, regionMapFactory);
+		}
+	}
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(SpatialMatrix.class);
 
 	private static int calculateSubRegionCount(final int x, final int xLength, final int y, final int yLength) {
 		return (x - xLength + 1) * (y - yLength + 1);
+	}
+
+	private static int calculateSubRegionCount(final SpatialRegion region, final int[] gridDims) {
+		return calculateSubRegionCount(gridDims[0], region.getLengthX(), gridDims[1], region.getLengthY());
 	}
 
 	private static <E> List<E> createMatrixBackingList(final int[] gridSize) {
@@ -62,35 +106,22 @@ public final class SpatialMatrix<E> {
 
 	private final SpatialMap<E> elementPlacements;
 
-	private transient final Function<SpatialRegion, Set<SpatialRegion>> newRegionPossibleMoveSetFactory;
-
 	private final Matrix<E> positionMatrix;
 
-	public SpatialMatrix(final int[] gridSize, final SpatialMap<E> posMap) {
-		this(new Matrix<>(createMatrixBackingList(gridSize), gridSize[1]), posMap);
-	}
+	private final IntFunction<? extends Map<SpatialRegion, Set<SpatialRegion>>> regionMapFactory;
 
-	/**
-	 * <strong>NOTE:</strong> This constructor entails iterating through the
-	 * entire backing matrix, so it could be extremely costly given a matrix of
-	 * great enough size.
-	 *
-	 * @param posMatrix
-	 *            The {@link Matrix} of values to create a corresponding
-	 *            {@link SpatialMatrix} for.
-	 *
-	 */
-	public SpatialMatrix(final Matrix<E> posMatrix) {
-		this(posMatrix, new MatrixSpatialMapFactory<E>().apply(posMatrix));
-	}
+	private transient final Function<? super SpatialRegion, ? extends Set<SpatialRegion>> regionSetFactory;
 
-	public SpatialMatrix(final Matrix<E> posMatrix, final SpatialMap<E> elementPlacements) {
+	private <S extends Set<SpatialRegion>> SpatialMatrix(final Matrix<E> posMatrix,
+			final SpatialMap<E> elementPlacements, final IntFunction<? extends S> regionSetFactory,
+			final IntFunction<? extends Map<SpatialRegion, Set<SpatialRegion>>> regionMapFactory) {
 		this.positionMatrix = posMatrix;
 		this.elementPlacements = elementPlacements;
-		newRegionPossibleMoveSetFactory = region -> {
+		this.regionSetFactory = region -> {
 			final int count = calculateSubRegionCount(region) - 1;
-			return Sets.newHashSetWithExpectedSize(count);
+			return regionSetFactory.apply(count);
 		};
+		this.regionMapFactory = regionMapFactory;
 	}
 
 	public void addValidMoves(final Collection<? super SpatialRegion> possibleMoveRegions,
@@ -118,7 +149,7 @@ public final class SpatialMatrix<E> {
 
 	public int calculateSubRegionCount(final SpatialRegion region) {
 		final int[] dims = positionMatrix.getDimensions();
-		return calculateSubRegionCount(dims[0], region.getLengthX(), dims[1], region.getLengthY());
+		return calculateSubRegionCount(region, dims);
 	}
 
 	public void clearRegion(final SpatialRegion occupiedRegion) {
@@ -153,7 +184,7 @@ public final class SpatialMatrix<E> {
 	// }
 
 	public <C extends Collection<? super SpatialRegion>> Table<Integer, Integer, C> createSizeIndexedRegionTable(
-			final IntFunction<? extends C> setFactory) {
+			final IntFunction<? extends C> regionSetFactory) {
 		final int dims[] = positionMatrix.getDimensions();
 		LOGGER.debug("Dims: {}", dims);
 		final int x = dims[0];
@@ -170,7 +201,7 @@ public final class SpatialMatrix<E> {
 						C regions = result.get(xLength, yLength);
 						if (regions == null) {
 							final int setSize = calculateSubRegionCount(xLength, yLength);
-							regions = setFactory.apply(setSize);
+							regions = regionSetFactory.apply(setSize);
 							LOGGER.debug("Adding new set for size {}*{}", xLength, yLength);
 							result.put(xLength, yLength, regions);
 						}
@@ -198,14 +229,13 @@ public final class SpatialMatrix<E> {
 
 	public Map<SpatialRegion, Set<SpatialRegion>> createValidMoveMap() {
 		final Set<SpatialRegion> regionElements = elementPlacements.getMinimalRegionElements().keySet();
-		final Map<SpatialRegion, Set<SpatialRegion>> result = Maps.newHashMapWithExpectedSize(regionElements.size());
+		final Map<SpatialRegion, Set<SpatialRegion>> result = regionMapFactory.apply(regionElements.size());
 		final int[] matrixDims = getDimensions();
 		final int x = matrixDims[0];
 		final int y = matrixDims[1];
 
 		for (final SpatialRegion movablePieceRegion : regionElements) {
-			final Set<SpatialRegion> possibleMoveRegions = result.computeIfAbsent(movablePieceRegion,
-					newRegionPossibleMoveSetFactory);
+			final Set<SpatialRegion> possibleMoveRegions = result.computeIfAbsent(movablePieceRegion, regionSetFactory);
 			final int maxStartingRowIdx = x - movablePieceRegion.getLengthX() + 1;
 			final int maxStartingColIdx = y - movablePieceRegion.getLengthY() + 1;
 			for (int startingRowIdx = 0; startingRowIdx < maxStartingRowIdx; startingRowIdx++) {
@@ -228,7 +258,7 @@ public final class SpatialMatrix<E> {
 	}
 
 	public Set<SpatialRegion> createValidMoveSet(final SpatialRegion movablePieceRegion) {
-		final Set<SpatialRegion> result = newRegionPossibleMoveSetFactory.apply(movablePieceRegion);
+		final Set<SpatialRegion> result = regionSetFactory.apply(movablePieceRegion);
 		addValidMoves(result, movablePieceRegion);
 		return result;
 	}
@@ -350,7 +380,7 @@ public final class SpatialMatrix<E> {
 	public void putValidMoves(final Map<SpatialRegion, Collection<? super SpatialRegion>> validMoves,
 			final SpatialRegion movablePieceRegion) {
 		final Collection<? super SpatialRegion> possibleMoveRegions = validMoves.computeIfAbsent(movablePieceRegion,
-				newRegionPossibleMoveSetFactory);
+				regionSetFactory);
 		addValidMoves(possibleMoveRegions, movablePieceRegion);
 	}
 

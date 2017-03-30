@@ -46,7 +46,7 @@ final class GameStateUnmarshalling {
 		LOGGER.debug("Creating model with coord occupant vector: {}", coordOccupants);
 		final int colCount = modelDesc.getColCount();
 		final Matrix<Integer> backingMatrix = new Matrix<>(coordOccupants, colCount);
-		return new SpatialMatrix<>(backingMatrix);
+		return SpatialMatrix.Factory.STABLE_ITER_ORDER.create(backingMatrix);
 	}
 
 	private GameStateUnmarshalling() {
