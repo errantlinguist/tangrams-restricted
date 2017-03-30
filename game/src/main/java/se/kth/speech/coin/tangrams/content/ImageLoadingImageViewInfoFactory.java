@@ -31,6 +31,8 @@ import java.util.function.IntSupplier;
 
 import javax.imageio.ImageIO;
 
+import com.google.common.collect.Maps;
+
 import se.kth.speech.MutablePair;
 import se.kth.speech.awt.ColorReplacementImageFilter;
 
@@ -42,30 +44,41 @@ import se.kth.speech.awt.ColorReplacementImageFilter;
 public final class ImageLoadingImageViewInfoFactory
 		implements Function<ImageVisualizationInfo.Datum, Entry<ImageViewInfo, Image>> {
 
-	private final BiFunction<? super Image, ? super Toolkit, ? extends Image> postColoringImgTransformer;
-
-	private final Map<URL, BufferedImage> resourceImgs;
-
-	private final Toolkit toolkit;
-
-	public ImageLoadingImageViewInfoFactory(final Toolkit toolkit,
-			final BiFunction<? super Image, ? super Toolkit, ? extends Image> postColoringImgTransformer,
-			final Map<URL, BufferedImage> resourceImgs) {
-		this.toolkit = toolkit;
-		this.postColoringImgTransformer = postColoringImgTransformer;
-		this.resourceImgs = resourceImgs;
-	}
-
-	@Override
-	public Entry<ImageViewInfo, Image> apply(final ImageVisualizationInfo.Datum imgVisualizationInfoDatum) {
-		final URL imgResourceLoc = imgVisualizationInfoDatum.getResourceLoc();
-		final BufferedImage initialImg = resourceImgs.computeIfAbsent(imgResourceLoc, loc -> {
+	private static Function<URL, BufferedImage> createResourceImgFactory(final int expectedUniqueResourceImgCount) {
+		final Map<URL, BufferedImage> resourceImgs = Maps.newHashMapWithExpectedSize(expectedUniqueResourceImgCount);
+		return imgResourceLoc -> resourceImgs.computeIfAbsent(imgResourceLoc, loc -> {
 			try {
 				return ImageIO.read(loc);
 			} catch (final IOException e) {
 				throw new UncheckedIOException(e);
 			}
 		});
+	}
+
+	private final BiFunction<? super Image, ? super Toolkit, ? extends Image> postColoringImgTransformer;
+
+	private final Function<? super URL, ? extends BufferedImage> resourceImgFactory;
+
+	private final Toolkit toolkit;
+
+	public ImageLoadingImageViewInfoFactory(final Toolkit toolkit,
+			final BiFunction<? super Image, ? super Toolkit, ? extends Image> postColoringImgTransformer,
+			final int expectedUniqueResourceImgCount) {
+		this(toolkit, postColoringImgTransformer, createResourceImgFactory(expectedUniqueResourceImgCount));
+	}
+
+	private ImageLoadingImageViewInfoFactory(final Toolkit toolkit,
+			final BiFunction<? super Image, ? super Toolkit, ? extends Image> postColoringImgTransformer,
+			final Function<? super URL, ? extends BufferedImage> resourceImgFactory) {
+		this.toolkit = toolkit;
+		this.postColoringImgTransformer = postColoringImgTransformer;
+		this.resourceImgFactory = resourceImgFactory;
+	}
+
+	@Override
+	public Entry<ImageViewInfo, Image> apply(final ImageVisualizationInfo.Datum imgVisualizationInfoDatum) {
+		final URL imgResourceLoc = imgVisualizationInfoDatum.getResourceLoc();
+		final BufferedImage initialImg = resourceImgFactory.apply(imgResourceLoc);
 		final IntSupplier widthGetter = initialImg::getWidth;
 		final IntSupplier heightGetter = initialImg::getHeight;
 		// Size/aspect ratio calculation

@@ -22,8 +22,6 @@ import java.util.Random;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-import com.google.common.collect.Maps;
-
 import se.kth.speech.SpatialMap;
 import se.kth.speech.SpatialMatrix;
 import se.kth.speech.coin.tangrams.content.ImageLoadingImageViewInfoFactory;
@@ -65,8 +63,7 @@ final class RandomPopulatedModelFactory implements Function<Random, SpatialMatri
 		final int piecePlacementCount = imgVisualizationInfo.getData().size();
 		final SpatialMatrix<Integer> result = new SpatialMatrix<>(gridSize, new SpatialMap<>(piecePlacementCount));
 		final ImageLoadingImageViewInfoFactory imgViewInfoFactory = new ImageLoadingImageViewInfoFactory(toolkit,
-				postColoringImgTransformer,
-				Maps.newHashMapWithExpectedSize(imgVisualizationInfo.getUniqueImageResourceCount()));
+				postColoringImgTransformer, imgVisualizationInfo.getUniqueImageResourceCount());
 		final RandomModelPopulator modelPopulator = new RandomModelPopulator(result, imgVisualizationInfo,
 				occupiedGridArea, allowFailedPlacements, imgViewInfoFactory);
 		modelPopulator.accept(rnd);

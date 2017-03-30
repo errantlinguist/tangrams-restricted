@@ -47,8 +47,6 @@ import java.util.function.Supplier;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.Maps;
-
 import se.kth.speech.MutablePair;
 import se.kth.speech.URLFilenameBaseSplitter;
 import se.kth.speech.awt.OpaqueTransparencyReplacementImageFilter;
@@ -202,7 +200,7 @@ public final class GameGUI implements Runnable {
 		for (final ListIterator<ImageVisualizationInfo.Datum> imgVizInfoDataIter = imgVizInfoData
 				.listIterator(); imgVizInfoDataIter.hasNext();) {
 			final int id = imgVizInfoDataIter.nextIndex();
-			ImageVisualizationInfo.Datum imgVisualizationInfoDatum = imgVizInfoDataIter.next();
+			final ImageVisualizationInfo.Datum imgVisualizationInfoDatum = imgVizInfoDataIter.next();
 			final ImageVisualizationInfo.Datum oldVizInfo = imgVisualizationInfoDataById.put(id,
 					imgVisualizationInfoDatum);
 			assert oldVizInfo == null;
@@ -245,8 +243,7 @@ public final class GameGUI implements Runnable {
 			return toolkit.createImage(new FilteredImageSource(img.getSource(), imgFilter));
 		};
 		final ImageLoadingImageViewInfoFactory imgViewInfoFactory = new ImageLoadingImageViewInfoFactory(
-				gameBoardPanel.getToolkit(), tranparencyFilterer,
-				Maps.newHashMapWithExpectedSize(uniqueImageResourceCount));
+				gameBoardPanel.getToolkit(), tranparencyFilterer, uniqueImageResourceCount);
 		return new MutablePair<>(gameBoardPanel, imgViewInfoFactory);
 	}
 
@@ -257,8 +254,7 @@ public final class GameGUI implements Runnable {
 				boardAreaColors.get(BoardArea.HIGHLIGHT), screenshotLogger, backgroundJobService);
 		gameBoardPanel.setBackground(boardAreaColors.get(BoardArea.BACKGROUND));
 		final ImageLoadingImageViewInfoFactory imgViewInfoFactory = new ImageLoadingImageViewInfoFactory(
-				gameBoardPanel.getToolkit(), DEFAULT_POST_COLORING_IMG_TRANSFORMER,
-				Maps.newHashMapWithExpectedSize(uniqueImageResourceCount));
+				gameBoardPanel.getToolkit(), DEFAULT_POST_COLORING_IMG_TRANSFORMER, uniqueImageResourceCount);
 		return new MutablePair<>(gameBoardPanel, imgViewInfoFactory);
 	}
 }

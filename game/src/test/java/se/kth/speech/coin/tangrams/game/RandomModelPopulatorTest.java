@@ -32,7 +32,6 @@ import org.junit.Test;
 import org.junit.experimental.theories.Theories;
 import org.junit.runner.RunWith;
 
-import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
 import se.kth.speech.SpatialMap;
@@ -118,7 +117,8 @@ public final class RandomModelPopulatorTest {
 	@Test
 	public void testAccept() {
 		final Random rnd = new Random();
-		final RandomImageVisualizationInfoFactory imgDataFactory = new RandomImageVisualizationInfoFactory(rnd, TEST_COLORS);
+		final RandomImageVisualizationInfoFactory imgDataFactory = new RandomImageVisualizationInfoFactory(rnd,
+				TEST_COLORS);
 		final int maxImgVisualizationInfoDatumCount = imgDataFactory.combinationCount();
 		// final int piecePlacementCount = rnd.ints().filter(val -> val <=
 		// maxImgVisualizationInfoDatumCount).findAny().getAsInt();
@@ -129,8 +129,7 @@ public final class RandomModelPopulatorTest {
 		final SpatialMatrix<Integer> result = new SpatialMatrix<>(gridSize, new SpatialMap<>(piecePlacementCount));
 
 		final ImageLoadingImageViewInfoFactory imgViewInfoFactory = new ImageLoadingImageViewInfoFactory(
-				Toolkit.getDefaultToolkit(), DEFAULT_POST_COLORING_IMG_TRANSFORMER,
-				Maps.newHashMapWithExpectedSize(piecePlacementCount));
+				Toolkit.getDefaultToolkit(), DEFAULT_POST_COLORING_IMG_TRANSFORMER, piecePlacementCount);
 		final ImageVisualizationInfo imgVisualizationInfo = imgDataFactory.apply(piecePlacementCount);
 		final RandomModelPopulator modelPopulator = new RandomModelPopulator(result, imgVisualizationInfo,
 				DEFAULT_OCCUPIED_GRID_AREA, false, imgViewInfoFactory);
