@@ -22,11 +22,12 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Window;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.font.TextAttribute;
 import java.text.AttributedCharacterIterator.Attribute;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -36,7 +37,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
-import java.util.Queue;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.IntConsumer;
@@ -170,8 +170,6 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 
 	private final IntConsumer roleStatusLabelFontSizeUpdater;
 
-	private final Queue<Runnable> componentShownHooks;
-
 	GameViewFrame(final GameBoardPanel boardPanel, final Controller controller,
 			final Supplier<? extends MapEntryRemapping<Integer, SpatialRegion>> moveFactory, final Runnable closeHook,
 			final Dimension preferredSize) {
@@ -270,16 +268,22 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 					LOGGER.warn("No more moves available.", e);
 				}
 			};
-			componentShownHooks = new ArrayDeque<>(1);
-			componentShownHooks.add(() -> updateNextTurnResponsibility(initialRole));
-		}
-	}
+			addComponentListener(new ComponentAdapter() {
 
-	@Override
-	public void setVisible(final boolean visible) {
-		super.setVisible(visible);
-		if (visible && !componentShownHooks.isEmpty()) {
-			componentShownHooks.remove().run();
+				/*
+				 * (non-Javadoc)
+				 * 
+				 * @see
+				 * java.awt.event.ComponentAdapter#componentShown(java.awt.event
+				 * .ComponentEvent)
+				 */
+				@Override
+				public void componentShown(final ComponentEvent e) {
+					updateNextTurnResponsibility(initialRole);
+					removeComponentListener(this);
+				}
+
+			});
 		}
 	}
 
