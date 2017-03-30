@@ -644,20 +644,6 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 	}
 
 	/**
-	 * @return the controller
-	 */
-	Controller getController() {
-		return controller;
-	}
-
-	/**
-	 * @return the posMatrix
-	 */
-	SpatialMatrix<Integer> getPosMatrix() {
-		return posMatrix;
-	}
-
-	/**
 	 *
 	 */
 	void notifyNextMove(final SpatialRegion source, final SpatialRegion target, final Integer pieceId) {
