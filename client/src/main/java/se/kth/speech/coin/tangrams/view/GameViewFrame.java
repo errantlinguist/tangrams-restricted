@@ -23,6 +23,8 @@ import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.awt.font.TextAttribute;
 import java.text.AttributedCharacterIterator.Attribute;
 import java.util.ArrayList;
@@ -149,6 +151,20 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 		controller.getListeners().add(this);
 		setPreferredSize(preferredSize);
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+		addWindowListener(new WindowAdapter() {
+
+			/*
+			 * (non-Javadoc)
+			 *
+			 * @see java.awt.event.WindowAdapter#windowClosed(java.awt.event.
+			 * WindowEvent)
+			 */
+			@Override
+			public void windowClosed(final WindowEvent e) {
+				closeHook.run();
+			}
+
+		});
 		setLayout(new BorderLayout());
 		add(boardPanel, BorderLayout.CENTER);
 
