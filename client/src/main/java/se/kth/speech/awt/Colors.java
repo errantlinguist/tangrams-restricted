@@ -55,7 +55,7 @@ public final class Colors {
 					final C names = result.computeIfAbsent(c.getRGB(), k -> nameCollFactory.get());
 					names.add(transformedName);
 				} catch (final IllegalAccessException e) {
-					LOGGER.warn(String.format("An %s occured while accessing field named \"%s\".",
+					LOGGER.warn(String.format("A(n) %s occured while accessing field named \"%s\".",
 							e.getClass().getSimpleName(), name), e);
 				}
 			}
