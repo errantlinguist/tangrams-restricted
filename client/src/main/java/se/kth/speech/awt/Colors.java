@@ -46,13 +46,13 @@ public final class Colors {
 			final Function<? super String, String> nameTransformer, final Supplier<? extends C> nameCollFactory) {
 		final Map<Integer, C> result = new HashMap<>();
 
-		for (final Field f : Color.class.getFields()) {
-			if (Color.class.isAssignableFrom(f.getType())) {
-				final String name = f.getName();
+		for (final Field field : Color.class.getFields()) {
+			if (Color.class.isAssignableFrom(field.getType())) {
+				final String name = field.getName();
 				try {
-					final Color c = (Color) f.get(null);
+					final Color color = (Color) field.get(null);
 					final String transformedName = nameTransformer.apply(name);
-					final C names = result.computeIfAbsent(c.getRGB(), k -> nameCollFactory.get());
+					final C names = result.computeIfAbsent(color.getRGB(), key -> nameCollFactory.get());
 					names.add(transformedName);
 				} catch (final IllegalAccessException e) {
 					LOGGER.warn(String.format("A(n) %s occured while accessing field named \"%s\".",
