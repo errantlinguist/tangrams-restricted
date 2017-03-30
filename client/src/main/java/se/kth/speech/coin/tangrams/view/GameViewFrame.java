@@ -38,7 +38,6 @@ import java.util.function.IntConsumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
@@ -56,7 +55,6 @@ import se.kth.speech.MapEntryRemapping;
 import se.kth.speech.MutablePair;
 import se.kth.speech.SpatialRegion;
 import se.kth.speech.awt.CachingMaximumWidthFontFactory;
-import se.kth.speech.awt.ColorIcon;
 import se.kth.speech.awt.ComponentResizedEventListener;
 import se.kth.speech.coin.tangrams.game.Controller;
 import se.kth.speech.coin.tangrams.game.PlayerRole;
@@ -85,18 +83,6 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 		final Map<Attribute, Object> result = Maps.newHashMapWithExpectedSize(2);
 		result.put(TextAttribute.FAMILY, Font.SANS_SERIF);
 		result.put(TextAttribute.SIZE, 20.0f);
-		return result;
-	}
-
-	private static ReadinessIndicator createPlayerReadinessIndicator(final int gameBoardPanelWidth,
-			final PlayerTurnStatus initialStatus) {
-		final int size = gameBoardPanelWidth / 20;
-		final ReadinessIndicator result = new ReadinessIndicator(
-				new ColorIcon(size, size, ReadinessIndicator.getStatusColor(initialStatus)), initialStatus);
-		result.setAlignmentX(CENTER_ALIGNMENT);
-		final String desc = "An indicator showing if it's your turn or not: Green means \"ready\" and red means \"not ready\".";
-		result.getAccessibleContext().setAccessibleDescription(desc);
-		result.setToolTipText(desc);
 		return result;
 	}
 
@@ -151,13 +137,7 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 		};
 	}
 
-	private static PlayerTurnStatus getPlayerTurnStatus(final PlayerRole role) {
-		return PlayerRole.SELECTING.equals(role) ? PlayerTurnStatus.READY : PlayerTurnStatus.NOT_READY;
-	}
-
 	private final Runnable nextTurnHook;
-
-	private final ReadinessIndicator playerReadiness;
 
 	private final JLabel roleStatusLabel;
 
@@ -189,31 +169,10 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 			add(roleStatusPanel, BorderLayout.PAGE_START);
 		}
 
-		final PlayerTurnStatus initialTurnStatus = getPlayerTurnStatus(initialRole);
-		playerReadiness = createPlayerReadinessIndicator(Math.min(preferredSize.width, preferredSize.height),
-				initialTurnStatus);
-
 		{
 			final JPanel statusPanel = new JPanel();
 			add(statusPanel, BorderLayout.PAGE_END);
-			final BoxLayout layout = new BoxLayout(statusPanel, BoxLayout.LINE_AXIS);
-			statusPanel.setLayout(layout);
-
-			final int marginSize = 2;
-			final Dimension marginDim = new Dimension(marginSize, 0);
-
-			final Component sidePanelLeftMargin = Box.createRigidArea(marginDim);
-			statusPanel.add(sidePanelLeftMargin);
-
-			{
-				final JPanel sidePanel = new JPanel();
-				statusPanel.add(sidePanel);
-				sidePanel.setLayout(new BoxLayout(sidePanel, BoxLayout.PAGE_AXIS));
-				sidePanel.add(playerReadiness);
-			}
-
-			final Component sidePanelRightMargin = Box.createRigidArea(marginDim);
-			statusPanel.add(sidePanelRightMargin);
+			statusPanel.setLayout(new BoxLayout(statusPanel, BoxLayout.LINE_AXIS));
 
 			{
 				final JTable controllerInfoTable = new JTable(new ControllerInfoTableModel(controller));
@@ -231,38 +190,38 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 				tablePanel.add(tableHeader);
 				tablePanel.add(controllerInfoTable);
 			}
-
-			nextTurnHook = () -> {
-				try {
-					final MapEntryRemapping<Integer, SpatialRegion> nextMove = moveFactory.get();
-					final Integer pieceId = nextMove.getKey();
-					final SpatialRegion source = nextMove.getOldValue();
-					final SpatialRegion target = nextMove.getNewValue();
-					boardPanel.notifyNextMove(source, target, pieceId);
-				} catch (final NoSuchElementException e) {
-					// No pieces left to be moved; Game cannot continue
-					JOptionPane.showMessageDialog(this, "No more moves available.", "No more moves",
-							JOptionPane.WARNING_MESSAGE);
-					LOGGER.warn("No more moves available.", e);
-				}
-			};
-			addComponentListener(new ComponentAdapter() {
-
-				/*
-				 * (non-Javadoc)
-				 *
-				 * @see
-				 * java.awt.event.ComponentAdapter#componentShown(java.awt.event
-				 * .ComponentEvent)
-				 */
-				@Override
-				public void componentShown(final ComponentEvent e) {
-					updateNextTurnResponsibility(initialRole);
-					removeComponentListener(this);
-				}
-
-			});
 		}
+
+		nextTurnHook = () -> {
+			try {
+				final MapEntryRemapping<Integer, SpatialRegion> nextMove = moveFactory.get();
+				final Integer pieceId = nextMove.getKey();
+				final SpatialRegion source = nextMove.getOldValue();
+				final SpatialRegion target = nextMove.getNewValue();
+				boardPanel.notifyNextMove(source, target, pieceId);
+			} catch (final NoSuchElementException e) {
+				// No pieces left to be moved; Game cannot continue
+				JOptionPane.showMessageDialog(this, "No more moves available.", "No more moves",
+						JOptionPane.WARNING_MESSAGE);
+				LOGGER.warn("No more moves available.", e);
+			}
+		};
+		addComponentListener(new ComponentAdapter() {
+
+			/*
+			 * (non-Javadoc)
+			 *
+			 * @see
+			 * java.awt.event.ComponentAdapter#componentShown(java.awt.event
+			 * .ComponentEvent)
+			 */
+			@Override
+			public void componentShown(final ComponentEvent e) {
+				updateNextTurnResponsibility(initialRole);
+				removeComponentListener(this);
+			}
+
+		});
 	}
 
 	@Override
@@ -278,17 +237,11 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 	@Override
 	public void updatePlayerRole(final PlayerRole newRole) {
 		LOGGER.debug("Observed event representing a change in player role.");
-		final PlayerTurnStatus newTurnStatus = getPlayerTurnStatus(newRole);
-
-		LOGGER.debug("Setting player readiness indicator status to {}.", newTurnStatus);
-		playerReadiness.setStatus(newTurnStatus);
-
 		final String roleStatusText = PLAYER_ROLE_STATUS_LABEL_TEXT.get(newRole);
 		LOGGER.info("Setting player state label for role {}.", newRole);
 		roleStatusLabel.setText(roleStatusText);
 		final String labelText = roleStatusLabel.getText();
 		assert labelText != null && !labelText.isEmpty();
-
 		updateNextTurnResponsibility(newRole);
 	}
 
