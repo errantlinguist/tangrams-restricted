@@ -127,6 +127,8 @@ public final class GameGUI implements Runnable {
 
 	private final boolean analysisEnabled;
 
+	private final ExecutorService backgroundJobService;
+
 	private final Runnable closeHook;
 
 	private final GameState gameState;
@@ -136,10 +138,8 @@ public final class GameGUI implements Runnable {
 	private final ScreenshotLogger screenshotLogger;
 
 	private final String title;
-
-	private final Point viewCenterpoint;
 	
-	private final ExecutorService backgroundJobService;
+	private final Point viewCenterpoint;
 
 	public GameGUI(final String title, final Point viewCenterpoint, final GameState gameState,
 			final Supplier<? extends Path> logOutdirPathSupplier, final ExecutorService backgroundJobService,
@@ -169,34 +169,6 @@ public final class GameGUI implements Runnable {
 				});
 			};
 		}
-	}
-
-	public Entry<GameBoardPanel, ImageLoadingImageViewInfoFactory> createDebugGameBoardImgViewInfoFactory(
-			final Controller controller, final Function<? super Integer, ? extends Image> pieceIdImageFactory,
-			final int uniqueImageResourceCount, final Map<BoardArea, Color> boardAreaColors) {
-		final GameBoardPanel gameBoardPanel = new GameBoardPanel(controller.getModel(), pieceIdImageFactory, controller,
-				boardAreaColors.get(BoardArea.HIGHLIGHT), screenshotLogger, backgroundJobService, true);
-		gameBoardPanel.setBackground(boardAreaColors.get(BoardArea.BACKGROUND));
-		final OpaqueTransparencyReplacementImageFilter imgFilter = new OpaqueTransparencyReplacementImageFilter(128);
-		final BiFunction<Image, Toolkit, Image> tranparencyFilterer = (img, toolkit) -> {
-			return toolkit.createImage(new FilteredImageSource(img.getSource(), imgFilter));
-		};
-		final ImageLoadingImageViewInfoFactory imgViewInfoFactory = new ImageLoadingImageViewInfoFactory(
-				gameBoardPanel.getToolkit(), tranparencyFilterer,
-				Maps.newHashMapWithExpectedSize(uniqueImageResourceCount));
-		return new MutablePair<>(gameBoardPanel, imgViewInfoFactory);
-	}
-
-	public Entry<GameBoardPanel, ImageLoadingImageViewInfoFactory> createProdGameBoardImgViewInfoFactory(
-			final Controller controller, final Function<? super Integer, ? extends Image> pieceIdImageFactory,
-			final int uniqueImageResourceCount, final Map<BoardArea, Color> boardAreaColors) {
-		final GameBoardPanel gameBoardPanel = new GameBoardPanel(controller.getModel(), pieceIdImageFactory, controller,
-				boardAreaColors.get(BoardArea.HIGHLIGHT), screenshotLogger, backgroundJobService);
-		gameBoardPanel.setBackground(boardAreaColors.get(BoardArea.BACKGROUND));
-		final ImageLoadingImageViewInfoFactory imgViewInfoFactory = new ImageLoadingImageViewInfoFactory(
-				gameBoardPanel.getToolkit(), DEFAULT_POST_COLORING_IMG_TRANSFORMER,
-				Maps.newHashMapWithExpectedSize(uniqueImageResourceCount));
-		return new MutablePair<>(gameBoardPanel, imgViewInfoFactory);
 	}
 
 	@Override
@@ -255,5 +227,33 @@ public final class GameGUI implements Runnable {
 		view.setLocation(viewLocation);
 		view.setVisible(true);
 
+	}
+
+	private Entry<GameBoardPanel, ImageLoadingImageViewInfoFactory> createDebugGameBoardImgViewInfoFactory(
+			final Controller controller, final Function<? super Integer, ? extends Image> pieceIdImageFactory,
+			final int uniqueImageResourceCount, final Map<BoardArea, Color> boardAreaColors) {
+		final GameBoardPanel gameBoardPanel = new GameBoardPanel(controller.getModel(), pieceIdImageFactory, controller,
+				boardAreaColors.get(BoardArea.HIGHLIGHT), screenshotLogger, backgroundJobService, true);
+		gameBoardPanel.setBackground(boardAreaColors.get(BoardArea.BACKGROUND));
+		final OpaqueTransparencyReplacementImageFilter imgFilter = new OpaqueTransparencyReplacementImageFilter(128);
+		final BiFunction<Image, Toolkit, Image> tranparencyFilterer = (img, toolkit) -> {
+			return toolkit.createImage(new FilteredImageSource(img.getSource(), imgFilter));
+		};
+		final ImageLoadingImageViewInfoFactory imgViewInfoFactory = new ImageLoadingImageViewInfoFactory(
+				gameBoardPanel.getToolkit(), tranparencyFilterer,
+				Maps.newHashMapWithExpectedSize(uniqueImageResourceCount));
+		return new MutablePair<>(gameBoardPanel, imgViewInfoFactory);
+	}
+
+	private Entry<GameBoardPanel, ImageLoadingImageViewInfoFactory> createProdGameBoardImgViewInfoFactory(
+			final Controller controller, final Function<? super Integer, ? extends Image> pieceIdImageFactory,
+			final int uniqueImageResourceCount, final Map<BoardArea, Color> boardAreaColors) {
+		final GameBoardPanel gameBoardPanel = new GameBoardPanel(controller.getModel(), pieceIdImageFactory, controller,
+				boardAreaColors.get(BoardArea.HIGHLIGHT), screenshotLogger, backgroundJobService);
+		gameBoardPanel.setBackground(boardAreaColors.get(BoardArea.BACKGROUND));
+		final ImageLoadingImageViewInfoFactory imgViewInfoFactory = new ImageLoadingImageViewInfoFactory(
+				gameBoardPanel.getToolkit(), DEFAULT_POST_COLORING_IMG_TRANSFORMER,
+				Maps.newHashMapWithExpectedSize(uniqueImageResourceCount));
+		return new MutablePair<>(gameBoardPanel, imgViewInfoFactory);
 	}
 }
