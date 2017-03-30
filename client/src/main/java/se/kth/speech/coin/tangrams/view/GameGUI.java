@@ -28,8 +28,10 @@ import java.io.UncheckedIOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
@@ -39,6 +41,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.IntFunction;
 import java.util.function.Supplier;
 
 import org.slf4j.Logger;
@@ -138,7 +141,7 @@ public final class GameGUI implements Runnable {
 	private final ScreenshotLogger screenshotLogger;
 
 	private final String title;
-	
+
 	private final Point viewCenterpoint;
 
 	public GameGUI(final String title, final Point viewCenterpoint, final GameState gameState,
@@ -182,9 +185,9 @@ public final class GameGUI implements Runnable {
 		final List<ImageVisualizationInfo.Datum> imgVizInfoData = imgVizInfo.getData();
 		final Map<BoardArea, Color> boardAreaColors = BoardArea.getDefaultBoardAreaColorMap();
 		final Random rnd = gameState.getRnd();
-		final Map<Integer, Image> pieceImgs = Maps.newHashMapWithExpectedSize(imgVizInfoData.size());
+		final List<Image> pieceImgs = new ArrayList<>(imgVizInfoData.size());
 
-		final Function<Integer, Image> pieceIdImgGetter = pieceImgs::get;
+		final IntFunction<Image> pieceIdImgGetter = pieceImgs::get;
 		final int uniqueImageResourceCount = imgVizInfo.getUniqueImageResourceCount();
 		final Entry<GameBoardPanel, ImageLoadingImageViewInfoFactory> gameBoardImgViewInfoFactory = analysisEnabled
 				? createDebugGameBoardImgViewInfoFactory(controller, pieceIdImgGetter, uniqueImageResourceCount,
@@ -196,16 +199,18 @@ public final class GameGUI implements Runnable {
 
 		final SortedMap<Integer, ImageVisualizationInfo.Datum> imgVisualizationInfoDataById = new TreeMap<>();
 
-		imgVizInfoData.forEach(imgVisualizationInfoDatum -> {
-			final Integer id = imgVisualizationInfoDataById.size();
+		for (final ListIterator<ImageVisualizationInfo.Datum> imgVizInfoDataIter = imgVizInfoData
+				.listIterator(); imgVizInfoDataIter.hasNext();) {
+			final int id = imgVizInfoDataIter.nextIndex();
+			ImageVisualizationInfo.Datum imgVisualizationInfoDatum = imgVizInfoDataIter.next();
 			final ImageVisualizationInfo.Datum oldVizInfo = imgVisualizationInfoDataById.put(id,
 					imgVisualizationInfoDatum);
 			assert oldVizInfo == null;
 
 			final Entry<ImageViewInfo, Image> imgViewInfoDatum = imgViewInfoFactory.apply(imgVisualizationInfoDatum);
-			final Image oldImg = pieceImgs.put(id, imgViewInfoDatum.getValue());
-			assert oldImg == null;
-		});
+			final boolean wasAdded = pieceImgs.add(imgViewInfoDatum.getValue());
+			assert wasAdded;
+		}
 		imgVizInfoWriter.accept(imgVisualizationInfoDataById.entrySet().iterator());
 
 		// http://stackoverflow.com/a/1936582/1391325
@@ -230,7 +235,7 @@ public final class GameGUI implements Runnable {
 	}
 
 	private Entry<GameBoardPanel, ImageLoadingImageViewInfoFactory> createDebugGameBoardImgViewInfoFactory(
-			final Controller controller, final Function<? super Integer, ? extends Image> pieceIdImageFactory,
+			final Controller controller, final IntFunction<? extends Image> pieceIdImageFactory,
 			final int uniqueImageResourceCount, final Map<BoardArea, Color> boardAreaColors) {
 		final GameBoardPanel gameBoardPanel = new GameBoardPanel(controller.getModel(), pieceIdImageFactory, controller,
 				boardAreaColors.get(BoardArea.HIGHLIGHT), screenshotLogger, backgroundJobService, true);
@@ -246,7 +251,7 @@ public final class GameGUI implements Runnable {
 	}
 
 	private Entry<GameBoardPanel, ImageLoadingImageViewInfoFactory> createProdGameBoardImgViewInfoFactory(
-			final Controller controller, final Function<? super Integer, ? extends Image> pieceIdImageFactory,
+			final Controller controller, final IntFunction<? extends Image> pieceIdImageFactory,
 			final int uniqueImageResourceCount, final Map<BoardArea, Color> boardAreaColors) {
 		final GameBoardPanel gameBoardPanel = new GameBoardPanel(controller.getModel(), pieceIdImageFactory, controller,
 				boardAreaColors.get(BoardArea.HIGHLIGHT), screenshotLogger, backgroundJobService);
