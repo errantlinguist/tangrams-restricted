@@ -176,7 +176,7 @@ public final class TangramsServer implements Runnable {
 
 	private static Options createOptions() {
 		final Options result = new Options();
-		Arrays.stream(Parameter.values()).map(Parameter::get).forEach(opt -> result.addOption(opt));
+		Arrays.stream(Parameter.values()).map(Parameter::get).forEach(result::addOption);
 		return result;
 	}
 
