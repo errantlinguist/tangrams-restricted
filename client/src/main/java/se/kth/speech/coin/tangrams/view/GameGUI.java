@@ -21,6 +21,9 @@ import java.awt.Dimension;
 import java.awt.Image;
 import java.awt.Point;
 import java.awt.Toolkit;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 import java.awt.image.FilteredImageSource;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -130,8 +133,6 @@ public final class GameGUI implements Runnable {
 
 	private final ExecutorService backgroundJobService;
 
-	private final Runnable closeHook;
-
 	private final GameState gameState;
 
 	private final Consumer<Iterator<Entry<Integer, ImageVisualizationInfo.Datum>>> imgVizInfoWriter;
@@ -142,6 +143,8 @@ public final class GameGUI implements Runnable {
 
 	private final Point viewCenterpoint;
 
+	private final WindowListener viewClosedListener;
+
 	public GameGUI(final String title, final Point viewCenterpoint, final GameState gameState,
 			final Supplier<? extends Path> logOutdirPathSupplier, final ExecutorService backgroundJobService,
 			final Runnable closeHook, final boolean analysisEnabled) {
@@ -151,7 +154,20 @@ public final class GameGUI implements Runnable {
 		this.analysisEnabled = analysisEnabled;
 		screenshotLogger = new ScreenshotLogger(logOutdirPathSupplier, () -> gameState.getController().getPlayerId(),
 				backgroundJobService);
-		this.closeHook = closeHook;
+		viewClosedListener = new WindowAdapter() {
+
+			/*
+			 * (non-Javadoc)
+			 *
+			 * @see java.awt.event.WindowAdapter#windowClosed(java.awt.event.
+			 * WindowEvent)
+			 */
+			@Override
+			public void windowClosed(final WindowEvent e) {
+				closeHook.run();
+			}
+
+		};
 		this.backgroundJobService = backgroundJobService;
 
 		{
@@ -218,7 +234,8 @@ public final class GameGUI implements Runnable {
 		final Dimension preferredSize = new Dimension(shortestScreenLength, shortestScreenLength);
 		final PatternMoveFactory moveFactory = new PatternMoveFactory(rnd, controller.getModel(), 4);
 		controller.getListeners().add(moveFactory);
-		final GameViewFrame view = new GameViewFrame(gameBoardPanel, controller, moveFactory, closeHook, preferredSize);
+		final GameViewFrame view = new GameViewFrame(gameBoardPanel, controller, moveFactory, preferredSize);
+		view.addWindowListener(viewClosedListener);
 		view.setTitle(title);
 		// gameViewFrame.setJMenuBar(createMenuBar(gameViewFrame));
 		view.setMaximumSize(screenSize);
