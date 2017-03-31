@@ -260,11 +260,11 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 		// component
 		final int uniqueRegionCount = posMatrix.getElementPlacements().getMinimalRegions().size();
 		compCoordStartIdxs = Maps.newHashMapWithExpectedSize(uniqueRegionCount);
-		addComponentListener(new ComponentResizedEventListener(() -> compCoordStartIdxs.clear()));
+		addComponentListener(new ComponentResizedEventListener(compCoordStartIdxs::clear));
 		compCoordSizes = Maps.newHashMapWithExpectedSize(uniqueRegionCount);
-		addComponentListener(new ComponentResizedEventListener(() -> compCoordSizes.clear()));
+		addComponentListener(new ComponentResizedEventListener(compCoordSizes::clear));
 		imgsScaledToGridSize = Maps.newHashMapWithExpectedSize(posMatrix.getUniqueElementCount());
-		addComponentListener(new ComponentResizedEventListener(() -> imgsScaledToGridSize.clear()));
+		addComponentListener(new ComponentResizedEventListener(imgsScaledToGridSize::clear));
 
 		{
 			final int[] minSizeDims = createMinimumDimLengths(posMatrix.getDimensions()).toArray();

@@ -349,7 +349,7 @@ public final class TangramsClient implements Runnable {
 						final File timestampedLogDir = new LogDirectoryFactory(rootLogDir, systemLoggingStartTime)
 								.get();
 						timestampedLogDir.mkdirs();
-						final Supplier<Path> timestampedLogDirPathSupplier = () -> timestampedLogDir.toPath();
+						final Supplier<Path> timestampedLogDirPathSupplier = timestampedLogDir::toPath;
 
 						final Entry<Consumer<String>, Runnable> recordingHooks;
 						if (recordingEnabled) {
