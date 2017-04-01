@@ -40,7 +40,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.function.BiConsumer;
-import java.util.function.IntFunction;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -222,7 +222,7 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 
 	private final BiConsumer<? super GameBoardPanel, ? super Turn> localTurnCompletionViewLogger;
 
-	private final IntFunction<? extends Image> pieceIdImageFactory;
+	private final Function<? super Integer, ? extends Image> pieceIdImageFactory;
 
 	private final SpatialMatrix<Integer> posMatrix;
 
@@ -231,14 +231,14 @@ final class GameBoardPanel extends JPanel implements Controller.Listener {
 	private final BiConsumer<Component, String> viewLogger;
 
 	GameBoardPanel(final SpatialMatrix<Integer> posMatrix,
-			final IntFunction<? extends Image> pieceIdImageFactory, final Controller controller,
+			final Function<? super Integer, ? extends Image> pieceIdImageFactory, final Controller controller,
 			final Color highlightColor, final BiConsumer<? super Component, ? super String> screenshotLogger,
 			final ExecutorService backgroundJobService) {
 		this(posMatrix, pieceIdImageFactory, controller, highlightColor, screenshotLogger, backgroundJobService, false);
 	}
 
 	GameBoardPanel(final SpatialMatrix<Integer> posMatrix,
-			final IntFunction<? extends Image> pieceIdImageFactory, final Controller controller,
+			final Function<? super Integer, ? extends Image> pieceIdImageFactory, final Controller controller,
 			final Color highlightColor, final BiConsumer<? super Component, ? super String> screenshotLogger,
 			final ExecutorService backgroundJobService, final boolean analysisEnabled) {
 		this.posMatrix = posMatrix;
