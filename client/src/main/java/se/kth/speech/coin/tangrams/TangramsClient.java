@@ -79,32 +79,6 @@ import se.kth.speech.io.DirectoryZipArchiver;
  */
 public final class TangramsClient implements Runnable {
 
-	private static class LogArchiveCopier implements Consumer<Path> {
-
-		private final Path copyDirPath;
-
-		private LogArchiveCopier(final Path copyDirPath) {
-			this.copyDirPath = copyDirPath;
-		}
-
-		@Override
-		public void accept(final Path filePath) {
-			final Path filename = filePath.getFileName();
-			final Path targetPath = copyDirPath.resolve(filename);
-			System.out.println(String.format("Copying session log archive to \"%s\".", targetPath));
-			LOGGER.info("Copying session log archive to \"{}\".", targetPath);
-			try {
-				final Path result = Files.copy(filePath, targetPath, StandardCopyOption.COPY_ATTRIBUTES);
-				LOGGER.info("Finished copying session log archive to \"{}\".", result);
-				System.out.println(String.format("Finished copying session log archive to \"%s\".", result));
-			} catch (final IOException e) {
-				throw new UncheckedIOException(e);
-			}
-
-		}
-
-	}
-
 	private enum Parameter implements Supplier<Option> {
 		ANALYSIS("a") {
 			@Override
@@ -162,6 +136,32 @@ public final class TangramsClient implements Runnable {
 
 	}
 
+	private static class SessionLogArchiveCopier implements Consumer<Path> {
+
+		private final Path copyDirPath;
+
+		private SessionLogArchiveCopier(final Path copyDirPath) {
+			this.copyDirPath = copyDirPath;
+		}
+
+		@Override
+		public void accept(final Path filePath) {
+			final Path filename = filePath.getFileName();
+			final Path targetPath = copyDirPath.resolve(filename);
+			System.out.println(String.format("Copying session log archive to \"%s\".", targetPath));
+			LOGGER.info("Copying session log archive to \"{}\".", targetPath);
+			try {
+				final Path result = Files.copy(filePath, targetPath, StandardCopyOption.COPY_ATTRIBUTES);
+				LOGGER.info("Finished copying session log archive to \"{}\".", result);
+				System.out.println(String.format("Finished copying session log archive to \"%s\".", result));
+			} catch (final IOException e) {
+				throw new UncheckedIOException(e);
+			}
+
+		}
+
+	}
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(TangramsClient.class);
 
 	private static final Options OPTIONS = createOptions();
@@ -199,7 +199,7 @@ public final class TangramsClient implements Runnable {
 					} else {
 						final Path copyDirPath = copyDir.toPath();
 						LOGGER.info("Will copy session log archive to \"{}\" after ending the session.", copyDirPath);
-						logArchiveCopier = new LogArchiveCopier(copyDirPath);
+						logArchiveCopier = new SessionLogArchiveCopier(copyDirPath);
 					}
 
 					final TangramsClient client = new TangramsClient(PROPS.getProperty("broker.ticket"), brokerHost,
@@ -364,9 +364,9 @@ public final class TangramsClient implements Runnable {
 
 	private final String brokerTicket;
 
-	private final Consumer<? super Path> logArchivePostprocessingHook;
-
 	private final boolean recordingEnabled;
+
+	private final Consumer<? super Path> logArchivePostprocessingHook;
 
 	public TangramsClient(final String brokerTicket, final String brokerHost, final int brokerPort,
 			final boolean analysisEnabled, final boolean recordingEnabled,
