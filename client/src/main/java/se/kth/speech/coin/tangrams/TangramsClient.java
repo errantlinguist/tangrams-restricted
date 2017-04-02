@@ -24,8 +24,10 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
@@ -77,6 +79,32 @@ import se.kth.speech.io.DirectoryZipArchiver;
  */
 public final class TangramsClient implements Runnable {
 
+	private static class LogArchiveCopier implements Consumer<Path> {
+
+		private final Path copyDirPath;
+
+		private LogArchiveCopier(final Path copyDirPath) {
+			this.copyDirPath = copyDirPath;
+		}
+
+		@Override
+		public void accept(final Path filePath) {
+			final Path filename = filePath.getFileName();
+			final Path targetPath = copyDirPath.resolve(filename);
+			System.out.println(String.format("Copying session log archive to \"%s\".", targetPath));
+			LOGGER.info("Copying session log archive to \"{}\".", targetPath);
+			try {
+				final Path result = Files.copy(filePath, targetPath, StandardCopyOption.COPY_ATTRIBUTES);
+				LOGGER.info("Finished copying session log archive to \"{}\".", result);
+				System.out.println(String.format("Finished copying session log archive to \"%s\".", result));
+			} catch (final IOException e) {
+				throw new UncheckedIOException(e);
+			}
+
+		}
+
+	}
+
 	private enum Parameter implements Supplier<Option> {
 		ANALYSIS("a") {
 			@Override
@@ -104,6 +132,14 @@ public final class TangramsClient implements Runnable {
 						.type(Number.class).build();
 			}
 
+		},
+		COPY_LOGS("c") {
+			@Override
+			public Option get() {
+				return Option.builder(optName).longOpt("copy-logs")
+						.desc("Copies the log archive for each session to a given directory.").hasArg().argName("dir")
+						.type(File.class).build();
+			}
 		},
 		HELP("?") {
 			@Override
@@ -150,14 +186,28 @@ public final class TangramsClient implements Runnable {
 				final boolean analysisEnabled = cl.hasOption(Parameter.ANALYSIS.optName);
 				final boolean recordingEnabled = !cl.hasOption(Parameter.RECORDING_DISABLED.optName);
 				final String brokerHost = parseBrokerHost(cl);
+
 				try {
 					final int brokerPort = parseBrokerPort(cl);
+					final File copyDir = (File) cl.getParsedOptionValue(Parameter.COPY_LOGS.optName);
+					final Consumer<Path> logArchiveCopier;
+					if (copyDir == null) {
+						LOGGER.info("No session log post-processing specified.");
+						logArchiveCopier = filePath -> {
+							// Do nothing
+						};
+					} else {
+						final Path copyDirPath = copyDir.toPath();
+						LOGGER.info("Will copy session log archive to \"{}\" after ending the session.", copyDirPath);
+						logArchiveCopier = new LogArchiveCopier(copyDirPath);
+					}
+
 					final TangramsClient client = new TangramsClient(PROPS.getProperty("broker.ticket"), brokerHost,
-							brokerPort, analysisEnabled, recordingEnabled);
+							brokerPort, analysisEnabled, recordingEnabled, logArchiveCopier);
 					client.run();
 
 				} catch (final ParseException e) {
-					System.out.println(String.format("Could not parse port: %s", e.getLocalizedMessage()));
+					System.out.println(String.format("Could not parse option: %s", e.getLocalizedMessage()));
 					printHelp();
 				}
 			}
@@ -193,17 +243,18 @@ public final class TangramsClient implements Runnable {
 		return result;
 	}
 
-	private static Runnable createSessionLogArchiver(final Path rootLogDirPath, final Date systemLoggingStartTime,
+	private static Supplier<Path> createSessionLogArchiver(final Path rootLogDirPath, final Date systemLoggingStartTime,
 			final Supplier<? extends Path> timestampedLogDirPathSupplier, final String playerId) {
 		return () -> {
 			final String archiveFilename = new SimpleDateFormat("yyyyMMdd-HHmm").format(systemLoggingStartTime) + "-"
 					+ playerId + ".zip";
-			final Path archiveFilePath = rootLogDirPath.resolve(archiveFilename);
-			System.out.println(String.format("Archiving session logs to \"%s\"...", archiveFilePath));
-			LOGGER.info("Archiving session logs to \"{}\"...", archiveFilePath);
-			new DirectoryZipArchiver().accept(timestampedLogDirPathSupplier.get(), archiveFilePath);
-			LOGGER.info("Finished archiving session logs to \"{}\".", archiveFilePath);
-			System.out.println(String.format("Finished archiving session logs to \"%s\".", archiveFilePath));
+			final Path result = rootLogDirPath.resolve(archiveFilename);
+			System.out.println(String.format("Archiving session logs to \"%s\"...", result));
+			LOGGER.info("Archiving session logs to \"{}\"...", result);
+			new DirectoryZipArchiver().accept(timestampedLogDirPathSupplier.get(), result);
+			LOGGER.info("Finished archiving session logs to \"{}\".", result);
+			System.out.println(String.format("Finished archiving session logs to \"%s\".", result));
+			return result;
 		};
 	}
 
@@ -313,15 +364,19 @@ public final class TangramsClient implements Runnable {
 
 	private final String brokerTicket;
 
+	private final Consumer<? super Path> logArchivePostprocessingHook;
+
 	private final boolean recordingEnabled;
 
 	public TangramsClient(final String brokerTicket, final String brokerHost, final int brokerPort,
-			final boolean analysisEnabled, final boolean recordingEnabled) {
+			final boolean analysisEnabled, final boolean recordingEnabled,
+			final Consumer<? super Path> logArchivePostprocessingHook) {
 		this.brokerTicket = brokerTicket;
 		this.brokerHost = brokerHost;
 		this.brokerPort = brokerPort;
 		this.analysisEnabled = analysisEnabled;
 		this.recordingEnabled = recordingEnabled;
+		this.logArchivePostprocessingHook = logArchivePostprocessingHook;
 	}
 
 	@Override
@@ -425,10 +480,16 @@ public final class TangramsClient implements Runnable {
 														// requesting that the
 														// background job
 														// executor be shut down
-														final Runnable sessionLogArchiver = createSessionLogArchiver(
+														final Supplier<Path> sessionLogArchiver = createSessionLogArchiver(
 																rootLogDirPath, systemLoggingStartTime,
 																timestampedLogDirPathSupplier, playerId);
-														backgroundJobService.execute(sessionLogArchiver);
+														// Future<Path>
+														// archivePath =
+														// backgroundJobService.submit(sessionLogArchiver);
+														CompletableFuture
+																.supplyAsync(sessionLogArchiver, backgroundJobService)
+																.thenAccept(logArchivePostprocessingHook);
+														// backgroundJobService.execute(sessionLogArchiver);
 														backgroundJobService.shutdown();
 													});
 												};
