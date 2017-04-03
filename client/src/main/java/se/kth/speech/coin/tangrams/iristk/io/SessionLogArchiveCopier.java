@@ -37,13 +37,13 @@ public final class SessionLogArchiveCopier implements Consumer<Path> {
 	}
 
 	@Override
-	public void accept(final Path filePath) {
-		final Path filename = filePath.getFileName();
+	public void accept(final Path sourceFilePath) {
+		final Path filename = sourceFilePath.getFileName();
 		final Path targetPath = targetDirPath.resolve(filename);
 		System.out.println(String.format("Copying session log archive to \"%s\".", targetPath));
 		LOGGER.info("Copying session log archive to \"{}\".", targetPath);
 		try {
-			final Path result = Files.copy(filePath, targetPath, StandardCopyOption.COPY_ATTRIBUTES);
+			final Path result = Files.copy(sourceFilePath, targetPath, StandardCopyOption.COPY_ATTRIBUTES);
 			LOGGER.info("Finished copying session log archive to \"{}\".", result);
 			System.out.println(String.format("Finished copying session log archive to \"%s\".", result));
 		} catch (final IOException e) {
