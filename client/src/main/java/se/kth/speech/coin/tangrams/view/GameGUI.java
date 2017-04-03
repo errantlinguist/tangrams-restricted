@@ -60,6 +60,7 @@ import se.kth.speech.coin.tangrams.content.ImageVisualizationInfoTableWriter;
 import se.kth.speech.coin.tangrams.game.Controller;
 import se.kth.speech.coin.tangrams.game.PatternMoveFactory;
 import se.kth.speech.coin.tangrams.iristk.GameState;
+import se.kth.speech.coin.tangrams.iristk.ImageVisualizationInfoDescription;
 
 /**
  *
@@ -170,7 +171,7 @@ public final class GameGUI implements Runnable {
 		this.backgroundJobService = backgroundJobService;
 
 		{
-			final Function<URL, String> imgNameFactory = new URLFilenameBaseSplitter();
+			final Function<URL, String> imgNameFactory = ImageVisualizationInfoDescription.getResourceNameFactory();
 			imgVizInfoWriter = imgVizInfoData -> {
 				backgroundJobService.submit(() -> {
 					final Path outdir = logOutdirPathSupplier.get();
