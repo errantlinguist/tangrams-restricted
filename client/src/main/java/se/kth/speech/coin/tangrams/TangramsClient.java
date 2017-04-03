@@ -24,10 +24,8 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
@@ -67,6 +65,7 @@ import se.kth.speech.coin.tangrams.content.IconImages;
 import se.kth.speech.coin.tangrams.iristk.GameManagementClientModule;
 import se.kth.speech.coin.tangrams.iristk.IrisSystemStopper;
 import se.kth.speech.coin.tangrams.iristk.io.LogDirectoryFactory;
+import se.kth.speech.coin.tangrams.iristk.io.SessionLogArchiveCopier;
 import se.kth.speech.coin.tangrams.view.ConnectionStatusFrame;
 import se.kth.speech.coin.tangrams.view.GameGUI;
 import se.kth.speech.io.DirectoryZipArchiver;
@@ -132,32 +131,6 @@ public final class TangramsClient implements Runnable {
 
 		private Parameter(final String optName) {
 			this.optName = optName;
-		}
-
-	}
-
-	private static class SessionLogArchiveCopier implements Consumer<Path> {
-
-		private final Path copyDirPath;
-
-		private SessionLogArchiveCopier(final Path copyDirPath) {
-			this.copyDirPath = copyDirPath;
-		}
-
-		@Override
-		public void accept(final Path filePath) {
-			final Path filename = filePath.getFileName();
-			final Path targetPath = copyDirPath.resolve(filename);
-			System.out.println(String.format("Copying session log archive to \"%s\".", targetPath));
-			LOGGER.info("Copying session log archive to \"{}\".", targetPath);
-			try {
-				final Path result = Files.copy(filePath, targetPath, StandardCopyOption.COPY_ATTRIBUTES);
-				LOGGER.info("Finished copying session log archive to \"{}\".", result);
-				System.out.println(String.format("Finished copying session log archive to \"%s\".", result));
-			} catch (final IOException e) {
-				throw new UncheckedIOException(e);
-			}
-
 		}
 
 	}
@@ -364,9 +337,9 @@ public final class TangramsClient implements Runnable {
 
 	private final String brokerTicket;
 
-	private final boolean recordingEnabled;
-
 	private final Consumer<? super Path> logArchivePostprocessingHook;
+
+	private final boolean recordingEnabled;
 
 	public TangramsClient(final String brokerTicket, final String brokerHost, final int brokerPort,
 			final boolean analysisEnabled, final boolean recordingEnabled,
