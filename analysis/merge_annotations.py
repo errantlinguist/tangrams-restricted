@@ -13,9 +13,6 @@ from collections import defaultdict
 DEFAULT_NAMESPACE = "http://www.speech.kth.se/higgins/2005/annotation/"
 DEFAULT_TAG_PREFIX = "{" + DEFAULT_NAMESPACE + "}"
 
-def create_namespace_tag_name(tag_name):
-	return DEFAULT_TAG_PREFIX + tag_name
-
 class AnnotationData(object):
 	
 	def __init__(self):
@@ -87,10 +84,11 @@ class TrackSources(object):
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
 		
+def create_namespace_tag_name(tag_name):
+	return DEFAULT_TAG_PREFIX + tag_name
 
 def merge_annots(annot_data):
 		for annot_datum in annot_data:
-			
 			print(annot_datum)
 
 if __name__ == '__main__':
