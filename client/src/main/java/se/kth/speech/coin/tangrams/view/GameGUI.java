@@ -50,7 +50,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import se.kth.speech.MutablePair;
-import se.kth.speech.URLFilenameBaseSplitter;
 import se.kth.speech.awt.OpaqueTransparencyReplacementImageFilter;
 import se.kth.speech.coin.tangrams.content.BoardArea;
 import se.kth.speech.coin.tangrams.content.ImageLoadingImageViewInfoFactory;
