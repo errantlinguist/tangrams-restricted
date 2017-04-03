@@ -26,7 +26,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.EnumMap;
@@ -66,9 +65,9 @@ import se.kth.speech.coin.tangrams.iristk.GameManagementClientModule;
 import se.kth.speech.coin.tangrams.iristk.IrisSystemStopper;
 import se.kth.speech.coin.tangrams.iristk.io.LogDirectoryFactory;
 import se.kth.speech.coin.tangrams.iristk.io.SessionLogArchiveCopier;
+import se.kth.speech.coin.tangrams.iristk.io.SessionLogArchiver;
 import se.kth.speech.coin.tangrams.view.ConnectionStatusFrame;
 import se.kth.speech.coin.tangrams.view.GameGUI;
-import se.kth.speech.io.DirectoryZipArchiver;
 
 /**
  *
@@ -214,21 +213,6 @@ public final class TangramsClient implements Runnable {
 		final Options result = new Options();
 		Arrays.stream(Parameter.values()).map(Parameter::get).forEach(result::addOption);
 		return result;
-	}
-
-	private static Supplier<Path> createSessionLogArchiver(final Path rootLogDirPath, final Date systemLoggingStartTime,
-			final Supplier<? extends Path> timestampedLogDirPathSupplier, final String playerId) {
-		return () -> {
-			final String archiveFilename = new SimpleDateFormat("yyyyMMdd-HHmm").format(systemLoggingStartTime) + "-"
-					+ playerId + ".zip";
-			final Path result = rootLogDirPath.resolve(archiveFilename);
-			System.out.println(String.format("Archiving session logs to \"%s\"...", result));
-			LOGGER.info("Archiving session logs to \"{}\"...", result);
-			new DirectoryZipArchiver().accept(timestampedLogDirPathSupplier.get(), result);
-			LOGGER.info("Finished archiving session logs to \"{}\".", result);
-			System.out.println(String.format("Finished archiving session logs to \"%s\".", result));
-			return result;
-		};
 	}
 
 	private static String parseBrokerHost(final CommandLine cl) {
@@ -453,7 +437,7 @@ public final class TangramsClient implements Runnable {
 														// requesting that the
 														// background job
 														// executor be shut down
-														final Supplier<Path> sessionLogArchiver = createSessionLogArchiver(
+														final Supplier<Path> sessionLogArchiver = new SessionLogArchiver(
 																rootLogDirPath, systemLoggingStartTime,
 																timestampedLogDirPathSupplier, playerId);
 														// Future<Path>
