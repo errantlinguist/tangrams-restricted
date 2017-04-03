@@ -18,12 +18,16 @@ package se.kth.speech.coin.tangrams;
 
 import java.nio.file.Path;
 import java.text.SimpleDateFormat;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import se.kth.speech.FilenameBaseSplitter;
 import se.kth.speech.io.DirectoryZipArchiver;
 
 /**
@@ -33,7 +37,11 @@ import se.kth.speech.io.DirectoryZipArchiver;
  */
 final class SessionLogArchiver implements Supplier<Path> {
 
+	private static final FilenameBaseSplitter FILENAME_BASE_SPLITTER = new FilenameBaseSplitter();
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(SessionLogArchiver.class);
+
+	private transient final DirectoryZipArchiver archiver;
 
 	private final String playerId;
 
@@ -49,6 +57,22 @@ final class SessionLogArchiver implements Supplier<Path> {
 		this.systemLoggingStartTime = systemLoggingStartTime;
 		this.timestampedLogDirPathSupplier = timestampedLogDirPathSupplier;
 		this.playerId = playerId;
+		final Function<Path, String> playerIdAppender = relSourceFilePath -> {
+			final Path filenamePath = relSourceFilePath.getFileName();
+			final String[] filenameParts = FILENAME_BASE_SPLITTER.apply(filenamePath.toString());
+
+			String result;
+			final int filenameBaseIdx = 0;
+			if (filenameParts[filenameBaseIdx].endsWith(playerId)) {
+				// Do nothing
+				result = relSourceFilePath.toString();
+			} else {
+				filenameParts[filenameBaseIdx] = filenameParts[filenameBaseIdx] + '-' + playerId;
+				result = Arrays.stream(filenameParts).collect(Collectors.joining("."));
+			}
+			return result;
+		};
+		archiver = new DirectoryZipArchiver(playerIdAppender);
 	}
 
 	/*
@@ -63,7 +87,7 @@ final class SessionLogArchiver implements Supplier<Path> {
 		final Path result = rootLogDirPath.resolve(archiveFilename);
 		System.out.println(String.format("Archiving session logs to \"%s\"...", result));
 		LOGGER.info("Archiving session logs to \"{}\"...", result);
-		new DirectoryZipArchiver().accept(timestampedLogDirPathSupplier.get(), result);
+		archiver.accept(timestampedLogDirPathSupplier.get(), result);
 		LOGGER.info("Finished archiving session logs to \"{}\".", result);
 		System.out.println(String.format("Finished archiving session logs to \"%s\".", result));
 		return result;
