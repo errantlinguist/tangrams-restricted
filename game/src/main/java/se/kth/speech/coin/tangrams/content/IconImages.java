@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.NavigableMap;
 import java.util.Properties;
 import java.util.TreeMap;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
 
@@ -49,6 +50,8 @@ public final class IconImages {
 
 	private static final Pattern MULTIVALUE_PROP_DELIM_PATTERN = Pattern.compile("\\s*,\\s*");
 
+	private static final Function<String, String> RESOURCE_NAME_FACTORY;
+
 	static {
 		try {
 			final Properties props = ClassProperties.load(IconImages.class);
@@ -58,7 +61,8 @@ public final class IconImages {
 			ICON_NAME_COMPARATOR = Comparator
 					.nullsLast(Lists.comparingByIndex(imageOrderingNames).thenComparing(Comparator.naturalOrder()));
 
-			ICON_IMAGE_RESOURCES = createImageResourceMap("image/(?!svg).+");
+			RESOURCE_NAME_FACTORY = new FilenameBaseSplitter();
+			ICON_IMAGE_RESOURCES = createImageResourceMap("image/(?!svg).+", RESOURCE_NAME_FACTORY);
 		} catch (final IOException e) {
 			throw new UncheckedIOException(e);
 		}
@@ -75,14 +79,22 @@ public final class IconImages {
 	 * @return the named icon image resources
 	 */
 	public static NavigableMap<String, URL> getImageResources(final String resourceContentTypeRegex) {
-		return createImageResourceMap(resourceContentTypeRegex);
+		return createImageResourceMap(resourceContentTypeRegex, RESOURCE_NAME_FACTORY);
 	}
 
-	private static NavigableMap<String, URL> createImageResourceMap(final String resourceContentTypeRegex) {
+	/**
+	 * @return the resourceNameFactory
+	 */
+	public static Function<String, String> getResourceNameFactory() {
+		return RESOURCE_NAME_FACTORY;
+	}
+
+	private static NavigableMap<String, URL> createImageResourceMap(final String resourceContentTypeRegex,
+			final Function<? super String, String> resourceNameFactory) {
 		final Predicate<String> imgFilter = new FileResourceLocatorContentTypePatternFilter(
 				Pattern.compile(resourceContentTypeRegex));
 		return new ClasspathDirResourceLocatorMapFactory<>(IconImages.class, () -> new TreeMap<>(ICON_NAME_COMPARATOR),
-				imgFilter, new FilenameBaseSplitter()).apply(ImageType.ICON.getDirLocator());
+				imgFilter, resourceNameFactory).apply(ImageType.ICON.getDirLocator());
 	}
 
 	private IconImages() {

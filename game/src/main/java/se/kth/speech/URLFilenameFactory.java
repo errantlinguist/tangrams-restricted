@@ -24,13 +24,7 @@ import java.util.function.Function;
  * @since 23 Mar 2017
  *
  */
-public final class URLFilenameBaseSplitter implements Function<URL, String> {
-
-	private final FilenameBaseSplitter filenameBaseSplitter;
-
-	public URLFilenameBaseSplitter() {
-		filenameBaseSplitter = new FilenameBaseSplitter();
-	}
+public final class URLFilenameFactory implements Function<URL, String> {
 
 	/*
 	 * (non-Javadoc)
@@ -40,8 +34,7 @@ public final class URLFilenameBaseSplitter implements Function<URL, String> {
 	@Override
 	public String apply(final URL url) {
 		final String urlStr = url.toString();
-		final String filename = urlStr.substring(urlStr.lastIndexOf('/') + 1);
-		return filenameBaseSplitter.apply(filename);
+		return urlStr.substring(urlStr.lastIndexOf('/') + 1);
 	}
 
 }

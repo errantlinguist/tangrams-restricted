@@ -24,7 +24,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import iristk.util.Record;
-import se.kth.speech.URLFilenameBaseSplitter;
+import se.kth.speech.URLFilenameFactory;
+import se.kth.speech.coin.tangrams.content.IconImages;
 import se.kth.speech.coin.tangrams.content.ImageSize;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 
@@ -96,7 +97,7 @@ public final class ImageVisualizationInfoDescription extends Record {
 
 	}
 
-	private static final Function<URL, String> RESOURCE_NAME_FACTORY = new URLFilenameBaseSplitter();
+	private static final Function<URL, String> RESOURCE_NAME_FACTORY = new URLFilenameFactory().andThen(IconImages.getResourceNameFactory());
 
 	/**
 	 * @return the resourceNameFactory
