@@ -30,16 +30,16 @@ public final class SessionLogArchiveCopier implements Consumer<Path> {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SessionLogArchiveCopier.class);
 
-	private final Path copyDirPath;
+	private final Path targetDirPath;
 
-	public SessionLogArchiveCopier(final Path copyDirPath) {
-		this.copyDirPath = copyDirPath;
+	public SessionLogArchiveCopier(final Path targetDirPath) {
+		this.targetDirPath = targetDirPath;
 	}
 
 	@Override
 	public void accept(final Path filePath) {
 		final Path filename = filePath.getFileName();
-		final Path targetPath = copyDirPath.resolve(filename);
+		final Path targetPath = targetDirPath.resolve(filename);
 		System.out.println(String.format("Copying session log archive to \"%s\".", targetPath));
 		LOGGER.info("Copying session log archive to \"{}\".", targetPath);
 		try {
