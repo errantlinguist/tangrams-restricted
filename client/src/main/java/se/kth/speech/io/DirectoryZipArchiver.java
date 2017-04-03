@@ -27,6 +27,7 @@ import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.BasicFileAttributeView;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.function.BiConsumer;
+import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.zip.Adler32;
 import java.util.zip.CheckedOutputStream;
@@ -48,7 +49,19 @@ public final class DirectoryZipArchiver implements BiConsumer<Path, Path> {
 
 	private static final int BUFFER_SIZE = 8192;
 
+	private static final Function<Path, String> DEFAULT_ENTRY_NAME_FACTORY = Path::toString;
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(DirectoryZipArchiver.class);
+
+	private final Function<? super Path, String> zippedFileEntryNameFactory;
+
+	public DirectoryZipArchiver() {
+		this(DEFAULT_ENTRY_NAME_FACTORY);
+	}
+
+	public DirectoryZipArchiver(final Function<? super Path, String> zippedFileEntryNameFactory) {
+		this.zippedFileEntryNameFactory = zippedFileEntryNameFactory;
+	}
 
 	@Override
 	public void accept(final Path indir, final Path outfile) throws UncheckedIOException {
@@ -61,8 +74,8 @@ public final class DirectoryZipArchiver implements BiConsumer<Path, Path> {
 				out.setMethod(ZipEntry.DEFLATED);
 				try (Stream<Path> filePaths = Files.walk(indir, FileVisitOption.FOLLOW_LINKS)) {
 					filePaths.filter(Files::isRegularFile).forEach(filePath -> {
-						final Path relIndir = indir.relativize(filePath);
-						final String entryName = relIndir.toString();
+						final Path relFilePath = indir.relativize(filePath);
+						final String entryName = zippedFileEntryNameFactory.apply(relFilePath);
 						final ZipEntry entry = new ZipEntry(entryName);
 						try {
 							out.putNextEntry(entry);
