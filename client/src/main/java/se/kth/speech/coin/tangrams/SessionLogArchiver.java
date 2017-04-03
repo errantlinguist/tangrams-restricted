@@ -14,7 +14,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech.coin.tangrams.iristk.io;
+package se.kth.speech.coin.tangrams;
 
 import java.nio.file.Path;
 import java.text.SimpleDateFormat;
@@ -31,7 +31,7 @@ import se.kth.speech.io.DirectoryZipArchiver;
  * @since 3 Apr 2017
  *
  */
-public final class SessionLogArchiver implements Supplier<Path> {
+final class SessionLogArchiver implements Supplier<Path> {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SessionLogArchiver.class);
 
@@ -43,7 +43,7 @@ public final class SessionLogArchiver implements Supplier<Path> {
 
 	private final Supplier<? extends Path> timestampedLogDirPathSupplier;
 
-	public SessionLogArchiver(final Path rootLogDirPath, final Date systemLoggingStartTime,
+	SessionLogArchiver(final Path rootLogDirPath, final Date systemLoggingStartTime,
 			final Supplier<? extends Path> timestampedLogDirPathSupplier, final String playerId) {
 		this.rootLogDirPath = rootLogDirPath;
 		this.systemLoggingStartTime = systemLoggingStartTime;

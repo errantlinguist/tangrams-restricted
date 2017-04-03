@@ -14,7 +14,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech.coin.tangrams.iristk.io;
+package se.kth.speech.coin.tangrams;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -26,13 +26,13 @@ import java.util.function.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public final class SessionLogArchiveCopier implements Consumer<Path> {
+final class SessionLogArchiveCopier implements Consumer<Path> {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SessionLogArchiveCopier.class);
 
 	private final Path targetDirPath;
 
-	public SessionLogArchiveCopier(final Path targetDirPath) {
+	SessionLogArchiveCopier(final Path targetDirPath) {
 		this.targetDirPath = targetDirPath;
 	}
 

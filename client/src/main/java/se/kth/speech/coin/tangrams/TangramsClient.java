@@ -64,8 +64,6 @@ import se.kth.speech.coin.tangrams.content.IconImages;
 import se.kth.speech.coin.tangrams.iristk.GameManagementClientModule;
 import se.kth.speech.coin.tangrams.iristk.IrisSystemStopper;
 import se.kth.speech.coin.tangrams.iristk.io.LogDirectoryFactory;
-import se.kth.speech.coin.tangrams.iristk.io.SessionLogArchiveCopier;
-import se.kth.speech.coin.tangrams.iristk.io.SessionLogArchiver;
 import se.kth.speech.coin.tangrams.view.ConnectionStatusFrame;
 import se.kth.speech.coin.tangrams.view.GameGUI;
 
