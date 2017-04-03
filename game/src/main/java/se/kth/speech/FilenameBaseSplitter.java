@@ -18,14 +18,13 @@ package se.kth.speech;
 
 import java.util.function.Function;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:tcshore@kth.se>Todd Shore</a>
  * @since 5 Mar 2017
  *
  */
-public final class FilenameBaseSplitter implements Function<String, Stream<String>> {
+public final class FilenameBaseSplitter implements Function<String, String[]> {
 
 	/**
 	 * @see <a href=
@@ -39,8 +38,8 @@ public final class FilenameBaseSplitter implements Function<String, Stream<Strin
 	 * @see java.util.function.Function#apply(java.lang.Object)
 	 */
 	@Override
-	public Stream<String> apply(final String path) {
-		return FILE_EXT_SPLITTING_PATTERN.splitAsStream(path);
+	public String[] apply(final String path) {
+		return FILE_EXT_SPLITTING_PATTERN.split(path);
 	}
 
 }

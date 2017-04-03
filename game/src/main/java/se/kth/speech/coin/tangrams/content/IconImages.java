@@ -62,7 +62,7 @@ public final class IconImages {
 					.nullsLast(Lists.comparingByIndex(imageOrderingNames).thenComparing(Comparator.naturalOrder()));
 
 			final FilenameBaseSplitter filenameBaseSplitter = new FilenameBaseSplitter();
-			RESOURCE_NAME_FACTORY = resourceLoc -> filenameBaseSplitter.apply(resourceLoc).findFirst().get();
+			RESOURCE_NAME_FACTORY = resourceLoc -> filenameBaseSplitter.apply(resourceLoc)[0];
 			ICON_IMAGE_RESOURCES = createImageResourceMap("image/(?!svg).+", RESOURCE_NAME_FACTORY);
 		} catch (final IOException e) {
 			throw new UncheckedIOException(e);
