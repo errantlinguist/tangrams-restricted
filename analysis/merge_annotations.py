@@ -45,9 +45,8 @@ class AnnotationData(object):
 			for track_source in track_data.sources_by_id.values():
 				sources_elem.append(track_source)
 		
-		segments_elem = etree.SubElement(result, create_namespace_tag_name("segments"))
-		for segment in self.segments.segments_by_id.values():
-			segments_elem.append(segment)
+		segments_elem = self.segments.create_xml_element()
+		result.append(segments_elem)
 			
 		return result
 
@@ -127,6 +126,13 @@ class Segments(object):
 				self.segments_by_id[segment_id] = segment
 				self.track_segments.update(other.track_segments)
 				self.source_segments.update(other.source_segments)
+				
+	def create_xml_element(self):
+		result = etree.Element(create_namespace_tag_name("segments"))
+		for segment in self.segments_by_id.values():
+			result.append(segment)
+			
+		return result
 	
 class TrackSources(object):
 	def __init__(self):
