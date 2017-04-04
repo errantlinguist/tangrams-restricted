@@ -1,16 +1,18 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 '''
 Created on Apr 3, 2017
 
 @author: tshore
 '''
 
-from xml.etree import ElementTree
+from lxml import etree
+from lxml.builder import ElementMaker
+#from xml.etree import ElementTree
 from collections import defaultdict
-#tree = ET.parse('country_data.xml')
-#root = tree.getroot()
 
 DEFAULT_NAMESPACE = "http://www.speech.kth.se/higgins/2005/annotation/"
+# http://stackoverflow.com/a/18340978/1391325
+etree.register_namespace("hat", DEFAULT_NAMESPACE)
 DEFAULT_TAG_PREFIX = "{" + DEFAULT_NAMESPACE + "}"
 
 class AnnotationData(object):
@@ -21,16 +23,45 @@ class AnnotationData(object):
 		
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
+	
+	def add(self, other):
+		for track_id, other_track in other.tracks.items():
+			if track_id in self.tracks:
+				raise ValueError("Track ID \"%s\" already in dict." % track_id)
+			else:
+				self.tracks[track_id] = other_track
+				
+		self.segments.add(other.segments)
+		
+	def create_xml_element(self):
+		# http://stackoverflow.com/a/22902367/1391325
+		em = ElementMaker(nsmap={None: DEFAULT_NAMESPACE })
+		#result = etree.Element(create_namespace_tag_name("annotation"))
+		result = em("annotation")
+		tracks_elem = etree.SubElement(result, create_namespace_tag_name("tracks"))
+		for track_id, track_data in self.tracks.items():
+			track_elem = etree.SubElement(tracks_elem, create_namespace_tag_name("track"), attrib={"id" : track_id})
+			sources_elem = etree.SubElement(track_elem, create_namespace_tag_name("sources"))
+			for track_source in track_data.sources_by_id.values():
+				sources_elem.append(track_source)
+		
+		segments_elem = etree.SubElement(result, create_namespace_tag_name("segments"))
+		for segment in self.segments.segments_by_id.values():
+			segments_elem.append(segment)
+			
+		return result
 
 class AnnotationParser(object):
 	
-	def __init__(self):
+	def __init__(self, id_prefix, channel_offset):
+		self.id_prefix = id_prefix
+		self.channel_offset = channel_offset
 		self.__tag_parsers = {create_namespace_tag_name("tracks") : self.__parse_tracks, create_namespace_tag_name("segments") : self.__parse_segments}
 		self.__result = None
 	
 	def __call__(self, infile):
 		self.__result = AnnotationData()
-		doc_root = ElementTree.parse(infile)
+		doc_root = etree.parse(infile)
 		tag_name = create_namespace_tag_name("annotation")
 		for child in doc_root.iter(tag_name):
 			self.__parse_annotation(child)		
@@ -48,12 +79,19 @@ class AnnotationParser(object):
 		track_data = self.__result.tracks
 		for track in tracks:
 			track_sources = TrackSources()
-			track_data[track.attrib["id"]] = track_sources
+			track_attrs = track.attrib
+			track_id = self.id_prefix + track_attrs["id"]
+			track_data[track_id] = track_sources
+			track_attrs["id"] = track_id 
 			
 			for source in track.iter(source_tag_name):
 				attrs = source.attrib
-				track_sources.sources_by_id[attrs["id"]] = source
-				track_sources.sources_by_channel[attrs["channel"]] = source
+				source_id = self.id_prefix + attrs["id"]
+				track_sources.sources_by_id[source_id] = source
+				attrs["id"] = source_id
+				channel = int(attrs["channel"]) + self.channel_offset
+				track_sources.sources_by_channel[channel] = source
+				attrs["channel"] = str(channel)
 				track_sources.sources_by_href[attrs["href"]] = source
 				
 	
@@ -61,9 +99,15 @@ class AnnotationParser(object):
 		segment_data = self.__result.segments
 		for segment in segments:
 			attrs = segment.attrib
-			segment_data.segments_by_id[attrs["id"]] = segment
-			segment_data.track_segments[attrs["track"]].append(segment)
-			segment_data.source_segments[attrs["source"]].append(segment)
+			segment_id = self.id_prefix + attrs["id"]
+			attrs["id"] = segment_id
+			segment_data.segments_by_id[segment_id] = segment
+			track_id = self.id_prefix + attrs["track"]
+			segment_data.track_segments[track_id].append(segment)
+			attrs["track"] = track_id
+			source_id = self.id_prefix + attrs["source"]
+			segment_data.source_segments[source_id].append(segment)
+			attrs["source"] = source_id
 
 class Segments(object):
 	
@@ -74,6 +118,15 @@ class Segments(object):
 		
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
+	
+	def add(self, other):
+		for segment_id, segment in other.segments_by_id.items():
+			if segment_id in self.segments_by_id:
+				raise ValueError("Segment ID \"%s\" already in dict." % segment_id)
+			else:
+				self.segments_by_id[segment_id] = segment
+				self.track_segments.update(other.track_segments)
+				self.source_segments.update(other.source_segments)
 	
 class TrackSources(object):
 	def __init__(self):
@@ -87,25 +140,41 @@ class TrackSources(object):
 def create_namespace_tag_name(tag_name):
 	return DEFAULT_TAG_PREFIX + tag_name
 
-def merge_annots(annot_data):
-		for annot_datum in annot_data:
-			print(annot_datum)
-
 if __name__ == '__main__':
 	import sys
 	if len(sys.argv) < 2:
 		print("Usage: %s INPUT_PATHS... > OUTFILE" % sys.argv[0], file=sys.stderr)
 		exit(64);
 	else:
+		import os.path
+		import tempfile
+
 		inpaths = sys.argv[1:]
-		parser = AnnotationParser()
-		
-		infile_data = []
-		for inpath in inpaths:
+		annot_data = []
+		for channel_offset, inpath in enumerate(inpaths):
 			print("Reading \"%s\"." % inpath, file=sys.stderr)
+			id_prefix = os.path.splitext(os.path.basename(inpath))[0] + "-"
+			parser = AnnotationParser(id_prefix, channel_offset)
 			with open(inpath, 'r') as inf:
 				infile_datum = parser(inf)
-				infile_data.append(infile_datum)
+				annot_data.append(infile_datum)
 				
-		merge_annots(infile_data)
+		result = annot_data[0]
+		if len(annot_data) > 1:
+			next_data = annot_data[1:]
+			for next_datum in next_data:
+				result.add(next_datum)
+				
+		annot_elem = result.create_xml_element()
+		annot_tree = etree.ElementTree(annot_elem)
+	
+		tmpfile = tempfile.mkstemp(text=True)
+		tmpfile_path = tmpfile[1]
+		try:
+			annot_tree.write(tmpfile_path, encoding="utf-8", xml_declaration=True, pretty_print=True)
+			with open(tmpfile_path, 'r') as inf:
+				print(inf.read())
+		finally:
+			os.remove(tmpfile_path)
+				
 		
