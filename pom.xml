@@ -16,6 +16,7 @@
 		<module>client</module>
 		<module>game</module>
 		<module>server</module>
+		<module>analysis</module>
 	</modules>
 
 	<properties>
