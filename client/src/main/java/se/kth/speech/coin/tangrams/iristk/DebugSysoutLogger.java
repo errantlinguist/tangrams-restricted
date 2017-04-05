@@ -1,6 +1,6 @@
 package se.kth.speech.coin.tangrams.iristk;
 
-public final class MyLogger {
+public final class DebugSysoutLogger {
 
 	public void debug(final Object string, final Object joinedPlayerId, final Object joinTime) {
 		System.out.println(string + " " + joinedPlayerId + " " + joinTime);
