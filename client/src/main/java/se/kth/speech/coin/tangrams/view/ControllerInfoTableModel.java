@@ -143,7 +143,7 @@ final class ControllerInfoTableModel extends AbstractTableModel implements Contr
 	}
 
 	@Override
-	public void updatePlayerSelection(final Integer pieceId, SpatialRegion region) {
+	public void updatePlayerSelection(final Integer pieceId, final SpatialRegion region) {
 		// Do nothing
 	}
 
@@ -169,7 +169,7 @@ final class ControllerInfoTableModel extends AbstractTableModel implements Contr
 	}
 
 	@Override
-	public void updateSelectionRejected(final Integer pieceId, SpatialRegion region) {
+	public void updateSelectionRejected(final Integer pieceId, final SpatialRegion region) {
 		// Do nothing
 	}
 
