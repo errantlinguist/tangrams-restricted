@@ -178,7 +178,7 @@ public final class GameManagementServerModule extends IrisModule {
 			final Object seedParamVal = gameParams.get(seedParam);
 			if (seedParamVal == null) {
 				throw new IllegalArgumentException(String.format(
-						"Could not parse random seed from game ID \"%s\" either as an instance of %s or as named parameters.",
+						"Could not parse random seed from game ID \"%s\" either as an instance of %s or as one of named parameters.",
 						gameId, Long.class), nfe);
 			} else {
 				seed = (Long) seedParamVal;
