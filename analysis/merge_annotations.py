@@ -150,7 +150,7 @@ if __name__ == '__main__':
 	import sys
 	if len(sys.argv) < 2:
 		print("Usage: %s INPUT_PATHS... > OUTFILE" % sys.argv[0], file=sys.stderr)
-		exit(64);
+		sys.exit(64);
 	else:
 		import os.path
 		import tempfile
@@ -177,8 +177,9 @@ if __name__ == '__main__':
 		tmpfile = tempfile.mkstemp(text=True)
 		tmpfile_path = tmpfile[1]
 		try:
-			annot_tree.write(tmpfile_path, encoding="utf-8", xml_declaration=True, pretty_print=True)
-			with open(tmpfile_path, 'r') as inf:
+			encoding = "utf-8"
+			annot_tree.write(tmpfile_path, encoding=encoding, xml_declaration=True, pretty_print=True)
+			with open(tmpfile_path, 'r', encoding=encoding) as inf:
 				print(inf.read())
 		finally:
 			os.remove(tmpfile_path)
