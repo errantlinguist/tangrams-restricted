@@ -185,7 +185,7 @@ public final class GameState {
 		builder.append(rnd);
 		builder.append(", imgVizInfo=");
 		builder.append(imgVizInfo);
-		builder.append("]");
+		builder.append(']');
 		return builder.toString();
 	}
 

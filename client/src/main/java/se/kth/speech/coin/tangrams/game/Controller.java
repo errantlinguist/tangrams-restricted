@@ -95,7 +95,7 @@ public final class Controller {
 			builder.append(Arrays.toString(lastPieceMoveTurnsById));
 			builder.append(", pieceMoveCounts=");
 			builder.append(Arrays.toString(pieceMoveCounts));
-			builder.append("]");
+			builder.append(']');
 			return builder.toString();
 		}
 
@@ -160,11 +160,11 @@ public final class Controller {
 
 	private PlayerRole role;
 
-	private int score = 0;
+	private int score;
 
 	private Entry<Integer, SpatialRegion> selectedPiece;
 
-	private int turnCount = 0;
+	private int turnCount;
 
 	public Controller(final SpatialMatrix<Integer> model, final String playerId, final PlayerRole role,
 			final GameManagementClientModule clientModule) {
