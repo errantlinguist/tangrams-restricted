@@ -40,7 +40,7 @@ public final class MathDivisors {
 		final List<Integer> result = createDivisorList(first);
 		while (values.hasNext()) {
 			final Integer next = values.next();
-			removeNonDivisors(values, next);
+			removeNonDivisors(result.iterator(), next);
 		}
 		return result;
 	}
