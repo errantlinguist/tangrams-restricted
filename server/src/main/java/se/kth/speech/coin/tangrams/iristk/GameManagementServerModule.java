@@ -169,8 +169,6 @@ public final class GameManagementServerModule extends IrisModule {
 	}
 
 	private Event createGameStateDescriptionEvent(final String gameId, final Game<Integer> gameState) {
-		final GameStateDescription gameDesc = new GameStateDescription();
-
 		Long seed;
 		try {
 			seed = Long.valueOf(gameId);
@@ -179,11 +177,15 @@ public final class GameManagementServerModule extends IrisModule {
 			final Parameter seedParam = Parameter.SEED;
 			final Object seedParamVal = gameParams.get(seedParam);
 			if (seedParamVal == null) {
-				throw new IllegalArgumentException("Could not parse random seed from game ID \"" + gameId + "\".");
+				throw new IllegalArgumentException(String.format(
+						"Could not parse random seed from game ID \"%s\" either as an instance of %s or as named parameters.",
+						gameId, Long.class), nfe);
 			} else {
 				seed = (Long) seedParamVal;
 			}
 		}
+
+		final GameStateDescription gameDesc = new GameStateDescription();
 		gameDesc.setSeed(seed);
 
 		final Map<PlayerRole, String> playerRoles = gameState.getPlayerRoles();
