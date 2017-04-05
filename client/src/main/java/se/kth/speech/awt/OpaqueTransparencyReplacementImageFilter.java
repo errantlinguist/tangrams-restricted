@@ -22,7 +22,9 @@ import java.awt.image.RGBImageFilter;
 public final class OpaqueTransparencyReplacementImageFilter extends RGBImageFilter {
 
 	private static final ColorModel COLOR_MODEL = ColorModel.getRGBdefault();
-	
+
+	private static final int OPAQUE_ALPHA = 0xff;
+
 	private final int alpha;
 
 	public OpaqueTransparencyReplacementImageFilter(final int alpha) {
@@ -36,7 +38,7 @@ public final class OpaqueTransparencyReplacementImageFilter extends RGBImageFilt
 	@Override
 	public int filterRGB(final int x, final int y, final int rgb) {
 		int alpha = COLOR_MODEL.getAlpha(rgb);
-		if (alpha == 0xff) {
+		if (alpha == OPAQUE_ALPHA) {
 			// Replace the opaque alpha with the alpha specified by the instance
 			// of this class
 			alpha = this.alpha;
