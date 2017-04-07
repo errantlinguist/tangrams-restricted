@@ -172,7 +172,7 @@ public final class TangramsClient implements Runnable {
 						if (Files.isDirectory(copyDirPath)){
 							LOGGER.info("Will copy session log archive to \"{}\" after ending the session.", copyDirPath);
 						} else {
-							LOGGER.warn("Path \"{}\" was supplied for session log copy dir but it's not a valid directory (yet?); Will try copying after the session is over anyways.", copyDir);
+							LOGGER.warn("Path \"{}\" was supplied for session log copy dir but it's not a valid directory (yet?); Will try copying after the session is over anyways.", copyDirPath);
 						}
 						logArchiveCopier = new SessionLogArchiveCopier(copyDirPath);					
 					}
