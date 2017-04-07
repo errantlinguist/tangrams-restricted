@@ -31,6 +31,5 @@
 	<classpathentry exported="true" kind="lib" path="core/lib/xuggle-xuggler-5.4.jar"/>
 	<classpathentry exported="true" kind="lib" path="core/lib/webcam-capture-0.3.10.jar"/>
 	<classpathentry exported="true" kind="lib" path="core/lib/bridj-0.6.2.jar"/>
-	<classpathentry exported="true" kind="lib" path="core/lib/furhat-proxy.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

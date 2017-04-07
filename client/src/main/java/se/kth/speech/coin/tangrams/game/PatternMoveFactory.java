@@ -60,7 +60,7 @@ public final class PatternMoveFactory
 
 	private final Set<Integer> seenPieceIds;
 
-	private boolean shouldPickNewPiece = false;
+	private boolean shouldPickNewPiece;
 
 	public PatternMoveFactory(final Random rnd, final SpatialMatrix<Integer> posMatrix,
 			final int initialRndOnsetLength) {
@@ -135,7 +135,7 @@ public final class PatternMoveFactory
 		builder.append(history);
 		builder.append(", initialRndOnsetLength=");
 		builder.append(initialRndOnsetLength);
-		builder.append("]");
+		builder.append(']');
 		return builder.toString();
 	}
 

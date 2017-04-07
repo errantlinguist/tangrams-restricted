@@ -126,7 +126,7 @@ public final class MapEntryRemapping<K, V> {
 		builder.append(oldValue);
 		builder.append(", newValue=");
 		builder.append(newValue);
-		builder.append("]");
+		builder.append(']');
 		return builder.toString();
 	}
 

@@ -35,7 +35,7 @@ final class SuccessfulConnectionHook implements Runnable {
 
 	private final Consumer<? super String> recordingManager;
 
-	private volatile Point viewLocationOnScreen = null;
+	private volatile Point viewLocationOnScreen;
 
 	SuccessfulConnectionHook(final ConnectionStatusFrame connectionStatusView,
 			final Consumer<? super String> recordingManager, final String playerId) {

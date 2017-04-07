@@ -44,7 +44,7 @@ public final class URLQueryParamMapFactory implements Function<String, Map<Strin
 		final Map<String, String> result = Maps.newHashMapWithExpectedSize(pairs.length);
 
 		for (final String pair : pairs) {
-			final int idx = pair.indexOf("=");
+			final int idx = pair.indexOf('=');
 			if (idx < 0) {
 				result.put(pair, "");
 			} else {
