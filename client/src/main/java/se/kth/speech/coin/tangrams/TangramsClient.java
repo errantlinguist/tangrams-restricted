@@ -166,10 +166,15 @@ public final class TangramsClient implements Runnable {
 						logArchiveCopier = filePath -> {
 							// Do nothing
 						};
-					} else {
+					} else if (copyDir.exists()) {
 						final Path copyDirPath = copyDir.toPath();
 						LOGGER.info("Will copy session log archive to \"{}\" after ending the session.", copyDirPath);
 						logArchiveCopier = new SessionLogArchiveCopier(copyDirPath);
+					} else {
+						LOGGER.warn("Path \"{}\" was supplied for session log copy dir but it doesn't exist (yet?); Ignoring and not doing any session post-processing.", copyDir);
+						logArchiveCopier = filePath -> {
+							// Do nothing
+						};						
 					}
 
 					final TangramsClient client = new TangramsClient(PROPS.getProperty("broker.ticket"), brokerHost,
