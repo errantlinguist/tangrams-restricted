@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -166,15 +167,14 @@ public final class TangramsClient implements Runnable {
 						logArchiveCopier = filePath -> {
 							// Do nothing
 						};
-					} else if (copyDir.exists()) {
-						final Path copyDirPath = copyDir.toPath();
-						LOGGER.info("Will copy session log archive to \"{}\" after ending the session.", copyDirPath);
-						logArchiveCopier = new SessionLogArchiveCopier(copyDirPath);
 					} else {
-						LOGGER.warn("Path \"{}\" was supplied for session log copy dir but it doesn't exist (yet?); Ignoring and not doing any session post-processing.", copyDir);
-						logArchiveCopier = filePath -> {
-							// Do nothing
-						};						
+						final Path copyDirPath = copyDir.toPath();
+						if (Files.isDirectory(copyDirPath)){
+							LOGGER.info("Will copy session log archive to \"{}\" after ending the session.", copyDirPath);
+						} else {
+							LOGGER.warn("Path \"{}\" was supplied for session log copy dir but it's not a valid directory (yet?); Will try copying after the session is over anyways.", copyDir);
+						}
+						logArchiveCopier = new SessionLogArchiveCopier(copyDirPath);					
 					}
 
 					final TangramsClient client = new TangramsClient(PROPS.getProperty("broker.ticket"), brokerHost,
