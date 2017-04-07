@@ -44,8 +44,13 @@ final class SessionLogArchiveCopier implements Consumer<Path> {
 		LOGGER.info("Copying session log archive to \"{}\".", targetPath);
 		try {
 			final Path result = Files.copy(sourceFilePath, targetPath, StandardCopyOption.COPY_ATTRIBUTES);
-			LOGGER.info("Finished copying session log archive to \"{}\".", result);
-			System.out.println(String.format("Finished copying session log archive to \"%s\".", result));
+			if (Files.exists(result)) {
+				LOGGER.info("Finished copying session log archive to \"{}\".", result);
+				System.out.println(String.format("Finished copying session log archive to \"%s\".", result));
+			} else {
+				LOGGER.error("File \"{}\" is non-existent even after copying!", result);
+				System.out.println(String.format("File \"%s\" is non-existent even after copying!", result));
+			}
 		} catch (final IOException e) {
 			throw new UncheckedIOException(e);
 		}
