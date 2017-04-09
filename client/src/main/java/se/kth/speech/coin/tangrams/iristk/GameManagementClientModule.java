@@ -89,12 +89,10 @@ public class GameManagementClientModule extends IrisModule {
 
 		} else {
 			final String gameId = event.getString(GameManagementEvent.Attribute.GAME_ID.toString());
-			if (Objects.equals(gameId, this.gameId)
-					&& !event.getString(GameManagementEvent.Attribute.PLAYER_ID.toString(), "").equals(playerId)) {
+			final String submittingPlayerId = event.getString(GameManagementEvent.Attribute.PLAYER_ID.toString(), "");
+			if (Objects.equals(gameId, this.gameId) && !submittingPlayerId.equals(playerId)) {
 				switch (gameEventType) {
 				case COMPLETED_TURN_REQUEST: {
-					final String submittingPlayerId = event
-							.getString(GameManagementEvent.Attribute.PLAYER_ID.toString());
 					LOGGER.debug("Received game event reporting a completed turn, submitted by \"{}\".",
 							submittingPlayerId);
 					final Move move = (Move) event.get(GameManagementEvent.Attribute.MOVE.toString());
@@ -109,8 +107,6 @@ public class GameManagementClientModule extends IrisModule {
 					break;
 				}
 				case NEXT_TURN_REQUEST: {
-					final String submittingPlayerId = event
-							.getString(GameManagementEvent.Attribute.PLAYER_ID.toString());
 					LOGGER.debug("Received game event reporting the submission of a new move, submitted by \"{}\".",
 							submittingPlayerId);
 					final Move move = (Move) event.get(GameManagementEvent.Attribute.MOVE.toString());
@@ -118,33 +114,28 @@ public class GameManagementClientModule extends IrisModule {
 					break;
 				}
 				case PLAYER_JOIN_RESPONSE: {
-					final String joinedPlayerId = event.getString(GameManagementEvent.Attribute.PLAYER_ID.toString());
 					final String joinTime = event.getString(GameManagementEvent.Attribute.TIMESTAMP.toString());
-					LOGGER.debug("Received game event reporting that \"{}\" has joined the game at {}.", joinedPlayerId,
-							joinTime);
+					LOGGER.debug("Received game event reporting that \"{}\" has joined the game at {}.",
+							submittingPlayerId, joinTime);
 					if (controller == null) {
 						LOGGER.debug("Game controller not yet set; Not notifying controller of joined player.");
 					} else {
-						controller.notifyPlayerJoined(joinedPlayerId, Timestamp.valueOf(joinTime).getTime());
+						controller.notifyPlayerJoined(submittingPlayerId, Timestamp.valueOf(joinTime).getTime());
 					}
 					break;
 				}
 				case SELECTION_REJECTION: {
-					final String rejectingPlayerId = event
-							.getString(GameManagementEvent.Attribute.PLAYER_ID.toString());
-					LOGGER.debug("Received game event reporting that \"{}\" rejected a selection.", rejectingPlayerId);
+					LOGGER.debug("Received game event reporting that \"{}\" rejected a selection.", submittingPlayerId);
 					final Selection selection = (Selection) event
 							.get(GameManagementEvent.Attribute.SELECTION.toString());
-					controller.notifySelectionRejected(rejectingPlayerId, selection);
+					controller.notifySelectionRejected(submittingPlayerId, selection);
 					break;
 				}
 				case SELECTION_REQUEST: {
-					final String selectingPlayerId = event
-							.getString(GameManagementEvent.Attribute.PLAYER_ID.toString());
-					LOGGER.debug("Received game event reporting selection info for \"{}\".", selectingPlayerId);
+					LOGGER.debug("Received game event reporting selection info for \"{}\".", submittingPlayerId);
 					final Selection selection = (Selection) event
 							.get(GameManagementEvent.Attribute.SELECTION.toString());
-					controller.notifyPlayerSelection(selectingPlayerId, selection);
+					controller.notifyPlayerSelection(submittingPlayerId, selection);
 					break;
 				}
 				default: {
