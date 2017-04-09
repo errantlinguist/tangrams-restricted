@@ -20,6 +20,7 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import com.google.common.collect.Maps;
@@ -35,9 +36,12 @@ import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
 public final class LoggedGameStateChangeDataParser
 		implements Function<Stream<String>, Map<String, GameStateChangeData>> {
 
+	private static final Pattern EMPTY_OR_WHITESPACE_PATTERN = Pattern.compile("\\s*");
+
 	@Override
 	public Map<String, GameStateChangeData> apply(final Stream<String> lines) {
-		final Stream<Event> loggedEvents = lines.flatMap(LoggedEvents.JSON_EVENT_PARSER);
+		final Stream<Event> loggedEvents = lines.filter(line -> !EMPTY_OR_WHITESPACE_PATTERN.matcher(line).matches())
+				.flatMap(LoggedEvents.JSON_EVENT_PARSER);
 		final Event[] loggedEventArray = loggedEvents.toArray(Event[]::new);
 		final Supplier<Map<String, GameStateChangeData>> mapFactory = () -> Maps
 				.newHashMapWithExpectedSize(loggedEventArray.length);

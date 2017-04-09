@@ -61,8 +61,6 @@ public final class ModelFeatureExtractor {
 		}
 	}
 
-	private static final Pattern EMPTY_OR_WHITESPACE_PATTERN = Pattern.compile("\\s*");
-
 	private static final Logger LOGGER = LoggerFactory.getLogger(ModelFeatureExtractor.class);
 
 	public static void main(final String[] args) throws IOException {
@@ -104,8 +102,7 @@ public final class ModelFeatureExtractor {
 			throws IOException {
 		LOGGER.info("Extracting features for player \"{}\".", playerId);
 		final Path eventLogFile = dataFiles.get(SessionFileType.EVENTS);
-		try (final Stream<String> lines = Files.lines(eventLogFile, LoggingFormats.ENCODING)
-				.filter(line -> !EMPTY_OR_WHITESPACE_PATTERN.matcher(line).matches())) {
+		try (final Stream<String> lines = Files.lines(eventLogFile, LoggingFormats.ENCODING)) {
 			final Map<String, GameStateChangeData> gameStateChangeData = new LoggedGameStateChangeDataParser()
 					.apply(lines);
 			final int gameCount = gameStateChangeData.size();
