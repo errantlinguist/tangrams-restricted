@@ -17,11 +17,12 @@
 package se.kth.speech.coin.tangrams.iristk;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
+
+import com.google.common.collect.Maps;
 
 import iristk.system.Event;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
@@ -38,7 +39,8 @@ public final class LoggedGameStateChangeDataParser
 	public Map<String, GameStateChangeData> apply(final Stream<String> lines) {
 		final Stream<Event> loggedEvents = lines.flatMap(LoggedEvents.JSON_EVENT_PARSER);
 		final Event[] loggedEventArray = loggedEvents.toArray(Event[]::new);
-		final Supplier<Map<String, GameStateChangeData>> mapFactory = () -> new HashMap<>(loggedEventArray.length + 1);
+		final Supplier<Map<String, GameStateChangeData>> mapFactory = () -> Maps
+				.newHashMapWithExpectedSize(loggedEventArray.length);
 		return Arrays.stream(loggedEventArray).collect(new GameStateCollector(mapFactory));
 	}
 
