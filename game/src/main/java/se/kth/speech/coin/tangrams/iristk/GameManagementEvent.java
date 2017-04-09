@@ -34,10 +34,6 @@ enum GameManagementEvent {
 	 */
 	COMPLETED_TURN_REQUEST("completedturn.request"),
 	/**
-	 * An event confirming the completion of a turn.
-	 */
-	COMPLETED_TURN_RESPONSE("completedturn.response"),
-	/**
 	 * An event denoting that a given game is ready to be played,
 	 * e.g.&nbsp;enough players have joined.
 	 */
