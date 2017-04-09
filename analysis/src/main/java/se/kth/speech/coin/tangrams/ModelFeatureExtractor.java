@@ -110,7 +110,7 @@ public final class ModelFeatureExtractor {
 			case 1: {
 				final Entry<String, GameStateChangeData> toFeatureize = gameStateChangeData.entrySet().iterator()
 						.next();
-				LOGGER.info("Creating features for game \"{}\".", toFeatureize.getKey());
+				LOGGER.info("Extracting features for game \"{}\".", toFeatureize.getKey());
 				final GameStateChangeData gameData = toFeatureize.getValue();
 				break;
 			}
