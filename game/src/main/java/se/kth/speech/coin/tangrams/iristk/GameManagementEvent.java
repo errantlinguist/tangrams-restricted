@@ -47,10 +47,6 @@ enum GameManagementEvent {
 	 */
 	NEXT_TURN_REQUEST("nextturn.request"),
 	/**
-	 * An event representing the notification of the next turn to be completed.
-	 */
-	NEXT_TURN_RESPONSE("nextturn.response"),
-	/**
 	 * An event representing a request by the sending client to add the given
 	 * player to the list of players in a game.
 	 */
