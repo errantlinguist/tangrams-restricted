@@ -62,4 +62,22 @@ public final class GameStateChangeData {
 	public Timestamp getStartTime() {
 		return startTime;
 	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		final StringBuilder builder = new StringBuilder();
+		builder.append("GameStateChangeData [startTime=");
+		builder.append(startTime);
+		builder.append(", initialState=");
+		builder.append(initialState);
+		builder.append(", events=");
+		builder.append(events);
+		builder.append("]");
+		return builder.toString();
+	}
 }
