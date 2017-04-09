@@ -50,7 +50,7 @@ import se.kth.speech.coin.tangrams.iristk.io.LoggingFormats;
 public final class ModelFeatureExtractor {
 
 	private enum SessionFileType {
-		AUDIO("(.+?)\\.wav"), EVENTS("events-(.+?)\\.txt");
+		EVENTS("events-(.+?)\\.txt"), UTTERANCES("(.+?)\\_rec.xml");
 
 		private final Pattern pattern;
 
@@ -112,6 +112,7 @@ public final class ModelFeatureExtractor {
 						.next();
 				LOGGER.info("Extracting features for game \"{}\".", toFeatureize.getKey());
 				final GameStateChangeData gameData = toFeatureize.getValue();
+				System.out.println(gameData);
 				break;
 			}
 			default: {
