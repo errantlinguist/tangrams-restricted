@@ -36,7 +36,6 @@ class AnnotationData(object):
 	def create_xml_element(self):
 		# http://stackoverflow.com/a/22902367/1391325
 		em = ElementMaker(nsmap={None: DEFAULT_NAMESPACE })
-		#result = etree.Element(create_namespace_tag_name("annotation"))
 		result = em("annotation")
 		tracks_elem = etree.SubElement(result, create_namespace_tag_name("tracks"))
 		for track_id, track_data in self.tracks.items():
