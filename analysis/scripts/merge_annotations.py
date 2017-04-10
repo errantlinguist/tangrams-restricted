@@ -72,6 +72,20 @@ class AnnotationParser(object):
 			tag_name = child.tag
 			parser = self.__tag_parsers[tag_name]
 			parser(child)
+	
+	def __parse_segments(self, segments):
+		segment_data = self.__result.segments
+		for segment in segments:
+			attrs = segment.attrib
+			segment_id = self.id_prefix + attrs["id"]
+			attrs["id"] = segment_id
+			segment_data.segments_by_id[segment_id] = segment
+			track_id = self.id_prefix + attrs["track"]
+			segment_data.track_segments[track_id].append(segment)
+			attrs["track"] = track_id
+			source_id = self.id_prefix + attrs["source"]
+			segment_data.source_segments[source_id].append(segment)
+			attrs["source"] = source_id
 			
 	def __parse_tracks(self, tracks):
 		source_tag_name = self.qname_factory("source")
@@ -92,21 +106,6 @@ class AnnotationParser(object):
 				track_sources.sources_by_channel[channel] = source
 				attrs["channel"] = str(channel)
 				track_sources.sources_by_href[attrs["href"]] = source
-				
-	
-	def __parse_segments(self, segments):
-		segment_data = self.__result.segments
-		for segment in segments:
-			attrs = segment.attrib
-			segment_id = self.id_prefix + attrs["id"]
-			attrs["id"] = segment_id
-			segment_data.segments_by_id[segment_id] = segment
-			track_id = self.id_prefix + attrs["track"]
-			segment_data.track_segments[track_id].append(segment)
-			attrs["track"] = track_id
-			source_id = self.id_prefix + attrs["source"]
-			segment_data.source_segments[source_id].append(segment)
-			attrs["source"] = source_id
 
 class Segments(object):
 	
