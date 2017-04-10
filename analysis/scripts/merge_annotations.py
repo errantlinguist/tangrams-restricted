@@ -10,15 +10,11 @@ from lxml.builder import ElementMaker
 #from xml.etree import ElementTree
 from collections import defaultdict
 
-DEFAULT_NAMESPACE = "http://www.speech.kth.se/higgins/2005/annotation/"
-# http://stackoverflow.com/a/18340978/1391325
-etree.register_namespace("hat", DEFAULT_NAMESPACE)
-DEFAULT_TAG_PREFIX = "{" + DEFAULT_NAMESPACE + "}"
-
 class AnnotationData(object):
 	
-	def __init__(self, qname_factory):
+	def __init__(self, qname_factory, namespace):
 		self.qname_factory = qname_factory
+		self.namespace = namespace
 		self.tracks = {}
 		self.segments = Segments(qname_factory)
 		
@@ -36,7 +32,7 @@ class AnnotationData(object):
 		
 	def create_xml_element(self):
 		# http://stackoverflow.com/a/22902367/1391325
-		em = ElementMaker(nsmap={None: DEFAULT_NAMESPACE })
+		em = ElementMaker(nsmap={None: self.namespace })
 		result = em("annotation")
 		tracks_elem = etree.SubElement(result, self.qname_factory("tracks"))
 		for track_id, track_data in self.tracks.items():
@@ -52,15 +48,16 @@ class AnnotationData(object):
 
 class AnnotationParser(object):
 	
-	def __init__(self, id_prefix, channel_offset, qname_factory):
+	def __init__(self, id_prefix, channel_offset, qname_factory, namespace):
 		self.id_prefix = id_prefix
 		self.channel_offset = channel_offset
 		self.qname_factory = qname_factory
+		self.namespace = namespace
 		self.__tag_parsers = {self.qname_factory("tracks") : self.__parse_tracks, self.qname_factory("segments") : self.__parse_segments}
 		self.__result = None
 	
 	def __call__(self, infile):
-		self.__result = AnnotationData(self.qname_factory)
+		self.__result = AnnotationData(self.qname_factory, self.namespace)
 		doc_root = etree.parse(infile)
 		tag_name = self.qname_factory("annotation")
 		for child in doc_root.iter(tag_name):
@@ -144,6 +141,34 @@ class TrackSources(object):
 
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
+		
+def merge_annotations(inpaths, namespace):
+	import os.path
+
+	annot_data = []
+	tag_qnames = {}
+	tag_prefix = "{" + namespace + "}"
+	def qname_factory(tag_name):
+		result = tag_qnames.get(tag_name)
+		if not result:
+			result = tag_prefix + tag_name
+			tag_qnames[tag_name] = result
+		return result
+		
+	for channel_offset, inpath in enumerate(inpaths):
+		print("Reading \"%s\"." % inpath, file=sys.stderr)
+		id_prefix = os.path.splitext(os.path.basename(inpath))[0] + "-"
+		parser = AnnotationParser(id_prefix, channel_offset, qname_factory, namespace)
+		with open(inpath, 'r') as inf:
+			infile_datum = parser(inf)
+			annot_data.append(infile_datum)
+			
+	result = annot_data[0]
+	if len(annot_data) > 1:
+		next_data = annot_data[1:]
+		for next_datum in next_data:
+			result.add(next_datum)
+	return result
 
 if __name__ == '__main__':
 	import sys
@@ -151,33 +176,15 @@ if __name__ == '__main__':
 		print("Usage: %s INPUT_PATHS... > OUTFILE" % sys.argv[0], file=sys.stderr)
 		sys.exit(64);
 	else:
-		import os.path
+		import os
 		import tempfile
 
+		default_namespace = "http://www.speech.kth.se/higgins/2005/annotation/"
+		# http://stackoverflow.com/a/18340978/1391325
+		etree.register_namespace("hat", default_namespace)
+		
 		inpaths = sys.argv[1:]
-		annot_data = []
-		tag_qnames = {}
-		def qname_factory(tag_name):
-			result = tag_qnames.get(tag_name)
-			if not result:
-				result = DEFAULT_TAG_PREFIX + tag_name
-				tag_qnames[tag_name] = result
-			return result
-			
-		for channel_offset, inpath in enumerate(inpaths):
-			print("Reading \"%s\"." % inpath, file=sys.stderr)
-			id_prefix = os.path.splitext(os.path.basename(inpath))[0] + "-"
-			parser = AnnotationParser(id_prefix, channel_offset, qname_factory)
-			with open(inpath, 'r') as inf:
-				infile_datum = parser(inf)
-				annot_data.append(infile_datum)
-				
-		result = annot_data[0]
-		if len(annot_data) > 1:
-			next_data = annot_data[1:]
-			for next_datum in next_data:
-				result.add(next_datum)
-				
+		result = merge_annotations(inpaths, default_namespace)
 		annot_elem = result.create_xml_element()
 		annot_tree = etree.ElementTree(annot_elem)
 	
