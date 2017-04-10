@@ -75,25 +75,39 @@ public final class ModelFeatureExtractor {
 
 	private static class FeatureVectorFactory implements Function<Segment, Void> {
 
-		private enum EntityFeatureType {
-			COLOR, POSITION, SELECTED, SHAPE, SIZE;
+		private static class EntityFeatures {
 
-			private static final List<EntityFeatureType> ORDERING;
+			private enum Dynamic {
+				POSITION, SELECTED;
 
-			static {
-				ORDERING = Arrays.asList(SHAPE, COLOR, SIZE, POSITION, SELECTED);
-				assert ORDERING.size() == EntityFeatureType.values().length;
+				private static final List<Dynamic> ORDERING;
+
+				static {
+					ORDERING = Arrays.asList(POSITION, SELECTED);
+					assert ORDERING.size() == Dynamic.values().length;
+				}
+			}
+
+			private enum Static {
+				COLOR, SHAPE, SIZE;
+
+				private static final List<Static> ORDERING;
+
+				static {
+					ORDERING = Arrays.asList(SHAPE, COLOR, SIZE);
+					assert ORDERING.size() == Static.values().length;
+				}
 			}
 		}
 
-		private enum EnvironmentFeatureType {
+		private enum EnvironmentFeature {
 			COL_COUNT, ENTITY_COUNT, ROW_COUNT;
 
-			private static final List<EnvironmentFeatureType> ORDERING;
+			private static final List<EnvironmentFeature> ORDERING;
 
 			static {
 				ORDERING = Arrays.asList(ROW_COUNT, COL_COUNT, ENTITY_COUNT);
-				assert ORDERING.size() == EnvironmentFeatureType.values().length;
+				assert ORDERING.size() == EnvironmentFeature.values().length;
 			}
 		}
 
@@ -126,8 +140,8 @@ public final class ModelFeatureExtractor {
 					.getImageVisualizationInfoDescription();
 			final List<ImageVisualizationInfoDescription.Datum> imgVizInfoData = imgVizInfoDataDesc.getData();
 			final int pieceCount = imgVizInfoData.size();
-			final double[] result = new double[EnvironmentFeatureType.values().length
-					+ pieceCount * EntityFeatureType.values().length];
+			final double[] result = new double[EnvironmentFeature.values().length
+					+ pieceCount * EntityFeatures.Static.values().length];
 			final int currentFeatureIdx = setEnvironmentFeatureVals(result, 0, modelDims, pieceCount);
 
 			for (final ListIterator<ImageVisualizationInfoDescription.Datum> imgVizInfoDataIter = imgVizInfoData
@@ -149,8 +163,8 @@ public final class ModelFeatureExtractor {
 
 		private static int setEnvironmentFeatureVals(final double[] vals, int currentFeatureIdx, final int[] modelDims,
 				final int pieceCount) {
-			for (final EnvironmentFeatureType featureType : EnvironmentFeatureType.ORDERING) {
-				switch (featureType) {
+			for (final EnvironmentFeature feature : EnvironmentFeature.ORDERING) {
+				switch (feature) {
 				case COL_COUNT:
 					vals[currentFeatureIdx] = modelDims[1];
 					break;
@@ -172,15 +186,11 @@ public final class ModelFeatureExtractor {
 		private static int setStaticEntityFeatureVals(final double[] vals, int currentFeatureIdx,
 				final ImageVisualizationInfoDescription.Datum pieceImgVizInfoDatum, final SpatialRegion pieceRegion,
 				final double modelArea) {
-			for (final EntityFeatureType featureType : EntityFeatureType.ORDERING) {
-				switch (featureType) {
+			for (final EntityFeatures.Static feature : EntityFeatures.Static.ORDERING) {
+				switch (feature) {
 				case COLOR:
 					final float colorFeatureVal = createColorFeatureVal(pieceImgVizInfoDatum);
 					vals[currentFeatureIdx] = colorFeatureVal;
-					break;
-				case POSITION:
-					break;
-				case SELECTED:
 					break;
 				case SHAPE:
 					final double shapeFeatureVal = getShapeFeatureVal(pieceImgVizInfoDatum);
