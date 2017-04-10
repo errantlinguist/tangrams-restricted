@@ -144,10 +144,6 @@ class TrackSources(object):
 
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
-		
-def create_default_qname(tag_name):
-#	return DEFAULT_TAG_PREFIX + tag_name
-	return etree.QName(DEFAULT_NAMESPACE, tag_name)
 
 if __name__ == '__main__':
 	import sys
