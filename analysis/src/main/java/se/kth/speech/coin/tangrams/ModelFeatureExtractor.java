@@ -75,28 +75,14 @@ public final class ModelFeatureExtractor {
 
 	private static class FeatureVectorFactory implements Function<Segment, Void> {
 
-		private static class EntityFeatures {
+		private enum EntityFeature {
+			COLOR, POSITION_X, POSITION_Y, SELECTED, SHAPE, SIZE;
 
-			private enum Dynamic {
-				POSITION, SELECTED;
+			private static final List<EntityFeature> ORDERING;
 
-				private static final List<Dynamic> ORDERING;
-
-				static {
-					ORDERING = Arrays.asList(POSITION, SELECTED);
-					assert ORDERING.size() == Dynamic.values().length;
-				}
-			}
-
-			private enum Static {
-				COLOR, SHAPE, SIZE;
-
-				private static final List<Static> ORDERING;
-
-				static {
-					ORDERING = Arrays.asList(SHAPE, COLOR, SIZE);
-					assert ORDERING.size() == Static.values().length;
-				}
+			static {
+				ORDERING = Arrays.asList(SHAPE, COLOR, SIZE, POSITION_X, POSITION_Y, SELECTED);
+				assert ORDERING.size() == EntityFeature.values().length;
 			}
 		}
 
@@ -129,7 +115,7 @@ public final class ModelFeatureExtractor {
 			return result;
 		}
 
-		private static void createStaticFeatures(final GameStateDescription initialStateDesc) {
+		private static double[] createStaticFeatures(final GameStateDescription initialStateDesc) {
 			final ModelDescription modelDesc = initialStateDesc.getModelDescription();
 			final SpatialMatrix<Integer> model = GameStateUnmarshalling.createModel(modelDesc);
 			final int[] modelDims = model.getDimensions();
@@ -141,19 +127,18 @@ public final class ModelFeatureExtractor {
 			final List<ImageVisualizationInfoDescription.Datum> imgVizInfoData = imgVizInfoDataDesc.getData();
 			final int pieceCount = imgVizInfoData.size();
 			final double[] result = new double[EnvironmentFeature.values().length
-					+ pieceCount * EntityFeatures.Static.values().length];
-			final int currentFeatureIdx = setEnvironmentFeatureVals(result, 0, modelDims, pieceCount);
+					+ pieceCount * EntityFeature.values().length];
+			int currentFeatureIdx = setEnvironmentFeatureVals(result, 0, modelDims, pieceCount);
 
 			for (final ListIterator<ImageVisualizationInfoDescription.Datum> imgVizInfoDataIter = imgVizInfoData
 					.listIterator(); imgVizInfoDataIter.hasNext();) {
 				final int pieceId = imgVizInfoDataIter.nextIndex();
 				final ImageVisualizationInfoDescription.Datum pieceImgVizInfoDatum = imgVizInfoDataIter.next();
-				final double shapeFeatureVal = getShapeFeatureVal(pieceImgVizInfoDatum);
-				final double colorFeatureVal = createColorFeatureVal(pieceImgVizInfoDatum);
 				final SpatialRegion pieceRegion = piecePlacements.getElementMinimalRegions().get(pieceId);
-				final int pieceArea = IntArrays.product(pieceRegion.getDimensions());
-				final double sizeFeatureVal = pieceArea / modelArea;
+				currentFeatureIdx = setStaticEntityFeatureVals(result, currentFeatureIdx, pieceImgVizInfoDatum,
+						pieceRegion, modelDims, modelArea);
 			}
+			return result;
 		}
 
 		private static double getShapeFeatureVal(final ImageVisualizationInfoDescription.Datum pieceImgVizInfoDatum) {
@@ -185,13 +170,25 @@ public final class ModelFeatureExtractor {
 
 		private static int setStaticEntityFeatureVals(final double[] vals, int currentFeatureIdx,
 				final ImageVisualizationInfoDescription.Datum pieceImgVizInfoDatum, final SpatialRegion pieceRegion,
-				final double modelArea) {
-			for (final EntityFeatures.Static feature : EntityFeatures.Static.ORDERING) {
+				final int[] modelDims, final double modelArea) {
+			for (final EntityFeature feature : EntityFeature.ORDERING) {
 				switch (feature) {
 				case COLOR:
 					final float colorFeatureVal = createColorFeatureVal(pieceImgVizInfoDatum);
 					vals[currentFeatureIdx] = colorFeatureVal;
 					break;
+				case POSITION_X: {
+					final double centerX = pieceRegion.getXLowerBound() + pieceRegion.getLengthX() / 2.0;
+					final double posX = centerX / modelDims[0];
+					vals[currentFeatureIdx] = posX;
+					break;
+				}
+				case POSITION_Y: {
+					final double centerY = pieceRegion.getYLowerBound() + pieceRegion.getLengthY() / 2.0;
+					final double posY = centerY / modelDims[1];
+					vals[currentFeatureIdx] = posY;
+					break;
+				}
 				case SHAPE:
 					final double shapeFeatureVal = getShapeFeatureVal(pieceImgVizInfoDatum);
 					vals[currentFeatureIdx] = shapeFeatureVal;
@@ -201,6 +198,9 @@ public final class ModelFeatureExtractor {
 					final double sizeFeatureVal = pieceArea / modelArea;
 					vals[currentFeatureIdx] = sizeFeatureVal;
 					break;
+				case SELECTED: {
+					break;
+				}
 				default: {
 					throw new AssertionError("Logic error");
 				}
