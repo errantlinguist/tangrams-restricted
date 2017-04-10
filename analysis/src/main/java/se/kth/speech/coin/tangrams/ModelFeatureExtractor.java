@@ -22,9 +22,11 @@ import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -54,11 +56,11 @@ import se.kth.speech.SpatialMatrix;
 import se.kth.speech.SpatialRegion;
 import se.kth.speech.coin.tangrams.content.IconImages;
 import se.kth.speech.coin.tangrams.iristk.GameStateChangeData;
+import se.kth.speech.coin.tangrams.iristk.GameStateDescription;
+import se.kth.speech.coin.tangrams.iristk.GameStateUnmarshalling;
 import se.kth.speech.coin.tangrams.iristk.ImageVisualizationInfoDescription;
 import se.kth.speech.coin.tangrams.iristk.LoggedGameStateChangeDataParser;
-import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
-import se.kth.speech.coin.tangrams.iristk.events.GameStateUnmarshalling;
-import se.kth.speech.coin.tangrams.iristk.events.ModelDescription;
+import se.kth.speech.coin.tangrams.iristk.ModelDescription;
 import se.kth.speech.coin.tangrams.iristk.io.LoggingFormats;
 import se.kth.speech.hat.xsd.Annotation;
 import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
@@ -212,14 +214,39 @@ public final class ModelFeatureExtractor {
 			return currentFeatureIdx;
 		}
 
-		private final Map<? super String, GameStateChangeData> playerStateChangeData;
+		private final double[] initialGameStateFeatures;
 
-		private final Map<? super String, String> sourceIdPlayerIds;
+		private final Map<String, GameStateChangeData> playerStateChangeData;
 
-		private FeatureVectorFactory(final Map<? super String, String> sourceIdPlayerIds,
-				final Map<? super String, GameStateChangeData> playerStateChangeData) {
+		private final Map<String, String> sourceIdPlayerIds;
+
+		private FeatureVectorFactory(final Map<String, String> sourceIdPlayerIds,
+				final Map<String, GameStateChangeData> playerStateChangeData) {
 			this.sourceIdPlayerIds = sourceIdPlayerIds;
 			this.playerStateChangeData = playerStateChangeData;
+
+			final List<double[]> playerInitialGameStateFeatureVectors = new ArrayList<>(playerStateChangeData.size());
+			for (final Entry<String, GameStateChangeData> entry : playerStateChangeData.entrySet()) {
+				final GameStateDescription gameDesc = entry.getValue().getInitialState();
+				final double[] initialGameStateFeatures = createStaticFeatures(gameDesc);
+				playerInitialGameStateFeatureVectors.add(initialGameStateFeatures);
+			}
+			// Sanity check: All initial game feature vectors for all the
+			// different players' event files should be equal
+			final Iterator<double[]> playerInitialGameStateFeatureVectorIter = playerInitialGameStateFeatureVectors
+					.iterator();
+			if (playerInitialGameStateFeatureVectorIter.hasNext()) {
+				final double[] first = playerInitialGameStateFeatureVectorIter.next();
+				while (playerInitialGameStateFeatureVectorIter.hasNext()) {
+					final double[] second = playerInitialGameStateFeatureVectorIter.next();
+					if (!Arrays.equals(first, second)) {
+						throw new IllegalArgumentException("Different initial game states for different players.");
+					}
+				}
+				initialGameStateFeatures = first;
+			} else {
+				throw new IllegalArgumentException("Player game state change data map is empty.");
+			}
 		}
 
 		@Override
@@ -256,7 +283,9 @@ public final class ModelFeatureExtractor {
 			final Map<String, String> sourceIdPlayerIds = createSourceIdPlayerIdMap(uttAnnots);
 			final Set<String> playerIds = new HashSet<>(sourceIdPlayerIds.values());
 			final int expectedEventLogFileCount = playerIds.size();
-			final Map<String, Path> playerEventLogFilePaths = createPlayerEventLogFileMap(uttFilePath,
+			final Path sessionLogDir = uttFilePath.getParent();
+			LOGGER.info("Processing session log directory \"{}\".", sessionLogDir);
+			final Map<String, Path> playerEventLogFilePaths = createPlayerEventLogFileMap(sessionLogDir,
 					expectedEventLogFileCount);
 			final Table<String, String, GameStateChangeData> playerGameStateChangeData = createPlayerGameStateChangeData(
 					playerEventLogFilePaths.entrySet());
@@ -271,7 +300,7 @@ public final class ModelFeatureExtractor {
 				final FeatureVectorFactory featureVectorFactory = new FeatureVectorFactory(sourceIdPlayerIds,
 						playerStateChangeData);
 				final List<Segment> segments = uttAnnots.getSegments().getSegment();
-				segments.stream().map(featureVectorFactory);
+				segments.stream().map(featureVectorFactory).collect(Collectors.toList());
 				// TODO: Finish
 			} else {
 				throw new UnsupportedOperationException(
@@ -283,7 +312,6 @@ public final class ModelFeatureExtractor {
 	private static Map<String, Path> createPlayerEventLogFileMap(final Path sessionLogDir,
 			final int minEventLogFileCount) throws IOException {
 		final Map<String, Path> result = Maps.newHashMapWithExpectedSize(minEventLogFileCount);
-		LOGGER.info("Processing session log directory \"{}\".", sessionLogDir);
 		try (Stream<Path> filePaths = Files.walk(sessionLogDir, FileVisitOption.FOLLOW_LINKS)) {
 			filePaths.forEach(filePath -> {
 				final Matcher m = LOGGED_EVENT_FILE_NAME_PATTERN.matcher(filePath.getFileName().toString());
