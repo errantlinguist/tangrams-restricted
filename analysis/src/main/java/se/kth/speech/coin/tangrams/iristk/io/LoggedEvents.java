@@ -16,11 +16,9 @@
 */
 package se.kth.speech.coin.tangrams.iristk.io;
 
+import java.io.UncheckedIOException;
 import java.util.function.Function;
 import java.util.stream.Stream;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import iristk.system.Event;
 import iristk.util.Record;
@@ -35,10 +33,7 @@ public final class LoggedEvents {
 
 	public static final Function<String, Stream<Event>> JSON_EVENT_PARSER;
 
-	private static final Logger LOGGER;
-
 	static {
-		LOGGER = LoggerFactory.getLogger(LoggedEvents.class);
 		JSON_EVENT_PARSER = line -> {
 			Stream<Event> result = Stream.empty();
 			try {
@@ -47,7 +42,7 @@ public final class LoggedEvents {
 					result = Stream.of((Event) record);
 				}
 			} catch (final JsonToRecordException e) {
-				LOGGER.error("Could not parse string as JSON: {}", line);
+				throw new UncheckedIOException(e);
 			}
 			return result;
 		};
