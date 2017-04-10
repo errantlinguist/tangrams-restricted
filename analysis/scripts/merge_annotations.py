@@ -145,8 +145,9 @@ class TrackSources(object):
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
 		
-def create_namespace_tag_name(tag_name):
-	return DEFAULT_TAG_PREFIX + tag_name
+def create_default_qname(tag_name):
+#	return DEFAULT_TAG_PREFIX + tag_name
+	return etree.QName(DEFAULT_NAMESPACE, tag_name)
 
 if __name__ == '__main__':
 	import sys
@@ -159,7 +160,14 @@ if __name__ == '__main__':
 
 		inpaths = sys.argv[1:]
 		annot_data = []
-		qname_factory = create_namespace_tag_name
+		tag_qnames = {}
+		def qname_factory(tag_name):
+			result = tag_qnames.get(tag_name)
+			if not result:
+				result = DEFAULT_TAG_PREFIX + tag_name
+				tag_qnames[tag_name] = result
+			return result
+			
 		for channel_offset, inpath in enumerate(inpaths):
 			print("Reading \"%s\"." % inpath, file=sys.stderr)
 			id_prefix = os.path.splitext(os.path.basename(inpath))[0] + "-"
