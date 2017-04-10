@@ -17,9 +17,10 @@ DEFAULT_TAG_PREFIX = "{" + DEFAULT_NAMESPACE + "}"
 
 class AnnotationData(object):
 	
-	def __init__(self):
+	def __init__(self, qname_factory):
+		self.qname_factory = qname_factory
 		self.tracks = {}
-		self.segments = Segments()
+		self.segments = Segments(qname_factory)
 		
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
@@ -37,10 +38,10 @@ class AnnotationData(object):
 		# http://stackoverflow.com/a/22902367/1391325
 		em = ElementMaker(nsmap={None: DEFAULT_NAMESPACE })
 		result = em("annotation")
-		tracks_elem = etree.SubElement(result, create_namespace_tag_name("tracks"))
+		tracks_elem = etree.SubElement(result, self.qname_factory("tracks"))
 		for track_id, track_data in self.tracks.items():
-			track_elem = etree.SubElement(tracks_elem, create_namespace_tag_name("track"), attrib={"id" : track_id})
-			sources_elem = etree.SubElement(track_elem, create_namespace_tag_name("sources"))
+			track_elem = etree.SubElement(tracks_elem, self.qname_factory("track"), attrib={"id" : track_id})
+			sources_elem = etree.SubElement(track_elem, self.qname_factory("sources"))
 			for track_source in track_data.sources_by_id.values():
 				sources_elem.append(track_source)
 		
@@ -51,16 +52,17 @@ class AnnotationData(object):
 
 class AnnotationParser(object):
 	
-	def __init__(self, id_prefix, channel_offset):
+	def __init__(self, id_prefix, channel_offset, qname_factory):
 		self.id_prefix = id_prefix
 		self.channel_offset = channel_offset
-		self.__tag_parsers = {create_namespace_tag_name("tracks") : self.__parse_tracks, create_namespace_tag_name("segments") : self.__parse_segments}
+		self.qname_factory = qname_factory
+		self.__tag_parsers = {self.qname_factory("tracks") : self.__parse_tracks, self.qname_factory("segments") : self.__parse_segments}
 		self.__result = None
 	
 	def __call__(self, infile):
-		self.__result = AnnotationData()
+		self.__result = AnnotationData(self.qname_factory)
 		doc_root = etree.parse(infile)
-		tag_name = create_namespace_tag_name("annotation")
+		tag_name = self.qname_factory("annotation")
 		for child in doc_root.iter(tag_name):
 			self.__parse_annotation(child)		
 			
@@ -73,7 +75,7 @@ class AnnotationParser(object):
 			parser(child)
 			
 	def __parse_tracks(self, tracks):
-		source_tag_name = create_namespace_tag_name("source")
+		source_tag_name = self.qname_factory("source")
 		track_data = self.__result.tracks
 		for track in tracks:
 			track_sources = TrackSources()
@@ -109,7 +111,8 @@ class AnnotationParser(object):
 
 class Segments(object):
 	
-	def __init__(self):
+	def __init__(self, qname_factory):
+		self.qname_factory = qname_factory
 		self.segments_by_id = {}
 		self.track_segments = defaultdict(list)
 		self.source_segments = defaultdict(list)
@@ -127,7 +130,7 @@ class Segments(object):
 				self.source_segments.update(other.source_segments)
 				
 	def create_xml_element(self):
-		result = etree.Element(create_namespace_tag_name("segments"))
+		result = etree.Element(self.qname_factory("segments"))
 		for segment in self.segments_by_id.values():
 			result.append(segment)
 			
@@ -156,10 +159,11 @@ if __name__ == '__main__':
 
 		inpaths = sys.argv[1:]
 		annot_data = []
+		qname_factory = create_namespace_tag_name
 		for channel_offset, inpath in enumerate(inpaths):
 			print("Reading \"%s\"." % inpath, file=sys.stderr)
 			id_prefix = os.path.splitext(os.path.basename(inpath))[0] + "-"
-			parser = AnnotationParser(id_prefix, channel_offset)
+			parser = AnnotationParser(id_prefix, channel_offset, qname_factory)
 			with open(inpath, 'r') as inf:
 				infile_datum = parser(inf)
 				annot_data.append(infile_datum)
