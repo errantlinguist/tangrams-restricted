@@ -5,10 +5,12 @@ Created on Apr 3, 2017
 @author: tshore
 '''
 
+import re
+from collections import defaultdict
 from lxml import etree
 from lxml.builder import ElementMaker
-#from xml.etree import ElementTree
-from collections import defaultdict
+
+__DIGITS_REGEX = re.compile('(\d+)')
 
 class AnnotationData(object):
 	
@@ -35,10 +37,10 @@ class AnnotationData(object):
 		em = ElementMaker(nsmap={None: self.namespace })
 		result = em("annotation")
 		tracks_elem = etree.SubElement(result, self.qname_factory("tracks"))
-		for track_id, track_data in self.tracks.items():
+		for track_id, track_data in sorted(self.tracks.items(), key=lambda k: natural_keys(k[0])):
 			track_elem = etree.SubElement(tracks_elem, self.qname_factory("track"), attrib={"id" : track_id})
 			sources_elem = etree.SubElement(track_elem, self.qname_factory("sources"))
-			for track_source in track_data.sources_by_id.values():
+			for track_source in sorted(track_data.sources_by_id.values(), key=lambda elem: natural_keys(elem.get("id"))):
 				sources_elem.append(track_source)
 		
 		segments_elem = self.segments.create_xml_element()
@@ -128,7 +130,7 @@ class Segments(object):
 				
 	def create_xml_element(self):
 		result = etree.Element(self.qname_factory("segments"))
-		for segment in self.segments_by_id.values():
+		for segment in sorted(self.segments_by_id.values(), key=lambda elem: natural_keys(elem.get("id"))):
 			result.append(segment)
 			
 		return result
@@ -168,7 +170,21 @@ def merge_annotations(inpaths, namespace):
 		next_data = annot_data[1:]
 		for next_datum in next_data:
 			result.add(next_datum)
-	return result
+	return result	
+	
+def natural_keys(text):
+	'''
+	alist.sort(key=natural_keys) sorts in human order
+	http://nedbatchelder.com/blog/200712/human_sorting.html
+	http://stackoverflow.com/a/5967539/1391325
+	'''
+	return [ __atoi(c) for c in __DIGITS_REGEX.split(text) ]
+	
+def __atoi(text):
+	'''
+	http://stackoverflow.com/a/5967539/1391325
+	'''
+	return int(text) if text.isdigit() else text
 
 if __name__ == '__main__':
 	import sys
