@@ -199,6 +199,8 @@ public final class ModelFeatureExtractor {
 					vals[currentFeatureIdx] = sizeFeatureVal;
 					break;
 				case SELECTED: {
+					// Set "not selected" as the initial value
+					vals[currentFeatureIdx] = 0.0;
 					break;
 				}
 				default: {
