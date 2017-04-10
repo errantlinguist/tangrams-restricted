@@ -14,7 +14,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech.coin.tangrams.iristk;
+package se.kth.speech.coin.tangrams.iristk.events;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,7 +29,7 @@ import se.kth.speech.Matrix;
  * @since 10 Jan 2017
  *
  */
-final class ModelDescription extends Record {
+public final class ModelDescription extends Record {
 
 	private int colCount;
 

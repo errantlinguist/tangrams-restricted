@@ -14,7 +14,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech.coin.tangrams.iristk;
+package se.kth.speech.coin.tangrams.iristk.events;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -26,13 +26,14 @@ import com.google.common.collect.HashBiMap;
 
 import iristk.util.Record;
 import se.kth.speech.coin.tangrams.game.PlayerRole;
+import se.kth.speech.coin.tangrams.iristk.ImageVisualizationInfoDescription;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
  * @since 10 Jan 2017
  *
  */
-final class GameStateDescription extends Record {
+public final class GameStateDescription extends Record {
 
 	private boolean allowFailedPlacements;
 

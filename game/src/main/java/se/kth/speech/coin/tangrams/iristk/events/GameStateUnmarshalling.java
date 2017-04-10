@@ -14,7 +14,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech.coin.tangrams.iristk;
+package se.kth.speech.coin.tangrams.iristk.events;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -33,7 +33,7 @@ import se.kth.speech.SpatialMatrix;
  * @since 25 Jan 2017
  *
  */
-final class GameStateUnmarshalling {
+public final class GameStateUnmarshalling {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(GameStateUnmarshalling.class);
 

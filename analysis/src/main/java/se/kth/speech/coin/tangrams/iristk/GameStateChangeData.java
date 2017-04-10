@@ -24,6 +24,7 @@ import java.util.Set;
 import java.util.TreeMap;
 
 import iristk.system.Event;
+import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
 
 public final class GameStateChangeData {
 

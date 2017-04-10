@@ -16,31 +16,55 @@
 */
 package se.kth.speech.coin.tangrams;
 
+import java.awt.Color;
 import java.io.IOException;
 import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import javax.xml.bind.JAXBException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.HashBasedTable;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Table;
 
-import se.kth.speech.MutablePair;
+import iristk.util.HAT;
+import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
+import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
+import se.kth.speech.IntArrays;
+import se.kth.speech.SpatialMap;
 import se.kth.speech.SpatialMatrix;
 import se.kth.speech.SpatialRegion;
-import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
+import se.kth.speech.coin.tangrams.content.IconImages;
 import se.kth.speech.coin.tangrams.iristk.GameStateChangeData;
+import se.kth.speech.coin.tangrams.iristk.ImageVisualizationInfoDescription;
 import se.kth.speech.coin.tangrams.iristk.LoggedGameStateChangeDataParser;
+import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
+import se.kth.speech.coin.tangrams.iristk.events.GameStateUnmarshalling;
+import se.kth.speech.coin.tangrams.iristk.events.ModelDescription;
 import se.kth.speech.coin.tangrams.iristk.io.LoggingFormats;
+import se.kth.speech.hat.xsd.Annotation;
+import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
+import se.kth.speech.hat.xsd.Annotation.Tracks.Track;
+import se.kth.speech.hat.xsd.Annotation.Tracks.Track.Sources;
+import se.kth.speech.hat.xsd.Annotation.Tracks.Track.Sources.Source;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -49,99 +73,250 @@ import se.kth.speech.coin.tangrams.iristk.io.LoggingFormats;
  */
 public final class ModelFeatureExtractor {
 
-	private enum SessionFileType {
-		EVENTS("events-(.+?)\\.txt"), UTTERANCES("(.+?)\\_rec.xml");
+	private static class FeatureVectorFactory implements Function<Segment, Void> {
 
-		private final Pattern pattern;
+		private enum EntityFeatureType {
+			COLOR, POSITION, SELECTED, SHAPE, SIZE;
 
-		private SessionFileType(final String regex) {
-			// Case-insensitive because case doesn't matter on Windows systems,
-			// and the recording can (currently) only be done on Windows systems
-			pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
+			private static final List<EntityFeatureType> ORDERING;
+
+			static {
+				ORDERING = Arrays.asList(SHAPE, COLOR, SIZE, POSITION, SELECTED);
+				assert ORDERING.size() == EntityFeatureType.values().length;
+			}
+		}
+
+		private enum EnvironmentFeatureType {
+			COL_COUNT, ENTITY_COUNT, ROW_COUNT;
+
+			private static final List<EnvironmentFeatureType> ORDERING;
+
+			static {
+				ORDERING = Arrays.asList(ROW_COUNT, COL_COUNT, ENTITY_COUNT);
+				assert ORDERING.size() == EnvironmentFeatureType.values().length;
+			}
+		}
+
+		private static final Object2DoubleMap<String> SHAPE_FEATURE_VALS = createShapeFeatureValueMap();
+
+		private static float createColorFeatureVal(final ImageVisualizationInfoDescription.Datum pieceImgVizInfoDatum) {
+			final Color color = pieceImgVizInfoDatum.getColor();
+			final float[] hsbVals = Color.RGBtoHSB(color.getRed(), color.getGreen(), color.getBlue(), null);
+			return hsbVals[0];
+		}
+
+		private static Object2DoubleMap<String> createShapeFeatureValueMap() {
+			final Set<String> possibleShapeStrValues = IconImages.getImageResources().keySet();
+			final Object2DoubleMap<String> result = new Object2DoubleOpenHashMap<>();
+			possibleShapeStrValues.forEach(strValue -> {
+				final double featureVal = result.size();
+				result.put(strValue, featureVal);
+			});
+			return result;
+		}
+
+		private static void createStaticFeatures(final GameStateDescription initialStateDesc) {
+			final ModelDescription modelDesc = initialStateDesc.getModelDescription();
+			final SpatialMatrix<Integer> model = GameStateUnmarshalling.createModel(modelDesc);
+			final int[] modelDims = model.getDimensions();
+			final double modelArea = IntArrays.product(modelDims);
+
+			final SpatialMap<Integer> piecePlacements = model.getElementPlacements();
+			final ImageVisualizationInfoDescription imgVizInfoDataDesc = initialStateDesc
+					.getImageVisualizationInfoDescription();
+			final List<ImageVisualizationInfoDescription.Datum> imgVizInfoData = imgVizInfoDataDesc.getData();
+			final int pieceCount = imgVizInfoData.size();
+			final double[] result = new double[EnvironmentFeatureType.values().length
+					+ pieceCount * EntityFeatureType.values().length];
+			final int currentFeatureIdx = setEnvironmentFeatureVals(result, 0, modelDims, pieceCount);
+
+			for (final ListIterator<ImageVisualizationInfoDescription.Datum> imgVizInfoDataIter = imgVizInfoData
+					.listIterator(); imgVizInfoDataIter.hasNext();) {
+				final int pieceId = imgVizInfoDataIter.nextIndex();
+				final ImageVisualizationInfoDescription.Datum pieceImgVizInfoDatum = imgVizInfoDataIter.next();
+				final double shapeFeatureVal = getShapeFeatureVal(pieceImgVizInfoDatum);
+				final double colorFeatureVal = createColorFeatureVal(pieceImgVizInfoDatum);
+				final SpatialRegion pieceRegion = piecePlacements.getElementMinimalRegions().get(pieceId);
+				final int pieceArea = IntArrays.product(pieceRegion.getDimensions());
+				final double sizeFeatureVal = pieceArea / modelArea;
+			}
+		}
+
+		private static double getShapeFeatureVal(final ImageVisualizationInfoDescription.Datum pieceImgVizInfoDatum) {
+			final String strVal = pieceImgVizInfoDatum.getResourceName();
+			return SHAPE_FEATURE_VALS.getDouble(strVal);
+		}
+
+		private static int setEnvironmentFeatureVals(final double[] vals, int currentFeatureIdx, final int[] modelDims,
+				final int pieceCount) {
+			for (final EnvironmentFeatureType featureType : EnvironmentFeatureType.ORDERING) {
+				switch (featureType) {
+				case COL_COUNT:
+					vals[currentFeatureIdx] = modelDims[1];
+					break;
+				case ENTITY_COUNT:
+					vals[currentFeatureIdx] = pieceCount;
+					break;
+				case ROW_COUNT:
+					vals[currentFeatureIdx] = modelDims[0];
+					break;
+				default: {
+					throw new AssertionError("Logic error");
+				}
+				}
+				currentFeatureIdx++;
+			}
+			return currentFeatureIdx;
+		}
+
+		private static int setStaticEntityFeatureVals(final double[] vals, int currentFeatureIdx,
+				final ImageVisualizationInfoDescription.Datum pieceImgVizInfoDatum, final SpatialRegion pieceRegion,
+				final double modelArea) {
+			for (final EntityFeatureType featureType : EntityFeatureType.ORDERING) {
+				switch (featureType) {
+				case COLOR:
+					final float colorFeatureVal = createColorFeatureVal(pieceImgVizInfoDatum);
+					vals[currentFeatureIdx] = colorFeatureVal;
+					break;
+				case POSITION:
+					break;
+				case SELECTED:
+					break;
+				case SHAPE:
+					final double shapeFeatureVal = getShapeFeatureVal(pieceImgVizInfoDatum);
+					vals[currentFeatureIdx] = shapeFeatureVal;
+					break;
+				case SIZE:
+					final int pieceArea = IntArrays.product(pieceRegion.getDimensions());
+					final double sizeFeatureVal = pieceArea / modelArea;
+					vals[currentFeatureIdx] = sizeFeatureVal;
+					break;
+				default: {
+					throw new AssertionError("Logic error");
+				}
+				}
+				currentFeatureIdx++;
+			}
+			return currentFeatureIdx;
+		}
+
+		private final Map<? super String, GameStateChangeData> playerStateChangeData;
+
+		private final Map<? super String, String> sourceIdPlayerIds;
+
+		private FeatureVectorFactory(final Map<? super String, String> sourceIdPlayerIds,
+				final Map<? super String, GameStateChangeData> playerStateChangeData) {
+			this.sourceIdPlayerIds = sourceIdPlayerIds;
+			this.playerStateChangeData = playerStateChangeData;
+		}
+
+		@Override
+		public Void apply(final Segment segment) {
+			final String sourceId = segment.getSource();
+			// Get the player ID associated with the given audio source
+			final String playerId = sourceIdPlayerIds.get(sourceId);
+			final GameStateChangeData gameStateChangeData = playerStateChangeData.get(playerId);
+			// TODO: Finish
+			return null;
 		}
 	}
+
+	private static final int EXPECTED_UNIQUE_GAME_COUNT = 1;
+
+	private static final Pattern LOGGED_EVENT_FILE_NAME_PATTERN = Pattern.compile("events-(.+?)\\.txt");
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(ModelFeatureExtractor.class);
 
-	public static void main(final String[] args) throws IOException {
+	/**
+	 * @see <a href=
+	 *      "http://stackoverflow.com/a/4546093/1391325">StackOverflow</a>
+	 */
+	private static final Pattern MINIMAL_FILE_EXT_PATTERN = Pattern.compile("\\.(?=[^\\.]+$)");
+
+	public static void main(final String[] args) throws IOException, JAXBException {
 		if (args.length < 1) {
-			final String usageMsg = String.format("Usage: %s INDIR", ModelFeatureExtractor.class.getName());
+			final String usageMsg = String.format("Usage: %s UTTERANCES_FILE", ModelFeatureExtractor.class.getName());
 			throw new IllegalArgumentException(usageMsg);
 		} else {
-			final Path indir = Paths.get(args[0]);
-			final int expectedPlayerCount = 2;
-			final Table<String, SessionFileType, Path> playerDataFiles = HashBasedTable.create(expectedPlayerCount,
-					SessionFileType.values().length);
-			try (Stream<Path> filePaths = Files.walk(indir, FileVisitOption.FOLLOW_LINKS)) {
-				filePaths.forEach(filePath -> {
-					final Optional<MutablePair<SessionFileType, String>> optFileTypeAndPlayerId = findFileTypeAndPlayerId(
-							filePath.getFileName().toString());
-					optFileTypeAndPlayerId.ifPresent(fileTypeAndPlayerId -> {
-						playerDataFiles.put(fileTypeAndPlayerId.getValue(), fileTypeAndPlayerId.getKey(), filePath);
-					});
-				});
-			}
-			final int playerCount = playerDataFiles.rowKeySet().size();
-			if (playerCount == expectedPlayerCount) {
-				final Map<String, Map<SessionFileType, Path>> rows = playerDataFiles.rowMap();
-				for (final Entry<String, Map<SessionFileType, Path>> row : rows.entrySet()) {
-					final String playerId = row.getKey();
-					final Map<SessionFileType, Path> dataFiles = row.getValue();
-					extractFeatures(playerId, dataFiles);
-				}
+			final Path uttFilePath = Paths.get(args[0]);
+			LOGGER.info("Parsing utterances from \"{}\".", uttFilePath);
+			final Annotation uttAnnots = HAT.readAnnotation(uttFilePath.toFile());
+			final Map<String, String> sourceIdPlayerIds = createSourceIdPlayerIdMap(uttAnnots);
+			final Set<String> playerIds = new HashSet<>(sourceIdPlayerIds.values());
+			final int expectedEventLogFileCount = playerIds.size();
+			final Map<String, Path> playerEventLogFilePaths = createPlayerEventLogFileMap(uttFilePath,
+					expectedEventLogFileCount);
+			final Table<String, String, GameStateChangeData> playerGameStateChangeData = createPlayerGameStateChangeData(
+					playerEventLogFilePaths.entrySet());
+			final Set<String> playerGameIdIntersection = new HashSet<>(playerGameStateChangeData.columnKeySet());
+			playerGameStateChangeData.rowMap().values().stream().map(Map::keySet)
+					.forEach(playerGameIdIntersection::retainAll);
+			final int gameCount = playerGameIdIntersection.size();
+			if (gameCount == 1) {
+				final String gameId = playerGameIdIntersection.iterator().next();
+				final Map<String, GameStateChangeData> playerStateChangeData = playerGameStateChangeData.columnMap()
+						.get(gameId);
+				final FeatureVectorFactory featureVectorFactory = new FeatureVectorFactory(sourceIdPlayerIds,
+						playerStateChangeData);
+				final List<Segment> segments = uttAnnots.getSegments().getSegment();
+				segments.stream().map(featureVectorFactory);
+				// TODO: Finish
 			} else {
-				throw new IllegalArgumentException(
-						String.format("Expected to find data files for %d unique player(s) but found %d instead.",
-								expectedPlayerCount, playerCount));
-			}
-
-		}
-	}
-
-	private static void extractFeatures(final String playerId, final Map<SessionFileType, Path> dataFiles)
-			throws IOException {
-		LOGGER.info("Extracting features for player \"{}\".", playerId);
-		final Path eventLogFile = dataFiles.get(SessionFileType.EVENTS);
-		try (final Stream<String> lines = Files.lines(eventLogFile, LoggingFormats.ENCODING)) {
-			final Map<String, GameStateChangeData> gameStateChangeData = new LoggedGameStateChangeDataParser()
-					.apply(lines);
-			final int gameCount = gameStateChangeData.size();
-			switch (gameCount) {
-			case 1: {
-				final Entry<String, GameStateChangeData> toFeatureize = gameStateChangeData.entrySet().iterator()
-						.next();
-				LOGGER.info("Extracting features for game \"{}\".", toFeatureize.getKey());
-				final GameStateChangeData gameData = toFeatureize.getValue();
-				System.out.println(gameData);
-				break;
-			}
-			default: {
 				throw new UnsupportedOperationException(
 						String.format("No logic for handling a game count of %d.", gameCount));
 			}
-			}
 		}
 	}
 
-	private static Optional<MutablePair<SessionFileType, String>> findFileTypeAndPlayerId(final String filename) {
-		Optional<MutablePair<SessionFileType, String>> result = Optional.empty();
-
-		for (final SessionFileType ft : SessionFileType.values()) {
-			final Matcher m = ft.pattern.matcher(filename);
-			if (m.matches()) {
-				result = Optional.of(new MutablePair<>(ft, m.group(1)));
-				break;
-			}
+	private static Map<String, Path> createPlayerEventLogFileMap(final Path sessionLogDir,
+			final int minEventLogFileCount) throws IOException {
+		final Map<String, Path> result = Maps.newHashMapWithExpectedSize(minEventLogFileCount);
+		LOGGER.info("Processing session log directory \"{}\".", sessionLogDir);
+		try (Stream<Path> filePaths = Files.walk(sessionLogDir, FileVisitOption.FOLLOW_LINKS)) {
+			filePaths.forEach(filePath -> {
+				final Matcher m = LOGGED_EVENT_FILE_NAME_PATTERN.matcher(filePath.getFileName().toString());
+				if (m.matches()) {
+					final String playerId = m.group(1);
+					result.put(playerId, filePath);
+				}
+			});
 		}
-
+		final int playerEventLogFileCount = result.size();
+		if (playerEventLogFileCount < minEventLogFileCount) {
+			throw new IllegalArgumentException(
+					String.format("Expected to find data files for at least %d unique player(s) but found %d instead.",
+							minEventLogFileCount, playerEventLogFileCount));
+		}
 		return result;
 	}
 
-	public void extract(final ImageVisualizationInfo imgVizInfo, final SpatialMatrix<Integer> model) {
-		final Map<Integer, SpatialRegion> piecePlacements = model.getElementPlacements().getElementMinimalRegions();
-		for (final Entry<Integer, SpatialRegion> piecePlacement : piecePlacements.entrySet()) {
-			final ImageVisualizationInfo.Datum imgVizInfoDatum = imgVizInfo.getData().get(piecePlacement.getKey());
+	private static Table<String, String, GameStateChangeData> createPlayerGameStateChangeData(
+			final Collection<Entry<String, Path>> playerEventLogFilePaths) throws IOException {
+		final Table<String, String, GameStateChangeData> result = HashBasedTable.create(playerEventLogFilePaths.size(),
+				EXPECTED_UNIQUE_GAME_COUNT);
+		for (final Entry<String, Path> playerEventLogFilePath : playerEventLogFilePaths) {
+			final String playerId = playerEventLogFilePath.getKey();
+			LOGGER.info("Extracting features for player \"{}\".", playerId);
+			final Path eventLogFile = playerEventLogFilePath.getValue();
+			try (final Stream<String> lines = Files.lines(eventLogFile, LoggingFormats.ENCODING)) {
+				final Map<String, GameStateChangeData> gameStateChangeData = new LoggedGameStateChangeDataParser()
+						.apply(lines);
+				gameStateChangeData.forEach((gameId, gameData) -> {
+					result.put(playerId, gameId, gameData);
+				});
+			}
 		}
+		return result;
+	}
+
+	private static Map<String, String> createSourceIdPlayerIdMap(final Annotation uttAnnots) {
+		final List<Track> tracks = uttAnnots.getTracks().getTrack();
+		final Stream<Source> sources = tracks.stream().map(Track::getSources).map(Sources::getSource)
+				.flatMap(List::stream);
+		return sources.collect(Collectors.toMap(Source::getId, source -> {
+			final String href = source.getHref();
+			return MINIMAL_FILE_EXT_PATTERN.split(href)[0];
+		}));
 	}
 
 	public void readLogfile() {
