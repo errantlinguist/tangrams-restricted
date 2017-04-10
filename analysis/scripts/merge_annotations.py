@@ -182,6 +182,7 @@ if __name__ == '__main__':
 			with open(tmpfile_path, 'r', encoding=encoding) as inf:
 				print(inf.read())
 		finally:
+			os.close(tmpfile[0])
 			os.remove(tmpfile_path)
 				
 		
