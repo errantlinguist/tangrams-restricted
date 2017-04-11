@@ -16,7 +16,6 @@
 */
 package se.kth.speech.coin.tangrams.game;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.IdentityHashMap;
@@ -28,8 +27,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import se.kth.speech.MutablePair;
-import se.kth.speech.SpatialMap;
 import se.kth.speech.SpatialMatrix;
+import se.kth.speech.SpatialMatrixRegionElementMover;
 import se.kth.speech.SpatialRegion;
 import se.kth.speech.coin.tangrams.AreaSpatialRegionFactory;
 import se.kth.speech.coin.tangrams.iristk.GameManagementClientModule;
@@ -156,6 +155,8 @@ public final class Controller {
 
 	private Move nextMove;
 
+	private final transient SpatialMatrixRegionElementMover<Integer> piecePosUpdater;
+
 	private final String playerId;
 
 	private PlayerRole role;
@@ -170,6 +171,7 @@ public final class Controller {
 			final GameManagementClientModule clientModule) {
 		this.model = model;
 		areaRegionFactory = new AreaSpatialRegionFactory(model);
+		piecePosUpdater = new SpatialMatrixRegionElementMover<>(model);
 		this.playerId = playerId;
 		this.role = role;
 		this.clientModule = clientModule;
@@ -395,17 +397,7 @@ public final class Controller {
 	private void updatePiecePositions(final Move move) {
 		final SpatialRegion source = areaRegionFactory.apply(move.getSource());
 		final SpatialRegion target = areaRegionFactory.apply(move.getTarget());
-		updatePiecePositions(source, target);
-	}
-
-	private void updatePiecePositions(final SpatialRegion source, final SpatialRegion target) {
-		final SpatialMap<Integer> piecePlacements = model.getElementPlacements();
-		final Iterable<Integer> pieceIdsToMove = new ArrayList<>(
-				piecePlacements.getMinimalRegionElements().get(source));
-		for (final Integer pieceId : pieceIdsToMove) {
-			model.placeElement(pieceId, target);
-		}
-		model.clearRegion(source);
+		piecePosUpdater.accept(source, target);
 	}
 
 	private void updatePlayerRole(final PlayerRole newRole) {

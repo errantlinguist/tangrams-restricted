@@ -16,23 +16,17 @@
 */
 package se.kth.speech.coin.tangrams;
 
-import java.awt.Color;
 import java.io.IOException;
 import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -48,19 +42,9 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Table;
 
 import iristk.util.HAT;
-import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
-import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
-import se.kth.speech.IntArrays;
-import se.kth.speech.SpatialMap;
-import se.kth.speech.SpatialMatrix;
-import se.kth.speech.SpatialRegion;
-import se.kth.speech.coin.tangrams.content.IconImages;
+import se.kth.speech.coin.tangrams.iristk.FeatureVectorFactory;
 import se.kth.speech.coin.tangrams.iristk.GameStateChangeData;
-import se.kth.speech.coin.tangrams.iristk.GameStateDescription;
-import se.kth.speech.coin.tangrams.iristk.GameStateUnmarshalling;
-import se.kth.speech.coin.tangrams.iristk.ImageVisualizationInfoDescription;
 import se.kth.speech.coin.tangrams.iristk.LoggedGameStateChangeDataParser;
-import se.kth.speech.coin.tangrams.iristk.ModelDescription;
 import se.kth.speech.coin.tangrams.iristk.io.LoggingFormats;
 import se.kth.speech.hat.xsd.Annotation;
 import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
@@ -74,191 +58,6 @@ import se.kth.speech.hat.xsd.Annotation.Tracks.Track.Sources.Source;
  *
  */
 public final class ModelFeatureExtractor {
-
-	private static class FeatureVectorFactory implements Function<Segment, Void> {
-
-		private enum EntityFeature {
-			COLOR, POSITION_X, POSITION_Y, SELECTED, SHAPE, SIZE;
-
-			private static final List<EntityFeature> ORDERING;
-
-			static {
-				ORDERING = Arrays.asList(SHAPE, COLOR, SIZE, POSITION_X, POSITION_Y, SELECTED);
-				assert ORDERING.size() == EntityFeature.values().length;
-			}
-		}
-
-		private enum EnvironmentFeature {
-			COL_COUNT, ENTITY_COUNT, ROW_COUNT;
-
-			private static final List<EnvironmentFeature> ORDERING;
-
-			static {
-				ORDERING = Arrays.asList(ROW_COUNT, COL_COUNT, ENTITY_COUNT);
-				assert ORDERING.size() == EnvironmentFeature.values().length;
-			}
-		}
-
-		private static final Object2DoubleMap<String> SHAPE_FEATURE_VALS = createShapeFeatureValueMap();
-
-		private static float createColorFeatureVal(final ImageVisualizationInfoDescription.Datum pieceImgVizInfoDatum) {
-			final Color color = pieceImgVizInfoDatum.getColor();
-			final float[] hsbVals = Color.RGBtoHSB(color.getRed(), color.getGreen(), color.getBlue(), null);
-			return hsbVals[0];
-		}
-
-		private static Object2DoubleMap<String> createShapeFeatureValueMap() {
-			final Set<String> possibleShapeStrValues = IconImages.getImageResources().keySet();
-			final Object2DoubleMap<String> result = new Object2DoubleOpenHashMap<>();
-			possibleShapeStrValues.forEach(strValue -> {
-				final double featureVal = result.size();
-				result.put(strValue, featureVal);
-			});
-			return result;
-		}
-
-		private static double[] createStaticFeatures(final GameStateDescription initialStateDesc) {
-			final ModelDescription modelDesc = initialStateDesc.getModelDescription();
-			final SpatialMatrix<Integer> model = GameStateUnmarshalling.createModel(modelDesc);
-			final int[] modelDims = model.getDimensions();
-			final double modelArea = IntArrays.product(modelDims);
-
-			final SpatialMap<Integer> piecePlacements = model.getElementPlacements();
-			final ImageVisualizationInfoDescription imgVizInfoDataDesc = initialStateDesc
-					.getImageVisualizationInfoDescription();
-			final List<ImageVisualizationInfoDescription.Datum> imgVizInfoData = imgVizInfoDataDesc.getData();
-			final int pieceCount = imgVizInfoData.size();
-			final double[] result = new double[EnvironmentFeature.values().length
-					+ pieceCount * EntityFeature.values().length];
-			int currentFeatureIdx = setEnvironmentFeatureVals(result, 0, modelDims, pieceCount);
-
-			for (final ListIterator<ImageVisualizationInfoDescription.Datum> imgVizInfoDataIter = imgVizInfoData
-					.listIterator(); imgVizInfoDataIter.hasNext();) {
-				final int pieceId = imgVizInfoDataIter.nextIndex();
-				final ImageVisualizationInfoDescription.Datum pieceImgVizInfoDatum = imgVizInfoDataIter.next();
-				final SpatialRegion pieceRegion = piecePlacements.getElementMinimalRegions().get(pieceId);
-				currentFeatureIdx = setStaticEntityFeatureVals(result, currentFeatureIdx, pieceImgVizInfoDatum,
-						pieceRegion, modelDims, modelArea);
-			}
-			return result;
-		}
-
-		private static double getShapeFeatureVal(final ImageVisualizationInfoDescription.Datum pieceImgVizInfoDatum) {
-			final String strVal = pieceImgVizInfoDatum.getResourceName();
-			return SHAPE_FEATURE_VALS.getDouble(strVal);
-		}
-
-		private static int setEnvironmentFeatureVals(final double[] vals, int currentFeatureIdx, final int[] modelDims,
-				final int pieceCount) {
-			for (final EnvironmentFeature feature : EnvironmentFeature.ORDERING) {
-				switch (feature) {
-				case COL_COUNT:
-					vals[currentFeatureIdx] = modelDims[1];
-					break;
-				case ENTITY_COUNT:
-					vals[currentFeatureIdx] = pieceCount;
-					break;
-				case ROW_COUNT:
-					vals[currentFeatureIdx] = modelDims[0];
-					break;
-				default: {
-					throw new AssertionError("Logic error");
-				}
-				}
-				currentFeatureIdx++;
-			}
-			return currentFeatureIdx;
-		}
-
-		private static int setStaticEntityFeatureVals(final double[] vals, int currentFeatureIdx,
-				final ImageVisualizationInfoDescription.Datum pieceImgVizInfoDatum, final SpatialRegion pieceRegion,
-				final int[] modelDims, final double modelArea) {
-			for (final EntityFeature feature : EntityFeature.ORDERING) {
-				switch (feature) {
-				case COLOR:
-					final float colorFeatureVal = createColorFeatureVal(pieceImgVizInfoDatum);
-					vals[currentFeatureIdx] = colorFeatureVal;
-					break;
-				case POSITION_X: {
-					final double centerX = pieceRegion.getXLowerBound() + pieceRegion.getLengthX() / 2.0;
-					final double posX = centerX / modelDims[0];
-					vals[currentFeatureIdx] = posX;
-					break;
-				}
-				case POSITION_Y: {
-					final double centerY = pieceRegion.getYLowerBound() + pieceRegion.getLengthY() / 2.0;
-					final double posY = centerY / modelDims[1];
-					vals[currentFeatureIdx] = posY;
-					break;
-				}
-				case SHAPE:
-					final double shapeFeatureVal = getShapeFeatureVal(pieceImgVizInfoDatum);
-					vals[currentFeatureIdx] = shapeFeatureVal;
-					break;
-				case SIZE:
-					final int pieceArea = IntArrays.product(pieceRegion.getDimensions());
-					final double sizeFeatureVal = pieceArea / modelArea;
-					vals[currentFeatureIdx] = sizeFeatureVal;
-					break;
-				case SELECTED: {
-					// Set "not selected" as the initial value
-					vals[currentFeatureIdx] = 0.0;
-					break;
-				}
-				default: {
-					throw new AssertionError("Logic error");
-				}
-				}
-				currentFeatureIdx++;
-			}
-			return currentFeatureIdx;
-		}
-
-		private final double[] initialGameStateFeatures;
-
-		private final Map<String, GameStateChangeData> playerStateChangeData;
-
-		private final Map<String, String> sourceIdPlayerIds;
-
-		private FeatureVectorFactory(final Map<String, String> sourceIdPlayerIds,
-				final Map<String, GameStateChangeData> playerStateChangeData) {
-			this.sourceIdPlayerIds = sourceIdPlayerIds;
-			this.playerStateChangeData = playerStateChangeData;
-
-			final List<double[]> playerInitialGameStateFeatureVectors = new ArrayList<>(playerStateChangeData.size());
-			for (final Entry<String, GameStateChangeData> entry : playerStateChangeData.entrySet()) {
-				final GameStateDescription gameDesc = entry.getValue().getInitialState();
-				final double[] initialGameStateFeatures = createStaticFeatures(gameDesc);
-				playerInitialGameStateFeatureVectors.add(initialGameStateFeatures);
-			}
-			// Sanity check: All initial game feature vectors for all the
-			// different players' event files should be equal
-			final Iterator<double[]> playerInitialGameStateFeatureVectorIter = playerInitialGameStateFeatureVectors
-					.iterator();
-			if (playerInitialGameStateFeatureVectorIter.hasNext()) {
-				final double[] first = playerInitialGameStateFeatureVectorIter.next();
-				while (playerInitialGameStateFeatureVectorIter.hasNext()) {
-					final double[] second = playerInitialGameStateFeatureVectorIter.next();
-					if (!Arrays.equals(first, second)) {
-						throw new IllegalArgumentException("Different initial game states for different players.");
-					}
-				}
-				initialGameStateFeatures = first;
-			} else {
-				throw new IllegalArgumentException("Player game state change data map is empty.");
-			}
-		}
-
-		@Override
-		public Void apply(final Segment segment) {
-			final String sourceId = segment.getSource();
-			// Get the player ID associated with the given audio source
-			final String playerId = sourceIdPlayerIds.get(sourceId);
-			final GameStateChangeData gameStateChangeData = playerStateChangeData.get(playerId);
-			// TODO: Finish
-			return null;
-		}
-	}
 
 	private static final int EXPECTED_UNIQUE_GAME_COUNT = 1;
 
