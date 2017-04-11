@@ -40,13 +40,18 @@ public final class GameStateUnmarshalling {
 	private static final Function<String, Integer> NULLABLE_INTEGER_GETTER = Integers::valueOfNullable;
 
 	public static SpatialMatrix<Integer> createModel(final ModelDescription modelDesc) {
+		return createModel(modelDesc, SpatialMatrix.Factory.STABLE_ITER_ORDER);
+	}
+
+	public static SpatialMatrix<Integer> createModel(final ModelDescription modelDesc,
+			final SpatialMatrix.Factory factory) {
 		final List<String> nullableCoordOccupants = modelDesc.getCoordOccupants();
 		final List<Integer> coordOccupants = nullableCoordOccupants.stream().map(NULLABLE_INTEGER_GETTER)
 				.collect(Collectors.toCollection(() -> new ArrayList<>(nullableCoordOccupants.size())));
 		LOGGER.debug("Creating model with coord occupant vector: {}", coordOccupants);
 		final int colCount = modelDesc.getColCount();
 		final Matrix<Integer> backingMatrix = new Matrix<>(coordOccupants, colCount);
-		return SpatialMatrix.Factory.STABLE_ITER_ORDER.create(backingMatrix);
+		return factory.create(backingMatrix);
 	}
 
 	private GameStateUnmarshalling() {
