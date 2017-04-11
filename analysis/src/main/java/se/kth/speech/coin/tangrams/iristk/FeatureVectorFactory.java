@@ -53,7 +53,7 @@ import se.kth.speech.coin.tangrams.iristk.events.Move;
 import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
 import se.kth.speech.hat.xsd.Transcription.T;
 
-public final class FeatureVectorFactory implements Function<Segment, Void> {
+public final class FeatureVectorFactory implements Function<Segment, double[]> {
 
 	private enum EntityFeature {
 		COLOR, POSITION_X, POSITION_Y, SELECTED, SHAPE, SIZE;
@@ -254,7 +254,7 @@ public final class FeatureVectorFactory implements Function<Segment, Void> {
 	}
 
 	@Override
-	public Void apply(final Segment segment) {
+	public double[] apply(final Segment segment) {
 		final String segmentId = segment.getId();
 		final List<Object> tokens = segment.getTranscription().getSegmentOrT();
 		if (LOGGER.isDebugEnabled()) {
@@ -271,8 +271,6 @@ public final class FeatureVectorFactory implements Function<Segment, Void> {
 		final float uttStartMills = segment.getStart() * SEGMENT_TIME_TO_MILLS_FACTOR;
 		final Timestamp gameStartTime = gameStateChangeData.getStartTime();
 		final Timestamp uttStartTimestamp = TimestampArithmetic.createOffsetTimestamp(gameStartTime, uttStartMills);
-		final double[] gameStateFeaturesAtUttStart = createGameStateFeatureVector(gameStateChangeData,
-				uttStartTimestamp);
 
 		final float uttEndMills = segment.getEnd() * SEGMENT_TIME_TO_MILLS_FACTOR;
 		final Timestamp uttEndTimestamp = TimestampArithmetic.createOffsetTimestamp(gameStartTime, uttEndMills);
@@ -280,13 +278,12 @@ public final class FeatureVectorFactory implements Function<Segment, Void> {
 				.headMap(uttEndTimestamp, true);
 		LOGGER.info("Found {} event time(s) during segment \"{}\".", eventsDuringUtt.size(), segmentId);
 
-		final Stream<String> tokenForms = tokens.stream().map(token -> (T) token).map(T::getContent);
-		// TODO: Finish
-		return null;
+		final Stream<String> uttTokenForms = tokens.stream().map(token -> (T) token).map(T::getContent);
+		return createFeatureVector(gameStateChangeData, uttStartTimestamp, uttTokenForms);
 	}
 
-	private double[] createGameStateFeatureVector(final GameStateChangeData gameStateChangeData,
-			final Timestamp gameTime) {
+	private double[] createFeatureVector(final GameStateChangeData gameStateChangeData, final Timestamp gameTime,
+			final Stream<String> uttTokenForms) {
 		final SpatialMatrix<Integer> model = copyInitialModel(
 				initialGameModelFactory.apply(gameStateChangeData.getInitialState().getModelDescription()));
 		final NavigableMap<Timestamp, List<Event>> events = gameStateChangeData.getEvents();
