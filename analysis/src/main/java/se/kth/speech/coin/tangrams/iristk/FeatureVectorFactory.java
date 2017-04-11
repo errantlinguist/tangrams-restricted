@@ -53,7 +53,7 @@ import se.kth.speech.coin.tangrams.iristk.events.Move;
 import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
 import se.kth.speech.hat.xsd.Transcription.T;
 
-public final class FeatureVectorFactory implements Function<Segment, double[]> {
+public final class FeatureVectorFactory implements Function<Segment, double[][]> {
 
 	private enum EntityFeature {
 		COLOR, POSITION_X, POSITION_Y, SELECTED, SHAPE, SIZE;
@@ -77,15 +77,41 @@ public final class FeatureVectorFactory implements Function<Segment, double[]> {
 		}
 	}
 
+	private static class TimestampedUtterance {
+
+		private final float endTime;
+
+		private final String segmentId;
+
+		private final float startTime;
+
+		private final List<String> tokens;
+
+		private TimestampedUtterance(final String segmentId, final List<String> tokens, final float startTime,
+				final float endTime) {
+			this.segmentId = segmentId;
+			this.tokens = tokens;
+			this.startTime = startTime;
+			this.endTime = endTime;
+		}
+	}
+
+	private static final float DEFAULT_MIN_SEGMENT_SPACING;
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(FeatureVectorFactory.class);
 
 	private static final List<PlayerRole> PLAYER_ROLE_FEATURE_ORDERING;
 
 	private static final Object2DoubleMap<PlayerRole> PLAYER_ROLE_FEATURE_VALS;
 
-	private static final int SEGMENT_TIME_TO_MILLS_FACTOR = 1000;
+	private static final int SEGMENT_TIME_TO_MILLS_FACTOR;
 
 	private static final Object2DoubleMap<String> SHAPE_FEATURE_VALS = createShapeFeatureValueMap();
+
+	static {
+		SEGMENT_TIME_TO_MILLS_FACTOR = 1000;
+		DEFAULT_MIN_SEGMENT_SPACING = 1.0f / SEGMENT_TIME_TO_MILLS_FACTOR;
+	}
 
 	static {
 		PLAYER_ROLE_FEATURE_ORDERING = createPlayerRoleFeatureOrderingList();
@@ -149,6 +175,61 @@ public final class FeatureVectorFactory implements Function<Segment, double[]> {
 	private static Object2DoubleMap<String> createShapeFeatureValueMap() {
 		final Set<String> possibleShapeStrValues = IconImages.getImageResources().keySet();
 		return createEnumeratedKeyFeatureValMap(possibleShapeStrValues);
+	}
+
+	private static TimestampedUtterance createTimestampedUtterance(final String segmentId, final List<T> tokens,
+			final float previousUttEndTime, final float nextUttStartTime) {
+		final Float firstTokenStartTime = tokens.get(0).getStart();
+		final float seqStartTime = firstTokenStartTime == null ? previousUttEndTime + DEFAULT_MIN_SEGMENT_SPACING
+				: firstTokenStartTime;
+		final Float lastTokenEndTime = tokens.get(tokens.size() - 1).getEnd();
+		final float seqEndTime = lastTokenEndTime == null ? nextUttStartTime - DEFAULT_MIN_SEGMENT_SPACING
+				: lastTokenEndTime;
+		final List<String> tokenForms = tokens.stream().map(T::getContent)
+				.collect(Collectors.toCollection(() -> new ArrayList<>(tokens.size())));
+		return new TimestampedUtterance(segmentId, tokenForms, seqStartTime, seqEndTime);
+	}
+
+	private static List<TimestampedUtterance> createTimestampedUtterances(final Segment segment) {
+		final List<TimestampedUtterance> result = new ArrayList<>();
+		final List<Object> children = segment.getTranscription().getSegmentOrT();
+		final Float initialPrevUttEndTime = segment.getStart();
+		assert initialPrevUttEndTime != null;
+		{
+			float prevUttEndTime = initialPrevUttEndTime;
+			List<T> currentTokenSeq = new ArrayList<>();
+			final String parentSegmentId = segment.getId();
+			for (final Object child : children) {
+				if (child instanceof Segment) {
+					final List<TimestampedUtterance> childUtts = createTimestampedUtterances((Segment) child);
+					// If there was a contiguous sequence of terminal tokens
+					// preceding this segment, finish building it
+					if (!currentTokenSeq.isEmpty()) {
+						final float nextUttStartTime = childUtts.get(0).startTime;
+						result.add(createTimestampedUtterance(parentSegmentId, currentTokenSeq, prevUttEndTime,
+								nextUttStartTime));
+						currentTokenSeq = new ArrayList<>();
+					}
+					// Add the newly-created child utterances after adding the
+					// now-completed terminal sequence
+					result.addAll(childUtts);
+					prevUttEndTime = childUtts.get(childUtts.size() - 1).endTime;
+				} else if (child instanceof T) {
+					currentTokenSeq.add((T) child);
+				} else {
+					throw new IllegalArgumentException(String.format("Could not parse child annotation of type \"%s\".",
+							child.getClass().getName()));
+				}
+			}
+			if (!currentTokenSeq.isEmpty()) {
+				// Add the last token sequence
+				final Float uttEndTime = segment.getEnd();
+				assert uttEndTime != null;
+				result.add(createTimestampedUtterance(parentSegmentId, currentTokenSeq, prevUttEndTime, uttEndTime));
+			}
+		}
+
+		return result;
 	}
 
 	private static double getShapeFeatureVal(final ImageVisualizationInfoDescription.Datum pieceImgVizInfoDatum) {
@@ -254,36 +335,18 @@ public final class FeatureVectorFactory implements Function<Segment, double[]> {
 	}
 
 	@Override
-	public double[] apply(final Segment segment) {
-		final String segmentId = segment.getId();
-		final List<Object> tokens = segment.getTranscription().getSegmentOrT();
-		if (LOGGER.isDebugEnabled()) {
-			final String segmentRepr = tokens.stream().map(token -> (T) token).map(T::getContent)
-					.collect(Collectors.joining(" "));
-			LOGGER.debug("Processing segment \"{}\": \"{}\"", segmentId, segmentRepr);
-		}
-
+	public double[][] apply(final Segment segment) {
+		final List<TimestampedUtterance> utts = createTimestampedUtterances(segment);
 		final String sourceId = segment.getSource();
 		// Get the player ID associated with the given audio source
 		final String playerId = sourceIdPlayerIds.get(sourceId);
 		final GameStateChangeData gameStateChangeData = playerStateChangeData.get(playerId);
-		final NavigableMap<Timestamp, List<Event>> events = gameStateChangeData.getEvents();
-		final float uttStartMills = segment.getStart() * SEGMENT_TIME_TO_MILLS_FACTOR;
-		final Timestamp gameStartTime = gameStateChangeData.getStartTime();
-		final Timestamp uttStartTimestamp = TimestampArithmetic.createOffsetTimestamp(gameStartTime, uttStartMills);
-
-		final float uttEndMills = segment.getEnd() * SEGMENT_TIME_TO_MILLS_FACTOR;
-		final Timestamp uttEndTimestamp = TimestampArithmetic.createOffsetTimestamp(gameStartTime, uttEndMills);
-		final NavigableMap<Timestamp, List<Event>> eventsDuringUtt = events.tailMap(uttStartTimestamp, true)
-				.headMap(uttEndTimestamp, true);
-		LOGGER.info("Found {} event time(s) during segment \"{}\".", eventsDuringUtt.size(), segmentId);
-
-		final Stream<String> uttTokenForms = tokens.stream().map(token -> (T) token).map(T::getContent);
-		return createFeatureVector(gameStateChangeData, uttStartTimestamp, uttTokenForms);
+		final Stream<double[]> featureVectors = utts.stream().map(utt -> createFeatureVector(utt, gameStateChangeData));
+		return featureVectors.toArray(double[][]::new);
 	}
 
-	private double[] createFeatureVector(final GameStateChangeData gameStateChangeData, final Timestamp gameTime,
-			final Stream<String> uttTokenForms) {
+	private double[] createFeatureVector(final Stream<String> uttTokenForms,
+			final GameStateChangeData gameStateChangeData, final Timestamp gameTime) {
 		final SpatialMatrix<Integer> model = copyInitialModel(
 				initialGameModelFactory.apply(gameStateChangeData.getInitialState().getModelDescription()));
 		final NavigableMap<Timestamp, List<Event>> events = gameStateChangeData.getEvents();
@@ -292,6 +355,36 @@ public final class FeatureVectorFactory implements Function<Segment, double[]> {
 		// TODO: Update e.g. piece position and selection features, player role
 		// feature
 		return result;
+	}
+
+	private double[] createFeatureVector(final TimestampedUtterance utt,
+			final GameStateChangeData gameStateChangeData) {
+		final NavigableMap<Timestamp, List<Event>> events = gameStateChangeData.getEvents();
+		final float uttStartMills = utt.startTime * SEGMENT_TIME_TO_MILLS_FACTOR;
+		final Timestamp gameStartTime = gameStateChangeData.getStartTime();
+		final Timestamp uttStartTimestamp = TimestampArithmetic.createOffsetTimestamp(gameStartTime, uttStartMills);
+
+		final float uttEndMills = utt.endTime * SEGMENT_TIME_TO_MILLS_FACTOR;
+		final Timestamp uttEndTimestamp = TimestampArithmetic.createOffsetTimestamp(gameStartTime, uttEndMills);
+		final NavigableMap<Timestamp, List<Event>> eventsDuringUtt = events.tailMap(uttStartTimestamp, true)
+				.headMap(uttEndTimestamp, true);
+		final List<String> tokenForms = utt.tokens;
+		if (!eventsDuringUtt.isEmpty()) {
+			final List<Event> allEventsDuringUtt = eventsDuringUtt.values().stream().flatMap(Collection::stream)
+					.collect(Collectors.toList());
+			if (LOGGER.isWarnEnabled()) {
+				final String delim = System.lineSeparator() + '\t';
+				final String uttRepr = allEventsDuringUtt.stream().map(Event::toString)
+						.collect(Collectors.joining(delim));
+				LOGGER.warn("Found {} event(s) during utterance \"{}\" subsequence: \"{}\"" + delim + "{}",
+						new Object[] { allEventsDuringUtt.size(), utt.segmentId,
+								tokenForms.stream().collect(Collectors.joining(" ")), uttRepr });
+
+			}
+			// TODO: estimate partitions for utterance: By phones?
+		}
+
+		return createFeatureVector(tokenForms.stream(), gameStateChangeData, uttStartTimestamp);
 	}
 
 	private double[] createInitialFeatureVector(final Collection<GameStateChangeData> gameStateData) {
