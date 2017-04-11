@@ -21,6 +21,7 @@ import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -99,7 +100,9 @@ public final class ModelFeatureExtractor {
 				final FeatureVectorFactory featureVectorFactory = new FeatureVectorFactory(sourceIdPlayerIds,
 						playerStateChangeData);
 				final List<Segment> segments = uttAnnots.getSegments().getSegment();
-				segments.stream().map(featureVectorFactory).collect(Collectors.toList());
+				final Stream<double[]> featureVectors = segments.stream().map(featureVectorFactory)
+						.flatMap(Arrays::stream);
+				featureVectors.map(Arrays::toString).forEach(System.out::println);
 				// TODO: Finish
 			} else {
 				throw new UnsupportedOperationException(
