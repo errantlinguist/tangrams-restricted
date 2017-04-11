@@ -334,8 +334,8 @@ public final class FeatureVectorFactory implements Function<Segment, Void> {
 				.getImageVisualizationInfoDescription();
 		final List<ImageVisualizationInfoDescription.Datum> imgVizInfoData = imgVizInfoDataDesc.getData();
 		final int pieceCount = imgVizInfoData.size();
-		final double[] result = new double[EnvironmentFeature.values().length + PlayerRole.values().length
-				+ +pieceCount * EntityFeature.values().length];
+		final double[] result = new double[EnvironmentFeature.values().length
+				+ pieceCount * EntityFeature.values().length];
 
 		// The initial feature vector is player-agnostic, so the "speaking
 		// player role" feature is not set
