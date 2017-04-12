@@ -34,6 +34,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import iristk.system.Event;
+import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>

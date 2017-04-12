@@ -59,7 +59,7 @@ import se.kth.speech.coin.tangrams.content.ImageVisualizationInfoTableWriter;
 import se.kth.speech.coin.tangrams.game.Controller;
 import se.kth.speech.coin.tangrams.game.PatternMoveFactory;
 import se.kth.speech.coin.tangrams.iristk.GameState;
-import se.kth.speech.coin.tangrams.iristk.ImageVisualizationInfoDescription;
+import se.kth.speech.coin.tangrams.iristk.events.ImageVisualizationInfoDescription;
 
 /**
  *

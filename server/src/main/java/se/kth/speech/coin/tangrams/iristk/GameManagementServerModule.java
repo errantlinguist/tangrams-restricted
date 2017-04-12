@@ -32,6 +32,9 @@ import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 import se.kth.speech.coin.tangrams.game.Game;
 import se.kth.speech.coin.tangrams.game.GameFactory;
 import se.kth.speech.coin.tangrams.game.GameFactory.Parameter;
+import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
+import se.kth.speech.coin.tangrams.iristk.events.ImageVisualizationInfoDescription;
+import se.kth.speech.coin.tangrams.iristk.events.ModelDescription;
 import se.kth.speech.coin.tangrams.game.PlayerRole;
 
 public final class GameManagementServerModule extends IrisModule {

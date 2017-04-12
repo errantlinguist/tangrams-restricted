@@ -23,6 +23,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
+import se.kth.speech.coin.tangrams.iristk.events.ImageVisualizationInfoDescription;
 
 final class ImageVisualizationInfoUnmarshaller
 		implements Function<ImageVisualizationInfoDescription, ImageVisualizationInfo> {
