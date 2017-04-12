@@ -72,7 +72,7 @@ final class GameStateFeatureVectorFactory implements BiFunction<GameStateChangeD
 
 		private static Object2DoubleMap<String> createShapeFeatureValueMap() {
 			final Set<String> possibleShapeStrValues = IconImages.getImageResources().keySet();
-			return FeatureMaps.createEnumeratedKeyFeatureValMap(possibleShapeStrValues);
+			return FeatureMaps.createOrdinalFeatureValMap(possibleShapeStrValues);
 		}
 
 		private static double getShapeFeatureVal(final ImageVisualizationInfoDescription.Datum pieceImgVizInfoDatum) {

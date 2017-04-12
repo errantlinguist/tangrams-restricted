@@ -28,7 +28,7 @@ import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
  */
 final class FeatureMaps {
 
-	static <K> Object2DoubleMap<K> createEnumeratedKeyFeatureValMap(final Collection<? extends K> keys) {
+	static <K> Object2DoubleMap<K> createOrdinalFeatureValMap(final Collection<? extends K> keys) {
 		final Object2DoubleMap<K> result = new Object2DoubleOpenHashMap<>(keys.size());
 		for (final K key : keys) {
 			final double featureVal = result.size();
