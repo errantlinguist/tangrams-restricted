@@ -39,6 +39,47 @@ final class GameStateChangeData {
 		this.startTime = startTime;
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(final Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (!(obj instanceof GameStateChangeData)) {
+			return false;
+		}
+		final GameStateChangeData other = (GameStateChangeData) obj;
+		if (events == null) {
+			if (other.events != null) {
+				return false;
+			}
+		} else if (!events.equals(other.events)) {
+			return false;
+		}
+		if (initialState == null) {
+			if (other.initialState != null) {
+				return false;
+			}
+		} else if (!initialState.equals(other.initialState)) {
+			return false;
+		}
+		if (startTime == null) {
+			if (other.startTime != null) {
+				return false;
+			}
+		} else if (!startTime.equals(other.startTime)) {
+			return false;
+		}
+		return true;
+	}
+
 	/**
 	 * @return the events
 	 */
@@ -62,6 +103,21 @@ final class GameStateChangeData {
 	 */
 	public Timestamp getStartTime() {
 		return startTime;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + (events == null ? 0 : events.hashCode());
+		result = prime * result + (initialState == null ? 0 : initialState.hashCode());
+		result = prime * result + (startTime == null ? 0 : startTime.hashCode());
+		return result;
 	}
 
 	/*
