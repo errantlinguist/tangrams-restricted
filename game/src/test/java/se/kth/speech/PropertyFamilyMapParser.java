@@ -55,7 +55,7 @@ public final class PropertyFamilyMapParser implements Function<Properties, Map<S
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.util.function.Function#apply(java.lang.Object)
 	 */
 	@Override

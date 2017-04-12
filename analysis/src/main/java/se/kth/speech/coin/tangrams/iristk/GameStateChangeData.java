@@ -65,7 +65,7 @@ public final class GameStateChangeData {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#toString()
 	 */
 	@Override

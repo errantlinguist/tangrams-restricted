@@ -234,7 +234,7 @@ public final class SpatialRegionTest {
 	 * {@link se.kth.speech.SpatialRegion#intersects(se.kth.speech.SpatialMap.SpatialRegion)}.
 	 */
 	@Test
-	public void testIntersectsRegionNegativeRegression1(){
+	public void testIntersectsRegionNegativeRegression1() {
 		final SpatialRegion r1 = new SpatialRegion(0, 5, 0, 5);
 		final SpatialRegion r2 = new SpatialRegion(0, 5, 5, 10);
 		Assert.assertFalse(r1.intersects(r2));

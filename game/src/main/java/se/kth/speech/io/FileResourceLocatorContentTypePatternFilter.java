@@ -39,7 +39,7 @@ public final class FileResourceLocatorContentTypePatternFilter implements Predic
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.util.function.Predicate#test(java.lang.Object)
 	 */
 	@Override

@@ -34,8 +34,7 @@ public final class NamedTestDescriptionPropertyMapFactory<D> implements Function
 
 	private final PropertyFamilyMapParser propFamilyMapParser;
 
-	public NamedTestDescriptionPropertyMapFactory(
-			final Function<? super Map<String, String>, D> descFactory,
+	public NamedTestDescriptionPropertyMapFactory(final Function<? super Map<String, String>, D> descFactory,
 			final String testDescPropNamePrefix, final int testParamCount) {
 		this.descFactory = descFactory;
 		propFamilyMapParser = new PropertyFamilyMapParser(propName -> Maps.newHashMapWithExpectedSize(testParamCount),

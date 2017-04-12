@@ -25,9 +25,9 @@ import iristk.util.Record;
  */
 public final class Selection extends Record {
 
-	private Integer pieceId;
-
 	private Area2D area;
+
+	private Integer pieceId;
 
 	public Selection() {
 		// Default constructor is required for JSON (un-)marshalling

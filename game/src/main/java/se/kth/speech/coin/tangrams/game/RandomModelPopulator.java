@@ -179,9 +179,10 @@ final class RandomModelPopulator implements Consumer<Random> {
 						ImageSize.getSizeComparator().reversed());
 		Collections.sort(imgViewInfoLoadedImgs, imgViewInfoSizeComparatorDesc);
 
-		if (LOGGER.isDebugEnabled()){
-			final PositionGridSizeSummary posGridSizeSummary = createPositionGridSizeSummary(pieceIds.keySet().iterator());
-			LOGGER.debug("Position grid size summary: {}", posGridSizeSummary);	
+		if (LOGGER.isDebugEnabled()) {
+			final PositionGridSizeSummary posGridSizeSummary = createPositionGridSizeSummary(
+					pieceIds.keySet().iterator());
+			LOGGER.debug("Position grid size summary: {}", posGridSizeSummary);
 		}
 
 		fillMatrix(posMatrix, pieceIds.entrySet(), rnd);

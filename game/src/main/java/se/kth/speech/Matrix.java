@@ -128,6 +128,10 @@ public final class Matrix<E> {
 
 	private final List<E> values;
 
+	public Matrix(final E[] values, final int colCount) {
+		this(Arrays.asList(values), colCount);
+	}
+
 	public Matrix(final List<E> values, final int colCount) {
 		if (colCount < 1) {
 			throw new IllegalArgumentException(String.format("Column count is %d but must be positive.", colCount));
@@ -150,10 +154,6 @@ public final class Matrix<E> {
 
 	public Matrix(final Matrix<E> copyee) {
 		this(copyee.getValues(), copyee.getColCount());
-	}
-
-	public Matrix(final E[] values, final int colCount) {
-		this(Arrays.asList(values), colCount);
 	}
 
 	/*

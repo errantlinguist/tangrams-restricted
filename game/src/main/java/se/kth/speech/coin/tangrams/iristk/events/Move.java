@@ -25,11 +25,11 @@ import iristk.util.Record;
  */
 public final class Move extends Record {
 
+	private Integer pieceId;
+
 	private Area2D source;
 
 	private Area2D target;
-
-	private Integer pieceId;
 
 	public Move() {
 		// Default constructor is required for JSON (un-)marshalling

@@ -26,7 +26,7 @@ import java.text.SimpleDateFormat;
  *
  */
 public final class LoggingFormats {
-	
+
 	public static final ThreadLocal<SimpleDateFormat> DATE_FORMAT = new ThreadLocal<SimpleDateFormat>() {
 
 		/*
@@ -40,7 +40,7 @@ public final class LoggingFormats {
 		}
 
 	};
-	
+
 	public static final Charset ENCODING = StandardCharsets.UTF_8;
 
 	public static final ThreadLocal<SimpleDateFormat> TIME_FORMAT = new ThreadLocal<SimpleDateFormat>() {
@@ -56,9 +56,9 @@ public final class LoggingFormats {
 		}
 
 	};
-	
-	private LoggingFormats(){
-		
+
+	private LoggingFormats() {
+
 	}
 
 }

@@ -97,7 +97,8 @@ public final class ImageVisualizationInfoDescription extends Record {
 
 	}
 
-	private static final Function<URL, String> RESOURCE_NAME_FACTORY = new URLFilenameFactory().andThen(IconImages.getResourceNameFactory());
+	private static final Function<URL, String> RESOURCE_NAME_FACTORY = new URLFilenameFactory()
+			.andThen(IconImages.getResourceNameFactory());
 
 	/**
 	 * @return the resourceNameFactory

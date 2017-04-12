@@ -40,7 +40,7 @@ public final class IntArrays {
 		System.arraycopy(b, 0, c, aLen, bLen);
 		return c;
 	}
-	
+
 	public static int[] copy(final int[] arr) {
 		return Arrays.copyOf(arr, arr.length);
 	}

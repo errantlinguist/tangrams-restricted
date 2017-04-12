@@ -63,6 +63,8 @@ public final class MatrixTest {
 	@DataPoints("valArrays")
 	public static final Object[][] VAL_ARRAYS;
 
+	private static final IteratorEqualityAsserter<Object> ITER_ASSERTER = new IteratorEqualityAsserter<>();
+
 	private static final Map<Matrix<Object>, Object[]> MATRIX_VAL_ARRAYS;
 
 	static {
@@ -78,8 +80,6 @@ public final class MatrixTest {
 				.max().getAsInt();
 		MATRIX_IDX_POSITIONS = IntStream.range(0, maxMatrixIdxPosition).toArray();
 	}
-
-	private static final IteratorEqualityAsserter<Object> ITER_ASSERTER = new IteratorEqualityAsserter<>();
 
 	private static <V> Map<Matrix<V>, V[]> createMatrixValueArrayMap(final Collection<? extends V[]> valArrays) {
 		final int collSize = valArrays.size();

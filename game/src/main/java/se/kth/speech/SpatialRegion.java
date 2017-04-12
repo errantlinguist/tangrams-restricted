@@ -102,6 +102,11 @@ public final class SpatialRegion {
 		return result;
 	}
 
+	static int[] getDimensions(final int xLowerBound, final int xUpperBound, final int yLowerBound,
+			final int yUpperBound) {
+		return new int[] { getLength(xLowerBound, xUpperBound), getLength(yLowerBound, yUpperBound) };
+	}
+
 	static int getGridArea(final int xLowerBound, final int xUpperBound, final int yLowerBound, final int yUpperBound) {
 		return getLength(xLowerBound, xUpperBound) * getLength(yLowerBound, yUpperBound);
 	}
@@ -109,6 +114,8 @@ public final class SpatialRegion {
 	static int getLength(final int lowerBound, final int upperBound) {
 		return upperBound - lowerBound;
 	}
+
+	private final int hashCode;
 
 	private final int xLowerBound;
 
@@ -118,16 +125,14 @@ public final class SpatialRegion {
 
 	private final int yUpperBound;
 
-	private final transient int hashCode;
-
 	SpatialRegion(final int xLowerBound, final int xUpperBound, final int yLowerBound, final int yUpperBound) {
 		this.xLowerBound = xLowerBound;
 		this.xUpperBound = xUpperBound;
 		this.yLowerBound = yLowerBound;
 		this.yUpperBound = yUpperBound;
 		if (!areBoundariesValid()) {
-			throw new IllegalArgumentException(String.format("Boundary values are invalid: %d, %d, %d, %d",
-					xLowerBound, xUpperBound, yLowerBound, yUpperBound));
+			throw new IllegalArgumentException(String.format("Boundary values are invalid: %d, %d, %d, %d", xLowerBound,
+					xUpperBound, yLowerBound, yUpperBound));
 		}
 
 		hashCode = createHashCode();
@@ -167,11 +172,6 @@ public final class SpatialRegion {
 
 	public int[] getDimensions() {
 		return new int[] { getLengthX(), getLengthY() };
-	}
-
-	static int[] getDimensions(final int xLowerBound, final int xUpperBound, final int yLowerBound,
-			final int yUpperBound) {
-		return new int[] { getLength(xLowerBound, xUpperBound), getLength(yLowerBound, yUpperBound) };
 	}
 
 	public int getGridArea() {

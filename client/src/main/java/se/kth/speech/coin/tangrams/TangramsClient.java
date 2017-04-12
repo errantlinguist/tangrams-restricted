@@ -169,12 +169,15 @@ public final class TangramsClient implements Runnable {
 						};
 					} else {
 						final Path copyDirPath = copyDir.toPath();
-						if (Files.isDirectory(copyDirPath)){
-							LOGGER.info("Will copy session log archive to \"{}\" after ending the session.", copyDirPath);
+						if (Files.isDirectory(copyDirPath)) {
+							LOGGER.info("Will copy session log archive to \"{}\" after ending the session.",
+									copyDirPath);
 						} else {
-							LOGGER.warn("Path \"{}\" was supplied for session log copy dir but it's not a valid directory (yet?); Will try copying after the session is over anyways.", copyDirPath);
+							LOGGER.warn(
+									"Path \"{}\" was supplied for session log copy dir but it's not a valid directory (yet?); Will try copying after the session is over anyways.",
+									copyDirPath);
 						}
-						logArchiveCopier = new SessionLogArchiveCopier(copyDirPath);					
+						logArchiveCopier = new SessionLogArchiveCopier(copyDirPath);
 					}
 
 					final TangramsClient client = new TangramsClient(PROPS.getProperty("broker.ticket"), brokerHost,

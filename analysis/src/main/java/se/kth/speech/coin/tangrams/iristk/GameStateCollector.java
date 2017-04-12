@@ -44,7 +44,7 @@ public final class GameStateCollector
 		implements Collector<Event, Map<String, GameStateChangeData>, Map<String, GameStateChangeData>> {
 
 	private static final BiConsumer<Map<String, GameStateChangeData>, Event> ACCUMULATOR = new BiConsumer<Map<String, GameStateChangeData>, Event>() {
-		
+
 		private final Set<GameManagementEvent> ignoredEventTypes = EnumSet.of(GameManagementEvent.PLAYER_JOIN_REQUEST,
 				GameManagementEvent.PLAYER_JOIN_RESPONSE);
 

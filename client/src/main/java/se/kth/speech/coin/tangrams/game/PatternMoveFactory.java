@@ -154,9 +154,9 @@ public final class PatternMoveFactory
 			LOGGER.debug("Still building initial random onset --- curent history: {}", history);
 		} else {
 			history.remove(pieceId);
-//			final boolean wasSeenBefore = history.remove(pieceId);
-//			assert wasSeenBefore != shouldPickNewPiece;
-//			shouldPickNewPiece = !shouldPickNewPiece;
+			// final boolean wasSeenBefore = history.remove(pieceId);
+			// assert wasSeenBefore != shouldPickNewPiece;
+			// shouldPickNewPiece = !shouldPickNewPiece;
 		}
 		addSeenPiece(pieceId);
 	}
@@ -252,7 +252,7 @@ public final class PatternMoveFactory
 		LOGGER.debug("Creating random move.");
 		final LinkedList<Integer> idsToTry = new LinkedList<>(pieceIds);
 		Collections.shuffle(idsToTry, rnd);
-		
+
 		Optional<MapEntryRemapping<Integer, SpatialRegion>> result = Optional.empty();
 		do {
 			final Integer idToTry = idsToTry.pop();
