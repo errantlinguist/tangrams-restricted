@@ -163,7 +163,7 @@ final class GameStateFeatureVectorFactory implements BiFunction<GameStateChangeD
 				vals[currentFeatureIdx] = sizeFeatureVal;
 				break;
 			default: {
-				throw new AssertionError("Logic error");
+				throw new AssertionError("Missing enum-handling logic.");
 			}
 			}
 			currentFeatureIdx++;
@@ -185,7 +185,7 @@ final class GameStateFeatureVectorFactory implements BiFunction<GameStateChangeD
 				vals[currentFeatureIdx] = modelDims[0];
 				break;
 			default: {
-				throw new AssertionError("Logic error");
+				throw new AssertionError("Missing enum-handling logic.");
 			}
 			}
 			currentFeatureIdx++;
