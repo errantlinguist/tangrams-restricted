@@ -20,7 +20,6 @@ import java.awt.Color;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -37,7 +36,6 @@ import com.google.common.collect.Maps;
 
 import iristk.system.Event;
 import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
-import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
 import se.kth.speech.IntArrays;
 import se.kth.speech.Matrix;
 import se.kth.speech.SpatialMap;
@@ -59,9 +57,27 @@ final class GameStateFeatureVectorFactory implements BiFunction<GameStateChangeD
 
 		private static final List<EntityFeature> ORDERING;
 
+		private static final Object2DoubleMap<String> SHAPE_FEATURE_VALS = createShapeFeatureValueMap();
+
 		static {
 			ORDERING = Arrays.asList(SHAPE, COLOR, SIZE, POSITION_X, POSITION_Y);
 			assert ORDERING.size() == EntityFeature.values().length;
+		}
+
+		private static float createColorFeatureVal(final ImageVisualizationInfoDescription.Datum pieceImgVizInfoDatum) {
+			final Color color = pieceImgVizInfoDatum.getColor();
+			final float[] hsbVals = Color.RGBtoHSB(color.getRed(), color.getGreen(), color.getBlue(), null);
+			return hsbVals[0];
+		}
+
+		private static Object2DoubleMap<String> createShapeFeatureValueMap() {
+			final Set<String> possibleShapeStrValues = IconImages.getImageResources().keySet();
+			return FeatureMaps.createEnumeratedKeyFeatureValMap(possibleShapeStrValues);
+		}
+
+		private static double getShapeFeatureVal(final ImageVisualizationInfoDescription.Datum pieceImgVizInfoDatum) {
+			final String strVal = pieceImgVizInfoDatum.getResourceName();
+			return SHAPE_FEATURE_VALS.getDouble(strVal);
 		}
 
 		private static int setVals(final double[] vals, int currentFeatureIdx,
@@ -139,8 +155,6 @@ final class GameStateFeatureVectorFactory implements BiFunction<GameStateChangeD
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(GameStateFeatureVectorFactory.class);
 
-	private static final Object2DoubleMap<String> SHAPE_FEATURE_VALS = createShapeFeatureValueMap();
-
 	private static void applyEvent(final SpatialMatrix<Integer> model, final Event event) {
 		final Move move = (Move) event.get(GameManagementEvent.Attribute.MOVE.toString());
 		if (move == null) {
@@ -166,31 +180,6 @@ final class GameStateFeatureVectorFactory implements BiFunction<GameStateChangeD
 
 	private static SpatialMatrix<Integer> copyInitialModel(final SpatialMatrix<Integer> copyee) {
 		return copyInitialModel(copyee.getPositionMatrix());
-	}
-
-	private static float createColorFeatureVal(final ImageVisualizationInfoDescription.Datum pieceImgVizInfoDatum) {
-		final Color color = pieceImgVizInfoDatum.getColor();
-		final float[] hsbVals = Color.RGBtoHSB(color.getRed(), color.getGreen(), color.getBlue(), null);
-		return hsbVals[0];
-	}
-
-	private static <K> Object2DoubleMap<K> createEnumeratedKeyFeatureValMap(final Collection<? extends K> keys) {
-		final Object2DoubleMap<K> result = new Object2DoubleOpenHashMap<>(keys.size());
-		for (final K key : keys) {
-			final double featureVal = result.size();
-			result.put(key, featureVal);
-		}
-		return result;
-	}
-
-	private static Object2DoubleMap<String> createShapeFeatureValueMap() {
-		final Set<String> possibleShapeStrValues = IconImages.getImageResources().keySet();
-		return createEnumeratedKeyFeatureValMap(possibleShapeStrValues);
-	}
-
-	private static double getShapeFeatureVal(final ImageVisualizationInfoDescription.Datum pieceImgVizInfoDatum) {
-		final String strVal = pieceImgVizInfoDatum.getResourceName();
-		return SHAPE_FEATURE_VALS.getDouble(strVal);
 	}
 
 	private static void updateToTime(final SpatialMatrix<Integer> model,
