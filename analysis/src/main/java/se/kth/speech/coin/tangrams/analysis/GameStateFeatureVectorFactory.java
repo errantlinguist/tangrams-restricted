@@ -202,7 +202,7 @@ final class GameStateFeatureVectorFactory implements BiFunction<GameStateChangeD
 
 	private final Function<ModelDescription, SpatialMatrix<Integer>> initialGameModelFactory;
 
-	public GameStateFeatureVectorFactory(final int expectedUniqueModelDescriptionCount) {
+	GameStateFeatureVectorFactory(final int expectedUniqueModelDescriptionCount) {
 		final Map<ModelDescription, SpatialMatrix<Integer>> gameModels = Maps
 				.newHashMapWithExpectedSize(expectedUniqueModelDescriptionCount);
 		initialGameModelFactory = modelDesc -> gameModels.computeIfAbsent(modelDesc,
