@@ -28,7 +28,7 @@ import iristk.system.Event;
  * @since 12 Jan 2017
  *
  */
-enum GameManagementEvent {
+public enum GameManagementEvent {
 	/**
 	 * An event requesting the completion of a turn.
 	 */
