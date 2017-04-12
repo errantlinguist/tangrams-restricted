@@ -30,11 +30,15 @@ final class FeatureMaps {
 
 	static <K> Object2DoubleMap<K> createOrdinalFeatureValMap(final Collection<? extends K> keys) {
 		final Object2DoubleMap<K> result = new Object2DoubleOpenHashMap<>(keys.size());
-		for (final K key : keys) {
-			final double featureVal = result.size();
-			result.put(key, featureVal);
-		}
+		putOrdinalFeatureVals(result, keys);
 		return result;
+	}
+
+	static <K> void putOrdinalFeatureVals(final Object2DoubleMap<K> map, final Collection<? extends K> keys) {
+		for (final K key : keys) {
+			final double featureVal = map.size();
+			map.put(key, featureVal);
+		}
 	}
 
 	private FeatureMaps() {
