@@ -37,6 +37,7 @@ import com.google.common.collect.Lists;
 
 import iristk.system.Event;
 import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
+import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
 import se.kth.speech.TimestampArithmetic;
 import se.kth.speech.coin.tangrams.iristk.EventSubmittingPlayerMatcher;
 import se.kth.speech.coin.tangrams.iristk.EventTypeMatcher;
@@ -67,22 +68,21 @@ final class FeatureVectorFactory implements Function<Segment, double[][]> {
 					GameManagementEvent.PLAYER_JOIN_REQUEST, GameManagementEvent.PLAYER_JOIN_RESPONSE,
 					GameManagementEvent.SELECTION_REJECTION, GameManagementEvent.SELECTION_REQUEST);
 			assert EVENT_TYPE_FEATURE_ORDERING.size() == GameManagementEvent.values().length;
-			final List<GameManagementEvent> nullableEventTypeFeatureOrdering = new ArrayList<>(
-					EVENT_TYPE_FEATURE_ORDERING.size() + 1);
-			nullableEventTypeFeatureOrdering.add(null);
-			nullableEventTypeFeatureOrdering.addAll(EVENT_TYPE_FEATURE_ORDERING);
-			EVENT_TYPE_FEATURE_VALS = FeatureMaps.createOrdinalFeatureValMap(nullableEventTypeFeatureOrdering);
+			EVENT_TYPE_FEATURE_VALS = new Object2DoubleOpenHashMap<>(EVENT_TYPE_FEATURE_ORDERING.size() + 1);
+			FeatureMaps.putOrdinalFeatureVals(EVENT_TYPE_FEATURE_VALS, EVENT_TYPE_FEATURE_ORDERING);
+			EVENT_TYPE_FEATURE_VALS.put(null, -1.0);
 		}
 
 		private static int findNearestEventDistance(
-				final Iterable<? extends Entry<?, ? extends List<? extends Event>>> timedEventLists,
+				final Iterable<? extends Entry<Timestamp, ? extends List<? extends Event>>> timedEventLists,
 				final Predicate<? super Event> eventMatcher) {
 			int result = -1;
 			int currentDistance = 0;
-			for (final Entry<?, ? extends List<? extends Event>> timedEventList : timedEventLists) {
+			for (final Entry<Timestamp, ? extends List<? extends Event>> timedEventList : timedEventLists) {
 				final List<? extends Event> eventsReversed = Lists.reverse(timedEventList.getValue());
 				for (final Event event : eventsReversed) {
 					if (eventMatcher.test(event)) {
+						LOGGER.debug("Found matching event at \"{}\".", timedEventList.getKey());
 						result = currentDistance;
 						break;
 					}
