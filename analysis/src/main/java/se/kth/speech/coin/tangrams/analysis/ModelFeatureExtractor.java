@@ -16,25 +16,37 @@
 */
 package se.kth.speech.coin.tangrams.analysis;
 
+import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.xml.bind.JAXBException;
 
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,6 +55,7 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Table;
 
 import iristk.util.HAT;
+import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
 import se.kth.speech.coin.tangrams.iristk.io.LoggingFormats;
 import se.kth.speech.hat.xsd.Annotation;
 import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
@@ -57,6 +70,36 @@ import se.kth.speech.hat.xsd.Annotation.Tracks.Track.Sources.Source;
  */
 public final class ModelFeatureExtractor {
 
+	private enum Parameter implements Supplier<Option> {
+		HELP("?") {
+			@Override
+			public Option get() {
+				return Option.builder(optName).longOpt("help").desc("Prints this message.").build();
+			}
+		},
+		INFILE("i") {
+			@Override
+			public Option get() {
+				return Option.builder(optName).longOpt("infile").desc("The path to the HAT file to process.").hasArg()
+						.argName("path").type(File.class).required().build();
+			}
+		},
+		OUTFILE("o") {
+			@Override
+			public Option get() {
+				return Option.builder(optName).longOpt("outfile").desc("The path of the feature file to write.")
+						.hasArg().argName("path").type(File.class).build();
+			}
+		};
+
+		protected final String optName;
+
+		private Parameter(final String optName) {
+			this.optName = optName;
+		}
+
+	}
+
 	private static final int EXPECTED_UNIQUE_GAME_COUNT = 1;
 
 	private static final Pattern LOGGED_EVENT_FILE_NAME_PATTERN = Pattern.compile("events-(.+?)\\.txt");
@@ -69,43 +112,93 @@ public final class ModelFeatureExtractor {
 	 */
 	private static final Pattern MINIMAL_FILE_EXT_PATTERN = Pattern.compile("\\.(?=[^\\.]+$)");
 
+	private static final Options OPTIONS = createOptions();
+
+	private static final Collector<CharSequence, ?, String> TABLE_ROW_CELL_JOINER;
+
+	private static final String TABLE_STRING_REPR_COL_DELIMITER;
+
+	private static final String TABLE_STRING_REPR_ROW_DELIMITER = System.lineSeparator();
+
+	static {
+		TABLE_STRING_REPR_COL_DELIMITER = "\t";
+		TABLE_ROW_CELL_JOINER = Collectors.joining(TABLE_STRING_REPR_COL_DELIMITER);
+	}
+
 	public static void main(final String[] args) throws IOException, JAXBException {
-		if (args.length < 1) {
-			final String usageMsg = String.format("Usage: %s UTTERANCES_FILE", ModelFeatureExtractor.class.getName());
-			throw new IllegalArgumentException(usageMsg);
-		} else {
-			final Path uttFilePath = Paths.get(args[0]);
-			LOGGER.info("Parsing utterances from \"{}\".", uttFilePath);
-			final Annotation uttAnnots = HAT.readAnnotation(uttFilePath.toFile());
-			final Map<String, String> sourceIdPlayerIds = createSourceIdPlayerIdMap(uttAnnots);
-			final Set<String> playerIds = new HashSet<>(sourceIdPlayerIds.values());
-			final int expectedEventLogFileCount = playerIds.size();
-			final Path sessionLogDir = uttFilePath.getParent();
-			LOGGER.info("Processing session log directory \"{}\".", sessionLogDir);
-			final Map<String, Path> playerEventLogFilePaths = createPlayerEventLogFileMap(sessionLogDir,
-					expectedEventLogFileCount);
-			final Table<String, String, GameStateChangeData> playerGameStateChangeData = createPlayerGameStateChangeData(
-					playerEventLogFilePaths.entrySet());
-			final Set<String> playerGameIdIntersection = new HashSet<>(playerGameStateChangeData.columnKeySet());
-			playerGameStateChangeData.rowMap().values().stream().map(Map::keySet)
-					.forEach(playerGameIdIntersection::retainAll);
-			final int gameCount = playerGameIdIntersection.size();
-			if (gameCount == 1) {
-				final String gameId = playerGameIdIntersection.iterator().next();
-				final Map<String, GameStateChangeData> playerStateChangeData = playerGameStateChangeData.columnMap()
-						.get(gameId);
-				final FeatureVectorFactory featureVectorFactory = new FeatureVectorFactory(sourceIdPlayerIds,
-						playerStateChangeData);
-				final List<Segment> segments = uttAnnots.getSegments().getSegment();
-				final Stream<double[]> featureVectors = segments.stream().map(featureVectorFactory)
-						.flatMap(Arrays::stream);
-				featureVectors.map(Arrays::toString).forEach(System.out::println);
-				// TODO: Finish
+		final CommandLineParser parser = new DefaultParser();
+		try {
+			final CommandLine cl = parser.parse(OPTIONS, args);
+			if (cl.hasOption(Parameter.HELP.optName)) {
+				printHelp();
 			} else {
-				throw new UnsupportedOperationException(
-						String.format("No logic for handling a game count of %d.", gameCount));
+				final File infile = (File) cl.getParsedOptionValue(Parameter.INFILE.optName);
+				LOGGER.info("Parsing utterances from \"{}\".", infile);
+				final Annotation uttAnnots = HAT.readAnnotation(infile);
+				final Map<String, String> sourceIdPlayerIds = createSourceIdPlayerIdMap(uttAnnots);
+				final Set<String> playerIds = new HashSet<>(sourceIdPlayerIds.values());
+				final int expectedEventLogFileCount = playerIds.size();
+				final Path sessionLogDir = infile.getParentFile().toPath();
+				LOGGER.info("Processing session log directory \"{}\".", sessionLogDir);
+				final Map<String, Path> playerEventLogFilePaths = createPlayerEventLogFileMap(sessionLogDir,
+						expectedEventLogFileCount);
+				final Table<String, String, GameStateChangeData> playerGameStateChangeData = createPlayerGameStateChangeData(
+						playerEventLogFilePaths.entrySet());
+				final Set<String> playerGameIdIntersection = new HashSet<>(playerGameStateChangeData.columnKeySet());
+				playerGameStateChangeData.rowMap().values().stream().map(Map::keySet)
+						.forEach(playerGameIdIntersection::retainAll);
+				final int gameCount = playerGameIdIntersection.size();
+				if (gameCount == 1) {
+					final String gameId = playerGameIdIntersection.iterator().next();
+					final Map<String, GameStateChangeData> playerStateChangeData = playerGameStateChangeData.columnMap()
+							.get(gameId);
+					final FeatureVectorFactory featureVectorFactory = new FeatureVectorFactory(sourceIdPlayerIds,
+							playerStateChangeData);
+
+					final Iterator<GameStateDescription> gameDescs = playerGameStateChangeData.values().stream()
+							.map(GameStateChangeData::getInitialState).iterator();
+					final GameStateDescription firstGameDesc = gameDescs.next();
+					while (gameDescs.hasNext()) {
+						// Sanity check to make sure that all players have
+						// started
+						// with the same game setup
+						final GameStateDescription next = gameDescs.next();
+						if (!firstGameDesc.isEquivalent(next)) {
+							throw new IllegalArgumentException("Found non-equivalent initial states between players.");
+						}
+					}
+					final Stream<String> featureDescs = featureVectorFactory.createFeatureDescriptions(firstGameDesc);
+					final String header = featureDescs.collect(TABLE_ROW_CELL_JOINER);
+
+					final List<Segment> segments = uttAnnots.getSegments().getSegment();
+					final Stream<double[]> featureVectors = segments.stream().map(featureVectorFactory)
+							.flatMap(Arrays::stream);
+					try (PrintWriter out = parseOutfile(cl)) {
+						out.print(header);
+						featureVectors.forEachOrdered(featureVector -> {
+							out.print(TABLE_STRING_REPR_ROW_DELIMITER);
+							final Stream<String> cellVals = Arrays.stream(featureVector).mapToObj(Double::toString);
+							final String row = cellVals.collect(TABLE_ROW_CELL_JOINER);
+							out.print(row);
+						});
+					}
+
+				} else {
+					throw new UnsupportedOperationException(
+							String.format("No logic for handling a game count of %d.", gameCount));
+				}
+
 			}
+		} catch (final ParseException e) {
+			System.out.println(String.format("An error occured while parsing the command-line arguments: %s", e));
+			printHelp();
 		}
+	}
+
+	private static Options createOptions() {
+		final Options result = new Options();
+		Arrays.stream(Parameter.values()).map(Parameter::get).forEach(result::addOption);
+		return result;
 	}
 
 	private static Map<String, Path> createPlayerEventLogFileMap(final Path sessionLogDir,
@@ -156,6 +249,24 @@ public final class ModelFeatureExtractor {
 			final String href = source.getHref();
 			return MINIMAL_FILE_EXT_PATTERN.split(href)[0];
 		}));
+	}
+
+	private static PrintWriter parseOutfile(final CommandLine cl) throws ParseException, IOException {
+		PrintWriter result;
+		final File outfile = (File) cl.getParsedOptionValue(Parameter.OUTFILE.optName);
+		if (outfile == null) {
+			LOGGER.info("No output file path specified; Writing to standard output.");
+			result = new PrintWriter(System.out);
+		} else {
+			LOGGER.info("Will write features to \"{}\".", outfile);
+			result = new PrintWriter(Files.newBufferedWriter(outfile.toPath(), StandardOpenOption.CREATE));
+		}
+		return result;
+	}
+
+	private static void printHelp() {
+		final HelpFormatter formatter = new HelpFormatter();
+		formatter.printHelp(ModelFeatureExtractor.class.getName(), OPTIONS);
 	}
 
 	public void readLogfile() {

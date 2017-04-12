@@ -27,6 +27,8 @@ import java.util.NavigableMap;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.IntFunction;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -45,6 +47,7 @@ import se.kth.speech.SpatialRegion;
 import se.kth.speech.coin.tangrams.AreaSpatialRegionFactory;
 import se.kth.speech.coin.tangrams.content.IconImages;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
+import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
 import se.kth.speech.coin.tangrams.iristk.events.GameStateUnmarshalling;
 import se.kth.speech.coin.tangrams.iristk.events.ImageVisualizationInfoDescription;
 import se.kth.speech.coin.tangrams.iristk.events.ModelDescription;
@@ -131,14 +134,14 @@ final class GameStateFeatureVectorFactory implements BiFunction<GameStateChangeD
 		}
 
 		private static int setVals(final double[] vals, int currentFeatureIdx, final int[] modelDims,
-				final int pieceCount) {
+				final int entityCount) {
 			for (final EnvironmentFeature feature : ORDERING) {
 				switch (feature) {
 				case COL_COUNT:
 					vals[currentFeatureIdx] = modelDims[1];
 					break;
 				case ENTITY_COUNT:
-					vals[currentFeatureIdx] = pieceCount;
+					vals[currentFeatureIdx] = entityCount;
 					break;
 				case ROW_COUNT:
 					vals[currentFeatureIdx] = modelDims[0];
@@ -170,6 +173,10 @@ final class GameStateFeatureVectorFactory implements BiFunction<GameStateChangeD
 		final SpatialRegion source = areaRegionFactory.apply(move.getSource());
 		final SpatialRegion target = areaRegionFactory.apply(move.getTarget());
 		pieceUpdater.accept(source, target);
+	}
+
+	private static int calculateTotalEntityFeatureCount(final int entityCount) {
+		return entityCount * EntityFeature.values().length;
 	}
 
 	private static SpatialMatrix<Integer> copyInitialModel(final Matrix<Integer> copyee) {
@@ -208,22 +215,40 @@ final class GameStateFeatureVectorFactory implements BiFunction<GameStateChangeD
 
 	@Override
 	public double[] apply(final GameStateChangeData gameStateChangeData, final Timestamp time) {
+		final GameStateDescription initialState = gameStateChangeData.getInitialState();
 		final SpatialMatrix<Integer> model = copyInitialModel(
-				initialGameModelFactory.apply(gameStateChangeData.getInitialState().getModelDescription()));
+				initialGameModelFactory.apply(initialState.getModelDescription()));
 		final NavigableMap<Timestamp, List<Event>> events = gameStateChangeData.getEvents();
 		updateToTime(model, events, time);
-		return createFeatureVector(model,
-				gameStateChangeData.getInitialState().getImageVisualizationInfoDescription().getData());
+		return createFeatureVector(model, initialState.getImageVisualizationInfoDescription().getData());
+	}
+
+	public Stream<String> createFeatureDescriptions(final GameStateDescription initialState) {
+		return createFeatureDescriptions(initialState.getImageVisualizationInfoDescription().getData().size());
+	}
+
+	public Stream<String> createFeatureDescriptions(final int entityCount) {
+		final Stream.Builder<String> resultBuilder = Stream.builder();
+		final Stream<String> envFeatureDescs = EnvironmentFeature.ORDERING.stream().map(Enum::toString);
+		envFeatureDescs.forEach(resultBuilder);
+		final IntFunction<Stream<String>> entityFeatureDescFactory = entityId -> {
+			final Stream<String> entityFeatureDescs = EntityFeature.ORDERING.stream().map(Enum::toString);
+			return entityFeatureDescs.map(desc -> "ENTITY_" + entityId + "-" + desc);
+		};
+		final Stream<String> entityFeatureDescs = IntStream.range(0, entityCount).mapToObj(entityFeatureDescFactory)
+				.flatMap(Function.identity());
+		entityFeatureDescs.forEach(resultBuilder);
+		return resultBuilder.build();
 	}
 
 	private double[] createFeatureVector(final SpatialMatrix<Integer> model,
 			final List<ImageVisualizationInfoDescription.Datum> imgVizInfoData) {
 		final int[] modelDims = model.getDimensions();
-		final int pieceCount = imgVizInfoData.size();
+		final int entityCount = imgVizInfoData.size();
 		final double[] result = new double[extraArrayCapacityToAllocate + EnvironmentFeature.values().length
-				+ pieceCount * EntityFeature.values().length];
+				+ calculateTotalEntityFeatureCount(entityCount)];
 
-		int currentFeatureIdx = EnvironmentFeature.setVals(result, 0, modelDims, pieceCount);
+		int currentFeatureIdx = EnvironmentFeature.setVals(result, 0, modelDims, entityCount);
 
 		final double modelArea = IntArrays.product(modelDims);
 		final SpatialMap<Integer> piecePlacements = model.getElementPlacements();

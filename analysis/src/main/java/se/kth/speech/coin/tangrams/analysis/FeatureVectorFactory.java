@@ -39,6 +39,7 @@ import iristk.system.Event;
 import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 import se.kth.speech.TimestampArithmetic;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
+import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
 import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
 import se.kth.speech.hat.xsd.Transcription.T;
 
@@ -288,6 +289,13 @@ final class FeatureVectorFactory implements Function<Segment, double[][]> {
 		final String playerId = sourceIdPlayerIds.get(sourceId);
 		final Stream<double[]> featureVectors = utts.stream().map(utt -> createFeatureVector(utt, playerId));
 		return featureVectors.toArray(double[][]::new);
+	}
+
+	public Stream<String> createFeatureDescriptions(final GameStateDescription initialState) {
+		final Stream<String> gameStateFeatureDescs = gameStateFeatureVectorFactory
+				.createFeatureDescriptions(initialState);
+		final Stream<String> playerFeatureDescs = PlayerFeature.ORDERING.stream().map(Enum::toString);
+		return Stream.concat(gameStateFeatureDescs, playerFeatureDescs);
 	}
 
 	private double[] createFeatureVector(final TimestampedUtterance utt, final String playerId) {
