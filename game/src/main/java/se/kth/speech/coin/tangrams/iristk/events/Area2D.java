@@ -25,9 +25,9 @@ import iristk.util.Record;
  */
 public final class Area2D extends Record {
 
-	private CoordinatePoint2D start;
-
 	private CoordinatePoint2D end;
+
+	private CoordinatePoint2D start;
 
 	public Area2D() {
 		// Default constructor is required for JSON (un-)marshalling
