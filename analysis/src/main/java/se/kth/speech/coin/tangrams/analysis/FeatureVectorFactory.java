@@ -38,6 +38,8 @@ import com.google.common.collect.Lists;
 import iristk.system.Event;
 import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 import se.kth.speech.TimestampArithmetic;
+import se.kth.speech.coin.tangrams.iristk.EventSubmittingPlayerMatcher;
+import se.kth.speech.coin.tangrams.iristk.EventTypeMatcher;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
 import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
@@ -47,46 +49,6 @@ final class FeatureVectorFactory implements Function<Segment, double[][]> {
 
 	private enum PlayerFeature {
 		LAST_MOVE_SUBMISSION_DISTANCE, LAST_SUBMITTED_EVENT_TYPE;
-
-		private static class EventSubmittingPlayerMatcher implements Predicate<Event> {
-
-			private final String playerId;
-
-			private EventSubmittingPlayerMatcher(final String playerId) {
-				this.playerId = playerId;
-			}
-
-			/*
-			 * (non-Javadoc)
-			 *
-			 * @see java.util.function.Predicate#test(java.lang.Object)
-			 */
-			@Override
-			public boolean test(final Event event) {
-				final String submittingPlayerId = event.getString(GameManagementEvent.Attribute.PLAYER_ID.toString());
-				return playerId.equals(submittingPlayerId);
-			}
-		}
-
-		private static class EventTypeMatcher implements Predicate<Event> {
-
-			private final GameManagementEvent eventTypeToMatch;
-
-			private EventTypeMatcher(final GameManagementEvent eventTypeToMatch) {
-				this.eventTypeToMatch = eventTypeToMatch;
-			}
-
-			/*
-			 * (non-Javadoc)
-			 *
-			 * @see java.util.function.Predicate#test(java.lang.Object)
-			 */
-			@Override
-			public boolean test(final Event event) {
-				final GameManagementEvent eventType = GameManagementEvent.getEventType(event);
-				return eventTypeToMatch.equals(eventType);
-			}
-		}
 
 		private static final List<GameManagementEvent> EVENT_TYPE_FEATURE_ORDERING;
 
