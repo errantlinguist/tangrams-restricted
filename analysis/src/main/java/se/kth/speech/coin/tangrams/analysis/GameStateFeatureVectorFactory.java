@@ -52,7 +52,7 @@ import se.kth.speech.coin.tangrams.iristk.events.ImageVisualizationInfoDescripti
 import se.kth.speech.coin.tangrams.iristk.events.ModelDescription;
 import se.kth.speech.coin.tangrams.iristk.events.Move;
 
-public final class GameStateFeatureVectorFactory implements BiFunction<GameStateChangeData, Timestamp, double[]> {
+final class GameStateFeatureVectorFactory implements BiFunction<GameStateChangeData, Timestamp, double[]> {
 
 	private enum EntityFeature {
 		COLOR, POSITION_X, POSITION_Y, SHAPE, SIZE;

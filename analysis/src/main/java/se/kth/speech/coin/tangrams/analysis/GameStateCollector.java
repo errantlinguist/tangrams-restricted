@@ -42,7 +42,7 @@ import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
  * @since 27 Jan 2017
  *
  */
-public final class GameStateCollector
+final class GameStateCollector
 		implements Collector<Event, Map<String, GameStateChangeData>, Map<String, GameStateChangeData>> {
 
 	private static final BiConsumer<Map<String, GameStateChangeData>, Event> ACCUMULATOR = new BiConsumer<Map<String, GameStateChangeData>, Event>() {

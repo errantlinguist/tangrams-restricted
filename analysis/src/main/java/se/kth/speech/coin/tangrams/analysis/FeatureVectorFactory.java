@@ -58,7 +58,7 @@ import se.kth.speech.coin.tangrams.iristk.events.Move;
 import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
 import se.kth.speech.hat.xsd.Transcription.T;
 
-public final class FeatureVectorFactory implements Function<Segment, double[][]> {
+final class FeatureVectorFactory implements Function<Segment, double[][]> {
 
 	private enum EntityFeature {
 		COLOR, POSITION_X, POSITION_Y, SELECTED, SHAPE, SIZE;
