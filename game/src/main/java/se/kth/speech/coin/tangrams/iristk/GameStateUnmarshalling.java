@@ -33,7 +33,7 @@ import se.kth.speech.SpatialMatrix;
  * @since 25 Jan 2017
  *
  */
-public final class GameStateUnmarshalling {
+final class GameStateUnmarshalling {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(GameStateUnmarshalling.class);
 

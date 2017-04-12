@@ -29,7 +29,7 @@ import se.kth.speech.Matrix;
  * @since 10 Jan 2017
  *
  */
-public final class ModelDescription extends Record {
+final class ModelDescription extends Record {
 
 	private int colCount;
 
