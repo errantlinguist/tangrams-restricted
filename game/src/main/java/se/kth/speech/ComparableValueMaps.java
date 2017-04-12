@@ -40,7 +40,7 @@ public final class ComparableValueMaps {
 		}
 		return newValue;
 	};
-	
+
 	public static <K, V extends Comparable<? super V>> Entry<Set<K>, V> findMaxValues(final Map<K, V> counts) {
 		final V val = Collections.max(counts.values());
 		final Set<K> keys = counts.entrySet().stream().filter(entry -> Objects.equals(entry.getValue(), val))
