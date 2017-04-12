@@ -14,7 +14,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech.coin.tangrams;
+package se.kth.speech.coin.tangrams.analysis;
 
 import java.io.IOException;
 import java.nio.file.FileVisitOption;
@@ -43,9 +43,6 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Table;
 
 import iristk.util.HAT;
-import se.kth.speech.coin.tangrams.iristk.FeatureVectorFactory;
-import se.kth.speech.coin.tangrams.iristk.GameStateChangeData;
-import se.kth.speech.coin.tangrams.iristk.LoggedGameStateChangeDataParser;
 import se.kth.speech.coin.tangrams.iristk.io.LoggingFormats;
 import se.kth.speech.hat.xsd.Annotation;
 import se.kth.speech.hat.xsd.Annotation.Segments.Segment;

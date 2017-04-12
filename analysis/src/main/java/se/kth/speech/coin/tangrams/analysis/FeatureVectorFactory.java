@@ -14,7 +14,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech.coin.tangrams.iristk;
+package se.kth.speech.coin.tangrams.analysis;
 
 import java.awt.Color;
 import java.sql.Timestamp;
@@ -49,6 +49,7 @@ import se.kth.speech.TimestampArithmetic;
 import se.kth.speech.coin.tangrams.AreaSpatialRegionFactory;
 import se.kth.speech.coin.tangrams.content.IconImages;
 import se.kth.speech.coin.tangrams.game.PlayerRole;
+import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
 import se.kth.speech.coin.tangrams.iristk.events.GameStateUnmarshalling;
 import se.kth.speech.coin.tangrams.iristk.events.ImageVisualizationInfoDescription;
