@@ -152,4 +152,5 @@ buildNumber.properties
 
 ## PROJECT-SPECIFIC IGNORE STATEMENTS
 log/
+output/
 .settings/
