@@ -62,7 +62,7 @@ public enum GameManagementEvent {
 	 */
 	SELECTION_REQUEST("selection.request");
 
-	enum Attribute {
+	public enum Attribute {
 		GAME_ID, GAME_STATE, MOVE, PLAYER_ID, SELECTION, TIMESTAMP;
 	}
 
