@@ -79,8 +79,8 @@ final class FeatureVectorFactory implements Function<Segment, double[][]> {
 			int result = -1;
 			int currentDistance = 0;
 			for (final Entry<Timestamp, ? extends List<? extends Event>> timedEventList : timedEventLists) {
-				LOGGER.debug("Checking events at time \"{}\".", timedEventList.getKey());
 				final List<? extends Event> eventsReversed = Lists.reverse(timedEventList.getValue());
+				LOGGER.debug("Checking {} event(s) at time \"{}\".", eventsReversed.size(), timedEventList.getKey());
 				for (final Event event : eventsReversed) {
 					if (eventMatcher.test(event)) {
 						LOGGER.debug("Found matching event at \"{}\".", timedEventList.getKey());
