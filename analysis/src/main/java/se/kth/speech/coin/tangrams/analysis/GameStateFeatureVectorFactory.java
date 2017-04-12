@@ -63,6 +63,45 @@ final class GameStateFeatureVectorFactory implements BiFunction<GameStateChangeD
 			ORDERING = Arrays.asList(SHAPE, COLOR, SIZE, POSITION_X, POSITION_Y);
 			assert ORDERING.size() == EntityFeature.values().length;
 		}
+
+		private static int setVals(final double[] vals, int currentFeatureIdx,
+				final ImageVisualizationInfoDescription.Datum pieceImgVizInfoDatum, final SpatialRegion pieceRegion,
+				final int[] modelDims, final double modelArea) {
+			for (final EntityFeature feature : ORDERING) {
+				switch (feature) {
+				case COLOR:
+					final float colorFeatureVal = createColorFeatureVal(pieceImgVizInfoDatum);
+					vals[currentFeatureIdx] = colorFeatureVal;
+					break;
+				case POSITION_X: {
+					final double centerX = pieceRegion.getXLowerBound() + pieceRegion.getLengthX() / 2.0;
+					final double posX = centerX / modelDims[0];
+					vals[currentFeatureIdx] = posX;
+					break;
+				}
+				case POSITION_Y: {
+					final double centerY = pieceRegion.getYLowerBound() + pieceRegion.getLengthY() / 2.0;
+					final double posY = centerY / modelDims[1];
+					vals[currentFeatureIdx] = posY;
+					break;
+				}
+				case SHAPE:
+					final double shapeFeatureVal = getShapeFeatureVal(pieceImgVizInfoDatum);
+					vals[currentFeatureIdx] = shapeFeatureVal;
+					break;
+				case SIZE:
+					final int pieceArea = IntArrays.product(pieceRegion.getDimensions());
+					final double sizeFeatureVal = pieceArea / modelArea;
+					vals[currentFeatureIdx] = sizeFeatureVal;
+					break;
+				default: {
+					throw new AssertionError("Missing enum-handling logic.");
+				}
+				}
+				currentFeatureIdx++;
+			}
+			return currentFeatureIdx;
+		}
 	}
 
 	private enum EnvironmentFeature {
@@ -73,6 +112,28 @@ final class GameStateFeatureVectorFactory implements BiFunction<GameStateChangeD
 		static {
 			ORDERING = Arrays.asList(ROW_COUNT, COL_COUNT, ENTITY_COUNT);
 			assert ORDERING.size() == EnvironmentFeature.values().length;
+		}
+
+		private static int setVals(final double[] vals, int currentFeatureIdx, final int[] modelDims,
+				final int pieceCount) {
+			for (final EnvironmentFeature feature : ORDERING) {
+				switch (feature) {
+				case COL_COUNT:
+					vals[currentFeatureIdx] = modelDims[1];
+					break;
+				case ENTITY_COUNT:
+					vals[currentFeatureIdx] = pieceCount;
+					break;
+				case ROW_COUNT:
+					vals[currentFeatureIdx] = modelDims[0];
+					break;
+				default: {
+					throw new AssertionError("Missing enum-handling logic.");
+				}
+				}
+				currentFeatureIdx++;
+			}
+			return currentFeatureIdx;
 		}
 	}
 
@@ -132,67 +193,6 @@ final class GameStateFeatureVectorFactory implements BiFunction<GameStateChangeD
 		return SHAPE_FEATURE_VALS.getDouble(strVal);
 	}
 
-	private static int setEntityFeatureVals(final double[] vals, int currentFeatureIdx,
-			final ImageVisualizationInfoDescription.Datum pieceImgVizInfoDatum, final SpatialRegion pieceRegion,
-			final int[] modelDims, final double modelArea) {
-		for (final EntityFeature feature : EntityFeature.ORDERING) {
-			switch (feature) {
-			case COLOR:
-				final float colorFeatureVal = createColorFeatureVal(pieceImgVizInfoDatum);
-				vals[currentFeatureIdx] = colorFeatureVal;
-				break;
-			case POSITION_X: {
-				final double centerX = pieceRegion.getXLowerBound() + pieceRegion.getLengthX() / 2.0;
-				final double posX = centerX / modelDims[0];
-				vals[currentFeatureIdx] = posX;
-				break;
-			}
-			case POSITION_Y: {
-				final double centerY = pieceRegion.getYLowerBound() + pieceRegion.getLengthY() / 2.0;
-				final double posY = centerY / modelDims[1];
-				vals[currentFeatureIdx] = posY;
-				break;
-			}
-			case SHAPE:
-				final double shapeFeatureVal = getShapeFeatureVal(pieceImgVizInfoDatum);
-				vals[currentFeatureIdx] = shapeFeatureVal;
-				break;
-			case SIZE:
-				final int pieceArea = IntArrays.product(pieceRegion.getDimensions());
-				final double sizeFeatureVal = pieceArea / modelArea;
-				vals[currentFeatureIdx] = sizeFeatureVal;
-				break;
-			default: {
-				throw new AssertionError("Missing enum-handling logic.");
-			}
-			}
-			currentFeatureIdx++;
-		}
-		return currentFeatureIdx;
-	}
-
-	private static int setEnvironmentFeatureVals(final double[] vals, int currentFeatureIdx, final int[] modelDims,
-			final int pieceCount) {
-		for (final EnvironmentFeature feature : EnvironmentFeature.ORDERING) {
-			switch (feature) {
-			case COL_COUNT:
-				vals[currentFeatureIdx] = modelDims[1];
-				break;
-			case ENTITY_COUNT:
-				vals[currentFeatureIdx] = pieceCount;
-				break;
-			case ROW_COUNT:
-				vals[currentFeatureIdx] = modelDims[0];
-				break;
-			default: {
-				throw new AssertionError("Missing enum-handling logic.");
-			}
-			}
-			currentFeatureIdx++;
-		}
-		return currentFeatureIdx;
-	}
-
 	private static void updateToTime(final SpatialMatrix<Integer> model,
 			final NavigableMap<Timestamp, List<Event>> timestampedEvents, final Timestamp time) {
 		final NavigableMap<Timestamp, List<Event>> timestampedEventsToApply = timestampedEvents.headMap(time, true);
@@ -226,7 +226,7 @@ final class GameStateFeatureVectorFactory implements BiFunction<GameStateChangeD
 		final double[] result = new double[EnvironmentFeature.values().length
 				+ pieceCount * EntityFeature.values().length];
 
-		int currentFeatureIdx = setEnvironmentFeatureVals(result, 0, modelDims, pieceCount);
+		int currentFeatureIdx = EnvironmentFeature.setVals(result, 0, modelDims, pieceCount);
 
 		final double modelArea = IntArrays.product(modelDims);
 		final SpatialMap<Integer> piecePlacements = model.getElementPlacements();
@@ -235,7 +235,7 @@ final class GameStateFeatureVectorFactory implements BiFunction<GameStateChangeD
 			final int pieceId = imgVizInfoDataIter.nextIndex();
 			final ImageVisualizationInfoDescription.Datum pieceImgVizInfoDatum = imgVizInfoDataIter.next();
 			final SpatialRegion pieceRegion = piecePlacements.getElementMinimalRegions().get(pieceId);
-			currentFeatureIdx = setEntityFeatureVals(result, currentFeatureIdx, pieceImgVizInfoDatum, pieceRegion,
+			currentFeatureIdx = EntityFeature.setVals(result, currentFeatureIdx, pieceImgVizInfoDatum, pieceRegion,
 					modelDims, modelArea);
 		}
 		return result;
