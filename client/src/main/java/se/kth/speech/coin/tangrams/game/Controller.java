@@ -143,7 +143,7 @@ public final class Controller {
 
 	private static final Function<SpatialRegion, Area2D> REGION_AREA_FACTORY = new SpatialRegionAreaFactory();
 
-	private transient final AreaSpatialRegionFactory areaRegionFactory;
+	private final AreaSpatialRegionFactory areaRegionFactory;
 
 	private final GameManagementClientModule clientModule;
 
@@ -155,7 +155,7 @@ public final class Controller {
 
 	private Move nextMove;
 
-	private final transient SpatialMatrixRegionElementMover<Integer> piecePosUpdater;
+	private final SpatialMatrixRegionElementMover<Integer> piecePosUpdater;
 
 	private final String playerId;
 

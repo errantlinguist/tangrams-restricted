@@ -45,7 +45,7 @@ final class RecordingManagement {
 
 		private final AudioRecorder recorder;
 
-		private transient final Runnable stopper;
+		private final Runnable stopper;
 
 		private Starter(final Supplier<? extends File> outdirSupplier) throws InitializationException {
 			this.outdirSupplier = outdirSupplier;

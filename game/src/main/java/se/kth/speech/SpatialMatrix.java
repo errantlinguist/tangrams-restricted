@@ -110,7 +110,7 @@ public final class SpatialMatrix<E> {
 
 	private final IntFunction<? extends Map<SpatialRegion, Set<SpatialRegion>>> regionMapFactory;
 
-	private transient final Function<? super SpatialRegion, ? extends Set<SpatialRegion>> regionSetFactory;
+	private final Function<? super SpatialRegion, ? extends Set<SpatialRegion>> regionSetFactory;
 
 	private <S extends Set<SpatialRegion>> SpatialMatrix(final Matrix<E> posMatrix,
 			final SpatialMap<E> elementPlacements, final IntFunction<? extends S> regionSetFactory,

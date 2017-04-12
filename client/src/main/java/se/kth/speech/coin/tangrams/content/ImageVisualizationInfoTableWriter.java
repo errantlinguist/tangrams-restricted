@@ -101,7 +101,7 @@ public final class ImageVisualizationInfoTableWriter {
 		TABLE_ROW_CELL_JOINER = Collectors.joining(TABLE_STRING_REPR_COL_DELIMITER);
 	}
 
-	private transient final ColorInfoWriter colorInfoWriter;
+	private final ColorInfoWriter colorInfoWriter;
 
 	private final Function<? super URL, String> resourceNameFactory;
 

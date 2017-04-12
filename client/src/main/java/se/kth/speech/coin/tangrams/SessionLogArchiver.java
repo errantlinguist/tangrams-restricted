@@ -41,7 +41,7 @@ final class SessionLogArchiver implements Supplier<Path> {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SessionLogArchiver.class);
 
-	private transient final DirectoryZipArchiver archiver;
+	private final DirectoryZipArchiver archiver;
 
 	private final String playerId;
 

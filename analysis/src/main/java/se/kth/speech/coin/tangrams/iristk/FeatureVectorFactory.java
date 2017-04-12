@@ -314,7 +314,7 @@ public final class FeatureVectorFactory implements Function<Segment, double[][]>
 		eventsToApply.forEach(event -> applyEvent(model, event));
 	}
 
-	private final transient Function<ModelDescription, SpatialMatrix<Integer>> initialGameModelFactory;
+	private final  Function<ModelDescription, SpatialMatrix<Integer>> initialGameModelFactory;
 
 	private final double[] initialGameStateFeatures;
 

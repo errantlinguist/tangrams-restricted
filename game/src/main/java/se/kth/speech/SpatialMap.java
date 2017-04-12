@@ -84,7 +84,7 @@ public final class SpatialMap<E> {
 	 * An ordered sequence of regions being used, e.g. for getting an ID for a
 	 * particular region
 	 */
-	private transient final List<SpatialRegion> regions;
+	private final List<SpatialRegion> regions;
 
 	private SpatialMap(final Multimap<SpatialRegion, E> regionElements, final Map<E, SpatialRegion> elementRegions,
 			final List<SpatialRegion> regions) {
