@@ -49,7 +49,7 @@ import se.kth.speech.hat.xsd.Transcription.T;
 final class FeatureVectorFactory implements Function<Segment, double[][]> {
 
 	private enum PlayerFeature {
-		LAST_MOVE_SUBMISSION_DISTANCE, LAST_SUBMITTED_EVENT_TYPE;
+		LAST_MOVE_SUBMISSION_DISTANCE, LAST_SPEAKING_PLAYER_MOVE_SUBMISSION_DISTANCE, LAST_SUBMITTED_EVENT_TYPE;
 
 		private static final List<GameManagementEvent> EVENT_TYPE_FEATURE_ORDERING;
 
@@ -58,7 +58,7 @@ final class FeatureVectorFactory implements Function<Segment, double[][]> {
 		private static final List<PlayerFeature> ORDERING;
 
 		static {
-			ORDERING = Arrays.asList(LAST_MOVE_SUBMISSION_DISTANCE, LAST_SUBMITTED_EVENT_TYPE);
+			ORDERING = Arrays.asList(LAST_MOVE_SUBMISSION_DISTANCE, LAST_SPEAKING_PLAYER_MOVE_SUBMISSION_DISTANCE, LAST_SUBMITTED_EVENT_TYPE);
 			assert ORDERING.size() == PlayerFeature.values().length;
 		}
 
@@ -79,6 +79,7 @@ final class FeatureVectorFactory implements Function<Segment, double[][]> {
 			int result = -1;
 			int currentDistance = 0;
 			for (final Entry<Timestamp, ? extends List<? extends Event>> timedEventList : timedEventLists) {
+				LOGGER.debug("Checking events at time \"{}\".", timedEventList.getKey());
 				final List<? extends Event> eventsReversed = Lists.reverse(timedEventList.getValue());
 				for (final Event event : eventsReversed) {
 					if (eventMatcher.test(event)) {
@@ -101,6 +102,17 @@ final class FeatureVectorFactory implements Function<Segment, double[][]> {
 			for (final PlayerFeature feature : ORDERING) {
 				switch (feature) {
 				case LAST_MOVE_SUBMISSION_DISTANCE: {
+					final NavigableMap<Timestamp, List<Event>> timedEventsBeforeUtt = gameData.getEvents().headMap(time,
+							true);
+					// Look for the last time a move was submitted, iterating backwards
+					final Predicate<Event> lastMoveSubmissionMatcher = new EventTypeMatcher(
+							GameManagementEvent.NEXT_TURN_REQUEST);
+					final int lastMoveSubmissionDistance = findNearestEventDistance(
+							timedEventsBeforeUtt.descendingMap().entrySet(), lastMoveSubmissionMatcher);
+					vals[currentFeatureIdx] = lastMoveSubmissionDistance;
+					break;
+				}
+				case LAST_SPEAKING_PLAYER_MOVE_SUBMISSION_DISTANCE: {
 					final NavigableMap<Timestamp, List<Event>> timedEventsBeforeUtt = gameData.getEvents().headMap(time,
 							true);
 					// Look for the last time the speaking player submitted a
