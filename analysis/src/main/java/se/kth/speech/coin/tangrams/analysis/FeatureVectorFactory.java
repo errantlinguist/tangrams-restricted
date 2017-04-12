@@ -102,6 +102,7 @@ final class FeatureVectorFactory implements Function<Segment, double[][]> {
 			for (final PlayerFeature feature : ORDERING) {
 				switch (feature) {
 				case LAST_MOVE_SUBMISSION_DISTANCE: {
+					//FIXME: Distance just keeps increasing
 					final NavigableMap<Timestamp, List<Event>> timedEventsBeforeUtt = gameData.getEvents().headMap(time,
 							true);
 					// Look for the last time a move was submitted, iterating backwards
@@ -113,6 +114,7 @@ final class FeatureVectorFactory implements Function<Segment, double[][]> {
 					break;
 				}
 				case LAST_SPEAKING_PLAYER_MOVE_SUBMISSION_DISTANCE: {
+					//FIXME: Distance just keeps increasing
 					final NavigableMap<Timestamp, List<Event>> timedEventsBeforeUtt = gameData.getEvents().headMap(time,
 							true);
 					// Look for the last time the speaking player submitted a
