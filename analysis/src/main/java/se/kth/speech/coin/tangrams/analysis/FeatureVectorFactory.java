@@ -83,7 +83,7 @@ final class FeatureVectorFactory implements Function<Segment, double[][]> {
 				LOGGER.debug("Checking {} event(s) at time \"{}\".", eventsReversed.size(), timedEventList.getKey());
 				for (final Event event : eventsReversed) {
 					if (eventMatcher.test(event)) {
-						LOGGER.debug("Found matching event at \"{}\".", timedEventList.getKey());
+						LOGGER.debug("Found matching event at \"{}\": {}", timedEventList.getKey(), event);
 						result = currentDistance;
 						break;
 					}
