@@ -32,21 +32,21 @@ import se.kth.speech.MutablePair;
  */
 public final class CachingMaximumWidthFontFactory implements Function<String, Font> {
 
-	private final Function<? super Font, FontMetrics> fmFactory;
-
 	private final float endSize;
 
+	private final Function<? super Font, FontMetrics> fmFactory;
+
 	private final float increment;
+
+	private final Supplier<? extends ListIterator<Entry<Font, FontMetrics>>> incrementingSizeFonts;
+
+	private final int maxWidth;
 
 	private final Font oldFont;
 
 	private final float startSize;
 
 	private final int widthPadding;
-
-	private final int maxWidth;
-
-	private final Supplier<? extends ListIterator<Entry<Font, FontMetrics>>> incrementingSizeFonts;
 
 	public CachingMaximumWidthFontFactory(final int maxWidth, final Function<? super Font, FontMetrics> fmFactory,
 			final Font oldFont, final float startSize, final float endSize, final float increment,
