@@ -189,13 +189,21 @@ final class GameStateFeatureVectorFactory implements BiFunction<GameStateChangeD
 		eventsToApply.forEach(event -> applyEvent(model, event));
 	}
 
+	private final int extraArrayCapacityToAllocate;
+
 	private final Function<ModelDescription, SpatialMatrix<Integer>> initialGameModelFactory;
 
-	GameStateFeatureVectorFactory(final int expectedUniqueModelDescriptionCount) {
+	GameStateFeatureVectorFactory(final int expectedUniqueModelDescriptionCount,
+			final int extraArrayCapacityToAllocate) {
+		if (extraArrayCapacityToAllocate < 0) {
+			throw new IllegalArgumentException(
+					"Extra array capacity to allocate is a negative value: " + extraArrayCapacityToAllocate);
+		}
 		final Map<ModelDescription, SpatialMatrix<Integer>> gameModels = Maps
 				.newHashMapWithExpectedSize(expectedUniqueModelDescriptionCount);
 		initialGameModelFactory = modelDesc -> gameModels.computeIfAbsent(modelDesc,
 				k -> GameStateUnmarshalling.createModel(k, SpatialMatrix.Factory.UNSTABLE_ITER_ORDER));
+		this.extraArrayCapacityToAllocate = extraArrayCapacityToAllocate;
 	}
 
 	@Override
@@ -212,7 +220,7 @@ final class GameStateFeatureVectorFactory implements BiFunction<GameStateChangeD
 			final List<ImageVisualizationInfoDescription.Datum> imgVizInfoData) {
 		final int[] modelDims = model.getDimensions();
 		final int pieceCount = imgVizInfoData.size();
-		final double[] result = new double[EnvironmentFeature.values().length
+		final double[] result = new double[extraArrayCapacityToAllocate + EnvironmentFeature.values().length
 				+ pieceCount * EntityFeature.values().length];
 
 		int currentFeatureIdx = EnvironmentFeature.setVals(result, 0, modelDims, pieceCount);
