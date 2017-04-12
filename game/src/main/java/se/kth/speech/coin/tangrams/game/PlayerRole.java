@@ -23,13 +23,13 @@ package se.kth.speech.coin.tangrams.game;
  */
 public enum PlayerRole {
 	/**
-	 * In this role, the player is to select a candidate piece for moving.
-	 */
-	SELECTING,
-	/**
 	 * In this role, the player is to submit the next move to be played.
 	 */
 	MOVE_SUBMISSION,
+	/**
+	 * In this role, the player is to select a candidate piece for moving.
+	 */
+	SELECTING,
 	/**
 	 * In this role, the player is to confirm a previously-selected piece for
 	 * moving in the turn.
