@@ -39,8 +39,6 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.Lists;
 
 import iristk.system.Event;
-import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
-import it.unimi.dsi.fastutil.ints.IntSet;
 import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
 import se.kth.speech.TimestampArithmetic;
@@ -379,19 +377,7 @@ final class SegmentFeatureVectorFactory implements Function<Segment, double[][]>
 		// Get the player ID associated with the given audio source
 		final String playerId = sourceIdPlayerIds.get(sourceId);
 		final Stream<double[]> featureVectors = utts.stream().map(utt -> createFeatureVector(utt, playerId));
-		final double[][] result = featureVectors.toArray(double[][]::new);
-		{
-			// http://docs.oracle.com/javase/8/docs/technotes/guides/language/assert.html
-			boolean assertsEnabled = false;
-			assert assertsEnabled = true; // Intentional side-effect!!!
-			// Now assertsEnabled is set to the correct value
-			if (assertsEnabled && result.length > 1) {
-				final IntSet lengths = new IntOpenHashSet(1);
-				Arrays.stream(result).mapToInt(arr -> arr.length).forEach(lengths::add);
-				assert lengths.size() == 1 : String.format("%d different feature vector lengths.", lengths.size());
-			}
-		}
-		return result;
+		return featureVectors.toArray(double[][]::new);
 	}
 
 	public Stream<String> createFeatureDescriptions(final GameStateDescription initialState) {
