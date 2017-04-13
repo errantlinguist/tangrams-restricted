@@ -173,7 +173,7 @@ public final class ModelFeatureExtractor {
 					final List<Segment> segments = uttAnnots.getSegments().getSegment();
 					final Stream<double[][]> segmentFeatureVectors = segments.stream().map(featureVectorFactory);
 					final Stream<double[]> featureVectors = segmentFeatureVectors.flatMap(Arrays::stream);
-					try (PrintWriter out = parseOutfile(cl)) {
+					try (final PrintWriter out = parseOutfile(cl)) {
 						out.print(header);
 						featureVectors.forEachOrdered(featureVector -> {
 							out.print(TABLE_STRING_REPR_ROW_DELIMITER);
@@ -252,7 +252,7 @@ public final class ModelFeatureExtractor {
 	}
 
 	private static PrintWriter parseOutfile(final CommandLine cl) throws ParseException, IOException {
-		PrintWriter result;
+		final PrintWriter result;
 		final File outfile = (File) cl.getParsedOptionValue(Parameter.OUTFILE.optName);
 		if (outfile == null) {
 			LOGGER.info("No output file path specified; Writing to standard output.");
