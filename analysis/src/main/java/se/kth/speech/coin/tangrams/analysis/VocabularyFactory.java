@@ -38,6 +38,7 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.TreeSet;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,7 +52,7 @@ import se.kth.speech.io.FileDataAge;
  * @since Apr 13, 2017
  *
  */
-public final class VocabularyFactory {
+public final class VocabularyFactory implements Supplier<Vocabulary> {
 
 	private static final Path CACHE_DIR;
 
@@ -202,9 +203,14 @@ public final class VocabularyFactory {
 		this.locale = locale;
 	}
 
-	public Vocabulary get() throws IOException {
-		final NavigableSet<String> words = fetchWordList(locale);
-		return new Vocabulary(words);
+	@Override
+	public Vocabulary get() {
+		try {
+			final NavigableSet<String> words = fetchWordList(locale);
+			return new Vocabulary(words);
+		} catch (final IOException e) {
+			throw new UncheckedIOException(e);
+		}
 	}
 
 }
