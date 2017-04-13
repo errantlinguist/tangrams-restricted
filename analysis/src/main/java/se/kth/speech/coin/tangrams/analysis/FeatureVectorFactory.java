@@ -57,7 +57,7 @@ final class FeatureVectorFactory implements Function<Segment, double[][]> {
 	 *      Extra-linguistic Information into Reference Resolution in
 	 *      Collaborative Task Dialogue&rdquo;. The 48<sup>th</sup> Annual
 	 *      Meeting of the Association for Computational Linguistics (ACL 2010),
-	 *      pp.1259-1267. 2010.</a>
+	 *      pp.1259&ndash;1267. 2010.</a>
 	 *
 	 */
 	private enum ActionHistoryFeature {
