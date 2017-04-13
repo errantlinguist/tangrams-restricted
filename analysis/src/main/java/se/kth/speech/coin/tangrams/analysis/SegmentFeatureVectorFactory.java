@@ -380,14 +380,16 @@ final class SegmentFeatureVectorFactory implements Function<Segment, double[][]>
 		final String playerId = sourceIdPlayerIds.get(sourceId);
 		final Stream<double[]> featureVectors = utts.stream().map(utt -> createFeatureVector(utt, playerId));
 		final double[][] result = featureVectors.toArray(double[][]::new);
-		// http://docs.oracle.com/javase/8/docs/technotes/guides/language/assert.html
-		boolean assertsEnabled = false;
-		assert assertsEnabled = true; // Intentional side-effect!!!
-		// Now assertsEnabled is set to the correct value
-		if (assertsEnabled && result.length > 1) {
-			final IntSet lengths = new IntOpenHashSet(1);
-			Arrays.stream(result).mapToInt(arr -> arr.length).forEach(lengths::add);
-			assert lengths.size() == 1 : String.format("%d different feature vector lengths.", lengths.size());
+		{
+			// http://docs.oracle.com/javase/8/docs/technotes/guides/language/assert.html
+			boolean assertsEnabled = false;
+			assert assertsEnabled = true; // Intentional side-effect!!!
+			// Now assertsEnabled is set to the correct value
+			if (assertsEnabled && result.length > 1) {
+				final IntSet lengths = new IntOpenHashSet(1);
+				Arrays.stream(result).mapToInt(arr -> arr.length).forEach(lengths::add);
+				assert lengths.size() == 1 : String.format("%d different feature vector lengths.", lengths.size());
+			}
 		}
 		return result;
 	}
