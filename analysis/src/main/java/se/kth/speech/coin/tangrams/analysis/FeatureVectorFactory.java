@@ -20,6 +20,7 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -121,7 +122,7 @@ final class FeatureVectorFactory implements Function<Segment, double[][]> {
 					// Look for the last time a move was submitted, iterating
 					// backwards
 					final Predicate<Event> lastMoveSubmissionMatcher = new EventTypeMatcher(
-							GameManagementEvent.NEXT_TURN_REQUEST);
+							Collections.singleton(GameManagementEvent.NEXT_TURN_REQUEST));
 					final int lastMoveSubmissionDistance = findNearestEventDistance(
 							timedEventsBeforeUtt.descendingMap().entrySet(), lastMoveSubmissionMatcher);
 					vals[currentFeatureIdx] = lastMoveSubmissionDistance;
@@ -134,7 +135,7 @@ final class FeatureVectorFactory implements Function<Segment, double[][]> {
 					// Look for the last time the speaking player submitted a
 					// move, iterating backwards
 					final Predicate<Event> lastMoveSubmissionByPlayerMatcher = new EventTypeMatcher(
-							GameManagementEvent.NEXT_TURN_REQUEST)
+							Collections.singleton(GameManagementEvent.NEXT_TURN_REQUEST))
 									.and(new EventSubmittingPlayerMatcher(speakingPlayerId));
 					final int lastMoveSubmissionDistance = findNearestEventDistance(
 							timedEventsBeforeUtt.descendingMap().entrySet(), lastMoveSubmissionByPlayerMatcher);
@@ -316,8 +317,8 @@ final class FeatureVectorFactory implements Function<Segment, double[][]> {
 
 		final double[] result = gameStateFeatureVectorFactory.apply(gameStateChangeData, uttStartTimestamp);
 		int currentFeatureIdx = result.length - nonGameStateFeatureCount;
-		currentFeatureIdx = ActionFeature.setVals(result, currentFeatureIdx, gameStateChangeData,
-				uttStartTimestamp, playerId);
+		currentFeatureIdx = ActionFeature.setVals(result, currentFeatureIdx, gameStateChangeData, uttStartTimestamp,
+				playerId);
 		// TODO: Update e.g. piece position and selection features, player role
 		// feature
 		return result;

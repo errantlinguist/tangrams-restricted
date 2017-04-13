@@ -16,17 +16,17 @@
 */
 package se.kth.speech.coin.tangrams.iristk;
 
+import java.util.Collection;
 import java.util.function.Predicate;
 
 import iristk.system.Event;
-import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 
 public final class EventTypeMatcher implements Predicate<Event> {
 
-	private final GameManagementEvent eventTypeToMatch;
+	private final Collection<GameManagementEvent> acceptedTypes;
 
-	public EventTypeMatcher(final GameManagementEvent eventTypeToMatch) {
-		this.eventTypeToMatch = eventTypeToMatch;
+	public EventTypeMatcher(final Collection<GameManagementEvent> acceptedTypes) {
+		this.acceptedTypes = acceptedTypes;
 	}
 
 	/*
@@ -46,7 +46,11 @@ public final class EventTypeMatcher implements Predicate<Event> {
 			return false;
 		}
 		final EventTypeMatcher other = (EventTypeMatcher) obj;
-		if (eventTypeToMatch != other.eventTypeToMatch) {
+		if (acceptedTypes == null) {
+			if (other.acceptedTypes != null) {
+				return false;
+			}
+		} else if (!acceptedTypes.equals(other.acceptedTypes)) {
 			return false;
 		}
 		return true;
@@ -61,7 +65,7 @@ public final class EventTypeMatcher implements Predicate<Event> {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + (eventTypeToMatch == null ? 0 : eventTypeToMatch.hashCode());
+		result = prime * result + (acceptedTypes == null ? 0 : acceptedTypes.hashCode());
 		return result;
 	}
 
@@ -73,7 +77,7 @@ public final class EventTypeMatcher implements Predicate<Event> {
 	@Override
 	public boolean test(final Event event) {
 		final GameManagementEvent eventType = GameManagementEvent.getEventType(event);
-		return eventTypeToMatch.equals(eventType);
+		return acceptedTypes.contains(eventType);
 	}
 
 	/*
@@ -84,8 +88,8 @@ public final class EventTypeMatcher implements Predicate<Event> {
 	@Override
 	public String toString() {
 		final StringBuilder builder = new StringBuilder();
-		builder.append("EventTypeMatcher [eventTypeToMatch=");
-		builder.append(eventTypeToMatch);
+		builder.append("EventTypeMatcher [acceptedTypes=");
+		builder.append(acceptedTypes);
 		builder.append("]");
 		return builder.toString();
 	}
