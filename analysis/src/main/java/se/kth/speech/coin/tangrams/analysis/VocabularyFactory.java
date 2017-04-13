@@ -196,7 +196,7 @@ public final class VocabularyFactory {
 		this(Locale.forLanguageTag(PROPS.getProperty("lang")));
 	}
 
-	public VocabularyFactory(final Locale locale) {
+	private VocabularyFactory(final Locale locale) {
 		LOGGER.info("Using locale \"{}\".", locale);
 		this.locale = locale;
 	}
