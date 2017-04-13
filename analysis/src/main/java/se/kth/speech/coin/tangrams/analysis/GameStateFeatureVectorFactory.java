@@ -27,7 +27,6 @@ import java.util.NavigableMap;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.function.IntFunction;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -231,12 +230,10 @@ final class GameStateFeatureVectorFactory implements BiFunction<GameStateChangeD
 		final Stream.Builder<String> resultBuilder = Stream.builder();
 		final Stream<String> envFeatureDescs = EnvironmentFeature.ORDERING.stream().map(Enum::toString);
 		envFeatureDescs.forEach(resultBuilder);
-		final IntFunction<Stream<String>> entityFeatureDescFactory = entityId -> {
-			final Stream<String> entityFeatureDescs = EntityFeature.ORDERING.stream().map(Enum::toString);
-			return entityFeatureDescs.map(desc -> "ENT_" + entityId + "-" + desc);
-		};
-		final Stream<String> entityFeatureDescs = IntStream.range(0, entityCount).mapToObj(entityFeatureDescFactory)
-				.flatMap(Function.identity());
+		final Stream<String> entityFeatureDescs = IntStream.range(0, entityCount).mapToObj(entityId -> {
+			final Stream<String> baseFeatureDescs = EntityFeature.ORDERING.stream().map(Enum::toString);
+			return baseFeatureDescs.map(desc -> "ENT_" + entityId + "-" + desc);
+		}).flatMap(Function.identity());
 		entityFeatureDescs.forEach(resultBuilder);
 		return resultBuilder.build();
 	}
