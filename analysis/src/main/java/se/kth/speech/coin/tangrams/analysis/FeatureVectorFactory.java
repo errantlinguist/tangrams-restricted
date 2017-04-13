@@ -283,8 +283,7 @@ final class FeatureVectorFactory implements Function<Segment, double[][]> {
 
 		final float uttEndMills = utt.endTime * SEGMENT_TIME_TO_MILLS_FACTOR;
 		final Timestamp uttEndTimestamp = TimestampArithmetic.createOffsetTimestamp(gameStartTime, uttEndMills);
-		final NavigableMap<Timestamp, List<Event>> eventsDuringUtt = events.tailMap(uttStartTimestamp, true)
-				.headMap(uttEndTimestamp, true);
+		final NavigableMap<Timestamp, List<Event>> eventsDuringUtt = events.subMap(uttStartTimestamp, true, uttEndTimestamp, true);
 		final List<String> tokenForms = utt.tokens;
 		if (!eventsDuringUtt.isEmpty()) {
 			final List<Event> allEventsDuringUtt = eventsDuringUtt.values().stream().flatMap(Collection::stream)
