@@ -76,7 +76,7 @@ public final class VocabularyFactory {
 		// meaning that a feature with a given index will always have the
 		// same meaning
 		final NavigableSet<String> result = new TreeSet<>(collator);
-		LOGGER.info("Reading word list at \"{}\".", vocabResourceLoc);
+		LOGGER.debug("Reading word list at \"{}\".", vocabResourceLoc);
 		try (final BufferedReader reader = new BufferedReader(new InputStreamReader(vocabResourceLoc.openStream()))) {
 			for (String line = reader.readLine(); line != null; line = reader.readLine()) {
 				// Remove any extra whitespace
