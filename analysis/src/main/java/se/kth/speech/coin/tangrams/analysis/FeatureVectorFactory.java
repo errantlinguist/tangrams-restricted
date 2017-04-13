@@ -60,19 +60,19 @@ final class FeatureVectorFactory implements Function<Segment, double[][]> {
 	 *      pp. 1259&ndash;1267. 2010.</a>
 	 *
 	 */
-	private enum ActionHistoryFeature {
+	private enum ActionFeature {
 		LAST_MOVE_SUBMISSION_DISTANCE, LAST_SPEAKING_PLAYER_MOVE_SUBMISSION_DISTANCE, LAST_SUBMITTED_EVENT_TYPE;
 
 		private static final List<GameManagementEvent> EVENT_TYPE_FEATURE_ORDERING;
 
 		private static final Object2DoubleMap<GameManagementEvent> EVENT_TYPE_FEATURE_VALS;
 
-		private static final List<ActionHistoryFeature> ORDERING;
+		private static final List<ActionFeature> ORDERING;
 
 		static {
 			ORDERING = Arrays.asList(LAST_MOVE_SUBMISSION_DISTANCE, LAST_SPEAKING_PLAYER_MOVE_SUBMISSION_DISTANCE,
 					LAST_SUBMITTED_EVENT_TYPE);
-			assert ORDERING.size() == ActionHistoryFeature.values().length;
+			assert ORDERING.size() == ActionFeature.values().length;
 		}
 
 		static {
@@ -107,12 +107,12 @@ final class FeatureVectorFactory implements Function<Segment, double[][]> {
 		}
 
 		private static int getTotalFeatureCount() {
-			return ActionHistoryFeature.values().length;
+			return ActionFeature.values().length;
 		}
 
 		private static int setVals(final double[] vals, int currentFeatureIdx, final GameStateChangeData gameData,
 				final Timestamp time, final String speakingPlayerId) {
-			for (final ActionHistoryFeature feature : ORDERING) {
+			for (final ActionFeature feature : ORDERING) {
 				switch (feature) {
 				case LAST_MOVE_SUBMISSION_DISTANCE: {
 					// FIXME: Distance just keeps increasing
@@ -266,7 +266,7 @@ final class FeatureVectorFactory implements Function<Segment, double[][]> {
 		this.sourceIdPlayerIds = sourceIdPlayerIds;
 		this.playerStateChangeData = playerStateChangeData;
 
-		nonGameStateFeatureCount = ActionHistoryFeature.getTotalFeatureCount();
+		nonGameStateFeatureCount = ActionFeature.getTotalFeatureCount();
 		gameStateFeatureVectorFactory = new GameStateFeatureVectorFactory(playerStateChangeData.values().size(),
 				nonGameStateFeatureCount);
 	}
@@ -284,7 +284,7 @@ final class FeatureVectorFactory implements Function<Segment, double[][]> {
 	public Stream<String> createFeatureDescriptions(final GameStateDescription initialState) {
 		final Stream<String> gameStateFeatureDescs = gameStateFeatureVectorFactory
 				.createFeatureDescriptions(initialState);
-		final Stream<String> playerFeatureDescs = ActionHistoryFeature.ORDERING.stream().map(Enum::toString);
+		final Stream<String> playerFeatureDescs = ActionFeature.ORDERING.stream().map(Enum::toString);
 		return Stream.concat(gameStateFeatureDescs, playerFeatureDescs);
 	}
 
@@ -316,7 +316,7 @@ final class FeatureVectorFactory implements Function<Segment, double[][]> {
 
 		final double[] result = gameStateFeatureVectorFactory.apply(gameStateChangeData, uttStartTimestamp);
 		int currentFeatureIdx = result.length - nonGameStateFeatureCount;
-		currentFeatureIdx = ActionHistoryFeature.setVals(result, currentFeatureIdx, gameStateChangeData,
+		currentFeatureIdx = ActionFeature.setVals(result, currentFeatureIdx, gameStateChangeData,
 				uttStartTimestamp, playerId);
 		// TODO: Update e.g. piece position and selection features, player role
 		// feature
