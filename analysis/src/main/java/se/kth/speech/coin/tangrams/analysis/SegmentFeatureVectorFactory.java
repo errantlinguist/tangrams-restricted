@@ -383,11 +383,11 @@ final class SegmentFeatureVectorFactory implements Function<Segment, Stream<doub
 		if (!eventsDuringUtt.isEmpty()) {
 			final List<Event> allEventsDuringUtt = eventsDuringUtt.values().stream().flatMap(Collection::stream)
 					.collect(Collectors.toList());
-			if (LOGGER.isWarnEnabled()) {
+			if (LOGGER.isDebugEnabled()) {
 				final String delim = System.lineSeparator() + '\t';
 				final String uttRepr = allEventsDuringUtt.stream().map(Event::toString)
 						.collect(Collectors.joining(delim));
-				LOGGER.warn("Found {} event(s) during utterance \"{}\" subsequence: \"{}\"" + delim + "{}",
+				LOGGER.debug("Found {} event(s) during utterance \"{}\" subsequence: \"{}\"" + delim + "{}",
 						new Object[] { allEventsDuringUtt.size(), utt.getSegmentId(),
 								tokenForms.stream().collect(Collectors.joining(" ")), uttRepr });
 			}
