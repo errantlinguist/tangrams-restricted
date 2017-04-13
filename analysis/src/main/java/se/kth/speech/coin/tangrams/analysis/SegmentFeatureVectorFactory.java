@@ -248,25 +248,6 @@ final class SegmentFeatureVectorFactory implements Function<Segment, Stream<doub
 		}
 	}
 
-	private static class TimestampedUtterance {
-
-		private final float endTime;
-
-		private final String segmentId;
-
-		private final float startTime;
-
-		private final List<String> tokens;
-
-		private TimestampedUtterance(final String segmentId, final List<String> tokens, final float startTime,
-				final float endTime) {
-			this.segmentId = segmentId;
-			this.tokens = tokens;
-			this.startTime = startTime;
-			this.endTime = endTime;
-		}
-	}
-
 	private static final float DEFAULT_MIN_SEGMENT_SPACING;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SegmentFeatureVectorFactory.class);
@@ -306,7 +287,7 @@ final class SegmentFeatureVectorFactory implements Function<Segment, Stream<doub
 					// If there was a contiguous sequence of terminal tokens
 					// preceding this segment, finish building it
 					if (!currentTokenSeq.isEmpty()) {
-						final float nextUttStartTime = childUtts.get(0).startTime;
+						final float nextUttStartTime = childUtts.get(0).getStartTime();
 						result.add(createTimestampedUtterance(parentSegmentId, currentTokenSeq, prevUttEndTime,
 								nextUttStartTime));
 						currentTokenSeq = new ArrayList<>();
@@ -314,7 +295,7 @@ final class SegmentFeatureVectorFactory implements Function<Segment, Stream<doub
 					// Add the newly-created child utterances after adding the
 					// now-completed terminal sequence
 					result.addAll(childUtts);
-					prevUttEndTime = childUtts.get(childUtts.size() - 1).endTime;
+					prevUttEndTime = childUtts.get(childUtts.size() - 1).getEndTime();
 				} else if (child instanceof T) {
 					currentTokenSeq.add((T) child);
 				} else {
@@ -390,15 +371,15 @@ final class SegmentFeatureVectorFactory implements Function<Segment, Stream<doub
 	private double[] createFeatureVector(final TimestampedUtterance utt, final String playerId) {
 		final GameStateChangeData gameStateChangeData = playerStateChangeData.get(playerId);
 		final NavigableMap<Timestamp, List<Event>> events = gameStateChangeData.getEvents();
-		final float uttStartMills = utt.startTime * SEGMENT_TIME_TO_MILLS_FACTOR;
+		final float uttStartMills = utt.getStartTime() * SEGMENT_TIME_TO_MILLS_FACTOR;
 		final Timestamp gameStartTime = gameStateChangeData.getStartTime();
 		final Timestamp uttStartTimestamp = TimestampArithmetic.createOffsetTimestamp(gameStartTime, uttStartMills);
 
-		final float uttEndMills = utt.endTime * SEGMENT_TIME_TO_MILLS_FACTOR;
+		final float uttEndMills = utt.getEndTime() * SEGMENT_TIME_TO_MILLS_FACTOR;
 		final Timestamp uttEndTimestamp = TimestampArithmetic.createOffsetTimestamp(gameStartTime, uttEndMills);
 		final NavigableMap<Timestamp, List<Event>> eventsDuringUtt = events.subMap(uttStartTimestamp, true,
 				uttEndTimestamp, true);
-		final List<String> tokenForms = utt.tokens;
+		final List<String> tokenForms = utt.getTokens();
 		if (!eventsDuringUtt.isEmpty()) {
 			final List<Event> allEventsDuringUtt = eventsDuringUtt.values().stream().flatMap(Collection::stream)
 					.collect(Collectors.toList());
@@ -407,7 +388,7 @@ final class SegmentFeatureVectorFactory implements Function<Segment, Stream<doub
 				final String uttRepr = allEventsDuringUtt.stream().map(Event::toString)
 						.collect(Collectors.joining(delim));
 				LOGGER.warn("Found {} event(s) during utterance \"{}\" subsequence: \"{}\"" + delim + "{}",
-						new Object[] { allEventsDuringUtt.size(), utt.segmentId,
+						new Object[] { allEventsDuringUtt.size(), utt.getSegmentId(),
 								tokenForms.stream().collect(Collectors.joining(" ")), uttRepr });
 			}
 			// TODO: estimate partitions for utterance: By phones?
