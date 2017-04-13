@@ -20,7 +20,7 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -44,6 +44,7 @@ import se.kth.speech.coin.tangrams.iristk.EventSubmittingPlayerMatcher;
 import se.kth.speech.coin.tangrams.iristk.EventTypeMatcher;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
+import se.kth.speech.coin.tangrams.iristk.events.Move;
 import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
 import se.kth.speech.hat.xsd.Transcription.T;
 
@@ -62,7 +63,7 @@ final class FeatureVectorFactory implements Function<Segment, double[][]> {
 	 *
 	 */
 	private enum ActionFeature {
-		LAST_MOVE_SUBMISSION_DISTANCE, LAST_SPEAKING_PLAYER_MOVE_SUBMISSION_DISTANCE, LAST_SUBMITTED_EVENT_TYPE;
+		LAST_MOVE_SUBMISSION_DISTANCE, LAST_SPEAKING_PLAYER_MOVE_SUBMISSION_DISTANCE, LAST_SUBMITTED_EVENT_TYPE, SELECTED_ENTITY;
 
 		private static final List<GameManagementEvent> EVENT_TYPE_FEATURE_ORDERING;
 
@@ -71,8 +72,8 @@ final class FeatureVectorFactory implements Function<Segment, double[][]> {
 		private static final List<ActionFeature> ORDERING;
 
 		static {
-			ORDERING = Arrays.asList(LAST_MOVE_SUBMISSION_DISTANCE, LAST_SPEAKING_PLAYER_MOVE_SUBMISSION_DISTANCE,
-					LAST_SUBMITTED_EVENT_TYPE);
+			ORDERING = Arrays.asList(SELECTED_ENTITY, LAST_MOVE_SUBMISSION_DISTANCE,
+					LAST_SPEAKING_PLAYER_MOVE_SUBMISSION_DISTANCE, LAST_SUBMITTED_EVENT_TYPE);
 			assert ORDERING.size() == ActionFeature.values().length;
 		}
 
@@ -122,7 +123,7 @@ final class FeatureVectorFactory implements Function<Segment, double[][]> {
 					// Look for the last time a move was submitted, iterating
 					// backwards
 					final Predicate<Event> lastMoveSubmissionMatcher = new EventTypeMatcher(
-							Collections.singleton(GameManagementEvent.NEXT_TURN_REQUEST));
+							EnumSet.of(GameManagementEvent.NEXT_TURN_REQUEST));
 					final int lastMoveSubmissionDistance = findNearestEventDistance(
 							timedEventsBeforeUtt.descendingMap().entrySet(), lastMoveSubmissionMatcher);
 					vals[currentFeatureIdx] = lastMoveSubmissionDistance;
@@ -135,7 +136,7 @@ final class FeatureVectorFactory implements Function<Segment, double[][]> {
 					// Look for the last time the speaking player submitted a
 					// move, iterating backwards
 					final Predicate<Event> lastMoveSubmissionByPlayerMatcher = new EventTypeMatcher(
-							Collections.singleton(GameManagementEvent.NEXT_TURN_REQUEST))
+							EnumSet.of(GameManagementEvent.NEXT_TURN_REQUEST))
 									.and(new EventSubmittingPlayerMatcher(speakingPlayerId));
 					final int lastMoveSubmissionDistance = findNearestEventDistance(
 							timedEventsBeforeUtt.descendingMap().entrySet(), lastMoveSubmissionByPlayerMatcher);
@@ -156,6 +157,30 @@ final class FeatureVectorFactory implements Function<Segment, double[][]> {
 					final GameManagementEvent lastEventType = lastEventSubmittedByPlayer.isPresent()
 							? GameManagementEvent.getEventType(lastEventSubmittedByPlayer.get()) : null;
 					final double val = EVENT_TYPE_FEATURE_VALS.get(lastEventType);
+					vals[currentFeatureIdx] = val;
+					break;
+				}
+				case SELECTED_ENTITY: {
+					final NavigableMap<Timestamp, List<Event>> timedEventsBeforeUtt = gameData.getEvents().headMap(time,
+							true);
+					final Stream<Event> eventsDescTime = timedEventsBeforeUtt.descendingMap().values().stream()
+							.map(Lists::reverse).flatMap(List::stream);
+					final String moveAttrName = GameManagementEvent.Attribute.MOVE.toString();
+					final Optional<Event> lastSelectionEvent = eventsDescTime.filter(event -> event.has(moveAttrName))
+							.findFirst();
+					// TODO: This will break if the entity IDs are not valid
+					// numeric values; Generalize so that the strings are
+					// treated as ordinal values (e.g. "1" -> first, "2" ->
+					// second, etc.)
+					final double val;
+					if (lastSelectionEvent.isPresent()) {
+						final Event event = lastSelectionEvent.get();
+						final Move move = (Move) event.get(moveAttrName);
+						final Integer entityId = move.getPieceId();
+						val = entityId.doubleValue();
+					} else {
+						val = -1.0;
+					}
 					vals[currentFeatureIdx] = val;
 					break;
 				}
