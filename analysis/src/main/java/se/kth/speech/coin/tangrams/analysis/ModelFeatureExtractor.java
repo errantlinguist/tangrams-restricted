@@ -152,7 +152,7 @@ public final class ModelFeatureExtractor {
 					final String gameId = playerGameIdIntersection.iterator().next();
 					final Map<String, GameStateChangeData> playerStateChangeData = playerGameStateChangeData.columnMap()
 							.get(gameId);
-					final FeatureVectorFactory featureVectorFactory = new FeatureVectorFactory(sourceIdPlayerIds,
+					final SegmentFeatureVectorFactory featureVectorFactory = new SegmentFeatureVectorFactory(sourceIdPlayerIds,
 							playerStateChangeData);
 
 					final Iterator<GameStateDescription> gameDescs = playerGameStateChangeData.values().stream()

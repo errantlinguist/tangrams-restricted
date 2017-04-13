@@ -52,7 +52,7 @@ import se.kth.speech.coin.tangrams.iristk.events.Move;
 import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
 import se.kth.speech.hat.xsd.Transcription.T;
 
-final class FeatureVectorFactory implements Function<Segment, double[][]> {
+final class SegmentFeatureVectorFactory implements Function<Segment, double[][]> {
 
 	/**
 	 *
@@ -271,7 +271,7 @@ final class FeatureVectorFactory implements Function<Segment, double[][]> {
 
 	private static final float DEFAULT_MIN_SEGMENT_SPACING;
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(FeatureVectorFactory.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(SegmentFeatureVectorFactory.class);
 
 	private static final int SEGMENT_TIME_TO_MILLS_FACTOR;
 
@@ -362,7 +362,7 @@ final class FeatureVectorFactory implements Function<Segment, double[][]> {
 
 	private final Map<String, String> sourceIdPlayerIds;
 
-	public FeatureVectorFactory(final Map<String, String> sourceIdPlayerIds,
+	public SegmentFeatureVectorFactory(final Map<String, String> sourceIdPlayerIds,
 			final Map<String, GameStateChangeData> playerStateChangeData) {
 		this.sourceIdPlayerIds = sourceIdPlayerIds;
 		this.playerStateChangeData = playerStateChangeData;
