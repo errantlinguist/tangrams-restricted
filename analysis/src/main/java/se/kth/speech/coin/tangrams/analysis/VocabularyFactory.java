@@ -144,7 +144,7 @@ public final class VocabularyFactory {
 							result = deserializeWordList(cachedVocabPath, collator);
 						} catch (ClassCastException | ClassNotFoundException e) {
 							LOGGER.warn(String.format(
-									"An error occurred while casting the deserialized data at \"%s\"; Creating a new word list from scratch.",
+									"An error occurred while casting the data deserialized from \"%s\"; Creating a new word list from scratch.",
 									cachedVocabPath), e);
 							result = createWordList(vocabResourceLoc, collator, normalizer);
 							serializeWordList(result, cachedVocabPath);
