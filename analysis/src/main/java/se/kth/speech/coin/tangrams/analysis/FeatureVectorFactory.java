@@ -20,15 +20,17 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.EnumMap;
 import java.util.EnumSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -63,7 +65,7 @@ final class FeatureVectorFactory implements Function<Segment, double[][]> {
 	 *
 	 */
 	private enum ActionFeature {
-		LAST_MOVE_SUBMISSION_DISTANCE, LAST_SPEAKING_PLAYER_MOVE_SUBMISSION_DISTANCE, LAST_SUBMITTED_EVENT_TYPE, SELECTED_ENTITY;
+		LAST_SUBMITTED_EVENT_TYPE, SELECTED_ENTITY;
 
 		private static final List<GameManagementEvent> EVENT_TYPE_FEATURE_ORDERING;
 
@@ -72,8 +74,7 @@ final class FeatureVectorFactory implements Function<Segment, double[][]> {
 		private static final List<ActionFeature> ORDERING;
 
 		static {
-			ORDERING = Arrays.asList(SELECTED_ENTITY, LAST_MOVE_SUBMISSION_DISTANCE,
-					LAST_SPEAKING_PLAYER_MOVE_SUBMISSION_DISTANCE, LAST_SUBMITTED_EVENT_TYPE);
+			ORDERING = Arrays.asList(SELECTED_ENTITY, LAST_SUBMITTED_EVENT_TYPE);
 			assert ORDERING.size() == ActionFeature.values().length;
 		}
 
@@ -88,24 +89,8 @@ final class FeatureVectorFactory implements Function<Segment, double[][]> {
 			EVENT_TYPE_FEATURE_VALS.put(null, -1.0);
 		}
 
-		private static int findNearestEventDistance(
-				final Iterable<? extends Entry<Timestamp, ? extends List<? extends Event>>> timedEventLists,
-				final Predicate<? super Event> eventMatcher) {
-			int result = -1;
-			int currentDistance = 0;
-			for (final Entry<Timestamp, ? extends List<? extends Event>> timedEventList : timedEventLists) {
-				final List<? extends Event> eventsReversed = Lists.reverse(timedEventList.getValue());
-				LOGGER.debug("Checking {} event(s) at time \"{}\".", eventsReversed.size(), timedEventList.getKey());
-				for (final Event event : eventsReversed) {
-					if (eventMatcher.test(event)) {
-						LOGGER.debug("Found matching event at \"{}\": {}", timedEventList.getKey(), event);
-						result = currentDistance;
-						break;
-					}
-					currentDistance++;
-				}
-			}
-			return result;
+		private static Stream<String> createFeatureDescriptions() {
+			return ActionFeature.ORDERING.stream().map(Enum::toString);
 		}
 
 		private static int getTotalFeatureCount() {
@@ -116,33 +101,6 @@ final class FeatureVectorFactory implements Function<Segment, double[][]> {
 				final Timestamp time, final String speakingPlayerId) {
 			for (final ActionFeature feature : ORDERING) {
 				switch (feature) {
-				case LAST_MOVE_SUBMISSION_DISTANCE: {
-					// FIXME: Distance just keeps increasing
-					final NavigableMap<Timestamp, List<Event>> timedEventsBeforeUtt = gameData.getEvents().headMap(time,
-							true);
-					// Look for the last time a move was submitted, iterating
-					// backwards
-					final Predicate<Event> lastMoveSubmissionMatcher = new EventTypeMatcher(
-							EnumSet.of(GameManagementEvent.NEXT_TURN_REQUEST));
-					final int lastMoveSubmissionDistance = findNearestEventDistance(
-							timedEventsBeforeUtt.descendingMap().entrySet(), lastMoveSubmissionMatcher);
-					vals[currentFeatureIdx] = lastMoveSubmissionDistance;
-					break;
-				}
-				case LAST_SPEAKING_PLAYER_MOVE_SUBMISSION_DISTANCE: {
-					// FIXME: Distance just keeps increasing
-					final NavigableMap<Timestamp, List<Event>> timedEventsBeforeUtt = gameData.getEvents().headMap(time,
-							true);
-					// Look for the last time the speaking player submitted a
-					// move, iterating backwards
-					final Predicate<Event> lastMoveSubmissionByPlayerMatcher = new EventTypeMatcher(
-							EnumSet.of(GameManagementEvent.NEXT_TURN_REQUEST))
-									.and(new EventSubmittingPlayerMatcher(speakingPlayerId));
-					final int lastMoveSubmissionDistance = findNearestEventDistance(
-							timedEventsBeforeUtt.descendingMap().entrySet(), lastMoveSubmissionByPlayerMatcher);
-					vals[currentFeatureIdx] = lastMoveSubmissionDistance;
-					break;
-				}
 				case LAST_SUBMITTED_EVENT_TYPE: {
 					final NavigableMap<Timestamp, List<Event>> timedEventsBeforeUtt = gameData.getEvents().headMap(time,
 							true);
@@ -163,8 +121,7 @@ final class FeatureVectorFactory implements Function<Segment, double[][]> {
 				case SELECTED_ENTITY: {
 					final NavigableMap<Timestamp, List<Event>> timedEventsBeforeUtt = gameData.getEvents().headMap(time,
 							true);
-					final Stream<Event> eventsDescTime = timedEventsBeforeUtt.descendingMap().values().stream()
-							.map(Lists::reverse).flatMap(List::stream);
+					final Stream<Event> eventsDescTime = getValuesDescendingOrder(timedEventsBeforeUtt);
 					final String moveAttrName = GameManagementEvent.Attribute.MOVE.toString();
 					final Optional<Event> lastSelectionEvent = eventsDescTime.filter(event -> event.has(moveAttrName))
 							.findFirst();
@@ -189,6 +146,103 @@ final class FeatureVectorFactory implements Function<Segment, double[][]> {
 				}
 				}
 				currentFeatureIdx++;
+			}
+			return currentFeatureIdx;
+		}
+	}
+
+	/**
+	 *
+	 * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
+	 * @since 13 Apr 2017
+	 * @see <a href="http://www.aclweb.org/anthology/P/P10/P10-1128.pdf">Ryu
+	 *      Iida, Shumpei Kobayashi, Takenobu Tokunaga. &ldquo;Incorporating
+	 *      Extra-linguistic Information into Reference Resolution in
+	 *      Collaborative Task Dialogue&rdquo;. The 48<sup>th</sup> Annual
+	 *      Meeting of the Association for Computational Linguistics (ACL 2010),
+	 *      pp. 1259&ndash;1267. 2010.</a>
+	 *
+	 */
+	private enum EventHistoryFeature {
+		LAST_OCCURRENCE_DIST, LAST_SUBMISSION_BY_SPEAKER_DIST;
+
+		private static final List<GameManagementEvent> EVENT_TYPE_FEATURE_ORDERING;
+
+		private static final Object2DoubleMap<GameManagementEvent> EVENT_TYPE_FEATURE_VALS;
+
+		private static final Map<GameManagementEvent, Predicate<Event>> EVENT_TYPE_MATCHERS;
+
+		private static final List<EventHistoryFeature> ORDERING;
+
+		static {
+			ORDERING = Arrays.asList(LAST_OCCURRENCE_DIST, LAST_SUBMISSION_BY_SPEAKER_DIST);
+			assert ORDERING.size() == EventHistoryFeature.values().length;
+		}
+
+		static {
+			EVENT_TYPE_FEATURE_ORDERING = Arrays.asList(GameManagementEvent.COMPLETED_TURN_REQUEST,
+					GameManagementEvent.GAME_READY_RESPONSE, GameManagementEvent.NEXT_TURN_REQUEST,
+					GameManagementEvent.PLAYER_JOIN_REQUEST, GameManagementEvent.PLAYER_JOIN_RESPONSE,
+					GameManagementEvent.SELECTION_REJECTION, GameManagementEvent.SELECTION_REQUEST);
+			assert EVENT_TYPE_FEATURE_ORDERING.size() == GameManagementEvent.values().length;
+			final Function<GameManagementEvent, Predicate<Event>> eventTypeMatcherFactory = eventType -> new EventTypeMatcher(
+					EnumSet.of(eventType));
+			EVENT_TYPE_MATCHERS = new EnumMap<>(GameManagementEvent.class);
+			Arrays.stream(GameManagementEvent.values())
+					.forEach(eventType -> EVENT_TYPE_MATCHERS.put(eventType, eventTypeMatcherFactory.apply(eventType)));
+			EVENT_TYPE_FEATURE_VALS = new Object2DoubleOpenHashMap<>(EVENT_TYPE_FEATURE_ORDERING.size() + 1);
+			FeatureMaps.putOrdinalFeatureVals(EVENT_TYPE_FEATURE_VALS, EVENT_TYPE_FEATURE_ORDERING);
+			EVENT_TYPE_FEATURE_VALS.put(null, -1.0);
+		}
+
+		private static Stream<String> createFeatureDescriptions() {
+			final int eventTypeCount = GameManagementEvent.values().length;
+			return IntStream.range(0, eventTypeCount).mapToObj(eventId -> {
+				final Stream<String> baseFeatureDescs = EventHistoryFeature.ORDERING.stream().map(Enum::toString);
+				return baseFeatureDescs.map(desc -> "EVT_" + eventId + "-" + desc);
+			}).flatMap(Function.identity());
+		}
+
+		private static int getTotalFeatureCount() {
+			final int eventTypeCount = GameManagementEvent.values().length;
+			return EventHistoryFeature.values().length * eventTypeCount;
+		}
+
+		private static int setVals(final double[] vals, int currentFeatureIdx, final GameStateChangeData gameData,
+				final Timestamp time, final String speakingPlayerId) {
+			for (final GameManagementEvent eventType : EVENT_TYPE_FEATURE_ORDERING) {
+				final Predicate<Event> eventTypeMatcher = EVENT_TYPE_MATCHERS.get(eventType);
+				for (final EventHistoryFeature feature : ORDERING) {
+					switch (feature) {
+					case LAST_OCCURRENCE_DIST: {
+						final NavigableMap<Timestamp, List<Event>> timedEventsBeforeUtt = gameData.getEvents()
+								.headMap(time, true);
+						// Look for the last time the event was seen (iterating
+						// backwards)
+						final Stream<Event> eventsDescTime = getValuesDescendingOrder(timedEventsBeforeUtt);
+						final int lastOccurrenceDist = findFirstMatchingDistance(eventsDescTime, eventTypeMatcher);
+						vals[currentFeatureIdx] = lastOccurrenceDist;
+						break;
+					}
+					case LAST_SUBMISSION_BY_SPEAKER_DIST: {
+						final NavigableMap<Timestamp, List<Event>> timedEventsBeforeUtt = gameData.getEvents()
+								.headMap(time, true);
+						// Look for the last time the event submitted by the
+						// speaking player (iterating
+						// backwards)
+						final Predicate<Event> matcher = eventTypeMatcher
+								.and(new EventSubmittingPlayerMatcher(speakingPlayerId));
+						final Stream<Event> eventsDescTime = getValuesDescendingOrder(timedEventsBeforeUtt);
+						final int lastOccurrenceDist = findFirstMatchingDistance(eventsDescTime, matcher);
+						vals[currentFeatureIdx] = lastOccurrenceDist;
+						break;
+					}
+					default: {
+						throw new AssertionError("Missing enum-handling logic.");
+					}
+					}
+					currentFeatureIdx++;
+				}
 			}
 			return currentFeatureIdx;
 		}
@@ -279,6 +333,25 @@ final class FeatureVectorFactory implements Function<Segment, double[][]> {
 		return result;
 	}
 
+	private static <E> int findFirstMatchingDistance(final Stream<E> elems, final Predicate<? super E> matcher) {
+		int result = -1;
+		int currentDist = 0;
+		for (final Iterator<E> elemIter = elems.iterator(); elemIter.hasNext();) {
+			final E elem = elemIter.next();
+			if (matcher.test(elem)) {
+				LOGGER.debug("Found matching element: {}", elem);
+				result = currentDist;
+				break;
+			}
+			currentDist++;
+		}
+		return result;
+	}
+
+	private static <V> Stream<V> getValuesDescendingOrder(final NavigableMap<?, ? extends List<? extends V>> map) {
+		return map.descendingMap().values().stream().map(Lists::reverse).flatMap(List::stream);
+	}
+
 	private final GameStateFeatureVectorFactory gameStateFeatureVectorFactory;
 
 	private final int nonGameStateFeatureCount;
@@ -292,7 +365,7 @@ final class FeatureVectorFactory implements Function<Segment, double[][]> {
 		this.sourceIdPlayerIds = sourceIdPlayerIds;
 		this.playerStateChangeData = playerStateChangeData;
 
-		nonGameStateFeatureCount = ActionFeature.getTotalFeatureCount();
+		nonGameStateFeatureCount = ActionFeature.getTotalFeatureCount() + EventHistoryFeature.getTotalFeatureCount();
 		gameStateFeatureVectorFactory = new GameStateFeatureVectorFactory(playerStateChangeData.values().size(),
 				nonGameStateFeatureCount);
 	}
@@ -308,10 +381,11 @@ final class FeatureVectorFactory implements Function<Segment, double[][]> {
 	}
 
 	public Stream<String> createFeatureDescriptions(final GameStateDescription initialState) {
-		final Stream<String> gameStateFeatureDescs = gameStateFeatureVectorFactory
-				.createFeatureDescriptions(initialState);
-		final Stream<String> playerFeatureDescs = ActionFeature.ORDERING.stream().map(Enum::toString);
-		return Stream.concat(gameStateFeatureDescs, playerFeatureDescs);
+		final Stream.Builder<String> resultBuilder = Stream.builder();
+		gameStateFeatureVectorFactory.createFeatureDescriptions(initialState).forEachOrdered(resultBuilder);
+		ActionFeature.createFeatureDescriptions().forEachOrdered(resultBuilder);
+		EventHistoryFeature.createFeatureDescriptions().forEachOrdered(resultBuilder);
+		return resultBuilder.build();
 	}
 
 	private double[] createFeatureVector(final TimestampedUtterance utt, final String playerId) {
@@ -344,6 +418,8 @@ final class FeatureVectorFactory implements Function<Segment, double[][]> {
 		int currentFeatureIdx = result.length - nonGameStateFeatureCount;
 		currentFeatureIdx = ActionFeature.setVals(result, currentFeatureIdx, gameStateChangeData, uttStartTimestamp,
 				playerId);
+		currentFeatureIdx = EventHistoryFeature.setVals(result, currentFeatureIdx, gameStateChangeData,
+				uttStartTimestamp, playerId);
 		// TODO: Update e.g. piece position and selection features, player role
 		// feature
 		return result;
