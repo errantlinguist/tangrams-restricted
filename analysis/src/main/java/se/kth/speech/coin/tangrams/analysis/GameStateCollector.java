@@ -82,7 +82,7 @@ final class GameStateCollector
 				case GAME_READY_RESPONSE: {
 					final GameStateDescription gameDesc = (GameStateDescription) event
 							.get(GameManagementEvent.Attribute.GAME_STATE.toString());
-					LOGGER.info("Found {} sent at \"{}\".", new Object[] { gameDesc.getClass().getSimpleName(), time });
+					LOGGER.debug("Found {} sent at \"{}\".", new Object[] { gameDesc.getClass().getSimpleName(), time });
 					putInitialState(gameStateChangeData, gameId, time, gameDesc);
 					break;
 				}
