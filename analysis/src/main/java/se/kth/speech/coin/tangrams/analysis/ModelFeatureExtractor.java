@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -171,8 +172,8 @@ public final class ModelFeatureExtractor {
 					final String header = featureDescs.collect(TABLE_ROW_CELL_JOINER);
 
 					final List<Segment> segments = uttAnnots.getSegments().getSegment();
-					final Stream<double[][]> segmentFeatureVectors = segments.stream().map(featureVectorFactory);
-					final Stream<double[]> featureVectors = segmentFeatureVectors.flatMap(Arrays::stream);
+					final Stream<Stream<double[]>> segmentFeatureVectors = segments.stream().map(featureVectorFactory);
+					final Stream<double[]> featureVectors = segmentFeatureVectors.flatMap(Function.identity());
 					try (final PrintWriter out = parseOutfile(cl)) {
 						out.print(header);
 						featureVectors.forEachOrdered(featureVector -> {

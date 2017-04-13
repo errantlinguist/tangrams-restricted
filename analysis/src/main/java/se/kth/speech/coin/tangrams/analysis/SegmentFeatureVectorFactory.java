@@ -50,7 +50,7 @@ import se.kth.speech.coin.tangrams.iristk.events.Move;
 import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
 import se.kth.speech.hat.xsd.Transcription.T;
 
-final class SegmentFeatureVectorFactory implements Function<Segment, double[][]> {
+final class SegmentFeatureVectorFactory implements Function<Segment, Stream<double[]>> {
 
 	/**
 	 *
@@ -371,13 +371,12 @@ final class SegmentFeatureVectorFactory implements Function<Segment, double[][]>
 	}
 
 	@Override
-	public double[][] apply(final Segment segment) {
+	public Stream<double[]> apply(final Segment segment) {
 		final List<TimestampedUtterance> utts = createTimestampedUtterances(segment);
 		final String sourceId = segment.getSource();
 		// Get the player ID associated with the given audio source
 		final String playerId = sourceIdPlayerIds.get(sourceId);
-		final Stream<double[]> featureVectors = utts.stream().map(utt -> createFeatureVector(utt, playerId));
-		return featureVectors.toArray(double[][]::new);
+		return utts.stream().map(utt -> createFeatureVector(utt, playerId));
 	}
 
 	public Stream<String> createFeatureDescriptions(final GameStateDescription initialState) {
