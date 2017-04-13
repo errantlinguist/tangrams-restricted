@@ -128,7 +128,7 @@ final class Utterance {
 	@Override
 	public String toString() {
 		final StringBuilder builder = new StringBuilder();
-		builder.append("TimestampedUtterance [segmentId=");
+		builder.append("Utterance [segmentId=");
 		builder.append(segmentId);
 		builder.append(", startTime=");
 		builder.append(startTime);
