@@ -259,7 +259,7 @@ final class SegmentFeatureVectorFactory implements Function<Segment, Stream<doub
 		DEFAULT_MIN_SEGMENT_SPACING = 1.0f / SEGMENT_TIME_TO_MILLS_FACTOR;
 	}
 
-	private static TimestampedUtterance createTimestampedUtterance(final String segmentId, final List<T> tokens,
+	private static Utterance createTimestampedUtterance(final String segmentId, final List<T> tokens,
 			final float previousUttEndTime, final float nextUttStartTime) {
 		final Float firstTokenStartTime = tokens.get(0).getStart();
 		final float seqStartTime = firstTokenStartTime == null ? previousUttEndTime + DEFAULT_MIN_SEGMENT_SPACING
@@ -269,11 +269,11 @@ final class SegmentFeatureVectorFactory implements Function<Segment, Stream<doub
 				: lastTokenEndTime;
 		final List<String> tokenForms = tokens.stream().map(T::getContent)
 				.collect(Collectors.toCollection(() -> new ArrayList<>(tokens.size())));
-		return new TimestampedUtterance(segmentId, tokenForms, seqStartTime, seqEndTime);
+		return new Utterance(segmentId, tokenForms, seqStartTime, seqEndTime);
 	}
 
-	private static List<TimestampedUtterance> createTimestampedUtterances(final Segment segment) {
-		final List<TimestampedUtterance> result = new ArrayList<>();
+	private static List<Utterance> createTimestampedUtterances(final Segment segment) {
+		final List<Utterance> result = new ArrayList<>();
 		final List<Object> children = segment.getTranscription().getSegmentOrT();
 		final Float initialPrevUttEndTime = segment.getStart();
 		assert initialPrevUttEndTime != null;
@@ -283,7 +283,7 @@ final class SegmentFeatureVectorFactory implements Function<Segment, Stream<doub
 			final String parentSegmentId = segment.getId();
 			for (final Object child : children) {
 				if (child instanceof Segment) {
-					final List<TimestampedUtterance> childUtts = createTimestampedUtterances((Segment) child);
+					final List<Utterance> childUtts = createTimestampedUtterances((Segment) child);
 					// If there was a contiguous sequence of terminal tokens
 					// preceding this segment, finish building it
 					if (!currentTokenSeq.isEmpty()) {
@@ -353,7 +353,7 @@ final class SegmentFeatureVectorFactory implements Function<Segment, Stream<doub
 
 	@Override
 	public Stream<double[]> apply(final Segment segment) {
-		final List<TimestampedUtterance> utts = createTimestampedUtterances(segment);
+		final List<Utterance> utts = createTimestampedUtterances(segment);
 		final String sourceId = segment.getSource();
 		// Get the player ID associated with the given audio source
 		final String playerId = sourceIdPlayerIds.get(sourceId);
@@ -368,7 +368,7 @@ final class SegmentFeatureVectorFactory implements Function<Segment, Stream<doub
 		return resultBuilder.build();
 	}
 
-	private double[] createFeatureVector(final TimestampedUtterance utt, final String playerId) {
+	private double[] createFeatureVector(final Utterance utt, final String playerId) {
 		final GameStateChangeData gameStateChangeData = playerStateChangeData.get(playerId);
 		final NavigableMap<Timestamp, List<Event>> events = gameStateChangeData.getEvents();
 		final float uttStartMills = utt.getStartTime() * SEGMENT_TIME_TO_MILLS_FACTOR;
