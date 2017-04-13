@@ -112,11 +112,11 @@ public final class VocabularyFactory implements Supplier<Vocabulary> {
 		final Collator collator = Collator.getInstance(locale);
 		final Function<String, String> normalizer = str -> str.toLowerCase(locale);
 
-		final String cachedVocabFileName = "words_" + locale.toLanguageTag() + ".ser";
-		final Path cachedVocabPath = CACHE_DIR.resolve(cachedVocabFileName);
-
 		final String vocabResLocStr = PROPS.getProperty("vocabFilePath");
 		final URL vocabResourceLoc = ModelFeatureExtractor.class.getResource(vocabResLocStr);
+		
+		final String cachedVocabFileName = "words_" + locale.toLanguageTag() + ".ser";
+		final Path cachedVocabPath = CACHE_DIR.resolve(cachedVocabFileName);
 
 		NavigableSet<String> result;
 		try {
