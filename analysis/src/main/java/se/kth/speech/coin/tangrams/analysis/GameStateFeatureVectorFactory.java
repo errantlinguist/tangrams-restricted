@@ -192,7 +192,7 @@ final class GameStateFeatureVectorFactory implements BiFunction<GameStateChangeD
 			final NavigableMap<Timestamp, List<Event>> timestampedEvents, final Timestamp time) {
 		final NavigableMap<Timestamp, List<Event>> timestampedEventsToApply = timestampedEvents.headMap(time, true);
 		final Stream<Event> eventsToApply = timestampedEventsToApply.values().stream().flatMap(List::stream);
-		eventsToApply.forEach(event -> applyEvent(model, event));
+		eventsToApply.forEachOrdered(event -> applyEvent(model, event));
 	}
 
 	private final int extraArrayCapacityToAllocate;
@@ -229,12 +229,12 @@ final class GameStateFeatureVectorFactory implements BiFunction<GameStateChangeD
 	public Stream<String> createFeatureDescriptions(final int entityCount) {
 		final Stream.Builder<String> resultBuilder = Stream.builder();
 		final Stream<String> envFeatureDescs = EnvironmentFeature.ORDERING.stream().map(Enum::toString);
-		envFeatureDescs.forEach(resultBuilder);
+		envFeatureDescs.forEachOrdered(resultBuilder);
 		final Stream<String> entityFeatureDescs = IntStream.range(0, entityCount).mapToObj(entityId -> {
 			final Stream<String> baseFeatureDescs = EntityFeature.ORDERING.stream().map(Enum::toString);
 			return baseFeatureDescs.map(desc -> "ENT_" + entityId + "-" + desc);
 		}).flatMap(Function.identity());
-		entityFeatureDescs.forEach(resultBuilder);
+		entityFeatureDescs.forEachOrdered(resultBuilder);
 		return resultBuilder.build();
 	}
 
