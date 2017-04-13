@@ -62,7 +62,7 @@ public final class MatrixStringReprFactory implements Function<Matrix<?>, String
 		final int[] dims = matrix.getDimensions();
 		final Stream.Builder<String> subheaderBuilder = Stream.builder();
 		subheaderBuilder.accept("");
-		IntStream.range(0, dims[1]).mapToObj(Integer::toString).forEach(subheaderBuilder);
+		IntStream.range(0, dims[1]).mapToObj(Integer::toString).forEachOrdered(subheaderBuilder);
 		final String subHeader = TABLE_STRING_REPR_ROW_DELIMITER
 				+ subheaderBuilder.build().collect(TABLE_ROW_CELL_JOINER);
 		final int cellCount = matrix.getValues().size();
