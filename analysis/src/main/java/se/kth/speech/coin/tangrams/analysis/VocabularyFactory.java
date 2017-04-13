@@ -208,7 +208,7 @@ public final class VocabularyFactory implements Supplier<Vocabulary> {
 		final Path cachedVocabPath = CACHE_DIR.resolve(cachedVocabFileName);
 		try {
 			final NavigableSet<String> words = fetchWordList(collator, normalizer, cachedVocabPath);
-			return new Vocabulary(words);
+			return new Vocabulary(words, normalizer);
 		} catch (final IOException e) {
 			throw new UncheckedIOException(e);
 		}
@@ -219,13 +219,6 @@ public final class VocabularyFactory implements Supplier<Vocabulary> {
 	 */
 	public Locale getLocale() {
 		return locale;
-	}
-
-	/**
-	 * @return the normalizer
-	 */
-	public Function<String, String> getNormalizer() {
-		return normalizer;
 	}
 
 }

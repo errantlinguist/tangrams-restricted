@@ -17,6 +17,7 @@
 package se.kth.speech.coin.tangrams.analysis;
 
 import java.util.Set;
+import java.util.function.Function;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -25,14 +26,25 @@ import java.util.Set;
  */
 final class Vocabulary {
 
+	private final Function<? super String, String> normalizer;
+
 	private final Set<String> words;
 
 	/**
 	 * @param words
+	 * @param normalizer
 	 *
 	 */
-	Vocabulary(final Set<String> words) {
+	Vocabulary(final Set<String> words, final Function<? super String, String> normalizer) {
 		this.words = words;
+		this.normalizer = normalizer;
+	}
+
+	/**
+	 * @return the normalizer
+	 */
+	public Function<? super String, String> getNormalizer() {
+		return normalizer;
 	}
 
 	/**
