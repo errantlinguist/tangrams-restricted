@@ -176,7 +176,6 @@ public final class ModelFeatureExtractor {
 					try (PrintWriter out = parseOutfile(cl)) {
 						out.print(header);
 						featureVectors.forEachOrdered(featureVector -> {
-							System.err.println("Length: " + featureVector.length);
 							out.print(TABLE_STRING_REPR_ROW_DELIMITER);
 							final Stream<String> cellVals = Arrays.stream(featureVector).mapToObj(Double::toString);
 							final String row = cellVals.collect(TABLE_ROW_CELL_JOINER);
