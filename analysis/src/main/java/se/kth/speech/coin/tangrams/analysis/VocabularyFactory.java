@@ -108,15 +108,10 @@ public final class VocabularyFactory implements Supplier<Vocabulary> {
 		return result;
 	}
 
-	private static NavigableSet<String> fetchWordList(final Locale locale) throws IOException {
-		final Collator collator = Collator.getInstance(locale);
-		final Function<String, String> normalizer = str -> str.toLowerCase(locale);
-
+	private static NavigableSet<String> fetchWordList(final Collator collator,
+			final Function<String, String> normalizer, final Path cachedVocabPath) throws IOException {
 		final String vocabResLocStr = PROPS.getProperty("vocabFilePath");
 		final URL vocabResourceLoc = ModelFeatureExtractor.class.getResource(vocabResLocStr);
-		
-		final String cachedVocabFileName = "words_" + locale.toLanguageTag() + ".ser";
-		final Path cachedVocabPath = CACHE_DIR.resolve(cachedVocabFileName);
 
 		NavigableSet<String> result;
 		try {
@@ -172,11 +167,9 @@ public final class VocabularyFactory implements Supplier<Vocabulary> {
 				result = createWordList(vocabResourceLoc, collator, normalizer);
 				serializeWordList(result, cachedVocabPath);
 			}
-
 		} catch (final URISyntaxException e) {
 			throw new AssertionError(e);
 		}
-
 		return result;
 	}
 
@@ -192,7 +185,11 @@ public final class VocabularyFactory implements Supplier<Vocabulary> {
 		serializeWordList(new ArrayList<>(words), outfile);
 	}
 
+	private final Collator collator;
+
 	private final Locale locale;
+
+	private final Function<String, String> normalizer;
 
 	public VocabularyFactory() {
 		this(Locale.forLanguageTag(PROPS.getProperty("lang")));
@@ -200,17 +197,35 @@ public final class VocabularyFactory implements Supplier<Vocabulary> {
 
 	private VocabularyFactory(final Locale locale) {
 		this.locale = locale;
+		collator = Collator.getInstance(locale);
+		normalizer = str -> str.toLowerCase(locale);
 	}
 
 	@Override
 	public Vocabulary get() {
 		LOGGER.info("Creating vocabulary for locale \"{}\".", locale);
+		final String cachedVocabFileName = "words_" + locale.toLanguageTag() + ".ser";
+		final Path cachedVocabPath = CACHE_DIR.resolve(cachedVocabFileName);
 		try {
-			final NavigableSet<String> words = fetchWordList(locale);
+			final NavigableSet<String> words = fetchWordList(collator, normalizer, cachedVocabPath);
 			return new Vocabulary(words);
 		} catch (final IOException e) {
 			throw new UncheckedIOException(e);
 		}
+	}
+
+	/**
+	 * @return the locale
+	 */
+	public Locale getLocale() {
+		return locale;
+	}
+
+	/**
+	 * @return the normalizer
+	 */
+	public Function<String, String> getNormalizer() {
+		return normalizer;
 	}
 
 }
