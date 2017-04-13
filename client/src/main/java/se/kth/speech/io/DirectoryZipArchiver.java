@@ -87,8 +87,6 @@ public final class DirectoryZipArchiver implements BiConsumer<Path, Path> {
 										"No file attributes found for file at path \"{}\"; Zipped entry might not have correct metadata.",
 										filePath);
 								entry.setComment("File attributes not available at time of archiving.");
-								entry.setLastModifiedTime(Files.getLastModifiedTime(filePath));
-								entry.setSize(Files.size(filePath));
 							} else {
 								final BasicFileAttributes attrs = attrView.readAttributes();
 								entry.setCreationTime(attrs.creationTime());
