@@ -153,8 +153,9 @@ public final class ModelFeatureExtractor {
 					final String gameId = playerGameIdIntersection.iterator().next();
 					final Map<String, GameStateChangeData> playerStateChangeData = playerGameStateChangeData.columnMap()
 							.get(gameId);
-					final SegmentFeatureVectorFactory featureVectorFactory = new SegmentFeatureVectorFactory(sourceIdPlayerIds,
-							playerStateChangeData);
+
+					final SegmentFeatureVectorFactory featureVectorFactory = new SegmentFeatureVectorFactory(
+							sourceIdPlayerIds, playerStateChangeData);
 
 					final Iterator<GameStateDescription> gameDescs = playerGameStateChangeData.values().stream()
 							.map(GameStateChangeData::getInitialState).iterator();
@@ -228,7 +229,7 @@ public final class ModelFeatureExtractor {
 				EXPECTED_UNIQUE_GAME_COUNT);
 		for (final Entry<String, Path> playerEventLogFilePath : playerEventLogFilePaths) {
 			final String playerId = playerEventLogFilePath.getKey();
-			LOGGER.info("Extracting features for player \"{}\".", playerId);
+			LOGGER.info("Reading session event log for player \"{}\".", playerId);
 			final Path eventLogFile = playerEventLogFilePath.getValue();
 			try (final Stream<String> lines = Files.lines(eventLogFile, LoggingFormats.ENCODING)) {
 				final Map<String, GameStateChangeData> gameStateChangeData = new LoggedGameStateChangeDataParser()
@@ -258,7 +259,7 @@ public final class ModelFeatureExtractor {
 			LOGGER.info("No output file path specified; Writing to standard output.");
 			result = new PrintWriter(System.out);
 		} else {
-			LOGGER.info("Will write features to \"{}\".", outfile);
+			LOGGER.info("Output file path is \"{}\".", outfile);
 			result = new PrintWriter(Files.newBufferedWriter(outfile.toPath(), StandardOpenOption.CREATE));
 		}
 		return result;
