@@ -233,7 +233,7 @@ final class GameStateFeatureVectorFactory implements BiFunction<GameStateChangeD
 		envFeatureDescs.forEach(resultBuilder);
 		final IntFunction<Stream<String>> entityFeatureDescFactory = entityId -> {
 			final Stream<String> entityFeatureDescs = EntityFeature.ORDERING.stream().map(Enum::toString);
-			return entityFeatureDescs.map(desc -> "ENTITY_" + entityId + "-" + desc);
+			return entityFeatureDescs.map(desc -> "ENT_" + entityId + "-" + desc);
 		};
 		final Stream<String> entityFeatureDescs = IntStream.range(0, entityCount).mapToObj(entityFeatureDescFactory)
 				.flatMap(Function.identity());
