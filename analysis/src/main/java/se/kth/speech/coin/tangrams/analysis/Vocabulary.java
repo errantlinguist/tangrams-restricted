@@ -16,6 +16,7 @@
 */
 package se.kth.speech.coin.tangrams.analysis;
 
+import java.util.Locale;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -26,18 +27,29 @@ import java.util.function.Function;
  */
 final class Vocabulary {
 
+	private final Locale locale;
+
 	private final Function<? super String, String> normalizer;
 
 	private final Set<String> words;
 
 	/**
 	 * @param words
+	 * @param locale
 	 * @param normalizer
 	 *
 	 */
-	Vocabulary(final Set<String> words, final Function<? super String, String> normalizer) {
+	Vocabulary(final Set<String> words, final Locale locale, final Function<? super String, String> normalizer) {
 		this.words = words;
+		this.locale = locale;
 		this.normalizer = normalizer;
+	}
+
+	/**
+	 * @return the locale
+	 */
+	public Locale getLocale() {
+		return locale;
 	}
 
 	/**

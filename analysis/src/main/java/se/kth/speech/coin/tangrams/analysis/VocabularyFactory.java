@@ -208,17 +208,10 @@ public final class VocabularyFactory implements Supplier<Vocabulary> {
 		final Path cachedVocabPath = CACHE_DIR.resolve(cachedVocabFileName);
 		try {
 			final NavigableSet<String> words = fetchWordList(collator, normalizer, cachedVocabPath);
-			return new Vocabulary(words, normalizer);
+			return new Vocabulary(words, locale, normalizer);
 		} catch (final IOException e) {
 			throw new UncheckedIOException(e);
 		}
-	}
-
-	/**
-	 * @return the locale
-	 */
-	public Locale getLocale() {
-		return locale;
 	}
 
 }
