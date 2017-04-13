@@ -151,6 +151,7 @@ buildNumber.properties
 .pmd
 
 ## PROJECT-SPECIFIC IGNORE STATEMENTS
+cache/
 log/
 output/
 .settings/
