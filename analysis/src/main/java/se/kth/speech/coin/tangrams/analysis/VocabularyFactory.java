@@ -91,6 +91,7 @@ public final class VocabularyFactory {
 	}
 
 	private static List<String> deserializeWordList(final Path infile) throws IOException, ClassNotFoundException {
+		LOGGER.debug("Reading serialized word list data at \"{}\".", infile);
 		try (ObjectInputStream instream = new ObjectInputStream(Files.newInputStream(infile))) {
 			@SuppressWarnings("unchecked")
 			final List<String> deserialized = (ArrayList<String>) instream.readObject();
