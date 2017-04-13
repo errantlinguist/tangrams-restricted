@@ -48,6 +48,18 @@ import se.kth.speech.hat.xsd.Transcription.T;
 
 final class FeatureVectorFactory implements Function<Segment, double[][]> {
 
+	/**
+	 *
+	 * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
+	 * @since 13 Apr 2017
+	 * @see <a href="http://www.aclweb.org/anthology/P/P10/P10-1128.pdf">Ryu
+	 *      Iida, Shumpei Kobayashi, Takenobu Tokunaga. &ldquo;Incorporating
+	 *      Extra-linguistic Information into Reference Resolution in
+	 *      Collaborative Task Dialogue&rdquo;. The 48<sup>th</sup> Annual
+	 *      Meeting of the Association for Computational Linguistics (ACL 2010),
+	 *      pp.1259-1267. 2010.</a>
+	 *
+	 */
 	private enum ActionHistoryFeature {
 		LAST_MOVE_SUBMISSION_DISTANCE, LAST_SPEAKING_PLAYER_MOVE_SUBMISSION_DISTANCE, LAST_SUBMITTED_EVENT_TYPE;
 
@@ -58,7 +70,8 @@ final class FeatureVectorFactory implements Function<Segment, double[][]> {
 		private static final List<ActionHistoryFeature> ORDERING;
 
 		static {
-			ORDERING = Arrays.asList(LAST_MOVE_SUBMISSION_DISTANCE, LAST_SPEAKING_PLAYER_MOVE_SUBMISSION_DISTANCE, LAST_SUBMITTED_EVENT_TYPE);
+			ORDERING = Arrays.asList(LAST_MOVE_SUBMISSION_DISTANCE, LAST_SPEAKING_PLAYER_MOVE_SUBMISSION_DISTANCE,
+					LAST_SUBMITTED_EVENT_TYPE);
 			assert ORDERING.size() == ActionHistoryFeature.values().length;
 		}
 
@@ -102,10 +115,11 @@ final class FeatureVectorFactory implements Function<Segment, double[][]> {
 			for (final ActionHistoryFeature feature : ORDERING) {
 				switch (feature) {
 				case LAST_MOVE_SUBMISSION_DISTANCE: {
-					//FIXME: Distance just keeps increasing
+					// FIXME: Distance just keeps increasing
 					final NavigableMap<Timestamp, List<Event>> timedEventsBeforeUtt = gameData.getEvents().headMap(time,
 							true);
-					// Look for the last time a move was submitted, iterating backwards
+					// Look for the last time a move was submitted, iterating
+					// backwards
 					final Predicate<Event> lastMoveSubmissionMatcher = new EventTypeMatcher(
 							GameManagementEvent.NEXT_TURN_REQUEST);
 					final int lastMoveSubmissionDistance = findNearestEventDistance(
@@ -114,7 +128,7 @@ final class FeatureVectorFactory implements Function<Segment, double[][]> {
 					break;
 				}
 				case LAST_SPEAKING_PLAYER_MOVE_SUBMISSION_DISTANCE: {
-					//FIXME: Distance just keeps increasing
+					// FIXME: Distance just keeps increasing
 					final NavigableMap<Timestamp, List<Event>> timedEventsBeforeUtt = gameData.getEvents().headMap(time,
 							true);
 					// Look for the last time the speaking player submitted a
@@ -283,7 +297,8 @@ final class FeatureVectorFactory implements Function<Segment, double[][]> {
 
 		final float uttEndMills = utt.endTime * SEGMENT_TIME_TO_MILLS_FACTOR;
 		final Timestamp uttEndTimestamp = TimestampArithmetic.createOffsetTimestamp(gameStartTime, uttEndMills);
-		final NavigableMap<Timestamp, List<Event>> eventsDuringUtt = events.subMap(uttStartTimestamp, true, uttEndTimestamp, true);
+		final NavigableMap<Timestamp, List<Event>> eventsDuringUtt = events.subMap(uttStartTimestamp, true,
+				uttEndTimestamp, true);
 		final List<String> tokenForms = utt.tokens;
 		if (!eventsDuringUtt.isEmpty()) {
 			final List<Event> allEventsDuringUtt = eventsDuringUtt.values().stream().flatMap(Collection::stream)
