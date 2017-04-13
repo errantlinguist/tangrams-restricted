@@ -199,12 +199,12 @@ public final class VocabularyFactory implements Supplier<Vocabulary> {
 	}
 
 	private VocabularyFactory(final Locale locale) {
-		LOGGER.info("Using locale \"{}\".", locale);
 		this.locale = locale;
 	}
 
 	@Override
 	public Vocabulary get() {
+		LOGGER.info("Creating vocabulary for locale \"{}\".", locale);
 		try {
 			final NavigableSet<String> words = fetchWordList(locale);
 			return new Vocabulary(words);
