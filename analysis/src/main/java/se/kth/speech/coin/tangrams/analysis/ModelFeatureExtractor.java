@@ -16,38 +16,21 @@
 */
 package se.kth.speech.coin.tangrams.analysis;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.PrintWriter;
-import java.io.UncheckedIOException;
-import java.net.URISyntaxException;
-import java.net.URL;
 import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
-import java.nio.file.attribute.FileTime;
-import java.text.Collator;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.NavigableSet;
-import java.util.Optional;
-import java.util.Properties;
 import java.util.Set;
-import java.util.TreeMap;
-import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
@@ -68,7 +51,6 @@ import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.github.errantlinguist.ClassProperties;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Table;
@@ -81,7 +63,6 @@ import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
 import se.kth.speech.hat.xsd.Annotation.Tracks.Track;
 import se.kth.speech.hat.xsd.Annotation.Tracks.Track.Sources;
 import se.kth.speech.hat.xsd.Annotation.Tracks.Track.Sources.Source;
-import se.kth.speech.io.FileDataAge;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -120,8 +101,6 @@ public final class ModelFeatureExtractor {
 
 	}
 
-	private static final Path CACHE_DIR;
-
 	private static final int EXPECTED_UNIQUE_GAME_COUNT = 1;
 
 	private static final Pattern LOGGED_EVENT_FILE_NAME_PATTERN = Pattern.compile("events-(.+?)\\.txt");
@@ -136,24 +115,11 @@ public final class ModelFeatureExtractor {
 
 	private static final Options OPTIONS = createOptions();
 
-	private static final Properties PROPS;
-
 	private static final Collector<CharSequence, ?, String> TABLE_ROW_CELL_JOINER;
 
 	private static final String TABLE_STRING_REPR_COL_DELIMITER;
 
 	private static final String TABLE_STRING_REPR_ROW_DELIMITER = System.lineSeparator();
-
-	static {
-		try {
-			PROPS = ClassProperties.load(ModelFeatureExtractor.class);
-			final String cacheDirResLoc = PROPS.getProperty("cacheDir");
-			CACHE_DIR = Paths.get(cacheDirResLoc);
-			LOGGER.debug("Using cache directory \"{}\".", CACHE_DIR);
-		} catch (final IOException e) {
-			throw new UncheckedIOException(e);
-		}
-	}
 
 	static {
 		TABLE_STRING_REPR_COL_DELIMITER = "\t";
@@ -188,8 +154,8 @@ public final class ModelFeatureExtractor {
 					final Map<String, GameStateChangeData> playerStateChangeData = playerGameStateChangeData.columnMap()
 							.get(gameId);
 
-					final NavigableSet<String> vocabTokens = fetchWordList();
-					LOGGER.info("Vocabulary size is {}.", vocabTokens.size());
+					final Vocabulary vocab = new VocabularyFactory().get();
+					LOGGER.info("Vocabulary size is {}.", vocab.size());
 					final SegmentFeatureVectorFactory featureVectorFactory = new SegmentFeatureVectorFactory(
 							sourceIdPlayerIds, playerStateChangeData);
 
@@ -288,114 +254,6 @@ public final class ModelFeatureExtractor {
 		}));
 	}
 
-	private static NavigableSet<String> createWordList(final URL vocabResourceLoc, final Collator collator,
-			final Function<? super String, String> normalizer) throws IOException {
-		// Use a TreeSet so that iteration order is stable across invocations,
-		// meaning that a feature with a given index will always have the
-		// same meaning
-		final NavigableSet<String> result = new TreeSet<>(collator);
-		try (final BufferedReader reader = new BufferedReader(new InputStreamReader(vocabResourceLoc.openStream()))) {
-			for (String line = reader.readLine(); line != null; line = reader.readLine()) {
-				// Remove any extra whitespace
-				line = line.trim();
-				if (!line.isEmpty()) {
-					line = normalizer.apply(line);
-					result.add(line);
-				}
-			}
-		}
-		return result;
-	}
-
-	private static NavigableSet<String> createWordList(final URL vocabResourceLoc, final Locale locale)
-			throws IOException {
-		LOGGER.info("Reading word list at \"{}\".", vocabResourceLoc);
-		final Collator collator = Collator.getInstance(locale);
-		final Function<String, String> normalizer = str -> str.toLowerCase(locale);
-		return createWordList(vocabResourceLoc, collator, normalizer);
-	}
-
-	private static NavigableSet<String> fetchWordList() throws IOException {
-		final Locale locale = Locale.forLanguageTag(PROPS.getProperty("lang"));
-		LOGGER.info("Using locale \"{}\".", locale);
-		return fetchWordList(locale);
-	}
-
-	private static NavigableSet<String> fetchWordList(final Locale locale) throws IOException {
-		final String cachedVocabFileName = locale.toLanguageTag() + ".ser";
-		final Path cachedVocabPath = CACHE_DIR.resolve(cachedVocabFileName);
-
-		final String vocabResLocStr = PROPS.getProperty("vocabFilePath");
-		final URL vocabResourceLoc = ModelFeatureExtractor.class.getResource(vocabResLocStr);
-
-		NavigableSet<String> result;
-		try {
-			final Path vocabFilePath = Paths.get(vocabResourceLoc.toURI());
-			Optional<FileTime> optVocabFilePathAge = Optional.empty();
-			try {
-				optVocabFilePathAge = FileDataAge.getFileDataAge(vocabFilePath);
-			} catch (final IOException e) {
-				LOGGER.warn(String.format(
-						"An I/O error occured while trying to get file attributes for vocab input file \"%s\".",
-						vocabFilePath), e);
-			}
-			if (optVocabFilePathAge.isPresent()) {
-				Optional<FileTime> optCachedVocabPathAge = Optional.empty();
-				try {
-					optCachedVocabPathAge = FileDataAge.getFileDataAge(cachedVocabPath);
-				} catch (final IOException e) {
-					LOGGER.info(
-							"An I/O error occured while trying to get file attributes for cached vocab data file \"{}\".",
-							cachedVocabPath);
-				}
-				if (optCachedVocabPathAge.isPresent()) {
-					// If the input file is older than the cached file, use
-					// the
-					// cached data
-					if (optVocabFilePathAge.get().compareTo(optCachedVocabPathAge.get()) < 0) {
-						try (ObjectInputStream instream = new ObjectInputStream(
-								Files.newInputStream(cachedVocabPath))) {
-							try {
-								@SuppressWarnings("unchecked")
-								final NavigableSet<String> deserialized = (NavigableSet<String>) instream.readObject();
-								result = deserialized;
-							} catch (ClassCastException | ClassNotFoundException e) {
-								LOGGER.warn(
-										"The deserialized data at \"{}\" could not be cast to \"{}\"; Creating a new word list from scratch.",
-										vocabFilePath, NavigableSet.class.getSimpleName());
-								result = createWordList(vocabResourceLoc, locale);
-								serializeWordList(result, cachedVocabPath);
-							}
-						}
-					} else {
-						LOGGER.info(
-								"The input vocab file at \"{}\" is newer than the cached data; Creating a new word list from scratch.",
-								vocabFilePath);
-						result = createWordList(vocabResourceLoc, locale);
-						serializeWordList(result, cachedVocabPath);
-					}
-				} else {
-					LOGGER.info(
-							"Could not get file attributes for cached vocab data file \"{}\"; Creating a new word list from scratch.",
-							cachedVocabPath);
-					result = createWordList(vocabResourceLoc, locale);
-					serializeWordList(result, cachedVocabPath);
-				}
-			} else {
-				LOGGER.warn(
-						"Could not get file attributes for vocab input file \"{}\"; Creating a new word list from scratch.",
-						vocabFilePath);
-				result = createWordList(vocabResourceLoc, locale);
-				serializeWordList(result, cachedVocabPath);
-			}
-
-		} catch (final URISyntaxException e) {
-			throw new AssertionError(e);
-		}
-
-		return result;
-	}
-
 	private static PrintWriter parseOutfile(final CommandLine cl) throws ParseException, IOException {
 		final PrintWriter result;
 		final File outfile = (File) cl.getParsedOptionValue(Parameter.OUTFILE.optName);
@@ -412,31 +270,6 @@ public final class ModelFeatureExtractor {
 	private static void printHelp() {
 		final HelpFormatter formatter = new HelpFormatter();
 		formatter.printHelp(ModelFeatureExtractor.class.getName(), OPTIONS);
-	}
-
-	private static NavigableSet<String> deserializeWordList(Path infile, final Collator collator) throws IOException {
-		NavigableSet<String> result;
-		try (ObjectInputStream instream = new ObjectInputStream(Files.newInputStream(infile))) {
-			@SuppressWarnings("unchecked")
-			final List<String> deserialized = (ArrayList<String>) instream.readObject();
-			return new TreeSet<String>(collator);
-		}
-	}
-
-	private static void serializeWordList(final List<String> words, final Path outfile) throws IOException {
-		Files.createDirectories(CACHE_DIR);
-		try (ObjectOutputStream outstream = new ObjectOutputStream(
-				Files.newOutputStream(outfile, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING))) {
-			outstream.writeObject(words);
-		}
-	}
-
-	private static void serializeWordList(final NavigableSet<String> words, final Path outfile) throws IOException {
-		serializeWordList(new ArrayList<>(words), outfile);
-	}
-
-	public void readLogfile() {
-
 	}
 
 }
