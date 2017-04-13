@@ -300,12 +300,10 @@ final class FeatureVectorFactory implements Function<Segment, double[][]> {
 			// TODO: estimate partitions for utterance: By phones?
 		}
 
-		final double[] gameStateFeatures = gameStateFeatureVectorFactory.apply(gameStateChangeData, uttStartTimestamp);
-		int currentFeatureIdx = gameStateFeatures.length - nonGameStateFeatureCount;
-		currentFeatureIdx = PlayerFeature.setVals(gameStateFeatures, currentFeatureIdx, gameStateChangeData,
+		final double[] result = gameStateFeatureVectorFactory.apply(gameStateChangeData, uttStartTimestamp);
+		int currentFeatureIdx = result.length - nonGameStateFeatureCount;
+		currentFeatureIdx = PlayerFeature.setVals(result, currentFeatureIdx, gameStateChangeData,
 				uttStartTimestamp, playerId);
-
-		final double[] result = Arrays.copyOf(gameStateFeatures, gameStateFeatures.length);
 		// TODO: Update e.g. piece position and selection features, player role
 		// feature
 		return result;
