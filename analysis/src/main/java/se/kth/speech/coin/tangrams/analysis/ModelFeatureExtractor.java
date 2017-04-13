@@ -161,8 +161,7 @@ public final class ModelFeatureExtractor {
 					final GameStateDescription firstGameDesc = gameDescs.next();
 					while (gameDescs.hasNext()) {
 						// Sanity check to make sure that all players have
-						// started
-						// with the same game setup
+						// started with the same game setup
 						final GameStateDescription next = gameDescs.next();
 						if (!firstGameDesc.isEquivalent(next)) {
 							throw new IllegalArgumentException("Found non-equivalent initial states between players.");
