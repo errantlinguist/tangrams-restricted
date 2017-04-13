@@ -171,11 +171,12 @@ public final class ModelFeatureExtractor {
 					final String header = featureDescs.collect(TABLE_ROW_CELL_JOINER);
 
 					final List<Segment> segments = uttAnnots.getSegments().getSegment();
-					final Stream<double[]> featureVectors = segments.stream().map(featureVectorFactory)
-							.flatMap(Arrays::stream);
+					final Stream<double[][]> segmentFeatureVectors = segments.stream().map(featureVectorFactory);
+					final Stream<double[]> featureVectors = segmentFeatureVectors.flatMap(Arrays::stream);
 					try (PrintWriter out = parseOutfile(cl)) {
 						out.print(header);
 						featureVectors.forEachOrdered(featureVector -> {
+							System.err.println("Length: " + featureVector.length);
 							out.print(TABLE_STRING_REPR_ROW_DELIMITER);
 							final Stream<String> cellVals = Arrays.stream(featureVector).mapToObj(Double::toString);
 							final String row = cellVals.collect(TABLE_ROW_CELL_JOINER);
