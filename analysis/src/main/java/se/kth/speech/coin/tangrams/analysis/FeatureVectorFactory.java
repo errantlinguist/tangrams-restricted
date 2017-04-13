@@ -164,7 +164,7 @@ final class FeatureVectorFactory implements Function<Segment, double[][]> {
 	 *
 	 */
 	private enum EventHistoryFeature {
-		LAST_OCCURRENCE_DIST, LAST_SPEAKER_SUB_DIST;
+		LAST_OCC_DIST, LAST_SPEAKER_SUB_DIST;
 
 		private static final List<GameManagementEvent> EVENT_TYPE_FEATURE_ORDERING;
 
@@ -175,7 +175,7 @@ final class FeatureVectorFactory implements Function<Segment, double[][]> {
 		private static final List<EventHistoryFeature> ORDERING;
 
 		static {
-			ORDERING = Arrays.asList(LAST_OCCURRENCE_DIST, LAST_SPEAKER_SUB_DIST);
+			ORDERING = Arrays.asList(LAST_OCC_DIST, LAST_SPEAKER_SUB_DIST);
 			assert ORDERING.size() == EventHistoryFeature.values().length;
 		}
 
@@ -214,7 +214,7 @@ final class FeatureVectorFactory implements Function<Segment, double[][]> {
 				final Predicate<Event> eventTypeMatcher = EVENT_TYPE_MATCHERS.get(eventType);
 				for (final EventHistoryFeature feature : ORDERING) {
 					switch (feature) {
-					case LAST_OCCURRENCE_DIST: {
+					case LAST_OCC_DIST: {
 						final NavigableMap<Timestamp, List<Event>> timedEventsBeforeUtt = gameData.getEvents()
 								.headMap(time, true);
 						// Look for the last time the event was seen (iterating
