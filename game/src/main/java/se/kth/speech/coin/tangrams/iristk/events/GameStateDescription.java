@@ -94,7 +94,7 @@ public final class GameStateDescription extends Record {
 	 */
 	public BiMap<PlayerRole, String> getPlayerRoles() {
 		final BiMap<PlayerRole, String> result = HashBiMap.create(jsonPlayerRoles.size());
-		jsonPlayerRoles.stream().forEach(jsonPlayerRole -> {
+		jsonPlayerRoles.forEach(jsonPlayerRole -> {
 			final Iterator<String> valIter = jsonPlayerRole.iterator();
 			result.put(PlayerRole.valueOf(valIter.next()), valIter.next());
 		});

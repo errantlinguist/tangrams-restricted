@@ -195,7 +195,7 @@ public final class SpatialMatrixTest {
 		final Set<Integer> cols = regionPowerSet.columnKeySet();
 		Assert.assertEquals(Integer.valueOf(y), Collections.max(cols));
 		Assert.assertEquals(y, cols.size());
-		regionPowerSet.values().stream().forEach(size -> {
+		regionPowerSet.values().forEach(size -> {
 			Assert.assertNotNull(size);
 			Assert.assertFalse(size.isEmpty());
 		});

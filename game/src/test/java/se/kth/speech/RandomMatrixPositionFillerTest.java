@@ -66,7 +66,7 @@ public final class RandomMatrixPositionFillerTest {
 	static {
 		TEST_PIECES = Arrays.asList(new int[] { 1, 2 }, new int[] { 3, 3 }, new int[] { 5, 2 });
 		TEST_PIECE_IDS = Maps.newHashMapWithExpectedSize(TEST_PIECES.size());
-		TEST_PIECES.stream().forEach(piece -> {
+		TEST_PIECES.forEach(piece -> {
 			final Integer id = TEST_PIECE_IDS.size();
 			TEST_PIECE_IDS.put(piece, id);
 		});
