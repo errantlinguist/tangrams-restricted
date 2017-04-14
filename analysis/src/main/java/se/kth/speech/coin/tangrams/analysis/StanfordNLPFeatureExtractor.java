@@ -16,7 +16,11 @@
 */
 package se.kth.speech.coin.tangrams.analysis;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.util.List;
+import java.util.Properties;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.DoubleStream.Builder;
@@ -29,6 +33,7 @@ import edu.stanford.nlp.ling.CoreAnnotations.TokensAnnotation;
 import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.pipeline.Annotation;
 import edu.stanford.nlp.pipeline.Annotator;
+import edu.stanford.nlp.pipeline.StanfordCoreNLP;
 import edu.stanford.nlp.trees.Tree;
 import edu.stanford.nlp.trees.TreeCoreAnnotations.TreeAnnotation;
 import edu.stanford.nlp.util.CoreMap;
@@ -38,13 +43,30 @@ import edu.stanford.nlp.util.CoreMap;
  * @since Apr 14, 2017
  *
  */
-final class LanguageFeatureExtractor implements UtteranceFeatureExtractor {
+final class StanfordNLPFeatureExtractor implements UtteranceFeatureExtractor {
+
+	private static final StanfordCoreNLP DEFAULT_ANNOT_PIPELINE = createDefaultAnnotPipeline();
 
 	private static final Collector<CharSequence, ?, String> TOKEN_FORM_JOINER = Collectors.joining(" ");
 
+	private static StanfordCoreNLP createDefaultAnnotPipeline() {
+		final Properties props = new Properties();
+		try (final InputStream inStream = StanfordNLPFeatureExtractor.class
+				.getResourceAsStream("stanford-corenlp.properties")) {
+			props.load(inStream);
+		} catch (final IOException e) {
+			throw new UncheckedIOException(e);
+		}
+		return new StanfordCoreNLP(props);
+	}
+
 	private final Annotator annotator;
 
-	public LanguageFeatureExtractor(final Annotator annotator) {
+	public StanfordNLPFeatureExtractor() {
+		this(DEFAULT_ANNOT_PIPELINE);
+	}
+
+	private StanfordNLPFeatureExtractor(final Annotator annotator) {
 		this.annotator = annotator;
 	}
 

@@ -30,7 +30,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Properties;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -57,8 +56,6 @@ import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Table;
 
-import edu.stanford.nlp.pipeline.StanfordCoreNLP;
-import edu.stanford.nlp.util.PropertiesUtils;
 import iristk.util.HAT;
 import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
 import se.kth.speech.coin.tangrams.iristk.io.LoggingFormats;
@@ -177,14 +174,8 @@ public final class FeatureVectorPrinter {
 							.map(extractor -> extractor.createFeatureDescriptions(firstGameDesc))
 							.flatMap(Function.identity()).forEachOrdered(featureDescBuilder);
 
-					final Properties props = PropertiesUtils.asProperties("annotators",
-							"tokenize,ssplit,pos,lemma,parse", "ssplit.isOneSentence", "true", "parse.model",
-							"edu/stanford/nlp/models/lexparser/englishPCFG.caseless.ser.gz", "pos.model",
-							"edu/stanford/nlp/models/pos-tagger/english-caseless-left3words-distsim.tagger",
-							"tokenize.language", "en");
-					final StanfordCoreNLP pipeline = new StanfordCoreNLP(props);
 					final List<UtteranceFeatureExtractor> uttFeatureExtrators = Arrays
-							.asList(new LanguageFeatureExtractor(pipeline));
+							.asList(new StanfordNLPFeatureExtractor());
 					uttFeatureExtrators.stream().map(UtteranceFeatureExtractor::createFeatureDescriptions)
 							.flatMap(Function.identity()).forEachOrdered(featureDescBuilder);
 					final Stream<String> featureDescs = featureDescBuilder.build();
