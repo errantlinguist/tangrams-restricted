@@ -26,7 +26,7 @@ import java.util.TreeMap;
 import iristk.system.Event;
 import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
 
-final class GameStateChangeData {
+final class GameHistory {
 
 	private final NavigableMap<Timestamp, List<Event>> events = new TreeMap<>();
 
@@ -34,14 +34,14 @@ final class GameStateChangeData {
 
 	private final Timestamp startTime;
 
-	GameStateChangeData(final GameStateDescription initialState, final Timestamp startTime) {
+	GameHistory(final GameStateDescription initialState, final Timestamp startTime) {
 		this.initialState = initialState;
 		this.startTime = startTime;
 	}
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#equals(java.lang.Object)
 	 */
 	@Override
@@ -52,10 +52,10 @@ final class GameStateChangeData {
 		if (obj == null) {
 			return false;
 		}
-		if (!(obj instanceof GameStateChangeData)) {
+		if (!(obj instanceof GameHistory)) {
 			return false;
 		}
-		final GameStateChangeData other = (GameStateChangeData) obj;
+		final GameHistory other = (GameHistory) obj;
 		if (events == null) {
 			if (other.events != null) {
 				return false;
@@ -107,7 +107,7 @@ final class GameStateChangeData {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#hashCode()
 	 */
 	@Override
@@ -128,13 +128,13 @@ final class GameStateChangeData {
 	@Override
 	public String toString() {
 		final StringBuilder builder = new StringBuilder();
-		builder.append("GameStateChangeData [startTime=");
+		builder.append("GameHistory [startTime=");
 		builder.append(startTime);
 		builder.append(", initialState=");
 		builder.append(initialState);
 		builder.append(", events=");
 		builder.append(events);
-		builder.append("]");
+		builder.append(']');
 		return builder.toString();
 	}
 }

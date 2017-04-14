@@ -25,8 +25,8 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Set;
-import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -52,7 +52,7 @@ import se.kth.speech.coin.tangrams.iristk.events.ImageVisualizationInfoDescripti
 import se.kth.speech.coin.tangrams.iristk.events.ModelDescription;
 import se.kth.speech.coin.tangrams.iristk.events.Move;
 
-final class GameStateFeatureVectorFactory implements BiFunction<GameStateChangeData, Timestamp, double[]> {
+final class GameStateFeatureExtractor implements FeatureExtractor {
 
 	private enum EntityFeature {
 		COLOR, POSITION_X, POSITION_Y, SHAPE, SIZE;
@@ -82,43 +82,41 @@ final class GameStateFeatureVectorFactory implements BiFunction<GameStateChangeD
 			return SHAPE_FEATURE_VALS.getDouble(strVal);
 		}
 
-		private static int setVals(final double[] vals, int currentFeatureIdx,
+		private static void setVals(final DoubleStream.Builder vals,
 				final ImageVisualizationInfoDescription.Datum pieceImgVizInfoDatum, final SpatialRegion pieceRegion,
 				final int[] modelDims, final double modelArea) {
 			for (final EntityFeature feature : ORDERING) {
 				switch (feature) {
 				case COLOR:
 					final float colorFeatureVal = createColorFeatureVal(pieceImgVizInfoDatum);
-					vals[currentFeatureIdx] = colorFeatureVal;
+					vals.accept(colorFeatureVal);
 					break;
 				case POSITION_X: {
 					final double centerX = pieceRegion.getXLowerBound() + pieceRegion.getLengthX() / 2.0;
 					final double posX = centerX / modelDims[0];
-					vals[currentFeatureIdx] = posX;
+					vals.accept(posX);
 					break;
 				}
 				case POSITION_Y: {
 					final double centerY = pieceRegion.getYLowerBound() + pieceRegion.getLengthY() / 2.0;
 					final double posY = centerY / modelDims[1];
-					vals[currentFeatureIdx] = posY;
+					vals.accept(posY);
 					break;
 				}
 				case SHAPE:
 					final double shapeFeatureVal = getShapeFeatureVal(pieceImgVizInfoDatum);
-					vals[currentFeatureIdx] = shapeFeatureVal;
+					vals.accept(shapeFeatureVal);
 					break;
 				case SIZE:
 					final int pieceArea = IntArrays.product(pieceRegion.getDimensions());
 					final double sizeFeatureVal = pieceArea / modelArea;
-					vals[currentFeatureIdx] = sizeFeatureVal;
+					vals.accept(sizeFeatureVal);
 					break;
 				default: {
 					throw new AssertionError("Missing enum-handling logic.");
 				}
 				}
-				currentFeatureIdx++;
 			}
-			return currentFeatureIdx;
 		}
 	}
 
@@ -132,30 +130,27 @@ final class GameStateFeatureVectorFactory implements BiFunction<GameStateChangeD
 			assert ORDERING.size() == EnvironmentFeature.values().length;
 		}
 
-		private static int setVals(final double[] vals, int currentFeatureIdx, final int[] modelDims,
-				final int entityCount) {
+		private static void setVals(final DoubleStream.Builder vals, final int[] modelDims, final int entityCount) {
 			for (final EnvironmentFeature feature : ORDERING) {
 				switch (feature) {
 				case COL_COUNT:
-					vals[currentFeatureIdx] = modelDims[1];
+					vals.accept(modelDims[1]);
 					break;
 				case ENTITY_COUNT:
-					vals[currentFeatureIdx] = entityCount;
+					vals.accept(entityCount);
 					break;
 				case ROW_COUNT:
-					vals[currentFeatureIdx] = modelDims[0];
+					vals.accept(modelDims[0]);
 					break;
 				default: {
 					throw new AssertionError("Missing enum-handling logic.");
 				}
 				}
-				currentFeatureIdx++;
 			}
-			return currentFeatureIdx;
 		}
 	}
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(GameStateFeatureVectorFactory.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(GameStateFeatureExtractor.class);
 
 	private static void applyEvent(final SpatialMatrix<Integer> model, final Event event) {
 		final Move move = (Move) event.get(GameManagementEvent.Attribute.MOVE.toString());
@@ -172,10 +167,6 @@ final class GameStateFeatureVectorFactory implements BiFunction<GameStateChangeD
 		final SpatialRegion source = areaRegionFactory.apply(move.getSource());
 		final SpatialRegion target = areaRegionFactory.apply(move.getTarget());
 		pieceUpdater.accept(source, target);
-	}
-
-	private static int calculateTotalEntityFeatureCount(final int entityCount) {
-		return entityCount * EntityFeature.values().length;
 	}
 
 	private static SpatialMatrix<Integer> copyInitialModel(final Matrix<Integer> copyee) {
@@ -195,38 +186,33 @@ final class GameStateFeatureVectorFactory implements BiFunction<GameStateChangeD
 		eventsToApply.forEachOrdered(event -> applyEvent(model, event));
 	}
 
-	private final int extraArrayCapacityToAllocate;
-
 	private final Function<ModelDescription, SpatialMatrix<Integer>> initialGameModelFactory;
 
-	GameStateFeatureVectorFactory(final int expectedUniqueModelDescriptionCount,
-			final int extraArrayCapacityToAllocate) {
-		if (extraArrayCapacityToAllocate < 0) {
-			throw new IllegalArgumentException(
-					"Extra array capacity to allocate is a negative value: " + extraArrayCapacityToAllocate);
-		}
+	GameStateFeatureExtractor(final int expectedUniqueModelDescriptionCount) {
 		final Map<ModelDescription, SpatialMatrix<Integer>> gameModels = Maps
 				.newHashMapWithExpectedSize(expectedUniqueModelDescriptionCount);
 		initialGameModelFactory = modelDesc -> gameModels.computeIfAbsent(modelDesc,
 				k -> GameStateUnmarshalling.createModel(k, SpatialMatrix.Factory.UNSTABLE_ITER_ORDER));
-		this.extraArrayCapacityToAllocate = extraArrayCapacityToAllocate;
 	}
 
 	@Override
-	public double[] apply(final GameStateChangeData gameStateChangeData, final Timestamp time) {
-		final GameStateDescription initialState = gameStateChangeData.getInitialState();
-		final SpatialMatrix<Integer> model = copyInitialModel(
-				initialGameModelFactory.apply(initialState.getModelDescription()));
-		final NavigableMap<Timestamp, List<Event>> events = gameStateChangeData.getEvents();
-		updateToTime(model, events, time);
-		return createFeatureVector(model, initialState.getImageVisualizationInfoDescription().getData());
+	public void accept(final GameContext context, final DoubleStream.Builder vals) {
+		extractFeatures(context.getHistory(), context.getTime(), vals);
 	}
 
+	/*
+	 * (non-Javadoc)
+	 *
+	 * @see se.kth.speech.coin.tangrams.analysis.FeatureExtractor#
+	 * createFeatureDescriptions(se.kth.speech.coin.tangrams.analysis.
+	 * GameContext)
+	 */
+	@Override
 	public Stream<String> createFeatureDescriptions(final GameStateDescription initialState) {
 		return createFeatureDescriptions(initialState.getImageVisualizationInfoDescription().getData().size());
 	}
 
-	public Stream<String> createFeatureDescriptions(final int entityCount) {
+	private Stream<String> createFeatureDescriptions(final int entityCount) {
 		final Stream.Builder<String> resultBuilder = Stream.builder();
 		final Stream<String> envFeatureDescs = EnvironmentFeature.ORDERING.stream().map(Enum::toString);
 		envFeatureDescs.forEachOrdered(resultBuilder);
@@ -238,14 +224,20 @@ final class GameStateFeatureVectorFactory implements BiFunction<GameStateChangeD
 		return resultBuilder.build();
 	}
 
-	private double[] createFeatureVector(final SpatialMatrix<Integer> model,
-			final List<ImageVisualizationInfoDescription.Datum> imgVizInfoData) {
+	private void extractFeatures(final GameHistory history, final Timestamp time, final DoubleStream.Builder vals) {
+		final GameStateDescription initialState = history.getInitialState();
+		final SpatialMatrix<Integer> model = copyInitialModel(
+				initialGameModelFactory.apply(initialState.getModelDescription()));
+		final NavigableMap<Timestamp, List<Event>> events = history.getEvents();
+		updateToTime(model, events, time);
+		extractFeatures(model, initialState.getImageVisualizationInfoDescription().getData(), vals);
+	}
+
+	private void extractFeatures(final SpatialMatrix<Integer> model,
+			final List<ImageVisualizationInfoDescription.Datum> imgVizInfoData, final DoubleStream.Builder vals) {
 		final int[] modelDims = model.getDimensions();
 		final int entityCount = imgVizInfoData.size();
-		final double[] result = new double[extraArrayCapacityToAllocate + EnvironmentFeature.values().length
-				+ calculateTotalEntityFeatureCount(entityCount)];
-
-		int currentFeatureIdx = EnvironmentFeature.setVals(result, 0, modelDims, entityCount);
+		EnvironmentFeature.setVals(vals, modelDims, entityCount);
 
 		final double modelArea = IntArrays.product(modelDims);
 		final SpatialMap<Integer> piecePlacements = model.getElementPlacements();
@@ -254,9 +246,7 @@ final class GameStateFeatureVectorFactory implements BiFunction<GameStateChangeD
 			final int pieceId = imgVizInfoDataIter.nextIndex();
 			final ImageVisualizationInfoDescription.Datum pieceImgVizInfoDatum = imgVizInfoDataIter.next();
 			final SpatialRegion pieceRegion = piecePlacements.getElementMinimalRegions().get(pieceId);
-			currentFeatureIdx = EntityFeature.setVals(result, currentFeatureIdx, pieceImgVizInfoDatum, pieceRegion,
-					modelDims, modelArea);
+			EntityFeature.setVals(vals, pieceImgVizInfoDatum, pieceRegion, modelDims, modelArea);
 		}
-		return result;
 	}
 }

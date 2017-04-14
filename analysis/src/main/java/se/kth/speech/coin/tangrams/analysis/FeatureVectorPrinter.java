@@ -37,6 +37,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
+import java.util.stream.DoubleStream;
 import java.util.stream.Stream;
 
 import javax.xml.bind.JAXBException;
@@ -69,7 +70,7 @@ import se.kth.speech.hat.xsd.Annotation.Tracks.Track.Sources.Source;
  * @since Apr 5, 2017
  *
  */
-public final class ModelFeatureExtractor {
+public final class FeatureVectorPrinter {
 
 	private enum Parameter implements Supplier<Option> {
 		HELP("?") {
@@ -105,7 +106,7 @@ public final class ModelFeatureExtractor {
 
 	private static final Pattern LOGGED_EVENT_FILE_NAME_PATTERN = Pattern.compile("events-(.+?)\\.txt");
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(ModelFeatureExtractor.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(FeatureVectorPrinter.class);
 
 	/**
 	 * @see <a href=
@@ -143,24 +144,15 @@ public final class ModelFeatureExtractor {
 				LOGGER.info("Processing session log directory \"{}\".", sessionLogDir);
 				final Map<String, Path> playerEventLogFilePaths = createPlayerEventLogFileMap(sessionLogDir,
 						expectedEventLogFileCount);
-				final Table<String, String, GameStateChangeData> playerGameStateChangeData = createPlayerGameStateChangeData(
+				final Table<String, String, GameHistory> playerGameStateChangeData = createPlayerGameStateChangeData(
 						playerEventLogFilePaths.entrySet());
 				final Set<String> playerGameIdIntersection = new HashSet<>(playerGameStateChangeData.columnKeySet());
 				playerGameStateChangeData.rowMap().values().stream().map(Map::keySet)
 						.forEach(playerGameIdIntersection::retainAll);
 				final int gameCount = playerGameIdIntersection.size();
 				if (gameCount == 1) {
-					final String gameId = playerGameIdIntersection.iterator().next();
-					final Map<String, GameStateChangeData> playerStateChangeData = playerGameStateChangeData.columnMap()
-							.get(gameId);
-
-					final Vocabulary vocab = new VocabularyFactory().get();
-					LOGGER.info("Vocabulary size is {}.", vocab.size());
-					final SegmentFeatureVectorFactory featureVectorFactory = new SegmentFeatureVectorFactory(
-							sourceIdPlayerIds, playerStateChangeData);
-
 					final Iterator<GameStateDescription> gameDescs = playerGameStateChangeData.values().stream()
-							.map(GameStateChangeData::getInitialState).iterator();
+							.map(GameHistory::getInitialState).iterator();
 					final GameStateDescription firstGameDesc = gameDescs.next();
 					while (gameDescs.hasNext()) {
 						// Sanity check to make sure that all players have
@@ -170,17 +162,29 @@ public final class ModelFeatureExtractor {
 							throw new IllegalArgumentException("Found non-equivalent initial states between players.");
 						}
 					}
-					final Stream<String> featureDescs = featureVectorFactory.createFeatureDescriptions(firstGameDesc);
+
+					final List<FeatureExtractor> extractors = Arrays.asList(
+							new GameStateFeatureExtractor(playerGameStateChangeData.values().size()),
+							new GameEventFeatureExtractor());
+					final Stream<String> featureDescs = extractors.stream()
+							.map(extractor -> extractor.createFeatureDescriptions(firstGameDesc))
+							.flatMap(Function.identity());
 					final String header = featureDescs.collect(TABLE_ROW_CELL_JOINER);
 
+					final String gameId = playerGameIdIntersection.iterator().next();
+					final Map<String, GameHistory> playerStateChangeData = playerGameStateChangeData.columnMap()
+							.get(gameId);
+					final SegmentFeatureVectorFactory featureVectorFactory = new SegmentFeatureVectorFactory(
+							sourceIdPlayerIds, playerStateChangeData, extractors);
 					final List<Segment> segments = uttAnnots.getSegments().getSegment();
-					final Stream<Stream<double[]>> segmentFeatureVectors = segments.stream().map(featureVectorFactory);
-					final Stream<double[]> featureVectors = segmentFeatureVectors.flatMap(Function.identity());
+					final Stream<Stream<DoubleStream>> segmentFeatureVectors = segments.stream()
+							.map(featureVectorFactory);
+					final Stream<DoubleStream> featureVectors = segmentFeatureVectors.flatMap(Function.identity());
 					try (final PrintWriter out = parseOutfile(cl)) {
 						out.print(header);
 						featureVectors.forEachOrdered(featureVector -> {
 							out.print(TABLE_STRING_REPR_ROW_DELIMITER);
-							final Stream<String> cellVals = Arrays.stream(featureVector).mapToObj(Double::toString);
+							final Stream<String> cellVals = featureVector.mapToObj(Double::toString);
 							final String row = cellVals.collect(TABLE_ROW_CELL_JOINER);
 							out.print(row);
 						});
@@ -225,18 +229,17 @@ public final class ModelFeatureExtractor {
 		return result;
 	}
 
-	private static Table<String, String, GameStateChangeData> createPlayerGameStateChangeData(
+	private static Table<String, String, GameHistory> createPlayerGameStateChangeData(
 			final Collection<Entry<String, Path>> playerEventLogFilePaths) throws IOException {
-		final Table<String, String, GameStateChangeData> result = HashBasedTable.create(playerEventLogFilePaths.size(),
+		final Table<String, String, GameHistory> result = HashBasedTable.create(playerEventLogFilePaths.size(),
 				EXPECTED_UNIQUE_GAME_COUNT);
 		for (final Entry<String, Path> playerEventLogFilePath : playerEventLogFilePaths) {
 			final String playerId = playerEventLogFilePath.getKey();
 			LOGGER.info("Reading session event log for player \"{}\".", playerId);
 			final Path eventLogFile = playerEventLogFilePath.getValue();
 			try (final Stream<String> lines = Files.lines(eventLogFile, LoggingFormats.ENCODING)) {
-				final Map<String, GameStateChangeData> gameStateChangeData = new LoggedGameStateChangeDataParser()
-						.apply(lines);
-				gameStateChangeData.forEach((gameId, gameData) -> {
+				final Map<String, GameHistory> gameHistories = new LoggedGameStateChangeDataParser().apply(lines);
+				gameHistories.forEach((gameId, gameData) -> {
 					result.put(playerId, gameId, gameData);
 				});
 			}
@@ -269,7 +272,7 @@ public final class ModelFeatureExtractor {
 
 	private static void printHelp() {
 		final HelpFormatter formatter = new HelpFormatter();
-		formatter.printHelp(ModelFeatureExtractor.class.getName(), OPTIONS);
+		formatter.printHelp(FeatureVectorPrinter.class.getName(), OPTIONS);
 	}
 
 }

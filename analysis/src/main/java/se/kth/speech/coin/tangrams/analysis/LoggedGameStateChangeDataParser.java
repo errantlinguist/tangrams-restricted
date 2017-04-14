@@ -34,16 +34,16 @@ import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
  *
  */
 final class LoggedGameStateChangeDataParser
-		implements Function<Stream<String>, Map<String, GameStateChangeData>> {
+		implements Function<Stream<String>, Map<String, GameHistory>> {
 
 	private static final Pattern EMPTY_OR_WHITESPACE_PATTERN = Pattern.compile("\\s*");
 
 	@Override
-	public Map<String, GameStateChangeData> apply(final Stream<String> lines) {
+	public Map<String, GameHistory> apply(final Stream<String> lines) {
 		final Stream<Event> loggedEvents = lines.filter(line -> !EMPTY_OR_WHITESPACE_PATTERN.matcher(line).matches())
 				.flatMap(LoggedEvents.JSON_EVENT_PARSER);
 		final Event[] loggedEventArray = loggedEvents.toArray(Event[]::new);
-		final Supplier<Map<String, GameStateChangeData>> mapFactory = () -> Maps
+		final Supplier<Map<String, GameHistory>> mapFactory = () -> Maps
 				.newHashMapWithExpectedSize(loggedEventArray.length);
 		return Arrays.stream(loggedEventArray).collect(new GameStateCollector(mapFactory));
 	}

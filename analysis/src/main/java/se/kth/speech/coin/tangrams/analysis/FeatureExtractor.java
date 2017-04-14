@@ -16,54 +16,19 @@
 */
 package se.kth.speech.coin.tangrams.analysis;
 
-import java.util.Locale;
-import java.util.Set;
-import java.util.function.Function;
+import java.util.function.BiConsumer;
+import java.util.stream.DoubleStream;
+import java.util.stream.Stream;
+
+import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
- * @since Apr 13, 2017
+ * @since Apr 14, 2017
  *
  */
-final class Vocabulary {
+interface FeatureExtractor extends BiConsumer<GameContext, DoubleStream.Builder> {
 
-	private final Locale locale;
-
-	private final Function<? super String, String> normalizer;
-
-	private final Set<String> words;
-
-	/**
-	 * @param words
-	 * @param locale
-	 * @param normalizer
-	 *
-	 */
-	Vocabulary(final Set<String> words, final Locale locale, final Function<? super String, String> normalizer) {
-		this.words = words;
-		this.locale = locale;
-		this.normalizer = normalizer;
-	}
-
-	/**
-	 * @return the locale
-	 */
-	public Locale getLocale() {
-		return locale;
-	}
-
-	/**
-	 * @return the normalizer
-	 */
-	public Function<? super String, String> getNormalizer() {
-		return normalizer;
-	}
-
-	/**
-	 * @return
-	 */
-	public int size() {
-		return words.size();
-	}
+	Stream<String> createFeatureDescriptions(final GameStateDescription initialState);
 
 }

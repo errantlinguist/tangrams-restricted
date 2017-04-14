@@ -43,9 +43,9 @@ import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
  *
  */
 final class GameStateCollector
-		implements Collector<Event, Map<String, GameStateChangeData>, Map<String, GameStateChangeData>> {
+		implements Collector<Event, Map<String, GameHistory>, Map<String, GameHistory>> {
 
-	private static final BiConsumer<Map<String, GameStateChangeData>, Event> ACCUMULATOR = new BiConsumer<Map<String, GameStateChangeData>, Event>() {
+	private static final BiConsumer<Map<String, GameHistory>, Event> ACCUMULATOR = new BiConsumer<Map<String, GameHistory>, Event>() {
 
 		private final Set<GameManagementEvent> ignoredEventTypes = EnumSet.of(GameManagementEvent.PLAYER_JOIN_REQUEST,
 				GameManagementEvent.PLAYER_JOIN_RESPONSE);
@@ -57,7 +57,7 @@ final class GameStateCollector
 		 * java.lang.Object)
 		 */
 		@Override
-		public void accept(final Map<String, GameStateChangeData> gameStateChangeData, final Event event) {
+		public void accept(final Map<String, GameHistory> gameHistories, final Event event) {
 			final String eventName = event.getName();
 			final GameManagementEvent gameEventType = GameManagementEvent.getEventType(eventName);
 			if (gameEventType == null) {
@@ -69,11 +69,11 @@ final class GameStateCollector
 				LOGGER.debug("Found {} sent at \"{}\".", new Object[] { event.getClass().getSimpleName(), time });
 				final String gameId = event.getString(GameManagementEvent.Attribute.GAME_ID.toString());
 				final Timestamp timestamp = Timestamp.valueOf(time);
-				accept(gameStateChangeData, gameId, timestamp, gameEventType, event);
+				accept(gameHistories, gameId, timestamp, gameEventType, event);
 			}
 		}
 
-		private void accept(final Map<String, GameStateChangeData> gameStateChangeData, final String gameId,
+		private void accept(final Map<String, GameHistory> gameHistories, final String gameId,
 				final Timestamp time, final GameManagementEvent gameEventType, final Event event) {
 			if (ignoredEventTypes.contains(gameEventType)) {
 				LOGGER.debug("Ignored event of type {} sent at \"{}\".", new Object[] { gameEventType, time });
@@ -83,11 +83,11 @@ final class GameStateCollector
 					final GameStateDescription gameDesc = (GameStateDescription) event
 							.get(GameManagementEvent.Attribute.GAME_STATE.toString());
 					LOGGER.debug("Found {} sent at \"{}\".", new Object[] { gameDesc.getClass().getSimpleName(), time });
-					putInitialState(gameStateChangeData, gameId, time, gameDesc);
+					putInitialState(gameHistories, gameId, time, gameDesc);
 					break;
 				}
 				default: {
-					addEvent(gameStateChangeData, gameId, time, event);
+					addEvent(gameHistories, gameId, time, event);
 					break;
 				}
 				}
@@ -99,9 +99,9 @@ final class GameStateCollector
 		 * @param timestamp
 		 * @param event
 		 */
-		private void addEvent(final Map<String, GameStateChangeData> gameStateChangeData, final String gameId,
+		private void addEvent(final Map<String, GameHistory> gameHistories, final String gameId,
 				final Timestamp time, final Event event) {
-			gameStateChangeData.compute(gameId, (gKey, oldVal) -> {
+			gameHistories.compute(gameId, (gKey, oldVal) -> {
 				if (oldVal == null) {
 					throw new IllegalArgumentException(String.format(
 							"Non-game state event found before the initial game state was parsed for game \"%s\": %s",
@@ -120,12 +120,12 @@ final class GameStateCollector
 		 * @param startTime
 		 * @param gameDesc
 		 */
-		private void putInitialState(final Map<String, GameStateChangeData> gameStateChangeData, final String gameId,
+		private void putInitialState(final Map<String, GameHistory> gameHistories, final String gameId,
 				final Timestamp startTime, final GameStateDescription gameDesc) {
-			gameStateChangeData.compute(gameId, (key, oldVal) -> {
-				final GameStateChangeData result;
+			gameHistories.compute(gameId, (key, oldVal) -> {
+				final GameHistory result;
 				if (oldVal == null) {
-					result = new GameStateChangeData(gameDesc, startTime);
+					result = new GameHistory(gameDesc, startTime);
 				} else {
 					throw new IllegalArgumentException(
 							String.format("More than one initial-state event found for game \"%s\".", gameId));
@@ -138,16 +138,16 @@ final class GameStateCollector
 	private static final Set<Characteristics> CHARACTERISTICS = EnumSet.of(Characteristics.UNORDERED,
 			Characteristics.IDENTITY_FINISH);
 
-	private static final BinaryOperator<Map<String, GameStateChangeData>> COMBINER = new BinaryOperator<Map<String, GameStateChangeData>>() {
+	private static final BinaryOperator<Map<String, GameHistory>> COMBINER = new BinaryOperator<Map<String, GameHistory>>() {
 
 		@Override
-		public Map<String, GameStateChangeData> apply(final Map<String, GameStateChangeData> target,
-				final Map<String, GameStateChangeData> source) {
-			for (final Entry<String, GameStateChangeData> sourceGameLoggedEventMap : source.entrySet()) {
+		public Map<String, GameHistory> apply(final Map<String, GameHistory> target,
+				final Map<String, GameHistory> source) {
+			for (final Entry<String, GameHistory> sourceGameLoggedEventMap : source.entrySet()) {
 				final String gameId = sourceGameLoggedEventMap.getKey();
-				final GameStateChangeData sourceGameData = sourceGameLoggedEventMap.getValue();
+				final GameHistory sourceGameData = sourceGameLoggedEventMap.getValue();
 				target.compute(gameId, (gKey, oldVal) -> {
-					GameStateChangeData result;
+					GameHistory result;
 					if (oldVal == null) {
 						// There is nothing to merge with; Just re-use the
 						// source object
@@ -190,9 +190,9 @@ final class GameStateCollector
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(GameStateCollector.class);
 
-	private final Supplier<Map<String, GameStateChangeData>> supplier;
+	private final Supplier<Map<String, GameHistory>> supplier;
 
-	public GameStateCollector(final Supplier<Map<String, GameStateChangeData>> supplier) {
+	public GameStateCollector(final Supplier<Map<String, GameHistory>> supplier) {
 		this.supplier = supplier;
 	}
 
@@ -202,7 +202,7 @@ final class GameStateCollector
 	 * @see java.util.stream.Collector#accumulator()
 	 */
 	@Override
-	public BiConsumer<Map<String, GameStateChangeData>, Event> accumulator() {
+	public BiConsumer<Map<String, GameHistory>, Event> accumulator() {
 		return ACCUMULATOR;
 	}
 
@@ -222,7 +222,7 @@ final class GameStateCollector
 	 * @see java.util.stream.Collector#combiner()
 	 */
 	@Override
-	public BinaryOperator<Map<String, GameStateChangeData>> combiner() {
+	public BinaryOperator<Map<String, GameHistory>> combiner() {
 		return COMBINER;
 	}
 
@@ -232,7 +232,7 @@ final class GameStateCollector
 	 * @see java.util.stream.Collector#finisher()
 	 */
 	@Override
-	public Function<Map<String, GameStateChangeData>, Map<String, GameStateChangeData>> finisher() {
+	public Function<Map<String, GameHistory>, Map<String, GameHistory>> finisher() {
 		return Function.identity();
 	}
 
@@ -242,7 +242,7 @@ final class GameStateCollector
 	 * @see java.util.stream.Collector#supplier()
 	 */
 	@Override
-	public Supplier<Map<String, GameStateChangeData>> supplier() {
+	public Supplier<Map<String, GameHistory>> supplier() {
 		return supplier;
 	}
 
