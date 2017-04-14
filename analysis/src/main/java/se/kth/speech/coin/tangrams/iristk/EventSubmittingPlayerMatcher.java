@@ -89,7 +89,7 @@ public final class EventSubmittingPlayerMatcher implements Predicate<Event> {
 		final StringBuilder builder = new StringBuilder();
 		builder.append("EventSubmittingPlayerMatcher [playerId=");
 		builder.append(playerId);
-		builder.append("]");
+		builder.append(']');
 		return builder.toString();
 	}
 }

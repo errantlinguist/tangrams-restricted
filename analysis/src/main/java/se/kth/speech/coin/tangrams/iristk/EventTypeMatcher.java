@@ -90,7 +90,7 @@ public final class EventTypeMatcher implements Predicate<Event> {
 		final StringBuilder builder = new StringBuilder();
 		builder.append("EventTypeMatcher [acceptedTypes=");
 		builder.append(acceptedTypes);
-		builder.append("]");
+		builder.append(']');
 		return builder.toString();
 	}
 }

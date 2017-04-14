@@ -136,7 +136,7 @@ final class Utterance {
 		builder.append(endTime);
 		builder.append(", tokens=");
 		builder.append(tokens);
-		builder.append("]");
+		builder.append(']');
 		return builder.toString();
 	}
 }
