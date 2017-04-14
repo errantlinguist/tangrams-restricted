@@ -10,6 +10,10 @@
 
 	<artifactId>analysis</artifactId>
 
+	<properties>
+		<stanford.corenlp.version>3.7.0</stanford.corenlp.version>
+	</properties>
+
 	<dependencies>
 		<dependency>
 			<groupId>${project.groupId}</groupId>
@@ -22,10 +26,21 @@
 			<artifactId>commons-cli</artifactId>
 		</dependency>
 		<dependency>
+			<groupId>edu.stanford.nlp</groupId>
+			<artifactId>stanford-corenlp</artifactId>
+			<version>${stanford.corenlp.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>edu.stanford.nlp</groupId>
+			<artifactId>stanford-corenlp</artifactId>
+			<version>${stanford.corenlp.version}</version>
+			<classifier>models-english</classifier>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
 			<groupId>it.unimi.dsi</groupId>
 			<artifactId>fastutil</artifactId>
 		</dependency>
-
 	</dependencies>
 
 	<build>

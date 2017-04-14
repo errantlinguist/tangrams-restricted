@@ -54,14 +54,18 @@ final class SegmentFeatureVectorFactory implements Function<Segment, Stream<Doub
 
 	private final Map<String, String> sourceIdPlayerIds;
 
-	private final List<? extends BiConsumer<? super GameContext, ? super DoubleStream.Builder>> extractors;
+	private final List<? extends BiConsumer<? super GameContext, ? super DoubleStream.Builder>> contextFeatureExtractors;
+
+	private final List<? extends BiConsumer<? super Utterance, ? super DoubleStream.Builder>> uttFeatureExtractors;
 
 	public SegmentFeatureVectorFactory(final Map<String, String> sourceIdPlayerIds,
 			final Map<String, GameHistory> playerStateChangeData,
-			final List<? extends BiConsumer<? super GameContext, ? super DoubleStream.Builder>> extractors) {
+			final List<? extends BiConsumer<? super GameContext, ? super DoubleStream.Builder>> contextFeatureExtractors,
+			final List<? extends BiConsumer<? super Utterance, ? super DoubleStream.Builder>> uttFeatureExtractors) {
 		this.sourceIdPlayerIds = sourceIdPlayerIds;
 		this.playerStateChangeData = playerStateChangeData;
-		this.extractors = extractors;
+		this.contextFeatureExtractors = contextFeatureExtractors;
+		this.uttFeatureExtractors = uttFeatureExtractors;
 	}
 
 	@Override
@@ -70,10 +74,11 @@ final class SegmentFeatureVectorFactory implements Function<Segment, Stream<Doub
 		final String sourceId = segment.getSource();
 		// Get the player ID associated with the given audio source
 		final String playerId = sourceIdPlayerIds.get(sourceId);
-		final Stream<GameContext> contexts = utts.stream().map(utt -> createContext(utt, playerId));
-		return contexts.map(context -> {
+		return utts.stream().map(utt -> {
+			final GameContext context = createContext(utt, playerId);
 			final DoubleStream.Builder featureVectorBuilder = DoubleStream.builder();
-			extractors.forEach(extractor -> extractor.accept(context, featureVectorBuilder));
+			contextFeatureExtractors.forEach(extractor -> extractor.accept(context, featureVectorBuilder));
+			uttFeatureExtractors.forEach(extractor -> extractor.accept(utt, featureVectorBuilder));
 			return featureVectorBuilder.build();
 		});
 	}

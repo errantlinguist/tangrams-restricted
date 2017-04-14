@@ -30,6 +30,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Properties;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -56,6 +57,8 @@ import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Table;
 
+import edu.stanford.nlp.pipeline.StanfordCoreNLP;
+import edu.stanford.nlp.util.PropertiesUtils;
 import iristk.util.HAT;
 import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
 import se.kth.speech.coin.tangrams.iristk.io.LoggingFormats;
@@ -162,20 +165,33 @@ public final class FeatureVectorPrinter {
 							throw new IllegalArgumentException("Found non-equivalent initial states between players.");
 						}
 					}
-
-					final List<GameContextFeatureExtractor> extractors = Arrays.asList(
-							new GameStateFeatureExtractor(playerGameStateChangeData.values().size()),
-							new GameEventFeatureExtractor());
-					final Stream<String> featureDescs = extractors.stream()
-							.map(extractor -> extractor.createFeatureDescriptions(firstGameDesc))
-							.flatMap(Function.identity());
-					final String header = featureDescs.collect(TABLE_ROW_CELL_JOINER);
-
 					final String gameId = playerGameIdIntersection.iterator().next();
 					final Map<String, GameHistory> playerStateChangeData = playerGameStateChangeData.columnMap()
 							.get(gameId);
+
+					final List<GameContextFeatureExtractor> contextFeatureExtractors = Arrays.asList(
+							new GameStateFeatureExtractor(playerGameStateChangeData.values().size()),
+							new GameEventFeatureExtractor());
+					final Stream.Builder<String> featureDescBuilder = Stream.builder();
+					contextFeatureExtractors.stream()
+							.map(extractor -> extractor.createFeatureDescriptions(firstGameDesc))
+							.flatMap(Function.identity()).forEachOrdered(featureDescBuilder);
+
+					final Properties props = PropertiesUtils.asProperties("annotators",
+							"tokenize,ssplit,pos,lemma,parse", "ssplit.isOneSentence", "true", "parse.model",
+							"edu/stanford/nlp/models/lexparser/englishPCFG.caseless.ser.gz", "pos.model",
+							"edu/stanford/nlp/models/pos-tagger/english-caseless-left3words-distsim.tagger",
+							"tokenize.language", "en");
+					final StanfordCoreNLP pipeline = new StanfordCoreNLP(props);
+					final List<UtteranceFeatureExtractor> uttFeatureExtrators = Arrays
+							.asList(new LanguageFeatureExtractor(pipeline));
+					uttFeatureExtrators.stream().map(UtteranceFeatureExtractor::createFeatureDescriptions)
+							.flatMap(Function.identity()).forEachOrdered(featureDescBuilder);
+					final Stream<String> featureDescs = featureDescBuilder.build();
+					final String header = featureDescs.collect(TABLE_ROW_CELL_JOINER);
+
 					final SegmentFeatureVectorFactory featureVectorFactory = new SegmentFeatureVectorFactory(
-							sourceIdPlayerIds, playerStateChangeData, extractors);
+							sourceIdPlayerIds, playerStateChangeData, contextFeatureExtractors, uttFeatureExtrators);
 					final List<Segment> segments = uttAnnots.getSegments().getSegment();
 					final Stream<Stream<DoubleStream>> segmentFeatureVectors = segments.stream()
 							.map(featureVectorFactory);
