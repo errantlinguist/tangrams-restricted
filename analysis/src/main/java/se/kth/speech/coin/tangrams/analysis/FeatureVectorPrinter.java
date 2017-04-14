@@ -163,7 +163,7 @@ public final class FeatureVectorPrinter {
 						}
 					}
 
-					final List<FeatureExtractor> extractors = Arrays.asList(
+					final List<GameContextFeatureExtractor> extractors = Arrays.asList(
 							new GameStateFeatureExtractor(playerGameStateChangeData.values().size()),
 							new GameEventFeatureExtractor());
 					final Stream<String> featureDescs = extractors.stream()

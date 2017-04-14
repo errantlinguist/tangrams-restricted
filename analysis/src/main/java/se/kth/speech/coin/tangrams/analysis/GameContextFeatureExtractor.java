@@ -27,7 +27,7 @@ import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
  * @since Apr 14, 2017
  *
  */
-interface FeatureExtractor extends BiConsumer<GameContext, DoubleStream.Builder> {
+interface GameContextFeatureExtractor extends BiConsumer<GameContext, DoubleStream.Builder> {
 
 	Stream<String> createFeatureDescriptions(final GameStateDescription initialState);
 

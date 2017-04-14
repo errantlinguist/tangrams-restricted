@@ -52,7 +52,7 @@ import se.kth.speech.coin.tangrams.iristk.events.ImageVisualizationInfoDescripti
 import se.kth.speech.coin.tangrams.iristk.events.ModelDescription;
 import se.kth.speech.coin.tangrams.iristk.events.Move;
 
-final class GameStateFeatureExtractor implements FeatureExtractor {
+final class GameStateFeatureExtractor implements GameContextFeatureExtractor {
 
 	private enum EntityFeature {
 		COLOR, POSITION_X, POSITION_Y, SHAPE, SIZE;

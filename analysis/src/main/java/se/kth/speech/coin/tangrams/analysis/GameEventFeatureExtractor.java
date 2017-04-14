@@ -45,7 +45,7 @@ import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
 import se.kth.speech.coin.tangrams.iristk.events.Move;
 
-final class GameEventFeatureExtractor implements FeatureExtractor {
+final class GameEventFeatureExtractor implements GameContextFeatureExtractor {
 
 	/**
 	 *
