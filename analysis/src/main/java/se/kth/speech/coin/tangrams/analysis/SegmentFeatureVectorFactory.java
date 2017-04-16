@@ -39,22 +39,15 @@ final class SegmentFeatureVectorFactory implements Function<Segment, Stream<Doub
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SegmentFeatureVectorFactory.class);
 
-	private static final Function<Segment, List<Utterance>> SEG_UTT_FACTORY;
-
-	private static final int SEGMENT_TIME_TO_MILLS_FACTOR;
+	private static final Function<Segment, List<Utterance>> SEG_UTT_FACTORY = new SegmentUtteranceFactory();
 
 	private static final Collector<CharSequence, ?, String> TOKEN_FORM_JOINER = Collectors.joining(" ");
 
-	static {
-		SEGMENT_TIME_TO_MILLS_FACTOR = 1000;
-		SEG_UTT_FACTORY = new SegmentUtteranceFactory(1.0f / SEGMENT_TIME_TO_MILLS_FACTOR);
-	}
+	private final List<? extends BiConsumer<? super GameContext, ? super DoubleStream.Builder>> contextFeatureExtractors;
 
 	private final Map<String, GameHistory> playerStateChangeData;
 
 	private final Map<String, String> sourceIdPlayerIds;
-
-	private final List<? extends BiConsumer<? super GameContext, ? super DoubleStream.Builder>> contextFeatureExtractors;
 
 	private final List<? extends BiConsumer<? super Utterance, ? super DoubleStream.Builder>> uttFeatureExtractors;
 
@@ -86,11 +79,11 @@ final class SegmentFeatureVectorFactory implements Function<Segment, Stream<Doub
 	private GameContext createContext(final Utterance utt, final String playerId) {
 		final GameHistory history = playerStateChangeData.get(playerId);
 		final NavigableMap<Timestamp, List<Event>> events = history.getEvents();
-		final float uttStartMills = utt.getStartTime() * SEGMENT_TIME_TO_MILLS_FACTOR;
+		final float uttStartMills = utt.getStartTime() * SegmentTimes.TIME_TO_MILLS_FACTOR;
 		final Timestamp gameStartTime = history.getStartTime();
 		final Timestamp uttStartTimestamp = TimestampArithmetic.createOffsetTimestamp(gameStartTime, uttStartMills);
 
-		final float uttEndMills = utt.getEndTime() * SEGMENT_TIME_TO_MILLS_FACTOR;
+		final float uttEndMills = utt.getEndTime() * SegmentTimes.TIME_TO_MILLS_FACTOR;
 		final Timestamp uttEndTimestamp = TimestampArithmetic.createOffsetTimestamp(gameStartTime, uttEndMills);
 		final NavigableMap<Timestamp, List<Event>> eventsDuringUtt = events.subMap(uttStartTimestamp, true,
 				uttEndTimestamp, true);

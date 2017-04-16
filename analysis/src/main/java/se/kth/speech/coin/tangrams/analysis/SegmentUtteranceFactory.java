@@ -24,11 +24,21 @@ import java.util.stream.Collectors;
 import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
 import se.kth.speech.hat.xsd.Transcription.T;
 
-final class SegmentUtteranceFactory implements Function<Segment, List<Utterance>> {
+public final class SegmentUtteranceFactory implements Function<Segment, List<Utterance>> {
+
+	private static final float DEFAULT_MIN_SEG_SPACING;
+
+	static {
+		DEFAULT_MIN_SEG_SPACING = 1.0f / SegmentTimes.TIME_TO_MILLS_FACTOR;
+	}
 
 	private final float minSegmentSpacing;
 
-	SegmentUtteranceFactory(final float minSegmentSpacing) {
+	public SegmentUtteranceFactory() {
+		this(DEFAULT_MIN_SEG_SPACING);
+	}
+
+	public SegmentUtteranceFactory(final float minSegmentSpacing) {
 		this.minSegmentSpacing = minSegmentSpacing;
 	}
 
