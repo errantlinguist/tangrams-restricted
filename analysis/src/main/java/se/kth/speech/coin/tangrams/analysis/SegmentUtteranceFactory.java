@@ -58,8 +58,8 @@ public final class SegmentUtteranceFactory implements Function<Segment, List<Utt
 			LOGGER.debug("Segment \"{}\" has no {} element: {}",
 					new Object[] { segment.getId(), Transcription.class.getSimpleName() });
 		} else {
-			result = new ArrayList<>();
 			final List<Object> children = transcription.getSegmentOrT();
+			result = new ArrayList<>(Math.max(children.size(), 16));
 			final Float initialPrevUttEndTime = segment.getStart();
 			assert initialPrevUttEndTime != null;
 			{
