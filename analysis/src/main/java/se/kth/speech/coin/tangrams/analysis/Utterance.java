@@ -18,7 +18,7 @@ package se.kth.speech.coin.tangrams.analysis;
 
 import java.util.List;
 
-final class Utterance {
+public final class Utterance {
 
 	private final float endTime;
 
@@ -28,7 +28,7 @@ final class Utterance {
 
 	private final List<String> tokens;
 
-	Utterance(final String segmentId, final List<String> tokens, final float startTime,
+	public Utterance(final String segmentId, final List<String> tokens, final float startTime,
 			final float endTime) {
 		this.segmentId = segmentId;
 		this.tokens = tokens;
