@@ -195,7 +195,6 @@ public final class WordsAsClassifiersTrainingDataFactory
 							.map(trainingDataFactory);
 					final Stream<Entry<Stream<String>, DoubleStream>> trainingData = segTrainingData
 							.flatMap(Function.identity());
-					// TODO: finish
 					try (final PrintWriter out = parseOutpath(cl)) {
 						out.print(header);
 						trainingData.forEachOrdered(trainingDatum -> {
@@ -284,8 +283,19 @@ public final class WordsAsClassifiersTrainingDataFactory
 	 * @see java.util.function.Function#apply(java.lang.Object)
 	 */
 	@Override
-	public Stream<Entry<Stream<String>, DoubleStream>> apply(final Segment t) {
-		// TODO Auto-generated method stub
+	public Stream<Entry<Stream<String>, DoubleStream>> apply(final Segment segment) {
+		final List<Utterance> utts = SEG_UTT_FACTORY.apply(segment);
+		final String sourceId = segment.getSource();
+		// Get the player ID associated with the given audio source
+		final String playerId = sourceIdPlayerIds.get(sourceId);
+		final Stream<Entry<Utterance, GameContext>> uttContexts = utts.stream()
+				.flatMap(utt -> uttContextFactory.apply(utt, playerId));
+//		return uttContexts.map(uttContext -> {
+//			final DoubleStream.Builder featureVectorBuilder = DoubleStream.builder();
+//			contextFeatureExtractors
+//					.forEach(extractor -> extractor.accept(uttContext.getValue(), featureVectorBuilder));
+//			return featureVectorBuilder.build();
+//		});
 		return null;
 	}
 

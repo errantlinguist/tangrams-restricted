@@ -17,8 +17,21 @@
 package se.kth.speech.coin.tangrams.analysis;
 
 import java.sql.Timestamp;
+import java.util.List;
+import java.util.NavigableMap;
+import java.util.Optional;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
+
+import com.google.common.collect.Lists;
+
+import iristk.system.Event;
 
 public final class GameContext {
+
+	private static <V> Stream<V> getValuesDescendingOrder(final NavigableMap<?, ? extends List<? extends V>> map) {
+		return map.descendingMap().values().stream().map(Lists::reverse).flatMap(List::stream);
+	}
 
 	private final GameHistory history;
 
@@ -73,6 +86,14 @@ public final class GameContext {
 		return true;
 	}
 
+	public Optional<Event> findLastEvent(final Predicate<Event> matcher) {
+		final NavigableMap<Timestamp, List<Event>> timedEventsBeforeUtt = getPrecedingEvents();
+		// Look for the last matching event (iterating
+		// backwards)
+		final Stream<Event> eventsDescTime = getValuesDescendingOrder(timedEventsBeforeUtt);
+		return eventsDescTime.filter(matcher).findFirst();
+	}
+
 	/**
 	 * @return the history
 	 */
@@ -85,6 +106,10 @@ public final class GameContext {
 	 */
 	public String getPlayerId() {
 		return playerId;
+	}
+
+	public NavigableMap<Timestamp, List<Event>> getPrecedingEvents() {
+		return history.getEvents().headMap(time, true);
 	}
 
 	/**

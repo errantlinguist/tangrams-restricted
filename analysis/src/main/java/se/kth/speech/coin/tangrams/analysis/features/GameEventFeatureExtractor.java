@@ -89,18 +89,17 @@ final class GameEventFeatureExtractor implements GameContextFeatureExtractor {
 			return ActionFeature.ORDERING.stream().map(Enum::toString);
 		}
 
-		private static void setVals(final DoubleStream.Builder vals, final NavigableMap<Timestamp, List<Event>> events,
-				final Timestamp time, final String speakingPlayerId) {
+		private static void setVals(final DoubleStream.Builder vals, final GameContext context) {
 			for (final ActionFeature feature : ORDERING) {
 				switch (feature) {
 				case LAST_SUBMITTED_EVENT_TYPE: {
-					final NavigableMap<Timestamp, List<Event>> timedEventsBeforeUtt = events.headMap(time, true);
+					final NavigableMap<Timestamp, List<Event>> timedEventsBeforeUtt = context.getPrecedingEvents();
 					// Look for the last time the speaking player submitted an
 					// event, iterating backwards
 					final Stream<Event> eventsReversed = timedEventsBeforeUtt.descendingMap().values().stream()
 							.map(Lists::reverse).flatMap(List::stream);
 					final Predicate<Event> lastSubmittedByPlayerMatcher = new EventSubmittingPlayerMatcher(
-							speakingPlayerId);
+							context.getPlayerId());
 					final Optional<Event> lastEventSubmittedByPlayer = eventsReversed
 							.filter(lastSubmittedByPlayerMatcher).findFirst();
 					final GameManagementEvent lastEventType = lastEventSubmittedByPlayer.isPresent()
@@ -110,7 +109,7 @@ final class GameEventFeatureExtractor implements GameContextFeatureExtractor {
 					break;
 				}
 				case SELECTED_ENTITY: {
-					final NavigableMap<Timestamp, List<Event>> timedEventsBeforeUtt = events.headMap(time, true);
+					final NavigableMap<Timestamp, List<Event>> timedEventsBeforeUtt = context.getPrecedingEvents();
 					final Stream<Event> eventsDescTime = getValuesDescendingOrder(timedEventsBeforeUtt);
 					final String moveAttrName = GameManagementEvent.Attribute.MOVE.toString();
 					final Optional<Event> lastSelectionEvent = eventsDescTime.filter(event -> event.has(moveAttrName))
@@ -206,14 +205,13 @@ final class GameEventFeatureExtractor implements GameContextFeatureExtractor {
 			return result;
 		}
 
-		private static void setVals(final DoubleStream.Builder vals, final NavigableMap<Timestamp, List<Event>> events,
-				final Timestamp time, final String speakingPlayerId) {
+		private static void setVals(final DoubleStream.Builder vals, final GameContext context) {
 			for (final GameManagementEvent eventType : EVENT_TYPE_FEATURE_ORDERING) {
 				final Predicate<Event> eventTypeMatcher = EVENT_TYPE_MATCHERS.get(eventType);
 				for (final EventHistoryFeature feature : ORDERING) {
 					switch (feature) {
 					case LAST_OCC_DIST: {
-						final NavigableMap<Timestamp, List<Event>> timedEventsBeforeUtt = events.headMap(time, true);
+						final NavigableMap<Timestamp, List<Event>> timedEventsBeforeUtt = context.getPrecedingEvents();
 						// Look for the last time the event was seen (iterating
 						// backwards)
 						final Stream<Event> eventsDescTime = getValuesDescendingOrder(timedEventsBeforeUtt);
@@ -222,12 +220,12 @@ final class GameEventFeatureExtractor implements GameContextFeatureExtractor {
 						break;
 					}
 					case LAST_SPEAKER_SUB_DIST: {
-						final NavigableMap<Timestamp, List<Event>> timedEventsBeforeUtt = events.headMap(time, true);
+						final NavigableMap<Timestamp, List<Event>> timedEventsBeforeUtt = context.getPrecedingEvents();
 						// Look for the last time the event submitted by the
 						// speaking player (iterating
 						// backwards)
 						final Predicate<Event> matcher = eventTypeMatcher
-								.and(new EventSubmittingPlayerMatcher(speakingPlayerId));
+								.and(new EventSubmittingPlayerMatcher(context.getPlayerId()));
 						final Stream<Event> eventsDescTime = getValuesDescendingOrder(timedEventsBeforeUtt);
 						final int lastOccurrenceDist = findFirstMatchingDistance(eventsDescTime, matcher);
 						vals.accept(lastOccurrenceDist);
@@ -249,12 +247,9 @@ final class GameEventFeatureExtractor implements GameContextFeatureExtractor {
 	}
 
 	@Override
-	public void accept(final GameContext gameState, final DoubleStream.Builder vals) {
-		final NavigableMap<Timestamp, List<Event>> events = gameState.getHistory().getEvents();
-		final Timestamp uttStartTimestamp = gameState.getTime();
-		final String playerId = gameState.getPlayerId();
-		ActionFeature.setVals(vals, events, uttStartTimestamp, playerId);
-		EventHistoryFeature.setVals(vals, events, uttStartTimestamp, playerId);
+	public void accept(final GameContext context, final DoubleStream.Builder vals) {
+		ActionFeature.setVals(vals, context);
+		EventHistoryFeature.setVals(vals, context);
 	}
 
 	@Override
