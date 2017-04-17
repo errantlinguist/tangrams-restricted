@@ -21,15 +21,16 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.NavigableSet;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Stream;
 
 import javax.xml.bind.JAXBException;
+import javax.xml.bind.Unmarshaller;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import iristk.util.HAT;
 import se.kth.speech.hat.xsd.Annotation;
 
 /**
@@ -43,11 +44,15 @@ public final class HATWordListFactory implements Function<Stream<Path>, Navigabl
 
 	private final Collector<Annotation, ?, NavigableSet<String>> collector;
 
+	private final Supplier<? extends Unmarshaller> unmarshallerSupplier;
+
 	/**
 	 *
 	 */
-	public HATWordListFactory(final Collector<Annotation, ?, NavigableSet<String>> collector) {
+	public HATWordListFactory(final Collector<Annotation, ?, NavigableSet<String>> collector,
+			final Supplier<? extends Unmarshaller> unmarshallerSupplier) {
 		this.collector = collector;
+		this.unmarshallerSupplier = unmarshallerSupplier;
 	}
 
 	@Override
@@ -71,7 +76,7 @@ public final class HATWordListFactory implements Function<Stream<Path>, Navigabl
 			Stream<Annotation> annot = Stream.empty();
 			LOGGER.info("Reading \"{}\".", infile);
 			try {
-				annot = Stream.of(HAT.readAnnotation(infile));
+				annot = Stream.of((Annotation) unmarshallerSupplier.get().unmarshal(infile));
 			} catch (final JAXBException e) {
 				LOGGER.warn("A(n) {} occurred while reading \"{}\"; Skipping.",
 						new Object[] { e.getClass().getSimpleName(), infile }, e);

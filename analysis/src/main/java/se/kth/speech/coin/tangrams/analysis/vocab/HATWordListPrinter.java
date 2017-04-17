@@ -29,7 +29,9 @@ import java.util.NavigableSet;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
+import javax.xml.bind.Unmarshaller;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -82,7 +84,32 @@ public final class HATWordListPrinter {
 
 	private static final Options OPTIONS = createOptions();
 
-	public static void main(final String[] args) throws IOException, JAXBException {
+	private static final ThreadLocal<Unmarshaller> UNMARSHALLER;
+
+	static {
+		try {
+			final JAXBContext jc = JAXBContext.newInstance("se.kth.speech.hat.xsd");
+			UNMARSHALLER = new ThreadLocal<Unmarshaller>() {
+				/*
+				 * (non-Javadoc)
+				 *
+				 * @see java.lang.ThreadLocal#initialValue()
+				 */
+				@Override
+				protected Unmarshaller initialValue() {
+					try {
+						return jc.createUnmarshaller();
+					} catch (final JAXBException e) {
+						throw new RuntimeException(e);
+					}
+				}
+			};
+		} catch (final JAXBException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+	public static void main(final String[] args) throws IOException {
 		final CommandLineParser parser = new DefaultParser();
 		try {
 			final CommandLine cl = parser.parse(OPTIONS, args);
@@ -91,7 +118,8 @@ public final class HATWordListPrinter {
 			} else {
 				final File inpath = (File) cl.getParsedOptionValue(Parameter.INPATH.optName);
 				LOGGER.info("Reading annotations from \"{}\".", inpath);
-				final HATWordListFactory f = new HATWordListFactory(new AnnotationVocabularyCollector());
+				final HATWordListFactory f = new HATWordListFactory(new AnnotationVocabularyCollector(),
+						UNMARSHALLER::get);
 				final NavigableSet<String> wordList;
 				try (final Stream<Path> inpaths = Files.walk(inpath.toPath(), FileVisitOption.FOLLOW_LINKS)) {
 					wordList = f.apply(inpaths);
