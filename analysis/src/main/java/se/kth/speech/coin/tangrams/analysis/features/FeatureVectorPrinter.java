@@ -138,7 +138,7 @@ public final class FeatureVectorPrinter {
 				final Map<String, Path> playerEventLogFilePaths = LoggedEvents
 						.createPlayerEventLogFileMap(sessionLogDir, expectedEventLogFileCount);
 				final Table<String, String, GameHistory> playerGameStateChangeData = LoggedEvents
-						.createPlayerGameHistories(playerEventLogFilePaths.entrySet(),
+						.createPlayerGameHistoryTable(playerEventLogFilePaths.entrySet(),
 								EXPECTED_UNIQUE_GAME_COUNT);
 				final Set<String> playerGameIdIntersection = new HashSet<>(playerGameStateChangeData.columnKeySet());
 				playerGameStateChangeData.rowMap().values().stream().map(Map::keySet)

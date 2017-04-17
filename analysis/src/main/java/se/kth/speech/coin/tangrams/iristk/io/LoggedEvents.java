@@ -109,7 +109,7 @@ public final class LoggedEvents {
 		return result;
 	}
 
-	public static Table<String, String, GameHistory> createPlayerGameHistories(
+	public static Table<String, String, GameHistory> createPlayerGameHistoryTable(
 			final Collection<Entry<String, Path>> playerEventLogFilePaths, final int expectedUniqueGameCount)
 			throws IOException {
 		final Table<String, String, GameHistory> result = HashBasedTable.create(playerEventLogFilePaths.size(),
