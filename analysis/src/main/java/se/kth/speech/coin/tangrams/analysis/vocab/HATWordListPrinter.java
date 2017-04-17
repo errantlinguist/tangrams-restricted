@@ -129,7 +129,7 @@ public final class HATWordListPrinter {
 					final Iterator<String> wordIter = wordList.iterator();
 					if (wordIter.hasNext()) {
 						final String first = wordIter.next();
-						out.println(first);
+						out.print(first);
 						while (wordIter.hasNext()) {
 							out.print(System.lineSeparator());
 							final String next = wordIter.next();
