@@ -77,7 +77,7 @@ final class GameEventFeatureExtractor implements GameContextFeatureExtractor {
 			assert EVENT_TYPE_FEATURE_ORDERING.size() == GameManagementEvent.values().length;
 			EVENT_TYPE_FEATURE_VALS = new Object2DoubleOpenHashMap<>(EVENT_TYPE_FEATURE_ORDERING.size() + 1);
 			FeatureMaps.putOrdinalFeatureVals(EVENT_TYPE_FEATURE_VALS, EVENT_TYPE_FEATURE_ORDERING);
-			EVENT_TYPE_FEATURE_VALS.put(null, -1.0);
+			EVENT_TYPE_FEATURE_VALS.put(null, NULL_FEATURE_VAL);
 		}
 
 		private static Stream<String> createFeatureDescriptions() {
@@ -114,7 +114,7 @@ final class GameEventFeatureExtractor implements GameContextFeatureExtractor {
 						final Integer entityId = lastSelectedEntityId.get();
 						val = entityId.doubleValue();
 					} else {
-						val = -1.0;
+						val = NULL_FEATURE_VAL;
 					}
 					vals.accept(val);
 					break;
@@ -168,7 +168,7 @@ final class GameEventFeatureExtractor implements GameContextFeatureExtractor {
 					.forEach(eventType -> EVENT_TYPE_MATCHERS.put(eventType, eventTypeMatcherFactory.apply(eventType)));
 			EVENT_TYPE_FEATURE_VALS = new Object2DoubleOpenHashMap<>(EVENT_TYPE_FEATURE_ORDERING.size() + 1);
 			FeatureMaps.putOrdinalFeatureVals(EVENT_TYPE_FEATURE_VALS, EVENT_TYPE_FEATURE_ORDERING);
-			EVENT_TYPE_FEATURE_VALS.put(null, -1.0);
+			EVENT_TYPE_FEATURE_VALS.put(null, NULL_FEATURE_VAL);
 		}
 
 		private static Stream<String> createFeatureDescriptions() {
@@ -204,6 +204,8 @@ final class GameEventFeatureExtractor implements GameContextFeatureExtractor {
 			}
 		}
 	}
+
+	private static final double NULL_FEATURE_VAL = -1.0;
 
 	@Override
 	public void accept(final GameContext context, final DoubleStream.Builder vals) {
