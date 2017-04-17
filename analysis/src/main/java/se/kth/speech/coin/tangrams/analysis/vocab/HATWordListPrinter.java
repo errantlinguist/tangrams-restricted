@@ -62,14 +62,14 @@ public final class HATWordListPrinter {
 		INPATH("i") {
 			@Override
 			public Option get() {
-				return Option.builder(optName).longOpt("infile").desc("The path to the HAT file(s) to process.")
+				return Option.builder(optName).longOpt("inpath").desc("The path to the HAT file(s) to process.")
 						.hasArg().argName("path").type(File.class).required().build();
 			}
 		},
 		OUTFILE("o") {
 			@Override
 			public Option get() {
-				return Option.builder(optName).longOpt("outfile").desc("The path of the word list file to write.")
+				return Option.builder(optName).longOpt("outpath").desc("The path of the word list file to write.")
 						.hasArg().argName("path").type(File.class).build();
 			}
 		};
