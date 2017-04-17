@@ -1,0 +1,177 @@
+/*
+ *  This file is part of analysis.
+ *
+ *  tangrams is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+package se.kth.speech.coin.tangrams.analysis.vocab;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.nio.file.FileVisitOption;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.NavigableSet;
+import java.util.function.Supplier;
+import java.util.stream.Collector;
+import java.util.stream.Stream;
+
+import javax.xml.bind.JAXBException;
+
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import iristk.util.HAT;
+import se.kth.speech.hat.xsd.Annotation;
+
+/**
+ * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
+ * @since Apr 5, 2017
+ *
+ */
+public final class HATWordListPrinter {
+
+	private enum Parameter implements Supplier<Option> {
+		HELP("?") {
+			@Override
+			public Option get() {
+				return Option.builder(optName).longOpt("help").desc("Prints this message.").build();
+			}
+		},
+		INPATH("i") {
+			@Override
+			public Option get() {
+				return Option.builder(optName).longOpt("infile").desc("The path to the HAT file(s) to process.")
+						.hasArg().argName("path").type(File.class).required().build();
+			}
+		},
+		OUTFILE("o") {
+			@Override
+			public Option get() {
+				return Option.builder(optName).longOpt("outfile").desc("The path of the word list file to write.")
+						.hasArg().argName("path").type(File.class).build();
+			}
+		};
+
+		protected final String optName;
+
+		private Parameter(final String optName) {
+			this.optName = optName;
+		}
+
+	}
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(HATWordListPrinter.class);
+
+	private static final Options OPTIONS = createOptions();
+
+	public static void main(final String[] args) throws IOException, JAXBException {
+		final CommandLineParser parser = new DefaultParser();
+		try {
+			final CommandLine cl = parser.parse(OPTIONS, args);
+			if (cl.hasOption(Parameter.HELP.optName)) {
+				printHelp();
+			} else {
+				final File inpath = (File) cl.getParsedOptionValue(Parameter.INPATH.optName);
+				LOGGER.info("Reading annotations from \"{}\".", inpath);
+				final HATWordListPrinter printer = new HATWordListPrinter(new HATVocabularyCollector());
+				final NavigableSet<String> wordList = printer.createWordList(inpath.toPath());
+				try (final PrintWriter out = parseOutfile(cl)) {
+					wordList.forEach(out::println);
+				}
+			}
+		} catch (final ParseException e) {
+			System.out.println(String.format("An error occured while parsing the command-line arguments: %s", e));
+			printHelp();
+		}
+	}
+
+	private static Options createOptions() {
+		final Options result = new Options();
+		Arrays.stream(Parameter.values()).map(Parameter::get).forEach(result::addOption);
+		return result;
+	}
+
+	private static PrintWriter parseOutfile(final CommandLine cl) throws ParseException, IOException {
+		final PrintWriter result;
+		final File outfile = (File) cl.getParsedOptionValue(Parameter.OUTFILE.optName);
+		if (outfile == null) {
+			LOGGER.info("No output file path specified; Writing to standard output.");
+			result = new PrintWriter(System.out);
+		} else {
+			LOGGER.info("Output file path is \"{}\".", outfile);
+			result = new PrintWriter(Files.newBufferedWriter(outfile.toPath(), StandardOpenOption.CREATE));
+		}
+		return result;
+	}
+
+	private static void printHelp() {
+		final HelpFormatter formatter = new HelpFormatter();
+		formatter.printHelp(HATWordListPrinter.class.getName(), OPTIONS);
+	}
+
+	private final Collector<Annotation, ?, NavigableSet<String>> collector;
+
+	public HATWordListPrinter(final Collector<Annotation, ?, NavigableSet<String>> collector) {
+		this.collector = collector;
+	}
+
+	private NavigableSet<String> createWordList(final Path pathToWalk) throws IOException {
+		NavigableSet<String> result = Collections.emptyNavigableSet();
+
+		try (final Stream<Path> inpaths = Files.walk(pathToWalk, FileVisitOption.FOLLOW_LINKS)) {
+			// NOTE: This also filters out directories as they have a content
+			// type of e.g. "inode/directory"
+			final Stream<Path> xmlFilePaths = inpaths.filter(inpath -> {
+				boolean shouldBeParsed = false;
+				try {
+					final String contentType = Files.probeContentType(inpath);
+					shouldBeParsed = contentType == null || contentType.endsWith("/xml");
+				} catch (final IOException e) {
+					LOGGER.warn(
+							"A(n) {} occurred while probing the content type of \"{}\"; Considering to be the correct format.",
+							new Object[] { e.getClass().getSimpleName(), inpath }, e);
+					shouldBeParsed = true;
+				}
+				return shouldBeParsed;
+			});
+			final Stream<Annotation> annots = xmlFilePaths.map(Path::toFile).flatMap(infile -> {
+				Stream<Annotation> annot = Stream.empty();
+				LOGGER.info("Reading \"{}\".", infile);
+				try {
+					annot = Stream.of(HAT.readAnnotation(infile));
+				} catch (final JAXBException e) {
+					LOGGER.warn("A(n) {} occurred while reading \"{}\"; Skipping.",
+							new Object[] { e.getClass().getSimpleName(), infile }, e);
+				}
+				return annot;
+			});
+
+			result = annots.collect(collector);
+		}
+		return result;
+
+	}
+
+}
