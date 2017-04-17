@@ -54,7 +54,7 @@ import se.kth.speech.coin.tangrams.iristk.events.ImageVisualizationInfoDescripti
 import se.kth.speech.coin.tangrams.iristk.events.ModelDescription;
 import se.kth.speech.coin.tangrams.iristk.events.Move;
 
-final class EntityFeatureExtractor implements GameContextFeatureExtractor {
+final class EntitySetFeatureExtractor implements GameContextFeatureExtractor {
 
 	private enum EntityFeature {
 		COLOR, POSITION_X, POSITION_Y, SHAPE, SIZE;
@@ -122,7 +122,7 @@ final class EntityFeatureExtractor implements GameContextFeatureExtractor {
 		}
 	}
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(EntityFeatureExtractor.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(EntitySetFeatureExtractor.class);
 
 	private static void applyEvent(final SpatialMatrix<Integer> model, final Event event) {
 		final Move move = (Move) event.get(GameManagementEvent.Attribute.MOVE.toString());
@@ -160,7 +160,7 @@ final class EntityFeatureExtractor implements GameContextFeatureExtractor {
 
 	private final Function<ModelDescription, SpatialMatrix<Integer>> initialGameModelFactory;
 
-	EntityFeatureExtractor(final int expectedUniqueModelDescriptionCount) {
+	EntitySetFeatureExtractor(final int expectedUniqueModelDescriptionCount) {
 		final Map<ModelDescription, SpatialMatrix<Integer>> gameModels = Maps
 				.newHashMapWithExpectedSize(expectedUniqueModelDescriptionCount);
 		initialGameModelFactory = modelDesc -> gameModels.computeIfAbsent(modelDesc,

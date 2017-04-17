@@ -173,7 +173,7 @@ public final class WordsAsClassifiersTrainingDataFactory
 
 					final int uniqueModelDescriptionCount = playerGameStateChangeData.values().size();
 					final List<GameContextFeatureExtractor> contextFeatureExtractors = Arrays
-							.asList(new EntityFeatureExtractor(uniqueModelDescriptionCount));
+							.asList(new EntitySetFeatureExtractor(uniqueModelDescriptionCount));
 					final Stream.Builder<String> featureDescBuilder = Stream.builder();
 					featureDescBuilder.accept("WORD");
 					contextFeatureExtractors.stream()
