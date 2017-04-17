@@ -18,7 +18,7 @@ package se.kth.speech.coin.tangrams.analysis;
 
 import java.sql.Timestamp;
 
-final class GameContext {
+public final class GameContext {
 
 	private final GameHistory history;
 

@@ -28,8 +28,7 @@ public final class Utterance {
 
 	private final List<String> tokens;
 
-	public Utterance(final String segmentId, final List<String> tokens, final float startTime,
-			final float endTime) {
+	public Utterance(final String segmentId, final List<String> tokens, final float startTime, final float endTime) {
 		this.segmentId = segmentId;
 		this.tokens = tokens;
 		this.startTime = startTime;
@@ -38,7 +37,7 @@ public final class Utterance {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#equals(java.lang.Object)
 	 */
 	@Override
@@ -106,7 +105,7 @@ public final class Utterance {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#hashCode()
 	 */
 	@Override
@@ -122,7 +121,7 @@ public final class Utterance {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#toString()
 	 */
 	@Override

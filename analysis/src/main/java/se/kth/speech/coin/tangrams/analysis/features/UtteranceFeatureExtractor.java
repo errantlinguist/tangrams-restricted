@@ -14,21 +14,21 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech.coin.tangrams.analysis;
+package se.kth.speech.coin.tangrams.analysis.features;
 
 import java.util.function.BiConsumer;
 import java.util.stream.DoubleStream;
 import java.util.stream.Stream;
 
-import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
+import se.kth.speech.coin.tangrams.analysis.Utterance;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
  * @since Apr 14, 2017
  *
  */
-interface GameContextFeatureExtractor extends BiConsumer<GameContext, DoubleStream.Builder> {
+interface UtteranceFeatureExtractor extends BiConsumer<Utterance, DoubleStream.Builder> {
 
-	Stream<String> createFeatureDescriptions(final GameStateDescription initialState);
+	Stream<String> createFeatureDescriptions();
 
 }

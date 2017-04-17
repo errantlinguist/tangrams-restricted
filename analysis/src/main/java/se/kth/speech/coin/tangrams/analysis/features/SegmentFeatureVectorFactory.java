@@ -14,7 +14,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech.coin.tangrams.analysis;
+package se.kth.speech.coin.tangrams.analysis.features;
 
 import java.sql.Timestamp;
 import java.util.Collection;
@@ -33,6 +33,11 @@ import org.slf4j.LoggerFactory;
 
 import iristk.system.Event;
 import se.kth.speech.TimestampArithmetic;
+import se.kth.speech.coin.tangrams.analysis.GameContext;
+import se.kth.speech.coin.tangrams.analysis.GameHistory;
+import se.kth.speech.coin.tangrams.analysis.SegmentTimes;
+import se.kth.speech.coin.tangrams.analysis.SegmentUtteranceFactory;
+import se.kth.speech.coin.tangrams.analysis.Utterance;
 import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
 
 final class SegmentFeatureVectorFactory implements Function<Segment, Stream<DoubleStream>> {

@@ -26,7 +26,7 @@ import java.util.TreeMap;
 import iristk.system.Event;
 import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
 
-final class GameHistory {
+public final class GameHistory {
 
 	private final NavigableMap<Timestamp, List<Event>> events = new TreeMap<>();
 

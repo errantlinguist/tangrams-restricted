@@ -1,5 +1,5 @@
 /*
- *  This file is part of se.kth.speech.coin.tangrams-restricted.analysis.
+ *  This file is part of analysis.
  *
  *  tangrams is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -14,7 +14,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech.coin.tangrams.analysis;
+package se.kth.speech.coin.tangrams.analysis.features;
 
 import java.io.File;
 import java.io.IOException;
@@ -57,6 +57,8 @@ import com.google.common.collect.Maps;
 import com.google.common.collect.Table;
 
 import iristk.util.HAT;
+import se.kth.speech.coin.tangrams.analysis.GameHistory;
+import se.kth.speech.coin.tangrams.analysis.LoggedGameStateChangeDataParser;
 import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
 import se.kth.speech.coin.tangrams.iristk.io.LoggingFormats;
 import se.kth.speech.hat.xsd.Annotation;
@@ -67,15 +69,10 @@ import se.kth.speech.hat.xsd.Annotation.Tracks.Track.Sources.Source;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
- * @since Apr 17, 2017
- * @see <a href="http://anthology.aclweb.org/W/W15/W15-0124.pdf">Casey
- *      Kennington, Livia Dia, & David Schlangen. &ldquo;A Discriminative Model
- *      for Perceptually-Grounded Incremental Reference Resolution.&rdquo; In
- *      <em>Proceedings of IWCS 2015</em><a>.
+ * @since Apr 5, 2017
  *
  */
-public final class WordsAsClassifiersTrainingDataFactory
-		implements Function<Segment, Stream<Entry<Stream<String>, DoubleStream>>> {
+public final class FeatureVectorPrinter {
 
 	private enum Parameter implements Supplier<Option> {
 		HELP("?") {
@@ -84,17 +81,17 @@ public final class WordsAsClassifiersTrainingDataFactory
 				return Option.builder(optName).longOpt("help").desc("Prints this message.").build();
 			}
 		},
-		INPATH("i") {
+		INFILE("i") {
 			@Override
 			public Option get() {
-				return Option.builder(optName).longOpt("inpath").desc("The path to the HAT file corpus to process.")
-						.hasArg().argName("path").type(File.class).required().build();
+				return Option.builder(optName).longOpt("infile").desc("The path to the HAT file to process.").hasArg()
+						.argName("path").type(File.class).required().build();
 			}
 		},
-		OUTPATH("o") {
+		OUTFILE("o") {
 			@Override
 			public Option get() {
-				return Option.builder(optName).longOpt("outpath").desc("The path to write the training data to.")
+				return Option.builder(optName).longOpt("outfile").desc("The path of the feature file to write.")
 						.hasArg().argName("path").type(File.class).build();
 			}
 		};
@@ -111,7 +108,7 @@ public final class WordsAsClassifiersTrainingDataFactory
 
 	private static final Pattern LOGGED_EVENT_FILE_NAME_PATTERN = Pattern.compile("events-(.+?)\\.txt");
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(WordsAsClassifiersTrainingDataFactory.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(FeatureVectorPrinter.class);
 
 	/**
 	 * @see <a href=
@@ -120,8 +117,6 @@ public final class WordsAsClassifiersTrainingDataFactory
 	private static final Pattern MINIMAL_FILE_EXT_PATTERN = Pattern.compile("\\.(?=[^\\.]+$)");
 
 	private static final Options OPTIONS = createOptions();
-
-	private static final Function<Segment, List<Utterance>> SEG_UTT_FACTORY = new SegmentUtteranceFactory();
 
 	private static final Collector<CharSequence, ?, String> TABLE_ROW_CELL_JOINER;
 
@@ -141,13 +136,13 @@ public final class WordsAsClassifiersTrainingDataFactory
 			if (cl.hasOption(Parameter.HELP.optName)) {
 				printHelp();
 			} else {
-				final File inpath = (File) cl.getParsedOptionValue(Parameter.INPATH.optName);
-				LOGGER.info("Reading annotations from \"{}\".", inpath);
-				final Annotation uttAnnots = HAT.readAnnotation(inpath);
+				final File infile = (File) cl.getParsedOptionValue(Parameter.INFILE.optName);
+				LOGGER.info("Parsing utterances from \"{}\".", infile);
+				final Annotation uttAnnots = HAT.readAnnotation(infile);
 				final Map<String, String> sourceIdPlayerIds = createSourceIdPlayerIdMap(uttAnnots);
 				final Set<String> playerIds = new HashSet<>(sourceIdPlayerIds.values());
 				final int expectedEventLogFileCount = playerIds.size();
-				final Path sessionLogDir = inpath.getParentFile().toPath();
+				final Path sessionLogDir = infile.getParentFile().toPath();
 				LOGGER.info("Processing session log directory \"{}\".", sessionLogDir);
 				final Map<String, Path> playerEventLogFilePaths = createPlayerEventLogFileMap(sessionLogDir,
 						expectedEventLogFileCount);
@@ -174,39 +169,34 @@ public final class WordsAsClassifiersTrainingDataFactory
 							.get(gameId);
 
 					final int uniqueModelDescriptionCount = playerGameStateChangeData.values().size();
-					final List<GameContextFeatureExtractor> contextFeatureExtractors = Arrays
-							.asList(new EntityFeatureExtractor(uniqueModelDescriptionCount));
+					final List<GameContextFeatureExtractor> contextFeatureExtractors = Arrays.asList(
+							new EnvironmentFeatureExtractor(uniqueModelDescriptionCount),
+							new EntityFeatureExtractor(uniqueModelDescriptionCount), new GameEventFeatureExtractor());
 					final Stream.Builder<String> featureDescBuilder = Stream.builder();
-					featureDescBuilder.accept("WORD");
 					contextFeatureExtractors.stream()
 							.map(extractor -> extractor.createFeatureDescriptions(firstGameDesc))
 							.flatMap(Function.identity()).forEachOrdered(featureDescBuilder);
 
+					final List<UtteranceFeatureExtractor> uttFeatureExtrators = Arrays
+							.asList(new StanfordNLPFeatureExtractor());
+					uttFeatureExtrators.stream().map(UtteranceFeatureExtractor::createFeatureDescriptions)
+							.flatMap(Function.identity()).forEachOrdered(featureDescBuilder);
 					final Stream<String> featureDescs = featureDescBuilder.build();
 					final String header = featureDescs.collect(TABLE_ROW_CELL_JOINER);
 
-					final WordsAsClassifiersTrainingDataFactory trainingDataFactory = new WordsAsClassifiersTrainingDataFactory(
-							sourceIdPlayerIds, playerStateChangeData, contextFeatureExtractors);
+					final SegmentFeatureVectorFactory featureVectorFactory = new SegmentFeatureVectorFactory(
+							sourceIdPlayerIds, playerStateChangeData, contextFeatureExtractors, uttFeatureExtrators);
 					final List<Segment> segments = uttAnnots.getSegments().getSegment();
-					final Stream<Stream<Entry<Stream<String>, DoubleStream>>> segTrainingData = segments.stream()
-							.map(trainingDataFactory);
-					final Stream<Entry<Stream<String>, DoubleStream>> trainingData = segTrainingData
-							.flatMap(Function.identity());
-					// TODO: finish
-					try (final PrintWriter out = parseOutpath(cl)) {
+					final Stream<Stream<DoubleStream>> segmentFeatureVectors = segments.stream()
+							.map(featureVectorFactory);
+					final Stream<DoubleStream> featureVectors = segmentFeatureVectors.flatMap(Function.identity());
+					try (final PrintWriter out = parseOutfile(cl)) {
 						out.print(header);
-						trainingData.forEachOrdered(trainingDatum -> {
-							final double[] featureVector = trainingDatum.getValue().toArray();
-							final Stream<String> rows = trainingDatum.getKey().map(word -> {
-								final Stream.Builder<String> rowBuilder = Stream.builder();
-								rowBuilder.accept(word);
-								Arrays.stream(featureVector).mapToObj(Double::toString).forEachOrdered(rowBuilder);
-								return rowBuilder.build();
-							}).map(stream -> stream.collect(TABLE_ROW_CELL_JOINER));
-							rows.forEachOrdered(row -> {
-								out.print(TABLE_STRING_REPR_ROW_DELIMITER);
-								out.println(row);
-							});
+						featureVectors.forEachOrdered(featureVector -> {
+							out.print(TABLE_STRING_REPR_ROW_DELIMITER);
+							final Stream<String> cellVals = featureVector.mapToObj(Double::toString);
+							final String row = cellVals.collect(TABLE_ROW_CELL_JOINER);
+							out.print(row);
 						});
 					}
 
@@ -214,6 +204,7 @@ public final class WordsAsClassifiersTrainingDataFactory
 					throw new UnsupportedOperationException(
 							String.format("No logic for handling a game count of %d.", gameCount));
 				}
+
 			}
 		} catch (final ParseException e) {
 			System.out.println(String.format("An error occured while parsing the command-line arguments: %s", e));
@@ -276,9 +267,9 @@ public final class WordsAsClassifiersTrainingDataFactory
 		}));
 	}
 
-	private static PrintWriter parseOutpath(final CommandLine cl) throws ParseException, IOException {
+	private static PrintWriter parseOutfile(final CommandLine cl) throws ParseException, IOException {
 		final PrintWriter result;
-		final File outfile = (File) cl.getParsedOptionValue(Parameter.OUTPATH.optName);
+		final File outfile = (File) cl.getParsedOptionValue(Parameter.OUTFILE.optName);
 		if (outfile == null) {
 			LOGGER.info("No output file path specified; Writing to standard output.");
 			result = new PrintWriter(System.out);
@@ -292,37 +283,6 @@ public final class WordsAsClassifiersTrainingDataFactory
 	private static void printHelp() {
 		final HelpFormatter formatter = new HelpFormatter();
 		formatter.printHelp(FeatureVectorPrinter.class.getName(), OPTIONS);
-	}
-
-	private final List<GameContextFeatureExtractor> contextFeatureExtractors;
-
-	private final Map<String, GameHistory> playerStateChangeData;
-
-	private final Map<String, String> sourceIdPlayerIds;
-
-	/**
-	 * @param contextFeatureExtractors
-	 * @param playerStateChangeData
-	 * @param sourceIdPlayerIds
-	 *
-	 */
-	public WordsAsClassifiersTrainingDataFactory(final Map<String, String> sourceIdPlayerIds,
-			final Map<String, GameHistory> playerStateChangeData,
-			final List<GameContextFeatureExtractor> contextFeatureExtractors) {
-		this.sourceIdPlayerIds = sourceIdPlayerIds;
-		this.playerStateChangeData = playerStateChangeData;
-		this.contextFeatureExtractors = contextFeatureExtractors;
-	}
-
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see java.util.function.Function#apply(java.lang.Object)
-	 */
-	@Override
-	public Stream<Entry<Stream<String>, DoubleStream>> apply(final Segment t) {
-		// TODO Auto-generated method stub
-		return null;
 	}
 
 }

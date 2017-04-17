@@ -33,8 +33,7 @@ import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
  * @since 6 Feb 2017
  *
  */
-final class LoggedGameStateChangeDataParser
-		implements Function<Stream<String>, Map<String, GameHistory>> {
+public final class LoggedGameStateChangeDataParser implements Function<Stream<String>, Map<String, GameHistory>> {
 
 	private static final Pattern EMPTY_OR_WHITESPACE_PATTERN = Pattern.compile("\\s*");
 

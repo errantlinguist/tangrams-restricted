@@ -42,8 +42,7 @@ import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
  * @since 27 Jan 2017
  *
  */
-final class GameStateCollector
-		implements Collector<Event, Map<String, GameHistory>, Map<String, GameHistory>> {
+final class GameStateCollector implements Collector<Event, Map<String, GameHistory>, Map<String, GameHistory>> {
 
 	private static final BiConsumer<Map<String, GameHistory>, Event> ACCUMULATOR = new BiConsumer<Map<String, GameHistory>, Event>() {
 
@@ -73,8 +72,8 @@ final class GameStateCollector
 			}
 		}
 
-		private void accept(final Map<String, GameHistory> gameHistories, final String gameId,
-				final Timestamp time, final GameManagementEvent gameEventType, final Event event) {
+		private void accept(final Map<String, GameHistory> gameHistories, final String gameId, final Timestamp time,
+				final GameManagementEvent gameEventType, final Event event) {
 			if (ignoredEventTypes.contains(gameEventType)) {
 				LOGGER.debug("Ignored event of type {} sent at \"{}\".", new Object[] { gameEventType, time });
 			} else {
@@ -82,7 +81,8 @@ final class GameStateCollector
 				case GAME_READY_RESPONSE: {
 					final GameStateDescription gameDesc = (GameStateDescription) event
 							.get(GameManagementEvent.Attribute.GAME_STATE.toString());
-					LOGGER.debug("Found {} sent at \"{}\".", new Object[] { gameDesc.getClass().getSimpleName(), time });
+					LOGGER.debug("Found {} sent at \"{}\".",
+							new Object[] { gameDesc.getClass().getSimpleName(), time });
 					putInitialState(gameHistories, gameId, time, gameDesc);
 					break;
 				}
@@ -99,8 +99,8 @@ final class GameStateCollector
 		 * @param timestamp
 		 * @param event
 		 */
-		private void addEvent(final Map<String, GameHistory> gameHistories, final String gameId,
-				final Timestamp time, final Event event) {
+		private void addEvent(final Map<String, GameHistory> gameHistories, final String gameId, final Timestamp time,
+				final Event event) {
 			gameHistories.compute(gameId, (gKey, oldVal) -> {
 				if (oldVal == null) {
 					throw new IllegalArgumentException(String.format(
