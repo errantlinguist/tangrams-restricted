@@ -19,7 +19,6 @@ package se.kth.speech.coin.tangrams.analysis.features;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -33,7 +32,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
@@ -53,7 +51,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.HashBasedTable;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Table;
 
 import iristk.util.HAT;
@@ -62,6 +59,7 @@ import se.kth.speech.coin.tangrams.analysis.LoggedGameStateChangeDataParser;
 import se.kth.speech.coin.tangrams.analysis.SegmentUtteranceFactory;
 import se.kth.speech.coin.tangrams.analysis.Utterance;
 import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
+import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
 import se.kth.speech.coin.tangrams.iristk.io.LoggingFormats;
 import se.kth.speech.hat.xsd.Annotation;
 import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
@@ -73,9 +71,9 @@ import se.kth.speech.hat.xsd.Annotation.Tracks.Track.Sources.Source;
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
  * @since Apr 17, 2017
  * @see <a href="http://anthology.aclweb.org/W/W15/W15-0124.pdf">Casey
- *      Kennington, Livia Dia, &amp; David Schlangen. &ldquo;A Discriminative Model
- *      for Perceptually-Grounded Incremental Reference Resolution.&rdquo; In
- *      <em>Proceedings of IWCS 2015</em><a>.
+ *      Kennington, Livia Dia, &amp; David Schlangen. &ldquo;A Discriminative
+ *      Model for Perceptually-Grounded Incremental Reference Resolution.&rdquo;
+ *      In <em>Proceedings of IWCS 2015</em><a>.
  *
  */
 public final class WordsAsClassifiersTrainingDataFactory
@@ -112,8 +110,6 @@ public final class WordsAsClassifiersTrainingDataFactory
 	}
 
 	private static final int EXPECTED_UNIQUE_GAME_COUNT = 1;
-
-	private static final Pattern LOGGED_EVENT_FILE_NAME_PATTERN = Pattern.compile("events-(.+?)\\.txt");
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(WordsAsClassifiersTrainingDataFactory.class);
 
@@ -153,8 +149,8 @@ public final class WordsAsClassifiersTrainingDataFactory
 				final int expectedEventLogFileCount = playerIds.size();
 				final Path sessionLogDir = inpath.getParentFile().toPath();
 				LOGGER.info("Processing session log directory \"{}\".", sessionLogDir);
-				final Map<String, Path> playerEventLogFilePaths = createPlayerEventLogFileMap(sessionLogDir,
-						expectedEventLogFileCount);
+				final Map<String, Path> playerEventLogFilePaths = LoggedEvents
+						.createPlayerEventLogFileMap(sessionLogDir, expectedEventLogFileCount);
 				final Table<String, String, GameHistory> playerGameStateChangeData = createPlayerGameStateChangeData(
 						playerEventLogFilePaths.entrySet());
 				final Set<String> playerGameIdIntersection = new HashSet<>(playerGameStateChangeData.columnKeySet());
@@ -228,27 +224,6 @@ public final class WordsAsClassifiersTrainingDataFactory
 	private static Options createOptions() {
 		final Options result = new Options();
 		Arrays.stream(Parameter.values()).map(Parameter::get).forEach(result::addOption);
-		return result;
-	}
-
-	private static Map<String, Path> createPlayerEventLogFileMap(final Path sessionLogDir,
-			final int minEventLogFileCount) throws IOException {
-		final Map<String, Path> result = Maps.newHashMapWithExpectedSize(minEventLogFileCount);
-		try (Stream<Path> filePaths = Files.walk(sessionLogDir, FileVisitOption.FOLLOW_LINKS)) {
-			filePaths.forEach(filePath -> {
-				final Matcher m = LOGGED_EVENT_FILE_NAME_PATTERN.matcher(filePath.getFileName().toString());
-				if (m.matches()) {
-					final String playerId = m.group(1);
-					result.put(playerId, filePath);
-				}
-			});
-		}
-		final int playerEventLogFileCount = result.size();
-		if (playerEventLogFileCount < minEventLogFileCount) {
-			throw new IllegalArgumentException(
-					String.format("Expected to find data files for at least %d unique player(s) but found %d instead.",
-							minEventLogFileCount, playerEventLogFileCount));
-		}
 		return result;
 	}
 

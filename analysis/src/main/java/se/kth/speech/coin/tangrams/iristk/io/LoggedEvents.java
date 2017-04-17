@@ -16,9 +16,18 @@
 */
 package se.kth.speech.coin.tangrams.iristk.io;
 
+import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.FileVisitOption;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Map;
 import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
+
+import com.google.common.collect.Maps;
 
 import iristk.system.Event;
 import iristk.util.Record;
@@ -33,6 +42,8 @@ public final class LoggedEvents {
 
 	public static final Function<String, Stream<Event>> JSON_EVENT_PARSER;
 
+	private static final Pattern LOGGED_EVENT_FILE_NAME_PATTERN = Pattern.compile("events-(.+?)\\.txt");
+
 	static {
 		JSON_EVENT_PARSER = line -> {
 			Stream<Event> result = Stream.empty();
@@ -46,6 +57,27 @@ public final class LoggedEvents {
 			}
 			return result;
 		};
+	}
+
+	public static Map<String, Path> createPlayerEventLogFileMap(final Path sessionLogDir,
+			final int minEventLogFileCount) throws IOException {
+		final Map<String, Path> result = Maps.newHashMapWithExpectedSize(minEventLogFileCount);
+		try (Stream<Path> filePaths = Files.walk(sessionLogDir, FileVisitOption.FOLLOW_LINKS)) {
+			filePaths.forEach(filePath -> {
+				final Matcher m = LOGGED_EVENT_FILE_NAME_PATTERN.matcher(filePath.getFileName().toString());
+				if (m.matches()) {
+					final String playerId = m.group(1);
+					result.put(playerId, filePath);
+				}
+			});
+		}
+		final int playerEventLogFileCount = result.size();
+		if (playerEventLogFileCount < minEventLogFileCount) {
+			throw new IllegalArgumentException(
+					String.format("Expected to find data files for at least %d unique player(s) but found %d instead.",
+							minEventLogFileCount, playerEventLogFileCount));
+		}
+		return result;
 	}
 
 	private LoggedEvents() {
