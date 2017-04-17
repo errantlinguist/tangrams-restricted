@@ -20,8 +20,13 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.analysis.util.CharArraySet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,19 +38,40 @@ public final class SegmentUtteranceFactory implements Function<Segment, List<Utt
 
 	private static final float DEFAULT_MIN_SEG_SPACING;
 
+	private static final Logger LOGGER = LoggerFactory.getLogger(SegmentUtteranceFactory.class);
+
+	private static final Collector<CharSequence, ?, String> TOKEN_JOINING_COLLECTOR = Collectors.joining(" ");
+
 	static {
 		DEFAULT_MIN_SEG_SPACING = 1.0f / SegmentTimes.TIME_TO_MILLS_FACTOR;
 	}
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(SegmentUtteranceFactory.class);
+	private static StandardAnalyzer createAnalyzer() {
+		final CharArraySet stopwords = CharArraySet.EMPTY_SET;
+		return new StandardAnalyzer(stopwords);
+	}
+
+	private static Function<String, Stream<String>> createTokenFactory() {
+		final Analyzer analyzer = createAnalyzer();
+		final StringTokenizer wrapped = new StringTokenizer(analyzer);
+		return content -> wrapped.apply(null, content);
+	}
 
 	private final float minSegmentSpacing;
 
+	private final Function<? super String, Stream<String>> tokenizer;
+
 	public SegmentUtteranceFactory() {
-		this(DEFAULT_MIN_SEG_SPACING);
+		this(createTokenFactory());
 	}
 
-	public SegmentUtteranceFactory(final float minSegmentSpacing) {
+	public SegmentUtteranceFactory(final Function<? super String, Stream<String>> tokenizer) {
+		this(tokenizer, DEFAULT_MIN_SEG_SPACING);
+	}
+
+	public SegmentUtteranceFactory(final Function<? super String, Stream<String>> tokenizer,
+			final float minSegmentSpacing) {
+		this.tokenizer = tokenizer;
 		this.minSegmentSpacing = minSegmentSpacing;
 	}
 
@@ -101,16 +127,18 @@ public final class SegmentUtteranceFactory implements Function<Segment, List<Utt
 		return result;
 	}
 
-	private Utterance createUtterance(final String segmentId, final List<T> tokens, final float previousUttEndTime,
+	private Utterance createUtterance(final String segmentId, final List<T> tokenAnnots, final float previousUttEndTime,
 			final float nextUttStartTime) {
-		final Float firstTokenStartTime = tokens.get(0).getStart();
+		final Float firstTokenStartTime = tokenAnnots.get(0).getStart();
 		final float seqStartTime = firstTokenStartTime == null ? previousUttEndTime + minSegmentSpacing
 				: firstTokenStartTime;
-		final Float lastTokenEndTime = tokens.get(tokens.size() - 1).getEnd();
+		final Float lastTokenEndTime = tokenAnnots.get(tokenAnnots.size() - 1).getEnd();
 		final float seqEndTime = lastTokenEndTime == null ? nextUttStartTime - minSegmentSpacing : lastTokenEndTime;
-		final List<String> tokenForms = tokens.stream().map(T::getContent)
-				.collect(Collectors.toCollection(() -> new ArrayList<>(tokens.size())));
-		return new Utterance(segmentId, tokenForms, seqStartTime, seqEndTime);
+		final Stream<String> tokenForms = tokenAnnots.stream().map(T::getContent);
+		final Stream<String> tokens = tokenizer.apply(tokenForms.collect(TOKEN_JOINING_COLLECTOR));
+		return new Utterance(segmentId,
+				tokens.collect(Collectors.toCollection(() -> new ArrayList<>(tokenAnnots.size()))), seqStartTime,
+				seqEndTime);
 	}
 
 }

@@ -27,8 +27,14 @@ import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
+import java.util.stream.Stream;
+
+import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.analysis.util.CharArraySet;
 
 import se.kth.speech.coin.tangrams.analysis.SegmentUtteranceFactory;
+import se.kth.speech.coin.tangrams.analysis.StringTokenizer;
 import se.kth.speech.hat.xsd.Annotation;
 
 /**
@@ -36,7 +42,8 @@ import se.kth.speech.hat.xsd.Annotation;
  * @since Apr 17, 2017
  *
  */
-public final class AnnotationVocabularyCollector implements Collector<Annotation, NavigableSet<String>, NavigableSet<String>> {
+public final class AnnotationVocabularyCollector
+		implements Collector<Annotation, NavigableSet<String>, NavigableSet<String>> {
 
 	private static final Set<Characteristics> CHARACTERISTICS = EnumSet.of(Characteristics.CONCURRENT,
 			Characteristics.IDENTITY_FINISH, Characteristics.UNORDERED);
@@ -46,6 +53,17 @@ public final class AnnotationVocabularyCollector implements Collector<Annotation
 		return c1;
 	};
 
+	private static StandardAnalyzer createAnalyzer(final Locale locale) {
+		final CharArraySet stopwords = CharArraySet.EMPTY_SET;
+		return new StandardAnalyzer(stopwords);
+	}
+
+	private static Function<String, Stream<String>> createTokenFactory(final Locale locale) {
+		final Analyzer analyzer = createAnalyzer(locale);
+		final StringTokenizer wrapped = new StringTokenizer(analyzer);
+		return content -> wrapped.apply(null, content);
+	}
+
 	private final BiConsumer<NavigableSet<String>, Annotation> accumulator;
 
 	private final Supplier<NavigableSet<String>> supplier;
@@ -54,16 +72,17 @@ public final class AnnotationVocabularyCollector implements Collector<Annotation
 		this(WordLists.DEFAULT_LOCALE);
 	}
 
-	public AnnotationVocabularyCollector(final Collator collator, final Function<? super String, String> normalizer) {
+	public AnnotationVocabularyCollector(final Collator collator,
+			final Function<? super String, Stream<String>> tokenizer) {
 		// Use a TreeSet so that iteration order is stable across
 		// invocations, meaning that a feature with a given index will
 		// always have the same meaning
 		supplier = () -> new TreeSet<>(collator);
-		accumulator = new WordLists.WordAccumulator<>(new SegmentUtteranceFactory(), normalizer);
+		accumulator = new WordLists.WordAccumulator<>(new SegmentUtteranceFactory(tokenizer));
 	}
 
 	public AnnotationVocabularyCollector(final Locale locale) {
-		this(Collator.getInstance(locale), str -> str.toLowerCase(locale));
+		this(Collator.getInstance(locale), createTokenFactory(locale));
 	}
 
 	/*

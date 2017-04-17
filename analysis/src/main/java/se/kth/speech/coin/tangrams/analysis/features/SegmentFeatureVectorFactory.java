@@ -36,9 +36,9 @@ final class SegmentFeatureVectorFactory implements Function<Segment, Stream<Doub
 
 	private final List<? extends BiConsumer<? super GameContext, ? super DoubleStream.Builder>> contextFeatureExtractors;
 
-	private final BiFunction<? super Utterance, ? super String, Stream<Entry<Utterance, GameContext>>> uttContextFactory;
-
 	private final Map<String, String> sourceIdPlayerIds;
+
+	private final BiFunction<? super Utterance, ? super String, Stream<Entry<Utterance, GameContext>>> uttContextFactory;
 
 	private final List<? extends BiConsumer<? super Utterance, ? super DoubleStream.Builder>> uttFeatureExtractors;
 

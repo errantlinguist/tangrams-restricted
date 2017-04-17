@@ -34,16 +34,12 @@ import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
  */
 final class WordLists {
 
-	static final class WordAccumulator<W, C extends Collection<? super W>> implements BiConsumer<C, Annotation> {
-
-		private final Function<? super String, W> normalizer;
+	static final class WordAccumulator<C extends Collection<? super String>> implements BiConsumer<C, Annotation> {
 
 		private final Function<Segment, ? extends Collection<Utterance>> segUttFactory;
 
-		WordAccumulator(final Function<Segment, ? extends Collection<Utterance>> segUttFactory,
-				final Function<? super String, W> normalizer) {
+		WordAccumulator(final Function<Segment, ? extends Collection<Utterance>> segUttFactory) {
 			this.segUttFactory = segUttFactory;
-			this.normalizer = normalizer;
 		}
 
 		@Override
@@ -52,8 +48,7 @@ final class WordLists {
 			final Stream<Utterance> utts = segments.stream().map(segUttFactory).map(Collection::stream)
 					.flatMap(Function.identity());
 			final Stream<String> words = utts.map(Utterance::getTokens).map(List::stream).flatMap(Function.identity());
-			final Stream<W> normalizedWords = words.map(normalizer);
-			normalizedWords.forEach(wordList::add);
+			words.forEach(wordList::add);
 		}
 	}
 
