@@ -45,7 +45,7 @@ public final class HATWordListFactory implements Function<Stream<Path>, Navigabl
 	private final Collector<Annotation, ?, NavigableSet<String>> collector;
 
 	private final Supplier<? extends Unmarshaller> unmarshallerSupplier;
-
+	
 	/**
 	 *
 	 */
