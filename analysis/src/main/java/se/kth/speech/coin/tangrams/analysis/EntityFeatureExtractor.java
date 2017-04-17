@@ -52,7 +52,7 @@ import se.kth.speech.coin.tangrams.iristk.events.ImageVisualizationInfoDescripti
 import se.kth.speech.coin.tangrams.iristk.events.ModelDescription;
 import se.kth.speech.coin.tangrams.iristk.events.Move;
 
-final class GameStateFeatureExtractor implements GameContextFeatureExtractor {
+final class EntityFeatureExtractor implements GameContextFeatureExtractor {
 
 	private enum EntityFeature {
 		COLOR, POSITION_X, POSITION_Y, SHAPE, SIZE;
@@ -120,37 +120,7 @@ final class GameStateFeatureExtractor implements GameContextFeatureExtractor {
 		}
 	}
 
-	private enum EnvironmentFeature {
-		COL_COUNT, ENTITY_COUNT, ROW_COUNT;
-
-		private static final List<EnvironmentFeature> ORDERING;
-
-		static {
-			ORDERING = Arrays.asList(ROW_COUNT, COL_COUNT, ENTITY_COUNT);
-			assert ORDERING.size() == EnvironmentFeature.values().length;
-		}
-
-		private static void setVals(final DoubleStream.Builder vals, final int[] modelDims, final int entityCount) {
-			for (final EnvironmentFeature feature : ORDERING) {
-				switch (feature) {
-				case COL_COUNT:
-					vals.accept(modelDims[1]);
-					break;
-				case ENTITY_COUNT:
-					vals.accept(entityCount);
-					break;
-				case ROW_COUNT:
-					vals.accept(modelDims[0]);
-					break;
-				default: {
-					throw new AssertionError("Missing enum-handling logic.");
-				}
-				}
-			}
-		}
-	}
-
-	private static final Logger LOGGER = LoggerFactory.getLogger(GameStateFeatureExtractor.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(EntityFeatureExtractor.class);
 
 	private static void applyEvent(final SpatialMatrix<Integer> model, final Event event) {
 		final Move move = (Move) event.get(GameManagementEvent.Attribute.MOVE.toString());
@@ -188,7 +158,7 @@ final class GameStateFeatureExtractor implements GameContextFeatureExtractor {
 
 	private final Function<ModelDescription, SpatialMatrix<Integer>> initialGameModelFactory;
 
-	GameStateFeatureExtractor(final int expectedUniqueModelDescriptionCount) {
+	EntityFeatureExtractor(final int expectedUniqueModelDescriptionCount) {
 		final Map<ModelDescription, SpatialMatrix<Integer>> gameModels = Maps
 				.newHashMapWithExpectedSize(expectedUniqueModelDescriptionCount);
 		initialGameModelFactory = modelDesc -> gameModels.computeIfAbsent(modelDesc,
@@ -213,15 +183,10 @@ final class GameStateFeatureExtractor implements GameContextFeatureExtractor {
 	}
 
 	private Stream<String> createFeatureDescriptions(final int entityCount) {
-		final Stream.Builder<String> resultBuilder = Stream.builder();
-		final Stream<String> envFeatureDescs = EnvironmentFeature.ORDERING.stream().map(Enum::toString);
-		envFeatureDescs.forEachOrdered(resultBuilder);
-		final Stream<String> entityFeatureDescs = IntStream.range(0, entityCount).mapToObj(entityId -> {
+		return IntStream.range(0, entityCount).mapToObj(entityId -> {
 			final Stream<String> baseFeatureDescs = EntityFeature.ORDERING.stream().map(Enum::toString);
 			return baseFeatureDescs.map(desc -> "ENT_" + entityId + "-" + desc);
 		}).flatMap(Function.identity());
-		entityFeatureDescs.forEachOrdered(resultBuilder);
-		return resultBuilder.build();
 	}
 
 	private void extractFeatures(final GameHistory history, final Timestamp time, final DoubleStream.Builder vals) {
@@ -236,9 +201,6 @@ final class GameStateFeatureExtractor implements GameContextFeatureExtractor {
 	private void extractFeatures(final SpatialMatrix<Integer> model,
 			final List<ImageVisualizationInfoDescription.Datum> imgVizInfoData, final DoubleStream.Builder vals) {
 		final int[] modelDims = model.getDimensions();
-		final int entityCount = imgVizInfoData.size();
-		EnvironmentFeature.setVals(vals, modelDims, entityCount);
-
 		final double modelArea = IntArrays.product(modelDims);
 		final SpatialMap<Integer> piecePlacements = model.getElementPlacements();
 		for (final ListIterator<ImageVisualizationInfoDescription.Datum> imgVizInfoDataIter = imgVizInfoData

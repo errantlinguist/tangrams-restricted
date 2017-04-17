@@ -173,9 +173,9 @@ public final class WordsAsClassifiersTrainingDataFactory
 					final Map<String, GameHistory> playerStateChangeData = playerGameStateChangeData.columnMap()
 							.get(gameId);
 
-					final List<GameContextFeatureExtractor> contextFeatureExtractors = Arrays.asList(
-							new GameStateFeatureExtractor(playerGameStateChangeData.values().size()),
-							new GameEventFeatureExtractor());
+					final int uniqueModelDescriptionCount = playerGameStateChangeData.values().size();
+					final List<GameContextFeatureExtractor> contextFeatureExtractors = Arrays
+							.asList(new EntityFeatureExtractor(uniqueModelDescriptionCount));
 					final Stream.Builder<String> featureDescBuilder = Stream.builder();
 					featureDescBuilder.accept("WORD");
 					contextFeatureExtractors.stream()

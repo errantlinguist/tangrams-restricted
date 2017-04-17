@@ -166,9 +166,10 @@ public final class FeatureVectorPrinter {
 					final Map<String, GameHistory> playerStateChangeData = playerGameStateChangeData.columnMap()
 							.get(gameId);
 
+					final int uniqueModelDescriptionCount = playerGameStateChangeData.values().size();
 					final List<GameContextFeatureExtractor> contextFeatureExtractors = Arrays.asList(
-							new GameStateFeatureExtractor(playerGameStateChangeData.values().size()),
-							new GameEventFeatureExtractor());
+							new EnvironmentFeatureExtractor(uniqueModelDescriptionCount),
+							new EntityFeatureExtractor(uniqueModelDescriptionCount), new GameEventFeatureExtractor());
 					final Stream.Builder<String> featureDescBuilder = Stream.builder();
 					contextFeatureExtractors.stream()
 							.map(extractor -> extractor.createFeatureDescriptions(firstGameDesc))
