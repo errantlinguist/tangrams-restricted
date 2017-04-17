@@ -26,7 +26,6 @@ import java.util.stream.Stream;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
-import org.apache.lucene.analysis.util.CharArraySet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,8 +46,8 @@ public final class SegmentUtteranceFactory implements Function<Segment, List<Utt
 	}
 
 	private static StandardAnalyzer createAnalyzer() {
-		final CharArraySet stopwords = CharArraySet.EMPTY_SET;
-		return new StandardAnalyzer(stopwords);
+		// final CharArraySet stopwords = CharArraySet.EMPTY_SET;
+		return new StandardAnalyzer();
 	}
 
 	private static Function<String, Stream<String>> createTokenFactory() {
