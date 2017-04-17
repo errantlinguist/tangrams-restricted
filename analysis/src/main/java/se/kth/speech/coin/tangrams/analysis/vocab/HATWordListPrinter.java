@@ -25,6 +25,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.NavigableSet;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
@@ -98,7 +99,16 @@ public final class HATWordListPrinter {
 				final HATWordListPrinter printer = new HATWordListPrinter(new HATVocabularyCollector());
 				final NavigableSet<String> wordList = printer.createWordList(inpath.toPath());
 				try (final PrintWriter out = parseOutfile(cl)) {
-					wordList.forEach(out::println);
+					final Iterator<String> wordIter = wordList.iterator();
+					if (wordIter.hasNext()) {
+						final String first = wordIter.next();
+						out.println(first);
+						while (wordIter.hasNext()) {
+							out.print(System.lineSeparator());
+							final String next = wordIter.next();
+							out.print(next);
+						}
+					}
 				}
 			}
 		} catch (final ParseException e) {
