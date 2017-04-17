@@ -95,11 +95,6 @@ public final class WordsAsClassifiersTrainingDataPrinter {
 			} else {
 				final File inpath = (File) cl.getParsedOptionValue(Parameter.INPATH.optName);
 				LOGGER.info("Reading annotations from \"{}\".", inpath);
-				final HATWordListFactory f = new HATWordListFactory(new AnnotationVocabularyCollector());
-				final NavigableSet<String> wordList;
-				try (final Stream<Path> inpaths = Files.walk(inpath.toPath(), FileVisitOption.FOLLOW_LINKS)) {
-					wordList = f.apply(inpaths);
-				}
 
 				// TODO: finish
 
