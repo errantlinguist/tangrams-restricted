@@ -31,8 +31,16 @@ import se.kth.speech.SpatialRegion;
 import se.kth.speech.coin.tangrams.content.IconImages;
 import se.kth.speech.coin.tangrams.iristk.events.ImageVisualizationInfoDescription;
 
+/**
+ * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
+ * @see <a href="http://anthology.aclweb.org/W/W15/W15-0124.pdf">Casey
+ *      Kennington, Livia Dia, &amp; David Schlangen. &ldquo;A Discriminative
+ *      Model for Perceptually-Grounded Incremental Reference Resolution.&rdquo;
+ *      In <em>Proceedings of IWCS 2015</em><a>.
+ *
+ */
 enum EntityFeature {
-	COLOR, POSITION_X, POSITION_Y, SHAPE, SIZE;
+	BLUE, BRIGHTNESS, GREEN, HUE, POSITION_X, POSITION_Y, RED, SATURATION, SHAPE, SIZE;
 
 	private static final double NULL_FEATURE_VAL = -1.0;
 
@@ -41,14 +49,8 @@ enum EntityFeature {
 	private static final Object2DoubleMap<String> SHAPE_FEATURE_VALS = createShapeFeatureValueMap();
 
 	static {
-		ORDERING = Arrays.asList(SHAPE, COLOR, SIZE, POSITION_X, POSITION_Y);
+		ORDERING = Arrays.asList(SHAPE, RED, GREEN, BLUE, HUE, SATURATION, BRIGHTNESS, SIZE, POSITION_X, POSITION_Y);
 		assert ORDERING.size() == EntityFeature.values().length;
-	}
-
-	private static float createColorFeatureVal(final ImageVisualizationInfoDescription.Datum pieceImgVizInfoDatum) {
-		final Color color = pieceImgVizInfoDatum.getColor();
-		final float[] hsbVals = Color.RGBtoHSB(color.getRed(), color.getGreen(), color.getBlue(), null);
-		return hsbVals[0];
 	}
 
 	private static Object2DoubleMap<String> createShapeFeatureValueMap() {
@@ -71,11 +73,27 @@ enum EntityFeature {
 	static void setVals(final DoubleStream.Builder vals,
 			final ImageVisualizationInfoDescription.Datum pieceImgVizInfoDatum, final SpatialRegion pieceRegion,
 			final int[] modelDims, final double modelArea) {
+		final Color color = pieceImgVizInfoDatum.getColor();
+		final float[] hsbVals = Color.RGBtoHSB(color.getRed(), color.getGreen(), color.getBlue(), null);
 		for (final EntityFeature feature : ORDERING) {
 			switch (feature) {
-			case COLOR:
-				final float colorFeatureVal = createColorFeatureVal(pieceImgVizInfoDatum);
-				vals.accept(colorFeatureVal);
+			case RED:
+				vals.accept(color.getRed());
+				break;
+			case GREEN:
+				vals.accept(color.getGreen());
+				break;
+			case BLUE:
+				vals.accept(color.getBlue());
+				break;
+			case HUE:
+				vals.accept(hsbVals[0]);
+				break;
+			case SATURATION:
+				vals.accept(hsbVals[1]);
+				break;
+			case BRIGHTNESS:
+				vals.accept(hsbVals[2]);
 				break;
 			case POSITION_X: {
 				final double centerX = pieceRegion.getXLowerBound() + pieceRegion.getLengthX() / 2.0;
