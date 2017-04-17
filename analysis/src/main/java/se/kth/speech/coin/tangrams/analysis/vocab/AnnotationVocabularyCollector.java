@@ -36,7 +36,7 @@ import se.kth.speech.hat.xsd.Annotation;
  * @since Apr 17, 2017
  *
  */
-public final class HATVocabularyCollector implements Collector<Annotation, NavigableSet<String>, NavigableSet<String>> {
+public final class AnnotationVocabularyCollector implements Collector<Annotation, NavigableSet<String>, NavigableSet<String>> {
 
 	private static final Set<Characteristics> CHARACTERISTICS = EnumSet.of(Characteristics.CONCURRENT,
 			Characteristics.IDENTITY_FINISH, Characteristics.UNORDERED);
@@ -50,11 +50,11 @@ public final class HATVocabularyCollector implements Collector<Annotation, Navig
 
 	private final Supplier<NavigableSet<String>> supplier;
 
-	public HATVocabularyCollector() {
+	public AnnotationVocabularyCollector() {
 		this(WordLists.DEFAULT_LOCALE);
 	}
 
-	public HATVocabularyCollector(final Collator collator, final Function<? super String, String> normalizer) {
+	public AnnotationVocabularyCollector(final Collator collator, final Function<? super String, String> normalizer) {
 		// Use a TreeSet so that iteration order is stable across
 		// invocations, meaning that a feature with a given index will
 		// always have the same meaning
@@ -62,7 +62,7 @@ public final class HATVocabularyCollector implements Collector<Annotation, Navig
 		accumulator = new WordLists.WordAccumulator<>(new SegmentUtteranceFactory(), normalizer);
 	}
 
-	public HATVocabularyCollector(final Locale locale) {
+	public AnnotationVocabularyCollector(final Locale locale) {
 		this(Collator.getInstance(locale), str -> str.toLowerCase(locale));
 	}
 

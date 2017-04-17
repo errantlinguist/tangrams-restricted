@@ -24,11 +24,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.NavigableSet;
 import java.util.function.Supplier;
-import java.util.stream.Collector;
 import java.util.stream.Stream;
 
 import javax.xml.bind.JAXBException;
@@ -42,9 +40,6 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import iristk.util.HAT;
-import se.kth.speech.hat.xsd.Annotation;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -96,8 +91,12 @@ public final class HATWordListPrinter {
 			} else {
 				final File inpath = (File) cl.getParsedOptionValue(Parameter.INPATH.optName);
 				LOGGER.info("Reading annotations from \"{}\".", inpath);
-				final HATWordListPrinter printer = new HATWordListPrinter(new HATVocabularyCollector());
-				final NavigableSet<String> wordList = printer.createWordList(inpath.toPath());
+				final HATWordListFactory f = new HATWordListFactory(new AnnotationVocabularyCollector());
+				final NavigableSet<String> wordList;
+				try (final Stream<Path> inpaths = Files.walk(inpath.toPath(), FileVisitOption.FOLLOW_LINKS)) {
+					wordList = f.apply(inpaths);
+				}
+
 				try (final PrintWriter out = parseOutfile(cl)) {
 					final Iterator<String> wordIter = wordList.iterator();
 					if (wordIter.hasNext()) {
@@ -139,49 +138,6 @@ public final class HATWordListPrinter {
 	private static void printHelp() {
 		final HelpFormatter formatter = new HelpFormatter();
 		formatter.printHelp(HATWordListPrinter.class.getName(), OPTIONS);
-	}
-
-	private final Collector<Annotation, ?, NavigableSet<String>> collector;
-
-	public HATWordListPrinter(final Collector<Annotation, ?, NavigableSet<String>> collector) {
-		this.collector = collector;
-	}
-
-	private NavigableSet<String> createWordList(final Path pathToWalk) throws IOException {
-		NavigableSet<String> result = Collections.emptyNavigableSet();
-
-		try (final Stream<Path> inpaths = Files.walk(pathToWalk, FileVisitOption.FOLLOW_LINKS)) {
-			// NOTE: This also filters out directories as they have a content
-			// type of e.g. "inode/directory"
-			final Stream<Path> xmlFilePaths = inpaths.filter(inpath -> {
-				boolean shouldBeParsed = false;
-				try {
-					final String contentType = Files.probeContentType(inpath);
-					shouldBeParsed = contentType == null || contentType.endsWith("/xml");
-				} catch (final IOException e) {
-					LOGGER.warn(
-							"A(n) {} occurred while probing the content type of \"{}\"; Considering to be the correct format.",
-							new Object[] { e.getClass().getSimpleName(), inpath }, e);
-					shouldBeParsed = true;
-				}
-				return shouldBeParsed;
-			});
-			final Stream<Annotation> annots = xmlFilePaths.map(Path::toFile).flatMap(infile -> {
-				Stream<Annotation> annot = Stream.empty();
-				LOGGER.info("Reading \"{}\".", infile);
-				try {
-					annot = Stream.of(HAT.readAnnotation(infile));
-				} catch (final JAXBException e) {
-					LOGGER.warn("A(n) {} occurred while reading \"{}\"; Skipping.",
-							new Object[] { e.getClass().getSimpleName(), infile }, e);
-				}
-				return annot;
-			});
-
-			result = annots.collect(collector);
-		}
-		return result;
-
 	}
 
 }
