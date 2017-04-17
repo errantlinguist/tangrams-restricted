@@ -86,7 +86,7 @@ public final class GameContext {
 		return true;
 	}
 
-	public Optional<Event> findLastEvent(final Predicate<Event> matcher) {
+	public Optional<Event> findLastEvent(final Predicate<? super Event> matcher) {
 		final NavigableMap<Timestamp, List<Event>> timedEventsBeforeUtt = getPrecedingEvents();
 		// Look for the last matching event (iterating
 		// backwards)
