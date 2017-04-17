@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.function.ToDoubleFunction;
 import java.util.regex.Pattern;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
@@ -156,10 +157,13 @@ public final class FeatureVectorPrinter {
 							throw new IllegalArgumentException("Found non-equivalent initial states between players.");
 						}
 					}
+
 					final int uniqueModelDescriptionCount = playerGameStateChangeData.values().size();
+					final ToDoubleFunction<String> namedResourceEdgeCountFactory = new ImageEdgeCountFactory();
 					final List<GameContextFeatureExtractor> contextFeatureExtractors = Arrays.asList(
 							new EnvironmentFeatureExtractor(uniqueModelDescriptionCount),
-							new EntitySetFeatureExtractor(uniqueModelDescriptionCount), new GameEventFeatureExtractor());
+							new EntitySetFeatureExtractor(uniqueModelDescriptionCount, namedResourceEdgeCountFactory),
+							new GameEventFeatureExtractor());
 					final Stream.Builder<String> featureDescBuilder = Stream.builder();
 					contextFeatureExtractors.stream()
 							.map(extractor -> extractor.createFeatureDescriptions(firstGameDesc))

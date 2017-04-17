@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.ToDoubleFunction;
 import java.util.stream.DoubleStream;
 
 import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
@@ -40,7 +41,7 @@ import se.kth.speech.coin.tangrams.iristk.events.ImageVisualizationInfoDescripti
  *
  */
 enum EntityFeature {
-	BLUE, BRIGHTNESS, GREEN, HUE, POSITION_X, POSITION_Y, RED, SATURATION, SHAPE, SIZE;
+	BLUE, BRIGHTNESS, EDGE_COUNT, GREEN, HUE, POSITION_X, POSITION_Y, RED, SATURATION, SHAPE, SIZE;
 
 	private static final double NULL_FEATURE_VAL = -1.0;
 
@@ -49,7 +50,8 @@ enum EntityFeature {
 	private static final Object2DoubleMap<String> SHAPE_FEATURE_VALS = createShapeFeatureValueMap();
 
 	static {
-		ORDERING = Arrays.asList(SHAPE, RED, GREEN, BLUE, HUE, SATURATION, BRIGHTNESS, SIZE, POSITION_X, POSITION_Y);
+		ORDERING = Arrays.asList(SHAPE, EDGE_COUNT, RED, GREEN, BLUE, HUE, SATURATION, BRIGHTNESS, SIZE, POSITION_X,
+				POSITION_Y);
 		assert ORDERING.size() == EntityFeature.values().length;
 	}
 
@@ -72,7 +74,8 @@ enum EntityFeature {
 
 	static void setVals(final DoubleStream.Builder vals,
 			final ImageVisualizationInfoDescription.Datum pieceImgVizInfoDatum, final SpatialRegion pieceRegion,
-			final int[] modelDims, final double modelArea) {
+			final int[] modelDims, final double modelArea,
+			final ToDoubleFunction<? super String> namedResourceEdgeCountFactory) {
 		final Color color = pieceImgVizInfoDatum.getColor();
 		final float[] hsbVals = Color.RGBtoHSB(color.getRed(), color.getGreen(), color.getBlue(), null);
 		for (final EntityFeature feature : ORDERING) {
@@ -107,6 +110,10 @@ enum EntityFeature {
 				vals.accept(posY);
 				break;
 			}
+			case EDGE_COUNT: {
+				final String imgResName = pieceImgVizInfoDatum.getResourceName();
+				vals.accept(namedResourceEdgeCountFactory.applyAsDouble(imgResName));
+			}
 			case SHAPE:
 				final double shapeFeatureVal = getShapeFeatureVal(pieceImgVizInfoDatum);
 				vals.accept(shapeFeatureVal);
@@ -125,10 +132,11 @@ enum EntityFeature {
 
 	static void setVals(final DoubleStream.Builder vals,
 			final Optional<Entry<ImageVisualizationInfoDescription.Datum, SpatialRegion>> entityData,
-			final int[] modelDims, final double modelArea) {
+			final int[] modelDims, final double modelArea,
+			final ToDoubleFunction<? super String> namedResourceEdgeCountFactory) {
 		if (entityData.isPresent()) {
 			final Entry<ImageVisualizationInfoDescription.Datum, SpatialRegion> data = entityData.get();
-			setVals(vals, data.getKey(), data.getValue(), modelDims, modelArea);
+			setVals(vals, data.getKey(), data.getValue(), modelDims, modelArea, namedResourceEdgeCountFactory);
 		} else {
 			// Set null feature vals
 			ORDERING.stream().mapToDouble(feature -> NULL_FEATURE_VAL).forEach(vals);

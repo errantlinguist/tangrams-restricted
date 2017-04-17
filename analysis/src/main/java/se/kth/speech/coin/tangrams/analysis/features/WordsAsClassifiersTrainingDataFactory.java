@@ -32,6 +32,7 @@ import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.function.ToDoubleFunction;
 import java.util.regex.Pattern;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
@@ -171,8 +172,10 @@ public final class WordsAsClassifiersTrainingDataFactory
 					}
 
 					final int uniqueModelDescriptionCount = playerGameStateChangeData.values().size();
+					final ToDoubleFunction<String> namedResourceEdgeCountFactory = new ImageEdgeCountFactory();
 					final List<GameContextFeatureExtractor> contextFeatureExtractors = Arrays
-							.asList(new SelectedEntityFeatureExtractor(uniqueModelDescriptionCount));
+							.asList(new SelectedEntityFeatureExtractor(uniqueModelDescriptionCount,
+									namedResourceEdgeCountFactory));
 					final Stream.Builder<String> featureDescBuilder = Stream.builder();
 					featureDescBuilder.accept("WORD");
 					contextFeatureExtractors.stream()

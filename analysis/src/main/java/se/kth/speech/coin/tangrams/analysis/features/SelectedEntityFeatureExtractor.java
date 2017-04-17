@@ -24,6 +24,7 @@ import java.util.Map.Entry;
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.ToDoubleFunction;
 import java.util.stream.DoubleStream;
 import java.util.stream.Stream;
 
@@ -89,7 +90,11 @@ final class SelectedEntityFeatureExtractor implements GameContextFeatureExtracto
 
 	private final Function<ModelDescription, SpatialMatrix<Integer>> initialGameModelFactory;
 
-	SelectedEntityFeatureExtractor(final int expectedUniqueModelDescriptionCount) {
+	private final ToDoubleFunction<? super String> namedResourceEdgeCountFactory;
+
+	SelectedEntityFeatureExtractor(final int expectedUniqueModelDescriptionCount,
+			final ToDoubleFunction<? super String> namedResourceEdgeCountFactory) {
+		this.namedResourceEdgeCountFactory = namedResourceEdgeCountFactory;
 		final Map<ModelDescription, SpatialMatrix<Integer>> gameModels = Maps
 				.newHashMapWithExpectedSize(expectedUniqueModelDescriptionCount);
 		initialGameModelFactory = modelDesc -> gameModels.computeIfAbsent(modelDesc,
@@ -132,6 +137,6 @@ final class SelectedEntityFeatureExtractor implements GameContextFeatureExtracto
 			final DoubleStream.Builder vals) {
 		final int[] modelDims = model.getDimensions();
 		final double modelArea = IntArrays.product(modelDims);
-		EntityFeature.setVals(vals, entityData, modelDims, modelArea);
+		EntityFeature.setVals(vals, entityData, modelDims, modelArea, namedResourceEdgeCountFactory);
 	}
 }

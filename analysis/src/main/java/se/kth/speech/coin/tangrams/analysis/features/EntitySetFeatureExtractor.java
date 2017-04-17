@@ -23,6 +23,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.function.Function;
+import java.util.function.ToDoubleFunction;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -89,7 +90,11 @@ final class EntitySetFeatureExtractor implements GameContextFeatureExtractor {
 
 	private final Function<ModelDescription, SpatialMatrix<Integer>> initialGameModelFactory;
 
-	EntitySetFeatureExtractor(final int expectedUniqueModelDescriptionCount) {
+	private final ToDoubleFunction<? super String> namedResourceEdgeCountFactory;
+
+	EntitySetFeatureExtractor(final int expectedUniqueModelDescriptionCount,
+			final ToDoubleFunction<? super String> namedResourceEdgeCountFactory) {
+		this.namedResourceEdgeCountFactory = namedResourceEdgeCountFactory;
 		final Map<ModelDescription, SpatialMatrix<Integer>> gameModels = Maps
 				.newHashMapWithExpectedSize(expectedUniqueModelDescriptionCount);
 		initialGameModelFactory = modelDesc -> gameModels.computeIfAbsent(modelDesc,
@@ -139,7 +144,8 @@ final class EntitySetFeatureExtractor implements GameContextFeatureExtractor {
 			final int pieceId = imgVizInfoDataIter.nextIndex();
 			final ImageVisualizationInfoDescription.Datum pieceImgVizInfoDatum = imgVizInfoDataIter.next();
 			final SpatialRegion pieceRegion = piecePlacements.getElementMinimalRegions().get(pieceId);
-			EntityFeature.setVals(vals, pieceImgVizInfoDatum, pieceRegion, modelDims, modelArea);
+			EntityFeature.setVals(vals, pieceImgVizInfoDatum, pieceRegion, modelDims, modelArea,
+					namedResourceEdgeCountFactory);
 		}
 	}
 }
