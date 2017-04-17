@@ -14,7 +14,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech.coin.tangrams.analysis;
+package se.kth.speech.coin.tangrams.iristk.io;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -26,14 +26,15 @@ import java.util.stream.Stream;
 import com.google.common.collect.Maps;
 
 import iristk.system.Event;
-import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
+import se.kth.speech.coin.tangrams.analysis.GameHistory;
+import se.kth.speech.coin.tangrams.analysis.GameHistoryeCollector;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
  * @since 6 Feb 2017
  *
  */
-public final class LoggedGameStateChangeDataParser implements Function<Stream<String>, Map<String, GameHistory>> {
+final class LoggedGameStateChangeDataParser implements Function<Stream<String>, Map<String, GameHistory>> {
 
 	private static final Pattern EMPTY_OR_WHITESPACE_PATTERN = Pattern.compile("\\s*");
 
@@ -44,7 +45,7 @@ public final class LoggedGameStateChangeDataParser implements Function<Stream<St
 		final Event[] loggedEventArray = loggedEvents.toArray(Event[]::new);
 		final Supplier<Map<String, GameHistory>> mapFactory = () -> Maps
 				.newHashMapWithExpectedSize(loggedEventArray.length);
-		return Arrays.stream(loggedEventArray).collect(new GameStateCollector(mapFactory));
+		return Arrays.stream(loggedEventArray).collect(new GameHistoryeCollector(mapFactory));
 	}
 
 }

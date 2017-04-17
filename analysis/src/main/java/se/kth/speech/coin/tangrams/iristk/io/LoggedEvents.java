@@ -21,17 +21,25 @@ import java.io.UncheckedIOException;
 import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Table;
 
 import iristk.system.Event;
 import iristk.util.Record;
 import iristk.util.Record.JsonToRecordException;
+import se.kth.speech.coin.tangrams.analysis.GameHistory;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -59,6 +67,8 @@ public final class LoggedEvents {
 		};
 	}
 
+	private static final Logger LOGGER = LoggerFactory.getLogger(LoggedEvents.class);
+
 	public static Map<String, Path> createPlayerEventLogFileMap(final Path sessionLogDir,
 			final int minEventLogFileCount) throws IOException {
 		final Map<String, Path> result = Maps.newHashMapWithExpectedSize(minEventLogFileCount);
@@ -76,6 +86,25 @@ public final class LoggedEvents {
 			throw new IllegalArgumentException(
 					String.format("Expected to find data files for at least %d unique player(s) but found %d instead.",
 							minEventLogFileCount, playerEventLogFileCount));
+		}
+		return result;
+	}
+
+	public static Table<String, String, GameHistory> createPlayerGameHistories(
+			final Collection<Entry<String, Path>> playerEventLogFilePaths, final int expectedUniqueGameCount)
+			throws IOException {
+		final Table<String, String, GameHistory> result = HashBasedTable.create(playerEventLogFilePaths.size(),
+				expectedUniqueGameCount);
+		for (final Entry<String, Path> playerEventLogFilePath : playerEventLogFilePaths) {
+			final String playerId = playerEventLogFilePath.getKey();
+			LOGGER.info("Reading session event log for player \"{}\".", playerId);
+			final Path eventLogFile = playerEventLogFilePath.getValue();
+			try (final Stream<String> lines = Files.lines(eventLogFile, LoggingFormats.ENCODING)) {
+				final Map<String, GameHistory> gameHistories = new LoggedGameStateChangeDataParser().apply(lines);
+				gameHistories.forEach((gameId, gameData) -> {
+					result.put(playerId, gameId, gameData);
+				});
+			}
 		}
 		return result;
 	}

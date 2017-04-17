@@ -23,7 +23,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -50,17 +49,14 @@ import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
 
 import iristk.util.HAT;
 import se.kth.speech.coin.tangrams.analysis.GameHistory;
-import se.kth.speech.coin.tangrams.analysis.LoggedGameStateChangeDataParser;
 import se.kth.speech.coin.tangrams.analysis.SegmentUtteranceFactory;
 import se.kth.speech.coin.tangrams.analysis.Utterance;
 import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
-import se.kth.speech.coin.tangrams.iristk.io.LoggingFormats;
 import se.kth.speech.hat.xsd.Annotation;
 import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
 import se.kth.speech.hat.xsd.Annotation.Tracks.Track;
@@ -151,8 +147,8 @@ public final class WordsAsClassifiersTrainingDataFactory
 				LOGGER.info("Processing session log directory \"{}\".", sessionLogDir);
 				final Map<String, Path> playerEventLogFilePaths = LoggedEvents
 						.createPlayerEventLogFileMap(sessionLogDir, expectedEventLogFileCount);
-				final Table<String, String, GameHistory> playerGameStateChangeData = createPlayerGameStateChangeData(
-						playerEventLogFilePaths.entrySet());
+				final Table<String, String, GameHistory> playerGameStateChangeData = LoggedEvents
+						.createPlayerGameHistories(playerEventLogFilePaths.entrySet(), EXPECTED_UNIQUE_GAME_COUNT);
 				final Set<String> playerGameIdIntersection = new HashSet<>(playerGameStateChangeData.columnKeySet());
 				playerGameStateChangeData.rowMap().values().stream().map(Map::keySet)
 						.forEach(playerGameIdIntersection::retainAll);
@@ -224,24 +220,6 @@ public final class WordsAsClassifiersTrainingDataFactory
 	private static Options createOptions() {
 		final Options result = new Options();
 		Arrays.stream(Parameter.values()).map(Parameter::get).forEach(result::addOption);
-		return result;
-	}
-
-	private static Table<String, String, GameHistory> createPlayerGameStateChangeData(
-			final Collection<Entry<String, Path>> playerEventLogFilePaths) throws IOException {
-		final Table<String, String, GameHistory> result = HashBasedTable.create(playerEventLogFilePaths.size(),
-				EXPECTED_UNIQUE_GAME_COUNT);
-		for (final Entry<String, Path> playerEventLogFilePath : playerEventLogFilePaths) {
-			final String playerId = playerEventLogFilePath.getKey();
-			LOGGER.info("Reading session event log for player \"{}\".", playerId);
-			final Path eventLogFile = playerEventLogFilePath.getValue();
-			try (final Stream<String> lines = Files.lines(eventLogFile, LoggingFormats.ENCODING)) {
-				final Map<String, GameHistory> gameHistories = new LoggedGameStateChangeDataParser().apply(lines);
-				gameHistories.forEach((gameId, gameData) -> {
-					result.put(playerId, gameId, gameData);
-				});
-			}
-		}
 		return result;
 	}
 
