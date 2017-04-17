@@ -57,7 +57,7 @@ enum EntityFeature {
 
 	private static Object2DoubleMap<String> createShapeFeatureValueMap() {
 		final Set<String> possibleShapeStrValues = IconImages.getImageResources().keySet();
-		return FeatureMaps.createOrdinalFeatureValMap(possibleShapeStrValues);
+		return FeatureMaps.createOrdinalFeatureValMap(possibleShapeStrValues, NULL_FEATURE_VAL);
 	}
 
 	private static double getShapeFeatureVal(final ImageVisualizationInfoDescription.Datum pieceImgVizInfoDatum) {

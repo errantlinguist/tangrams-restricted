@@ -76,6 +76,7 @@ final class GameEventFeatureExtractor implements GameContextFeatureExtractor {
 					GameManagementEvent.SELECTION_REJECTION, GameManagementEvent.SELECTION_REQUEST);
 			assert EVENT_TYPE_FEATURE_ORDERING.size() == GameManagementEvent.values().length;
 			EVENT_TYPE_FEATURE_VALS = new Object2DoubleOpenHashMap<>(EVENT_TYPE_FEATURE_ORDERING.size() + 1);
+			EVENT_TYPE_FEATURE_VALS.defaultReturnValue(NULL_FEATURE_VAL);
 			FeatureMaps.putOrdinalFeatureVals(EVENT_TYPE_FEATURE_VALS, EVENT_TYPE_FEATURE_ORDERING);
 			EVENT_TYPE_FEATURE_VALS.put(null, NULL_FEATURE_VAL);
 		}
