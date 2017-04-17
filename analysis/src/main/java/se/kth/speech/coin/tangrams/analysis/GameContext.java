@@ -17,17 +17,38 @@
 package se.kth.speech.coin.tangrams.analysis;
 
 import java.sql.Timestamp;
+import java.util.Iterator;
 import java.util.List;
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.google.common.collect.Lists;
 
 import iristk.system.Event;
 
 public final class GameContext {
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(GameContext.class);
+
+	private static <E> int findFirstMatchingDistance(final Stream<E> elems, final Predicate<? super E> matcher) {
+		int result = -1;
+		int currentDist = 0;
+		for (final Iterator<E> elemIter = elems.iterator(); elemIter.hasNext();) {
+			final E elem = elemIter.next();
+			if (matcher.test(elem)) {
+				LOGGER.debug("Found matching element: {}", elem);
+				result = currentDist;
+				break;
+			}
+			currentDist++;
+		}
+		return result;
+	}
 
 	private static <V> Stream<V> getValuesDescendingOrder(final NavigableMap<?, ? extends List<? extends V>> map) {
 		return map.descendingMap().values().stream().map(Lists::reverse).flatMap(List::stream);
@@ -87,11 +108,19 @@ public final class GameContext {
 	}
 
 	public Optional<Event> findLastEvent(final Predicate<? super Event> matcher) {
-		final NavigableMap<Timestamp, List<Event>> timedEventsBeforeUtt = getPrecedingEvents();
+		final NavigableMap<Timestamp, List<Event>> timedEvents = getPrecedingEvents();
 		// Look for the last matching event (iterating
 		// backwards)
-		final Stream<Event> eventsDescTime = getValuesDescendingOrder(timedEventsBeforeUtt);
+		final Stream<Event> eventsDescTime = getValuesDescendingOrder(timedEvents);
 		return eventsDescTime.filter(matcher).findFirst();
+	}
+
+	public int findLastEventDistance(final Predicate<? super Event> matcher) {
+		final NavigableMap<Timestamp, List<Event>> timedEvents = getPrecedingEvents();
+		// Look for the last time the event was seen (iterating
+		// backwards)
+		final Stream<Event> eventsDescTime = getValuesDescendingOrder(timedEvents);
+		return findFirstMatchingDistance(eventsDescTime, matcher);
 	}
 
 	/**

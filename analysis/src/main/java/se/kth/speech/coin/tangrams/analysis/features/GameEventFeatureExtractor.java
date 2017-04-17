@@ -20,7 +20,6 @@ import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.EnumSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
@@ -30,9 +29,6 @@ import java.util.function.Predicate;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Lists;
 
@@ -190,44 +186,20 @@ final class GameEventFeatureExtractor implements GameContextFeatureExtractor {
 			}).flatMap(Function.identity());
 		}
 
-		private static <E> int findFirstMatchingDistance(final Stream<E> elems, final Predicate<? super E> matcher) {
-			int result = -1;
-			int currentDist = 0;
-			for (final Iterator<E> elemIter = elems.iterator(); elemIter.hasNext();) {
-				final E elem = elemIter.next();
-				if (matcher.test(elem)) {
-					LOGGER.debug("Found matching element: {}", elem);
-					result = currentDist;
-					break;
-				}
-				currentDist++;
-			}
-			return result;
-		}
-
 		private static void setVals(final DoubleStream.Builder vals, final GameContext context) {
 			for (final GameManagementEvent eventType : EVENT_TYPE_FEATURE_ORDERING) {
 				final Predicate<Event> eventTypeMatcher = EVENT_TYPE_MATCHERS.get(eventType);
 				for (final EventHistoryFeature feature : ORDERING) {
 					switch (feature) {
 					case LAST_OCC_DIST: {
-						final NavigableMap<Timestamp, List<Event>> timedEventsBeforeUtt = context.getPrecedingEvents();
-						// Look for the last time the event was seen (iterating
-						// backwards)
-						final Stream<Event> eventsDescTime = getValuesDescendingOrder(timedEventsBeforeUtt);
-						final int lastOccurrenceDist = findFirstMatchingDistance(eventsDescTime, eventTypeMatcher);
+						final int lastOccurrenceDist = context.findLastEventDistance(eventTypeMatcher);
 						vals.accept(lastOccurrenceDist);
 						break;
 					}
 					case LAST_SPEAKER_SUB_DIST: {
-						final NavigableMap<Timestamp, List<Event>> timedEventsBeforeUtt = context.getPrecedingEvents();
-						// Look for the last time the event submitted by the
-						// speaking player (iterating
-						// backwards)
 						final Predicate<Event> matcher = eventTypeMatcher
 								.and(new EventSubmittingPlayerMatcher(context.getPlayerId()));
-						final Stream<Event> eventsDescTime = getValuesDescendingOrder(timedEventsBeforeUtt);
-						final int lastOccurrenceDist = findFirstMatchingDistance(eventsDescTime, matcher);
+						final int lastOccurrenceDist = context.findLastEventDistance(matcher);
 						vals.accept(lastOccurrenceDist);
 						break;
 					}
@@ -239,8 +211,6 @@ final class GameEventFeatureExtractor implements GameContextFeatureExtractor {
 			}
 		}
 	}
-
-	private static final Logger LOGGER = LoggerFactory.getLogger(GameEventFeatureExtractor.class);
 
 	private static <V> Stream<V> getValuesDescendingOrder(final NavigableMap<?, ? extends List<? extends V>> map) {
 		return map.descendingMap().values().stream().map(Lists::reverse).flatMap(List::stream);
