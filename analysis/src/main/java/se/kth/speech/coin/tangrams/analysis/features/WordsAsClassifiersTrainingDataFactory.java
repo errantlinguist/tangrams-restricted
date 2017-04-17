@@ -53,6 +53,7 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.Table;
 
 import iristk.util.HAT;
+import se.kth.speech.MutablePair;
 import se.kth.speech.coin.tangrams.analysis.GameContext;
 import se.kth.speech.coin.tangrams.analysis.GameHistory;
 import se.kth.speech.coin.tangrams.analysis.SegmentUtteranceFactory;
@@ -76,7 +77,7 @@ import se.kth.speech.hat.xsd.Annotation.Tracks.Track.Sources.Source;
  *
  */
 public final class WordsAsClassifiersTrainingDataFactory
-		implements Function<Segment, Stream<Entry<Stream<String>, DoubleStream>>> {
+		implements Function<Segment, Stream<Entry<List<String>, DoubleStream>>> {
 
 	private enum Parameter implements Supplier<Option> {
 		HELP("?") {
@@ -133,8 +134,6 @@ public final class WordsAsClassifiersTrainingDataFactory
 		TABLE_ROW_CELL_JOINER = Collectors.joining(TABLE_STRING_REPR_COL_DELIMITER);
 	}
 
-	private static final Collector<CharSequence, ?, String> TOKEN_FORM_JOINER = Collectors.joining(" ");
-
 	public static void main(final String[] args) throws IOException, JAXBException {
 		final CommandLineParser parser = new DefaultParser();
 		try {
@@ -173,7 +172,7 @@ public final class WordsAsClassifiersTrainingDataFactory
 
 					final int uniqueModelDescriptionCount = playerGameStateChangeData.values().size();
 					final List<GameContextFeatureExtractor> contextFeatureExtractors = Arrays
-							.asList(new EntitySetFeatureExtractor(uniqueModelDescriptionCount));
+							.asList(new SelectedEntityFeatureExtractor(uniqueModelDescriptionCount));
 					final Stream.Builder<String> featureDescBuilder = Stream.builder();
 					featureDescBuilder.accept("WORD");
 					contextFeatureExtractors.stream()
@@ -191,24 +190,24 @@ public final class WordsAsClassifiersTrainingDataFactory
 					final WordsAsClassifiersTrainingDataFactory trainingDataFactory = new WordsAsClassifiersTrainingDataFactory(
 							sourceIdPlayerIds, uttContextFactory, contextFeatureExtractors);
 					final List<Segment> segments = uttAnnots.getSegments().getSegment();
-					final Stream<Stream<Entry<Stream<String>, DoubleStream>>> segTrainingData = segments.stream()
+					final Stream<Stream<Entry<List<String>, DoubleStream>>> segTrainingData = segments.stream()
 							.map(trainingDataFactory);
-					final Stream<Entry<Stream<String>, DoubleStream>> trainingData = segTrainingData
+					final Stream<Entry<List<String>, DoubleStream>> trainingData = segTrainingData
 							.flatMap(Function.identity());
 					try (final PrintWriter out = parseOutpath(cl)) {
 						out.print(header);
-						trainingData.forEachOrdered(trainingDatum -> {
+						final Stream<String> rows = trainingData.flatMap(trainingDatum -> {
 							final double[] featureVector = trainingDatum.getValue().toArray();
-							final Stream<String> rows = trainingDatum.getKey().map(word -> {
+							return trainingDatum.getKey().stream().map(word -> {
 								final Stream.Builder<String> rowBuilder = Stream.builder();
 								rowBuilder.accept(word);
 								Arrays.stream(featureVector).mapToObj(Double::toString).forEachOrdered(rowBuilder);
 								return rowBuilder.build();
 							}).map(stream -> stream.collect(TABLE_ROW_CELL_JOINER));
-							rows.forEachOrdered(row -> {
-								out.print(TABLE_STRING_REPR_ROW_DELIMITER);
-								out.println(row);
-							});
+						});
+						rows.forEachOrdered(row -> {
+							out.print(TABLE_STRING_REPR_ROW_DELIMITER);
+							out.print(row);
 						});
 					}
 
@@ -283,20 +282,21 @@ public final class WordsAsClassifiersTrainingDataFactory
 	 * @see java.util.function.Function#apply(java.lang.Object)
 	 */
 	@Override
-	public Stream<Entry<Stream<String>, DoubleStream>> apply(final Segment segment) {
+	public Stream<Entry<List<String>, DoubleStream>> apply(final Segment segment) {
 		final List<Utterance> utts = SEG_UTT_FACTORY.apply(segment);
 		final String sourceId = segment.getSource();
 		// Get the player ID associated with the given audio source
 		final String playerId = sourceIdPlayerIds.get(sourceId);
 		final Stream<Entry<Utterance, GameContext>> uttContexts = utts.stream()
 				.flatMap(utt -> uttContextFactory.apply(utt, playerId));
-//		return uttContexts.map(uttContext -> {
-//			final DoubleStream.Builder featureVectorBuilder = DoubleStream.builder();
-//			contextFeatureExtractors
-//					.forEach(extractor -> extractor.accept(uttContext.getValue(), featureVectorBuilder));
-//			return featureVectorBuilder.build();
-//		});
-		return null;
+		return uttContexts.map(uttContext -> {
+			final DoubleStream.Builder featureVectorBuilder = DoubleStream.builder();
+			contextFeatureExtractors
+					.forEach(extractor -> extractor.accept(uttContext.getValue(), featureVectorBuilder));
+			final DoubleStream vals = featureVectorBuilder.build();
+			final List<String> uttTokens = uttContext.getKey().getTokens();
+			return new MutablePair<>(uttTokens, vals);
+		});
 	}
 
 }
