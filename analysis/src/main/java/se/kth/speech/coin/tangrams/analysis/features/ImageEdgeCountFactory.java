@@ -37,6 +37,7 @@ final class ImageEdgeCountFactory implements ToDoubleFunction<String> {
 
 	private static Object2DoubleMap<String> createPropValMap(final Properties props) {
 		final Object2DoubleMap<String> result = new Object2DoubleOpenHashMap<>(props.size());
+		result.defaultReturnValue(-1.0);
 		props.forEach((propName, propValue) -> {
 			result.put(propName.toString(), Double.parseDouble(propValue.toString()));
 		});
