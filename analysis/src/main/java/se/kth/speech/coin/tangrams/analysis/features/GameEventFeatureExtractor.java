@@ -98,8 +98,8 @@ final class GameEventFeatureExtractor implements GameContextFeatureExtractor {
 							context.getPlayerId());
 					final Optional<Event> lastEventSubmittedByPlayer = eventsReversed
 							.filter(lastSubmittedByPlayerMatcher).findFirst();
-					final GameManagementEvent lastEventType = lastEventSubmittedByPlayer.isPresent()
-							? GameManagementEvent.getEventType(lastEventSubmittedByPlayer.get()) : null;
+					final GameManagementEvent lastEventType = lastEventSubmittedByPlayer
+							.map(GameManagementEvent::getEventType).orElse(null);
 					final double val = EVENT_TYPE_FEATURE_VALS.get(lastEventType);
 					vals.accept(val);
 					break;
