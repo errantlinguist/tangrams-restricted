@@ -16,52 +16,38 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features;
 
-import java.sql.Timestamp;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.NavigableMap;
+import java.util.Map.Entry;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
 import java.util.stream.Stream;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import iristk.system.Event;
-import se.kth.speech.TimestampArithmetic;
 import se.kth.speech.coin.tangrams.analysis.GameContext;
-import se.kth.speech.coin.tangrams.analysis.GameHistory;
-import se.kth.speech.coin.tangrams.analysis.SegmentTimes;
 import se.kth.speech.coin.tangrams.analysis.SegmentUtteranceFactory;
 import se.kth.speech.coin.tangrams.analysis.Utterance;
 import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
 
 final class SegmentFeatureVectorFactory implements Function<Segment, Stream<DoubleStream>> {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(SegmentFeatureVectorFactory.class);
-
 	private static final Function<Segment, List<Utterance>> SEG_UTT_FACTORY = new SegmentUtteranceFactory();
-
-	private static final Collector<CharSequence, ?, String> TOKEN_FORM_JOINER = Collectors.joining(" ");
 
 	private final List<? extends BiConsumer<? super GameContext, ? super DoubleStream.Builder>> contextFeatureExtractors;
 
-	private final Map<String, GameHistory> playerStateChangeData;
+	private final BiFunction<? super Utterance, ? super String, Stream<Entry<Utterance, GameContext>>> uttContextFactory;
 
 	private final Map<String, String> sourceIdPlayerIds;
 
 	private final List<? extends BiConsumer<? super Utterance, ? super DoubleStream.Builder>> uttFeatureExtractors;
 
 	public SegmentFeatureVectorFactory(final Map<String, String> sourceIdPlayerIds,
-			final Map<String, GameHistory> playerStateChangeData,
+			final BiFunction<? super Utterance, ? super String, Stream<Entry<Utterance, GameContext>>> uttContextFactory,
 			final List<? extends BiConsumer<? super GameContext, ? super DoubleStream.Builder>> contextFeatureExtractors,
 			final List<? extends BiConsumer<? super Utterance, ? super DoubleStream.Builder>> uttFeatureExtractors) {
 		this.sourceIdPlayerIds = sourceIdPlayerIds;
-		this.playerStateChangeData = playerStateChangeData;
+		this.uttContextFactory = uttContextFactory;
 		this.contextFeatureExtractors = contextFeatureExtractors;
 		this.uttFeatureExtractors = uttFeatureExtractors;
 	}
@@ -72,41 +58,15 @@ final class SegmentFeatureVectorFactory implements Function<Segment, Stream<Doub
 		final String sourceId = segment.getSource();
 		// Get the player ID associated with the given audio source
 		final String playerId = sourceIdPlayerIds.get(sourceId);
-		return utts.stream().map(utt -> {
-			final GameContext context = createContext(utt, playerId);
+		final Stream<Entry<Utterance, GameContext>> uttContexts = utts.stream()
+				.flatMap(utt -> uttContextFactory.apply(utt, playerId));
+		return uttContexts.map(uttContext -> {
 			final DoubleStream.Builder featureVectorBuilder = DoubleStream.builder();
-			contextFeatureExtractors.forEach(extractor -> extractor.accept(context, featureVectorBuilder));
-			uttFeatureExtractors.forEach(extractor -> extractor.accept(utt, featureVectorBuilder));
+			contextFeatureExtractors
+					.forEach(extractor -> extractor.accept(uttContext.getValue(), featureVectorBuilder));
+			uttFeatureExtractors.forEach(extractor -> extractor.accept(uttContext.getKey(), featureVectorBuilder));
 			return featureVectorBuilder.build();
 		});
-	}
-
-	private GameContext createContext(final Utterance utt, final String playerId) {
-		final GameHistory history = playerStateChangeData.get(playerId);
-		final NavigableMap<Timestamp, List<Event>> events = history.getEvents();
-		final float uttStartMills = utt.getStartTime() * SegmentTimes.TIME_TO_MILLS_FACTOR;
-		final Timestamp gameStartTime = history.getStartTime();
-		final Timestamp uttStartTimestamp = TimestampArithmetic.createOffsetTimestamp(gameStartTime, uttStartMills);
-
-		final float uttEndMills = utt.getEndTime() * SegmentTimes.TIME_TO_MILLS_FACTOR;
-		final Timestamp uttEndTimestamp = TimestampArithmetic.createOffsetTimestamp(gameStartTime, uttEndMills);
-		final NavigableMap<Timestamp, List<Event>> eventsDuringUtt = events.subMap(uttStartTimestamp, true,
-				uttEndTimestamp, true);
-		final List<String> tokenForms = utt.getTokens();
-		if (!eventsDuringUtt.isEmpty()) {
-			final List<Event> allEventsDuringUtt = eventsDuringUtt.values().stream().flatMap(Collection::stream)
-					.collect(Collectors.toList());
-			if (LOGGER.isDebugEnabled()) {
-				final String delim = System.lineSeparator() + '\t';
-				final String uttRepr = allEventsDuringUtt.stream().map(Event::toString)
-						.collect(Collectors.joining(delim));
-				LOGGER.debug("Found {} event(s) during utterance \"{}\" subsequence: \"{}\"" + delim + "{}",
-						new Object[] { allEventsDuringUtt.size(), utt.getSegmentId(),
-								tokenForms.stream().collect(TOKEN_FORM_JOINER), uttRepr });
-			}
-			// TODO: estimate partitions for utterance: By phones?
-		}
-		return new GameContext(history, uttStartTimestamp, playerId);
 	}
 
 }

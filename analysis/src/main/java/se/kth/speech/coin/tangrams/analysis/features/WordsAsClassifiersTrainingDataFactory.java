@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
@@ -52,9 +53,11 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.Table;
 
 import iristk.util.HAT;
+import se.kth.speech.coin.tangrams.analysis.GameContext;
 import se.kth.speech.coin.tangrams.analysis.GameHistory;
 import se.kth.speech.coin.tangrams.analysis.SegmentUtteranceFactory;
 import se.kth.speech.coin.tangrams.analysis.Utterance;
+import se.kth.speech.coin.tangrams.analysis.UtteranceGameContextFactory;
 import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
 import se.kth.speech.hat.xsd.Annotation;
@@ -130,6 +133,8 @@ public final class WordsAsClassifiersTrainingDataFactory
 		TABLE_ROW_CELL_JOINER = Collectors.joining(TABLE_STRING_REPR_COL_DELIMITER);
 	}
 
+	private static final Collector<CharSequence, ?, String> TOKEN_FORM_JOINER = Collectors.joining(" ");
+
 	public static void main(final String[] args) throws IOException, JAXBException {
 		final CommandLineParser parser = new DefaultParser();
 		try {
@@ -165,9 +170,6 @@ public final class WordsAsClassifiersTrainingDataFactory
 							throw new IllegalArgumentException("Found non-equivalent initial states between players.");
 						}
 					}
-					final String gameId = playerGameIdIntersection.iterator().next();
-					final Map<String, GameHistory> playerStateChangeData = playerGameStateChangeData.columnMap()
-							.get(gameId);
 
 					final int uniqueModelDescriptionCount = playerGameStateChangeData.values().size();
 					final List<GameContextFeatureExtractor> contextFeatureExtractors = Arrays
@@ -181,8 +183,13 @@ public final class WordsAsClassifiersTrainingDataFactory
 					final Stream<String> featureDescs = featureDescBuilder.build();
 					final String header = featureDescs.collect(TABLE_ROW_CELL_JOINER);
 
+					final String gameId = playerGameIdIntersection.iterator().next();
+					final Map<String, GameHistory> playerGameHistories = playerGameStateChangeData.columnMap()
+							.get(gameId);
+					final UtteranceGameContextFactory uttContextFactory = new UtteranceGameContextFactory(
+							playerGameHistories::get);
 					final WordsAsClassifiersTrainingDataFactory trainingDataFactory = new WordsAsClassifiersTrainingDataFactory(
-							sourceIdPlayerIds, playerStateChangeData, contextFeatureExtractors);
+							sourceIdPlayerIds, uttContextFactory, contextFeatureExtractors);
 					final List<Segment> segments = uttAnnots.getSegments().getSegment();
 					final Stream<Stream<Entry<Stream<String>, DoubleStream>>> segTrainingData = segments.stream()
 							.map(trainingDataFactory);
@@ -253,21 +260,21 @@ public final class WordsAsClassifiersTrainingDataFactory
 
 	private final List<GameContextFeatureExtractor> contextFeatureExtractors;
 
-	private final Map<String, GameHistory> playerStateChangeData;
+	private final BiFunction<? super Utterance, ? super String, Stream<Entry<Utterance, GameContext>>> uttContextFactory;
 
 	private final Map<String, String> sourceIdPlayerIds;
 
 	/**
 	 * @param contextFeatureExtractors
-	 * @param playerStateChangeData
+	 * @param playerGameHistories
 	 * @param sourceIdPlayerIds
 	 *
 	 */
 	public WordsAsClassifiersTrainingDataFactory(final Map<String, String> sourceIdPlayerIds,
-			final Map<String, GameHistory> playerStateChangeData,
+			final BiFunction<? super Utterance, ? super String, Stream<Entry<Utterance, GameContext>>> uttContextFactory,
 			final List<GameContextFeatureExtractor> contextFeatureExtractors) {
 		this.sourceIdPlayerIds = sourceIdPlayerIds;
-		this.playerStateChangeData = playerStateChangeData;
+		this.uttContextFactory = uttContextFactory;
 		this.contextFeatureExtractors = contextFeatureExtractors;
 	}
 

@@ -52,6 +52,7 @@ import com.google.common.collect.Table;
 
 import iristk.util.HAT;
 import se.kth.speech.coin.tangrams.analysis.GameHistory;
+import se.kth.speech.coin.tangrams.analysis.UtteranceGameContextFactory;
 import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
 import se.kth.speech.hat.xsd.Annotation;
@@ -138,8 +139,7 @@ public final class FeatureVectorPrinter {
 				final Map<String, Path> playerEventLogFilePaths = LoggedEvents
 						.createPlayerEventLogFileMap(sessionLogDir, expectedEventLogFileCount);
 				final Table<String, String, GameHistory> playerGameStateChangeData = LoggedEvents
-						.createPlayerGameHistoryTable(playerEventLogFilePaths.entrySet(),
-								EXPECTED_UNIQUE_GAME_COUNT);
+						.createPlayerGameHistoryTable(playerEventLogFilePaths.entrySet(), EXPECTED_UNIQUE_GAME_COUNT);
 				final Set<String> playerGameIdIntersection = new HashSet<>(playerGameStateChangeData.columnKeySet());
 				playerGameStateChangeData.rowMap().values().stream().map(Map::keySet)
 						.forEach(playerGameIdIntersection::retainAll);
@@ -156,10 +156,6 @@ public final class FeatureVectorPrinter {
 							throw new IllegalArgumentException("Found non-equivalent initial states between players.");
 						}
 					}
-					final String gameId = playerGameIdIntersection.iterator().next();
-					final Map<String, GameHistory> playerStateChangeData = playerGameStateChangeData.columnMap()
-							.get(gameId);
-
 					final int uniqueModelDescriptionCount = playerGameStateChangeData.values().size();
 					final List<GameContextFeatureExtractor> contextFeatureExtractors = Arrays.asList(
 							new EnvironmentFeatureExtractor(uniqueModelDescriptionCount),
@@ -176,8 +172,13 @@ public final class FeatureVectorPrinter {
 					final Stream<String> featureDescs = featureDescBuilder.build();
 					final String header = featureDescs.collect(TABLE_ROW_CELL_JOINER);
 
+					final String gameId = playerGameIdIntersection.iterator().next();
+					final Map<String, GameHistory> playerGameHistories = playerGameStateChangeData.columnMap()
+							.get(gameId);
+					final UtteranceGameContextFactory uttContextFactory = new UtteranceGameContextFactory(
+							playerGameHistories::get);
 					final SegmentFeatureVectorFactory featureVectorFactory = new SegmentFeatureVectorFactory(
-							sourceIdPlayerIds, playerStateChangeData, contextFeatureExtractors, uttFeatureExtrators);
+							sourceIdPlayerIds, uttContextFactory, contextFeatureExtractors, uttFeatureExtrators);
 					final List<Segment> segments = uttAnnots.getSegments().getSegment();
 					final Stream<Stream<DoubleStream>> segmentFeatureVectors = segments.stream()
 							.map(featureVectorFactory);

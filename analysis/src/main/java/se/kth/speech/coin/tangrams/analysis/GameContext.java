@@ -26,7 +26,7 @@ public final class GameContext {
 
 	private final Timestamp time;
 
-	public GameContext(final GameHistory history, final Timestamp time, final String playerId) {
+	GameContext(final GameHistory history, final Timestamp time, final String playerId) {
 		this.history = history;
 		this.time = time;
 		this.playerId = playerId;
