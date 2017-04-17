@@ -177,6 +177,7 @@ public final class WordsAsClassifiersTrainingDataFactory
 							new GameStateFeatureExtractor(playerGameStateChangeData.values().size()),
 							new GameEventFeatureExtractor());
 					final Stream.Builder<String> featureDescBuilder = Stream.builder();
+					featureDescBuilder.accept("WORD");
 					contextFeatureExtractors.stream()
 							.map(extractor -> extractor.createFeatureDescriptions(firstGameDesc))
 							.flatMap(Function.identity()).forEachOrdered(featureDescBuilder);
@@ -195,12 +196,17 @@ public final class WordsAsClassifiersTrainingDataFactory
 					try (final PrintWriter out = parseOutpath(cl)) {
 						out.print(header);
 						trainingData.forEachOrdered(trainingDatum -> {
-							out.print(TABLE_STRING_REPR_ROW_DELIMITER);
-							// final Stream<String> cellVals =
-							// trainingDatum.mapToObj(Double::toString);
-							// final String row =
-							// cellVals.collect(TABLE_ROW_CELL_JOINER);
-							// out.print(row);
+							final double[] featureVector = trainingDatum.getValue().toArray();
+							final Stream<String> rows = trainingDatum.getKey().map(word -> {
+								final Stream.Builder<String> rowBuilder = Stream.builder();
+								rowBuilder.accept(word);
+								Arrays.stream(featureVector).mapToObj(Double::toString).forEachOrdered(rowBuilder);
+								return rowBuilder.build();
+							}).map(stream -> stream.collect(TABLE_ROW_CELL_JOINER));
+							rows.forEachOrdered(row -> {
+								out.print(TABLE_STRING_REPR_ROW_DELIMITER);
+								out.println(row);
+							});
 						});
 					}
 
@@ -289,9 +295,9 @@ public final class WordsAsClassifiersTrainingDataFactory
 	}
 
 	private final List<GameContextFeatureExtractor> contextFeatureExtractors;
-	
+
 	private final Map<String, GameHistory> playerStateChangeData;
-	
+
 	private final Map<String, String> sourceIdPlayerIds;
 
 	/**
@@ -310,7 +316,7 @@ public final class WordsAsClassifiersTrainingDataFactory
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.util.function.Function#apply(java.lang.Object)
 	 */
 	@Override
