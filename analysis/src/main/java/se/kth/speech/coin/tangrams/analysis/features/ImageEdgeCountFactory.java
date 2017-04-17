@@ -77,6 +77,7 @@ final class ImageEdgeCountFactory implements ToDoubleFunction<String> {
 		// throw new UncheckedIOException(e);
 		// }
 		// TODO: Algorithmically count the edges of any arbitrary shape
+		assert resourceEdgeCounts.containsKey(resourceName);
 		return resourceEdgeCounts.getDouble(resourceName);
 	}
 
