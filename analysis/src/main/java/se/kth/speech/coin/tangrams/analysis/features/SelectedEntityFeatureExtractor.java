@@ -19,12 +19,12 @@ package se.kth.speech.coin.tangrams.analysis.features;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.NavigableMap;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.DoubleStream;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -35,7 +35,7 @@ import com.google.common.collect.Maps;
 import iristk.system.Event;
 import se.kth.speech.IntArrays;
 import se.kth.speech.Matrix;
-import se.kth.speech.SpatialMap;
+import se.kth.speech.MutablePair;
 import se.kth.speech.SpatialMatrix;
 import se.kth.speech.SpatialMatrixRegionElementMover;
 import se.kth.speech.SpatialRegion;
@@ -49,9 +49,9 @@ import se.kth.speech.coin.tangrams.iristk.events.ImageVisualizationInfoDescripti
 import se.kth.speech.coin.tangrams.iristk.events.ModelDescription;
 import se.kth.speech.coin.tangrams.iristk.events.Move;
 
-final class EntitySetFeatureExtractor implements GameContextFeatureExtractor {
+final class SelectedEntityFeatureExtractor implements GameContextFeatureExtractor {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(EntitySetFeatureExtractor.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(SelectedEntityFeatureExtractor.class);
 
 	private static void applyEvent(final SpatialMatrix<Integer> model, final Event event) {
 		final Move move = (Move) event.get(GameManagementEvent.Attribute.MOVE.toString());
@@ -89,7 +89,7 @@ final class EntitySetFeatureExtractor implements GameContextFeatureExtractor {
 
 	private final Function<ModelDescription, SpatialMatrix<Integer>> initialGameModelFactory;
 
-	EntitySetFeatureExtractor(final int expectedUniqueModelDescriptionCount) {
+	SelectedEntityFeatureExtractor(final int expectedUniqueModelDescriptionCount) {
 		final Map<ModelDescription, SpatialMatrix<Integer>> gameModels = Maps
 				.newHashMapWithExpectedSize(expectedUniqueModelDescriptionCount);
 		initialGameModelFactory = modelDesc -> gameModels.computeIfAbsent(modelDesc,
@@ -98,7 +98,21 @@ final class EntitySetFeatureExtractor implements GameContextFeatureExtractor {
 
 	@Override
 	public void accept(final GameContext context, final DoubleStream.Builder vals) {
-		extractFeatures(context.getHistory(), context.getTime(), vals);
+		final GameHistory history = context.getHistory();
+		final GameStateDescription initialState = history.getInitialState();
+		final SpatialMatrix<Integer> model = copyInitialModel(
+				initialGameModelFactory.apply(initialState.getModelDescription()));
+		final NavigableMap<Timestamp, List<Event>> events = history.getEvents();
+		updateToTime(model, events, context.getTime());
+		final Optional<Integer> lastSelectedEntityId = context.findLastSelectedEntityId();
+		final Optional<Entry<ImageVisualizationInfoDescription.Datum, SpatialRegion>> entityData = lastSelectedEntityId
+				.map(entityId -> {
+					final ImageVisualizationInfoDescription.Datum imgVizInfoDatum = initialState
+							.getImageVisualizationInfoDescription().getData().get(entityId);
+					final SpatialRegion region = model.getElementPlacements().getElementMinimalRegions().get(entityId);
+					return new MutablePair<>(imgVizInfoDatum, region);
+				});
+		extractFeatures(model, entityData, vals);
 	}
 
 	/*
@@ -110,36 +124,14 @@ final class EntitySetFeatureExtractor implements GameContextFeatureExtractor {
 	 */
 	@Override
 	public Stream<String> createFeatureDescriptions(final GameStateDescription initialState) {
-		return createFeatureDescriptions(initialState.getImageVisualizationInfoDescription().getData().size());
-	}
-
-	private Stream<String> createFeatureDescriptions(final int entityCount) {
-		return IntStream.range(0, entityCount).mapToObj(entityId -> {
-			final Stream<String> baseFeatureDescs = EntityFeature.getOrdering().stream().map(Enum::toString);
-			return baseFeatureDescs.map(desc -> "ENT_" + entityId + "-" + desc);
-		}).flatMap(Function.identity());
-	}
-
-	private void extractFeatures(final GameHistory history, final Timestamp time, final DoubleStream.Builder vals) {
-		final GameStateDescription initialState = history.getInitialState();
-		final SpatialMatrix<Integer> model = copyInitialModel(
-				initialGameModelFactory.apply(initialState.getModelDescription()));
-		final NavigableMap<Timestamp, List<Event>> events = history.getEvents();
-		updateToTime(model, events, time);
-		extractFeatures(model, initialState.getImageVisualizationInfoDescription().getData(), vals);
+		return EntityFeature.getOrdering().stream().map(Enum::toString);
 	}
 
 	private void extractFeatures(final SpatialMatrix<Integer> model,
-			final List<ImageVisualizationInfoDescription.Datum> imgVizInfoData, final DoubleStream.Builder vals) {
+			final Optional<Entry<ImageVisualizationInfoDescription.Datum, SpatialRegion>> entityData,
+			final DoubleStream.Builder vals) {
 		final int[] modelDims = model.getDimensions();
 		final double modelArea = IntArrays.product(modelDims);
-		final SpatialMap<Integer> piecePlacements = model.getElementPlacements();
-		for (final ListIterator<ImageVisualizationInfoDescription.Datum> imgVizInfoDataIter = imgVizInfoData
-				.listIterator(); imgVizInfoDataIter.hasNext();) {
-			final int pieceId = imgVizInfoDataIter.nextIndex();
-			final ImageVisualizationInfoDescription.Datum pieceImgVizInfoDatum = imgVizInfoDataIter.next();
-			final SpatialRegion pieceRegion = piecePlacements.getElementMinimalRegions().get(pieceId);
-			EntityFeature.setVals(vals, pieceImgVizInfoDatum, pieceRegion, modelDims, modelArea);
-		}
+		EntityFeature.setVals(vals, entityData, modelDims, modelArea);
 	}
 }
