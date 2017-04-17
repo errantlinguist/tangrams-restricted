@@ -40,7 +40,6 @@ import se.kth.speech.coin.tangrams.iristk.EventSubmittingPlayerMatcher;
 import se.kth.speech.coin.tangrams.iristk.EventTypeMatcher;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
-import se.kth.speech.coin.tangrams.iristk.events.Move;
 
 final class GameEventFeatureExtractor implements GameContextFeatureExtractor {
 
@@ -105,20 +104,14 @@ final class GameEventFeatureExtractor implements GameContextFeatureExtractor {
 					break;
 				}
 				case SELECTED_ENTITY: {
-					final NavigableMap<Timestamp, List<Event>> timedEventsBeforeUtt = context.getPrecedingEvents();
-					final Stream<Event> eventsDescTime = getValuesDescendingOrder(timedEventsBeforeUtt);
-					final String moveAttrName = GameManagementEvent.Attribute.MOVE.toString();
-					final Optional<Event> lastSelectionEvent = eventsDescTime.filter(event -> event.has(moveAttrName))
-							.findFirst();
+					final Optional<Integer> lastSelectedEntityId = context.findLastSelectedEntityId();
 					// TODO: This will break if the entity IDs are not valid
 					// numeric values; Generalize so that the strings are
 					// treated as ordinal values (e.g. "1" -> first, "2" ->
 					// second, etc.)
 					final double val;
-					if (lastSelectionEvent.isPresent()) {
-						final Event event = lastSelectionEvent.get();
-						final Move move = (Move) event.get(moveAttrName);
-						final Integer entityId = move.getPieceId();
+					if (lastSelectedEntityId.isPresent()) {
+						final Integer entityId = lastSelectedEntityId.get();
 						val = entityId.doubleValue();
 					} else {
 						val = -1.0;
@@ -210,10 +203,6 @@ final class GameEventFeatureExtractor implements GameContextFeatureExtractor {
 				}
 			}
 		}
-	}
-
-	private static <V> Stream<V> getValuesDescendingOrder(final NavigableMap<?, ? extends List<? extends V>> map) {
-		return map.descendingMap().values().stream().map(Lists::reverse).flatMap(List::stream);
 	}
 
 	@Override

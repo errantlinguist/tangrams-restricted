@@ -30,6 +30,8 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.Lists;
 
 import iristk.system.Event;
+import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
+import se.kth.speech.coin.tangrams.iristk.events.Move;
 
 public final class GameContext {
 
@@ -121,6 +123,15 @@ public final class GameContext {
 		// backwards)
 		final Stream<Event> eventsDescTime = getValuesDescendingOrder(timedEvents);
 		return findFirstMatchingDistance(eventsDescTime, matcher);
+	}
+
+	public Optional<Integer> findLastSelectedEntityId() {
+		final String moveAttrName = GameManagementEvent.Attribute.MOVE.toString();
+		final Optional<Event> lastSelectionEvent = findLastEvent(event -> event.has(moveAttrName));
+		return lastSelectionEvent.map(event -> {
+			final Move move = (Move) event.get(moveAttrName);
+			return move.getPieceId();
+		});
 	}
 
 	/**
