@@ -144,8 +144,6 @@ final class GameEventFeatureExtractor implements GameContextFeatureExtractor {
 
 		private static final List<GameManagementEvent> EVENT_TYPE_FEATURE_ORDERING;
 
-		private static final Object2DoubleMap<GameManagementEvent> EVENT_TYPE_FEATURE_VALS;
-
 		private static final Map<GameManagementEvent, Predicate<Event>> EVENT_TYPE_MATCHERS;
 
 		private static final List<EventHistoryFeature> ORDERING;
@@ -166,9 +164,6 @@ final class GameEventFeatureExtractor implements GameContextFeatureExtractor {
 			EVENT_TYPE_MATCHERS = new EnumMap<>(GameManagementEvent.class);
 			Arrays.stream(GameManagementEvent.values())
 					.forEach(eventType -> EVENT_TYPE_MATCHERS.put(eventType, eventTypeMatcherFactory.apply(eventType)));
-			EVENT_TYPE_FEATURE_VALS = new Object2DoubleOpenHashMap<>(EVENT_TYPE_FEATURE_ORDERING.size() + 1);
-			FeatureMaps.putOrdinalFeatureVals(EVENT_TYPE_FEATURE_VALS, EVENT_TYPE_FEATURE_ORDERING);
-			EVENT_TYPE_FEATURE_VALS.put(null, NULL_FEATURE_VAL);
 		}
 
 		private static Stream<String> createFeatureDescriptions() {
