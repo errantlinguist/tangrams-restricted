@@ -24,11 +24,16 @@ class AnnotationData(object):
 		return self.__class__.__name__ + str(self.__dict__)
 	
 	def add(self, other):
+		old_track_count = len(self.tracks)
 		for track_id, other_track in other.tracks.items():
 			if track_id in self.tracks:
 				raise ValueError("Track ID \"%s\" already in dict." % track_id)
 			else:
 				self.tracks[track_id] = other_track
+		# Remove channel IDs because HAT doesn't support multiple tracks for one Annotation which each have "channel" attrs
+		if old_track_count < len(self.tracks):
+			for track_data in self.tracks.values():
+				track_data.remove_attr("channel")
 				
 		self.segments.add(other.segments)
 		
@@ -50,9 +55,8 @@ class AnnotationData(object):
 
 class AnnotationParser(object):
 	
-	def __init__(self, id_prefix, channel_offset, qname_factory, namespace):
+	def __init__(self, id_prefix, qname_factory, namespace):
 		self.id_prefix = id_prefix
-		self.channel_offset = channel_offset
 		self.qname_factory = qname_factory
 		self.namespace = namespace
 		self.__tag_parsers = {self.qname_factory("tracks") : self.__parse_tracks, self.qname_factory("segments") : self.__parse_segments}
@@ -99,13 +103,9 @@ class AnnotationParser(object):
 			
 			for source in track.iter(source_tag_name):
 				attrs = source.attrib
-				source_id = self.id_prefix + attrs["id"]
-				track_sources.sources_by_id[source_id] = source
-				attrs["id"] = source_id
-				channel = int(attrs["channel"]) + self.channel_offset
-				track_sources.sources_by_channel[channel] = source
-				attrs["channel"] = str(channel)
-				track_sources.sources_by_href[attrs["href"]] = source
+				source_id = self.id_prefix + source.get("id")
+				source.set("id", source_id)
+				track_sources.add(source)
 
 class Segments(object):
 	
@@ -143,6 +143,41 @@ class TrackSources(object):
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
 		
+	def add(self, source):
+		source_id = source.get("id")
+		self.sources_by_id[source_id] = source
+		channel = source.get("channel")
+		if not is_blank_or_none(channel):
+			self.sources_by_channel[channel] = source
+		href = source.get("href")
+		if not is_blank_or_none(href):
+			self.sources_by_href[href] = source
+			
+	def remove(self, source):
+		source_id = source.get("id")
+		del self.sources_by_id[source_id]
+		channel = source.get("channel")
+		if not is_blank_or_none(channel):
+			del self.sources_by_channel[channel]
+		href = source.get("href")
+		if not is_blank_or_none(href):
+			del self.sources_by_href[href]
+			
+	def remove_attr(self, attr):
+		if attr == "id":
+			raise ValueError("Cannot remove ID attribute: This is absolutely necessary.")
+		else:
+			for source in self.sources_by_id.values():
+				#source.set(attr, None)
+				try:
+					del source.attrib["channel"]
+				except KeyError:
+					# Attr not present; just continue
+					pass
+		
+def is_blank_or_none(str):
+	return str is None or len(str) < 1 or str.isspace()		
+		
 def merge_annotations(inpaths, namespace):
 	import os.path
 
@@ -156,10 +191,10 @@ def merge_annotations(inpaths, namespace):
 			tag_qnames[tag_name] = result
 		return result
 		
-	for channel_offset, inpath in enumerate(inpaths):
+	for inpath in inpaths:
 		print("Reading \"%s\"." % inpath, file=sys.stderr)
 		id_prefix = os.path.splitext(os.path.basename(inpath))[0] + "-"
-		parser = AnnotationParser(id_prefix, channel_offset, qname_factory, namespace)
+		parser = AnnotationParser(id_prefix, qname_factory, namespace)
 		with open(inpath, 'r') as inf:
 			infile_datum = parser(inf)
 			annot_data.append(infile_datum)
