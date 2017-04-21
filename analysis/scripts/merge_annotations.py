@@ -11,7 +11,8 @@ from lxml import etree
 from lxml.builder import ElementMaker
 from xml.sax.saxutils import escape
 
-__DIGITS_REGEX = re.compile('(\d+)')
+__DIGITS_PATTERN = re.compile('(\d+)')
+__WHITESPACE_PATTERN = re.compile('\s+')
 
 class AnnotationData(object):
 	
@@ -194,7 +195,7 @@ def merge_annotations(inpaths, namespace):
 		
 	for inpath in inpaths:
 		print("Reading \"%s\"." % inpath, file=sys.stderr)
-		id_prefix = escape(os.path.splitext(os.path.basename(inpath))[0]) + "-"
+		id_prefix = sanitize_dom_id(os.path.splitext(os.path.basename(inpath))[0]) + "-"
 		parser = AnnotationParser(id_prefix, qname_factory, namespace)
 		with open(inpath, 'r') as inf:
 			infile_datum = parser(inf)
@@ -213,7 +214,11 @@ def natural_keys(text):
 	http://nedbatchelder.com/blog/200712/human_sorting.html
 	http://stackoverflow.com/a/5967539/1391325
 	'''
-	return [ __atoi(c) for c in __DIGITS_REGEX.split(text) ]
+	return [ __atoi(c) for c in __DIGITS_PATTERN.split(text) ]
+	
+def sanitize_dom_id(str):
+	result = __WHITESPACE_PATTERN.sub('-', str)
+	return escape(result)
 	
 def __atoi(text):
 	'''
