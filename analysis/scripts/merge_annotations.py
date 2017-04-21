@@ -9,6 +9,7 @@ import re
 from collections import defaultdict
 from lxml import etree
 from lxml.builder import ElementMaker
+from xml.sax.saxutils import escape
 
 __DIGITS_REGEX = re.compile('(\d+)')
 
@@ -193,7 +194,7 @@ def merge_annotations(inpaths, namespace):
 		
 	for inpath in inpaths:
 		print("Reading \"%s\"." % inpath, file=sys.stderr)
-		id_prefix = os.path.splitext(os.path.basename(inpath))[0] + "-"
+		id_prefix = escape(os.path.splitext(os.path.basename(inpath))[0]) + "-"
 		parser = AnnotationParser(id_prefix, qname_factory, namespace)
 		with open(inpath, 'r') as inf:
 			infile_datum = parser(inf)
