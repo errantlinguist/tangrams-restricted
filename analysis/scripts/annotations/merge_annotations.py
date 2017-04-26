@@ -197,9 +197,8 @@ def merge_annotations(inpaths, namespace):
 		print("Reading \"%s\"." % inpath, file=sys.stderr)
 		id_prefix = sanitize_dom_id(os.path.splitext(os.path.basename(inpath))[0]) + "-"
 		parser = AnnotationParser(id_prefix, qname_factory, namespace)
-		with open(inpath, 'r') as inf:
-			infile_datum = parser(inpath)
-			annot_data.append(infile_datum)
+		infile_datum = parser(inpath)
+		annot_data.append(infile_datum)
 			
 	result = annot_data[0]
 	if len(annot_data) > 1:
