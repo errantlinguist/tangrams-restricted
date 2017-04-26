@@ -64,10 +64,10 @@ class AnnotationParser(object):
 		self.__tag_parsers = {self.qname_factory("tracks") : self.__parse_tracks, self.qname_factory("segments") : self.__parse_segments}
 		self.__result = None
 	
-	def __call__(self, doc_root):
+	def __call__(self, doc_tree):
 		self.__result = AnnotationData(self.qname_factory, self.namespace)
 		tag_name = self.qname_factory("annotation")
-		for child in doc_root.iter(tag_name):
+		for child in doc_tree.iter(tag_name):
 			self.__parse_annotation(child)		
 			
 		return self.__result
@@ -196,8 +196,8 @@ def merge_annotations(inpaths, namespace):
 		print("Reading \"%s\"." % inpath, file=sys.stderr)
 		id_prefix = sanitize_dom_id(os.path.splitext(os.path.basename(inpath))[0]) + "-"
 		parser = AnnotationParser(id_prefix, qname_factory, namespace)
-		doc_root = etree.parse(inpath)
-		infile_datum = parser(doc_root)
+		doc_tree = etree.parse(inpath)
+		infile_datum = parser(doc_tree)
 		annot_data.append(infile_datum)
 			
 	result = annot_data[0]
