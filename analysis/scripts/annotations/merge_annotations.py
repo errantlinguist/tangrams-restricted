@@ -16,9 +16,10 @@ __WHITESPACE_PATTERN = re.compile('\s+')
 
 class AnnotationData(object):
 	
-	def __init__(self, qname_factory, namespace):
+	def __init__(self, qname_factory, namespace, encoding):
 		self.qname_factory = qname_factory
 		self.namespace = namespace
+		self.encoding = encoding
 		self.tracks = {}
 		self.segments = Segments(qname_factory)
 		
@@ -65,7 +66,7 @@ class AnnotationParser(object):
 		self.__result = None
 	
 	def __call__(self, doc_tree):
-		self.__result = AnnotationData(self.qname_factory, self.namespace)
+		self.__result = AnnotationData(self.qname_factory, self.namespace, doc_tree.docinfo.encoding)
 		tag_name = self.qname_factory("annotation")
 		for child in doc_tree.iter(tag_name):
 			self.__parse_annotation(child)		
@@ -246,7 +247,7 @@ if __name__ == '__main__':
 		tmpfile = tempfile.mkstemp(text=True)
 		tmpfile_path = tmpfile[1]
 		try:
-			encoding = "utf-8"
+			encoding = result.encoding
 			annot_tree.write(tmpfile_path, encoding=encoding, xml_declaration=True, pretty_print=True)
 			with open(tmpfile_path, 'r', encoding=encoding) as inf:
 				print(inf.read())
