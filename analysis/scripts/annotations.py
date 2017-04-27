@@ -17,7 +17,7 @@ class AnnotationData(object):
 		self.nsmap = nsmap
 		self.encoding = encoding
 		self.track_data = {}
-		self.segments = SegmentData(qname_factory)
+		self.segments = SegmentDatum(qname_factory)
 		
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
@@ -115,7 +115,7 @@ class QNameStringFactory(object):
 			self.tag_qnames[tag_name] = result
 		return result
 	
-class SegmentData(object):
+class SegmentDatum(object):
 	
 	def __init__(self, qname_factory):
 		self.qname_factory = qname_factory
