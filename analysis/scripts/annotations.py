@@ -54,10 +54,10 @@ class AnnotationData(object):
 
 class AnnotationParser(object):
 	
-	def __init__(self, id_prefix, qname_factory, nsmap):
-		self.id_prefix = id_prefix
+	def __init__(self, qname_factory, nsmap, id_prefix=""):
 		self.qname_factory = qname_factory
 		self.nsmap = nsmap
+		self.id_prefix = id_prefix
 		self.__tag_parsers = {self.qname_factory("tracks") : self.__parse_tracks, self.qname_factory("segments") : self.__parse_segments}
 	
 	def __call__(self, doc_tree):
