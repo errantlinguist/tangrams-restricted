@@ -14,29 +14,28 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech.coin.tangrams.analysis.features;
+package se.kth.speech.coin.tangrams.analysis;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.nio.file.Files;
+import java.io.PrintStream;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
+import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.function.ToDoubleFunction;
 import java.util.regex.Pattern;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
-import java.util.stream.DoubleStream;
 import java.util.stream.Stream;
 
 import javax.xml.bind.JAXBException;
@@ -53,14 +52,11 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Table;
 
+import iristk.system.Event;
 import iristk.util.HAT;
 import se.kth.speech.MutablePair;
-import se.kth.speech.coin.tangrams.analysis.GameContext;
-import se.kth.speech.coin.tangrams.analysis.GameContextModelFactory;
-import se.kth.speech.coin.tangrams.analysis.GameHistory;
-import se.kth.speech.coin.tangrams.analysis.SegmentUtteranceFactory;
-import se.kth.speech.coin.tangrams.analysis.Utterance;
-import se.kth.speech.coin.tangrams.analysis.UtteranceGameContextFactory;
+import se.kth.speech.TimestampArithmetic;
+import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
 import se.kth.speech.hat.xsd.Annotation;
@@ -72,14 +68,8 @@ import se.kth.speech.hat.xsd.Annotation.Tracks.Track.Sources.Source;
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
  * @since Apr 17, 2017
- * @see <a href="http://anthology.aclweb.org/W/W15/W15-0124.pdf">Casey
- *      Kennington, Livia Dia, &amp; David Schlangen. &ldquo;A Discriminative
- *      Model for Perceptually-Grounded Incremental Reference Resolution.&rdquo;
- *      In <em>Proceedings of IWCS 2015</em><a>.
- *
  */
-public final class WordsAsClassifiersTrainingDataFactory
-		implements Function<Segment, Stream<Entry<List<String>, DoubleStream>>> {
+public final class EventUtterancePrinter implements Function<GameHistory, Stream<Entry<Event, List<Utterance>>>> {
 
 	private enum Parameter implements Supplier<Option> {
 		HELP("?") {
@@ -94,13 +84,6 @@ public final class WordsAsClassifiersTrainingDataFactory
 				return Option.builder(optName).longOpt("inpath").desc("The path to the HAT file corpus to process.")
 						.hasArg().argName("path").type(File.class).required().build();
 			}
-		},
-		OUTPATH("o") {
-			@Override
-			public Option get() {
-				return Option.builder(optName).longOpt("outpath").desc("The path to write the training data to.")
-						.hasArg().argName("path").type(File.class).build();
-			}
 		};
 
 		protected final String optName;
@@ -113,7 +96,7 @@ public final class WordsAsClassifiersTrainingDataFactory
 
 	private static final int EXPECTED_UNIQUE_GAME_COUNT = 1;
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(WordsAsClassifiersTrainingDataFactory.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(EventUtterancePrinter.class);
 
 	/**
 	 * @see <a href=
@@ -125,18 +108,7 @@ public final class WordsAsClassifiersTrainingDataFactory
 
 	private static final Function<Segment, List<Utterance>> SEG_UTT_FACTORY = new SegmentUtteranceFactory();
 
-	private static final Collector<CharSequence, ?, String> TABLE_ROW_CELL_JOINER;
-
-	private static final String TABLE_STRING_REPR_COL_DELIMITER;
-
-	private static final String TABLE_STRING_REPR_ROW_DELIMITER = System.lineSeparator();
-
-	static {
-		TABLE_STRING_REPR_COL_DELIMITER = "\t";
-		TABLE_ROW_CELL_JOINER = Collectors.joining(TABLE_STRING_REPR_COL_DELIMITER);
-	}
-
-	public static void main(final String[] args) throws IOException, JAXBException {
+	public static void main(final String[] args) throws IOException, JAXBException, InterruptedException {
 		final CommandLineParser parser = new DefaultParser();
 		try {
 			final CommandLine cl = parser.parse(OPTIONS, args);
@@ -146,6 +118,7 @@ public final class WordsAsClassifiersTrainingDataFactory
 				final File inpath = (File) cl.getParsedOptionValue(Parameter.INPATH.optName);
 				LOGGER.info("Reading annotations from \"{}\".", inpath);
 				final Annotation uttAnnots = HAT.readAnnotation(inpath);
+
 				final Map<String, String> sourceIdPlayerIds = createSourceIdPlayerIdMap(uttAnnots);
 				final Set<String> playerIds = new HashSet<>(sourceIdPlayerIds.values());
 				final int expectedEventLogFileCount = playerIds.size();
@@ -172,48 +145,40 @@ public final class WordsAsClassifiersTrainingDataFactory
 						}
 					}
 
-					final int uniqueModelDescriptionCount = playerGameHistoryTable.values().size();
-					final ToDoubleFunction<String> namedResourceEdgeCountFactory = new ImageEdgeCountFactory();
-					final List<GameContextFeatureExtractor> contextFeatureExtractors = Arrays.asList(
-							new SelectedEntityFeatureExtractor(new GameContextModelFactory(uniqueModelDescriptionCount),
-									namedResourceEdgeCountFactory));
-					final Stream.Builder<String> featureDescBuilder = Stream.builder();
-					featureDescBuilder.accept("WORD");
-					contextFeatureExtractors.stream()
-							.map(extractor -> extractor.createFeatureDescriptions(firstGameDesc))
-							.flatMap(Function.identity()).forEachOrdered(featureDescBuilder);
-
-					final Stream<String> featureDescs = featureDescBuilder.build();
-					final String header = featureDescs.collect(TABLE_ROW_CELL_JOINER);
-
 					final String gameId = playerGameIdIntersection.iterator().next();
-					final Map<String, GameHistory> playerGameHistories = playerGameHistoryTable.columnMap()
-							.get(gameId);
-					final UtteranceGameContextFactory uttContextFactory = new UtteranceGameContextFactory(
-							playerGameHistories::get);
-					final WordsAsClassifiersTrainingDataFactory trainingDataFactory = new WordsAsClassifiersTrainingDataFactory(
-							sourceIdPlayerIds, uttContextFactory, contextFeatureExtractors);
+					final Map<String, GameHistory> playerGameHistories = playerGameHistoryTable.columnMap().get(gameId);
 					final List<Segment> segments = uttAnnots.getSegments().getSegment();
-					final Stream<Stream<Entry<List<String>, DoubleStream>>> segTrainingData = segments.stream()
-							.map(trainingDataFactory);
-					final Stream<Entry<List<String>, DoubleStream>> trainingData = segTrainingData
-							.flatMap(Function.identity());
-					try (final PrintWriter out = parseOutpath(cl)) {
-						out.print(header);
-						final Stream<String> rows = trainingData.flatMap(trainingDatum -> {
-							final double[] featureVector = trainingDatum.getValue().toArray();
-							return trainingDatum.getKey().stream().map(word -> {
-								final Stream.Builder<String> rowBuilder = Stream.builder();
-								rowBuilder.accept(word);
-								Arrays.stream(featureVector).mapToObj(Double::toString).forEachOrdered(rowBuilder);
-								return rowBuilder.build();
-							}).map(stream -> stream.collect(TABLE_ROW_CELL_JOINER));
-						});
-						rows.forEachOrdered(row -> {
-							out.print(TABLE_STRING_REPR_ROW_DELIMITER);
-							out.print(row);
-						});
-					}
+					final List<Utterance> utts = segments.stream().map(SEG_UTT_FACTORY).flatMap(List::stream)
+							.sorted(Comparator.comparing(Utterance::getStartTime)
+									.thenComparing(Comparator.comparing(Utterance::getEndTime)))
+							.collect(Collectors.toList());
+					final EventUtterancePrinter replayer = new EventUtterancePrinter(utts);
+
+					final String playerPerspectiveToUse = "sinc";
+					final GameHistory history = playerGameHistories.get(playerPerspectiveToUse);
+					final Stream<Entry<Event, List<Utterance>>> eventUttLists = replayer.apply(history);
+					final PrintStream out = System.out;
+					final Collector<CharSequence, ?, String> joiner = Collectors.joining(" ");
+					eventUttLists.forEachOrdered(eventUttList -> {
+						final Event event = eventUttList.getKey();
+						if (event == null) {
+							out.println("EVENT - null");
+						} else {
+							out.println(String.format("EVENT - time %s - submitter %s", event.getTime(),
+									event.get(GameManagementEvent.Attribute.PLAYER_ID.toString())));
+							out.println(event);
+						}
+
+						final List<Utterance> eventUtts = eventUttList.getValue();
+						if (eventUtts.isEmpty()) {
+							out.println("\tNo utterances for event!");
+						} else {
+							final Stream<String> sents = eventUtts.stream().map(Utterance::getTokens).map(List::stream)
+									.map(str -> str.collect(joiner));
+							sents.forEachOrdered(sent -> out.println("\t" + sent));
+						}
+
+					});
 
 				} else {
 					throw new UnsupportedOperationException(
@@ -242,42 +207,15 @@ public final class WordsAsClassifiersTrainingDataFactory
 		}));
 	}
 
-	private static PrintWriter parseOutpath(final CommandLine cl) throws ParseException, IOException {
-		final PrintWriter result;
-		final File outfile = (File) cl.getParsedOptionValue(Parameter.OUTPATH.optName);
-		if (outfile == null) {
-			LOGGER.info("No output file path specified; Writing to standard output.");
-			result = new PrintWriter(System.out);
-		} else {
-			LOGGER.info("Output file path is \"{}\".", outfile);
-			result = new PrintWriter(Files.newBufferedWriter(outfile.toPath(), StandardOpenOption.CREATE));
-		}
-		return result;
-	}
-
 	private static void printHelp() {
 		final HelpFormatter formatter = new HelpFormatter();
-		formatter.printHelp(WordsAsClassifiersTrainingDataFactory.class.getName(), OPTIONS);
+		formatter.printHelp(EventUtterancePrinter.class.getName(), OPTIONS);
 	}
 
-	private final List<GameContextFeatureExtractor> contextFeatureExtractors;
+	private final List<Utterance> utts;
 
-	private final Map<String, String> sourceIdPlayerIds;
-
-	private final BiFunction<? super Utterance, ? super String, Stream<Entry<Utterance, GameContext>>> uttContextFactory;
-
-	/**
-	 * @param contextFeatureExtractors
-	 * @param playerGameHistories
-	 * @param sourceIdPlayerIds
-	 *
-	 */
-	public WordsAsClassifiersTrainingDataFactory(final Map<String, String> sourceIdPlayerIds,
-			final BiFunction<? super Utterance, ? super String, Stream<Entry<Utterance, GameContext>>> uttContextFactory,
-			final List<GameContextFeatureExtractor> contextFeatureExtractors) {
-		this.sourceIdPlayerIds = sourceIdPlayerIds;
-		this.uttContextFactory = uttContextFactory;
-		this.contextFeatureExtractors = contextFeatureExtractors;
+	public EventUtterancePrinter(final List<Utterance> utts) {
+		this.utts = utts;
 	}
 
 	/*
@@ -286,21 +224,84 @@ public final class WordsAsClassifiersTrainingDataFactory
 	 * @see java.util.function.Function#apply(java.lang.Object)
 	 */
 	@Override
-	public Stream<Entry<List<String>, DoubleStream>> apply(final Segment segment) {
-		final List<Utterance> utts = SEG_UTT_FACTORY.apply(segment);
-		final String sourceId = segment.getSource();
-		// Get the player ID associated with the given audio source
-		final String playerId = sourceIdPlayerIds.get(sourceId);
-		final Stream<Entry<Utterance, GameContext>> uttContexts = utts.stream()
-				.flatMap(utt -> uttContextFactory.apply(utt, playerId));
-		return uttContexts.map(uttContext -> {
-			final DoubleStream.Builder featureVectorBuilder = DoubleStream.builder();
-			contextFeatureExtractors
-					.forEach(extractor -> extractor.accept(uttContext.getValue(), featureVectorBuilder));
-			final DoubleStream vals = featureVectorBuilder.build();
-			final List<String> uttTokens = uttContext.getKey().getTokens();
-			return new MutablePair<>(uttTokens, vals);
-		});
+	public Stream<Entry<Event, List<Utterance>>> apply(final GameHistory history) {
+		final Stream<Event> events = history.getEvents().values().stream().flatMap(List::stream);
+		final Timestamp gameStartTime = history.getStartTime();
+
+		Stream<Entry<Event, List<Utterance>>> result;
+
+		final Iterator<Event> eventIter = events.iterator();
+		if (eventIter.hasNext()) {
+			final Iterator<Utterance> uttIter = utts.iterator();
+			if (uttIter.hasNext()) {
+				final Stream.Builder<Entry<Event, List<Utterance>>> resultBuilder = Stream.builder();
+				Event currentEvent = null;
+				{
+					// Find all utterances up to the first event
+					final Event firstEvent = eventIter.next();
+					final Timestamp firstEventTimestamp = Timestamp.valueOf(firstEvent.getTime());
+					final List<Utterance> firstUttList = new ArrayList<>();
+					do {
+						final Utterance nextUtt = uttIter.next();
+						final float uttStartMills = nextUtt.getStartTime() * SegmentTimes.TIME_TO_MILLS_FACTOR;
+						final Timestamp uttStartTimestamp = TimestampArithmetic.createOffsetTimestamp(gameStartTime,
+								uttStartMills);
+						// If the utterance was before the first event, add it
+						// to the
+						// list of before-event utterances
+						if (uttStartTimestamp.compareTo(firstEventTimestamp) < 0) {
+							firstUttList.add(nextUtt);
+						} else {
+							break;
+						}
+					} while (uttIter.hasNext());
+					// Add the first list only if any utterances preceding the
+					// first event were found
+					if (!firstUttList.isEmpty()) {
+						resultBuilder.accept(new MutablePair<>(null, firstUttList));
+					}
+
+					currentEvent = firstEvent;
+				}
+				{
+					// Find the next set of utterances following each event
+					while (eventIter.hasNext()) {
+						final Event nextEvent = eventIter.next();
+						final Timestamp nextEventTimestamp = Timestamp.valueOf(nextEvent.getTime());
+						final List<Utterance> uttList = new ArrayList<>();
+						while (uttIter.hasNext()) {
+							final Utterance nextUtt = uttIter.next();
+							final float uttStartMills = nextUtt.getStartTime() * SegmentTimes.TIME_TO_MILLS_FACTOR;
+							final Timestamp uttStartTimestamp = TimestampArithmetic.createOffsetTimestamp(gameStartTime,
+									uttStartMills);
+							// If the utterance was before the next event, add
+							// it to the
+							// list of utterances for the current event
+							if (uttStartTimestamp.compareTo(nextEventTimestamp) < 0) {
+								uttList.add(nextUtt);
+							} else {
+								resultBuilder.accept(new MutablePair<>(currentEvent, uttList));
+								currentEvent = nextEvent;
+								break;
+							}
+						}
+					}
+				}
+
+				result = resultBuilder.build();
+
+			} else {
+				// No utterances were found; Return an empty list of utterances
+				// for each event
+				final List<Utterance> nullList = Collections.emptyList();
+				result = events.map(event -> new MutablePair<>(event, nullList));
+			}
+
+		} else {
+			// No events were found; Return all the utterances
+			result = Stream.of(new MutablePair<>(null, Collections.unmodifiableList(utts)));
+		}
+		return result;
 	}
 
 }
