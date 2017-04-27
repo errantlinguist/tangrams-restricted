@@ -94,8 +94,8 @@ class AnnotationParser(object):
 		for track in tracks:
 			track_source_data = TrackSourceData()
 			track_id = self.id_prefix + track.get("id")
-			track_data[track_id] = track_source_data
 			track.set("id", track_id)
+			track_data[track_id] = track_source_data
 			
 			for source in track.iter(source_tag_name):
 				source_id = self.id_prefix + source.get("id")
