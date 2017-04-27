@@ -127,6 +127,7 @@ public final class GameContext {
 
 	public Optional<Integer> findLastSelectedEntityId() {
 		final String moveAttrName = GameManagementEvent.Attribute.MOVE.toString();
+		// NOTE: This finds turn completion as well as next-turn submission events
 		final Optional<Event> lastSelectionEvent = findLastEvent(event -> event.has(moveAttrName));
 		return lastSelectionEvent.map(event -> {
 			final Move move = (Move) event.get(moveAttrName);
