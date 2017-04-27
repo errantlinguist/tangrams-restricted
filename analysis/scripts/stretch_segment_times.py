@@ -19,10 +19,12 @@ def stretch_segment_times(segments, factor):
 		#print("Original start: %s" % orig_start, file=sys.stderr)
 		new_start = orig_start * factor
 		#print("New start: %s" % new_start, file=sys.stderr)
+		segment.set("start", str(new_start))
 		orig_end = Decimal(segment.get("end"))
 		#print("Original end: %s" % orig_end, file=sys.stderr)
 		new_end = orig_end * factor
 		#print("New end: %s" % new_end, file=sys.stderr)
+		segment.set("end", str(new_end))
 
 if __name__ == '__main__':
 	import sys
