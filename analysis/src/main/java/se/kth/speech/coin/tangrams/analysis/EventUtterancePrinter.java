@@ -228,7 +228,7 @@ public final class EventUtterancePrinter implements Function<GameHistory, Stream
 		final Stream<Event> events = history.getEvents().values().stream().flatMap(List::stream);
 		final Timestamp gameStartTime = history.getStartTime();
 
-		Stream<Entry<Event, List<Utterance>>> result;
+		final Stream<Entry<Event, List<Utterance>>> result;
 
 		final Iterator<Event> eventIter = events.iterator();
 		if (eventIter.hasNext()) {
