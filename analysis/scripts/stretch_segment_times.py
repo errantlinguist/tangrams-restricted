@@ -28,10 +28,12 @@ def stretch_segment_times(segments, factor):
 
 if __name__ == '__main__':
 	import sys
-	if len(sys.argv) < 3:
-		print("Usage: %s INFILE TIME_COMPRESSION_FACTOR > OUTFILE" % sys.argv[0], file=sys.stderr)
+	if len(sys.argv) < 4:
+		print("Usage: %s INFILE SOURCE_ID_TO_CHANGE TIME_COMPRESSION_FACTOR > OUTFILE" % sys.argv[0], file=sys.stderr)
 		sys.exit(64);
-	else:
+	else:		
+		import re
+		
 		default_namespace = HAT_DATA_NAMESPACE
 		
 		inpath = sys.argv[1]
@@ -40,8 +42,16 @@ if __name__ == '__main__':
 		doc_tree = etree.parse(inpath)
 		infile_datum = parser(doc_tree)
 	
-		factor = Decimal(sys.argv[2])
-		print("Stretching times by a factor of %f." % factor, file=sys.stderr)
-		stretch_segment_times(infile_datum.segment_data.segments_by_id.values(), factor)
-		encoding = doc_tree.docinfo.encoding
-		print_etree_to_file(doc_tree, encoding, sys.stdout)
+		seg_id_pattern = re.compile(sys.argv[2])
+		segments = [segment for segment in infile_datum.segment_data.segments_by_id.values() if seg_id_pattern.match(segment.get("source")) is not None]
+		if segments:
+			print("%d segment(s) matching source ID pattern \"%s\"." % (len(segments), seg_id_pattern.pattern), file=sys.stderr) 
+			
+			factor = Decimal(sys.argv[3])
+			print("Stretching times by a factor of %f." % factor, file=sys.stderr)
+			
+			stretch_segment_times(segments, factor)
+			encoding = doc_tree.docinfo.encoding
+			print_etree_to_file(doc_tree, encoding, sys.stdout)
+		else: 
+			raise ValueError("No segments matching source ID pattern \"%s\"." % seg_id_pattern.pattern)
