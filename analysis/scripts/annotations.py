@@ -13,7 +13,7 @@ __WHITESPACE_PATTERN = re.compile('\s+')
 class AnnotationData(object):
 	
 	def __init__(self, qname_factory, nsmap, encoding):
-		self.qname_factory = qname_factory
+		self.__qname_factory = qname_factory
 		self.nsmap = nsmap
 		self.encoding = encoding
 		self.track_data = {}
@@ -40,10 +40,10 @@ class AnnotationData(object):
 		# http://stackoverflow.com/a/22902367/1391325
 		em = ElementMaker(nsmap=self.nsmap)
 		result = em("annotation")
-		tracks_elem = etree.SubElement(result, self.qname_factory("tracks"))
+		tracks_elem = etree.SubElement(result, self.__qname_factory("tracks"))
 		for track_id, track_datum in sorted(self.track_data.items(), key=lambda k: natural_keys(k[0])):
-			track_elem = etree.SubElement(tracks_elem, self.qname_factory("track"), attrib={"id" : track_id})
-			sources_elem = etree.SubElement(track_elem, self.qname_factory("sources"))
+			track_elem = etree.SubElement(tracks_elem, self.__qname_factory("track"), attrib={"id" : track_id})
+			sources_elem = etree.SubElement(track_elem, self.__qname_factory("sources"))
 			for track_source in sorted(track_datum.sources_by_id.values(), key=lambda elem: natural_keys(elem.get("id"))):
 				sources_elem.append(track_source)
 		
@@ -55,14 +55,14 @@ class AnnotationData(object):
 class AnnotationParser(object):
 	
 	def __init__(self, qname_factory, nsmap, id_prefix=""):
-		self.qname_factory = qname_factory
+		self.__qname_factory = qname_factory
 		self.nsmap = nsmap
 		self.id_prefix = id_prefix
-		self.__tag_parsers = {self.qname_factory("tracks") : self.__parse_tracks, self.qname_factory("segments") : self.__parse_segments}
+		self.__tag_parsers = {self.__qname_factory("tracks") : self.__parse_tracks, self.__qname_factory("segments") : self.__parse_segments}
 	
 	def __call__(self, doc_tree):
-		result = AnnotationData(self.qname_factory, self.nsmap, doc_tree.docinfo.encoding)
-		tag_name = self.qname_factory("annotation")
+		result = AnnotationData(self.__qname_factory, self.nsmap, doc_tree.docinfo.encoding)
+		tag_name = self.__qname_factory("annotation")
 		for child in doc_tree.iter(tag_name):
 			self.__parse_annotation(child, result)		
 			
@@ -89,7 +89,7 @@ class AnnotationParser(object):
 			attrs["source"] = source_id
 			
 	def __parse_tracks(self, tracks, result):
-		source_tag_name = self.qname_factory("source")
+		source_tag_name = self.__qname_factory("source")
 		track_data = result.track_data
 		for track in track_data:
 			track_source_data = TrackDatum()
@@ -118,7 +118,7 @@ class QNameStringFactory(object):
 class SegmentData(object):
 	
 	def __init__(self, qname_factory):
-		self.qname_factory = qname_factory
+		self.__qname_factory = qname_factory
 		self.segments_by_id = {}
 		self.track_segments = defaultdict(list)
 		self.source_segments = defaultdict(list)
@@ -136,7 +136,7 @@ class SegmentData(object):
 				self.source_segments.update(other.source_segments)
 				
 	def create_xml_element(self):
-		result = etree.Element(self.qname_factory("segments"))
+		result = etree.Element(self.__qname_factory("segments"))
 		for segment in sorted(self.segments_by_id.values(), key=lambda elem: natural_keys(elem.get("id"))):
 			result.append(segment)
 			
