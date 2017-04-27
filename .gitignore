@@ -150,6 +150,9 @@ buildNumber.properties
 ## PMD <https://pmd.github.io/>
 .pmd
 
+## PYTHON
+__pycache__/
+
 ## PROJECT-SPECIFIC IGNORE STATEMENTS
 cache/
 log/
