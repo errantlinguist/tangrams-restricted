@@ -5,13 +5,12 @@ Created on Apr 3, 2017
 @author: tshore
 '''
 
-import os
 import os.path
-import tempfile
 
 from lxml import etree
 
 from annotations import AnnotationParser, HAT_DATA_NAMESPACE, QNameStringFactory, sanitize_dom_id
+from etree_printing import print_etree_to_file
 
 
 def merge_annotations(inpaths, namespace):
@@ -33,17 +32,6 @@ def merge_annotations(inpaths, namespace):
 			result.add(next_datum)
 	return result
 
-def print_elem_tree_to_file(elem_tree, encoding, outfile):
-	tmpfile = tempfile.mkstemp(text=True)
-	tmpfile_path = tmpfile[1]
-	try:
-		elem_tree.write(tmpfile_path, encoding=encoding, xml_declaration=True, pretty_print=True)
-		with open(tmpfile_path, 'r', encoding=encoding) as inf:
-			print(inf.read(), file=outfile)
-	finally:
-		os.close(tmpfile[0])
-		os.remove(tmpfile_path)
-
 if __name__ == '__main__':
 	import sys
 	if len(sys.argv) < 2:
@@ -59,5 +47,5 @@ if __name__ == '__main__':
 		result = merge_annotations(inpaths, default_namespace)
 		annot_elem = result.create_xml_element()
 		annot_tree = etree.ElementTree(annot_elem)
-		print_elem_tree_to_file(annot_tree, result.encoding, sys.stdout)			
+		print_etree_to_file(annot_tree, result.encoding, sys.stdout)			
 		
