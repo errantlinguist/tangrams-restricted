@@ -16,99 +16,39 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features;
 
-import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
-import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.ToDoubleFunction;
 import java.util.stream.DoubleStream;
 import java.util.stream.Stream;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.google.common.collect.Maps;
-
-import iristk.system.Event;
 import se.kth.speech.IntArrays;
-import se.kth.speech.Matrix;
 import se.kth.speech.MutablePair;
 import se.kth.speech.SpatialMatrix;
-import se.kth.speech.SpatialMatrixRegionElementMover;
 import se.kth.speech.SpatialRegion;
-import se.kth.speech.coin.tangrams.AreaSpatialRegionFactory;
 import se.kth.speech.coin.tangrams.analysis.GameContext;
 import se.kth.speech.coin.tangrams.analysis.GameHistory;
-import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
-import se.kth.speech.coin.tangrams.iristk.events.GameStateUnmarshalling;
 import se.kth.speech.coin.tangrams.iristk.events.ImageVisualizationInfoDescription;
-import se.kth.speech.coin.tangrams.iristk.events.ModelDescription;
-import se.kth.speech.coin.tangrams.iristk.events.Move;
 
 final class SelectedEntityFeatureExtractor implements GameContextFeatureExtractor {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(SelectedEntityFeatureExtractor.class);
-
-	private static void applyEvent(final SpatialMatrix<Integer> model, final Event event) {
-		final Move move = (Move) event.get(GameManagementEvent.Attribute.MOVE.toString());
-		if (move == null) {
-			LOGGER.debug("Event has no move attribute; Ignoring.");
-		} else {
-			applyMove(model, move);
-		}
-	}
-
-	private static void applyMove(final SpatialMatrix<Integer> model, final Move move) {
-		final AreaSpatialRegionFactory areaRegionFactory = new AreaSpatialRegionFactory(model);
-		final SpatialMatrixRegionElementMover<Integer> pieceUpdater = new SpatialMatrixRegionElementMover<>(model);
-		final SpatialRegion source = areaRegionFactory.apply(move.getSource());
-		final SpatialRegion target = areaRegionFactory.apply(move.getTarget());
-		pieceUpdater.accept(source, target);
-	}
-
-	private static SpatialMatrix<Integer> copyInitialModel(final Matrix<Integer> copyee) {
-		final List<Integer> copiedVals = new ArrayList<>(copyee.getValues());
-		final Matrix<Integer> deepCopy = new Matrix<>(copiedVals, copyee.getDimensions()[1]);
-		return SpatialMatrix.Factory.UNSTABLE_ITER_ORDER.create(deepCopy);
-	}
-
-	private static SpatialMatrix<Integer> copyInitialModel(final SpatialMatrix<Integer> copyee) {
-		return copyInitialModel(copyee.getPositionMatrix());
-	}
-
-	private static void updateToTime(final SpatialMatrix<Integer> model,
-			final NavigableMap<Timestamp, List<Event>> timestampedEvents, final Timestamp time) {
-		final NavigableMap<Timestamp, List<Event>> timestampedEventsToApply = timestampedEvents.headMap(time, true);
-		final Stream<Event> eventsToApply = timestampedEventsToApply.values().stream().flatMap(List::stream);
-		eventsToApply.forEachOrdered(event -> applyEvent(model, event));
-	}
-
-	private final Function<ModelDescription, SpatialMatrix<Integer>> initialGameModelFactory;
+	private final Function<? super GameContext, SpatialMatrix<Integer>> gameModelFactory;
 
 	private final ToDoubleFunction<? super String> namedResourceEdgeCountFactory;
 
-	SelectedEntityFeatureExtractor(final int expectedUniqueModelDescriptionCount,
+	SelectedEntityFeatureExtractor(final Function<? super GameContext, SpatialMatrix<Integer>> gameModelFactory,
 			final ToDoubleFunction<? super String> namedResourceEdgeCountFactory) {
+		this.gameModelFactory = gameModelFactory;
 		this.namedResourceEdgeCountFactory = namedResourceEdgeCountFactory;
-		final Map<ModelDescription, SpatialMatrix<Integer>> gameModels = Maps
-				.newHashMapWithExpectedSize(expectedUniqueModelDescriptionCount);
-		initialGameModelFactory = modelDesc -> gameModels.computeIfAbsent(modelDesc,
-				k -> GameStateUnmarshalling.createModel(k, SpatialMatrix.Factory.UNSTABLE_ITER_ORDER));
 	}
 
 	@Override
 	public void accept(final GameContext context, final DoubleStream.Builder vals) {
 		final GameHistory history = context.getHistory();
 		final GameStateDescription initialState = history.getInitialState();
-		final SpatialMatrix<Integer> model = copyInitialModel(
-				initialGameModelFactory.apply(initialState.getModelDescription()));
-		final NavigableMap<Timestamp, List<Event>> events = history.getEvents();
-		updateToTime(model, events, context.getTime());
+		final SpatialMatrix<Integer> model = gameModelFactory.apply(context);
 		final Optional<Integer> lastSelectedEntityId = context.findLastSelectedEntityId();
 		final Optional<Entry<ImageVisualizationInfoDescription.Datum, SpatialRegion>> entityData = lastSelectedEntityId
 				.map(entityId -> {

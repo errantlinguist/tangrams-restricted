@@ -173,8 +173,8 @@ public final class WordsAsClassifiersTrainingDataFactory
 
 					final int uniqueModelDescriptionCount = playerGameStateChangeData.values().size();
 					final ToDoubleFunction<String> namedResourceEdgeCountFactory = new ImageEdgeCountFactory();
-					final List<GameContextFeatureExtractor> contextFeatureExtractors = Arrays
-							.asList(new SelectedEntityFeatureExtractor(uniqueModelDescriptionCount,
+					final List<GameContextFeatureExtractor> contextFeatureExtractors = Arrays.asList(
+							new SelectedEntityFeatureExtractor(new GameContextModelFactory(uniqueModelDescriptionCount),
 									namedResourceEdgeCountFactory));
 					final Stream.Builder<String> featureDescBuilder = Stream.builder();
 					featureDescBuilder.accept("WORD");
@@ -261,9 +261,9 @@ public final class WordsAsClassifiersTrainingDataFactory
 
 	private final List<GameContextFeatureExtractor> contextFeatureExtractors;
 
-	private final BiFunction<? super Utterance, ? super String, Stream<Entry<Utterance, GameContext>>> uttContextFactory;
-
 	private final Map<String, String> sourceIdPlayerIds;
+
+	private final BiFunction<? super Utterance, ? super String, Stream<Entry<Utterance, GameContext>>> uttContextFactory;
 
 	/**
 	 * @param contextFeatureExtractors
