@@ -59,24 +59,23 @@ class AnnotationParser(object):
 		self.qname_factory = qname_factory
 		self.nsmap = nsmap
 		self.__tag_parsers = {self.qname_factory("tracks") : self.__parse_tracks, self.qname_factory("segments") : self.__parse_segments}
-		self.__result = None
 	
 	def __call__(self, doc_tree):
-		self.__result = AnnotationData(self.qname_factory, self.nsmap, doc_tree.docinfo.encoding)
+		result = AnnotationData(self.qname_factory, self.nsmap, doc_tree.docinfo.encoding)
 		tag_name = self.qname_factory("annotation")
 		for child in doc_tree.iter(tag_name):
-			self.__parse_annotation(child)		
+			self.__parse_annotation(child, result)		
 			
-		return self.__result
+		return result
 			
-	def __parse_annotation(self, annot):
+	def __parse_annotation(self, annot, result):
 		for child in annot:
 			tag_name = child.tag
 			parser = self.__tag_parsers[tag_name]
-			parser(child)
+			parser(child, result)
 	
-	def __parse_segments(self, segments):
-		segment_data = self.__result.segments
+	def __parse_segments(self, segments, result):
+		segment_data = result.segments
 		for segment in segments:
 			attrs = segment.attrib
 			segment_id = self.id_prefix + attrs["id"]
@@ -89,9 +88,9 @@ class AnnotationParser(object):
 			segment_data.source_segments[source_id].append(segment)
 			attrs["source"] = source_id
 			
-	def __parse_tracks(self, tracks):
+	def __parse_tracks(self, tracks, result):
 		source_tag_name = self.qname_factory("source")
-		track_data = self.__result.tracks
+		track_data = result.tracks
 		for track in tracks:
 			track_sources = TrackSources()
 			track_attrs = track.attrib
