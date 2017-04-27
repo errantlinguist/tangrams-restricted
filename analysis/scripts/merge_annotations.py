@@ -17,7 +17,8 @@ def merge_annotations(inpaths, namespace):
 	for inpath in inpaths:
 		print("Reading \"%s\"." % inpath, file=sys.stderr)
 		id_prefix = sanitize_dom_id(os.path.splitext(os.path.basename(inpath))[0]) + "-"
-		parser = AnnotationParser(id_prefix, QNameStringFactory(namespace), namespace)
+		nsmap = {None: namespace}
+		parser = AnnotationParser(id_prefix, QNameStringFactory(namespace), nsmap)
 		doc_tree = etree.parse(inpath)
 		infile_datum = parser(doc_tree)
 		annot_data.append(infile_datum)

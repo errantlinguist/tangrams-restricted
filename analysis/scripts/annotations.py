@@ -12,9 +12,9 @@ __WHITESPACE_PATTERN = re.compile('\s+')
 
 class AnnotationData(object):
 	
-	def __init__(self, qname_factory, namespace, encoding):
+	def __init__(self, qname_factory, nsmap, encoding):
 		self.qname_factory = qname_factory
-		self.namespace = namespace
+		self.nsmap = nsmap
 		self.encoding = encoding
 		self.tracks = {}
 		self.segments = Segments(qname_factory)
@@ -38,7 +38,7 @@ class AnnotationData(object):
 		
 	def create_xml_element(self):
 		# http://stackoverflow.com/a/22902367/1391325
-		em = ElementMaker(nsmap={None: self.namespace })
+		em = ElementMaker(nsmap=self.nsmap)
 		result = em("annotation")
 		tracks_elem = etree.SubElement(result, self.qname_factory("tracks"))
 		for track_id, track_data in sorted(self.tracks.items(), key=lambda k: natural_keys(k[0])):
@@ -54,15 +54,15 @@ class AnnotationData(object):
 
 class AnnotationParser(object):
 	
-	def __init__(self, id_prefix, qname_factory, namespace):
+	def __init__(self, id_prefix, qname_factory, nsmap):
 		self.id_prefix = id_prefix
 		self.qname_factory = qname_factory
-		self.namespace = namespace
+		self.nsmap = nsmap
 		self.__tag_parsers = {self.qname_factory("tracks") : self.__parse_tracks, self.qname_factory("segments") : self.__parse_segments}
 		self.__result = None
 	
 	def __call__(self, doc_tree):
-		self.__result = AnnotationData(self.qname_factory, self.namespace, doc_tree.docinfo.encoding)
+		self.__result = AnnotationData(self.qname_factory, self.nsmap, doc_tree.docinfo.encoding)
 		tag_name = self.qname_factory("annotation")
 		for child in doc_tree.iter(tag_name):
 			self.__parse_annotation(child)		
