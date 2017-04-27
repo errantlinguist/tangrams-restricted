@@ -9,6 +9,8 @@ from lxml.builder import ElementMaker
 __DIGITS_PATTERN = re.compile('(\d+)')
 __WHITESPACE_PATTERN = re.compile('\s+')
 
+HAT_DATA_NAMESPACE = "http://www.speech.kth.se/higgins/2005/annotation/"
+
 class AnnotationData(object):
 	
 	def __init__(self, qname_factory, namespace, encoding):

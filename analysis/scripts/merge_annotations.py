@@ -7,7 +7,7 @@ Created on Apr 3, 2017
 
 from lxml import etree
 
-from annotations import AnnotationParser, sanitize_dom_id
+from annotations import AnnotationParser, HAT_DATA_NAMESPACE, sanitize_dom_id
 
 def merge_annotations(inpaths, namespace):
 	import os.path
@@ -46,7 +46,7 @@ if __name__ == '__main__':
 		import os
 		import tempfile
 
-		default_namespace = "http://www.speech.kth.se/higgins/2005/annotation/"
+		default_namespace = HAT_DATA_NAMESPACE
 		# http://stackoverflow.com/a/18340978/1391325
 		etree.register_namespace("hat", default_namespace)
 		
