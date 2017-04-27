@@ -138,11 +138,9 @@ public final class GameContext {
 		});
 	}
 
-	public Optional<ImageVisualizationInfoDescription.Datum> findLastSelectedEntityVisualizationInfo() {
+	public ImageVisualizationInfoDescription.Datum getEntityVisualizationInfo(int entityId) {
 		final GameStateDescription initialState = history.getInitialState();
-		final Optional<Integer> lastSelectedEntityId = findLastSelectedEntityId();
-		return lastSelectedEntityId
-				.map(entityId -> initialState.getImageVisualizationInfoDescription().getData().get(entityId));
+		return initialState.getImageVisualizationInfoDescription().getData().get(entityId);
 	}
 
 	/**
