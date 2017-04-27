@@ -92,7 +92,7 @@ class AnnotationParser(object):
 		source_tag_name = self.qname_factory("source")
 		track_data = result.tracks
 		for track in tracks:
-			track_sources = TrackSources()
+			track_sources = TrackSourceData()
 			track_attrs = track.attrib
 			track_id = self.id_prefix + track_attrs["id"]
 			track_data[track_id] = track_sources
@@ -144,7 +144,7 @@ class SegmentData(object):
 			
 		return result
 	
-class TrackSources(object):
+class TrackSourceData(object):
 	def __init__(self):
 		self.sources_by_id = {}
 		self.sources_by_channel = {}
