@@ -31,8 +31,8 @@ class AnnotationData(object):
 				self.track_data[track_id] = other_track
 		# Remove channel IDs because HAT doesn't support multiple tracks for one Annotation which each have "channel" attrs
 		if old_track_count < len(self.track_data):
-			for track_data in self.track_data.values():
-				track_data.remove_attr("channel")
+			for track_datum in self.track_data.values():
+				track_datum.remove_attr("channel")
 				
 		self.segments.add(other.segments)
 		
@@ -41,10 +41,10 @@ class AnnotationData(object):
 		em = ElementMaker(nsmap=self.nsmap)
 		result = em("annotation")
 		tracks_elem = etree.SubElement(result, self.qname_factory("tracks"))
-		for track_id, track_data in sorted(self.track_data.items(), key=lambda k: natural_keys(k[0])):
+		for track_id, track_datum in sorted(self.track_data.items(), key=lambda k: natural_keys(k[0])):
 			track_elem = etree.SubElement(tracks_elem, self.qname_factory("track"), attrib={"id" : track_id})
 			sources_elem = etree.SubElement(track_elem, self.qname_factory("sources"))
-			for track_source in sorted(track_data.sources_by_id.values(), key=lambda elem: natural_keys(elem.get("id"))):
+			for track_source in sorted(track_datum.sources_by_id.values(), key=lambda elem: natural_keys(elem.get("id"))):
 				sources_elem.append(track_source)
 		
 		segments_elem = self.segments.create_xml_element()
@@ -92,7 +92,7 @@ class AnnotationParser(object):
 		source_tag_name = self.qname_factory("source")
 		track_data = result.track_data
 		for track in track_data:
-			track_source_data = TrackSourceData()
+			track_source_data = TrackDatum()
 			track_id = self.id_prefix + track.get("id")
 			track.set("id", track_id)
 			track_data[track_id] = track_source_data
@@ -142,7 +142,7 @@ class SegmentData(object):
 			
 		return result
 	
-class TrackSourceData(object):
+class TrackDatum(object):
 	def __init__(self):
 		self.sources_by_id = {}
 		self.sources_by_channel = {}
