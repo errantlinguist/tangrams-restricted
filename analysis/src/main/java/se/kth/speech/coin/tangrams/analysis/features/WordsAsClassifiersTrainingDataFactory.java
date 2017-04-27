@@ -152,14 +152,14 @@ public final class WordsAsClassifiersTrainingDataFactory
 				LOGGER.info("Processing session log directory \"{}\".", sessionLogDir);
 				final Map<String, Path> playerEventLogFilePaths = LoggedEvents
 						.createPlayerEventLogFileMap(sessionLogDir, expectedEventLogFileCount);
-				final Table<String, String, GameHistory> playerGameStateChangeData = LoggedEvents
+				final Table<String, String, GameHistory> playerGameHistoryTable = LoggedEvents
 						.createPlayerGameHistoryTable(playerEventLogFilePaths.entrySet(), EXPECTED_UNIQUE_GAME_COUNT);
-				final Set<String> playerGameIdIntersection = new HashSet<>(playerGameStateChangeData.columnKeySet());
-				playerGameStateChangeData.rowMap().values().stream().map(Map::keySet)
+				final Set<String> playerGameIdIntersection = new HashSet<>(playerGameHistoryTable.columnKeySet());
+				playerGameHistoryTable.rowMap().values().stream().map(Map::keySet)
 						.forEach(playerGameIdIntersection::retainAll);
 				final int gameCount = playerGameIdIntersection.size();
 				if (gameCount == 1) {
-					final Iterator<GameStateDescription> gameDescs = playerGameStateChangeData.values().stream()
+					final Iterator<GameStateDescription> gameDescs = playerGameHistoryTable.values().stream()
 							.map(GameHistory::getInitialState).iterator();
 					final GameStateDescription firstGameDesc = gameDescs.next();
 					while (gameDescs.hasNext()) {
@@ -171,7 +171,7 @@ public final class WordsAsClassifiersTrainingDataFactory
 						}
 					}
 
-					final int uniqueModelDescriptionCount = playerGameStateChangeData.values().size();
+					final int uniqueModelDescriptionCount = playerGameHistoryTable.values().size();
 					final ToDoubleFunction<String> namedResourceEdgeCountFactory = new ImageEdgeCountFactory();
 					final List<GameContextFeatureExtractor> contextFeatureExtractors = Arrays.asList(
 							new SelectedEntityFeatureExtractor(new GameContextModelFactory(uniqueModelDescriptionCount),
@@ -186,7 +186,7 @@ public final class WordsAsClassifiersTrainingDataFactory
 					final String header = featureDescs.collect(TABLE_ROW_CELL_JOINER);
 
 					final String gameId = playerGameIdIntersection.iterator().next();
-					final Map<String, GameHistory> playerGameHistories = playerGameStateChangeData.columnMap()
+					final Map<String, GameHistory> playerGameHistories = playerGameHistoryTable.columnMap()
 							.get(gameId);
 					final UtteranceGameContextFactory uttContextFactory = new UtteranceGameContextFactory(
 							playerGameHistories::get);
