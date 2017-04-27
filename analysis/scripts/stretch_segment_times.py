@@ -13,21 +13,16 @@ from annotations import AnnotationParser, HAT_DATA_NAMESPACE, QNameStringFactory
 from etree_printing import print_etree_to_file
 
 
-def stretch_segment_times(segments, factor):
-	max_start_time = max((Decimal(segment.get("start")) for segment in segments))
-	print("Max start: %f" % max_start_time)
-	max_end_time = max((Decimal(segment.get("end")) for segment in segments))
-	print("Max end: %f" % max_end_time)
-	
+def stretch_segment_times(segments, factor):	
 	for segment in segments: 
 		orig_start = Decimal(segment.get("start"))
-		print("Original start: %s" % orig_start, file=sys.stderr)
+		#print("Original start: %s" % orig_start, file=sys.stderr)
 		new_start = orig_start * factor
-		print("New start: %s" % new_start, file=sys.stderr)
+		#print("New start: %s" % new_start, file=sys.stderr)
 		orig_end = Decimal(segment.get("end"))
-		print("Original end: %s" % orig_end, file=sys.stderr)
+		#print("Original end: %s" % orig_end, file=sys.stderr)
 		new_end = orig_end * factor
-		print("New end: %s" % new_end, file=sys.stderr)
+		#print("New end: %s" % new_end, file=sys.stderr)
 
 if __name__ == '__main__':
 	import sys
