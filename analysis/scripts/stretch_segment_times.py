@@ -35,7 +35,7 @@ if __name__ == '__main__':
 	parser.add_argument("-i", '--infile', metavar='PATH', required=True, help='The file to read.')
 	parser.add_argument("-p", '--source-id-pattern', metavar='REGEX', type=re.compile, required=True, help='A regular expression matching the source ID of the segments to change.')
 	parser.add_argument("-f", '--factor', type=Decimal, required=True, help='The amount to stretch the times by.')
-	parser.add_argument("-o", '--outfile', help='The path to write the output to.')
+	parser.add_argument("-o", '--outfile', metavar='PATH', help='The path to write the output to.')
 	
 	args = parser.parse_args()
 	
@@ -57,6 +57,11 @@ if __name__ == '__main__':
 		
 		stretch_segment_times(segments, factor)
 		encoding = doc_tree.docinfo.encoding
-		print_etree_to_file(doc_tree, encoding, sys.stdout)
+		outpath = args.outfile
+		if outpath:
+			print("Writing transformed data to \"%s\"." % outpath, file=sys.stderr)
+			doc_tree.write(outpath, encoding=encoding, xml_declaration=True, pretty_print=True)
+		else:
+			print_etree_to_file(doc_tree, encoding, sys.stdout)
 	else: 
 		raise ValueError("No segments matching source ID pattern \"%s\"." % source_id_pattern.pattern)
