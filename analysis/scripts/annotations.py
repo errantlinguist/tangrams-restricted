@@ -180,8 +180,9 @@ def is_blank_or_none(str):
 def natural_keys(text):
 	'''
 	alist.sort(key=natural_keys) sorts in human order
-	http://nedbatchelder.com/blog/200712/human_sorting.html
-	http://stackoverflow.com/a/5967539/1391325
+	
+	@see http://nedbatchelder.com/blog/200712/human_sorting.html
+	@see http://stackoverflow.com/a/5967539/1391325
 	'''
 	return [__atoi(c) for c in __DIGITS_PATTERN.split(text)]
 	
@@ -191,6 +192,6 @@ def sanitize_dom_id(str):
 	
 def __atoi(text):
 	'''
-	http://stackoverflow.com/a/5967539/1391325
+	@see http://stackoverflow.com/a/5967539/1391325
 	'''
 	return int(text) if text.isdigit() else text
