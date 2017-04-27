@@ -256,7 +256,7 @@ public final class WordsAsClassifiersTrainingDataFactory
 
 	private static void printHelp() {
 		final HelpFormatter formatter = new HelpFormatter();
-		formatter.printHelp(FeatureVectorPrinter.class.getName(), OPTIONS);
+		formatter.printHelp(WordsAsClassifiersTrainingDataFactory.class.getName(), OPTIONS);
 	}
 
 	private final List<GameContextFeatureExtractor> contextFeatureExtractors;
