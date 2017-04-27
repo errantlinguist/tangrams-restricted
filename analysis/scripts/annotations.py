@@ -166,7 +166,7 @@ class TrackSources(object):
 			raise ValueError("Cannot remove ID attribute: This is absolutely necessary.")
 		else:
 			for source in self.sources_by_id.values():
-				#source.set(attr, None)
+				# source.set(attr, None)
 				try:
 					del source.attrib["channel"]
 				except KeyError:
