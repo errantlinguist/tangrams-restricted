@@ -7,25 +7,16 @@ Created on Apr 3, 2017
 
 from lxml import etree
 
-from annotations import AnnotationParser, HAT_DATA_NAMESPACE, sanitize_dom_id
+from annotations import AnnotationParser, HAT_DATA_NAMESPACE, QNameStringFactory, sanitize_dom_id
 
 def merge_annotations(inpaths, namespace):
 	import os.path
 
 	annot_data = []
-	tag_qnames = {}
-	tag_prefix = "{" + namespace + "}"
-	def qname_factory(tag_name):
-		result = tag_qnames.get(tag_name)
-		if not result:
-			result = tag_prefix + tag_name
-			tag_qnames[tag_name] = result
-		return result
-		
 	for inpath in inpaths:
 		print("Reading \"%s\"." % inpath, file=sys.stderr)
 		id_prefix = sanitize_dom_id(os.path.splitext(os.path.basename(inpath))[0]) + "-"
-		parser = AnnotationParser(id_prefix, qname_factory, namespace)
+		parser = AnnotationParser(id_prefix, QNameStringFactory(namespace), namespace)
 		doc_tree = etree.parse(inpath)
 		infile_datum = parser(doc_tree)
 		annot_data.append(infile_datum)

@@ -104,7 +104,20 @@ class AnnotationParser(object):
 				source_id = self.id_prefix + source.get("id")
 				source.set("id", source_id)
 				track_sources.add(source)
-
+				
+class QNameStringFactory(object):
+	
+	def __init__(self, namespace):
+		self.tag_qnames = {}
+		self.__tag_prefix = "{" + namespace + "}"
+		
+	def __call__(self, tag_name):
+		result = self.tag_qnames.get(tag_name)
+		if not result:
+			result = self.__tag_prefix + tag_name
+			self.tag_qnames[tag_name] = result
+		return result
+	
 class Segments(object):
 	
 	def __init__(self, qname_factory):
