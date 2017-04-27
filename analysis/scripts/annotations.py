@@ -17,7 +17,7 @@ class AnnotationData(object):
 		self.nsmap = nsmap
 		self.encoding = encoding
 		self.track_data = {}
-		self.segments = SegmentData(qname_factory)
+		self.segment_data = SegmentData(qname_factory)
 		
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
@@ -34,7 +34,7 @@ class AnnotationData(object):
 			for track_datum in self.track_data.values():
 				track_datum.remove_attr("channel")
 				
-		self.segments.add(other.segments)
+		self.segment_data.add(other.segment_data)
 		
 	def create_xml_element(self):
 		# http://stackoverflow.com/a/22902367/1391325
@@ -47,7 +47,7 @@ class AnnotationData(object):
 			for track_source in sorted(track_datum.sources_by_id.values(), key=lambda elem: natural_keys(elem.get("id"))):
 				sources_elem.append(track_source)
 		
-		segments_elem = self.segments.create_xml_element()
+		segments_elem = self.segment_data.create_xml_element()
 		result.append(segments_elem)
 			
 		return result
@@ -75,7 +75,7 @@ class AnnotationParser(object):
 			parser(child, result)
 	
 	def __parse_segments(self, segments, result):
-		segment_data = result.segments
+		segment_data = result.segment_data
 		for segment in segments:
 			attrs = segment.attrib
 			segment_id = self.id_prefix + attrs["id"]
