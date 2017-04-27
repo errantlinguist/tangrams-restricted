@@ -16,22 +16,22 @@ class AnnotationData(object):
 		self.qname_factory = qname_factory
 		self.nsmap = nsmap
 		self.encoding = encoding
-		self.tracks = {}
+		self.track_data = {}
 		self.segments = SegmentData(qname_factory)
 		
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
 	
 	def add(self, other):
-		old_track_count = len(self.tracks)
-		for track_id, other_track in other.tracks.items():
-			if track_id in self.tracks:
+		old_track_count = len(self.track_data)
+		for track_id, other_track in other.track_data.items():
+			if track_id in self.track_data:
 				raise ValueError("Track ID \"%s\" already in dict." % track_id)
 			else:
-				self.tracks[track_id] = other_track
+				self.track_data[track_id] = other_track
 		# Remove channel IDs because HAT doesn't support multiple tracks for one Annotation which each have "channel" attrs
-		if old_track_count < len(self.tracks):
-			for track_data in self.tracks.values():
+		if old_track_count < len(self.track_data):
+			for track_data in self.track_data.values():
 				track_data.remove_attr("channel")
 				
 		self.segments.add(other.segments)
@@ -41,7 +41,7 @@ class AnnotationData(object):
 		em = ElementMaker(nsmap=self.nsmap)
 		result = em("annotation")
 		tracks_elem = etree.SubElement(result, self.qname_factory("tracks"))
-		for track_id, track_data in sorted(self.tracks.items(), key=lambda k: natural_keys(k[0])):
+		for track_id, track_data in sorted(self.track_data.items(), key=lambda k: natural_keys(k[0])):
 			track_elem = etree.SubElement(tracks_elem, self.qname_factory("track"), attrib={"id" : track_id})
 			sources_elem = etree.SubElement(track_elem, self.qname_factory("sources"))
 			for track_source in sorted(track_data.sources_by_id.values(), key=lambda elem: natural_keys(elem.get("id"))):
@@ -90,8 +90,8 @@ class AnnotationParser(object):
 			
 	def __parse_tracks(self, tracks, result):
 		source_tag_name = self.qname_factory("source")
-		track_data = result.tracks
-		for track in tracks:
+		track_data = result.track_data
+		for track in track_data:
 			track_source_data = TrackSourceData()
 			track_id = self.id_prefix + track.get("id")
 			track.set("id", track_id)
