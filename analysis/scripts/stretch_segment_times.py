@@ -10,7 +10,7 @@ from decimal import Decimal
 from lxml import etree
 
 from annotations import AnnotationParser, HAT_DATA_NAMESPACE, QNameStringFactory
-from etree_printing import print_etree_to_file
+
 
 
 def stretch_segment_times(segments, factor):	
@@ -30,6 +30,7 @@ if __name__ == '__main__':
 	import argparse
 	import re
 	import sys
+	from etree_printing import print_etree_to_file
 	
 	parser = argparse.ArgumentParser(description=sys.argv[0])
 	parser.add_argument("-i", '--infile', metavar='PATH', required=True, help='The file to read.')
