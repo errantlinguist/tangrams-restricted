@@ -98,7 +98,6 @@ class AnnotationParser(object):
 			track.set("id", track_id)
 			
 			for source in track.iter(source_tag_name):
-				attrs = source.attrib
 				source_id = self.id_prefix + source.get("id")
 				source.set("id", source_id)
 				track_source_data.add(source)
