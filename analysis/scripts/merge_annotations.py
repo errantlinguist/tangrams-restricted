@@ -14,11 +14,12 @@ from annotations import AnnotationParser, HAT_DATA_NAMESPACE, QNameStringFactory
 
 def merge_annotations(inpaths, namespace):
 	annot_data = []
+	qname_factory = QNameStringFactory(namespace)
 	for inpath in inpaths:
 		print("Reading \"%s\"." % inpath, file=sys.stderr)
 		id_prefix = sanitize_dom_id(os.path.splitext(os.path.basename(inpath))[0]) + "-"
 		nsmap = {None: namespace}
-		parser = AnnotationParser(id_prefix, QNameStringFactory(namespace), nsmap)
+		parser = AnnotationParser(id_prefix, qname_factory, nsmap)
 		doc_tree = etree.parse(inpath)
 		infile_datum = parser(doc_tree)
 		annot_data.append(infile_datum)
