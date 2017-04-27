@@ -12,7 +12,6 @@ from lxml import etree
 from annotations import AnnotationParser, HAT_DATA_NAMESPACE, QNameStringFactory
 
 
-
 def stretch_segment_times(segments, factor):	
 	for segment in segments: 
 		orig_start = Decimal(segment.get("start"))
