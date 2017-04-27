@@ -5,13 +5,14 @@ Created on Apr 3, 2017
 @author: tshore
 '''
 
+import os.path
+
 from lxml import etree
 
 from annotations import AnnotationParser, HAT_DATA_NAMESPACE, QNameStringFactory, sanitize_dom_id
 
-def merge_annotations(inpaths, namespace):
-	import os.path
 
+def merge_annotations(inpaths, namespace):
 	annot_data = []
 	for inpath in inpaths:
 		print("Reading \"%s\"." % inpath, file=sys.stderr)
