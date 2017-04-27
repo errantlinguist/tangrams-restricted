@@ -1,15 +1,10 @@
-#!/usr/bin/env python3
-'''
-Created on Apr 3, 2017
-
-@author: tshore
-'''
-
-import re
 from collections import defaultdict
+import re
+from xml.sax.saxutils import escape
+
 from lxml import etree
 from lxml.builder import ElementMaker
-from xml.sax.saxutils import escape
+
 
 __DIGITS_PATTERN = re.compile('(\d+)')
 __WHITESPACE_PATTERN = re.compile('\s+')
@@ -178,43 +173,15 @@ class TrackSources(object):
 					pass
 		
 def is_blank_or_none(str):
-	return str is None or len(str) < 1 or str.isspace()		
-		
-def merge_annotations(inpaths, namespace):
-	import os.path
+	return str is None or len(str) < 1 or str.isspace()
 
-	annot_data = []
-	tag_qnames = {}
-	tag_prefix = "{" + namespace + "}"
-	def qname_factory(tag_name):
-		result = tag_qnames.get(tag_name)
-		if not result:
-			result = tag_prefix + tag_name
-			tag_qnames[tag_name] = result
-		return result
-		
-	for inpath in inpaths:
-		print("Reading \"%s\"." % inpath, file=sys.stderr)
-		id_prefix = sanitize_dom_id(os.path.splitext(os.path.basename(inpath))[0]) + "-"
-		parser = AnnotationParser(id_prefix, qname_factory, namespace)
-		doc_tree = etree.parse(inpath)
-		infile_datum = parser(doc_tree)
-		annot_data.append(infile_datum)
-			
-	result = annot_data[0]
-	if len(annot_data) > 1:
-		next_data = annot_data[1:]
-		for next_datum in next_data:
-			result.add(next_datum)
-	return result	
-	
 def natural_keys(text):
 	'''
 	alist.sort(key=natural_keys) sorts in human order
 	http://nedbatchelder.com/blog/200712/human_sorting.html
 	http://stackoverflow.com/a/5967539/1391325
 	'''
-	return [ __atoi(c) for c in __DIGITS_PATTERN.split(text) ]
+	return [__atoi(c) for c in __DIGITS_PATTERN.split(text)]
 	
 def sanitize_dom_id(str):
 	result = __WHITESPACE_PATTERN.sub('-', str)
@@ -225,34 +192,3 @@ def __atoi(text):
 	http://stackoverflow.com/a/5967539/1391325
 	'''
 	return int(text) if text.isdigit() else text
-
-if __name__ == '__main__':
-	import sys
-	if len(sys.argv) < 2:
-		print("Usage: %s INPUT_PATHS... > OUTFILE" % sys.argv[0], file=sys.stderr)
-		sys.exit(64);
-	else:
-		import os
-		import tempfile
-
-		default_namespace = "http://www.speech.kth.se/higgins/2005/annotation/"
-		# http://stackoverflow.com/a/18340978/1391325
-		etree.register_namespace("hat", default_namespace)
-		
-		inpaths = sys.argv[1:]
-		result = merge_annotations(inpaths, default_namespace)
-		annot_elem = result.create_xml_element()
-		annot_tree = etree.ElementTree(annot_elem)
-	
-		tmpfile = tempfile.mkstemp(text=True)
-		tmpfile_path = tmpfile[1]
-		try:
-			encoding = result.encoding
-			annot_tree.write(tmpfile_path, encoding=encoding, xml_declaration=True, pretty_print=True)
-			with open(tmpfile_path, 'r', encoding=encoding) as inf:
-				print(inf.read())
-		finally:
-			os.close(tmpfile[0])
-			os.remove(tmpfile_path)
-				
-		
