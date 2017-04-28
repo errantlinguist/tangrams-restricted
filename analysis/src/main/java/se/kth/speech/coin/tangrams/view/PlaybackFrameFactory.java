@@ -55,7 +55,7 @@ import se.kth.speech.coin.tangrams.iristk.ImageVisualizationInfoUnmarshaller;
  * @since 16 Nov 2016
  *
  */
-final class PlaybackGameViewFrameFactory implements Function<PlaybackGameViewFrameFactory.Parameters, PlaybackFrame> {
+final class PlaybackFrameFactory implements Function<PlaybackFrameFactory.Parameters, PlaybackFrame> {
 
 	public static final class Parameters {
 
@@ -119,7 +119,7 @@ final class PlaybackGameViewFrameFactory implements Function<PlaybackGameViewFra
 	private static final ImageVisualizationInfoUnmarshaller IMG_INFO_UNMARSHALLER = new ImageVisualizationInfoUnmarshaller(
 			IconImages.getImageResources()::get);
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(PlaybackGameViewFrameFactory.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(PlaybackFrameFactory.class);
 
 	@Override
 	public PlaybackFrame apply(final Parameters params) {

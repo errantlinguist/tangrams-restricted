@@ -187,8 +187,8 @@ public final class PlaybackGUI implements Runnable {
 					SpatialMatrix.Factory.STABLE_ITER_ORDER);
 			final Controller controller = new PlaybackController(model, new PlaybackClient());
 			final Random rnd = new Random(initialState.getSeed());
-			result = new PlaybackGameViewFrameFactory()
-					.apply(new PlaybackGameViewFrameFactory.Parameters(controller, history, rnd));
+			result = new PlaybackFrameFactory()
+					.apply(new PlaybackFrameFactory.Parameters(controller, history, rnd));
 			break;
 		}
 		default: {
