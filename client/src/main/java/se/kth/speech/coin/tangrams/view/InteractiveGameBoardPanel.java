@@ -50,6 +50,7 @@ import se.kth.speech.SpatialRegion;
 import se.kth.speech.awt.ComponentResizedEventListener;
 import se.kth.speech.awt.DisablingMouseAdapter;
 import se.kth.speech.coin.tangrams.game.Controller;
+import se.kth.speech.coin.tangrams.game.GameplayController;
 import se.kth.speech.coin.tangrams.game.PlayerRole;
 import se.kth.speech.coin.tangrams.game.Turn;
 import se.kth.speech.coin.tangrams.iristk.events.Move;
@@ -153,7 +154,7 @@ final class InteractiveGameBoardPanel extends AbstractGameBoardPanel implements 
 
 	private final Map<SpatialRegion, int[]> compCoordStartIdxs;
 
-	private final Controller controller;
+	private final GameplayController controller;
 
 	private final Map<Image, Image> imgsScaledToGridSize;
 
@@ -166,14 +167,14 @@ final class InteractiveGameBoardPanel extends AbstractGameBoardPanel implements 
 	private final BiConsumer<Component, String> viewLogger;
 
 	InteractiveGameBoardPanel(final SpatialMatrix<Integer> posMatrix,
-			final Function<? super Integer, ? extends Image> pieceIdImageFactory, final Controller controller,
+			final Function<? super Integer, ? extends Image> pieceIdImageFactory, final GameplayController controller,
 			final Color highlightColor, final BiConsumer<? super Component, ? super String> screenshotLogger,
 			final ExecutorService backgroundJobService) {
 		this(posMatrix, pieceIdImageFactory, controller, highlightColor, screenshotLogger, backgroundJobService, false);
 	}
 
 	InteractiveGameBoardPanel(final SpatialMatrix<Integer> posMatrix,
-			final Function<? super Integer, ? extends Image> pieceIdImageFactory, final Controller controller,
+			final Function<? super Integer, ? extends Image> pieceIdImageFactory, final GameplayController controller,
 			final Color highlightColor, final BiConsumer<? super Component, ? super String> screenshotLogger,
 			final ExecutorService backgroundJobService, final boolean analysisEnabled) {
 		super(posMatrix, pieceIdImageFactory, highlightColor, analysisEnabled);

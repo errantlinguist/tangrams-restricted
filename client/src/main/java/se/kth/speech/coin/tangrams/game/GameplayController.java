@@ -179,7 +179,6 @@ public final class GameplayController implements Controller {
 	/**
 	 * @return the playerId
 	 */
-	@Override
 	public String getPlayerId() {
 		return playerId;
 	}
@@ -187,7 +186,6 @@ public final class GameplayController implements Controller {
 	/**
 	 * @return the role
 	 */
-	@Override
 	public PlayerRole getRole() {
 		return role;
 	}

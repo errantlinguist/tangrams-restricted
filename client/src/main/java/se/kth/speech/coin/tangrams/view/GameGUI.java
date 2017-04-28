@@ -124,12 +124,12 @@ public final class GameGUI implements Runnable {
 
 	private final WindowListener viewClosedListener;;
 
-	private final GameViewFrameFactory viewFactory;
+	private final InteractiveGameViewFrameFactory viewFactory;
 
 	public GameGUI(final String title, final Point viewCenterpoint, final GameState gameState,
 			final Supplier<? extends Path> logOutdirPathSupplier, final ExecutorService backgroundJobService,
 			final Runnable closeHook, final boolean analysisEnabled) {
-		viewFactory = new GameViewFrameFactory(
+		viewFactory = new InteractiveGameViewFrameFactory(
 				new ScreenshotLogger(logOutdirPathSupplier, () -> gameState.getController().getPlayerId(),
 						backgroundJobService),
 				createImgVizInfoWriter(backgroundJobService, logOutdirPathSupplier), backgroundJobService,
@@ -155,8 +155,8 @@ public final class GameGUI implements Runnable {
 
 	@Override
 	public void run() {
-		final GameViewFrame view = viewFactory.apply(new GameViewFrameFactory.Parameters(gameState.getController(),
-				gameState.getImageVisualizationInfo(), gameState.getRnd()));
+		final InteractiveGameViewFrame view = viewFactory.apply(new InteractiveGameViewFrameFactory.Parameters(
+				gameState.getController(), gameState.getImageVisualizationInfo(), gameState.getRnd()));
 		view.addWindowListener(viewClosedListener);
 		view.setTitle(title);
 		// gameViewFrame.setJMenuBar(createMenuBar(gameViewFrame));
@@ -164,13 +164,11 @@ public final class GameGUI implements Runnable {
 		final Dimension screenSize = view.getToolkit().getScreenSize();
 		LOGGER.debug("Setting maximum component size to {}.", screenSize);
 		view.setMaximumSize(screenSize);
-
 		view.pack();
 
 		final Point viewLocation = new Point(viewCenterpoint.x - view.getWidth() / 2,
 				viewCenterpoint.y - view.getHeight() / 2);
 		view.setLocation(viewLocation);
 		view.setVisible(true);
-
 	}
 }

@@ -17,7 +17,7 @@
 	<dependencies>
 		<dependency>
 			<groupId>${project.groupId}</groupId>
-			<artifactId>game</artifactId>
+			<artifactId>client</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 

@@ -231,7 +231,7 @@ public final class GameManagementClientModule extends IrisModule implements Game
 
 		final PlayerRole role = gameDesc.getPlayerRoles().inverse().get(playerId);
 
-		final Controller controller = new GameplayController(model, playerId, role, this);
+		final GameplayController controller = new GameplayController(model, playerId, role, this);
 		setController(controller);
 
 		final ImageVisualizationInfoDescription imgVizDesc = gameDesc.getImageVisualizationInfoDescription();

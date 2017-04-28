@@ -21,14 +21,14 @@ import java.util.Random;
 import com.google.common.collect.BiMap;
 
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
-import se.kth.speech.coin.tangrams.game.Controller;
+import se.kth.speech.coin.tangrams.game.GameplayController;
 import se.kth.speech.coin.tangrams.game.PlayerRole;
 
 public final class GameState {
 
 	private final boolean allowFailedPlacements;
 
-	private final Controller controller;
+	private final GameplayController controller;
 
 	private final ImageVisualizationInfo imgVizInfo;
 
@@ -38,7 +38,7 @@ public final class GameState {
 
 	private final Random rnd;
 
-	GameState(final Controller controller, final ImageVisualizationInfo imgVizInfo,
+	GameState(final GameplayController controller, final ImageVisualizationInfo imgVizInfo,
 			final BiMap<PlayerRole, String> playerRoles, final Random rnd, final double occupiedGridArea,
 			final boolean allowFailedPlacements) {
 		this.controller = controller;
@@ -113,7 +113,7 @@ public final class GameState {
 	/**
 	 * @return the controller
 	 */
-	public Controller getController() {
+	public GameplayController getController() {
 		return controller;
 	}
 

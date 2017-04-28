@@ -46,7 +46,7 @@ import se.kth.speech.coin.tangrams.content.BoardArea;
 import se.kth.speech.coin.tangrams.content.ImageLoadingImageViewInfoFactory;
 import se.kth.speech.coin.tangrams.content.ImageViewInfo;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
-import se.kth.speech.coin.tangrams.game.Controller;
+import se.kth.speech.coin.tangrams.game.GameplayController;
 import se.kth.speech.coin.tangrams.game.PatternMoveFactory;
 
 /**
@@ -55,17 +55,18 @@ import se.kth.speech.coin.tangrams.game.PatternMoveFactory;
  * @since 16 Nov 2016
  *
  */
-final class GameViewFrameFactory implements Function<GameViewFrameFactory.Parameters, GameViewFrame> {
+final class InteractiveGameViewFrameFactory implements Function<InteractiveGameViewFrameFactory.Parameters, InteractiveGameViewFrame> {
 
 	public static final class Parameters {
 
-		private final Controller controller;
+		private final GameplayController controller;
 
 		private final ImageVisualizationInfo imgVizInfo;
 
 		private final Random rnd;
 
-		public Parameters(final Controller controller, final ImageVisualizationInfo imgVizInfo, final Random rnd) {
+		public Parameters(final GameplayController controller, final ImageVisualizationInfo imgVizInfo,
+				final Random rnd) {
 			this.controller = controller;
 			this.imgVizInfo = imgVizInfo;
 			this.rnd = rnd;
@@ -83,7 +84,7 @@ final class GameViewFrameFactory implements Function<GameViewFrameFactory.Parame
 
 	};
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(GameViewFrameFactory.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(InteractiveGameViewFrameFactory.class);
 
 	private final boolean analysisEnabled;
 
@@ -93,7 +94,7 @@ final class GameViewFrameFactory implements Function<GameViewFrameFactory.Parame
 
 	private final BiConsumer<? super Component, ? super String> screenshotLogger;
 
-	public GameViewFrameFactory(final BiConsumer<? super Component, ? super String> screenshotLogger,
+	public InteractiveGameViewFrameFactory(final BiConsumer<? super Component, ? super String> screenshotLogger,
 			final Consumer<Iterator<Entry<Integer, ImageVisualizationInfo.Datum>>> imgVizInfoWriter,
 			final ExecutorService backgroundJobService, final boolean analysisEnabled) {
 		this.screenshotLogger = screenshotLogger;
@@ -103,9 +104,9 @@ final class GameViewFrameFactory implements Function<GameViewFrameFactory.Parame
 	}
 
 	@Override
-	public GameViewFrame apply(final Parameters params) {
+	public InteractiveGameViewFrame apply(final Parameters params) {
 		LOGGER.debug("Creating view components.");
-		final Controller controller = params.controller;
+		final GameplayController controller = params.controller;
 		// String matrixStrRepr = new
 		// MatrixStringReprFactory().apply(model.getPositionMatrix());
 		// System.out.println(matrixStrRepr);
@@ -148,14 +149,15 @@ final class GameViewFrameFactory implements Function<GameViewFrameFactory.Parame
 		final Dimension preferredSize = new Dimension(shortestScreenLength, shortestScreenLength);
 		final PatternMoveFactory moveFactory = new PatternMoveFactory(rnd, controller.getModel(), 4);
 		controller.getListeners().add(moveFactory);
-		return new GameViewFrame(gameBoardPanel, controller, moveFactory, preferredSize);
+		return new InteractiveGameViewFrame(gameBoardPanel, controller, moveFactory, preferredSize);
 	}
 
 	private Entry<InteractiveGameBoardPanel, ImageLoadingImageViewInfoFactory> createDebugGameBoardImgViewInfoFactory(
-			final Controller controller, final Function<? super Integer, ? extends Image> pieceIdImageFactory,
+			final GameplayController controller, final Function<? super Integer, ? extends Image> pieceIdImageFactory,
 			final int uniqueImageResourceCount, final Map<BoardArea, Color> boardAreaColors) {
-		final InteractiveGameBoardPanel gameBoardPanel = new InteractiveGameBoardPanel(controller.getModel(), pieceIdImageFactory, controller,
-				boardAreaColors.get(BoardArea.HIGHLIGHT), screenshotLogger, backgroundJobService, true);
+		final InteractiveGameBoardPanel gameBoardPanel = new InteractiveGameBoardPanel(controller.getModel(),
+				pieceIdImageFactory, controller, boardAreaColors.get(BoardArea.HIGHLIGHT), screenshotLogger,
+				backgroundJobService, true);
 		gameBoardPanel.setBackground(boardAreaColors.get(BoardArea.BACKGROUND));
 		final OpaqueTransparencyReplacementImageFilter imgFilter = new OpaqueTransparencyReplacementImageFilter(128);
 		final BiFunction<Image, Toolkit, Image> tranparencyFilterer = (img, toolkit) -> {
@@ -167,10 +169,11 @@ final class GameViewFrameFactory implements Function<GameViewFrameFactory.Parame
 	}
 
 	private Entry<InteractiveGameBoardPanel, ImageLoadingImageViewInfoFactory> createProdGameBoardImgViewInfoFactory(
-			final Controller controller, final Function<? super Integer, ? extends Image> pieceIdImageFactory,
+			final GameplayController controller, final Function<? super Integer, ? extends Image> pieceIdImageFactory,
 			final int uniqueImageResourceCount, final Map<BoardArea, Color> boardAreaColors) {
-		final InteractiveGameBoardPanel gameBoardPanel = new InteractiveGameBoardPanel(controller.getModel(), pieceIdImageFactory, controller,
-				boardAreaColors.get(BoardArea.HIGHLIGHT), screenshotLogger, backgroundJobService);
+		final InteractiveGameBoardPanel gameBoardPanel = new InteractiveGameBoardPanel(controller.getModel(),
+				pieceIdImageFactory, controller, boardAreaColors.get(BoardArea.HIGHLIGHT), screenshotLogger,
+				backgroundJobService);
 		gameBoardPanel.setBackground(boardAreaColors.get(BoardArea.BACKGROUND));
 		final ImageLoadingImageViewInfoFactory imgViewInfoFactory = new ImageLoadingImageViewInfoFactory(
 				gameBoardPanel.getToolkit(), DEFAULT_POST_COLORING_IMG_TRANSFORMER, uniqueImageResourceCount);

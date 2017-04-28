@@ -62,8 +62,6 @@ public interface Controller {
 
 	SpatialMatrix<Integer> getModel();
 
-	PlayerRole getRole();
-
 	int getScore();
 
 	int getTurnCount();
@@ -90,7 +88,5 @@ public interface Controller {
 	void submitTurnComplete();
 
 	boolean isSelectionCorrect();
-
-	String getPlayerId();
 
 }

@@ -25,12 +25,12 @@ import java.util.stream.Collectors;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 import se.kth.speech.coin.tangrams.iristk.events.ImageVisualizationInfoDescription;
 
-final class ImageVisualizationInfoUnmarshaller
+public final class ImageVisualizationInfoUnmarshaller
 		implements Function<ImageVisualizationInfoDescription, ImageVisualizationInfo> {
 
 	private final Function<? super String, ? extends URL> resourceNameLocFactory;
 
-	ImageVisualizationInfoUnmarshaller(final Function<? super String, ? extends URL> resourceNameLocFactory) {
+	public ImageVisualizationInfoUnmarshaller(final Function<? super String, ? extends URL> resourceNameLocFactory) {
 		this.resourceNameLocFactory = resourceNameLocFactory;
 	}
 
