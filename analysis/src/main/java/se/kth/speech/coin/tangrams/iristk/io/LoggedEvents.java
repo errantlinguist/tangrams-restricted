@@ -25,7 +25,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -51,38 +50,7 @@ import se.kth.speech.coin.tangrams.analysis.GameHistoryCollector;
  */
 public final class LoggedEvents {
 
-	/**
-	 * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
-	 * @since 6 Feb 2017
-	 *
-	 */
-	private static final class LoggedGameHistoryParser
-			implements Function<Stream<String>, Map<String, GameHistory>> {
-
-		private static final Pattern EMPTY_OR_WHITESPACE_PATTERN = Pattern.compile("\\s*");
-
-		@Override
-		public Map<String, GameHistory> apply(final Stream<String> lines) {
-			final Stream<Event> loggedEvents = lines
-					.filter(line -> !EMPTY_OR_WHITESPACE_PATTERN.matcher(line).matches()).flatMap(line -> {
-						Stream<Event> result = Stream.empty();
-						try {
-							final Record record = Record.fromJSON(line);
-							if (record instanceof Event) {
-								result = Stream.of((Event) record);
-							}
-						} catch (final JsonToRecordException e) {
-							throw new UncheckedIOException(e);
-						}
-						return result;
-					});
-			final Event[] loggedEventArray = loggedEvents.toArray(Event[]::new);
-			final Supplier<Map<String, GameHistory>> mapFactory = () -> Maps
-					.newHashMapWithExpectedSize(loggedEventArray.length);
-			return Arrays.stream(loggedEventArray).collect(new GameHistoryCollector(mapFactory));
-		}
-
-	}
+	private static final Pattern EMPTY_OR_WHITESPACE_PATTERN = Pattern.compile("\\s*");
 
 	private static final Pattern LOGGED_EVENT_FILE_NAME_PATTERN = Pattern.compile("events-(.+?)\\.txt");
 
@@ -119,13 +87,33 @@ public final class LoggedEvents {
 			LOGGER.info("Reading session event log for player \"{}\".", playerId);
 			final Path eventLogFile = playerEventLogFilePath.getValue();
 			try (final Stream<String> lines = Files.lines(eventLogFile, LoggingFormats.ENCODING)) {
-				final Map<String, GameHistory> gameHistories = new LoggedGameHistoryParser().apply(lines);
+				final Map<String, GameHistory> gameHistories = parseLoggedHistory(lines);
 				gameHistories.forEach((gameId, gameData) -> {
 					result.put(playerId, gameId, gameData);
 				});
 			}
 		}
 		return result;
+	}
+
+	public static Map<String, GameHistory> parseLoggedHistory(final Stream<String> lines) {
+		final Stream<Event> loggedEvents = lines.filter(line -> !EMPTY_OR_WHITESPACE_PATTERN.matcher(line).matches())
+				.flatMap(line -> {
+					Stream<Event> result = Stream.empty();
+					try {
+						final Record record = Record.fromJSON(line);
+						if (record instanceof Event) {
+							result = Stream.of((Event) record);
+						}
+					} catch (final JsonToRecordException e) {
+						throw new UncheckedIOException(e);
+					}
+					return result;
+				});
+		final Event[] loggedEventArray = loggedEvents.toArray(Event[]::new);
+		final Supplier<Map<String, GameHistory>> mapFactory = () -> Maps
+				.newHashMapWithExpectedSize(loggedEventArray.length);
+		return Arrays.stream(loggedEventArray).collect(new GameHistoryCollector(mapFactory));
 	}
 
 	private LoggedEvents() {
