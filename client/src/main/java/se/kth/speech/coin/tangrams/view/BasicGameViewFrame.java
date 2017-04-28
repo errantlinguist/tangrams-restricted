@@ -23,36 +23,26 @@ import java.awt.font.TextAttribute;
 import java.text.AttributedCharacterIterator.Attribute;
 import java.util.Collections;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.function.Supplier;
 
 import javax.swing.BoxLayout;
 import javax.swing.JFrame;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTable;
 import javax.swing.table.JTableHeader;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Maps;
 
 import se.kth.speech.MapEntryRemapping;
 import se.kth.speech.SpatialRegion;
 import se.kth.speech.coin.tangrams.game.Controller;
-import se.kth.speech.coin.tangrams.game.PlayerRole;
-import se.kth.speech.coin.tangrams.game.Turn;
-import se.kth.speech.coin.tangrams.iristk.events.Move;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
  * @since 2 Mar 2017
  *
  */
-public class BasicGameViewFrame extends JFrame implements Controller.Listener {
-
-	private static final Logger LOGGER = LoggerFactory.getLogger(BasicGameViewFrame.class);
+public class BasicGameViewFrame extends JFrame {
 
 	/**
 	 *
@@ -66,12 +56,9 @@ public class BasicGameViewFrame extends JFrame implements Controller.Listener {
 		return result;
 	}
 
-	private final Runnable nextTurnHook;
-
 	BasicGameViewFrame(final AbstractGameBoardPanel boardPanel, final Controller controller,
 			final Supplier<? extends MapEntryRemapping<Integer, SpatialRegion>> moveFactory,
 			final Dimension preferredSize) {
-		controller.getListeners().add(this);
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		setPreferredSize(preferredSize);
 		setLayout(new BorderLayout());
@@ -99,88 +86,5 @@ public class BasicGameViewFrame extends JFrame implements Controller.Listener {
 				tablePanel.add(controllerInfoTable);
 			}
 		}
-
-		nextTurnHook = () -> {
-			try {
-				final MapEntryRemapping<Integer, SpatialRegion> nextMove = moveFactory.get();
-				final Integer pieceId = nextMove.getKey();
-				final SpatialRegion source = nextMove.getOldValue();
-				final SpatialRegion target = nextMove.getNewValue();
-				boardPanel.notifyNextMove(source, target, pieceId);
-			} catch (final NoSuchElementException e) {
-				// No pieces left to be moved; Game cannot continue
-				JOptionPane.showMessageDialog(this, "No more moves available.", "No more moves",
-						JOptionPane.WARNING_MESSAGE);
-				LOGGER.warn("No more moves available.", e);
-			}
-		};
 	}
-
-	@Override
-	public void updateNextMove(final Move move) {
-		LOGGER.debug("Observed event representing the subbmission of a move by a player.");
-	}
-
-	@Override
-	public void updatePlayerJoined(final String joinedPlayerId, final long time) {
-		LOGGER.debug("Observed event representing the joining of a player.");
-	}
-
-	@Override
-	public void updatePlayerRole(final PlayerRole newRole) {
-		LOGGER.debug("Observed event representing a change in player role.");
-		updateNextTurnResponsibility(newRole);
-	}
-
-	@Override
-	public void updatePlayerSelection(final Integer pieceId, final SpatialRegion region) {
-		LOGGER.debug("Observed event representing a user selection.");
-	}
-
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see
-	 * se.kth.speech.coin.tangrams.game.Controller.Listener#updateScore(int)
-	 */
-	@Override
-	public void updateScore(final int score) {
-		LOGGER.debug("Notified of new score.");
-	}
-
-	@Override
-	public void updateSelectionRejected(final Integer pieceId, final SpatialRegion region) {
-		LOGGER.debug("Observed event representing the rejection of the last selection.");
-	}
-
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see se.kth.speech.coin.tangrams.iristk.Controller.Listener#
-	 * updateTurnCompletion(se.kth.speech.coin.tangrams.iristk.events.Turn)
-	 */
-	@Override
-	public void updateTurnCompleted(final Turn turn) {
-		LOGGER.debug("Observed event representing a completed turn.");
-	}
-
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see
-	 * se.kth.speech.coin.tangrams.game.Controller.Listener#updateMoveCount(int)
-	 */
-	@Override
-	public void updateTurnCount(final int newCount) {
-		LOGGER.debug("Notified of new turn count.");
-	}
-
-	private void updateNextTurnResponsibility(final PlayerRole role) {
-		if (PlayerRole.MOVE_SUBMISSION.equals(role)) {
-			JOptionPane.showMessageDialog(this, "Press \"OK\" to continue to the next turn.", "Next turn",
-					JOptionPane.INFORMATION_MESSAGE);
-			nextTurnHook.run();
-		}
-	}
-
 }
