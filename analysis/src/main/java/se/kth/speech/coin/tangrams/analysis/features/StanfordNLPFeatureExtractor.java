@@ -46,7 +46,21 @@ import se.kth.speech.coin.tangrams.analysis.Utterance;
  */
 final class StanfordNLPFeatureExtractor implements UtteranceFeatureExtractor {
 
-	private static final StanfordCoreNLP DEFAULT_ANNOT_PIPELINE = createDefaultAnnotPipeline();
+	/**
+	 * {@link DefaultAnnotPipelineHolder} is loaded on the first execution of
+	 * {@link StanfordNLPFeatureExtractor#getInstance()} or the first access to
+	 * {@link DefaultAnnotPipelineHolder#INSTANCE}, not before.
+	 *
+	 * @author <a href="http://www.cs.umd.edu/~pugh/">Bill Pugh</a>
+	 * @see <a href=
+	 *      "https://en.wikipedia.org/wiki/Singleton_pattern#The_solution_of_Bill_Pugh">https://en.wikipedia.org/wiki/Singleton_pattern#The_solution_of_Bill_Pugh</a>
+	 */
+	private static final class DefaultAnnotPipelineHolder {
+		/**
+		 * A singleton instance of {@link StanfordCoreNLP}.
+		 */
+		private static final StanfordCoreNLP INSTANCE = createDefaultAnnotPipeline();
+	}
 
 	private static final Collector<CharSequence, ?, String> TOKEN_FORM_JOINER = Collectors.joining(" ");
 
@@ -61,10 +75,19 @@ final class StanfordNLPFeatureExtractor implements UtteranceFeatureExtractor {
 		return new StanfordCoreNLP(props);
 	}
 
+	/**
+	 * Gets a singleton instance of {@link StanfordCoreNLP}.
+	 *
+	 * @return The singleton instance.
+	 */
+	private static StanfordCoreNLP getDefaultAnnotPipeline() {
+		return DefaultAnnotPipelineHolder.INSTANCE;
+	}
+
 	private final Annotator annotator;
 
 	public StanfordNLPFeatureExtractor() {
-		this(DEFAULT_ANNOT_PIPELINE);
+		this(getDefaultAnnotPipeline());
 	}
 
 	private StanfordNLPFeatureExtractor(final Annotator annotator) {
