@@ -42,7 +42,7 @@ import se.kth.speech.coin.tangrams.iristk.events.ModelDescription;
 import se.kth.speech.coin.tangrams.iristk.events.Move;
 import se.kth.speech.coin.tangrams.iristk.events.Selection;
 
-public class GameManagementClientModule extends IrisModule implements GameManagementClient {
+public final class GameManagementClientModule extends IrisModule implements GameManagementClient {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(GameManagementClientModule.class);
 
