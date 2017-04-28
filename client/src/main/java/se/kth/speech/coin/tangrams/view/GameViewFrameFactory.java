@@ -55,7 +55,7 @@ import se.kth.speech.coin.tangrams.game.PatternMoveFactory;
  * @since 16 Nov 2016
  *
  */
-public final class GameViewFrameFactory implements Function<GameViewFrameFactory.Parameters, GameViewFrame> {
+final class GameViewFrameFactory implements Function<GameViewFrameFactory.Parameters, GameViewFrame> {
 
 	public static final class Parameters {
 
