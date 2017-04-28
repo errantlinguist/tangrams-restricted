@@ -301,7 +301,7 @@ public final class GameEventAudioReplayer implements Function<Segment, Stream<En
 				}
 
 				// final Map<String, String> sourceIdPlayerIds =
-				// createSourceIdPlayerIdMap(uttAnnots);
+				// Annotations.createSourceIdPlayerIdMap(uttAnnots);
 				// final Set<String> playerIds = new
 				// HashSet<>(sourceIdPlayerIds.values());
 				// final int expectedEventLogFileCount = playerIds.size();
@@ -395,16 +395,6 @@ public final class GameEventAudioReplayer implements Function<Segment, Stream<En
 		final Options result = new Options();
 		Arrays.stream(Parameter.values()).map(Parameter::get).forEach(result::addOption);
 		return result;
-	}
-
-	private static Map<String, String> createSourceIdPlayerIdMap(final Annotation uttAnnots) {
-		final List<Track> tracks = uttAnnots.getTracks().getTrack();
-		final Stream<Source> sources = tracks.stream().map(Track::getSources).map(Sources::getSource)
-				.flatMap(List::stream);
-		return sources.collect(Collectors.toMap(Source::getId, source -> {
-			final String href = source.getHref();
-			return MINIMAL_FILE_EXT_PATTERN.split(href)[0];
-		}));
 	}
 
 	private static void printHelp() {

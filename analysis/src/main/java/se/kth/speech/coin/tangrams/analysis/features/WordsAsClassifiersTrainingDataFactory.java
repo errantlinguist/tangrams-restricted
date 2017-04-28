@@ -33,7 +33,6 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
-import java.util.regex.Pattern;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
@@ -55,6 +54,7 @@ import com.google.common.collect.Table;
 
 import iristk.util.HAT;
 import se.kth.speech.MutablePair;
+import se.kth.speech.coin.tangrams.analysis.Annotations;
 import se.kth.speech.coin.tangrams.analysis.GameContext;
 import se.kth.speech.coin.tangrams.analysis.GameContextModelFactory;
 import se.kth.speech.coin.tangrams.analysis.GameHistory;
@@ -65,9 +65,6 @@ import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
 import se.kth.speech.hat.xsd.Annotation;
 import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
-import se.kth.speech.hat.xsd.Annotation.Tracks.Track;
-import se.kth.speech.hat.xsd.Annotation.Tracks.Track.Sources;
-import se.kth.speech.hat.xsd.Annotation.Tracks.Track.Sources.Source;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -115,12 +112,6 @@ public final class WordsAsClassifiersTrainingDataFactory
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(WordsAsClassifiersTrainingDataFactory.class);
 
-	/**
-	 * @see <a href=
-	 *      "http://stackoverflow.com/a/4546093/1391325">StackOverflow</a>
-	 */
-	private static final Pattern MINIMAL_FILE_EXT_PATTERN = Pattern.compile("\\.(?=[^\\.]+$)");
-
 	private static final Options OPTIONS = createOptions();
 
 	private static final Function<Segment, List<Utterance>> SEG_UTT_FACTORY = new SegmentUtteranceFactory();
@@ -146,7 +137,7 @@ public final class WordsAsClassifiersTrainingDataFactory
 				final File inpath = (File) cl.getParsedOptionValue(Parameter.INPATH.optName);
 				LOGGER.info("Reading annotations from \"{}\".", inpath);
 				final Annotation uttAnnots = HAT.readAnnotation(inpath);
-				final Map<String, String> sourceIdPlayerIds = createSourceIdPlayerIdMap(uttAnnots);
+				final Map<String, String> sourceIdPlayerIds = Annotations.createSourceIdPlayerIdMap(uttAnnots);
 				final Set<String> playerIds = new HashSet<>(sourceIdPlayerIds.values());
 				final int expectedEventLogFileCount = playerIds.size();
 				final Path sessionLogDir = inpath.getParentFile().toPath();
@@ -187,8 +178,7 @@ public final class WordsAsClassifiersTrainingDataFactory
 					final String header = featureDescs.collect(TABLE_ROW_CELL_JOINER);
 
 					final String gameId = playerGameIdIntersection.iterator().next();
-					final Map<String, GameHistory> playerGameHistories = playerGameHistoryTable.columnMap()
-							.get(gameId);
+					final Map<String, GameHistory> playerGameHistories = playerGameHistoryTable.columnMap().get(gameId);
 					final UtteranceGameContextFactory uttContextFactory = new UtteranceGameContextFactory(
 							playerGameHistories::get);
 					final WordsAsClassifiersTrainingDataFactory trainingDataFactory = new WordsAsClassifiersTrainingDataFactory(
@@ -230,16 +220,6 @@ public final class WordsAsClassifiersTrainingDataFactory
 		final Options result = new Options();
 		Arrays.stream(Parameter.values()).map(Parameter::get).forEach(result::addOption);
 		return result;
-	}
-
-	private static Map<String, String> createSourceIdPlayerIdMap(final Annotation uttAnnots) {
-		final List<Track> tracks = uttAnnots.getTracks().getTrack();
-		final Stream<Source> sources = tracks.stream().map(Track::getSources).map(Sources::getSource)
-				.flatMap(List::stream);
-		return sources.collect(Collectors.toMap(Source::getId, source -> {
-			final String href = source.getHref();
-			return MINIMAL_FILE_EXT_PATTERN.split(href)[0];
-		}));
 	}
 
 	private static PrintWriter parseOutpath(final CommandLine cl) throws ParseException, IOException {

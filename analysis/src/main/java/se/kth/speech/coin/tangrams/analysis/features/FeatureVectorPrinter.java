@@ -31,7 +31,6 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
-import java.util.regex.Pattern;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
@@ -52,15 +51,13 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.Table;
 
 import iristk.util.HAT;
+import se.kth.speech.coin.tangrams.analysis.Annotations;
 import se.kth.speech.coin.tangrams.analysis.GameHistory;
 import se.kth.speech.coin.tangrams.analysis.UtteranceGameContextFactory;
 import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
 import se.kth.speech.hat.xsd.Annotation;
 import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
-import se.kth.speech.hat.xsd.Annotation.Tracks.Track;
-import se.kth.speech.hat.xsd.Annotation.Tracks.Track.Sources;
-import se.kth.speech.hat.xsd.Annotation.Tracks.Track.Sources.Source;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -103,12 +100,6 @@ public final class FeatureVectorPrinter {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(FeatureVectorPrinter.class);
 
-	/**
-	 * @see <a href=
-	 *      "http://stackoverflow.com/a/4546093/1391325">StackOverflow</a>
-	 */
-	private static final Pattern MINIMAL_FILE_EXT_PATTERN = Pattern.compile("\\.(?=[^\\.]+$)");
-
 	private static final Options OPTIONS = createOptions();
 
 	private static final Collector<CharSequence, ?, String> TABLE_ROW_CELL_JOINER;
@@ -132,7 +123,7 @@ public final class FeatureVectorPrinter {
 				final File infile = (File) cl.getParsedOptionValue(Parameter.INFILE.optName);
 				LOGGER.info("Parsing utterances from \"{}\".", infile);
 				final Annotation uttAnnots = HAT.readAnnotation(infile);
-				final Map<String, String> sourceIdPlayerIds = createSourceIdPlayerIdMap(uttAnnots);
+				final Map<String, String> sourceIdPlayerIds = Annotations.createSourceIdPlayerIdMap(uttAnnots);
 				final Set<String> playerIds = new HashSet<>(sourceIdPlayerIds.values());
 				final int expectedEventLogFileCount = playerIds.size();
 				final Path sessionLogDir = infile.getParentFile().toPath();
@@ -213,16 +204,6 @@ public final class FeatureVectorPrinter {
 		final Options result = new Options();
 		Arrays.stream(Parameter.values()).map(Parameter::get).forEach(result::addOption);
 		return result;
-	}
-
-	private static Map<String, String> createSourceIdPlayerIdMap(final Annotation uttAnnots) {
-		final List<Track> tracks = uttAnnots.getTracks().getTrack();
-		final Stream<Source> sources = tracks.stream().map(Track::getSources).map(Sources::getSource)
-				.flatMap(List::stream);
-		return sources.collect(Collectors.toMap(Source::getId, source -> {
-			final String href = source.getHref();
-			return MINIMAL_FILE_EXT_PATTERN.split(href)[0];
-		}));
 	}
 
 	private static PrintWriter parseOutfile(final CommandLine cl) throws ParseException, IOException {

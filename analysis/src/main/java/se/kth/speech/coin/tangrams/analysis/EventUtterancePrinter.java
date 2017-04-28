@@ -23,6 +23,7 @@ import java.nio.file.Path;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -33,7 +34,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.regex.Pattern;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -50,6 +50,7 @@ import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.collect.Maps;
 import com.google.common.collect.Table;
 
 import iristk.system.Event;
@@ -61,9 +62,6 @@ import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
 import se.kth.speech.hat.xsd.Annotation;
 import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
-import se.kth.speech.hat.xsd.Annotation.Tracks.Track;
-import se.kth.speech.hat.xsd.Annotation.Tracks.Track.Sources;
-import se.kth.speech.hat.xsd.Annotation.Tracks.Track.Sources.Source;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -98,12 +96,6 @@ public final class EventUtterancePrinter implements Function<GameHistory, Stream
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(EventUtterancePrinter.class);
 
-	/**
-	 * @see <a href=
-	 *      "http://stackoverflow.com/a/4546093/1391325">StackOverflow</a>
-	 */
-	private static final Pattern MINIMAL_FILE_EXT_PATTERN = Pattern.compile("\\.(?=[^\\.]+$)");
-
 	private static final Options OPTIONS = createOptions();
 
 	private static final Function<Segment, List<Utterance>> SEG_UTT_FACTORY = new SegmentUtteranceFactory();
@@ -119,7 +111,7 @@ public final class EventUtterancePrinter implements Function<GameHistory, Stream
 				LOGGER.info("Reading annotations from \"{}\".", inpath);
 				final Annotation uttAnnots = HAT.readAnnotation(inpath);
 
-				final Map<String, String> sourceIdPlayerIds = createSourceIdPlayerIdMap(uttAnnots);
+				final Map<String, String> sourceIdPlayerIds = Annotations.createSourceIdPlayerIdMap(uttAnnots);
 				final Set<String> playerIds = new HashSet<>(sourceIdPlayerIds.values());
 				final int expectedEventLogFileCount = playerIds.size();
 				final Path sessionLogDir = inpath.getParentFile().toPath();
@@ -148,7 +140,9 @@ public final class EventUtterancePrinter implements Function<GameHistory, Stream
 					final String gameId = playerGameIdIntersection.iterator().next();
 					final Map<String, GameHistory> playerGameHistories = playerGameHistoryTable.columnMap().get(gameId);
 					final List<Segment> segments = uttAnnots.getSegments().getSegment();
-					final List<Utterance> utts = segments.stream().map(SEG_UTT_FACTORY).flatMap(List::stream)
+					final Map<Utterance, String> uttPlayerIds = createUtterancePlayerIdMap(segments,
+							sourceIdPlayerIds::get);
+					final List<Utterance> utts = uttPlayerIds.keySet().stream()
 							.sorted(Comparator.comparing(Utterance::getStartTime)
 									.thenComparing(Comparator.comparing(Utterance::getEndTime)))
 							.collect(Collectors.toList());
@@ -173,8 +167,10 @@ public final class EventUtterancePrinter implements Function<GameHistory, Stream
 						if (eventUtts.isEmpty()) {
 							out.println("\tNo utterances for event!");
 						} else {
-							final Stream<String> sents = eventUtts.stream().map(Utterance::getTokens).map(List::stream)
-									.map(str -> str.collect(joiner));
+							final Stream<String> sents = eventUtts.stream().map(utt -> {
+								final String speakingPlayerId = uttPlayerIds.get(utt);
+								return speakingPlayerId + " - " + utt.getTokens().stream().collect(joiner);
+							});
 							sents.forEachOrdered(sent -> out.println("\t" + sent));
 						}
 
@@ -197,14 +193,18 @@ public final class EventUtterancePrinter implements Function<GameHistory, Stream
 		return result;
 	}
 
-	private static Map<String, String> createSourceIdPlayerIdMap(final Annotation uttAnnots) {
-		final List<Track> tracks = uttAnnots.getTracks().getTrack();
-		final Stream<Source> sources = tracks.stream().map(Track::getSources).map(Sources::getSource)
-				.flatMap(List::stream);
-		return sources.collect(Collectors.toMap(Source::getId, source -> {
-			final String href = source.getHref();
-			return MINIMAL_FILE_EXT_PATTERN.split(href)[0];
-		}));
+	private static Map<Utterance, String> createUtterancePlayerIdMap(final Collection<Segment> segments,
+			final Function<? super String, String> sourcePlayerIdGetter) {
+		final Map<Utterance, String> result = Maps.newHashMapWithExpectedSize(segments.size());
+		for (final Segment segment : segments) {
+			final String sourceId = segment.getSource();
+			final List<Utterance> segUtts = SEG_UTT_FACTORY.apply(segment);
+			for (final Utterance segUtt : segUtts) {
+				final String playerId = sourcePlayerIdGetter.apply(sourceId);
+				result.put(segUtt, playerId);
+			}
+		}
+		return result;
 	}
 
 	private static void printHelp() {
