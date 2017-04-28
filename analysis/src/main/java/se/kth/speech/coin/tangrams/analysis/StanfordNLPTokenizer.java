@@ -39,7 +39,7 @@ import edu.stanford.nlp.util.CoreMap;
  * @since Apr 14, 2017
  *
  */
-final class StanfordNLPTokenizer implements Function<String, List<String>> {
+public final class StanfordNLPTokenizer implements Function<String, List<String>> {
 
 	/**
 	 * {@link DefaultAnnotPipelineHolder} is loaded on the first execution of
