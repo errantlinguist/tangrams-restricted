@@ -42,7 +42,7 @@ import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
  * @since 27 Jan 2017
  *
  */
-public final class GameHistoryeCollector
+public final class GameHistoryCollector
 		implements Collector<Event, Map<String, GameHistory>, Map<String, GameHistory>> {
 
 	private static final BiConsumer<Map<String, GameHistory>, Event> ACCUMULATOR = new BiConsumer<Map<String, GameHistory>, Event>() {
@@ -189,11 +189,11 @@ public final class GameHistoryeCollector
 	 */
 	private static final int EXPECTED_EVENTS_FOR_TIMESTAMP = 1;
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(GameHistoryeCollector.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(GameHistoryCollector.class);
 
 	private final Supplier<Map<String, GameHistory>> supplier;
 
-	public GameHistoryeCollector(final Supplier<Map<String, GameHistory>> supplier) {
+	public GameHistoryCollector(final Supplier<Map<String, GameHistory>> supplier) {
 		this.supplier = supplier;
 	}
 

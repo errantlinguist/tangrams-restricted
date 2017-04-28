@@ -42,7 +42,7 @@ import iristk.system.Event;
 import iristk.util.Record;
 import iristk.util.Record.JsonToRecordException;
 import se.kth.speech.coin.tangrams.analysis.GameHistory;
-import se.kth.speech.coin.tangrams.analysis.GameHistoryeCollector;
+import se.kth.speech.coin.tangrams.analysis.GameHistoryCollector;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -79,7 +79,7 @@ public final class LoggedEvents {
 			final Event[] loggedEventArray = loggedEvents.toArray(Event[]::new);
 			final Supplier<Map<String, GameHistory>> mapFactory = () -> Maps
 					.newHashMapWithExpectedSize(loggedEventArray.length);
-			return Arrays.stream(loggedEventArray).collect(new GameHistoryeCollector(mapFactory));
+			return Arrays.stream(loggedEventArray).collect(new GameHistoryCollector(mapFactory));
 		}
 
 	}
