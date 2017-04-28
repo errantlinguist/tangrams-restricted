@@ -47,7 +47,7 @@ import se.kth.speech.coin.tangrams.iristk.events.Selection;
  *
  */
 @RunWith(Theories.class)
-public final class ControllerHistoryTest {
+public final class GameplayControllerHistoryTest {
 
 	@DataPoints("testMatrices")
 	public static final Collection<SpatialMatrix<Integer>> TEST_MODELS;
@@ -86,17 +86,17 @@ public final class ControllerHistoryTest {
 
 	@Theory
 	public void testGetTurnCountNoMoves(final SpatialMatrix<Integer> model, final long seed) {
-		final Controller controller = new Controller(model, "localPlayer", PlayerRole.MOVE_SUBMISSION, CLIENT);
-		final Controller.History history = controller.getHistory();
+		final GameplayController controller = new GameplayController(model, "localPlayer", PlayerRole.MOVE_SUBMISSION, CLIENT);
+		final GameplayController.History history = controller.getHistory();
 		Assert.assertEquals(0, history.getTurnCount());
 	}
 
 	@Theory
 	public void testGetTurnCountOneTurn(final SpatialMatrix<Integer> model, final long seed) {
-		final Controller controller = new Controller(model, "localPlayer", PlayerRole.MOVE_SUBMISSION, CLIENT);
+		final GameplayController controller = new GameplayController(model, "localPlayer", PlayerRole.MOVE_SUBMISSION, CLIENT);
 		final Random rnd = new Random(seed);
 		submitRandomTurn(controller, rnd);
-		final Controller.History history = controller.getHistory();
+		final GameplayController.History history = controller.getHistory();
 		Assert.assertEquals(1, history.getTurnCount());
 	}
 

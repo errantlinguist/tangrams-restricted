@@ -33,6 +33,7 @@ import iristk.system.IrisModule;
 import se.kth.speech.SpatialMatrix;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 import se.kth.speech.coin.tangrams.game.Controller;
+import se.kth.speech.coin.tangrams.game.GameplayController;
 import se.kth.speech.coin.tangrams.game.PlayerRole;
 import se.kth.speech.coin.tangrams.iristk.events.Area2D;
 import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
@@ -230,7 +231,7 @@ public final class GameManagementClientModule extends IrisModule implements Game
 
 		final PlayerRole role = gameDesc.getPlayerRoles().inverse().get(playerId);
 
-		final Controller controller = new Controller(model, playerId, role, this);
+		final Controller controller = new GameplayController(model, playerId, role, this);
 		setController(controller);
 
 		final ImageVisualizationInfoDescription imgVizDesc = gameDesc.getImageVisualizationInfoDescription();
