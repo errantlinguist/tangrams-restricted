@@ -17,6 +17,7 @@
 package se.kth.speech.coin.tangrams.analysis;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
@@ -26,6 +27,7 @@ import java.util.stream.Stream;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
+import org.apache.lucene.analysis.util.CharArraySet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,7 +49,13 @@ public final class SegmentUtteranceFactory implements Function<Segment, List<Utt
 
 	private static StandardAnalyzer createAnalyzer() {
 		// final CharArraySet stopwords = CharArraySet.EMPTY_SET;
-		return new StandardAnalyzer();
+		final CharArraySet stopwords = createMetaLanguageTokenSet();
+		return new StandardAnalyzer(stopwords);
+	}
+
+	private static CharArraySet createMetaLanguageTokenSet() {
+		return new CharArraySet(Arrays.asList("BREATH", "CLICK", "COUGH", "LAUGHTER", "META", "SNIFF", "SWEDISH"),
+				false);
 	}
 
 	private static Function<String, Stream<String>> createTokenFactory() {
