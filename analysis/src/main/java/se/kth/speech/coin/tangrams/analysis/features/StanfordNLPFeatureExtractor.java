@@ -48,7 +48,7 @@ final class StanfordNLPFeatureExtractor implements UtteranceFeatureExtractor {
 
 	/**
 	 * {@link DefaultAnnotPipelineHolder} is loaded on the first execution of
-	 * {@link StanfordNLPFeatureExtractor#getInstance()} or the first access to
+	 * {@link StanfordNLPFeatureExtractor#getDefaultAnnotPipeline()} or the first access to
 	 * {@link DefaultAnnotPipelineHolder#INSTANCE}, not before.
 	 *
 	 * @author <a href="http://www.cs.umd.edu/~pugh/">Bill Pugh</a>
