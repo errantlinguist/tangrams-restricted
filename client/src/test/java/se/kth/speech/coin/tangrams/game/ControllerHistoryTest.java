@@ -37,7 +37,7 @@ import se.kth.speech.SpatialMatrix;
 import se.kth.speech.SpatialRegion;
 import se.kth.speech.coin.tangrams.MatrixTests;
 import se.kth.speech.coin.tangrams.SpatialMatrixTests;
-import se.kth.speech.coin.tangrams.iristk.GameManagementClientModule;
+import se.kth.speech.coin.tangrams.iristk.GameManagementClient;
 import se.kth.speech.coin.tangrams.iristk.events.Area2D;
 import se.kth.speech.coin.tangrams.iristk.events.Selection;
 
@@ -55,7 +55,7 @@ public final class ControllerHistoryTest {
 	@DataPoints("seeds")
 	public static final long[] TEST_SEEDS = new Random().longs().distinct().limit(5).toArray();
 
-	private static final GameManagementClientModule CLIENT_MODULE = Mockito.mock(GameManagementClientModule.class);
+	private static final GameManagementClient CLIENT = Mockito.mock(GameManagementClient.class);
 
 	private static final Function<SpatialRegion, Area2D> REGION_AREA_FACTORY = new SpatialRegionAreaFactory();
 
@@ -86,14 +86,14 @@ public final class ControllerHistoryTest {
 
 	@Theory
 	public void testGetTurnCountNoMoves(final SpatialMatrix<Integer> model, final long seed) {
-		final Controller controller = new Controller(model, "localPlayer", PlayerRole.MOVE_SUBMISSION, CLIENT_MODULE);
+		final Controller controller = new Controller(model, "localPlayer", PlayerRole.MOVE_SUBMISSION, CLIENT);
 		final Controller.History history = controller.getHistory();
 		Assert.assertEquals(0, history.getTurnCount());
 	}
 
 	@Theory
 	public void testGetTurnCountOneTurn(final SpatialMatrix<Integer> model, final long seed) {
-		final Controller controller = new Controller(model, "localPlayer", PlayerRole.MOVE_SUBMISSION, CLIENT_MODULE);
+		final Controller controller = new Controller(model, "localPlayer", PlayerRole.MOVE_SUBMISSION, CLIENT);
 		final Random rnd = new Random(seed);
 		submitRandomTurn(controller, rnd);
 		final Controller.History history = controller.getHistory();

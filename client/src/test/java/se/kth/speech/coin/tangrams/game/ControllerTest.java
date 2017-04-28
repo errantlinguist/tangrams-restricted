@@ -37,7 +37,7 @@ import se.kth.speech.SpatialMatrix;
 import se.kth.speech.SpatialRegion;
 import se.kth.speech.coin.tangrams.MatrixTests;
 import se.kth.speech.coin.tangrams.SpatialMatrixTests;
-import se.kth.speech.coin.tangrams.iristk.GameManagementClientModule;
+import se.kth.speech.coin.tangrams.iristk.GameManagementClient;
 import se.kth.speech.coin.tangrams.iristk.events.Area2D;
 import se.kth.speech.coin.tangrams.iristk.events.Selection;
 
@@ -58,7 +58,7 @@ public final class ControllerTest {
 	@DataPoints("seeds")
 	public static final long[] TEST_SEEDS;
 
-	private static final GameManagementClientModule CLIENT_MODULE = Mockito.mock(GameManagementClientModule.class);
+	private static final GameManagementClient CLIENT = Mockito.mock(GameManagementClient.class);
 
 	private static final Function<SpatialRegion, Area2D> REGION_AREA_FACTORY = new SpatialRegionAreaFactory();
 
@@ -95,13 +95,13 @@ public final class ControllerTest {
 
 	@Theory
 	public void testGetTurnCountNoMoves(final SpatialMatrix<Integer> model, final long seed) {
-		final Controller controller = new Controller(model, "localPlayer", PlayerRole.MOVE_SUBMISSION, CLIENT_MODULE);
+		final Controller controller = new Controller(model, "localPlayer", PlayerRole.MOVE_SUBMISSION, CLIENT);
 		Assert.assertEquals(0, controller.getTurnCount());
 	}
 
 	@Theory
 	public void testGetTurnCountOneTurn(final SpatialMatrix<Integer> model, final long seed) {
-		final Controller controller = new Controller(model, "localPlayer", PlayerRole.MOVE_SUBMISSION, CLIENT_MODULE);
+		final Controller controller = new Controller(model, "localPlayer", PlayerRole.MOVE_SUBMISSION, CLIENT);
 		final Random rnd = new Random(seed);
 		submitRandomTurn(controller, rnd);
 		Assert.assertEquals(1, controller.getTurnCount());
@@ -109,7 +109,7 @@ public final class ControllerTest {
 
 	@Theory
 	public void testNotifyPlayerSelectionPositive(final SpatialMatrix<Integer> model, final long seed) {
-		final Controller controller = new Controller(model, "localPlayer", PlayerRole.MOVE_SUBMISSION, CLIENT_MODULE);
+		final Controller controller = new Controller(model, "localPlayer", PlayerRole.MOVE_SUBMISSION, CLIENT);
 		final Random rnd = new Random(seed);
 		final MapEntryRemapping<Integer, SpatialRegion> move = SpatialMatrixTests.createRandomValidMove(model, rnd);
 		final SpatialRegion sourceRegion = move.getOldValue();
@@ -123,7 +123,7 @@ public final class ControllerTest {
 
 	@Theory
 	public void testSubmitNextMovePositive(final SpatialMatrix<Integer> model, final long seed) {
-		final Controller controller = new Controller(model, "localPlayer", PlayerRole.MOVE_SUBMISSION, CLIENT_MODULE);
+		final Controller controller = new Controller(model, "localPlayer", PlayerRole.MOVE_SUBMISSION, CLIENT);
 		final Random rnd = new Random(seed);
 		final MapEntryRemapping<Integer, SpatialRegion> move = SpatialMatrixTests.createRandomValidMove(model, rnd);
 		final SpatialRegion sourceRegion = move.getOldValue();
@@ -138,7 +138,7 @@ public final class ControllerTest {
 
 	@Theory
 	public void testSubmitTurnCompletePositive(final SpatialMatrix<Integer> model, final long seed) {
-		final Controller controller = new Controller(model, "localPlayer", PlayerRole.MOVE_SUBMISSION, CLIENT_MODULE);
+		final Controller controller = new Controller(model, "localPlayer", PlayerRole.MOVE_SUBMISSION, CLIENT);
 		final Random rnd = new Random(seed);
 		final MapEntryRemapping<Integer, SpatialRegion> move = SpatialMatrixTests.createRandomValidMove(model, rnd);
 		final SpatialRegion sourceRegion = move.getOldValue();
