@@ -370,10 +370,8 @@ final class InteractiveGameBoardPanel extends GameBoardPanel implements Controll
 		selectingMouseListener.setEnabled(canSelect);
 	}
 
-	/**
-	 *
-	 */
-	void notifyNextMove(final SpatialRegion source, final SpatialRegion target, final Integer pieceId) {
+	@Override
+	protected void notifyNextMove(final SpatialRegion source, final SpatialRegion target, final Integer pieceId) {
 		LOGGER.debug("Notified of continue event.");
 		final PlayerRole role = controller.getRole();
 		switch (role) {

@@ -51,7 +51,7 @@ import se.kth.speech.awt.ComponentResizedEventListener;
  * @since 2 Mar 2017
  *
  */
-public class GameBoardPanel extends JPanel {
+public abstract class GameBoardPanel extends JPanel {
 
 	private static final Stroke GRID_STROKE = new BasicStroke(1.0f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 1.0f,
 			new float[] { 1.0f }, 0);
@@ -395,5 +395,7 @@ public class GameBoardPanel extends JPanel {
 
 		return result;
 	}
+	
+	protected abstract void notifyNextMove(final SpatialRegion source, final SpatialRegion target, final Integer pieceId);
 
 }
