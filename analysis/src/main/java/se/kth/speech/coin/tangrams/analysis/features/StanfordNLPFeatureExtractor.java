@@ -64,7 +64,7 @@ final class StanfordNLPFeatureExtractor implements UtteranceFeatureExtractor {
 		private static StanfordCoreNLP createDefaultAnnotPipeline() {
 			final Properties props = new Properties();
 			try (final InputStream inStream = DefaultAnnotPipelineHolder.class
-					.getResourceAsStream("stanford-corenlp.properties")) {
+					.getResourceAsStream("stanford-corenlp-feature_extraction.properties")) {
 				props.load(inStream);
 			} catch (final IOException e) {
 				throw new UncheckedIOException(e);
