@@ -87,7 +87,7 @@ public final class LoggedEvents {
 			LOGGER.info("Reading session event log for player \"{}\".", playerId);
 			final Path eventLogFile = playerEventLogFilePath.getValue();
 			try (final Stream<String> lines = Files.lines(eventLogFile, LoggingFormats.ENCODING)) {
-				final Map<String, GameHistory> gameHistories = parseLoggedHistory(lines);
+				final Map<String, GameHistory> gameHistories = parseGameHistories(lines);
 				gameHistories.forEach((gameId, gameData) -> {
 					result.put(playerId, gameId, gameData);
 				});
@@ -96,7 +96,7 @@ public final class LoggedEvents {
 		return result;
 	}
 
-	public static Map<String, GameHistory> parseLoggedHistory(final Stream<String> lines) {
+	public static Map<String, GameHistory> parseGameHistories(final Stream<String> lines) {
 		final Stream<Event> loggedEvents = lines.filter(line -> !EMPTY_OR_WHITESPACE_PATTERN.matcher(line).matches())
 				.flatMap(line -> {
 					Stream<Event> result = Stream.empty();
