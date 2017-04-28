@@ -117,12 +117,12 @@ public final class GameViewFrameFactory implements Function<GameViewFrameFactory
 
 		final Function<Integer, Image> pieceIdImgGetter = pieceImgs::get;
 		final int uniqueImageResourceCount = imgVizInfo.getUniqueImageResourceCount();
-		final Entry<GameBoardPanel, ImageLoadingImageViewInfoFactory> gameBoardImgViewInfoFactory = analysisEnabled
+		final Entry<InteractiveGameBoardPanel, ImageLoadingImageViewInfoFactory> gameBoardImgViewInfoFactory = analysisEnabled
 				? createDebugGameBoardImgViewInfoFactory(controller, pieceIdImgGetter, uniqueImageResourceCount,
 						boardAreaColors)
 				: createProdGameBoardImgViewInfoFactory(controller, pieceIdImgGetter, uniqueImageResourceCount,
 						boardAreaColors);
-		final GameBoardPanel gameBoardPanel = gameBoardImgViewInfoFactory.getKey();
+		final InteractiveGameBoardPanel gameBoardPanel = gameBoardImgViewInfoFactory.getKey();
 		final ImageLoadingImageViewInfoFactory imgViewInfoFactory = gameBoardImgViewInfoFactory.getValue();
 
 		final SortedMap<Integer, ImageVisualizationInfo.Datum> imgVisualizationInfoDataById = new TreeMap<>();
@@ -151,10 +151,10 @@ public final class GameViewFrameFactory implements Function<GameViewFrameFactory
 		return new GameViewFrame(gameBoardPanel, controller, moveFactory, preferredSize);
 	}
 
-	private Entry<GameBoardPanel, ImageLoadingImageViewInfoFactory> createDebugGameBoardImgViewInfoFactory(
+	private Entry<InteractiveGameBoardPanel, ImageLoadingImageViewInfoFactory> createDebugGameBoardImgViewInfoFactory(
 			final Controller controller, final Function<? super Integer, ? extends Image> pieceIdImageFactory,
 			final int uniqueImageResourceCount, final Map<BoardArea, Color> boardAreaColors) {
-		final GameBoardPanel gameBoardPanel = new GameBoardPanel(controller.getModel(), pieceIdImageFactory, controller,
+		final InteractiveGameBoardPanel gameBoardPanel = new InteractiveGameBoardPanel(controller.getModel(), pieceIdImageFactory, controller,
 				boardAreaColors.get(BoardArea.HIGHLIGHT), screenshotLogger, backgroundJobService, true);
 		gameBoardPanel.setBackground(boardAreaColors.get(BoardArea.BACKGROUND));
 		final OpaqueTransparencyReplacementImageFilter imgFilter = new OpaqueTransparencyReplacementImageFilter(128);
@@ -166,10 +166,10 @@ public final class GameViewFrameFactory implements Function<GameViewFrameFactory
 		return new MutablePair<>(gameBoardPanel, imgViewInfoFactory);
 	}
 
-	private Entry<GameBoardPanel, ImageLoadingImageViewInfoFactory> createProdGameBoardImgViewInfoFactory(
+	private Entry<InteractiveGameBoardPanel, ImageLoadingImageViewInfoFactory> createProdGameBoardImgViewInfoFactory(
 			final Controller controller, final Function<? super Integer, ? extends Image> pieceIdImageFactory,
 			final int uniqueImageResourceCount, final Map<BoardArea, Color> boardAreaColors) {
-		final GameBoardPanel gameBoardPanel = new GameBoardPanel(controller.getModel(), pieceIdImageFactory, controller,
+		final InteractiveGameBoardPanel gameBoardPanel = new InteractiveGameBoardPanel(controller.getModel(), pieceIdImageFactory, controller,
 				boardAreaColors.get(BoardArea.HIGHLIGHT), screenshotLogger, backgroundJobService);
 		gameBoardPanel.setBackground(boardAreaColors.get(BoardArea.BACKGROUND));
 		final ImageLoadingImageViewInfoFactory imgViewInfoFactory = new ImageLoadingImageViewInfoFactory(

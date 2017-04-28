@@ -143,7 +143,7 @@ final class GameViewFrame extends JFrame implements Controller.Listener {
 
 	private final IntConsumer roleStatusLabelFontSizeUpdater;
 
-	GameViewFrame(final GameBoardPanel boardPanel, final Controller controller,
+	GameViewFrame(final InteractiveGameBoardPanel boardPanel, final Controller controller,
 			final Supplier<? extends MapEntryRemapping<Integer, SpatialRegion>> moveFactory,
 			final Dimension preferredSize) {
 		controller.getListeners().add(this);
