@@ -19,15 +19,16 @@ package se.kth.speech.coin.tangrams.analysis;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.standard.StandardAnalyzer;
-import org.apache.lucene.analysis.util.CharArraySet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,42 +42,42 @@ public final class SegmentUtteranceFactory implements Function<Segment, List<Utt
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SegmentUtteranceFactory.class);
 
+	private static final Set<String> META_LANGUAGE_TOKENS = new HashSet<>(
+			Arrays.asList("BREATH", "CLICK", "COUGH", "LAUGHTER", "META", "NOISE", "SNIFF", "SWEDISH"));
+
 	private static final Collector<CharSequence, ?, String> TOKEN_JOINING_COLLECTOR = Collectors.joining(" ");
 
 	static {
 		DEFAULT_MIN_SEG_SPACING = 1.0f / SegmentTimes.TIME_TO_MILLS_FACTOR;
 	}
 
-	private static StandardAnalyzer createAnalyzer() {
-		// final CharArraySet stopwords = CharArraySet.EMPTY_SET;
-		final CharArraySet stopwords = createMetaLanguageTokenSet();
-		return new StandardAnalyzer(stopwords);
+	private static Function<String, List<String>> createDefaultTokenizer() {
+		final Predicate<String> nonMetaLanguagePredicate = token -> !META_LANGUAGE_TOKENS.contains(token);
+		final StanfordNLPTokenizer stanfordTokenizer = new StanfordNLPTokenizer(nonMetaLanguagePredicate);
+		return stanfordTokenizer;
 	}
 
-	private static CharArraySet createMetaLanguageTokenSet() {
-		return new CharArraySet(Arrays.asList("BREATH", "CLICK", "COUGH", "LAUGHTER", "META", "SNIFF", "SWEDISH"),
-				false);
-	}
-
-	private static Function<String, Stream<String>> createTokenFactory() {
-		final Analyzer analyzer = createAnalyzer();
-		final StringTokenizer wrapped = new StringTokenizer(analyzer);
-		return content -> wrapped.apply(null, content);
-	}
+	// private static Function<String, Stream<String>> createDefaultTokenizer()
+	// {
+	// final Analyzer analyer = new BlacklistingAnalyzer(new
+	// CharArraySet(META_LANGUAGE_TOKENS, false));
+	// final StringTokenizer tokenizer = new StringTokenizer(analyer);
+	// return str -> tokenizer.apply(null, str).collect(Collectors.toList());
+	// }
 
 	private final float minSegmentSpacing;
 
-	private final Function<? super String, Stream<String>> tokenizer;
+	private final Function<? super String, ? extends List<String>> tokenizer;
 
 	public SegmentUtteranceFactory() {
-		this(createTokenFactory());
+		this(createDefaultTokenizer());
 	}
 
-	public SegmentUtteranceFactory(final Function<? super String, Stream<String>> tokenizer) {
+	public SegmentUtteranceFactory(final Function<? super String, ? extends List<String>> tokenizer) {
 		this(tokenizer, DEFAULT_MIN_SEG_SPACING);
 	}
 
-	public SegmentUtteranceFactory(final Function<? super String, Stream<String>> tokenizer,
+	public SegmentUtteranceFactory(final Function<? super String, ? extends List<String>> tokenizer,
 			final float minSegmentSpacing) {
 		this.tokenizer = tokenizer;
 		this.minSegmentSpacing = minSegmentSpacing;
@@ -106,8 +107,8 @@ public final class SegmentUtteranceFactory implements Function<Segment, List<Utt
 						// preceding this segment, finish building it
 						if (!currentTokenSeq.isEmpty()) {
 							final float nextUttStartTime = childUtts.get(0).getStartTime();
-							result.add(createUtterance(parentSegmentId, currentTokenSeq, prevUttEndTime,
-									nextUttStartTime));
+							createUtterance(parentSegmentId, currentTokenSeq, prevUttEndTime,
+									nextUttStartTime).ifPresent(result::add);
 							currentTokenSeq = new ArrayList<>();
 						}
 						// Add the newly-created child utterances after adding
@@ -126,7 +127,7 @@ public final class SegmentUtteranceFactory implements Function<Segment, List<Utt
 					// Add the last token sequence
 					final Float uttEndTime = segment.getEnd();
 					assert uttEndTime != null;
-					result.add(createUtterance(parentSegmentId, currentTokenSeq, prevUttEndTime, uttEndTime));
+					createUtterance(parentSegmentId, currentTokenSeq, prevUttEndTime, uttEndTime).ifPresent(result::add);
 				}
 			}
 		}
@@ -134,18 +135,17 @@ public final class SegmentUtteranceFactory implements Function<Segment, List<Utt
 		return result;
 	}
 
-	private Utterance createUtterance(final String segmentId, final List<T> tokenAnnots, final float previousUttEndTime,
-			final float nextUttStartTime) {
+	private Optional<Utterance> createUtterance(final String segmentId, final List<T> tokenAnnots,
+			final float previousUttEndTime, final float nextUttStartTime) {
 		final Float firstTokenStartTime = tokenAnnots.get(0).getStart();
 		final float seqStartTime = firstTokenStartTime == null ? previousUttEndTime + minSegmentSpacing
 				: firstTokenStartTime;
 		final Float lastTokenEndTime = tokenAnnots.get(tokenAnnots.size() - 1).getEnd();
 		final float seqEndTime = lastTokenEndTime == null ? nextUttStartTime - minSegmentSpacing : lastTokenEndTime;
 		final Stream<String> tokenForms = tokenAnnots.stream().map(T::getContent);
-		final Stream<String> tokens = tokenizer.apply(tokenForms.collect(TOKEN_JOINING_COLLECTOR));
-		return new Utterance(segmentId,
-				tokens.collect(Collectors.toCollection(() -> new ArrayList<>(tokenAnnots.size()))), seqStartTime,
-				seqEndTime);
+		final List<String> tokens = tokenizer.apply(tokenForms.collect(TOKEN_JOINING_COLLECTOR));
+		return tokens.isEmpty() ? Optional.empty()
+				: Optional.of(new Utterance(segmentId, tokens, seqStartTime, seqEndTime));
 	}
 
 }

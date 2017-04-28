@@ -18,6 +18,7 @@ package se.kth.speech.coin.tangrams.analysis.vocab;
 
 import java.text.Collator;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.NavigableSet;
 import java.util.Set;
@@ -27,7 +28,7 @@ import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
-import java.util.stream.Stream;
+import java.util.stream.Collectors;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.standard.StandardAnalyzer;
@@ -58,10 +59,10 @@ public final class AnnotationVocabularyCollector
 		return new StandardAnalyzer(stopwords);
 	}
 
-	private static Function<String, Stream<String>> createTokenFactory(final Locale locale) {
+	private static Function<String, List<String>> createDefaultTokenizer(final Locale locale) {
 		final Analyzer analyzer = createAnalyzer(locale);
 		final StringTokenizer wrapped = new StringTokenizer(analyzer);
-		return content -> wrapped.apply(null, content);
+		return content -> wrapped.apply(null, content).collect(Collectors.toList());
 	}
 
 	private final BiConsumer<NavigableSet<String>, Annotation> accumulator;
@@ -73,7 +74,7 @@ public final class AnnotationVocabularyCollector
 	}
 
 	public AnnotationVocabularyCollector(final Collator collator,
-			final Function<? super String, Stream<String>> tokenizer) {
+			final Function<? super String, ? extends List<String>> tokenizer) {
 		// Use a TreeSet so that iteration order is stable across
 		// invocations, meaning that a feature with a given index will
 		// always have the same meaning
@@ -82,7 +83,7 @@ public final class AnnotationVocabularyCollector
 	}
 
 	public AnnotationVocabularyCollector(final Locale locale) {
-		this(Collator.getInstance(locale), createTokenFactory(locale));
+		this(Collator.getInstance(locale), createDefaultTokenizer(locale));
 	}
 
 	/*
