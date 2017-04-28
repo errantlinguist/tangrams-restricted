@@ -96,10 +96,10 @@ final class GameViewFrameFactory implements Function<GameViewFrameFactory.Parame
 	public GameViewFrameFactory(final BiConsumer<? super Component, ? super String> screenshotLogger,
 			final Consumer<Iterator<Entry<Integer, ImageVisualizationInfo.Datum>>> imgVizInfoWriter,
 			final ExecutorService backgroundJobService, final boolean analysisEnabled) {
-		this.analysisEnabled = analysisEnabled;
 		this.screenshotLogger = screenshotLogger;
-		this.backgroundJobService = backgroundJobService;
 		this.imgVizInfoWriter = imgVizInfoWriter;
+		this.backgroundJobService = backgroundJobService;
+		this.analysisEnabled = analysisEnabled;
 	}
 
 	@Override
