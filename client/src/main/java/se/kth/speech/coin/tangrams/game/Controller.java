@@ -31,7 +31,7 @@ import se.kth.speech.SpatialMatrix;
 import se.kth.speech.SpatialMatrixRegionElementMover;
 import se.kth.speech.SpatialRegion;
 import se.kth.speech.coin.tangrams.AreaSpatialRegionFactory;
-import se.kth.speech.coin.tangrams.iristk.GameManagementClientModule;
+import se.kth.speech.coin.tangrams.iristk.GameManagementClient;
 import se.kth.speech.coin.tangrams.iristk.events.Area2D;
 import se.kth.speech.coin.tangrams.iristk.events.Move;
 import se.kth.speech.coin.tangrams.iristk.events.Selection;
@@ -145,7 +145,7 @@ public final class Controller {
 
 	private final AreaSpatialRegionFactory areaRegionFactory;
 
-	private final GameManagementClientModule clientModule;
+	private final GameManagementClient clientModule;
 
 	private final History history;
 
@@ -168,7 +168,7 @@ public final class Controller {
 	private int turnCount;
 
 	public Controller(final SpatialMatrix<Integer> model, final String playerId, final PlayerRole role,
-			final GameManagementClientModule clientModule) {
+			final GameManagementClient clientModule) {
 		this.model = model;
 		areaRegionFactory = new AreaSpatialRegionFactory(model);
 		piecePosUpdater = new SpatialMatrixRegionElementMover<>(model);

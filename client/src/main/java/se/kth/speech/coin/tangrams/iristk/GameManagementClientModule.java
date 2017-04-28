@@ -42,7 +42,7 @@ import se.kth.speech.coin.tangrams.iristk.events.ModelDescription;
 import se.kth.speech.coin.tangrams.iristk.events.Move;
 import se.kth.speech.coin.tangrams.iristk.events.Selection;
 
-public class GameManagementClientModule extends IrisModule {
+public class GameManagementClientModule extends IrisModule implements GameManagementClient {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(GameManagementClientModule.class);
 
@@ -151,6 +151,10 @@ public class GameManagementClientModule extends IrisModule {
 		}
 	}
 
+	/* (non-Javadoc)
+	 * @see se.kth.speech.coin.tangrams.iristk.GameManagementClient#rejectSelection(java.lang.Integer, se.kth.speech.coin.tangrams.iristk.events.Area2D)
+	 */
+	@Override
 	public void rejectSelection(final Integer pieceId, final Area2D area) {
 		final Event request = createPlayerEvent(GameManagementEvent.SELECTION_REJECTION);
 		request.put(GameManagementEvent.Attribute.SELECTION.toString(), new Selection(pieceId, area));
@@ -159,12 +163,20 @@ public class GameManagementClientModule extends IrisModule {
 		send(request);
 	}
 
+	/* (non-Javadoc)
+	 * @see se.kth.speech.coin.tangrams.iristk.GameManagementClient#requestJoinGame()
+	 */
+	@Override
 	public void requestJoinGame() {
 		final Event request = createPlayerEvent(GameManagementEvent.PLAYER_JOIN_REQUEST);
 		LOGGER.info("Sending broker event for requesting to join game \"{}\".", gameId);
 		send(request);
 	}
 
+	/* (non-Javadoc)
+	 * @see se.kth.speech.coin.tangrams.iristk.GameManagementClient#requestNextMove(se.kth.speech.coin.tangrams.iristk.events.Move)
+	 */
+	@Override
 	public void requestNextMove(final Move move) {
 		final Event request = createPlayerEvent(GameManagementEvent.NEXT_TURN_REQUEST);
 		request.put(GameManagementEvent.Attribute.MOVE.toString(), move);
@@ -172,6 +184,10 @@ public class GameManagementClientModule extends IrisModule {
 		send(request);
 	}
 
+	/* (non-Javadoc)
+	 * @see se.kth.speech.coin.tangrams.iristk.GameManagementClient#requestSelection(java.lang.Integer, se.kth.speech.coin.tangrams.iristk.events.Area2D)
+	 */
+	@Override
 	public void requestSelection(final Integer pieceId, final Area2D area) {
 		final Event request = createPlayerEvent(GameManagementEvent.SELECTION_REQUEST);
 		request.put(GameManagementEvent.Attribute.SELECTION.toString(), new Selection(pieceId, area));
@@ -179,6 +195,10 @@ public class GameManagementClientModule extends IrisModule {
 		send(request);
 	}
 
+	/* (non-Javadoc)
+	 * @see se.kth.speech.coin.tangrams.iristk.GameManagementClient#requestTurnCompletion(se.kth.speech.coin.tangrams.iristk.events.Move)
+	 */
+	@Override
 	public void requestTurnCompletion(final Move move) {
 		final Event request = createPlayerEvent(GameManagementEvent.COMPLETED_TURN_REQUEST);
 		request.put(GameManagementEvent.Attribute.MOVE.toString(), move);
