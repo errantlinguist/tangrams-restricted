@@ -79,26 +79,18 @@ final class PlaybackFrameFactory implements Function<PlaybackFrameFactory.Parame
 		 */
 		private static final long serialVersionUID = 5656752301161168246L;
 
-		/**
-		 * @param posMatrix
-		 * @param pieceIdImageFactory
-		 * @param highlightColor
-		 */
-		public PlaybackGameBoardPanel(final SpatialMatrix<Integer> posMatrix,
-				final Function<? super Integer, ? extends Image> pieceIdImageFactory, final Color highlightColor) {
-			super(posMatrix, pieceIdImageFactory, highlightColor);
-		}
+		private final Controller controller;
 
 		/**
 		 * @param posMatrix
 		 * @param pieceIdImageFactory
 		 * @param highlightColor
-		 * @param analysisEnabled
 		 */
 		public PlaybackGameBoardPanel(final SpatialMatrix<Integer> posMatrix,
 				final Function<? super Integer, ? extends Image> pieceIdImageFactory, final Color highlightColor,
-				final boolean analysisEnabled) {
-			super(posMatrix, pieceIdImageFactory, highlightColor, analysisEnabled);
+				final Controller controller) {
+			super(posMatrix, pieceIdImageFactory, highlightColor, true);
+			this.controller = controller;
 		}
 
 		/*
@@ -110,8 +102,8 @@ final class PlaybackFrameFactory implements Function<PlaybackFrameFactory.Parame
 		 */
 		@Override
 		protected void notifyNextMove(final SpatialRegion source, final SpatialRegion target, final Integer pieceId) {
-			// TODO Auto-generated method stub
-
+			LOGGER.debug("Notified of continue event.");
+			controller.submitNextMove(source, target, pieceId);
 		}
 
 	}
@@ -171,7 +163,7 @@ final class PlaybackFrameFactory implements Function<PlaybackFrameFactory.Parame
 			final Controller controller, final Function<? super Integer, ? extends Image> pieceIdImageFactory,
 			final int uniqueImageResourceCount, final Map<BoardArea, Color> boardAreaColors) {
 		final AbstractGameBoardPanel gameBoardPanel = new PlaybackGameBoardPanel(controller.getModel(),
-				pieceIdImageFactory, boardAreaColors.get(BoardArea.HIGHLIGHT), true);
+				pieceIdImageFactory, boardAreaColors.get(BoardArea.HIGHLIGHT), controller);
 		gameBoardPanel.setBackground(boardAreaColors.get(BoardArea.BACKGROUND));
 		final OpaqueTransparencyReplacementImageFilter imgFilter = new OpaqueTransparencyReplacementImageFilter(128);
 		final BiFunction<Image, Toolkit, Image> tranparencyFilterer = (img, toolkit) -> {
