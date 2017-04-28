@@ -60,20 +60,20 @@ final class StanfordNLPFeatureExtractor implements UtteranceFeatureExtractor {
 		 * A singleton instance of {@link StanfordCoreNLP}.
 		 */
 		private static final StanfordCoreNLP INSTANCE = createDefaultAnnotPipeline();
+		
+		private static StanfordCoreNLP createDefaultAnnotPipeline() {
+			final Properties props = new Properties();
+			try (final InputStream inStream = DefaultAnnotPipelineHolder.class
+					.getResourceAsStream("stanford-corenlp.properties")) {
+				props.load(inStream);
+			} catch (final IOException e) {
+				throw new UncheckedIOException(e);
+			}
+			return new StanfordCoreNLP(props);
+		}
 	}
 
 	private static final Collector<CharSequence, ?, String> TOKEN_FORM_JOINER = Collectors.joining(" ");
-
-	private static StanfordCoreNLP createDefaultAnnotPipeline() {
-		final Properties props = new Properties();
-		try (final InputStream inStream = StanfordNLPFeatureExtractor.class
-				.getResourceAsStream("stanford-corenlp.properties")) {
-			props.load(inStream);
-		} catch (final IOException e) {
-			throw new UncheckedIOException(e);
-		}
-		return new StanfordCoreNLP(props);
-	}
 
 	/**
 	 * Gets a singleton instance of {@link StanfordCoreNLP}.
