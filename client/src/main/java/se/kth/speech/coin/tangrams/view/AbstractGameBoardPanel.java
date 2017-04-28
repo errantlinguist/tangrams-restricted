@@ -51,7 +51,7 @@ import se.kth.speech.awt.ComponentResizedEventListener;
  * @since 2 Mar 2017
  *
  */
-public abstract class GameBoardPanel extends JPanel {
+public abstract class AbstractGameBoardPanel extends JPanel {
 
 	private static final Stroke GRID_STROKE = new BasicStroke(1.0f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 1.0f,
 			new float[] { 1.0f }, 0);
@@ -62,7 +62,7 @@ public abstract class GameBoardPanel extends JPanel {
 
 	private static final int IMG_TOTAL_PADDING;
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(GameBoardPanel.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(AbstractGameBoardPanel.class);
 
 	private static final int MIN_GRID_SQUARE_LENGTH;
 
@@ -140,12 +140,12 @@ public abstract class GameBoardPanel extends JPanel {
 
 	private final SpatialMatrix<Integer> posMatrix;
 
-	GameBoardPanel(final SpatialMatrix<Integer> posMatrix,
+	AbstractGameBoardPanel(final SpatialMatrix<Integer> posMatrix,
 			final Function<? super Integer, ? extends Image> pieceIdImageFactory, final Color highlightColor) {
 		this(posMatrix, pieceIdImageFactory, highlightColor, false);
 	}
 
-	GameBoardPanel(final SpatialMatrix<Integer> posMatrix,
+	AbstractGameBoardPanel(final SpatialMatrix<Integer> posMatrix,
 			final Function<? super Integer, ? extends Image> pieceIdImageFactory, final Color highlightColor,
 			final boolean analysisEnabled) {
 		this.posMatrix = posMatrix;

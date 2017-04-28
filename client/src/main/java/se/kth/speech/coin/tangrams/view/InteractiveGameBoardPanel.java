@@ -59,7 +59,7 @@ import se.kth.speech.coin.tangrams.iristk.events.Move;
  * @since 2 Mar 2017
  *
  */
-final class InteractiveGameBoardPanel extends GameBoardPanel implements Controller.Listener {
+final class InteractiveGameBoardPanel extends AbstractGameBoardPanel implements Controller.Listener {
 
 	private static class DelegatingSwingWorker extends SwingWorker<Void, Void> {
 
