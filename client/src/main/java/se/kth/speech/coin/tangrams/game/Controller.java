@@ -91,4 +91,6 @@ public interface Controller {
 
 	boolean isSelectionCorrect();
 
+	String getPlayerId();
+
 }
