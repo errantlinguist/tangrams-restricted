@@ -285,11 +285,11 @@ public final class EventUtterancePrinter implements Function<GameHistory, Stream
 			if (uttIter.hasNext()) {
 				final Stream.Builder<Entry<Event, List<Utterance>>> resultBuilder = Stream.builder();
 				Event currentEvent = null;
+				List<Utterance> nextUttList = new ArrayList<>();
 				{
 					// Find all utterances up to the first event
 					final Event firstEvent = eventIter.next();
 					final Timestamp firstEventTimestamp = Timestamp.valueOf(firstEvent.getTime());
-					final List<Utterance> firstUttList = new ArrayList<>();
 					do {
 						final Utterance nextUtt = uttIter.next();
 						final float uttStartMills = nextUtt.getStartTime() * SegmentTimes.TIME_TO_MILLS_FACTOR;
@@ -299,15 +299,16 @@ public final class EventUtterancePrinter implements Function<GameHistory, Stream
 						// to the
 						// list of before-event utterances
 						if (uttStartTimestamp.compareTo(firstEventTimestamp) < 0) {
-							firstUttList.add(nextUtt);
+							nextUttList.add(nextUtt);
 						} else {
 							break;
 						}
 					} while (uttIter.hasNext());
 					// Add the first list only if any utterances preceding the
 					// first event were found
-					if (!firstUttList.isEmpty()) {
-						resultBuilder.accept(new MutablePair<>(null, firstUttList));
+					if (!nextUttList.isEmpty()) {
+						resultBuilder.accept(new MutablePair<>(null, nextUttList));
+						nextUttList = new ArrayList<>();
 					}
 
 					currentEvent = firstEvent;
@@ -317,8 +318,7 @@ public final class EventUtterancePrinter implements Function<GameHistory, Stream
 					while (eventIter.hasNext()) {
 						final Event nextEvent = eventIter.next();
 						final Timestamp nextEventTimestamp = Timestamp.valueOf(nextEvent.getTime());
-						final List<Utterance> uttList = new ArrayList<>();
-						while (uttIter.hasNext()) {
+						eventUtts: while (uttIter.hasNext()) {
 							final Utterance nextUtt = uttIter.next();
 							final float uttStartMills = nextUtt.getStartTime() * SegmentTimes.TIME_TO_MILLS_FACTOR;
 							final Timestamp uttStartTimestamp = TimestampArithmetic.createOffsetTimestamp(gameStartTime,
@@ -327,11 +327,13 @@ public final class EventUtterancePrinter implements Function<GameHistory, Stream
 							// it to the
 							// list of utterances for the current event
 							if (uttStartTimestamp.compareTo(nextEventTimestamp) < 0) {
-								uttList.add(nextUtt);
+								nextUttList.add(nextUtt);
 							} else {
-								resultBuilder.accept(new MutablePair<>(currentEvent, uttList));
+								resultBuilder.accept(new MutablePair<>(currentEvent, nextUttList));
+								nextUttList = new ArrayList<>();
+								nextUttList.add(nextUtt);
 								currentEvent = nextEvent;
-								break;
+								break eventUtts;
 							}
 						}
 					}
