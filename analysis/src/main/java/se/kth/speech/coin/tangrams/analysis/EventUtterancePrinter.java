@@ -16,10 +16,13 @@
 */
 package se.kth.speech.coin.tangrams.analysis;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintStream;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -55,6 +58,7 @@ import com.google.common.collect.Table;
 
 import iristk.system.Event;
 import iristk.util.HAT;
+import se.kth.speech.FilenameBaseSplitter;
 import se.kth.speech.MutablePair;
 import se.kth.speech.TimestampArithmetic;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
@@ -80,6 +84,20 @@ public final class EventUtterancePrinter implements Function<GameHistory, Stream
 			@Override
 			public Option get() {
 				return Option.builder(optName).longOpt("inpath").desc("The path to the HAT file corpus to process.")
+						.hasArg().argName("path").type(File.class).required().build();
+			}
+		},
+		OUTFILE_PREFIX("p") {
+			@Override
+			public Option get() {
+				return Option.builder(optName).longOpt("outfile-prefix").desc("A prefix to add to the output files.")
+						.hasArg().argName("prefix").build();
+			}
+		},
+		OUTPATH("o") {
+			@Override
+			public Option get() {
+				return Option.builder(optName).longOpt("outpath").desc("The path to write the training data to.")
 						.hasArg().argName("path").type(File.class).required().build();
 			}
 		};
@@ -148,32 +166,57 @@ public final class EventUtterancePrinter implements Function<GameHistory, Stream
 							.collect(Collectors.toList());
 					final EventUtterancePrinter replayer = new EventUtterancePrinter(utts);
 
-					final String playerPerspectiveToUse = "sinc";
-					final GameHistory history = playerGameHistories.get(playerPerspectiveToUse);
-					final Stream<Entry<Event, List<Utterance>>> eventUttLists = replayer.apply(history);
-					final PrintStream out = System.out;
+					final Path outpath = ((File) cl.getParsedOptionValue(Parameter.OUTPATH.optName)).toPath();
+					LOGGER.info("Writing data to \"{}\".", outpath);
+					final String outfileNamePrefix = parseOutfilePrefix(cl, inpath);
+					LOGGER.info("Prefixing each output file with \"{}\".", outfileNamePrefix);
 					final Collector<CharSequence, ?, String> joiner = Collectors.joining(" ");
-					eventUttLists.forEachOrdered(eventUttList -> {
-						final Event event = eventUttList.getKey();
-						if (event == null) {
-							out.println("EVENT - null");
-						} else {
-							out.println(String.format("EVENT - time %s - submitter %s", event.getTime(),
-									event.get(GameManagementEvent.Attribute.PLAYER_ID.toString())));
-							out.println(event);
-						}
+					playerGameHistories.forEach((playerId, history) -> {
+						final Path outfilePath = outpath.resolve(outfileNamePrefix + playerId + ".txt");
+						final Stream<Entry<Event, List<Utterance>>> eventUttLists = replayer.apply(history);
+						LOGGER.info("Writing utterances from perspective of \"{}\" to \"{}\".", playerId, outfilePath);
+						try (BufferedWriter writer = Files.newBufferedWriter(outfilePath, StandardOpenOption.CREATE,
+								StandardOpenOption.TRUNCATE_EXISTING)) {
+							eventUttLists.forEachOrdered(eventUttList -> {
+								final Event event = eventUttList.getKey();
+								try {
+									if (event == null) {
+										writer.write("EVENT - null");
+										writer.newLine();
+									} else {
+										writer.write(String.format("EVENT - time %s - submitter %s", event.getTime(),
+												event.get(GameManagementEvent.Attribute.PLAYER_ID.toString())));
+										writer.newLine();
+										writer.write(event.toString());
+										writer.newLine();
+									}
 
-						final List<Utterance> eventUtts = eventUttList.getValue();
-						if (eventUtts.isEmpty()) {
-							out.println("\tNo utterances for event!");
-						} else {
-							final Stream<String> sents = eventUtts.stream().map(utt -> {
-								final String speakingPlayerId = uttPlayerIds.get(utt);
-								return speakingPlayerId + " - " + utt.getTokens().stream().collect(joiner);
+									final List<Utterance> eventUtts = eventUttList.getValue();
+									if (eventUtts.isEmpty()) {
+										writer.write("\tNo utterances for event!");
+										writer.newLine();
+									} else {
+										final Stream<String> sents = eventUtts.stream().map(utt -> {
+											final String speakingPlayerId = uttPlayerIds.get(utt);
+											return speakingPlayerId + " - " + utt.getTokens().stream().collect(joiner);
+										});
+										sents.forEachOrdered(sent -> {
+											try {
+												writer.write("\t" + sent);
+												writer.newLine();
+											} catch (final IOException e) {
+												throw new UncheckedIOException(e);
+											}
+										});
+									}
+								} catch (final IOException e) {
+									throw new UncheckedIOException(e);
+								}
+
 							});
-							sents.forEachOrdered(sent -> out.println("\t" + sent));
+						} catch (final IOException e) {
+							throw new UncheckedIOException(e);
 						}
-
 					});
 
 				} else {
@@ -205,6 +248,12 @@ public final class EventUtterancePrinter implements Function<GameHistory, Stream
 			}
 		}
 		return result;
+	}
+
+	private static String parseOutfilePrefix(final CommandLine cl, final File inpath) {
+		final String infix = "_" + new FilenameBaseSplitter().apply(inpath.getName())[0] + "_LOG-";
+		final String prefix = cl.getOptionValue(Parameter.OUTFILE_PREFIX.optName, "eventUtts");
+		return prefix + infix;
 	}
 
 	private static void printHelp() {
