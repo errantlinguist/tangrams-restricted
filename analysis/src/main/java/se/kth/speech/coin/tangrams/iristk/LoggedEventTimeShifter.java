@@ -153,11 +153,4 @@ public final class LoggedEventTimeShifter {
 		formatter.printHelp(LoggedEventTimeShifter.class.getName(), OPTIONS);
 	}
 
-	/**
-	 *
-	 */
-	public LoggedEventTimeShifter() {
-		// TODO Auto-generated constructor stub
-	}
-
 }

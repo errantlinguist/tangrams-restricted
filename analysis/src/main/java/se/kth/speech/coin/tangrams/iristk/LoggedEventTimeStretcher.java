@@ -152,11 +152,4 @@ public final class LoggedEventTimeStretcher {
 		formatter.printHelp(LoggedEventTimeStretcher.class.getName(), OPTIONS);
 	}
 
-	/**
-	 *
-	 */
-	public LoggedEventTimeStretcher() {
-		// TODO Auto-generated constructor stub
-	}
-
 }
