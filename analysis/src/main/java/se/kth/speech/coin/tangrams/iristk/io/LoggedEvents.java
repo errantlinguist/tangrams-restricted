@@ -97,23 +97,26 @@ public final class LoggedEvents {
 	}
 
 	public static Map<String, GameHistory> parseGameHistories(final Stream<String> lines) {
-		final Stream<Event> loggedEvents = lines.filter(line -> !EMPTY_OR_WHITESPACE_PATTERN.matcher(line).matches())
-				.flatMap(line -> {
-					Stream<Event> result = Stream.empty();
-					try {
-						final Record record = Record.fromJSON(line);
-						if (record instanceof Event) {
-							result = Stream.of((Event) record);
-						}
-					} catch (final JsonToRecordException e) {
-						throw new UncheckedIOException(e);
-					}
-					return result;
-				});
+		final Stream<Event> loggedEvents = parseLoggedEvents(lines);
 		final Event[] loggedEventArray = loggedEvents.toArray(Event[]::new);
 		final Supplier<Map<String, GameHistory>> mapFactory = () -> Maps
 				.newHashMapWithExpectedSize(loggedEventArray.length);
 		return Arrays.stream(loggedEventArray).collect(new GameHistoryCollector(mapFactory));
+	}
+
+	public static Stream<Event> parseLoggedEvents(final Stream<String> lines) {
+		return lines.filter(line -> !EMPTY_OR_WHITESPACE_PATTERN.matcher(line).matches()).flatMap(line -> {
+			Stream<Event> result = Stream.empty();
+			try {
+				final Record record = Record.fromJSON(line);
+				if (record instanceof Event) {
+					result = Stream.of((Event) record);
+				}
+			} catch (final JsonToRecordException e) {
+				throw new UncheckedIOException(e);
+			}
+			return result;
+		});
 	}
 
 	private LoggedEvents() {
