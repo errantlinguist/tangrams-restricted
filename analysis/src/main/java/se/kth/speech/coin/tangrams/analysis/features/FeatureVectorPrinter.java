@@ -214,7 +214,7 @@ public final class FeatureVectorPrinter {
 			result = new PrintWriter(System.out);
 		} else {
 			LOGGER.info("Output file path is \"{}\".", outfile);
-			result = new PrintWriter(Files.newBufferedWriter(outfile.toPath(), StandardOpenOption.CREATE));
+			result = new PrintWriter(Files.newBufferedWriter(outfile.toPath(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING));
 		}
 		return result;
 	}
