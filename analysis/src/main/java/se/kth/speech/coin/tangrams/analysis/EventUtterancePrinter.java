@@ -41,6 +41,8 @@ import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import javax.swing.JFileChooser;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.xml.bind.JAXBException;
 
 import org.apache.commons.cli.CommandLine;
@@ -64,6 +66,7 @@ import se.kth.speech.TimestampArithmetic;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
+import se.kth.speech.coin.tangrams.view.UserPrompts;
 import se.kth.speech.hat.xsd.Annotation;
 import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
 
@@ -118,116 +121,60 @@ public final class EventUtterancePrinter implements Function<GameHistory, Stream
 
 	private static final Function<Segment, List<Utterance>> SEG_UTT_FACTORY = new SegmentUtteranceFactory();
 
+	private static final String DEFAULT_OUTFILE_PREFIX = "eventUtts";
+
 	public static void main(final String[] args) throws IOException, JAXBException, InterruptedException {
-		final CommandLineParser parser = new DefaultParser();
-		try {
-			final CommandLine cl = parser.parse(OPTIONS, args);
-			if (cl.hasOption(Parameter.HELP.optName)) {
-				printHelp();
-			} else {
-				final File inpath = (File) cl.getParsedOptionValue(Parameter.INPATH.optName);
-				LOGGER.info("Reading annotations from \"{}\".", inpath);
-				final Annotation uttAnnots = HAT.readAnnotation(inpath);
-
-				final Map<String, String> sourceIdPlayerIds = Annotations.createSourceIdPlayerIdMap(uttAnnots);
-				final Set<String> playerIds = new HashSet<>(sourceIdPlayerIds.values());
-				final int expectedEventLogFileCount = playerIds.size();
-				final Path sessionLogDir = inpath.getParentFile().toPath();
-				LOGGER.info("Processing session log directory \"{}\".", sessionLogDir);
-				final Map<String, Path> playerEventLogFilePaths = LoggedEvents
-						.createPlayerEventLogFileMap(sessionLogDir, expectedEventLogFileCount);
-				final Table<String, String, GameHistory> playerGameHistoryTable = LoggedEvents
-						.createPlayerGameHistoryTable(playerEventLogFilePaths.entrySet(), EXPECTED_UNIQUE_GAME_COUNT);
-				final Set<String> playerGameIdIntersection = new HashSet<>(playerGameHistoryTable.columnKeySet());
-				playerGameHistoryTable.rowMap().values().stream().map(Map::keySet)
-						.forEach(playerGameIdIntersection::retainAll);
-				final int gameCount = playerGameIdIntersection.size();
-				if (gameCount == 1) {
-					final Iterator<GameStateDescription> gameDescs = playerGameHistoryTable.values().stream()
-							.map(GameHistory::getInitialState).iterator();
-					final GameStateDescription firstGameDesc = gameDescs.next();
-					while (gameDescs.hasNext()) {
-						// Sanity check to make sure that all players have
-						// started with the same game setup
-						final GameStateDescription next = gameDescs.next();
-						if (!firstGameDesc.isEquivalent(next)) {
-							throw new IllegalArgumentException("Found non-equivalent initial states between players.");
-						}
-					}
-
-					final String gameId = playerGameIdIntersection.iterator().next();
-					final Map<String, GameHistory> playerGameHistories = playerGameHistoryTable.columnMap().get(gameId);
-					final List<Segment> segments = uttAnnots.getSegments().getSegment();
-					final Map<Utterance, String> uttPlayerIds = createUtterancePlayerIdMap(segments,
-							sourceIdPlayerIds::get);
-					final List<Utterance> utts = uttPlayerIds.keySet().stream()
-							.sorted(Comparator.comparing(Utterance::getStartTime)
-									.thenComparing(Comparator.comparing(Utterance::getEndTime)))
-							.collect(Collectors.toList());
-					final EventUtterancePrinter replayer = new EventUtterancePrinter(utts);
-
-					final Path outpath = ((File) cl.getParsedOptionValue(Parameter.OUTPATH.optName)).toPath();
-					LOGGER.info("Writing data to \"{}\".", outpath);
-					final String outfileNamePrefix = parseOutfilePrefix(cl, inpath);
-					LOGGER.info("Prefixing each output file with \"{}\".", outfileNamePrefix);
-					final Collector<CharSequence, ?, String> joiner = Collectors.joining(" ");
-					playerGameHistories.forEach((playerId, history) -> {
-						final Path outfilePath = outpath.resolve(outfileNamePrefix + playerId + ".txt");
-						final Stream<Entry<Event, List<Utterance>>> eventUttLists = replayer.apply(history);
-						LOGGER.info("Writing utterances from perspective of \"{}\" to \"{}\".", playerId, outfilePath);
-						try (BufferedWriter writer = Files.newBufferedWriter(outfilePath, StandardOpenOption.CREATE,
-								StandardOpenOption.TRUNCATE_EXISTING)) {
-							eventUttLists.forEachOrdered(eventUttList -> {
-								final Event event = eventUttList.getKey();
+		if (args.length < 1) {
+			final JFileChooser fileChooser = createFileChooser();
+			fileChooser.setDialogTitle("Input file");
+			fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+			UserPrompts.promptFile(fileChooser).ifPresent(inpath -> {
+				LOGGER.info("Will read annotations from \"{}\".", inpath);
+				fileChooser.setDialogTitle("Output dir");
+				fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+				UserPrompts.promptFile(fileChooser).map(File::toPath).ifPresent(outpath -> {
+					LOGGER.info("Will write data to \"{}\".", outpath);
+					UserPrompts.promptNonBlankString("Enter output filename prefi:", DEFAULT_OUTFILE_PREFIX)
+							.ifPresent(outfileNamePrefix -> {
+								LOGGER.info("Will prefix each output file with \"{}\".", outfileNamePrefix);
 								try {
-									if (event == null) {
-										writer.write("EVENT - null");
-										writer.newLine();
-									} else {
-										writer.write(String.format("EVENT - time %s - submitter %s", event.getTime(),
-												event.get(GameManagementEvent.Attribute.PLAYER_ID.toString())));
-										writer.newLine();
-										writer.write(event.toString());
-										writer.newLine();
-									}
-
-									final List<Utterance> eventUtts = eventUttList.getValue();
-									if (eventUtts.isEmpty()) {
-										writer.write("\tNo utterances for event!");
-										writer.newLine();
-									} else {
-										final Stream<String> sents = eventUtts.stream().map(utt -> {
-											final String speakingPlayerId = uttPlayerIds.get(utt);
-											return speakingPlayerId + " - " + utt.getTokens().stream().collect(joiner);
-										});
-										sents.forEachOrdered(sent -> {
-											try {
-												writer.write("\t" + sent);
-												writer.newLine();
-											} catch (final IOException e) {
-												throw new UncheckedIOException(e);
-											}
-										});
-									}
+									run(inpath, outpath, outfileNamePrefix);
+								} catch (final JAXBException e) {
+									throw new RuntimeException(e);
 								} catch (final IOException e) {
 									throw new UncheckedIOException(e);
 								}
-
 							});
-						} catch (final IOException e) {
-							throw new UncheckedIOException(e);
-						}
-					});
-
+				});
+			});
+		} else {
+			final CommandLineParser parser = new DefaultParser();
+			try {
+				final CommandLine cl = parser.parse(OPTIONS, args);
+				if (cl.hasOption(Parameter.HELP.optName)) {
+					printHelp();
 				} else {
-					throw new UnsupportedOperationException(
-							String.format("No logic for handling a game count of %d.", gameCount));
+					final File inpath = (File) cl.getParsedOptionValue(Parameter.INPATH.optName);
+					LOGGER.info("Will read annotations from \"{}\".", inpath);
+					final Path outpath = ((File) cl.getParsedOptionValue(Parameter.OUTPATH.optName)).toPath();
+					LOGGER.info("Will write data to \"{}\".", outpath);
+					final String outfileNamePrefix = parseOutfilePrefix(cl, inpath);
+					LOGGER.info("Will prefix each output file with \"{}\".", outfileNamePrefix);
+					run(inpath, outpath, outfileNamePrefix);
 				}
+			} catch (final ParseException e) {
+				System.out.println(String.format("An error occured while parsing the command-line arguments: %s", e));
+				printHelp();
 			}
-		} catch (final ParseException e) {
-			System.out.println(String.format("An error occured while parsing the command-line arguments: %s", e));
-			printHelp();
 		}
+
+	}
+
+	private static JFileChooser createFileChooser() {
+		final JFileChooser result = new JFileChooser();
+		final FileNameExtensionFilter filter = new FileNameExtensionFilter("XML files (*.xml)", "xml");
+		result.setFileFilter(filter);
+		return result;
 	}
 
 	private static Options createOptions() {
@@ -252,13 +199,105 @@ public final class EventUtterancePrinter implements Function<GameHistory, Stream
 
 	private static String parseOutfilePrefix(final CommandLine cl, final File inpath) {
 		final String infix = "_" + new FilenameBaseSplitter().apply(inpath.getName())[0] + "_LOG-";
-		final String prefix = cl.getOptionValue(Parameter.OUTFILE_PREFIX.optName, "eventUtts");
+		final String prefix = cl.getOptionValue(Parameter.OUTFILE_PREFIX.optName, DEFAULT_OUTFILE_PREFIX);
 		return prefix + infix;
 	}
 
 	private static void printHelp() {
 		final HelpFormatter formatter = new HelpFormatter();
 		formatter.printHelp(EventUtterancePrinter.class.getName(), OPTIONS);
+	}
+
+	private static void run(final File inpath, final Path outpath, final String outfileNamePrefix)
+			throws JAXBException, IOException {
+		LOGGER.info("Reading annotations from \"{}\".", inpath);
+		final Annotation uttAnnots = HAT.readAnnotation(inpath);
+
+		final Map<String, String> sourceIdPlayerIds = Annotations.createSourceIdPlayerIdMap(uttAnnots);
+		final Set<String> playerIds = new HashSet<>(sourceIdPlayerIds.values());
+		final int expectedEventLogFileCount = playerIds.size();
+		final Path sessionLogDir = inpath.getParentFile().toPath();
+		LOGGER.info("Processing session log directory \"{}\".", sessionLogDir);
+		final Map<String, Path> playerEventLogFilePaths = LoggedEvents.createPlayerEventLogFileMap(sessionLogDir,
+				expectedEventLogFileCount);
+		final Table<String, String, GameHistory> playerGameHistoryTable = LoggedEvents
+				.createPlayerGameHistoryTable(playerEventLogFilePaths.entrySet(), EXPECTED_UNIQUE_GAME_COUNT);
+		final Set<String> playerGameIdIntersection = new HashSet<>(playerGameHistoryTable.columnKeySet());
+		playerGameHistoryTable.rowMap().values().stream().map(Map::keySet).forEach(playerGameIdIntersection::retainAll);
+		final int gameCount = playerGameIdIntersection.size();
+		if (gameCount == 1) {
+			final Iterator<GameStateDescription> gameDescs = playerGameHistoryTable.values().stream()
+					.map(GameHistory::getInitialState).iterator();
+			final GameStateDescription firstGameDesc = gameDescs.next();
+			while (gameDescs.hasNext()) {
+				// Sanity check to make sure that all players have
+				// started with the same game setup
+				final GameStateDescription next = gameDescs.next();
+				if (!firstGameDesc.isEquivalent(next)) {
+					throw new IllegalArgumentException("Found non-equivalent initial states between players.");
+				}
+			}
+
+			final String gameId = playerGameIdIntersection.iterator().next();
+			final Map<String, GameHistory> playerGameHistories = playerGameHistoryTable.columnMap().get(gameId);
+			final List<Segment> segments = uttAnnots.getSegments().getSegment();
+			final Map<Utterance, String> uttPlayerIds = createUtterancePlayerIdMap(segments, sourceIdPlayerIds::get);
+			final List<Utterance> utts = uttPlayerIds.keySet().stream().sorted(Comparator
+					.comparing(Utterance::getStartTime).thenComparing(Comparator.comparing(Utterance::getEndTime)))
+					.collect(Collectors.toList());
+			final EventUtterancePrinter replayer = new EventUtterancePrinter(utts);
+			final Collector<CharSequence, ?, String> joiner = Collectors.joining(" ");
+			playerGameHistories.forEach((playerId, history) -> {
+				final Path outfilePath = outpath.resolve(outfileNamePrefix + playerId + ".txt");
+				final Stream<Entry<Event, List<Utterance>>> eventUttLists = replayer.apply(history);
+				LOGGER.info("Writing utterances from perspective of \"{}\" to \"{}\".", playerId, outfilePath);
+				try (BufferedWriter writer = Files.newBufferedWriter(outfilePath, StandardOpenOption.CREATE,
+						StandardOpenOption.TRUNCATE_EXISTING)) {
+					eventUttLists.forEachOrdered(eventUttList -> {
+						final Event event = eventUttList.getKey();
+						try {
+							if (event == null) {
+								writer.write("EVENT - null");
+								writer.newLine();
+							} else {
+								writer.write(String.format("EVENT - time %s - submitter %s", event.getTime(),
+										event.get(GameManagementEvent.Attribute.PLAYER_ID.toString())));
+								writer.newLine();
+								writer.write(event.toString());
+								writer.newLine();
+							}
+
+							final List<Utterance> eventUtts = eventUttList.getValue();
+							if (eventUtts.isEmpty()) {
+								writer.write("\tNo utterances for event!");
+								writer.newLine();
+							} else {
+								final Stream<String> sents = eventUtts.stream().map(utt -> {
+									final String speakingPlayerId = uttPlayerIds.get(utt);
+									return speakingPlayerId + " - " + utt.getTokens().stream().collect(joiner);
+								});
+								sents.forEachOrdered(sent -> {
+									try {
+										writer.write("\t" + sent);
+										writer.newLine();
+									} catch (final IOException e) {
+										throw new UncheckedIOException(e);
+									}
+								});
+							}
+						} catch (final IOException e) {
+							throw new UncheckedIOException(e);
+						}
+
+					});
+				} catch (final IOException e) {
+					throw new UncheckedIOException(e);
+				}
+			});
+		} else {
+			throw new UnsupportedOperationException(
+					String.format("No logic for handling a game count of %d.", gameCount));
+		}
 	}
 
 	private final List<Utterance> utts;
