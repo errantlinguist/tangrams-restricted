@@ -150,10 +150,10 @@ public final class FeatureVectorPrinter {
 					}
 
 					final int uniqueModelDescriptionCount = playerGameStateChangeData.values().size();
-					final ToDoubleFunction<String> namedResourceEdgeCountFactory = new ImageEdgeCounter();
+					final ToDoubleFunction<String> namedResourceEdgeCounter = new ImageEdgeCounter();
 					final List<GameContextFeatureExtractor> contextFeatureExtractors = Arrays.asList(
 							new EnvironmentFeatureExtractor(uniqueModelDescriptionCount),
-							new EntitySetFeatureExtractor(uniqueModelDescriptionCount, namedResourceEdgeCountFactory),
+							new EntitySetFeatureExtractor(uniqueModelDescriptionCount, namedResourceEdgeCounter),
 							new GameEventFeatureExtractor());
 					final Stream.Builder<String> featureDescBuilder = Stream.builder();
 					contextFeatureExtractors.stream()

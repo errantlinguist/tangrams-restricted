@@ -164,10 +164,10 @@ public final class WordsAsClassifiersTrainingDataFactory
 					}
 
 					final int uniqueModelDescriptionCount = playerGameHistoryTable.values().size();
-					final ToDoubleFunction<String> namedResourceEdgeCountFactory = new ImageEdgeCounter();
+					final ToDoubleFunction<String> namedResourceEdgeCounter = new ImageEdgeCounter();
 					final List<GameContextFeatureExtractor> contextFeatureExtractors = Arrays.asList(
 							new SelectedEntityFeatureExtractor(new GameContextModelFactory(uniqueModelDescriptionCount),
-									namedResourceEdgeCountFactory));
+									namedResourceEdgeCounter));
 					final Stream.Builder<String> featureDescBuilder = Stream.builder();
 					featureDescBuilder.accept("WORD");
 					contextFeatureExtractors.stream()
