@@ -164,7 +164,7 @@ public final class WordsAsClassifiersTrainingDataFactory
 					}
 
 					final int uniqueModelDescriptionCount = playerGameHistoryTable.values().size();
-					final ToDoubleFunction<String> namedResourceEdgeCountFactory = new ImageEdgeCountFactory();
+					final ToDoubleFunction<String> namedResourceEdgeCountFactory = new ImageEdgeCounter();
 					final List<GameContextFeatureExtractor> contextFeatureExtractors = Arrays.asList(
 							new SelectedEntityFeatureExtractor(new GameContextModelFactory(uniqueModelDescriptionCount),
 									namedResourceEdgeCountFactory));
