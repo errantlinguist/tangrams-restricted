@@ -125,16 +125,19 @@ public final class EventUtterancePrinter implements Function<GameHistory, Stream
 
 	public static void main(final String[] args) throws IOException, JAXBException, InterruptedException {
 		if (args.length < 1) {
-			final JFileChooser fileChooser = createFileChooser();
+			final JFileChooser fileChooser = new JFileChooser(System.getProperty("user.dir"));
+			final FileNameExtensionFilter filter = new FileNameExtensionFilter("XML files (*.xml)", "xml");
+			fileChooser.setFileFilter(filter);
 			fileChooser.setDialogTitle("Input file");
 			fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
 			UserPrompts.promptFile(fileChooser).ifPresent(inpath -> {
 				LOGGER.info("Will read annotations from \"{}\".", inpath);
 				fileChooser.setDialogTitle("Output dir");
 				fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+				fileChooser.removeChoosableFileFilter(filter);
 				UserPrompts.promptFile(fileChooser).map(File::toPath).ifPresent(outpath -> {
 					LOGGER.info("Will write data to \"{}\".", outpath);
-					UserPrompts.promptNonBlankString("Enter output filename prefi:", DEFAULT_OUTFILE_PREFIX)
+					UserPrompts.promptNonBlankString("Enter output filename prefix.", DEFAULT_OUTFILE_PREFIX)
 							.ifPresent(outfileNamePrefix -> {
 								LOGGER.info("Will prefix each output file with \"{}\".", outfileNamePrefix);
 								try {
@@ -168,13 +171,6 @@ public final class EventUtterancePrinter implements Function<GameHistory, Stream
 			}
 		}
 
-	}
-
-	private static JFileChooser createFileChooser() {
-		final JFileChooser result = new JFileChooser();
-		final FileNameExtensionFilter filter = new FileNameExtensionFilter("XML files (*.xml)", "xml");
-		result.setFileFilter(filter);
-		return result;
 	}
 
 	private static Options createOptions() {

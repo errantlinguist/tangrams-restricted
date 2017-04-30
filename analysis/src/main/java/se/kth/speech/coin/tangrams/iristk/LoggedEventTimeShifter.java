@@ -19,6 +19,9 @@ package se.kth.speech.coin.tangrams.iristk;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.UncheckedIOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -27,6 +30,9 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
+
+import javax.swing.JFileChooser;
+import javax.swing.filechooser.FileNameExtensionFilter;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -42,6 +48,7 @@ import com.eclipsesource.json.JsonObject;
 
 import iristk.system.Event;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
+import se.kth.speech.coin.tangrams.view.UserPrompts;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -68,7 +75,7 @@ public final class LoggedEventTimeShifter {
 			@Override
 			public Option get() {
 				return Option.builder(optName).longOpt("addend").desc("The amount to shift the times by.").hasArg()
-						.argName("value").type(Number.class).required().build();
+						.argName("value").required().build();
 			}
 		},
 		OUTPATH("o") {
@@ -91,41 +98,47 @@ public final class LoggedEventTimeShifter {
 	private static final Options OPTIONS = createOptions();
 
 	public static void main(final String[] args) throws IOException {
-		final CommandLineParser parser = new DefaultParser();
-		try {
-			final CommandLine cl = parser.parse(OPTIONS, args);
-			if (cl.hasOption(Parameter.HELP.optName)) {
-				printHelp();
-			} else {
-				final Path inpath = ((File) cl.getParsedOptionValue(Parameter.INPATH.optName)).toPath();
-				LOGGER.info("Reading annotations from \"{}\".", inpath);
-				final Stream<Event> events = LoggedEvents.parseLoggedEvents(Files.lines(inpath));
-				final double addendInSecs = ((Number) cl.getParsedOptionValue(Parameter.ADDEND.optName)).doubleValue();
-				LOGGER.info("Shifting logged events by {} second(s).", addendInSecs);
-				final long addendInMills = Math.round(addendInSecs * 1000);
-				final Stream<Event> shiftedEvents = events.map(event -> {
-					final Timestamp timestamp = Timestamp.valueOf(event.getTime());
-					final long newTimeMills = timestamp.getTime() + addendInMills;
-					timestamp.setTime(newTimeMills);
-					event.setTime(timestamp.toString());
-					return event;
+		if (args.length < 1) {
+			final JFileChooser fileChooser = new JFileChooser(System.getProperty("user.dir"));
+			fileChooser.setDialogTitle("Input file");
+			fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+			fileChooser.setFileFilter(new FileNameExtensionFilter("Text files (*.txt)", "txt"));
+			UserPrompts.promptFile(fileChooser).map(File::toPath).ifPresent(inpath -> {
+				LOGGER.info("Will read annotations from \"{}\".", inpath);
+				fileChooser.setDialogTitle("Output file");
+				fileChooser.setDialogType(JFileChooser.SAVE_DIALOG);
+				UserPrompts.promptFile(fileChooser).ifPresent(outpath -> {
+					LOGGER.info("Will write data to \"{}\".", outpath);
+					UserPrompts.promptDecimalFraction("Enter amount to shift event times by in seconds.")
+							.ifPresent(addend -> {
+								LOGGER.info("Will shift event times by \"{}\" second(s).", addend);
+								try (PrintWriter writer = new PrintWriter(outpath)) {
+									run(inpath, addend, writer);
+								} catch (final IOException e) {
+									throw new UncheckedIOException(e);
+								}
+							});
 				});
-
-				try (final PrintWriter out = parseOutpath(cl)) {
-					final Iterator<String> eventReprIter = shiftedEvents.map(Event::toJSON).map(JsonObject::toString)
-							.iterator();
-					if (eventReprIter.hasNext()) {
-						out.print(eventReprIter.next());
-						while (eventReprIter.hasNext()) {
-							out.println();
-							out.print(eventReprIter.next());
-						}
+			});
+		} else {
+			final CommandLineParser parser = new DefaultParser();
+			try {
+				final CommandLine cl = parser.parse(OPTIONS, args);
+				if (cl.hasOption(Parameter.HELP.optName)) {
+					printHelp();
+				} else {
+					final Path inpath = ((File) cl.getParsedOptionValue(Parameter.INPATH.optName)).toPath();
+					LOGGER.info("Will read annotations from \"{}\".", inpath);
+					final BigDecimal addendInSecs = new BigDecimal(cl.getOptionValue(Parameter.ADDEND.optName));
+					LOGGER.info("Will shift event times by \"{}\" second(s).", addendInSecs);
+					try (final PrintWriter out = parseOutpath(cl)) {
+						run(inpath, addendInSecs, out);
 					}
 				}
+			} catch (final ParseException e) {
+				System.out.println(String.format("An error occured while parsing the command-line arguments: %s", e));
+				printHelp();
 			}
-		} catch (final ParseException e) {
-			System.out.println(String.format("An error occured while parsing the command-line arguments: %s", e));
-			printHelp();
 		}
 	}
 
@@ -151,6 +164,30 @@ public final class LoggedEventTimeShifter {
 	private static void printHelp() {
 		final HelpFormatter formatter = new HelpFormatter();
 		formatter.printHelp(LoggedEventTimeShifter.class.getName(), OPTIONS);
+	}
+
+	private static void run(final Path inpath, final BigDecimal addendInSecs, final PrintWriter out)
+			throws IOException {
+		LOGGER.info("Reading annotations from \"{}\".", inpath);
+		final Stream<Event> events = LoggedEvents.parseLoggedEvents(Files.lines(inpath));
+		LOGGER.info("Shifting logged events by {} second(s).", addendInSecs);
+		final BigDecimal addendInMills = addendInSecs.multiply(new BigDecimal(1000));
+		final Stream<Event> shiftedEvents = events.map(event -> {
+			final Timestamp timestamp = Timestamp.valueOf(event.getTime());
+			final BigDecimal newTimeMills = addendInMills.add(new BigDecimal(timestamp.getTime()));
+			timestamp.setTime(newTimeMills.setScale(0, RoundingMode.HALF_UP).longValue());
+			event.setTime(timestamp.toString());
+			return event;
+		});
+
+		final Iterator<String> eventReprIter = shiftedEvents.map(Event::toJSON).map(JsonObject::toString).iterator();
+		if (eventReprIter.hasNext()) {
+			out.print(eventReprIter.next());
+			while (eventReprIter.hasNext()) {
+				out.println();
+				out.print(eventReprIter.next());
+			}
+		}
 	}
 
 }
