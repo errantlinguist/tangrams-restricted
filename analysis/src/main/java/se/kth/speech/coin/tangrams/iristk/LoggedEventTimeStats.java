@@ -17,29 +17,22 @@
 package se.kth.speech.coin.tangrams.iristk;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Timestamp;
-import java.util.Arrays;
-import java.util.Collection;
+import java.util.DoubleSummaryStatistics;
 import java.util.Map;
-import java.util.Set;
-import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 
 import iristk.system.Event;
-import se.kth.speech.BigDecimalSummaryStatistics;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
-import se.kth.speech.collections.EqualityMap;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -48,34 +41,12 @@ import se.kth.speech.collections.EqualityMap;
  */
 public final class LoggedEventTimeStats {
 
-	private static class EventTimestampSubtractor implements Function<Event, BigDecimal> {
-
-		private final Timestamp minuendTimestamp;
-
-		private EventTimestampSubtractor(final Timestamp minuendTimestamp) {
-			this.minuendTimestamp = minuendTimestamp;
-		}
-
-		/*
-		 * (non-Javadoc)
-		 *
-		 * @see java.util.function.Function#apply(java.lang.Object)
-		 */
-		@Override
-		public BigDecimal apply(final Event subtrahendEvent) {
-			final Timestamp subtrahendTimestamp = Timestamp.valueOf(subtrahendEvent.getTime());
-			final BigDecimal diffMills = new BigDecimal(minuendTimestamp.getTime() - subtrahendTimestamp.getTime());
-			return diffMills.divide(ONE_THOUSAND);
-		}
-	}
-
 	private static final Logger LOGGER = LoggerFactory.getLogger(LoggedEventTimeStats.class);
 
-	private static final BigDecimal ONE_THOUSAND = new BigDecimal(1000);
-
 	public static void main(final String[] args) throws IOException {
-		if (args.length < 1) {
-			System.err.println(String.format("Usage :%s INFILES...", LoggedEventTimeStats.class.getName()));
+		if (args.length != 2) {
+			throw new IllegalArgumentException(
+					String.format("Usage :%s MINUEND_INFILE SUBTRAHEND_INFILE", LoggedEventTimeStats.class.getName()));
 		} else {
 
 			// String testStr =
@@ -93,70 +64,49 @@ public final class LoggedEventTimeStats {
 			// assert testCloneEvent.equals(testEvent1);
 			// assert new Event(testEvent1).equals(testEvent2);
 			// assert testCloneEvent.hashCode() == testEvent1.hashCode();
-
-			final Stream<Path> infilePaths = Arrays.stream(args).map(Paths::get);
-			final Map<Event, Set<Event>> analogousEventSets = new EqualityMap<>();
-			infilePaths.forEach(infilePath -> {
-				Stream<Event> fileEvents;
-				LOGGER.info("Reading logged events from \"{}\".", infilePath);
-				try {
-					fileEvents = LoggedEvents.parseLoggedEvents(Files.lines(infilePath));
-					fileEvents.forEach(fileEvent -> {
-						final Event clone = (Event) fileEvent.clone();
-						assert clone.equals(fileEvent);
-						clone.setTime(null);
-						final Set<Event> analogousEventSet = analogousEventSets.computeIfAbsent(clone,
-								key -> Sets.newHashSetWithExpectedSize(args.length));
-						analogousEventSet.add(fileEvent);
-					});
-				} catch (final IOException e) {
-					throw new UncheckedIOException(e);
-				}
-			});
-			final Map<Event, Map<Event, BigDecimal>> analogousEventTimeDiffTable = Maps
-					.newHashMapWithExpectedSize(analogousEventSets.size() * args.length);
-			analogousEventSets.values().stream().forEach(analogousEventSet -> {
-				for (final Event event1 : analogousEventSet) {
-					final Timestamp timestamp1 = Timestamp.valueOf(event1.getTime());
-					for (final Event event2 : analogousEventSet) {
-						final Timestamp timestamp2 = Timestamp.valueOf(event2.getTime());
-						final int cmp = timestamp1.compareTo(timestamp2);
-						if (cmp < 0) {
-							final Event minuendEvent = event2;
-							final EventTimestampSubtractor subtractor = new EventTimestampSubtractor(timestamp2);
-							final Event subtrahendEvent = event1;
-							final Map<Event, BigDecimal> analogousEventTimeDiffs = analogousEventTimeDiffTable
-									.computeIfAbsent(minuendEvent,
-											key -> Maps.newHashMapWithExpectedSize(analogousEventSet.size()));
-							final BigDecimal diffSecs = analogousEventTimeDiffs.computeIfAbsent(subtrahendEvent,
-									subtractor);
-							LOGGER.debug("Diff in secs: {}", diffSecs);
-						} else if (cmp > 1) {
-							final Event minuendEvent = event1;
-							final EventTimestampSubtractor subtractor = new EventTimestampSubtractor(timestamp1);
-							final Event subtrahendEvent = event2;
-							final Map<Event, BigDecimal> analogousEventTimeDiffs = analogousEventTimeDiffTable
-									.computeIfAbsent(minuendEvent,
-											key -> Maps.newHashMapWithExpectedSize(analogousEventSet.size()));
-							final BigDecimal diffSecs = analogousEventTimeDiffs.computeIfAbsent(subtrahendEvent,
-									subtractor);
-							LOGGER.debug("Diff in secs: {}", diffSecs);
-						} else {
-							// Do nothing
-							LOGGER.debug("Ignoring equal timestamp values.");
-						}
+			final Path minuendInfile = Paths.get(args[0]);
+			final Map<String, Map<Path, Timestamp>> analogousEventTimestampMappings = Maps
+					.newHashMapWithExpectedSize(args.length);
+			putEventTimestamps(analogousEventTimestampMappings, minuendInfile, args.length);
+			final Path subtrahendInfile = Paths.get(args[1]);
+			putEventTimestamps(analogousEventTimestampMappings, subtrahendInfile, args.length);
+			final Map<String, Double> analogousEventTimeDiffs = Maps
+					.newHashMapWithExpectedSize(analogousEventTimestampMappings.size());
+			analogousEventTimestampMappings.forEach((eventId, analogousEventTimestampMapping) -> {
+				final Timestamp minuendTimestamp = analogousEventTimestampMapping.get(minuendInfile);
+				if (minuendTimestamp == null) {
+					LOGGER.warn("Event ID \"{}\" not present in file \"{}\".", eventId, minuendInfile);
+				} else {
+					final Timestamp subtrahendTimestamp = analogousEventTimestampMapping.get(subtrahendInfile);
+					if (subtrahendTimestamp == null) {
+						LOGGER.warn("Event ID \"{}\" not present in file \"{}\".", eventId, subtrahendInfile);
+					} else {
+						final long diffMills = minuendTimestamp.getTime() - subtrahendTimestamp.getTime();
+						final double diffSecs = diffMills / 1000.0;
+						LOGGER.debug("Diff in secs: {}", diffSecs);
+						analogousEventTimeDiffs.put(eventId, diffSecs);
 					}
 				}
 			});
-			final Stream<BigDecimal> analogousEventTimeDiffs = analogousEventTimeDiffTable.values().stream()
-					.map(Map::values).flatMap(Collection::stream);
-			final BigDecimalSummaryStatistics stats = new BigDecimalSummaryStatistics();
-			analogousEventTimeDiffs.forEach(stats);
+			final DoubleSummaryStatistics stats = analogousEventTimeDiffs.values().stream()
+					.collect(Collectors.summarizingDouble(Double::doubleValue));
 			System.out.println("COUNT\t" + stats.getCount());
 			System.out.println("MIN\t" + stats.getMin());
 			System.out.println("MAX\t" + stats.getMax());
 			System.out.println("MEAN\t" + stats.getAverage());
 		}
+	}
+
+	private static void putEventTimestamps(final Map<String, Map<Path, Timestamp>> analogousEventTimestampMappings,
+			final Path infilePath, final int expectedAnalogousEventCount) throws IOException {
+		LOGGER.info("Reading logged events from \"{}\".", infilePath);
+		final Stream<Event> fileEvents = LoggedEvents.parseLoggedEvents(Files.lines(infilePath));
+		fileEvents.forEach(fileEvent -> {
+			final String eventId = fileEvent.getId();
+			final Map<Path, Timestamp> analogousEventMapping = analogousEventTimestampMappings.computeIfAbsent(eventId,
+					key -> Maps.newHashMapWithExpectedSize(expectedAnalogousEventCount));
+			analogousEventMapping.put(infilePath, Timestamp.valueOf(fileEvent.getTime()));
+		});
 	}
 
 }
