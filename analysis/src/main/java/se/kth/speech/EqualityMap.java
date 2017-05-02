@@ -30,6 +30,9 @@ import com.google.common.collect.Sets;
 import se.kth.speech.MutablePair;
 
 /**
+ * Useful for mapping classes which have nonfunctional
+ * {@link Object#hashCode()} functionality.
+ * 
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
  * @since May 1, 2017
  *
