@@ -52,6 +52,7 @@ public final class EqualityMap<K, V> implements Map<K, V> {
 	}
 
 	private EqualityMap(final List<K> keys, final List<V> values) {
+		assert keys.size() == values.size();
 		this.keys = keys;
 		this.values = values;
 	}
