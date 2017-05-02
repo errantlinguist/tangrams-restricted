@@ -22,6 +22,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Timestamp;
 import java.util.DoubleSummaryStatistics;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -65,8 +66,7 @@ public final class LoggedEventTimeStats {
 			// assert new Event(testEvent1).equals(testEvent2);
 			// assert testCloneEvent.hashCode() == testEvent1.hashCode();
 			final Path minuendInfile = Paths.get(args[0]);
-			final Map<String, Map<Path, Timestamp>> analogousEventTimestampMappings = Maps
-					.newHashMapWithExpectedSize(args.length);
+			final Map<String, Map<Path, Timestamp>> analogousEventTimestampMappings = new HashMap<>();
 			putEventTimestamps(analogousEventTimestampMappings, minuendInfile, args.length);
 			final Path subtrahendInfile = Paths.get(args[1]);
 			putEventTimestamps(analogousEventTimestampMappings, subtrahendInfile, args.length);
