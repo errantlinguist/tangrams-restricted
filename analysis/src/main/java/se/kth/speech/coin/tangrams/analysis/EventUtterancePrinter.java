@@ -121,7 +121,7 @@ public final class EventUtterancePrinter implements Function<GameHistory, Stream
 
 	private static final Function<Segment, List<Utterance>> SEG_UTT_FACTORY = new SegmentUtteranceFactory();
 
-	private static final String DEFAULT_OUTFILE_PREFIX = "eventUtts";
+	private static final String DEFAULT_OUTFILE_PREFIX = "eventUtts_";
 
 	public static void main(final String[] args) throws IOException, JAXBException, InterruptedException {
 		if (args.length < 1) {
@@ -194,7 +194,7 @@ public final class EventUtterancePrinter implements Function<GameHistory, Stream
 	}
 
 	private static String parseOutfilePrefix(final CommandLine cl, final File inpath) {
-		final String infix = "_" + new FilenameBaseSplitter().apply(inpath.getName())[0] + "_LOG-";
+		final String infix = new FilenameBaseSplitter().apply(inpath.getName())[0] + "_LOG-";
 		final String prefix = cl.getOptionValue(Parameter.OUTFILE_PREFIX.optName, DEFAULT_OUTFILE_PREFIX);
 		return prefix + infix;
 	}
