@@ -352,13 +352,13 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 
 					for (final Iterator<Entry<Event, List<Utterance>>> eventUttListIter = eventUttLists
 							.iterator(); eventUttListIter.hasNext();) {
-						writer.write(TABLE_STRING_REPR_ROW_DELIMITER);
 						final Entry<Event, List<Utterance>> eventUttList = eventUttListIter.next();
 						final Event event = eventUttList.getKey();
 						final List<Utterance> eventUtts = eventUttList.getValue();
 						if (eventUtts.isEmpty()) {
-
+							LOGGER.warn("No utterances for event ID \"{}\".", event);
 						} else {
+							writer.write(TABLE_STRING_REPR_ROW_DELIMITER);
 							final String imgVizInfoDesc;
 							if (event == null) {
 								imgVizInfoDesc = createBlankImgDesc(colHeaders);
