@@ -218,9 +218,8 @@ public final class EventUtterancePrinter {
 			final List<Segment> segments = uttAnnots.getSegments().getSegment();
 			final Map<Utterance, String> uttPlayerIds = new UtterancePlayerIdMapFactory(SEG_UTT_FACTORY,
 					sourceIdPlayerIds::get).apply(segments);
-			final List<Utterance> utts = uttPlayerIds.keySet().stream().sorted(Comparator
-					.comparing(Utterance::getStartTime).thenComparing(Comparator.comparing(Utterance::getEndTime)))
-					.collect(Collectors.toList());
+			final List<Utterance> utts = Arrays.asList(uttPlayerIds.keySet().stream().sorted(Comparator
+					.comparing(Utterance::getStartTime).thenComparing(Comparator.comparing(Utterance::getEndTime))).toArray(Utterance[]::new));
 			final Collector<CharSequence, ?, String> joiner = Collectors.joining(" ");
 			playerGameHistories.forEach((playerId, history) -> {
 				final Path outfilePath = outpath.resolve(outfileNamePrefix + playerId + ".txt");
