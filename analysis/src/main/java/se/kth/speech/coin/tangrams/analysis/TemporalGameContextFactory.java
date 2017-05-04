@@ -35,16 +35,16 @@ import se.kth.speech.coin.tangrams.iristk.EventTimes;
  * @since Apr 17, 2017
  *
  */
-public final class UtteranceGameContextFactory {
+public final class TemporalGameContextFactory {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(UtteranceGameContextFactory.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(TemporalGameContextFactory.class);
 
 	// private static final Collector<CharSequence, ?, String> TOKEN_FORM_JOINER
 	// = Collectors.joining(" ");
 
 	private final Function<? super String, GameHistory> playerGameHistoryFactory;
 
-	public UtteranceGameContextFactory(final Function<? super String, GameHistory> playerGameHistoryFactory) {
+	public TemporalGameContextFactory(final Function<? super String, GameHistory> playerGameHistoryFactory) {
 		this.playerGameHistoryFactory = playerGameHistoryFactory;
 	}
 

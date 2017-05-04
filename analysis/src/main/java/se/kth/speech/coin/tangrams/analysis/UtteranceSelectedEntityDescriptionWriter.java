@@ -348,7 +348,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 									.thenComparing(Comparator.comparing(Utterance::getEndTime)))
 							.toArray(Utterance[]::new));
 			final Map<String, GameHistory> playerGameHistories = playerGameHistoryTable.columnMap().get(gameId);
-			final UtteranceGameContextFactory uttContextFactory = new UtteranceGameContextFactory(
+			final TemporalGameContextFactory uttContextFactory = new TemporalGameContextFactory(
 					playerGameHistories::get);
 			final int uniqueModelDescriptionCount = playerGameHistoryTable.values().size();
 			// final GameContextModelFactory gameModelFactory = new

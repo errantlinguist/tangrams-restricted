@@ -26,7 +26,7 @@ import java.util.stream.Stream;
 import se.kth.speech.coin.tangrams.analysis.GameContext;
 import se.kth.speech.coin.tangrams.analysis.SegmentUtteranceFactory;
 import se.kth.speech.coin.tangrams.analysis.Utterance;
-import se.kth.speech.coin.tangrams.analysis.UtteranceGameContextFactory;
+import se.kth.speech.coin.tangrams.analysis.TemporalGameContextFactory;
 import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
 
 final class SegmentFeatureVectorFactory implements Function<Segment, Stream<DoubleStream>> {
@@ -37,12 +37,12 @@ final class SegmentFeatureVectorFactory implements Function<Segment, Stream<Doub
 
 	private final Map<String, String> sourceIdPlayerIds;
 
-	private final UtteranceGameContextFactory uttContextFactory;
+	private final TemporalGameContextFactory uttContextFactory;
 
 	private final List<? extends BiConsumer<? super Utterance, ? super DoubleStream.Builder>> uttFeatureExtractors;
 
 	public SegmentFeatureVectorFactory(final Map<String, String> sourceIdPlayerIds,
-			final UtteranceGameContextFactory uttContextFactory,
+			final TemporalGameContextFactory uttContextFactory,
 			final List<? extends BiConsumer<? super GameContext, ? super DoubleStream.Builder>> contextFeatureExtractors,
 			final List<? extends BiConsumer<? super Utterance, ? super DoubleStream.Builder>> uttFeatureExtractors) {
 		this.sourceIdPlayerIds = sourceIdPlayerIds;

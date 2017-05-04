@@ -59,7 +59,7 @@ import se.kth.speech.coin.tangrams.analysis.GameContextModelFactory;
 import se.kth.speech.coin.tangrams.analysis.GameHistory;
 import se.kth.speech.coin.tangrams.analysis.SegmentUtteranceFactory;
 import se.kth.speech.coin.tangrams.analysis.Utterance;
-import se.kth.speech.coin.tangrams.analysis.UtteranceGameContextFactory;
+import se.kth.speech.coin.tangrams.analysis.TemporalGameContextFactory;
 import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
 import se.kth.speech.hat.xsd.Annotation;
@@ -178,7 +178,7 @@ public final class WordsAsClassifiersTrainingDataFactory
 
 					final String gameId = playerGameIdIntersection.iterator().next();
 					final Map<String, GameHistory> playerGameHistories = playerGameHistoryTable.columnMap().get(gameId);
-					final UtteranceGameContextFactory uttContextFactory = new UtteranceGameContextFactory(
+					final TemporalGameContextFactory uttContextFactory = new TemporalGameContextFactory(
 							playerGameHistories::get);
 					final WordsAsClassifiersTrainingDataFactory trainingDataFactory = new WordsAsClassifiersTrainingDataFactory(
 							sourceIdPlayerIds, uttContextFactory, contextFeatureExtractors);
@@ -243,7 +243,7 @@ public final class WordsAsClassifiersTrainingDataFactory
 
 	private final Map<String, String> sourceIdPlayerIds;
 
-	private final UtteranceGameContextFactory uttContextFactory;
+	private final TemporalGameContextFactory uttContextFactory;
 
 	/**
 	 * @param contextFeatureExtractors
@@ -252,7 +252,7 @@ public final class WordsAsClassifiersTrainingDataFactory
 	 *
 	 */
 	public WordsAsClassifiersTrainingDataFactory(final Map<String, String> sourceIdPlayerIds,
-			final UtteranceGameContextFactory uttContextFactory,
+			final TemporalGameContextFactory uttContextFactory,
 			final List<GameContextFeatureExtractor> contextFeatureExtractors) {
 		this.sourceIdPlayerIds = sourceIdPlayerIds;
 		this.uttContextFactory = uttContextFactory;

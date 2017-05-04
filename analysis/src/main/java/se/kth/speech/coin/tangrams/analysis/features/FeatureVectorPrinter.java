@@ -53,7 +53,7 @@ import com.google.common.collect.Table;
 import iristk.util.HAT;
 import se.kth.speech.coin.tangrams.analysis.Annotations;
 import se.kth.speech.coin.tangrams.analysis.GameHistory;
-import se.kth.speech.coin.tangrams.analysis.UtteranceGameContextFactory;
+import se.kth.speech.coin.tangrams.analysis.TemporalGameContextFactory;
 import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
 import se.kth.speech.hat.xsd.Annotation;
@@ -170,7 +170,7 @@ public final class FeatureVectorPrinter {
 					final String gameId = playerGameIdIntersection.iterator().next();
 					final Map<String, GameHistory> playerGameHistories = playerGameStateChangeData.columnMap()
 							.get(gameId);
-					final UtteranceGameContextFactory uttContextFactory = new UtteranceGameContextFactory(
+					final TemporalGameContextFactory uttContextFactory = new TemporalGameContextFactory(
 							playerGameHistories::get);
 					final SegmentFeatureVectorFactory featureVectorFactory = new SegmentFeatureVectorFactory(
 							sourceIdPlayerIds, uttContextFactory, contextFeatureExtractors, uttFeatureExtrators);
