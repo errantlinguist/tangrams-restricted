@@ -30,7 +30,7 @@ import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
  * @since Apr 17, 2017
  *
  */
-final class ImageEdgeCounter implements ToDoubleFunction<String> {
+public final class ImageEdgeCounter implements ToDoubleFunction<String> {
 
 	// private static final Logger LOGGER =
 	// LoggerFactory.getLogger(ImageEdgeCountFactory.class);

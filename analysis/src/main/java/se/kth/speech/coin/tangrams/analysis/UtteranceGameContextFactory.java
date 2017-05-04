@@ -45,10 +45,6 @@ public final class UtteranceGameContextFactory implements BiFunction<Utterance, 
 
 	private final Function<? super String, GameHistory> playerGameHistoryFactory;
 
-	/**
-	 * @param playerGameHistoryFactory
-	 *
-	 */
 	public UtteranceGameContextFactory(final Function<? super String, GameHistory> playerGameHistoryFactory) {
 		this.playerGameHistoryFactory = playerGameHistoryFactory;
 	}

@@ -21,10 +21,13 @@ import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.UncheckedIOException;
+import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashSet;
@@ -37,6 +40,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
+import java.util.stream.DoubleStream;
 import java.util.stream.Stream;
 
 import javax.swing.JFileChooser;
@@ -58,6 +62,9 @@ import com.google.common.collect.Table;
 import iristk.system.Event;
 import iristk.util.HAT;
 import se.kth.speech.FilenameBaseSplitter;
+import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
+import se.kth.speech.coin.tangrams.analysis.features.ImageEdgeCounter;
+import se.kth.speech.coin.tangrams.analysis.features.SelectedEntityFeatureExtractor;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfoTableRowWriter;
 import se.kth.speech.coin.tangrams.iristk.EventTypeMatcher;
@@ -118,12 +125,18 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 
 	private static final int EXPECTED_UNIQUE_GAME_COUNT = 1;
 
+	private static final List<EntityFeature> FEATURES_TO_DESCRIBE = Arrays.asList(EntityFeature.POSITION_X,
+			EntityFeature.POSITION_Y, EntityFeature.EDGE_COUNT);
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(UtteranceSelectedEntityDescriptionWriter.class);
 
 	private static final EventTypeMatcher NEW_SALIENT_PIECE_EVENT_MATCHER = new EventTypeMatcher(
 			EnumSet.of(GameManagementEvent.NEXT_TURN_REQUEST));
 
 	private static final Options OPTIONS = createOptions();
+
+	private static final EventTypeMatcher REQUIRED_EVENT_MATCHER = new EventTypeMatcher(
+			EnumSet.of(GameManagementEvent.NEXT_TURN_REQUEST, GameManagementEvent.GAME_READY_RESPONSE));
 
 	private static final Function<Segment, List<Utterance>> SEG_UTT_FACTORY = new SegmentUtteranceFactory();
 
@@ -201,7 +214,39 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 
 	private static List<List<String>> createColHeaders() {
 		final List<List<String>> imgViewDescColHeaders = ImageVisualizationInfoTableRowWriter.createColumnHeaders();
-		return imgViewDescColHeaders;
+		final int resultColCount = imgViewDescColHeaders.stream().mapToInt(List::size).max().getAsInt()
+				+ FEATURES_TO_DESCRIBE.size();
+
+		final Iterator<List<String>> imgDescHeaderIter = imgViewDescColHeaders.iterator();
+		List<List<String>> result;
+		if (imgDescHeaderIter.hasNext()) {
+			result = new ArrayList<>(imgViewDescColHeaders.size());
+			final List<String> firstHeader = new ArrayList<>(resultColCount);
+			result.add(firstHeader);
+
+			FEATURES_TO_DESCRIBE.stream().map(Object::toString).forEachOrdered(firstHeader::add);
+			final List<String> firstImgDescHeader = imgDescHeaderIter.next();
+			firstHeader.addAll(firstImgDescHeader);
+			System.out.println(firstHeader);
+			final String padding = "";
+			while (firstHeader.size() < resultColCount) {
+				firstHeader.add(padding);
+			}
+
+			while (imgDescHeaderIter.hasNext()) {
+				final List<String> nextImgDescHeader = imgDescHeaderIter.next();
+				final List<String> nextHeader = new ArrayList<>(resultColCount);
+				result.add(nextHeader);
+
+				// Add padding for feature-derived descriptions
+				FEATURES_TO_DESCRIBE.stream().map(feature -> padding).forEach(nextHeader::add);
+				nextHeader.addAll(nextImgDescHeader);
+			}
+
+		} else {
+			result = Collections.emptyList();
+		}
+		return result;
 	}
 
 	private static Options createOptions() {
@@ -242,8 +287,8 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 		LOGGER.info("Processing session log directory \"{}\".", sessionLogDir);
 		final Map<String, Path> playerEventLogFilePaths = LoggedEvents.createPlayerEventLogFileMap(sessionLogDir,
 				expectedEventLogFileCount);
-		final Table<String, String, GameHistory> playerGameHistoryTable = LoggedEvents
-				.createPlayerGameHistoryTable(playerEventLogFilePaths.entrySet(), EXPECTED_UNIQUE_GAME_COUNT);
+		final Table<String, String, GameHistory> playerGameHistoryTable = LoggedEvents.createPlayerGameHistoryTable(
+				playerEventLogFilePaths.entrySet(), EXPECTED_UNIQUE_GAME_COUNT, REQUIRED_EVENT_MATCHER);
 		final Set<String> playerGameIdIntersection = new HashSet<>(playerGameHistoryTable.columnKeySet());
 		playerGameHistoryTable.rowMap().values().stream().map(Map::keySet).forEach(playerGameIdIntersection::retainAll);
 		final int gameCount = playerGameIdIntersection.size();
@@ -276,6 +321,9 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 			final int uniqueModelDescriptionCount = playerGameHistoryTable.values().size();
 			final GameContextModelFactory gameModelFactory = new GameContextModelFactory(uniqueModelDescriptionCount);
 			final ImageVisualizationInfoUnmarshaller imgVizInfoUnmarshaller = new ImageVisualizationInfoUnmarshaller();
+			final SelectedEntityFeatureExtractor entityFeatureExtractor = new SelectedEntityFeatureExtractor(
+					new GameContextModelFactory(uniqueModelDescriptionCount), new ImageEdgeCounter());
+
 			for (final Entry<String, GameHistory> playerGameHistory : playerGameHistories.entrySet()) {
 				final String playerId = playerGameHistory.getKey();
 				final GameHistory history = playerGameHistory.getValue();
@@ -301,7 +349,9 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 						writer.write(TABLE_STRING_REPR_ROW_DELIMITER);
 						final Entry<Event, List<Utterance>> eventUttList = eventUttListIter.next();
 						final Event event = eventUttList.getKey();
-						String imgVizInfoDesc;
+						final List<Utterance> eventUtts = eventUttList.getValue();
+
+						final String imgVizInfoDesc;
 						if (event == null) {
 							final int colCount = colHeaders.stream().mapToInt(List::size).max().getAsInt();
 							final String[] blankCells = new String[colCount];
@@ -309,6 +359,18 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 							imgVizInfoDesc = Arrays.stream(blankCells).collect(TABLE_ROW_CELL_JOINER);
 						} else {
 							final StringWriter strWriter = new StringWriter(256);
+							final double[] featureVector = eventUtts.stream().map(eventUtt -> {
+								// Just use the first event context
+								final GameContext context = uttContextFactory.apply(eventUtt, playerId).findFirst()
+										.get();
+								final DoubleStream.Builder vals = DoubleStream.builder();
+								entityFeatureExtractor.accept(context, vals);
+								return vals.build();
+							}).map(DoubleStream::toArray).findFirst().get();
+							writer.write(FEATURES_TO_DESCRIBE.stream()
+									.map(feature -> Double.toString(feature.getVal(featureVector)))
+									.collect(TABLE_ROW_CELL_JOINER));
+							writer.write(TABLE_STRING_REPR_COL_DELIMITER);
 							final ImageVisualizationInfoTableRowWriter imgInfoDescWriter = new ImageVisualizationInfoTableRowWriter(
 									strWriter);
 							final Move move = (Move) event.get(GameManagementEvent.Attribute.MOVE.toString());
@@ -316,12 +378,12 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 							final ImageVisualizationInfo.Datum selectedPieceImgVizInfo = imgVizInfo.getData()
 									.get(selectedPieceId);
 							imgInfoDescWriter.write(selectedPieceId, selectedPieceImgVizInfo);
+
 							imgVizInfoDesc = strWriter.toString();
 						}
 						writer.write(imgVizInfoDesc);
 						writer.write(TABLE_STRING_REPR_COL_DELIMITER);
 
-						final List<Utterance> eventUtts = eventUttList.getValue();
 						final String eventDialogStr = createUtteranceDialogString(eventUtts.stream(),
 								uttPlayerIds::get);
 						writer.write(eventDialogStr);
@@ -335,6 +397,12 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 					String.format("No logic for handling a game count of %d.", gameCount));
 		}
 
+	}
+
+	private static void writeFeatureDescs(final Writer writer, final double[] featureVector) throws IOException {
+		for (final EntityFeature feature : FEATURES_TO_DESCRIBE) {
+			writer.write(Double.toString(feature.getVal(featureVector)));
+		}
 	}
 
 }

@@ -31,13 +31,13 @@ import se.kth.speech.coin.tangrams.analysis.GameContext;
 import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
 import se.kth.speech.coin.tangrams.iristk.events.ImageVisualizationInfoDescription;
 
-final class SelectedEntityFeatureExtractor implements GameContextFeatureExtractor {
+public final class SelectedEntityFeatureExtractor implements GameContextFeatureExtractor {
 
 	private final Function<? super GameContext, SpatialMatrix<Integer>> gameModelFactory;
 
 	private final ToDoubleFunction<? super String> namedResourceEdgeCountFactory;
 
-	SelectedEntityFeatureExtractor(final Function<? super GameContext, SpatialMatrix<Integer>> gameModelFactory,
+	public SelectedEntityFeatureExtractor(final Function<? super GameContext, SpatialMatrix<Integer>> gameModelFactory,
 			final ToDoubleFunction<? super String> namedResourceEdgeCountFactory) {
 		this.gameModelFactory = gameModelFactory;
 		this.namedResourceEdgeCountFactory = namedResourceEdgeCountFactory;

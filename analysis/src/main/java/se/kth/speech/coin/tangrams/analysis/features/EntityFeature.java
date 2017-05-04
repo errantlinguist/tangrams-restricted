@@ -20,6 +20,7 @@ import java.awt.Color;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Set;
@@ -27,6 +28,8 @@ import java.util.function.ToDoubleFunction;
 import java.util.stream.DoubleStream;
 
 import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import se.kth.speech.IntArrays;
 import se.kth.speech.SpatialRegion;
 import se.kth.speech.coin.tangrams.content.IconImages;
@@ -40,8 +43,10 @@ import se.kth.speech.coin.tangrams.iristk.events.ImageVisualizationInfoDescripti
  *      In <em>Proceedings of IWCS 2015</em><a>.
  *
  */
-enum EntityFeature {
+public enum EntityFeature {
 	BLUE, BRIGHTNESS, EDGE_COUNT, GREEN, HUE, POSITION_X, POSITION_Y, RED, SATURATION, SHAPE, SIZE;
+
+	private static final Object2IntMap<EntityFeature> FEATURE_VECTOR_IDXS;
 
 	private static final double NULL_FEATURE_VAL = -1.0;
 
@@ -53,6 +58,13 @@ enum EntityFeature {
 		ORDERING = Arrays.asList(SHAPE, EDGE_COUNT, RED, GREEN, BLUE, HUE, SATURATION, BRIGHTNESS, SIZE, POSITION_X,
 				POSITION_Y);
 		assert ORDERING.size() == EntityFeature.values().length;
+
+		FEATURE_VECTOR_IDXS = new Object2IntOpenHashMap<>(ORDERING.size());
+		for (final ListIterator<EntityFeature> iter = ORDERING.listIterator(); iter.hasNext();) {
+			final int nextIdx = iter.nextIndex();
+			final EntityFeature feature = iter.next();
+			FEATURE_VECTOR_IDXS.put(feature, nextIdx);
+		}
 	}
 
 	private static Object2DoubleMap<String> createShapeFeatureValueMap() {
@@ -141,5 +153,10 @@ enum EntityFeature {
 			// Set null feature vals
 			ORDERING.stream().mapToDouble(feature -> NULL_FEATURE_VAL).forEach(vals);
 		}
+	}
+
+	public double getVal(final double[] features) {
+		final int idx = FEATURE_VECTOR_IDXS.get(this);
+		return features[idx];
 	}
 }

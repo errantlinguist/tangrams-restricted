@@ -25,6 +25,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -49,6 +50,8 @@ import se.kth.speech.coin.tangrams.analysis.GameHistoryCollector;
  *
  */
 public final class LoggedEvents {
+
+	private static final Predicate<Event> DEFAULT_EVENT_FILTER = event -> true;
 
 	private static final Pattern EMPTY_OR_WHITESPACE_PATTERN = Pattern.compile("\\s*");
 
@@ -80,6 +83,12 @@ public final class LoggedEvents {
 	public static Table<String, String, GameHistory> createPlayerGameHistoryTable(
 			final Collection<Entry<String, Path>> playerEventLogFilePaths, final int expectedUniqueGameCount)
 			throws IOException {
+		return createPlayerGameHistoryTable(playerEventLogFilePaths, expectedUniqueGameCount, DEFAULT_EVENT_FILTER);
+	}
+
+	public static Table<String, String, GameHistory> createPlayerGameHistoryTable(
+			final Collection<Entry<String, Path>> playerEventLogFilePaths, final int expectedUniqueGameCount,
+			final Predicate<? super Event> eventFilter) throws IOException {
 		final Table<String, String, GameHistory> result = HashBasedTable.create(playerEventLogFilePaths.size(),
 				expectedUniqueGameCount);
 		for (final Entry<String, Path> playerEventLogFilePath : playerEventLogFilePaths) {
@@ -87,7 +96,7 @@ public final class LoggedEvents {
 			LOGGER.info("Reading session event log for player \"{}\".", playerId);
 			final Path eventLogFile = playerEventLogFilePath.getValue();
 			try (final Stream<String> lines = Files.lines(eventLogFile, LoggingFormats.ENCODING)) {
-				final Map<String, GameHistory> gameHistories = parseGameHistories(lines);
+				final Map<String, GameHistory> gameHistories = parseGameHistories(lines, eventFilter);
 				gameHistories.forEach((gameId, gameData) -> {
 					result.put(playerId, gameId, gameData);
 				});
@@ -97,7 +106,12 @@ public final class LoggedEvents {
 	}
 
 	public static Map<String, GameHistory> parseGameHistories(final Stream<String> lines) {
-		final Stream<Event> loggedEvents = parseLoggedEvents(lines);
+		return parseGameHistories(lines, DEFAULT_EVENT_FILTER);
+	}
+
+	public static Map<String, GameHistory> parseGameHistories(final Stream<String> lines,
+			final Predicate<? super Event> eventFilter) {
+		final Stream<Event> loggedEvents = parseLoggedEvents(lines).filter(eventFilter);
 		final Event[] loggedEventArray = loggedEvents.toArray(Event[]::new);
 		final Supplier<Map<String, GameHistory>> mapFactory = () -> Maps
 				.newHashMapWithExpectedSize(loggedEventArray.length);
