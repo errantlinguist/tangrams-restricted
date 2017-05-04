@@ -29,7 +29,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
@@ -244,7 +243,7 @@ public final class WordsAsClassifiersTrainingDataFactory
 
 	private final Map<String, String> sourceIdPlayerIds;
 
-	private final BiFunction<? super Utterance, ? super String, Stream<GameContext>> uttContextFactory;
+	private final UtteranceGameContextFactory uttContextFactory;
 
 	/**
 	 * @param contextFeatureExtractors
@@ -253,7 +252,7 @@ public final class WordsAsClassifiersTrainingDataFactory
 	 *
 	 */
 	public WordsAsClassifiersTrainingDataFactory(final Map<String, String> sourceIdPlayerIds,
-			final BiFunction<? super Utterance, ? super String, Stream<GameContext>> uttContextFactory,
+			final UtteranceGameContextFactory uttContextFactory,
 			final List<GameContextFeatureExtractor> contextFeatureExtractors) {
 		this.sourceIdPlayerIds = sourceIdPlayerIds;
 		this.uttContextFactory = uttContextFactory;
@@ -272,7 +271,8 @@ public final class WordsAsClassifiersTrainingDataFactory
 		// Get the player ID associated with the given audio source
 		final String playerId = sourceIdPlayerIds.get(sourceId);
 		return utts.stream().map(utt -> {
-			final Stream<GameContext> uttContexts = uttContextFactory.apply(utt, playerId);
+			final Stream<GameContext> uttContexts = uttContextFactory.apply(utt.getStartTime(), utt.getEndTime(),
+					playerId);
 			return uttContexts.map(uttContext -> {
 				final DoubleStream.Builder featureVectorBuilder = DoubleStream.builder();
 				contextFeatureExtractors.forEach(extractor -> extractor.accept(uttContext, featureVectorBuilder));

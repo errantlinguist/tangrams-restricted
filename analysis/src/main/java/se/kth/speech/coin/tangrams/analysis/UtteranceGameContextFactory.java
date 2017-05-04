@@ -20,10 +20,7 @@ import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.NavigableMap;
-import java.util.function.BiFunction;
 import java.util.function.Function;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -38,11 +35,12 @@ import se.kth.speech.coin.tangrams.iristk.EventTimes;
  * @since Apr 17, 2017
  *
  */
-public final class UtteranceGameContextFactory implements BiFunction<Utterance, String, Stream<GameContext>> {
+public final class UtteranceGameContextFactory {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(UtteranceGameContextFactory.class);
 
-	private static final Collector<CharSequence, ?, String> TOKEN_FORM_JOINER = Collectors.joining(" ");
+	// private static final Collector<CharSequence, ?, String> TOKEN_FORM_JOINER
+	// = Collectors.joining(" ");
 
 	private final Function<? super String, GameHistory> playerGameHistoryFactory;
 
@@ -50,18 +48,15 @@ public final class UtteranceGameContextFactory implements BiFunction<Utterance, 
 		this.playerGameHistoryFactory = playerGameHistoryFactory;
 	}
 
-	@Override
-	public Stream<GameContext> apply(final Utterance utt, final String playerId) {
+	public Stream<GameContext> apply(final float startTime, final float endTime, final String playerId) {
+		assert startTime <= endTime;
 		LOGGER.debug("Getting history for player \"{}\".", playerId);
 		final GameHistory history = playerGameHistoryFactory.apply(playerId);
 		final NavigableMap<LocalDateTime, List<Event>> events = history.getEvents();
 		final LocalDateTime gameStartTime = history.getStartTime();
-		final LocalDateTime uttStartTimestamp = TimestampArithmetic.createOffsetTimestamp(gameStartTime,
-				utt.getStartTime());
+		final LocalDateTime uttStartTimestamp = TimestampArithmetic.createOffsetTimestamp(gameStartTime, startTime);
 
-		assert utt.getStartTime() <= utt.getEndTime();
-		final LocalDateTime uttEndTimestamp = TimestampArithmetic.createOffsetTimestamp(gameStartTime,
-				utt.getEndTime());
+		final LocalDateTime uttEndTimestamp = TimestampArithmetic.createOffsetTimestamp(gameStartTime, endTime);
 		assert uttStartTimestamp.isBefore(uttEndTimestamp) || uttStartTimestamp.isEqual(uttEndTimestamp);
 		final NavigableMap<LocalDateTime, List<Event>> eventsDuringUtt = events.subMap(uttStartTimestamp, true,
 				uttEndTimestamp, true);
@@ -73,16 +68,19 @@ public final class UtteranceGameContextFactory implements BiFunction<Utterance, 
 			// Create one data point for each event found during the utterance
 			// TODO: estimate partitions for utterance: By phones?
 			final Collection<List<Event>> timedEvents = eventsDuringUtt.values();
-			if (LOGGER.isDebugEnabled()) {
-				final List<Event> allEventsDuringUtt = timedEvents.stream().flatMap(Collection::stream)
-						.collect(Collectors.toList());
-				final String delim = System.lineSeparator() + '\t';
-				final String uttRepr = allEventsDuringUtt.stream().map(Event::toString)
-						.collect(Collectors.joining(delim));
-				LOGGER.debug("Found {} event(s) during utterance \"{}\" subsequence: \"{}\"" + delim + "{}",
-						new Object[] { allEventsDuringUtt.size(), utt.getSegmentId(),
-								utt.getTokens().stream().collect(TOKEN_FORM_JOINER), uttRepr });
-			}
+			// if (LOGGER.isDebugEnabled()) {
+			// final List<Event> allEventsDuringUtt =
+			// timedEvents.stream().flatMap(Collection::stream)
+			// .collect(Collectors.toList());
+			// final String delim = System.lineSeparator() + '\t';
+			// final String uttRepr =
+			// allEventsDuringUtt.stream().map(Event::toString)
+			// .collect(Collectors.joining(delim));
+			// LOGGER.debug("Found {} event(s) during utterance \"{}\"
+			// subsequence: \"{}\"" + delim + "{}",
+			// new Object[] { allEventsDuringUtt.size(), utt.getSegmentId(),
+			// utt.getTokens().stream().collect(TOKEN_FORM_JOINER), uttRepr });
+			// }
 			final Stream<Event> allEventsDuringUtt = timedEvents.stream().flatMap(Collection::stream);
 			final Stream<LocalDateTime> allTimestampsDuringUtt = allEventsDuringUtt.map(Event::getTime)
 					.map(EventTimes::parseEventTime);

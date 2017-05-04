@@ -26,6 +26,8 @@ import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -36,7 +38,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.function.Function;
@@ -71,6 +72,7 @@ import se.kth.speech.coin.tangrams.analysis.features.ImageEdgeCounter;
 import se.kth.speech.coin.tangrams.analysis.features.SelectedEntityFeatureExtractor;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfoTableRowWriter;
+import se.kth.speech.coin.tangrams.iristk.EventTimes;
 import se.kth.speech.coin.tangrams.iristk.EventTypeMatcher;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 import se.kth.speech.coin.tangrams.iristk.ImageVisualizationInfoUnmarshaller;
@@ -184,9 +186,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 				FILE_FILTERS.stream().forEachOrdered(fileChooser::removeChoosableFileFilter);
 				UserPrompts.promptFile(fileChooser).map(File::toPath).ifPresent(outpath -> {
 					LOGGER.info("Will write data to \"{}\".", outpath);
-					UserPrompts
-							.promptNonBlankString("Enter output filename prefix.",
-									DEFAULT_OUTFILE_PREFIX)
+					UserPrompts.promptNonBlankString("Enter output filename prefix.", DEFAULT_OUTFILE_PREFIX)
 							.ifPresent(outfileNamePrefix -> {
 								LOGGER.info("Will prefix each output file with \"{}\".", outfileNamePrefix);
 								try {
@@ -297,7 +297,8 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 	private static void run(final Path inpath, final Path outpath, final String outfileNamePrefix)
 			throws JAXBException, IOException {
 		final Iterator<Path> infilePathIter = Files.walk(inpath, FileVisitOption.FOLLOW_LINKS)
-				.filter(Files::isRegularFile).filter(filePath -> filePath.getFileName().toString().endsWith(".properties")).iterator();
+				.filter(Files::isRegularFile)
+				.filter(filePath -> filePath.getFileName().toString().endsWith(".properties")).iterator();
 		while (infilePathIter.hasNext()) {
 			final Path infilePath = infilePathIter.next();
 			LOGGER.info("Reading batch job properties from \"{}\".", infilePath);
@@ -379,53 +380,59 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 					for (final Iterator<Entry<Event, List<Utterance>>> eventUttListIter = eventUttLists
 							.iterator(); eventUttListIter.hasNext();) {
 						final Entry<Event, List<Utterance>> eventUttList = eventUttListIter.next();
+						writer.write(TABLE_STRING_REPR_ROW_DELIMITER);
+
 						final Event event = eventUttList.getKey();
 						final List<Utterance> eventUtts = eventUttList.getValue();
-						if (eventUtts.isEmpty()) {
-							LOGGER.warn("No utterances for event ID \"{}\".", event);
+
+						final String imgVizInfoDesc;
+						if (event == null) {
+							imgVizInfoDesc = createBlankImgDesc(colHeaders);
 						} else {
-							writer.write(TABLE_STRING_REPR_ROW_DELIMITER);
-							final String imgVizInfoDesc;
-							if (event == null) {
-								imgVizInfoDesc = createBlankImgDesc(colHeaders);
+							final StringWriter strWriter = new StringWriter(256);
+
+							final float contextStartTime;
+							final float contextEndTime;
+							if (eventUtts.isEmpty()) {
+								LOGGER.warn("No utterances for event ID \"{}\".", event);
+								final LocalDateTime eventTime = EventTimes.parseEventTime(event.getTime());
+								final Duration gameDuration = Duration.between(history.getStartTime(), eventTime);
+								final float offset = gameDuration.toMillis() / 1000.0f;
+								contextStartTime = offset;
+								contextEndTime = offset;
 							} else {
-								final StringWriter strWriter = new StringWriter(256);
-								final Optional<double[]> optFeatureVector = eventUtts.stream().map(eventUtt -> {
-									// Just use the first event context
-									final GameContext context = uttContextFactory.apply(eventUtt, playerId).findFirst()
-											.get();
-									final DoubleStream.Builder vals = DoubleStream.builder();
-									entityFeatureExtractor.accept(context, vals);
-									return vals.build();
-								}).map(DoubleStream::toArray).findFirst();
-
-								if (optFeatureVector.isPresent()) {
-									final double[] featureVector = optFeatureVector.get();
-									writer.write(FEATURES_TO_DESCRIBE.stream()
-											.map(feature -> Double.toString(feature.getVal(featureVector)))
-											.collect(TABLE_ROW_CELL_JOINER));
-									writer.write(TABLE_STRING_REPR_COL_DELIMITER);
-									final ImageVisualizationInfoTableRowWriter imgInfoDescWriter = new ImageVisualizationInfoTableRowWriter(
-											strWriter);
-									final Move move = (Move) event.get(GameManagementEvent.Attribute.MOVE.toString());
-									final Integer selectedPieceId = move.getPieceId();
-									final ImageVisualizationInfo.Datum selectedPieceImgVizInfo = imgVizInfo.getData()
-											.get(selectedPieceId);
-									imgInfoDescWriter.write(selectedPieceId, selectedPieceImgVizInfo);
-
-									imgVizInfoDesc = strWriter.toString();
-								} else {
-									imgVizInfoDesc = createBlankImgDesc(colHeaders);
-								}
-
+								// Just use the context of the first utterance
+								final Utterance firstUtt = eventUtts.iterator().next();
+								contextStartTime = firstUtt.getStartTime();
+								contextEndTime = firstUtt.getEndTime();
 							}
-							writer.write(imgVizInfoDesc);
-							writer.write(TABLE_STRING_REPR_COL_DELIMITER);
 
-							final String eventDialogStr = createUtteranceDialogString(eventUtts.stream(),
-									uttPlayerIds::get);
-							writer.write(eventDialogStr);
+							final GameContext context = uttContextFactory
+									.apply(contextStartTime, contextEndTime, playerId).findFirst().get();
+							final DoubleStream.Builder vals = DoubleStream.builder();
+							entityFeatureExtractor.accept(context, vals);
+							final double[] featureVector = vals.build().toArray();
+
+							writer.write(FEATURES_TO_DESCRIBE.stream()
+									.map(feature -> Double.toString(feature.getVal(featureVector)))
+									.collect(TABLE_ROW_CELL_JOINER));
+							writer.write(TABLE_STRING_REPR_COL_DELIMITER);
+							final ImageVisualizationInfoTableRowWriter imgInfoDescWriter = new ImageVisualizationInfoTableRowWriter(
+									strWriter);
+							final Move move = (Move) event.get(GameManagementEvent.Attribute.MOVE.toString());
+							final Integer selectedPieceId = move.getPieceId();
+							final ImageVisualizationInfo.Datum selectedPieceImgVizInfo = imgVizInfo.getData()
+									.get(selectedPieceId);
+							imgInfoDescWriter.write(selectedPieceId, selectedPieceImgVizInfo);
+
+							imgVizInfoDesc = strWriter.toString();
 						}
+						writer.write(imgVizInfoDesc);
+						writer.write(TABLE_STRING_REPR_COL_DELIMITER);
+
+						final String eventDialogStr = createUtteranceDialogString(eventUtts.stream(),
+								uttPlayerIds::get);
+						writer.write(eventDialogStr);
 
 					}
 
