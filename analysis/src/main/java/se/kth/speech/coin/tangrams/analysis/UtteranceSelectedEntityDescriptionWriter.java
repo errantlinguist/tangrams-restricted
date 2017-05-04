@@ -283,7 +283,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 
 	private static void printHelp() {
 		final HelpFormatter formatter = new HelpFormatter();
-		formatter.printHelp(EventUtterancePrinter.class.getName(), OPTIONS);
+		formatter.printHelp(UtteranceSelectedEntityDescriptionWriter.class.getName(), OPTIONS);
 	}
 
 	private static void run(final Path inpath, final Path outpath, final String outfileNamePrefix)
