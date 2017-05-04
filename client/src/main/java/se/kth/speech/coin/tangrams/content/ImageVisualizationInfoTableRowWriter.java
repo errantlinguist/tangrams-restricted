@@ -20,7 +20,9 @@ import java.awt.Color;
 import java.io.IOException;
 import java.io.Writer;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -40,34 +42,40 @@ import se.kth.speech.coin.tangrams.iristk.events.ImageVisualizationInfoDescripti
  */
 public final class ImageVisualizationInfoTableRowWriter {
 
-	private class ColorInfoWriter {
+	private static class ColorInfoWriter {
 
-		private final List<String> colNames = Arrays.asList("RED", "GREEN", "BLUE", "ALPHA", "HUE", "SATURATION",
-				"BRIGHTNESS", "JAVA_NAME");
+		private static final List<String> COL_NAMES = Arrays.asList("RED", "GREEN", "BLUE", "ALPHA", "HUE",
+				"SATURATION", "BRIGHTNESS", "JAVA_NAME");
 
-		private final Map<Integer, Set<String>> rgbColorNames = Colors.createRGBColorNameMap(String::toUpperCase,
-				TreeSet::new);
+		private static final Map<Integer, Set<String>> RGB_COLOR_NAMES = Colors
+				.createRGBColorNameMap(String::toUpperCase, TreeSet::new);
+
+		private final Writer writer;
+
+		private ColorInfoWriter(final Writer writer) {
+			this.writer = writer;
+		}
 
 		public void append(final Color color) throws IOException {
-			write(color.getRed());
+			write(writer, color.getRed());
 			writer.write(TABLE_STRING_REPR_COL_DELIMITER);
-			write(color.getGreen());
+			write(writer, color.getGreen());
 			writer.write(TABLE_STRING_REPR_COL_DELIMITER);
-			write(color.getBlue());
+			write(writer, color.getBlue());
 			writer.write(TABLE_STRING_REPR_COL_DELIMITER);
-			write(color.getAlpha());
+			write(writer, color.getAlpha());
 			writer.write(TABLE_STRING_REPR_COL_DELIMITER);
 			{
 				final float[] hsbVals = Color.RGBtoHSB(color.getRed(), color.getGreen(), color.getBlue(), null);
-				write(hsbVals[0]);
+				write(writer, hsbVals[0]);
 				writer.write(TABLE_STRING_REPR_COL_DELIMITER);
-				write(hsbVals[1]);
+				write(writer, hsbVals[1]);
 				writer.write(TABLE_STRING_REPR_COL_DELIMITER);
-				write(hsbVals[2]);
+				write(writer, hsbVals[2]);
 				writer.write(TABLE_STRING_REPR_COL_DELIMITER);
 			}
 			{
-				final Set<String> colorNames = rgbColorNames.get(color.getRGB());
+				final Set<String> colorNames = RGB_COLOR_NAMES.get(color.getRGB());
 				final String nullVal = "-";
 				final String colorNameRepr;
 				if (colorNames == null) {
@@ -84,15 +92,45 @@ public final class ImageVisualizationInfoTableRowWriter {
 
 	}
 
+	private static final String COLOR_COL_NAME = "COLOR";
+
 	private static final Collector<CharSequence, ?, String> TABLE_ROW_CELL_JOINER;
+
+	private static final Collector<CharSequence, ?, String> TABLE_ROW_JOINER;
 
 	private static final String TABLE_STRING_REPR_COL_DELIMITER;
 
-	private static final String TABLE_STRING_REPR_ROW_DELIMITER = System.lineSeparator();
+	private static final String TABLE_STRING_REPR_ROW_DELIMITER;
+
+	static {
+		TABLE_STRING_REPR_ROW_DELIMITER = System.lineSeparator();
+		TABLE_ROW_JOINER = Collectors.joining(TABLE_STRING_REPR_ROW_DELIMITER);
+	}
 
 	static {
 		TABLE_STRING_REPR_COL_DELIMITER = "\t";
 		TABLE_ROW_CELL_JOINER = Collectors.joining(TABLE_STRING_REPR_COL_DELIMITER);
+	}
+
+	public static List<List<String>> createColumnHeaders() {
+		final List<String> mainColNames = Collections
+				.unmodifiableList(Arrays.asList("ID", "IMAGE", "SIZE", COLOR_COL_NAME));
+		final int colorHeaderIdx = mainColNames.indexOf(COLOR_COL_NAME);
+		final List<String> subColNames = new ArrayList<>(mainColNames.size());
+		// Offset the color sub-header row
+		for (int i = 0; i < colorHeaderIdx; ++i) {
+			subColNames.add("");
+		}
+		ColorInfoWriter.COL_NAMES.forEach(subColNames::add);
+		return Arrays.asList(mainColNames, subColNames);
+	}
+
+	private static void write(final Writer writer, final float val) throws IOException {
+		writer.write(Float.toString(val));
+	}
+
+	private static void write(final Writer writer, final int val) throws IOException {
+		writer.write(Integer.toString(val));
 	}
 
 	private final ColorInfoWriter colorInfoWriter;
@@ -109,7 +147,7 @@ public final class ImageVisualizationInfoTableRowWriter {
 			final Function<? super URL, String> resourceNameFactory) {
 		this.writer = writer;
 		this.resourceNameFactory = resourceNameFactory;
-		colorInfoWriter = new ColorInfoWriter();
+		colorInfoWriter = new ColorInfoWriter(writer);
 	}
 
 	public void write(final Object rowId, final ImageVisualizationInfo.Datum datum) throws IOException {
@@ -125,27 +163,10 @@ public final class ImageVisualizationInfoTableRowWriter {
 	}
 
 	public void writeHeader() throws IOException {
-		final String colorColName = "COLOR";
-		final List<String> colNames = Arrays.asList("ID", "IMAGE", "SIZE", colorColName);
-		final String header = colNames.stream().collect(TABLE_ROW_CELL_JOINER);
-		writer.write(header);
-
-		// Write color sub-header
-		writer.write(TABLE_STRING_REPR_ROW_DELIMITER);
-		final int colorHeaderIdx = colNames.indexOf(colorColName);
-		// Offset the color sub-header row
-		for (int i = 0; i < colorHeaderIdx; ++i) {
-			writer.write(TABLE_STRING_REPR_COL_DELIMITER);
-		}
-		writer.write(colorInfoWriter.colNames.stream().collect(TABLE_ROW_CELL_JOINER));
-	}
-
-	private void write(final float val) throws IOException {
-		writer.write(Float.toString(val));
-	}
-
-	private void write(final int val) throws IOException {
-		writer.write(Integer.toString(val));
+		final List<List<String>> headers = createColumnHeaders();
+		final String headerStr = headers.stream().map(header -> header.stream().collect(TABLE_ROW_CELL_JOINER))
+				.collect(TABLE_ROW_JOINER);
+		writer.write(headerStr);
 	}
 
 }
