@@ -16,7 +16,7 @@
 */
 package se.kth.speech.coin.tangrams.analysis;
 
-import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -88,8 +88,8 @@ public final class GameContextModelFactory implements Function<GameContext, Spat
 	}
 
 	private static void updateToTime(final SpatialMatrix<Integer> model,
-			final NavigableMap<Timestamp, List<Event>> timestampedEvents, final Timestamp time) {
-		final NavigableMap<Timestamp, List<Event>> timestampedEventsToApply = timestampedEvents.headMap(time, true);
+			final NavigableMap<LocalDateTime, List<Event>> timestampedEvents, final LocalDateTime time) {
+		final NavigableMap<LocalDateTime, List<Event>> timestampedEventsToApply = timestampedEvents.headMap(time, true);
 		final Stream<Event> eventsToApply = timestampedEventsToApply.values().stream().flatMap(List::stream);
 		eventsToApply.forEachOrdered(event -> applyEvent(model, event));
 	}
@@ -116,7 +116,7 @@ public final class GameContextModelFactory implements Function<GameContext, Spat
 		final GameStateDescription initialState = history.getInitialState();
 		final SpatialMatrix<Integer> result = copyInitialModel(
 				initialGameModelFactory.apply(initialState.getModelDescription()));
-		final NavigableMap<Timestamp, List<Event>> events = history.getEvents();
+		final NavigableMap<LocalDateTime, List<Event>> events = history.getEvents();
 		updateToTime(result, events, context.getTime());
 		return result;
 	}

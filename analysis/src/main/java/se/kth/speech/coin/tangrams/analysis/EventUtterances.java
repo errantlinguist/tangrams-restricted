@@ -16,7 +16,7 @@
 */
 package se.kth.speech.coin.tangrams.analysis;
 
-import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -28,6 +28,7 @@ import java.util.stream.Stream;
 import iristk.system.Event;
 import se.kth.speech.MutablePair;
 import se.kth.speech.TimestampArithmetic;
+import se.kth.speech.coin.tangrams.iristk.EventTimes;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -44,7 +45,7 @@ public final class EventUtterances {
 	public static Stream<Entry<Event, List<Utterance>>> createEventUtteranceMappings(final List<Utterance> utts,
 			final GameHistory history, final Predicate<? super Event> eventFilter) {
 		final Stream<Event> events = history.getEvents().values().stream().flatMap(List::stream).filter(eventFilter);
-		final Timestamp gameStartTime = history.getStartTime();
+		final LocalDateTime gameStartTime = history.getStartTime();
 
 		final Stream<Entry<Event, List<Utterance>>> result;
 
@@ -58,12 +59,11 @@ public final class EventUtterances {
 				{
 					// Find all utterances up to the first event
 					final Event firstEvent = eventIter.next();
-					final Timestamp firstEventTimestamp = Timestamp.valueOf(firstEvent.getTime());
+					final LocalDateTime firstEventTimestamp = EventTimes.parseEventTime(firstEvent.getTime());
 					do {
 						final Utterance nextUtt = uttIter.next();
-						final float uttStartMills = nextUtt.getStartTime() * SegmentTimes.TIME_TO_MILLS_FACTOR;
-						final Timestamp uttStartTimestamp = TimestampArithmetic.createOffsetTimestamp(gameStartTime,
-								uttStartMills);
+						final LocalDateTime uttStartTimestamp = TimestampArithmetic.createOffsetTimestamp(gameStartTime,
+								nextUtt.getStartTime());
 						// If the utterance was before the first event, add it
 						// to the
 						// list of before-event utterances
@@ -86,16 +86,16 @@ public final class EventUtterances {
 					// Find the next set of utterances following each event
 					while (eventIter.hasNext()) {
 						final Event nextEvent = eventIter.next();
-						final Timestamp nextEventTimestamp = Timestamp.valueOf(nextEvent.getTime());
+						final LocalDateTime nextEventTimestamp = EventTimes.parseEventTime(nextEvent.getTime());
 						eventUtts: while (uttIter.hasNext()) {
 							final Utterance nextUtt = uttIter.next();
 							final float uttStartMills = nextUtt.getStartTime() * SegmentTimes.TIME_TO_MILLS_FACTOR;
-							final Timestamp uttStartTimestamp = TimestampArithmetic.createOffsetTimestamp(gameStartTime,
-									uttStartMills);
+							final LocalDateTime uttStartTimestamp = TimestampArithmetic
+									.createOffsetTimestamp(gameStartTime, uttStartMills);
 							// If the utterance was before the next event, add
 							// it to the
 							// list of utterances for the current event
-							if (uttStartTimestamp.compareTo(nextEventTimestamp) < 0) {
+							if (uttStartTimestamp.isBefore(nextEventTimestamp)) {
 								nextUttList.add(nextUtt);
 							} else {
 								resultBuilder.accept(new MutablePair<>(currentEvent, nextUttList));

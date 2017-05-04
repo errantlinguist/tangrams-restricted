@@ -16,7 +16,7 @@
 */
 package se.kth.speech.coin.tangrams.analysis;
 
-import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NavigableMap;
@@ -62,9 +62,9 @@ public final class GameContext {
 
 	private final String playerId;
 
-	private final Timestamp time;
+	private final LocalDateTime time;
 
-	GameContext(final GameHistory history, final Timestamp time, final String playerId) {
+	GameContext(final GameHistory history, final LocalDateTime time, final String playerId) {
 		this.history = history;
 		this.time = time;
 		this.playerId = playerId;
@@ -112,7 +112,7 @@ public final class GameContext {
 	}
 
 	public Optional<Event> findLastEvent(final Predicate<? super Event> matcher) {
-		final NavigableMap<Timestamp, List<Event>> timedEvents = getPrecedingEvents();
+		final NavigableMap<LocalDateTime, List<Event>> timedEvents = getPrecedingEvents();
 		// Look for the last matching event (iterating
 		// backwards)
 		final Stream<Event> eventsDescTime = getValuesDescendingOrder(timedEvents);
@@ -120,7 +120,7 @@ public final class GameContext {
 	}
 
 	public int findLastEventDistance(final Predicate<? super Event> matcher) {
-		final NavigableMap<Timestamp, List<Event>> timedEvents = getPrecedingEvents();
+		final NavigableMap<LocalDateTime, List<Event>> timedEvents = getPrecedingEvents();
 		// Look for the last time the event was seen (iterating
 		// backwards)
 		final Stream<Event> eventsDescTime = getValuesDescendingOrder(timedEvents);
@@ -138,7 +138,7 @@ public final class GameContext {
 		});
 	}
 
-	public ImageVisualizationInfoDescription.Datum getEntityVisualizationInfo(int entityId) {
+	public ImageVisualizationInfoDescription.Datum getEntityVisualizationInfo(final int entityId) {
 		final GameStateDescription initialState = history.getInitialState();
 		return initialState.getImageVisualizationInfoDescription().getData().get(entityId);
 	}
@@ -157,14 +157,14 @@ public final class GameContext {
 		return playerId;
 	}
 
-	public NavigableMap<Timestamp, List<Event>> getPrecedingEvents() {
+	public NavigableMap<LocalDateTime, List<Event>> getPrecedingEvents() {
 		return history.getEvents().headMap(time, true);
 	}
 
 	/**
 	 * @return the time
 	 */
-	public Timestamp getTime() {
+	public LocalDateTime getTime() {
 		return time;
 	}
 

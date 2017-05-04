@@ -21,12 +21,10 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
-import java.sql.Timestamp;
 import java.time.Duration;
-import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 import java.time.format.DateTimeParseException;
+import java.time.temporal.Temporal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.NavigableMap;
@@ -68,15 +66,13 @@ final class PlaybackFrame extends BasicGameViewFrame {
 	 */
 	private static final long serialVersionUID = 4991235485542157057L;
 
-	private static final ZoneId TIMEZONE = ZoneId.systemDefault();
-
 	private final JTextField currentTimeLabel;
 
 	private final GameEventReplayer eventReplayer;
 
 	private final List<Runnable> fileOpeningHooks = new ArrayList<>();
 
-	private final Instant gameStart;
+	private final LocalDateTime gameStart;
 
 	/**
 	 * @param boardPanel
@@ -92,22 +88,22 @@ final class PlaybackFrame extends BasicGameViewFrame {
 		setJMenuBar(createMenuBar());
 
 		{
-			final NavigableMap<Timestamp, List<Event>> timedEventMap = gameHistory.getEvents();
+			final NavigableMap<LocalDateTime, List<Event>> timedEventMap = gameHistory.getEvents();
 			final List<Event> events = timedEventMap.values().stream().flatMap(List::stream)
 					.collect(Collectors.toList());
 			eventReplayer = new GameEventReplayer(events, gameHistory.getStartTime(), controller);
 		}
 		{
-			gameStart = gameHistory.getStartTime().toInstant();
+			gameStart = gameHistory.getStartTime();
 			LOGGER.debug("Set game start as \"{}\".", gameStart);
 			currentTimeLabel = new JTextField(Durations.formatDuration(getGameDuration(gameStart)));
 			currentTimeLabel.addActionListener(actionEvent -> {
 				final String inputDurationStr = currentTimeLabel.getText();
 				try {
 					final Duration inputDuration = Durations.parseDuration(inputDurationStr);
-					final Timestamp inputTimestamp = getTimestamp(inputDuration);
+					final LocalDateTime inputTimestamp = getTimestamp(inputDuration);
 					LOGGER.debug("Timestamp for user input: {}", inputTimestamp);
-					final Timestamp currentTime = eventReplayer.getCurrentTime();
+					final LocalDateTime currentTime = eventReplayer.getCurrentTime();
 					LOGGER.debug("Event replayer's current time: {}", currentTime);
 					final int cmp = currentTime.compareTo(inputTimestamp);
 					if (cmp < 0) {
@@ -122,9 +118,8 @@ final class PlaybackFrame extends BasicGameViewFrame {
 				}
 				// Update outside of the try block in order to re-set the field
 				// in the case of bad inputs
-				final Timestamp currentTimestamp = eventReplayer.getCurrentTime();
-				final Instant currentInstant = currentTimestamp.toInstant();
-				final Duration currentGameDuration = getGameDuration(currentInstant);
+				final LocalDateTime currentTimestamp = eventReplayer.getCurrentTime();
+				final Duration currentGameDuration = getGameDuration(currentTimestamp);
 				currentTimeLabel.setText(Durations.formatDuration(currentGameDuration));
 			});
 		}
@@ -139,9 +134,8 @@ final class PlaybackFrame extends BasicGameViewFrame {
 				// Rewind one event
 				try {
 					eventReplayer.undoLastEvent();
-					final Timestamp eventTime = eventReplayer.getCurrentTime();
-					final Instant eventInstant = eventTime.toInstant();
-					currentTimeLabel.setText(Durations.formatDuration(getGameDuration(eventInstant)));
+					final LocalDateTime eventTime = eventReplayer.getCurrentTime();
+					currentTimeLabel.setText(Durations.formatDuration(getGameDuration(eventTime)));
 				} catch (final NoSuchElementException ex) {
 					JOptionPane.showMessageDialog(this, "No more events available in history.", "Beginning reached",
 							JOptionPane.WARNING_MESSAGE);
@@ -158,9 +152,8 @@ final class PlaybackFrame extends BasicGameViewFrame {
 				// Go forward one event
 				try {
 					eventReplayer.applyNextEvent();
-					final Timestamp eventTime = eventReplayer.getCurrentTime();
-					final Instant eventInstant = eventTime.toInstant();
-					currentTimeLabel.setText(Durations.formatDuration(getGameDuration(eventInstant)));
+					final LocalDateTime eventTime = eventReplayer.getCurrentTime();
+					currentTimeLabel.setText(Durations.formatDuration(getGameDuration(eventTime)));
 				} catch (final NoSuchElementException e) {
 					JOptionPane.showMessageDialog(this, "No more events available in history.", "End reached",
 							JOptionPane.WARNING_MESSAGE);
@@ -220,17 +213,15 @@ final class PlaybackFrame extends BasicGameViewFrame {
 		return result;
 	}
 
-	private Duration getGameDuration(final Instant lastInstant) {
+	private Duration getGameDuration(final Temporal lastInstant) {
 		return Duration.between(gameStart, lastInstant);
 	}
 
-	private Timestamp getTimestamp(final Duration gameDuration) {
+	private LocalDateTime getTimestamp(final Duration gameDuration) {
 		LOGGER.debug("Creating timestamp for duration \"{}\".", Durations.formatDuration(gameDuration));
-		final Instant lastInstant = gameStart.plus(gameDuration);
-		LOGGER.debug("Created last instant for given duration: {}", lastInstant);
-		final LocalDateTime lastTime = LocalDateTime.ofInstant(lastInstant, TIMEZONE);
+		final LocalDateTime lastTime = gameStart.plus(gameDuration);
 		LOGGER.debug("Created LocalDateTime: {}", lastTime);
-		return Timestamp.valueOf(lastTime);
+		return lastTime;
 	}
 
 }

@@ -17,6 +17,7 @@
 package se.kth.speech.coin.tangrams.iristk;
 
 import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -94,7 +95,7 @@ public final class GameEventReplayer {
 
 	private final Controller controller;
 
-	private Timestamp currentTime;
+	private LocalDateTime currentTime;
 
 	private int eventCount;
 
@@ -102,10 +103,10 @@ public final class GameEventReplayer {
 
 	private final List<Event> events;
 
-	private final Timestamp initialTime;
+	private final LocalDateTime initialTime;
 
-	public GameEventReplayer(final List<Event> events, final Timestamp initialTime, final Controller controller) {
-		if (Timestamp.valueOf(events.iterator().next().getTime()).before(initialTime)) {
+	public GameEventReplayer(final List<Event> events, final LocalDateTime initialTime, final Controller controller) {
+		if (EventTimes.parseEventTime(events.iterator().next().getTime()).isBefore(initialTime)) {
 			throw new IllegalArgumentException(
 					"The first event in the provided list has a timestamp before the provided initial time.");
 		}
@@ -131,7 +132,7 @@ public final class GameEventReplayer {
 	/**
 	 * @return the currentTime
 	 */
-	public Timestamp getCurrentTime() {
+	public LocalDateTime getCurrentTime() {
 		return currentTime;
 	}
 
@@ -156,15 +157,15 @@ public final class GameEventReplayer {
 	 * @param startTime
 	 * @return
 	 */
-	public synchronized List<Event> undoTo(final Timestamp startTime) {
+	public synchronized List<Event> undoTo(final LocalDateTime startTime) {
 		final List<Event> result = new ArrayList<>(eventCount);
 		// Retreat in the replay history
 		final int oldEventCount = eventCount;
 		while (eventIter.hasPrevious()) {
 			final Event previousEvent = eventIter.previous();
 			final String previousEventTimeStr = previousEvent.getTime();
-			final Timestamp previousEventTime = Timestamp.valueOf(previousEvent.getTime());
-			if (previousEventTime.before(startTime)) {
+			final LocalDateTime previousEventTime = EventTimes.parseEventTime(previousEvent.getTime());
+			if (previousEventTime.isBefore(startTime)) {
 				// Put the iterator pointer back to where it was before
 				eventIter.next();
 				LOGGER.debug(
@@ -207,7 +208,7 @@ public final class GameEventReplayer {
 			}
 			notifyEvents(undoEvents);
 			final Event lastEvent = undoEvents.listIterator().next();
-			currentTime = Timestamp.valueOf(lastEvent.getTime());
+			currentTime = EventTimes.parseEventTime(lastEvent.getTime());
 			LOGGER.debug("Set current time to \"{}\".", currentTime);
 		}
 		return result;
@@ -217,15 +218,15 @@ public final class GameEventReplayer {
 	 * @param endTime
 	 * @return
 	 */
-	public synchronized List<Event> updateTo(final Timestamp endTime) {
+	public synchronized List<Event> updateTo(final LocalDateTime endTime) {
 		final List<Event> result;
 		// Advance in the replay history
 		final int oldEventCount = eventCount;
 		while (eventIter.hasNext()) {
 			final Event nextEvent = eventIter.next();
 			final String nextEventTimeStr = nextEvent.getTime();
-			final Timestamp nextEventTime = Timestamp.valueOf(nextEvent.getTime());
-			if (nextEventTime.after(endTime)) {
+			final LocalDateTime nextEventTime = EventTimes.parseEventTime(nextEvent.getTime());
+			if (nextEventTime.isAfter(endTime)) {
 				// Put the iterator pointer back to where it was before
 				eventIter.previous();
 				LOGGER.debug(
@@ -245,7 +246,7 @@ public final class GameEventReplayer {
 		} else {
 			notifyEvents(result);
 			final Event lastEvent = result.listIterator(result.size()).previous();
-			currentTime = Timestamp.valueOf(lastEvent.getTime());
+			currentTime = EventTimes.parseEventTime(lastEvent.getTime());
 			LOGGER.debug("Set current time to \"{}\".", currentTime);
 		}
 		return result;
@@ -253,7 +254,7 @@ public final class GameEventReplayer {
 
 	private void applyEvent(final Event nextEvent) {
 		notifyEvents(Collections.singletonList(nextEvent));
-		currentTime = Timestamp.valueOf(nextEvent.getTime());
+		currentTime = EventTimes.parseEventTime(nextEvent.getTime());
 		LOGGER.debug("Set current time to \"{}\".", currentTime);
 		eventCount++;
 	}
@@ -334,7 +335,7 @@ public final class GameEventReplayer {
 	private void undoEvent(final Event eventToUndo, final String precedingEventTime) {
 		final Event undoEvent = createUndoEvent(eventToUndo, precedingEventTime);
 		notifyEvents(Collections.singletonList(undoEvent));
-		currentTime = Timestamp.valueOf(undoEvent.getTime());
+		currentTime = EventTimes.parseEventTime(undoEvent.getTime());
 		LOGGER.debug("Set current time to \"{}\".", currentTime);
 		eventCount--;
 	}

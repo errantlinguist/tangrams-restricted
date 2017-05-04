@@ -16,7 +16,7 @@
 */
 package se.kth.speech.coin.tangrams.analysis;
 
-import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.NavigableMap;
@@ -31,6 +31,7 @@ import org.slf4j.LoggerFactory;
 
 import iristk.system.Event;
 import se.kth.speech.TimestampArithmetic;
+import se.kth.speech.coin.tangrams.iristk.EventTimes;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -53,25 +54,17 @@ public final class UtteranceGameContextFactory implements BiFunction<Utterance, 
 	public Stream<GameContext> apply(final Utterance utt, final String playerId) {
 		LOGGER.debug("Getting history for player \"{}\".", playerId);
 		final GameHistory history = playerGameHistoryFactory.apply(playerId);
-		final NavigableMap<Timestamp, List<Event>> events = history.getEvents();
-		final float uttStartMills = utt.getStartTime() * SegmentTimes.TIME_TO_MILLS_FACTOR;
-		final Timestamp gameStartTime = history.getStartTime();
-		final Timestamp uttStartTimestamp = TimestampArithmetic.createOffsetTimestamp(gameStartTime, uttStartMills);
+		final NavigableMap<LocalDateTime, List<Event>> events = history.getEvents();
+		final LocalDateTime gameStartTime = history.getStartTime();
+		final LocalDateTime uttStartTimestamp = TimestampArithmetic.createOffsetTimestamp(gameStartTime,
+				utt.getStartTime());
 
-		final float uttEndMills = utt.getEndTime() * SegmentTimes.TIME_TO_MILLS_FACTOR;
-		assert uttStartMills <= uttEndMills;
-		// System.out.println(uttStartMills + " " + uttEndMills);
-		final Timestamp uttEndTimestamp = TimestampArithmetic.createOffsetTimestamp(gameStartTime, uttEndMills);
-		// assert uttStartTimestamp.compareTo(uttEndTimestamp) >= 0;
-		System.out.println(utt.getTokens());
-		final NavigableMap<Timestamp, List<Event>> eventsDuringUtt;
-		if (uttEndTimestamp.compareTo(uttStartTimestamp) < 0) {
-			LOGGER.warn("Weird utterance: {} {} {}", new Object[] { uttStartTimestamp, uttEndTimestamp },
-					utt.getTokens());
-			eventsDuringUtt = events.subMap(uttEndTimestamp, true, uttEndTimestamp, true);
-		} else {
-			eventsDuringUtt = events.subMap(uttStartTimestamp, true, uttEndTimestamp, true);
-		}
+		assert utt.getStartTime() <= utt.getEndTime();
+		final LocalDateTime uttEndTimestamp = TimestampArithmetic.createOffsetTimestamp(gameStartTime,
+				utt.getEndTime());
+		assert uttStartTimestamp.isBefore(uttEndTimestamp) || uttStartTimestamp.isEqual(uttEndTimestamp);
+		final NavigableMap<LocalDateTime, List<Event>> eventsDuringUtt = events.subMap(uttStartTimestamp, true,
+				uttEndTimestamp, true);
 
 		final Stream.Builder<GameContext> resultBuilder = Stream.builder();
 		if (eventsDuringUtt.isEmpty()) {
@@ -91,8 +84,8 @@ public final class UtteranceGameContextFactory implements BiFunction<Utterance, 
 								utt.getTokens().stream().collect(TOKEN_FORM_JOINER), uttRepr });
 			}
 			final Stream<Event> allEventsDuringUtt = timedEvents.stream().flatMap(Collection::stream);
-			final Stream<Timestamp> allTimestampsDuringUtt = allEventsDuringUtt.map(Event::getTime)
-					.map(Timestamp::valueOf);
+			final Stream<LocalDateTime> allTimestampsDuringUtt = allEventsDuringUtt.map(Event::getTime)
+					.map(EventTimes::parseEventTime);
 			allTimestampsDuringUtt.map(timestampDuringUtt -> new GameContext(history, timestampDuringUtt, playerId))
 					.forEachOrdered(resultBuilder);
 		}

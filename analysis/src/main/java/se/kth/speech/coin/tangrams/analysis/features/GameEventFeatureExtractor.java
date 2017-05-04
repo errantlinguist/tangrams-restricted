@@ -16,7 +16,7 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features;
 
-import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.EnumSet;
@@ -89,7 +89,7 @@ final class GameEventFeatureExtractor implements GameContextFeatureExtractor {
 			for (final ActionFeature feature : ORDERING) {
 				switch (feature) {
 				case LAST_SUBMITTED_EVENT_TYPE: {
-					final NavigableMap<Timestamp, List<Event>> timedEventsBeforeUtt = context.getPrecedingEvents();
+					final NavigableMap<LocalDateTime, List<Event>> timedEventsBeforeUtt = context.getPrecedingEvents();
 					// Look for the last time the speaking player submitted an
 					// event, iterating backwards
 					final Stream<Event> eventsReversed = timedEventsBeforeUtt.descendingMap().values().stream()

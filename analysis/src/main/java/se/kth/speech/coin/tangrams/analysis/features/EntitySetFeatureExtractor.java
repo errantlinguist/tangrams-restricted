@@ -16,7 +16,7 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features;
 
-import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
@@ -82,8 +82,8 @@ final class EntitySetFeatureExtractor implements GameContextFeatureExtractor {
 	}
 
 	private static void updateToTime(final SpatialMatrix<Integer> model,
-			final NavigableMap<Timestamp, List<Event>> timestampedEvents, final Timestamp time) {
-		final NavigableMap<Timestamp, List<Event>> timestampedEventsToApply = timestampedEvents.headMap(time, true);
+			final NavigableMap<LocalDateTime, List<Event>> timestampedEvents, final LocalDateTime time) {
+		final NavigableMap<LocalDateTime, List<Event>> timestampedEventsToApply = timestampedEvents.headMap(time, true);
 		final Stream<Event> eventsToApply = timestampedEventsToApply.values().stream().flatMap(List::stream);
 		eventsToApply.forEachOrdered(event -> applyEvent(model, event));
 	}
@@ -125,11 +125,11 @@ final class EntitySetFeatureExtractor implements GameContextFeatureExtractor {
 		}).flatMap(Function.identity());
 	}
 
-	private void extractFeatures(final GameHistory history, final Timestamp time, final DoubleStream.Builder vals) {
+	private void extractFeatures(final GameHistory history, final LocalDateTime time, final DoubleStream.Builder vals) {
 		final GameStateDescription initialState = history.getInitialState();
 		final SpatialMatrix<Integer> model = copyInitialModel(
 				initialGameModelFactory.apply(initialState.getModelDescription()));
-		final NavigableMap<Timestamp, List<Event>> events = history.getEvents();
+		final NavigableMap<LocalDateTime, List<Event>> events = history.getEvents();
 		updateToTime(model, events, time);
 		extractFeatures(model, initialState.getImageVisualizationInfoDescription().getData(), vals);
 	}

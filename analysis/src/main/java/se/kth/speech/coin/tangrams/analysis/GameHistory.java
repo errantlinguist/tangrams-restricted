@@ -16,7 +16,7 @@
 */
 package se.kth.speech.coin.tangrams.analysis;
 
-import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.NavigableMap;
@@ -28,13 +28,13 @@ import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
 
 public final class GameHistory {
 
-	private final NavigableMap<Timestamp, List<Event>> events = new TreeMap<>();
+	private final NavigableMap<LocalDateTime, List<Event>> events = new TreeMap<>();
 
 	private final GameStateDescription initialState;
 
-	private final Timestamp startTime;
+	private final LocalDateTime startTime;
 
-	GameHistory(final GameStateDescription initialState, final Timestamp startTime) {
+	GameHistory(final GameStateDescription initialState, final LocalDateTime startTime) {
 		this.initialState = initialState;
 		this.startTime = startTime;
 	}
@@ -83,7 +83,7 @@ public final class GameHistory {
 	/**
 	 * @return the events
 	 */
-	public NavigableMap<Timestamp, List<Event>> getEvents() {
+	public NavigableMap<LocalDateTime, List<Event>> getEvents() {
 		return events;
 	}
 
@@ -101,7 +101,7 @@ public final class GameHistory {
 	/**
 	 * @return the startTime
 	 */
-	public Timestamp getStartTime() {
+	public LocalDateTime getStartTime() {
 		return startTime;
 	}
 

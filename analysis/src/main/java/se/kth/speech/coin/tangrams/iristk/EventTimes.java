@@ -14,28 +14,22 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech;
+package se.kth.speech.coin.tangrams.iristk;
 
-import java.time.Duration;
 import java.time.LocalDateTime;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
- * @since 11 Apr 2017
+ * @since 4 May 2017
  *
  */
-public final class TimestampArithmetic {
+public final class EventTimes {
 
-	public static LocalDateTime createOffsetTimestamp(final LocalDateTime augend, final double offsetSecs) {
-		final long wholePart = Math.round(Math.floor(offsetSecs));
-		final double fractionPart = offsetSecs - wholePart;
-		final long nanos = Math.round(fractionPart * 1000000000);
-		final Duration duration = Duration.ofSeconds(wholePart, nanos);
-		return augend.plus(duration);
+	public static LocalDateTime parseEventTime(final String timeStr) {
+		return LocalDateTime.parse(timeStr.replace(" ", "T"));
 	}
 
-	private TimestampArithmetic() {
-
+	private EventTimes() {
 	}
 
 }

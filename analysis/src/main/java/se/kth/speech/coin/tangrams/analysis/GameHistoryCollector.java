@@ -16,7 +16,7 @@
 */
 package se.kth.speech.coin.tangrams.analysis;
 
-import java.sql.Timestamp;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
@@ -34,6 +34,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import iristk.system.Event;
+import se.kth.speech.coin.tangrams.iristk.EventTimes;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
 
@@ -68,12 +69,12 @@ public final class GameHistoryCollector
 				final String time = event.getTime();
 				LOGGER.debug("Found {} sent at \"{}\".", new Object[] { event.getClass().getSimpleName(), time });
 				final String gameId = event.getString(GameManagementEvent.Attribute.GAME_ID.toString());
-				final Timestamp timestamp = Timestamp.valueOf(time);
+				final LocalDateTime timestamp = EventTimes.parseEventTime(time);
 				accept(gameHistories, gameId, timestamp, gameEventType, event);
 			}
 		}
 
-		private void accept(final Map<String, GameHistory> gameHistories, final String gameId, final Timestamp time,
+		private void accept(final Map<String, GameHistory> gameHistories, final String gameId, final LocalDateTime time,
 				final GameManagementEvent gameEventType, final Event event) {
 			if (ignoredEventTypes.contains(gameEventType)) {
 				LOGGER.debug("Ignored event of type {} sent at \"{}\".", new Object[] { gameEventType, time });
@@ -100,8 +101,8 @@ public final class GameHistoryCollector
 		 * @param timestamp
 		 * @param event
 		 */
-		private void addEvent(final Map<String, GameHistory> gameHistories, final String gameId, final Timestamp time,
-				final Event event) {
+		private void addEvent(final Map<String, GameHistory> gameHistories, final String gameId,
+				final LocalDateTime time, final Event event) {
 			gameHistories.compute(gameId, (gKey, oldVal) -> {
 				if (oldVal == null) {
 					throw new IllegalArgumentException(String.format(
@@ -122,7 +123,7 @@ public final class GameHistoryCollector
 		 * @param gameDesc
 		 */
 		private void putInitialState(final Map<String, GameHistory> gameHistories, final String gameId,
-				final Timestamp startTime, final GameStateDescription gameDesc) {
+				final LocalDateTime startTime, final GameStateDescription gameDesc) {
 			gameHistories.compute(gameId, (key, oldVal) -> {
 				final GameHistory result;
 				if (oldVal == null) {
@@ -157,7 +158,7 @@ public final class GameHistoryCollector
 						// Sanity check
 						if (Objects.equals(sourceGameData.getStartTime(), oldVal.getStartTime())) {
 							if (Objects.equals(sourceGameData.getInitialState(), oldVal.getInitialState())) {
-								final Map<Timestamp, List<Event>> targetLoggedEventMap = oldVal.getEvents();
+								final Map<LocalDateTime, List<Event>> targetLoggedEventMap = oldVal.getEvents();
 								sourceGameData.getEvents().forEach((time, sourceLoggedEventList) -> {
 									final List<Event> targetEventList = targetLoggedEventMap.computeIfAbsent(time,
 											tKey -> new ArrayList<>(EXPECTED_EVENTS_FOR_TIMESTAMP));
