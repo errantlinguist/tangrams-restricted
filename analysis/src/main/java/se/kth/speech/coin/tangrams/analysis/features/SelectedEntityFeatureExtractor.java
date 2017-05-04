@@ -24,9 +24,9 @@ import java.util.stream.DoubleStream;
 import java.util.stream.Stream;
 
 import se.kth.speech.IntArrays;
-import se.kth.speech.MutablePair;
 import se.kth.speech.SpatialMatrix;
 import se.kth.speech.SpatialRegion;
+import se.kth.speech.coin.tangrams.analysis.EntityStateDescriptions;
 import se.kth.speech.coin.tangrams.analysis.GameContext;
 import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
 import se.kth.speech.coin.tangrams.iristk.events.ImageVisualizationInfoDescription;
@@ -46,15 +46,9 @@ final class SelectedEntityFeatureExtractor implements GameContextFeatureExtracto
 	@Override
 	public void accept(final GameContext context, final DoubleStream.Builder vals) {
 		final SpatialMatrix<Integer> model = gameModelFactory.apply(context);
-		final Optional<Integer> lastSelectedEntityId = context.findLastSelectedEntityId();
-		final Optional<Entry<ImageVisualizationInfoDescription.Datum, SpatialRegion>> entityData = lastSelectedEntityId
-				.map(entityId -> {
-					final ImageVisualizationInfoDescription.Datum imgVizInfoDatum = context
-							.getEntityVisualizationInfo(entityId);
-					final SpatialRegion region = model.getElementPlacements().getElementMinimalRegions().get(entityId);
-					return new MutablePair<>(imgVizInfoDatum, region);
-				});
-		extractFeatures(model, entityData, vals);
+		final Optional<Entry<ImageVisualizationInfoDescription.Datum, SpatialRegion>> selectedEntityDesc = EntityStateDescriptions
+				.createSelectedEntityDescription(context, model);
+		extractFeatures(model, selectedEntityDesc, vals);
 	}
 
 	/*
