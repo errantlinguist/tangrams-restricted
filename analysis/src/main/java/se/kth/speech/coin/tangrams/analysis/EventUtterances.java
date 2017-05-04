@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import iristk.system.Event;
@@ -37,7 +38,12 @@ public final class EventUtterances {
 
 	public static Stream<Entry<Event, List<Utterance>>> createEventUtteranceMappings(final List<Utterance> utts,
 			final GameHistory history) {
-		final Stream<Event> events = history.getEvents().values().stream().flatMap(List::stream);
+		return createEventUtteranceMappings(utts, history, event -> true);
+	}
+
+	public static Stream<Entry<Event, List<Utterance>>> createEventUtteranceMappings(final List<Utterance> utts,
+			final GameHistory history, final Predicate<? super Event> eventFilter) {
+		final Stream<Event> events = history.getEvents().values().stream().flatMap(List::stream).filter(eventFilter);
 		final Timestamp gameStartTime = history.getStartTime();
 
 		final Stream<Entry<Event, List<Utterance>>> result;
