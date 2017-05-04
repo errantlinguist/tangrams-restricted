@@ -16,6 +16,7 @@
 */
 package se.kth.speech.coin.tangrams.analysis;
 
+import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
@@ -35,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -94,8 +96,9 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 		INPATH("i") {
 			@Override
 			public Option get() {
-				return Option.builder(optName).longOpt("inpath").desc("The path to the HAT file corpus to process.")
-						.hasArg().argName("path").type(File.class).required().build();
+				return Option.builder(optName).longOpt("inpath")
+						.desc("The path to the property file(s) describing the job(s) to process.").hasArg()
+						.argName("path").type(File.class).required().build();
 			}
 		},
 		OUTFILE_PREFIX("p") {
@@ -162,18 +165,20 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 		TABLE_ROW_CELL_JOINER = Collectors.joining(TABLE_STRING_REPR_COL_DELIMITER);
 	}
 
+	private static final List<FileNameExtensionFilter> FILE_FILTERS = Arrays
+			.asList(new FileNameExtensionFilter("Property files (*.properties)", "properties"));
+
 	public static void main(final String[] args) throws IOException, JAXBException, InterruptedException {
 		if (args.length < 1) {
 			final JFileChooser fileChooser = new JFileChooser(System.getProperty("user.dir"));
-			final FileNameExtensionFilter filter = new FileNameExtensionFilter("XML files (*.xml)", "xml");
-			fileChooser.setFileFilter(filter);
+			FILE_FILTERS.stream().forEachOrdered(fileChooser::addChoosableFileFilter);
 			fileChooser.setDialogTitle("Input file");
 			fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-			UserPrompts.promptFile(fileChooser).ifPresent(inpath -> {
+			UserPrompts.promptFile(fileChooser).map(File::toPath).ifPresent(inpath -> {
 				LOGGER.info("Will read annotations from \"{}\".", inpath);
 				fileChooser.setDialogTitle("Output dir");
 				fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-				fileChooser.removeChoosableFileFilter(filter);
+				FILE_FILTERS.stream().forEachOrdered(fileChooser::removeChoosableFileFilter);
 				UserPrompts.promptFile(fileChooser).map(File::toPath).ifPresent(outpath -> {
 					LOGGER.info("Will write data to \"{}\".", outpath);
 					UserPrompts.promptNonBlankString("Enter output filename prefix.", DEFAULT_OUTFILE_PREFIX)
@@ -196,8 +201,8 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 				if (cl.hasOption(Parameter.HELP.optName)) {
 					printHelp();
 				} else {
-					final File inpath = (File) cl.getParsedOptionValue(Parameter.INPATH.optName);
-					LOGGER.info("Will read annotations from \"{}\".", inpath);
+					final Path inpath = ((File) cl.getParsedOptionValue(Parameter.INPATH.optName)).toPath();
+					LOGGER.info("Will read batch job data from \"{}\".", inpath);
 					final Path outpath = ((File) cl.getParsedOptionValue(Parameter.OUTPATH.optName)).toPath();
 					LOGGER.info("Will write data to \"{}\".", outpath);
 					final String outfileNamePrefix = parseOutfilePrefix(cl, inpath);
@@ -270,8 +275,8 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 		return uttStrs.collect(SENTENCE_JOINER);
 	}
 
-	private static String parseOutfilePrefix(final CommandLine cl, final File inpath) {
-		final String infix = new FilenameBaseSplitter().apply(inpath.getName())[0] + "_LOG-";
+	private static String parseOutfilePrefix(final CommandLine cl, final Path inpath) {
+		final String infix = new FilenameBaseSplitter().apply(inpath.getFileName().toString())[0] + "_LOG-";
 		final String prefix = cl.getOptionValue(Parameter.OUTFILE_PREFIX.optName, DEFAULT_OUTFILE_PREFIX);
 		return prefix + infix;
 	}
@@ -281,20 +286,26 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 		formatter.printHelp(EventUtterancePrinter.class.getName(), OPTIONS);
 	}
 
-	private static void run(final File inpath, final Path outpath, final String outfileNamePrefix)
+	private static void run(final Path inpath, final Path outpath, final String outfileNamePrefix)
 			throws JAXBException, IOException {
-		LOGGER.info("Reading annotations from \"{}\".", inpath);
-		final Annotation uttAnnots = HAT.readAnnotation(inpath);
+		LOGGER.info("Reading batch job properties from \"{}\".", inpath);
+		final Properties props = new Properties();
+		try (final BufferedReader propsReader = Files.newBufferedReader(inpath)) {
+			props.load(propsReader);
+		}
+		run(props, inpath.getParent(), outpath, outfileNamePrefix);
+	}
 
-		final Map<String, String> sourceIdPlayerIds = Annotations.createSourceIdPlayerIdMap(uttAnnots);
-		final Set<String> playerIds = new HashSet<>(sourceIdPlayerIds.values());
-		final int expectedEventLogFileCount = playerIds.size();
-		final Path sessionLogDir = inpath.getParentFile().toPath();
-		LOGGER.info("Processing session log directory \"{}\".", sessionLogDir);
-		final Map<String, Path> playerEventLogFilePaths = LoggedEvents.createPlayerEventLogFileMap(sessionLogDir,
-				expectedEventLogFileCount);
+	private static void run(final Properties props, final Path infileBaseDir, final Path outpath,
+			final String outfileNamePrefix) throws JAXBException, IOException {
+		final Path hatInfilePath = infileBaseDir.resolve(props.getProperty("hat"));
+		LOGGER.info("Reading annotations from \"{}\".", hatInfilePath);
+		final Annotation uttAnnots = HAT.readAnnotation(hatInfilePath.toFile());
+
+		final PlayerDataManager playerData = PlayerDataManager.parsePlayerProps(props, infileBaseDir);
+
 		final Table<String, String, GameHistory> playerGameHistoryTable = LoggedEvents.createPlayerGameHistoryTable(
-				playerEventLogFilePaths.entrySet(), EXPECTED_UNIQUE_GAME_COUNT, REQUIRED_EVENT_MATCHER);
+				playerData.getPlayerEventLogs().entrySet(), EXPECTED_UNIQUE_GAME_COUNT, REQUIRED_EVENT_MATCHER);
 		final Set<String> playerGameIdIntersection = new HashSet<>(playerGameHistoryTable.columnKeySet());
 		playerGameHistoryTable.rowMap().values().stream().map(Map::keySet).forEach(playerGameIdIntersection::retainAll);
 		final int gameCount = playerGameIdIntersection.size();
@@ -315,7 +326,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 
 			final List<Segment> segments = uttAnnots.getSegments().getSegment();
 			final Map<Utterance, String> uttPlayerIds = new UtterancePlayerIdMapFactory(SEG_UTT_FACTORY,
-					sourceIdPlayerIds::get).apply(segments);
+					playerData.getPlayerSourceIds().inverse()::get).apply(segments);
 			final List<Utterance> utts = Arrays
 					.asList(uttPlayerIds.keySet().stream()
 							.sorted(Comparator.comparing(Utterance::getStartTime)
@@ -325,7 +336,8 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 			final UtteranceGameContextFactory uttContextFactory = new UtteranceGameContextFactory(
 					playerGameHistories::get);
 			final int uniqueModelDescriptionCount = playerGameHistoryTable.values().size();
-//			final GameContextModelFactory gameModelFactory = new GameContextModelFactory(uniqueModelDescriptionCount);
+			// final GameContextModelFactory gameModelFactory = new
+			// GameContextModelFactory(uniqueModelDescriptionCount);
 			final ImageVisualizationInfoUnmarshaller imgVizInfoUnmarshaller = new ImageVisualizationInfoUnmarshaller();
 			final SelectedEntityFeatureExtractor entityFeatureExtractor = new SelectedEntityFeatureExtractor(
 					new GameContextModelFactory(uniqueModelDescriptionCount), new ImageEdgeCounter());
