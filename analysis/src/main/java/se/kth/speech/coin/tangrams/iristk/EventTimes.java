@@ -26,7 +26,7 @@ import java.time.LocalDateTime;
 public final class EventTimes {
 
 	public static LocalDateTime parseEventTime(final String timeStr) {
-		return LocalDateTime.parse(timeStr.replace(" ", "T"));
+		return LocalDateTime.parse(timeStr.replace(' ', 'T'));
 	}
 
 	private EventTimes() {
