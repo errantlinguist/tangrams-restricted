@@ -25,6 +25,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.regex.Pattern;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -51,10 +52,20 @@ public final class SegmentUtteranceFactory implements Function<Segment, List<Utt
 		DEFAULT_MIN_SEG_SPACING = 1.0f / SegmentTimes.TIME_TO_MILLS_FACTOR;
 	}
 
+	// private static Function<String, List<String>> createDefaultTokenizer() {
+	// final Predicate<String> nonMetaLanguagePredicate = token ->
+	// !META_LANGUAGE_TOKENS.contains(token);
+	// final StanfordNLPTokenizer stanfordTokenizer = new
+	// StanfordNLPTokenizer(nonMetaLanguagePredicate);
+	// return stanfordTokenizer;
+	// }
+
+	private static final Pattern WHITESPACE_PATTERN = Pattern.compile("\\s+");
+
 	private static Function<String, List<String>> createDefaultTokenizer() {
 		final Predicate<String> nonMetaLanguagePredicate = token -> !META_LANGUAGE_TOKENS.contains(token);
-		final StanfordNLPTokenizer stanfordTokenizer = new StanfordNLPTokenizer(nonMetaLanguagePredicate);
-		return stanfordTokenizer;
+		return str -> Arrays
+				.asList(WHITESPACE_PATTERN.splitAsStream(str).filter(nonMetaLanguagePredicate).toArray(String[]::new));
 	}
 
 	// private static Function<String, Stream<String>> createDefaultTokenizer()
@@ -107,8 +118,8 @@ public final class SegmentUtteranceFactory implements Function<Segment, List<Utt
 						// preceding this segment, finish building it
 						if (!currentTokenSeq.isEmpty()) {
 							final float nextUttStartTime = childUtts.get(0).getStartTime();
-							createUtterance(parentSegmentId, currentTokenSeq, prevUttEndTime,
-									nextUttStartTime).ifPresent(result::add);
+							createUtterance(parentSegmentId, currentTokenSeq, prevUttEndTime, nextUttStartTime)
+									.ifPresent(result::add);
 							currentTokenSeq = new ArrayList<>();
 						}
 						// Add the newly-created child utterances after adding
@@ -127,7 +138,8 @@ public final class SegmentUtteranceFactory implements Function<Segment, List<Utt
 					// Add the last token sequence
 					final Float uttEndTime = segment.getEnd();
 					assert uttEndTime != null;
-					createUtterance(parentSegmentId, currentTokenSeq, prevUttEndTime, uttEndTime).ifPresent(result::add);
+					createUtterance(parentSegmentId, currentTokenSeq, prevUttEndTime, uttEndTime)
+							.ifPresent(result::add);
 				}
 			}
 		}
