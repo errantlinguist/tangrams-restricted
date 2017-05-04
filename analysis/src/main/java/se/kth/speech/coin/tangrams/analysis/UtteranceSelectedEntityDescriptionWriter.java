@@ -279,7 +279,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 			final Function<? super Utterance, String> uttPlayerIdGetter) {
 		final Stream<String> uttStrs = utts.map(utt -> {
 			final String playerId = uttPlayerIdGetter.apply(utt);
-			return "**" + playerId + "**: \"" + utt.getTokens().stream().collect(WORD_JOINER) + "\"";
+			return "**" + playerId + ":** \"" + utt.getTokens().stream().collect(WORD_JOINER) + "\"";
 		});
 		return uttStrs.collect(SENTENCE_JOINER);
 	}
