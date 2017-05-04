@@ -23,11 +23,8 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.sql.Timestamp;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -61,8 +58,6 @@ import com.google.common.collect.Table;
 import iristk.system.Event;
 import iristk.util.HAT;
 import se.kth.speech.FilenameBaseSplitter;
-import se.kth.speech.MutablePair;
-import se.kth.speech.TimestampArithmetic;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
@@ -74,7 +69,7 @@ import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
  * @since Apr 17, 2017
  */
-public final class EventUtterancePrinter implements Function<GameHistory, Stream<Entry<Event, List<Utterance>>>> {
+public final class EventUtterancePrinter {
 
 	private enum Parameter implements Supplier<Option> {
 		HELP("?") {
@@ -113,6 +108,8 @@ public final class EventUtterancePrinter implements Function<GameHistory, Stream
 
 	}
 
+	private static final String DEFAULT_OUTFILE_PREFIX = "eventUtts_";
+
 	private static final int EXPECTED_UNIQUE_GAME_COUNT = 1;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(EventUtterancePrinter.class);
@@ -120,8 +117,6 @@ public final class EventUtterancePrinter implements Function<GameHistory, Stream
 	private static final Options OPTIONS = createOptions();
 
 	private static final Function<Segment, List<Utterance>> SEG_UTT_FACTORY = new SegmentUtteranceFactory();
-
-	private static final String DEFAULT_OUTFILE_PREFIX = "eventUtts_";
 
 	public static void main(final String[] args) throws IOException, JAXBException, InterruptedException {
 		if (args.length < 1) {
@@ -241,11 +236,11 @@ public final class EventUtterancePrinter implements Function<GameHistory, Stream
 			final List<Utterance> utts = uttPlayerIds.keySet().stream().sorted(Comparator
 					.comparing(Utterance::getStartTime).thenComparing(Comparator.comparing(Utterance::getEndTime)))
 					.collect(Collectors.toList());
-			final EventUtterancePrinter replayer = new EventUtterancePrinter(utts);
 			final Collector<CharSequence, ?, String> joiner = Collectors.joining(" ");
 			playerGameHistories.forEach((playerId, history) -> {
 				final Path outfilePath = outpath.resolve(outfileNamePrefix + playerId + ".txt");
-				final Stream<Entry<Event, List<Utterance>>> eventUttLists = replayer.apply(history);
+				final Stream<Entry<Event, List<Utterance>>> eventUttLists = EventUtterances
+						.createEventUtteranceMappings(utts, history);
 				LOGGER.info("Writing utterances from perspective of \"{}\" to \"{}\".", playerId, outfilePath);
 				try (BufferedWriter writer = Files.newBufferedWriter(outfilePath, StandardOpenOption.CREATE,
 						StandardOpenOption.TRUNCATE_EXISTING)) {
@@ -294,100 +289,6 @@ public final class EventUtterancePrinter implements Function<GameHistory, Stream
 			throw new UnsupportedOperationException(
 					String.format("No logic for handling a game count of %d.", gameCount));
 		}
-	}
-
-	private final List<Utterance> utts;
-
-	public EventUtterancePrinter(final List<Utterance> utts) {
-		this.utts = utts;
-	}
-
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see java.util.function.Function#apply(java.lang.Object)
-	 */
-	@Override
-	public Stream<Entry<Event, List<Utterance>>> apply(final GameHistory history) {
-		final Stream<Event> events = history.getEvents().values().stream().flatMap(List::stream);
-		final Timestamp gameStartTime = history.getStartTime();
-
-		final Stream<Entry<Event, List<Utterance>>> result;
-
-		final Iterator<Event> eventIter = events.iterator();
-		if (eventIter.hasNext()) {
-			final Iterator<Utterance> uttIter = utts.iterator();
-			if (uttIter.hasNext()) {
-				final Stream.Builder<Entry<Event, List<Utterance>>> resultBuilder = Stream.builder();
-				Event currentEvent = null;
-				List<Utterance> nextUttList = new ArrayList<>();
-				{
-					// Find all utterances up to the first event
-					final Event firstEvent = eventIter.next();
-					final Timestamp firstEventTimestamp = Timestamp.valueOf(firstEvent.getTime());
-					do {
-						final Utterance nextUtt = uttIter.next();
-						final float uttStartMills = nextUtt.getStartTime() * SegmentTimes.TIME_TO_MILLS_FACTOR;
-						final Timestamp uttStartTimestamp = TimestampArithmetic.createOffsetTimestamp(gameStartTime,
-								uttStartMills);
-						// If the utterance was before the first event, add it
-						// to the
-						// list of before-event utterances
-						if (uttStartTimestamp.compareTo(firstEventTimestamp) < 0) {
-							nextUttList.add(nextUtt);
-						} else {
-							break;
-						}
-					} while (uttIter.hasNext());
-					// Add the first list only if any utterances preceding the
-					// first event were found
-					if (!nextUttList.isEmpty()) {
-						resultBuilder.accept(new MutablePair<>(null, nextUttList));
-						nextUttList = new ArrayList<>();
-					}
-
-					currentEvent = firstEvent;
-				}
-				{
-					// Find the next set of utterances following each event
-					while (eventIter.hasNext()) {
-						final Event nextEvent = eventIter.next();
-						final Timestamp nextEventTimestamp = Timestamp.valueOf(nextEvent.getTime());
-						eventUtts: while (uttIter.hasNext()) {
-							final Utterance nextUtt = uttIter.next();
-							final float uttStartMills = nextUtt.getStartTime() * SegmentTimes.TIME_TO_MILLS_FACTOR;
-							final Timestamp uttStartTimestamp = TimestampArithmetic.createOffsetTimestamp(gameStartTime,
-									uttStartMills);
-							// If the utterance was before the next event, add
-							// it to the
-							// list of utterances for the current event
-							if (uttStartTimestamp.compareTo(nextEventTimestamp) < 0) {
-								nextUttList.add(nextUtt);
-							} else {
-								resultBuilder.accept(new MutablePair<>(currentEvent, nextUttList));
-								nextUttList = new ArrayList<>();
-								nextUttList.add(nextUtt);
-								currentEvent = nextEvent;
-								break eventUtts;
-							}
-						}
-					}
-				}
-
-				result = resultBuilder.build();
-
-			} else {
-				// No utterances were found; Return an empty list of utterances
-				// for each event
-				final List<Utterance> nullList = Collections.emptyList();
-				result = events.map(event -> new MutablePair<>(event, nullList));
-			}
-
-		} else {
-			// No events were found; Return all the utterances
-			result = Stream.of(new MutablePair<>(null, Collections.unmodifiableList(utts)));
-		}
-		return result;
 	}
 
 }
