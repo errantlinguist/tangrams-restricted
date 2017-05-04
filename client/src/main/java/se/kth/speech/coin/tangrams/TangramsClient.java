@@ -40,8 +40,6 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import javax.swing.JOptionPane;
-import javax.swing.UIManager;
-import javax.swing.UnsupportedLookAndFeelException;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -59,6 +57,7 @@ import iristk.system.IrisSystem;
 import iristk.system.LoggingModule;
 import iristk.util.NameFilter;
 import se.kth.speech.MutablePair;
+import se.kth.speech.awt.LookAndFeels;
 import se.kth.speech.coin.tangrams.iristk.GameManagementClientModule;
 import se.kth.speech.coin.tangrams.iristk.ImageVisualizationInfoUnmarshaller;
 import se.kth.speech.coin.tangrams.iristk.IrisSystemStopper;
@@ -305,18 +304,6 @@ public final class TangramsClient implements Runnable {
 		return result;
 	}
 
-	private static void setLookAndFeel() {
-		final String lookAndFeelClassName = UIManager.getSystemLookAndFeelClassName();
-		try {
-			UIManager.setLookAndFeel(lookAndFeelClassName);
-		} catch (ClassNotFoundException | InstantiationException | IllegalAccessException
-				| UnsupportedLookAndFeelException e) {
-			LOGGER.error(String.format(
-					"An error occurred while trying to use the look-and-feel class name \"%s\"; Giving up.",
-					lookAndFeelClassName), e);
-		}
-	}
-
 	private final boolean analysisEnabled;
 
 	private final String brokerHost;
@@ -342,7 +329,7 @@ public final class TangramsClient implements Runnable {
 
 	@Override
 	public void run() {
-		setLookAndFeel();
+		LookAndFeels.setLookAndFeel();
 		final String playerId = promptPlayerId(null, createDefaultPlayerId());
 		if (playerId == null) {
 			LOGGER.info("Quitting application before creation of new game was completed.");

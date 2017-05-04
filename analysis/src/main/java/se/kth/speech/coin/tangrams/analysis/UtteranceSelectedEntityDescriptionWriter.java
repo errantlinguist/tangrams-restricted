@@ -64,6 +64,7 @@ import com.google.common.collect.Table;
 import iristk.system.Event;
 import iristk.util.HAT;
 import se.kth.speech.FilenameBaseSplitter;
+import se.kth.speech.awt.LookAndFeels;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
 import se.kth.speech.coin.tangrams.analysis.features.ImageEdgeCounter;
 import se.kth.speech.coin.tangrams.analysis.features.SelectedEntityFeatureExtractor;
@@ -170,6 +171,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 
 	public static void main(final String[] args) throws IOException, JAXBException, InterruptedException {
 		if (args.length < 1) {
+			LookAndFeels.setLookAndFeel();
 			final JFileChooser fileChooser = new JFileChooser(System.getProperty("user.dir"));
 			FILE_FILTERS.stream().forEachOrdered(fileChooser::addChoosableFileFilter);
 			fileChooser.setDialogTitle("Input file");
