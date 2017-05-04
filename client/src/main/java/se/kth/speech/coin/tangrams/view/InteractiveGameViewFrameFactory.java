@@ -90,12 +90,12 @@ final class InteractiveGameViewFrameFactory implements Function<InteractiveGameV
 
 	private final ExecutorService backgroundJobService;
 
-	private final Consumer<Iterator<Entry<Integer, ImageVisualizationInfo.Datum>>> imgVizInfoWriter;
+	private final Consumer<? super Iterator<? extends Entry<Integer, ImageVisualizationInfo.Datum>>> imgVizInfoWriter;
 
 	private final BiConsumer<? super Component, ? super String> screenshotLogger;
 
 	public InteractiveGameViewFrameFactory(final BiConsumer<? super Component, ? super String> screenshotLogger,
-			final Consumer<Iterator<Entry<Integer, ImageVisualizationInfo.Datum>>> imgVizInfoWriter,
+			final Consumer<? super Iterator<? extends Entry<Integer, ImageVisualizationInfo.Datum>>> imgVizInfoWriter,
 			final ExecutorService backgroundJobService, final boolean analysisEnabled) {
 		this.screenshotLogger = screenshotLogger;
 		this.imgVizInfoWriter = imgVizInfoWriter;
