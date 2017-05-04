@@ -98,7 +98,7 @@ public final class GameGUI implements Runnable {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(GameGUI.class);
 
-	private static Consumer<Iterator<Entry<Integer, ImageVisualizationInfo.Datum>>> createImgVizInfoWriter(
+	private static Consumer<Iterator<? extends Entry<Integer, ImageVisualizationInfo.Datum>>> createImgVizInfoWriter(
 			final ExecutorService backgroundJobService, final Supplier<? extends Path> logOutdirPathSupplier) {
 		final Function<URL, String> imgNameFactory = ImageVisualizationInfoDescription.getResourceNameFactory();
 		return imgVizInfoData -> {
