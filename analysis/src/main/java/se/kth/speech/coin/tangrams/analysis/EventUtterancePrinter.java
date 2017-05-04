@@ -24,7 +24,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -52,7 +51,6 @@ import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.Maps;
 import com.google.common.collect.Table;
 
 import iristk.system.Event;
@@ -174,20 +172,6 @@ public final class EventUtterancePrinter {
 		return result;
 	}
 
-	private static Map<Utterance, String> createUtterancePlayerIdMap(final Collection<Segment> segments,
-			final Function<? super String, String> sourcePlayerIdGetter) {
-		final Map<Utterance, String> result = Maps.newHashMapWithExpectedSize(segments.size());
-		for (final Segment segment : segments) {
-			final String sourceId = segment.getSource();
-			final List<Utterance> segUtts = SEG_UTT_FACTORY.apply(segment);
-			for (final Utterance segUtt : segUtts) {
-				final String playerId = sourcePlayerIdGetter.apply(sourceId);
-				result.put(segUtt, playerId);
-			}
-		}
-		return result;
-	}
-
 	private static String parseOutfilePrefix(final CommandLine cl, final File inpath) {
 		final String infix = new FilenameBaseSplitter().apply(inpath.getName())[0] + "_LOG-";
 		final String prefix = cl.getOptionValue(Parameter.OUTFILE_PREFIX.optName, DEFAULT_OUTFILE_PREFIX);
@@ -232,7 +216,8 @@ public final class EventUtterancePrinter {
 			final String gameId = playerGameIdIntersection.iterator().next();
 			final Map<String, GameHistory> playerGameHistories = playerGameHistoryTable.columnMap().get(gameId);
 			final List<Segment> segments = uttAnnots.getSegments().getSegment();
-			final Map<Utterance, String> uttPlayerIds = createUtterancePlayerIdMap(segments, sourceIdPlayerIds::get);
+			final Map<Utterance, String> uttPlayerIds = new UtterancePlayerIdMapFactory(SEG_UTT_FACTORY,
+					sourceIdPlayerIds::get).apply(segments);
 			final List<Utterance> utts = uttPlayerIds.keySet().stream().sorted(Comparator
 					.comparing(Utterance::getStartTime).thenComparing(Comparator.comparing(Utterance::getEndTime)))
 					.collect(Collectors.toList());
