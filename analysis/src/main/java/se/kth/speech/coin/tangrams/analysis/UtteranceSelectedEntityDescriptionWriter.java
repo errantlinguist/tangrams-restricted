@@ -234,7 +234,6 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 			FEATURES_TO_DESCRIBE.stream().map(Object::toString).forEachOrdered(firstHeader::add);
 			final List<String> firstImgDescHeader = imgDescHeaderIter.next();
 			firstHeader.addAll(firstImgDescHeader);
-			System.out.println(firstHeader);
 			final String padding = "";
 			while (firstHeader.size() < resultColCount) {
 				firstHeader.add(padding);
