@@ -22,6 +22,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.UncheckedIOException;
+import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -175,7 +176,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 			final JFileChooser fileChooser = new JFileChooser(System.getProperty("user.dir"));
 			FILE_FILTERS.stream().forEachOrdered(fileChooser::addChoosableFileFilter);
 			fileChooser.setDialogTitle("Input file");
-			fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+			fileChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
 			UserPrompts.promptFile(fileChooser).map(File::toPath).ifPresent(inpath -> {
 				LOGGER.info("Will read annotations from \"{}\".", inpath);
 				fileChooser.setDialogTitle("Output dir");
@@ -185,7 +186,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 					LOGGER.info("Will write data to \"{}\".", outpath);
 					UserPrompts
 							.promptNonBlankString("Enter output filename prefix.",
-									DEFAULT_OUTFILE_PREFIX + createOutfileInfix(inpath))
+									DEFAULT_OUTFILE_PREFIX)
 							.ifPresent(outfileNamePrefix -> {
 								LOGGER.info("Will prefix each output file with \"{}\".", outfileNamePrefix);
 								try {
@@ -284,9 +285,8 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 	}
 
 	private static String parseOutfilePrefix(final CommandLine cl, final Path inpath) {
-		final String infix = createOutfileInfix(inpath);
 		final String prefix = cl.getOptionValue(Parameter.OUTFILE_PREFIX.optName, DEFAULT_OUTFILE_PREFIX);
-		return prefix + infix;
+		return prefix;
 	}
 
 	private static void printHelp() {
@@ -296,12 +296,18 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 
 	private static void run(final Path inpath, final Path outpath, final String outfileNamePrefix)
 			throws JAXBException, IOException {
-		LOGGER.info("Reading batch job properties from \"{}\".", inpath);
-		final Properties props = new Properties();
-		try (final BufferedReader propsReader = Files.newBufferedReader(inpath)) {
-			props.load(propsReader);
+		final Iterator<Path> infilePathIter = Files.walk(inpath, FileVisitOption.FOLLOW_LINKS)
+				.filter(Files::isRegularFile).filter(filePath -> filePath.getFileName().toString().endsWith(".properties")).iterator();
+		while (infilePathIter.hasNext()) {
+			final Path infilePath = infilePathIter.next();
+			LOGGER.info("Reading batch job properties from \"{}\".", infilePath);
+			final Properties props = new Properties();
+			try (final BufferedReader propsReader = Files.newBufferedReader(infilePath)) {
+				props.load(propsReader);
+			}
+			final String outfileInfix = createOutfileInfix(infilePath);
+			run(props, infilePath.getParent(), outpath, outfileNamePrefix + outfileInfix);
 		}
-		run(props, inpath.getParent(), outpath, outfileNamePrefix);
 	}
 
 	private static void run(final Properties props, final Path infileBaseDir, final Path outpath,
