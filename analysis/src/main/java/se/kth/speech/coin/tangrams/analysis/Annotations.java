@@ -20,13 +20,14 @@ import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
-import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.collect.BiMap;
+import com.google.common.collect.HashBiMap;
 
 import se.kth.speech.hat.xsd.Annotation;
 import se.kth.speech.hat.xsd.Annotation.Tracks.Track;
@@ -48,11 +49,12 @@ public final class Annotations {
 	 */
 	private static final Pattern MINIMAL_FILE_EXT_PATTERN = Pattern.compile("\\.(?=[^\\.]+$)");
 
-	public static Map<String, String> createSourceIdPlayerIdMap(final Annotation uttAnnots) {
+	public static BiMap<String, String> createSourceIdPlayerIdMap(final Annotation uttAnnots) {
 		final List<Track> tracks = uttAnnots.getTracks().getTrack();
-		final Stream<Source> sources = tracks.stream().map(Track::getSources).map(Sources::getSource)
-				.flatMap(List::stream);
-		return sources.collect(Collectors.toMap(Source::getId, source -> {
+		final List<Source> sources = tracks.stream().map(Track::getSources).map(Sources::getSource)
+				.flatMap(List::stream).collect(Collectors.toList());
+		final BiMap<String, String> result = HashBiMap.create(sources.size());
+		for (final Source source : sources) {
 			final String href = source.getHref();
 			String fileName = null;
 			try {
@@ -63,8 +65,13 @@ public final class Annotations {
 						"Could not create path from \"%s\"; Trying to parse it directly as a filename.", href), e);
 				fileName = href;
 			}
-			return MINIMAL_FILE_EXT_PATTERN.split(fileName)[0];
-		}));
+			final String playerId = MINIMAL_FILE_EXT_PATTERN.split(fileName)[0];
+			final String sourceId = source.getId();
+			final String oldPlayerId = result.put(sourceId, playerId);
+			assert oldPlayerId != null;
+		}
+
+		return result;
 	}
 
 	private Annotations() {
