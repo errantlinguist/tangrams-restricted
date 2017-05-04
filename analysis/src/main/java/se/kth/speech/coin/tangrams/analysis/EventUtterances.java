@@ -21,9 +21,16 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Spliterators;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.google.common.collect.Lists;
 
 import iristk.system.Event;
 import se.kth.speech.MutablePair;
@@ -36,10 +43,53 @@ import se.kth.speech.coin.tangrams.iristk.EventTimes;
  *
  */
 public final class EventUtterances {
+	
+	private static final Logger LOGGER = LoggerFactory.getLogger(EventUtterances.class);
 
 	public static Stream<Entry<Event, List<Utterance>>> createEventUtteranceMappings(final List<Utterance> utts,
 			final GameHistory history) {
 		return createEventUtteranceMappings(utts, history, event -> true);
+	}
+	
+	
+	private static Entry<Event,List<Utterance>> createPreEventUtteranceList(final Iterator<Utterance> uttIter, final Iterator<Event> eventIter,
+			final LocalDateTime gameStartTime, final Predicate<? super Event> eventFilter){
+		final Entry<Event,List<Utterance>> result;
+
+		if (eventIter.hasNext()) {
+			if (uttIter.hasNext()) {
+				List<Utterance> nextUttList = new ArrayList<>();
+				{
+					// Find all utterances up to the first event
+					final Event firstEvent = eventIter.next();
+					LOGGER.info("First event: {}", firstEvent);
+					final LocalDateTime firstEventTimestamp = EventTimes.parseEventTime(firstEvent.getTime());
+					do {
+						final Utterance nextUtt = uttIter.next();
+						final LocalDateTime uttStartTimestamp = TimestampArithmetic.createOffsetTimestamp(gameStartTime,
+								nextUtt.getStartTime());
+						// If the utterance was before the first event, add it
+						// to the
+						// list of before-event utterances
+						if (uttStartTimestamp.compareTo(firstEventTimestamp) < 0) {
+							nextUttList.add(nextUtt);
+						} else {
+							break;
+						}
+					} while (uttIter.hasNext());
+					result = new MutablePair<>(firstEvent, nextUttList);
+				}
+
+			} else {
+				// No utterances were found; Return an empty list of utterances
+				result = new MutablePair<>(null, Collections.emptyList());
+			}
+
+		} else {
+			// No events were found; Return all the utterances
+			result =  new MutablePair<>(null, Collections.unmodifiableList(Lists.newArrayList(uttIter)));
+		}
+		return result;		
 	}
 
 	public static Stream<Entry<Event, List<Utterance>>> createEventUtteranceMappings(final List<Utterance> utts,
@@ -48,7 +98,10 @@ public final class EventUtterances {
 		final LocalDateTime gameStartTime = history.getStartTime();
 
 		final Stream<Entry<Event, List<Utterance>>> result;
-
+		
+		
+		// TODO: Finish
+		
 		final Iterator<Event> eventIter = events.iterator();
 		if (eventIter.hasNext()) {
 			final Iterator<Utterance> uttIter = utts.iterator();
@@ -59,6 +112,7 @@ public final class EventUtterances {
 				{
 					// Find all utterances up to the first event
 					final Event firstEvent = eventIter.next();
+					LOGGER.info("First event: {}", firstEvent);
 					final LocalDateTime firstEventTimestamp = EventTimes.parseEventTime(firstEvent.getTime());
 					do {
 						final Utterance nextUtt = uttIter.next();
@@ -86,6 +140,7 @@ public final class EventUtterances {
 					// Find the next set of utterances following each event
 					while (eventIter.hasNext()) {
 						final Event nextEvent = eventIter.next();
+						LOGGER.info("Next event: {}", nextEvent);
 						final LocalDateTime nextEventTimestamp = EventTimes.parseEventTime(nextEvent.getTime());
 						eventUtts: while (uttIter.hasNext()) {
 							final Utterance nextUtt = uttIter.next();
