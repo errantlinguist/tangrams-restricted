@@ -24,14 +24,12 @@ import java.awt.event.WindowListener;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Iterator;
 import java.util.Map.Entry;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 import org.slf4j.Logger;
@@ -40,7 +38,6 @@ import org.slf4j.LoggerFactory;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfoTableWriter;
 import se.kth.speech.coin.tangrams.iristk.GameState;
-import se.kth.speech.coin.tangrams.iristk.events.ImageVisualizationInfoDescription;
 
 /**
  *
@@ -100,15 +97,13 @@ public final class GameGUI implements Runnable {
 
 	private static Consumer<Iterator<? extends Entry<Integer, ImageVisualizationInfo.Datum>>> createImgVizInfoWriter(
 			final ExecutorService backgroundJobService, final Supplier<? extends Path> logOutdirPathSupplier) {
-		final Function<URL, String> imgNameFactory = ImageVisualizationInfoDescription.getResourceNameFactory();
 		return imgVizInfoData -> {
 			backgroundJobService.submit(() -> {
 				final Path outdir = logOutdirPathSupplier.get();
 				final Path outfile = outdir.resolve(IMAGE_INFO_LOGFILE_NAME);
 				try (final BufferedWriter writer = Files.newBufferedWriter(outfile)) {
-					final ImageVisualizationInfoTableWriter infoWriter = new ImageVisualizationInfoTableWriter(writer,
-							imgNameFactory);
-					infoWriter.accept(imgVizInfoData);
+					final ImageVisualizationInfoTableWriter infoWriter = new ImageVisualizationInfoTableWriter(writer);
+					infoWriter.write(imgVizInfoData);
 				} catch (final IOException e) {
 					throw new UncheckedIOException(e);
 				}

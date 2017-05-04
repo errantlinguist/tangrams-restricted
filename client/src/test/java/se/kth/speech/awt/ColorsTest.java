@@ -34,11 +34,11 @@ public final class ColorsTest {
 
 	/**
 	 * Test method for
-	 * {@link se.kth.speech.awt.Colors#createColorNameMap(java.util.function.Function, java.util.function.Supplier)}.
+	 * {@link se.kth.speech.awt.Colors#createRGBColorNameMap(java.util.function.Function, java.util.function.Supplier)}.
 	 */
 	@Test
 	public void testCreateColorNameMap() {
-		final Map<Integer, Set<String>> result = Colors.createColorNameMap(Function.identity(), HashSet::new);
+		final Map<Integer, Set<String>> result = Colors.createRGBColorNameMap(Function.identity(), HashSet::new);
 		Assert.assertFalse(result.isEmpty());
 		for (final Entry<Integer, Set<String>> rgbNames : result.entrySet()) {
 			final Set<String> names = rgbNames.getValue();

@@ -43,7 +43,7 @@ public final class Colors {
 	 * @see <a href=
 	 *      "http://stackoverflow.com/a/4126126/1391325">StackOverflow</a>
 	 */
-	public static <C extends Collection<? super String>> Map<Integer, C> createColorNameMap(
+	public static <C extends Collection<? super String>> Map<Integer, C> createRGBColorNameMap(
 			final Function<? super String, String> nameTransformer, final Supplier<? extends C> nameCollFactory) {
 		final Map<Integer, C> result = new HashMap<>();
 

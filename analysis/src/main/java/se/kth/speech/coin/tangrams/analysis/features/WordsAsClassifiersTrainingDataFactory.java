@@ -244,7 +244,7 @@ public final class WordsAsClassifiersTrainingDataFactory
 
 	private final Map<String, String> sourceIdPlayerIds;
 
-	private final BiFunction<? super Utterance, ? super String, Stream<Entry<Utterance, GameContext>>> uttContextFactory;
+	private final BiFunction<? super Utterance, ? super String, Stream<GameContext>> uttContextFactory;
 
 	/**
 	 * @param contextFeatureExtractors
@@ -253,7 +253,7 @@ public final class WordsAsClassifiersTrainingDataFactory
 	 *
 	 */
 	public WordsAsClassifiersTrainingDataFactory(final Map<String, String> sourceIdPlayerIds,
-			final BiFunction<? super Utterance, ? super String, Stream<Entry<Utterance, GameContext>>> uttContextFactory,
+			final BiFunction<? super Utterance, ? super String, Stream<GameContext>> uttContextFactory,
 			final List<GameContextFeatureExtractor> contextFeatureExtractors) {
 		this.sourceIdPlayerIds = sourceIdPlayerIds;
 		this.uttContextFactory = uttContextFactory;
@@ -271,16 +271,16 @@ public final class WordsAsClassifiersTrainingDataFactory
 		final String sourceId = segment.getSource();
 		// Get the player ID associated with the given audio source
 		final String playerId = sourceIdPlayerIds.get(sourceId);
-		final Stream<Entry<Utterance, GameContext>> uttContexts = utts.stream()
-				.flatMap(utt -> uttContextFactory.apply(utt, playerId));
-		return uttContexts.map(uttContext -> {
-			final DoubleStream.Builder featureVectorBuilder = DoubleStream.builder();
-			contextFeatureExtractors
-					.forEach(extractor -> extractor.accept(uttContext.getValue(), featureVectorBuilder));
-			final DoubleStream vals = featureVectorBuilder.build();
-			final List<String> uttTokens = uttContext.getKey().getTokens();
-			return new MutablePair<>(uttTokens, vals);
-		});
+		return utts.stream().map(utt -> {
+			final Stream<GameContext> uttContexts = uttContextFactory.apply(utt, playerId);
+			return uttContexts.map(uttContext -> {
+				final DoubleStream.Builder featureVectorBuilder = DoubleStream.builder();
+				contextFeatureExtractors.forEach(extractor -> extractor.accept(uttContext, featureVectorBuilder));
+				final DoubleStream vals = featureVectorBuilder.build();
+				final List<String> uttTokens = utt.getTokens();
+				return new MutablePair<>(uttTokens, vals);
+			});
+		}).flatMap(Function.identity());
 	}
 
 }

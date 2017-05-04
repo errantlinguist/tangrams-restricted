@@ -18,7 +18,6 @@ package se.kth.speech.coin.tangrams.analysis.features;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -38,12 +37,12 @@ final class SegmentFeatureVectorFactory implements Function<Segment, Stream<Doub
 
 	private final Map<String, String> sourceIdPlayerIds;
 
-	private final BiFunction<? super Utterance, ? super String, Stream<Entry<Utterance, GameContext>>> uttContextFactory;
+	private final BiFunction<? super Utterance, ? super String, Stream<GameContext>> uttContextFactory;
 
 	private final List<? extends BiConsumer<? super Utterance, ? super DoubleStream.Builder>> uttFeatureExtractors;
 
 	public SegmentFeatureVectorFactory(final Map<String, String> sourceIdPlayerIds,
-			final BiFunction<? super Utterance, ? super String, Stream<Entry<Utterance, GameContext>>> uttContextFactory,
+			final BiFunction<? super Utterance, ? super String, Stream<GameContext>> uttContextFactory,
 			final List<? extends BiConsumer<? super GameContext, ? super DoubleStream.Builder>> contextFeatureExtractors,
 			final List<? extends BiConsumer<? super Utterance, ? super DoubleStream.Builder>> uttFeatureExtractors) {
 		this.sourceIdPlayerIds = sourceIdPlayerIds;
@@ -58,15 +57,16 @@ final class SegmentFeatureVectorFactory implements Function<Segment, Stream<Doub
 		final String sourceId = segment.getSource();
 		// Get the player ID associated with the given audio source
 		final String playerId = sourceIdPlayerIds.get(sourceId);
-		final Stream<Entry<Utterance, GameContext>> uttContexts = utts.stream()
-				.flatMap(utt -> uttContextFactory.apply(utt, playerId));
-		return uttContexts.map(uttContext -> {
-			final DoubleStream.Builder featureVectorBuilder = DoubleStream.builder();
-			contextFeatureExtractors
-					.forEach(extractor -> extractor.accept(uttContext.getValue(), featureVectorBuilder));
-			uttFeatureExtractors.forEach(extractor -> extractor.accept(uttContext.getKey(), featureVectorBuilder));
-			return featureVectorBuilder.build();
+		final Stream<Stream<DoubleStream>> cxtVectors = utts.stream().map(utt -> {
+			final Stream<GameContext> uttContexts = uttContextFactory.apply(utt, playerId);
+			return uttContexts.map(uttContext -> {
+				final DoubleStream.Builder featureVectorBuilder = DoubleStream.builder();
+				contextFeatureExtractors.forEach(extractor -> extractor.accept(uttContext, featureVectorBuilder));
+				uttFeatureExtractors.forEach(extractor -> extractor.accept(utt, featureVectorBuilder));
+				return featureVectorBuilder.build();
+			});
 		});
+		return cxtVectors.flatMap(Function.identity());
 	}
 
 }
