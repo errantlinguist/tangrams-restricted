@@ -16,7 +16,6 @@
 */
 package se.kth.speech.coin.tangrams.iristk;
 
-import java.net.URL;
 import java.sql.Timestamp;
 import java.util.Objects;
 import java.util.Random;
@@ -51,7 +50,7 @@ public final class GameManagementClientModule extends IrisModule implements Game
 
 	private final String gameId;
 
-	private final ImageVisualizationInfoUnmarshaller imgVizInfoUnmarshaller;
+	private final Function<? super ImageVisualizationInfoDescription, ImageVisualizationInfo> imgVizInfoUnmarshaller;
 
 	/**
 	 * <strong>NOTE:</strong> It is better to pass the new game-handling logic
@@ -65,11 +64,11 @@ public final class GameManagementClientModule extends IrisModule implements Game
 	private final String playerId;
 
 	public GameManagementClientModule(final String gameId, final String playerId,
-			final Function<? super String, ? extends URL> localResourceLocFactory,
+			final Function<? super ImageVisualizationInfoDescription, ImageVisualizationInfo> imgVizInfoUnmarshaller,
 			final Consumer<? super GameState> newGameHandler) {
 		this.gameId = gameId;
 		this.playerId = playerId;
-		imgVizInfoUnmarshaller = new ImageVisualizationInfoUnmarshaller(localResourceLocFactory);
+		this.imgVizInfoUnmarshaller = imgVizInfoUnmarshaller;
 		this.newGameHandler = newGameHandler;
 	}
 
@@ -152,8 +151,12 @@ public final class GameManagementClientModule extends IrisModule implements Game
 		}
 	}
 
-	/* (non-Javadoc)
-	 * @see se.kth.speech.coin.tangrams.iristk.GameManagementClient#rejectSelection(java.lang.Integer, se.kth.speech.coin.tangrams.iristk.events.Area2D)
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * se.kth.speech.coin.tangrams.iristk.GameManagementClient#rejectSelection(
+	 * java.lang.Integer, se.kth.speech.coin.tangrams.iristk.events.Area2D)
 	 */
 	@Override
 	public void rejectSelection(final Integer pieceId, final Area2D area) {
@@ -164,8 +167,11 @@ public final class GameManagementClientModule extends IrisModule implements Game
 		send(request);
 	}
 
-	/* (non-Javadoc)
-	 * @see se.kth.speech.coin.tangrams.iristk.GameManagementClient#requestJoinGame()
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * se.kth.speech.coin.tangrams.iristk.GameManagementClient#requestJoinGame()
 	 */
 	@Override
 	public void requestJoinGame() {
@@ -174,8 +180,12 @@ public final class GameManagementClientModule extends IrisModule implements Game
 		send(request);
 	}
 
-	/* (non-Javadoc)
-	 * @see se.kth.speech.coin.tangrams.iristk.GameManagementClient#requestNextMove(se.kth.speech.coin.tangrams.iristk.events.Move)
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * se.kth.speech.coin.tangrams.iristk.GameManagementClient#requestNextMove(
+	 * se.kth.speech.coin.tangrams.iristk.events.Move)
 	 */
 	@Override
 	public void requestNextMove(final Move move) {
@@ -185,8 +195,12 @@ public final class GameManagementClientModule extends IrisModule implements Game
 		send(request);
 	}
 
-	/* (non-Javadoc)
-	 * @see se.kth.speech.coin.tangrams.iristk.GameManagementClient#requestSelection(java.lang.Integer, se.kth.speech.coin.tangrams.iristk.events.Area2D)
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * se.kth.speech.coin.tangrams.iristk.GameManagementClient#requestSelection(
+	 * java.lang.Integer, se.kth.speech.coin.tangrams.iristk.events.Area2D)
 	 */
 	@Override
 	public void requestSelection(final Integer pieceId, final Area2D area) {
@@ -196,8 +210,11 @@ public final class GameManagementClientModule extends IrisModule implements Game
 		send(request);
 	}
 
-	/* (non-Javadoc)
-	 * @see se.kth.speech.coin.tangrams.iristk.GameManagementClient#requestTurnCompletion(se.kth.speech.coin.tangrams.iristk.events.Move)
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see se.kth.speech.coin.tangrams.iristk.GameManagementClient#
+	 * requestTurnCompletion(se.kth.speech.coin.tangrams.iristk.events.Move)
 	 */
 	@Override
 	public void requestTurnCompletion(final Move move) {

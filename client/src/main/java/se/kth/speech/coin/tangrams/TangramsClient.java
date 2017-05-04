@@ -23,7 +23,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.lang.reflect.InvocationTargetException;
-import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -38,7 +37,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 import javax.swing.JOptionPane;
@@ -61,8 +59,8 @@ import iristk.system.IrisSystem;
 import iristk.system.LoggingModule;
 import iristk.util.NameFilter;
 import se.kth.speech.MutablePair;
-import se.kth.speech.coin.tangrams.content.IconImages;
 import se.kth.speech.coin.tangrams.iristk.GameManagementClientModule;
+import se.kth.speech.coin.tangrams.iristk.ImageVisualizationInfoUnmarshaller;
 import se.kth.speech.coin.tangrams.iristk.IrisSystemStopper;
 import se.kth.speech.coin.tangrams.iristk.io.LogDirectoryFactory;
 import se.kth.speech.coin.tangrams.view.ConnectionStatusFrame;
@@ -401,10 +399,8 @@ public final class TangramsClient implements Runnable {
 									system.addModule(loggingModule);
 									loggingModule.startLogging(systemLoggingStartTime.getTime());
 								}
-								final Function<String, URL> localResourceLocGetter = IconImages
-										.getImageResources()::get;
 								final GameManagementClientModule gameClientModule = new GameManagementClientModule(
-										gameId, playerId, localResourceLocGetter, gameState -> {
+										gameId, playerId, new ImageVisualizationInfoUnmarshaller(), gameState -> {
 											LOGGER.info(
 													"Handling game state data received from server for game \"{}\".",
 													gameId);

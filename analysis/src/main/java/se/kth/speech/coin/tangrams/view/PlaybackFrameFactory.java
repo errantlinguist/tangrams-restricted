@@ -41,7 +41,6 @@ import se.kth.speech.SpatialRegion;
 import se.kth.speech.awt.OpaqueTransparencyReplacementImageFilter;
 import se.kth.speech.coin.tangrams.analysis.GameHistory;
 import se.kth.speech.coin.tangrams.content.BoardArea;
-import se.kth.speech.coin.tangrams.content.IconImages;
 import se.kth.speech.coin.tangrams.content.ImageLoadingImageViewInfoFactory;
 import se.kth.speech.coin.tangrams.content.ImageViewInfo;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
@@ -108,8 +107,7 @@ final class PlaybackFrameFactory implements Function<PlaybackFrameFactory.Parame
 
 	}
 
-	private static final ImageVisualizationInfoUnmarshaller IMG_INFO_UNMARSHALLER = new ImageVisualizationInfoUnmarshaller(
-			IconImages.getImageResources()::get);
+	private static final ImageVisualizationInfoUnmarshaller IMG_INFO_UNMARSHALLER = new ImageVisualizationInfoUnmarshaller();
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(PlaybackFrameFactory.class);
 
