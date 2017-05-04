@@ -181,7 +181,9 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 				FILE_FILTERS.stream().forEachOrdered(fileChooser::removeChoosableFileFilter);
 				UserPrompts.promptFile(fileChooser).map(File::toPath).ifPresent(outpath -> {
 					LOGGER.info("Will write data to \"{}\".", outpath);
-					UserPrompts.promptNonBlankString("Enter output filename prefix.", DEFAULT_OUTFILE_PREFIX)
+					UserPrompts
+							.promptNonBlankString("Enter output filename prefix.",
+									DEFAULT_OUTFILE_PREFIX + createOutfileInfix(inpath))
 							.ifPresent(outfileNamePrefix -> {
 								LOGGER.info("Will prefix each output file with \"{}\".", outfileNamePrefix);
 								try {
@@ -266,6 +268,10 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 		return result;
 	}
 
+	private static String createOutfileInfix(final Path inpath) {
+		return new FilenameBaseSplitter().apply(inpath.getFileName().toString())[0] + "_LOG-";
+	}
+
 	private static String createUtteranceDialogString(final Stream<Utterance> utts,
 			final Function<? super Utterance, String> uttPlayerIdGetter) {
 		final Stream<String> uttStrs = utts.map(utt -> {
@@ -276,7 +282,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 	}
 
 	private static String parseOutfilePrefix(final CommandLine cl, final Path inpath) {
-		final String infix = new FilenameBaseSplitter().apply(inpath.getFileName().toString())[0] + "_LOG-";
+		final String infix = createOutfileInfix(inpath);
 		final String prefix = cl.getOptionValue(Parameter.OUTFILE_PREFIX.optName, DEFAULT_OUTFILE_PREFIX);
 		return prefix + infix;
 	}
