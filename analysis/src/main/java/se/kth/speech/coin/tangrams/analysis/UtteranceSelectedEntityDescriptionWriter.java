@@ -16,10 +16,10 @@
 */
 package se.kth.speech.coin.tangrams.analysis;
 
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.StringWriter;
 import java.io.UncheckedIOException;
 import java.nio.file.FileVisitOption;
@@ -135,6 +135,9 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 	private static final List<EntityFeature> FEATURES_TO_DESCRIBE = Arrays.asList(EntityFeature.POSITION_X,
 			EntityFeature.POSITION_Y, EntityFeature.EDGE_COUNT);
 
+	private static final List<FileNameExtensionFilter> FILE_FILTERS = Arrays
+			.asList(new FileNameExtensionFilter("Property files (*.properties)", "properties"));
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(UtteranceSelectedEntityDescriptionWriter.class);
 
 	private static final EventTypeMatcher NEW_SALIENT_PIECE_EVENT_MATCHER = new EventTypeMatcher(
@@ -168,9 +171,6 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 		TABLE_STRING_REPR_COL_DELIMITER = "\t";
 		TABLE_ROW_CELL_JOINER = Collectors.joining(TABLE_STRING_REPR_COL_DELIMITER);
 	}
-
-	private static final List<FileNameExtensionFilter> FILE_FILTERS = Arrays
-			.asList(new FileNameExtensionFilter("Property files (*.properties)", "properties"));
 
 	public static void main(final String[] args) throws IOException, JAXBException {
 		if (args.length < 1) {
@@ -303,8 +303,8 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 			final Path infilePath = infilePathIter.next();
 			LOGGER.info("Reading batch job properties from \"{}\".", infilePath);
 			final Properties props = new Properties();
-			try (final BufferedReader propsReader = Files.newBufferedReader(infilePath)) {
-				props.load(propsReader);
+			try (final InputStream propsInstream = Files.newInputStream(infilePath)) {
+				props.load(propsInstream);
 			}
 			final String outfileInfix = createOutfileInfix(infilePath);
 			run(props, infilePath.getParent(), outpath, outfileNamePrefix + outfileInfix);
