@@ -172,7 +172,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 	private static final List<FileNameExtensionFilter> FILE_FILTERS = Arrays
 			.asList(new FileNameExtensionFilter("Property files (*.properties)", "properties"));
 
-	public static void main(final String[] args) throws IOException, JAXBException, InterruptedException {
+	public static void main(final String[] args) throws IOException, JAXBException {
 		if (args.length < 1) {
 			LookAndFeels.setLookAndFeel();
 			final JFileChooser fileChooser = new JFileChooser(System.getProperty("user.dir"));
