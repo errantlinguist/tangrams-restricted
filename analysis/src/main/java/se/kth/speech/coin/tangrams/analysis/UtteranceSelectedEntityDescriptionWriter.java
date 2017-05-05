@@ -352,9 +352,9 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 		try {
 			loadClassSettingsProps(settingsProps);
 		} catch (final IOException e) {
-			LOGGER.info(String.format(
-					"An error occurred while trying to load the class settings from \"%s\"; Falling back to defaults.",
-					CLASS_SETTINGS_INFILE_PATH), e);
+			LOGGER.info(
+					"A(n) {} occurred while trying to load the class settings from \"{}\"; Falling back to defaults.",
+					e.getClass().getSimpleName(), CLASS_SETTINGS_INFILE_PATH);
 		}
 		return new Settings(settingsProps);
 	}
