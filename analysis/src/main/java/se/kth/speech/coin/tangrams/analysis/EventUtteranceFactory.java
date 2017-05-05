@@ -20,8 +20,8 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map.Entry;
+import java.util.Queue;
 import java.util.function.BiFunction;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -40,7 +40,7 @@ import se.kth.speech.coin.tangrams.iristk.EventTimes;
  *
  */
 public final class EventUtteranceFactory
-		implements BiFunction<List<Utterance>, GameHistory, Stream<Entry<Event, List<Utterance>>>> {
+		implements BiFunction<Queue<Utterance>, GameHistory, Stream<Entry<Event, List<Utterance>>>> {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(EventUtteranceFactory.class);
 
@@ -62,16 +62,15 @@ public final class EventUtteranceFactory
 	}
 
 	@Override
-	public Stream<Entry<Event, List<Utterance>>> apply(final List<Utterance> utts, final GameHistory history) {
+	public Stream<Entry<Event, List<Utterance>>> apply(final Queue<Utterance> utts, final GameHistory history) {
 		final Stream<Event> events = history.getEvents().values().stream().flatMap(List::stream).filter(eventFilter);
 		final LocalDateTime gameStartTime = history.getStartTime();
 
-		final ListIterator<Utterance> uttIter = utts.listIterator();
 		final Iterator<Event> eventIter = events.iterator();
 		Event currentEvent = eventIter.next();
 		final Stream.Builder<Entry<Event, List<Utterance>>> resultBuilder = Stream.builder();
 
-		final List<Utterance> firstUtts = createPreEventUtteranceList(uttIter, currentEvent, gameStartTime);
+		final List<Utterance> firstUtts = createPreEventUtteranceList(utts, currentEvent, gameStartTime);
 		if (firstUtts.isEmpty()) {
 			LOGGER.debug("No utterances before first event.");
 		} else {
@@ -85,8 +84,8 @@ public final class EventUtteranceFactory
 			List<Utterance> nextUttList = new ArrayList<>();
 			final LocalDateTime nextEventTimestamp = EventTimes.parseEventTime(nextEvent.getTime())
 					.plusSeconds(timeWindow);
-			eventUtts: while (uttIter.hasNext()) {
-				final Utterance nextUtt = uttIter.next();
+			eventUtts: while (!utts.isEmpty()) {
+				final Utterance nextUtt = utts.remove();
 				final LocalDateTime uttStartTimestamp = TimestampArithmetic.createOffsetTimestamp(gameStartTime,
 						nextUtt.getStartTime());
 				// If the utterance was before the next event, add
@@ -105,27 +104,23 @@ public final class EventUtteranceFactory
 		}
 
 		// Get the utterances after the last event
-		if (uttIter.hasNext()) {
-			final List<Utterance> lastEventUtts = new ArrayList<>();
-			do {
-				final Utterance nextUtt = uttIter.next();
-				lastEventUtts.add(nextUtt);
-			} while (uttIter.hasNext());
+		if (!utts.isEmpty()) {
+			final List<Utterance> lastEventUtts = new ArrayList<>(utts);
 			resultBuilder.accept(new MutablePair<>(currentEvent, lastEventUtts));
 		}
 		return resultBuilder.build();
 	}
 
-	private List<Utterance> createPreEventUtteranceList(final ListIterator<Utterance> uttIter, final Event firstEvent,
+	private List<Utterance> createPreEventUtteranceList(final Queue<Utterance> utts, final Event firstEvent,
 			final LocalDateTime gameStartTime) {
 		LOGGER.debug("First event: {}", firstEvent);
 		final LocalDateTime firstEventTimestamp = EventTimes.parseEventTime(firstEvent.getTime())
 				.plusSeconds(timeWindow);
 
 		final List<Utterance> result = new ArrayList<>();
-		while (uttIter.hasNext()) {
+		while (!utts.isEmpty()) {
 			// Find all utterances up to the first event
-			final Utterance nextUtt = uttIter.next();
+			final Utterance nextUtt = utts.peek();
 			final LocalDateTime uttStartTimestamp = TimestampArithmetic.createOffsetTimestamp(gameStartTime,
 					nextUtt.getStartTime());
 			// If the utterance was before the first event, add it
@@ -133,9 +128,8 @@ public final class EventUtteranceFactory
 			// list of before-event utterances
 			if (firstEventTimestamp.isAfter(uttStartTimestamp)) {
 				result.add(nextUtt);
+				utts.remove();
 			} else {
-				// "put back" the last-popped utt onto the "stack"
-				uttIter.previous();
 				break;
 			}
 		}

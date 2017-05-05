@@ -26,11 +26,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Deque;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -348,7 +350,8 @@ public final class EventUtteranceTimeComparisonParamTester {
 				final String gameId = gameHistory.getKey();
 				LOGGER.info("Processing game \"{}\".", gameId);
 				final GameHistory history = gameHistory.getValue();
-				final List<Entry<Event, List<Utterance>>> eventUttLists = eventUttFactory.apply(allUtts, history)
+				final Deque<Utterance> uttsToProcess = new ArrayDeque<>(allUtts);
+				final List<Entry<Event, List<Utterance>>> eventUttLists = eventUttFactory.apply(uttsToProcess, history)
 						.collect(Collectors.toList());
 
 				final Multimap<Utterance, Event> uttEvents = HashMultimap.create(eventUttLists.size(), 1);

@@ -30,10 +30,12 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Deque;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -434,8 +436,9 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 				// The visualization info for the given game
 				final ImageVisualizationInfo imgVizInfo = imgVizInfoUnmarshaller
 						.apply(history.getInitialState().getImageVisualizationInfoDescription());
-
-				final Stream<Entry<Event, List<Utterance>>> eventUttLists = EVENT_UTT_FACTORY.apply(utts, history);
+				final Deque<Utterance> uttsToProcess = new ArrayDeque<>(utts);
+				final Stream<Entry<Event, List<Utterance>>> eventUttLists = EVENT_UTT_FACTORY.apply(uttsToProcess,
+						history);
 
 				final List<List<String>> colHeaders = createColHeaders();
 				final String headerStr = colHeaders.stream()
