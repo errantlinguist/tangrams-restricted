@@ -20,11 +20,13 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.io.StringWriter;
 import java.io.UncheckedIOException;
 import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.time.Duration;
 import java.time.LocalDateTime;
@@ -38,6 +40,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.function.Function;
@@ -128,6 +131,41 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 
 	}
 
+	private static class Settings {
+
+		private final Properties props;
+
+		private Settings(final Properties props) {
+			this.props = props;
+		}
+
+		public Optional<String> getInpath() {
+			final String propVal = props.getProperty("inpath");
+			return propVal == null ? Optional.empty() : Optional.of(propVal);
+		}
+
+		public Optional<String> getOutpath() {
+			final String propVal = props.getProperty("outpath");
+			return propVal == null ? Optional.empty() : Optional.of(propVal);
+		}
+
+		public void setInpath(final String propVal) {
+			props.setProperty("inpath", propVal);
+		}
+
+		public void setOutpath(final String propVal) {
+			props.setProperty("outpath", propVal);
+		}
+
+		private Properties getProperties() {
+			return props;
+		}
+	}
+
+	private static final Path CLASS_SETTINGS_INFILE_PATH;
+
+	private static final FileNameExtensionFilter DEFAULT_FILE_FILTER;
+
 	private static final String DEFAULT_OUTFILE_PREFIX = "uttImgDescs_";
 
 	private static final int EXPECTED_UNIQUE_GAME_COUNT = 1;
@@ -135,8 +173,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 	private static final List<EntityFeature> FEATURES_TO_DESCRIBE = Arrays.asList(EntityFeature.POSITION_X,
 			EntityFeature.POSITION_Y, EntityFeature.EDGE_COUNT);
 
-	private static final List<FileNameExtensionFilter> FILE_FILTERS = Arrays
-			.asList(new FileNameExtensionFilter("Property files (*.properties)", "properties"));
+	private static final List<FileNameExtensionFilter> FILE_FILTERS;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(UtteranceSelectedEntityDescriptionWriter.class);
 
@@ -152,6 +189,8 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 
 	private static final Collector<CharSequence, ?, String> SENTENCE_JOINER = Collectors.joining(". ");
 
+	private static final Path SETTINGS_DIR;
+
 	private static final Collector<CharSequence, ?, String> TABLE_ROW_CELL_JOINER;
 
 	private static final Collector<CharSequence, ?, String> TABLE_ROW_JOINER;
@@ -163,6 +202,11 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 	private static final Collector<CharSequence, ?, String> WORD_JOINER = Collectors.joining(" ");
 
 	static {
+		FILE_FILTERS = Arrays.asList(new FileNameExtensionFilter("Property files (*.properties)", "properties"));
+		DEFAULT_FILE_FILTER = FILE_FILTERS.iterator().next();
+	}
+
+	static {
 		TABLE_STRING_REPR_ROW_DELIMITER = System.lineSeparator();
 		TABLE_ROW_JOINER = Collectors.joining(TABLE_STRING_REPR_ROW_DELIMITER);
 	}
@@ -172,11 +216,20 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 		TABLE_ROW_CELL_JOINER = Collectors.joining(TABLE_STRING_REPR_COL_DELIMITER);
 	}
 
+	static {
+		SETTINGS_DIR = Paths.get(".settings");
+		CLASS_SETTINGS_INFILE_PATH = SETTINGS_DIR
+				.resolve(UtteranceSelectedEntityDescriptionWriter.class.getName() + ".properties");
+	}
+
 	public static void main(final String[] args) throws IOException, JAXBException {
 		if (args.length < 1) {
 			LookAndFeels.setLookAndFeel();
-			final JFileChooser fileChooser = new JFileChooser(System.getProperty("user.dir"));
+			final Settings settings = loadClassSettings();
+			final File currentInpath = new File(settings.getInpath().orElse(System.getProperty("user.dir")));
+			final JFileChooser fileChooser = new JFileChooser(currentInpath);
 			FILE_FILTERS.stream().forEachOrdered(fileChooser::addChoosableFileFilter);
+			fileChooser.setFileFilter(DEFAULT_FILE_FILTER);
 			fileChooser.setDialogTitle("Input file");
 			fileChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
 			UserPrompts.promptFile(fileChooser).map(File::toPath).ifPresent(inpath -> {
@@ -184,8 +237,11 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 				fileChooser.setDialogTitle("Output dir");
 				fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 				FILE_FILTERS.stream().forEachOrdered(fileChooser::removeChoosableFileFilter);
+				settings.setInpath(inpath.toString());
+				settings.getOutpath().map(File::new).ifPresent(fileChooser::setCurrentDirectory);
 				UserPrompts.promptFile(fileChooser).map(File::toPath).ifPresent(outpath -> {
 					LOGGER.info("Will write data to \"{}\".", outpath);
+					settings.setOutpath(outpath.toString());
 					UserPrompts.promptNonBlankString("Enter output filename prefix.", DEFAULT_OUTFILE_PREFIX)
 							.ifPresent(outfileNamePrefix -> {
 								LOGGER.info("Will prefix each output file with \"{}\".", outfileNamePrefix);
@@ -199,6 +255,13 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 							});
 				});
 			});
+
+			LOGGER.debug("Saving class settings to \"{}\".", CLASS_SETTINGS_INFILE_PATH);
+			try (OutputStream settingsOutStream = Files.newOutputStream(CLASS_SETTINGS_INFILE_PATH,
+					StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
+				settings.getProperties().store(settingsOutStream, String.format("Persisted settings for class \"%s\".",
+						UtteranceSelectedEntityDescriptionWriter.class.getName()));
+			}
 		} else {
 			final CommandLineParser parser = new DefaultParser();
 			try {
@@ -282,6 +345,27 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 			return "**" + playerId + ":** \"" + utt.getTokens().stream().collect(WORD_JOINER) + "\"";
 		});
 		return uttStrs.collect(SENTENCE_JOINER);
+	}
+
+	private static Settings loadClassSettings() {
+		final Properties settingsProps = new Properties();
+		try {
+			loadClassSettingsProps(settingsProps);
+		} catch (final IOException e) {
+			LOGGER.info(String.format(
+					"An error occurred while trying to load the class settings from \"%s\"; Falling back to defaults.",
+					CLASS_SETTINGS_INFILE_PATH), e);
+		}
+		return new Settings(settingsProps);
+	}
+
+	private static void loadClassSettingsProps(final Properties props) throws IOException {
+		final Path classSettingsInfilePath = SETTINGS_DIR
+				.resolve(UtteranceSelectedEntityDescriptionWriter.class.getName() + ".properties");
+		Files.createDirectories(SETTINGS_DIR);
+		try (InputStream classSettingsPropsInstream = Files.newInputStream(classSettingsInfilePath)) {
+			props.load(classSettingsPropsInstream);
+		}
 	}
 
 	private static String parseOutfilePrefix(final CommandLine cl, final Path inpath) {
