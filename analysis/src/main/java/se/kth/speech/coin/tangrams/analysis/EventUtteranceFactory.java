@@ -18,7 +18,6 @@ package se.kth.speech.coin.tangrams.analysis;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
@@ -118,33 +117,26 @@ public final class EventUtteranceFactory
 
 	private List<Utterance> createPreEventUtteranceList(final Iterator<Utterance> uttIter, final Event firstEvent,
 			final LocalDateTime gameStartTime) {
-		final List<Utterance> result;
+		final List<Utterance> result = new ArrayList<>();
 
-		if (uttIter.hasNext()) {
-			result = new ArrayList<>();
-			{
-				// Find all utterances up to the first event
-				LOGGER.debug("First event: {}", firstEvent);
-				final LocalDateTime firstEventTimestamp = EventTimes.parseEventTime(firstEvent.getTime())
-						.plusSeconds(timeWindow);
-				do {
-					final Utterance nextUtt = uttIter.next();
-					final LocalDateTime uttStartTimestamp = TimestampArithmetic.createOffsetTimestamp(gameStartTime,
-							nextUtt.getStartTime());
-					// If the utterance was before the first event, add it
-					// to the
-					// list of before-event utterances
-					if (firstEventTimestamp.isAfter(uttStartTimestamp)) {
-						result.add(nextUtt);
-					} else {
-						break;
-					}
-				} while (uttIter.hasNext());
-			}
-
-		} else {
-			// No utterances were found; Return an empty list of utterances
-			result = Collections.emptyList();
+		while (uttIter.hasNext()) {
+			// Find all utterances up to the first event
+			LOGGER.debug("First event: {}", firstEvent);
+			final LocalDateTime firstEventTimestamp = EventTimes.parseEventTime(firstEvent.getTime())
+					.plusSeconds(timeWindow);
+			do {
+				final Utterance nextUtt = uttIter.next();
+				final LocalDateTime uttStartTimestamp = TimestampArithmetic.createOffsetTimestamp(gameStartTime,
+						nextUtt.getStartTime());
+				// If the utterance was before the first event, add it
+				// to the
+				// list of before-event utterances
+				if (firstEventTimestamp.isAfter(uttStartTimestamp)) {
+					result.add(nextUtt);
+				} else {
+					break;
+				}
+			} while (uttIter.hasNext());
 		}
 		return result;
 	}
