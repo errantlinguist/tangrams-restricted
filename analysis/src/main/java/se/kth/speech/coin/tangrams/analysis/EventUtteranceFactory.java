@@ -22,6 +22,8 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.function.BiFunction;
+import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
@@ -40,17 +42,34 @@ import se.kth.speech.coin.tangrams.iristk.EventTimes;
  * @since 4 May 2017
  *
  */
-public final class EventUtterances {
+public final class EventUtteranceFactory
+		implements BiFunction<Iterable<Utterance>, GameHistory, Stream<Entry<Event, List<Utterance>>>> {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(EventUtterances.class);
+	private static final BiPredicate<LocalDateTime, LocalDateTime> DEFAULT_EVENT_UTT_TIME_PREDICATE = (nextEventTime,
+			uttStartTime) -> nextEventTime.isAfter(uttStartTime);
 
-	public static Stream<Entry<Event, List<Utterance>>> createEventUtteranceMappings(final List<Utterance> utts,
-			final GameHistory history) {
-		return createEventUtteranceMappings(utts, history, event -> true);
+	private static final Logger LOGGER = LoggerFactory.getLogger(EventUtteranceFactory.class);
+
+	private final Predicate<? super Event> eventFilter;
+
+	private final BiPredicate<? super LocalDateTime, ? super LocalDateTime> nextEventIsAfterUttStart;
+
+	public EventUtteranceFactory() {
+		this(event -> true, DEFAULT_EVENT_UTT_TIME_PREDICATE);
 	}
 
-	public static Stream<Entry<Event, List<Utterance>>> createEventUtteranceMappings(final List<Utterance> utts,
-			final GameHistory history, final Predicate<? super Event> eventFilter) {
+	public EventUtteranceFactory(final Predicate<? super Event> eventFilter) {
+		this(eventFilter, DEFAULT_EVENT_UTT_TIME_PREDICATE);
+	}
+
+	public EventUtteranceFactory(final Predicate<? super Event> eventFilter,
+			final BiPredicate<? super LocalDateTime, ? super LocalDateTime> nextEventIsAfterUttStart) {
+		this.eventFilter = eventFilter;
+		this.nextEventIsAfterUttStart = nextEventIsAfterUttStart;
+	}
+
+	@Override
+	public Stream<Entry<Event, List<Utterance>>> apply(final Iterable<Utterance> utts, final GameHistory history) {
 		final Stream<Event> events = history.getEvents().values().stream().flatMap(List::stream).filter(eventFilter);
 		final LocalDateTime gameStartTime = history.getStartTime();
 
@@ -82,7 +101,7 @@ public final class EventUtterances {
 				// If the utterance was before the next event, add
 				// it to the
 				// list of utterances for the current event
-				if (nextEventTimestamp.isAfter(uttStartTimestamp)) {
+				if (nextEventIsAfterUttStart.test(nextEventTimestamp, uttStartTimestamp)) {
 					nextUttList.add(nextUtt);
 				} else {
 					resultBuilder.accept(new MutablePair<>(currentEvent, nextUttList));
@@ -106,7 +125,7 @@ public final class EventUtterances {
 		return resultBuilder.build();
 	}
 
-	private static Entry<Event, List<Utterance>> createPreEventUtteranceList(final Iterator<Utterance> uttIter,
+	private Entry<Event, List<Utterance>> createPreEventUtteranceList(final Iterator<Utterance> uttIter,
 			final Iterator<Event> eventIter, final LocalDateTime gameStartTime) {
 		final Entry<Event, List<Utterance>> result;
 
@@ -125,7 +144,7 @@ public final class EventUtterances {
 						// If the utterance was before the first event, add it
 						// to the
 						// list of before-event utterances
-						if (firstEventTimestamp.isAfter(uttStartTimestamp)) {
+						if (nextEventIsAfterUttStart.test(firstEventTimestamp, uttStartTimestamp)) {
 							nextUttList.add(nextUtt);
 						} else {
 							break;
@@ -144,9 +163,6 @@ public final class EventUtterances {
 			result = new MutablePair<>(null, Collections.unmodifiableList(Lists.newArrayList(uttIter)));
 		}
 		return result;
-	}
-
-	private EventUtterances() {
 	}
 
 }

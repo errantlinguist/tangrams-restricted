@@ -168,6 +168,9 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 
 	private static final String DEFAULT_OUTFILE_PREFIX = "uttImgDescs_";
 
+	private static final EventUtteranceFactory EVENT_UTT_FACTORY = new EventUtteranceFactory(
+			new EventTypeMatcher(EnumSet.of(GameManagementEvent.NEXT_TURN_REQUEST)));
+
 	private static final int EXPECTED_UNIQUE_GAME_COUNT = 1;
 
 	private static final List<EntityFeature> FEATURES_TO_DESCRIBE = Arrays.asList(EntityFeature.POSITION_X,
@@ -176,9 +179,6 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 	private static final List<FileNameExtensionFilter> FILE_FILTERS;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(UtteranceSelectedEntityDescriptionWriter.class);
-
-	private static final EventTypeMatcher NEW_SALIENT_PIECE_EVENT_MATCHER = new EventTypeMatcher(
-			EnumSet.of(GameManagementEvent.NEXT_TURN_REQUEST));
 
 	private static final Options OPTIONS = createOptions();
 
@@ -439,8 +439,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 				final ImageVisualizationInfo imgVizInfo = imgVizInfoUnmarshaller
 						.apply(history.getInitialState().getImageVisualizationInfoDescription());
 
-				final Stream<Entry<Event, List<Utterance>>> eventUttLists = EventUtterances
-						.createEventUtteranceMappings(utts, history, NEW_SALIENT_PIECE_EVENT_MATCHER);
+				final Stream<Entry<Event, List<Utterance>>> eventUttLists = EVENT_UTT_FACTORY.apply(utts, history);
 
 				final List<List<String>> colHeaders = createColHeaders();
 				final String headerStr = colHeaders.stream()
