@@ -19,7 +19,6 @@ package se.kth.speech.coin.tangrams.analysis;
 import java.io.File;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.function.Function;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -45,7 +44,7 @@ public final class SegmentTimedUtteranceWriter {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SegmentTimedUtteranceWriter.class);
 
-	private static final Function<Segment, List<Utterance>> SEG_UTT_FACTORY = new SegmentUtteranceFactory();
+	private static final SegmentUtteranceFactory SEG_UTT_FACTORY = new SegmentUtteranceFactory();
 
 	private static final Collector<CharSequence, ?, String> WORD_JOINER = Collectors.joining(" ");
 

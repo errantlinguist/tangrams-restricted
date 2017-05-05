@@ -31,7 +31,7 @@ import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
 
 final class SegmentFeatureVectorFactory implements Function<Segment, Stream<DoubleStream>> {
 
-	private static final Function<Segment, List<Utterance>> SEG_UTT_FACTORY = new SegmentUtteranceFactory();
+	private static final SegmentUtteranceFactory SEG_UTT_FACTORY = new SegmentUtteranceFactory();
 
 	private final List<? extends BiConsumer<? super GameContext, ? super DoubleStream.Builder>> contextFeatureExtractors;
 

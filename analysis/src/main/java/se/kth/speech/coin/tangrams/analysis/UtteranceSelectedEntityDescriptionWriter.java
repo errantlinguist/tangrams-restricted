@@ -185,7 +185,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 	private static final EventTypeMatcher REQUIRED_EVENT_MATCHER = new EventTypeMatcher(
 			EnumSet.of(GameManagementEvent.NEXT_TURN_REQUEST, GameManagementEvent.GAME_READY_RESPONSE));
 
-	private static final Function<Segment, List<Utterance>> SEG_UTT_FACTORY = new SegmentUtteranceFactory();
+	private static final SegmentUtteranceFactory SEG_UTT_FACTORY = new SegmentUtteranceFactory();
 
 	private static final Collector<CharSequence, ?, String> SENTENCE_JOINER = Collectors.joining(". ");
 

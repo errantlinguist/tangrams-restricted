@@ -113,7 +113,7 @@ public final class WordsAsClassifiersTrainingDataFactory
 
 	private static final Options OPTIONS = createOptions();
 
-	private static final Function<Segment, List<Utterance>> SEG_UTT_FACTORY = new SegmentUtteranceFactory();
+	private static final SegmentUtteranceFactory SEG_UTT_FACTORY = new SegmentUtteranceFactory();
 
 	private static final Collector<CharSequence, ?, String> TABLE_ROW_CELL_JOINER;
 
