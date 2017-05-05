@@ -41,9 +41,9 @@ import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
  * @since 5 May 2017
  *
  */
-public final class SegmentTimedUtterancePrinter {
+public final class SegmentTimedUtteranceWriter {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(SegmentTimedUtterancePrinter.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(SegmentTimedUtteranceWriter.class);
 
 	private static final Function<Segment, List<Utterance>> SEG_UTT_FACTORY = new SegmentUtteranceFactory();
 
@@ -52,7 +52,7 @@ public final class SegmentTimedUtterancePrinter {
 	public static void main(final String[] args) throws JAXBException {
 		if (args.length != 2) {
 			throw new IllegalArgumentException(
-					String.format("Usage: %s INPATH INITIAL_TIMESTAMP", SegmentTimedUtterancePrinter.class));
+					String.format("Usage: %s INPATH INITIAL_TIMESTAMP", SegmentTimedUtteranceWriter.class));
 		} else {
 			final File inpath = new File(args[0]);
 			LOGGER.info("Reading annotations from \"{}\".", inpath);
