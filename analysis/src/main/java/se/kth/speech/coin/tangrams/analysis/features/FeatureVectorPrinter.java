@@ -24,7 +24,6 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -54,6 +53,7 @@ import iristk.util.HAT;
 import se.kth.speech.coin.tangrams.analysis.Annotations;
 import se.kth.speech.coin.tangrams.analysis.GameHistory;
 import se.kth.speech.coin.tangrams.analysis.TemporalGameContextFactory;
+import se.kth.speech.coin.tangrams.iristk.GameStateDescriptions;
 import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
 import se.kth.speech.hat.xsd.Annotation;
@@ -130,26 +130,17 @@ public final class FeatureVectorPrinter {
 				LOGGER.info("Processing session log directory \"{}\".", sessionLogDir);
 				final Map<String, Path> playerEventLogFilePaths = LoggedEvents
 						.createPlayerEventLogFileMap(sessionLogDir, expectedEventLogFileCount);
-				final Table<String, String, GameHistory> playerGameStateChangeData = LoggedEvents
+				final Table<String, String, GameHistory> playerGameHistoryTable = LoggedEvents
 						.createPlayerGameHistoryTable(playerEventLogFilePaths.entrySet(), EXPECTED_UNIQUE_GAME_COUNT);
-				final Set<String> playerGameIdIntersection = new HashSet<>(playerGameStateChangeData.columnKeySet());
-				playerGameStateChangeData.rowMap().values().stream().map(Map::keySet)
+				final Set<String> playerGameIdIntersection = new HashSet<>(playerGameHistoryTable.columnKeySet());
+				playerGameHistoryTable.rowMap().values().stream().map(Map::keySet)
 						.forEach(playerGameIdIntersection::retainAll);
 				final int gameCount = playerGameIdIntersection.size();
 				if (gameCount == 1) {
-					final Iterator<GameStateDescription> gameDescs = playerGameStateChangeData.values().stream()
-							.map(GameHistory::getInitialState).iterator();
-					final GameStateDescription firstGameDesc = gameDescs.next();
-					while (gameDescs.hasNext()) {
-						// Sanity check to make sure that all players have
-						// started with the same game setup
-						final GameStateDescription next = gameDescs.next();
-						if (!firstGameDesc.isEquivalent(next)) {
-							throw new IllegalArgumentException("Found non-equivalent initial states between players.");
-						}
-					}
+					final GameStateDescription firstGameDesc = GameStateDescriptions.findAnyEquivalentGameState(
+							playerGameHistoryTable.values().stream().map(GameHistory::getInitialState).iterator());
 
-					final int uniqueModelDescriptionCount = playerGameStateChangeData.values().size();
+					final int uniqueModelDescriptionCount = playerGameHistoryTable.values().size();
 					final ToDoubleFunction<String> namedResourceEdgeCounter = new ImageEdgeCounter();
 					final List<GameContextFeatureExtractor> contextFeatureExtractors = Arrays.asList(
 							new EnvironmentFeatureExtractor(uniqueModelDescriptionCount),
@@ -168,8 +159,7 @@ public final class FeatureVectorPrinter {
 					final String header = featureDescs.collect(TABLE_ROW_CELL_JOINER);
 
 					final String gameId = playerGameIdIntersection.iterator().next();
-					final Map<String, GameHistory> playerGameHistories = playerGameStateChangeData.columnMap()
-							.get(gameId);
+					final Map<String, GameHistory> playerGameHistories = playerGameHistoryTable.columnMap().get(gameId);
 					final TemporalGameContextFactory uttContextFactory = new TemporalGameContextFactory(
 							playerGameHistories::get);
 					final SegmentFeatureVectorFactory featureVectorFactory = new SegmentFeatureVectorFactory(
@@ -214,7 +204,8 @@ public final class FeatureVectorPrinter {
 			result = new PrintWriter(System.out);
 		} else {
 			LOGGER.info("Output file path is \"{}\".", outfile);
-			result = new PrintWriter(Files.newBufferedWriter(outfile.toPath(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING));
+			result = new PrintWriter(Files.newBufferedWriter(outfile.toPath(), StandardOpenOption.CREATE,
+					StandardOpenOption.TRUNCATE_EXISTING));
 		}
 		return result;
 	}

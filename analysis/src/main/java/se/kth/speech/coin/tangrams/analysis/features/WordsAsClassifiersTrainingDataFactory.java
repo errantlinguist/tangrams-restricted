@@ -24,7 +24,6 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -58,8 +57,9 @@ import se.kth.speech.coin.tangrams.analysis.GameContext;
 import se.kth.speech.coin.tangrams.analysis.GameContextModelFactory;
 import se.kth.speech.coin.tangrams.analysis.GameHistory;
 import se.kth.speech.coin.tangrams.analysis.SegmentUtteranceFactory;
-import se.kth.speech.coin.tangrams.analysis.Utterance;
 import se.kth.speech.coin.tangrams.analysis.TemporalGameContextFactory;
+import se.kth.speech.coin.tangrams.analysis.Utterance;
+import se.kth.speech.coin.tangrams.iristk.GameStateDescriptions;
 import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
 import se.kth.speech.hat.xsd.Annotation;
@@ -150,17 +150,8 @@ public final class WordsAsClassifiersTrainingDataFactory
 						.forEach(playerGameIdIntersection::retainAll);
 				final int gameCount = playerGameIdIntersection.size();
 				if (gameCount == 1) {
-					final Iterator<GameStateDescription> gameDescs = playerGameHistoryTable.values().stream()
-							.map(GameHistory::getInitialState).iterator();
-					final GameStateDescription firstGameDesc = gameDescs.next();
-					while (gameDescs.hasNext()) {
-						// Sanity check to make sure that all players have
-						// started with the same game setup
-						final GameStateDescription next = gameDescs.next();
-						if (!firstGameDesc.isEquivalent(next)) {
-							throw new IllegalArgumentException("Found non-equivalent initial states between players.");
-						}
-					}
+					final GameStateDescription firstGameDesc = GameStateDescriptions.findAnyEquivalentGameState(
+							playerGameHistoryTable.values().stream().map(GameHistory::getInitialState).iterator());
 
 					final int uniqueModelDescriptionCount = playerGameHistoryTable.values().size();
 					final ToDoubleFunction<String> namedResourceEdgeCounter = new ImageEdgeCounter();

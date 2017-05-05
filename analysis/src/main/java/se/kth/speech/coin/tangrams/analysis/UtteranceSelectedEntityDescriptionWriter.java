@@ -78,8 +78,8 @@ import se.kth.speech.coin.tangrams.content.ImageVisualizationInfoTableRowWriter;
 import se.kth.speech.coin.tangrams.iristk.EventTimes;
 import se.kth.speech.coin.tangrams.iristk.EventTypeMatcher;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
+import se.kth.speech.coin.tangrams.iristk.GameStateDescriptions;
 import se.kth.speech.coin.tangrams.iristk.ImageVisualizationInfoUnmarshaller;
-import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
 import se.kth.speech.coin.tangrams.iristk.events.Move;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
 import se.kth.speech.coin.tangrams.view.UserPrompts;
@@ -409,17 +409,8 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 		playerGameHistoryTable.rowMap().values().stream().map(Map::keySet).forEach(playerGameIdIntersection::retainAll);
 		final int gameCount = playerGameIdIntersection.size();
 		if (gameCount == 1) {
-			final Iterator<GameStateDescription> gameDescs = playerGameHistoryTable.values().stream()
-					.map(GameHistory::getInitialState).iterator();
-			final GameStateDescription firstGameDesc = gameDescs.next();
-			while (gameDescs.hasNext()) {
-				// Sanity check to make sure that all players have
-				// started with the same game setup
-				final GameStateDescription next = gameDescs.next();
-				if (!firstGameDesc.isEquivalent(next)) {
-					throw new IllegalArgumentException("Found non-equivalent initial states between players.");
-				}
-			}
+			GameStateDescriptions.findAnyEquivalentGameState(
+					playerGameHistoryTable.values().stream().map(GameHistory::getInitialState).iterator());
 
 			final String gameId = playerGameIdIntersection.iterator().next();
 
