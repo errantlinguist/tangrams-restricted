@@ -124,7 +124,6 @@ public final class EventUtteranceFactory
 		final List<Utterance> result = new ArrayList<>();
 		while (uttIter.hasNext()) {
 			// Find all utterances up to the first event
-
 			final Utterance nextUtt = uttIter.next();
 			final LocalDateTime uttStartTimestamp = TimestampArithmetic.createOffsetTimestamp(gameStartTime,
 					nextUtt.getStartTime());
