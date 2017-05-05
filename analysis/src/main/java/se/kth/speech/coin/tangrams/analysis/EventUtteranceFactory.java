@@ -29,8 +29,6 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.Lists;
-
 import iristk.system.Event;
 import se.kth.speech.MutablePair;
 import se.kth.speech.TimestampArithmetic;
@@ -70,13 +68,10 @@ public final class EventUtteranceFactory
 
 		final Iterator<Utterance> uttIter = utts.iterator();
 		final Iterator<Event> eventIter = events.iterator();
-		final Entry<Event, List<Utterance>> preEventUtts = createPreEventUtteranceList(uttIter, eventIter,
-				gameStartTime);
-		Event currentEvent = preEventUtts.getKey();
-
+		Event currentEvent = eventIter.next();
 		final Stream.Builder<Entry<Event, List<Utterance>>> resultBuilder = Stream.builder();
 
-		final List<Utterance> firstUtts = preEventUtts.getValue();
+		final List<Utterance> firstUtts = createPreEventUtteranceList(uttIter, currentEvent, gameStartTime);
 		if (firstUtts.isEmpty()) {
 			LOGGER.debug("No utterances before first event.");
 		} else {
@@ -88,7 +83,8 @@ public final class EventUtteranceFactory
 			final Event nextEvent = eventIter.next();
 			LOGGER.debug("Next event: {}", nextEvent);
 			List<Utterance> nextUttList = new ArrayList<>();
-			final LocalDateTime nextEventTimestamp = EventTimes.parseEventTime(nextEvent.getTime()).plusSeconds(timeWindow);
+			final LocalDateTime nextEventTimestamp = EventTimes.parseEventTime(nextEvent.getTime())
+					.plusSeconds(timeWindow);
 			eventUtts: while (uttIter.hasNext()) {
 				final Utterance nextUtt = uttIter.next();
 				final LocalDateTime uttStartTimestamp = TimestampArithmetic.createOffsetTimestamp(gameStartTime,
@@ -120,42 +116,35 @@ public final class EventUtteranceFactory
 		return resultBuilder.build();
 	}
 
-	private Entry<Event, List<Utterance>> createPreEventUtteranceList(final Iterator<Utterance> uttIter,
-			final Iterator<Event> eventIter, final LocalDateTime gameStartTime) {
-		final Entry<Event, List<Utterance>> result;
+	private List<Utterance> createPreEventUtteranceList(final Iterator<Utterance> uttIter, final Event firstEvent,
+			final LocalDateTime gameStartTime) {
+		final List<Utterance> result;
 
-		if (eventIter.hasNext()) {
-			if (uttIter.hasNext()) {
-				final List<Utterance> nextUttList = new ArrayList<>();
-				{
-					// Find all utterances up to the first event
-					final Event firstEvent = eventIter.next();
-					LOGGER.debug("First event: {}", firstEvent);
-					final LocalDateTime firstEventTimestamp = EventTimes.parseEventTime(firstEvent.getTime()).plusSeconds(timeWindow);
-					do {
-						final Utterance nextUtt = uttIter.next();
-						final LocalDateTime uttStartTimestamp = TimestampArithmetic.createOffsetTimestamp(gameStartTime,
-								nextUtt.getStartTime());
-						// If the utterance was before the first event, add it
-						// to the
-						// list of before-event utterances
-						if (firstEventTimestamp.isAfter(uttStartTimestamp)) {
-							nextUttList.add(nextUtt);
-						} else {
-							break;
-						}
-					} while (uttIter.hasNext());
-					result = new MutablePair<>(firstEvent, nextUttList);
-				}
-
-			} else {
-				// No utterances were found; Return an empty list of utterances
-				result = new MutablePair<>(null, Collections.emptyList());
+		if (uttIter.hasNext()) {
+			result = new ArrayList<>();
+			{
+				// Find all utterances up to the first event
+				LOGGER.debug("First event: {}", firstEvent);
+				final LocalDateTime firstEventTimestamp = EventTimes.parseEventTime(firstEvent.getTime())
+						.plusSeconds(timeWindow);
+				do {
+					final Utterance nextUtt = uttIter.next();
+					final LocalDateTime uttStartTimestamp = TimestampArithmetic.createOffsetTimestamp(gameStartTime,
+							nextUtt.getStartTime());
+					// If the utterance was before the first event, add it
+					// to the
+					// list of before-event utterances
+					if (firstEventTimestamp.isAfter(uttStartTimestamp)) {
+						result.add(nextUtt);
+					} else {
+						break;
+					}
+				} while (uttIter.hasNext());
 			}
 
 		} else {
-			// No events were found; Return all the utterances
-			result = new MutablePair<>(null, Collections.unmodifiableList(Lists.newArrayList(uttIter)));
+			// No utterances were found; Return an empty list of utterances
+			result = Collections.emptyList();
 		}
 		return result;
 	}
