@@ -17,6 +17,8 @@
 package se.kth.speech.coin.tangrams.iristk;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -25,8 +27,15 @@ import java.time.LocalDateTime;
  */
 public final class EventTimes {
 
+	public static final DateTimeFormatter FORMATTER = createFormatterBuilder().toFormatter();
+
+	public static DateTimeFormatterBuilder createFormatterBuilder() {
+		return new DateTimeFormatterBuilder().parseCaseInsensitive().append(DateTimeFormatter.ISO_LOCAL_DATE)
+				.appendLiteral(' ').append(DateTimeFormatter.ISO_LOCAL_TIME);
+	}
+
 	public static LocalDateTime parseEventTime(final String timeStr) {
-		return LocalDateTime.parse(timeStr.replace(' ', 'T'));
+		return LocalDateTime.parse(timeStr, FORMATTER);
 	}
 
 	private EventTimes() {
