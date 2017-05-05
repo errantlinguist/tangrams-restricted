@@ -86,10 +86,8 @@ public final class EventUtteranceFactory
 		}
 
 		// Get the utterances after the last event
-		if (!utts.isEmpty()) {
-			final List<Utterance> lastEventUtts = new ArrayList<>(utts);
-			resultBuilder.accept(new MutablePair<>(currentEvent, lastEventUtts));
-		}
+		final List<Utterance> lastEventUtts = new ArrayList<>(utts);
+		resultBuilder.accept(new MutablePair<>(currentEvent, lastEventUtts));
 		return resultBuilder.build();
 	}
 
