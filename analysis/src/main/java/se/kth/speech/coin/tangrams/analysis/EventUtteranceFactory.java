@@ -124,19 +124,17 @@ public final class EventUtteranceFactory
 			LOGGER.debug("First event: {}", firstEvent);
 			final LocalDateTime firstEventTimestamp = EventTimes.parseEventTime(firstEvent.getTime())
 					.plusSeconds(timeWindow);
-			do {
-				final Utterance nextUtt = uttIter.next();
-				final LocalDateTime uttStartTimestamp = TimestampArithmetic.createOffsetTimestamp(gameStartTime,
-						nextUtt.getStartTime());
-				// If the utterance was before the first event, add it
-				// to the
-				// list of before-event utterances
-				if (firstEventTimestamp.isAfter(uttStartTimestamp)) {
-					result.add(nextUtt);
-				} else {
-					break;
-				}
-			} while (uttIter.hasNext());
+			final Utterance nextUtt = uttIter.next();
+			final LocalDateTime uttStartTimestamp = TimestampArithmetic.createOffsetTimestamp(gameStartTime,
+					nextUtt.getStartTime());
+			// If the utterance was before the first event, add it
+			// to the
+			// list of before-event utterances
+			if (firstEventTimestamp.isAfter(uttStartTimestamp)) {
+				result.add(nextUtt);
+			} else {
+				break;
+			}
 		}
 		return result;
 	}
