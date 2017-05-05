@@ -478,7 +478,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 							final float contextStartTime;
 							final float contextEndTime;
 							if (eventUtts.isEmpty()) {
-								LOGGER.warn("No utterances for event ID \"{}\".", event);
+								LOGGER.warn("No utterances for event \"{}\".", event);
 								final LocalDateTime eventTime = EventTimes.parseEventTime(event.getTime());
 								final Duration gameDuration = Duration.between(history.getStartTime(), eventTime);
 								final float offset = gameDuration.toMillis() / 1000.0f;
