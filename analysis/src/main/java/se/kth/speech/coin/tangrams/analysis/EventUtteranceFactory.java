@@ -88,7 +88,7 @@ public final class EventUtteranceFactory
 			final Event nextEvent = eventIter.next();
 			LOGGER.debug("Next event: {}", nextEvent);
 			List<Utterance> nextUttList = new ArrayList<>();
-			final LocalDateTime nextEventTimestamp = EventTimes.parseEventTime(nextEvent.getTime());
+			final LocalDateTime nextEventTimestamp = EventTimes.parseEventTime(nextEvent.getTime()).plusSeconds(timeWindow);
 			eventUtts: while (uttIter.hasNext()) {
 				final Utterance nextUtt = uttIter.next();
 				final LocalDateTime uttStartTimestamp = TimestampArithmetic.createOffsetTimestamp(gameStartTime,
@@ -96,7 +96,7 @@ public final class EventUtteranceFactory
 				// If the utterance was before the next event, add
 				// it to the
 				// list of utterances for the current event
-				if (nextEventTimestamp.plusSeconds(timeWindow).isAfter(uttStartTimestamp)) {
+				if (nextEventTimestamp.isAfter(uttStartTimestamp)) {
 					nextUttList.add(nextUtt);
 				} else {
 					resultBuilder.accept(new MutablePair<>(currentEvent, nextUttList));
@@ -131,7 +131,7 @@ public final class EventUtteranceFactory
 					// Find all utterances up to the first event
 					final Event firstEvent = eventIter.next();
 					LOGGER.debug("First event: {}", firstEvent);
-					final LocalDateTime firstEventTimestamp = EventTimes.parseEventTime(firstEvent.getTime());
+					final LocalDateTime firstEventTimestamp = EventTimes.parseEventTime(firstEvent.getTime()).plusSeconds(timeWindow);
 					do {
 						final Utterance nextUtt = uttIter.next();
 						final LocalDateTime uttStartTimestamp = TimestampArithmetic.createOffsetTimestamp(gameStartTime,
@@ -139,7 +139,7 @@ public final class EventUtteranceFactory
 						// If the utterance was before the first event, add it
 						// to the
 						// list of before-event utterances
-						if (firstEventTimestamp.plusSeconds(timeWindow).isAfter(uttStartTimestamp)) {
+						if (firstEventTimestamp.isAfter(uttStartTimestamp)) {
 							nextUttList.add(nextUtt);
 						} else {
 							break;
