@@ -117,13 +117,14 @@ public final class EventUtteranceFactory
 
 	private List<Utterance> createPreEventUtteranceList(final Iterator<Utterance> uttIter, final Event firstEvent,
 			final LocalDateTime gameStartTime) {
+		LOGGER.debug("First event: {}", firstEvent);
+		final LocalDateTime firstEventTimestamp = EventTimes.parseEventTime(firstEvent.getTime())
+				.plusSeconds(timeWindow);
+		
 		final List<Utterance> result = new ArrayList<>();
-
 		while (uttIter.hasNext()) {
 			// Find all utterances up to the first event
-			LOGGER.debug("First event: {}", firstEvent);
-			final LocalDateTime firstEventTimestamp = EventTimes.parseEventTime(firstEvent.getTime())
-					.plusSeconds(timeWindow);
+
 			final Utterance nextUtt = uttIter.next();
 			final LocalDateTime uttStartTimestamp = TimestampArithmetic.createOffsetTimestamp(gameStartTime,
 					nextUtt.getStartTime());
