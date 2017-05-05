@@ -80,42 +80,25 @@ public final class EventUtteranceFactory
 		// Find the next set of utterances following each event
 		while (eventIter.hasNext()) {
 			final Event nextEvent = eventIter.next();
-			LOGGER.debug("Next event: {}", nextEvent);
-			List<Utterance> nextUttList = new ArrayList<>();
-			final LocalDateTime nextEventTimestamp = EventTimes.parseEventTime(nextEvent.getTime())
-					.plusSeconds(timeWindow);
-			eventUtts: while (!utts.isEmpty()) {
-				final Utterance nextUtt = utts.remove();
-				final LocalDateTime uttStartTimestamp = TimestampArithmetic.createOffsetTimestamp(gameStartTime,
-						nextUtt.getStartTime());
-				// If the utterance was before the next event, add
-				// it to the
-				// list of utterances for the current event
-				if (nextEventTimestamp.isAfter(uttStartTimestamp)) {
-					nextUttList.add(nextUtt);
-				} else {
-					resultBuilder.accept(new MutablePair<>(currentEvent, nextUttList));
-					nextUttList = new ArrayList<>();
-					nextUttList.add(nextUtt);
-					break eventUtts;
-				}
-			}
+			final List<Utterance> nextUttList = createPreEventUtteranceList(utts, nextEvent, gameStartTime);
+			resultBuilder.accept(new MutablePair<>(currentEvent, nextUttList));
 			currentEvent = nextEvent;
 		}
 
 		// Get the utterances after the last event
-		if (!utts.isEmpty()) {
+		if (!utts.isEmpty())
+
+		{
 			final List<Utterance> lastEventUtts = new ArrayList<>(utts);
 			resultBuilder.accept(new MutablePair<>(currentEvent, lastEventUtts));
 		}
 		return resultBuilder.build();
 	}
 
-	private List<Utterance> createPreEventUtteranceList(final Queue<Utterance> utts, final Event firstEvent,
+	private List<Utterance> createPreEventUtteranceList(final Queue<Utterance> utts, final Event nextEvent,
 			final LocalDateTime gameStartTime) {
-		LOGGER.debug("First event: {}", firstEvent);
-		final LocalDateTime firstEventTimestamp = EventTimes.parseEventTime(firstEvent.getTime())
-				.plusSeconds(timeWindow);
+		LOGGER.debug("Event: {}", nextEvent);
+		final LocalDateTime nextEventTimestamp = EventTimes.parseEventTime(nextEvent.getTime()).plusSeconds(timeWindow);
 
 		final List<Utterance> result = new ArrayList<>();
 		while (!utts.isEmpty()) {
@@ -126,7 +109,7 @@ public final class EventUtteranceFactory
 			// If the utterance was before the first event, add it
 			// to the
 			// list of before-event utterances
-			if (firstEventTimestamp.isAfter(uttStartTimestamp)) {
+			if (nextEventTimestamp.isAfter(uttStartTimestamp)) {
 				result.add(nextUtt);
 				utts.remove();
 			} else {
