@@ -84,7 +84,6 @@ import se.kth.speech.coin.tangrams.iristk.events.Move;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
 import se.kth.speech.coin.tangrams.view.UserPrompts;
 import se.kth.speech.hat.xsd.Annotation;
-import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -411,12 +410,11 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 		if (gameCount == 1) {
 			GameStateDescriptions.findAnyEquivalentGameState(
 					playerGameHistoryTable.values().stream().map(GameHistory::getInitialState).iterator());
-
 			final String gameId = playerGameIdIntersection.iterator().next();
+			LOGGER.debug("Processing game \"{}\".", gameId);
 
-			final List<Segment> segments = uttAnnots.getSegments().getSegment();
 			final Map<Utterance, String> uttPlayerIds = new UtterancePlayerIdMapFactory(SEG_UTT_FACTORY::create,
-					playerData.getPlayerSourceIds().inverse()::get).apply(segments);
+					playerData.getPlayerSourceIds().inverse()::get).apply(uttAnnots.getSegments().getSegment());
 			final List<Utterance> utts = Arrays
 					.asList(uttPlayerIds.keySet().stream()
 							.sorted(Comparator.comparing(Utterance::getStartTime)
@@ -426,8 +424,6 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 			final TemporalGameContextFactory uttContextFactory = new TemporalGameContextFactory(
 					playerGameHistories::get);
 			final int uniqueModelDescriptionCount = playerGameHistoryTable.values().size();
-			// final GameContextModelFactory gameModelFactory = new
-			// GameContextModelFactory(uniqueModelDescriptionCount);
 			final ImageVisualizationInfoUnmarshaller imgVizInfoUnmarshaller = new ImageVisualizationInfoUnmarshaller();
 			final SelectedEntityFeatureExtractor entityFeatureExtractor = new SelectedEntityFeatureExtractor(
 					new GameContextModelFactory(uniqueModelDescriptionCount), new ImageEdgeCounter());
