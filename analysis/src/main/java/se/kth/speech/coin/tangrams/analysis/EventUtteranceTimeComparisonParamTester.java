@@ -26,7 +26,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -41,7 +40,6 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
-import java.util.function.BiPredicate;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
@@ -340,12 +338,7 @@ public final class EventUtteranceTimeComparisonParamTester {
 		final String headerStr = colHeaders.stream().map(header -> header.stream().collect(TABLE_ROW_CELL_JOINER))
 				.collect(TABLE_ROW_JOINER);
 
-		final BiPredicate<LocalDateTime, LocalDateTime> timeFrameAfterTestPredicate = (nextEventTime, uttStartTime) -> {
-			final LocalDateTime uttStartTimeOffset = uttStartTime.plusSeconds(-5);
-			return nextEventTime.isAfter(uttStartTimeOffset);
-		};
-		final EventUtteranceFactory eventUttFactory = new EventUtteranceFactory(SALIENT_PIECE_EVENT_MATCHER,
-				timeFrameAfterTestPredicate);
+		final EventUtteranceFactory eventUttFactory = new EventUtteranceFactory(SALIENT_PIECE_EVENT_MATCHER, 0);
 
 		for (final Entry<String, Map<String, GameHistory>> playerGameHistories : playerGameHistoryTable.columnMap()
 				.entrySet()) {

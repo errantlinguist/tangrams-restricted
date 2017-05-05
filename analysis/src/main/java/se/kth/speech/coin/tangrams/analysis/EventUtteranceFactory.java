@@ -23,7 +23,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.function.BiFunction;
-import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
@@ -45,27 +44,23 @@ import se.kth.speech.coin.tangrams.iristk.EventTimes;
 public final class EventUtteranceFactory
 		implements BiFunction<Iterable<Utterance>, GameHistory, Stream<Entry<Event, List<Utterance>>>> {
 
-	private static final BiPredicate<LocalDateTime, LocalDateTime> DEFAULT_EVENT_UTT_TIME_PREDICATE = (nextEventTime,
-			uttStartTime) -> nextEventTime.isAfter(uttStartTime);
-
 	private static final Logger LOGGER = LoggerFactory.getLogger(EventUtteranceFactory.class);
 
 	private final Predicate<? super Event> eventFilter;
 
-	private final BiPredicate<? super LocalDateTime, ? super LocalDateTime> nextEventIsAfterUttStart;
+	private final long timeWindow;
 
 	public EventUtteranceFactory() {
-		this(event -> true, DEFAULT_EVENT_UTT_TIME_PREDICATE);
+		this(event -> true, 0);
 	}
 
 	public EventUtteranceFactory(final Predicate<? super Event> eventFilter) {
-		this(eventFilter, DEFAULT_EVENT_UTT_TIME_PREDICATE);
+		this(eventFilter, 0);
 	}
 
-	public EventUtteranceFactory(final Predicate<? super Event> eventFilter,
-			final BiPredicate<? super LocalDateTime, ? super LocalDateTime> nextEventIsAfterUttStart) {
+	public EventUtteranceFactory(final Predicate<? super Event> eventFilter, final long timeWindow) {
 		this.eventFilter = eventFilter;
-		this.nextEventIsAfterUttStart = nextEventIsAfterUttStart;
+		this.timeWindow = timeWindow;
 	}
 
 	@Override
@@ -101,16 +96,16 @@ public final class EventUtteranceFactory
 				// If the utterance was before the next event, add
 				// it to the
 				// list of utterances for the current event
-				if (nextEventIsAfterUttStart.test(nextEventTimestamp, uttStartTimestamp)) {
+				if (nextEventTimestamp.plusSeconds(timeWindow).isAfter(uttStartTimestamp)) {
 					nextUttList.add(nextUtt);
 				} else {
 					resultBuilder.accept(new MutablePair<>(currentEvent, nextUttList));
 					nextUttList = new ArrayList<>();
 					nextUttList.add(nextUtt);
-					currentEvent = nextEvent;
 					break eventUtts;
 				}
 			}
+			currentEvent = nextEvent;
 		}
 
 		// Get the utterances after the last event
@@ -144,7 +139,7 @@ public final class EventUtteranceFactory
 						// If the utterance was before the first event, add it
 						// to the
 						// list of before-event utterances
-						if (nextEventIsAfterUttStart.test(firstEventTimestamp, uttStartTimestamp)) {
+						if (firstEventTimestamp.plusSeconds(timeWindow).isAfter(uttStartTimestamp)) {
 							nextUttList.add(nextUtt);
 						} else {
 							break;
