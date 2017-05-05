@@ -79,7 +79,8 @@ public final class AnnotationVocabularyCollector
 		// invocations, meaning that a feature with a given index will
 		// always have the same meaning
 		supplier = () -> new TreeSet<>(collator);
-		accumulator = new WordLists.WordAccumulator<>(new SegmentUtteranceFactory(tokenizer));
+		final SegmentUtteranceFactory segUttFactory = new SegmentUtteranceFactory(tokenizer);
+		accumulator = new WordLists.WordAccumulator<>(segUttFactory::create);
 	}
 
 	public AnnotationVocabularyCollector(final Locale locale) {

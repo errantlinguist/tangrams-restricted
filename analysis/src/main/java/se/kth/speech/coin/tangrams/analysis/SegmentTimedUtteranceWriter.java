@@ -57,7 +57,7 @@ public final class SegmentTimedUtteranceWriter {
 			LOGGER.info("Reading annotations from \"{}\".", inpath);
 			final Annotation uttAnnots = HAT.readAnnotation(inpath);
 			final List<Segment> segments = uttAnnots.getSegments().getSegment();
-			final Stream<Utterance> utts = segments.stream().map(SEG_UTT_FACTORY).flatMap(List::stream);
+			final Stream<Utterance> utts = SEG_UTT_FACTORY.create(segments.stream()).flatMap(List::stream);
 			// .sorted(Comparator.comparing(Utterance::getStartTime)
 			// .thenComparing(Comparator.comparing(Utterance::getEndTime)))
 

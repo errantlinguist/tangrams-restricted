@@ -415,7 +415,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 			final String gameId = playerGameIdIntersection.iterator().next();
 
 			final List<Segment> segments = uttAnnots.getSegments().getSegment();
-			final Map<Utterance, String> uttPlayerIds = new UtterancePlayerIdMapFactory(SEG_UTT_FACTORY,
+			final Map<Utterance, String> uttPlayerIds = new UtterancePlayerIdMapFactory(SEG_UTT_FACTORY::create,
 					playerData.getPlayerSourceIds().inverse()::get).apply(segments);
 			final List<Utterance> utts = Arrays
 					.asList(uttPlayerIds.keySet().stream()

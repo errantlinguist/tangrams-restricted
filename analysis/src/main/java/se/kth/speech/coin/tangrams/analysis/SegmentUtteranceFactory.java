@@ -19,6 +19,7 @@ package se.kth.speech.coin.tangrams.analysis;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
@@ -37,7 +38,7 @@ import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
 import se.kth.speech.hat.xsd.Transcription;
 import se.kth.speech.hat.xsd.Transcription.T;
 
-public final class SegmentUtteranceFactory implements Function<Segment, List<Utterance>> {
+public final class SegmentUtteranceFactory {
 
 	private static final float DEFAULT_MIN_SEG_SPACING;
 
@@ -46,11 +47,11 @@ public final class SegmentUtteranceFactory implements Function<Segment, List<Utt
 	private static final Set<String> META_LANGUAGE_TOKENS = new HashSet<>(
 			Arrays.asList("BREATH", "CLICK", "COUGH", "LAUGHTER", "META", "NOISE", "SNIFF", "SWEDISH"));
 
-	private static final Collector<CharSequence, ?, String> TOKEN_JOINING_COLLECTOR = Collectors.joining(" ");
+	private static final Comparator<Segment> TEMPORAL_SEGMENT_COMPARATOR = Comparator.comparing(Segment::getStart)
+			.thenComparing(Segment::getEnd).thenComparing(Segment::getSource).thenComparing(Segment::getTrack)
+			.thenComparing(Segment::getId);
 
-	static {
-		DEFAULT_MIN_SEG_SPACING = 1.0f / SegmentTimes.TIME_TO_MILLS_FACTOR;
-	}
+	private static final Collector<CharSequence, ?, String> TOKEN_JOINING_COLLECTOR = Collectors.joining(" ");
 
 	// private static Function<String, List<String>> createDefaultTokenizer() {
 	// final Predicate<String> nonMetaLanguagePredicate = token ->
@@ -62,10 +63,8 @@ public final class SegmentUtteranceFactory implements Function<Segment, List<Utt
 
 	private static final Pattern WHITESPACE_PATTERN = Pattern.compile("\\s+");
 
-	private static Function<String, List<String>> createDefaultTokenizer() {
-		final Predicate<String> nonMetaLanguagePredicate = token -> !META_LANGUAGE_TOKENS.contains(token);
-		return str -> Arrays
-				.asList(WHITESPACE_PATTERN.splitAsStream(str).filter(nonMetaLanguagePredicate).toArray(String[]::new));
+	static {
+		DEFAULT_MIN_SEG_SPACING = 1.0f / SegmentTimes.TIME_TO_MILLS_FACTOR;
 	}
 
 	// private static Function<String, Stream<String>> createDefaultTokenizer()
@@ -75,6 +74,12 @@ public final class SegmentUtteranceFactory implements Function<Segment, List<Utt
 	// final StringTokenizer tokenizer = new StringTokenizer(analyer);
 	// return str -> tokenizer.apply(null, str).collect(Collectors.toList());
 	// }
+
+	private static Function<String, List<String>> createDefaultTokenizer() {
+		final Predicate<String> nonMetaLanguagePredicate = token -> !META_LANGUAGE_TOKENS.contains(token);
+		return str -> Arrays
+				.asList(WHITESPACE_PATTERN.splitAsStream(str).filter(nonMetaLanguagePredicate).toArray(String[]::new));
+	}
 
 	private final float minSegmentSpacing;
 
@@ -94,8 +99,7 @@ public final class SegmentUtteranceFactory implements Function<Segment, List<Utt
 		this.minSegmentSpacing = minSegmentSpacing;
 	}
 
-	@Override
-	public List<Utterance> apply(final Segment segment) {
+	public List<Utterance> create(final Segment segment) {
 		final List<Utterance> result;
 		final Transcription transcription = segment.getTranscription();
 		if (transcription == null) {
@@ -113,12 +117,12 @@ public final class SegmentUtteranceFactory implements Function<Segment, List<Utt
 				final String parentSegmentId = segment.getId();
 				for (final Object child : children) {
 					if (child instanceof Segment) {
-						final List<Utterance> childUtts = apply((Segment) child);
+						final List<Utterance> childUtts = create((Segment) child);
 						// If there was a contiguous sequence of terminal tokens
 						// preceding this segment, finish building it
 						if (!currentTokenSeq.isEmpty()) {
 							final float nextUttStartTime = childUtts.get(0).getStartTime();
-							createUtterance(parentSegmentId, currentTokenSeq, prevUttEndTime, nextUttStartTime)
+							create(parentSegmentId, currentTokenSeq, prevUttEndTime, nextUttStartTime)
 									.ifPresent(result::add);
 							currentTokenSeq = new ArrayList<>();
 						}
@@ -138,8 +142,7 @@ public final class SegmentUtteranceFactory implements Function<Segment, List<Utt
 					// Add the last token sequence
 					final Float uttEndTime = segment.getEnd();
 					assert uttEndTime != null;
-					createUtterance(parentSegmentId, currentTokenSeq, prevUttEndTime, uttEndTime)
-							.ifPresent(result::add);
+					create(parentSegmentId, currentTokenSeq, prevUttEndTime, uttEndTime).ifPresent(result::add);
 				}
 			}
 		}
@@ -147,7 +150,11 @@ public final class SegmentUtteranceFactory implements Function<Segment, List<Utt
 		return result;
 	}
 
-	private Optional<Utterance> createUtterance(final String segmentId, final List<T> tokenAnnots,
+	public Stream<List<Utterance>> create(final Stream<Segment> segments) {
+		return segments.sorted(TEMPORAL_SEGMENT_COMPARATOR).map(this::create);
+	}
+
+	private Optional<Utterance> create(final String segmentId, final List<T> tokenAnnots,
 			final float previousUttEndTime, final float nextUttStartTime) {
 		final Float firstTokenStartTime = tokenAnnots.get(0).getStart();
 		final float seqStartTime = firstTokenStartTime == null ? previousUttEndTime + minSegmentSpacing

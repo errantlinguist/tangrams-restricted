@@ -257,7 +257,7 @@ public final class WordsAsClassifiersTrainingDataFactory
 	 */
 	@Override
 	public Stream<Entry<List<String>, DoubleStream>> apply(final Segment segment) {
-		final List<Utterance> utts = SEG_UTT_FACTORY.apply(segment);
+		final List<Utterance> utts = SEG_UTT_FACTORY.create(segment);
 		final String sourceId = segment.getSource();
 		// Get the player ID associated with the given audio source
 		final String playerId = sourceIdPlayerIds.get(sourceId);
