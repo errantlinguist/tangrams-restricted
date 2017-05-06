@@ -79,7 +79,7 @@ public final class SegmentTimedUtteranceWriter {
 						.desc("The initial timestamp to use for calculating utterance times.").hasArg()
 						// See
 						// se.kth.speech.coin.tangrams.iristk.EventTimes.FORMATTER
-						.argName("'yyyy-MM-dd HH:mm:ss.SSS'").build();
+						.argName("'yyyy-[m]m-[d]d hh:mm:ss[.f...]'").build();
 			}
 		},
 		EVENT_LOG(EVENT_LOG_OPT_NAME) {
