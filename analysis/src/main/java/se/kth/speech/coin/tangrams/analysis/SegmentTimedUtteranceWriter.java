@@ -125,7 +125,6 @@ public final class SegmentTimedUtteranceWriter {
 	private static final Collector<CharSequence, ?, String> WORD_JOINER = Collectors.joining(" ");
 
 	public static void main(final String[] args) throws JAXBException, IOException {
-
 		final CommandLineParser parser = new DefaultParser();
 		try {
 			final CommandLine cl = parser.parse(OPTIONS, args);
