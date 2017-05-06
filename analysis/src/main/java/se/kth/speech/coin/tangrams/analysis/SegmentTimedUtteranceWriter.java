@@ -153,7 +153,7 @@ public final class SegmentTimedUtteranceWriter {
 					throw new AssertionError("No logic for case statement val \"" + selectedTimestampOpt + "\".");
 				}
 				}
-				LOGGER.info("Initial timestamp is {}.", initialTime);
+				LOGGER.info("Initial timestamp is \"{}\".", EventTimes.FORMATTER.format(initialTime));
 
 				final File hatFile = (File) cl.getParsedOptionValue(Parameter.HAT_FILE.optName);
 				LOGGER.info("Reading annotations from \"{}\".", hatFile);
@@ -163,7 +163,7 @@ public final class SegmentTimedUtteranceWriter {
 				final Stream<MutablePair<String, String>> uttReprTimestamps = utts.map(utt -> {
 					final float startTime = utt.getStartTime();
 					final String uttRepr = utt.getTokens().stream().collect(WORD_JOINER);
-					LOGGER.debug("Start time for \"{}\" is {}.", uttRepr, startTime);
+					LOGGER.debug("Start time for \"{}\" is \"{}\".", uttRepr, startTime);
 					final LocalDateTime uttTime = TimestampArithmetic.createOffsetTimestamp(initialTime, startTime);
 					final String uttTimestamp = uttTime.format(EventTimes.FORMATTER);
 					return new MutablePair<>(uttRepr, uttTimestamp);
