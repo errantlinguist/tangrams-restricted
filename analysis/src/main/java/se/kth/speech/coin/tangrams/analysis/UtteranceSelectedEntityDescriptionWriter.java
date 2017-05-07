@@ -122,6 +122,14 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 				return Option.builder(optName).longOpt("outpath").desc("The path to write the training data to.")
 						.hasArg().argName("path").type(File.class).required().build();
 			}
+		},
+		STRICT("s") {
+			@Override
+			public Option get() {
+				return Option.builder(optName).longOpt("strict")
+						.desc("Causes the extraction to fail if at least one utterance for each event wasn't found.")
+						.build();
+			}
 		};
 
 		protected final String optName;
@@ -247,7 +255,8 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 							.ifPresent(outfileNamePrefix -> {
 								LOGGER.info("Will prefix each output file with \"{}\".", outfileNamePrefix);
 								try {
-									run(inpath, outpath, outfileNamePrefix);
+									new UtteranceSelectedEntityDescriptionWriter(outpath, outfileNamePrefix, false)
+											.accept(inpath);
 								} catch (final JAXBException e) {
 									throw new RuntimeException(e);
 								} catch (final IOException e) {
@@ -276,7 +285,8 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 					LOGGER.info("Will write data to \"{}\".", outpath);
 					final String outfileNamePrefix = parseOutfilePrefix(cl, inpath);
 					LOGGER.info("Will prefix each output file with \"{}\".", outfileNamePrefix);
-					run(inpath, outpath, outfileNamePrefix);
+					final boolean strict = cl.hasOption(Parameter.STRICT.optName);
+					new UtteranceSelectedEntityDescriptionWriter(outpath, outfileNamePrefix, strict).accept(inpath);
 				}
 			} catch (final ParseException e) {
 				System.out.println(String.format("An error occured while parsing the command-line arguments: %s", e));
@@ -379,8 +389,20 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 		formatter.printHelp(UtteranceSelectedEntityDescriptionWriter.class.getName(), OPTIONS);
 	}
 
-	private static void run(final Path inpath, final Path outpath, final String outfileNamePrefix)
-			throws JAXBException, IOException {
+	private final String outfileNamePrefix;
+
+	private final Path outpath;
+
+	private final boolean strict;
+
+	public UtteranceSelectedEntityDescriptionWriter(final Path outpath, final String outfileNamePrefix,
+			final boolean strict) {
+		this.outpath = outpath;
+		this.outfileNamePrefix = outfileNamePrefix;
+		this.strict = strict;
+	}
+
+	public void accept(final Path inpath) throws JAXBException, IOException {
 		final Iterator<Path> infilePathIter = Files.walk(inpath, FileVisitOption.FOLLOW_LINKS)
 				.filter(Files::isRegularFile)
 				.filter(filePath -> filePath.getFileName().toString().endsWith(".properties")).iterator();
@@ -392,12 +414,12 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 				props.load(propsInstream);
 			}
 			final String outfileInfix = createOutfileInfix(infilePath);
-			run(props, infilePath.getParent(), outpath, outfileNamePrefix + outfileInfix);
+			accept(props, infilePath.getParent(), outfileNamePrefix + outfileInfix);
 		}
 	}
 
-	private static void run(final Properties props, final Path infileBaseDir, final Path outpath,
-			final String outfileNamePrefix) throws JAXBException, IOException {
+	private void accept(final Properties props, final Path infileBaseDir, final String outfileNamePrefix)
+			throws JAXBException, IOException {
 		final Path hatInfilePath = infileBaseDir.resolve(props.getProperty("hat"));
 		LOGGER.info("Reading annotations from \"{}\".", hatInfilePath);
 		final Annotation uttAnnots = HAT.readAnnotation(hatInfilePath.toFile());
@@ -467,12 +489,17 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 							final float contextStartTime;
 							final float contextEndTime;
 							if (eventUtts.isEmpty()) {
-								LOGGER.warn("No utterances for event \"{}\".", event);
-								final LocalDateTime eventTime = EventTimes.parseEventTime(event.getTime());
-								final Duration gameDuration = Duration.between(history.getStartTime(), eventTime);
-								final float offset = gameDuration.toMillis() / 1000.0f;
-								contextStartTime = offset;
-								contextEndTime = offset;
+								if (strict) {
+									throw new IllegalArgumentException(
+											String.format("No utterances for event \"%s\".", event));
+								} else {
+									LOGGER.warn("No utterances for event \"{}\".", event);
+									final LocalDateTime eventTime = EventTimes.parseEventTime(event.getTime());
+									final Duration gameDuration = Duration.between(history.getStartTime(), eventTime);
+									final float offset = gameDuration.toMillis() / 1000.0f;
+									contextStartTime = offset;
+									contextEndTime = offset;
+								}
 							} else {
 								// Just use the context of the first utterance
 								final Utterance firstUtt = eventUtts.iterator().next();
