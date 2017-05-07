@@ -45,7 +45,7 @@ public final class SegmentUtteranceFactory {
 	private static final Logger LOGGER = LoggerFactory.getLogger(SegmentUtteranceFactory.class);
 
 	private static final Set<String> META_LANGUAGE_TOKENS = new HashSet<>(
-			Arrays.asList("BREATH", "CLICK", "COUGH", "LAUGHTER", "META", "NOISE", "SNIFF", "SWEDISH"));
+			Arrays.asList("BREATH", "CLICK", "COUGH", "LAUGHTER", "META", "NOISE", "SNIFF", "SWEDISH", "UNKNOWN"));
 
 	private static final Comparator<Segment> TEMPORAL_SEGMENT_COMPARATOR = Comparator.comparing(Segment::getStart)
 			.thenComparing(Segment::getEnd).thenComparing(Segment::getSource).thenComparing(Segment::getTrack)
