@@ -590,13 +590,14 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 				sb.append(System.lineSeparator());
 				final List<Utterance> prevUtts = prevEventUttList.getValue();
 				final Utterance prevUtt = prevUtts.get(prevUtts.size() - 1);
-				sb.append(String.format("Last utt before event: \"%s\", start: %f, end: %f",
-						prevUtt.getTokens().stream().collect(WORD_JOINER), prevUtt.getStartTime(),
-						prevUtt.getEndTime()));
+				sb.append(String.format("Last utt before event: \"%s\"; start: %f; end: %f; segment ID: \"%s\"",
+						prevUtt.getTokens().stream().collect(WORD_JOINER), prevUtt.getStartTime(), prevUtt.getEndTime(),
+						prevUtt.getSegmentId()));
 			}
 		}
 		{
-			final ListIterator<Entry<Event, List<Utterance>>> eventUttListIter = eventUttLists.listIterator(eventIdx + 1);
+			final ListIterator<Entry<Event, List<Utterance>>> eventUttListIter = eventUttLists
+					.listIterator(eventIdx + 1);
 			Entry<Event, List<Utterance>> nextEventUttList = null;
 			while (eventUttListIter.hasNext()) {
 				nextEventUttList = eventUttListIter.next();
@@ -609,9 +610,9 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 				sb.append(System.lineSeparator());
 				final List<Utterance> nextUtts = nextEventUttList.getValue();
 				final Utterance nextUtt = nextUtts.get(0);
-				sb.append(String.format("Next utt after event: \"%s\", start: %f, end: %f",
-						nextUtt.getTokens().stream().collect(WORD_JOINER), nextUtt.getStartTime(),
-						nextUtt.getEndTime()));
+				sb.append(String.format("Next utt after event: \"%s\"; start: %f; end: %f; segment ID: \"%s\"",
+						nextUtt.getTokens().stream().collect(WORD_JOINER), nextUtt.getStartTime(), nextUtt.getEndTime(),
+						nextUtt.getSegmentId()));
 			}
 		}
 		return sb.toString();
