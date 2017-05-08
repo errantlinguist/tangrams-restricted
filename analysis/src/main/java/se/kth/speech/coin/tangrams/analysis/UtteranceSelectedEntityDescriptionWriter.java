@@ -596,7 +596,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 			}
 		}
 		{
-			final ListIterator<Entry<Event, List<Utterance>>> eventUttListIter = eventUttLists.listIterator(eventIdx);
+			final ListIterator<Entry<Event, List<Utterance>>> eventUttListIter = eventUttLists.listIterator(eventIdx + 1);
 			Entry<Event, List<Utterance>> nextEventUttList = null;
 			while (eventUttListIter.hasNext()) {
 				nextEventUttList = eventUttListIter.next();
