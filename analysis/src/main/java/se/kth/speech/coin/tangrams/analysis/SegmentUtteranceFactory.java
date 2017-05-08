@@ -99,7 +99,7 @@ public final class SegmentUtteranceFactory {
 		final Transcription transcription = segment.getTranscription();
 		if (transcription == null) {
 			result = Collections.emptyList();
-			LOGGER.debug("Segment \"{}\" has no {} element: {}",
+			LOGGER.debug("Segment \"{}\" has no {} element.",
 					new Object[] { segment.getId(), Transcription.class.getSimpleName() });
 		} else {
 			final List<Object> children = transcription.getSegmentOrT();
