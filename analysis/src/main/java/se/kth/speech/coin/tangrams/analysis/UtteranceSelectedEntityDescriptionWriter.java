@@ -502,7 +502,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 											String.format("No utterances for event \"%s\".", event));
 								} else {
 									final String msg = createNoEventUtterancesMsg(event, eventUttLists,
-											eventUttListIter.previousIndex());
+											eventUttListIter.nextIndex() - 1);
 									LOGGER.warn(msg);
 									final LocalDateTime eventTime = EventTimes.parseEventTime(event.getTime());
 									final Duration gameDuration = Duration.between(history.getStartTime(), eventTime);
