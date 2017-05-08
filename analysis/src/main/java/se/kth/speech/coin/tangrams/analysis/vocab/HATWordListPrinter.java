@@ -22,9 +22,11 @@ import java.io.PrintWriter;
 import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 import java.util.NavigableSet;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -37,6 +39,7 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.MissingOptionException;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
@@ -55,13 +58,6 @@ public final class HATWordListPrinter {
 			@Override
 			public Option get() {
 				return Option.builder(optName).longOpt("help").desc("Prints this message.").build();
-			}
-		},
-		INPATH("i") {
-			@Override
-			public Option get() {
-				return Option.builder(optName).longOpt("inpath").desc("The path to the HAT file(s) to process.")
-						.hasArg().argName("path").type(File.class).required().build();
 			}
 		},
 		OUTFILE("o") {
@@ -116,26 +112,21 @@ public final class HATWordListPrinter {
 			if (cl.hasOption(Parameter.HELP.optName)) {
 				printHelp();
 			} else {
-				final File inpath = (File) cl.getParsedOptionValue(Parameter.INPATH.optName);
-				LOGGER.info("Reading annotations from \"{}\".", inpath);
-				final HATWordListFactory f = new HATWordListFactory(new AnnotationVocabularyCollector(),
-						UNMARSHALLER::get);
-				final NavigableSet<String> wordList;
-				try (final Stream<Path> inpaths = Files.walk(inpath.toPath(), FileVisitOption.FOLLOW_LINKS)) {
-					wordList = f.apply(inpaths);
+				final List<Path> inpaths = Arrays.asList(cl.getArgList().stream().map(Paths::get).toArray(Path[]::new));
+				switch (inpaths.size()) {
+				case 0: {
+					throw new MissingOptionException("No input path specified.");
 				}
-
-				try (final PrintWriter out = parseOutfile(cl)) {
-					final Iterator<String> wordIter = wordList.iterator();
-					if (wordIter.hasNext()) {
-						final String first = wordIter.next();
-						out.print(first);
-						while (wordIter.hasNext()) {
-							out.print(System.lineSeparator());
-							final String next = wordIter.next();
-							out.print(next);
-						}
+				case 1: {
+					final Path inpath = inpaths.iterator().next();
+					try (final PrintWriter out = parseOutpath(cl)) {
+						run(inpath, out);
 					}
+					break;
+				}
+				default: {
+					throw new IllegalArgumentException("No support for multiple inpaths (yet).");
+				}
 				}
 			}
 		} catch (final ParseException e) {
@@ -150,7 +141,7 @@ public final class HATWordListPrinter {
 		return result;
 	}
 
-	private static PrintWriter parseOutfile(final CommandLine cl) throws ParseException, IOException {
+	private static PrintWriter parseOutpath(final CommandLine cl) throws ParseException, IOException {
 		final PrintWriter result;
 		final File outfile = (File) cl.getParsedOptionValue(Parameter.OUTFILE.optName);
 		if (outfile == null) {
@@ -158,14 +149,40 @@ public final class HATWordListPrinter {
 			result = new PrintWriter(System.out);
 		} else {
 			LOGGER.info("Output file path is \"{}\".", outfile);
-			result = new PrintWriter(Files.newBufferedWriter(outfile.toPath(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING));
+			result = new PrintWriter(Files.newBufferedWriter(outfile.toPath(), StandardOpenOption.CREATE,
+					StandardOpenOption.TRUNCATE_EXISTING));
 		}
 		return result;
 	}
 
 	private static void printHelp() {
 		final HelpFormatter formatter = new HelpFormatter();
-		formatter.printHelp(HATWordListPrinter.class.getName(), OPTIONS);
+		formatter.printHelp(HATWordListPrinter.class.getSimpleName() + " INFILE", OPTIONS);
+	}
+
+	/**
+	 * @param infile
+	 * @param out
+	 * @throws IOException
+	 */
+	private static void run(final Path infile, final PrintWriter out) throws IOException {
+		LOGGER.info("Reading annotations from \"{}\".", infile);
+		final HATWordListFactory f = new HATWordListFactory(new AnnotationVocabularyCollector(), UNMARSHALLER::get);
+		final NavigableSet<String> wordList;
+		try (final Stream<Path> inpaths = Files.walk(infile, FileVisitOption.FOLLOW_LINKS)) {
+			wordList = f.apply(inpaths);
+		}
+
+		final Iterator<String> wordIter = wordList.iterator();
+		if (wordIter.hasNext()) {
+			final String first = wordIter.next();
+			out.print(first);
+			while (wordIter.hasNext()) {
+				out.print(System.lineSeparator());
+				final String next = wordIter.next();
+				out.print(next);
+			}
+		}
 	}
 
 }

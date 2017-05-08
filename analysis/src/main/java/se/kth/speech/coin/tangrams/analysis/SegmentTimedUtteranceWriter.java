@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.function.Supplier;
@@ -34,6 +35,7 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.MissingOptionException;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.OptionGroup;
 import org.apache.commons.cli.Options;
@@ -59,17 +61,18 @@ import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
 public final class SegmentTimedUtteranceWriter {
 
 	private enum Parameter implements Supplier<Option> {
+		EVENT_LOG(EVENT_LOG_OPT_NAME) {
+			@Override
+			public Option get() {
+				return Option.builder(optName).longOpt("log")
+						.desc("The event log to use for calculating utterance times.").hasArg().argName("path")
+						.type(File.class).build();
+			}
+		},
 		HELP("?") {
 			@Override
 			public Option get() {
 				return Option.builder(optName).longOpt("help").desc("Prints this message.").build();
-			}
-		},
-		HAT_FILE("h") {
-			@Override
-			public Option get() {
-				return Option.builder(optName).longOpt("hat").desc("The path to the HAT file to process.").hasArg()
-						.argName("path").type(File.class).required().build();
 			}
 		},
 		INITIAL_TIMESTAMP(INITIAL_TIMESTAMP_OPT_NAME) {
@@ -80,14 +83,6 @@ public final class SegmentTimedUtteranceWriter {
 						// See
 						// se.kth.speech.coin.tangrams.iristk.EventTimes.FORMATTER
 						.argName("'yyyy-[m]m-[d]d hh:mm:ss[.f...]'").build();
-			}
-		},
-		EVENT_LOG(EVENT_LOG_OPT_NAME) {
-			@Override
-			public Option get() {
-				return Option.builder(optName).longOpt("log")
-						.desc("The event log to use for calculating utterance times.").hasArg().argName("path")
-						.type(File.class).build();
 			}
 		};
 
@@ -101,9 +96,19 @@ public final class SegmentTimedUtteranceWriter {
 
 	}
 
+	private static final String EVENT_LOG_OPT_NAME = "l";
+
+	private static final String INITIAL_TIMESTAMP_OPT_NAME = "t";
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(SegmentTimedUtteranceWriter.class);
+
 	private static final Options OPTIONS;
 
+	private static final SegmentUtteranceFactory SEG_UTT_FACTORY = new SegmentUtteranceFactory();
+
 	private static final OptionGroup TIMESTAMP_OPTS;
+
+	private static final Collector<CharSequence, ?, String> WORD_JOINER = Collectors.joining(" ");
 
 	static {
 		OPTIONS = new Options();
@@ -114,16 +119,6 @@ public final class SegmentTimedUtteranceWriter {
 		OPTIONS.addOptionGroup(TIMESTAMP_OPTS);
 	}
 
-	private static final String INITIAL_TIMESTAMP_OPT_NAME = "t";
-
-	private static final String EVENT_LOG_OPT_NAME = "l";
-
-	private static final Logger LOGGER = LoggerFactory.getLogger(SegmentTimedUtteranceWriter.class);
-
-	private static final SegmentUtteranceFactory SEG_UTT_FACTORY = new SegmentUtteranceFactory();
-
-	private static final Collector<CharSequence, ?, String> WORD_JOINER = Collectors.joining(" ");
-
 	public static void main(final String[] args) throws JAXBException, IOException {
 		final CommandLineParser parser = new DefaultParser();
 		try {
@@ -131,45 +126,53 @@ public final class SegmentTimedUtteranceWriter {
 			if (cl.hasOption(Parameter.HELP.optName)) {
 				printHelp();
 			} else {
-				final String selectedTimestampOpt = TIMESTAMP_OPTS.getSelected();
-				final Object timestampOptVal = cl.getParsedOptionValue(selectedTimestampOpt);
-				final LocalDateTime initialTime;
-				switch (selectedTimestampOpt) {
-				case EVENT_LOG_OPT_NAME: {
-					final Path eventLogFilePath = ((File) timestampOptVal).toPath();
-					LOGGER.info("Reading log at \"{}\" to find timestamp.", eventLogFilePath);
-					initialTime = EventTimes
-							.parseEventTime(LoggedEvents.parseLoggedEvents(Files.lines(eventLogFilePath))
-									.filter(new EventTypeMatcher(EnumSet.of(GameManagementEvent.GAME_READY_RESPONSE)))
-									.findFirst().get().getTime());
-					break;
-				}
-				case INITIAL_TIMESTAMP_OPT_NAME: {
-					initialTime = EventTimes.parseEventTime(timestampOptVal.toString());
-					break;
-				}
-				default: {
-					throw new AssertionError("No logic for case statement val \"" + selectedTimestampOpt + "\".");
-				}
-				}
-				LOGGER.info("Initial timestamp is \"{}\".", EventTimes.FORMATTER.format(initialTime));
+				final List<File> infiles = Arrays.asList(cl.getArgList().stream().map(File::new).toArray(File[]::new));
+				if (infiles.isEmpty()) {
+					throw new MissingOptionException("No input file(s) specified.");
 
-				final File hatFile = (File) cl.getParsedOptionValue(Parameter.HAT_FILE.optName);
-				LOGGER.info("Reading annotations from \"{}\".", hatFile);
-				final Annotation uttAnnots = HAT.readAnnotation(hatFile);
-				final List<Segment> segments = uttAnnots.getSegments().getSegment();
-				final Stream<Utterance> utts = SEG_UTT_FACTORY.create(segments.stream()).flatMap(List::stream);
-				final Stream<MutablePair<String, String>> uttReprTimestamps = utts.map(utt -> {
-					final float startTime = utt.getStartTime();
-					final String uttRepr = utt.getTokens().stream().collect(WORD_JOINER);
-					LOGGER.debug("Start time for \"{}\" is{}.", uttRepr, startTime);
-					final LocalDateTime uttTime = TimestampArithmetic.createOffsetTimestamp(initialTime, startTime);
-					final String uttTimestamp = uttTime.format(EventTimes.FORMATTER);
-					return new MutablePair<>(uttRepr, uttTimestamp);
-				});
-				System.out.println("UTTERANCE\tTIME");
-				uttReprTimestamps.map(uttRepr -> String.format("%s\t%s", uttRepr.getKey(), uttRepr.getValue()))
-						.forEachOrdered(System.out::println);
+				} else {
+					final String selectedTimestampOpt = TIMESTAMP_OPTS.getSelected();
+					final Object timestampOptVal = cl.getParsedOptionValue(selectedTimestampOpt);
+					final LocalDateTime initialTime;
+					switch (selectedTimestampOpt) {
+					case EVENT_LOG_OPT_NAME: {
+						final Path eventLogFilePath = ((File) timestampOptVal).toPath();
+						LOGGER.info("Reading log at \"{}\" to find timestamp.", eventLogFilePath);
+						initialTime = EventTimes.parseEventTime(LoggedEvents
+								.parseLoggedEvents(Files.lines(eventLogFilePath))
+								.filter(new EventTypeMatcher(EnumSet.of(GameManagementEvent.GAME_READY_RESPONSE)))
+								.findFirst().get().getTime());
+						break;
+					}
+					case INITIAL_TIMESTAMP_OPT_NAME: {
+						initialTime = EventTimes.parseEventTime(timestampOptVal.toString());
+						break;
+					}
+					default: {
+						throw new AssertionError("No logic for case statement val \"" + selectedTimestampOpt + "\".");
+					}
+					}
+					LOGGER.info("Initial timestamp is \"{}\".", EventTimes.FORMATTER.format(initialTime));
+
+					for (final File infile : infiles) {
+						LOGGER.info("Reading annotations from \"{}\".", infile);
+						final Annotation uttAnnots = HAT.readAnnotation(infile);
+						final List<Segment> segments = uttAnnots.getSegments().getSegment();
+						final Stream<Utterance> utts = SEG_UTT_FACTORY.create(segments.stream()).flatMap(List::stream);
+						final Stream<MutablePair<String, String>> uttReprTimestamps = utts.map(utt -> {
+							final float startTime = utt.getStartTime();
+							final String uttRepr = utt.getTokens().stream().collect(WORD_JOINER);
+							LOGGER.debug("Start time for \"{}\" is{}.", uttRepr, startTime);
+							final LocalDateTime uttTime = TimestampArithmetic.createOffsetTimestamp(initialTime,
+									startTime);
+							final String uttTimestamp = uttTime.format(EventTimes.FORMATTER);
+							return new MutablePair<>(uttRepr, uttTimestamp);
+						});
+						System.out.println("UTTERANCE\tTIME");
+						uttReprTimestamps.map(uttRepr -> String.format("%s\t%s", uttRepr.getKey(), uttRepr.getValue()))
+								.forEachOrdered(System.out::println);
+					}
+				}
 			}
 		} catch (final ParseException e) {
 			System.out.println(String.format("An error occured while parsing the command-line arguments: %s", e));
@@ -180,7 +183,7 @@ public final class SegmentTimedUtteranceWriter {
 
 	private static void printHelp() {
 		final HelpFormatter formatter = new HelpFormatter();
-		formatter.printHelp(SegmentTimedUtteranceWriter.class.getName(), OPTIONS);
+		formatter.printHelp(SegmentTimedUtteranceWriter.class.getSimpleName() + " INPATHS...", OPTIONS);
 	}
 
 }

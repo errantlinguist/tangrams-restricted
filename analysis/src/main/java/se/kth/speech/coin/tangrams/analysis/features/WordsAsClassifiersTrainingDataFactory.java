@@ -42,6 +42,7 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.MissingOptionException;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
@@ -82,13 +83,6 @@ public final class WordsAsClassifiersTrainingDataFactory
 			@Override
 			public Option get() {
 				return Option.builder(optName).longOpt("help").desc("Prints this message.").build();
-			}
-		},
-		INPATH("i") {
-			@Override
-			public Option get() {
-				return Option.builder(optName).longOpt("inpath").desc("The path to the HAT file corpus to process.")
-						.hasArg().argName("path").type(File.class).required().build();
 			}
 		},
 		OUTPATH("o") {
@@ -133,71 +127,21 @@ public final class WordsAsClassifiersTrainingDataFactory
 			if (cl.hasOption(Parameter.HELP.optName)) {
 				printHelp();
 			} else {
-				final File inpath = (File) cl.getParsedOptionValue(Parameter.INPATH.optName);
-				LOGGER.info("Reading annotations from \"{}\".", inpath);
-				final Annotation uttAnnots = HAT.readAnnotation(inpath);
-				final Map<String, String> sourceIdPlayerIds = Annotations.createSourceIdPlayerIdMap(uttAnnots);
-				final Set<String> playerIds = new HashSet<>(sourceIdPlayerIds.values());
-				final int expectedEventLogFileCount = playerIds.size();
-				final Path sessionLogDir = inpath.getParentFile().toPath();
-				LOGGER.info("Processing session log directory \"{}\".", sessionLogDir);
-				final Map<String, Path> playerEventLogFilePaths = LoggedEvents
-						.createPlayerEventLogFileMap(sessionLogDir, expectedEventLogFileCount);
-				final Table<String, String, GameHistory> playerGameHistoryTable = LoggedEvents
-						.createPlayerGameHistoryTable(playerEventLogFilePaths.entrySet(), EXPECTED_UNIQUE_GAME_COUNT);
-				final Set<String> playerGameIdIntersection = new HashSet<>(playerGameHistoryTable.columnKeySet());
-				playerGameHistoryTable.rowMap().values().stream().map(Map::keySet)
-						.forEach(playerGameIdIntersection::retainAll);
-				final int gameCount = playerGameIdIntersection.size();
-				if (gameCount == 1) {
-					final GameStateDescription firstGameDesc = GameStateDescriptions.findAnyEquivalentGameState(
-							playerGameHistoryTable.values().stream().map(GameHistory::getInitialState).iterator());
-
-					final int uniqueModelDescriptionCount = playerGameHistoryTable.values().size();
-					final ToDoubleFunction<String> namedResourceEdgeCounter = new ImageEdgeCounter();
-					final List<GameContextFeatureExtractor> contextFeatureExtractors = Arrays.asList(
-							new SelectedEntityFeatureExtractor(new GameContextModelFactory(uniqueModelDescriptionCount),
-									namedResourceEdgeCounter));
-					final Stream.Builder<String> featureDescBuilder = Stream.builder();
-					featureDescBuilder.accept("WORD");
-					contextFeatureExtractors.stream()
-							.map(extractor -> extractor.createFeatureDescriptions(firstGameDesc))
-							.flatMap(Function.identity()).forEachOrdered(featureDescBuilder);
-
-					final Stream<String> featureDescs = featureDescBuilder.build();
-					final String header = featureDescs.collect(TABLE_ROW_CELL_JOINER);
-
-					final String gameId = playerGameIdIntersection.iterator().next();
-					final Map<String, GameHistory> playerGameHistories = playerGameHistoryTable.columnMap().get(gameId);
-					final TemporalGameContextFactory uttContextFactory = new TemporalGameContextFactory(
-							playerGameHistories::get);
-					final WordsAsClassifiersTrainingDataFactory trainingDataFactory = new WordsAsClassifiersTrainingDataFactory(
-							sourceIdPlayerIds, uttContextFactory, contextFeatureExtractors);
-					final List<Segment> segments = uttAnnots.getSegments().getSegment();
-					final Stream<Stream<Entry<List<String>, DoubleStream>>> segTrainingData = segments.stream()
-							.map(trainingDataFactory);
-					final Stream<Entry<List<String>, DoubleStream>> trainingData = segTrainingData
-							.flatMap(Function.identity());
+				final List<File> infiles = Arrays.asList(cl.getArgList().stream().map(File::new).toArray(File[]::new));
+				switch (infiles.size()) {
+				case 0: {
+					throw new MissingOptionException("No input path specified.");
+				}
+				case 1: {
+					final File infile = infiles.iterator().next();
 					try (final PrintWriter out = parseOutpath(cl)) {
-						out.print(header);
-						final Stream<String> rows = trainingData.flatMap(trainingDatum -> {
-							final double[] featureVector = trainingDatum.getValue().toArray();
-							return trainingDatum.getKey().stream().map(word -> {
-								final Stream.Builder<String> rowBuilder = Stream.builder();
-								rowBuilder.accept(word);
-								Arrays.stream(featureVector).mapToObj(Double::toString).forEachOrdered(rowBuilder);
-								return rowBuilder.build();
-							}).map(stream -> stream.collect(TABLE_ROW_CELL_JOINER));
-						});
-						rows.forEachOrdered(row -> {
-							out.print(TABLE_STRING_REPR_ROW_DELIMITER);
-							out.print(row);
-						});
+						run(infile, out);
 					}
-
-				} else {
-					throw new UnsupportedOperationException(
-							String.format("No logic for handling a game count of %d.", gameCount));
+					break;
+				}
+				default: {
+					throw new IllegalArgumentException("No support for multiple infiles (yet).");
+				}
 				}
 			}
 		} catch (final ParseException e) {
@@ -227,7 +171,76 @@ public final class WordsAsClassifiersTrainingDataFactory
 
 	private static void printHelp() {
 		final HelpFormatter formatter = new HelpFormatter();
-		formatter.printHelp(WordsAsClassifiersTrainingDataFactory.class.getName(), OPTIONS);
+		formatter.printHelp(WordsAsClassifiersTrainingDataFactory.class.getSimpleName() + " INFILE", OPTIONS);
+	}
+
+	/**
+	 * @param infile
+	 * @param out
+	 * @throws IOException
+	 * @throws JAXBException
+	 */
+	private static void run(final File infile, final PrintWriter out) throws IOException, JAXBException {
+		LOGGER.info("Reading annotations from \"{}\".", infile);
+		final Annotation uttAnnots = HAT.readAnnotation(infile);
+		final Map<String, String> sourceIdPlayerIds = Annotations.createSourceIdPlayerIdMap(uttAnnots);
+		final Set<String> playerIds = new HashSet<>(sourceIdPlayerIds.values());
+		final int expectedEventLogFileCount = playerIds.size();
+		final Path sessionLogDir = infile.getParentFile().toPath();
+		LOGGER.info("Processing session log directory \"{}\".", sessionLogDir);
+		final Map<String, Path> playerEventLogFilePaths = LoggedEvents.createPlayerEventLogFileMap(sessionLogDir,
+				expectedEventLogFileCount);
+		final Table<String, String, GameHistory> playerGameHistoryTable = LoggedEvents
+				.createPlayerGameHistoryTable(playerEventLogFilePaths.entrySet(), EXPECTED_UNIQUE_GAME_COUNT);
+		final Set<String> playerGameIdIntersection = new HashSet<>(playerGameHistoryTable.columnKeySet());
+		playerGameHistoryTable.rowMap().values().stream().map(Map::keySet).forEach(playerGameIdIntersection::retainAll);
+		final int gameCount = playerGameIdIntersection.size();
+		if (gameCount == 1) {
+			final GameStateDescription firstGameDesc = GameStateDescriptions.findAnyEquivalentGameState(
+					playerGameHistoryTable.values().stream().map(GameHistory::getInitialState).iterator());
+
+			final int uniqueModelDescriptionCount = playerGameHistoryTable.values().size();
+			final ToDoubleFunction<String> namedResourceEdgeCounter = new ImageEdgeCounter();
+			final List<GameContextFeatureExtractor> contextFeatureExtractors = Arrays
+					.asList(new SelectedEntityFeatureExtractor(new GameContextModelFactory(uniqueModelDescriptionCount),
+							namedResourceEdgeCounter));
+			final Stream.Builder<String> featureDescBuilder = Stream.builder();
+			featureDescBuilder.accept("WORD");
+			contextFeatureExtractors.stream().map(extractor -> extractor.createFeatureDescriptions(firstGameDesc))
+					.flatMap(Function.identity()).forEachOrdered(featureDescBuilder);
+
+			final Stream<String> featureDescs = featureDescBuilder.build();
+			final String header = featureDescs.collect(TABLE_ROW_CELL_JOINER);
+
+			final String gameId = playerGameIdIntersection.iterator().next();
+			final Map<String, GameHistory> playerGameHistories = playerGameHistoryTable.columnMap().get(gameId);
+			final TemporalGameContextFactory uttContextFactory = new TemporalGameContextFactory(
+					playerGameHistories::get);
+			final WordsAsClassifiersTrainingDataFactory trainingDataFactory = new WordsAsClassifiersTrainingDataFactory(
+					sourceIdPlayerIds, uttContextFactory, contextFeatureExtractors);
+			final List<Segment> segments = uttAnnots.getSegments().getSegment();
+			final Stream<Stream<Entry<List<String>, DoubleStream>>> segTrainingData = segments.stream()
+					.map(trainingDataFactory);
+			final Stream<Entry<List<String>, DoubleStream>> trainingData = segTrainingData.flatMap(Function.identity());
+			out.print(header);
+			final Stream<String> rows = trainingData.flatMap(trainingDatum -> {
+				final double[] featureVector = trainingDatum.getValue().toArray();
+				return trainingDatum.getKey().stream().map(word -> {
+					final Stream.Builder<String> rowBuilder = Stream.builder();
+					rowBuilder.accept(word);
+					Arrays.stream(featureVector).mapToObj(Double::toString).forEachOrdered(rowBuilder);
+					return rowBuilder.build();
+				}).map(stream -> stream.collect(TABLE_ROW_CELL_JOINER));
+			});
+			rows.forEachOrdered(row -> {
+				out.print(TABLE_STRING_REPR_ROW_DELIMITER);
+				out.print(row);
+			});
+
+		} else {
+			throw new UnsupportedOperationException(
+					String.format("No logic for handling a game count of %d.", gameCount));
+		}
 	}
 
 	private final List<GameContextFeatureExtractor> contextFeatureExtractors;

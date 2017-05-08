@@ -60,6 +60,7 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.MissingOptionException;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
@@ -101,14 +102,6 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 				return Option.builder(optName).longOpt("help").desc("Prints this message.").build();
 			}
 		},
-		INPATH("i") {
-			@Override
-			public Option get() {
-				return Option.builder(optName).longOpt("inpath")
-						.desc("The path to the property file(s) describing the job(s) to process.").hasArg()
-						.argName("path").type(File.class).required().build();
-			}
-		},
 		OUTFILE_PREFIX("p") {
 			@Override
 			public Option get() {
@@ -119,7 +112,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 		OUTPATH("o") {
 			@Override
 			public Option get() {
-				return Option.builder(optName).longOpt("outpath").desc("The path to write the training data to.")
+				return Option.builder(optName).longOpt("outpath").desc("The path to write the output to.")
 						.hasArg().argName("path").type(File.class).required().build();
 			}
 		},
@@ -279,14 +272,26 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 				if (cl.hasOption(Parameter.HELP.optName)) {
 					printHelp();
 				} else {
-					final Path inpath = ((File) cl.getParsedOptionValue(Parameter.INPATH.optName)).toPath();
-					LOGGER.info("Will read batch job data from \"{}\".", inpath);
-					final Path outpath = ((File) cl.getParsedOptionValue(Parameter.OUTPATH.optName)).toPath();
-					LOGGER.info("Will write data to \"{}\".", outpath);
-					final String outfileNamePrefix = parseOutfilePrefix(cl, inpath);
-					LOGGER.info("Will prefix each output file with \"{}\".", outfileNamePrefix);
-					final boolean strict = cl.hasOption(Parameter.STRICT.optName);
-					new UtteranceSelectedEntityDescriptionWriter(outpath, outfileNamePrefix, strict).accept(inpath);
+					final List<Path> inpaths = Arrays
+							.asList(cl.getArgList().stream().map(Paths::get).toArray(Path[]::new));
+					if (inpaths.isEmpty()) {
+						throw new MissingOptionException("No input path(s) specified.");
+
+					} else {
+						final Path outpath = ((File) cl.getParsedOptionValue(Parameter.OUTPATH.optName)).toPath();
+						LOGGER.info("Will write data to \"{}\".", outpath);
+						final boolean strict = cl.hasOption(Parameter.STRICT.optName);
+						for (final Path inpath : inpaths) {
+							final String outfileNamePrefix = parseOutfilePrefix(cl, inpath);
+							LOGGER.info("Will prefix each output file for input \"{}\" with \"{}\".", inpath,
+									outfileNamePrefix);
+							final UtteranceSelectedEntityDescriptionWriter writer = new UtteranceSelectedEntityDescriptionWriter(
+									outpath, outfileNamePrefix, strict);
+							LOGGER.info("Will read batch job data from \"{}\".", inpath);
+							writer.accept(inpath);
+						}
+					}
+
 				}
 			} catch (final ParseException e) {
 				System.out.println(String.format("An error occured while parsing the command-line arguments: %s", e));
@@ -386,7 +391,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 
 	private static void printHelp() {
 		final HelpFormatter formatter = new HelpFormatter();
-		formatter.printHelp(UtteranceSelectedEntityDescriptionWriter.class.getName(), OPTIONS);
+		formatter.printHelp(UtteranceSelectedEntityDescriptionWriter.class.getSimpleName() + " INPATHS...", OPTIONS);
 	}
 
 	private final String outfileNamePrefix;

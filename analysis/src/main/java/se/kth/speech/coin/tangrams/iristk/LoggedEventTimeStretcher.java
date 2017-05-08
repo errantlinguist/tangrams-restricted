@@ -24,10 +24,12 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -38,6 +40,7 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.MissingOptionException;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
@@ -58,24 +61,17 @@ import se.kth.speech.coin.tangrams.view.UserPrompts;
 public final class LoggedEventTimeStretcher {
 
 	private enum Parameter implements Supplier<Option> {
-		HELP("?") {
-			@Override
-			public Option get() {
-				return Option.builder(optName).longOpt("help").desc("Prints this message.").build();
-			}
-		},
-		INPATH("i") {
-			@Override
-			public Option get() {
-				return Option.builder(optName).longOpt("inpath").desc("The path to event log to process.").hasArg()
-						.argName("path").type(File.class).required().build();
-			}
-		},
 		FACTOR("f") {
 			@Override
 			public Option get() {
 				return Option.builder(optName).longOpt("factor").desc("The amount to stretch the times by.").hasArg()
 						.argName("value").required().build();
+			}
+		},
+		HELP("?") {
+			@Override
+			public Option get() {
+				return Option.builder(optName).longOpt("help").desc("Prints this message.").build();
 			}
 		},
 		OUTPATH("o") {
@@ -127,12 +123,25 @@ public final class LoggedEventTimeStretcher {
 				if (cl.hasOption(Parameter.HELP.optName)) {
 					printHelp();
 				} else {
-					final Path inpath = ((File) cl.getParsedOptionValue(Parameter.INPATH.optName)).toPath();
-					LOGGER.info("Will read annotations from \"{}\".", inpath);
-					final BigDecimal stretchFactor = new BigDecimal(cl.getOptionValue(Parameter.FACTOR.optName));
-					LOGGER.info("Will stretch logged events by a factor of {}.", stretchFactor);
-					try (final PrintWriter out = parseOutpath(cl)) {
-						run(inpath, stretchFactor, out);
+					final List<Path> inpaths = Arrays
+							.asList(cl.getArgList().stream().map(Paths::get).toArray(Path[]::new));
+					switch (inpaths.size()) {
+					case 0: {
+						throw new MissingOptionException("No input path specified.");
+					}
+					case 1: {
+						final Path inpath = inpaths.iterator().next();
+						LOGGER.info("Will read annotations from \"{}\".", inpath);
+						final BigDecimal stretchFactor = new BigDecimal(cl.getOptionValue(Parameter.FACTOR.optName));
+						LOGGER.info("Will stretch logged events by a factor of {}.", stretchFactor);
+						try (final PrintWriter out = parseOutpath(cl)) {
+							run(inpath, stretchFactor, out);
+						}
+						break;
+					}
+					default: {
+						throw new IllegalArgumentException("No support for multiple inpaths (yet).");
+					}
 					}
 				}
 			} catch (final ParseException e) {
@@ -163,7 +172,7 @@ public final class LoggedEventTimeStretcher {
 
 	private static void printHelp() {
 		final HelpFormatter formatter = new HelpFormatter();
-		formatter.printHelp(LoggedEventTimeStretcher.class.getName(), OPTIONS);
+		formatter.printHelp(LoggedEventTimeStretcher.class.getSimpleName() + " INPATH", OPTIONS);
 	}
 
 	private static void run(final Path inpath, final BigDecimal stretchFactor, final PrintWriter out)

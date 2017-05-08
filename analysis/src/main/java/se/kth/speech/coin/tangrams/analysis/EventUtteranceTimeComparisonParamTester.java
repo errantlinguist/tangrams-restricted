@@ -54,6 +54,7 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.MissingOptionException;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
@@ -86,14 +87,6 @@ public final class EventUtteranceTimeComparisonParamTester {
 			@Override
 			public Option get() {
 				return Option.builder(optName).longOpt("help").desc("Prints this message.").build();
-			}
-		},
-		INPATH("i") {
-			@Override
-			public Option get() {
-				return Option.builder(optName).longOpt("inpath")
-						.desc("The path to the property file(s) describing the job(s) to process.").hasArg()
-						.argName("path").type(File.class).required().build();
 			}
 		};
 
@@ -218,9 +211,16 @@ public final class EventUtteranceTimeComparisonParamTester {
 				if (cl.hasOption(Parameter.HELP.optName)) {
 					printHelp();
 				} else {
-					final Path inpath = ((File) cl.getParsedOptionValue(Parameter.INPATH.optName)).toPath();
-					LOGGER.info("Will read batch job data from \"{}\".", inpath);
-					run(inpath);
+					final List<Path> inpaths = Arrays
+							.asList(cl.getArgList().stream().map(Paths::get).toArray(Path[]::new));
+					if (inpaths.isEmpty()) {
+						throw new MissingOptionException("No input path(s) specified.");
+					} else {
+						for (final Path inpath : inpaths) {
+							LOGGER.info("Will read batch job data from \"{}\".", inpath);
+							run(inpath);
+						}
+					}
 				}
 			} catch (final ParseException e) {
 				System.out.println(String.format("An error occured while parsing the command-line arguments: %s", e));
@@ -299,7 +299,7 @@ public final class EventUtteranceTimeComparisonParamTester {
 
 	private static void printHelp() {
 		final HelpFormatter formatter = new HelpFormatter();
-		formatter.printHelp(EventUtteranceTimeComparisonParamTester.class.getName(), OPTIONS);
+		formatter.printHelp(EventUtteranceTimeComparisonParamTester.class.getSimpleName() + " INPATHS...", OPTIONS);
 	}
 
 	private static void run(final Path inpath) throws JAXBException, IOException {
