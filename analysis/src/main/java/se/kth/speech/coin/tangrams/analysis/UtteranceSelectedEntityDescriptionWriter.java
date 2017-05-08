@@ -30,16 +30,15 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Deque;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
@@ -468,8 +467,8 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 				// The visualization info for the given game
 				final ImageVisualizationInfo imgVizInfo = imgVizInfoUnmarshaller
 						.apply(history.getInitialState().getImageVisualizationInfoDescription());
-				final Stream<Entry<Event, List<Utterance>>> eventUttLists = EVENT_UTT_FACTORY.apply(utts.listIterator(),
-						history);
+				final List<Entry<Event, List<Utterance>>> eventUttLists = EVENT_UTT_FACTORY
+						.apply(utts.listIterator(), history).collect(Collectors.toList());
 
 				final List<List<String>> colHeaders = createColHeaders();
 				final String headerStr = colHeaders.stream()
@@ -481,8 +480,8 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 						StandardOpenOption.TRUNCATE_EXISTING)) {
 					writer.write(headerStr);
 
-					for (final Iterator<Entry<Event, List<Utterance>>> eventUttListIter = eventUttLists
-							.iterator(); eventUttListIter.hasNext();) {
+					for (final ListIterator<Entry<Event, List<Utterance>>> eventUttListIter = eventUttLists
+							.listIterator(); eventUttListIter.hasNext();) {
 						final Entry<Event, List<Utterance>> eventUttList = eventUttListIter.next();
 						writer.write(TABLE_STRING_REPR_ROW_DELIMITER);
 
@@ -502,7 +501,9 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 									throw new IllegalArgumentException(
 											String.format("No utterances for event \"%s\".", event));
 								} else {
-									LOGGER.warn("No utterances for event \"{}\".", event);
+									final String msg = createNoEventUtterancesMsg(event, eventUttLists,
+											eventUttListIter.previousIndex());
+									LOGGER.warn(msg);
 									final LocalDateTime eventTime = EventTimes.parseEventTime(event.getTime());
 									final Duration gameDuration = Duration.between(history.getStartTime(), eventTime);
 									final float offset = gameDuration.toMillis() / 1000.0f;
@@ -559,5 +560,58 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 					String.format("No logic for handling a game count of %d.", gameCount));
 		}
 
+	}
+
+	/**
+	 * @param event
+	 * @param eventUttLists
+	 * @param previousIndex
+	 * @return
+	 */
+	private String createNoEventUtterancesMsg(final Event event,
+			final List<Entry<Event, List<Utterance>>> eventUttLists, final int eventIdx) {
+		final StringBuilder sb = new StringBuilder(128);
+		sb.append("No utterances for event \"");
+		sb.append(event);
+		sb.append("\".");
+		{
+			final ListIterator<Entry<Event, List<Utterance>>> eventUttListIter = eventUttLists.listIterator(eventIdx);
+			Entry<Event, List<Utterance>> prevEventUttList = null;
+			while (eventUttListIter.hasPrevious()) {
+				prevEventUttList = eventUttListIter.previous();
+				final List<Utterance> prevUtts = prevEventUttList.getValue();
+				if (!prevUtts.isEmpty()) {
+					break;
+				}
+			}
+			if (prevEventUttList != null) {
+				sb.append(System.lineSeparator());
+				final List<Utterance> prevUtts = prevEventUttList.getValue();
+				final Utterance prevUtt = prevUtts.get(prevUtts.size() - 1);
+				sb.append(String.format("Last utt before event: \"%s\" start: %f end: %f",
+						prevUtt.getTokens().stream().collect(WORD_JOINER), prevUtt.getStartTime(),
+						prevUtt.getEndTime()));
+			}
+		}
+		{
+			final ListIterator<Entry<Event, List<Utterance>>> eventUttListIter = eventUttLists.listIterator(eventIdx);
+			Entry<Event, List<Utterance>> nextEventUttList = null;
+			while (eventUttListIter.hasNext()) {
+				nextEventUttList = eventUttListIter.next();
+				final List<Utterance> nextUtts = nextEventUttList.getValue();
+				if (!nextUtts.isEmpty()) {
+					break;
+				}
+			}
+			if (nextEventUttList != null) {
+				sb.append(System.lineSeparator());
+				final List<Utterance> nextUtts = nextEventUttList.getValue();
+				final Utterance nextUtt = nextUtts.get(0);
+				sb.append(String.format("Next utt after event: \"%s\" start: %f end: %f",
+						nextUtt.getTokens().stream().collect(WORD_JOINER), nextUtt.getStartTime(),
+						nextUtt.getEndTime()));
+			}
+		}
+		return sb.toString();
 	}
 }
