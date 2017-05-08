@@ -18,11 +18,11 @@ package se.kth.speech.coin.tangrams.analysis;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -80,6 +80,24 @@ public final class SegmentUtteranceFactory {
 				.asList(WHITESPACE_PATTERN.splitAsStream(str).filter(whitelistingPredicate).toArray(String[]::new));
 	}
 
+	static void addSegmentTokens(final ArrayList<? super T> tokens, final Collection<Object> children) {
+		tokens.ensureCapacity(tokens.size() + children.size());
+		for (final Object child : children) {
+			if (child instanceof Segment) {
+				addSegmentTokens(tokens, ((Segment) child).getTranscription().getSegmentOrT());
+			} else {
+				tokens.add((T) child);
+			}
+		}
+	}
+
+	static List<T> createSegmentTokenList(final Segment seg) {
+		final List<Object> children = seg.getTranscription().getSegmentOrT();
+		final ArrayList<T> result = new ArrayList<>(Math.max(children.size(), 16));
+		addSegmentTokens(result, children);
+		return result;
+	}
+
 	private final Function<? super String, ? extends List<String>> tokenizer;
 
 	public SegmentUtteranceFactory() {
@@ -103,42 +121,32 @@ public final class SegmentUtteranceFactory {
 					new Object[] { segment.getId(), Transcription.class.getSimpleName() });
 		} else {
 			final List<Object> children = transcription.getSegmentOrT();
-			result = new ArrayList<>(Math.max(children.size(), 16));
-			final Float initialPrevUttEndTime = segment.getStart();
-			assert initialPrevUttEndTime != null;
+			// TODO: make this recursive
+			children.stream().filter(child -> child instanceof Segment).findAny().ifPresent(childSeg -> {
+				LOGGER.warn(
+						"Segment \"{}\" contains child {} instances; Multi-level transcriptions not (yet) supported.",
+						new Object[] { segment.getId(), Segment.class.getSimpleName() });
+			});
+			final Float segStartTime = segment.getStart();
+			assert segStartTime != null;
+			final Float segEndTime = segment.getEnd();
+			assert segEndTime != null;
 			{
-				double prevUttEndTime = initialPrevUttEndTime;
-				List<T> currentTokenSeq = new ArrayList<>();
+				final ArrayList<T> tokens = new ArrayList<>(Math.max(children.size(), 16));
 				final String parentSegmentId = segment.getId();
 				for (final Object child : children) {
 					if (child instanceof Segment) {
-						final List<Utterance> childUtts = create((Segment) child);
-						// If there was a contiguous sequence of terminal tokens
-						// preceding this segment, finish building it
-						if (!currentTokenSeq.isEmpty()) {
-							final double nextUttStartTime = childUtts.get(0).getStartTime();
-							create(parentSegmentId, currentTokenSeq, prevUttEndTime, nextUttStartTime)
-									.ifPresent(result::add);
-							currentTokenSeq = new ArrayList<>();
-						}
-						// Add the newly-created child utterances after adding
-						// the
-						// now-completed terminal sequence
-						result.addAll(childUtts);
-						prevUttEndTime = childUtts.get(childUtts.size() - 1).getEndTime();
-					} else if (child instanceof T) {
-						currentTokenSeq.add((T) child);
+						final Segment childSeg = (Segment) child;
+						addSegmentTokens(tokens, childSeg.getTranscription().getSegmentOrT());
 					} else {
-						throw new IllegalArgumentException(String.format(
-								"Could not parse child annotation of type \"%s\".", child.getClass().getName()));
+						tokens.add((T) child);
 					}
 				}
-				if (!currentTokenSeq.isEmpty()) {
-					// Add the last token sequence
-					final Float uttEndTime = segment.getEnd();
-					assert uttEndTime != null;
-					create(parentSegmentId, currentTokenSeq, prevUttEndTime, uttEndTime).ifPresent(result::add);
-				}
+				final String uttRepr = tokens.stream().map(T::getContent).collect(TOKEN_JOINING_COLLECTOR);
+				final List<String> tokenForms = tokenizer.apply(uttRepr);
+				final Utterance utt = new Utterance(parentSegmentId, tokenForms, segStartTime.doubleValue(),
+						segEndTime.doubleValue());
+				result = Collections.singletonList(utt);
 			}
 		}
 
@@ -149,16 +157,23 @@ public final class SegmentUtteranceFactory {
 		return segments.sorted(TEMPORAL_SEGMENT_COMPARATOR).map(this::create);
 	}
 
-	private Optional<Utterance> create(final String segmentId, final List<T> tokenAnnots,
-			final double previousUttEndTime, final double nextUttStartTime) {
-		final Float firstTokenStartTime = tokenAnnots.get(0).getStart();
-		final double seqStartTime = firstTokenStartTime == null ? previousUttEndTime : firstTokenStartTime;
-		final Float lastTokenEndTime = tokenAnnots.get(tokenAnnots.size() - 1).getEnd();
-		final double seqEndTime = lastTokenEndTime == null ? nextUttStartTime : lastTokenEndTime;
-		final Stream<String> tokenForms = tokenAnnots.stream().map(T::getContent);
-		final List<String> tokens = tokenizer.apply(tokenForms.collect(TOKEN_JOINING_COLLECTOR));
-		return tokens.isEmpty() ? Optional.empty()
-				: Optional.of(new Utterance(segmentId, tokens, seqStartTime, seqEndTime));
-	}
+	// private Optional<Utterance> create(final String segmentId, final List<T>
+	// tokenAnnots,
+	// final double previousUttEndTime, final double nextUttStartTime) {
+	// final Float firstTokenStartTime = tokenAnnots.get(0).getStart();
+	// final double seqStartTime = firstTokenStartTime == null ?
+	// previousUttEndTime : firstTokenStartTime;
+	// final Float lastTokenEndTime = tokenAnnots.get(tokenAnnots.size() -
+	// 1).getEnd();
+	// final double seqEndTime = lastTokenEndTime == null ? nextUttStartTime :
+	// lastTokenEndTime;
+	// final Stream<String> tokenForms =
+	// tokenAnnots.stream().map(T::getContent);
+	// final List<String> tokens =
+	// tokenizer.apply(tokenForms.collect(TOKEN_JOINING_COLLECTOR));
+	// return tokens.isEmpty() ? Optional.empty()
+	// : Optional.of(new Utterance(segmentId, tokens, seqStartTime,
+	// seqEndTime));
+	// }
 
 }

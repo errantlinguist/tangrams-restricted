@@ -83,23 +83,6 @@ public final class SegmentUtteranceFactoryTest {
 		return Collections.singleton(annots.getSegments());
 	}
 
-	private static void addSegmentTokens(final Collection<? super T> tokens, final Iterable<Object> children) {
-		for (final Object child : children) {
-			if (child instanceof Segment) {
-				addSegmentTokens(tokens, ((Segment) child).getTranscription().getSegmentOrT());
-			} else {
-				tokens.add((T) child);
-			}
-		}
-	}
-
-	private static List<T> createSegmentTokenList(final Segment seg) {
-		final List<Object> children = seg.getTranscription().getSegmentOrT();
-		final List<T> result = new ArrayList<>(Math.max(children.size(), 16));
-		addSegmentTokens(result, children);
-		return result;
-	}
-	
 	private static Annotation readAnnotations() throws URISyntaxException, JAXBException {
 		final URL testAnnotFileUrl = SegmentUtteranceFactoryTest.class.getResource("test-hat.xml");
 		LOGGER.info("Reading test annotations from \"{}\".", testAnnotFileUrl);
@@ -114,7 +97,7 @@ public final class SegmentUtteranceFactoryTest {
 	@Theory
 	public void testCreateSegment(final Segment seg) {
 		LOGGER.info("Testing segment \"{}\".",
-				createSegmentTokenList(seg).stream().map(T::getContent).collect(TOKEN_JOINING_COLLECTOR));
+				 SegmentUtteranceFactory.createSegmentTokenList(seg).stream().map(T::getContent).collect(TOKEN_JOINING_COLLECTOR));
 		final List<Utterance> utts = TEST_INST.create(seg);
 		Assert.assertFalse(utts.isEmpty());
 		final Float actualStart = seg.getStart();
