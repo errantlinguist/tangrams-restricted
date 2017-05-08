@@ -144,9 +144,13 @@ public final class SegmentUtteranceFactory {
 				}
 				final String uttRepr = tokens.stream().map(T::getContent).collect(TOKEN_JOINING_COLLECTOR);
 				final List<String> tokenForms = tokenizer.apply(uttRepr);
-				final Utterance utt = new Utterance(parentSegmentId, tokenForms, segStartTime.doubleValue(),
-						segEndTime.doubleValue());
-				result = Collections.singletonList(utt);
+				if (tokenForms.isEmpty()){
+					result = Collections.emptyList();
+				} else {
+					final Utterance utt = new Utterance(parentSegmentId, tokenForms, segStartTime.doubleValue(),
+							segEndTime.doubleValue());
+					result = Collections.singletonList(utt);
+				}
 			}
 		}
 
