@@ -468,8 +468,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 				// The visualization info for the given game
 				final ImageVisualizationInfo imgVizInfo = imgVizInfoUnmarshaller
 						.apply(history.getInitialState().getImageVisualizationInfoDescription());
-				final Deque<Utterance> uttsToProcess = new ArrayDeque<>(utts);
-				final Stream<Entry<Event, List<Utterance>>> eventUttLists = EVENT_UTT_FACTORY.apply(uttsToProcess,
+				final Stream<Entry<Event, List<Utterance>>> eventUttLists = EVENT_UTT_FACTORY.apply(utts.listIterator(),
 						history);
 
 				final List<List<String>> colHeaders = createColHeaders();
