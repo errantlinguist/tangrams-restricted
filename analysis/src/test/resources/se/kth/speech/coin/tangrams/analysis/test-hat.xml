@@ -1,0 +1,31 @@
+<?xml version='1.0' encoding='ISO-8859-1'?>
+<annotation xmlns="http://www.speech.kth.se/higgins/2005/annotation/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.speech.kth.se/higgins/2005/annotation/ http://www.speech.kth.se/higgins/2005/annotation/annotation.xsd" id="test-hat">
+	<tracks>
+		<track id="track1"><sources><source id="source1" href="testHat.wav" channel="0"/></sources></track>
+		<track id="track2"><sources><source id="source2" href="testHat.wav" channel="1"/></sources></track>
+	</tracks>
+	<segments>
+		<segment start="5.3454" end="7.4332" source="source1" track="track1" id="segment1">
+			<transcription><t>mm</t><t>okay</t></transcription>
+		</segment>
+		<segment start="8.7693" end="14.8654" source="source1" track="track1" id="segment2">
+			<transcription><t>BREATH</t><t>press</t><t>okay</t><t>to</t><t>continue</t><t>to</t><t>next</t><t>turn</t><t>so</t><t>I</t><t>click</t><t>okay</t></transcription>
+		</segment>
+		<segment start="8.5179" end="9.4365" source="source2" track="track2" id="segment4">
+			<transcription><t>all</t><t>right</t></transcription>
+		</segment>
+
+		<segment start="999.8187" end="1000.0744" source="source1" track="track1" id="segment393">
+			<transcription><t>CLICK</t></transcription>
+		</segment>
+		<segment start="1000.8247" end="1002.8884" source="source2" track="track2" id="segment392">
+			<transcription><t>NOISE</t><t>NOISE</t></transcription>
+		</segment>
+		<segment start="1022.4118" end="1022.9597" source="source2" track="track2" id="segment395">
+			<transcription><t>no</t></transcription>
+		</segment>
+		<segment start="1057.8790" end="1058.9748" source="source2" track="track2" id="segment396">
+			<transcription><t>yeah</t><t>NOISE</t><t>right</t></transcription>
+		</segment>
+	</segments>
+</annotation>
