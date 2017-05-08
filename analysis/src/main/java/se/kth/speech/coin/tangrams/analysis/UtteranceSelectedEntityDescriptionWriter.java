@@ -328,6 +328,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 				firstHeader.add(padding);
 			}
 
+			// Add subheader for image description-specific features, e.g. color features
 			while (imgDescHeaderIter.hasNext()) {
 				final List<String> nextImgDescHeader = imgDescHeaderIter.next();
 				final List<String> nextHeader = new ArrayList<>(resultColCount);
