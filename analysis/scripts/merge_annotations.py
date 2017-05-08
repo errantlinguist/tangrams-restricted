@@ -35,8 +35,7 @@ def merge_annotations(inpaths, namespace):
 if __name__ == '__main__':
 	import sys
 	if len(sys.argv) < 2:
-		print("Usage: %s INPUT_PATHS... > OUTFILE" % sys.argv[0], file=sys.stderr)
-		sys.exit(64);
+		raise ValueError("Usage: %s INPUT_PATHS... > OUTFILE" % sys.argv[0])
 	else:
 
 		default_namespace = HAT_DATA_NAMESPACE
