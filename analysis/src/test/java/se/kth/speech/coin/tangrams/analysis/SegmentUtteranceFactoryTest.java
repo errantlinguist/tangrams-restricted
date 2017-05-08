@@ -55,6 +55,8 @@ public final class SegmentUtteranceFactoryTest {
 
 	private static Annotation annots;
 
+	private static final double DOUBLE_DELTA = 0.01;
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(SegmentUtteranceFactoryTest.class);
 
 	private static final SegmentUtteranceFactory TEST_INST;
@@ -97,7 +99,7 @@ public final class SegmentUtteranceFactoryTest {
 		addSegmentTokens(result, children);
 		return result;
 	}
-
+	
 	private static Annotation readAnnotations() throws URISyntaxException, JAXBException {
 		final URL testAnnotFileUrl = SegmentUtteranceFactoryTest.class.getResource("test-hat.xml");
 		LOGGER.info("Reading test annotations from \"{}\".", testAnnotFileUrl);
@@ -118,9 +120,9 @@ public final class SegmentUtteranceFactoryTest {
 		final Float actualStart = seg.getStart();
 		final Float actualEnd = seg.getEnd();
 		final double minStart = utts.stream().mapToDouble(Utterance::getStartTime).min().getAsDouble();
-		Assert.assertEquals(actualStart.doubleValue(), minStart, 0.01);
+		Assert.assertEquals(actualStart.doubleValue(), minStart, DOUBLE_DELTA);
 		final double maxEnd = utts.stream().mapToDouble(Utterance::getEndTime).max().getAsDouble();
-		Assert.assertEquals(actualEnd.doubleValue(), maxEnd, 0.01);
+		Assert.assertEquals(actualEnd.doubleValue(), maxEnd, DOUBLE_DELTA);
 		for (final Utterance utt : utts) {
 			Assert.assertTrue(actualStart <= utt.getStartTime());
 			Assert.assertTrue(actualEnd >= utt.getEndTime());
