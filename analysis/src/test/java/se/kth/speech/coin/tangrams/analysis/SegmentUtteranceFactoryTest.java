@@ -127,7 +127,6 @@ public final class SegmentUtteranceFactoryTest {
 			Assert.assertTrue(actualStart <= utt.getStartTime());
 			Assert.assertTrue(actualEnd >= utt.getEndTime());
 		}
-		// Finish
 	}
 
 	/**
