@@ -32,7 +32,7 @@ if __name__ == '__main__':
 	from etree_printing import print_etree_to_file
 	
 	parser = argparse.ArgumentParser(description=sys.argv[0])
-	parser.add_argument("-i", '--infile', metavar='PATH', required=True, help='The file to read.')
+	parser.add_argument("infile", metavar='PATH', help='The file to read.')
 	parser.add_argument("-p", '--source-id-pattern', metavar='REGEX', type=re.compile, required=True, help='A regular expression matching the source ID of the segments to change.')
 	parser.add_argument("-a", '--addend', type=Decimal, required=True, help='The amount to shift the times by.')
 	parser.add_argument("-o", '--outfile', metavar='PATH', help='The path to write the output to.')
