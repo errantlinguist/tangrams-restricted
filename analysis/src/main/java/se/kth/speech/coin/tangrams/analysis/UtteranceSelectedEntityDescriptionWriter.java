@@ -112,8 +112,8 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 		OUTPATH("o") {
 			@Override
 			public Option get() {
-				return Option.builder(optName).longOpt("outpath").desc("The path to write the output to.")
-						.hasArg().argName("path").type(File.class).required().build();
+				return Option.builder(optName).longOpt("outpath").desc("The path to write the output to.").hasArg()
+						.argName("path").type(File.class).required().build();
 			}
 		},
 		STRICT("s") {
@@ -311,7 +311,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 	private static List<List<String>> createColHeaders() {
 		final List<List<String>> imgViewDescColHeaders = ImageVisualizationInfoTableRowWriter.createColumnHeaders();
 		final int resultColCount = imgViewDescColHeaders.stream().mapToInt(List::size).max().getAsInt()
-				+ FEATURES_TO_DESCRIBE.size();
+				+ FEATURES_TO_DESCRIBE.size() + 1;
 
 		final Iterator<List<String>> imgDescHeaderIter = imgViewDescColHeaders.iterator();
 		List<List<String>> result;
@@ -320,6 +320,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 			final List<String> firstHeader = new ArrayList<>(resultColCount);
 			result.add(firstHeader);
 
+			firstHeader.add("TIME");
 			FEATURES_TO_DESCRIBE.stream().map(Object::toString).forEachOrdered(firstHeader::add);
 			final List<String> firstImgDescHeader = imgDescHeaderIter.next();
 			firstHeader.addAll(firstImgDescHeader);
@@ -328,12 +329,15 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 				firstHeader.add(padding);
 			}
 
-			// Add subheader for image description-specific features, e.g. color features
+			// Add subheader for image description-specific features, e.g. color
+			// features
 			while (imgDescHeaderIter.hasNext()) {
 				final List<String> nextImgDescHeader = imgDescHeaderIter.next();
 				final List<String> nextHeader = new ArrayList<>(resultColCount);
 				result.add(nextHeader);
 
+				// Add padding for timestamp col
+				nextHeader.add(padding);
 				// Add padding for feature-derived descriptions
 				FEATURES_TO_DESCRIBE.stream().map(feature -> padding).forEach(nextHeader::add);
 				nextHeader.addAll(nextImgDescHeader);
@@ -512,24 +516,28 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 								contextStartTime = firstUtt.getStartTime();
 								contextEndTime = firstUtt.getEndTime();
 							}
-
-							final GameContext context = uttContextFactory
-									.apply(contextStartTime, contextEndTime, playerId).findFirst().get();
-							final DoubleStream.Builder vals = DoubleStream.builder();
-							entityFeatureExtractor.accept(context, vals);
-							final double[] featureVector = vals.build().toArray();
-
-							writer.write(FEATURES_TO_DESCRIBE.stream()
-									.map(feature -> Double.toString(feature.getVal(featureVector)))
-									.collect(TABLE_ROW_CELL_JOINER));
+							writer.write(event.getTime());
 							writer.write(TABLE_STRING_REPR_COL_DELIMITER);
-							final ImageVisualizationInfoTableRowWriter imgInfoDescWriter = new ImageVisualizationInfoTableRowWriter(
-									strWriter);
-							final Move move = (Move) event.get(GameManagementEvent.Attribute.MOVE.toString());
-							final Integer selectedPieceId = move.getPieceId();
-							final ImageVisualizationInfo.Datum selectedPieceImgVizInfo = imgVizInfo.getData()
-									.get(selectedPieceId);
-							imgInfoDescWriter.write(selectedPieceId, selectedPieceImgVizInfo);
+							{
+								final GameContext context = uttContextFactory
+										.apply(contextStartTime, contextEndTime, playerId).findFirst().get();
+								final DoubleStream.Builder vals = DoubleStream.builder();
+								entityFeatureExtractor.accept(context, vals);
+								final double[] featureVector = vals.build().toArray();
+								writer.write(FEATURES_TO_DESCRIBE.stream()
+										.map(feature -> Double.toString(feature.getVal(featureVector)))
+										.collect(TABLE_ROW_CELL_JOINER));
+							}
+							writer.write(TABLE_STRING_REPR_COL_DELIMITER);
+							{
+								final ImageVisualizationInfoTableRowWriter imgInfoDescWriter = new ImageVisualizationInfoTableRowWriter(
+										strWriter);
+								final Move move = (Move) event.get(GameManagementEvent.Attribute.MOVE.toString());
+								final Integer selectedPieceId = move.getPieceId();
+								final ImageVisualizationInfo.Datum selectedPieceImgVizInfo = imgVizInfo.getData()
+										.get(selectedPieceId);
+								imgInfoDescWriter.write(selectedPieceId, selectedPieceImgVizInfo);
+							}
 
 							imgVizInfoDesc = strWriter.toString();
 						}
@@ -545,7 +553,9 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 				}
 			}
 
-		} else {
+		} else
+
+		{
 			throw new UnsupportedOperationException(
 					String.format("No logic for handling a game count of %d.", gameCount));
 		}
