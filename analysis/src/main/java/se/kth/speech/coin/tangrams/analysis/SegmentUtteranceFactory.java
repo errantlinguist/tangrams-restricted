@@ -40,8 +40,6 @@ import se.kth.speech.hat.xsd.Transcription.T;
 
 public final class SegmentUtteranceFactory {
 
-	private static final float DEFAULT_MIN_SEG_SPACING;
-
 	private static final Logger LOGGER = LoggerFactory.getLogger(SegmentUtteranceFactory.class);
 
 	private static final Set<String> META_LANGUAGE_TOKENS = new HashSet<>(
@@ -63,10 +61,6 @@ public final class SegmentUtteranceFactory {
 
 	private static final Pattern WHITESPACE_PATTERN = Pattern.compile("\\s+");
 
-	static {
-		DEFAULT_MIN_SEG_SPACING = 1.0f / SegmentTimes.TIME_TO_MILLS_FACTOR;
-	}
-
 	// private static Function<String, Stream<String>> createDefaultTokenizer()
 	// {
 	// final Analyzer analyer = new BlacklistingAnalyzer(new
@@ -81,8 +75,6 @@ public final class SegmentUtteranceFactory {
 				.asList(WHITESPACE_PATTERN.splitAsStream(str).filter(nonMetaLanguagePredicate).toArray(String[]::new));
 	}
 
-	private final float minSegmentSpacing;
-
 	private final Function<? super String, ? extends List<String>> tokenizer;
 
 	public SegmentUtteranceFactory() {
@@ -90,13 +82,7 @@ public final class SegmentUtteranceFactory {
 	}
 
 	public SegmentUtteranceFactory(final Function<? super String, ? extends List<String>> tokenizer) {
-		this(tokenizer, DEFAULT_MIN_SEG_SPACING);
-	}
-
-	public SegmentUtteranceFactory(final Function<? super String, ? extends List<String>> tokenizer,
-			final float minSegmentSpacing) {
 		this.tokenizer = tokenizer;
-		this.minSegmentSpacing = minSegmentSpacing;
 	}
 
 	public List<Utterance> create(final Segment segment) {
@@ -157,10 +143,10 @@ public final class SegmentUtteranceFactory {
 	private Optional<Utterance> create(final String segmentId, final List<T> tokenAnnots,
 			final float previousUttEndTime, final float nextUttStartTime) {
 		final Float firstTokenStartTime = tokenAnnots.get(0).getStart();
-		final float seqStartTime = firstTokenStartTime == null ? previousUttEndTime + minSegmentSpacing
+		final float seqStartTime = firstTokenStartTime == null ? previousUttEndTime
 				: firstTokenStartTime;
 		final Float lastTokenEndTime = tokenAnnots.get(tokenAnnots.size() - 1).getEnd();
-		final float seqEndTime = lastTokenEndTime == null ? nextUttStartTime - minSegmentSpacing : lastTokenEndTime;
+		final float seqEndTime = lastTokenEndTime == null ? nextUttStartTime : lastTokenEndTime;
 		final Stream<String> tokenForms = tokenAnnots.stream().map(T::getContent);
 		final List<String> tokens = tokenizer.apply(tokenForms.collect(TOKEN_JOINING_COLLECTOR));
 		return tokens.isEmpty() ? Optional.empty()
