@@ -19,9 +19,13 @@ package se.kth.speech.coin.tangrams.analysis;
 import java.io.File;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Predicate;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 import javax.xml.bind.JAXBException;
 
@@ -39,6 +43,7 @@ import iristk.util.HAT;
 import se.kth.speech.hat.xsd.Annotation;
 import se.kth.speech.hat.xsd.Annotation.Segments;
 import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
+import se.kth.speech.hat.xsd.Transcription.T;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -52,7 +57,14 @@ public final class SegmentUtteranceFactoryTest {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SegmentUtteranceFactoryTest.class);
 
-	private static final SegmentUtteranceFactory TEST_INST = new SegmentUtteranceFactory();
+	private static final SegmentUtteranceFactory TEST_INST;
+
+	private static final Collector<CharSequence, ?, String> TOKEN_JOINING_COLLECTOR = Collectors.joining(" ");
+
+	static {
+		final Predicate<String> whitelistingTokenFilter = token -> true;
+		TEST_INST = new SegmentUtteranceFactory(whitelistingTokenFilter);
+	}
 
 	@BeforeClass
 	public static void loadAnnotations() throws URISyntaxException, JAXBException {
@@ -69,6 +81,23 @@ public final class SegmentUtteranceFactoryTest {
 		return Collections.singleton(annots.getSegments());
 	}
 
+	private static void addSegmentTokens(final Collection<? super T> tokens, final Iterable<Object> children) {
+		for (final Object child : children) {
+			if (child instanceof Segment) {
+				addSegmentTokens(tokens, ((Segment) child).getTranscription().getSegmentOrT());
+			} else {
+				tokens.add((T) child);
+			}
+		}
+	}
+
+	private static List<T> createSegmentTokenList(final Segment seg) {
+		final List<Object> children = seg.getTranscription().getSegmentOrT();
+		final List<T> result = new ArrayList<>(Math.max(children.size(), 16));
+		addSegmentTokens(result, children);
+		return result;
+	}
+
 	private static Annotation readAnnotations() throws URISyntaxException, JAXBException {
 		final URL testAnnotFileUrl = SegmentUtteranceFactoryTest.class.getResource("test-hat.xml");
 		LOGGER.info("Reading test annotations from \"{}\".", testAnnotFileUrl);
@@ -82,10 +111,16 @@ public final class SegmentUtteranceFactoryTest {
 	 */
 	@Theory
 	public void testCreateSegment(final Segment seg) {
+		LOGGER.info("Testing segment \"{}\".",
+				createSegmentTokenList(seg).stream().map(T::getContent).collect(TOKEN_JOINING_COLLECTOR));
 		final List<Utterance> utts = TEST_INST.create(seg);
+		Assert.assertFalse(utts.isEmpty());
 		final Float actualStart = seg.getStart();
 		final Float actualEnd = seg.getEnd();
-		// double minStart = utts.stream().mapToDouble(Utterance::getStartTime)
+		final double minStart = utts.stream().mapToDouble(Utterance::getStartTime).min().getAsDouble();
+		Assert.assertEquals(actualStart.doubleValue(), minStart, 0.01);
+		final double maxEnd = utts.stream().mapToDouble(Utterance::getEndTime).max().getAsDouble();
+		Assert.assertEquals(actualEnd.doubleValue(), maxEnd, 0.01);
 		for (final Utterance utt : utts) {
 			Assert.assertTrue(actualStart <= utt.getStartTime());
 			Assert.assertTrue(actualEnd >= utt.getEndTime());

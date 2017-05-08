@@ -71,8 +71,13 @@ public final class SegmentUtteranceFactory {
 
 	private static Function<String, List<String>> createDefaultTokenizer() {
 		final Predicate<String> nonMetaLanguagePredicate = token -> !META_LANGUAGE_TOKENS.contains(token);
+		return createWhitelistingTokenizer(nonMetaLanguagePredicate);
+	}
+
+	private static Function<String, List<String>> createWhitelistingTokenizer(
+			final Predicate<String> whitelistingPredicate) {
 		return str -> Arrays
-				.asList(WHITESPACE_PATTERN.splitAsStream(str).filter(nonMetaLanguagePredicate).toArray(String[]::new));
+				.asList(WHITESPACE_PATTERN.splitAsStream(str).filter(whitelistingPredicate).toArray(String[]::new));
 	}
 
 	private final Function<? super String, ? extends List<String>> tokenizer;
@@ -83,6 +88,10 @@ public final class SegmentUtteranceFactory {
 
 	public SegmentUtteranceFactory(final Function<? super String, ? extends List<String>> tokenizer) {
 		this.tokenizer = tokenizer;
+	}
+
+	public SegmentUtteranceFactory(final Predicate<String> whitelistingPredicate) {
+		this(createWhitelistingTokenizer(whitelistingPredicate));
 	}
 
 	public List<Utterance> create(final Segment segment) {
@@ -98,7 +107,7 @@ public final class SegmentUtteranceFactory {
 			final Float initialPrevUttEndTime = segment.getStart();
 			assert initialPrevUttEndTime != null;
 			{
-				float prevUttEndTime = initialPrevUttEndTime;
+				double prevUttEndTime = initialPrevUttEndTime;
 				List<T> currentTokenSeq = new ArrayList<>();
 				final String parentSegmentId = segment.getId();
 				for (final Object child : children) {
@@ -107,7 +116,7 @@ public final class SegmentUtteranceFactory {
 						// If there was a contiguous sequence of terminal tokens
 						// preceding this segment, finish building it
 						if (!currentTokenSeq.isEmpty()) {
-							final float nextUttStartTime = childUtts.get(0).getStartTime();
+							final double nextUttStartTime = childUtts.get(0).getStartTime();
 							create(parentSegmentId, currentTokenSeq, prevUttEndTime, nextUttStartTime)
 									.ifPresent(result::add);
 							currentTokenSeq = new ArrayList<>();
@@ -141,12 +150,11 @@ public final class SegmentUtteranceFactory {
 	}
 
 	private Optional<Utterance> create(final String segmentId, final List<T> tokenAnnots,
-			final float previousUttEndTime, final float nextUttStartTime) {
+			final double previousUttEndTime, final double nextUttStartTime) {
 		final Float firstTokenStartTime = tokenAnnots.get(0).getStart();
-		final float seqStartTime = firstTokenStartTime == null ? previousUttEndTime
-				: firstTokenStartTime;
+		final double seqStartTime = firstTokenStartTime == null ? previousUttEndTime : firstTokenStartTime;
 		final Float lastTokenEndTime = tokenAnnots.get(tokenAnnots.size() - 1).getEnd();
-		final float seqEndTime = lastTokenEndTime == null ? nextUttStartTime : lastTokenEndTime;
+		final double seqEndTime = lastTokenEndTime == null ? nextUttStartTime : lastTokenEndTime;
 		final Stream<String> tokenForms = tokenAnnots.stream().map(T::getContent);
 		final List<String> tokens = tokenizer.apply(tokenForms.collect(TOKEN_JOINING_COLLECTOR));
 		return tokens.isEmpty() ? Optional.empty()

@@ -20,16 +20,16 @@ import java.util.List;
 
 public final class Utterance {
 
-	private final float endTime;
+	private final double endTime;
 
 	private final String segmentId;
 
-	private final float startTime;
+	private final double startTime;
 
 	private final List<String> tokens;
 
-	public Utterance(final String segmentId, final List<String> tokens, final float startTime, final float endTime) {
-		if (startTime > endTime){
+	public Utterance(final String segmentId, final List<String> tokens, final double startTime, final double endTime) {
+		if (startTime > endTime) {
 			throw new IllegalArgumentException("Start time is greater than end time.");
 		}
 		this.segmentId = segmentId;
@@ -40,7 +40,7 @@ public final class Utterance {
 
 	/*
 	 * (non-Javadoc)
-	 *
+	 * 
 	 * @see java.lang.Object#equals(java.lang.Object)
 	 */
 	@Override
@@ -55,7 +55,7 @@ public final class Utterance {
 			return false;
 		}
 		final Utterance other = (Utterance) obj;
-		if (Float.floatToIntBits(endTime) != Float.floatToIntBits(other.endTime)) {
+		if (Double.doubleToLongBits(endTime) != Double.doubleToLongBits(other.endTime)) {
 			return false;
 		}
 		if (segmentId == null) {
@@ -65,7 +65,7 @@ public final class Utterance {
 		} else if (!segmentId.equals(other.segmentId)) {
 			return false;
 		}
-		if (Float.floatToIntBits(startTime) != Float.floatToIntBits(other.startTime)) {
+		if (Double.doubleToLongBits(startTime) != Double.doubleToLongBits(other.startTime)) {
 			return false;
 		}
 		if (tokens == null) {
@@ -81,7 +81,7 @@ public final class Utterance {
 	/**
 	 * @return the endTime
 	 */
-	public float getEndTime() {
+	public double getEndTime() {
 		return endTime;
 	}
 
@@ -95,7 +95,7 @@ public final class Utterance {
 	/**
 	 * @return the startTime
 	 */
-	public float getStartTime() {
+	public double getStartTime() {
 		return startTime;
 	}
 
@@ -108,16 +108,19 @@ public final class Utterance {
 
 	/*
 	 * (non-Javadoc)
-	 *
+	 * 
 	 * @see java.lang.Object#hashCode()
 	 */
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + Float.floatToIntBits(endTime);
+		long temp;
+		temp = Double.doubleToLongBits(endTime);
+		result = prime * result + (int) (temp ^ temp >>> 32);
 		result = prime * result + (segmentId == null ? 0 : segmentId.hashCode());
-		result = prime * result + Float.floatToIntBits(startTime);
+		temp = Double.doubleToLongBits(startTime);
+		result = prime * result + (int) (temp ^ temp >>> 32);
 		result = prime * result + (tokens == null ? 0 : tokens.hashCode());
 		return result;
 	}

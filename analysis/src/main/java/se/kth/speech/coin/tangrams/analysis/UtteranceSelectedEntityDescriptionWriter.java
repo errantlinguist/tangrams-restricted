@@ -494,8 +494,8 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 						} else {
 							final StringWriter strWriter = new StringWriter(256);
 
-							final float contextStartTime;
-							final float contextEndTime;
+							final double contextStartTime;
+							final double contextEndTime;
 							if (eventUtts.isEmpty()) {
 								if (strict) {
 									throw new IllegalArgumentException(

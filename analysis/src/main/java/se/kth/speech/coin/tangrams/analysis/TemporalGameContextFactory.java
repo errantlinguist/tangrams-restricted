@@ -48,7 +48,7 @@ public final class TemporalGameContextFactory {
 		this.playerGameHistoryFactory = playerGameHistoryFactory;
 	}
 
-	public Stream<GameContext> apply(final float startTime, final float endTime, final String playerId) {
+	public Stream<GameContext> apply(final double startTime, final double endTime, final String playerId) {
 		assert startTime <= endTime;
 		LOGGER.debug("Getting history for player \"{}\".", playerId);
 		final GameHistory history = playerGameHistoryFactory.apply(playerId);

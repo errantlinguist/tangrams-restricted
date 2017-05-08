@@ -160,7 +160,7 @@ public final class SegmentTimedUtteranceWriter {
 						final List<Segment> segments = uttAnnots.getSegments().getSegment();
 						final Stream<Utterance> utts = SEG_UTT_FACTORY.create(segments.stream()).flatMap(List::stream);
 						final Stream<MutablePair<String, String>> uttReprTimestamps = utts.map(utt -> {
-							final float startTime = utt.getStartTime();
+							final double startTime = utt.getStartTime();
 							final String uttRepr = utt.getTokens().stream().collect(WORD_JOINER);
 							LOGGER.debug("Start time for \"{}\" is{}.", uttRepr, startTime);
 							final LocalDateTime uttTime = TimestampArithmetic.createOffsetTimestamp(initialTime,
