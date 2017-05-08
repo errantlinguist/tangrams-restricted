@@ -590,7 +590,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 				sb.append(System.lineSeparator());
 				final List<Utterance> prevUtts = prevEventUttList.getValue();
 				final Utterance prevUtt = prevUtts.get(prevUtts.size() - 1);
-				sb.append(String.format("Last utt before event: \"%s\", start: %f end: %f",
+				sb.append(String.format("Last utt before event: \"%s\", start: %f, end: %f",
 						prevUtt.getTokens().stream().collect(WORD_JOINER), prevUtt.getStartTime(),
 						prevUtt.getEndTime()));
 			}
@@ -609,7 +609,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 				sb.append(System.lineSeparator());
 				final List<Utterance> nextUtts = nextEventUttList.getValue();
 				final Utterance nextUtt = nextUtts.get(0);
-				sb.append(String.format("Next utt after event: \"%s\", start: %f end: %f",
+				sb.append(String.format("Next utt after event: \"%s\", start: %f, end: %f",
 						nextUtt.getTokens().stream().collect(WORD_JOINER), nextUtt.getStartTime(),
 						nextUtt.getEndTime()));
 			}
