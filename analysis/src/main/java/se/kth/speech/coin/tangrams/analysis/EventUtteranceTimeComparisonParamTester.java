@@ -296,8 +296,6 @@ public final class EventUtteranceTimeComparisonParamTester {
 		final PlayerDataManager playerData = PlayerDataManager.parsePlayerProps(props, infileBaseDir);
 		final Table<String, String, GameHistory> playerGameHistoryTable = LoggedEvents.createPlayerGameHistoryTable(
 				playerData.getPlayerEventLogs().entrySet(), LoggedEvents.VALID_MODEL_MIN_REQUIRED_EVENT_MATCHER);
-		final Set<String> playerGameIdIntersection = new HashSet<>(playerGameHistoryTable.columnKeySet());
-		playerGameHistoryTable.rowMap().values().stream().map(Map::keySet).forEach(playerGameIdIntersection::retainAll);
 		GameStateDescriptions.findAnyEquivalentGameState(
 				playerGameHistoryTable.values().stream().map(GameHistory::getInitialState).iterator());
 
