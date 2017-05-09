@@ -191,8 +191,6 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 	private static final EventUtteranceFactory EVENT_UTT_FACTORY = new EventUtteranceFactory(
 			new EventTypeMatcher(EnumSet.of(GameManagementEvent.NEXT_TURN_REQUEST)));
 
-	private static final int EXPECTED_UNIQUE_GAME_COUNT = 1;
-
 	private static final List<EntityFeature> FEATURES_TO_DESCRIBE = Arrays.asList(EntityFeature.POSITION_X,
 			EntityFeature.POSITION_Y, EntityFeature.EDGE_COUNT);
 
@@ -442,7 +440,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 		final PlayerDataManager playerData = PlayerDataManager.parsePlayerProps(props, infileBaseDir);
 
 		final Table<String, String, GameHistory> playerGameHistoryTable = LoggedEvents.createPlayerGameHistoryTable(
-				playerData.getPlayerEventLogs().entrySet(), EXPECTED_UNIQUE_GAME_COUNT, LoggedEvents.VALID_MODEL_MIN_REQUIRED_EVENT_MATCHER);
+				playerData.getPlayerEventLogs().entrySet(), LoggedEvents.VALID_MODEL_MIN_REQUIRED_EVENT_MATCHER);
 		final Set<String> playerGameIdIntersection = new HashSet<>(playerGameHistoryTable.columnKeySet());
 		playerGameHistoryTable.rowMap().values().stream().map(Map::keySet).forEach(playerGameIdIntersection::retainAll);
 		final int gameCount = playerGameIdIntersection.size();

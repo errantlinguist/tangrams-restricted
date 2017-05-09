@@ -127,8 +127,6 @@ public final class WordsAsClassifiersTrainingDataFactory
 
 	}
 
-	private static final int EXPECTED_UNIQUE_GAME_COUNT = 1;
-
 	private static final Logger LOGGER = LoggerFactory.getLogger(WordsAsClassifiersTrainingDataFactory.class);
 
 	private static final SegmentUtteranceFactory SEG_UTT_FACTORY = new SegmentUtteranceFactory();
@@ -191,7 +189,7 @@ public final class WordsAsClassifiersTrainingDataFactory
 		final Map<String, Path> playerEventLogFilePaths = LoggedEvents.createPlayerEventLogFileMap(sessionLogDir,
 				expectedEventLogFileCount);
 		final Table<String, String, GameHistory> playerGameHistoryTable = LoggedEvents
-				.createPlayerGameHistoryTable(playerEventLogFilePaths.entrySet(), EXPECTED_UNIQUE_GAME_COUNT);
+				.createPlayerGameHistoryTable(playerEventLogFilePaths.entrySet());
 		final Set<String> playerGameIdIntersection = new HashSet<>(playerGameHistoryTable.columnKeySet());
 		playerGameHistoryTable.rowMap().values().stream().map(Map::keySet).forEach(playerGameIdIntersection::retainAll);
 		final int gameCount = playerGameIdIntersection.size();

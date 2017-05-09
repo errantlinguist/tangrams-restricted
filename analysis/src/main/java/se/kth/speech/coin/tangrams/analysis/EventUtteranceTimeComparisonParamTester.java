@@ -135,8 +135,6 @@ public final class EventUtteranceTimeComparisonParamTester {
 
 	private static final FileNameExtensionFilter DEFAULT_FILE_FILTER;
 
-	private static final int EXPECTED_UNIQUE_GAME_COUNT = 1;
-
 	private static final List<FileNameExtensionFilter> FILE_FILTERS;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(EventUtteranceTimeComparisonParamTester.class);
@@ -297,7 +295,7 @@ public final class EventUtteranceTimeComparisonParamTester {
 
 		final PlayerDataManager playerData = PlayerDataManager.parsePlayerProps(props, infileBaseDir);
 		final Table<String, String, GameHistory> playerGameHistoryTable = LoggedEvents.createPlayerGameHistoryTable(
-				playerData.getPlayerEventLogs().entrySet(), EXPECTED_UNIQUE_GAME_COUNT, LoggedEvents.VALID_MODEL_MIN_REQUIRED_EVENT_MATCHER);
+				playerData.getPlayerEventLogs().entrySet(), LoggedEvents.VALID_MODEL_MIN_REQUIRED_EVENT_MATCHER);
 		final Set<String> playerGameIdIntersection = new HashSet<>(playerGameHistoryTable.columnKeySet());
 		playerGameHistoryTable.rowMap().values().stream().map(Map::keySet).forEach(playerGameIdIntersection::retainAll);
 		GameStateDescriptions.findAnyEquivalentGameState(
