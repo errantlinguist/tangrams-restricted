@@ -446,6 +446,8 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 		GameStateDescriptions.findAnyEquivalentGameState(
 				playerGameHistoryTable.values().stream().map(GameHistory::getInitialState).iterator());
 		final int uniqueModelDescriptionCount = playerGameHistoryTable.values().size();
+		final SelectedEntityFeatureExtractor entityFeatureExtractor = new SelectedEntityFeatureExtractor(
+				new GameContextModelFactory(uniqueModelDescriptionCount), new ImageEdgeCounter());
 
 		final Map<Utterance, String> uttPlayerIds = new UtterancePlayerIdMapFactory(SEG_UTT_FACTORY::create,
 				playerData.getPlayerSourceIds().inverse()::get).apply(uttAnnots.getSegments().getSegment());
@@ -456,8 +458,6 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 			final TemporalGameContextFactory uttContextFactory = new TemporalGameContextFactory(
 					playerGameHistories::get);
 			final ImageVisualizationInfoUnmarshaller imgVizInfoUnmarshaller = new ImageVisualizationInfoUnmarshaller();
-			final SelectedEntityFeatureExtractor entityFeatureExtractor = new SelectedEntityFeatureExtractor(
-					new GameContextModelFactory(uniqueModelDescriptionCount), new ImageEdgeCounter());
 
 			for (final Entry<String, GameHistory> playerGameHistory : playerGameHistories.entrySet()) {
 				final String playerId = playerGameHistory.getKey();
