@@ -45,8 +45,8 @@ public final class SegmentUtteranceFactory {
 	private static final Set<String> META_LANGUAGE_TOKENS = new HashSet<>(
 			Arrays.asList("BREATH", "CLICK", "COUGH", "LAUGHTER", "META", "NOISE", "SNIFF", "SWEDISH", "UNKNOWN"));
 
-	private static final Comparator<Segment> TEMPORAL_SEGMENT_COMPARATOR = Comparator.comparing(Segment::getStart)
-			.thenComparing(Segment::getEnd).thenComparing(Segment::getSource).thenComparing(Segment::getTrack)
+	private static final Comparator<Segment> TEMPORAL_SEGMENT_COMPARATOR = Comparator.comparingDouble(Segment::getStart)
+			.thenComparingDouble(Segment::getEnd).thenComparing(seg -> seg.getTranscription().getSegmentOrT().size()).thenComparing(Segment::getSource).thenComparing(Segment::getTrack)
 			.thenComparing(Segment::getId);
 
 	private static final Collector<CharSequence, ?, String> TOKEN_JOINING_COLLECTOR = Collectors.joining(" ");
