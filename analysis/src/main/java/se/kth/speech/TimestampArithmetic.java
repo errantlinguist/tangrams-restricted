@@ -16,6 +16,8 @@
 */
 package se.kth.speech;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.LocalDateTime;
 
@@ -25,6 +27,16 @@ import java.time.LocalDateTime;
  *
  */
 public final class TimestampArithmetic {
+
+	private static final BigDecimal MILLIARD = new BigDecimal("1000000000");
+
+	public static BigDecimal calculateOffset(final LocalDateTime start, final LocalDateTime end,
+			final RoundingMode roundingMode) {
+		final Duration duration = Duration.between(start, end);
+		final long seconds = duration.getSeconds();
+		final BigDecimal nanoseconds = new BigDecimal(seconds * 1000000000 + duration.getNano());
+		return nanoseconds.divide(MILLIARD, roundingMode);
+	}
 
 	public static LocalDateTime createOffsetTimestamp(final LocalDateTime augend, final double offsetSecs) {
 		final long wholePart = Math.round(Math.floor(offsetSecs));
