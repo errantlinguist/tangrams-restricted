@@ -86,7 +86,25 @@ public final class SegmentTimedUtteranceWriter {
 			}
 		};
 
+		private static final Options OPTIONS;
+
+		private static final OptionGroup TIMESTAMP_OPTS;
+
 		private static final EnumSet<Parameter> TIMESTAMP_PARAMS = EnumSet.of(INITIAL_TIMESTAMP, EVENT_LOG);
+
+		static {
+			OPTIONS = new Options();
+			EnumSet.complementOf(Parameter.TIMESTAMP_PARAMS).stream().map(Parameter::get).forEach(OPTIONS::addOption);
+			TIMESTAMP_OPTS = new OptionGroup();
+			Parameter.TIMESTAMP_PARAMS.stream().map(Parameter::get).forEach(TIMESTAMP_OPTS::addOption);
+			TIMESTAMP_OPTS.setRequired(true);
+			OPTIONS.addOptionGroup(TIMESTAMP_OPTS);
+		}
+
+		private static void printHelp() {
+			final HelpFormatter formatter = new HelpFormatter();
+			formatter.printHelp(SegmentTimedUtteranceWriter.class.getSimpleName() + " INPATHS...", OPTIONS);
+		}
 
 		protected final String optName;
 
@@ -102,36 +120,23 @@ public final class SegmentTimedUtteranceWriter {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SegmentTimedUtteranceWriter.class);
 
-	private static final Options OPTIONS;
-
 	private static final SegmentUtteranceFactory SEG_UTT_FACTORY = new SegmentUtteranceFactory();
 
-	private static final OptionGroup TIMESTAMP_OPTS;
-
 	private static final Collector<CharSequence, ?, String> WORD_JOINER = Collectors.joining(" ");
-
-	static {
-		OPTIONS = new Options();
-		EnumSet.complementOf(Parameter.TIMESTAMP_PARAMS).stream().map(Parameter::get).forEach(OPTIONS::addOption);
-		TIMESTAMP_OPTS = new OptionGroup();
-		Parameter.TIMESTAMP_PARAMS.stream().map(Parameter::get).forEach(TIMESTAMP_OPTS::addOption);
-		TIMESTAMP_OPTS.setRequired(true);
-		OPTIONS.addOptionGroup(TIMESTAMP_OPTS);
-	}
 
 	public static void main(final String[] args) throws JAXBException, IOException {
 		final CommandLineParser parser = new DefaultParser();
 		try {
-			final CommandLine cl = parser.parse(OPTIONS, args);
+			final CommandLine cl = parser.parse(Parameter.OPTIONS, args);
 			if (cl.hasOption(Parameter.HELP.optName)) {
-				printHelp();
+				Parameter.printHelp();
 			} else {
 				final List<File> infiles = Arrays.asList(cl.getArgList().stream().map(File::new).toArray(File[]::new));
 				if (infiles.isEmpty()) {
 					throw new MissingOptionException("No input file(s) specified.");
 
 				} else {
-					final String selectedTimestampOpt = TIMESTAMP_OPTS.getSelected();
+					final String selectedTimestampOpt = Parameter.TIMESTAMP_OPTS.getSelected();
 					final Object timestampOptVal = cl.getParsedOptionValue(selectedTimestampOpt);
 					final LocalDateTime initialTime;
 					switch (selectedTimestampOpt) {
@@ -176,14 +181,9 @@ public final class SegmentTimedUtteranceWriter {
 			}
 		} catch (final ParseException e) {
 			System.out.println(String.format("An error occured while parsing the command-line arguments: %s", e));
-			printHelp();
+			Parameter.printHelp();
 		}
 
-	}
-
-	private static void printHelp() {
-		final HelpFormatter formatter = new HelpFormatter();
-		formatter.printHelp(SegmentTimedUtteranceWriter.class.getSimpleName() + " INPATHS...", OPTIONS);
 	}
 
 }
