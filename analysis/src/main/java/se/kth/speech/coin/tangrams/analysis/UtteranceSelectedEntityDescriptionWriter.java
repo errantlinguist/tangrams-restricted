@@ -268,7 +268,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 
 	public static void main(final String[] args) throws IOException, JAXBException, ParseException {
 		if (args.length < 1) {
-			runInteractive();
+			runInteractively();
 		} else {
 			final CommandLineParser parser = new DefaultParser();
 //			try {
@@ -364,7 +364,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 		}
 	}
 
-	private static void runInteractive() throws IOException {
+	private static void runInteractively() throws IOException {
 		LookAndFeels.setLookAndFeel();
 		final Settings settings = loadClassSettings();
 		final File currentInpath = new File(settings.getInpath().orElse(System.getProperty("user.dir")));
