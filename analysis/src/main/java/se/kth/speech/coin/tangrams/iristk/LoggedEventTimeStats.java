@@ -47,7 +47,7 @@ public final class LoggedEventTimeStats {
 	public static void main(final String[] args) throws IOException {
 		if (args.length != 2) {
 			throw new IllegalArgumentException(
-					String.format("Usage :%s MINUEND_INFILE SUBTRAHEND_INFILE", LoggedEventTimeStats.class.getName()));
+					String.format("Usage :%s MINUEND_INFILE SUBTRAHEND_INFILE", LoggedEventTimeStats.class.getSimpleName()));
 		} else {
 
 			// String testStr =
