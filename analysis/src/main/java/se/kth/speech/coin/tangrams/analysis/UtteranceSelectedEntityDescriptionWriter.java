@@ -566,7 +566,6 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 			throw new UnsupportedOperationException(
 					String.format("No logic for handling a game count of %d.", gameCount));
 		}
-
 	}
 
 	/**
