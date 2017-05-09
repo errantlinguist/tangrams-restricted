@@ -181,6 +181,8 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 		}
 	}
 
+	private static final String BLANK_IMG_DESC;
+
 	private static final Path CLASS_SETTINGS_INFILE_PATH;
 
 	private static final FileNameExtensionFilter DEFAULT_FILE_FILTER;
@@ -194,6 +196,8 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 			EntityFeature.POSITION_Y, EntityFeature.EDGE_COUNT);
 
 	private static final List<FileNameExtensionFilter> FILE_FILTERS;
+
+	private static final String HEADER_STR;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(UtteranceSelectedEntityDescriptionWriter.class);
 
@@ -232,6 +236,13 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 		SETTINGS_DIR = Paths.get(".settings");
 		CLASS_SETTINGS_INFILE_PATH = SETTINGS_DIR
 				.resolve(UtteranceSelectedEntityDescriptionWriter.class.getName() + ".properties");
+	}
+
+	static {
+		final List<List<String>> colHeaders = createColHeaders();
+		HEADER_STR = colHeaders.stream().map(header -> header.stream().collect(TABLE_ROW_CELL_JOINER))
+				.collect(TABLE_ROW_JOINER);
+		BLANK_IMG_DESC = createBlankImgDesc(colHeaders);
 	}
 
 	public static void main(final CommandLine cl) throws IOException, JAXBException, ParseException {
@@ -468,15 +479,11 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 				final List<Entry<Event, List<Utterance>>> eventUttLists = EVENT_UTT_FACTORY
 						.apply(utts.listIterator(), history).collect(Collectors.toList());
 
-				final List<List<String>> colHeaders = createColHeaders();
-				final String headerStr = colHeaders.stream()
-						.map(header -> header.stream().collect(TABLE_ROW_CELL_JOINER)).collect(TABLE_ROW_JOINER);
-
 				final Path outfilePath = outpath.resolve(outfileNamePrefix + playerId + "_GAME-" + gameId + ".txt");
 				LOGGER.info("Writing utterances from perspective of \"{}\" to \"{}\".", playerId, outfilePath);
 				try (BufferedWriter writer = Files.newBufferedWriter(outfilePath, StandardOpenOption.CREATE,
 						StandardOpenOption.TRUNCATE_EXISTING)) {
-					writer.write(headerStr);
+					writer.write(HEADER_STR);
 
 					for (final ListIterator<Entry<Event, List<Utterance>>> eventUttListIter = eventUttLists
 							.listIterator(); eventUttListIter.hasNext();) {
@@ -488,7 +495,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 
 						final String imgVizInfoDesc;
 						if (event == null) {
-							imgVizInfoDesc = createBlankImgDesc(colHeaders);
+							imgVizInfoDesc = BLANK_IMG_DESC;
 						} else {
 							final StringWriter strWriter = new StringWriter(256);
 
