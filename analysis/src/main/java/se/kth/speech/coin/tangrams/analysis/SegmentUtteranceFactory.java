@@ -113,10 +113,9 @@ public final class SegmentUtteranceFactory {
 	}
 
 	public List<Utterance> create(final Segment segment) {
-		final List<Utterance> result;
+		final List<Utterance> result = new ArrayList<>(1);
 		final Transcription transcription = segment.getTranscription();
 		if (transcription == null) {
-			result = Collections.emptyList();
 			LOGGER.debug("Segment \"{}\" has no {} element.",
 					new Object[] { segment.getId(), Transcription.class.getSimpleName() });
 		} else {
@@ -145,11 +144,11 @@ public final class SegmentUtteranceFactory {
 				final String uttRepr = tokens.stream().map(T::getContent).collect(TOKEN_JOINING_COLLECTOR);
 				final List<String> tokenForms = tokenizer.apply(uttRepr);
 				if (tokenForms.isEmpty()){
-					result = Collections.emptyList();
+					// Do nothing
 				} else {
 					final Utterance utt = new Utterance(parentSegmentId, tokenForms, segStartTime.doubleValue(),
 							segEndTime.doubleValue());
-					result = Collections.singletonList(utt);
+					result.add(utt);
 				}
 			}
 		}
