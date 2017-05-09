@@ -19,7 +19,6 @@ package se.kth.speech.coin.tangrams.analysis;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -46,8 +45,8 @@ public final class SegmentUtteranceFactory {
 			Arrays.asList("BREATH", "CLICK", "COUGH", "LAUGHTER", "META", "NOISE", "SNIFF", "SWEDISH", "UNKNOWN"));
 
 	private static final Comparator<Segment> TEMPORAL_SEGMENT_COMPARATOR = Comparator.comparingDouble(Segment::getStart)
-			.thenComparingDouble(Segment::getEnd).thenComparing(seg -> seg.getTranscription().getSegmentOrT().size()).thenComparing(Segment::getSource).thenComparing(Segment::getTrack)
-			.thenComparing(Segment::getId);
+			.thenComparingDouble(Segment::getEnd).thenComparing(seg -> seg.getTranscription().getSegmentOrT().size())
+			.thenComparing(Segment::getSource).thenComparing(Segment::getTrack).thenComparing(Segment::getId);
 
 	private static final Collector<CharSequence, ?, String> TOKEN_JOINING_COLLECTOR = Collectors.joining(" ");
 
@@ -143,7 +142,7 @@ public final class SegmentUtteranceFactory {
 				}
 				final String uttRepr = tokens.stream().map(T::getContent).collect(TOKEN_JOINING_COLLECTOR);
 				final List<String> tokenForms = tokenizer.apply(uttRepr);
-				if (tokenForms.isEmpty()){
+				if (tokenForms.isEmpty()) {
 					// Do nothing
 				} else {
 					final Utterance utt = new Utterance(parentSegmentId, tokenForms, segStartTime.doubleValue(),
