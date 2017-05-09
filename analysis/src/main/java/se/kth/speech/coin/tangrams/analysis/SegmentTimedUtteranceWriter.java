@@ -24,6 +24,7 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
@@ -43,6 +44,7 @@ import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import iristk.system.Event;
 import iristk.util.HAT;
 import se.kth.speech.MutablePair;
 import se.kth.speech.TimestampArithmetic;
@@ -116,6 +118,9 @@ public final class SegmentTimedUtteranceWriter {
 
 	private static final String EVENT_LOG_OPT_NAME = "l";
 
+	private static final Predicate<Event> INITIAL_EVENT_PREDICATE = new EventTypeMatcher(
+			EnumSet.of(GameManagementEvent.GAME_READY_RESPONSE));
+
 	private static final String INITIAL_TIMESTAMP_OPT_NAME = "t";
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SegmentTimedUtteranceWriter.class);
@@ -142,11 +147,7 @@ public final class SegmentTimedUtteranceWriter {
 					switch (selectedTimestampOpt) {
 					case EVENT_LOG_OPT_NAME: {
 						final Path eventLogFilePath = ((File) timestampOptVal).toPath();
-						LOGGER.info("Reading log at \"{}\" to find timestamp.", eventLogFilePath);
-						initialTime = EventTimes.parseEventTime(LoggedEvents
-								.parseLoggedEvents(Files.lines(eventLogFilePath))
-								.filter(new EventTypeMatcher(EnumSet.of(GameManagementEvent.GAME_READY_RESPONSE)))
-								.findFirst().get().getTime());
+						initialTime = parseInitialTime(eventLogFilePath);
 						break;
 					}
 					case INITIAL_TIMESTAMP_OPT_NAME: {
@@ -184,6 +185,12 @@ public final class SegmentTimedUtteranceWriter {
 			Parameter.printHelp();
 		}
 
+	}
+
+	private static LocalDateTime parseInitialTime(final Path eventLogFilePath) throws IOException {
+		LOGGER.info("Reading log at \"{}\" to find timestamp.", eventLogFilePath);
+		return EventTimes.parseEventTime(LoggedEvents.parseLoggedEvents(Files.lines(eventLogFilePath))
+				.filter(INITIAL_EVENT_PREDICATE).findFirst().get().getTime());
 	}
 
 }
