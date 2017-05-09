@@ -240,79 +240,44 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 				.resolve(UtteranceSelectedEntityDescriptionWriter.class.getName() + ".properties");
 	}
 
-	public static void main(final String[] args) throws IOException, JAXBException {
-		if (args.length < 1) {
-			LookAndFeels.setLookAndFeel();
-			final Settings settings = loadClassSettings();
-			final File currentInpath = new File(settings.getInpath().orElse(System.getProperty("user.dir")));
-			final JFileChooser fileChooser = new JFileChooser(currentInpath);
-			FILE_FILTERS.stream().forEachOrdered(fileChooser::addChoosableFileFilter);
-			fileChooser.setFileFilter(DEFAULT_FILE_FILTER);
-			fileChooser.setDialogTitle("Input file");
-			fileChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
-			UserPrompts.promptFile(fileChooser).map(File::toPath).ifPresent(inpath -> {
-				LOGGER.info("Will read annotations from \"{}\".", inpath);
-				fileChooser.setDialogTitle("Output dir");
-				fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-				FILE_FILTERS.stream().forEachOrdered(fileChooser::removeChoosableFileFilter);
-				settings.setInpath(inpath.toString());
-				settings.getOutpath().map(File::new).ifPresent(fileChooser::setCurrentDirectory);
-				UserPrompts.promptFile(fileChooser).map(File::toPath).ifPresent(outpath -> {
-					LOGGER.info("Will write data to \"{}\".", outpath);
-					settings.setOutpath(outpath.toString());
-					UserPrompts.promptNonBlankString("Enter output filename prefix.", DEFAULT_OUTFILE_PREFIX)
-							.ifPresent(outfileNamePrefix -> {
-								LOGGER.info("Will prefix each output file with \"{}\".", outfileNamePrefix);
-								try {
-									new UtteranceSelectedEntityDescriptionWriter(outpath, outfileNamePrefix, false)
-											.accept(inpath);
-								} catch (final JAXBException e) {
-									throw new RuntimeException(e);
-								} catch (final IOException e) {
-									throw new UncheckedIOException(e);
-								}
-							});
-				});
-			});
+	public static void main(final CommandLine cl) throws IOException, JAXBException, ParseException {
+		if (cl.hasOption(Parameter.HELP.optName)) {
+			Parameter.printHelp();
+		} else {
+			final List<Path> inpaths = Arrays.asList(cl.getArgList().stream().map(Paths::get).toArray(Path[]::new));
+			if (inpaths.isEmpty()) {
+				throw new MissingOptionException("No input path(s) specified.");
 
-			LOGGER.debug("Saving class settings to \"{}\".", CLASS_SETTINGS_INFILE_PATH);
-			try (OutputStream settingsOutStream = Files.newOutputStream(CLASS_SETTINGS_INFILE_PATH,
-					StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
-				settings.getProperties().store(settingsOutStream, String.format("Persisted settings for class \"%s\".",
-						UtteranceSelectedEntityDescriptionWriter.class.getName()));
+			} else {
+				final Path outpath = ((File) cl.getParsedOptionValue(Parameter.OUTPATH.optName)).toPath();
+				LOGGER.info("Will write data to \"{}\".", outpath);
+				final boolean strict = cl.hasOption(Parameter.STRICT.optName);
+				for (final Path inpath : inpaths) {
+					final String outfileNamePrefix = Parameter.parseOutfilePrefix(cl, inpath);
+					LOGGER.info("Will prefix each output file for input \"{}\" with \"{}\".", inpath,
+							outfileNamePrefix);
+					final UtteranceSelectedEntityDescriptionWriter writer = new UtteranceSelectedEntityDescriptionWriter(
+							outpath, outfileNamePrefix, strict);
+					LOGGER.info("Will read batch job data from \"{}\".", inpath);
+					writer.accept(inpath);
+				}
 			}
+
+		}
+	}
+
+	public static void main(final String[] args) throws IOException, JAXBException, ParseException {
+		if (args.length < 1) {
+			runInteractive();
 		} else {
 			final CommandLineParser parser = new DefaultParser();
-			try {
+//			try {
 				final CommandLine cl = parser.parse(Parameter.OPTIONS, args);
-				if (cl.hasOption(Parameter.HELP.optName)) {
-					Parameter.printHelp();
-				} else {
-					final List<Path> inpaths = Arrays
-							.asList(cl.getArgList().stream().map(Paths::get).toArray(Path[]::new));
-					if (inpaths.isEmpty()) {
-						throw new MissingOptionException("No input path(s) specified.");
-
-					} else {
-						final Path outpath = ((File) cl.getParsedOptionValue(Parameter.OUTPATH.optName)).toPath();
-						LOGGER.info("Will write data to \"{}\".", outpath);
-						final boolean strict = cl.hasOption(Parameter.STRICT.optName);
-						for (final Path inpath : inpaths) {
-							final String outfileNamePrefix = Parameter.parseOutfilePrefix(cl, inpath);
-							LOGGER.info("Will prefix each output file for input \"{}\" with \"{}\".", inpath,
-									outfileNamePrefix);
-							final UtteranceSelectedEntityDescriptionWriter writer = new UtteranceSelectedEntityDescriptionWriter(
-									outpath, outfileNamePrefix, strict);
-							LOGGER.info("Will read batch job data from \"{}\".", inpath);
-							writer.accept(inpath);
-						}
-					}
-
-				}
-			} catch (final ParseException e) {
-				System.out.println(String.format("An error occured while parsing the command-line arguments: %s", e));
-				Parameter.printHelp();
-			}
+				main(cl);
+//			} catch (final ParseException e) {
+//				System.out.println(String.format("An error occured while parsing the command-line arguments: %s", e));
+//				Parameter.printHelp();
+//			}
 		}
 
 	}
@@ -397,6 +362,49 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 		try (InputStream classSettingsPropsInstream = Files.newInputStream(classSettingsInfilePath)) {
 			props.load(classSettingsPropsInstream);
 		}
+	}
+
+	private static void runInteractive() throws IOException {
+		LookAndFeels.setLookAndFeel();
+		final Settings settings = loadClassSettings();
+		final File currentInpath = new File(settings.getInpath().orElse(System.getProperty("user.dir")));
+		final JFileChooser fileChooser = new JFileChooser(currentInpath);
+		FILE_FILTERS.stream().forEachOrdered(fileChooser::addChoosableFileFilter);
+		fileChooser.setFileFilter(DEFAULT_FILE_FILTER);
+		fileChooser.setDialogTitle("Input file");
+		fileChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+		UserPrompts.promptFile(fileChooser).map(File::toPath).ifPresent(inpath -> {
+			LOGGER.info("Will read annotations from \"{}\".", inpath);
+			fileChooser.setDialogTitle("Output dir");
+			fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+			FILE_FILTERS.stream().forEachOrdered(fileChooser::removeChoosableFileFilter);
+			settings.setInpath(inpath.toString());
+			settings.getOutpath().map(File::new).ifPresent(fileChooser::setCurrentDirectory);
+			UserPrompts.promptFile(fileChooser).map(File::toPath).ifPresent(outpath -> {
+				LOGGER.info("Will write data to \"{}\".", outpath);
+				settings.setOutpath(outpath.toString());
+				UserPrompts.promptNonBlankString("Enter output filename prefix.", DEFAULT_OUTFILE_PREFIX)
+						.ifPresent(outfileNamePrefix -> {
+							LOGGER.info("Will prefix each output file with \"{}\".", outfileNamePrefix);
+							try {
+								new UtteranceSelectedEntityDescriptionWriter(outpath, outfileNamePrefix, false)
+										.accept(inpath);
+							} catch (final JAXBException e) {
+								throw new RuntimeException(e);
+							} catch (final IOException e) {
+								throw new UncheckedIOException(e);
+							}
+						});
+			});
+		});
+
+		LOGGER.debug("Saving class settings to \"{}\".", CLASS_SETTINGS_INFILE_PATH);
+		try (OutputStream settingsOutStream = Files.newOutputStream(CLASS_SETTINGS_INFILE_PATH,
+				StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
+			settings.getProperties().store(settingsOutStream, String.format("Persisted settings for class \"%s\".",
+					UtteranceSelectedEntityDescriptionWriter.class.getName()));
+		}
+
 	}
 
 	private final String outfileNamePrefix;

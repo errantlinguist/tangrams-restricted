@@ -185,52 +185,30 @@ public final class EventUtteranceTimeComparisonParamTester {
 				.resolve(EventUtteranceTimeComparisonParamTester.class.getName() + ".properties");
 	}
 
+	public static void main(final CommandLine cl) throws IOException, JAXBException, MissingOptionException {
+		if (cl.hasOption(Parameter.HELP.optName)) {
+			Parameter.printHelp();
+		} else {
+			final List<Path> inpaths = Arrays.asList(cl.getArgList().stream().map(Paths::get).toArray(Path[]::new));
+			if (inpaths.isEmpty()) {
+				throw new MissingOptionException("No input path(s) specified.");
+			} else {
+				for (final Path inpath : inpaths) {
+					LOGGER.info("Will read batch job data from \"{}\".", inpath);
+					run(inpath);
+				}
+			}
+		}
+	}
+
 	public static void main(final String[] args) throws IOException, JAXBException {
 		if (args.length < 1) {
-			LookAndFeels.setLookAndFeel();
-			final Settings settings = loadClassSettings();
-			final File currentInpath = new File(settings.getInpath().orElse(System.getProperty("user.dir")));
-			final JFileChooser fileChooser = new JFileChooser(currentInpath);
-			FILE_FILTERS.stream().forEachOrdered(fileChooser::addChoosableFileFilter);
-			fileChooser.setFileFilter(DEFAULT_FILE_FILTER);
-			fileChooser.setDialogTitle("Input file");
-			fileChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
-			UserPrompts.promptFile(fileChooser).map(File::toPath).ifPresent(inpath -> {
-				LOGGER.info("Will read annotations from \"{}\".", inpath);
-				settings.setInpath(inpath.toString());
-				try {
-					run(inpath);
-				} catch (final JAXBException e) {
-					throw new RuntimeException(e);
-				} catch (final IOException e) {
-					throw new UncheckedIOException(e);
-				}
-			});
-
-			LOGGER.debug("Saving class settings to \"{}\".", CLASS_SETTINGS_INFILE_PATH);
-			try (OutputStream settingsOutStream = Files.newOutputStream(CLASS_SETTINGS_INFILE_PATH,
-					StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
-				settings.getProperties().store(settingsOutStream, String.format("Persisted settings for class \"%s\".",
-						EventUtteranceTimeComparisonParamTester.class.getName()));
-			}
+			runInteractively();
 		} else {
 			final CommandLineParser parser = new DefaultParser();
 			try {
 				final CommandLine cl = parser.parse(Parameter.OPTIONS, args);
-				if (cl.hasOption(Parameter.HELP.optName)) {
-					Parameter.printHelp();
-				} else {
-					final List<Path> inpaths = Arrays
-							.asList(cl.getArgList().stream().map(Paths::get).toArray(Path[]::new));
-					if (inpaths.isEmpty()) {
-						throw new MissingOptionException("No input path(s) specified.");
-					} else {
-						for (final Path inpath : inpaths) {
-							LOGGER.info("Will read batch job data from \"{}\".", inpath);
-							run(inpath);
-						}
-					}
-				}
+				main(cl);
 			} catch (final ParseException e) {
 				System.out.println(String.format("An error occured while parsing the command-line arguments: %s", e));
 				Parameter.printHelp();
@@ -384,6 +362,35 @@ public final class EventUtteranceTimeComparisonParamTester {
 				System.out.println("Number of overlapping utt: " + overlappingUtts.size());
 
 			}
+		}
+	}
+
+	private static void runInteractively() throws IOException {
+		LookAndFeels.setLookAndFeel();
+		final Settings settings = loadClassSettings();
+		final File currentInpath = new File(settings.getInpath().orElse(System.getProperty("user.dir")));
+		final JFileChooser fileChooser = new JFileChooser(currentInpath);
+		FILE_FILTERS.stream().forEachOrdered(fileChooser::addChoosableFileFilter);
+		fileChooser.setFileFilter(DEFAULT_FILE_FILTER);
+		fileChooser.setDialogTitle("Input file");
+		fileChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
+		UserPrompts.promptFile(fileChooser).map(File::toPath).ifPresent(inpath -> {
+			LOGGER.info("Will read annotations from \"{}\".", inpath);
+			settings.setInpath(inpath.toString());
+			try {
+				run(inpath);
+			} catch (final JAXBException e) {
+				throw new RuntimeException(e);
+			} catch (final IOException e) {
+				throw new UncheckedIOException(e);
+			}
+		});
+
+		LOGGER.debug("Saving class settings to \"{}\".", CLASS_SETTINGS_INFILE_PATH);
+		try (OutputStream settingsOutStream = Files.newOutputStream(CLASS_SETTINGS_INFILE_PATH,
+				StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
+			settings.getProperties().store(settingsOutStream, String.format("Persisted settings for class \"%s\".",
+					EventUtteranceTimeComparisonParamTester.class.getName()));
 		}
 	}
 }

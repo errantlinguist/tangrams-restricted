@@ -117,57 +117,40 @@ public final class LoggedEventTimeShifter {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(LoggedEventTimeShifter.class);
 
+	public static void main(final CommandLine cl) throws IOException, ParseException {
+		if (cl.hasOption(Parameter.HELP.optName)) {
+			Parameter.printHelp();
+		} else {
+			final List<Path> inpaths = Arrays.asList(cl.getArgList().stream().map(Paths::get).toArray(Path[]::new));
+			switch (inpaths.size()) {
+			case 0: {
+				throw new MissingOptionException("No input path specified.");
+			}
+			case 1: {
+				final Path inpath = inpaths.iterator().next();
+				LOGGER.info("Will read annotations from \"{}\".", inpath);
+				final BigDecimal addendInSecs = new BigDecimal(cl.getOptionValue(Parameter.ADDEND.optName));
+				LOGGER.info("Will shift event times by \"{}\" second(s).", addendInSecs);
+				try (final PrintWriter out = Parameter.parseOutpath(cl)) {
+					run(inpath, addendInSecs, out);
+				}
+				break;
+			}
+			default: {
+				throw new IllegalArgumentException("No support for multiple inpaths (yet).");
+			}
+			}
+		}
+	}
+
 	public static void main(final String[] args) throws IOException {
 		if (args.length < 1) {
-			final JFileChooser fileChooser = new JFileChooser(System.getProperty("user.dir"));
-			fileChooser.setDialogTitle("Input file");
-			fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-			fileChooser.setFileFilter(new FileNameExtensionFilter("Text files (*.txt)", "txt"));
-			UserPrompts.promptFile(fileChooser).map(File::toPath).ifPresent(inpath -> {
-				LOGGER.info("Will read annotations from \"{}\".", inpath);
-				fileChooser.setDialogTitle("Output file");
-				fileChooser.setDialogType(JFileChooser.SAVE_DIALOG);
-				UserPrompts.promptFile(fileChooser).ifPresent(outpath -> {
-					LOGGER.info("Will write data to \"{}\".", outpath);
-					UserPrompts.promptDecimalFraction("Enter amount to shift event times by in seconds.")
-							.ifPresent(addend -> {
-								LOGGER.info("Will shift event times by \"{}\" second(s).", addend);
-								try (PrintWriter writer = new PrintWriter(outpath)) {
-									run(inpath, addend, writer);
-								} catch (final IOException e) {
-									throw new UncheckedIOException(e);
-								}
-							});
-				});
-			});
+			runInteractively();
 		} else {
 			final CommandLineParser parser = new DefaultParser();
 			try {
 				final CommandLine cl = parser.parse(Parameter.OPTIONS, args);
-				if (cl.hasOption(Parameter.HELP.optName)) {
-					Parameter.printHelp();
-				} else {
-					final List<Path> inpaths = Arrays
-							.asList(cl.getArgList().stream().map(Paths::get).toArray(Path[]::new));
-					switch (inpaths.size()) {
-					case 0: {
-						throw new MissingOptionException("No input path specified.");
-					}
-					case 1: {
-						final Path inpath = inpaths.iterator().next();
-						LOGGER.info("Will read annotations from \"{}\".", inpath);
-						final BigDecimal addendInSecs = new BigDecimal(cl.getOptionValue(Parameter.ADDEND.optName));
-						LOGGER.info("Will shift event times by \"{}\" second(s).", addendInSecs);
-						try (final PrintWriter out = Parameter.parseOutpath(cl)) {
-							run(inpath, addendInSecs, out);
-						}
-						break;
-					}
-					default: {
-						throw new IllegalArgumentException("No support for multiple inpaths (yet).");
-					}
-					}
-				}
+				main(cl);
 			} catch (final ParseException e) {
 				System.out.println(String.format("An error occured while parsing the command-line arguments: %s", e));
 				Parameter.printHelp();
@@ -197,6 +180,30 @@ public final class LoggedEventTimeShifter {
 				out.print(eventReprIter.next());
 			}
 		}
+	}
+
+	private static void runInteractively() {
+		final JFileChooser fileChooser = new JFileChooser(System.getProperty("user.dir"));
+		fileChooser.setDialogTitle("Input file");
+		fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+		fileChooser.setFileFilter(new FileNameExtensionFilter("Text files (*.txt)", "txt"));
+		UserPrompts.promptFile(fileChooser).map(File::toPath).ifPresent(inpath -> {
+			LOGGER.info("Will read annotations from \"{}\".", inpath);
+			fileChooser.setDialogTitle("Output file");
+			fileChooser.setDialogType(JFileChooser.SAVE_DIALOG);
+			UserPrompts.promptFile(fileChooser).ifPresent(outpath -> {
+				LOGGER.info("Will write data to \"{}\".", outpath);
+				UserPrompts.promptDecimalFraction("Enter amount to shift event times by in seconds.")
+						.ifPresent(addend -> {
+							LOGGER.info("Will shift event times by \"{}\" second(s).", addend);
+							try (PrintWriter writer = new PrintWriter(outpath)) {
+								run(inpath, addend, writer);
+							} catch (final IOException e) {
+								throw new UncheckedIOException(e);
+							}
+						});
+			});
+		});
 	}
 
 }
