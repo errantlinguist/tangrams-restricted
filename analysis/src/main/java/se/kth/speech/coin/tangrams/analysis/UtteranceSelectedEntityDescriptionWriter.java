@@ -199,6 +199,8 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 
 	private static final String HEADER_STR;
 
+	private static final ImageVisualizationInfoUnmarshaller IMG_VIZ_INFO_UNMARSHALLER = new ImageVisualizationInfoUnmarshaller();
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(UtteranceSelectedEntityDescriptionWriter.class);
 
 	private static final SegmentUtteranceFactory SEG_UTT_FACTORY = new SegmentUtteranceFactory();
@@ -488,7 +490,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 		this.outfileNamePrefix = outfileNamePrefix;
 		this.strict = strict;
 	}
-
+	
 	public void accept(final Path inpath) throws JAXBException, IOException {
 		final Iterator<Path> infilePathIter = Files.walk(inpath, FileVisitOption.FOLLOW_LINKS)
 				.filter(Files::isRegularFile)
@@ -531,13 +533,12 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 			final Map<String, GameHistory> playerGameHistories = playerGameHistoryTable.columnMap().get(gameId);
 			final TemporalGameContextFactory uttContextFactory = new TemporalGameContextFactory(
 					playerGameHistories::get);
-			final ImageVisualizationInfoUnmarshaller imgVizInfoUnmarshaller = new ImageVisualizationInfoUnmarshaller();
 
 			for (final Entry<String, GameHistory> playerGameHistory : playerGameHistories.entrySet()) {
 				final String playerId = playerGameHistory.getKey();
 				final GameHistory history = playerGameHistory.getValue();
 				// The visualization info for the given game
-				final ImageVisualizationInfo imgVizInfo = imgVizInfoUnmarshaller
+				final ImageVisualizationInfo imgVizInfo = IMG_VIZ_INFO_UNMARSHALLER
 						.apply(history.getInitialState().getImageVisualizationInfoDescription());
 				final List<Entry<Event, List<Utterance>>> eventUttLists = EVENT_UTT_FACTORY
 						.apply(utts.listIterator(), history).collect(Collectors.toList());
