@@ -129,7 +129,7 @@ public final class TangramsServer implements Runnable {
 
 		private static void printHelp() {
 			final HelpFormatter formatter = new HelpFormatter();
-			formatter.printHelp(TangramsServer.class.getName(), OPTIONS);
+			formatter.printHelp(TangramsServer.class.getSimpleName(), OPTIONS);
 		}
 
 		protected final String optName;
