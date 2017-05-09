@@ -29,7 +29,6 @@ import java.nio.file.StandardOpenOption;
 import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.Iterator;
-import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -121,13 +120,13 @@ public final class LoggedEventTimeStretcher {
 		if (cl.hasOption(Parameter.HELP.optName)) {
 			Parameter.printHelp();
 		} else {
-			final List<Path> inpaths = Arrays.asList(cl.getArgList().stream().map(Paths::get).toArray(Path[]::new));
-			switch (inpaths.size()) {
+			final Path[] inpaths = cl.getArgList().stream().map(Paths::get).toArray(Path[]::new);
+			switch (inpaths.length) {
 			case 0: {
 				throw new MissingOptionException("No input path specified.");
 			}
 			case 1: {
-				final Path inpath = inpaths.iterator().next();
+				final Path inpath = inpaths[0];
 				LOGGER.info("Will read annotations from \"{}\".", inpath);
 				final BigDecimal stretchFactor = new BigDecimal(cl.getOptionValue(Parameter.FACTOR.optName));
 				LOGGER.info("Will stretch logged events by a factor of {}.", stretchFactor);

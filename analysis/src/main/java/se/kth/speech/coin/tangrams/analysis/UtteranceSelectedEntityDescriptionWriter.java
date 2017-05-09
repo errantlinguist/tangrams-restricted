@@ -244,8 +244,8 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 		if (cl.hasOption(Parameter.HELP.optName)) {
 			Parameter.printHelp();
 		} else {
-			final List<Path> inpaths = Arrays.asList(cl.getArgList().stream().map(Paths::get).toArray(Path[]::new));
-			if (inpaths.isEmpty()) {
+			final Path[] inpaths = cl.getArgList().stream().map(Paths::get).toArray(Path[]::new);
+			if (inpaths.length < 1) {
 				throw new MissingOptionException("No input path(s) specified.");
 
 			} else {
