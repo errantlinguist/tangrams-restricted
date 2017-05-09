@@ -336,6 +336,69 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 		return result;
 	}
 
+	/**
+	 * @param event
+	 * @param eventUttLists
+	 * @param previousIndex
+	 * @return
+	 */
+	private static String createNoEventUtterancesMsg(final Event event,
+			final List<Entry<Event, List<Utterance>>> eventUttLists, final int eventIdx,
+			final Function<Utterance, String> uttPlayerIds) {
+		final StringBuilder sb = new StringBuilder(128);
+		sb.append("No utterances for event index ");
+		sb.append(eventIdx);
+		sb.append(" \"");
+		sb.append(event);
+		sb.append("\".");
+		{
+			final ListIterator<Entry<Event, List<Utterance>>> eventUttListIter = eventUttLists.listIterator(eventIdx);
+			Entry<Event, List<Utterance>> prevEventUttList = null;
+			while (eventUttListIter.hasPrevious()) {
+				prevEventUttList = eventUttListIter.previous();
+				final List<Utterance> prevUtts = prevEventUttList.getValue();
+				if (!prevUtts.isEmpty()) {
+					break;
+				}
+			}
+			if (prevEventUttList != null) {
+				sb.append(System.lineSeparator());
+				final Event prevEvent = prevEventUttList.getKey();
+				final List<Utterance> prevUtts = prevEventUttList.getValue();
+				final Utterance prevUtt = prevUtts.get(prevUtts.size() - 1);
+				final String speakingPlayerId = uttPlayerIds.apply(prevUtt);
+				sb.append(String.format(
+						"Last utt before event: \"%s\"; speaking player ID: \"%s\"; start: %f; end: %f; segment ID: \"%s\"; event ID: \"%s\"; event time: \"%s\"",
+						prevUtt.getTokens().stream().collect(WORD_JOINER), speakingPlayerId, prevUtt.getStartTime(),
+						prevUtt.getEndTime(), prevUtt.getSegmentId(), prevEvent.getId(), prevEvent.getTime()));
+			}
+		}
+		{
+			final ListIterator<Entry<Event, List<Utterance>>> eventUttListIter = eventUttLists
+					.listIterator(eventIdx + 1);
+			Entry<Event, List<Utterance>> nextEventUttList = null;
+			while (eventUttListIter.hasNext()) {
+				nextEventUttList = eventUttListIter.next();
+				final List<Utterance> nextUtts = nextEventUttList.getValue();
+				if (!nextUtts.isEmpty()) {
+					break;
+				}
+			}
+			if (nextEventUttList != null) {
+				sb.append(System.lineSeparator());
+				final Event nextEvent = nextEventUttList.getKey();
+				final List<Utterance> nextUtts = nextEventUttList.getValue();
+				final Utterance nextUtt = nextUtts.get(0);
+				final String speakingPlayerId = uttPlayerIds.apply(nextUtt);
+				sb.append(String.format(
+						"Next utt after event: \"%s\"; speaking player ID: \"%s\"; start: %f; end: %f; segment ID: \"%s\"; event ID: \"%s\"; event time: \"%s\"",
+						nextUtt.getTokens().stream().collect(WORD_JOINER), speakingPlayerId, nextUtt.getStartTime(),
+						nextUtt.getEndTime(), nextUtt.getSegmentId(), nextEvent.getId(), nextEvent.getTime()));
+			}
+		}
+		return sb.toString();
+	}
+
 	private static String createOutfileInfix(final Path inpath) {
 		return new FilenameBaseSplitter().apply(inpath.getFileName().toString())[0] + "_LOG-";
 	}
@@ -507,7 +570,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 											String.format("No utterances for event \"%s\".", event));
 								} else {
 									final String msg = createNoEventUtterancesMsg(event, eventUttLists,
-											eventUttListIter.nextIndex() - 1);
+											eventUttListIter.nextIndex() - 1, uttPlayerIds::get);
 									LOGGER.warn(msg);
 									final LocalDateTime eventTime = EventTimes.parseEventTime(event.getTime());
 									final Duration gameDuration = Duration.between(history.getStartTime(), eventTime);
@@ -558,65 +621,5 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 				}
 			}
 		}
-	}
-
-	/**
-	 * @param event
-	 * @param eventUttLists
-	 * @param previousIndex
-	 * @return
-	 */
-	private static String createNoEventUtterancesMsg(final Event event,
-			final List<Entry<Event, List<Utterance>>> eventUttLists, final int eventIdx) {
-		final StringBuilder sb = new StringBuilder(128);
-		sb.append("No utterances for event index ");
-		sb.append(eventIdx);
-		sb.append(" \"");
-		sb.append(event);
-		sb.append("\".");
-		{
-			final ListIterator<Entry<Event, List<Utterance>>> eventUttListIter = eventUttLists.listIterator(eventIdx);
-			Entry<Event, List<Utterance>> prevEventUttList = null;
-			while (eventUttListIter.hasPrevious()) {
-				prevEventUttList = eventUttListIter.previous();
-				final List<Utterance> prevUtts = prevEventUttList.getValue();
-				if (!prevUtts.isEmpty()) {
-					break;
-				}
-			}
-			if (prevEventUttList != null) {
-				sb.append(System.lineSeparator());
-				final Event prevEvent = prevEventUttList.getKey();
-				final List<Utterance> prevUtts = prevEventUttList.getValue();
-				final Utterance prevUtt = prevUtts.get(prevUtts.size() - 1);
-				sb.append(String.format(
-						"Last utt before event: \"%s\"; start: %f; end: %f; segment ID: \"%s\"; event ID: \"%s\"; event time: \"%s\"",
-						prevUtt.getTokens().stream().collect(WORD_JOINER), prevUtt.getStartTime(), prevUtt.getEndTime(),
-						prevUtt.getSegmentId(), prevEvent.getId(), prevEvent.getTime()));
-			}
-		}
-		{
-			final ListIterator<Entry<Event, List<Utterance>>> eventUttListIter = eventUttLists
-					.listIterator(eventIdx + 1);
-			Entry<Event, List<Utterance>> nextEventUttList = null;
-			while (eventUttListIter.hasNext()) {
-				nextEventUttList = eventUttListIter.next();
-				final List<Utterance> nextUtts = nextEventUttList.getValue();
-				if (!nextUtts.isEmpty()) {
-					break;
-				}
-			}
-			if (nextEventUttList != null) {
-				sb.append(System.lineSeparator());
-				final Event nextEvent = nextEventUttList.getKey();
-				final List<Utterance> nextUtts = nextEventUttList.getValue();
-				final Utterance nextUtt = nextUtts.get(0);
-				sb.append(String.format(
-						"Next utt after event: \"%s\"; start: %f; end: %f; segment ID: \"%s\"; event ID: \"%s\"; event time: \"%s\"",
-						nextUtt.getTokens().stream().collect(WORD_JOINER), nextUtt.getStartTime(), nextUtt.getEndTime(),
-						nextUtt.getSegmentId(), nextEvent.getId(), nextEvent.getTime()));
-			}
-		}
-		return sb.toString();
 	}
 }
