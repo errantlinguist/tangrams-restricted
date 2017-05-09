@@ -566,7 +566,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 	 * @param previousIndex
 	 * @return
 	 */
-	private String createNoEventUtterancesMsg(final Event event,
+	private static String createNoEventUtterancesMsg(final Event event,
 			final List<Entry<Event, List<Utterance>>> eventUttLists, final int eventIdx) {
 		final StringBuilder sb = new StringBuilder(128);
 		sb.append("No utterances for event index ");
