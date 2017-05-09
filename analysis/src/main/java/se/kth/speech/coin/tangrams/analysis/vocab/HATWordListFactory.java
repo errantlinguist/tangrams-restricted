@@ -57,16 +57,14 @@ public final class HATWordListFactory implements Function<Stream<Path>, Navigabl
 
 	@Override
 	public NavigableSet<String> apply(final Stream<Path> inpaths) {
-		// NOTE: This also filters out directories as they have a content
-		// type of e.g. "inode/directory"
-		final Stream<Path> xmlFilePaths = inpaths.filter(inpath -> {
+		final Stream<Path> xmlFilePaths = inpaths.filter(Files::isRegularFile).filter(inpath -> {
 			boolean shouldBeParsed = false;
 			try {
 				final String contentType = Files.probeContentType(inpath);
-				shouldBeParsed = contentType == null || contentType.endsWith("/xml");
+				shouldBeParsed = contentType != null && contentType.endsWith("/xml");
 			} catch (final IOException e) {
 				LOGGER.warn(
-						"A(n) {} occurred while probing the content type of \"{}\"; Considering to be the correct format.",
+						"A(n) {} occurred while probing the content type of \"{}\"; Skipping file.",
 						new Object[] { e.getClass().getSimpleName(), inpath }, e);
 				shouldBeParsed = true;
 			}
