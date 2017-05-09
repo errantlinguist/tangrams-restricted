@@ -446,16 +446,14 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 		playerGameHistoryTable.rowMap().values().stream().map(Map::keySet).forEach(playerGameIdIntersection::retainAll);
 		GameStateDescriptions.findAnyEquivalentGameState(
 				playerGameHistoryTable.values().stream().map(GameHistory::getInitialState).iterator());
+
+		final Map<Utterance, String> uttPlayerIds = new UtterancePlayerIdMapFactory(SEG_UTT_FACTORY::create,
+				playerData.getPlayerSourceIds().inverse()::get).apply(uttAnnots.getSegments().getSegment());
+		final List<Utterance> utts = Arrays
+				.asList(uttPlayerIds.keySet().stream().sorted(Comparator.comparing(Utterance::getStartTime)
+						.thenComparing(Comparator.comparing(Utterance::getEndTime))).toArray(Utterance[]::new));
 		for (final String gameId : playerGameIdIntersection) {
 			LOGGER.debug("Processing game \"{}\".", gameId);
-
-			final Map<Utterance, String> uttPlayerIds = new UtterancePlayerIdMapFactory(SEG_UTT_FACTORY::create,
-					playerData.getPlayerSourceIds().inverse()::get).apply(uttAnnots.getSegments().getSegment());
-			final List<Utterance> utts = Arrays
-					.asList(uttPlayerIds.keySet().stream()
-							.sorted(Comparator.comparing(Utterance::getStartTime)
-									.thenComparing(Comparator.comparing(Utterance::getEndTime)))
-							.toArray(Utterance[]::new));
 			final Map<String, GameHistory> playerGameHistories = playerGameHistoryTable.columnMap().get(gameId);
 			final TemporalGameContextFactory uttContextFactory = new TemporalGameContextFactory(
 					playerGameHistories::get);
