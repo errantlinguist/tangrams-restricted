@@ -136,7 +136,7 @@ public final class HATWordListPrinter {
 			if (cl.hasOption(Parameter.HELP.optName)) {
 				Parameter.printHelp();
 			} else {
-				final Path[]inpaths = cl.getArgList().stream().map(Paths::get).toArray(Path[]::new);
+				final Path[] inpaths = cl.getArgList().stream().map(Paths::get).toArray(Path[]::new);
 				switch (inpaths.length) {
 				case 0: {
 					throw new MissingOptionException("No input path specified.");
