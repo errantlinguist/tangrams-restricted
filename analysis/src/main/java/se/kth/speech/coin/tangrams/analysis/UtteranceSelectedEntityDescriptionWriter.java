@@ -266,13 +266,14 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 			runInteractively();
 		} else {
 			final CommandLineParser parser = new DefaultParser();
-//			try {
-				final CommandLine cl = parser.parse(Parameter.OPTIONS, args);
-				main(cl);
-//			} catch (final ParseException e) {
-//				System.out.println(String.format("An error occured while parsing the command-line arguments: %s", e));
-//				Parameter.printHelp();
-//			}
+			// try {
+			final CommandLine cl = parser.parse(Parameter.OPTIONS, args);
+			main(cl);
+			// } catch (final ParseException e) {
+			// System.out.println(String.format("An error occured while parsing
+			// the command-line arguments: %s", e));
+			// Parameter.printHelp();
+			// }
 		}
 
 	}
@@ -443,11 +444,9 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 				playerData.getPlayerEventLogs().entrySet(), LoggedEvents.VALID_MODEL_MIN_REQUIRED_EVENT_MATCHER);
 		final Set<String> playerGameIdIntersection = new HashSet<>(playerGameHistoryTable.columnKeySet());
 		playerGameHistoryTable.rowMap().values().stream().map(Map::keySet).forEach(playerGameIdIntersection::retainAll);
-		final int gameCount = playerGameIdIntersection.size();
-		if (gameCount == 1) {
-			GameStateDescriptions.findAnyEquivalentGameState(
-					playerGameHistoryTable.values().stream().map(GameHistory::getInitialState).iterator());
-			final String gameId = playerGameIdIntersection.iterator().next();
+		GameStateDescriptions.findAnyEquivalentGameState(
+				playerGameHistoryTable.values().stream().map(GameHistory::getInitialState).iterator());
+		for (final String gameId : playerGameIdIntersection) {
 			LOGGER.debug("Processing game \"{}\".", gameId);
 
 			final Map<Utterance, String> uttPlayerIds = new UtterancePlayerIdMapFactory(SEG_UTT_FACTORY::create,
@@ -478,7 +477,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 				final String headerStr = colHeaders.stream()
 						.map(header -> header.stream().collect(TABLE_ROW_CELL_JOINER)).collect(TABLE_ROW_JOINER);
 
-				final Path outfilePath = outpath.resolve(outfileNamePrefix + playerId + ".txt");
+				final Path outfilePath = outpath.resolve(outfileNamePrefix + playerId + "_GAME-" + gameId + ".txt");
 				LOGGER.info("Writing utterances from perspective of \"{}\" to \"{}\".", playerId, outfilePath);
 				try (BufferedWriter writer = Files.newBufferedWriter(outfilePath, StandardOpenOption.CREATE,
 						StandardOpenOption.TRUNCATE_EXISTING)) {
@@ -556,10 +555,6 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 
 				}
 			}
-
-		} else {
-			throw new UnsupportedOperationException(
-					String.format("No logic for handling a game count of %d.", gameCount));
 		}
 	}
 
