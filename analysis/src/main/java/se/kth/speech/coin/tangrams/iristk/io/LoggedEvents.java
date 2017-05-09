@@ -23,6 +23,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Predicate;
@@ -43,6 +44,8 @@ import iristk.util.Record;
 import iristk.util.Record.JsonToRecordException;
 import se.kth.speech.coin.tangrams.analysis.GameHistory;
 import se.kth.speech.coin.tangrams.analysis.GameHistoryCollector;
+import se.kth.speech.coin.tangrams.iristk.EventTypeMatcher;
+import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -50,6 +53,9 @@ import se.kth.speech.coin.tangrams.analysis.GameHistoryCollector;
  *
  */
 public final class LoggedEvents {
+
+	public static final EventTypeMatcher VALID_MODEL_MIN_REQUIRED_EVENT_MATCHER = new EventTypeMatcher(
+			EnumSet.of(GameManagementEvent.NEXT_TURN_REQUEST, GameManagementEvent.GAME_READY_RESPONSE));
 
 	private static final Predicate<Event> DEFAULT_EVENT_FILTER = event -> true;
 

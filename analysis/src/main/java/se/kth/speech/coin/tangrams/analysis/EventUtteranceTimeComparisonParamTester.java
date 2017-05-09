@@ -141,9 +141,6 @@ public final class EventUtteranceTimeComparisonParamTester {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(EventUtteranceTimeComparisonParamTester.class);
 
-	private static final EventTypeMatcher REQUIRED_EVENT_MATCHER = new EventTypeMatcher(
-			EnumSet.of(GameManagementEvent.NEXT_TURN_REQUEST, GameManagementEvent.GAME_READY_RESPONSE));
-
 	private static final EventTypeMatcher SALIENT_PIECE_EVENT_MATCHER;
 
 	private static final SegmentUtteranceFactory SEG_UTT_FACTORY = new SegmentUtteranceFactory();
@@ -300,7 +297,7 @@ public final class EventUtteranceTimeComparisonParamTester {
 
 		final PlayerDataManager playerData = PlayerDataManager.parsePlayerProps(props, infileBaseDir);
 		final Table<String, String, GameHistory> playerGameHistoryTable = LoggedEvents.createPlayerGameHistoryTable(
-				playerData.getPlayerEventLogs().entrySet(), EXPECTED_UNIQUE_GAME_COUNT, REQUIRED_EVENT_MATCHER);
+				playerData.getPlayerEventLogs().entrySet(), EXPECTED_UNIQUE_GAME_COUNT, LoggedEvents.VALID_MODEL_MIN_REQUIRED_EVENT_MATCHER);
 		final Set<String> playerGameIdIntersection = new HashSet<>(playerGameHistoryTable.columnKeySet());
 		playerGameHistoryTable.rowMap().values().stream().map(Map::keySet).forEach(playerGameIdIntersection::retainAll);
 		GameStateDescriptions.findAnyEquivalentGameState(
