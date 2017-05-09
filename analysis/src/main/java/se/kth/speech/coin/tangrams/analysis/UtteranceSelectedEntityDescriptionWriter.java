@@ -124,6 +124,25 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 			}
 		};
 
+		private static final Options OPTIONS = createOptions();
+
+		private static Options createOptions() {
+			final Options result = new Options();
+			Arrays.stream(Parameter.values()).map(Parameter::get).forEach(result::addOption);
+			return result;
+		}
+
+		private static String parseOutfilePrefix(final CommandLine cl, final Path inpath) {
+			final String prefix = cl.getOptionValue(Parameter.OUTFILE_PREFIX.optName, DEFAULT_OUTFILE_PREFIX);
+			return prefix;
+		}
+
+		private static void printHelp() {
+			final HelpFormatter formatter = new HelpFormatter();
+			formatter.printHelp(UtteranceSelectedEntityDescriptionWriter.class.getSimpleName() + " INPATHS...",
+					OPTIONS);
+		}
+
 		protected final String optName;
 
 		private Parameter(final String optName) {
@@ -180,8 +199,6 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 	private static final List<FileNameExtensionFilter> FILE_FILTERS;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(UtteranceSelectedEntityDescriptionWriter.class);
-
-	private static final Options OPTIONS = createOptions();
 
 	private static final EventTypeMatcher REQUIRED_EVENT_MATCHER = new EventTypeMatcher(
 			EnumSet.of(GameManagementEvent.NEXT_TURN_REQUEST, GameManagementEvent.GAME_READY_RESPONSE));
@@ -267,9 +284,9 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 		} else {
 			final CommandLineParser parser = new DefaultParser();
 			try {
-				final CommandLine cl = parser.parse(OPTIONS, args);
+				final CommandLine cl = parser.parse(Parameter.OPTIONS, args);
 				if (cl.hasOption(Parameter.HELP.optName)) {
-					printHelp();
+					Parameter.printHelp();
 				} else {
 					final List<Path> inpaths = Arrays
 							.asList(cl.getArgList().stream().map(Paths::get).toArray(Path[]::new));
@@ -281,7 +298,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 						LOGGER.info("Will write data to \"{}\".", outpath);
 						final boolean strict = cl.hasOption(Parameter.STRICT.optName);
 						for (final Path inpath : inpaths) {
-							final String outfileNamePrefix = parseOutfilePrefix(cl, inpath);
+							final String outfileNamePrefix = Parameter.parseOutfilePrefix(cl, inpath);
 							LOGGER.info("Will prefix each output file for input \"{}\" with \"{}\".", inpath,
 									outfileNamePrefix);
 							final UtteranceSelectedEntityDescriptionWriter writer = new UtteranceSelectedEntityDescriptionWriter(
@@ -294,7 +311,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 				}
 			} catch (final ParseException e) {
 				System.out.println(String.format("An error occured while parsing the command-line arguments: %s", e));
-				printHelp();
+				Parameter.printHelp();
 			}
 		}
 
@@ -348,12 +365,6 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 		return result;
 	}
 
-	private static Options createOptions() {
-		final Options result = new Options();
-		Arrays.stream(Parameter.values()).map(Parameter::get).forEach(result::addOption);
-		return result;
-	}
-
 	private static String createOutfileInfix(final Path inpath) {
 		return new FilenameBaseSplitter().apply(inpath.getFileName().toString())[0] + "_LOG-";
 	}
@@ -386,16 +397,6 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 		try (InputStream classSettingsPropsInstream = Files.newInputStream(classSettingsInfilePath)) {
 			props.load(classSettingsPropsInstream);
 		}
-	}
-
-	private static String parseOutfilePrefix(final CommandLine cl, final Path inpath) {
-		final String prefix = cl.getOptionValue(Parameter.OUTFILE_PREFIX.optName, DEFAULT_OUTFILE_PREFIX);
-		return prefix;
-	}
-
-	private static void printHelp() {
-		final HelpFormatter formatter = new HelpFormatter();
-		formatter.printHelp(UtteranceSelectedEntityDescriptionWriter.class.getSimpleName() + " INPATHS...", OPTIONS);
 	}
 
 	private final String outfileNamePrefix;
@@ -588,10 +589,11 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 			}
 			if (prevEventUttList != null) {
 				sb.append(System.lineSeparator());
-				Event prevEvent = prevEventUttList.getKey();
+				final Event prevEvent = prevEventUttList.getKey();
 				final List<Utterance> prevUtts = prevEventUttList.getValue();
 				final Utterance prevUtt = prevUtts.get(prevUtts.size() - 1);
-				sb.append(String.format("Last utt before event: \"%s\"; start: %f; end: %f; segment ID: \"%s\"; event ID: \"%s\"; event time: \"%s\"",
+				sb.append(String.format(
+						"Last utt before event: \"%s\"; start: %f; end: %f; segment ID: \"%s\"; event ID: \"%s\"; event time: \"%s\"",
 						prevUtt.getTokens().stream().collect(WORD_JOINER), prevUtt.getStartTime(), prevUtt.getEndTime(),
 						prevUtt.getSegmentId(), prevEvent.getId(), prevEvent.getTime()));
 			}
@@ -609,10 +611,11 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 			}
 			if (nextEventUttList != null) {
 				sb.append(System.lineSeparator());
-				Event nextEvent = nextEventUttList.getKey();
+				final Event nextEvent = nextEventUttList.getKey();
 				final List<Utterance> nextUtts = nextEventUttList.getValue();
 				final Utterance nextUtt = nextUtts.get(0);
-				sb.append(String.format("Next utt after event: \"%s\"; start: %f; end: %f; segment ID: \"%s\"; event ID: \"%s\"; event time: \"%s\"",
+				sb.append(String.format(
+						"Next utt after event: \"%s\"; start: %f; end: %f; segment ID: \"%s\"; event ID: \"%s\"; event time: \"%s\"",
 						nextUtt.getTokens().stream().collect(WORD_JOINER), nextUtt.getStartTime(), nextUtt.getEndTime(),
 						nextUtt.getSegmentId(), nextEvent.getId(), nextEvent.getTime()));
 			}

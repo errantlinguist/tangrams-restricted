@@ -93,6 +93,32 @@ public final class WordsAsClassifiersTrainingDataFactory
 			}
 		};
 
+		private static final Options OPTIONS = createOptions();
+
+		private static Options createOptions() {
+			final Options result = new Options();
+			Arrays.stream(Parameter.values()).map(Parameter::get).forEach(result::addOption);
+			return result;
+		}
+
+		private static PrintWriter parseOutpath(final CommandLine cl) throws ParseException, IOException {
+			final PrintWriter result;
+			final File outfile = (File) cl.getParsedOptionValue(Parameter.OUTPATH.optName);
+			if (outfile == null) {
+				LOGGER.info("No output file path specified; Writing to standard output.");
+				result = new PrintWriter(System.out);
+			} else {
+				LOGGER.info("Output file path is \"{}\".", outfile);
+				result = new PrintWriter(Files.newBufferedWriter(outfile.toPath(), StandardOpenOption.CREATE));
+			}
+			return result;
+		}
+
+		private static void printHelp() {
+			final HelpFormatter formatter = new HelpFormatter();
+			formatter.printHelp(WordsAsClassifiersTrainingDataFactory.class.getSimpleName() + " INFILE", OPTIONS);
+		}
+
 		protected final String optName;
 
 		private Parameter(final String optName) {
@@ -104,8 +130,6 @@ public final class WordsAsClassifiersTrainingDataFactory
 	private static final int EXPECTED_UNIQUE_GAME_COUNT = 1;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(WordsAsClassifiersTrainingDataFactory.class);
-
-	private static final Options OPTIONS = createOptions();
 
 	private static final SegmentUtteranceFactory SEG_UTT_FACTORY = new SegmentUtteranceFactory();
 
@@ -123,9 +147,9 @@ public final class WordsAsClassifiersTrainingDataFactory
 	public static void main(final String[] args) throws IOException, JAXBException {
 		final CommandLineParser parser = new DefaultParser();
 		try {
-			final CommandLine cl = parser.parse(OPTIONS, args);
+			final CommandLine cl = parser.parse(Parameter.OPTIONS, args);
 			if (cl.hasOption(Parameter.HELP.optName)) {
-				printHelp();
+				Parameter.printHelp();
 			} else {
 				final List<File> infiles = Arrays.asList(cl.getArgList().stream().map(File::new).toArray(File[]::new));
 				switch (infiles.size()) {
@@ -134,7 +158,7 @@ public final class WordsAsClassifiersTrainingDataFactory
 				}
 				case 1: {
 					final File infile = infiles.iterator().next();
-					try (final PrintWriter out = parseOutpath(cl)) {
+					try (final PrintWriter out = Parameter.parseOutpath(cl)) {
 						run(infile, out);
 					}
 					break;
@@ -146,32 +170,8 @@ public final class WordsAsClassifiersTrainingDataFactory
 			}
 		} catch (final ParseException e) {
 			System.out.println(String.format("An error occured while parsing the command-line arguments: %s", e));
-			printHelp();
+			Parameter.printHelp();
 		}
-	}
-
-	private static Options createOptions() {
-		final Options result = new Options();
-		Arrays.stream(Parameter.values()).map(Parameter::get).forEach(result::addOption);
-		return result;
-	}
-
-	private static PrintWriter parseOutpath(final CommandLine cl) throws ParseException, IOException {
-		final PrintWriter result;
-		final File outfile = (File) cl.getParsedOptionValue(Parameter.OUTPATH.optName);
-		if (outfile == null) {
-			LOGGER.info("No output file path specified; Writing to standard output.");
-			result = new PrintWriter(System.out);
-		} else {
-			LOGGER.info("Output file path is \"{}\".", outfile);
-			result = new PrintWriter(Files.newBufferedWriter(outfile.toPath(), StandardOpenOption.CREATE));
-		}
-		return result;
-	}
-
-	private static void printHelp() {
-		final HelpFormatter formatter = new HelpFormatter();
-		formatter.printHelp(WordsAsClassifiersTrainingDataFactory.class.getSimpleName() + " INFILE", OPTIONS);
 	}
 
 	/**

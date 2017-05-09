@@ -122,6 +122,49 @@ public final class TangramsClient implements Runnable {
 			}
 		};
 
+		private static final Options OPTIONS = createOptions();
+
+		private static Options createOptions() {
+			final Options result = new Options();
+			Arrays.stream(Parameter.values()).map(Parameter::get).forEach(result::addOption);
+			return result;
+		}
+
+		private static String parseBrokerHost(final CommandLine cl) {
+			final String result;
+			{
+				final String optName = Parameter.BROKER_HOST.optName;
+				if (cl.hasOption(optName)) {
+					result = cl.getOptionValue(optName);
+					LOGGER.info("Using broker hostname \"{}\".", result);
+				} else {
+					result = PROPS.getProperty("broker.host");
+					LOGGER.info("No broker hostname provided; Using default \"{}\".", result);
+				}
+			}
+			return result;
+		}
+
+		private static int parseBrokerPort(final CommandLine cl) throws ParseException {
+			final int result;
+			{
+				final Number paramValue = (Number) cl.getParsedOptionValue(Parameter.BROKER_PORT.optName);
+				if (paramValue == null) {
+					result = Integer.parseInt(PROPS.getProperty("broker.port"));
+					LOGGER.info("No broker port provided; Using default \"{}\".", result);
+				} else {
+					result = paramValue.intValue();
+					LOGGER.info("Using port \"{}\".", result);
+				}
+			}
+			return result;
+		}
+
+		private static void printHelp() {
+			final HelpFormatter formatter = new HelpFormatter();
+			formatter.printHelp(TangramsClient.class.getSimpleName(), OPTIONS);
+		}
+
 		protected final String optName;
 
 		private Parameter(final String optName) {
@@ -131,8 +174,6 @@ public final class TangramsClient implements Runnable {
 	}
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(TangramsClient.class);
-
-	private static final Options OPTIONS = createOptions();
 
 	private static final Properties PROPS;
 
@@ -147,16 +188,16 @@ public final class TangramsClient implements Runnable {
 	public static void main(final String[] args) {
 		final CommandLineParser parser = new DefaultParser();
 		try {
-			final CommandLine cl = parser.parse(OPTIONS, args);
+			final CommandLine cl = parser.parse(Parameter.OPTIONS, args);
 			if (cl.hasOption(Parameter.HELP.optName)) {
-				printHelp();
+				Parameter.printHelp();
 			} else {
 				final boolean analysisEnabled = cl.hasOption(Parameter.ANALYSIS.optName);
 				final boolean recordingEnabled = !cl.hasOption(Parameter.RECORDING_DISABLED.optName);
-				final String brokerHost = parseBrokerHost(cl);
+				final String brokerHost = Parameter.parseBrokerHost(cl);
 
 				try {
-					final int brokerPort = parseBrokerPort(cl);
+					final int brokerPort = Parameter.parseBrokerPort(cl);
 					final File copyDir = (File) cl.getParsedOptionValue(Parameter.COPY_LOGS.optName);
 					final Consumer<Path> logArchiveCopier;
 					if (copyDir == null) {
@@ -183,12 +224,12 @@ public final class TangramsClient implements Runnable {
 
 				} catch (final ParseException e) {
 					System.out.println(String.format("Could not parse option: %s", e.getLocalizedMessage()));
-					printHelp();
+					Parameter.printHelp();
 				}
 			}
 		} catch (final ParseException e) {
 			System.out.println(String.format("An error occured while parsing the command-line arguments: %s", e));
-			printHelp();
+			Parameter.printHelp();
 		}
 	}
 
@@ -210,47 +251,6 @@ public final class TangramsClient implements Runnable {
 	private static String createDefaultPlayerId() {
 		final String username = Objects.toString(System.getProperty("user.name"), "Tangrams");
 		return username + "_" + System.currentTimeMillis();
-	}
-
-	private static Options createOptions() {
-		final Options result = new Options();
-		Arrays.stream(Parameter.values()).map(Parameter::get).forEach(result::addOption);
-		return result;
-	}
-
-	private static String parseBrokerHost(final CommandLine cl) {
-		final String result;
-		{
-			final String optName = Parameter.BROKER_HOST.optName;
-			if (cl.hasOption(optName)) {
-				result = cl.getOptionValue(optName);
-				LOGGER.info("Using broker hostname \"{}\".", result);
-			} else {
-				result = PROPS.getProperty("broker.host");
-				LOGGER.info("No broker hostname provided; Using default \"{}\".", result);
-			}
-		}
-		return result;
-	}
-
-	private static int parseBrokerPort(final CommandLine cl) throws ParseException {
-		final int result;
-		{
-			final Number paramValue = (Number) cl.getParsedOptionValue(Parameter.BROKER_PORT.optName);
-			if (paramValue == null) {
-				result = Integer.parseInt(PROPS.getProperty("broker.port"));
-				LOGGER.info("No broker port provided; Using default \"{}\".", result);
-			} else {
-				result = paramValue.intValue();
-				LOGGER.info("Using port \"{}\".", result);
-			}
-		}
-		return result;
-	}
-
-	private static void printHelp() {
-		final HelpFormatter formatter = new HelpFormatter();
-		formatter.printHelp(TangramsClient.class.getName(), OPTIONS);
 	}
 
 	private static String promptGameId(final Component dialogParentComponent) {

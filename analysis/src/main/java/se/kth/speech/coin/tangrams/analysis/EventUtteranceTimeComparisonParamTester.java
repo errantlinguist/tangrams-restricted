@@ -88,6 +88,19 @@ public final class EventUtteranceTimeComparisonParamTester {
 			}
 		};
 
+		private static final Options OPTIONS = createOptions();
+
+		private static Options createOptions() {
+			final Options result = new Options();
+			Arrays.stream(Parameter.values()).map(Parameter::get).forEach(result::addOption);
+			return result;
+		}
+
+		private static void printHelp() {
+			final HelpFormatter formatter = new HelpFormatter();
+			formatter.printHelp(EventUtteranceTimeComparisonParamTester.class.getSimpleName() + " INPATHS...", OPTIONS);
+		}
+
 		protected final String optName;
 
 		private Parameter(final String optName) {
@@ -127,8 +140,6 @@ public final class EventUtteranceTimeComparisonParamTester {
 	private static final List<FileNameExtensionFilter> FILE_FILTERS;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(EventUtteranceTimeComparisonParamTester.class);
-
-	private static final Options OPTIONS = createOptions();
 
 	private static final EventTypeMatcher REQUIRED_EVENT_MATCHER = new EventTypeMatcher(
 			EnumSet.of(GameManagementEvent.NEXT_TURN_REQUEST, GameManagementEvent.GAME_READY_RESPONSE));
@@ -205,9 +216,9 @@ public final class EventUtteranceTimeComparisonParamTester {
 		} else {
 			final CommandLineParser parser = new DefaultParser();
 			try {
-				final CommandLine cl = parser.parse(OPTIONS, args);
+				final CommandLine cl = parser.parse(Parameter.OPTIONS, args);
 				if (cl.hasOption(Parameter.HELP.optName)) {
-					printHelp();
+					Parameter.printHelp();
 				} else {
 					final List<Path> inpaths = Arrays
 							.asList(cl.getArgList().stream().map(Paths::get).toArray(Path[]::new));
@@ -222,7 +233,7 @@ public final class EventUtteranceTimeComparisonParamTester {
 				}
 			} catch (final ParseException e) {
 				System.out.println(String.format("An error occured while parsing the command-line arguments: %s", e));
-				printHelp();
+				Parameter.printHelp();
 			}
 		}
 
@@ -268,12 +279,6 @@ public final class EventUtteranceTimeComparisonParamTester {
 		return result;
 	}
 
-	private static Options createOptions() {
-		final Options result = new Options();
-		Arrays.stream(Parameter.values()).map(Parameter::get).forEach(result::addOption);
-		return result;
-	}
-
 	private static Settings loadClassSettings() {
 		final Properties settingsProps = new Properties();
 		try {
@@ -293,11 +298,6 @@ public final class EventUtteranceTimeComparisonParamTester {
 		try (InputStream classSettingsPropsInstream = Files.newInputStream(classSettingsInfilePath)) {
 			props.load(classSettingsPropsInstream);
 		}
-	}
-
-	private static void printHelp() {
-		final HelpFormatter formatter = new HelpFormatter();
-		formatter.printHelp(EventUtteranceTimeComparisonParamTester.class.getSimpleName() + " INPATHS...", OPTIONS);
 	}
 
 	private static void run(final Path inpath) throws JAXBException, IOException {

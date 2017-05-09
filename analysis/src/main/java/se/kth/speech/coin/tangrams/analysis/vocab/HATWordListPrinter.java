@@ -68,6 +68,33 @@ public final class HATWordListPrinter {
 			}
 		};
 
+		private static final Options OPTIONS = createOptions();
+
+		private static Options createOptions() {
+			final Options result = new Options();
+			Arrays.stream(Parameter.values()).map(Parameter::get).forEach(result::addOption);
+			return result;
+		}
+
+		private static PrintWriter parseOutpath(final CommandLine cl) throws ParseException, IOException {
+			final PrintWriter result;
+			final File outfile = (File) cl.getParsedOptionValue(Parameter.OUTFILE.optName);
+			if (outfile == null) {
+				LOGGER.info("No output file path specified; Writing to standard output.");
+				result = new PrintWriter(System.out);
+			} else {
+				LOGGER.info("Output file path is \"{}\".", outfile);
+				result = new PrintWriter(Files.newBufferedWriter(outfile.toPath(), StandardOpenOption.CREATE,
+						StandardOpenOption.TRUNCATE_EXISTING));
+			}
+			return result;
+		}
+
+		private static void printHelp() {
+			final HelpFormatter formatter = new HelpFormatter();
+			formatter.printHelp(HATWordListPrinter.class.getSimpleName() + " INFILE", OPTIONS);
+		}
+
 		protected final String optName;
 
 		private Parameter(final String optName) {
@@ -77,8 +104,6 @@ public final class HATWordListPrinter {
 	}
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(HATWordListPrinter.class);
-
-	private static final Options OPTIONS = createOptions();
 
 	private static final ThreadLocal<Unmarshaller> UNMARSHALLER;
 
@@ -108,9 +133,9 @@ public final class HATWordListPrinter {
 	public static void main(final String[] args) throws IOException {
 		final CommandLineParser parser = new DefaultParser();
 		try {
-			final CommandLine cl = parser.parse(OPTIONS, args);
+			final CommandLine cl = parser.parse(Parameter.OPTIONS, args);
 			if (cl.hasOption(Parameter.HELP.optName)) {
-				printHelp();
+				Parameter.printHelp();
 			} else {
 				final List<Path> inpaths = Arrays.asList(cl.getArgList().stream().map(Paths::get).toArray(Path[]::new));
 				switch (inpaths.size()) {
@@ -119,7 +144,7 @@ public final class HATWordListPrinter {
 				}
 				case 1: {
 					final Path inpath = inpaths.iterator().next();
-					try (final PrintWriter out = parseOutpath(cl)) {
+					try (final PrintWriter out = Parameter.parseOutpath(cl)) {
 						run(inpath, out);
 					}
 					break;
@@ -131,33 +156,8 @@ public final class HATWordListPrinter {
 			}
 		} catch (final ParseException e) {
 			System.out.println(String.format("An error occured while parsing the command-line arguments: %s", e));
-			printHelp();
+			Parameter.printHelp();
 		}
-	}
-
-	private static Options createOptions() {
-		final Options result = new Options();
-		Arrays.stream(Parameter.values()).map(Parameter::get).forEach(result::addOption);
-		return result;
-	}
-
-	private static PrintWriter parseOutpath(final CommandLine cl) throws ParseException, IOException {
-		final PrintWriter result;
-		final File outfile = (File) cl.getParsedOptionValue(Parameter.OUTFILE.optName);
-		if (outfile == null) {
-			LOGGER.info("No output file path specified; Writing to standard output.");
-			result = new PrintWriter(System.out);
-		} else {
-			LOGGER.info("Output file path is \"{}\".", outfile);
-			result = new PrintWriter(Files.newBufferedWriter(outfile.toPath(), StandardOpenOption.CREATE,
-					StandardOpenOption.TRUNCATE_EXISTING));
-		}
-		return result;
-	}
-
-	private static void printHelp() {
-		final HelpFormatter formatter = new HelpFormatter();
-		formatter.printHelp(HATWordListPrinter.class.getSimpleName() + " INFILE", OPTIONS);
 	}
 
 	/**

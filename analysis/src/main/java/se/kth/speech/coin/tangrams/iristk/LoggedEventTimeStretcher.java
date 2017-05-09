@@ -82,6 +82,32 @@ public final class LoggedEventTimeStretcher {
 			}
 		};
 
+		private static final Options OPTIONS = createOptions();
+
+		private static Options createOptions() {
+			final Options result = new Options();
+			Arrays.stream(Parameter.values()).map(Parameter::get).forEach(result::addOption);
+			return result;
+		}
+
+		private static PrintWriter parseOutpath(final CommandLine cl) throws ParseException, IOException {
+			final PrintWriter result;
+			final File outfile = (File) cl.getParsedOptionValue(Parameter.OUTPATH.optName);
+			if (outfile == null) {
+				LOGGER.info("No output file path specified; Writing to standard output.");
+				result = new PrintWriter(System.out);
+			} else {
+				LOGGER.info("Output file path is \"{}\".", outfile);
+				result = new PrintWriter(Files.newBufferedWriter(outfile.toPath(), StandardOpenOption.CREATE));
+			}
+			return result;
+		}
+
+		private static void printHelp() {
+			final HelpFormatter formatter = new HelpFormatter();
+			formatter.printHelp(LoggedEventTimeStretcher.class.getSimpleName() + " INPATH", OPTIONS);
+		}
+
 		protected final String optName;
 
 		private Parameter(final String optName) {
@@ -90,8 +116,6 @@ public final class LoggedEventTimeStretcher {
 	}
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(LoggedEventTimeStretcher.class);
-
-	private static final Options OPTIONS = createOptions();
 
 	public static void main(final String[] args) throws IOException {
 		if (args.length < 1) {
@@ -119,9 +143,9 @@ public final class LoggedEventTimeStretcher {
 		} else {
 			final CommandLineParser parser = new DefaultParser();
 			try {
-				final CommandLine cl = parser.parse(OPTIONS, args);
+				final CommandLine cl = parser.parse(Parameter.OPTIONS, args);
 				if (cl.hasOption(Parameter.HELP.optName)) {
-					printHelp();
+					Parameter.printHelp();
 				} else {
 					final List<Path> inpaths = Arrays
 							.asList(cl.getArgList().stream().map(Paths::get).toArray(Path[]::new));
@@ -134,7 +158,7 @@ public final class LoggedEventTimeStretcher {
 						LOGGER.info("Will read annotations from \"{}\".", inpath);
 						final BigDecimal stretchFactor = new BigDecimal(cl.getOptionValue(Parameter.FACTOR.optName));
 						LOGGER.info("Will stretch logged events by a factor of {}.", stretchFactor);
-						try (final PrintWriter out = parseOutpath(cl)) {
+						try (final PrintWriter out = Parameter.parseOutpath(cl)) {
 							run(inpath, stretchFactor, out);
 						}
 						break;
@@ -146,33 +170,9 @@ public final class LoggedEventTimeStretcher {
 				}
 			} catch (final ParseException e) {
 				System.out.println(String.format("An error occured while parsing the command-line arguments: %s", e));
-				printHelp();
+				Parameter.printHelp();
 			}
 		}
-	}
-
-	private static Options createOptions() {
-		final Options result = new Options();
-		Arrays.stream(Parameter.values()).map(Parameter::get).forEach(result::addOption);
-		return result;
-	}
-
-	private static PrintWriter parseOutpath(final CommandLine cl) throws ParseException, IOException {
-		final PrintWriter result;
-		final File outfile = (File) cl.getParsedOptionValue(Parameter.OUTPATH.optName);
-		if (outfile == null) {
-			LOGGER.info("No output file path specified; Writing to standard output.");
-			result = new PrintWriter(System.out);
-		} else {
-			LOGGER.info("Output file path is \"{}\".", outfile);
-			result = new PrintWriter(Files.newBufferedWriter(outfile.toPath(), StandardOpenOption.CREATE));
-		}
-		return result;
-	}
-
-	private static void printHelp() {
-		final HelpFormatter formatter = new HelpFormatter();
-		formatter.printHelp(LoggedEventTimeStretcher.class.getSimpleName() + " INPATH", OPTIONS);
 	}
 
 	private static void run(final Path inpath, final BigDecimal stretchFactor, final PrintWriter out)
