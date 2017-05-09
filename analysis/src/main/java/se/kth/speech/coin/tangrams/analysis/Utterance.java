@@ -16,9 +16,14 @@
 */
 package se.kth.speech.coin.tangrams.analysis;
 
+import java.util.Comparator;
 import java.util.List;
 
-public final class Utterance {
+public final class Utterance implements Comparable<Utterance> {
+
+	public static final Comparator<Utterance> NATURAL_COMPARATOR = Comparator.comparingDouble(Utterance::getStartTime)
+			.thenComparingDouble(Utterance::getEndTime).thenComparingInt(utt -> utt.getTokens().size())
+			.thenComparing(Utterance::getSegmentId);
 
 	private final double endTime;
 
@@ -40,7 +45,17 @@ public final class Utterance {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
+	 * @see java.lang.Comparable#compareTo(java.lang.Object)
+	 */
+	@Override
+	public int compareTo(final Utterance o) {
+		return NATURAL_COMPARATOR.compare(this, o);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 *
 	 * @see java.lang.Object#equals(java.lang.Object)
 	 */
 	@Override
@@ -108,7 +123,7 @@ public final class Utterance {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#hashCode()
 	 */
 	@Override

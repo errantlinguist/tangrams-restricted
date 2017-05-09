@@ -302,8 +302,7 @@ public final class EventUtteranceTimeComparisonParamTester {
 		final Map<Utterance, String> uttPlayerIds = new UtterancePlayerIdMapFactory(SEG_UTT_FACTORY::create,
 				playerData.getPlayerSourceIds().inverse()::get).apply(uttAnnots.getSegments().getSegment());
 		final List<Utterance> allUtts = Arrays
-				.asList(uttPlayerIds.keySet().stream().sorted(Comparator.comparing(Utterance::getStartTime)
-						.thenComparing(Comparator.comparing(Utterance::getEndTime))).toArray(Utterance[]::new));
+				.asList(uttPlayerIds.keySet().stream().sorted().toArray(Utterance[]::new));
 
 		final List<List<String>> colHeaders = createColHeaders();
 		final String headerStr = colHeaders.stream().map(header -> header.stream().collect(TABLE_ROW_CELL_JOINER))
