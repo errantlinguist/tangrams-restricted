@@ -448,8 +448,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 
 		final Map<Utterance, String> uttPlayerIds = new UtterancePlayerIdMapFactory(SEG_UTT_FACTORY::create,
 				playerData.getPlayerSourceIds().inverse()::get).apply(uttAnnots.getSegments().getSegment());
-		final List<Utterance> utts = Arrays
-				.asList(uttPlayerIds.keySet().stream().sorted().toArray(Utterance[]::new));
+		final List<Utterance> utts = Arrays.asList(uttPlayerIds.keySet().stream().sorted().toArray(Utterance[]::new));
 		for (final String gameId : playerGameIdIntersection) {
 			LOGGER.debug("Processing game \"{}\".", gameId);
 			final Map<String, GameHistory> playerGameHistories = playerGameHistoryTable.columnMap().get(gameId);
