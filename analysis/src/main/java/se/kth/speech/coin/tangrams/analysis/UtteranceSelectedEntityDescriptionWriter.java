@@ -505,7 +505,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 	}
 
 	private static String createOutfileInfix(final Path inpath) {
-		return new FilenameBaseSplitter().apply(inpath.getFileName().toString())[0] + "_LOG-";
+		return new FilenameBaseSplitter().apply(inpath.getFileName().toString())[0];
 	}
 
 	private static Settings loadClassSettings() {
@@ -609,12 +609,12 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 
 		final PlayerDataManager playerData = PlayerDataManager.parsePlayerProps(props, infileBaseDir);
 
-		final Table<String, String, GameHistory> playerGameHistoryTable = LoggedEvents.createPlayerGameHistoryTable(
+		final Table<String, String, GameHistory> gamePlayerHistoryTable = LoggedEvents.createPlayerGameHistoryTable(
 				playerData.getPlayerEventLogs().entrySet(), LoggedEvents.VALID_MODEL_MIN_REQUIRED_EVENT_MATCHER);
-		final Set<String> playerGameIdIntersection = new HashSet<>(playerGameHistoryTable.columnKeySet());
-		final Map<String, Map<String, GameHistory>> gameHistories = playerGameHistoryTable.rowMap();
-		gameHistories.values().stream().map(Map::keySet).forEach(playerGameIdIntersection::retainAll);
-		final int uniqueModelDescriptionCount = playerGameHistoryTable.values().size();
+		final Set<String> playerGameIdIntersection = new HashSet<>(gamePlayerHistoryTable.rowKeySet());
+		gamePlayerHistoryTable.columnMap().values().stream().map(Map::keySet)
+				.forEach(playerGameIdIntersection::retainAll);
+		final int uniqueModelDescriptionCount = gamePlayerHistoryTable.values().size();
 		final SelectedEntityFeatureExtractor entityFeatureExtractor = new SelectedEntityFeatureExtractor(
 				new EntityFeature.Extractor(FEATURES_TO_DESCRIBE),
 				new GameContextModelFactory(uniqueModelDescriptionCount), new ImageEdgeCounter());
@@ -624,16 +624,16 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 		final List<Utterance> utts = Arrays.asList(uttPlayerIds.keySet().stream().sorted().toArray(Utterance[]::new));
 		for (final String gameId : playerGameIdIntersection) {
 			LOGGER.debug("Processing game \"{}\".", gameId);
-			final Map<String, GameHistory> playerGameHistories = playerGameHistoryTable.columnMap().get(gameId);
-			final TemporalGameContextFactory uttContextFactory = new TemporalGameContextFactory(
-					playerGameHistories::get);
+			final Map<String, GameHistory> playerHistories = gamePlayerHistoryTable.row(gameId);
+			final TemporalGameContextFactory uttContextFactory = new TemporalGameContextFactory(playerHistories::get);
 
 			final TabularDataWriter gameWriter = new TabularDataWriter(utts, uttPlayerIds::get, uttContextFactory,
 					entityFeatureExtractor, strict);
-			for (final Entry<String, GameHistory> playerGameHistory : playerGameHistories.entrySet()) {
-				final String playerId = playerGameHistory.getKey();
-				final GameHistory history = playerGameHistory.getValue();
-				final Path outfilePath = outpath.resolve(outfileNamePrefix + playerId + "_GAME-" + gameId + ".txt");
+			for (final Entry<String, GameHistory> playerHistory : playerHistories.entrySet()) {
+				final String playerId = playerHistory.getKey();
+				final GameHistory history = playerHistory.getValue();
+				final Path outfilePath = outpath
+						.resolve(outfileNamePrefix + "_GAME-" + gameId + "_LOG-" + playerId + ".txt");
 				LOGGER.info("Writing utterances from perspective of \"{}\" to \"{}\".", playerId, outfilePath);
 				try (BufferedWriter writer = Files.newBufferedWriter(outfilePath, StandardOpenOption.CREATE,
 						StandardOpenOption.TRUNCATE_EXISTING)) {

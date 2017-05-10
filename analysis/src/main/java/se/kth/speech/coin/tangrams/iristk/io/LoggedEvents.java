@@ -46,6 +46,7 @@ import se.kth.speech.coin.tangrams.analysis.GameHistory;
 import se.kth.speech.coin.tangrams.analysis.GameHistoryCollector;
 import se.kth.speech.coin.tangrams.iristk.EventTypeMatcher;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
+import se.kth.speech.coin.tangrams.iristk.GameStateDescriptions;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -142,8 +143,7 @@ public final class LoggedEvents {
 		});
 	}
 
-	private static Table<String, String, GameHistory> putPlayerGameHistories(
-			final Table<String, String, GameHistory> playerGameHistories,
+	private static void putPlayerGameHistories(final Table<String, String, GameHistory> playerGameHistories,
 			final Collection<Entry<String, Path>> playerEventLogFilePaths, final Predicate<? super Event> eventFilter)
 			throws IOException {
 		for (final Entry<String, Path> playerEventLogFilePath : playerEventLogFilePaths) {
@@ -152,12 +152,19 @@ public final class LoggedEvents {
 			final Path eventLogFile = playerEventLogFilePath.getValue();
 			try (final Stream<String> lines = Files.lines(eventLogFile, LoggingFormats.ENCODING)) {
 				final Map<String, GameHistory> gameHistories = parseGameHistories(lines, eventFilter);
-				gameHistories.forEach((gameId, gameData) -> {
-					playerGameHistories.put(playerId, gameId, gameData);
+				gameHistories.forEach((gameId, history) -> {
+					playerGameHistories.put(gameId, playerId, history);
 				});
 			}
 		}
-		return playerGameHistories;
+
+		final Map<String, Map<String, GameHistory>> playerHistoriesByGameId = playerGameHistories.rowMap();
+		playerHistoriesByGameId.values().stream().map(Map::values).map(Collection::stream).forEach(gameHistories -> {
+			// For each set of player game histories for each game ID, ensure
+			// that the initial states are all equivalent
+			GameStateDescriptions
+					.findAnyEquivalentGameState(gameHistories.map(GameHistory::getInitialState).iterator());
+		});
 	}
 
 	private LoggedEvents() {
