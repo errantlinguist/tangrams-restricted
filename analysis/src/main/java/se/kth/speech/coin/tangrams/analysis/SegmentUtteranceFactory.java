@@ -19,6 +19,7 @@ package se.kth.speech.coin.tangrams.analysis;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -79,6 +80,10 @@ public final class SegmentUtteranceFactory {
 				.asList(WHITESPACE_PATTERN.splitAsStream(str).filter(whitelistingPredicate).toArray(String[]::new));
 	}
 
+	private static int estimateTokenCount(final List<Object> children) {
+		return Math.max(children.size(), 16);
+	}
+
 	static void addSegmentTokens(final ArrayList<? super T> tokens, final Collection<Object> children) {
 		tokens.ensureCapacity(tokens.size() + children.size());
 		for (final Object child : children) {
@@ -90,10 +95,19 @@ public final class SegmentUtteranceFactory {
 		}
 	}
 
-	static List<T> createSegmentTokenList(final Segment seg) {
-		final List<Object> children = seg.getTranscription().getSegmentOrT();
-		final ArrayList<T> result = new ArrayList<>(Math.max(children.size(), 16));
-		addSegmentTokens(result, children);
+	static List<T> createSegmentTokenList(final Segment segment) {
+		final Transcription transcription = segment.getTranscription();
+		final List<T> result;
+		if (transcription == null) {
+			LOGGER.warn("Segment ID \"{}\" has no {} element.",
+					new Object[] { segment.getId(), Transcription.class.getSimpleName() });
+			result = Collections.emptyList();
+		} else {
+			final List<Object> children = transcription.getSegmentOrT();
+			final ArrayList<T> resultImpl = new ArrayList<>(estimateTokenCount(children));
+			addSegmentTokens(resultImpl, children);
+			result = resultImpl;
+		}
 		return result;
 	}
 
@@ -115,14 +129,14 @@ public final class SegmentUtteranceFactory {
 		final List<Utterance> result = new ArrayList<>(1);
 		final Transcription transcription = segment.getTranscription();
 		if (transcription == null) {
-			LOGGER.debug("Segment \"{}\" has no {} element.",
+			LOGGER.warn("Segment ID \"{}\" has no {} element.",
 					new Object[] { segment.getId(), Transcription.class.getSimpleName() });
 		} else {
 			final List<Object> children = transcription.getSegmentOrT();
 			// TODO: make this recursive
 			children.stream().filter(child -> child instanceof Segment).findAny().ifPresent(childSeg -> {
 				LOGGER.warn(
-						"Segment \"{}\" contains child {} instances; Multi-level transcriptions not (yet) supported.",
+						"Segment ID \"{}\" contains child {} instances; Multi-level transcriptions not (yet) supported.",
 						new Object[] { segment.getId(), Segment.class.getSimpleName() });
 			});
 			final Float segStartTime = segment.getStart();
@@ -130,7 +144,7 @@ public final class SegmentUtteranceFactory {
 			final Float segEndTime = segment.getEnd();
 			assert segEndTime != null;
 			{
-				final ArrayList<T> tokens = new ArrayList<>(Math.max(children.size(), 16));
+				final ArrayList<T> tokens = new ArrayList<>(estimateTokenCount(children));
 				final String parentSegmentId = segment.getId();
 				for (final Object child : children) {
 					if (child instanceof Segment) {
