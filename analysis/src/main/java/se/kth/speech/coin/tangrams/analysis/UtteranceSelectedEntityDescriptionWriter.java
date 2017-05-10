@@ -81,7 +81,6 @@ import se.kth.speech.coin.tangrams.content.ImageVisualizationInfoTableRowWriter;
 import se.kth.speech.coin.tangrams.iristk.EventTimes;
 import se.kth.speech.coin.tangrams.iristk.EventTypeMatcher;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
-import se.kth.speech.coin.tangrams.iristk.GameStateDescriptions;
 import se.kth.speech.coin.tangrams.iristk.ImageVisualizationInfoUnmarshaller;
 import se.kth.speech.coin.tangrams.iristk.events.Move;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
@@ -440,7 +439,8 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 
 	private static final String DEFAULT_OUTFILE_PREFIX = "uttImgDescs_";
 
-	private static final List<EntityFeature> FEATURES_TO_DESCRIBE;
+	private static final List<EntityFeature> FEATURES_TO_DESCRIBE = Arrays.asList(EntityFeature.POSITION_X,
+			EntityFeature.POSITION_Y, EntityFeature.EDGE_COUNT);;
 
 	private static final List<FileNameExtensionFilter> FILE_FILTERS;
 
@@ -449,11 +449,6 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 	private static final SegmentUtteranceFactory SEG_UTT_FACTORY = new SegmentUtteranceFactory();
 
 	private static final Path SETTINGS_DIR;
-
-	static {
-		FEATURES_TO_DESCRIBE = Arrays.asList(EntityFeature.POSITION_X, EntityFeature.POSITION_Y,
-				EntityFeature.EDGE_COUNT);
-	}
 
 	static {
 		FILE_FILTERS = Arrays.asList(new FileNameExtensionFilter("Property files (*.properties)", "properties"));
@@ -617,9 +612,8 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 		final Table<String, String, GameHistory> playerGameHistoryTable = LoggedEvents.createPlayerGameHistoryTable(
 				playerData.getPlayerEventLogs().entrySet(), LoggedEvents.VALID_MODEL_MIN_REQUIRED_EVENT_MATCHER);
 		final Set<String> playerGameIdIntersection = new HashSet<>(playerGameHistoryTable.columnKeySet());
-		playerGameHistoryTable.rowMap().values().stream().map(Map::keySet).forEach(playerGameIdIntersection::retainAll);
-		GameStateDescriptions.findAnyEquivalentGameState(
-				playerGameHistoryTable.values().stream().map(GameHistory::getInitialState).iterator());
+		final Map<String, Map<String, GameHistory>> gameHistories = playerGameHistoryTable.rowMap();
+		gameHistories.values().stream().map(Map::keySet).forEach(playerGameIdIntersection::retainAll);
 		final int uniqueModelDescriptionCount = playerGameHistoryTable.values().size();
 		final SelectedEntityFeatureExtractor entityFeatureExtractor = new SelectedEntityFeatureExtractor(
 				new EntityFeature.Extractor(FEATURES_TO_DESCRIBE),
