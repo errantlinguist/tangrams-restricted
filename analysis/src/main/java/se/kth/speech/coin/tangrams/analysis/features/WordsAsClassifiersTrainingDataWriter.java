@@ -32,7 +32,6 @@ import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.DoubleStream;
 import java.util.stream.Stream;
 
 import javax.xml.bind.JAXBException;
@@ -129,11 +128,26 @@ public final class WordsAsClassifiersTrainingDataWriter {
 
 	}
 
-	private static final EntityFeature.Extractor EXTRACTOR = new EntityFeature.Extractor();
+	private static final ArrayList<Attribute> ATTRS;
+
+	private static final Attribute CLASS_ATTR;
+
+	private static final EntityFeature.Extractor EXTRACTOR;
+
+	private static final Map<EntityFeature, Attribute> FEATURE_ATTRS;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(WordsAsClassifiersTrainingDataWriter.class);
 
 	private static final SegmentUtteranceFactory SEG_UTT_FACTORY = new SegmentUtteranceFactory();
+
+	static {
+		FEATURE_ATTRS = EntityFeature.Extractor.createFeatureAttrMap();
+		EXTRACTOR = new EntityFeature.Extractor(FEATURE_ATTRS);
+		ATTRS = new ArrayList<>(FEATURE_ATTRS.size() + 1);
+		ATTRS.addAll(FEATURE_ATTRS.values());
+		CLASS_ATTR = new Attribute("WORD", true);
+		ATTRS.add(CLASS_ATTR);
+	}
 
 	public static void main(final CommandLine cl) throws IOException, JAXBException, ParseException {
 		if (cl.hasOption(Parameter.HELP.optName)) {
@@ -208,9 +222,9 @@ public final class WordsAsClassifiersTrainingDataWriter {
 
 		final PlayerDataManager playerData = PlayerDataManager.parsePlayerProps(props, infileBaseDir);
 
-		final Table<String, String, GameHistory> playerGameHistoryTable = LoggedEvents.createPlayerGameHistoryTable(
+		final Table<String, String, GameHistory> gamePlayerHistoryTable = LoggedEvents.createPlayerGameHistoryTable(
 				playerData.getPlayerEventLogs().entrySet(), LoggedEvents.VALID_MODEL_MIN_REQUIRED_EVENT_MATCHER);
-		final int uniqueModelDescriptionCount = playerGameHistoryTable.values().size();
+		final int uniqueModelDescriptionCount = gamePlayerHistoryTable.values().size();
 		final List<GameContextFeatureExtractor> contextFeatureExtractors = Arrays
 				.asList(new SelectedEntityFeatureExtractor(EXTRACTOR,
 						new GameContextModelFactory(uniqueModelDescriptionCount), new ImageEdgeCounter()));
@@ -219,7 +233,7 @@ public final class WordsAsClassifiersTrainingDataWriter {
 				playerData.getPlayerSourceIds().inverse()::get).apply(uttAnnots.getSegments().getSegment());
 		final List<Utterance> utts = Arrays.asList(uttPlayerIds.keySet().stream().sorted().toArray(Utterance[]::new));
 
-		for (final Entry<String, Map<String, GameHistory>> gamePlayerHistories : playerGameHistoryTable.rowMap()
+		for (final Entry<String, Map<String, GameHistory>> gamePlayerHistories : gamePlayerHistoryTable.rowMap()
 				.entrySet()) {
 			final String gameId = gamePlayerHistories.getKey();
 			LOGGER.debug("Processing game \"{}\".", gameId);
@@ -227,35 +241,20 @@ public final class WordsAsClassifiersTrainingDataWriter {
 			final TemporalGameContextFactory uttContextFactory = new TemporalGameContextFactory(playerHistories::get);
 			for (final Entry<String, GameHistory> playerGameHistory : playerHistories.entrySet()) {
 				final String playerId = playerGameHistory.getKey();
-				final GameHistory history = playerGameHistory.getValue();
 
-				final ArrayList<Attribute> attrs = new ArrayList<>();
-				final Stream<String> contextAttrNames = contextFeatureExtractors.stream()
-						.map(extractor -> extractor.createFeatureDescriptions(history.getInitialState()))
-						.flatMap(Function.identity());
-				contextAttrNames.forEachOrdered(contextAttrName -> {
-					attrs.add(new Attribute(contextAttrName));
-				});
-
-				final Attribute wordAttr = new Attribute("WORD", true);
-				attrs.add(wordAttr);
-				final Instances instances = new Instances("wordtraining", attrs, playerGameHistoryTable.size() * 100);
-				instances.setClass(wordAttr);
+				final Instances instances = new Instances("word_training", ATTRS, gamePlayerHistoryTable.size() * 1000);
+				instances.setClass(CLASS_ATTR);
 
 				utts.forEach(utt -> {
 					final Stream<Instance> uttInstances = createInstances(utt, uttPlayerIds::get, uttContextFactory,
 							contextFeatureExtractors, instances);
 					uttInstances.forEachOrdered(uttInstance -> {
 						final double[] ctxFeatures = uttInstance.toDoubleArray();
-						LOGGER.info("Contextual feature vals: {}", Arrays.toString(ctxFeatures));
 						utt.getTokens().forEach(token -> {
 							final Instance tokenInst = uttInstance.copy(ctxFeatures);
 							tokenInst.setDataset(instances);
-							// tokenInst.setValue(wordAttr, token);
 							tokenInst.setClassValue(token);
 							instances.add(tokenInst);
-							// LOGGER.debug("Setting word attr to \"{}\".",
-							// token);
 						});
 					});
 				});
@@ -275,20 +274,13 @@ public final class WordsAsClassifiersTrainingDataWriter {
 	private Stream<Instance> createInstances(final Utterance utt,
 			final Function<? super Utterance, String> uttPlayerIdGetter,
 			final TemporalGameContextFactory uttContextFactory,
-			// BiConsumer<? super Utterance, ? super DoubleStream.Builder>
-			// uttFeatureExtractor,
 			final List<GameContextFeatureExtractor> contextFeatureExtractors, final Instances instances) {
 		final String playerId = uttPlayerIdGetter.apply(utt);
 		final Stream<GameContext> uttContexts = uttContextFactory.apply(utt.getStartTime(), utt.getEndTime(), playerId);
 		return uttContexts.map(uttContext -> {
 			final Instance inst = new DenseInstance(instances.numAttributes());
 			inst.setDataset(instances);
-			final DoubleStream.Builder featureVectorBuilder = DoubleStream.builder();
-			contextFeatureExtractors.forEach(extractor -> extractor.accept(uttContext, featureVectorBuilder));
-			final double[] vals = featureVectorBuilder.build().toArray();
-			for (int i = 0; i < vals.length; ++i) {
-				inst.setValue(i, vals[i]);
-			}
+			contextFeatureExtractors.forEach(extractor -> extractor.accept(uttContext, inst));
 			return inst;
 		});
 	}

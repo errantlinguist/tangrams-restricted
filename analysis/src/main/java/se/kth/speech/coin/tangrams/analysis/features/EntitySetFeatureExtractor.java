@@ -23,9 +23,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.function.Function;
-import java.util.function.ToDoubleFunction;
-import java.util.stream.DoubleStream;
-import java.util.stream.IntStream;
+import java.util.function.ToIntFunction;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -49,6 +47,7 @@ import se.kth.speech.coin.tangrams.iristk.events.GameStateUnmarshalling;
 import se.kth.speech.coin.tangrams.iristk.events.ImageVisualizationInfoDescription;
 import se.kth.speech.coin.tangrams.iristk.events.ModelDescription;
 import se.kth.speech.coin.tangrams.iristk.events.Move;
+import weka.core.Instance;
 
 final class EntitySetFeatureExtractor implements GameContextFeatureExtractor {
 
@@ -88,15 +87,16 @@ final class EntitySetFeatureExtractor implements GameContextFeatureExtractor {
 		eventsToApply.forEachOrdered(event -> applyEvent(model, event));
 	}
 
-	private final EntityFeature.Extractor extractor;
+	private final List<EntityFeature.Extractor> entityFeatureExtractors;
 
 	private final Function<ModelDescription, SpatialMatrix<Integer>> initialGameModelFactory;
 
-	private final ToDoubleFunction<? super String> namedResourceEdgeCountFactory;
+	private final ToIntFunction<? super String> namedResourceEdgeCountFactory;
 
-	EntitySetFeatureExtractor(final EntityFeature.Extractor extractor, final int expectedUniqueModelDescriptionCount,
-			final ToDoubleFunction<? super String> namedResourceEdgeCountFactory) {
-		this.extractor = extractor;
+	EntitySetFeatureExtractor(final List<EntityFeature.Extractor> entityFeatureExtractors,
+			final int expectedUniqueModelDescriptionCount,
+			final ToIntFunction<? super String> namedResourceEdgeCountFactory) {
+		this.entityFeatureExtractors = entityFeatureExtractors;
 		this.namedResourceEdgeCountFactory = namedResourceEdgeCountFactory;
 		final Map<ModelDescription, SpatialMatrix<Integer>> gameModels = Maps
 				.newHashMapWithExpectedSize(expectedUniqueModelDescriptionCount);
@@ -105,30 +105,11 @@ final class EntitySetFeatureExtractor implements GameContextFeatureExtractor {
 	}
 
 	@Override
-	public void accept(final GameContext context, final DoubleStream.Builder vals) {
+	public void accept(final GameContext context, final Instance vals) {
 		extractFeatures(context.getHistory(), context.getTime(), vals);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see se.kth.speech.coin.tangrams.analysis.FeatureExtractor#
-	 * createFeatureDescriptions(se.kth.speech.coin.tangrams.analysis.
-	 * GameContext)
-	 */
-	@Override
-	public Stream<String> createFeatureDescriptions(final GameStateDescription initialState) {
-		return createFeatureDescriptions(initialState.getImageVisualizationInfoDescription().getData().size());
-	}
-
-	private Stream<String> createFeatureDescriptions(final int entityCount) {
-		return IntStream.range(0, entityCount).mapToObj(entityId -> {
-			final Stream<String> baseFeatureDescs = extractor.getOrdering().stream().map(Enum::toString);
-			return baseFeatureDescs.map(desc -> "ENT_" + entityId + "-" + desc);
-		}).flatMap(Function.identity());
-	}
-
-	private void extractFeatures(final GameHistory history, final LocalDateTime time, final DoubleStream.Builder vals) {
+	private void extractFeatures(final GameHistory history, final LocalDateTime time, final Instance vals) {
 		final GameStateDescription initialState = history.getInitialState();
 		final SpatialMatrix<Integer> model = copyInitialModel(
 				initialGameModelFactory.apply(initialState.getModelDescription()));
@@ -138,7 +119,7 @@ final class EntitySetFeatureExtractor implements GameContextFeatureExtractor {
 	}
 
 	private void extractFeatures(final SpatialMatrix<Integer> model,
-			final List<ImageVisualizationInfoDescription.Datum> imgVizInfoData, final DoubleStream.Builder vals) {
+			final List<ImageVisualizationInfoDescription.Datum> imgVizInfoData, final Instance vals) {
 		final int[] modelDims = model.getDimensions();
 		final double modelArea = IntArrays.product(modelDims);
 		final SpatialMap<Integer> piecePlacements = model.getElementPlacements();
@@ -147,8 +128,8 @@ final class EntitySetFeatureExtractor implements GameContextFeatureExtractor {
 			final int pieceId = imgVizInfoDataIter.nextIndex();
 			final ImageVisualizationInfoDescription.Datum pieceImgVizInfoDatum = imgVizInfoDataIter.next();
 			final SpatialRegion pieceRegion = piecePlacements.getElementMinimalRegions().get(pieceId);
-			extractor.setVals(vals, pieceImgVizInfoDatum, pieceRegion, modelDims, modelArea,
-					namedResourceEdgeCountFactory);
+			entityFeatureExtractors.forEach(extractor -> extractor.setVals(vals, pieceImgVizInfoDatum, pieceRegion,
+					modelDims, modelArea, namedResourceEdgeCountFactory));
 		}
 	}
 }

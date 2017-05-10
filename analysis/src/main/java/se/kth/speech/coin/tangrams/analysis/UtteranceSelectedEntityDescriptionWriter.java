@@ -48,7 +48,6 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
-import java.util.stream.DoubleStream;
 import java.util.stream.Stream;
 
 import javax.swing.JFileChooser;
@@ -73,6 +72,7 @@ import iristk.util.HAT;
 import se.kth.speech.FilenameBaseSplitter;
 import se.kth.speech.awt.LookAndFeels;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
+import se.kth.speech.coin.tangrams.analysis.features.EntityFeature.Extractor;
 import se.kth.speech.coin.tangrams.analysis.features.GameContextFeatureExtractor;
 import se.kth.speech.coin.tangrams.analysis.features.ImageEdgeCounter;
 import se.kth.speech.coin.tangrams.analysis.features.SelectedEntityFeatureExtractor;
@@ -86,6 +86,10 @@ import se.kth.speech.coin.tangrams.iristk.events.Move;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
 import se.kth.speech.coin.tangrams.view.UserPrompts;
 import se.kth.speech.hat.xsd.Annotation;
+import weka.core.Attribute;
+import weka.core.DenseInstance;
+import weka.core.Instance;
+import weka.core.Instances;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -357,7 +361,8 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 			return uttStrs.collect(SENTENCE_JOINER);
 		}
 
-		void write(final String playerId, final GameHistory history, final Writer writer) throws IOException {
+		void write(final String playerId, final GameHistory history, final Writer writer, final Instances instances)
+				throws IOException {
 			// The visualization info for the given game
 			final ImageVisualizationInfo imgVizInfo = IMG_VIZ_INFO_UNMARSHALLER
 					.apply(history.getInitialState().getImageVisualizationInfoDescription());
@@ -405,9 +410,12 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 					{
 						final GameContext context = uttContextFactory.apply(contextStartTime, contextEndTime, playerId)
 								.findFirst().get();
-						final DoubleStream.Builder vals = DoubleStream.builder();
-						ctxFeatureExtractor.accept(context, vals);
-						final double[] featureVector = vals.build().toArray();
+						final Instance inst = new DenseInstance(instances.numAttributes());
+						inst.setDataset(instances);
+						ctxFeatureExtractor.accept(context, inst);
+						instances.add(inst);
+
+						final double[] featureVector = inst.toDoubleArray();
 						writer.write(
 								Arrays.stream(featureVector).mapToObj(Double::toString).collect(TABLE_ROW_CELL_JOINER));
 					}
@@ -433,14 +441,19 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 		}
 	}
 
+	private static final ArrayList<Attribute> ATTRS;
+
 	private static final Path CLASS_SETTINGS_INFILE_PATH;
 
 	private static final FileNameExtensionFilter DEFAULT_FILE_FILTER;
 
 	private static final String DEFAULT_OUTFILE_PREFIX = "uttImgDescs_";
 
-	private static final List<EntityFeature> FEATURES_TO_DESCRIBE = Arrays.asList(EntityFeature.POSITION_X,
-			EntityFeature.POSITION_Y, EntityFeature.EDGE_COUNT);;
+	private static final Extractor EXTRACTOR;
+
+	private static final Map<EntityFeature, Attribute> FEATURE_ATTRS;
+
+	private static final List<EntityFeature> FEATURES_TO_DESCRIBE;
 
 	private static final List<FileNameExtensionFilter> FILE_FILTERS;
 
@@ -459,6 +472,15 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 		SETTINGS_DIR = Paths.get(".settings");
 		CLASS_SETTINGS_INFILE_PATH = SETTINGS_DIR
 				.resolve(UtteranceSelectedEntityDescriptionWriter.class.getName() + ".properties");
+	}
+
+	static {
+		FEATURES_TO_DESCRIBE = Arrays.asList(EntityFeature.POSITION_X, EntityFeature.POSITION_Y,
+				EntityFeature.EDGE_COUNT);
+		FEATURE_ATTRS = EntityFeature.Extractor.createFeatureAttrMap(FEATURES_TO_DESCRIBE);
+		EXTRACTOR = new EntityFeature.Extractor(FEATURE_ATTRS);
+		ATTRS = new ArrayList<>(FEATURE_ATTRS.size());
+		ATTRS.addAll(FEATURE_ATTRS.values());
 	}
 
 	public static void main(final CommandLine cl) throws IOException, JAXBException, ParseException {
@@ -487,19 +509,18 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 		}
 	}
 
-	public static void main(final String[] args) throws IOException, JAXBException, ParseException {
+	public static void main(final String[] args) throws IOException, JAXBException {
 		if (args.length < 1) {
 			runInteractively();
 		} else {
 			final CommandLineParser parser = new DefaultParser();
-			// try {
-			final CommandLine cl = parser.parse(Parameter.OPTIONS, args);
-			main(cl);
-			// } catch (final ParseException e) {
-			// System.out.println(String.format("An error occured while parsing
-			// the command-line arguments: %s", e));
-			// Parameter.printHelp();
-			// }
+			try {
+				final CommandLine cl = parser.parse(Parameter.OPTIONS, args);
+				main(cl);
+			} catch (final ParseException e) {
+				System.out.println(String.format("An error occurred while parsing the command-line arguments: %s", e));
+				Parameter.printHelp();
+			}
 		}
 
 	}
@@ -615,8 +636,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 		gamePlayerHistoryTable.columnMap().values().stream().map(Map::keySet)
 				.forEach(playerGameIdIntersection::retainAll);
 		final int uniqueModelDescriptionCount = gamePlayerHistoryTable.values().size();
-		final SelectedEntityFeatureExtractor entityFeatureExtractor = new SelectedEntityFeatureExtractor(
-				new EntityFeature.Extractor(FEATURES_TO_DESCRIBE),
+		final SelectedEntityFeatureExtractor entityFeatureExtractor = new SelectedEntityFeatureExtractor(EXTRACTOR,
 				new GameContextModelFactory(uniqueModelDescriptionCount), new ImageEdgeCounter());
 
 		final Map<Utterance, String> uttPlayerIds = new UtterancePlayerIdMapFactory(SEG_UTT_FACTORY::create,
@@ -626,6 +646,8 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 			LOGGER.debug("Processing game \"{}\".", gameId);
 			final Map<String, GameHistory> playerHistories = gamePlayerHistoryTable.row(gameId);
 			final TemporalGameContextFactory uttContextFactory = new TemporalGameContextFactory(playerHistories::get);
+
+			final Instances instances = new Instances("word_training", ATTRS, gamePlayerHistoryTable.size() * 1000);
 
 			final TabularDataWriter gameWriter = new TabularDataWriter(utts, uttPlayerIds::get, uttContextFactory,
 					entityFeatureExtractor, strict);
@@ -637,7 +659,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 				LOGGER.info("Writing utterances from perspective of \"{}\" to \"{}\".", playerId, outfilePath);
 				try (BufferedWriter writer = Files.newBufferedWriter(outfilePath, StandardOpenOption.CREATE,
 						StandardOpenOption.TRUNCATE_EXISTING)) {
-					gameWriter.write(playerId, history, writer);
+					gameWriter.write(playerId, history, writer, instances);
 				}
 			}
 		}

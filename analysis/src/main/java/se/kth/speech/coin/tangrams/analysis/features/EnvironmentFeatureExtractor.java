@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.function.Function;
-import java.util.stream.DoubleStream;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -45,6 +44,7 @@ import se.kth.speech.coin.tangrams.iristk.events.GameStateUnmarshalling;
 import se.kth.speech.coin.tangrams.iristk.events.ImageVisualizationInfoDescription;
 import se.kth.speech.coin.tangrams.iristk.events.ModelDescription;
 import se.kth.speech.coin.tangrams.iristk.events.Move;
+import weka.core.Instance;
 
 final class EnvironmentFeatureExtractor implements GameContextFeatureExtractor {
 
@@ -58,24 +58,24 @@ final class EnvironmentFeatureExtractor implements GameContextFeatureExtractor {
 			assert ORDERING.size() == EnvironmentFeature.values().length;
 		}
 
-		private static void setVals(final DoubleStream.Builder vals, final int[] modelDims, final int entityCount) {
-			for (final EnvironmentFeature feature : ORDERING) {
-				switch (feature) {
-				case COL_COUNT:
-					vals.accept(modelDims[1]);
-					break;
-				case ENTITY_COUNT:
-					vals.accept(entityCount);
-					break;
-				case ROW_COUNT:
-					vals.accept(modelDims[0]);
-					break;
-				default: {
-					throw new AssertionError("Missing enum-handling logic.");
-				}
-				}
-			}
-		}
+//		private static void setVals(final Instance vals, final int[] modelDims, final int entityCount) {
+//			for (final EnvironmentFeature feature : ORDERING) {
+//				switch (feature) {
+//				case COL_COUNT:
+//					vals.accept(modelDims[1]);
+//					break;
+//				case ENTITY_COUNT:
+//					vals.accept(entityCount);
+//					break;
+//				case ROW_COUNT:
+//					vals.accept(modelDims[0]);
+//					break;
+//				default: {
+//					throw new AssertionError("Missing enum-handling logic.");
+//				}
+//				}
+//			}
+//		}
 	}
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(EnvironmentFeatureExtractor.class);
@@ -124,39 +124,39 @@ final class EnvironmentFeatureExtractor implements GameContextFeatureExtractor {
 	}
 
 	@Override
-	public void accept(final GameContext context, final DoubleStream.Builder vals) {
-		extractFeatures(context.getHistory(), context.getTime(), vals);
+	public void accept(final GameContext context, final Instance vals) {
+//		extractFeatures(context.getHistory(), context.getTime(), vals);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see se.kth.speech.coin.tangrams.analysis.FeatureExtractor#
-	 * createFeatureDescriptions(se.kth.speech.coin.tangrams.analysis.
-	 * GameContext)
-	 */
-	@Override
-	public Stream<String> createFeatureDescriptions(final GameStateDescription initialState) {
-		return createFeatureDescriptions(initialState.getImageVisualizationInfoDescription().getData().size());
-	}
+//	/*
+//	 * (non-Javadoc)
+//	 *
+//	 * @see se.kth.speech.coin.tangrams.analysis.FeatureExtractor#
+//	 * createFeatureDescriptions(se.kth.speech.coin.tangrams.analysis.
+//	 * GameContext)
+//	 */
+//	@Override
+//	public Stream<String> createFeatureDescriptions(final GameStateDescription initialState) {
+//		return createFeatureDescriptions(initialState.getImageVisualizationInfoDescription().getData().size());
+//	}
 
-	private Stream<String> createFeatureDescriptions(final int entityCount) {
-		return EnvironmentFeature.ORDERING.stream().map(Enum::toString);
-	}
+//	private Stream<String> createFeatureDescriptions(final int entityCount) {
+//		return EnvironmentFeature.ORDERING.stream().map(Enum::toString);
+//	}
 
-	private void extractFeatures(final GameHistory history, final LocalDateTime time, final DoubleStream.Builder vals) {
-		final GameStateDescription initialState = history.getInitialState();
-		final SpatialMatrix<Integer> model = copyInitialModel(
-				initialGameModelFactory.apply(initialState.getModelDescription()));
-		final NavigableMap<LocalDateTime, List<Event>> events = history.getEvents();
-		updateToTime(model, events, time);
-		extractFeatures(model, initialState.getImageVisualizationInfoDescription().getData(), vals);
-	}
+//	private void extractFeatures(final GameHistory history, final LocalDateTime time, final Instance vals) {
+//		final GameStateDescription initialState = history.getInitialState();
+//		final SpatialMatrix<Integer> model = copyInitialModel(
+//				initialGameModelFactory.apply(initialState.getModelDescription()));
+//		final NavigableMap<LocalDateTime, List<Event>> events = history.getEvents();
+//		updateToTime(model, events, time);
+//		extractFeatures(model, initialState.getImageVisualizationInfoDescription().getData(), vals);
+//	}
 
-	private void extractFeatures(final SpatialMatrix<Integer> model,
-			final List<ImageVisualizationInfoDescription.Datum> imgVizInfoData, final DoubleStream.Builder vals) {
-		final int[] modelDims = model.getDimensions();
-		final int entityCount = imgVizInfoData.size();
-		EnvironmentFeature.setVals(vals, modelDims, entityCount);
-	}
+//	private void extractFeatures(final SpatialMatrix<Integer> model,
+//			final List<ImageVisualizationInfoDescription.Datum> imgVizInfoData, final Instance vals) {
+//		final int[] modelDims = model.getDimensions();
+//		final int entityCount = imgVizInfoData.size();
+//		EnvironmentFeature.setVals(vals, modelDims, entityCount);
+//	}
 }

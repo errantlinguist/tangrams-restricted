@@ -22,11 +22,11 @@ import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -40,6 +40,8 @@ import se.kth.speech.coin.tangrams.iristk.EventSubmittingPlayerMatcher;
 import se.kth.speech.coin.tangrams.iristk.EventTypeMatcher;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
+import weka.core.Attribute;
+import weka.core.Instance;
 
 final class GameEventFeatureExtractor implements GameContextFeatureExtractor {
 
@@ -55,74 +57,66 @@ final class GameEventFeatureExtractor implements GameContextFeatureExtractor {
 	 *      pp. 1259&ndash;1267. 2010.</a>
 	 *
 	 */
-	private enum ActionFeature {
+	public enum ActionFeature {
 		LAST_SUBMITTED_EVENT_TYPE, SELECTED_ENTITY;
 
-		private static final List<GameManagementEvent> EVENT_TYPE_FEATURE_ORDERING;
+		// private static Stream<String> createFeatureDescriptions() {
+		// return ActionFeature.ORDERING.stream().map(Enum::toString);
+		// }
 
-		private static final Object2DoubleMap<GameManagementEvent> EVENT_TYPE_FEATURE_VALS;
+		public static final class Extractor {
 
-		private static final List<ActionFeature> ORDERING;
+			private final Map<ActionFeature, Attribute> featureAttrs;
 
-		static {
-			ORDERING = Arrays.asList(SELECTED_ENTITY, LAST_SUBMITTED_EVENT_TYPE);
-			assert ORDERING.size() == ActionFeature.values().length;
-		}
+			public Extractor(final Map<ActionFeature, Attribute> featureAttrs) {
+				this.featureAttrs = featureAttrs;
+			}
 
-		static {
-			EVENT_TYPE_FEATURE_ORDERING = Arrays.asList(GameManagementEvent.COMPLETED_TURN_REQUEST,
-					GameManagementEvent.GAME_READY_RESPONSE, GameManagementEvent.NEXT_TURN_REQUEST,
-					GameManagementEvent.PLAYER_JOIN_REQUEST, GameManagementEvent.PLAYER_JOIN_RESPONSE,
-					GameManagementEvent.SELECTION_REJECTION, GameManagementEvent.SELECTION_REQUEST);
-			assert EVENT_TYPE_FEATURE_ORDERING.size() == GameManagementEvent.values().length;
-			EVENT_TYPE_FEATURE_VALS = new Object2DoubleOpenHashMap<>(EVENT_TYPE_FEATURE_ORDERING.size() + 1);
-			EVENT_TYPE_FEATURE_VALS.defaultReturnValue(NULL_FEATURE_VAL);
-			FeatureMaps.putOrdinalFeatureVals(EVENT_TYPE_FEATURE_VALS, EVENT_TYPE_FEATURE_ORDERING);
-			EVENT_TYPE_FEATURE_VALS.put(null, NULL_FEATURE_VAL);
-		}
-
-		private static Stream<String> createFeatureDescriptions() {
-			return ActionFeature.ORDERING.stream().map(Enum::toString);
-		}
-
-		private static void setVals(final DoubleStream.Builder vals, final GameContext context) {
-			for (final ActionFeature feature : ORDERING) {
-				switch (feature) {
-				case LAST_SUBMITTED_EVENT_TYPE: {
-					final NavigableMap<LocalDateTime, List<Event>> timedEventsBeforeUtt = context.getPrecedingEvents();
-					// Look for the last time the speaking player submitted an
-					// event, iterating backwards
-					final Stream<Event> eventsReversed = timedEventsBeforeUtt.descendingMap().values().stream()
-							.map(Lists::reverse).flatMap(List::stream);
-					final Predicate<Event> lastSubmittedByPlayerMatcher = new EventSubmittingPlayerMatcher(
-							context.getPlayerId());
-					final Optional<Event> lastEventSubmittedByPlayer = eventsReversed
-							.filter(lastSubmittedByPlayerMatcher).findFirst();
-					final GameManagementEvent lastEventType = lastEventSubmittedByPlayer
-							.map(GameManagementEvent::getEventType).orElse(null);
-					final double val = EVENT_TYPE_FEATURE_VALS.getDouble(lastEventType);
-					vals.accept(val);
-					break;
-				}
-				case SELECTED_ENTITY: {
-					final Optional<Integer> lastSelectedEntityId = context.findLastSelectedEntityId();
-					// TODO: This will break if the entity IDs are not valid
-					// numeric values; Generalize so that the strings are
-					// treated as ordinal values (e.g. "1" -> first, "2" ->
-					// second, etc.)
-					final double val;
-					if (lastSelectedEntityId.isPresent()) {
-						final Integer entityId = lastSelectedEntityId.get();
-						val = entityId.doubleValue();
-					} else {
-						val = NULL_FEATURE_VAL;
+			private void setVals(final Instance vals, final GameContext context) {
+				for (final Entry<ActionFeature, Attribute> featureAttr : featureAttrs.entrySet()) {
+					ActionFeature feature = featureAttr.getKey();
+					Attribute attr = featureAttr.getValue();
+					switch (feature) {
+					case LAST_SUBMITTED_EVENT_TYPE: {
+						final NavigableMap<LocalDateTime, List<Event>> timedEventsBeforeUtt = context
+								.getPrecedingEvents();
+						// Look for the last time the speaking player submitted
+						// an
+						// event, iterating backwards
+						final Stream<Event> eventsReversed = timedEventsBeforeUtt.descendingMap().values().stream()
+								.map(Lists::reverse).flatMap(List::stream);
+						final Predicate<Event> lastSubmittedByPlayerMatcher = new EventSubmittingPlayerMatcher(
+								context.getPlayerId());
+						final Optional<Event> lastEventSubmittedByPlayer = eventsReversed
+								.filter(lastSubmittedByPlayerMatcher).findFirst();
+						final GameManagementEvent lastEventType = lastEventSubmittedByPlayer
+								.map(GameManagementEvent::getEventType).orElse(null);
+						// final double val =
+						// EVENT_TYPE_FEATURE_VALS.getDouble(lastEventType);
+						vals.setValue(attr, lastEventType.name());
+						break;
 					}
-					vals.accept(val);
-					break;
-				}
-				default: {
-					throw new AssertionError("Missing enum-handling logic.");
-				}
+					case SELECTED_ENTITY: {
+						final Optional<Integer> lastSelectedEntityId = context.findLastSelectedEntityId();
+						// TODO: This will break if the entity IDs are not valid
+						// numeric values; Generalize so that the strings are
+						// treated as ordinal values (e.g. "1" -> first, "2" ->
+						// second, etc.)
+						// final double val;
+						// if (lastSelectedEntityId.isPresent()) {
+						// final Integer entityId = lastSelectedEntityId.get();
+						// val = entityId.doubleValue();
+						// } else {
+						// val = NULL_FEATURE_VAL;
+						// }
+						// vals.setValue(attr, val);
+						lastSelectedEntityId.ifPresent(entityId -> vals.setValue(attr, entityId));
+						break;
+					}
+					default: {
+						throw new AssertionError("Missing enum-handling logic.");
+					}
+					}
 				}
 			}
 		}
@@ -140,26 +134,12 @@ final class GameEventFeatureExtractor implements GameContextFeatureExtractor {
 	 *      pp. 1259&ndash;1267. 2010.</a>
 	 *
 	 */
-	private enum EventHistoryFeature {
+	public enum EventHistoryFeature {
 		LAST_OCC_DIST, LAST_SPEAKER_SUB_DIST;
-
-		private static final List<GameManagementEvent> EVENT_TYPE_FEATURE_ORDERING;
 
 		private static final Map<GameManagementEvent, Predicate<Event>> EVENT_TYPE_MATCHERS;
 
-		private static final List<EventHistoryFeature> ORDERING;
-
 		static {
-			ORDERING = Arrays.asList(LAST_OCC_DIST, LAST_SPEAKER_SUB_DIST);
-			assert ORDERING.size() == EventHistoryFeature.values().length;
-		}
-
-		static {
-			EVENT_TYPE_FEATURE_ORDERING = Arrays.asList(GameManagementEvent.COMPLETED_TURN_REQUEST,
-					GameManagementEvent.GAME_READY_RESPONSE, GameManagementEvent.NEXT_TURN_REQUEST,
-					GameManagementEvent.PLAYER_JOIN_REQUEST, GameManagementEvent.PLAYER_JOIN_RESPONSE,
-					GameManagementEvent.SELECTION_REJECTION, GameManagementEvent.SELECTION_REQUEST);
-			assert EVENT_TYPE_FEATURE_ORDERING.size() == GameManagementEvent.values().length;
 			final Function<GameManagementEvent, Predicate<Event>> eventTypeMatcherFactory = eventType -> new EventTypeMatcher(
 					EnumSet.of(eventType));
 			EVENT_TYPE_MATCHERS = new EnumMap<>(GameManagementEvent.class);
@@ -167,54 +147,66 @@ final class GameEventFeatureExtractor implements GameContextFeatureExtractor {
 					.forEach(eventType -> EVENT_TYPE_MATCHERS.put(eventType, eventTypeMatcherFactory.apply(eventType)));
 		}
 
-		private static Stream<String> createFeatureDescriptions() {
-			final int eventTypeCount = GameManagementEvent.values().length;
-			return IntStream.range(0, eventTypeCount).mapToObj(eventId -> {
-				final Stream<String> baseFeatureDescs = EventHistoryFeature.ORDERING.stream().map(Enum::toString);
-				return baseFeatureDescs.map(desc -> "EVT_" + eventId + "-" + desc);
-			}).flatMap(Function.identity());
-		}
+		// private static Stream<String> createFeatureDescriptions() {
+		// final int eventTypeCount = GameManagementEvent.values().length;
+		// return IntStream.range(0, eventTypeCount).mapToObj(eventId -> {
+		// final Stream<String> baseFeatureDescs =
+		// EventHistoryFeature.ORDERING.stream().map(Enum::toString);
+		// return baseFeatureDescs.map(desc -> "EVT_" + eventId + "-" + desc);
+		// }).flatMap(Function.identity());
+		// }
 
-		private static void setVals(final DoubleStream.Builder vals, final GameContext context) {
-			for (final GameManagementEvent eventType : EVENT_TYPE_FEATURE_ORDERING) {
-				final Predicate<Event> eventTypeMatcher = EVENT_TYPE_MATCHERS.get(eventType);
-				for (final EventHistoryFeature feature : ORDERING) {
-					switch (feature) {
-					case LAST_OCC_DIST: {
-						final int lastOccurrenceDist = context.findLastEventDistance(eventTypeMatcher);
-						vals.accept(lastOccurrenceDist);
-						break;
-					}
-					case LAST_SPEAKER_SUB_DIST: {
-						final Predicate<Event> matcher = eventTypeMatcher
-								.and(new EventSubmittingPlayerMatcher(context.getPlayerId()));
-						final int lastOccurrenceDist = context.findLastEventDistance(matcher);
-						vals.accept(lastOccurrenceDist);
-						break;
-					}
-					default: {
-						throw new AssertionError("Missing enum-handling logic.");
-					}
-					}
-				}
-			}
-		}
+//		public static final class Extractor {
+//			
+//			private final Map<EventHistoryFeature, Attribute> featureAttrs;
+//			
+//			public Extractor(final Map<EventHistoryFeature, Attribute> featureAttrs){
+//				this.featureAttrs = featureAttrs;
+//			}
+//
+//			private void setVals(final Instance vals, final GameContext context) {
+//				for (final GameManagementEvent eventType : EVENT_TYPE_FEATURE_ORDERING) {
+//					final Predicate<Event> eventTypeMatcher = EVENT_TYPE_MATCHERS.get(eventType);
+//					for (final Entry<EventHistoryFeature, Attribute> featureAttr : featureAttrs.entrySet()) {
+//						EventHistoryFeature feature = featureAttr.getKey();
+//						Attribute attr = featureAttr.getValue();
+//						switch (feature) {
+//						case LAST_OCC_DIST: {
+//							final int lastOccurrenceDist = context.findLastEventDistance(eventTypeMatcher);
+//							vals.setValue(attr, lastOccurrenceDist);
+//							break;
+//						}
+//						case LAST_SPEAKER_SUB_DIST: {
+//							final Predicate<Event> matcher = eventTypeMatcher
+//									.and(new EventSubmittingPlayerMatcher(context.getPlayerId()));
+//							final int lastOccurrenceDist = context.findLastEventDistance(matcher);
+//							vals.setValue(attr, lastOccurrenceDist);
+//							break;
+//						}
+//						default: {
+//							throw new AssertionError("Missing enum-handling logic.");
+//						}
+//						}
+//					}
+//				}
+//			}
 	}
 
-	private static final double NULL_FEATURE_VAL = -1.0;
+//	private static final double NULL_FEATURE_VAL = -1.0;
 
 	@Override
-	public void accept(final GameContext context, final DoubleStream.Builder vals) {
-		ActionFeature.setVals(vals, context);
-		EventHistoryFeature.setVals(vals, context);
+	public void accept(final GameContext context, final Instance vals) {
+//		ActionFeature.setVals(vals, context);
+//		EventHistoryFeature.setVals(vals, context);
 	}
 
-	@Override
-	public Stream<String> createFeatureDescriptions(final GameStateDescription initialState) {
-		final Stream.Builder<String> resultBuilder = Stream.builder();
-		ActionFeature.createFeatureDescriptions().forEachOrdered(resultBuilder);
-		EventHistoryFeature.createFeatureDescriptions().forEachOrdered(resultBuilder);
-		return resultBuilder.build();
-	}
+	// @Override
+	// public Stream<String> createFeatureDescriptions(final
+	// GameStateDescription initialState) {
+	// final Stream.Builder<String> resultBuilder = Stream.builder();
+	// ActionFeature.createFeatureDescriptions().forEachOrdered(resultBuilder);
+	// EventHistoryFeature.createFeatureDescriptions().forEachOrdered(resultBuilder);
+	// return resultBuilder.build();
+	// }
 
 }

@@ -20,26 +20,26 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.util.Properties;
-import java.util.function.ToDoubleFunction;
+import java.util.function.ToIntFunction;
 
-import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
-import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
  * @since Apr 17, 2017
  *
  */
-public final class ImageEdgeCounter implements ToDoubleFunction<String> {
+public final class ImageEdgeCounter implements ToIntFunction<String> {
 
 	// private static final Logger LOGGER =
 	// LoggerFactory.getLogger(ImageEdgeCountFactory.class);
 
-	private static Object2DoubleMap<String> createPropValMap(final Properties props) {
-		final Object2DoubleMap<String> result = new Object2DoubleOpenHashMap<>(props.size());
-		result.defaultReturnValue(-1.0);
+	private static Object2IntMap<String> createPropValMap(final Properties props) {
+		final Object2IntMap<String> result = new Object2IntOpenHashMap<>(props.size());
+		result.defaultReturnValue(-1);
 		props.forEach((propName, propValue) -> {
-			result.put(propName.toString(), Double.parseDouble(propValue.toString()));
+			result.put(propName.toString(), Integer.parseInt(propValue.toString()));
 		});
 		return result;
 	}
@@ -54,13 +54,13 @@ public final class ImageEdgeCounter implements ToDoubleFunction<String> {
 		return result;
 	}
 
-	private final Object2DoubleMap<String> resourceEdgeCounts;
+	private final Object2IntMap<String> resourceEdgeCounts;
 
 	public ImageEdgeCounter() {
 		this(createPropValMap(loadEdgeCountProps()));
 	}
 
-	public ImageEdgeCounter(final Object2DoubleMap<String> resourceEdgeCounts) {
+	public ImageEdgeCounter(final Object2IntMap<String> resourceEdgeCounts) {
 		this.resourceEdgeCounts = resourceEdgeCounts;
 	}
 
@@ -68,7 +68,7 @@ public final class ImageEdgeCounter implements ToDoubleFunction<String> {
 	// IconImages.getImageResources()::get;
 
 	@Override
-	public double applyAsDouble(final String resourceName) {
+	public int applyAsInt(final String resourceName) {
 		// URL resLoc = LOCAL_RES_LOC_FACTORY.apply(resourceName);
 		// LOGGER.info("Reading file at \"{}\".", resLoc);
 		// try {
@@ -79,7 +79,7 @@ public final class ImageEdgeCounter implements ToDoubleFunction<String> {
 		// }
 		// TODO: Algorithmically count the edges of any arbitrary shape
 		assert resourceEdgeCounts.containsKey(resourceName);
-		return resourceEdgeCounts.getDouble(resourceName);
+		return resourceEdgeCounts.getInt(resourceName);
 	}
 
 }

@@ -17,19 +17,17 @@
 package se.kth.speech.coin.tangrams.analysis.features;
 
 import java.util.function.BiConsumer;
-import java.util.stream.DoubleStream;
-import java.util.stream.Stream;
 
 import se.kth.speech.coin.tangrams.analysis.GameContext;
-import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
+import weka.core.Instance;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
  * @since Apr 14, 2017
  *
  */
-public interface GameContextFeatureExtractor extends BiConsumer<GameContext, DoubleStream.Builder> {
+public interface GameContextFeatureExtractor extends BiConsumer<GameContext, Instance> {
 
-	Stream<String> createFeatureDescriptions(final GameStateDescription initialState);
+//	Stream<String> createFeatureDescriptions(final GameStateDescription initialState);
 
 }

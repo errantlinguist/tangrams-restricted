@@ -19,21 +19,18 @@ package se.kth.speech.coin.tangrams.analysis.features;
 import java.awt.Color;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.EnumMap;
 import java.util.List;
-import java.util.ListIterator;
+import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.Set;
-import java.util.function.ToDoubleFunction;
-import java.util.stream.DoubleStream;
+import java.util.function.Function;
+import java.util.function.ToIntFunction;
 
-import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
-import it.unimi.dsi.fastutil.objects.Object2IntMap;
-import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import se.kth.speech.IntArrays;
 import se.kth.speech.SpatialRegion;
-import se.kth.speech.coin.tangrams.content.IconImages;
 import se.kth.speech.coin.tangrams.iristk.events.ImageVisualizationInfoDescription;
+import weka.core.Attribute;
+import weka.core.Instance;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -48,11 +45,11 @@ public enum EntityFeature {
 
 	public static final class Extractor {
 
+		private static final String DEFAULT_ATTR_NAME_PREFIX = "";
+
 		private static final List<EntityFeature> DEFAULT_ORDERING;
 
-		private static final double NULL_FEATURE_VAL = -1.0;
-
-		private static final Object2DoubleMap<String> SHAPE_FEATURE_VALS = createShapeFeatureValueMap();
+		private static final Map<EntityFeature, Function<String, Attribute>> FEATURE_TYPED_ATTR_FACTORIES = createFeatureTypedAttrFactoryMap();
 
 		static {
 			DEFAULT_ORDERING = Arrays.asList(SHAPE, EDGE_COUNT, RED, GREEN, BLUE, HUE, SATURATION, BRIGHTNESS, SIZE,
@@ -60,116 +57,185 @@ public enum EntityFeature {
 			assert DEFAULT_ORDERING.size() == EntityFeature.values().length;
 		}
 
-		private static Object2DoubleMap<String> createShapeFeatureValueMap() {
-			final Set<String> possibleShapeStrValues = IconImages.getImageResources().keySet();
-			return FeatureMaps.createOrdinalFeatureValMap(possibleShapeStrValues, NULL_FEATURE_VAL);
+		public static Map<EntityFeature, Attribute> createFeatureAttrMap() {
+			return createFeatureAttrMap(DEFAULT_ATTR_NAME_PREFIX);
 		}
 
-		private static double getShapeFeatureVal(final ImageVisualizationInfoDescription.Datum pieceImgVizInfoDatum) {
-			final String strVal = pieceImgVizInfoDatum.getResourceName();
-			return SHAPE_FEATURE_VALS.getDouble(strVal);
+		public static Map<EntityFeature, Attribute> createFeatureAttrMap(final Iterable<EntityFeature> features) {
+			return createFeatureAttrMap(features, DEFAULT_ATTR_NAME_PREFIX);
 		}
 
-		private final Object2IntMap<EntityFeature> featureVectorIdxs;
-
-		private final List<EntityFeature> ordering;
-
-		public Extractor() {
-			this(DEFAULT_ORDERING);
-		}
-
-		public Extractor(final List<EntityFeature> ordering) {
-			this.ordering = ordering;
-			featureVectorIdxs = new Object2IntOpenHashMap<>(ordering.size());
-			for (final ListIterator<EntityFeature> iter = ordering.listIterator(); iter.hasNext();) {
-				final int nextIdx = iter.nextIndex();
-				final EntityFeature feature = iter.next();
-				featureVectorIdxs.put(feature, nextIdx);
+		public static Map<EntityFeature, Attribute> createFeatureAttrMap(final Iterable<EntityFeature> features,
+				final String prefix) {
+			final Map<EntityFeature, Attribute> result = new EnumMap<>(EntityFeature.class);
+			for (final EntityFeature feature : features) {
+				final Function<String, Attribute> attrFactory = FEATURE_TYPED_ATTR_FACTORIES.get(feature);
+				result.put(feature, attrFactory.apply(prefix + feature.name()));
 			}
+			return result;
 		}
 
-		/**
-		 * @return the ordering
-		 */
-		public List<EntityFeature> getOrdering() {
-			return Collections.unmodifiableList(ordering);
+		public static Map<EntityFeature, Attribute> createFeatureAttrMap(final String prefix) {
+			return createFeatureAttrMap(FEATURE_TYPED_ATTR_FACTORIES.keySet(), prefix);
 		}
 
-		public double getVal(final EntityFeature feature, final double[] features) {
-			final int idx = featureVectorIdxs.get(feature);
-			return features[idx];
+		// private static final Logger LOGGER =
+		// LoggerFactory.getLogger(Extractor.class);
+
+		// private static final Object2DoubleMap<String> SHAPE_FEATURE_VALS =
+		// createShapeFeatureValueMap();
+
+		// private static final double NULL_FEATURE_VAL = -1.0;
+
+		// private static Object2DoubleMap<String> createShapeFeatureValueMap()
+		// {
+		// final Set<String> possibleShapeStrValues =
+		// IconImages.getImageResources().keySet();
+		// return FeatureMaps.createOrdinalFeatureValMap(possibleShapeStrValues,
+		// NULL_FEATURE_VAL);
+		// }
+
+		// private static double getShapeFeatureVal(final
+		// ImageVisualizationInfoDescription.Datum pieceImgVizInfoDatum) {
+		// final String strVal = pieceImgVizInfoDatum.getResourceName();
+		// return SHAPE_FEATURE_VALS.getDouble(strVal);
+		// }
+
+		// private final Object2IntMap<EntityFeature> featureVectorIdxs;
+
+		private static Map<EntityFeature, Function<String, Attribute>> createFeatureTypedAttrFactoryMap() {
+			final Map<EntityFeature, Function<String, Attribute>> result = new EnumMap<>(EntityFeature.class);
+			final Function<String, Attribute> doubleVal = name -> new Attribute(name);
+			final Function<String, Attribute> strVal = name -> new Attribute(name, true);
+			result.put(EntityFeature.BLUE, doubleVal);
+			result.put(EntityFeature.BRIGHTNESS, doubleVal);
+			result.put(EntityFeature.EDGE_COUNT, doubleVal);
+			result.put(EntityFeature.GREEN, doubleVal);
+			result.put(EntityFeature.HUE, doubleVal);
+			result.put(EntityFeature.POSITION_X, doubleVal);
+			result.put(EntityFeature.POSITION_Y, doubleVal);
+			result.put(EntityFeature.RED, doubleVal);
+			result.put(EntityFeature.SATURATION, doubleVal);
+			result.put(EntityFeature.SHAPE, strVal);
+			result.put(EntityFeature.SIZE, doubleVal);
+			assert result.size() == EntityFeature.values().length;
+			return result;
 		}
 
-		void setVals(final DoubleStream.Builder vals,
+		private final Map<EntityFeature, Attribute> featureAttrs;
+
+		public Extractor(final Map<EntityFeature, Attribute> featureAttrs) {
+			this.featureAttrs = featureAttrs;
+			// featureVectorIdxs = new Object2IntOpenHashMap<>(ordering.size());
+			// for (final ListIterator<EntityFeature> iter =
+			// ordering.listIterator(); iter.hasNext();) {
+			// final int nextIdx = iter.nextIndex();
+			// final EntityFeature feature = iter.next();
+			// featureVectorIdxs.put(feature, nextIdx);
+			// }
+		}
+
+		// public double getVal(final EntityFeature feature, final double[]
+		// features) {
+		// final int idx = featureVectorIdxs.get(feature);
+		// return features[idx];
+		// }
+
+		public Map<EntityFeature, Attribute> getFeatureAttrs() {
+			return Collections.unmodifiableMap(featureAttrs);
+		}
+
+		public Object getVal(final EntityFeature feature,
 				final ImageVisualizationInfoDescription.Datum pieceImgVizInfoDatum, final SpatialRegion pieceRegion,
 				final int[] modelDims, final double modelArea,
-				final ToDoubleFunction<? super String> namedResourceEdgeCountFactory) {
+				final ToIntFunction<? super String> namedResourceEdgeCountFactory) {
 			final Color color = pieceImgVizInfoDatum.getColor();
 			final float[] hsbVals = Color.RGBtoHSB(color.getRed(), color.getGreen(), color.getBlue(), null);
-			for (final EntityFeature feature : ordering) {
-				switch (feature) {
-				case RED:
-					vals.accept(color.getRed());
-					break;
-				case GREEN:
-					vals.accept(color.getGreen());
-					break;
-				case BLUE:
-					vals.accept(color.getBlue());
-					break;
-				case HUE:
-					vals.accept(hsbVals[0]);
-					break;
-				case SATURATION:
-					vals.accept(hsbVals[1]);
-					break;
-				case BRIGHTNESS:
-					vals.accept(hsbVals[2]);
-					break;
-				case POSITION_X: {
-					final double centerX = pieceRegion.getXLowerBound() + pieceRegion.getLengthX() / 2.0;
-					final double posX = centerX / modelDims[0];
-					vals.accept(posX);
-					break;
-				}
-				case POSITION_Y: {
-					final double centerY = pieceRegion.getYLowerBound() + pieceRegion.getLengthY() / 2.0;
-					final double posY = centerY / modelDims[1];
-					vals.accept(posY);
-					break;
-				}
-				case EDGE_COUNT: {
-					final String imgResName = pieceImgVizInfoDatum.getResourceName();
-					vals.accept(namedResourceEdgeCountFactory.applyAsDouble(imgResName));
-				}
-				case SHAPE:
-					final double shapeFeatureVal = getShapeFeatureVal(pieceImgVizInfoDatum);
-					vals.accept(shapeFeatureVal);
-					break;
-				case SIZE:
-					final int pieceArea = IntArrays.product(pieceRegion.getDimensions());
-					final double sizeFeatureVal = pieceArea / modelArea;
-					vals.accept(sizeFeatureVal);
-					break;
-				default: {
-					throw new AssertionError("Missing enum-handling logic.");
-				}
+			Object result;
+			switch (feature) {
+			case RED:
+				result = color.getRed();
+				break;
+			case GREEN:
+				result = color.getGreen();
+				break;
+			case BLUE:
+				result = color.getBlue();
+				break;
+			case HUE:
+				result = hsbVals[0];
+				break;
+			case SATURATION:
+				result = hsbVals[1];
+				break;
+			case BRIGHTNESS:
+				result = hsbVals[2];
+				break;
+			case POSITION_X: {
+				final double centerX = pieceRegion.getXLowerBound() + pieceRegion.getLengthX() / 2.0;
+				final double posX = centerX / modelDims[0];
+				result = posX;
+				break;
+			}
+			case POSITION_Y: {
+				final double centerY = pieceRegion.getYLowerBound() + pieceRegion.getLengthY() / 2.0;
+				final double posY = centerY / modelDims[1];
+				result = posY;
+				break;
+			}
+			case EDGE_COUNT: {
+				final String imgResName = pieceImgVizInfoDatum.getResourceName();
+				final int edgeCount = namedResourceEdgeCountFactory.applyAsInt(imgResName);
+				result = edgeCount;
+				break;
+			}
+			case SHAPE:
+				final String imgResName = pieceImgVizInfoDatum.getResourceName();
+				result = imgResName;
+				break;
+			case SIZE:
+				final int pieceArea = IntArrays.product(pieceRegion.getDimensions());
+				final double sizeFeatureVal = pieceArea / modelArea;
+				result = sizeFeatureVal;
+				break;
+			default: {
+				throw new AssertionError("Missing enum-handling logic.");
+			}
+			}
+			return result;
+		}
+
+		void setVals(final Instance vals, final ImageVisualizationInfoDescription.Datum pieceImgVizInfoDatum,
+				final SpatialRegion pieceRegion, final int[] modelDims, final double modelArea,
+				final ToIntFunction<? super String> namedResourceEdgeCountFactory) {
+			for (final Entry<EntityFeature, Attribute> featureAttr : featureAttrs.entrySet()) {
+				final EntityFeature feature = featureAttr.getKey();
+				final Attribute attr = featureAttr.getValue();
+				final Object val = getVal(feature, pieceImgVizInfoDatum, pieceRegion, modelDims, modelArea,
+						namedResourceEdgeCountFactory);
+				if (val instanceof Number) {
+					vals.setValue(attr, ((Number) val).doubleValue());
+				} else {
+					vals.setValue(attr, val.toString());
 				}
 			}
 		}
 
-		void setVals(final DoubleStream.Builder vals,
-				final Optional<Entry<ImageVisualizationInfoDescription.Datum, SpatialRegion>> entityData,
-				final int[] modelDims, final double modelArea,
-				final ToDoubleFunction<? super String> namedResourceEdgeCountFactory) {
-			if (entityData.isPresent()) {
-				final Entry<ImageVisualizationInfoDescription.Datum, SpatialRegion> data = entityData.get();
-				setVals(vals, data.getKey(), data.getValue(), modelDims, modelArea, namedResourceEdgeCountFactory);
-			} else {
-				// Set null feature vals
-				ordering.stream().mapToDouble(feature -> NULL_FEATURE_VAL).forEach(vals);
-			}
-		}
+		// void setVals(final Instance vals,
+		// final Optional<Entry<ImageVisualizationInfoDescription.Datum,
+		// SpatialRegion>> entityData,
+		// final int[] modelDims, final double modelArea,
+		// final ToDoubleFunction<? super String> namedResourceEdgeCountFactory)
+		// {
+		// if (entityData.isPresent()) {
+		// final Entry<ImageVisualizationInfoDescription.Datum, SpatialRegion>
+		// data = entityData.get();
+		// setVals(vals, data.getKey(), data.getValue(), modelDims, modelArea,
+		// namedResourceEdgeCountFactory);
+		// } else {
+		// LOGGER.debug("No entity data provided.");
+		// }
+		// }
 
 	}
 

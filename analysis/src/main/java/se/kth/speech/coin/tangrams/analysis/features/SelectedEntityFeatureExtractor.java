@@ -19,17 +19,15 @@ package se.kth.speech.coin.tangrams.analysis.features;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.function.Function;
-import java.util.function.ToDoubleFunction;
-import java.util.stream.DoubleStream;
-import java.util.stream.Stream;
+import java.util.function.ToIntFunction;
 
 import se.kth.speech.IntArrays;
 import se.kth.speech.MutablePair;
 import se.kth.speech.SpatialMatrix;
 import se.kth.speech.SpatialRegion;
 import se.kth.speech.coin.tangrams.analysis.GameContext;
-import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
 import se.kth.speech.coin.tangrams.iristk.events.ImageVisualizationInfoDescription;
+import weka.core.Instance;
 
 public final class SelectedEntityFeatureExtractor implements GameContextFeatureExtractor {
 
@@ -48,41 +46,37 @@ public final class SelectedEntityFeatureExtractor implements GameContextFeatureE
 
 	private final Function<? super GameContext, SpatialMatrix<Integer>> gameModelFactory;
 
-	private final ToDoubleFunction<? super String> namedResourceEdgeCountFactory;
+	private final ToIntFunction<? super String> namedResourceEdgeCountFactory;
 
 	public SelectedEntityFeatureExtractor(final EntityFeature.Extractor extractor,
 			final Function<? super GameContext, SpatialMatrix<Integer>> gameModelFactory,
-			final ToDoubleFunction<? super String> namedResourceEdgeCountFactory) {
+			final ToIntFunction<? super String> namedResourceEdgeCountFactory) {
 		this.extractor = extractor;
 		this.gameModelFactory = gameModelFactory;
 		this.namedResourceEdgeCountFactory = namedResourceEdgeCountFactory;
 	}
 
 	@Override
-	public void accept(final GameContext context, final DoubleStream.Builder vals) {
+	public void accept(final GameContext context, final Instance vals) {
 		final SpatialMatrix<Integer> model = gameModelFactory.apply(context);
-		final Optional<Entry<ImageVisualizationInfoDescription.Datum, SpatialRegion>> selectedEntityDesc = createSelectedEntityDescription(
-				context, model);
-		extractFeatures(model, selectedEntityDesc, vals);
+		createSelectedEntityDescription(context, model).ifPresent(entityData -> {
+			final int[] modelDims = model.getDimensions();
+			final double modelArea = IntArrays.product(modelDims);
+			extractor.setVals(vals, entityData.getKey(), entityData.getValue(), modelDims, modelArea,
+					namedResourceEdgeCountFactory);
+		});
 	}
 
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see se.kth.speech.coin.tangrams.analysis.FeatureExtractor#
-	 * createFeatureDescriptions(se.kth.speech.coin.tangrams.analysis.
-	 * GameContext)
-	 */
-	@Override
-	public Stream<String> createFeatureDescriptions(final GameStateDescription initialState) {
-		return extractor.getOrdering().stream().map(Enum::toString);
-	}
+//	/*
+//	 * (non-Javadoc)
+//	 *
+//	 * @see se.kth.speech.coin.tangrams.analysis.FeatureExtractor#
+//	 * createFeatureDescriptions(se.kth.speech.coin.tangrams.analysis.
+//	 * GameContext)
+//	 */
+//	@Override
+//	public Stream<String> createFeatureDescriptions(final GameStateDescription initialState) {
+//		return extractor.getFeatureAttrs().stream().map(Entry::getValue).map(Attribute::name);
+//	}
 
-	private void extractFeatures(final SpatialMatrix<Integer> model,
-			final Optional<Entry<ImageVisualizationInfoDescription.Datum, SpatialRegion>> entityData,
-			final DoubleStream.Builder vals) {
-		final int[] modelDims = model.getDimensions();
-		final double modelArea = IntArrays.product(modelDims);
-		extractor.setVals(vals, entityData, modelDims, modelArea, namedResourceEdgeCountFactory);
-	}
 }
