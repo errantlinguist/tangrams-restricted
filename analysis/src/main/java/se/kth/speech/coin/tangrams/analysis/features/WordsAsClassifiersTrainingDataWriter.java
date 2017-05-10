@@ -146,7 +146,7 @@ public final class WordsAsClassifiersTrainingDataWriter {
 				final ArffSaver saver = new ArffSaver();
 				final File outpath = (File) cl.getParsedOptionValue(Parameter.OUTPATH.optName);
 				if (outpath == null) {
-					LOGGER.info("Will write data to standard output stream.", outpath);
+					LOGGER.info("Will write data to standard output stream.");
 				} else {
 					LOGGER.info("Will write data to \"{}\".", outpath);
 					saver.setFile(outpath);
