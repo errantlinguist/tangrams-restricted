@@ -23,6 +23,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.StringWriter;
 import java.io.UncheckedIOException;
+import java.io.Writer;
 import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -72,6 +73,7 @@ import iristk.util.HAT;
 import se.kth.speech.FilenameBaseSplitter;
 import se.kth.speech.awt.LookAndFeels;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
+import se.kth.speech.coin.tangrams.analysis.features.GameContextFeatureExtractor;
 import se.kth.speech.coin.tangrams.analysis.features.ImageEdgeCounter;
 import se.kth.speech.coin.tangrams.analysis.features.SelectedEntityFeatureExtractor;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
@@ -181,7 +183,260 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 		}
 	}
 
-	private static final String BLANK_IMG_DESC;
+	private static class TabularDataWriter {
+
+		private static final String BLANK_IMG_DESC;
+
+		private static final EventUtteranceFactory EVENT_UTT_FACTORY = new EventUtteranceFactory(
+				new EventTypeMatcher(EnumSet.of(GameManagementEvent.NEXT_TURN_REQUEST)));
+
+		private static final List<EntityFeature> FEATURES_TO_DESCRIBE = Arrays.asList(EntityFeature.POSITION_X,
+				EntityFeature.POSITION_Y, EntityFeature.EDGE_COUNT);
+
+		private static final String HEADER_STR;
+
+		private static final ImageVisualizationInfoUnmarshaller IMG_VIZ_INFO_UNMARSHALLER = new ImageVisualizationInfoUnmarshaller();
+
+		private static final Collector<CharSequence, ?, String> SENTENCE_JOINER = Collectors.joining(". ");
+
+		private static final Collector<CharSequence, ?, String> TABLE_ROW_CELL_JOINER;
+
+		private static final Collector<CharSequence, ?, String> TABLE_ROW_JOINER;
+
+		private static final String TABLE_STRING_REPR_COL_DELIMITER;
+
+		private static final String TABLE_STRING_REPR_ROW_DELIMITER;
+
+		private static final Collector<CharSequence, ?, String> WORD_JOINER = Collectors.joining(" ");
+
+		static {
+			TABLE_STRING_REPR_ROW_DELIMITER = System.lineSeparator();
+			TABLE_ROW_JOINER = Collectors.joining(TABLE_STRING_REPR_ROW_DELIMITER);
+		}
+
+		static {
+			TABLE_STRING_REPR_COL_DELIMITER = "\t";
+			TABLE_ROW_CELL_JOINER = Collectors.joining(TABLE_STRING_REPR_COL_DELIMITER);
+		}
+
+		static {
+			final List<List<String>> colHeaders = createColHeaders();
+			HEADER_STR = colHeaders.stream().map(header -> header.stream().collect(TABLE_ROW_CELL_JOINER))
+					.collect(TABLE_ROW_JOINER);
+			BLANK_IMG_DESC = createBlankImgDesc(colHeaders);
+		}
+
+		private static String createBlankImgDesc(final List<List<String>> colHeaders) {
+			final int colCount = colHeaders.stream().mapToInt(List::size).max().getAsInt();
+			final String[] blankCells = new String[colCount];
+			Arrays.fill(blankCells, "-");
+			return Arrays.stream(blankCells).collect(TABLE_ROW_CELL_JOINER);
+		}
+
+		private static List<List<String>> createColHeaders() {
+			final List<List<String>> imgViewDescColHeaders = ImageVisualizationInfoTableRowWriter.createColumnHeaders();
+			final int resultColCount = imgViewDescColHeaders.stream().mapToInt(List::size).max().getAsInt()
+					+ FEATURES_TO_DESCRIBE.size() + 1;
+
+			final Iterator<List<String>> imgDescHeaderIter = imgViewDescColHeaders.iterator();
+			List<List<String>> result;
+			if (imgDescHeaderIter.hasNext()) {
+				result = new ArrayList<>(imgViewDescColHeaders.size());
+				final List<String> firstHeader = new ArrayList<>(resultColCount);
+				result.add(firstHeader);
+
+				firstHeader.add("TIME");
+				FEATURES_TO_DESCRIBE.stream().map(Object::toString).forEachOrdered(firstHeader::add);
+				final List<String> firstImgDescHeader = imgDescHeaderIter.next();
+				firstHeader.addAll(firstImgDescHeader);
+				final String padding = "";
+				while (firstHeader.size() < resultColCount) {
+					firstHeader.add(padding);
+				}
+
+				// Add subheader for image description-specific features, e.g.
+				// color
+				// features
+				while (imgDescHeaderIter.hasNext()) {
+					final List<String> nextImgDescHeader = imgDescHeaderIter.next();
+					final List<String> nextHeader = new ArrayList<>(resultColCount);
+					result.add(nextHeader);
+
+					// Add padding for timestamp col
+					nextHeader.add(padding);
+					// Add padding for feature-derived descriptions
+					FEATURES_TO_DESCRIBE.stream().map(feature -> padding).forEach(nextHeader::add);
+					nextHeader.addAll(nextImgDescHeader);
+				}
+
+			} else {
+				result = Collections.emptyList();
+			}
+			return result;
+		}
+
+		private final GameContextFeatureExtractor ctxFeatureExtractor;
+
+		private final boolean strict;
+
+		private final TemporalGameContextFactory uttContextFactory;
+
+		private final Function<? super Utterance, String> uttPlayerIdGetter;
+
+		private final List<Utterance> utts;
+
+		private TabularDataWriter(final List<Utterance> utts,
+				final Function<? super Utterance, String> uttPlayerIdGetter,
+				final TemporalGameContextFactory uttContextFactory,
+				final GameContextFeatureExtractor ctxFeatureExtractor, final boolean strict) {
+			this.utts = utts;
+			this.uttPlayerIdGetter = uttPlayerIdGetter;
+			this.uttContextFactory = uttContextFactory;
+			this.ctxFeatureExtractor = ctxFeatureExtractor;
+			this.strict = strict;
+		}
+
+		private String createNoEventUtterancesMsg(final Event event,
+				final List<Entry<Event, List<Utterance>>> eventUttLists, final int eventIdx) {
+			final StringBuilder sb = new StringBuilder(128);
+			sb.append("No utterances for event index ");
+			sb.append(eventIdx);
+			sb.append(" \"");
+			sb.append(event);
+			sb.append("\".");
+			{
+				final ListIterator<Entry<Event, List<Utterance>>> eventUttListIter = eventUttLists
+						.listIterator(eventIdx);
+				Entry<Event, List<Utterance>> prevEventUttList = null;
+				while (eventUttListIter.hasPrevious()) {
+					prevEventUttList = eventUttListIter.previous();
+					final List<Utterance> prevUtts = prevEventUttList.getValue();
+					if (!prevUtts.isEmpty()) {
+						break;
+					}
+				}
+				if (prevEventUttList != null) {
+					sb.append(System.lineSeparator());
+					final Event prevEvent = prevEventUttList.getKey();
+					final List<Utterance> prevUtts = prevEventUttList.getValue();
+					final Utterance prevUtt = prevUtts.get(prevUtts.size() - 1);
+					final String speakingPlayerId = uttPlayerIdGetter.apply(prevUtt);
+					sb.append(String.format(
+							"Last utt before event: \"%s\"; speaking player ID: \"%s\"; start: %f; end: %f; segment ID: \"%s\"; event ID: \"%s\"; event time: \"%s\"",
+							prevUtt.getTokens().stream().collect(WORD_JOINER), speakingPlayerId, prevUtt.getStartTime(),
+							prevUtt.getEndTime(), prevUtt.getSegmentId(), prevEvent.getId(), prevEvent.getTime()));
+				}
+			}
+			{
+				final ListIterator<Entry<Event, List<Utterance>>> eventUttListIter = eventUttLists
+						.listIterator(eventIdx + 1);
+				Entry<Event, List<Utterance>> nextEventUttList = null;
+				while (eventUttListIter.hasNext()) {
+					nextEventUttList = eventUttListIter.next();
+					final List<Utterance> nextUtts = nextEventUttList.getValue();
+					if (!nextUtts.isEmpty()) {
+						break;
+					}
+				}
+				if (nextEventUttList != null) {
+					sb.append(System.lineSeparator());
+					final Event nextEvent = nextEventUttList.getKey();
+					final List<Utterance> nextUtts = nextEventUttList.getValue();
+					final Utterance nextUtt = nextUtts.get(0);
+					final String speakingPlayerId = uttPlayerIdGetter.apply(nextUtt);
+					sb.append(String.format(
+							"Next utt after event: \"%s\"; speaking player ID: \"%s\"; start: %f; end: %f; segment ID: \"%s\"; event ID: \"%s\"; event time: \"%s\"",
+							nextUtt.getTokens().stream().collect(WORD_JOINER), speakingPlayerId, nextUtt.getStartTime(),
+							nextUtt.getEndTime(), nextUtt.getSegmentId(), nextEvent.getId(), nextEvent.getTime()));
+				}
+			}
+			return sb.toString();
+		}
+
+		private String createUtteranceDialogString(final Stream<Utterance> utts) {
+			final Stream<String> uttStrs = utts.map(utt -> {
+				final String playerId = uttPlayerIdGetter.apply(utt);
+				return "**" + playerId + ":** \"" + utt.getTokens().stream().collect(WORD_JOINER) + "\"";
+			});
+			return uttStrs.collect(SENTENCE_JOINER);
+		}
+
+		void write(final String playerId, final GameHistory history, final Writer writer) throws IOException {
+			// The visualization info for the given game
+			final ImageVisualizationInfo imgVizInfo = IMG_VIZ_INFO_UNMARSHALLER
+					.apply(history.getInitialState().getImageVisualizationInfoDescription());
+			final List<Entry<Event, List<Utterance>>> eventUttLists = EVENT_UTT_FACTORY
+					.apply(utts.listIterator(), history).collect(Collectors.toList());
+
+			writer.write(HEADER_STR);
+			for (final ListIterator<Entry<Event, List<Utterance>>> eventUttListIter = eventUttLists
+					.listIterator(); eventUttListIter.hasNext();) {
+				final Entry<Event, List<Utterance>> eventUttList = eventUttListIter.next();
+				writer.write(TABLE_STRING_REPR_ROW_DELIMITER);
+
+				final Event event = eventUttList.getKey();
+				final List<Utterance> eventUtts = eventUttList.getValue();
+
+				final String imgVizInfoDesc;
+				if (event == null) {
+					imgVizInfoDesc = BLANK_IMG_DESC;
+				} else {
+					final StringWriter strWriter = new StringWriter(256);
+
+					final double contextStartTime;
+					final double contextEndTime;
+					if (eventUtts.isEmpty()) {
+						if (strict) {
+							throw new IllegalArgumentException(String.format("No utterances for event \"%s\".", event));
+						} else {
+							final String msg = createNoEventUtterancesMsg(event, eventUttLists,
+									eventUttListIter.nextIndex() - 1);
+							LOGGER.warn(msg);
+							final LocalDateTime eventTime = EventTimes.parseEventTime(event.getTime());
+							final Duration gameDuration = Duration.between(history.getStartTime(), eventTime);
+							final float offset = gameDuration.toMillis() / 1000.0f;
+							contextStartTime = offset;
+							contextEndTime = offset;
+						}
+					} else {
+						// Just use the context of the first utterance
+						final Utterance firstUtt = eventUtts.iterator().next();
+						contextStartTime = firstUtt.getStartTime();
+						contextEndTime = firstUtt.getEndTime();
+					}
+					writer.write(event.getTime());
+					writer.write(TABLE_STRING_REPR_COL_DELIMITER);
+					{
+						final GameContext context = uttContextFactory.apply(contextStartTime, contextEndTime, playerId)
+								.findFirst().get();
+						final DoubleStream.Builder vals = DoubleStream.builder();
+						ctxFeatureExtractor.accept(context, vals);
+						final double[] featureVector = vals.build().toArray();
+						writer.write(FEATURES_TO_DESCRIBE.stream()
+								.map(feature -> Double.toString(feature.getVal(featureVector)))
+								.collect(TABLE_ROW_CELL_JOINER));
+					}
+					writer.write(TABLE_STRING_REPR_COL_DELIMITER);
+					{
+						final ImageVisualizationInfoTableRowWriter imgInfoDescWriter = new ImageVisualizationInfoTableRowWriter(
+								strWriter);
+						final Move move = (Move) event.get(GameManagementEvent.Attribute.MOVE.toString());
+						final Integer selectedPieceId = move.getPieceId();
+						final ImageVisualizationInfo.Datum selectedPieceImgVizInfo = imgVizInfo.getData()
+								.get(selectedPieceId);
+						imgInfoDescWriter.write(selectedPieceId, selectedPieceImgVizInfo);
+					}
+
+					imgVizInfoDesc = strWriter.toString();
+				}
+				writer.write(imgVizInfoDesc);
+				writer.write(TABLE_STRING_REPR_COL_DELIMITER);
+
+				final String eventDialogStr = createUtteranceDialogString(eventUtts.stream());
+				writer.write(eventDialogStr);
+			}
+		}
+	}
 
 	private static final Path CLASS_SETTINGS_INFILE_PATH;
 
@@ -189,35 +444,13 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 
 	private static final String DEFAULT_OUTFILE_PREFIX = "uttImgDescs_";
 
-	private static final EventUtteranceFactory EVENT_UTT_FACTORY = new EventUtteranceFactory(
-			new EventTypeMatcher(EnumSet.of(GameManagementEvent.NEXT_TURN_REQUEST)));
-
-	private static final List<EntityFeature> FEATURES_TO_DESCRIBE = Arrays.asList(EntityFeature.POSITION_X,
-			EntityFeature.POSITION_Y, EntityFeature.EDGE_COUNT);
-
 	private static final List<FileNameExtensionFilter> FILE_FILTERS;
-
-	private static final String HEADER_STR;
-
-	private static final ImageVisualizationInfoUnmarshaller IMG_VIZ_INFO_UNMARSHALLER = new ImageVisualizationInfoUnmarshaller();
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(UtteranceSelectedEntityDescriptionWriter.class);
 
 	private static final SegmentUtteranceFactory SEG_UTT_FACTORY = new SegmentUtteranceFactory();
 
-	private static final Collector<CharSequence, ?, String> SENTENCE_JOINER = Collectors.joining(". ");
-
 	private static final Path SETTINGS_DIR;
-
-	private static final Collector<CharSequence, ?, String> TABLE_ROW_CELL_JOINER;
-
-	private static final Collector<CharSequence, ?, String> TABLE_ROW_JOINER;
-
-	private static final String TABLE_STRING_REPR_COL_DELIMITER;
-
-	private static final String TABLE_STRING_REPR_ROW_DELIMITER;
-
-	private static final Collector<CharSequence, ?, String> WORD_JOINER = Collectors.joining(" ");
 
 	static {
 		FILE_FILTERS = Arrays.asList(new FileNameExtensionFilter("Property files (*.properties)", "properties"));
@@ -225,26 +458,9 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 	}
 
 	static {
-		TABLE_STRING_REPR_ROW_DELIMITER = System.lineSeparator();
-		TABLE_ROW_JOINER = Collectors.joining(TABLE_STRING_REPR_ROW_DELIMITER);
-	}
-
-	static {
-		TABLE_STRING_REPR_COL_DELIMITER = "\t";
-		TABLE_ROW_CELL_JOINER = Collectors.joining(TABLE_STRING_REPR_COL_DELIMITER);
-	}
-
-	static {
 		SETTINGS_DIR = Paths.get(".settings");
 		CLASS_SETTINGS_INFILE_PATH = SETTINGS_DIR
 				.resolve(UtteranceSelectedEntityDescriptionWriter.class.getName() + ".properties");
-	}
-
-	static {
-		final List<List<String>> colHeaders = createColHeaders();
-		HEADER_STR = colHeaders.stream().map(header -> header.stream().collect(TABLE_ROW_CELL_JOINER))
-				.collect(TABLE_ROW_JOINER);
-		BLANK_IMG_DESC = createBlankImgDesc(colHeaders);
 	}
 
 	public static void main(final CommandLine cl) throws IOException, JAXBException, ParseException {
@@ -290,128 +506,8 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 
 	}
 
-	private static String createBlankImgDesc(final List<List<String>> colHeaders) {
-		final int colCount = colHeaders.stream().mapToInt(List::size).max().getAsInt();
-		final String[] blankCells = new String[colCount];
-		Arrays.fill(blankCells, "-");
-		return Arrays.stream(blankCells).collect(TABLE_ROW_CELL_JOINER);
-	}
-
-	private static List<List<String>> createColHeaders() {
-		final List<List<String>> imgViewDescColHeaders = ImageVisualizationInfoTableRowWriter.createColumnHeaders();
-		final int resultColCount = imgViewDescColHeaders.stream().mapToInt(List::size).max().getAsInt()
-				+ FEATURES_TO_DESCRIBE.size() + 1;
-
-		final Iterator<List<String>> imgDescHeaderIter = imgViewDescColHeaders.iterator();
-		List<List<String>> result;
-		if (imgDescHeaderIter.hasNext()) {
-			result = new ArrayList<>(imgViewDescColHeaders.size());
-			final List<String> firstHeader = new ArrayList<>(resultColCount);
-			result.add(firstHeader);
-
-			firstHeader.add("TIME");
-			FEATURES_TO_DESCRIBE.stream().map(Object::toString).forEachOrdered(firstHeader::add);
-			final List<String> firstImgDescHeader = imgDescHeaderIter.next();
-			firstHeader.addAll(firstImgDescHeader);
-			final String padding = "";
-			while (firstHeader.size() < resultColCount) {
-				firstHeader.add(padding);
-			}
-
-			// Add subheader for image description-specific features, e.g. color
-			// features
-			while (imgDescHeaderIter.hasNext()) {
-				final List<String> nextImgDescHeader = imgDescHeaderIter.next();
-				final List<String> nextHeader = new ArrayList<>(resultColCount);
-				result.add(nextHeader);
-
-				// Add padding for timestamp col
-				nextHeader.add(padding);
-				// Add padding for feature-derived descriptions
-				FEATURES_TO_DESCRIBE.stream().map(feature -> padding).forEach(nextHeader::add);
-				nextHeader.addAll(nextImgDescHeader);
-			}
-
-		} else {
-			result = Collections.emptyList();
-		}
-		return result;
-	}
-
-	/**
-	 * @param event
-	 * @param eventUttLists
-	 * @param previousIndex
-	 * @return
-	 */
-	private static String createNoEventUtterancesMsg(final Event event,
-			final List<Entry<Event, List<Utterance>>> eventUttLists, final int eventIdx,
-			final Function<Utterance, String> uttPlayerIds) {
-		final StringBuilder sb = new StringBuilder(128);
-		sb.append("No utterances for event index ");
-		sb.append(eventIdx);
-		sb.append(" \"");
-		sb.append(event);
-		sb.append("\".");
-		{
-			final ListIterator<Entry<Event, List<Utterance>>> eventUttListIter = eventUttLists.listIterator(eventIdx);
-			Entry<Event, List<Utterance>> prevEventUttList = null;
-			while (eventUttListIter.hasPrevious()) {
-				prevEventUttList = eventUttListIter.previous();
-				final List<Utterance> prevUtts = prevEventUttList.getValue();
-				if (!prevUtts.isEmpty()) {
-					break;
-				}
-			}
-			if (prevEventUttList != null) {
-				sb.append(System.lineSeparator());
-				final Event prevEvent = prevEventUttList.getKey();
-				final List<Utterance> prevUtts = prevEventUttList.getValue();
-				final Utterance prevUtt = prevUtts.get(prevUtts.size() - 1);
-				final String speakingPlayerId = uttPlayerIds.apply(prevUtt);
-				sb.append(String.format(
-						"Last utt before event: \"%s\"; speaking player ID: \"%s\"; start: %f; end: %f; segment ID: \"%s\"; event ID: \"%s\"; event time: \"%s\"",
-						prevUtt.getTokens().stream().collect(WORD_JOINER), speakingPlayerId, prevUtt.getStartTime(),
-						prevUtt.getEndTime(), prevUtt.getSegmentId(), prevEvent.getId(), prevEvent.getTime()));
-			}
-		}
-		{
-			final ListIterator<Entry<Event, List<Utterance>>> eventUttListIter = eventUttLists
-					.listIterator(eventIdx + 1);
-			Entry<Event, List<Utterance>> nextEventUttList = null;
-			while (eventUttListIter.hasNext()) {
-				nextEventUttList = eventUttListIter.next();
-				final List<Utterance> nextUtts = nextEventUttList.getValue();
-				if (!nextUtts.isEmpty()) {
-					break;
-				}
-			}
-			if (nextEventUttList != null) {
-				sb.append(System.lineSeparator());
-				final Event nextEvent = nextEventUttList.getKey();
-				final List<Utterance> nextUtts = nextEventUttList.getValue();
-				final Utterance nextUtt = nextUtts.get(0);
-				final String speakingPlayerId = uttPlayerIds.apply(nextUtt);
-				sb.append(String.format(
-						"Next utt after event: \"%s\"; speaking player ID: \"%s\"; start: %f; end: %f; segment ID: \"%s\"; event ID: \"%s\"; event time: \"%s\"",
-						nextUtt.getTokens().stream().collect(WORD_JOINER), speakingPlayerId, nextUtt.getStartTime(),
-						nextUtt.getEndTime(), nextUtt.getSegmentId(), nextEvent.getId(), nextEvent.getTime()));
-			}
-		}
-		return sb.toString();
-	}
-
 	private static String createOutfileInfix(final Path inpath) {
 		return new FilenameBaseSplitter().apply(inpath.getFileName().toString())[0] + "_LOG-";
-	}
-
-	private static String createUtteranceDialogString(final Stream<Utterance> utts,
-			final Function<? super Utterance, String> uttPlayerIdGetter) {
-		final Stream<String> uttStrs = utts.map(utt -> {
-			final String playerId = uttPlayerIdGetter.apply(utt);
-			return "**" + playerId + ":** \"" + utt.getTokens().stream().collect(WORD_JOINER) + "\"";
-		});
-		return uttStrs.collect(SENTENCE_JOINER);
 	}
 
 	private static Settings loadClassSettings() {
@@ -490,7 +586,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 		this.outfileNamePrefix = outfileNamePrefix;
 		this.strict = strict;
 	}
-	
+
 	public void accept(final Path inpath) throws JAXBException, IOException {
 		final Iterator<Path> infilePathIter = Files.walk(inpath, FileVisitOption.FOLLOW_LINKS)
 				.filter(Files::isRegularFile)
@@ -534,91 +630,16 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 			final TemporalGameContextFactory uttContextFactory = new TemporalGameContextFactory(
 					playerGameHistories::get);
 
+			final TabularDataWriter gameWriter = new TabularDataWriter(utts, uttPlayerIds::get, uttContextFactory,
+					entityFeatureExtractor, strict);
 			for (final Entry<String, GameHistory> playerGameHistory : playerGameHistories.entrySet()) {
 				final String playerId = playerGameHistory.getKey();
 				final GameHistory history = playerGameHistory.getValue();
-				// The visualization info for the given game
-				final ImageVisualizationInfo imgVizInfo = IMG_VIZ_INFO_UNMARSHALLER
-						.apply(history.getInitialState().getImageVisualizationInfoDescription());
-				final List<Entry<Event, List<Utterance>>> eventUttLists = EVENT_UTT_FACTORY
-						.apply(utts.listIterator(), history).collect(Collectors.toList());
-
 				final Path outfilePath = outpath.resolve(outfileNamePrefix + playerId + "_GAME-" + gameId + ".txt");
 				LOGGER.info("Writing utterances from perspective of \"{}\" to \"{}\".", playerId, outfilePath);
 				try (BufferedWriter writer = Files.newBufferedWriter(outfilePath, StandardOpenOption.CREATE,
 						StandardOpenOption.TRUNCATE_EXISTING)) {
-					writer.write(HEADER_STR);
-
-					for (final ListIterator<Entry<Event, List<Utterance>>> eventUttListIter = eventUttLists
-							.listIterator(); eventUttListIter.hasNext();) {
-						final Entry<Event, List<Utterance>> eventUttList = eventUttListIter.next();
-						writer.write(TABLE_STRING_REPR_ROW_DELIMITER);
-
-						final Event event = eventUttList.getKey();
-						final List<Utterance> eventUtts = eventUttList.getValue();
-
-						final String imgVizInfoDesc;
-						if (event == null) {
-							imgVizInfoDesc = BLANK_IMG_DESC;
-						} else {
-							final StringWriter strWriter = new StringWriter(256);
-
-							final double contextStartTime;
-							final double contextEndTime;
-							if (eventUtts.isEmpty()) {
-								if (strict) {
-									throw new IllegalArgumentException(
-											String.format("No utterances for event \"%s\".", event));
-								} else {
-									final String msg = createNoEventUtterancesMsg(event, eventUttLists,
-											eventUttListIter.nextIndex() - 1, uttPlayerIds::get);
-									LOGGER.warn(msg);
-									final LocalDateTime eventTime = EventTimes.parseEventTime(event.getTime());
-									final Duration gameDuration = Duration.between(history.getStartTime(), eventTime);
-									final float offset = gameDuration.toMillis() / 1000.0f;
-									contextStartTime = offset;
-									contextEndTime = offset;
-								}
-							} else {
-								// Just use the context of the first utterance
-								final Utterance firstUtt = eventUtts.iterator().next();
-								contextStartTime = firstUtt.getStartTime();
-								contextEndTime = firstUtt.getEndTime();
-							}
-							writer.write(event.getTime());
-							writer.write(TABLE_STRING_REPR_COL_DELIMITER);
-							{
-								final GameContext context = uttContextFactory
-										.apply(contextStartTime, contextEndTime, playerId).findFirst().get();
-								final DoubleStream.Builder vals = DoubleStream.builder();
-								entityFeatureExtractor.accept(context, vals);
-								final double[] featureVector = vals.build().toArray();
-								writer.write(FEATURES_TO_DESCRIBE.stream()
-										.map(feature -> Double.toString(feature.getVal(featureVector)))
-										.collect(TABLE_ROW_CELL_JOINER));
-							}
-							writer.write(TABLE_STRING_REPR_COL_DELIMITER);
-							{
-								final ImageVisualizationInfoTableRowWriter imgInfoDescWriter = new ImageVisualizationInfoTableRowWriter(
-										strWriter);
-								final Move move = (Move) event.get(GameManagementEvent.Attribute.MOVE.toString());
-								final Integer selectedPieceId = move.getPieceId();
-								final ImageVisualizationInfo.Datum selectedPieceImgVizInfo = imgVizInfo.getData()
-										.get(selectedPieceId);
-								imgInfoDescWriter.write(selectedPieceId, selectedPieceImgVizInfo);
-							}
-
-							imgVizInfoDesc = strWriter.toString();
-						}
-						writer.write(imgVizInfoDesc);
-						writer.write(TABLE_STRING_REPR_COL_DELIMITER);
-
-						final String eventDialogStr = createUtteranceDialogString(eventUtts.stream(),
-								uttPlayerIds::get);
-						writer.write(eventDialogStr);
-
-					}
-
+					gameWriter.write(playerId, history, writer);
 				}
 			}
 		}
