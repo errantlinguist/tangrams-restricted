@@ -13,4 +13,3 @@ A game for organizing tangrams in the fewest number of moves using two players. 
 ## To do
 
 * Add feature for measuring the similarity of two models (e.g. one seeded for "1" vs. one seeded for "2")
-* Add score for players based on the similarity of the current state of the model with the winning configuration. **Even better:** Calculate the absolute minimum number of moves needed to win the game and then use that similarly to how a "par" is used in golf
