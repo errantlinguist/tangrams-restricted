@@ -25,7 +25,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -50,7 +49,6 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.Table;
 
 import iristk.util.HAT;
-import se.kth.speech.FilenameBaseSplitter;
 import se.kth.speech.coin.tangrams.analysis.GameContext;
 import se.kth.speech.coin.tangrams.analysis.GameContextModelFactory;
 import se.kth.speech.coin.tangrams.analysis.GameHistory;
@@ -65,6 +63,7 @@ import weka.core.Attribute;
 import weka.core.DenseInstance;
 import weka.core.Instance;
 import weka.core.Instances;
+import weka.core.converters.AbstractFileSaver;
 import weka.core.converters.ArffSaver;
 
 /**
@@ -85,22 +84,13 @@ public final class WordsAsClassifiersTrainingDataWriter {
 				return Option.builder(optName).longOpt("help").desc("Prints this message.").build();
 			}
 		},
-		OUTFILE_PREFIX("p") {
-			@Override
-			public Option get() {
-				return Option.builder(optName).longOpt("outfile-prefix").desc("A prefix to add to the output files.")
-						.hasArg().argName("prefix").build();
-			}
-		},
 		OUTPATH("o") {
 			@Override
 			public Option get() {
 				return Option.builder(optName).longOpt("outpath").desc("The path to write the training data to.")
-						.hasArg().argName("path").type(File.class).required().build();
+						.hasArg().argName("path").type(File.class).build();
 			}
 		};
-
-		private static final String DEFAULT_OUTFILE_PREFIX = "wordsAsClassifiers_";
 
 		private static final Options OPTIONS = createOptions();
 
@@ -108,11 +98,6 @@ public final class WordsAsClassifiersTrainingDataWriter {
 			final Options result = new Options();
 			Arrays.stream(Parameter.values()).map(Parameter::get).forEach(result::addOption);
 			return result;
-		}
-
-		private static String parseOutfilePrefix(final CommandLine cl, final Path inpath) {
-			final String prefix = cl.getOptionValue(Parameter.OUTFILE_PREFIX.optName, DEFAULT_OUTFILE_PREFIX);
-			return prefix;
 		}
 
 		private static void printHelp() {
@@ -158,15 +143,18 @@ public final class WordsAsClassifiersTrainingDataWriter {
 				throw new MissingOptionException("No input path(s) specified.");
 
 			} else {
+				final ArffSaver saver = new ArffSaver();
 				final File outpath = (File) cl.getParsedOptionValue(Parameter.OUTPATH.optName);
-				LOGGER.info("Will write data to \"{}\".", outpath);
+				if (outpath == null) {
+					LOGGER.info("Will write data to standard output stream.", outpath);
+				} else {
+					LOGGER.info("Will write data to \"{}\".", outpath);
+					saver.setFile(outpath);
+				}
+
+				final WordsAsClassifiersTrainingDataWriter writer = new WordsAsClassifiersTrainingDataWriter(saver);
 				for (final Path inpath : inpaths) {
-					final String outfileNamePrefix = Parameter.parseOutfilePrefix(cl, inpath);
-					LOGGER.info("Will prefix each output file for input \"{}\" with \"{}\".", inpath,
-							outfileNamePrefix);
-					final WordsAsClassifiersTrainingDataWriter writer = new WordsAsClassifiersTrainingDataWriter(
-							outpath, outfileNamePrefix);
-					LOGGER.info("Will read batch job data from \"{}\".", inpath);
+					LOGGER.info("Reading batch job data from \"{}\".", inpath);
 					writer.accept(inpath);
 				}
 			}
@@ -185,36 +173,33 @@ public final class WordsAsClassifiersTrainingDataWriter {
 		}
 	}
 
-	private static String createOutfileInfix(final Path inpath) {
-		return new FilenameBaseSplitter().apply(inpath.getFileName().toString())[0] + "_LOG-";
-	}
+	private final AbstractFileSaver saver;
 
-	private final String outfileNamePrefix;
-
-	private final File outpath;
-
-	public WordsAsClassifiersTrainingDataWriter(final File outpath, final String outfileNamePrefix) {
-		this.outpath = outpath;
-		this.outfileNamePrefix = outfileNamePrefix;
+	public WordsAsClassifiersTrainingDataWriter(final AbstractFileSaver saver) {
+		this.saver = saver;
 	}
 
 	public void accept(final Path inpath) throws JAXBException, IOException {
-		final Iterator<Path> infilePathIter = Files.walk(inpath, FileVisitOption.FOLLOW_LINKS)
-				.filter(Files::isRegularFile)
-				.filter(filePath -> filePath.getFileName().toString().endsWith(".properties")).iterator();
-		while (infilePathIter.hasNext()) {
-			final Path infilePath = infilePathIter.next();
+		final Path[] infilePaths = Files.walk(inpath, FileVisitOption.FOLLOW_LINKS).filter(Files::isRegularFile)
+				.filter(filePath -> filePath.getFileName().toString().endsWith(".properties")).toArray(Path[]::new);
+
+		final Instances instances = new Instances("word_training", ATTRS, infilePaths.length * 1000);
+		instances.setClass(CLASS_ATTR);
+		saver.setInstances(instances);
+
+		for (final Path infilePath : infilePaths) {
 			LOGGER.info("Reading batch job properties from \"{}\".", infilePath);
 			final Properties props = new Properties();
 			try (final InputStream propsInstream = Files.newInputStream(infilePath)) {
 				props.load(propsInstream);
 			}
-			final String outfileInfix = createOutfileInfix(infilePath);
-			accept(props, infilePath.getParent(), outfileNamePrefix + outfileInfix);
+			accept(props, infilePath.getParent(), instances);
 		}
+
+		saver.writeBatch();
 	}
 
-	private void accept(final Properties props, final Path infileBaseDir, final String outfileNamePrefix)
+	private void accept(final Properties props, final Path infileBaseDir, final Instances instances)
 			throws JAXBException, IOException {
 		final Path hatInfilePath = infileBaseDir.resolve(props.getProperty("hat"));
 		LOGGER.info("Reading annotations from \"{}\".", hatInfilePath);
@@ -241,9 +226,7 @@ public final class WordsAsClassifiersTrainingDataWriter {
 			final TemporalGameContextFactory uttContextFactory = new TemporalGameContextFactory(playerHistories::get);
 			for (final Entry<String, GameHistory> playerGameHistory : playerHistories.entrySet()) {
 				final String playerId = playerGameHistory.getKey();
-
-				final Instances instances = new Instances("word_training", ATTRS, gamePlayerHistoryTable.size() * 1000);
-				instances.setClass(CLASS_ATTR);
+				LOGGER.info("Processing game from perspective of player \"{}\".", playerId);
 
 				utts.forEach(utt -> {
 					final Stream<Instance> uttInstances = createInstances(utt, uttPlayerIds::get, uttContextFactory,
@@ -258,15 +241,6 @@ public final class WordsAsClassifiersTrainingDataWriter {
 						});
 					});
 				});
-
-				final File outfilePath = new File(outpath,
-						outfileNamePrefix + "_GAME-" + gameId + "_LOG-" + playerId + ".arff");
-				LOGGER.info("Writing training data from perspective of \"{}\" to \"{}\".", playerId, outfilePath);
-
-				final ArffSaver saver = new ArffSaver();
-				saver.setInstances(instances);
-				saver.setFile(outfilePath);
-				saver.writeBatch();
 			}
 		}
 	}
