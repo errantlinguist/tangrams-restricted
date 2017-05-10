@@ -79,30 +79,6 @@ public enum EntityFeature {
 			return createFeatureAttrMap(FEATURE_TYPED_ATTR_FACTORIES.keySet(), prefix);
 		}
 
-		// private static final Logger LOGGER =
-		// LoggerFactory.getLogger(Extractor.class);
-
-		// private static final Object2DoubleMap<String> SHAPE_FEATURE_VALS =
-		// createShapeFeatureValueMap();
-
-		// private static final double NULL_FEATURE_VAL = -1.0;
-
-		// private static Object2DoubleMap<String> createShapeFeatureValueMap()
-		// {
-		// final Set<String> possibleShapeStrValues =
-		// IconImages.getImageResources().keySet();
-		// return FeatureMaps.createOrdinalFeatureValMap(possibleShapeStrValues,
-		// NULL_FEATURE_VAL);
-		// }
-
-		// private static double getShapeFeatureVal(final
-		// ImageVisualizationInfoDescription.Datum pieceImgVizInfoDatum) {
-		// final String strVal = pieceImgVizInfoDatum.getResourceName();
-		// return SHAPE_FEATURE_VALS.getDouble(strVal);
-		// }
-
-		// private final Object2IntMap<EntityFeature> featureVectorIdxs;
-
 		private static Map<EntityFeature, Function<String, Attribute>> createFeatureTypedAttrFactoryMap() {
 			final Map<EntityFeature, Function<String, Attribute>> result = new EnumMap<>(EntityFeature.class);
 			final Function<String, Attribute> doubleVal = name -> new Attribute(name);
@@ -126,20 +102,7 @@ public enum EntityFeature {
 
 		public Extractor(final Map<EntityFeature, Attribute> featureAttrs) {
 			this.featureAttrs = featureAttrs;
-			// featureVectorIdxs = new Object2IntOpenHashMap<>(ordering.size());
-			// for (final ListIterator<EntityFeature> iter =
-			// ordering.listIterator(); iter.hasNext();) {
-			// final int nextIdx = iter.nextIndex();
-			// final EntityFeature feature = iter.next();
-			// featureVectorIdxs.put(feature, nextIdx);
-			// }
 		}
-
-		// public double getVal(final EntityFeature feature, final double[]
-		// features) {
-		// final int idx = featureVectorIdxs.get(feature);
-		// return features[idx];
-		// }
 
 		public Map<EntityFeature, Attribute> getFeatureAttrs() {
 			return Collections.unmodifiableMap(featureAttrs);
@@ -151,7 +114,7 @@ public enum EntityFeature {
 				final ToIntFunction<? super String> namedResourceEdgeCountFactory) {
 			final Color color = pieceImgVizInfoDatum.getColor();
 			final float[] hsbVals = Color.RGBtoHSB(color.getRed(), color.getGreen(), color.getBlue(), null);
-			Object result;
+			final Object result;
 			switch (feature) {
 			case RED:
 				result = color.getRed();
@@ -220,22 +183,6 @@ public enum EntityFeature {
 				}
 			}
 		}
-
-		// void setVals(final Instance vals,
-		// final Optional<Entry<ImageVisualizationInfoDescription.Datum,
-		// SpatialRegion>> entityData,
-		// final int[] modelDims, final double modelArea,
-		// final ToDoubleFunction<? super String> namedResourceEdgeCountFactory)
-		// {
-		// if (entityData.isPresent()) {
-		// final Entry<ImageVisualizationInfoDescription.Datum, SpatialRegion>
-		// data = entityData.get();
-		// setVals(vals, data.getKey(), data.getValue(), modelDims, modelArea,
-		// namedResourceEdgeCountFactory);
-		// } else {
-		// LOGGER.debug("No entity data provided.");
-		// }
-		// }
 
 	}
 
