@@ -95,6 +95,16 @@ public final class SegmentUtteranceFactory {
 		}
 	}
 
+	static void addSegmentTokens(final ArrayList<? super T> tokens, final Segment segment) {
+		final Transcription transcription = segment.getTranscription();
+		if (transcription == null) {
+			LOGGER.warn("Segment ID \"{}\" has no {} element.",
+					new Object[] { segment.getId(), Transcription.class.getSimpleName() });
+		} else {
+			addSegmentTokens(tokens, transcription.getSegmentOrT());
+		}
+	}
+
 	static List<T> createSegmentTokenList(final Segment segment) {
 		final Transcription transcription = segment.getTranscription();
 		final List<T> result;
@@ -149,7 +159,7 @@ public final class SegmentUtteranceFactory {
 				for (final Object child : children) {
 					if (child instanceof Segment) {
 						final Segment childSeg = (Segment) child;
-						addSegmentTokens(tokens, childSeg.getTranscription().getSegmentOrT());
+						addSegmentTokens(tokens, childSeg);
 					} else {
 						tokens.add((T) child);
 					}
