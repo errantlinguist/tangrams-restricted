@@ -62,6 +62,7 @@ public final class GameEventReplayer {
 						submittingPlayerId);
 				final Move moveToUndo = (Move) event.get(GameManagementEvent.Attribute.MOVE.toString());
 				final Move undoMove = createUndoMove(moveToUndo);
+				// TODO: Finish
 				break;
 			}
 			case NEXT_TURN_REQUEST: {
@@ -69,6 +70,7 @@ public final class GameEventReplayer {
 						submittingPlayerId);
 				final Move moveToUndo = (Move) event.get(GameManagementEvent.Attribute.MOVE.toString());
 				final Move undoMove = createUndoMove(moveToUndo);
+				// TODO: Finish
 				break;
 			}
 			case SELECTION_REQUEST: {
