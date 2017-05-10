@@ -183,7 +183,8 @@ public final class FeatureVectorPrinter {
 			final ToDoubleFunction<String> namedResourceEdgeCounter = new ImageEdgeCounter();
 			final List<GameContextFeatureExtractor> contextFeatureExtractors = Arrays.asList(
 					new EnvironmentFeatureExtractor(uniqueModelDescriptionCount),
-					new EntitySetFeatureExtractor(uniqueModelDescriptionCount, namedResourceEdgeCounter),
+					new EntitySetFeatureExtractor(new EntityFeature.Extractor(), uniqueModelDescriptionCount,
+							namedResourceEdgeCounter),
 					new GameEventFeatureExtractor());
 			final Stream.Builder<String> featureDescBuilder = Stream.builder();
 			contextFeatureExtractors.stream().map(extractor -> extractor.createFeatureDescriptions(firstGameDesc))

@@ -16,16 +16,25 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.Function;
@@ -51,17 +60,26 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Table;
 
+import iristk.system.Event;
 import iristk.util.HAT;
+import se.kth.speech.FilenameBaseSplitter;
 import se.kth.speech.MutablePair;
 import se.kth.speech.coin.tangrams.analysis.Annotations;
 import se.kth.speech.coin.tangrams.analysis.GameContext;
 import se.kth.speech.coin.tangrams.analysis.GameContextModelFactory;
 import se.kth.speech.coin.tangrams.analysis.GameHistory;
+import se.kth.speech.coin.tangrams.analysis.PlayerDataManager;
 import se.kth.speech.coin.tangrams.analysis.SegmentUtteranceFactory;
 import se.kth.speech.coin.tangrams.analysis.TemporalGameContextFactory;
 import se.kth.speech.coin.tangrams.analysis.Utterance;
+import se.kth.speech.coin.tangrams.analysis.UtterancePlayerIdMapFactory;
+import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
+import se.kth.speech.coin.tangrams.content.ImageVisualizationInfoTableRowWriter;
+import se.kth.speech.coin.tangrams.iristk.EventTimes;
+import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 import se.kth.speech.coin.tangrams.iristk.GameStateDescriptions;
 import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
+import se.kth.speech.coin.tangrams.iristk.events.Move;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
 import se.kth.speech.hat.xsd.Annotation;
 import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
@@ -172,6 +190,146 @@ public final class WordsAsClassifiersTrainingDataFactory
 		}
 	}
 
+	private static String createOutfileInfix(final Path inpath) {
+		return new FilenameBaseSplitter().apply(inpath.getFileName().toString())[0] + "_LOG-";
+	}
+
+	// public void accept(final Path inpath) throws JAXBException, IOException {
+	// final Iterator<Path> infilePathIter = Files.walk(inpath,
+	// FileVisitOption.FOLLOW_LINKS)
+	// .filter(Files::isRegularFile)
+	// .filter(filePath ->
+	// filePath.getFileName().toString().endsWith(".properties")).iterator();
+	// while (infilePathIter.hasNext()) {
+	// final Path infilePath = infilePathIter.next();
+	// LOGGER.info("Reading batch job properties from \"{}\".", infilePath);
+	// final Properties props = new Properties();
+	// try (final InputStream propsInstream = Files.newInputStream(infilePath))
+	// {
+	// props.load(propsInstream);
+	// }
+	// final String outfileInfix = createOutfileInfix(infilePath);
+	// accept(props, infilePath.getParent(), outfileNamePrefix + outfileInfix);
+	// }
+	// }
+
+//	private void accept(final Properties props, final Path infileBaseDir, final String outfileNamePrefix)
+//			throws JAXBException, IOException {
+//		final Path hatInfilePath = infileBaseDir.resolve(props.getProperty("hat"));
+//		LOGGER.info("Reading annotations from \"{}\".", hatInfilePath);
+//		final Annotation uttAnnots = HAT.readAnnotation(hatInfilePath.toFile());
+//
+//		final PlayerDataManager playerData = PlayerDataManager.parsePlayerProps(props, infileBaseDir);
+//
+//		final Table<String, String, GameHistory> playerGameHistoryTable = LoggedEvents.createPlayerGameHistoryTable(
+//				playerData.getPlayerEventLogs().entrySet(), LoggedEvents.VALID_MODEL_MIN_REQUIRED_EVENT_MATCHER);
+//		final Set<String> playerGameIdIntersection = new HashSet<>(playerGameHistoryTable.columnKeySet());
+//		playerGameHistoryTable.rowMap().values().stream().map(Map::keySet).forEach(playerGameIdIntersection::retainAll);
+//		GameStateDescriptions.findAnyEquivalentGameState(
+//				playerGameHistoryTable.values().stream().map(GameHistory::getInitialState).iterator());
+//		final int uniqueModelDescriptionCount = playerGameHistoryTable.values().size();
+//		final SelectedEntityFeatureExtractor entityFeatureExtractor = new SelectedEntityFeatureExtractor(new EntityFeature.Extractor(),
+//				new GameContextModelFactory(uniqueModelDescriptionCount), new ImageEdgeCounter());
+//
+//		final Map<Utterance, String> uttPlayerIds = new UtterancePlayerIdMapFactory(SEG_UTT_FACTORY::create,
+//				playerData.getPlayerSourceIds().inverse()::get).apply(uttAnnots.getSegments().getSegment());
+//		final List<Utterance> utts = Arrays.asList(uttPlayerIds.keySet().stream().sorted().toArray(Utterance[]::new));
+//		for (final String gameId : playerGameIdIntersection) {
+//			LOGGER.debug("Processing game \"{}\".", gameId);
+//			final Map<String, GameHistory> playerGameHistories = playerGameHistoryTable.columnMap().get(gameId);
+//			final TemporalGameContextFactory uttContextFactory = new TemporalGameContextFactory(
+//					playerGameHistories::get);
+//
+//			for (final Entry<String, GameHistory> playerGameHistory : playerGameHistories.entrySet()) {
+//				final String playerId = playerGameHistory.getKey();
+//				final GameHistory history = playerGameHistory.getValue();
+//				// The visualization info for the given game
+//				final ImageVisualizationInfo imgVizInfo = IMG_VIZ_INFO_UNMARSHALLER
+//						.apply(history.getInitialState().getImageVisualizationInfoDescription());
+//				final List<Entry<Event, List<Utterance>>> eventUttLists = EVENT_UTT_FACTORY
+//						.apply(utts.listIterator(), history).collect(Collectors.toList());
+//
+//				final Path outfilePath = outpath.resolve(outfileNamePrefix + playerId + "_GAME-" + gameId + ".txt");
+//				LOGGER.info("Writing utterances from perspective of \"{}\" to \"{}\".", playerId, outfilePath);
+//				try (BufferedWriter writer = Files.newBufferedWriter(outfilePath, StandardOpenOption.CREATE,
+//						StandardOpenOption.TRUNCATE_EXISTING)) {
+//					writer.write(HEADER_STR);
+//
+//					for (final ListIterator<Entry<Event, List<Utterance>>> eventUttListIter = eventUttLists
+//							.listIterator(); eventUttListIter.hasNext();) {
+//						final Entry<Event, List<Utterance>> eventUttList = eventUttListIter.next();
+//						writer.write(TABLE_STRING_REPR_ROW_DELIMITER);
+//
+//						final Event event = eventUttList.getKey();
+//						final List<Utterance> eventUtts = eventUttList.getValue();
+//
+//						final String imgVizInfoDesc;
+//						if (event == null) {
+//							imgVizInfoDesc = BLANK_IMG_DESC;
+//						} else {
+//							final StringWriter strWriter = new StringWriter(256);
+//
+//							final double contextStartTime;
+//							final double contextEndTime;
+//							if (eventUtts.isEmpty()) {
+//								if (strict) {
+//									throw new IllegalArgumentException(
+//											String.format("No utterances for event \"%s\".", event));
+//								} else {
+//									final String msg = createNoEventUtterancesMsg(event, eventUttLists,
+//											eventUttListIter.nextIndex() - 1, uttPlayerIds::get);
+//									LOGGER.warn(msg);
+//									final LocalDateTime eventTime = EventTimes.parseEventTime(event.getTime());
+//									final Duration gameDuration = Duration.between(history.getStartTime(), eventTime);
+//									final float offset = gameDuration.toMillis() / 1000.0f;
+//									contextStartTime = offset;
+//									contextEndTime = offset;
+//								}
+//							} else {
+//								// Just use the context of the first utterance
+//								final Utterance firstUtt = eventUtts.iterator().next();
+//								contextStartTime = firstUtt.getStartTime();
+//								contextEndTime = firstUtt.getEndTime();
+//							}
+//							writer.write(event.getTime());
+//							writer.write(TABLE_STRING_REPR_COL_DELIMITER);
+//							{
+//								final GameContext context = uttContextFactory
+//										.apply(contextStartTime, contextEndTime, playerId).findFirst().get();
+//								final DoubleStream.Builder vals = DoubleStream.builder();
+//								entityFeatureExtractor.accept(context, vals);
+//								final double[] featureVector = vals.build().toArray();
+//								writer.write(FEATURES_TO_DESCRIBE.stream()
+//										.map(feature -> Double.toString(feature.getVal(featureVector)))
+//										.collect(TABLE_ROW_CELL_JOINER));
+//							}
+//							writer.write(TABLE_STRING_REPR_COL_DELIMITER);
+//							{
+//								final ImageVisualizationInfoTableRowWriter imgInfoDescWriter = new ImageVisualizationInfoTableRowWriter(
+//										strWriter);
+//								final Move move = (Move) event.get(GameManagementEvent.Attribute.MOVE.toString());
+//								final Integer selectedPieceId = move.getPieceId();
+//								final ImageVisualizationInfo.Datum selectedPieceImgVizInfo = imgVizInfo.getData()
+//										.get(selectedPieceId);
+//								imgInfoDescWriter.write(selectedPieceId, selectedPieceImgVizInfo);
+//							}
+//
+//							imgVizInfoDesc = strWriter.toString();
+//						}
+//						writer.write(imgVizInfoDesc);
+//						writer.write(TABLE_STRING_REPR_COL_DELIMITER);
+//
+//						final String eventDialogStr = createUtteranceDialogString(eventUtts.stream(),
+//								uttPlayerIds::get);
+//						writer.write(eventDialogStr);
+//
+//					}
+//
+//				}
+//			}
+//		}
+//	}
+
 	/**
 	 * @param infile
 	 * @param out
@@ -200,7 +358,7 @@ public final class WordsAsClassifiersTrainingDataFactory
 			final int uniqueModelDescriptionCount = playerGameHistoryTable.values().size();
 			final ToDoubleFunction<String> namedResourceEdgeCounter = new ImageEdgeCounter();
 			final List<GameContextFeatureExtractor> contextFeatureExtractors = Arrays
-					.asList(new SelectedEntityFeatureExtractor(new GameContextModelFactory(uniqueModelDescriptionCount),
+					.asList(new SelectedEntityFeatureExtractor(new EntityFeature.Extractor(), new GameContextModelFactory(uniqueModelDescriptionCount),
 							namedResourceEdgeCounter));
 			final Stream.Builder<String> featureDescBuilder = Stream.builder();
 			featureDescBuilder.accept("WORD");

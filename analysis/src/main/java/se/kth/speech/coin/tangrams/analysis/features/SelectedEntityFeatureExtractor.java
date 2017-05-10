@@ -44,12 +44,16 @@ public final class SelectedEntityFeatureExtractor implements GameContextFeatureE
 		});
 	}
 
+	private final EntityFeature.Extractor extractor;
+
 	private final Function<? super GameContext, SpatialMatrix<Integer>> gameModelFactory;
 
 	private final ToDoubleFunction<? super String> namedResourceEdgeCountFactory;
 
-	public SelectedEntityFeatureExtractor(final Function<? super GameContext, SpatialMatrix<Integer>> gameModelFactory,
+	public SelectedEntityFeatureExtractor(final EntityFeature.Extractor extractor,
+			final Function<? super GameContext, SpatialMatrix<Integer>> gameModelFactory,
 			final ToDoubleFunction<? super String> namedResourceEdgeCountFactory) {
+		this.extractor = extractor;
 		this.gameModelFactory = gameModelFactory;
 		this.namedResourceEdgeCountFactory = namedResourceEdgeCountFactory;
 	}
@@ -71,7 +75,7 @@ public final class SelectedEntityFeatureExtractor implements GameContextFeatureE
 	 */
 	@Override
 	public Stream<String> createFeatureDescriptions(final GameStateDescription initialState) {
-		return EntityFeature.getOrdering().stream().map(Enum::toString);
+		return extractor.getOrdering().stream().map(Enum::toString);
 	}
 
 	private void extractFeatures(final SpatialMatrix<Integer> model,
@@ -79,6 +83,6 @@ public final class SelectedEntityFeatureExtractor implements GameContextFeatureE
 			final DoubleStream.Builder vals) {
 		final int[] modelDims = model.getDimensions();
 		final double modelArea = IntArrays.product(modelDims);
-		EntityFeature.setVals(vals, entityData, modelDims, modelArea, namedResourceEdgeCountFactory);
+		extractor.setVals(vals, entityData, modelDims, modelArea, namedResourceEdgeCountFactory);
 	}
 }

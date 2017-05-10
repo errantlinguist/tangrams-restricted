@@ -88,12 +88,15 @@ final class EntitySetFeatureExtractor implements GameContextFeatureExtractor {
 		eventsToApply.forEachOrdered(event -> applyEvent(model, event));
 	}
 
+	private final EntityFeature.Extractor extractor;
+
 	private final Function<ModelDescription, SpatialMatrix<Integer>> initialGameModelFactory;
 
 	private final ToDoubleFunction<? super String> namedResourceEdgeCountFactory;
 
-	EntitySetFeatureExtractor(final int expectedUniqueModelDescriptionCount,
+	EntitySetFeatureExtractor(final EntityFeature.Extractor extractor, final int expectedUniqueModelDescriptionCount,
 			final ToDoubleFunction<? super String> namedResourceEdgeCountFactory) {
+		this.extractor = extractor;
 		this.namedResourceEdgeCountFactory = namedResourceEdgeCountFactory;
 		final Map<ModelDescription, SpatialMatrix<Integer>> gameModels = Maps
 				.newHashMapWithExpectedSize(expectedUniqueModelDescriptionCount);
@@ -120,7 +123,7 @@ final class EntitySetFeatureExtractor implements GameContextFeatureExtractor {
 
 	private Stream<String> createFeatureDescriptions(final int entityCount) {
 		return IntStream.range(0, entityCount).mapToObj(entityId -> {
-			final Stream<String> baseFeatureDescs = EntityFeature.getOrdering().stream().map(Enum::toString);
+			final Stream<String> baseFeatureDescs = extractor.getOrdering().stream().map(Enum::toString);
 			return baseFeatureDescs.map(desc -> "ENT_" + entityId + "-" + desc);
 		}).flatMap(Function.identity());
 	}
@@ -144,7 +147,7 @@ final class EntitySetFeatureExtractor implements GameContextFeatureExtractor {
 			final int pieceId = imgVizInfoDataIter.nextIndex();
 			final ImageVisualizationInfoDescription.Datum pieceImgVizInfoDatum = imgVizInfoDataIter.next();
 			final SpatialRegion pieceRegion = piecePlacements.getElementMinimalRegions().get(pieceId);
-			EntityFeature.setVals(vals, pieceImgVizInfoDatum, pieceRegion, modelDims, modelArea,
+			extractor.setVals(vals, pieceImgVizInfoDatum, pieceRegion, modelDims, modelArea,
 					namedResourceEdgeCountFactory);
 		}
 	}

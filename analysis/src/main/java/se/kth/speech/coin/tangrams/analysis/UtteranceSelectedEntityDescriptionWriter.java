@@ -190,9 +190,6 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 		private static final EventUtteranceFactory EVENT_UTT_FACTORY = new EventUtteranceFactory(
 				new EventTypeMatcher(EnumSet.of(GameManagementEvent.NEXT_TURN_REQUEST)));
 
-		private static final List<EntityFeature> FEATURES_TO_DESCRIBE = Arrays.asList(EntityFeature.POSITION_X,
-				EntityFeature.POSITION_Y, EntityFeature.EDGE_COUNT);
-
 		private static final String HEADER_STR;
 
 		private static final ImageVisualizationInfoUnmarshaller IMG_VIZ_INFO_UNMARSHALLER = new ImageVisualizationInfoUnmarshaller();
@@ -412,9 +409,8 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 						final DoubleStream.Builder vals = DoubleStream.builder();
 						ctxFeatureExtractor.accept(context, vals);
 						final double[] featureVector = vals.build().toArray();
-						writer.write(FEATURES_TO_DESCRIBE.stream()
-								.map(feature -> Double.toString(feature.getVal(featureVector)))
-								.collect(TABLE_ROW_CELL_JOINER));
+						writer.write(
+								Arrays.stream(featureVector).mapToObj(Double::toString).collect(TABLE_ROW_CELL_JOINER));
 					}
 					writer.write(TABLE_STRING_REPR_COL_DELIMITER);
 					{
@@ -444,6 +440,10 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 
 	private static final String DEFAULT_OUTFILE_PREFIX = "uttImgDescs_";
 
+	private static final EntityFeature.Extractor EXTRACTOR;
+
+	private static final List<EntityFeature> FEATURES_TO_DESCRIBE;
+
 	private static final List<FileNameExtensionFilter> FILE_FILTERS;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(UtteranceSelectedEntityDescriptionWriter.class);
@@ -451,6 +451,12 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 	private static final SegmentUtteranceFactory SEG_UTT_FACTORY = new SegmentUtteranceFactory();
 
 	private static final Path SETTINGS_DIR;
+
+	static {
+		FEATURES_TO_DESCRIBE = Arrays.asList(EntityFeature.POSITION_X, EntityFeature.POSITION_Y,
+				EntityFeature.EDGE_COUNT);
+		EXTRACTOR = new EntityFeature.Extractor(FEATURES_TO_DESCRIBE);
+	}
 
 	static {
 		FILE_FILTERS = Arrays.asList(new FileNameExtensionFilter("Property files (*.properties)", "properties"));
@@ -618,7 +624,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 		GameStateDescriptions.findAnyEquivalentGameState(
 				playerGameHistoryTable.values().stream().map(GameHistory::getInitialState).iterator());
 		final int uniqueModelDescriptionCount = playerGameHistoryTable.values().size();
-		final SelectedEntityFeatureExtractor entityFeatureExtractor = new SelectedEntityFeatureExtractor(
+		final SelectedEntityFeatureExtractor entityFeatureExtractor = new SelectedEntityFeatureExtractor(EXTRACTOR,
 				new GameContextModelFactory(uniqueModelDescriptionCount), new ImageEdgeCounter());
 
 		final Map<Utterance, String> uttPlayerIds = new UtterancePlayerIdMapFactory(SEG_UTT_FACTORY::create,

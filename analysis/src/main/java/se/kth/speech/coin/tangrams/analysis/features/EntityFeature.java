@@ -46,117 +46,131 @@ import se.kth.speech.coin.tangrams.iristk.events.ImageVisualizationInfoDescripti
 public enum EntityFeature {
 	BLUE, BRIGHTNESS, EDGE_COUNT, GREEN, HUE, POSITION_X, POSITION_Y, RED, SATURATION, SHAPE, SIZE;
 
-	private static final Object2IntMap<EntityFeature> FEATURE_VECTOR_IDXS;
+	public static final class Extractor {
 
-	private static final double NULL_FEATURE_VAL = -1.0;
+		private static final List<EntityFeature> DEFAULT_ORDERING;
 
-	private static final List<EntityFeature> ORDERING;
+		private static final double NULL_FEATURE_VAL = -1.0;
 
-	private static final Object2DoubleMap<String> SHAPE_FEATURE_VALS = createShapeFeatureValueMap();
+		private static final Object2DoubleMap<String> SHAPE_FEATURE_VALS = createShapeFeatureValueMap();
 
-	static {
-		ORDERING = Arrays.asList(SHAPE, EDGE_COUNT, RED, GREEN, BLUE, HUE, SATURATION, BRIGHTNESS, SIZE, POSITION_X,
-				POSITION_Y);
-		assert ORDERING.size() == EntityFeature.values().length;
-
-		FEATURE_VECTOR_IDXS = new Object2IntOpenHashMap<>(ORDERING.size());
-		for (final ListIterator<EntityFeature> iter = ORDERING.listIterator(); iter.hasNext();) {
-			final int nextIdx = iter.nextIndex();
-			final EntityFeature feature = iter.next();
-			FEATURE_VECTOR_IDXS.put(feature, nextIdx);
+		static {
+			DEFAULT_ORDERING = Arrays.asList(SHAPE, EDGE_COUNT, RED, GREEN, BLUE, HUE, SATURATION, BRIGHTNESS, SIZE,
+					POSITION_X, POSITION_Y);
+			assert DEFAULT_ORDERING.size() == EntityFeature.values().length;
 		}
-	}
 
-	private static Object2DoubleMap<String> createShapeFeatureValueMap() {
-		final Set<String> possibleShapeStrValues = IconImages.getImageResources().keySet();
-		return FeatureMaps.createOrdinalFeatureValMap(possibleShapeStrValues, NULL_FEATURE_VAL);
-	}
+		private static Object2DoubleMap<String> createShapeFeatureValueMap() {
+			final Set<String> possibleShapeStrValues = IconImages.getImageResources().keySet();
+			return FeatureMaps.createOrdinalFeatureValMap(possibleShapeStrValues, NULL_FEATURE_VAL);
+		}
 
-	private static double getShapeFeatureVal(final ImageVisualizationInfoDescription.Datum pieceImgVizInfoDatum) {
-		final String strVal = pieceImgVizInfoDatum.getResourceName();
-		return SHAPE_FEATURE_VALS.getDouble(strVal);
-	}
+		private static double getShapeFeatureVal(final ImageVisualizationInfoDescription.Datum pieceImgVizInfoDatum) {
+			final String strVal = pieceImgVizInfoDatum.getResourceName();
+			return SHAPE_FEATURE_VALS.getDouble(strVal);
+		}
 
-	/**
-	 * @return the ordering
-	 */
-	static List<EntityFeature> getOrdering() {
-		return Collections.unmodifiableList(ORDERING);
-	}
+		private final Object2IntMap<EntityFeature> featureVectorIdxs;
 
-	static void setVals(final DoubleStream.Builder vals,
-			final ImageVisualizationInfoDescription.Datum pieceImgVizInfoDatum, final SpatialRegion pieceRegion,
-			final int[] modelDims, final double modelArea,
-			final ToDoubleFunction<? super String> namedResourceEdgeCountFactory) {
-		final Color color = pieceImgVizInfoDatum.getColor();
-		final float[] hsbVals = Color.RGBtoHSB(color.getRed(), color.getGreen(), color.getBlue(), null);
-		for (final EntityFeature feature : ORDERING) {
-			switch (feature) {
-			case RED:
-				vals.accept(color.getRed());
-				break;
-			case GREEN:
-				vals.accept(color.getGreen());
-				break;
-			case BLUE:
-				vals.accept(color.getBlue());
-				break;
-			case HUE:
-				vals.accept(hsbVals[0]);
-				break;
-			case SATURATION:
-				vals.accept(hsbVals[1]);
-				break;
-			case BRIGHTNESS:
-				vals.accept(hsbVals[2]);
-				break;
-			case POSITION_X: {
-				final double centerX = pieceRegion.getXLowerBound() + pieceRegion.getLengthX() / 2.0;
-				final double posX = centerX / modelDims[0];
-				vals.accept(posX);
-				break;
-			}
-			case POSITION_Y: {
-				final double centerY = pieceRegion.getYLowerBound() + pieceRegion.getLengthY() / 2.0;
-				final double posY = centerY / modelDims[1];
-				vals.accept(posY);
-				break;
-			}
-			case EDGE_COUNT: {
-				final String imgResName = pieceImgVizInfoDatum.getResourceName();
-				vals.accept(namedResourceEdgeCountFactory.applyAsDouble(imgResName));
-			}
-			case SHAPE:
-				final double shapeFeatureVal = getShapeFeatureVal(pieceImgVizInfoDatum);
-				vals.accept(shapeFeatureVal);
-				break;
-			case SIZE:
-				final int pieceArea = IntArrays.product(pieceRegion.getDimensions());
-				final double sizeFeatureVal = pieceArea / modelArea;
-				vals.accept(sizeFeatureVal);
-				break;
-			default: {
-				throw new AssertionError("Missing enum-handling logic.");
-			}
+		private final List<EntityFeature> ordering;
+
+		public Extractor() {
+			this(DEFAULT_ORDERING);
+		}
+
+		public Extractor(final List<EntityFeature> ordering) {
+			this.ordering = ordering;
+			featureVectorIdxs = new Object2IntOpenHashMap<>(ordering.size());
+			for (final ListIterator<EntityFeature> iter = ordering.listIterator(); iter.hasNext();) {
+				final int nextIdx = iter.nextIndex();
+				final EntityFeature feature = iter.next();
+				featureVectorIdxs.put(feature, nextIdx);
 			}
 		}
-	}
 
-	static void setVals(final DoubleStream.Builder vals,
-			final Optional<Entry<ImageVisualizationInfoDescription.Datum, SpatialRegion>> entityData,
-			final int[] modelDims, final double modelArea,
-			final ToDoubleFunction<? super String> namedResourceEdgeCountFactory) {
-		if (entityData.isPresent()) {
-			final Entry<ImageVisualizationInfoDescription.Datum, SpatialRegion> data = entityData.get();
-			setVals(vals, data.getKey(), data.getValue(), modelDims, modelArea, namedResourceEdgeCountFactory);
-		} else {
-			// Set null feature vals
-			ORDERING.stream().mapToDouble(feature -> NULL_FEATURE_VAL).forEach(vals);
+		/**
+		 * @return the ordering
+		 */
+		public List<EntityFeature> getOrdering() {
+			return Collections.unmodifiableList(ordering);
 		}
+
+		public double getVal(final EntityFeature feature, final double[] features) {
+			final int idx = featureVectorIdxs.get(feature);
+			return features[idx];
+		}
+
+		void setVals(final DoubleStream.Builder vals,
+				final ImageVisualizationInfoDescription.Datum pieceImgVizInfoDatum, final SpatialRegion pieceRegion,
+				final int[] modelDims, final double modelArea,
+				final ToDoubleFunction<? super String> namedResourceEdgeCountFactory) {
+			final Color color = pieceImgVizInfoDatum.getColor();
+			final float[] hsbVals = Color.RGBtoHSB(color.getRed(), color.getGreen(), color.getBlue(), null);
+			for (final EntityFeature feature : ordering) {
+				switch (feature) {
+				case RED:
+					vals.accept(color.getRed());
+					break;
+				case GREEN:
+					vals.accept(color.getGreen());
+					break;
+				case BLUE:
+					vals.accept(color.getBlue());
+					break;
+				case HUE:
+					vals.accept(hsbVals[0]);
+					break;
+				case SATURATION:
+					vals.accept(hsbVals[1]);
+					break;
+				case BRIGHTNESS:
+					vals.accept(hsbVals[2]);
+					break;
+				case POSITION_X: {
+					final double centerX = pieceRegion.getXLowerBound() + pieceRegion.getLengthX() / 2.0;
+					final double posX = centerX / modelDims[0];
+					vals.accept(posX);
+					break;
+				}
+				case POSITION_Y: {
+					final double centerY = pieceRegion.getYLowerBound() + pieceRegion.getLengthY() / 2.0;
+					final double posY = centerY / modelDims[1];
+					vals.accept(posY);
+					break;
+				}
+				case EDGE_COUNT: {
+					final String imgResName = pieceImgVizInfoDatum.getResourceName();
+					vals.accept(namedResourceEdgeCountFactory.applyAsDouble(imgResName));
+				}
+				case SHAPE:
+					final double shapeFeatureVal = getShapeFeatureVal(pieceImgVizInfoDatum);
+					vals.accept(shapeFeatureVal);
+					break;
+				case SIZE:
+					final int pieceArea = IntArrays.product(pieceRegion.getDimensions());
+					final double sizeFeatureVal = pieceArea / modelArea;
+					vals.accept(sizeFeatureVal);
+					break;
+				default: {
+					throw new AssertionError("Missing enum-handling logic.");
+				}
+				}
+			}
+		}
+
+		void setVals(final DoubleStream.Builder vals,
+				final Optional<Entry<ImageVisualizationInfoDescription.Datum, SpatialRegion>> entityData,
+				final int[] modelDims, final double modelArea,
+				final ToDoubleFunction<? super String> namedResourceEdgeCountFactory) {
+			if (entityData.isPresent()) {
+				final Entry<ImageVisualizationInfoDescription.Datum, SpatialRegion> data = entityData.get();
+				setVals(vals, data.getKey(), data.getValue(), modelDims, modelArea, namedResourceEdgeCountFactory);
+			} else {
+				// Set null feature vals
+				ordering.stream().mapToDouble(feature -> NULL_FEATURE_VAL).forEach(vals);
+			}
+		}
+
 	}
 
-	public double getVal(final double[] features) {
-		final int idx = FEATURE_VECTOR_IDXS.get(this);
-		return features[idx];
-	}
 }
