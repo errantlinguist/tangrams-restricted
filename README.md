@@ -13,3 +13,9 @@ A game for organizing tangrams in the fewest number of moves using two players. 
 ## To do
 
 * Add feature for measuring the similarity of two models (e.g. one seeded for "1" vs. one seeded for "2")
+* Add timer which stops the game (and recording) after e.g. 15 minutes
+* Add "submission\_time" attr to each game event so that *that* timestamp can be used instead of the "event\_time" attr, which is actually the time the client received the event (thereby adding a degree of lag)
+* Add error handling for re-sending an event if the connection is lost (e.g. implement an "event received" event reply which the sending client waits for)
+* Add SVG support so that pieces can be of arbitrary size
+* Add automatic edge counting using [Canny's algorithm](https://en.wikipedia.org/wiki/Canny_edge_detector) for automatically counting the edges of a piece
+* Add automatic piece generation 
