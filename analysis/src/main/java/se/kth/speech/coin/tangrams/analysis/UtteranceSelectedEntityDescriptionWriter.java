@@ -440,8 +440,6 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 
 	private static final String DEFAULT_OUTFILE_PREFIX = "uttImgDescs_";
 
-	private static final EntityFeature.Extractor EXTRACTOR;
-
 	private static final List<EntityFeature> FEATURES_TO_DESCRIBE;
 
 	private static final List<FileNameExtensionFilter> FILE_FILTERS;
@@ -455,7 +453,6 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 	static {
 		FEATURES_TO_DESCRIBE = Arrays.asList(EntityFeature.POSITION_X, EntityFeature.POSITION_Y,
 				EntityFeature.EDGE_COUNT);
-		EXTRACTOR = new EntityFeature.Extractor(FEATURES_TO_DESCRIBE);
 	}
 
 	static {
@@ -624,7 +621,8 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 		GameStateDescriptions.findAnyEquivalentGameState(
 				playerGameHistoryTable.values().stream().map(GameHistory::getInitialState).iterator());
 		final int uniqueModelDescriptionCount = playerGameHistoryTable.values().size();
-		final SelectedEntityFeatureExtractor entityFeatureExtractor = new SelectedEntityFeatureExtractor(EXTRACTOR,
+		final SelectedEntityFeatureExtractor entityFeatureExtractor = new SelectedEntityFeatureExtractor(
+				new EntityFeature.Extractor(FEATURES_TO_DESCRIBE),
 				new GameContextModelFactory(uniqueModelDescriptionCount), new ImageEdgeCounter());
 
 		final Map<Utterance, String> uttPlayerIds = new UtterancePlayerIdMapFactory(SEG_UTT_FACTORY::create,
