@@ -164,7 +164,7 @@ public final class HATNgramFrequencyPrinter {
 //		annots.map(Annotation::getSegments).map(Segments::getSegment).map(seg -> {
 //			seg.get
 //		});
-		
+		// TODO: Finish
 //		return annots.collect(collector);
 //	}
 
