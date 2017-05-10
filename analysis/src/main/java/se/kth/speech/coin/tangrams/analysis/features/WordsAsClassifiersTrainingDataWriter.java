@@ -183,7 +183,7 @@ public final class WordsAsClassifiersTrainingDataWriter {
 		final Path[] infilePaths = Files.walk(inpath, FileVisitOption.FOLLOW_LINKS).filter(Files::isRegularFile)
 				.filter(filePath -> filePath.getFileName().toString().endsWith(".properties")).toArray(Path[]::new);
 
-		final Instances instances = new Instances("word_training", ATTRS, infilePaths.length * 1000);
+		final Instances instances = new Instances("word_training", ATTRS, infilePaths.length * 5000);
 		instances.setClass(CLASS_ATTR);
 		saver.setInstances(instances);
 
