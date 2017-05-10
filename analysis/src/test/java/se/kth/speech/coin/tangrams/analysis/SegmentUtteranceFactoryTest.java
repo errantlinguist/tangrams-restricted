@@ -19,7 +19,6 @@ package se.kth.speech.coin.tangrams.analysis;
 import java.io.File;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -31,7 +30,6 @@ import javax.xml.bind.JAXBException;
 
 import org.junit.Assert;
 import org.junit.BeforeClass;
-import org.junit.Test;
 import org.junit.experimental.theories.DataPoints;
 import org.junit.experimental.theories.Theories;
 import org.junit.experimental.theories.Theory;
@@ -110,15 +108,6 @@ public final class SegmentUtteranceFactoryTest {
 			Assert.assertTrue(actualStart <= utt.getStartTime());
 			Assert.assertTrue(actualEnd >= utt.getEndTime());
 		}
-	}
-
-	/**
-	 * Test method for
-	 * {@link se.kth.speech.coin.tangrams.analysis.SegmentUtteranceFactory#create(java.util.stream.Stream)}.
-	 */
-	@Test
-	public void testCreateStreamOfSegment() {
-		// fail("Not yet implemented"); // TODO
 	}
 
 }
