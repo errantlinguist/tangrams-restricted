@@ -286,6 +286,7 @@ public final class WordsAsClassifiersTrainingDataWriter {
 			}
 			accept(props, infilePath.getParent(), instances);
 		}
+		LOGGER.info("Processed {} data point(s), with a total of \"{}\" class(es).", instances.numInstances(), instances.numClasses());
 
 		saver.writeBatch();
 	}
