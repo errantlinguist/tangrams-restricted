@@ -23,18 +23,14 @@ import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.text.Collator;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.NavigableSet;
 import java.util.Properties;
-import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -64,11 +60,9 @@ import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
 import se.kth.speech.coin.tangrams.analysis.TemporalGameContexts;
 import se.kth.speech.coin.tangrams.analysis.Utterance;
 import se.kth.speech.coin.tangrams.analysis.UtterancePlayerIdMapFactory;
-import se.kth.speech.coin.tangrams.analysis.vocab.WordLists;
 import se.kth.speech.coin.tangrams.content.IconImages;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
 import se.kth.speech.hat.xsd.Annotation;
-import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
 import weka.core.Attribute;
 import weka.core.DenseInstance;
 import weka.core.Instance;
@@ -87,6 +81,89 @@ import weka.core.converters.ConverterUtils;
  */
 public final class WordsAsClassifiersTrainingDataWriter {
 
+	private static class MultiClassDataCollector {
+
+		private static final ImageEdgeCounter IMG_EDGE_COUNTER = new ImageEdgeCounter();
+
+		private static final SegmentUtteranceFactory SEG_UTT_FACTORY = new SegmentUtteranceFactory();
+
+		private final Function<? super String, Instances> classInstanceGetter;
+
+		private final int numAttributes;
+		
+		private MultiClassDataCollector(final Function<? super String, Instances> classInstanceGetter,
+				final int numAttributes) {
+			this.classInstanceGetter = classInstanceGetter;
+			this.numAttributes = numAttributes;
+		}
+
+		private void accept(final SessionDataManager sessionData) throws JAXBException, IOException {
+			final Path hatInfilePath = sessionData.getHATFilePath();
+			LOGGER.info("Reading annotations from \"{}\".", hatInfilePath);
+			final Annotation uttAnnots = HAT.readAnnotation(hatInfilePath.toFile());
+
+			final Path eventLogPath = sessionData.getCanonicalEventLogPath();
+			LOGGER.info("Reading events from \"{}\".", eventLogPath);
+			final Map<String, GameHistory> gameHistories = LoggedEvents.parseGameHistories(Files.lines(eventLogPath),
+					LoggedEvents.VALID_MODEL_MIN_REQUIRED_EVENT_MATCHER);
+			final int uniqueModelDescriptionCount = gameHistories.values().size();
+			final List<GameContextFeatureExtractor> contextFeatureExtractors = Arrays
+					.asList(new SelectedEntityFeatureExtractor(EXTRACTOR,
+							new GameContextModelFactory(uniqueModelDescriptionCount), IMG_EDGE_COUNTER));
+
+			final BiMap<String, String> playerSourceIds = sessionData.getPlayerData().getPlayerSourceIds();
+			final Function<String, String> sourcePlayerIdGetter = playerSourceIds.inverse()::get;
+			final Map<Utterance, String> uttPlayerIds = new UtterancePlayerIdMapFactory(SEG_UTT_FACTORY::create,
+					sourcePlayerIdGetter).apply(uttAnnots.getSegments().getSegment());
+			final List<Utterance> utts = Arrays
+					.asList(uttPlayerIds.keySet().stream().sorted().toArray(Utterance[]::new));
+
+			for (final Entry<String, GameHistory> gameHistory : gameHistories.entrySet()) {
+				final String gameId = gameHistory.getKey();
+				LOGGER.debug("Processing game \"{}\".", gameId);
+				final GameHistory history = gameHistory.getValue();
+				for (final String perspectivePlayerId : playerSourceIds.keySet()) {
+					LOGGER.info("Processing game from perspective of player \"{}\".", perspectivePlayerId);
+
+					utts.forEach(utt -> {
+						final String uttPlayerId = uttPlayerIds.get(utt);
+						if (perspectivePlayerId.equals(uttPlayerId)) {
+							final Stream<Instance> uttInstances = createContextInstances(utt, contextFeatureExtractors,
+									history, perspectivePlayerId);
+							uttInstances.forEachOrdered(uttInstance -> {
+								final double[] ctxFeatures = uttInstance.toDoubleArray();
+								utt.getTokens().forEach(token -> {
+									final Instances classInstances = classInstanceGetter.apply(token);
+									final Instance tokenInst = uttInstance.copy(ctxFeatures);
+									tokenInst.setDataset(classInstances);
+									// This is a positive training example
+									tokenInst.setClassValue(Boolean.TRUE.toString());
+									classInstances.add(tokenInst);
+								});
+							});
+						} else {
+							LOGGER.debug(
+									"Skipping the extraction of features for utterance with segment ID \"{}\" because the utterance is from player \"{}\" rather than the player whose perspective is being used for extracting features (\"{}\")",
+									utt.getSegmentId(), uttPlayerId, perspectivePlayerId);
+						}
+					});
+				}
+			}
+		}
+
+		private Stream<Instance> createContextInstances(final Utterance utt,
+				final List<GameContextFeatureExtractor> contextFeatureExtractors, final GameHistory history,
+				final String perspectivePlayerId) {
+			final Stream<GameContext> uttContexts = TemporalGameContexts.create(history, utt.getStartTime(),
+					utt.getEndTime(), perspectivePlayerId);
+			return uttContexts.map(uttContext -> {
+				final Instance inst = new DenseInstance(numAttributes);
+				contextFeatureExtractors.forEach(extractor -> extractor.accept(uttContext, inst));
+				return inst;
+			});
+		}
+	}
+
 	private enum Parameter implements Supplier<Option> {
 		HELP("?") {
 			@Override
@@ -98,7 +175,7 @@ public final class WordsAsClassifiersTrainingDataWriter {
 			@Override
 			public Option get() {
 				return Option.builder(optName).longOpt("outpath").desc("The path to write the training data to.")
-						.hasArg().argName("path").type(File.class).build();
+						.hasArg().argName("path").type(File.class).required().build();
 			}
 		};
 
@@ -110,21 +187,26 @@ public final class WordsAsClassifiersTrainingDataWriter {
 			return result;
 		}
 
-		private static File parseOutpath(final CommandLine cl) throws ParseException {
-			final File result;
-			final File val = (File) cl.getParsedOptionValue(Parameter.OUTPATH.optName);
-			if (val != null && val.isDirectory()) {
-				// TODO: Find common path root for all input paths and use it to
-				// make the default filename
-				final String timestamp = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss").format(LocalDateTime.now());
-				result = new File(val, "wordsAsClassifiers-" + timestamp + "." + DEFAULT_OUTFILE_EXT);
-				LOGGER.warn("Supplied outpath \"{}\" is a directory; Using default output file path \"{}\".", val,
-						result);
-			} else {
-				result = val;
-			}
-			return result;
-		}
+		// private static File parseOutpath(final CommandLine cl) throws
+		// ParseException {
+		// final File result;
+		// final File val = (File)
+		// cl.getParsedOptionValue(Parameter.OUTPATH.optName);
+		// if (val != null && val.isDirectory()) {
+		// // TODO: Find common path root for all input paths and use it to
+		// // make the default filename
+		// final String timestamp =
+		// DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss").format(LocalDateTime.now());
+		// result = new File(val, "wordsAsClassifiers-" + timestamp + "." +
+		// DEFAULT_OUTFILE_EXT);
+		// LOGGER.warn("Supplied outpath \"{}\" is a directory; Using default
+		// output file path \"{}\".", val,
+		// result);
+		// } else {
+		// result = val;
+		// }
+		// return result;
+		// }
 
 		private static void printHelp() {
 			final HelpFormatter formatter = new HelpFormatter();
@@ -139,44 +221,74 @@ public final class WordsAsClassifiersTrainingDataWriter {
 
 	}
 
-	private static final String DEFAULT_OUTFILE_EXT = "arff";
+	private static final ArrayList<Attribute> ATTRS;
+
+	private static final Attribute CLASS_ATTR;
+
+	private static final String DEFAULT_OUTFILE_EXT = ".arff";
 
 	private static final EntityFeature.Extractor EXTRACTOR;
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(WordsAsClassifiersTrainingDataWriter.class);
+	// private static NavigableSet<String> createUnigramVocabulary(final
+	// Iterable<SessionDataManager> sessionData)
+	// throws JAXBException {
+	// final NavigableSet<String> result = new
+	// TreeSet<>(Collator.getInstance(WordLists.DEFAULT_LOCALE));
+	// for (final SessionDataManager sessionDatum : sessionData) {
+	// final Path hatFilePath = sessionDatum.getHATFilePath();
+	// LOGGER.info("Processing vocabulary data from \"{}\".", hatFilePath);
+	// final Annotation annot = HAT.readAnnotation(hatFilePath.toFile());
+	// final Stream<Segment> segs = annot.getSegments().getSegment().stream();
+	// final Stream<Utterance> utts =
+	// SEG_UTT_FACTORY.create(segs).map(List::stream).flatMap(Function.identity());
+	// utts.forEach(utt -> {
+	// final List<String> tokens = utt.getTokens();
+	// assert !tokens.isEmpty();
+	// result.addAll(tokens);
+	// });
+	// }
+	// return result;
+	// }
 
-	private static final SegmentUtteranceFactory SEG_UTT_FACTORY = new SegmentUtteranceFactory();
+	private static final Logger LOGGER = LoggerFactory.getLogger(WordsAsClassifiersTrainingDataWriter.class);
 
 	static {
 		final List<String> shapeFeatureVals = new ArrayList<>(IconImages.getImageResources().keySet());
 		shapeFeatureVals.sort(Comparator.naturalOrder());
 		EXTRACTOR = new EntityFeature.Extractor(shapeFeatureVals);
+		final Map<EntityFeature, Attribute> featureAttrs = EXTRACTOR.getFeatureAttrs();
+		ATTRS = new ArrayList<>(featureAttrs.size() + 1);
+		ATTRS.addAll(featureAttrs.values());
+		CLASS_ATTR = new Attribute("REFERENT", Arrays.asList(Boolean.TRUE.toString(), Boolean.FALSE.toString()));
+		ATTRS.add(CLASS_ATTR);
 	}
 
 	public static void main(final CommandLine cl) throws IOException, JAXBException, ParseException {
 		if (cl.hasOption(Parameter.HELP.optName)) {
 			Parameter.printHelp();
 		} else {
-			final Path[] inpaths = cl.getArgList().stream().map(Paths::get).toArray(Path[]::new);
-			if (inpaths.length < 1) {
+			final List<Path> inpaths = Arrays.asList(cl.getArgList().stream().map(Paths::get).toArray(Path[]::new));
+			if (inpaths.isEmpty()) {
 				throw new MissingOptionException("No input path(s) specified.");
 
 			} else {
-				final AbstractFileSaver saver;
-				final File outpath = Parameter.parseOutpath(cl);
-				if (outpath == null) {
-					LOGGER.info("Will write data to standard output stream.");
-					saver = ConverterUtils.getSaverForExtension(DEFAULT_OUTFILE_EXT);
-				} else {
-					LOGGER.info("Will write data to \"{}\".", outpath);
-					saver = ConverterUtils.getSaverForFile(outpath);
-					saver.setFile(outpath);
-				}
+				final File outpath = (File) cl.getParsedOptionValue(Parameter.OUTPATH.optName);
+				LOGGER.info("Will write data to \"{}\".", outpath);
+				final AbstractFileSaver saver = ConverterUtils.getSaverForExtension(DEFAULT_OUTFILE_EXT);
 
-				final WordsAsClassifiersTrainingDataWriter writer = new WordsAsClassifiersTrainingDataWriter(saver);
-				for (final Path inpath : inpaths) {
-					LOGGER.info("Reading batch job data from \"{}\".", inpath);
-					writer.accept(inpath);
+				final WordsAsClassifiersTrainingDataWriter writer = new WordsAsClassifiersTrainingDataWriter();
+				final Map<String, Instances> classInstances = writer.apply(inpaths);
+				if (outpath.mkdirs()) {
+					LOGGER.info("Output directory \"{}\" was nonexistent; Created it before writing data.", outpath);
+				}
+				for (final Entry<String, Instances> classInstanceEntry : classInstances.entrySet()) {
+					final String className = classInstanceEntry.getKey();
+					final File outfile = new File(outpath, "wordAsClassifiers-" + className + DEFAULT_OUTFILE_EXT);
+					LOGGER.info("Writing data for classifier \"{}\" to \"{}\".", className, outfile);
+					final Instances insts = classInstanceEntry.getValue();
+					saver.setInstances(insts);
+					saver.setFile(outfile);
+					saver.writeBatch();
 				}
 			}
 
@@ -194,133 +306,51 @@ public final class WordsAsClassifiersTrainingDataWriter {
 		}
 	}
 
-	private static void accept(final SessionDataManager sessionData, final Instances instances)
-			throws JAXBException, IOException {
-		final Path hatInfilePath = sessionData.getHATFilePath();
-		LOGGER.info("Reading annotations from \"{}\".", hatInfilePath);
-		final Annotation uttAnnots = HAT.readAnnotation(hatInfilePath.toFile());
+	private static int estimateVocabTokenCount(final String token,
+			final Map<Path, SessionDataManager> infileSessionData) {
+		return infileSessionData.size() * 10;
+	}
 
-		final Path eventLogPath = sessionData.getCanonicalEventLogPath();
-		LOGGER.info("Reading events from \"{}\".", eventLogPath);
-		final Map<String, GameHistory> gameHistories = LoggedEvents.parseGameHistories(Files.lines(eventLogPath),
-				LoggedEvents.VALID_MODEL_MIN_REQUIRED_EVENT_MATCHER);
-		final int uniqueModelDescriptionCount = gameHistories.values().size();
-		final List<GameContextFeatureExtractor> contextFeatureExtractors = Arrays
-				.asList(new SelectedEntityFeatureExtractor(EXTRACTOR,
-						new GameContextModelFactory(uniqueModelDescriptionCount), new ImageEdgeCounter()));
+	private static int estimateVocabTypeCount(final Map<Path, SessionDataManager> infileSessionData) {
+		return Math.toIntExact(Math.round(Math.ceil(Math.log(infileSessionData.size() * 850))));
+	}
 
-		final BiMap<String, String> playerSourceIds = sessionData.getPlayerData().getPlayerSourceIds();
-		final Function<String, String> sourcePlayerIdGetter = playerSourceIds.inverse()::get;
-		final Map<Utterance, String> uttPlayerIds = new UtterancePlayerIdMapFactory(SEG_UTT_FACTORY::create,
-				sourcePlayerIdGetter).apply(uttAnnots.getSegments().getSegment());
-		final List<Utterance> utts = Arrays.asList(uttPlayerIds.keySet().stream().sorted().toArray(Utterance[]::new));
-
-		for (final Entry<String, GameHistory> gameHistory : gameHistories.entrySet()) {
-			final String gameId = gameHistory.getKey();
-			LOGGER.debug("Processing game \"{}\".", gameId);
-			final GameHistory history = gameHistory.getValue();
-			for (final String perspectivePlayerId : playerSourceIds.keySet()) {
-				LOGGER.info("Processing game from perspective of player \"{}\".", perspectivePlayerId);
-
-				utts.forEach(utt -> {
-					final String uttPlayerId = uttPlayerIds.get(utt);
-					if (perspectivePlayerId.equals(uttPlayerId)) {
-						final Stream<Instance> uttInstances = createContextInstances(utt, contextFeatureExtractors,
-								history, perspectivePlayerId, instances);
-						uttInstances.forEachOrdered(uttInstance -> {
-							final double[] ctxFeatures = uttInstance.toDoubleArray();
-							utt.getTokens().forEach(token -> {
-								final Instance tokenInst = uttInstance.copy(ctxFeatures);
-								tokenInst.setDataset(instances);
-								tokenInst.setClassValue(token);
-								instances.add(tokenInst);
-							});
-						});
-					} else {
-						LOGGER.debug(
-								"Skipping the extraction of features for utterance with segment ID \"{}\" because the utterance is from player \"{}\" rather than the player whose perspective is being used for extracting features (\"{}\")",
-								utt.getSegmentId(), uttPlayerId, perspectivePlayerId);
-					}
-
-				});
-			}
+	private static void putSessionData(final Map<Path, SessionDataManager> fileSessionData, final Path infilePath)
+			throws IOException {
+		LOGGER.info("Reading batch job properties from \"{}\".", infilePath);
+		final Properties props = new Properties();
+		try (final InputStream propsInstream = Files.newInputStream(infilePath)) {
+			props.load(propsInstream);
+			final Path infileBaseDir = infilePath.getParent();
+			final SessionDataManager sessionData = SessionDataManager.create(props, infileBaseDir);
+			fileSessionData.put(infilePath, sessionData);
 		}
 	}
 
-	private static Stream<Instance> createContextInstances(final Utterance utt,
-			final List<GameContextFeatureExtractor> contextFeatureExtractors, final GameHistory history,
-			final String perspectivePlayerId, final Instances instances) {
-		final Stream<GameContext> uttContexts = TemporalGameContexts.create(history, utt.getStartTime(),
-				utt.getEndTime(), perspectivePlayerId);
-		return uttContexts.map(uttContext -> {
-			final Instance inst = new DenseInstance(instances.numAttributes());
-			inst.setDataset(instances);
-			contextFeatureExtractors.forEach(extractor -> extractor.accept(uttContext, inst));
-			return inst;
+	public Map<String, Instances> apply(final Iterable<Path> inpaths) throws JAXBException, IOException {
+		final Map<Path, SessionDataManager> infileSessionData = new HashMap<>();
+		for (final Path inpath : inpaths) {
+			LOGGER.info("Looking for batch job data underneath \"{}\".", inpath);
+			final Path[] infiles = Files.walk(inpath, FileVisitOption.FOLLOW_LINKS).filter(Files::isRegularFile)
+					.filter(filePath -> filePath.getFileName().toString().endsWith(".properties")).toArray(Path[]::new);
+			for (final Path infile : infiles) {
+				putSessionData(infileSessionData, infile);
+			}
+		}
+
+		final Map<String, Instances> result = Maps
+				.newHashMapWithExpectedSize(estimateVocabTypeCount(infileSessionData));
+		final Function<String, Instances> classInstanceFetcher = className -> result.computeIfAbsent(className, k -> {
+			final Instances instances = new Instances("referent_for_token-" + k, ATTRS,
+					estimateVocabTokenCount(k, infileSessionData));
+			instances.setClass(CLASS_ATTR);
+			return instances;
 		});
-	}
-
-	private static Map<Path, SessionDataManager> createFileSessionDataMap(final Path[] infilePaths) throws IOException {
-		final Map<Path, SessionDataManager> result = Maps.newHashMapWithExpectedSize(infilePaths.length);
-		for (final Path infilePath : infilePaths) {
-			LOGGER.info("Reading batch job properties from \"{}\".", infilePath);
-			final Properties props = new Properties();
-			try (final InputStream propsInstream = Files.newInputStream(infilePath)) {
-				props.load(propsInstream);
-				final Path infileBaseDir = infilePath.getParent();
-				final SessionDataManager sessionData = SessionDataManager.create(props, infileBaseDir);
-				result.put(infilePath, sessionData);
-			}
-		}
-		return result;
-	}
-
-	private static NavigableSet<String> createUnigramVocabulary(final Iterable<SessionDataManager> sessionData)
-			throws JAXBException {
-		final NavigableSet<String> result = new TreeSet<>(Collator.getInstance(WordLists.DEFAULT_LOCALE));
-		for (final SessionDataManager sessionDatum : sessionData) {
-			final Path hatFilePath = sessionDatum.getHATFilePath();
-			LOGGER.info("Processing vocabulary data from \"{}\".", hatFilePath);
-			final Annotation annot = HAT.readAnnotation(hatFilePath.toFile());
-			final Stream<Segment> segs = annot.getSegments().getSegment().stream();
-			final Stream<Utterance> utts = SEG_UTT_FACTORY.create(segs).map(List::stream).flatMap(Function.identity());
-			utts.forEach(utt -> {
-				final List<String> tokens = utt.getTokens();
-				assert !tokens.isEmpty();
-				result.addAll(tokens);
-			});
-		}
-		return result;
-	}
-
-	private final AbstractFileSaver saver;
-
-	public WordsAsClassifiersTrainingDataWriter(final AbstractFileSaver saver) {
-		this.saver = saver;
-	}
-
-	public void accept(final Path inpath) throws JAXBException, IOException {
-		final Map<Path, SessionDataManager> infileSessionData = createFileSessionDataMap(Files
-				.walk(inpath, FileVisitOption.FOLLOW_LINKS).filter(Files::isRegularFile)
-				.filter(filePath -> filePath.getFileName().toString().endsWith(".properties")).toArray(Path[]::new));
-
-		final List<String> classifications = new ArrayList<>(createUnigramVocabulary(infileSessionData.values()));
-		final Map<EntityFeature, Attribute> featureAttrs = EXTRACTOR.getFeatureAttrs();
-		final ArrayList<Attribute> attrs = new ArrayList<>(featureAttrs.size() + 1);
-		attrs.addAll(featureAttrs.values());
-		final Attribute classifictionAttr = new Attribute("WORD", classifications);
-		attrs.add(classifictionAttr);
-		final Instances instances = new Instances("selected_entity_for_word", attrs, infileSessionData.size() * 5000);
-		instances.setClass(classifictionAttr);
-		saver.setInstances(instances);
-
+		final MultiClassDataCollector coll = new MultiClassDataCollector(classInstanceFetcher, ATTRS.size());
 		for (final Entry<Path, SessionDataManager> infileSessionDataEntry : infileSessionData.entrySet()) {
-			accept(infileSessionDataEntry.getValue(), instances);
+			coll.accept(infileSessionDataEntry.getValue());
 		}
-		LOGGER.info("Processed {} data point(s), with a total of {} distinct class value(s).", instances.numInstances(),
-				instances.numDistinctValues(classifictionAttr));
-
-		saver.writeBatch();
+		return result;
 	}
 
 }
