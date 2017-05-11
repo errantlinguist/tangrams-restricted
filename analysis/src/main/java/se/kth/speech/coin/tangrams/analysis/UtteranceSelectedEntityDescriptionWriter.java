@@ -294,7 +294,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 			return result;
 		}
 
-		private final BiFunction<GameContext, EntityFeature, Object> ctxFeatureExtractor;
+		private final BiFunction<EntityFeature, GameContext, Object> ctxFeatureExtractor;
 
 		private final boolean strict;
 
@@ -307,7 +307,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 		private TabularDataWriter(final List<Utterance> utts,
 				final Function<? super Utterance, String> uttPlayerIdGetter,
 				final PlayerGameContextFactory uttContextFactory,
-				final BiFunction<GameContext, EntityFeature, Object> ctxFeatureExtractor, final boolean strict) {
+				final BiFunction<EntityFeature, GameContext, Object> ctxFeatureExtractor, final boolean strict) {
 			this.utts = utts;
 			this.uttPlayerIdGetter = uttPlayerIdGetter;
 			this.uttContextFactory = uttContextFactory;
@@ -432,7 +432,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 						final String featureVectorRepr;
 						if (optSelectedEntityId.isPresent()) {
 							final Stream<Object> featureVals = FEATURES_TO_DESCRIBE.stream()
-									.map(feature -> ctxFeatureExtractor.apply(context, feature));
+									.map(feature -> ctxFeatureExtractor.apply(feature, context));
 							featureVectorRepr = featureVals.map(Object::toString).collect(TABLE_ROW_CELL_JOINER);
 						} else {
 							featureVectorRepr = BLANK_IMG_DESC;

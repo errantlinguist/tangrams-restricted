@@ -53,7 +53,7 @@ public final class SelectedEntityFeatureExtractor implements GameContextFeatureE
 		extractor.accept(vals, entityData);
 	}
 
-	public Object getVal(final GameContext context, final EntityFeature feature) {
+	public Object getVal(final EntityFeature feature, final GameContext context) {
 		final SpatialMatrix<Integer> model = gameModelFactory.apply(context);
 		final EntityFeature.Extractor.Context entityData = createExtractionContext(context, model);
 		return extractor.getVal(feature, entityData);
