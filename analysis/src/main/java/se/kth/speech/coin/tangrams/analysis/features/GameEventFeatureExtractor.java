@@ -60,10 +60,6 @@ final class GameEventFeatureExtractor implements GameContextFeatureExtractor {
 	public enum ActionFeature {
 		LAST_SUBMITTED_EVENT_TYPE, SELECTED_ENTITY;
 
-		// private static Stream<String> createFeatureDescriptions() {
-		// return ActionFeature.ORDERING.stream().map(Enum::toString);
-		// }
-
 		public static final class Extractor {
 
 			private final Map<ActionFeature, Attribute> featureAttrs;
@@ -147,15 +143,6 @@ final class GameEventFeatureExtractor implements GameContextFeatureExtractor {
 					.forEach(eventType -> EVENT_TYPE_MATCHERS.put(eventType, eventTypeMatcherFactory.apply(eventType)));
 		}
 
-		// private static Stream<String> createFeatureDescriptions() {
-		// final int eventTypeCount = GameManagementEvent.values().length;
-		// return IntStream.range(0, eventTypeCount).mapToObj(eventId -> {
-		// final Stream<String> baseFeatureDescs =
-		// EventHistoryFeature.ORDERING.stream().map(Enum::toString);
-		// return baseFeatureDescs.map(desc -> "EVT_" + eventId + "-" + desc);
-		// }).flatMap(Function.identity());
-		// }
-
 //		public static final class Extractor {
 //			
 //			private final Map<EventHistoryFeature, Attribute> featureAttrs;
@@ -199,14 +186,5 @@ final class GameEventFeatureExtractor implements GameContextFeatureExtractor {
 //		ActionFeature.setVals(vals, context);
 //		EventHistoryFeature.setVals(vals, context);
 	}
-
-	// @Override
-	// public Stream<String> createFeatureDescriptions(final
-	// GameStateDescription initialState) {
-	// final Stream.Builder<String> resultBuilder = Stream.builder();
-	// ActionFeature.createFeatureDescriptions().forEachOrdered(resultBuilder);
-	// EventHistoryFeature.createFeatureDescriptions().forEachOrdered(resultBuilder);
-	// return resultBuilder.build();
-	// }
 
 }
