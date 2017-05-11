@@ -294,7 +294,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 			return result;
 		}
 
-		private final BiFunction<GameContext, EntityFeature, Optional<Object>> ctxFeatureExtractor;
+		private final BiFunction<GameContext, EntityFeature, Object> ctxFeatureExtractor;
 
 		private final boolean strict;
 
@@ -307,8 +307,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 		private TabularDataWriter(final List<Utterance> utts,
 				final Function<? super Utterance, String> uttPlayerIdGetter,
 				final PlayerGameContextFactory uttContextFactory,
-				final BiFunction<GameContext, EntityFeature, Optional<Object>> ctxFeatureExtractor,
-				final boolean strict) {
+				final BiFunction<GameContext, EntityFeature, Object> ctxFeatureExtractor, final boolean strict) {
 			this.utts = utts;
 			this.uttPlayerIdGetter = uttPlayerIdGetter;
 			this.uttContextFactory = uttContextFactory;
@@ -429,11 +428,16 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 					{
 						final GameContext context = uttContextFactory.create(contextStartTime, contextEndTime, playerId)
 								.findFirst().get();
-						final Stream<Object> featureVals = FEATURES_TO_DESCRIBE.stream()
-								.map(feature -> ctxFeatureExtractor.apply(context, feature).orElse(NULL_VALUE_REPR));
-						// writer.write(
-						// Arrays.stream(featureVector).mapToObj(Double::toString).collect(TABLE_ROW_CELL_JOINER));
-						writer.write(featureVals.map(Object::toString).collect(TABLE_ROW_CELL_JOINER));
+						final Optional<Integer> optSelectedEntityId = SELECTED_ENTITY_ID_GETTER.apply(context);
+						final String featureVectorRepr;
+						if (optSelectedEntityId.isPresent()) {
+							final Stream<Object> featureVals = FEATURES_TO_DESCRIBE.stream()
+									.map(feature -> ctxFeatureExtractor.apply(context, feature));
+							featureVectorRepr = featureVals.map(Object::toString).collect(TABLE_ROW_CELL_JOINER);
+						} else {
+							featureVectorRepr = BLANK_IMG_DESC;
+						}
+						writer.write(featureVectorRepr);
 					}
 					writer.write(TABLE_STRING_REPR_COL_DELIMITER);
 					{
@@ -493,6 +497,9 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 		shapeFeatureVals.sort(Comparator.naturalOrder());
 		EXTRACTOR = new EntityFeature.Extractor(FEATURES_TO_DESCRIBE, shapeFeatureVals);
 	}
+
+	private static final Function<GameContext, Optional<Integer>> SELECTED_ENTITY_ID_GETTER = ctx -> ctx
+			.findLastSelectedEntityId();
 
 	public static void main(final CommandLine cl) throws IOException, JAXBException, ParseException {
 		if (cl.hasOption(Parameter.HELP.optName)) {
@@ -647,7 +654,8 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 		gamePlayerHistoryTable.columnMap().values().stream().map(Map::keySet)
 				.forEach(playerGameIdIntersection::retainAll);
 		final int uniqueModelDescriptionCount = gamePlayerHistoryTable.values().size();
-		final SelectedEntityFeatureExtractor entityFeatureExtractor = new SelectedEntityFeatureExtractor(EXTRACTOR, ctx -> ctx.findLastSelectedEntityId(),
+		final SelectedEntityFeatureExtractor entityFeatureExtractor = new SelectedEntityFeatureExtractor(EXTRACTOR,
+				SELECTED_ENTITY_ID_GETTER.andThen(Optional::get),
 				new GameContextModelFactory(uniqueModelDescriptionCount), new ImageEdgeCounter());
 
 		final Map<Utterance, String> uttPlayerIds = new UtterancePlayerIdMapFactory(SEG_UTT_FACTORY::create,

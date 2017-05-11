@@ -90,14 +90,17 @@ public final class WordsAsClassifiersTrainingDataWriter {
 
 		private static final SegmentUtteranceFactory SEG_UTT_FACTORY = new SegmentUtteranceFactory();
 
+		private static final Function<GameContext, Optional<Integer>> SELECTED_ENTITY_ID_GETTER = ctx -> ctx
+				.findLastSelectedEntityId();
+
 		private final Function<? super String, Instances> classInstanceGetter;
 
-		private final Function<GameContext, Optional<Integer>> negativeExampleEntityIdGetter;
+		private final Function<GameContext, Integer> negativeExampleEntityIdGetter;
 
 		private final int numAttributes;
 
 		private MultiClassDataCollector(final Function<? super String, Instances> classInstanceGetter,
-				final int numAttributes, final Function<GameContext, Optional<Integer>> negativeExampleEntityIdGetter) {
+				final int numAttributes, final Function<GameContext, Integer> negativeExampleEntityIdGetter) {
 			this.negativeExampleEntityIdGetter = negativeExampleEntityIdGetter;
 			this.classInstanceGetter = classInstanceGetter;
 			this.numAttributes = numAttributes;
@@ -116,7 +119,7 @@ public final class WordsAsClassifiersTrainingDataWriter {
 
 			final GameContextModelFactory modelFactory = new GameContextModelFactory(uniqueModelDescriptionCount);
 			final GameContextFeatureExtractor positiveCtxFeatureExtractor = new SelectedEntityFeatureExtractor(
-					EXTRACTOR, ctx -> ctx.findLastSelectedEntityId(), modelFactory, IMG_EDGE_COUNTER);
+					EXTRACTOR, SELECTED_ENTITY_ID_GETTER.andThen(Optional::get), modelFactory, IMG_EDGE_COUNTER);
 
 			final GameContextFeatureExtractor negativeCtxFeatureExtractor = new SelectedEntityFeatureExtractor(
 					EXTRACTOR, negativeExampleEntityIdGetter, modelFactory, IMG_EDGE_COUNTER);
@@ -141,12 +144,14 @@ public final class WordsAsClassifiersTrainingDataWriter {
 							final Stream<GameContext> uttContexts = TemporalGameContexts.create(history,
 									utt.getStartTime(), utt.getEndTime(), perspectivePlayerId);
 							uttContexts.forEach(uttContext -> {
-								// Add positive training examples
-								addTokenInstances(utt, uttContext, positiveCtxFeatureExtractor,
-										Boolean.TRUE.toString());
-								// Add negative training examples
-								addTokenInstances(utt, uttContext, negativeCtxFeatureExtractor,
-										Boolean.FALSE.toString());
+								SELECTED_ENTITY_ID_GETTER.apply(uttContext).ifPresent(selectedEntityId -> {
+									// Add positive training examples
+									addTokenInstances(utt, uttContext, positiveCtxFeatureExtractor,
+											Boolean.TRUE.toString());
+									// Add negative training examples
+									addTokenInstances(utt, uttContext, negativeCtxFeatureExtractor,
+											Boolean.FALSE.toString());
+								});
 							});
 						} else {
 							LOGGER.debug(
@@ -160,15 +165,13 @@ public final class WordsAsClassifiersTrainingDataWriter {
 
 		private void addTokenInstances(final Utterance utt, final GameContext uttContext,
 				final GameContextFeatureExtractor extractor, final String classValue) {
-			final Instance positiveInst = new DenseInstance(numAttributes);
-			extractor.accept(uttContext, positiveInst);
 			utt.getTokens().forEach(token -> {
 				final Instances classInstances = classInstanceGetter.apply(token);
-				final Instance positiveTokenInst = new DenseInstance(positiveInst.weight(),
-						positiveInst.toDoubleArray());
-				positiveTokenInst.setDataset(classInstances);
-				positiveTokenInst.setClassValue(classValue);
-				classInstances.add(positiveTokenInst);
+				final Instance inst =  new DenseInstance(numAttributes);
+				inst.setDataset(classInstances);
+				extractor.accept(uttContext, inst);
+				inst.setClassValue(classValue);
+				classInstances.add(inst);
 			});
 		}
 	}
@@ -314,13 +317,12 @@ public final class WordsAsClassifiersTrainingDataWriter {
 		}
 	}
 
-	private final Function<GameContext, Optional<Integer>> negativeExampleEntityIdGetter;
+	private final Function<GameContext, Integer> negativeExampleEntityIdGetter;
 
 	/**
 	 * @param rnd
 	 */
-	public WordsAsClassifiersTrainingDataWriter(
-			final Function<GameContext, Optional<Integer>> negativeExampleEntityIdGetter) {
+	public WordsAsClassifiersTrainingDataWriter(final Function<GameContext, Integer> negativeExampleEntityIdGetter) {
 		this.negativeExampleEntityIdGetter = negativeExampleEntityIdGetter;
 	}
 

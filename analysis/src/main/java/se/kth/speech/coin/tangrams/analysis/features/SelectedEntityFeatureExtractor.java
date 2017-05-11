@@ -17,7 +17,6 @@
 package se.kth.speech.coin.tangrams.analysis.features;
 
 import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.ToIntFunction;
 
@@ -31,7 +30,7 @@ import weka.core.Instance;
 
 public final class SelectedEntityFeatureExtractor implements GameContextFeatureExtractor {
 
-	private final Function<? super GameContext, Optional<Integer>> entityIdGetter;
+	private final Function<? super GameContext, Integer> entityIdGetter;
 
 	private final EntityFeature.Extractor extractor;
 
@@ -40,7 +39,7 @@ public final class SelectedEntityFeatureExtractor implements GameContextFeatureE
 	private final ToIntFunction<? super String> namedResourceEdgeCountFactory;
 
 	public SelectedEntityFeatureExtractor(final EntityFeature.Extractor extractor,
-			final Function<? super GameContext, Optional<Integer>> entityIdGetter,
+			final Function<? super GameContext, Integer> entityIdGetter,
 			final Function<? super GameContext, SpatialMatrix<Integer>> gameModelFactory,
 			final ToIntFunction<? super String> namedResourceEdgeCountFactory) {
 		this.extractor = extractor;
@@ -52,32 +51,30 @@ public final class SelectedEntityFeatureExtractor implements GameContextFeatureE
 	@Override
 	public void accept(final GameContext context, final Instance vals) {
 		final SpatialMatrix<Integer> model = gameModelFactory.apply(context);
-		createSelectedEntityDescription(context, model).ifPresent(entityData -> {
-			final int[] modelDims = model.getDimensions();
-			final double modelArea = IntArrays.product(modelDims);
-			extractor.setVals(vals, entityData.getKey(), entityData.getValue(), modelDims, modelArea,
-					namedResourceEdgeCountFactory);
-		});
+		final Entry<ImageVisualizationInfoDescription.Datum, SpatialRegion> entityData = createSelectedEntityDescription(
+				context, model);
+		final int[] modelDims = model.getDimensions();
+		final double modelArea = IntArrays.product(modelDims);
+		extractor.setVals(vals, entityData.getKey(), entityData.getValue(), modelDims, modelArea,
+				namedResourceEdgeCountFactory);
 	}
 
-	public Optional<Object> getVal(final GameContext context, final EntityFeature feature) {
+	public Object getVal(final GameContext context, final EntityFeature feature) {
 		final SpatialMatrix<Integer> model = gameModelFactory.apply(context);
-		return createSelectedEntityDescription(context, model).map(entityData -> {
-			final int[] modelDims = model.getDimensions();
-			final double modelArea = IntArrays.product(modelDims);
-			return extractor.getVal(feature, entityData.getKey(), entityData.getValue(), modelDims, modelArea,
-					namedResourceEdgeCountFactory);
-		});
+		final Entry<ImageVisualizationInfoDescription.Datum, SpatialRegion> entityData = createSelectedEntityDescription(
+				context, model);
+		final int[] modelDims = model.getDimensions();
+		final double modelArea = IntArrays.product(modelDims);
+		return extractor.getVal(feature, entityData.getKey(), entityData.getValue(), modelDims, modelArea,
+				namedResourceEdgeCountFactory);
 	}
 
-	private Optional<Entry<ImageVisualizationInfoDescription.Datum, SpatialRegion>> createSelectedEntityDescription(
+	private Entry<ImageVisualizationInfoDescription.Datum, SpatialRegion> createSelectedEntityDescription(
 			final GameContext context, final SpatialMatrix<Integer> model) {
-		return entityIdGetter.apply(context).map(entityId -> {
-			final ImageVisualizationInfoDescription.Datum imgVizInfoDatum = context
-					.getEntityVisualizationInfo(entityId);
-			final SpatialRegion region = model.getElementPlacements().getElementMinimalRegions().get(entityId);
-			return new MutablePair<>(imgVizInfoDatum, region);
-		});
+		final Integer entityId = entityIdGetter.apply(context);
+		final ImageVisualizationInfoDescription.Datum imgVizInfoDatum = context.getEntityVisualizationInfo(entityId);
+		final SpatialRegion region = model.getElementPlacements().getElementMinimalRegions().get(entityId);
+		return new MutablePair<>(imgVizInfoDatum, region);
 	}
 
 }

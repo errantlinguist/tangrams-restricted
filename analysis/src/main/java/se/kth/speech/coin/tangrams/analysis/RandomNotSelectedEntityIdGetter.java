@@ -19,8 +19,10 @@ package se.kth.speech.coin.tangrams.analysis;
 import java.util.Optional;
 import java.util.Random;
 import java.util.function.Function;
+import java.util.function.ToIntFunction;
 
-public final class RandomNotSelectedEntityIdGetter implements Function<GameContext, Optional<Integer>> {
+public final class RandomNotSelectedEntityIdGetter
+		implements Function<GameContext, Integer>, ToIntFunction<GameContext> {
 
 	private final Random rnd;
 
@@ -29,12 +31,13 @@ public final class RandomNotSelectedEntityIdGetter implements Function<GameConte
 	}
 
 	@Override
-	public Optional<Integer> apply(final GameContext ctx) {
-		final int notSelectedEntityId = applyAsInt(ctx);
-		return Optional.of(notSelectedEntityId);
+	public Integer apply(final GameContext ctx) {
+		final int result = applyAsInt(ctx);
+		return result;
 	}
 
-	private int applyAsInt(final GameContext ctx) {
+	@Override
+	public int applyAsInt(final GameContext ctx) {
 		final int entityCount = ctx.getEntityCount();
 		final int result;
 		final Optional<Integer> lastSelectedEntityId = ctx.findLastSelectedEntityId();
