@@ -629,13 +629,13 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 				props.load(propsInstream);
 			}
 			final String outfileInfix = createOutfileInfix(infilePath);
-			accept(props, infilePath.getParent(), outfileNamePrefix + outfileInfix);
+			final SessionDataManager sessionData = SessionDataManager.create(props, infilePath.getParent());
+			accept(sessionData, outfileNamePrefix + outfileInfix);
 		}
 	}
 
-	private void accept(final Properties props, final Path infileBaseDir, final String outfileNamePrefix)
+	private void accept(final SessionDataManager sessionData, final String outfileNamePrefix)
 			throws JAXBException, IOException {
-		final SessionDataManager sessionData = SessionDataManager.create(props, infileBaseDir);
 		final Path hatInfilePath = sessionData.getHATFilePath();
 		LOGGER.info("Reading annotations from \"{}\".", hatInfilePath);
 		final Annotation uttAnnots = HAT.readAnnotation(hatInfilePath.toFile());
