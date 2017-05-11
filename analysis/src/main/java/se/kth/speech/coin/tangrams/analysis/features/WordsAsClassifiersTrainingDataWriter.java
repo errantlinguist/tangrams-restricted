@@ -195,46 +195,7 @@ public final class WordsAsClassifiersTrainingDataWriter {
 		}
 	}
 
-	private static Stream<Instance> createInstances(final Utterance utt,
-			final List<GameContextFeatureExtractor> contextFeatureExtractors, final GameHistory history,
-			final String perspectivePlayerId, final Instances instances) {
-		final Stream<GameContext> uttContexts = TemporalGameContexts.create(history, utt.getStartTime(),
-				utt.getEndTime(), perspectivePlayerId);
-		return uttContexts.map(uttContext -> {
-			final Instance inst = new DenseInstance(instances.numAttributes());
-			inst.setDataset(instances);
-			contextFeatureExtractors.forEach(extractor -> extractor.accept(uttContext, inst));
-			return inst;
-		});
-	}
-
-	private final AbstractFileSaver saver;
-
-	public WordsAsClassifiersTrainingDataWriter(final AbstractFileSaver saver) {
-		this.saver = saver;
-	}
-
-	public void accept(final Path inpath) throws JAXBException, IOException {
-		final Path[] infilePaths = Files.walk(inpath, FileVisitOption.FOLLOW_LINKS).filter(Files::isRegularFile)
-				.filter(filePath -> filePath.getFileName().toString().endsWith(".properties")).toArray(Path[]::new);
-
-		final Instances instances = new Instances("word_training", ATTRS, infilePaths.length * 5000);
-		instances.setClass(CLASS_ATTR);
-		saver.setInstances(instances);
-
-		for (final Path infilePath : infilePaths) {
-			LOGGER.info("Reading batch job properties from \"{}\".", infilePath);
-			final Properties props = new Properties();
-			try (final InputStream propsInstream = Files.newInputStream(infilePath)) {
-				props.load(propsInstream);
-			}
-			accept(props, infilePath.getParent(), instances);
-		}
-
-		saver.writeBatch();
-	}
-
-	private void accept(final Properties props, final Path infileBaseDir, final Instances instances)
+	private static void accept(final Properties props, final Path infileBaseDir, final Instances instances)
 			throws JAXBException, IOException {
 		final SessionDataManager sessionData = SessionDataManager.create(props, infileBaseDir);
 		final Path hatInfilePath = sessionData.getHATFilePath();
@@ -286,6 +247,45 @@ public final class WordsAsClassifiersTrainingDataWriter {
 				});
 			}
 		}
+	}
+
+	private static Stream<Instance> createInstances(final Utterance utt,
+			final List<GameContextFeatureExtractor> contextFeatureExtractors, final GameHistory history,
+			final String perspectivePlayerId, final Instances instances) {
+		final Stream<GameContext> uttContexts = TemporalGameContexts.create(history, utt.getStartTime(),
+				utt.getEndTime(), perspectivePlayerId);
+		return uttContexts.map(uttContext -> {
+			final Instance inst = new DenseInstance(instances.numAttributes());
+			inst.setDataset(instances);
+			contextFeatureExtractors.forEach(extractor -> extractor.accept(uttContext, inst));
+			return inst;
+		});
+	}
+
+	private final AbstractFileSaver saver;
+
+	public WordsAsClassifiersTrainingDataWriter(final AbstractFileSaver saver) {
+		this.saver = saver;
+	}
+
+	public void accept(final Path inpath) throws JAXBException, IOException {
+		final Path[] infilePaths = Files.walk(inpath, FileVisitOption.FOLLOW_LINKS).filter(Files::isRegularFile)
+				.filter(filePath -> filePath.getFileName().toString().endsWith(".properties")).toArray(Path[]::new);
+
+		final Instances instances = new Instances("word_training", ATTRS, infilePaths.length * 5000);
+		instances.setClass(CLASS_ATTR);
+		saver.setInstances(instances);
+
+		for (final Path infilePath : infilePaths) {
+			LOGGER.info("Reading batch job properties from \"{}\".", infilePath);
+			final Properties props = new Properties();
+			try (final InputStream propsInstream = Files.newInputStream(infilePath)) {
+				props.load(propsInstream);
+			}
+			accept(props, infilePath.getParent(), instances);
+		}
+
+		saver.writeBatch();
 	}
 
 }
