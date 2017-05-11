@@ -195,6 +195,19 @@ public final class WordsAsClassifiersTrainingDataWriter {
 		}
 	}
 
+	private static Stream<Instance> createInstances(final Utterance utt,
+			final List<GameContextFeatureExtractor> contextFeatureExtractors, final GameHistory history,
+			final String perspectivePlayerId, final Instances instances) {
+		final Stream<GameContext> uttContexts = TemporalGameContexts.create(history, utt.getStartTime(),
+				utt.getEndTime(), perspectivePlayerId);
+		return uttContexts.map(uttContext -> {
+			final Instance inst = new DenseInstance(instances.numAttributes());
+			inst.setDataset(instances);
+			contextFeatureExtractors.forEach(extractor -> extractor.accept(uttContext, inst));
+			return inst;
+		});
+	}
+
 	private final AbstractFileSaver saver;
 
 	public WordsAsClassifiersTrainingDataWriter(final AbstractFileSaver saver) {
@@ -273,19 +286,6 @@ public final class WordsAsClassifiersTrainingDataWriter {
 				});
 			}
 		}
-	}
-
-	private Stream<Instance> createInstances(final Utterance utt,
-			final List<GameContextFeatureExtractor> contextFeatureExtractors, final GameHistory history,
-			final String perspectivePlayerId, final Instances instances) {
-		final Stream<GameContext> uttContexts = TemporalGameContexts.create(history, utt.getStartTime(),
-				utt.getEndTime(), perspectivePlayerId);
-		return uttContexts.map(uttContext -> {
-			final Instance inst = new DenseInstance(instances.numAttributes());
-			inst.setDataset(instances);
-			contextFeatureExtractors.forEach(extractor -> extractor.accept(uttContext, inst));
-			return inst;
-		});
 	}
 
 }
