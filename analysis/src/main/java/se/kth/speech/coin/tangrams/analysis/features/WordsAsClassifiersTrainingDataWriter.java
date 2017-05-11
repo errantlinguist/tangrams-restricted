@@ -23,6 +23,8 @@ import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -64,7 +66,7 @@ import weka.core.DenseInstance;
 import weka.core.Instance;
 import weka.core.Instances;
 import weka.core.converters.AbstractFileSaver;
-import weka.core.converters.ArffSaver;
+import weka.core.converters.ConverterUtils;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -100,6 +102,22 @@ public final class WordsAsClassifiersTrainingDataWriter {
 			return result;
 		}
 
+		private static File parseOutpath(final CommandLine cl) throws ParseException {
+			final File result;
+			final File val = (File) cl.getParsedOptionValue(Parameter.OUTPATH.optName);
+			if (val != null && val.isDirectory()) {
+				// TODO: Find common path root for all input paths and use it to
+				// make the default filename
+				final String timestamp = DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss").format(LocalDateTime.now());
+				result = new File(val, "wordsAsClassifiers-" + timestamp + "." + DEFAULT_OUTFILE_EXT);
+				LOGGER.warn("Supplied outpath \"{}\" is a directory; Using default output file path \"{}\".", val,
+						result);
+			} else {
+				result = val;
+			}
+			return result;
+		}
+
 		private static void printHelp() {
 			final HelpFormatter formatter = new HelpFormatter();
 			formatter.printHelp(WordsAsClassifiersTrainingDataWriter.class.getSimpleName() + " INFILE", OPTIONS);
@@ -116,6 +134,8 @@ public final class WordsAsClassifiersTrainingDataWriter {
 	private static final ArrayList<Attribute> ATTRS;
 
 	private static final Attribute CLASS_ATTR;
+
+	private static final String DEFAULT_OUTFILE_EXT = "arff";
 
 	private static final EntityFeature.Extractor EXTRACTOR;
 
@@ -143,12 +163,14 @@ public final class WordsAsClassifiersTrainingDataWriter {
 				throw new MissingOptionException("No input path(s) specified.");
 
 			} else {
-				final ArffSaver saver = new ArffSaver();
-				final File outpath = (File) cl.getParsedOptionValue(Parameter.OUTPATH.optName);
+				final AbstractFileSaver saver;
+				final File outpath = Parameter.parseOutpath(cl);
 				if (outpath == null) {
 					LOGGER.info("Will write data to standard output stream.");
+					saver = ConverterUtils.getSaverForExtension(DEFAULT_OUTFILE_EXT);
 				} else {
 					LOGGER.info("Will write data to \"{}\".", outpath);
+					saver = ConverterUtils.getSaverForFile(outpath);
 					saver.setFile(outpath);
 				}
 
