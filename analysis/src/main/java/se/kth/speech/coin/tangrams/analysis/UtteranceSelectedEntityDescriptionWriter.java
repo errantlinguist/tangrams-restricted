@@ -34,6 +34,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -76,6 +77,7 @@ import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature.Extractor;
 import se.kth.speech.coin.tangrams.analysis.features.ImageEdgeCounter;
 import se.kth.speech.coin.tangrams.analysis.features.SelectedEntityFeatureExtractor;
+import se.kth.speech.coin.tangrams.content.IconImages;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfoTableRowWriter;
 import se.kth.speech.coin.tangrams.iristk.EventTimes;
@@ -492,7 +494,9 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 	static {
 		FEATURES_TO_DESCRIBE = Arrays.asList(EntityFeature.POSITION_X, EntityFeature.POSITION_Y,
 				EntityFeature.EDGE_COUNT);
-		FEATURE_ATTRS = EntityFeature.Extractor.createFeatureAttrMap(FEATURES_TO_DESCRIBE);
+		final List<String> shapeFeatureVals = new ArrayList<>(IconImages.getImageResources().keySet());
+		shapeFeatureVals.sort(Comparator.naturalOrder());
+		FEATURE_ATTRS = EntityFeature.Extractor.createFeatureAttrMap(FEATURES_TO_DESCRIBE, shapeFeatureVals);
 		EXTRACTOR = new EntityFeature.Extractor(FEATURE_ATTRS);
 		ATTRS = new ArrayList<>(FEATURE_ATTRS.size());
 		ATTRS.addAll(FEATURE_ATTRS.values());

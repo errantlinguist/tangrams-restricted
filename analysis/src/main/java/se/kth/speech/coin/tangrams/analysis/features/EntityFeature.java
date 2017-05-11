@@ -20,6 +20,7 @@ import java.awt.Color;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumMap;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -49,40 +50,42 @@ public enum EntityFeature {
 
 		private static final List<EntityFeature> DEFAULT_ORDERING;
 
-		private static final Map<EntityFeature, Function<String, Attribute>> FEATURE_TYPED_ATTR_FACTORIES = createFeatureTypedAttrFactoryMap();
-
 		static {
 			DEFAULT_ORDERING = Arrays.asList(SHAPE, EDGE_COUNT, RED, GREEN, BLUE, HUE, SATURATION, BRIGHTNESS, SIZE,
 					POSITION_X, POSITION_Y);
 			assert DEFAULT_ORDERING.size() == EntityFeature.values().length;
 		}
 
-		public static Map<EntityFeature, Attribute> createFeatureAttrMap() {
-			return createFeatureAttrMap(DEFAULT_ATTR_NAME_PREFIX);
-		}
-
-		public static Map<EntityFeature, Attribute> createFeatureAttrMap(final Iterable<EntityFeature> features) {
-			return createFeatureAttrMap(features, DEFAULT_ATTR_NAME_PREFIX);
+		public static Map<EntityFeature, Attribute> createFeatureAttrMap(final Iterable<EntityFeature> features,
+				final List<String> shapeVals) {
+			return createFeatureAttrMap(features, DEFAULT_ATTR_NAME_PREFIX, shapeVals);
 		}
 
 		public static Map<EntityFeature, Attribute> createFeatureAttrMap(final Iterable<EntityFeature> features,
-				final String prefix) {
+				final String prefix, final List<String> shapeVals) {
+			final Map<EntityFeature, Function<String, Attribute>> attrFactories = createFeatureTypedAttrFactoryMap(
+					shapeVals);
 			final Map<EntityFeature, Attribute> result = new EnumMap<>(EntityFeature.class);
 			for (final EntityFeature feature : features) {
-				final Function<String, Attribute> attrFactory = FEATURE_TYPED_ATTR_FACTORIES.get(feature);
+				final Function<String, Attribute> attrFactory = attrFactories.get(feature);
 				result.put(feature, attrFactory.apply(prefix + feature.name()));
 			}
 			return result;
 		}
 
-		public static Map<EntityFeature, Attribute> createFeatureAttrMap(final String prefix) {
-			return createFeatureAttrMap(FEATURE_TYPED_ATTR_FACTORIES.keySet(), prefix);
+		public static Map<EntityFeature, Attribute> createFeatureAttrMap(final List<String> shapeVals) {
+			return createFeatureAttrMap(DEFAULT_ATTR_NAME_PREFIX, shapeVals);
 		}
 
-		private static Map<EntityFeature, Function<String, Attribute>> createFeatureTypedAttrFactoryMap() {
+		public static Map<EntityFeature, Attribute> createFeatureAttrMap(final String prefix,
+				final List<String> shapeVals) {
+			return createFeatureAttrMap(EnumSet.allOf(EntityFeature.class), prefix, shapeVals);
+		}
+
+		private static Map<EntityFeature, Function<String, Attribute>> createFeatureTypedAttrFactoryMap(
+				final List<String> shapeVals) {
 			final Map<EntityFeature, Function<String, Attribute>> result = new EnumMap<>(EntityFeature.class);
 			final Function<String, Attribute> doubleVal = name -> new Attribute(name);
-			final Function<String, Attribute> strVal = name -> new Attribute(name, true);
 			result.put(EntityFeature.BLUE, doubleVal);
 			result.put(EntityFeature.BRIGHTNESS, doubleVal);
 			result.put(EntityFeature.EDGE_COUNT, doubleVal);
@@ -92,7 +95,7 @@ public enum EntityFeature {
 			result.put(EntityFeature.POSITION_Y, doubleVal);
 			result.put(EntityFeature.RED, doubleVal);
 			result.put(EntityFeature.SATURATION, doubleVal);
-			result.put(EntityFeature.SHAPE, strVal);
+			result.put(EntityFeature.SHAPE, name -> new Attribute(name, shapeVals));
 			result.put(EntityFeature.SIZE, doubleVal);
 			assert result.size() == EntityFeature.values().length;
 			return result;

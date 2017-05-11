@@ -27,6 +27,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -59,6 +60,7 @@ import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
 import se.kth.speech.coin.tangrams.analysis.TemporalGameContexts;
 import se.kth.speech.coin.tangrams.analysis.Utterance;
 import se.kth.speech.coin.tangrams.analysis.UtterancePlayerIdMapFactory;
+import se.kth.speech.coin.tangrams.content.IconImages;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
 import se.kth.speech.hat.xsd.Annotation;
 import weka.core.Attribute;
@@ -146,7 +148,9 @@ public final class WordsAsClassifiersTrainingDataWriter {
 	private static final SegmentUtteranceFactory SEG_UTT_FACTORY = new SegmentUtteranceFactory();
 
 	static {
-		FEATURE_ATTRS = EntityFeature.Extractor.createFeatureAttrMap();
+		final List<String> shapeFeatureVals = new ArrayList<>(IconImages.getImageResources().keySet());
+		shapeFeatureVals.sort(Comparator.naturalOrder());
+		FEATURE_ATTRS = EntityFeature.Extractor.createFeatureAttrMap(shapeFeatureVals);
 		EXTRACTOR = new EntityFeature.Extractor(FEATURE_ATTRS);
 		ATTRS = new ArrayList<>(FEATURE_ATTRS.size() + 1);
 		ATTRS.addAll(FEATURE_ATTRS.values());
