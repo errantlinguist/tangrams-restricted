@@ -88,7 +88,6 @@ import se.kth.speech.coin.tangrams.iristk.events.Move;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
 import se.kth.speech.coin.tangrams.view.UserPrompts;
 import se.kth.speech.hat.xsd.Annotation;
-import weka.core.Attribute;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -458,8 +457,6 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 		}
 	}
 
-	private static final ArrayList<Attribute> ATTRS;
-
 	private static final Path CLASS_SETTINGS_INFILE_PATH;
 
 	private static final FileNameExtensionFilter DEFAULT_FILE_FILTER;
@@ -467,8 +464,6 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 	private static final String DEFAULT_OUTFILE_PREFIX = "uttImgDescs_";
 
 	private static final Extractor EXTRACTOR;
-
-	private static final Map<EntityFeature, Attribute> FEATURE_ATTRS;
 
 	private static final List<EntityFeature> FEATURES_TO_DESCRIBE;
 
@@ -496,10 +491,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 				EntityFeature.EDGE_COUNT);
 		final List<String> shapeFeatureVals = new ArrayList<>(IconImages.getImageResources().keySet());
 		shapeFeatureVals.sort(Comparator.naturalOrder());
-		FEATURE_ATTRS = EntityFeature.Extractor.createFeatureAttrMap(FEATURES_TO_DESCRIBE, shapeFeatureVals);
-		EXTRACTOR = new EntityFeature.Extractor(FEATURE_ATTRS);
-		ATTRS = new ArrayList<>(FEATURE_ATTRS.size());
-		ATTRS.addAll(FEATURE_ATTRS.values());
+		EXTRACTOR = new EntityFeature.Extractor(FEATURES_TO_DESCRIBE, shapeFeatureVals);
 	}
 
 	public static void main(final CommandLine cl) throws IOException, JAXBException, ParseException {

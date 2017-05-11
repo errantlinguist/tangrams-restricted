@@ -141,8 +141,6 @@ public final class WordsAsClassifiersTrainingDataWriter {
 
 	private static final EntityFeature.Extractor EXTRACTOR;
 
-	private static final Map<EntityFeature, Attribute> FEATURE_ATTRS;
-
 	private static final Logger LOGGER = LoggerFactory.getLogger(WordsAsClassifiersTrainingDataWriter.class);
 
 	private static final SegmentUtteranceFactory SEG_UTT_FACTORY = new SegmentUtteranceFactory();
@@ -150,10 +148,10 @@ public final class WordsAsClassifiersTrainingDataWriter {
 	static {
 		final List<String> shapeFeatureVals = new ArrayList<>(IconImages.getImageResources().keySet());
 		shapeFeatureVals.sort(Comparator.naturalOrder());
-		FEATURE_ATTRS = EntityFeature.Extractor.createFeatureAttrMap(shapeFeatureVals);
-		EXTRACTOR = new EntityFeature.Extractor(FEATURE_ATTRS);
-		ATTRS = new ArrayList<>(FEATURE_ATTRS.size() + 1);
-		ATTRS.addAll(FEATURE_ATTRS.values());
+		EXTRACTOR = new EntityFeature.Extractor(shapeFeatureVals);
+		final Map<EntityFeature, Attribute> featureAttrs = EXTRACTOR.getFeatureAttrs();
+		ATTRS = new ArrayList<>(featureAttrs.size() + 1);
+		ATTRS.addAll(featureAttrs.values());
 		CLASS_ATTR = new Attribute("WORD", true);
 		ATTRS.add(CLASS_ATTR);
 	}

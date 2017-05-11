@@ -56,30 +56,30 @@ public enum EntityFeature {
 			assert DEFAULT_ORDERING.size() == EntityFeature.values().length;
 		}
 
-		public static Map<EntityFeature, Attribute> createFeatureAttrMap(final Iterable<EntityFeature> features,
+		private static Map<EntityFeature, Attribute> createFeatureAttrMap(final Iterable<EntityFeature> features,
 				final List<String> shapeVals) {
 			return createFeatureAttrMap(features, DEFAULT_ATTR_NAME_PREFIX, shapeVals);
 		}
 
-		public static Map<EntityFeature, Attribute> createFeatureAttrMap(final Iterable<EntityFeature> features,
-				final String prefix, final List<String> shapeVals) {
+		private static Map<EntityFeature, Attribute> createFeatureAttrMap(final Iterable<EntityFeature> features,
+				final String attrNamePrefix, final List<String> shapeVals) {
 			final Map<EntityFeature, Function<String, Attribute>> attrFactories = createFeatureTypedAttrFactoryMap(
 					shapeVals);
 			final Map<EntityFeature, Attribute> result = new EnumMap<>(EntityFeature.class);
 			for (final EntityFeature feature : features) {
 				final Function<String, Attribute> attrFactory = attrFactories.get(feature);
-				result.put(feature, attrFactory.apply(prefix + feature.name()));
+				result.put(feature, attrFactory.apply(attrNamePrefix + feature.name()));
 			}
 			return result;
 		}
 
-		public static Map<EntityFeature, Attribute> createFeatureAttrMap(final List<String> shapeVals) {
+		private static Map<EntityFeature, Attribute> createFeatureAttrMap(final List<String> shapeVals) {
 			return createFeatureAttrMap(DEFAULT_ATTR_NAME_PREFIX, shapeVals);
 		}
 
-		public static Map<EntityFeature, Attribute> createFeatureAttrMap(final String prefix,
+		private static Map<EntityFeature, Attribute> createFeatureAttrMap(final String attrNamePrefix,
 				final List<String> shapeVals) {
-			return createFeatureAttrMap(EnumSet.allOf(EntityFeature.class), prefix, shapeVals);
+			return createFeatureAttrMap(EnumSet.allOf(EntityFeature.class), attrNamePrefix, shapeVals);
 		}
 
 		private static Map<EntityFeature, Function<String, Attribute>> createFeatureTypedAttrFactoryMap(
@@ -103,8 +103,25 @@ public enum EntityFeature {
 
 		private final Map<EntityFeature, Attribute> featureAttrs;
 
+		public Extractor(final Iterable<EntityFeature> features, final List<String> shapeVals) {
+			this(createFeatureAttrMap(features, shapeVals));
+		}
+
+		public Extractor(final Iterable<EntityFeature> features, final String attrNamePrefix,
+				final List<String> shapeVals) {
+			this(createFeatureAttrMap(features, attrNamePrefix, shapeVals));
+		}
+
+		public Extractor(final List<String> shapeVals) {
+			this(createFeatureAttrMap(shapeVals));
+		}
+
 		public Extractor(final Map<EntityFeature, Attribute> featureAttrs) {
 			this.featureAttrs = featureAttrs;
+		}
+
+		public Extractor(final String attrNamePrefix, final List<String> shapeVals) {
+			this(createFeatureAttrMap(attrNamePrefix, shapeVals));
 		}
 
 		public Map<EntityFeature, Attribute> getFeatureAttrs() {
