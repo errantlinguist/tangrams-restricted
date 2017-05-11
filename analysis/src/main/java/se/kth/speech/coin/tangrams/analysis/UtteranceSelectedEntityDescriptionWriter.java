@@ -607,11 +607,10 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 	}
 
 	public void accept(final Path inpath) throws JAXBException, IOException {
-		final Iterator<Path> infilePathIter = Files.walk(inpath, FileVisitOption.FOLLOW_LINKS)
+		final Path[] infilePaths = Files.walk(inpath, FileVisitOption.FOLLOW_LINKS)
 				.filter(Files::isRegularFile)
-				.filter(filePath -> filePath.getFileName().toString().endsWith(".properties")).iterator();
-		while (infilePathIter.hasNext()) {
-			final Path infilePath = infilePathIter.next();
+				.filter(filePath -> filePath.getFileName().toString().endsWith(".properties")).toArray(Path[]::new);
+		for (final Path infilePath : infilePaths) {
 			LOGGER.info("Reading batch job properties from \"{}\".", infilePath);
 			final Properties props = new Properties();
 			try (final InputStream propsInstream = Files.newInputStream(infilePath)) {
