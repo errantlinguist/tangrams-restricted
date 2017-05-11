@@ -138,11 +138,16 @@ public final class GameContext {
 		});
 	}
 
+	public int getEntityCount(){
+		final GameStateDescription initialState = history.getInitialState();
+		return initialState.getImageVisualizationInfoDescription().getData().size();
+	}
+
 	public ImageVisualizationInfoDescription.Datum getEntityVisualizationInfo(final int entityId) {
 		final GameStateDescription initialState = history.getInitialState();
 		return initialState.getImageVisualizationInfoDescription().getData().get(entityId);
 	}
-
+	
 	/**
 	 * @return the history
 	 */

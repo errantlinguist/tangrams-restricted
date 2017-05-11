@@ -647,7 +647,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 		gamePlayerHistoryTable.columnMap().values().stream().map(Map::keySet)
 				.forEach(playerGameIdIntersection::retainAll);
 		final int uniqueModelDescriptionCount = gamePlayerHistoryTable.values().size();
-		final SelectedEntityFeatureExtractor entityFeatureExtractor = new SelectedEntityFeatureExtractor(EXTRACTOR,
+		final SelectedEntityFeatureExtractor entityFeatureExtractor = new SelectedEntityFeatureExtractor(EXTRACTOR, ctx -> ctx.findLastSelectedEntityId(),
 				new GameContextModelFactory(uniqueModelDescriptionCount), new ImageEdgeCounter());
 
 		final Map<Utterance, String> uttPlayerIds = new UtterancePlayerIdMapFactory(SEG_UTT_FACTORY::create,

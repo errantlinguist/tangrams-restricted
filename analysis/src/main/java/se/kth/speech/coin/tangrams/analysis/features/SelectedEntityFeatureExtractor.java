@@ -31,16 +31,7 @@ import weka.core.Instance;
 
 public final class SelectedEntityFeatureExtractor implements GameContextFeatureExtractor {
 
-	private static Optional<Entry<ImageVisualizationInfoDescription.Datum, SpatialRegion>> createSelectedEntityDescription(
-			final GameContext context, final SpatialMatrix<Integer> model) {
-		final Optional<Integer> lastSelectedEntityId = context.findLastSelectedEntityId();
-		return lastSelectedEntityId.map(entityId -> {
-			final ImageVisualizationInfoDescription.Datum imgVizInfoDatum = context
-					.getEntityVisualizationInfo(entityId);
-			final SpatialRegion region = model.getElementPlacements().getElementMinimalRegions().get(entityId);
-			return new MutablePair<>(imgVizInfoDatum, region);
-		});
-	}
+	private final Function<? super GameContext, Optional<Integer>> entityIdGetter;
 
 	private final EntityFeature.Extractor extractor;
 
@@ -49,9 +40,11 @@ public final class SelectedEntityFeatureExtractor implements GameContextFeatureE
 	private final ToIntFunction<? super String> namedResourceEdgeCountFactory;
 
 	public SelectedEntityFeatureExtractor(final EntityFeature.Extractor extractor,
+			final Function<? super GameContext, Optional<Integer>> entityIdGetter,
 			final Function<? super GameContext, SpatialMatrix<Integer>> gameModelFactory,
 			final ToIntFunction<? super String> namedResourceEdgeCountFactory) {
 		this.extractor = extractor;
+		this.entityIdGetter = entityIdGetter;
 		this.gameModelFactory = gameModelFactory;
 		this.namedResourceEdgeCountFactory = namedResourceEdgeCountFactory;
 	}
@@ -74,6 +67,16 @@ public final class SelectedEntityFeatureExtractor implements GameContextFeatureE
 			final double modelArea = IntArrays.product(modelDims);
 			return extractor.getVal(feature, entityData.getKey(), entityData.getValue(), modelDims, modelArea,
 					namedResourceEdgeCountFactory);
+		});
+	}
+
+	private Optional<Entry<ImageVisualizationInfoDescription.Datum, SpatialRegion>> createSelectedEntityDescription(
+			final GameContext context, final SpatialMatrix<Integer> model) {
+		return entityIdGetter.apply(context).map(entityId -> {
+			final ImageVisualizationInfoDescription.Datum imgVizInfoDatum = context
+					.getEntityVisualizationInfo(entityId);
+			final SpatialRegion region = model.getElementPlacements().getElementMinimalRegions().get(entityId);
+			return new MutablePair<>(imgVizInfoDatum, region);
 		});
 	}
 

@@ -30,7 +30,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Properties;
+import java.util.Random;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -55,6 +57,7 @@ import iristk.util.HAT;
 import se.kth.speech.coin.tangrams.analysis.GameContext;
 import se.kth.speech.coin.tangrams.analysis.GameContextModelFactory;
 import se.kth.speech.coin.tangrams.analysis.GameHistory;
+import se.kth.speech.coin.tangrams.analysis.RandomNotSelectedEntityIdGetter;
 import se.kth.speech.coin.tangrams.analysis.SegmentUtteranceFactory;
 import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
 import se.kth.speech.coin.tangrams.analysis.TemporalGameContexts;
@@ -89,10 +92,13 @@ public final class WordsAsClassifiersTrainingDataWriter {
 
 		private final Function<? super String, Instances> classInstanceGetter;
 
+		private final Function<GameContext, Optional<Integer>> negativeExampleEntityIdGetter;
+
 		private final int numAttributes;
-		
+
 		private MultiClassDataCollector(final Function<? super String, Instances> classInstanceGetter,
-				final int numAttributes) {
+				final int numAttributes, final Function<GameContext, Optional<Integer>> negativeExampleEntityIdGetter) {
+			this.negativeExampleEntityIdGetter = negativeExampleEntityIdGetter;
 			this.classInstanceGetter = classInstanceGetter;
 			this.numAttributes = numAttributes;
 		}
@@ -107,9 +113,13 @@ public final class WordsAsClassifiersTrainingDataWriter {
 			final Map<String, GameHistory> gameHistories = LoggedEvents.parseGameHistories(Files.lines(eventLogPath),
 					LoggedEvents.VALID_MODEL_MIN_REQUIRED_EVENT_MATCHER);
 			final int uniqueModelDescriptionCount = gameHistories.values().size();
-			final List<GameContextFeatureExtractor> contextFeatureExtractors = Arrays
-					.asList(new SelectedEntityFeatureExtractor(EXTRACTOR,
-							new GameContextModelFactory(uniqueModelDescriptionCount), IMG_EDGE_COUNTER));
+
+			final GameContextModelFactory modelFactory = new GameContextModelFactory(uniqueModelDescriptionCount);
+			final GameContextFeatureExtractor positiveCtxFeatureExtractor = new SelectedEntityFeatureExtractor(
+					EXTRACTOR, ctx -> ctx.findLastSelectedEntityId(), modelFactory, IMG_EDGE_COUNTER);
+
+			final GameContextFeatureExtractor negativeCtxFeatureExtractor = new SelectedEntityFeatureExtractor(
+					EXTRACTOR, negativeExampleEntityIdGetter, modelFactory, IMG_EDGE_COUNTER);
 
 			final BiMap<String, String> playerSourceIds = sessionData.getPlayerData().getPlayerSourceIds();
 			final Function<String, String> sourcePlayerIdGetter = playerSourceIds.inverse()::get;
@@ -128,18 +138,15 @@ public final class WordsAsClassifiersTrainingDataWriter {
 					utts.forEach(utt -> {
 						final String uttPlayerId = uttPlayerIds.get(utt);
 						if (perspectivePlayerId.equals(uttPlayerId)) {
-							final Stream<Instance> uttInstances = createContextInstances(utt, contextFeatureExtractors,
-									history, perspectivePlayerId);
-							uttInstances.forEachOrdered(uttInstance -> {
-								final double[] ctxFeatures = uttInstance.toDoubleArray();
-								utt.getTokens().forEach(token -> {
-									final Instances classInstances = classInstanceGetter.apply(token);
-									final Instance tokenInst = uttInstance.copy(ctxFeatures);
-									tokenInst.setDataset(classInstances);
-									// This is a positive training example
-									tokenInst.setClassValue(Boolean.TRUE.toString());
-									classInstances.add(tokenInst);
-								});
+							final Stream<GameContext> uttContexts = TemporalGameContexts.create(history,
+									utt.getStartTime(), utt.getEndTime(), perspectivePlayerId);
+							uttContexts.forEach(uttContext -> {
+								// Add positive training examples
+								addTokenInstances(utt, uttContext, positiveCtxFeatureExtractor,
+										Boolean.TRUE.toString());
+								// Add negative training examples
+								addTokenInstances(utt, uttContext, negativeCtxFeatureExtractor,
+										Boolean.FALSE.toString());
 							});
 						} else {
 							LOGGER.debug(
@@ -151,15 +158,17 @@ public final class WordsAsClassifiersTrainingDataWriter {
 			}
 		}
 
-		private Stream<Instance> createContextInstances(final Utterance utt,
-				final List<GameContextFeatureExtractor> contextFeatureExtractors, final GameHistory history,
-				final String perspectivePlayerId) {
-			final Stream<GameContext> uttContexts = TemporalGameContexts.create(history, utt.getStartTime(),
-					utt.getEndTime(), perspectivePlayerId);
-			return uttContexts.map(uttContext -> {
-				final Instance inst = new DenseInstance(numAttributes);
-				contextFeatureExtractors.forEach(extractor -> extractor.accept(uttContext, inst));
-				return inst;
+		private void addTokenInstances(final Utterance utt, final GameContext uttContext,
+				final GameContextFeatureExtractor extractor, final String classValue) {
+			final Instance positiveInst = new DenseInstance(numAttributes);
+			extractor.accept(uttContext, positiveInst);
+			utt.getTokens().forEach(token -> {
+				final Instances classInstances = classInstanceGetter.apply(token);
+				final Instance positiveTokenInst = new DenseInstance(positiveInst.weight(),
+						positiveInst.toDoubleArray());
+				positiveTokenInst.setDataset(classInstances);
+				positiveTokenInst.setClassValue(classValue);
+				classInstances.add(positiveTokenInst);
 			});
 		}
 	}
@@ -177,6 +186,14 @@ public final class WordsAsClassifiersTrainingDataWriter {
 				return Option.builder(optName).longOpt("outpath").desc("The path to write the training data to.")
 						.hasArg().argName("path").type(File.class).required().build();
 			}
+		},
+		RANDOM_SEED("r") {
+			@Override
+			public Option get() {
+				return Option.builder(optName).longOpt("random-seed")
+						.desc("The value to use for seeding random negative examples.").hasArg().argName("value")
+						.type(Number.class).build();
+			}
 		};
 
 		private static final Options OPTIONS = createOptions();
@@ -186,27 +203,6 @@ public final class WordsAsClassifiersTrainingDataWriter {
 			Arrays.stream(Parameter.values()).map(Parameter::get).forEach(result::addOption);
 			return result;
 		}
-
-		// private static File parseOutpath(final CommandLine cl) throws
-		// ParseException {
-		// final File result;
-		// final File val = (File)
-		// cl.getParsedOptionValue(Parameter.OUTPATH.optName);
-		// if (val != null && val.isDirectory()) {
-		// // TODO: Find common path root for all input paths and use it to
-		// // make the default filename
-		// final String timestamp =
-		// DateTimeFormatter.ofPattern("yyyyMMdd-HHmmss").format(LocalDateTime.now());
-		// result = new File(val, "wordsAsClassifiers-" + timestamp + "." +
-		// DEFAULT_OUTFILE_EXT);
-		// LOGGER.warn("Supplied outpath \"{}\" is a directory; Using default
-		// output file path \"{}\".", val,
-		// result);
-		// } else {
-		// result = val;
-		// }
-		// return result;
-		// }
 
 		private static void printHelp() {
 			final HelpFormatter formatter = new HelpFormatter();
@@ -228,27 +224,6 @@ public final class WordsAsClassifiersTrainingDataWriter {
 	private static final String DEFAULT_OUTFILE_EXT = ".arff";
 
 	private static final EntityFeature.Extractor EXTRACTOR;
-
-	// private static NavigableSet<String> createUnigramVocabulary(final
-	// Iterable<SessionDataManager> sessionData)
-	// throws JAXBException {
-	// final NavigableSet<String> result = new
-	// TreeSet<>(Collator.getInstance(WordLists.DEFAULT_LOCALE));
-	// for (final SessionDataManager sessionDatum : sessionData) {
-	// final Path hatFilePath = sessionDatum.getHATFilePath();
-	// LOGGER.info("Processing vocabulary data from \"{}\".", hatFilePath);
-	// final Annotation annot = HAT.readAnnotation(hatFilePath.toFile());
-	// final Stream<Segment> segs = annot.getSegments().getSegment().stream();
-	// final Stream<Utterance> utts =
-	// SEG_UTT_FACTORY.create(segs).map(List::stream).flatMap(Function.identity());
-	// utts.forEach(utt -> {
-	// final List<String> tokens = utt.getTokens();
-	// assert !tokens.isEmpty();
-	// result.addAll(tokens);
-	// });
-	// }
-	// return result;
-	// }
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(WordsAsClassifiersTrainingDataWriter.class);
 
@@ -274,13 +249,25 @@ public final class WordsAsClassifiersTrainingDataWriter {
 			} else {
 				final File outpath = (File) cl.getParsedOptionValue(Parameter.OUTPATH.optName);
 				LOGGER.info("Will write data to \"{}\".", outpath);
-				final AbstractFileSaver saver = ConverterUtils.getSaverForExtension(DEFAULT_OUTFILE_EXT);
+				final Number randomSeed = (Number) cl.getParsedOptionValue(Parameter.RANDOM_SEED.optName);
+				final Random rnd;
+				if (randomSeed == null) {
+					LOGGER.info("Using default system-generated random seed.");
+					rnd = new Random();
+				} else {
+					final long seed = randomSeed.longValue();
+					LOGGER.info("Using {} as random seed.", seed);
+					rnd = new Random(seed);
+				}
 
-				final WordsAsClassifiersTrainingDataWriter writer = new WordsAsClassifiersTrainingDataWriter();
+				final WordsAsClassifiersTrainingDataWriter writer = new WordsAsClassifiersTrainingDataWriter(
+						new RandomNotSelectedEntityIdGetter(rnd));
 				final Map<String, Instances> classInstances = writer.apply(inpaths);
 				if (outpath.mkdirs()) {
 					LOGGER.info("Output directory \"{}\" was nonexistent; Created it before writing data.", outpath);
 				}
+
+				final AbstractFileSaver saver = ConverterUtils.getSaverForExtension(DEFAULT_OUTFILE_EXT);
 				for (final Entry<String, Instances> classInstanceEntry : classInstances.entrySet()) {
 					final String className = classInstanceEntry.getKey();
 					final File outfile = new File(outpath, "wordAsClassifiers-" + className + DEFAULT_OUTFILE_EXT);
@@ -327,6 +314,16 @@ public final class WordsAsClassifiersTrainingDataWriter {
 		}
 	}
 
+	private final Function<GameContext, Optional<Integer>> negativeExampleEntityIdGetter;
+
+	/**
+	 * @param rnd
+	 */
+	public WordsAsClassifiersTrainingDataWriter(
+			final Function<GameContext, Optional<Integer>> negativeExampleEntityIdGetter) {
+		this.negativeExampleEntityIdGetter = negativeExampleEntityIdGetter;
+	}
+
 	public Map<String, Instances> apply(final Iterable<Path> inpaths) throws JAXBException, IOException {
 		final Map<Path, SessionDataManager> infileSessionData = new HashMap<>();
 		for (final Path inpath : inpaths) {
@@ -346,7 +343,8 @@ public final class WordsAsClassifiersTrainingDataWriter {
 			instances.setClass(CLASS_ATTR);
 			return instances;
 		});
-		final MultiClassDataCollector coll = new MultiClassDataCollector(classInstanceFetcher, ATTRS.size());
+		final MultiClassDataCollector coll = new MultiClassDataCollector(classInstanceFetcher, ATTRS.size(),
+				negativeExampleEntityIdGetter);
 		for (final Entry<Path, SessionDataManager> infileSessionDataEntry : infileSessionData.entrySet()) {
 			coll.accept(infileSessionDataEntry.getValue());
 		}
