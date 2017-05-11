@@ -45,7 +45,6 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
@@ -76,7 +75,7 @@ import se.kth.speech.awt.LookAndFeels;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature.Extractor;
 import se.kth.speech.coin.tangrams.analysis.features.ImageEdgeCounter;
-import se.kth.speech.coin.tangrams.analysis.features.SelectedEntityFeatureExtractor;
+import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionContextFactory;
 import se.kth.speech.coin.tangrams.content.IconImages;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfoTableRowWriter;
@@ -294,7 +293,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 			return result;
 		}
 
-		private final BiFunction<EntityFeature, GameContext, Optional<Object>> ctxFeatureExtractor;
+		private final EntityFeatureExtractionContextFactory extractionContextFactory;
 
 		private final boolean strict;
 
@@ -307,12 +306,11 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 		private TabularDataWriter(final List<Utterance> utts,
 				final Function<? super Utterance, String> uttPlayerIdGetter,
 				final PlayerGameContextFactory uttContextFactory,
-				final BiFunction<EntityFeature, GameContext, Optional<Object>> ctxFeatureExtractor,
-				final boolean strict) {
+				final EntityFeatureExtractionContextFactory extractionContextFactory, final boolean strict) {
 			this.utts = utts;
 			this.uttPlayerIdGetter = uttPlayerIdGetter;
 			this.uttContextFactory = uttContextFactory;
-			this.ctxFeatureExtractor = ctxFeatureExtractor;
+			this.extractionContextFactory = extractionContextFactory;
 			this.strict = strict;
 		}
 
@@ -429,11 +427,14 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 					{
 						final GameContext context = uttContextFactory.create(contextStartTime, contextEndTime, playerId)
 								.findFirst().get();
-						final Optional<Integer> optSelectedEntityId = SELECTED_ENTITY_ID_GETTER.apply(context);
+						final Optional<Integer> optSelectedEntityId = context.findLastSelectedEntityId();
 						final String featureVectorRepr;
 						if (optSelectedEntityId.isPresent()) {
+							final Integer entityId = optSelectedEntityId.get();
+							final EntityFeature.Extractor.Context extractionContext = extractionContextFactory
+									.createExtractionContext(context, entityId);
 							final Stream<Optional<Object>> featureVals = FEATURES_TO_DESCRIBE.stream()
-									.map(feature -> ctxFeatureExtractor.apply(feature, context));
+									.map(feature -> EXTRACTOR.getVal(feature, extractionContext));
 							featureVectorRepr = featureVals
 									.map(opt -> opt.map(Object::toString).orElse(NULL_VALUE_REPR))
 									.collect(TABLE_ROW_CELL_JOINER);
@@ -500,9 +501,6 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 		shapeFeatureVals.sort(Comparator.naturalOrder());
 		EXTRACTOR = new EntityFeature.Extractor(FEATURES_TO_DESCRIBE, shapeFeatureVals);
 	}
-
-	private static final Function<GameContext, Optional<Integer>> SELECTED_ENTITY_ID_GETTER = ctx -> ctx
-			.findLastSelectedEntityId();
 
 	public static void main(final CommandLine cl) throws IOException, JAXBException, ParseException {
 		if (cl.hasOption(Parameter.HELP.optName)) {
@@ -657,8 +655,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 		gamePlayerHistoryTable.columnMap().values().stream().map(Map::keySet)
 				.forEach(playerGameIdIntersection::retainAll);
 		final int uniqueModelDescriptionCount = gamePlayerHistoryTable.values().size();
-		final SelectedEntityFeatureExtractor entityFeatureExtractor = new SelectedEntityFeatureExtractor(EXTRACTOR,
-				SELECTED_ENTITY_ID_GETTER.andThen(Optional::get),
+		final EntityFeatureExtractionContextFactory extractionContextFactory = new EntityFeatureExtractionContextFactory(
 				new GameContextModelFactory(uniqueModelDescriptionCount), new ImageEdgeCounter());
 
 		final Map<Utterance, String> uttPlayerIds = new UtterancePlayerIdMapFactory(SEG_UTT_FACTORY::create,
@@ -669,7 +666,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 			final Map<String, GameHistory> playerHistories = gamePlayerHistoryTable.row(gameId);
 
 			final TabularDataWriter gameWriter = new TabularDataWriter(utts, uttPlayerIds::get,
-					new PlayerGameContextFactory(playerHistories::get), entityFeatureExtractor::getVal, strict);
+					new PlayerGameContextFactory(playerHistories::get), extractionContextFactory, strict);
 			for (final Entry<String, GameHistory> playerHistory : playerHistories.entrySet()) {
 				final String playerId = playerHistory.getKey();
 				final GameHistory history = playerHistory.getValue();

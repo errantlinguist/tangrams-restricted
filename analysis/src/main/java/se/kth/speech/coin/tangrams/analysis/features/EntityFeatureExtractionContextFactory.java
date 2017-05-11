@@ -16,7 +16,6 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features;
 
-import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.ToIntFunction;
 
@@ -25,44 +24,22 @@ import se.kth.speech.SpatialMatrix;
 import se.kth.speech.SpatialRegion;
 import se.kth.speech.coin.tangrams.analysis.GameContext;
 import se.kth.speech.coin.tangrams.iristk.events.ImageVisualizationInfoDescription;
-import weka.core.Instance;
 
-public final class SelectedEntityFeatureExtractor implements GameContextFeatureExtractor {
-
-	private final Function<? super GameContext, Integer> entityIdGetter;
-
-	private final EntityFeature.Extractor extractor;
+public final class EntityFeatureExtractionContextFactory {
 
 	private final Function<? super GameContext, SpatialMatrix<Integer>> gameModelFactory;
 
 	private final ToIntFunction<? super String> namedResourceEdgeCountFactory;
 
-	public SelectedEntityFeatureExtractor(final EntityFeature.Extractor extractor,
-			final Function<? super GameContext, Integer> entityIdGetter,
+	public EntityFeatureExtractionContextFactory(
 			final Function<? super GameContext, SpatialMatrix<Integer>> gameModelFactory,
 			final ToIntFunction<? super String> namedResourceEdgeCountFactory) {
-		this.extractor = extractor;
-		this.entityIdGetter = entityIdGetter;
 		this.gameModelFactory = gameModelFactory;
 		this.namedResourceEdgeCountFactory = namedResourceEdgeCountFactory;
 	}
 
-	@Override
-	public void accept(final GameContext context, final Instance vals) {
+	public EntityFeature.Extractor.Context createExtractionContext(final GameContext context, final Integer entityId) {
 		final SpatialMatrix<Integer> model = gameModelFactory.apply(context);
-		final EntityFeature.Extractor.Context entityData = createExtractionContext(context, model);
-		extractor.accept(vals, entityData);
-	}
-
-	public Optional<Object> getVal(final EntityFeature feature, final GameContext context) {
-		final SpatialMatrix<Integer> model = gameModelFactory.apply(context);
-		final EntityFeature.Extractor.Context entityData = createExtractionContext(context, model);
-		return extractor.getVal(feature, entityData);
-	}
-
-	private EntityFeature.Extractor.Context createExtractionContext(final GameContext context,
-			final SpatialMatrix<Integer> model) {
-		final Integer entityId = entityIdGetter.apply(context);
 		final ImageVisualizationInfoDescription.Datum imgVizInfoDatum = context.getEntityVisualizationInfo(entityId);
 		final SpatialRegion region = model.getElementPlacements().getElementMinimalRegions().get(entityId);
 		final int[] modelDims = model.getDimensions();

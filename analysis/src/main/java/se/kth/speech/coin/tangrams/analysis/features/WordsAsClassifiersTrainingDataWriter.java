@@ -117,12 +117,8 @@ public final class WordsAsClassifiersTrainingDataWriter {
 					LoggedEvents.VALID_MODEL_MIN_REQUIRED_EVENT_MATCHER);
 			final int uniqueModelDescriptionCount = gameHistories.values().size();
 
-			final GameContextModelFactory modelFactory = new GameContextModelFactory(uniqueModelDescriptionCount);
-			final GameContextFeatureExtractor positiveCtxFeatureExtractor = new SelectedEntityFeatureExtractor(
-					EXTRACTOR, SELECTED_ENTITY_ID_GETTER.andThen(Optional::get), modelFactory, IMG_EDGE_COUNTER);
-
-			final GameContextFeatureExtractor negativeCtxFeatureExtractor = new SelectedEntityFeatureExtractor(
-					EXTRACTOR, negativeExampleEntityIdGetter, modelFactory, IMG_EDGE_COUNTER);
+			final EntityFeatureExtractionContextFactory extractionContextFactory = new EntityFeatureExtractionContextFactory(
+					new GameContextModelFactory(uniqueModelDescriptionCount), IMG_EDGE_COUNTER);
 
 			final BiMap<String, String> playerSourceIds = sessionData.getPlayerData().getPlayerSourceIds();
 			final Function<String, String> sourcePlayerIdGetter = playerSourceIds.inverse()::get;
@@ -146,11 +142,14 @@ public final class WordsAsClassifiersTrainingDataWriter {
 							uttContexts.forEach(uttContext -> {
 								SELECTED_ENTITY_ID_GETTER.apply(uttContext).ifPresent(selectedEntityId -> {
 									// Add positive training examples
-									addTokenInstances(utt, uttContext, positiveCtxFeatureExtractor,
-											Boolean.TRUE.toString());
+									final EntityFeature.Extractor.Context positiveContext = extractionContextFactory
+											.createExtractionContext(uttContext, selectedEntityId);
+									addTokenInstances(utt, uttContext, positiveContext, Boolean.TRUE.toString());
 									// Add negative training examples
-									addTokenInstances(utt, uttContext, negativeCtxFeatureExtractor,
-											Boolean.FALSE.toString());
+									final EntityFeature.Extractor.Context negativeContext = extractionContextFactory
+											.createExtractionContext(uttContext,
+													negativeExampleEntityIdGetter.apply(uttContext));
+									addTokenInstances(utt, uttContext, negativeContext, Boolean.FALSE.toString());
 								});
 							});
 						} else {
@@ -164,12 +163,12 @@ public final class WordsAsClassifiersTrainingDataWriter {
 		}
 
 		private void addTokenInstances(final Utterance utt, final GameContext uttContext,
-				final GameContextFeatureExtractor extractor, final String classValue) {
+				final EntityFeature.Extractor.Context extractionContext, final String classValue) {
 			utt.getTokens().forEach(token -> {
 				final Instances classInstances = classInstanceGetter.apply(token);
-				final Instance inst =  new DenseInstance(numAttributes);
+				final Instance inst = new DenseInstance(numAttributes);
 				inst.setDataset(classInstances);
-				extractor.accept(uttContext, inst);
+				EXTRACTOR.accept(inst, extractionContext);
 				inst.setClassValue(classValue);
 				classInstances.add(inst);
 			});
