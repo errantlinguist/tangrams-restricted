@@ -21,6 +21,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NavigableMap;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
@@ -39,14 +40,15 @@ public final class GameContext {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(GameContext.class);
 
-	private static <E> int findFirstMatchingDistance(final Stream<E> elems, final Predicate<? super E> matcher) {
-		int result = -1;
+	private static <E> OptionalInt findFirstMatchingDistance(final Stream<E> elems,
+			final Predicate<? super E> matcher) {
+		OptionalInt result = OptionalInt.empty();
 		int currentDist = 0;
 		for (final Iterator<E> elemIter = elems.iterator(); elemIter.hasNext();) {
 			final E elem = elemIter.next();
 			if (matcher.test(elem)) {
 				LOGGER.debug("Found matching element: {}", elem);
-				result = currentDist;
+				result = OptionalInt.of(currentDist);
 				break;
 			}
 			currentDist++;
@@ -119,7 +121,7 @@ public final class GameContext {
 		return eventsDescTime.filter(matcher).findFirst();
 	}
 
-	public int findLastEventDistance(final Predicate<? super Event> matcher) {
+	public OptionalInt findLastEventDistance(final Predicate<? super Event> matcher) {
 		final NavigableMap<LocalDateTime, List<Event>> timedEvents = getPrecedingEvents();
 		// Look for the last time the event was seen (iterating
 		// backwards)
@@ -138,7 +140,7 @@ public final class GameContext {
 		});
 	}
 
-	public int getEntityCount(){
+	public int getEntityCount() {
 		final GameStateDescription initialState = history.getInitialState();
 		return initialState.getImageVisualizationInfoDescription().getData().size();
 	}
@@ -147,7 +149,7 @@ public final class GameContext {
 		final GameStateDescription initialState = history.getInitialState();
 		return initialState.getImageVisualizationInfoDescription().getData().get(entityId);
 	}
-	
+
 	/**
 	 * @return the history
 	 */

@@ -18,12 +18,11 @@ package se.kth.speech.coin.tangrams.analysis.features;
 
 import java.awt.Color;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.ToIntFunction;
 
@@ -31,7 +30,6 @@ import se.kth.speech.IntArrays;
 import se.kth.speech.SpatialRegion;
 import se.kth.speech.coin.tangrams.iristk.events.ImageVisualizationInfoDescription;
 import weka.core.Attribute;
-import weka.core.Instance;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -44,7 +42,30 @@ import weka.core.Instance;
 public enum EntityFeature {
 	BLUE, BRIGHTNESS, EDGE_COUNT, GREEN, HUE, POSITION_X, POSITION_Y, RED, SATURATION, SHAPE, SIZE;
 
-	public static final class Extractor {
+	public static final class Extractor extends AbstractInstanceFeatureExtractor<EntityFeature, Extractor.Context> {
+
+		public static final class Context {
+
+			private final ImageVisualizationInfoDescription.Datum pieceImgVizInfoDatum;
+
+			private final SpatialRegion pieceRegion;
+
+			private final int[] modelDims;
+
+			private final double modelArea;
+
+			private final ToIntFunction<? super String> namedResourceEdgeCountFactory;
+
+			public Context(final ImageVisualizationInfoDescription.Datum pieceImgVizInfoDatum,
+					final SpatialRegion pieceRegion, final int[] modelDims, final double modelArea,
+					final ToIntFunction<? super String> namedResourceEdgeCountFactory) {
+				this.pieceImgVizInfoDatum = pieceImgVizInfoDatum;
+				this.pieceRegion = pieceRegion;
+				this.modelDims = modelDims;
+				this.modelArea = modelArea;
+				this.namedResourceEdgeCountFactory = namedResourceEdgeCountFactory;
+			}
+		}
 
 		private static final String DEFAULT_ATTR_NAME_PREFIX = "";
 
@@ -101,8 +122,6 @@ public enum EntityFeature {
 			return result;
 		}
 
-		private final Map<EntityFeature, Attribute> featureAttrs;
-
 		public Extractor(final Iterable<EntityFeature> features, final List<String> shapeVals) {
 			this(createFeatureAttrMap(features, shapeVals));
 		}
@@ -117,91 +136,71 @@ public enum EntityFeature {
 		}
 
 		public Extractor(final Map<EntityFeature, Attribute> featureAttrs) {
-			this.featureAttrs = featureAttrs;
+			super(featureAttrs);
 		}
 
 		public Extractor(final String attrNamePrefix, final List<String> shapeVals) {
 			this(createFeatureAttrMap(attrNamePrefix, shapeVals));
 		}
 
-		public Map<EntityFeature, Attribute> getFeatureAttrs() {
-			return Collections.unmodifiableMap(featureAttrs);
-		}
-
-		public Object getVal(final EntityFeature feature,
-				final ImageVisualizationInfoDescription.Datum pieceImgVizInfoDatum, final SpatialRegion pieceRegion,
-				final int[] modelDims, final double modelArea,
-				final ToIntFunction<? super String> namedResourceEdgeCountFactory) {
-			final Color color = pieceImgVizInfoDatum.getColor();
+		@Override
+		public Optional<Object> getVal(final EntityFeature feature, final Context context) {
+			final Color color = context.pieceImgVizInfoDatum.getColor();
 			final float[] hsbVals = Color.RGBtoHSB(color.getRed(), color.getGreen(), color.getBlue(), null);
-			final Object result;
+			final Object val;
 			switch (feature) {
 			case RED:
-				result = color.getRed();
+				val = color.getRed();
 				break;
 			case GREEN:
-				result = color.getGreen();
+				val = color.getGreen();
 				break;
 			case BLUE:
-				result = color.getBlue();
+				val = color.getBlue();
 				break;
 			case HUE:
-				result = hsbVals[0];
+				val = hsbVals[0];
 				break;
 			case SATURATION:
-				result = hsbVals[1];
+				val = hsbVals[1];
 				break;
 			case BRIGHTNESS:
-				result = hsbVals[2];
+				val = hsbVals[2];
 				break;
 			case POSITION_X: {
-				final double centerX = pieceRegion.getXLowerBound() + pieceRegion.getLengthX() / 2.0;
-				final double posX = centerX / modelDims[0];
-				result = posX;
+				final SpatialRegion r = context.pieceRegion;
+				final double centerX = r.getXLowerBound() + r.getLengthX() / 2.0;
+				final double posX = centerX / context.modelDims[0];
+				val = posX;
 				break;
 			}
 			case POSITION_Y: {
-				final double centerY = pieceRegion.getYLowerBound() + pieceRegion.getLengthY() / 2.0;
-				final double posY = centerY / modelDims[1];
-				result = posY;
+				final SpatialRegion r = context.pieceRegion;
+				final double centerY = r.getYLowerBound() + r.getLengthY() / 2.0;
+				final double posY = centerY / context.modelDims[1];
+				val = posY;
 				break;
 			}
 			case EDGE_COUNT: {
-				final String imgResName = pieceImgVizInfoDatum.getResourceName();
-				final int edgeCount = namedResourceEdgeCountFactory.applyAsInt(imgResName);
-				result = edgeCount;
+				final String imgResName = context.pieceImgVizInfoDatum.getResourceName();
+				final int edgeCount = context.namedResourceEdgeCountFactory.applyAsInt(imgResName);
+				val = edgeCount;
 				break;
 			}
 			case SHAPE:
-				final String imgResName = pieceImgVizInfoDatum.getResourceName();
-				result = imgResName;
+				final String imgResName = context.pieceImgVizInfoDatum.getResourceName();
+				val = imgResName;
 				break;
 			case SIZE:
-				final int pieceArea = IntArrays.product(pieceRegion.getDimensions());
-				final double sizeFeatureVal = pieceArea / modelArea;
-				result = sizeFeatureVal;
+				final int pieceArea = IntArrays.product(context.pieceRegion.getDimensions());
+				final double sizeFeatureVal = pieceArea / context.modelArea;
+				val = sizeFeatureVal;
 				break;
 			default: {
 				throw new AssertionError("Missing enum-handling logic.");
 			}
 			}
-			return result;
-		}
-
-		void setVals(final Instance vals, final ImageVisualizationInfoDescription.Datum pieceImgVizInfoDatum,
-				final SpatialRegion pieceRegion, final int[] modelDims, final double modelArea,
-				final ToIntFunction<? super String> namedResourceEdgeCountFactory) {
-			for (final Entry<EntityFeature, Attribute> featureAttr : featureAttrs.entrySet()) {
-				final EntityFeature feature = featureAttr.getKey();
-				final Attribute attr = featureAttr.getValue();
-				final Object val = getVal(feature, pieceImgVizInfoDatum, pieceRegion, modelDims, modelArea,
-						namedResourceEdgeCountFactory);
-				if (val instanceof Number) {
-					vals.setValue(attr, ((Number) val).doubleValue());
-				} else {
-					vals.setValue(attr, val.toString());
-				}
-			}
+			return Optional.of(val);
 		}
 
 	}
