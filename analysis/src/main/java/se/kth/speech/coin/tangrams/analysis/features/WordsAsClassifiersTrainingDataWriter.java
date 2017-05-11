@@ -229,8 +229,8 @@ public final class WordsAsClassifiersTrainingDataWriter {
 				utts.forEach(utt -> {
 					final String uttPlayerId = uttPlayerIds.get(utt);
 					if (perspectivePlayerId.equals(uttPlayerId)) {
-						final Stream<Instance> uttInstances = createInstances(utt, contextFeatureExtractors, history,
-								perspectivePlayerId, instances);
+						final Stream<Instance> uttInstances = createContextInstances(utt, contextFeatureExtractors,
+								history, perspectivePlayerId, instances);
 						uttInstances.forEachOrdered(uttInstance -> {
 							final double[] ctxFeatures = uttInstance.toDoubleArray();
 							utt.getTokens().forEach(token -> {
@@ -251,7 +251,7 @@ public final class WordsAsClassifiersTrainingDataWriter {
 		}
 	}
 
-	private static Stream<Instance> createInstances(final Utterance utt,
+	private static Stream<Instance> createContextInstances(final Utterance utt,
 			final List<GameContextFeatureExtractor> contextFeatureExtractors, final GameHistory history,
 			final String perspectivePlayerId, final Instances instances) {
 		final Stream<GameContext> uttContexts = TemporalGameContexts.create(history, utt.getStartTime(),
@@ -286,7 +286,8 @@ public final class WordsAsClassifiersTrainingDataWriter {
 			}
 			accept(props, infilePath.getParent(), instances);
 		}
-		LOGGER.info("Processed {} data point(s), with a total of \"{}\" class(es).", instances.numInstances(), instances.numClasses());
+		LOGGER.info("Processed {} data point(s), with a total of {} distinct class value(s).", instances.numInstances(),
+				instances.numDistinctValues(CLASS_ATTR));
 
 		saver.writeBatch();
 	}
