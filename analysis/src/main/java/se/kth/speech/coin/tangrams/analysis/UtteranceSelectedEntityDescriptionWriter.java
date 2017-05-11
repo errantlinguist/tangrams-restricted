@@ -526,7 +526,9 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 	}
 
 	private static String createOutfileInfix(final Path inpath) {
-		return new FilenameBaseSplitter().apply(inpath.getFileName().toString())[0];
+		final String parentDirName = inpath.getParent().getFileName().toString();
+		final String fileBaseName = new FilenameBaseSplitter().apply(inpath.getFileName().toString())[0];
+		return parentDirName + "-" + fileBaseName;
 	}
 
 	private static Settings loadClassSettings() {
@@ -607,8 +609,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 	}
 
 	public void accept(final Path inpath) throws JAXBException, IOException {
-		final Path[] infilePaths = Files.walk(inpath, FileVisitOption.FOLLOW_LINKS)
-				.filter(Files::isRegularFile)
+		final Path[] infilePaths = Files.walk(inpath, FileVisitOption.FOLLOW_LINKS).filter(Files::isRegularFile)
 				.filter(filePath -> filePath.getFileName().toString().endsWith(".properties")).toArray(Path[]::new);
 		for (final Path infilePath : infilePaths) {
 			LOGGER.info("Reading batch job properties from \"{}\".", infilePath);
