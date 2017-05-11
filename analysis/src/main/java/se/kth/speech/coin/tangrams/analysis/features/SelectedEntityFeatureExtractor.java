@@ -16,6 +16,7 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features;
 
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.ToIntFunction;
 
@@ -53,7 +54,7 @@ public final class SelectedEntityFeatureExtractor implements GameContextFeatureE
 		extractor.accept(vals, entityData);
 	}
 
-	public Object getVal(final EntityFeature feature, final GameContext context) {
+	public Optional<Object> getVal(final EntityFeature feature, final GameContext context) {
 		final SpatialMatrix<Integer> model = gameModelFactory.apply(context);
 		final EntityFeature.Extractor.Context entityData = createExtractionContext(context, model);
 		return extractor.getVal(feature, entityData);
