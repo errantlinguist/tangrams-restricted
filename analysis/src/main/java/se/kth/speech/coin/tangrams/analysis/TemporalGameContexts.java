@@ -20,11 +20,7 @@ import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.NavigableMap;
-import java.util.function.Function;
 import java.util.stream.Stream;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import iristk.system.Event;
 import se.kth.speech.TimestampArithmetic;
@@ -35,23 +31,10 @@ import se.kth.speech.coin.tangrams.iristk.EventTimes;
  * @since Apr 17, 2017
  *
  */
-public final class TemporalGameContextFactory {
+public final class TemporalGameContexts {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(TemporalGameContextFactory.class);
-
-	// private static final Collector<CharSequence, ?, String> TOKEN_FORM_JOINER
-	// = Collectors.joining(" ");
-
-	private final Function<? super String, GameHistory> playerGameHistoryFactory;
-
-	public TemporalGameContextFactory(final Function<? super String, GameHistory> playerGameHistoryFactory) {
-		this.playerGameHistoryFactory = playerGameHistoryFactory;
-	}
-
-	public Stream<GameContext> apply(final double startTime, final double endTime, final String playerId) {
-		assert startTime <= endTime;
-		LOGGER.debug("Getting history for player \"{}\".", playerId);
-		final GameHistory history = playerGameHistoryFactory.apply(playerId);
+	public static Stream<GameContext> create(final GameHistory history, final double startTime, final double endTime,
+			final String perspectivePlayerId) {
 		final NavigableMap<LocalDateTime, List<Event>> events = history.getEvents();
 		final LocalDateTime gameStartTime = history.getStartTime();
 		final LocalDateTime uttStartTimestamp = TimestampArithmetic.createOffsetTimestamp(gameStartTime, startTime);
@@ -63,7 +46,7 @@ public final class TemporalGameContextFactory {
 
 		final Stream.Builder<GameContext> resultBuilder = Stream.builder();
 		if (eventsDuringUtt.isEmpty()) {
-			resultBuilder.accept(new GameContext(history, uttStartTimestamp, playerId));
+			resultBuilder.accept(new GameContext(history, uttStartTimestamp, perspectivePlayerId));
 		} else {
 			// Create one data point for each event found during the utterance
 			// TODO: estimate partitions for utterance: By phones?
@@ -84,10 +67,15 @@ public final class TemporalGameContextFactory {
 			final Stream<Event> allEventsDuringUtt = timedEvents.stream().flatMap(Collection::stream);
 			final Stream<LocalDateTime> allTimestampsDuringUtt = allEventsDuringUtt.map(Event::getTime)
 					.map(EventTimes::parseEventTime);
-			allTimestampsDuringUtt.map(timestampDuringUtt -> new GameContext(history, timestampDuringUtt, playerId))
+			allTimestampsDuringUtt
+					.map(timestampDuringUtt -> new GameContext(history, timestampDuringUtt, perspectivePlayerId))
 					.forEachOrdered(resultBuilder);
 		}
 		return resultBuilder.build();
+	}
+
+	private TemporalGameContexts() {
+
 	}
 
 }

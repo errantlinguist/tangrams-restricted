@@ -152,6 +152,24 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 
 	}
 
+	private static final class PlayerGameContextFactory {
+
+		private final Function<? super String, GameHistory> playerGameHistoryGetter;
+
+		public PlayerGameContextFactory(final Function<? super String, GameHistory> playerGameHistoryGetter) {
+			this.playerGameHistoryGetter = playerGameHistoryGetter;
+		}
+
+		public Stream<GameContext> create(final double startTime, final double endTime,
+				final String perspectivePlayerId) {
+			LOGGER.debug("Creating a context based on the logged game history from the perspective of player \"{}\".",
+					perspectivePlayerId);
+			final GameHistory history = playerGameHistoryGetter.apply(perspectivePlayerId);
+			return TemporalGameContexts.create(history, startTime, endTime, perspectivePlayerId);
+		}
+
+	}
+
 	private static class Settings {
 
 		private final Properties props;
@@ -253,7 +271,8 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 					firstHeader.add(padding);
 				}
 
-				// Add subheader for image description-specific features, e.g.
+				// Add subheader for image description-specific features,
+				// e.g.
 				// color
 				// features
 				while (imgDescHeaderIter.hasNext()) {
@@ -278,7 +297,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 
 		private final boolean strict;
 
-		private final TemporalGameContextFactory uttContextFactory;
+		private final PlayerGameContextFactory uttContextFactory;
 
 		private final Function<? super Utterance, String> uttPlayerIdGetter;
 
@@ -286,7 +305,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 
 		private TabularDataWriter(final List<Utterance> utts,
 				final Function<? super Utterance, String> uttPlayerIdGetter,
-				final TemporalGameContextFactory uttContextFactory,
+				final PlayerGameContextFactory uttContextFactory,
 				final BiFunction<GameContext, EntityFeature, Optional<Object>> ctxFeatureExtractor,
 				final boolean strict) {
 			this.utts = utts;
@@ -407,7 +426,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 					writer.write(event.getTime());
 					writer.write(TABLE_STRING_REPR_COL_DELIMITER);
 					{
-						final GameContext context = uttContextFactory.apply(contextStartTime, contextEndTime, playerId)
+						final GameContext context = uttContextFactory.create(contextStartTime, contextEndTime, playerId)
 								.findFirst().get();
 						final Stream<Object> featureVals = FEATURES_TO_DESCRIBE.stream()
 								.map(feature -> ctxFeatureExtractor.apply(context, feature).orElse(NULL_VALUE_REPR));
@@ -620,12 +639,12 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 
 	private void accept(final Properties props, final Path infileBaseDir, final String outfileNamePrefix)
 			throws JAXBException, IOException {
-		final Path hatInfilePath = infileBaseDir.resolve(props.getProperty("hat"));
+		final SessionDataManager sessionData = SessionDataManager.create(props, infileBaseDir);
+		final Path hatInfilePath = sessionData.getHATFilePath();
 		LOGGER.info("Reading annotations from \"{}\".", hatInfilePath);
 		final Annotation uttAnnots = HAT.readAnnotation(hatInfilePath.toFile());
 
-		final PlayerDataManager playerData = PlayerDataManager.parsePlayerProps(props, infileBaseDir);
-
+		final PlayerDataManager playerData = sessionData.getPlayerData();
 		final Table<String, String, GameHistory> gamePlayerHistoryTable = LoggedEvents.createPlayerGameHistoryTable(
 				playerData.getPlayerEventLogs().entrySet(), LoggedEvents.VALID_MODEL_MIN_REQUIRED_EVENT_MATCHER);
 		final Set<String> playerGameIdIntersection = new HashSet<>(gamePlayerHistoryTable.rowKeySet());
@@ -641,10 +660,9 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 		for (final String gameId : playerGameIdIntersection) {
 			LOGGER.debug("Processing game \"{}\".", gameId);
 			final Map<String, GameHistory> playerHistories = gamePlayerHistoryTable.row(gameId);
-			final TemporalGameContextFactory uttContextFactory = new TemporalGameContextFactory(playerHistories::get);
 
-			final TabularDataWriter gameWriter = new TabularDataWriter(utts, uttPlayerIds::get, uttContextFactory,
-					entityFeatureExtractor::getVal, strict);
+			final TabularDataWriter gameWriter = new TabularDataWriter(utts, uttPlayerIds::get,
+					new PlayerGameContextFactory(playerHistories::get), entityFeatureExtractor::getVal, strict);
 			for (final Entry<String, GameHistory> playerHistory : playerHistories.entrySet()) {
 				final String playerId = playerHistory.getKey();
 				final GameHistory history = playerHistory.getValue();

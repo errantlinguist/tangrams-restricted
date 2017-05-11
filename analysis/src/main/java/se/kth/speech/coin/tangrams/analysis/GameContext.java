@@ -60,14 +60,14 @@ public final class GameContext {
 
 	private final GameHistory history;
 
-	private final String playerId;
+	private final String perspectivePlayerId;
 
 	private final LocalDateTime time;
 
-	GameContext(final GameHistory history, final LocalDateTime time, final String playerId) {
+	GameContext(final GameHistory history, final LocalDateTime time, final String perspectivePlayerId) {
 		this.history = history;
 		this.time = time;
-		this.playerId = playerId;
+		this.perspectivePlayerId = perspectivePlayerId;
 	}
 
 	/*
@@ -94,11 +94,11 @@ public final class GameContext {
 		} else if (!history.equals(other.history)) {
 			return false;
 		}
-		if (playerId == null) {
-			if (other.playerId != null) {
+		if (perspectivePlayerId == null) {
+			if (other.perspectivePlayerId != null) {
 				return false;
 			}
-		} else if (!playerId.equals(other.playerId)) {
+		} else if (!perspectivePlayerId.equals(other.perspectivePlayerId)) {
 			return false;
 		}
 		if (time == null) {
@@ -153,8 +153,8 @@ public final class GameContext {
 	/**
 	 * @return the playerId
 	 */
-	public String getPlayerId() {
-		return playerId;
+	public String getPersepectivePlayerId() {
+		return perspectivePlayerId;
 	}
 
 	public NavigableMap<LocalDateTime, List<Event>> getPrecedingEvents() {
@@ -178,7 +178,7 @@ public final class GameContext {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + (history == null ? 0 : history.hashCode());
-		result = prime * result + (playerId == null ? 0 : playerId.hashCode());
+		result = prime * result + (perspectivePlayerId == null ? 0 : perspectivePlayerId.hashCode());
 		result = prime * result + (time == null ? 0 : time.hashCode());
 		return result;
 	}
@@ -196,7 +196,7 @@ public final class GameContext {
 		builder.append(", time=");
 		builder.append(time);
 		builder.append(", playerId=");
-		builder.append(playerId);
+		builder.append(perspectivePlayerId);
 		builder.append(']');
 		return builder.toString();
 	}

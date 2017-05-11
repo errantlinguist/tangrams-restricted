@@ -48,15 +48,15 @@ import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.Table;
+import com.google.common.collect.BiMap;
 
 import iristk.util.HAT;
 import se.kth.speech.coin.tangrams.analysis.GameContext;
 import se.kth.speech.coin.tangrams.analysis.GameContextModelFactory;
 import se.kth.speech.coin.tangrams.analysis.GameHistory;
-import se.kth.speech.coin.tangrams.analysis.PlayerDataManager;
 import se.kth.speech.coin.tangrams.analysis.SegmentUtteranceFactory;
-import se.kth.speech.coin.tangrams.analysis.TemporalGameContextFactory;
+import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
+import se.kth.speech.coin.tangrams.analysis.TemporalGameContexts;
 import se.kth.speech.coin.tangrams.analysis.Utterance;
 import se.kth.speech.coin.tangrams.analysis.UtterancePlayerIdMapFactory;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
@@ -223,56 +223,63 @@ public final class WordsAsClassifiersTrainingDataWriter {
 
 	private void accept(final Properties props, final Path infileBaseDir, final Instances instances)
 			throws JAXBException, IOException {
-		final Path hatInfilePath = infileBaseDir.resolve(props.getProperty("hat"));
+		final SessionDataManager sessionData = SessionDataManager.create(props, infileBaseDir);
+		final Path hatInfilePath = sessionData.getHATFilePath();
 		LOGGER.info("Reading annotations from \"{}\".", hatInfilePath);
 		final Annotation uttAnnots = HAT.readAnnotation(hatInfilePath.toFile());
 
-		final PlayerDataManager playerData = PlayerDataManager.parsePlayerProps(props, infileBaseDir);
-
-		final Table<String, String, GameHistory> gamePlayerHistoryTable = LoggedEvents.createPlayerGameHistoryTable(
-				playerData.getPlayerEventLogs().entrySet(), LoggedEvents.VALID_MODEL_MIN_REQUIRED_EVENT_MATCHER);
-		final int uniqueModelDescriptionCount = gamePlayerHistoryTable.values().size();
+		final Path eventLogPath = sessionData.getCanonicalEventLogPath();
+		LOGGER.info("Reading events from \"{}\".", eventLogPath);
+		final Map<String, GameHistory> gameHistories = LoggedEvents.parseGameHistories(Files.lines(eventLogPath),
+				LoggedEvents.VALID_MODEL_MIN_REQUIRED_EVENT_MATCHER);
+		final int uniqueModelDescriptionCount = gameHistories.values().size();
 		final List<GameContextFeatureExtractor> contextFeatureExtractors = Arrays
 				.asList(new SelectedEntityFeatureExtractor(EXTRACTOR,
 						new GameContextModelFactory(uniqueModelDescriptionCount), new ImageEdgeCounter()));
 
+		final BiMap<String, String> playerSourceIds = sessionData.getPlayerData().getPlayerSourceIds();
+		final Function<String, String> sourcePlayerIdGetter = playerSourceIds.inverse()::get;
 		final Map<Utterance, String> uttPlayerIds = new UtterancePlayerIdMapFactory(SEG_UTT_FACTORY::create,
-				playerData.getPlayerSourceIds().inverse()::get).apply(uttAnnots.getSegments().getSegment());
+				sourcePlayerIdGetter).apply(uttAnnots.getSegments().getSegment());
 		final List<Utterance> utts = Arrays.asList(uttPlayerIds.keySet().stream().sorted().toArray(Utterance[]::new));
 
-		for (final Entry<String, Map<String, GameHistory>> gamePlayerHistories : gamePlayerHistoryTable.rowMap()
-				.entrySet()) {
-			final String gameId = gamePlayerHistories.getKey();
+		for (final Entry<String, GameHistory> gameHistory : gameHistories.entrySet()) {
+			final String gameId = gameHistory.getKey();
 			LOGGER.debug("Processing game \"{}\".", gameId);
-			final Map<String, GameHistory> playerHistories = gamePlayerHistories.getValue();
-			final TemporalGameContextFactory uttContextFactory = new TemporalGameContextFactory(playerHistories::get);
-			for (final Entry<String, GameHistory> playerGameHistory : playerHistories.entrySet()) {
-				final String playerId = playerGameHistory.getKey();
-				LOGGER.info("Processing game from perspective of player \"{}\".", playerId);
+			final GameHistory history = gameHistory.getValue();
+			for (final String perspectivePlayerId : playerSourceIds.keySet()) {
+				LOGGER.info("Processing game from perspective of player \"{}\".", perspectivePlayerId);
 
 				utts.forEach(utt -> {
-					final Stream<Instance> uttInstances = createInstances(utt, uttPlayerIds::get, uttContextFactory,
-							contextFeatureExtractors, instances);
-					uttInstances.forEachOrdered(uttInstance -> {
-						final double[] ctxFeatures = uttInstance.toDoubleArray();
-						utt.getTokens().forEach(token -> {
-							final Instance tokenInst = uttInstance.copy(ctxFeatures);
-							tokenInst.setDataset(instances);
-							tokenInst.setClassValue(token);
-							instances.add(tokenInst);
+					final String uttPlayerId = uttPlayerIds.get(utt);
+					if (perspectivePlayerId.equals(uttPlayerId)) {
+						final Stream<Instance> uttInstances = createInstances(utt, contextFeatureExtractors, history,
+								perspectivePlayerId, instances);
+						uttInstances.forEachOrdered(uttInstance -> {
+							final double[] ctxFeatures = uttInstance.toDoubleArray();
+							utt.getTokens().forEach(token -> {
+								final Instance tokenInst = uttInstance.copy(ctxFeatures);
+								tokenInst.setDataset(instances);
+								tokenInst.setClassValue(token);
+								instances.add(tokenInst);
+							});
 						});
-					});
+					} else {
+						LOGGER.debug(
+								"Skipping the extraction of features for utterance with segment ID \"{}\" because the utterance is from player \"{}\" rather than the player whose perspective is being used for extracting features (\"{}\")",
+								utt.getSegmentId(), uttPlayerId, perspectivePlayerId);
+					}
+
 				});
 			}
 		}
 	}
 
 	private Stream<Instance> createInstances(final Utterance utt,
-			final Function<? super Utterance, String> uttPlayerIdGetter,
-			final TemporalGameContextFactory uttContextFactory,
-			final List<GameContextFeatureExtractor> contextFeatureExtractors, final Instances instances) {
-		final String playerId = uttPlayerIdGetter.apply(utt);
-		final Stream<GameContext> uttContexts = uttContextFactory.apply(utt.getStartTime(), utt.getEndTime(), playerId);
+			final List<GameContextFeatureExtractor> contextFeatureExtractors, final GameHistory history,
+			final String perspectivePlayerId, final Instances instances) {
+		final Stream<GameContext> uttContexts = TemporalGameContexts.create(history, utt.getStartTime(),
+				utt.getEndTime(), perspectivePlayerId);
 		return uttContexts.map(uttContext -> {
 			final Instance inst = new DenseInstance(instances.numAttributes());
 			inst.setDataset(instances);

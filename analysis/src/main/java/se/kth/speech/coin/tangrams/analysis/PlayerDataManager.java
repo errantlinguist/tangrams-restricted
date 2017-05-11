@@ -1,7 +1,7 @@
 /*
  *  This file is part of se.kth.speech.coin.tangrams-restricted.analysis.
  *
- *  se.kth.speech.coin.tangrams.client is free software: you can redistribute it and/or modify
+ *  se.kth.speech.coin.tangrams-restricted.analysis is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
  *  the Free Software Foundation, either version 3 of the License, or
  *  (at your option) any later version.
@@ -17,6 +17,7 @@
 package se.kth.speech.coin.tangrams.analysis;
 
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -31,6 +32,7 @@ import com.google.common.collect.Maps;
 
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
+import se.kth.speech.io.RelativePaths;
 
 /**
  * @author <a href="mailto:tcshore@kth.se>Todd Shore</a>
@@ -41,7 +43,7 @@ public final class PlayerDataManager {
 
 	private static final Pattern PLAYER_PROP_NAME_PATTERN = Pattern.compile("player\\.([^\\.]+)\\.(.+)");
 
-	public static PlayerDataManager parsePlayerProps(final Properties props, final Path baseDir) {
+	public static PlayerDataManager create(final Properties props, final Path baseDir) {
 		final Set<Entry<Object, Object>> propsEntries = props.entrySet();
 		final BiMap<String, String> playerIds = HashBiMap.create(propsEntries.size());
 		final BiMap<String, String> sourceIds = HashBiMap.create(propsEntries.size());
@@ -54,7 +56,8 @@ public final class PlayerDataManager {
 				final String datumTypeName = playerPropNameMatcher.group(2);
 				switch (datumTypeName) {
 				case "eventLog": {
-					final Path eventLogPath = baseDir.resolve(prop.getValue().toString());
+					final Path eventLogPath = RelativePaths.resolveIfNotAbsolute(Paths.get(prop.getValue().toString()),
+							baseDir);
 					eventLogPaths.put(tupleId, eventLogPath);
 					break;
 				}

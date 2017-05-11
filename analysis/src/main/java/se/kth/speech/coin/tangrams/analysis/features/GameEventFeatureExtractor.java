@@ -82,7 +82,7 @@ final class GameEventFeatureExtractor implements GameContextFeatureExtractor {
 						final Stream<Event> eventsReversed = timedEventsBeforeUtt.descendingMap().values().stream()
 								.map(Lists::reverse).flatMap(List::stream);
 						final Predicate<Event> lastSubmittedByPlayerMatcher = new EventSubmittingPlayerMatcher(
-								context.getPlayerId());
+								context.getPersepectivePlayerId());
 						final Optional<Event> lastEventSubmittedByPlayer = eventsReversed
 								.filter(lastSubmittedByPlayerMatcher).findFirst();
 						final GameManagementEvent lastEventType = lastEventSubmittedByPlayer
