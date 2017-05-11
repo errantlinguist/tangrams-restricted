@@ -77,18 +77,4 @@ public final class SelectedEntityFeatureExtractor implements GameContextFeatureE
 		});
 	}
 
-	// /*
-	// * (non-Javadoc)
-	// *
-	// * @see se.kth.speech.coin.tangrams.analysis.FeatureExtractor#
-	// * createFeatureDescriptions(se.kth.speech.coin.tangrams.analysis.
-	// * GameContext)
-	// */
-	// @Override
-	// public Stream<String> createFeatureDescriptions(final
-	// GameStateDescription initialState) {
-	// return
-	// extractor.getFeatureAttrs().stream().map(Entry::getValue).map(Attribute::name);
-	// }
-
 }
