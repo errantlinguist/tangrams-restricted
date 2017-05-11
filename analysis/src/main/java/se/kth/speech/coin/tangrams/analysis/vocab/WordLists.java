@@ -32,7 +32,7 @@ import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
  * @since Apr 17, 2017
  *
  */
-final class WordLists {
+public final class WordLists {
 
 	static final class WordAccumulator<C extends Collection<? super String>> implements BiConsumer<C, Annotation> {
 
