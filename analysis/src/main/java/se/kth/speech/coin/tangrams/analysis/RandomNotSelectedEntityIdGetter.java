@@ -39,6 +39,7 @@ public final class RandomNotSelectedEntityIdGetter
 	@Override
 	public int applyAsInt(final GameContext ctx) {
 		final int entityCount = ctx.getEntityCount();
+		assert entityCount > 1;
 		final int result;
 		final Optional<Integer> lastSelectedEntityId = ctx.findLastSelectedEntityId();
 		if (lastSelectedEntityId.isPresent()) {
