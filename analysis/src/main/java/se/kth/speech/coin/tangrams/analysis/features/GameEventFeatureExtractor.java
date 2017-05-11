@@ -33,8 +33,6 @@ import java.util.stream.Stream;
 import com.google.common.collect.Lists;
 
 import iristk.system.Event;
-import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
-import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
 import se.kth.speech.coin.tangrams.analysis.GameContext;
 import se.kth.speech.coin.tangrams.iristk.EventSubmittingPlayerMatcher;
 import se.kth.speech.coin.tangrams.iristk.EventTypeMatcher;

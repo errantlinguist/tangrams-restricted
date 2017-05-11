@@ -19,11 +19,11 @@ package se.kth.speech.coin.tangrams.analysis.features;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
+import java.util.Map;
 import java.util.Properties;
 import java.util.function.ToIntFunction;
 
-import it.unimi.dsi.fastutil.objects.Object2IntMap;
-import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
+import com.google.common.collect.Maps;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -32,12 +32,8 @@ import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
  */
 public final class ImageEdgeCounter implements ToIntFunction<String> {
 
-	// private static final Logger LOGGER =
-	// LoggerFactory.getLogger(ImageEdgeCountFactory.class);
-
-	private static Object2IntMap<String> createPropValMap(final Properties props) {
-		final Object2IntMap<String> result = new Object2IntOpenHashMap<>(props.size());
-		result.defaultReturnValue(-1);
+	private static Map<String, Integer> createPropValMap(final Properties props) {
+		final Map<String, Integer> result = Maps.newHashMapWithExpectedSize(props.size());
 		props.forEach((propName, propValue) -> {
 			result.put(propName.toString(), Integer.parseInt(propValue.toString()));
 		});
@@ -54,13 +50,13 @@ public final class ImageEdgeCounter implements ToIntFunction<String> {
 		return result;
 	}
 
-	private final Object2IntMap<String> resourceEdgeCounts;
+	private final Map<String, Integer> resourceEdgeCounts;
 
 	public ImageEdgeCounter() {
 		this(createPropValMap(loadEdgeCountProps()));
 	}
 
-	public ImageEdgeCounter(final Object2IntMap<String> resourceEdgeCounts) {
+	public ImageEdgeCounter(final Map<String, Integer> resourceEdgeCounts) {
 		this.resourceEdgeCounts = resourceEdgeCounts;
 	}
 
@@ -79,7 +75,7 @@ public final class ImageEdgeCounter implements ToIntFunction<String> {
 		// }
 		// TODO: Algorithmically count the edges of any arbitrary shape
 		assert resourceEdgeCounts.containsKey(resourceName);
-		return resourceEdgeCounts.getInt(resourceName);
+		return resourceEdgeCounts.get(resourceName);
 	}
 
 }
