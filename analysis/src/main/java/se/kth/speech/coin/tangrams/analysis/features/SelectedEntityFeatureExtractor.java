@@ -67,16 +67,28 @@ public final class SelectedEntityFeatureExtractor implements GameContextFeatureE
 		});
 	}
 
-//	/*
-//	 * (non-Javadoc)
-//	 *
-//	 * @see se.kth.speech.coin.tangrams.analysis.FeatureExtractor#
-//	 * createFeatureDescriptions(se.kth.speech.coin.tangrams.analysis.
-//	 * GameContext)
-//	 */
-//	@Override
-//	public Stream<String> createFeatureDescriptions(final GameStateDescription initialState) {
-//		return extractor.getFeatureAttrs().stream().map(Entry::getValue).map(Attribute::name);
-//	}
+	public Optional<Object> getVal(final GameContext context, final EntityFeature feature) {
+		final SpatialMatrix<Integer> model = gameModelFactory.apply(context);
+		return createSelectedEntityDescription(context, model).map(entityData -> {
+			final int[] modelDims = model.getDimensions();
+			final double modelArea = IntArrays.product(modelDims);
+			return extractor.getVal(feature, entityData.getKey(), entityData.getValue(), modelDims, modelArea,
+					namedResourceEdgeCountFactory);
+		});
+	}
+
+	// /*
+	// * (non-Javadoc)
+	// *
+	// * @see se.kth.speech.coin.tangrams.analysis.FeatureExtractor#
+	// * createFeatureDescriptions(se.kth.speech.coin.tangrams.analysis.
+	// * GameContext)
+	// */
+	// @Override
+	// public Stream<String> createFeatureDescriptions(final
+	// GameStateDescription initialState) {
+	// return
+	// extractor.getFeatureAttrs().stream().map(Entry::getValue).map(Attribute::name);
+	// }
 
 }
