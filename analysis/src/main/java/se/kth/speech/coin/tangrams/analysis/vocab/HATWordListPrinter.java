@@ -45,6 +45,8 @@ import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import se.kth.speech.hat.xsd.Annotation;
+
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
  * @since Apr 5, 2017
@@ -159,6 +161,32 @@ public final class HATWordListPrinter {
 		}
 	}
 
+	private static Stream<Annotation> parseAnnotations(final Stream<Path> inpaths) {
+		final Stream<Path> xmlFilePaths = inpaths.filter(Files::isRegularFile).filter(inpath -> {
+			boolean shouldBeParsed = false;
+			try {
+				final String contentType = Files.probeContentType(inpath);
+				shouldBeParsed = contentType != null && contentType.endsWith("/xml");
+			} catch (final IOException e) {
+				LOGGER.warn("A(n) {} occurred while probing the content type of \"{}\"; Skipping file.",
+						new Object[] { e.getClass().getSimpleName(), inpath }, e);
+				shouldBeParsed = true;
+			}
+			return shouldBeParsed;
+		});
+		return xmlFilePaths.map(Path::toFile).flatMap(infile -> {
+			Stream<Annotation> annot = Stream.empty();
+			LOGGER.info("Reading \"{}\".", infile);
+			try {
+				annot = Stream.of((Annotation) UNMARSHALLER.get().unmarshal(infile));
+			} catch (final JAXBException e) {
+				LOGGER.warn("A(n) {} occurred while reading \"{}\"; Skipping.",
+						new Object[] { e.getClass().getSimpleName(), infile }, e);
+			}
+			return annot;
+		});
+	}
+
 	/**
 	 * @param infile
 	 * @param out
@@ -166,11 +194,9 @@ public final class HATWordListPrinter {
 	 */
 	private static void run(final Path infile, final PrintWriter out) throws IOException {
 		LOGGER.info("Reading annotations from \"{}\".", infile);
-		final HATWordListFactory f = new HATWordListFactory(new AnnotationVocabularyCollector(), UNMARSHALLER::get);
-		final NavigableSet<String> wordList;
-		try (final Stream<Path> inpaths = Files.walk(infile, FileVisitOption.FOLLOW_LINKS)) {
-			wordList = f.apply(inpaths);
-		}
+		final Stream<Path> inpaths = Files.walk(infile, FileVisitOption.FOLLOW_LINKS);
+		final Stream<Annotation> annots = parseAnnotations(inpaths);
+		final NavigableSet<String> wordList = annots.collect(new AnnotationVocabularyCollector());
 
 		final Iterator<String> wordIter = wordList.iterator();
 		if (wordIter.hasNext()) {
