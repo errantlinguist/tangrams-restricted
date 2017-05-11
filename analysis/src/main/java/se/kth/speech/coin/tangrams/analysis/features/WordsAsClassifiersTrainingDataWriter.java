@@ -310,7 +310,7 @@ public final class WordsAsClassifiersTrainingDataWriter {
 		attrs.addAll(featureAttrs.values());
 		final Attribute classifictionAttr = new Attribute("WORD", classifications);
 		attrs.add(classifictionAttr);
-		final Instances instances = new Instances("word_training", attrs, infileSessionData.size() * 5000);
+		final Instances instances = new Instances("selected_entity_for_word", attrs, infileSessionData.size() * 5000);
 		instances.setClass(classifictionAttr);
 		saver.setInstances(instances);
 
