@@ -28,6 +28,4 @@ import weka.core.Instance;
  */
 public interface GameContextFeatureExtractor extends BiConsumer<GameContext, Instance> {
 
-//	Stream<String> createFeatureDescriptions(final GameStateDescription initialState);
-
 }
