@@ -71,8 +71,16 @@ public final class WordsAsClassifiersTrainingDataWriter {
 		OUTPATH("o") {
 			@Override
 			public Option get() {
-				return Option.builder(optName).longOpt("outpath").desc("The path to write the training data to.")
-						.hasArg().argName("path").type(File.class).required().build();
+				return Option.builder(optName).longOpt("outpath").desc("The path to write the data to.").hasArg()
+						.argName("path").type(File.class).required().build();
+			}
+		},
+		OUTPUT_TYPE("t") {
+			@Override
+			public Option get() {
+				return Option.builder(optName).longOpt("output-type")
+						.desc("The filename extension matching the data type to output (e.g. \"arff\" or \"arff.gz\").")
+						.hasArg().argName("ext").build();
 			}
 		},
 		RANDOM_SEED("r") {
@@ -92,6 +100,14 @@ public final class WordsAsClassifiersTrainingDataWriter {
 			return result;
 		}
 
+		private static String parseOutputType(final CommandLine cl) {
+			String outExt = cl.getOptionValue(Parameter.OUTPUT_TYPE.optName, "arff");
+			if (!outExt.startsWith(".")) {
+				outExt = "." + outExt;
+			}
+			return outExt;
+		}
+
 		private static void printHelp() {
 			final HelpFormatter formatter = new HelpFormatter();
 			formatter.printHelp(WordsAsClassifiersTrainingDataWriter.class.getSimpleName() + " INFILE", OPTIONS);
@@ -108,8 +124,6 @@ public final class WordsAsClassifiersTrainingDataWriter {
 	private static final ArrayList<Attribute> ATTRS;
 
 	private static final Attribute CLASS_ATTR;
-
-	private static final String DEFAULT_OUTFILE_EXT = ".arff";
 
 	private static final EntityFeature.Extractor EXTRACTOR;
 
@@ -147,6 +161,8 @@ public final class WordsAsClassifiersTrainingDataWriter {
 					LOGGER.info("Using {} as random seed.", seed);
 					rnd = new Random(seed);
 				}
+				final String outfileExt = Parameter.parseOutputType(cl);
+				LOGGER.info("Will write data in \"*{}\" format.", outfileExt);
 
 				final WordsAsClassifiersInstancesMapFactory instancesFactory = new WordsAsClassifiersInstancesMapFactory(
 						new RandomNotSelectedEntityIdGetter(rnd));
@@ -156,10 +172,11 @@ public final class WordsAsClassifiersTrainingDataWriter {
 				if (outdir.mkdirs()) {
 					LOGGER.info("Output directory \"{}\" was nonexistent; Created it before writing data.", outdir);
 				}
-				final AbstractFileSaver saver = ConverterUtils.getSaverForExtension(DEFAULT_OUTFILE_EXT);
+
+				final AbstractFileSaver saver = ConverterUtils.getSaverForExtension(outfileExt);
 				for (final Entry<String, Instances> classInstanceEntry : classInstances.entrySet()) {
 					final String className = classInstanceEntry.getKey();
-					final File outfile = new File(outdir, className + DEFAULT_OUTFILE_EXT);
+					final File outfile = new File(outdir, className + outfileExt);
 					LOGGER.info("Writing data for classifier \"{}\" to \"{}\".", className, outfile);
 					final Instances insts = classInstanceEntry.getValue();
 					saver.setInstances(insts);

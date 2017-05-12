@@ -79,6 +79,14 @@ public final class WordsAsClassifiersCrossValidationTrainingDataWriter {
 						.hasArg().argName("path").type(File.class).required().build();
 			}
 		},
+		OUTPUT_TYPE("t") {
+			@Override
+			public Option get() {
+				return Option.builder(optName).longOpt("output-type")
+						.desc("The filename extension matching the data type to output (e.g. \"arff\" or \"arff.gz\").")
+						.hasArg().argName("ext").build();
+			}
+		},
 		RANDOM_SEED("r") {
 			@Override
 			public Option get() {
@@ -94,6 +102,14 @@ public final class WordsAsClassifiersCrossValidationTrainingDataWriter {
 			final Options result = new Options();
 			Arrays.stream(Parameter.values()).map(Parameter::get).forEach(result::addOption);
 			return result;
+		}
+
+		private static String parseOutputType(final CommandLine cl) {
+			String outExt = cl.getOptionValue(Parameter.OUTPUT_TYPE.optName, "arff");
+			if (!outExt.startsWith(".")) {
+				outExt = "." + outExt;
+			}
+			return outExt;
 		}
 
 		private static void printHelp() {
@@ -113,8 +129,6 @@ public final class WordsAsClassifiersCrossValidationTrainingDataWriter {
 	private static final ArrayList<Attribute> ATTRS;
 
 	private static final Attribute CLASS_ATTR;
-
-	private static final String DEFAULT_OUTFILE_EXT = ".arff";
 
 	private static final EntityFeature.Extractor EXTRACTOR;
 
@@ -153,11 +167,13 @@ public final class WordsAsClassifiersCrossValidationTrainingDataWriter {
 					LOGGER.info("Using {} as random seed.", seed);
 					rnd = new Random(seed);
 				}
+				final String outfileExt = Parameter.parseOutputType(cl);
+				LOGGER.info("Will write data in \"*{}\" format.", outfileExt);
 
 				final WordsAsClassifiersInstancesMapFactory instancesFactory = new WordsAsClassifiersInstancesMapFactory(
 						new RandomNotSelectedEntityIdGetter(rnd));
 				final WordsAsClassifiersCrossValidationTrainingDataWriter writer = new WordsAsClassifiersCrossValidationTrainingDataWriter(
-						instancesFactory, outpath);
+						instancesFactory, outpath, outfileExt);
 				writer.apply(inpaths);
 			}
 		}
@@ -178,10 +194,13 @@ public final class WordsAsClassifiersCrossValidationTrainingDataWriter {
 
 	private final File outdir;
 
+	private final String outfileExt;
+
 	public WordsAsClassifiersCrossValidationTrainingDataWriter(
-			final WordsAsClassifiersInstancesMapFactory instancesFactory, final File outdir) {
+			final WordsAsClassifiersInstancesMapFactory instancesFactory, final File outdir, final String outfileExt) {
 		this.instancesFactory = instancesFactory;
 		this.outdir = outdir;
+		this.outfileExt = outfileExt;
 	}
 
 	public void apply(final Iterable<Path> inpaths) throws JAXBException, IOException {
@@ -210,10 +229,10 @@ public final class WordsAsClassifiersCrossValidationTrainingDataWriter {
 					.filter(sessionData -> !sessionData.equals(testSessionData));
 			final Map<String, Instances> classInstances = instancesFactory
 					.apply(Arrays.asList(trainingSessionData.toArray(SessionDataManager[]::new)));
-			final AbstractFileSaver saver = ConverterUtils.getSaverForExtension(DEFAULT_OUTFILE_EXT);
+			final AbstractFileSaver saver = ConverterUtils.getSaverForExtension(outfileExt);
 			for (final Entry<String, Instances> classInstanceEntry : classInstances.entrySet()) {
 				final String className = classInstanceEntry.getKey();
-				final File outfile = new File(subsampleDir, "train-" + className + DEFAULT_OUTFILE_EXT);
+				final File outfile = new File(subsampleDir, "train-" + className + outfileExt);
 				LOGGER.debug("Writing training data for classifier \"{}\" to \"{}\".", className, outfile);
 				final Instances insts = classInstanceEntry.getValue();
 				saver.setInstances(insts);
@@ -222,7 +241,7 @@ public final class WordsAsClassifiersCrossValidationTrainingDataWriter {
 			}
 			LOGGER.info("Wrote training data for {} class(es).", classInstances.size());
 
-			final File testOutfile = new File(subsampleDir, "test" + DEFAULT_OUTFILE_EXT);
+			final File testOutfile = new File(subsampleDir, "test" + outfileExt);
 			LOGGER.info("Writing test data to \"{}\".", testOutfile);
 			final Instances testInsts = instancesFactory.apply(Collections.singleton(testSessionData)).values()
 					.iterator().next();
