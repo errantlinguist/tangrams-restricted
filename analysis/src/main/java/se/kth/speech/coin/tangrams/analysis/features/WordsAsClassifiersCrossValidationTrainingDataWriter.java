@@ -281,6 +281,7 @@ public final class WordsAsClassifiersCrossValidationTrainingDataWriter {
 			saver.setInstances(testInsts);
 			saver.setFile(testOutfile);
 			saver.writeBatch();
+			LOGGER.info("Wrote {} test data point(s).", testInsts.numInstances());
 		}
 
 		LOGGER.info("Finished writing {} cross-validation dataset(s) to \"{}\".", infileSessionData.size(), outdir);
