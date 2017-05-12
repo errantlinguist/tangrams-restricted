@@ -135,8 +135,8 @@ public final class WordsAsClassifiersTrainingDataWriter {
 				throw new MissingOptionException("No input path(s) specified.");
 
 			} else {
-				final File outpath = (File) cl.getParsedOptionValue(Parameter.OUTPATH.optName);
-				LOGGER.info("Will write data to \"{}\".", outpath);
+				final File outdir = (File) cl.getParsedOptionValue(Parameter.OUTPATH.optName);
+				LOGGER.info("Will write data to \"{}\".", outdir);
 				final Number randomSeed = (Number) cl.getParsedOptionValue(Parameter.RANDOM_SEED.optName);
 				final Random rnd;
 				if (randomSeed == null) {
@@ -153,14 +153,13 @@ public final class WordsAsClassifiersTrainingDataWriter {
 				final WordsAsClassifiersTrainingDataWriter writer = new WordsAsClassifiersTrainingDataWriter(
 						instancesFactory);
 				final Map<String, Instances> classInstances = writer.apply(inpaths);
-				if (outpath.mkdirs()) {
-					LOGGER.info("Output directory \"{}\" was nonexistent; Created it before writing data.", outpath);
+				if (outdir.mkdirs()) {
+					LOGGER.info("Output directory \"{}\" was nonexistent; Created it before writing data.", outdir);
 				}
-
 				final AbstractFileSaver saver = ConverterUtils.getSaverForExtension(DEFAULT_OUTFILE_EXT);
 				for (final Entry<String, Instances> classInstanceEntry : classInstances.entrySet()) {
 					final String className = classInstanceEntry.getKey();
-					final File outfile = new File(outpath, "wordAsClassifiers-" + className + DEFAULT_OUTFILE_EXT);
+					final File outfile = new File(outdir, className + DEFAULT_OUTFILE_EXT);
 					LOGGER.info("Writing data for classifier \"{}\" to \"{}\".", className, outfile);
 					final Instances insts = classInstanceEntry.getValue();
 					saver.setInstances(insts);
