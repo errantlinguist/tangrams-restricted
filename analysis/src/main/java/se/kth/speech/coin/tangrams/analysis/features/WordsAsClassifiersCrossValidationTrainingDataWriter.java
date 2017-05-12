@@ -182,7 +182,7 @@ public final class WordsAsClassifiersCrossValidationTrainingDataWriter {
 						createAnnotationReader(), createGameHistoryReader(), new RandomNotSelectedEntityIdGetter(rnd));
 				final WordsAsClassifiersCrossValidationTrainingDataWriter writer = new WordsAsClassifiersCrossValidationTrainingDataWriter(
 						instancesFactory, outpath, outfileExt);
-				writer.apply(inpaths);
+				writer.accept(inpaths);
 			}
 		}
 	}
@@ -236,7 +236,7 @@ public final class WordsAsClassifiersCrossValidationTrainingDataWriter {
 		this.outfileExt = outfileExt;
 	}
 
-	public void apply(final Iterable<Path> inpaths) throws IOException {
+	public void accept(final Iterable<Path> inpaths) throws IOException {
 		final Map<Path, SessionDataManager> infileSessionData = SessionDataManager.createFileSessionDataMap(inpaths);
 		final Collection<SessionDataManager> allSessions = infileSessionData.values();
 		final Map<Path, String> infilePathOutdirNames = FileNames
