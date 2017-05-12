@@ -614,15 +614,15 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 
 	}
 
-	private final String outfileNamePrefix;
+	private final Path outdir;
 
-	private final Path outpath;
+	private final String outfileNamePrefix;
 
 	private final boolean strict;
 
-	public UtteranceSelectedEntityDescriptionWriter(final Path outpath, final String outfileNamePrefix,
+	public UtteranceSelectedEntityDescriptionWriter(final Path outdir, final String outfileNamePrefix,
 			final boolean strict) {
-		this.outpath = outpath;
+		this.outdir = outdir;
 		this.outfileNamePrefix = outfileNamePrefix;
 		this.strict = strict;
 	}
@@ -662,7 +662,11 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 				playerData.getPlayerSourceIds().inverse()::get).apply(uttAnnots.getSegments().getSegment());
 		final List<Utterance> utts = Arrays.asList(uttPlayerIds.keySet().stream().sorted().toArray(Utterance[]::new));
 
-		final Path extantOutPath = Files.createDirectories(outpath);
+		final boolean outdirAlreadyExists = Files.exists(outdir);
+		final Path extantOutdir = Files.createDirectories(outdir);
+		if (!outdirAlreadyExists) {
+			LOGGER.info("Created output directory \"{}\".", extantOutdir);
+		}
 		for (final String gameId : playerGameIdIntersection) {
 			LOGGER.debug("Processing game \"{}\".", gameId);
 			final Map<String, GameHistory> playerHistories = gamePlayerHistoryTable.row(gameId);
@@ -672,7 +676,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 			for (final Entry<String, GameHistory> playerHistory : playerHistories.entrySet()) {
 				final String playerId = playerHistory.getKey();
 				final GameHistory history = playerHistory.getValue();
-				final Path outfilePath = extantOutPath
+				final Path outfilePath = extantOutdir
 						.resolve(outfileNamePrefix + "_GAME-" + gameId + "_LOG-" + playerId + ".txt");
 				LOGGER.info("Writing utterances from perspective of \"{}\" to \"{}\".", playerId, outfilePath);
 				try (BufferedWriter writer = Files.newBufferedWriter(outfilePath, StandardOpenOption.CREATE,
