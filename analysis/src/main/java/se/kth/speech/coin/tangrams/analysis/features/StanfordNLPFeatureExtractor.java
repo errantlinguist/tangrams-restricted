@@ -24,7 +24,6 @@ import java.util.Properties;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.DoubleStream.Builder;
-import java.util.stream.Stream;
 
 import edu.stanford.nlp.ling.CoreAnnotations.PartOfSpeechAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.SentencesAnnotation;
@@ -44,7 +43,7 @@ import se.kth.speech.coin.tangrams.analysis.Utterance;
  * @since Apr 14, 2017
  *
  */
-final class StanfordNLPFeatureExtractor implements UtteranceFeatureExtractor {
+final class StanfordNLPFeatureExtractor {
 
 	/**
 	 * {@link DefaultAnnotPipelineHolder} is loaded on the first execution of
@@ -94,13 +93,6 @@ final class StanfordNLPFeatureExtractor implements UtteranceFeatureExtractor {
 		this.annotator = annotator;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see java.util.function.BiConsumer#accept(java.lang.Object,
-	 * java.lang.Object)
-	 */
-	@Override
 	public void accept(final Utterance utt, final Builder vals) {
 		final Annotation annot = new Annotation(utt.getTokens().stream().collect(TOKEN_FORM_JOINER));
 		annotator.annotate(annot);
@@ -121,18 +113,6 @@ final class StanfordNLPFeatureExtractor implements UtteranceFeatureExtractor {
 			System.err.println(tree);
 		}
 		// TODO Finish
-	}
-
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see se.kth.speech.coin.tangrams.analysis.UtteranceFeatureExtractor#
-	 * createFeatureDescriptions()
-	 */
-	@Override
-	public Stream<String> createFeatureDescriptions() {
-		// TODO Auto-generated method stub
-		return Stream.empty();
 	}
 
 }
