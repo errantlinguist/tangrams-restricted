@@ -123,6 +123,7 @@ public final class WordsAsClassifiersInstancesMapFactory {
 									utt.getStartTime(), utt.getEndTime(), perspectivePlayerId);
 							uttContexts.forEach(uttContext -> {
 								SELECTED_ENTITY_ID_GETTER.apply(uttContext).ifPresent(selectedEntityId -> {
+									LOGGER.debug("Creating positive and negative examples for entity ID \"{}\", which is selected by player \"{}\".", selectedEntityId, perspectivePlayerId);
 									// Add positive training examples
 									final EntityFeature.Extractor.Context positiveContext = extractionContextFactory
 											.createExtractionContext(uttContext, selectedEntityId);
