@@ -27,8 +27,8 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import se.kth.speech.FilenameBaseSplitter;
 import se.kth.speech.io.DirectoryZipArchiver;
+import se.kth.speech.io.FileNames;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -36,8 +36,6 @@ import se.kth.speech.io.DirectoryZipArchiver;
  *
  */
 final class SessionLogArchiver implements Supplier<Path> {
-
-	private static final FilenameBaseSplitter FILENAME_BASE_SPLITTER = new FilenameBaseSplitter();
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SessionLogArchiver.class);
 
@@ -59,7 +57,7 @@ final class SessionLogArchiver implements Supplier<Path> {
 		this.playerId = playerId;
 		final Function<Path, String> playerIdAppender = relSourceFilePath -> {
 			final Path filenamePath = relSourceFilePath.getFileName();
-			final String[] filenameParts = FILENAME_BASE_SPLITTER.apply(filenamePath.toString());
+			final String[] filenameParts = FileNames.splitBase(filenamePath.toString());
 
 			String result;
 			final int filenameBaseIdx = 0;

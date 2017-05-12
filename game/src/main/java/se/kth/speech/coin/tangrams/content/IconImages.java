@@ -32,9 +32,9 @@ import java.util.regex.Pattern;
 
 import com.github.errantlinguist.ClassProperties;
 
-import se.kth.speech.FilenameBaseSplitter;
 import se.kth.speech.Lists;
 import se.kth.speech.io.ClasspathDirResourceLocatorMapFactory;
+import se.kth.speech.io.FileNames;
 import se.kth.speech.io.FileResourceLocatorContentTypePatternFilter;
 
 /**
@@ -61,8 +61,7 @@ public final class IconImages {
 			ICON_NAME_COMPARATOR = Comparator
 					.nullsLast(Lists.comparingByIndex(imageOrderingNames).thenComparing(Comparator.naturalOrder()));
 
-			final FilenameBaseSplitter filenameBaseSplitter = new FilenameBaseSplitter();
-			RESOURCE_NAME_FACTORY = resourceLoc -> filenameBaseSplitter.apply(resourceLoc)[0];
+			RESOURCE_NAME_FACTORY = resourceLoc -> FileNames.splitBase(resourceLoc)[0];
 			ICON_IMAGE_RESOURCES = createImageResourceMap("image/(?!svg).+", RESOURCE_NAME_FACTORY);
 		} catch (final IOException e) {
 			throw new UncheckedIOException(e);

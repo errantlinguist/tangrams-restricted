@@ -70,12 +70,11 @@ import com.google.common.collect.Table;
 
 import iristk.system.Event;
 import iristk.util.HAT;
-import se.kth.speech.FilenameBaseSplitter;
 import se.kth.speech.awt.LookAndFeels;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature.Extractor;
-import se.kth.speech.coin.tangrams.analysis.features.ImageEdgeCounter;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionContextFactory;
+import se.kth.speech.coin.tangrams.analysis.features.ImageEdgeCounter;
 import se.kth.speech.coin.tangrams.content.IconImages;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfoTableRowWriter;
@@ -87,6 +86,7 @@ import se.kth.speech.coin.tangrams.iristk.events.Move;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
 import se.kth.speech.coin.tangrams.view.UserPrompts;
 import se.kth.speech.hat.xsd.Annotation;
+import se.kth.speech.io.FileNames;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -546,7 +546,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 
 	private static String createOutfileInfix(final Path inpath) {
 		final String parentDirName = inpath.getParent().getFileName().toString();
-		final String fileBaseName = new FilenameBaseSplitter().apply(inpath.getFileName().toString())[0];
+		final String fileBaseName = FileNames.splitBase(inpath.getFileName().toString())[0];
 		return parentDirName + "-" + fileBaseName;
 	}
 
