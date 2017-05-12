@@ -16,47 +16,32 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features;
 
-import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
-import java.util.Properties;
-import java.util.Random;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import javax.xml.bind.JAXBException;
 
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.MissingOptionException;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.BiMap;
+import com.google.common.collect.Maps;
 
 import iristk.util.HAT;
 import se.kth.speech.coin.tangrams.analysis.GameContext;
 import se.kth.speech.coin.tangrams.analysis.GameContextModelFactory;
 import se.kth.speech.coin.tangrams.analysis.GameHistory;
-import se.kth.speech.coin.tangrams.analysis.RandomNotSelectedEntityIdGetter;
 import se.kth.speech.coin.tangrams.analysis.SegmentUtteranceFactory;
 import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
 import se.kth.speech.coin.tangrams.analysis.TemporalGameContexts;
@@ -69,8 +54,6 @@ import weka.core.Attribute;
 import weka.core.DenseInstance;
 import weka.core.Instance;
 import weka.core.Instances;
-import weka.core.converters.AbstractFileSaver;
-import weka.core.converters.ConverterUtils;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -81,7 +64,7 @@ import weka.core.converters.ConverterUtils;
  *      In <em>Proceedings of IWCS 2015</em><a>.
  *
  */
-public final class WordsAsClassifiersTrainingDataWriter {
+public final class WordsAsClassifiersInstancesMapFactory {
 
 	private static class MultiClassDataCollector {
 
@@ -174,59 +157,13 @@ public final class WordsAsClassifiersTrainingDataWriter {
 		}
 	}
 
-	private enum Parameter implements Supplier<Option> {
-		HELP("?") {
-			@Override
-			public Option get() {
-				return Option.builder(optName).longOpt("help").desc("Prints this message.").build();
-			}
-		},
-		OUTPATH("o") {
-			@Override
-			public Option get() {
-				return Option.builder(optName).longOpt("outpath").desc("The path to write the training data to.")
-						.hasArg().argName("path").type(File.class).required().build();
-			}
-		},
-		RANDOM_SEED("r") {
-			@Override
-			public Option get() {
-				return Option.builder(optName).longOpt("random-seed")
-						.desc("The value to use for seeding random negative examples.").hasArg().argName("value")
-						.type(Number.class).build();
-			}
-		};
-
-		private static final Options OPTIONS = createOptions();
-
-		private static Options createOptions() {
-			final Options result = new Options();
-			Arrays.stream(Parameter.values()).map(Parameter::get).forEach(result::addOption);
-			return result;
-		}
-
-		private static void printHelp() {
-			final HelpFormatter formatter = new HelpFormatter();
-			formatter.printHelp(WordsAsClassifiersTrainingDataWriter.class.getSimpleName() + " INFILE", OPTIONS);
-		}
-
-		protected final String optName;
-
-		private Parameter(final String optName) {
-			this.optName = optName;
-		}
-
-	}
-
 	private static final ArrayList<Attribute> ATTRS;
 
 	private static final Attribute CLASS_ATTR;
 
-	private static final String DEFAULT_OUTFILE_EXT = ".arff";
-
 	private static final EntityFeature.Extractor EXTRACTOR;
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(WordsAsClassifiersTrainingDataWriter.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(WordsAsClassifiersInstancesMapFactory.class);
 
 	static {
 		final List<String> shapeFeatureVals = new ArrayList<>(IconImages.getImageResources().keySet());
@@ -239,92 +176,35 @@ public final class WordsAsClassifiersTrainingDataWriter {
 		ATTRS.add(CLASS_ATTR);
 	}
 
-	public static void main(final CommandLine cl) throws IOException, JAXBException, ParseException {
-		if (cl.hasOption(Parameter.HELP.optName)) {
-			Parameter.printHelp();
-		} else {
-			final List<Path> inpaths = Arrays.asList(cl.getArgList().stream().map(Paths::get).toArray(Path[]::new));
-			if (inpaths.isEmpty()) {
-				throw new MissingOptionException("No input path(s) specified.");
-
-			} else {
-				final File outpath = (File) cl.getParsedOptionValue(Parameter.OUTPATH.optName);
-				LOGGER.info("Will write data to \"{}\".", outpath);
-				final Number randomSeed = (Number) cl.getParsedOptionValue(Parameter.RANDOM_SEED.optName);
-				final Random rnd;
-				if (randomSeed == null) {
-					LOGGER.info("Using default system-generated random seed.");
-					rnd = new Random();
-				} else {
-					final long seed = randomSeed.longValue();
-					LOGGER.info("Using {} as random seed.", seed);
-					rnd = new Random(seed);
-				}
-
-				final WordsAsClassifiersInstancesMapFactory instancesFactory = new WordsAsClassifiersInstancesMapFactory(
-						new RandomNotSelectedEntityIdGetter(rnd));
-				final WordsAsClassifiersTrainingDataWriter writer = new WordsAsClassifiersTrainingDataWriter(
-						instancesFactory);
-				final Map<String, Instances> classInstances = writer.apply(inpaths);
-				if (outpath.mkdirs()) {
-					LOGGER.info("Output directory \"{}\" was nonexistent; Created it before writing data.", outpath);
-				}
-
-				final AbstractFileSaver saver = ConverterUtils.getSaverForExtension(DEFAULT_OUTFILE_EXT);
-				for (final Entry<String, Instances> classInstanceEntry : classInstances.entrySet()) {
-					final String className = classInstanceEntry.getKey();
-					final File outfile = new File(outpath, "wordAsClassifiers-" + className + DEFAULT_OUTFILE_EXT);
-					LOGGER.info("Writing data for classifier \"{}\" to \"{}\".", className, outfile);
-					final Instances insts = classInstanceEntry.getValue();
-					saver.setInstances(insts);
-					saver.setFile(outfile);
-					saver.writeBatch();
-				}
-			}
-
-		}
+	private static int estimateVocabTokenCount(final String token, final Collection<SessionDataManager> sessionData) {
+		return sessionData.size() * 10;
 	}
 
-	public static void main(final String[] args) throws IOException, JAXBException {
-		final CommandLineParser parser = new DefaultParser();
-		try {
-			final CommandLine cl = parser.parse(Parameter.OPTIONS, args);
-			main(cl);
-		} catch (final ParseException e) {
-			System.out.println(String.format("An error occured while parsing the command-line arguments: %s", e));
-			Parameter.printHelp();
-		}
+	private static int estimateVocabTypeCount(final Collection<SessionDataManager> sessionData) {
+		return Math.toIntExact(Math.round(Math.ceil(Math.log(sessionData.size() * 850))));
 	}
 
-	private static void putSessionData(final Map<Path, SessionDataManager> fileSessionData, final Path infilePath)
-			throws IOException {
-		LOGGER.info("Reading batch job properties from \"{}\".", infilePath);
-		final Properties props = new Properties();
-		try (final InputStream propsInstream = Files.newInputStream(infilePath)) {
-			props.load(propsInstream);
-			final Path infileBaseDir = infilePath.getParent();
-			final SessionDataManager sessionData = SessionDataManager.create(props, infileBaseDir);
-			fileSessionData.put(infilePath, sessionData);
-		}
+	private final Function<GameContext, Integer> negativeExampleEntityIdGetter;
+
+	public WordsAsClassifiersInstancesMapFactory(final Function<GameContext, Integer> negativeExampleEntityIdGetter) {
+		this.negativeExampleEntityIdGetter = negativeExampleEntityIdGetter;
 	}
 
-	private final WordsAsClassifiersInstancesMapFactory instancesFactory;
-
-	public WordsAsClassifiersTrainingDataWriter(final WordsAsClassifiersInstancesMapFactory instancesFactory) {
-		this.instancesFactory = instancesFactory;
-	}
-
-	public Map<String, Instances> apply(final Iterable<Path> inpaths) throws JAXBException, IOException {
-		final Map<Path, SessionDataManager> infileSessionData = new HashMap<>();
-		for (final Path inpath : inpaths) {
-			LOGGER.info("Looking for batch job data underneath \"{}\".", inpath);
-			final Path[] infiles = Files.walk(inpath, FileVisitOption.FOLLOW_LINKS).filter(Files::isRegularFile)
-					.filter(filePath -> filePath.getFileName().toString().endsWith(".properties")).toArray(Path[]::new);
-			for (final Path infile : infiles) {
-				putSessionData(infileSessionData, infile);
-			}
+	public Map<String, Instances> apply(final Collection<SessionDataManager> sessionData)
+			throws JAXBException, IOException {
+		final Map<String, Instances> result = Maps.newHashMapWithExpectedSize(estimateVocabTypeCount(sessionData));
+		final Function<String, Instances> classInstanceFetcher = className -> result.computeIfAbsent(className, k -> {
+			final Instances instances = new Instances("referent_for_token-" + k, ATTRS,
+					estimateVocabTokenCount(k, sessionData));
+			instances.setClass(CLASS_ATTR);
+			return instances;
+		});
+		final MultiClassDataCollector coll = new MultiClassDataCollector(classInstanceFetcher, ATTRS.size(),
+				negativeExampleEntityIdGetter);
+		for (final SessionDataManager sessionDatum : sessionData) {
+			coll.accept(sessionDatum);
 		}
-		return instancesFactory.apply(infileSessionData.values());
+		return result;
 	}
 
 }
