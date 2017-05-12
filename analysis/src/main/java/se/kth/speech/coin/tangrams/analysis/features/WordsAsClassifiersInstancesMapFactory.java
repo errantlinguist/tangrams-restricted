@@ -98,10 +98,6 @@ public final class WordsAsClassifiersInstancesMapFactory {
 			final Annotation uttAnnots = hatAnnotationFactory.apply(hatInfilePath);
 
 			final Path eventLogPath = sessionData.getCanonicalEventLogPath();
-			LOGGER.info("Reading events from \"{}\".", eventLogPath);
-			// final Map<String, GameHistory> gameHistories =
-			// LoggedEvents.parseGameHistories(Files.lines(eventLogPath),
-			// LoggedEvents.VALID_MODEL_MIN_REQUIRED_EVENT_MATCHER);
 			final Map<String, GameHistory> gameHistories = gameHistoryFactory.apply(eventLogPath);
 			final int uniqueModelDescriptionCount = gameHistories.values().size();
 
