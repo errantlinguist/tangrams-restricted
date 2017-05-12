@@ -30,12 +30,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.Properties;
 import java.util.Random;
-import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
 
 import javax.xml.bind.JAXBException;
 
@@ -50,24 +47,10 @@ import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.BiMap;
-
-import iristk.util.HAT;
-import se.kth.speech.coin.tangrams.analysis.GameContext;
-import se.kth.speech.coin.tangrams.analysis.GameContextModelFactory;
-import se.kth.speech.coin.tangrams.analysis.GameHistory;
 import se.kth.speech.coin.tangrams.analysis.RandomNotSelectedEntityIdGetter;
-import se.kth.speech.coin.tangrams.analysis.SegmentUtteranceFactory;
 import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
-import se.kth.speech.coin.tangrams.analysis.TemporalGameContexts;
-import se.kth.speech.coin.tangrams.analysis.Utterance;
-import se.kth.speech.coin.tangrams.analysis.UtterancePlayerIdMapFactory;
 import se.kth.speech.coin.tangrams.content.IconImages;
-import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
-import se.kth.speech.hat.xsd.Annotation;
 import weka.core.Attribute;
-import weka.core.DenseInstance;
-import weka.core.Instance;
 import weka.core.Instances;
 import weka.core.converters.AbstractFileSaver;
 import weka.core.converters.ConverterUtils;
@@ -82,97 +65,6 @@ import weka.core.converters.ConverterUtils;
  *
  */
 public final class WordsAsClassifiersTrainingDataWriter {
-
-	private static class MultiClassDataCollector {
-
-		private static final ImageEdgeCounter IMG_EDGE_COUNTER = new ImageEdgeCounter();
-
-		private static final SegmentUtteranceFactory SEG_UTT_FACTORY = new SegmentUtteranceFactory();
-
-		private static final Function<GameContext, Optional<Integer>> SELECTED_ENTITY_ID_GETTER = ctx -> ctx
-				.findLastSelectedEntityId();
-
-		private final Function<? super String, Instances> classInstanceGetter;
-
-		private final Function<GameContext, Integer> negativeExampleEntityIdGetter;
-
-		private final int numAttributes;
-
-		private MultiClassDataCollector(final Function<? super String, Instances> classInstanceGetter,
-				final int numAttributes, final Function<GameContext, Integer> negativeExampleEntityIdGetter) {
-			this.negativeExampleEntityIdGetter = negativeExampleEntityIdGetter;
-			this.classInstanceGetter = classInstanceGetter;
-			this.numAttributes = numAttributes;
-		}
-
-		private void accept(final SessionDataManager sessionData) throws JAXBException, IOException {
-			final Path hatInfilePath = sessionData.getHATFilePath();
-			LOGGER.info("Reading annotations from \"{}\".", hatInfilePath);
-			final Annotation uttAnnots = HAT.readAnnotation(hatInfilePath.toFile());
-
-			final Path eventLogPath = sessionData.getCanonicalEventLogPath();
-			LOGGER.info("Reading events from \"{}\".", eventLogPath);
-			final Map<String, GameHistory> gameHistories = LoggedEvents.parseGameHistories(Files.lines(eventLogPath),
-					LoggedEvents.VALID_MODEL_MIN_REQUIRED_EVENT_MATCHER);
-			final int uniqueModelDescriptionCount = gameHistories.values().size();
-
-			final EntityFeatureExtractionContextFactory extractionContextFactory = new EntityFeatureExtractionContextFactory(
-					new GameContextModelFactory(uniqueModelDescriptionCount), IMG_EDGE_COUNTER);
-
-			final BiMap<String, String> playerSourceIds = sessionData.getPlayerData().getPlayerSourceIds();
-			final Function<String, String> sourcePlayerIdGetter = playerSourceIds.inverse()::get;
-			final Map<Utterance, String> uttPlayerIds = new UtterancePlayerIdMapFactory(SEG_UTT_FACTORY::create,
-					sourcePlayerIdGetter).apply(uttAnnots.getSegments().getSegment());
-			final List<Utterance> utts = Arrays
-					.asList(uttPlayerIds.keySet().stream().sorted().toArray(Utterance[]::new));
-
-			for (final Entry<String, GameHistory> gameHistory : gameHistories.entrySet()) {
-				final String gameId = gameHistory.getKey();
-				LOGGER.debug("Processing game \"{}\".", gameId);
-				final GameHistory history = gameHistory.getValue();
-				for (final String perspectivePlayerId : playerSourceIds.keySet()) {
-					LOGGER.info("Processing game from perspective of player \"{}\".", perspectivePlayerId);
-
-					utts.forEach(utt -> {
-						final String uttPlayerId = uttPlayerIds.get(utt);
-						if (perspectivePlayerId.equals(uttPlayerId)) {
-							final Stream<GameContext> uttContexts = TemporalGameContexts.create(history,
-									utt.getStartTime(), utt.getEndTime(), perspectivePlayerId);
-							uttContexts.forEach(uttContext -> {
-								SELECTED_ENTITY_ID_GETTER.apply(uttContext).ifPresent(selectedEntityId -> {
-									// Add positive training examples
-									final EntityFeature.Extractor.Context positiveContext = extractionContextFactory
-											.createExtractionContext(uttContext, selectedEntityId);
-									addTokenInstances(utt, uttContext, positiveContext, Boolean.TRUE.toString());
-									// Add negative training examples
-									final EntityFeature.Extractor.Context negativeContext = extractionContextFactory
-											.createExtractionContext(uttContext,
-													negativeExampleEntityIdGetter.apply(uttContext));
-									addTokenInstances(utt, uttContext, negativeContext, Boolean.FALSE.toString());
-								});
-							});
-						} else {
-							LOGGER.debug(
-									"Skipping the extraction of features for utterance with segment ID \"{}\" because the utterance is from player \"{}\" rather than the player whose perspective is being used for extracting features (\"{}\")",
-									utt.getSegmentId(), uttPlayerId, perspectivePlayerId);
-						}
-					});
-				}
-			}
-		}
-
-		private void addTokenInstances(final Utterance utt, final GameContext uttContext,
-				final EntityFeature.Extractor.Context extractionContext, final String classValue) {
-			utt.getTokens().forEach(token -> {
-				final Instances classInstances = classInstanceGetter.apply(token);
-				final Instance inst = new DenseInstance(numAttributes);
-				inst.setDataset(classInstances);
-				EXTRACTOR.accept(inst, extractionContext);
-				inst.setClassValue(classValue);
-				classInstances.add(inst);
-			});
-		}
-	}
 
 	private enum Parameter implements Supplier<Option> {
 		HELP("?") {
