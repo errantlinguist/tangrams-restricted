@@ -17,7 +17,6 @@
 package se.kth.speech.coin.tangrams.analysis.features;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -38,7 +37,6 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.Maps;
 
-import iristk.util.HAT;
 import se.kth.speech.coin.tangrams.analysis.GameContext;
 import se.kth.speech.coin.tangrams.analysis.GameContextModelFactory;
 import se.kth.speech.coin.tangrams.analysis.GameHistory;
@@ -48,7 +46,6 @@ import se.kth.speech.coin.tangrams.analysis.TemporalGameContexts;
 import se.kth.speech.coin.tangrams.analysis.Utterance;
 import se.kth.speech.coin.tangrams.analysis.UtterancePlayerIdMapFactory;
 import se.kth.speech.coin.tangrams.content.IconImages;
-import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
 import se.kth.speech.hat.xsd.Annotation;
 import weka.core.Attribute;
 import weka.core.DenseInstance;
@@ -77,26 +74,35 @@ public final class WordsAsClassifiersInstancesMapFactory {
 
 		private final Function<? super String, Instances> classInstanceGetter;
 
+		private final Function<? super Path, Map<String, GameHistory>> gameHistoryFactory;
+
+		private final Function<? super Path, Annotation> hatAnnotationFactory;
+
 		private final Function<GameContext, Integer> negativeExampleEntityIdGetter;
 
 		private final int numAttributes;
 
-		private MultiClassDataCollector(final Function<? super String, Instances> classInstanceGetter,
-				final int numAttributes, final Function<GameContext, Integer> negativeExampleEntityIdGetter) {
+		private MultiClassDataCollector(final Function<? super Path, Annotation> hatAnnotationFactory,
+				final Function<? super Path, Map<String, GameHistory>> gameHistoryFactory,
+				final Function<? super String, Instances> classInstanceGetter, final int numAttributes,
+				final Function<GameContext, Integer> negativeExampleEntityIdGetter) {
+			this.hatAnnotationFactory = hatAnnotationFactory;
+			this.gameHistoryFactory = gameHistoryFactory;
 			this.negativeExampleEntityIdGetter = negativeExampleEntityIdGetter;
 			this.classInstanceGetter = classInstanceGetter;
 			this.numAttributes = numAttributes;
 		}
 
-		private void accept(final SessionDataManager sessionData) throws JAXBException, IOException {
+		private void accept(final SessionDataManager sessionData) {
 			final Path hatInfilePath = sessionData.getHATFilePath();
-			LOGGER.info("Reading annotations from \"{}\".", hatInfilePath);
-			final Annotation uttAnnots = HAT.readAnnotation(hatInfilePath.toFile());
+			final Annotation uttAnnots = hatAnnotationFactory.apply(hatInfilePath);
 
 			final Path eventLogPath = sessionData.getCanonicalEventLogPath();
 			LOGGER.info("Reading events from \"{}\".", eventLogPath);
-			final Map<String, GameHistory> gameHistories = LoggedEvents.parseGameHistories(Files.lines(eventLogPath),
-					LoggedEvents.VALID_MODEL_MIN_REQUIRED_EVENT_MATCHER);
+			// final Map<String, GameHistory> gameHistories =
+			// LoggedEvents.parseGameHistories(Files.lines(eventLogPath),
+			// LoggedEvents.VALID_MODEL_MIN_REQUIRED_EVENT_MATCHER);
+			final Map<String, GameHistory> gameHistories = gameHistoryFactory.apply(eventLogPath);
 			final int uniqueModelDescriptionCount = gameHistories.values().size();
 
 			final EntityFeatureExtractionContextFactory extractionContextFactory = new EntityFeatureExtractionContextFactory(
@@ -123,7 +129,9 @@ public final class WordsAsClassifiersInstancesMapFactory {
 									utt.getStartTime(), utt.getEndTime(), perspectivePlayerId);
 							uttContexts.forEach(uttContext -> {
 								SELECTED_ENTITY_ID_GETTER.apply(uttContext).ifPresent(selectedEntityId -> {
-									LOGGER.debug("Creating positive and negative examples for entity ID \"{}\", which is selected by player \"{}\".", selectedEntityId, perspectivePlayerId);
+									LOGGER.debug(
+											"Creating positive and negative examples for entity ID \"{}\", which is selected by player \"{}\".",
+											selectedEntityId, perspectivePlayerId);
 									// Add positive training examples
 									final EntityFeature.Extractor.Context positiveContext = extractionContextFactory
 											.createExtractionContext(uttContext, selectedEntityId);
@@ -185,9 +193,17 @@ public final class WordsAsClassifiersInstancesMapFactory {
 		return Math.toIntExact(Math.round(Math.ceil(Math.log(sessionData.size() * 850))));
 	}
 
+	private final Function<? super Path, Map<String, GameHistory>> gameHistoryFactory;
+
+	private final Function<? super Path, Annotation> hatAnnotationFactory;
+
 	private final Function<GameContext, Integer> negativeExampleEntityIdGetter;
 
-	public WordsAsClassifiersInstancesMapFactory(final Function<GameContext, Integer> negativeExampleEntityIdGetter) {
+	public WordsAsClassifiersInstancesMapFactory(final Function<? super Path, Annotation> hatAnnotationFactory,
+			final Function<? super Path, Map<String, GameHistory>> gameHistoryFactory,
+			final Function<GameContext, Integer> negativeExampleEntityIdGetter) {
+		this.hatAnnotationFactory = hatAnnotationFactory;
+		this.gameHistoryFactory = gameHistoryFactory;
 		this.negativeExampleEntityIdGetter = negativeExampleEntityIdGetter;
 	}
 
@@ -200,8 +216,8 @@ public final class WordsAsClassifiersInstancesMapFactory {
 			instances.setClass(CLASS_ATTR);
 			return instances;
 		});
-		final MultiClassDataCollector coll = new MultiClassDataCollector(classInstanceFetcher, ATTRS.size(),
-				negativeExampleEntityIdGetter);
+		final MultiClassDataCollector coll = new MultiClassDataCollector(hatAnnotationFactory, gameHistoryFactory,
+				classInstanceFetcher, ATTRS.size(), negativeExampleEntityIdGetter);
 		for (final SessionDataManager sessionDatum : sessionData) {
 			coll.accept(sessionDatum);
 		}

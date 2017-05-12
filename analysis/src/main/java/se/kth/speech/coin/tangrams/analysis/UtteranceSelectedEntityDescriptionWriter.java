@@ -645,7 +645,6 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 	private void accept(final SessionDataManager sessionData, final String outfileNamePrefix)
 			throws JAXBException, IOException {
 		final Path hatInfilePath = sessionData.getHATFilePath();
-		LOGGER.info("Reading annotations from \"{}\".", hatInfilePath);
 		final Annotation uttAnnots = HAT.readAnnotation(hatInfilePath.toFile());
 
 		final PlayerDataManager playerData = sessionData.getPlayerData();
