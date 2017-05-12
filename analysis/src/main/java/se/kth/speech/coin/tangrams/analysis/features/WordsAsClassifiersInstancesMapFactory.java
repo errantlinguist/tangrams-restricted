@@ -16,7 +16,7 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features;
 
-import java.nio.file.Path;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -28,6 +28,8 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import javax.xml.bind.JAXBException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,15 +37,13 @@ import com.google.common.collect.BiMap;
 import com.google.common.collect.Maps;
 
 import se.kth.speech.coin.tangrams.analysis.GameContext;
-import se.kth.speech.coin.tangrams.analysis.GameContextModelFactory;
 import se.kth.speech.coin.tangrams.analysis.GameHistory;
 import se.kth.speech.coin.tangrams.analysis.SegmentUtteranceFactory;
 import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
 import se.kth.speech.coin.tangrams.analysis.TemporalGameContexts;
 import se.kth.speech.coin.tangrams.analysis.Utterance;
-import se.kth.speech.coin.tangrams.analysis.UtterancePlayerIdMapFactory;
+import se.kth.speech.coin.tangrams.analysis.UtteranceEntityContextManager;
 import se.kth.speech.coin.tangrams.content.IconImages;
-import se.kth.speech.hat.xsd.Annotation;
 import weka.core.Attribute;
 import weka.core.DenseInstance;
 import weka.core.Instance;
@@ -58,58 +58,33 @@ import weka.core.Instances;
  *      In <em>Proceedings of IWCS 2015</em><a>.
  *
  */
-public final class WordsAsClassifiersInstancesMapFactory
-		implements Function<Collection<SessionDataManager>, Map<String, Instances>> {
+public final class WordsAsClassifiersInstancesMapFactory {
 
 	private static class MultiClassDataCollector {
-
-		private static final ImageEdgeCounter IMG_EDGE_COUNTER = new ImageEdgeCounter();
-
-		private static final SegmentUtteranceFactory SEG_UTT_FACTORY = new SegmentUtteranceFactory();
 
 		private static final Function<GameContext, Optional<Integer>> SELECTED_ENTITY_ID_GETTER = ctx -> ctx
 				.findLastSelectedEntityId();
 
 		private final Function<? super String, Instances> classInstanceGetter;
 
-		private final Function<? super Path, Map<String, GameHistory>> gameHistoryFactory;
-
-		private final Function<? super Path, Annotation> hatAnnotationFactory;
-
 		private final Function<GameContext, Integer> negativeExampleEntityIdGetter;
 
 		private final int numAttributes;
 
-		private MultiClassDataCollector(final Function<? super Path, Annotation> hatAnnotationFactory,
-				final Function<? super Path, Map<String, GameHistory>> gameHistoryFactory,
-				final Function<? super String, Instances> classInstanceGetter, final int numAttributes,
-				final Function<GameContext, Integer> negativeExampleEntityIdGetter) {
-			this.hatAnnotationFactory = hatAnnotationFactory;
-			this.gameHistoryFactory = gameHistoryFactory;
+		private MultiClassDataCollector(final Function<? super String, Instances> classInstanceGetter,
+				final int numAttributes, final Function<GameContext, Integer> negativeExampleEntityIdGetter) {
 			this.negativeExampleEntityIdGetter = negativeExampleEntityIdGetter;
 			this.classInstanceGetter = classInstanceGetter;
 			this.numAttributes = numAttributes;
 		}
 
-		private void accept(final SessionDataManager sessionData) {
-			final Path hatInfilePath = sessionData.getHATFilePath();
-			final Annotation uttAnnots = hatAnnotationFactory.apply(hatInfilePath);
+		private void accept(final UtteranceEntityContextManager uttCtx) {
+			final BiMap<String, String> playerSourceIds = uttCtx.getPlayerSourceIds();
+			final List<Utterance> utts = uttCtx.getUtts();
+			final Map<Utterance, String> uttPlayerIds = uttCtx.getUttPlayerIds();
+			final EntityFeatureExtractionContextFactory extractionContextFactory = uttCtx.getExtractionContextFactory();
 
-			final Path eventLogPath = sessionData.getCanonicalEventLogPath();
-			final Map<String, GameHistory> gameHistories = gameHistoryFactory.apply(eventLogPath);
-			final int uniqueModelDescriptionCount = gameHistories.values().size();
-
-			final EntityFeatureExtractionContextFactory extractionContextFactory = new EntityFeatureExtractionContextFactory(
-					new GameContextModelFactory(uniqueModelDescriptionCount), IMG_EDGE_COUNTER);
-
-			final BiMap<String, String> playerSourceIds = sessionData.getPlayerData().getPlayerSourceIds();
-			final Function<String, String> sourcePlayerIdGetter = playerSourceIds.inverse()::get;
-			final Map<Utterance, String> uttPlayerIds = new UtterancePlayerIdMapFactory(SEG_UTT_FACTORY::create,
-					sourcePlayerIdGetter).apply(uttAnnots.getSegments().getSegment());
-			final List<Utterance> utts = Arrays
-					.asList(uttPlayerIds.keySet().stream().sorted().toArray(Utterance[]::new));
-
-			for (final Entry<String, GameHistory> gameHistory : gameHistories.entrySet()) {
+			for (final Entry<String, GameHistory> gameHistory : uttCtx.getGameHistories().entrySet()) {
 				final String gameId = gameHistory.getKey();
 				LOGGER.debug("Processing game \"{}\".", gameId);
 				final GameHistory history = gameHistory.getValue();
@@ -166,7 +141,11 @@ public final class WordsAsClassifiersInstancesMapFactory
 
 	private static final EntityFeature.Extractor EXTRACTOR;
 
+	private static final ImageEdgeCounter IMG_EDGE_COUNTER = new ImageEdgeCounter();
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(WordsAsClassifiersInstancesMapFactory.class);
+
+	private static final SegmentUtteranceFactory SEG_UTT_FACTORY = new SegmentUtteranceFactory();
 
 	static {
 		final List<String> shapeFeatureVals = new ArrayList<>(IconImages.getImageResources().keySet());
@@ -187,22 +166,14 @@ public final class WordsAsClassifiersInstancesMapFactory
 		return Math.toIntExact(Math.round(Math.ceil(Math.log(sessionData.size() * 850))));
 	}
 
-	private final Function<? super Path, Map<String, GameHistory>> gameHistoryFactory;
-
-	private final Function<? super Path, Annotation> hatAnnotationFactory;
-
 	private final Function<GameContext, Integer> negativeExampleEntityIdGetter;
 
-	public WordsAsClassifiersInstancesMapFactory(final Function<? super Path, Annotation> hatAnnotationFactory,
-			final Function<? super Path, Map<String, GameHistory>> gameHistoryFactory,
-			final Function<GameContext, Integer> negativeExampleEntityIdGetter) {
-		this.hatAnnotationFactory = hatAnnotationFactory;
-		this.gameHistoryFactory = gameHistoryFactory;
+	public WordsAsClassifiersInstancesMapFactory(final Function<GameContext, Integer> negativeExampleEntityIdGetter) {
 		this.negativeExampleEntityIdGetter = negativeExampleEntityIdGetter;
 	}
 
-	@Override
-	public Map<String, Instances> apply(final Collection<SessionDataManager> sessionData) {
+	public Map<String, Instances> apply(final Collection<SessionDataManager> sessionData)
+			throws JAXBException, IOException {
 		final Map<String, Instances> result = Maps.newHashMapWithExpectedSize(estimateVocabTypeCount(sessionData));
 		final Function<String, Instances> classInstanceFetcher = className -> result.computeIfAbsent(className, k -> {
 			final Instances instances = new Instances("referent_for_token-" + k, ATTRS,
@@ -210,10 +181,12 @@ public final class WordsAsClassifiersInstancesMapFactory
 			instances.setClass(CLASS_ATTR);
 			return instances;
 		});
-		final MultiClassDataCollector coll = new MultiClassDataCollector(hatAnnotationFactory, gameHistoryFactory,
-				classInstanceFetcher, ATTRS.size(), negativeExampleEntityIdGetter);
+		final MultiClassDataCollector coll = new MultiClassDataCollector(classInstanceFetcher, ATTRS.size(),
+				negativeExampleEntityIdGetter);
 		for (final SessionDataManager sessionDatum : sessionData) {
-			coll.accept(sessionDatum);
+			final UtteranceEntityContextManager uttCtx = new UtteranceEntityContextManager(sessionDatum, SEG_UTT_FACTORY,
+					IMG_EDGE_COUNTER);
+			coll.accept(uttCtx);
 		}
 		return result;
 	}

@@ -18,19 +18,15 @@ package se.kth.speech.coin.tangrams.analysis.features;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 import javax.xml.bind.JAXBException;
@@ -46,13 +42,9 @@ import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import iristk.util.HAT;
-import se.kth.speech.coin.tangrams.analysis.GameHistory;
 import se.kth.speech.coin.tangrams.analysis.RandomNotSelectedEntityIdGetter;
 import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
 import se.kth.speech.coin.tangrams.content.IconImages;
-import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
-import se.kth.speech.hat.xsd.Annotation;
 import weka.core.Attribute;
 import weka.core.Instances;
 import weka.core.converters.AbstractFileSaver;
@@ -129,6 +121,8 @@ public final class WordsAsClassifiersTrainingDataWriter {
 
 	}
 
+	public static final String CLASS_ATTR_NAME = "REFERENT";
+
 	private static final ArrayList<Attribute> ATTRS;
 
 	private static final Attribute CLASS_ATTR;
@@ -144,7 +138,7 @@ public final class WordsAsClassifiersTrainingDataWriter {
 		final Map<EntityFeature, Attribute> featureAttrs = EXTRACTOR.getFeatureAttrs();
 		ATTRS = new ArrayList<>(featureAttrs.size() + 1);
 		ATTRS.addAll(featureAttrs.values());
-		CLASS_ATTR = new Attribute("REFERENT", Arrays.asList(Boolean.TRUE.toString(), Boolean.FALSE.toString()));
+		CLASS_ATTR = new Attribute(CLASS_ATTR_NAME, Arrays.asList(Boolean.TRUE.toString(), Boolean.FALSE.toString()));
 		ATTRS.add(CLASS_ATTR);
 	}
 
@@ -173,7 +167,7 @@ public final class WordsAsClassifiersTrainingDataWriter {
 				LOGGER.info("Will write data in \"*{}\" format.", outfileExt);
 
 				final WordsAsClassifiersInstancesMapFactory instancesFactory = new WordsAsClassifiersInstancesMapFactory(
-						createAnnotationReader(), createGameHistoryReader(), new RandomNotSelectedEntityIdGetter(rnd));
+						new RandomNotSelectedEntityIdGetter(rnd));
 				final WordsAsClassifiersTrainingDataWriter writer = new WordsAsClassifiersTrainingDataWriter(
 						instancesFactory);
 				final Map<String, Instances> classInstances = writer.apply(inpaths);
@@ -207,38 +201,13 @@ public final class WordsAsClassifiersTrainingDataWriter {
 		}
 	}
 
-	private static Function<Path, Annotation> createAnnotationReader() {
-		final Map<Path, Annotation> pathAnnots = new HashMap<>();
-		return path -> pathAnnots.computeIfAbsent(path, k -> {
-			LOGGER.info("Reading annotations from \"{}\".", k);
-			try {
-				return HAT.readAnnotation(k.toFile());
-			} catch (final JAXBException e) {
-				throw new RuntimeException(e);
-			}
-		});
-	}
-
-	private static Function<Path, Map<String, GameHistory>> createGameHistoryReader() {
-		final Map<Path, Map<String, GameHistory>> pathGameHistories = new HashMap<>();
-		return path -> pathGameHistories.computeIfAbsent(path, k -> {
-			LOGGER.info("Reading game histories from \"{}\".", k);
-			try {
-				return LoggedEvents.parseGameHistories(Files.lines(k),
-						LoggedEvents.VALID_MODEL_MIN_REQUIRED_EVENT_MATCHER);
-			} catch (final IOException e) {
-				throw new UncheckedIOException(e);
-			}
-		});
-	}
-
 	private final WordsAsClassifiersInstancesMapFactory instancesFactory;
 
 	public WordsAsClassifiersTrainingDataWriter(final WordsAsClassifiersInstancesMapFactory instancesFactory) {
 		this.instancesFactory = instancesFactory;
 	}
 
-	public Map<String, Instances> apply(final Iterable<Path> inpaths) throws IOException {
+	public Map<String, Instances> apply(final Iterable<Path> inpaths) throws IOException, JAXBException {
 		final Map<Path, SessionDataManager> infileSessionData = SessionDataManager.createFileSessionDataMap(inpaths);
 		return instancesFactory.apply(infileSessionData.values());
 	}
