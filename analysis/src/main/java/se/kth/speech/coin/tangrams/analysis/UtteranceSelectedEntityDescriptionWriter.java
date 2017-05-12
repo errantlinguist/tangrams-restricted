@@ -469,7 +469,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 
 	private static final FileNameExtensionFilter DEFAULT_FILE_FILTER;
 
-	private static final String DEFAULT_OUTFILE_PREFIX = "uttImgDescs_";
+	private static final String DEFAULT_OUTFILE_PREFIX = "";
 
 	private static final Extractor EXTRACTOR;
 
@@ -661,6 +661,8 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 		final Map<Utterance, String> uttPlayerIds = new UtterancePlayerIdMapFactory(SEG_UTT_FACTORY::create,
 				playerData.getPlayerSourceIds().inverse()::get).apply(uttAnnots.getSegments().getSegment());
 		final List<Utterance> utts = Arrays.asList(uttPlayerIds.keySet().stream().sorted().toArray(Utterance[]::new));
+
+		final Path extantOutPath = Files.createDirectories(outpath);
 		for (final String gameId : playerGameIdIntersection) {
 			LOGGER.debug("Processing game \"{}\".", gameId);
 			final Map<String, GameHistory> playerHistories = gamePlayerHistoryTable.row(gameId);
@@ -670,7 +672,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 			for (final Entry<String, GameHistory> playerHistory : playerHistories.entrySet()) {
 				final String playerId = playerHistory.getKey();
 				final GameHistory history = playerHistory.getValue();
-				final Path outfilePath = outpath
+				final Path outfilePath = extantOutPath
 						.resolve(outfileNamePrefix + "_GAME-" + gameId + "_LOG-" + playerId + ".txt");
 				LOGGER.info("Writing utterances from perspective of \"{}\" to \"{}\".", playerId, outfilePath);
 				try (BufferedWriter writer = Files.newBufferedWriter(outfilePath, StandardOpenOption.CREATE,
