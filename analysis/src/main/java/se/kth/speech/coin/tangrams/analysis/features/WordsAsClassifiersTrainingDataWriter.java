@@ -18,19 +18,14 @@ package se.kth.speech.coin.tangrams.analysis.features;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.FileVisitOption;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Properties;
 import java.util.Random;
 import java.util.function.Supplier;
 
@@ -188,18 +183,6 @@ public final class WordsAsClassifiersTrainingDataWriter {
 		}
 	}
 
-	private static void putSessionData(final Map<Path, SessionDataManager> fileSessionData, final Path infilePath)
-			throws IOException {
-		LOGGER.info("Reading batch job properties from \"{}\".", infilePath);
-		final Properties props = new Properties();
-		try (final InputStream propsInstream = Files.newInputStream(infilePath)) {
-			props.load(propsInstream);
-			final Path infileBaseDir = infilePath.getParent();
-			final SessionDataManager sessionData = SessionDataManager.create(props, infileBaseDir);
-			fileSessionData.put(infilePath, sessionData);
-		}
-	}
-
 	private final WordsAsClassifiersInstancesMapFactory instancesFactory;
 
 	public WordsAsClassifiersTrainingDataWriter(final WordsAsClassifiersInstancesMapFactory instancesFactory) {
@@ -207,15 +190,7 @@ public final class WordsAsClassifiersTrainingDataWriter {
 	}
 
 	public Map<String, Instances> apply(final Iterable<Path> inpaths) throws JAXBException, IOException {
-		final Map<Path, SessionDataManager> infileSessionData = new HashMap<>();
-		for (final Path inpath : inpaths) {
-			LOGGER.info("Looking for batch job data underneath \"{}\".", inpath);
-			final Path[] infiles = Files.walk(inpath, FileVisitOption.FOLLOW_LINKS).filter(Files::isRegularFile)
-					.filter(filePath -> filePath.getFileName().toString().endsWith(".properties")).toArray(Path[]::new);
-			for (final Path infile : infiles) {
-				putSessionData(infileSessionData, infile);
-			}
-		}
+		final Map<Path, SessionDataManager> infileSessionData = SessionDataManager.createFileSessionDataMap(inpaths);
 		return instancesFactory.apply(infileSessionData.values());
 	}
 

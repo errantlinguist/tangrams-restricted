@@ -16,9 +16,18 @@
 */
 package se.kth.speech.coin.tangrams.analysis;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.FileVisitOption;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Properties;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import se.kth.speech.io.RelativePaths;
 
@@ -29,12 +38,40 @@ import se.kth.speech.io.RelativePaths;
  */
 public final class SessionDataManager {
 
+	private static final Logger LOGGER = LoggerFactory.getLogger(SessionDataManager.class);
+
 	public static SessionDataManager create(final Properties props, final Path baseDir) {
 		final Path hatInfilePath = RelativePaths.resolveIfNotAbsolute(Paths.get(props.getProperty("hat")), baseDir);
 		final Path canonicalEventLogPath = RelativePaths
 				.resolveIfNotAbsolute(Paths.get(props.getProperty("canonicalEvents")), baseDir);
 		final PlayerDataManager playerData = PlayerDataManager.create(props, baseDir);
 		return new SessionDataManager(hatInfilePath, canonicalEventLogPath, playerData);
+	}
+
+	public static Map<Path, SessionDataManager> createFileSessionDataMap(final Iterable<Path> inpaths)
+			throws IOException {
+		final Map<Path, SessionDataManager> result = new HashMap<>();
+		for (final Path inpath : inpaths) {
+			LOGGER.info("Looking for session data underneath \"{}\".", inpath);
+			final Path[] infiles = Files.walk(inpath, FileVisitOption.FOLLOW_LINKS).filter(Files::isRegularFile)
+					.filter(filePath -> filePath.getFileName().toString().endsWith(".properties")).toArray(Path[]::new);
+			for (final Path infile : infiles) {
+				putSessionData(result, infile);
+			}
+		}
+		return result;
+	}
+
+	private static void putSessionData(final Map<Path, SessionDataManager> fileSessionData, final Path infilePath)
+			throws IOException {
+		LOGGER.info("Reading session properties from \"{}\".", infilePath);
+		final Properties props = new Properties();
+		try (final InputStream propsInstream = Files.newInputStream(infilePath)) {
+			props.load(propsInstream);
+			final Path infileBaseDir = infilePath.getParent();
+			final SessionDataManager sessionData = SessionDataManager.create(props, infileBaseDir);
+			fileSessionData.put(infilePath, sessionData);
+		}
 	}
 
 	private final Path canonicalEventLogPath;
