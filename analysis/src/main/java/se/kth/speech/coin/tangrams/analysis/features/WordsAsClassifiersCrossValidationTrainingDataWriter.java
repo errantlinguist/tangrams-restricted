@@ -134,6 +134,10 @@ public final class WordsAsClassifiersCrossValidationTrainingDataWriter {
 
 	}
 
+	public static final String TEST_FILE_NAME_BASE = "test";
+
+	public static final String TRAINING_FILE_NAME_PREFIX = "train-";
+
 	private static final ArrayList<Attribute> ATTRS;
 
 	private static final Attribute CLASS_ATTR;
@@ -265,7 +269,7 @@ public final class WordsAsClassifiersCrossValidationTrainingDataWriter {
 			final AbstractFileSaver saver = ConverterUtils.getSaverForExtension(outfileExt);
 			for (final Entry<String, Instances> classInstanceEntry : classInstances.entrySet()) {
 				final String className = classInstanceEntry.getKey();
-				final File outfile = new File(subsampleDir, "train-" + className + outfileExt);
+				final File outfile = new File(subsampleDir, TRAINING_FILE_NAME_PREFIX + className + outfileExt);
 				LOGGER.debug("Writing training data for classifier \"{}\" to \"{}\".", className, outfile);
 				final Instances insts = classInstanceEntry.getValue();
 				saver.setInstances(insts);
@@ -274,7 +278,7 @@ public final class WordsAsClassifiersCrossValidationTrainingDataWriter {
 			}
 			LOGGER.info("Wrote training data for {} class(es).", classInstances.size());
 
-			final File testOutfile = new File(subsampleDir, "test" + outfileExt);
+			final File testOutfile = new File(subsampleDir, TEST_FILE_NAME_BASE + outfileExt);
 			LOGGER.info("Writing test data to \"{}\".", testOutfile);
 			final Instances testInsts = instancesFactory.apply(Collections.singleton(testSessionData)).values()
 					.iterator().next();
