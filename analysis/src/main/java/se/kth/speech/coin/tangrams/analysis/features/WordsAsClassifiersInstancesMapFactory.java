@@ -16,7 +16,6 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -28,8 +27,6 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Stream;
-
-import javax.xml.bind.JAXBException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,7 +58,8 @@ import weka.core.Instances;
  *      In <em>Proceedings of IWCS 2015</em><a>.
  *
  */
-public final class WordsAsClassifiersInstancesMapFactory {
+public final class WordsAsClassifiersInstancesMapFactory
+		implements Function<Collection<SessionDataManager>, Map<String, Instances>> {
 
 	private static class MultiClassDataCollector {
 
@@ -203,8 +201,8 @@ public final class WordsAsClassifiersInstancesMapFactory {
 		this.negativeExampleEntityIdGetter = negativeExampleEntityIdGetter;
 	}
 
-	public Map<String, Instances> apply(final Collection<SessionDataManager> sessionData)
-			throws JAXBException, IOException {
+	@Override
+	public Map<String, Instances> apply(final Collection<SessionDataManager> sessionData) {
 		final Map<String, Instances> result = Maps.newHashMapWithExpectedSize(estimateVocabTypeCount(sessionData));
 		final Function<String, Instances> classInstanceFetcher = className -> result.computeIfAbsent(className, k -> {
 			final Instances instances = new Instances("referent_for_token-" + k, ATTRS,

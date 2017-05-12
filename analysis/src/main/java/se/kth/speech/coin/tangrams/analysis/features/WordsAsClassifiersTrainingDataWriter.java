@@ -238,7 +238,7 @@ public final class WordsAsClassifiersTrainingDataWriter {
 		this.instancesFactory = instancesFactory;
 	}
 
-	public Map<String, Instances> apply(final Iterable<Path> inpaths) throws JAXBException, IOException {
+	public Map<String, Instances> apply(final Iterable<Path> inpaths) throws IOException {
 		final Map<Path, SessionDataManager> infileSessionData = SessionDataManager.createFileSessionDataMap(inpaths);
 		return instancesFactory.apply(infileSessionData.values());
 	}
