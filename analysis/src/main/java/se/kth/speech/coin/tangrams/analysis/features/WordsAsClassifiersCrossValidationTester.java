@@ -49,6 +49,7 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.Maps;
 
 import se.kth.speech.coin.tangrams.content.IconImages;
+import weka.classifiers.AbstractClassifier;
 import weka.classifiers.functions.Logistic;
 import weka.core.Attribute;
 import weka.core.Instance;
@@ -66,6 +67,32 @@ import weka.core.converters.ConverterUtils;
  *
  */
 public final class WordsAsClassifiersCrossValidationTester {
+
+	private static class DisjointMultiClassifier extends AbstractClassifier {
+
+		/**
+		 *
+		 */
+		private static final long serialVersionUID = -3227148575501596586L;
+
+		private final Map<String, Logistic> wordClassifiers;
+
+		public DisjointMultiClassifier(final Map<String, Logistic> wordClassifiers) {
+			this.wordClassifiers = wordClassifiers;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see weka.classifiers.Classifier#buildClassifier(weka.core.Instances)
+		 */
+		@Override
+		public void buildClassifier(final Instances data) throws TrainingException {
+			final String relName = parseRelationClassName(data.relationName());
+			trainWordClassifier(wordClassifiers, relName, data);
+		}
+
+	}
 
 	private enum Parameter implements Supplier<Option> {
 		HELP("?") {
@@ -147,33 +174,16 @@ public final class WordsAsClassifiersCrossValidationTester {
 			final AbstractFileLoader loader = ConverterUtils.getLoaderForExtension(ext);
 			loader.setSource(infile.toFile());
 			final Instances structure = loader.getStructure();
-			final String relName = structure.relationName();
-			final Matcher classRelNameMatcher = CLASS_RELATION_NAME_PATTERN.matcher(relName);
-			if (classRelNameMatcher.matches()) {
-				final String className = classRelNameMatcher.group(1);
-				for (Instance nextInst = loader.getNextInstance(structure); nextInst != null; nextInst = loader
-						.getNextInstance(structure)) {
-					structure.add(nextInst);
-				}
-				LOGGER.info("{} instance(s) for class \"{}\".", structure.numInstances(), className);
-				final Attribute classAttr = structure
-						.attribute(WordsAsClassifiersCrossValidationTrainingDataWriter.CLASS_ATTR_NAME);
-				structure.setClassIndex(classAttr.index());
-
-				final Logistic classifier = new Logistic();
-				try {
-					classifier.buildClassifier(structure);
-				} catch (final Exception e) {
-					throw new TrainingException(e);
-				}
-				final Logistic oldClassifier = result.put(className, classifier);
-				if (oldClassifier != null) {
-					throw new IllegalArgumentException(
-							String.format("Multiple training files found for class \"%s\".", className));
-				}
-			} else {
-				LOGGER.warn("Relation name \"{}\" could not be parsed as representing a single word class.", relName);
+			final String className = parseRelationClassName(structure.relationName());
+			for (Instance nextInst = loader.getNextInstance(structure); nextInst != null; nextInst = loader
+					.getNextInstance(structure)) {
+				structure.add(nextInst);
 			}
+			LOGGER.info("{} instance(s) for class \"{}\".", structure.numInstances(), className);
+			final Attribute classAttr = structure
+					.attribute(WordsAsClassifiersCrossValidationTrainingDataWriter.CLASS_ATTR_NAME);
+			structure.setClassIndex(classAttr.index());
+			trainWordClassifier(result, className, structure);
 		}
 		return result;
 	}
@@ -236,6 +246,31 @@ public final class WordsAsClassifiersCrossValidationTester {
 				.anyMatch(filePath -> TEST_FILE_NAME_PATTERN.matcher(filePath.getFileName().toString()).matches());
 		return containsTestFiles && dirFiles.stream()
 				.anyMatch(filePath -> TRAINING_FILE_NAME_PATTERN.matcher(filePath.getFileName().toString()).matches());
+	}
+
+	private static String parseRelationClassName(final String relName) {
+		final Matcher classRelNameMatcher = CLASS_RELATION_NAME_PATTERN.matcher(relName);
+		if (classRelNameMatcher.matches()) {
+			return classRelNameMatcher.group(1);
+		} else {
+			throw new IllegalArgumentException(
+					String.format("Could not parse a class name from relation name \"%s\".", relName));
+		}
+	}
+
+	private static void trainWordClassifier(final Map<String, Logistic> classifiers, final String className,
+			final Instances structure) throws TrainingException {
+		final Logistic classifier = new Logistic();
+		try {
+			classifier.buildClassifier(structure);
+		} catch (final Exception e) {
+			throw new TrainingException(e);
+		}
+		final Logistic oldClassifier = classifiers.put(className, classifier);
+		if (oldClassifier != null) {
+			throw new IllegalArgumentException(
+					String.format("Multiple training files found for class \"%s\".", className));
+		}
 	}
 
 	public void accept(final Path inpath) throws IOException, TrainingException {
