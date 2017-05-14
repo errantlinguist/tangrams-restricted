@@ -24,7 +24,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -62,9 +61,6 @@ public final class WordsAsClassifiersInstancesMapFactory {
 
 	private static class MultiClassDataCollector {
 
-		private static final Function<GameContext, Optional<Integer>> SELECTED_ENTITY_ID_GETTER = ctx -> ctx
-				.findLastSelectedEntityId();
-
 		private final Function<? super String, Instances> classInstanceGetter;
 
 		private final Function<GameContext, Integer> negativeExampleEntityIdGetter;
@@ -97,7 +93,7 @@ public final class WordsAsClassifiersInstancesMapFactory {
 							final Stream<GameContext> uttContexts = TemporalGameContexts.create(history,
 									utt.getStartTime(), utt.getEndTime(), perspectivePlayerId);
 							uttContexts.forEach(uttContext -> {
-								SELECTED_ENTITY_ID_GETTER.apply(uttContext).ifPresent(selectedEntityId -> {
+								uttContext.findLastSelectedEntityId().ifPresent(selectedEntityId -> {
 									LOGGER.debug(
 											"Creating positive and negative examples for entity ID \"{}\", which is selected by player \"{}\".",
 											selectedEntityId, perspectivePlayerId);
