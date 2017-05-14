@@ -131,6 +131,8 @@ public final class WordsAsClassifiersInstancesMapFactory {
 		}
 	}
 
+	private static final String CLASS_ATTR_NAME = "IS_REFERENT";
+
 	public static final String CLASS_RELATION_PREFIX = "referent_for_token-";
 
 	private static final ArrayList<Attribute> ATTRS;
@@ -152,8 +154,15 @@ public final class WordsAsClassifiersInstancesMapFactory {
 		final Map<EntityFeature, Attribute> featureAttrs = EXTRACTOR.getFeatureAttrs();
 		ATTRS = new ArrayList<>(featureAttrs.size() + 1);
 		ATTRS.addAll(featureAttrs.values());
-		CLASS_ATTR = new Attribute("REFERENT", Arrays.asList(Boolean.TRUE.toString(), Boolean.FALSE.toString()));
+		CLASS_ATTR = new Attribute(CLASS_ATTR_NAME, Arrays.asList(Boolean.TRUE.toString(), Boolean.FALSE.toString()));
 		ATTRS.add(CLASS_ATTR);
+	}
+
+	/**
+	 * @return the classAttrName
+	 */
+	public static String getClassAttrName() {
+		return CLASS_ATTR_NAME;
 	}
 
 	private static int estimateVocabTokenCount(final String token, final Collection<SessionDataManager> sessionData) {

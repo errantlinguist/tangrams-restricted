@@ -20,9 +20,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -44,8 +42,6 @@ import org.slf4j.LoggerFactory;
 
 import se.kth.speech.coin.tangrams.analysis.RandomNotSelectedEntityIdGetter;
 import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
-import se.kth.speech.coin.tangrams.content.IconImages;
-import weka.core.Attribute;
 import weka.core.Instances;
 import weka.core.converters.AbstractFileSaver;
 import weka.core.converters.ConverterUtils;
@@ -121,26 +117,7 @@ public final class WordsAsClassifiersTrainingDataWriter {
 
 	}
 
-	public static final String CLASS_ATTR_NAME = "REFERENT";
-
-	private static final ArrayList<Attribute> ATTRS;
-
-	private static final Attribute CLASS_ATTR;
-
-	private static final EntityFeature.Extractor EXTRACTOR;
-
 	private static final Logger LOGGER = LoggerFactory.getLogger(WordsAsClassifiersTrainingDataWriter.class);
-
-	static {
-		final List<String> shapeFeatureVals = new ArrayList<>(IconImages.getImageResources().keySet());
-		shapeFeatureVals.sort(Comparator.naturalOrder());
-		EXTRACTOR = new EntityFeature.Extractor(shapeFeatureVals);
-		final Map<EntityFeature, Attribute> featureAttrs = EXTRACTOR.getFeatureAttrs();
-		ATTRS = new ArrayList<>(featureAttrs.size() + 1);
-		ATTRS.addAll(featureAttrs.values());
-		CLASS_ATTR = new Attribute(CLASS_ATTR_NAME, Arrays.asList(Boolean.TRUE.toString(), Boolean.FALSE.toString()));
-		ATTRS.add(CLASS_ATTR);
-	}
 
 	public static void main(final CommandLine cl) throws IOException, JAXBException, ParseException {
 		if (cl.hasOption(Parameter.HELP.optName)) {
