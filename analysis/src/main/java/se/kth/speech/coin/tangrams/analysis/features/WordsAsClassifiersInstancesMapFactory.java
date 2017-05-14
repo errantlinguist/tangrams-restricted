@@ -131,6 +131,8 @@ public final class WordsAsClassifiersInstancesMapFactory {
 		}
 	}
 
+	public static final String CLASS_RELATION_PREFIX = "referent_for_token-";
+
 	private static final ArrayList<Attribute> ATTRS;
 
 	private static final Attribute CLASS_ATTR;
@@ -172,7 +174,7 @@ public final class WordsAsClassifiersInstancesMapFactory {
 			throws JAXBException, IOException {
 		final Map<String, Instances> result = Maps.newHashMapWithExpectedSize(estimateVocabTypeCount(sessionData));
 		final Function<String, Instances> classInstanceFetcher = className -> result.computeIfAbsent(className, k -> {
-			final Instances instances = new Instances("referent_for_token-" + k, ATTRS,
+			final Instances instances = new Instances(CLASS_RELATION_PREFIX + k, ATTRS,
 					estimateVocabTokenCount(k, sessionData));
 			instances.setClass(CLASS_ATTR);
 			return instances;
@@ -180,8 +182,8 @@ public final class WordsAsClassifiersInstancesMapFactory {
 		final MultiClassDataCollector coll = new MultiClassDataCollector(classInstanceFetcher, ATTRS.size(),
 				negativeExampleEntityIdGetter);
 		for (final SessionDataManager sessionDatum : sessionData) {
-			final UtteranceEntityContextManager uttCtx = new UtteranceEntityContextManager(sessionDatum, SEG_UTT_FACTORY,
-					IMG_EDGE_COUNTER);
+			final UtteranceEntityContextManager uttCtx = new UtteranceEntityContextManager(sessionDatum,
+					SEG_UTT_FACTORY, IMG_EDGE_COUNTER);
 			coll.accept(uttCtx);
 		}
 		return result;
