@@ -28,33 +28,14 @@ import iristk.system.Event;
  */
 public final class EventDialogue {
 
-//	private final Function<? super Utterance, GameContext> gameContextFactory;
-	
 	private final Optional<Event> lastEvent;
 
 	private final List<Utterance> utts;
 
-//	public UtteranceDialogue(final List<Utterance> utts,
-//			final Function<? super Utterance, GameContext> gameContextFactory) {
-//		this.utts = utts;
-//		this.gameContextFactory = gameContextFactory;
-//	}
-	
 	public EventDialogue( final Optional<Event> lastEvent, final List<Utterance> utts) {
 		this.lastEvent = lastEvent;
 		this.utts = utts;
 	}
-
-//	public Optional<Event> findLastEventBeforeFirstUtt() {
-//		return getGameContext(getUtts().get(0)).getPrecedingEventsDescendingOrder().findFirst();
-//	}
-
-//	/**
-//	 * @return the gameContext
-//	 */
-//	public GameContext getGameContext(final Utterance utt) {
-//		return gameContextFactory.apply(utt);
-//	}
 
 	/**
 	 * @return the lastEvent
