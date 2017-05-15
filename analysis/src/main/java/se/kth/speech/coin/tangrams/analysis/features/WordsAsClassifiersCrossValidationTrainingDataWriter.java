@@ -259,7 +259,9 @@ public final class WordsAsClassifiersCrossValidationTrainingDataWriter {
 		LOGGER.info("Finished writing {} cross-validation dataset(s) to \"{}\".", infileSessionData.size(), outdir);
 	}
 
-	private void createTestData(final SessionDataManager testSessionData) {
+	private void createTestData(final SessionDataManager testSessionData) throws JAXBException, IOException {
+		SessionEventDialogueManager sessionEventDiagMgr = new SessionEventDialogueManager(testSessionData, EVENT_DIAG_FACTORY);
+//		sessionEventDiagMgr.createUttDialogues(history, perspectivePlayerId);
 		final Path eventLogPath = testSessionData.getCanonicalEventLogPath();
 
 	}

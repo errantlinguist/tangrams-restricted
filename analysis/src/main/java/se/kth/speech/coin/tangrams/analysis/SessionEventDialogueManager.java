@@ -19,10 +19,10 @@ package se.kth.speech.coin.tangrams.analysis;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Collections;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -50,19 +50,17 @@ public final class SessionEventDialogueManager {
 
 	private final BiFunction<ListIterator<Utterance>, GameHistory, Stream<EventDialogue>> eventUttFactory;
 
-	private final Map<String, GameHistory> gameHistories;
+	private final GameHistory gameHistory;
+
+	private final String gameId;
 
 	private final BiMap<String, String> playerSourceIds;
 
-	public int getUniqueGameModelDescriptionCount(){
-		return gameHistories.values().size();
-	}
-
 	private final List<Utterance> utts;
 
-	public SessionEventDialogueManager(
-			final SessionDataManager sessionData,
-			final BiFunction<ListIterator<Utterance>, GameHistory, Stream<EventDialogue>> eventUttFactory) throws JAXBException, IOException {
+	public SessionEventDialogueManager(final SessionDataManager sessionData,
+			final BiFunction<ListIterator<Utterance>, GameHistory, Stream<EventDialogue>> eventUttFactory)
+			throws JAXBException, IOException {
 		this.eventUttFactory = eventUttFactory;
 		final Path hatInfilePath = sessionData.getHATFilePath();
 		LOGGER.info("Reading annotations from \"{}\".", hatInfilePath);
@@ -70,8 +68,25 @@ public final class SessionEventDialogueManager {
 
 		final Path eventLogPath = sessionData.getCanonicalEventLogPath();
 		LOGGER.info("Reading game histories from \"{}\".", eventLogPath);
-		gameHistories = LoggedEvents.parseGameHistories(Files.lines(eventLogPath),
+		final Map<String, GameHistory> gameHistories = LoggedEvents.parseGameHistories(Files.lines(eventLogPath),
 				LoggedEvents.VALID_MODEL_MIN_REQUIRED_EVENT_MATCHER);
+		final int gameCount = gameHistories.size();
+		switch (gameCount) {
+		case 0: {
+			throw new IllegalArgumentException(String.format("Event log \"%s\" contains no games.", eventLogPath));
+		}
+		case 1: {
+			final Entry<String, GameHistory> gameHistoryToUse = gameHistories.entrySet().iterator().next();
+			gameId = gameHistoryToUse.getKey();
+			LOGGER.info("Parsed history for game \"{}\".", gameId);
+			gameHistory = gameHistoryToUse.getValue();
+			break;
+		}
+		default: {
+			throw new IllegalArgumentException(String
+					.format("Event log \"%s\" contains multiple games; Not (currently) supported.", eventLogPath));
+		}
+		}
 
 		playerSourceIds = sessionData.getPlayerData().getPlayerSourceIds();
 		final Map<String, String> sourcePlayerIds = sessionData.getPlayerData().getPlayerSourceIds().inverse();
@@ -79,7 +94,8 @@ public final class SessionEventDialogueManager {
 			final String sourceId = seg.getSource();
 			return sourcePlayerIds.get(sourceId);
 		});
-		utts = segUttFactory.create(uttAnnots.getSegments().getSegment().stream()).flatMap(List::stream).collect(Collectors.toList());
+		utts = segUttFactory.create(uttAnnots.getSegments().getSegment().stream()).flatMap(List::stream)
+				.collect(Collectors.toList());
 	}
 
 	public List<EventDialogue> createUttDialogues(final GameHistory history, final String perspectivePlayerId) {
@@ -88,11 +104,15 @@ public final class SessionEventDialogueManager {
 		return eventUttLists;
 	}
 
+	public GameHistory getGameHistory() {
+		return gameHistory;
+	}
+
 	/**
-	 * @return the gameHistories
+	 * @return the gameId
 	 */
-	public Map<String, GameHistory> getGameHistories() {
-		return Collections.unmodifiableMap(gameHistories);
+	public String getGameId() {
+		return gameId;
 	}
 
 	/**

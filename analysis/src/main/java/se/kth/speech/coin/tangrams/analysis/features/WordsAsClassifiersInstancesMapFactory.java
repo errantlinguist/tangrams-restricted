@@ -22,7 +22,6 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -88,45 +87,41 @@ public final class WordsAsClassifiersInstancesMapFactory
 		private void accept(final SessionEventDialogueManager sessionEventDiagMgr) {
 			final Set<String> playerIds = sessionEventDiagMgr.getPlayerSourceIds().keySet();
 			final EntityFeatureExtractionContextFactory extractionContextFactory = new EntityFeatureExtractionContextFactory(
-					new GameContextModelFactory(sessionEventDiagMgr.getUniqueGameModelDescriptionCount()),
-					IMG_EDGE_COUNTER);
+					new GameContextModelFactory(1), IMG_EDGE_COUNTER);
 
-			for (final Entry<String, GameHistory> gameHistory : sessionEventDiagMgr.getGameHistories().entrySet()) {
-				final String gameId = gameHistory.getKey();
-				LOGGER.debug("Processing game \"{}\".", gameId);
-				final GameHistory history = gameHistory.getValue();
-				for (final String perspectivePlayerId : playerIds) {
-					LOGGER.info("Processing game from perspective of player \"{}\".", perspectivePlayerId);
-					final List<EventDialogue> uttDialogues = sessionEventDiagMgr.createUttDialogues(history,
-							perspectivePlayerId);
-					uttDialogues.forEach(uttDialogue -> {
-						final List<Utterance> dialogueUtts = uttDialogue.getUtts();
-						dialogueUtts.forEach(dialogueUtt -> {
-							final String uttPlayerId = dialogueUtt.getSpeakerId();
-							if (perspectivePlayerId.equals(uttPlayerId)) {
-								final GameContext uttCtx = createGameContext(dialogueUtt, history, perspectivePlayerId);
-								uttCtx.findLastSelectedEntityId().ifPresent(selectedEntityId -> {
-									LOGGER.debug(
-											"Creating positive and negative examples for entity ID \"{}\", which is selected by player \"{}\".",
-											selectedEntityId, perspectivePlayerId);
-									// Add positive training examples
-									final EntityFeature.Extractor.Context positiveContext = extractionContextFactory
-											.createExtractionContext(uttCtx, selectedEntityId);
-									addTokenInstances(dialogueUtt, uttCtx, positiveContext, Boolean.TRUE.toString());
-									// Add negative training examples
-									final EntityFeature.Extractor.Context negativeContext = extractionContextFactory
-											.createExtractionContext(uttCtx,
-													negativeExampleEntityIdGetter.apply(uttCtx));
-									addTokenInstances(dialogueUtt, uttCtx, negativeContext, Boolean.FALSE.toString());
-								});
-							} else {
+			final String gameId = sessionEventDiagMgr.getGameId();
+			LOGGER.debug("Processing game \"{}\".", gameId);
+			final GameHistory history = sessionEventDiagMgr.getGameHistory();
+			for (final String perspectivePlayerId : playerIds) {
+				LOGGER.info("Processing game from perspective of player \"{}\".", perspectivePlayerId);
+				final List<EventDialogue> uttDialogues = sessionEventDiagMgr.createUttDialogues(history,
+						perspectivePlayerId);
+				uttDialogues.forEach(uttDialogue -> {
+					final List<Utterance> dialogueUtts = uttDialogue.getUtts();
+					dialogueUtts.forEach(dialogueUtt -> {
+						final String uttPlayerId = dialogueUtt.getSpeakerId();
+						if (perspectivePlayerId.equals(uttPlayerId)) {
+							final GameContext uttCtx = createGameContext(dialogueUtt, history, perspectivePlayerId);
+							uttCtx.findLastSelectedEntityId().ifPresent(selectedEntityId -> {
 								LOGGER.debug(
-										"Skipping the extraction of features for utterance with segment ID \"{}\" because the utterance is from player \"{}\" rather than the player whose perspective is being used for extracting features (\"{}\")",
-										dialogueUtt.getSegmentId(), uttPlayerId, perspectivePlayerId);
-							}
-						});
+										"Creating positive and negative examples for entity ID \"{}\", which is selected by player \"{}\".",
+										selectedEntityId, perspectivePlayerId);
+								// Add positive training examples
+								final EntityFeature.Extractor.Context positiveContext = extractionContextFactory
+										.createExtractionContext(uttCtx, selectedEntityId);
+								addTokenInstances(dialogueUtt, uttCtx, positiveContext, Boolean.TRUE.toString());
+								// Add negative training examples
+								final EntityFeature.Extractor.Context negativeContext = extractionContextFactory
+										.createExtractionContext(uttCtx, negativeExampleEntityIdGetter.apply(uttCtx));
+								addTokenInstances(dialogueUtt, uttCtx, negativeContext, Boolean.FALSE.toString());
+							});
+						} else {
+							LOGGER.debug(
+									"Skipping the extraction of features for utterance with segment ID \"{}\" because the utterance is from player \"{}\" rather than the player whose perspective is being used for extracting features (\"{}\")",
+									dialogueUtt.getSegmentId(), uttPlayerId, perspectivePlayerId);
+						}
 					});
-				}
+				});
 			}
 		}
 
