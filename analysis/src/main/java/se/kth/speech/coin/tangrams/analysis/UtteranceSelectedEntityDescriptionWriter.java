@@ -424,7 +424,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 						if (optSelectedEntityId.isPresent()) {
 							final Integer entityId = optSelectedEntityId.get();
 							final EntityFeature.Extractor.Context extractionContext = extractionContextFactory
-									.createExtractionContext(context, entityId);
+									.apply(context, entityId);
 							final Stream<Optional<Object>> featureVals = FEATURES_TO_DESCRIBE.stream()
 									.map(feature -> EXTRACTOR.getVal(feature, extractionContext));
 							featureVectorRepr = featureVals

@@ -19,6 +19,7 @@ package se.kth.speech.coin.tangrams.analysis.features;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -83,12 +84,12 @@ public final class WordsAsClassifiersInstancesMapFactory
 									"Creating positive and negative examples for entity ID \"{}\", which is selected by player \"{}\".",
 									selectedEntityId, submittingPlayerId);
 							// Add positive training examples
-							final EntityFeature.Extractor.Context positiveContext = extCtxFactory
-									.createExtractionContext(uttCtx, selectedEntityId);
+							final EntityFeature.Extractor.Context positiveContext = extCtxFactory.apply(uttCtx,
+									selectedEntityId);
 							addTokenInstances(dialogueUtt, positiveContext, Boolean.TRUE.toString());
 							// Add negative training examples
-							final EntityFeature.Extractor.Context negativeContext = extCtxFactory
-									.createExtractionContext(uttCtx, negativeExampleEntityIdGetter.apply(uttCtx));
+							final EntityFeature.Extractor.Context negativeContext = extCtxFactory.apply(uttCtx,
+									negativeExampleEntityIdGetter.apply(uttCtx));
 							addTokenInstances(dialogueUtt, negativeContext, Boolean.FALSE.toString());
 						} else {
 							LOGGER.debug(
@@ -143,7 +144,7 @@ public final class WordsAsClassifiersInstancesMapFactory
 	private EntityInstanceAttributeContext entityInstAttrCtx;
 
 	@Inject
-	private EntityFeatureExtractionContextFactory extCtxFactory;
+	private BiFunction<? super GameContext, ? super Integer, EntityFeature.Extractor.Context> extCtxFactory;
 
 	@Inject
 	private Function<GameContext, Integer> negativeExampleEntityIdGetter;

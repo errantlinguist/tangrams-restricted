@@ -16,6 +16,7 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features;
 
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.ToIntFunction;
 
@@ -25,7 +26,8 @@ import se.kth.speech.SpatialRegion;
 import se.kth.speech.coin.tangrams.analysis.GameContext;
 import se.kth.speech.coin.tangrams.iristk.events.ImageVisualizationInfoDescription;
 
-public final class EntityFeatureExtractionContextFactory {
+public final class EntityFeatureExtractionContextFactory
+		implements BiFunction<GameContext, Integer, EntityFeature.Extractor.Context> {
 
 	private final Function<? super GameContext, SpatialMatrix<Integer>> gameModelFactory;
 
@@ -38,9 +40,11 @@ public final class EntityFeatureExtractionContextFactory {
 		this.namedResourceEdgeCountFactory = namedResourceEdgeCountFactory;
 	}
 
-	public EntityFeature.Extractor.Context createExtractionContext(final GameContext context, final Integer entityId) {
+	@Override
+	public EntityFeature.Extractor.Context apply(final GameContext context, final Integer entityId) {
 		final SpatialMatrix<Integer> model = gameModelFactory.apply(context);
-		final ImageVisualizationInfoDescription.Datum imgVizInfoDatum = context.getEntityVisualizationInfo().get(entityId);
+		final ImageVisualizationInfoDescription.Datum imgVizInfoDatum = context.getEntityVisualizationInfo()
+				.get(entityId);
 		final SpatialRegion region = model.getElementPlacements().getElementMinimalRegions().get(entityId);
 		final int[] modelDims = model.getDimensions();
 		final double modelArea = IntArrays.product(modelDims);

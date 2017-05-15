@@ -26,6 +26,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
 import javax.inject.Inject;
@@ -199,7 +200,7 @@ public final class WordsAsClassifiersCrossValidationTrainingDataWriter {
 	private EntityInstanceAttributeContext entInstAttrCtx;
 
 	@Inject
-	private EntityFeatureExtractionContextFactory extCtxFactory;
+	private BiFunction<? super GameContext, ? super Integer, EntityFeature.Extractor.Context> extCtxFactory;
 
 	private final WordsAsClassifiersInstancesMapFactory instancesFactory;
 
@@ -316,8 +317,7 @@ public final class WordsAsClassifiersCrossValidationTrainingDataWriter {
 			final Map<Integer, Datum> examples = imgVizInfoDataEntry.getValue();
 			for (final Entry<Integer, Datum> example : examples.entrySet()) {
 				final Integer entityId = example.getKey();
-				final EntityFeature.Extractor.Context extContext = extCtxFactory.createExtractionContext(uttCtx,
-						entityId);
+				final EntityFeature.Extractor.Context extContext = extCtxFactory.apply(uttCtx, entityId);
 				if (entityStatus == null) {
 
 				} else {
