@@ -26,7 +26,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Random;
 import java.util.function.Supplier;
 
 import javax.xml.bind.JAXBException;
@@ -41,10 +40,9 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import se.kth.speech.coin.tangrams.analysis.EventDialogueFactory;
-import se.kth.speech.coin.tangrams.analysis.GameContextModelFactory;
-import se.kth.speech.coin.tangrams.analysis.RandomNotSelectedEntityIdGetter;
 import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
 import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManager;
 import se.kth.speech.coin.tangrams.iristk.EventTypeMatcher;
@@ -85,14 +83,6 @@ public final class WordsAsClassifiersTrainingDataWriter {
 						.desc("The filename extension matching the data type to output (e.g. \"arff\" or \"arff.gz\").")
 						.hasArg().argName("ext").build();
 			}
-		},
-		RANDOM_SEED("r") {
-			@Override
-			public Option get() {
-				return Option.builder(optName).longOpt("random-seed")
-						.desc("The value to use for seeding random negative examples.").hasArg().argName("value")
-						.type(Number.class).build();
-			}
 		};
 
 		private static final Options OPTIONS = createOptions();
@@ -127,9 +117,6 @@ public final class WordsAsClassifiersTrainingDataWriter {
 	private static final EventDialogueFactory EVENT_DIAG_FACTORY = new EventDialogueFactory(
 			new EventTypeMatcher(GameManagementEvent.NEXT_TURN_REQUEST));
 
-	private static final EntityFeatureExtractionContextFactory EXTRACTION_CONTEXT_FACTORY = new EntityFeatureExtractionContextFactory(
-			new GameContextModelFactory(1), new ImageEdgeCounter());
-
 	private static final Logger LOGGER = LoggerFactory.getLogger(WordsAsClassifiersTrainingDataWriter.class);
 
 	public static void main(final CommandLine cl) throws IOException, JAXBException, ParseException {
@@ -143,40 +130,32 @@ public final class WordsAsClassifiersTrainingDataWriter {
 			} else {
 				final File outdir = (File) cl.getParsedOptionValue(Parameter.OUTPATH.optName);
 				LOGGER.info("Will write data to \"{}\".", outdir);
-				final Number randomSeed = (Number) cl.getParsedOptionValue(Parameter.RANDOM_SEED.optName);
-				final Random rnd;
-				if (randomSeed == null) {
-					LOGGER.info("Using default system-generated random seed.");
-					rnd = new Random();
-				} else {
-					final long seed = randomSeed.longValue();
-					LOGGER.info("Using {} as random seed.", seed);
-					rnd = new Random(seed);
-				}
 				final String outfileExt = Parameter.parseOutputType(cl);
 				LOGGER.info("Will write data in \"*{}\" format.", outfileExt);
 
-				final WordsAsClassifiersInstancesMapFactory instancesFactory = new WordsAsClassifiersInstancesMapFactory(
-						EXTRACTION_CONTEXT_FACTORY, new RandomNotSelectedEntityIdGetter(rnd));
-				final WordsAsClassifiersTrainingDataWriter writer = new WordsAsClassifiersTrainingDataWriter(
-						instancesFactory);
-				final Map<String, Instances> classInstances = writer.apply(inpaths);
-				if (outdir.mkdirs()) {
-					LOGGER.info("Output directory \"{}\" was nonexistent; Created it before writing data.", outdir);
-				}
+				try (final ClassPathXmlApplicationContext appCtx = new ClassPathXmlApplicationContext("extraction.xml",
+						WordsAsClassifiersTrainingDataWriter.class)) {
+					final WordsAsClassifiersInstancesMapFactory instancesFactory = appCtx
+							.getBean(WordsAsClassifiersInstancesMapFactory.class);
+					final WordsAsClassifiersTrainingDataWriter writer = new WordsAsClassifiersTrainingDataWriter(
+							instancesFactory);
+					final Map<String, Instances> classInstances = writer.apply(inpaths);
+					if (outdir.mkdirs()) {
+						LOGGER.info("Output directory \"{}\" was nonexistent; Created it before writing data.", outdir);
+					}
 
-				final AbstractFileSaver saver = ConverterUtils.getSaverForExtension(outfileExt);
-				for (final Entry<String, Instances> classInstanceEntry : classInstances.entrySet()) {
-					final String className = classInstanceEntry.getKey();
-					final File outfile = new File(outdir, className + outfileExt);
-					LOGGER.info("Writing data for classifier \"{}\" to \"{}\".", className, outfile);
-					final Instances insts = classInstanceEntry.getValue();
-					saver.setInstances(insts);
-					saver.setFile(outfile);
-					saver.writeBatch();
+					final AbstractFileSaver saver = ConverterUtils.getSaverForExtension(outfileExt);
+					for (final Entry<String, Instances> classInstanceEntry : classInstances.entrySet()) {
+						final String className = classInstanceEntry.getKey();
+						final File outfile = new File(outdir, className + outfileExt);
+						LOGGER.info("Writing data for classifier \"{}\" to \"{}\".", className, outfile);
+						final Instances insts = classInstanceEntry.getValue();
+						saver.setInstances(insts);
+						saver.setFile(outfile);
+						saver.writeBatch();
+					}
 				}
 			}
-
 		}
 	}
 

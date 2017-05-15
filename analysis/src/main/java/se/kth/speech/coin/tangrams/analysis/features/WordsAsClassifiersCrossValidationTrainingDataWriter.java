@@ -26,9 +26,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Random;
 import java.util.function.Supplier;
 
+import javax.inject.Inject;
 import javax.xml.bind.JAXBException;
 
 import org.apache.commons.cli.CommandLine;
@@ -41,15 +41,13 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
 
-import io.netty.handler.ssl.ApplicationProtocolConfig.SelectedListenerFailureBehavior;
 import se.kth.speech.coin.tangrams.analysis.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.EventDialogueFactory;
 import se.kth.speech.coin.tangrams.analysis.GameContext;
 import se.kth.speech.coin.tangrams.analysis.GameContext.EntityStatus;
-import se.kth.speech.coin.tangrams.analysis.GameContextModelFactory;
 import se.kth.speech.coin.tangrams.analysis.GameHistory;
-import se.kth.speech.coin.tangrams.analysis.RandomNotSelectedEntityIdGetter;
 import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
 import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManager;
 import se.kth.speech.coin.tangrams.analysis.TemporalGameContexts;
@@ -85,19 +83,16 @@ public final class WordsAsClassifiersCrossValidationTrainingDataWriter {
 		OUTPATH("o") {
 			@Override
 			public Option get() {
-				return Option.builder(optName).longOpt("outpath").desc("The path to write the training data to.").hasArg().argName("path").type(File.class).required().build();
+				return Option.builder(optName).longOpt("outpath").desc("The path to write the training data to.")
+						.hasArg().argName("path").type(File.class).required().build();
 			}
 		},
 		OUTPUT_TYPE("t") {
 			@Override
 			public Option get() {
-				return Option.builder(optName).longOpt("output-type").desc("The filename extension matching the data type to output (e.g. \"arff\" or \"arff.gz\").").hasArg().argName("ext").build();
-			}
-		},
-		RANDOM_SEED("r") {
-			@Override
-			public Option get() {
-				return Option.builder(optName).longOpt("random-seed").desc("The value to use for seeding random negative examples.").hasArg().argName("value").type(Number.class).build();
+				return Option.builder(optName).longOpt("output-type")
+						.desc("The filename extension matching the data type to output (e.g. \"arff\" or \"arff.gz\").")
+						.hasArg().argName("ext").build();
 			}
 		};
 
@@ -141,9 +136,6 @@ public final class WordsAsClassifiersCrossValidationTrainingDataWriter {
 	private static final Logger LOGGER = LoggerFactory
 			.getLogger(WordsAsClassifiersCrossValidationTrainingDataWriter.class);
 
-	private static final EntityFeatureExtractionContextFactory EXTRACTION_CONTEXT_FACTORY = new EntityFeatureExtractionContextFactory(
-			new GameContextModelFactory(1), new ImageEdgeCounter());
-
 	public static void main(final CommandLine cl) throws IOException, JAXBException, ParseException {
 		if (cl.hasOption(Parameter.HELP.optName)) {
 			Parameter.printHelp();
@@ -155,24 +147,16 @@ public final class WordsAsClassifiersCrossValidationTrainingDataWriter {
 			} else {
 				final File outpath = (File) cl.getParsedOptionValue(Parameter.OUTPATH.optName);
 				LOGGER.info("Will write data to \"{}\".", outpath);
-				final Number randomSeed = (Number) cl.getParsedOptionValue(Parameter.RANDOM_SEED.optName);
-				final Random rnd;
-				if (randomSeed == null) {
-					LOGGER.info("Using default system-generated random seed.");
-					rnd = new Random();
-				} else {
-					final long seed = randomSeed.longValue();
-					LOGGER.info("Using {} as random seed.", seed);
-					rnd = new Random(seed);
-				}
 				final String outfileExt = Parameter.parseOutputType(cl);
 				LOGGER.info("Will write data in \"*{}\" format.", outfileExt);
-
-				final WordsAsClassifiersInstancesMapFactory instancesFactory = new WordsAsClassifiersInstancesMapFactory(
-						EXTRACTION_CONTEXT_FACTORY, new RandomNotSelectedEntityIdGetter(rnd));
-				final WordsAsClassifiersCrossValidationTrainingDataWriter writer = new WordsAsClassifiersCrossValidationTrainingDataWriter(
-						instancesFactory, outpath, outfileExt);
-				writer.accept(inpaths);
+				try (final ClassPathXmlApplicationContext appCtx = new ClassPathXmlApplicationContext("extraction.xml",
+						WordsAsClassifiersCrossValidationTrainingDataWriter.class)) {
+					final WordsAsClassifiersInstancesMapFactory instancesFactory = appCtx
+							.getBean(WordsAsClassifiersInstancesMapFactory.class);
+					final WordsAsClassifiersCrossValidationTrainingDataWriter writer = new WordsAsClassifiersCrossValidationTrainingDataWriter(
+							instancesFactory, outpath, outfileExt);
+					writer.accept(inpaths);
+				}
 			}
 		}
 	}
@@ -187,6 +171,35 @@ public final class WordsAsClassifiersCrossValidationTrainingDataWriter {
 			Parameter.printHelp();
 		}
 	}
+
+	private static GameContext createGameContext(final Utterance dialogueUtt, final GameHistory history,
+			final String perspectivePlayerId) {
+		LOGGER.debug(
+				"Creating a context based on the logged game history, which is then seen from the perspective of player \"{}\".",
+				perspectivePlayerId);
+		final GameContext[] ctxs = TemporalGameContexts
+				.create(history, dialogueUtt.getStartTime(), dialogueUtt.getEndTime(), perspectivePlayerId)
+				.toArray(GameContext[]::new);
+		if (ctxs.length > 1) {
+			LOGGER.warn("More than one game context found for {}; Only using the first one.", dialogueUtt);
+		}
+		return ctxs[0];
+	}
+
+	private static void createTestData(final SessionDataManager testSessionData) throws JAXBException, IOException {
+		final SessionEventDialogueManager sessionEventDiagMgr = new SessionEventDialogueManager(testSessionData,
+				EVENT_DIAG_FACTORY);
+		final List<EventDialogue> uttDiags = sessionEventDiagMgr.createUttDialogues();
+		for (final EventDialogue uttDiag : uttDiags) {
+			// testEntities(uttDiag, sessionEventDiagMgr.getGameHistory());
+		}
+	}
+
+	@Inject
+	private EntityInstanceAttributeContext entInstAttrCtx;
+
+	@Inject
+	private EntityFeatureExtractionContextFactory extCtxFactory;
 
 	private final WordsAsClassifiersInstancesMapFactory instancesFactory;
 
@@ -268,31 +281,14 @@ public final class WordsAsClassifiersCrossValidationTrainingDataWriter {
 		LOGGER.info("Finished writing {} cross-validation dataset(s) to \"{}\".", infileSessionData.size(), outdir);
 	}
 
-	private void testEntities(Utterance dialogueUtt, final GameContext uttCtx, Map<EntityStatus, Map<Integer, Datum>> imgVizInfoData) {
-		for (Entry<EntityStatus, Map<Integer, Datum>> imgVizInfoDataEntry : imgVizInfoData.entrySet()) {
-			EntityStatus entityStatus = imgVizInfoDataEntry.getKey();
-			Map<Integer, Datum> examples = imgVizInfoDataEntry.getValue();
-			for (Entry<Integer, Datum> example : examples.entrySet()) {
-				Integer entityId = example.getKey();
-				EntityFeature.Extractor.Context extContext = EXTRACTION_CONTEXT_FACTORY
-						.createExtractionContext(uttCtx, entityId);
-				if (entityStatus == null) {
-					
-				} else {
-					switch (entityStatus){
-					case SELECTED : {
-						break;
-					}
-					default : {
-						throw new IllegalArgumentException(String.format("No logic for enum value %s.", entityStatus));
-					}
-					}
-				}
-			}
-		}
+	private void createEntityInstance(final Utterance utt, final GameContext uttContext,
+			final EntityFeature.Extractor.Context extractionContext, final String classValue) {
+		final Instance inst = new DenseInstance(entInstAttrCtx.getAttrs().size());
+		// inst.setDataset(classInstances);
+		entInstAttrCtx.getExtractor().accept(inst, extractionContext);
 	}
 
-	private void testEntities(EventDialogue uttDiag, final GameHistory history) {
+	private void testEntities(final EventDialogue uttDiag, final GameHistory history) {
 		uttDiag.getLastEvent().ifPresent(event -> {
 			LOGGER.debug("Creating test data for event: {}", event);
 			final String submittingPlayerId = event.getString(GameManagementEvent.Attribute.PLAYER_ID.toString());
@@ -301,7 +297,7 @@ public final class WordsAsClassifiersCrossValidationTrainingDataWriter {
 				final String uttPlayerId = dialogueUtt.getSpeakerId();
 				if (submittingPlayerId.equals(uttPlayerId)) {
 					final GameContext uttCtx = createGameContext(dialogueUtt, history, submittingPlayerId);
-					Map<EntityStatus, Map<Integer, Datum>> imgVizInfoData = uttCtx
+					final Map<EntityStatus, Map<Integer, Datum>> imgVizInfoData = uttCtx
 							.createEntityStatusVisualizationInfoMap();
 					testEntities(dialogueUtt, uttCtx, imgVizInfoData);
 				} else {
@@ -313,34 +309,28 @@ public final class WordsAsClassifiersCrossValidationTrainingDataWriter {
 		});
 	}
 
-	private void createTestData(final SessionDataManager testSessionData) throws JAXBException, IOException {
-		SessionEventDialogueManager sessionEventDiagMgr = new SessionEventDialogueManager(testSessionData,
-				EVENT_DIAG_FACTORY);
-		List<EventDialogue> uttDiags = sessionEventDiagMgr.createUttDialogues();
-		for (EventDialogue uttDiag : uttDiags) {
-			testEntities(uttDiag, sessionEventDiagMgr.getGameHistory());
+	private void testEntities(final Utterance dialogueUtt, final GameContext uttCtx,
+			final Map<EntityStatus, Map<Integer, Datum>> imgVizInfoData) {
+		for (final Entry<EntityStatus, Map<Integer, Datum>> imgVizInfoDataEntry : imgVizInfoData.entrySet()) {
+			final EntityStatus entityStatus = imgVizInfoDataEntry.getKey();
+			final Map<Integer, Datum> examples = imgVizInfoDataEntry.getValue();
+			for (final Entry<Integer, Datum> example : examples.entrySet()) {
+				final Integer entityId = example.getKey();
+				final EntityFeature.Extractor.Context extContext = extCtxFactory.createExtractionContext(uttCtx,
+						entityId);
+				if (entityStatus == null) {
+
+				} else {
+					switch (entityStatus) {
+					case SELECTED: {
+						break;
+					}
+					default: {
+						throw new IllegalArgumentException(String.format("No logic for enum value %s.", entityStatus));
+					}
+					}
+				}
+			}
 		}
 	}
-
-	private void createEntityInstance(final Utterance utt, final GameContext uttContext,
-			final EntityFeature.Extractor.Context extractionContext, final String classValue) {
-		final Instance inst = new DenseInstance(WordsAsClassifiersInstancesMapFactory.getAttrs().size());
-		inst.setDataset(classInstances);
-		WordsAsClassifiersInstancesMapFactory.getExtractor().accept(inst, extractionContext);
-	}
-
-	private static GameContext createGameContext(final Utterance dialogueUtt, final GameHistory history,
-			final String perspectivePlayerId) {
-		LOGGER.debug(
-				"Creating a context based on the logged game history, which is then seen from the perspective of player \"{}\".",
-				perspectivePlayerId);
-		final GameContext[] ctxs = TemporalGameContexts
-				.create(history, dialogueUtt.getStartTime(), dialogueUtt.getEndTime(), perspectivePlayerId)
-				.toArray(GameContext[]::new);
-		if (ctxs.length > 1) {
-			LOGGER.warn("More than one game context found for {}; Only using the first one.", dialogueUtt);
-		}
-		return ctxs[0];
-	}
-
 }

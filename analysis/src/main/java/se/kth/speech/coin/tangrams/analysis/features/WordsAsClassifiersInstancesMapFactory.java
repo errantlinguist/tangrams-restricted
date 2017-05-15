@@ -16,13 +16,13 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.Function;
+
+import javax.inject.Inject;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,9 +35,7 @@ import se.kth.speech.coin.tangrams.analysis.GameHistory;
 import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManager;
 import se.kth.speech.coin.tangrams.analysis.TemporalGameContexts;
 import se.kth.speech.coin.tangrams.analysis.Utterance;
-import se.kth.speech.coin.tangrams.content.IconImages;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
-import weka.core.Attribute;
 import weka.core.DenseInstance;
 import weka.core.Instance;
 import weka.core.Instances;
@@ -54,40 +52,16 @@ import weka.core.Instances;
 public final class WordsAsClassifiersInstancesMapFactory
 		implements Function<Collection<SessionEventDialogueManager>, Map<String, Instances>> {
 
-	private static class MultiClassDataCollector {
-
-		private static GameContext createGameContext(final Utterance dialogueUtt, final GameHistory history,
-				final String perspectivePlayerId) {
-			LOGGER.debug(
-					"Creating a context based on the logged game history, which is then seen from the perspective of player \"{}\".",
-					perspectivePlayerId);
-			final GameContext[] ctxs = TemporalGameContexts
-					.create(history, dialogueUtt.getStartTime(), dialogueUtt.getEndTime(), perspectivePlayerId)
-					.toArray(GameContext[]::new);
-			if (ctxs.length > 1) {
-				LOGGER.warn("More than one game context found for {}; Only using the first one.", dialogueUtt);
-			}
-			return ctxs[0];
-		}
+	private class MultiClassDataCollector implements Consumer<SessionEventDialogueManager> {
 
 		private final Function<? super String, Instances> classInstanceGetter;
 
-		private final Function<GameContext, Integer> negativeExampleEntityIdGetter;
-
-		private final int numAttributes;
-
-		private final EntityFeatureExtractionContextFactory extCtxFactory;
-
-		private MultiClassDataCollector(final Function<? super String, Instances> classInstanceGetter,
-				final int numAttributes, final Function<GameContext, Integer> negativeExampleEntityIdGetter,
-				final EntityFeatureExtractionContextFactory extCtxFactory) {
-			this.negativeExampleEntityIdGetter = negativeExampleEntityIdGetter;
+		private MultiClassDataCollector(final Function<? super String, Instances> classInstanceGetter) {
 			this.classInstanceGetter = classInstanceGetter;
-			this.numAttributes = numAttributes;
-			this.extCtxFactory = extCtxFactory;
 		}
 
-		private void accept(final SessionEventDialogueManager sessionEventDiagMgr) {
+		@Override
+		public void accept(final SessionEventDialogueManager sessionEventDiagMgr) {
 
 			final String gameId = sessionEventDiagMgr.getGameId();
 			LOGGER.debug("Processing game \"{}\".", gameId);
@@ -111,11 +85,11 @@ public final class WordsAsClassifiersInstancesMapFactory
 							// Add positive training examples
 							final EntityFeature.Extractor.Context positiveContext = extCtxFactory
 									.createExtractionContext(uttCtx, selectedEntityId);
-							addTokenInstances(dialogueUtt, uttCtx, positiveContext, Boolean.TRUE.toString());
+							addTokenInstances(dialogueUtt, positiveContext, Boolean.TRUE.toString());
 							// Add negative training examples
 							final EntityFeature.Extractor.Context negativeContext = extCtxFactory
 									.createExtractionContext(uttCtx, negativeExampleEntityIdGetter.apply(uttCtx));
-							addTokenInstances(dialogueUtt, uttCtx, negativeContext, Boolean.FALSE.toString());
+							addTokenInstances(dialogueUtt, negativeContext, Boolean.FALSE.toString());
 						} else {
 							LOGGER.debug(
 									"Skipping the extraction of features for utterance with segment ID \"{}\" because the utterance is from player \"{}\" rather than the player whose perspective is being used for extracting features (\"{}\")",
@@ -126,13 +100,13 @@ public final class WordsAsClassifiersInstancesMapFactory
 			});
 		}
 
-		private void addTokenInstances(final Utterance utt, final GameContext uttContext,
-				final EntityFeature.Extractor.Context extractionContext, final String classValue) {
+		private void addTokenInstances(final Utterance utt, final EntityFeature.Extractor.Context extractionContext,
+				final String classValue) {
 			utt.getTokens().forEach(token -> {
 				final Instances classInstances = classInstanceGetter.apply(token);
-				final Instance inst = new DenseInstance(numAttributes);
+				final Instance inst = new DenseInstance(entityInstAttrCtx.getAttrs().size());
 				inst.setDataset(classInstances);
-				EXTRACTOR.accept(inst, extractionContext);
+				entityInstAttrCtx.getExtractor().accept(inst, extractionContext);
 				inst.setClassValue(classValue);
 				classInstances.add(inst);
 			});
@@ -141,46 +115,20 @@ public final class WordsAsClassifiersInstancesMapFactory
 
 	public static final String CLASS_RELATION_PREFIX = "referent_for_token-";
 
-	private static final ArrayList<Attribute> ATTRS;
-
-	/**
-	 * @return the attrs
-	 */
-	public static ArrayList<Attribute> getAttrs() {
-		return ATTRS;
-	}
-
-	private static final Attribute CLASS_ATTR;
-
-	private static final String CLASS_ATTR_NAME = "IS_REFERENT";
-
-	private static final EntityFeature.Extractor EXTRACTOR;
-
-	/**
-	 * @return the extractor
-	 */
-	public static EntityFeature.Extractor getExtractor() {
-		return EXTRACTOR;
-	}
-
 	private static final Logger LOGGER = LoggerFactory.getLogger(WordsAsClassifiersInstancesMapFactory.class);
 
-	static {
-		final List<String> shapeFeatureVals = new ArrayList<>(IconImages.getImageResources().keySet());
-		shapeFeatureVals.sort(Comparator.naturalOrder());
-		EXTRACTOR = new EntityFeature.Extractor(shapeFeatureVals);
-		final Map<EntityFeature, Attribute> featureAttrs = EXTRACTOR.getFeatureAttrs();
-		ATTRS = new ArrayList<>(featureAttrs.size() + 1);
-		ATTRS.addAll(featureAttrs.values());
-		CLASS_ATTR = new Attribute(CLASS_ATTR_NAME, Arrays.asList(Boolean.TRUE.toString(), Boolean.FALSE.toString()));
-		ATTRS.add(CLASS_ATTR);
-	}
-
-	/**
-	 * @return the classAttrName
-	 */
-	public static String getClassAttrName() {
-		return CLASS_ATTR_NAME;
+	private static GameContext createGameContext(final Utterance dialogueUtt, final GameHistory history,
+			final String perspectivePlayerId) {
+		LOGGER.debug(
+				"Creating a context based on the logged game history, which is then seen from the perspective of player \"{}\".",
+				perspectivePlayerId);
+		final GameContext[] ctxs = TemporalGameContexts
+				.create(history, dialogueUtt.getStartTime(), dialogueUtt.getEndTime(), perspectivePlayerId)
+				.toArray(GameContext[]::new);
+		if (ctxs.length > 1) {
+			LOGGER.warn("More than one game context found for {}; Only using the first one.", dialogueUtt);
+		}
+		return ctxs[0];
 	}
 
 	private static int estimateVocabTokenCount(final String token, final Collection<?> sessionData) {
@@ -191,28 +139,26 @@ public final class WordsAsClassifiersInstancesMapFactory
 		return Math.toIntExact(Math.round(Math.ceil(Math.log(sessionData.size() * 850))));
 	}
 
-	private final Function<GameContext, Integer> negativeExampleEntityIdGetter;
+	@Inject
+	private EntityInstanceAttributeContext entityInstAttrCtx;
 
-	private final EntityFeatureExtractionContextFactory extCtxFactory;
+	@Inject
+	private EntityFeatureExtractionContextFactory extCtxFactory;
 
-	public WordsAsClassifiersInstancesMapFactory(final EntityFeatureExtractionContextFactory extCtxFactory,
-			final Function<GameContext, Integer> negativeExampleEntityIdGetter) {
-		this.extCtxFactory = extCtxFactory;
-		this.negativeExampleEntityIdGetter = negativeExampleEntityIdGetter;
-	}
+	@Inject
+	private Function<GameContext, Integer> negativeExampleEntityIdGetter;
 
 	@Override
 	public Map<String, Instances> apply(final Collection<SessionEventDialogueManager> sessionEventDiagMgrs) {
 		final Map<String, Instances> result = Maps
 				.newHashMapWithExpectedSize(estimateVocabTypeCount(sessionEventDiagMgrs));
 		final Function<String, Instances> classInstanceFetcher = className -> result.computeIfAbsent(className, k -> {
-			final Instances instances = new Instances(CLASS_RELATION_PREFIX + k, ATTRS,
+			final Instances instances = new Instances(CLASS_RELATION_PREFIX + k, entityInstAttrCtx.getAttrs(),
 					estimateVocabTokenCount(k, sessionEventDiagMgrs));
-			instances.setClass(CLASS_ATTR);
+			instances.setClass(entityInstAttrCtx.getClassAttr());
 			return instances;
 		});
-		final MultiClassDataCollector coll = new MultiClassDataCollector(classInstanceFetcher, ATTRS.size(),
-				negativeExampleEntityIdGetter, extCtxFactory);
+		final MultiClassDataCollector coll = new MultiClassDataCollector(classInstanceFetcher);
 		for (final SessionEventDialogueManager sessionEventDiagMgr : sessionEventDiagMgrs) {
 			coll.accept(sessionEventDiagMgr);
 		}

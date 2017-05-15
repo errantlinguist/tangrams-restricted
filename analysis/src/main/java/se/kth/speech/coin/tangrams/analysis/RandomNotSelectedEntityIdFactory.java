@@ -21,12 +21,12 @@ import java.util.Random;
 import java.util.function.Function;
 import java.util.function.ToIntFunction;
 
-public final class RandomNotSelectedEntityIdGetter
+public final class RandomNotSelectedEntityIdFactory
 		implements Function<GameContext, Integer>, ToIntFunction<GameContext> {
 
 	private final Random rnd;
 
-	public RandomNotSelectedEntityIdGetter(final Random rnd) {
+	public RandomNotSelectedEntityIdFactory(final Random rnd) {
 		this.rnd = rnd;
 	}
 

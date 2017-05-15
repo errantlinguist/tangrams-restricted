@@ -22,12 +22,9 @@ import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Supplier;
@@ -49,7 +46,6 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Maps;
 
-import weka.classifiers.AbstractClassifier;
 import weka.classifiers.functions.Logistic;
 import weka.core.Attribute;
 import weka.core.Instance;
@@ -194,6 +190,8 @@ public final class WordsAsClassifiersCrossValidationTester {
 		}
 	}
 
+	private static final String CLASS_ATTR_NAME = "IS_REFERENT";
+
 	private static final Pattern CLASS_RELATION_NAME_PATTERN = Pattern
 			.compile(Pattern.quote(WordsAsClassifiersInstancesMapFactory.CLASS_RELATION_PREFIX) + "(.+)");
 
@@ -205,24 +203,6 @@ public final class WordsAsClassifiersCrossValidationTester {
 	private static final Pattern TRAINING_FILE_NAME_PATTERN = Pattern
 			.compile(Pattern.quote(WordsAsClassifiersCrossValidationTrainingDataWriter.TRAINING_FILE_NAME_PREFIX)
 					+ "(.+?)(\\..+)");
-
-	public static void main(final CommandLine cl)
-			throws IOException, JAXBException, ParseException, TrainingException, ClassificationException {
-		if (cl.hasOption(Parameter.HELP.optName)) {
-			Parameter.printHelp();
-		} else {
-			final List<Path> inpaths = Arrays.asList(cl.getArgList().stream().map(Paths::get).toArray(Path[]::new));
-			if (inpaths.isEmpty()) {
-				throw new MissingOptionException("No input path(s) specified.");
-
-			} else {
-				final WordsAsClassifiersCrossValidationTester writer = new WordsAsClassifiersCrossValidationTester();
-				for (final Path inpath : inpaths) {
-					writer.accept(inpath);
-				}
-			}
-		}
-	}
 
 	// public static Map<String, Logistic> createWordClassifierMap(final
 	// Map<Path, String> trainingFiles)
@@ -254,6 +234,24 @@ public final class WordsAsClassifiersCrossValidationTester {
 	// }
 	// return result;
 	// }
+
+	public static void main(final CommandLine cl)
+			throws IOException, JAXBException, ParseException, TrainingException, ClassificationException {
+		if (cl.hasOption(Parameter.HELP.optName)) {
+			Parameter.printHelp();
+		} else {
+			final List<Path> inpaths = Arrays.asList(cl.getArgList().stream().map(Paths::get).toArray(Path[]::new));
+			if (inpaths.isEmpty()) {
+				throw new MissingOptionException("No input path(s) specified.");
+
+			} else {
+				final WordsAsClassifiersCrossValidationTester writer = new WordsAsClassifiersCrossValidationTester();
+				for (final Path inpath : inpaths) {
+					writer.accept(inpath);
+				}
+			}
+		}
+	}
 
 	public static void main(final String[] args)
 			throws IOException, JAXBException, TrainingException, ClassificationException {
@@ -290,8 +288,8 @@ public final class WordsAsClassifiersCrossValidationTester {
 		assert !trainingFiles.isEmpty();
 		return new TestDescription(trainingFiles, testFiles);
 	}
-	
-	private static Logistic createWordClassifier(Instances data) throws TrainingException{
+
+	private static Logistic createWordClassifier(final Instances data) throws TrainingException {
 		final Logistic result = new Logistic();
 		try {
 			result.buildClassifier(data);
@@ -311,17 +309,18 @@ public final class WordsAsClassifiersCrossValidationTester {
 			final AbstractFileLoader loader = ConverterUtils.getLoaderForExtension(ext);
 			loader.setSource(infile.toFile());
 			final Instances structure = loader.getStructure();
-			final Attribute classAttr = structure.attribute(WordsAsClassifiersInstancesMapFactory.getClassAttrName());
+			final Attribute classAttr = structure.attribute(CLASS_ATTR_NAME);
 			structure.setClassIndex(classAttr.index());
 			for (Instance nextInst = loader.getNextInstance(structure); nextInst != null; nextInst = loader
 					.getNextInstance(structure)) {
 				structure.add(nextInst);
 			}
 			final String className = parseRelationClassName(structure.relationName());
-			Logistic classifier = createWordClassifier(structure);
-			Logistic oldClassifier = result.put(className, classifier);
-			if (oldClassifier != null){
-				throw new IllegalArgumentException(String.format("More than one file for word class \"%s\".", className));
+			final Logistic classifier = createWordClassifier(structure);
+			final Logistic oldClassifier = result.put(className, classifier);
+			if (oldClassifier != null) {
+				throw new IllegalArgumentException(
+						String.format("More than one file for word class \"%s\".", className));
 			}
 			LOGGER.info("{} instance(s) for class \"{}\".", structure.numInstances(), className);
 		}
@@ -359,27 +358,32 @@ public final class WordsAsClassifiersCrossValidationTester {
 
 		for (final Path indir : indirs) {
 			final TestDescription testDesc = createTestDescription(indir);
-			final Map<String,Logistic> wordClassifiers = createWordClassifierMap(testDesc.trainingFiles);
-//			for (final Entry<Path, String> testFilePathExt : testDesc.testFiles.entrySet()) {
-//				final AbstractFileLoader loader = ConverterUtils.getLoaderForExtension(testFilePathExt.getValue());
-//				loader.setSource(testFilePathExt.getKey().toFile());
-//				final Instances testStruct = loader.getStructure();
-//				final Attribute classAttr = testStruct
-//						.attribute(WordsAsClassifiersInstancesMapFactory.getClassAttrName());
-//				testStruct.setClassIndex(classAttr.index());
-//				for (Instance nextInst = loader.getNextInstance(testStruct); nextInst != null; nextInst = loader
-//						.getNextInstance(testStruct)) {
-//					try {
-//						final double classification = wordClassifier.classifyInstance(nextInst);
-//						LOGGER.info("Classification: " + classification);
-//					} catch (final Exception e) {
-//						throw new ClassificationException(e);
-//					}
-//					testStruct.add(nextInst);
-//				}
-//			}
-//
-//			final String testInfileStr = "C:\\Users\\tcshore\\Box Sync\\tangrams-restricted\\Ready\\20170329-1641-arvid-lutfisk\\events.lutfisk.txt";
+			final Map<String, Logistic> wordClassifiers = createWordClassifierMap(testDesc.trainingFiles);
+			// for (final Entry<Path, String> testFilePathExt :
+			// testDesc.testFiles.entrySet()) {
+			// final AbstractFileLoader loader =
+			// ConverterUtils.getLoaderForExtension(testFilePathExt.getValue());
+			// loader.setSource(testFilePathExt.getKey().toFile());
+			// final Instances testStruct = loader.getStructure();
+			// final Attribute classAttr = testStruct
+			// .attribute(WordsAsClassifiersInstancesMapFactory.getClassAttrName());
+			// testStruct.setClassIndex(classAttr.index());
+			// for (Instance nextInst = loader.getNextInstance(testStruct);
+			// nextInst != null; nextInst = loader
+			// .getNextInstance(testStruct)) {
+			// try {
+			// final double classification =
+			// wordClassifier.classifyInstance(nextInst);
+			// LOGGER.info("Classification: " + classification);
+			// } catch (final Exception e) {
+			// throw new ClassificationException(e);
+			// }
+			// testStruct.add(nextInst);
+			// }
+			// }
+			//
+			// final String testInfileStr = "C:\\Users\\tcshore\\Box
+			// Sync\\tangrams-restricted\\Ready\\20170329-1641-arvid-lutfisk\\events.lutfisk.txt";
 		}
 	}
 }

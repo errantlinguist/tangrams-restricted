@@ -96,8 +96,8 @@ public final class GameContextModelFactory implements Function<GameContext, Spat
 
 	private final Function<? super ModelDescription, SpatialMatrix<Integer>> initialGameModelFactory;
 
-	public GameContextModelFactory(final int expectedniqueModelCount) {
-		this(createCachingInitialGameModelFactory(expectedniqueModelCount));
+	public GameContextModelFactory(final int expectedUniqueModelCount) {
+		this(createCachingInitialGameModelFactory(expectedUniqueModelCount));
 	}
 
 	private GameContextModelFactory(

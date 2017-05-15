@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:util="http://www.springframework.org/schema/util"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="
+        http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+         http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+        http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd">
+
+	<context:component-scan base-package="se.kth.speech.coin.tangrams.analysis.features" />
+
+	<bean id="training-class-attr-name" class="java.lang.String"
+		factory-method="valueOf">
+		<constructor-arg value="IS_REFERENT" />
+	</bean>
+
+	<bean id="shape-attr-vals" class="java.util.TreeSet">
+		<constructor-arg
+			value="#{ T(se.kth.speech.coin.tangrams.content.IconImages).getImageResources().keySet() }" />
+	</bean>
+
+	<bean id="entity-feature-extractor"
+		class="se.kth.speech.coin.tangrams.analysis.features.EntityFeature.Extractor">
+		<constructor-arg ref="shape-attr-vals" />
+	</bean>
+
+	<bean id="entity-inst-attr-ctx"
+		class="se.kth.speech.coin.tangrams.analysis.features.EntityInstanceAttributeContext">
+		<constructor-arg ref="entity-feature-extractor" />
+		<constructor-arg ref="training-class-attr-name" />
+	</bean>
+
+	<bean id="entity-ext-ctx-factory"
+		class="se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionContextFactory">
+		<constructor-arg>
+			<bean class="se.kth.speech.coin.tangrams.analysis.GameContextModelFactory">
+				<constructor-arg value="1" />
+			</bean>
+		</constructor-arg>
+		<constructor-arg>
+			<bean
+				class="se.kth.speech.coin.tangrams.analysis.features.ImageEdgeCounter" />
+		</constructor-arg>
+	</bean>
+
+	<bean id="negative-example-entity-id-factory"
+		class="se.kth.speech.coin.tangrams.analysis.RandomNotSelectedEntityIdFactory">
+		<constructor-arg>
+			<bean class="java.util.Random" />
+		</constructor-arg>
+	</bean>
+
+	<bean id="words-as-classifiers-inst-map-factory"
+		class="se.kth.speech.coin.tangrams.analysis.features.WordsAsClassifiersInstancesMapFactory" />
+
+</beans>
