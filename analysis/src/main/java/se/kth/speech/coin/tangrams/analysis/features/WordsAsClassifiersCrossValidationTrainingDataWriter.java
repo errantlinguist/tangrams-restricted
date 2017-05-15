@@ -228,7 +228,7 @@ public final class WordsAsClassifiersCrossValidationTrainingDataWriter {
 				}
 				classInstances = instancesFactory.apply(trainingSessionEvtDiagMgrs);
 			}
-			LOGGER.info("Trained classifiers for {} class(es).", classInstances.size());
+			LOGGER.info("Trained classifiers for {} class(es); Writing to disk.", classInstances.size());
 
 			final AbstractFileSaver saver = ConverterUtils.getSaverForExtension(outfileExt);
 			for (final Entry<String, Instances> classInstanceEntry : classInstances.entrySet()) {
