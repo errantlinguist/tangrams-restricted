@@ -43,6 +43,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import se.kth.speech.coin.tangrams.analysis.EventDialogueFactory;
+import se.kth.speech.coin.tangrams.analysis.GameContextModelFactory;
 import se.kth.speech.coin.tangrams.analysis.RandomNotSelectedEntityIdGetter;
 import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
 import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManager;
@@ -126,6 +127,9 @@ public final class WordsAsClassifiersTrainingDataWriter {
 	private static final EventDialogueFactory EVENT_DIAG_FACTORY = new EventDialogueFactory(
 			new EventTypeMatcher(GameManagementEvent.NEXT_TURN_REQUEST));
 
+	private static final EntityFeatureExtractionContextFactory EXTRACTION_CONTEXT_FACTORY = new EntityFeatureExtractionContextFactory(
+			new GameContextModelFactory(1), new ImageEdgeCounter());
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(WordsAsClassifiersTrainingDataWriter.class);
 
 	public static void main(final CommandLine cl) throws IOException, JAXBException, ParseException {
@@ -153,7 +157,7 @@ public final class WordsAsClassifiersTrainingDataWriter {
 				LOGGER.info("Will write data in \"*{}\" format.", outfileExt);
 
 				final WordsAsClassifiersInstancesMapFactory instancesFactory = new WordsAsClassifiersInstancesMapFactory(
-						new RandomNotSelectedEntityIdGetter(rnd));
+						EXTRACTION_CONTEXT_FACTORY, new RandomNotSelectedEntityIdGetter(rnd));
 				final WordsAsClassifiersTrainingDataWriter writer = new WordsAsClassifiersTrainingDataWriter(
 						instancesFactory);
 				final Map<String, Instances> classInstances = writer.apply(inpaths);

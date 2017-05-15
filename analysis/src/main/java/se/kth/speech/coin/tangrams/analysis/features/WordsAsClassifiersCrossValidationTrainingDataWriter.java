@@ -45,6 +45,8 @@ import org.slf4j.LoggerFactory;
 import se.kth.speech.coin.tangrams.analysis.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.EventDialogueFactory;
 import se.kth.speech.coin.tangrams.analysis.GameContext;
+import se.kth.speech.coin.tangrams.analysis.GameContext.EntityStatus;
+import se.kth.speech.coin.tangrams.analysis.GameContextModelFactory;
 import se.kth.speech.coin.tangrams.analysis.GameHistory;
 import se.kth.speech.coin.tangrams.analysis.RandomNotSelectedEntityIdGetter;
 import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
@@ -53,7 +55,7 @@ import se.kth.speech.coin.tangrams.analysis.TemporalGameContexts;
 import se.kth.speech.coin.tangrams.analysis.Utterance;
 import se.kth.speech.coin.tangrams.iristk.EventTypeMatcher;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
-import se.kth.speech.coin.tangrams.iristk.events.Move;
+import se.kth.speech.coin.tangrams.iristk.events.ImageVisualizationInfoDescription.Datum;
 import se.kth.speech.io.FileNames;
 import weka.core.Instances;
 import weka.core.converters.AbstractFileSaver;
@@ -140,6 +142,9 @@ public final class WordsAsClassifiersCrossValidationTrainingDataWriter {
 
 	private static final Logger LOGGER = LoggerFactory
 			.getLogger(WordsAsClassifiersCrossValidationTrainingDataWriter.class);
+	
+	private static final EntityFeatureExtractionContextFactory EXTRACTION_CONTEXT_FACTORY = new EntityFeatureExtractionContextFactory(
+			new GameContextModelFactory(1), new ImageEdgeCounter());
 
 	public static void main(final CommandLine cl) throws IOException, JAXBException, ParseException {
 		if (cl.hasOption(Parameter.HELP.optName)) {
@@ -165,7 +170,7 @@ public final class WordsAsClassifiersCrossValidationTrainingDataWriter {
 				final String outfileExt = Parameter.parseOutputType(cl);
 				LOGGER.info("Will write data in \"*{}\" format.", outfileExt);
 
-				final WordsAsClassifiersInstancesMapFactory instancesFactory = new WordsAsClassifiersInstancesMapFactory(
+				final WordsAsClassifiersInstancesMapFactory instancesFactory = new WordsAsClassifiersInstancesMapFactory(EXTRACTION_CONTEXT_FACTORY,
 						new RandomNotSelectedEntityIdGetter(rnd));
 				final WordsAsClassifiersCrossValidationTrainingDataWriter writer = new WordsAsClassifiersCrossValidationTrainingDataWriter(
 						instancesFactory, outpath, outfileExt);
@@ -266,9 +271,10 @@ public final class WordsAsClassifiersCrossValidationTrainingDataWriter {
 	}
 
 	private void createTestData(final SessionDataManager testSessionData) throws JAXBException, IOException {
-		SessionEventDialogueManager sessionEventDiagMgr = new SessionEventDialogueManager(testSessionData, EVENT_DIAG_FACTORY);
+		SessionEventDialogueManager sessionEventDiagMgr = new SessionEventDialogueManager(testSessionData,
+				EVENT_DIAG_FACTORY);
 		List<EventDialogue> uttDiags = sessionEventDiagMgr.createUttDialogues();
-		for (EventDialogue uttDiag : uttDiags){
+		for (EventDialogue uttDiag : uttDiags) {
 			uttDiag.getLastEvent().ifPresent(event -> {
 				LOGGER.debug("Creating test data for event: {}", event);
 				final String submittingPlayerId = event.getString(GameManagementEvent.Attribute.PLAYER_ID.toString());
@@ -278,18 +284,30 @@ public final class WordsAsClassifiersCrossValidationTrainingDataWriter {
 					if (submittingPlayerId.equals(uttPlayerId)) {
 						final GameHistory history = sessionEventDiagMgr.getGameHistory();
 						final GameContext uttCtx = createGameContext(dialogueUtt, history, submittingPlayerId);
-						final Integer selectedEntityId = uttCtx.findLastSelectedEntityId().get();
-						LOGGER.debug(
-								"Creating positive and negative examples for entity ID \"{}\", which is selected by player \"{}\".",
-								selectedEntityId, submittingPlayerId);
-						// Add positive training examples
-//						final EntityFeature.Extractor.Context positiveContext = extractionContextFactory
-//								.createExtractionContext(uttCtx, selectedEntityId);
-//						addTokenInstances(dialogueUtt, uttCtx, positiveContext, Boolean.TRUE.toString());
-//						// Add negative training examples
-//						final EntityFeature.Extractor.Context negativeContext = extractionContextFactory
-//								.createExtractionContext(uttCtx, negativeExampleEntityIdGetter.apply(uttCtx));
-//						addTokenInstances(dialogueUtt, uttCtx, negativeContext, Boolean.FALSE.toString());
+						Map<EntityStatus, Map<Integer, Datum>> imgVizInfoData = uttCtx
+								.createEntityStatusVisualizationInfoMap();
+						for (Entry<EntityStatus, Map<Integer, Datum>> imgVizInfoDataEntry : imgVizInfoData.entrySet()) {
+							EntityStatus entityStatus = imgVizInfoDataEntry.getKey();
+							Map<Integer, Datum> examples = imgVizInfoDataEntry.getValue();
+							if (entityStatus == null) {
+								for (Entry<Integer, Datum> negExample : examples.entrySet()) {
+
+								}
+							} else {
+								switch (entityStatus) {
+								case SELECTED: {
+									for (Entry<Integer, Datum> posExample : examples.entrySet()) {
+										
+									}
+									break;
+								}
+								default: {
+									throw new IllegalArgumentException(
+											String.format("No logic for enum value %s.", entityStatus));
+								}
+								}
+							}
+						}
 					} else {
 						LOGGER.debug(
 								"Skipping the extraction of features for utterance with segment ID \"{}\" because the utterance is from player \"{}\" rather than the player whose perspective is being used for extracting features (\"{}\")",
@@ -299,7 +317,7 @@ public final class WordsAsClassifiersCrossValidationTrainingDataWriter {
 			});
 		}
 	}
-	
+
 	private static GameContext createGameContext(final Utterance dialogueUtt, final GameHistory history,
 			final String perspectivePlayerId) {
 		LOGGER.debug(

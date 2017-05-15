@@ -68,82 +68,90 @@ import weka.core.converters.ConverterUtils;
  */
 public final class WordsAsClassifiersCrossValidationTester {
 
-	private static class DisjointMultiClassifier extends AbstractClassifier {
-
-		/**
-		 *
-		 */
-		private static final long serialVersionUID = -3227148575501596586L;
-
-		private final List<String> classValues;
-
-		private final Map<String, Logistic> wordClassifiers;
-
-		public DisjointMultiClassifier() {
-			this(new HashMap<>(), new ArrayList<>());
-		}
-
-		public DisjointMultiClassifier(final int initialCapacity) {
-			this(Maps.newHashMapWithExpectedSize(initialCapacity), new ArrayList<>(initialCapacity));
-		}
-
-		public DisjointMultiClassifier(final Map<String, Logistic> wordClassifiers, final List<String> classValues) {
-			this.wordClassifiers = wordClassifiers;
-			this.classValues = classValues;
-		}
-
-		/*
-		 * (non-Javadoc)
-		 *
-		 * @see weka.classifiers.Classifier#buildClassifier(weka.core.Instances)
-		 */
-		@Override
-		public void buildClassifier(final Instances data) throws TrainingException {
-			final String className = parseRelationClassName(data.relationName());
-			final Logistic classifier = new Logistic();
-			try {
-				classifier.buildClassifier(data);
-			} catch (final Exception e) {
-				throw new TrainingException(e);
-			}
-			final Logistic oldClassifier = wordClassifiers.put(className, classifier);
-			if (oldClassifier != null) {
-				throw new IllegalArgumentException(
-						String.format("Multiple training files found for class \"%s\".", className));
-			} else {
-				classValues.add(className);
-			}
-		}
-
-		/*
-		 * (non-Javadoc)
-		 *
-		 * @see
-		 * weka.classifiers.AbstractClassifier#distributionForInstance(weka.core
-		 * .Instance)
-		 */
-		@Override
-		public double[] distributionForInstance(final Instance instance) throws Exception {
-			final double[] result = new double[classValues.size()];
-
-			for (final ListIterator<String> classValueIter = classValues.listIterator(); classValueIter.hasNext();) {
-				final int resultIdx = classValueIter.nextIndex();
-				final String classValue = classValueIter.next();
-				final Logistic classifier = wordClassifiers.get(classValue);
-				final double[] dist = classifier.distributionForInstance(instance);
-				// LOGGER.info("Distribution for class \"{}\": {}", classValue,
-				// Arrays.toString(dist));
-				final List<Object> possibleValues = Collections.list(instance.classAttribute().enumerateValues());
-				final int truthValIdx = possibleValues.indexOf(Boolean.TRUE.toString());
-				final double truthVal = dist[truthValIdx];
-				LOGGER.debug("Confidence for class \"{}\" is {}.", classValue, truthVal);
-				result[resultIdx] = truthVal;
-			}
-
-			return result;
-		}
-
-	}
+	// private static class DisjointMultiClassifier extends AbstractClassifier {
+	//
+	// /**
+	// *
+	// */
+	// private static final long serialVersionUID = -3227148575501596586L;
+	//
+	// private final List<String> classValues;
+	//
+	// private final Map<String, Logistic> wordClassifiers;
+	//
+	// public DisjointMultiClassifier() {
+	// this(new HashMap<>(), new ArrayList<>());
+	// }
+	//
+	// public DisjointMultiClassifier(final int initialCapacity) {
+	// this(Maps.newHashMapWithExpectedSize(initialCapacity), new
+	// ArrayList<>(initialCapacity));
+	// }
+	//
+	// public DisjointMultiClassifier(final Map<String, Logistic>
+	// wordClassifiers, final List<String> classValues) {
+	// this.wordClassifiers = wordClassifiers;
+	// this.classValues = classValues;
+	// }
+	//
+	// /*
+	// * (non-Javadoc)
+	// *
+	// * @see weka.classifiers.Classifier#buildClassifier(weka.core.Instances)
+	// */
+	// @Override
+	// public void buildClassifier(final Instances data) throws
+	// TrainingException {
+	// final String className = parseRelationClassName(data.relationName());
+	// final Logistic classifier = new Logistic();
+	// try {
+	// classifier.buildClassifier(data);
+	// } catch (final Exception e) {
+	// throw new TrainingException(e);
+	// }
+	// final Logistic oldClassifier = wordClassifiers.put(className,
+	// classifier);
+	// if (oldClassifier != null) {
+	// throw new IllegalArgumentException(
+	// String.format("Multiple training files found for class \"%s\".",
+	// className));
+	// } else {
+	// classValues.add(className);
+	// }
+	// }
+	//
+	// /*
+	// * (non-Javadoc)
+	// *
+	// * @see
+	// * weka.classifiers.AbstractClassifier#distributionForInstance(weka.core
+	// * .Instance)
+	// */
+	// @Override
+	// public double[] distributionForInstance(final Instance instance) throws
+	// Exception {
+	// final double[] result = new double[classValues.size()];
+	//
+	// for (final ListIterator<String> classValueIter =
+	// classValues.listIterator(); classValueIter.hasNext();) {
+	// final int resultIdx = classValueIter.nextIndex();
+	// final String classValue = classValueIter.next();
+	// final Logistic classifier = wordClassifiers.get(classValue);
+	// final double[] dist = classifier.distributionForInstance(instance);
+	// // LOGGER.info("Distribution for class \"{}\": {}", classValue,
+	// // Arrays.toString(dist));
+	// final List<Object> possibleValues =
+	// Collections.list(instance.classAttribute().enumerateValues());
+	// final int truthValIdx = possibleValues.indexOf(Boolean.TRUE.toString());
+	// final double truthVal = dist[truthValIdx];
+	// LOGGER.debug("Confidence for class \"{}\" is {}.", classValue, truthVal);
+	// result[resultIdx] = truthVal;
+	// }
+	//
+	// return result;
+	// }
+	//
+	// }
 
 	private enum Parameter implements Supplier<Option> {
 		HELP("?") {
@@ -282,10 +290,20 @@ public final class WordsAsClassifiersCrossValidationTester {
 		assert !trainingFiles.isEmpty();
 		return new TestDescription(trainingFiles, testFiles);
 	}
+	
+	private static Logistic createWordClassifier(Instances data) throws TrainingException{
+		final Logistic result = new Logistic();
+		try {
+			result.buildClassifier(data);
+		} catch (final Exception e) {
+			throw new TrainingException(e);
+		}
+		return result;
+	}
 
-	private static DisjointMultiClassifier createWordClassifier(final Map<Path, String> trainingFiles)
+	private static Map<String, Logistic> createWordClassifierMap(final Map<Path, String> trainingFiles)
 			throws IOException, TrainingException {
-		final DisjointMultiClassifier result = new DisjointMultiClassifier(trainingFiles.size());
+		final Map<String, Logistic> result = Maps.newHashMapWithExpectedSize(trainingFiles.size());
 		for (final Entry<Path, String> trainingFileDesc : trainingFiles.entrySet()) {
 			final Path infile = trainingFileDesc.getKey();
 			final String ext = trainingFileDesc.getValue();
@@ -300,8 +318,12 @@ public final class WordsAsClassifiersCrossValidationTester {
 				structure.add(nextInst);
 			}
 			final String className = parseRelationClassName(structure.relationName());
+			Logistic classifier = createWordClassifier(structure);
+			Logistic oldClassifier = result.put(className, classifier);
+			if (oldClassifier != null){
+				throw new IllegalArgumentException(String.format("More than one file for word class \"%s\".", className));
+			}
 			LOGGER.info("{} instance(s) for class \"{}\".", structure.numInstances(), className);
-			result.buildClassifier(structure);
 		}
 		return result;
 	}
@@ -337,27 +359,27 @@ public final class WordsAsClassifiersCrossValidationTester {
 
 		for (final Path indir : indirs) {
 			final TestDescription testDesc = createTestDescription(indir);
-			final DisjointMultiClassifier wordClassifier = createWordClassifier(testDesc.trainingFiles);
-			for (final Entry<Path, String> testFilePathExt : testDesc.testFiles.entrySet()) {
-				final AbstractFileLoader loader = ConverterUtils.getLoaderForExtension(testFilePathExt.getValue());
-				loader.setSource(testFilePathExt.getKey().toFile());
-				final Instances testStruct = loader.getStructure();
-				final Attribute classAttr = testStruct
-						.attribute(WordsAsClassifiersInstancesMapFactory.getClassAttrName());
-				testStruct.setClassIndex(classAttr.index());
-				for (Instance nextInst = loader.getNextInstance(testStruct); nextInst != null; nextInst = loader
-						.getNextInstance(testStruct)) {
-					try {
-						final double classification = wordClassifier.classifyInstance(nextInst);
-						LOGGER.info("Classification: " + classification);
-					} catch (final Exception e) {
-						throw new ClassificationException(e);
-					}
-					testStruct.add(nextInst);
-				}
-			}
-
-			final String testInfileStr = "C:\\Users\\tcshore\\Box Sync\\tangrams-restricted\\Ready\\20170329-1641-arvid-lutfisk\\events.lutfisk.txt";
+			final Map<String,Logistic> wordClassifiers = createWordClassifierMap(testDesc.trainingFiles);
+//			for (final Entry<Path, String> testFilePathExt : testDesc.testFiles.entrySet()) {
+//				final AbstractFileLoader loader = ConverterUtils.getLoaderForExtension(testFilePathExt.getValue());
+//				loader.setSource(testFilePathExt.getKey().toFile());
+//				final Instances testStruct = loader.getStructure();
+//				final Attribute classAttr = testStruct
+//						.attribute(WordsAsClassifiersInstancesMapFactory.getClassAttrName());
+//				testStruct.setClassIndex(classAttr.index());
+//				for (Instance nextInst = loader.getNextInstance(testStruct); nextInst != null; nextInst = loader
+//						.getNextInstance(testStruct)) {
+//					try {
+//						final double classification = wordClassifier.classifyInstance(nextInst);
+//						LOGGER.info("Classification: " + classification);
+//					} catch (final Exception e) {
+//						throw new ClassificationException(e);
+//					}
+//					testStruct.add(nextInst);
+//				}
+//			}
+//
+//			final String testInfileStr = "C:\\Users\\tcshore\\Box Sync\\tangrams-restricted\\Ready\\20170329-1641-arvid-lutfisk\\events.lutfisk.txt";
 		}
 	}
 }

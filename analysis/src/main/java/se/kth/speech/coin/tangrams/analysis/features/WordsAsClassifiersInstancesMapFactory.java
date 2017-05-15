@@ -31,7 +31,6 @@ import com.google.common.collect.Maps;
 
 import se.kth.speech.coin.tangrams.analysis.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.GameContext;
-import se.kth.speech.coin.tangrams.analysis.GameContextModelFactory;
 import se.kth.speech.coin.tangrams.analysis.GameHistory;
 import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManager;
 import se.kth.speech.coin.tangrams.analysis.TemporalGameContexts;
@@ -57,9 +56,6 @@ public final class WordsAsClassifiersInstancesMapFactory
 
 	private static class MultiClassDataCollector {
 
-		private static final EntityFeatureExtractionContextFactory EXTRACTION_CONTEXT_FACTORY = new EntityFeatureExtractionContextFactory(
-				new GameContextModelFactory(1), new ImageEdgeCounter());
-
 		private static GameContext createGameContext(final Utterance dialogueUtt, final GameHistory history,
 				final String perspectivePlayerId) {
 			LOGGER.debug(
@@ -80,11 +76,15 @@ public final class WordsAsClassifiersInstancesMapFactory
 
 		private final int numAttributes;
 
+		private final EntityFeatureExtractionContextFactory extCtxFactory;
+
 		private MultiClassDataCollector(final Function<? super String, Instances> classInstanceGetter,
-				final int numAttributes, final Function<GameContext, Integer> negativeExampleEntityIdGetter) {
+				final int numAttributes, final Function<GameContext, Integer> negativeExampleEntityIdGetter,
+				final EntityFeatureExtractionContextFactory extCtxFactory) {
 			this.negativeExampleEntityIdGetter = negativeExampleEntityIdGetter;
 			this.classInstanceGetter = classInstanceGetter;
 			this.numAttributes = numAttributes;
+			this.extCtxFactory = extCtxFactory;
 		}
 
 		private void accept(final SessionEventDialogueManager sessionEventDiagMgr) {
@@ -109,11 +109,11 @@ public final class WordsAsClassifiersInstancesMapFactory
 									"Creating positive and negative examples for entity ID \"{}\", which is selected by player \"{}\".",
 									selectedEntityId, submittingPlayerId);
 							// Add positive training examples
-							final EntityFeature.Extractor.Context positiveContext = EXTRACTION_CONTEXT_FACTORY
+							final EntityFeature.Extractor.Context positiveContext = extCtxFactory
 									.createExtractionContext(uttCtx, selectedEntityId);
 							addTokenInstances(dialogueUtt, uttCtx, positiveContext, Boolean.TRUE.toString());
 							// Add negative training examples
-							final EntityFeature.Extractor.Context negativeContext = EXTRACTION_CONTEXT_FACTORY
+							final EntityFeature.Extractor.Context negativeContext = extCtxFactory
 									.createExtractionContext(uttCtx, negativeExampleEntityIdGetter.apply(uttCtx));
 							addTokenInstances(dialogueUtt, uttCtx, negativeContext, Boolean.FALSE.toString());
 						} else {
@@ -179,7 +179,11 @@ public final class WordsAsClassifiersInstancesMapFactory
 
 	private final Function<GameContext, Integer> negativeExampleEntityIdGetter;
 
-	public WordsAsClassifiersInstancesMapFactory(final Function<GameContext, Integer> negativeExampleEntityIdGetter) {
+	private final EntityFeatureExtractionContextFactory extCtxFactory;
+
+	public WordsAsClassifiersInstancesMapFactory(final EntityFeatureExtractionContextFactory extCtxFactory,
+			final Function<GameContext, Integer> negativeExampleEntityIdGetter) {
+		this.extCtxFactory = extCtxFactory;
 		this.negativeExampleEntityIdGetter = negativeExampleEntityIdGetter;
 	}
 
@@ -194,7 +198,7 @@ public final class WordsAsClassifiersInstancesMapFactory
 			return instances;
 		});
 		final MultiClassDataCollector coll = new MultiClassDataCollector(classInstanceFetcher, ATTRS.size(),
-				negativeExampleEntityIdGetter);
+				negativeExampleEntityIdGetter, extCtxFactory);
 		for (final SessionEventDialogueManager sessionEventDiagMgr : sessionEventDiagMgrs) {
 			coll.accept(sessionEventDiagMgr);
 		}
