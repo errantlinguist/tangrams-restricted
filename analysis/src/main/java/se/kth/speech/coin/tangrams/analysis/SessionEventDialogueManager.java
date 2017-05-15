@@ -33,6 +33,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.BiMap;
+import com.google.common.collect.Maps;
 
 import iristk.util.HAT;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
@@ -98,7 +99,7 @@ public final class SessionEventDialogueManager {
 	 * @return the playerSourceIds
 	 */
 	public BiMap<String, String> getPlayerSourceIds() {
-		return playerSourceIds;
+		return Maps.unmodifiableBiMap(playerSourceIds);
 	}
 
 }
