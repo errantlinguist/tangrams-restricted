@@ -43,6 +43,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import se.kth.speech.coin.tangrams.analysis.EventDialogueFactory;
+import se.kth.speech.coin.tangrams.analysis.GameHistory;
 import se.kth.speech.coin.tangrams.analysis.RandomNotSelectedEntityIdGetter;
 import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
 import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManager;
@@ -261,8 +262,7 @@ public final class WordsAsClassifiersCrossValidationTrainingDataWriter {
 
 	private void createTestData(final SessionDataManager testSessionData) throws JAXBException, IOException {
 		SessionEventDialogueManager sessionEventDiagMgr = new SessionEventDialogueManager(testSessionData, EVENT_DIAG_FACTORY);
-//		sessionEventDiagMgr.createUttDialogues(history, perspectivePlayerId);
-		final Path eventLogPath = testSessionData.getCanonicalEventLogPath();
+		GameHistory history = sessionEventDiagMgr.getGameHistory();
 
 	}
 

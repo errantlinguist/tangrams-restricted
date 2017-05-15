@@ -91,16 +91,16 @@ public final class WordsAsClassifiersInstancesMapFactory
 
 			final String gameId = sessionEventDiagMgr.getGameId();
 			LOGGER.debug("Processing game \"{}\".", gameId);
-			final GameHistory history = sessionEventDiagMgr.getGameHistory();
+			
 			for (final String perspectivePlayerId : playerIds) {
 				LOGGER.info("Processing game from perspective of player \"{}\".", perspectivePlayerId);
-				final List<EventDialogue> uttDialogues = sessionEventDiagMgr.createUttDialogues(history,
-						perspectivePlayerId);
+				final List<EventDialogue> uttDialogues = sessionEventDiagMgr.createUttDialogues(perspectivePlayerId);
 				uttDialogues.forEach(uttDialogue -> {
 					final List<Utterance> dialogueUtts = uttDialogue.getUtts();
 					dialogueUtts.forEach(dialogueUtt -> {
 						final String uttPlayerId = dialogueUtt.getSpeakerId();
 						if (perspectivePlayerId.equals(uttPlayerId)) {
+							final GameHistory history = sessionEventDiagMgr.getGameHistory();
 							final GameContext uttCtx = createGameContext(dialogueUtt, history, perspectivePlayerId);
 							uttCtx.findLastSelectedEntityId().ifPresent(selectedEntityId -> {
 								LOGGER.debug(
