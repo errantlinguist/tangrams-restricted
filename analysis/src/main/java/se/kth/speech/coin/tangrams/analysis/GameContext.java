@@ -22,6 +22,7 @@ import java.util.Collections;
 import java.util.EnumMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
@@ -33,6 +34,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
 import iristk.system.Event;
 import se.kth.speech.coin.tangrams.iristk.EventTypeMatcher;
@@ -42,6 +44,10 @@ import se.kth.speech.coin.tangrams.iristk.events.ImageVisualizationInfoDescripti
 import se.kth.speech.coin.tangrams.iristk.events.Move;
 
 public final class GameContext {
+
+	public enum EntityStatus {
+		SELECTED;
+	}
 
 	private static final Map<GameManagementEvent, EventTypeMatcher> EVENT_TYPE_MATCHERS = createEventTypeMatcherMap();
 
@@ -84,6 +90,42 @@ public final class GameContext {
 		this.history = history;
 		this.time = time;
 		this.perspectivePlayerId = perspectivePlayerId;
+	}
+
+	public Map<EntityStatus, Map<Integer, ImageVisualizationInfoDescription.Datum>> createEntityStatusVisualizationInfoMap() {
+		final Map<EntityStatus, Map<Integer, ImageVisualizationInfoDescription.Datum>> result = new EnumMap<>(
+				EntityStatus.class);
+		final List<ImageVisualizationInfoDescription.Datum> vizInfo = getEntityVisualizationInfo();
+		final Optional<Integer> optSelectedEntityId = findLastSelectedEntityId();
+		if (optSelectedEntityId.isPresent()) {
+			final Integer selectedEntityId = optSelectedEntityId.get();
+			final Map<Integer, ImageVisualizationInfoDescription.Datum> selected = Maps.newHashMapWithExpectedSize(1);
+			final Map<Integer, ImageVisualizationInfoDescription.Datum> notSelected = Maps
+					.newHashMapWithExpectedSize(vizInfo.size() - 1);
+			for (final ListIterator<ImageVisualizationInfoDescription.Datum> imgVizInfoDataIter = vizInfo
+					.listIterator(); imgVizInfoDataIter.hasNext();) {
+				final Integer entityId = imgVizInfoDataIter.nextIndex();
+				final ImageVisualizationInfoDescription.Datum imgVizInfoDatum = imgVizInfoDataIter.next();
+				if (selectedEntityId.equals(entityId)) {
+					selected.put(entityId, imgVizInfoDatum);
+				} else {
+					notSelected.put(entityId, imgVizInfoDatum);
+				}
+			}
+			result.put(EntityStatus.SELECTED, selected);
+			result.put(null, notSelected);
+		} else {
+			final Map<Integer, ImageVisualizationInfoDescription.Datum> notSelected = Maps
+					.newHashMapWithExpectedSize(vizInfo.size());
+			for (final ListIterator<ImageVisualizationInfoDescription.Datum> imgVizInfoDataIter = vizInfo
+					.listIterator(); imgVizInfoDataIter.hasNext();) {
+				final Integer entityId = imgVizInfoDataIter.nextIndex();
+				final ImageVisualizationInfoDescription.Datum imgVizInfoDatum = imgVizInfoDataIter.next();
+				notSelected.put(entityId, imgVizInfoDatum);
+			}
+			result.put(null, notSelected);
+		}
+		return result;
 	}
 
 	/*
