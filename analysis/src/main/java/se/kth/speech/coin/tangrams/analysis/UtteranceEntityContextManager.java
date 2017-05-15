@@ -49,8 +49,6 @@ public final class UtteranceEntityContextManager {
 
 	private final BiFunction<ListIterator<Utterance>, GameHistory, Stream<EventDialogue>> eventUttFactory;
 
-//	private final EntityFeatureExtractionContextFactory extractionContextFactory;
-
 	private final Map<String, GameHistory> gameHistories;
 
 	private final BiMap<String, String> playerSourceIds;
@@ -73,10 +71,6 @@ public final class UtteranceEntityContextManager {
 		LOGGER.info("Reading game histories from \"{}\".", eventLogPath);
 		gameHistories = LoggedEvents.parseGameHistories(Files.lines(eventLogPath),
 				LoggedEvents.VALID_MODEL_MIN_REQUIRED_EVENT_MATCHER);
-//		final int uniqueModelDescriptionCount = gameHistories.values().size();
-
-//		extractionContextFactory = new EntityFeatureExtractionContextFactory(
-//				new GameContextModelFactory(uniqueModelDescriptionCount), imgEdgeCounter);
 
 		playerSourceIds = sessionData.getPlayerData().getPlayerSourceIds();
 		final Map<String, String> sourcePlayerIds = sessionData.getPlayerData().getPlayerSourceIds().inverse();
@@ -91,35 +85,7 @@ public final class UtteranceEntityContextManager {
 		final List<EventDialogue> eventUttLists = eventUttFactory.apply(utts.listIterator(), history)
 				.collect(Collectors.toList());
 		return eventUttLists;
-//		final List<UtteranceDialogue> result = new ArrayList<>(eventUttLists.size());
-//		for (final Entry<Event, List<Utterance>> eventUttList : eventUttLists) {
-//			final Event event = eventUttList.getKey();
-//			final List<Utterance> uttList = eventUttList.getValue();
-//			final Map<Utterance, GameContext> uttCtxs = uttList.stream()
-//					.collect(Collectors.toMap(Function.identity(), utt -> {
-//						final List<GameContext> uttContexts = TemporalGameContexts
-//								.create(history, utt.getStartTime(), utt.getEndTime(), perspectivePlayerId)
-//								.collect(Collectors.toList());
-//						if (uttContexts.size() > 1) {
-//							LOGGER.warn("More than one context found for {}; Ignoring all but the first.", utt);
-//						}
-//						return uttContexts.get(0);
-//					}));
-//			final UtteranceDialogue uttDiag = new UtteranceDialogue(uttList, uttCtxs::get);
-//			final Event lastEventBeforeFirstUtt = uttDiag.findLastEventBeforeFirstUtt().orElse(null);
-//			if (!Objects.equals(event, lastEventBeforeFirstUtt)){
-//				LOGGER.warn("Do something here");
-//			}
-//		}
-//		return result;
 	}
-
-//	/**
-//	 * @return the extractionContextFactory
-//	 */
-//	public EntityFeatureExtractionContextFactory getExtractionContextFactory() {
-//		return extractionContextFactory;
-//	}
 
 	/**
 	 * @return the gameHistories
