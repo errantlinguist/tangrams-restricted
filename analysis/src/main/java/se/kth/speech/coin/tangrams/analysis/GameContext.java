@@ -46,7 +46,8 @@ import se.kth.speech.coin.tangrams.iristk.events.Move;
 public final class GameContext {
 
 	public enum EntityStatus {
-		SELECTED;
+		SELECTED,
+		NOT_SELECTED;
 	}
 
 	private static final Map<GameManagementEvent, EventTypeMatcher> EVENT_TYPE_MATCHERS = createEventTypeMatcherMap();
@@ -113,7 +114,7 @@ public final class GameContext {
 				}
 			}
 			result.put(EntityStatus.SELECTED, selected);
-			result.put(null, notSelected);
+			result.put(EntityStatus.NOT_SELECTED, notSelected);
 		} else {
 			final Map<Integer, ImageVisualizationInfoDescription.Datum> notSelected = Maps
 					.newHashMapWithExpectedSize(vizInfo.size());
@@ -123,7 +124,7 @@ public final class GameContext {
 				final ImageVisualizationInfoDescription.Datum imgVizInfoDatum = imgVizInfoDataIter.next();
 				notSelected.put(entityId, imgVizInfoDatum);
 			}
-			result.put(null, notSelected);
+			result.put(EntityStatus.NOT_SELECTED, notSelected);
 		}
 		return result;
 	}

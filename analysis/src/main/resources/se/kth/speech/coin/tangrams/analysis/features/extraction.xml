@@ -9,6 +9,17 @@
 
 	<context:component-scan base-package="se.kth.speech.coin.tangrams.analysis.features" />
 
+	<bean id="event-dialogue-factory"
+		class="se.kth.speech.coin.tangrams.analysis.EventDialogueFactory">
+		<constructor-arg>
+			<bean class="se.kth.speech.coin.tangrams.iristk.EventTypeMatcher">
+				<constructor-arg
+					type="se.kth.speech.coin.tangrams.iristk.GameManagementEvent"
+					value="NEXT_TURN_REQUEST" />
+			</bean>
+		</constructor-arg>
+	</bean>
+
 	<bean id="training-class-attr-name" class="java.lang.String"
 		factory-method="valueOf">
 		<constructor-arg value="IS_REFERENT" />
@@ -52,5 +63,10 @@
 
 	<bean id="words-as-classifiers-inst-map-factory"
 		class="se.kth.speech.coin.tangrams.analysis.features.WordsAsClassifiersInstancesMapFactory" />
+
+	<bean id="words-as-classifiers-data-writer" class="se.kth.speech.coin.tangrams.analysis.features.WordsAsClassifiersTrainingDataWriter" />
+
+	<bean id="words-as-classifiers-cross-validation-data-writer"
+		class="se.kth.speech.coin.tangrams.analysis.features.WordsAsClassifiersCrossValidationTrainingDataWriter" />
 
 </beans>

@@ -24,10 +24,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.BiFunction;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
+import javax.inject.Inject;
 import javax.xml.bind.JAXBException;
 
 import org.apache.commons.cli.CommandLine;
@@ -42,11 +46,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
-import se.kth.speech.coin.tangrams.analysis.EventDialogueFactory;
+import se.kth.speech.coin.tangrams.analysis.EventDialogue;
+import se.kth.speech.coin.tangrams.analysis.GameHistory;
 import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
 import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManager;
-import se.kth.speech.coin.tangrams.iristk.EventTypeMatcher;
-import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
+import se.kth.speech.coin.tangrams.analysis.Utterance;
 import weka.core.Instances;
 import weka.core.converters.AbstractFileSaver;
 import weka.core.converters.ConverterUtils;
@@ -114,9 +118,6 @@ public final class WordsAsClassifiersTrainingDataWriter {
 
 	}
 
-	private static final EventDialogueFactory EVENT_DIAG_FACTORY = new EventDialogueFactory(
-			new EventTypeMatcher(GameManagementEvent.NEXT_TURN_REQUEST));
-
 	private static final Logger LOGGER = LoggerFactory.getLogger(WordsAsClassifiersTrainingDataWriter.class);
 
 	public static void main(final CommandLine cl) throws IOException, JAXBException, ParseException {
@@ -135,10 +136,8 @@ public final class WordsAsClassifiersTrainingDataWriter {
 
 				try (final ClassPathXmlApplicationContext appCtx = new ClassPathXmlApplicationContext("extraction.xml",
 						WordsAsClassifiersTrainingDataWriter.class)) {
-					final WordsAsClassifiersInstancesMapFactory instancesFactory = appCtx
-							.getBean(WordsAsClassifiersInstancesMapFactory.class);
-					final WordsAsClassifiersTrainingDataWriter writer = new WordsAsClassifiersTrainingDataWriter(
-							instancesFactory);
+					final WordsAsClassifiersTrainingDataWriter writer = appCtx
+							.getBean(WordsAsClassifiersTrainingDataWriter.class);
 					final Map<String, Instances> classInstances = writer.apply(inpaths);
 					if (outdir.mkdirs()) {
 						LOGGER.info("Output directory \"{}\" was nonexistent; Created it before writing data.", outdir);
@@ -170,11 +169,11 @@ public final class WordsAsClassifiersTrainingDataWriter {
 		}
 	}
 
-	private final WordsAsClassifiersInstancesMapFactory instancesFactory;
+	@Inject
+	private WordsAsClassifiersInstancesMapFactory instancesFactory;
 
-	public WordsAsClassifiersTrainingDataWriter(final WordsAsClassifiersInstancesMapFactory instancesFactory) {
-		this.instancesFactory = instancesFactory;
-	}
+	@Inject
+	private BiFunction<ListIterator<Utterance>, GameHistory, Stream<EventDialogue>> eventDiagFactory;
 
 	public Map<String, Instances> apply(final Iterable<Path> inpaths) throws IOException, JAXBException {
 		final Collection<SessionDataManager> infileSessionData = SessionDataManager.createFileSessionDataMap(inpaths)
@@ -182,7 +181,7 @@ public final class WordsAsClassifiersTrainingDataWriter {
 		final List<SessionEventDialogueManager> sessionEvtDiagMgrs = new ArrayList<>(infileSessionData.size());
 		for (final SessionDataManager sessionDatum : infileSessionData) {
 			final SessionEventDialogueManager sessionEventDiagMgr = new SessionEventDialogueManager(sessionDatum,
-					EVENT_DIAG_FACTORY);
+					eventDiagFactory);
 			sessionEvtDiagMgrs.add(sessionEventDiagMgr);
 		}
 		return instancesFactory.apply(sessionEvtDiagMgrs);
