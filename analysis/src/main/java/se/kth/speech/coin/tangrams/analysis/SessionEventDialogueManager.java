@@ -43,9 +43,9 @@ import se.kth.speech.hat.xsd.Annotation;
  * @since 12 May 2017
  *
  */
-public final class UtteranceEntityContextManager {
+public final class SessionEventDialogueManager {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(UtteranceEntityContextManager.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(SessionEventDialogueManager.class);
 
 	private final BiFunction<ListIterator<Utterance>, GameHistory, Stream<EventDialogue>> eventUttFactory;
 
@@ -59,7 +59,7 @@ public final class UtteranceEntityContextManager {
 
 	private final List<Utterance> utts;
 
-	public UtteranceEntityContextManager(
+	public SessionEventDialogueManager(
 			final SessionDataManager sessionData,
 			final BiFunction<ListIterator<Utterance>, GameHistory, Stream<EventDialogue>> eventUttFactory) throws JAXBException, IOException {
 		this.eventUttFactory = eventUttFactory;

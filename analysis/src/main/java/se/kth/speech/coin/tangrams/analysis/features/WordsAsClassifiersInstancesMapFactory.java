@@ -42,7 +42,7 @@ import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
 import se.kth.speech.coin.tangrams.analysis.TemporalGameContexts;
 import se.kth.speech.coin.tangrams.analysis.Utterance;
 import se.kth.speech.coin.tangrams.analysis.EventDialogue;
-import se.kth.speech.coin.tangrams.analysis.UtteranceEntityContextManager;
+import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManager;
 import se.kth.speech.coin.tangrams.content.IconImages;
 import se.kth.speech.coin.tangrams.iristk.EventTypeMatcher;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
@@ -91,18 +91,18 @@ public final class WordsAsClassifiersInstancesMapFactory {
 			this.numAttributes = numAttributes;
 		}
 
-		private void accept(final UtteranceEntityContextManager uttCtxMgr) {
-			final BiMap<String, String> playerSourceIds = uttCtxMgr.getPlayerSourceIds();
+		private void accept(final SessionEventDialogueManager sessionEventDiagMgr) {
+			final BiMap<String, String> playerSourceIds = sessionEventDiagMgr.getPlayerSourceIds();
 			final EntityFeatureExtractionContextFactory extractionContextFactory = new EntityFeatureExtractionContextFactory(
-					new GameContextModelFactory(uttCtxMgr.getUniqueGameModelDescriptionCount()), IMG_EDGE_COUNTER);
+					new GameContextModelFactory(sessionEventDiagMgr.getUniqueGameModelDescriptionCount()), IMG_EDGE_COUNTER);
 
-			for (final Entry<String, GameHistory> gameHistory : uttCtxMgr.getGameHistories().entrySet()) {
+			for (final Entry<String, GameHistory> gameHistory : sessionEventDiagMgr.getGameHistories().entrySet()) {
 				final String gameId = gameHistory.getKey();
 				LOGGER.debug("Processing game \"{}\".", gameId);
 				final GameHistory history = gameHistory.getValue();
 				for (final String perspectivePlayerId : playerSourceIds.keySet()) {
 					LOGGER.info("Processing game from perspective of player \"{}\".", perspectivePlayerId);
-					final List<EventDialogue> uttDialogues = uttCtxMgr.createUttDialogues(history,
+					final List<EventDialogue> uttDialogues = sessionEventDiagMgr.createUttDialogues(history,
 							perspectivePlayerId);
 					uttDialogues.forEach(uttDialogue -> {
 						final List<Utterance> dialogueUtts = uttDialogue.getUtts();
@@ -209,9 +209,9 @@ public final class WordsAsClassifiersInstancesMapFactory {
 		final MultiClassDataCollector coll = new MultiClassDataCollector(classInstanceFetcher, ATTRS.size(),
 				negativeExampleEntityIdGetter);
 		for (final SessionDataManager sessionDatum : sessionData) {
-			final UtteranceEntityContextManager uttCtx = new UtteranceEntityContextManager(sessionDatum,
+			final SessionEventDialogueManager sessionEventDiagMgr = new SessionEventDialogueManager(sessionDatum,
 					EVENT_DIAG_FACTORY);
-			coll.accept(uttCtx);
+			coll.accept(sessionEventDiagMgr);
 		}
 		return result;
 	}
