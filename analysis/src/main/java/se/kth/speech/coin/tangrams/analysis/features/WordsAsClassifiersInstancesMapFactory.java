@@ -57,6 +57,9 @@ public final class WordsAsClassifiersInstancesMapFactory
 
 	private static class MultiClassDataCollector {
 
+		private static final EntityFeatureExtractionContextFactory EXTRACTION_CONTEXT_FACTORY = new EntityFeatureExtractionContextFactory(
+				new GameContextModelFactory(1), new ImageEdgeCounter());
+
 		private static GameContext createGameContext(final Utterance dialogueUtt, final GameHistory history,
 				final String perspectivePlayerId) {
 			LOGGER.debug(
@@ -85,8 +88,6 @@ public final class WordsAsClassifiersInstancesMapFactory
 		}
 
 		private void accept(final SessionEventDialogueManager sessionEventDiagMgr) {
-			final EntityFeatureExtractionContextFactory extractionContextFactory = new EntityFeatureExtractionContextFactory(
-					new GameContextModelFactory(1), IMG_EDGE_COUNTER);
 
 			final String gameId = sessionEventDiagMgr.getGameId();
 			LOGGER.debug("Processing game \"{}\".", gameId);
@@ -95,7 +96,8 @@ public final class WordsAsClassifiersInstancesMapFactory
 			uttDialogues.forEach(uttDialogue -> {
 				uttDialogue.getLastEvent().ifPresent(event -> {
 					LOGGER.debug("Extracting features for utterances for event: {}", event);
-					final String submittingPlayerId = event.getString(GameManagementEvent.Attribute.PLAYER_ID.toString());
+					final String submittingPlayerId = event
+							.getString(GameManagementEvent.Attribute.PLAYER_ID.toString());
 					final List<Utterance> dialogueUtts = uttDialogue.getUtts();
 					dialogueUtts.forEach(dialogueUtt -> {
 						final String uttPlayerId = dialogueUtt.getSpeakerId();
@@ -107,11 +109,11 @@ public final class WordsAsClassifiersInstancesMapFactory
 									"Creating positive and negative examples for entity ID \"{}\", which is selected by player \"{}\".",
 									selectedEntityId, submittingPlayerId);
 							// Add positive training examples
-							final EntityFeature.Extractor.Context positiveContext = extractionContextFactory
+							final EntityFeature.Extractor.Context positiveContext = EXTRACTION_CONTEXT_FACTORY
 									.createExtractionContext(uttCtx, selectedEntityId);
 							addTokenInstances(dialogueUtt, uttCtx, positiveContext, Boolean.TRUE.toString());
 							// Add negative training examples
-							final EntityFeature.Extractor.Context negativeContext = extractionContextFactory
+							final EntityFeature.Extractor.Context negativeContext = EXTRACTION_CONTEXT_FACTORY
 									.createExtractionContext(uttCtx, negativeExampleEntityIdGetter.apply(uttCtx));
 							addTokenInstances(dialogueUtt, uttCtx, negativeContext, Boolean.FALSE.toString());
 						} else {
@@ -146,8 +148,6 @@ public final class WordsAsClassifiersInstancesMapFactory
 	private static final String CLASS_ATTR_NAME = "IS_REFERENT";
 
 	private static final EntityFeature.Extractor EXTRACTOR;
-
-	private static final ImageEdgeCounter IMG_EDGE_COUNTER = new ImageEdgeCounter();
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(WordsAsClassifiersInstancesMapFactory.class);
 
