@@ -42,11 +42,15 @@ import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import se.kth.speech.coin.tangrams.analysis.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.EventDialogueFactory;
+import se.kth.speech.coin.tangrams.analysis.GameContext;
 import se.kth.speech.coin.tangrams.analysis.GameHistory;
 import se.kth.speech.coin.tangrams.analysis.RandomNotSelectedEntityIdGetter;
 import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
 import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManager;
+import se.kth.speech.coin.tangrams.analysis.TemporalGameContexts;
+import se.kth.speech.coin.tangrams.analysis.Utterance;
 import se.kth.speech.coin.tangrams.iristk.EventTypeMatcher;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 import se.kth.speech.io.FileNames;
@@ -263,7 +267,24 @@ public final class WordsAsClassifiersCrossValidationTrainingDataWriter {
 	private void createTestData(final SessionDataManager testSessionData) throws JAXBException, IOException {
 		SessionEventDialogueManager sessionEventDiagMgr = new SessionEventDialogueManager(testSessionData, EVENT_DIAG_FACTORY);
 		GameHistory history = sessionEventDiagMgr.getGameHistory();
-		sessionEventDiagMgr.createUttDialogues();
+		List<EventDialogue> uttDiags = sessionEventDiagMgr.createUttDialogues();
+		for (EventDialogue uttDiag : uttDiags){
+			
+		}
+	}
+	
+	private static GameContext createGameContext(final Utterance dialogueUtt, final GameHistory history,
+			final String perspectivePlayerId) {
+		LOGGER.debug(
+				"Creating a context based on the logged game history, which is then seen from the perspective of player \"{}\".",
+				perspectivePlayerId);
+		final GameContext[] ctxs = TemporalGameContexts
+				.create(history, dialogueUtt.getStartTime(), dialogueUtt.getEndTime(), perspectivePlayerId)
+				.toArray(GameContext[]::new);
+		if (ctxs.length > 1) {
+			LOGGER.warn("More than one game context found for {}; Only using the first one.", dialogueUtt);
+		}
+		return ctxs[0];
 	}
 
 }
