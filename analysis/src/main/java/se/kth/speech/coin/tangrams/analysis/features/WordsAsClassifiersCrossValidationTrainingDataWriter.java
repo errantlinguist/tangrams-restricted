@@ -28,6 +28,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -194,7 +195,7 @@ public final class WordsAsClassifiersCrossValidationTrainingDataWriter {
 	private BiFunction<? super GameContext, ? super Integer, EntityFeature.Extractor.Context> extCtxFactory;
 
 	@Inject
-	private WordsAsClassifiersInstancesMapFactory instancesFactory;
+	private Function<Collection<SessionEventDialogueManager>, Map<String, Instances>> instancesFactory;
 
 	private File outdir;
 

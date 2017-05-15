@@ -28,6 +28,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -170,7 +171,7 @@ public final class WordsAsClassifiersTrainingDataWriter {
 	}
 
 	@Inject
-	private WordsAsClassifiersInstancesMapFactory instancesFactory;
+	private Function<Collection<SessionEventDialogueManager>, Map<String, Instances>> instancesFactory;
 
 	@Inject
 	private BiFunction<ListIterator<Utterance>, GameHistory, Stream<EventDialogue>> eventDiagFactory;
