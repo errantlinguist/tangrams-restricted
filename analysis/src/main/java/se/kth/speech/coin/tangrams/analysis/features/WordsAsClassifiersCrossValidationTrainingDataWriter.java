@@ -53,6 +53,7 @@ import se.kth.speech.coin.tangrams.analysis.TemporalGameContexts;
 import se.kth.speech.coin.tangrams.analysis.Utterance;
 import se.kth.speech.coin.tangrams.iristk.EventTypeMatcher;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
+import se.kth.speech.coin.tangrams.iristk.events.Move;
 import se.kth.speech.io.FileNames;
 import weka.core.Instances;
 import weka.core.converters.AbstractFileSaver;
@@ -266,10 +267,36 @@ public final class WordsAsClassifiersCrossValidationTrainingDataWriter {
 
 	private void createTestData(final SessionDataManager testSessionData) throws JAXBException, IOException {
 		SessionEventDialogueManager sessionEventDiagMgr = new SessionEventDialogueManager(testSessionData, EVENT_DIAG_FACTORY);
-		GameHistory history = sessionEventDiagMgr.getGameHistory();
 		List<EventDialogue> uttDiags = sessionEventDiagMgr.createUttDialogues();
 		for (EventDialogue uttDiag : uttDiags){
-			
+			uttDiag.getLastEvent().ifPresent(event -> {
+				LOGGER.debug("Creating test data for event: {}", event);
+				final String submittingPlayerId = event.getString(GameManagementEvent.Attribute.PLAYER_ID.toString());
+				final List<Utterance> dialogueUtts = uttDiag.getUtts();
+				dialogueUtts.forEach(dialogueUtt -> {
+					final String uttPlayerId = dialogueUtt.getSpeakerId();
+					if (submittingPlayerId.equals(uttPlayerId)) {
+						final GameHistory history = sessionEventDiagMgr.getGameHistory();
+						final GameContext uttCtx = createGameContext(dialogueUtt, history, submittingPlayerId);
+						final Integer selectedEntityId = uttCtx.findLastSelectedEntityId().get();
+						LOGGER.debug(
+								"Creating positive and negative examples for entity ID \"{}\", which is selected by player \"{}\".",
+								selectedEntityId, submittingPlayerId);
+						// Add positive training examples
+//						final EntityFeature.Extractor.Context positiveContext = extractionContextFactory
+//								.createExtractionContext(uttCtx, selectedEntityId);
+//						addTokenInstances(dialogueUtt, uttCtx, positiveContext, Boolean.TRUE.toString());
+//						// Add negative training examples
+//						final EntityFeature.Extractor.Context negativeContext = extractionContextFactory
+//								.createExtractionContext(uttCtx, negativeExampleEntityIdGetter.apply(uttCtx));
+//						addTokenInstances(dialogueUtt, uttCtx, negativeContext, Boolean.FALSE.toString());
+					} else {
+						LOGGER.debug(
+								"Skipping the extraction of features for utterance with segment ID \"{}\" because the utterance is from player \"{}\" rather than the player whose perspective is being used for extracting features (\"{}\")",
+								dialogueUtt.getSegmentId(), uttPlayerId, submittingPlayerId);
+					}
+				});
+			});
 		}
 	}
 	
