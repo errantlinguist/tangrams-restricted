@@ -113,6 +113,16 @@ public final class GameContext {
 		return true;
 	}
 
+	/**
+	 * Finds the last {@link Event} matching a given {@link Predicate} in
+	 * chronological order, i.e.&nbsp;the &ldquo;last&rdquo; matching event
+	 * preceding the time in the game represented by this {@link GameContext}
+	 * instance.
+	 *
+	 * @param matcher
+	 *            A {@link Predicate} matching the event to find.
+	 * @return An {@link Optional} containing the last matching event, if any.
+	 */
 	public Optional<Event> findLastEvent(final Predicate<? super Event> matcher) {
 		final NavigableMap<LocalDateTime, List<Event>> timedEvents = getPrecedingEvents();
 		// Look for the last matching event (iterating
@@ -121,6 +131,20 @@ public final class GameContext {
 		return eventsDescTime.filter(matcher).findFirst();
 	}
 
+	/**
+	 * Finds the distance to the last {@link Event} matching a given
+	 * {@link Predicate} in chronological order, i.e.&nbsp;the
+	 * &ldquo;last&rdquo; matching event preceding the time in the game
+	 * represented by this {@link GameContext} instance; The distance is
+	 * represented as the number of events between the last event and the
+	 * matching event, i.e.&nbsp;<code>0</code> means that the last event
+	 * submitted matches.
+	 *
+	 * @param matcher
+	 *            A {@link Predicate} matching the event to find.
+	 * @return An {@link OptionalInt} containing the distance to the last
+	 *         matching event, if any.
+	 */
 	public OptionalInt findLastEventDistance(final Predicate<? super Event> matcher) {
 		final NavigableMap<LocalDateTime, List<Event>> timedEvents = getPrecedingEvents();
 		// Look for the last time the event was seen (iterating
