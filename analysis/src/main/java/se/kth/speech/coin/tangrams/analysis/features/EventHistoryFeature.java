@@ -18,7 +18,6 @@ package se.kth.speech.coin.tangrams.analysis.features;
 
 import java.util.Arrays;
 import java.util.EnumMap;
-import java.util.EnumSet;
 import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
@@ -100,7 +99,7 @@ public enum EventHistoryFeature {
 
 	static {
 		final Function<GameManagementEvent, EventTypeMatcher> eventTypeMatcherFactory = eventType -> new EventTypeMatcher(
-				EnumSet.of(eventType));
+				eventType);
 		EVENT_TYPE_MATCHERS = new EnumMap<>(GameManagementEvent.class);
 		Arrays.stream(GameManagementEvent.values())
 				.forEach(eventType -> EVENT_TYPE_MATCHERS.put(eventType, eventTypeMatcherFactory.apply(eventType)));
