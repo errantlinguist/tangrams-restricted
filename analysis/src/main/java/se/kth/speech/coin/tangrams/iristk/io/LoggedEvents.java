@@ -66,9 +66,22 @@ public final class LoggedEvents {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(LoggedEvents.class);
 
+	/**
+	 *
+	 * @param sessionLogDir
+	 *            A {@link Path} denoting the session log directory to process.
+	 * @param expectedEventLogFileCount
+	 *            The expected number of event logs in the directory to process.
+	 * @return A new {@link Map} of player IDs mapped to a {@link Path} pointing
+	 *         to the player's respective event log.
+	 * @throws IOException
+	 *             If an error occurs while
+	 *             {@link Files#walk(Path, FileVisitOption...) walking} through
+	 *             the given directory.
+	 */
 	public static Map<String, Path> createPlayerEventLogFileMap(final Path sessionLogDir,
-			final int minEventLogFileCount) throws IOException {
-		final Map<String, Path> result = Maps.newHashMapWithExpectedSize(minEventLogFileCount);
+			final int expectedEventLogFileCount) throws IOException {
+		final Map<String, Path> result = Maps.newHashMapWithExpectedSize(expectedEventLogFileCount);
 		try (Stream<Path> filePaths = Files.walk(sessionLogDir, FileVisitOption.FOLLOW_LINKS)) {
 			filePaths.forEach(filePath -> {
 				final Matcher m = LOGGED_EVENT_FILE_NAME_PATTERN.matcher(filePath.getFileName().toString());
@@ -79,25 +92,73 @@ public final class LoggedEvents {
 			});
 		}
 		final int playerEventLogFileCount = result.size();
-		if (playerEventLogFileCount < minEventLogFileCount) {
+		if (playerEventLogFileCount < expectedEventLogFileCount) {
 			throw new IllegalArgumentException(
 					String.format("Expected to find data files for at least %d unique player(s) but found %d instead.",
-							minEventLogFileCount, playerEventLogFileCount));
+							expectedEventLogFileCount, playerEventLogFileCount));
 		}
 		return result;
 	}
 
+	/**
+	 *
+	 * @param playerEventLogFilePaths
+	 *            A mapping of log {@link Path paths} to read for each player
+	 *            ID.
+	 * @return A new {@link Table}, with game ID as the row key and player ID as
+	 *         the column key, mapping to the relevant {@link GameHistory}
+	 *         representing the logged event history for a given game from the
+	 *         perspective of a given player.
+	 * @throws IOException
+	 *             If an error occurs while reading one of the provided event
+	 *             log file paths.
+	 */
 	public static Table<String, String, GameHistory> createPlayerGameHistoryTable(
 			final Collection<Entry<String, Path>> playerEventLogFilePaths) throws IOException {
 		return createPlayerGameHistoryTable(playerEventLogFilePaths, DEFAULT_EVENT_FILTER);
 	}
 
+	/**
+	 *
+	 * @param playerEventLogFilePaths
+	 *            A mapping of log {@link Path paths} to read for each player
+	 *            ID.
+	 * @param expectedUniqueGameCount
+	 *            The number of unique games represented in the file(s) to
+	 *            parse.
+	 * @return A new {@link Table}, with game ID as the row key and player ID as
+	 *         the column key, mapping to the relevant {@link GameHistory}
+	 *         representing the logged event history for a given game from the
+	 *         perspective of a given player.
+	 * @throws IOException
+	 *             If an error occurs while reading one of the provided event
+	 *             log file paths.
+	 */
 	public static Table<String, String, GameHistory> createPlayerGameHistoryTable(
 			final Collection<Entry<String, Path>> playerEventLogFilePaths, final int expectedUniqueGameCount)
 			throws IOException {
 		return createPlayerGameHistoryTable(playerEventLogFilePaths, expectedUniqueGameCount, DEFAULT_EVENT_FILTER);
 	}
 
+	/**
+	 *
+	 * @param playerEventLogFilePaths
+	 *            A mapping of log {@link Path paths} to read for each player
+	 *            ID.
+	 * @param expectedUniqueGameCount
+	 *            The number of unique games represented in the file(s) to
+	 *            parse.
+	 * @param eventFilter
+	 *            A positive (i.e.&nbsp;whitelisting) filter for the
+	 *            {@link Event events} to include.
+	 * @return A new {@link Table}, with game ID as the row key and player ID as
+	 *         the column key, mapping to the relevant {@link GameHistory}
+	 *         representing the logged event history for a given game from the
+	 *         perspective of a given player.
+	 * @throws IOException
+	 *             If an error occurs while reading one of the provided event
+	 *             log file paths.
+	 */
 	public static Table<String, String, GameHistory> createPlayerGameHistoryTable(
 			final Collection<Entry<String, Path>> playerEventLogFilePaths, final int expectedUniqueGameCount,
 			final Predicate<? super Event> eventFilter) throws IOException {
@@ -107,6 +168,22 @@ public final class LoggedEvents {
 		return result;
 	}
 
+	/**
+	 *
+	 * @param playerEventLogFilePaths
+	 *            A mapping of log {@link Path paths} to read for each player
+	 *            ID.
+	 * @param eventFilter
+	 *            A positive (i.e.&nbsp;whitelisting) filter for the
+	 *            {@link Event events} to include.
+	 * @return A new {@link Table}, with game ID as the row key and player ID as
+	 *         the column key, mapping to the relevant {@link GameHistory}
+	 *         representing the logged event history for a given game from the
+	 *         perspective of a given player.
+	 * @throws IOException
+	 *             If an error occurs while reading one of the provided event
+	 *             log file paths.
+	 */
 	public static Table<String, String, GameHistory> createPlayerGameHistoryTable(
 			final Collection<Entry<String, Path>> playerEventLogFilePaths, final Predicate<? super Event> eventFilter)
 			throws IOException {
@@ -115,10 +192,27 @@ public final class LoggedEvents {
 		return result;
 	}
 
+	/**
+	 *
+	 * @param lines
+	 *            The logged events to parse, one on each line.
+	 * @return A new {@link Map} of game IDs to their respective
+	 *         {@link GameHistory histories}.
+	 */
 	public static Map<String, GameHistory> parseGameHistories(final Stream<String> lines) {
 		return parseGameHistories(lines, DEFAULT_EVENT_FILTER);
 	}
 
+	/**
+	 *
+	 * @param lines
+	 *            The logged events to parse, one on each line.
+	 * @param eventFilter
+	 *            A positive (i.e.&nbsp;whitelisting) filter for the
+	 *            {@link Event events} to include.
+	 * @return A new {@link Map} of game IDs to their respective
+	 *         {@link GameHistory histories}.
+	 */
 	public static Map<String, GameHistory> parseGameHistories(final Stream<String> lines,
 			final Predicate<? super Event> eventFilter) {
 		final Stream<Event> loggedEvents = parseLoggedEvents(lines).filter(eventFilter);
@@ -128,6 +222,12 @@ public final class LoggedEvents {
 		return Arrays.stream(loggedEventArray).collect(new GameHistoryCollector(mapFactory));
 	}
 
+	/**
+	 *
+	 * @param lines
+	 *            The logged events to parse, one on each line.
+	 * @return The successfully-parsed {@link Event} instances.
+	 */
 	public static Stream<Event> parseLoggedEvents(final Stream<String> lines) {
 		return lines.filter(line -> !EMPTY_OR_WHITESPACE_PATTERN.matcher(line).matches()).flatMap(line -> {
 			Stream<Event> result = Stream.empty();
@@ -143,6 +243,23 @@ public final class LoggedEvents {
 		});
 	}
 
+	/**
+	 *
+	 * @param playerGameHistories
+	 *            A {@link Table}, with game ID as the row key and player ID as
+	 *            the column key, mapping to the relevant {@link GameHistory}
+	 *            representing the logged event history for a given game from
+	 *            the perspective of a given player.
+	 * @param playerEventLogFilePaths
+	 *            A mapping of log {@link Path paths} to read for each player
+	 *            ID.
+	 * @param eventFilter
+	 *            A positive (i.e.&nbsp;whitelisting) filter for the
+	 *            {@link Event events} to include.
+	 * @throws IOException
+	 *             If an error occurs while reading one of the provided event
+	 *             log file paths.
+	 */
 	private static void putPlayerGameHistories(final Table<String, String, GameHistory> playerGameHistories,
 			final Collection<Entry<String, Path>> playerEventLogFilePaths, final Predicate<? super Event> eventFilter)
 			throws IOException {
