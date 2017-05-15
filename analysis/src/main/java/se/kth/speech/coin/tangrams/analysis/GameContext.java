@@ -273,7 +273,7 @@ public final class GameContext {
 		builder.append(history);
 		builder.append(", time=");
 		builder.append(time);
-		builder.append(", playerId=");
+		builder.append(", perspectivePlayerId=");
 		builder.append(perspectivePlayerId);
 		builder.append(']');
 		return builder.toString();
