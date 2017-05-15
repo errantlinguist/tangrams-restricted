@@ -143,11 +143,25 @@ public final class WordsAsClassifiersInstancesMapFactory
 
 	private static final ArrayList<Attribute> ATTRS;
 
+	/**
+	 * @return the attrs
+	 */
+	public static ArrayList<Attribute> getAttrs() {
+		return ATTRS;
+	}
+
 	private static final Attribute CLASS_ATTR;
 
 	private static final String CLASS_ATTR_NAME = "IS_REFERENT";
 
 	private static final EntityFeature.Extractor EXTRACTOR;
+
+	/**
+	 * @return the extractor
+	 */
+	public static EntityFeature.Extractor getExtractor() {
+		return EXTRACTOR;
+	}
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(WordsAsClassifiersInstancesMapFactory.class);
 
