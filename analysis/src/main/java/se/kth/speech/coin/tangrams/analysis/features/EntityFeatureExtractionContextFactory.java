@@ -40,7 +40,7 @@ public final class EntityFeatureExtractionContextFactory {
 
 	public EntityFeature.Extractor.Context createExtractionContext(final GameContext context, final Integer entityId) {
 		final SpatialMatrix<Integer> model = gameModelFactory.apply(context);
-		final ImageVisualizationInfoDescription.Datum imgVizInfoDatum = context.getEntityVisualizationInfo(entityId);
+		final ImageVisualizationInfoDescription.Datum imgVizInfoDatum = context.getEntityVisualizationInfo().get(entityId);
 		final SpatialRegion region = model.getElementPlacements().getElementMinimalRegions().get(entityId);
 		final int[] modelDims = model.getDimensions();
 		final double modelArea = IntArrays.product(modelDims);

@@ -18,6 +18,7 @@ package se.kth.speech.coin.tangrams.analysis;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.Iterator;
 import java.util.List;
@@ -212,9 +213,9 @@ public final class GameContext {
 		return initialState.getImageVisualizationInfoDescription().getData().size();
 	}
 
-	public ImageVisualizationInfoDescription.Datum getEntityVisualizationInfo(final int entityId) {
+	public List<ImageVisualizationInfoDescription.Datum> getEntityVisualizationInfo() {
 		final GameStateDescription initialState = history.getInitialState();
-		return initialState.getImageVisualizationInfoDescription().getData().get(entityId);
+		return Collections.unmodifiableList(initialState.getImageVisualizationInfoDescription().getData());
 	}
 
 	/**
