@@ -24,6 +24,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.function.Function;
 
 import javax.xml.bind.JAXBException;
@@ -31,18 +32,17 @@ import javax.xml.bind.JAXBException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.BiMap;
 import com.google.common.collect.Maps;
 
+import se.kth.speech.coin.tangrams.analysis.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.EventDialogueFactory;
 import se.kth.speech.coin.tangrams.analysis.GameContext;
 import se.kth.speech.coin.tangrams.analysis.GameContextModelFactory;
 import se.kth.speech.coin.tangrams.analysis.GameHistory;
 import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
+import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManager;
 import se.kth.speech.coin.tangrams.analysis.TemporalGameContexts;
 import se.kth.speech.coin.tangrams.analysis.Utterance;
-import se.kth.speech.coin.tangrams.analysis.EventDialogue;
-import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManager;
 import se.kth.speech.coin.tangrams.content.IconImages;
 import se.kth.speech.coin.tangrams.iristk.EventTypeMatcher;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
@@ -92,7 +92,7 @@ public final class WordsAsClassifiersInstancesMapFactory {
 		}
 
 		private void accept(final SessionEventDialogueManager sessionEventDiagMgr) {
-			final BiMap<String, String> playerSourceIds = sessionEventDiagMgr.getPlayerSourceIds();
+			final Set<String> playerIds = sessionEventDiagMgr.getPlayerSourceIds().keySet();
 			final EntityFeatureExtractionContextFactory extractionContextFactory = new EntityFeatureExtractionContextFactory(
 					new GameContextModelFactory(sessionEventDiagMgr.getUniqueGameModelDescriptionCount()), IMG_EDGE_COUNTER);
 
@@ -100,7 +100,7 @@ public final class WordsAsClassifiersInstancesMapFactory {
 				final String gameId = gameHistory.getKey();
 				LOGGER.debug("Processing game \"{}\".", gameId);
 				final GameHistory history = gameHistory.getValue();
-				for (final String perspectivePlayerId : playerSourceIds.keySet()) {
+				for (final String perspectivePlayerId : playerIds) {
 					LOGGER.info("Processing game from perspective of player \"{}\".", perspectivePlayerId);
 					final List<EventDialogue> uttDialogues = sessionEventDiagMgr.createUttDialogues(history,
 							perspectivePlayerId);
