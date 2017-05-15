@@ -20,7 +20,9 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -40,8 +42,12 @@ import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import se.kth.speech.coin.tangrams.analysis.EventDialogueFactory;
 import se.kth.speech.coin.tangrams.analysis.RandomNotSelectedEntityIdGetter;
 import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
+import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManager;
+import se.kth.speech.coin.tangrams.iristk.EventTypeMatcher;
+import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 import weka.core.Instances;
 import weka.core.converters.AbstractFileSaver;
 import weka.core.converters.ConverterUtils;
@@ -117,6 +123,9 @@ public final class WordsAsClassifiersTrainingDataWriter {
 
 	}
 
+	private static final EventDialogueFactory EVENT_DIAG_FACTORY = new EventDialogueFactory(
+			new EventTypeMatcher(GameManagementEvent.NEXT_TURN_REQUEST));
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(WordsAsClassifiersTrainingDataWriter.class);
 
 	public static void main(final CommandLine cl) throws IOException, JAXBException, ParseException {
@@ -185,8 +194,16 @@ public final class WordsAsClassifiersTrainingDataWriter {
 	}
 
 	public Map<String, Instances> apply(final Iterable<Path> inpaths) throws IOException, JAXBException {
-		final Map<Path, SessionDataManager> infileSessionData = SessionDataManager.createFileSessionDataMap(inpaths);
-		return instancesFactory.apply(infileSessionData.values());
+		final Collection<SessionDataManager> infileSessionData = SessionDataManager.createFileSessionDataMap(inpaths)
+				.values();
+		final List<SessionEventDialogueManager> sessionEvtDiagMgrs = new ArrayList<>(infileSessionData.size());
+		for (final SessionDataManager sessionDatum : infileSessionData) {
+			final SessionEventDialogueManager sessionEventDiagMgr = new SessionEventDialogueManager(sessionDatum,
+					EVENT_DIAG_FACTORY);
+			sessionEvtDiagMgrs.add(sessionEventDiagMgr);
+		}
+		return instancesFactory.apply(sessionEvtDiagMgrs);
+
 	}
 
 }

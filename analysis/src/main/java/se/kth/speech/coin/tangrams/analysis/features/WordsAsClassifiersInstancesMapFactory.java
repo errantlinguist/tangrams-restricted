@@ -16,7 +16,6 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -27,25 +26,19 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.Function;
 
-import javax.xml.bind.JAXBException;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Maps;
 
 import se.kth.speech.coin.tangrams.analysis.EventDialogue;
-import se.kth.speech.coin.tangrams.analysis.EventDialogueFactory;
 import se.kth.speech.coin.tangrams.analysis.GameContext;
 import se.kth.speech.coin.tangrams.analysis.GameContextModelFactory;
 import se.kth.speech.coin.tangrams.analysis.GameHistory;
-import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
 import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManager;
 import se.kth.speech.coin.tangrams.analysis.TemporalGameContexts;
 import se.kth.speech.coin.tangrams.analysis.Utterance;
 import se.kth.speech.coin.tangrams.content.IconImages;
-import se.kth.speech.coin.tangrams.iristk.EventTypeMatcher;
-import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 import weka.core.Attribute;
 import weka.core.DenseInstance;
 import weka.core.Instance;
@@ -60,7 +53,8 @@ import weka.core.Instances;
  *      In <em>Proceedings of IWCS 2015</em><a>.
  *
  */
-public final class WordsAsClassifiersInstancesMapFactory {
+public final class WordsAsClassifiersInstancesMapFactory
+		implements Function<Collection<SessionEventDialogueManager>, Map<String, Instances>> {
 
 	private static class MultiClassDataCollector {
 
@@ -94,7 +88,8 @@ public final class WordsAsClassifiersInstancesMapFactory {
 		private void accept(final SessionEventDialogueManager sessionEventDiagMgr) {
 			final Set<String> playerIds = sessionEventDiagMgr.getPlayerSourceIds().keySet();
 			final EntityFeatureExtractionContextFactory extractionContextFactory = new EntityFeatureExtractionContextFactory(
-					new GameContextModelFactory(sessionEventDiagMgr.getUniqueGameModelDescriptionCount()), IMG_EDGE_COUNTER);
+					new GameContextModelFactory(sessionEventDiagMgr.getUniqueGameModelDescriptionCount()),
+					IMG_EDGE_COUNTER);
 
 			for (final Entry<String, GameHistory> gameHistory : sessionEventDiagMgr.getGameHistories().entrySet()) {
 				final String gameId = gameHistory.getKey();
@@ -156,9 +151,6 @@ public final class WordsAsClassifiersInstancesMapFactory {
 
 	private static final String CLASS_ATTR_NAME = "IS_REFERENT";
 
-	private static final EventDialogueFactory EVENT_DIAG_FACTORY = new EventDialogueFactory(
-			new EventTypeMatcher(GameManagementEvent.NEXT_TURN_REQUEST));
-
 	private static final EntityFeature.Extractor EXTRACTOR;
 
 	private static final ImageEdgeCounter IMG_EDGE_COUNTER = new ImageEdgeCounter();
@@ -183,11 +175,11 @@ public final class WordsAsClassifiersInstancesMapFactory {
 		return CLASS_ATTR_NAME;
 	}
 
-	private static int estimateVocabTokenCount(final String token, final Collection<SessionDataManager> sessionData) {
+	private static int estimateVocabTokenCount(final String token, final Collection<?> sessionData) {
 		return sessionData.size() * 10;
 	}
 
-	private static int estimateVocabTypeCount(final Collection<SessionDataManager> sessionData) {
+	private static int estimateVocabTypeCount(final Collection<?> sessionData) {
 		return Math.toIntExact(Math.round(Math.ceil(Math.log(sessionData.size() * 850))));
 	}
 
@@ -197,20 +189,19 @@ public final class WordsAsClassifiersInstancesMapFactory {
 		this.negativeExampleEntityIdGetter = negativeExampleEntityIdGetter;
 	}
 
-	public Map<String, Instances> apply(final Collection<SessionDataManager> sessionData)
-			throws JAXBException, IOException {
-		final Map<String, Instances> result = Maps.newHashMapWithExpectedSize(estimateVocabTypeCount(sessionData));
+	@Override
+	public Map<String, Instances> apply(final Collection<SessionEventDialogueManager> sessionEventDiagMgrs) {
+		final Map<String, Instances> result = Maps
+				.newHashMapWithExpectedSize(estimateVocabTypeCount(sessionEventDiagMgrs));
 		final Function<String, Instances> classInstanceFetcher = className -> result.computeIfAbsent(className, k -> {
 			final Instances instances = new Instances(CLASS_RELATION_PREFIX + k, ATTRS,
-					estimateVocabTokenCount(k, sessionData));
+					estimateVocabTokenCount(k, sessionEventDiagMgrs));
 			instances.setClass(CLASS_ATTR);
 			return instances;
 		});
 		final MultiClassDataCollector coll = new MultiClassDataCollector(classInstanceFetcher, ATTRS.size(),
 				negativeExampleEntityIdGetter);
-		for (final SessionDataManager sessionDatum : sessionData) {
-			final SessionEventDialogueManager sessionEventDiagMgr = new SessionEventDialogueManager(sessionDatum,
-					EVENT_DIAG_FACTORY);
+		for (final SessionEventDialogueManager sessionEventDiagMgr : sessionEventDiagMgrs) {
 			coll.accept(sessionEventDiagMgr);
 		}
 		return result;

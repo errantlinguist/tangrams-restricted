@@ -20,15 +20,14 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
 
 import javax.xml.bind.JAXBException;
 
@@ -43,8 +42,12 @@ import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import se.kth.speech.coin.tangrams.analysis.EventDialogueFactory;
 import se.kth.speech.coin.tangrams.analysis.RandomNotSelectedEntityIdGetter;
 import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
+import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManager;
+import se.kth.speech.coin.tangrams.iristk.EventTypeMatcher;
+import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 import se.kth.speech.io.FileNames;
 import weka.core.Instances;
 import weka.core.converters.AbstractFileSaver;
@@ -126,6 +129,9 @@ public final class WordsAsClassifiersCrossValidationTrainingDataWriter {
 
 	public static final String TRAINING_FILE_NAME_PREFIX = "train-";
 
+	private static final EventDialogueFactory EVENT_DIAG_FACTORY = new EventDialogueFactory(
+			new EventTypeMatcher(GameManagementEvent.NEXT_TURN_REQUEST));
+
 	private static final Logger LOGGER = LoggerFactory
 			.getLogger(WordsAsClassifiersCrossValidationTrainingDataWriter.class);
 
@@ -194,12 +200,12 @@ public final class WordsAsClassifiersCrossValidationTrainingDataWriter {
 					final String base = FileNames.splitBase(fileName)[0];
 					return FileNames.sanitize(base, "-");
 				});
-		for (final Entry<Path, SessionDataManager> entry : infileSessionData.entrySet()) {
-			final Path testDataFilePath = entry.getKey();
-			LOGGER.info("Creating {}-fold cross-validation set for testing on data from \"{}\".", allSessions.size(),
-					testDataFilePath);
+		for (final Entry<Path, SessionDataManager> testSessionDataEntry : infileSessionData.entrySet()) {
+			final Path testSessionDataFilePath = testSessionDataEntry.getKey();
+			LOGGER.info("Creating {}-fold cross-validation set for testing on session data from \"{}\".",
+					allSessions.size(), testSessionDataFilePath);
 
-			final String subsampleDirname = infilePathOutdirNames.get(testDataFilePath);
+			final String subsampleDirname = infilePathOutdirNames.get(testSessionDataFilePath);
 			final File subsampleDir = new File(outdir, subsampleDirname);
 			LOGGER.info("Will write validation data to \"{}\".", subsampleDir);
 			if (subsampleDir.mkdirs()) {
@@ -207,11 +213,23 @@ public final class WordsAsClassifiersCrossValidationTrainingDataWriter {
 						subsampleDir);
 			}
 
-			final SessionDataManager testSessionData = entry.getValue();
-			final Stream<SessionDataManager> trainingSessionData = allSessions.stream()
-					.filter(sessionData -> !sessionData.equals(testSessionData));
-			final Map<String, Instances> classInstances = instancesFactory
-					.apply(Arrays.asList(trainingSessionData.toArray(SessionDataManager[]::new)));
+			final SessionDataManager testSessionData = testSessionDataEntry.getValue();
+
+			final Map<String, Instances> classInstances;
+			{
+				final SessionDataManager[] trainingSessionData = allSessions.stream()
+						.filter(sessionData -> !sessionData.equals(testSessionData)).toArray(SessionDataManager[]::new);
+				final List<SessionEventDialogueManager> trainingSessionEvtDiagMgrs = new ArrayList<>(
+						trainingSessionData.length);
+				for (final SessionDataManager trainingSessionDatum : trainingSessionData) {
+					final SessionEventDialogueManager sessionEventDiagMgr = new SessionEventDialogueManager(
+							trainingSessionDatum, EVENT_DIAG_FACTORY);
+					trainingSessionEvtDiagMgrs.add(sessionEventDiagMgr);
+				}
+				classInstances = instancesFactory.apply(trainingSessionEvtDiagMgrs);
+			}
+			LOGGER.info("Trained classifiers for {} class(es).", classInstances.size());
+
 			final AbstractFileSaver saver = ConverterUtils.getSaverForExtension(outfileExt);
 			for (final Entry<String, Instances> classInstanceEntry : classInstances.entrySet()) {
 				final String className = classInstanceEntry.getKey();
@@ -224,17 +242,26 @@ public final class WordsAsClassifiersCrossValidationTrainingDataWriter {
 			}
 			LOGGER.info("Wrote training data for {} class(es).", classInstances.size());
 
-//			final File testOutfile = new File(subsampleDir, TEST_FILE_NAME_BASE + outfileExt);
-//			LOGGER.info("Writing test data to \"{}\".", testOutfile);
-//			final Instances testInsts = instancesFactory.apply(Collections.singleton(testSessionData)).values()
-//					.iterator().next();
-//			saver.setInstances(testInsts);
-//			saver.setFile(testOutfile);
-//			saver.writeBatch();
-//			LOGGER.info("Wrote {} test data point(s).", testInsts.numInstances());
+			createTestData(testSessionData);
+			// final File testOutfile = new File(subsampleDir,
+			// TEST_FILE_NAME_BASE + outfileExt);
+			// LOGGER.info("Writing test data to \"{}\".", testOutfile);
+			// final Instances testInsts =
+			// instancesFactory.apply(Collections.singleton(testSessionData)).values()
+			// .iterator().next();
+			// saver.setInstances(testInsts);
+			// saver.setFile(testOutfile);
+			// saver.writeBatch();
+			// LOGGER.info("Wrote {} test data point(s).",
+			// testInsts.numInstances());
 		}
 
 		LOGGER.info("Finished writing {} cross-validation dataset(s) to \"{}\".", infileSessionData.size(), outdir);
+	}
+
+	private void createTestData(final SessionDataManager testSessionData) {
+		final Path eventLogPath = testSessionData.getCanonicalEventLogPath();
+
 	}
 
 }
