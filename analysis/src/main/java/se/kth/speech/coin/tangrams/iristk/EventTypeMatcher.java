@@ -17,6 +17,7 @@
 package se.kth.speech.coin.tangrams.iristk;
 
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.function.Predicate;
 
 import iristk.system.Event;
@@ -29,9 +30,13 @@ public final class EventTypeMatcher implements Predicate<Event> {
 		this.acceptedTypes = acceptedTypes;
 	}
 
+	public EventTypeMatcher(final GameManagementEvent acceptedType) {
+		this(EnumSet.of(acceptedType));
+	}
+
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#equals(java.lang.Object)
 	 */
 	@Override
@@ -58,7 +63,7 @@ public final class EventTypeMatcher implements Predicate<Event> {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#hashCode()
 	 */
 	@Override
@@ -82,7 +87,7 @@ public final class EventTypeMatcher implements Predicate<Event> {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#toString()
 	 */
 	@Override
