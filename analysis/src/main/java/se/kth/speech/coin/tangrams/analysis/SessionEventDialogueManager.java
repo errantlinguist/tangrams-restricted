@@ -98,7 +98,7 @@ public final class SessionEventDialogueManager {
 				.collect(Collectors.toList());
 	}
 
-	public List<EventDialogue> createUttDialogues(final String perspectivePlayerId) {
+	public List<EventDialogue> createUttDialogues() {
 		final List<EventDialogue> eventUttLists = eventUttFactory.apply(utts.listIterator(), gameHistory)
 				.collect(Collectors.toList());
 		return eventUttLists;

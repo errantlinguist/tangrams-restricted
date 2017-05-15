@@ -94,7 +94,7 @@ public final class WordsAsClassifiersInstancesMapFactory
 			
 			for (final String perspectivePlayerId : playerIds) {
 				LOGGER.info("Processing game from perspective of player \"{}\".", perspectivePlayerId);
-				final List<EventDialogue> uttDialogues = sessionEventDiagMgr.createUttDialogues(perspectivePlayerId);
+				final List<EventDialogue> uttDialogues = sessionEventDiagMgr.createUttDialogues();
 				uttDialogues.forEach(uttDialogue -> {
 					final List<Utterance> dialogueUtts = uttDialogue.getUtts();
 					dialogueUtts.forEach(dialogueUtt -> {

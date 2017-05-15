@@ -263,7 +263,7 @@ public final class WordsAsClassifiersCrossValidationTrainingDataWriter {
 	private void createTestData(final SessionDataManager testSessionData) throws JAXBException, IOException {
 		SessionEventDialogueManager sessionEventDiagMgr = new SessionEventDialogueManager(testSessionData, EVENT_DIAG_FACTORY);
 		GameHistory history = sessionEventDiagMgr.getGameHistory();
-
+		sessionEventDiagMgr.createUttDialogues();
 	}
 
 }
