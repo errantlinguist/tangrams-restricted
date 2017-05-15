@@ -118,8 +118,7 @@ public final class SegmentTimedUtteranceWriter {
 
 	private static final String EVENT_LOG_OPT_NAME = "l";
 
-	private static final Predicate<Event> INITIAL_EVENT_PREDICATE = new EventTypeMatcher(
-			EnumSet.of(GameManagementEvent.GAME_READY_RESPONSE));
+	private static final Predicate<Event> INITIAL_EVENT_PREDICATE = new EventTypeMatcher(GameManagementEvent.GAME_READY_RESPONSE);
 
 	private static final String INITIAL_TIMESTAMP_OPT_NAME = "t";
 

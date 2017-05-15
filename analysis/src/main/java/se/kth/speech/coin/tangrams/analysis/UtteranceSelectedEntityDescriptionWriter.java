@@ -35,7 +35,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -206,7 +205,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 		private static final String BLANK_IMG_DESC;
 
 		private static final EventUtteranceFactory EVENT_UTT_FACTORY = new EventUtteranceFactory(
-				new EventTypeMatcher(EnumSet.of(GameManagementEvent.NEXT_TURN_REQUEST)));
+				new EventTypeMatcher(GameManagementEvent.NEXT_TURN_REQUEST));
 
 		private static final String HEADER_STR;
 
