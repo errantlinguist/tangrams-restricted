@@ -121,18 +121,23 @@ public final class SegmentUtteranceFactory {
 		return result;
 	}
 
+	private final Function<? super Segment, String> segmentSpeakerIdFactory;
+
 	private final Function<? super String, ? extends List<String>> tokenizer;
 
-	public SegmentUtteranceFactory() {
-		this(createDefaultTokenizer());
+	public SegmentUtteranceFactory(final Function<? super Segment, String> segmentSpeakerIdFactory) {
+		this(segmentSpeakerIdFactory, createDefaultTokenizer());
 	}
 
-	public SegmentUtteranceFactory(final Function<? super String, ? extends List<String>> tokenizer) {
+	public SegmentUtteranceFactory(final Function<? super Segment, String> segmentSpeakerIdFactory,
+			final Function<? super String, ? extends List<String>> tokenizer) {
+		this.segmentSpeakerIdFactory = segmentSpeakerIdFactory;
 		this.tokenizer = tokenizer;
 	}
 
-	public SegmentUtteranceFactory(final Predicate<String> whitelistingPredicate) {
-		this(createWhitelistingTokenizer(whitelistingPredicate));
+	public SegmentUtteranceFactory(final Function<? super Segment, String> segmentSpeakerIdFactory,
+			final Predicate<String> whitelistingPredicate) {
+		this(segmentSpeakerIdFactory, createWhitelistingTokenizer(whitelistingPredicate));
 	}
 
 	public List<Utterance> create(final Segment segment) {
@@ -156,6 +161,7 @@ public final class SegmentUtteranceFactory {
 			{
 				final ArrayList<T> tokens = new ArrayList<>(estimateTokenCount(children));
 				final String parentSegmentId = segment.getId();
+				final String speakerId = segmentSpeakerIdFactory.apply(segment);
 				for (final Object child : children) {
 					if (child instanceof Segment) {
 						final Segment childSeg = (Segment) child;
@@ -169,8 +175,8 @@ public final class SegmentUtteranceFactory {
 				if (tokenForms.isEmpty()) {
 					// Do nothing
 				} else {
-					final Utterance utt = new Utterance(parentSegmentId, tokenForms, segStartTime.doubleValue(),
-							segEndTime.doubleValue());
+					final Utterance utt = new Utterance(parentSegmentId, speakerId, tokenForms,
+							segStartTime.doubleValue(), segEndTime.doubleValue());
 					result.add(utt);
 				}
 			}

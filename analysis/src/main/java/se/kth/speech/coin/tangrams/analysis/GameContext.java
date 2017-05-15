@@ -17,8 +17,11 @@
 package se.kth.speech.coin.tangrams.analysis;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.EnumMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.OptionalInt;
@@ -31,6 +34,7 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.Lists;
 
 import iristk.system.Event;
+import se.kth.speech.coin.tangrams.iristk.EventTypeMatcher;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
 import se.kth.speech.coin.tangrams.iristk.events.ImageVisualizationInfoDescription;
@@ -38,7 +42,16 @@ import se.kth.speech.coin.tangrams.iristk.events.Move;
 
 public final class GameContext {
 
+	private static final Map<GameManagementEvent, EventTypeMatcher> EVENT_TYPE_MATCHERS = createEventTypeMatcherMap();
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(GameContext.class);
+
+	private static Map<GameManagementEvent, EventTypeMatcher> createEventTypeMatcherMap() {
+		final Map<GameManagementEvent, EventTypeMatcher> result = new EnumMap<>(GameManagementEvent.class);
+		Arrays.stream(GameManagementEvent.values())
+				.forEach(eventType -> result.put(eventType, new EventTypeMatcher(eventType)));
+		return result;
+	}
 
 	private static <E> OptionalInt findFirstMatchingDistance(final Stream<E> elems,
 			final Predicate<? super E> matcher) {
@@ -114,6 +127,21 @@ public final class GameContext {
 	}
 
 	/**
+	 * Finds the last {@link Event} representing a given
+	 * {@link GameManagementEvent} in chronological order, i.e.&nbsp;the
+	 * &ldquo;last&rdquo; matching event preceding the time in the game
+	 * represented by this {@link GameContext} instance.
+	 *
+	 * @param eventType
+	 *            The {@link GameManagementEvent} to match.
+	 * @return An {@link Optional} containing the last matching event, if any.
+	 */
+	public Optional<Event> findLastEvent(final GameManagementEvent eventType) {
+		final EventTypeMatcher matcher = EVENT_TYPE_MATCHERS.get(eventType);
+		return findLastEvent(matcher);
+	}
+
+	/**
 	 * Finds the last {@link Event} matching a given {@link Predicate} in
 	 * chronological order, i.e.&nbsp;the &ldquo;last&rdquo; matching event
 	 * preceding the time in the game represented by this {@link GameContext}
@@ -129,6 +157,21 @@ public final class GameContext {
 		// backwards)
 		final Stream<Event> eventsDescTime = getValuesDescendingOrder(timedEvents);
 		return eventsDescTime.filter(matcher).findFirst();
+	}
+
+	/**
+	 * Finds the last {@link Event} representing a given
+	 * {@link GameManagementEvent} in chronological order, i.e.&nbsp;the
+	 * &ldquo;last&rdquo; matching event preceding the time in the game
+	 * represented by this {@link GameContext} instance.
+	 *
+	 * @param eventType
+	 *            The {@link GameManagementEvent} to match.
+	 * @return An {@link Optional} containing the last matching event, if any.
+	 */
+	public OptionalInt findLastEventDistance(final GameManagementEvent eventType) {
+		final EventTypeMatcher matcher = EVENT_TYPE_MATCHERS.get(eventType);
+		return findLastEventDistance(matcher);
 	}
 
 	/**
@@ -190,6 +233,10 @@ public final class GameContext {
 
 	public NavigableMap<LocalDateTime, List<Event>> getPrecedingEvents() {
 		return history.getEvents().headMap(time, true);
+	}
+
+	public Stream<Event> getPrecedingEventsDescendingOrder() {
+		return getValuesDescendingOrder(getPrecedingEvents());
 	}
 
 	/**

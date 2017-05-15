@@ -224,14 +224,14 @@ public final class WordsAsClassifiersCrossValidationTrainingDataWriter {
 			}
 			LOGGER.info("Wrote training data for {} class(es).", classInstances.size());
 
-			final File testOutfile = new File(subsampleDir, TEST_FILE_NAME_BASE + outfileExt);
-			LOGGER.info("Writing test data to \"{}\".", testOutfile);
-			final Instances testInsts = instancesFactory.apply(Collections.singleton(testSessionData)).values()
-					.iterator().next();
-			saver.setInstances(testInsts);
-			saver.setFile(testOutfile);
-			saver.writeBatch();
-			LOGGER.info("Wrote {} test data point(s).", testInsts.numInstances());
+//			final File testOutfile = new File(subsampleDir, TEST_FILE_NAME_BASE + outfileExt);
+//			LOGGER.info("Writing test data to \"{}\".", testOutfile);
+//			final Instances testInsts = instancesFactory.apply(Collections.singleton(testSessionData)).values()
+//					.iterator().next();
+//			saver.setInstances(testInsts);
+//			saver.setFile(testOutfile);
+//			saver.writeBatch();
+//			LOGGER.info("Wrote {} test data point(s).", testInsts.numInstances());
 		}
 
 		LOGGER.info("Finished writing {} cross-validation dataset(s) to \"{}\".", infileSessionData.size(), outdir);

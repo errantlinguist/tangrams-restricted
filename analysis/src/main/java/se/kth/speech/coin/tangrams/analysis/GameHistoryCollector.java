@@ -109,7 +109,7 @@ public final class GameHistoryCollector
 							"Non-game state event found before the initial game state was parsed for game \"%s\": %s",
 							gameId, event));
 				} else {
-					final List<Event> timeEvents = oldVal.getEvents().computeIfAbsent(time,
+					final List<Event> timeEvents = oldVal.getEventsMutable().computeIfAbsent(time,
 							tKey -> new ArrayList<>(EXPECTED_EVENTS_FOR_TIMESTAMP));
 					timeEvents.add(event);
 				}
@@ -158,7 +158,7 @@ public final class GameHistoryCollector
 						// Sanity check
 						if (Objects.equals(sourceGameData.getStartTime(), oldVal.getStartTime())) {
 							if (Objects.equals(sourceGameData.getInitialState(), oldVal.getInitialState())) {
-								final Map<LocalDateTime, List<Event>> targetLoggedEventMap = oldVal.getEvents();
+								final Map<LocalDateTime, List<Event>> targetLoggedEventMap = oldVal.getEventsMutable();
 								sourceGameData.getEvents().forEach((time, sourceLoggedEventList) -> {
 									final List<Event> targetEventList = targetLoggedEventMap.computeIfAbsent(time,
 											tKey -> new ArrayList<>(EXPECTED_EVENTS_FOR_TIMESTAMP));

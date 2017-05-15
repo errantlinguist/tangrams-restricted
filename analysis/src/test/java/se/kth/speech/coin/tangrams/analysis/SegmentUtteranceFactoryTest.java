@@ -63,7 +63,7 @@ public final class SegmentUtteranceFactoryTest {
 
 	static {
 		final Predicate<String> whitelistingTokenFilter = token -> true;
-		TEST_INST = new SegmentUtteranceFactory(whitelistingTokenFilter);
+		TEST_INST = new SegmentUtteranceFactory(Segment::getSource, whitelistingTokenFilter);
 	}
 
 	@BeforeClass

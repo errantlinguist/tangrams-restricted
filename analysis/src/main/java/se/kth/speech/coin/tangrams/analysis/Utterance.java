@@ -29,15 +29,18 @@ public final class Utterance implements Comparable<Utterance> {
 
 	private final String segmentId;
 
+	private final String speakerId;
+
 	private final double startTime;
 
 	private final List<String> tokens;
 
-	public Utterance(final String segmentId, final List<String> tokens, final double startTime, final double endTime) {
+	public Utterance(final String segmentId, String speakerId, final List<String> tokens, final double startTime, final double endTime) {
 		if (startTime > endTime) {
 			throw new IllegalArgumentException("Start time is greater than end time.");
 		}
 		this.segmentId = segmentId;
+		this.speakerId = speakerId;
 		this.tokens = tokens;
 		this.startTime = startTime;
 		this.endTime = endTime;
@@ -53,43 +56,37 @@ public final class Utterance implements Comparable<Utterance> {
 		return NATURAL_COMPARATOR.compare(this, o);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 *
+	/* (non-Javadoc)
 	 * @see java.lang.Object#equals(java.lang.Object)
 	 */
 	@Override
-	public boolean equals(final Object obj) {
-		if (this == obj) {
+	public boolean equals(Object obj) {
+		if (this == obj)
 			return true;
-		}
-		if (obj == null) {
+		if (obj == null)
 			return false;
-		}
-		if (!(obj instanceof Utterance)) {
+		if (!(obj instanceof Utterance))
 			return false;
-		}
-		final Utterance other = (Utterance) obj;
-		if (Double.doubleToLongBits(endTime) != Double.doubleToLongBits(other.endTime)) {
+		Utterance other = (Utterance) obj;
+		if (Double.doubleToLongBits(endTime) != Double.doubleToLongBits(other.endTime))
 			return false;
-		}
 		if (segmentId == null) {
-			if (other.segmentId != null) {
+			if (other.segmentId != null)
 				return false;
-			}
-		} else if (!segmentId.equals(other.segmentId)) {
+		} else if (!segmentId.equals(other.segmentId))
 			return false;
-		}
-		if (Double.doubleToLongBits(startTime) != Double.doubleToLongBits(other.startTime)) {
+		if (speakerId == null) {
+			if (other.speakerId != null)
+				return false;
+		} else if (!speakerId.equals(other.speakerId))
 			return false;
-		}
+		if (Double.doubleToLongBits(startTime) != Double.doubleToLongBits(other.startTime))
+			return false;
 		if (tokens == null) {
-			if (other.tokens != null) {
+			if (other.tokens != null)
 				return false;
-			}
-		} else if (!tokens.equals(other.tokens)) {
+		} else if (!tokens.equals(other.tokens))
 			return false;
-		}
 		return true;
 	}
 
@@ -108,6 +105,13 @@ public final class Utterance implements Comparable<Utterance> {
 	}
 
 	/**
+	 * @return the speakerId
+	 */
+	public String getSpeakerId() {
+		return speakerId;
+	}
+
+	/**
 	 * @return the startTime
 	 */
 	public double getStartTime() {
@@ -121,9 +125,7 @@ public final class Utterance implements Comparable<Utterance> {
 		return tokens;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 *
+	/* (non-Javadoc)
 	 * @see java.lang.Object#hashCode()
 	 */
 	@Override
@@ -132,31 +134,32 @@ public final class Utterance implements Comparable<Utterance> {
 		int result = 1;
 		long temp;
 		temp = Double.doubleToLongBits(endTime);
-		result = prime * result + (int) (temp ^ temp >>> 32);
-		result = prime * result + (segmentId == null ? 0 : segmentId.hashCode());
+		result = prime * result + (int) (temp ^ (temp >>> 32));
+		result = prime * result + ((segmentId == null) ? 0 : segmentId.hashCode());
+		result = prime * result + ((speakerId == null) ? 0 : speakerId.hashCode());
 		temp = Double.doubleToLongBits(startTime);
-		result = prime * result + (int) (temp ^ temp >>> 32);
-		result = prime * result + (tokens == null ? 0 : tokens.hashCode());
+		result = prime * result + (int) (temp ^ (temp >>> 32));
+		result = prime * result + ((tokens == null) ? 0 : tokens.hashCode());
 		return result;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 *
+	/* (non-Javadoc)
 	 * @see java.lang.Object#toString()
 	 */
 	@Override
 	public String toString() {
-		final StringBuilder builder = new StringBuilder();
-		builder.append("Utterance [segmentId=");
-		builder.append(segmentId);
-		builder.append(", startTime=");
+		StringBuilder builder = new StringBuilder();
+		builder.append("Utterance [startTime=");
 		builder.append(startTime);
 		builder.append(", endTime=");
 		builder.append(endTime);
+		builder.append(", speakerId=");
+		builder.append(speakerId);
+		builder.append(", segmentId=");
+		builder.append(segmentId);
 		builder.append(", tokens=");
 		builder.append(tokens);
-		builder.append(']');
+		builder.append("]");
 		return builder.toString();
 	}
 }

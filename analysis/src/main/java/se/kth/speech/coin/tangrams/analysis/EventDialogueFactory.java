@@ -21,7 +21,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -30,7 +30,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import iristk.system.Event;
-import se.kth.speech.MutablePair;
 import se.kth.speech.TimestampArithmetic;
 import se.kth.speech.coin.tangrams.iristk.EventTimes;
 
@@ -39,49 +38,49 @@ import se.kth.speech.coin.tangrams.iristk.EventTimes;
  * @since 4 May 2017
  *
  */
-public final class EventUtteranceFactory
-		implements BiFunction<ListIterator<Utterance>, GameHistory, Stream<Entry<Event, List<Utterance>>>> {
+public final class EventDialogueFactory
+		implements BiFunction<ListIterator<Utterance>, GameHistory, Stream<EventDialogue>> {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(EventUtteranceFactory.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(EventDialogueFactory.class);
 
 	private final Predicate<? super Event> eventFilter;
 
 	private final long timeWindow;
 
-	public EventUtteranceFactory() {
+	public EventDialogueFactory() {
 		this(event -> true, 0);
 	}
 
-	public EventUtteranceFactory(final Predicate<? super Event> eventFilter) {
+	public EventDialogueFactory(final Predicate<? super Event> eventFilter) {
 		this(eventFilter, 0);
 	}
 
-	public EventUtteranceFactory(final Predicate<? super Event> eventFilter, final long timeWindow) {
+	public EventDialogueFactory(final Predicate<? super Event> eventFilter, final long timeWindow) {
 		this.eventFilter = eventFilter;
 		this.timeWindow = timeWindow;
 	}
 
 	@Override
-	public Stream<Entry<Event, List<Utterance>>> apply(final ListIterator<Utterance> utts, final GameHistory history) {
-		final Stream<Event> events = history.getEvents().values().stream().flatMap(List::stream).filter(eventFilter);
+	public Stream<EventDialogue> apply(final ListIterator<Utterance> utts, final GameHistory history) {
+		final Stream<Event> events = history.getEventSequence().filter(eventFilter);
 		final LocalDateTime gameStartTime = history.getStartTime();
 
 		final Iterator<Event> eventIter = events.iterator();
 		Event currentEvent = eventIter.next();
-		final Stream.Builder<Entry<Event, List<Utterance>>> resultBuilder = Stream.builder();
+		final Stream.Builder<EventDialogue> resultBuilder = Stream.builder();
 
 		final List<Utterance> firstUtts = createPreEventUtteranceList(utts, currentEvent, gameStartTime);
 		if (firstUtts.isEmpty()) {
 			LOGGER.debug("No utterances before first event.");
 		} else {
-			resultBuilder.accept(new MutablePair<>(null, firstUtts));
+			resultBuilder.accept(new EventDialogue(Optional.empty(), firstUtts));
 		}
 
 		// Find the next set of utterances following each event
 		while (eventIter.hasNext()) {
 			final Event nextEvent = eventIter.next();
 			final List<Utterance> nextUttList = createPreEventUtteranceList(utts, nextEvent, gameStartTime);
-			resultBuilder.accept(new MutablePair<>(currentEvent, nextUttList));
+			resultBuilder.accept(new EventDialogue(Optional.of(currentEvent), nextUttList));
 			currentEvent = nextEvent;
 		}
 
@@ -90,7 +89,7 @@ public final class EventUtteranceFactory
 		while (utts.hasNext()) {
 			lastEventUtts.add(utts.next());
 		}
-		resultBuilder.accept(new MutablePair<>(currentEvent, lastEventUtts));
+		resultBuilder.accept(new EventDialogue(Optional.of(currentEvent), lastEventUtts));
 		return resultBuilder.build();
 	}
 

@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.NavigableMap;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.stream.Stream;
 
 import iristk.system.Event;
 import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
@@ -84,7 +85,11 @@ public final class GameHistory {
 	 * @return the events
 	 */
 	public NavigableMap<LocalDateTime, List<Event>> getEvents() {
-		return events;
+		return Collections.unmodifiableNavigableMap(events);
+	}
+
+	public Stream<Event> getEventSequence() {
+		return getEvents().values().stream().flatMap(List::stream);
 	}
 
 	/**
@@ -136,5 +141,12 @@ public final class GameHistory {
 		builder.append(events);
 		builder.append(']');
 		return builder.toString();
+	}
+
+	/**
+	 * @return the events
+	 */
+	NavigableMap<LocalDateTime, List<Event>> getEventsMutable() {
+		return events;
 	}
 }

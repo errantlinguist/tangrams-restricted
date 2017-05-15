@@ -26,11 +26,10 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.Temporal;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import java.util.NavigableMap;
 import java.util.NoSuchElementException;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import javax.swing.JButton;
 import javax.swing.JMenu;
@@ -88,9 +87,7 @@ final class PlaybackFrame extends BasicGameViewFrame {
 		setJMenuBar(createMenuBar());
 
 		{
-			final NavigableMap<LocalDateTime, List<Event>> timedEventMap = gameHistory.getEvents();
-			final List<Event> events = timedEventMap.values().stream().flatMap(List::stream)
-					.collect(Collectors.toList());
+			final List<Event> events = Arrays.asList(gameHistory.getEventSequence().toArray(Event[]::new));
 			eventReplayer = new GameEventReplayer(events, gameHistory.getStartTime(), controller);
 		}
 		{

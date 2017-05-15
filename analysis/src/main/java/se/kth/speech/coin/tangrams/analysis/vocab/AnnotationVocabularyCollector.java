@@ -36,6 +36,7 @@ import org.apache.lucene.analysis.util.CharArraySet;
 
 import se.kth.speech.coin.tangrams.analysis.SegmentUtteranceFactory;
 import se.kth.speech.hat.xsd.Annotation;
+import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
 import se.kth.speech.lucene.StringTokenizer;
 
 /**
@@ -79,7 +80,7 @@ public final class AnnotationVocabularyCollector
 		// invocations, meaning that a feature with a given index will
 		// always have the same meaning
 		supplier = () -> new TreeSet<>(collator);
-		final SegmentUtteranceFactory segUttFactory = new SegmentUtteranceFactory(tokenizer);
+		final SegmentUtteranceFactory segUttFactory = new SegmentUtteranceFactory(Segment::getSource, tokenizer);
 		accumulator = new WordLists.WordAccumulator<>(segUttFactory::create);
 	}
 

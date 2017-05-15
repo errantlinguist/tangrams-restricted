@@ -118,13 +118,12 @@ public final class SegmentTimedUtteranceWriter {
 
 	private static final String EVENT_LOG_OPT_NAME = "l";
 
-	private static final Predicate<Event> INITIAL_EVENT_PREDICATE = new EventTypeMatcher(GameManagementEvent.GAME_READY_RESPONSE);
+	private static final Predicate<Event> INITIAL_EVENT_PREDICATE = new EventTypeMatcher(
+			GameManagementEvent.GAME_READY_RESPONSE);
 
 	private static final String INITIAL_TIMESTAMP_OPT_NAME = "t";
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SegmentTimedUtteranceWriter.class);
-
-	private static final SegmentUtteranceFactory SEG_UTT_FACTORY = new SegmentUtteranceFactory();
 
 	private static final Collector<CharSequence, ?, String> WORD_JOINER = Collectors.joining(" ");
 
@@ -163,7 +162,9 @@ public final class SegmentTimedUtteranceWriter {
 						LOGGER.info("Reading annotations from \"{}\".", infile);
 						final Annotation uttAnnots = HAT.readAnnotation(infile);
 						final List<Segment> segments = uttAnnots.getSegments().getSegment();
-						final Stream<Utterance> utts = SEG_UTT_FACTORY.create(segments.stream()).flatMap(List::stream);
+						// Just use the source ID as the speaker ID
+						final SegmentUtteranceFactory segUttFactory = new SegmentUtteranceFactory(Segment::getSource);
+						final Stream<Utterance> utts = segUttFactory.create(segments.stream()).flatMap(List::stream);
 						final Stream<MutablePair<String, String>> uttReprTimestamps = utts.map(utt -> {
 							final double startTime = utt.getStartTime();
 							final String uttRepr = utt.getTokens().stream().collect(WORD_JOINER);

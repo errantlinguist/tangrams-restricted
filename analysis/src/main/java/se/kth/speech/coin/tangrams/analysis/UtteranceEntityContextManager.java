@@ -19,12 +19,13 @@ package se.kth.speech.coin.tangrams.analysis;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
-import java.util.function.Function;
-import java.util.function.ToIntFunction;
+import java.util.function.BiFunction;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.xml.bind.JAXBException;
 
@@ -34,7 +35,6 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.BiMap;
 
 import iristk.util.HAT;
-import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionContextFactory;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
 import se.kth.speech.hat.xsd.Annotation;
 
@@ -47,18 +47,24 @@ public final class UtteranceEntityContextManager {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(UtteranceEntityContextManager.class);
 
-	private final EntityFeatureExtractionContextFactory extractionContextFactory;
+	private final BiFunction<ListIterator<Utterance>, GameHistory, Stream<EventDialogue>> eventUttFactory;
+
+//	private final EntityFeatureExtractionContextFactory extractionContextFactory;
 
 	private final Map<String, GameHistory> gameHistories;
 
 	private final BiMap<String, String> playerSourceIds;
 
-	private final Map<Utterance, String> uttPlayerIds;
+	public int getUniqueGameModelDescriptionCount(){
+		return gameHistories.values().size();
+	}
 
 	private final List<Utterance> utts;
 
-	public UtteranceEntityContextManager(final SessionDataManager sessionData, final SegmentUtteranceFactory segUttFactory,
-			final ToIntFunction<? super String> imgEdgeCounter) throws JAXBException, IOException {
+	public UtteranceEntityContextManager(
+			final SessionDataManager sessionData,
+			final BiFunction<ListIterator<Utterance>, GameHistory, Stream<EventDialogue>> eventUttFactory) throws JAXBException, IOException {
+		this.eventUttFactory = eventUttFactory;
 		final Path hatInfilePath = sessionData.getHATFilePath();
 		LOGGER.info("Reading annotations from \"{}\".", hatInfilePath);
 		final Annotation uttAnnots = HAT.readAnnotation(hatInfilePath.toFile());
@@ -67,24 +73,53 @@ public final class UtteranceEntityContextManager {
 		LOGGER.info("Reading game histories from \"{}\".", eventLogPath);
 		gameHistories = LoggedEvents.parseGameHistories(Files.lines(eventLogPath),
 				LoggedEvents.VALID_MODEL_MIN_REQUIRED_EVENT_MATCHER);
-		final int uniqueModelDescriptionCount = gameHistories.values().size();
+//		final int uniqueModelDescriptionCount = gameHistories.values().size();
 
-		extractionContextFactory = new EntityFeatureExtractionContextFactory(
-				new GameContextModelFactory(uniqueModelDescriptionCount), imgEdgeCounter);
+//		extractionContextFactory = new EntityFeatureExtractionContextFactory(
+//				new GameContextModelFactory(uniqueModelDescriptionCount), imgEdgeCounter);
 
 		playerSourceIds = sessionData.getPlayerData().getPlayerSourceIds();
-		final Function<String, String> sourcePlayerIdGetter = playerSourceIds.inverse()::get;
-		uttPlayerIds = new UtterancePlayerIdMapFactory(segUttFactory::create, sourcePlayerIdGetter)
-				.apply(uttAnnots.getSegments().getSegment());
-		utts = Arrays.asList(uttPlayerIds.keySet().stream().sorted().toArray(Utterance[]::new));
+		final Map<String, String> sourcePlayerIds = sessionData.getPlayerData().getPlayerSourceIds().inverse();
+		final SegmentUtteranceFactory segUttFactory = new SegmentUtteranceFactory(seg -> {
+			final String sourceId = seg.getSource();
+			return sourcePlayerIds.get(sourceId);
+		});
+		utts = segUttFactory.create(uttAnnots.getSegments().getSegment().stream()).flatMap(List::stream).collect(Collectors.toList());
 	}
 
-	/**
-	 * @return the extractionContextFactory
-	 */
-	public EntityFeatureExtractionContextFactory getExtractionContextFactory() {
-		return extractionContextFactory;
+	public List<EventDialogue> createUttDialogues(final GameHistory history, final String perspectivePlayerId) {
+		final List<EventDialogue> eventUttLists = eventUttFactory.apply(utts.listIterator(), history)
+				.collect(Collectors.toList());
+		return eventUttLists;
+//		final List<UtteranceDialogue> result = new ArrayList<>(eventUttLists.size());
+//		for (final Entry<Event, List<Utterance>> eventUttList : eventUttLists) {
+//			final Event event = eventUttList.getKey();
+//			final List<Utterance> uttList = eventUttList.getValue();
+//			final Map<Utterance, GameContext> uttCtxs = uttList.stream()
+//					.collect(Collectors.toMap(Function.identity(), utt -> {
+//						final List<GameContext> uttContexts = TemporalGameContexts
+//								.create(history, utt.getStartTime(), utt.getEndTime(), perspectivePlayerId)
+//								.collect(Collectors.toList());
+//						if (uttContexts.size() > 1) {
+//							LOGGER.warn("More than one context found for {}; Ignoring all but the first.", utt);
+//						}
+//						return uttContexts.get(0);
+//					}));
+//			final UtteranceDialogue uttDiag = new UtteranceDialogue(uttList, uttCtxs::get);
+//			final Event lastEventBeforeFirstUtt = uttDiag.findLastEventBeforeFirstUtt().orElse(null);
+//			if (!Objects.equals(event, lastEventBeforeFirstUtt)){
+//				LOGGER.warn("Do something here");
+//			}
+//		}
+//		return result;
 	}
+
+//	/**
+//	 * @return the extractionContextFactory
+//	 */
+//	public EntityFeatureExtractionContextFactory getExtractionContextFactory() {
+//		return extractionContextFactory;
+//	}
 
 	/**
 	 * @return the gameHistories
@@ -98,20 +133,6 @@ public final class UtteranceEntityContextManager {
 	 */
 	public BiMap<String, String> getPlayerSourceIds() {
 		return playerSourceIds;
-	}
-
-	/**
-	 * @return the uttPlayerIds
-	 */
-	public Map<Utterance, String> getUttPlayerIds() {
-		return Collections.unmodifiableMap(uttPlayerIds);
-	}
-
-	/**
-	 * @return the utts
-	 */
-	public List<Utterance> getUtts() {
-		return Collections.unmodifiableList(utts);
 	}
 
 }

@@ -85,6 +85,7 @@ import se.kth.speech.coin.tangrams.iristk.events.Move;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
 import se.kth.speech.coin.tangrams.view.UserPrompts;
 import se.kth.speech.hat.xsd.Annotation;
+import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
 import se.kth.speech.io.FileNames;
 
 /**
@@ -204,7 +205,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 
 		private static final String BLANK_IMG_DESC;
 
-		private static final EventUtteranceFactory EVENT_UTT_FACTORY = new EventUtteranceFactory(
+		private static final EventDialogueFactory EVENT_DIAG_FACTORY = new EventDialogueFactory(
 				new EventTypeMatcher(GameManagementEvent.NEXT_TURN_REQUEST));
 
 		private static final String HEADER_STR;
@@ -298,23 +299,18 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 
 		private final PlayerGameContextFactory uttContextFactory;
 
-		private final Function<? super Utterance, String> uttPlayerIdGetter;
-
 		private final List<Utterance> utts;
 
-		private TabularDataWriter(final List<Utterance> utts,
-				final Function<? super Utterance, String> uttPlayerIdGetter,
-				final PlayerGameContextFactory uttContextFactory,
+		private TabularDataWriter(final List<Utterance> utts, final PlayerGameContextFactory uttContextFactory,
 				final EntityFeatureExtractionContextFactory extractionContextFactory, final boolean strict) {
 			this.utts = utts;
-			this.uttPlayerIdGetter = uttPlayerIdGetter;
 			this.uttContextFactory = uttContextFactory;
 			this.extractionContextFactory = extractionContextFactory;
 			this.strict = strict;
 		}
 
-		private String createNoEventUtterancesMsg(final Event event,
-				final List<Entry<Event, List<Utterance>>> eventUttLists, final int eventIdx) {
+		private String createNoEventUtterancesMsg(final Event event, final List<EventDialogue> eventDiags,
+				final int eventIdx) {
 			final StringBuilder sb = new StringBuilder(128);
 			sb.append("No utterances for event index ");
 			sb.append(eventIdx);
@@ -322,22 +318,21 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 			sb.append(event);
 			sb.append("\".");
 			{
-				final ListIterator<Entry<Event, List<Utterance>>> eventUttListIter = eventUttLists
-						.listIterator(eventIdx);
-				Entry<Event, List<Utterance>> prevEventUttList = null;
-				while (eventUttListIter.hasPrevious()) {
-					prevEventUttList = eventUttListIter.previous();
-					final List<Utterance> prevUtts = prevEventUttList.getValue();
+				final ListIterator<EventDialogue> eventDiagIter = eventDiags.listIterator(eventIdx);
+				EventDialogue prevEventDiag = null;
+				while (eventDiagIter.hasPrevious()) {
+					prevEventDiag = eventDiagIter.previous();
+					final List<Utterance> prevUtts = prevEventDiag.getUtts();
 					if (!prevUtts.isEmpty()) {
 						break;
 					}
 				}
-				if (prevEventUttList != null) {
+				if (prevEventDiag != null) {
 					sb.append(System.lineSeparator());
-					final Event prevEvent = prevEventUttList.getKey();
-					final List<Utterance> prevUtts = prevEventUttList.getValue();
+					final Event prevEvent = prevEventDiag.getLastEvent().orElse(null);
+					final List<Utterance> prevUtts = prevEventDiag.getUtts();
 					final Utterance prevUtt = prevUtts.get(prevUtts.size() - 1);
-					final String speakingPlayerId = uttPlayerIdGetter.apply(prevUtt);
+					final String speakingPlayerId = prevUtt.getSpeakerId();
 					sb.append(String.format(
 							"Last utt before event: \"%s\"; speaking player ID: \"%s\"; start: %f; end: %f; segment ID: \"%s\"; event ID: \"%s\"; event time: \"%s\"",
 							prevUtt.getTokens().stream().collect(WORD_JOINER), speakingPlayerId, prevUtt.getStartTime(),
@@ -345,22 +340,21 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 				}
 			}
 			{
-				final ListIterator<Entry<Event, List<Utterance>>> eventUttListIter = eventUttLists
-						.listIterator(eventIdx + 1);
-				Entry<Event, List<Utterance>> nextEventUttList = null;
-				while (eventUttListIter.hasNext()) {
-					nextEventUttList = eventUttListIter.next();
-					final List<Utterance> nextUtts = nextEventUttList.getValue();
+				final ListIterator<EventDialogue> eventDiagIter = eventDiags.listIterator(eventIdx + 1);
+				EventDialogue nextEventDiag = null;
+				while (eventDiagIter.hasNext()) {
+					nextEventDiag = eventDiagIter.next();
+					final List<Utterance> nextUtts = nextEventDiag.getUtts();
 					if (!nextUtts.isEmpty()) {
 						break;
 					}
 				}
-				if (nextEventUttList != null) {
+				if (nextEventDiag != null) {
 					sb.append(System.lineSeparator());
-					final Event nextEvent = nextEventUttList.getKey();
-					final List<Utterance> nextUtts = nextEventUttList.getValue();
+					final Event nextEvent = nextEventDiag.getLastEvent().orElse(null);
+					final List<Utterance> nextUtts = nextEventDiag.getUtts();
 					final Utterance nextUtt = nextUtts.get(0);
-					final String speakingPlayerId = uttPlayerIdGetter.apply(nextUtt);
+					final String speakingPlayerId = nextUtt.getSpeakerId();
 					sb.append(String.format(
 							"Next utt after event: \"%s\"; speaking player ID: \"%s\"; start: %f; end: %f; segment ID: \"%s\"; event ID: \"%s\"; event time: \"%s\"",
 							nextUtt.getTokens().stream().collect(WORD_JOINER), speakingPlayerId, nextUtt.getStartTime(),
@@ -372,7 +366,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 
 		private String createUtteranceDialogString(final Stream<Utterance> utts) {
 			final Stream<String> uttStrs = utts.map(utt -> {
-				final String playerId = uttPlayerIdGetter.apply(utt);
+				final String playerId = utt.getSpeakerId();
 				return "**" + playerId + ":** \"" + utt.getTokens().stream().collect(WORD_JOINER) + "\"";
 			});
 			return uttStrs.collect(SENTENCE_JOINER);
@@ -382,22 +376,21 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 			// The visualization info for the given game
 			final ImageVisualizationInfo imgVizInfo = IMG_VIZ_INFO_UNMARSHALLER
 					.apply(history.getInitialState().getImageVisualizationInfoDescription());
-			final List<Entry<Event, List<Utterance>>> eventUttLists = EVENT_UTT_FACTORY
-					.apply(utts.listIterator(), history).collect(Collectors.toList());
+			final List<EventDialogue> eventDiags = EVENT_DIAG_FACTORY.apply(utts.listIterator(), history)
+					.collect(Collectors.toList());
 
 			writer.write(HEADER_STR);
-			for (final ListIterator<Entry<Event, List<Utterance>>> eventUttListIter = eventUttLists
-					.listIterator(); eventUttListIter.hasNext();) {
-				final Entry<Event, List<Utterance>> eventUttList = eventUttListIter.next();
+			for (final ListIterator<EventDialogue> eventDiagIter = eventDiags.listIterator(); eventDiagIter
+					.hasNext();) {
+				final EventDialogue eventDiag = eventDiagIter.next();
 				writer.write(TABLE_STRING_REPR_ROW_DELIMITER);
 
-				final Event event = eventUttList.getKey();
-				final List<Utterance> eventUtts = eventUttList.getValue();
+				final Optional<Event> optEvent = eventDiag.getLastEvent();
+				final List<Utterance> eventUtts = eventDiag.getUtts();
 
 				final String imgVizInfoDesc;
-				if (event == null) {
-					imgVizInfoDesc = BLANK_IMG_DESC;
-				} else {
+				if (optEvent.isPresent()) {
+					final Event event = optEvent.get();
 					final StringWriter strWriter = new StringWriter(256);
 
 					final double contextStartTime;
@@ -406,8 +399,8 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 						if (strict) {
 							throw new IllegalArgumentException(String.format("No utterances for event \"%s\".", event));
 						} else {
-							final String msg = createNoEventUtterancesMsg(event, eventUttLists,
-									eventUttListIter.nextIndex() - 1);
+							final String msg = createNoEventUtterancesMsg(event, eventDiags,
+									eventDiagIter.nextIndex() - 1);
 							LOGGER.warn(msg);
 							final LocalDateTime eventTime = EventTimes.parseEventTime(event.getTime());
 							final Duration gameDuration = Duration.between(history.getStartTime(), eventTime);
@@ -454,6 +447,8 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 					}
 
 					imgVizInfoDesc = strWriter.toString();
+				} else {
+					imgVizInfoDesc = BLANK_IMG_DESC;
 				}
 				writer.write(imgVizInfoDesc);
 				writer.write(TABLE_STRING_REPR_COL_DELIMITER);
@@ -477,8 +472,6 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 	private static final List<FileNameExtensionFilter> FILE_FILTERS;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(UtteranceSelectedEntityDescriptionWriter.class);
-
-	private static final SegmentUtteranceFactory SEG_UTT_FACTORY = new SegmentUtteranceFactory();
 
 	private static final Path SETTINGS_DIR;
 
@@ -656,9 +649,14 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 		final EntityFeatureExtractionContextFactory extractionContextFactory = new EntityFeatureExtractionContextFactory(
 				new GameContextModelFactory(uniqueModelDescriptionCount), new ImageEdgeCounter());
 
-		final Map<Utterance, String> uttPlayerIds = new UtterancePlayerIdMapFactory(SEG_UTT_FACTORY::create,
-				playerData.getPlayerSourceIds().inverse()::get).apply(uttAnnots.getSegments().getSegment());
-		final List<Utterance> utts = Arrays.asList(uttPlayerIds.keySet().stream().sorted().toArray(Utterance[]::new));
+		final Map<String, String> sourcePlayerIds = playerData.getPlayerSourceIds().inverse();
+		final SegmentUtteranceFactory segUttFactory = new SegmentUtteranceFactory(seg -> {
+			final String sourceId = seg.getSource();
+			return sourcePlayerIds.get(sourceId);
+		});
+		final List<Segment> segs = uttAnnots.getSegments().getSegment();
+		final List<Utterance> utts = Arrays
+				.asList(segUttFactory.create(segs.stream()).flatMap(List::stream).toArray(Utterance[]::new));
 
 		final boolean outdirAlreadyExists = Files.exists(outdir);
 		final Path extantOutdir = Files.createDirectories(outdir);
@@ -669,7 +667,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 			LOGGER.debug("Processing game \"{}\".", gameId);
 			final Map<String, GameHistory> playerHistories = gamePlayerHistoryTable.row(gameId);
 
-			final TabularDataWriter gameWriter = new TabularDataWriter(utts, uttPlayerIds::get,
+			final TabularDataWriter gameWriter = new TabularDataWriter(utts,
 					new PlayerGameContextFactory(playerHistories::get), extractionContextFactory, strict);
 			for (final Entry<String, GameHistory> playerHistory : playerHistories.entrySet()) {
 				final String playerId = playerHistory.getKey();
