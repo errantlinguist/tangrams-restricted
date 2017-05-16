@@ -33,10 +33,13 @@ import weka.core.Attribute;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
- * @see <a href="http://anthology.aclweb.org/W/W15/W15-0124.pdf">Casey
- *      Kennington, Livia Dia, &amp; David Schlangen. &ldquo;A Discriminative
- *      Model for Perceptually-Grounded Incremental Reference Resolution.&rdquo;
- *      In <em>Proceedings of IWCS 2015</em><a>.
+ * @see <a href="http://www.aclweb.org/anthology/P15-1029">Casey Kennington,
+ *      &amp; David Schlangen. &ldquo;Simple Learning and Compositional
+ *      Application of Perceptually Grounded Word Meanings for Incremental
+ *      Reference Resolution&rdquo;. In <em>Proceedings of the 53<sup>rd</sup>
+ *      Annual Meeting of the Association for Computational Linguistics and the
+ *      7<sup>th</sup> International Joint Conference on Natural Language
+ *      Processing</em><a>.
  *
  */
 public enum EntityFeature {
@@ -46,15 +49,15 @@ public enum EntityFeature {
 
 		public static final class Context {
 
-			private final ImageVisualizationInfoDescription.Datum pieceImgVizInfoDatum;
-
-			private final SpatialRegion pieceRegion;
+			private final double modelArea;
 
 			private final int[] modelDims;
 
-			private final double modelArea;
-
 			private final ToIntFunction<? super String> namedResourceEdgeCountFactory;
+
+			private final ImageVisualizationInfoDescription.Datum pieceImgVizInfoDatum;
+
+			private final SpatialRegion pieceRegion;
 
 			public Context(final ImageVisualizationInfoDescription.Datum pieceImgVizInfoDatum,
 					final SpatialRegion pieceRegion, final int[] modelDims, final double modelArea,

@@ -55,10 +55,13 @@ import weka.core.Instances;
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
  * @since Apr 17, 2017
- * @see <a href="http://anthology.aclweb.org/W/W15/W15-0124.pdf">Casey
- *      Kennington, Livia Dia, &amp; David Schlangen. &ldquo;A Discriminative
- *      Model for Perceptually-Grounded Incremental Reference Resolution.&rdquo;
- *      In <em>Proceedings of IWCS 2015</em><a>.
+ * @see <a href="http://www.aclweb.org/anthology/P15-1029">Casey Kennington,
+ *      &amp; David Schlangen. &ldquo;Simple Learning and Compositional
+ *      Application of Perceptually Grounded Word Meanings for Incremental
+ *      Reference Resolution&rdquo;. In <em>Proceedings of the 53<sup>rd</sup>
+ *      Annual Meeting of the Association for Computational Linguistics and the
+ *      7<sup>th</sup> International Joint Conference on Natural Language
+ *      Processing</em><a>.
  *
  */
 public final class WordsAsClassifiersCrossValidationTester {
@@ -122,8 +125,7 @@ public final class WordsAsClassifiersCrossValidationTester {
 		}
 	}
 
-	public static void main(final String[] args)
-			throws TrainingException, ExecutionException, IOException {
+	public static void main(final String[] args) throws TrainingException, ExecutionException, IOException {
 		final CommandLineParser parser = new DefaultParser();
 		try {
 			final CommandLine cl = parser.parse(Parameter.OPTIONS, args);
@@ -178,8 +180,7 @@ public final class WordsAsClassifiersCrossValidationTester {
 	@Inject
 	private WordsAsClassifiersCrossValidationTestSetFactory testSetFactory;
 
-	public void accept(final Iterable<Path> inpaths)
-			throws TrainingException, ExecutionException, IOException {
+	public void accept(final Iterable<Path> inpaths) throws TrainingException, ExecutionException, IOException {
 		final Map<Path, SessionDataManager> infileSessionData = SessionDataManager.createFileSessionDataMap(inpaths);
 		final Map<SessionDataManager, Path> allSessions = infileSessionData.entrySet().stream()
 				.collect(Collectors.toMap(Entry::getValue, Entry::getKey));
