@@ -19,9 +19,9 @@ package se.kth.speech.coin.tangrams.analysis.features;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.ToIntFunction;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -87,7 +87,7 @@ public final class WordsAsClassifiersInstancesMapFactory
 					dialogueUttsFromInstructor.forEach(dialogueUtt -> {
 						final GameHistory history = sessionEventDiagMgr.getGameHistory();
 						final GameContext uttCtx = createGameContext(dialogueUtt, history, submittingPlayerId);
-						final Integer selectedEntityId = uttCtx.findLastSelectedEntityId().get();
+						final int selectedEntityId = uttCtx.findLastSelectedEntityId().get();
 						LOGGER.debug(
 								"Creating positive and negative examples for entity ID \"{}\", which is selected by player \"{}\".",
 								selectedEntityId, submittingPlayerId);
@@ -97,7 +97,7 @@ public final class WordsAsClassifiersInstancesMapFactory
 						addTokenInstances(dialogueUtt, positiveContext, Boolean.TRUE.toString());
 						// Add negative training examples
 						final EntityFeature.Extractor.Context negativeContext = extCtxFactory.apply(uttCtx,
-								negativeExampleEntityIdGetter.apply(uttCtx));
+								negativeExampleEntityIdGetter.applyAsInt(uttCtx));
 						addTokenInstances(dialogueUtt, negativeContext, Boolean.FALSE.toString());
 					});
 				});
@@ -168,10 +168,10 @@ public final class WordsAsClassifiersInstancesMapFactory
 	private EntityInstanceAttributeContext entityInstAttrCtx;
 
 	@Inject
-	private BiFunction<? super GameContext, ? super Integer, EntityFeature.Extractor.Context> extCtxFactory;
+	private EntityFeatureExtractionContextFactory extCtxFactory;
 
 	@Inject
-	private Function<GameContext, Integer> negativeExampleEntityIdGetter;
+	private ToIntFunction<GameContext> negativeExampleEntityIdGetter;
 
 	@Override
 	public Map<String, Instances> apply(final Collection<SessionEventDialogueManager> sessionEventDiagMgrs) {

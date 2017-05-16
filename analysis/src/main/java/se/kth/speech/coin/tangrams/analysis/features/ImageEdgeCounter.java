@@ -19,11 +19,11 @@ package se.kth.speech.coin.tangrams.analysis.features;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
-import java.util.Map;
 import java.util.Properties;
 import java.util.function.ToIntFunction;
 
-import com.google.common.collect.Maps;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -32,8 +32,9 @@ import com.google.common.collect.Maps;
  */
 public final class ImageEdgeCounter implements ToIntFunction<String> {
 
-	private static Map<String, Integer> createPropValMap(final Properties props) {
-		final Map<String, Integer> result = Maps.newHashMapWithExpectedSize(props.size());
+	private static Object2IntMap<String> createPropValMap(final Properties props) {
+		final Object2IntMap<String> result = new Object2IntOpenHashMap<>(props.size());
+		result.defaultReturnValue(-1);
 		props.forEach((propName, propValue) -> {
 			result.put(propName.toString(), Integer.parseInt(propValue.toString()));
 		});
@@ -50,13 +51,13 @@ public final class ImageEdgeCounter implements ToIntFunction<String> {
 		return result;
 	}
 
-	private final Map<String, Integer> resourceEdgeCounts;
+	private final Object2IntMap<String> resourceEdgeCounts;
 
 	public ImageEdgeCounter() {
 		this(createPropValMap(loadEdgeCountProps()));
 	}
 
-	public ImageEdgeCounter(final Map<String, Integer> resourceEdgeCounts) {
+	public ImageEdgeCounter(final Object2IntMap<String> resourceEdgeCounts) {
 		this.resourceEdgeCounts = resourceEdgeCounts;
 	}
 
@@ -74,8 +75,9 @@ public final class ImageEdgeCounter implements ToIntFunction<String> {
 		// throw new UncheckedIOException(e);
 		// }
 		// TODO: Algorithmically count the edges of any arbitrary shape
-		assert resourceEdgeCounts.containsKey(resourceName);
-		return resourceEdgeCounts.get(resourceName);
+		final int result = resourceEdgeCounts.getInt(resourceName);
+		assert result != resourceEdgeCounts.defaultReturnValue();
+		return result;
 	}
 
 }

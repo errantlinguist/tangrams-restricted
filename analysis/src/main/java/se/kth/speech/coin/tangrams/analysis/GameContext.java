@@ -17,7 +17,6 @@
 package se.kth.speech.coin.tangrams.analysis;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumMap;
@@ -29,7 +28,6 @@ import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -37,9 +35,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 
 import iristk.system.Event;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntList;
+import it.unimi.dsi.fastutil.ints.IntLists;
 import se.kth.speech.coin.tangrams.iristk.EventTypeMatcher;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
@@ -83,7 +85,7 @@ public final class GameContext {
 		return map.descendingMap().values().stream().map(Lists::reverse).flatMap(List::stream);
 	}
 
-	private final List<Integer> entityIds;
+	private final IntList entityIds;
 
 	private final GameHistory history;
 
@@ -98,21 +100,21 @@ public final class GameContext {
 		entityIds = createEntityIdList();
 	}
 
-	public Map<EntityStatus, Map<Integer, ImageVisualizationInfoDescription.Datum>> createEntityStatusVisualizationInfoMap() {
-		final Map<EntityStatus, Map<Integer, ImageVisualizationInfoDescription.Datum>> result = new EnumMap<>(
+	public Map<EntityStatus, Int2ObjectMap<ImageVisualizationInfoDescription.Datum>> createEntityStatusVisualizationInfoMap() {
+		final Map<EntityStatus, Int2ObjectMap<ImageVisualizationInfoDescription.Datum>> result = new EnumMap<>(
 				EntityStatus.class);
 		final List<ImageVisualizationInfoDescription.Datum> vizInfo = getEntityVisualizationInfo();
 		final Optional<Integer> optSelectedEntityId = findLastSelectedEntityId();
 		if (optSelectedEntityId.isPresent()) {
-			final Integer selectedEntityId = optSelectedEntityId.get();
-			final Map<Integer, ImageVisualizationInfoDescription.Datum> selected = Maps.newHashMapWithExpectedSize(1);
-			final Map<Integer, ImageVisualizationInfoDescription.Datum> notSelected = Maps
-					.newHashMapWithExpectedSize(vizInfo.size() - 1);
+			final int selectedEntityId = optSelectedEntityId.get();
+			final Int2ObjectMap<ImageVisualizationInfoDescription.Datum> selected = new Int2ObjectOpenHashMap<>(1);
+			final Int2ObjectMap<ImageVisualizationInfoDescription.Datum> notSelected = new Int2ObjectOpenHashMap<>(
+					vizInfo.size() - 1);
 			for (final ListIterator<ImageVisualizationInfoDescription.Datum> imgVizInfoDataIter = vizInfo
 					.listIterator(); imgVizInfoDataIter.hasNext();) {
-				final Integer entityId = imgVizInfoDataIter.nextIndex();
+				final int entityId = imgVizInfoDataIter.nextIndex();
 				final ImageVisualizationInfoDescription.Datum imgVizInfoDatum = imgVizInfoDataIter.next();
-				if (selectedEntityId.equals(entityId)) {
+				if (selectedEntityId == entityId) {
 					selected.put(entityId, imgVizInfoDatum);
 				} else {
 					notSelected.put(entityId, imgVizInfoDatum);
@@ -121,11 +123,11 @@ public final class GameContext {
 			result.put(EntityStatus.SELECTED, selected);
 			result.put(EntityStatus.NOT_SELECTED, notSelected);
 		} else {
-			final Map<Integer, ImageVisualizationInfoDescription.Datum> notSelected = Maps
-					.newHashMapWithExpectedSize(vizInfo.size());
+			final Int2ObjectMap<ImageVisualizationInfoDescription.Datum> notSelected = new Int2ObjectOpenHashMap<>(
+					vizInfo.size());
 			for (final ListIterator<ImageVisualizationInfoDescription.Datum> imgVizInfoDataIter = vizInfo
 					.listIterator(); imgVizInfoDataIter.hasNext();) {
-				final Integer entityId = imgVizInfoDataIter.nextIndex();
+				final int entityId = imgVizInfoDataIter.nextIndex();
 				final ImageVisualizationInfoDescription.Datum imgVizInfoDatum = imgVizInfoDataIter.next();
 				notSelected.put(entityId, imgVizInfoDatum);
 			}
@@ -261,8 +263,8 @@ public final class GameContext {
 		return initialState.getImageVisualizationInfoDescription().getData().size();
 	}
 
-	public List<Integer> getEntityIds() {
-		return Collections.unmodifiableList(entityIds);
+	public IntList getEntityIds() {
+		return IntLists.unmodifiable(entityIds);
 	}
 
 	public List<ImageVisualizationInfoDescription.Datum> getEntityVisualizationInfo() {
@@ -332,8 +334,10 @@ public final class GameContext {
 		return builder.toString();
 	}
 
-	private List<Integer> createEntityIdList() {
-		int entityCount = getEntityCount();
-		return IntStream.range(0, entityCount).boxed().collect(Collectors.toCollection(() -> new ArrayList<>(entityCount)));
+	private IntList createEntityIdList() {
+		final int entityCount = getEntityCount();
+		final IntList result = new IntArrayList(entityCount);
+		IntStream.range(0, entityCount).forEachOrdered(result::add);
+		return result;
 	}
 }

@@ -262,9 +262,8 @@ class UtteranceTabularDataWriter {
 					final Optional<Integer> optSelectedEntityId = context.findLastSelectedEntityId();
 					final String featureVectorRepr;
 					if (optSelectedEntityId.isPresent()) {
-						final Integer entityId = optSelectedEntityId.get();
 						final EntityFeature.Extractor.Context extractionContext = extractionContextFactory
-								.apply(context, entityId);
+								.apply(context, optSelectedEntityId.get());
 						final Stream<Optional<Object>> featureVals = featuresToDescribe.stream()
 								.map(feature -> extractor.apply(feature, extractionContext));
 						featureVectorRepr = featureVals.map(opt -> opt.map(Object::toString).orElse(NULL_VALUE_REPR))

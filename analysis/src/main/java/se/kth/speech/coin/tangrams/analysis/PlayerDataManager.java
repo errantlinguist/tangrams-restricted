@@ -29,8 +29,9 @@ import java.util.regex.Pattern;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+import it.unimi.dsi.fastutil.ints.IntSet;
 import se.kth.speech.io.RelativePaths;
 
 /**
@@ -76,7 +77,10 @@ public final class PlayerDataManager {
 			}
 		}
 
-		final Set<Integer> propCounts = Sets.newHashSet(playerIds.size(), sourceIds.size(), eventLogPaths.size());
+		final IntSet propCounts = new IntOpenHashSet(3);
+		propCounts.add(playerIds.size());
+		propCounts.add(sourceIds.size());
+		propCounts.add(eventLogPaths.size());
 		if (propCounts.size() > 1) {
 			throw new IllegalArgumentException("Not all player data tuples are well-formed.");
 		}
