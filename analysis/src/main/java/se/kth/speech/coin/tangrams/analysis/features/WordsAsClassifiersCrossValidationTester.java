@@ -170,8 +170,8 @@ public final class WordsAsClassifiersCrossValidationTester {
 				throw new MissingOptionException("No input path(s) specified.");
 
 			} else {
-				try (final ClassPathXmlApplicationContext appCtx = new ClassPathXmlApplicationContext("entity-feature-extraction.xml",
-						WordsAsClassifiersCrossValidationTester.class)) {
+				try (final ClassPathXmlApplicationContext appCtx = new ClassPathXmlApplicationContext(
+						"entity-feature-extraction.xml", WordsAsClassifiersCrossValidationTester.class)) {
 					final WordsAsClassifiersCrossValidationTester bean = appCtx
 							.getBean(WordsAsClassifiersCrossValidationTester.class);
 					final TestResults testResults = bean.apply(inpaths);
@@ -232,9 +232,10 @@ public final class WordsAsClassifiersCrossValidationTester {
 
 	private static long estimateTestInstanceCount(final SessionDataManager sessionData) throws IOException {
 		final long lineCount = Files.lines(sessionData.getCanonicalEventLogPath()).count();
-		// Estimated number of entities per game * estimate number of tokens
-		// (i.e. n-grams) per utterance dialogue
-		return lineCount * 20 * 20;
+		// Number of logged events * estimated number of entities per game *
+		// estimated number of utterances per dialogue * estimated number of
+		// tokens (i.e. n-grams) per dialogue
+		return lineCount * 20 * 4 * 20;
 	}
 
 	private static void printResults(final TestResults testResults, final PrintWriter out) {
