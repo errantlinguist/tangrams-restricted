@@ -262,7 +262,7 @@ public final class GameContext {
 	}
 
 	public Set<Integer> getEntityIds() {
-		return entityIds;
+		return Collections.unmodifiableSet(entityIds);
 	}
 
 	public List<ImageVisualizationInfoDescription.Datum> getEntityVisualizationInfo() {
