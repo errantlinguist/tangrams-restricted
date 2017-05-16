@@ -48,7 +48,7 @@ public final class SessionEventDialogueManager {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SessionEventDialogueManager.class);
 
-	private final BiFunction<ListIterator<Utterance>, GameHistory, Stream<EventDialogue>> eventUttFactory;
+	private final BiFunction<ListIterator<Utterance>, GameHistory, Stream<EventDialogue>> eventDiagFactory;
 
 	private final GameHistory gameHistory;
 
@@ -59,9 +59,9 @@ public final class SessionEventDialogueManager {
 	private final List<Utterance> utts;
 
 	public SessionEventDialogueManager(final SessionDataManager sessionData,
-			final BiFunction<ListIterator<Utterance>, GameHistory, Stream<EventDialogue>> eventUttFactory)
+			final BiFunction<ListIterator<Utterance>, GameHistory, Stream<EventDialogue>> eventDiagFactory)
 			throws JAXBException, IOException {
-		this.eventUttFactory = eventUttFactory;
+		this.eventDiagFactory = eventDiagFactory;
 		final Path hatInfilePath = sessionData.getHATFilePath();
 		LOGGER.info("Reading annotations from \"{}\".", hatInfilePath);
 		final Annotation uttAnnots = HAT.readAnnotation(hatInfilePath.toFile());
@@ -99,7 +99,7 @@ public final class SessionEventDialogueManager {
 	}
 
 	public List<EventDialogue> createUttDialogues() {
-		final List<EventDialogue> eventUttLists = eventUttFactory.apply(utts.listIterator(), gameHistory)
+		final List<EventDialogue> eventUttLists = eventDiagFactory.apply(utts.listIterator(), gameHistory)
 				.collect(Collectors.toList());
 		return eventUttLists;
 	}
