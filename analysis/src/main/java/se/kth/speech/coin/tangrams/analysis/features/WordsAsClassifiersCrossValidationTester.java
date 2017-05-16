@@ -16,11 +16,15 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features;
 
+import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +32,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -48,6 +53,8 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 import com.google.common.collect.Maps;
 
 import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
+import se.kth.speech.coin.tangrams.analysis.features.EntityCrossValidationTester.EventDialogueTestResults;
+import se.kth.speech.coin.tangrams.analysis.features.EntityCrossValidationTester.SessionTestResults;
 import weka.classifiers.functions.Logistic;
 import weka.core.Instances;
 
@@ -65,19 +72,65 @@ import weka.core.Instances;
  */
 public final class WordsAsClassifiersCrossValidationTester {
 
+	public static final class TestResults {
+
+		private final Map<Path, SessionTestResults> sessionResults;
+
+		private final SessionTestResults totalResults = new SessionTestResults();
+
+		private TestResults(final int expectedSessionCount) {
+			sessionResults = Maps.newHashMapWithExpectedSize(expectedSessionCount);
+		}
+
+		/**
+		 * @return the sessionResults
+		 */
+		public Map<Path, SessionTestResults> getSessionResults() {
+			return Collections.unmodifiableMap(sessionResults);
+		}
+
+		/**
+		 * @return the totalResults
+		 */
+		public SessionTestResults getTotalResults() {
+			return totalResults;
+		}
+	}
+
 	private enum Parameter implements Supplier<Option> {
 		HELP("?") {
 			@Override
 			public Option get() {
 				return Option.builder(optName).longOpt("help").desc("Prints this message.").build();
 			}
-		};
+		},
+		OUTPATH("o") {
+			@Override
+			public Option get() {
+				return Option.builder(optName).longOpt("outpath").desc("The path to write the data to.").hasArg()
+						.argName("path").type(File.class).build();
+			}
+		},;
 
 		private static final Options OPTIONS = createOptions();
 
 		private static Options createOptions() {
 			final Options result = new Options();
 			Arrays.stream(Parameter.values()).map(Parameter::get).forEach(result::addOption);
+			return result;
+		}
+
+		private static PrintWriter parseOutpath(final CommandLine cl) throws ParseException, IOException {
+			final PrintWriter result;
+			final File outfile = (File) cl.getParsedOptionValue(Parameter.OUTPATH.optName);
+			if (outfile == null) {
+				LOGGER.info("No output file path specified; Writing to standard output.");
+				result = new PrintWriter(System.out);
+			} else {
+				LOGGER.info("Output file path is \"{}\".", outfile);
+				result = new PrintWriter(Files.newBufferedWriter(outfile.toPath(), StandardOpenOption.CREATE,
+						StandardOpenOption.TRUNCATE_EXISTING));
+			}
 			return result;
 		}
 
@@ -98,7 +151,12 @@ public final class WordsAsClassifiersCrossValidationTester {
 
 	public static final String TRAINING_FILE_NAME_PREFIX = "train-";
 
+	private static final List<String> COL_HEADERS = Arrays.asList("INPATH", "MEAN_RANK", "DIAG_COUNT", "UTTS_TESTED",
+			"MEAN_UTTS_PER_DIAG");
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(WordsAsClassifiersCrossValidationTester.class);
+
+	private static final Collector<CharSequence, ?, String> ROW_CELL_JOINER = Collectors.joining("\t");
 
 	private static final String TEST_INSTS_REL_NAME = "tested_entites";
 
@@ -116,7 +174,10 @@ public final class WordsAsClassifiersCrossValidationTester {
 						WordsAsClassifiersCrossValidationTester.class)) {
 					final WordsAsClassifiersCrossValidationTester bean = appCtx
 							.getBean(WordsAsClassifiersCrossValidationTester.class);
-					bean.accept(inpaths);
+					final TestResults testResults = bean.apply(inpaths);
+					try (PrintWriter out = Parameter.parseOutpath(cl)) {
+						printResults(testResults, out);
+					}
 				}
 			}
 		}
@@ -131,6 +192,14 @@ public final class WordsAsClassifiersCrossValidationTester {
 			System.out.println(String.format("An error occured while parsing the command-line arguments: %s", e));
 			Parameter.printHelp();
 		}
+	}
+
+	private static List<Object> createTableRow(final Object key, final SessionTestResults sessionTestResults) {
+		final EventDialogueTestResults sessionDiagResults = sessionTestResults.getDiagResults();
+		final int totalUttsTested = sessionDiagResults.getTotalUtterancesTested();
+		final int totalDiagsTested = sessionTestResults.getTotalDiagsTested();
+		return Arrays.asList(key, sessionDiagResults.getMeanRank(), totalDiagsTested, totalUttsTested,
+				totalUttsTested / (double) totalDiagsTested);
 	}
 
 	private static Logistic createWordClassifier(final Instances data) throws TrainingException {
@@ -168,6 +237,21 @@ public final class WordsAsClassifiersCrossValidationTester {
 		return lineCount * 20 * 20;
 	}
 
+	private static void printResults(final TestResults testResults, final PrintWriter out) {
+		out.println(COL_HEADERS.stream().collect(ROW_CELL_JOINER));
+
+		for (final Entry<Path, SessionTestResults> infileSessionTestResults : testResults.sessionResults.entrySet()) {
+			final Path infilePath = infileSessionTestResults.getKey();
+			final SessionTestResults sessionTestResults = infileSessionTestResults.getValue();
+			final List<Object> cellVals = createTableRow(infilePath, sessionTestResults);
+			out.println(cellVals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
+		}
+
+		final SessionTestResults totalSessionResults = testResults.totalResults;
+		final List<Object> summaryVals = createTableRow("SUMMARY", totalSessionResults);
+		out.print(summaryVals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
+	}
+
 	@Inject
 	private WordClassDiscountingSmoother smoother;
 
@@ -180,13 +264,14 @@ public final class WordsAsClassifiersCrossValidationTester {
 	@Inject
 	private WordsAsClassifiersCrossValidationTestSetFactory testSetFactory;
 
-	public void accept(final Iterable<Path> inpaths) throws TrainingException, ExecutionException, IOException {
+	public TestResults apply(final Iterable<Path> inpaths) throws TrainingException, ExecutionException, IOException {
 		final Map<Path, SessionDataManager> infileSessionData = SessionDataManager.createFileSessionDataMap(inpaths);
 		final Map<SessionDataManager, Path> allSessions = infileSessionData.entrySet().stream()
 				.collect(Collectors.toMap(Entry::getValue, Entry::getKey));
 		infileSessionData.forEach((infile, sessionData) -> allSessions.put(sessionData, infile));
 
 		final Stream<Entry<SessionDataManager, Map<String, Instances>>> testSets = testSetFactory.apply(allSessions);
+		final TestResults result = new TestResults(allSessions.size());
 		for (final Iterator<Entry<SessionDataManager, Map<String, Instances>>> testSetIter = testSets
 				.iterator(); testSetIter.hasNext();) {
 			final Entry<SessionDataManager, Map<String, Instances>> testSet = testSetIter.next();
@@ -194,7 +279,7 @@ public final class WordsAsClassifiersCrossValidationTester {
 
 			final Map<String, Instances> classInstances = testSet.getValue();
 			final Instances oovInstances = smoother.redistributeMass(classInstances);
-			LOGGER.info("{} instances for out-of-vocabulary class.", oovInstances.size());
+			LOGGER.debug("{} instances for out-of-vocabulary class.", oovInstances.size());
 
 			final Map<String, Logistic> wordClassifiers = createWordClassifierMap(classInstances.entrySet());
 			tester.setWordClassifiers(wordClassifiers::get);
@@ -211,8 +296,12 @@ public final class WordsAsClassifiersCrossValidationTester {
 			}
 			final Instances testInsts = testInstsFactory.apply(TEST_INSTS_REL_NAME, initialCapacity);
 			tester.setTestInsts(testInsts);
-			tester.test(testSessionData);
+			final SessionTestResults testResults = tester.testSession(testSessionData);
+			final Path infilePath = allSessions.get(testSessionData);
+			result.sessionResults.put(infilePath, testResults);
+			result.totalResults.add(testResults);
 		}
+		return result;
 	}
 
 }
