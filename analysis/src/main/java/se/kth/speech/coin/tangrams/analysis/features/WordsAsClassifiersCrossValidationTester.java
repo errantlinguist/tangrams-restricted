@@ -230,12 +230,19 @@ public final class WordsAsClassifiersCrossValidationTester {
 		return result;
 	}
 
-	private static long estimateTestInstanceCount(final SessionDataManager sessionData) throws IOException {
+	private static int estimateTestInstanceCount(final SessionDataManager sessionData) throws IOException {
 		final long lineCount = Files.lines(sessionData.getCanonicalEventLogPath()).count();
 		// Number of logged events * estimated number of entities per game *
 		// estimated number of utterances per dialogue * estimated number of
 		// tokens (i.e. n-grams) per dialogue
-		return lineCount * 20 * 4 * 20;
+		final long estimate = lineCount * 20 * 4 * 20;
+		int result = Integer.MAX_VALUE;
+		try {
+			result = Math.toIntExact(estimate);
+		} catch (final ArithmeticException e) {
+			LOGGER.debug(String.format("Could not convert long value \"%d\" to an int; Returning max.", estimate), e);
+		}
+		return result;
 	}
 
 	private static void printResults(final TestResults testResults, final PrintWriter out) {
@@ -285,17 +292,8 @@ public final class WordsAsClassifiersCrossValidationTester {
 			final Map<String, Logistic> wordClassifiers = createWordClassifierMap(classInstances.entrySet());
 			tester.setWordClassifiers(wordClassifiers::get);
 
-			int initialCapacity = Integer.MAX_VALUE;
-			{
-				final long estimatedInstCount = estimateTestInstanceCount(testSessionData);
-				try {
-					initialCapacity = Math.toIntExact(estimatedInstCount);
-				} catch (final ArithmeticException e) {
-					LOGGER.debug(String.format("Could not convert long value \"%d\" to an int; Returning max.",
-							estimatedInstCount), e);
-				}
-			}
-			final Instances testInsts = testInstsFactory.apply(TEST_INSTS_REL_NAME, initialCapacity);
+			final Instances testInsts = testInstsFactory.apply(TEST_INSTS_REL_NAME,
+					estimateTestInstanceCount(testSessionData));
 			tester.setTestInsts(testInsts);
 			final SessionTestResults testResults = tester.testSession(testSessionData);
 			final Path infilePath = allSessions.get(testSessionData);
