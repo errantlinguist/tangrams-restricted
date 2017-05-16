@@ -138,7 +138,7 @@ public final class WordsAsClassifiersCrossValidationTrainingDataWriter {
 				LOGGER.info("Will write data to \"{}\".", outpath);
 				final String outfileExt = Parameter.parseOutputType(cl);
 				LOGGER.info("Will write data in \"*{}\" format.", outfileExt);
-				try (final ClassPathXmlApplicationContext appCtx = new ClassPathXmlApplicationContext("extraction.xml",
+				try (final ClassPathXmlApplicationContext appCtx = new ClassPathXmlApplicationContext("entity-feature-extraction.xml",
 						WordsAsClassifiersCrossValidationTrainingDataWriter.class)) {
 					final WordsAsClassifiersCrossValidationTrainingDataWriter writer = appCtx
 							.getBean(WordsAsClassifiersCrossValidationTrainingDataWriter.class, outpath, outfileExt);

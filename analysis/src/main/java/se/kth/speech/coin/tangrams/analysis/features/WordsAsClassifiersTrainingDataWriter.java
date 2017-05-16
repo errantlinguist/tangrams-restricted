@@ -138,7 +138,7 @@ public final class WordsAsClassifiersTrainingDataWriter {
 				final String outfileExt = Parameter.parseOutputType(cl);
 				LOGGER.info("Will write data in \"*{}\" format.", outfileExt);
 
-				try (final ClassPathXmlApplicationContext appCtx = new ClassPathXmlApplicationContext("extraction.xml",
+				try (final ClassPathXmlApplicationContext appCtx = new ClassPathXmlApplicationContext("entity-feature-extraction.xml",
 						WordsAsClassifiersTrainingDataWriter.class)) {
 					final WordsAsClassifiersTrainingDataWriter writer = appCtx
 							.getBean(WordsAsClassifiersTrainingDataWriter.class);

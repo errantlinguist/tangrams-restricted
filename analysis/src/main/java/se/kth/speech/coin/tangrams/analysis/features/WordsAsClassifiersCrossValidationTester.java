@@ -170,7 +170,7 @@ public final class WordsAsClassifiersCrossValidationTester {
 				throw new MissingOptionException("No input path(s) specified.");
 
 			} else {
-				try (final ClassPathXmlApplicationContext appCtx = new ClassPathXmlApplicationContext("extraction.xml",
+				try (final ClassPathXmlApplicationContext appCtx = new ClassPathXmlApplicationContext("entity-feature-extraction.xml",
 						WordsAsClassifiersCrossValidationTester.class)) {
 					final WordsAsClassifiersCrossValidationTester bean = appCtx
 							.getBean(WordsAsClassifiersCrossValidationTester.class);
