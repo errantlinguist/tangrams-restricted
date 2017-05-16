@@ -32,9 +32,43 @@ public final class EventDialogue {
 
 	private final List<Utterance> utts;
 
-	public EventDialogue( final Optional<Event> lastEvent, final List<Utterance> utts) {
+	public EventDialogue(final Optional<Event> lastEvent, final List<Utterance> utts) {
 		this.lastEvent = lastEvent;
 		this.utts = utts;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(final Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (!(obj instanceof EventDialogue)) {
+			return false;
+		}
+		final EventDialogue other = (EventDialogue) obj;
+		if (lastEvent == null) {
+			if (other.lastEvent != null) {
+				return false;
+			}
+		} else if (!lastEvent.equals(other.lastEvent)) {
+			return false;
+		}
+		if (utts == null) {
+			if (other.utts != null) {
+				return false;
+			}
+		} else if (!utts.equals(other.utts)) {
+			return false;
+		}
+		return true;
 	}
 
 	/**
@@ -49,6 +83,36 @@ public final class EventDialogue {
 	 */
 	public List<Utterance> getUtts() {
 		return utts;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + (lastEvent == null ? 0 : lastEvent.hashCode());
+		result = prime * result + (utts == null ? 0 : utts.hashCode());
+		return result;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		final StringBuilder builder = new StringBuilder();
+		builder.append("EventDialogue [lastEvent=");
+		builder.append(lastEvent);
+		builder.append(", utts=");
+		builder.append(utts);
+		builder.append("]");
+		return builder.toString();
 	}
 
 }
