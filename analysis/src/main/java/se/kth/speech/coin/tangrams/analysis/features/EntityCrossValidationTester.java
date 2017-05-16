@@ -124,8 +124,6 @@ public final class EntityCrossValidationTester {
 
 	private static final Comparator<Entry<Integer, Double>> NBEST_COMPARATOR;
 
-	private static final String TRUE_REFERENT_CLASS_VAL = Boolean.TRUE.toString();
-
 	static {
 		final Comparator<Entry<Integer, Double>> scoreCmp = Comparator.comparing(Entry::getValue);
 		NBEST_COMPARATOR = scoreCmp.reversed();
@@ -257,7 +255,7 @@ public final class EntityCrossValidationTester {
 				try {
 					final double val = classifier.classifyInstance(testInst);
 					final Object classVal = getNominalClassValue(testInst, val);
-					if (TRUE_REFERENT_CLASS_VAL.equals(classVal)) {
+					if (Boolean.TRUE.toString().equals(classVal)) {
 						confidenceSum += 1;
 					}
 				} catch (final Exception e) {

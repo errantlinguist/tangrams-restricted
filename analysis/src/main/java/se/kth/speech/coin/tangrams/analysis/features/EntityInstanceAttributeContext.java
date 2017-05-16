@@ -18,6 +18,7 @@ package se.kth.speech.coin.tangrams.analysis.features;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 
 import weka.core.Attribute;
@@ -29,8 +30,17 @@ import weka.core.Attribute;
  */
 public final class EntityInstanceAttributeContext {
 
-	public static Attribute createClassAttr(final String classAttrName) {
-		return new Attribute(classAttrName, Arrays.asList(Boolean.TRUE.toString(), Boolean.FALSE.toString()));
+	private static final List<String> CLASS_VALUES = Arrays.asList(Boolean.TRUE.toString(), Boolean.FALSE.toString());
+
+	/**
+	 * @return the classValues
+	 */
+	public static List<String> getClassValues() {
+		return CLASS_VALUES;
+	}
+
+	private static Attribute createClassAttr(final String classAttrName) {
+		return new Attribute(classAttrName, CLASS_VALUES);
 	}
 
 	private final ArrayList<Attribute> attrs;
