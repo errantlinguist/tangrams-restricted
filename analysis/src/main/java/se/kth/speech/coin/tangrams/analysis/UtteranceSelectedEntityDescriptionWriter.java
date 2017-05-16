@@ -221,6 +221,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 				LOGGER.info("Will write data to \"{}\".", outpath);
 				final boolean strict = cl.hasOption(Parameter.STRICT.optName);
 				for (final Path inpath : inpaths) {
+					LOGGER.info("Will read batch job data from \"{}\".", inpath);
 					final String outfileNamePrefix = Parameter.parseOutfilePrefix(cl, inpath);
 					LOGGER.info("Will prefix each output file for input \"{}\" with \"{}\".", inpath,
 							outfileNamePrefix);
@@ -228,7 +229,6 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 					try (final ClassPathXmlApplicationContext appCtx = createAppCtx()) {
 						final UtteranceSelectedEntityDescriptionWriter writer = getWriterBean(appCtx, outpath,
 								outfileNamePrefix, strict);
-						LOGGER.info("Will read batch job data from \"{}\".", inpath);
 						writer.accept(inpath);
 					}
 				}
@@ -303,7 +303,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 		fileChooser.setDialogTitle("Input file");
 		fileChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
 		UserPrompts.promptFile(fileChooser).map(File::toPath).ifPresent(inpath -> {
-			LOGGER.info("Will read annotations from \"{}\".", inpath);
+			LOGGER.info("Will read batch job data from \"{}\".", inpath);
 			fileChooser.setDialogTitle("Output dir");
 			fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
 			FILE_FILTERS.stream().forEachOrdered(fileChooser::removeChoosableFileFilter);
@@ -318,7 +318,6 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 							try (final ClassPathXmlApplicationContext appCtx = createAppCtx()) {
 								final UtteranceSelectedEntityDescriptionWriter writer = getWriterBean(appCtx, outpath,
 										outfileNamePrefix, false);
-								LOGGER.info("Will read batch job data from \"{}\".", inpath);
 								writer.accept(inpath);
 							} catch (final JAXBException e) {
 								throw new RuntimeException(e);
