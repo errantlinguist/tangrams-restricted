@@ -134,8 +134,7 @@ public final class EntityCrossValidationTester {
 		return result;
 	}
 
-	private static double findNbestRank(final NavigableMap<Double, Set<Integer>> nbestGroups,
-			final Integer entityId) {
+	private static double findNbestRank(final NavigableMap<Double, Set<Integer>> nbestGroups, final Integer entityId) {
 		double bestRankForTiedGroup = 1.0;
 		Set<Integer> tiedEntityIds = null;
 		for (final Entry<Double, Set<Integer>> nbestGroup : nbestGroups.entrySet()) {
@@ -293,16 +292,9 @@ public final class EntityCrossValidationTester {
 								.sorted(NBEST_COMPARATOR).collect(Collectors
 										.toCollection(() -> new ArrayList<>(entityReferenceConfidenceVals.size())));
 						final NavigableMap<Double, Set<Integer>> nbestGroups = createNbestGroupMap(nbestVals);
-						
-						final Optional<Integer> optEntityId = uttCtx.findLastSelectedEntityId();
-						final double rank;
-						if (optEntityId.isPresent()) {
-							final Integer entityId = optEntityId.get();
 
-							rank = findNbestRank(nbestGroups, entityId);
-						} else {
-							rank = nbestGroups.size() + 1;
-						}
+						final Integer entityId = uttCtx.findLastSelectedEntityId().get();
+						final double rank = findNbestRank(nbestGroups, entityId);
 						LOGGER.debug("Rank of correct entity: {}", rank);
 						testResults.rankSum += rank;
 					} catch (final ClassificationException e) {
