@@ -65,6 +65,8 @@
 		class="se.kth.speech.coin.tangrams.analysis.features.WordsAsClassifiersInstancesMapFactory" />
 
 	<bean id="words-as-classifiers-data-writer" class="se.kth.speech.coin.tangrams.analysis.features.WordsAsClassifiersTrainingDataWriter" />
+	
+	<bean id="words-as-classifiers-cross-validation-data-factory" class="se.kth.speech.coin.tangrams.analysis.features.WordsAsClassifiersCrossValidationTestSetFactory" />
 
 	<bean id="words-as-classifiers-cross-validation-data-writer"
 		class="se.kth.speech.coin.tangrams.analysis.features.WordsAsClassifiersCrossValidationTrainingDataWriter"

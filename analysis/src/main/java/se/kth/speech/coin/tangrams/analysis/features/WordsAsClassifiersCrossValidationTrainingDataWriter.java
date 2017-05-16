@@ -18,20 +18,16 @@ package se.kth.speech.coin.tangrams.analysis.features;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
-import java.util.function.BiFunction;
-import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.inject.Inject;
@@ -49,15 +45,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
-import com.google.common.collect.Maps;
-
-import se.kth.speech.coin.tangrams.analysis.EventDialogue;
-import se.kth.speech.coin.tangrams.analysis.GameHistory;
 import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
-import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManager;
-import se.kth.speech.coin.tangrams.analysis.Utterance;
 import se.kth.speech.io.FileNames;
-import weka.classifiers.functions.Logistic;
 import weka.core.Instances;
 import weka.core.converters.AbstractFileSaver;
 import weka.core.converters.ConverterUtils;
@@ -169,113 +158,37 @@ public final class WordsAsClassifiersCrossValidationTrainingDataWriter {
 		}
 	}
 
-	private static Logistic createWordClassifier(final Instances data) throws TrainingException {
-		final Logistic result = new Logistic();
-		try {
-			result.buildClassifier(data);
-		} catch (final Exception e) {
-			throw new TrainingException(e);
-		}
-		return result;
-	}
-
-	private static Map<String, Logistic> createWordClassifierMap(final Set<Entry<String, Instances>> classInstances)
-			throws TrainingException {
-		final Map<String, Logistic> result = Maps.newHashMapWithExpectedSize(classInstances.size());
-		for (final Entry<String, Instances> classInstancesEntry : classInstances) {
-			final String className = classInstancesEntry.getKey();
-			LOGGER.debug("Training classifier for class \"{}\".", className);
-			final Instances trainingInsts = classInstancesEntry.getValue();
-			final Logistic classifier = createWordClassifier(trainingInsts);
-			final Logistic oldClassifier = result.put(className, classifier);
-			if (oldClassifier != null) {
-				throw new IllegalArgumentException(
-						String.format("More than one file for word class \"%s\".", className));
-			}
-			LOGGER.debug("{} instance(s) for class \"{}\".", trainingInsts.size(), className);
-		}
-		return result;
-	}
-
-	private static long estimateTestInstanceCount(final SessionDataManager sessionData) throws IOException {
-		final long lineCount = Files.lines(sessionData.getCanonicalEventLogPath()).count();
-		// Estimated number of entities per game * estimate number of tokens
-		// (i.e. n-grams) per utterance dialogue
-		return lineCount * 20 * 20;
-	}
-
-	@Inject
-	private EntityInstanceAttributeContext entInstAttrCtx;
-
-	@Inject
-	private BiFunction<ListIterator<Utterance>, GameHistory, Stream<EventDialogue>> eventDiagFactory;
-
-	@Inject
-	private Function<Collection<SessionEventDialogueManager>, Map<String, Instances>> instancesFactory;
-
 	private File outdir;
 
 	private String outfileExt;
 
 	@Inject
-	private EntityCrossValidationTester tester;
+	private WordsAsClassifiersCrossValidationTestSetFactory testSetFactory;
 
 	public void accept(final Iterable<Path> inpaths) throws IOException, JAXBException, TrainingException {
 		final Map<Path, SessionDataManager> infileSessionData = SessionDataManager.createFileSessionDataMap(inpaths);
-		final Collection<SessionDataManager> allSessions = infileSessionData.values();
+		final Map<SessionDataManager, Path> allSessions = infileSessionData.entrySet().stream()
+				.collect(Collectors.toMap(Entry::getValue, Entry::getKey));
+		infileSessionData.forEach((infile, sessionData) -> allSessions.put(sessionData, infile));
 		final Map<Path, String> infilePathOutdirNames = FileNames
 				.createMinimalPathLeafNameMap(infileSessionData.keySet(), fileName -> {
 					final String base = FileNames.splitBase(fileName)[0];
 					return FileNames.sanitize(base, "-");
 				});
-		for (final Entry<Path, SessionDataManager> testSessionDataEntry : infileSessionData.entrySet()) {
-			final Path testSessionDataFilePath = testSessionDataEntry.getKey();
-			LOGGER.info("Creating {}-fold cross-validation set for testing on session data from \"{}\".",
-					allSessions.size(), testSessionDataFilePath);
 
-			final String subsampleDirname = infilePathOutdirNames.get(testSessionDataFilePath);
-			final File subsampleDir = new File(outdir, subsampleDirname);
-			LOGGER.info("Will write validation data to \"{}\".", subsampleDir);
-			if (subsampleDir.mkdirs()) {
-				LOGGER.debug("Subsample directory \"{}\" was nonexistent; Created it before writing data.",
-						subsampleDir);
-			}
+		final Stream<Entry<SessionDataManager, Map<String, Instances>>> testSets = testSetFactory.apply(allSessions);
+		for (final Iterator<Entry<SessionDataManager, Map<String, Instances>>> testSetIter = testSets
+				.iterator(); testSetIter.hasNext();) {
+			final Entry<SessionDataManager, Map<String, Instances>> testSet = testSetIter.next();
+			final SessionDataManager testSessionData = testSet.getKey();
+			final Map<String, Instances> classInstances = testSet.getValue();
 
-			final SessionDataManager testSessionData = testSessionDataEntry.getValue();
-
-			final Map<String, Instances> classInstances;
-			{
-				final SessionDataManager[] trainingSessionData = allSessions.stream()
-						.filter(sessionData -> !sessionData.equals(testSessionData)).toArray(SessionDataManager[]::new);
-				final List<SessionEventDialogueManager> trainingSessionEvtDiagMgrs = new ArrayList<>(
-						trainingSessionData.length);
-				for (final SessionDataManager trainingSessionDatum : trainingSessionData) {
-					final SessionEventDialogueManager sessionEventDiagMgr = new SessionEventDialogueManager(
-							trainingSessionDatum, eventDiagFactory);
-					trainingSessionEvtDiagMgrs.add(sessionEventDiagMgr);
-				}
-				classInstances = instancesFactory.apply(trainingSessionEvtDiagMgrs);
-			}
-			LOGGER.info("Read training data for {} class(es).", classInstances.size());
-			final Map<String, Logistic> wordClassifiers = createWordClassifierMap(classInstances.entrySet());
-			tester.setWordClassifiers(wordClassifiers::get);
-
-			int initialCapacity = Integer.MAX_VALUE;
-			{
-				final long estimatedInstCount = estimateTestInstanceCount(testSessionData);
-				try {
-					initialCapacity = Math.toIntExact(estimatedInstCount);
-				} catch (final ArithmeticException e) {
-					LOGGER.debug(String.format("Could not convert long value \"%d\" to an int; Returning max.",
-							estimatedInstCount), e);
-				}
-			}
-			final Instances testInsts = new Instances("tested_entites", entInstAttrCtx.getAttrs(), initialCapacity);
-			testInsts.setClass(entInstAttrCtx.getClassAttr());
-			tester.setTestInsts(testInsts);
-			tester.test(testSessionData);
+			final Path sessionInpath = allSessions.get(testSessionData);
+			final String subsampleDirname = infilePathOutdirNames.get(sessionInpath);
+			final File subsampleDir = createSubsampleDir(subsampleDirname);
+			LOGGER.debug("Writing data for {} classes to \"{}\".", classInstances.size(), subsampleDir);
+			persist(classInstances.entrySet(), subsampleDir);
 		}
-
 		LOGGER.info("Finished writing {} cross-validation dataset(s) to \"{}\".", infileSessionData.size(), outdir);
 	}
 
@@ -293,6 +206,15 @@ public final class WordsAsClassifiersCrossValidationTrainingDataWriter {
 	 */
 	public void setOutfileExt(final String outfileExt) {
 		this.outfileExt = outfileExt;
+	}
+
+	private File createSubsampleDir(final String subsampleDirname) {
+		final File result = new File(outdir, subsampleDirname);
+		LOGGER.info("Will write validation data to \"{}\".", result);
+		if (result.mkdirs()) {
+			LOGGER.debug("Subsample directory \"{}\" was nonexistent; Created it before writing data.", result);
+		}
+		return result;
 	}
 
 	private void persist(final Collection<Entry<String, Instances>> classInstances, final File subsampleDir)

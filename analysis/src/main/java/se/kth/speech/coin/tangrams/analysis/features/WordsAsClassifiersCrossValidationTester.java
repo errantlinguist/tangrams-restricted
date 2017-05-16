@@ -17,20 +17,20 @@
 package se.kth.speech.coin.tangrams.analysis.features;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.function.Supplier;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import javax.inject.Inject;
 import javax.xml.bind.JAXBException;
 
 import org.apache.commons.cli.CommandLine;
@@ -43,15 +43,13 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import com.google.common.collect.Maps;
 
+import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
 import weka.classifiers.functions.Logistic;
-import weka.core.Attribute;
-import weka.core.Instance;
 import weka.core.Instances;
-import weka.core.converters.AbstractFileLoader;
-import weka.core.converters.ConverterUtils;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -93,31 +91,13 @@ public final class WordsAsClassifiersCrossValidationTester {
 
 	}
 
-	private static class TestDescription {
+	public static final String TEST_FILE_NAME_BASE = "test";
 
-		private final Map<Path, String> testFiles;
-
-		private final Map<Path, String> trainingFiles;
-
-		private TestDescription(final Map<Path, String> trainingFiles, final Map<Path, String> testFiles) {
-			this.trainingFiles = trainingFiles;
-			this.testFiles = testFiles;
-		}
-	}
-
-	private static final String CLASS_ATTR_NAME = "IS_REFERENT";
+	public static final String TRAINING_FILE_NAME_PREFIX = "train-";
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(WordsAsClassifiersCrossValidationTester.class);
 
-	private static final Pattern TEST_FILE_NAME_PATTERN = Pattern.compile(
-			Pattern.quote(WordsAsClassifiersCrossValidationTrainingDataWriter.TEST_FILE_NAME_BASE) + "(\\..+)");
-
-	private static final Pattern TRAINING_FILE_NAME_PATTERN = Pattern
-			.compile(Pattern.quote(WordsAsClassifiersCrossValidationTrainingDataWriter.TRAINING_FILE_NAME_PREFIX)
-					+ "(.+?)(\\..+)");
-
-	public static void main(final CommandLine cl)
-			throws IOException, JAXBException, ParseException, TrainingException, ClassificationException {
+	public static void main(final CommandLine cl) throws IOException, JAXBException, ParseException, TrainingException {
 		if (cl.hasOption(Parameter.HELP.optName)) {
 			Parameter.printHelp();
 		} else {
@@ -126,16 +106,17 @@ public final class WordsAsClassifiersCrossValidationTester {
 				throw new MissingOptionException("No input path(s) specified.");
 
 			} else {
-				final WordsAsClassifiersCrossValidationTester writer = new WordsAsClassifiersCrossValidationTester();
-				for (final Path inpath : inpaths) {
-					writer.accept(inpath);
+				try (final ClassPathXmlApplicationContext appCtx = new ClassPathXmlApplicationContext("extraction.xml",
+						WordsAsClassifiersCrossValidationTester.class)) {
+					final WordsAsClassifiersCrossValidationTester bean = appCtx
+							.getBean(WordsAsClassifiersCrossValidationTester.class);
+					bean.accept(inpaths);
 				}
 			}
 		}
 	}
 
-	public static void main(final String[] args)
-			throws IOException, JAXBException, TrainingException, ClassificationException {
+	public static void main(final String[] args) throws IOException, JAXBException, TrainingException {
 		final CommandLineParser parser = new DefaultParser();
 		try {
 			final CommandLine cl = parser.parse(Parameter.OPTIONS, args);
@@ -144,30 +125,6 @@ public final class WordsAsClassifiersCrossValidationTester {
 			System.out.println(String.format("An error occured while parsing the command-line arguments: %s", e));
 			Parameter.printHelp();
 		}
-	}
-
-	private static TestDescription createTestDescription(final Path indir) throws IOException {
-		LOGGER.info("Creating test description for directory \"{}\".", indir);
-		final List<Path> dirFiles = Arrays.asList(Files.list(indir).filter(Files::isRegularFile).toArray(Path[]::new));
-		final Map<Path, String> trainingFiles = new HashMap<>();
-		final Map<Path, String> testFiles = new HashMap<>();
-		for (final Path dirFile : dirFiles) {
-			final String dirFileName = dirFile.getFileName().toString();
-			final Matcher trainingFileMatcher = TRAINING_FILE_NAME_PATTERN.matcher(dirFileName);
-			if (trainingFileMatcher.matches()) {
-				final String ext = trainingFileMatcher.group(2);
-				trainingFiles.put(dirFile, ext);
-			} else {
-				final Matcher testFileMatcher = TEST_FILE_NAME_PATTERN.matcher(dirFileName);
-				if (testFileMatcher.matches()) {
-					final String ext = testFileMatcher.group(1);
-					testFiles.put(dirFile, ext);
-				}
-			}
-		}
-		assert !testFiles.isEmpty();
-		assert !trainingFiles.isEmpty();
-		return new TestDescription(trainingFiles, testFiles);
 	}
 
 	private static Logistic createWordClassifier(final Instances data) throws TrainingException {
@@ -180,82 +137,70 @@ public final class WordsAsClassifiersCrossValidationTester {
 		return result;
 	}
 
-	private static Map<String, Logistic> createWordClassifierMap(final Map<Path, String> trainingFiles)
-			throws IOException, TrainingException {
-		final Map<String, Logistic> result = Maps.newHashMapWithExpectedSize(trainingFiles.size());
-		for (final Entry<Path, String> trainingFileDesc : trainingFiles.entrySet()) {
-			final Path infile = trainingFileDesc.getKey();
-			final String ext = trainingFileDesc.getValue();
-			LOGGER.info("Training model from \"{}\".", infile);
-			final AbstractFileLoader loader = ConverterUtils.getLoaderForExtension(ext);
-			loader.setSource(infile.toFile());
-			final Instances structure = loader.getStructure();
-			final Attribute classAttr = structure.attribute(CLASS_ATTR_NAME);
-			structure.setClassIndex(classAttr.index());
-			for (Instance nextInst = loader.getNextInstance(structure); nextInst != null; nextInst = loader
-					.getNextInstance(structure)) {
-				structure.add(nextInst);
-			}
-			final String className = WordsAsClassifiersInstancesMapFactory
-					.parseRelationClassName(structure.relationName());
-			final Logistic classifier = createWordClassifier(structure);
+	private static Map<String, Logistic> createWordClassifierMap(final Set<Entry<String, Instances>> classInstances)
+			throws TrainingException {
+		final Map<String, Logistic> result = Maps.newHashMapWithExpectedSize(classInstances.size());
+		for (final Entry<String, Instances> classInstancesEntry : classInstances) {
+			final String className = classInstancesEntry.getKey();
+			LOGGER.debug("Training classifier for class \"{}\".", className);
+			final Instances trainingInsts = classInstancesEntry.getValue();
+			final Logistic classifier = createWordClassifier(trainingInsts);
 			final Logistic oldClassifier = result.put(className, classifier);
 			if (oldClassifier != null) {
 				throw new IllegalArgumentException(
 						String.format("More than one file for word class \"%s\".", className));
 			}
-			LOGGER.info("{} instance(s) for class \"{}\".", structure.numInstances(), className);
+			LOGGER.debug("{} instance(s) for class \"{}\".", trainingInsts.size(), className);
 		}
 		return result;
 	}
 
-	private static boolean isTestDir(final Path dir) throws IOException {
-		final List<Path> dirFiles = Arrays.asList(Files.list(dir).filter(Files::isRegularFile).toArray(Path[]::new));
-		final boolean containsTestFiles = dirFiles.stream()
-				.anyMatch(filePath -> TEST_FILE_NAME_PATTERN.matcher(filePath.getFileName().toString()).matches());
-		return containsTestFiles && dirFiles.stream()
-				.anyMatch(filePath -> TRAINING_FILE_NAME_PATTERN.matcher(filePath.getFileName().toString()).matches());
+	private static long estimateTestInstanceCount(final SessionDataManager sessionData) throws IOException {
+		final long lineCount = Files.lines(sessionData.getCanonicalEventLogPath()).count();
+		// Estimated number of entities per game * estimate number of tokens
+		// (i.e. n-grams) per utterance dialogue
+		return lineCount * 20 * 20;
 	}
 
-	public void accept(final Path inpath) throws IOException, TrainingException, ClassificationException {
-		LOGGER.info("Looking for training/testing data under \"{}\".", inpath);
-		final Path[] indirs = Files.walk(inpath, FileVisitOption.FOLLOW_LINKS).filter(Files::isDirectory)
-				.filter(dirPath -> {
-					try {
-						return isTestDir(dirPath);
-					} catch (final IOException e) {
-						throw new UncheckedIOException(e);
-					}
-				}).toArray(Path[]::new);
+	@Inject
+	private EntityInstanceAttributeContext entInstAttrCtx;
 
-		for (final Path indir : indirs) {
-			final TestDescription testDesc = createTestDescription(indir);
-			final Map<String, Logistic> wordClassifiers = createWordClassifierMap(testDesc.trainingFiles);
-			// for (final Entry<Path, String> testFilePathExt :
-			// testDesc.testFiles.entrySet()) {
-			// final AbstractFileLoader loader =
-			// ConverterUtils.getLoaderForExtension(testFilePathExt.getValue());
-			// loader.setSource(testFilePathExt.getKey().toFile());
-			// final Instances testStruct = loader.getStructure();
-			// final Attribute classAttr = testStruct
-			// .attribute(WordsAsClassifiersInstancesMapFactory.getClassAttrName());
-			// testStruct.setClassIndex(classAttr.index());
-			// for (Instance nextInst = loader.getNextInstance(testStruct);
-			// nextInst != null; nextInst = loader
-			// .getNextInstance(testStruct)) {
-			// try {
-			// final double classification =
-			// wordClassifier.classifyInstance(nextInst);
-			// LOGGER.info("Classification: " + classification);
-			// } catch (final Exception e) {
-			// throw new ClassificationException(e);
-			// }
-			// testStruct.add(nextInst);
-			// }
-			// }
-			//
-			// final String testInfileStr = "C:\\Users\\tcshore\\Box
-			// Sync\\tangrams-restricted\\Ready\\20170329-1641-arvid-lutfisk\\events.lutfisk.txt";
+	@Inject
+	private EntityCrossValidationTester tester;
+
+	@Inject
+	private WordsAsClassifiersCrossValidationTestSetFactory testSetFactory;
+
+	public void accept(final Iterable<Path> inpaths) throws IOException, JAXBException, TrainingException {
+		final Map<Path, SessionDataManager> infileSessionData = SessionDataManager.createFileSessionDataMap(inpaths);
+		final Map<SessionDataManager, Path> allSessions = infileSessionData.entrySet().stream()
+				.collect(Collectors.toMap(Entry::getValue, Entry::getKey));
+		infileSessionData.forEach((infile, sessionData) -> allSessions.put(sessionData, infile));
+		
+		final Stream<Entry<SessionDataManager, Map<String, Instances>>> testSets = testSetFactory.apply(allSessions);
+		for (final Iterator<Entry<SessionDataManager, Map<String, Instances>>> testSetIter = testSets
+				.iterator(); testSetIter.hasNext();) {
+			final Entry<SessionDataManager, Map<String, Instances>> testSet = testSetIter.next();
+			final SessionDataManager testSessionData = testSet.getKey();
+			final Map<String, Instances> classInstances = testSet.getValue();
+			final Map<String, Logistic> wordClassifiers = createWordClassifierMap(classInstances.entrySet());
+			tester.setWordClassifiers(wordClassifiers::get);
+
+			int initialCapacity = Integer.MAX_VALUE;
+			{
+				final long estimatedInstCount = estimateTestInstanceCount(testSessionData);
+				try {
+					initialCapacity = Math.toIntExact(estimatedInstCount);
+				} catch (final ArithmeticException e) {
+					LOGGER.debug(String.format("Could not convert long value \"%d\" to an int; Returning max.",
+							estimatedInstCount), e);
+				}
+			}
+			final Instances testInsts = new Instances("tested_entites", entInstAttrCtx.getAttrs(), initialCapacity);
+			testInsts.setClass(entInstAttrCtx.getClassAttr());
+			tester.setTestInsts(testInsts);
+			tester.test(testSessionData);
 		}
 	}
+
 }
