@@ -189,6 +189,8 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 
 	private static final String DEFAULT_OUTFILE_PREFIX = "";
 
+	private static final String FEATURES_TO_DESCRIBE_BEAN_ID = "features-to-describe";
+
 	private static final List<FileNameExtensionFilter> FILE_FILTERS;
 
 	private static final Path SETTINGS_DIR;
@@ -265,7 +267,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 	private static UtteranceSelectedEntityDescriptionWriter getWriterBean(final ClassPathXmlApplicationContext appCtx,
 			final Path outpath, final String outfileNamePrefix, final boolean strict) {
 		@SuppressWarnings("unchecked")
-		final List<EntityFeature> featuresToDescribe = appCtx.getBean("features-to-describe", List.class);
+		final List<EntityFeature> featuresToDescribe = appCtx.getBean(FEATURES_TO_DESCRIBE_BEAN_ID, List.class);
 		return appCtx.getBean(UtteranceSelectedEntityDescriptionWriter.class, featuresToDescribe, outpath,
 				outfileNamePrefix, strict);
 	}
