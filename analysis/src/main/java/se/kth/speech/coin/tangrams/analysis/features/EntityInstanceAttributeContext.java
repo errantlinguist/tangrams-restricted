@@ -29,13 +29,27 @@ import weka.core.Attribute;
  */
 public final class EntityInstanceAttributeContext {
 
-	private final EntityFeature.Extractor extractor;
-
-	private final String classAttrName;
+	public static Attribute createClassAttr(final String classAttrName) {
+		return new Attribute(classAttrName, Arrays.asList(Boolean.TRUE.toString(), Boolean.FALSE.toString()));
+	}
 
 	private final ArrayList<Attribute> attrs;
 
 	private final Attribute classAttr;
+
+	private final String classAttrName;
+
+	private final EntityFeature.Extractor extractor;
+
+	public EntityInstanceAttributeContext(final EntityFeature.Extractor extractor, final String classAttrName) {
+		this.extractor = extractor;
+		this.classAttrName = classAttrName;
+		final Map<EntityFeature, Attribute> featureAttrs = extractor.getFeatureAttrs();
+		attrs = new ArrayList<>(featureAttrs.size() + 1);
+		attrs.addAll(featureAttrs.values());
+		classAttr = createClassAttr(classAttrName);
+		attrs.add(classAttr);
+	}
 
 	/**
 	 * @return the attrs
@@ -49,23 +63,6 @@ public final class EntityInstanceAttributeContext {
 	 */
 	public Attribute getClassAttr() {
 		return classAttr;
-	}
-
-	public EntityInstanceAttributeContext(final EntityFeature.Extractor extractor, final String classAttrName) {
-		this.extractor = extractor;
-		this.classAttrName = classAttrName;
-		final Map<EntityFeature, Attribute> featureAttrs = extractor.getFeatureAttrs();
-		this.attrs = new ArrayList<>(featureAttrs.size() + 1);
-		attrs.addAll(featureAttrs.values());
-		this.classAttr = createClassAttr(classAttrName);
-		attrs.add(classAttr);
-	}
-
-	/**
-	 * @return the classAttr
-	 */
-	public static Attribute createClassAttr(String classAttrName) {
-		return new Attribute(classAttrName, Arrays.asList(Boolean.TRUE.toString(), Boolean.FALSE.toString()));
 	}
 
 	/**
