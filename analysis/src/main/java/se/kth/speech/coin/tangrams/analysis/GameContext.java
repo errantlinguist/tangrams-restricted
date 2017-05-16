@@ -17,6 +17,7 @@
 package se.kth.speech.coin.tangrams.analysis;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumMap;
@@ -27,7 +28,6 @@ import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.OptionalInt;
-import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -83,7 +83,7 @@ public final class GameContext {
 		return map.descendingMap().values().stream().map(Lists::reverse).flatMap(List::stream);
 	}
 
-	private final Set<Integer> entityIds;
+	private final List<Integer> entityIds;
 
 	private final GameHistory history;
 
@@ -95,7 +95,7 @@ public final class GameContext {
 		this.history = history;
 		this.time = time;
 		this.perspectivePlayerId = perspectivePlayerId;
-		entityIds = createEntityIdSet();
+		entityIds = createEntityIdList();
 	}
 
 	public Map<EntityStatus, Map<Integer, ImageVisualizationInfoDescription.Datum>> createEntityStatusVisualizationInfoMap() {
@@ -261,8 +261,8 @@ public final class GameContext {
 		return initialState.getImageVisualizationInfoDescription().getData().size();
 	}
 
-	public Set<Integer> getEntityIds() {
-		return Collections.unmodifiableSet(entityIds);
+	public List<Integer> getEntityIds() {
+		return Collections.unmodifiableList(entityIds);
 	}
 
 	public List<ImageVisualizationInfoDescription.Datum> getEntityVisualizationInfo() {
@@ -332,7 +332,8 @@ public final class GameContext {
 		return builder.toString();
 	}
 
-	private Set<Integer> createEntityIdSet() {
-		return IntStream.range(0, getEntityCount()).boxed().collect(Collectors.toSet());
+	private List<Integer> createEntityIdList() {
+		int entityCount = getEntityCount();
+		return IntStream.range(0, entityCount).boxed().collect(Collectors.toCollection(() -> new ArrayList<>(entityCount)));
 	}
 }
