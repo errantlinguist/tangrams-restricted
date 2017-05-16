@@ -127,7 +127,7 @@ public final class LoggedEventTimeStretcher {
 			}
 			case 1: {
 				final Path inpath = inpaths[0];
-				LOGGER.info("Will read annotations from \"{}\".", inpath);
+				LOGGER.info("Will read event log data from \"{}\".", inpath);
 				final BigDecimal stretchFactor = new BigDecimal(cl.getOptionValue(Parameter.FACTOR.optName));
 				LOGGER.info("Will stretch logged events by a factor of {}.", stretchFactor);
 				try (final PrintWriter out = Parameter.parseOutpath(cl)) {
@@ -159,7 +159,7 @@ public final class LoggedEventTimeStretcher {
 
 	private static void run(final Path inpath, final BigDecimal stretchFactor, final PrintWriter out)
 			throws IOException {
-		LOGGER.info("Reading annotations from \"{}\".", inpath);
+		LOGGER.info("Reading event log data from \"{}\".", inpath);
 		final Stream<Event> events = LoggedEvents.parseLoggedEvents(Files.lines(inpath));
 		LOGGER.info("Stretching logged events by a factor of {}.", stretchFactor);
 		final Stream<Event> shiftedEvents = events.map(event -> {
@@ -186,7 +186,7 @@ public final class LoggedEventTimeStretcher {
 		fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
 		fileChooser.setFileFilter(new FileNameExtensionFilter("Text files (*.txt)", "txt"));
 		UserPrompts.promptFile(fileChooser).map(File::toPath).ifPresent(inpath -> {
-			LOGGER.info("Will read annotations from \"{}\".", inpath);
+			LOGGER.info("Will read event log data from \"{}\".", inpath);
 			fileChooser.setDialogTitle("Output file");
 			fileChooser.setDialogType(JFileChooser.SAVE_DIALOG);
 			UserPrompts.promptFile(fileChooser).ifPresent(outpath -> {
