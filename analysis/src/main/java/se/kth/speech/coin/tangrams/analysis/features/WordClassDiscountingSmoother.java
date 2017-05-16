@@ -79,7 +79,7 @@ public final class WordClassDiscountingSmoother {
 		}
 		final List<Classifier> result = new ArrayList<>(wordClasses.size() * ngramLength);
 		for (final String wordClass : wordClasses) {
-			LOGGER.info("Getting classifier for class \"{}\".", wordClass);
+			LOGGER.debug("Getting classifier for class \"{}\".", wordClass);
 			Classifier classifier = wordClassifiers.apply(wordClass);
 			if (classifier == null) {
 				LOGGER.debug("Getting distribution for OOV classes (\"{}\").", oovClassName);
@@ -97,7 +97,7 @@ public final class WordClassDiscountingSmoother {
 		while (entryIter.hasNext()) {
 			final Entry<String, Instances> insts = entryIter.next();
 			if (insts.getValue().numInstances() < minCount) {
-				LOGGER.info("Class \"{}\" has fewer than {} instances; Will redistribute to \"{}\".",
+				LOGGER.debug("Class \"{}\" has fewer than {} instances; Will redistribute to \"{}\".",
 						new Object[] { insts.getKey(), minCount, augendClassName });
 				addendClassInsts.add(insts);
 				entryIter.remove();
