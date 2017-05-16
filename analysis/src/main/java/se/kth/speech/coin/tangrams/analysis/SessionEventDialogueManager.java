@@ -78,7 +78,7 @@ public final class SessionEventDialogueManager {
 		case 1: {
 			final Entry<String, GameHistory> gameHistoryToUse = gameHistories.entrySet().iterator().next();
 			gameId = gameHistoryToUse.getKey();
-			LOGGER.info("Parsed history for game \"{}\".", gameId);
+			LOGGER.debug("Parsed history for game \"{}\".", gameId);
 			gameHistory = gameHistoryToUse.getValue();
 			break;
 		}
