@@ -47,8 +47,8 @@ final class StanfordNLPFeatureExtractor {
 
 	/**
 	 * {@link DefaultAnnotPipelineHolder} is loaded on the first execution of
-	 * {@link StanfordNLPFeatureExtractor#getDefaultAnnotPipeline()} or the first access to
-	 * {@link DefaultAnnotPipelineHolder#INSTANCE}, not before.
+	 * {@link StanfordNLPFeatureExtractor#getDefaultAnnotPipeline()} or the
+	 * first access to {@link DefaultAnnotPipelineHolder#INSTANCE}, not before.
 	 *
 	 * @author <a href="http://www.cs.umd.edu/~pugh/">Bill Pugh</a>
 	 * @see <a href=
@@ -59,7 +59,7 @@ final class StanfordNLPFeatureExtractor {
 		 * A singleton instance of {@link StanfordCoreNLP}.
 		 */
 		private static final StanfordCoreNLP INSTANCE = createDefaultAnnotPipeline();
-		
+
 		private static StanfordCoreNLP createDefaultAnnotPipeline() {
 			final Properties props = new Properties();
 			try (final InputStream inStream = DefaultAnnotPipelineHolder.class
