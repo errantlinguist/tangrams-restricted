@@ -271,6 +271,7 @@ public final class WordsAsClassifiersCrossValidationTrainingDataWriter {
 				}
 			}
 			final Instances testInsts = new Instances("tested_entites", entInstAttrCtx.getAttrs(), initialCapacity);
+			testInsts.setClass(entInstAttrCtx.getClassAttr());
 			tester.setTestInsts(testInsts);
 			tester.test(testSessionData);
 		}
