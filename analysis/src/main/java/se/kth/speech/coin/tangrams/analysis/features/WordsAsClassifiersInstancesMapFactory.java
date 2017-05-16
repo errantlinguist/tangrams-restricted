@@ -168,10 +168,14 @@ public final class WordsAsClassifiersInstancesMapFactory
 	}
 
 	private static int estimateVocabTypeTokenCount(final String token, final Collection<?> sessionData) {
-		final double estimate = Math.log(sessionData.size()) * 1000;
+		// Number of sessions * estimated number of dialogues per session *
+		// training instances used per dialogue *
+		// estimated number of utterances per dialogue * estimated number of
+		// tokens (i.e. n-grams) per dialogue
+		final long estimate = sessionData.size() * 50 * 2 * 4 * 20;
 		int result = Integer.MAX_VALUE;
 		try {
-			result = Math.toIntExact(Math.round(Math.ceil(estimate)));
+			result = Math.toIntExact(estimate);
 		} catch (final ArithmeticException e) {
 			LOGGER.debug("Vocab type token count estimate error.", e);
 		}
