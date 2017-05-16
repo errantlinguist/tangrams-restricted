@@ -40,6 +40,15 @@ public final class SessionDataManager {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SessionDataManager.class);
 
+	public static SessionDataManager create(final Path inpath) throws IOException {
+		LOGGER.info("Reading session properties from \"{}\".", inpath);
+		final Properties props = new Properties();
+		try (final InputStream propsInstream = Files.newInputStream(inpath)) {
+			props.load(propsInstream);
+		}
+		return create(props, inpath.getParent());
+	}
+
 	public static SessionDataManager create(final Properties props, final Path baseDir) {
 		final Path hatInfilePath = RelativePaths.resolveIfNotAbsolute(Paths.get(props.getProperty("hat")), baseDir);
 		final Path canonicalEventLogPath = RelativePaths
@@ -56,22 +65,11 @@ public final class SessionDataManager {
 			final Path[] infiles = Files.walk(inpath, FileVisitOption.FOLLOW_LINKS).filter(Files::isRegularFile)
 					.filter(filePath -> filePath.getFileName().toString().endsWith(".properties")).toArray(Path[]::new);
 			for (final Path infile : infiles) {
-				putSessionData(result, infile);
+				final SessionDataManager infileSessionData = create(infile);
+				result.put(infile, infileSessionData);
 			}
 		}
 		return result;
-	}
-
-	private static void putSessionData(final Map<Path, SessionDataManager> fileSessionData, final Path infilePath)
-			throws IOException {
-		LOGGER.info("Reading session properties from \"{}\".", infilePath);
-		final Properties props = new Properties();
-		try (final InputStream propsInstream = Files.newInputStream(infilePath)) {
-			props.load(propsInstream);
-			final Path infileBaseDir = infilePath.getParent();
-			final SessionDataManager sessionData = SessionDataManager.create(props, infileBaseDir);
-			fileSessionData.put(infilePath, sessionData);
-		}
 	}
 
 	private final Path canonicalEventLogPath;
@@ -89,7 +87,7 @@ public final class SessionDataManager {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#equals(java.lang.Object)
 	 */
 	@Override
@@ -151,7 +149,7 @@ public final class SessionDataManager {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#hashCode()
 	 */
 	@Override
@@ -166,7 +164,7 @@ public final class SessionDataManager {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#toString()
 	 */
 	@Override

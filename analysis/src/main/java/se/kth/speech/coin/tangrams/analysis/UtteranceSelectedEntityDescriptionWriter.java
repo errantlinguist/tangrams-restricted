@@ -629,7 +629,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 				props.load(propsInstream);
 			}
 			final String outfileInfix = createOutfileInfix(infilePath);
-			final SessionDataManager sessionData = SessionDataManager.create(props, infilePath.getParent());
+			final SessionDataManager sessionData = SessionDataManager.create(infilePath);
 			accept(sessionData, outfileNamePrefix + outfileInfix);
 		}
 	}
