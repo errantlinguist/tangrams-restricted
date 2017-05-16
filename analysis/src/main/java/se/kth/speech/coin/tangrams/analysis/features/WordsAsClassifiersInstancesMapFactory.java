@@ -156,12 +156,26 @@ public final class WordsAsClassifiersInstancesMapFactory
 		return ctxs[0];
 	}
 
-	private static int estimateVocabTokenCount(final String token, final Collection<?> sessionData) {
-		return sessionData.size() * 25;
+	private static int estimateVocabTypeCount(final Collection<?> sessionData) {
+		final double estimate = Math.log(sessionData.size()) * 850;
+		int result = Integer.MAX_VALUE;
+		try {
+			result = Math.toIntExact(Math.round(Math.ceil(estimate)));
+		} catch (final ArithmeticException e) {
+			LOGGER.debug("Vocab type count estimate error.", e);
+		}
+		return result;
 	}
 
-	private static int estimateVocabTypeCount(final Collection<?> sessionData) {
-		return Math.toIntExact(Math.round(Math.ceil(Math.log(sessionData.size()) * 850)));
+	private static int estimateVocabTypeTokenCount(final String token, final Collection<?> sessionData) {
+		final double estimate = Math.log(sessionData.size()) * 1000;
+		int result = Integer.MAX_VALUE;
+		try {
+			result = Math.toIntExact(Math.round(Math.ceil(estimate)));
+		} catch (final ArithmeticException e) {
+			LOGGER.debug("Vocab type token count estimate error.", e);
+		}
+		return result;
 	}
 
 	@Inject
@@ -179,7 +193,7 @@ public final class WordsAsClassifiersInstancesMapFactory
 				.newHashMapWithExpectedSize(estimateVocabTypeCount(sessionEventDiagMgrs));
 		final Function<String, Instances> classInstanceFetcher = className -> result.computeIfAbsent(className, k -> {
 			final Instances instances = new Instances(createRelationName(k), entityInstAttrCtx.getAttrs(),
-					estimateVocabTokenCount(k, sessionEventDiagMgrs));
+					estimateVocabTypeTokenCount(k, sessionEventDiagMgrs));
 			instances.setClass(entityInstAttrCtx.getClassAttr());
 			return instances;
 		});
