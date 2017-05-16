@@ -16,14 +16,12 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NavigableMap;
@@ -33,17 +31,14 @@ import java.util.TreeMap;
 import java.util.concurrent.ExecutionException;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javax.inject.Inject;
-import javax.xml.bind.JAXBException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Maps;
 
@@ -64,7 +59,7 @@ public final class EntityCrossValidationTester {
 
 	public static final class EventDialogueTestResults {
 
-		private int rankSum;
+		private double rankSum;
 
 		private int totalUtterancesTested;
 
@@ -74,13 +69,13 @@ public final class EntityCrossValidationTester {
 		}
 
 		public double getMeanRank() {
-			return rankSum / (double) totalUtterancesTested;
+			return rankSum / totalUtterancesTested;
 		}
 
 		/**
 		 * @return the rankSum
 		 */
-		public int getRankSum() {
+		public double getRankSum() {
 			return rankSum;
 		}
 
@@ -139,18 +134,27 @@ public final class EntityCrossValidationTester {
 		return result;
 	}
 
-	private static int findNbestRank(final NavigableMap<Double, Set<Integer>> nbestMap, final Integer entityId) {
-		int result = 1;
-		boolean found = false;
-		for (final Entry<Double, Set<Integer>> nbest : nbestMap.entrySet()) {
-			if (nbest.getValue().contains(entityId)) {
-				found = true;
+	private static double findNbestRank(final NavigableMap<Double, Set<Integer>> nbestGroupMap,
+			final Integer entityId) {
+		double bestRankForTiedGroup = 1.0;
+		Set<Integer> tiedEntityIds = null;
+		for (final Entry<Double, Set<Integer>> nbestGroup : nbestGroupMap.entrySet()) {
+			final Set<Integer> entityIds = nbestGroup.getValue();
+			if (entityIds.contains(entityId)) {
+				tiedEntityIds = entityIds;
 				break;
 			}
-			result++;
+			bestRankForTiedGroup += entityIds.size();
 		}
-		if (!found) {
+
+		final double result;
+		if (tiedEntityIds == null) {
 			throw new IllegalArgumentException("ID not found.");
+		} else {
+			final int tiedGroupSize = tiedEntityIds.size();
+			final double worstRankForTiedGroup = bestRankForTiedGroup + (tiedEntityIds.size() - 1);
+			// Average the ranks for sets of ties
+			result = (bestRankForTiedGroup + worstRankForTiedGroup) / tiedGroupSize;
 		}
 		return result;
 	}
@@ -166,21 +170,10 @@ public final class EntityCrossValidationTester {
 	private EntityInstanceAttributeContext entInstAttrCtx;
 
 	@Inject
-	private BiFunction<ListIterator<Utterance>, GameHistory, Stream<EventDialogue>> eventDiagFactory;
+	private Supplier<LoadingCache<SessionDataManager, SessionEventDialogueManager>> sessionDiagMgrCacheSupplier;
 
 	@Inject
 	private BiFunction<? super GameContext, ? super Integer, EntityFeature.Extractor.Context> extCtxFactory;
-
-	private final LoadingCache<SessionDataManager, SessionEventDialogueManager> sessionDiagMgrs = CacheBuilder
-			.newBuilder().build(new CacheLoader<SessionDataManager, SessionEventDialogueManager>() {
-
-				@Override
-				public SessionEventDialogueManager load(final SessionDataManager key)
-						throws JAXBException, IOException {
-					return new SessionEventDialogueManager(key, eventDiagFactory);
-				}
-
-			});
 
 	@Inject
 	private WordClassDiscountingSmoother smoother;
@@ -206,7 +199,7 @@ public final class EntityCrossValidationTester {
 	}
 
 	public SessionTestResults testSession(final SessionDataManager sessionData) throws ExecutionException {
-		final SessionEventDialogueManager sessionEventDiagMgr = sessionDiagMgrs.get(sessionData);
+		final SessionEventDialogueManager sessionEventDiagMgr = sessionDiagMgrCacheSupplier.get().get(sessionData);
 		final List<EventDialogue> uttDiags = sessionEventDiagMgr.createUttDialogues();
 		final SessionTestResults result = new SessionTestResults();
 		for (final EventDialogue uttDiag : uttDiags) {
@@ -309,7 +302,7 @@ public final class EntityCrossValidationTester {
 						final NavigableMap<Double, Set<Integer>> nbestValMap = createNbestMap(nbestVals);
 						final Optional<Integer> optEntityId = uttCtx.findLastSelectedEntityId();
 
-						final int rank;
+						final double rank;
 						if (optEntityId.isPresent()) {
 							final Integer entityId = optEntityId.get();
 
