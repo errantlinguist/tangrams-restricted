@@ -318,6 +318,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 							try (final ClassPathXmlApplicationContext appCtx = createAppCtx()) {
 								final UtteranceSelectedEntityDescriptionWriter writer = getWriterBean(appCtx, outpath,
 										outfileNamePrefix, false);
+								LOGGER.info("Will read batch job data from \"{}\".", inpath);
 								writer.accept(inpath);
 							} catch (final JAXBException e) {
 								throw new RuntimeException(e);
