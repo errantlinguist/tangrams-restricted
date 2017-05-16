@@ -161,7 +161,7 @@ public final class WordsAsClassifiersInstancesMapFactory
 	}
 
 	private static int estimateVocabTypeCount(final Collection<?> sessionData) {
-		return Math.toIntExact(Math.round(Math.ceil(Math.log(sessionData.size() * 850))));
+		return Math.toIntExact(Math.round(Math.ceil(Math.log(sessionData.size()) * 850)));
 	}
 
 	@Inject
