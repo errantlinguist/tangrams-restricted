@@ -232,10 +232,11 @@ public final class WordsAsClassifiersCrossValidationTester {
 
 	private static int estimateTestInstanceCount(final SessionDataManager sessionData) throws IOException {
 		final long lineCount = Files.lines(sessionData.getCanonicalEventLogPath()).count();
-		// Number of logged events * estimated number of entities per game *
+		// (Number of logged events / estimated number of events per dialogue) *
+		// estimated number of entities per game *
 		// estimated number of utterances per dialogue * estimated number of
 		// tokens (i.e. n-grams) per dialogue
-		final long estimate = lineCount * 20 * 4 * 20;
+		final long estimate = lineCount / 4 * 20 * 4 * 20;
 		int result = Integer.MAX_VALUE;
 		try {
 			result = Math.toIntExact(estimate);
