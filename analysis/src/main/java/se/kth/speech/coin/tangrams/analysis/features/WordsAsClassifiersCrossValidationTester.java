@@ -235,7 +235,7 @@ public final class WordsAsClassifiersCrossValidationTester {
 		// (Number of logged events / estimated number of events per dialogue) *
 		// estimated number of entities per game *
 		// estimated number of utterances per dialogue * estimated number of
-		// tokens (i.e. n-grams) per dialogue
+		// tokens (i.e. n-grams) per utterance
 		final long estimate = lineCount / 4 * 20 * 4 * 20;
 		int result = Integer.MAX_VALUE;
 		try {
