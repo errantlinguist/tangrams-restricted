@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -101,8 +100,6 @@ public final class WordsAsClassifiersCrossValidationTester {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(WordsAsClassifiersCrossValidationTester.class);
 
-	private static final String OOV_CLASS_NAME = "_UNKNOWN_";
-
 	private static final String TEST_INSTS_REL_NAME = "tested_entites";
 
 	public static void main(final CommandLine cl)
@@ -172,10 +169,13 @@ public final class WordsAsClassifiersCrossValidationTester {
 	}
 
 	@Inject
-	private EntityInstanceAttributeContext entInstAttrCtx;
+	private WordClassDiscountingSmoother smoother;
 
 	@Inject
 	private EntityCrossValidationTester tester;
+
+	@Inject
+	private ClassInstanceFactory testInstsFactory;
 
 	@Inject
 	private WordsAsClassifiersCrossValidationTestSetFactory testSetFactory;
@@ -193,8 +193,8 @@ public final class WordsAsClassifiersCrossValidationTester {
 			final SessionDataManager testSessionData = testSet.getKey();
 
 			final Map<String, Instances> classInstances = testSet.getValue();
-			final Instances oovInstances = redistributeMass(classInstances, 4, OOV_CLASS_NAME);
-			LOGGER.info("{} instances for out-of-vocabulary class \"\"", oovInstances.size(), OOV_CLASS_NAME);
+			final Instances oovInstances = smoother.redistributeMass(classInstances);
+			LOGGER.info("{} instances for out-of-vocabulary class.", oovInstances.size());
 
 			final Map<String, Logistic> wordClassifiers = createWordClassifierMap(classInstances.entrySet());
 			tester.setWordClassifiers(wordClassifiers::get);
@@ -209,38 +209,10 @@ public final class WordsAsClassifiersCrossValidationTester {
 							estimatedInstCount), e);
 				}
 			}
-			final Instances testInsts = createTestInsts(initialCapacity);
+			final Instances testInsts = testInstsFactory.apply(TEST_INSTS_REL_NAME, initialCapacity);
 			tester.setTestInsts(testInsts);
 			tester.test(testSessionData);
 		}
-	}
-
-	private Instances createTestInsts(final int initialCapacity) {
-		final Instances result = new Instances(TEST_INSTS_REL_NAME, entInstAttrCtx.getAttrs(), initialCapacity);
-		result.setClass(entInstAttrCtx.getClassAttr());
-		return result;
-	}
-
-	private Instances redistributeMass(final Map<String, Instances> classInsts, final int minCount,
-			final String augendClassName) {
-		final List<Entry<String, Instances>> addendClassInsts = new ArrayList<>();
-		final Iterator<Entry<String, Instances>> entryIter = classInsts.entrySet().iterator();
-		while (entryIter.hasNext()) {
-			final Entry<String, Instances> insts = entryIter.next();
-			if (insts.getValue().numInstances() < minCount) {
-				LOGGER.info("Class \"{}\" has fewer than {} instances; Will redistribute to \"{}\".",
-						new Object[] { insts.getKey(), minCount, augendClassName });
-				addendClassInsts.add(insts);
-				entryIter.remove();
-			}
-		}
-		final Instances augendInsts = classInsts.computeIfAbsent(augendClassName, k -> {
-			final int totalInstCount = addendClassInsts.stream().map(Entry::getValue).mapToInt(Instances::numAttributes)
-					.sum();
-			return createTestInsts(totalInstCount);
-		});
-		addendClassInsts.stream().forEach(addendClassInst -> augendInsts.addAll(addendClassInst.getValue()));
-		return augendInsts;
 	}
 
 }

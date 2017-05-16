@@ -130,6 +130,10 @@ public final class WordsAsClassifiersInstancesMapFactory
 		CLASS_RELATION_NAME_PATTERN = Pattern.compile(Pattern.quote(CLASS_RELATION_PREFIX) + "(.+)");
 	}
 
+	public static String createRelationName(final String className) {
+		return CLASS_RELATION_PREFIX + className;
+	}
+
 	public static String parseRelationClassName(final String relName) {
 		final Matcher classRelNameMatcher = CLASS_RELATION_NAME_PATTERN.matcher(relName);
 		if (classRelNameMatcher.matches()) {
@@ -176,7 +180,7 @@ public final class WordsAsClassifiersInstancesMapFactory
 		final Map<String, Instances> result = Maps
 				.newHashMapWithExpectedSize(estimateVocabTypeCount(sessionEventDiagMgrs));
 		final Function<String, Instances> classInstanceFetcher = className -> result.computeIfAbsent(className, k -> {
-			final Instances instances = new Instances(CLASS_RELATION_PREFIX + k, entityInstAttrCtx.getAttrs(),
+			final Instances instances = new Instances(createRelationName(k), entityInstAttrCtx.getAttrs(),
 					estimateVocabTokenCount(k, sessionEventDiagMgrs));
 			instances.setClass(entityInstAttrCtx.getClassAttr());
 			return instances;

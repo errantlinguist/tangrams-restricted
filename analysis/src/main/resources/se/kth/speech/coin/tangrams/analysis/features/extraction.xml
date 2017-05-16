@@ -24,6 +24,11 @@
 		factory-method="valueOf">
 		<constructor-arg value="IS_REFERENT" />
 	</bean>
+	
+	<bean id="out-of-vocab-class-name" class="java.lang.String"
+		factory-method="valueOf">
+		<constructor-arg value="__UNKNOWN__" />
+	</bean>
 
 	<bean id="shape-attr-vals" class="java.util.TreeSet">
 		<constructor-arg
@@ -61,19 +66,32 @@
 		</constructor-arg>
 	</bean>
 
+	<bean id="class-insts-factory"
+		class="se.kth.speech.coin.tangrams.analysis.features.ClassInstanceFactory" />
+		
+	<bean id="smoother"
+		class="se.kth.speech.coin.tangrams.analysis.features.WordClassDiscountingSmoother" >
+		<constructor-arg value="4" />
+		<constructor-arg ref="out-of-vocab-class-name" />
+		</bean>
+
 	<bean id="words-as-classifiers-inst-map-factory"
 		class="se.kth.speech.coin.tangrams.analysis.features.WordsAsClassifiersInstancesMapFactory" />
 
-	<bean id="words-as-classifiers-data-writer" class="se.kth.speech.coin.tangrams.analysis.features.WordsAsClassifiersTrainingDataWriter" />
-	
-	<bean id="words-as-classifiers-cross-validation-data-factory" class="se.kth.speech.coin.tangrams.analysis.features.WordsAsClassifiersCrossValidationTestSetFactory" />
+	<bean id="words-as-classifiers-data-writer"
+		class="se.kth.speech.coin.tangrams.analysis.features.WordsAsClassifiersTrainingDataWriter" />
+
+	<bean id="words-as-classifiers-cross-validation-data-factory"
+		class="se.kth.speech.coin.tangrams.analysis.features.WordsAsClassifiersCrossValidationTestSetFactory" />
 
 	<bean id="words-as-classifiers-cross-validation-data-writer"
 		class="se.kth.speech.coin.tangrams.analysis.features.WordsAsClassifiersCrossValidationTrainingDataWriter"
 		scope="prototype" />
-		
-	<bean id="words-as-classifiers-cross-validation-entity-tester" class="se.kth.speech.coin.tangrams.analysis.features.EntityCrossValidationTester" />
-	
-	<bean id="words-as-classifiers-cross-validation-dataset-tester" class="se.kth.speech.coin.tangrams.analysis.features.WordsAsClassifiersCrossValidationTester" />
+
+	<bean id="words-as-classifiers-cross-validation-entity-tester"
+		class="se.kth.speech.coin.tangrams.analysis.features.EntityCrossValidationTester" />
+
+	<bean id="words-as-classifiers-cross-validation-dataset-tester"
+		class="se.kth.speech.coin.tangrams.analysis.features.WordsAsClassifiersCrossValidationTester" />
 
 </beans>
