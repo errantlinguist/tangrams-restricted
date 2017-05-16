@@ -39,9 +39,11 @@ public final class EntityInstanceAttributeContext {
 
 	private final String classAttrName;
 
-	private final EntityFeature.Extractor extractor;
+	private final InstanceFeatureExtractor<EntityFeature, EntityFeature.Extractor.Context> extractor;
 
-	public EntityInstanceAttributeContext(final EntityFeature.Extractor extractor, final String classAttrName) {
+	public EntityInstanceAttributeContext(
+			final InstanceFeatureExtractor<EntityFeature, EntityFeature.Extractor.Context> extractor,
+			final String classAttrName) {
 		this.extractor = extractor;
 		this.classAttrName = classAttrName;
 		final Map<EntityFeature, Attribute> featureAttrs = extractor.getFeatureAttrs();
@@ -75,7 +77,7 @@ public final class EntityInstanceAttributeContext {
 	/**
 	 * @return the extractor
 	 */
-	public EntityFeature.Extractor getExtractor() {
+	public InstanceFeatureExtractor<EntityFeature, EntityFeature.Extractor.Context> getExtractor() {
 		return extractor;
 	}
 

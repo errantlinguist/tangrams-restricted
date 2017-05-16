@@ -29,7 +29,6 @@ import se.kth.speech.coin.tangrams.analysis.GameContext;
 import se.kth.speech.coin.tangrams.iristk.EventSubmittingPlayerMatcher;
 import se.kth.speech.coin.tangrams.iristk.EventTypeMatcher;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
-import weka.core.Attribute;
 
 /**
  *
@@ -56,23 +55,20 @@ public enum EventHistoryFeature {
 	 */
 	LAST_SPEAKER_SUBMISSION_DIST;
 
-	public static final class Extractor extends AbstractInstanceFeatureExtractor<EventHistoryFeature, GameContext> {
+	public static final class Extractor implements FeatureExtractor<EventHistoryFeature, GameContext> {
 
 		private final Predicate<Event> gameEventToConditionMatcher;
 
-		public Extractor(final Map<EventHistoryFeature, Attribute> featureAttrs,
-				final GameManagementEvent gameEventToCondition) {
-			this(featureAttrs, EVENT_TYPE_MATCHERS.get(gameEventToCondition));
+		public Extractor(final GameManagementEvent gameEventToCondition) {
+			this(EVENT_TYPE_MATCHERS.get(gameEventToCondition));
 		}
 
-		private Extractor(final Map<EventHistoryFeature, Attribute> featureAttrs,
-				final Predicate<Event> gameEventToConditionMatcher) {
-			super(featureAttrs);
+		private Extractor(final Predicate<Event> gameEventToConditionMatcher) {
 			this.gameEventToConditionMatcher = gameEventToConditionMatcher;
 		}
 
 		@Override
-		public Optional<Object> getVal(final EventHistoryFeature feature, final GameContext context) {
+		public Optional<Object> apply(final EventHistoryFeature feature, final GameContext context) {
 			final Optional<Object> result;
 			switch (feature) {
 			case LAST_OCCURRENCE_DIST: {

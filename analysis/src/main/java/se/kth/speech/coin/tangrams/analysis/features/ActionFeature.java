@@ -18,7 +18,6 @@ package se.kth.speech.coin.tangrams.analysis.features;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.function.Predicate;
@@ -30,7 +29,6 @@ import iristk.system.Event;
 import se.kth.speech.coin.tangrams.analysis.GameContext;
 import se.kth.speech.coin.tangrams.iristk.EventSubmittingPlayerMatcher;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
-import weka.core.Attribute;
 
 /**
  *
@@ -47,14 +45,10 @@ import weka.core.Attribute;
 public enum ActionFeature {
 	LAST_SUBMITTED_EVENT_TYPE;
 
-	public static final class Extractor extends AbstractInstanceFeatureExtractor<ActionFeature, GameContext> {
-
-		public Extractor(final Map<ActionFeature, Attribute> featureAttrs) {
-			super(featureAttrs);
-		}
+	public static final class Extractor implements FeatureExtractor<ActionFeature, GameContext> {
 
 		@Override
-		public Optional<Object> getVal(final ActionFeature feature, final GameContext context) {
+		public Optional<Object> apply(final ActionFeature feature, final GameContext context) {
 			final Optional<Object> result;
 			switch (feature) {
 			case LAST_SUBMITTED_EVENT_TYPE: {

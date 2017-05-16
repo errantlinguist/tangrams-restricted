@@ -33,13 +33,16 @@ import weka.core.Instance;
  * @since May 11, 2017
  *
  */
-public abstract class AbstractInstanceFeatureExtractor<F, C> implements BiConsumer<Instance, C> {
+public final class InstanceFeatureExtractor<F, C> implements BiConsumer<Instance, C> {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(AbstractInstanceFeatureExtractor.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(InstanceFeatureExtractor.class);
+
+	private final FeatureExtractor<F, C> extractor;
 
 	private final Map<F, Attribute> featureAttrs;
 
-	public AbstractInstanceFeatureExtractor(final Map<F, Attribute> featureAttrs) {
+	public InstanceFeatureExtractor(final FeatureExtractor<F, C> extractor, final Map<F, Attribute> featureAttrs) {
+		this.extractor = extractor;
 		this.featureAttrs = featureAttrs;
 	}
 
@@ -48,7 +51,7 @@ public abstract class AbstractInstanceFeatureExtractor<F, C> implements BiConsum
 		for (final Entry<F, Attribute> featureAttr : featureAttrs.entrySet()) {
 			final F feature = featureAttr.getKey();
 			final Attribute attr = featureAttr.getValue();
-			final Optional<Object> optVal = getVal(feature, context);
+			final Optional<Object> optVal = extractor.apply(feature, context);
 			if (optVal.isPresent()) {
 				final Object val = optVal.get();
 				if (val instanceof Number) {
@@ -65,7 +68,5 @@ public abstract class AbstractInstanceFeatureExtractor<F, C> implements BiConsum
 	public Map<F, Attribute> getFeatureAttrs() {
 		return Collections.unmodifiableMap(featureAttrs);
 	}
-
-	public abstract Optional<Object> getVal(F feature, C context);
 
 }

@@ -24,20 +24,21 @@
 		factory-method="valueOf">
 		<constructor-arg value="IS_REFERENT" />
 	</bean>
-	
+
 	<bean id="out-of-vocab-class-name" class="java.lang.String"
 		factory-method="valueOf">
 		<constructor-arg value="__UNKNOWN__" />
 	</bean>
 
-	<bean id="shape-attr-vals" class="java.util.TreeSet">
-		<constructor-arg
-			value="#{ T(se.kth.speech.coin.tangrams.content.IconImages).getImageResources().keySet() }" />
-	</bean>
-
 	<bean id="entity-feature-extractor"
-		class="se.kth.speech.coin.tangrams.analysis.features.EntityFeature.Extractor">
-		<constructor-arg ref="shape-attr-vals" />
+		class="se.kth.speech.coin.tangrams.analysis.features.InstanceFeatureExtractor">
+		<constructor-arg>
+			<bean
+				class="se.kth.speech.coin.tangrams.analysis.features.EntityFeature.Extractor">
+			</bean>
+		</constructor-arg>
+		<constructor-arg
+			value="#{ T(se.kth.speech.coin.tangrams.analysis.features.EntityFeature.Extractor).createFeatureAttrMap(T(se.kth.speech.coin.tangrams.content.IconImages).getImageResources().keySet()) }"></constructor-arg>
 	</bean>
 
 	<bean id="entity-inst-attr-ctx"
@@ -68,12 +69,12 @@
 
 	<bean id="class-insts-factory"
 		class="se.kth.speech.coin.tangrams.analysis.features.ClassInstanceFactory" />
-		
+
 	<bean id="smoother"
-		class="se.kth.speech.coin.tangrams.analysis.features.WordClassDiscountingSmoother" >
+		class="se.kth.speech.coin.tangrams.analysis.features.WordClassDiscountingSmoother">
 		<constructor-arg value="4" />
 		<constructor-arg ref="out-of-vocab-class-name" />
-		</bean>
+	</bean>
 
 	<bean id="words-as-classifiers-inst-map-factory"
 		class="se.kth.speech.coin.tangrams.analysis.features.WordsAsClassifiersInstancesMapFactory" />

@@ -34,7 +34,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -74,7 +73,6 @@ import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature.Extractor;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionContextFactory;
 import se.kth.speech.coin.tangrams.analysis.features.ImageEdgeCounter;
-import se.kth.speech.coin.tangrams.content.IconImages;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfoTableRowWriter;
 import se.kth.speech.coin.tangrams.iristk.EventTimes;
@@ -426,7 +424,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 							final EntityFeature.Extractor.Context extractionContext = extractionContextFactory
 									.apply(context, entityId);
 							final Stream<Optional<Object>> featureVals = FEATURES_TO_DESCRIBE.stream()
-									.map(feature -> EXTRACTOR.getVal(feature, extractionContext));
+									.map(feature -> EXTRACTOR.apply(feature, extractionContext));
 							featureVectorRepr = featureVals
 									.map(opt -> opt.map(Object::toString).orElse(NULL_VALUE_REPR))
 									.collect(TABLE_ROW_CELL_JOINER);
@@ -465,7 +463,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 
 	private static final String DEFAULT_OUTFILE_PREFIX = "";
 
-	private static final Extractor EXTRACTOR;
+	private static final Extractor EXTRACTOR = new EntityFeature.Extractor();
 
 	private static final List<EntityFeature> FEATURES_TO_DESCRIBE;
 
@@ -489,9 +487,6 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 	static {
 		FEATURES_TO_DESCRIBE = Arrays.asList(EntityFeature.POSITION_X, EntityFeature.POSITION_Y,
 				EntityFeature.EDGE_COUNT);
-		final List<String> shapeFeatureVals = new ArrayList<>(IconImages.getImageResources().keySet());
-		shapeFeatureVals.sort(Comparator.naturalOrder());
-		EXTRACTOR = new EntityFeature.Extractor(FEATURES_TO_DESCRIBE, shapeFeatureVals);
 	}
 
 	public static void main(final CommandLine cl) throws IOException, JAXBException, ParseException {

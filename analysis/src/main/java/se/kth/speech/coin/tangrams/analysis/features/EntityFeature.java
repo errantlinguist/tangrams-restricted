@@ -45,7 +45,7 @@ import weka.core.Attribute;
 public enum EntityFeature {
 	BLUE, BRIGHTNESS, EDGE_COUNT, GREEN, HUE, POSITION_X, POSITION_Y, RED, SATURATION, SHAPE, SIZE;
 
-	public static final class Extractor extends AbstractInstanceFeatureExtractor<EntityFeature, Extractor.Context> {
+	public static final class Extractor implements FeatureExtractor<EntityFeature, Extractor.Context> {
 
 		public static final class Context {
 
@@ -80,12 +80,12 @@ public enum EntityFeature {
 			assert DEFAULT_ORDERING.size() == EntityFeature.values().length;
 		}
 
-		private static Map<EntityFeature, Attribute> createFeatureAttrMap(final Iterable<EntityFeature> features,
+		public static Map<EntityFeature, Attribute> createFeatureAttrMap(final Iterable<EntityFeature> features,
 				final List<String> shapeVals) {
 			return createFeatureAttrMap(features, DEFAULT_ATTR_NAME_PREFIX, shapeVals);
 		}
 
-		private static Map<EntityFeature, Attribute> createFeatureAttrMap(final Iterable<EntityFeature> features,
+		public static Map<EntityFeature, Attribute> createFeatureAttrMap(final Iterable<EntityFeature> features,
 				final String attrNamePrefix, final List<String> shapeVals) {
 			final Map<EntityFeature, Function<String, Attribute>> attrFactories = createFeatureTypedAttrFactoryMap(
 					shapeVals);
@@ -97,16 +97,16 @@ public enum EntityFeature {
 			return result;
 		}
 
-		private static Map<EntityFeature, Attribute> createFeatureAttrMap(final List<String> shapeVals) {
+		public static Map<EntityFeature, Attribute> createFeatureAttrMap(final List<String> shapeVals) {
 			return createFeatureAttrMap(DEFAULT_ATTR_NAME_PREFIX, shapeVals);
 		}
 
-		private static Map<EntityFeature, Attribute> createFeatureAttrMap(final String attrNamePrefix,
+		public static Map<EntityFeature, Attribute> createFeatureAttrMap(final String attrNamePrefix,
 				final List<String> shapeVals) {
 			return createFeatureAttrMap(EnumSet.allOf(EntityFeature.class), attrNamePrefix, shapeVals);
 		}
 
-		private static Map<EntityFeature, Function<String, Attribute>> createFeatureTypedAttrFactoryMap(
+		public static Map<EntityFeature, Function<String, Attribute>> createFeatureTypedAttrFactoryMap(
 				final List<String> shapeVals) {
 			final Map<EntityFeature, Function<String, Attribute>> result = new EnumMap<>(EntityFeature.class);
 			final Function<String, Attribute> doubleVal = name -> new Attribute(name);
@@ -125,29 +125,32 @@ public enum EntityFeature {
 			return result;
 		}
 
-		public Extractor(final Iterable<EntityFeature> features, final List<String> shapeVals) {
-			this(createFeatureAttrMap(features, shapeVals));
-		}
-
-		public Extractor(final Iterable<EntityFeature> features, final String attrNamePrefix,
-				final List<String> shapeVals) {
-			this(createFeatureAttrMap(features, attrNamePrefix, shapeVals));
-		}
-
-		public Extractor(final List<String> shapeVals) {
-			this(createFeatureAttrMap(shapeVals));
-		}
-
-		public Extractor(final Map<EntityFeature, Attribute> featureAttrs) {
-			super(featureAttrs);
-		}
-
-		public Extractor(final String attrNamePrefix, final List<String> shapeVals) {
-			this(createFeatureAttrMap(attrNamePrefix, shapeVals));
-		}
+		// public Extractor(final Iterable<EntityFeature> features, final
+		// List<String> shapeVals) {
+		// this(createFeatureAttrMap(features, shapeVals));
+		// }
+		//
+		// public Extractor(final Iterable<EntityFeature> features, final String
+		// attrNamePrefix,
+		// final List<String> shapeVals) {
+		// this(createFeatureAttrMap(features, attrNamePrefix, shapeVals));
+		// }
+		//
+		// public Extractor(final List<String> shapeVals) {
+		// this(createFeatureAttrMap(shapeVals));
+		// }
+		//
+		// public Extractor(final Map<EntityFeature, Attribute> featureAttrs) {
+		// super(featureAttrs);
+		// }
+		//
+		// public Extractor(final String attrNamePrefix, final List<String>
+		// shapeVals) {
+		// this(createFeatureAttrMap(attrNamePrefix, shapeVals));
+		// }
 
 		@Override
-		public Optional<Object> getVal(final EntityFeature feature, final Context context) {
+		public Optional<Object> apply(final EntityFeature feature, final Context context) {
 			final Color color = context.pieceImgVizInfoDatum.getColor();
 			final float[] hsbVals = Color.RGBtoHSB(color.getRed(), color.getGreen(), color.getBlue(), null);
 			final Object val;
