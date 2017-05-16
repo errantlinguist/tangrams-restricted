@@ -58,15 +58,6 @@ public final class EntityCrossValidationTester {
 
 	private Function<? super String, ? extends Classifier> wordClassifiers;
 
-	public void test(final SessionDataManager testSessionData) throws JAXBException, IOException {
-		final SessionEventDialogueManager sessionEventDiagMgr = new SessionEventDialogueManager(testSessionData,
-				eventDiagFactory);
-		final List<EventDialogue> uttDiags = sessionEventDiagMgr.createUttDialogues();
-		for (final EventDialogue uttDiag : uttDiags) {
-			testEntities(uttDiag, sessionEventDiagMgr.getGameHistory());
-		}
-	}
-
 	/**
 	 * @param testInsts
 	 *            the testInsts to set
@@ -83,10 +74,20 @@ public final class EntityCrossValidationTester {
 		this.wordClassifiers = wordClassifiers;
 	}
 
+	public void test(final SessionDataManager testSessionData) throws JAXBException, IOException {
+		final SessionEventDialogueManager sessionEventDiagMgr = new SessionEventDialogueManager(testSessionData,
+				eventDiagFactory);
+		final List<EventDialogue> uttDiags = sessionEventDiagMgr.createUttDialogues();
+		for (final EventDialogue uttDiag : uttDiags) {
+			testEntities(uttDiag, sessionEventDiagMgr.getGameHistory());
+		}
+	}
+
 	private Instance createEntityTestInstance(final EntityFeature.Extractor.Context extractionContext) {
 		final Instance result = new DenseInstance(entInstAttrCtx.getAttrs().size());
 		result.setDataset(testInsts);
 		entInstAttrCtx.getExtractor().accept(result, extractionContext);
+		result.setClassMissing();
 		return result;
 	}
 
@@ -97,21 +98,23 @@ public final class EntityCrossValidationTester {
 	}
 
 	private void findReferredEntity(final Utterance utt, final GameContext uttCtx) throws ClassificationException {
+		LOGGER.info("Finding entity referred by {}.", utt);
 		final List<String> wordClasses = createUttWordClassList(utt);
-		final Classifier[] classifiers = wordClasses.stream().map(wordClassifiers).toArray(Classifier[]::new);
 		for (final Integer entityId : uttCtx.getEntityIds()) {
-			// Create a game context for classifying the entity with the given
-			// ID
+			// Create a game context for classifying the entity with the
+			// given ID
 			final EntityFeature.Extractor.Context extContext = extCtxFactory.apply(uttCtx, entityId);
 			final Instance testInst = createEntityTestInstance(extContext);
-			for (final Classifier classifier : classifiers) {
+			for (final String wordClass : wordClasses) {
+				LOGGER.info("Getting classifier for class \"{}\" for classifying entity ID \"{}\".", wordClass,
+						entityId);
+				final Classifier classifier = wordClassifiers.apply(wordClass);
 				try {
 					classifier.classifyInstance(testInst);
 				} catch (final Exception e) {
 					throw new ClassificationException(e);
 				}
 			}
-
 		}
 	}
 
