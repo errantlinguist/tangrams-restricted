@@ -125,30 +125,6 @@ public enum EntityFeature {
 			return result;
 		}
 
-		// public Extractor(final Iterable<EntityFeature> features, final
-		// List<String> shapeVals) {
-		// this(createFeatureAttrMap(features, shapeVals));
-		// }
-		//
-		// public Extractor(final Iterable<EntityFeature> features, final String
-		// attrNamePrefix,
-		// final List<String> shapeVals) {
-		// this(createFeatureAttrMap(features, attrNamePrefix, shapeVals));
-		// }
-		//
-		// public Extractor(final List<String> shapeVals) {
-		// this(createFeatureAttrMap(shapeVals));
-		// }
-		//
-		// public Extractor(final Map<EntityFeature, Attribute> featureAttrs) {
-		// super(featureAttrs);
-		// }
-		//
-		// public Extractor(final String attrNamePrefix, final List<String>
-		// shapeVals) {
-		// this(createFeatureAttrMap(attrNamePrefix, shapeVals));
-		// }
-
 		@Override
 		public Optional<Object> apply(final EntityFeature feature, final Context context) {
 			final Color color = context.pieceImgVizInfoDatum.getColor();
