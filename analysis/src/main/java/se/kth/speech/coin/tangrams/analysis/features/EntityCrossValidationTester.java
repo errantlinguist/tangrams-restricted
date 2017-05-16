@@ -124,7 +124,7 @@ public final class EntityCrossValidationTester {
 		NBEST_COMPARATOR = scoreCmp.reversed();
 	}
 
-	private static NavigableMap<Double, Set<Integer>> createNbestMap(
+	private static NavigableMap<Double, Set<Integer>> createNbestGroupMap(
 			final Collection<Entry<Integer, Double>> entityReferenceConfidenceVals) {
 		final NavigableMap<Double, Set<Integer>> result = new TreeMap<>();
 		for (final Entry<Integer, Double> val : entityReferenceConfidenceVals) {
@@ -134,11 +134,11 @@ public final class EntityCrossValidationTester {
 		return result;
 	}
 
-	private static double findNbestRank(final NavigableMap<Double, Set<Integer>> nbestGroupMap,
+	private static double findNbestRank(final NavigableMap<Double, Set<Integer>> nbestGroups,
 			final Integer entityId) {
 		double bestRankForTiedGroup = 1.0;
 		Set<Integer> tiedEntityIds = null;
-		for (final Entry<Double, Set<Integer>> nbestGroup : nbestGroupMap.entrySet()) {
+		for (final Entry<Double, Set<Integer>> nbestGroup : nbestGroups.entrySet()) {
 			final Set<Integer> entityIds = nbestGroup.getValue();
 			if (entityIds.contains(entityId)) {
 				tiedEntityIds = entityIds;
@@ -289,26 +289,19 @@ public final class EntityCrossValidationTester {
 					try {
 						final Map<Integer, Double> entityReferenceConfidenceVals = createReferredEntityConfidenceMap(
 								dialogueUtt, uttCtx);
-						// System.out.println(dialogueUtt);
 						final List<Entry<Integer, Double>> nbestVals = entityReferenceConfidenceVals.entrySet().stream()
 								.sorted(NBEST_COMPARATOR).collect(Collectors
 										.toCollection(() -> new ArrayList<>(entityReferenceConfidenceVals.size())));
-						// for (final Entry<Integer, Double> nbestVal :
-						// nbestVals) {
-						// System.out.println("score: " +
-						// nbestVal.getValue() +
-						// "\tentity: " + nbestVal.getKey());
-						// }
-						final NavigableMap<Double, Set<Integer>> nbestValMap = createNbestMap(nbestVals);
+						final NavigableMap<Double, Set<Integer>> nbestGroups = createNbestGroupMap(nbestVals);
+						
 						final Optional<Integer> optEntityId = uttCtx.findLastSelectedEntityId();
-
 						final double rank;
 						if (optEntityId.isPresent()) {
 							final Integer entityId = optEntityId.get();
 
-							rank = findNbestRank(nbestValMap, entityId);
+							rank = findNbestRank(nbestGroups, entityId);
 						} else {
-							rank = nbestValMap.size() + 1;
+							rank = nbestGroups.size() + 1;
 						}
 						LOGGER.debug("Rank of correct entity: {}", rank);
 						testResults.rankSum += rank;
