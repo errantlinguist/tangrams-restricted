@@ -22,6 +22,8 @@ import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.inject.Inject;
 
@@ -114,9 +116,26 @@ public final class WordsAsClassifiersInstancesMapFactory
 		}
 	}
 
-	public static final String CLASS_RELATION_PREFIX = "referent_for_token-";
+	private static final Pattern CLASS_RELATION_NAME_PATTERN;
+
+	private static final String CLASS_RELATION_PREFIX;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(WordsAsClassifiersInstancesMapFactory.class);
+
+	static {
+		CLASS_RELATION_PREFIX = "referent_for_token-";
+		CLASS_RELATION_NAME_PATTERN = Pattern.compile(Pattern.quote(CLASS_RELATION_PREFIX) + "(.+)");
+	}
+
+	public static String parseRelationClassName(final String relName) {
+		final Matcher classRelNameMatcher = CLASS_RELATION_NAME_PATTERN.matcher(relName);
+		if (classRelNameMatcher.matches()) {
+			return classRelNameMatcher.group(1);
+		} else {
+			throw new IllegalArgumentException(
+					String.format("Could not parse a class name from relation name \"%s\".", relName));
+		}
+	}
 
 	private static GameContext createGameContext(final Utterance dialogueUtt, final GameHistory history,
 			final String perspectivePlayerId) {

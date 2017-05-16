@@ -27,7 +27,10 @@ import java.util.Map;
 import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.Set;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -46,8 +49,7 @@ import se.kth.speech.coin.tangrams.iristk.events.Move;
 public final class GameContext {
 
 	public enum EntityStatus {
-		SELECTED,
-		NOT_SELECTED;
+		NOT_SELECTED, SELECTED;
 	}
 
 	private static final Map<GameManagementEvent, EventTypeMatcher> EVENT_TYPE_MATCHERS = createEventTypeMatcherMap();
@@ -81,6 +83,8 @@ public final class GameContext {
 		return map.descendingMap().values().stream().map(Lists::reverse).flatMap(List::stream);
 	}
 
+	private final Set<Integer> entityIds;
+
 	private final GameHistory history;
 
 	private final String perspectivePlayerId;
@@ -91,6 +95,7 @@ public final class GameContext {
 		this.history = history;
 		this.time = time;
 		this.perspectivePlayerId = perspectivePlayerId;
+		entityIds = createEntityIdSet();
 	}
 
 	public Map<EntityStatus, Map<Integer, ImageVisualizationInfoDescription.Datum>> createEntityStatusVisualizationInfoMap() {
@@ -256,6 +261,10 @@ public final class GameContext {
 		return initialState.getImageVisualizationInfoDescription().getData().size();
 	}
 
+	public Set<Integer> getEntityIds() {
+		return entityIds;
+	}
+
 	public List<ImageVisualizationInfoDescription.Datum> getEntityVisualizationInfo() {
 		final GameStateDescription initialState = history.getInitialState();
 		return Collections.unmodifiableList(initialState.getImageVisualizationInfoDescription().getData());
@@ -321,5 +330,9 @@ public final class GameContext {
 		builder.append(perspectivePlayerId);
 		builder.append(']');
 		return builder.toString();
+	}
+
+	private Set<Integer> createEntityIdSet() {
+		return IntStream.range(0, getEntityCount()).boxed().collect(Collectors.toSet());
 	}
 }

@@ -69,5 +69,7 @@
 	<bean id="words-as-classifiers-cross-validation-data-writer"
 		class="se.kth.speech.coin.tangrams.analysis.features.WordsAsClassifiersCrossValidationTrainingDataWriter"
 		scope="prototype" />
+		
+	<bean id="words-as-classifiers-cross-validation-tester" class="se.kth.speech.coin.tangrams.analysis.features.EntityCrossValidationTester" />
 
 </beans>
