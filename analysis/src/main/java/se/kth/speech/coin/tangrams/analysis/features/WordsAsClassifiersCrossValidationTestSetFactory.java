@@ -25,6 +25,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -34,6 +35,10 @@ import javax.xml.bind.JAXBException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 
 import se.kth.speech.MutablePair;
 import se.kth.speech.coin.tangrams.analysis.EventDialogue;
@@ -62,8 +67,19 @@ public final class WordsAsClassifiersCrossValidationTestSetFactory {
 	@Inject
 	private Function<Collection<SessionEventDialogueManager>, Map<String, Instances>> instancesFactory;
 
+	private final LoadingCache<SessionDataManager, SessionEventDialogueManager> sessionDiagMgrs = CacheBuilder
+			.newBuilder().build(new CacheLoader<SessionDataManager, SessionEventDialogueManager>() {
+
+				@Override
+				public SessionEventDialogueManager load(final SessionDataManager key)
+						throws JAXBException, IOException {
+					return new SessionEventDialogueManager(key, eventDiagFactory);
+				}
+
+			});
+
 	public Stream<Entry<SessionDataManager, Map<String, Instances>>> apply(
-			final Map<SessionDataManager, Path> allSessions) throws IOException, JAXBException {
+			final Map<SessionDataManager, Path> allSessions) throws ExecutionException {
 		final Stream.Builder<Entry<SessionDataManager, Map<String, Instances>>> resultBuilder = Stream.builder();
 		for (final Entry<SessionDataManager, Path> testSessionDataEntry : allSessions.entrySet()) {
 			final Path testSessionDataFilePath = testSessionDataEntry.getValue();
@@ -76,7 +92,7 @@ public final class WordsAsClassifiersCrossValidationTestSetFactory {
 	}
 
 	public Stream<Entry<SessionDataManager, Map<String, Instances>>> apply(final Set<SessionDataManager> allSessions)
-			throws IOException, JAXBException {
+			throws ExecutionException {
 		final Stream.Builder<Entry<SessionDataManager, Map<String, Instances>>> resultBuilder = Stream.builder();
 		for (final SessionDataManager testSessionDataMgr : allSessions) {
 			resultBuilder.accept(createTestSet(testSessionDataMgr, allSessions));
@@ -85,7 +101,7 @@ public final class WordsAsClassifiersCrossValidationTestSetFactory {
 	}
 
 	private Entry<SessionDataManager, Map<String, Instances>> createTestSet(final SessionDataManager testSessionDataMgr,
-			final Set<SessionDataManager> allSessions) throws JAXBException, IOException {
+			final Set<SessionDataManager> allSessions) throws ExecutionException {
 		final Map<String, Instances> classInstances;
 		{
 			final SessionDataManager[] trainingSessionDataMgrs = allSessions.stream()
@@ -93,8 +109,8 @@ public final class WordsAsClassifiersCrossValidationTestSetFactory {
 			final List<SessionEventDialogueManager> trainingSessionEvtDiagMgrs = new ArrayList<>(
 					trainingSessionDataMgrs.length);
 			for (final SessionDataManager trainingSessionDatum : trainingSessionDataMgrs) {
-				final SessionEventDialogueManager sessionEventDiagMgr = new SessionEventDialogueManager(
-						trainingSessionDatum, eventDiagFactory);
+				SessionEventDialogueManager sessionEventDiagMgr;
+				sessionEventDiagMgr = sessionDiagMgrs.get(trainingSessionDatum);
 				trainingSessionEvtDiagMgrs.add(sessionEventDiagMgr);
 			}
 			classInstances = instancesFactory.apply(trainingSessionEvtDiagMgrs);

@@ -20,18 +20,19 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.inject.Inject;
-import javax.xml.bind.JAXBException;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -97,7 +98,12 @@ public final class WordsAsClassifiersCrossValidationTester {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(WordsAsClassifiersCrossValidationTester.class);
 
-	public static void main(final CommandLine cl) throws IOException, JAXBException, ParseException, TrainingException {
+	private static final String OOV_CLASS_NAME = "_UNKNOWN_";
+
+	private static final String TEST_INSTS_REL_NAME = "tested_entites";
+
+	public static void main(final CommandLine cl)
+			throws ParseException, TrainingException, ExecutionException, IOException {
 		if (cl.hasOption(Parameter.HELP.optName)) {
 			Parameter.printHelp();
 		} else {
@@ -116,7 +122,8 @@ public final class WordsAsClassifiersCrossValidationTester {
 		}
 	}
 
-	public static void main(final String[] args) throws IOException, JAXBException, TrainingException {
+	public static void main(final String[] args)
+			throws TrainingException, ExecutionException, IOException {
 		final CommandLineParser parser = new DefaultParser();
 		try {
 			final CommandLine cl = parser.parse(Parameter.OPTIONS, args);
@@ -171,18 +178,23 @@ public final class WordsAsClassifiersCrossValidationTester {
 	@Inject
 	private WordsAsClassifiersCrossValidationTestSetFactory testSetFactory;
 
-	public void accept(final Iterable<Path> inpaths) throws IOException, JAXBException, TrainingException {
+	public void accept(final Iterable<Path> inpaths)
+			throws TrainingException, ExecutionException, IOException {
 		final Map<Path, SessionDataManager> infileSessionData = SessionDataManager.createFileSessionDataMap(inpaths);
 		final Map<SessionDataManager, Path> allSessions = infileSessionData.entrySet().stream()
 				.collect(Collectors.toMap(Entry::getValue, Entry::getKey));
 		infileSessionData.forEach((infile, sessionData) -> allSessions.put(sessionData, infile));
-		
+
 		final Stream<Entry<SessionDataManager, Map<String, Instances>>> testSets = testSetFactory.apply(allSessions);
 		for (final Iterator<Entry<SessionDataManager, Map<String, Instances>>> testSetIter = testSets
 				.iterator(); testSetIter.hasNext();) {
 			final Entry<SessionDataManager, Map<String, Instances>> testSet = testSetIter.next();
 			final SessionDataManager testSessionData = testSet.getKey();
+
 			final Map<String, Instances> classInstances = testSet.getValue();
+			final Instances oovInstances = redistributeMass(classInstances, 4, OOV_CLASS_NAME);
+			LOGGER.info("{} instances for out-of-vocabulary class \"\"", oovInstances.size(), OOV_CLASS_NAME);
+
 			final Map<String, Logistic> wordClassifiers = createWordClassifierMap(classInstances.entrySet());
 			tester.setWordClassifiers(wordClassifiers::get);
 
@@ -196,11 +208,38 @@ public final class WordsAsClassifiersCrossValidationTester {
 							estimatedInstCount), e);
 				}
 			}
-			final Instances testInsts = new Instances("tested_entites", entInstAttrCtx.getAttrs(), initialCapacity);
-			testInsts.setClass(entInstAttrCtx.getClassAttr());
+			final Instances testInsts = createTestInsts(initialCapacity);
 			tester.setTestInsts(testInsts);
 			tester.test(testSessionData);
 		}
+	}
+
+	private Instances createTestInsts(final int initialCapacity) {
+		final Instances result = new Instances(TEST_INSTS_REL_NAME, entInstAttrCtx.getAttrs(), initialCapacity);
+		result.setClass(entInstAttrCtx.getClassAttr());
+		return result;
+	}
+
+	private Instances redistributeMass(final Map<String, Instances> classInsts, final int minCount,
+			final String augendClassName) {
+		final List<Entry<String, Instances>> addendClassInsts = new ArrayList<>();
+		final Iterator<Entry<String, Instances>> entryIter = classInsts.entrySet().iterator();
+		while (entryIter.hasNext()) {
+			final Entry<String, Instances> insts = entryIter.next();
+			if (insts.getValue().numInstances() < minCount) {
+				LOGGER.info("Class \"{}\" has fewer than {} instances; Will redistribute to \"{}\".",
+						new Object[] { insts.getKey(), minCount, augendClassName });
+				addendClassInsts.add(insts);
+				entryIter.remove();
+			}
+		}
+		final Instances augendInsts = classInsts.computeIfAbsent(augendClassName, k -> {
+			final int totalInstCount = addendClassInsts.stream().map(Entry::getValue).mapToInt(Instances::numAttributes)
+					.sum();
+			return createTestInsts(totalInstCount);
+		});
+		addendClassInsts.stream().forEach(addendClassInst -> augendInsts.addAll(addendClassInst.getValue()));
+		return augendInsts;
 	}
 
 }

@@ -26,12 +26,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.inject.Inject;
-import javax.xml.bind.JAXBException;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -122,7 +122,7 @@ public final class WordsAsClassifiersCrossValidationTrainingDataWriter {
 	private static final Logger LOGGER = LoggerFactory
 			.getLogger(WordsAsClassifiersCrossValidationTrainingDataWriter.class);
 
-	public static void main(final CommandLine cl) throws IOException, JAXBException, ParseException, TrainingException {
+	public static void main(final CommandLine cl) throws ParseException, ExecutionException, IOException {
 		if (cl.hasOption(Parameter.HELP.optName)) {
 			Parameter.printHelp();
 		} else {
@@ -147,7 +147,7 @@ public final class WordsAsClassifiersCrossValidationTrainingDataWriter {
 		}
 	}
 
-	public static void main(final String[] args) throws IOException, JAXBException, TrainingException {
+	public static void main(final String[] args) throws ExecutionException, IOException {
 		final CommandLineParser parser = new DefaultParser();
 		try {
 			final CommandLine cl = parser.parse(Parameter.OPTIONS, args);
@@ -165,7 +165,7 @@ public final class WordsAsClassifiersCrossValidationTrainingDataWriter {
 	@Inject
 	private WordsAsClassifiersCrossValidationTestSetFactory testSetFactory;
 
-	public void accept(final Iterable<Path> inpaths) throws IOException, JAXBException, TrainingException {
+	public void accept(final Iterable<Path> inpaths) throws ExecutionException, IOException {
 		final Map<Path, SessionDataManager> infileSessionData = SessionDataManager.createFileSessionDataMap(inpaths);
 		final Map<SessionDataManager, Path> allSessions = infileSessionData.entrySet().stream()
 				.collect(Collectors.toMap(Entry::getValue, Entry::getKey));

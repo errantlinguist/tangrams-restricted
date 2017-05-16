@@ -19,6 +19,7 @@ package se.kth.speech.coin.tangrams.analysis.features;
 import java.io.IOException;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.concurrent.ExecutionException;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -28,6 +29,10 @@ import javax.xml.bind.JAXBException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 
 import se.kth.speech.coin.tangrams.analysis.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.GameContext;
@@ -54,6 +59,17 @@ public final class EntityCrossValidationTester {
 	@Inject
 	private BiFunction<? super GameContext, ? super Integer, EntityFeature.Extractor.Context> extCtxFactory;
 
+	private final LoadingCache<SessionDataManager, SessionEventDialogueManager> sessionDiagMgrs = CacheBuilder
+			.newBuilder().build(new CacheLoader<SessionDataManager, SessionEventDialogueManager>() {
+
+				@Override
+				public SessionEventDialogueManager load(final SessionDataManager key)
+						throws JAXBException, IOException {
+					return new SessionEventDialogueManager(key, eventDiagFactory);
+				}
+
+			});
+
 	private Instances testInsts;
 
 	private Function<? super String, ? extends Classifier> wordClassifiers;
@@ -74,9 +90,8 @@ public final class EntityCrossValidationTester {
 		this.wordClassifiers = wordClassifiers;
 	}
 
-	public void test(final SessionDataManager testSessionData) throws JAXBException, IOException {
-		final SessionEventDialogueManager sessionEventDiagMgr = new SessionEventDialogueManager(testSessionData,
-				eventDiagFactory);
+	public void test(final SessionDataManager testSessionData) throws ExecutionException {
+		final SessionEventDialogueManager sessionEventDiagMgr = sessionDiagMgrs.get(testSessionData);
 		final List<EventDialogue> uttDiags = sessionEventDiagMgr.createUttDialogues();
 		for (final EventDialogue uttDiag : uttDiags) {
 			testEntities(uttDiag, sessionEventDiagMgr.getGameHistory());

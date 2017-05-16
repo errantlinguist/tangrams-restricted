@@ -167,7 +167,7 @@ public final class WordsAsClassifiersInstancesMapFactory
 
 	@Inject
 	private Function<GameContext, Integer> negativeExampleEntityIdGetter;
-
+	
 	@Override
 	public Map<String, Instances> apply(final Collection<SessionEventDialogueManager> sessionEventDiagMgrs) {
 		final Map<String, Instances> result = Maps
