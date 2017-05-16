@@ -87,6 +87,47 @@ public final class SessionDataManager {
 		this.playerData = playerData;
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(final Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (!(obj instanceof SessionDataManager)) {
+			return false;
+		}
+		final SessionDataManager other = (SessionDataManager) obj;
+		if (canonicalEventLogPath == null) {
+			if (other.canonicalEventLogPath != null) {
+				return false;
+			}
+		} else if (!canonicalEventLogPath.equals(other.canonicalEventLogPath)) {
+			return false;
+		}
+		if (hatFilePath == null) {
+			if (other.hatFilePath != null) {
+				return false;
+			}
+		} else if (!hatFilePath.equals(other.hatFilePath)) {
+			return false;
+		}
+		if (playerData == null) {
+			if (other.playerData != null) {
+				return false;
+			}
+		} else if (!playerData.equals(other.playerData)) {
+			return false;
+		}
+		return true;
+	}
+
 	/**
 	 * @return the canonicalEventLogPath
 	 */
@@ -106,6 +147,39 @@ public final class SessionDataManager {
 	 */
 	public PlayerDataManager getPlayerData() {
 		return playerData;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + (canonicalEventLogPath == null ? 0 : canonicalEventLogPath.hashCode());
+		result = prime * result + (hatFilePath == null ? 0 : hatFilePath.hashCode());
+		result = prime * result + (playerData == null ? 0 : playerData.hashCode());
+		return result;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		final StringBuilder builder = new StringBuilder();
+		builder.append("SessionDataManager [canonicalEventLogPath=");
+		builder.append(canonicalEventLogPath);
+		builder.append(", hatFilePath=");
+		builder.append(hatFilePath);
+		builder.append(", playerData=");
+		builder.append(playerData);
+		builder.append("]");
+		return builder.toString();
 	}
 
 }
