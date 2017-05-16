@@ -141,9 +141,7 @@ public final class WordsAsClassifiersCrossValidationTrainingDataWriter {
 				try (final ClassPathXmlApplicationContext appCtx = new ClassPathXmlApplicationContext("extraction.xml",
 						WordsAsClassifiersCrossValidationTrainingDataWriter.class)) {
 					final WordsAsClassifiersCrossValidationTrainingDataWriter writer = appCtx
-							.getBean(WordsAsClassifiersCrossValidationTrainingDataWriter.class);
-					writer.setOutdir(outpath);
-					writer.setOutfileExt(outfileExt);
+							.getBean(WordsAsClassifiersCrossValidationTrainingDataWriter.class, outpath, outfileExt);
 					writer.accept(inpaths);
 				}
 			}
@@ -161,12 +159,17 @@ public final class WordsAsClassifiersCrossValidationTrainingDataWriter {
 		}
 	}
 
-	private File outdir;
+	private final File outdir;
 
-	private String outfileExt;
+	private final String outfileExt;
 
 	@Inject
 	private WordsAsClassifiersCrossValidationTestSetFactory testSetFactory;
+
+	public WordsAsClassifiersCrossValidationTrainingDataWriter(final File outdir, final String outfileExt) {
+		this.outdir = outdir;
+		this.outfileExt = outfileExt;
+	}
 
 	public void accept(final Iterable<Path> inpaths) throws ExecutionException, IOException {
 		final Map<Path, SessionDataManager> infileSessionData = SessionDataManager.createFileSessionDataMap(inpaths);
@@ -193,22 +196,6 @@ public final class WordsAsClassifiersCrossValidationTrainingDataWriter {
 			persist(classInstances.entrySet(), subsampleDir);
 		}
 		LOGGER.info("Finished writing {} cross-validation dataset(s) to \"{}\".", infileSessionData.size(), outdir);
-	}
-
-	/**
-	 * @param outdir
-	 *            the outdir to set
-	 */
-	public void setOutdir(final File outdir) {
-		this.outdir = outdir;
-	}
-
-	/**
-	 * @param outfileExt
-	 *            the outfileExt to set
-	 */
-	public void setOutfileExt(final String outfileExt) {
-		this.outfileExt = outfileExt;
 	}
 
 	private File createSubsampleDir(final String subsampleDirname) {
