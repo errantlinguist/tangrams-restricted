@@ -157,7 +157,7 @@ public final class WordsAsClassifiersInstancesMapFactory
 	}
 
 	private static int estimateVocabTokenCount(final String token, final Collection<?> sessionData) {
-		return sessionData.size() * 10;
+		return sessionData.size() * 25;
 	}
 
 	private static int estimateVocabTypeCount(final Collection<?> sessionData) {
