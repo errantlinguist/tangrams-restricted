@@ -155,11 +155,11 @@ public final class EntityCrossValidationTester {
 		return result;
 	}
 
-	private static Object getNominalClassValue(final Instance inst, final double val) {
+	private static double findNominalClassValueProbability(final Instance inst, final double[] classValProbs,
+			final String classValue) {
 		final List<Object> classVals = Collections.list(inst.classAttribute().enumerateValues());
-		final int idx = (int) val;
-		assert idx == val;
-		return classVals.get(idx);
+		final int idx = classVals.indexOf(classValue);
+		return classValProbs[idx];
 	}
 
 	@Inject
@@ -253,11 +253,10 @@ public final class EntityCrossValidationTester {
 			double confidenceSum = 0.0;
 			for (final Classifier classifier : classifiers) {
 				try {
-					final double val = classifier.classifyInstance(testInst);
-					final Object classVal = getNominalClassValue(testInst, val);
-					if (Boolean.TRUE.toString().equals(classVal)) {
-						confidenceSum += 1;
-					}
+					final double[] classValProbs = classifier.distributionForInstance(testInst);
+					final double classValProb = findNominalClassValueProbability(testInst, classValProbs,
+							Boolean.TRUE.toString());
+					confidenceSum += classValProb;
 				} catch (final Exception e) {
 					throw new ClassificationException(e);
 				}
