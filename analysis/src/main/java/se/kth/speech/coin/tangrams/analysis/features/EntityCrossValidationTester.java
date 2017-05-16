@@ -70,12 +70,12 @@ public final class EntityCrossValidationTester {
 
 			});
 
+	@Inject
+	private WordClassDiscountingSmoother smoother;
+
 	private Instances testInsts;
 
 	private Function<? super String, ? extends Classifier> wordClassifiers;
-
-	@Inject
-	private WordClassDiscountingSmoother smoother;
 
 	/**
 	 * @param testInsts
@@ -118,7 +118,7 @@ public final class EntityCrossValidationTester {
 	private void findReferredEntity(final Utterance utt, final GameContext uttCtx) throws ClassificationException {
 		LOGGER.info("Finding entity referred by {}.", utt);
 		final List<String> wordClasses = createUttWordClassList(utt);
-		List<Classifier> classifiers = smoother.createNGramClassifierList(wordClasses, wordClassifiers);
+		final List<Classifier> classifiers = smoother.createNGramClassifierList(wordClasses, wordClassifiers);
 		for (final Integer entityId : uttCtx.getEntityIds()) {
 			// Create a game context for classifying the entity with the
 			// given ID
