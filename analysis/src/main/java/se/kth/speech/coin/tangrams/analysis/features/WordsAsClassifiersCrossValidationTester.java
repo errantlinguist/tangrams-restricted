@@ -301,6 +301,7 @@ public final class WordsAsClassifiersCrossValidationTester {
 			result.sessionResults.put(infilePath, testResults);
 			result.totalResults.add(testResults);
 		}
+		LOGGER.info("Finished {} cross-validation iteration(s).", result.sessionResults.size());
 		return result;
 	}
 
