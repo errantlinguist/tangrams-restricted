@@ -104,6 +104,40 @@ public final class PlayerDataManager {
 		this.playerEventLogs = playerEventLogs;
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(final Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (!(obj instanceof PlayerDataManager)) {
+			return false;
+		}
+		final PlayerDataManager other = (PlayerDataManager) obj;
+		if (playerEventLogs == null) {
+			if (other.playerEventLogs != null) {
+				return false;
+			}
+		} else if (!playerEventLogs.equals(other.playerEventLogs)) {
+			return false;
+		}
+		if (playerSourceIds == null) {
+			if (other.playerSourceIds != null) {
+				return false;
+			}
+		} else if (!playerSourceIds.equals(other.playerSourceIds)) {
+			return false;
+		}
+		return true;
+	}
+
 	/**
 	 * @return the playerEventLogs
 	 */
@@ -116,6 +150,36 @@ public final class PlayerDataManager {
 	 */
 	public BiMap<String, String> getPlayerSourceIds() {
 		return Maps.unmodifiableBiMap(playerSourceIds);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + (playerEventLogs == null ? 0 : playerEventLogs.hashCode());
+		result = prime * result + (playerSourceIds == null ? 0 : playerSourceIds.hashCode());
+		return result;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		final StringBuilder builder = new StringBuilder();
+		builder.append("PlayerDataManager [playerEventLogs=");
+		builder.append(playerEventLogs);
+		builder.append(", playerSourceIds=");
+		builder.append(playerSourceIds);
+		builder.append("]");
+		return builder.toString();
 	}
 
 }
