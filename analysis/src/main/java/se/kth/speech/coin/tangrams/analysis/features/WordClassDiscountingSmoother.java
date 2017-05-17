@@ -28,6 +28,7 @@ import javax.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import se.kth.speech.coin.tangrams.analysis.features.weka.ClassInstanceFactory;
 import weka.classifiers.Classifier;
 import weka.core.Instances;
 

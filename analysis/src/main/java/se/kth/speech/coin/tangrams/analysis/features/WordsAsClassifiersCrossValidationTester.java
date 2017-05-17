@@ -55,6 +55,7 @@ import com.google.common.collect.Maps;
 import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
 import se.kth.speech.coin.tangrams.analysis.features.EntityCrossValidationTester.EventDialogueTestResults;
 import se.kth.speech.coin.tangrams.analysis.features.EntityCrossValidationTester.SessionTestResults;
+import se.kth.speech.coin.tangrams.analysis.features.weka.ClassInstanceFactory;
 import weka.classifiers.functions.Logistic;
 import weka.core.Instances;
 

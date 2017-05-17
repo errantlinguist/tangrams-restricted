@@ -8,7 +8,7 @@
         http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd">
 
 	<context:component-scan
-		base-package="se.kth.speech.coin.tangrams.analysis se.kth.speech.coin.tangrams.analysis.features" />
+		base-package="se.kth.speech.coin.tangrams.analysis.*" />
 
 	<util:list id="features-to-describe"
 		value-type="se.kth.speech.coin.tangrams.analysis.features.EntityFeature">

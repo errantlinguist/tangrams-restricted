@@ -8,7 +8,7 @@
         http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd">
 
 	<context:component-scan
-		base-package="se.kth.speech.coin.tangrams.analysis se.kth.speech.coin.tangrams.analysis.features" />
+		base-package="se.kth.speech.coin.tangrams.analysis.*" />
 
 	<bean id="event-dialogue-factory"
 		class="se.kth.speech.coin.tangrams.analysis.EventDialogueFactory">
@@ -32,7 +32,7 @@
 	</bean>
 
 	<bean id="entity-inst-feature-extractor"
-		class="se.kth.speech.coin.tangrams.analysis.features.InstanceFeatureExtractor">
+		class="se.kth.speech.coin.tangrams.analysis.features.weka.InstanceFeatureExtractor">
 		<constructor-arg>
 			<bean
 				class="se.kth.speech.coin.tangrams.analysis.features.EntityFeature.Extractor">
@@ -43,8 +43,8 @@
 	</bean>
 
 	<bean id="entity-inst-attr-ctx"
-		class="se.kth.speech.coin.tangrams.analysis.features.EntityInstanceAttributeContext">
-		<constructor-arg ref="entity-feature-extractor" />
+		class="se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttributeContext">
+		<constructor-arg ref="entity-inst-feature-extractor" />
 		<constructor-arg ref="training-class-attr-name" />
 	</bean>
 
@@ -76,7 +76,7 @@
 	</bean>
 
 	<bean id="class-insts-factory"
-		class="se.kth.speech.coin.tangrams.analysis.features.ClassInstanceFactory" />
+		class="se.kth.speech.coin.tangrams.analysis.features.weka.ClassInstanceFactory" />
 
 	<bean id="smoother"
 		class="se.kth.speech.coin.tangrams.analysis.features.WordClassDiscountingSmoother">
