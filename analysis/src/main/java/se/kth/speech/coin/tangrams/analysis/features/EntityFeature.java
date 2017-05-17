@@ -68,6 +68,95 @@ public enum EntityFeature {
 				this.modelArea = modelArea;
 				this.namedResourceEdgeCountFactory = namedResourceEdgeCountFactory;
 			}
+
+			/*
+			 * (non-Javadoc)
+			 * 
+			 * @see java.lang.Object#equals(java.lang.Object)
+			 */
+			@Override
+			public boolean equals(final Object obj) {
+				if (this == obj) {
+					return true;
+				}
+				if (obj == null) {
+					return false;
+				}
+				if (!(obj instanceof Context)) {
+					return false;
+				}
+				final Context other = (Context) obj;
+				if (Double.doubleToLongBits(modelArea) != Double.doubleToLongBits(other.modelArea)) {
+					return false;
+				}
+				if (!Arrays.equals(modelDims, other.modelDims)) {
+					return false;
+				}
+				if (namedResourceEdgeCountFactory == null) {
+					if (other.namedResourceEdgeCountFactory != null) {
+						return false;
+					}
+				} else if (!namedResourceEdgeCountFactory.equals(other.namedResourceEdgeCountFactory)) {
+					return false;
+				}
+				if (pieceImgVizInfoDatum == null) {
+					if (other.pieceImgVizInfoDatum != null) {
+						return false;
+					}
+				} else if (!pieceImgVizInfoDatum.equals(other.pieceImgVizInfoDatum)) {
+					return false;
+				}
+				if (pieceRegion == null) {
+					if (other.pieceRegion != null) {
+						return false;
+					}
+				} else if (!pieceRegion.equals(other.pieceRegion)) {
+					return false;
+				}
+				return true;
+			}
+
+			/*
+			 * (non-Javadoc)
+			 * 
+			 * @see java.lang.Object#hashCode()
+			 */
+			@Override
+			public int hashCode() {
+				final int prime = 31;
+				int result = 1;
+				long temp;
+				temp = Double.doubleToLongBits(modelArea);
+				result = prime * result + (int) (temp ^ temp >>> 32);
+				result = prime * result + Arrays.hashCode(modelDims);
+				result = prime * result
+						+ (namedResourceEdgeCountFactory == null ? 0 : namedResourceEdgeCountFactory.hashCode());
+				result = prime * result + (pieceImgVizInfoDatum == null ? 0 : pieceImgVizInfoDatum.hashCode());
+				result = prime * result + (pieceRegion == null ? 0 : pieceRegion.hashCode());
+				return result;
+			}
+
+			/*
+			 * (non-Javadoc)
+			 * 
+			 * @see java.lang.Object#toString()
+			 */
+			@Override
+			public String toString() {
+				final StringBuilder builder = new StringBuilder();
+				builder.append("Context [modelArea=");
+				builder.append(modelArea);
+				builder.append(", modelDims=");
+				builder.append(Arrays.toString(modelDims));
+				builder.append(", namedResourceEdgeCountFactory=");
+				builder.append(namedResourceEdgeCountFactory);
+				builder.append(", pieceImgVizInfoDatum=");
+				builder.append(pieceImgVizInfoDatum);
+				builder.append(", pieceRegion=");
+				builder.append(pieceRegion);
+				builder.append("]");
+				return builder.toString();
+			}
 		}
 
 		private static final String DEFAULT_ATTR_NAME_PREFIX = "";
