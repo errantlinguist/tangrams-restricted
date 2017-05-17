@@ -170,10 +170,9 @@ public final class WordsAsClassifiersInstancesMapFactory
 
 	private static int estimateVocabTypeTokenCount(final String token, final Collection<?> sessionData) {
 		// Number of sessions * estimated number of dialogues per session *
-		// training instances used per dialogue *
 		// estimated number of utterances per dialogue * estimated number of
 		// tokens (i.e. n-grams) per utterance
-		final long estimate = sessionData.size() * 50 * 2 * 4 * 20;
+		final long estimate = sessionData.size() * 50 * 4 * 10;
 		int result = Integer.MAX_VALUE;
 		try {
 			result = Math.toIntExact(estimate);
