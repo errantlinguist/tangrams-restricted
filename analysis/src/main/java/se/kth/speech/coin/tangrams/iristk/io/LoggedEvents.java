@@ -23,7 +23,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.EnumSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Predicate;
@@ -56,7 +55,7 @@ import se.kth.speech.coin.tangrams.iristk.GameStateDescriptions;
 public final class LoggedEvents {
 
 	public static final EventTypeMatcher VALID_MODEL_MIN_REQUIRED_EVENT_MATCHER = new EventTypeMatcher(
-			EnumSet.of(GameManagementEvent.NEXT_TURN_REQUEST, GameManagementEvent.GAME_READY_RESPONSE));
+			GameManagementEvent.getGameModelStateChangingEvents());
 
 	private static final Predicate<Event> DEFAULT_EVENT_FILTER = event -> true;
 

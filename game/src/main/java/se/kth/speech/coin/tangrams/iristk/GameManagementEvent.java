@@ -17,7 +17,10 @@
 package se.kth.speech.coin.tangrams.iristk;
 
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.EnumSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -68,6 +71,9 @@ public enum GameManagementEvent {
 
 	public static final String EVENT_NAME_QUALIFIER = "tangrams.action";
 
+	private static final EnumSet<GameManagementEvent> GAME_MODEL_STATE_CHANGING_EVENTS = EnumSet
+			.of(GameManagementEvent.GAME_READY_RESPONSE, GameManagementEvent.NEXT_TURN_REQUEST);
+
 	private static final Map<String, GameManagementEvent> NAMED_EVENTS = Arrays.stream(GameManagementEvent.values())
 			.collect(Collectors.toMap(GameManagementEvent::getEventName, Function.identity()));
 
@@ -77,6 +83,13 @@ public enum GameManagementEvent {
 
 	public static GameManagementEvent getEventType(final String eventName) {
 		return NAMED_EVENTS.get(eventName);
+	}
+
+	/**
+	 * @return the gameModelStateChangingEvents
+	 */
+	public static Set<GameManagementEvent> getGameModelStateChangingEvents() {
+		return Collections.unmodifiableSet(GAME_MODEL_STATE_CHANGING_EVENTS);
 	}
 
 	private final String eventName;
