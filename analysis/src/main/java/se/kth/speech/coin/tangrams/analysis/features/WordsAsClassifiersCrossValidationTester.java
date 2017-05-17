@@ -23,6 +23,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
@@ -52,6 +53,7 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import com.google.common.collect.Maps;
 
+import se.kth.speech.coin.tangrams.analysis.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
 import se.kth.speech.coin.tangrams.analysis.features.EntityCrossValidationTester.EventDialogueTestResults;
 import se.kth.speech.coin.tangrams.analysis.features.EntityCrossValidationTester.SessionTestResults;
@@ -77,10 +79,12 @@ public final class WordsAsClassifiersCrossValidationTester {
 
 		private final Map<Path, SessionTestResults> sessionResults;
 
-		private final SessionTestResults totalResults = new SessionTestResults();
-
 		private TestResults(final int expectedSessionCount) {
 			sessionResults = Maps.newHashMapWithExpectedSize(expectedSessionCount);
+		}
+
+		public Stream<Entry<EventDialogue, EventDialogueTestResults>> getAllDiagTestResults() {
+			return sessionResults.values().stream().map(SessionTestResults::getDiagResults).flatMap(List::stream);
 		}
 
 		/**
@@ -90,11 +94,19 @@ public final class WordsAsClassifiersCrossValidationTester {
 			return Collections.unmodifiableMap(sessionResults);
 		}
 
+		public int totalDiagsTested() {
+			return sessionResults.values().stream().mapToInt(SessionTestResults::totalDiagsTested).sum();
+		}
+
 		/**
 		 * @return the totalResults
 		 */
-		public SessionTestResults getTotalResults() {
-			return totalResults;
+		public SessionTestResults totalResults() {
+			final List<Entry<EventDialogue, EventDialogueTestResults>> totalDiagResults = new ArrayList<>(
+					totalDiagsTested());
+			final SessionTestResults result = new SessionTestResults(totalDiagResults);
+			sessionResults.forEach((inpath, sessionResults) -> result.add(sessionResults));
+			return result;
 		}
 	}
 
@@ -152,7 +164,7 @@ public final class WordsAsClassifiersCrossValidationTester {
 
 	public static final String TRAINING_FILE_NAME_PREFIX = "train-";
 
-	private static final List<String> COL_HEADERS = Arrays.asList("INPATH", "MEAN_RANK", "DIAG_COUNT", "UTTS_TESTED",
+	private static final List<String> COL_HEADERS = Arrays.asList("INPATH", "MRR", "DIAG_COUNT", "UTTS_TESTED",
 			"MEAN_UTTS_PER_DIAG");
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(WordsAsClassifiersCrossValidationTester.class);
@@ -197,10 +209,9 @@ public final class WordsAsClassifiersCrossValidationTester {
 	}
 
 	private static List<Object> createTableRow(final Object key, final SessionTestResults sessionTestResults) {
-		final EventDialogueTestResults sessionDiagResults = sessionTestResults.getDiagResults();
-		final int totalUttsTested = sessionDiagResults.getTotalUtterancesTested();
-		final int totalDiagsTested = sessionTestResults.getTotalDiagsTested();
-		return Arrays.asList(key, sessionDiagResults.getMeanRank(), totalDiagsTested, totalUttsTested,
+		final int totalUttsTested = sessionTestResults.totalUtterancesTested();
+		final int totalDiagsTested = sessionTestResults.totalDiagsTested();
+		return Arrays.asList(key, sessionTestResults.meanReciprocalRank(), totalDiagsTested, totalUttsTested,
 				totalUttsTested / (double) totalDiagsTested);
 	}
 
@@ -258,7 +269,7 @@ public final class WordsAsClassifiersCrossValidationTester {
 			out.println(cellVals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
 		}
 
-		final SessionTestResults totalSessionResults = testResults.totalResults;
+		final SessionTestResults totalSessionResults = testResults.totalResults();
 		final List<Object> summaryVals = createTableRow("SUMMARY", totalSessionResults);
 		out.print(summaryVals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
 	}
@@ -302,7 +313,6 @@ public final class WordsAsClassifiersCrossValidationTester {
 			final SessionTestResults testResults = tester.testSession(testSessionData);
 			final Path infilePath = allSessions.get(testSessionData);
 			result.sessionResults.put(infilePath, testResults);
-			result.totalResults.add(testResults);
 		}
 		LOGGER.info("Finished {} cross-validation iteration(s).", result.sessionResults.size());
 		return result;

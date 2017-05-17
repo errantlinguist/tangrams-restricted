@@ -16,8 +16,10 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
@@ -38,6 +40,7 @@ import it.unimi.dsi.fastutil.ints.Int2DoubleOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
+import se.kth.speech.MutablePair;
 import se.kth.speech.coin.tangrams.analysis.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.GameContext;
 import se.kth.speech.coin.tangrams.analysis.GameHistory;
@@ -56,58 +59,96 @@ public final class EntityCrossValidationTester {
 
 	public static final class EventDialogueTestResults {
 
-		private double rankSum;
+		private final List<Entry<Utterance, UtteranceTestResults>> uttTestResults;
 
-		private int totalUtterancesTested;
+		private EventDialogueTestResults(final List<Entry<Utterance, UtteranceTestResults>> uttTestResults) {
+			this.uttTestResults = uttTestResults;
+		}
 
 		public void add(final EventDialogueTestResults other) {
-			rankSum += other.rankSum;
-			totalUtterancesTested += other.totalUtterancesTested;
+			uttTestResults.addAll(other.uttTestResults);
 		}
 
-		public double getMeanRank() {
-			return rankSum / totalUtterancesTested;
+		public double meanReciprocalRank() {
+			final double rrSum = sumReciprocalRank();
+			return rrSum / totalUtterancesTested();
 		}
 
-		/**
-		 * @return the rankSum
-		 */
-		public double getRankSum() {
-			return rankSum;
+		public double meanTokensPerUtterance() {
+			final int totalTokens = totalTokens();
+			return totalTokens / (double) uttTestResults.size();
 		}
 
-		/**
-		 * @return the totalUtterancesTested
-		 */
-		public int getTotalUtterancesTested() {
-			return totalUtterancesTested;
+		public int totalTokens() {
+			return uttTestResults.stream().map(Entry::getKey).map(Utterance::getTokens).mapToInt(List::size).sum();
 		}
+
+		public int totalUtterancesTested() {
+			return uttTestResults.size();
+		}
+
+		private double sumReciprocalRank() {
+			double result = 0.0;
+			// TODO: Find a better way to calculate MRR, which avoids cumulative
+			// floating-point precision errors
+			for (final Entry<Utterance, UtteranceTestResults> uttTestResultsEntry : uttTestResults) {
+				final UtteranceTestResults testResults = uttTestResultsEntry.getValue();
+				final double uttRR = testResults.reciprocalRank();
+				result += uttRR;
+			}
+			return result;
+		}
+
 	}
 
 	public static final class SessionTestResults {
 
-		private final EventDialogueTestResults diagResults = new EventDialogueTestResults();
+		private final List<Entry<EventDialogue, EventDialogueTestResults>> diagTestResults;
 
-		private int totalDiagsTested;
+		public SessionTestResults(final List<Entry<EventDialogue, EventDialogueTestResults>> diagResults) {
+			diagTestResults = diagResults;
+		}
 
 		public void add(final SessionTestResults other) {
-			diagResults.add(other.diagResults);
-			totalDiagsTested += other.totalDiagsTested;
+			diagTestResults.addAll(other.diagTestResults);
 		}
 
 		/**
 		 * @return the diagResults
 		 */
-		public EventDialogueTestResults getDiagResults() {
-			return diagResults;
+		public List<Entry<EventDialogue, EventDialogueTestResults>> getDiagResults() {
+			return diagTestResults;
 		}
 
-		public double getMeanUttsPerDialogue() {
-			return diagResults.totalUtterancesTested / (double) totalDiagsTested;
+		public double meanReciprocalRank() {
+			final double rrSum = sumReciprocalRank();
+			return rrSum / totalUtterancesTested();
 		}
 
-		public int getTotalDiagsTested() {
-			return totalDiagsTested;
+		public double meanUttsPerDialogue() {
+			final int totalUtts = totalUtterancesTested();
+			return totalUtts / (double) totalDiagsTested();
+		}
+
+		public int totalDiagsTested() {
+			return diagTestResults.size();
+		}
+
+		public int totalUtterancesTested() {
+			return diagTestResults.stream().map(Entry::getValue)
+					.mapToInt(EventDialogueTestResults::totalUtterancesTested).sum();
+		}
+
+		private double sumReciprocalRank() {
+			double result = 0.0;
+			// TODO: Find a better way to calculate MRR, which avoids cumulative
+			// floating-point precision errors
+			for (final Entry<EventDialogue, EventDialogueTestResults> diagTestResultsEntry : diagTestResults) {
+				final EventDialogueTestResults diagTestResults = diagTestResultsEntry.getValue();
+				final double diagRRSum = diagTestResults.sumReciprocalRank();
+				result += diagRRSum;
+			}
+			return result;
 		}
 
 	}
@@ -120,7 +161,7 @@ public final class EntityCrossValidationTester {
 
 		private final double rank;
 
-		public UtteranceTestResults(final Int2DoubleMap entityReferenceConfidenceVals, final int goldStandardEntityId,
+		private UtteranceTestResults(final Int2DoubleMap entityReferenceConfidenceVals, final int goldStandardEntityId,
 				final double rank) {
 			this.entityReferenceConfidenceVals = entityReferenceConfidenceVals;
 			this.goldStandardEntityId = goldStandardEntityId;
@@ -146,6 +187,10 @@ public final class EntityCrossValidationTester {
 		 */
 		public double getRank() {
 			return rank;
+		}
+
+		public double reciprocalRank() {
+			return 1.0 / rank;
 		}
 	}
 
@@ -194,21 +239,13 @@ public final class EntityCrossValidationTester {
 			throws ExecutionException, ClassificationException {
 		final SessionEventDialogueManager sessionEventDiagMgr = sessionDiagMgrCacheSupplier.get().get(sessionData);
 		final List<EventDialogue> uttDiags = sessionEventDiagMgr.createUttDialogues();
-		final SessionTestResults result = new SessionTestResults();
+		final SessionTestResults result = new SessionTestResults(new ArrayList<>(uttDiags.size()));
 		for (final EventDialogue uttDiag : uttDiags) {
 			final Optional<EventDialogueTestResults> optTestResults = testDialogue(uttDiag,
 					sessionEventDiagMgr.getGameHistory());
 			if (optTestResults.isPresent()) {
-				result.totalDiagsTested++;
-
 				final EventDialogueTestResults results = optTestResults.get();
-				{
-					final double mean = results.getMeanRank();
-					LOGGER.debug("Mean rank of {} for {} utterance(s) tested in {}.", mean,
-							results.totalUtterancesTested, uttDiag);
-					assert !Double.isNaN(mean);
-				}
-				result.diagResults.add(results);
+				result.diagTestResults.add(new MutablePair<>(uttDiag, results));
 			} else {
 				LOGGER.debug("No utterances tested for {}.", uttDiag);
 			}
@@ -278,14 +315,13 @@ public final class EntityCrossValidationTester {
 			if (dialogueUttsFromInstructor.length < 1) {
 				result = Optional.empty();
 			} else {
-				final EventDialogueTestResults diagTestResults = new EventDialogueTestResults();
+				final EventDialogueTestResults diagTestResults = new EventDialogueTestResults(
+						new ArrayList<>(dialogueUttsFromInstructor.length));
 				for (final Utterance dialogueUtt : dialogueUttsFromInstructor) {
 					final GameContext uttCtx = UtteranceGameContexts.createGameContext(dialogueUtt, history,
 							submittingPlayerId);
-
-					diagTestResults.totalUtterancesTested++;
 					final UtteranceTestResults uttTestResults = testUtterance(dialogueUtt, uttCtx);
-					diagTestResults.rankSum += uttTestResults.getRank();
+					diagTestResults.uttTestResults.add(new MutablePair<>(dialogueUtt, uttTestResults));
 				}
 				result = Optional.of(diagTestResults);
 			}
