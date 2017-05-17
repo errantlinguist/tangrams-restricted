@@ -17,14 +17,13 @@
 package se.kth.speech.math;
 
 import java.util.Collection;
+import java.util.function.Supplier;
 
 import it.unimi.dsi.fastutil.doubles.Double2ObjectRBTreeMap;
 import it.unimi.dsi.fastutil.doubles.Double2ObjectSortedMap;
 import it.unimi.dsi.fastutil.doubles.DoubleComparators;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import it.unimi.dsi.fastutil.ints.IntCollection;
-import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
-import it.unimi.dsi.fastutil.ints.IntSet;
 import it.unimi.dsi.fastutil.objects.ObjectIterable;
 
 /**
@@ -33,22 +32,22 @@ import it.unimi.dsi.fastutil.objects.ObjectIterable;
  *
  */
 public final class NBestRankings {
-
-	public static Double2ObjectSortedMap<IntSet> createNbestGroupMap(
+	
+	public static <G extends IntCollection> Double2ObjectSortedMap<G> createNbestGroupMap(
 			final Collection<Int2DoubleMap.Entry> observationReferenceConfidenceVals,
-			final int tieGroupInitialCapacity) {
-		final Double2ObjectSortedMap<IntSet> result = new Double2ObjectRBTreeMap<>(
+			final Supplier<G> tieGroupContainerFactory) {
+		final Double2ObjectSortedMap<G> result = new Double2ObjectRBTreeMap<>(
 				DoubleComparators.OPPOSITE_COMPARATOR);
 		for (final Int2DoubleMap.Entry observationReferenceConfidenceVal : observationReferenceConfidenceVals) {
 			final double confidenceVal = observationReferenceConfidenceVal.getDoubleValue();
-			IntSet observationIds = result.get(confidenceVal);
+			G observationIds = result.get(confidenceVal);
 			if (observationIds == null) {
-				observationIds = new IntOpenHashSet(tieGroupInitialCapacity);
+				observationIds = tieGroupContainerFactory.get();
 				result.put(confidenceVal, observationIds);
 			}
 			observationIds.add(observationReferenceConfidenceVal.getIntKey());
 		}
-		return result;
+		return result;		
 	}
 
 	public static double findAveragedRank(final ObjectIterable<? extends IntCollection> nbestGroups,

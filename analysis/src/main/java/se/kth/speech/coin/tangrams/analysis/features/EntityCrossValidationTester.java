@@ -35,6 +35,7 @@ import it.unimi.dsi.fastutil.doubles.Double2ObjectSortedMap;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import it.unimi.dsi.fastutil.ints.Int2DoubleOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntList;
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import se.kth.speech.coin.tangrams.analysis.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.GameContext;
@@ -258,7 +259,7 @@ public final class EntityCrossValidationTester {
 		testResults.totalUtterancesTested++;
 		final Int2DoubleMap entityReferenceConfidenceVals = createReferredEntityConfidenceMap(dialogueUtt, uttCtx);
 		final Double2ObjectSortedMap<IntSet> nbestGroups = NBestRankings
-				.createNbestGroupMap(entityReferenceConfidenceVals.int2DoubleEntrySet(), 1);
+				.createNbestGroupMap(entityReferenceConfidenceVals.int2DoubleEntrySet(), () -> new IntOpenHashSet(1));
 		final double rank = NBestRankings.findAveragedRank(nbestGroups.values(),
 				uttCtx.findLastSelectedEntityId().get());
 		assert rank <= uttCtx.getEntityCount();
