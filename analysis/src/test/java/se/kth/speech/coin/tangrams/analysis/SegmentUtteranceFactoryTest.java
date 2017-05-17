@@ -82,7 +82,7 @@ public final class SegmentUtteranceFactoryTest {
 	}
 
 	private static Annotation readAnnotations() throws URISyntaxException, JAXBException {
-		final URL testAnnotFileUrl = SegmentUtteranceFactoryTest.class.getResource("test-hat.xml");
+		final URL testAnnotFileUrl = SegmentUtteranceFactoryTest.class.getResource(TestDataResources.ROOT_DIR + "/test-hat.xml");
 		LOGGER.info("Reading test annotations from \"{}\".", testAnnotFileUrl);
 		final File testAnnotFile = new File(testAnnotFileUrl.toURI());
 		return HAT.readAnnotation(testAnnotFile);
@@ -94,8 +94,8 @@ public final class SegmentUtteranceFactoryTest {
 	 */
 	@Theory
 	public void testCreateSegment(final Segment seg) {
-		LOGGER.info("Testing segment \"{}\".",
-				 SegmentUtteranceFactory.createSegmentTokenList(seg).stream().map(T::getContent).collect(TOKEN_JOINING_COLLECTOR));
+		LOGGER.info("Testing segment \"{}\".", SegmentUtteranceFactory.createSegmentTokenList(seg).stream()
+				.map(T::getContent).collect(TOKEN_JOINING_COLLECTOR));
 		final List<Utterance> utts = TEST_INST.create(seg);
 		Assert.assertFalse(utts.isEmpty());
 		final Float actualStart = seg.getStart();

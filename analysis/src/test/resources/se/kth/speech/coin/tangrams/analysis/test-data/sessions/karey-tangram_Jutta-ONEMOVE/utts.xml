@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="iso-8859-1"?><annotation xmlns="http://www.speech.kth.se/higgins/2005/annotation/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.speech.kth.se/higgins/2005/annotation/ http://www.speech.kth.se/higgins/2005/annotation/annotation.xsd" id="ENTER_ANNOTATION_ID_HERE"><tracks>
+<track id="track1"><sources><source id="source1" href="karey_tangram_Jutta-synced.wav" channel="0" /></sources></track>
+<track id="track2"><sources><source id="source2" href="karey_tangram_Jutta-synced.wav" channel="1" /></sources></track>
+</tracks>
+<segments>
+<segment start="21.8114" end="32.9477" source="source2" track="track2" id="segment5">
+
+<transcription><t>um</t><t>so</t><t>mm</t><t>this</t><t>time</t><t>it's</t><t>the</t><t>CLICK</t><t>lower</t><t>right</t><t>the</t><t>red</t><t>one</t><t>take</t><t>the</t><t>one</t><t>on</t><t>the</t><t>bottom</t></transcription></segment>
+<segment start="28.0584" end="28.2336" source="source1" track="track1" id="segment6">
+
+<transcription><t>mm</t></transcription></segment>
+<segment start="34.9225" end="35.4589" source="source1" track="track1" id="segment8">
+
+<transcription><t>the</t></transcription></segment>
+<segment start="36.0130" end="37.9289" source="source2" track="track2" id="segment7">
+
+<transcription><t>pink</t><t>red</t><t>the</t></transcription></segment>
+<segment start="37.4952" end="38.8746" source="source1" track="track1" id="segment9">
+
+<transcription><t>oh</t><t>the</t><t>pink</t><t>one</t><t>with</t><t>the</t><t>four</t></transcription></segment>
+<segment start="39.2207" end="43.0851" source="source2" track="track2" id="segment10">
+
+<transcription><t>yeah</t><t>the</t><t>edgy</t><t>yeah</t><t>looks</t><t>more</t><t>like</t><t>a</t><t>wing</t></transcription></segment>
+<segment start="43.5997" end="44.5083" source="source2" track="track2" id="segment11">
+
+<transcription><t>yep</t><t>it's</t><t>the</t><t>right</t><t>one</t></transcription></segment>
+</segments></annotation>
