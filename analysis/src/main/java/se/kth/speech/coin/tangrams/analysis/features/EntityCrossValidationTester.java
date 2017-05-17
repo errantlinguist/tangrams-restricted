@@ -33,6 +33,7 @@ import com.google.common.cache.LoadingCache;
 import iristk.system.Event;
 import it.unimi.dsi.fastutil.doubles.Double2ObjectSortedMap;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
+import it.unimi.dsi.fastutil.ints.Int2DoubleMaps;
 import it.unimi.dsi.fastutil.ints.Int2DoubleOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
@@ -109,6 +110,43 @@ public final class EntityCrossValidationTester {
 			return totalDiagsTested;
 		}
 
+	}
+
+	public static final class UtteranceTestResults {
+
+		private final Int2DoubleMap entityReferenceConfidenceVals;
+
+		private final int goldStandardEntityId;
+
+		private final double rank;
+
+		public UtteranceTestResults(final Int2DoubleMap entityReferenceConfidenceVals, final int goldStandardEntityId,
+				final double rank) {
+			this.entityReferenceConfidenceVals = entityReferenceConfidenceVals;
+			this.goldStandardEntityId = goldStandardEntityId;
+			this.rank = rank;
+		}
+
+		/**
+		 * @return the entityReferenceConfidenceVals
+		 */
+		public Int2DoubleMap getEntityReferenceConfidenceVals() {
+			return Int2DoubleMaps.unmodifiable(entityReferenceConfidenceVals);
+		}
+
+		/**
+		 * @return the goldStandardEntityId
+		 */
+		public int getGoldStandardEntityId() {
+			return goldStandardEntityId;
+		}
+
+		/**
+		 * @return the rank
+		 */
+		public double getRank() {
+			return rank;
+		}
 	}
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(EntityCrossValidationTester.class);
@@ -240,13 +278,16 @@ public final class EntityCrossValidationTester {
 			if (dialogueUttsFromInstructor.length < 1) {
 				result = Optional.empty();
 			} else {
-				final EventDialogueTestResults testResults = new EventDialogueTestResults();
+				final EventDialogueTestResults diagTestResults = new EventDialogueTestResults();
 				for (final Utterance dialogueUtt : dialogueUttsFromInstructor) {
 					final GameContext uttCtx = UtteranceGameContexts.createGameContext(dialogueUtt, history,
 							submittingPlayerId);
-					testUtterance(dialogueUtt, uttCtx, testResults);
+
+					diagTestResults.totalUtterancesTested++;
+					final UtteranceTestResults uttTestResults = testUtterance(dialogueUtt, uttCtx);
+					diagTestResults.rankSum += uttTestResults.getRank();
 				}
-				result = Optional.of(testResults);
+				result = Optional.of(diagTestResults);
 			}
 		} else {
 			result = Optional.empty();
@@ -254,16 +295,16 @@ public final class EntityCrossValidationTester {
 		return result;
 	}
 
-	private void testUtterance(final Utterance dialogueUtt, final GameContext uttCtx,
-			final EventDialogueTestResults testResults) throws ClassificationException {
-		testResults.totalUtterancesTested++;
+	private UtteranceTestResults testUtterance(final Utterance dialogueUtt, final GameContext uttCtx)
+			throws ClassificationException {
 		final Int2DoubleMap entityReferenceConfidenceVals = createReferredEntityConfidenceMap(dialogueUtt, uttCtx);
-		final Double2ObjectSortedMap<IntSet> nbestGroups = NBestRankings
-				.createNbestGroupMap(entityReferenceConfidenceVals.int2DoubleEntrySet(), confidenceVal -> new IntOpenHashSet(1));
-		final double rank = NBestRankings.findAveragedRank(nbestGroups.values(),
-				uttCtx.findLastSelectedEntityId().get());
+		final Double2ObjectSortedMap<IntSet> nbestGroups = NBestRankings.createNbestGroupMap(
+				entityReferenceConfidenceVals.int2DoubleEntrySet(), confidenceVal -> new IntOpenHashSet(1));
+		final int goldStandardEntityId = uttCtx.findLastSelectedEntityId().get();
+		final double rank = NBestRankings.findAveragedRank(nbestGroups.values(), goldStandardEntityId);
 		assert rank <= uttCtx.getEntityCount();
 		LOGGER.debug("Rank of correct entity: {}", rank);
-		testResults.rankSum += rank;
+		return new UtteranceTestResults(entityReferenceConfidenceVals, goldStandardEntityId, rank);
 	}
+
 }
