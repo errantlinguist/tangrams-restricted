@@ -16,7 +16,6 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -32,16 +31,11 @@ import org.slf4j.LoggerFactory;
 import com.google.common.cache.LoadingCache;
 
 import iristk.system.Event;
-import it.unimi.dsi.fastutil.doubles.Double2ObjectRBTreeMap;
 import it.unimi.dsi.fastutil.doubles.Double2ObjectSortedMap;
-import it.unimi.dsi.fastutil.doubles.DoubleComparators;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import it.unimi.dsi.fastutil.ints.Int2DoubleOpenHashMap;
-import it.unimi.dsi.fastutil.ints.IntCollection;
 import it.unimi.dsi.fastutil.ints.IntList;
-import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
-import it.unimi.dsi.fastutil.objects.ObjectIterable;
 import se.kth.speech.coin.tangrams.analysis.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.GameContext;
 import se.kth.speech.coin.tangrams.analysis.GameHistory;
@@ -50,6 +44,7 @@ import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManager;
 import se.kth.speech.coin.tangrams.analysis.Utterance;
 import se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttributeContext;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
+import se.kth.speech.math.NBestRankings;
 import weka.classifiers.Classifier;
 import weka.core.DenseInstance;
 import weka.core.Instance;
@@ -116,45 +111,6 @@ public final class EntityCrossValidationTester {
 	}
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(EntityCrossValidationTester.class);
-
-	private static Double2ObjectSortedMap<IntSet> createNbestGroupMap(
-			final Collection<Int2DoubleMap.Entry> entityReferenceConfidenceVals) {
-		final Double2ObjectSortedMap<IntSet> result = new Double2ObjectRBTreeMap<>(
-				DoubleComparators.OPPOSITE_COMPARATOR);
-		for (final Int2DoubleMap.Entry entityReferenceConfidenceVal : entityReferenceConfidenceVals) {
-			final double confidenceVal = entityReferenceConfidenceVal.getDoubleValue();
-			IntSet entityIds = result.get(confidenceVal);
-			if (entityIds == null) {
-				entityIds = new IntOpenHashSet();
-				result.put(confidenceVal, entityIds);
-			}
-			entityIds.add(entityReferenceConfidenceVal.getIntKey());
-		}
-		return result;
-	}
-
-	private static double findAveragedRank(final ObjectIterable<? extends IntCollection> nbestGroups,
-			final int entityId) {
-		double bestRankForTiedGroup = 1.0;
-		IntCollection tiedEntityIds = null;
-		for (final IntCollection nbestGroup : nbestGroups) {
-			if (nbestGroup.contains(entityId)) {
-				tiedEntityIds = nbestGroup;
-				break;
-			}
-			bestRankForTiedGroup += nbestGroup.size();
-		}
-
-		final double result;
-		if (tiedEntityIds == null) {
-			throw new IllegalArgumentException("ID not found.");
-		} else {
-			final double worstRankForTiedGroup = bestRankForTiedGroup + (tiedEntityIds.size() - 1);
-			// Average the ranks for sets of ties
-			result = (bestRankForTiedGroup + worstRankForTiedGroup) / 2;
-		}
-		return result;
-	}
 
 	private static double findNominalClassValueProbability(final Instance inst, final double[] classValProbs,
 			final String classValue) {
@@ -301,9 +257,10 @@ public final class EntityCrossValidationTester {
 			final EventDialogueTestResults testResults) throws ClassificationException {
 		testResults.totalUtterancesTested++;
 		final Int2DoubleMap entityReferenceConfidenceVals = createReferredEntityConfidenceMap(dialogueUtt, uttCtx);
-		final Double2ObjectSortedMap<IntSet> nbestGroups = createNbestGroupMap(
-				entityReferenceConfidenceVals.int2DoubleEntrySet());
-		final double rank = findAveragedRank(nbestGroups.values(), uttCtx.findLastSelectedEntityId().get());
+		final Double2ObjectSortedMap<IntSet> nbestGroups = NBestRankings
+				.createNbestGroupMap(entityReferenceConfidenceVals.int2DoubleEntrySet());
+		final double rank = NBestRankings.findAveragedRank(nbestGroups.values(),
+				uttCtx.findLastSelectedEntityId().get());
 		assert rank <= uttCtx.getEntityCount();
 		LOGGER.debug("Rank of correct entity: {}", rank);
 		testResults.rankSum += rank;
