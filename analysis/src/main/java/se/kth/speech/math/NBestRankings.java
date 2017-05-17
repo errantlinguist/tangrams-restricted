@@ -17,7 +17,7 @@
 package se.kth.speech.math;
 
 import java.util.Collection;
-import java.util.function.Supplier;
+import java.util.function.DoubleFunction;
 
 import it.unimi.dsi.fastutil.doubles.Double2ObjectRBTreeMap;
 import it.unimi.dsi.fastutil.doubles.Double2ObjectSortedMap;
@@ -35,14 +35,14 @@ public final class NBestRankings {
 	
 	public static <G extends IntCollection> Double2ObjectSortedMap<G> createNbestGroupMap(
 			final Collection<Int2DoubleMap.Entry> observationReferenceConfidenceVals,
-			final Supplier<G> tieGroupContainerFactory) {
+			final DoubleFunction<G> tieGroupContainerFactory) {
 		final Double2ObjectSortedMap<G> result = new Double2ObjectRBTreeMap<>(
 				DoubleComparators.OPPOSITE_COMPARATOR);
 		for (final Int2DoubleMap.Entry observationReferenceConfidenceVal : observationReferenceConfidenceVals) {
 			final double confidenceVal = observationReferenceConfidenceVal.getDoubleValue();
 			G observationIds = result.get(confidenceVal);
 			if (observationIds == null) {
-				observationIds = tieGroupContainerFactory.get();
+				observationIds = tieGroupContainerFactory.apply(confidenceVal);
 				result.put(confidenceVal, observationIds);
 			}
 			observationIds.add(observationReferenceConfidenceVal.getIntKey());

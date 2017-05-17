@@ -259,7 +259,7 @@ public final class EntityCrossValidationTester {
 		testResults.totalUtterancesTested++;
 		final Int2DoubleMap entityReferenceConfidenceVals = createReferredEntityConfidenceMap(dialogueUtt, uttCtx);
 		final Double2ObjectSortedMap<IntSet> nbestGroups = NBestRankings
-				.createNbestGroupMap(entityReferenceConfidenceVals.int2DoubleEntrySet(), () -> new IntOpenHashSet(1));
+				.createNbestGroupMap(entityReferenceConfidenceVals.int2DoubleEntrySet(), confidenceVal -> new IntOpenHashSet(1));
 		final double rank = NBestRankings.findAveragedRank(nbestGroups.values(),
 				uttCtx.findLastSelectedEntityId().get());
 		assert rank <= uttCtx.getEntityCount();
