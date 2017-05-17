@@ -30,7 +30,7 @@
 		<constructor-arg value="__UNKNOWN__" />
 	</bean>
 
-	<bean id="entity-feature-extractor"
+	<bean id="entity-inst-feature-extractor"
 		class="se.kth.speech.coin.tangrams.analysis.features.InstanceFeatureExtractor">
 		<constructor-arg>
 			<bean
