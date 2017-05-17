@@ -61,7 +61,6 @@ import com.google.common.collect.Table;
 import iristk.util.HAT;
 import se.kth.speech.awt.LookAndFeels;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
-import se.kth.speech.coin.tangrams.analysis.features.EntityFeature.Extractor;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionContextFactory;
 import se.kth.speech.coin.tangrams.analysis.features.ImageEdgeCounter;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
@@ -338,7 +337,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 	}
 
 	@Inject
-	private Extractor extractor;
+	private EntityFeature.Extractor extractor;
 
 	private final List<EntityFeature> featuresToDescribe;
 
