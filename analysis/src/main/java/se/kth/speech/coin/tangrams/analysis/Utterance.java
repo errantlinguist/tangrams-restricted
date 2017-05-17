@@ -22,7 +22,7 @@ import java.util.List;
 public final class Utterance implements Comparable<Utterance> {
 
 	public static final Comparator<Utterance> NATURAL_COMPARATOR = Comparator.comparingDouble(Utterance::getStartTime)
-			.thenComparingDouble(Utterance::getEndTime).thenComparingInt(utt -> utt.getTokens().size())
+			.thenComparingDouble(Utterance::getEndTime).thenComparingInt(utt -> utt.getTokens().size()).thenComparing(Utterance::getSpeakerId)
 			.thenComparing(Utterance::getSegmentId);
 
 	private final double endTime;
