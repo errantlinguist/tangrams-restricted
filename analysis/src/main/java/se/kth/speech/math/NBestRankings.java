@@ -35,14 +35,15 @@ import it.unimi.dsi.fastutil.objects.ObjectIterable;
 public final class NBestRankings {
 
 	public static Double2ObjectSortedMap<IntSet> createNbestGroupMap(
-			final Collection<Int2DoubleMap.Entry> observationReferenceConfidenceVals) {
+			final Collection<Int2DoubleMap.Entry> observationReferenceConfidenceVals,
+			final int tieGroupInitialCapacity) {
 		final Double2ObjectSortedMap<IntSet> result = new Double2ObjectRBTreeMap<>(
 				DoubleComparators.OPPOSITE_COMPARATOR);
 		for (final Int2DoubleMap.Entry observationReferenceConfidenceVal : observationReferenceConfidenceVals) {
 			final double confidenceVal = observationReferenceConfidenceVal.getDoubleValue();
 			IntSet observationIds = result.get(confidenceVal);
 			if (observationIds == null) {
-				observationIds = new IntOpenHashSet();
+				observationIds = new IntOpenHashSet(tieGroupInitialCapacity);
 				result.put(confidenceVal, observationIds);
 			}
 			observationIds.add(observationReferenceConfidenceVal.getIntKey());
