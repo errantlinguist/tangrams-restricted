@@ -158,7 +158,7 @@ public final class WordsAsClassifiersInstancesMapFactory
 	}
 
 	private static int estimateVocabTypeCount(final Collection<?> sessionData) {
-		final double estimate = Math.log(sessionData.size()) * 850;
+		final double estimate = Math.log(sessionData.size() + 1) * 850;
 		int result = Integer.MAX_VALUE;
 		try {
 			result = Math.toIntExact(Math.round(Math.ceil(estimate)));
