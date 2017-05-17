@@ -38,8 +38,8 @@ import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
  *      Shumpei Kobayashi, Takenobu Tokunaga. &ldquo;Incorporating
  *      Extra-linguistic Information into Reference Resolution in Collaborative
  *      Task Dialogue&rdquo;. The 48<sup>th</sup> Annual Meeting of the
- *      Association for Computational Linguistics (ACL 2010), pp.
- *      1259&ndash;1267. 2010.</a>
+ *      Association for Computational Linguistics (ACL 2010),
+ *      pp.&nbsp;1259&ndash;1267. 2010.</a>
  *
  */
 public enum EventHistoryFeature {
