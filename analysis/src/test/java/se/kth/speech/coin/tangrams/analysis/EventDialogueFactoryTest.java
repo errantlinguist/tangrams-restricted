@@ -67,8 +67,6 @@ public class EventDialogueFactoryTest {
 
 	private final void testApply(final Predicate<? super Event> eventFilter)
 			throws URISyntaxException, IOException, JAXBException {
-		final List<Path> sessionDirPaths = TestDataResources.createSessionDataDirectoryPathList();
-		System.out.println(sessionDirPaths);
 		final String singleMoveSessionDataResLocStr = TestDataResources.SESSION_DATA_DIR
 				+ "/karey-tangram_Jutta-ONEMOVE";
 		final URL eventLogUrl = EventDialogueFactoryTest.class
