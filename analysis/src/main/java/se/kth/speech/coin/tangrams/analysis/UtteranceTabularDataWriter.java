@@ -219,8 +219,7 @@ class UtteranceTabularDataWriter {
 		// The visualization info for the given game
 		final ImageVisualizationInfo imgVizInfo = IMG_VIZ_INFO_UNMARSHALLER
 				.apply(history.getInitialState().getImageVisualizationInfoDescription());
-		final List<EventDialogue> eventDiags = EVENT_DIAG_FACTORY.apply(utts.listIterator(), history)
-				.collect(Collectors.toList());
+		final List<EventDialogue> eventDiags = Arrays.asList(EVENT_DIAG_FACTORY.apply(utts.listIterator(), history).toArray(EventDialogue[]::new));
 
 		final List<List<String>> colHeaders = createColHeaders();
 		final String colHeaderStr = colHeaders.stream().map(header -> header.stream().collect(TABLE_ROW_CELL_JOINER))

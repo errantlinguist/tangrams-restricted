@@ -19,12 +19,12 @@ package se.kth.speech.coin.tangrams.analysis;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.BiFunction;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.xml.bind.JAXBException;
@@ -94,13 +94,13 @@ public final class SessionEventDialogueManager {
 			final String sourceId = seg.getSource();
 			return sourcePlayerIds.get(sourceId);
 		});
-		utts = segUttFactory.create(uttAnnots.getSegments().getSegment().stream()).flatMap(List::stream)
-				.collect(Collectors.toList());
+		utts = Arrays.asList(segUttFactory.create(uttAnnots.getSegments().getSegment().stream()).flatMap(List::stream)
+				.toArray(Utterance[]::new));
 	}
 
 	public List<EventDialogue> createUttDialogues() {
-		final List<EventDialogue> eventUttLists = eventDiagFactory.apply(utts.listIterator(), gameHistory)
-				.collect(Collectors.toList());
+		final List<EventDialogue> eventUttLists = Arrays
+				.asList(eventDiagFactory.apply(utts.listIterator(), gameHistory).toArray(EventDialogue[]::new));
 		return eventUttLists;
 	}
 
