@@ -64,6 +64,9 @@ public final class WordsAsClassifiersCrossValidationTestSetFactory {
 
 	public Stream<Entry<SessionDataManager, Map<String, Instances>>> apply(
 			final Map<SessionDataManager, Path> allSessions) throws ExecutionException {
+		if (allSessions.size() < 2){
+			throw new IllegalArgumentException(String.format("Session count is %d but at least two sessions are required for cross-validation.", allSessions.size()));
+		}
 		final Stream.Builder<Entry<SessionDataManager, Map<String, Instances>>> resultBuilder = Stream.builder();
 		for (final Entry<SessionDataManager, Path> testSessionDataEntry : allSessions.entrySet()) {
 			final Path testSessionDataFilePath = testSessionDataEntry.getValue();
