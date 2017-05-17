@@ -162,7 +162,7 @@ public final class WordsAsClassifiersCrossValidationTester {
 	private static final String TEST_INSTS_REL_NAME = "tested_entites";
 
 	public static void main(final CommandLine cl)
-			throws ParseException, TrainingException, ExecutionException, IOException {
+			throws ParseException, TrainingException, ExecutionException, IOException, ClassificationException {
 		if (cl.hasOption(Parameter.HELP.optName)) {
 			Parameter.printHelp();
 		} else {
@@ -184,7 +184,8 @@ public final class WordsAsClassifiersCrossValidationTester {
 		}
 	}
 
-	public static void main(final String[] args) throws TrainingException, ExecutionException, IOException {
+	public static void main(final String[] args)
+			throws TrainingException, ExecutionException, IOException, ClassificationException {
 		final CommandLineParser parser = new DefaultParser();
 		try {
 			final CommandLine cl = parser.parse(Parameter.OPTIONS, args);
@@ -274,7 +275,8 @@ public final class WordsAsClassifiersCrossValidationTester {
 	@Inject
 	private WordsAsClassifiersCrossValidationTestSetFactory testSetFactory;
 
-	public TestResults apply(final Iterable<Path> inpaths) throws TrainingException, ExecutionException, IOException {
+	public TestResults apply(final Iterable<Path> inpaths)
+			throws TrainingException, ExecutionException, IOException, ClassificationException {
 		final Map<Path, SessionDataManager> infileSessionData = SessionDataManager.createFileSessionDataMap(inpaths);
 		final Map<SessionDataManager, Path> allSessions = infileSessionData.entrySet().stream()
 				.collect(Collectors.toMap(Entry::getValue, Entry::getKey));
