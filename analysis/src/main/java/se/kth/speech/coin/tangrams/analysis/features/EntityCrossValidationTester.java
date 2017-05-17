@@ -16,16 +16,13 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import javax.inject.Inject;
 
@@ -35,14 +32,16 @@ import org.slf4j.LoggerFactory;
 import com.google.common.cache.LoadingCache;
 
 import iristk.system.Event;
-import it.unimi.dsi.fastutil.doubles.Double2ObjectMap;
 import it.unimi.dsi.fastutil.doubles.Double2ObjectRBTreeMap;
 import it.unimi.dsi.fastutil.doubles.Double2ObjectSortedMap;
+import it.unimi.dsi.fastutil.doubles.DoubleComparators;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import it.unimi.dsi.fastutil.ints.Int2DoubleOpenHashMap;
+import it.unimi.dsi.fastutil.ints.IntCollection;
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
+import it.unimi.dsi.fastutil.objects.ObjectIterable;
 import se.kth.speech.coin.tangrams.analysis.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.GameContext;
 import se.kth.speech.coin.tangrams.analysis.GameHistory;
@@ -118,17 +117,10 @@ public final class EntityCrossValidationTester {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(EntityCrossValidationTester.class);
 
-	private static final Comparator<Int2DoubleMap.Entry> NBEST_COMPARATOR;
-
-	static {
-		final Comparator<Int2DoubleMap.Entry> scoreCmp = Comparator
-				.comparingDouble(Int2DoubleMap.Entry::getDoubleValue);
-		NBEST_COMPARATOR = scoreCmp.reversed();
-	}
-
 	private static Double2ObjectSortedMap<IntSet> createNbestGroupMap(
 			final Collection<Int2DoubleMap.Entry> entityReferenceConfidenceVals) {
-		final Double2ObjectSortedMap<IntSet> result = new Double2ObjectRBTreeMap<>();
+		final Double2ObjectSortedMap<IntSet> result = new Double2ObjectRBTreeMap<>(
+				DoubleComparators.OPPOSITE_COMPARATOR);
 		for (final Int2DoubleMap.Entry entityReferenceConfidenceVal : entityReferenceConfidenceVals) {
 			final double confidenceVal = entityReferenceConfidenceVal.getDoubleValue();
 			IntSet entityIds = result.get(confidenceVal);
@@ -141,16 +133,15 @@ public final class EntityCrossValidationTester {
 		return result;
 	}
 
-	private static double findNbestRank(final Double2ObjectSortedMap<IntSet> nbestGroups, final int entityId) {
+	private static double findNbestRank(final ObjectIterable<? extends IntCollection> nbestGroups, final int entityId) {
 		double bestRankForTiedGroup = 1.0;
-		IntSet tiedEntityIds = null;
-		for (final Double2ObjectMap.Entry<IntSet> nbestGroup : nbestGroups.double2ObjectEntrySet()) {
-			final IntSet entityIds = nbestGroup.getValue();
-			if (entityIds.contains(entityId)) {
-				tiedEntityIds = entityIds;
+		IntCollection tiedEntityIds = null;
+		for (final IntCollection nbestGroup : nbestGroups) {
+			if (nbestGroup.contains(entityId)) {
+				tiedEntityIds = nbestGroup;
 				break;
 			}
-			bestRankForTiedGroup += entityIds.size();
+			bestRankForTiedGroup += nbestGroup.size();
 		}
 
 		final double result;
@@ -175,10 +166,10 @@ public final class EntityCrossValidationTester {
 	private EntityInstanceAttributeContext entInstAttrCtx;
 
 	@Inject
-	private Supplier<LoadingCache<SessionDataManager, SessionEventDialogueManager>> sessionDiagMgrCacheSupplier;
+	private EntityFeatureExtractionContextFactory extCtxFactory;
 
 	@Inject
-	private EntityFeatureExtractionContextFactory extCtxFactory;
+	private Supplier<LoadingCache<SessionDataManager, SessionEventDialogueManager>> sessionDiagMgrCacheSupplier;
 
 	@Inject
 	private WordClassDiscountingSmoother smoother;
@@ -294,12 +285,10 @@ public final class EntityCrossValidationTester {
 					try {
 						final Int2DoubleMap entityReferenceConfidenceVals = createReferredEntityConfidenceMap(
 								dialogueUtt, uttCtx);
-						final List<Int2DoubleMap.Entry> nbestVals = entityReferenceConfidenceVals.int2DoubleEntrySet()
-								.stream().sorted(NBEST_COMPARATOR).collect(Collectors
-										.toCollection(() -> new ArrayList<>(entityReferenceConfidenceVals.size())));
-						final Double2ObjectSortedMap<IntSet> nbestGroups = createNbestGroupMap(nbestVals);
-
-						final double rank = findNbestRank(nbestGroups, uttCtx.findLastSelectedEntityId().get());
+						final Double2ObjectSortedMap<IntSet> nbestGroups = createNbestGroupMap(
+								entityReferenceConfidenceVals.int2DoubleEntrySet());
+						final double rank = findNbestRank(nbestGroups.values(),
+								uttCtx.findLastSelectedEntityId().get());
 						assert rank <= uttCtx.getEntityCount();
 						LOGGER.debug("Rank of correct entity: {}", rank);
 						testResults.rankSum += rank;
