@@ -45,19 +45,12 @@ public final class EventDialogueFactory
 
 	private final Predicate<? super Event> eventFilter;
 
-	private final long timeWindow;
-
 	public EventDialogueFactory() {
-		this(event -> true, 0);
+		this(event -> true);
 	}
 
 	public EventDialogueFactory(final Predicate<? super Event> eventFilter) {
-		this(eventFilter, 0);
-	}
-
-	public EventDialogueFactory(final Predicate<? super Event> eventFilter, final long timeWindow) {
 		this.eventFilter = eventFilter;
-		this.timeWindow = timeWindow;
 	}
 
 	@Override
@@ -96,7 +89,7 @@ public final class EventDialogueFactory
 	private List<Utterance> createPreEventUtteranceList(final ListIterator<Utterance> utts, final Event nextEvent,
 			final LocalDateTime gameStartTime) {
 		LOGGER.debug("Event: {}", nextEvent);
-		final LocalDateTime nextEventTimestamp = EventTimes.parseEventTime(nextEvent.getTime()).plusSeconds(timeWindow);
+		final LocalDateTime nextEventTimestamp = EventTimes.parseEventTime(nextEvent.getTime());
 
 		final List<Utterance> result = new ArrayList<>();
 		while (utts.hasNext()) {
