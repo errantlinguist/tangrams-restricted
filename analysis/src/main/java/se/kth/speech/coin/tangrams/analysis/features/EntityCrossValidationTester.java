@@ -133,7 +133,8 @@ public final class EntityCrossValidationTester {
 		return result;
 	}
 
-	private static double findAveragedRank(final ObjectIterable<? extends IntCollection> nbestGroups, final int entityId) {
+	private static double findAveragedRank(final ObjectIterable<? extends IntCollection> nbestGroups,
+			final int entityId) {
 		double bestRankForTiedGroup = 1.0;
 		IntCollection tiedEntityIds = null;
 		for (final IntCollection nbestGroup : nbestGroups) {
@@ -194,7 +195,8 @@ public final class EntityCrossValidationTester {
 		this.wordClassifiers = wordClassifiers;
 	}
 
-	public SessionTestResults testSession(final SessionDataManager sessionData) throws ExecutionException {
+	public SessionTestResults testSession(final SessionDataManager sessionData)
+			throws ExecutionException, ClassificationException {
 		final SessionEventDialogueManager sessionEventDiagMgr = sessionDiagMgrCacheSupplier.get().get(sessionData);
 		final List<EventDialogue> uttDiags = sessionEventDiagMgr.createUttDialogues();
 		final SessionTestResults result = new SessionTestResults();
@@ -260,11 +262,13 @@ public final class EntityCrossValidationTester {
 	private List<String> createUttWordClassList(final Utterance utt) {
 		final List<String> tokens = utt.getTokens();
 		// Unigrams
-		// TODO: Implement converting token list into n-gram list for higher-order classification
+		// TODO: Implement converting token list into n-gram list for
+		// higher-order classification
 		return tokens;
 	}
 
-	private Optional<EventDialogueTestResults> testDialogue(final EventDialogue uttDiag, final GameHistory history) {
+	private Optional<EventDialogueTestResults> testDialogue(final EventDialogue uttDiag, final GameHistory history)
+			throws ClassificationException {
 		final Optional<EventDialogueTestResults> result;
 
 		final Optional<Event> optLastEvent = uttDiag.getLastEvent();
@@ -281,22 +285,9 @@ public final class EntityCrossValidationTester {
 			} else {
 				final EventDialogueTestResults testResults = new EventDialogueTestResults();
 				for (final Utterance dialogueUtt : dialogueUttsFromInstructor) {
-					testResults.totalUtterancesTested++;
 					final GameContext uttCtx = UtteranceGameContexts.createGameContext(dialogueUtt, history,
 							submittingPlayerId);
-					try {
-						final Int2DoubleMap entityReferenceConfidenceVals = createReferredEntityConfidenceMap(
-								dialogueUtt, uttCtx);
-						final Double2ObjectSortedMap<IntSet> nbestGroups = createNbestGroupMap(
-								entityReferenceConfidenceVals.int2DoubleEntrySet());
-						final double rank = findAveragedRank(nbestGroups.values(),
-								uttCtx.findLastSelectedEntityId().get());
-						assert rank <= uttCtx.getEntityCount();
-						LOGGER.debug("Rank of correct entity: {}", rank);
-						testResults.rankSum += rank;
-					} catch (final ClassificationException e) {
-						throw new RuntimeException(e);
-					}
+					testUtterance(dialogueUtt, uttCtx, testResults);
 				}
 				result = Optional.of(testResults);
 			}
@@ -304,5 +295,17 @@ public final class EntityCrossValidationTester {
 			result = Optional.empty();
 		}
 		return result;
+	}
+
+	private void testUtterance(final Utterance dialogueUtt, final GameContext uttCtx,
+			final EventDialogueTestResults testResults) throws ClassificationException {
+		testResults.totalUtterancesTested++;
+		final Int2DoubleMap entityReferenceConfidenceVals = createReferredEntityConfidenceMap(dialogueUtt, uttCtx);
+		final Double2ObjectSortedMap<IntSet> nbestGroups = createNbestGroupMap(
+				entityReferenceConfidenceVals.int2DoubleEntrySet());
+		final double rank = findAveragedRank(nbestGroups.values(), uttCtx.findLastSelectedEntityId().get());
+		assert rank <= uttCtx.getEntityCount();
+		LOGGER.debug("Rank of correct entity: {}", rank);
+		testResults.rankSum += rank;
 	}
 }
