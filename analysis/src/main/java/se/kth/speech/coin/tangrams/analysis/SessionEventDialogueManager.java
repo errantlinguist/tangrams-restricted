@@ -89,7 +89,7 @@ public final class SessionEventDialogueManager {
 		}
 
 		playerSourceIds = sessionData.getPlayerData().getPlayerSourceIds();
-		final Map<String, String> sourcePlayerIds = sessionData.getPlayerData().getPlayerSourceIds().inverse();
+		final Map<String, String> sourcePlayerIds = playerSourceIds.inverse();
 		final SegmentUtteranceFactory segUttFactory = new SegmentUtteranceFactory(seg -> {
 			final String sourceId = seg.getSource();
 			return sourcePlayerIds.get(sourceId);
