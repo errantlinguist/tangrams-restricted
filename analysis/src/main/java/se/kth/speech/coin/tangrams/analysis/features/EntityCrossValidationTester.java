@@ -133,7 +133,7 @@ public final class EntityCrossValidationTester {
 		return result;
 	}
 
-	private static double findNbestRank(final ObjectIterable<? extends IntCollection> nbestGroups, final int entityId) {
+	private static double findAveragedRank(final ObjectIterable<? extends IntCollection> nbestGroups, final int entityId) {
 		double bestRankForTiedGroup = 1.0;
 		IntCollection tiedEntityIds = null;
 		for (final IntCollection nbestGroup : nbestGroups) {
@@ -287,7 +287,7 @@ public final class EntityCrossValidationTester {
 								dialogueUtt, uttCtx);
 						final Double2ObjectSortedMap<IntSet> nbestGroups = createNbestGroupMap(
 								entityReferenceConfidenceVals.int2DoubleEntrySet());
-						final double rank = findNbestRank(nbestGroups.values(),
+						final double rank = findAveragedRank(nbestGroups.values(),
 								uttCtx.findLastSelectedEntityId().get());
 						assert rank <= uttCtx.getEntityCount();
 						LOGGER.debug("Rank of correct entity: {}", rank);
