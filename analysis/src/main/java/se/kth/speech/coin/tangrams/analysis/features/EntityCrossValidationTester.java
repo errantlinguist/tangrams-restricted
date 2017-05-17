@@ -157,10 +157,9 @@ public final class EntityCrossValidationTester {
 		if (tiedEntityIds == null) {
 			throw new IllegalArgumentException("ID not found.");
 		} else {
-			final int tiedGroupSize = tiedEntityIds.size();
 			final double worstRankForTiedGroup = bestRankForTiedGroup + (tiedEntityIds.size() - 1);
 			// Average the ranks for sets of ties
-			result = (bestRankForTiedGroup + worstRankForTiedGroup) / tiedGroupSize;
+			result = (bestRankForTiedGroup + worstRankForTiedGroup) / 2;
 		}
 		return result;
 	}
@@ -301,6 +300,7 @@ public final class EntityCrossValidationTester {
 						final Double2ObjectSortedMap<IntSet> nbestGroups = createNbestGroupMap(nbestVals);
 
 						final double rank = findNbestRank(nbestGroups, uttCtx.findLastSelectedEntityId().get());
+						assert rank <= uttCtx.getEntityCount();
 						LOGGER.debug("Rank of correct entity: {}", rank);
 						testResults.rankSum += rank;
 					} catch (final ClassificationException e) {
