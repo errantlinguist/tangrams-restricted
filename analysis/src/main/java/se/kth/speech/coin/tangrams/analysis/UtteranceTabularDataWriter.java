@@ -32,6 +32,8 @@ import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.apache.log4j.Logger;
+
 import iristk.system.Event;
 import se.kth.speech.coin.tangrams.analysis.UtteranceSelectedEntityDescriptionWriter.PlayerGameContextFactory;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
@@ -192,12 +194,16 @@ class UtteranceTabularDataWriter {
 				sb.append(System.lineSeparator());
 				final Event nextEvent = nextEventDiag.getLastEvent().orElse(null);
 				final List<Utterance> nextUtts = nextEventDiag.getUtts();
-				final Utterance nextUtt = nextUtts.get(0);
-				final String speakingPlayerId = nextUtt.getSpeakerId();
-				sb.append(String.format(
-						"Next utt after event: \"%s\"; speaking player ID: \"%s\"; start: %f; end: %f; segment ID: \"%s\"; event ID: \"%s\"; event time: \"%s\"",
-						nextUtt.getTokens().stream().collect(WORD_JOINER), speakingPlayerId, nextUtt.getStartTime(),
-						nextUtt.getEndTime(), nextUtt.getSegmentId(), nextEvent.getId(), nextEvent.getTime()));
+				if (nextUtts.isEmpty()){
+					// Do nothing
+				} else {
+					final Utterance nextUtt = nextUtts.get(0);
+					final String speakingPlayerId = nextUtt.getSpeakerId();
+					sb.append(String.format(
+							"Next utt after event: \"%s\"; speaking player ID: \"%s\"; start: %f; end: %f; segment ID: \"%s\"; event ID: \"%s\"; event time: \"%s\"",
+							nextUtt.getTokens().stream().collect(WORD_JOINER), speakingPlayerId, nextUtt.getStartTime(),
+							nextUtt.getEndTime(), nextUtt.getSegmentId(), nextEvent.getId(), nextEvent.getTime()));					
+				}
 			}
 		}
 		return sb.toString();
