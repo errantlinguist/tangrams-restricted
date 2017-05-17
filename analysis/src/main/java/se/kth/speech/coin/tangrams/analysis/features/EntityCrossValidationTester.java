@@ -231,6 +231,7 @@ public final class EntityCrossValidationTester {
 			throws ClassificationException {
 		LOGGER.debug("Getting entity reference confidence measures for {}.", utt);
 		final List<String> wordClasses = createUttWordClassList(utt);
+		// TODO: Cache mapping of word classes -> classifiers?
 		final List<Classifier> classifiers = smoother.createNGramClassifierList(wordClasses, wordClassifiers);
 		final IntList entityIds = uttCtx.getEntityIds();
 		final Int2DoubleMap result = new Int2DoubleOpenHashMap(entityIds.size());
@@ -259,6 +260,7 @@ public final class EntityCrossValidationTester {
 	private List<String> createUttWordClassList(final Utterance utt) {
 		final List<String> tokens = utt.getTokens();
 		// Unigrams
+		// TODO: Implement converting token list into n-gram list for higher-order classification
 		return tokens;
 	}
 
