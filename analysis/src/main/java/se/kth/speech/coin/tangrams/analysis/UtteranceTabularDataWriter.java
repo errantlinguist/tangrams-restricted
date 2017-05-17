@@ -32,8 +32,6 @@ import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.apache.log4j.Logger;
-
 import iristk.system.Event;
 import se.kth.speech.coin.tangrams.analysis.UtteranceSelectedEntityDescriptionWriter.PlayerGameContextFactory;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
