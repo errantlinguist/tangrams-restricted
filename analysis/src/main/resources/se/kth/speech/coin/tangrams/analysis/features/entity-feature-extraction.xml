@@ -51,10 +51,9 @@
 		</constructor-arg>
 	</bean>
 
-	<bean id="negative-example-random-generator" class="java.util.Random">
-		<description>The random number generator used for selecting an entity
-			ID to use for creating a negative example; Provide an explicit seed
-			below in order to make the training results reproducible from one run
+	<bean id="random-generator" class="java.util.Random">
+		<description>The random number generator used in the application; Provide an explicit seed
+			below in order to make the results reproducible from one run
 			to the next.
 		</description>
 		<!-- <constructor-arg value="1" /> -->
@@ -62,7 +61,7 @@
 
 	<bean id="negative-example-entity-id-factory"
 		class="se.kth.speech.coin.tangrams.analysis.RandomNotSelectedEntityIdFactory">
-		<constructor-arg ref="negative-example-random-generator" />
+		<constructor-arg ref="random-generator" />
 	</bean>
 
 	<bean id="class-insts-factory"
