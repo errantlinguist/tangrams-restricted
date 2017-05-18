@@ -18,11 +18,8 @@ package se.kth.speech.coin.tangrams.analysis;
 
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.UncheckedIOException;
-import java.nio.file.Files;
 import java.util.ListIterator;
-import java.util.Properties;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
@@ -42,21 +39,11 @@ import se.kth.speech.coin.tangrams.view.UserPrompts;
  */
 public final class UtteranceDialogueAnnotationEditor {
 
-	/**
-	 * 
-	 */
-	public UtteranceDialogueAnnotationEditor() {
-		// TODO Auto-generated constructor stub
-	}
-
 	private static final Logger LOGGER = LoggerFactory.getLogger(UtteranceDialogueAnnotationEditor.class);
-	
-	public static void main(String[] args) {
+
+	public static void main(final String[] args) {
 		runInteractively();
 	}
-	
-	@Inject
-	private BiFunction<ListIterator<Utterance>, GameHistory, Stream<EventDialogue>> eventDiagFactory;
 
 	private static void runInteractively() {
 		final JFileChooser fileChooser = new JFileChooser(System.getProperty("user.dir"));
@@ -71,12 +58,23 @@ public final class UtteranceDialogueAnnotationEditor {
 				LOGGER.info("Will write data to \"{}\".", outpath);
 				try {
 					final SessionDataManager sessionData = SessionDataManager.create(inpath);
-//					SessionEventDialogueManager evtDiagMgr = new SessionEventDialogueManager(sessionData);
-				} catch (IOException e) {
+					// SessionEventDialogueManager evtDiagMgr = new
+					// SessionEventDialogueManager(sessionData);
+				} catch (final IOException e) {
 					throw new UncheckedIOException(e);
 				}
 			});
 		});
+	}
+
+	@Inject
+	private BiFunction<ListIterator<Utterance>, GameHistory, Stream<EventDialogue>> eventDiagFactory;
+
+	/**
+	 *
+	 */
+	public UtteranceDialogueAnnotationEditor() {
+		// TODO Auto-generated constructor stub
 	}
 
 }
