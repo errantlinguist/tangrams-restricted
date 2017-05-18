@@ -170,7 +170,7 @@ public final class CrossValidationTester {
 				.collect(Collectors.toMap(Entry::getValue, Entry::getKey));
 		infileSessionData.forEach((infile, sessionData) -> allSessions.put(sessionData, infile));
 
-		LOGGER.info("Starting cross-validation test using data from {} sessions.");
+		LOGGER.info("Starting cross-validation test using data from {} session(s).", allSessions.size());
 		final Stream<Entry<SessionDataManager, Map<String, Instances>>> testSets = testSetFactory.apply(allSessions);
 		final Result result = new Result(allSessions.size());
 		for (final Iterator<Entry<SessionDataManager, Map<String, Instances>>> testSetIter = testSets
