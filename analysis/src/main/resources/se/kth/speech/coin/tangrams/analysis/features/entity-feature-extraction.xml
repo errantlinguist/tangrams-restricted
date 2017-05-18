@@ -21,16 +21,6 @@
 		</constructor-arg>
 	</bean>
 
-	<bean id="training-class-attr-name" class="java.lang.String"
-		factory-method="valueOf">
-		<constructor-arg value="IS_REFERENT" />
-	</bean>
-
-	<bean id="out-of-vocab-class-name" class="java.lang.String"
-		factory-method="valueOf">
-		<constructor-arg value="__UNKNOWN__" />
-	</bean>
-
 	<bean id="entity-inst-feature-extractor"
 		class="se.kth.speech.coin.tangrams.analysis.features.weka.InstanceFeatureExtractor">
 		<constructor-arg>
@@ -45,7 +35,7 @@
 	<bean id="entity-inst-attr-ctx"
 		class="se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttributeContext">
 		<constructor-arg ref="entity-inst-feature-extractor" />
-		<constructor-arg ref="training-class-attr-name" />
+		<constructor-arg value="IS_REFERENT" />
 	</bean>
 
 	<bean id="entity-ext-ctx-factory"
@@ -81,7 +71,7 @@
 	<bean id="smoother"
 		class="se.kth.speech.coin.tangrams.analysis.features.WordClassDiscountingSmoother">
 		<constructor-arg value="4" />
-		<constructor-arg ref="out-of-vocab-class-name" />
+		<constructor-arg value="__UNKNOWN__" />
 	</bean>
 
 	<bean id="words-as-classifiers-inst-map-factory"
