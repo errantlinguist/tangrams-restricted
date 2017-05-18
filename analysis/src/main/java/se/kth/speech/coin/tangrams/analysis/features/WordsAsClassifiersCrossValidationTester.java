@@ -293,7 +293,7 @@ public final class WordsAsClassifiersCrossValidationTester {
 				.collect(Collectors.toMap(Entry::getValue, Entry::getKey));
 		infileSessionData.forEach((infile, sessionData) -> allSessions.put(sessionData, infile));
 
-		LOGGER.info("Starting cross-validation test.");
+		LOGGER.info("Starting cross-validation test using data from {} sessions.");
 		final Stream<Entry<SessionDataManager, Map<String, Instances>>> testSets = testSetFactory.apply(allSessions);
 		final TestResults result = new TestResults(allSessions.size());
 		for (final Iterator<Entry<SessionDataManager, Map<String, Instances>>> testSetIter = testSets
@@ -315,7 +315,7 @@ public final class WordsAsClassifiersCrossValidationTester {
 			final Path infilePath = allSessions.get(testSessionData);
 			result.sessionResults.put(infilePath, testResults);
 		}
-		LOGGER.info("Finished testing {} cross-validation datasets(s).", result.sessionResults.size());
+		LOGGER.info("Finished testing {} cross-validation dataset(s).", result.sessionResults.size());
 		return result;
 	}
 
