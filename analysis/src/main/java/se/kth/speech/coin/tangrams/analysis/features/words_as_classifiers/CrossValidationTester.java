@@ -62,12 +62,11 @@ import weka.core.Instances;
  *      Reference Resolution&rdquo;. In <em>Proceedings of the 53<sup>rd</sup>
  *      Annual Meeting of the Association for Computational Linguistics and the
  *      7<sup>th</sup> International Joint Conference on Natural Language
- *      Processing</em><a>.
+ *      Processing</em><a>.</li>
  *      </ul>
- *      </li>
  *
  */
-public final class WordsAsClassifiersCrossValidationTester {
+public final class CrossValidationTester {
 
 	public static final class Result {
 
@@ -104,7 +103,7 @@ public final class WordsAsClassifiersCrossValidationTester {
 		}
 	}
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(WordsAsClassifiersCrossValidationTester.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(CrossValidationTester.class);
 
 	private static final String TEST_INSTS_REL_NAME = "tested_entites";
 
@@ -162,7 +161,7 @@ public final class WordsAsClassifiersCrossValidationTester {
 	private ClassInstanceFactory testInstsFactory;
 
 	@Inject
-	private WordsAsClassifiersCrossValidationTestSetFactory testSetFactory;
+	private CrossValidationTestSetFactory testSetFactory;
 
 	public Result apply(final Iterable<Path> inpaths)
 			throws TrainingException, ExecutionException, IOException, ClassificationException {

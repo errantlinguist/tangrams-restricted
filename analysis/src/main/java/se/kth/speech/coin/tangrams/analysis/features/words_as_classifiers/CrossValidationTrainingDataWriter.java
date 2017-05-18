@@ -70,7 +70,7 @@ import weka.core.converters.ConverterUtils;
  *      </ul>
  *
  */
-public final class WordsAsClassifiersCrossValidationTrainingDataWriter {
+public final class CrossValidationTrainingDataWriter {
 
 	private enum Parameter implements Supplier<Option> {
 		HELP("?") {
@@ -113,8 +113,7 @@ public final class WordsAsClassifiersCrossValidationTrainingDataWriter {
 
 		private static void printHelp() {
 			final HelpFormatter formatter = new HelpFormatter();
-			formatter.printHelp(WordsAsClassifiersCrossValidationTrainingDataWriter.class.getSimpleName() + " INFILE",
-					OPTIONS);
+			formatter.printHelp(CrossValidationTrainingDataWriter.class.getSimpleName() + " INFILE", OPTIONS);
 		}
 
 		protected final String optName;
@@ -129,8 +128,7 @@ public final class WordsAsClassifiersCrossValidationTrainingDataWriter {
 
 	public static final String TRAINING_FILE_NAME_PREFIX = "train-";
 
-	private static final Logger LOGGER = LoggerFactory
-			.getLogger(WordsAsClassifiersCrossValidationTrainingDataWriter.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(CrossValidationTrainingDataWriter.class);
 
 	public static void main(final CommandLine cl) throws ParseException, ExecutionException, IOException {
 		if (cl.hasOption(Parameter.HELP.optName)) {
@@ -146,9 +144,9 @@ public final class WordsAsClassifiersCrossValidationTrainingDataWriter {
 				final String outfileExt = Parameter.parseOutputType(cl);
 				LOGGER.info("Will write data in \"*{}\" format.", outfileExt);
 				try (final ClassPathXmlApplicationContext appCtx = new ClassPathXmlApplicationContext(
-						"entity-feature-extraction.xml", WordsAsClassifiersCrossValidationTrainingDataWriter.class)) {
-					final WordsAsClassifiersCrossValidationTrainingDataWriter writer = appCtx
-							.getBean(WordsAsClassifiersCrossValidationTrainingDataWriter.class, outpath, outfileExt);
+						"entity-feature-extraction.xml", CrossValidationTrainingDataWriter.class)) {
+					final CrossValidationTrainingDataWriter writer = appCtx
+							.getBean(CrossValidationTrainingDataWriter.class, outpath, outfileExt);
 					writer.accept(inpaths);
 				}
 			}
@@ -171,9 +169,9 @@ public final class WordsAsClassifiersCrossValidationTrainingDataWriter {
 	private final String outfileExt;
 
 	@Inject
-	private WordsAsClassifiersCrossValidationTestSetFactory testSetFactory;
+	private CrossValidationTestSetFactory testSetFactory;
 
-	public WordsAsClassifiersCrossValidationTrainingDataWriter(final File outdir, final String outfileExt) {
+	public CrossValidationTrainingDataWriter(final File outdir, final String outfileExt) {
 		this.outdir = outdir;
 		this.outfileExt = outfileExt;
 	}

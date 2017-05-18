@@ -18,22 +18,18 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
+import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
-import java.util.ListIterator;
-import java.util.Map;
 import java.util.Map.Entry;
-import java.util.function.BiFunction;
-import java.util.function.Function;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
-
-import javax.inject.Inject;
-import javax.xml.bind.JAXBException;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -47,18 +43,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
-import se.kth.speech.coin.tangrams.analysis.EventDialogue;
-import se.kth.speech.coin.tangrams.analysis.GameHistory;
-import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
-import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManager;
-import se.kth.speech.coin.tangrams.analysis.Utterance;
-import weka.core.Instances;
-import weka.core.converters.AbstractFileSaver;
-import weka.core.converters.ConverterUtils;
+import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
+import se.kth.speech.coin.tangrams.analysis.features.TrainingException;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.CrossValidationTester.Result;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.EntityCrossValidationTester.SessionTestResults;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
- * @since Apr 17, 2017
+ * @since May 18, 2017
  * @see
  *      <ul>
  *      <li><a href="http://anthology.aclweb.org/W/W15/W15-0124.pdf">Casey
@@ -75,7 +67,7 @@ import weka.core.converters.ConverterUtils;
  *      </ul>
  *
  */
-public final class WordsAsClassifiersTrainingDataWriter {
+public final class CrossValidationStatisticsWriter {
 
 	private enum Parameter implements Supplier<Option> {
 		HELP("?") {
@@ -88,17 +80,9 @@ public final class WordsAsClassifiersTrainingDataWriter {
 			@Override
 			public Option get() {
 				return Option.builder(optName).longOpt("outpath").desc("The path to write the data to.").hasArg()
-						.argName("path").type(File.class).required().build();
+						.argName("path").type(File.class).build();
 			}
-		},
-		OUTPUT_TYPE("t") {
-			@Override
-			public Option get() {
-				return Option.builder(optName).longOpt("output-type")
-						.desc("The filename extension matching the data type to output (e.g. \"arff\" or \"arff.gz\").")
-						.hasArg().argName("ext").build();
-			}
-		};
+		},;
 
 		private static final Options OPTIONS = createOptions();
 
@@ -108,17 +92,23 @@ public final class WordsAsClassifiersTrainingDataWriter {
 			return result;
 		}
 
-		private static String parseOutputType(final CommandLine cl) {
-			String outExt = cl.getOptionValue(Parameter.OUTPUT_TYPE.optName, "arff");
-			if (!outExt.startsWith(".")) {
-				outExt = "." + outExt;
+		private static PrintWriter parseOutpath(final CommandLine cl) throws ParseException, IOException {
+			final PrintWriter result;
+			final File outfile = (File) cl.getParsedOptionValue(Parameter.OUTPATH.optName);
+			if (outfile == null) {
+				LOGGER.info("No output file path specified; Writing to standard output.");
+				result = new PrintWriter(System.out);
+			} else {
+				LOGGER.info("Output file path is \"{}\".", outfile);
+				result = new PrintWriter(Files.newBufferedWriter(outfile.toPath(), StandardOpenOption.CREATE,
+						StandardOpenOption.TRUNCATE_EXISTING));
 			}
-			return outExt;
+			return result;
 		}
 
 		private static void printHelp() {
 			final HelpFormatter formatter = new HelpFormatter();
-			formatter.printHelp(WordsAsClassifiersTrainingDataWriter.class.getSimpleName() + " INFILE", OPTIONS);
+			formatter.printHelp(CrossValidationStatisticsWriter.class.getSimpleName() + " INFILE", OPTIONS);
 		}
 
 		protected final String optName;
@@ -129,9 +119,15 @@ public final class WordsAsClassifiersTrainingDataWriter {
 
 	}
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(WordsAsClassifiersTrainingDataWriter.class);
+	private static final List<String> COL_HEADERS = Arrays.asList("INPATH", "MRR", "DIAG_COUNT", "UTTS_TESTED",
+			"MEAN_UTTS_PER_DIAG");
 
-	public static void main(final CommandLine cl) throws IOException, JAXBException, ParseException {
+	private static final Logger LOGGER = LoggerFactory.getLogger(CrossValidationStatisticsWriter.class);
+
+	private static final Collector<CharSequence, ?, String> ROW_CELL_JOINER = Collectors.joining("\t");
+
+	public static void main(final CommandLine cl)
+			throws ParseException, TrainingException, ExecutionException, IOException, ClassificationException {
 		if (cl.hasOption(Parameter.HELP.optName)) {
 			Parameter.printHelp();
 		} else {
@@ -140,36 +136,20 @@ public final class WordsAsClassifiersTrainingDataWriter {
 				throw new MissingOptionException("No input path(s) specified.");
 
 			} else {
-				final File outdir = (File) cl.getParsedOptionValue(Parameter.OUTPATH.optName);
-				LOGGER.info("Will write data to \"{}\".", outdir);
-				final String outfileExt = Parameter.parseOutputType(cl);
-				LOGGER.info("Will write data in \"*{}\" format.", outfileExt);
-
 				try (final ClassPathXmlApplicationContext appCtx = new ClassPathXmlApplicationContext(
-						"entity-feature-extraction.xml", WordsAsClassifiersTrainingDataWriter.class)) {
-					final WordsAsClassifiersTrainingDataWriter writer = appCtx
-							.getBean(WordsAsClassifiersTrainingDataWriter.class);
-					final Map<String, Instances> classInstances = writer.apply(inpaths);
-					if (outdir.mkdirs()) {
-						LOGGER.info("Output directory \"{}\" was nonexistent; Created it before writing data.", outdir);
-					}
-
-					final AbstractFileSaver saver = ConverterUtils.getSaverForExtension(outfileExt);
-					for (final Entry<String, Instances> classInstanceEntry : classInstances.entrySet()) {
-						final String className = classInstanceEntry.getKey();
-						final File outfile = new File(outdir, className + outfileExt);
-						LOGGER.info("Writing data for classifier \"{}\" to \"{}\".", className, outfile);
-						final Instances insts = classInstanceEntry.getValue();
-						saver.setInstances(insts);
-						saver.setFile(outfile);
-						saver.writeBatch();
+						"entity-feature-extraction.xml", CrossValidationStatisticsWriter.class)) {
+					final CrossValidationTester tester = appCtx.getBean(CrossValidationTester.class);
+					final Result testResults = tester.apply(inpaths);
+					try (PrintWriter out = Parameter.parseOutpath(cl)) {
+						printResults(testResults, out);
 					}
 				}
 			}
 		}
 	}
 
-	public static void main(final String[] args) throws IOException, JAXBException {
+	public static void main(final String[] args)
+			throws TrainingException, ExecutionException, IOException, ClassificationException {
 		final CommandLineParser parser = new DefaultParser();
 		try {
 			final CommandLine cl = parser.parse(Parameter.OPTIONS, args);
@@ -180,23 +160,27 @@ public final class WordsAsClassifiersTrainingDataWriter {
 		}
 	}
 
-	@Inject
-	private BiFunction<ListIterator<Utterance>, GameHistory, Stream<EventDialogue>> eventDiagFactory;
+	private static List<Object> createTableRow(final Object key, final SessionTestResults sessionTestResults) {
+		final int totalUttsTested = sessionTestResults.totalUtterancesTested();
+		final int totalDiagsTested = sessionTestResults.totalDiagsTested();
+		return Arrays.asList(key, sessionTestResults.meanReciprocalRank(), totalDiagsTested, totalUttsTested,
+				totalUttsTested / (double) totalDiagsTested);
+	}
 
-	@Inject
-	private Function<Collection<SessionEventDialogueManager>, Map<String, Instances>> instancesFactory;
+	private static void printResults(final Result testResults, final PrintWriter out) {
+		out.println(COL_HEADERS.stream().collect(ROW_CELL_JOINER));
 
-	public Map<String, Instances> apply(final Iterable<Path> inpaths) throws IOException, JAXBException {
-		final Collection<SessionDataManager> infileSessionData = SessionDataManager.createFileSessionDataMap(inpaths)
-				.values();
-		final List<SessionEventDialogueManager> sessionEvtDiagMgrs = new ArrayList<>(infileSessionData.size());
-		for (final SessionDataManager sessionDatum : infileSessionData) {
-			final SessionEventDialogueManager sessionEventDiagMgr = new SessionEventDialogueManager(sessionDatum,
-					eventDiagFactory);
-			sessionEvtDiagMgrs.add(sessionEventDiagMgr);
+		for (final Entry<Path, SessionTestResults> infileSessionTestResults : testResults.getSessionResults()
+				.entrySet()) {
+			final Path infilePath = infileSessionTestResults.getKey();
+			final SessionTestResults sessionTestResults = infileSessionTestResults.getValue();
+			final List<Object> cellVals = createTableRow(infilePath, sessionTestResults);
+			out.println(cellVals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
 		}
-		return instancesFactory.apply(sessionEvtDiagMgrs);
 
+		final SessionTestResults totalSessionResults = testResults.totalResults();
+		final List<Object> summaryVals = createTableRow("SUMMARY", totalSessionResults);
+		out.print(summaryVals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
 	}
 
 }

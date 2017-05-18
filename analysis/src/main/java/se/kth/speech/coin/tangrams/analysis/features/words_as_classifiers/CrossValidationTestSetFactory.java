@@ -59,9 +59,9 @@ import weka.core.Instances;
  *      </ul>
  *
  */
-public final class WordsAsClassifiersCrossValidationTestSetFactory {
+public final class CrossValidationTestSetFactory {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(WordsAsClassifiersCrossValidationTestSetFactory.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(CrossValidationTestSetFactory.class);
 
 	private static final int MIN_INPUT_SIZE = 2;
 

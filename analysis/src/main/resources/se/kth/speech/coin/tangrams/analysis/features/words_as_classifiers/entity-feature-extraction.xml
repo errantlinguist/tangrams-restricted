@@ -71,25 +71,25 @@
 	</bean>
 
 	<bean id="words-as-classifiers-inst-map-factory"
-		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordsAsClassifiersInstancesMapFactory" />
+		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.InstancesMapFactory" />
 
 	<bean id="words-as-classifiers-data-writer"
-		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordsAsClassifiersTrainingDataWriter" />
+		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.TrainingDataWriter" />
 
 	<bean id="session-evt-diag-mgr-cache-supplier"
 		class="se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManagerCacheSupplier"></bean>
 
 	<bean id="words-as-classifiers-cross-validation-data-factory"
-		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordsAsClassifiersCrossValidationTestSetFactory" />
+		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.CrossValidationTestSetFactory" />
 
 	<bean id="words-as-classifiers-cross-validation-data-writer"
-		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordsAsClassifiersCrossValidationTrainingDataWriter"
+		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.CrossValidationTrainingDataWriter"
 		scope="prototype" />
 
 	<bean id="words-as-classifiers-cross-validation-entity-tester"
 		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.EntityCrossValidationTester" />
 
 	<bean id="words-as-classifiers-cross-validation-dataset-tester"
-		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordsAsClassifiersCrossValidationTester" />
+		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.CrossValidationTester" />
 
 </beans>

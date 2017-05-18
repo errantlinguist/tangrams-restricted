@@ -66,7 +66,7 @@ import weka.core.Instances;
  *      </ul>
  *
  */
-public final class WordsAsClassifiersInstancesMapFactory
+public final class InstancesMapFactory
 		implements Function<Collection<SessionEventDialogueManager>, Map<String, Instances>> {
 
 	private class MultiClassDataCollector implements Consumer<SessionEventDialogueManager> {
@@ -131,7 +131,7 @@ public final class WordsAsClassifiersInstancesMapFactory
 
 	private static final String CLASS_RELATION_PREFIX;
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(WordsAsClassifiersInstancesMapFactory.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(InstancesMapFactory.class);
 
 	static {
 		CLASS_RELATION_PREFIX = "referent_for_token-";
