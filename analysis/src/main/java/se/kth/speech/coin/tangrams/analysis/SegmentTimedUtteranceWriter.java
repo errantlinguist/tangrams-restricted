@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
-import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.function.Predicate;
@@ -134,8 +133,8 @@ public final class SegmentTimedUtteranceWriter {
 			if (cl.hasOption(Parameter.HELP.optName)) {
 				Parameter.printHelp();
 			} else {
-				final List<File> infiles = Arrays.asList(cl.getArgList().stream().map(File::new).toArray(File[]::new));
-				if (infiles.isEmpty()) {
+				final File[] infiles = cl.getArgList().stream().map(File::new).toArray(File[]::new);
+				if (infiles.length < 1) {
 					throw new MissingOptionException("No input file(s) specified.");
 
 				} else {
