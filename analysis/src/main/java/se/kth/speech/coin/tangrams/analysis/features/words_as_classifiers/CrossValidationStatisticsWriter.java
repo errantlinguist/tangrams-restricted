@@ -46,7 +46,6 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
 import se.kth.speech.coin.tangrams.analysis.features.TrainingException;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.CrossValidationTester.Result;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.EntityCrossValidationTester.SessionTestResults;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -160,7 +159,7 @@ public final class CrossValidationStatisticsWriter {
 		}
 	}
 
-	private static List<Object> createTableRow(final Object key, final SessionTestResults sessionTestResults) {
+	private static List<Object> createTableRow(final Object key, final SessionTester.Result sessionTestResults) {
 		final int totalUttsTested = sessionTestResults.totalUtterancesTested();
 		final int totalDiagsTested = sessionTestResults.totalDiagsTested();
 		return Arrays.asList(key, sessionTestResults.meanReciprocalRank(), totalDiagsTested, totalUttsTested,
@@ -170,15 +169,15 @@ public final class CrossValidationStatisticsWriter {
 	private static void printResults(final Result testResults, final PrintWriter out) {
 		out.println(COL_HEADERS.stream().collect(ROW_CELL_JOINER));
 
-		for (final Entry<Path, SessionTestResults> infileSessionTestResults : testResults.getSessionResults()
+		for (final Entry<Path, SessionTester.Result> infileSessionTestResults : testResults.getSessionResults()
 				.entrySet()) {
 			final Path infilePath = infileSessionTestResults.getKey();
-			final SessionTestResults sessionTestResults = infileSessionTestResults.getValue();
+			final SessionTester.Result sessionTestResults = infileSessionTestResults.getValue();
 			final List<Object> cellVals = createTableRow(infilePath, sessionTestResults);
 			out.println(cellVals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
 		}
 
-		final SessionTestResults totalSessionResults = testResults.totalResults();
+		final SessionTester.Result totalSessionResults = testResults.totalResults();
 		final List<Object> summaryVals = createTableRow("SUMMARY", totalSessionResults);
 		out.print(summaryVals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
 	}

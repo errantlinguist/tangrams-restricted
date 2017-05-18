@@ -42,8 +42,6 @@ import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
 import se.kth.speech.coin.tangrams.analysis.features.TrainingException;
 import se.kth.speech.coin.tangrams.analysis.features.weka.ClassInstanceFactory;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.EntityCrossValidationTester.EventDialogueTestResults;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.EntityCrossValidationTester.SessionTestResults;
 import weka.classifiers.functions.Logistic;
 import weka.core.Instances;
 
@@ -70,37 +68,38 @@ public final class CrossValidationTester {
 
 	public static final class Result {
 
-		private final Map<Path, SessionTestResults> sessionResults;
+		private final Map<Path, SessionTester.Result> sessionResults;
 
 		private Result(final int expectedSessionCount) {
 			sessionResults = Maps.newHashMapWithExpectedSize(expectedSessionCount);
 		}
 
-		public Stream<Entry<EventDialogue, EventDialogueTestResults>> getAllDiagTestResults() {
-			return sessionResults.values().stream().map(SessionTestResults::getDiagResults).flatMap(List::stream);
+		public Stream<Entry<EventDialogue, EventDialogueTester.Result>> getAllDiagTestResults() {
+			return sessionResults.values().stream().map(SessionTester.Result::getDiagResults).flatMap(List::stream);
 		}
 
 		/**
 		 * @return the sessionResults
 		 */
-		public Map<Path, SessionTestResults> getSessionResults() {
+		public Map<Path, SessionTester.Result> getSessionResults() {
 			return Collections.unmodifiableMap(sessionResults);
 		}
 
 		public int totalDiagsTested() {
-			return sessionResults.values().stream().mapToInt(SessionTestResults::totalDiagsTested).sum();
+			return sessionResults.values().stream().mapToInt(SessionTester.Result::totalDiagsTested).sum();
 		}
 
 		/**
 		 * @return the totalResults
 		 */
-		public SessionTestResults totalResults() {
-			final List<Entry<EventDialogue, EventDialogueTestResults>> totalDiagResults = new ArrayList<>(
+		public SessionTester.Result totalResults() {
+			final List<Entry<EventDialogue, EventDialogueTester.Result>> totalDiagResults = new ArrayList<>(
 					totalDiagsTested());
-			final SessionTestResults result = new SessionTestResults(totalDiagResults);
+			final SessionTester.Result result = new SessionTester.Result(totalDiagResults);
 			sessionResults.forEach((inpath, sessionResults) -> result.add(sessionResults));
 			return result;
 		}
+
 	}
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(CrossValidationTester.class);
@@ -152,10 +151,10 @@ public final class CrossValidationTester {
 	}
 
 	@Inject
-	private WordClassDiscountingSmoother smoother;
+	private SessionTester sessionTester;
 
 	@Inject
-	private EntityCrossValidationTester tester;
+	private WordClassDiscountingSmoother smoother;
 
 	@Inject
 	private ClassInstanceFactory testInstsFactory;
@@ -183,12 +182,13 @@ public final class CrossValidationTester {
 			LOGGER.debug("{} instances for out-of-vocabulary class.", oovInstances.size());
 
 			final Map<String, Logistic> wordClassifiers = createWordClassifierMap(classInstances.entrySet());
-			tester.setWordClassifiers(wordClassifiers::get);
+			sessionTester.setWordClassifiers(wordClassifiers::get);
 
 			final Instances testInsts = testInstsFactory.apply(TEST_INSTS_REL_NAME,
 					estimateTestInstanceCount(testSessionData));
-			tester.setTestInsts(testInsts);
-			final SessionTestResults testResults = tester.testSession(testSessionData);
+			sessionTester.setTestInsts(testInsts);
+
+			final SessionTester.Result testResults = sessionTester.testSession(testSessionData);
 			final Path infilePath = allSessions.get(testSessionData);
 			result.sessionResults.put(infilePath, testResults);
 		}
