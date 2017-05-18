@@ -37,9 +37,9 @@ import it.unimi.dsi.fastutil.doubles.Double2ObjectSortedMap;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMaps;
 import it.unimi.dsi.fastutil.ints.Int2DoubleOpenHashMap;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntCollection;
 import it.unimi.dsi.fastutil.ints.IntList;
-import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
-import it.unimi.dsi.fastutil.ints.IntSet;
 import se.kth.speech.MutablePair;
 import se.kth.speech.coin.tangrams.analysis.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.GameContext;
@@ -337,8 +337,8 @@ public final class EntityCrossValidationTester {
 	private UtteranceTestResults testUtterance(final Utterance dialogueUtt, final GameContext uttCtx)
 			throws ClassificationException {
 		final Int2DoubleMap entityReferenceConfidenceVals = createReferredEntityConfidenceMap(dialogueUtt, uttCtx);
-		final Double2ObjectSortedMap<IntSet> nbestGroups = NBestRankings.createNbestGroupMap(
-				entityReferenceConfidenceVals.int2DoubleEntrySet(), confidenceVal -> new IntOpenHashSet(1));
+		final Double2ObjectSortedMap<IntCollection> nbestGroups = NBestRankings.createNbestGroupMap(
+				entityReferenceConfidenceVals.int2DoubleEntrySet(), confidenceVal -> new IntArrayList(1));
 		final int goldStandardEntityId = uttCtx.findLastSelectedEntityId().get();
 		final double rank = NBestRankings.findAveragedRank(nbestGroups.values(), goldStandardEntityId);
 		assert rank <= uttCtx.getEntityCount();
