@@ -16,15 +16,10 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features;
 
-import java.io.File;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -32,24 +27,13 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
-import java.util.function.Supplier;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
-import org.apache.commons.cli.CommandLine;
-import org.apache.commons.cli.CommandLineParser;
-import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.MissingOptionException;
-import org.apache.commons.cli.Option;
-import org.apache.commons.cli.Options;
-import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import com.google.common.collect.Maps;
 
@@ -83,11 +67,11 @@ import weka.core.Instances;
  */
 public final class WordsAsClassifiersCrossValidationTester {
 
-	public static final class TestResults {
+	public static final class Result {
 
 		private final Map<Path, SessionTestResults> sessionResults;
 
-		private TestResults(final int expectedSessionCount) {
+		private Result(final int expectedSessionCount) {
 			sessionResults = Maps.newHashMapWithExpectedSize(expectedSessionCount);
 		}
 
@@ -118,110 +102,9 @@ public final class WordsAsClassifiersCrossValidationTester {
 		}
 	}
 
-	private enum Parameter implements Supplier<Option> {
-		HELP("?") {
-			@Override
-			public Option get() {
-				return Option.builder(optName).longOpt("help").desc("Prints this message.").build();
-			}
-		},
-		OUTPATH("o") {
-			@Override
-			public Option get() {
-				return Option.builder(optName).longOpt("outpath").desc("The path to write the data to.").hasArg()
-						.argName("path").type(File.class).build();
-			}
-		},;
-
-		private static final Options OPTIONS = createOptions();
-
-		private static Options createOptions() {
-			final Options result = new Options();
-			Arrays.stream(Parameter.values()).map(Parameter::get).forEach(result::addOption);
-			return result;
-		}
-
-		private static PrintWriter parseOutpath(final CommandLine cl) throws ParseException, IOException {
-			final PrintWriter result;
-			final File outfile = (File) cl.getParsedOptionValue(Parameter.OUTPATH.optName);
-			if (outfile == null) {
-				LOGGER.info("No output file path specified; Writing to standard output.");
-				result = new PrintWriter(System.out);
-			} else {
-				LOGGER.info("Output file path is \"{}\".", outfile);
-				result = new PrintWriter(Files.newBufferedWriter(outfile.toPath(), StandardOpenOption.CREATE,
-						StandardOpenOption.TRUNCATE_EXISTING));
-			}
-			return result;
-		}
-
-		private static void printHelp() {
-			final HelpFormatter formatter = new HelpFormatter();
-			formatter.printHelp(WordsAsClassifiersCrossValidationTester.class.getSimpleName() + " INFILE", OPTIONS);
-		}
-
-		protected final String optName;
-
-		private Parameter(final String optName) {
-			this.optName = optName;
-		}
-
-	}
-
-	public static final String TEST_FILE_NAME_BASE = "test";
-
-	public static final String TRAINING_FILE_NAME_PREFIX = "train-";
-
-	private static final List<String> COL_HEADERS = Arrays.asList("INPATH", "MRR", "DIAG_COUNT", "UTTS_TESTED",
-			"MEAN_UTTS_PER_DIAG");
-
 	private static final Logger LOGGER = LoggerFactory.getLogger(WordsAsClassifiersCrossValidationTester.class);
 
-	private static final Collector<CharSequence, ?, String> ROW_CELL_JOINER = Collectors.joining("\t");
-
 	private static final String TEST_INSTS_REL_NAME = "tested_entites";
-
-	public static void main(final CommandLine cl)
-			throws ParseException, TrainingException, ExecutionException, IOException, ClassificationException {
-		if (cl.hasOption(Parameter.HELP.optName)) {
-			Parameter.printHelp();
-		} else {
-			final List<Path> inpaths = Arrays.asList(cl.getArgList().stream().map(Paths::get).toArray(Path[]::new));
-			if (inpaths.isEmpty()) {
-				throw new MissingOptionException("No input path(s) specified.");
-
-			} else {
-				try (final ClassPathXmlApplicationContext appCtx = new ClassPathXmlApplicationContext(
-						"entity-feature-extraction.xml", WordsAsClassifiersCrossValidationTester.class)) {
-					final WordsAsClassifiersCrossValidationTester bean = appCtx
-							.getBean(WordsAsClassifiersCrossValidationTester.class);
-					final TestResults testResults = bean.apply(inpaths);
-					try (PrintWriter out = Parameter.parseOutpath(cl)) {
-						printResults(testResults, out);
-					}
-				}
-			}
-		}
-	}
-
-	public static void main(final String[] args)
-			throws TrainingException, ExecutionException, IOException, ClassificationException {
-		final CommandLineParser parser = new DefaultParser();
-		try {
-			final CommandLine cl = parser.parse(Parameter.OPTIONS, args);
-			main(cl);
-		} catch (final ParseException e) {
-			System.out.println(String.format("An error occured while parsing the command-line arguments: %s", e));
-			Parameter.printHelp();
-		}
-	}
-
-	private static List<Object> createTableRow(final Object key, final SessionTestResults sessionTestResults) {
-		final int totalUttsTested = sessionTestResults.totalUtterancesTested();
-		final int totalDiagsTested = sessionTestResults.totalDiagsTested();
-		return Arrays.asList(key, sessionTestResults.meanReciprocalRank(), totalDiagsTested, totalUttsTested,
-				totalUttsTested / (double) totalDiagsTested);
-	}
 
 	private static Logistic createWordClassifier(final Instances data) throws TrainingException {
 		final Logistic result = new Logistic();
@@ -267,21 +150,6 @@ public final class WordsAsClassifiersCrossValidationTester {
 		return result;
 	}
 
-	private static void printResults(final TestResults testResults, final PrintWriter out) {
-		out.println(COL_HEADERS.stream().collect(ROW_CELL_JOINER));
-
-		for (final Entry<Path, SessionTestResults> infileSessionTestResults : testResults.sessionResults.entrySet()) {
-			final Path infilePath = infileSessionTestResults.getKey();
-			final SessionTestResults sessionTestResults = infileSessionTestResults.getValue();
-			final List<Object> cellVals = createTableRow(infilePath, sessionTestResults);
-			out.println(cellVals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
-		}
-
-		final SessionTestResults totalSessionResults = testResults.totalResults();
-		final List<Object> summaryVals = createTableRow("SUMMARY", totalSessionResults);
-		out.print(summaryVals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
-	}
-
 	@Inject
 	private WordClassDiscountingSmoother smoother;
 
@@ -294,7 +162,7 @@ public final class WordsAsClassifiersCrossValidationTester {
 	@Inject
 	private WordsAsClassifiersCrossValidationTestSetFactory testSetFactory;
 
-	public TestResults apply(final Iterable<Path> inpaths)
+	public Result apply(final Iterable<Path> inpaths)
 			throws TrainingException, ExecutionException, IOException, ClassificationException {
 		final Map<Path, SessionDataManager> infileSessionData = SessionDataManager.createFileSessionDataMap(inpaths);
 		final Map<SessionDataManager, Path> allSessions = infileSessionData.entrySet().stream()
@@ -303,7 +171,7 @@ public final class WordsAsClassifiersCrossValidationTester {
 
 		LOGGER.info("Starting cross-validation test using data from {} sessions.");
 		final Stream<Entry<SessionDataManager, Map<String, Instances>>> testSets = testSetFactory.apply(allSessions);
-		final TestResults result = new TestResults(allSessions.size());
+		final Result result = new Result(allSessions.size());
 		for (final Iterator<Entry<SessionDataManager, Map<String, Instances>>> testSetIter = testSets
 				.iterator(); testSetIter.hasNext();) {
 			final Entry<SessionDataManager, Map<String, Instances>> testSet = testSetIter.next();
