@@ -56,16 +56,20 @@ public final class WordsAsClassifiersCrossValidationTestSetFactory {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(WordsAsClassifiersCrossValidationTestSetFactory.class);
 
-	@Inject
-	private Supplier<LoadingCache<SessionDataManager, SessionEventDialogueManager>> sessionDiagMgrCacheSupplier;
+	private static final int MIN_INPUT_SIZE = 2;
 
 	@Inject
 	private Function<Collection<SessionEventDialogueManager>, Map<String, Instances>> instancesFactory;
 
+	@Inject
+	private Supplier<LoadingCache<SessionDataManager, SessionEventDialogueManager>> sessionDiagMgrCacheSupplier;
+
 	public Stream<Entry<SessionDataManager, Map<String, Instances>>> apply(
 			final Map<SessionDataManager, Path> allSessions) throws ExecutionException {
-		if (allSessions.size() < 2){
-			throw new IllegalArgumentException(String.format("Session count is %d but at least two sessions are required for cross-validation.", allSessions.size()));
+		if (allSessions.size() < MIN_INPUT_SIZE) {
+			throw new IllegalArgumentException(
+					String.format("Session count is %d but at least %d is required for cross-validation.",
+							allSessions.size(), MIN_INPUT_SIZE));
 		}
 		final Stream.Builder<Entry<SessionDataManager, Map<String, Instances>>> resultBuilder = Stream.builder();
 		for (final Entry<SessionDataManager, Path> testSessionDataEntry : allSessions.entrySet()) {
