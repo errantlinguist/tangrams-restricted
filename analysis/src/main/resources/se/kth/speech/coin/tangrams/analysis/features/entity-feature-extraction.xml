@@ -10,11 +10,7 @@
 	<context:component-scan base-package="se.kth.speech.coin.tangrams.analysis.*" />
 
 	<bean id="random-generator" class="java.util.Random">
-		<description>The random number generator used in the application;
-			Provide an explicit seed
-			below in order to make the results
-			reproducible from one run
-			to the next.
+		<description>The random number generator used in the application; Provide an explicit seed below in order to make the results reproducible from one run to the next.
 		</description>
 		<!-- <constructor-arg value="1" /> -->
 	</bean>
