@@ -7,8 +7,17 @@
          http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
         http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd">
 
-	<context:component-scan
-		base-package="se.kth.speech.coin.tangrams.analysis.*" />
+	<context:component-scan base-package="se.kth.speech.coin.tangrams.analysis.*" />
+
+	<bean id="random-generator" class="java.util.Random">
+		<description>The random number generator used in the application;
+			Provide an explicit seed
+			below in order to make the results
+			reproducible from one run
+			to the next.
+		</description>
+		<!-- <constructor-arg value="1" /> -->
+	</bean>
 
 	<bean id="event-dialogue-factory"
 		class="se.kth.speech.coin.tangrams.analysis.EventDialogueFactory">
@@ -51,14 +60,6 @@
 		</constructor-arg>
 	</bean>
 
-	<bean id="random-generator" class="java.util.Random">
-		<description>The random number generator used in the application; Provide an explicit seed
-			below in order to make the results reproducible from one run
-			to the next.
-		</description>
-		<!-- <constructor-arg value="1" /> -->
-	</bean>
-
 	<bean id="negative-example-entity-id-factory"
 		class="se.kth.speech.coin.tangrams.analysis.RandomNotSelectedEntityIdFactory">
 		<constructor-arg ref="random-generator" />
@@ -78,8 +79,9 @@
 
 	<bean id="words-as-classifiers-data-writer"
 		class="se.kth.speech.coin.tangrams.analysis.features.WordsAsClassifiersTrainingDataWriter" />
-		
-	<bean id="session-evt-diag-mgr-cache-supplier" class="se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManagerCacheSupplier"></bean>
+
+	<bean id="session-evt-diag-mgr-cache-supplier"
+		class="se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManagerCacheSupplier"></bean>
 
 	<bean id="words-as-classifiers-cross-validation-data-factory"
 		class="se.kth.speech.coin.tangrams.analysis.features.WordsAsClassifiersCrossValidationTestSetFactory" />
