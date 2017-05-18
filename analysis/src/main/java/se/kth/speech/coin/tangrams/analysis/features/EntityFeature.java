@@ -33,13 +33,20 @@ import weka.core.Attribute;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
- * @see <a href="http://www.aclweb.org/anthology/P15-1029">Casey Kennington,
+ * @see
+ *      <ul>
+ *      <li><a href="http://anthology.aclweb.org/W/W15/W15-0124.pdf">Casey
+ *      Kennington, Livia Dia, &amp; David Schlangen. &ldquo;A Discriminative
+ *      Model for Perceptually-Grounded Incremental Reference Resolution.&rdquo;
+ *      In <em>Proceedings of IWCS 2015</em><a>.</li>
+ *      <li><a href="http://www.aclweb.org/anthology/P15-1029">Casey Kennington,
  *      &amp; David Schlangen. &ldquo;Simple Learning and Compositional
  *      Application of Perceptually Grounded Word Meanings for Incremental
  *      Reference Resolution&rdquo;. In <em>Proceedings of the 53<sup>rd</sup>
  *      Annual Meeting of the Association for Computational Linguistics and the
  *      7<sup>th</sup> International Joint Conference on Natural Language
- *      Processing</em><a>.
+ *      Processing</em><a>.</li>
+ *      </ul>
  *
  */
 public enum EntityFeature {
@@ -71,7 +78,7 @@ public enum EntityFeature {
 
 			/*
 			 * (non-Javadoc)
-			 * 
+			 *
 			 * @see java.lang.Object#equals(java.lang.Object)
 			 */
 			@Override
@@ -118,7 +125,7 @@ public enum EntityFeature {
 
 			/*
 			 * (non-Javadoc)
-			 * 
+			 *
 			 * @see java.lang.Object#hashCode()
 			 */
 			@Override
@@ -138,7 +145,7 @@ public enum EntityFeature {
 
 			/*
 			 * (non-Javadoc)
-			 * 
+			 *
 			 * @see java.lang.Object#toString()
 			 */
 			@Override
