@@ -14,7 +14,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech.coin.tangrams.analysis.features;
+package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers;
 
 import java.io.File;
 import java.io.IOException;
@@ -43,8 +43,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
-import se.kth.speech.coin.tangrams.analysis.features.EntityCrossValidationTester.SessionTestResults;
-import se.kth.speech.coin.tangrams.analysis.features.WordsAsClassifiersCrossValidationTester.Result;
+import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
+import se.kth.speech.coin.tangrams.analysis.features.TrainingException;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.EntityCrossValidationTester.SessionTestResults;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordsAsClassifiersCrossValidationTester.Result;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>

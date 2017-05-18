@@ -14,26 +14,24 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech.coin.tangrams.analysis.features;
+package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.function.BiFunction;
-import java.util.function.Function;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.inject.Inject;
-import javax.xml.bind.JAXBException;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -47,11 +45,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
-import se.kth.speech.coin.tangrams.analysis.EventDialogue;
-import se.kth.speech.coin.tangrams.analysis.GameHistory;
 import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
-import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManager;
-import se.kth.speech.coin.tangrams.analysis.Utterance;
+import se.kth.speech.io.FileNames;
 import weka.core.Instances;
 import weka.core.converters.AbstractFileSaver;
 import weka.core.converters.ConverterUtils;
@@ -75,7 +70,7 @@ import weka.core.converters.ConverterUtils;
  *      </ul>
  *
  */
-public final class WordsAsClassifiersTrainingDataWriter {
+public final class WordsAsClassifiersCrossValidationTrainingDataWriter {
 
 	private enum Parameter implements Supplier<Option> {
 		HELP("?") {
@@ -87,8 +82,8 @@ public final class WordsAsClassifiersTrainingDataWriter {
 		OUTPATH("o") {
 			@Override
 			public Option get() {
-				return Option.builder(optName).longOpt("outpath").desc("The path to write the data to.").hasArg()
-						.argName("path").type(File.class).required().build();
+				return Option.builder(optName).longOpt("outpath").desc("The path to write the training data to.")
+						.hasArg().argName("path").type(File.class).required().build();
 			}
 		},
 		OUTPUT_TYPE("t") {
@@ -118,7 +113,8 @@ public final class WordsAsClassifiersTrainingDataWriter {
 
 		private static void printHelp() {
 			final HelpFormatter formatter = new HelpFormatter();
-			formatter.printHelp(WordsAsClassifiersTrainingDataWriter.class.getSimpleName() + " INFILE", OPTIONS);
+			formatter.printHelp(WordsAsClassifiersCrossValidationTrainingDataWriter.class.getSimpleName() + " INFILE",
+					OPTIONS);
 		}
 
 		protected final String optName;
@@ -129,9 +125,14 @@ public final class WordsAsClassifiersTrainingDataWriter {
 
 	}
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(WordsAsClassifiersTrainingDataWriter.class);
+	public static final String TEST_FILE_NAME_BASE = "test";
 
-	public static void main(final CommandLine cl) throws IOException, JAXBException, ParseException {
+	public static final String TRAINING_FILE_NAME_PREFIX = "train-";
+
+	private static final Logger LOGGER = LoggerFactory
+			.getLogger(WordsAsClassifiersCrossValidationTrainingDataWriter.class);
+
+	public static void main(final CommandLine cl) throws ParseException, ExecutionException, IOException {
 		if (cl.hasOption(Parameter.HELP.optName)) {
 			Parameter.printHelp();
 		} else {
@@ -140,36 +141,21 @@ public final class WordsAsClassifiersTrainingDataWriter {
 				throw new MissingOptionException("No input path(s) specified.");
 
 			} else {
-				final File outdir = (File) cl.getParsedOptionValue(Parameter.OUTPATH.optName);
-				LOGGER.info("Will write data to \"{}\".", outdir);
+				final File outpath = (File) cl.getParsedOptionValue(Parameter.OUTPATH.optName);
+				LOGGER.info("Will write data to \"{}\".", outpath);
 				final String outfileExt = Parameter.parseOutputType(cl);
 				LOGGER.info("Will write data in \"*{}\" format.", outfileExt);
-
 				try (final ClassPathXmlApplicationContext appCtx = new ClassPathXmlApplicationContext(
-						"entity-feature-extraction.xml", WordsAsClassifiersTrainingDataWriter.class)) {
-					final WordsAsClassifiersTrainingDataWriter writer = appCtx
-							.getBean(WordsAsClassifiersTrainingDataWriter.class);
-					final Map<String, Instances> classInstances = writer.apply(inpaths);
-					if (outdir.mkdirs()) {
-						LOGGER.info("Output directory \"{}\" was nonexistent; Created it before writing data.", outdir);
-					}
-
-					final AbstractFileSaver saver = ConverterUtils.getSaverForExtension(outfileExt);
-					for (final Entry<String, Instances> classInstanceEntry : classInstances.entrySet()) {
-						final String className = classInstanceEntry.getKey();
-						final File outfile = new File(outdir, className + outfileExt);
-						LOGGER.info("Writing data for classifier \"{}\" to \"{}\".", className, outfile);
-						final Instances insts = classInstanceEntry.getValue();
-						saver.setInstances(insts);
-						saver.setFile(outfile);
-						saver.writeBatch();
-					}
+						"entity-feature-extraction.xml", WordsAsClassifiersCrossValidationTrainingDataWriter.class)) {
+					final WordsAsClassifiersCrossValidationTrainingDataWriter writer = appCtx
+							.getBean(WordsAsClassifiersCrossValidationTrainingDataWriter.class, outpath, outfileExt);
+					writer.accept(inpaths);
 				}
 			}
 		}
 	}
 
-	public static void main(final String[] args) throws IOException, JAXBException {
+	public static void main(final String[] args) throws ExecutionException, IOException {
 		final CommandLineParser parser = new DefaultParser();
 		try {
 			final CommandLine cl = parser.parse(Parameter.OPTIONS, args);
@@ -180,23 +166,66 @@ public final class WordsAsClassifiersTrainingDataWriter {
 		}
 	}
 
-	@Inject
-	private BiFunction<ListIterator<Utterance>, GameHistory, Stream<EventDialogue>> eventDiagFactory;
+	private final File outdir;
+
+	private final String outfileExt;
 
 	@Inject
-	private Function<Collection<SessionEventDialogueManager>, Map<String, Instances>> instancesFactory;
+	private WordsAsClassifiersCrossValidationTestSetFactory testSetFactory;
 
-	public Map<String, Instances> apply(final Iterable<Path> inpaths) throws IOException, JAXBException {
-		final Collection<SessionDataManager> infileSessionData = SessionDataManager.createFileSessionDataMap(inpaths)
-				.values();
-		final List<SessionEventDialogueManager> sessionEvtDiagMgrs = new ArrayList<>(infileSessionData.size());
-		for (final SessionDataManager sessionDatum : infileSessionData) {
-			final SessionEventDialogueManager sessionEventDiagMgr = new SessionEventDialogueManager(sessionDatum,
-					eventDiagFactory);
-			sessionEvtDiagMgrs.add(sessionEventDiagMgr);
-		}
-		return instancesFactory.apply(sessionEvtDiagMgrs);
-
+	public WordsAsClassifiersCrossValidationTrainingDataWriter(final File outdir, final String outfileExt) {
+		this.outdir = outdir;
+		this.outfileExt = outfileExt;
 	}
 
+	public void accept(final Iterable<Path> inpaths) throws ExecutionException, IOException {
+		final Map<Path, SessionDataManager> infileSessionData = SessionDataManager.createFileSessionDataMap(inpaths);
+		final Map<SessionDataManager, Path> allSessions = infileSessionData.entrySet().stream()
+				.collect(Collectors.toMap(Entry::getValue, Entry::getKey));
+		infileSessionData.forEach((infile, sessionData) -> allSessions.put(sessionData, infile));
+		final Map<Path, String> infilePathOutdirNames = FileNames
+				.createMinimalPathLeafNameMap(infileSessionData.keySet(), fileName -> {
+					final String base = FileNames.splitBase(fileName)[0];
+					return FileNames.sanitize(base, "-");
+				});
+
+		final Stream<Entry<SessionDataManager, Map<String, Instances>>> testSets = testSetFactory.apply(allSessions);
+		for (final Iterator<Entry<SessionDataManager, Map<String, Instances>>> testSetIter = testSets
+				.iterator(); testSetIter.hasNext();) {
+			final Entry<SessionDataManager, Map<String, Instances>> testSet = testSetIter.next();
+			final SessionDataManager testSessionData = testSet.getKey();
+			final Map<String, Instances> classInstances = testSet.getValue();
+
+			final Path sessionInpath = allSessions.get(testSessionData);
+			final String subsampleDirname = infilePathOutdirNames.get(sessionInpath);
+			final File subsampleDir = createSubsampleDir(subsampleDirname);
+			LOGGER.debug("Writing data for {} classes to \"{}\".", classInstances.size(), subsampleDir);
+			persist(classInstances.entrySet(), subsampleDir);
+		}
+		LOGGER.info("Finished writing {} cross-validation dataset(s) to \"{}\".", infileSessionData.size(), outdir);
+	}
+
+	private File createSubsampleDir(final String subsampleDirname) {
+		final File result = new File(outdir, subsampleDirname);
+		LOGGER.info("Will write validation data to \"{}\".", result);
+		if (result.mkdirs()) {
+			LOGGER.debug("Subsample directory \"{}\" was nonexistent; Created it before writing data.", result);
+		}
+		return result;
+	}
+
+	private void persist(final Collection<Entry<String, Instances>> classInstances, final File subsampleDir)
+			throws IOException {
+		final AbstractFileSaver saver = ConverterUtils.getSaverForExtension(outfileExt);
+		for (final Entry<String, Instances> classInstanceEntry : classInstances) {
+			final String className = classInstanceEntry.getKey();
+			final File outfile = new File(subsampleDir, TRAINING_FILE_NAME_PREFIX + className + outfileExt);
+			LOGGER.debug("Writing training data for classifier \"{}\" to \"{}\".", className, outfile);
+			final Instances insts = classInstanceEntry.getValue();
+			saver.setInstances(insts);
+			saver.setFile(outfile);
+			saver.writeBatch();
+		}
+		LOGGER.info("Wrote training data for {} class(es).", classInstances.size());
+	}
 }

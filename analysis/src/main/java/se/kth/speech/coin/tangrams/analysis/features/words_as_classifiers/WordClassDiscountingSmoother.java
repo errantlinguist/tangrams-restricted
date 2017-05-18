@@ -14,7 +14,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech.coin.tangrams.analysis.features;
+package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers;
 
 import java.util.ArrayList;
 import java.util.Iterator;

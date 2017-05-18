@@ -65,31 +65,31 @@
 		class="se.kth.speech.coin.tangrams.analysis.features.weka.ClassInstanceFactory" />
 
 	<bean id="smoother"
-		class="se.kth.speech.coin.tangrams.analysis.features.WordClassDiscountingSmoother">
+		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordClassDiscountingSmoother">
 		<constructor-arg value="4" />
 		<constructor-arg value="__UNKNOWN__" />
 	</bean>
 
 	<bean id="words-as-classifiers-inst-map-factory"
-		class="se.kth.speech.coin.tangrams.analysis.features.WordsAsClassifiersInstancesMapFactory" />
+		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordsAsClassifiersInstancesMapFactory" />
 
 	<bean id="words-as-classifiers-data-writer"
-		class="se.kth.speech.coin.tangrams.analysis.features.WordsAsClassifiersTrainingDataWriter" />
+		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordsAsClassifiersTrainingDataWriter" />
 
 	<bean id="session-evt-diag-mgr-cache-supplier"
 		class="se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManagerCacheSupplier"></bean>
 
 	<bean id="words-as-classifiers-cross-validation-data-factory"
-		class="se.kth.speech.coin.tangrams.analysis.features.WordsAsClassifiersCrossValidationTestSetFactory" />
+		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordsAsClassifiersCrossValidationTestSetFactory" />
 
 	<bean id="words-as-classifiers-cross-validation-data-writer"
-		class="se.kth.speech.coin.tangrams.analysis.features.WordsAsClassifiersCrossValidationTrainingDataWriter"
+		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordsAsClassifiersCrossValidationTrainingDataWriter"
 		scope="prototype" />
 
 	<bean id="words-as-classifiers-cross-validation-entity-tester"
-		class="se.kth.speech.coin.tangrams.analysis.features.EntityCrossValidationTester" />
+		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.EntityCrossValidationTester" />
 
 	<bean id="words-as-classifiers-cross-validation-dataset-tester"
-		class="se.kth.speech.coin.tangrams.analysis.features.WordsAsClassifiersCrossValidationTester" />
+		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordsAsClassifiersCrossValidationTester" />
 
 </beans>

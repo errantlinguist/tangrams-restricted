@@ -14,7 +14,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech.coin.tangrams.analysis.features;
+package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -47,6 +47,9 @@ import se.kth.speech.coin.tangrams.analysis.GameHistory;
 import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
 import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManager;
 import se.kth.speech.coin.tangrams.analysis.Utterance;
+import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
+import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
+import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionContextFactory;
 import se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttributeContext;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 import se.kth.speech.math.NBestRankings;

@@ -14,7 +14,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech.coin.tangrams.analysis.features;
+package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -39,9 +39,11 @@ import com.google.common.collect.Maps;
 
 import se.kth.speech.coin.tangrams.analysis.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
-import se.kth.speech.coin.tangrams.analysis.features.EntityCrossValidationTester.EventDialogueTestResults;
-import se.kth.speech.coin.tangrams.analysis.features.EntityCrossValidationTester.SessionTestResults;
+import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
+import se.kth.speech.coin.tangrams.analysis.features.TrainingException;
 import se.kth.speech.coin.tangrams.analysis.features.weka.ClassInstanceFactory;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.EntityCrossValidationTester.EventDialogueTestResults;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.EntityCrossValidationTester.SessionTestResults;
 import weka.classifiers.functions.Logistic;
 import weka.core.Instances;
 
