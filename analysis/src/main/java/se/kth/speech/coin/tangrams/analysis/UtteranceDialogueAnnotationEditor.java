@@ -60,6 +60,7 @@ public final class UtteranceDialogueAnnotationEditor {
 					final SessionDataManager sessionData = SessionDataManager.create(inpath);
 					// SessionEventDialogueManager evtDiagMgr = new
 					// SessionEventDialogueManager(sessionData);
+					// TODO: Finish
 				} catch (final IOException e) {
 					throw new UncheckedIOException(e);
 				}
