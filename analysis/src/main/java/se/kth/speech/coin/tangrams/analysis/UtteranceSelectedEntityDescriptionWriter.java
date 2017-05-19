@@ -35,9 +35,7 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
 
 import javax.inject.Inject;
 import javax.swing.JFileChooser;
@@ -162,24 +160,6 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 		private Properties getProperties() {
 			return props;
 		}
-	}
-
-	static final class PlayerGameContextFactory {
-
-		private final Function<? super String, GameHistory> playerGameHistoryGetter;
-
-		public PlayerGameContextFactory(final Function<? super String, GameHistory> playerGameHistoryGetter) {
-			this.playerGameHistoryGetter = playerGameHistoryGetter;
-		}
-
-		public Stream<GameContext> create(final double startTime, final double endTime,
-				final String perspectivePlayerId) {
-			LOGGER.debug("Creating a context based on the logged game history from the perspective of player \"{}\".",
-					perspectivePlayerId);
-			final GameHistory history = playerGameHistoryGetter.apply(perspectivePlayerId);
-			return TemporalGameContexts.create(history, startTime, endTime, perspectivePlayerId);
-		}
-
 	}
 
 	private static final Path CLASS_SETTINGS_INFILE_PATH;

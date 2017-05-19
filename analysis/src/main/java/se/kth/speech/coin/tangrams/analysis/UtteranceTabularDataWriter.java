@@ -33,7 +33,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import iristk.system.Event;
-import se.kth.speech.coin.tangrams.analysis.UtteranceSelectedEntityDescriptionWriter.PlayerGameContextFactory;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionContextFactory;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
@@ -192,7 +191,7 @@ class UtteranceTabularDataWriter {
 				sb.append(System.lineSeparator());
 				final Event nextEvent = nextEventDiag.getLastEvent().orElse(null);
 				final List<Utterance> nextUtts = nextEventDiag.getUtts();
-				if (nextUtts.isEmpty()){
+				if (nextUtts.isEmpty()) {
 					// Do nothing
 				} else {
 					final Utterance nextUtt = nextUtts.get(0);
@@ -200,7 +199,7 @@ class UtteranceTabularDataWriter {
 					sb.append(String.format(
 							"Next utt after event: \"%s\"; speaking player ID: \"%s\"; start: %f; end: %f; segment ID: \"%s\"; event ID: \"%s\"; event time: \"%s\"",
 							nextUtt.getTokens().stream().collect(WORD_JOINER), speakingPlayerId, nextUtt.getStartTime(),
-							nextUtt.getEndTime(), nextUtt.getSegmentId(), nextEvent.getId(), nextEvent.getTime()));					
+							nextUtt.getEndTime(), nextUtt.getSegmentId(), nextEvent.getId(), nextEvent.getTime()));
 				}
 			}
 		}
@@ -219,7 +218,8 @@ class UtteranceTabularDataWriter {
 		// The visualization info for the given game
 		final ImageVisualizationInfo imgVizInfo = IMG_VIZ_INFO_UNMARSHALLER
 				.apply(history.getInitialState().getImageVisualizationInfoDescription());
-		final List<EventDialogue> eventDiags = Arrays.asList(EVENT_DIAG_FACTORY.apply(utts.listIterator(), history).toArray(EventDialogue[]::new));
+		final List<EventDialogue> eventDiags = Arrays
+				.asList(EVENT_DIAG_FACTORY.apply(utts.listIterator(), history).toArray(EventDialogue[]::new));
 
 		final List<List<String>> colHeaders = createColHeaders();
 		final String colHeaderStr = colHeaders.stream().map(header -> header.stream().collect(TABLE_ROW_CELL_JOINER))
