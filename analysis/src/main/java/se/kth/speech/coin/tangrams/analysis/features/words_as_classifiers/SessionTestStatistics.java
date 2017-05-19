@@ -25,7 +25,7 @@ import se.kth.speech.coin.tangrams.analysis.Utterance;
  * @since 19 May 2017
  *
  */
-public interface SessionTestStatistics extends EventDialogueTestStatistics {
+interface SessionTestStatistics extends EventDialogueTestStatistics {
 
 	double meanRank();
 

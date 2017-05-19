@@ -21,13 +21,17 @@ import java.util.List;
 import se.kth.speech.coin.tangrams.analysis.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.Utterance;
 
-public interface EventDialogueTestStatistics {
+interface EventDialogueTestStatistics {
 
 	List<Utterance> getUtterancesTested();
 
 	default double meanTokensPerTestedUtterance() {
 		final int totalTokens = totalTokensTested();
 		return totalTokens / (double) totalUtterancesTested();
+	}
+
+	default double meanUtterancesTested() {
+		return totalUtterancesTested() / (double) totalUtteranceCount();
 	}
 
 	int totalTokensTested();
