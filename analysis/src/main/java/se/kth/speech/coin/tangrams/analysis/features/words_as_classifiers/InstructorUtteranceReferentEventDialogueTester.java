@@ -68,7 +68,11 @@ public final class InstructorUtteranceReferentEventDialogueTester implements Eve
 			} else {
 				// Just use the game context for the first utterance for all
 				// utterances processed for the given dialogue
-				final GameContext uttCtx = UtteranceGameContexts.createGameContext(dialogueUttsFromInstructor.get(0),
+				Utterance firstUtt = dialogueUttsFromInstructor.get(0);
+				if (dialogueUttsFromInstructor.size() == 1 && firstUtt.getTokens().get(0).equals("yeah")){
+					LOGGER.debug("stopped");
+				}
+				final GameContext uttCtx = UtteranceGameContexts.createGameContext(firstUtt,
 						history, submittingPlayerId);
 				final Int2DoubleMap referentConfidenceVals = uttSeqClassifier.apply(dialogueUttsFromInstructor, uttCtx);
 				final int goldStandardEntityId = uttCtx.findLastSelectedEntityId().get();

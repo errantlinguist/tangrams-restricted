@@ -117,8 +117,8 @@ public final class CrossValidationStatisticsWriter {
 
 	}
 
-	private static final List<String> COL_HEADERS = Arrays.asList("INPATH", "MRR", "DIAG_COUNT", "UTTS_TESTED",
-			"MEAN_UTTS_PER_DIAG");
+	private static final List<String> COL_HEADERS = Arrays.asList("INPATH", "MEAN_RANK", "MRR", "DIAG_COUNT",
+			"UTTS_TESTED", "MEAN_UTTS_PER_DIAG");
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(CrossValidationStatisticsWriter.class);
 
@@ -161,8 +161,8 @@ public final class CrossValidationStatisticsWriter {
 	private static List<Object> createTableRow(final Object key, final SessionTester.Result sessionTestResults) {
 		final int totalUttsTested = sessionTestResults.totalUtterancesTested();
 		final int totalDiagsTested = sessionTestResults.totalDiagsTested();
-		return Arrays.asList(key, sessionTestResults.meanReciprocalRank(), totalDiagsTested, totalUttsTested,
-				totalUttsTested / (double) totalDiagsTested);
+		return Arrays.asList(key, sessionTestResults.meanRank(), sessionTestResults.meanReciprocalRank(),
+				totalDiagsTested, totalUttsTested, totalUttsTested / (double) totalDiagsTested);
 	}
 
 	private static void printResults(final CrossValidationTester.Result testResults, final PrintWriter out) {

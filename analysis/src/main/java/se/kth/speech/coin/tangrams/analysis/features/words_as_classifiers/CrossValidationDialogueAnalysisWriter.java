@@ -120,7 +120,7 @@ public final class CrossValidationDialogueAnalysisWriter {
 
 	}
 
-	private static final List<String> COL_HEADERS = Arrays.asList("DIALOGUE", "RR", "UTT_COUNT", "TOKEN_COUNT",
+	private static final List<String> COL_HEADERS = Arrays.asList("DIALOGUE", "DIALOGUE_AS_TESTED", "RANK", "RR", "UTT_COUNT", "TOKEN_COUNT",
 			"MEAN_TOKENS_PER_UTT");
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(CrossValidationDialogueAnalysisWriter.class);
@@ -170,11 +170,12 @@ public final class CrossValidationDialogueAnalysisWriter {
 		List<Entry<EventDialogue, EventDialogueTester.Result>> totalDiagTestResults = totalSessionResults
 				.getDiagResults();
 		for (Entry<EventDialogue, EventDialogueTester.Result> diagTestResults : totalDiagTestResults) {
-//			EventDialogue diag = diagTestResults.getKey();
+			EventDialogue diag = diagTestResults.getKey();
+			String uttDiagRepr = UTT_DIAG_REPR_FACTORY.apply(diag.getUtts().iterator());
 			EventDialogueTester.Result testResults = diagTestResults.getValue();
 			List<Utterance> uttsTested = testResults.getUttsTested();
-			String uttDiagRepr = UTT_DIAG_REPR_FACTORY.apply(uttsTested.iterator());
-			List<Object> cellVals = Arrays.asList(uttDiagRepr, testResults.reciprocalRank(), testResults.totalUtterancesTested(), testResults.totalTokens(), testResults.meanTokensPerUtterance());
+			String testedUttDiagRepr = UTT_DIAG_REPR_FACTORY.apply(uttsTested.iterator());
+			List<Object> cellVals = Arrays.asList(uttDiagRepr, testedUttDiagRepr, testResults.rank(), testResults.reciprocalRank(), testResults.totalUtterancesTested(), testResults.totalTokens(), testResults.meanTokensPerUtterance());
 			out.println(cellVals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
 			
 		}

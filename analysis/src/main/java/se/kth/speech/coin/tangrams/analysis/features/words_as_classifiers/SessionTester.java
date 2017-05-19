@@ -64,6 +64,10 @@ public final class SessionTester {
 			return diagTestResults;
 		}
 
+		public double meanRank() {
+			return sumRank() / totalDiagsTested();
+		}
+
 		public double meanReciprocalRank() {
 			final double rrSum = sumReciprocalRank();
 			return rrSum / totalUtterancesTested();
@@ -81,6 +85,15 @@ public final class SessionTester {
 		public int totalUtterancesTested() {
 			return diagTestResults.stream().map(Entry::getValue)
 					.mapToInt(EventDialogueTester.Result::totalUtterancesTested).sum();
+		}
+
+		private double sumRank() {
+			double result = 0.0;
+			for (final Entry<EventDialogue, EventDialogueTester.Result> diagTestResultsEntry : diagTestResults) {
+				final EventDialogueTester.Result diagTestResults = diagTestResultsEntry.getValue();
+				result += diagTestResults.rank();
+			}
+			return result;
 		}
 
 		private double sumReciprocalRank() {
