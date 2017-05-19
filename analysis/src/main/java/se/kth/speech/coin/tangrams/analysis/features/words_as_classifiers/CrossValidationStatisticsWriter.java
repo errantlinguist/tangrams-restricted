@@ -45,7 +45,6 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
 import se.kth.speech.coin.tangrams.analysis.features.TrainingException;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.CrossValidationTester.Result;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -138,7 +137,7 @@ public final class CrossValidationStatisticsWriter {
 				try (final ClassPathXmlApplicationContext appCtx = new ClassPathXmlApplicationContext(
 						"entity-feature-extraction.xml", CrossValidationStatisticsWriter.class)) {
 					final CrossValidationTester tester = appCtx.getBean(CrossValidationTester.class);
-					final Result testResults = tester.apply(inpaths);
+					final CrossValidationTester.Result testResults = tester.apply(inpaths);
 					try (PrintWriter out = Parameter.parseOutpath(cl)) {
 						printResults(testResults, out);
 					}
@@ -166,7 +165,7 @@ public final class CrossValidationStatisticsWriter {
 				totalUttsTested / (double) totalDiagsTested);
 	}
 
-	private static void printResults(final Result testResults, final PrintWriter out) {
+	private static void printResults(final CrossValidationTester.Result testResults, final PrintWriter out) {
 		out.println(COL_HEADERS.stream().collect(ROW_CELL_JOINER));
 
 		for (final Entry<Path, SessionTester.Result> infileSessionTestResults : testResults.getSessionResults()
