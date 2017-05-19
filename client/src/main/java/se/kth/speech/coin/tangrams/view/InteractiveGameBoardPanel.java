@@ -22,6 +22,8 @@ import java.awt.Dimension;
 import java.awt.Image;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -30,6 +32,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Properties;
 import java.util.concurrent.ExecutorService;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
@@ -43,6 +46,7 @@ import javax.swing.SwingWorker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.github.errantlinguist.ClassProperties;
 import com.google.common.collect.Maps;
 
 import se.kth.speech.SpatialMatrix;
@@ -117,6 +121,8 @@ final class InteractiveGameBoardPanel extends AbstractGameBoardPanel implements 
 
 	private static final int MIN_GRID_SQUARE_LENGTH;
 
+	private static final int MOVE_SUBMISSION_WAIT_TIME_MILLS;
+
 	/**
 	 *
 	 */
@@ -135,6 +141,15 @@ final class InteractiveGameBoardPanel extends AbstractGameBoardPanel implements 
 		}
 
 	};
+
+	static {
+		try {
+			final Properties props = ClassProperties.load(InteractiveGameBoardPanel.class);
+			MOVE_SUBMISSION_WAIT_TIME_MILLS = Integer.parseInt(props.getProperty("moveSubmissionWaitTime"));
+		} catch (final IOException e) {
+			throw new UncheckedIOException(e);
+		}
+	}
 
 	static {
 		final int highlightingStrokeWidth = 4;
@@ -377,9 +392,19 @@ final class InteractiveGameBoardPanel extends AbstractGameBoardPanel implements 
 		final PlayerRole role = controller.getRole();
 		switch (role) {
 		case MOVE_SUBMISSION: {
-			toggleHighlightedRegion(source);
 			backgroundJobService
 					.execute(new DelegatingSwingWorker(() -> controller.submitNextMove(source, target, pieceId)));
+			backgroundJobService.execute(new SwingWorker<Void, Void>() {
+
+				@Override
+				protected Void doInBackground() throws InterruptedException {
+					Thread.sleep(MOVE_SUBMISSION_WAIT_TIME_MILLS);
+					toggleHighlightedRegion(source);
+					return null;
+				}
+
+			});
+
 			break;
 		}
 		default: {
