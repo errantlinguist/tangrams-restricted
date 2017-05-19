@@ -52,8 +52,6 @@ class UtteranceTabularDataWriter {
 
 	private static final String NULL_VALUE_REPR = "-";
 
-	private static final Collector<CharSequence, ?, String> SENTENCE_JOINER = Collectors.joining(". ");
-
 	private static final Collector<CharSequence, ?, String> TABLE_ROW_CELL_JOINER;
 
 	private static final Collector<CharSequence, ?, String> TABLE_ROW_JOINER;
@@ -62,7 +60,9 @@ class UtteranceTabularDataWriter {
 
 	private static final String TABLE_STRING_REPR_ROW_DELIMITER;
 
-	private static final Collector<CharSequence, ?, String> WORD_JOINER = Collectors.joining(" ");
+	private static final UtteranceDialogueRepresentationStringFactory UTT_DIAG_REPR_FACTORY;
+
+	private static final Collector<? super CharSequence, ?, String> WORD_JOINER;
 
 	static {
 		TABLE_STRING_REPR_ROW_DELIMITER = System.lineSeparator();
@@ -72,6 +72,11 @@ class UtteranceTabularDataWriter {
 	static {
 		TABLE_STRING_REPR_COL_DELIMITER = "\t";
 		TABLE_ROW_CELL_JOINER = Collectors.joining(TABLE_STRING_REPR_COL_DELIMITER);
+	}
+
+	static {
+		UTT_DIAG_REPR_FACTORY = new UtteranceDialogueRepresentationStringFactory();
+		WORD_JOINER = UTT_DIAG_REPR_FACTORY.getWordJoiner();
 	}
 
 	private static String createBlankImgDesc(final List<List<String>> colHeaders) {
@@ -206,14 +211,6 @@ class UtteranceTabularDataWriter {
 		return sb.toString();
 	}
 
-	private String createUtteranceDialogString(final Stream<Utterance> utts) {
-		final Stream<String> uttStrs = utts.map(utt -> {
-			final String playerId = utt.getSpeakerId();
-			return "**" + playerId + ":** \"" + utt.getTokens().stream().collect(WORD_JOINER) + "\"";
-		});
-		return uttStrs.collect(SENTENCE_JOINER);
-	}
-
 	void write(final String playerId, final GameHistory history, final Writer writer) throws IOException {
 		// The visualization info for the given game
 		final ImageVisualizationInfo imgVizInfo = IMG_VIZ_INFO_UNMARSHALLER
@@ -294,7 +291,7 @@ class UtteranceTabularDataWriter {
 			writer.write(imgVizInfoDesc);
 			writer.write(TABLE_STRING_REPR_COL_DELIMITER);
 
-			final String eventDialogStr = createUtteranceDialogString(eventUtts.stream());
+			final String eventDialogStr = UTT_DIAG_REPR_FACTORY.apply(eventUtts.iterator());
 			writer.write(eventDialogStr);
 		}
 	}
