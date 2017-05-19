@@ -120,12 +120,14 @@ public final class CrossValidationDialogueAnalysisWriter {
 
 	}
 
-	private static final List<String> COL_HEADERS = Arrays.asList("DIALOGUE", "DIALOGUE_AS_TESTED", "RANK", "RR", "UTT_COUNT", "TOKEN_COUNT",
-			"MEAN_TOKENS_PER_UTT");
+	private static final List<String> COL_HEADERS = Arrays.asList("DIALOGUE", "DIALOGUE_AS_TESTED", "RANK", "RR",
+			"UTT_COUNT", "TOKEN_COUNT", "MEAN_TOKENS_PER_UTT");
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(CrossValidationDialogueAnalysisWriter.class);
 
 	private static final Collector<CharSequence, ?, String> ROW_CELL_JOINER = Collectors.joining("\t");
+
+	private static final UtteranceDialogueRepresentationStringFactory UTT_DIAG_REPR_FACTORY = new UtteranceDialogueRepresentationStringFactory();
 
 	public static void main(final CommandLine cl)
 			throws ParseException, TrainingException, ExecutionException, IOException, ClassificationException {
@@ -161,23 +163,23 @@ public final class CrossValidationDialogueAnalysisWriter {
 		}
 	}
 
-	private static final UtteranceDialogueRepresentationStringFactory UTT_DIAG_REPR_FACTORY = new UtteranceDialogueRepresentationStringFactory();
-
 	private static void printResults(final CrossValidationTester.Result cvtestResults, final PrintWriter out) {
 		out.println(COL_HEADERS.stream().collect(ROW_CELL_JOINER));
 
 		final SessionTester.Result totalSessionResults = cvtestResults.totalResults();
-		List<Entry<EventDialogue, EventDialogueTester.Result>> totalDiagTestResults = totalSessionResults
+		final List<Entry<EventDialogue, EventDialogueTester.Result>> totalDiagTestResults = totalSessionResults
 				.getDiagResults();
-		for (Entry<EventDialogue, EventDialogueTester.Result> diagTestResults : totalDiagTestResults) {
-			EventDialogue diag = diagTestResults.getKey();
-			String uttDiagRepr = UTT_DIAG_REPR_FACTORY.apply(diag.getUtts().iterator());
-			EventDialogueTester.Result testResults = diagTestResults.getValue();
-			List<Utterance> uttsTested = testResults.getUttsTested();
-			String testedUttDiagRepr = UTT_DIAG_REPR_FACTORY.apply(uttsTested.iterator());
-			List<Object> cellVals = Arrays.asList(uttDiagRepr, testedUttDiagRepr, testResults.rank(), testResults.reciprocalRank(), testResults.totalUtterancesTested(), testResults.totalTokens(), testResults.meanTokensPerUtterance());
+		for (final Entry<EventDialogue, EventDialogueTester.Result> diagTestResults : totalDiagTestResults) {
+			final EventDialogue diag = diagTestResults.getKey();
+			final String uttDiagRepr = UTT_DIAG_REPR_FACTORY.apply(diag.getUtts().iterator());
+			final EventDialogueTester.Result testResults = diagTestResults.getValue();
+			final List<Utterance> uttsTested = testResults.getUttsTested();
+			final String testedUttDiagRepr = UTT_DIAG_REPR_FACTORY.apply(uttsTested.iterator());
+			final List<Object> cellVals = Arrays.asList(uttDiagRepr, testedUttDiagRepr, testResults.rank(),
+					testResults.reciprocalRank(), testResults.totalUtterancesTested(), testResults.totalTokens(),
+					testResults.meanTokensPerUtterance());
 			out.println(cellVals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
-			
+
 		}
 	}
 
