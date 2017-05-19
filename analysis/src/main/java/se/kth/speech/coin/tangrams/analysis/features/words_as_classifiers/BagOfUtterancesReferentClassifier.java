@@ -42,7 +42,7 @@ import weka.core.Instance;
  * @since 18 May 2017
  *
  */
-public final class BagOfUtterancesReferentClassifier implements UtteranceClassifier {
+public final class BagOfUtterancesReferentClassifier implements UtteranceSequenceClassifier {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(BagOfUtterancesReferentClassifier.class);
 

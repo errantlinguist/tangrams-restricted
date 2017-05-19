@@ -42,9 +42,9 @@ public final class InstructorUtteranceReferentEventDialogueTester implements Eve
 	private static final Logger LOGGER = LoggerFactory
 			.getLogger(InstructorUtteranceReferentEventDialogueTester.class);
 
-	private final UtteranceClassifier uttClassifier;
+	private final UtteranceSequenceClassifier uttClassifier;
 
-	public InstructorUtteranceReferentEventDialogueTester(final UtteranceClassifier uttClassifier) {
+	public InstructorUtteranceReferentEventDialogueTester(final UtteranceSequenceClassifier uttClassifier) {
 		this.uttClassifier = uttClassifier;
 	}
 

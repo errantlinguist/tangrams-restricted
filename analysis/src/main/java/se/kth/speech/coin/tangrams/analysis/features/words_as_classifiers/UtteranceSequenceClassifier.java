@@ -28,7 +28,7 @@ import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
  * @since 18 May 2017
  *
  */
-public interface UtteranceClassifier {
+public interface UtteranceSequenceClassifier {
 
 	Int2DoubleMap apply(List<Utterance> dialogueUtts, GameContext uttCtx) throws ClassificationException;
 
