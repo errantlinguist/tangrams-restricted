@@ -23,6 +23,9 @@ import java.util.Map;
 
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
 import weka.core.Attribute;
+import weka.core.DenseInstance;
+import weka.core.Instance;
+import weka.core.Instances;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -62,6 +65,13 @@ public final class EntityInstanceAttributeContext {
 		attrs.addAll(featureAttrs.values());
 		classAttr = createClassAttr(classAttrName);
 		attrs.add(classAttr);
+	}
+
+	public Instance createInstance(final EntityFeature.Extractor.Context extractionContext, final Instances insts) {
+		final Instance result = new DenseInstance(attrs.size());
+		result.setDataset(insts);
+		extractor.accept(result, extractionContext);
+		return result;
 	}
 
 	/**

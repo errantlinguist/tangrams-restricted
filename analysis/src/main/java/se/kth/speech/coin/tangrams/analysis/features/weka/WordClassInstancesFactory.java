@@ -27,7 +27,7 @@ import weka.core.Instances;
  * @since 16 May 2017
  *
  */
-public final class ClassInstanceFactory implements BiFunction<String, Integer, Instances> {
+public final class WordClassInstancesFactory implements BiFunction<String, Integer, Instances> {
 
 	@Inject
 	private EntityInstanceAttributeContext entInstAttrCtx;

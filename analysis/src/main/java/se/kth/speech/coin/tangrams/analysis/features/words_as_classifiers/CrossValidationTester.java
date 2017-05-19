@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -34,6 +35,7 @@ import javax.inject.Inject;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.BeanFactory;
 
 import com.google.common.collect.Maps;
 
@@ -41,7 +43,7 @@ import se.kth.speech.coin.tangrams.analysis.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
 import se.kth.speech.coin.tangrams.analysis.features.TrainingException;
-import se.kth.speech.coin.tangrams.analysis.features.weka.ClassInstanceFactory;
+import se.kth.speech.coin.tangrams.analysis.features.weka.WordClassInstancesFactory;
 import weka.classifiers.functions.Logistic;
 import weka.core.Instances;
 
@@ -150,14 +152,29 @@ public final class CrossValidationTester {
 		return result;
 	}
 
+	// @Inject
+	// private SessionTester sessionTester;
+
+	// private final BiFunction<Map<String, Logistic>, Instances, SessionTester>
+	// sessionTesterFactory;
+
 	@Inject
-	private SessionTester sessionTester;
+	private BeanFactory beanFactory;
 
 	@Inject
 	private WordClassDiscountingSmoother smoother;
 
 	@Inject
-	private ClassInstanceFactory testInstsFactory;
+	private WordClassInstancesFactory testInstsFactory;
+
+	// @Inject
+	// private SessionTesterFactoryBean sessionTesterFactory;
+
+	// public CrossValidationTester(
+	// final BiFunction<Map<String, Logistic>, Instances, SessionTester>
+	// sessionTesterFactory) {
+	// this.sessionTesterFactory = sessionTesterFactory;
+	// }
 
 	@Inject
 	private CrossValidationTestSetFactory testSetFactory;
@@ -182,11 +199,15 @@ public final class CrossValidationTester {
 			LOGGER.debug("{} instances for out-of-vocabulary class.", oovInstances.size());
 
 			final Map<String, Logistic> wordClassifiers = createWordClassifierMap(classInstances.entrySet());
-			sessionTester.setWordClassifiers(wordClassifiers::get);
-
+			// sessionTesterFactory.setWordClassifiers(wordClassifiers::get);
 			final Instances testInsts = testInstsFactory.apply(TEST_INSTS_REL_NAME,
 					estimateTestInstanceCount(testSessionData));
-			sessionTester.setTestInsts(testInsts);
+			// sessionTesterFactory.setTestInstances(testInsts);
+			// final SessionTester sessionTester = (SessionTester)
+			// sessionTesterFactory.getObject();
+			final Function<String, Logistic> wordClassifierGetter = wordClassifiers::get;
+			final SessionTester sessionTester = beanFactory.getBean(SessionTester.class, wordClassifierGetter,
+					testInsts);
 
 			final SessionTester.Result testResults = sessionTester.testSession(testSessionData);
 			final Path infilePath = allSessions.get(testSessionData);

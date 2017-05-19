@@ -21,12 +21,14 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import javax.inject.Inject;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.BeanFactory;
 
 import com.google.common.cache.LoadingCache;
 
@@ -35,6 +37,11 @@ import se.kth.speech.coin.tangrams.analysis.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
 import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManager;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
+import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
+import se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttributeContext;
+import weka.classifiers.Classifier;
+import weka.core.Instance;
+import weka.core.Instances;
 
 public final class SessionTester {
 
@@ -93,39 +100,44 @@ public final class SessionTester {
 	private static final Logger LOGGER = LoggerFactory.getLogger(SessionTester.class);
 
 	@Inject
+	private BeanFactory beanFactory;
+
+	@Inject
+	private EntityInstanceAttributeContext entInstAttrCtx;
+
+	@Inject
 	private Supplier<LoadingCache<SessionDataManager, SessionEventDialogueManager>> sessionDiagMgrCacheSupplier;
 
-//	private Instances testInsts;
-	
-	private final EventDialogueTester diagClassifier;
-	
-	public SessionTester(final EventDialogueTester diagClassifier){
-		this.diagClassifier = diagClassifier;
+	private final Function<EntityFeature.Extractor.Context, Instance> testInstFactory;
+
+	private final Function<? super String, ? extends Classifier> wordClassifiers;
+
+	/**
+	 * @param wordClassifiers
+	 * @param testInsts
+	 */
+	public SessionTester(final Function<? super String, ? extends Classifier> wordClassifiers,
+			final Instances testInsts) {
+		this.wordClassifiers = wordClassifiers;
+		testInstFactory = ctx -> {
+			final Instance result = entInstAttrCtx.createInstance(ctx, testInsts);
+			result.setClassMissing();
+			return result;
+		};
 	}
 
-//	/**
-//	 * @param testInsts
-//	 *            the testInsts to set
-//	 */
-//	public void setTestInsts(final Instances testInsts) {
-//		this.testInsts = testInsts;
-//	}
-//
-//	/**
-//	 * @param wordClassifiers
-//	 *            the wordClassifiers to set
-//	 */
-//	public void setWordClassifiers(final Function<? super String, ? extends Classifier> wordClassifiers) {
-//		this.wordClassifiers = wordClassifiers;
-//	}
-
-	public Result testSession(final SessionDataManager sessionData)
-			throws ExecutionException, ClassificationException {
+	public Result testSession(final SessionDataManager sessionData) throws ExecutionException, ClassificationException {
 		final SessionEventDialogueManager sessionEventDiagMgr = sessionDiagMgrCacheSupplier.get().get(sessionData);
 		final List<EventDialogue> uttDiags = sessionEventDiagMgr.createUttDialogues();
 		final Result result = new Result(new ArrayList<>(uttDiags.size()));
+
+		final ReferentConfidenceMapFactory referentConfidenceMapFactory = beanFactory
+				.getBean(ReferentConfidenceMapFactory.class, wordClassifiers, testInstFactory);
+		final UtteranceSequenceClassifier uttSeqClassifier = beanFactory.getBean(UtteranceSequenceClassifier.class,
+				referentConfidenceMapFactory);
+		final EventDialogueTester diagTester = beanFactory.getBean(EventDialogueTester.class, uttSeqClassifier);
 		for (final EventDialogue uttDiag : uttDiags) {
-			final Optional<EventDialogueTester.Result> optTestResults = diagClassifier.apply(uttDiag,
+			final Optional<EventDialogueTester.Result> optTestResults = diagTester.apply(uttDiag,
 					sessionEventDiagMgr.getGameHistory());
 			if (optTestResults.isPresent()) {
 				final EventDialogueTester.Result results = optTestResults.get();
@@ -136,13 +148,5 @@ public final class SessionTester {
 		}
 		return result;
 	}
-
-//	private Instance createEntityTestInstance(final EntityFeature.Extractor.Context extractionContext) {
-//		final Instance result = new DenseInstance(entInstAttrCtx.getAttrs().size());
-//		result.setDataset(testInsts);
-//		entInstAttrCtx.getExtractor().accept(result, extractionContext);
-//		result.setClassMissing();
-//		return result;
-//	}
 
 }

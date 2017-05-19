@@ -28,7 +28,7 @@ import javax.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import se.kth.speech.coin.tangrams.analysis.features.weka.ClassInstanceFactory;
+import se.kth.speech.coin.tangrams.analysis.features.weka.WordClassInstancesFactory;
 import weka.classifiers.Classifier;
 import weka.core.Instances;
 
@@ -49,7 +49,7 @@ public final class WordClassDiscountingSmoother {
 	private static final Logger LOGGER = LoggerFactory.getLogger(WordClassDiscountingSmoother.class);
 
 	@Inject
-	private ClassInstanceFactory classInstsFactory;
+	private WordClassInstancesFactory classInstsFactory;
 
 	private final int minCount;
 

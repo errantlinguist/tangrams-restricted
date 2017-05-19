@@ -42,10 +42,10 @@ public final class InstructorUtteranceReferentEventDialogueTester implements Eve
 	private static final Logger LOGGER = LoggerFactory
 			.getLogger(InstructorUtteranceReferentEventDialogueTester.class);
 
-	private final UtteranceSequenceClassifier uttClassifier;
+	private final UtteranceSequenceClassifier uttSeqClassifier;
 
-	public InstructorUtteranceReferentEventDialogueTester(final UtteranceSequenceClassifier uttClassifier) {
-		this.uttClassifier = uttClassifier;
+	public InstructorUtteranceReferentEventDialogueTester(final UtteranceSequenceClassifier uttSeqClassifier) {
+		this.uttSeqClassifier = uttSeqClassifier;
 	}
 
 	@Override
@@ -70,7 +70,7 @@ public final class InstructorUtteranceReferentEventDialogueTester implements Eve
 				// utterances processed for the given dialogue
 				final GameContext uttCtx = UtteranceGameContexts.createGameContext(dialogueUttsFromInstructor.get(0),
 						history, submittingPlayerId);
-				final Int2DoubleMap referentConfidenceVals = uttClassifier.apply(dialogueUttsFromInstructor, uttCtx);
+				final Int2DoubleMap referentConfidenceVals = uttSeqClassifier.apply(dialogueUttsFromInstructor, uttCtx);
 				final int goldStandardEntityId = uttCtx.findLastSelectedEntityId().get();
 				result = Optional.of(new Result(referentConfidenceVals, goldStandardEntityId, dialogueUttsFromInstructor));
 			}

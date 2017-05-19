@@ -10,7 +10,9 @@
 	<context:component-scan base-package="se.kth.speech.coin.tangrams.analysis.*" />
 
 	<bean id="random-generator" class="java.util.Random">
-		<description>The random number generator used in the application; Provide an explicit seed below in order to make the results reproducible from one run to the next.
+		<description>The random number generator used in the application;
+			Provide an explicit seed below in order to make the results
+			reproducible from one run to the next.
 		</description>
 		<!-- <constructor-arg value="1" /> -->
 	</bean>
@@ -43,7 +45,7 @@
 		<constructor-arg value="IS_REFERENT" />
 	</bean>
 
-	<bean id="entity-ext-ctx-factory"
+	<bean id="entity-extraction-ctx-factory"
 		class="se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionContextFactory">
 		<constructor-arg>
 			<bean class="se.kth.speech.coin.tangrams.analysis.GameContextModelFactory">
@@ -62,7 +64,7 @@
 	</bean>
 
 	<bean id="class-insts-factory"
-		class="se.kth.speech.coin.tangrams.analysis.features.weka.ClassInstanceFactory" />
+		class="se.kth.speech.coin.tangrams.analysis.features.weka.WordClassInstancesFactory" />
 
 	<bean id="smoother"
 		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordClassDiscountingSmoother">
@@ -70,26 +72,42 @@
 		<constructor-arg value="__UNKNOWN__" />
 	</bean>
 
-	<bean id="words-as-classifiers-inst-map-factory"
+	<bean id="insts-map-factory"
 		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.InstancesMapFactory" />
 
-	<bean id="words-as-classifiers-data-writer"
+	<bean id="training-data-writer"
 		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.TrainingDataWriter" />
 
 	<bean id="session-evt-diag-mgr-cache-supplier"
 		class="se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManagerCacheSupplier"></bean>
 
-	<bean id="words-as-classifiers-cross-validation-data-factory"
+	<bean id="cross-validation-test-data-factory"
 		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.CrossValidationTestSetFactory" />
 
-	<bean id="words-as-classifiers-cross-validation-data-writer"
+	<bean id="cross-validation-training-data-writer"
 		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.CrossValidationTrainingDataWriter"
 		scope="prototype" />
 
-	<bean id="words-as-classifiers-cross-validation-entity-tester"
-		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.EntityCrossValidationTester" />
+	<bean id="ref-conf-map-factory"
+		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.ReferentConfidenceMapFactory"
+		scope="prototype"></bean>
 
-	<bean id="words-as-classifiers-cross-validation-dataset-tester"
-		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.CrossValidationTester" />
+	<bean id="diag_classifier"
+		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.InstructorUtteranceReferentEventDialogueTester"
+		scope="prototype">
+	</bean>
+
+	<bean id="utt_seq_classifier"
+		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.BagOfUtterancesReferentClassifier"
+		scope="prototype">
+	</bean>
+
+	<bean id="session-tester"
+		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.SessionTester"
+		scope="prototype"></bean>
+
+	<bean id="cross-validation-tester"
+		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.CrossValidationTester"
+		scope="prototype" />
 
 </beans>
