@@ -39,8 +39,7 @@ import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
  */
 public final class InstructorUtteranceReferentEventDialogueTester implements EventDialogueTester {
 
-	private static final Logger LOGGER = LoggerFactory
-			.getLogger(InstructorUtteranceReferentEventDialogueTester.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(InstructorUtteranceReferentEventDialogueTester.class);
 
 	private final UtteranceSequenceClassifier uttSeqClassifier;
 
@@ -58,25 +57,24 @@ public final class InstructorUtteranceReferentEventDialogueTester implements Eve
 			final Event event = optLastEvent.get();
 			LOGGER.debug("Classifying referred entity for {}.", event);
 			final String submittingPlayerId = event.getString(GameManagementEvent.Attribute.PLAYER_ID.toString());
-			final List<Utterance> dialogueUttsFromInstructor = Arrays.asList(uttDiag.getUtts().stream().filter(dialogueUtt -> {
-				final String uttPlayerId = dialogueUtt.getSpeakerId();
-				return submittingPlayerId.equals(uttPlayerId);
-			}).toArray(Utterance[]::new));
+			final List<Utterance> dialogueUttsFromInstructor = Arrays
+					.asList(uttDiag.getUtts().stream().filter(dialogueUtt -> {
+						final String uttPlayerId = dialogueUtt.getSpeakerId();
+						return submittingPlayerId.equals(uttPlayerId);
+					}).toArray(Utterance[]::new));
 
 			if (dialogueUttsFromInstructor.isEmpty()) {
 				result = Optional.empty();
 			} else {
 				// Just use the game context for the first utterance for all
 				// utterances processed for the given dialogue
-				Utterance firstUtt = dialogueUttsFromInstructor.get(0);
-				if (dialogueUttsFromInstructor.size() == 1 && firstUtt.getTokens().get(0).equals("yeah")){
-					LOGGER.debug("stopped");
-				}
-				final GameContext uttCtx = UtteranceGameContexts.createGameContext(firstUtt,
-						history, submittingPlayerId);
+				final Utterance firstUtt = dialogueUttsFromInstructor.get(0);
+				final GameContext uttCtx = UtteranceGameContexts.createGameContext(firstUtt, history,
+						submittingPlayerId);
 				final Int2DoubleMap referentConfidenceVals = uttSeqClassifier.apply(dialogueUttsFromInstructor, uttCtx);
 				final int goldStandardEntityId = uttCtx.findLastSelectedEntityId().get();
-				result = Optional.of(new Result(referentConfidenceVals, goldStandardEntityId, dialogueUttsFromInstructor));
+				result = Optional
+						.of(new Result(referentConfidenceVals, goldStandardEntityId, dialogueUttsFromInstructor));
 			}
 		} else {
 			result = Optional.empty();
