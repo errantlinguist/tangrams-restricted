@@ -32,12 +32,11 @@ import it.unimi.dsi.fastutil.objects.ObjectIterable;
  *
  */
 public final class NBestRankings {
-	
+
 	public static <G extends IntCollection> Double2ObjectSortedMap<G> createNbestGroupMap(
 			final Collection<Int2DoubleMap.Entry> observationReferenceConfidenceVals,
 			final DoubleFunction<G> tieGroupContainerFactory) {
-		final Double2ObjectSortedMap<G> result = new Double2ObjectRBTreeMap<>(
-				DoubleComparators.OPPOSITE_COMPARATOR);
+		final Double2ObjectSortedMap<G> result = new Double2ObjectRBTreeMap<>(DoubleComparators.OPPOSITE_COMPARATOR);
 		for (final Int2DoubleMap.Entry observationReferenceConfidenceVal : observationReferenceConfidenceVals) {
 			final double confidenceVal = observationReferenceConfidenceVal.getDoubleValue();
 			G observationIds = result.get(confidenceVal);
@@ -47,12 +46,12 @@ public final class NBestRankings {
 			}
 			observationIds.add(observationReferenceConfidenceVal.getIntKey());
 		}
-		return result;		
+		return result;
 	}
 
 	public static double findAveragedRank(final ObjectIterable<? extends IntCollection> nbestGroups,
 			final int observationId) {
-		double bestRankForTiedGroup = 1.0;
+		int bestRankForTiedGroup = 1;
 		IntCollection tiedObservationIds = null;
 		for (final IntCollection nbestGroup : nbestGroups) {
 			if (nbestGroup.contains(observationId)) {
@@ -66,9 +65,14 @@ public final class NBestRankings {
 		if (tiedObservationIds == null) {
 			throw new IllegalArgumentException("ID not found.");
 		} else {
-			final double worstRankForTiedGroup = bestRankForTiedGroup + (tiedObservationIds.size() - 1);
 			// Average the ranks for sets of ties
-			result = (bestRankForTiedGroup + worstRankForTiedGroup) / 2;
+			final int tiedObservationCount = tiedObservationIds.size();
+			double groupRankSum = 0.0;
+			for (int i = 0; i < tiedObservationCount; ++i) {
+				final int observationRank = bestRankForTiedGroup + i;
+				groupRankSum += observationRank;
+			}
+			result = groupRankSum / tiedObservationCount;
 		}
 		return result;
 	}
