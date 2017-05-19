@@ -48,7 +48,7 @@ import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
  * @since 17 May 2017
  *
  */
-public class EventDialogueFactoryTest {
+public final class EventDialogueFactoryTest {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(EventDialogueFactoryTest.class);
 
