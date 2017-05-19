@@ -160,7 +160,7 @@ public final class CrossValidationStatisticsWriter {
 
 	private static List<Object> createTableRow(final Object key, final SessionTester.Result sessionTestResults) {
 		final int totalUttsTested = sessionTestResults.totalUtterancesTested();
-		final int totalDiagsTested = sessionTestResults.totalDiagsTested();
+		final int totalDiagsTested = sessionTestResults.totalDialoguesTested();
 		return Arrays.asList(key, sessionTestResults.meanRank(), sessionTestResults.meanReciprocalRank(),
 				totalDiagsTested, totalUttsTested, totalUttsTested / (double) totalDiagsTested);
 	}

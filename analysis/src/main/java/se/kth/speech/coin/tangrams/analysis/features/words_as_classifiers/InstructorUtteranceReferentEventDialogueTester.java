@@ -57,11 +57,11 @@ public final class InstructorUtteranceReferentEventDialogueTester implements Eve
 			final Event event = optLastEvent.get();
 			LOGGER.debug("Classifying referred entity for {}.", event);
 			final String submittingPlayerId = event.getString(GameManagementEvent.Attribute.PLAYER_ID.toString());
-			final List<Utterance> dialogueUttsFromInstructor = Arrays
-					.asList(uttDiag.getUtts().stream().filter(dialogueUtt -> {
-						final String uttPlayerId = dialogueUtt.getSpeakerId();
-						return submittingPlayerId.equals(uttPlayerId);
-					}).toArray(Utterance[]::new));
+			final List<Utterance> allUtts = uttDiag.getUtts();
+			final List<Utterance> dialogueUttsFromInstructor = Arrays.asList(allUtts.stream().filter(dialogueUtt -> {
+				final String uttPlayerId = dialogueUtt.getSpeakerId();
+				return submittingPlayerId.equals(uttPlayerId);
+			}).toArray(Utterance[]::new));
 
 			if (dialogueUttsFromInstructor.isEmpty()) {
 				result = Optional.empty();
@@ -73,8 +73,8 @@ public final class InstructorUtteranceReferentEventDialogueTester implements Eve
 						submittingPlayerId);
 				final Int2DoubleMap referentConfidenceVals = uttSeqClassifier.apply(dialogueUttsFromInstructor, uttCtx);
 				final int goldStandardEntityId = uttCtx.findLastSelectedEntityId().get();
-				result = Optional
-						.of(new Result(referentConfidenceVals, goldStandardEntityId, dialogueUttsFromInstructor));
+				result = Optional.of(new Result(referentConfidenceVals, goldStandardEntityId,
+						dialogueUttsFromInstructor, allUtts.size()));
 			}
 		} else {
 			result = Optional.empty();

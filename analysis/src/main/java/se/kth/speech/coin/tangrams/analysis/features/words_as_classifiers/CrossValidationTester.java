@@ -19,7 +19,7 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -39,8 +39,10 @@ import org.springframework.beans.factory.BeanFactory;
 
 import com.google.common.collect.Maps;
 
+import it.unimi.dsi.fastutil.ints.IntSet;
 import se.kth.speech.coin.tangrams.analysis.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
+import se.kth.speech.coin.tangrams.analysis.Utterance;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
 import se.kth.speech.coin.tangrams.analysis.features.TrainingException;
 import se.kth.speech.coin.tangrams.analysis.features.weka.WordClassInstancesFactory;
@@ -68,16 +70,20 @@ import weka.core.Instances;
  */
 public final class CrossValidationTester {
 
-	public static final class Result {
+	public static final class Result implements SessionTestStatistics {
 
 		private final Map<Path, SessionTester.Result> sessionResults;
 
+		private final SessionTester.Result totalResults;
+
 		private Result(final int expectedSessionCount) {
 			sessionResults = Maps.newHashMapWithExpectedSize(expectedSessionCount);
+			totalResults = new SessionTester.Result(expectedSessionCount * 50);
 		}
 
-		public Stream<Entry<EventDialogue, EventDialogueTester.Result>> getAllDiagTestResults() {
-			return sessionResults.values().stream().map(SessionTester.Result::getDiagResults).flatMap(List::stream);
+		public Stream<Entry<EventDialogue, EventDialogueTester.Result>> getAllDialogueTestResults() {
+			return sessionResults.values().stream().map(SessionTester.Result::getDialogueTestResults)
+					.flatMap(List::stream);
 		}
 
 		/**
@@ -87,19 +93,135 @@ public final class CrossValidationTester {
 			return Collections.unmodifiableMap(sessionResults);
 		}
 
-		public int totalDiagsTested() {
-			return sessionResults.values().stream().mapToInt(SessionTester.Result::totalDiagsTested).sum();
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see
+		 * se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.
+		 * EventDialogueTestStatistics#getUtterancesTested()
+		 */
+		@Override
+		public List<Utterance> getUtterancesTested() {
+			return Arrays.asList(sessionResults.values().stream().map(SessionTestStatistics::getUtterancesTested)
+					.map(List::stream).flatMap(Function.identity()).toArray(Utterance[]::new));
+		}
+
+		public double meanGoldStandardUniqueReferentIdCount() {
+			return sessionResults.values().stream().mapToInt(SessionTestStatistics::uniqueGoldStandardReferentIdCount)
+					.average().getAsDouble();
+		}
+
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see
+		 * se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.
+		 * SessionTestStatistics#meanRank()
+		 */
+		@Override
+		public double meanRank() {
+			return totalResults.meanRank();
+		}
+
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see
+		 * se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.
+		 * SessionTestStatistics#meanReciprocalRank()
+		 */
+		@Override
+		public double meanReciprocalRank() {
+			return totalResults.meanReciprocalRank();
+		}
+
+		public double meanTokensTestedPerSession() {
+			return sessionResults.values().stream().mapToInt(SessionTestStatistics::totalTokensTested).average()
+					.getAsDouble();
+		}
+
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see
+		 * se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.
+		 * SessionTestStatistics#modeReferentIds()
+		 */
+		@Override
+		public IntSet modeReferentIds() {
+			return totalResults.modeReferentIds();
+		}
+
+		public void put(final Path infilePath, final SessionTester.Result testResults) {
+			sessionResults.put(infilePath, testResults);
+			testResults.getDialogueTestResults().forEach(totalResults::add);
+		}
+
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see
+		 * se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.
+		 * CrossValidationTestStatistics#totalDialoguesTested()
+		 */
+		@Override
+		public int totalDialoguesTested() {
+			return sessionResults.values().stream().mapToInt(SessionTester.Result::totalDialoguesTested).sum();
 		}
 
 		/**
 		 * @return the totalResults
 		 */
 		public SessionTester.Result totalResults() {
-			final List<Entry<EventDialogue, EventDialogueTester.Result>> totalDiagResults = new ArrayList<>(
-					totalDiagsTested());
-			final SessionTester.Result result = new SessionTester.Result(totalDiagResults);
-			sessionResults.forEach((inpath, sessionResults) -> result.add(sessionResults));
-			return result;
+			return totalResults;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see
+		 * se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.
+		 * EventDialogueTestStatistics#totalTokensTested()
+		 */
+		@Override
+		public int totalTokensTested() {
+			return totalResults.totalTokensTested();
+		}
+
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see
+		 * se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.
+		 * EventDialogueTestStatistics#totalUtteranceCount()
+		 */
+		@Override
+		public int totalUtteranceCount() {
+			return totalResults.totalUtteranceCount();
+		}
+
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see
+		 * se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.
+		 * EventDialogueTestStatistics#totalUtterancesTested()
+		 */
+		@Override
+		public int totalUtterancesTested() {
+			return totalResults.totalUtterancesTested();
+		}
+
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see
+		 * se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.
+		 * SessionTestStatistics#uniqueGoldStandardReferentIdCount()
+		 */
+		@Override
+		public int uniqueGoldStandardReferentIdCount() {
+			throw new UnsupportedOperationException("Cannot compare reference IDs across sessions.");
 		}
 
 	}
@@ -211,7 +333,7 @@ public final class CrossValidationTester {
 
 			final SessionTester.Result testResults = sessionTester.testSession(testSessionData);
 			final Path infilePath = allSessions.get(testSessionData);
-			result.sessionResults.put(infilePath, testResults);
+			result.put(infilePath, testResults);
 		}
 		LOGGER.info("Finished testing {} cross-validation dataset(s).", result.sessionResults.size());
 		return result;

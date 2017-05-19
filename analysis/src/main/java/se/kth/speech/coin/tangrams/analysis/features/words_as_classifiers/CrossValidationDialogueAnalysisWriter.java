@@ -120,8 +120,9 @@ public final class CrossValidationDialogueAnalysisWriter {
 
 	}
 
-	private static final List<String> COL_HEADERS = Arrays.asList("DIALOGUE", "DIALOGUE_AS_TESTED", "GOLD_STD_ID", "RANK", "RR",
-			"UTT_COUNT", "TOKEN_COUNT", "MEAN_TOKENS_PER_UTT");
+	private static final List<String> COL_HEADERS = Arrays.asList("INPATH", "DIALOGUE", "DIALOGUE_AS_TESTED",
+			"GOLD_STD_ID", "RANK", "RR", "TESTED_UTT_COUNT", "TOTAL_UTT_COUNT", "MEAN_DIAG_UTTS_TESTED", "TOKEN_COUNT",
+			"MEAN_TOKENS_PER_UTT", "UNIQUE_REF_ID_COUNT");
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(CrossValidationDialogueAnalysisWriter.class);
 
@@ -144,7 +145,9 @@ public final class CrossValidationDialogueAnalysisWriter {
 					final CrossValidationTester tester = appCtx.getBean(CrossValidationTester.class);
 					final CrossValidationTester.Result testResults = tester.apply(inpaths);
 					try (PrintWriter out = Parameter.parseOutpath(cl)) {
-						printResults(testResults, out);
+						final CrossValidationDialogueAnalysisWriter writer = new CrossValidationDialogueAnalysisWriter(
+								out);
+						writer.write(testResults);
 					}
 				}
 			}
@@ -163,24 +166,60 @@ public final class CrossValidationDialogueAnalysisWriter {
 		}
 	}
 
-	private static void printResults(final CrossValidationTester.Result cvtestResults, final PrintWriter out) {
+	private final PrintWriter out;
+
+	public CrossValidationDialogueAnalysisWriter(final PrintWriter out) {
+		this.out = out;
+	}
+
+	private void write(final CrossValidationTester.Result cvtestResults) {
 		out.println(COL_HEADERS.stream().collect(ROW_CELL_JOINER));
 
-		final SessionTester.Result totalSessionResults = cvtestResults.totalResults();
-		final List<Entry<EventDialogue, EventDialogueTester.Result>> totalDiagTestResults = totalSessionResults
-				.getDiagResults();
-		for (final Entry<EventDialogue, EventDialogueTester.Result> diagTestResults : totalDiagTestResults) {
-			final EventDialogue diag = diagTestResults.getKey();
-			final String uttDiagRepr = UTT_DIAG_REPR_FACTORY.apply(diag.getUtts().iterator());
-			final EventDialogueTester.Result testResults = diagTestResults.getValue();
-			final List<Utterance> uttsTested = testResults.getUttsTested();
-			final String testedUttDiagRepr = UTT_DIAG_REPR_FACTORY.apply(uttsTested.iterator());
-			final List<Object> cellVals = Arrays.asList(uttDiagRepr, testedUttDiagRepr, testResults.getGoldStandardReferentId(), testResults.rank(),
-					testResults.reciprocalRank(), testResults.totalUtterancesTested(), testResults.totalTokens(),
-					testResults.meanTokensPerUtterance());
-			out.println(cellVals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
-
+		for (final Entry<Path, SessionTester.Result> infileSessionResults : cvtestResults.getSessionResults()
+				.entrySet()) {
+			final Path inpath = infileSessionResults.getKey();
+			final SessionTester.Result sessionResults = infileSessionResults.getValue();
+			for (final Entry<EventDialogue, EventDialogueTester.Result> diagTestResults : sessionResults
+					.getDialogueTestResults()) {
+				writeRow(inpath, diagTestResults);
+			}
 		}
+		writeSummaryTotals(cvtestResults);
+	}
+
+	private void writeRow(final Object key, final Entry<EventDialogue, EventDialogueTester.Result> diagTestResults) {
+		final EventDialogue diag = diagTestResults.getKey();
+		final String uttDiagRepr = UTT_DIAG_REPR_FACTORY.apply(diag.getUtts().iterator());
+		final EventDialogueTester.Result testResults = diagTestResults.getValue();
+		final List<Utterance> uttsTested = testResults.getUtterancesTested();
+		final String testedUttDiagRepr = UTT_DIAG_REPR_FACTORY.apply(uttsTested.iterator());
+
+		final int uttsTestedCount = testResults.totalUtterancesTested();
+		final int totalDiagUtts = testResults.totalUtteranceCount();
+		assert totalDiagUtts == diag.getUtts().size();
+		final double meanDiagUttsTested = uttsTestedCount / (double) totalDiagUtts;
+
+		final List<Object> cellVals = Arrays.asList(key, uttDiagRepr, testedUttDiagRepr,
+				testResults.getGoldStandardReferentId(), testResults.rank(), testResults.reciprocalRank(),
+				uttsTestedCount, totalDiagUtts, meanDiagUttsTested, testResults.totalTokensTested(),
+				testResults.meanTokensPerTestedUtterance(), 1);
+		assert cellVals.size() == COL_HEADERS.size();
+		out.println(cellVals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
+	}
+
+	private void writeSummaryTotals(final CrossValidationTester.Result cvtestResults) {
+		final SessionTester.Result totalSessionResults = cvtestResults.totalResults();
+		final int uttsTestedCount = totalSessionResults.totalUtterancesTested();
+		final int totalDiagUtts = totalSessionResults.totalUtteranceCount();
+		final double meanDiagUttsTested = uttsTestedCount / (double) totalDiagUtts;
+		final List<Object> cellVals = Arrays.asList("SUMMARY: ALL DIALOGUES AS ONE SESSION", "", "", "",
+				totalSessionResults.meanRank(), totalSessionResults.meanReciprocalRank(),
+				totalSessionResults.meanUtterancesTestedPerDialogue(),
+				totalSessionResults.meanUtteranceTotalPerDialogue(), meanDiagUttsTested,
+				totalSessionResults.totalTokensTested(), totalSessionResults.meanTokensPerTestedUtterance(),
+				cvtestResults.meanGoldStandardUniqueReferentIdCount());
+		assert cellVals.size() == COL_HEADERS.size();
+		out.println(cellVals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
 	}
 
 }

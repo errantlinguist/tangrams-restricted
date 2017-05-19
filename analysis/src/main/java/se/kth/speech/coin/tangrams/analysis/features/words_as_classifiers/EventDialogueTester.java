@@ -40,7 +40,7 @@ import se.kth.speech.math.NBestRankings;
  */
 public interface EventDialogueTester {
 
-	public static final class Result {
+	public static final class Result implements EventDialogueTestStatistics {
 
 		private static final Logger LOGGER = LoggerFactory.getLogger(Result.class);
 
@@ -48,31 +48,16 @@ public interface EventDialogueTester {
 
 		private final Int2DoubleMap referentConfidenceVals;
 
+		private final int totalUttCount;
+
 		private final List<Utterance> uttsTested;
-		
-		public double reciprocalRank(){
-			return 1.0 / rank();
-		}
-
-
-		public double meanTokensPerUtterance() {
-			final int totalTokens = totalTokens();
-			return totalTokens / (double) uttsTested.size();
-		}
-
-		public int totalTokens() {
-			return uttsTested.stream().map(Utterance::getTokens).mapToInt(List::size).sum();
-		}
-
-		public int totalUtterancesTested() {
-			return uttsTested.size();
-		}
 
 		protected Result(final Int2DoubleMap referentConfidenceVals, final int goldStandardReferentId,
-				final List<Utterance> uttsTested) {
+				final List<Utterance> uttsTested, final int totalDiagUttCount) {
 			this.referentConfidenceVals = referentConfidenceVals;
 			this.goldStandardReferentId = goldStandardReferentId;
 			this.uttsTested = uttsTested;
+			totalUttCount = totalDiagUttCount;
 		}
 
 		/**
@@ -92,7 +77,8 @@ public interface EventDialogueTester {
 		/**
 		 * @return the uttsTested
 		 */
-		public List<Utterance> getUttsTested() {
+		@Override
+		public List<Utterance> getUtterancesTested() {
 			return Collections.unmodifiableList(uttsTested);
 		}
 
@@ -102,6 +88,25 @@ public interface EventDialogueTester {
 			final double result = NBestRankings.findAveragedRank(nbestGroups.values(), getGoldStandardReferentId());
 			LOGGER.debug("Rank of correct entity: {}", result);
 			return result;
+		}
+
+		public double reciprocalRank() {
+			return 1.0 / rank();
+		}
+
+		@Override
+		public int totalTokensTested() {
+			return uttsTested.stream().map(Utterance::getTokens).mapToInt(List::size).sum();
+		}
+
+		@Override
+		public int totalUtteranceCount() {
+			return totalUttCount;
+		}
+
+		@Override
+		public int totalUtterancesTested() {
+			return uttsTested.size();
 		}
 
 	}

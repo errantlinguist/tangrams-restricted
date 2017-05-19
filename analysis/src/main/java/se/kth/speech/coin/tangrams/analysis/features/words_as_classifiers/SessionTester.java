@@ -17,6 +17,7 @@
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Optional;
@@ -32,59 +33,175 @@ import org.springframework.beans.factory.BeanFactory;
 
 import com.google.common.cache.LoadingCache;
 
+import it.unimi.dsi.fastutil.ints.Int2IntMap;
+import it.unimi.dsi.fastutil.ints.Int2IntMaps;
+import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
+import it.unimi.dsi.fastutil.ints.IntSet;
 import se.kth.speech.MutablePair;
 import se.kth.speech.coin.tangrams.analysis.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
 import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManager;
+import se.kth.speech.coin.tangrams.analysis.Utterance;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
 import se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttributeContext;
+import se.kth.speech.fastutil.IntMaps;
 import weka.classifiers.Classifier;
 import weka.core.Instance;
 import weka.core.Instances;
 
 public final class SessionTester {
 
-	public static final class Result {
+	public static final class Result implements SessionTestStatistics {
 
 		private final List<Entry<EventDialogue, EventDialogueTester.Result>> diagTestResults;
 
-		public Result(final List<Entry<EventDialogue, EventDialogueTester.Result>> diagResults) {
-			diagTestResults = diagResults;
+		private final Int2IntMap goldStdReferentIdCounts;
+
+		public Result(final int expectedDiagTestCount) {
+			diagTestResults = new ArrayList<>(expectedDiagTestCount);
+			goldStdReferentIdCounts = new Int2IntOpenHashMap(expectedDiagTestCount);
+			goldStdReferentIdCounts.defaultReturnValue(0);
+		}
+
+		/**
+		 * @param uttDiag
+		 * @param results
+		 */
+		public void add(final Entry<EventDialogue, EventDialogueTester.Result> diagTestResults) {
+			this.diagTestResults.add(diagTestResults);
+			final int refId = diagTestResults.getValue().getGoldStandardReferentId();
+			goldStdReferentIdCounts.put(refId, goldStdReferentIdCounts.get(refId) + 1);
 		}
 
 		public void add(final Result other) {
+			other.diagTestResults.forEach(this::add);
 			diagTestResults.addAll(other.diagTestResults);
 		}
 
 		/**
 		 * @return the diagResults
 		 */
-		public List<Entry<EventDialogue, EventDialogueTester.Result>> getDiagResults() {
+		public List<Entry<EventDialogue, EventDialogueTester.Result>> getDialogueTestResults() {
 			return diagTestResults;
 		}
 
-		public double meanRank() {
-			return sumRank() / totalDiagsTested();
+		/**
+		 * @return the goldStdReferentIdCounts. <strong>NOTE:</strong> This has
+		 *         no meaning across sessions because entity IDs are not stable
+		 *         across sessions, i.e.&nbsp;the entity with ID <code>2</code>
+		 *         in one game has nothing to do with the entity with ID
+		 *         <code>2</code> in another game.
+		 */
+		public Int2IntMap getGoldStdReferentIdCounts() {
+			return Int2IntMaps.unmodifiable(goldStdReferentIdCounts);
 		}
 
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see
+		 * se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.
+		 * EventDialogueTestStatistics#getUtterancesTested()
+		 */
+		@Override
+		public List<Utterance> getUtterancesTested() {
+			return Arrays.asList(
+					diagTestResults.stream().map(Entry::getValue).map(EventDialogueTestStatistics::getUtterancesTested)
+							.map(List::stream).flatMap(Function.identity()).toArray(Utterance[]::new));
+		}
+
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see
+		 * se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.
+		 * SessionTestStatistics#meanRank()
+		 */
+		@Override
+		public double meanRank() {
+			return sumRank() / totalDialoguesTested();
+		}
+
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see
+		 * se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.
+		 * SessionTestStatistics#meanReciprocalRank()
+		 */
+		@Override
 		public double meanReciprocalRank() {
 			final double rrSum = sumReciprocalRank();
 			return rrSum / totalUtterancesTested();
 		}
 
-		public double meanUttsPerDialogue() {
-			final int totalUtts = totalUtterancesTested();
-			return totalUtts / (double) totalDiagsTested();
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see
+		 * se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.
+		 * SessionTestStatistics#modeReferentIds()
+		 */
+		@Override
+		public IntSet modeReferentIds() {
+			return IntMaps.createMaxValueKeySet(goldStdReferentIdCounts);
 		}
 
-		public int totalDiagsTested() {
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see
+		 * se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.
+		 * SessionTestStatistics#totalDialoguesTested()
+		 */
+		@Override
+		public int totalDialoguesTested() {
 			return diagTestResults.size();
 		}
 
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see
+		 * se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.
+		 * EventDialogueStatistics#totalTokensTested()
+		 */
+		@Override
+		public int totalTokensTested() {
+			return diagTestResults.stream().map(Entry::getValue).mapToInt(EventDialogueTester.Result::totalTokensTested)
+					.sum();
+		}
+
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see
+		 * se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.
+		 * EventDialogueStatistics#totalUtteranceCount()
+		 */
+		@Override
+		public int totalUtteranceCount() {
+			return diagTestResults.stream().map(Entry::getValue)
+					.mapToInt(EventDialogueTester.Result::totalUtteranceCount).sum();
+		}
+
+		@Override
 		public int totalUtterancesTested() {
 			return diagTestResults.stream().map(Entry::getValue)
 					.mapToInt(EventDialogueTester.Result::totalUtterancesTested).sum();
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see
+		 * se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.
+		 * SessionTestStatistics#uniqueRefIdCount()
+		 */
+		@Override
+		public int uniqueGoldStandardReferentIdCount() {
+			return goldStdReferentIdCounts.size();
 		}
 
 		private double sumRank() {
@@ -139,10 +256,11 @@ public final class SessionTester {
 		};
 	}
 
-	public Result testSession(final SessionDataManager sessionData) throws ExecutionException, ClassificationException {
+	public SessionTester.Result testSession(final SessionDataManager sessionData)
+			throws ExecutionException, ClassificationException {
 		final SessionEventDialogueManager sessionEventDiagMgr = sessionDiagMgrCacheSupplier.get().get(sessionData);
 		final List<EventDialogue> uttDiags = sessionEventDiagMgr.createUttDialogues();
-		final Result result = new Result(new ArrayList<>(uttDiags.size()));
+		final SessionTester.Result result = new SessionTester.Result(uttDiags.size());
 
 		final ReferentConfidenceMapFactory referentConfidenceMapFactory = beanFactory
 				.getBean(ReferentConfidenceMapFactory.class, wordClassifiers, testInstFactory);
@@ -154,7 +272,7 @@ public final class SessionTester {
 					sessionEventDiagMgr.getGameHistory());
 			if (optTestResults.isPresent()) {
 				final EventDialogueTester.Result results = optTestResults.get();
-				result.diagTestResults.add(new MutablePair<>(uttDiag, results));
+				result.add(new MutablePair<>(uttDiag, results));
 			} else {
 				LOGGER.debug("No utterances tested for {}.", uttDiag);
 			}
