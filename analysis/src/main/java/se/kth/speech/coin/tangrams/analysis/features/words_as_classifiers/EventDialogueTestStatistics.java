@@ -16,14 +16,12 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers;
 
-import java.util.List;
+import java.util.stream.Stream;
 
 import se.kth.speech.coin.tangrams.analysis.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.Utterance;
 
 interface EventDialogueTestStatistics {
-
-	List<Utterance> getUtterancesTested();
 
 	default double meanTokensPerTestedUtterance() {
 		final int totalTokens = totalTokensTested();
@@ -51,4 +49,6 @@ interface EventDialogueTestStatistics {
 	 *         {@link EventDialogue dialogue} under test which were tested.
 	 */
 	int totalUtterancesTested();
+
+	Stream<Utterance> utterancesTested();
 }

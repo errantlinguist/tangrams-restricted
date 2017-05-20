@@ -30,6 +30,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -205,7 +206,7 @@ public final class CrossValidationDialogueAnalysisWriter {
 		final String timestamp = diag.getLastEvent().map(Event::getTime).orElse("(no event found for dialogue)");
 		final String uttDiagRepr = UTT_DIAG_REPR_FACTORY.apply(diag.getUtts().iterator());
 		final EventDialogueTester.Result testResults = diagTestResults.getValue();
-		final List<Utterance> uttsTested = testResults.getUtterancesTested();
+		final Stream<Utterance> uttsTested = testResults.utterancesTested();
 		final String testedUttDiagRepr = UTT_DIAG_REPR_FACTORY.apply(uttsTested.iterator());
 
 		final List<Object> cellVals = Arrays.asList(key, sequenceOrder, timestamp, uttDiagRepr, testedUttDiagRepr,

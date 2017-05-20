@@ -16,9 +16,9 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -74,14 +74,6 @@ public interface EventDialogueTester {
 			return referentConfidenceVals;
 		}
 
-		/**
-		 * @return the uttsTested
-		 */
-		@Override
-		public List<Utterance> getUtterancesTested() {
-			return Collections.unmodifiableList(uttsTested);
-		}
-
 		public double rank() {
 			final Double2ObjectSortedMap<IntList> nbestGroups = NBestRankings.createNbestGroupMap(
 					getReferentConfidenceVals().int2DoubleEntrySet(), confidenceVal -> new IntArrayList(1));
@@ -107,6 +99,14 @@ public interface EventDialogueTester {
 		@Override
 		public int totalUtterancesTested() {
 			return uttsTested.size();
+		}
+
+		/**
+		 * @return the uttsTested
+		 */
+		@Override
+		public Stream<Utterance> utterancesTested() {
+			return uttsTested.stream();
 		}
 
 	}

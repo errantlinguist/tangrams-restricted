@@ -17,13 +17,13 @@
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
@@ -95,20 +95,6 @@ public final class SessionTester {
 		 */
 		public Int2IntMap getGoldStdReferentIdCounts() {
 			return Int2IntMaps.unmodifiable(goldStdReferentIdCounts);
-		}
-
-		/*
-		 * (non-Javadoc)
-		 *
-		 * @see
-		 * se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.
-		 * EventDialogueTestStatistics#getUtterancesTested()
-		 */
-		@Override
-		public List<Utterance> getUtterancesTested() {
-			return Arrays.asList(
-					diagTestResults.stream().map(Entry::getValue).map(EventDialogueTestStatistics::getUtterancesTested)
-							.map(List::stream).flatMap(Function.identity()).toArray(Utterance[]::new));
 		}
 
 		/*
@@ -194,7 +180,7 @@ public final class SessionTester {
 
 		/*
 		 * (non-Javadoc)
-		 * 
+		 *
 		 * @see
 		 * se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.
 		 * SessionTestStatistics#uniqueRefIdCount()
@@ -202,6 +188,19 @@ public final class SessionTester {
 		@Override
 		public int uniqueGoldStandardReferentIdCount() {
 			return goldStdReferentIdCounts.size();
+		}
+
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see
+		 * se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.
+		 * EventDialogueTestStatistics#utterancesTested()
+		 */
+		@Override
+		public Stream<Utterance> utterancesTested() {
+			return diagTestResults.stream().map(Entry::getValue).map(EventDialogueTestStatistics::utterancesTested)
+					.flatMap(Function.identity());
 		}
 
 		private double sumRank() {

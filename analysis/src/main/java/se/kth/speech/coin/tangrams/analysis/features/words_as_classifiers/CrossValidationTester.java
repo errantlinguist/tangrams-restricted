@@ -19,7 +19,6 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -98,12 +97,11 @@ public final class CrossValidationTester {
 		 *
 		 * @see
 		 * se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.
-		 * EventDialogueTestStatistics#getUtterancesTested()
+		 * EventDialogueTestStatistics#utterancesTested()
 		 */
 		@Override
-		public List<Utterance> getUtterancesTested() {
-			return Arrays.asList(sessionResults.values().stream().map(SessionTestStatistics::getUtterancesTested)
-					.map(List::stream).flatMap(Function.identity()).toArray(Utterance[]::new));
+		public Stream<Utterance> utterancesTested() {
+			return sessionResults.values().stream().map(SessionTestStatistics::utterancesTested).flatMap(Function.identity());
 		}
 
 		public double meanGoldStandardUniqueReferentIdCount() {
