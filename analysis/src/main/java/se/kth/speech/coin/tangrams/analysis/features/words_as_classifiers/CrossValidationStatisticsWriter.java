@@ -80,7 +80,7 @@ public final class CrossValidationStatisticsWriter {
 				return Option.builder(optName).longOpt("outpath").desc("The path to write the data to.").hasArg()
 						.argName("path").type(File.class).build();
 			}
-		},;
+		};
 
 		private static final Options OPTIONS = createOptions();
 
