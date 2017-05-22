@@ -81,12 +81,12 @@ public final class StanfordNLPTokenizer implements Function<String, List<String>
 
 	private final Predicate<? super String> tokenFilter;
 
-	public StanfordNLPTokenizer(final Predicate<? super String> tokenFilter) {
-		this(tokenFilter, getDefaultAnnotPipeline());
+	public StanfordNLPTokenizer(final Predicate<? super String> resultFilter) {
+		this(resultFilter, getDefaultAnnotPipeline());
 	}
 
-	private StanfordNLPTokenizer(final Predicate<? super String> tokenFilter, final Annotator annotator) {
-		this.tokenFilter = tokenFilter;
+	private StanfordNLPTokenizer(final Predicate<? super String> resultFilter, final Annotator annotator) {
+		this.tokenFilter = resultFilter;
 		this.annotator = annotator;
 	}
 
