@@ -31,7 +31,7 @@ import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 
 /**
  * This {@link EventDialogueUtteranceSequenceExtractor} extracts all the
- * {@link Utterance utterances} made by the {@link PlayerRole.MOVE_SUBMISSION
+ * {@link Utterance utterances} made by the {@link PlayerRole#MOVE_SUBMISSION
  * instructor} of the {@link EventDialogue} used for classification.
  *
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
