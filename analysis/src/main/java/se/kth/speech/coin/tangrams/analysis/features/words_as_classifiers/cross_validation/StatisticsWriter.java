@@ -41,7 +41,7 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
+import org.springframework.context.support.FileSystemXmlApplicationContext;
 
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
 import se.kth.speech.coin.tangrams.analysis.features.TrainingException;
@@ -69,6 +69,14 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.Sessio
 public final class StatisticsWriter {
 
 	private enum Parameter implements Supplier<Option> {
+		APP_CONTEXT_DEFINITIONS("a") {
+			@Override
+			public Option get() {
+				return Option.builder(optName).longOpt("app-ctx")
+						.desc("Location(s) to the Spring application context definition file(s) to load for configuration.")
+						.hasArgs().argName("locator").required().build();
+			}
+		},
 		HELP("?") {
 			@Override
 			public Option get() {
@@ -135,8 +143,8 @@ public final class StatisticsWriter {
 				throw new MissingOptionException("No input path(s) specified.");
 
 			} else {
-				try (final ClassPathXmlApplicationContext appCtx = new ClassPathXmlApplicationContext(
-						"context.xml", StatisticsWriter.class)) {
+				final String[] appCtxLocs = cl.getOptionValues(Parameter.APP_CONTEXT_DEFINITIONS.optName);
+				try (final FileSystemXmlApplicationContext appCtx = new FileSystemXmlApplicationContext(appCtxLocs)) {
 					final Tester tester = appCtx.getBean(Tester.class);
 					final Tester.Result testResults = tester.apply(inpaths);
 					try (PrintWriter out = Parameter.parseOutpath(cl)) {
