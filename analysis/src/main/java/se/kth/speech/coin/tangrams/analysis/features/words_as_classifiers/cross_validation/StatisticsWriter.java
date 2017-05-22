@@ -25,6 +25,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map.Entry;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
@@ -126,8 +127,8 @@ public final class StatisticsWriter {
 
 	}
 
-	private static final List<String> COL_HEADERS = Arrays.asList("INPATH", "MEAN_RANK", "MRR", "DIAG_COUNT",
-			"UTTS_TESTED", "MEAN_UTTS_PER_DIAG");
+	private static final List<String> COL_HEADERS = Arrays.asList("INPATH", "TEST_ITER", "MEAN_RANK", "MRR",
+			"DIAG_COUNT", "UTTS_TESTED", "MEAN_UTTS_PER_DIAG");
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(StatisticsWriter.class);
 
@@ -167,26 +168,32 @@ public final class StatisticsWriter {
 		}
 	}
 
-	private static List<Object> createTableRow(final Object key, final SessionTester.Result sessionTestResults) {
+	private static List<Object> createTableRow(final Object key, final Integer iterNo,
+			final SessionTester.Result sessionTestResults) {
 		final int totalUttsTested = sessionTestResults.totalUtterancesTested();
 		final int totalDiagsTested = sessionTestResults.totalDialoguesTested();
-		return Arrays.asList(key, sessionTestResults.meanRank(), sessionTestResults.meanReciprocalRank(),
+		return Arrays.asList(key, iterNo, sessionTestResults.meanRank(), sessionTestResults.meanReciprocalRank(),
 				totalDiagsTested, totalUttsTested, totalUttsTested / (double) totalDiagsTested);
 	}
 
 	private static void printResults(final Tester.Result testResults, final PrintWriter out) {
 		out.println(COL_HEADERS.stream().collect(ROW_CELL_JOINER));
 
-		for (final Entry<Path, SessionTester.Result> infileSessionTestResults : testResults.getSessionResults()
+		for (final Entry<Path, List<SessionTester.Result>> infileSessionTestResults : testResults.getSessionResults()
 				.entrySet()) {
 			final Path infilePath = infileSessionTestResults.getKey();
-			final SessionTester.Result sessionTestResults = infileSessionTestResults.getValue();
-			final List<Object> cellVals = createTableRow(infilePath, sessionTestResults);
-			out.println(cellVals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
+			final List<SessionTester.Result> sessionTestResultList = infileSessionTestResults.getValue();
+			for (final ListIterator<SessionTester.Result> sessionTestResultIter = sessionTestResultList
+					.listIterator(); sessionTestResultIter.hasNext();) {
+				final SessionTester.Result sessionResults = sessionTestResultIter.next();
+				final int iterNo = sessionTestResultIter.nextIndex();
+				final List<Object> cellVals = createTableRow(infilePath, iterNo, sessionResults);
+				out.println(cellVals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
+			}
 		}
 
 		final SessionTester.Result totalSessionResults = testResults.totalResults();
-		final List<Object> summaryVals = createTableRow("SUMMARY", totalSessionResults);
+		final List<Object> summaryVals = createTableRow("SUMMARY", testResults.iterCount(), totalSessionResults);
 		out.print(summaryVals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
 	}
 

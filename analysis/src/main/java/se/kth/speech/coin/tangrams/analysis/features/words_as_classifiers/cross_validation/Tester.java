@@ -19,6 +19,7 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -31,7 +32,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -72,35 +72,44 @@ import weka.core.Instances;
  *      </ul>
  *
  */
-@Named
 public final class Tester {
 
 	public static final class Result implements SessionTestStatistics {
 
-		private final Map<Path, SessionTester.Result> sessionResults;
+		private final int iterCount;
+
+		private final Map<Path, List<SessionTester.Result>> sessionResults;
 
 		private final SessionTester.Result totalResults;
 
-		private Result(final int expectedSessionCount) {
+		private Result(final int expectedSessionCount, final int iterCount) {
 			sessionResults = Maps.newHashMapWithExpectedSize(expectedSessionCount);
 			totalResults = new SessionTester.Result(expectedSessionCount * 50);
+			this.iterCount = iterCount;
 		}
 
 		public Stream<Entry<EventDialogue, EventDialogueTester.Result>> getAllDialogueTestResults() {
-			return sessionResults.values().stream().map(SessionTester.Result::getDialogueTestResults)
-					.flatMap(List::stream);
+			return sessionResults.values().stream().flatMap(List::stream)
+					.map(SessionTester.Result::getDialogueTestResults).flatMap(List::stream);
 		}
 
 		/**
 		 * @return the sessionResults
 		 */
-		public Map<Path, SessionTester.Result> getSessionResults() {
+		public Map<Path, List<SessionTester.Result>> getSessionResults() {
 			return Collections.unmodifiableMap(sessionResults);
 		}
 
+		/**
+		 * @return the iterCount
+		 */
+		public int iterCount() {
+			return iterCount;
+		}
+
 		public double meanGoldStandardUniqueReferentIdCount() {
-			return sessionResults.values().stream().mapToInt(SessionTestStatistics::uniqueGoldStandardReferentIdCount)
-					.average().getAsDouble();
+			return sessionResults.values().stream().flatMap(List::stream)
+					.mapToInt(SessionTestStatistics::uniqueGoldStandardReferentIdCount).average().getAsDouble();
 		}
 
 		/*
@@ -128,8 +137,8 @@ public final class Tester {
 		}
 
 		public double meanTokensTestedPerSession() {
-			return sessionResults.values().stream().mapToInt(SessionTestStatistics::totalTokensTested).average()
-					.getAsDouble();
+			return sessionResults.values().stream().flatMap(List::stream)
+					.mapToInt(SessionTestStatistics::totalTokensTested).average().getAsDouble();
 		}
 
 		/*
@@ -145,7 +154,9 @@ public final class Tester {
 		}
 
 		public void put(final Path infilePath, final SessionTester.Result testResults) {
-			sessionResults.put(infilePath, testResults);
+			final List<SessionTester.Result> iterResults = sessionResults.computeIfAbsent(infilePath,
+					key -> new ArrayList<>(iterCount));
+			iterResults.add(testResults);
 			testResults.getDialogueTestResults().forEach(totalResults::add);
 		}
 
@@ -158,7 +169,8 @@ public final class Tester {
 		 */
 		@Override
 		public int totalDialoguesTested() {
-			return sessionResults.values().stream().mapToInt(SessionTester.Result::totalDialoguesTested).sum();
+			return sessionResults.values().stream().flatMap(List::stream)
+					.mapToInt(SessionTester.Result::totalDialoguesTested).sum();
 		}
 
 		/**
@@ -225,7 +237,7 @@ public final class Tester {
 		 */
 		@Override
 		public Stream<Utterance> utterancesTested() {
-			return sessionResults.values().stream().map(SessionTestStatistics::utterancesTested)
+			return sessionResults.values().stream().flatMap(List::stream).map(SessionTestStatistics::utterancesTested)
 					.flatMap(Function.identity());
 		}
 
@@ -282,6 +294,8 @@ public final class Tester {
 	@Inject
 	private BeanFactory beanFactory;
 
+	private final int iterCount;
+
 	@Inject
 	private WordClassDiscountingSmoother smoother;
 
@@ -291,6 +305,10 @@ public final class Tester {
 	@Inject
 	private TestSetFactory testSetFactory;
 
+	public Tester(final int iterCount) {
+		this.iterCount = iterCount;
+	}
+
 	public Result apply(final Iterable<Path> inpaths)
 			throws TrainingException, ExecutionException, IOException, ClassificationException {
 		final Map<Path, SessionDataManager> infileSessionData = SessionDataManager.createFileSessionDataMap(inpaths);
@@ -298,29 +316,36 @@ public final class Tester {
 				.collect(Collectors.toMap(Entry::getValue, Entry::getKey));
 		infileSessionData.forEach((infile, sessionData) -> allSessions.put(sessionData, infile));
 
-		LOGGER.info("Starting cross-validation test using data from {} session(s).", allSessions.size());
-		final Stream<Entry<SessionDataManager, Map<String, Instances>>> testSets = testSetFactory.apply(allSessions);
-		final Result result = new Result(allSessions.size());
-		for (final Iterator<Entry<SessionDataManager, Map<String, Instances>>> testSetIter = testSets
-				.iterator(); testSetIter.hasNext();) {
-			final Entry<SessionDataManager, Map<String, Instances>> testSet = testSetIter.next();
-			final SessionDataManager testSessionData = testSet.getKey();
-			final Path infilePath = allSessions.get(testSessionData);
-			LOGGER.info("Running cross-validation test on data from \"{}\".", infilePath);
+		final Result result = new Result(allSessions.size(), iterCount);
+		LOGGER.info(
+				"Starting cross-validation test using data from {} session(s), doing {} iterations on each dataset.",
+				allSessions.size(), iterCount);
+		for (int iter = 1; iter <= iterCount; ++iter) {
+			LOGGER.info("Training/testing iteration no. {}.", iter);
+			final Stream<Entry<SessionDataManager, Map<String, Instances>>> testSets = testSetFactory
+					.apply(allSessions);
+			for (final Iterator<Entry<SessionDataManager, Map<String, Instances>>> testSetIter = testSets
+					.iterator(); testSetIter.hasNext();) {
+				final Entry<SessionDataManager, Map<String, Instances>> testSet = testSetIter.next();
+				final SessionDataManager testSessionData = testSet.getKey();
+				final Path infilePath = allSessions.get(testSessionData);
+				LOGGER.info("Running cross-validation test on data from \"{}\".", infilePath);
 
-			final Map<String, Instances> classInstances = testSet.getValue();
-			final Instances oovInstances = smoother.redistributeMass(classInstances);
-			LOGGER.debug("{} instances for out-of-vocabulary class.", oovInstances.size());
+				final Map<String, Instances> classInstances = testSet.getValue();
+				final Instances oovInstances = smoother.redistributeMass(classInstances);
+				LOGGER.debug("{} instances for out-of-vocabulary class.", oovInstances.size());
 
-			final Map<String, Logistic> wordClassifiers = createWordClassifierMap(classInstances.entrySet());
-			final Instances testInsts = testInstsFactory.apply(TEST_INSTS_REL_NAME,
-					estimateTestInstanceCount(testSessionData));
-			final Function<String, Logistic> wordClassifierGetter = wordClassifiers::get;
-			final SessionTester sessionTester = beanFactory.getBean(SessionTester.class, wordClassifierGetter,
-					testInsts);
+				final Map<String, Logistic> wordClassifiers = createWordClassifierMap(classInstances.entrySet());
+				final Instances testInsts = testInstsFactory.apply(TEST_INSTS_REL_NAME,
+						estimateTestInstanceCount(testSessionData));
+				final Function<String, Logistic> wordClassifierGetter = wordClassifiers::get;
+				final SessionTester sessionTester = beanFactory.getBean(SessionTester.class, wordClassifierGetter,
+						testInsts);
 
-			final SessionTester.Result testResults = sessionTester.testSession(testSessionData);
-			result.put(infilePath, testResults);
+				final SessionTester.Result testResults = sessionTester.testSession(testSessionData);
+				result.put(infilePath, testResults);
+			}
+
 		}
 		LOGGER.info("Finished testing {} cross-validation dataset(s).", result.sessionResults.size());
 		return result;

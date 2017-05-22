@@ -34,4 +34,8 @@
 		<description>This bean defines logic for generating values representing the confidence of classifying a given referenceable entity as being referred to by a given sequence of utterances.</description>
 	</bean>
 	
+	<bean id="cross-validation-tester" class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.Tester">
+		<constructor-arg value="5" />
+	</bean>
+	
 </beans>

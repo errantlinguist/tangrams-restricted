@@ -25,6 +25,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map.Entry;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
@@ -132,8 +133,8 @@ public final class DialogueAnalysisWriter {
 
 	}
 
-	private static final List<String> COL_HEADERS = Arrays.asList("INPATH", "SESSION_ORDER", "EVENT_TIME", "DIALOGUE",
-			"DIALOGUE_AS_TESTED", "GOLD_STD_ID", "RANK", "RR", "TESTED_UTT_COUNT", "TOTAL_UTT_COUNT",
+	private static final List<String> COL_HEADERS = Arrays.asList("INPATH", "TEST_ITER", "SESSION_ORDER", "EVENT_TIME",
+			"DIALOGUE", "DIALOGUE_AS_TESTED", "GOLD_STD_ID", "RANK", "RR", "TESTED_UTT_COUNT", "TOTAL_UTT_COUNT",
 			"MEAN_DIAG_UTTS_TESTED", "TOKEN_COUNT", "MEAN_TOKENS_PER_UTT");
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(DialogueAnalysisWriter.class);
@@ -157,8 +158,7 @@ public final class DialogueAnalysisWriter {
 					final Tester tester = appCtx.getBean(Tester.class);
 					final Tester.Result testResults = tester.apply(inpaths);
 					try (PrintWriter out = Parameter.parseOutpath(cl)) {
-						final DialogueAnalysisWriter writer = new DialogueAnalysisWriter(
-								out);
+						final DialogueAnalysisWriter writer = new DialogueAnalysisWriter(out);
 						writer.write(testResults);
 					}
 				}
@@ -187,14 +187,21 @@ public final class DialogueAnalysisWriter {
 	private void write(final Tester.Result cvtestResults) {
 		out.println(COL_HEADERS.stream().collect(ROW_CELL_JOINER));
 
-		for (final Entry<Path, SessionTester.Result> infileSessionResults : cvtestResults.getSessionResults()
+		for (final Entry<Path, List<SessionTester.Result>> infileSessionResults : cvtestResults.getSessionResults()
 				.entrySet()) {
 			final Path inpath = infileSessionResults.getKey();
-			final SessionTester.Result sessionResults = infileSessionResults.getValue();
-			int sessionDialogueOrder = 1;
-			for (final Entry<EventDialogue, EventDialogueTester.Result> diagTestResults : sessionResults
-					.getDialogueTestResults()) {
-				writeRow(inpath, sessionDialogueOrder++, diagTestResults);
+			final List<SessionTester.Result> sessionResultList = infileSessionResults.getValue();
+			for (final ListIterator<SessionTester.Result> sessionResultIter = sessionResultList
+					.listIterator(); sessionResultIter.hasNext();) {
+				final SessionTester.Result sessionResults = sessionResultIter.next();
+				final int iterNo = sessionResultIter.nextIndex();
+				{
+					int sessionDialogueOrder = 1;
+					for (final Entry<EventDialogue, EventDialogueTester.Result> diagTestResults : sessionResults
+							.getDialogueTestResults()) {
+						writeRow(inpath, iterNo, sessionDialogueOrder++, diagTestResults);
+					}
+				}
 			}
 		}
 
@@ -210,7 +217,7 @@ public final class DialogueAnalysisWriter {
 		// writeSummaryTotals(cvtestResults);
 	}
 
-	private void writeRow(final Object key, final Integer sequenceOrder,
+	private void writeRow(final Object key, final Integer iterNo, final Integer sequenceOrder,
 			final Entry<EventDialogue, EventDialogueTester.Result> diagTestResults) {
 		final EventDialogue diag = diagTestResults.getKey();
 		final String timestamp = diag.getLastEvent().map(Event::getTime).orElse("(no event found for dialogue)");
@@ -219,9 +226,9 @@ public final class DialogueAnalysisWriter {
 		final Stream<Utterance> uttsTested = testResults.utterancesTested();
 		final String testedUttDiagRepr = UTT_DIAG_REPR_FACTORY.apply(uttsTested.iterator());
 
-		final List<Object> cellVals = Arrays.asList(key, sequenceOrder, timestamp, uttDiagRepr, testedUttDiagRepr,
-				testResults.getGoldStandardReferentId(), testResults.rank(), testResults.reciprocalRank(),
-				testResults.totalUtterancesTested(), testResults.totalUtteranceCount(),
+		final List<Object> cellVals = Arrays.asList(key, iterNo, sequenceOrder, timestamp, uttDiagRepr,
+				testedUttDiagRepr, testResults.getGoldStandardReferentId(), testResults.rank(),
+				testResults.reciprocalRank(), testResults.totalUtterancesTested(), testResults.totalUtteranceCount(),
 				testResults.meanUtterancesTested(), testResults.totalTokensTested(),
 				testResults.meanTokensPerTestedUtterance());
 		assert cellVals.size() == COL_HEADERS.size();
