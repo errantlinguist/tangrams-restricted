@@ -89,10 +89,10 @@ public final class SingleGameContextReferentEventDialogueTester implements Event
 				LOGGER.debug("Creating game context from perspective of player \"{}\".", firstSpeakerId);
 				final GameContext uttCtx = createGameContext(firstUtt, history, firstSpeakerId);
 				final Int2DoubleMap referentConfidenceVals = uttSeqClassifier.apply(uttsToClassify, uttCtx);
-				final int goldStandardEntityId = uttCtx.findLastSelectedEntityId().get();
-				result = Optional.of(new Result(referentConfidenceVals, goldStandardEntityId, uttsToClassify,
-						uttDiag.getUtts().size()));
-
+				result = uttCtx.findLastSelectedEntityId().map(goldStandardEntityId -> {
+					return new Result(referentConfidenceVals, goldStandardEntityId, uttsToClassify,
+							uttDiag.getUtts().size());
+				});
 			}
 		} else {
 			result = Optional.empty();
