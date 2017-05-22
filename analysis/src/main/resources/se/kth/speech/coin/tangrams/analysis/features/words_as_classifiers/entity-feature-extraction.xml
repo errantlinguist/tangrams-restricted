@@ -10,15 +10,13 @@
 	<context:component-scan base-package="se.kth.speech.coin.tangrams.analysis.*" />
 
 	<bean id="random-generator" class="java.util.Random">
-		<description>The random number generator used in the application;
-			Provide an explicit seed below in order to make the results
-			reproducible from one run to the next.
-		</description>
+		<description>The random number generator used in the application; Provide an explicit seed below in order to make the results reproducible from one run to the next.</description>
 		<!-- <constructor-arg value="1" /> -->
 	</bean>
 
 	<bean id="event-dialogue-factory"
 		class="se.kth.speech.coin.tangrams.analysis.EventDialogueFactory">
+		<description>This bean is used to create a sequence of individual event dialogues from a sequence of individual utterances combined with the history of the game session in which these utterances were made.</description>
 		<constructor-arg>
 			<bean class="se.kth.speech.coin.tangrams.iristk.EventTypeMatcher">
 				<constructor-arg
@@ -30,9 +28,11 @@
 
 	<bean id="entity-inst-feature-extractor"
 		class="se.kth.speech.coin.tangrams.analysis.features.weka.InstanceFeatureExtractor">
+		<description>The bean responsible for extracting features representing given entities (which are potential referents) and then configuring &quot;weka.core.Instance&quot; instances to represent the values of these features.</description>
 		<constructor-arg>
 			<bean
 				class="se.kth.speech.coin.tangrams.analysis.features.EntityFeature.Extractor">
+				<description>The bean used for extracting individual features for a given entity.</description>
 			</bean>
 		</constructor-arg>
 		<constructor-arg
@@ -41,6 +41,7 @@
 
 	<bean id="entity-inst-attr-ctx"
 		class="se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttributeContext">
+		<description>This bean encapsulates the logic and data required for creating and manipulating &quot;weka.core.Instance&quot; instances which represent individual referenceable entities in the game session.</description>
 		<constructor-arg ref="entity-inst-feature-extractor" />
 		<constructor-arg value="IS_REFERENT" />
 	</bean>
