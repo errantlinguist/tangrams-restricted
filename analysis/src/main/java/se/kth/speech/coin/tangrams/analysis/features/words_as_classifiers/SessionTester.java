@@ -45,6 +45,7 @@ import se.kth.speech.coin.tangrams.analysis.Utterance;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
 import se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttributeContext;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.utts.UtteranceSequenceClassifier;
 import se.kth.speech.fastutil.IntMaps;
 import weka.classifiers.Classifier;
 import weka.core.Instance;

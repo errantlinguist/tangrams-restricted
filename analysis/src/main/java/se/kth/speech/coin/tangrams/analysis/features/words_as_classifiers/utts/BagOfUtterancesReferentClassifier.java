@@ -14,7 +14,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers;
+package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.utts;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -23,6 +23,7 @@ import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import se.kth.speech.coin.tangrams.analysis.GameContext;
 import se.kth.speech.coin.tangrams.analysis.Utterance;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.ReferentConfidenceMapFactory;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>

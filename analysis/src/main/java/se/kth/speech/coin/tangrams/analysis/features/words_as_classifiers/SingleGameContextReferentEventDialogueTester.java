@@ -32,6 +32,7 @@ import se.kth.speech.coin.tangrams.analysis.TemporalGameContexts;
 import se.kth.speech.coin.tangrams.analysis.Utterance;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.utts.EventDialogueUtteranceSequenceExtractor;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.utts.UtteranceSequenceClassifier;
 
 /**
  * This {@link EventDialogueTester} tests classification using a single
