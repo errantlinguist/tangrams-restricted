@@ -16,34 +16,42 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.BiFunction;
+
+import javax.inject.Inject;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import iristk.system.Event;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import se.kth.speech.coin.tangrams.analysis.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.GameContext;
 import se.kth.speech.coin.tangrams.analysis.GameHistory;
 import se.kth.speech.coin.tangrams.analysis.Utterance;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
-import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 
 /**
+ * This {@link EventDialogueTester} tests classification using a single
+ * {@link GameContext} for all the individual {@link Utterance utterances} in
+ * the given dialogue &mdash; namely, the context of the first utterance to be
+ * used for classification is used for all subsequent utterances as well.
+ *
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
  * @since 18 May 2017
  *
  */
-public final class InstructorUtteranceReferentEventDialogueTester implements EventDialogueTester {
+public final class SingleGameContextReferentEventDialogueTester implements EventDialogueTester {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(InstructorUtteranceReferentEventDialogueTester.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(SingleGameContextReferentEventDialogueTester.class);
+
+	@Inject
+	private BiFunction<EventDialogue, GameHistory, Optional<List<Utterance>>> diagUttExtractor;
 
 	private final UtteranceSequenceClassifier uttSeqClassifier;
 
-	public InstructorUtteranceReferentEventDialogueTester(final UtteranceSequenceClassifier uttSeqClassifier) {
+	public SingleGameContextReferentEventDialogueTester(final UtteranceSequenceClassifier uttSeqClassifier) {
 		this.uttSeqClassifier = uttSeqClassifier;
 	}
 
@@ -52,29 +60,23 @@ public final class InstructorUtteranceReferentEventDialogueTester implements Eve
 			throws ClassificationException {
 		final Optional<Result> result;
 
-		final Optional<Event> optLastEvent = uttDiag.getLastEvent();
-		if (optLastEvent.isPresent()) {
-			final Event event = optLastEvent.get();
-			LOGGER.debug("Classifying referred entity for {}.", event);
-			final String submittingPlayerId = event.getString(GameManagementEvent.Attribute.PLAYER_ID.toString());
-			final List<Utterance> allUtts = uttDiag.getUtts();
-			final List<Utterance> dialogueUttsFromInstructor = Arrays.asList(allUtts.stream().filter(dialogueUtt -> {
-				final String uttPlayerId = dialogueUtt.getSpeakerId();
-				return submittingPlayerId.equals(uttPlayerId);
-			}).toArray(Utterance[]::new));
-
-			if (dialogueUttsFromInstructor.isEmpty()) {
+		final Optional<List<Utterance>> optUttsToClassify = diagUttExtractor.apply(uttDiag, history);
+		if (optUttsToClassify.isPresent()) {
+			final List<Utterance> uttsToClassify = optUttsToClassify.get();
+			if (uttsToClassify.isEmpty()) {
 				result = Optional.empty();
 			} else {
 				// Just use the game context for the first utterance for all
 				// utterances processed for the given dialogue
-				final Utterance firstUtt = dialogueUttsFromInstructor.get(0);
-				final GameContext uttCtx = UtteranceGameContexts.createGameContext(firstUtt, history,
-						submittingPlayerId);
-				final Int2DoubleMap referentConfidenceVals = uttSeqClassifier.apply(dialogueUttsFromInstructor, uttCtx);
+				final Utterance firstUtt = uttsToClassify.get(0);
+				final String firstSpeakerId = firstUtt.getSpeakerId();
+				LOGGER.debug("Creating game context from perspective of player \"{}\".", firstSpeakerId);
+				final GameContext uttCtx = UtteranceGameContexts.createGameContext(firstUtt, history, firstSpeakerId);
+				final Int2DoubleMap referentConfidenceVals = uttSeqClassifier.apply(uttsToClassify, uttCtx);
 				final int goldStandardEntityId = uttCtx.findLastSelectedEntityId().get();
-				result = Optional.of(new Result(referentConfidenceVals, goldStandardEntityId,
-						dialogueUttsFromInstructor, allUtts.size()));
+				result = Optional.of(new Result(referentConfidenceVals, goldStandardEntityId, uttsToClassify,
+						uttDiag.getUtts().size()));
+
 			}
 		} else {
 			result = Optional.empty();

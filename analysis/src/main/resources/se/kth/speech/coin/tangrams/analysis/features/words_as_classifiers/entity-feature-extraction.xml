@@ -92,17 +92,21 @@
 	<bean id="ref-conf-map-factory"
 		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.ReferentConfidenceMapFactory"
 		scope="prototype"></bean>
-
-	<bean id="diag_classifier"
-		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.InstructorUtteranceReferentEventDialogueTester"
-		scope="prototype">
-		<description>This bean defines logic for classifying individual dialogues, i.e. individual sequences of utterances which are related to a single game event.</description>
+		
+	<bean id="diag_utt_seq_extractor" class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.InstructorEventDialogueUtteranceExtractor">
+		<description>This bean defines logic for extracting the individual utterance(s) in a given dialogue to use for referent classification for that dialogue.</description>
 	</bean>
 
 	<bean id="utt_seq_classifier"
 		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.BagOfUtterancesReferentClassifier"
 		scope="prototype">
 		<description>This bean defines logic for generating values representing the confidence of classifying a given referenceable entity as being referred to by a given sequence of utterances.</description>
+	</bean>
+	
+	<bean id="diag_classifier"
+		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.SingleGameContextReferentEventDialogueTester"
+		scope="prototype">
+		<description>This bean defines logic for testing the classification of individual dialogues, i.e. individual sequences of utterances which are related to a single game event.</description>
 	</bean>
 
 	<bean id="session-tester"
