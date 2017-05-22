@@ -7,7 +7,7 @@
          http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
         http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd">
 
-	<context:component-scan base-package="se.kth.speech.coin.tangrams.analysis.*" />
+	<context:component-scan base-package="se.kth.speech.coin.tangrams.analysis.**" />
 
 	<bean id="random-generator" class="java.util.Random">
 		<description>The random number generator used in the application; Provide an explicit seed below in order to make the results reproducible from one run to the next.</description>
