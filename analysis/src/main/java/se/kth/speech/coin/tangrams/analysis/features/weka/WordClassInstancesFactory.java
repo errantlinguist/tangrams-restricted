@@ -19,6 +19,7 @@ package se.kth.speech.coin.tangrams.analysis.features.weka;
 import java.util.function.BiFunction;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 
 import weka.core.Instances;
 
@@ -27,6 +28,7 @@ import weka.core.Instances;
  * @since 16 May 2017
  *
  */
+@Named
 public final class WordClassInstancesFactory implements BiFunction<String, Integer, Instances> {
 
 	@Inject

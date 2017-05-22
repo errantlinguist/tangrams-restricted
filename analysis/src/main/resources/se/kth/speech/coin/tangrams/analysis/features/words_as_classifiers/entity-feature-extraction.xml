@@ -58,9 +58,6 @@
 		<constructor-arg ref="random-generator" />
 	</bean>
 
-	<bean id="class-insts-factory"
-		class="se.kth.speech.coin.tangrams.analysis.features.weka.WordClassInstancesFactory" />
-
 	<bean id="smoother"
 		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordClassDiscountingSmoother">
 		<constructor-arg value="4" />
