@@ -50,5 +50,10 @@ interface EventDialogueTestStatistics {
 	 */
 	int totalUtterancesTested();
 
+	/**
+	 * 
+	 * @return All {@link Utterance} instances which were used for
+	 *         classification, in the order in which they appeared.
+	 */
 	Stream<Utterance> utterancesTested();
 }
