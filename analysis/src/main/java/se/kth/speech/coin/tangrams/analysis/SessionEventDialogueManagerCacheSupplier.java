@@ -24,6 +24,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.xml.bind.JAXBException;
 
 import com.google.common.cache.CacheBuilder;
@@ -35,6 +36,7 @@ import com.google.common.cache.LoadingCache;
  * @since May 16, 2017
  *
  */
+@Named
 public final class SessionEventDialogueManagerCacheSupplier
 		implements Supplier<LoadingCache<SessionDataManager, SessionEventDialogueManager>> {
 
