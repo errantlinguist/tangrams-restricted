@@ -98,18 +98,6 @@ public final class Tester {
 			return Collections.unmodifiableMap(sessionResults);
 		}
 
-		/*
-		 * (non-Javadoc)
-		 *
-		 * @see
-		 * se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.
-		 * EventDialogueTestStatistics#utterancesTested()
-		 */
-		@Override
-		public Stream<Utterance> utterancesTested() {
-			return sessionResults.values().stream().map(SessionTestStatistics::utterancesTested).flatMap(Function.identity());
-		}
-
 		public double meanGoldStandardUniqueReferentIdCount() {
 			return sessionResults.values().stream().mapToInt(SessionTestStatistics::uniqueGoldStandardReferentIdCount)
 					.average().getAsDouble();
@@ -226,6 +214,19 @@ public final class Tester {
 		@Override
 		public int uniqueGoldStandardReferentIdCount() {
 			throw new UnsupportedOperationException("Cannot compare reference IDs across sessions.");
+		}
+
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see
+		 * se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.
+		 * EventDialogueTestStatistics#utterancesTested()
+		 */
+		@Override
+		public Stream<Utterance> utterancesTested() {
+			return sessionResults.values().stream().map(SessionTestStatistics::utterancesTested)
+					.flatMap(Function.identity());
 		}
 
 	}
