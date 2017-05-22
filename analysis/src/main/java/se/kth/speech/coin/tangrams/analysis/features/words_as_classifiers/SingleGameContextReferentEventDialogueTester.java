@@ -29,6 +29,7 @@ import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import se.kth.speech.coin.tangrams.analysis.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.GameContext;
 import se.kth.speech.coin.tangrams.analysis.GameHistory;
+import se.kth.speech.coin.tangrams.analysis.TemporalGameContexts;
 import se.kth.speech.coin.tangrams.analysis.Utterance;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
 
@@ -45,6 +46,20 @@ import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
 public final class SingleGameContextReferentEventDialogueTester implements EventDialogueTester {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SingleGameContextReferentEventDialogueTester.class);
+
+	private static GameContext createGameContext(final Utterance dialogueUtt, final GameHistory history,
+			final String perspectivePlayerId) {
+		LOGGER.debug(
+				"Creating a context based on the logged game history, which is then seen from the perspective of player \"{}\".",
+				perspectivePlayerId);
+		final GameContext[] ctxs = TemporalGameContexts
+				.create(history, dialogueUtt.getStartTime(), dialogueUtt.getEndTime(), perspectivePlayerId)
+				.toArray(GameContext[]::new);
+		if (ctxs.length > 1) {
+			LOGGER.warn("More than one game context found for {}; Only using the first one.", dialogueUtt);
+		}
+		return ctxs[0];
+	}
 
 	@Inject
 	private BiFunction<EventDialogue, GameHistory, Optional<List<Utterance>>> diagUttExtractor;
@@ -71,7 +86,7 @@ public final class SingleGameContextReferentEventDialogueTester implements Event
 				final Utterance firstUtt = uttsToClassify.get(0);
 				final String firstSpeakerId = firstUtt.getSpeakerId();
 				LOGGER.debug("Creating game context from perspective of player \"{}\".", firstSpeakerId);
-				final GameContext uttCtx = UtteranceGameContexts.createGameContext(firstUtt, history, firstSpeakerId);
+				final GameContext uttCtx = createGameContext(firstUtt, history, firstSpeakerId);
 				final Int2DoubleMap referentConfidenceVals = uttSeqClassifier.apply(uttsToClassify, uttCtx);
 				final int goldStandardEntityId = uttCtx.findLastSelectedEntityId().get();
 				result = Optional.of(new Result(referentConfidenceVals, goldStandardEntityId, uttsToClassify,
