@@ -47,10 +47,6 @@
 				<constructor-arg value="1" />
 			</bean>
 		</constructor-arg>
-		<constructor-arg>
-			<bean
-				class="se.kth.speech.coin.tangrams.analysis.features.ImageEdgeCounter" />
-		</constructor-arg>
 	</bean>
 
 	<bean id="negative-example-entity-id-factory"
