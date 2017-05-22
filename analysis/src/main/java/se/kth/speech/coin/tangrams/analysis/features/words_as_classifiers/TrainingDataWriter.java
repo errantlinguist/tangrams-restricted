@@ -148,7 +148,7 @@ public final class TrainingDataWriter {
 				LOGGER.info("Will write data in \"*{}\" format.", outfileExt);
 
 				try (final ClassPathXmlApplicationContext appCtx = new ClassPathXmlApplicationContext(
-						"entity-feature-extraction.xml", TrainingDataWriter.class)) {
+						"cross-validation.xml", TrainingDataWriter.class)) {
 					final TrainingDataWriter writer = appCtx.getBean(TrainingDataWriter.class);
 					final Map<String, Instances> classInstances = writer.apply(inpaths);
 					if (outdir.mkdirs()) {

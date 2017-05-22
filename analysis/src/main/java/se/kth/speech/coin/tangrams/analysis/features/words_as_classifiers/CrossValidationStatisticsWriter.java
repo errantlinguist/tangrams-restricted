@@ -135,7 +135,7 @@ public final class CrossValidationStatisticsWriter {
 
 			} else {
 				try (final ClassPathXmlApplicationContext appCtx = new ClassPathXmlApplicationContext(
-						"entity-feature-extraction.xml", CrossValidationStatisticsWriter.class)) {
+						"cross-validation.xml", CrossValidationStatisticsWriter.class)) {
 					final CrossValidationTester tester = appCtx.getBean(CrossValidationTester.class);
 					final CrossValidationTester.Result testResults = tester.apply(inpaths);
 					try (PrintWriter out = Parameter.parseOutpath(cl)) {

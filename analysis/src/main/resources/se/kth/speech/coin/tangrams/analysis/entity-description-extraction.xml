@@ -7,7 +7,7 @@
          http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
         http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd">
 
-	<import resource="features/words_as_classifiers/entity-feature-extraction.xml"/>
+	<import resource="features/words_as_classifiers/cross-validation.xml"/>
 
 	<util:list id="features-to-describe"
 		value-type="se.kth.speech.coin.tangrams.analysis.features.EntityFeature">

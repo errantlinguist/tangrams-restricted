@@ -143,7 +143,7 @@ public final class CrossValidationDialogueAnalysisWriter {
 
 			} else {
 				try (final ClassPathXmlApplicationContext appCtx = new ClassPathXmlApplicationContext(
-						"entity-feature-extraction.xml", CrossValidationDialogueAnalysisWriter.class)) {
+						"cross-validation.xml", CrossValidationDialogueAnalysisWriter.class)) {
 					final CrossValidationTester tester = appCtx.getBean(CrossValidationTester.class);
 					final CrossValidationTester.Result testResults = tester.apply(inpaths);
 					try (PrintWriter out = Parameter.parseOutpath(cl)) {

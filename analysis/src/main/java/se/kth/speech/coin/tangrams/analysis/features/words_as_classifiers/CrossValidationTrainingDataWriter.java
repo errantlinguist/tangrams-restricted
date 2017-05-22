@@ -144,7 +144,7 @@ public final class CrossValidationTrainingDataWriter {
 				final String outfileExt = Parameter.parseOutputType(cl);
 				LOGGER.info("Will write data in \"*{}\" format.", outfileExt);
 				try (final ClassPathXmlApplicationContext appCtx = new ClassPathXmlApplicationContext(
-						"entity-feature-extraction.xml", CrossValidationTrainingDataWriter.class)) {
+						"cross-validation.xml", CrossValidationTrainingDataWriter.class)) {
 					final CrossValidationTrainingDataWriter writer = appCtx
 							.getBean(CrossValidationTrainingDataWriter.class, outpath, outfileExt);
 					writer.accept(inpaths);
