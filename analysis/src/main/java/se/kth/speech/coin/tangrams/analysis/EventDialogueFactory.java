@@ -45,10 +45,6 @@ public final class EventDialogueFactory
 
 	private final Predicate<? super Event> eventFilter;
 
-	public EventDialogueFactory() {
-		this(event -> true);
-	}
-
 	public EventDialogueFactory(final Predicate<? super Event> eventFilter) {
 		this.eventFilter = eventFilter;
 	}
