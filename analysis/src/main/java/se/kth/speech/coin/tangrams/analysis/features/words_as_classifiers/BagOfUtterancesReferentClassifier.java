@@ -37,9 +37,6 @@ public final class BagOfUtterancesReferentClassifier implements UtteranceSequenc
 		this.referentConfidenceMapFactory = referentConfidenceMapFactory;
 	}
 
-	/* (non-Javadoc)
-	 * @see se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.UtteranceClassifier#apply(se.kth.speech.coin.tangrams.analysis.Utterance[], se.kth.speech.coin.tangrams.analysis.GameContext)
-	 */
 	@Override
 	public Int2DoubleMap apply(final List<Utterance> dialogueUtts, final GameContext uttCtx)
 			throws ClassificationException {
