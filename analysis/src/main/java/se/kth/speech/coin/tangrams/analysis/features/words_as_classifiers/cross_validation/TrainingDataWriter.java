@@ -14,7 +14,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers;
+package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation;
 
 import java.io.File;
 import java.io.IOException;
@@ -70,7 +70,7 @@ import weka.core.converters.ConverterUtils;
  *      </ul>
  *
  */
-public final class CrossValidationTrainingDataWriter {
+public final class TrainingDataWriter {
 
 	private enum Parameter implements Supplier<Option> {
 		HELP("?") {
@@ -113,7 +113,7 @@ public final class CrossValidationTrainingDataWriter {
 
 		private static void printHelp() {
 			final HelpFormatter formatter = new HelpFormatter();
-			formatter.printHelp(CrossValidationTrainingDataWriter.class.getSimpleName() + " INFILE", OPTIONS);
+			formatter.printHelp(TrainingDataWriter.class.getSimpleName() + " INFILE", OPTIONS);
 		}
 
 		protected final String optName;
@@ -128,7 +128,7 @@ public final class CrossValidationTrainingDataWriter {
 
 	public static final String TRAINING_FILE_NAME_PREFIX = "train-";
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(CrossValidationTrainingDataWriter.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(TrainingDataWriter.class);
 
 	public static void main(final CommandLine cl) throws ParseException, ExecutionException, IOException {
 		if (cl.hasOption(Parameter.HELP.optName)) {
@@ -144,9 +144,9 @@ public final class CrossValidationTrainingDataWriter {
 				final String outfileExt = Parameter.parseOutputType(cl);
 				LOGGER.info("Will write data in \"*{}\" format.", outfileExt);
 				try (final ClassPathXmlApplicationContext appCtx = new ClassPathXmlApplicationContext(
-						"cross-validation.xml", CrossValidationTrainingDataWriter.class)) {
-					final CrossValidationTrainingDataWriter writer = appCtx
-							.getBean(CrossValidationTrainingDataWriter.class, outpath, outfileExt);
+						"context.xml", TrainingDataWriter.class)) {
+					final TrainingDataWriter writer = appCtx
+							.getBean(TrainingDataWriter.class, outpath, outfileExt);
 					writer.accept(inpaths);
 				}
 			}
@@ -169,9 +169,9 @@ public final class CrossValidationTrainingDataWriter {
 	private final String outfileExt;
 
 	@Inject
-	private CrossValidationTestSetFactory testSetFactory;
+	private TestSetFactory testSetFactory;
 
-	public CrossValidationTrainingDataWriter(final File outdir, final String outfileExt) {
+	public TrainingDataWriter(final File outdir, final String outfileExt) {
 		this.outdir = outdir;
 		this.outfileExt = outfileExt;
 	}

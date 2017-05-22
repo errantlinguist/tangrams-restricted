@@ -14,7 +14,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers;
+package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -46,6 +46,10 @@ import se.kth.speech.coin.tangrams.analysis.Utterance;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
 import se.kth.speech.coin.tangrams.analysis.features.TrainingException;
 import se.kth.speech.coin.tangrams.analysis.features.weka.WordClassInstancesFactory;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.EventDialogueTester;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.SessionTestStatistics;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.SessionTester;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordClassDiscountingSmoother;
 import weka.classifiers.functions.Logistic;
 import weka.core.Instances;
 
@@ -69,7 +73,7 @@ import weka.core.Instances;
  *
  */
 @Named
-public final class CrossValidationTester {
+public final class Tester {
 
 	public static final class Result implements SessionTestStatistics {
 
@@ -226,7 +230,7 @@ public final class CrossValidationTester {
 
 	}
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(CrossValidationTester.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(Tester.class);
 
 	private static final String TEST_INSTS_REL_NAME = "tested_entites";
 
@@ -284,7 +288,7 @@ public final class CrossValidationTester {
 	private WordClassInstancesFactory testInstsFactory;
 
 	@Inject
-	private CrossValidationTestSetFactory testSetFactory;
+	private TestSetFactory testSetFactory;
 
 	public Result apply(final Iterable<Path> inpaths)
 			throws TrainingException, ExecutionException, IOException, ClassificationException {

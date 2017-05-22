@@ -61,7 +61,7 @@
 	</bean>
 
 	<bean id="cross-validation-training-data-writer"
-		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.CrossValidationTrainingDataWriter"
+		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.TrainingDataWriter"
 		scope="prototype" />
 
 	<bean id="ref-conf-map-factory"

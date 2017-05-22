@@ -14,7 +14,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers;
+package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation;
 
 import java.io.File;
 import java.io.IOException;
@@ -30,6 +30,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -43,8 +44,14 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
+import iristk.system.Event;
+import se.kth.speech.coin.tangrams.analysis.EventDialogue;
+import se.kth.speech.coin.tangrams.analysis.Utterance;
+import se.kth.speech.coin.tangrams.analysis.UtteranceDialogueRepresentationStringFactory;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
 import se.kth.speech.coin.tangrams.analysis.features.TrainingException;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.EventDialogueTester;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.SessionTester;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -65,7 +72,7 @@ import se.kth.speech.coin.tangrams.analysis.features.TrainingException;
  *      </ul>
  *
  */
-public final class CrossValidationStatisticsWriter {
+public final class DialogueAnalysisWriter {
 
 	private enum Parameter implements Supplier<Option> {
 		HELP("?") {
@@ -106,7 +113,7 @@ public final class CrossValidationStatisticsWriter {
 
 		private static void printHelp() {
 			final HelpFormatter formatter = new HelpFormatter();
-			formatter.printHelp(CrossValidationStatisticsWriter.class.getSimpleName() + " INFILE", OPTIONS);
+			formatter.printHelp(DialogueAnalysisWriter.class.getSimpleName() + " INFILE", OPTIONS);
 		}
 
 		protected final String optName;
@@ -117,12 +124,15 @@ public final class CrossValidationStatisticsWriter {
 
 	}
 
-	private static final List<String> COL_HEADERS = Arrays.asList("INPATH", "MEAN_RANK", "MRR", "DIAG_COUNT",
-			"UTTS_TESTED", "MEAN_UTTS_PER_DIAG");
+	private static final List<String> COL_HEADERS = Arrays.asList("INPATH", "SESSION_ORDER", "EVENT_TIME", "DIALOGUE",
+			"DIALOGUE_AS_TESTED", "GOLD_STD_ID", "RANK", "RR", "TESTED_UTT_COUNT", "TOTAL_UTT_COUNT",
+			"MEAN_DIAG_UTTS_TESTED", "TOKEN_COUNT", "MEAN_TOKENS_PER_UTT");
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(CrossValidationStatisticsWriter.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(DialogueAnalysisWriter.class);
 
 	private static final Collector<CharSequence, ?, String> ROW_CELL_JOINER = Collectors.joining("\t");
+
+	private static final UtteranceDialogueRepresentationStringFactory UTT_DIAG_REPR_FACTORY = new UtteranceDialogueRepresentationStringFactory();
 
 	public static void main(final CommandLine cl)
 			throws ParseException, TrainingException, ExecutionException, IOException, ClassificationException {
@@ -135,11 +145,13 @@ public final class CrossValidationStatisticsWriter {
 
 			} else {
 				try (final ClassPathXmlApplicationContext appCtx = new ClassPathXmlApplicationContext(
-						"cross-validation.xml", CrossValidationStatisticsWriter.class)) {
-					final CrossValidationTester tester = appCtx.getBean(CrossValidationTester.class);
-					final CrossValidationTester.Result testResults = tester.apply(inpaths);
+						"context.xml", DialogueAnalysisWriter.class)) {
+					final Tester tester = appCtx.getBean(Tester.class);
+					final Tester.Result testResults = tester.apply(inpaths);
 					try (PrintWriter out = Parameter.parseOutpath(cl)) {
-						printResults(testResults, out);
+						final DialogueAnalysisWriter writer = new DialogueAnalysisWriter(
+								out);
+						writer.write(testResults);
 					}
 				}
 			}
@@ -158,27 +170,88 @@ public final class CrossValidationStatisticsWriter {
 		}
 	}
 
-	private static List<Object> createTableRow(final Object key, final SessionTester.Result sessionTestResults) {
-		final int totalUttsTested = sessionTestResults.totalUtterancesTested();
-		final int totalDiagsTested = sessionTestResults.totalDialoguesTested();
-		return Arrays.asList(key, sessionTestResults.meanRank(), sessionTestResults.meanReciprocalRank(),
-				totalDiagsTested, totalUttsTested, totalUttsTested / (double) totalDiagsTested);
+	private final PrintWriter out;
+
+	public DialogueAnalysisWriter(final PrintWriter out) {
+		this.out = out;
 	}
 
-	private static void printResults(final CrossValidationTester.Result testResults, final PrintWriter out) {
+	private void write(final Tester.Result cvtestResults) {
 		out.println(COL_HEADERS.stream().collect(ROW_CELL_JOINER));
 
-		for (final Entry<Path, SessionTester.Result> infileSessionTestResults : testResults.getSessionResults()
+		for (final Entry<Path, SessionTester.Result> infileSessionResults : cvtestResults.getSessionResults()
 				.entrySet()) {
-			final Path infilePath = infileSessionTestResults.getKey();
-			final SessionTester.Result sessionTestResults = infileSessionTestResults.getValue();
-			final List<Object> cellVals = createTableRow(infilePath, sessionTestResults);
-			out.println(cellVals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
+			final Path inpath = infileSessionResults.getKey();
+			final SessionTester.Result sessionResults = infileSessionResults.getValue();
+			int sessionDialogueOrder = 1;
+			for (final Entry<EventDialogue, EventDialogueTester.Result> diagTestResults : sessionResults
+					.getDialogueTestResults()) {
+				writeRow(inpath, sessionDialogueOrder++, diagTestResults);
+			}
 		}
 
-		final SessionTester.Result totalSessionResults = testResults.totalResults();
-		final List<Object> summaryVals = createTableRow("SUMMARY", totalSessionResults);
-		out.print(summaryVals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
+		// out.println("SESSION TOTALS");
+		// for (final Entry<Path, SessionTester.Result> infileSessionResults :
+		// cvtestResults.getSessionResults()
+		// .entrySet()) {
+		// final Path inpath = infileSessionResults.getKey();
+		// final SessionTester.Result sessionResults =
+		// infileSessionResults.getValue();
+		// writeSessionSummary(inpath, sessionResults);
+		// }
+		// writeSummaryTotals(cvtestResults);
 	}
+
+	private void writeRow(final Object key, final Integer sequenceOrder,
+			final Entry<EventDialogue, EventDialogueTester.Result> diagTestResults) {
+		final EventDialogue diag = diagTestResults.getKey();
+		final String timestamp = diag.getLastEvent().map(Event::getTime).orElse("(no event found for dialogue)");
+		final String uttDiagRepr = UTT_DIAG_REPR_FACTORY.apply(diag.getUtts().iterator());
+		final EventDialogueTester.Result testResults = diagTestResults.getValue();
+		final Stream<Utterance> uttsTested = testResults.utterancesTested();
+		final String testedUttDiagRepr = UTT_DIAG_REPR_FACTORY.apply(uttsTested.iterator());
+
+		final List<Object> cellVals = Arrays.asList(key, sequenceOrder, timestamp, uttDiagRepr, testedUttDiagRepr,
+				testResults.getGoldStandardReferentId(), testResults.rank(), testResults.reciprocalRank(),
+				testResults.totalUtterancesTested(), testResults.totalUtteranceCount(),
+				testResults.meanUtterancesTested(), testResults.totalTokensTested(),
+				testResults.meanTokensPerTestedUtterance());
+		assert cellVals.size() == COL_HEADERS.size();
+		out.println(cellVals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
+	}
+
+	// private void writeSessionSummary(Object key, final SessionTester.Result
+	// sessionResults) {
+	// final List<Object> cellVals = Arrays.asList(key, "", "", "",
+	// sessionResults.meanRank(), sessionResults.meanReciprocalRank(),
+	// sessionResults.meanUtterancesTestedPerDialogue(),
+	// sessionResults.meanUtteranceTotalPerDialogue(),
+	// sessionResults.meanUtterancesTestedPerDialogue(),
+	// sessionResults.totalTokensTested(),
+	// sessionResults.meanTokensPerTestedUtterance(),
+	// sessionResults.getGoldStdReferentIdCounts().size());
+	// assert cellVals.size() == COL_HEADERS.size();
+	// out.println(cellVals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
+	// }
+
+	// private void writeSummaryTotals(final CrossValidationTester.Result
+	// cvtestResults) {
+	// final SessionTester.Result totalSessionResults =
+	// cvtestResults.totalResults();
+	// final int uttsTestedCount = totalSessionResults.totalUtterancesTested();
+	// final int totalDiagUtts = totalSessionResults.totalUtteranceCount();
+	// final double meanDiagUttsTested = uttsTestedCount / (double)
+	// totalDiagUtts;
+	// final List<Object> cellVals = Arrays.asList("SUMMARY: ALL DIALOGUES AS
+	// ONE SESSION", "", "", "",
+	// totalSessionResults.meanRank(), totalSessionResults.meanReciprocalRank(),
+	// totalSessionResults.meanUtterancesTestedPerDialogue(),
+	// totalSessionResults.meanUtteranceTotalPerDialogue(), meanDiagUttsTested,
+	// totalSessionResults.totalTokensTested(),
+	// totalSessionResults.meanTokensPerTestedUtterance(),
+	// cvtestResults.meanGoldStandardUniqueReferentIdCount());
+	// assert cellVals.size() == COL_HEADERS.size();
+	// out.println(cellVals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
+	// }
 
 }

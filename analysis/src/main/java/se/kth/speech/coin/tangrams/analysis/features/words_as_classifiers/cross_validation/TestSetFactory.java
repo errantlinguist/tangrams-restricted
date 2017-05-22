@@ -14,7 +14,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers;
+package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -61,9 +61,9 @@ import weka.core.Instances;
  *
  */
 @Named
-public final class CrossValidationTestSetFactory {
+public final class TestSetFactory {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(CrossValidationTestSetFactory.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(TestSetFactory.class);
 
 	private static final int MIN_INPUT_SIZE = 2;
 
