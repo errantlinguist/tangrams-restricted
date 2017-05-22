@@ -33,6 +33,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 import javax.xml.bind.JAXBException;
 
 import org.apache.commons.cli.CommandLine;
@@ -75,6 +76,7 @@ import weka.core.converters.ConverterUtils;
  *      </ul>
  *
  */
+@Named
 public final class TrainingDataWriter {
 
 	private enum Parameter implements Supplier<Option> {

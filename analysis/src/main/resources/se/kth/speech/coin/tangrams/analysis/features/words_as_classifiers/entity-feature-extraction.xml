@@ -64,9 +64,6 @@
 		<constructor-arg value="__UNKNOWN__" />
 	</bean>
 
-	<bean id="training-data-writer"
-		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.TrainingDataWriter" />
-
 	<bean id="session-evt-diag-mgr-cache-supplier"
 		class="se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManagerCacheSupplier"></bean>
 
