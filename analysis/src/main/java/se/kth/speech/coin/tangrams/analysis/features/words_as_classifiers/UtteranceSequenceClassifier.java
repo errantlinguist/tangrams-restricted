@@ -24,12 +24,32 @@ import se.kth.speech.coin.tangrams.analysis.Utterance;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
 
 /**
+ * An interface for classes which generate values representing the confidence of
+ * classifying a given referenceable entity as being referred to by a given
+ * sequence of {@link Utterance utterances}.
+ * 
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
  * @since 18 May 2017
  *
  */
 public interface UtteranceSequenceClassifier {
 
+	/**
+	 * Calculates the confidence of a given sequence of {@link Utterance
+	 * utterances} referring to each referenceable entity given a particular
+	 * {@link GameContext}.
+	 * 
+	 * @param dialogueUtts
+	 *            The sequence of utterances to classify.
+	 * @param uttCtx
+	 *            The {@link GameContext} instance representing the state of the
+	 *            game at the time the given utterances were made.
+	 * @return A new {@link Int2DoubleMap} mapping entity IDs to the confidence
+	 *         measure of the entity with the given ID being referred to by the
+	 *         given utterances.
+	 * @throws ClassificationException
+	 *             If an error occurs while classifying any individual entity.
+	 */
 	Int2DoubleMap apply(List<Utterance> dialogueUtts, GameContext uttCtx) throws ClassificationException;
 
 }
