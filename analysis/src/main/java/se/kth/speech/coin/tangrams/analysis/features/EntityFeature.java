@@ -26,6 +26,8 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.ToIntFunction;
 
+import javax.inject.Named;
+
 import se.kth.speech.IntArrays;
 import se.kth.speech.SpatialRegion;
 import se.kth.speech.coin.tangrams.iristk.events.ImageVisualizationInfoDescription;
@@ -52,6 +54,7 @@ import weka.core.Attribute;
 public enum EntityFeature {
 	BLUE, BRIGHTNESS, EDGE_COUNT, GREEN, HUE, POSITION_X, POSITION_Y, RED, SATURATION, SHAPE, SIZE;
 
+	@Named
 	public static final class Extractor implements FeatureExtractor<EntityFeature, Extractor.Context> {
 
 		public static final class Context {

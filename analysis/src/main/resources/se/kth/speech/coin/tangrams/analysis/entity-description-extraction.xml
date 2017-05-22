@@ -17,10 +17,6 @@
 		<value>EDGE_COUNT</value>
 	</util:list>
 
-	<bean id="entity-described-feature-extractor"
-		class="se.kth.speech.coin.tangrams.analysis.features.EntityFeature.Extractor">
-	</bean>
-
 	<bean id="utt-selected-entity-desc-writer"
 		class="se.kth.speech.coin.tangrams.analysis.UtteranceSelectedEntityDescriptionWriter"
 		scope="prototype">
