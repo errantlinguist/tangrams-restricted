@@ -31,6 +31,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,6 +68,7 @@ import weka.core.Instances;
  *      </ul>
  *
  */
+@Named
 public final class CrossValidationTester {
 
 	public static final class Result implements SessionTestStatistics {

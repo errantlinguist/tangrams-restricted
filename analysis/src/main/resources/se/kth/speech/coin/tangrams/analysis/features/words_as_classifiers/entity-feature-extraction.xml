@@ -95,8 +95,4 @@
 		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.SessionTester"
 		scope="prototype"></bean>
 
-	<bean id="cross-validation-tester"
-		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.CrossValidationTester"
-		scope="prototype" />
-
 </beans>
