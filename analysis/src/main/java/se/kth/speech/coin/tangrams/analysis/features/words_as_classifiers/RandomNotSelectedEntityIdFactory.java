@@ -14,11 +14,13 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech.coin.tangrams.analysis;
+package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers;
 
 import java.util.Optional;
 import java.util.Random;
 import java.util.function.ToIntFunction;
+
+import se.kth.speech.coin.tangrams.analysis.GameContext;
 
 public final class RandomNotSelectedEntityIdFactory
 		implements ToIntFunction<GameContext> {
