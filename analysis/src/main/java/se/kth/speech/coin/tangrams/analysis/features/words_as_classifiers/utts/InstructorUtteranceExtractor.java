@@ -45,7 +45,7 @@ public final class InstructorUtteranceExtractor implements EventDialogueUtteranc
 	@Override
 	public Optional<List<Utterance>> apply(final EventDialogue uttDiag, final GameHistory history) {
 		return uttDiag.getLastEvent().map(event -> {
-			LOGGER.debug("Classifying entity referred to by instructor references for {}.", event);
+			LOGGER.debug("Classifying entity referred to by instructor for {}.", event);
 			final String submittingPlayerId = event.getString(GameManagementEvent.Attribute.PLAYER_ID.toString());
 			final List<Utterance> allUtts = uttDiag.getUtts();
 			return Arrays.asList(allUtts.stream().filter(dialogueUtt -> {
