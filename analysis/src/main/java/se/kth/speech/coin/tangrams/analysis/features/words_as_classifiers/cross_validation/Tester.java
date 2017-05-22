@@ -304,6 +304,8 @@ public final class Tester {
 				.iterator(); testSetIter.hasNext();) {
 			final Entry<SessionDataManager, Map<String, Instances>> testSet = testSetIter.next();
 			final SessionDataManager testSessionData = testSet.getKey();
+			final Path infilePath = allSessions.get(testSessionData);
+			LOGGER.info("Running cross-validation test on data from \"{}\".", infilePath);
 
 			final Map<String, Instances> classInstances = testSet.getValue();
 			final Instances oovInstances = smoother.redistributeMass(classInstances);
@@ -317,7 +319,6 @@ public final class Tester {
 					testInsts);
 
 			final SessionTester.Result testResults = sessionTester.testSession(testSessionData);
-			final Path infilePath = allSessions.get(testSessionData);
 			result.put(infilePath, testResults);
 		}
 		LOGGER.info("Finished testing {} cross-validation dataset(s).", result.sessionResults.size());
