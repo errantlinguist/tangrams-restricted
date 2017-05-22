@@ -310,12 +310,8 @@ public final class Tester {
 			LOGGER.debug("{} instances for out-of-vocabulary class.", oovInstances.size());
 
 			final Map<String, Logistic> wordClassifiers = createWordClassifierMap(classInstances.entrySet());
-			// sessionTesterFactory.setWordClassifiers(wordClassifiers::get);
 			final Instances testInsts = testInstsFactory.apply(TEST_INSTS_REL_NAME,
 					estimateTestInstanceCount(testSessionData));
-			// sessionTesterFactory.setTestInstances(testInsts);
-			// final SessionTester sessionTester = (SessionTester)
-			// sessionTesterFactory.getObject();
 			final Function<String, Logistic> wordClassifierGetter = wordClassifiers::get;
 			final SessionTester sessionTester = beanFactory.getBean(SessionTester.class, wordClassifierGetter,
 					testInsts);
