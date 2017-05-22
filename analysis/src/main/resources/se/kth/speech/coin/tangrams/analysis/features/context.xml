@@ -10,11 +10,6 @@
 	<import resource="../context.xml"/>
 	<context:component-scan base-package="se.kth.speech.coin.tangrams.analysis.features" />
 
-	<bean id="random-generator" class="java.util.Random">
-		<description>The random number generator used in the application; Provide an explicit seed below in order to make the results reproducible from one run to the next.</description>
-		<!-- <constructor-arg value="1" /> -->
-	</bean>
-
 	<bean id="entity-inst-feature-extractor"
 		class="se.kth.speech.coin.tangrams.analysis.features.weka.InstanceFeatureExtractor">
 		<description>The bean responsible for extracting features representing given entities (which are potential referents) and then configuring &quot;weka.core.Instance&quot; instances to represent the values of these features.</description>
@@ -36,11 +31,6 @@
 				<constructor-arg value="1" />
 			</bean>
 		</constructor-arg>
-	</bean>
-
-	<bean id="negative-example-entity-id-factory"
-		class="se.kth.speech.coin.tangrams.analysis.RandomNotSelectedEntityIdFactory">
-		<constructor-arg ref="random-generator" />
 	</bean>
 
 </beans>
