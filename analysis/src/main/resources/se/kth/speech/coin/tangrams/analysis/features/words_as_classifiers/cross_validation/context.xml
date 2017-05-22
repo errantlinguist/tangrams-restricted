@@ -7,85 +7,10 @@
          http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
         http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd">
 
-	<context:component-scan base-package="se.kth.speech.coin.tangrams.analysis.**" />
-
-	<bean id="random-generator" class="java.util.Random">
-		<description>The random number generator used in the application; Provide an explicit seed below in order to make the results reproducible from one run to the next.</description>
-		<!-- <constructor-arg value="1" /> -->
-	</bean>
-
-	<bean id="event-dialogue-factory"
-		class="se.kth.speech.coin.tangrams.analysis.EventDialogueFactory">
-		<description>This bean is used to create a sequence of individual event dialogues from a sequence of individual utterances combined with the history of the game session in which these utterances were made.</description>
-		<constructor-arg>
-			<bean class="se.kth.speech.coin.tangrams.iristk.EventTypeMatcher">
-				<constructor-arg
-					type="se.kth.speech.coin.tangrams.iristk.GameManagementEvent"
-					value="NEXT_TURN_REQUEST" />
-			</bean>
-		</constructor-arg>
-	</bean>
-
-	<bean id="entity-inst-feature-extractor"
-		class="se.kth.speech.coin.tangrams.analysis.features.weka.InstanceFeatureExtractor">
-		<description>The bean responsible for extracting features representing given entities (which are potential referents) and then configuring &quot;weka.core.Instance&quot; instances to represent the values of these features.</description>
-		<constructor-arg
-			value="#{ T(se.kth.speech.coin.tangrams.analysis.features.EntityFeature.Extractor).createFeatureAttrMap(T(se.kth.speech.coin.tangrams.content.IconImages).getImageResources().keySet()) }"></constructor-arg>
-	</bean>
-
-	<bean id="entity-inst-attr-ctx"
-		class="se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttributeContext">
-		<description>This bean encapsulates the logic and data required for creating and manipulating &quot;weka.core.Instance&quot; instances which represent individual referenceable entities in the game session.</description>
-		<constructor-arg ref="entity-inst-feature-extractor" />
-		<constructor-arg value="IS_REFERENT" />
-	</bean>
-
-	<bean id="entity-extraction-ctx-factory"
-		class="se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionContextFactory">
-		<constructor-arg>
-			<bean class="se.kth.speech.coin.tangrams.analysis.GameContextModelFactory">
-				<constructor-arg value="1" />
-			</bean>
-		</constructor-arg>
-	</bean>
-
-	<bean id="negative-example-entity-id-factory"
-		class="se.kth.speech.coin.tangrams.analysis.RandomNotSelectedEntityIdFactory">
-		<constructor-arg ref="random-generator" />
-	</bean>
-
-	<bean id="smoother"
-		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordClassDiscountingSmoother">
-		<constructor-arg value="4" />
-		<constructor-arg value="__UNKNOWN__" />
-	</bean>
+	<import resource="../context.xml"/>
 
 	<bean id="cross-validation-training-data-writer"
 		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.TrainingDataWriter"
 		scope="prototype" />
-
-	<bean id="ref-conf-map-factory"
-		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.ReferentConfidenceMapFactory"
-		scope="prototype"></bean>
-		
-	<bean id="diag-utt-seq-extractor" class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.utts.InstructorUtteranceExtractor">
-		<description>This bean defines logic for extracting the individual utterance(s) in a given dialogue to use for referent classification for that dialogue.</description>
-	</bean>
-
-	<bean id="utt-seq-classifier"
-		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.utts.BagOfUtterancesReferentClassifier"
-		scope="prototype">
-		<description>This bean defines logic for generating values representing the confidence of classifying a given referenceable entity as being referred to by a given sequence of utterances.</description>
-	</bean>
-	
-	<bean id="dialogue-tester"
-		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.SingleGameContextReferentEventDialogueTester"
-		scope="prototype">
-		<description>This bean defines logic for testing the classification of individual dialogues, i.e. individual sequences of utterances which are related to a single game event.</description>
-	</bean>
-
-	<bean id="session-tester"
-		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.SessionTester"
-		scope="prototype"></bean>
 
 </beans>
