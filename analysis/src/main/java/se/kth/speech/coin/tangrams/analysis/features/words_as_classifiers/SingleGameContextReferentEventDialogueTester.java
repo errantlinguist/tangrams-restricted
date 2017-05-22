@@ -18,7 +18,6 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.function.BiFunction;
 
 import javax.inject.Inject;
 
@@ -32,6 +31,7 @@ import se.kth.speech.coin.tangrams.analysis.GameHistory;
 import se.kth.speech.coin.tangrams.analysis.TemporalGameContexts;
 import se.kth.speech.coin.tangrams.analysis.Utterance;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.utts.EventDialogueUtteranceSequenceExtractor;
 
 /**
  * This {@link EventDialogueTester} tests classification using a single
@@ -62,7 +62,7 @@ public final class SingleGameContextReferentEventDialogueTester implements Event
 	}
 
 	@Inject
-	private BiFunction<EventDialogue, GameHistory, Optional<List<Utterance>>> diagUttExtractor;
+	private EventDialogueUtteranceSequenceExtractor diagUttExtractor;
 
 	private final UtteranceSequenceClassifier uttSeqClassifier;
 
