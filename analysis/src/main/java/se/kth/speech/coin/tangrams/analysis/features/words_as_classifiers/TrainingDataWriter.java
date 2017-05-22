@@ -147,9 +147,8 @@ public final class TrainingDataWriter {
 				final String outfileExt = Parameter.parseOutputType(cl);
 				LOGGER.info("Will write data in \"*{}\" format.", outfileExt);
 
-				// TODO: Remove dependency on application context for cross validation
 				try (final ClassPathXmlApplicationContext appCtx = new ClassPathXmlApplicationContext(
-						"cross_validation/context.xml", TrainingDataWriter.class)) {
+						"context.xml", TrainingDataWriter.class)) {
 					final TrainingDataWriter writer = appCtx.getBean(TrainingDataWriter.class);
 					final Map<String, Instances> classInstances = writer.apply(inpaths);
 					if (outdir.mkdirs()) {

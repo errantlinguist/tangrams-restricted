@@ -8,6 +8,7 @@
         http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd">
 
 	<import resource="../context.xml"/>
+	<context:component-scan base-package="se.kth.speech.coin.tangrams.analysis.features._words_as_classifiers.cross_validation" />
 
 	<bean id="cross-validation-training-data-writer"
 		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.TrainingDataWriter"

@@ -7,23 +7,12 @@
          http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
         http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd">
 
-	<context:component-scan base-package="se.kth.speech.coin.tangrams.analysis.**" />
+	<import resource="../context.xml"/>
+	<context:component-scan base-package="se.kth.speech.coin.tangrams.analysis.features" />
 
 	<bean id="random-generator" class="java.util.Random">
 		<description>The random number generator used in the application; Provide an explicit seed below in order to make the results reproducible from one run to the next.</description>
 		<!-- <constructor-arg value="1" /> -->
-	</bean>
-
-	<bean id="event-dialogue-factory"
-		class="se.kth.speech.coin.tangrams.analysis.EventDialogueFactory">
-		<description>This bean is used to create a sequence of individual event dialogues from a sequence of individual utterances combined with the history of the game session in which these utterances were made.</description>
-		<constructor-arg>
-			<bean class="se.kth.speech.coin.tangrams.iristk.EventTypeMatcher">
-				<constructor-arg
-					type="se.kth.speech.coin.tangrams.iristk.GameManagementEvent"
-					value="NEXT_TURN_REQUEST" />
-			</bean>
-		</constructor-arg>
 	</bean>
 
 	<bean id="entity-inst-feature-extractor"

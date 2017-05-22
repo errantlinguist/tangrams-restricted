@@ -8,45 +8,11 @@
         http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd">
 
 	<import resource="../context.xml"/>
+	<context:component-scan base-package="se.kth.speech.coin.tangrams.analysis.features._words_as_classifiers" />
 
 	<bean id="random-generator" class="java.util.Random">
 		<description>The random number generator used in the application; Provide an explicit seed below in order to make the results reproducible from one run to the next.</description>
 		<!-- <constructor-arg value="1" /> -->
-	</bean>
-
-	<bean id="event-dialogue-factory"
-		class="se.kth.speech.coin.tangrams.analysis.EventDialogueFactory">
-		<description>This bean is used to create a sequence of individual event dialogues from a sequence of individual utterances combined with the history of the game session in which these utterances were made.</description>
-		<constructor-arg>
-			<bean class="se.kth.speech.coin.tangrams.iristk.EventTypeMatcher">
-				<constructor-arg
-					type="se.kth.speech.coin.tangrams.iristk.GameManagementEvent"
-					value="NEXT_TURN_REQUEST" />
-			</bean>
-		</constructor-arg>
-	</bean>
-
-	<bean id="entity-inst-feature-extractor"
-		class="se.kth.speech.coin.tangrams.analysis.features.weka.InstanceFeatureExtractor">
-		<description>The bean responsible for extracting features representing given entities (which are potential referents) and then configuring &quot;weka.core.Instance&quot; instances to represent the values of these features.</description>
-		<constructor-arg
-			value="#{ T(se.kth.speech.coin.tangrams.analysis.features.EntityFeature.Extractor).createFeatureAttrMap(T(se.kth.speech.coin.tangrams.content.IconImages).getImageResources().keySet()) }"></constructor-arg>
-	</bean>
-
-	<bean id="entity-inst-attr-ctx"
-		class="se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttributeContext">
-		<description>This bean encapsulates the logic and data required for creating and manipulating &quot;weka.core.Instance&quot; instances which represent individual referenceable entities in the game session.</description>
-		<constructor-arg ref="entity-inst-feature-extractor" />
-		<constructor-arg value="IS_REFERENT" />
-	</bean>
-
-	<bean id="entity-extraction-ctx-factory"
-		class="se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionContextFactory">
-		<constructor-arg>
-			<bean class="se.kth.speech.coin.tangrams.analysis.GameContextModelFactory">
-				<constructor-arg value="1" />
-			</bean>
-		</constructor-arg>
 	</bean>
 
 	<bean id="negative-example-entity-id-factory"
