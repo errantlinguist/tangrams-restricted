@@ -64,9 +64,6 @@
 		<constructor-arg value="__UNKNOWN__" />
 	</bean>
 
-	<bean id="insts-map-factory"
-		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.InstancesMapFactory" />
-
 	<bean id="training-data-writer"
 		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.TrainingDataWriter" />
 
