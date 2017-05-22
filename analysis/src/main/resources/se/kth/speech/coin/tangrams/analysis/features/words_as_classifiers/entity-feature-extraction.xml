@@ -93,7 +93,7 @@
 		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.ReferentConfidenceMapFactory"
 		scope="prototype"></bean>
 		
-	<bean id="diag_utt_seq_extractor" class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.utts.InstructorEventDialogueUtteranceExtractor">
+	<bean id="diag_utt_seq_extractor" class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.utts.InstructorUtteranceExtractor">
 		<description>This bean defines logic for extracting the individual utterance(s) in a given dialogue to use for referent classification for that dialogue.</description>
 	</bean>
 

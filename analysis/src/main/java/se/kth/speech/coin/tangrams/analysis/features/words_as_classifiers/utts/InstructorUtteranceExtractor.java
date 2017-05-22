@@ -38,9 +38,9 @@ import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
  * @since 22 May 2017
  *
  */
-public final class InstructorEventDialogueUtteranceExtractor implements EventDialogueUtteranceSequenceExtractor {
+public final class InstructorUtteranceExtractor implements EventDialogueUtteranceSequenceExtractor {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(InstructorEventDialogueUtteranceExtractor.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(InstructorUtteranceExtractor.class);
 
 	@Override
 	public Optional<List<Utterance>> apply(final EventDialogue uttDiag, final GameHistory history) {
