@@ -67,9 +67,6 @@
 	<bean id="session-evt-diag-mgr-cache-supplier"
 		class="se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManagerCacheSupplier"></bean>
 
-	<bean id="cross-validation-test-data-factory"
-		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.CrossValidationTestSetFactory" />
-
 	<bean id="cross-validation-training-data-writer"
 		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.CrossValidationTrainingDataWriter"
 		scope="prototype" />

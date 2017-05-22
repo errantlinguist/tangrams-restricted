@@ -29,6 +29,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import javax.inject.Inject;
+import javax.inject.Named;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,6 +60,7 @@ import weka.core.Instances;
  *      </ul>
  *
  */
+@Named
 public final class CrossValidationTestSetFactory {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(CrossValidationTestSetFactory.class);
