@@ -272,12 +272,6 @@ public final class CrossValidationTester {
 		return result;
 	}
 
-	// @Inject
-	// private SessionTester sessionTester;
-
-	// private final BiFunction<Map<String, Logistic>, Instances, SessionTester>
-	// sessionTesterFactory;
-
 	@Inject
 	private BeanFactory beanFactory;
 
@@ -286,15 +280,6 @@ public final class CrossValidationTester {
 
 	@Inject
 	private WordClassInstancesFactory testInstsFactory;
-
-	// @Inject
-	// private SessionTesterFactoryBean sessionTesterFactory;
-
-	// public CrossValidationTester(
-	// final BiFunction<Map<String, Logistic>, Instances, SessionTester>
-	// sessionTesterFactory) {
-	// this.sessionTesterFactory = sessionTesterFactory;
-	// }
 
 	@Inject
 	private CrossValidationTestSetFactory testSetFactory;
