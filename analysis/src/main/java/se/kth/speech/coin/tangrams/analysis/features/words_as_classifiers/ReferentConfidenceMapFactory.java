@@ -57,8 +57,8 @@ public final class ReferentConfidenceMapFactory {
 	public ReferentConfidenceMapFactory(
 			final Function<? super String, ? extends Classifier> wordClassifiers,
 			final Function<? super EntityFeature.Extractor.Context, ? extends Instance> testInstFactory) {
-		this.testInstFactory = testInstFactory;
 		this.wordClassifiers = wordClassifiers;
+		this.testInstFactory = testInstFactory;
 	}
 
 	public Int2DoubleMap apply(final List<String> tokens, final GameContext uttCtx)
