@@ -20,12 +20,14 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
@@ -161,8 +163,7 @@ public final class Tester {
 			sessionResults.compute(infilePath, (key, oldVal) -> {
 				final List<SessionTester.Result> newVal;
 				if (oldVal == null) {
-					newVal = new ArrayList<>(iterCount);
-					Collections.fill(newVal, null);
+					newVal = Arrays.asList(new SessionTester.Result[iterCount]);
 				} else {
 					newVal = oldVal;
 				}
@@ -407,11 +408,28 @@ public final class Tester {
 		LOGGER.info(
 				"Starting cross-validation test using data from {} session(s), doing {} iterations on each dataset.",
 				allSessions.size(), iterCount);
-		for (int iter = 1; iter <= iterCount; ++iter) {
-			executor.submit(new CrossValidator(allSessions, iter, result));
+		final List<CompletableFuture<Void>> iterResultFutures = new ArrayList<>(iterCount);
+		for (int iter = 0; iter < iterCount; ++iter) {
+			final CompletableFuture<Void> iterResultFuture = CompletableFuture
+					.runAsync(new CrossValidator(allSessions, iter, result), executor);
+			iterResultFutures.add(iterResultFuture);
 		}
+		final CompletableFuture<Void> allDone = CompletableFuture
+				.allOf(iterResultFutures.stream().toArray(CompletableFuture[]::new));
+		allDone.join();
 		LOGGER.info("Finished testing {} cross-validation dataset(s).", result.sessionResults.size());
 		return result;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Object#finalize()
+	 */
+	@Override
+	protected void finalize() throws Throwable {
+		executor.shutdown();
+		super.finalize();
 	}
 
 }
