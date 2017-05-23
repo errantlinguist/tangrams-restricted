@@ -23,22 +23,19 @@
 		<constructor-arg value="4" />
 		<constructor-arg value="__UNKNOWN__" />
 	</bean>
-	
+
 	<bean id="diag-utt-seq-extractor"
 		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.utts.AllUtteranceExtractor">
 		<description>This bean defines logic for generating values representing the confidence of classifying a given referenceable entity as being referred to by a given sequence of utterances.</description>
 	</bean>
 	
-	<bean id="utt-seq-classifier"
-		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.utts.BagOfUtterancesReferentClassifier"
-		scope="prototype">
-		<description>This bean defines logic for generating values representing the confidence of classifying a given referenceable entity as being referred to by a given sequence of utterances.</description>
+	<bean id="dialogue-classifier" class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.IsolatedUtteranceEventDialogueClassifier" scope="prototype">
 	</bean>
 	
-	<bean id="cross-validation-tester" class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.Tester">
+	<bean id="cross-validation-tester" class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.Tester" scope="prototype">
 		<constructor-arg>
 			<description>The number of training/testing iterations to perform.</description>
-			<value>5</value>
+			<value>1</value>
 		</constructor-arg>
 		<constructor-arg>
 			<description>The maximum number of parallel threads.</description>

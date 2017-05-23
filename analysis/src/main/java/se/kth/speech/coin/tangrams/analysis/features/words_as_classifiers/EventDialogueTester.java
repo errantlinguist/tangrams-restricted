@@ -50,13 +50,13 @@ public interface EventDialogueTester {
 
 		private final int totalUttCount;
 
-		private final List<Utterance> uttsTested;
+		private final EventDialogue transformedDiag;
 
 		protected Result(final Int2DoubleMap referentConfidenceVals, final int goldStandardReferentId,
-				final List<Utterance> uttsTested, final int totalDiagUttCount) {
+				final EventDialogue transformedDiag, final int totalDiagUttCount) {
 			this.referentConfidenceVals = referentConfidenceVals;
 			this.goldStandardReferentId = goldStandardReferentId;
-			this.uttsTested = uttsTested;
+			this.transformedDiag = transformedDiag;
 			totalUttCount = totalDiagUttCount;
 		}
 
@@ -74,6 +74,13 @@ public interface EventDialogueTester {
 			return referentConfidenceVals;
 		}
 
+		/**
+		 * @return the transformedDiag
+		 */
+		public EventDialogue getTransformedDiag() {
+			return transformedDiag;
+		}
+
 		public double rank() {
 			final Double2ObjectSortedMap<IntList> nbestGroups = NBestRankings.createNbestGroupMap(
 					getReferentConfidenceVals().int2DoubleEntrySet(), confidenceVal -> new IntArrayList(1));
@@ -88,7 +95,7 @@ public interface EventDialogueTester {
 
 		@Override
 		public int totalTokensTested() {
-			return uttsTested.stream().map(Utterance::getTokens).mapToInt(List::size).sum();
+			return utterancesTested().map(Utterance::getTokens).mapToInt(List::size).sum();
 		}
 
 		@Override
@@ -98,7 +105,7 @@ public interface EventDialogueTester {
 
 		@Override
 		public int totalUtterancesTested() {
-			return uttsTested.size();
+			return transformedDiag.getUtts().size();
 		}
 
 		/**
@@ -106,7 +113,7 @@ public interface EventDialogueTester {
 		 */
 		@Override
 		public Stream<Utterance> utterancesTested() {
-			return uttsTested.stream();
+			return transformedDiag.getUtts().stream();
 		}
 
 	}

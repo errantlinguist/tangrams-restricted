@@ -18,10 +18,9 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.utts;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.function.BiFunction;
+import java.util.function.Function;
 
 import se.kth.speech.coin.tangrams.analysis.EventDialogue;
-import se.kth.speech.coin.tangrams.analysis.GameHistory;
 import se.kth.speech.coin.tangrams.analysis.Utterance;
 
 /**
@@ -34,6 +33,6 @@ import se.kth.speech.coin.tangrams.analysis.Utterance;
  *
  */
 public interface EventDialogueUtteranceSequenceExtractor
-		extends BiFunction<EventDialogue, GameHistory, Optional<List<Utterance>>> {
+		extends Function<EventDialogue, Optional<List<Utterance>>> {
 
 }

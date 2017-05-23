@@ -14,9 +14,10 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.utts;
+package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -25,24 +26,19 @@ import org.slf4j.LoggerFactory;
 
 import se.kth.speech.coin.tangrams.analysis.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.Utterance;
-import se.kth.speech.coin.tangrams.game.PlayerRole;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.utts.InstructorUtteranceExtractor;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 
 /**
- * This {@link EventDialogueUtteranceSequenceExtractor} extracts all the
- * {@link Utterance utterances} made by the {@link PlayerRole#MOVE_SUBMISSION
- * instructor} of the {@link EventDialogue} used in classification.
- *
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
- * @since 22 May 2017
+ * @since 23 May 2017
  *
  */
-public final class InstructorUtteranceExtractor implements EventDialogueUtteranceSequenceExtractor {
+public final class InstructorUtteranceFilteringEventDialogueTransformer implements EventDialogueTransformer {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(InstructorUtteranceExtractor.class);
 
-	@Override
-	public Optional<List<Utterance>> apply(final EventDialogue uttDiag) {
+	private static Optional<List<Utterance>> createInstructorUttList(final EventDialogue uttDiag) {
 		return uttDiag.getLastEvent().map(event -> {
 			LOGGER.debug("Classifying entity referred to by instructor for {}.", event);
 			final String submittingPlayerId = event.getString(GameManagementEvent.Attribute.PLAYER_ID.toString());
@@ -52,6 +48,23 @@ public final class InstructorUtteranceExtractor implements EventDialogueUtteranc
 				return submittingPlayerId.equals(uttPlayerId);
 			}).toArray(Utterance[]::new));
 		});
+	}
+
+	/**
+	 *
+	 */
+	public InstructorUtteranceFilteringEventDialogueTransformer() {
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.util.function.Function#apply(java.lang.Object)
+	 */
+	@Override
+	public EventDialogue apply(final EventDialogue diag) {
+		final List<Utterance> filteredUtts = createInstructorUttList(diag).orElse(Collections.emptyList());
+		return new EventDialogue(diag.getLastEvent(), filteredUtts);
 	}
 
 }

@@ -18,8 +18,7 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers;
 
 import java.util.List;
 import java.util.Optional;
-
-import javax.inject.Inject;
+import java.util.function.Function;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,8 +30,7 @@ import se.kth.speech.coin.tangrams.analysis.GameHistory;
 import se.kth.speech.coin.tangrams.analysis.TemporalGameContexts;
 import se.kth.speech.coin.tangrams.analysis.Utterance;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.utts.EventDialogueUtteranceSequenceExtractor;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.utts.UtteranceSequenceClassifier;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EventDialogueClassifier;
 
 /**
  * This {@link EventDialogueTester} tests classification using a single
@@ -62,40 +60,42 @@ public final class SingleGameContextReferentEventDialogueTester implements Event
 		return ctxs[0];
 	}
 
-	@Inject
-	private EventDialogueUtteranceSequenceExtractor diagUttExtractor;
+	private final EventDialogueClassifier diagClassifier;
 
-	private final UtteranceSequenceClassifier uttSeqClassifier;
+	private final Function<? super EventDialogue, EventDialogue> diagTransformer;
 
-	public SingleGameContextReferentEventDialogueTester(final UtteranceSequenceClassifier uttSeqClassifier) {
-		this.uttSeqClassifier = uttSeqClassifier;
+	public SingleGameContextReferentEventDialogueTester(final EventDialogueClassifier diagClassifier,
+			final Function<? super EventDialogue, EventDialogue> diagTransformer) {
+		this.diagClassifier = diagClassifier;
+		this.diagTransformer = diagTransformer;
 	}
 
 	@Override
 	public Optional<Result> apply(final EventDialogue uttDiag, final GameHistory history)
 			throws ClassificationException {
 		final Optional<Result> result;
+		final EventDialogue transformedDiag = diagTransformer.apply(uttDiag);
 
-		final Optional<List<Utterance>> optUttsToClassify = diagUttExtractor.apply(uttDiag, history);
-		if (optUttsToClassify.isPresent()) {
-			final List<Utterance> uttsToClassify = optUttsToClassify.get();
-			if (uttsToClassify.isEmpty()) {
-				result = Optional.empty();
-			} else {
-				// Just use the game context for the first utterance for all
-				// utterances processed for the given dialogue
-				final Utterance firstUtt = uttsToClassify.get(0);
-				final String firstSpeakerId = firstUtt.getSpeakerId();
-				LOGGER.debug("Creating game context from perspective of player \"{}\".", firstSpeakerId);
-				final GameContext uttCtx = createGameContext(firstUtt, history, firstSpeakerId);
-				final Int2DoubleMap referentConfidenceVals = uttSeqClassifier.apply(uttsToClassify, uttCtx);
+		final List<Utterance> allUtts = transformedDiag.getUtts();
+		if (allUtts.isEmpty()) {
+			result = Optional.empty();
+		} else {
+			// Just use the game context for the first utterance for all
+			// utterances processed for the given dialogue
+			final Utterance firstUtt = allUtts.get(0);
+			final String firstSpeakerId = firstUtt.getSpeakerId();
+			LOGGER.debug("Creating game context from perspective of player \"{}\".", firstSpeakerId);
+			final GameContext uttCtx = createGameContext(firstUtt, history, firstSpeakerId);
+			final Optional<Int2DoubleMap> optReferentConfidenceVals = diagClassifier.apply(transformedDiag, uttCtx);
+			if (optReferentConfidenceVals.isPresent()) {
+				final Int2DoubleMap referentConfidenceVals = optReferentConfidenceVals.get();
 				result = uttCtx.findLastSelectedEntityId().map(goldStandardEntityId -> {
-					return new Result(referentConfidenceVals, goldStandardEntityId, uttsToClassify,
+					return new Result(referentConfidenceVals, goldStandardEntityId, transformedDiag,
 							uttDiag.getUtts().size());
 				});
+			} else {
+				result = Optional.empty();
 			}
-		} else {
-			result = Optional.empty();
 		}
 
 		return result;

@@ -14,27 +14,33 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.utts;
+package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags;
 
+import java.util.Arrays;
 import java.util.List;
-import java.util.Optional;
+import java.util.function.Predicate;
 
 import se.kth.speech.coin.tangrams.analysis.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.Utterance;
 
 /**
- * This {@link EventDialogueUtteranceSequenceExtractor} extracts all the
- * {@link Utterance utterances} for the {@link EventDialogue} used in classification.
- *
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
- * @since 22 May 2017
+ * @since 23 May 2017
  *
  */
-public final class AllUtteranceExtractor implements EventDialogueUtteranceSequenceExtractor {
+public final class UtteranceFilteringEventDialogueFactory implements EventDialogueTransformer {
+
+	private final Predicate<? super Utterance> uttFilter;
+
+	public UtteranceFilteringEventDialogueFactory(final Predicate<? super Utterance> uttFilter) {
+		this.uttFilter = uttFilter;
+	}
 
 	@Override
-	public Optional<List<Utterance>> apply(final EventDialogue uttDiag) {
-		return Optional.of(uttDiag.getUtts());
+	public EventDialogue apply(final EventDialogue diag) {
+		final List<Utterance> filteredUtts = Arrays
+				.asList(diag.getUtts().stream().filter(uttFilter).toArray(Utterance[]::new));
+		return new EventDialogue(diag.getLastEvent(), filteredUtts);
 	}
 
 }

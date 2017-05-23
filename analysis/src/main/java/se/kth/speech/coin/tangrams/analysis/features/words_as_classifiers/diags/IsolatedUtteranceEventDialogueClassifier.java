@@ -14,31 +14,51 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.utts;
+package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
+import se.kth.speech.coin.tangrams.analysis.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.GameContext;
 import se.kth.speech.coin.tangrams.analysis.Utterance;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.ReferentConfidenceMapFactory;
 
 /**
- * An interface for classes which generate values representing the confidence of
- * classifying a given referenceable entity as being referred to by a given
- * sequence of {@link Utterance utterances}.
- * 
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
- * @since 18 May 2017
+ * @since 23 May 2017
  *
  */
-public interface UtteranceSequenceClassifier {
+public final class IsolatedUtteranceEventDialogueClassifier implements EventDialogueClassifier {
+
+	private final ReferentConfidenceMapFactory referentConfidenceMapFactory;
+
+	public IsolatedUtteranceEventDialogueClassifier(final ReferentConfidenceMapFactory referentConfidenceMapFactory) {
+		this.referentConfidenceMapFactory = referentConfidenceMapFactory;
+	}
+
+	@Override
+	public Optional<Int2DoubleMap> apply(final EventDialogue diag, final GameContext ctx)
+			throws ClassificationException {
+		final Optional<Int2DoubleMap> result;
+		final List<Utterance> uttsToClassify = diag.getUtts();
+		if (uttsToClassify.isEmpty()) {
+			result = Optional.empty();
+		} else {
+			final Int2DoubleMap referentConfidenceVals = createReferentConfidenceMap(uttsToClassify, ctx);
+			result = Optional.of(referentConfidenceVals);
+		}
+		return result;
+	}
 
 	/**
 	 * Calculates the confidence of a given sequence of {@link Utterance
 	 * utterances} referring to each referenceable entity given a particular
 	 * {@link GameContext}.
-	 * 
+	 *
 	 * @param dialogueUtts
 	 *            The sequence of utterances to classify.
 	 * @param uttCtx
@@ -50,6 +70,14 @@ public interface UtteranceSequenceClassifier {
 	 * @throws ClassificationException
 	 *             If an error occurs while classifying any individual entity.
 	 */
-	Int2DoubleMap apply(List<Utterance> dialogueUtts, GameContext uttCtx) throws ClassificationException;
+	private Int2DoubleMap createReferentConfidenceMap(final List<Utterance> dialogueUtts, final GameContext uttCtx)
+			throws ClassificationException {
+		final int estAvgUttTokenCount = 8;
+		final List<String> diagTokens = new ArrayList<>(dialogueUtts.size() * estAvgUttTokenCount);
+		for (final Utterance dialogUtt : dialogueUtts) {
+			diagTokens.addAll(dialogUtt.getTokens());
+		}
+		return referentConfidenceMapFactory.apply(diagTokens, uttCtx);
+	}
 
 }

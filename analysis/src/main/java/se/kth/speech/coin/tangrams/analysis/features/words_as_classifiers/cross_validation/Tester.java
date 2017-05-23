@@ -43,20 +43,29 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.BeanFactory;
 
+import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Maps;
 
 import it.unimi.dsi.fastutil.ints.IntSet;
 import se.kth.speech.coin.tangrams.analysis.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
+import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManager;
 import se.kth.speech.coin.tangrams.analysis.Utterance;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
+import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
 import se.kth.speech.coin.tangrams.analysis.features.TrainingException;
+import se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttributeContext;
 import se.kth.speech.coin.tangrams.analysis.features.weka.WordClassInstancesFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.EventDialogueTester;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.ReferentConfidenceMapFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.SessionTestStatistics;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.SessionTester;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.SingleGameContextReferentEventDialogueTester;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordClassDiscountingSmoother;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EventDialogueClassifier;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EventDialogueTransformer;
 import weka.classifiers.functions.Logistic;
+import weka.core.Instance;
 import weka.core.Instances;
 
 /**
@@ -270,7 +279,7 @@ public final class Tester {
 			this.iterNo = iterNo;
 			this.result = result;
 		}
-
+		
 		/*
 		 * (non-Javadoc)
 		 *
@@ -305,14 +314,21 @@ public final class Tester {
 				final Instances oovInstances = smoother.redistributeMass(classInstances);
 				LOGGER.debug("{} instances for out-of-vocabulary class.", oovInstances.size());
 
-				final Map<String, Logistic> wordClassifiers = createWordClassifierMap(classInstances.entrySet());
+				final Function<String, Logistic> wordClassifierGetter = createWordClassifierMap(
+						classInstances.entrySet())::get;
 				final Instances testInsts = testInstsFactory.apply(TEST_INSTS_REL_NAME,
 						estimateTestInstanceCount(testSessionData));
-				final Function<String, Logistic> wordClassifierGetter = wordClassifiers::get;
-				final SessionTester sessionTester = beanFactory.getBean(SessionTester.class, wordClassifierGetter,
-						testInsts);
-
-				final SessionTester.Result testResults = sessionTester.testSession(testSessionData);
+				final Function<EntityFeature.Extractor.Context, Instance> testInstFactory = entInstAttrCtx
+						.createInstFactory(testInsts);
+				final ReferentConfidenceMapFactory referentConfidenceMapFactory = beanFactory
+						.getBean(ReferentConfidenceMapFactory.class, wordClassifierGetter, testInstFactory);
+				final EventDialogueClassifier diagClassifier = beanFactory.getBean(EventDialogueClassifier.class,
+						referentConfidenceMapFactory);
+				final SingleGameContextReferentEventDialogueTester diagTester = new SingleGameContextReferentEventDialogueTester(
+						diagClassifier, diagTransformer);
+				final SessionTester sessionTester = new SessionTester(diagTester);
+				final SessionTester.Result testResults = sessionTester
+						.apply(sessionDiagMgrCacheSupplier.get().get(testSessionData));
 				result.put(infilePath, testResults);
 			}
 			return result;
@@ -333,6 +349,9 @@ public final class Tester {
 		}
 		return result;
 	}
+	
+	@Inject
+	private EventDialogueTransformer diagTransformer;
 
 	private static Map<String, Logistic> createWordClassifierMap(final Set<Entry<String, Instances>> classInstances)
 			throws TrainingException {
@@ -371,9 +390,22 @@ public final class Tester {
 	@Inject
 	private BeanFactory beanFactory;
 
+	@Inject
+	private EntityInstanceAttributeContext entInstAttrCtx;
+
+	// @Inject
+	// private BeanFactory beanFactory;
+
+	// @Inject
+	// private BiFunction<Function<String, Logistic>, Instances, SessionTester>
+	// sessionTesterFactory;
+
 	private final Supplier<? extends ExecutorService> executorFactory;
 
 	private final int iterCount;
+
+	@Inject
+	private Supplier<LoadingCache<SessionDataManager, SessionEventDialogueManager>> sessionDiagMgrCacheSupplier;
 
 	@Inject
 	private WordClassDiscountingSmoother smoother;

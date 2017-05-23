@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
 import weka.core.Attribute;
@@ -72,6 +73,14 @@ public final class EntityInstanceAttributeContext {
 		result.setDataset(insts);
 		extractor.accept(result, extractionContext);
 		return result;
+	}
+
+	public Function<EntityFeature.Extractor.Context, Instance> createInstFactory(final Instances insts) {
+		return ctx -> {
+			final Instance result = createInstance(ctx, insts);
+			result.setClassMissing();
+			return result;
+		};
 	}
 
 	/**

@@ -20,18 +20,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Optional;
-import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
-
-import javax.inject.Inject;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.BeanFactory;
-
-import com.google.common.cache.LoadingCache;
 
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2IntMaps;
@@ -39,17 +32,10 @@ import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import se.kth.speech.MutablePair;
 import se.kth.speech.coin.tangrams.analysis.EventDialogue;
-import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
 import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManager;
 import se.kth.speech.coin.tangrams.analysis.Utterance;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
-import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
-import se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttributeContext;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.utts.UtteranceSequenceClassifier;
 import se.kth.speech.fastutil.IntMaps;
-import weka.classifiers.Classifier;
-import weka.core.Instance;
-import weka.core.Instances;
 
 public final class SessionTester {
 
@@ -229,44 +215,21 @@ public final class SessionTester {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SessionTester.class);
 
-	@Inject
-	private BeanFactory beanFactory;
-
-	@Inject
-	private EntityInstanceAttributeContext entInstAttrCtx;
-
-	@Inject
-	private Supplier<LoadingCache<SessionDataManager, SessionEventDialogueManager>> sessionDiagMgrCacheSupplier;
-
-	private final Function<EntityFeature.Extractor.Context, Instance> testInstFactory;
-
-	private final Function<? super String, ? extends Classifier> wordClassifiers;
+	private final EventDialogueTester diagTester;
 
 	/**
 	 * @param wordClassifiers
 	 * @param testInsts
 	 */
-	public SessionTester(final Function<? super String, ? extends Classifier> wordClassifiers,
-			final Instances testInsts) {
-		this.wordClassifiers = wordClassifiers;
-		testInstFactory = ctx -> {
-			final Instance result = entInstAttrCtx.createInstance(ctx, testInsts);
-			result.setClassMissing();
-			return result;
-		};
+	public SessionTester(final EventDialogueTester diagTester) {
+		this.diagTester = diagTester;
 	}
 
-	public SessionTester.Result testSession(final SessionDataManager sessionData)
-			throws ExecutionException, ClassificationException {
-		final SessionEventDialogueManager sessionEventDiagMgr = sessionDiagMgrCacheSupplier.get().get(sessionData);
+	public SessionTester.Result apply(final SessionEventDialogueManager sessionEventDiagMgr)
+			throws ClassificationException {
 		final List<EventDialogue> uttDiags = sessionEventDiagMgr.createUttDialogues();
 		final SessionTester.Result result = new SessionTester.Result(uttDiags.size());
 
-		final ReferentConfidenceMapFactory referentConfidenceMapFactory = beanFactory
-				.getBean(ReferentConfidenceMapFactory.class, wordClassifiers, testInstFactory);
-		final UtteranceSequenceClassifier uttSeqClassifier = beanFactory.getBean(UtteranceSequenceClassifier.class,
-				referentConfidenceMapFactory);
-		final EventDialogueTester diagTester = beanFactory.getBean(EventDialogueTester.class, uttSeqClassifier);
 		for (final EventDialogue uttDiag : uttDiags) {
 			final Optional<EventDialogueTester.Result> optTestResults = diagTester.apply(uttDiag,
 					sessionEventDiagMgr.getGameHistory());
