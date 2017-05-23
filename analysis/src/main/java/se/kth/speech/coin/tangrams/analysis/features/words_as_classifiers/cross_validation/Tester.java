@@ -26,7 +26,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -78,12 +82,12 @@ public final class Tester {
 
 		private final int iterCount;
 
-		private final Map<Path, List<SessionTester.Result>> sessionResults;
+		private final ConcurrentMap<Path, List<SessionTester.Result>> sessionResults;
 
 		private final SessionTester.Result totalResults;
 
 		private Result(final int expectedSessionCount, final int iterCount) {
-			sessionResults = Maps.newHashMapWithExpectedSize(expectedSessionCount);
+			sessionResults = new ConcurrentHashMap<>(expectedSessionCount);
 			totalResults = new SessionTester.Result(expectedSessionCount * 50);
 			this.iterCount = iterCount;
 		}
@@ -153,10 +157,19 @@ public final class Tester {
 			return totalResults.modeReferentIds();
 		}
 
-		public void put(final Path infilePath, final SessionTester.Result testResults) {
-			final List<SessionTester.Result> iterResults = sessionResults.computeIfAbsent(infilePath,
-					key -> new ArrayList<>(iterCount));
-			iterResults.add(testResults);
+		public void put(final Path infilePath, final int iterNo, final SessionTester.Result testResults) {
+			sessionResults.compute(infilePath, (key, oldVal) -> {
+				final List<SessionTester.Result> newVal;
+				if (oldVal == null) {
+					newVal = new ArrayList<>(iterCount);
+					Collections.fill(newVal, null);
+				} else {
+					newVal = oldVal;
+				}
+				final SessionTester.Result oldResults = newVal.set(iterNo, testResults);
+				assert oldResults == null;
+				return newVal;
+			});
 			testResults.getDialogueTestResults().forEach(totalResults::add);
 		}
 
@@ -243,6 +256,70 @@ public final class Tester {
 
 	}
 
+	private final class CrossValidator implements Runnable {
+
+		private final Map<SessionDataManager, Path> allSessions;
+
+		private final int iterNo;
+
+		private final Result result;
+
+		private CrossValidator(final Map<SessionDataManager, Path> allSessions, final int iterNo, final Result result) {
+			this.allSessions = allSessions;
+			this.iterNo = iterNo;
+			this.result = result;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see java.lang.Runnable#run()
+		 */
+		@Override
+		public void run() {
+			LOGGER.info("Training/testing iteration no. {}.", iterNo);
+			Map<Path, SessionTester.Result> iterResults;
+			try {
+				iterResults = crossValidate(allSessions);
+			} catch (ExecutionException | TrainingException | IOException | ClassificationException e) {
+				throw new RuntimeException(e);
+			}
+			for (final Entry<Path, SessionTester.Result> iterResult : iterResults.entrySet()) {
+				result.put(iterResult.getKey(), iterNo, iterResult.getValue());
+			}
+		}
+
+		private Map<Path, SessionTester.Result> crossValidate(final Map<SessionDataManager, Path> allSessions)
+				throws ExecutionException, TrainingException, IOException, ClassificationException {
+			final Map<Path, SessionTester.Result> result = Maps.newHashMapWithExpectedSize(allSessions.size());
+			final Stream<Entry<SessionDataManager, Map<String, Instances>>> testSets = testSetFactory
+					.apply(allSessions);
+			for (final Iterator<Entry<SessionDataManager, Map<String, Instances>>> testSetIter = testSets
+					.iterator(); testSetIter.hasNext();) {
+				final Entry<SessionDataManager, Map<String, Instances>> testSet = testSetIter.next();
+				final SessionDataManager testSessionData = testSet.getKey();
+				final Path infilePath = allSessions.get(testSessionData);
+				LOGGER.info("Running cross-validation test on data from \"{}\".", infilePath);
+
+				final Map<String, Instances> classInstances = testSet.getValue();
+				final Instances oovInstances = smoother.redistributeMass(classInstances);
+				LOGGER.debug("{} instances for out-of-vocabulary class.", oovInstances.size());
+
+				final Map<String, Logistic> wordClassifiers = createWordClassifierMap(classInstances.entrySet());
+				final Instances testInsts = testInstsFactory.apply(TEST_INSTS_REL_NAME,
+						estimateTestInstanceCount(testSessionData));
+				final Function<String, Logistic> wordClassifierGetter = wordClassifiers::get;
+				final SessionTester sessionTester = beanFactory.getBean(SessionTester.class, wordClassifierGetter,
+						testInsts);
+
+				final SessionTester.Result testResults = sessionTester.testSession(testSessionData);
+				result.put(infilePath, testResults);
+			}
+			return result;
+		}
+
+	}
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(Tester.class);
 
 	private static final String TEST_INSTS_REL_NAME = "tested_entites";
@@ -294,6 +371,8 @@ public final class Tester {
 	@Inject
 	private BeanFactory beanFactory;
 
+	private final ExecutorService executor;
+
 	private final int iterCount;
 
 	@Inject
@@ -306,11 +385,19 @@ public final class Tester {
 	private TestSetFactory testSetFactory;
 
 	public Tester(final int iterCount) {
-		this.iterCount = iterCount;
+		this(iterCount, Executors.newSingleThreadExecutor());
 	}
 
-	public Result apply(final Iterable<Path> inpaths)
-			throws TrainingException, ExecutionException, IOException, ClassificationException {
+	public Tester(final int iterCount, final ExecutorService executor) {
+		this.iterCount = iterCount;
+		this.executor = executor;
+	}
+
+	public Tester(final int iterCount, final int parallelThreadCount) {
+		this(iterCount, Executors.newFixedThreadPool(parallelThreadCount));
+	}
+
+	public Result apply(final Iterable<Path> inpaths) throws IOException {
 		final Map<Path, SessionDataManager> infileSessionData = SessionDataManager.createFileSessionDataMap(inpaths);
 		final Map<SessionDataManager, Path> allSessions = infileSessionData.entrySet().stream()
 				.collect(Collectors.toMap(Entry::getValue, Entry::getKey));
@@ -321,31 +408,7 @@ public final class Tester {
 				"Starting cross-validation test using data from {} session(s), doing {} iterations on each dataset.",
 				allSessions.size(), iterCount);
 		for (int iter = 1; iter <= iterCount; ++iter) {
-			LOGGER.info("Training/testing iteration no. {}.", iter);
-			final Stream<Entry<SessionDataManager, Map<String, Instances>>> testSets = testSetFactory
-					.apply(allSessions);
-			for (final Iterator<Entry<SessionDataManager, Map<String, Instances>>> testSetIter = testSets
-					.iterator(); testSetIter.hasNext();) {
-				final Entry<SessionDataManager, Map<String, Instances>> testSet = testSetIter.next();
-				final SessionDataManager testSessionData = testSet.getKey();
-				final Path infilePath = allSessions.get(testSessionData);
-				LOGGER.info("Running cross-validation test on data from \"{}\".", infilePath);
-
-				final Map<String, Instances> classInstances = testSet.getValue();
-				final Instances oovInstances = smoother.redistributeMass(classInstances);
-				LOGGER.debug("{} instances for out-of-vocabulary class.", oovInstances.size());
-
-				final Map<String, Logistic> wordClassifiers = createWordClassifierMap(classInstances.entrySet());
-				final Instances testInsts = testInstsFactory.apply(TEST_INSTS_REL_NAME,
-						estimateTestInstanceCount(testSessionData));
-				final Function<String, Logistic> wordClassifierGetter = wordClassifiers::get;
-				final SessionTester sessionTester = beanFactory.getBean(SessionTester.class, wordClassifierGetter,
-						testInsts);
-
-				final SessionTester.Result testResults = sessionTester.testSession(testSessionData);
-				result.put(infilePath, testResults);
-			}
-
+			executor.submit(new CrossValidator(allSessions, iter, result));
 		}
 		LOGGER.info("Finished testing {} cross-validation dataset(s).", result.sessionResults.size());
 		return result;

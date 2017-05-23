@@ -27,7 +27,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map.Entry;
-import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
@@ -49,8 +48,6 @@ import iristk.system.Event;
 import se.kth.speech.coin.tangrams.analysis.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.Utterance;
 import se.kth.speech.coin.tangrams.analysis.UtteranceDialogueRepresentationStringFactory;
-import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
-import se.kth.speech.coin.tangrams.analysis.features.TrainingException;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.EventDialogueTester;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.SessionTester;
 
@@ -143,8 +140,7 @@ public final class DialogueAnalysisWriter {
 
 	private static final UtteranceDialogueRepresentationStringFactory UTT_DIAG_REPR_FACTORY = new UtteranceDialogueRepresentationStringFactory();
 
-	public static void main(final CommandLine cl)
-			throws ParseException, TrainingException, ExecutionException, IOException, ClassificationException {
+	public static void main(final CommandLine cl) throws ParseException, IOException {
 		if (cl.hasOption(Parameter.HELP.optName)) {
 			Parameter.printHelp();
 		} else {
@@ -166,8 +162,7 @@ public final class DialogueAnalysisWriter {
 		}
 	}
 
-	public static void main(final String[] args)
-			throws TrainingException, ExecutionException, IOException, ClassificationException {
+	public static void main(final String[] args) throws IOException {
 		final CommandLineParser parser = new DefaultParser();
 		try {
 			final CommandLine cl = parser.parse(Parameter.OPTIONS, args);

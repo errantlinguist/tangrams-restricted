@@ -36,7 +36,14 @@
 	</bean>
 	
 	<bean id="cross-validation-tester" class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.Tester">
-		<constructor-arg value="5" />
+		<constructor-arg>
+			<description>The number of training/testing iterations to perform.</description>
+			<value>5</value>
+		</constructor-arg>
+		<constructor-arg>
+			<description>The maximum number of parallel threads.</description>
+			<value>2</value>
+		</constructor-arg>
 	</bean>
 	
 </beans>
