@@ -168,7 +168,7 @@ public final class Tester {
 				} else {
 					newVal = oldVal;
 				}
-				final SessionTester.Result oldResults = newVal.set(iterNo, testResults);
+				final SessionTester.Result oldResults = newVal.set(iterNo - 1, testResults);
 				assert oldResults == null;
 				return newVal;
 			});
@@ -411,7 +411,7 @@ public final class Tester {
 				allSessions.size(), iterCount);
 		final ExecutorService executor = executorFactory.get();
 		final List<CompletableFuture<Void>> iterResultFutures = new ArrayList<>(iterCount);
-		for (int iter = 0; iter < iterCount; ++iter) {
+		for (int iter = 1; iter <= iterCount; ++iter) {
 			final CompletableFuture<Void> iterResultFuture = CompletableFuture
 					.runAsync(new CrossValidator(allSessions, iter, result), executor);
 			iterResultFutures.add(iterResultFuture);
