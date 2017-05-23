@@ -19,7 +19,6 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
@@ -410,14 +409,14 @@ public final class Tester {
 				"Starting cross-validation test using data from {} session(s), doing {} iterations on each dataset.",
 				allSessions.size(), iterCount);
 		final ExecutorService executor = executorFactory.get();
-		final List<CompletableFuture<Void>> iterResultFutures = new ArrayList<>(iterCount);
+		final Stream.Builder<CompletableFuture<Void>> iterResultFutures = Stream.builder();
 		for (int iter = 1; iter <= iterCount; ++iter) {
 			final CompletableFuture<Void> iterResultFuture = CompletableFuture
 					.runAsync(new CrossValidator(allSessions, iter, result), executor);
 			iterResultFutures.add(iterResultFuture);
 		}
 		final CompletableFuture<Void> allDone = CompletableFuture
-				.allOf(iterResultFutures.stream().toArray(CompletableFuture[]::new));
+				.allOf(iterResultFutures.build().toArray(CompletableFuture[]::new));
 		allDone.join();
 		LOGGER.info("Finished testing {} cross-validation dataset(s).", result.sessionResults.size());
 		LOGGER.debug("Shutting down executor service.");
