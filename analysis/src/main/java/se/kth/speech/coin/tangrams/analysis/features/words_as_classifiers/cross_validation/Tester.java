@@ -279,14 +279,13 @@ public final class Tester {
 		@Override
 		public void run() {
 			LOGGER.info("Training/testing iteration no. {}.", iterNo);
-			Map<Path, SessionTester.Result> iterResults;
 			try {
-				iterResults = crossValidate(allSessions);
+				final Map<Path, SessionTester.Result> iterResults = crossValidate(allSessions);
+				for (final Entry<Path, SessionTester.Result> iterResult : iterResults.entrySet()) {
+					result.put(iterResult.getKey(), iterNo, iterResult.getValue());
+				}
 			} catch (ExecutionException | TrainingException | IOException | ClassificationException e) {
 				throw new RuntimeException(e);
-			}
-			for (final Entry<Path, SessionTester.Result> iterResult : iterResults.entrySet()) {
-				result.put(iterResult.getKey(), iterNo, iterResult.getValue());
 			}
 		}
 
@@ -409,19 +408,22 @@ public final class Tester {
 				"Starting cross-validation test using data from {} session(s), doing {} iterations on each dataset.",
 				allSessions.size(), iterCount);
 		final ExecutorService executor = executorFactory.get();
-		final Stream.Builder<CompletableFuture<Void>> iterResultFutures = Stream.builder();
-		for (int iter = 1; iter <= iterCount; ++iter) {
-			final CompletableFuture<Void> iterResultFuture = CompletableFuture
-					.runAsync(new CrossValidator(allSessions, iter, result), executor);
-			iterResultFutures.add(iterResultFuture);
+		try {
+			final Stream.Builder<CompletableFuture<Void>> iterResultFutures = Stream.builder();
+			for (int iter = 1; iter <= iterCount; ++iter) {
+				final CompletableFuture<Void> iterResultFuture = CompletableFuture
+						.runAsync(new CrossValidator(allSessions, iter, result), executor);
+				iterResultFutures.add(iterResultFuture);
+			}
+			final CompletableFuture<Void> allDone = CompletableFuture
+					.allOf(iterResultFutures.build().toArray(CompletableFuture[]::new));
+			allDone.join();
+			LOGGER.info("Finished testing {} cross-validation dataset(s).", result.sessionResults.size());
+		} finally {
+			LOGGER.debug("Shutting down executor service.");
+			executor.shutdown();
+			LOGGER.debug("Successfully shut down executor service.");
 		}
-		final CompletableFuture<Void> allDone = CompletableFuture
-				.allOf(iterResultFutures.build().toArray(CompletableFuture[]::new));
-		allDone.join();
-		LOGGER.info("Finished testing {} cross-validation dataset(s).", result.sessionResults.size());
-		LOGGER.debug("Shutting down executor service.");
-		executor.shutdown();
-		LOGGER.debug("Successfully shut down executor service.");
 		return result;
 	}
 
