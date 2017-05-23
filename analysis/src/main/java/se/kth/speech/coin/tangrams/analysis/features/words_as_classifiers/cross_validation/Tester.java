@@ -34,6 +34,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -372,7 +373,7 @@ public final class Tester {
 	@Inject
 	private BeanFactory beanFactory;
 
-	private final ExecutorService executor;
+	private final Supplier<? extends ExecutorService> executorFactory;
 
 	private final int iterCount;
 
@@ -386,16 +387,16 @@ public final class Tester {
 	private TestSetFactory testSetFactory;
 
 	public Tester(final int iterCount) {
-		this(iterCount, Executors.newSingleThreadExecutor());
-	}
-
-	public Tester(final int iterCount, final ExecutorService executor) {
-		this.iterCount = iterCount;
-		this.executor = executor;
+		this(iterCount, Executors::newSingleThreadExecutor);
 	}
 
 	public Tester(final int iterCount, final int parallelThreadCount) {
-		this(iterCount, Executors.newFixedThreadPool(parallelThreadCount));
+		this(iterCount, () -> Executors.newFixedThreadPool(parallelThreadCount));
+	}
+
+	public Tester(final int iterCount, final Supplier<? extends ExecutorService> executorFactory) {
+		this.iterCount = iterCount;
+		this.executorFactory = executorFactory;
 	}
 
 	public Result apply(final Iterable<Path> inpaths) throws IOException {
@@ -408,6 +409,7 @@ public final class Tester {
 		LOGGER.info(
 				"Starting cross-validation test using data from {} session(s), doing {} iterations on each dataset.",
 				allSessions.size(), iterCount);
+		final ExecutorService executor = executorFactory.get();
 		final List<CompletableFuture<Void>> iterResultFutures = new ArrayList<>(iterCount);
 		for (int iter = 0; iter < iterCount; ++iter) {
 			final CompletableFuture<Void> iterResultFuture = CompletableFuture
@@ -418,18 +420,10 @@ public final class Tester {
 				.allOf(iterResultFutures.stream().toArray(CompletableFuture[]::new));
 		allDone.join();
 		LOGGER.info("Finished testing {} cross-validation dataset(s).", result.sessionResults.size());
-		return result;
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see java.lang.Object#finalize()
-	 */
-	@Override
-	protected void finalize() throws Throwable {
+		LOGGER.debug("Shutting down executor service.");
 		executor.shutdown();
-		super.finalize();
+		LOGGER.debug("Successfully shut down executor service.");
+		return result;
 	}
 
 }
