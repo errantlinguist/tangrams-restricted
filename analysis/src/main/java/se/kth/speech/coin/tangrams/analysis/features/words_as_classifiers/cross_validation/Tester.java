@@ -419,11 +419,16 @@ public final class Tester {
 					.allOf(iterResultFutures.build().toArray(CompletableFuture[]::new));
 			allDone.join();
 			LOGGER.info("Finished testing {} cross-validation dataset(s).", result.sessionResults.size());
-		} finally {
 			LOGGER.debug("Shutting down executor service.");
 			executor.shutdown();
 			LOGGER.debug("Successfully shut down executor service.");
+		} catch (final RuntimeException e) {
+			LOGGER.debug("Emergency executor service shutdown.");
+			executor.shutdownNow();
+			LOGGER.debug("Successfully shut down executor service.");
+			throw e;
 		}
+
 		return result;
 	}
 
