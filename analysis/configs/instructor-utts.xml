@@ -24,10 +24,6 @@
 		<constructor-arg value="__UNKNOWN__" />
 	</bean>
 
-	<bean id="diag-utt-seq-extractor" class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.utts.InstructorUtteranceExtractor">
-		<description>This bean defines logic for extracting the individual utterance(s) in a given dialogue to use for referent classification for that dialogue.</description>
-	</bean>
-	
 	<bean id="dialogue-classifier" class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.IsolatedUtteranceEventDialogueClassifier" scope="prototype">
 	</bean>
 	

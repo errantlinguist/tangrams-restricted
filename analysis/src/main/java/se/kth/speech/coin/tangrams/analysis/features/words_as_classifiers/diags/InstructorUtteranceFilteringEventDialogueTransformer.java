@@ -26,7 +26,6 @@ import org.slf4j.LoggerFactory;
 
 import se.kth.speech.coin.tangrams.analysis.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.Utterance;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.utts.InstructorUtteranceExtractor;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 
 /**
@@ -36,7 +35,7 @@ import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
  */
 public final class InstructorUtteranceFilteringEventDialogueTransformer implements EventDialogueTransformer {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(InstructorUtteranceExtractor.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(InstructorUtteranceFilteringEventDialogueTransformer.class);
 
 	private static Optional<List<Utterance>> createInstructorUttList(final EventDialogue uttDiag) {
 		return uttDiag.getLastEvent().map(event -> {
