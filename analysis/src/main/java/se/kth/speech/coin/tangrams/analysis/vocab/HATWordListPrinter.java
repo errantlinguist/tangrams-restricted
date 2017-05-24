@@ -93,7 +93,7 @@ public final class HATWordListPrinter {
 
 		private static void printHelp() {
 			final HelpFormatter formatter = new HelpFormatter();
-			formatter.printHelp(HATWordListPrinter.class.getSimpleName() + " INFILE", OPTIONS);
+			formatter.printHelp(HATWordListPrinter.class.getSimpleName() + " INPATHS...", OPTIONS);
 		}
 
 		protected final String optName;

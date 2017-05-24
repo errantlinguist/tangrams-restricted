@@ -120,7 +120,7 @@ public final class TrainingDataWriter {
 
 		private static void printHelp() {
 			final HelpFormatter formatter = new HelpFormatter();
-			formatter.printHelp(TrainingDataWriter.class.getSimpleName() + " INFILE", OPTIONS);
+			formatter.printHelp(TrainingDataWriter.class.getSimpleName() + " INPATHS...", OPTIONS);
 		}
 
 		protected final String optName;

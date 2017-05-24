@@ -134,7 +134,7 @@ public final class StatisticsWriter implements Consumer<Tester.Result> {
 
 		private static void printHelp() {
 			final HelpFormatter formatter = new HelpFormatter();
-			formatter.printHelp(StatisticsWriter.class.getSimpleName() + " INFILE", OPTIONS);
+			formatter.printHelp(StatisticsWriter.class.getSimpleName() + " INPATHS...", OPTIONS);
 		}
 
 		protected final String optName;

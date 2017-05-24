@@ -140,7 +140,7 @@ public final class DialogueAnalysisWriter implements Consumer<Tester.Result> {
 
 		private static void printHelp() {
 			final HelpFormatter formatter = new HelpFormatter();
-			formatter.printHelp(DialogueAnalysisWriter.class.getSimpleName() + " INFILE", OPTIONS);
+			formatter.printHelp(DialogueAnalysisWriter.class.getSimpleName() + " INPATHS...", OPTIONS);
 		}
 
 		protected final String optName;
