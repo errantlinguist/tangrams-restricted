@@ -35,7 +35,10 @@ import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
  */
 public final class InstructorUtteranceFilteringEventDialogueTransformer implements EventDialogueTransformer {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(InstructorUtteranceFilteringEventDialogueTransformer.class);
+	private static final List<Utterance> EMPTY_UTT_LIST = Collections.emptyList();
+
+	private static final Logger LOGGER = LoggerFactory
+			.getLogger(InstructorUtteranceFilteringEventDialogueTransformer.class);
 
 	private static Optional<List<Utterance>> createInstructorUttList(final EventDialogue uttDiag) {
 		return uttDiag.getLastEvent().map(event -> {
@@ -51,12 +54,12 @@ public final class InstructorUtteranceFilteringEventDialogueTransformer implemen
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.util.function.Function#apply(java.lang.Object)
 	 */
 	@Override
 	public EventDialogue apply(final EventDialogue diag) {
-		final List<Utterance> filteredUtts = createInstructorUttList(diag).orElse(Collections.emptyList());
+		final List<Utterance> filteredUtts = createInstructorUttList(diag).orElse(EMPTY_UTT_LIST);
 		return new EventDialogue(diag.getLastEvent(), filteredUtts);
 	}
 
