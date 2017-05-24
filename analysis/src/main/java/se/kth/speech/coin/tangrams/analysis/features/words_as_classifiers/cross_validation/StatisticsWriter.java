@@ -27,6 +27,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map.Entry;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
@@ -64,7 +65,7 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.Sessio
  *      </ul>
  *
  */
-public final class StatisticsWriter {
+public final class StatisticsWriter implements Consumer<Tester.Result> {
 
 	private enum Parameter implements Supplier<Option> {
 		APP_CONTEXT_DEFINITIONS("a") {
@@ -145,7 +146,8 @@ public final class StatisticsWriter {
 					final Tester tester = appCtx.getBean(Tester.class);
 					final Tester.Result testResults = tester.apply(inpaths);
 					try (PrintWriter out = Parameter.parseOutpath(cl)) {
-						printResults(testResults, out);
+						final StatisticsWriter writer = new StatisticsWriter(out);
+						writer.accept(testResults);
 					}
 				}
 			}
@@ -171,7 +173,14 @@ public final class StatisticsWriter {
 				totalDiagsTested, totalUttsTested, totalUttsTested / (double) totalDiagsTested);
 	}
 
-	private static void printResults(final Tester.Result testResults, final PrintWriter out) {
+	private final PrintWriter out;
+
+	public StatisticsWriter(final PrintWriter out) {
+		this.out = out;
+	}
+
+	@Override
+	public void accept(final Tester.Result testResults) {
 		out.println(COL_HEADERS.stream().collect(ROW_CELL_JOINER));
 
 		for (final Entry<Path, List<SessionTester.Result>> infileSessionTestResults : testResults.getSessionResults()
