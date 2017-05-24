@@ -393,13 +393,6 @@ public final class Tester {
 	@Inject
 	private EntityInstanceAttributeContext entInstAttrCtx;
 
-	// @Inject
-	// private BeanFactory beanFactory;
-
-	// @Inject
-	// private BiFunction<Function<String, Logistic>, Instances, SessionTester>
-	// sessionTesterFactory;
-
 	private final Supplier<? extends ExecutorService> executorFactory;
 
 	private final int iterCount;
