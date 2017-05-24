@@ -44,7 +44,7 @@
 			<constructor-arg>
 				<description>The number of training/testing iterations to perform.
 				</description>
-				<value>1</value>
+				<value>5</value>
 			</constructor-arg>
 			<constructor-arg>
 				<description>The maximum number of parallel threads.</description>
