@@ -37,7 +37,7 @@ import org.apache.lucene.analysis.util.CharArraySet;
 import se.kth.speech.coin.tangrams.analysis.SegmentUtteranceFactory;
 import se.kth.speech.hat.xsd.Annotation;
 import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
-import se.kth.speech.lucene.StringTokenizer;
+import se.kth.speech.nlp.lucene.StringTokenizer;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>

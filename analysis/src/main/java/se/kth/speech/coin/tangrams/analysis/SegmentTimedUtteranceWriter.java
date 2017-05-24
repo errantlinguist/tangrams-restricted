@@ -124,8 +124,6 @@ public final class SegmentTimedUtteranceWriter {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SegmentTimedUtteranceWriter.class);
 
-	private static final Collector<CharSequence, ?, String> WORD_JOINER = Collectors.joining(" ");
-
 	public static void main(final String[] args) throws JAXBException, IOException {
 		final CommandLineParser parser = new DefaultParser();
 		try {
@@ -166,7 +164,7 @@ public final class SegmentTimedUtteranceWriter {
 						final Stream<Utterance> utts = segUttFactory.create(segments.stream()).flatMap(List::stream);
 						final Stream<MutablePair<String, String>> uttReprTimestamps = utts.map(utt -> {
 							final double startTime = utt.getStartTime();
-							final String uttRepr = utt.getTokens().stream().collect(WORD_JOINER);
+							final String uttRepr = utt.getTokenStr();
 							LOGGER.debug("Start time for \"{}\" is{}.", uttRepr, startTime);
 							final LocalDateTime uttTime = TimestampArithmetic.createOffsetTimestamp(initialTime,
 									startTime);

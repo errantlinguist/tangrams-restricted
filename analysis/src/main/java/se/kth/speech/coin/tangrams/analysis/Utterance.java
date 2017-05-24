@@ -18,12 +18,16 @@ package se.kth.speech.coin.tangrams.analysis;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 public final class Utterance implements Comparable<Utterance> {
 
 	public static final Comparator<Utterance> NATURAL_COMPARATOR = Comparator.comparingDouble(Utterance::getStartTime)
-			.thenComparingDouble(Utterance::getEndTime).thenComparingInt(utt -> utt.getTokens().size()).thenComparing(Utterance::getSpeakerId)
-			.thenComparing(Utterance::getSegmentId);
+			.thenComparingDouble(Utterance::getEndTime).thenComparingInt(utt -> utt.getTokens().size())
+			.thenComparing(Utterance::getSpeakerId).thenComparing(Utterance::getSegmentId);
+
+	private static final Collector<CharSequence, ?, String> WORD_JOINER = Collectors.joining(" ");
 
 	private final double endTime;
 
@@ -35,13 +39,17 @@ public final class Utterance implements Comparable<Utterance> {
 
 	private final List<String> tokens;
 
-	public Utterance(final String segmentId, String speakerId, final List<String> tokens, final double startTime, final double endTime) {
+	private final String tokenStr;
+
+	public Utterance(final String segmentId, final String speakerId, final List<String> tokens, final double startTime,
+			final double endTime) {
 		if (startTime > endTime) {
 			throw new IllegalArgumentException("Start time is greater than end time.");
 		}
 		this.segmentId = segmentId;
 		this.speakerId = speakerId;
 		this.tokens = tokens;
+		tokenStr = tokens.stream().collect(WORD_JOINER);
 		this.startTime = startTime;
 		this.endTime = endTime;
 	}
@@ -56,37 +64,50 @@ public final class Utterance implements Comparable<Utterance> {
 		return NATURAL_COMPARATOR.compare(this, o);
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see java.lang.Object#equals(java.lang.Object)
 	 */
 	@Override
-	public boolean equals(Object obj) {
-		if (this == obj)
+	public boolean equals(final Object obj) {
+		if (this == obj) {
 			return true;
-		if (obj == null)
+		}
+		if (obj == null) {
 			return false;
-		if (!(obj instanceof Utterance))
+		}
+		if (!(obj instanceof Utterance)) {
 			return false;
-		Utterance other = (Utterance) obj;
-		if (Double.doubleToLongBits(endTime) != Double.doubleToLongBits(other.endTime))
+		}
+		final Utterance other = (Utterance) obj;
+		if (Double.doubleToLongBits(endTime) != Double.doubleToLongBits(other.endTime)) {
 			return false;
+		}
 		if (segmentId == null) {
-			if (other.segmentId != null)
+			if (other.segmentId != null) {
 				return false;
-		} else if (!segmentId.equals(other.segmentId))
+			}
+		} else if (!segmentId.equals(other.segmentId)) {
 			return false;
+		}
 		if (speakerId == null) {
-			if (other.speakerId != null)
+			if (other.speakerId != null) {
 				return false;
-		} else if (!speakerId.equals(other.speakerId))
+			}
+		} else if (!speakerId.equals(other.speakerId)) {
 			return false;
-		if (Double.doubleToLongBits(startTime) != Double.doubleToLongBits(other.startTime))
+		}
+		if (Double.doubleToLongBits(startTime) != Double.doubleToLongBits(other.startTime)) {
 			return false;
+		}
 		if (tokens == null) {
-			if (other.tokens != null)
+			if (other.tokens != null) {
 				return false;
-		} else if (!tokens.equals(other.tokens))
+			}
+		} else if (!tokens.equals(other.tokens)) {
 			return false;
+		}
 		return true;
 	}
 
@@ -125,7 +146,16 @@ public final class Utterance implements Comparable<Utterance> {
 		return tokens;
 	}
 
-	/* (non-Javadoc)
+	/**
+	 * @return the tokenStr
+	 */
+	public String getTokenStr() {
+		return tokenStr;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see java.lang.Object#hashCode()
 	 */
 	@Override
@@ -134,21 +164,23 @@ public final class Utterance implements Comparable<Utterance> {
 		int result = 1;
 		long temp;
 		temp = Double.doubleToLongBits(endTime);
-		result = prime * result + (int) (temp ^ (temp >>> 32));
-		result = prime * result + ((segmentId == null) ? 0 : segmentId.hashCode());
-		result = prime * result + ((speakerId == null) ? 0 : speakerId.hashCode());
+		result = prime * result + (int) (temp ^ temp >>> 32);
+		result = prime * result + (segmentId == null ? 0 : segmentId.hashCode());
+		result = prime * result + (speakerId == null ? 0 : speakerId.hashCode());
 		temp = Double.doubleToLongBits(startTime);
-		result = prime * result + (int) (temp ^ (temp >>> 32));
-		result = prime * result + ((tokens == null) ? 0 : tokens.hashCode());
+		result = prime * result + (int) (temp ^ temp >>> 32);
+		result = prime * result + (tokens == null ? 0 : tokens.hashCode());
 		return result;
 	}
 
-	/* (non-Javadoc)
+	/*
+	 * (non-Javadoc)
+	 * 
 	 * @see java.lang.Object#toString()
 	 */
 	@Override
 	public String toString() {
-		StringBuilder builder = new StringBuilder();
+		final StringBuilder builder = new StringBuilder();
 		builder.append("Utterance [startTime=");
 		builder.append(startTime);
 		builder.append(", endTime=");

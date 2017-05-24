@@ -21,8 +21,6 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.Properties;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
 import java.util.stream.DoubleStream.Builder;
 
 import edu.stanford.nlp.ling.CoreAnnotations.PartOfSpeechAnnotation;
@@ -72,8 +70,6 @@ final class StanfordNLPFeatureExtractor {
 		}
 	}
 
-	private static final Collector<CharSequence, ?, String> TOKEN_FORM_JOINER = Collectors.joining(" ");
-
 	/**
 	 * Gets a singleton instance of {@link StanfordCoreNLP}.
 	 *
@@ -94,7 +90,7 @@ final class StanfordNLPFeatureExtractor {
 	}
 
 	public void accept(final Utterance utt, final Builder vals) {
-		final Annotation annot = new Annotation(utt.getTokens().stream().collect(TOKEN_FORM_JOINER));
+		final Annotation annot = new Annotation(utt.getTokenStr());
 		annotator.annotate(annot);
 		final List<CoreMap> sents = annot.get(SentencesAnnotation.class);
 		// traversing the words in the current sentence
