@@ -16,13 +16,15 @@
 */
 package se.kth.speech.coin.tangrams.analysis;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
+import java.util.Properties;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -34,6 +36,9 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.github.errantlinguist.ClassProperties;
+import com.google.common.collect.Sets;
+
 import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
 import se.kth.speech.hat.xsd.Transcription;
 import se.kth.speech.hat.xsd.Transcription.T;
@@ -42,8 +47,7 @@ public final class SegmentUtteranceFactory {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SegmentUtteranceFactory.class);
 
-	private static final Set<String> META_LANGUAGE_TOKENS = new HashSet<>(
-			Arrays.asList("BREATH", "CLICK", "COUGH", "LAUGHTER", "META", "NOISE", "SNIFF", "SWEDISH", "UNKNOWN"));
+	private static final Set<String> META_LANGUAGE_TOKENS;
 
 	private static final Comparator<Segment> TEMPORAL_SEGMENT_COMPARATOR = Comparator.comparingDouble(Segment::getStart)
 			.thenComparingDouble(Segment::getEnd).thenComparing(seg -> seg.getTranscription().getSegmentOrT().size())
@@ -51,23 +55,22 @@ public final class SegmentUtteranceFactory {
 
 	private static final Collector<CharSequence, ?, String> TOKEN_JOINING_COLLECTOR = Collectors.joining(" ");
 
-	// private static Function<String, List<String>> createDefaultTokenizer() {
-	// final Predicate<String> nonMetaLanguagePredicate = token ->
-	// !META_LANGUAGE_TOKENS.contains(token);
-	// final StanfordNLPTokenizer stanfordTokenizer = new
-	// StanfordNLPTokenizer(nonMetaLanguagePredicate);
-	// return stanfordTokenizer;
-	// }
-
 	private static final Pattern WHITESPACE_PATTERN = Pattern.compile("\\s+");
 
-	// private static Function<String, Stream<String>> createDefaultTokenizer()
-	// {
-	// final Analyzer analyer = new BlacklistingAnalyzer(new
-	// CharArraySet(META_LANGUAGE_TOKENS, false));
-	// final StringTokenizer tokenizer = new StringTokenizer(analyer);
-	// return str -> tokenizer.apply(null, str).collect(Collectors.toList());
-	// }
+	static {
+		try {
+			final Properties props = ClassProperties.load(SegmentUtteranceFactory.class);
+			final Pattern metaLangTokenDelimPattern = Pattern.compile(",");
+			final String metaLangTokenStr = props.getProperty("metaLanguageTokens");
+			final String[] metaLangTokenArr = metaLangTokenDelimPattern.split(metaLangTokenStr);
+			META_LANGUAGE_TOKENS = Sets.newHashSetWithExpectedSize(metaLangTokenArr.length);
+			for (final String token : metaLangTokenArr) {
+				META_LANGUAGE_TOKENS.add(token);
+			}
+		} catch (final IOException e) {
+			throw new UncheckedIOException(e);
+		}
+	}
 
 	private static Function<String, List<String>> createDefaultTokenizer() {
 		final Predicate<String> nonMetaLanguagePredicate = token -> !META_LANGUAGE_TOKENS.contains(token);
