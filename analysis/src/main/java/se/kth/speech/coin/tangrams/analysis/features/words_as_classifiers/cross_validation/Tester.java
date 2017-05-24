@@ -279,7 +279,7 @@ public final class Tester {
 			this.iterNo = iterNo;
 			this.result = result;
 		}
-		
+
 		/*
 		 * (non-Javadoc)
 		 *
@@ -324,6 +324,7 @@ public final class Tester {
 						.getBean(ReferentConfidenceMapFactory.class, wordClassifierGetter, testInstFactory);
 				final EventDialogueClassifier diagClassifier = beanFactory.getBean(EventDialogueClassifier.class,
 						referentConfidenceMapFactory);
+
 				final SingleGameContextReferentEventDialogueTester diagTester = new SingleGameContextReferentEventDialogueTester(
 						diagClassifier, diagTransformer);
 				final SessionTester sessionTester = new SessionTester(diagTester);
@@ -340,6 +341,16 @@ public final class Tester {
 
 	private static final String TEST_INSTS_REL_NAME = "tested_entites";
 
+	private static Function<EventDialogue, EventDialogue> createChainedDialogueTransformer(
+			final Iterable<EventDialogueTransformer> diagTransformers) {
+		final Iterator<EventDialogueTransformer> transformerIter = diagTransformers.iterator();
+		Function<EventDialogue, EventDialogue> result = transformerIter.next();
+		while (transformerIter.hasNext()) {
+			result = result.andThen(transformerIter.next());
+		}
+		return result;
+	}
+
 	private static Logistic createWordClassifier(final Instances data) throws TrainingException {
 		final Logistic result = new Logistic();
 		try {
@@ -349,9 +360,6 @@ public final class Tester {
 		}
 		return result;
 	}
-	
-	@Inject
-	private EventDialogueTransformer diagTransformer;
 
 	private static Map<String, Logistic> createWordClassifierMap(final Set<Entry<String, Instances>> classInstances)
 			throws TrainingException {
@@ -390,6 +398,8 @@ public final class Tester {
 	@Inject
 	private BeanFactory beanFactory;
 
+	private final Function<? super EventDialogue, EventDialogue> diagTransformer;
+
 	@Inject
 	private EntityInstanceAttributeContext entInstAttrCtx;
 
@@ -409,17 +419,25 @@ public final class Tester {
 	@Inject
 	private TestSetFactory testSetFactory;
 
-	public Tester(final int iterCount) {
-		this(iterCount, Executors::newSingleThreadExecutor);
-	}
-
-	public Tester(final int iterCount, final int parallelThreadCount) {
-		this(iterCount, () -> Executors.newFixedThreadPool(parallelThreadCount));
-	}
-
-	public Tester(final int iterCount, final Supplier<? extends ExecutorService> executorFactory) {
+	public Tester(final Function<? super EventDialogue, EventDialogue> diagTransformer, final int iterCount,
+			final Supplier<? extends ExecutorService> executorFactory) {
+		this.diagTransformer = diagTransformer;
 		this.iterCount = iterCount;
 		this.executorFactory = executorFactory;
+	}
+
+	public Tester(final List<EventDialogueTransformer> diagTransformers, final int iterCount) {
+		this(diagTransformers, iterCount, Executors::newSingleThreadExecutor);
+	}
+
+	public Tester(final List<EventDialogueTransformer> diagTransformers, final int iterCount,
+			final int parallelThreadCount) {
+		this(diagTransformers, iterCount, () -> Executors.newFixedThreadPool(parallelThreadCount));
+	}
+
+	public Tester(final List<EventDialogueTransformer> diagTransformers, final int iterCount,
+			final Supplier<? extends ExecutorService> executorFactory) {
+		this(createChainedDialogueTransformer(diagTransformers), iterCount, executorFactory);
 	}
 
 	public Result apply(final Iterable<Path> inpaths) throws IOException {

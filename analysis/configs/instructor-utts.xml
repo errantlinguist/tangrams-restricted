@@ -39,11 +39,20 @@
 			scope="prototype">
 		</bean>
 
-		<bean id="dialogue-transformer"
-			class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.InstructorUtteranceFilteringEventDialogueTransformer"></bean>
+		<util:list id="dialogue-transformers" value-type="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EventDialogueTransformer">
+			<bean class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.InstructorUtteranceFilteringEventDialogueTransformer"></bean>
+			<bean class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.LuceneAnalyzingEventDialogueTransformer">
+				<constructor-arg>
+					<bean class="org.apache.lucene.analysis.standard.StandardAnalyzer">
+						<constructor-arg type="org.apache.lucene.analysis.util.CharArraySet" value="#{ T(org.apache.lucene.analysis.util.CharArraySet).EMPTY_SET }" />
+					</bean>
+				</constructor-arg>	
+			</bean>
+		</util:list>
 
 		<bean id="cross-validation-tester"
 			class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.Tester">
+			<constructor-arg ref="dialogue-transformers" />
 			<constructor-arg>
 				<description>The number of training/testing iterations to perform.
 				</description>
