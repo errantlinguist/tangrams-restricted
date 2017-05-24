@@ -6,38 +6,53 @@
 	http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
 	http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd">
 
-	<import resource="classpath:se/kth/speech/coin/tangrams/analysis/features/words_as_classifiers/cross_validation/context.xml" />
-	
-  	<bean id="random-generator" class="java.util.Random">
-		<description>The random number generator used in the application; Provide an explicit seed below in order to make the results reproducible from one run to the next.</description>
-		<constructor-arg value="1" />
-	</bean>
+	<import
+		resource="classpath:se/kth/speech/coin/tangrams/analysis/features/words_as_classifiers/cross_validation/context.xml" />
 
-	<bean id="negative-example-entity-id-factory"
-		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.RandomNotSelectedEntityIdFactory">
-		<constructor-arg ref="random-generator" />
-	</bean>
+	<beans>
+		<description>Finds one random negative example for each positive
+			example. For each dialogue, the only utterances used for training and
+			testing are those which were made by the instructor for the turn
+			which the dialogue has as a context.</description>
 
-	<bean id="smoother"
-		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordClassDiscountingSmoother">
-		<constructor-arg value="4" />
-		<constructor-arg value="__UNKNOWN__" />
-	</bean>
+		<bean id="random-generator" class="java.util.Random">
+			<description>The random number generator used in the application;
+				Provide an explicit seed below in order to make the results
+				reproducible from one run to the next.
+			</description>
+			<constructor-arg value="1" />
+		</bean>
 
-	<bean id="dialogue-classifier" class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.IsolatedUtteranceEventDialogueClassifier" scope="prototype">
-	</bean>
-	
-	<bean id="dialogue-transformer" class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.InstructorUtteranceFilteringEventDialogueTransformer"></bean>
+		<bean id="negative-example-entity-id-factory"
+			class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.RandomNotSelectedEntityIdFactory">
+			<constructor-arg ref="random-generator" />
+		</bean>
 
-	<bean id="cross-validation-tester" class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.Tester">
-		<constructor-arg>
-			<description>The number of training/testing iterations to perform.</description>
-			<value>1</value>
-		</constructor-arg>
-		<constructor-arg>
-			<description>The maximum number of parallel threads.</description>
-			<value>1</value>
-		</constructor-arg>
-	</bean>
-	
+		<bean id="smoother"
+			class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordClassDiscountingSmoother">
+			<constructor-arg value="4" />
+			<constructor-arg value="__UNKNOWN__" />
+		</bean>
+
+		<bean id="dialogue-classifier"
+			class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.IsolatedUtteranceEventDialogueClassifier"
+			scope="prototype">
+		</bean>
+
+		<bean id="dialogue-transformer"
+			class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.InstructorUtteranceFilteringEventDialogueTransformer"></bean>
+
+		<bean id="cross-validation-tester"
+			class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.Tester">
+			<constructor-arg>
+				<description>The number of training/testing iterations to perform.
+				</description>
+				<value>1</value>
+			</constructor-arg>
+			<constructor-arg>
+				<description>The maximum number of parallel threads.</description>
+				<value>1</value>
+			</constructor-arg>
+		</bean>
+	</beans>
 </beans>
