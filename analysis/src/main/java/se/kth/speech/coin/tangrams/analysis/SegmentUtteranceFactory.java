@@ -27,10 +27,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.regex.Pattern;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -53,10 +50,6 @@ public final class SegmentUtteranceFactory {
 			.thenComparingDouble(Segment::getEnd).thenComparing(seg -> seg.getTranscription().getSegmentOrT().size())
 			.thenComparing(Segment::getSource).thenComparing(Segment::getTrack).thenComparing(Segment::getId);
 
-	private static final Collector<CharSequence, ?, String> TOKEN_JOINING_COLLECTOR = Collectors.joining(" ");
-
-	private static final Pattern WHITESPACE_PATTERN = Pattern.compile("\\s+");
-
 	static {
 		try {
 			final Properties props = ClassProperties.load(SegmentUtteranceFactory.class);
@@ -70,17 +63,6 @@ public final class SegmentUtteranceFactory {
 		} catch (final IOException e) {
 			throw new UncheckedIOException(e);
 		}
-	}
-
-	private static Function<String, List<String>> createDefaultTokenizer() {
-		final Predicate<String> nonMetaLanguagePredicate = token -> !META_LANGUAGE_TOKENS.contains(token);
-		return createWhitelistingTokenizer(nonMetaLanguagePredicate);
-	}
-
-	private static Function<String, List<String>> createWhitelistingTokenizer(
-			final Predicate<String> whitelistingPredicate) {
-		return str -> Arrays
-				.asList(WHITESPACE_PATTERN.splitAsStream(str).filter(whitelistingPredicate).toArray(String[]::new));
 	}
 
 	private static int estimateTokenCount(final List<Object> children) {
@@ -126,21 +108,8 @@ public final class SegmentUtteranceFactory {
 
 	private final Function<? super Segment, String> segmentSpeakerIdFactory;
 
-	private final Function<? super String, ? extends List<String>> tokenizer;
-
 	public SegmentUtteranceFactory(final Function<? super Segment, String> segmentSpeakerIdFactory) {
-		this(segmentSpeakerIdFactory, createDefaultTokenizer());
-	}
-
-	public SegmentUtteranceFactory(final Function<? super Segment, String> segmentSpeakerIdFactory,
-			final Function<? super String, ? extends List<String>> tokenizer) {
 		this.segmentSpeakerIdFactory = segmentSpeakerIdFactory;
-		this.tokenizer = tokenizer;
-	}
-
-	public SegmentUtteranceFactory(final Function<? super Segment, String> segmentSpeakerIdFactory,
-			final Predicate<String> whitelistingPredicate) {
-		this(segmentSpeakerIdFactory, createWhitelistingTokenizer(whitelistingPredicate));
 	}
 
 	public List<Utterance> create(final Segment segment) {
@@ -173,12 +142,13 @@ public final class SegmentUtteranceFactory {
 						tokens.add((T) child);
 					}
 				}
-				final String uttRepr = tokens.stream().map(T::getContent).collect(TOKEN_JOINING_COLLECTOR);
-				final List<String> tokenForms = tokenizer.apply(uttRepr);
-				if (tokenForms.isEmpty()) {
+				final String[] contentTokens = tokens.stream().map(T::getContent).map(String::trim)
+						.filter(token -> !token.isEmpty()).filter(token -> !META_LANGUAGE_TOKENS.contains(token))
+						.toArray(String[]::new);
+				if (contentTokens.length < 1) {
 					// Do nothing
 				} else {
-					final Utterance utt = new Utterance(parentSegmentId, speakerId, tokenForms,
+					final Utterance utt = new Utterance(parentSegmentId, speakerId, Arrays.asList(contentTokens),
 							segStartTime.doubleValue(), segEndTime.doubleValue());
 					result.add(utt);
 				}

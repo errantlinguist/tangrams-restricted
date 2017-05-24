@@ -22,7 +22,6 @@ import java.net.URL;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.function.Predicate;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
@@ -57,14 +56,9 @@ public final class SegmentUtteranceFactoryTest {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SegmentUtteranceFactoryTest.class);
 
-	private static final SegmentUtteranceFactory TEST_INST;
+	private static final SegmentUtteranceFactory TEST_INST = new SegmentUtteranceFactory(Segment::getSource);
 
 	private static final Collector<CharSequence, ?, String> TOKEN_JOINING_COLLECTOR = Collectors.joining(" ");
-
-	static {
-		final Predicate<String> whitelistingTokenFilter = token -> true;
-		TEST_INST = new SegmentUtteranceFactory(Segment::getSource, whitelistingTokenFilter);
-	}
 
 	@BeforeClass
 	public static void loadAnnotations() throws URISyntaxException, JAXBException {

@@ -18,7 +18,6 @@ package se.kth.speech.coin.tangrams.analysis.vocab;
 
 import java.text.Collator;
 import java.util.EnumSet;
-import java.util.List;
 import java.util.Locale;
 import java.util.NavigableSet;
 import java.util.Set;
@@ -28,16 +27,10 @@ import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
-import java.util.stream.Collectors;
-
-import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.standard.StandardAnalyzer;
-import org.apache.lucene.analysis.util.CharArraySet;
 
 import se.kth.speech.coin.tangrams.analysis.SegmentUtteranceFactory;
 import se.kth.speech.hat.xsd.Annotation;
 import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
-import se.kth.speech.nlp.lucene.StringTokenizer;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -55,17 +48,6 @@ public final class AnnotationVocabularyCollector
 		return c1;
 	};
 
-	private static StandardAnalyzer createAnalyzer(final Locale locale) {
-		final CharArraySet stopwords = CharArraySet.EMPTY_SET;
-		return new StandardAnalyzer(stopwords);
-	}
-
-	private static Function<String, List<String>> createDefaultTokenizer(final Locale locale) {
-		final Analyzer analyzer = createAnalyzer(locale);
-		final StringTokenizer wrapped = new StringTokenizer(analyzer);
-		return content -> wrapped.apply(null, content).collect(Collectors.toList());
-	}
-
 	private final BiConsumer<NavigableSet<String>, Annotation> accumulator;
 
 	private final Supplier<NavigableSet<String>> supplier;
@@ -74,18 +56,17 @@ public final class AnnotationVocabularyCollector
 		this(WordLists.DEFAULT_LOCALE);
 	}
 
-	public AnnotationVocabularyCollector(final Collator collator,
-			final Function<? super String, ? extends List<String>> tokenizer) {
+	public AnnotationVocabularyCollector(final Collator collator) {
 		// Use a TreeSet so that iteration order is stable across
 		// invocations, meaning that a feature with a given index will
 		// always have the same meaning
 		supplier = () -> new TreeSet<>(collator);
-		final SegmentUtteranceFactory segUttFactory = new SegmentUtteranceFactory(Segment::getSource, tokenizer);
+		final SegmentUtteranceFactory segUttFactory = new SegmentUtteranceFactory(Segment::getSource);
 		accumulator = new WordLists.WordAccumulator<>(segUttFactory::create);
 	}
 
 	public AnnotationVocabularyCollector(final Locale locale) {
-		this(Collator.getInstance(locale), createDefaultTokenizer(locale));
+		this(Collator.getInstance(locale));
 	}
 
 	/*
