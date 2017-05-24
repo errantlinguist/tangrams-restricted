@@ -50,12 +50,6 @@ public final class InstructorUtteranceFilteringEventDialogueTransformer implemen
 		});
 	}
 
-	/**
-	 *
-	 */
-	public InstructorUtteranceFilteringEventDialogueTransformer() {
-	}
-
 	/*
 	 * (non-Javadoc)
 	 * 
