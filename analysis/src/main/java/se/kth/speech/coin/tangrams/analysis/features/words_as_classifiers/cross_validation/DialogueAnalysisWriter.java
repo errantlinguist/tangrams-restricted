@@ -27,6 +27,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map.Entry;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
@@ -70,7 +71,7 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.Sessio
  *      </ul>
  *
  */
-public final class DialogueAnalysisWriter {
+public final class DialogueAnalysisWriter implements Consumer<Tester.Result> {
 
 	private enum Parameter implements Supplier<Option> {
 		APP_CONTEXT_DEFINITIONS("a") {
@@ -155,7 +156,7 @@ public final class DialogueAnalysisWriter {
 					final Tester.Result testResults = tester.apply(inpaths);
 					try (PrintWriter out = Parameter.parseOutpath(cl)) {
 						final DialogueAnalysisWriter writer = new DialogueAnalysisWriter(out);
-						writer.write(testResults);
+						writer.accept(testResults);
 					}
 				}
 			}
@@ -179,7 +180,8 @@ public final class DialogueAnalysisWriter {
 		this.out = out;
 	}
 
-	private void write(final Tester.Result cvtestResults) {
+	@Override
+	public void accept(final Tester.Result cvtestResults) {
 		out.println(COL_HEADERS.stream().collect(ROW_CELL_JOINER));
 
 		for (final Entry<Path, List<SessionTester.Result>> infileSessionResults : cvtestResults.getSessionResults()
