@@ -27,6 +27,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map.Entry;
+import java.util.OptionalInt;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
@@ -88,6 +89,14 @@ public final class DialogueAnalysisWriter implements Consumer<Tester.Result> {
 				return Option.builder(optName).longOpt("help").desc("Prints this message.").build();
 			}
 		},
+		ITER_COUNT("i") {
+			@Override
+			public Option get() {
+				return Option.builder(optName).longOpt("iter-count")
+						.desc("The number of training/testing iterations to run for each cross-validation dataset.")
+						.hasArgs().argName("count").type(Number.class).build();
+			}
+		},
 		OUTPATH("o") {
 			@Override
 			public Option get() {
@@ -101,6 +110,17 @@ public final class DialogueAnalysisWriter implements Consumer<Tester.Result> {
 		private static Options createOptions() {
 			final Options result = new Options();
 			Arrays.stream(Parameter.values()).map(Parameter::get).forEach(result::addOption);
+			return result;
+		}
+
+		private static OptionalInt parseIterCount(final CommandLine cl) throws ParseException {
+			final Number optVal = (Number) cl.getParsedOptionValue(Parameter.ITER_COUNT.optName);
+			final OptionalInt result;
+			if (optVal == null) {
+				result = OptionalInt.empty();
+			} else {
+				result = OptionalInt.of(optVal.intValue());
+			}
 			return result;
 		}
 
@@ -151,8 +171,11 @@ public final class DialogueAnalysisWriter implements Consumer<Tester.Result> {
 
 			} else {
 				final String[] appCtxLocs = cl.getOptionValues(Parameter.APP_CONTEXT_DEFINITIONS.optName);
+				final OptionalInt iterCount = Parameter.parseIterCount(cl);
+				LOGGER.info("Will run {} training/testing iteration(s).", iterCount);
 				try (final FileSystemXmlApplicationContext appCtx = new FileSystemXmlApplicationContext(appCtxLocs)) {
 					final Tester tester = appCtx.getBean(Tester.class);
+					iterCount.ifPresent(tester::setIterCount);
 					final Tester.Result testResults = tester.apply(inpaths);
 					try (PrintWriter out = Parameter.parseOutpath(cl)) {
 						final DialogueAnalysisWriter writer = new DialogueAnalysisWriter(out);

@@ -405,7 +405,7 @@ public final class Tester {
 
 	private final Supplier<? extends ExecutorService> executorFactory;
 
-	private final int iterCount;
+	private int iterCount = 1;
 
 	@Inject
 	private Supplier<LoadingCache<SessionDataManager, SessionEventDialogueManager>> sessionDiagMgrCacheSupplier;
@@ -419,25 +419,23 @@ public final class Tester {
 	@Inject
 	private TestSetFactory testSetFactory;
 
-	public Tester(final Function<? super EventDialogue, EventDialogue> diagTransformer, final int iterCount,
+	public Tester(final Function<? super EventDialogue, EventDialogue> diagTransformer,
 			final Supplier<? extends ExecutorService> executorFactory) {
 		this.diagTransformer = diagTransformer;
-		this.iterCount = iterCount;
 		this.executorFactory = executorFactory;
 	}
 
-	public Tester(final List<EventDialogueTransformer> diagTransformers, final int iterCount) {
-		this(diagTransformers, iterCount, Executors::newSingleThreadExecutor);
+	public Tester(final List<EventDialogueTransformer> diagTransformers) {
+		this(diagTransformers, Executors::newSingleThreadExecutor);
 	}
 
-	public Tester(final List<EventDialogueTransformer> diagTransformers, final int iterCount,
-			final int parallelThreadCount) {
-		this(diagTransformers, iterCount, () -> Executors.newFixedThreadPool(parallelThreadCount));
+	public Tester(final List<EventDialogueTransformer> diagTransformers, final int parallelThreadCount) {
+		this(diagTransformers, () -> Executors.newFixedThreadPool(parallelThreadCount));
 	}
 
-	public Tester(final List<EventDialogueTransformer> diagTransformers, final int iterCount,
+	public Tester(final List<EventDialogueTransformer> diagTransformers,
 			final Supplier<? extends ExecutorService> executorFactory) {
-		this(createChainedDialogueTransformer(diagTransformers), iterCount, executorFactory);
+		this(createChainedDialogueTransformer(diagTransformers), executorFactory);
 	}
 
 	public Result apply(final Iterable<Path> inpaths) throws IOException {
@@ -473,6 +471,21 @@ public final class Tester {
 		}
 
 		return result;
+	}
+
+	/**
+	 * @return the iterCount
+	 */
+	public int getIterCount() {
+		return iterCount;
+	}
+
+	/**
+	 * @param iterCount
+	 *            the iterCount to set
+	 */
+	public void setIterCount(final int iterCount) {
+		this.iterCount = iterCount;
 	}
 
 }

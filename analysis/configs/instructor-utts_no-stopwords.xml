@@ -13,7 +13,7 @@
 		<description>Finds one random negative example for each positive
 			example. For each dialogue, the only utterances used for training and
 			testing are those which were made by the instructor for the turn
-			which the dialogue has as a context.</description>
+			which the dialogue has as a context. Filters out English stopwords in each utterance.</description>
 
 		<bean id="random-generator" class="java.util.Random">
 			<description>The random number generator used in the application;
@@ -68,13 +68,8 @@
 		</util:list>
 
 		<bean id="cross-validation-tester"
-			class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.Tester">
+			class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.Tester" scope="prototype">
 			<constructor-arg ref="dialogue-transformers" />
-			<constructor-arg>
-				<description>The number of training/testing iterations to perform.
-				</description>
-				<value>5</value>
-			</constructor-arg>
 			<constructor-arg>
 				<description>The maximum number of parallel threads.</description>
 				<value>1</value>
