@@ -113,7 +113,9 @@ public final class StatisticsWriter implements Consumer<Tester.Result> {
 			if (optVal == null) {
 				result = OptionalInt.empty();
 			} else {
-				result = OptionalInt.of(optVal.intValue());
+				final int val = optVal.intValue();
+				LOGGER.info("Will run {} training/testing iteration(s).", val);
+				result = OptionalInt.of(val);
 			}
 			return result;
 		}
@@ -163,7 +165,6 @@ public final class StatisticsWriter implements Consumer<Tester.Result> {
 			} else {
 				final String[] appCtxLocs = cl.getOptionValues(Parameter.APP_CONTEXT_DEFINITIONS.optName);
 				final OptionalInt iterCount = Parameter.parseIterCount(cl);
-				LOGGER.info("Will run {} training/testing iteration(s).", iterCount);
 				try (final FileSystemXmlApplicationContext appCtx = new FileSystemXmlApplicationContext(appCtxLocs)) {
 					final Tester tester = appCtx.getBean(Tester.class);
 					iterCount.ifPresent(tester::setIterCount);
