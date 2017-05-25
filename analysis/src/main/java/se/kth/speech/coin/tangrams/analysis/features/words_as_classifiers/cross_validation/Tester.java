@@ -63,7 +63,6 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.Sessio
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.SingleGameContextReferentEventDialogueTester;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordClassDiscountingSmoother;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EventDialogueClassifier;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EventDialogueTransformer;
 import weka.classifiers.functions.Logistic;
 import weka.core.Instance;
 import weka.core.Instances;
@@ -341,16 +340,6 @@ public final class Tester {
 
 	private static final String TEST_INSTS_REL_NAME = "tested_entites";
 
-	private static Function<EventDialogue, EventDialogue> createChainedDialogueTransformer(
-			final Iterable<EventDialogueTransformer> diagTransformers) {
-		final Iterator<EventDialogueTransformer> transformerIter = diagTransformers.iterator();
-		Function<EventDialogue, EventDialogue> result = transformerIter.next();
-		while (transformerIter.hasNext()) {
-			result = result.andThen(transformerIter.next());
-		}
-		return result;
-	}
-
 	private static Logistic createWordClassifier(final Instances data) throws TrainingException {
 		final Logistic result = new Logistic();
 		try {
@@ -419,23 +408,18 @@ public final class Tester {
 	@Inject
 	private TestSetFactory testSetFactory;
 
+	public Tester(final Function<? super EventDialogue, EventDialogue> diagTransformer) {
+		this(diagTransformer, Executors::newSingleThreadExecutor);
+	}
+
+	public Tester(final Function<? super EventDialogue, EventDialogue> diagTransformer, final int parallelThreadCount) {
+		this(diagTransformer, () -> Executors.newFixedThreadPool(parallelThreadCount));
+	}
+
 	public Tester(final Function<? super EventDialogue, EventDialogue> diagTransformer,
 			final Supplier<? extends ExecutorService> executorFactory) {
 		this.diagTransformer = diagTransformer;
 		this.executorFactory = executorFactory;
-	}
-
-	public Tester(final List<EventDialogueTransformer> diagTransformers) {
-		this(diagTransformers, Executors::newSingleThreadExecutor);
-	}
-
-	public Tester(final List<EventDialogueTransformer> diagTransformers, final int parallelThreadCount) {
-		this(diagTransformers, () -> Executors.newFixedThreadPool(parallelThreadCount));
-	}
-
-	public Tester(final List<EventDialogueTransformer> diagTransformers,
-			final Supplier<? extends ExecutorService> executorFactory) {
-		this(createChainedDialogueTransformer(diagTransformers), executorFactory);
 	}
 
 	public Result apply(final Iterable<Path> inpaths) throws IOException {

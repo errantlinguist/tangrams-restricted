@@ -23,10 +23,6 @@ import java.util.stream.Stream;
 
 import org.apache.lucene.analysis.Analyzer;
 
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
-
 import se.kth.speech.coin.tangrams.analysis.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.Utterance;
 import se.kth.speech.nlp.lucene.StringTokenizer;
@@ -36,7 +32,7 @@ import se.kth.speech.nlp.lucene.StringTokenizer;
  * @since 24 May 2017
  *
  */
-public final class LuceneAnalyzingEventDialogueTransformer implements EventDialogueTransformer {
+public final class LuceneAnalyzingEventDialogueTransformer implements Function<EventDialogue,EventDialogue> {
 
 	private static Function<String, Stream<String>> createTokenTransformer(final Analyzer analyzer) {
 		final StringTokenizer ssTokenizer = new StringTokenizer(analyzer);
@@ -44,9 +40,6 @@ public final class LuceneAnalyzingEventDialogueTransformer implements EventDialo
 	}
 
 	private final Function<? super String, Stream<String>> tokenTransformer;
-
-	private final LoadingCache<Utterance, Stream<Utterance>> transformedUtts = CacheBuilder.newBuilder().weakKeys()
-			.softValues().build(CacheLoader.from(this::transformUtt));
 
 	public LuceneAnalyzingEventDialogueTransformer(final Analyzer analyzer) {
 		this(createTokenTransformer(analyzer));
@@ -64,7 +57,7 @@ public final class LuceneAnalyzingEventDialogueTransformer implements EventDialo
 	@Override
 	public EventDialogue apply(final EventDialogue diag) {
 		final List<Utterance> newUtts = Arrays
-				.asList(diag.getUtts().stream().flatMap(transformedUtts::getUnchecked).toArray(Utterance[]::new));
+				.asList(diag.getUtts().stream().flatMap(this::transformUtt).toArray(Utterance[]::new));
 		return new EventDialogue(diag.getLastEvent(), newUtts);
 	}
 

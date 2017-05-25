@@ -20,13 +20,10 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 
 import se.kth.speech.coin.tangrams.analysis.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.Utterance;
@@ -37,7 +34,7 @@ import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
  * @since 23 May 2017
  *
  */
-public final class InstructorUtteranceFilteringEventDialogueTransformer implements EventDialogueTransformer {
+public final class InstructorUtteranceFilteringEventDialogueTransformer implements Function<EventDialogue,EventDialogue> {
 
 	private static final List<Utterance> EMPTY_UTT_LIST = Collections.emptyList();
 
@@ -56,9 +53,6 @@ public final class InstructorUtteranceFilteringEventDialogueTransformer implemen
 		});
 	}
 
-	private final LoadingCache<EventDialogue, EventDialogue> transformedDiags = CacheBuilder.newBuilder().weakKeys()
-			.softValues().build(CacheLoader.from(this::transform));
-
 	/*
 	 * (non-Javadoc)
 	 *
@@ -66,10 +60,6 @@ public final class InstructorUtteranceFilteringEventDialogueTransformer implemen
 	 */
 	@Override
 	public EventDialogue apply(final EventDialogue diag) {
-		return transformedDiags.getUnchecked(diag);
-	}
-
-	private EventDialogue transform(final EventDialogue diag) {
 		final List<Utterance> filteredUtts = createInstructorUttList(diag).orElse(EMPTY_UTT_LIST);
 		return new EventDialogue(diag.getLastEvent(), filteredUtts);
 	}
