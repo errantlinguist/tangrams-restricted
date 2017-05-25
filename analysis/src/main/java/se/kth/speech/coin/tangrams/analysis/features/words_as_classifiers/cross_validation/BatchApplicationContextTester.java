@@ -156,10 +156,10 @@ public final class BatchApplicationContextTester {
 						}
 						LOGGER.info("Wrote cross-validation statistics to \"{}\".", statsFilePath);
 
-						final Path diagAnalysisPath = actualOutdirPath.resolve("diag-analysis.tsv");
+						final Path diagAnalysisPath = actualOutdirPath.resolve("diag-analysis-firstiter.tsv");
 						try (final PrintWriter out = new PrintWriter(Files.newBufferedWriter(diagAnalysisPath,
 								StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING))) {
-							final DialogueAnalysisWriter writer = new DialogueAnalysisWriter(out);
+							final DialogueAnalysisWriter writer = new DialogueAnalysisWriter(out, 1);
 							writer.accept(testResults);
 						}
 						LOGGER.info("Wrote dialogue analysis to \"{}\".", diagAnalysisPath);

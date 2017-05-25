@@ -179,7 +179,7 @@ public final class DialogueAnalysisWriter implements Consumer<Tester.Result> {
 					iterCount.ifPresent(tester::setIterCount);
 					final Tester.Result testResults = tester.apply(inpaths);
 					try (PrintWriter out = Parameter.parseOutpath(cl)) {
-						final DialogueAnalysisWriter writer = new DialogueAnalysisWriter(out);
+						final DialogueAnalysisWriter writer = new DialogueAnalysisWriter(out, tester.getIterCount());
 						writer.accept(testResults);
 					}
 				}
@@ -200,8 +200,11 @@ public final class DialogueAnalysisWriter implements Consumer<Tester.Result> {
 
 	private final PrintWriter out;
 
-	public DialogueAnalysisWriter(final PrintWriter out) {
+	private final int maxIters;
+
+	public DialogueAnalysisWriter(final PrintWriter out, final int maxIters) {
 		this.out = out;
+		this.maxIters = maxIters;
 	}
 
 	@Override
@@ -215,13 +218,18 @@ public final class DialogueAnalysisWriter implements Consumer<Tester.Result> {
 			for (final ListIterator<SessionTester.Result> sessionResultIter = sessionResultList
 					.listIterator(); sessionResultIter.hasNext();) {
 				final SessionTester.Result sessionResults = sessionResultIter.next();
+				// NOTE: This should remain here, after "Iterator.next()", so
+				// that the printed first iteration is "1" rather than "0"
 				final int iterNo = sessionResultIter.nextIndex();
-				{
+				if (iterNo <= maxIters) {
 					int sessionDialogueOrder = 1;
 					for (final Entry<EventDialogue, EventDialogueTester.Result> diagTestResults : sessionResults
 							.getDialogueTestResults()) {
 						writeRow(inpath, iterNo, sessionDialogueOrder++, diagTestResults);
 					}
+				} else {
+					LOGGER.debug("Maximum iteration output reached ({}).", maxIters);
+					break;
 				}
 			}
 		}
