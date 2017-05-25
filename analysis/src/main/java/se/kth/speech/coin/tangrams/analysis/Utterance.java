@@ -29,20 +29,20 @@ public final class Utterance implements Comparable<Utterance> {
 
 	private static final Collector<CharSequence, ?, String> WORD_JOINER = Collectors.joining(" ");
 
-	private final double endTime;
+	private final float endTime;
 
 	private final String segmentId;
 
 	private final String speakerId;
 
-	private final double startTime;
+	private final float startTime;
 
 	private final List<String> tokens;
 
 	private final String tokenStr;
 
-	public Utterance(final String segmentId, final String speakerId, final List<String> tokens, final double startTime,
-			final double endTime) {
+	public Utterance(final String segmentId, final String speakerId, final List<String> tokens, final float startTime,
+			final float endTime) {
 		if (startTime > endTime) {
 			throw new IllegalArgumentException("Start time is greater than end time.");
 		}
@@ -81,7 +81,7 @@ public final class Utterance implements Comparable<Utterance> {
 			return false;
 		}
 		final Utterance other = (Utterance) obj;
-		if (Double.doubleToLongBits(endTime) != Double.doubleToLongBits(other.endTime)) {
+		if (Float.floatToIntBits(endTime) != Float.floatToIntBits(other.endTime)) {
 			return false;
 		}
 		if (segmentId == null) {
@@ -98,7 +98,14 @@ public final class Utterance implements Comparable<Utterance> {
 		} else if (!speakerId.equals(other.speakerId)) {
 			return false;
 		}
-		if (Double.doubleToLongBits(startTime) != Double.doubleToLongBits(other.startTime)) {
+		if (Float.floatToIntBits(startTime) != Float.floatToIntBits(other.startTime)) {
+			return false;
+		}
+		if (tokenStr == null) {
+			if (other.tokenStr != null) {
+				return false;
+			}
+		} else if (!tokenStr.equals(other.tokenStr)) {
 			return false;
 		}
 		if (tokens == null) {
@@ -114,7 +121,7 @@ public final class Utterance implements Comparable<Utterance> {
 	/**
 	 * @return the endTime
 	 */
-	public double getEndTime() {
+	public float getEndTime() {
 		return endTime;
 	}
 
@@ -135,7 +142,7 @@ public final class Utterance implements Comparable<Utterance> {
 	/**
 	 * @return the startTime
 	 */
-	public double getStartTime() {
+	public float getStartTime() {
 		return startTime;
 	}
 
@@ -162,20 +169,18 @@ public final class Utterance implements Comparable<Utterance> {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		long temp;
-		temp = Double.doubleToLongBits(endTime);
-		result = prime * result + (int) (temp ^ temp >>> 32);
+		result = prime * result + Float.floatToIntBits(endTime);
 		result = prime * result + (segmentId == null ? 0 : segmentId.hashCode());
 		result = prime * result + (speakerId == null ? 0 : speakerId.hashCode());
-		temp = Double.doubleToLongBits(startTime);
-		result = prime * result + (int) (temp ^ temp >>> 32);
+		result = prime * result + Float.floatToIntBits(startTime);
+		result = prime * result + (tokenStr == null ? 0 : tokenStr.hashCode());
 		result = prime * result + (tokens == null ? 0 : tokens.hashCode());
 		return result;
 	}
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#toString()
 	 */
 	@Override

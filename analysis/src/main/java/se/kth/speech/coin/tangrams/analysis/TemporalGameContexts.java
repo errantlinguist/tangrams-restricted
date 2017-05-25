@@ -33,7 +33,7 @@ import se.kth.speech.coin.tangrams.iristk.EventTimes;
  */
 public final class TemporalGameContexts {
 
-	public static Stream<GameContext> create(final GameHistory history, final double startTime, final double endTime,
+	public static Stream<GameContext> create(final GameHistory history, final float startTime, final float endTime,
 			final String perspectivePlayerId) {
 		final NavigableMap<LocalDateTime, List<Event>> events = history.getEvents();
 		final LocalDateTime gameStartTime = history.getStartTime();

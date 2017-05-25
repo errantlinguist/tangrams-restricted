@@ -27,7 +27,7 @@ final class PlayerGameContextFactory {
 		this.playerGameHistoryGetter = playerGameHistoryGetter;
 	}
 
-	public Stream<GameContext> create(final double startTime, final double endTime,
+	public Stream<GameContext> create(final float startTime, final float endTime,
 			final String perspectivePlayerId) {
 		UtteranceSelectedEntityDescriptionWriter.LOGGER.debug("Creating a context based on the logged game history from the perspective of player \"{}\".",
 				perspectivePlayerId);

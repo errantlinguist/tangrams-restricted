@@ -149,7 +149,7 @@ public final class SegmentUtteranceFactory {
 					// Do nothing
 				} else {
 					final Utterance utt = new Utterance(parentSegmentId, speakerId, Arrays.asList(contentTokens),
-							segStartTime.doubleValue(), segEndTime.doubleValue());
+							segStartTime, segEndTime);
 					result.add(utt);
 				}
 			}
@@ -164,13 +164,13 @@ public final class SegmentUtteranceFactory {
 
 	// private Optional<Utterance> create(final String segmentId, final List<T>
 	// tokenAnnots,
-	// final double previousUttEndTime, final double nextUttStartTime) {
+	// final float previousUttEndTime, final float nextUttStartTime) {
 	// final Float firstTokenStartTime = tokenAnnots.get(0).getStart();
-	// final double seqStartTime = firstTokenStartTime == null ?
+	// final float seqStartTime = firstTokenStartTime == null ?
 	// previousUttEndTime : firstTokenStartTime;
 	// final Float lastTokenEndTime = tokenAnnots.get(tokenAnnots.size() -
 	// 1).getEnd();
-	// final double seqEndTime = lastTokenEndTime == null ? nextUttStartTime :
+	// final float seqEndTime = lastTokenEndTime == null ? nextUttStartTime :
 	// lastTokenEndTime;
 	// final Stream<String> tokenForms =
 	// tokenAnnots.stream().map(T::getContent);

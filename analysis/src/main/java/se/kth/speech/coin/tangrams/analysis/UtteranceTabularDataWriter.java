@@ -227,8 +227,8 @@ class UtteranceTabularDataWriter {
 				final Event event = optEvent.get();
 				final StringWriter strWriter = new StringWriter(256);
 
-				final double contextStartTime;
-				final double contextEndTime;
+				final float contextStartTime;
+				final float contextEndTime;
 				if (eventUtts.isEmpty()) {
 					if (strict) {
 						throw new IllegalArgumentException(String.format("No utterances for event \"%s\".", event));

@@ -34,10 +34,10 @@ public final class UtteranceDialogueRepresentationStringFactoryTest {
 	@Test
 	public void testApply() {
 		final Utterance utt1 = new Utterance("segment3", "Tobias", Arrays.asList("come", "out", "of", "there", "again"),
-				2.0914, 2.8518);
+				2.0914f, 2.8518f);
 		final Utterance utt2 = new Utterance("segment4", "nacho",
-				Arrays.asList("yeah", "I'm", "connecting", "to", "game", "thirteen"), 3.9165, 4.9432);
-		final Utterance utt3 = new Utterance("segment5", "nacho", Arrays.asList("okay"), 5.9318, 8.4415);
+				Arrays.asList("yeah", "I'm", "connecting", "to", "game", "thirteen"), 3.9165f, 4.9432f);
+		final Utterance utt3 = new Utterance("segment5", "nacho", Arrays.asList("okay"), 5.9318f, 8.4415f);
 
 		final String actual = TEST_INST.apply(Stream.of(utt1, utt2, utt3).iterator());
 		Assert.assertTrue(actual.indexOf(utt1.getSpeakerId()) < actual.indexOf(utt2.getSpeakerId()));
