@@ -23,9 +23,12 @@
 			<constructor-arg value="1" />
 		</bean>
 
-		<bean id="negative-example-entity-id-factory"
-			class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.RandomNotSelectedEntityIdFactory">
-			<constructor-arg ref="random-generator" />
+		<bean id="test-insts-factory" class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.OnePositiveOneNegativeInstanceFactory">
+			<constructor-arg>
+				<bean class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.RandomNotSelectedEntityIdFactory">
+					<constructor-arg ref="random-generator" />
+				</bean>
+			</constructor-arg>
 		</bean>
 
 		<bean id="smoother"
