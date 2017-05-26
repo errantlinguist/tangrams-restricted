@@ -10,16 +10,6 @@
 	<import resource="../context.xml"/>
 	<context:component-scan base-package="se.kth.speech.coin.tangrams.analysis.features._words_as_classifiers" />
 
-	<bean id="random-generator" class="java.util.Random">
-		<description>The random number generator used in the application; Provide an explicit seed below in order to make the results reproducible from one run to the next.</description>
-		<constructor-arg value="1" />
-	</bean>
-
-	<bean id="negative-example-entity-id-factory"
-		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.RandomNotSelectedEntityIdFactory">
-		<constructor-arg ref="random-generator" />
-	</bean>
-
 	<bean id="smoother"
 		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordClassDiscountingSmoother">
 		<constructor-arg value="4" />
