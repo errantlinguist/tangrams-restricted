@@ -16,6 +16,7 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training;
 
+import java.util.List;
 import java.util.function.Function;
 import java.util.function.ToIntFunction;
 import java.util.stream.Stream;
@@ -64,22 +65,23 @@ public final class OnePositiveOneNegativeInstanceFactory extends AbstractSizeEst
 	private final ToIntFunction<GameContext> negativeExampleEntityIdGetter;
 
 	@Inject
+	private Function<? super EventDialogue, EventDialogue> diagTransformer;
+
+	@Inject
 	private EntityFeatureExtractionContextFactory extCtxFactory;
 
 	public OnePositiveOneNegativeInstanceFactory(final ToIntFunction<GameContext> negativeExampleEntityIdGetter) {
 		this.negativeExampleEntityIdGetter = negativeExampleEntityIdGetter;
 	}
 
-	private void addTokenInstances(final Utterance utt, final EntityFeature.Extractor.Context extractionContext,
+	private void addTokenInstances(final String wordClass, final EntityFeature.Extractor.Context extractionContext,
 			final Function<? super String, ? extends Instances> classInstancesGetter, final String classValue) {
-		utt.getTokens().forEach(token -> {
-			final Instances classInstances = classInstancesGetter.apply(token);
-			final Instance inst = new DenseInstance(entityInstAttrCtx.getAttrs().size());
-			inst.setDataset(classInstances);
-			entityInstAttrCtx.getExtractor().accept(inst, extractionContext);
-			inst.setClassValue(classValue);
-			classInstances.add(inst);
-		});
+		final Instances classInstances = classInstancesGetter.apply(wordClass);
+		final Instance inst = new DenseInstance(entityInstAttrCtx.getAttrs().size());
+		inst.setDataset(classInstances);
+		entityInstAttrCtx.getExtractor().accept(inst, extractionContext);
+		inst.setClassValue(classValue);
+		classInstances.add(inst);
 	}
 
 	@Override
@@ -87,34 +89,38 @@ public final class OnePositiveOneNegativeInstanceFactory extends AbstractSizeEst
 			final Function<? super String, ? extends Instances> classInstancesGetter) {
 		final String gameId = sessionEventDiagMgr.getGameId();
 		LOGGER.debug("Processing game \"{}\".", gameId);
+		final GameHistory history = sessionEventDiagMgr.getGameHistory();
 
 		final Stream<EventDialogue> uttDialogues = sessionEventDiagMgr.createUttDialogues();
 		uttDialogues.forEachOrdered(uttDialogue -> {
 			uttDialogue.getLastEvent().ifPresent(event -> {
 				LOGGER.debug("Extracting features for utterances for event: {}", event);
-				final String submittingPlayerId = event.getString(GameManagementEvent.Attribute.PLAYER_ID.toString());
-				final Stream<Utterance> dialogueUttsFromInstructor = uttDialogue.getUtts().stream()
-						.filter(dialogueUtt -> {
-							final String uttPlayerId = dialogueUtt.getSpeakerId();
-							return submittingPlayerId.equals(uttPlayerId);
-						});
-				dialogueUttsFromInstructor.forEach(dialogueUtt -> {
-					final GameHistory history = sessionEventDiagMgr.getGameHistory();
-					final GameContext uttCtx = UtteranceGameContexts.createSingleContext(dialogueUtt, history,
-							submittingPlayerId);
+				final EventDialogue transformedDiag = diagTransformer.apply(uttDialogue);
+				final List<Utterance> allUtts = transformedDiag.getUtts();
+				if (allUtts.isEmpty()) {
+					LOGGER.debug("No utterances to train with for {}.", transformedDiag);
+				} else {
+					// Just use the game context for the first utterance for all
+					// utterances processed for the given dialogue
+					final Utterance firstUtt = allUtts.get(0);
+					final GameContext uttCtx = UtteranceGameContexts.createSingleContext(firstUtt, history);
 					final int selectedEntityId = uttCtx.findLastSelectedEntityId().get();
 					LOGGER.debug(
 							"Creating positive and negative examples for entity ID \"{}\", which is selected by player \"{}\".",
-							selectedEntityId, submittingPlayerId);
-					// Add positive training example
-					final EntityFeature.Extractor.Context positiveContext = extCtxFactory.apply(uttCtx,
-							selectedEntityId);
-					addTokenInstances(dialogueUtt, positiveContext, classInstancesGetter, Boolean.TRUE.toString());
-					// Add negative training example
-					final EntityFeature.Extractor.Context negativeContext = extCtxFactory.apply(uttCtx,
-							negativeExampleEntityIdGetter.applyAsInt(uttCtx));
-					addTokenInstances(dialogueUtt, negativeContext, classInstancesGetter, Boolean.FALSE.toString());
-				});
+							selectedEntityId, event.getString(GameManagementEvent.Attribute.PLAYER_ID.toString()));
+					final Stream<String> wordClasses = transformedDiag.getUtts().stream().map(Utterance::getTokens)
+							.flatMap(List::stream);
+					wordClasses.forEach(wordClass -> {
+						// Add positive training example
+						final EntityFeature.Extractor.Context positiveContext = extCtxFactory.apply(uttCtx,
+								selectedEntityId);
+						addTokenInstances(wordClass, positiveContext, classInstancesGetter, Boolean.TRUE.toString());
+						// Add negative training example
+						final EntityFeature.Extractor.Context negativeContext = extCtxFactory.apply(uttCtx,
+								negativeExampleEntityIdGetter.applyAsInt(uttCtx));
+						addTokenInstances(wordClass, negativeContext, classInstancesGetter, Boolean.FALSE.toString());
+					});
+				}
 			});
 		});
 	}
