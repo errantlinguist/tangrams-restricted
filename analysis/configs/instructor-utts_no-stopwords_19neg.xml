@@ -10,7 +10,7 @@
 		resource="classpath:se/kth/speech/coin/tangrams/analysis/features/words_as_classifiers/cross_validation/context.xml" />
 
 	<beans>
-		<description>Finds one random negative example for each positive
+		<description>Uses all (19) non-selected entities for each positive
 			example. For each dialogue, the only utterances used for training and
 			testing are those which were made by the instructor for the turn
 			which the dialogue has as a context. Filters out English stopwords in each utterance.</description>
@@ -23,12 +23,9 @@
 			<constructor-arg value="1" />
 		</bean>
 
-		<bean id="training-insts-factory" class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.OnePositiveOneNegativeInstanceFactory">
-			<constructor-arg>
-				<bean class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.RandomNotSelectedEntityIdFactory">
-					<constructor-arg ref="random-generator" />
-				</bean>
-			</constructor-arg>
+		<bean id="training-insts-factory" class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.OnePositiveMultipleNegativeInstanceFactory">
+				<constructor-arg ref="random-generator" />
+				<constructor-arg value="19" />
 		</bean>
 
 		<bean id="smoother"

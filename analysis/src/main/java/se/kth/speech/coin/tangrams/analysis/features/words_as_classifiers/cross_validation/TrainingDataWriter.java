@@ -46,6 +46,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.support.FileSystemXmlApplicationContext;
 
 import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.WordClassificationData;
 import se.kth.speech.io.FileNames;
 import weka.core.Instances;
 import weka.core.converters.AbstractFileSaver;
@@ -152,10 +153,8 @@ public final class TrainingDataWriter {
 				final String outfileExt = Parameter.parseOutputType(cl);
 				LOGGER.info("Will write data in \"*{}\" format.", outfileExt);
 				final String[] appCtxLocs = cl.getOptionValues(Parameter.APP_CONTEXT_DEFINITIONS.optName);
-				try (final FileSystemXmlApplicationContext appCtx = new FileSystemXmlApplicationContext(
-						appCtxLocs)) {
-					final TrainingDataWriter writer = appCtx
-							.getBean(TrainingDataWriter.class, outpath, outfileExt);
+				try (final FileSystemXmlApplicationContext appCtx = new FileSystemXmlApplicationContext(appCtxLocs)) {
+					final TrainingDataWriter writer = appCtx.getBean(TrainingDataWriter.class, outpath, outfileExt);
 					writer.accept(inpaths);
 				}
 			}
@@ -196,18 +195,19 @@ public final class TrainingDataWriter {
 					return FileNames.sanitize(base, "-");
 				});
 
-		final Stream<Entry<SessionDataManager, Map<String, Instances>>> testSets = testSetFactory.apply(allSessions);
-		for (final Iterator<Entry<SessionDataManager, Map<String, Instances>>> testSetIter = testSets
+		final Stream<Entry<SessionDataManager, WordClassificationData>> testSets = testSetFactory.apply(allSessions);
+		for (final Iterator<Entry<SessionDataManager, WordClassificationData>> testSetIter = testSets
 				.iterator(); testSetIter.hasNext();) {
-			final Entry<SessionDataManager, Map<String, Instances>> testSet = testSetIter.next();
+			final Entry<SessionDataManager, WordClassificationData> testSet = testSetIter.next();
 			final SessionDataManager testSessionData = testSet.getKey();
-			final Map<String, Instances> classInstances = testSet.getValue();
+			final WordClassificationData trainingData = testSet.getValue();
 
 			final Path sessionInpath = allSessions.get(testSessionData);
 			final String subsampleDirname = infilePathOutdirNames.get(sessionInpath);
 			final File subsampleDir = createSubsampleDir(subsampleDirname);
-			LOGGER.debug("Writing data for {} classes to \"{}\".", classInstances.size(), subsampleDir);
-			persist(classInstances.entrySet(), subsampleDir);
+			final Map<String, Instances> classInsts = trainingData.getClassInstances();
+			LOGGER.debug("Writing data for {} classes to \"{}\".", classInsts.size(), subsampleDir);
+			persist(classInsts.entrySet(), subsampleDir);
 		}
 		LOGGER.info("Finished writing {} cross-validation dataset(s) to \"{}\".", infileSessionData.size(), outdir);
 	}

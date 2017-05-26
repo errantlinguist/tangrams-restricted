@@ -25,7 +25,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -157,13 +156,14 @@ public final class TrainingDataWriter {
 				final String[] appCtxLocs = cl.getOptionValues(Parameter.APP_CONTEXT_DEFINITIONS.optName);
 				try (final FileSystemXmlApplicationContext appCtx = new FileSystemXmlApplicationContext(appCtxLocs)) {
 					final TrainingDataWriter writer = appCtx.getBean(TrainingDataWriter.class);
-					final Map<String, Instances> classInstances = writer.apply(inpaths);
+					final WordClassificationData trainingData = writer.apply(inpaths);
 					if (outdir.mkdirs()) {
 						LOGGER.info("Output directory \"{}\" was nonexistent; Created it before writing data.", outdir);
 					}
 
 					final AbstractFileSaver saver = ConverterUtils.getSaverForExtension(outfileExt);
-					for (final Entry<String, Instances> classInstanceEntry : classInstances.entrySet()) {
+					for (final Entry<String, Instances> classInstanceEntry : trainingData.getClassInstances()
+							.entrySet()) {
 						final String className = classInstanceEntry.getKey();
 						final File outfile = new File(outdir, className + outfileExt);
 						LOGGER.info("Writing data for classifier \"{}\" to \"{}\".", className, outfile);
@@ -192,9 +192,9 @@ public final class TrainingDataWriter {
 	private BiFunction<ListIterator<Utterance>, GameHistory, Stream<EventDialogue>> eventDiagFactory;
 
 	@Inject
-	private Function<Collection<SessionEventDialogueManager>, Map<String, Instances>> instancesFactory;
+	private Function<Collection<SessionEventDialogueManager>, WordClassificationData> instancesFactory;
 
-	public Map<String, Instances> apply(final Iterable<Path> inpaths) throws IOException, JAXBException {
+	public WordClassificationData apply(final Iterable<Path> inpaths) throws IOException, JAXBException {
 		final Collection<SessionDataManager> infileSessionData = SessionDataManager.createFileSessionDataMap(inpaths)
 				.values();
 		final List<SessionEventDialogueManager> sessionEvtDiagMgrs = new ArrayList<>(infileSessionData.size());

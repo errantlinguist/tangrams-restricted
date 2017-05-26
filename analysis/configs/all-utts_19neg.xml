@@ -10,7 +10,7 @@
 		resource="classpath:se/kth/speech/coin/tangrams/analysis/features/words_as_classifiers/cross_validation/context.xml" />
 
 	<beans>
-		<description>Finds one random negative example for each positive example. Uses all utterances in each dialogue for training and testing.</description>
+		<description>Uses all (19) non-selected entities for negative examples for each positive example. Uses all utterances in each dialogue for training and testing.</description>
 
 		<bean id="random-generator" class="java.util.Random">
 			<description>The random number generator used in the application;
@@ -19,12 +19,9 @@
 			<constructor-arg value="1" />
 		</bean>
 
-		<bean id="training-insts-factory" class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.OnePositiveOneNegativeInstanceFactory">
-			<constructor-arg>
-				<bean class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.RandomNotSelectedEntityIdFactory">
-					<constructor-arg ref="random-generator" />
-				</bean>
-			</constructor-arg>
+		<bean id="training-insts-factory" class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.OnePositiveMultipleNegativeInstanceFactory">
+				<constructor-arg ref="random-generator" />
+				<constructor-arg value="19" />
 		</bean>
 
 		<bean id="smoother"

@@ -25,6 +25,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -62,6 +63,7 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.Sessio
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.SingleGameContextReferentEventDialogueTester;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordClassDiscountingSmoother;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EventDialogueClassifier;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.WordClassificationData;
 import weka.classifiers.functions.Logistic;
 import weka.core.Instance;
 import weka.core.Instances;
@@ -299,21 +301,21 @@ public final class Tester {
 		private Map<Path, SessionTester.Result> crossValidate()
 				throws ExecutionException, TrainingException, IOException, ClassificationException {
 			final Map<Path, SessionTester.Result> result = Maps.newHashMapWithExpectedSize(allSessions.size());
-			final Stream<Entry<SessionDataManager, Map<String, Instances>>> testSets = testSetFactory
+			final Stream<Entry<SessionDataManager, WordClassificationData>> testSets = testSetFactory
 					.apply(allSessions);
-			for (final Iterator<Entry<SessionDataManager, Map<String, Instances>>> testSetIter = testSets
+			for (final Iterator<Entry<SessionDataManager, WordClassificationData>> testSetIter = testSets
 					.iterator(); testSetIter.hasNext();) {
-				final Entry<SessionDataManager, Map<String, Instances>> testSet = testSetIter.next();
+				final Entry<SessionDataManager, WordClassificationData> testSet = testSetIter.next();
 				final SessionDataManager testSessionData = testSet.getKey();
 				final Path infilePath = allSessions.get(testSessionData);
 				LOGGER.info("Running cross-validation test on data from \"{}\".", infilePath);
 
-				final Map<String, Instances> classInstances = testSet.getValue();
-				final Instances oovInstances = smoother.redistributeMass(classInstances);
-				LOGGER.debug("{} instances for out-of-vocabulary class.", oovInstances.size());
+				final WordClassificationData trainingData = testSet.getValue();
+				final Optional<Instances> oovInstances = smoother.redistributeMass(trainingData);
+				LOGGER.debug("{} instances for out-of-vocabulary class.", oovInstances.map(Instances::size).orElse(0));
 
 				final Function<String, Logistic> wordClassifierGetter = createWordClassifierMap(
-						classInstances.entrySet())::get;
+						trainingData.getClassInstances().entrySet())::get;
 				final Instances testInsts = testInstsFactory.apply(TEST_INSTS_REL_NAME,
 						estimateTestInstanceCount(testSessionData));
 				final Function<EntityFeature.Extractor.Context, Instance> testInstFactory = entInstAttrCtx
@@ -416,8 +418,7 @@ public final class Tester {
 		this(() -> Executors.newFixedThreadPool(parallelThreadCount));
 	}
 
-	public Tester(
-			final Supplier<? extends ExecutorService> executorFactory) {
+	public Tester(final Supplier<? extends ExecutorService> executorFactory) {
 		this.executorFactory = executorFactory;
 	}
 

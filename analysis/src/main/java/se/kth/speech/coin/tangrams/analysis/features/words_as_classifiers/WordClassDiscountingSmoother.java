@@ -17,10 +17,10 @@
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.function.Function;
 
 import javax.inject.Inject;
@@ -28,7 +28,11 @@ import javax.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.ObjectIterator;
+import se.kth.speech.MutablePair;
 import se.kth.speech.coin.tangrams.analysis.features.weka.WordClassInstancesFactory;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.WordClassificationData;
 import weka.classifiers.Classifier;
 import weka.core.Instances;
 
@@ -69,8 +73,8 @@ public final class WordClassDiscountingSmoother {
 		return createNGramClassifierList(wordClasses, wordClassifiers, 1);
 	}
 
-	public Instances redistributeMass(final Map<String, Instances> classInsts) {
-		return redistributeMass(classInsts, minCount, oovClassName);
+	public Optional<Instances> redistributeMass(final WordClassificationData trainingData) {
+		return redistributeMass(trainingData, minCount, oovClassName);
 	}
 
 	private List<Classifier> createNGramClassifierList(final List<String> wordClasses,
@@ -91,26 +95,38 @@ public final class WordClassDiscountingSmoother {
 		return result;
 	}
 
-	private Instances redistributeMass(final Map<String, Instances> classInsts, final int minCount,
+	private Optional<Instances> redistributeMass(final WordClassificationData trainingData, final int minCount,
 			final String augendClassName) {
 		final List<Entry<String, Instances>> addendClassInsts = new ArrayList<>();
-		final Iterator<Entry<String, Instances>> entryIter = classInsts.entrySet().iterator();
-		while (entryIter.hasNext()) {
-			final Entry<String, Instances> insts = entryIter.next();
-			if (insts.getValue().numInstances() < minCount) {
+
+		final Map<String, Instances> classInsts = trainingData.getClassInstances();
+		for (final ObjectIterator<Object2IntMap.Entry<String>> observationCountIter = trainingData
+				.getClassObservationCounts().object2IntEntrySet().iterator(); observationCountIter.hasNext();) {
+			final Object2IntMap.Entry<String> observationCount = observationCountIter.next();
+			final int count = observationCount.getIntValue();
+			if (count < minCount) {
+				final String className = observationCount.getKey();
 				LOGGER.debug("Class \"{}\" has fewer than {} instances; Will redistribute to \"{}\".",
-						new Object[] { insts.getKey(), minCount, augendClassName });
-				addendClassInsts.add(insts);
-				entryIter.remove();
+						new Object[] { className, minCount, augendClassName });
+				addendClassInsts.add(new MutablePair<>(className, classInsts.remove(className)));
+				observationCountIter.remove();
 			}
+
 		}
-		final Instances augendInsts = classInsts.computeIfAbsent(augendClassName, k -> {
-			final int totalInstCount = addendClassInsts.stream().map(Entry::getValue).mapToInt(Instances::numAttributes)
-					.sum();
-			return classInstsFactory.apply(WordClasses.createRelationName(augendClassName), totalInstCount);
-		});
-		addendClassInsts.stream().forEach(addendClassInst -> augendInsts.addAll(addendClassInst.getValue()));
-		return augendInsts;
+
+		final Optional<Instances> result;
+		if (addendClassInsts.isEmpty()) {
+			result = Optional.empty();
+		} else {
+			final Instances augendInsts = classInsts.computeIfAbsent(augendClassName, k -> {
+				final int totalInstCount = addendClassInsts.stream().map(Entry::getValue)
+						.mapToInt(Instances::numAttributes).sum();
+				return classInstsFactory.apply(WordClasses.createRelationName(augendClassName), totalInstCount);
+			});
+			addendClassInsts.stream().forEach(addendClassInst -> augendInsts.addAll(addendClassInst.getValue()));
+			result = Optional.of(augendInsts);
+		}
+		return result;
 	}
 
 }

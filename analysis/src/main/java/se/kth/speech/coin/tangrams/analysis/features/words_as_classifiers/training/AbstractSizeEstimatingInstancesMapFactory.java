@@ -27,6 +27,8 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Maps;
 
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManager;
 import se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttributeContext;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordClasses;
@@ -38,7 +40,7 @@ import weka.core.Instances;
  *
  */
 public abstract class AbstractSizeEstimatingInstancesMapFactory
-		implements Function<Collection<SessionEventDialogueManager>, Map<String, Instances>> {
+		implements Function<Collection<SessionEventDialogueManager>, WordClassificationData> {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(AbstractSizeEstimatingInstancesMapFactory.class);
 
@@ -71,22 +73,27 @@ public abstract class AbstractSizeEstimatingInstancesMapFactory
 	protected EntityInstanceAttributeContext entityInstAttrCtx;
 
 	@Override
-	public Map<String, Instances> apply(final Collection<SessionEventDialogueManager> sessionEventDiagMgrs) {
-		final Map<String, Instances> result = Maps
-				.newHashMapWithExpectedSize(estimateVocabTypeCount(sessionEventDiagMgrs));
-		final Function<String, Instances> classInstancesFetcher = className -> result.computeIfAbsent(className, k -> {
-			final Instances instances = new Instances(WordClasses.createRelationName(k), entityInstAttrCtx.getAttrs(),
-					estimateVocabTypeTokenCount(k, sessionEventDiagMgrs));
-			instances.setClass(entityInstAttrCtx.getClassAttr());
-			return instances;
-		});
+	public WordClassificationData apply(final Collection<SessionEventDialogueManager> sessionEventDiagMgrs) {
+		int estClassCount = estimateVocabTypeCount(sessionEventDiagMgrs);
+		final Map<String, Instances> classInstances = Maps
+				.newHashMapWithExpectedSize(estClassCount);
+		final Function<String, Instances> classInstancesFetcher = className -> classInstances.computeIfAbsent(className,
+				key -> {
+					final Instances instances = new Instances(WordClasses.createRelationName(key),
+							entityInstAttrCtx.getAttrs(), estimateVocabTypeTokenCount(key, sessionEventDiagMgrs));
+					instances.setClass(entityInstAttrCtx.getClassAttr());
+					return instances;
+				});
+		final Object2IntMap<String> classObservationCounts = new Object2IntOpenHashMap<>(estClassCount);
+		classObservationCounts.defaultReturnValue(0);
+		final WordClassificationData result = new WordClassificationData(classInstances, classObservationCounts, classInstancesFetcher);
 		for (final SessionEventDialogueManager sessionEventDiagMgr : sessionEventDiagMgrs) {
-			addTrainingData(sessionEventDiagMgr, classInstancesFetcher);
+			addTrainingData(sessionEventDiagMgr, result);
 		}
 		return result;
 	}
 
 	protected abstract void addTrainingData(SessionEventDialogueManager sessionEventDiagMgr,
-			Function<? super String, ? extends Instances> classInstancesGetter);
+			WordClassificationData trainingData);
 
 }

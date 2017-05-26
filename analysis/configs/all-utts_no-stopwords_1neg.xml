@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:util="http://www.springframework.org/schema/util"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+	http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+	http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd">
+
+	<import
+		resource="classpath:se/kth/speech/coin/tangrams/analysis/features/words_as_classifiers/cross_validation/context.xml" />
+
+	<beans>
+		<description>Finds one random negative example for each positive
+			example. Uses all utterances in each dialogue for training and
+			testing. Filters out English stopwords in each utterance.
+		</description>
+
+		<bean id="random-generator" class="java.util.Random">
+			<description>The random number generator used in the application;
+				Provide an explicit seed below in order to make the results
+				reproducible from one run to the next.
+			</description>
+			<constructor-arg value="1" />
+		</bean>
+
+		<bean id="training-insts-factory" class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.OnePositiveMultipleNegativeInstanceFactory">
+				<constructor-arg ref="random-generator" />
+				<constructor-arg value="1" />
+		</bean>
+
+		<bean id="smoother"
+			class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordClassDiscountingSmoother">
+			<constructor-arg value="4" />
+			<constructor-arg value="__UNKNOWN__" />
+		</bean>
+
+		<bean id="dialogue-classifier"
+			class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.IsolatedUtteranceEventDialogueClassifier"
+			scope="prototype">
+		</bean>
+		
+		<bean id="stopword-set-factory" class="se.kth.speech.nlp.SnowballPorter2EnglishStopwordSetFactory">
+			<property name="variantsToUnify">
+				<util:set value-type="se.kth.speech.nlp.SnowballPorter2EnglishStopwords.Variant">
+					<value>CANONICAL</value>
+					<value>FILLERS</value>
+				</util:set>
+			</property>
+		</bean>
+		
+		<bean id="dialogue-transformer" class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.CachingEventDialogueTransformer">
+			<constructor-arg>
+				<bean class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.ChainedEventDialogueTransformer">
+					<constructor-arg>
+						<util:list value-type="java.util.function.Function">
+							<bean class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.LuceneAnalyzingEventDialogueTransformer">
+								<constructor-arg>
+									<bean class="org.apache.lucene.analysis.standard.StandardAnalyzer">
+										<constructor-arg type="org.apache.lucene.analysis.util.CharArraySet">
+											<bean class="org.apache.lucene.analysis.util.CharArraySet">
+												<constructor-arg ref="stopword-set-factory" />
+												<constructor-arg>
+													<description>Ignore case?</description>
+													<value>true</value>
+												</constructor-arg>
+											</bean>
+										</constructor-arg>
+									</bean>
+								</constructor-arg>	
+							</bean>
+						</util:list>
+					</constructor-arg>
+				</bean>
+			</constructor-arg>
+		</bean>
+
+		<bean id="cross-validation-tester"
+			class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.Tester" scope="prototype">
+			<constructor-arg>
+				<description>The maximum number of parallel threads.</description>
+				<value>1</value>
+			</constructor-arg>
+		</bean>
+	</beans>
+</beans>

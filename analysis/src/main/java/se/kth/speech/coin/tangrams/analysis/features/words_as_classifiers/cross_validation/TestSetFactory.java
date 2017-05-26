@@ -39,7 +39,7 @@ import com.google.common.cache.LoadingCache;
 import se.kth.speech.MutablePair;
 import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
 import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManager;
-import weka.core.Instances;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.WordClassificationData;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -68,19 +68,19 @@ public final class TestSetFactory {
 	private static final int MIN_INPUT_SIZE = 2;
 
 	@Inject
-	private Function<Collection<SessionEventDialogueManager>, Map<String, Instances>> instancesFactory;
+	private Function<Collection<SessionEventDialogueManager>, WordClassificationData> instancesFactory;
 
 	@Inject
 	private Supplier<LoadingCache<SessionDataManager, SessionEventDialogueManager>> sessionDiagMgrCacheSupplier;
 
-	public Stream<Entry<SessionDataManager, Map<String, Instances>>> apply(
+	public Stream<Entry<SessionDataManager, WordClassificationData>> apply(
 			final Map<SessionDataManager, Path> allSessions) throws ExecutionException {
 		if (allSessions.size() < MIN_INPUT_SIZE) {
 			throw new IllegalArgumentException(
 					String.format("Session count is %d but at least %d is required for cross-validation.",
 							allSessions.size(), MIN_INPUT_SIZE));
 		}
-		final Stream.Builder<Entry<SessionDataManager, Map<String, Instances>>> resultBuilder = Stream.builder();
+		final Stream.Builder<Entry<SessionDataManager, WordClassificationData>> resultBuilder = Stream.builder();
 		for (final Entry<SessionDataManager, Path> testSessionDataEntry : allSessions.entrySet()) {
 			final Path testSessionDataFilePath = testSessionDataEntry.getValue();
 			LOGGER.info("Creating {}-fold cross-validation set for testing on session data from \"{}\".",
@@ -91,18 +91,18 @@ public final class TestSetFactory {
 		return resultBuilder.build();
 	}
 
-	public Stream<Entry<SessionDataManager, Map<String, Instances>>> apply(final Set<SessionDataManager> allSessions)
+	public Stream<Entry<SessionDataManager, WordClassificationData>> apply(final Set<SessionDataManager> allSessions)
 			throws ExecutionException {
-		final Stream.Builder<Entry<SessionDataManager, Map<String, Instances>>> resultBuilder = Stream.builder();
+		final Stream.Builder<Entry<SessionDataManager, WordClassificationData>> resultBuilder = Stream.builder();
 		for (final SessionDataManager testSessionDataMgr : allSessions) {
 			resultBuilder.accept(createTestSet(testSessionDataMgr, allSessions));
 		}
 		return resultBuilder.build();
 	}
 
-	private Entry<SessionDataManager, Map<String, Instances>> createTestSet(final SessionDataManager testSessionDataMgr,
+	private Entry<SessionDataManager, WordClassificationData> createTestSet(final SessionDataManager testSessionDataMgr,
 			final Set<SessionDataManager> allSessions) throws ExecutionException {
-		final Map<String, Instances> classInstances;
+		final WordClassificationData trainingData;
 		{
 			final SessionDataManager[] trainingSessionDataMgrs = allSessions.stream()
 					.filter(sessionData -> !sessionData.equals(testSessionDataMgr)).toArray(SessionDataManager[]::new);
@@ -113,10 +113,10 @@ public final class TestSetFactory {
 				sessionEventDiagMgr = sessionDiagMgrCacheSupplier.get().get(trainingSessionDatum);
 				trainingSessionEvtDiagMgrs.add(sessionEventDiagMgr);
 			}
-			classInstances = instancesFactory.apply(trainingSessionEvtDiagMgrs);
+			trainingData = instancesFactory.apply(trainingSessionEvtDiagMgrs);
 		}
-		LOGGER.info("Read training data for {} class(es).", classInstances.size());
-		return new MutablePair<>(testSessionDataMgr, classInstances);
+		LOGGER.info("Read training data for {} class(es).", trainingData.getClassInstances().size());
+		return new MutablePair<>(testSessionDataMgr, trainingData);
 	}
 
 }
