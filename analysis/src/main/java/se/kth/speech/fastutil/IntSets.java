@@ -21,7 +21,6 @@ import java.util.Random;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntCollection;
 import it.unimi.dsi.fastutil.ints.IntList;
-import it.unimi.dsi.fastutil.ints.IntLists;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 
@@ -73,13 +72,11 @@ public final class IntSets {
 					"Provided list has fewer non-complement values (%d) than supplied subset result size of %d.",
 					randomAccessVals.size(), size));
 		}
-		IntLists.shuffle(randomAccessVals, rnd);
+//		IntLists.shuffle(randomAccessVals, rnd);
 		final IntSet result = new IntOpenHashSet(size);
 		while (result.size() < size) {
-			final int val = getRandomValue(vals, rnd);
-			if (val != complementVal) {
+			final int val = getRandomValue(randomAccessVals, rnd);
 				result.add(val);
-			}
 		}
 		return result;
 	}
