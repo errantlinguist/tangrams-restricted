@@ -37,7 +37,6 @@ import se.kth.speech.coin.tangrams.analysis.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.GameContext;
 import se.kth.speech.coin.tangrams.analysis.GameHistory;
 import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManager;
-import se.kth.speech.coin.tangrams.analysis.TemporalGameContexts;
 import se.kth.speech.coin.tangrams.analysis.Utterance;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionContextFactory;
@@ -80,7 +79,6 @@ public final class InstancesMapFactory
 
 		@Override
 		public void accept(final SessionEventDialogueManager sessionEventDiagMgr) {
-
 			final String gameId = sessionEventDiagMgr.getGameId();
 			LOGGER.debug("Processing game \"{}\".", gameId);
 
@@ -97,7 +95,7 @@ public final class InstancesMapFactory
 							});
 					dialogueUttsFromInstructor.forEach(dialogueUtt -> {
 						final GameHistory history = sessionEventDiagMgr.getGameHistory();
-						final GameContext uttCtx = createGameContext(dialogueUtt, history, submittingPlayerId);
+						final GameContext uttCtx = UtteranceGameContexts.create(dialogueUtt, history, submittingPlayerId);
 						final int selectedEntityId = uttCtx.findLastSelectedEntityId().get();
 						LOGGER.debug(
 								"Creating positive and negative examples for entity ID \"{}\", which is selected by player \"{}\".",
@@ -151,20 +149,6 @@ public final class InstancesMapFactory
 			throw new IllegalArgumentException(
 					String.format("Could not parse a class name from relation name \"%s\".", relName));
 		}
-	}
-
-	private static GameContext createGameContext(final Utterance dialogueUtt, final GameHistory history,
-			final String perspectivePlayerId) {
-		LOGGER.debug(
-				"Creating a context based on the logged game history, which is then seen from the perspective of player \"{}\".",
-				perspectivePlayerId);
-		final GameContext[] ctxs = TemporalGameContexts
-				.create(history, dialogueUtt.getStartTime(), dialogueUtt.getEndTime(), perspectivePlayerId)
-				.toArray(GameContext[]::new);
-		if (ctxs.length > 1) {
-			LOGGER.warn("More than one game context found for {}; Only using the first one.", dialogueUtt);
-		}
-		return ctxs[0];
 	}
 
 	private static int estimateVocabTypeCount(final Collection<?> sessionData) {
