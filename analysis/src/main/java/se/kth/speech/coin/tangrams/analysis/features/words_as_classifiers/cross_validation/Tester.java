@@ -288,7 +288,7 @@ public final class Tester {
 		public void run() {
 			LOGGER.info("Training/testing iteration no. {}.", iterNo);
 			try {
-				final Map<Path, SessionTester.Result> iterResults = crossValidate(allSessions);
+				final Map<Path, SessionTester.Result> iterResults = crossValidate();
 				for (final Entry<Path, SessionTester.Result> iterResult : iterResults.entrySet()) {
 					result.put(iterResult.getKey(), iterNo, iterResult.getValue());
 				}
@@ -297,7 +297,7 @@ public final class Tester {
 			}
 		}
 
-		private Map<Path, SessionTester.Result> crossValidate(final Map<SessionDataManager, Path> allSessions)
+		private Map<Path, SessionTester.Result> crossValidate()
 				throws ExecutionException, TrainingException, IOException, ClassificationException {
 			final Map<Path, SessionTester.Result> result = Maps.newHashMapWithExpectedSize(allSessions.size());
 			final Stream<Entry<SessionDataManager, Map<String, Instances>>> testSets = testSetFactory
