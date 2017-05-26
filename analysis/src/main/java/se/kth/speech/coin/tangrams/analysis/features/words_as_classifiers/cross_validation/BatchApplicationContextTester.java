@@ -250,6 +250,7 @@ public final class BatchApplicationContextTester {
 		final List<Object> configSummary = StatisticsWriter.createSummaryTableRow(appCtxDefPath.toString(),
 				testResults);
 		try (final BufferedWriter summaryWriter = Files.newBufferedWriter(summaryFile, summaryFileOpenOpts)) {
+			summaryWriter.newLine();
 			summaryWriter.write(configSummary.stream().map(Object::toString).collect(ROW_CELL_JOINER));
 		}
 	}
