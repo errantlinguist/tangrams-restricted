@@ -19,7 +19,7 @@
 			<constructor-arg value="1" />
 		</bean>
 
-		<bean id="test-insts-factory" class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.OnePositiveOneNegativeInstanceFactory">
+		<bean id="training-insts-factory" class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.OnePositiveOneNegativeInstanceFactory">
 			<constructor-arg>
 				<bean class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.RandomNotSelectedEntityIdFactory">
 					<constructor-arg ref="random-generator" />
