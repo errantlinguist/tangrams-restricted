@@ -37,7 +37,6 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.function.Supplier;
 
-import javax.inject.Inject;
 import javax.swing.JFileChooser;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.xml.bind.JAXBException;
@@ -52,7 +51,6 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import com.google.common.collect.Table;
 
@@ -202,12 +200,9 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 					final String outfileNamePrefix = Parameter.parseOutfilePrefix(cl, inpath);
 					LOGGER.info("Will prefix each output file for input \"{}\" with \"{}\".", inpath,
 							outfileNamePrefix);
-
-					try (final ClassPathXmlApplicationContext appCtx = createAppCtx()) {
-						final UtteranceSelectedEntityDescriptionWriter writer = getWriterBean(appCtx, outpath,
-								outfileNamePrefix, strict);
-						writer.accept(inpath);
-					}
+					final UtteranceSelectedEntityDescriptionWriter writer = createWriter(outpath, outfileNamePrefix,
+							strict);
+					writer.accept(inpath);
 				}
 			}
 
@@ -230,22 +225,17 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 
 	}
 
-	private static ClassPathXmlApplicationContext createAppCtx() {
-		return new ClassPathXmlApplicationContext("entity-description-extraction.xml",
-				UtteranceSelectedEntityDescriptionWriter.class);
-	}
-
 	private static String createOutfileInfix(final Path inpath) {
 		final String parentDirName = inpath.getParent().getFileName().toString();
 		final String fileBaseName = FileNames.splitBase(inpath.getFileName().toString())[0];
 		return parentDirName + "-" + fileBaseName;
 	}
 
-	private static UtteranceSelectedEntityDescriptionWriter getWriterBean(final ClassPathXmlApplicationContext appCtx,
-			final Path outpath, final String outfileNamePrefix, final boolean strict) {
-		@SuppressWarnings("unchecked")
-		final List<EntityFeature> featuresToDescribe = appCtx.getBean(List.class);
-		return appCtx.getBean(UtteranceSelectedEntityDescriptionWriter.class, featuresToDescribe, outpath,
+	private static UtteranceSelectedEntityDescriptionWriter createWriter(final Path outpath,
+			final String outfileNamePrefix, final boolean strict) {
+		final List<EntityFeature> featuresToDescribe = Arrays.asList(EntityFeature.POSITION_X, EntityFeature.POSITION_Y,
+				EntityFeature.EDGE_COUNT);
+		return new UtteranceSelectedEntityDescriptionWriter(new EntityFeature.Extractor(), featuresToDescribe, outpath,
 				outfileNamePrefix, strict);
 	}
 
@@ -292,9 +282,9 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 				UserPrompts.promptNonBlankString("Enter output filename prefix.", DEFAULT_OUTFILE_PREFIX)
 						.ifPresent(outfileNamePrefix -> {
 							LOGGER.info("Will prefix each output file with \"{}\".", outfileNamePrefix);
-							try (final ClassPathXmlApplicationContext appCtx = createAppCtx()) {
-								final UtteranceSelectedEntityDescriptionWriter writer = getWriterBean(appCtx, outpath,
-										outfileNamePrefix, false);
+							final UtteranceSelectedEntityDescriptionWriter writer = createWriter(outpath,
+									outfileNamePrefix, false);
+							try {
 								writer.accept(inpath);
 							} catch (final JAXBException e) {
 								throw new RuntimeException(e);
@@ -314,8 +304,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 
 	}
 
-	@Inject
-	private EntityFeature.Extractor extractor;
+	private final EntityFeature.Extractor extractor;
 
 	private final List<EntityFeature> featuresToDescribe;
 
@@ -325,8 +314,10 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 
 	private final boolean strict;
 
-	public UtteranceSelectedEntityDescriptionWriter(final List<EntityFeature> featuresToDescribe, final Path outdir,
-			final String outfileNamePrefix, final boolean strict) {
+	public UtteranceSelectedEntityDescriptionWriter(final EntityFeature.Extractor extractor,
+			final List<EntityFeature> featuresToDescribe, final Path outdir, final String outfileNamePrefix,
+			final boolean strict) {
+		this.extractor = extractor;
 		this.featuresToDescribe = featuresToDescribe;
 		this.outdir = outdir;
 		this.outfileNamePrefix = outfileNamePrefix;
