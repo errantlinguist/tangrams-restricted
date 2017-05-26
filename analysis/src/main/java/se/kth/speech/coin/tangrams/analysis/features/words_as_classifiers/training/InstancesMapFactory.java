@@ -14,15 +14,13 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers;
+package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training;
 
 import java.util.Collection;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.ToIntFunction;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import javax.inject.Inject;
@@ -41,6 +39,8 @@ import se.kth.speech.coin.tangrams.analysis.Utterance;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionContextFactory;
 import se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttributeContext;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.UtteranceGameContexts;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordClasses;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 import weka.core.DenseInstance;
 import weka.core.Instance;
@@ -68,7 +68,7 @@ import weka.core.Instances;
 @Named
 public final class InstancesMapFactory
 		implements Function<Collection<SessionEventDialogueManager>, Map<String, Instances>> {
-	
+
 	private class MultiClassDataCollector implements Consumer<SessionEventDialogueManager> {
 
 		private final Function<? super String, Instances> classInstanceGetter;
@@ -95,7 +95,8 @@ public final class InstancesMapFactory
 							});
 					dialogueUttsFromInstructor.forEach(dialogueUtt -> {
 						final GameHistory history = sessionEventDiagMgr.getGameHistory();
-						final GameContext uttCtx = UtteranceGameContexts.create(dialogueUtt, history, submittingPlayerId);
+						final GameContext uttCtx = UtteranceGameContexts.createSingleContext(dialogueUtt, history,
+								submittingPlayerId);
 						final int selectedEntityId = uttCtx.findLastSelectedEntityId().get();
 						LOGGER.debug(
 								"Creating positive and negative examples for entity ID \"{}\", which is selected by player \"{}\".",
@@ -126,30 +127,7 @@ public final class InstancesMapFactory
 		}
 	}
 
-	private static final Pattern CLASS_RELATION_NAME_PATTERN;
-
-	private static final String CLASS_RELATION_PREFIX;
-
 	private static final Logger LOGGER = LoggerFactory.getLogger(InstancesMapFactory.class);
-
-	static {
-		CLASS_RELATION_PREFIX = "referent_for_token-";
-		CLASS_RELATION_NAME_PATTERN = Pattern.compile(Pattern.quote(CLASS_RELATION_PREFIX) + "(.+)");
-	}
-
-	public static String createRelationName(final String className) {
-		return CLASS_RELATION_PREFIX + className;
-	}
-
-	public static String parseRelationClassName(final String relName) {
-		final Matcher classRelNameMatcher = CLASS_RELATION_NAME_PATTERN.matcher(relName);
-		if (classRelNameMatcher.matches()) {
-			return classRelNameMatcher.group(1);
-		} else {
-			throw new IllegalArgumentException(
-					String.format("Could not parse a class name from relation name \"%s\".", relName));
-		}
-	}
 
 	private static int estimateVocabTypeCount(final Collection<?> sessionData) {
 		final double estimate = Math.log(sessionData.size() + 1) * 850;
@@ -190,7 +168,7 @@ public final class InstancesMapFactory
 		final Map<String, Instances> result = Maps
 				.newHashMapWithExpectedSize(estimateVocabTypeCount(sessionEventDiagMgrs));
 		final Function<String, Instances> classInstanceFetcher = className -> result.computeIfAbsent(className, k -> {
-			final Instances instances = new Instances(createRelationName(k), entityInstAttrCtx.getAttrs(),
+			final Instances instances = new Instances(WordClasses.createRelationName(k), entityInstAttrCtx.getAttrs(),
 					estimateVocabTypeTokenCount(k, sessionEventDiagMgrs));
 			instances.setClass(entityInstAttrCtx.getClassAttr());
 			return instances;

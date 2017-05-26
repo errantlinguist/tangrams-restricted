@@ -70,7 +70,7 @@ public final class SingleGameContextReferentEventDialogueTester implements Event
 			final Utterance firstUtt = allUtts.get(0);
 			final String firstSpeakerId = firstUtt.getSpeakerId();
 			LOGGER.debug("Creating game context from perspective of player \"{}\".", firstSpeakerId);
-			final GameContext uttCtx = UtteranceGameContexts.create(firstUtt, history, firstSpeakerId);
+			final GameContext uttCtx = UtteranceGameContexts.createSingleContext(firstUtt, history, firstSpeakerId);
 			final Optional<Int2DoubleMap> optReferentConfidenceVals = diagClassifier.apply(transformedDiag, uttCtx);
 			if (optReferentConfidenceVals.isPresent()) {
 				final Int2DoubleMap referentConfidenceVals = optReferentConfidenceVals.get();

@@ -29,11 +29,11 @@ import se.kth.speech.coin.tangrams.analysis.Utterance;
  * @since May 26, 2017
  *
  */
-final class UtteranceGameContexts {
+public final class UtteranceGameContexts {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(UtteranceGameContexts.class);
 
-	static GameContext create(final Utterance dialogueUtt, final GameHistory history,
+	public static GameContext createSingleContext(final Utterance dialogueUtt, final GameHistory history,
 			final String perspectivePlayerId) {
 		LOGGER.debug(
 				"Creating a context based on the logged game history, which is then seen from the perspective of player \"{}\".",

@@ -16,7 +16,7 @@
 	</bean>
 
 	<bean id="negative-example-entity-id-factory"
-		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.RandomNotSelectedEntityIdFactory">
+		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.RandomNotSelectedEntityIdFactory">
 		<constructor-arg ref="random-generator" />
 	</bean>
 

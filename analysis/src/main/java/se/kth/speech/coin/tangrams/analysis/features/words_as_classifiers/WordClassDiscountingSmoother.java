@@ -107,7 +107,7 @@ public final class WordClassDiscountingSmoother {
 		final Instances augendInsts = classInsts.computeIfAbsent(augendClassName, k -> {
 			final int totalInstCount = addendClassInsts.stream().map(Entry::getValue).mapToInt(Instances::numAttributes)
 					.sum();
-			return classInstsFactory.apply(InstancesMapFactory.createRelationName(augendClassName), totalInstCount);
+			return classInstsFactory.apply(WordClasses.createRelationName(augendClassName), totalInstCount);
 		});
 		addendClassInsts.stream().forEach(addendClassInst -> augendInsts.addAll(addendClassInst.getValue()));
 		return augendInsts;
