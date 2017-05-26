@@ -34,7 +34,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.inject.Inject;
@@ -422,12 +421,7 @@ public final class Tester {
 		this.executorFactory = executorFactory;
 	}
 
-	public Result apply(final Iterable<Path> inpaths) throws IOException {
-		final Map<Path, SessionDataManager> infileSessionData = SessionDataManager.createFileSessionDataMap(inpaths);
-		final Map<SessionDataManager, Path> allSessions = infileSessionData.entrySet().stream()
-				.collect(Collectors.toMap(Entry::getValue, Entry::getKey));
-		infileSessionData.forEach((infile, sessionData) -> allSessions.put(sessionData, infile));
-
+	public Result apply(final Map<SessionDataManager, Path> allSessions) throws IOException {
 		final Result result = new Result(allSessions.size(), iterCount);
 		LOGGER.info(
 				"Starting cross-validation test using data from {} session(s), doing {} iterations on each dataset.",

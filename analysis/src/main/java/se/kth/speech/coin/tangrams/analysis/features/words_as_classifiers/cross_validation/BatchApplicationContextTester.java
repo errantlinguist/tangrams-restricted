@@ -27,6 +27,7 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.OptionalInt;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -43,6 +44,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.support.FileSystemXmlApplicationContext;
 
+import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
 import se.kth.speech.io.FileNames;
 
 /**
@@ -134,6 +136,18 @@ public final class BatchApplicationContextTester {
 				final Path outdir = ((File) cl.getParsedOptionValue(Parameter.OUTPATH.optName)).toPath();
 				LOGGER.info("Will write data to \"{}\".", outdir);
 
+				final Path summaryFile;
+				{
+					final Path origSummaryFile = outdir.resolve("batch-summary.tsv");
+					if (Files.deleteIfExists(origSummaryFile)) {
+						LOGGER.info("Deleted already-existing file at \"{}\".", origSummaryFile);
+					}
+					summaryFile = Files.createFile(origSummaryFile);
+					LOGGER.debug("Created summary file at \"{}\".", summaryFile);
+				}
+
+				final Map<SessionDataManager, Path> allSessions = TestSessionData.readTestSessionData(inpaths);
+
 				for (final Path appCtxDefPath : appCtxDefPaths) {
 					final String appCtxDefLoc = appCtxDefPath.toString();
 					final String batchOutdirName = createBatchOutdirName(appCtxDefPath);
@@ -144,26 +158,9 @@ public final class BatchApplicationContextTester {
 							appCtxDefLoc)) {
 						final Tester tester = appCtx.getBean(Tester.class);
 						iterCount.ifPresent(tester::setIterCount);
-						final Tester.Result testResults = tester.apply(inpaths);
-
 						final Path actualOutdirPath = Files.createDirectories(batchOutdirPath);
-
-						final Path statsFilePath = actualOutdirPath.resolve("stats.tsv");
-						try (final PrintWriter out = new PrintWriter(Files.newBufferedWriter(statsFilePath,
-								StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING))) {
-							final StatisticsWriter writer = new StatisticsWriter(out);
-							writer.accept(testResults);
-						}
-						LOGGER.info("Wrote cross-validation statistics to \"{}\".", statsFilePath);
-
-						final Path diagAnalysisPath = actualOutdirPath.resolve("diag-analysis-firstiter.tsv");
-						try (final PrintWriter out = new PrintWriter(Files.newBufferedWriter(diagAnalysisPath,
-								StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING))) {
-							final DialogueAnalysisWriter writer = new DialogueAnalysisWriter(out, 1);
-							writer.accept(testResults);
-						}
-						LOGGER.info("Wrote dialogue analysis to \"{}\".", diagAnalysisPath);
-
+						final Tester.Result testResults = tester.apply(allSessions);
+						writeResults(testResults, actualOutdirPath);
 					}
 				}
 
@@ -200,6 +197,24 @@ public final class BatchApplicationContextTester {
 
 	private static String createBatchOutdirName(final Path appCtxDefPath) {
 		return FileNames.splitBase(appCtxDefPath.getFileName().toString())[0];
+	}
+
+	private static void writeResults(final Tester.Result result, final Path actualOutdirPath) throws IOException {
+		final Path statsFilePath = actualOutdirPath.resolve("stats.tsv");
+		try (final PrintWriter out = new PrintWriter(Files.newBufferedWriter(statsFilePath, StandardOpenOption.CREATE,
+				StandardOpenOption.TRUNCATE_EXISTING))) {
+			final StatisticsWriter writer = new StatisticsWriter(out);
+			writer.accept(result);
+		}
+		LOGGER.info("Wrote cross-validation statistics to \"{}\".", statsFilePath);
+
+		final Path diagAnalysisPath = actualOutdirPath.resolve("diag-analysis-firstiter.tsv");
+		try (final PrintWriter out = new PrintWriter(Files.newBufferedWriter(diagAnalysisPath,
+				StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING))) {
+			final DialogueAnalysisWriter writer = new DialogueAnalysisWriter(out, 1);
+			writer.accept(result);
+		}
+		LOGGER.info("Wrote dialogue analysis to \"{}\".", diagAnalysisPath);
 	}
 
 }

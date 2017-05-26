@@ -177,7 +177,7 @@ public final class DialogueAnalysisWriter implements Consumer<Tester.Result> {
 				try (final FileSystemXmlApplicationContext appCtx = new FileSystemXmlApplicationContext(appCtxLocs)) {
 					final Tester tester = appCtx.getBean(Tester.class);
 					iterCount.ifPresent(tester::setIterCount);
-					final Tester.Result testResults = tester.apply(inpaths);
+					final Tester.Result testResults = tester.apply(TestSessionData.readTestSessionData(inpaths));
 					try (PrintWriter out = Parameter.parseOutpath(cl)) {
 						final DialogueAnalysisWriter writer = new DialogueAnalysisWriter(out, tester.getIterCount());
 						writer.accept(testResults);

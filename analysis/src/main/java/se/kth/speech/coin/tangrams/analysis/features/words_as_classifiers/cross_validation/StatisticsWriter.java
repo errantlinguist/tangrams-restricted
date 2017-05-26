@@ -106,7 +106,7 @@ public final class StatisticsWriter implements Consumer<Tester.Result> {
 			Arrays.stream(Parameter.values()).map(Parameter::get).forEach(result::addOption);
 			return result;
 		}
-		
+
 		private static OptionalInt parseIterCount(final CommandLine cl) throws ParseException {
 			final Number optVal = (Number) cl.getParsedOptionValue(Parameter.ITER_COUNT.optName);
 			final OptionalInt result;
@@ -154,6 +154,10 @@ public final class StatisticsWriter implements Consumer<Tester.Result> {
 
 	private static final Collector<CharSequence, ?, String> ROW_CELL_JOINER = Collectors.joining("\t");
 
+	public static List<Object> createSummaryTableRow(final Object key, final Tester.Result testResults) {
+		return createTableRow(key, testResults.iterCount(), testResults.totalResults());
+	}
+
 	public static void main(final CommandLine cl) throws ParseException, IOException {
 		if (cl.hasOption(Parameter.HELP.optName)) {
 			Parameter.printHelp();
@@ -168,7 +172,7 @@ public final class StatisticsWriter implements Consumer<Tester.Result> {
 				try (final FileSystemXmlApplicationContext appCtx = new FileSystemXmlApplicationContext(appCtxLocs)) {
 					final Tester tester = appCtx.getBean(Tester.class);
 					iterCount.ifPresent(tester::setIterCount);
-					final Tester.Result testResults = tester.apply(inpaths);
+					final Tester.Result testResults = tester.apply(TestSessionData.readTestSessionData(inpaths));
 					try (PrintWriter out = Parameter.parseOutpath(cl)) {
 						final StatisticsWriter writer = new StatisticsWriter(out);
 						writer.accept(testResults);
@@ -220,8 +224,7 @@ public final class StatisticsWriter implements Consumer<Tester.Result> {
 			}
 		}
 
-		final SessionTester.Result totalSessionResults = testResults.totalResults();
-		final List<Object> summaryVals = createTableRow("SUMMARY", testResults.iterCount(), totalSessionResults);
+		final List<Object> summaryVals = createSummaryTableRow("SUMMARY", testResults);
 		out.print(summaryVals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
 	}
 
