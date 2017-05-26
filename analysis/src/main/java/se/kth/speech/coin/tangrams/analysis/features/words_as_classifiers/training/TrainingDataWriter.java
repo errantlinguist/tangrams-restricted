@@ -155,7 +155,6 @@ public final class TrainingDataWriter {
 				final String outfileExt = Parameter.parseOutputType(cl);
 				LOGGER.info("Will write data in \"*{}\" format.", outfileExt);
 				final String[] appCtxLocs = cl.getOptionValues(Parameter.APP_CONTEXT_DEFINITIONS.optName);
-
 				try (final FileSystemXmlApplicationContext appCtx = new FileSystemXmlApplicationContext(appCtxLocs)) {
 					final TrainingDataWriter writer = appCtx.getBean(TrainingDataWriter.class);
 					final Map<String, Instances> classInstances = writer.apply(inpaths);
