@@ -243,7 +243,6 @@ public final class BatchApplicationContextTester {
 		try (final FileSystemXmlApplicationContext appCtx = new FileSystemXmlApplicationContext(appCtxDefLoc)) {
 			final Tester tester = appCtx.getBean(Tester.class);
 			iterCount.ifPresent(tester::setIterCount);
-
 			testResults = tester.apply(allSessions);
 		}
 		writeResults(testResults, outdirPath);
