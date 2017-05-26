@@ -386,7 +386,8 @@ public final class Tester {
 	@Inject
 	private BeanFactory beanFactory;
 
-	private final Function<? super EventDialogue, EventDialogue> diagTransformer;
+	@Inject
+	private Function<? super EventDialogue, EventDialogue> diagTransformer;
 
 	@Inject
 	private EntityInstanceAttributeContext entInstAttrCtx;
@@ -407,17 +408,16 @@ public final class Tester {
 	@Inject
 	private TestSetFactory testSetFactory;
 
-	public Tester(final Function<? super EventDialogue, EventDialogue> diagTransformer) {
-		this(diagTransformer, Executors::newSingleThreadExecutor);
+	public Tester() {
+		this(Executors::newSingleThreadExecutor);
 	}
 
-	public Tester(final Function<? super EventDialogue, EventDialogue> diagTransformer, final int parallelThreadCount) {
-		this(diagTransformer, () -> Executors.newFixedThreadPool(parallelThreadCount));
+	public Tester(final int parallelThreadCount) {
+		this(() -> Executors.newFixedThreadPool(parallelThreadCount));
 	}
 
-	public Tester(final Function<? super EventDialogue, EventDialogue> diagTransformer,
+	public Tester(
 			final Supplier<? extends ExecutorService> executorFactory) {
-		this.diagTransformer = diagTransformer;
 		this.executorFactory = executorFactory;
 	}
 
