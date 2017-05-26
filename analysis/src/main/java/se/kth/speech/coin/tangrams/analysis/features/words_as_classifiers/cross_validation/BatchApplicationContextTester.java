@@ -16,10 +16,12 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
+import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
@@ -31,6 +33,8 @@ import java.util.Map;
 import java.util.OptionalInt;
 import java.util.Set;
 import java.util.function.Supplier;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -119,7 +123,12 @@ public final class BatchApplicationContextTester {
 
 	}
 
+	private static final List<String> COL_HEADERS = Arrays.asList("INPATH", "ITER_COUNT", "MEAN_RANK", "MRR",
+			"DIAG_COUNT", "UTTS_TESTED", "MEAN_UTTS_PER_DIAG");
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(BatchApplicationContextTester.class);
+
+	private static final Collector<CharSequence, ?, String> ROW_CELL_JOINER = Collectors.joining("\t");
 
 	public static void main(final CommandLine cl) throws IOException, ParseException {
 		if (cl.hasOption(Parameter.HELP.optName)) {
@@ -136,34 +145,10 @@ public final class BatchApplicationContextTester {
 				final Path outdir = ((File) cl.getParsedOptionValue(Parameter.OUTPATH.optName)).toPath();
 				LOGGER.info("Will write data to \"{}\".", outdir);
 
-				final Path summaryFile;
-				{
-					final Path origSummaryFile = outdir.resolve("batch-summary.tsv");
-					if (Files.deleteIfExists(origSummaryFile)) {
-						LOGGER.info("Deleted already-existing file at \"{}\".", origSummaryFile);
-					}
-					summaryFile = Files.createFile(origSummaryFile);
-					LOGGER.debug("Created summary file at \"{}\".", summaryFile);
-				}
-
 				final Map<SessionDataManager, Path> allSessions = TestSessionData.readTestSessionData(inpaths);
-
-				for (final Path appCtxDefPath : appCtxDefPaths) {
-					final String appCtxDefLoc = appCtxDefPath.toString();
-					final String batchOutdirName = createBatchOutdirName(appCtxDefPath);
-					final Path batchOutdirPath = outdir.resolve(batchOutdirName);
-					LOGGER.info("Will write results of testing \"{}\" to \"{}\".", appCtxDefPath, batchOutdirPath);
-
-					try (final FileSystemXmlApplicationContext appCtx = new FileSystemXmlApplicationContext(
-							appCtxDefLoc)) {
-						final Tester tester = appCtx.getBean(Tester.class);
-						iterCount.ifPresent(tester::setIterCount);
-						final Path actualOutdirPath = Files.createDirectories(batchOutdirPath);
-						final Tester.Result testResults = tester.apply(allSessions);
-						writeResults(testResults, actualOutdirPath);
-					}
-				}
-
+				final BatchApplicationContextTester tester = new BatchApplicationContextTester(allSessions, iterCount,
+						outdir);
+				tester.accept(appCtxDefPaths);
 			}
 		}
 	}
@@ -215,6 +200,58 @@ public final class BatchApplicationContextTester {
 			writer.accept(result);
 		}
 		LOGGER.info("Wrote dialogue analysis to \"{}\".", diagAnalysisPath);
+	}
+
+	private final Map<SessionDataManager, Path> allSessions;
+
+	private final OptionalInt iterCount;
+
+	private final Path outdir;
+
+	private final Path summaryFile;
+
+	public BatchApplicationContextTester(final Map<SessionDataManager, Path> allSessions, final OptionalInt iterCount,
+			final Path outdir) {
+		this.allSessions = allSessions;
+		this.iterCount = iterCount;
+		this.outdir = outdir;
+
+		summaryFile = outdir.resolve("batch-summary.tsv");
+	}
+
+	/**
+	 * @param appCtxDefPaths
+	 * @throws IOException
+	 */
+	public void accept(final Iterable<Path> appCtxDefPaths) throws IOException {
+		try (final BufferedWriter summaryWriter = Files.newBufferedWriter(summaryFile, StandardOpenOption.CREATE,
+				StandardOpenOption.TRUNCATE_EXISTING)) {
+			summaryWriter.write(COL_HEADERS.stream().collect(ROW_CELL_JOINER));
+		}
+		for (final Path appCtxDefPath : appCtxDefPaths) {
+			accept(appCtxDefPath, StandardOpenOption.APPEND);
+		}
+	}
+
+	private void accept(final Path appCtxDefPath, final OpenOption... summaryFileOpenOpts) throws IOException {
+		final String appCtxDefLoc = appCtxDefPath.toString();
+		final String batchOutdirName = createBatchOutdirName(appCtxDefPath);
+		final Path outdirPath = Files.createDirectories(outdir.resolve(batchOutdirName));
+		LOGGER.info("Will write results of testing \"{}\" to \"{}\".", appCtxDefPath, outdirPath);
+
+		final Tester.Result testResults;
+		try (final FileSystemXmlApplicationContext appCtx = new FileSystemXmlApplicationContext(appCtxDefLoc)) {
+			final Tester tester = appCtx.getBean(Tester.class);
+			iterCount.ifPresent(tester::setIterCount);
+
+			testResults = tester.apply(allSessions);
+		}
+		writeResults(testResults, outdirPath);
+		final List<Object> configSummary = StatisticsWriter.createSummaryTableRow(appCtxDefPath.toString(),
+				testResults);
+		try (final BufferedWriter summaryWriter = Files.newBufferedWriter(summaryFile, summaryFileOpenOpts)) {
+			summaryWriter.write(configSummary.stream().map(Object::toString).collect(ROW_CELL_JOINER));
+		}
 	}
 
 }
