@@ -108,16 +108,16 @@ public final class OnePositiveOneNegativeInstanceFactory extends AbstractSizeEst
 					LOGGER.debug(
 							"Creating positive and negative examples for entity ID \"{}\", which is selected by player \"{}\".",
 							selectedEntityId, event.getString(GameManagementEvent.Attribute.PLAYER_ID.toString()));
+					final EntityFeature.Extractor.Context positiveContext = extCtxFactory.apply(uttCtx,
+							selectedEntityId);
+					final EntityFeature.Extractor.Context negativeContext = extCtxFactory.apply(uttCtx,
+							negativeExampleEntityIdGetter.applyAsInt(uttCtx));
 					final Stream<String> wordClasses = transformedDiag.getUtts().stream().map(Utterance::getTokens)
 							.flatMap(List::stream);
 					wordClasses.forEach(wordClass -> {
 						// Add positive training example
-						final EntityFeature.Extractor.Context positiveContext = extCtxFactory.apply(uttCtx,
-								selectedEntityId);
 						addTokenInstances(wordClass, positiveContext, classInstancesGetter, Boolean.TRUE.toString());
 						// Add negative training example
-						final EntityFeature.Extractor.Context negativeContext = extCtxFactory.apply(uttCtx,
-								negativeExampleEntityIdGetter.applyAsInt(uttCtx));
 						addTokenInstances(wordClass, negativeContext, classInstancesGetter, Boolean.FALSE.toString());
 					});
 				}
