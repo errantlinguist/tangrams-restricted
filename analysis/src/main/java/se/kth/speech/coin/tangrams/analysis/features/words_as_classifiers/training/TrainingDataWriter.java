@@ -46,7 +46,7 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
+import org.springframework.context.support.FileSystemXmlApplicationContext;
 
 import se.kth.speech.coin.tangrams.analysis.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.GameHistory;
@@ -80,6 +80,14 @@ import weka.core.converters.ConverterUtils;
 public final class TrainingDataWriter {
 
 	private enum Parameter implements Supplier<Option> {
+		APP_CONTEXT_DEFINITIONS("a") {
+			@Override
+			public Option get() {
+				return Option.builder(optName).longOpt("app-ctx")
+						.desc("Location(s) to the Spring application context definition file(s) to load for configuration.")
+						.hasArgs().argName("locator").required().build();
+			}
+		},
 		HELP("?") {
 			@Override
 			public Option get() {
@@ -146,9 +154,9 @@ public final class TrainingDataWriter {
 				LOGGER.info("Will write data to \"{}\".", outdir);
 				final String outfileExt = Parameter.parseOutputType(cl);
 				LOGGER.info("Will write data in \"*{}\" format.", outfileExt);
+				final String[] appCtxLocs = cl.getOptionValues(Parameter.APP_CONTEXT_DEFINITIONS.optName);
 
-				try (final ClassPathXmlApplicationContext appCtx = new ClassPathXmlApplicationContext(
-						"context.xml", TrainingDataWriter.class)) {
+				try (final FileSystemXmlApplicationContext appCtx = new FileSystemXmlApplicationContext(appCtxLocs)) {
 					final TrainingDataWriter writer = appCtx.getBean(TrainingDataWriter.class);
 					final Map<String, Instances> classInstances = writer.apply(inpaths);
 					if (outdir.mkdirs()) {
