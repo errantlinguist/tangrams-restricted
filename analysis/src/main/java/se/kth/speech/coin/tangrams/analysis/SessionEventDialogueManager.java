@@ -98,10 +98,8 @@ public final class SessionEventDialogueManager {
 				.toArray(Utterance[]::new));
 	}
 
-	public List<EventDialogue> createUttDialogues() {
-		final List<EventDialogue> eventUttLists = Arrays
-				.asList(eventDiagFactory.apply(utts.listIterator(), gameHistory).toArray(EventDialogue[]::new));
-		return eventUttLists;
+	public Stream<EventDialogue> createUttDialogues() {
+		return eventDiagFactory.apply(utts.listIterator(), gameHistory);
 	}
 
 	public GameHistory getGameHistory() {

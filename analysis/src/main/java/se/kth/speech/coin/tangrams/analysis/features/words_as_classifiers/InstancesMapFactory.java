@@ -17,7 +17,6 @@
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -70,7 +69,7 @@ import weka.core.Instances;
 @Named
 public final class InstancesMapFactory
 		implements Function<Collection<SessionEventDialogueManager>, Map<String, Instances>> {
-
+	
 	private class MultiClassDataCollector implements Consumer<SessionEventDialogueManager> {
 
 		private final Function<? super String, Instances> classInstanceGetter;
@@ -85,8 +84,8 @@ public final class InstancesMapFactory
 			final String gameId = sessionEventDiagMgr.getGameId();
 			LOGGER.debug("Processing game \"{}\".", gameId);
 
-			final List<EventDialogue> uttDialogues = sessionEventDiagMgr.createUttDialogues();
-			uttDialogues.forEach(uttDialogue -> {
+			final Stream<EventDialogue> uttDialogues = sessionEventDiagMgr.createUttDialogues();
+			uttDialogues.forEachOrdered(uttDialogue -> {
 				uttDialogue.getLastEvent().ifPresent(event -> {
 					LOGGER.debug("Extracting features for utterances for event: {}", event);
 					final String submittingPlayerId = event
