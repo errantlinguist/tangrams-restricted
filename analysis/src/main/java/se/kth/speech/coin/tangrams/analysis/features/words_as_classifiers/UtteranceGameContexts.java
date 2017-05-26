@@ -33,6 +33,11 @@ public final class UtteranceGameContexts {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(UtteranceGameContexts.class);
 
+	public static GameContext createSingleContext(final Utterance dialogueUtt, final GameHistory history) {
+		final String speakerId = dialogueUtt.getSpeakerId();
+		return createSingleContext(dialogueUtt, history, speakerId);
+	}
+
 	public static GameContext createSingleContext(final Utterance dialogueUtt, final GameHistory history,
 			final String perspectivePlayerId) {
 		LOGGER.debug(

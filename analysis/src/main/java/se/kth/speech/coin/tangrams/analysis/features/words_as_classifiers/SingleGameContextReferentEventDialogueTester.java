@@ -20,9 +20,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import se.kth.speech.coin.tangrams.analysis.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.GameContext;
@@ -42,8 +39,6 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.
  *
  */
 public final class SingleGameContextReferentEventDialogueTester implements EventDialogueTester {
-
-	private static final Logger LOGGER = LoggerFactory.getLogger(SingleGameContextReferentEventDialogueTester.class);
 
 	private final EventDialogueClassifier diagClassifier;
 
@@ -68,9 +63,7 @@ public final class SingleGameContextReferentEventDialogueTester implements Event
 			// Just use the game context for the first utterance for all
 			// utterances processed for the given dialogue
 			final Utterance firstUtt = allUtts.get(0);
-			final String firstSpeakerId = firstUtt.getSpeakerId();
-			LOGGER.debug("Creating game context from perspective of player \"{}\".", firstSpeakerId);
-			final GameContext uttCtx = UtteranceGameContexts.createSingleContext(firstUtt, history, firstSpeakerId);
+			final GameContext uttCtx = UtteranceGameContexts.createSingleContext(firstUtt, history);
 			final Optional<Int2DoubleMap> optReferentConfidenceVals = diagClassifier.apply(transformedDiag, uttCtx);
 			if (optReferentConfidenceVals.isPresent()) {
 				final Int2DoubleMap referentConfidenceVals = optReferentConfidenceVals.get();
