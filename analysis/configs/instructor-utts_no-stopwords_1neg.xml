@@ -81,6 +81,7 @@
 				<description>The maximum number of parallel threads.</description>
 				<value>1</value>
 			</constructor-arg>
+			<property name="iterCount" value="10" />
 		</bean>
 	</beans>
 </beans>
