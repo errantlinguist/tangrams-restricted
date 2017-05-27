@@ -12,13 +12,6 @@
 	<beans>
 		<description>Uses all (19) non-selected entities for negative examples for each positive example. Uses all utterances in each dialogue for training and testing.</description>
 
-		<bean id="random-generator" class="java.util.Random">
-			<description>The random number generator used in the application;
-				Provide an explicit seed below in order to make the results
-				reproducible from one run to the next.</description>
-			<constructor-arg value="1" />
-		</bean>
-
 		<bean id="training-insts-factory" class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.OnePositiveMaximumNegativeInstancesFactory">
 		</bean>
 

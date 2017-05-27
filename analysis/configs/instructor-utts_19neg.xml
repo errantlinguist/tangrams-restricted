@@ -15,14 +15,6 @@
 			testing are those which were made by the instructor for the turn
 			which the dialogue has as a context.</description>
 
-		<bean id="random-generator" class="java.util.Random">
-			<description>The random number generator used in the application;
-				Provide an explicit seed below in order to make the results
-				reproducible from one run to the next.
-			</description>
-			<constructor-arg value="1" />
-		</bean>
-
 		<bean id="training-insts-factory" class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.OnePositiveMaximumNegativeInstancesFactory">
 		</bean>
 
