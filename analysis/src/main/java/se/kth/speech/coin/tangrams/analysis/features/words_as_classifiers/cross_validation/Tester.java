@@ -313,13 +313,13 @@ public final class Tester {
 		private ConcurrentMap<String, Logistic> createWordClassifierMap(
 				final Set<Entry<String, Instances>> classInstances) {
 			final ConcurrentMap<String, Logistic> result = new ConcurrentHashMap<>(classInstances.size());
-			final Stream.Builder<CompletableFuture<Void>> trainedClassifiers = Stream.builder();
+			final Stream.Builder<CompletableFuture<Void>> trainingJobs = Stream.builder();
 			for (final Entry<String, Instances> classInstancesEntry : classInstances) {
 				final String className = classInstancesEntry.getKey();
 				LOGGER.debug("Training classifier for class \"{}\".", className);
 				final Instances trainingInsts = classInstancesEntry.getValue();
 				LOGGER.debug("{} instance(s) for class \"{}\".", trainingInsts.size(), className);
-				final CompletableFuture<Void> trainedClassifier = CompletableFuture.runAsync(() -> {
+				final CompletableFuture<Void> trainingJob = CompletableFuture.runAsync(() -> {
 					try {
 						final Logistic classifier = new Logistic();
 						classifier.buildClassifier(trainingInsts);
@@ -332,11 +332,9 @@ public final class Tester {
 						throw new RuntimeException(e);
 					}
 				}, executor);
-				trainedClassifiers.add(trainedClassifier);
+				trainingJobs.add(trainingJob);
 			}
-			final CompletableFuture<Void> allTrainedClassifiers = CompletableFuture
-					.allOf(trainedClassifiers.build().toArray(CompletableFuture[]::new));
-			allTrainedClassifiers.join();
+			CompletableFuture.allOf(trainingJobs.build().toArray(CompletableFuture[]::new)).join();
 			return result;
 		}
 	}
