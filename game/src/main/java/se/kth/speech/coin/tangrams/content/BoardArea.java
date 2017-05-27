@@ -31,10 +31,10 @@ import javax.swing.UIManager;
 public enum BoardArea {
 	BACKGROUND, HIGHLIGHT;
 
-	private static final Map<BoardArea, Color> DEFAULT_BOARD_AREA_COLORS = createDefaultBoardAreaColorMap();
+	private static final Map<BoardArea, Color> DEFAULT_BOARD_AREA_COLORS = Collections.unmodifiableMap(createDefaultBoardAreaColorMap());
 
 	public static Map<BoardArea, Color> getDefaultBoardAreaColorMap() {
-		return Collections.unmodifiableMap(DEFAULT_BOARD_AREA_COLORS);
+		return DEFAULT_BOARD_AREA_COLORS;
 	}
 
 	private static Map<BoardArea, Color> createDefaultBoardAreaColorMap() {

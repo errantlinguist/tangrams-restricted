@@ -44,7 +44,7 @@ public final class InstanceFeatureExtractor<F, C> implements BiConsumer<Instance
 
 	public InstanceFeatureExtractor(final FeatureExtractor<F, C> extractor, final Map<F, Attribute> featureAttrs) {
 		this.extractor = extractor;
-		this.featureAttrs = featureAttrs;
+		this.featureAttrs = Collections.unmodifiableMap(featureAttrs);
 	}
 
 	@Override
@@ -67,7 +67,7 @@ public final class InstanceFeatureExtractor<F, C> implements BiConsumer<Instance
 	}
 
 	public Map<F, Attribute> getFeatureAttrs() {
-		return Collections.unmodifiableMap(featureAttrs);
+		return featureAttrs;
 	}
 
 }

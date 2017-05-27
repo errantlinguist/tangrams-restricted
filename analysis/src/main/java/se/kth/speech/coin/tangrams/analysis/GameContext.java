@@ -97,7 +97,7 @@ public final class GameContext {
 		this.history = history;
 		this.time = time;
 		this.perspectivePlayerId = perspectivePlayerId;
-		entityIds = createEntityIdList();
+		entityIds = IntLists.unmodifiable(createEntityIdList());
 	}
 
 	public Map<EntityStatus, Int2ObjectMap<ImageVisualizationInfoDescription.Datum>> createEntityStatusVisualizationInfoMap() {
@@ -264,7 +264,7 @@ public final class GameContext {
 	}
 
 	public IntList getEntityIds() {
-		return IntLists.unmodifiable(entityIds);
+		return entityIds;
 	}
 
 	public List<ImageVisualizationInfoDescription.Datum> getEntityVisualizationInfo() {

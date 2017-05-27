@@ -104,8 +104,8 @@ public final class PlayerDataManager {
 	private final BiMap<String, String> playerSourceIds;
 
 	public PlayerDataManager(final BiMap<String, String> playerSourceIds, final Map<String, Path> playerEventLogs) {
-		this.playerSourceIds = playerSourceIds;
-		this.playerEventLogs = playerEventLogs;
+		this.playerSourceIds = Maps.unmodifiableBiMap(playerSourceIds);
+		this.playerEventLogs = Collections.unmodifiableMap(playerEventLogs);
 	}
 
 	/*
@@ -146,14 +146,14 @@ public final class PlayerDataManager {
 	 * @return the playerEventLogs
 	 */
 	public Map<String, Path> getPlayerEventLogs() {
-		return Collections.unmodifiableMap(playerEventLogs);
+		return playerEventLogs;
 	}
 
 	/**
 	 * @return the playerSourceIds
 	 */
 	public BiMap<String, String> getPlayerSourceIds() {
-		return Maps.unmodifiableBiMap(playerSourceIds);
+		return playerSourceIds;
 	}
 
 	/*

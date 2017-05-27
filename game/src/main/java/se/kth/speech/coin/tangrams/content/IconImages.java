@@ -62,7 +62,7 @@ public final class IconImages {
 					.nullsLast(Lists.comparingByIndex(imageOrderingNames).thenComparing(Comparator.naturalOrder()));
 
 			RESOURCE_NAME_FACTORY = resourceLoc -> FileNames.splitBase(resourceLoc)[0];
-			ICON_IMAGE_RESOURCES = createImageResourceMap("image/(?!svg).+", RESOURCE_NAME_FACTORY);
+			ICON_IMAGE_RESOURCES = Collections.unmodifiableNavigableMap(createImageResourceMap("image/(?!svg).+", RESOURCE_NAME_FACTORY));
 		} catch (final IOException e) {
 			throw new UncheckedIOException(e);
 		}
@@ -72,7 +72,7 @@ public final class IconImages {
 	 * @return the named icon image resources
 	 */
 	public static NavigableMap<String, URL> getImageResources() {
-		return Collections.unmodifiableNavigableMap(ICON_IMAGE_RESOURCES);
+		return ICON_IMAGE_RESOURCES;
 	}
 
 	/**

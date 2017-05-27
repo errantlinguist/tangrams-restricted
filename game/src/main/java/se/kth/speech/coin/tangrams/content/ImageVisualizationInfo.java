@@ -139,7 +139,7 @@ public final class ImageVisualizationInfo {
 	private final int uniqueImgResourceCount;
 
 	public ImageVisualizationInfo(final List<Datum> data, final int uniqueImgResourceCount) {
-		this.data = data;
+		this.data = Collections.unmodifiableList(data);
 		this.uniqueImgResourceCount = uniqueImgResourceCount;
 	}
 
@@ -147,7 +147,7 @@ public final class ImageVisualizationInfo {
 	 * @return the data
 	 */
 	public List<Datum> getData() {
-		return Collections.unmodifiableList(data);
+		return data;
 	}
 
 	/**

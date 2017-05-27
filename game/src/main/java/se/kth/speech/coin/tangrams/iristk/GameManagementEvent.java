@@ -71,8 +71,8 @@ public enum GameManagementEvent {
 
 	public static final String EVENT_NAME_QUALIFIER = "tangrams.action";
 
-	private static final EnumSet<GameManagementEvent> GAME_MODEL_STATE_CHANGING_EVENTS = EnumSet
-			.of(GameManagementEvent.GAME_READY_RESPONSE, GameManagementEvent.NEXT_TURN_REQUEST);
+	private static final Set<GameManagementEvent> GAME_MODEL_STATE_CHANGING_EVENTS = Collections.unmodifiableSet(EnumSet
+			.of(GameManagementEvent.GAME_READY_RESPONSE, GameManagementEvent.NEXT_TURN_REQUEST));
 
 	private static final Map<String, GameManagementEvent> NAMED_EVENTS = Arrays.stream(GameManagementEvent.values())
 			.collect(Collectors.toMap(GameManagementEvent::getEventName, Function.identity()));
@@ -89,7 +89,7 @@ public enum GameManagementEvent {
 	 * @return the gameModelStateChangingEvents
 	 */
 	public static Set<GameManagementEvent> getGameModelStateChangingEvents() {
-		return Collections.unmodifiableSet(GAME_MODEL_STATE_CHANGING_EVENTS);
+		return GAME_MODEL_STATE_CHANGING_EVENTS;
 	}
 
 	private final String eventName;

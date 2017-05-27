@@ -34,7 +34,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.BiMap;
-import com.google.common.collect.Maps;
 
 import iristk.util.HAT;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
@@ -94,8 +93,8 @@ public final class SessionEventDialogueManager {
 		});
 		final List<Utterance> utts = Arrays.asList(segUttFactory.create(uttAnnots.getSegments().getSegment().stream())
 				.flatMap(List::stream).toArray(Utterance[]::new));
-		uttDialogues = Arrays
-				.asList(eventDiagFactory.apply(utts.listIterator(), gameHistory).toArray(EventDialogue[]::new));
+		uttDialogues = Collections.unmodifiableList(
+				Arrays.asList(eventDiagFactory.apply(utts.listIterator(), gameHistory).toArray(EventDialogue[]::new)));
 	}
 
 	public GameHistory getGameHistory() {
@@ -113,11 +112,11 @@ public final class SessionEventDialogueManager {
 	 * @return the playerSourceIds
 	 */
 	public BiMap<String, String> getPlayerSourceIds() {
-		return Maps.unmodifiableBiMap(playerSourceIds);
+		return playerSourceIds;
 	}
 
 	public List<EventDialogue> getUttDialogues() {
-		return Collections.unmodifiableList(uttDialogues);
+		return uttDialogues;
 	}
 
 }
