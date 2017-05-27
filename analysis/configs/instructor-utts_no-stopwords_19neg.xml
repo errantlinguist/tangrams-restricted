@@ -16,6 +16,7 @@
 			which the dialogue has as a context. Filters out English stopwords in each utterance.</description>
 
 		<bean id="training-insts-factory" class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.OnePositiveMaximumNegativeInstancesFactory">
+			<description>Uses all (19) non-selected entities for negative examples for each positive example.</description>
 		</bean>
 
 		<bean id="smoother"
@@ -43,21 +44,14 @@
 				<bean class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.ChainedEventDialogueTransformer">
 					<constructor-arg>
 						<util:list value-type="java.util.function.Function">
-							<bean class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.InstructorUtteranceFilteringEventDialogueTransformer"></bean>
-							<bean class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.LuceneAnalyzingEventDialogueTransformer">
-								<constructor-arg>
-									<bean class="org.apache.lucene.analysis.standard.StandardAnalyzer">
-										<constructor-arg type="org.apache.lucene.analysis.util.CharArraySet">
-											<bean class="org.apache.lucene.analysis.util.CharArraySet">
-												<constructor-arg ref="stopword-set-factory" />
-												<constructor-arg>
-													<description>Ignore case?</description>
-													<value>true</value>
-												</constructor-arg>
-											</bean>
-										</constructor-arg>
-									</bean>
-								</constructor-arg>	
+							<bean class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.InstructorUtteranceFilteringEventDialogueTransformer">
+								<description>For each dialogue, the only utterances used for training and
+						testing are those which were made by the instructor for the turn
+						which the dialogue has as a context.</description>
+							</bean>
+							<bean class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.TokenFilteringEventDialogueTransformer">
+								<description>Filters out stopwords in each utterance.</description>
+								<constructor-arg ref="stopword-set-factory" />
 							</bean>
 						</util:list>
 					</constructor-arg>

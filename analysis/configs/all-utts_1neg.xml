@@ -20,6 +20,7 @@
 		</bean>
 
 		<bean id="training-insts-factory" class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.OnePositiveOneNegativeInstanceFactory">
+				<description>Finds one random negative example for each positive example.</description>
 				<constructor-arg ref="random-generator" />
 		</bean>
 
@@ -34,17 +35,7 @@
 			scope="prototype">
 		</bean>
 		
-		<bean id="dialogue-transformer" class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.CachingEventDialogueTransformer">
-			<constructor-arg>
-				<bean class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.LuceneAnalyzingEventDialogueTransformer">
-					<constructor-arg>
-						<bean class="org.apache.lucene.analysis.standard.StandardAnalyzer">
-							<constructor-arg type="org.apache.lucene.analysis.util.CharArraySet" value="#{ T(org.apache.lucene.analysis.util.CharArraySet).EMPTY_SET }" />
-						</bean>
-					</constructor-arg>	
-				</bean>
-			</constructor-arg>
-		</bean>
+		<bean id="dialogue-transformer" class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.DummyEventDialogueTransformer" />
 
 		<bean id="cross-validation-tester"
 			class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.Tester" scope="prototype">
