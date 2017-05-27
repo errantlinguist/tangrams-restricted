@@ -12,7 +12,7 @@
 					<constructor-arg>
 						<util:properties>
 							<!-- https://stanfordnlp.github.io/CoreNLP/api.html -->
-							<prop key="annotators"><!-- https://stanfordnlp.github.io/CoreNLP/annotators.html -->tokenize,ssplit</prop>
+							<prop key="annotators"><!-- https://stanfordnlp.github.io/CoreNLP/annotators.html -->ssplit,tokenize</prop>
 							<prop key="ssplit.isOneSentence"><!-- # https://stanfordnlp.github.io/CoreNLP/ssplit.html -->true</prop>
 							<prop key="tokenize.language"><!-- # https://stanfordnlp.github.io/CoreNLP/tokenize.html -->en</prop>
 						</util:properties>
