@@ -345,6 +345,11 @@ public final class Tester {
 
 	private static final String TEST_INSTS_REL_NAME = "tested_entites";
 
+	private static Supplier<ExecutorService> createExecutorServiceFactory(final int parallelThreadCount) {
+		LOGGER.info("Will run with {} parallel thread(s).", parallelThreadCount);
+		return () -> Executors.newFixedThreadPool(parallelThreadCount);
+	}
+
 	private static int estimateTestInstanceCount(final SessionDataManager sessionData) throws IOException {
 		final long lineCount = Files.lines(sessionData.getCanonicalEventLogPath()).count();
 		// (Number of logged events / estimated number of events per dialogue) *
@@ -397,7 +402,7 @@ public final class Tester {
 	}
 
 	public Tester(final int parallelThreadCount) {
-		this(() -> Executors.newFixedThreadPool(parallelThreadCount));
+		this(createExecutorServiceFactory(parallelThreadCount));
 	}
 
 	public Tester(final Supplier<? extends ExecutorService> executorFactory) {
