@@ -8,7 +8,7 @@
 
 		<bean id="stanford-tokenizer" class="se.kth.speech.nlp.StanfordCoreNLPTokenizer">
 			<constructor-arg>
-				<bean class ="edu.stanford.nlp.pipeline.StanfordCoreNLP">
+				<bean class="edu.stanford.nlp.pipeline.StanfordCoreNLP">
 					<constructor-arg>
 						<util:properties>
 							<!-- https://stanfordnlp.github.io/CoreNLP/api.html -->
