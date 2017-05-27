@@ -45,8 +45,9 @@ public final class StanfordCoreNLPTokenizer implements Function<String, List<Str
 	}
 
 	public StanfordCoreNLPTokenizer(final Annotator annotator, final Predicate<? super String> tokenFilter) {
-		this.tokenFilter = tokenFilter;
 		this.annotator = annotator;
+		this.tokenFilter = tokenFilter;
+		
 	}
 
 	@Override
