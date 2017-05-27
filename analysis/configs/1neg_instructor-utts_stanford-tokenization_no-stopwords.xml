@@ -8,14 +8,19 @@
 
 	<import
 		resource="classpath:se/kth/speech/coin/tangrams/analysis/features/words_as_classifiers/cross_validation/context.xml" />
+	<import resource="dialogue-transformation/stanford-tokenization.xml"/>
 
 	<beans>
-		<description>Finds one random negative example for each positive example. Uses all utterances in each dialogue for training and testing. Tokenizes utterances using Stanford CoreNLP's tokenizer (https://stanfordnlp.github.io/CoreNLP/tokenize.html).</description>
+		<description>Finds one random negative example for each positive
+			example. For each dialogue, the only utterances used for training and
+			testing are those which were made by the instructor for the turn
+			which the dialogue has as a context. Tokenizes utterances using Stanford CoreNLP's tokenizer (https://stanfordnlp.github.io/CoreNLP/tokenize.html). Filters out English stopwords in each utterance. </description>
 
 		<bean id="random-generator" class="java.util.Random">
 			<description>The random number generator used in the application;
 				Provide an explicit seed below in order to make the results
-				reproducible from one run to the next.</description>
+				reproducible from one run to the next.
+			</description>
 			<constructor-arg value="1" />
 		</bean>
 
@@ -35,26 +40,35 @@
 			scope="prototype">
 		</bean>
 		
+		<bean id="stopword-set-factory" class="se.kth.speech.nlp.SnowballPorter2EnglishStopwordSetFactory">
+			<property name="variantsToUnify">
+				<util:set value-type="se.kth.speech.nlp.SnowballPorter2EnglishStopwords.Variant">
+					<value>CANONICAL</value>
+					<value>FILLERS</value>
+				</util:set>
+			</property>
+		</bean>		
+
 		<bean id="dialogue-transformer" class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.CachingEventDialogueTransformer">
 			<constructor-arg>
-				<bean class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.TokenizingEventDialogueTransformer">
-					<description>Tokenizes utterances using Stanford CoreNLP's tokenizer (https://stanfordnlp.github.io/CoreNLP/tokenize.html)</description>
+				<bean class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.ChainedEventDialogueTransformer">
 					<constructor-arg>
-						<bean class="se.kth.speech.nlp.StanfordCoreNLPTokenizer">
-							<constructor-arg >
-								<bean class ="edu.stanford.nlp.pipeline.StanfordCoreNLP">
-									<constructor-arg>
-										<util:properties>
-											<!-- https://stanfordnlp.github.io/CoreNLP/api.html -->
-											<prop key="annotators"><!-- https://stanfordnlp.github.io/CoreNLP/annotators.html -->tokenize,ssplit</prop>
-											<prop key="ssplit.isOneSentence"><!-- # https://stanfordnlp.github.io/CoreNLP/ssplit.html -->true</prop>
-											<prop key="tokenize.language"><!-- # https://stanfordnlp.github.io/CoreNLP/tokenize.html -->en</prop>
-										</util:properties>
-									</constructor-arg>
-								</bean>
-							</constructor-arg>
-						</bean>
-					</constructor-arg>	
+						<util:list value-type="java.util.function.Function">
+							<bean class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.InstructorUtteranceFilteringEventDialogueTransformer">
+								<description>For each dialogue, the only utterances used for training and
+						testing are those which were made by the instructor for the turn
+						which the dialogue has as a context.</description>
+							</bean>
+							<bean class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.TokenizingEventDialogueTransformer">
+								<description>Tokenizes utterances using Stanford CoreNLP's tokenizer (https://stanfordnlp.github.io/CoreNLP/tokenize.html).</description>
+								<constructor-arg ref="stanford-tokenizer" />
+							</bean>
+							<bean class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.TokenFilteringEventDialogueTransformer">
+								<description>Filters out stopwords in each utterance.</description>
+								<constructor-arg ref="stopword-set-factory" />
+							</bean>
+						</util:list>
+					</constructor-arg>
 				</bean>
 			</constructor-arg>
 		</bean>
