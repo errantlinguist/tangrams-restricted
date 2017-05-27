@@ -13,7 +13,7 @@
 	<beans>
 		<description>Finds one random negative example for each positive
 			example. Uses all utterances in each dialogue for training and
-			testing.Tokenizes utterances using Stanford CoreNLP's tokenizer (https://stanfordnlp.github.io/CoreNLP/tokenize.html). Filters out English stopwords in each utterance.
+			testing. Tokenizes utterances using Stanford CoreNLP's tokenizer (https://stanfordnlp.github.io/CoreNLP/tokenize.html). Filters out English stopwords in each utterance.
 		</description>
 
 		<bean id="random-generator" class="java.util.Random">
