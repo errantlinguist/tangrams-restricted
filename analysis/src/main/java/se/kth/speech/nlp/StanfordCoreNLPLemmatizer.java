@@ -14,7 +14,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech.coin.tangrams.analysis;
+package se.kth.speech.nlp;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -25,8 +25,8 @@ import java.util.Properties;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import edu.stanford.nlp.ling.CoreAnnotations.LemmaAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.SentencesAnnotation;
-import edu.stanford.nlp.ling.CoreAnnotations.TextAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.TokensAnnotation;
 import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.pipeline.Annotation;
@@ -36,14 +36,14 @@ import edu.stanford.nlp.util.CoreMap;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
- * @since Apr 14, 2017
+ * @since May 22, 2017
  *
  */
-public final class StanfordNLPTokenizer implements Function<String, List<String>> {
+public final class StanfordCoreNLPLemmatizer implements Function<String, List<String>> {
 
 	/**
 	 * {@link DefaultAnnotPipelineHolder} is loaded on the first execution of
-	 * {@link StanfordNLPTokenizer#getDefaultAnnotPipeline()} or the first
+	 * {@link StanfordCoreNLPLemmatizer#getDefaultAnnotPipeline()} or the first
 	 * access to {@link DefaultAnnotPipelineHolder#INSTANCE}, not before.
 	 *
 	 * @author <a href="http://www.cs.umd.edu/~pugh/">Bill Pugh</a>
@@ -59,7 +59,7 @@ public final class StanfordNLPTokenizer implements Function<String, List<String>
 		private static StanfordCoreNLP createDefaultAnnotPipeline() {
 			final Properties props = new Properties();
 			try (final InputStream inStream = DefaultAnnotPipelineHolder.class
-					.getResourceAsStream("stanford-corenlp-tokenizer.properties")) {
+					.getResourceAsStream("stanford-corenlp-lemmatization.properties")) {
 				props.load(inStream);
 			} catch (final IOException e) {
 				throw new UncheckedIOException(e);
@@ -79,14 +79,14 @@ public final class StanfordNLPTokenizer implements Function<String, List<String>
 
 	private final Annotator annotator;
 
-	private final Predicate<? super String> tokenFilter;
+	private final Predicate<? super String> resultFilter;
 
-	public StanfordNLPTokenizer(final Predicate<? super String> resultFilter) {
-		this(resultFilter, getDefaultAnnotPipeline());
+	public StanfordCoreNLPLemmatizer(final Predicate<? super String> tokenFilter) {
+		this(tokenFilter, getDefaultAnnotPipeline());
 	}
 
-	private StanfordNLPTokenizer(final Predicate<? super String> resultFilter, final Annotator annotator) {
-		this.tokenFilter = resultFilter;
+	private StanfordCoreNLPLemmatizer(final Predicate<? super String> resultFilter, final Annotator annotator) {
+		this.resultFilter = resultFilter;
 		this.annotator = annotator;
 	}
 
@@ -102,10 +102,9 @@ public final class StanfordNLPTokenizer implements Function<String, List<String>
 			final List<CoreLabel> tokens = sent.get(TokensAnnotation.class);
 			result.ensureCapacity(result.size() + tokens.size());
 			for (final CoreLabel token : tokens) {
-				// this is the text of the token
-				final String word = token.get(TextAnnotation.class);
-				if (tokenFilter.test(word)) {
-					result.add(word);
+				final String lemma = token.get(LemmaAnnotation.class);
+				if (resultFilter.test(lemma)){
+					result.add(lemma);
 				}
 			}
 		}
