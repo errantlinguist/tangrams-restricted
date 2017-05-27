@@ -168,7 +168,7 @@ public final class BatchApplicationContextTester {
 		final Set<Path> result = new HashSet<>();
 		for (final String appCtxLoc : appCtxLocs) {
 			final Path appCtxPath = Paths.get(appCtxLoc);
-			final Iterator<Path> childPathIter = Files.walk(appCtxPath).iterator();
+			final Iterator<Path> childPathIter = Files.walk(appCtxPath, 1).iterator();
 			while (childPathIter.hasNext()) {
 				final Path childPath = childPathIter.next();
 				final String contentType = Files.probeContentType(childPath);
