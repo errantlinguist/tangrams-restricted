@@ -280,7 +280,7 @@ public final class Tester {
 		return result;
 	}
 
-	private static Map<String, Logistic> createWordClassifierMap(final Set<Entry<String, Instances>> classInstances,
+	private static ConcurrentMap<String, Logistic> createWordClassifierMap(final Set<Entry<String, Instances>> classInstances,
 			final ExecutorService executor) {
 		final ConcurrentMap<String, Logistic> result = new ConcurrentHashMap<>(classInstances.size());
 		final Stream.Builder<CompletableFuture<Void>> trainedClassifiers = Stream.builder();
