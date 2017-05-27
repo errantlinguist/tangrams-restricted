@@ -53,10 +53,6 @@
 
 		<bean id="cross-validation-tester"
 			class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.Tester" scope="prototype">
-			<constructor-arg>
-				<description>The maximum number of parallel threads.</description>
-				<value>1</value>
-			</constructor-arg>
 		</bean>
 	</beans>
 </beans>

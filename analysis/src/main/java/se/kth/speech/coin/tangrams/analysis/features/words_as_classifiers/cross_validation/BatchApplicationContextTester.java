@@ -32,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.OptionalInt;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
@@ -49,6 +50,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.support.FileSystemXmlApplicationContext;
 
 import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
+import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
 import se.kth.speech.io.FileNames;
 
 /**
@@ -130,7 +132,7 @@ public final class BatchApplicationContextTester {
 
 	private static final Collector<CharSequence, ?, String> ROW_CELL_JOINER = Collectors.joining("\t");
 
-	public static void main(final CommandLine cl) throws IOException, ParseException {
+	public static void main(final CommandLine cl) throws IOException, ParseException, ClassificationException, ExecutionException {
 		if (cl.hasOption(Parameter.HELP.optName)) {
 			Parameter.printHelp();
 		} else {
@@ -153,7 +155,7 @@ public final class BatchApplicationContextTester {
 		}
 	}
 
-	public static void main(final String[] args) throws IOException {
+	public static void main(final String[] args) throws IOException, ClassificationException, ExecutionException {
 		final CommandLineParser parser = new DefaultParser();
 		try {
 			final CommandLine cl = parser.parse(Parameter.OPTIONS, args);
@@ -222,8 +224,10 @@ public final class BatchApplicationContextTester {
 	/**
 	 * @param appCtxDefPaths
 	 * @throws IOException
+	 * @throws ExecutionException 
+	 * @throws ClassificationException 
 	 */
-	public void accept(final Iterable<Path> appCtxDefPaths) throws IOException {
+	public void accept(final Iterable<Path> appCtxDefPaths) throws IOException, ClassificationException, ExecutionException {
 		try (final BufferedWriter summaryWriter = Files.newBufferedWriter(summaryFile, StandardOpenOption.CREATE,
 				StandardOpenOption.TRUNCATE_EXISTING)) {
 			summaryWriter.write(COL_HEADERS.stream().collect(ROW_CELL_JOINER));
@@ -233,7 +237,7 @@ public final class BatchApplicationContextTester {
 		}
 	}
 
-	private void accept(final Path appCtxDefPath, final OpenOption... summaryFileOpenOpts) throws IOException {
+	private void accept(final Path appCtxDefPath, final OpenOption... summaryFileOpenOpts) throws IOException, ClassificationException, ExecutionException {
 		final String appCtxDefLoc = appCtxDefPath.toString();
 		final String batchOutdirName = createBatchOutdirName(appCtxDefPath);
 		final Path outdirPath = Files.createDirectories(outdir.resolve(batchOutdirName));

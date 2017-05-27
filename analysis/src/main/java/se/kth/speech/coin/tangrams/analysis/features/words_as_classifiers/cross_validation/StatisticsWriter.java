@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map.Entry;
 import java.util.OptionalInt;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
@@ -45,6 +46,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.support.FileSystemXmlApplicationContext;
 
+import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.SessionTester;
 
 /**
@@ -158,7 +160,7 @@ public final class StatisticsWriter implements Consumer<Tester.Result> {
 		return createTableRow(key, testResults.iterCount(), testResults.totalResults());
 	}
 
-	public static void main(final CommandLine cl) throws ParseException, IOException {
+	public static void main(final CommandLine cl) throws ParseException, IOException, ClassificationException, ExecutionException {
 		if (cl.hasOption(Parameter.HELP.optName)) {
 			Parameter.printHelp();
 		} else {
@@ -182,7 +184,7 @@ public final class StatisticsWriter implements Consumer<Tester.Result> {
 		}
 	}
 
-	public static void main(final String[] args) throws IOException {
+	public static void main(final String[] args) throws IOException, ClassificationException, ExecutionException {
 		final CommandLineParser parser = new DefaultParser();
 		try {
 			final CommandLine cl = parser.parse(Parameter.OPTIONS, args);

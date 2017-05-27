@@ -266,76 +266,42 @@ public final class Tester {
 
 	}
 
-	private final class CrossValidator implements Runnable {
-
-		private final Map<SessionDataManager, Path> allSessions;
-
-		private final int iterNo;
-
-		private final Result result;
-
-		private CrossValidator(final Map<SessionDataManager, Path> allSessions, final int iterNo, final Result result) {
-			this.allSessions = allSessions;
-			this.iterNo = iterNo;
-			this.result = result;
-		}
-
-		/*
-		 * (non-Javadoc)
-		 *
-		 * @see java.lang.Runnable#run()
-		 */
-		@Override
-		public void run() {
-			LOGGER.info("Training/testing iteration no. {}.", iterNo);
-			try {
-				final Map<Path, SessionTester.Result> iterResults = crossValidate();
-				for (final Entry<Path, SessionTester.Result> iterResult : iterResults.entrySet()) {
-					result.put(iterResult.getKey(), iterNo, iterResult.getValue());
-				}
-			} catch (ExecutionException | TrainingException | IOException | ClassificationException e) {
-				throw new RuntimeException(e);
-			}
-		}
-
-		private Map<Path, SessionTester.Result> crossValidate()
-				throws ExecutionException, TrainingException, IOException, ClassificationException {
-			final Map<Path, SessionTester.Result> result = Maps.newHashMapWithExpectedSize(allSessions.size());
-			final Stream<Entry<SessionDataManager, WordClassificationData>> testSets = testSetFactory
-					.apply(allSessions);
-			for (final Iterator<Entry<SessionDataManager, WordClassificationData>> testSetIter = testSets
-					.iterator(); testSetIter.hasNext();) {
-				final Entry<SessionDataManager, WordClassificationData> testSet = testSetIter.next();
-				final SessionDataManager testSessionData = testSet.getKey();
-				final Path infilePath = allSessions.get(testSessionData);
-				LOGGER.info("Running cross-validation test on data from \"{}\".", infilePath);
-
-				final WordClassificationData trainingData = testSet.getValue();
-				final Optional<Instances> oovInstances = smoother.redistributeMass(trainingData);
-				LOGGER.debug("{} instances for out-of-vocabulary class.", oovInstances.map(Instances::size).orElse(0));
-
-				final Function<String, Logistic> wordClassifierGetter = createWordClassifierMap(
-						trainingData.getClassInstances().entrySet())::get;
-				final Instances testInsts = testInstsFactory.apply(TEST_INSTS_REL_NAME,
-						estimateTestInstanceCount(testSessionData));
-				final Function<EntityFeature.Extractor.Context, Instance> testInstFactory = entInstAttrCtx
-						.createInstFactory(testInsts);
-				final ReferentConfidenceMapFactory referentConfidenceMapFactory = beanFactory
-						.getBean(ReferentConfidenceMapFactory.class, wordClassifierGetter, testInstFactory);
-				final EventDialogueClassifier diagClassifier = beanFactory.getBean(EventDialogueClassifier.class,
-						referentConfidenceMapFactory);
-
-				final SingleGameContextReferentEventDialogueTester diagTester = new SingleGameContextReferentEventDialogueTester(
-						diagClassifier, diagTransformer);
-				final SessionTester sessionTester = new SessionTester(diagTester);
-				final SessionTester.Result testResults = sessionTester
-						.apply(sessionDiagMgrCacheSupplier.get().get(testSessionData));
-				result.put(infilePath, testResults);
-			}
-			return result;
-		}
-
-	}
+	// private final class CrossValidator implements Runnable {
+	//
+	// private final Map<SessionDataManager, Path> allSessions;
+	//
+	// private final int iterNo;
+	//
+	// private final Result result;
+	//
+	// private CrossValidator(final Map<SessionDataManager, Path> allSessions,
+	// final int iterNo, final Result result) {
+	// this.allSessions = allSessions;
+	// this.iterNo = iterNo;
+	// this.result = result;
+	// }
+	//
+	// /*
+	// * (non-Javadoc)
+	// *
+	// * @see java.lang.Runnable#run()
+	// */
+	// @Override
+	// public void run() {
+	// LOGGER.info("Training/testing iteration no. {}.", iterNo);
+	// try {
+	// final Map<Path, SessionTester.Result> iterResults = crossValidate();
+	// for (final Entry<Path, SessionTester.Result> iterResult :
+	// iterResults.entrySet()) {
+	// result.put(iterResult.getKey(), iterNo, iterResult.getValue());
+	// }
+	// } catch (ExecutionException | TrainingException | IOException |
+	// ClassificationException e) {
+	// throw new RuntimeException(e);
+	// }
+	// }
+	//
+	// }
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(Tester.class);
 
@@ -351,21 +317,32 @@ public final class Tester {
 		return result;
 	}
 
-	private static Map<String, Logistic> createWordClassifierMap(final Set<Entry<String, Instances>> classInstances)
-			throws TrainingException {
-		final Map<String, Logistic> result = Maps.newHashMapWithExpectedSize(classInstances.size());
+	private static Map<String, Logistic> createWordClassifierMap(final Set<Entry<String, Instances>> classInstances,
+			final ExecutorService executor) {
+		final ConcurrentMap<String, Logistic> result = new ConcurrentHashMap<>(classInstances.size());
+		final Stream.Builder<CompletableFuture<Void>> trainedClassifiers = Stream.builder();
 		for (final Entry<String, Instances> classInstancesEntry : classInstances) {
 			final String className = classInstancesEntry.getKey();
 			LOGGER.debug("Training classifier for class \"{}\".", className);
 			final Instances trainingInsts = classInstancesEntry.getValue();
-			final Logistic classifier = createWordClassifier(trainingInsts);
-			final Logistic oldClassifier = result.put(className, classifier);
-			if (oldClassifier != null) {
-				throw new IllegalArgumentException(
-						String.format("More than one file for word class \"%s\".", className));
-			}
 			LOGGER.debug("{} instance(s) for class \"{}\".", trainingInsts.size(), className);
+			final CompletableFuture<Void> trainedClassifier = CompletableFuture.runAsync(() -> {
+				try {
+					final Logistic classifier = createWordClassifier(trainingInsts);
+					final Logistic oldClassifier = result.put(className, classifier);
+					if (oldClassifier != null) {
+						throw new IllegalArgumentException(
+								String.format("More than one file for word class \"%s\".", className));
+					}
+				} catch (final TrainingException e) {
+					throw new RuntimeException(e);
+				}
+			}, executor);
+			trainedClassifiers.add(trainedClassifier);
 		}
+		final CompletableFuture<Void> allTrainedClassifiers = CompletableFuture
+				.allOf(trainedClassifiers.build().toArray(CompletableFuture[]::new));
+		allTrainedClassifiers.join();
 		return result;
 	}
 
@@ -383,6 +360,12 @@ public final class Tester {
 			LOGGER.debug(String.format("Could not convert long value \"%d\" to an int; Returning max.", estimate), e);
 		}
 		return result;
+	}
+
+	private static void shutdownExceptionnally(final ExecutorService executor) {
+		LOGGER.debug("Emergency executor service shutdown.");
+		executor.shutdownNow();
+		LOGGER.debug("Successfully shut down executor service.");
 	}
 
 	@Inject
@@ -411,7 +394,7 @@ public final class Tester {
 	private TestSetFactory testSetFactory;
 
 	public Tester() {
-		this(Executors::newSingleThreadExecutor);
+		this(Runtime.getRuntime().availableProcessors() - 1);
 	}
 
 	public Tester(final int parallelThreadCount) {
@@ -422,33 +405,39 @@ public final class Tester {
 		this.executorFactory = executorFactory;
 	}
 
-	public Result apply(final Map<SessionDataManager, Path> allSessions) throws IOException {
+	public Result apply(final Map<SessionDataManager, Path> allSessions)
+			throws ClassificationException, ExecutionException, IOException {
 		final Result result = new Result(allSessions.size(), iterCount);
 		LOGGER.info(
 				"Starting cross-validation test using data from {} session(s), doing {} iterations on each dataset.",
 				allSessions.size(), iterCount);
 		final ExecutorService executor = executorFactory.get();
 		try {
-			final Stream.Builder<CompletableFuture<Void>> iterResultFutures = Stream.builder();
-			for (int iter = 1; iter <= iterCount; ++iter) {
-				final CompletableFuture<Void> iterResultFuture = CompletableFuture
-						.runAsync(new CrossValidator(allSessions, iter, result), executor);
-				iterResultFutures.add(iterResultFuture);
+			for (int iterNo = 1; iterNo <= iterCount; ++iterNo) {
+				LOGGER.info("Training/testing iteration no. {}.", iterNo);
+				final Map<Path, SessionTester.Result> iterResults = crossValidate(allSessions, executor);
+				for (final Entry<Path, SessionTester.Result> iterResult : iterResults.entrySet()) {
+					result.put(iterResult.getKey(), iterNo, iterResult.getValue());
+				}
 			}
-			final CompletableFuture<Void> allDone = CompletableFuture
-					.allOf(iterResultFutures.build().toArray(CompletableFuture[]::new));
-			allDone.join();
 			LOGGER.info("Finished testing {} cross-validation dataset(s).", result.sessionResults.size());
 			LOGGER.debug("Shutting down executor service.");
 			executor.shutdown();
 			LOGGER.debug("Successfully shut down executor service.");
+
+		} catch (final ClassificationException e) {
+			shutdownExceptionnally(executor);
+			throw e;
+		} catch (final ExecutionException e) {
+			shutdownExceptionnally(executor);
+			throw e;
+		} catch (final IOException e) {
+			shutdownExceptionnally(executor);
+			throw e;
 		} catch (final RuntimeException e) {
-			LOGGER.debug("Emergency executor service shutdown.");
-			executor.shutdownNow();
-			LOGGER.debug("Successfully shut down executor service.");
+			shutdownExceptionnally(executor);
 			throw e;
 		}
-
 		return result;
 	}
 
@@ -465,6 +454,42 @@ public final class Tester {
 	 */
 	public void setIterCount(final int iterCount) {
 		this.iterCount = iterCount;
+	}
+
+	private Map<Path, SessionTester.Result> crossValidate(final Map<SessionDataManager, Path> allSessions,
+			final ExecutorService executor) throws ExecutionException, IOException, ClassificationException {
+		final Map<Path, SessionTester.Result> result = Maps.newHashMapWithExpectedSize(allSessions.size());
+		final Stream<Entry<SessionDataManager, WordClassificationData>> testSets = testSetFactory.apply(allSessions);
+		for (final Iterator<Entry<SessionDataManager, WordClassificationData>> testSetIter = testSets
+				.iterator(); testSetIter.hasNext();) {
+			final Entry<SessionDataManager, WordClassificationData> testSet = testSetIter.next();
+			final SessionDataManager testSessionData = testSet.getKey();
+			final Path infilePath = allSessions.get(testSessionData);
+			LOGGER.info("Running cross-validation test on data from \"{}\".", infilePath);
+
+			final WordClassificationData trainingData = testSet.getValue();
+			final Optional<Instances> oovInstances = smoother.redistributeMass(trainingData);
+			LOGGER.debug("{} instances for out-of-vocabulary class.", oovInstances.map(Instances::size).orElse(0));
+
+			final Function<String, Logistic> wordClassifierGetter = createWordClassifierMap(
+					trainingData.getClassInstances().entrySet(), executor)::get;
+			final Instances testInsts = testInstsFactory.apply(TEST_INSTS_REL_NAME,
+					estimateTestInstanceCount(testSessionData));
+			final Function<EntityFeature.Extractor.Context, Instance> testInstFactory = entInstAttrCtx
+					.createInstFactory(testInsts);
+			final ReferentConfidenceMapFactory referentConfidenceMapFactory = beanFactory
+					.getBean(ReferentConfidenceMapFactory.class, wordClassifierGetter, testInstFactory);
+			final EventDialogueClassifier diagClassifier = beanFactory.getBean(EventDialogueClassifier.class,
+					referentConfidenceMapFactory);
+
+			final SingleGameContextReferentEventDialogueTester diagTester = new SingleGameContextReferentEventDialogueTester(
+					diagClassifier, diagTransformer);
+			final SessionTester sessionTester = new SessionTester(diagTester);
+			final SessionTester.Result testResults = sessionTester
+					.apply(sessionDiagMgrCacheSupplier.get().get(testSessionData));
+			result.put(infilePath, testResults);
+		}
+		return result;
 	}
 
 }
