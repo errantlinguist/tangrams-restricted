@@ -227,8 +227,8 @@ public final class SessionTester {
 
 	public SessionTester.Result apply(final SessionEventDialogueManager sessionEventDiagMgr)
 			throws ClassificationException {
-		final EventDialogue[] uttDiags = sessionEventDiagMgr.createUttDialogues().toArray(EventDialogue[]::new);
-		final SessionTester.Result result = new SessionTester.Result(uttDiags.length);
+		final List<EventDialogue> uttDiags = sessionEventDiagMgr.getUttDialogues();
+		final SessionTester.Result result = new SessionTester.Result(uttDiags.size());
 
 		for (final EventDialogue uttDiag : uttDiags) {
 			final Optional<EventDialogueTester.Result> optTestResults = diagTester.apply(uttDiag,

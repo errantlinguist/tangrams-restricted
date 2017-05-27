@@ -100,8 +100,8 @@ public final class OnePositiveMaximumNegativeInstancesFactory extends AbstractSi
 		LOGGER.debug("Processing game \"{}\".", gameId);
 		final GameHistory history = sessionEventDiagMgr.getGameHistory();
 
-		final Stream<EventDialogue> uttDialogues = sessionEventDiagMgr.createUttDialogues();
-		uttDialogues.forEachOrdered(uttDialogue -> {
+		final List<EventDialogue> uttDialogues = sessionEventDiagMgr.getUttDialogues();
+		uttDialogues.forEach(uttDialogue -> {
 			uttDialogue.getLastEvent().ifPresent(event -> {
 				LOGGER.debug("Extracting features for utterances for event: {}", event);
 				final EventDialogue transformedDiag = diagTransformer.apply(uttDialogue);

@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -48,20 +49,17 @@ public final class SessionEventDialogueManager {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SessionEventDialogueManager.class);
 
-	private final BiFunction<ListIterator<Utterance>, GameHistory, Stream<EventDialogue>> eventDiagFactory;
-
 	private final GameHistory gameHistory;
 
 	private final String gameId;
 
 	private final BiMap<String, String> playerSourceIds;
 
-	private final List<Utterance> utts;
+	private List<EventDialogue> uttDialogues;
 
 	public SessionEventDialogueManager(final SessionDataManager sessionData,
 			final BiFunction<ListIterator<Utterance>, GameHistory, Stream<EventDialogue>> eventDiagFactory)
 			throws JAXBException, IOException {
-		this.eventDiagFactory = eventDiagFactory;
 		final Path hatInfilePath = sessionData.getHATFilePath();
 		LOGGER.info("Reading annotations from \"{}\".", hatInfilePath);
 		final Annotation uttAnnots = HAT.readAnnotation(hatInfilePath.toFile());
@@ -94,12 +92,10 @@ public final class SessionEventDialogueManager {
 			final String sourceId = seg.getSource();
 			return sourcePlayerIds.get(sourceId);
 		});
-		utts = Arrays.asList(segUttFactory.create(uttAnnots.getSegments().getSegment().stream()).flatMap(List::stream)
-				.toArray(Utterance[]::new));
-	}
-
-	public Stream<EventDialogue> createUttDialogues() {
-		return eventDiagFactory.apply(utts.listIterator(), gameHistory);
+		final List<Utterance> utts = Arrays.asList(segUttFactory.create(uttAnnots.getSegments().getSegment().stream())
+				.flatMap(List::stream).toArray(Utterance[]::new));
+		uttDialogues = Arrays
+				.asList(eventDiagFactory.apply(utts.listIterator(), gameHistory).toArray(EventDialogue[]::new));
 	}
 
 	public GameHistory getGameHistory() {
@@ -118,6 +114,10 @@ public final class SessionEventDialogueManager {
 	 */
 	public BiMap<String, String> getPlayerSourceIds() {
 		return Maps.unmodifiableBiMap(playerSourceIds);
+	}
+
+	public List<EventDialogue> getUttDialogues() {
+		return Collections.unmodifiableList(uttDialogues);
 	}
 
 }
