@@ -24,12 +24,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map.Entry;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -47,11 +44,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.support.FileSystemXmlApplicationContext;
 
-import se.kth.speech.coin.tangrams.analysis.EventDialogue;
-import se.kth.speech.coin.tangrams.analysis.GameHistory;
+import com.google.common.cache.LoadingCache;
+
 import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
 import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManager;
-import se.kth.speech.coin.tangrams.analysis.Utterance;
 import weka.core.Instances;
 import weka.core.converters.AbstractFileSaver;
 import weka.core.converters.ConverterUtils;
@@ -189,7 +185,7 @@ public final class TrainingDataWriter {
 	}
 
 	@Inject
-	private BiFunction<ListIterator<Utterance>, GameHistory, Stream<EventDialogue>> eventDiagFactory;
+	private Supplier<LoadingCache<SessionDataManager, SessionEventDialogueManager>> sessionEvtDiagMgrSupplier;
 
 	@Inject
 	private Function<Collection<SessionEventDialogueManager>, WordClassificationData> instancesFactory;
@@ -199,8 +195,8 @@ public final class TrainingDataWriter {
 				.values();
 		final List<SessionEventDialogueManager> sessionEvtDiagMgrs = new ArrayList<>(infileSessionData.size());
 		for (final SessionDataManager sessionDatum : infileSessionData) {
-			final SessionEventDialogueManager sessionEventDiagMgr = new SessionEventDialogueManager(sessionDatum,
-					eventDiagFactory);
+			final SessionEventDialogueManager sessionEventDiagMgr = sessionEvtDiagMgrSupplier.get()
+					.getUnchecked(sessionDatum);
 			sessionEvtDiagMgrs.add(sessionEventDiagMgr);
 		}
 		return instancesFactory.apply(sessionEvtDiagMgrs);
