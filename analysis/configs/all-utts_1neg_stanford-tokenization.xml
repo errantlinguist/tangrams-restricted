@@ -10,7 +10,7 @@
 		resource="classpath:se/kth/speech/coin/tangrams/analysis/features/words_as_classifiers/cross_validation/context.xml" />
 
 	<beans>
-		<description>Finds one random negative example for each positive example. Uses all utterances in each dialogue for training and testing.</description>
+		<description>Finds one random negative example for each positive example. Uses all utterances in each dialogue for training and testing. Tokenizes utterances using Stanford CoreNLP's tokenizer (https://stanfordnlp.github.io/CoreNLP/tokenize.html)</description>
 
 		<bean id="random-generator" class="java.util.Random">
 			<description>The random number generator used in the application;
@@ -38,6 +38,7 @@
 		<bean id="dialogue-transformer" class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.CachingEventDialogueTransformer">
 			<constructor-arg>
 				<bean class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.TokenizingEventDialogueTransformer">
+					<description> Tokenizes utterances using Stanford CoreNLP's tokenizer (https://stanfordnlp.github.io/CoreNLP/tokenize.html)</description>
 					<constructor-arg>
 						<bean class="se.kth.speech.nlp.StanfordCoreNLPTokenizer">
 							<constructor-arg >
