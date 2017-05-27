@@ -18,7 +18,7 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.train
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
+import java.util.Map.Entry;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -27,7 +27,8 @@ import javax.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import it.unimi.dsi.fastutil.ints.IntSet;
+import it.unimi.dsi.fastutil.ints.IntList;
+import se.kth.speech.MutablePair;
 import se.kth.speech.coin.tangrams.analysis.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.GameContext;
 import se.kth.speech.coin.tangrams.analysis.GameHistory;
@@ -37,7 +38,6 @@ import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionContextFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.UtteranceGameContexts;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
-import se.kth.speech.fastutil.IntSets;
 import weka.core.DenseInstance;
 import weka.core.Instance;
 import weka.core.Instances;
@@ -61,26 +61,27 @@ import weka.core.Instances;
  *      </ul>
  *
  */
-public final class OnePositiveMultipleNegativeInstanceFactory extends AbstractSizeEstimatingInstancesMapFactory {
+public final class OnePositiveMaximumNegativeInstancesFactory extends AbstractSizeEstimatingInstancesMapFactory {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(OnePositiveMultipleNegativeInstanceFactory.class);
-
-	private final int negativeExampleCount;
+	private static final Logger LOGGER = LoggerFactory.getLogger(OnePositiveMaximumNegativeInstancesFactory.class);
 
 	@Inject
 	private Function<? super EventDialogue, EventDialogue> diagTransformer;
 
-	private final Random rnd;
-
 	@Inject
 	private EntityFeatureExtractionContextFactory extCtxFactory;
 
-	public OnePositiveMultipleNegativeInstanceFactory(final Random rnd, final int negativeExampleCount) {
-		if (negativeExampleCount < 0) {
-			throw new IllegalArgumentException("Negative example count must be non-negative.");
+	private List<Entry<EntityFeature.Extractor.Context, String>> createContexts(final GameContext uttCtx,
+			final int selectedEntityId) {
+		final IntList entityIds = uttCtx.getEntityIds();
+		final List<Entry<EntityFeature.Extractor.Context, String>> result = new ArrayList<>(entityIds.size());
+		for (final int entityId : uttCtx.getEntityIds()) {
+			final EntityFeature.Extractor.Context context = extCtxFactory.apply(uttCtx, entityId);
+			final boolean examplePolarity = entityId == selectedEntityId;
+			final String classValue = Boolean.toString(examplePolarity);
+			result.add(new MutablePair<>(context, classValue));
 		}
-		this.rnd = rnd;
-		this.negativeExampleCount = negativeExampleCount;
+		return result;
 	}
 
 	private Instance createTokenInstance(final Instances classInsts,
@@ -116,30 +117,16 @@ public final class OnePositiveMultipleNegativeInstanceFactory extends AbstractSi
 					LOGGER.debug(
 							"Creating positive and negative examples for entity ID \"{}\", which is selected by player \"{}\".",
 							selectedEntityId, event.getString(GameManagementEvent.Attribute.PLAYER_ID.toString()));
-					final EntityFeature.Extractor.Context positiveContext = extCtxFactory.apply(uttCtx,
+					final List<Entry<EntityFeature.Extractor.Context, String>> contexts = createContexts(uttCtx,
 							selectedEntityId);
-					final IntSet notSelectedEntityIds = IntSets.createRandomSubset(uttCtx.getEntityIds(), rnd,
-							negativeExampleCount, selectedEntityId);
-					final List<EntityFeature.Extractor.Context> negativeContexts = new ArrayList<>(
-							notSelectedEntityIds.size());
-					for (final int notSelectedEntityId : notSelectedEntityIds) {
-						final EntityFeature.Extractor.Context negativeContext = extCtxFactory.apply(uttCtx,
-								notSelectedEntityId);
-						negativeContexts.add(negativeContext);
-					}
 					final Stream<String> wordClasses = transformedDiag.getUtts().stream().map(Utterance::getTokens)
 							.flatMap(List::stream);
 					wordClasses.forEach(wordClass -> {
 						final Instances classInsts = trainingData.fetchWordInstances(wordClass);
-						final Stream.Builder<Instance> trainingInsts = Stream.builder();
-						// Add positive training example
-						trainingInsts.add(createTokenInstance(classInsts, positiveContext, Boolean.TRUE.toString()));
-						// Add negative training examples
-						for (final EntityFeature.Extractor.Context negativeContext : negativeContexts) {
-							trainingInsts
-									.add(createTokenInstance(classInsts, negativeContext, Boolean.FALSE.toString()));
-						}
-						trainingData.addObservation(wordClass, trainingInsts.build());
+						final Stream<Instance> trainingInsts = contexts.stream()
+								.map(context -> createTokenInstance(classInsts, context.getKey(), context.getValue()));
+						// Add examples
+						trainingData.addObservation(wordClass, trainingInsts);
 					});
 				}
 			});
