@@ -38,7 +38,7 @@
 		<bean id="dialogue-transformer" class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.CachingEventDialogueTransformer">
 			<constructor-arg>
 				<bean class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.TokenizingEventDialogueTransformer">
-					<description> Tokenizes utterances using Stanford CoreNLP's tokenizer (https://stanfordnlp.github.io/CoreNLP/tokenize.html)</description>
+					<description>Tokenizes utterances using Stanford CoreNLP's tokenizer (https://stanfordnlp.github.io/CoreNLP/tokenize.html)</description>
 					<constructor-arg>
 						<bean class="se.kth.speech.nlp.StanfordCoreNLPTokenizer">
 							<constructor-arg >
