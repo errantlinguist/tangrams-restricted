@@ -21,7 +21,7 @@
 		<bean id="smoother"
 			class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordClassDiscountingSmoother">
 			<constructor-arg value="4" />
-			<constructor-arg value="__UNKNOWN__" />
+			<constructor-arg value="__OUT_OF_VOCAB__" />
 		</bean>
 
 		<bean id="dialogue-classifier"
