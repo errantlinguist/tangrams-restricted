@@ -16,14 +16,9 @@
 */
 package se.kth.speech.nlp;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
 import java.util.function.Function;
-import java.util.function.Predicate;
 
 import edu.stanford.nlp.ling.CoreAnnotations.LemmaAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.SentencesAnnotation;
@@ -31,7 +26,6 @@ import edu.stanford.nlp.ling.CoreAnnotations.TokensAnnotation;
 import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.pipeline.Annotation;
 import edu.stanford.nlp.pipeline.Annotator;
-import edu.stanford.nlp.pipeline.StanfordCoreNLP;
 import edu.stanford.nlp.util.CoreMap;
 
 /**
@@ -41,52 +35,9 @@ import edu.stanford.nlp.util.CoreMap;
  */
 public final class StanfordCoreNLPLemmatizer implements Function<String, List<String>> {
 
-	/**
-	 * {@link DefaultAnnotPipelineHolder} is loaded on the first execution of
-	 * {@link StanfordCoreNLPLemmatizer#getDefaultAnnotPipeline()} or the first
-	 * access to {@link DefaultAnnotPipelineHolder#INSTANCE}, not before.
-	 *
-	 * @author <a href="http://www.cs.umd.edu/~pugh/">Bill Pugh</a>
-	 * @see <a href=
-	 *      "https://en.wikipedia.org/wiki/Singleton_pattern#The_solution_of_Bill_Pugh">https://en.wikipedia.org/wiki/Singleton_pattern#The_solution_of_Bill_Pugh</a>
-	 */
-	private static final class DefaultAnnotPipelineHolder {
-		/**
-		 * A singleton instance of {@link StanfordCoreNLP}.
-		 */
-		private static final StanfordCoreNLP INSTANCE = createDefaultAnnotPipeline();
-
-		private static StanfordCoreNLP createDefaultAnnotPipeline() {
-			final Properties props = new Properties();
-			try (final InputStream inStream = DefaultAnnotPipelineHolder.class
-					.getResourceAsStream("stanford-corenlp-lemmatization.properties")) {
-				props.load(inStream);
-			} catch (final IOException e) {
-				throw new UncheckedIOException(e);
-			}
-			return new StanfordCoreNLP(props);
-		}
-	}
-
-	/**
-	 * Gets a singleton instance of {@link StanfordCoreNLP}.
-	 *
-	 * @return The singleton instance.
-	 */
-	private static StanfordCoreNLP getDefaultAnnotPipeline() {
-		return DefaultAnnotPipelineHolder.INSTANCE;
-	}
-
 	private final Annotator annotator;
 
-	private final Predicate<? super String> resultFilter;
-
-	public StanfordCoreNLPLemmatizer(final Predicate<? super String> tokenFilter) {
-		this(tokenFilter, getDefaultAnnotPipeline());
-	}
-
-	private StanfordCoreNLPLemmatizer(final Predicate<? super String> resultFilter, final Annotator annotator) {
-		this.resultFilter = resultFilter;
+	private StanfordCoreNLPLemmatizer(final Annotator annotator) {
 		this.annotator = annotator;
 	}
 
@@ -103,9 +54,7 @@ public final class StanfordCoreNLPLemmatizer implements Function<String, List<St
 			result.ensureCapacity(result.size() + tokens.size());
 			for (final CoreLabel token : tokens) {
 				final String lemma = token.get(LemmaAnnotation.class);
-				if (resultFilter.test(lemma)){
-					result.add(lemma);
-				}
+				result.add(lemma);
 			}
 		}
 		return result;

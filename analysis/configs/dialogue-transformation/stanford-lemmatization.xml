@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:util="http://www.springframework.org/schema/util"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+	http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+	http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd">
+
+		<bean id="stanford-lemmatizer" class="se.kth.speech.nlp.StanfordCoreNLPLemmatizer">
+			<constructor-arg>
+				<bean class="edu.stanford.nlp.pipeline.StanfordCoreNLP">
+					<constructor-arg>
+						<util:properties >
+							<!-- https://stanfordnlp.github.io/CoreNLP/api.html -->
+							<prop key="annotators"><!-- https://stanfordnlp.github.io/CoreNLP/annotators.html -->tokenize,ssplit,pos,lemma</prop>
+							<prop key="ssplit.isOneSentence"><!-- # https://stanfordnlp.github.io/CoreNLP/ssplit.html -->true</prop>
+							<prop key="tokenize.language"><!-- # https://stanfordnlp.github.io/CoreNLP/tokenize.html -->en</prop>
+						</util:properties>
+					</constructor-arg>
+				</bean>
+			</constructor-arg>
+		</bean>
+
+</beans>
