@@ -35,7 +35,9 @@
 			scope="prototype">
 		</bean>
 		
-		<bean id="dialogue-transformer" class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.DummyEventDialogueTransformer" />
+		<bean id="dialogue-transformer" class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.DummyEventDialogueTransformer">
+			<description>Uses all utterances in each dialogue for training and testing.</description>
+		</bean>
 
 		<bean id="cross-validation-tester"
 			class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.Tester" scope="prototype">
