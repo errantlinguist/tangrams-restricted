@@ -266,43 +266,6 @@ public final class Tester {
 
 	}
 
-	// private final class CrossValidator implements Runnable {
-	//
-	// private final Map<SessionDataManager, Path> allSessions;
-	//
-	// private final int iterNo;
-	//
-	// private final Result result;
-	//
-	// private CrossValidator(final Map<SessionDataManager, Path> allSessions,
-	// final int iterNo, final Result result) {
-	// this.allSessions = allSessions;
-	// this.iterNo = iterNo;
-	// this.result = result;
-	// }
-	//
-	// /*
-	// * (non-Javadoc)
-	// *
-	// * @see java.lang.Runnable#run()
-	// */
-	// @Override
-	// public void run() {
-	// LOGGER.info("Training/testing iteration no. {}.", iterNo);
-	// try {
-	// final Map<Path, SessionTester.Result> iterResults = crossValidate();
-	// for (final Entry<Path, SessionTester.Result> iterResult :
-	// iterResults.entrySet()) {
-	// result.put(iterResult.getKey(), iterNo, iterResult.getValue());
-	// }
-	// } catch (ExecutionException | TrainingException | IOException |
-	// ClassificationException e) {
-	// throw new RuntimeException(e);
-	// }
-	// }
-	//
-	// }
-
 	private static final Logger LOGGER = LoggerFactory.getLogger(Tester.class);
 
 	private static final String TEST_INSTS_REL_NAME = "tested_entites";
