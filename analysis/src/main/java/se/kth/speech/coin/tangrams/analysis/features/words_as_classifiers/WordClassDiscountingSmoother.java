@@ -70,19 +70,7 @@ public final class WordClassDiscountingSmoother {
 
 	public List<Classifier> createNGramClassifierList(final List<String> wordClasses,
 			final Function<? super String, ? extends Classifier> wordClassifiers) {
-		return createNGramClassifierList(wordClasses, wordClassifiers, 1);
-	}
-
-	public Optional<Instances> redistributeMass(final WordClassificationData trainingData) {
-		return redistributeMass(trainingData, minCount, oovClassName);
-	}
-
-	private List<Classifier> createNGramClassifierList(final List<String> wordClasses,
-			final Function<? super String, ? extends Classifier> wordClassifiers, final int ngramLength) {
-		if (ngramLength != 1) {
-			throw new IllegalArgumentException("Currently only unigram probabilities are supported.");
-		}
-		final List<Classifier> result = new ArrayList<>(wordClasses.size() * ngramLength);
+		final List<Classifier> result = new ArrayList<>(wordClasses.size());
 		for (final String wordClass : wordClasses) {
 			LOGGER.debug("Getting classifier for class \"{}\".", wordClass);
 			Classifier classifier = wordClassifiers.apply(wordClass);
@@ -93,6 +81,10 @@ public final class WordClassDiscountingSmoother {
 			result.add(classifier);
 		}
 		return result;
+	}
+
+	public Optional<Instances> redistributeMass(final WordClassificationData trainingData) {
+		return redistributeMass(trainingData, minCount, oovClassName);
 	}
 
 	private Optional<Instances> redistributeMass(final WordClassificationData trainingData, final int minCount,
