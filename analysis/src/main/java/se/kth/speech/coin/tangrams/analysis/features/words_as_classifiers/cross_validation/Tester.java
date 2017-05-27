@@ -357,7 +357,7 @@ public final class Tester {
 	private TestSetFactory testSetFactory;
 
 	public Tester() {
-		this(Runtime.getRuntime().availableProcessors() - 1);
+		this(Math.max(Runtime.getRuntime().availableProcessors() - 1, 1));
 	}
 
 	public Tester(final int parallelThreadCount) {
