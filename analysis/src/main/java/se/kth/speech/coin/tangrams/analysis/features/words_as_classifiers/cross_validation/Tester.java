@@ -361,7 +361,7 @@ public final class Tester {
 		return result;
 	}
 
-	private static void shutdownExceptionnally(final ExecutorService executor) {
+	private static void shutdownExceptionally(final ExecutorService executor) {
 		LOGGER.debug("Emergency executor service shutdown.");
 		executor.shutdownNow();
 		LOGGER.debug("Successfully shut down executor service.");
@@ -426,16 +426,16 @@ public final class Tester {
 			LOGGER.debug("Successfully shut down executor service.");
 
 		} catch (final ClassificationException e) {
-			shutdownExceptionnally(executor);
+			shutdownExceptionally(executor);
 			throw e;
 		} catch (final ExecutionException e) {
-			shutdownExceptionnally(executor);
+			shutdownExceptionally(executor);
 			throw e;
 		} catch (final IOException e) {
-			shutdownExceptionnally(executor);
+			shutdownExceptionally(executor);
 			throw e;
 		} catch (final RuntimeException e) {
-			shutdownExceptionnally(executor);
+			shutdownExceptionally(executor);
 			throw e;
 		}
 		return result;
