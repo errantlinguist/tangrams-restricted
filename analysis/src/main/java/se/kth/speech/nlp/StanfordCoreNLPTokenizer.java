@@ -19,7 +19,6 @@ package se.kth.speech.nlp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
-import java.util.function.Predicate;
 
 import edu.stanford.nlp.ling.CoreAnnotations.SentencesAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.TextAnnotation;
@@ -38,16 +37,9 @@ public final class StanfordCoreNLPTokenizer implements Function<String, List<Str
 
 	private final Annotator annotator;
 
-	private final Predicate<? super String> tokenFilter;
-
 	public StanfordCoreNLPTokenizer(final Annotator annotator) {
-		this(annotator, token -> true);
-	}
-
-	public StanfordCoreNLPTokenizer(final Annotator annotator, final Predicate<? super String> tokenFilter) {
 		this.annotator = annotator;
-		this.tokenFilter = tokenFilter;
-		
+
 	}
 
 	@Override
@@ -64,9 +56,7 @@ public final class StanfordCoreNLPTokenizer implements Function<String, List<Str
 			for (final CoreLabel token : tokens) {
 				// this is the text of the token
 				final String word = token.get(TextAnnotation.class);
-				if (tokenFilter.test(word)) {
-					result.add(word);
-				}
+				result.add(word);
 			}
 		}
 		return result;
