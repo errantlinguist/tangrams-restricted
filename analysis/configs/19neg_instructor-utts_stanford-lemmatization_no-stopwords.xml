@@ -8,6 +8,7 @@
 
 	<import
 		resource="classpath:se/kth/speech/coin/tangrams/analysis/features/words_as_classifiers/cross_validation/context.xml" />
+	<import resource="common/context.xml"/>
 	<import resource="dialogue-transformation/stanford-lemmatization.xml"/>
 
 	<beans>
@@ -16,17 +17,6 @@
 			testing are those which were made by the instructor for the turn
 			which the dialogue has as a context. Lemmatizes utterances using Stanford CoreNLP's lemmatizer (https://stanfordnlp.github.io/CoreNLP/lemma.html). Filters out English stopwords in each utterance. </description>
 
-		<bean id="smoother"
-			class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordClassDiscountingSmoother">
-			<constructor-arg value="4" />
-			<constructor-arg value="__OUT_OF_VOCAB__" />
-		</bean>
-
-		<bean id="dialogue-classifier"
-			class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.IsolatedUtteranceEventDialogueClassifier"
-			scope="prototype">
-		</bean>
-		
 		<bean id="stopword-set-factory" class="se.kth.speech.nlp.SnowballPorter2EnglishStopwordSetFactory">
 			<property name="variantsToUnify">
 				<util:set value-type="se.kth.speech.nlp.SnowballPorter2EnglishStopwords.Variant">

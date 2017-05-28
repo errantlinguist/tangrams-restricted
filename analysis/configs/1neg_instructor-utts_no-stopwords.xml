@@ -8,6 +8,7 @@
 
 	<import
 		resource="classpath:se/kth/speech/coin/tangrams/analysis/features/words_as_classifiers/cross_validation/context.xml" />
+	<import resource="common/context.xml"/>
 
 	<beans>
 		<description>Finds one random negative example for each positive
@@ -23,17 +24,6 @@
 			<constructor-arg value="1" />
 		</bean>
 
-		<bean id="smoother"
-			class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordClassDiscountingSmoother">
-			<constructor-arg value="4" />
-			<constructor-arg value="__OUT_OF_VOCAB__" />
-		</bean>
-
-		<bean id="dialogue-classifier"
-			class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.IsolatedUtteranceEventDialogueClassifier"
-			scope="prototype">
-		</bean>
-		
 		<bean id="stopword-set-factory" class="se.kth.speech.nlp.SnowballPorter2EnglishStopwordSetFactory">
 			<property name="variantsToUnify">
 				<util:set value-type="se.kth.speech.nlp.SnowballPorter2EnglishStopwords.Variant">

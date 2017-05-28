@@ -8,6 +8,7 @@
 
 	<import
 		resource="classpath:se/kth/speech/coin/tangrams/analysis/features/words_as_classifiers/cross_validation/context.xml" />
+	<import resource="common/context.xml"/>
 	<import resource="dialogue-transformation/stanford-tokenization.xml"/>
 
 	<beans>
@@ -15,17 +16,6 @@
 			example. For each dialogue, the only utterances used for training and
 			testing are those which were made by the instructor for the turn
 			which the dialogue has as a context. Tokenizes utterances using Stanford CoreNLP's tokenizer (https://stanfordnlp.github.io/CoreNLP/tokenize.html).</description>
-
-		<bean id="smoother"
-			class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordClassDiscountingSmoother">
-			<constructor-arg value="4" />
-			<constructor-arg value="__OUT_OF_VOCAB__" />
-		</bean>
-
-		<bean id="dialogue-classifier"
-			class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.IsolatedUtteranceEventDialogueClassifier"
-			scope="prototype">
-		</bean>
 
 		<bean id="dialogue-transformer" class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.CachingEventDialogueTransformer">
 			<constructor-arg>
