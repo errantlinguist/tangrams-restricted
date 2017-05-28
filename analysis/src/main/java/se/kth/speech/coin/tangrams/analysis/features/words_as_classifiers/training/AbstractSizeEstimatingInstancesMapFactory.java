@@ -40,7 +40,7 @@ import weka.core.Instances;
  *
  */
 public abstract class AbstractSizeEstimatingInstancesMapFactory
-		implements Function<Collection<SessionEventDialogueManager>, WordClassificationData> {
+		implements TrainingInstancesFactory {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(AbstractSizeEstimatingInstancesMapFactory.class);
 
