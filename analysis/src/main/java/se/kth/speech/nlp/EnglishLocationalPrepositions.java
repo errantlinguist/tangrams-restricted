@@ -26,6 +26,9 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.google.common.collect.Sets;
 
 /**
@@ -34,10 +37,27 @@ import com.google.common.collect.Sets;
  *
  */
 public final class EnglishLocationalPrepositions {
+	
+	private static final Logger LOGGER = LoggerFactory.getLogger(EnglishLocationalPrepositions.class);
 
 	private static final Pattern WHITESPACE_PATTERN = Pattern.compile("\\s+");
 
-	public static List<List<String>> loadList() {
+	private static Set<List<String>> instance = null;
+
+	public static Set<List<String>> loadSet() {
+		if (instance == null) {
+			synchronized (EnglishLocationalPrepositions.class) {
+				if (instance == null) {
+					LOGGER.info("Loading English locational prepositions.");
+					instance = loadNewSet();
+				}
+
+			}
+		}
+		return instance;
+	}
+
+	private static List<List<String>> loadList() {
 		final List<List<String>> result = new ArrayList<>();
 		try (final BufferedReader reader = new BufferedReader(new InputStreamReader(
 				EnglishLocationalPrepositions.class.getResourceAsStream("english-locational-prepositions.txt")))) {
@@ -51,7 +71,7 @@ public final class EnglishLocationalPrepositions {
 		return result;
 	}
 
-	public static Set<List<String>> loadSet() {
+	private static Set<List<String>> loadNewSet() {
 		final List<List<String>> list = loadList();
 		final Set<List<String>> result = Sets.newHashSetWithExpectedSize(list.size());
 		result.addAll(list);
