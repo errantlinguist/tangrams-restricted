@@ -33,7 +33,8 @@
 		</bean>
 
 		<bean id="cross-validation-tester"
-			class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.Tester" scope="prototype">
+			class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.Tester">
+			<constructor-arg ref="dialogue-transformer" />
 		</bean>
 	</beans>
 </beans>
