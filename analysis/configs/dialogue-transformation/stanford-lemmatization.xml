@@ -10,7 +10,7 @@
 			<constructor-arg>
 				<bean class="edu.stanford.nlp.pipeline.StanfordCoreNLP">
 					<constructor-arg>
-						<util:properties >
+						<util:properties>
 							<!-- https://stanfordnlp.github.io/CoreNLP/api.html -->
 							<prop key="annotators"><!-- https://stanfordnlp.github.io/CoreNLP/annotators.html -->tokenize,ssplit,pos,lemma</prop>
 							<prop key="ssplit.isOneSentence"><!-- # https://stanfordnlp.github.io/CoreNLP/ssplit.html -->true</prop>
