@@ -29,7 +29,7 @@ import se.kth.speech.coin.tangrams.analysis.Utterance;
  * @since May 27, 2017
  *
  */
-public final class TokenizingEventDialogueTransformer implements Function<EventDialogue, EventDialogue> {
+public final class TokenizingEventDialogueTransformer implements EventDialogueTransformer {
 
 	private final Function<? super String, ? extends List<String>> tokenizer;
 

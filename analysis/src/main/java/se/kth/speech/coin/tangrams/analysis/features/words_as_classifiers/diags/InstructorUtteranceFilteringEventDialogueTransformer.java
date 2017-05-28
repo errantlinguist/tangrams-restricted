@@ -20,7 +20,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,7 +33,7 @@ import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
  * @since 23 May 2017
  *
  */
-public final class InstructorUtteranceFilteringEventDialogueTransformer implements Function<EventDialogue,EventDialogue> {
+public final class InstructorUtteranceFilteringEventDialogueTransformer implements EventDialogueTransformer {
 
 	private static final List<Utterance> EMPTY_UTT_LIST = Collections.emptyList();
 

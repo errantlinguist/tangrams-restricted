@@ -32,7 +32,7 @@ import se.kth.speech.nlp.lucene.StringTokenizer;
  * @since 24 May 2017
  *
  */
-public final class LuceneAnalyzingEventDialogueTransformer implements Function<EventDialogue,EventDialogue> {
+public final class LuceneAnalyzingEventDialogueTransformer implements EventDialogueTransformer {
 
 	private static Function<String, Stream<String>> createTokenTransformer(final Analyzer analyzer) {
 		final StringTokenizer ssTokenizer = new StringTokenizer(analyzer);

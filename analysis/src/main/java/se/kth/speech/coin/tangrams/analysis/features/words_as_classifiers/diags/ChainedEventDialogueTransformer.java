@@ -27,7 +27,7 @@ import se.kth.speech.coin.tangrams.analysis.EventDialogue;
  * @since May 25, 2017
  *
  */
-public class ChainedEventDialogueTransformer implements Function<EventDialogue,EventDialogue> {
+public class ChainedEventDialogueTransformer implements EventDialogueTransformer {
 
 	private static Function<? super EventDialogue, EventDialogue> createChainedDialogueTransformer(
 			final Iterable<? extends Function<? super EventDialogue, EventDialogue>> diagTransformers) {

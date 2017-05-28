@@ -16,23 +16,15 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags;
 
+import java.util.function.Function;
+
 import se.kth.speech.coin.tangrams.analysis.EventDialogue;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
- * @since May 27, 2017
+ * @since May 28, 2017
  *
  */
-public final class DummyEventDialogueTransformer implements EventDialogueTransformer {
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see java.util.function.Function#apply(java.lang.Object)
-	 */
-	@Override
-	public EventDialogue apply(final EventDialogue diag) {
-		return diag;
-	}
+public interface EventDialogueTransformer extends Function<EventDialogue,EventDialogue> {
 
 }

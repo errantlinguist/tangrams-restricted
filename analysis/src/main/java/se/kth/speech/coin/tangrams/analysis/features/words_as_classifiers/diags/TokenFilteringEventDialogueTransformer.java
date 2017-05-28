@@ -19,7 +19,6 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
@@ -31,7 +30,7 @@ import se.kth.speech.coin.tangrams.analysis.Utterance;
  * @since May 27, 2017
  *
  */
-public final class TokenFilteringEventDialogueTransformer implements Function<EventDialogue, EventDialogue> {
+public final class TokenFilteringEventDialogueTransformer implements EventDialogueTransformer {
 
 	private final Predicate<? super String> positiveTokenFilter;
 

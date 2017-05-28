@@ -6,7 +6,7 @@
 	http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
 	http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd">
 
-		<bean id="stanford-tokenizer" class="se.kth.speech.nlp.StanfordCoreNLPTokenizer">
+	<bean id="stanford-tokenizer" class="se.kth.speech.nlp.StanfordCoreNLPTokenizer">
 		<constructor-arg>
 			<bean class="edu.stanford.nlp.pipeline.StanfordCoreNLP">
 				<constructor-arg>

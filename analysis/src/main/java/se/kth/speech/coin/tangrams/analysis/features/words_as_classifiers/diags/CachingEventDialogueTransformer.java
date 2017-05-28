@@ -29,7 +29,7 @@ import se.kth.speech.coin.tangrams.analysis.EventDialogue;
  * @since May 25, 2017
  *
  */
-public final class CachingEventDialogueTransformer implements Function<EventDialogue,EventDialogue> {
+public final class CachingEventDialogueTransformer implements EventDialogueTransformer {
 
 	private final LoadingCache<EventDialogue, EventDialogue> transformedDiags;
 
