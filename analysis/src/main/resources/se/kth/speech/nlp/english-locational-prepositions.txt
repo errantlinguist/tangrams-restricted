@@ -1,0 +1,43 @@
+above
+across
+adjacent to
+after
+against
+ahead of
+among
+amongst
+around
+at
+before
+behind
+below
+beneath
+beside
+between
+beyond
+by
+close to
+down
+far from
+inside of
+in
+inside
+left of
+near
+nearer
+nearest
+on
+on top of
+onto
+out
+outside
+over
+past
+right of
+to
+toward
+towards
+under
+underneath
+up
+upon
