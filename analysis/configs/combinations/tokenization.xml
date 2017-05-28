@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:util="http://www.springframework.org/schema/util"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+	http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+	http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd">
+
+	<bean id="stanford-pipeline" class="edu.stanford.nlp.pipeline.StanfordCoreNLP" lazy-init="true">
+		<constructor-arg>
+			<util:properties>
+				<!-- https://stanfordnlp.github.io/CoreNLP/api.html -->
+				<prop key="annotators"><!-- https://stanfordnlp.github.io/CoreNLP/annotators.html -->tokenize,ssplit,pos,lemma,parse</prop>
+				<prop key="parse.model"><!-- https://stanfordnlp.github.io/CoreNLP/parse.html -->edu/stanford/nlp/models/lexparser/englishPCFG.caseless.ser.gz</prop>
+				<prop key="pos.model"><!-- https://stanfordnlp.github.io/CoreNLP/pos.html -->edu/stanford/nlp/models/pos-tagger/english-caseless-left3words-distsim.tagger</prop>
+				<prop key="ssplit.isOneSentence"><!-- # https://stanfordnlp.github.io/CoreNLP/ssplit.html -->true</prop>
+				<prop key="tokenize.language"><!-- # https://stanfordnlp.github.io/CoreNLP/tokenize.html -->en</prop>
+			</util:properties>
+		</constructor-arg>
+	</bean>
+
+	<bean id="stanford-tokenizing-diag-transformer" class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.TokenizingEventDialogueTransformer">
+		<description>Tokenizes utterances using Stanford CoreNLP's tokenizer (https://stanfordnlp.github.io/CoreNLP/tokenize.html).</description>
+		<constructor-arg>
+			<bean class="se.kth.speech.nlp.StanfordCoreNLPTokenizer">
+				<constructor-arg ref="stanford-pipeline" />
+			</bean>
+		</constructor-arg>
+	</bean>
+	
+	<bean id="stanford-lemmatizing-diag-transformer" class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.TokenizingEventDialogueTransformer" lazy-init="true">
+		<description>Lemmatizes utterances using Stanford CoreNLP's lemmatizer (https://stanfordnlp.github.io/CoreNLP/lemma.html).</description>
+		<constructor-arg>
+			<bean class="se.kth.speech.nlp.StanfordCoreNLPLemmatizer">
+				<constructor-arg ref="stanford-pipeline" />
+			</bean>
+		</constructor-arg>
+	</bean>
+	
+	<bean id="stanford-parsing-tokenizing-diag-transformer" class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.TokenizingEventDialogueTransformer" lazy-init="true">
+		<constructor-arg>
+			<bean class="se.kth.speech.nlp.StanfordCoreNLPParsingTokenizer">
+				<constructor-arg ref="stanford-pipeline" />
+				<constructor-arg>
+					<bean class="se.kth.speech.nlp.PhrasalHeadFilteringPredicate">
+						<constructor-arg>
+							<util:map>
+								<entry key="PP" value="#{ T(se.kth.speech.nlp.EnglishLocationalPrepositions).loadSet() }" />
+							</util:map>
+						</constructor-arg>
+						<constructor-arg>
+							<bean class="edu.stanford.nlp.trees.CollinsHeadFinder"></bean>
+						</constructor-arg>
+					</bean>
+				</constructor-arg>
+			</bean>
+		</constructor-arg>
+	</bean>
+
+</beans>
