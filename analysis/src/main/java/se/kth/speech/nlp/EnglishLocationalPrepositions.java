@@ -51,7 +51,6 @@ public final class EnglishLocationalPrepositions {
 					LOGGER.info("Loading English locational prepositions.");
 					instance = loadNewSet();
 				}
-
 			}
 		}
 		return instance;
