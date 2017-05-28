@@ -18,7 +18,6 @@ package se.kth.speech.nlp;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
 
 import edu.stanford.nlp.ling.CoreAnnotations.SentencesAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.TextAnnotation;
@@ -33,19 +32,21 @@ import edu.stanford.nlp.util.CoreMap;
  * @since Apr 14, 2017
  *
  */
-public final class StanfordCoreNLPTokenizer implements Function<String, List<String>> {
-
-	private final Annotator annotator;
+public final class StanfordCoreNLPTokenizer extends AbstractStanfordCoreNLPTokenizer {
 
 	public StanfordCoreNLPTokenizer(final Annotator annotator) {
-		this.annotator = annotator;
-
+		super(annotator);
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * se.kth.speech.nlp.AbstractStanfordCoreNLPTokenizer#tokenize(edu.stanford.
+	 * nlp.pipeline.Annotation)
+	 */
 	@Override
-	public List<String> apply(final String input) {
-		final Annotation annot = new Annotation(input);
-		annotator.annotate(annot);
+	protected List<String> tokenize(final Annotation annot) {
 		final List<CoreMap> sents = annot.get(SentencesAnnotation.class);
 		final ArrayList<String> result = new ArrayList<>(16 * sents.size());
 		// traversing the words in the current sentence

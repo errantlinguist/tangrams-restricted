@@ -34,11 +34,9 @@ import edu.stanford.nlp.util.CoreMap;
  * @since Apr 14, 2017
  *
  */
-public final class StanfordCoreNLPParsingTokenizer implements Function<String, List<String>> {
+public final class StanfordCoreNLPParsingTokenizer extends AbstractStanfordCoreNLPTokenizer {
 
 	private static final Function<CoreLabel, String> DEFAULT_LABEL_TOKEN_EXTRACTOR = CoreLabel::word;
-
-	private final Annotator annotator;
 
 	private final Function<? super CoreLabel, String> labelTokenExtractor;
 
@@ -50,15 +48,20 @@ public final class StanfordCoreNLPParsingTokenizer implements Function<String, L
 
 	public StanfordCoreNLPParsingTokenizer(final Annotator annotator, final Predicate<Tree> treePruningPositiveFilter,
 			final Function<? super CoreLabel, String> labelTokenExtractor) {
-		this.annotator = annotator;
+		super(annotator);
 		this.treePruningPositiveFilter = treePruningPositiveFilter;
 		this.labelTokenExtractor = labelTokenExtractor;
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * se.kth.speech.nlp.AbstractStanfordCoreNLPTokenizer#tokenize(edu.stanford.
+	 * nlp.pipeline.Annotation)
+	 */
 	@Override
-	public List<String> apply(final String input) {
-		final Annotation annot = new Annotation(input);
-		annotator.annotate(annot);
+	protected List<String> tokenize(final Annotation annot) {
 		final List<CoreMap> sents = annot.get(SentencesAnnotation.class);
 		final ArrayList<String> result = new ArrayList<>(16 * sents.size());
 		// traversing the words in the current sentence
