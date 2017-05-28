@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:util="http://www.springframework.org/schema/util"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+	http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+	http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd">
+
+	<import
+		resource="classpath:se/kth/speech/coin/tangrams/analysis/features/words_as_classifiers/cross_validation/context.xml" />
+	<import resource="common/context.xml"/>
+	<import resource="dialogue-transformation/stanford-parsing-tokenization.xml"/>
+	
+	<beans>
+		<description>Uses all (19) non-selected entities for each positive
+			example. Uses all utterances in each dialogue for training and
+			testing. Tokenizes utterances using Stanford CoreNLP's tokenizer (https://stanfordnlp.github.io/CoreNLP/tokenize.html). Filters out English stopwords in each utterance.
+		</description>
+
+		<bean id="stopword-set-factory" class="se.kth.speech.nlp.SnowballPorter2EnglishStopwordSetFactory">
+			<property name="variantsToUnify">
+				<util:set value-type="se.kth.speech.nlp.SnowballPorter2EnglishStopwords.Variant">
+					<value>CANONICAL</value>
+					<value>FILLERS</value>
+				</util:set>
+			</property>
+		</bean>
+		
+		<bean id="dialogue-transformer" class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.CachingEventDialogueTransformer">
+			<constructor-arg>
+				<bean class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.ChainedEventDialogueTransformer">
+					<constructor-arg>
+						<util:list value-type="java.util.function.Function">
+							<bean class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.TokenizingEventDialogueTransformer">
+								<constructor-arg ref="stanford-parsing-tokenizer" />
+							</bean>
+							<bean class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.TokenFilteringEventDialogueTransformer">
+								<description>Filters out stopwords in each utterance.</description>
+								<constructor-arg ref="stopword-set-factory" />
+							</bean>
+						</util:list>
+					</constructor-arg>
+				</bean>
+			</constructor-arg>
+		</bean>
+		
+		<bean id="training-insts-factory" class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.OnePositiveMaximumNegativeInstancesFactory">
+			<description>Uses all (19) non-selected entities for negative examples for each positive example.</description>
+			<constructor-arg ref="dialogue-transformer" />
+		</bean>
+
+		<bean id="cross-validation-tester"
+			class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.Tester">
+			<constructor-arg ref="dialogue-transformer" />
+		</bean>
+	</beans>
+</beans>
