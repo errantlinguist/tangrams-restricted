@@ -7,18 +7,18 @@
 	http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd">
 
 		<bean id="stanford-tokenizer" class="se.kth.speech.nlp.StanfordCoreNLPTokenizer">
-			<constructor-arg>
-				<bean class="edu.stanford.nlp.pipeline.StanfordCoreNLP">
-					<constructor-arg>
-						<util:properties>
-							<!-- https://stanfordnlp.github.io/CoreNLP/api.html -->
-							<prop key="annotators"><!-- https://stanfordnlp.github.io/CoreNLP/annotators.html -->tokenize,ssplit</prop>
-							<prop key="ssplit.isOneSentence"><!-- # https://stanfordnlp.github.io/CoreNLP/ssplit.html -->true</prop>
-							<prop key="tokenize.language"><!-- # https://stanfordnlp.github.io/CoreNLP/tokenize.html -->en</prop>
-						</util:properties>
-					</constructor-arg>
-				</bean>
-			</constructor-arg>
-		</bean>
+		<constructor-arg>
+			<bean class="edu.stanford.nlp.pipeline.StanfordCoreNLP">
+				<constructor-arg>
+					<util:properties>
+						<!-- https://stanfordnlp.github.io/CoreNLP/api.html -->
+						<prop key="annotators"><!-- https://stanfordnlp.github.io/CoreNLP/annotators.html -->tokenize,ssplit</prop>
+						<prop key="ssplit.isOneSentence"><!-- # https://stanfordnlp.github.io/CoreNLP/ssplit.html -->true</prop>
+						<prop key="tokenize.language"><!-- # https://stanfordnlp.github.io/CoreNLP/tokenize.html -->en</prop>
+					</util:properties>
+				</constructor-arg>
+			</bean>
+		</constructor-arg>
+	</bean>
 
 </beans>

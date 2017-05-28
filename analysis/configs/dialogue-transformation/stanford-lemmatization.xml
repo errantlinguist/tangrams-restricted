@@ -6,19 +6,19 @@
 	http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
 	http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd">
 
-		<bean id="stanford-lemmatizer" class="se.kth.speech.nlp.StanfordCoreNLPLemmatizer">
-			<constructor-arg>
-				<bean class="edu.stanford.nlp.pipeline.StanfordCoreNLP">
-					<constructor-arg>
-						<util:properties>
-							<!-- https://stanfordnlp.github.io/CoreNLP/api.html -->
-							<prop key="annotators"><!-- https://stanfordnlp.github.io/CoreNLP/annotators.html -->tokenize,ssplit,pos,lemma</prop>
-							<prop key="ssplit.isOneSentence"><!-- # https://stanfordnlp.github.io/CoreNLP/ssplit.html -->true</prop>
-							<prop key="tokenize.language"><!-- # https://stanfordnlp.github.io/CoreNLP/tokenize.html -->en</prop>
-						</util:properties>
-					</constructor-arg>
-				</bean>
-			</constructor-arg>
-		</bean>
+	<bean id="stanford-lemmatizer" class="se.kth.speech.nlp.StanfordCoreNLPLemmatizer">
+		<constructor-arg>
+			<bean class="edu.stanford.nlp.pipeline.StanfordCoreNLP">
+				<constructor-arg>
+					<util:properties>
+						<!-- https://stanfordnlp.github.io/CoreNLP/api.html -->
+						<prop key="annotators"><!-- https://stanfordnlp.github.io/CoreNLP/annotators.html -->tokenize,ssplit,pos,lemma</prop>
+						<prop key="ssplit.isOneSentence"><!-- # https://stanfordnlp.github.io/CoreNLP/ssplit.html -->true</prop>
+						<prop key="tokenize.language"><!-- # https://stanfordnlp.github.io/CoreNLP/tokenize.html -->en</prop>
+					</util:properties>
+				</constructor-arg>
+			</bean>
+		</constructor-arg>
+	</bean>
 
 </beans>
