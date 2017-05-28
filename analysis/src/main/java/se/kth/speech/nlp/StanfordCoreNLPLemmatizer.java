@@ -46,8 +46,8 @@ public final class StanfordCoreNLPLemmatizer implements Function<String, List<St
 		final Annotation annot = new Annotation(input);
 		annotator.annotate(annot);
 		final List<CoreMap> sents = annot.get(SentencesAnnotation.class);
-		// traversing the words in the current sentence
 		final ArrayList<String> result = new ArrayList<>(16 * sents.size());
+		// traversing the words in the current sentence
 		for (final CoreMap sent : sents) {
 			// a CoreLabel is a CoreMap with additional token-specific methods
 			final List<CoreLabel> tokens = sent.get(TokensAnnotation.class);
