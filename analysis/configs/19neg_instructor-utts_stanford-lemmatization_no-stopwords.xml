@@ -16,10 +16,6 @@
 			testing are those which were made by the instructor for the turn
 			which the dialogue has as a context. Lemmatizes utterances using Stanford CoreNLP's lemmatizer (https://stanfordnlp.github.io/CoreNLP/lemma.html). Filters out English stopwords in each utterance. </description>
 
-		<bean id="training-insts-factory" class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.OnePositiveMaximumNegativeInstancesFactory">
-			<description>Uses all (19) non-selected entities for negative examples for each positive example.</description>
-		</bean>
-
 		<bean id="smoother"
 			class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordClassDiscountingSmoother">
 			<constructor-arg value="4" />
@@ -62,6 +58,11 @@
 					</constructor-arg>
 				</bean>
 			</constructor-arg>
+		</bean>
+		
+		<bean id="training-insts-factory" class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.OnePositiveMaximumNegativeInstancesFactory">
+			<description>Uses all (19) non-selected entities for negative examples for each positive example.</description>
+			<constructor-arg ref="dialogue-transformer" />
 		</bean>
 
 		<bean id="cross-validation-tester"

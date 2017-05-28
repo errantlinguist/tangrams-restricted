@@ -23,11 +23,6 @@
 			<constructor-arg value="1" />
 		</bean>
 
-		<bean id="training-insts-factory" class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.OnePositiveOneNegativeInstanceFactory">
-				<description>Finds one random negative example for each positive example.</description>
-				<constructor-arg ref="random-generator" />
-		</bean>
-
 		<bean id="smoother"
 			class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordClassDiscountingSmoother">
 			<constructor-arg value="4" />
@@ -47,6 +42,12 @@
 			which the dialogue has as a context.</description>
 				</bean>
 			</constructor-arg>
+		</bean>
+		
+		<bean id="training-insts-factory" class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.OnePositiveOneNegativeInstanceFactory">
+				<description>Finds one random negative example for each positive example.</description>
+				<constructor-arg ref="dialogue-transformer" />
+				<constructor-arg ref="random-generator" />
 		</bean>
 
 		<bean id="cross-validation-tester"

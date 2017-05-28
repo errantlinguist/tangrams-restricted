@@ -12,10 +12,6 @@
 	<beans>
 		<description>Uses all (19) non-selected entities for negative examples for each positive example. Uses all utterances in each dialogue for training and testing.</description>
 
-		<bean id="training-insts-factory" class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.OnePositiveMaximumNegativeInstancesFactory">
-			<description>Uses all (19) non-selected entities for negative examples for each positive example.</description>
-		</bean>
-
 		<bean id="smoother"
 			class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordClassDiscountingSmoother">
 			<constructor-arg value="4" />
@@ -29,6 +25,11 @@
 		
 		<bean id="dialogue-transformer" class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.DummyEventDialogueTransformer">
 			<description>Uses all utterances in each dialogue for training and testing.</description>
+		</bean>
+		
+		<bean id="training-insts-factory" class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.OnePositiveMaximumNegativeInstancesFactory">
+			<description>Uses all (19) non-selected entities for negative examples for each positive example.</description>
+			<constructor-arg ref="dialogue-transformer" />
 		</bean>
 
 		<bean id="cross-validation-tester"

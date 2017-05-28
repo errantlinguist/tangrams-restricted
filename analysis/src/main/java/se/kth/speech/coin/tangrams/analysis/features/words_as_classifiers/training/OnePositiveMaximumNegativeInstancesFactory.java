@@ -65,11 +65,15 @@ public final class OnePositiveMaximumNegativeInstancesFactory extends AbstractSi
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(OnePositiveMaximumNegativeInstancesFactory.class);
 
-	@Inject
-	private Function<? super EventDialogue, EventDialogue> diagTransformer;
+	private final Function<? super EventDialogue, EventDialogue> diagTransformer;
 
 	@Inject
 	private EntityFeatureExtractionContextFactory extCtxFactory;
+
+	public OnePositiveMaximumNegativeInstancesFactory(
+			final Function<? super EventDialogue, EventDialogue> diagTransformer) {
+		this.diagTransformer = diagTransformer;
+	}
 
 	private List<Entry<EntityFeature.Extractor.Context, String>> createContexts(final GameContext uttCtx,
 			final int selectedEntityId) {

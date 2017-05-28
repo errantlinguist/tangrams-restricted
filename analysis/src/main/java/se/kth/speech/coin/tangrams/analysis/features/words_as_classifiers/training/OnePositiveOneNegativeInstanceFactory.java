@@ -64,15 +64,16 @@ public final class OnePositiveOneNegativeInstanceFactory extends AbstractSizeEst
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(OnePositiveOneNegativeInstanceFactory.class);
 
-	@Inject
-	private Function<? super EventDialogue, EventDialogue> diagTransformer;
+	private final Function<? super EventDialogue, EventDialogue> diagTransformer;
 
 	private final Random rnd;
 
 	@Inject
 	private EntityFeatureExtractionContextFactory extCtxFactory;
 
-	public OnePositiveOneNegativeInstanceFactory(final Random rnd) {
+	public OnePositiveOneNegativeInstanceFactory(final Function<? super EventDialogue, EventDialogue> diagTransformer,
+			final Random rnd) {
+		this.diagTransformer = diagTransformer;
 		this.rnd = rnd;
 	}
 
