@@ -228,6 +228,7 @@ public final class BatchApplicationContextTester {
 	 * @throws ClassificationException 
 	 */
 	public void accept(final Iterable<Path> appCtxDefPaths) throws IOException, ClassificationException, ExecutionException {
+		Files.createDirectories(summaryFile.getParent());
 		try (final BufferedWriter summaryWriter = Files.newBufferedWriter(summaryFile, StandardOpenOption.CREATE,
 				StandardOpenOption.TRUNCATE_EXISTING)) {
 			summaryWriter.write(COL_HEADERS.stream().collect(ROW_CELL_JOINER));
