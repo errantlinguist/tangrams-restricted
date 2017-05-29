@@ -18,13 +18,11 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross
 
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -39,6 +37,7 @@ import com.google.common.cache.LoadingCache;
 import se.kth.speech.MutablePair;
 import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
 import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManager;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.TrainingInstancesFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.WordClassificationData;
 
 /**
@@ -68,7 +67,7 @@ public final class TestSetFactory {
 	private static final int MIN_INPUT_SIZE = 2;
 
 	@Inject
-	private Function<Collection<SessionEventDialogueManager>, WordClassificationData> instancesFactory;
+	private TrainingInstancesFactory instancesFactory;
 
 	@Inject
 	private Supplier<LoadingCache<SessionDataManager, SessionEventDialogueManager>> sessionDiagMgrCacheSupplier;

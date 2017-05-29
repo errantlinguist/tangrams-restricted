@@ -25,7 +25,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 import javax.inject.Inject;
@@ -188,7 +187,7 @@ public final class TrainingDataWriter {
 	private Supplier<LoadingCache<SessionDataManager, SessionEventDialogueManager>> sessionEvtDiagMgrSupplier;
 
 	@Inject
-	private Function<Collection<SessionEventDialogueManager>, WordClassificationData> instancesFactory;
+	private TrainingInstancesFactory instancesFactory;
 
 	public WordClassificationData apply(final Iterable<Path> inpaths) throws IOException, JAXBException {
 		final Collection<SessionDataManager> infileSessionData = SessionDataManager.createFileSessionDataMap(inpaths)
