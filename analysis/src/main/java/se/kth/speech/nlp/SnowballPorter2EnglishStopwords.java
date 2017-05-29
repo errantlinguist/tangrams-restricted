@@ -125,7 +125,7 @@ public final class SnowballPorter2EnglishStopwords {
 	public static Set<String> loadStopwordSet(final String resLoc) throws IOException {
 		final Set<String> result = new HashSet<>();
 		load(resLoc, result);
-		LOGGER.info("Read stopword set of size {}.", result.size());
+		LOGGER.info("Read stopword set of size {} from \"{}\".", result.size(), resLoc);
 		return result;
 	}
 
