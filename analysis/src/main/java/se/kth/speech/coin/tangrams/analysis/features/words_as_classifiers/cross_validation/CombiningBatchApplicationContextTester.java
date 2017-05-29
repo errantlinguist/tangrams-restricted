@@ -435,43 +435,22 @@ public final class CombiningBatchApplicationContextTester {
 
 		private final EventDialogueTransformer diagTransformer;
 
-		private final TokenFiltering tokenFilteringMethod;
-
-		private final Tokenization tokenizationMethod;
-
-		private final UtteranceFiltering uttFilteringMethod;
-
+//		private final TokenFiltering tokenFilteringMethod;
+//
+//		private final Tokenization tokenizationMethod;
+//
+//		private final UtteranceFiltering uttFilteringMethod;
+		
 		private TrainingContext(final UtteranceFiltering uttFilteringMethod, final Tokenization tokenizationMethod,
 				final TokenFiltering tokenFilteringMethod, final EventDialogueTransformer diagTransformer,
 				final ApplicationContext appCtx) {
-			this.uttFilteringMethod = uttFilteringMethod;
-			this.tokenizationMethod = tokenizationMethod;
-			this.tokenFilteringMethod = tokenFilteringMethod;
+//			this.uttFilteringMethod = uttFilteringMethod;
+//			this.tokenizationMethod = tokenizationMethod;
+//			this.tokenFilteringMethod = tokenFilteringMethod;
 			this.diagTransformer = diagTransformer;
 			this.appCtx = appCtx;
 		}
 
-		/*
-		 * (non-Javadoc)
-		 * 
-		 * @see java.lang.Object#toString()
-		 */
-		@Override
-		public String toString() {
-			final StringBuilder builder = new StringBuilder();
-			builder.append("TrainingContext [appCtx=");
-			builder.append(appCtx);
-			builder.append(", diagTransformer=");
-			builder.append(diagTransformer);
-			builder.append(", tokenFilteringMethod=");
-			builder.append(tokenFilteringMethod);
-			builder.append(", tokenizationMethod=");
-			builder.append(tokenizationMethod);
-			builder.append(", uttFilteringMethod=");
-			builder.append(uttFilteringMethod);
-			builder.append("]");
-			return builder.toString();
-		}
 	}
 
 	private enum UtteranceFiltering implements Supplier<EventDialogueTransformer> {
