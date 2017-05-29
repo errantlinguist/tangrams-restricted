@@ -45,6 +45,29 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.traini
  */
 public final class CombiningBatchJobTester {
 
+	public static final class Input {
+
+		private final Map<SessionDataManager, Path> allSessions;
+
+		private final Iterable<UtteranceFiltering> uttFilteringMethods;
+
+		private final Iterable<Tokenization> tokenizationMethods;
+
+		private final Iterable<TokenFiltering> tokenFilteringMethods;
+
+		private final Iterable<Training> trainingMethods;
+
+		public Input(final Iterable<UtteranceFiltering> uttFilteringMethods,
+				final Iterable<Tokenization> tokenizationMethods, final Iterable<TokenFiltering> tokenFilteringMethods,
+				final Iterable<Training> trainingMethods, final Map<SessionDataManager, Path> allSessions) {
+			this.uttFilteringMethods = uttFilteringMethods;
+			this.tokenizationMethods = tokenizationMethods;
+			this.tokenFilteringMethods = tokenFilteringMethods;
+			this.trainingMethods = trainingMethods;
+			this.allSessions = allSessions;
+		}
+	}
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(CombiningBatchJobTester.class);
 
 	private final ApplicationContext appCtx;
@@ -71,16 +94,15 @@ public final class CombiningBatchJobTester {
 		this.testerConfigurator = testerConfigurator;
 	}
 
-	public void accept(final Map<SessionDataManager, Path> allSessions)
-			throws ClassificationException, ExecutionException, IOException {
+	public void accept(final Input input) throws ClassificationException, ExecutionException, IOException {
 		final SessionEventDialogueManagerCacheSupplier sessionDiagMgrCacheSupplier = appCtx
 				.getBean(SessionEventDialogueManagerCacheSupplier.class);
-		for (final UtteranceFiltering uttFilteringMethod : UtteranceFiltering.values()) {
+		for (final UtteranceFiltering uttFilteringMethod : input.uttFilteringMethods) {
 			final EventDialogueTransformer uttFilter = uttFilteringMethod.get();
-			for (final Tokenization tokenizationMethod : Tokenization.values()) {
+			for (final Tokenization tokenizationMethod : input.tokenizationMethods) {
 				final EventDialogueTransformer tokenizer = tokenizationMethod.get();
 
-				for (final TokenFiltering tokenFilteringMethod : TokenFiltering.values()) {
+				for (final TokenFiltering tokenFilteringMethod : input.tokenFilteringMethods) {
 					final EventDialogueTransformer tokenFilter = tokenFilteringMethod.get();
 
 					final List<EventDialogueTransformer> diagTransformers = Arrays.asList(uttFilter, tokenizer,
@@ -89,7 +111,7 @@ public final class CombiningBatchJobTester {
 							new ChainedEventDialogueTransformer(diagTransformers));
 					final TrainingContext trainingCtx = new TrainingContext(uttFilteringMethod, tokenizationMethod,
 							tokenFilteringMethod, cachingDiagTransformer, appCtx);
-					for (final Training trainingMethod : Training.values()) {
+					for (final Training trainingMethod : input.trainingMethods) {
 						final Entry<TrainingInstancesFactory, Integer> trainingInstsFactoryIterCount = trainingMethod
 								.apply(trainingCtx);
 
@@ -102,7 +124,7 @@ public final class CombiningBatchJobTester {
 						final TestParameters testParams = new TestParameters(uttFilteringMethod, tokenizationMethod,
 								tokenFilteringMethod, trainingMethod);
 						LOGGER.info("Testing {}.", testParams);
-						final Tester.Result testResults = tester.apply(allSessions);
+						final Tester.Result testResults = tester.apply(input.allSessions);
 						final BatchJobSummary batchSummary = new BatchJobSummary(testParams, testResults);
 						batchJobResultHandler.accept(batchSummary);
 					}

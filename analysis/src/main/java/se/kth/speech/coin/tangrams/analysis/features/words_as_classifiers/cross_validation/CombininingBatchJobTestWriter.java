@@ -169,7 +169,11 @@ public final class CombininingBatchJobTestWriter implements Consumer<BatchJobSum
 							"combining-batch-tester.xml", CombininingBatchJobTestWriter.class)) {
 						final CombiningBatchJobTester tester = new CombiningBatchJobTester(executor, appCtx, writer,
 								testerConfigurator);
-						tester.accept(allSessionDataFuture.get());
+						final CombiningBatchJobTester.Input input = new CombiningBatchJobTester.Input(
+								Arrays.asList(UtteranceFiltering.values()), Arrays.asList(Tokenization.values()),
+								Arrays.asList(TokenFiltering.values()), Arrays.asList(Training.values()),
+								allSessionDataFuture.get());
+						tester.accept(input);
 					}
 					LOGGER.info("Shutting down executor service.");
 					executor.shutdown();
