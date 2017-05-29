@@ -16,12 +16,10 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import se.kth.speech.coin.tangrams.analysis.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.Utterance;
 
 /**
@@ -29,7 +27,7 @@ import se.kth.speech.coin.tangrams.analysis.Utterance;
  * @since May 27, 2017
  *
  */
-public final class TokenizingEventDialogueTransformer implements EventDialogueTransformer {
+public final class TokenizingEventDialogueTransformer extends AbstractUtteranceTransformingEventDialogueTransformer {
 
 	private final Function<? super String, ? extends List<String>> tokenizer;
 
@@ -37,19 +35,8 @@ public final class TokenizingEventDialogueTransformer implements EventDialogueTr
 		this.tokenizer = tokenizer;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see java.util.function.Function#apply(java.lang.Object)
-	 */
 	@Override
-	public EventDialogue apply(final EventDialogue diag) {
-		final List<Utterance> newUtts = Arrays
-				.asList(diag.getUtts().stream().flatMap(this::transformUtt).toArray(Utterance[]::new));
-		return new EventDialogue(diag.getLastEvent(), newUtts);
-	}
-
-	private Stream<Utterance> transformUtt(final Utterance utt) {
+	protected Stream<Utterance> transformUtt(final Utterance utt) {
 		final String tokenStr = utt.getTokenStr();
 		final List<String> newTokens = tokenizer.apply(tokenStr);
 		return newTokens.isEmpty() ? Stream.empty()

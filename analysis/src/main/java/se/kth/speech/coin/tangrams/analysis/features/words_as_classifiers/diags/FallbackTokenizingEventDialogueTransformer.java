@@ -16,7 +16,6 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -24,7 +23,6 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import se.kth.speech.coin.tangrams.analysis.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.Utterance;
 
 /**
@@ -32,7 +30,8 @@ import se.kth.speech.coin.tangrams.analysis.Utterance;
  * @since May 27, 2017
  *
  */
-public final class FallbackTokenizingEventDialogueTransformer implements EventDialogueTransformer {
+public final class FallbackTokenizingEventDialogueTransformer
+		extends AbstractUtteranceTransformingEventDialogueTransformer {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(FallbackTokenizingEventDialogueTransformer.class);
 
@@ -46,19 +45,8 @@ public final class FallbackTokenizingEventDialogueTransformer implements EventDi
 		this.fallbackTokenizer = fallbackTokenizer;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see java.util.function.Function#apply(java.lang.Object)
-	 */
 	@Override
-	public EventDialogue apply(final EventDialogue diag) {
-		final List<Utterance> newUtts = Arrays
-				.asList(diag.getUtts().stream().flatMap(this::transformUtt).toArray(Utterance[]::new));
-		return new EventDialogue(diag.getLastEvent(), newUtts);
-	}
-
-	private Stream<Utterance> transformUtt(final Utterance utt) {
+	protected Stream<Utterance> transformUtt(final Utterance utt) {
 		final String tokenStr = utt.getTokenStr();
 		final List<String> resultTokens;
 		{

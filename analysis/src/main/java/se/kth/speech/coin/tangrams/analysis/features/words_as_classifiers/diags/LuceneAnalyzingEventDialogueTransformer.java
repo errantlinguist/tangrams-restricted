@@ -17,13 +17,11 @@
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags;
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
 import org.apache.lucene.analysis.Analyzer;
 
-import se.kth.speech.coin.tangrams.analysis.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.Utterance;
 import se.kth.speech.nlp.lucene.StringTokenizer;
 
@@ -32,7 +30,8 @@ import se.kth.speech.nlp.lucene.StringTokenizer;
  * @since 24 May 2017
  *
  */
-public final class LuceneAnalyzingEventDialogueTransformer implements EventDialogueTransformer {
+public final class LuceneAnalyzingEventDialogueTransformer
+		extends AbstractUtteranceTransformingEventDialogueTransformer {
 
 	private static Function<String, Stream<String>> createTokenTransformer(final Analyzer analyzer) {
 		final StringTokenizer ssTokenizer = new StringTokenizer(analyzer);
@@ -49,19 +48,8 @@ public final class LuceneAnalyzingEventDialogueTransformer implements EventDialo
 		this.tokenTransformer = tokenTransformer;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see java.util.function.Function#apply(java.lang.Object)
-	 */
 	@Override
-	public EventDialogue apply(final EventDialogue diag) {
-		final List<Utterance> newUtts = Arrays
-				.asList(diag.getUtts().stream().flatMap(this::transformUtt).toArray(Utterance[]::new));
-		return new EventDialogue(diag.getLastEvent(), newUtts);
-	}
-
-	private Stream<Utterance> transformUtt(final Utterance utt) {
+	protected Stream<Utterance> transformUtt(final Utterance utt) {
 		final Stream<String> newTokens = tokenTransformer.apply(utt.getTokenStr()).map(String::trim)
 				.filter(str -> !str.isEmpty());
 		final String[] newTokenArr = newTokens.toArray(String[]::new);
