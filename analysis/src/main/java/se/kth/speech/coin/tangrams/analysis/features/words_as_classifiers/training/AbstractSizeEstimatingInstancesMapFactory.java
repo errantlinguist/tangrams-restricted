@@ -20,8 +20,6 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.function.Function;
 
-import javax.inject.Inject;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,8 +28,11 @@ import com.google.common.collect.Maps;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManager;
+import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
 import se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttributeContext;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordClasses;
+import weka.core.DenseInstance;
+import weka.core.Instance;
 import weka.core.Instances;
 
 /**
@@ -39,8 +40,7 @@ import weka.core.Instances;
  * @since May 26, 2017
  *
  */
-public abstract class AbstractSizeEstimatingInstancesMapFactory
-		implements TrainingInstancesFactory {
+public abstract class AbstractSizeEstimatingInstancesMapFactory implements TrainingInstancesFactory {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(AbstractSizeEstimatingInstancesMapFactory.class);
 
@@ -69,14 +69,16 @@ public abstract class AbstractSizeEstimatingInstancesMapFactory
 		return result;
 	}
 
-	@Inject
-	protected EntityInstanceAttributeContext entityInstAttrCtx;
+	private final EntityInstanceAttributeContext entityInstAttrCtx;
+
+	protected AbstractSizeEstimatingInstancesMapFactory(final EntityInstanceAttributeContext entityInstAttrCtx) {
+		this.entityInstAttrCtx = entityInstAttrCtx;
+	}
 
 	@Override
 	public WordClassificationData apply(final Collection<SessionEventDialogueManager> sessionEventDiagMgrs) {
-		int estClassCount = estimateVocabTypeCount(sessionEventDiagMgrs);
-		final Map<String, Instances> classInstances = Maps
-				.newHashMapWithExpectedSize(estClassCount);
+		final int estClassCount = estimateVocabTypeCount(sessionEventDiagMgrs);
+		final Map<String, Instances> classInstances = Maps.newHashMapWithExpectedSize(estClassCount);
 		final Function<String, Instances> classInstancesFetcher = className -> classInstances.computeIfAbsent(className,
 				key -> {
 					final Instances instances = new Instances(WordClasses.createRelationName(key),
@@ -86,7 +88,8 @@ public abstract class AbstractSizeEstimatingInstancesMapFactory
 				});
 		final Object2IntMap<String> classObservationCounts = new Object2IntOpenHashMap<>(estClassCount);
 		classObservationCounts.defaultReturnValue(0);
-		final WordClassificationData result = new WordClassificationData(classInstances, classObservationCounts, classInstancesFetcher);
+		final WordClassificationData result = new WordClassificationData(classInstances, classObservationCounts,
+				classInstancesFetcher);
 		for (final SessionEventDialogueManager sessionEventDiagMgr : sessionEventDiagMgrs) {
 			addTrainingData(sessionEventDiagMgr, result);
 		}
@@ -95,5 +98,14 @@ public abstract class AbstractSizeEstimatingInstancesMapFactory
 
 	protected abstract void addTrainingData(SessionEventDialogueManager sessionEventDiagMgr,
 			WordClassificationData trainingData);
+
+	protected Instance createTokenInstance(final Instances classInsts,
+			final EntityFeature.Extractor.Context extractionContext, final String classValue) {
+		final Instance result = new DenseInstance(entityInstAttrCtx.getAttrs().size());
+		result.setDataset(classInsts);
+		entityInstAttrCtx.getExtractor().accept(result, extractionContext);
+		result.setClassValue(classValue);
+		return result;
+	}
 
 }

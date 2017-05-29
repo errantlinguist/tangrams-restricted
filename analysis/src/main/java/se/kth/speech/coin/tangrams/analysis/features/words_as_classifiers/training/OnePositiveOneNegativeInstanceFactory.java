@@ -20,8 +20,6 @@ import java.util.List;
 import java.util.Random;
 import java.util.stream.Stream;
 
-import javax.inject.Inject;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,11 +31,11 @@ import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManager;
 import se.kth.speech.coin.tangrams.analysis.Utterance;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionContextFactory;
+import se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttributeContext;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.UtteranceGameContexts;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EventDialogueTransformer;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 import se.kth.speech.fastutil.RandomIntLists;
-import weka.core.DenseInstance;
 import weka.core.Instance;
 import weka.core.Instances;
 
@@ -66,24 +64,17 @@ public final class OnePositiveOneNegativeInstanceFactory extends AbstractSizeEst
 
 	private final EventDialogueTransformer diagTransformer;
 
+	private final EntityFeatureExtractionContextFactory extCtxFactory;
+
 	private final Random rnd;
 
-	@Inject
-	private EntityFeatureExtractionContextFactory extCtxFactory;
-
-	public OnePositiveOneNegativeInstanceFactory(final EventDialogueTransformer diagTransformer,
+	public OnePositiveOneNegativeInstanceFactory(final EntityInstanceAttributeContext entityInstAttrCtx,
+			final EventDialogueTransformer diagTransformer, final EntityFeatureExtractionContextFactory extCtxFactory,
 			final Random rnd) {
+		super(entityInstAttrCtx);
 		this.diagTransformer = diagTransformer;
+		this.extCtxFactory = extCtxFactory;
 		this.rnd = rnd;
-	}
-
-	private Instance createTokenInstance(final Instances classInsts,
-			final EntityFeature.Extractor.Context extractionContext, final String classValue) {
-		final Instance result = new DenseInstance(entityInstAttrCtx.getAttrs().size());
-		result.setDataset(classInsts);
-		entityInstAttrCtx.getExtractor().accept(result, extractionContext);
-		result.setClassValue(classValue);
-		return result;
 	}
 
 	private int findRandomEntityId(final GameContext ctx, final int complementId) {

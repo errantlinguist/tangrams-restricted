@@ -36,6 +36,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -51,6 +52,7 @@ import org.springframework.context.support.FileSystemXmlApplicationContext;
 
 import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.StatisticsWriter.SummaryDatum;
 import se.kth.speech.io.FileNames;
 
 /**
@@ -125,14 +127,12 @@ public final class BatchApplicationContextTester {
 
 	}
 
-	private static final List<String> COL_HEADERS = Arrays.asList("INPATH", "ITER_COUNT", "MEAN_RANK", "MRR",
-			"DIAG_COUNT", "UTTS_TESTED", "MEAN_UTTS_PER_DIAG");
-
 	private static final Logger LOGGER = LoggerFactory.getLogger(BatchApplicationContextTester.class);
 
 	private static final Collector<CharSequence, ?, String> ROW_CELL_JOINER = Collectors.joining("\t");
 
-	public static void main(final CommandLine cl) throws IOException, ParseException, ClassificationException, ExecutionException {
+	public static void main(final CommandLine cl)
+			throws IOException, ParseException, ClassificationException, ExecutionException {
 		if (cl.hasOption(Parameter.HELP.optName)) {
 			Parameter.printHelp();
 		} else {
@@ -224,21 +224,24 @@ public final class BatchApplicationContextTester {
 	/**
 	 * @param appCtxDefPaths
 	 * @throws IOException
-	 * @throws ExecutionException 
-	 * @throws ClassificationException 
+	 * @throws ExecutionException
+	 * @throws ClassificationException
 	 */
-	public void accept(final Iterable<Path> appCtxDefPaths) throws IOException, ClassificationException, ExecutionException {
+	public void accept(final Iterable<Path> appCtxDefPaths)
+			throws IOException, ClassificationException, ExecutionException {
 		Files.createDirectories(summaryFile.getParent());
 		try (final BufferedWriter summaryWriter = Files.newBufferedWriter(summaryFile, StandardOpenOption.CREATE,
 				StandardOpenOption.TRUNCATE_EXISTING)) {
-			summaryWriter.write(COL_HEADERS.stream().collect(ROW_CELL_JOINER));
+			summaryWriter.write(StatisticsWriter.getSummaryDatumColumnOrdering().stream().map(SummaryDatum::toString)
+					.collect(ROW_CELL_JOINER));
 		}
 		for (final Path appCtxDefPath : appCtxDefPaths) {
 			accept(appCtxDefPath, StandardOpenOption.APPEND);
 		}
 	}
 
-	private void accept(final Path appCtxDefPath, final OpenOption... summaryFileOpenOpts) throws IOException, ClassificationException, ExecutionException {
+	private void accept(final Path appCtxDefPath, final OpenOption... summaryFileOpenOpts)
+			throws IOException, ClassificationException, ExecutionException {
 		final String appCtxDefLoc = appCtxDefPath.toString();
 		final String batchOutdirName = createBatchOutdirName(appCtxDefPath);
 		final Path outdirPath = Files.createDirectories(outdir.resolve(batchOutdirName));
@@ -251,11 +254,14 @@ public final class BatchApplicationContextTester {
 			testResults = tester.apply(allSessions);
 		}
 		writeResults(testResults, outdirPath);
-		final List<Object> configSummary = StatisticsWriter.createSummaryTableRow(appCtxDefPath.toString(),
+		
+		final Map<SummaryDatum, Object> configSummary = StatisticsWriter.createSummaryDataMap(appCtxDefPath.toString(),
 				testResults);
+		final Stream<Object> rowCellVals = StatisticsWriter.getSummaryDatumColumnOrdering().stream()
+				.map(configSummary::get);
 		try (final BufferedWriter summaryWriter = Files.newBufferedWriter(summaryFile, summaryFileOpenOpts)) {
 			summaryWriter.newLine();
-			summaryWriter.write(configSummary.stream().map(Object::toString).collect(ROW_CELL_JOINER));
+			summaryWriter.write(rowCellVals.map(Object::toString).collect(ROW_CELL_JOINER));
 		}
 	}
 

@@ -32,9 +32,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import javax.inject.Inject;
@@ -344,11 +342,6 @@ public final class Tester {
 
 	private static final String TEST_INSTS_REL_NAME = "tested_entites";
 
-	private static Supplier<ExecutorService> createExecutorServiceFactory(final int parallelThreadCount) {
-		LOGGER.info("Will run with {} parallel thread(s).", parallelThreadCount);
-		return () -> Executors.newFixedThreadPool(parallelThreadCount);
-	}
-
 	private static int estimateTestInstanceCount(final SessionDataManager sessionData) throws IOException {
 		final long lineCount = Files.lines(sessionData.getCanonicalEventLogPath()).count();
 		// (Number of logged events / estimated number of events per dialogue) *
@@ -365,12 +358,6 @@ public final class Tester {
 		return result;
 	}
 
-	private static void shutdownExceptionally(final ExecutorService executor) {
-		LOGGER.debug("Emergency executor service shutdown.");
-		executor.shutdownNow();
-		LOGGER.debug("Successfully shut down executor service.");
-	}
-
 	@Inject
 	private BeanFactory beanFactory;
 
@@ -379,7 +366,7 @@ public final class Tester {
 	@Inject
 	private EntityInstanceAttributeContext entInstAttrCtx;
 
-	private final Supplier<? extends ExecutorService> executorFactory;
+	private final ExecutorService executor;
 
 	private int iterCount = 1;
 
@@ -394,22 +381,11 @@ public final class Tester {
 
 	private final TestSetFactory testSetFactory;
 
-	public Tester(final TestSetFactory testSetFactory,
-			final EventDialogueTransformer diagTransformer) {
-		this(testSetFactory, diagTransformer, Math.max(Runtime.getRuntime().availableProcessors() - 1, 1));
-	}
-
-	public Tester(final TestSetFactory testSetFactory,
-			final EventDialogueTransformer diagTransformer, final int parallelThreadCount) {
-		this(testSetFactory, diagTransformer, createExecutorServiceFactory(parallelThreadCount));
-	}
-
-	public Tester(final TestSetFactory testSetFactory,
-			final EventDialogueTransformer diagTransformer,
-			final Supplier<? extends ExecutorService> executorFactory) {
+	public Tester(final TestSetFactory testSetFactory, final EventDialogueTransformer diagTransformer,
+			final ExecutorService executor) {
 		this.testSetFactory = testSetFactory;
 		this.diagTransformer = diagTransformer;
-		this.executorFactory = executorFactory;
+		this.executor = executor;
 	}
 
 	public Result apply(final Map<SessionDataManager, Path> allSessions)
@@ -418,34 +394,15 @@ public final class Tester {
 		LOGGER.info(
 				"Starting cross-validation test using data from {} session(s), doing {} iteration(s) on each dataset.",
 				allSessions.size(), iterCount);
-		final ExecutorService executor = executorFactory.get();
 		final CrossValidator crossValidator = new CrossValidator(executor);
-		try {
-			for (int iterNo = 1; iterNo <= iterCount; ++iterNo) {
-				LOGGER.info("Training/testing iteration no. {}.", iterNo);
-				final Map<Path, SessionTester.Result> iterResults = crossValidator.apply(allSessions);
-				for (final Entry<Path, SessionTester.Result> iterResult : iterResults.entrySet()) {
-					result.put(iterResult.getKey(), iterNo, iterResult.getValue());
-				}
+		for (int iterNo = 1; iterNo <= iterCount; ++iterNo) {
+			LOGGER.info("Training/testing iteration no. {}.", iterNo);
+			final Map<Path, SessionTester.Result> iterResults = crossValidator.apply(allSessions);
+			for (final Entry<Path, SessionTester.Result> iterResult : iterResults.entrySet()) {
+				result.put(iterResult.getKey(), iterNo, iterResult.getValue());
 			}
-			LOGGER.info("Finished testing {} cross-validation dataset(s).", result.sessionResults.size());
-			LOGGER.debug("Shutting down executor service.");
-			executor.shutdown();
-			LOGGER.debug("Successfully shut down executor service.");
-
-		} catch (final ClassificationException e) {
-			shutdownExceptionally(executor);
-			throw e;
-		} catch (final ExecutionException e) {
-			shutdownExceptionally(executor);
-			throw e;
-		} catch (final IOException e) {
-			shutdownExceptionally(executor);
-			throw e;
-		} catch (final RuntimeException e) {
-			shutdownExceptionally(executor);
-			throw e;
 		}
+		LOGGER.info("Finished testing {} cross-validation dataset(s).", result.sessionResults.size());
 		return result;
 	}
 

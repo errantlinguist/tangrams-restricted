@@ -21,6 +21,9 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import se.kth.speech.coin.tangrams.analysis.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.Utterance;
 
@@ -29,12 +32,18 @@ import se.kth.speech.coin.tangrams.analysis.Utterance;
  * @since May 27, 2017
  *
  */
-public final class TokenizingEventDialogueTransformer implements EventDialogueTransformer {
+public final class FallbackTokenizingEventDialogueTransformer implements EventDialogueTransformer {
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(FallbackTokenizingEventDialogueTransformer.class);
+
+	private final Function<? super String, ? extends List<String>> fallbackTokenizer;
 
 	private final Function<? super String, ? extends List<String>> tokenizer;
 
-	public TokenizingEventDialogueTransformer(final Function<? super String, ? extends List<String>> tokenizer) {
+	public FallbackTokenizingEventDialogueTransformer(final Function<? super String, ? extends List<String>> tokenizer,
+			final Function<? super String, ? extends List<String>> fallbackTokenizer) {
 		this.tokenizer = tokenizer;
+		this.fallbackTokenizer = fallbackTokenizer;
 	}
 
 	/*
@@ -51,9 +60,18 @@ public final class TokenizingEventDialogueTransformer implements EventDialogueTr
 
 	private Stream<Utterance> transformUtt(final Utterance utt) {
 		final String tokenStr = utt.getTokenStr();
-		final List<String> newTokens = tokenizer.apply(tokenStr);
-		return newTokens.isEmpty() ? Stream.empty()
-				: Stream.of(new Utterance(utt.getSegmentId(), utt.getSpeakerId(), newTokens, utt.getStartTime(),
+		final List<String> resultTokens;
+		{
+			final List<String> newTokens = tokenizer.apply(tokenStr);
+			if (newTokens.isEmpty() && !utt.getTokens().isEmpty()) {
+				LOGGER.info("No tokens found for {}; Using fallback tokenizer.", utt);
+				resultTokens = fallbackTokenizer.apply(tokenStr);
+			} else {
+				resultTokens = newTokens;
+			}
+		}
+		return resultTokens.isEmpty() ? Stream.empty()
+				: Stream.of(new Utterance(utt.getSegmentId(), utt.getSpeakerId(), resultTokens, utt.getStartTime(),
 						utt.getEndTime()));
 	}
 

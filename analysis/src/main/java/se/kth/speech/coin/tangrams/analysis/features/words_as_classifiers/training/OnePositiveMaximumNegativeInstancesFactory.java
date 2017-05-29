@@ -21,8 +21,6 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.stream.Stream;
 
-import javax.inject.Inject;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,10 +33,10 @@ import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManager;
 import se.kth.speech.coin.tangrams.analysis.Utterance;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionContextFactory;
+import se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttributeContext;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.UtteranceGameContexts;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EventDialogueTransformer;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
-import weka.core.DenseInstance;
 import weka.core.Instance;
 import weka.core.Instances;
 
@@ -67,12 +65,13 @@ public final class OnePositiveMaximumNegativeInstancesFactory extends AbstractSi
 
 	private final EventDialogueTransformer diagTransformer;
 
-	@Inject
-	private EntityFeatureExtractionContextFactory extCtxFactory;
+	private final EntityFeatureExtractionContextFactory extCtxFactory;
 
-	public OnePositiveMaximumNegativeInstancesFactory(
-			final EventDialogueTransformer diagTransformer) {
+	public OnePositiveMaximumNegativeInstancesFactory(final EntityInstanceAttributeContext entityInstAttrCtx,
+			final EventDialogueTransformer diagTransformer, final EntityFeatureExtractionContextFactory extCtxFactory) {
+		super(entityInstAttrCtx);
 		this.diagTransformer = diagTransformer;
+		this.extCtxFactory = extCtxFactory;
 	}
 
 	private List<Entry<EntityFeature.Extractor.Context, String>> createContexts(final GameContext uttCtx,
@@ -85,15 +84,6 @@ public final class OnePositiveMaximumNegativeInstancesFactory extends AbstractSi
 			final String classValue = Boolean.toString(examplePolarity);
 			result.add(new MutablePair<>(context, classValue));
 		}
-		return result;
-	}
-
-	private Instance createTokenInstance(final Instances classInsts,
-			final EntityFeature.Extractor.Context extractionContext, final String classValue) {
-		final Instance result = new DenseInstance(entityInstAttrCtx.getAttrs().size());
-		result.setDataset(classInsts);
-		entityInstAttrCtx.getExtractor().accept(result, extractionContext);
-		result.setClassValue(classValue);
 		return result;
 	}
 

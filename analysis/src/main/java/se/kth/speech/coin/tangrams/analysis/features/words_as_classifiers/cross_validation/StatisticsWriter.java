@@ -24,8 +24,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
+import java.util.EnumMap;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.OptionalInt;
 import java.util.concurrent.ExecutionException;
@@ -33,6 +35,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -69,6 +72,10 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.Sessio
  *
  */
 public final class StatisticsWriter implements Consumer<Tester.Result> {
+
+	public enum SummaryDatum {
+		DIALOGUE_COUNT, KEY, MEAN_RANK, MEAN_UTTERANCES_PER_DIALOGUE, MRR, TEST_ITERATION, UTTERANCES_TESTED
+	}
 
 	private enum Parameter implements Supplier<Option> {
 		APP_CONTEXT_DEFINITIONS("a") {
@@ -149,18 +156,32 @@ public final class StatisticsWriter implements Consumer<Tester.Result> {
 
 	}
 
-	private static final List<String> COL_HEADERS = Arrays.asList("INPATH", "TEST_ITER", "MEAN_RANK", "MRR",
-			"DIAG_COUNT", "UTTS_TESTED", "MEAN_UTTS_PER_DIAG");
-
 	private static final Logger LOGGER = LoggerFactory.getLogger(StatisticsWriter.class);
 
 	private static final Collector<CharSequence, ?, String> ROW_CELL_JOINER = Collectors.joining("\t");
 
-	public static List<Object> createSummaryTableRow(final Object key, final Tester.Result testResults) {
-		return createTableRow(key, testResults.iterCount(), testResults.totalResults());
+	private static final List<SummaryDatum> SUMMARY_DATUM_COLUMN_ORDERING;
+
+	/**
+	 * @return the summaryDatumColumnOrdering
+	 */
+	protected static List<SummaryDatum> getSummaryDatumColumnOrdering() {
+		return SUMMARY_DATUM_COLUMN_ORDERING;
 	}
 
-	public static void main(final CommandLine cl) throws ParseException, IOException, ClassificationException, ExecutionException {
+	static {
+		SUMMARY_DATUM_COLUMN_ORDERING = Arrays.asList(SummaryDatum.KEY, SummaryDatum.TEST_ITERATION,
+				SummaryDatum.MEAN_RANK, SummaryDatum.MRR, SummaryDatum.DIALOGUE_COUNT, SummaryDatum.UTTERANCES_TESTED,
+				SummaryDatum.MEAN_UTTERANCES_PER_DIALOGUE);
+		assert SUMMARY_DATUM_COLUMN_ORDERING.size() == SummaryDatum.values().length;
+	}
+
+	public static Map<SummaryDatum, Object> createSummaryDataMap(final Object key, final Tester.Result testResults) {
+		return createSessionSummaryDataMap(key, testResults.iterCount(), testResults.totalResults());
+	}
+
+	public static void main(final CommandLine cl)
+			throws ParseException, IOException, ClassificationException, ExecutionException {
 		if (cl.hasOption(Parameter.HELP.optName)) {
 			Parameter.printHelp();
 		} else {
@@ -195,12 +216,20 @@ public final class StatisticsWriter implements Consumer<Tester.Result> {
 		}
 	}
 
-	private static List<Object> createTableRow(final Object key, final Integer iterNo,
+	private static Map<SummaryDatum, Object> createSessionSummaryDataMap(final Object key, final Integer iterNo,
 			final SessionTester.Result sessionTestResults) {
 		final int totalUttsTested = sessionTestResults.totalUtterancesTested();
 		final int totalDiagsTested = sessionTestResults.totalDialoguesTested();
-		return Arrays.asList(key, iterNo, sessionTestResults.meanRank(), sessionTestResults.meanReciprocalRank(),
-				totalDiagsTested, totalUttsTested, totalUttsTested / (double) totalDiagsTested);
+		final Map<SummaryDatum, Object> result = new EnumMap<>(SummaryDatum.class);
+		result.put(SummaryDatum.KEY, key);
+		result.put(SummaryDatum.TEST_ITERATION, iterNo);
+		result.put(SummaryDatum.MEAN_RANK, sessionTestResults.meanRank());
+		result.put(SummaryDatum.MRR, sessionTestResults.meanReciprocalRank());
+		result.put(SummaryDatum.DIALOGUE_COUNT, totalDiagsTested);
+		result.put(SummaryDatum.UTTERANCES_TESTED, totalUttsTested);
+		result.put(SummaryDatum.MEAN_UTTERANCES_PER_DIALOGUE, totalUttsTested / (double) totalDiagsTested);
+		assert result.size() == SummaryDatum.values().length;
+		return result;
 	}
 
 	private final PrintWriter out;
@@ -211,7 +240,7 @@ public final class StatisticsWriter implements Consumer<Tester.Result> {
 
 	@Override
 	public void accept(final Tester.Result testResults) {
-		out.println(COL_HEADERS.stream().collect(ROW_CELL_JOINER));
+		out.println(SUMMARY_DATUM_COLUMN_ORDERING.stream().map(SummaryDatum::toString).collect(ROW_CELL_JOINER));
 
 		for (final Entry<Path, List<SessionTester.Result>> infileSessionTestResults : testResults.getSessionResults()
 				.entrySet()) {
@@ -221,13 +250,16 @@ public final class StatisticsWriter implements Consumer<Tester.Result> {
 					.listIterator(); sessionTestResultIter.hasNext();) {
 				final SessionTester.Result sessionResults = sessionTestResultIter.next();
 				final int iterNo = sessionTestResultIter.nextIndex();
-				final List<Object> cellVals = createTableRow(infilePath, iterNo, sessionResults);
-				out.println(cellVals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
+				final Map<SummaryDatum, Object> sessionSummaryData = createSessionSummaryDataMap(infilePath, iterNo,
+						sessionResults);
+				final Stream<Object> rowCellVals = SUMMARY_DATUM_COLUMN_ORDERING.stream().map(sessionSummaryData::get);
+				out.println(rowCellVals.map(Object::toString).collect(ROW_CELL_JOINER));
 			}
 		}
 
-		final List<Object> summaryVals = createSummaryTableRow("SUMMARY", testResults);
-		out.print(summaryVals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
+		final Map<SummaryDatum, Object> totalSummaryData = createSummaryDataMap("SUMMARY", testResults);
+		final Stream<Object> summaryVals = SUMMARY_DATUM_COLUMN_ORDERING.stream().map(totalSummaryData::get);
+		out.print(summaryVals.map(Object::toString).collect(ROW_CELL_JOINER));
 	}
 
 }
