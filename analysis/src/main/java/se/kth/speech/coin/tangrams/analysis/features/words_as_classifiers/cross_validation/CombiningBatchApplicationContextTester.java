@@ -59,7 +59,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
+import edu.stanford.nlp.ling.Label;
 import edu.stanford.nlp.trees.CollinsHeadFinder;
+import edu.stanford.nlp.trees.HeadFinder;
+import edu.stanford.nlp.trees.Tree;
 import se.kth.speech.MutablePair;
 import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
 import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManagerCacheSupplier;
@@ -152,6 +155,10 @@ public final class CombiningBatchApplicationContextTester {
 			this.optName = optName;
 		}
 
+	}
+
+	private interface HasKeyName {
+		String getKeyName();
 	}
 
 	private static class Summary {
@@ -309,7 +316,7 @@ public final class CombiningBatchApplicationContextTester {
 		}
 	}
 
-	private enum TokenFiltering implements Supplier<EventDialogueTransformer> {
+	private enum TokenFiltering implements Supplier<EventDialogueTransformer>, HasKeyName {
 		NO_FILTER(DUMMY_EVT_DIAG_TRANSFORMER, "noFilter"), STOPWORDS_FILLERS(
 				createStopwordFilteringTransformer(EnumSet.of(SnowballPorter2EnglishStopwords.Variant.CANONICAL,
 						SnowballPorter2EnglishStopwords.Variant.FILLERS)),
@@ -337,13 +344,14 @@ public final class CombiningBatchApplicationContextTester {
 		/**
 		 * @return the keyName
 		 */
-		protected String getKeyName() {
+		@Override
+		public String getKeyName() {
 			return keyName;
 		}
 
 	}
 
-	private enum Tokenization implements Supplier<EventDialogueTransformer> {
+	private enum Tokenization implements Supplier<EventDialogueTransformer>, HasKeyName {
 		BASIC_TOKENIZER {
 
 			@Override
@@ -353,7 +361,7 @@ public final class CombiningBatchApplicationContextTester {
 			}
 
 			@Override
-			protected String getKeyName() {
+			public String getKeyName() {
 				return "tokenized";
 			}
 		},
@@ -366,42 +374,99 @@ public final class CombiningBatchApplicationContextTester {
 			}
 
 			@Override
-			protected String getKeyName() {
+			public String getKeyName() {
 				return "lemmatized";
+			}
+		},
+		NPS_WITHOUT_PPS {
+
+			@Override
+			public ChainedEventDialogueTransformer get() {
+				final FallbackTokenizingEventDialogueTransformer npWhitelistingTokenizer = ParsingTokenizer.NP_WHITELISTING
+						.get();
+				final FallbackTokenizingEventDialogueTransformer ppBlacklistingTokenizer = ParsingTokenizer.PP_BLACKLISTING
+						.get();
+				return new ChainedEventDialogueTransformer(Arrays.asList(FILLER_REMOVING_DIAG_TRANSFORMER,
+						npWhitelistingTokenizer, ppBlacklistingTokenizer));
+			}
+
+			@Override
+			public String getKeyName() {
+				final Stream.Builder<String> resultBuilder = Stream.builder();
+				PARSING_GARBAGE_TOKEN_REMOVING_DIAG_TRANSFORMERS.stream().map(Entry::getKey)
+						.forEachOrdered(resultBuilder);
+				resultBuilder.add(ParsingTokenizer.NP_WHITELISTING.getKeyName());
+				resultBuilder.add(ParsingTokenizer.PP_BLACKLISTING.getKeyName());
+				return resultBuilder.build().collect(TOKENIZER_KEY_JOINER);
 			}
 		},
 		PP_REMOVER {
 
 			@Override
 			public ChainedEventDialogueTransformer get() {
-				final Map<String, Set<List<String>>> labelHeadBlacklists = Collections.singletonMap("PP",
-						EnglishLocationalPrepositions.loadSet());
-				final PhrasalHeadFilteringPredicate pred = new PhrasalHeadFilteringPredicate(labelHeadBlacklists,
-						new CollinsHeadFinder());
-				final FallbackTokenizingEventDialogueTransformer tokenizer = new FallbackTokenizingEventDialogueTransformer(
-						new StanfordCoreNLPParsingTokenizer(
-								StanfordCoreNLPConfigurationVariant.TOKENIZING_LEMMATIZING_PARSING.get(), pred),
-						new PatternTokenizer());
+				final FallbackTokenizingEventDialogueTransformer tokenizer = ParsingTokenizer.PP_BLACKLISTING.get();
 				return new ChainedEventDialogueTransformer(Arrays.asList(FILLER_REMOVING_DIAG_TRANSFORMER, tokenizer));
 			}
 
 			@Override
-			protected String getKeyName() {
+			public String getKeyName() {
 				final Stream.Builder<String> resultBuilder = Stream.builder();
 				PARSING_GARBAGE_TOKEN_REMOVING_DIAG_TRANSFORMERS.stream().map(Entry::getKey)
 						.forEachOrdered(resultBuilder);
-				resultBuilder.add("noPPs");
+				resultBuilder.add(ParsingTokenizer.PP_BLACKLISTING.getKeyName());
 				return resultBuilder.build().collect(TOKENIZER_KEY_JOINER);
 			}
 		};
 
-		/**
-		 * @return the keyName
-		 */
-		protected abstract String getKeyName();
+		private enum ParsingTokenizer implements Supplier<FallbackTokenizingEventDialogueTransformer>, HasKeyName {
+			NP_WHITELISTING {
+
+				@Override
+				public FallbackTokenizingEventDialogueTransformer get() {
+					final Predicate<Tree> npWhitelistingPred = tree -> {
+						final Label label = tree.label();
+						return label == null ? false : "NP".equals(label.value());
+					};
+					return new FallbackTokenizingEventDialogueTransformer(new StanfordCoreNLPParsingTokenizer(
+							StanfordCoreNLPConfigurationVariant.TOKENIZING_LEMMATIZING_PARSING.get(),
+							npWhitelistingPred), FALLBACK_TOKENIZER);
+				}
+
+				@Override
+				public String getKeyName() {
+					return "onlyNPs";
+				}
+
+			},
+			PP_BLACKLISTING {
+
+				@Override
+				public FallbackTokenizingEventDialogueTransformer get() {
+					final Map<String, Set<List<String>>> labelHeadBlacklists = Collections.singletonMap("PP",
+							EnglishLocationalPrepositions.loadSet());
+					final PhrasalHeadFilteringPredicate pred = new PhrasalHeadFilteringPredicate(labelHeadBlacklists,
+							HEAD_FINDER);
+					return new FallbackTokenizingEventDialogueTransformer(
+							new StanfordCoreNLPParsingTokenizer(
+									StanfordCoreNLPConfigurationVariant.TOKENIZING_LEMMATIZING_PARSING.get(), pred),
+							FALLBACK_TOKENIZER);
+				}
+
+				@Override
+				public String getKeyName() {
+					return "noPPs";
+				}
+
+			};
+		};
+
+		private static final Function<String, List<String>> FALLBACK_TOKENIZER = new PatternTokenizer();
+
+		private static final HeadFinder HEAD_FINDER = new CollinsHeadFinder();
+
 	}
 
-	private enum Training implements Function<TrainingContext, Entry<TrainingInstancesFactory, Integer>> {
+	private enum Training implements Function<TrainingContext, Entry<TrainingInstancesFactory, Integer>>, HasKeyName {
 		ALL_NEG("allNeg") {
 			@Override
 			public Entry<TrainingInstancesFactory, Integer> apply(final TrainingContext trainingCtx) {
@@ -438,7 +503,8 @@ public final class CombiningBatchApplicationContextTester {
 		/**
 		 * @return the keyName
 		 */
-		protected String getKeyName() {
+		@Override
+		public String getKeyName() {
 			return keyName;
 		}
 	}
@@ -467,7 +533,7 @@ public final class CombiningBatchApplicationContextTester {
 
 	}
 
-	private enum UtteranceFiltering implements Supplier<EventDialogueTransformer> {
+	private enum UtteranceFiltering implements Supplier<EventDialogueTransformer>, HasKeyName {
 		ALL_UTTS(DUMMY_EVT_DIAG_TRANSFORMER, "allUtts"), INSTRUCTOR_UTTS(
 				new InstructorUtteranceFilteringEventDialogueTransformer(), "instructorUtts");
 
@@ -488,7 +554,8 @@ public final class CombiningBatchApplicationContextTester {
 		/**
 		 * @return the keyName
 		 */
-		protected String getKeyName() {
+		@Override
+		public String getKeyName() {
 			return keyName;
 		}
 	}
