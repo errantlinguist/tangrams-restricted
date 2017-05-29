@@ -29,6 +29,7 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.OptionalInt;
 import java.util.Random;
 import java.util.Set;
@@ -56,6 +57,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import edu.stanford.nlp.trees.CollinsHeadFinder;
+import se.kth.speech.MutablePair;
 import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
 import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManagerCacheSupplier;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
@@ -323,33 +325,33 @@ public final class CombiningBatchApplicationContextTester {
 		}
 	}
 
-	private enum Training
-			implements BiFunction<EventDialogueTransformer, ApplicationContext, TrainingInstancesFactory> {
+	private enum Training implements
+			BiFunction<EventDialogueTransformer, ApplicationContext, Entry<TrainingInstancesFactory, Integer>> {
 		ALL_NEG("allNeg") {
 			@Override
-			public OnePositiveMaximumNegativeInstancesFactory apply(final EventDialogueTransformer diagTransformer,
+			public Entry<TrainingInstancesFactory, Integer> apply(final EventDialogueTransformer diagTransformer,
 					final ApplicationContext appCtx) {
 				final EntityInstanceAttributeContext entityInstAttrCtx = appCtx
 						.getBean(EntityInstanceAttributeContext.class);
 				final EntityFeatureExtractionContextFactory extCtxFactory = appCtx
 						.getBean(EntityFeatureExtractionContextFactory.class);
-				final OnePositiveMaximumNegativeInstancesFactory result = new OnePositiveMaximumNegativeInstancesFactory(
+				final OnePositiveMaximumNegativeInstancesFactory instsFactory = new OnePositiveMaximumNegativeInstancesFactory(
 						entityInstAttrCtx, diagTransformer, extCtxFactory);
-				return result;
+				return new MutablePair<>(instsFactory, 1);
 			}
 		},
 		ONE_NEG("oneNeg") {
 
 			@Override
-			public OnePositiveOneNegativeInstanceFactory apply(final EventDialogueTransformer diagTransformer,
+			public Entry<TrainingInstancesFactory, Integer> apply(final EventDialogueTransformer diagTransformer,
 					final ApplicationContext appCtx) {
 				final EntityInstanceAttributeContext entityInstAttrCtx = appCtx
 						.getBean(EntityInstanceAttributeContext.class);
 				final EntityFeatureExtractionContextFactory extCtxFactory = appCtx
 						.getBean(EntityFeatureExtractionContextFactory.class);
-				final OnePositiveOneNegativeInstanceFactory result = new OnePositiveOneNegativeInstanceFactory(
+				final OnePositiveOneNegativeInstanceFactory instsFactory = new OnePositiveOneNegativeInstanceFactory(
 						entityInstAttrCtx, diagTransformer, extCtxFactory, RND);
-				return result;
+				return new MutablePair<>(instsFactory, 10);
 			}
 
 		};
@@ -530,13 +532,14 @@ public final class CombiningBatchApplicationContextTester {
 							new ChainedEventDialogueTransformer(diagTransformers));
 
 					for (final Training trainingMethod : Training.values()) {
-						final TrainingInstancesFactory trainingInstsFactory = trainingMethod
+						final Entry<TrainingInstancesFactory, Integer> trainingInstsFactoryIterCount = trainingMethod
 								.apply(cachingDiagTransformer, appCtx);
 
-						final TestSetFactory testSetFactory = new TestSetFactory(trainingInstsFactory,
+						final TestSetFactory testSetFactory = new TestSetFactory(trainingInstsFactoryIterCount.getKey(),
 								sessionDiagMgrCacheSupplier);
 						final Tester tester = appCtx.getBean(Tester.class, testSetFactory, cachingDiagTransformer,
 								executor);
+						tester.setIterCount(trainingInstsFactoryIterCount.getValue());
 						iterCount.ifPresent(tester::setIterCount);
 						final TestParameters testParams = new TestParameters(uttFilteringMethod, tokenizationMethod,
 								tokenFilteringMethod, trainingMethod);
