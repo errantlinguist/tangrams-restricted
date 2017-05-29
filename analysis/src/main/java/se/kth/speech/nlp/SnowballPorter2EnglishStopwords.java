@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -107,7 +108,7 @@ public final class SnowballPorter2EnglishStopwords {
 			final List<String> words = loadStopwordList(resLocs);
 			final Set<String> result = Sets.newHashSetWithExpectedSize(words.size());
 			result.addAll(words);
-			LOGGER.info("Read stopword set of size {}.", result.size());
+			LOGGER.info("Read stopword set of size {} from {}.", result.size(), Arrays.asList(resLocs));
 			return result;
 		} catch (final IOException e) {
 			throw new UncheckedIOException(e);
