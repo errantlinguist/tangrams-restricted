@@ -201,7 +201,11 @@ enum Tokenization implements Supplier<EventDialogueTransformer>, HasKeyName {
 	}
 
 	public static Tokenization getByKey(final String keyName) {
-		return ParsingTokenizer.TOKENIZATION_INSTANCES_BY_KEY.get(keyName);
+		final Tokenization result = ParsingTokenizer.TOKENIZATION_INSTANCES_BY_KEY.get(keyName);
+		if (result == null) {
+			throw new IllegalArgumentException(String.format("No instance for key \"%s\".", keyName));
+		}
+		return result;
 	}
 
 }

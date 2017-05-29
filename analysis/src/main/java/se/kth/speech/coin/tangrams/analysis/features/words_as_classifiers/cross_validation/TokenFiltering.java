@@ -41,7 +41,11 @@ enum TokenFiltering implements Supplier<EventDialogueTransformer>, HasKeyName {
 			.collect(Collectors.toMap(TokenFiltering::getKeyName, Function.identity()));
 
 	public static TokenFiltering getByKey(final String keyName) {
-		return INSTANCES_BY_KEY.get(keyName);
+		final TokenFiltering result = INSTANCES_BY_KEY.get(keyName);
+		if (result == null) {
+			throw new IllegalArgumentException(String.format("No instance for key \"%s\".", keyName));
+		}
+		return result;
 	}
 
 	private static TokenFilteringEventDialogueTransformer createStopwordFilteringTransformer(

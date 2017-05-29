@@ -68,7 +68,11 @@ enum Training implements Function<TrainingContext, Entry<TrainingInstancesFactor
 	private static final Random RND = new Random(1);
 
 	public static Training getByKey(final String keyName) {
-		return INSTANCES_BY_KEY.get(keyName);
+		final Training result = INSTANCES_BY_KEY.get(keyName);
+		if (result == null) {
+			throw new IllegalArgumentException(String.format("No instance for key \"%s\".", keyName));
+		}
+		return result;
 	}
 
 	private final String keyName;

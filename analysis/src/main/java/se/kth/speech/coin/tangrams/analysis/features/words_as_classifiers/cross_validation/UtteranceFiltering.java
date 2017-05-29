@@ -34,7 +34,11 @@ enum UtteranceFiltering implements Supplier<EventDialogueTransformer>, HasKeyNam
 			.collect(Collectors.toMap(UtteranceFiltering::getKeyName, Function.identity()));
 
 	public static UtteranceFiltering getByKey(final String keyName) {
-		return INSTANCES_BY_KEY.get(keyName);
+		final UtteranceFiltering result = INSTANCES_BY_KEY.get(keyName);
+		if (result == null) {
+			throw new IllegalArgumentException(String.format("No instance for key \"%s\".", keyName));
+		}
+		return result;
 	}
 
 	private final EventDialogueTransformer held;
