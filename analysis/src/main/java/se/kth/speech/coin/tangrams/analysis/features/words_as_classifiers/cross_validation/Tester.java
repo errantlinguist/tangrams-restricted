@@ -412,7 +412,7 @@ public final class Tester {
 			throws ClassificationException, ExecutionException, IOException {
 		final Result result = new Result(allSessions.size(), iterCount);
 		LOGGER.info(
-				"Starting cross-validation test using data from {} session(s), doing {} iterations on each dataset.",
+				"Starting cross-validation test using data from {} session(s), doing {} iteration(s) on each dataset.",
 				allSessions.size(), iterCount);
 		final ExecutorService executor = executorFactory.get();
 		final CrossValidator crossValidator = new CrossValidator(executor);
