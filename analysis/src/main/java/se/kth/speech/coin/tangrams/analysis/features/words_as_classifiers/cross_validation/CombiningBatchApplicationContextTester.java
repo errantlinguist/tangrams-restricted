@@ -16,13 +16,11 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation;
 
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
-import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
@@ -35,8 +33,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.OptionalInt;
 import java.util.Properties;
+import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
@@ -52,12 +52,14 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.support.FileSystemXmlApplicationContext;
+import org.springframework.context.ApplicationContext;
+import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import edu.stanford.nlp.pipeline.Annotator;
 import edu.stanford.nlp.pipeline.StanfordCoreNLP;
 import edu.stanford.nlp.trees.CollinsHeadFinder;
 import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
+import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManagerCacheSupplier;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.CachingEventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.ChainedEventDialogueTransformer;
@@ -66,6 +68,9 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.InstructorUtteranceFilteringEventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.TokenFilteringEventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.TokenizingEventDialogueTransformer;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.OnePositiveMaximumNegativeInstancesFactory;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.OnePositiveOneNegativeInstanceFactory;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.TrainingInstancesFactory;
 import se.kth.speech.io.FileNames;
 import se.kth.speech.nlp.EnglishLocationalPrepositions;
 import se.kth.speech.nlp.PhrasalHeadFilteringPredicate;
@@ -81,6 +86,26 @@ import se.kth.speech.nlp.StanfordCoreNLPTokenizer;
  *
  */
 public final class CombiningBatchApplicationContextTester {
+
+	public static final class Input {
+
+		private final StanfordCoreNLP stanfordPipeline;
+
+		private final TokenFiltering tokenFilterFactory;
+
+		private final Tokenization tokenizerFactory;
+
+		private final UtteranceFiltering uttChooserFactory;
+
+		public Input(final StanfordCoreNLP stanfordPipeline, final UtteranceFiltering uttChooserFactory,
+				final Tokenization tokenizerFactory, final TokenFiltering tokenFilterFactory) {
+			this.stanfordPipeline = stanfordPipeline;
+			this.uttChooserFactory = uttChooserFactory;
+			this.tokenizerFactory = tokenizerFactory;
+			this.tokenFilterFactory = tokenFilterFactory;
+
+		}
+	}
 
 	private enum Parameter implements Supplier<Option> {
 		APP_CONTEXT_DEFINITIONS("a") {
@@ -158,7 +183,7 @@ public final class CombiningBatchApplicationContextTester {
 
 		/*
 		 * (non-Javadoc)
-		 * 
+		 *
 		 * @see java.util.function.Supplier#get()
 		 */
 		@Override
@@ -173,7 +198,7 @@ public final class CombiningBatchApplicationContextTester {
 
 			/*
 			 * (non-Javadoc)
-			 * 
+			 *
 			 * @see java.util.function.Function#apply(java.lang.Object)
 			 */
 			@Override
@@ -185,7 +210,7 @@ public final class CombiningBatchApplicationContextTester {
 
 			/*
 			 * (non-Javadoc)
-			 * 
+			 *
 			 * @see java.util.function.Function#apply(java.lang.Object)
 			 */
 			@Override
@@ -197,7 +222,7 @@ public final class CombiningBatchApplicationContextTester {
 
 			/*
 			 * (non-Javadoc)
-			 * 
+			 *
 			 * @see java.util.function.Function#apply(java.lang.Object)
 			 */
 			@Override
@@ -211,16 +236,37 @@ public final class CombiningBatchApplicationContextTester {
 		};
 	}
 
-	private enum TrainingInstances {
+	private enum TrainingMethod
+			implements BiFunction<EventDialogueTransformer, ApplicationContext, TrainingInstancesFactory> {
+		ALL_NEG {
+			@Override
+			public OnePositiveMaximumNegativeInstancesFactory apply(final EventDialogueTransformer diagTransformer,
+					final ApplicationContext appCtx) {
+				final OnePositiveMaximumNegativeInstancesFactory result = appCtx
+						.getBean(OnePositiveMaximumNegativeInstancesFactory.class, diagTransformer);
+				return result;
+			}
+		},
+		ONE_NEG {
+
+			@Override
+			public OnePositiveOneNegativeInstanceFactory apply(final EventDialogueTransformer diagTransformer,
+					final ApplicationContext appCtx) {
+				final OnePositiveOneNegativeInstanceFactory result = appCtx
+						.getBean(OnePositiveOneNegativeInstanceFactory.class, diagTransformer, RND);
+				return result;
+			}
+
+		};
 	}
 
-	private enum UtteranceChoosing implements Supplier<EventDialogueTransformer> {
+	private enum UtteranceFiltering implements Supplier<EventDialogueTransformer> {
 		ALL_UTTS(DUMMY_EVT_DIAG_TRANSFORMER), INSTRUCTOR_UTTS(
 				new InstructorUtteranceFilteringEventDialogueTransformer());
 
 		private final EventDialogueTransformer held;
 
-		private UtteranceChoosing(final EventDialogueTransformer held) {
+		private UtteranceFiltering(final EventDialogueTransformer held) {
 			this.held = held;
 		}
 
@@ -230,12 +276,14 @@ public final class CombiningBatchApplicationContextTester {
 		}
 	}
 
-	private static final DummyEventDialogueTransformer DUMMY_EVT_DIAG_TRANSFORMER = new DummyEventDialogueTransformer();
-
 	private static final List<String> COL_HEADERS = Arrays.asList("INPATH", "ITER_COUNT", "MEAN_RANK", "MRR",
 			"DIAG_COUNT", "UTTS_TESTED", "MEAN_UTTS_PER_DIAG");
 
+	private static final DummyEventDialogueTransformer DUMMY_EVT_DIAG_TRANSFORMER = new DummyEventDialogueTransformer();
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(CombiningBatchApplicationContextTester.class);
+
+	private static final Random RND = new Random(1);
 
 	private static final Collector<CharSequence, ?, String> ROW_CELL_JOINER = Collectors.joining("\t");
 
@@ -249,32 +297,50 @@ public final class CombiningBatchApplicationContextTester {
 				throw new MissingOptionException("No input path(s) specified.");
 
 			} else {
-				final String[] appCtxLocs = cl.getOptionValues(Parameter.APP_CONTEXT_DEFINITIONS.optName);
-				final Set<Path> appCtxDefPaths = createBatchAppDefSet(appCtxLocs);
 				final OptionalInt iterCount = Parameter.parseIterCount(cl);
 				final Path outdir = ((File) cl.getParsedOptionValue(Parameter.OUTPATH.optName)).toPath();
 				LOGGER.info("Will write data to \"{}\".", outdir);
 
 				final Map<SessionDataManager, Path> allSessions = TestSessionData.readTestSessionData(inpaths);
-				final CombiningBatchApplicationContextTester tester = new CombiningBatchApplicationContextTester(
-						allSessions, iterCount, outdir);
+				// final CombiningBatchApplicationContextTester tester = new
+				// CombiningBatchApplicationContextTester(
+				// allSessions, iterCount, outdir);
 
 				final StanfordCoreNLP stanfordPipeline = new StanfordCoreNLP(createAnnotationPipelineProps());
-				for (final UtteranceChoosing uttChooserFactory : UtteranceChoosing.values()) {
-					final EventDialogueTransformer uttChooser = uttChooserFactory.get();
-					for (final Tokenization tokenizerFactory : Tokenization.values()) {
-						final TokenizingEventDialogueTransformer tokenizer = tokenizerFactory.apply(stanfordPipeline);
 
-						for (final TokenFiltering tokenFilterFactory : TokenFiltering.values()) {
-							final EventDialogueTransformer tokenFilter = tokenFilterFactory.get();
+				try (final ClassPathXmlApplicationContext appCtx = new ClassPathXmlApplicationContext("context.xml",
+						CombiningBatchApplicationContextTester.class)) {
+					final SessionEventDialogueManagerCacheSupplier sessionDiagMgrCacheSupplier = appCtx
+							.getBean(SessionEventDialogueManagerCacheSupplier.class);
 
-							final List<EventDialogueTransformer> diagTransformers = Arrays.asList(uttChooser, tokenizer,
-									tokenFilter);
-							final CachingEventDialogueTransformer cachingDiagTransformer = new CachingEventDialogueTransformer(
-									new ChainedEventDialogueTransformer(diagTransformers));
+					for (final UtteranceFiltering uttFilteringMethod : UtteranceFiltering.values()) {
+						final EventDialogueTransformer uttFilter = uttFilteringMethod.get();
+						for (final Tokenization tokenizationMethod : Tokenization.values()) {
+							final TokenizingEventDialogueTransformer tokenizer = tokenizationMethod
+									.apply(stanfordPipeline);
+
+							for (final TokenFiltering tokenFilteringMethod : TokenFiltering.values()) {
+								final EventDialogueTransformer tokenFilter = tokenFilteringMethod.get();
+
+								final List<EventDialogueTransformer> diagTransformers = Arrays.asList(uttFilter,
+										tokenizer, tokenFilter);
+								final CachingEventDialogueTransformer cachingDiagTransformer = new CachingEventDialogueTransformer(
+										new ChainedEventDialogueTransformer(diagTransformers));
+								final Tester tester = appCtx.getBean(Tester.class, cachingDiagTransformer);
+
+								for (final TrainingMethod trainingMethod : TrainingMethod.values()) {
+									final TrainingInstancesFactory trainingInstsFactory = trainingMethod
+											.apply(cachingDiagTransformer, appCtx);
+									final TestSetFactory testSetFactory = new TestSetFactory(trainingInstsFactory,
+											sessionDiagMgrCacheSupplier);
+
+								}
+
+							}
+
 						}
-
 					}
+
 				}
 
 			}
@@ -373,45 +439,6 @@ public final class CombiningBatchApplicationContextTester {
 		this.outdir = outdir;
 
 		summaryFile = outdir.resolve("batch-summary.tsv");
-	}
-
-	/**
-	 * @param appCtxDefPaths
-	 * @throws IOException
-	 * @throws ExecutionException
-	 * @throws ClassificationException
-	 */
-	public void accept(final Iterable<Path> appCtxDefPaths)
-			throws IOException, ClassificationException, ExecutionException {
-		try (final BufferedWriter summaryWriter = Files.newBufferedWriter(summaryFile, StandardOpenOption.CREATE,
-				StandardOpenOption.TRUNCATE_EXISTING)) {
-			summaryWriter.write(COL_HEADERS.stream().collect(ROW_CELL_JOINER));
-		}
-		for (final Path appCtxDefPath : appCtxDefPaths) {
-			accept(appCtxDefPath, StandardOpenOption.APPEND);
-		}
-	}
-
-	private void accept(final Path appCtxDefPath, final OpenOption... summaryFileOpenOpts)
-			throws IOException, ClassificationException, ExecutionException {
-		final String appCtxDefLoc = appCtxDefPath.toString();
-		final String batchOutdirName = createBatchOutdirName(appCtxDefPath);
-		final Path outdirPath = Files.createDirectories(outdir.resolve(batchOutdirName));
-		LOGGER.info("Will write results of testing \"{}\" to \"{}\".", appCtxDefPath, outdirPath);
-
-		final Tester.Result testResults;
-		try (final FileSystemXmlApplicationContext appCtx = new FileSystemXmlApplicationContext(appCtxDefLoc)) {
-			final Tester tester = appCtx.getBean(Tester.class);
-			iterCount.ifPresent(tester::setIterCount);
-			testResults = tester.apply(allSessions);
-		}
-		writeResults(testResults, outdirPath);
-		final List<Object> configSummary = StatisticsWriter.createSummaryTableRow(appCtxDefPath.toString(),
-				testResults);
-		try (final BufferedWriter summaryWriter = Files.newBufferedWriter(summaryFile, summaryFileOpenOpts)) {
-			summaryWriter.newLine();
-			summaryWriter.write(configSummary.stream().map(Object::toString).collect(ROW_CELL_JOINER));
-		}
 	}
 
 }
