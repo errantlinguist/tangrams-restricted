@@ -91,14 +91,6 @@ import se.kth.speech.nlp.StanfordCoreNLPTokenizer;
 public final class CombiningBatchApplicationContextTester {
 
 	private enum Parameter implements Supplier<Option> {
-		APP_CONTEXT_DEFINITIONS("a") {
-			@Override
-			public Option get() {
-				return Option.builder(optName).longOpt("app-ctx")
-						.desc("Location(s) to the Spring application context definition file(s) to load for configuration.")
-						.hasArgs().argName("locator").required().build();
-			}
-		},
 		HELP("?") {
 			@Override
 			public Option get() {
