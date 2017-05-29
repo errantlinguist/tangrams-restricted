@@ -31,8 +31,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import javax.inject.Inject;
-
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -154,7 +152,9 @@ public final class TrainingDataWriter {
 				LOGGER.info("Will write data in \"*{}\" format.", outfileExt);
 				final String[] appCtxLocs = cl.getOptionValues(Parameter.APP_CONTEXT_DEFINITIONS.optName);
 				try (final FileSystemXmlApplicationContext appCtx = new FileSystemXmlApplicationContext(appCtxLocs)) {
-					final TrainingDataWriter writer = appCtx.getBean(TrainingDataWriter.class, outpath, outfileExt);
+					final TestSetFactory testSetFactory = appCtx.getBean(TestSetFactory.class);
+					final TrainingDataWriter writer = appCtx.getBean(TrainingDataWriter.class, testSetFactory, outpath,
+							outfileExt);
 					writer.accept(inpaths);
 				}
 			}
@@ -176,10 +176,10 @@ public final class TrainingDataWriter {
 
 	private final String outfileExt;
 
-	@Inject
-	private TestSetFactory testSetFactory;
+	private final TestSetFactory testSetFactory;
 
-	public TrainingDataWriter(final File outdir, final String outfileExt) {
+	public TrainingDataWriter(final TestSetFactory testSetFactory, final File outdir, final String outfileExt) {
+		this.testSetFactory = testSetFactory;
 		this.outdir = outdir;
 		this.outfileExt = outfileExt;
 	}

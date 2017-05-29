@@ -27,7 +27,6 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import javax.inject.Inject;
-import javax.inject.Named;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,7 +58,6 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.traini
  *      </ul>
  *
  */
-@Named
 public final class TestSetFactory {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(TestSetFactory.class);
