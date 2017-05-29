@@ -424,8 +424,16 @@ public final class CombiningBatchApplicationContextTester {
 				@Override
 				public FallbackTokenizingEventDialogueTransformer get() {
 					final Predicate<Tree> npWhitelistingPred = tree -> {
-						final Label label = tree.label();
-						return label == null ? false : "NP".equals(label.value());
+						final boolean result;
+						if (tree.isLeaf()) {
+							result = true;
+						} else if (tree.isPreTerminal()) {
+							result = true;
+						} else {
+							final Label label = tree.label();
+							result = label == null ? false : "NP".equals(label.value());
+						}
+						return result;
 					};
 					return new FallbackTokenizingEventDialogueTransformer(new StanfordCoreNLPParsingTokenizer(
 							StanfordCoreNLPConfigurationVariant.TOKENIZING_LEMMATIZING_PARSING.get(),
