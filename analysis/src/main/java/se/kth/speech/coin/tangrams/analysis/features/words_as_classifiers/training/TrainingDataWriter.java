@@ -27,8 +27,6 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.function.Supplier;
 
-import javax.inject.Inject;
-import javax.inject.Named;
 import javax.xml.bind.JAXBException;
 
 import org.apache.commons.cli.CommandLine;
@@ -47,6 +45,7 @@ import com.google.common.cache.LoadingCache;
 
 import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
 import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManager;
+import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManagerCacheSupplier;
 import weka.core.Instances;
 import weka.core.converters.AbstractFileSaver;
 import weka.core.converters.ConverterUtils;
@@ -70,7 +69,6 @@ import weka.core.converters.ConverterUtils;
  *      </ul>
  *
  */
-@Named
 public final class TrainingDataWriter {
 
 	private enum Parameter implements Supplier<Option> {
@@ -150,7 +148,10 @@ public final class TrainingDataWriter {
 				LOGGER.info("Will write data in \"*{}\" format.", outfileExt);
 				final String[] appCtxLocs = cl.getOptionValues(Parameter.APP_CONTEXT_DEFINITIONS.optName);
 				try (final FileSystemXmlApplicationContext appCtx = new FileSystemXmlApplicationContext(appCtxLocs)) {
-					final TrainingDataWriter writer = appCtx.getBean(TrainingDataWriter.class);
+					final TrainingInstancesFactory instsFactory = appCtx.getBean(TrainingInstancesFactory.class);
+					final SessionEventDialogueManagerCacheSupplier sessionDiagMgrCacheSupplier = appCtx
+							.getBean(SessionEventDialogueManagerCacheSupplier.class);
+					final TrainingDataWriter writer = new TrainingDataWriter(instsFactory, sessionDiagMgrCacheSupplier);
 					final WordClassificationData trainingData = writer.apply(inpaths);
 					if (outdir.mkdirs()) {
 						LOGGER.info("Output directory \"{}\" was nonexistent; Created it before writing data.", outdir);
@@ -183,11 +184,15 @@ public final class TrainingDataWriter {
 		}
 	}
 
-	@Inject
-	private Supplier<LoadingCache<SessionDataManager, SessionEventDialogueManager>> sessionEvtDiagMgrSupplier;
+	private final TrainingInstancesFactory instancesFactory;
 
-	@Inject
-	private TrainingInstancesFactory instancesFactory;
+	private final Supplier<LoadingCache<SessionDataManager, SessionEventDialogueManager>> sessionEvtDiagMgrSupplier;
+
+	public TrainingDataWriter(final TrainingInstancesFactory instancesFactory,
+			final Supplier<LoadingCache<SessionDataManager, SessionEventDialogueManager>> sessionEvtDiagMgrSupplier) {
+		this.instancesFactory = instancesFactory;
+		this.sessionEvtDiagMgrSupplier = sessionEvtDiagMgrSupplier;
+	}
 
 	public WordClassificationData apply(final Iterable<Path> inpaths) throws IOException, JAXBException {
 		final Collection<SessionDataManager> infileSessionData = SessionDataManager.createFileSessionDataMap(inpaths)
