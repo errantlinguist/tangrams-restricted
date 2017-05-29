@@ -16,10 +16,14 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.EnumSet;
+import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.DummyEventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EventDialogueTransformer;
@@ -32,6 +36,13 @@ enum TokenFiltering implements Supplier<EventDialogueTransformer>, HasKeyName {
 			createStopwordFilteringTransformer(EnumSet.of(SnowballPorter2EnglishStopwords.Variant.CANONICAL,
 					SnowballPorter2EnglishStopwords.Variant.FILLERS)),
 			"stopsFillers");
+
+	private static final Map<String, TokenFiltering> INSTANCES_BY_KEY = Arrays.stream(TokenFiltering.values())
+			.collect(Collectors.toMap(TokenFiltering::getKeyName, Function.identity()));
+
+	public static TokenFiltering getByKey(final String keyName) {
+		return INSTANCES_BY_KEY.get(keyName);
+	}
 
 	private static TokenFilteringEventDialogueTransformer createStopwordFilteringTransformer(
 			final Collection<SnowballPorter2EnglishStopwords.Variant> variantsToUnify) {

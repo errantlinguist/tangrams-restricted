@@ -16,7 +16,11 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation;
 
+import java.util.Arrays;
+import java.util.Map;
+import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.DummyEventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EventDialogueTransformer;
@@ -25,6 +29,13 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.
 enum UtteranceFiltering implements Supplier<EventDialogueTransformer>, HasKeyName {
 	ALL_UTTS(new DummyEventDialogueTransformer(),
 			"allUtts"), INSTRUCTOR_UTTS(new InstructorUtteranceFilteringEventDialogueTransformer(), "instructorUtts");
+
+	private static final Map<String, UtteranceFiltering> INSTANCES_BY_KEY = Arrays.stream(UtteranceFiltering.values())
+			.collect(Collectors.toMap(UtteranceFiltering::getKeyName, Function.identity()));
+
+	public static UtteranceFiltering getByKey(final String keyName) {
+		return INSTANCES_BY_KEY.get(keyName);
+	}
 
 	private final EventDialogueTransformer held;
 

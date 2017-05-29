@@ -166,9 +166,12 @@ enum Tokenization implements Supplier<EventDialogueTransformer>, HasKeyName {
 		};
 	}
 
-	private static final Function<String, List<String>> FALLBACK_TOKENIZER = new PatternTokenizer();;
+	private static final Map<String, Tokenization> INSTANCES_BY_KEY = Arrays.stream(Tokenization.values())
+			.collect(Collectors.toMap(Tokenization::getKeyName, Function.identity()));
 
-	private static final TokenFilteringEventDialogueTransformer FILLER_REMOVING_DIAG_TRANSFORMER;
+	private static final Function<String, List<String>> FALLBACK_TOKENIZER = new PatternTokenizer();
+
+	private static final TokenFilteringEventDialogueTransformer FILLER_REMOVING_DIAG_TRANSFORMER;;
 
 	private static final Set<String> FILLER_WORDS;
 
@@ -190,6 +193,10 @@ enum Tokenization implements Supplier<EventDialogueTransformer>, HasKeyName {
 		garbageRemovingTransformers.put("nofillers,nodisfl",
 				new TokenFilteringEventDialogueTransformer(token -> !parsingGarbageTokenMatcher.test(token)));
 		PARSING_GARBAGE_TOKEN_REMOVING_DIAG_TRANSFORMERS = new ArrayList<>(garbageRemovingTransformers.entrySet());
+	}
+
+	public static Tokenization getByKey(final String keyName) {
+		return INSTANCES_BY_KEY.get(keyName);
 	}
 
 }
