@@ -92,7 +92,7 @@ import se.kth.speech.nlp.StanfordCoreNLPTokenizer;
  */
 public final class CombiningBatchApplicationContextTester {
 
-	private enum Parameter implements Supplier<Option> {
+	private enum CLIParameter implements Supplier<Option> {
 		HELP("?") {
 			@Override
 			public Option get() {
@@ -119,12 +119,12 @@ public final class CombiningBatchApplicationContextTester {
 
 		private static Options createOptions() {
 			final Options result = new Options();
-			Arrays.stream(Parameter.values()).map(Parameter::get).forEach(result::addOption);
+			Arrays.stream(CLIParameter.values()).map(CLIParameter::get).forEach(result::addOption);
 			return result;
 		}
 
 		private static OptionalInt parseIterCount(final CommandLine cl) throws ParseException {
-			final Number optVal = (Number) cl.getParsedOptionValue(Parameter.ITER_COUNT.optName);
+			final Number optVal = (Number) cl.getParsedOptionValue(CLIParameter.ITER_COUNT.optName);
 			final OptionalInt result;
 			if (optVal == null) {
 				result = OptionalInt.empty();
@@ -143,7 +143,7 @@ public final class CombiningBatchApplicationContextTester {
 
 		protected final String optName;
 
-		private Parameter(final String optName) {
+		private CLIParameter(final String optName) {
 			this.optName = optName;
 		}
 
@@ -491,16 +491,16 @@ public final class CombiningBatchApplicationContextTester {
 
 	public static void main(final CommandLine cl)
 			throws ParseException, InterruptedException, ExecutionException, ClassificationException, IOException {
-		if (cl.hasOption(Parameter.HELP.optName)) {
-			Parameter.printHelp();
+		if (cl.hasOption(CLIParameter.HELP.optName)) {
+			CLIParameter.printHelp();
 		} else {
 			final List<Path> inpaths = Arrays.asList(cl.getArgList().stream().map(Paths::get).toArray(Path[]::new));
 			if (inpaths.isEmpty()) {
 				throw new MissingOptionException("No input path(s) specified.");
 
 			} else {
-				final OptionalInt iterCount = Parameter.parseIterCount(cl);
-				final Path outdir = ((File) cl.getParsedOptionValue(Parameter.OUTPATH.optName)).toPath();
+				final OptionalInt iterCount = CLIParameter.parseIterCount(cl);
+				final Path outdir = ((File) cl.getParsedOptionValue(CLIParameter.OUTPATH.optName)).toPath();
 				LOGGER.info("Will write data to \"{}\".", outdir);
 
 				final ExecutorService executor = createExecutorService();
@@ -542,11 +542,11 @@ public final class CombiningBatchApplicationContextTester {
 			throws IOException, ClassificationException, ExecutionException, InterruptedException {
 		final CommandLineParser parser = new DefaultParser();
 		try {
-			final CommandLine cl = parser.parse(Parameter.OPTIONS, args);
+			final CommandLine cl = parser.parse(CLIParameter.OPTIONS, args);
 			main(cl);
 		} catch (final ParseException e) {
 			System.out.println(String.format("An error occured while parsing the command-line arguments: %s", e));
-			Parameter.printHelp();
+			CLIParameter.printHelp();
 		}
 	}
 
