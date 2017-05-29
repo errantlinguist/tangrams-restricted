@@ -20,11 +20,14 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
+import java.lang.ref.Reference;
+import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
@@ -38,23 +41,34 @@ import com.google.common.collect.Sets;
  *
  */
 public final class EnglishLocationalPrepositions {
-	
+
+	private static final ConcurrentMap<Class<EnglishLocationalPrepositions>, Reference<Set<List<String>>>> INSTANCES = new ConcurrentHashMap<>(
+			1);
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(EnglishLocationalPrepositions.class);
 
 	private static final Pattern WHITESPACE_PATTERN = Pattern.compile("\\s+");
 
-	private static Set<List<String>> instance = null;
-
 	public static Set<List<String>> loadSet() {
-		if (instance == null) {
-			synchronized (EnglishLocationalPrepositions.class) {
-				if (instance == null) {
-					LOGGER.info("Loading English locational prepositions.");
-					instance = Collections.unmodifiableSet(loadNewSet());
-				}
-			}
-		}
-		return instance;
+		final Reference<Set<List<String>>> ref = INSTANCES.compute(EnglishLocationalPrepositions.class,
+				(key, oldValue) -> {
+					final Reference<Set<List<String>>> newValue;
+					if (oldValue == null) {
+						// No instance has yet been created; Create one
+						newValue = new SoftReference<>(loadNewSet());
+					} else if (oldValue.get() == null) {
+						// The old instance has already been deleted; Replace it
+						// with a
+						// new reference to a new instance
+						newValue = new SoftReference<>(loadNewSet());
+					} else {
+						// The existing instance has not yet been deleted;
+						// Re-use it
+						newValue = oldValue;
+					}
+					return newValue;
+				});
+		return ref.get();
 	}
 
 	private static List<List<String>> loadList() {
@@ -72,6 +86,7 @@ public final class EnglishLocationalPrepositions {
 	}
 
 	private static Set<List<String>> loadNewSet() {
+		LOGGER.info("Loading English locational preposition set.");
 		final List<List<String>> list = loadList();
 		final Set<List<String>> result = Sets.newHashSetWithExpectedSize(list.size());
 		result.addAll(list);
