@@ -122,6 +122,7 @@ enum Tokenization implements Supplier<EventDialogueTransformer>, HasKeyName {
 			@Override
 			public FallbackTokenizingEventDialogueTransformer get() {
 				final Predicate<Tree> npWhitelistingPred = tree -> {
+					// TODO: Fix this: This prunes away the entire root node and so deleted the entire parse tree!
 					final boolean result;
 					if (tree.isLeaf()) {
 						result = true;
