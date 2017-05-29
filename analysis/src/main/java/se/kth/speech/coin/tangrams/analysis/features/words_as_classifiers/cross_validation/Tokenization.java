@@ -164,16 +164,21 @@ enum Tokenization implements Supplier<EventDialogueTransformer>, HasKeyName {
 			}
 
 		};
-	}
 
-	private static final Map<String, Tokenization> INSTANCES_BY_KEY = Arrays.stream(Tokenization.values())
-			.collect(Collectors.toMap(Tokenization::getKeyName, Function.identity()));
+		/**
+		 * <strong>NOTE:</strong> This must be nested here so that it will be
+		 * initialized properly when loading the outer class.
+		 */
+		private static final Map<String, Tokenization> TOKENIZATION_INSTANCES_BY_KEY = Arrays
+				.stream(Tokenization.values()).collect(Collectors.toMap(Tokenization::getKeyName, Function.identity()));
+
+	}
 
 	private static final Function<String, List<String>> FALLBACK_TOKENIZER = new PatternTokenizer();
 
-	private static final TokenFilteringEventDialogueTransformer FILLER_REMOVING_DIAG_TRANSFORMER;;
+	private static final TokenFilteringEventDialogueTransformer FILLER_REMOVING_DIAG_TRANSFORMER;
 
-	private static final Set<String> FILLER_WORDS;
+	private static final Set<String> FILLER_WORDS;;
 
 	private static final HeadFinder HEAD_FINDER = new CollinsHeadFinder();
 
@@ -196,7 +201,7 @@ enum Tokenization implements Supplier<EventDialogueTransformer>, HasKeyName {
 	}
 
 	public static Tokenization getByKey(final String keyName) {
-		return INSTANCES_BY_KEY.get(keyName);
+		return ParsingTokenizer.TOKENIZATION_INSTANCES_BY_KEY.get(keyName);
 	}
 
 }
