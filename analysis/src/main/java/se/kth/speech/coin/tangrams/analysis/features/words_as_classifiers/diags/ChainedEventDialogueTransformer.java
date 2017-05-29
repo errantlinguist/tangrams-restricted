@@ -29,7 +29,7 @@ import se.kth.speech.coin.tangrams.analysis.EventDialogue;
  */
 public class ChainedEventDialogueTransformer implements EventDialogueTransformer {
 
-	private static Function<? super EventDialogue, EventDialogue> createChainedDialogueTransformer(
+	private static Function<? super EventDialogue, EventDialogue> createDecorated(
 			final Iterable<? extends Function<? super EventDialogue, EventDialogue>> diagTransformers) {
 		final Iterator<? extends Function<? super EventDialogue, EventDialogue>> transformerIter = diagTransformers
 				.iterator();
@@ -43,7 +43,7 @@ public class ChainedEventDialogueTransformer implements EventDialogueTransformer
 	private final Function<? super EventDialogue, EventDialogue> decorated;
 
 	public ChainedEventDialogueTransformer(final List<? extends EventDialogueTransformer> diagTransformers) {
-		this(createChainedDialogueTransformer(diagTransformers));
+		this(createDecorated(diagTransformers));
 	}
 
 	private ChainedEventDialogueTransformer(final Function<? super EventDialogue, EventDialogue> decorated) {
