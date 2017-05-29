@@ -92,7 +92,7 @@ public final class SnowballPorter2EnglishStopwords {
 		for (final String resLoc : resLocs) {
 			load(resLoc, result);
 		}
-		LOGGER.debug("Read stopword list of size {}.", result.size());
+		LOGGER.debug("Read stopword list of size {} from {}.", result.size(), Arrays.toString(resLocs));
 		return result;
 	}
 
