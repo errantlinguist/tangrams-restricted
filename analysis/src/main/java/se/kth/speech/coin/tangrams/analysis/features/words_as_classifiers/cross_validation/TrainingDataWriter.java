@@ -153,8 +153,7 @@ public final class TrainingDataWriter {
 				final String[] appCtxLocs = cl.getOptionValues(Parameter.APP_CONTEXT_DEFINITIONS.optName);
 				try (final FileSystemXmlApplicationContext appCtx = new FileSystemXmlApplicationContext(appCtxLocs)) {
 					final TestSetFactory testSetFactory = appCtx.getBean(TestSetFactory.class);
-					final TrainingDataWriter writer = appCtx.getBean(TrainingDataWriter.class, testSetFactory, outpath,
-							outfileExt);
+					final TrainingDataWriter writer = new TrainingDataWriter(testSetFactory, outpath, outfileExt);
 					writer.accept(inpaths);
 				}
 			}
