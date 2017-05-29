@@ -72,6 +72,16 @@ public final class TestSetFactory {
 	@Inject
 	private Supplier<LoadingCache<SessionDataManager, SessionEventDialogueManager>> sessionDiagMgrCacheSupplier;
 
+	public TestSetFactory() {
+
+	}
+
+	public TestSetFactory(final TrainingInstancesFactory instancesFactory,
+			final Supplier<LoadingCache<SessionDataManager, SessionEventDialogueManager>> sessionDiagMgrCacheSupplier) {
+		this.instancesFactory = instancesFactory;
+		this.sessionDiagMgrCacheSupplier = sessionDiagMgrCacheSupplier;
+	}
+
 	public Stream<Entry<SessionDataManager, WordClassificationData>> apply(
 			final Map<SessionDataManager, Path> allSessions) throws ExecutionException {
 		if (allSessions.size() < MIN_INPUT_SIZE) {
