@@ -287,7 +287,7 @@ public final class Tester {
 
 				final WordClassificationData trainingData = testSet.getValue();
 				final Optional<Instances> oovInstances = smoother.redistributeMass(trainingData);
-				LOGGER.debug("{} instances for out-of-vocabulary class.", oovInstances.map(Instances::size).orElse(0));
+				LOGGER.debug("{} instance(s) for out-of-vocabulary class.", oovInstances.map(Instances::size).orElse(0));
 
 				final Function<String, Logistic> wordClassifierGetter = createWordClassifierMap(
 						trainingData.getClassInstances().entrySet())::get;
