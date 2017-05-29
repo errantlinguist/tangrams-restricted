@@ -65,18 +65,18 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_
 public final class CombininingBatchJobTestWriter implements Consumer<BatchJobSummary> {
 
 	private enum Parameter implements Supplier<Option> {
-		HELP("?") {
-			@Override
-			public Option get() {
-				return Option.builder(optName).longOpt("help").desc("Prints this message.").build();
-			}
-		},
 		APPEND_SUMMARY("a") {
 			@Override
 			public Option get() {
 				return Option.builder(optName).longOpt("append")
 						.desc("If this flag is present, the summary file is appended to rather than being truncated and written anew.")
 						.build();
+			}
+		},
+		HELP("?") {
+			@Override
+			public Option get() {
+				return Option.builder(optName).longOpt("help").desc("Prints this message.").build();
 			}
 		},
 		ITER_COUNT("i") {
@@ -94,13 +94,6 @@ public final class CombininingBatchJobTestWriter implements Consumer<BatchJobSum
 						.argName("path").type(File.class).required().build();
 			}
 		},
-		TOKENIZERS("to") {
-			@Override
-			public Option get() {
-				return Option.builder(optName).longOpt("tokenizers").desc("A list of tokenization method(s) to use.")
-						.hasArgs().argName("name").build();
-			}
-		},
 		TOKEN_FILTERS("f") {
 			@Override
 			public Option get() {
@@ -108,11 +101,11 @@ public final class CombininingBatchJobTestWriter implements Consumer<BatchJobSum
 						.desc("A list of token filtering method(s) to use.").hasArgs().argName("name").build();
 			}
 		},
-		UTT_FILTERS("u") {
+		TOKENIZERS("to") {
 			@Override
 			public Option get() {
-				return Option.builder(optName).longOpt("utt-filters")
-						.desc("A list of utterance filtering method(s) to use.").hasArgs().argName("name").build();
+				return Option.builder(optName).longOpt("tokenizers").desc("A list of tokenization method(s) to use.")
+						.hasArgs().argName("name").build();
 			}
 		},
 		TRAINING("tr") {
@@ -120,6 +113,13 @@ public final class CombininingBatchJobTestWriter implements Consumer<BatchJobSum
 			public Option get() {
 				return Option.builder(optName).longOpt("training").desc("A list of training method(s) to use.")
 						.hasArgs().argName("name").build();
+			}
+		},
+		UTT_FILTERS("u") {
+			@Override
+			public Option get() {
+				return Option.builder(optName).longOpt("utt-filters")
+						.desc("A list of utterance filtering method(s) to use.").hasArgs().argName("name").build();
 			}
 		};
 
@@ -195,6 +195,12 @@ public final class CombininingBatchJobTestWriter implements Consumer<BatchJobSum
 
 	private static final List<String> COL_HEADERS;
 
+	private static final Logger LOGGER = LoggerFactory.getLogger(CombininingBatchJobTestWriter.class);
+
+	private static final Collector<CharSequence, ?, String> METHOD_KEY_NAME_JOINER = Collectors.joining("_");
+
+	private static final Collector<CharSequence, ?, String> ROW_CELL_JOINER = Collectors.joining("\t");
+
 	private static final List<SummaryDatum> SUMMARY_DATA_TO_WRITE;
 
 	static {
@@ -202,12 +208,6 @@ public final class CombininingBatchJobTestWriter implements Consumer<BatchJobSum
 				SummaryDatum.UTTERANCES_TESTED, SummaryDatum.MEAN_UTTERANCES_PER_DIALOGUE);
 		COL_HEADERS = createColHeaderList(SUMMARY_DATA_TO_WRITE);
 	}
-
-	private static final Logger LOGGER = LoggerFactory.getLogger(CombininingBatchJobTestWriter.class);
-
-	private static final Collector<CharSequence, ?, String> ROW_CELL_JOINER = Collectors.joining("\t");
-
-	private static final Collector<CharSequence, ?, String> METHOD_KEY_NAME_JOINER = Collectors.joining("_");
 
 	public static void main(final CommandLine cl)
 			throws ParseException, InterruptedException, ExecutionException, ClassificationException, IOException {
@@ -347,11 +347,11 @@ public final class CombininingBatchJobTestWriter implements Consumer<BatchJobSum
 		LOGGER.debug("Successfully shut down executor service.");
 	}
 
+	private boolean createNewSummary;
+
 	private final Path outdir;
 
 	private final Path summaryFile;
-
-	private boolean createNewSummary;
 
 	public CombininingBatchJobTestWriter(final Path outdir, final boolean createNewSummary) {
 		this.outdir = outdir;
