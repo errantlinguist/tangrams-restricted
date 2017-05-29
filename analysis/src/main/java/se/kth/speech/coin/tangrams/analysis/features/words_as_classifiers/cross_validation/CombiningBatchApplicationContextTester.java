@@ -23,10 +23,12 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -38,6 +40,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
@@ -67,6 +70,7 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.CachingEventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.ChainedEventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.DummyEventDialogueTransformer;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.DuplicateTokenFilteringEventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.FallbackTokenizingEventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.InstructorUtteranceFilteringEventDialogueTransformer;
@@ -75,6 +79,7 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.OnePositiveMaximumNegativeInstancesFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.OnePositiveOneNegativeInstanceFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.TrainingInstancesFactory;
+import se.kth.speech.nlp.Disfluencies;
 import se.kth.speech.nlp.EnglishLocationalPrepositions;
 import se.kth.speech.nlp.PatternTokenizer;
 import se.kth.speech.nlp.PhrasalHeadFilteringPredicate;
@@ -299,8 +304,8 @@ public final class CombiningBatchApplicationContextTester {
 		}
 
 		private Stream<String> createRowCellValues() {
-			return Stream.of(uttFilteringMethod.keyName, tokenizationMethod.keyName, tokenFilteringMethod.keyName,
-					trainingMethod.keyName);
+			return Stream.of(uttFilteringMethod.getKeyName(), tokenizationMethod.getKeyName(),
+					tokenFilteringMethod.getKeyName(), trainingMethod.getKeyName());
 		}
 	}
 
@@ -339,28 +344,36 @@ public final class CombiningBatchApplicationContextTester {
 	}
 
 	private enum Tokenization implements Supplier<EventDialogueTransformer> {
-		BASIC_TOKENIZER("tokenized") {
+		BASIC_TOKENIZER {
 
 			@Override
 			public TokenizingEventDialogueTransformer get() {
 				return new TokenizingEventDialogueTransformer(
 						new StanfordCoreNLPTokenizer(StanfordCoreNLPConfigurationVariant.TOKENIZING.get()));
 			}
+
+			@Override
+			protected String getKeyName() {
+				return "tokenized";
+			}
 		},
-		LEMMATIZER("lemmatized") {
+		LEMMATIZER {
 
 			@Override
 			public TokenizingEventDialogueTransformer get() {
 				return new TokenizingEventDialogueTransformer(new StanfordCoreNLPLemmatizer(
 						StanfordCoreNLPConfigurationVariant.TOKENIZING_LEMMATIZING.get()));
 			}
+
+			@Override
+			protected String getKeyName() {
+				return "lemmatized";
+			}
 		},
-		PP_REMOVER("remFillers-ppRemoval") {
+		PP_REMOVER {
 
 			@Override
 			public ChainedEventDialogueTransformer get() {
-				final TokenFilteringEventDialogueTransformer fillerRemover = createStopwordFilteringTransformer(
-						EnumSet.of(SnowballPorter2EnglishStopwords.Variant.FILLERS));
 				final Map<String, Set<List<String>>> labelHeadBlacklists = Collections.singletonMap("PP",
 						EnglishLocationalPrepositions.loadSet());
 				final PhrasalHeadFilteringPredicate pred = new PhrasalHeadFilteringPredicate(labelHeadBlacklists,
@@ -369,22 +382,23 @@ public final class CombiningBatchApplicationContextTester {
 						new StanfordCoreNLPParsingTokenizer(
 								StanfordCoreNLPConfigurationVariant.TOKENIZING_LEMMATIZING_PARSING.get(), pred),
 						new PatternTokenizer());
-				return new ChainedEventDialogueTransformer(Arrays.asList(fillerRemover, tokenizer));
+				return new ChainedEventDialogueTransformer(Arrays.asList(FILLER_REMOVING_DIAG_TRANSFORMER, tokenizer));
+			}
+
+			@Override
+			protected String getKeyName() {
+				final Stream.Builder<String> resultBuilder = Stream.builder();
+				PARSING_GARBAGE_TOKEN_REMOVING_DIAG_TRANSFORMERS.stream().map(Entry::getKey)
+						.forEachOrdered(resultBuilder);
+				resultBuilder.add("noPPs");
+				return resultBuilder.build().collect(TOKENIZER_KEY_JOINER);
 			}
 		};
-
-		private final String keyName;
-
-		private Tokenization(final String keyName) {
-			this.keyName = keyName;
-		}
 
 		/**
 		 * @return the keyName
 		 */
-		protected String getKeyName() {
-			return keyName;
-		}
+		protected abstract String getKeyName();
 	}
 
 	private enum Training implements Function<TrainingContext, Entry<TrainingInstancesFactory, Integer>> {
@@ -435,18 +449,18 @@ public final class CombiningBatchApplicationContextTester {
 
 		private final EventDialogueTransformer diagTransformer;
 
-//		private final TokenFiltering tokenFilteringMethod;
-//
-//		private final Tokenization tokenizationMethod;
-//
-//		private final UtteranceFiltering uttFilteringMethod;
-		
+		// private final TokenFiltering tokenFilteringMethod;
+		//
+		// private final Tokenization tokenizationMethod;
+		//
+		// private final UtteranceFiltering uttFilteringMethod;
+
 		private TrainingContext(final UtteranceFiltering uttFilteringMethod, final Tokenization tokenizationMethod,
 				final TokenFiltering tokenFilteringMethod, final EventDialogueTransformer diagTransformer,
 				final ApplicationContext appCtx) {
-//			this.uttFilteringMethod = uttFilteringMethod;
-//			this.tokenizationMethod = tokenizationMethod;
-//			this.tokenFilteringMethod = tokenFilteringMethod;
+			// this.uttFilteringMethod = uttFilteringMethod;
+			// this.tokenizationMethod = tokenizationMethod;
+			// this.tokenFilteringMethod = tokenFilteringMethod;
 			this.diagTransformer = diagTransformer;
 			this.appCtx = appCtx;
 		}
@@ -481,13 +495,35 @@ public final class CombiningBatchApplicationContextTester {
 
 	private static final DummyEventDialogueTransformer DUMMY_EVT_DIAG_TRANSFORMER = new DummyEventDialogueTransformer();
 
+	private static final TokenFilteringEventDialogueTransformer FILLER_REMOVING_DIAG_TRANSFORMER;
+
+	private static final Set<String> FILLER_WORDS;
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(CombiningBatchApplicationContextTester.class);
 
 	private static final Collector<CharSequence, ?, String> METHOD_KEY_NAME_JOINER = Collectors.joining("_");
 
+	private static final List<Entry<String, EventDialogueTransformer>> PARSING_GARBAGE_TOKEN_REMOVING_DIAG_TRANSFORMERS;
+
 	private static final Random RND = new Random(1);
 
 	private static final Collector<CharSequence, ?, String> ROW_CELL_JOINER = Collectors.joining("\t");
+
+	private static final Collector<CharSequence, ?, String> TOKENIZER_KEY_JOINER = Collectors.joining(",");
+
+	static {
+		FILLER_WORDS = SnowballPorter2EnglishStopwords.Variant.FILLERS.get();
+		FILLER_REMOVING_DIAG_TRANSFORMER = new TokenFilteringEventDialogueTransformer(FILLER_WORDS);
+
+		final LinkedHashMap<String, EventDialogueTransformer> garbageRemovingTransformers = new LinkedHashMap<>();
+		garbageRemovingTransformers.put("dedup", new DuplicateTokenFilteringEventDialogueTransformer());
+		final Predicate<String> parsingGarbageTokenMatcher = token -> {
+			return FILLER_WORDS.contains(token) || Disfluencies.TOKEN_MATCHER.test(token);
+		};
+		garbageRemovingTransformers.put("nofillers,nodisfl",
+				new TokenFilteringEventDialogueTransformer(token -> !parsingGarbageTokenMatcher.test(token)));
+		PARSING_GARBAGE_TOKEN_REMOVING_DIAG_TRANSFORMERS = new ArrayList<>(garbageRemovingTransformers.entrySet());
+	}
 
 	public static void main(final CommandLine cl)
 			throws ParseException, InterruptedException, ExecutionException, ClassificationException, IOException {
@@ -561,9 +597,14 @@ public final class CombiningBatchApplicationContextTester {
 
 	private static TokenFilteringEventDialogueTransformer createStopwordFilteringTransformer(
 			final Collection<SnowballPorter2EnglishStopwords.Variant> variantsToUnify) {
+		return new TokenFilteringEventDialogueTransformer(createStopwordSet(variantsToUnify));
+	}
+
+	private static Set<String> createStopwordSet(
+			final Collection<SnowballPorter2EnglishStopwords.Variant> variantsToUnify) {
 		final SnowballPorter2EnglishStopwordSetFactory factory = new SnowballPorter2EnglishStopwordSetFactory();
 		factory.setVariantsToUnify(variantsToUnify);
-		return new TokenFilteringEventDialogueTransformer(factory.getObject());
+		return factory.getObject();
 	}
 
 	private static void shutdownExceptionally(final ExecutorService executor) {
