@@ -149,7 +149,64 @@ public final class CombiningBatchApplicationContextTester {
 
 	}
 
+	private static class Summary {
+
+		private static final List<String> COL_HEADERS;
+
+		private static final List<SummaryDatum> SUMMARY_DATA_TO_WRITE;
+
+		static {
+			SUMMARY_DATA_TO_WRITE = Arrays.asList(SummaryDatum.MEAN_RANK, SummaryDatum.MRR, SummaryDatum.DIALOGUE_COUNT,
+					SummaryDatum.UTTERANCES_TESTED, SummaryDatum.MEAN_UTTERANCES_PER_DIALOGUE);
+			COL_HEADERS = createColHeaderList(SUMMARY_DATA_TO_WRITE);
+		}
+
+		private static List<String> createColHeaderList(final List<SummaryDatum> summaryDataToWrite) {
+			final Stream.Builder<String> colHeaderStreamBuilder = Stream.builder();
+			TestParameters.createColumnHeaders().forEachOrdered(colHeaderStreamBuilder);
+			colHeaderStreamBuilder.add("OUTPATH");
+			colHeaderStreamBuilder.add("ITER_COUNT");
+			summaryDataToWrite.stream().map(SummaryDatum::toString).forEachOrdered(colHeaderStreamBuilder);
+			return Arrays.asList(colHeaderStreamBuilder.build().toArray(String[]::new));
+		}
+
+		/**
+		 * @return the colHeaders
+		 */
+		private static List<String> getColHeaders() {
+			return COL_HEADERS;
+		}
+
+		private final Path outdirPath;
+
+		private final TestParameters testParams;
+
+		private final Tester.Result testResults;
+
+		private Summary(final TestParameters testParams, final Tester.Result testResults, final Path outdirPath) {
+			this.testParams = testParams;
+			this.testResults = testResults;
+			this.outdirPath = outdirPath;
+		}
+
+		private Stream<String> createRowCellValues() {
+			final Stream.Builder<String> resultBuilder = Stream.builder();
+			testParams.createRowCellValues().forEachOrdered(resultBuilder);
+			final Map<SummaryDatum, Object> configSummary = StatisticsWriter.createSummaryDataMap(outdirPath.toString(),
+					testResults);
+			resultBuilder.add(configSummary.get(SummaryDatum.KEY).toString());
+			resultBuilder.add(configSummary.get(SummaryDatum.TEST_ITERATION).toString());
+			SUMMARY_DATA_TO_WRITE.stream().map(configSummary::get).map(Object::toString).forEachOrdered(resultBuilder);
+			return resultBuilder.build();
+		}
+	}
+
 	private static class TestParameters {
+
+		private static Stream<String> createColumnHeaders() {
+			return Stream.of(UtteranceFiltering.class.getSimpleName(), Tokenization.class.getSimpleName(),
+					TokenFiltering.class.getSimpleName(), Training.class.getSimpleName());
+		}
 
 		private final TokenFiltering tokenFilteringMethod;
 
@@ -240,6 +297,11 @@ public final class CombiningBatchApplicationContextTester {
 					tokenFilteringMethod.getKeyName(), trainingMethod.getKeyName());
 			return keyNames.collect(METHOD_KEY_NAME_JOINER);
 		}
+
+		private Stream<String> createRowCellValues() {
+			return Stream.of(uttFilteringMethod.keyName, tokenizationMethod.keyName, tokenFilteringMethod.keyName,
+					trainingMethod.keyName);
+		}
 	}
 
 	private enum TokenFiltering implements Supplier<EventDialogueTransformer> {
@@ -293,7 +355,7 @@ public final class CombiningBatchApplicationContextTester {
 						StanfordCoreNLPConfigurationVariant.TOKENIZING_LEMMATIZING.get()));
 			}
 		},
-		PP_REMOVER("remFillers+ppRemoval") {
+		PP_REMOVER("remFillers-ppRemoval") {
 
 			@Override
 			public ChainedEventDialogueTransformer get() {
@@ -394,13 +456,6 @@ public final class CombiningBatchApplicationContextTester {
 		protected String getKeyName() {
 			return keyName;
 		}
-	}
-
-	private static final List<String> COL_HEADERS;
-	
-	static {
-		COL_HEADERS = Arrays.asList("INPATH", "ITER_COUNT", SummaryDatum.MEAN_RANK.toString(), SummaryDatum.MRR.toString(),
-				SummaryDatum.DIALOGUE_COUNT.toString(), SummaryDatum.UTTERANCES_TESTED.toString(), SummaryDatum.MEAN_UTTERANCES_PER_DIALOGUE.toString());
 	}
 
 	private static final DummyEventDialogueTransformer DUMMY_EVT_DIAG_TRANSFORMER = new DummyEventDialogueTransformer();
@@ -552,19 +607,9 @@ public final class CombiningBatchApplicationContextTester {
 						final String batchOutdirName = testParams.createBatchOutdirName();
 						final Path outdirPath = Files.createDirectories(outdir.resolve(batchOutdirName));
 						LOGGER.info("Will write results of testing {} to \"{}\".", testParams, outdirPath);
-						final BatchTestResultWriter testWriter = new BatchTestResultWriter(
-								outdirPath);
+						final BatchTestResultWriter testWriter = new BatchTestResultWriter(outdirPath);
 						testWriter.apply(testResults);
-
-						final Map<SummaryDatum, Object> configSummary = StatisticsWriter
-								.createSummaryDataMap(outdirPath.toString(), testResults);
-						final Stream<Object> rowCellVals = StatisticsWriter.getSummaryDatumColumnOrdering().stream()
-								.map(configSummary::get);
-						try (final BufferedWriter summaryWriter = Files.newBufferedWriter(summaryFile,
-								StandardOpenOption.APPEND)) {
-							summaryWriter.newLine();
-							summaryWriter.write(rowCellVals.map(Object::toString).collect(ROW_CELL_JOINER));
-						}
+						writeSummary(new Summary(testParams, testResults, outdirPath));
 					}
 				}
 			}
@@ -575,7 +620,15 @@ public final class CombiningBatchApplicationContextTester {
 		Files.createDirectories(summaryFile.getParent());
 		try (final BufferedWriter summaryWriter = Files.newBufferedWriter(summaryFile, StandardOpenOption.CREATE,
 				StandardOpenOption.TRUNCATE_EXISTING)) {
-			summaryWriter.write(COL_HEADERS.stream().collect(ROW_CELL_JOINER));
+			summaryWriter.write(Summary.getColHeaders().stream().collect(ROW_CELL_JOINER));
+		}
+	}
+
+	private void writeSummary(final Summary summary) throws IOException {
+		try (final BufferedWriter summaryWriter = Files.newBufferedWriter(summaryFile, StandardOpenOption.APPEND)) {
+			summaryWriter.newLine();
+			final Stream<String> rowCellVals = summary.createRowCellValues();
+			summaryWriter.write(rowCellVals.collect(ROW_CELL_JOINER));
 		}
 	}
 
