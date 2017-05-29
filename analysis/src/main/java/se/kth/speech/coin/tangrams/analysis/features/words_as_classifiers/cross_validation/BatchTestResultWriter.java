@@ -31,22 +31,22 @@ import org.slf4j.LoggerFactory;
  * @since 24 May 2017
  *
  */
-public final class BatchApplicationContextTestWriter {
+public final class BatchTestResultWriter {
 
 	private static final StandardOpenOption[] DEFAULT_FILE_OPEN_OPTS = new StandardOpenOption[] {
 			StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING };
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(BatchApplicationContextTestWriter.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(BatchTestResultWriter.class);
 
 	private final OpenOption[] fileOpenOpts;
 
 	private final Path outdir;
 
-	public BatchApplicationContextTestWriter(final Path outdir) {
+	public BatchTestResultWriter(final Path outdir) {
 		this(outdir, DEFAULT_FILE_OPEN_OPTS);
 	}
 
-	public BatchApplicationContextTestWriter(final Path outdir, final OpenOption[] fileOpenOpts) {
+	public BatchTestResultWriter(final Path outdir, final OpenOption[] fileOpenOpts) {
 		this.outdir = outdir;
 		this.fileOpenOpts = fileOpenOpts;
 	}

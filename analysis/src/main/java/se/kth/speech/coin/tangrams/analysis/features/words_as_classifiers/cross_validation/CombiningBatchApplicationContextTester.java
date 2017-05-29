@@ -396,8 +396,12 @@ public final class CombiningBatchApplicationContextTester {
 		}
 	}
 
-	private static final List<String> COL_HEADERS = Arrays.asList("INPATH", "ITER_COUNT", "MEAN_RANK", "MRR",
-			"DIAG_COUNT", "UTTS_TESTED", "MEAN_UTTS_PER_DIAG");
+	private static final List<String> COL_HEADERS;
+	
+	static {
+		COL_HEADERS = Arrays.asList("INPATH", "ITER_COUNT", SummaryDatum.MEAN_RANK.toString(), SummaryDatum.MRR.toString(),
+				SummaryDatum.DIALOGUE_COUNT.toString(), SummaryDatum.UTTERANCES_TESTED.toString(), SummaryDatum.MEAN_UTTERANCES_PER_DIALOGUE.toString());
+	}
 
 	private static final DummyEventDialogueTransformer DUMMY_EVT_DIAG_TRANSFORMER = new DummyEventDialogueTransformer();
 
@@ -548,7 +552,7 @@ public final class CombiningBatchApplicationContextTester {
 						final String batchOutdirName = testParams.createBatchOutdirName();
 						final Path outdirPath = Files.createDirectories(outdir.resolve(batchOutdirName));
 						LOGGER.info("Will write results of testing {} to \"{}\".", testParams, outdirPath);
-						final BatchApplicationContextTestWriter testWriter = new BatchApplicationContextTestWriter(
+						final BatchTestResultWriter testWriter = new BatchTestResultWriter(
 								outdirPath);
 						testWriter.apply(testResults);
 
