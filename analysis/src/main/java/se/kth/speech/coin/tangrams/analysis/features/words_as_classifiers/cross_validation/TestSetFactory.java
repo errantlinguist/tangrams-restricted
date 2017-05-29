@@ -26,8 +26,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import javax.inject.Inject;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,11 +62,15 @@ public final class TestSetFactory {
 
 	private static final int MIN_INPUT_SIZE = 2;
 
-	@Inject
-	private TrainingInstancesFactory instancesFactory;
+	private final TrainingInstancesFactory instancesFactory;
 
-	@Inject
-	private Supplier<LoadingCache<SessionDataManager, SessionEventDialogueManager>> sessionDiagMgrCacheSupplier;
+	private final Supplier<LoadingCache<SessionDataManager, SessionEventDialogueManager>> sessionDiagMgrCacheSupplier;
+
+	public TestSetFactory(final TrainingInstancesFactory instancesFactory,
+			final Supplier<LoadingCache<SessionDataManager, SessionEventDialogueManager>> sessionDiagMgrCacheSupplier) {
+		this.instancesFactory = instancesFactory;
+		this.sessionDiagMgrCacheSupplier = sessionDiagMgrCacheSupplier;
+	}
 
 	public Stream<Entry<SessionDataManager, WordClassificationData>> apply(
 			final Map<SessionDataManager, Path> allSessions) throws ExecutionException {
