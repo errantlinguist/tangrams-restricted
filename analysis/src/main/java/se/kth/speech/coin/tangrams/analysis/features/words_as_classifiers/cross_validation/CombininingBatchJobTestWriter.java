@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
+import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
@@ -69,6 +70,14 @@ public final class CombininingBatchJobTestWriter implements Consumer<BatchJobSum
 			@Override
 			public Option get() {
 				return Option.builder(optName).longOpt("help").desc("Prints this message.").build();
+			}
+		},
+		APPEND_SUMMARY("a") {
+			@Override
+			public Option get() {
+				return Option.builder(optName).longOpt("append")
+						.desc("If this flag is present, the summary file is appended to rather than being truncated and written anew.")
+						.build();
 			}
 		},
 		ITER_COUNT("i") {
@@ -133,6 +142,17 @@ public final class CombininingBatchJobTestWriter implements Consumer<BatchJobSum
 				result = OptionalInt.of(val);
 			}
 			return result;
+		}
+
+		private static OpenOption[] parseSummaryFileOpenOptions(final CommandLine cl) {
+			final Stream.Builder<OpenOption> resultBuilder = Stream.builder();
+			resultBuilder.add(StandardOpenOption.CREATE);
+			final boolean appendSummary = cl.hasOption(Parameter.APPEND_SUMMARY.optName);
+			LOGGER.info("Append to summary rather than truncate? {}", appendSummary);
+			final OpenOption extantFileBehavior = appendSummary ? StandardOpenOption.APPEND
+					: StandardOpenOption.TRUNCATE_EXISTING;
+			resultBuilder.add(extantFileBehavior);
+			return resultBuilder.build().toArray(OpenOption[]::new);
 		}
 
 		private static NavigableSet<TokenFiltering> parseTokenFilteringMethods(final CommandLine cl) {
@@ -226,7 +246,7 @@ public final class CombininingBatchJobTestWriter implements Consumer<BatchJobSum
 				}
 				final Path outdir = ((File) cl.getParsedOptionValue(Parameter.OUTPATH.optName)).toPath();
 				LOGGER.info("Will write data to \"{}\".", outdir);
-
+				final OpenOption[] summaryFileOpenOpts = Parameter.parseSummaryFileOpenOptions(cl);
 				final NavigableSet<UtteranceFiltering> uttFilteringMethods = Parameter.parseUttFilteringMethods(cl);
 				LOGGER.info("Utterance filtering methods: {}", uttFilteringMethods);
 				final NavigableSet<Tokenization> tokenizationMethods = Parameter.parseTokenizationMethods(cl);
@@ -239,7 +259,8 @@ public final class CombininingBatchJobTestWriter implements Consumer<BatchJobSum
 				try {
 					final Future<Map<SessionDataManager, Path>> allSessionDataFuture = executor
 							.submit(() -> TestSessionData.readTestSessionData(inpaths));
-					final CombininingBatchJobTestWriter writer = new CombininingBatchJobTestWriter(outdir);
+					final CombininingBatchJobTestWriter writer = new CombininingBatchJobTestWriter(outdir,
+							summaryFileOpenOpts);
 					try (final ClassPathXmlApplicationContext appCtx = new ClassPathXmlApplicationContext(
 							"combining-batch-tester.xml", CombininingBatchJobTestWriter.class)) {
 						final CombiningBatchJobTester tester = new CombiningBatchJobTester(executor, appCtx, writer,
@@ -343,8 +364,12 @@ public final class CombininingBatchJobTestWriter implements Consumer<BatchJobSum
 
 	private boolean isRunning;
 
-	public CombininingBatchJobTestWriter(final Path outdir) {
+	private final OpenOption[] summaryFileOpenOpts;
+
+	public CombininingBatchJobTestWriter(final Path outdir, final OpenOption[] summaryFileOpenOpts) {
 		this.outdir = outdir;
+		this.summaryFileOpenOpts = summaryFileOpenOpts;
+
 		summaryFile = outdir.resolve("batch-summary.tsv");
 	}
 
@@ -371,8 +396,7 @@ public final class CombininingBatchJobTestWriter implements Consumer<BatchJobSum
 
 	private void writeInitialSummaryFile() throws IOException {
 		Files.createDirectories(summaryFile.getParent());
-		try (final BufferedWriter summaryWriter = Files.newBufferedWriter(summaryFile, StandardOpenOption.CREATE,
-				StandardOpenOption.TRUNCATE_EXISTING)) {
+		try (final BufferedWriter summaryWriter = Files.newBufferedWriter(summaryFile, summaryFileOpenOpts)) {
 			summaryWriter.write(COL_HEADERS.stream().collect(ROW_CELL_JOINER));
 		}
 	}
