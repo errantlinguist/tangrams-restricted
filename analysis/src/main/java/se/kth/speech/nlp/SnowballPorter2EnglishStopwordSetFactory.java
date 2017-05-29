@@ -16,7 +16,6 @@
 */
 package se.kth.speech.nlp;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.Set;
 
@@ -37,7 +36,7 @@ public final class SnowballPorter2EnglishStopwordSetFactory implements FactoryBe
 	 * @see org.springframework.beans.factory.FactoryBean#getObject()
 	 */
 	@Override
-	public Set<String> getObject() throws IOException {
+	public Set<String> getObject() {
 		return SnowballPorter2EnglishStopwords.loadStopwordSet(variantsToUnify);
 	}
 
