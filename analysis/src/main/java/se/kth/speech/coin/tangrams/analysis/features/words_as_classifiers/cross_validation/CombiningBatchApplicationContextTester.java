@@ -37,7 +37,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
@@ -387,32 +387,29 @@ public final class CombiningBatchApplicationContextTester {
 		}
 	}
 
-	private enum Training implements
-			BiFunction<EventDialogueTransformer, ApplicationContext, Entry<TrainingInstancesFactory, Integer>> {
+	private enum Training implements Function<TrainingContext, Entry<TrainingInstancesFactory, Integer>> {
 		ALL_NEG("allNeg") {
 			@Override
-			public Entry<TrainingInstancesFactory, Integer> apply(final EventDialogueTransformer diagTransformer,
-					final ApplicationContext appCtx) {
-				final EntityInstanceAttributeContext entityInstAttrCtx = appCtx
+			public Entry<TrainingInstancesFactory, Integer> apply(final TrainingContext trainingCtx) {
+				final EntityInstanceAttributeContext entityInstAttrCtx = trainingCtx.appCtx
 						.getBean(EntityInstanceAttributeContext.class);
-				final EntityFeatureExtractionContextFactory extCtxFactory = appCtx
+				final EntityFeatureExtractionContextFactory extCtxFactory = trainingCtx.appCtx
 						.getBean(EntityFeatureExtractionContextFactory.class);
 				final OnePositiveMaximumNegativeInstancesFactory instsFactory = new OnePositiveMaximumNegativeInstancesFactory(
-						entityInstAttrCtx, diagTransformer, extCtxFactory);
+						entityInstAttrCtx, trainingCtx.diagTransformer, extCtxFactory);
 				return new MutablePair<>(instsFactory, 1);
 			}
 		},
 		ONE_NEG("oneNeg") {
 
 			@Override
-			public Entry<TrainingInstancesFactory, Integer> apply(final EventDialogueTransformer diagTransformer,
-					final ApplicationContext appCtx) {
-				final EntityInstanceAttributeContext entityInstAttrCtx = appCtx
+			public Entry<TrainingInstancesFactory, Integer> apply(final TrainingContext trainingCtx) {
+				final EntityInstanceAttributeContext entityInstAttrCtx = trainingCtx.appCtx
 						.getBean(EntityInstanceAttributeContext.class);
-				final EntityFeatureExtractionContextFactory extCtxFactory = appCtx
+				final EntityFeatureExtractionContextFactory extCtxFactory = trainingCtx.appCtx
 						.getBean(EntityFeatureExtractionContextFactory.class);
 				final OnePositiveOneNegativeInstanceFactory instsFactory = new OnePositiveOneNegativeInstanceFactory(
-						entityInstAttrCtx, diagTransformer, extCtxFactory, RND);
+						entityInstAttrCtx, trainingCtx.diagTransformer, extCtxFactory, RND);
 				return new MutablePair<>(instsFactory, 10);
 			}
 
@@ -429,6 +426,51 @@ public final class CombiningBatchApplicationContextTester {
 		 */
 		protected String getKeyName() {
 			return keyName;
+		}
+	}
+
+	private static class TrainingContext {
+
+		private final ApplicationContext appCtx;
+
+		private final EventDialogueTransformer diagTransformer;
+
+		private final TokenFiltering tokenFilteringMethod;
+
+		private final Tokenization tokenizationMethod;
+
+		private final UtteranceFiltering uttFilteringMethod;
+
+		private TrainingContext(final UtteranceFiltering uttFilteringMethod, final Tokenization tokenizationMethod,
+				final TokenFiltering tokenFilteringMethod, final EventDialogueTransformer diagTransformer,
+				final ApplicationContext appCtx) {
+			this.uttFilteringMethod = uttFilteringMethod;
+			this.tokenizationMethod = tokenizationMethod;
+			this.tokenFilteringMethod = tokenFilteringMethod;
+			this.diagTransformer = diagTransformer;
+			this.appCtx = appCtx;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see java.lang.Object#toString()
+		 */
+		@Override
+		public String toString() {
+			final StringBuilder builder = new StringBuilder();
+			builder.append("TrainingContext [appCtx=");
+			builder.append(appCtx);
+			builder.append(", diagTransformer=");
+			builder.append(diagTransformer);
+			builder.append(", tokenFilteringMethod=");
+			builder.append(tokenFilteringMethod);
+			builder.append(", tokenizationMethod=");
+			builder.append(tokenizationMethod);
+			builder.append(", uttFilteringMethod=");
+			builder.append(uttFilteringMethod);
+			builder.append("]");
+			return builder.toString();
 		}
 	}
 
@@ -589,10 +631,11 @@ public final class CombiningBatchApplicationContextTester {
 							tokenFilter);
 					final CachingEventDialogueTransformer cachingDiagTransformer = new CachingEventDialogueTransformer(
 							new ChainedEventDialogueTransformer(diagTransformers));
-
+					final TrainingContext trainingCtx = new TrainingContext(uttFilteringMethod, tokenizationMethod,
+							tokenFilteringMethod, cachingDiagTransformer, appCtx);
 					for (final Training trainingMethod : Training.values()) {
 						final Entry<TrainingInstancesFactory, Integer> trainingInstsFactoryIterCount = trainingMethod
-								.apply(cachingDiagTransformer, appCtx);
+								.apply(trainingCtx);
 
 						final TestSetFactory testSetFactory = new TestSetFactory(trainingInstsFactoryIterCount.getKey(),
 								sessionDiagMgrCacheSupplier);
