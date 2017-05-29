@@ -18,7 +18,6 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
 
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import se.kth.speech.coin.tangrams.analysis.EventDialogue;
@@ -27,6 +26,7 @@ import se.kth.speech.coin.tangrams.analysis.GameHistory;
 import se.kth.speech.coin.tangrams.analysis.Utterance;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EventDialogueClassifier;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EventDialogueTransformer;
 
 /**
  * This {@link EventDialogueTester} tests classification using a single
@@ -42,10 +42,10 @@ public final class SingleGameContextReferentEventDialogueTester implements Event
 
 	private final EventDialogueClassifier diagClassifier;
 
-	private final Function<? super EventDialogue, EventDialogue> diagTransformer;
+	private final EventDialogueTransformer diagTransformer;
 
 	public SingleGameContextReferentEventDialogueTester(final EventDialogueClassifier diagClassifier,
-			final Function<? super EventDialogue, EventDialogue> diagTransformer) {
+			final EventDialogueTransformer diagTransformer) {
 		this.diagClassifier = diagClassifier;
 		this.diagTransformer = diagTransformer;
 	}

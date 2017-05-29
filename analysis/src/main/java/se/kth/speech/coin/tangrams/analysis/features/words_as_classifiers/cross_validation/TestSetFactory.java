@@ -23,17 +23,15 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.cache.LoadingCache;
-
 import se.kth.speech.MutablePair;
 import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
 import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManager;
+import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManagerCacheSupplier;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.TrainingInstancesFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.WordClassificationData;
 
@@ -64,10 +62,10 @@ public final class TestSetFactory {
 
 	private final TrainingInstancesFactory instancesFactory;
 
-	private final Supplier<LoadingCache<SessionDataManager, SessionEventDialogueManager>> sessionDiagMgrCacheSupplier;
+	private final SessionEventDialogueManagerCacheSupplier sessionDiagMgrCacheSupplier;
 
 	public TestSetFactory(final TrainingInstancesFactory instancesFactory,
-			final Supplier<LoadingCache<SessionDataManager, SessionEventDialogueManager>> sessionDiagMgrCacheSupplier) {
+			final SessionEventDialogueManagerCacheSupplier sessionDiagMgrCacheSupplier) {
 		this.instancesFactory = instancesFactory;
 		this.sessionDiagMgrCacheSupplier = sessionDiagMgrCacheSupplier;
 	}

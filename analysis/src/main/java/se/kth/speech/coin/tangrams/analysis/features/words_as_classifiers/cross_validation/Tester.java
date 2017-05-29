@@ -43,13 +43,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.BeanFactory;
 
-import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Maps;
 
 import it.unimi.dsi.fastutil.ints.IntSet;
 import se.kth.speech.coin.tangrams.analysis.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
-import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManager;
+import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManagerCacheSupplier;
 import se.kth.speech.coin.tangrams.analysis.Utterance;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
@@ -62,6 +61,7 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.Sessio
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.SingleGameContextReferentEventDialogueTester;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordClassDiscountingSmoother;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EventDialogueClassifier;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.WordClassificationData;
 import weka.classifiers.functions.Logistic;
 import weka.core.Instance;
@@ -287,7 +287,8 @@ public final class Tester {
 
 				final WordClassificationData trainingData = testSet.getValue();
 				final Optional<Instances> oovInstances = smoother.redistributeMass(trainingData);
-				LOGGER.debug("{} instance(s) for out-of-vocabulary class.", oovInstances.map(Instances::size).orElse(0));
+				LOGGER.debug("{} instance(s) for out-of-vocabulary class.",
+						oovInstances.map(Instances::size).orElse(0));
 
 				final Function<String, Logistic> wordClassifierGetter = createWordClassifierMap(
 						trainingData.getClassInstances().entrySet())::get;
@@ -373,7 +374,7 @@ public final class Tester {
 	@Inject
 	private BeanFactory beanFactory;
 
-	private final Function<? super EventDialogue, EventDialogue> diagTransformer;
+	private final EventDialogueTransformer diagTransformer;
 
 	@Inject
 	private EntityInstanceAttributeContext entInstAttrCtx;
@@ -383,7 +384,7 @@ public final class Tester {
 	private int iterCount = 1;
 
 	@Inject
-	private Supplier<LoadingCache<SessionDataManager, SessionEventDialogueManager>> sessionDiagMgrCacheSupplier;
+	private SessionEventDialogueManagerCacheSupplier sessionDiagMgrCacheSupplier;
 
 	@Inject
 	private WordClassDiscountingSmoother smoother;
@@ -391,19 +392,22 @@ public final class Tester {
 	@Inject
 	private WordClassInstancesFactory testInstsFactory;
 
-	@Inject
-	private TestSetFactory testSetFactory;
+	private final TestSetFactory testSetFactory;
 
-	public Tester(final Function<? super EventDialogue, EventDialogue> diagTransformer) {
-		this(diagTransformer, Math.max(Runtime.getRuntime().availableProcessors() - 1, 1));
+	public Tester(final TestSetFactory testSetFactory,
+			final EventDialogueTransformer diagTransformer) {
+		this(testSetFactory, diagTransformer, Math.max(Runtime.getRuntime().availableProcessors() - 1, 1));
 	}
 
-	public Tester(final Function<? super EventDialogue, EventDialogue> diagTransformer, final int parallelThreadCount) {
-		this(diagTransformer, createExecutorServiceFactory(parallelThreadCount));
+	public Tester(final TestSetFactory testSetFactory,
+			final EventDialogueTransformer diagTransformer, final int parallelThreadCount) {
+		this(testSetFactory, diagTransformer, createExecutorServiceFactory(parallelThreadCount));
 	}
 
-	public Tester(final Function<? super EventDialogue, EventDialogue> diagTransformer,
+	public Tester(final TestSetFactory testSetFactory,
+			final EventDialogueTransformer diagTransformer,
 			final Supplier<? extends ExecutorService> executorFactory) {
+		this.testSetFactory = testSetFactory;
 		this.diagTransformer = diagTransformer;
 		this.executorFactory = executorFactory;
 	}

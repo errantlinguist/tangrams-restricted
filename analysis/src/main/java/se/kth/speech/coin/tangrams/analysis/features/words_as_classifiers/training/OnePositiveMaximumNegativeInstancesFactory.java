@@ -19,7 +19,6 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.train
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.function.Function;
 import java.util.stream.Stream;
 
 import javax.inject.Inject;
@@ -37,6 +36,7 @@ import se.kth.speech.coin.tangrams.analysis.Utterance;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionContextFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.UtteranceGameContexts;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EventDialogueTransformer;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 import weka.core.DenseInstance;
 import weka.core.Instance;
@@ -65,13 +65,13 @@ public final class OnePositiveMaximumNegativeInstancesFactory extends AbstractSi
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(OnePositiveMaximumNegativeInstancesFactory.class);
 
-	private final Function<? super EventDialogue, EventDialogue> diagTransformer;
+	private final EventDialogueTransformer diagTransformer;
 
 	@Inject
 	private EntityFeatureExtractionContextFactory extCtxFactory;
 
 	public OnePositiveMaximumNegativeInstancesFactory(
-			final Function<? super EventDialogue, EventDialogue> diagTransformer) {
+			final EventDialogueTransformer diagTransformer) {
 		this.diagTransformer = diagTransformer;
 	}
 

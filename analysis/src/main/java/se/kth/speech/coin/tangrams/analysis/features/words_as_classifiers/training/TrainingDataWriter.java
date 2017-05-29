@@ -41,8 +41,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.support.FileSystemXmlApplicationContext;
 
-import com.google.common.cache.LoadingCache;
-
 import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
 import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManager;
 import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManagerCacheSupplier;
@@ -186,10 +184,10 @@ public final class TrainingDataWriter {
 
 	private final TrainingInstancesFactory instancesFactory;
 
-	private final Supplier<LoadingCache<SessionDataManager, SessionEventDialogueManager>> sessionEvtDiagMgrSupplier;
+	private final SessionEventDialogueManagerCacheSupplier sessionEvtDiagMgrSupplier;
 
 	public TrainingDataWriter(final TrainingInstancesFactory instancesFactory,
-			final Supplier<LoadingCache<SessionDataManager, SessionEventDialogueManager>> sessionEvtDiagMgrSupplier) {
+			final SessionEventDialogueManagerCacheSupplier sessionEvtDiagMgrSupplier) {
 		this.instancesFactory = instancesFactory;
 		this.sessionEvtDiagMgrSupplier = sessionEvtDiagMgrSupplier;
 	}

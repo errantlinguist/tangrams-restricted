@@ -18,7 +18,6 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.train
 
 import java.util.List;
 import java.util.Random;
-import java.util.function.Function;
 import java.util.stream.Stream;
 
 import javax.inject.Inject;
@@ -35,6 +34,7 @@ import se.kth.speech.coin.tangrams.analysis.Utterance;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionContextFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.UtteranceGameContexts;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EventDialogueTransformer;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 import se.kth.speech.fastutil.RandomIntLists;
 import weka.core.DenseInstance;
@@ -64,14 +64,14 @@ public final class OnePositiveOneNegativeInstanceFactory extends AbstractSizeEst
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(OnePositiveOneNegativeInstanceFactory.class);
 
-	private final Function<? super EventDialogue, EventDialogue> diagTransformer;
+	private final EventDialogueTransformer diagTransformer;
 
 	private final Random rnd;
 
 	@Inject
 	private EntityFeatureExtractionContextFactory extCtxFactory;
 
-	public OnePositiveOneNegativeInstanceFactory(final Function<? super EventDialogue, EventDialogue> diagTransformer,
+	public OnePositiveOneNegativeInstanceFactory(final EventDialogueTransformer diagTransformer,
 			final Random rnd) {
 		this.diagTransformer = diagTransformer;
 		this.rnd = rnd;

@@ -42,8 +42,7 @@ public class ChainedEventDialogueTransformer implements EventDialogueTransformer
 
 	private final Function<? super EventDialogue, EventDialogue> decorated;
 
-	public ChainedEventDialogueTransformer(
-			final List<? extends Function<? super EventDialogue, EventDialogue>> diagTransformers) {
+	public ChainedEventDialogueTransformer(final List<? extends EventDialogueTransformer> diagTransformers) {
 		this(createChainedDialogueTransformer(diagTransformers));
 	}
 
@@ -63,7 +62,7 @@ public class ChainedEventDialogueTransformer implements EventDialogueTransformer
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#equals(java.lang.Object)
 	 */
 	@Override
@@ -90,7 +89,7 @@ public class ChainedEventDialogueTransformer implements EventDialogueTransformer
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#hashCode()
 	 */
 	@Override
@@ -103,7 +102,7 @@ public class ChainedEventDialogueTransformer implements EventDialogueTransformer
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#toString()
 	 */
 	@Override

@@ -16,8 +16,6 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags;
 
-import java.util.function.Function;
-
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -33,7 +31,7 @@ public final class CachingEventDialogueTransformer implements EventDialogueTrans
 
 	private final LoadingCache<EventDialogue, EventDialogue> transformedDiags;
 
-	public CachingEventDialogueTransformer(final Function<? super EventDialogue, EventDialogue> decorated) {
+	public CachingEventDialogueTransformer(final EventDialogueTransformer decorated) {
 		this(CacheBuilder.newBuilder().weakKeys().softValues().build(CacheLoader.from(decorated::apply)));
 	}
 
