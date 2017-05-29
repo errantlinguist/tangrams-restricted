@@ -25,9 +25,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.NavigableSet;
 import java.util.OptionalInt;
+import java.util.TreeSet;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -82,6 +85,34 @@ public final class CombininingBatchJobTestWriter implements Consumer<BatchJobSum
 				return Option.builder(optName).longOpt("outpath").desc("The path to write the data to.").hasArg()
 						.argName("path").type(File.class).required().build();
 			}
+		},
+		TOKENIZERS("to") {
+			@Override
+			public Option get() {
+				return Option.builder(optName).longOpt("tokenizers").desc("A list of tokenization method(s) to use.")
+						.hasArgs().argName("name").build();
+			}
+		},
+		TOKEN_FILTERS("f") {
+			@Override
+			public Option get() {
+				return Option.builder(optName).longOpt("token-filters")
+						.desc("A list of token filtering method(s) to use.").hasArgs().argName("name").build();
+			}
+		},
+		UTT_FILTERS("u") {
+			@Override
+			public Option get() {
+				return Option.builder(optName).longOpt("utt-filters")
+						.desc("A list of utterance filtering method(s) to use.").hasArgs().argName("name").build();
+			}
+		},
+		TRAINING("tr") {
+			@Override
+			public Option get() {
+				return Option.builder(optName).longOpt("training").desc("A list of training method(s) to use.")
+						.hasArgs().argName("name").build();
+			}
 		};
 
 		private static final Options OPTIONS = createOptions();
@@ -99,9 +130,45 @@ public final class CombininingBatchJobTestWriter implements Consumer<BatchJobSum
 				result = OptionalInt.empty();
 			} else {
 				final int val = optVal.intValue();
-				LOGGER.info("Will run {} training/testing iteration(s).", val);
 				result = OptionalInt.of(val);
 			}
+			return result;
+		}
+
+		private static NavigableSet<TokenFiltering> parseTokenFilteringMethods(final CommandLine cl) {
+			final String[] names = cl.getOptionValues(Parameter.TOKEN_FILTERS.optName);
+			final Stream<TokenFiltering> insts = names == null ? Arrays.stream(TokenFiltering.values())
+					: Arrays.stream(names).map(TokenFiltering::valueOf);
+			final NavigableSet<TokenFiltering> result = new TreeSet<>(Comparator.comparing(TokenFiltering::getKeyName));
+			insts.forEach(result::add);
+			return result;
+		}
+
+		private static NavigableSet<Tokenization> parseTokenizationMethods(final CommandLine cl) {
+			final String[] names = cl.getOptionValues(Parameter.TOKENIZERS.optName);
+			final Stream<Tokenization> insts = names == null ? Arrays.stream(Tokenization.values())
+					: Arrays.stream(names).map(Tokenization::valueOf);
+			final NavigableSet<Tokenization> result = new TreeSet<>(Comparator.comparing(Tokenization::getKeyName));
+			insts.forEach(result::add);
+			return result;
+		}
+
+		private static NavigableSet<Training> parseTrainingMethods(final CommandLine cl) {
+			final String[] names = cl.getOptionValues(Parameter.TRAINING.optName);
+			final Stream<Training> insts = names == null ? Arrays.stream(Training.values())
+					: Arrays.stream(names).map(Training::valueOf);
+			final NavigableSet<Training> result = new TreeSet<>(Comparator.comparing(Training::getKeyName));
+			insts.forEach(result::add);
+			return result;
+		}
+
+		private static NavigableSet<UtteranceFiltering> parseUttFilteringMethods(final CommandLine cl) {
+			final String[] names = cl.getOptionValues(Parameter.UTT_FILTERS.optName);
+			final Stream<UtteranceFiltering> insts = names == null ? Arrays.stream(UtteranceFiltering.values())
+					: Arrays.stream(names).map(UtteranceFiltering::valueOf);
+			final NavigableSet<UtteranceFiltering> result = new TreeSet<>(
+					Comparator.comparing(UtteranceFiltering::getKeyName));
+			insts.forEach(result::add);
 			return result;
 		}
 
@@ -149,7 +216,7 @@ public final class CombininingBatchJobTestWriter implements Consumer<BatchJobSum
 					final OptionalInt optIterCount = Parameter.parseIterCount(cl);
 					if (optIterCount.isPresent()) {
 						final int iterCount = optIterCount.getAsInt();
-						LOGGER.info("Will set iteration count for all tests to {}.", iterCount);
+						LOGGER.info("Will run {} training/testing iteration(s).", iterCount);
 						testerConfigurator = tester -> tester.setIterCount(iterCount);
 					} else {
 						testerConfigurator = tester -> {
@@ -160,6 +227,14 @@ public final class CombininingBatchJobTestWriter implements Consumer<BatchJobSum
 				final Path outdir = ((File) cl.getParsedOptionValue(Parameter.OUTPATH.optName)).toPath();
 				LOGGER.info("Will write data to \"{}\".", outdir);
 
+				final NavigableSet<UtteranceFiltering> uttFilteringMethods = Parameter.parseUttFilteringMethods(cl);
+				LOGGER.info("Utterance filtering methods: {}", uttFilteringMethods);
+				final NavigableSet<Tokenization> tokenizationMethods = Parameter.parseTokenizationMethods(cl);
+				LOGGER.info("Tokenization methods: {}", tokenizationMethods);
+				final NavigableSet<TokenFiltering> tokenFilteringMethods = Parameter.parseTokenFilteringMethods(cl);
+				LOGGER.info("Token filtering methods: {}", tokenFilteringMethods);
+				final NavigableSet<Training> trainingMethods = Parameter.parseTrainingMethods(cl);
+				LOGGER.info("Training methods: {}", trainingMethods);
 				final ExecutorService executor = createExecutorService();
 				try {
 					final Future<Map<SessionDataManager, Path>> allSessionDataFuture = executor
@@ -170,8 +245,7 @@ public final class CombininingBatchJobTestWriter implements Consumer<BatchJobSum
 						final CombiningBatchJobTester tester = new CombiningBatchJobTester(executor, appCtx, writer,
 								testerConfigurator);
 						final CombiningBatchJobTester.Input input = new CombiningBatchJobTester.Input(
-								Arrays.asList(UtteranceFiltering.values()), Arrays.asList(Tokenization.values()),
-								Arrays.asList(TokenFiltering.values()), Arrays.asList(Training.values()),
+								uttFilteringMethods, tokenizationMethods, tokenFilteringMethods, trainingMethods,
 								allSessionDataFuture.get());
 						tester.accept(input);
 					}
