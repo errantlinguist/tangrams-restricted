@@ -35,7 +35,7 @@ public final class DuplicateTokenFilteringEventDialogueTransformer
 		final List<String> oldTokens = utt.getTokens();
 		final Stream<String> newTokens = oldTokens.stream().distinct();
 		final String[] newTokenArr = newTokens.toArray(String[]::new);
-		assert newTokenArr.length > 1;
+		assert newTokenArr.length > 0;
 		return Stream.of(new Utterance(utt.getSegmentId(), utt.getSpeakerId(), Arrays.asList(newTokenArr),
 				utt.getStartTime(), utt.getEndTime()));
 	}
