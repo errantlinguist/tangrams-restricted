@@ -38,17 +38,17 @@ import edu.stanford.nlp.pipeline.StanfordCoreNLP;
  *
  */
 @RunWith(Theories.class)
-public final class PhraseExtractingTokenizerTest {
+public final class PhraseExtractingParsingTokenizerTest {
 
 	@DataPoints
 	public static final Collection<Entry<String, List<String>>> INPUT_EXPECTED_OUTPUTS = createInputExpectedOutputMap()
 			.entrySet();
 
-	private static final PhraseExtractingTokenizer TEST_INST;
+	private static final PhraseExtractingParsingTokenizer TEST_INST;
 
 	static {
 		final StanfordCoreNLP annnotator = StanfordCoreNLPConfigurationVariant.TOKENIZING_LEMMATIZING_PARSING.get();
-		TEST_INST = new PhraseExtractingTokenizer(annnotator, subTree -> {
+		TEST_INST = new PhraseExtractingParsingTokenizer(annnotator, subTree -> {
 			final Label label = subTree.label();
 			return label == null ? false : "NP".equals(label.value());
 		});

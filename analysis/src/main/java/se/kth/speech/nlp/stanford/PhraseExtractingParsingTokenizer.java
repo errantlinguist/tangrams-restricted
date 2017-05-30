@@ -36,17 +36,17 @@ import edu.stanford.nlp.util.CoreMap;
  * @since Apr 14, 2017
  *
  */
-public final class PhraseExtractingTokenizer extends AbstractTokenizer {
+public final class PhraseExtractingParsingTokenizer extends AbstractTokenizer {
 
 	private final Predicate<Tree> subTreeBranchPruningPositiveFilter;
 
 	private final Predicate<? super Tree> subTreeMatcher;
 
-	public PhraseExtractingTokenizer(final Annotator annotator, final Predicate<? super Tree> subTreeMatcher) {
+	public PhraseExtractingParsingTokenizer(final Annotator annotator, final Predicate<? super Tree> subTreeMatcher) {
 		this(annotator, subTreeMatcher, subTreeBranch -> true);
 	}
 
-	public PhraseExtractingTokenizer(final Annotator annotator, final Predicate<? super Tree> subTreeMatcher,
+	public PhraseExtractingParsingTokenizer(final Annotator annotator, final Predicate<? super Tree> subTreeMatcher,
 			final Predicate<Tree> subTreeBranchPruningPositiveFilter) {
 		super(annotator);
 		this.subTreeMatcher = subTreeMatcher;
