@@ -18,22 +18,14 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import edu.stanford.nlp.ling.Label;
-import edu.stanford.nlp.trees.CollinsHeadFinder;
-import edu.stanford.nlp.trees.HeadFinder;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.ChainedEventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.DuplicateTokenFilteringEventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EventDialogueTransformer;
@@ -41,12 +33,8 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.TokenFilteringEventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.TokenizingEventDialogueTransformer;
 import se.kth.speech.nlp.Disfluencies;
-import se.kth.speech.nlp.EnglishLocationalPrepositions;
-import se.kth.speech.nlp.PatternTokenizer;
 import se.kth.speech.nlp.SnowballPorter2EnglishStopwords;
 import se.kth.speech.nlp.stanford.Lemmatizer;
-import se.kth.speech.nlp.stanford.PhrasalHeadFilteringPredicate;
-import se.kth.speech.nlp.stanford.PhraseExtractingParsingTokenizer;
 import se.kth.speech.nlp.stanford.StanfordCoreNLPConfigurationVariant;
 import se.kth.speech.nlp.stanford.Tokenizer;
 
@@ -77,13 +65,31 @@ enum Tokenization implements Supplier<EventDialogueTransformer>, HasAbbreviation
 			return "lemmatized";
 		}
 	},
+	NPS_ONLY {
+
+		@Override
+		public ChainedEventDialogueTransformer get() {
+			final FallbackTokenizingEventDialogueTransformer npWhitelistingTokenizer = ParsingTokenization.NP_WHITELISTING
+					.get();
+			return new ChainedEventDialogueTransformer(
+					Arrays.asList(FILLER_REMOVING_DIAG_TRANSFORMER, npWhitelistingTokenizer));
+		}
+
+		@Override
+		public String getAbbreviation() {
+			final Stream.Builder<String> resultBuilder = Stream.builder();
+			PARSING_GARBAGE_TOKEN_REMOVING_DIAG_TRANSFORMERS.stream().map(Entry::getKey).forEachOrdered(resultBuilder);
+			resultBuilder.add(ParsingTokenization.NP_WHITELISTING.getAbbreviation());
+			return resultBuilder.build().collect(TokenizationAbbreviations.JOINER);
+		}
+	},
 	NPS_WITHOUT_PPS {
 
 		@Override
 		public ChainedEventDialogueTransformer get() {
-			final FallbackTokenizingEventDialogueTransformer npWhitelistingTokenizer = ParsingTokenizer.NP_WHITELISTING
+			final FallbackTokenizingEventDialogueTransformer npWhitelistingTokenizer = ParsingTokenization.NP_WHITELISTING
 					.get();
-			final FallbackTokenizingEventDialogueTransformer ppBlacklistingTokenizer = ParsingTokenizer.PP_BLACKLISTING
+			final FallbackTokenizingEventDialogueTransformer ppBlacklistingTokenizer = ParsingTokenization.PP_BLACKLISTING
 					.get();
 			return new ChainedEventDialogueTransformer(
 					Arrays.asList(FILLER_REMOVING_DIAG_TRANSFORMER, npWhitelistingTokenizer, ppBlacklistingTokenizer));
@@ -93,16 +99,16 @@ enum Tokenization implements Supplier<EventDialogueTransformer>, HasAbbreviation
 		public String getAbbreviation() {
 			final Stream.Builder<String> resultBuilder = Stream.builder();
 			PARSING_GARBAGE_TOKEN_REMOVING_DIAG_TRANSFORMERS.stream().map(Entry::getKey).forEachOrdered(resultBuilder);
-			resultBuilder.add(ParsingTokenizer.NP_WHITELISTING.getAbbreviation());
-			resultBuilder.add(ParsingTokenizer.PP_BLACKLISTING.getAbbreviation());
-			return resultBuilder.build().collect(TOKENIZER_ABBREV_JOINER);
+			resultBuilder.add(ParsingTokenization.NP_WHITELISTING.getAbbreviation());
+			resultBuilder.add(ParsingTokenization.PP_BLACKLISTING.getAbbreviation());
+			return resultBuilder.build().collect(TokenizationAbbreviations.JOINER);
 		}
 	},
 	PP_REMOVER {
 
 		@Override
 		public ChainedEventDialogueTransformer get() {
-			final FallbackTokenizingEventDialogueTransformer tokenizer = ParsingTokenizer.PP_BLACKLISTING.get();
+			final FallbackTokenizingEventDialogueTransformer tokenizer = ParsingTokenization.PP_BLACKLISTING.get();
 			return new ChainedEventDialogueTransformer(Arrays.asList(FILLER_REMOVING_DIAG_TRANSFORMER, tokenizer));
 		}
 
@@ -110,61 +116,14 @@ enum Tokenization implements Supplier<EventDialogueTransformer>, HasAbbreviation
 		public String getAbbreviation() {
 			final Stream.Builder<String> resultBuilder = Stream.builder();
 			PARSING_GARBAGE_TOKEN_REMOVING_DIAG_TRANSFORMERS.stream().map(Entry::getKey).forEachOrdered(resultBuilder);
-			resultBuilder.add(ParsingTokenizer.PP_BLACKLISTING.getAbbreviation());
-			return resultBuilder.build().collect(TOKENIZER_ABBREV_JOINER);
+			resultBuilder.add(ParsingTokenization.PP_BLACKLISTING.getAbbreviation());
+			return resultBuilder.build().collect(TokenizationAbbreviations.JOINER);
 		}
 	};
 
-	private enum ParsingTokenizer implements Supplier<FallbackTokenizingEventDialogueTransformer>, HasAbbreviation {
-		NP_WHITELISTING {
-
-			@Override
-			public FallbackTokenizingEventDialogueTransformer get() {
-				return new FallbackTokenizingEventDialogueTransformer(new PhraseExtractingParsingTokenizer(
-						StanfordCoreNLPConfigurationVariant.TOKENIZING_LEMMATIZING_PARSING.get(), subTree -> {
-							final Label label = subTree.label();
-							return label == null ? false : "NP".equals(label.value());
-						}), FALLBACK_TOKENIZER);
-			}
-
-			@Override
-			public String getAbbreviation() {
-				return "onlyNPs";
-			}
-
-		},
-		PP_BLACKLISTING {
-
-			@Override
-			public FallbackTokenizingEventDialogueTransformer get() {
-				final Map<String, Set<List<String>>> labelHeadBlacklists = Collections.singletonMap("PP",
-						EnglishLocationalPrepositions.get());
-				final PhrasalHeadFilteringPredicate pred = new PhrasalHeadFilteringPredicate(labelHeadBlacklists,
-						HEAD_FINDER);
-				return new FallbackTokenizingEventDialogueTransformer(
-						new se.kth.speech.nlp.stanford.ParsingTokenizer(
-								StanfordCoreNLPConfigurationVariant.TOKENIZING_LEMMATIZING_PARSING.get(), pred),
-						FALLBACK_TOKENIZER);
-			}
-
-			@Override
-			public String getAbbreviation() {
-				return "noPPs";
-			}
-
-		};
-
-	}
-
-	private static final Function<String, List<String>> FALLBACK_TOKENIZER = new PatternTokenizer();
-
 	private static final TokenFilteringEventDialogueTransformer FILLER_REMOVING_DIAG_TRANSFORMER;
 
-	private static final HeadFinder HEAD_FINDER = new CollinsHeadFinder();
-
 	private static final List<Entry<String, EventDialogueTransformer>> PARSING_GARBAGE_TOKEN_REMOVING_DIAG_TRANSFORMERS;
-
-	private static final Collector<CharSequence, ?, String> TOKENIZER_ABBREV_JOINER = Collectors.joining(",");
 
 	static {
 		final Set<String> fillerWords = SnowballPorter2EnglishStopwords.Variant.FILLERS.get();
