@@ -148,4 +148,16 @@ public class ListSubsequencesTest {
 		Assert.assertEquals(expected, actual);
 	}
 
+	/**
+	 * Test method for
+	 * {@link se.kth.speech.ListSubsequences#createSubsequenceList(java.util.List, int)}.
+	 */
+	@Test
+	public void testCreateSubsequenceListSameLength() {
+		final List<String> input = Arrays.asList("I", "can't", "do", "it", "well");
+		final List<List<String>> expected = Arrays.asList(input);
+		final List<List<String>> actual = ListSubsequences.createSubsequenceList(input, input.size());
+		Assert.assertEquals(expected, actual);
+	}
+
 }

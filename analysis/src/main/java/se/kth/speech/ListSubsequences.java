@@ -34,17 +34,18 @@ public final class ListSubsequences {
 			result = list;
 		} else {
 			result = new ArrayList<>(list.size());
-			final int subseqLength = list.size() / 2;
-			final List<List<T>> subseqs = createSubsequenceList(list, subseqLength);
-			System.out.println("subseqLength: " + subseqLength + ", subseqs: " + subseqs);
-			final List<List<T>> deduplicatedSubseqs = createDeduplicatedAdjacentSubsequenceListFromListOfSubsequences(
-					subseqs);
-			System.out.println("subseqLength: " + subseqLength + ", deduplicatedSubseqs: " + deduplicatedSubseqs);
-			for (final List<T> subseq : deduplicatedSubseqs) {
-				System.out.println("subseq being processed: " + subseq);
-				final List<T> dedup = createDeduplicatedAdjacentSubsequenceList(subseq);
-				System.out.println("dedupd subseq: " + dedup);
-				result.addAll(dedup);
+			for (int subseqLength = list.size(); subseqLength > 0; --subseqLength) {
+				final List<List<T>> subseqs = createSubsequenceList(list, subseqLength);
+				System.out.println("subseqLength: " + subseqLength + ", subseqs: " + subseqs);
+				final List<List<T>> deduplicatedSubseqs = createDeduplicatedAdjacentSubsequenceListFromListOfSubsequences(
+						subseqs);
+				System.out.println("subseqLength: " + subseqLength + ", deduplicatedSubseqs: " + deduplicatedSubseqs);
+				for (final List<T> subseq : deduplicatedSubseqs) {
+					System.out.println("subseq being processed: " + subseq);
+					final List<T> dedup = createDeduplicatedAdjacentSubsequenceList(subseq);
+					System.out.println("dedupd subseq: " + dedup);
+					result.addAll(dedup);
+				}
 			}
 			// TODO: Fix
 		}
@@ -72,7 +73,7 @@ public final class ListSubsequences {
 	public static <T> List<List<T>> createSubsequenceList(final List<T> list, final int subseqLength) {
 		final List<List<T>> result = new ArrayList<>(Math.max(list.size() / subseqLength, 1));
 		final int maxSubseqStart = list.size() - subseqLength;
-		int lastSubseqEnd = -1;
+		int lastSubseqEnd = 0;
 		for (int subseqStart = 0; subseqStart < maxSubseqStart; subseqStart += subseqLength) {
 			final int subseqEnd = subseqStart + subseqLength;
 			final List<T> subseq = list.subList(subseqStart, subseqEnd);
