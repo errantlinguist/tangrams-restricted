@@ -86,23 +86,6 @@ public final class SnowballPorter2EnglishStopwords {
 	 * <strong>NOTE:</strong> All words in the stoplist are lowercase (or at
 	 * least they should be).
 	 *
-	 * @return A new {@List} of (lowercase) strings representing the stoplist.
-	 * @throws IOException
-	 *             If an error occurs while reading the stoplist file.
-	 */
-	public static List<String> loadStopwordList(final String[] resLocs) throws IOException {
-		final List<String> result = new ArrayList<>(16 * resLocs.length);
-		for (final String resLoc : resLocs) {
-			load(resLoc, result);
-		}
-		LOGGER.debug("Read stopword list of size {} from {}.", result.size(), Arrays.toString(resLocs));
-		return result;
-	}
-
-	/**
-	 * <strong>NOTE:</strong> All words in the stoplist are lowercase (or at
-	 * least they should be).
-	 *
 	 * @return A new {@Set} of (lowercase) strings representing the stoplist.
 	 */
 	public static Set<String> loadStopwordSet(final Collection<Variant> variantsToUnify) {
@@ -167,6 +150,23 @@ public final class SnowballPorter2EnglishStopwords {
 				new InputStreamReader(SnowballPorter2EnglishStopwords.class.getResourceAsStream(resLoc)))) {
 			reader.lines().flatMap(SnowballPorter2EnglishStopwords::parse).forEach(coll::add);
 		}
+	}
+
+	/**
+	 * <strong>NOTE:</strong> All words in the stoplist are lowercase (or at
+	 * least they should be).
+	 *
+	 * @return A new {@List} of (lowercase) strings representing the stoplist.
+	 * @throws IOException
+	 *             If an error occurs while reading the stoplist file.
+	 */
+	private static List<String> loadStopwordList(final String[] resLocs) throws IOException {
+		final List<String> result = new ArrayList<>(16 * resLocs.length);
+		for (final String resLoc : resLocs) {
+			load(resLoc, result);
+		}
+		LOGGER.debug("Read stopword list of size {} from {}.", result.size(), Arrays.toString(resLocs));
+		return result;
 	}
 
 	/**
