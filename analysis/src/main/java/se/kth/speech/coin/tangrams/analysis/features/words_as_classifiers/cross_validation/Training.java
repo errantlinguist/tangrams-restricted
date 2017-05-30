@@ -60,7 +60,7 @@ enum Training implements Function<TrainingContext, Entry<TrainingInstancesFactor
 		}
 
 	},
-	SENTIMENT_ANALYZING("sentiment"){
+	SENTIMENT_ANALYZING("sentiment") {
 		@Override
 		public Entry<TrainingInstancesFactory, Integer> apply(final TrainingContext trainingCtx) {
 			final ApplicationContext appCtx = trainingCtx.getAppCtx();
@@ -69,10 +69,13 @@ enum Training implements Function<TrainingContext, Entry<TrainingInstancesFactor
 			final EntityFeatureExtractionContextFactory extCtxFactory = appCtx
 					.getBean(EntityFeatureExtractionContextFactory.class);
 			final SentimentAnalyzingInstancesFactory instsFactory = new SentimentAnalyzingInstancesFactory(
-					entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory, StanfordCoreNLPConfigurationVariant.TOKENIZING_PARSING_SENTIMENT.get());
+					entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory,
+					StanfordCoreNLPConfigurationVariant.TOKENIZING_PARSING_SENTIMENT.get(), ESTIMATED_UNIQUE_UTT_COUNT);
 			return new MutablePair<>(instsFactory, 1);
-		}	
+		}
 	};
+
+	private static final int ESTIMATED_UNIQUE_UTT_COUNT = 2000;
 
 	private static final Random RND = new Random(1);
 

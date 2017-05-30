@@ -104,14 +104,12 @@ public final class SentimentAnalyzingInstancesFactory extends AbstractSizeEstima
 
 	public SentimentAnalyzingInstancesFactory(final EntityInstanceAttributeContext entityInstAttrCtx,
 			final EventDialogueTransformer diagTransformer, final EntityFeatureExtractionContextFactory extCtxFactory,
-			final Annotator annotator) {
+			final Annotator annotator, final int expectedUniqueUttCount) {
 		super(entityInstAttrCtx);
 		this.diagTransformer = diagTransformer;
 		this.extCtxFactory = extCtxFactory;
 		this.annotator = annotator;
-
-		final int estimatedUniqueUttCount = 1000;
-		uttWeightCache = new Object2DoubleOpenHashMap<>(estimatedUniqueUttCount);
+		uttWeightCache = new Object2DoubleOpenHashMap<>(expectedUniqueUttCount);
 	}
 
 	private void addWeightedExamples(final String wordClass, final WordClassificationData trainingData,
