@@ -35,7 +35,7 @@ enum ParsingTokenization implements Supplier<TokenizingEventDialogueTransformer>
 		@Override
 		public TokenizingEventDialogueTransformer get() {
 			return new TokenizingEventDialogueTransformer(new PhraseExtractingParsingTokenizer(
-					StanfordCoreNLPConfigurationVariant.TOKENIZING_LEMMATIZING_PARSING.get(),
+					StanfordCoreNLPConfigurationVariant.TOKENIZING_PARSING.get(),
 					NP_WHITELISTING_PHRASE_MATCHER));
 		}
 
@@ -50,7 +50,7 @@ enum ParsingTokenization implements Supplier<TokenizingEventDialogueTransformer>
 		@Override
 		public TokenizingEventDialogueTransformer get() {
 			return new TokenizingEventDialogueTransformer(new PhraseExtractingParsingTokenizer(
-					StanfordCoreNLPConfigurationVariant.TOKENIZING_LEMMATIZING_PARSING.get(),
+					StanfordCoreNLPConfigurationVariant.TOKENIZING_PARSING.get(),
 					NP_WHITELISTING_PHRASE_MATCHER, LOCATIONAL_PP_PRUNING_MATCHER));
 		}
 
@@ -65,7 +65,7 @@ enum ParsingTokenization implements Supplier<TokenizingEventDialogueTransformer>
 		@Override
 		public TokenizingEventDialogueTransformer get() {
 			return new TokenizingEventDialogueTransformer(new se.kth.speech.nlp.stanford.ParsingTokenizer(
-					StanfordCoreNLPConfigurationVariant.TOKENIZING_LEMMATIZING_PARSING.get(),
+					StanfordCoreNLPConfigurationVariant.TOKENIZING_PARSING.get(),
 					LOCATIONAL_PP_PRUNING_MATCHER));
 		}
 

@@ -58,14 +58,26 @@ public enum StanfordCoreNLPConfigurationVariant implements Supplier<StanfordCore
 			return result;
 		}
 	},
-	TOKENIZING_LEMMATIZING_PARSING {
+	TOKENIZING_PARSING {
 
 		@Override
 		protected Properties createProps() {
 			final Properties result = createDefaultProps();
 			// https://stanfordnlp.github.io/CoreNLP/annotators.html
 			final Stream<String> annotatorNames = Stream.of(Annotator.STANFORD_TOKENIZE, Annotator.STANFORD_SSPLIT,
-					Annotator.STANFORD_POS, Annotator.STANFORD_LEMMA, Annotator.STANFORD_PARSE);
+					Annotator.STANFORD_POS, Annotator.STANFORD_PARSE);
+			result.setProperty("annotators", annotatorNames.collect(OPTION_MULTIVALUE_DELIMITER));
+			return result;
+		}
+	},
+	TOKENIZING_PARSING_SENTIMENT {
+
+		@Override
+		protected Properties createProps() {
+			final Properties result = createDefaultProps();
+			// https://stanfordnlp.github.io/CoreNLP/annotators.html
+			final Stream<String> annotatorNames = Stream.of(Annotator.STANFORD_TOKENIZE, Annotator.STANFORD_SSPLIT,
+					Annotator.STANFORD_POS, Annotator.STANFORD_PARSE, Annotator.STANFORD_SENTIMENT);
 			result.setProperty("annotators", annotatorNames.collect(OPTION_MULTIVALUE_DELIMITER));
 			return result;
 		}
@@ -94,6 +106,8 @@ public enum StanfordCoreNLPConfigurationVariant implements Supplier<StanfordCore
 		// "edu/stanford/nlp/models/pos-tagger/english-caseless-left3words-distsim.tagger");
 		result.setProperty("pos.model",
 				"edu/stanford/nlp/models/pos-tagger/english-bidirectional/english-bidirectional-distsim.tagger");
+		// https://stanfordnlp.github.io/CoreNLP/sentiment.html
+		result.setProperty("sentiment.model", "edu/stanford/nlp/models/sentiment/sentiment.binary.ser.gz");
 		// https://stanfordnlp.github.io/CoreNLP/ssplit.html
 		result.setProperty("ssplit.isOneSentence", "true");
 		// https://stanfordnlp.github.io/CoreNLP/tokenize.html

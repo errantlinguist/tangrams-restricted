@@ -47,7 +47,7 @@ public final class PhraseExtractingParsingTokenizerTest {
 	private static final PhraseExtractingParsingTokenizer TEST_INST;
 
 	static {
-		final StanfordCoreNLP annnotator = StanfordCoreNLPConfigurationVariant.TOKENIZING_LEMMATIZING_PARSING.get();
+		final StanfordCoreNLP annnotator = StanfordCoreNLPConfigurationVariant.TOKENIZING_PARSING.get();
 		TEST_INST = new PhraseExtractingParsingTokenizer(annnotator, subTree -> {
 			final Label label = subTree.label();
 			return label == null ? false : "NP".equals(label.value());

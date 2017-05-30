@@ -27,7 +27,9 @@ import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionCont
 import se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttributeContext;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.OnePositiveMaximumNegativeInstancesFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.OnePositiveOneNegativeInstanceFactory;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.SentimentAnalyzingInstancesFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.TrainingInstancesFactory;
+import se.kth.speech.nlp.stanford.StanfordCoreNLPConfigurationVariant;
 
 enum Training implements Function<TrainingContext, Entry<TrainingInstancesFactory, Integer>>, HasAbbreviation {
 	ALL_NEG("allNeg") {
@@ -57,6 +59,19 @@ enum Training implements Function<TrainingContext, Entry<TrainingInstancesFactor
 			return new MutablePair<>(instsFactory, 10);
 		}
 
+	},
+	SENTIMENT_ANALYZING("sentiment"){
+		@Override
+		public Entry<TrainingInstancesFactory, Integer> apply(final TrainingContext trainingCtx) {
+			final ApplicationContext appCtx = trainingCtx.getAppCtx();
+			final EntityInstanceAttributeContext entityInstAttrCtx = appCtx
+					.getBean(EntityInstanceAttributeContext.class);
+			final EntityFeatureExtractionContextFactory extCtxFactory = appCtx
+					.getBean(EntityFeatureExtractionContextFactory.class);
+			final SentimentAnalyzingInstancesFactory instsFactory = new SentimentAnalyzingInstancesFactory(
+					entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory, StanfordCoreNLPConfigurationVariant.TOKENIZING_PARSING_SENTIMENT.get());
+			return new MutablePair<>(instsFactory, 1);
+		}	
 	};
 
 	private static final Random RND = new Random(1);
