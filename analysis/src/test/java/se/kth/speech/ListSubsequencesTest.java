@@ -80,8 +80,32 @@ public final class ListSubsequencesTest {
 	 * {@link se.kth.speech.ListSubsequences#createDeduplicatedAdjacentSubsequenceList(java.util.List)}.
 	 */
 	@Test
-	public void testCreateDeduplicatedAdjacentSubsequenceListNegative() {
+	public void testCreateDeduplicatedAdjacentSubsequenceListNegative1() {
 		final List<String> input = Arrays.asList("I", "can't");
+		final List<String> expected = input;
+		final List<String> actual = ListSubsequences.createDeduplicatedAdjacentSubsequenceList(input);
+		Assert.assertEquals(expected, actual);
+	}
+
+	/**
+	 * Test method for
+	 * {@link se.kth.speech.ListSubsequences#createDeduplicatedAdjacentSubsequenceList(java.util.List)}.
+	 */
+	@Test
+	public void testCreateDeduplicatedAdjacentSubsequenceListNegative2() {
+		final List<String> input = Arrays.asList("uh", "you", "should", "explain");
+		final List<String> expected = input;
+		final List<String> actual = ListSubsequences.createDeduplicatedAdjacentSubsequenceList(input);
+		Assert.assertEquals(expected, actual);
+	}
+
+	/**
+	 * Test method for
+	 * {@link se.kth.speech.ListSubsequences#createDeduplicatedAdjacentSubsequenceList(java.util.List)}.
+	 */
+	@Test
+	public void testCreateDeduplicatedAdjacentSubsequenceListNegativeEmpty() {
+		final List<String> input = Collections.emptyList();
 		final List<String> expected = input;
 		final List<String> actual = ListSubsequences.createDeduplicatedAdjacentSubsequenceList(input);
 		Assert.assertEquals(expected, actual);
