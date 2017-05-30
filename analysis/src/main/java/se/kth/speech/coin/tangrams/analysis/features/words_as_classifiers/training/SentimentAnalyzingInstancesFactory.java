@@ -76,6 +76,10 @@ public final class SentimentAnalyzingInstancesFactory extends AbstractSizeEstima
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SentimentAnalyzingInstancesFactory.class);
 
+	private static final String NEGATIVE_EXAMPLE_LABEL = Boolean.FALSE.toString();
+
+	private static final String POSITIVE_EXAMPLE_LABEL = Boolean.TRUE.toString();
+
 	private static final Object2IntMap<String> SENTIMENT_LABEL_WEIGHTS = createSentimentClassWeightMap();
 
 	/**
@@ -229,7 +233,7 @@ public final class SentimentAnalyzingInstancesFactory extends AbstractSizeEstima
 								// utterance being processed does NOT correspond
 								// to the selected entity
 								addWeightedExamples(wordClass, trainingData, trainingContexts.positive, weight,
-										Boolean.FALSE.toString());
+										NEGATIVE_EXAMPLE_LABEL);
 							});
 						} else if (firstInstructorUttSentimentRank > 0) {
 							// Use the other player's utterances which came
@@ -246,13 +250,13 @@ public final class SentimentAnalyzingInstancesFactory extends AbstractSizeEstima
 								// utterance being processed DOES correspond to
 								// the selected entity
 								addWeightedExamples(wordClass, trainingData, trainingContexts.positive,
-										firstInstructorUttSentimentRank, Boolean.TRUE.toString());
+										firstInstructorUttSentimentRank, POSITIVE_EXAMPLE_LABEL);
 								// For each entity which is NOT selected, add a
 								// negative example for this observation: The
 								// utterance being processed does NOT correspond
 								// to these non-selected entities
 								addWeightedExamples(wordClass, trainingData, trainingContexts.negative,
-										firstInstructorUttSentimentRank, Boolean.FALSE.toString());
+										firstInstructorUttSentimentRank, NEGATIVE_EXAMPLE_LABEL);
 							});
 						}
 
@@ -263,9 +267,9 @@ public final class SentimentAnalyzingInstancesFactory extends AbstractSizeEstima
 									"Processing positive observation of word class \"{}\" from instructor utterance with weight {}.",
 									wordClass, instructorObservationWeight);
 							addWeightedExamples(wordClass, trainingData, trainingContexts.positive,
-									instructorObservationWeight, Boolean.TRUE.toString());
+									instructorObservationWeight, POSITIVE_EXAMPLE_LABEL);
 							addWeightedExamples(wordClass, trainingData, trainingContexts.negative,
-									instructorObservationWeight, Boolean.FALSE.toString());
+									instructorObservationWeight, NEGATIVE_EXAMPLE_LABEL);
 						});
 					}
 				}
