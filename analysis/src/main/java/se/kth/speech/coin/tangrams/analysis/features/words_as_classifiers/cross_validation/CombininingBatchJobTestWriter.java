@@ -147,7 +147,7 @@ public final class CombininingBatchJobTestWriter implements Consumer<BatchJobSum
 			final String[] names = cl.getOptionValues(Parameter.TOKEN_FILTERS.optName);
 			final Stream<TokenFiltering> insts = names == null ? Arrays.stream(TokenFiltering.values())
 					: Arrays.stream(names).map(TokenFiltering::valueOf);
-			final NavigableSet<TokenFiltering> result = new TreeSet<>(Comparator.comparing(TokenFiltering::getKeyName));
+			final NavigableSet<TokenFiltering> result = new TreeSet<>(Comparator.comparing(TokenFiltering::getAbbreviation));
 			insts.forEach(result::add);
 			return result;
 		}
@@ -156,7 +156,7 @@ public final class CombininingBatchJobTestWriter implements Consumer<BatchJobSum
 			final String[] names = cl.getOptionValues(Parameter.TOKENIZERS.optName);
 			final Stream<Tokenization> insts = names == null ? Arrays.stream(Tokenization.values())
 					: Arrays.stream(names).map(Tokenization::valueOf);
-			final NavigableSet<Tokenization> result = new TreeSet<>(Comparator.comparing(Tokenization::getKeyName));
+			final NavigableSet<Tokenization> result = new TreeSet<>(Comparator.comparing(Tokenization::getAbbreviation));
 			insts.forEach(result::add);
 			return result;
 		}
@@ -165,7 +165,7 @@ public final class CombininingBatchJobTestWriter implements Consumer<BatchJobSum
 			final String[] names = cl.getOptionValues(Parameter.TRAINING.optName);
 			final Stream<Training> insts = names == null ? Arrays.stream(Training.values())
 					: Arrays.stream(names).map(Training::valueOf);
-			final NavigableSet<Training> result = new TreeSet<>(Comparator.comparing(Training::getKeyName));
+			final NavigableSet<Training> result = new TreeSet<>(Comparator.comparing(Training::getAbbreviation));
 			insts.forEach(result::add);
 			return result;
 		}
@@ -175,7 +175,7 @@ public final class CombininingBatchJobTestWriter implements Consumer<BatchJobSum
 			final Stream<UtteranceFiltering> insts = names == null ? Arrays.stream(UtteranceFiltering.values())
 					: Arrays.stream(names).map(UtteranceFiltering::valueOf);
 			final NavigableSet<UtteranceFiltering> result = new TreeSet<>(
-					Comparator.comparing(UtteranceFiltering::getKeyName));
+					Comparator.comparing(UtteranceFiltering::getAbbreviation));
 			insts.forEach(result::add);
 			return result;
 		}
@@ -335,10 +335,10 @@ public final class CombininingBatchJobTestWriter implements Consumer<BatchJobSum
 	}
 
 	private static Stream<String> createRowCellValues(final TestParameters testParams) {
-		final Stream<HasKeyName> nameable = Stream.of(testParams.getUttFilteringMethod(),
+		final Stream<HasAbbreviation> nameable = Stream.of(testParams.getUttFilteringMethod(),
 				testParams.getTokenizationMethod(), testParams.getTokenFilteringMethod(),
 				testParams.getTrainingMethod());
-		return nameable.map(HasKeyName::getKeyName);
+		return nameable.map(HasAbbreviation::getAbbreviation);
 	}
 
 	private static void shutdownExceptionally(final ExecutorService executor) {

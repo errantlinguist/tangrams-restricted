@@ -22,7 +22,7 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.InstructorUtteranceFilteringEventDialogueTransformer;
 
-enum UtteranceFiltering implements Supplier<EventDialogueTransformer>, HasKeyName {
+enum UtteranceFiltering implements Supplier<EventDialogueTransformer>, HasAbbreviation {
 	ALL_UTTS(new DummyEventDialogueTransformer(),
 			"allUtts"), INSTRUCTOR_UTTS(new InstructorUtteranceFilteringEventDialogueTransformer(), "instructorUtts");
 
@@ -44,7 +44,7 @@ enum UtteranceFiltering implements Supplier<EventDialogueTransformer>, HasKeyNam
 	 * @return the keyName
 	 */
 	@Override
-	public String getKeyName() {
+	public String getAbbreviation() {
 		return keyName;
 	}
 }

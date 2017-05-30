@@ -27,7 +27,7 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.
 import se.kth.speech.nlp.SnowballPorter2EnglishStopwordSetFactory;
 import se.kth.speech.nlp.SnowballPorter2EnglishStopwords;
 
-enum TokenFiltering implements Supplier<EventDialogueTransformer>, HasKeyName {
+enum TokenFiltering implements Supplier<EventDialogueTransformer>, HasAbbreviation {
 	NO_FILTER(new DummyEventDialogueTransformer(), "noFilter"), STOPWORDS_FILLERS(
 			createStopwordFilteringTransformer(EnumSet.of(SnowballPorter2EnglishStopwords.Variant.CANONICAL,
 					SnowballPorter2EnglishStopwords.Variant.FILLERS)),
@@ -68,7 +68,7 @@ enum TokenFiltering implements Supplier<EventDialogueTransformer>, HasKeyName {
 	 * @return the keyName
 	 */
 	@Override
-	public String getKeyName() {
+	public String getAbbreviation() {
 		return keyName;
 	}
 

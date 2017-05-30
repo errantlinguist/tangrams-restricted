@@ -29,7 +29,7 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.traini
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.OnePositiveOneNegativeInstanceFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.TrainingInstancesFactory;
 
-enum Training implements Function<TrainingContext, Entry<TrainingInstancesFactory, Integer>>, HasKeyName {
+enum Training implements Function<TrainingContext, Entry<TrainingInstancesFactory, Integer>>, HasAbbreviation {
 	ALL_NEG("allNeg") {
 		@Override
 		public Entry<TrainingInstancesFactory, Integer> apply(final TrainingContext trainingCtx) {
@@ -71,7 +71,7 @@ enum Training implements Function<TrainingContext, Entry<TrainingInstancesFactor
 	 * @return the keyName
 	 */
 	@Override
-	public String getKeyName() {
+	public String getAbbreviation() {
 		return keyName;
 	}
 }

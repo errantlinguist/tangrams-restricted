@@ -16,6 +16,6 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation;
 
-interface HasKeyName {
-	String getKeyName();
+interface HasAbbreviation {
+	String getAbbreviation();
 }

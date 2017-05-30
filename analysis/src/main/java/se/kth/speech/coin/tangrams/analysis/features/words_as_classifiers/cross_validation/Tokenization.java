@@ -51,7 +51,7 @@ import se.kth.speech.nlp.StanfordCoreNLPLemmatizer;
 import se.kth.speech.nlp.StanfordCoreNLPParsingTokenizer;
 import se.kth.speech.nlp.StanfordCoreNLPTokenizer;
 
-enum Tokenization implements Supplier<EventDialogueTransformer>, HasKeyName {
+enum Tokenization implements Supplier<EventDialogueTransformer>, HasAbbreviation {
 	BASIC_TOKENIZER {
 
 		@Override
@@ -61,7 +61,7 @@ enum Tokenization implements Supplier<EventDialogueTransformer>, HasKeyName {
 		}
 
 		@Override
-		public String getKeyName() {
+		public String getAbbreviation() {
 			return "tokenized";
 		}
 	},
@@ -74,7 +74,7 @@ enum Tokenization implements Supplier<EventDialogueTransformer>, HasKeyName {
 		}
 
 		@Override
-		public String getKeyName() {
+		public String getAbbreviation() {
 			return "lemmatized";
 		}
 	},
@@ -91,11 +91,11 @@ enum Tokenization implements Supplier<EventDialogueTransformer>, HasKeyName {
 		}
 
 		@Override
-		public String getKeyName() {
+		public String getAbbreviation() {
 			final Stream.Builder<String> resultBuilder = Stream.builder();
 			PARSING_GARBAGE_TOKEN_REMOVING_DIAG_TRANSFORMERS.stream().map(Entry::getKey).forEachOrdered(resultBuilder);
-			resultBuilder.add(ParsingTokenizer.NP_WHITELISTING.getKeyName());
-			resultBuilder.add(ParsingTokenizer.PP_BLACKLISTING.getKeyName());
+			resultBuilder.add(ParsingTokenizer.NP_WHITELISTING.getAbbreviation());
+			resultBuilder.add(ParsingTokenizer.PP_BLACKLISTING.getAbbreviation());
 			return resultBuilder.build().collect(TOKENIZER_KEY_JOINER);
 		}
 	},
@@ -108,15 +108,15 @@ enum Tokenization implements Supplier<EventDialogueTransformer>, HasKeyName {
 		}
 
 		@Override
-		public String getKeyName() {
+		public String getAbbreviation() {
 			final Stream.Builder<String> resultBuilder = Stream.builder();
 			PARSING_GARBAGE_TOKEN_REMOVING_DIAG_TRANSFORMERS.stream().map(Entry::getKey).forEachOrdered(resultBuilder);
-			resultBuilder.add(ParsingTokenizer.PP_BLACKLISTING.getKeyName());
+			resultBuilder.add(ParsingTokenizer.PP_BLACKLISTING.getAbbreviation());
 			return resultBuilder.build().collect(TOKENIZER_KEY_JOINER);
 		}
 	};
 
-	private enum ParsingTokenizer implements Supplier<FallbackTokenizingEventDialogueTransformer>, HasKeyName {
+	private enum ParsingTokenizer implements Supplier<FallbackTokenizingEventDialogueTransformer>, HasAbbreviation {
 		NP_WHITELISTING {
 
 			@Override
@@ -141,7 +141,7 @@ enum Tokenization implements Supplier<EventDialogueTransformer>, HasKeyName {
 			}
 
 			@Override
-			public String getKeyName() {
+			public String getAbbreviation() {
 				return "onlyNPs";
 			}
 
@@ -161,7 +161,7 @@ enum Tokenization implements Supplier<EventDialogueTransformer>, HasKeyName {
 			}
 
 			@Override
-			public String getKeyName() {
+			public String getAbbreviation() {
 				return "noPPs";
 			}
 
