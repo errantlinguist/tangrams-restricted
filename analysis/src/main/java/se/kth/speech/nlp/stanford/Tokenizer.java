@@ -14,7 +14,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech.nlp;
+package se.kth.speech.nlp.stanford;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,9 +32,9 @@ import edu.stanford.nlp.util.CoreMap;
  * @since Apr 14, 2017
  *
  */
-public final class StanfordCoreNLPTokenizer extends AbstractStanfordCoreNLPTokenizer {
+public final class Tokenizer extends AbstractTokenizer {
 
-	public StanfordCoreNLPTokenizer(final Annotator annotator) {
+	public Tokenizer(final Annotator annotator) {
 		super(annotator);
 	}
 

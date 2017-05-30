@@ -14,7 +14,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech.nlp;
+package se.kth.speech.nlp.stanford;
 
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
@@ -30,7 +30,7 @@ import edu.stanford.nlp.pipeline.StanfordCoreNLP;
  * @since 29 May 2017
  *
  */
-public enum StanfordCoreNLPConfigurationVariant implements Supplier<StanfordCoreNLP> {
+public enum PipelineConfigurationVariant implements Supplier<StanfordCoreNLP> {
 	TOKENIZING {
 
 		@Override
@@ -62,8 +62,8 @@ public enum StanfordCoreNLPConfigurationVariant implements Supplier<StanfordCore
 		}
 	};
 
-	private static final ConcurrentMap<StanfordCoreNLPConfigurationVariant, Reference<StanfordCoreNLP>> INSTANCES = new ConcurrentHashMap<>(
-			StanfordCoreNLPConfigurationVariant.values().length);
+	private static final ConcurrentMap<PipelineConfigurationVariant, Reference<StanfordCoreNLP>> INSTANCES = new ConcurrentHashMap<>(
+			PipelineConfigurationVariant.values().length);
 
 	private static Properties createDefaultProps() {
 		final Properties result = new Properties();

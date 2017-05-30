@@ -8,7 +8,7 @@
 
 	<import resource="stanford-pipeline.xml"/>
 
-	<bean id="stanford-tokenizer" class="se.kth.speech.nlp.StanfordCoreNLPTokenizer">
+	<bean id="stanford-tokenizer" class="se.kth.speech.nlp.stanford.Tokenizer">
 		<constructor-arg ref="stanford-pipeline" />
 	</bean>
 

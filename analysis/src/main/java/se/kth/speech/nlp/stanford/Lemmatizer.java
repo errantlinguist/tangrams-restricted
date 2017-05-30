@@ -14,43 +14,28 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech.nlp;
+package se.kth.speech.nlp.stanford;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
-import java.util.function.Predicate;
 
+import edu.stanford.nlp.ling.CoreAnnotations.LemmaAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.SentencesAnnotation;
+import edu.stanford.nlp.ling.CoreAnnotations.TokensAnnotation;
 import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.pipeline.Annotation;
 import edu.stanford.nlp.pipeline.Annotator;
-import edu.stanford.nlp.trees.Tree;
-import edu.stanford.nlp.trees.TreeCoreAnnotations.TreeAnnotation;
 import edu.stanford.nlp.util.CoreMap;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
- * @since Apr 14, 2017
+ * @since May 22, 2017
  *
  */
-public final class StanfordCoreNLPParsingTokenizer extends AbstractStanfordCoreNLPTokenizer {
+public final class Lemmatizer extends AbstractTokenizer {
 
-	private static final Function<CoreLabel, String> DEFAULT_LABEL_TOKEN_EXTRACTOR = CoreLabel::word;
-
-	private final Function<? super CoreLabel, String> labelTokenExtractor;
-
-	private final Predicate<Tree> treePruningPositiveFilter;
-
-	public StanfordCoreNLPParsingTokenizer(final Annotator annotator, final Predicate<Tree> treePruningPositiveFilter) {
-		this(annotator, treePruningPositiveFilter, DEFAULT_LABEL_TOKEN_EXTRACTOR);
-	}
-
-	public StanfordCoreNLPParsingTokenizer(final Annotator annotator, final Predicate<Tree> treePruningPositiveFilter,
-			final Function<? super CoreLabel, String> labelTokenExtractor) {
+	public Lemmatizer(final Annotator annotator) {
 		super(annotator);
-		this.treePruningPositiveFilter = treePruningPositiveFilter;
-		this.labelTokenExtractor = labelTokenExtractor;
 	}
 
 	/*
@@ -66,16 +51,12 @@ public final class StanfordCoreNLPParsingTokenizer extends AbstractStanfordCoreN
 		final ArrayList<String> result = new ArrayList<>(16 * sents.size());
 		// traversing the words in the current sentence
 		for (final CoreMap sent : sents) {
-			// this is the parse tree of the current sentence
-			final Tree tree = sent.get(TreeAnnotation.class);
-			final Tree prunedTree = tree.prune(treePruningPositiveFilter);
-			if (prunedTree != null) {
-				final List<CoreLabel> coreLabels = prunedTree.taggedLabeledYield();
-				result.ensureCapacity(result.size() + coreLabels.size());
-				for (final CoreLabel coreLabel : coreLabels) {
-					final String token = labelTokenExtractor.apply(coreLabel);
-					result.add(token);
-				}
+			// a CoreLabel is a CoreMap with additional token-specific methods
+			final List<CoreLabel> tokens = sent.get(TokensAnnotation.class);
+			result.ensureCapacity(result.size() + tokens.size());
+			for (final CoreLabel token : tokens) {
+				final String lemma = token.get(LemmaAnnotation.class);
+				result.add(lemma);
 			}
 		}
 		return result;

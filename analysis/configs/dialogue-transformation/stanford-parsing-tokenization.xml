@@ -8,10 +8,10 @@
 
 	<import resource="stanford-pipeline.xml"/>
 
-	<bean id="stanford-parsing-tokenizer" class="se.kth.speech.nlp.StanfordCoreNLPParsingTokenizer">
+	<bean id="stanford-parsing-tokenizer" class="se.kth.speech.nlp.stanford.ParsingTokenizer">
 		<constructor-arg ref="stanford-pipeline" />
 		<constructor-arg>
-			<bean class="se.kth.speech.nlp.PhrasalHeadFilteringPredicate">
+			<bean class="se.kth.speech.nlp.stanford.PhrasalHeadFilteringPredicate">
 				<constructor-arg>
 					<util:map>
 						<entry key="PP" value="#{ T(se.kth.speech.nlp.EnglishLocationalPrepositions).loadSet() }" />

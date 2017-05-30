@@ -44,12 +44,11 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.
 import se.kth.speech.nlp.Disfluencies;
 import se.kth.speech.nlp.EnglishLocationalPrepositions;
 import se.kth.speech.nlp.PatternTokenizer;
-import se.kth.speech.nlp.PhrasalHeadFilteringPredicate;
 import se.kth.speech.nlp.SnowballPorter2EnglishStopwords;
-import se.kth.speech.nlp.StanfordCoreNLPConfigurationVariant;
-import se.kth.speech.nlp.StanfordCoreNLPLemmatizer;
-import se.kth.speech.nlp.StanfordCoreNLPParsingTokenizer;
-import se.kth.speech.nlp.StanfordCoreNLPTokenizer;
+import se.kth.speech.nlp.stanford.Lemmatizer;
+import se.kth.speech.nlp.stanford.PhrasalHeadFilteringPredicate;
+import se.kth.speech.nlp.stanford.PipelineConfigurationVariant;
+import se.kth.speech.nlp.stanford.Tokenizer;
 
 enum Tokenization implements Supplier<EventDialogueTransformer>, HasAbbreviation {
 	BASIC_TOKENIZER {
@@ -57,7 +56,7 @@ enum Tokenization implements Supplier<EventDialogueTransformer>, HasAbbreviation
 		@Override
 		public TokenizingEventDialogueTransformer get() {
 			return new TokenizingEventDialogueTransformer(
-					new StanfordCoreNLPTokenizer(StanfordCoreNLPConfigurationVariant.TOKENIZING.get()));
+					new Tokenizer(PipelineConfigurationVariant.TOKENIZING.get()));
 		}
 
 		@Override
@@ -70,7 +69,7 @@ enum Tokenization implements Supplier<EventDialogueTransformer>, HasAbbreviation
 		@Override
 		public TokenizingEventDialogueTransformer get() {
 			return new TokenizingEventDialogueTransformer(
-					new StanfordCoreNLPLemmatizer(StanfordCoreNLPConfigurationVariant.TOKENIZING_LEMMATIZING.get()));
+					new Lemmatizer(PipelineConfigurationVariant.TOKENIZING_LEMMATIZING.get()));
 		}
 
 		@Override
@@ -135,8 +134,8 @@ enum Tokenization implements Supplier<EventDialogueTransformer>, HasAbbreviation
 					}
 					return result;
 				};
-				return new FallbackTokenizingEventDialogueTransformer(new StanfordCoreNLPParsingTokenizer(
-						StanfordCoreNLPConfigurationVariant.TOKENIZING_LEMMATIZING_PARSING.get(), npWhitelistingPred),
+				return new FallbackTokenizingEventDialogueTransformer(new se.kth.speech.nlp.stanford.ParsingTokenizer(
+						PipelineConfigurationVariant.TOKENIZING_LEMMATIZING_PARSING.get(), npWhitelistingPred),
 						FALLBACK_TOKENIZER);
 			}
 
@@ -155,8 +154,8 @@ enum Tokenization implements Supplier<EventDialogueTransformer>, HasAbbreviation
 				final PhrasalHeadFilteringPredicate pred = new PhrasalHeadFilteringPredicate(labelHeadBlacklists,
 						HEAD_FINDER);
 				return new FallbackTokenizingEventDialogueTransformer(
-						new StanfordCoreNLPParsingTokenizer(
-								StanfordCoreNLPConfigurationVariant.TOKENIZING_LEMMATIZING_PARSING.get(), pred),
+						new se.kth.speech.nlp.stanford.ParsingTokenizer(
+								PipelineConfigurationVariant.TOKENIZING_LEMMATIZING_PARSING.get(), pred),
 						FALLBACK_TOKENIZER);
 			}
 

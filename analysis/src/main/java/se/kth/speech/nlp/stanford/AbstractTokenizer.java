@@ -14,7 +14,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech.nlp;
+package se.kth.speech.nlp.stanford;
 
 import java.util.List;
 import java.util.function.Function;
@@ -27,11 +27,11 @@ import edu.stanford.nlp.pipeline.Annotator;
  * @since Apr 14, 2017
  *
  */
-public abstract class AbstractStanfordCoreNLPTokenizer implements Function<String, List<String>> {
+public abstract class AbstractTokenizer implements Function<String, List<String>> {
 
 	private final Annotator annotator;
 
-	public AbstractStanfordCoreNLPTokenizer(final Annotator annotator) {
+	public AbstractTokenizer(final Annotator annotator) {
 		this.annotator = annotator;
 
 	}

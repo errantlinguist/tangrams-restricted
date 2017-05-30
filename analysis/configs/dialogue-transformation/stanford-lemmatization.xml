@@ -8,7 +8,7 @@
 
 	<import resource="stanford-pipeline.xml"/>
 
-	<bean id="stanford-lemmatizer" class="se.kth.speech.nlp.StanfordCoreNLPLemmatizer">
+	<bean id="stanford-lemmatizer" class="se.kth.speech.nlp.stanford.Lemmatizer">
 		<constructor-arg ref="stanford-pipeline" />
 	</bean>
 
