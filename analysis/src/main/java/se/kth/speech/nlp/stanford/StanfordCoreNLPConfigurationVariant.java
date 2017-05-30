@@ -22,7 +22,11 @@ import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Supplier;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import edu.stanford.nlp.pipeline.Annotator;
 import edu.stanford.nlp.pipeline.StanfordCoreNLP;
 
 /**
@@ -37,7 +41,8 @@ public enum StanfordCoreNLPConfigurationVariant implements Supplier<StanfordCore
 		protected Properties createProps() {
 			final Properties result = createDefaultProps();
 			// https://stanfordnlp.github.io/CoreNLP/annotators.html
-			result.setProperty("annotators", "tokenize,ssplit");
+			final Stream<String> annotatorNames = Stream.of(Annotator.STANFORD_TOKENIZE, Annotator.STANFORD_SSPLIT);
+			result.setProperty("annotators", annotatorNames.collect(OPTION_MULTIVALUE_DELIMITER));
 			return result;
 		}
 	},
@@ -47,7 +52,9 @@ public enum StanfordCoreNLPConfigurationVariant implements Supplier<StanfordCore
 		protected Properties createProps() {
 			final Properties result = createDefaultProps();
 			// https://stanfordnlp.github.io/CoreNLP/annotators.html
-			result.setProperty("annotators", "tokenize,ssplit,pos,lemma");
+			final Stream<String> annotatorNames = Stream.of(Annotator.STANFORD_TOKENIZE, Annotator.STANFORD_SSPLIT,
+					Annotator.STANFORD_POS, Annotator.STANFORD_LEMMA);
+			result.setProperty("annotators", annotatorNames.collect(OPTION_MULTIVALUE_DELIMITER));
 			return result;
 		}
 	},
@@ -57,7 +64,9 @@ public enum StanfordCoreNLPConfigurationVariant implements Supplier<StanfordCore
 		protected Properties createProps() {
 			final Properties result = createDefaultProps();
 			// https://stanfordnlp.github.io/CoreNLP/annotators.html
-			result.setProperty("annotators", "tokenize,ssplit,pos,lemma,parse");
+			final Stream<String> annotatorNames = Stream.of(Annotator.STANFORD_TOKENIZE, Annotator.STANFORD_SSPLIT,
+					Annotator.STANFORD_POS, Annotator.STANFORD_LEMMA, Annotator.STANFORD_PARSE);
+			result.setProperty("annotators", annotatorNames.collect(OPTION_MULTIVALUE_DELIMITER));
 			return result;
 		}
 	};
@@ -65,19 +74,22 @@ public enum StanfordCoreNLPConfigurationVariant implements Supplier<StanfordCore
 	private static final ConcurrentMap<StanfordCoreNLPConfigurationVariant, Reference<StanfordCoreNLP>> INSTANCES = new ConcurrentHashMap<>(
 			StanfordCoreNLPConfigurationVariant.values().length);
 
+	private static final Collector<CharSequence, ?, String> OPTION_MULTIVALUE_DELIMITER = Collectors.joining(",");
+
 	private static Properties createDefaultProps() {
 		final Properties result = new Properties();
 		// https://stanfordnlp.github.io/CoreNLP/api.html
 		// https://stanfordnlp.github.io/CoreNLP/parse.html
 		// result.setProperty("parse.model",
 		// "edu/stanford/nlp/models/lexparser/englishPCFG.ser.gz");
-//		 result.setProperty("parse.model",
-//		 "edu/stanford/nlp/models/lexparser/englishPCFG.caseless.ser.gz");
-//		result.setProperty("parse.model", "edu/stanford/nlp/models/lexparser/englishFactored.ser.gz");
+		// result.setProperty("parse.model",
+		// "edu/stanford/nlp/models/lexparser/englishPCFG.caseless.ser.gz");
+		// result.setProperty("parse.model",
+		// "edu/stanford/nlp/models/lexparser/englishFactored.ser.gz");
 		result.setProperty("parse.model", "edu/stanford/nlp/models/srparser/englishSR.ser.gz");
 		// https://stanfordnlp.github.io/CoreNLP/pos.html
-//		result.setProperty("pos.model",
-//				"edu/stanford/nlp/models/pos-tagger/english-left3words/english-left3words-distsim.tagger");
+		// result.setProperty("pos.model",
+		// "edu/stanford/nlp/models/pos-tagger/english-left3words/english-left3words-distsim.tagger");
 		// result.setProperty("pos.model",
 		// "edu/stanford/nlp/models/pos-tagger/english-caseless-left3words-distsim.tagger");
 		result.setProperty("pos.model",
