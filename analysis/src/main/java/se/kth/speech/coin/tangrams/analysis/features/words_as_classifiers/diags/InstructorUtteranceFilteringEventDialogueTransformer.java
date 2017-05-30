@@ -20,13 +20,13 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Predicate;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import se.kth.speech.coin.tangrams.analysis.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.Utterance;
-import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -43,12 +43,10 @@ public final class InstructorUtteranceFilteringEventDialogueTransformer implemen
 	private static Optional<List<Utterance>> createInstructorUttList(final EventDialogue uttDiag) {
 		return uttDiag.getFirstEvent().map(event -> {
 			LOGGER.debug("Classifying entity referred to by instructor for {}.", event);
-			final String submittingPlayerId = event.getString(GameManagementEvent.Attribute.PLAYER_ID.toString());
+			final Predicate<Utterance> instructorUttMatcher = UtteranceMatchers
+					.createEventSubmitterUtteranceMatcher(event);
 			final List<Utterance> allUtts = uttDiag.getUtts();
-			return Arrays.asList(allUtts.stream().filter(dialogueUtt -> {
-				final String uttPlayerId = dialogueUtt.getSpeakerId();
-				return submittingPlayerId.equals(uttPlayerId);
-			}).toArray(Utterance[]::new));
+			return Arrays.asList(allUtts.stream().filter(instructorUttMatcher).toArray(Utterance[]::new));
 		});
 	}
 
