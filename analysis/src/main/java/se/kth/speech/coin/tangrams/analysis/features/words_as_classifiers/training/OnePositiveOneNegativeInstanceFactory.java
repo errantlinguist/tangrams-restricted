@@ -95,7 +95,7 @@ public final class OnePositiveOneNegativeInstanceFactory extends AbstractSizeEst
 
 		final List<EventDialogue> uttDialogues = sessionEventDiagMgr.getUttDialogues();
 		uttDialogues.forEach(uttDialogue -> {
-			uttDialogue.getLastEvent().ifPresent(event -> {
+			uttDialogue.getFirstEvent().ifPresent(event -> {
 				LOGGER.debug("Extracting features for utterances for event: {}", event);
 				final EventDialogue transformedDiag = diagTransformer.apply(uttDialogue);
 				final List<Utterance> allUtts = transformedDiag.getUtts();

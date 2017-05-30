@@ -39,7 +39,7 @@ public abstract class AbstractUtteranceTransformingEventDialogueTransformer impl
 	public EventDialogue apply(final EventDialogue diag) {
 		final List<Utterance> newUtts = Arrays
 				.asList(diag.getUtts().stream().flatMap(this::transformUtt).toArray(Utterance[]::new));
-		return new EventDialogue(diag.getLastEvent(), newUtts);
+		return new EventDialogue(diag.getDialogueEvents(), newUtts);
 	}
 
 	protected abstract Stream<Utterance> transformUtt(final Utterance utt);

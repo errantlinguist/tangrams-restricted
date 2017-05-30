@@ -251,7 +251,7 @@ public final class DialogueAnalysisWriter implements Consumer<Tester.Result> {
 	private void writeRow(final Object key, final Integer iterNo, final Integer sequenceOrder,
 			final Entry<EventDialogue, EventDialogueTester.Result> diagTestResults) {
 		final EventDialogue diag = diagTestResults.getKey();
-		final String timestamp = diag.getLastEvent().map(Event::getTime).orElse("(no event found for dialogue)");
+		final String timestamp = diag.getFirstEvent().map(Event::getTime).orElse("(no event found for dialogue)");
 		final String uttDiagRepr = UTT_DIAG_REPR_FACTORY.apply(diag.getUtts().iterator());
 		final EventDialogueTester.Result testResults = diagTestResults.getValue();
 		final Stream<Utterance> uttsTested = testResults.utterancesTested();

@@ -28,12 +28,12 @@ import iristk.system.Event;
  */
 public final class EventDialogue {
 
-	private final Optional<Event> lastEvent;
+	private final List<Event> dialogueEvents;
 
 	private final List<Utterance> utts;
 
-	public EventDialogue(final Optional<Event> lastEvent, final List<Utterance> utts) {
-		this.lastEvent = lastEvent;
+	public EventDialogue(final List<Event> dialogueEvents, final List<Utterance> utts) {
+		this.dialogueEvents = dialogueEvents;
 		this.utts = utts;
 	}
 
@@ -54,11 +54,11 @@ public final class EventDialogue {
 			return false;
 		}
 		final EventDialogue other = (EventDialogue) obj;
-		if (lastEvent == null) {
-			if (other.lastEvent != null) {
+		if (dialogueEvents == null) {
+			if (other.dialogueEvents != null) {
 				return false;
 			}
-		} else if (!lastEvent.equals(other.lastEvent)) {
+		} else if (!dialogueEvents.equals(other.dialogueEvents)) {
 			return false;
 		}
 		if (utts == null) {
@@ -72,10 +72,14 @@ public final class EventDialogue {
 	}
 
 	/**
-	 * @return the lastEvent
+	 * @return the dialogueEvents
 	 */
-	public Optional<Event> getLastEvent() {
-		return lastEvent;
+	public List<Event> getDialogueEvents() {
+		return dialogueEvents;
+	}
+
+	public Optional<Event> getFirstEvent() {
+		return dialogueEvents.isEmpty() ? Optional.empty() : Optional.of(dialogueEvents.iterator().next());
 	}
 
 	/**
@@ -94,7 +98,7 @@ public final class EventDialogue {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + (lastEvent == null ? 0 : lastEvent.hashCode());
+		result = prime * result + (dialogueEvents == null ? 0 : dialogueEvents.hashCode());
 		result = prime * result + (utts == null ? 0 : utts.hashCode());
 		return result;
 	}
@@ -107,8 +111,8 @@ public final class EventDialogue {
 	@Override
 	public String toString() {
 		final StringBuilder builder = new StringBuilder();
-		builder.append("EventDialogue [lastEvent=");
-		builder.append(lastEvent);
+		builder.append("EventDialogue [dialogueEvents=");
+		builder.append(dialogueEvents);
 		builder.append(", utts=");
 		builder.append(utts);
 		builder.append("]");

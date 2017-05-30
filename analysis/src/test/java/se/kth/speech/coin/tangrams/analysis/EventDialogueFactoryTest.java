@@ -106,7 +106,7 @@ public final class EventDialogueFactoryTest {
 			final Event expectedEvent = expectedEventIter.next();
 			Assert.assertTrue(actualDiagIter.hasNext());
 			final EventDialogue actualDiag = actualDiagIter.next();
-			final Optional<Event> actualOptLastEvent = actualDiag.getLastEvent();
+			final Optional<Event> actualOptLastEvent = actualDiag.getFirstEvent();
 			Assert.assertTrue(actualOptLastEvent.isPresent());
 			Assert.assertEquals(expectedEvent, actualOptLastEvent.get());
 		}

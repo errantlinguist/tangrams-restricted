@@ -41,7 +41,7 @@ public final class InstructorUtteranceFilteringEventDialogueTransformer implemen
 			.getLogger(InstructorUtteranceFilteringEventDialogueTransformer.class);
 
 	private static Optional<List<Utterance>> createInstructorUttList(final EventDialogue uttDiag) {
-		return uttDiag.getLastEvent().map(event -> {
+		return uttDiag.getFirstEvent().map(event -> {
 			LOGGER.debug("Classifying entity referred to by instructor for {}.", event);
 			final String submittingPlayerId = event.getString(GameManagementEvent.Attribute.PLAYER_ID.toString());
 			final List<Utterance> allUtts = uttDiag.getUtts();
@@ -60,7 +60,7 @@ public final class InstructorUtteranceFilteringEventDialogueTransformer implemen
 	@Override
 	public EventDialogue apply(final EventDialogue diag) {
 		final List<Utterance> filteredUtts = createInstructorUttList(diag).orElse(EMPTY_UTT_LIST);
-		return new EventDialogue(diag.getLastEvent(), filteredUtts);
+		return new EventDialogue(diag.getDialogueEvents(), filteredUtts);
 	}
 
 }

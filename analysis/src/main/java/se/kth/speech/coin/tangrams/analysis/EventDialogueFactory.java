@@ -18,10 +18,12 @@ package se.kth.speech.coin.tangrams.analysis;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.Optional;
+import java.util.Map.Entry;
 import java.util.function.BiFunction;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -30,6 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import iristk.system.Event;
+import se.kth.speech.Iterators;
 import se.kth.speech.TimestampArithmetic;
 import se.kth.speech.coin.tangrams.iristk.EventTimes;
 
@@ -43,33 +46,46 @@ public final class EventDialogueFactory
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(EventDialogueFactory.class);
 
-	private final Predicate<? super Event> eventFilter;
+	private final Predicate<? super Event> dialogueEventDelimiter;
 
-	public EventDialogueFactory(final Predicate<? super Event> eventFilter) {
-		this.eventFilter = eventFilter;
+	public EventDialogueFactory(final Predicate<? super Event> dialogueEventDelimiter) {
+		this.dialogueEventDelimiter = dialogueEventDelimiter;
 	}
 
 	@Override
 	public Stream<EventDialogue> apply(final ListIterator<Utterance> utts, final GameHistory history) {
-		final Stream<Event> events = history.getEventSequence().filter(eventFilter);
+		// final Stream<Event> events =
+		// history.getEventSequence().filter(dialogueEventDelimiter);
+		final Stream<Event> events = history.getEventSequence();
 		final LocalDateTime gameStartTime = history.getStartTime();
 
 		final Iterator<Event> eventIter = events.iterator();
-		Event currentEvent = eventIter.next();
+		// Find the set of elements before the first one delimiting a dialogue
+		final Entry<Stream<Event>, Event> preDialogueEvents = Iterators.findElementsBeforeDelimiter(eventIter,
+				dialogueEventDelimiter);
+		Event currentEvent = preDialogueEvents.getValue();
+		assert dialogueEventDelimiter.test(currentEvent);
+
 		final Stream.Builder<EventDialogue> resultBuilder = Stream.builder();
 
 		final List<Utterance> firstUtts = createPreEventUtteranceList(utts, currentEvent, gameStartTime);
 		if (firstUtts.isEmpty()) {
 			LOGGER.debug("No utterances before first event.");
 		} else {
-			resultBuilder.accept(new EventDialogue(Optional.empty(), firstUtts));
+			resultBuilder.accept(
+					new EventDialogue(Arrays.asList(preDialogueEvents.getKey().toArray(Event[]::new)), firstUtts));
 		}
 
-		// Find the next set of utterances following each event
 		while (eventIter.hasNext()) {
-			final Event nextEvent = eventIter.next();
+			// Find the next set of events which delimit one dialogue
+			final Entry<Stream<Event>, Event> nextDialogueEvents = Iterators.findElementsBeforeDelimiter(eventIter,
+					dialogueEventDelimiter);
+			final Event nextEvent = nextDialogueEvents.getValue();
+			assert dialogueEventDelimiter.test(nextEvent);
+			// Find the set of utterances following the last event
 			final List<Utterance> nextUttList = createPreEventUtteranceList(utts, nextEvent, gameStartTime);
-			resultBuilder.accept(new EventDialogue(Optional.of(currentEvent), nextUttList));
+			final Stream<Event> nextDiagEvents = Stream.concat(Stream.of(currentEvent), nextDialogueEvents.getKey());
+			resultBuilder.accept(new EventDialogue(Arrays.asList(nextDiagEvents.toArray(Event[]::new)), nextUttList));
 			currentEvent = nextEvent;
 		}
 
@@ -78,7 +94,7 @@ public final class EventDialogueFactory
 		while (utts.hasNext()) {
 			lastEventUtts.add(utts.next());
 		}
-		resultBuilder.accept(new EventDialogue(Optional.of(currentEvent), lastEventUtts));
+		resultBuilder.accept(new EventDialogue(Collections.singletonList(currentEvent), lastEventUtts));
 		return resultBuilder.build();
 	}
 

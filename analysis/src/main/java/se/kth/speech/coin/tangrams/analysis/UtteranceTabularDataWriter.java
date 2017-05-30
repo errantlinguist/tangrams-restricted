@@ -165,7 +165,7 @@ class UtteranceTabularDataWriter {
 			}
 			if (prevEventDiag != null) {
 				sb.append(System.lineSeparator());
-				final Event prevEvent = prevEventDiag.getLastEvent().orElse(null);
+				final Event prevEvent = prevEventDiag.getFirstEvent().orElse(null);
 				final List<Utterance> prevUtts = prevEventDiag.getUtts();
 				final Utterance prevUtt = prevUtts.get(prevUtts.size() - 1);
 				final String speakingPlayerId = prevUtt.getSpeakerId();
@@ -187,7 +187,7 @@ class UtteranceTabularDataWriter {
 			}
 			if (nextEventDiag != null) {
 				sb.append(System.lineSeparator());
-				final Event nextEvent = nextEventDiag.getLastEvent().orElse(null);
+				final Event nextEvent = nextEventDiag.getFirstEvent().orElse(null);
 				final List<Utterance> nextUtts = nextEventDiag.getUtts();
 				if (nextUtts.isEmpty()) {
 					// Do nothing
@@ -219,7 +219,7 @@ class UtteranceTabularDataWriter {
 			final EventDialogue eventDiag = eventDiagIter.next();
 			writer.write(TABLE_STRING_REPR_ROW_DELIMITER);
 
-			final Optional<Event> optEvent = eventDiag.getLastEvent();
+			final Optional<Event> optEvent = eventDiag.getFirstEvent();
 			final List<Utterance> eventUtts = eventDiag.getUtts();
 
 			final String imgVizInfoDesc;
