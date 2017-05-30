@@ -34,7 +34,7 @@ import java.util.OptionalInt;
 import java.util.TreeSet;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -302,12 +302,7 @@ public final class CombininingBatchJobTestWriter implements Consumer<BatchJobSum
 	}
 
 	private static ExecutorService createBackgroundJobExecutor() {
-		return createBackgroundJobExecutor(Math.max(Runtime.getRuntime().availableProcessors() - 1, 1));
-	}
-
-	private static ExecutorService createBackgroundJobExecutor(final int parallelThreadCount) {
-		LOGGER.info("Will run with {} parallel thread(s).", parallelThreadCount);
-		return Executors.newFixedThreadPool(parallelThreadCount);
+		return ForkJoinPool.commonPool();
 	}
 
 	private static String createBatchOutdirName(final TestParameters testParams) {
