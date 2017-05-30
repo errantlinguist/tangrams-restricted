@@ -121,10 +121,10 @@ public enum StanfordCoreNLPConfigurationVariant implements Function<Executor, Su
 
 	@Override
 	public Supplier<StanfordCoreNLP> apply(final Executor executor) {
-		final CompletableFuture<StanfordCoreNLP> futureAnnotator = applyAsync(executor);
+		final CompletableFuture<StanfordCoreNLP> futureInst = applyAsync(executor);
 		return () -> {
 			try {
-				return futureAnnotator.get();
+				return futureInst.get();
 			} catch (InterruptedException | ExecutionException e) {
 				throw new RuntimeException(e);
 			}
