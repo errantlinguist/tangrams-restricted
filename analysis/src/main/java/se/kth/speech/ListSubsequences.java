@@ -19,6 +19,8 @@ package se.kth.speech;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -28,34 +30,23 @@ import java.util.List;
 public final class ListSubsequences {
 
 	public static <T> List<T> createDeduplicatedAdjacentSubsequenceList(final List<T> list) {
-		throw new UnsupportedOperationException("broken");
-//		System.out.println("inputList: " + list);
-//		final List<T> result;
-//		if (list.size() == 1) {
-//			result = list;
-//		} else {
-//			result = new ArrayList<>(list.size());
-//			final int subseqLength = list.size() - 1;
-//			// for (int subseqLength = list.size() - 1; subseqLength > 0;
-//			// --subseqLength) {
-//			final List<List<T>> subseqs = createSubsequenceList(list, subseqLength);
-//			System.out.println("subseqLength: " + subseqLength + ", subseqs: " + subseqs);
-//			final List<List<T>> deduplicatedSubseqs = createDeduplicatedAdjacentSubsequenceListFromListOfSubsequences(
-//					subseqs);
-//			System.out.println("subseqLength: " + subseqLength + ", deduplicatedSubseqs: " + deduplicatedSubseqs);
-//			for (final List<T> deduplicatedSubseq : deduplicatedSubseqs) {
-//				System.out.println("subseq being processed: " + deduplicatedSubseq);
-//				final List<T> dedup = createDeduplicatedAdjacentSubsequenceList(deduplicatedSubseq);
-//				System.out.println("dedupd subseq: " + dedup);
-//				if (deduplicatedSubseq.equals(dedup)){
-//					result.addAll(dedup);
-//				}
-//			}
-//			// }
-//			// TODO: Fix
-//		}
-//
-//		return result;
+		final List<T> result;
+		if (list.size() == 1) {
+			result = list;
+		} else {
+			List<T> intermediateResult = list;
+			for (int subseqLength = intermediateResult.size() - 1; subseqLength > 0; --subseqLength) {
+				final List<List<T>> subseqs = createSubsequenceList(intermediateResult, subseqLength);
+				final List<List<T>> deduplicatedSubseqs = createDeduplicatedAdjacentSubsequenceListFromListOfSubsequences(
+						subseqs);
+				final Stream<List<T>> nextLevel = deduplicatedSubseqs.stream()
+						.map(ListSubsequences::createDeduplicatedAdjacentSubsequenceList);
+				intermediateResult = nextLevel.flatMap(List::stream).collect(Collectors.toList());
+			}
+			result = intermediateResult;
+		}
+
+		return result;
 	}
 
 	public static <T> List<List<T>> createDeduplicatedAdjacentSubsequenceListFromListOfSubsequences(
