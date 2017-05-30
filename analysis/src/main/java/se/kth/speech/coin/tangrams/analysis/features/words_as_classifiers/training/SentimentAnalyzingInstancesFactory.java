@@ -264,6 +264,8 @@ public final class SentimentAnalyzingInstancesFactory extends AbstractSizeEstima
 									wordClass, instructorObservationWeight);
 							addWeightedExamples(wordClass, trainingData, trainingContexts.positive,
 									instructorObservationWeight, Boolean.TRUE.toString());
+							addWeightedExamples(wordClass, trainingData, trainingContexts.negative,
+									instructorObservationWeight, Boolean.FALSE.toString());
 						});
 					}
 				}
