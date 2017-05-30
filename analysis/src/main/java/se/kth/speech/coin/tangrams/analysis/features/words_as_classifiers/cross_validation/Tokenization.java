@@ -132,7 +132,7 @@ enum Tokenization implements Supplier<EventDialogueTransformer>, HasAbbreviation
 		final Predicate<String> parsingGarbageTokenMatcher = token -> {
 			return fillerWords.contains(token) || Disfluencies.TOKEN_MATCHER.test(token);
 		};
-		garbageRemovingTransformers.put("noFillers,noDisfl",
+		garbageRemovingTransformers.put("noFillers" + TokenizationAbbreviations.DELIMITER + "noDisfl",
 				new TokenFilteringEventDialogueTransformer(token -> !parsingGarbageTokenMatcher.test(token)));
 		PARSING_GARBAGE_TOKEN_REMOVING_DIAG_TRANSFORMERS = new ArrayList<>(garbageRemovingTransformers.entrySet());
 	}
