@@ -74,7 +74,7 @@ public final class OnePositiveMaximumNegativeInstancesFactory extends AbstractSi
 		this.extCtxFactory = extCtxFactory;
 	}
 
-	private List<Entry<EntityFeature.Extractor.Context, String>> createContexts(final GameContext uttCtx,
+	private List<Entry<EntityFeature.Extractor.Context, String>> createTrainingContexts(final GameContext uttCtx,
 			final int selectedEntityId) {
 		final IntList entityIds = uttCtx.getEntityIds();
 		final List<Entry<EntityFeature.Extractor.Context, String>> result = new ArrayList<>(entityIds.size());
@@ -85,6 +85,14 @@ public final class OnePositiveMaximumNegativeInstancesFactory extends AbstractSi
 			result.add(new MutablePair<>(context, classValue));
 		}
 		return result;
+	}
+
+	private List<Entry<EntityFeature.Extractor.Context, String>> createTrainingContexts(final Utterance utt,
+			final GameHistory history) {
+		final GameContext uttCtx = UtteranceGameContexts.createSingleContext(utt, history);
+		final int selectedEntityId = uttCtx.findLastSelectedEntityId().get();
+		LOGGER.debug("Creating positive and negative examples for entity ID \"{}\".", selectedEntityId);
+		return createTrainingContexts(uttCtx, selectedEntityId);
 	}
 
 	@Override
@@ -106,15 +114,11 @@ public final class OnePositiveMaximumNegativeInstancesFactory extends AbstractSi
 					// Just use the game context for the first utterance for all
 					// utterances processed for the given dialogue
 					final Utterance firstUtt = allUtts.get(0);
-					final GameContext uttCtx = UtteranceGameContexts.createSingleContext(firstUtt, history);
-					final int selectedEntityId = uttCtx.findLastSelectedEntityId().get();
-					LOGGER.debug(
-							"Creating positive and negative examples for entity ID \"{}\", which is selected by player \"{}\".",
-							selectedEntityId, event.getString(GameManagementEvent.Attribute.PLAYER_ID.toString()));
-					final List<Entry<EntityFeature.Extractor.Context, String>> contexts = createContexts(uttCtx,
-							selectedEntityId);
-					final Stream<String> wordClasses = allUtts.stream().map(Utterance::getTokens)
-							.flatMap(List::stream);
+					LOGGER.debug("Creating positive and negative examples for entity selected by player \"{}\".",
+							event.getString(GameManagementEvent.Attribute.PLAYER_ID.toString()));
+					final List<Entry<EntityFeature.Extractor.Context, String>> contexts = createTrainingContexts(
+							firstUtt, history);
+					final Stream<String> wordClasses = allUtts.stream().map(Utterance::getTokens).flatMap(List::stream);
 					wordClasses.forEach(wordClass -> {
 						final Instances classInsts = trainingData.fetchWordInstances(wordClass);
 						final Stream<Instance> trainingInsts = contexts.stream()
