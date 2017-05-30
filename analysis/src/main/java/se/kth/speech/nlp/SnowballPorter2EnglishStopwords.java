@@ -20,12 +20,16 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
+import java.lang.ref.Reference;
+import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -60,11 +64,7 @@ public final class SnowballPorter2EnglishStopwords {
 		 */
 		@Override
 		public Set<String> get() {
-			try {
-				return loadStopwordSet(getResLoc());
-			} catch (final IOException e) {
-				throw new UncheckedIOException(e);
-			}
+			return fetchStopwordSet(getResLoc());
 		}
 
 		/**
@@ -76,6 +76,9 @@ public final class SnowballPorter2EnglishStopwords {
 	}
 
 	private static final char COMMENT_DELIM = '|';
+
+	private static final ConcurrentMap<String, Reference<Set<String>>> INSTANCES = new ConcurrentHashMap<>(
+			Variant.values().length);
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SnowballPorter2EnglishStopwords.class);
 
@@ -115,21 +118,6 @@ public final class SnowballPorter2EnglishStopwords {
 		}
 	}
 
-	/**
-	 * <strong>NOTE:</strong> All words in the stoplist are lowercase (or at
-	 * least they should be).
-	 *
-	 * @return A new {@Set} of (lowercase) strings representing the stoplist.
-	 * @throws IOException
-	 *             If an error occurs while reading the stoplist file.
-	 */
-	public static Set<String> loadStopwordSet(final String resLoc) throws IOException {
-		final Set<String> result = new HashSet<>();
-		load(resLoc, result);
-		LOGGER.info("Read stopword set of size {} from \"{}\".", result.size(), resLoc);
-		return result;
-	}
-
 	public static Stream<String> parse(final String line) {
 		final int commentStartIdx = line.indexOf(COMMENT_DELIM);
 		String content;
@@ -142,11 +130,58 @@ public final class SnowballPorter2EnglishStopwords {
 		return content.isEmpty() ? Stream.empty() : Stream.of(content);
 	}
 
+	/**
+	 * <strong>NOTE:</strong> All words in the stoplist are lowercase (or at
+	 * least they should be).
+	 *
+	 * @return A new {@Set} of (lowercase) strings representing the stoplist.
+	 * @throws UncheckedIOException
+	 *             If an error occurs while reading the stoplist file.
+	 */
+	private static Set<String> fetchStopwordSet(final String resLoc) {
+		final Reference<Set<String>> ref = INSTANCES.compute(resLoc, (key, oldValue) -> {
+			final Reference<Set<String>> newValue;
+			try {
+				if (oldValue == null) {
+					// No instance has yet been created; Create one
+					newValue = new SoftReference<>(loadStopwordSet(resLoc));
+				} else if (oldValue.get() == null) {
+					// The old instance has already been deleted; Replace it
+					// with a new reference to a new instance
+					newValue = new SoftReference<>(loadStopwordSet(resLoc));
+				} else {
+					// The existing instance has not yet been deleted;
+					// Re-use it
+					newValue = oldValue;
+				}
+			} catch (final IOException e) {
+				throw new UncheckedIOException(e);
+			}
+			return newValue;
+		});
+		return ref.get();
+	}
+
 	private static void load(final String resLoc, final Collection<? super String> coll) throws IOException {
 		try (final BufferedReader reader = new BufferedReader(
 				new InputStreamReader(SnowballPorter2EnglishStopwords.class.getResourceAsStream(resLoc)))) {
 			reader.lines().flatMap(SnowballPorter2EnglishStopwords::parse).forEach(coll::add);
 		}
+	}
+
+	/**
+	 * <strong>NOTE:</strong> All words in the stoplist are lowercase (or at
+	 * least they should be).
+	 *
+	 * @return A new {@Set} of (lowercase) strings representing the stoplist.
+	 * @throws IOException
+	 *             If an error occurs while reading the stoplist file.
+	 */
+	private static Set<String> loadStopwordSet(final String resLoc) throws IOException {
+		final Set<String> result = new HashSet<>();
+		load(resLoc, result);
+		LOGGER.info("Read stopword set of size {} from \"{}\".", result.size(), resLoc);
+		return result;
 	}
 
 	private SnowballPorter2EnglishStopwords() {
