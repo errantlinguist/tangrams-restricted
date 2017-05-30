@@ -51,7 +51,7 @@ enum ParsingTokenization implements Supplier<TokenizingEventDialogueTransformer>
 		public TokenizingEventDialogueTransformer get() {
 			return new TokenizingEventDialogueTransformer(new PhraseExtractingParsingTokenizer(
 					StanfordCoreNLPConfigurationVariant.TOKENIZING_LEMMATIZING_PARSING.get(),
-					NP_WHITELISTING_PHRASE_MATCHER));
+					NP_WHITELISTING_PHRASE_MATCHER, LOCATIONAL_PP_PRUNING_MATCHER));
 		}
 
 		@Override
