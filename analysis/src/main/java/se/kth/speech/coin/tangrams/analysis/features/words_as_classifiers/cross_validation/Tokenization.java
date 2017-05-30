@@ -96,7 +96,7 @@ enum Tokenization implements Supplier<EventDialogueTransformer>, HasAbbreviation
 			PARSING_GARBAGE_TOKEN_REMOVING_DIAG_TRANSFORMERS.stream().map(Entry::getKey).forEachOrdered(resultBuilder);
 			resultBuilder.add(ParsingTokenizer.NP_WHITELISTING.getAbbreviation());
 			resultBuilder.add(ParsingTokenizer.PP_BLACKLISTING.getAbbreviation());
-			return resultBuilder.build().collect(TOKENIZER_KEY_JOINER);
+			return resultBuilder.build().collect(TOKENIZER_ABBREV_JOINER);
 		}
 	},
 	PP_REMOVER {
@@ -112,7 +112,7 @@ enum Tokenization implements Supplier<EventDialogueTransformer>, HasAbbreviation
 			final Stream.Builder<String> resultBuilder = Stream.builder();
 			PARSING_GARBAGE_TOKEN_REMOVING_DIAG_TRANSFORMERS.stream().map(Entry::getKey).forEachOrdered(resultBuilder);
 			resultBuilder.add(ParsingTokenizer.PP_BLACKLISTING.getAbbreviation());
-			return resultBuilder.build().collect(TOKENIZER_KEY_JOINER);
+			return resultBuilder.build().collect(TOKENIZER_ABBREV_JOINER);
 		}
 	};
 
@@ -177,7 +177,7 @@ enum Tokenization implements Supplier<EventDialogueTransformer>, HasAbbreviation
 
 	private static final List<Entry<String, EventDialogueTransformer>> PARSING_GARBAGE_TOKEN_REMOVING_DIAG_TRANSFORMERS;
 
-	private static final Collector<CharSequence, ?, String> TOKENIZER_KEY_JOINER = Collectors.joining(",");
+	private static final Collector<CharSequence, ?, String> TOKENIZER_ABBREV_JOINER = Collectors.joining(",");
 
 	static {
 		final Set<String> fillerWords = SnowballPorter2EnglishStopwords.Variant.FILLERS.get();
