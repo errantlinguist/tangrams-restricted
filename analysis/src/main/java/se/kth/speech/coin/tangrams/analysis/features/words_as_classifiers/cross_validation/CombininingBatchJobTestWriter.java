@@ -250,15 +250,15 @@ public final class CombininingBatchJobTestWriter implements Consumer<BatchJobSum
 				LOGGER.info("Token filtering methods: {}", tokenFilteringMethods);
 				final NavigableSet<Training> trainingMethods = Parameter.parseTrainingMethods(cl);
 				LOGGER.info("Training methods: {}", trainingMethods);
-				final ExecutorService executor = createBackgroundJobExecutor();
+				final ExecutorService backgroundJobExecutor = createBackgroundJobExecutor();
 				try {
-					final Future<Map<SessionDataManager, Path>> allSessionDataFuture = executor
+					final Future<Map<SessionDataManager, Path>> allSessionDataFuture = backgroundJobExecutor
 							.submit(() -> TestSessionData.readTestSessionData(inpaths));
 					final CombininingBatchJobTestWriter writer = new CombininingBatchJobTestWriter(outdir,
 							!appendSummary);
 					try (final ClassPathXmlApplicationContext appCtx = new ClassPathXmlApplicationContext(
 							"combining-batch-tester.xml", CombininingBatchJobTestWriter.class)) {
-						final CombiningBatchJobTester tester = new CombiningBatchJobTester(executor, appCtx, writer,
+						final CombiningBatchJobTester tester = new CombiningBatchJobTester(backgroundJobExecutor, appCtx, writer,
 								testerConfigurator);
 						final CombiningBatchJobTester.Input input = new CombiningBatchJobTester.Input(
 								uttFilteringMethods, tokenizationMethods, tokenFilteringMethods, trainingMethods,
@@ -266,23 +266,23 @@ public final class CombininingBatchJobTestWriter implements Consumer<BatchJobSum
 						tester.accept(input);
 					}
 					LOGGER.info("Shutting down executor service.");
-					executor.shutdown();
+					backgroundJobExecutor.shutdown();
 					LOGGER.info("Successfully shut down executor service.");
 
 				} catch (final InterruptedException e) {
-					shutdownExceptionally(executor);
+					shutdownExceptionally(backgroundJobExecutor);
 					throw e;
 				} catch (final ExecutionException e) {
-					shutdownExceptionally(executor);
+					shutdownExceptionally(backgroundJobExecutor);
 					throw e;
 				} catch (final ClassificationException e) {
-					shutdownExceptionally(executor);
+					shutdownExceptionally(backgroundJobExecutor);
 					throw e;
 				} catch (final IOException e) {
-					shutdownExceptionally(executor);
+					shutdownExceptionally(backgroundJobExecutor);
 					throw e;
 				} catch (final RuntimeException e) {
-					shutdownExceptionally(executor);
+					shutdownExceptionally(backgroundJobExecutor);
 					throw e;
 				}
 			}
