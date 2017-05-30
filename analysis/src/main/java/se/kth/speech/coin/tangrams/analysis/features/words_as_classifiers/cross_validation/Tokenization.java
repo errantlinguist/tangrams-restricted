@@ -17,7 +17,6 @@
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map.Entry;
@@ -69,10 +68,11 @@ enum Tokenization implements Supplier<EventDialogueTransformer>, HasAbbreviation
 
 		@Override
 		public ChainedEventDialogueTransformer get() {
-			final FallbackTokenizingEventDialogueTransformer npWhitelistingTokenizer = ParsingTokenization.NP_WHITELISTING
-					.get();
-			return new ChainedEventDialogueTransformer(
-					Arrays.asList(FILLER_REMOVING_DIAG_TRANSFORMER, npWhitelistingTokenizer));
+			final List<EventDialogueTransformer> chain = new ArrayList<>(
+					PARSING_GARBAGE_TOKEN_REMOVING_DIAG_TRANSFORMERS.size() + 1);
+			PARSING_GARBAGE_TOKEN_REMOVING_DIAG_TRANSFORMERS.stream().map(Entry::getValue).forEach(chain::add);
+			chain.add(ParsingTokenization.NP_WHITELISTING.get());
+			return new ChainedEventDialogueTransformer(chain);
 		}
 
 		@Override
@@ -87,20 +87,18 @@ enum Tokenization implements Supplier<EventDialogueTransformer>, HasAbbreviation
 
 		@Override
 		public ChainedEventDialogueTransformer get() {
-			final FallbackTokenizingEventDialogueTransformer npWhitelistingTokenizer = ParsingTokenization.NP_WHITELISTING
-					.get();
-			final FallbackTokenizingEventDialogueTransformer ppBlacklistingTokenizer = ParsingTokenization.PP_BLACKLISTING
-					.get();
-			return new ChainedEventDialogueTransformer(
-					Arrays.asList(FILLER_REMOVING_DIAG_TRANSFORMER, npWhitelistingTokenizer, ppBlacklistingTokenizer));
+			final List<EventDialogueTransformer> chain = new ArrayList<>(
+					PARSING_GARBAGE_TOKEN_REMOVING_DIAG_TRANSFORMERS.size() + 1);
+			PARSING_GARBAGE_TOKEN_REMOVING_DIAG_TRANSFORMERS.stream().map(Entry::getValue).forEach(chain::add);
+			chain.add(ParsingTokenization.NP_WHITELISTING_PP_PRUNING.get());
+			return new ChainedEventDialogueTransformer(chain);
 		}
 
 		@Override
 		public String getAbbreviation() {
 			final Stream.Builder<String> resultBuilder = Stream.builder();
 			PARSING_GARBAGE_TOKEN_REMOVING_DIAG_TRANSFORMERS.stream().map(Entry::getKey).forEachOrdered(resultBuilder);
-			resultBuilder.add(ParsingTokenization.NP_WHITELISTING.getAbbreviation());
-			resultBuilder.add(ParsingTokenization.PP_BLACKLISTING.getAbbreviation());
+			resultBuilder.add(ParsingTokenization.NP_WHITELISTING_PP_PRUNING.getAbbreviation());
 			return resultBuilder.build().collect(TokenizationAbbreviations.JOINER);
 		}
 	},
@@ -108,8 +106,12 @@ enum Tokenization implements Supplier<EventDialogueTransformer>, HasAbbreviation
 
 		@Override
 		public ChainedEventDialogueTransformer get() {
+			final List<EventDialogueTransformer> chain = new ArrayList<>(
+					PARSING_GARBAGE_TOKEN_REMOVING_DIAG_TRANSFORMERS.size() + 1);
+			PARSING_GARBAGE_TOKEN_REMOVING_DIAG_TRANSFORMERS.stream().map(Entry::getValue).forEach(chain::add);
 			final FallbackTokenizingEventDialogueTransformer tokenizer = ParsingTokenization.PP_BLACKLISTING.get();
-			return new ChainedEventDialogueTransformer(Arrays.asList(FILLER_REMOVING_DIAG_TRANSFORMER, tokenizer));
+			chain.add(tokenizer);
+			return new ChainedEventDialogueTransformer(chain);
 		}
 
 		@Override
@@ -121,14 +123,10 @@ enum Tokenization implements Supplier<EventDialogueTransformer>, HasAbbreviation
 		}
 	};
 
-	private static final TokenFilteringEventDialogueTransformer FILLER_REMOVING_DIAG_TRANSFORMER;
-
 	private static final List<Entry<String, EventDialogueTransformer>> PARSING_GARBAGE_TOKEN_REMOVING_DIAG_TRANSFORMERS;
 
 	static {
 		final Set<String> fillerWords = SnowballPorter2EnglishStopwords.Variant.FILLERS.get();
-		FILLER_REMOVING_DIAG_TRANSFORMER = new TokenFilteringEventDialogueTransformer(fillerWords);
-
 		final LinkedHashMap<String, EventDialogueTransformer> garbageRemovingTransformers = new LinkedHashMap<>();
 		garbageRemovingTransformers.put("dedup", new DuplicateTokenFilteringEventDialogueTransformer());
 		final Predicate<String> parsingGarbageTokenMatcher = token -> {
