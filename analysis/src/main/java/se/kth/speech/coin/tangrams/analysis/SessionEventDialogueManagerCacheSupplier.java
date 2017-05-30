@@ -17,10 +17,7 @@
 package se.kth.speech.coin.tangrams.analysis;
 
 import java.io.IOException;
-import java.util.ListIterator;
-import java.util.function.BiFunction;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
 
 import javax.inject.Inject;
 import javax.inject.Named;
@@ -40,7 +37,7 @@ public final class SessionEventDialogueManagerCacheSupplier
 		implements Supplier<LoadingCache<SessionDataManager, SessionEventDialogueManager>> {
 
 	@Inject
-	private BiFunction<ListIterator<Utterance>, GameHistory, Stream<EventDialogue>> eventDiagFactory;
+	private EventDialogueFactory eventDiagFactory;
 
 	private final LoadingCache<SessionDataManager, SessionEventDialogueManager> instances = CacheBuilder.newBuilder()
 			.build(new CacheLoader<SessionDataManager, SessionEventDialogueManager>() {
