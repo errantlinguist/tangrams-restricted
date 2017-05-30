@@ -17,6 +17,7 @@
 package se.kth.speech;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -119,6 +120,18 @@ public class ListSubsequencesTest {
 		final List<String> input = Arrays.asList("I", "can't", "do", "it");
 		final List<List<String>> expected = Arrays.asList(Arrays.asList("I", "can't"), Arrays.asList("do", "it"));
 		final List<List<String>> actual = ListSubsequences.createSubsequenceList(input, 2);
+		Assert.assertEquals(expected, actual);
+	}
+
+	/**
+	 * Test method for
+	 * {@link se.kth.speech.ListSubsequences#createSubsequenceList(java.util.List, int)}.
+	 */
+	@Test
+	public void testCreateSubsequenceListLengthOne() {
+		final List<String> input = Arrays.asList("I", "can't", "do", "it", "well");
+		final List<List<String>> expected = input.stream().map(Collections::singletonList).collect(Collectors.toList());
+		final List<List<String>> actual = ListSubsequences.createSubsequenceList(input, 1);
 		Assert.assertEquals(expected, actual);
 	}
 
