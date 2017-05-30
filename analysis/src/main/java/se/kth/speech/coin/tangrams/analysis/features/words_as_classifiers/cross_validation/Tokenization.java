@@ -173,8 +173,6 @@ enum Tokenization implements Supplier<EventDialogueTransformer>, HasAbbreviation
 
 	private static final TokenFilteringEventDialogueTransformer FILLER_REMOVING_DIAG_TRANSFORMER;
 
-	private static final Set<String> FILLER_WORDS;;
-
 	private static final HeadFinder HEAD_FINDER = new CollinsHeadFinder();
 
 	private static final List<Entry<String, EventDialogueTransformer>> PARSING_GARBAGE_TOKEN_REMOVING_DIAG_TRANSFORMERS;
@@ -182,13 +180,13 @@ enum Tokenization implements Supplier<EventDialogueTransformer>, HasAbbreviation
 	private static final Collector<CharSequence, ?, String> TOKENIZER_KEY_JOINER = Collectors.joining(",");
 
 	static {
-		FILLER_WORDS = SnowballPorter2EnglishStopwords.Variant.FILLERS.get();
-		FILLER_REMOVING_DIAG_TRANSFORMER = new TokenFilteringEventDialogueTransformer(FILLER_WORDS);
+		final Set<String> fillerWords = SnowballPorter2EnglishStopwords.Variant.FILLERS.get();
+		FILLER_REMOVING_DIAG_TRANSFORMER = new TokenFilteringEventDialogueTransformer(fillerWords);
 
 		final LinkedHashMap<String, EventDialogueTransformer> garbageRemovingTransformers = new LinkedHashMap<>();
 		garbageRemovingTransformers.put("dedup", new DuplicateTokenFilteringEventDialogueTransformer());
 		final Predicate<String> parsingGarbageTokenMatcher = token -> {
-			return FILLER_WORDS.contains(token) || Disfluencies.TOKEN_MATCHER.test(token);
+			return fillerWords.contains(token) || Disfluencies.TOKEN_MATCHER.test(token);
 		};
 		garbageRemovingTransformers.put("noFillers,noDisfl",
 				new TokenFilteringEventDialogueTransformer(token -> !parsingGarbageTokenMatcher.test(token)));
