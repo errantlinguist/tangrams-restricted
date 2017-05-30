@@ -263,81 +263,6 @@ public final class Tester {
 
 	}
 
-	private class CrossValidator {
-
-		private final ExecutorService executor;
-
-		private CrossValidator(final ExecutorService executor) {
-			this.executor = executor;
-		}
-
-		public Map<Path, SessionTester.Result> apply(final Map<SessionDataManager, Path> allSessions)
-				throws ExecutionException, IOException, ClassificationException {
-			final Map<Path, SessionTester.Result> result = Maps.newHashMapWithExpectedSize(allSessions.size());
-			final Stream<Entry<SessionDataManager, WordClassificationData>> testSets = testSetFactory
-					.apply(allSessions);
-			for (final Iterator<Entry<SessionDataManager, WordClassificationData>> testSetIter = testSets
-					.iterator(); testSetIter.hasNext();) {
-				final Entry<SessionDataManager, WordClassificationData> testSet = testSetIter.next();
-				final SessionDataManager testSessionData = testSet.getKey();
-				final Path infilePath = allSessions.get(testSessionData);
-				LOGGER.info("Running cross-validation test on data from \"{}\".", infilePath);
-
-				final WordClassificationData trainingData = testSet.getValue();
-				final Optional<Instances> oovInstances = smoother.redistributeMass(trainingData);
-				LOGGER.debug("{} instance(s) for out-of-vocabulary class.",
-						oovInstances.map(Instances::size).orElse(0));
-
-				final Function<String, Logistic> wordClassifierGetter = createWordClassifierMap(
-						trainingData.getClassInstances().entrySet())::get;
-				final Instances testInsts = testInstsFactory.apply(TEST_INSTS_REL_NAME,
-						estimateTestInstanceCount(testSessionData));
-				final Function<EntityFeature.Extractor.Context, Instance> testInstFactory = entInstAttrCtx
-						.createInstFactory(testInsts);
-				final ReferentConfidenceMapFactory referentConfidenceMapFactory = beanFactory
-						.getBean(ReferentConfidenceMapFactory.class, wordClassifierGetter, testInstFactory);
-				final EventDialogueClassifier diagClassifier = beanFactory.getBean(EventDialogueClassifier.class,
-						referentConfidenceMapFactory);
-
-				final SingleGameContextReferentEventDialogueTester diagTester = new SingleGameContextReferentEventDialogueTester(
-						diagClassifier, diagTransformer);
-				final SessionTester sessionTester = new SessionTester(diagTester);
-				final SessionTester.Result testResults = sessionTester
-						.apply(sessionDiagMgrCacheSupplier.get().get(testSessionData));
-				result.put(infilePath, testResults);
-			}
-			return result;
-		}
-
-		private ConcurrentMap<String, Logistic> createWordClassifierMap(
-				final Set<Entry<String, Instances>> classInstances) {
-			final ConcurrentMap<String, Logistic> result = new ConcurrentHashMap<>(classInstances.size());
-			final Stream.Builder<CompletableFuture<Void>> trainingJobs = Stream.builder();
-			for (final Entry<String, Instances> classInstancesEntry : classInstances) {
-				final String className = classInstancesEntry.getKey();
-				LOGGER.debug("Training classifier for class \"{}\".", className);
-				final Instances trainingInsts = classInstancesEntry.getValue();
-				LOGGER.debug("{} instance(s) for class \"{}\".", trainingInsts.size(), className);
-				final CompletableFuture<Void> trainingJob = CompletableFuture.runAsync(() -> {
-					try {
-						final Logistic classifier = new Logistic();
-						classifier.buildClassifier(trainingInsts);
-						final Logistic oldClassifier = result.put(className, classifier);
-						if (oldClassifier != null) {
-							throw new IllegalArgumentException(
-									String.format("More than one file for word class \"%s\".", className));
-						}
-					} catch (final Exception e) {
-						throw new RuntimeException(e);
-					}
-				}, executor);
-				trainingJobs.add(trainingJob);
-			}
-			CompletableFuture.allOf(trainingJobs.build().toArray(CompletableFuture[]::new)).join();
-			return result;
-		}
-	}
-
 	private static final Logger LOGGER = LoggerFactory.getLogger(Tester.class);
 
 	private static final String TEST_INSTS_REL_NAME = "tested_entites";
@@ -394,10 +319,9 @@ public final class Tester {
 		LOGGER.info(
 				"Starting cross-validation test using data from {} session(s), doing {} iteration(s) on each dataset.",
 				allSessions.size(), iterCount);
-		final CrossValidator crossValidator = new CrossValidator(executor);
 		for (int iterNo = 1; iterNo <= iterCount; ++iterNo) {
 			LOGGER.info("Training/testing iteration no. {}.", iterNo);
-			final Map<Path, SessionTester.Result> iterResults = crossValidator.apply(allSessions);
+			final Map<Path, SessionTester.Result> iterResults = crossValidate(allSessions);
 			for (final Entry<Path, SessionTester.Result> iterResult : iterResults.entrySet()) {
 				result.put(iterResult.getKey(), iterNo, iterResult.getValue());
 			}
@@ -419,6 +343,70 @@ public final class Tester {
 	 */
 	public void setIterCount(final int iterCount) {
 		this.iterCount = iterCount;
+	}
+
+	private ConcurrentMap<String, Logistic> createWordClassifierMap(
+			final Set<Entry<String, Instances>> classInstances) {
+		final ConcurrentMap<String, Logistic> result = new ConcurrentHashMap<>(classInstances.size());
+		final Stream.Builder<CompletableFuture<Void>> trainingJobs = Stream.builder();
+		for (final Entry<String, Instances> classInstancesEntry : classInstances) {
+			final String className = classInstancesEntry.getKey();
+			LOGGER.debug("Training classifier for class \"{}\".", className);
+			final Instances trainingInsts = classInstancesEntry.getValue();
+			LOGGER.debug("{} instance(s) for class \"{}\".", trainingInsts.size(), className);
+			final CompletableFuture<Void> trainingJob = CompletableFuture.runAsync(() -> {
+				try {
+					final Logistic classifier = new Logistic();
+					classifier.buildClassifier(trainingInsts);
+					final Logistic oldClassifier = result.put(className, classifier);
+					if (oldClassifier != null) {
+						throw new IllegalArgumentException(
+								String.format("More than one file for word class \"%s\".", className));
+					}
+				} catch (final Exception e) {
+					throw new RuntimeException(e);
+				}
+			}, executor);
+			trainingJobs.add(trainingJob);
+		}
+		CompletableFuture.allOf(trainingJobs.build().toArray(CompletableFuture[]::new)).join();
+		return result;
+	}
+
+	private Map<Path, SessionTester.Result> crossValidate(final Map<SessionDataManager, Path> allSessions)
+			throws ExecutionException, IOException, ClassificationException {
+		final Map<Path, SessionTester.Result> result = Maps.newHashMapWithExpectedSize(allSessions.size());
+		final Stream<Entry<SessionDataManager, WordClassificationData>> testSets = testSetFactory.apply(allSessions);
+		for (final Iterator<Entry<SessionDataManager, WordClassificationData>> testSetIter = testSets
+				.iterator(); testSetIter.hasNext();) {
+			final Entry<SessionDataManager, WordClassificationData> testSet = testSetIter.next();
+			final SessionDataManager testSessionData = testSet.getKey();
+			final Path infilePath = allSessions.get(testSessionData);
+			LOGGER.info("Running cross-validation test on data from \"{}\".", infilePath);
+
+			final WordClassificationData trainingData = testSet.getValue();
+			final Optional<Instances> oovInstances = smoother.redistributeMass(trainingData);
+			LOGGER.debug("{} instance(s) for out-of-vocabulary class.", oovInstances.map(Instances::size).orElse(0));
+
+			final Function<String, Logistic> wordClassifierGetter = createWordClassifierMap(
+					trainingData.getClassInstances().entrySet())::get;
+			final Instances testInsts = testInstsFactory.apply(TEST_INSTS_REL_NAME,
+					estimateTestInstanceCount(testSessionData));
+			final Function<EntityFeature.Extractor.Context, Instance> testInstFactory = entInstAttrCtx
+					.createInstFactory(testInsts);
+			final ReferentConfidenceMapFactory referentConfidenceMapFactory = beanFactory
+					.getBean(ReferentConfidenceMapFactory.class, wordClassifierGetter, testInstFactory);
+			final EventDialogueClassifier diagClassifier = beanFactory.getBean(EventDialogueClassifier.class,
+					referentConfidenceMapFactory);
+
+			final SingleGameContextReferentEventDialogueTester diagTester = new SingleGameContextReferentEventDialogueTester(
+					diagClassifier, diagTransformer);
+			final SessionTester sessionTester = new SessionTester(diagTester);
+			final SessionTester.Result testResults = sessionTester
+					.apply(sessionDiagMgrCacheSupplier.get().get(testSessionData));
+			result.put(infilePath, testResults);
+		}
+		return result;
 	}
 
 }
