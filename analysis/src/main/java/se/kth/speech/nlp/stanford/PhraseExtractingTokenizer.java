@@ -36,21 +36,9 @@ import edu.stanford.nlp.util.CoreMap;
  */
 public final class PhraseExtractingTokenizer extends AbstractTokenizer {
 
-	private static final Function<CoreLabel, String> DEFAULT_LABEL_TOKEN_EXTRACTOR = CoreLabel::word;
 
-	private final Function<? super CoreLabel, String> labelTokenExtractor;
-
-	private final Predicate<Tree> treePruningPositiveFilter;
-
-	public PhraseExtractingTokenizer(final Annotator annotator, final Predicate<Tree> treePruningPositiveFilter) {
-		this(annotator, treePruningPositiveFilter, DEFAULT_LABEL_TOKEN_EXTRACTOR);
-	}
-
-	public PhraseExtractingTokenizer(final Annotator annotator, final Predicate<Tree> treePruningPositiveFilter,
-			final Function<? super CoreLabel, String> labelTokenExtractor) {
+	public PhraseExtractingTokenizer(final Annotator annotator) {
 		super(annotator);
-		this.treePruningPositiveFilter = treePruningPositiveFilter;
-		this.labelTokenExtractor = labelTokenExtractor;
 	}
 
 	/*
@@ -68,15 +56,7 @@ public final class PhraseExtractingTokenizer extends AbstractTokenizer {
 		for (final CoreMap sent : sents) {
 			// this is the parse tree of the current sentence
 			final Tree tree = sent.get(TreeAnnotation.class);
-			final Tree prunedTree = tree.prune(treePruningPositiveFilter);
-			if (prunedTree != null) {
-				final List<CoreLabel> coreLabels = prunedTree.taggedLabeledYield();
-				result.ensureCapacity(result.size() + coreLabels.size());
-				for (final CoreLabel coreLabel : coreLabels) {
-					final String token = labelTokenExtractor.apply(coreLabel);
-					result.add(token);
-				}
-			}
+			// TODO: Finish
 		}
 		return result;
 	}
