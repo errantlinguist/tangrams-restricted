@@ -66,7 +66,7 @@ public final class SentimentAnalyzingInstancesFactory extends AbstractSizeEstima
 
 	/**
 	 *
-	 * @see edu.stanford.nlp.sentiment.RNNOptions.DEFAULT_CLASS_NAMES
+	 * @see edu.stanford.nlp.sentiment.RNNOptions#DEFAULT_CLASS_NAMES
 	 */
 	private static Object2IntMap<String> createSentimentClassWeightMap() {
 		final String[] classNames = RNNOptions.DEFAULT_CLASS_NAMES;
