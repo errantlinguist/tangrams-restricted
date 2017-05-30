@@ -28,29 +28,34 @@ import java.util.List;
 public final class ListSubsequences {
 
 	public static <T> List<T> createDeduplicatedAdjacentSubsequenceList(final List<T> list) {
-		System.out.println("inputList: " + list);
-		final List<T> result;
-		if (list.size() == 1) {
-			result = list;
-		} else {
-			result = new ArrayList<>(list.size());
-			for (int subseqLength = list.size(); subseqLength > 0; --subseqLength) {
-				final List<List<T>> subseqs = createSubsequenceList(list, subseqLength);
-				System.out.println("subseqLength: " + subseqLength + ", subseqs: " + subseqs);
-				final List<List<T>> deduplicatedSubseqs = createDeduplicatedAdjacentSubsequenceListFromListOfSubsequences(
-						subseqs);
-				System.out.println("subseqLength: " + subseqLength + ", deduplicatedSubseqs: " + deduplicatedSubseqs);
-				for (final List<T> subseq : deduplicatedSubseqs) {
-					System.out.println("subseq being processed: " + subseq);
-					final List<T> dedup = createDeduplicatedAdjacentSubsequenceList(subseq);
-					System.out.println("dedupd subseq: " + dedup);
-					result.addAll(dedup);
-				}
-			}
-			// TODO: Fix
-		}
-
-		return result;
+		throw new UnsupportedOperationException("broken");
+//		System.out.println("inputList: " + list);
+//		final List<T> result;
+//		if (list.size() == 1) {
+//			result = list;
+//		} else {
+//			result = new ArrayList<>(list.size());
+//			final int subseqLength = list.size() - 1;
+//			// for (int subseqLength = list.size() - 1; subseqLength > 0;
+//			// --subseqLength) {
+//			final List<List<T>> subseqs = createSubsequenceList(list, subseqLength);
+//			System.out.println("subseqLength: " + subseqLength + ", subseqs: " + subseqs);
+//			final List<List<T>> deduplicatedSubseqs = createDeduplicatedAdjacentSubsequenceListFromListOfSubsequences(
+//					subseqs);
+//			System.out.println("subseqLength: " + subseqLength + ", deduplicatedSubseqs: " + deduplicatedSubseqs);
+//			for (final List<T> deduplicatedSubseq : deduplicatedSubseqs) {
+//				System.out.println("subseq being processed: " + deduplicatedSubseq);
+//				final List<T> dedup = createDeduplicatedAdjacentSubsequenceList(deduplicatedSubseq);
+//				System.out.println("dedupd subseq: " + dedup);
+//				if (deduplicatedSubseq.equals(dedup)){
+//					result.addAll(dedup);
+//				}
+//			}
+//			// }
+//			// TODO: Fix
+//		}
+//
+//		return result;
 	}
 
 	public static <T> List<List<T>> createDeduplicatedAdjacentSubsequenceListFromListOfSubsequences(
