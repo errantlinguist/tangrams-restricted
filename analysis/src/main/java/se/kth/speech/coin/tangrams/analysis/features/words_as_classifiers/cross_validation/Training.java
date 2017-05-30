@@ -70,7 +70,9 @@ enum Training implements Function<TrainingContext, Entry<TrainingInstancesFactor
 					.getBean(EntityFeatureExtractionContextFactory.class);
 			final SentimentAnalyzingInstancesFactory instsFactory = new SentimentAnalyzingInstancesFactory(
 					entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory,
-					StanfordCoreNLPConfigurationVariant.TOKENIZING_PARSING_SENTIMENT.get(), ESTIMATED_UNIQUE_UTT_COUNT);
+					StanfordCoreNLPConfigurationVariant.TOKENIZING_PARSING_SENTIMENT
+							.apply(trainingCtx.getBackgroundJobExecutor()),
+					ESTIMATED_UNIQUE_UTT_COUNT);
 			return new MutablePair<>(instsFactory, 1);
 		}
 	};

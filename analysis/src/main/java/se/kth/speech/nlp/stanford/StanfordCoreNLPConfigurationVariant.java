@@ -19,8 +19,12 @@ package se.kth.speech.nlp.stanford;
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
 import java.util.Properties;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Executor;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
@@ -34,7 +38,7 @@ import edu.stanford.nlp.pipeline.StanfordCoreNLP;
  * @since 29 May 2017
  *
  */
-public enum StanfordCoreNLPConfigurationVariant implements Supplier<StanfordCoreNLP> {
+public enum StanfordCoreNLPConfigurationVariant implements Function<Executor, Supplier<StanfordCoreNLP>> {
 	TOKENIZING {
 
 		@Override
@@ -83,7 +87,7 @@ public enum StanfordCoreNLPConfigurationVariant implements Supplier<StanfordCore
 		}
 	};
 
-	private static final ConcurrentMap<StanfordCoreNLPConfigurationVariant, Reference<StanfordCoreNLP>> INSTANCES = new ConcurrentHashMap<>(
+	private static final ConcurrentMap<StanfordCoreNLPConfigurationVariant, Reference<CompletableFuture<StanfordCoreNLP>>> INSTANCES = new ConcurrentHashMap<>(
 			StanfordCoreNLPConfigurationVariant.values().length);
 
 	private static final Collector<CharSequence, ?, String> OPTION_MULTIVALUE_DELIMITER = Collectors.joining(",");
@@ -116,16 +120,31 @@ public enum StanfordCoreNLPConfigurationVariant implements Supplier<StanfordCore
 	}
 
 	@Override
-	public StanfordCoreNLP get() {
-		final Reference<StanfordCoreNLP> ref = INSTANCES.compute(this, (key, oldValue) -> {
-			final Reference<StanfordCoreNLP> newValue;
+	public Supplier<StanfordCoreNLP> apply(final Executor executor) {
+		final CompletableFuture<StanfordCoreNLP> futureAnnotator = applyAsync(executor);
+		return () -> {
+			try {
+				return futureAnnotator.get();
+			} catch (InterruptedException | ExecutionException e) {
+				throw new RuntimeException(e);
+			}
+		};
+	}
+
+	private CompletableFuture<StanfordCoreNLP> applyAsync(final Executor executor) {
+		final Reference<CompletableFuture<StanfordCoreNLP>> ref = INSTANCES.compute(this, (key, oldValue) -> {
+			final Reference<CompletableFuture<StanfordCoreNLP>> newValue;
 			if (oldValue == null) {
 				// No instance has yet been created; Create one
-				newValue = new SoftReference<>(new StanfordCoreNLP(createProps()));
+				final CompletableFuture<StanfordCoreNLP> futureInst = CompletableFuture
+						.supplyAsync(() -> new StanfordCoreNLP(createProps()), executor);
+				newValue = new SoftReference<>(futureInst);
 			} else if (oldValue.get() == null) {
 				// The old instance has already been deleted; Replace it with a
 				// new reference to a new instance
-				newValue = new SoftReference<>(new StanfordCoreNLP(createProps()));
+				final CompletableFuture<StanfordCoreNLP> futureInst = CompletableFuture
+						.supplyAsync(() -> new StanfordCoreNLP(createProps()), executor);
+				newValue = new SoftReference<>(futureInst);
 			} else {
 				// The existing instance has not yet been deleted; Re-use it
 				newValue = oldValue;

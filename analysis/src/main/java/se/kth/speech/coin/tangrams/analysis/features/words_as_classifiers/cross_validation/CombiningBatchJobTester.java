@@ -73,7 +73,7 @@ public final class CombiningBatchJobTester {
 
 	private final ApplicationContext appCtx;
 
-	private final ExecutorService executor;
+	private final ExecutorService backgroundJobExecutor;
 
 	private final Consumer<? super BatchJobSummary> batchJobResultHandler;
 
@@ -86,10 +86,10 @@ public final class CombiningBatchJobTester {
 		});
 	}
 
-	public CombiningBatchJobTester(final ExecutorService executor, final ApplicationContext appCtx,
+	public CombiningBatchJobTester(final ExecutorService backgroundJobExecutor, final ApplicationContext appCtx,
 			final Consumer<? super BatchJobSummary> batchJobResultHandler,
 			final Consumer<? super Tester> testerConfigurator) {
-		this.executor = executor;
+		this.backgroundJobExecutor = backgroundJobExecutor;
 		this.appCtx = appCtx;
 		this.batchJobResultHandler = batchJobResultHandler;
 		this.testerConfigurator = testerConfigurator;
@@ -101,7 +101,7 @@ public final class CombiningBatchJobTester {
 		for (final UtteranceFiltering uttFilteringMethod : input.uttFilteringMethods) {
 			final EventDialogueTransformer uttFilter = uttFilteringMethod.get();
 			for (final Tokenization tokenizationMethod : input.tokenizationMethods) {
-				final EventDialogueTransformer tokenizer = tokenizationMethod.get();
+				final EventDialogueTransformer tokenizer = tokenizationMethod.apply(backgroundJobExecutor);
 
 				for (final TokenFiltering tokenFilteringMethod : input.tokenFilteringMethods) {
 					final EventDialogueTransformer tokenFilter = tokenFilteringMethod.get();
@@ -111,7 +111,7 @@ public final class CombiningBatchJobTester {
 					final CachingEventDialogueTransformer cachingDiagTransformer = new CachingEventDialogueTransformer(
 							new ChainedEventDialogueTransformer(diagTransformers));
 					final TrainingContext trainingCtx = new TrainingContext(uttFilteringMethod, tokenizationMethod,
-							tokenFilteringMethod, cachingDiagTransformer, appCtx);
+							tokenFilteringMethod, cachingDiagTransformer, appCtx, backgroundJobExecutor);
 					for (final Training trainingMethod : input.trainingMethods) {
 						final Entry<TrainingInstancesFactory, Integer> trainingInstsFactoryIterCount = trainingMethod
 								.apply(trainingCtx);
@@ -119,16 +119,17 @@ public final class CombiningBatchJobTester {
 						final TestSetFactory testSetFactory = new TestSetFactory(trainingInstsFactoryIterCount.getKey(),
 								sessionDiagMgrCacheSupplier);
 						final Tester tester = appCtx.getBean(Tester.class, testSetFactory, cachingDiagTransformer,
-								executor);
+								backgroundJobExecutor);
 						tester.setIterCount(trainingInstsFactoryIterCount.getValue());
 						testerConfigurator.accept(tester);
 						final TestParameters testParams = new TestParameters(uttFilteringMethod, tokenizationMethod,
 								tokenFilteringMethod, trainingMethod);
 						LOGGER.info("Testing {}.", testParams);
-						
-						LocalDateTime testTimestamp = LocalDateTime.now();
+
+						final LocalDateTime testTimestamp = LocalDateTime.now();
 						final Tester.Result testResults = tester.apply(input.allSessions);
-						final BatchJobSummary batchSummary = new BatchJobSummary(testTimestamp, testParams, testResults);
+						final BatchJobSummary batchSummary = new BatchJobSummary(testTimestamp, testParams,
+								testResults);
 						batchJobResultHandler.accept(batchSummary);
 					}
 				}

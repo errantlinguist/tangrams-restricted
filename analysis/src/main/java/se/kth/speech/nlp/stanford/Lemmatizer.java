@@ -18,6 +18,7 @@ package se.kth.speech.nlp.stanford;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 
 import edu.stanford.nlp.ling.CoreAnnotations.LemmaAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.SentencesAnnotation;
@@ -34,13 +35,13 @@ import edu.stanford.nlp.util.CoreMap;
  */
 public final class Lemmatizer extends AbstractTokenizer {
 
-	public Lemmatizer(final Annotator annotator) {
-		super(annotator);
+	public Lemmatizer(final Supplier<? extends Annotator> annotatorSupplier) {
+		super(annotatorSupplier);
 	}
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see
 	 * se.kth.speech.nlp.AbstractStanfordCoreNLPTokenizer#tokenize(edu.stanford.
 	 * nlp.pipeline.Annotation)

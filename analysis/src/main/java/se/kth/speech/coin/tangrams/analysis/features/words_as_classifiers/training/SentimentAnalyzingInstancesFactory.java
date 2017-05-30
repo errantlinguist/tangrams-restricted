@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map.Entry;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -100,7 +101,7 @@ public final class SentimentAnalyzingInstancesFactory extends AbstractSizeEstima
 		return result;
 	}
 
-	private final Annotator annotator;
+	private final Supplier<? extends Annotator> annotatorSupplier;
 
 	private final EventDialogueTransformer diagTransformer;
 
@@ -110,11 +111,11 @@ public final class SentimentAnalyzingInstancesFactory extends AbstractSizeEstima
 
 	public SentimentAnalyzingInstancesFactory(final EntityInstanceAttributeContext entityInstAttrCtx,
 			final EventDialogueTransformer diagTransformer, final EntityFeatureExtractionContextFactory extCtxFactory,
-			final Annotator annotator, final int expectedUniqueUttCount) {
+			final Supplier<? extends Annotator> annotatorSupplier, final int expectedUniqueUttCount) {
 		super(entityInstAttrCtx);
 		this.diagTransformer = diagTransformer;
 		this.extCtxFactory = extCtxFactory;
-		this.annotator = annotator;
+		this.annotatorSupplier = annotatorSupplier;
 		uttWeightCache = new Object2DoubleOpenHashMap<>(expectedUniqueUttCount);
 	}
 
@@ -134,7 +135,7 @@ public final class SentimentAnalyzingInstancesFactory extends AbstractSizeEstima
 
 	private double calculateUttSentimentRank(final Utterance utt) {
 		final Annotation annot = new Annotation(utt.getTokenStr());
-		annotator.annotate(annot);
+		annotatorSupplier.get().annotate(annot);
 		final List<CoreMap> sents = annot.get(SentencesAnnotation.class);
 		final double result;
 		if (sents.isEmpty()) {

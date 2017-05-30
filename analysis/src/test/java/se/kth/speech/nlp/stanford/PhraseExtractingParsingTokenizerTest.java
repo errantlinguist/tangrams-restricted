@@ -22,6 +22,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import org.junit.Assert;
 import org.junit.experimental.theories.DataPoints;
@@ -30,7 +32,6 @@ import org.junit.experimental.theories.Theory;
 import org.junit.runner.RunWith;
 
 import edu.stanford.nlp.ling.Label;
-import edu.stanford.nlp.pipeline.StanfordCoreNLP;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -47,11 +48,13 @@ public final class PhraseExtractingParsingTokenizerTest {
 	private static final PhraseExtractingParsingTokenizer TEST_INST;
 
 	static {
-		final StanfordCoreNLP annnotator = StanfordCoreNLPConfigurationVariant.TOKENIZING_PARSING.get();
-		TEST_INST = new PhraseExtractingParsingTokenizer(annnotator, subTree -> {
-			final Label label = subTree.label();
-			return label == null ? false : "NP".equals(label.value());
-		});
+		final ExecutorService executor = Executors.newSingleThreadExecutor();
+		TEST_INST = new PhraseExtractingParsingTokenizer(
+				StanfordCoreNLPConfigurationVariant.TOKENIZING_PARSING.apply(executor), subTree -> {
+					final Label label = subTree.label();
+					return label == null ? false : "NP".equals(label.value());
+				});
+		executor.shutdown();
 	}
 
 	private static Map<String, List<String>> createInputExpectedOutputMap() {

@@ -16,6 +16,8 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation;
 
+import java.util.concurrent.ExecutorService;
+
 import org.springframework.context.ApplicationContext;
 
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EventDialogueTransformer;
@@ -32,14 +34,17 @@ final class TrainingContext {
 	//
 	// private final UtteranceFiltering uttFilteringMethod;
 
+	private final ExecutorService backgroundJobExecutor;
+
 	TrainingContext(final UtteranceFiltering uttFilteringMethod, final Tokenization tokenizationMethod,
 			final TokenFiltering tokenFilteringMethod, final EventDialogueTransformer diagTransformer,
-			final ApplicationContext appCtx) {
+			final ApplicationContext appCtx, final ExecutorService backgroundJobExecutor) {
 		// this.uttFilteringMethod = uttFilteringMethod;
 		// this.tokenizationMethod = tokenizationMethod;
 		// this.tokenFilteringMethod = tokenFilteringMethod;
 		this.diagTransformer = diagTransformer;
 		this.appCtx = appCtx;
+		this.backgroundJobExecutor = backgroundJobExecutor;
 	}
 
 	/**
@@ -47,6 +52,13 @@ final class TrainingContext {
 	 */
 	ApplicationContext getAppCtx() {
 		return appCtx;
+	}
+
+	/**
+	 * @return the backgroundJobExecutor
+	 */
+	ExecutorService getBackgroundJobExecutor() {
+		return backgroundJobExecutor;
 	}
 
 	/**

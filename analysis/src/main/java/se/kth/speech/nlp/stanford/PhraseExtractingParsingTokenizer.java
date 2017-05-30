@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.Deque;
 import java.util.List;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 import edu.stanford.nlp.ling.CoreAnnotations.SentencesAnnotation;
 import edu.stanford.nlp.ling.Word;
@@ -42,13 +43,14 @@ public final class PhraseExtractingParsingTokenizer extends AbstractTokenizer {
 
 	private final Predicate<? super Tree> subTreeMatcher;
 
-	public PhraseExtractingParsingTokenizer(final Annotator annotator, final Predicate<? super Tree> subTreeMatcher) {
-		this(annotator, subTreeMatcher, subTreeBranch -> true);
+	public PhraseExtractingParsingTokenizer(final Supplier<? extends Annotator> annotatorSupplier,
+			final Predicate<? super Tree> subTreeMatcher) {
+		this(annotatorSupplier, subTreeMatcher, subTreeBranch -> true);
 	}
 
-	public PhraseExtractingParsingTokenizer(final Annotator annotator, final Predicate<? super Tree> subTreeMatcher,
-			final Predicate<Tree> subTreeBranchPruningPositiveFilter) {
-		super(annotator);
+	public PhraseExtractingParsingTokenizer(final Supplier<? extends Annotator> annotatorSupplier,
+			final Predicate<? super Tree> subTreeMatcher, final Predicate<Tree> subTreeBranchPruningPositiveFilter) {
+		super(annotatorSupplier);
 		this.subTreeMatcher = subTreeMatcher;
 		this.subTreeBranchPruningPositiveFilter = subTreeBranchPruningPositiveFilter;
 	}

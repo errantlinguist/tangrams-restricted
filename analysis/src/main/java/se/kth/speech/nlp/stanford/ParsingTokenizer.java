@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 import edu.stanford.nlp.ling.CoreAnnotations.SentencesAnnotation;
 import edu.stanford.nlp.ling.CoreLabel;
@@ -42,20 +43,22 @@ public final class ParsingTokenizer extends AbstractTokenizer {
 
 	private final Predicate<Tree> treePruningPositiveFilter;
 
-	public ParsingTokenizer(final Annotator annotator, final Predicate<Tree> treePruningPositiveFilter) {
-		this(annotator, treePruningPositiveFilter, DEFAULT_LABEL_TOKEN_EXTRACTOR);
+	public ParsingTokenizer(final Supplier<? extends Annotator> annotatorSupplier,
+			final Predicate<Tree> treePruningPositiveFilter) {
+		this(annotatorSupplier, treePruningPositiveFilter, DEFAULT_LABEL_TOKEN_EXTRACTOR);
 	}
 
-	public ParsingTokenizer(final Annotator annotator, final Predicate<Tree> treePruningPositiveFilter,
+	public ParsingTokenizer(final Supplier<? extends Annotator> annotatorSupplier,
+			final Predicate<Tree> treePruningPositiveFilter,
 			final Function<? super CoreLabel, String> labelTokenExtractor) {
-		super(annotator);
+		super(annotatorSupplier);
 		this.treePruningPositiveFilter = treePruningPositiveFilter;
 		this.labelTokenExtractor = labelTokenExtractor;
 	}
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see
 	 * se.kth.speech.nlp.AbstractStanfordCoreNLPTokenizer#tokenize(edu.stanford.
 	 * nlp.pipeline.Annotation)

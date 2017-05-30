@@ -21,8 +21,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.Executor;
+import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.ChainedEventDialogueTransformer;
@@ -36,13 +37,13 @@ import se.kth.speech.nlp.stanford.Lemmatizer;
 import se.kth.speech.nlp.stanford.StanfordCoreNLPConfigurationVariant;
 import se.kth.speech.nlp.stanford.Tokenizer;
 
-enum Tokenization implements Supplier<EventDialogueTransformer>, HasAbbreviation {
+enum Tokenization implements Function<Executor, EventDialogueTransformer>, HasAbbreviation {
 	BASIC_TOKENIZER {
 
 		@Override
-		public TokenizingEventDialogueTransformer get() {
+		public TokenizingEventDialogueTransformer apply(final Executor executor) {
 			return new TokenizingEventDialogueTransformer(
-					new Tokenizer(StanfordCoreNLPConfigurationVariant.TOKENIZING.get()));
+					new Tokenizer(StanfordCoreNLPConfigurationVariant.TOKENIZING.apply(executor)));
 		}
 
 		@Override
@@ -53,9 +54,9 @@ enum Tokenization implements Supplier<EventDialogueTransformer>, HasAbbreviation
 	LEMMATIZER {
 
 		@Override
-		public TokenizingEventDialogueTransformer get() {
+		public TokenizingEventDialogueTransformer apply(final Executor executor) {
 			return new TokenizingEventDialogueTransformer(
-					new Lemmatizer(StanfordCoreNLPConfigurationVariant.TOKENIZING_LEMMATIZING.get()));
+					new Lemmatizer(StanfordCoreNLPConfigurationVariant.TOKENIZING_LEMMATIZING.apply(executor)));
 		}
 
 		@Override
@@ -66,11 +67,11 @@ enum Tokenization implements Supplier<EventDialogueTransformer>, HasAbbreviation
 	NPS_ONLY {
 
 		@Override
-		public ChainedEventDialogueTransformer get() {
+		public ChainedEventDialogueTransformer apply(final Executor executor) {
 			final List<EventDialogueTransformer> chain = new ArrayList<>(
 					PARSING_GARBAGE_TOKEN_REMOVING_DIAG_TRANSFORMERS.size() + 1);
 			PARSING_GARBAGE_TOKEN_REMOVING_DIAG_TRANSFORMERS.stream().map(Entry::getValue).forEach(chain::add);
-			chain.add(ParsingTokenization.NP_WHITELISTING.get());
+			chain.add(ParsingTokenization.NP_WHITELISTING.apply(executor));
 			return new ChainedEventDialogueTransformer(chain);
 		}
 
@@ -85,11 +86,11 @@ enum Tokenization implements Supplier<EventDialogueTransformer>, HasAbbreviation
 	NPS_WITHOUT_PPS {
 
 		@Override
-		public ChainedEventDialogueTransformer get() {
+		public ChainedEventDialogueTransformer apply(final Executor executor) {
 			final List<EventDialogueTransformer> chain = new ArrayList<>(
 					PARSING_GARBAGE_TOKEN_REMOVING_DIAG_TRANSFORMERS.size() + 1);
 			PARSING_GARBAGE_TOKEN_REMOVING_DIAG_TRANSFORMERS.stream().map(Entry::getValue).forEach(chain::add);
-			chain.add(ParsingTokenization.NP_WHITELISTING_PP_PRUNING.get());
+			chain.add(ParsingTokenization.NP_WHITELISTING_PP_PRUNING.apply(executor));
 			return new ChainedEventDialogueTransformer(chain);
 		}
 
@@ -104,11 +105,11 @@ enum Tokenization implements Supplier<EventDialogueTransformer>, HasAbbreviation
 	PP_REMOVER {
 
 		@Override
-		public ChainedEventDialogueTransformer get() {
+		public ChainedEventDialogueTransformer apply(final Executor executor) {
 			final List<EventDialogueTransformer> chain = new ArrayList<>(
 					PARSING_GARBAGE_TOKEN_REMOVING_DIAG_TRANSFORMERS.size() + 1);
 			PARSING_GARBAGE_TOKEN_REMOVING_DIAG_TRANSFORMERS.stream().map(Entry::getValue).forEach(chain::add);
-			chain.add(ParsingTokenization.PP_BLACKLISTING.get());
+			chain.add(ParsingTokenization.PP_BLACKLISTING.apply(executor));
 			return new ChainedEventDialogueTransformer(chain);
 		}
 

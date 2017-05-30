@@ -17,8 +17,9 @@
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation;
 
 import java.util.Collections;
+import java.util.concurrent.Executor;
+import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 
 import edu.stanford.nlp.ling.Label;
 import edu.stanford.nlp.trees.CollinsHeadFinder;
@@ -29,13 +30,13 @@ import se.kth.speech.nlp.stanford.PhrasalHeadFilteringPredicate;
 import se.kth.speech.nlp.stanford.PhraseExtractingParsingTokenizer;
 import se.kth.speech.nlp.stanford.StanfordCoreNLPConfigurationVariant;
 
-enum ParsingTokenization implements Supplier<TokenizingEventDialogueTransformer>, HasAbbreviation {
+enum ParsingTokenization implements Function<Executor, TokenizingEventDialogueTransformer>, HasAbbreviation {
 	NP_WHITELISTING {
 
 		@Override
-		public TokenizingEventDialogueTransformer get() {
+		public TokenizingEventDialogueTransformer apply(final Executor executor) {
 			return new TokenizingEventDialogueTransformer(new PhraseExtractingParsingTokenizer(
-					StanfordCoreNLPConfigurationVariant.TOKENIZING_PARSING.get(),
+					StanfordCoreNLPConfigurationVariant.TOKENIZING_PARSING.apply(executor),
 					NP_WHITELISTING_PHRASE_MATCHER));
 		}
 
@@ -48,9 +49,9 @@ enum ParsingTokenization implements Supplier<TokenizingEventDialogueTransformer>
 	NP_WHITELISTING_PP_PRUNING {
 
 		@Override
-		public TokenizingEventDialogueTransformer get() {
+		public TokenizingEventDialogueTransformer apply(final Executor executor) {
 			return new TokenizingEventDialogueTransformer(new PhraseExtractingParsingTokenizer(
-					StanfordCoreNLPConfigurationVariant.TOKENIZING_PARSING.get(),
+					StanfordCoreNLPConfigurationVariant.TOKENIZING_PARSING.apply(executor),
 					NP_WHITELISTING_PHRASE_MATCHER, LOCATIONAL_PP_PRUNING_MATCHER));
 		}
 
@@ -63,9 +64,9 @@ enum ParsingTokenization implements Supplier<TokenizingEventDialogueTransformer>
 	PP_BLACKLISTING {
 
 		@Override
-		public TokenizingEventDialogueTransformer get() {
+		public TokenizingEventDialogueTransformer apply(final Executor executor) {
 			return new TokenizingEventDialogueTransformer(new se.kth.speech.nlp.stanford.ParsingTokenizer(
-					StanfordCoreNLPConfigurationVariant.TOKENIZING_PARSING.get(),
+					StanfordCoreNLPConfigurationVariant.TOKENIZING_PARSING.apply(executor),
 					LOCATIONAL_PP_PRUNING_MATCHER));
 		}
 
