@@ -28,7 +28,6 @@ import java.util.stream.Stream;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.ChainedEventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.DuplicateTokenFilteringEventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EventDialogueTransformer;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.FallbackTokenizingEventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.TokenFilteringEventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.TokenizingEventDialogueTransformer;
 import se.kth.speech.nlp.Disfluencies;
@@ -109,8 +108,7 @@ enum Tokenization implements Supplier<EventDialogueTransformer>, HasAbbreviation
 			final List<EventDialogueTransformer> chain = new ArrayList<>(
 					PARSING_GARBAGE_TOKEN_REMOVING_DIAG_TRANSFORMERS.size() + 1);
 			PARSING_GARBAGE_TOKEN_REMOVING_DIAG_TRANSFORMERS.stream().map(Entry::getValue).forEach(chain::add);
-			final FallbackTokenizingEventDialogueTransformer tokenizer = ParsingTokenization.PP_BLACKLISTING.get();
-			chain.add(tokenizer);
+			chain.add(ParsingTokenization.PP_BLACKLISTING.get());
 			return new ChainedEventDialogueTransformer(chain);
 		}
 
