@@ -121,8 +121,13 @@ public final class OnePositiveMaximumNegativeInstancesFactory extends AbstractSi
 					final Stream<String> wordClasses = allUtts.stream().map(Utterance::getTokens).flatMap(List::stream);
 					wordClasses.forEach(wordClass -> {
 						final Instances classInsts = trainingData.fetchWordInstances(wordClass);
-						final Stream<Instance> trainingInsts = trainingContexts.stream()
-								.map(trainingContext -> createTokenInstance(classInsts, trainingContext.getKey(), trainingContext.getValue()));
+						final Stream<Entry<Instance, String>> trainingInsts = trainingContexts.stream()
+								.map(trainingContext -> {
+									final String classValue = trainingContext.getValue();
+									return new MutablePair<>(
+											createTokenInstance(classInsts, trainingContext.getKey(), classValue),
+											classValue);
+								});
 						// Add examples
 						trainingData.addObservation(wordClass, trainingInsts);
 					});

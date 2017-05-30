@@ -17,10 +17,12 @@
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training;
 
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import weka.core.Instance;
 import weka.core.Instances;
 
@@ -37,12 +39,17 @@ public final class WordClassificationData {
 
 	private final Object2IntMap<String> classObservationCounts;
 
+	private final Object2IntMap<String> trainingInstanceCounts;
+
 	protected WordClassificationData(final Map<String, Instances> classInsts,
 			final Object2IntMap<String> classObservationCounts,
 			final Function<String, Instances> classInstancesFetcher) {
 		this.classInsts = classInsts;
 		this.classObservationCounts = classObservationCounts;
 		this.classInstancesFetcher = classInstancesFetcher;
+
+		trainingInstanceCounts = new Object2IntOpenHashMap<>(2);
+		trainingInstanceCounts.defaultReturnValue(0);
 	}
 
 	public Instances fetchWordInstances(final String wordClass) {
@@ -63,10 +70,20 @@ public final class WordClassificationData {
 		return classObservationCounts;
 	}
 
-	protected void addObservation(final String wordClass, final Stream<Instance> insts) {
+	/**
+	 * @return the trainingInstanceCounts
+	 */
+	public Object2IntMap<String> getTrainingInstanceCounts() {
+		return trainingInstanceCounts;
+	}
+
+	protected void addObservation(final String wordClass, final Stream<Entry<Instance, String>> instClassValues) {
 		final Instances classInstances = classInstancesFetcher.apply(wordClass);
-		insts.forEach(inst -> {
+		instClassValues.forEach(instClassValue -> {
+			final Instance inst = instClassValue.getKey();
 			classInstances.add(inst);
+			final String classValue = instClassValue.getValue();
+			trainingInstanceCounts.put(classValue, trainingInstanceCounts.getInt(classValue) + 1);
 		});
 		classObservationCounts.put(wordClass, classObservationCounts.getInt(wordClass) + 1);
 	}

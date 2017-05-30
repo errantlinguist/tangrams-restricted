@@ -54,6 +54,7 @@ import se.kth.speech.coin.tangrams.analysis.UtteranceDialogueRepresentationStrin
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.EventDialogueTester;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.SessionTester;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.Tester.CrossValidationTestSummary;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -165,7 +166,8 @@ public final class DialogueAnalysisWriter implements Consumer<Tester.Result> {
 
 	private static final UtteranceDialogueRepresentationStringFactory UTT_DIAG_REPR_FACTORY = new UtteranceDialogueRepresentationStringFactory();
 
-	public static void main(final CommandLine cl) throws ParseException, IOException, ClassificationException, ExecutionException {
+	public static void main(final CommandLine cl)
+			throws ParseException, IOException, ClassificationException, ExecutionException {
 		if (cl.hasOption(Parameter.HELP.optName)) {
 			Parameter.printHelp();
 		} else {
@@ -213,13 +215,14 @@ public final class DialogueAnalysisWriter implements Consumer<Tester.Result> {
 	public void accept(final Tester.Result cvtestResults) {
 		out.println(COL_HEADERS.stream().collect(ROW_CELL_JOINER));
 
-		for (final Entry<Path, List<SessionTester.Result>> infileSessionResults : cvtestResults.getSessionResults()
-				.entrySet()) {
+		for (final Entry<Path, List<CrossValidationTestSummary>> infileSessionResults : cvtestResults
+				.getSessionResults().entrySet()) {
 			final Path inpath = infileSessionResults.getKey();
-			final List<SessionTester.Result> sessionResultList = infileSessionResults.getValue();
-			for (final ListIterator<SessionTester.Result> sessionResultIter = sessionResultList
+			final List<CrossValidationTestSummary> sessionResultList = infileSessionResults.getValue();
+			for (final ListIterator<CrossValidationTestSummary> sessionResultIter = sessionResultList
 					.listIterator(); sessionResultIter.hasNext();) {
-				final SessionTester.Result sessionResults = sessionResultIter.next();
+				final CrossValidationTestSummary cvTestSummary = sessionResultIter.next();
+				final SessionTester.Result sessionResults = cvTestSummary.getTestResults();
 				// NOTE: This should remain here, after "Iterator.next()", so
 				// that the printed first iteration is "1" rather than "0"
 				final int iterNo = sessionResultIter.nextIndex();

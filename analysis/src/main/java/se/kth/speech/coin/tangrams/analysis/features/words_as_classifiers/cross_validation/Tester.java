@@ -86,11 +86,27 @@ import weka.core.Instances;
  */
 public final class Tester {
 
+	public static final class CrossValidationTestSummary {
+
+		private final SessionTester.Result testResults;
+
+		private CrossValidationTestSummary(final SessionTester.Result testResults) {
+			this.testResults = testResults;
+		}
+
+		/**
+		 * @return the testResults
+		 */
+		public SessionTester.Result getTestResults() {
+			return testResults;
+		}
+	}
+
 	public static final class Result implements SessionTestStatistics {
 
 		private final int iterCount;
 
-		private final ConcurrentMap<Path, List<SessionTester.Result>> sessionResults;
+		private final ConcurrentMap<Path, List<CrossValidationTestSummary>> sessionResults;
 
 		private final SessionTester.Result totalResults;
 
@@ -101,14 +117,14 @@ public final class Tester {
 		}
 
 		public Stream<Entry<EventDialogue, EventDialogueTester.Result>> getAllDialogueTestResults() {
-			return sessionResults.values().stream().flatMap(List::stream)
+			return sessionResults.values().stream().flatMap(List::stream).map(CrossValidationTestSummary::getTestResults)
 					.map(SessionTester.Result::getDialogueTestResults).flatMap(List::stream);
 		}
 
 		/**
 		 * @return the sessionResults
 		 */
-		public Map<Path, List<SessionTester.Result>> getSessionResults() {
+		public Map<Path, List<CrossValidationTestSummary>> getSessionResults() {
 			return Collections.unmodifiableMap(sessionResults);
 		}
 
@@ -120,7 +136,7 @@ public final class Tester {
 		}
 
 		public double meanGoldStandardUniqueReferentIdCount() {
-			return sessionResults.values().stream().flatMap(List::stream)
+			return sessionResults.values().stream().flatMap(List::stream).map(CrossValidationTestSummary::getTestResults)
 					.mapToInt(SessionTestStatistics::uniqueGoldStandardReferentIdCount).average().getAsDouble();
 		}
 
@@ -149,7 +165,7 @@ public final class Tester {
 		}
 
 		public double meanTokensTestedPerSession() {
-			return sessionResults.values().stream().flatMap(List::stream)
+			return sessionResults.values().stream().flatMap(List::stream).map(CrossValidationTestSummary::getTestResults)
 					.mapToInt(SessionTestStatistics::totalTokensTested).average().getAsDouble();
 		}
 
@@ -165,19 +181,19 @@ public final class Tester {
 			return totalResults.modeReferentIds();
 		}
 
-		public void put(final Path infilePath, final int iterNo, final SessionTester.Result testResults) {
+		public void put(final Path infilePath, final int iterNo, final CrossValidationTestSummary cvTestSummary) {
 			sessionResults.compute(infilePath, (key, oldVal) -> {
-				final List<SessionTester.Result> newVal;
+				final List<CrossValidationTestSummary> newVal;
 				if (oldVal == null) {
-					newVal = Arrays.asList(new SessionTester.Result[iterCount]);
+					newVal = Arrays.asList(new CrossValidationTestSummary[iterCount]);
 				} else {
 					newVal = oldVal;
 				}
-				final SessionTester.Result oldResults = newVal.set(iterNo - 1, testResults);
+				final CrossValidationTestSummary oldResults = newVal.set(iterNo - 1, cvTestSummary);
 				assert oldResults == null;
 				return newVal;
 			});
-			testResults.getDialogueTestResults().forEach(totalResults::add);
+			cvTestSummary.getTestResults().getDialogueTestResults().forEach(totalResults::add);
 		}
 
 		/*
@@ -189,7 +205,7 @@ public final class Tester {
 		 */
 		@Override
 		public int totalDialoguesTested() {
-			return sessionResults.values().stream().flatMap(List::stream)
+			return sessionResults.values().stream().flatMap(List::stream).map(CrossValidationTestSummary::getTestResults)
 					.mapToInt(SessionTester.Result::totalDialoguesTested).sum();
 		}
 
@@ -257,8 +273,8 @@ public final class Tester {
 		 */
 		@Override
 		public Stream<Utterance> utterancesTested() {
-			return sessionResults.values().stream().flatMap(List::stream).map(SessionTestStatistics::utterancesTested)
-					.flatMap(Function.identity());
+			return sessionResults.values().stream().flatMap(List::stream).map(CrossValidationTestSummary::getTestResults)
+					.map(SessionTestStatistics::utterancesTested).flatMap(Function.identity());
 		}
 
 	}
@@ -321,8 +337,8 @@ public final class Tester {
 				allSessions.size(), iterCount);
 		for (int iterNo = 1; iterNo <= iterCount; ++iterNo) {
 			LOGGER.info("Training/testing iteration no. {}.", iterNo);
-			final Map<Path, SessionTester.Result> iterResults = crossValidate(allSessions);
-			for (final Entry<Path, SessionTester.Result> iterResult : iterResults.entrySet()) {
+			final Map<Path, CrossValidationTestSummary> iterResults = crossValidate(allSessions);
+			for (final Entry<Path, CrossValidationTestSummary> iterResult : iterResults.entrySet()) {
 				result.put(iterResult.getKey(), iterNo, iterResult.getValue());
 			}
 		}
@@ -373,9 +389,9 @@ public final class Tester {
 		return result;
 	}
 
-	private Map<Path, SessionTester.Result> crossValidate(final Map<SessionDataManager, Path> allSessions)
+	private Map<Path, CrossValidationTestSummary> crossValidate(final Map<SessionDataManager, Path> allSessions)
 			throws ExecutionException, IOException, ClassificationException {
-		final Map<Path, SessionTester.Result> result = Maps.newHashMapWithExpectedSize(allSessions.size());
+		final Map<Path, CrossValidationTestSummary> result = Maps.newHashMapWithExpectedSize(allSessions.size());
 		final Stream<Entry<SessionDataManager, WordClassificationData>> testSets = testSetFactory.apply(allSessions);
 		for (final Iterator<Entry<SessionDataManager, WordClassificationData>> testSetIter = testSets
 				.iterator(); testSetIter.hasNext();) {
@@ -404,7 +420,8 @@ public final class Tester {
 			final SessionTester sessionTester = new SessionTester(diagTester);
 			final SessionTester.Result testResults = sessionTester
 					.apply(sessionDiagMgrCacheSupplier.get().get(testSessionData));
-			result.put(infilePath, testResults);
+			final CrossValidationTestSummary cvTestSummary = new CrossValidationTestSummary(testResults);
+			result.put(infilePath, cvTestSummary);
 		}
 		return result;
 	}

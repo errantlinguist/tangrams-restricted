@@ -17,6 +17,7 @@
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training;
 
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.Random;
 import java.util.stream.Stream;
 
@@ -24,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import it.unimi.dsi.fastutil.ints.IntList;
+import se.kth.speech.MutablePair;
 import se.kth.speech.coin.tangrams.analysis.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.GameContext;
 import se.kth.speech.coin.tangrams.analysis.GameHistory;
@@ -61,6 +63,10 @@ import weka.core.Instances;
 public final class OnePositiveOneNegativeInstanceFactory extends AbstractSizeEstimatingInstancesMapFactory {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(OnePositiveOneNegativeInstanceFactory.class);
+
+	private static final String NEGATIVE_EXAMPLE_LABEL = Boolean.FALSE.toString();
+
+	private static final String POSITIVE_EXAMPLE_LABEL = Boolean.TRUE.toString();
 
 	private final EventDialogueTransformer diagTransformer;
 
@@ -115,16 +121,23 @@ public final class OnePositiveOneNegativeInstanceFactory extends AbstractSizeEst
 
 					final EntityFeature.Extractor.Context negativeTrainingContext = extCtxFactory.apply(uttCtx,
 							findRandomEntityId(uttCtx, selectedEntityId));
-					final Stream<String> wordClasses = allUtts.stream().map(Utterance::getTokens)
-							.flatMap(List::stream);
+					final Stream<String> wordClasses = allUtts.stream().map(Utterance::getTokens).flatMap(List::stream);
 					wordClasses.forEach(wordClass -> {
 						final Instances classInsts = trainingData.fetchWordInstances(wordClass);
-						final Stream.Builder<Instance> trainingInsts = Stream.builder();
-						// Add positive training example
-						trainingInsts.add(createTokenInstance(classInsts, positiveTrainingContext, Boolean.TRUE.toString()));
-						// Add negative training example
-						trainingInsts.add(createTokenInstance(classInsts, negativeTrainingContext, Boolean.FALSE.toString()));
-						trainingData.addObservation(wordClass, trainingInsts.build());
+						final Stream.Builder<Entry<Instance, String>> trainingInsts = Stream.builder();
+						{
+							// Add positive training example
+							final String classValue = POSITIVE_EXAMPLE_LABEL;
+							trainingInsts.add(new MutablePair<>(
+									createTokenInstance(classInsts, positiveTrainingContext, classValue), classValue));
+						}
+						{
+							// Add negative training example
+							final String classValue = NEGATIVE_EXAMPLE_LABEL;
+							trainingInsts.add(new MutablePair<>(
+									createTokenInstance(classInsts, negativeTrainingContext, classValue), classValue));
+							trainingData.addObservation(wordClass, trainingInsts.build());
+						}
 					});
 				}
 			});

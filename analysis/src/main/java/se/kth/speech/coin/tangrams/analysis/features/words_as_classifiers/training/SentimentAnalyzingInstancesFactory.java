@@ -19,6 +19,7 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.train
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Map.Entry;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
@@ -37,6 +38,7 @@ import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import se.kth.speech.Iterators;
+import se.kth.speech.MutablePair;
 import se.kth.speech.coin.tangrams.analysis.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.GameContext;
 import se.kth.speech.coin.tangrams.analysis.GameHistory;
@@ -120,10 +122,10 @@ public final class SentimentAnalyzingInstancesFactory extends AbstractSizeEstima
 			final List<Context> trainingContexts, final double weight, final String classValue) {
 		assert weight > 0.0;
 		final Instances classInsts = trainingData.fetchWordInstances(wordClass);
-		final List<Instance> trainingInsts = new ArrayList<>(trainingContexts.size());
+		final List<Entry<Instance, String>> trainingInsts = new ArrayList<>(trainingContexts.size());
 		for (final Context trainingContext : trainingContexts) {
 			final Instance trainingInst = createTokenInstance(classInsts, trainingContext, classValue);
-			trainingInsts.add(trainingInst);
+			trainingInsts.add(new MutablePair<>(trainingInst, classValue));
 			trainingInst.setWeight(weight);
 		}
 		// Add examples

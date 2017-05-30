@@ -51,6 +51,7 @@ import org.springframework.context.support.FileSystemXmlApplicationContext;
 
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.SessionTester;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.Tester.CrossValidationTestSummary;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -162,13 +163,6 @@ public final class StatisticsWriter implements Consumer<Tester.Result> {
 
 	private static final List<SummaryDatum> SUMMARY_DATUM_COLUMN_ORDERING;
 
-	/**
-	 * @return the summaryDatumColumnOrdering
-	 */
-	protected static List<SummaryDatum> getSummaryDatumColumnOrdering() {
-		return SUMMARY_DATUM_COLUMN_ORDERING;
-	}
-
 	static {
 		SUMMARY_DATUM_COLUMN_ORDERING = Arrays.asList(SummaryDatum.KEY, SummaryDatum.TEST_ITERATION,
 				SummaryDatum.MEAN_RANK, SummaryDatum.MRR, SummaryDatum.DIALOGUE_COUNT, SummaryDatum.UTTERANCES_TESTED,
@@ -232,6 +226,13 @@ public final class StatisticsWriter implements Consumer<Tester.Result> {
 		return result;
 	}
 
+	/**
+	 * @return the summaryDatumColumnOrdering
+	 */
+	protected static List<SummaryDatum> getSummaryDatumColumnOrdering() {
+		return SUMMARY_DATUM_COLUMN_ORDERING;
+	}
+
 	private final PrintWriter out;
 
 	public StatisticsWriter(final PrintWriter out) {
@@ -242,16 +243,16 @@ public final class StatisticsWriter implements Consumer<Tester.Result> {
 	public void accept(final Tester.Result testResults) {
 		out.println(SUMMARY_DATUM_COLUMN_ORDERING.stream().map(SummaryDatum::toString).collect(ROW_CELL_JOINER));
 
-		for (final Entry<Path, List<SessionTester.Result>> infileSessionTestResults : testResults.getSessionResults()
-				.entrySet()) {
+		for (final Entry<Path, List<CrossValidationTestSummary>> infileSessionTestResults : testResults
+				.getSessionResults().entrySet()) {
 			final Path infilePath = infileSessionTestResults.getKey();
-			final List<SessionTester.Result> sessionTestResultList = infileSessionTestResults.getValue();
-			for (final ListIterator<SessionTester.Result> sessionTestResultIter = sessionTestResultList
+			final List<CrossValidationTestSummary> sessionTestResultList = infileSessionTestResults.getValue();
+			for (final ListIterator<CrossValidationTestSummary> sessionTestResultIter = sessionTestResultList
 					.listIterator(); sessionTestResultIter.hasNext();) {
-				final SessionTester.Result sessionResults = sessionTestResultIter.next();
+				final CrossValidationTestSummary sessionResults = sessionTestResultIter.next();
 				final int iterNo = sessionTestResultIter.nextIndex();
 				final Map<SummaryDatum, Object> sessionSummaryData = createSessionSummaryDataMap(infilePath, iterNo,
-						sessionResults);
+						sessionResults.getTestResults());
 				final Stream<Object> rowCellVals = SUMMARY_DATUM_COLUMN_ORDERING.stream().map(sessionSummaryData::get);
 				out.println(rowCellVals.map(Object::toString).collect(ROW_CELL_JOINER));
 			}
