@@ -17,29 +17,26 @@
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation;
 
 import java.util.Collections;
-import java.util.List;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import edu.stanford.nlp.ling.Label;
 import edu.stanford.nlp.trees.CollinsHeadFinder;
 import edu.stanford.nlp.trees.Tree;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.FallbackTokenizingEventDialogueTransformer;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.TokenizingEventDialogueTransformer;
 import se.kth.speech.nlp.EnglishLocationalPrepositions;
-import se.kth.speech.nlp.PatternTokenizer;
 import se.kth.speech.nlp.stanford.PhrasalHeadFilteringPredicate;
 import se.kth.speech.nlp.stanford.PhraseExtractingParsingTokenizer;
 import se.kth.speech.nlp.stanford.StanfordCoreNLPConfigurationVariant;
 
-enum ParsingTokenization implements Supplier<FallbackTokenizingEventDialogueTransformer>, HasAbbreviation {
+enum ParsingTokenization implements Supplier<TokenizingEventDialogueTransformer>, HasAbbreviation {
 	NP_WHITELISTING {
 
 		@Override
-		public FallbackTokenizingEventDialogueTransformer get() {
-			return new FallbackTokenizingEventDialogueTransformer(new PhraseExtractingParsingTokenizer(
+		public TokenizingEventDialogueTransformer get() {
+			return new TokenizingEventDialogueTransformer(new PhraseExtractingParsingTokenizer(
 					StanfordCoreNLPConfigurationVariant.TOKENIZING_LEMMATIZING_PARSING.get(),
-					NP_WHITELISTING_PHRASE_MATCHER), FALLBACK_TOKENIZER);
+					NP_WHITELISTING_PHRASE_MATCHER));
 		}
 
 		@Override
@@ -51,10 +48,10 @@ enum ParsingTokenization implements Supplier<FallbackTokenizingEventDialogueTran
 	NP_WHITELISTING_PP_PRUNING {
 
 		@Override
-		public FallbackTokenizingEventDialogueTransformer get() {
-			return new FallbackTokenizingEventDialogueTransformer(new PhraseExtractingParsingTokenizer(
+		public TokenizingEventDialogueTransformer get() {
+			return new TokenizingEventDialogueTransformer(new PhraseExtractingParsingTokenizer(
 					StanfordCoreNLPConfigurationVariant.TOKENIZING_LEMMATIZING_PARSING.get(),
-					NP_WHITELISTING_PHRASE_MATCHER), FALLBACK_TOKENIZER);
+					NP_WHITELISTING_PHRASE_MATCHER));
 		}
 
 		@Override
@@ -66,10 +63,10 @@ enum ParsingTokenization implements Supplier<FallbackTokenizingEventDialogueTran
 	PP_BLACKLISTING {
 
 		@Override
-		public FallbackTokenizingEventDialogueTransformer get() {
-			return new FallbackTokenizingEventDialogueTransformer(new se.kth.speech.nlp.stanford.ParsingTokenizer(
+		public TokenizingEventDialogueTransformer get() {
+			return new TokenizingEventDialogueTransformer(new se.kth.speech.nlp.stanford.ParsingTokenizer(
 					StanfordCoreNLPConfigurationVariant.TOKENIZING_LEMMATIZING_PARSING.get(),
-					LOCATIONAL_PP_PRUNING_MATCHER), FALLBACK_TOKENIZER);
+					LOCATIONAL_PP_PRUNING_MATCHER));
 		}
 
 		@Override
@@ -78,8 +75,6 @@ enum ParsingTokenization implements Supplier<FallbackTokenizingEventDialogueTran
 		}
 
 	};
-
-	private static final Function<String, List<String>> FALLBACK_TOKENIZER = new PatternTokenizer();
 
 	private static final PhrasalHeadFilteringPredicate LOCATIONAL_PP_PRUNING_MATCHER = new PhrasalHeadFilteringPredicate(
 			Collections.singletonMap("PP", EnglishLocationalPrepositions.get()), new CollinsHeadFinder());
