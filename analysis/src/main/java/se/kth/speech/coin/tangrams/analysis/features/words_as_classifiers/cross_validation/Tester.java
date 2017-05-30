@@ -31,7 +31,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executor;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -324,7 +324,7 @@ public final class Tester {
 	@Inject
 	private EntityInstanceAttributeContext entInstAttrCtx;
 
-	private final ExecutorService executor;
+	private final Executor backgroundJobExecutor;
 
 	private int iterCount = 1;
 
@@ -340,10 +340,10 @@ public final class Tester {
 	private final TestSetFactory testSetFactory;
 
 	public Tester(final TestSetFactory testSetFactory, final EventDialogueTransformer diagTransformer,
-			final ExecutorService executor) {
+			final Executor backgroundJobExecutor) {
 		this.testSetFactory = testSetFactory;
 		this.diagTransformer = diagTransformer;
-		this.executor = executor;
+		this.backgroundJobExecutor = backgroundJobExecutor;
 	}
 
 	public Result apply(final Map<SessionDataManager, Path> allSessions)
@@ -399,7 +399,7 @@ public final class Tester {
 				} catch (final Exception e) {
 					throw new RuntimeException(e);
 				}
-			}, executor);
+			}, backgroundJobExecutor);
 			trainingJobs.add(trainingJob);
 		}
 		CompletableFuture.allOf(trainingJobs.build().toArray(CompletableFuture[]::new)).join();
