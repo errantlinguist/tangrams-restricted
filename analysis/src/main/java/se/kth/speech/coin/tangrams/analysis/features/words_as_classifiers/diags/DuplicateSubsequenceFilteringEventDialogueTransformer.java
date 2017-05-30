@@ -34,7 +34,7 @@ public final class DuplicateSubsequenceFilteringEventDialogueTransformer
 	protected Stream<Utterance> transformUtt(final Utterance utt) {
 		final List<String> oldTokens = utt.getTokens();
 		final List<String> newTokens = ListSubsequences.createDeduplicatedAdjacentSubsequenceList(oldTokens);
-		assert !newTokens.isEmpty();
+		assert oldTokens.isEmpty() == newTokens.isEmpty();
 		return Stream.of(
 				new Utterance(utt.getSegmentId(), utt.getSpeakerId(), newTokens, utt.getStartTime(), utt.getEndTime()));
 	}
