@@ -39,7 +39,7 @@ public final class ListSubsequences {
 				final List<List<T>> subseqs = createSubsequenceList(intermediateResult, subseqLength);
 				final List<List<T>> deduplicatedSubseqs = createDeduplicatedAdjacentSubsequenceListFromListOfSubsequences(
 						subseqs);
-				final Stream<List<T>> nextLevel = deduplicatedSubseqs.stream()
+				final Stream<List<T>> nextLevel = deduplicatedSubseqs.parallelStream()
 						.map(ListSubsequences::createDeduplicatedAdjacentSubsequenceList);
 				intermediateResult = nextLevel.flatMap(List::stream).collect(Collectors.toList());
 			}
