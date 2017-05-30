@@ -27,12 +27,12 @@ import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
  * @since 30 May 2017
  *
  */
-final class UtteranceMatchers {
+public final class UtteranceMatchers {
 
 	private UtteranceMatchers() {
 	}
 	
-	static Predicate<Utterance> createEventSubmitterUtteranceMatcher(Event event){
+	public static Predicate<Utterance> createEventSubmitterUtteranceMatcher(Event event){
 		final String submittingPlayerId = event.getString(GameManagementEvent.Attribute.PLAYER_ID.toString());
 		return utt -> submittingPlayerId.equals(utt.getSpeakerId());		
 	}
