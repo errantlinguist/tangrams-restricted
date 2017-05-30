@@ -30,6 +30,7 @@ import java.util.stream.Stream;
 public final class ListSubsequences {
 
 	public static <T> List<T> createDeduplicatedAdjacentSubsequenceList(final List<T> list) {
+		// TODO: Optimize this: The complexity is terrible
 		final List<T> result;
 		if (list.size() == 1) {
 			result = list;
