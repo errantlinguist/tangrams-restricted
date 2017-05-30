@@ -34,6 +34,8 @@ import edu.stanford.nlp.sentiment.RNNOptions;
 import edu.stanford.nlp.sentiment.SentimentCoreAnnotations.SentimentClass;
 import edu.stanford.nlp.util.CoreMap;
 import it.unimi.dsi.fastutil.ints.IntList;
+import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
+import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import se.kth.speech.Iterators;
@@ -86,6 +88,8 @@ public final class SentimentAnalyzingInstancesFactory extends AbstractSizeEstima
 
 	private final EntityFeatureExtractionContextFactory extCtxFactory;
 
+	private final Object2DoubleMap<Utterance> uttWeightCache;
+
 	public SentimentAnalyzingInstancesFactory(final EntityInstanceAttributeContext entityInstAttrCtx,
 			final EventDialogueTransformer diagTransformer, final EntityFeatureExtractionContextFactory extCtxFactory,
 			final Annotator annotator) {
@@ -93,6 +97,9 @@ public final class SentimentAnalyzingInstancesFactory extends AbstractSizeEstima
 		this.diagTransformer = diagTransformer;
 		this.extCtxFactory = extCtxFactory;
 		this.annotator = annotator;
+
+		final int estimatedUniqueUttCount = 1000;
+		uttWeightCache = new Object2DoubleOpenHashMap<>(estimatedUniqueUttCount);
 	}
 
 	private void addWeightedExamples(final String wordClass, final WordClassificationData trainingData,
@@ -148,6 +155,20 @@ public final class SentimentAnalyzingInstancesFactory extends AbstractSizeEstima
 		return createTrainingContexts(uttCtx, selectedEntityId);
 	}
 
+	private double fetchUttSentimentRank(final Utterance utt) {
+		final double result;
+		if (uttWeightCache.containsKey(utt)) {
+			result = uttWeightCache.getDouble(utt);
+		} else {
+			// Calculate the weight without any locking because it's okay if
+			// weight is sometimes calculated more than once per utt inst-- this
+			// function is stateless
+			result = calculateUttSentimentRank(utt);
+			uttWeightCache.put(utt, result);
+		}
+		return result;
+	}
+
 	@Override
 	protected void addTrainingData(final SessionEventDialogueManager sessionEventDiagMgr,
 			final WordClassificationData trainingData) {
@@ -179,7 +200,7 @@ public final class SentimentAnalyzingInstancesFactory extends AbstractSizeEstima
 								.findElementsBeforeDelimiter(uttIter, instructorUttMatcher);
 						final Utterance firstInstructorUtt = preInstructorUtts.getValue();
 
-						final double firstInstructorUttSentimentRank = calculateUttSentimentRank(firstInstructorUtt);
+						final double firstInstructorUttSentimentRank = fetchUttSentimentRank(firstInstructorUtt);
 						if (firstInstructorUttSentimentRank != 0) {
 							// Use the other player's utterances which came
 							// before this instructor utterance as weighted
