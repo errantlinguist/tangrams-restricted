@@ -17,10 +17,8 @@
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.Map.Entry;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
@@ -39,13 +37,13 @@ import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import se.kth.speech.Iterators;
-import se.kth.speech.MutablePair;
 import se.kth.speech.coin.tangrams.analysis.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.GameContext;
 import se.kth.speech.coin.tangrams.analysis.GameHistory;
 import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManager;
 import se.kth.speech.coin.tangrams.analysis.Utterance;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
+import se.kth.speech.coin.tangrams.analysis.features.EntityFeature.Extractor.Context;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionContextFactory;
 import se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttributeContext;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.UtteranceGameContexts;
@@ -61,6 +59,20 @@ import weka.core.Instances;
  *
  */
 public final class SentimentAnalyzingInstancesFactory extends AbstractSizeEstimatingInstancesMapFactory {
+
+	private static class BooleanTrainingContexts {
+
+		private final List<EntityFeature.Extractor.Context> negative;
+
+		private final List<EntityFeature.Extractor.Context> positive;
+
+		private BooleanTrainingContexts(final List<EntityFeature.Extractor.Context> positive,
+				final List<EntityFeature.Extractor.Context> negative) {
+			this.positive = positive;
+			this.negative = negative;
+		}
+
+	}
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SentimentAnalyzingInstancesFactory.class);
 
@@ -103,16 +115,17 @@ public final class SentimentAnalyzingInstancesFactory extends AbstractSizeEstima
 	}
 
 	private void addWeightedExamples(final String wordClass, final WordClassificationData trainingData,
-			final Stream<Entry<EntityFeature.Extractor.Context, String>> trainingContexts, final double weight) {
+			final List<Context> trainingContexts, final double weight, final String classValue) {
+		assert weight > 0.0;
 		final Instances classInsts = trainingData.fetchWordInstances(wordClass);
-		final Instance[] trainingInsts = trainingContexts
-				.map(context -> createTokenInstance(classInsts, context.getKey(), context.getValue()))
-				.toArray(Instance[]::new);
-		for (final Instance trainingInst : trainingInsts) {
+		final List<Instance> trainingInsts = new ArrayList<>(trainingContexts.size());
+		for (final Context trainingContext : trainingContexts) {
+			final Instance trainingInst = createTokenInstance(classInsts, trainingContext, classValue);
+			trainingInsts.add(trainingInst);
 			trainingInst.setWeight(weight);
 		}
 		// Add examples
-		trainingData.addObservation(wordClass, Arrays.stream(trainingInsts));
+		trainingData.addObservation(wordClass, trainingInsts.stream());
 	}
 
 	private double calculateUttSentimentRank(final Utterance utt) {
@@ -134,21 +147,23 @@ public final class SentimentAnalyzingInstancesFactory extends AbstractSizeEstima
 		return result;
 	}
 
-	private List<Entry<EntityFeature.Extractor.Context, String>> createTrainingContexts(final GameContext uttCtx,
-			final int selectedEntityId) {
+	private BooleanTrainingContexts createTrainingContexts(final GameContext uttCtx, final int selectedEntityId) {
 		final IntList entityIds = uttCtx.getEntityIds();
-		final List<Entry<EntityFeature.Extractor.Context, String>> result = new ArrayList<>(entityIds.size());
+		final List<EntityFeature.Extractor.Context> positive = new ArrayList<>(1);
+		final List<EntityFeature.Extractor.Context> negative = new ArrayList<>(entityIds.size() - 1);
 		for (final int entityId : uttCtx.getEntityIds()) {
 			final EntityFeature.Extractor.Context context = extCtxFactory.apply(uttCtx, entityId);
 			final boolean examplePolarity = entityId == selectedEntityId;
-			final String classValue = Boolean.toString(examplePolarity);
-			result.add(new MutablePair<>(context, classValue));
+			if (examplePolarity) {
+				positive.add(context);
+			} else {
+				negative.add(context);
+			}
 		}
-		return result;
+		return new BooleanTrainingContexts(positive, negative);
 	}
 
-	private List<Entry<EntityFeature.Extractor.Context, String>> createTrainingContexts(final Utterance utt,
-			final GameHistory history) {
+	private BooleanTrainingContexts createTrainingContexts(final Utterance utt, final GameHistory history) {
 		final GameContext uttCtx = UtteranceGameContexts.createSingleContext(utt, history);
 		final int selectedEntityId = uttCtx.findLastSelectedEntityId().get();
 		LOGGER.debug("Creating positive and negative examples for entity ID \"{}\".", selectedEntityId);
@@ -189,39 +204,68 @@ public final class SentimentAnalyzingInstancesFactory extends AbstractSizeEstima
 					// utterances processed for the given dialogue
 					LOGGER.debug("Creating positive and negative examples for entity selected by player \"{}\".",
 							event.getString(GameManagementEvent.Attribute.PLAYER_ID.toString()));
-					final List<Entry<EntityFeature.Extractor.Context, String>> trainingContexts = createTrainingContexts(
-							allUtts.get(0), history);
+					final BooleanTrainingContexts trainingContexts = createTrainingContexts(allUtts.get(0), history);
 					final Predicate<Utterance> instructorUttMatcher = UtteranceMatchers
 							.createEventSubmitterUtteranceMatcher(event);
 
 					final ListIterator<Utterance> uttIter = allUtts.listIterator();
 					while (uttIter.hasNext()) {
-						final Entry<Stream<Utterance>, Utterance> preInstructorUtts = Iterators
+						final java.util.Map.Entry<Stream<Utterance>, Utterance> preInstructorUtts = Iterators
 								.findElementsBeforeDelimiter(uttIter, instructorUttMatcher);
 						final Utterance firstInstructorUtt = preInstructorUtts.getValue();
 
 						final double firstInstructorUttSentimentRank = fetchUttSentimentRank(firstInstructorUtt);
-						if (firstInstructorUttSentimentRank != 0) {
+						if (firstInstructorUttSentimentRank < 0) {
 							// Use the other player's utterances which came
-							// before this instructor utterance as weighted
+							// before this instructor utterance as negative
+							// examples
+							final double weight = Math.abs(firstInstructorUttSentimentRank);
+							final Stream<String> preInstructorWordClasses = preInstructorUtts.getKey()
+									.map(Utterance::getTokens).flatMap(List::stream);
+							preInstructorWordClasses.forEach(wordClass -> {
+								LOGGER.debug(
+										"Processing negative observation of word class \"{}\" from non-instructor utterance with weight {}.",
+										wordClass, weight);
+								// For each entity which is selected, add a
+								// negative example for this observation: The
+								// utterance being processed does NOT correspond
+								// to the selected entity
+								addWeightedExamples(wordClass, trainingData, trainingContexts.positive, weight,
+										Boolean.FALSE.toString());
+							});
+						} else if (firstInstructorUttSentimentRank > 0) {
+							// Use the other player's utterances which came
+							// before this instructor utterance as positive
 							// examples
 							final Stream<String> preInstructorWordClasses = preInstructorUtts.getKey()
 									.map(Utterance::getTokens).flatMap(List::stream);
 							preInstructorWordClasses.forEach(wordClass -> {
-								LOGGER.debug("Adding word class \"{}\" from non-instructor utterance with weight {}.",
+								LOGGER.debug(
+										"Processing positive observation of word class \"{}\" from non-instructor utterance with weight {}.",
 										wordClass, firstInstructorUttSentimentRank);
-								addWeightedExamples(wordClass, trainingData, trainingContexts.stream(),
-										firstInstructorUttSentimentRank);
+								// For each entity which is selected, add a
+								// positive example for this observation: The
+								// utterance being processed DOES correspond to
+								// the selected entity
+								addWeightedExamples(wordClass, trainingData, trainingContexts.positive,
+										firstInstructorUttSentimentRank, Boolean.TRUE.toString());
+								// For each entity which is NOT selected, add a
+								// negative example for this observation: The
+								// utterance being processed does NOT correspond
+								// to these non-selected entities
+								addWeightedExamples(wordClass, trainingData, trainingContexts.negative,
+										firstInstructorUttSentimentRank, Boolean.FALSE.toString());
 							});
 						}
 
 						final double instructorObservationWeight = firstInstructorUttSentimentRank <= 0.0 ? 1.0
 								: firstInstructorUttSentimentRank;
 						firstInstructorUtt.getTokens().stream().forEach(wordClass -> {
-							LOGGER.debug("Adding word class \"{}\" from instructor utterance with weight {}.",
+							LOGGER.debug(
+									"Processing positive observation of word class \"{}\" from instructor utterance with weight {}.",
 									wordClass, instructorObservationWeight);
-							addWeightedExamples(wordClass, trainingData, trainingContexts.stream(),
-									instructorObservationWeight);
+							addWeightedExamples(wordClass, trainingData, trainingContexts.positive,
+									instructorObservationWeight, Boolean.TRUE.toString());
 						});
 					}
 				}
