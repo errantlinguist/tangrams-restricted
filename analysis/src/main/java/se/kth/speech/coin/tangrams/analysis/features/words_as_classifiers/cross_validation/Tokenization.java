@@ -47,7 +47,7 @@ import se.kth.speech.nlp.PatternTokenizer;
 import se.kth.speech.nlp.SnowballPorter2EnglishStopwords;
 import se.kth.speech.nlp.stanford.Lemmatizer;
 import se.kth.speech.nlp.stanford.PhrasalHeadFilteringPredicate;
-import se.kth.speech.nlp.stanford.PipelineConfigurationVariant;
+import se.kth.speech.nlp.stanford.StanfordCoreNLPConfigurationVariant;
 import se.kth.speech.nlp.stanford.Tokenizer;
 
 enum Tokenization implements Supplier<EventDialogueTransformer>, HasAbbreviation {
@@ -56,7 +56,7 @@ enum Tokenization implements Supplier<EventDialogueTransformer>, HasAbbreviation
 		@Override
 		public TokenizingEventDialogueTransformer get() {
 			return new TokenizingEventDialogueTransformer(
-					new Tokenizer(PipelineConfigurationVariant.TOKENIZING.get()));
+					new Tokenizer(StanfordCoreNLPConfigurationVariant.TOKENIZING.get()));
 		}
 
 		@Override
@@ -69,7 +69,7 @@ enum Tokenization implements Supplier<EventDialogueTransformer>, HasAbbreviation
 		@Override
 		public TokenizingEventDialogueTransformer get() {
 			return new TokenizingEventDialogueTransformer(
-					new Lemmatizer(PipelineConfigurationVariant.TOKENIZING_LEMMATIZING.get()));
+					new Lemmatizer(StanfordCoreNLPConfigurationVariant.TOKENIZING_LEMMATIZING.get()));
 		}
 
 		@Override
@@ -135,7 +135,7 @@ enum Tokenization implements Supplier<EventDialogueTransformer>, HasAbbreviation
 					return result;
 				};
 				return new FallbackTokenizingEventDialogueTransformer(new se.kth.speech.nlp.stanford.ParsingTokenizer(
-						PipelineConfigurationVariant.TOKENIZING_LEMMATIZING_PARSING.get(), npWhitelistingPred),
+						StanfordCoreNLPConfigurationVariant.TOKENIZING_LEMMATIZING_PARSING.get(), npWhitelistingPred),
 						FALLBACK_TOKENIZER);
 			}
 
@@ -155,7 +155,7 @@ enum Tokenization implements Supplier<EventDialogueTransformer>, HasAbbreviation
 						HEAD_FINDER);
 				return new FallbackTokenizingEventDialogueTransformer(
 						new se.kth.speech.nlp.stanford.ParsingTokenizer(
-								PipelineConfigurationVariant.TOKENIZING_LEMMATIZING_PARSING.get(), pred),
+								StanfordCoreNLPConfigurationVariant.TOKENIZING_LEMMATIZING_PARSING.get(), pred),
 						FALLBACK_TOKENIZER);
 			}
 

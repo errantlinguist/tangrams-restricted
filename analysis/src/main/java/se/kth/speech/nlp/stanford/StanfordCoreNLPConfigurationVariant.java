@@ -30,7 +30,7 @@ import edu.stanford.nlp.pipeline.StanfordCoreNLP;
  * @since 29 May 2017
  *
  */
-public enum PipelineConfigurationVariant implements Supplier<StanfordCoreNLP> {
+public enum StanfordCoreNLPConfigurationVariant implements Supplier<StanfordCoreNLP> {
 	TOKENIZING {
 
 		@Override
@@ -62,8 +62,8 @@ public enum PipelineConfigurationVariant implements Supplier<StanfordCoreNLP> {
 		}
 	};
 
-	private static final ConcurrentMap<PipelineConfigurationVariant, Reference<StanfordCoreNLP>> INSTANCES = new ConcurrentHashMap<>(
-			PipelineConfigurationVariant.values().length);
+	private static final ConcurrentMap<StanfordCoreNLPConfigurationVariant, Reference<StanfordCoreNLP>> INSTANCES = new ConcurrentHashMap<>(
+			StanfordCoreNLPConfigurationVariant.values().length);
 
 	private static Properties createDefaultProps() {
 		final Properties result = new Properties();
