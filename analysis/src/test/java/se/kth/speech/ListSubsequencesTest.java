@@ -18,6 +18,7 @@ package se.kth.speech;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -34,9 +35,11 @@ public class ListSubsequencesTest {
 	 * {@link se.kth.speech.ListSubsequences#createDeduplicatedAdjacentSubsequenceList(java.util.List)}.
 	 */
 	@Test
-	public void testCreateDeduplicatedAdjacentSubsequenceList() {
-		final List<String> input = Arrays.asList("I", "can't", "I", "can't", "do", "I", "can't", "do", "it");
-		final List<String> expected = Arrays.asList("I", "can't", "do", "it");
+	public void testCreateDeduplicatedAdjacentSubsequenceListEven() {
+		final List<String> duplicatedSubseq = Arrays.asList("I", "can't");
+		final List<List<String>> repetitions = Arrays.asList(duplicatedSubseq, duplicatedSubseq);
+		final List<String> input = repetitions.stream().flatMap(List::stream).collect(Collectors.toList());
+		final List<String> expected = duplicatedSubseq;
 		final List<String> actual = ListSubsequences.createDeduplicatedAdjacentSubsequenceList(input);
 		Assert.assertEquals(expected, actual);
 	}
@@ -54,6 +57,56 @@ public class ListSubsequencesTest {
 				Arrays.asList("well"));
 		final List<List<String>> actual = ListSubsequences
 				.createDeduplicatedAdjacentSubsequenceListFromListOfSubsequences(input);
+		Assert.assertEquals(expected, actual);
+	}
+
+	/**
+	 * Test method for
+	 * {@link se.kth.speech.ListSubsequences#createDeduplicatedAdjacentSubsequenceListFromListOfSubsequences(java.util.List)}.
+	 */
+	@Test
+	public void testCreateDeduplicatedAdjacentSubsequenceListFromListOfSubsequencesEvenSubseqCount() {
+		final List<String> duplicatedSubseq = Arrays.asList("I", "can't");
+		final List<List<String>> input = Arrays.asList(duplicatedSubseq, duplicatedSubseq);
+		final List<List<String>> expected = Arrays.asList(duplicatedSubseq);
+		final List<List<String>> actual = ListSubsequences
+				.createDeduplicatedAdjacentSubsequenceListFromListOfSubsequences(input);
+		Assert.assertEquals(expected, actual);
+	}
+
+	/**
+	 * Test method for
+	 * {@link se.kth.speech.ListSubsequences#createDeduplicatedAdjacentSubsequenceList(java.util.List)}.
+	 */
+	@Test
+	public void testCreateDeduplicatedAdjacentSubsequenceListNegative() {
+		final List<String> input = Arrays.asList("I", "can't");
+		final List<String> expected = input;
+		final List<String> actual = ListSubsequences.createDeduplicatedAdjacentSubsequenceList(input);
+		Assert.assertEquals(expected, actual);
+	}
+
+	/**
+	 * Test method for
+	 * {@link se.kth.speech.ListSubsequences#createDeduplicatedAdjacentSubsequenceList(java.util.List)}.
+	 */
+	@Test
+	public void testCreateDeduplicatedAdjacentSubsequenceListSingleElem() {
+		final List<String> input = Arrays.asList("I");
+		final List<String> expected = input;
+		final List<String> actual = ListSubsequences.createDeduplicatedAdjacentSubsequenceList(input);
+		Assert.assertEquals(expected, actual);
+	}
+
+	/**
+	 * Test method for
+	 * {@link se.kth.speech.ListSubsequences#createDeduplicatedAdjacentSubsequenceList(java.util.List)}.
+	 */
+	@Test
+	public void testCreateDeduplicatedAdjacentSubsequenceListUneven() {
+		final List<String> input = Arrays.asList("I", "can't", "I", "can't", "do", "I", "can't", "do", "it");
+		final List<String> expected = Arrays.asList("I", "can't", "do", "it");
+		final List<String> actual = ListSubsequences.createDeduplicatedAdjacentSubsequenceList(input);
 		Assert.assertEquals(expected, actual);
 	}
 
@@ -78,6 +131,19 @@ public class ListSubsequencesTest {
 		final List<String> input = Arrays.asList("I", "can't", "do", "it", "well");
 		final List<List<String>> expected = Arrays.asList(Arrays.asList("I", "can't"), Arrays.asList("do", "it"),
 				Arrays.asList("well"));
+		final List<List<String>> actual = ListSubsequences.createSubsequenceList(input, 2);
+		Assert.assertEquals(expected, actual);
+	}
+
+	/**
+	 * Test method for
+	 * {@link se.kth.speech.ListSubsequences#createSubsequenceList(java.util.List, int)}.
+	 */
+	@Test
+	public void testCreateSubsequenceListSame() {
+		final List<String> duplicatedSubseq = Arrays.asList("I", "can't");
+		final List<List<String>> expected = Arrays.asList(duplicatedSubseq, duplicatedSubseq);
+		final List<String> input = expected.stream().flatMap(List::stream).collect(Collectors.toList());
 		final List<List<String>> actual = ListSubsequences.createSubsequenceList(input, 2);
 		Assert.assertEquals(expected, actual);
 	}

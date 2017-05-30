@@ -28,9 +28,27 @@ import java.util.List;
 public final class ListSubsequences {
 
 	public static <T> List<T> createDeduplicatedAdjacentSubsequenceList(final List<T> list) {
-		final List<T> result = new ArrayList<>(list.size());
-		addDeduplicatedAdjacentSubsequences(list, result);
-		// TODO: Fix
+		System.out.println("inputList: " + list);
+		final List<T> result;
+		if (list.size() == 1) {
+			result = list;
+		} else {
+			result = new ArrayList<>(list.size());
+			final int subseqLength = list.size() / 2;
+			final List<List<T>> subseqs = createSubsequenceList(list, subseqLength);
+			System.out.println("subseqLength: " + subseqLength + ", subseqs: " + subseqs);
+			final List<List<T>> deduplicatedSubseqs = createDeduplicatedAdjacentSubsequenceListFromListOfSubsequences(
+					subseqs);
+			System.out.println("subseqLength: " + subseqLength + ", deduplicatedSubseqs: " + deduplicatedSubseqs);
+			for (final List<T> subseq : deduplicatedSubseqs) {
+				System.out.println("subseq being processed: " + subseq);
+				final List<T> dedup = createDeduplicatedAdjacentSubsequenceList(subseq);
+				System.out.println("dedupd subseq: " + dedup);
+				result.addAll(dedup);
+			}
+			// TODO: Fix
+		}
+
 		return result;
 	}
 
@@ -69,22 +87,6 @@ public final class ListSubsequences {
 			result.add(trailingSubseq);
 		}
 		return result;
-	}
-
-	private static <T> void addDeduplicatedAdjacentSubsequences(final List<T> list, final List<? super T> result) {
-		final int maxDuplicateSubseqLength = list.size() / 2;
-		for (int subseqLength = maxDuplicateSubseqLength; subseqLength > 0; --subseqLength) {
-			final List<List<T>> subseqs = createSubsequenceList(list, subseqLength);
-			System.out.println("subseqs: " + subseqs);
-			final List<List<T>> deduplicatedSubseqs = createDeduplicatedAdjacentSubsequenceListFromListOfSubsequences(
-					subseqs);
-			System.out.println("deduplicatedSubseqs: " + subseqs);
-			for (final List<T> subseq : deduplicatedSubseqs) {
-				final List<T> elems = createDeduplicatedAdjacentSubsequenceList(subseq);
-				System.out.println("elems: " + elems);
-				result.addAll(elems);
-			}
-		}
 	}
 
 	private ListSubsequences() {
