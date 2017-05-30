@@ -26,7 +26,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.ChainedEventDialogueTransformer;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.DuplicateTokenFilteringEventDialogueTransformer;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.DuplicateSubsequenceFilteringEventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.TokenFilteringEventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.TokenizingEventDialogueTransformer;
@@ -126,7 +126,7 @@ enum Tokenization implements Supplier<EventDialogueTransformer>, HasAbbreviation
 	static {
 		final Set<String> fillerWords = SnowballPorter2EnglishStopwords.Variant.FILLERS.get();
 		final LinkedHashMap<String, EventDialogueTransformer> garbageRemovingTransformers = new LinkedHashMap<>();
-		garbageRemovingTransformers.put("dedup", new DuplicateTokenFilteringEventDialogueTransformer());
+		garbageRemovingTransformers.put("dedupSeqs", new DuplicateSubsequenceFilteringEventDialogueTransformer());
 		final Predicate<String> parsingGarbageTokenMatcher = token -> {
 			return fillerWords.contains(token) || Disfluencies.TOKEN_MATCHER.test(token);
 		};

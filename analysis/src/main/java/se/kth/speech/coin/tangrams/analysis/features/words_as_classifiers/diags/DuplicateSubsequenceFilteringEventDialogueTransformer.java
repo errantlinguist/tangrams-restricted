@@ -16,7 +16,6 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -28,20 +27,16 @@ import se.kth.speech.coin.tangrams.analysis.Utterance;
  * @since May 27, 2017
  *
  */
-public final class DuplicateTokenFilteringEventDialogueTransformer
+public final class DuplicateSubsequenceFilteringEventDialogueTransformer
 		extends AbstractUtteranceTransformingEventDialogueTransformer {
 
 	@Override
 	protected Stream<Utterance> transformUtt(final Utterance utt) {
 		final List<String> oldTokens = utt.getTokens();
-		final List<List<String>> bigrams = ListSubsequences.createSubsequenceList(oldTokens, 2);
-		final List<List<String>> dedupBigrams = ListSubsequences
-				.createDeduplicatedAdjacentSubsequenceListFromListOfSubsequences(bigrams);
-		final Stream<String> newTokens = dedupBigrams.stream().flatMap(List::stream);
-		final String[] newTokenArr = newTokens.toArray(String[]::new);
-		assert newTokenArr.length > 0;
-		return Stream.of(new Utterance(utt.getSegmentId(), utt.getSpeakerId(), Arrays.asList(newTokenArr),
-				utt.getStartTime(), utt.getEndTime()));
+		final List<String> newTokens = ListSubsequences.createDeduplicatedAdjacentSubsequenceList(oldTokens);
+		assert !newTokens.isEmpty();
+		return Stream.of(
+				new Utterance(utt.getSegmentId(), utt.getSpeakerId(), newTokens, utt.getStartTime(), utt.getEndTime()));
 	}
 
 }
