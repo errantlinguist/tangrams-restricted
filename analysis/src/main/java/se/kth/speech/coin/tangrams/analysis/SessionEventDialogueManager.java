@@ -93,6 +93,7 @@ public final class SessionEventDialogueManager {
 		});
 		final List<Utterance> utts = Arrays.asList(segUttFactory.create(uttAnnots.getSegments().getSegment().stream())
 				.flatMap(List::stream).toArray(Utterance[]::new));
+		LOGGER.debug("Creating dialogues for {} annotated utterance(s).", utts.size());
 		uttDialogues = Collections.unmodifiableList(
 				Arrays.asList(eventDiagFactory.apply(utts.listIterator(), gameHistory).toArray(EventDialogue[]::new)));
 	}
