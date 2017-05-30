@@ -64,7 +64,6 @@ public final class EventDialogueFactory
 		final Entry<Stream<Event>, Event> preDialogueEvents = Iterators.findElementsBeforeDelimiter(eventIter,
 				dialogueEventDelimiter);
 		Event currentEvent = preDialogueEvents.getValue();
-		assert dialogueEventDelimiter.test(currentEvent);
 
 		final Stream.Builder<EventDialogue> resultBuilder = Stream.builder();
 
@@ -81,7 +80,6 @@ public final class EventDialogueFactory
 			final Entry<Stream<Event>, Event> nextDialogueEvents = Iterators.findElementsBeforeDelimiter(eventIter,
 					dialogueEventDelimiter);
 			final Event nextEvent = nextDialogueEvents.getValue();
-			assert dialogueEventDelimiter.test(nextEvent);
 			// Find the set of utterances following the last event
 			final List<Utterance> nextUttList = createPreEventUtteranceList(utts, nextEvent, gameStartTime);
 			final Stream<Event> nextDiagEvents = Stream.concat(Stream.of(currentEvent), nextDialogueEvents.getKey());
