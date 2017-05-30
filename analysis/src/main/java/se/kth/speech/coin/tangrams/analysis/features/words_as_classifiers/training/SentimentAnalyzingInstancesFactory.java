@@ -65,11 +65,11 @@ public final class SentimentAnalyzingInstancesFactory extends AbstractSizeEstima
 	private static final Object2IntMap<String> SENTIMENT_LABEL_WEIGHTS = createSentimentClassWeightMap();
 
 	/**
-	 * 
+	 *
 	 * @see edu.stanford.nlp.sentiment.RNNOptions.DEFAULT_CLASS_NAMES
 	 */
 	private static Object2IntMap<String> createSentimentClassWeightMap() {
-		String[] classNames = RNNOptions.DEFAULT_CLASS_NAMES;
+		final String[] classNames = RNNOptions.DEFAULT_CLASS_NAMES;
 		final Object2IntMap<String> result = new Object2IntOpenHashMap<>(classNames.length);
 		result.put("Very negative", -2);
 		result.put("Negative", -1);
@@ -111,13 +111,19 @@ public final class SentimentAnalyzingInstancesFactory extends AbstractSizeEstima
 		final Annotation annot = new Annotation(utt.getTokenStr());
 		annotator.annotate(annot);
 		final List<CoreMap> sents = annot.get(SentencesAnnotation.class);
-		int rankSum = 0;
-		// traversing the words in the current sentence
-		for (final CoreMap sent : sents) {
-			final String sentimentClass = sent.get(SentimentClass.class);
-			rankSum += SENTIMENT_LABEL_WEIGHTS.getInt(sentimentClass);
+		final double result;
+		if (sents.isEmpty()) {
+			result = 0.0;
+		} else {
+			int rankSum = 0;
+			// traversing the words in the current sentence
+			for (final CoreMap sent : sents) {
+				final String sentimentClass = sent.get(SentimentClass.class);
+				rankSum += SENTIMENT_LABEL_WEIGHTS.getInt(sentimentClass);
+			}
+			result = rankSum / (double) sents.size();
 		}
-		return rankSum / (double) sents.size();
+		return result;
 	}
 
 	private List<Entry<EntityFeature.Extractor.Context, String>> createTrainingContexts(final GameContext uttCtx,
@@ -180,7 +186,8 @@ public final class SentimentAnalyzingInstancesFactory extends AbstractSizeEstima
 							final Stream<String> preInstructorWordClasses = preInstructorUtts.getKey()
 									.map(Utterance::getTokens).flatMap(List::stream);
 							preInstructorWordClasses.forEach(wordClass -> {
-								LOGGER.debug("Adding word class \"{}\" from non-instructor utterance with weight {}.", wordClass, firstInstructorUttSentimentRank);
+								LOGGER.debug("Adding word class \"{}\" from non-instructor utterance with weight {}.",
+										wordClass, firstInstructorUttSentimentRank);
 								addWeightedExamples(wordClass, trainingData, trainingContexts.stream(),
 										firstInstructorUttSentimentRank);
 							});
@@ -189,7 +196,8 @@ public final class SentimentAnalyzingInstancesFactory extends AbstractSizeEstima
 						final double instructorObservationWeight = firstInstructorUttSentimentRank <= 0.0 ? 1.0
 								: firstInstructorUttSentimentRank;
 						firstInstructorUtt.getTokens().stream().forEach(wordClass -> {
-							LOGGER.debug("Adding word class \"{}\" from instructor utterance with weight {}.", wordClass, instructorObservationWeight);
+							LOGGER.debug("Adding word class \"{}\" from instructor utterance with weight {}.",
+									wordClass, instructorObservationWeight);
 							addWeightedExamples(wordClass, trainingData, trainingContexts.stream(),
 									instructorObservationWeight);
 						});
