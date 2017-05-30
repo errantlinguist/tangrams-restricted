@@ -113,7 +113,7 @@ public final class OnePositiveMaximumNegativeInstancesFactory extends AbstractSi
 							selectedEntityId, event.getString(GameManagementEvent.Attribute.PLAYER_ID.toString()));
 					final List<Entry<EntityFeature.Extractor.Context, String>> contexts = createContexts(uttCtx,
 							selectedEntityId);
-					final Stream<String> wordClasses = transformedDiag.getUtts().stream().map(Utterance::getTokens)
+					final Stream<String> wordClasses = allUtts.stream().map(Utterance::getTokens)
 							.flatMap(List::stream);
 					wordClasses.forEach(wordClass -> {
 						final Instances classInsts = trainingData.fetchWordInstances(wordClass);

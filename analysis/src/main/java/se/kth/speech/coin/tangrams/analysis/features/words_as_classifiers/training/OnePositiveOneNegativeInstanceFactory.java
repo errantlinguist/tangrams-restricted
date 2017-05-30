@@ -115,7 +115,7 @@ public final class OnePositiveOneNegativeInstanceFactory extends AbstractSizeEst
 
 					final EntityFeature.Extractor.Context negativeContext = extCtxFactory.apply(uttCtx,
 							findRandomEntityId(uttCtx, selectedEntityId));
-					final Stream<String> wordClasses = transformedDiag.getUtts().stream().map(Utterance::getTokens)
+					final Stream<String> wordClasses = allUtts.stream().map(Utterance::getTokens)
 							.flatMap(List::stream);
 					wordClasses.forEach(wordClass -> {
 						final Instances classInsts = trainingData.fetchWordInstances(wordClass);
