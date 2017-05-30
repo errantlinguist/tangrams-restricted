@@ -79,9 +79,9 @@ public final class CombiningBatchJobTester {
 
 	private final Consumer<? super Tester> testerConfigurator;
 
-	public CombiningBatchJobTester(final ExecutorService executor, final ApplicationContext appCtx,
+	public CombiningBatchJobTester(final ExecutorService backgroundJobExecutor, final ApplicationContext appCtx,
 			final Consumer<? super BatchJobSummary> batchJobResultHandler) {
-		this(executor, appCtx, batchJobResultHandler, tester -> {
+		this(backgroundJobExecutor, appCtx, batchJobResultHandler, tester -> {
 			// Do nothing
 		});
 	}
