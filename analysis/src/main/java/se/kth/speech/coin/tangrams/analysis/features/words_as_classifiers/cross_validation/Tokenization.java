@@ -126,7 +126,7 @@ enum Tokenization implements Supplier<EventDialogueTransformer>, HasAbbreviation
 	static {
 		final Set<String> fillerWords = SnowballPorter2EnglishStopwords.Variant.FILLERS.get();
 		final LinkedHashMap<String, EventDialogueTransformer> garbageRemovingTransformers = new LinkedHashMap<>();
-		garbageRemovingTransformers.put("dedupSeqs", new DuplicateSubsequenceFilteringEventDialogueTransformer());
+		garbageRemovingTransformers.put("dedupSubseqs", new DuplicateSubsequenceFilteringEventDialogueTransformer());
 		final Predicate<String> parsingGarbageTokenMatcher = token -> {
 			return fillerWords.contains(token) || Disfluencies.TOKEN_MATCHER.test(token);
 		};
