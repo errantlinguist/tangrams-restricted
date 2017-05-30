@@ -34,7 +34,6 @@ import java.util.stream.Stream;
 import edu.stanford.nlp.ling.Label;
 import edu.stanford.nlp.trees.CollinsHeadFinder;
 import edu.stanford.nlp.trees.HeadFinder;
-import edu.stanford.nlp.trees.Tree;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.ChainedEventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.DuplicateTokenFilteringEventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EventDialogueTransformer;
@@ -47,6 +46,7 @@ import se.kth.speech.nlp.PatternTokenizer;
 import se.kth.speech.nlp.SnowballPorter2EnglishStopwords;
 import se.kth.speech.nlp.stanford.Lemmatizer;
 import se.kth.speech.nlp.stanford.PhrasalHeadFilteringPredicate;
+import se.kth.speech.nlp.stanford.PhraseExtractingParsingTokenizer;
 import se.kth.speech.nlp.stanford.StanfordCoreNLPConfigurationVariant;
 import se.kth.speech.nlp.stanford.Tokenizer;
 
@@ -120,23 +120,11 @@ enum Tokenization implements Supplier<EventDialogueTransformer>, HasAbbreviation
 
 			@Override
 			public FallbackTokenizingEventDialogueTransformer get() {
-				final Predicate<Tree> npWhitelistingPred = tree -> {
-					// TODO: Fix this: This prunes away the entire root node and
-					// so deleted the entire parse tree!
-					final boolean result;
-					if (tree.isLeaf()) {
-						result = true;
-					} else if (tree.isPreTerminal()) {
-						result = true;
-					} else {
-						final Label label = tree.label();
-						result = label == null ? false : "NP".equals(label.value());
-					}
-					return result;
-				};
-				return new FallbackTokenizingEventDialogueTransformer(new se.kth.speech.nlp.stanford.ParsingTokenizer(
-						StanfordCoreNLPConfigurationVariant.TOKENIZING_LEMMATIZING_PARSING.get(), npWhitelistingPred),
-						FALLBACK_TOKENIZER);
+				return new FallbackTokenizingEventDialogueTransformer(new PhraseExtractingParsingTokenizer(
+						StanfordCoreNLPConfigurationVariant.TOKENIZING_LEMMATIZING_PARSING.get(), subTree -> {
+							final Label label = subTree.label();
+							return label == null ? false : "NP".equals(label.value());
+						}), FALLBACK_TOKENIZER);
 			}
 
 			@Override
