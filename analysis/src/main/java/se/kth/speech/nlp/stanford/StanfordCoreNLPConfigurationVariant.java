@@ -74,7 +74,6 @@ public enum StanfordCoreNLPConfigurationVariant implements Supplier<StanfordCore
 //		 result.setProperty("parse.model",
 //		 "edu/stanford/nlp/models/lexparser/englishPCFG.caseless.ser.gz");
 //		result.setProperty("parse.model", "edu/stanford/nlp/models/lexparser/englishFactored.ser.gz");
-//		result.setProperty("parse.model", "edu/stanford/nlp/models/lexparser/englishRNN.ser.gz");
 		result.setProperty("parse.model", "edu/stanford/nlp/models/srparser/englishSR.ser.gz");
 		// https://stanfordnlp.github.io/CoreNLP/pos.html
 		result.setProperty("pos.model",
