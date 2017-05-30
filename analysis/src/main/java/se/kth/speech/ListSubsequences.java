@@ -34,6 +34,23 @@ public final class ListSubsequences {
 		return result;
 	}
 
+	public static <T> List<List<T>> createDeduplicatedAdjacentSubsequenceListFromListOfSubsequences(
+			final List<List<T>> subseqs) {
+		final List<List<T>> result = new ArrayList<>(subseqs.size());
+		final Iterator<List<T>> subSeqIter = subseqs.iterator();
+		while (subSeqIter.hasNext()) {
+			final List<T> firstSubseq = subSeqIter.next();
+			result.add(firstSubseq);
+			if (subSeqIter.hasNext()) {
+				final List<T> nextSubSeq = subSeqIter.next();
+				if (!firstSubseq.equals(nextSubSeq)) {
+					result.add(nextSubSeq);
+				}
+			}
+		}
+		return result;
+	}
+
 	public static <T> List<List<T>> createSubsequenceList(final List<T> list, final int subseqLength) {
 		final List<List<T>> result = new ArrayList<>(Math.max(list.size() / subseqLength, 1));
 		final int maxSubseqStart = list.size() - subseqLength;
@@ -64,26 +81,10 @@ public final class ListSubsequences {
 			System.out.println("deduplicatedSubseqs: " + subseqs);
 			for (final List<T> subseq : deduplicatedSubseqs) {
 				final List<T> elems = createDeduplicatedAdjacentSubsequenceList(subseq);
+				System.out.println("elems: " + elems);
 				result.addAll(elems);
 			}
 		}
-	}
-
-	public static <T> List<List<T>> createDeduplicatedAdjacentSubsequenceListFromListOfSubsequences(
-			final List<List<T>> subseqs) {
-		final List<List<T>> result = new ArrayList<>(subseqs.size());
-		final Iterator<List<T>> subSeqIter = subseqs.iterator();
-		while (subSeqIter.hasNext()) {
-			final List<T> firstSubseq = subSeqIter.next();
-			result.add(firstSubseq);
-			if (subSeqIter.hasNext()) {
-				final List<T> nextSubSeq = subSeqIter.next();
-				if (!firstSubseq.equals(nextSubSeq)) {
-					result.add(nextSubSeq);
-				}
-			}
-		}
-		return result;
 	}
 
 	private ListSubsequences() {
