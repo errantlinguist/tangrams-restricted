@@ -230,6 +230,7 @@ public final class SessionTester {
 		final List<EventDialogue> uttDiags = sessionEventDiagMgr.getUttDialogues();
 		final SessionTester.Result result = new SessionTester.Result(uttDiags.size());
 
+		LOGGER.info("Testing {} individual dialogue(s).", uttDiags.size());
 		for (final EventDialogue uttDiag : uttDiags) {
 			final Optional<EventDialogueTester.Result> optTestResults = diagTester.apply(uttDiag,
 					sessionEventDiagMgr.getGameHistory());
