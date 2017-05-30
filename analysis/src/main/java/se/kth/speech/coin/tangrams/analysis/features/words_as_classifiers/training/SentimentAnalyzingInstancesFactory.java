@@ -71,6 +71,7 @@ public final class SentimentAnalyzingInstancesFactory extends AbstractSizeEstima
 	private static Object2IntMap<String> createSentimentClassWeightMap() {
 		final String[] classNames = RNNOptions.DEFAULT_CLASS_NAMES;
 		final Object2IntMap<String> result = new Object2IntOpenHashMap<>(classNames.length);
+		result.defaultReturnValue(0);
 		result.put("Very negative", -2);
 		result.put("Negative", -1);
 		result.put("Neutral", 0);
