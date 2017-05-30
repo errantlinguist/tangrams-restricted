@@ -71,21 +71,26 @@ public final class ListSubsequences {
 	}
 
 	public static <T> List<List<T>> createSubsequenceList(final List<T> list, final int subseqLength) {
-		final List<List<T>> result = new ArrayList<>(Math.max(list.size() / subseqLength, 1));
-		final int maxSubseqStart = list.size() - subseqLength;
-		int lastSubseqEnd = 0;
-		for (int subseqStart = 0; subseqStart < maxSubseqStart; subseqStart += subseqLength) {
-			final int subseqEnd = subseqStart + subseqLength;
-			final List<T> subseq = list.subList(subseqStart, subseqEnd);
-			result.add(subseq);
-			lastSubseqEnd = subseqEnd;
-		}
+		final List<List<T>> result;
+		if (subseqLength < 1) {
+			throw new IllegalArgumentException("Subsequence length must be positive.");
+		} else {
+			result = new ArrayList<>(Math.max(list.size() / subseqLength, 1));
+			final int maxSubseqStart = list.size() - subseqLength;
+			int lastSubseqEnd = 0;
+			for (int subseqStart = 0; subseqStart < maxSubseqStart; subseqStart += subseqLength) {
+				final int subseqEnd = subseqStart + subseqLength;
+				final List<T> subseq = list.subList(subseqStart, subseqEnd);
+				result.add(subseq);
+				lastSubseqEnd = subseqEnd;
+			}
 
-		final int trailingSubseqLength = list.size() - lastSubseqEnd;
-		if (trailingSubseqLength > 0) {
-			final List<T> trailingSubseq = list.subList(lastSubseqEnd, list.size());
-			assert trailingSubseq.size() == trailingSubseqLength;
-			result.add(trailingSubseq);
+			final int trailingSubseqLength = list.size() - lastSubseqEnd;
+			if (trailingSubseqLength > 0) {
+				final List<T> trailingSubseq = list.subList(lastSubseqEnd, list.size());
+				assert trailingSubseq.size() == trailingSubseqLength;
+				result.add(trailingSubseq);
+			}
 		}
 		return result;
 	}
