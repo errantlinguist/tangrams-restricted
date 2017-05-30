@@ -110,10 +110,10 @@ public final class OnePositiveOneNegativeInstanceFactory extends AbstractSizeEst
 					LOGGER.debug(
 							"Creating positive and negative examples for entity ID \"{}\", which is selected by player \"{}\".",
 							selectedEntityId, event.getString(GameManagementEvent.Attribute.PLAYER_ID.toString()));
-					final EntityFeature.Extractor.Context positiveContext = extCtxFactory.apply(uttCtx,
+					final EntityFeature.Extractor.Context positiveTrainingContext = extCtxFactory.apply(uttCtx,
 							selectedEntityId);
 
-					final EntityFeature.Extractor.Context negativeContext = extCtxFactory.apply(uttCtx,
+					final EntityFeature.Extractor.Context negativeTrainingContext = extCtxFactory.apply(uttCtx,
 							findRandomEntityId(uttCtx, selectedEntityId));
 					final Stream<String> wordClasses = allUtts.stream().map(Utterance::getTokens)
 							.flatMap(List::stream);
@@ -121,9 +121,9 @@ public final class OnePositiveOneNegativeInstanceFactory extends AbstractSizeEst
 						final Instances classInsts = trainingData.fetchWordInstances(wordClass);
 						final Stream.Builder<Instance> trainingInsts = Stream.builder();
 						// Add positive training example
-						trainingInsts.add(createTokenInstance(classInsts, positiveContext, Boolean.TRUE.toString()));
+						trainingInsts.add(createTokenInstance(classInsts, positiveTrainingContext, Boolean.TRUE.toString()));
 						// Add negative training example
-						trainingInsts.add(createTokenInstance(classInsts, negativeContext, Boolean.FALSE.toString()));
+						trainingInsts.add(createTokenInstance(classInsts, negativeTrainingContext, Boolean.FALSE.toString()));
 						trainingData.addObservation(wordClass, trainingInsts.build());
 					});
 				}

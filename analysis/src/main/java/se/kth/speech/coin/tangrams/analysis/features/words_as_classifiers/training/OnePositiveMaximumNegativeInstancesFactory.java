@@ -116,13 +116,13 @@ public final class OnePositiveMaximumNegativeInstancesFactory extends AbstractSi
 					final Utterance firstUtt = allUtts.get(0);
 					LOGGER.debug("Creating positive and negative examples for entity selected by player \"{}\".",
 							event.getString(GameManagementEvent.Attribute.PLAYER_ID.toString()));
-					final List<Entry<EntityFeature.Extractor.Context, String>> contexts = createTrainingContexts(
+					final List<Entry<EntityFeature.Extractor.Context, String>> trainingContexts = createTrainingContexts(
 							firstUtt, history);
 					final Stream<String> wordClasses = allUtts.stream().map(Utterance::getTokens).flatMap(List::stream);
 					wordClasses.forEach(wordClass -> {
 						final Instances classInsts = trainingData.fetchWordInstances(wordClass);
-						final Stream<Instance> trainingInsts = contexts.stream()
-								.map(context -> createTokenInstance(classInsts, context.getKey(), context.getValue()));
+						final Stream<Instance> trainingInsts = trainingContexts.stream()
+								.map(trainingContext -> createTokenInstance(classInsts, trainingContext.getKey(), trainingContext.getValue()));
 						// Add examples
 						trainingData.addObservation(wordClass, trainingInsts);
 					});
