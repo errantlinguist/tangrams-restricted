@@ -29,7 +29,7 @@ import org.junit.Test;
  * @since 30 May 2017
  *
  */
-public class ListSubsequencesTest {
+public final class ListSubsequencesTest {
 
 	/**
 	 * Test method for
