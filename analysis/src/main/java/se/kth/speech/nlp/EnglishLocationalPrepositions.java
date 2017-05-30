@@ -49,18 +49,18 @@ public final class EnglishLocationalPrepositions {
 
 	private static final Pattern WHITESPACE_PATTERN = Pattern.compile("\\s+");
 
-	public static Set<List<String>> loadSet() {
+	public static Set<List<String>> get() {
 		final Reference<Set<List<String>>> ref = INSTANCES.compute(EnglishLocationalPrepositions.class,
 				(key, oldValue) -> {
 					final Reference<Set<List<String>>> newValue;
 					if (oldValue == null) {
 						// No instance has yet been created; Create one
-						newValue = new SoftReference<>(loadNewSet());
+						newValue = new SoftReference<>(loadSet());
 					} else if (oldValue.get() == null) {
 						// The old instance has already been deleted; Replace it
 						// with a
 						// new reference to a new instance
-						newValue = new SoftReference<>(loadNewSet());
+						newValue = new SoftReference<>(loadSet());
 					} else {
 						// The existing instance has not yet been deleted;
 						// Re-use it
@@ -85,7 +85,7 @@ public final class EnglishLocationalPrepositions {
 		return result;
 	}
 
-	private static Set<List<String>> loadNewSet() {
+	private static Set<List<String>> loadSet() {
 		LOGGER.info("Loading English locational preposition set.");
 		final List<List<String>> list = loadList();
 		final Set<List<String>> result = Sets.newHashSetWithExpectedSize(list.size());

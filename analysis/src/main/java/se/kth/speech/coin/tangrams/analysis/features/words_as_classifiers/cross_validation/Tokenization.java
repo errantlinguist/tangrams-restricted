@@ -150,7 +150,7 @@ enum Tokenization implements Supplier<EventDialogueTransformer>, HasAbbreviation
 			@Override
 			public FallbackTokenizingEventDialogueTransformer get() {
 				final Map<String, Set<List<String>>> labelHeadBlacklists = Collections.singletonMap("PP",
-						EnglishLocationalPrepositions.loadSet());
+						EnglishLocationalPrepositions.get());
 				final PhrasalHeadFilteringPredicate pred = new PhrasalHeadFilteringPredicate(labelHeadBlacklists,
 						HEAD_FINDER);
 				return new FallbackTokenizingEventDialogueTransformer(
