@@ -73,7 +73,8 @@ public enum StanfordCoreNLPConfigurationVariant implements Supplier<StanfordCore
 		// "edu/stanford/nlp/models/lexparser/englishPCFG.ser.gz");
 		// result.setProperty("parse.model",
 		// "edu/stanford/nlp/models/lexparser/englishPCFG.caseless.ser.gz");
-		result.setProperty("parse.model", "edu/stanford/nlp/models/srparser/englishSR.ser.gz");
+//		result.setProperty("parse.model", "edu/stanford/nlp/models/srparser/englishSR.ser.gz");
+		result.setProperty("parse.model", "edu/stanford/nlp/models/lexparser/englishFactored.ser.gz");
 		// https://stanfordnlp.github.io/CoreNLP/pos.html
 		result.setProperty("pos.model",
 				"edu/stanford/nlp/models/pos-tagger/english-left3words/english-left3words-distsim.tagger");
