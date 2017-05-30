@@ -16,13 +16,15 @@
 */
 package se.kth.speech.nlp.stanford;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Deque;
 import java.util.List;
-import java.util.function.Function;
 import java.util.function.Predicate;
 
 import edu.stanford.nlp.ling.CoreAnnotations.SentencesAnnotation;
-import edu.stanford.nlp.ling.CoreLabel;
+import edu.stanford.nlp.ling.Word;
 import edu.stanford.nlp.pipeline.Annotation;
 import edu.stanford.nlp.pipeline.Annotator;
 import edu.stanford.nlp.trees.Tree;
@@ -36,14 +38,24 @@ import edu.stanford.nlp.util.CoreMap;
  */
 public final class PhraseExtractingTokenizer extends AbstractTokenizer {
 
+	private final Predicate<Tree> subTreeBranchPruningPositiveFilter;
 
-	public PhraseExtractingTokenizer(final Annotator annotator) {
+	private final Predicate<? super Tree> subTreeMatcher;
+
+	public PhraseExtractingTokenizer(final Annotator annotator, final Predicate<? super Tree> subTreeMatcher) {
+		this(annotator, subTreeMatcher, subTreeBranch -> true);
+	}
+
+	public PhraseExtractingTokenizer(final Annotator annotator, final Predicate<? super Tree> subTreeMatcher,
+			final Predicate<Tree> subTreeBranchPruningPositiveFilter) {
 		super(annotator);
+		this.subTreeMatcher = subTreeMatcher;
+		this.subTreeBranchPruningPositiveFilter = subTreeBranchPruningPositiveFilter;
 	}
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see
 	 * se.kth.speech.nlp.AbstractStanfordCoreNLPTokenizer#tokenize(edu.stanford.
 	 * nlp.pipeline.Annotation)
@@ -51,14 +63,31 @@ public final class PhraseExtractingTokenizer extends AbstractTokenizer {
 	@Override
 	protected List<String> tokenize(final Annotation annot) {
 		final List<CoreMap> sents = annot.get(SentencesAnnotation.class);
-		final ArrayList<String> result = new ArrayList<>(16 * sents.size());
+		final ArrayList<Word> resultWords = new ArrayList<>(16 * sents.size());
 		// traversing the words in the current sentence
 		for (final CoreMap sent : sents) {
 			// this is the parse tree of the current sentence
 			final Tree tree = sent.get(TreeAnnotation.class);
-			// TODO: Finish
+			final List<Tree> children = tree.getChildrenAsList();
+			final Deque<Tree> subTreesToProcess = new ArrayDeque<>(Math.max(16, children.size()));
+			children.forEach(subTreesToProcess::addLast);
+			final List<Tree> extractedPhrases = new ArrayList<>();
+
+			while (!subTreesToProcess.isEmpty()) {
+				final Tree subTreeToProcess = subTreesToProcess.removeFirst();
+				if (subTreeMatcher.test(subTreeToProcess)) {
+					final Tree prunedSubTree = subTreeToProcess.prune(subTreeBranchPruningPositiveFilter);
+					extractedPhrases.add(prunedSubTree);
+				} else {
+					subTreeToProcess.getChildrenAsList().forEach(subTreesToProcess::addLast);
+				}
+			}
+
+			for (final Tree extractedPhrase : extractedPhrases) {
+				extractedPhrase.yieldWords(resultWords);
+			}
 		}
-		return result;
+		return Arrays.asList(resultWords.stream().map(Word::word).toArray(String[]::new));
 	}
 
 }
