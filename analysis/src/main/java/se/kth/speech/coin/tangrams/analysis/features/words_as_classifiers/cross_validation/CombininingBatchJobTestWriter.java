@@ -250,7 +250,7 @@ public final class CombininingBatchJobTestWriter implements Consumer<BatchJobSum
 				LOGGER.info("Token filtering methods: {}", tokenFilteringMethods);
 				final NavigableSet<Training> trainingMethods = Parameter.parseTrainingMethods(cl);
 				LOGGER.info("Training methods: {}", trainingMethods);
-				final ExecutorService executor = createExecutorService();
+				final ExecutorService executor = createBackgroundJobExecutor();
 				try {
 					final Future<Map<SessionDataManager, Path>> allSessionDataFuture = executor
 							.submit(() -> TestSessionData.readTestSessionData(inpaths));
@@ -301,6 +301,15 @@ public final class CombininingBatchJobTestWriter implements Consumer<BatchJobSum
 		}
 	}
 
+	private static ExecutorService createBackgroundJobExecutor() {
+		return createBackgroundJobExecutor(Math.max(Runtime.getRuntime().availableProcessors() - 1, 1));
+	}
+
+	private static ExecutorService createBackgroundJobExecutor(final int parallelThreadCount) {
+		LOGGER.info("Will run with {} parallel thread(s).", parallelThreadCount);
+		return Executors.newFixedThreadPool(parallelThreadCount);
+	}
+
 	private static String createBatchOutdirName(final TestParameters testParams) {
 		final Stream<String> rowCellVals = createTestMethodRowCellValues(testParams);
 		return rowCellVals.collect(METHOD_KEY_NAME_JOINER);
@@ -314,15 +323,6 @@ public final class CombininingBatchJobTestWriter implements Consumer<BatchJobSum
 		resultBuilder.add("ITER_COUNT");
 		summaryDataToWrite.stream().map(SummaryDatum::toString).forEachOrdered(resultBuilder);
 		return Arrays.asList(resultBuilder.build().toArray(String[]::new));
-	}
-
-	private static ExecutorService createExecutorService() {
-		return createExecutorService(Math.max(Runtime.getRuntime().availableProcessors() - 1, 1));
-	}
-
-	private static ExecutorService createExecutorService(final int parallelThreadCount) {
-		LOGGER.info("Will run with {} parallel thread(s).", parallelThreadCount);
-		return Executors.newFixedThreadPool(parallelThreadCount);
 	}
 
 	private static Stream<String> createRowCellValues(final BatchJobSummary summary, final Path outdirPath) {
