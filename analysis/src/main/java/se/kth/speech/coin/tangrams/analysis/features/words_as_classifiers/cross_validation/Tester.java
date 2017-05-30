@@ -44,6 +44,7 @@ import org.springframework.beans.factory.BeanFactory;
 import com.google.common.collect.Maps;
 
 import it.unimi.dsi.fastutil.ints.IntSet;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import se.kth.speech.coin.tangrams.analysis.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
 import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManagerCacheSupplier;
@@ -90,8 +91,12 @@ public final class Tester {
 
 		private final SessionTester.Result testResults;
 
-		private CrossValidationTestSummary(final SessionTester.Result testResults) {
+		private final Object2IntMap<String> trainingInstanceCounts;
+
+		private CrossValidationTestSummary(final SessionTester.Result testResults,
+				final Object2IntMap<String> trainingInstanceCounts) {
 			this.testResults = testResults;
+			this.trainingInstanceCounts = trainingInstanceCounts;
 		}
 
 		/**
@@ -99,6 +104,13 @@ public final class Tester {
 		 */
 		public SessionTester.Result getTestResults() {
 			return testResults;
+		}
+
+		/**
+		 * @return the trainingInstanceCounts
+		 */
+		public Object2IntMap<String> getTrainingInstanceCounts() {
+			return trainingInstanceCounts;
 		}
 	}
 
@@ -117,8 +129,9 @@ public final class Tester {
 		}
 
 		public Stream<Entry<EventDialogue, EventDialogueTester.Result>> getAllDialogueTestResults() {
-			return sessionResults.values().stream().flatMap(List::stream).map(CrossValidationTestSummary::getTestResults)
-					.map(SessionTester.Result::getDialogueTestResults).flatMap(List::stream);
+			return sessionResults.values().stream().flatMap(List::stream)
+					.map(CrossValidationTestSummary::getTestResults).map(SessionTester.Result::getDialogueTestResults)
+					.flatMap(List::stream);
 		}
 
 		/**
@@ -136,7 +149,8 @@ public final class Tester {
 		}
 
 		public double meanGoldStandardUniqueReferentIdCount() {
-			return sessionResults.values().stream().flatMap(List::stream).map(CrossValidationTestSummary::getTestResults)
+			return sessionResults.values().stream().flatMap(List::stream)
+					.map(CrossValidationTestSummary::getTestResults)
 					.mapToInt(SessionTestStatistics::uniqueGoldStandardReferentIdCount).average().getAsDouble();
 		}
 
@@ -165,8 +179,9 @@ public final class Tester {
 		}
 
 		public double meanTokensTestedPerSession() {
-			return sessionResults.values().stream().flatMap(List::stream).map(CrossValidationTestSummary::getTestResults)
-					.mapToInt(SessionTestStatistics::totalTokensTested).average().getAsDouble();
+			return sessionResults.values().stream().flatMap(List::stream)
+					.map(CrossValidationTestSummary::getTestResults).mapToInt(SessionTestStatistics::totalTokensTested)
+					.average().getAsDouble();
 		}
 
 		/*
@@ -205,7 +220,8 @@ public final class Tester {
 		 */
 		@Override
 		public int totalDialoguesTested() {
-			return sessionResults.values().stream().flatMap(List::stream).map(CrossValidationTestSummary::getTestResults)
+			return sessionResults.values().stream().flatMap(List::stream)
+					.map(CrossValidationTestSummary::getTestResults)
 					.mapToInt(SessionTester.Result::totalDialoguesTested).sum();
 		}
 
@@ -273,8 +289,9 @@ public final class Tester {
 		 */
 		@Override
 		public Stream<Utterance> utterancesTested() {
-			return sessionResults.values().stream().flatMap(List::stream).map(CrossValidationTestSummary::getTestResults)
-					.map(SessionTestStatistics::utterancesTested).flatMap(Function.identity());
+			return sessionResults.values().stream().flatMap(List::stream)
+					.map(CrossValidationTestSummary::getTestResults).map(SessionTestStatistics::utterancesTested)
+					.flatMap(Function.identity());
 		}
 
 	}
@@ -420,7 +437,8 @@ public final class Tester {
 			final SessionTester sessionTester = new SessionTester(diagTester);
 			final SessionTester.Result testResults = sessionTester
 					.apply(sessionDiagMgrCacheSupplier.get().get(testSessionData));
-			final CrossValidationTestSummary cvTestSummary = new CrossValidationTestSummary(testResults);
+			final CrossValidationTestSummary cvTestSummary = new CrossValidationTestSummary(testResults,
+					trainingData.getTrainingInstanceCounts());
 			result.put(infilePath, cvTestSummary);
 		}
 		return result;
