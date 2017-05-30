@@ -16,12 +16,9 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation;
 
-import java.util.Arrays;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import org.springframework.context.ApplicationContext;
 
@@ -62,18 +59,7 @@ enum Training implements Function<TrainingContext, Entry<TrainingInstancesFactor
 
 	};
 
-	private static final Map<String, Training> INSTANCES_BY_KEY = Arrays.stream(Training.values())
-			.collect(Collectors.toMap(Training::getKeyName, Function.identity()));
-
 	private static final Random RND = new Random(1);
-
-	public static Training getByKey(final String keyName) {
-		final Training result = INSTANCES_BY_KEY.get(keyName);
-		if (result == null) {
-			throw new IllegalArgumentException(String.format("No instance for key \"%s\".", keyName));
-		}
-		return result;
-	}
 
 	private final String keyName;
 

@@ -122,7 +122,8 @@ enum Tokenization implements Supplier<EventDialogueTransformer>, HasKeyName {
 			@Override
 			public FallbackTokenizingEventDialogueTransformer get() {
 				final Predicate<Tree> npWhitelistingPred = tree -> {
-					// TODO: Fix this: This prunes away the entire root node and so deleted the entire parse tree!
+					// TODO: Fix this: This prunes away the entire root node and
+					// so deleted the entire parse tree!
 					final boolean result;
 					if (tree.isLeaf()) {
 						result = true;
@@ -166,13 +167,6 @@ enum Tokenization implements Supplier<EventDialogueTransformer>, HasKeyName {
 
 		};
 
-		/**
-		 * <strong>NOTE:</strong> This must be nested here so that it will be
-		 * initialized properly when loading the outer class.
-		 */
-		private static final Map<String, Tokenization> TOKENIZATION_INSTANCES_BY_KEY = Arrays
-				.stream(Tokenization.values()).collect(Collectors.toMap(Tokenization::getKeyName, Function.identity()));
-
 	}
 
 	private static final Function<String, List<String>> FALLBACK_TOKENIZER = new PatternTokenizer();
@@ -199,14 +193,6 @@ enum Tokenization implements Supplier<EventDialogueTransformer>, HasKeyName {
 		garbageRemovingTransformers.put("noFillers,noDisfl",
 				new TokenFilteringEventDialogueTransformer(token -> !parsingGarbageTokenMatcher.test(token)));
 		PARSING_GARBAGE_TOKEN_REMOVING_DIAG_TRANSFORMERS = new ArrayList<>(garbageRemovingTransformers.entrySet());
-	}
-
-	public static Tokenization getByKey(final String keyName) {
-		final Tokenization result = ParsingTokenizer.TOKENIZATION_INSTANCES_BY_KEY.get(keyName);
-		if (result == null) {
-			throw new IllegalArgumentException(String.format("No instance for key \"%s\".", keyName));
-		}
-		return result;
 	}
 
 }
