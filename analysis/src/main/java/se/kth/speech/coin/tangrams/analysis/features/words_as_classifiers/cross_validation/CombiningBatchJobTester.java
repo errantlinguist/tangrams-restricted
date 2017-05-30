@@ -18,6 +18,7 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -124,8 +125,10 @@ public final class CombiningBatchJobTester {
 						final TestParameters testParams = new TestParameters(uttFilteringMethod, tokenizationMethod,
 								tokenFilteringMethod, trainingMethod);
 						LOGGER.info("Testing {}.", testParams);
+						
+						LocalDateTime testTimestamp = LocalDateTime.now();
 						final Tester.Result testResults = tester.apply(input.allSessions);
-						final BatchJobSummary batchSummary = new BatchJobSummary(testParams, testResults);
+						final BatchJobSummary batchSummary = new BatchJobSummary(testTimestamp, testParams, testResults);
 						batchJobResultHandler.accept(batchSummary);
 					}
 				}

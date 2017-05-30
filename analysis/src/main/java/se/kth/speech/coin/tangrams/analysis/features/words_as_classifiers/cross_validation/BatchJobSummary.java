@@ -16,13 +16,19 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation;
 
+import java.time.LocalDateTime;
+
 public final class BatchJobSummary {
 
 	private final TestParameters testParams;
 
 	private final Tester.Result testResults;
 
-	BatchJobSummary(final TestParameters testParams, final Tester.Result testResults) {
+	private final LocalDateTime testTimestamp;
+
+	BatchJobSummary(final LocalDateTime testTimestamp, final TestParameters testParams,
+			final Tester.Result testResults) {
+		this.testTimestamp = testTimestamp;
 		this.testParams = testParams;
 		this.testResults = testResults;
 	}
@@ -39,6 +45,8 @@ public final class BatchJobSummary {
 		builder.append(testParams);
 		builder.append(", testResults=");
 		builder.append(testResults);
+		builder.append(", testTimestamp=");
+		builder.append(testTimestamp);
 		builder.append("]");
 		return builder.toString();
 	}
@@ -55,5 +63,12 @@ public final class BatchJobSummary {
 	 */
 	Tester.Result getTestResults() {
 		return testResults;
+	}
+
+	/**
+	 * @return the testTimestamp
+	 */
+	LocalDateTime getTestTimestamp() {
+		return testTimestamp;
 	}
 }

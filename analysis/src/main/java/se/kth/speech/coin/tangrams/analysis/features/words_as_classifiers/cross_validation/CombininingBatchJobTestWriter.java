@@ -24,6 +24,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
@@ -56,6 +57,7 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.StatisticsWriter.SummaryDatum;
+import se.kth.speech.coin.tangrams.iristk.EventTimes;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -147,7 +149,8 @@ public final class CombininingBatchJobTestWriter implements Consumer<BatchJobSum
 			final String[] names = cl.getOptionValues(Parameter.TOKEN_FILTERS.optName);
 			final Stream<TokenFiltering> insts = names == null ? Arrays.stream(TokenFiltering.values())
 					: Arrays.stream(names).map(TokenFiltering::valueOf);
-			final NavigableSet<TokenFiltering> result = new TreeSet<>(Comparator.comparing(TokenFiltering::getAbbreviation));
+			final NavigableSet<TokenFiltering> result = new TreeSet<>(
+					Comparator.comparing(TokenFiltering::getAbbreviation));
 			insts.forEach(result::add);
 			return result;
 		}
@@ -156,7 +159,8 @@ public final class CombininingBatchJobTestWriter implements Consumer<BatchJobSum
 			final String[] names = cl.getOptionValues(Parameter.TOKENIZERS.optName);
 			final Stream<Tokenization> insts = names == null ? Arrays.stream(Tokenization.values())
 					: Arrays.stream(names).map(Tokenization::valueOf);
-			final NavigableSet<Tokenization> result = new TreeSet<>(Comparator.comparing(Tokenization::getAbbreviation));
+			final NavigableSet<Tokenization> result = new TreeSet<>(
+					Comparator.comparing(Tokenization::getAbbreviation));
 			insts.forEach(result::add);
 			return result;
 		}
@@ -202,6 +206,8 @@ public final class CombininingBatchJobTestWriter implements Consumer<BatchJobSum
 	private static final Collector<CharSequence, ?, String> ROW_CELL_JOINER = Collectors.joining("\t");
 
 	private static final List<SummaryDatum> SUMMARY_DATA_TO_WRITE;
+
+	private static final DateTimeFormatter TIMESTAMP_FORMATTER = EventTimes.FORMATTER;
 
 	static {
 		SUMMARY_DATA_TO_WRITE = Arrays.asList(SummaryDatum.MEAN_RANK, SummaryDatum.MRR, SummaryDatum.DIALOGUE_COUNT,
@@ -296,22 +302,18 @@ public final class CombininingBatchJobTestWriter implements Consumer<BatchJobSum
 	}
 
 	private static String createBatchOutdirName(final TestParameters testParams) {
-		final Stream<String> rowCellVals = createRowCellValues(testParams);
+		final Stream<String> rowCellVals = createTestMethodRowCellValues(testParams);
 		return rowCellVals.collect(METHOD_KEY_NAME_JOINER);
 	}
 
 	private static List<String> createColHeaderList(final List<SummaryDatum> summaryDataToWrite) {
-		final Stream.Builder<String> colHeaderStreamBuilder = Stream.builder();
-		createColumnHeaders().forEachOrdered(colHeaderStreamBuilder);
-		colHeaderStreamBuilder.add("OUTDIR");
-		colHeaderStreamBuilder.add("ITER_COUNT");
-		summaryDataToWrite.stream().map(SummaryDatum::toString).forEachOrdered(colHeaderStreamBuilder);
-		return Arrays.asList(colHeaderStreamBuilder.build().toArray(String[]::new));
-	}
-
-	private static Stream<String> createColumnHeaders() {
-		return Stream.of(UtteranceFiltering.class.getSimpleName(), Tokenization.class.getSimpleName(),
-				TokenFiltering.class.getSimpleName(), Training.class.getSimpleName());
+		final Stream.Builder<String> resultBuilder = Stream.builder();
+		resultBuilder.add("TIME");
+		createTestMethodColumnHeaders().forEachOrdered(resultBuilder);
+		resultBuilder.add("OUTDIR");
+		resultBuilder.add("ITER_COUNT");
+		summaryDataToWrite.stream().map(SummaryDatum::toString).forEachOrdered(resultBuilder);
+		return Arrays.asList(resultBuilder.build().toArray(String[]::new));
 	}
 
 	private static ExecutorService createExecutorService() {
@@ -325,7 +327,8 @@ public final class CombininingBatchJobTestWriter implements Consumer<BatchJobSum
 
 	private static Stream<String> createRowCellValues(final BatchJobSummary summary, final Path outdirPath) {
 		final Stream.Builder<String> resultBuilder = Stream.builder();
-		createRowCellValues(summary.getTestParams()).forEachOrdered(resultBuilder);
+		resultBuilder.add(TIMESTAMP_FORMATTER.format(summary.getTestTimestamp()));
+		createTestMethodRowCellValues(summary.getTestParams()).forEachOrdered(resultBuilder);
 		final Map<SummaryDatum, Object> configSummary = StatisticsWriter.createSummaryDataMap(null,
 				summary.getTestResults());
 		resultBuilder.add(outdirPath.toString());
@@ -334,7 +337,12 @@ public final class CombininingBatchJobTestWriter implements Consumer<BatchJobSum
 		return resultBuilder.build();
 	}
 
-	private static Stream<String> createRowCellValues(final TestParameters testParams) {
+	private static Stream<String> createTestMethodColumnHeaders() {
+		return Stream.of(UtteranceFiltering.class.getSimpleName(), Tokenization.class.getSimpleName(),
+				TokenFiltering.class.getSimpleName(), Training.class.getSimpleName());
+	}
+
+	private static Stream<String> createTestMethodRowCellValues(final TestParameters testParams) {
 		final Stream<HasAbbreviation> nameable = Stream.of(testParams.getUttFilteringMethod(),
 				testParams.getTokenizationMethod(), testParams.getTokenFilteringMethod(),
 				testParams.getTrainingMethod());
