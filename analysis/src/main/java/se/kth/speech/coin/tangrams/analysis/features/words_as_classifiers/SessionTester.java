@@ -106,7 +106,7 @@ public final class SessionTester {
 		@Override
 		public double meanReciprocalRank() {
 			final double rrSum = sumReciprocalRank();
-			return rrSum / totalUtterancesTested();
+			return rrSum / totalDialoguesTested();
 		}
 
 		/*
