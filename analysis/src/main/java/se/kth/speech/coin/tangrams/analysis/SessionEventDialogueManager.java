@@ -48,6 +48,15 @@ public final class SessionEventDialogueManager {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SessionEventDialogueManager.class);
 
+	private static Stream<EventDialogue> createUttDialogues(final Annotation uttAnnots, final GameHistory gameHistory,
+			final SegmentUtteranceFactory segUttFactory,
+			final BiFunction<ListIterator<Utterance>, GameHistory, Stream<EventDialogue>> eventDiagFactory) {
+		final List<Utterance> utts = Arrays.asList(segUttFactory.create(uttAnnots.getSegments().getSegment().stream())
+				.flatMap(List::stream).toArray(Utterance[]::new));
+		LOGGER.debug("Creating dialogues for {} annotated utterance(s).", utts.size());
+		return eventDiagFactory.apply(utts.listIterator(), gameHistory);
+	}
+
 	private final GameHistory gameHistory;
 
 	private final String gameId;
@@ -95,7 +104,8 @@ public final class SessionEventDialogueManager {
 				.flatMap(List::stream).toArray(Utterance[]::new));
 		LOGGER.debug("Creating dialogues for {} annotated utterance(s).", utts.size());
 		uttDialogues = Collections.unmodifiableList(
-				Arrays.asList(eventDiagFactory.apply(utts.listIterator(), gameHistory).toArray(EventDialogue[]::new)));
+				Arrays.asList(createUttDialogues(uttAnnots, gameHistory, segUttFactory, eventDiagFactory)
+						.toArray(EventDialogue[]::new)));
 	}
 
 	public GameHistory getGameHistory() {
