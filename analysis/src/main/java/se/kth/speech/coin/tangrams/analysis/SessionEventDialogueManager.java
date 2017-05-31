@@ -56,7 +56,7 @@ public final class SessionEventDialogueManager {
 
 	private List<EventDialogue> uttDialogues;
 
-	public SessionEventDialogueManager(final SessionDataManager sessionData,
+	SessionEventDialogueManager(final SessionDataManager sessionData,
 			final BiFunction<ListIterator<Utterance>, GameHistory, Stream<EventDialogue>> eventDiagFactory)
 			throws JAXBException, IOException {
 		final Path hatInfilePath = sessionData.getHATFilePath();
