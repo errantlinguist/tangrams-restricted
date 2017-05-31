@@ -26,6 +26,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.BiFunction;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import javax.xml.bind.JAXBException;
@@ -46,16 +47,36 @@ import se.kth.speech.hat.xsd.Annotation;
  */
 public final class SessionEventDialogueManager {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(SessionEventDialogueManager.class);
+	private static class EventDialogueCreatingClosure implements Supplier<Stream<EventDialogue>> {
 
-	private static Stream<EventDialogue> createUttDialogues(final Annotation uttAnnots, final GameHistory gameHistory,
-			final SegmentUtteranceFactory segUttFactory,
-			final BiFunction<ListIterator<Utterance>, GameHistory, Stream<EventDialogue>> eventDiagFactory) {
-		final List<Utterance> utts = Arrays.asList(segUttFactory.create(uttAnnots.getSegments().getSegment().stream())
-				.flatMap(List::stream).toArray(Utterance[]::new));
-		LOGGER.debug("Creating dialogues for {} annotated utterance(s).", utts.size());
-		return eventDiagFactory.apply(utts.listIterator(), gameHistory);
+		private final Annotation uttAnnots;
+
+		private final GameHistory gameHistory;
+
+		private final SegmentUtteranceFactory segUttFactory;
+
+		private final BiFunction<ListIterator<Utterance>, GameHistory, Stream<EventDialogue>> eventDiagFactory;
+
+		private EventDialogueCreatingClosure(final Annotation uttAnnots, final GameHistory gameHistory,
+				final SegmentUtteranceFactory segUttFactory,
+				final BiFunction<ListIterator<Utterance>, GameHistory, Stream<EventDialogue>> eventDiagFactory) {
+			this.uttAnnots = uttAnnots;
+			this.gameHistory = gameHistory;
+			this.segUttFactory = segUttFactory;
+			this.eventDiagFactory = eventDiagFactory;
+		}
+
+		@Override
+		public Stream<EventDialogue> get() {
+			final List<Utterance> utts = Arrays
+					.asList(segUttFactory.create(uttAnnots.getSegments().getSegment().stream()).flatMap(List::stream)
+							.toArray(Utterance[]::new));
+			LOGGER.debug("Creating dialogues for {} annotated utterance(s).", utts.size());
+			return eventDiagFactory.apply(utts.listIterator(), gameHistory);
+		}
 	}
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(SessionEventDialogueManager.class);
 
 	private final GameHistory gameHistory;
 
@@ -104,8 +125,8 @@ public final class SessionEventDialogueManager {
 				.flatMap(List::stream).toArray(Utterance[]::new));
 		LOGGER.debug("Creating dialogues for {} annotated utterance(s).", utts.size());
 		uttDialogues = Collections.unmodifiableList(
-				Arrays.asList(createUttDialogues(uttAnnots, gameHistory, segUttFactory, eventDiagFactory)
-						.toArray(EventDialogue[]::new)));
+				Arrays.asList(new EventDialogueCreatingClosure(uttAnnots, gameHistory, segUttFactory, eventDiagFactory)
+						.get().toArray(EventDialogue[]::new)));
 	}
 
 	public GameHistory getGameHistory() {
