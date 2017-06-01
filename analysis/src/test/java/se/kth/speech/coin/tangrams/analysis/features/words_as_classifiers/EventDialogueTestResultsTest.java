@@ -20,7 +20,6 @@ import java.util.Arrays;
 import java.util.stream.IntStream;
 
 import org.junit.Assert;
-import org.junit.Test;
 import org.junit.experimental.theories.DataPoints;
 import org.junit.experimental.theories.Theories;
 import org.junit.experimental.theories.Theory;
@@ -76,38 +75,11 @@ public final class EventDialogueTestResultsTest {
 		Assert.assertEquals(testedRank, testInst.rank(), 0.00001);
 	}
 
-	@Test
-	public void testReciprocalRank1() {
-		final Int2DoubleMap referentConfidenceVals = new Int2DoubleOpenHashMap();
-		referentConfidenceVals.put(0, 0.23245);
-		referentConfidenceVals.put(1, 0.5343);
-		referentConfidenceVals.put(2, 0.211234);
-		referentConfidenceVals.put(3, 0.04352434);
-		final int goldStandardReferentId = 2;
-		final Utterance testUtt = new Utterance("segment1", "testSpeaker", Arrays.asList("test", "utterance"), 2.3f,
-				3.3f);
-		final EventDialogue transformedDiag = new EventDialogue(Arrays.asList(new Event()), Arrays.asList(testUtt));
-		final int totalDiagUttCount = 1;
-		final EventDialogueTestResults testInst = new EventDialogueTestResults(referentConfidenceVals,
-				goldStandardReferentId, transformedDiag, totalDiagUttCount);
-		Assert.assertEquals(0.33333, testInst.reciprocalRank(), 0.00001);
-	}
-
-	@Test
-	public void testReciprocalRank2() {
-		final Int2DoubleMap referentConfidenceVals = new Int2DoubleOpenHashMap();
-		referentConfidenceVals.put(0, 0.23245);
-		referentConfidenceVals.put(1, 0.5343);
-		referentConfidenceVals.put(2, 0.211234);
-		referentConfidenceVals.put(3, 0.04352434);
-		final int goldStandardReferentId = 1;
-		final Utterance testUtt = new Utterance("segment1", "testSpeaker", Arrays.asList("test", "utterance"), 2.3f,
-				3.3f);
-		final EventDialogue transformedDiag = new EventDialogue(Arrays.asList(new Event()), Arrays.asList(testUtt));
-		final int totalDiagUttCount = 1;
-		final EventDialogueTestResults testInst = new EventDialogueTestResults(referentConfidenceVals,
-				goldStandardReferentId, transformedDiag, totalDiagUttCount);
-		Assert.assertEquals(1, testInst.reciprocalRank(), 0.00001);
+	@Theory
+	public void testReciprocalRank(final int testedRank) {
+		final EventDialogueTestResults testInst = createMockDiagTestResult(testedRank);
+		final double expected = 1.0 / testedRank;
+		Assert.assertEquals(expected, testInst.reciprocalRank(), 0.0);
 	}
 
 }
