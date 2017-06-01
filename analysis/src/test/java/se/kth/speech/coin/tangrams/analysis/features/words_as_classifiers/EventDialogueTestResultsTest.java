@@ -32,7 +32,7 @@ import se.kth.speech.coin.tangrams.analysis.Utterance;
  * @since May 31, 2017
  *
  */
-public final class EventDialogueTesterResultTest {
+public final class EventDialogueTestResultsTest {
 
 	// {0.08052273635368928=>[5], 0.07303962011080395=>[7],
 	// 0.06956941639116672=>[13], 0.06450970173096632=>[19],
