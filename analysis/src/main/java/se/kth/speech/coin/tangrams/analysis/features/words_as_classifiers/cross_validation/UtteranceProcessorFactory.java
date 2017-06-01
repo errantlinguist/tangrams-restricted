@@ -18,17 +18,36 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.EnumSet;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.function.Supplier;
 
+import edu.stanford.nlp.ling.CoreLabel;
+import edu.stanford.nlp.ling.Label;
+import edu.stanford.nlp.pipeline.Annotator;
+import edu.stanford.nlp.pipeline.StanfordCoreNLP;
+import edu.stanford.nlp.trees.CollinsHeadFinder;
+import edu.stanford.nlp.trees.Tree;
+import se.kth.speech.MutablePair;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.CachingEventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.ChainedEventDialogueTransformer;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.DuplicateTokenFilteringEventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.InstructorUtteranceFilteringEventDialogueTransformer;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.TokenFilteringEventDialogueTransformer;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.TokenizingEventDialogueTransformer;
+import se.kth.speech.nlp.Disfluencies;
+import se.kth.speech.nlp.EnglishLocationalPrepositions;
+import se.kth.speech.nlp.SnowballPorter2EnglishStopwords;
+import se.kth.speech.nlp.stanford.PhrasalHeadFilteringPredicate;
+import se.kth.speech.nlp.stanford.PhraseExtractingParsingTokenizer;
+import se.kth.speech.nlp.stanford.StanfordCoreNLPConfigurationVariant;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -37,19 +56,26 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.
  */
 public final class UtteranceProcessorFactory implements Function<Executor, EventDialogueTransformer>, HasAbbreviation {
 
-	private final Set<UtteranceProcessingOption> uttProcessingOptions;
+	private static final InstructorUtteranceFilteringEventDialogueTransformer INST_UTT_DIAG_TRANSFORMER = new InstructorUtteranceFilteringEventDialogueTransformer();
 
-	private static final List<UtteranceProcessingOption> PROCESSING_STEP_ORDERING = createProcessingStepOrdering();
+	private static final List<UtteranceProcessingOption> PARSING_OPTS = Arrays
+			.asList(UtteranceProcessingOption.NPS_ONLY, UtteranceProcessingOption.PP_REMOVAL);
 
-	private static List<UtteranceProcessingOption> createProcessingStepOrdering() {
-		List<UtteranceProcessingOption> result = Arrays.asList(UtteranceProcessingOption.INSTRUCTOR_ONLY,
-				UtteranceProcessingOption.REMOVE_DISFLUENCIES, UtteranceProcessingOption.REMOVE_FILLERS,
-				UtteranceProcessingOption.DEDUPLICATE_TOKENS, UtteranceProcessingOption.NPS_ONLY,
-				UtteranceProcessingOption.PP_REMOVAL, UtteranceProcessingOption.LEMMATIZE,
-				UtteranceProcessingOption.REMOVE_STOPWORDS);
-		assert result.size() == UtteranceProcessingOption.values().length;
+	private static final List<Entry<UtteranceProcessingOption, EventDialogueTransformer>> UNIFIABLE_PRE_PARSING_CLEANERS = createUnifiablePreParsingOptCleanerList();
+
+	private static List<Entry<UtteranceProcessingOption, EventDialogueTransformer>> createUnifiablePreParsingOptCleanerList() {
+		List<Entry<UtteranceProcessingOption, EventDialogueTransformer>> result = new ArrayList<>();
+		result.add(new MutablePair<>(UtteranceProcessingOption.REMOVE_DISFLUENCIES,
+				new TokenFilteringEventDialogueTransformer(token -> !Disfluencies.TOKEN_MATCHER.test(token))));
+		final Set<String> fillerWords = SnowballPorter2EnglishStopwords.Variant.FILLERS.get();
+		result.add(new MutablePair<>(UtteranceProcessingOption.REMOVE_FILLERS,
+				new TokenFilteringEventDialogueTransformer(token -> !fillerWords.contains(token))));
+		result.add(new MutablePair<>(UtteranceProcessingOption.DEDUPLICATE_TOKENS,
+				new DuplicateTokenFilteringEventDialogueTransformer()));
 		return result;
 	}
+
+	private final Set<UtteranceProcessingOption> uttProcessingOptions;
 
 	/**
 	 * 
@@ -57,15 +83,38 @@ public final class UtteranceProcessorFactory implements Function<Executor, Event
 	public UtteranceProcessorFactory(Set<UtteranceProcessingOption> uttProcessingOptions, Tokenization tokenization) {
 		this.uttProcessingOptions = uttProcessingOptions;
 	}
+	
+	private static final PhrasalHeadFilteringPredicate LOCATIONAL_PP_PRUNING_MATCHER = new PhrasalHeadFilteringPredicate(
+			Collections.singletonMap("PP", EnglishLocationalPrepositions.get()), new CollinsHeadFinder());
 
-	private static final InstructorUtteranceFilteringEventDialogueTransformer INST_UTT_DIAG_TRANSFORMER = new InstructorUtteranceFilteringEventDialogueTransformer();
-
-	private static final List<UtteranceProcessingOption> PARSING_OPTS = Arrays
-			.asList(UtteranceProcessingOption.NPS_ONLY, UtteranceProcessingOption.PP_REMOVAL);
-
-	private static final List<UtteranceProcessingOption> UNIFIABLE_PRE_PARSING_CLEANING_OPTS = Arrays.asList(
-			UtteranceProcessingOption.REMOVE_DISFLUENCIES, UtteranceProcessingOption.REMOVE_FILLERS,
-			UtteranceProcessingOption.DEDUPLICATE_TOKENS);
+	
+	private static final Predicate<Tree> ANY_SUBTREE_MATCHER = tree -> true;
+	
+	private Optional<TokenizingEventDialogueTransformer> createParsingTokenizer(Executor executor, boolean lemmatize){
+		final Optional<TokenizingEventDialogueTransformer> result;
+		Supplier<StanfordCoreNLP> annotatorInst = StanfordCoreNLPConfigurationVariant.TOKENIZING_PARSING.apply(executor);
+		final Function<CoreLabel, String> parserTokenizer = lemmatize ? CoreLabel::lemma : CoreLabel::word;
+		if (uttProcessingOptions.contains(UtteranceProcessingOption.NPS_ONLY)) {
+			final Predicate<Tree> ppFilter = uttProcessingOptions.contains(UtteranceProcessingOption.PP_REMOVAL) ? LOCATIONAL_PP_PRUNING_MATCHER : ANY_SUBTREE_MATCHER; 
+			final TokenizingEventDialogueTransformer transformer = new TokenizingEventDialogueTransformer(new PhraseExtractingParsingTokenizer(
+					annotatorInst, parserTokenizer,
+					NP_WHITELISTING_PHRASE_MATCHER, ppFilter));
+			result = Optional.of(transformer);
+		} else if (uttProcessingOptions.contains(UtteranceProcessingOption.PP_REMOVAL)) {
+			final TokenizingEventDialogueTransformer transformer = new TokenizingEventDialogueTransformer(new se.kth.speech.nlp.stanford.ParsingTokenizer(
+					annotatorInst,
+					LOCATIONAL_PP_PRUNING_MATCHER, parserTokenizer));
+			result = Optional.of(transformer);
+		} else {
+			result = Optional.empty();
+		}		
+		return result;
+	}
+	
+	private static final Predicate<Tree> NP_WHITELISTING_PHRASE_MATCHER = subTree -> {
+		final Label label = subTree.label();
+		return label == null ? false : "NP".equals(label.value());
+	};
 
 	/*
 	 * (non-Javadoc)
@@ -74,22 +123,27 @@ public final class UtteranceProcessorFactory implements Function<Executor, Event
 	 */
 	@Override
 	public EventDialogueTransformer apply(Executor executor) {
-		List<EventDialogueTransformer> chain = new ArrayList<>(uttProcessingOptions.size());
+		final List<EventDialogueTransformer> chain = new ArrayList<>(uttProcessingOptions.size());
 		if (uttProcessingOptions.contains(UtteranceProcessingOption.INSTRUCTOR_ONLY)) {
 			chain.add(INST_UTT_DIAG_TRANSFORMER);
 		}
-		boolean isParsing = (PARSING_OPTS.stream().anyMatch(uttProcessingOptions::contains));
-		if (isParsing) {
-			// Add stopword filter to the chain after parsing in order to
-			// prevent it from negatively affecting parsing accuracy
-		} else {
-			for (UtteranceProcessingOption preParsingOpt : UNIFIABLE_PRE_PARSING_CLEANING_OPTS) {
-				if (uttProcessingOptions.contains(preParsingOpt)) {
 
-				}
+		for (Entry<UtteranceProcessingOption, EventDialogueTransformer> preParsingOptCleaner : UNIFIABLE_PRE_PARSING_CLEANERS) {
+			if (uttProcessingOptions.contains(preParsingOptCleaner.getKey())) {
+				chain.add(preParsingOptCleaner.getValue());
 			}
 		}
-		// TODO Auto-generated method stub
+
+		boolean lemmatize = uttProcessingOptions.contains(UtteranceProcessingOption.LEMMATIZE);
+		final Optional<ParsingTokenization> tokenization = createParsingTokenizer(executor, lemmatize);
+		tokenization.ifPresent(tok -> tok.apply(executor));
+
+		// Add stopword filter to the chain after parsing in order to
+		// prevent it from negatively affecting parsing accuracy
+		if (uttProcessingOptions.contains(UtteranceProcessingOption.REMOVE_STOPWORDS)){
+			final Set<String> fillerWords = SnowballPorter2EnglishStopwords.Variant.CANONICAL.get();
+			chain.add(new TokenFilteringEventDialogueTransformer(token -> !fillerWords.contains(token)));
+		}
 		return new CachingEventDialogueTransformer(new ChainedEventDialogueTransformer(chain));
 	}
 

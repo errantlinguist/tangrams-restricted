@@ -37,16 +37,9 @@ import edu.stanford.nlp.util.CoreMap;
  */
 public final class ParsingTokenizer extends AbstractTokenizer {
 
-	private static final Function<CoreLabel, String> DEFAULT_LABEL_TOKEN_EXTRACTOR = CoreLabel::word;
-
 	private final Function<? super CoreLabel, String> labelTokenExtractor;
 
 	private final Predicate<Tree> treePruningPositiveFilter;
-
-	public ParsingTokenizer(final Supplier<? extends Annotator> annotatorSupplier,
-			final Predicate<Tree> treePruningPositiveFilter) {
-		this(annotatorSupplier, treePruningPositiveFilter, DEFAULT_LABEL_TOKEN_EXTRACTOR);
-	}
 
 	public ParsingTokenizer(final Supplier<? extends Annotator> annotatorSupplier,
 			final Predicate<Tree> treePruningPositiveFilter,

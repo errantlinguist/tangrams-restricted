@@ -21,11 +21,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Deque;
 import java.util.List;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import edu.stanford.nlp.ling.CoreAnnotations.SentencesAnnotation;
-import edu.stanford.nlp.ling.Word;
+import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.pipeline.Annotation;
 import edu.stanford.nlp.pipeline.Annotator;
 import edu.stanford.nlp.trees.Tree;
@@ -39,18 +40,21 @@ import edu.stanford.nlp.util.CoreMap;
  */
 public final class PhraseExtractingParsingTokenizer extends AbstractTokenizer {
 
+	private final Function<? super CoreLabel, String> labelTokenExtractor;
+
 	private final Predicate<Tree> subTreeBranchPruningPositiveFilter;
 
 	private final Predicate<? super Tree> subTreeMatcher;
 
-	public PhraseExtractingParsingTokenizer(final Supplier<? extends Annotator> annotatorSupplier,
+	public PhraseExtractingParsingTokenizer(final Supplier<? extends Annotator> annotatorSupplier, Function<? super CoreLabel, String> labelTokenExtractor,
 			final Predicate<? super Tree> subTreeMatcher) {
-		this(annotatorSupplier, subTreeMatcher, subTreeBranch -> true);
+		this(annotatorSupplier, labelTokenExtractor, subTreeMatcher, subTreeBranch -> true);
 	}
-
-	public PhraseExtractingParsingTokenizer(final Supplier<? extends Annotator> annotatorSupplier,
+	
+	public PhraseExtractingParsingTokenizer(final Supplier<? extends Annotator> annotatorSupplier, Function<? super CoreLabel, String> labelTokenExtractor,
 			final Predicate<? super Tree> subTreeMatcher, final Predicate<Tree> subTreeBranchPruningPositiveFilter) {
 		super(annotatorSupplier);
+		this.labelTokenExtractor = labelTokenExtractor;
 		this.subTreeMatcher = subTreeMatcher;
 		this.subTreeBranchPruningPositiveFilter = subTreeBranchPruningPositiveFilter;
 	}
@@ -65,7 +69,7 @@ public final class PhraseExtractingParsingTokenizer extends AbstractTokenizer {
 	@Override
 	protected List<String> tokenize(final Annotation annot) {
 		final List<CoreMap> sents = annot.get(SentencesAnnotation.class);
-		final ArrayList<Word> resultWords = new ArrayList<>(16 * sents.size());
+		final ArrayList<CoreLabel> resultWords = new ArrayList<>(16 * sents.size());
 		// traversing the words in the current sentence
 		for (final CoreMap sent : sents) {
 			// this is the parse tree of the current sentence
@@ -86,10 +90,11 @@ public final class PhraseExtractingParsingTokenizer extends AbstractTokenizer {
 			}
 
 			for (final Tree extractedPhrase : extractedPhrases) {
-				extractedPhrase.yieldWords(resultWords);
+				List<CoreLabel> phaseLabels = extractedPhrase.taggedLabeledYield();
+				resultWords.addAll(phaseLabels);
 			}
 		}
-		return Arrays.asList(resultWords.stream().map(Word::word).toArray(String[]::new));
+		return Arrays.asList(resultWords.stream().map(labelTokenExtractor).toArray(String[]::new));
 	}
 
 }
