@@ -31,6 +31,7 @@ import org.junit.experimental.theories.Theories;
 import org.junit.experimental.theories.Theory;
 import org.junit.runner.RunWith;
 
+import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.ling.Label;
 
 /**
@@ -50,7 +51,7 @@ public final class PhraseExtractingParsingTokenizerTest {
 	static {
 		final ExecutorService executor = Executors.newSingleThreadExecutor();
 		TEST_INST = new PhraseExtractingParsingTokenizer(
-				StanfordCoreNLPConfigurationVariant.TOKENIZING_PARSING.apply(executor), subTree -> {
+				StanfordCoreNLPConfigurationVariant.TOKENIZING_PARSING.apply(executor), CoreLabel::word, subTree -> {
 					final Label label = subTree.label();
 					return label == null ? false : "NP".equals(label.value());
 				});
