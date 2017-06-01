@@ -43,10 +43,15 @@ import org.springframework.beans.factory.BeanFactory;
 
 import com.google.common.collect.Maps;
 
+import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import se.kth.speech.MutablePair;
 import se.kth.speech.coin.tangrams.analysis.EventDialogue;
+import se.kth.speech.coin.tangrams.analysis.GameContext;
+import se.kth.speech.coin.tangrams.analysis.GameHistory;
 import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
+import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManager;
 import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManagerCacheSupplier;
 import se.kth.speech.coin.tangrams.analysis.Utterance;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
@@ -57,8 +62,7 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.EventD
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.ReferentConfidenceMapFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.SessionTestResults;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.SessionTestStatistics;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.SessionTester;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.SingleGameContextReferentEventDialogueTester;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.UtteranceGameContexts;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordClassDiscountingSmoother;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EventDialogueClassifier;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EventDialogueTransformer;
@@ -222,8 +226,8 @@ public final class Tester {
 		@Override
 		public int totalDialoguesTested() {
 			return sessionResults.values().stream().flatMap(List::stream)
-					.map(CrossValidationTestSummary::getTestResults)
-					.mapToInt(SessionTestResults::totalDialoguesTested).sum();
+					.map(CrossValidationTestSummary::getTestResults).mapToInt(SessionTestResults::totalDialoguesTested)
+					.sum();
 		}
 
 		/**
@@ -317,6 +321,8 @@ public final class Tester {
 		return result;
 	}
 
+	private final Executor backgroundJobExecutor;
+
 	@Inject
 	private BeanFactory beanFactory;
 
@@ -324,8 +330,6 @@ public final class Tester {
 
 	@Inject
 	private EntityInstanceAttributeContext entInstAttrCtx;
-
-	private final Executor backgroundJobExecutor;
 
 	private int iterCount = 1;
 
@@ -379,6 +383,19 @@ public final class Tester {
 		this.iterCount = iterCount;
 	}
 
+	private EventDialogueClassifier createDialogueClassifier(final WordClassificationData trainingData,
+			final SessionDataManager testSessionData) throws IOException {
+		final Function<String, Logistic> wordClassifierGetter = createWordClassifierMap(
+				trainingData.getClassInstances().entrySet())::get;
+		final Instances testInsts = testInstsFactory.apply(TEST_INSTS_REL_NAME,
+				estimateTestInstanceCount(testSessionData));
+		final Function<EntityFeature.Extractor.Context, Instance> testInstFactory = entInstAttrCtx
+				.createInstFactory(testInsts);
+		final ReferentConfidenceMapFactory referentConfidenceMapFactory = beanFactory
+				.getBean(ReferentConfidenceMapFactory.class, wordClassifierGetter, testInstFactory);
+		return beanFactory.getBean(EventDialogueClassifier.class, referentConfidenceMapFactory);
+	}
+
 	private ConcurrentMap<String, Logistic> createWordClassifierMap(
 			final Set<Entry<String, Instances>> classInstances) {
 		final ConcurrentMap<String, Logistic> result = new ConcurrentHashMap<>(classInstances.size());
@@ -421,26 +438,60 @@ public final class Tester {
 			final WordClassificationData trainingData = testSet.getValue();
 			final Optional<Instances> oovInstances = smoother.redistributeMass(trainingData);
 			LOGGER.debug("{} instance(s) for out-of-vocabulary class.", oovInstances.map(Instances::size).orElse(0));
+			final EventDialogueClassifier diagClassifier = createDialogueClassifier(trainingData, testSessionData);
 
-			final Function<String, Logistic> wordClassifierGetter = createWordClassifierMap(
-					trainingData.getClassInstances().entrySet())::get;
-			final Instances testInsts = testInstsFactory.apply(TEST_INSTS_REL_NAME,
-					estimateTestInstanceCount(testSessionData));
-			final Function<EntityFeature.Extractor.Context, Instance> testInstFactory = entInstAttrCtx
-					.createInstFactory(testInsts);
-			final ReferentConfidenceMapFactory referentConfidenceMapFactory = beanFactory
-					.getBean(ReferentConfidenceMapFactory.class, wordClassifierGetter, testInstFactory);
-			final EventDialogueClassifier diagClassifier = beanFactory.getBean(EventDialogueClassifier.class,
-					referentConfidenceMapFactory);
-
-			final SingleGameContextReferentEventDialogueTester diagTester = new SingleGameContextReferentEventDialogueTester(
-					diagClassifier, diagTransformer);
-			final SessionTester sessionTester = new SessionTester(diagTester);
-			final SessionTestResults testResults = sessionTester
-					.apply(sessionDiagMgrCacheSupplier.get().get(testSessionData));
+			final SessionTestResults testResults = testSession(sessionDiagMgrCacheSupplier.get().get(testSessionData),
+					diagClassifier);
 			final CrossValidationTestSummary cvTestSummary = new CrossValidationTestSummary(testResults,
 					trainingData.getTrainingInstanceCounts());
 			result.put(infilePath, cvTestSummary);
+		}
+		return result;
+	}
+
+	private Optional<EventDialogueTestResults> testDialogue(final EventDialogue uttDiag, final GameHistory history,
+			final EventDialogueClassifier diagClassifier) throws ClassificationException {
+		final Optional<EventDialogueTestResults> result;
+		final EventDialogue transformedDiag = diagTransformer.apply(uttDiag);
+
+		final List<Utterance> allUtts = transformedDiag.getUtts();
+		if (allUtts.isEmpty()) {
+			result = Optional.empty();
+		} else {
+			// Just use the game context for the first utterance for all
+			// utterances processed for the given dialogue
+			final Utterance firstUtt = allUtts.get(0);
+			final GameContext uttCtx = UtteranceGameContexts.createSingleContext(firstUtt, history);
+			final Optional<Int2DoubleMap> optReferentConfidenceVals = diagClassifier.apply(transformedDiag, uttCtx);
+			if (optReferentConfidenceVals.isPresent()) {
+				final Int2DoubleMap referentConfidenceVals = optReferentConfidenceVals.get();
+				result = uttCtx.findLastSelectedEntityId().map(goldStandardEntityId -> {
+					return new EventDialogueTestResults(referentConfidenceVals, goldStandardEntityId, transformedDiag,
+							uttDiag.getUtts().size());
+				});
+			} else {
+				result = Optional.empty();
+			}
+		}
+
+		return result;
+	}
+
+	private SessionTestResults testSession(final SessionEventDialogueManager sessionEventDiagMgr,
+			final EventDialogueClassifier diagClassifier) throws ClassificationException {
+		final List<EventDialogue> uttDiags = sessionEventDiagMgr.getUttDialogues();
+		final SessionTestResults result = new SessionTestResults(uttDiags.size());
+
+		LOGGER.info("Testing {} individual dialogue(s).", uttDiags.size());
+		for (final EventDialogue uttDiag : uttDiags) {
+			final Optional<EventDialogueTestResults> optTestResults = testDialogue(uttDiag,
+					sessionEventDiagMgr.getGameHistory(), diagClassifier);
+			if (optTestResults.isPresent()) {
+				final EventDialogueTestResults results = optTestResults.get();
+				result.add(new MutablePair<>(uttDiag, results));
+			} else {
+				LOGGER.debug("No utterances tested for {}.", uttDiag);
+			}
 		}
 		return result;
 	}

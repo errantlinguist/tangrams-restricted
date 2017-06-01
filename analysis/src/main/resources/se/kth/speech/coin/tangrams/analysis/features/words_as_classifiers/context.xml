@@ -14,14 +14,4 @@
 		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.ReferentConfidenceMapFactory"
 		scope="prototype"></bean>
 		
-	<bean id="dialogue-tester"
-		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.SingleGameContextReferentEventDialogueTester"
-		scope="prototype">
-		<description>This bean defines logic for testing the classification of individual dialogues, i.e. individual sequences of utterances which are related to a single game event.</description>
-	</bean>
-
-	<bean id="session-tester"
-		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.SessionTester"
-		scope="prototype"></bean>
-
 </beans>

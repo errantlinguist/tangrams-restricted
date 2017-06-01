@@ -14,9 +14,14 @@
 		<constructor-arg value="4" />
 		<constructor-arg value="__OUT_OF_VOCAB__" />
 	</bean>
+	
+	<bean id="test-set-factory" class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.TestSetFactory" scope="prototype"></bean>
 
 	<bean id="dialogue-classifier"
 		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.IsolatedUtteranceEventDialogueClassifier"
 		scope="prototype">
 	</bean>
+	
+	<bean id="background-job-executor" class="java.util.concurrent.ForkJoinPool" factory-method="commonPool" />
+	
 </beans>

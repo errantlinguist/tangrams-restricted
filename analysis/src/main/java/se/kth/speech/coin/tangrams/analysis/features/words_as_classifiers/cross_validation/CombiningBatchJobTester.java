@@ -50,13 +50,13 @@ public final class CombiningBatchJobTester {
 
 		private final Map<SessionDataManager, Path> allSessions;
 
-		private final Iterable<UtteranceFiltering> uttFilteringMethods;
+		private final Iterable<TokenFiltering> tokenFilteringMethods;
 
 		private final Iterable<Tokenization> tokenizationMethods;
 
-		private final Iterable<TokenFiltering> tokenFilteringMethods;
-
 		private final Iterable<Training> trainingMethods;
+
+		private final Iterable<UtteranceFiltering> uttFilteringMethods;
 
 		public Input(final Iterable<UtteranceFiltering> uttFilteringMethods,
 				final Iterable<Tokenization> tokenizationMethods, final Iterable<TokenFiltering> tokenFilteringMethods,
@@ -115,7 +115,6 @@ public final class CombiningBatchJobTester {
 					for (final Training trainingMethod : input.trainingMethods) {
 						final Entry<TrainingInstancesFactory, Integer> trainingInstsFactoryIterCount = trainingMethod
 								.apply(trainingCtx);
-
 						final TestSetFactory testSetFactory = new TestSetFactory(trainingInstsFactoryIterCount.getKey(),
 								sessionDiagMgrCacheSupplier);
 						final Tester tester = appCtx.getBean(Tester.class, testSetFactory, cachingDiagTransformer,

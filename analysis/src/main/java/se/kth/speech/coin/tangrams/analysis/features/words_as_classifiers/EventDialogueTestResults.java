@@ -47,7 +47,7 @@ public final class EventDialogueTestResults implements EventDialogueTestStatisti
 
 	private final EventDialogue transformedDiag;
 
-	protected EventDialogueTestResults(final Int2DoubleMap referentConfidenceVals, final int goldStandardReferentId,
+	public EventDialogueTestResults(final Int2DoubleMap referentConfidenceVals, final int goldStandardReferentId,
 			final EventDialogue transformedDiag, final int totalDiagUttCount) {
 		this.referentConfidenceVals = referentConfidenceVals;
 		this.goldStandardReferentId = goldStandardReferentId;
