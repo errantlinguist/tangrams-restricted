@@ -184,7 +184,7 @@ public final class StatisticsWriter implements Consumer<Tester.Result> {
 
 	private static Map<SummaryDatum, Object> createSessionSummaryDataMap(final Object key, final Integer iterNo,
 			final SessionTestResults sessionTestResults) {
-		final int totalUttsTested = sessionTestResults.totalUtterancesTested();
+		final int totalUttsTested = sessionTestResults.testedUtteranceCount();
 		final int totalDiagsTested = sessionTestResults.totalDialoguesTested();
 		final Map<SummaryDatum, Object> result = new EnumMap<>(SummaryDatum.class);
 		result.put(SummaryDatum.KEY, key);

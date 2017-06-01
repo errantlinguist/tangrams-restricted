@@ -24,15 +24,15 @@ import se.kth.speech.coin.tangrams.analysis.Utterance;
 interface EventDialogueTestStatistics {
 
 	default double meanTokensPerTestedUtterance() {
-		final int totalTokens = totalTokensTested();
-		return totalTokens / (double) totalUtterancesTested();
+		final int totalTokens = testedTokenCount();
+		return totalTokens / (double) testedUtteranceCount();
 	}
 
 	default double meanUtterancesTested() {
-		return totalUtterancesTested() / (double) totalUtteranceCount();
+		return testedUtteranceCount() / (double) totalUtteranceCount();
 	}
 
-	int totalTokensTested();
+	int testedTokenCount();
 
 	/**
 	 *
@@ -48,12 +48,12 @@ interface EventDialogueTestStatistics {
 	 * @return The number of {@link Utterance utterances} for the given
 	 *         {@link EventDialogue dialogue} under test which were tested.
 	 */
-	int totalUtterancesTested();
+	int testedUtteranceCount();
 
 	/**
 	 * 
 	 * @return All {@link Utterance} instances which were used for
 	 *         classification, in the order in which they appeared.
 	 */
-	Stream<Utterance> utterancesTested();
+	Stream<Utterance> testedUtterances();
 }

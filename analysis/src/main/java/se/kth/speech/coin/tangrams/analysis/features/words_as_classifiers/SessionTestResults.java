@@ -132,8 +132,8 @@ public final class SessionTestResults implements SessionTestStatistics {
 	 * EventDialogueStatistics#totalTokensTested()
 	 */
 	@Override
-	public int totalTokensTested() {
-		return diagTestResults.stream().map(Entry::getValue).mapToInt(EventDialogueTestResults::totalTokensTested)
+	public int testedTokenCount() {
+		return diagTestResults.stream().map(Entry::getValue).mapToInt(EventDialogueTestResults::testedTokenCount)
 				.sum();
 	}
 
@@ -151,9 +151,9 @@ public final class SessionTestResults implements SessionTestStatistics {
 	}
 
 	@Override
-	public int totalUtterancesTested() {
+	public int testedUtteranceCount() {
 		return diagTestResults.stream().map(Entry::getValue)
-				.mapToInt(EventDialogueTestResults::totalUtterancesTested).sum();
+				.mapToInt(EventDialogueTestResults::testedUtteranceCount).sum();
 	}
 
 	/*
@@ -176,8 +176,8 @@ public final class SessionTestResults implements SessionTestStatistics {
 	 * EventDialogueTestStatistics#utterancesTested()
 	 */
 	@Override
-	public Stream<Utterance> utterancesTested() {
-		return diagTestResults.stream().map(Entry::getValue).map(EventDialogueTestStatistics::utterancesTested)
+	public Stream<Utterance> testedUtterances() {
+		return diagTestResults.stream().map(Entry::getValue).map(EventDialogueTestStatistics::testedUtterances)
 				.flatMap(Function.identity());
 	}
 

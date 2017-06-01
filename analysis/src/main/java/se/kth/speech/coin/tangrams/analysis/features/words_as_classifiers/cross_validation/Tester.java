@@ -185,7 +185,7 @@ public final class Tester {
 
 		public double meanTokensTestedPerSession() {
 			return sessionResults.values().stream().flatMap(List::stream)
-					.map(CrossValidationTestSummary::getTestResults).mapToInt(SessionTestStatistics::totalTokensTested)
+					.map(CrossValidationTestSummary::getTestResults).mapToInt(SessionTestStatistics::testedTokenCount)
 					.average().getAsDouble();
 		}
 
@@ -245,8 +245,8 @@ public final class Tester {
 		 * EventDialogueTestStatistics#totalTokensTested()
 		 */
 		@Override
-		public int totalTokensTested() {
-			return totalResults.totalTokensTested();
+		public int testedTokenCount() {
+			return totalResults.testedTokenCount();
 		}
 
 		/*
@@ -269,8 +269,8 @@ public final class Tester {
 		 * EventDialogueTestStatistics#totalUtterancesTested()
 		 */
 		@Override
-		public int totalUtterancesTested() {
-			return totalResults.totalUtterancesTested();
+		public int testedUtteranceCount() {
+			return totalResults.testedUtteranceCount();
 		}
 
 		/*
@@ -293,9 +293,9 @@ public final class Tester {
 		 * EventDialogueTestStatistics#utterancesTested()
 		 */
 		@Override
-		public Stream<Utterance> utterancesTested() {
+		public Stream<Utterance> testedUtterances() {
 			return sessionResults.values().stream().flatMap(List::stream)
-					.map(CrossValidationTestSummary::getTestResults).map(SessionTestStatistics::utterancesTested)
+					.map(CrossValidationTestSummary::getTestResults).map(SessionTestStatistics::testedUtterances)
 					.flatMap(Function.identity());
 		}
 

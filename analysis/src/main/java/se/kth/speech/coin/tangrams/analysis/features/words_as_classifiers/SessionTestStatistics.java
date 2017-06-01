@@ -38,7 +38,7 @@ public interface SessionTestStatistics extends EventDialogueTestStatistics {
 	 *         session under test.
 	 */
 	default double meanUtterancesTestedPerDialogue() {
-		final int totalUtts = totalUtterancesTested();
+		final int totalUtts = testedUtteranceCount();
 		return totalUtts / (double) totalDialoguesTested();
 	}
 

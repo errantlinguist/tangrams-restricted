@@ -89,8 +89,8 @@ public final class EventDialogueTestResults implements EventDialogueTestStatisti
 	}
 
 	@Override
-	public int totalTokensTested() {
-		return utterancesTested().map(Utterance::getTokens).mapToInt(List::size).sum();
+	public int testedTokenCount() {
+		return testedUtterances().map(Utterance::getTokens).mapToInt(List::size).sum();
 	}
 
 	@Override
@@ -99,7 +99,7 @@ public final class EventDialogueTestResults implements EventDialogueTestStatisti
 	}
 
 	@Override
-	public int totalUtterancesTested() {
+	public int testedUtteranceCount() {
 		return transformedDiag.getUtts().size();
 	}
 
@@ -107,7 +107,7 @@ public final class EventDialogueTestResults implements EventDialogueTestStatisti
 	 * @return the uttsTested
 	 */
 	@Override
-	public Stream<Utterance> utterancesTested() {
+	public Stream<Utterance> testedUtterances() {
 		return transformedDiag.getUtts().stream();
 	}
 

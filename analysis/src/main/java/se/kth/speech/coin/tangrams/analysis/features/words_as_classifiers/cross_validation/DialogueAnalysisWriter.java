@@ -233,13 +233,13 @@ public final class DialogueAnalysisWriter implements Consumer<Tester.Result> {
 		final String timestamp = diag.getFirstEvent().map(Event::getTime).orElse("(no event found for dialogue)");
 		final String uttDiagRepr = UTT_DIAG_REPR_FACTORY.apply(diag.getUtts().iterator());
 		final EventDialogueTestResults testResults = diagTestResults.getValue();
-		final Stream<Utterance> uttsTested = testResults.utterancesTested();
+		final Stream<Utterance> uttsTested = testResults.testedUtterances();
 		final String testedUttDiagRepr = UTT_DIAG_REPR_FACTORY.apply(uttsTested.iterator());
 
 		final List<Object> cellVals = Arrays.asList(key, iterNo, sequenceOrder, timestamp, uttDiagRepr,
 				testedUttDiagRepr, testResults.getGoldStandardReferentId(), testResults.rank(),
-				testResults.reciprocalRank(), testResults.totalUtterancesTested(), testResults.totalUtteranceCount(),
-				testResults.meanUtterancesTested(), testResults.totalTokensTested(),
+				testResults.reciprocalRank(), testResults.testedUtteranceCount(), testResults.totalUtteranceCount(),
+				testResults.meanUtterancesTested(), testResults.testedTokenCount(),
 				testResults.meanTokensPerTestedUtterance());
 		assert cellVals.size() == COL_HEADERS.size();
 		out.println(cellVals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
