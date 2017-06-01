@@ -16,6 +16,7 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation;
 
+import java.util.EnumSet;
 import java.util.Map.Entry;
 import java.util.Random;
 import java.util.function.Function;
@@ -29,7 +30,7 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.traini
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.OnePositiveOneNegativeInstanceFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.SentimentAnalyzingInstancesFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.TrainingInstancesFactory;
-import se.kth.speech.nlp.stanford.StanfordCoreNLPConfigurationVariant;
+import se.kth.speech.nlp.stanford.StanfordCoreNLPConfigurationFactory;
 
 enum Training implements Function<TrainingContext, Entry<TrainingInstancesFactory, Integer>>, HasAbbreviation {
 	ALL_NEG("allNeg") {
@@ -70,8 +71,9 @@ enum Training implements Function<TrainingContext, Entry<TrainingInstancesFactor
 					.getBean(EntityFeatureExtractionContextFactory.class);
 			final SentimentAnalyzingInstancesFactory instsFactory = new SentimentAnalyzingInstancesFactory(
 					entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory,
-					StanfordCoreNLPConfigurationVariant.TOKENIZING_PARSING_SENTIMENT
-							.apply(trainingCtx.getBackgroundJobExecutor()),
+					new StanfordCoreNLPConfigurationFactory().apply(
+							EnumSet.of(StanfordCoreNLPConfigurationFactory.Option.SENTIMENT),
+							trainingCtx.getBackgroundJobExecutor()),
 					ESTIMATED_UNIQUE_UTT_COUNT);
 			return new MutablePair<>(instsFactory, 1);
 		}

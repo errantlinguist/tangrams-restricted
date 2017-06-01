@@ -19,17 +19,19 @@ package se.kth.speech.nlp.stanford;
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
 import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
+
+import com.google.common.collect.Sets;
 
 import edu.stanford.nlp.pipeline.Annotator;
 import edu.stanford.nlp.pipeline.StanfordCoreNLP;
@@ -39,57 +41,15 @@ import edu.stanford.nlp.pipeline.StanfordCoreNLP;
  * @since 29 May 2017
  *
  */
-public enum StanfordCoreNLPConfigurationVariant implements Function<Executor, Supplier<StanfordCoreNLP>> {
-	TOKENIZING {
+public final class StanfordCoreNLPConfigurationFactory
+		implements BiFunction<Set<StanfordCoreNLPConfigurationFactory.Option>, Executor, Supplier<StanfordCoreNLP>> {
 
-		@Override
-		protected Properties createProps() {
-			final Properties result = createDefaultProps();
-			// https://stanfordnlp.github.io/CoreNLP/annotators.html
-			final Stream<String> annotatorNames = Stream.of(Annotator.STANFORD_TOKENIZE, Annotator.STANFORD_SSPLIT);
-			result.setProperty("annotators", annotatorNames.collect(OPTION_MULTIVALUE_DELIMITER));
-			return result;
-		}
-	},
-	TOKENIZING_LEMMATIZING {
+	public enum Option {
+		LEMMATIZE, PARSE, SENTIMENT;
+	}
 
-		@Override
-		protected Properties createProps() {
-			final Properties result = createDefaultProps();
-			// https://stanfordnlp.github.io/CoreNLP/annotators.html
-			final Stream<String> annotatorNames = Stream.of(Annotator.STANFORD_TOKENIZE, Annotator.STANFORD_SSPLIT,
-					Annotator.STANFORD_POS, Annotator.STANFORD_LEMMA);
-			result.setProperty("annotators", annotatorNames.collect(OPTION_MULTIVALUE_DELIMITER));
-			return result;
-		}
-	},
-	TOKENIZING_PARSING {
-
-		@Override
-		protected Properties createProps() {
-			final Properties result = createDefaultProps();
-			// https://stanfordnlp.github.io/CoreNLP/annotators.html
-			final Stream<String> annotatorNames = Stream.of(Annotator.STANFORD_TOKENIZE, Annotator.STANFORD_SSPLIT,
-					Annotator.STANFORD_POS, Annotator.STANFORD_PARSE);
-			result.setProperty("annotators", annotatorNames.collect(OPTION_MULTIVALUE_DELIMITER));
-			return result;
-		}
-	},
-	TOKENIZING_PARSING_SENTIMENT {
-
-		@Override
-		protected Properties createProps() {
-			final Properties result = createDefaultProps();
-			// https://stanfordnlp.github.io/CoreNLP/annotators.html
-			final Stream<String> annotatorNames = Stream.of(Annotator.STANFORD_TOKENIZE, Annotator.STANFORD_SSPLIT,
-					Annotator.STANFORD_POS, Annotator.STANFORD_PARSE, Annotator.STANFORD_SENTIMENT);
-			result.setProperty("annotators", annotatorNames.collect(OPTION_MULTIVALUE_DELIMITER));
-			return result;
-		}
-	};
-
-	private static final ConcurrentMap<StanfordCoreNLPConfigurationVariant, Reference<Supplier<StanfordCoreNLP>>> INSTANCES = new ConcurrentHashMap<>(
-			StanfordCoreNLPConfigurationVariant.values().length);
+	private static final ConcurrentMap<Set<Option>, Reference<Supplier<StanfordCoreNLP>>> INSTANCES = new ConcurrentHashMap<>(
+			Option.values().length * Option.values().length);
 
 	private static final Collector<CharSequence, ?, String> OPTION_MULTIVALUE_DELIMITER = Collectors.joining(",");
 
@@ -131,19 +91,19 @@ public enum StanfordCoreNLPConfigurationVariant implements Function<Executor, Su
 	}
 
 	@Override
-	public Supplier<StanfordCoreNLP> apply(final Executor executor) {
-		final Reference<Supplier<StanfordCoreNLP>> ref = INSTANCES.compute(this, (key, oldValue) -> {
+	public Supplier<StanfordCoreNLP> apply(final Set<Option> opts, final Executor executor) {
+		final Reference<Supplier<StanfordCoreNLP>> ref = INSTANCES.compute(opts, (key, oldValue) -> {
 			final Reference<Supplier<StanfordCoreNLP>> newValue;
 			if (oldValue == null) {
 				// No instance has yet been created; Create one
 				final CompletableFuture<StanfordCoreNLP> futureInst = CompletableFuture
-						.supplyAsync(() -> new StanfordCoreNLP(createProps()), executor);
+						.supplyAsync(() -> new StanfordCoreNLP(createProps(opts)), executor);
 				newValue = new SoftReference<>(wrapFuture(futureInst));
 			} else if (oldValue.get() == null) {
 				// The old instance has already been deleted; Replace it with a
 				// new reference to a new instance
 				final CompletableFuture<StanfordCoreNLP> futureInst = CompletableFuture
-						.supplyAsync(() -> new StanfordCoreNLP(createProps()), executor);
+						.supplyAsync(() -> new StanfordCoreNLP(createProps(opts)), executor);
 				newValue = new SoftReference<>(wrapFuture(futureInst));
 			} else {
 				// The existing instance has not yet been deleted; Re-use it
@@ -154,5 +114,30 @@ public enum StanfordCoreNLPConfigurationVariant implements Function<Executor, Su
 		return ref.get();
 	}
 
-	protected abstract Properties createProps();
+	/**
+	 * @param opts
+	 * @return
+	 */
+	private Properties createProps(final Set<Option> opts) {
+		final Properties result = createDefaultProps();
+		final Set<String> annotatorNames = Sets.newLinkedHashSetWithExpectedSize(6);
+		annotatorNames.add(Annotator.STANFORD_TOKENIZE);
+		annotatorNames.add(Annotator.STANFORD_SSPLIT);
+		if (opts.contains(Option.LEMMATIZE)) {
+			annotatorNames.add(Annotator.STANFORD_POS);
+			annotatorNames.add(Annotator.STANFORD_LEMMA);
+		}
+		if (opts.contains(Option.PARSE)) {
+			annotatorNames.add(Annotator.STANFORD_POS);
+			annotatorNames.add(Annotator.STANFORD_PARSE);
+		}
+		if (opts.contains(Option.SENTIMENT)) {
+			annotatorNames.add(Annotator.STANFORD_POS);
+			annotatorNames.add(Annotator.STANFORD_PARSE);
+			annotatorNames.add(Annotator.STANFORD_SENTIMENT);
+		}
+		result.setProperty("annotators", annotatorNames.stream().collect(OPTION_MULTIVALUE_DELIMITER));
+		return result;
+	}
+
 }

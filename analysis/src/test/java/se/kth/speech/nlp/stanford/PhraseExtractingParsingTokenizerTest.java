@@ -18,6 +18,7 @@ package se.kth.speech.nlp.stanford;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,7 +52,7 @@ public final class PhraseExtractingParsingTokenizerTest {
 	static {
 		final ExecutorService executor = Executors.newSingleThreadExecutor();
 		TEST_INST = new PhraseExtractingParsingTokenizer(
-				StanfordCoreNLPConfigurationVariant.TOKENIZING_PARSING.apply(executor), CoreLabel::word, subTree -> {
+				new StanfordCoreNLPConfigurationFactory().apply(EnumSet.of(StanfordCoreNLPConfigurationFactory.Option.PARSE), executor), CoreLabel::word, subTree -> {
 					final Label label = subTree.label();
 					return label == null ? false : "NP".equals(label.value());
 				});

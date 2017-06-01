@@ -18,25 +18,18 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross
 
 final class TestParameters {
 
-	private final TokenFiltering tokenFilteringMethod;
-
-	private final Tokenization tokenizationMethod;
-
 	private final Training trainingMethod;
 
-	private final UtteranceFiltering uttFilteringMethod;
+	private final String uttProcessingMethodDesc;
 
-	TestParameters(final UtteranceFiltering uttFilteringMethod, final Tokenization tokenizationMethod,
-			final TokenFiltering tokenFilteringMethod, final Training trainingMethod) {
-		this.uttFilteringMethod = uttFilteringMethod;
-		this.tokenizationMethod = tokenizationMethod;
-		this.tokenFilteringMethod = tokenFilteringMethod;
+	TestParameters(final String uttProcessingMethodDesc, final Training trainingMethod) {
+		this.uttProcessingMethodDesc = uttProcessingMethodDesc;
 		this.trainingMethod = trainingMethod;
 	}
 
 	/*
 	 * (non-Javadoc)
-	 *
+	 * 
 	 * @see java.lang.Object#equals(java.lang.Object)
 	 */
 	@Override
@@ -51,33 +44,17 @@ final class TestParameters {
 			return false;
 		}
 		final TestParameters other = (TestParameters) obj;
-		if (tokenFilteringMethod != other.tokenFilteringMethod) {
-			return false;
-		}
-		if (tokenizationMethod != other.tokenizationMethod) {
-			return false;
-		}
 		if (trainingMethod != other.trainingMethod) {
 			return false;
 		}
-		if (uttFilteringMethod != other.uttFilteringMethod) {
+		if (uttProcessingMethodDesc == null) {
+			if (other.uttProcessingMethodDesc != null) {
+				return false;
+			}
+		} else if (!uttProcessingMethodDesc.equals(other.uttProcessingMethodDesc)) {
 			return false;
 		}
 		return true;
-	}
-
-	/**
-	 * @return the tokenFilteringMethod
-	 */
-	public TokenFiltering getTokenFilteringMethod() {
-		return tokenFilteringMethod;
-	}
-
-	/**
-	 * @return the tokenizationMethod
-	 */
-	public Tokenization getTokenizationMethod() {
-		return tokenizationMethod;
 	}
 
 	/**
@@ -88,44 +65,38 @@ final class TestParameters {
 	}
 
 	/**
-	 * @return the uttFilteringMethod
+	 * @return the uttProcessingMethodDesc
 	 */
-	public UtteranceFiltering getUttFilteringMethod() {
-		return uttFilteringMethod;
+	public String getUttProcessingMethodDesc() {
+		return uttProcessingMethodDesc;
 	}
 
 	/*
 	 * (non-Javadoc)
-	 *
+	 * 
 	 * @see java.lang.Object#hashCode()
 	 */
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + (tokenFilteringMethod == null ? 0 : tokenFilteringMethod.hashCode());
-		result = prime * result + (tokenizationMethod == null ? 0 : tokenizationMethod.hashCode());
 		result = prime * result + (trainingMethod == null ? 0 : trainingMethod.hashCode());
-		result = prime * result + (uttFilteringMethod == null ? 0 : uttFilteringMethod.hashCode());
+		result = prime * result + (uttProcessingMethodDesc == null ? 0 : uttProcessingMethodDesc.hashCode());
 		return result;
 	}
 
 	/*
 	 * (non-Javadoc)
-	 *
+	 * 
 	 * @see java.lang.Object#toString()
 	 */
 	@Override
 	public String toString() {
 		final StringBuilder builder = new StringBuilder();
-		builder.append("TestParameters [uttFilteringMethod=");
-		builder.append(uttFilteringMethod);
-		builder.append(", tokenizationMethod=");
-		builder.append(tokenizationMethod);
-		builder.append(", tokenFilteringMethod=");
-		builder.append(tokenFilteringMethod);
-		builder.append(", trainingMethod=");
+		builder.append("TestParameters [trainingMethod=");
 		builder.append(trainingMethod);
+		builder.append(", uttProcessingMethodDesc=");
+		builder.append(uttProcessingMethodDesc);
 		builder.append("]");
 		return builder.toString();
 	}

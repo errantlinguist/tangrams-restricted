@@ -16,24 +16,19 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation;
 
-import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.UncheckedIOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.EnumMap;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
-import java.util.NavigableSet;
 import java.util.OptionalInt;
-import java.util.TreeSet;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
@@ -56,10 +51,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
+import com.google.common.collect.Sets;
+
 import se.kth.speech.coin.tangrams.CLIParameters;
 import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.StatisticsWriter.SummaryDatum;
 import se.kth.speech.coin.tangrams.iristk.EventTimes;
 
 /**
@@ -68,6 +64,15 @@ import se.kth.speech.coin.tangrams.iristk.EventTimes;
  *
  */
 public final class CombiningBatchJobTestSingleFileWriter implements Consumer<BatchJobSummary> {
+
+	// private static final List<String> COL_HEADERS = Arrays.asList("INPATH",
+	// "TEST_ITER", "SESSION_ORDER", "EVENT_TIME",
+	// "DIALOGUE", "DIALOGUE_AS_TESTED", "GOLD_STD_ID", "RANK", "RR",
+	// "TESTED_UTT_COUNT", "TOTAL_UTT_COUNT",
+	// "MEAN_DIAG_UTTS_TESTED", "TOKEN_COUNT", "MEAN_TOKENS_PER_UTT");
+	public enum SummaryDatum {
+		SESSION_FILE, TEST_ITER, SESSION_ORDER, EVENT_TIME, DIALOGUE, DIALOGUE_AS_TESTED, GOLD_STD_ENTITY_ID, RANK, TESTED_UTT_COUNT, TOTAL_UTT_COUNT, TOKEN_COUNT, TEST_TIME;
+	}
 
 	private enum Parameter implements Supplier<Option> {
 		HELP("?") {
@@ -91,32 +96,18 @@ public final class CombiningBatchJobTestSingleFileWriter implements Consumer<Bat
 						.argName("path").type(File.class).required().build();
 			}
 		},
-		TOKEN_FILTERS("f") {
+		UTT_PROCESSING("u") {
 			@Override
 			public Option get() {
 				return Option.builder(optName).longOpt("token-filters")
-						.desc("A list of token filtering method(s) to use.").hasArgs().argName("name").build();
+						.desc("A list of token processing option(s) to use.").hasArgs().argName("name").build();
 			}
 		},
-		TOKENIZERS("to") {
-			@Override
-			public Option get() {
-				return Option.builder(optName).longOpt("tokenizers").desc("A list of tokenization method(s) to use.")
-						.hasArgs().argName("name").build();
-			}
-		},
-		TRAINING("tr") {
+		TRAINING("t") {
 			@Override
 			public Option get() {
 				return Option.builder(optName).longOpt("training").desc("A list of training method(s) to use.")
 						.hasArgs().argName("name").build();
-			}
-		},
-		UTT_FILTERS("u") {
-			@Override
-			public Option get() {
-				return Option.builder(optName).longOpt("utt-filters")
-						.desc("A list of utterance filtering method(s) to use.").hasArgs().argName("name").build();
 			}
 		};
 
@@ -128,41 +119,21 @@ public final class CombiningBatchJobTestSingleFileWriter implements Consumer<Bat
 			return result;
 		}
 
-		private static NavigableSet<TokenFiltering> parseTokenFilteringMethods(final CommandLine cl) {
-			final String[] names = cl.getOptionValues(Parameter.TOKEN_FILTERS.optName);
-			final Stream<TokenFiltering> insts = names == null ? Arrays.stream(TokenFiltering.values())
-					: Arrays.stream(names).map(TokenFiltering::valueOf);
-			final NavigableSet<TokenFiltering> result = new TreeSet<>(
-					Comparator.comparing(TokenFiltering::getAbbreviation));
-			insts.forEach(result::add);
-			return result;
-		}
-
-		private static NavigableSet<Tokenization> parseTokenizationMethods(final CommandLine cl) {
-			final String[] names = cl.getOptionValues(Parameter.TOKENIZERS.optName);
-			final Stream<Tokenization> insts = names == null ? Arrays.stream(Tokenization.values())
-					: Arrays.stream(names).map(Tokenization::valueOf);
-			final NavigableSet<Tokenization> result = new TreeSet<>(
-					Comparator.comparing(Tokenization::getAbbreviation));
-			insts.forEach(result::add);
-			return result;
-		}
-
-		private static NavigableSet<Training> parseTrainingMethods(final CommandLine cl) {
+		private static Set<Training> parseTrainingMethods(final CommandLine cl) {
 			final String[] names = cl.getOptionValues(Parameter.TRAINING.optName);
 			final Stream<Training> insts = names == null ? Arrays.stream(Training.values())
 					: Arrays.stream(names).map(Training::valueOf);
-			final NavigableSet<Training> result = new TreeSet<>(Comparator.comparing(Training::getAbbreviation));
+			final Set<Training> result = EnumSet.noneOf(Training.class);
 			insts.forEach(result::add);
 			return result;
 		}
 
-		private static NavigableSet<UtteranceFiltering> parseUttFilteringMethods(final CommandLine cl) {
-			final String[] names = cl.getOptionValues(Parameter.UTT_FILTERS.optName);
-			final Stream<UtteranceFiltering> insts = names == null ? Arrays.stream(UtteranceFiltering.values())
-					: Arrays.stream(names).map(UtteranceFiltering::valueOf);
-			final NavigableSet<UtteranceFiltering> result = new TreeSet<>(
-					Comparator.comparing(UtteranceFiltering::getAbbreviation));
+		private static Set<UtteranceProcessingOption> parseUtteranceProcessingOptions(final CommandLine cl) {
+			final String[] names = cl.getOptionValues(Parameter.UTT_PROCESSING.optName);
+			final Stream<UtteranceProcessingOption> insts = names == null
+					? Arrays.stream(UtteranceProcessingOption.values())
+					: Arrays.stream(names).map(UtteranceProcessingOption::valueOf);
+			final Set<UtteranceProcessingOption> result = EnumSet.noneOf(UtteranceProcessingOption.class);
 			insts.forEach(result::add);
 			return result;
 		}
@@ -214,15 +185,13 @@ public final class CombiningBatchJobTestSingleFileWriter implements Consumer<Bat
 				}
 				final PrintWriter out = CLIParameters
 						.parseOutpath((File) cl.getParsedOptionValue(Parameter.OUTPATH.optName));
-				final NavigableSet<UtteranceFiltering> uttFilteringMethods = Parameter.parseUttFilteringMethods(cl);
-				LOGGER.info("Utterance filtering methods: {}", uttFilteringMethods);
-				final NavigableSet<Tokenization> tokenizationMethods = Parameter.parseTokenizationMethods(cl);
-				LOGGER.info("Tokenization methods: {}", tokenizationMethods);
-				final NavigableSet<TokenFiltering> tokenFilteringMethods = Parameter.parseTokenFilteringMethods(cl);
-				LOGGER.info("Token filtering methods: {}", tokenFilteringMethods);
-				final NavigableSet<Training> trainingMethods = Parameter.parseTrainingMethods(cl);
+				final Set<UtteranceProcessingOption> uttProcessingOpts = Parameter.parseUtteranceProcessingOptions(cl);
+				LOGGER.info("Utterance processing options: {}", uttProcessingOpts);
+				final Set<Training> trainingMethods = Parameter.parseTrainingMethods(cl);
 				LOGGER.info("Training methods: {}", trainingMethods);
 				final ExecutorService backgroundJobExecutor = createBackgroundJobExecutor();
+				final Future<Set<Set<UtteranceProcessingOption>>> futureUttProcessingOptSets = backgroundJobExecutor
+						.submit(() -> Sets.powerSet(uttProcessingOpts));
 				try {
 					final Future<Map<SessionDataManager, Path>> allSessionDataFuture = backgroundJobExecutor
 							.submit(() -> TestSessionData.readTestSessionData(inpaths));
@@ -231,9 +200,11 @@ public final class CombiningBatchJobTestSingleFileWriter implements Consumer<Bat
 							"combining-batch-tester.xml", CombiningBatchJobTestSingleFileWriter.class)) {
 						final CombiningBatchJobTester tester = new CombiningBatchJobTester(backgroundJobExecutor,
 								appCtx, writer, testerConfigurator);
+						final Set<Set<UtteranceProcessingOption>> uttProcessingOptSets = futureUttProcessingOptSets
+								.get();
+						LOGGER.info("Testing {} combination(s) of utterance processing options.", uttProcessingOptSets.size());
 						final CombiningBatchJobTester.Input input = new CombiningBatchJobTester.Input(
-								uttFilteringMethods, tokenizationMethods, tokenFilteringMethods, trainingMethods,
-								allSessionDataFuture.get());
+								uttProcessingOptSets, trainingMethods, allSessionDataFuture.get());
 						tester.accept(input);
 					}
 					LOGGER.info("Shutting down executor service.");
@@ -291,16 +262,21 @@ public final class CombiningBatchJobTestSingleFileWriter implements Consumer<Bat
 		return Arrays.asList(resultBuilder.build().toArray(String[]::new));
 	}
 
+	private static Map<SummaryDatum, Object> createRowCellValueMap(final BatchJobSummary summary) {
+		final Map<SummaryDatum, Object> result = new EnumMap<>(SummaryDatum.class);
+		final TestParameters testParams = summary.getTestParams();
+		final Tester.Result testResults = summary.getTestResults();
+
+		assert result.size() == SummaryDatum.values().length;
+		return result;
+	}
+
 	private static Stream<String> createTestMethodColumnHeaders() {
-		return Stream.of(UtteranceFiltering.class.getSimpleName(), Tokenization.class.getSimpleName(),
-				TokenFiltering.class.getSimpleName(), Training.class.getSimpleName());
+		return Stream.of(UtteranceProcessingOption.class.getSimpleName(), Training.class.getSimpleName());
 	}
 
 	private static Stream<String> createTestMethodRowCellValues(final TestParameters testParams) {
-		final Stream<HasAbbreviation> nameable = Stream.of(testParams.getUttFilteringMethod(),
-				testParams.getTokenizationMethod(), testParams.getTokenFilteringMethod(),
-				testParams.getTrainingMethod());
-		return nameable.map(HasAbbreviation::getAbbreviation);
+		return Stream.of(testParams.getUttProcessingMethodDesc(), testParams.getTrainingMethod().getAbbreviation());
 	}
 
 	private static void shutdownExceptionally(final ExecutorService executor) {
@@ -324,24 +300,6 @@ public final class CombiningBatchJobTestSingleFileWriter implements Consumer<Bat
 	public void accept(final BatchJobSummary summary) {
 		final TestParameters testParams = summary.getTestParams();
 		final Tester.Result testResults = summary.getTestResults();
-	}
-	
-	private static Map<SummaryDatum,Object> createRowCellValueMap( BatchJobSummary summary){
-		 Map<SummaryDatum,Object> result = new EnumMap<>(SummaryDatum.class);
-		final TestParameters testParams = summary.getTestParams();
-		final Tester.Result testResults = summary.getTestResults();
-		
-		assert result.size() == SummaryDatum.values().length;
-		return result;
-	}
-
-	// private static final List<String> COL_HEADERS = Arrays.asList("INPATH",
-	// "TEST_ITER", "SESSION_ORDER", "EVENT_TIME",
-	// "DIALOGUE", "DIALOGUE_AS_TESTED", "GOLD_STD_ID", "RANK", "RR",
-	// "TESTED_UTT_COUNT", "TOTAL_UTT_COUNT",
-	// "MEAN_DIAG_UTTS_TESTED", "TOKEN_COUNT", "MEAN_TOKENS_PER_UTT");
-	public enum SummaryDatum {
-		SESSION_FILE, TEST_ITER, SESSION_ORDER, EVENT_TIME, DIALOGUE, DIALOGUE_AS_TESTED, GOLD_STD_ENTITY_ID, RANK, TESTED_UTT_COUNT, TOTAL_UTT_COUNT, TOKEN_COUNT, TEST_TIME;
 	}
 
 }

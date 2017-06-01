@@ -17,9 +17,36 @@
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation;
 
 enum UtteranceProcessingOption implements HasAbbreviation {
-	DEDUPLICATE_TOKENS("dedupTokens"), INSTRUCTOR_ONLY("instructorUtts"), LEMMATIZE("lemmatized"), NPS_ONLY(
-			"onlyNPs"), PP_REMOVAL("prunedPPs"), REMOVE_DISFLUENCIES(
-					"noDisfl"), REMOVE_FILLERS("noFillers"), REMOVE_STOPWORDS("noStops");
+	DEDUPLICATE_TOKENS("dedupTokens"),
+	/**
+	 * Train and test only on utterances from the dialogue instructor.
+	 */
+	INSTRUCTOR_ONLY("instrUtts"),
+	/**
+	 * Uses token lemmas rather than the observed token forms.
+	 */
+	LEMMATIZE("lemmatized"),
+	/**
+	 * Parses NPs and extract them.
+	 */
+	NPS_ONLY("onlyNPs"),
+	/**
+	 * Creates a parse tree and use the leaf node labels as tokens.
+	 */
+	PARSE_TOKENIZED("parseTok"),
+
+	/**
+	 * Parses PPs and remove them.
+	 */
+	PP_REMOVAL("prunedPPs"), REMOVE_DISFLUENCIES("noDisfl"), REMOVE_FILLERS("noFillers"), REMOVE_STOPWORDS("noStops"),
+	/**
+	 * (Re-)tokenizes the utterance using Stanford CoreNLP's
+	 * {@link edu.stanford.nlp.process.PTBTokenizer<T>}.
+	 *
+	 * @see <a href="https://nlp.stanford.edu/software/tokenizer.html">Stanford
+	 *      CoreNLP website</a>
+	 */
+	RETOKENIZE("retokenized");
 
 	private final String abbrev;
 
