@@ -78,7 +78,7 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_
 public final class DialogueAnalysisWriter implements Consumer<Tester.Result> {
 
 	private enum Parameter implements Supplier<Option> {
-		APP_CONTEXT_DEFINITIONS("a") {
+		APP_CONTEXT_DEFINITIONS("c") {
 			@Override
 			public Option get() {
 				return Option.builder(optName).longOpt("app-ctx")

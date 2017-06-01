@@ -79,7 +79,7 @@ public final class StatisticsWriter implements Consumer<Tester.Result> {
 	}
 
 	private enum Parameter implements Supplier<Option> {
-		APP_CONTEXT_DEFINITIONS("a") {
+		APP_CONTEXT_DEFINITIONS("c") {
 			@Override
 			public Option get() {
 				return Option.builder(optName).longOpt("app-ctx")
