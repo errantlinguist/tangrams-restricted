@@ -55,6 +55,7 @@ import se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttribut
 import se.kth.speech.coin.tangrams.analysis.features.weka.WordClassInstancesFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.EventDialogueTestResults;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.ReferentConfidenceMapFactory;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.SessionTestResults;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.SessionTestStatistics;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.SessionTester;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.SingleGameContextReferentEventDialogueTester;
@@ -89,11 +90,11 @@ public final class Tester {
 
 	public static final class CrossValidationTestSummary {
 
-		private final SessionTester.Result testResults;
+		private final SessionTestResults testResults;
 
 		private final Object2IntMap<String> trainingInstanceCounts;
 
-		private CrossValidationTestSummary(final SessionTester.Result testResults,
+		private CrossValidationTestSummary(final SessionTestResults testResults,
 				final Object2IntMap<String> trainingInstanceCounts) {
 			this.testResults = testResults;
 			this.trainingInstanceCounts = trainingInstanceCounts;
@@ -102,7 +103,7 @@ public final class Tester {
 		/**
 		 * @return the testResults
 		 */
-		public SessionTester.Result getTestResults() {
+		public SessionTestResults getTestResults() {
 			return testResults;
 		}
 
@@ -120,17 +121,17 @@ public final class Tester {
 
 		private final ConcurrentMap<Path, List<CrossValidationTestSummary>> sessionResults;
 
-		private final SessionTester.Result totalResults;
+		private final SessionTestResults totalResults;
 
 		private Result(final int expectedSessionCount, final int iterCount) {
 			sessionResults = new ConcurrentHashMap<>(expectedSessionCount);
-			totalResults = new SessionTester.Result(expectedSessionCount * 50);
+			totalResults = new SessionTestResults(expectedSessionCount * 50);
 			this.iterCount = iterCount;
 		}
 
 		public Stream<Entry<EventDialogue, EventDialogueTestResults>> getAllDialogueTestResults() {
 			return sessionResults.values().stream().flatMap(List::stream)
-					.map(CrossValidationTestSummary::getTestResults).map(SessionTester.Result::getDialogueTestResults)
+					.map(CrossValidationTestSummary::getTestResults).map(SessionTestResults::getDialogueTestResults)
 					.flatMap(List::stream);
 		}
 
@@ -222,13 +223,13 @@ public final class Tester {
 		public int totalDialoguesTested() {
 			return sessionResults.values().stream().flatMap(List::stream)
 					.map(CrossValidationTestSummary::getTestResults)
-					.mapToInt(SessionTester.Result::totalDialoguesTested).sum();
+					.mapToInt(SessionTestResults::totalDialoguesTested).sum();
 		}
 
 		/**
 		 * @return the totalResults
 		 */
-		public SessionTester.Result totalResults() {
+		public SessionTestResults totalResults() {
 			return totalResults;
 		}
 
@@ -435,7 +436,7 @@ public final class Tester {
 			final SingleGameContextReferentEventDialogueTester diagTester = new SingleGameContextReferentEventDialogueTester(
 					diagClassifier, diagTransformer);
 			final SessionTester sessionTester = new SessionTester(diagTester);
-			final SessionTester.Result testResults = sessionTester
+			final SessionTestResults testResults = sessionTester
 					.apply(sessionDiagMgrCacheSupplier.get().get(testSessionData));
 			final CrossValidationTestSummary cvTestSummary = new CrossValidationTestSummary(testResults,
 					trainingData.getTrainingInstanceCounts());

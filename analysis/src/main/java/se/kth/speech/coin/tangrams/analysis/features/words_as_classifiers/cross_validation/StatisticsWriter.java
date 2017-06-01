@@ -50,7 +50,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.support.FileSystemXmlApplicationContext;
 
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.SessionTester;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.SessionTestResults;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.Tester.CrossValidationTestSummary;
 
 /**
@@ -211,7 +211,7 @@ public final class StatisticsWriter implements Consumer<Tester.Result> {
 	}
 
 	private static Map<SummaryDatum, Object> createSessionSummaryDataMap(final Object key, final Integer iterNo,
-			final SessionTester.Result sessionTestResults) {
+			final SessionTestResults sessionTestResults) {
 		final int totalUttsTested = sessionTestResults.totalUtterancesTested();
 		final int totalDiagsTested = sessionTestResults.totalDialoguesTested();
 		final Map<SummaryDatum, Object> result = new EnumMap<>(SummaryDatum.class);

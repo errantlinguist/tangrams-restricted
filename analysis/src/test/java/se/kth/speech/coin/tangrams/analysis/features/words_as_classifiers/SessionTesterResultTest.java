@@ -57,7 +57,7 @@ public final class SessionTesterResultTest {
 
 	@Test
 	public void testMeanRank() {
-		final SessionTester.Result testInst = new SessionTester.Result(1);
+		final SessionTestResults testInst = new SessionTestResults(1);
 		final Utterance testUtt = new Utterance("segment1", "testSpeaker", Arrays.asList("test", "utterance"), 2.3f,
 				3.3f);
 		final EventDialogue diag = new EventDialogue(Arrays.asList(new Event()), Arrays.asList(testUtt));
@@ -71,7 +71,7 @@ public final class SessionTesterResultTest {
 
 	@Test
 	public void testMeanReciprocalRank() {
-		final SessionTester.Result testInst = new SessionTester.Result(1);
+		final SessionTestResults testInst = new SessionTestResults(1);
 		final Utterance testUtt = new Utterance("segment1", "testSpeaker", Arrays.asList("test", "utterance"), 2.3f,
 				3.3f);
 		final EventDialogue diag = new EventDialogue(Arrays.asList(new Event()), Arrays.asList(testUtt));

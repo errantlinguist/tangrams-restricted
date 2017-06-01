@@ -53,7 +53,7 @@ import se.kth.speech.coin.tangrams.analysis.Utterance;
 import se.kth.speech.coin.tangrams.analysis.UtteranceDialogueRepresentationStringFactory;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.EventDialogueTestResults;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.SessionTester;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.SessionTestResults;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.Tester.CrossValidationTestSummary;
 
 /**
@@ -222,7 +222,7 @@ public final class DialogueAnalysisWriter implements Consumer<Tester.Result> {
 			for (final ListIterator<CrossValidationTestSummary> sessionResultIter = sessionResultList
 					.listIterator(); sessionResultIter.hasNext();) {
 				final CrossValidationTestSummary cvTestSummary = sessionResultIter.next();
-				final SessionTester.Result sessionResults = cvTestSummary.getTestResults();
+				final SessionTestResults sessionResults = cvTestSummary.getTestResults();
 				// NOTE: This should remain here, after "Iterator.next()", so
 				// that the printed first iteration is "1" rather than "0"
 				final int iterNo = sessionResultIter.nextIndex();
