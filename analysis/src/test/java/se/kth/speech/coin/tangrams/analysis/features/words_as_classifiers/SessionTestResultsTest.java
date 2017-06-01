@@ -35,24 +35,30 @@ import se.kth.speech.coin.tangrams.analysis.Utterance;
  */
 public final class SessionTestResultsTest {
 
+	private static final int[] EXPECTED_ENTITY_ID_RANKING;
+
+	private static final Int2DoubleMap REF_CONF_VALS;
+
+	static {
+		REF_CONF_VALS = new Int2DoubleOpenHashMap();
+		EXPECTED_ENTITY_ID_RANKING = new int[4];
+		REF_CONF_VALS.put(3, 0.23245);
+		EXPECTED_ENTITY_ID_RANKING[1] = 3;
+		REF_CONF_VALS.put(1, 0.5343);
+		EXPECTED_ENTITY_ID_RANKING[0] = 1;
+		REF_CONF_VALS.put(2, 0.211234);
+		EXPECTED_ENTITY_ID_RANKING[2] = 2;
+		REF_CONF_VALS.put(0, 0.04352434);
+		EXPECTED_ENTITY_ID_RANKING[3] = 0;
+	}
+
 	private static EventDialogueTestResults createMockDiagTestResult(final int rank) {
-		final Int2DoubleMap referentConfidenceVals = new Int2DoubleOpenHashMap();
-		final int[] expectedRanking = new int[4];
-		referentConfidenceVals.put(3, 0.23245);
-		expectedRanking[1] = 3;
-		referentConfidenceVals.put(1, 0.5343);
-		expectedRanking[0] = 1;
-		referentConfidenceVals.put(2, 0.211234);
-		expectedRanking[2] = 2;
-		referentConfidenceVals.put(0, 0.04352434);
-		expectedRanking[3] = 0;
-		final int goldStandardReferentId = expectedRanking[rank - 1];
+		final int goldStandardReferentId = EXPECTED_ENTITY_ID_RANKING[rank - 1];
 		final Utterance testUtt = new Utterance("segment1", "testSpeaker", Arrays.asList("test", "utterance"), 2.3f,
 				3.3f);
 		final EventDialogue transformedDiag = new EventDialogue(Arrays.asList(new Event()), Arrays.asList(testUtt));
 		final int totalDiagUttCount = 1;
-		return new EventDialogueTestResults(referentConfidenceVals, goldStandardReferentId, transformedDiag,
-				totalDiagUttCount);
+		return new EventDialogueTestResults(REF_CONF_VALS, goldStandardReferentId, transformedDiag, totalDiagUttCount);
 	}
 
 	@Test
