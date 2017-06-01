@@ -17,6 +17,7 @@
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map.Entry;
@@ -68,6 +69,18 @@ public final class UtteranceProcessorFactory implements Function<Executor, Event
 	};
 
 	private static final List<Entry<UtteranceProcessingOption, EventDialogueTransformer>> UNIFIABLE_PRE_PARSING_CLEANERS = createUnifiablePreParsingOptCleanerList();
+
+	private static final List<UtteranceProcessingOption> PROCESSING_STEP_ORDERING = createProcessingStepOrdering();
+
+	private static List<UtteranceProcessingOption> createProcessingStepOrdering() {
+		final List<UtteranceProcessingOption> result = Arrays.asList(UtteranceProcessingOption.INSTRUCTOR_ONLY,
+				UtteranceProcessingOption.REMOVE_DISFLUENCIES, UtteranceProcessingOption.REMOVE_FILLERS,
+				UtteranceProcessingOption.DEDUPLICATE_TOKENS, UtteranceProcessingOption.NPS_ONLY,
+				UtteranceProcessingOption.PP_REMOVAL, UtteranceProcessingOption.LEMMATIZE,
+				UtteranceProcessingOption.REMOVE_STOPWORDS);
+		assert result.size() == UtteranceProcessingOption.values().length;
+		return result;
+	}
 
 	private static List<Entry<UtteranceProcessingOption, EventDialogueTransformer>> createUnifiablePreParsingOptCleanerList() {
 		final List<Entry<UtteranceProcessingOption, EventDialogueTransformer>> result = new ArrayList<>();
@@ -130,10 +143,8 @@ public final class UtteranceProcessorFactory implements Function<Executor, Event
 
 	@Override
 	public String getAbbreviation() {
-		uttProcessingOptions.stream().map(UtteranceProcessingOption::getAbbreviation)
-				.collect(TokenizationAbbreviations.JOINER);
-		// TODO Auto-generated method stub
-		return null;
+		return PROCESSING_STEP_ORDERING.stream().filter(uttProcessingOptions::contains)
+				.map(UtteranceProcessingOption::getAbbreviation).collect(TokenizationAbbreviations.JOINER);
 	}
 
 	private Optional<TokenizingEventDialogueTransformer> createParsingTokenizer(final Executor executor,
