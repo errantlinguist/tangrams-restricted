@@ -65,7 +65,7 @@ import se.kth.speech.coin.tangrams.iristk.EventTimes;
  * @since 24 May 2017
  *
  */
-public final class CombininingBatchJobTestWriter implements Consumer<BatchJobSummary> {
+public final class CombiningBatchJobTestMultiDirWriter implements Consumer<BatchJobSummary> {
 
 	private enum Parameter implements Supplier<Option> {
 		APPEND_SUMMARY("a") {
@@ -175,7 +175,7 @@ public final class CombininingBatchJobTestWriter implements Consumer<BatchJobSum
 
 		private static void printHelp() {
 			final HelpFormatter formatter = new HelpFormatter();
-			formatter.printHelp(CombininingBatchJobTestWriter.class.getSimpleName() + " INPATHS...", OPTIONS);
+			formatter.printHelp(CombiningBatchJobTestMultiDirWriter.class.getSimpleName() + " INPATHS...", OPTIONS);
 		}
 
 		protected final String optName;
@@ -188,7 +188,7 @@ public final class CombininingBatchJobTestWriter implements Consumer<BatchJobSum
 
 	private static final List<String> COL_HEADERS;
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(CombininingBatchJobTestWriter.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(CombiningBatchJobTestMultiDirWriter.class);
 
 	private static final Collector<CharSequence, ?, String> METHOD_KEY_NAME_JOINER = Collectors.joining("_");
 
@@ -244,10 +244,10 @@ public final class CombininingBatchJobTestWriter implements Consumer<BatchJobSum
 				try {
 					final Future<Map<SessionDataManager, Path>> allSessionDataFuture = backgroundJobExecutor
 							.submit(() -> TestSessionData.readTestSessionData(inpaths));
-					final CombininingBatchJobTestWriter writer = new CombininingBatchJobTestWriter(outdir,
+					final CombiningBatchJobTestMultiDirWriter writer = new CombiningBatchJobTestMultiDirWriter(outdir,
 							!appendSummary);
 					try (final ClassPathXmlApplicationContext appCtx = new ClassPathXmlApplicationContext(
-							"combining-batch-tester.xml", CombininingBatchJobTestWriter.class)) {
+							"combining-batch-tester.xml", CombiningBatchJobTestMultiDirWriter.class)) {
 						final CombiningBatchJobTester tester = new CombiningBatchJobTester(backgroundJobExecutor,
 								appCtx, writer, testerConfigurator);
 						final CombiningBatchJobTester.Input input = new CombiningBatchJobTester.Input(
@@ -346,7 +346,7 @@ public final class CombininingBatchJobTestWriter implements Consumer<BatchJobSum
 
 	private final Path summaryFile;
 
-	public CombininingBatchJobTestWriter(final Path outdir, final boolean createNewSummary) {
+	public CombiningBatchJobTestMultiDirWriter(final Path outdir, final boolean createNewSummary) {
 		this.outdir = outdir;
 		this.createNewSummary = createNewSummary;
 
