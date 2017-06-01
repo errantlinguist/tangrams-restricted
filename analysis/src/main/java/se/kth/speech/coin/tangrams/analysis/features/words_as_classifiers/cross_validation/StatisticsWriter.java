@@ -19,17 +19,20 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.EnumMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.OptionalInt;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -117,6 +120,30 @@ public final class StatisticsWriter implements Consumer<Tester.Result> {
 			return result;
 		}
 
+		private static Set<String> parseAppCtxDefPaths(final CommandLine cl) throws IOException {
+			final String[] appCtxLocs = cl.getOptionValues(Parameter.APP_CONTEXT_DEFINITIONS.optName);
+			final Set<String> result = new HashSet<>();
+			for (final String appCtxLoc : appCtxLocs) {
+				final Path appCtxPath = Paths.get(appCtxLoc);
+				try (Stream<Path> childPaths = Files.walk(appCtxPath, FileVisitOption.FOLLOW_LINKS)) {
+					final Stream<Path> xmlFilePaths = childPaths.filter(inpath -> {
+						boolean shouldBeParsed = false;
+						try {
+							final String contentType = Files.probeContentType(inpath);
+							shouldBeParsed = contentType != null && contentType.endsWith("/xml");
+						} catch (final IOException e) {
+							LOGGER.warn("A(n) {} occurred while probing the content type of \"{}\"; Skipping file.",
+									new Object[] { e.getClass().getSimpleName(), inpath }, e);
+							shouldBeParsed = true;
+						}
+						return shouldBeParsed;
+					});
+					xmlFilePaths.map(Path::toAbsolutePath).map(Path::toString).forEach(result::add);
+				}
+			}
+			return result;
+		}
+
 		private static OptionalInt parseIterCount(final CommandLine cl) throws ParseException {
 			final Number optVal = (Number) cl.getParsedOptionValue(Parameter.ITER_COUNT.optName);
 			final OptionalInt result;
@@ -184,7 +211,7 @@ public final class StatisticsWriter implements Consumer<Tester.Result> {
 				throw new MissingOptionException("No input path(s) specified.");
 
 			} else {
-				final String[] appCtxLocs = cl.getOptionValues(Parameter.APP_CONTEXT_DEFINITIONS.optName);
+				final String[] appCtxLocs = Parameter.parseAppCtxDefPaths(cl).stream().toArray(String[]::new);
 				final OptionalInt iterCount = Parameter.parseIterCount(cl);
 				try (final FileSystemXmlApplicationContext appCtx = new FileSystemXmlApplicationContext(appCtxLocs)) {
 					final Tester tester = appCtx.getBean(Tester.class);

@@ -18,14 +18,19 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.train
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.FileVisitOption;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import javax.xml.bind.JAXBException;
 
@@ -108,6 +113,30 @@ public final class TrainingDataWriter {
 			return result;
 		}
 
+		private static Set<String> parseAppCtxDefPaths(final CommandLine cl) throws IOException {
+			final String[] appCtxLocs = cl.getOptionValues(Parameter.APP_CONTEXT_DEFINITIONS.optName);
+			final Set<String> result = new HashSet<>();
+			for (final String appCtxLoc : appCtxLocs) {
+				final Path appCtxPath = Paths.get(appCtxLoc);
+				try (Stream<Path> childPaths = Files.walk(appCtxPath, FileVisitOption.FOLLOW_LINKS)) {
+					final Stream<Path> xmlFilePaths = childPaths.filter(inpath -> {
+						boolean shouldBeParsed = false;
+						try {
+							final String contentType = Files.probeContentType(inpath);
+							shouldBeParsed = contentType != null && contentType.endsWith("/xml");
+						} catch (final IOException e) {
+							LOGGER.warn("A(n) {} occurred while probing the content type of \"{}\"; Skipping file.",
+									new Object[] { e.getClass().getSimpleName(), inpath }, e);
+							shouldBeParsed = true;
+						}
+						return shouldBeParsed;
+					});
+					xmlFilePaths.map(Path::toAbsolutePath).map(Path::toString).forEach(result::add);
+				}
+			}
+			return result;
+		}
+
 		private static String parseOutputType(final CommandLine cl) {
 			String outExt = cl.getOptionValue(Parameter.OUTPUT_TYPE.optName, "arff");
 			if (!outExt.startsWith(".")) {
@@ -144,7 +173,7 @@ public final class TrainingDataWriter {
 				LOGGER.info("Will write data to \"{}\".", outdir);
 				final String outfileExt = Parameter.parseOutputType(cl);
 				LOGGER.info("Will write data in \"*{}\" format.", outfileExt);
-				final String[] appCtxLocs = cl.getOptionValues(Parameter.APP_CONTEXT_DEFINITIONS.optName);
+				final String[] appCtxLocs = Parameter.parseAppCtxDefPaths(cl).stream().toArray(String[]::new);
 				try (final FileSystemXmlApplicationContext appCtx = new FileSystemXmlApplicationContext(appCtxLocs)) {
 					final TrainingInstancesFactory instsFactory = appCtx.getBean(TrainingInstancesFactory.class);
 					final SessionEventDialogueManagerCacheSupplier sessionDiagMgrCacheSupplier = appCtx
