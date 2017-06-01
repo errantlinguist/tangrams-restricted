@@ -16,6 +16,8 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation;
 
+import se.kth.speech.nlp.Disfluencies;
+
 enum UtteranceProcessingOption implements HasAbbreviation {
 	DEDUPLICATE_TOKENS("dedupTokens"),
 	/**
@@ -38,7 +40,11 @@ enum UtteranceProcessingOption implements HasAbbreviation {
 	/**
 	 * Parses PPs and remove them.
 	 */
-	PP_REMOVAL("prunedPPs"), REMOVE_DISFLUENCIES("noDisfl"), REMOVE_FILLERS("noFillers"), REMOVE_STOPWORDS("noStops"),
+	PP_REMOVAL("prunedPPs"),
+	/**
+	 * Removes {@link Disfluencies#TOKEN_MATCHER disfluencies}.
+	 */
+	REMOVE_DISFLUENCIES("noDisfl"), REMOVE_FILLERS("noFillers"), REMOVE_STOPWORDS("noStops"),
 	/**
 	 * (Re-)tokenizes the utterance using Stanford CoreNLP's
 	 * {@link edu.stanford.nlp.process.PTBTokenizer<T>}.
