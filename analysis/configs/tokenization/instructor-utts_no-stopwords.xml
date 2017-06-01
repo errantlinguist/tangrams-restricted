@@ -6,7 +6,7 @@
 	http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
 	http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd">
 	
-	<import resource="../common/stopwords.xml"/>
+	<import resource="../stopwords.xml"/>
 
 	<beans>
 		<description>For each dialogue, the only utterances used for training and
