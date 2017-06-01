@@ -17,7 +17,6 @@
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map.Entry;
@@ -44,6 +43,7 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.
 import se.kth.speech.nlp.Disfluencies;
 import se.kth.speech.nlp.EnglishLocationalPrepositions;
 import se.kth.speech.nlp.SnowballPorter2EnglishStopwords;
+import se.kth.speech.nlp.stanford.Lemmatizer;
 import se.kth.speech.nlp.stanford.PhrasalHeadFilteringPredicate;
 import se.kth.speech.nlp.stanford.PhraseExtractingParsingTokenizer;
 import se.kth.speech.nlp.stanford.StanfordCoreNLPConfigurationVariant;
@@ -66,9 +66,6 @@ public final class UtteranceProcessorFactory implements Function<Executor, Event
 		final Label label = subTree.label();
 		return label == null ? false : "NP".equals(label.value());
 	};
-
-	private static final List<UtteranceProcessingOption> PARSING_OPTS = Arrays
-			.asList(UtteranceProcessingOption.NPS_ONLY, UtteranceProcessingOption.PP_REMOVAL);
 
 	private static final List<Entry<UtteranceProcessingOption, EventDialogueTransformer>> UNIFIABLE_PRE_PARSING_CLEANERS = createUnifiablePreParsingOptCleanerList();
 
@@ -113,8 +110,14 @@ public final class UtteranceProcessorFactory implements Function<Executor, Event
 		}
 
 		final boolean lemmatize = uttProcessingOptions.contains(UtteranceProcessingOption.LEMMATIZE);
-		final Optional<ParsingTokenization> tokenization = createParsingTokenizer(executor, lemmatize);
-		tokenization.ifPresent(tok -> tok.apply(executor));
+		final Optional<TokenizingEventDialogueTransformer> parsingTomenizer = createParsingTokenizer(executor,
+				lemmatize);
+		if (parsingTomenizer.isPresent()) {
+			chain.add(parsingTomenizer.get());
+		} else if (lemmatize) {
+			chain.add(new TokenizingEventDialogueTransformer(
+					new Lemmatizer(StanfordCoreNLPConfigurationVariant.TOKENIZING_LEMMATIZING.apply(executor))));
+		}
 
 		// Add stopword filter to the chain after parsing in order to
 		// prevent it from negatively affecting parsing accuracy
