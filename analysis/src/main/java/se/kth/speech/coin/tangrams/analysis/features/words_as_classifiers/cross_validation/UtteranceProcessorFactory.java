@@ -94,12 +94,12 @@ public final class UtteranceProcessorFactory implements Function<Executor, Event
 		return result;
 	}
 
-	private final Set<UtteranceProcessingOption> uttProcessingOptions;
+	private final Set<? super UtteranceProcessingOption> uttProcessingOptions;
 
 	/**
 	 *
 	 */
-	public UtteranceProcessorFactory(final Set<UtteranceProcessingOption> uttProcessingOptions) {
+	public UtteranceProcessorFactory(final Set<? super UtteranceProcessingOption> uttProcessingOptions) {
 		this.uttProcessingOptions = uttProcessingOptions;
 	}
 
