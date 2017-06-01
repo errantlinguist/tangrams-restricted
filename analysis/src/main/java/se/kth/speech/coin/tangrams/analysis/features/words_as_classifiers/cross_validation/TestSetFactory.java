@@ -112,7 +112,7 @@ public final class TestSetFactory {
 			}
 			trainingData = instancesFactory.apply(trainingSessionEvtDiagMgrs);
 		}
-		LOGGER.info("Read training data for {} class(es).", trainingData.getClassInstances().size());
+		LOGGER.info("Created training data for {} class(es).", trainingData.getClassInstances().size());
 		return new MutablePair<>(testSessionDataMgr, trainingData);
 	}
 
