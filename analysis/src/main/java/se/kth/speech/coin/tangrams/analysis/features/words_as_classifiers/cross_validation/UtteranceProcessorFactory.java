@@ -99,8 +99,7 @@ public final class UtteranceProcessorFactory implements Function<Executor, Event
 	/**
 	 *
 	 */
-	public UtteranceProcessorFactory(final Set<UtteranceProcessingOption> uttProcessingOptions,
-			final Tokenization tokenization) {
+	public UtteranceProcessorFactory(final Set<UtteranceProcessingOption> uttProcessingOptions) {
 		this.uttProcessingOptions = uttProcessingOptions;
 	}
 
