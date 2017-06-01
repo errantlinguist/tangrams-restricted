@@ -30,7 +30,6 @@ import java.util.function.Supplier;
 
 import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.ling.Label;
-import edu.stanford.nlp.pipeline.Annotator;
 import edu.stanford.nlp.pipeline.StanfordCoreNLP;
 import edu.stanford.nlp.trees.CollinsHeadFinder;
 import edu.stanford.nlp.trees.Tree;
@@ -56,7 +55,17 @@ import se.kth.speech.nlp.stanford.StanfordCoreNLPConfigurationVariant;
  */
 public final class UtteranceProcessorFactory implements Function<Executor, EventDialogueTransformer>, HasAbbreviation {
 
+	private static final Predicate<Tree> ANY_SUBTREE_MATCHER = tree -> true;
+
 	private static final InstructorUtteranceFilteringEventDialogueTransformer INST_UTT_DIAG_TRANSFORMER = new InstructorUtteranceFilteringEventDialogueTransformer();
+
+	private static final PhrasalHeadFilteringPredicate LOCATIONAL_PP_PRUNING_MATCHER = new PhrasalHeadFilteringPredicate(
+			Collections.singletonMap("PP", EnglishLocationalPrepositions.get()), new CollinsHeadFinder());
+
+	private static final Predicate<Tree> NP_WHITELISTING_PHRASE_MATCHER = subTree -> {
+		final Label label = subTree.label();
+		return label == null ? false : "NP".equals(label.value());
+	};
 
 	private static final List<UtteranceProcessingOption> PARSING_OPTS = Arrays
 			.asList(UtteranceProcessingOption.NPS_ONLY, UtteranceProcessingOption.PP_REMOVAL);
@@ -64,7 +73,7 @@ public final class UtteranceProcessorFactory implements Function<Executor, Event
 	private static final List<Entry<UtteranceProcessingOption, EventDialogueTransformer>> UNIFIABLE_PRE_PARSING_CLEANERS = createUnifiablePreParsingOptCleanerList();
 
 	private static List<Entry<UtteranceProcessingOption, EventDialogueTransformer>> createUnifiablePreParsingOptCleanerList() {
-		List<Entry<UtteranceProcessingOption, EventDialogueTransformer>> result = new ArrayList<>();
+		final List<Entry<UtteranceProcessingOption, EventDialogueTransformer>> result = new ArrayList<>();
 		result.add(new MutablePair<>(UtteranceProcessingOption.REMOVE_DISFLUENCIES,
 				new TokenFilteringEventDialogueTransformer(token -> !Disfluencies.TOKEN_MATCHER.test(token))));
 		final Set<String> fillerWords = SnowballPorter2EnglishStopwords.Variant.FILLERS.get();
@@ -78,69 +87,38 @@ public final class UtteranceProcessorFactory implements Function<Executor, Event
 	private final Set<UtteranceProcessingOption> uttProcessingOptions;
 
 	/**
-	 * 
+	 *
 	 */
-	public UtteranceProcessorFactory(Set<UtteranceProcessingOption> uttProcessingOptions, Tokenization tokenization) {
+	public UtteranceProcessorFactory(final Set<UtteranceProcessingOption> uttProcessingOptions,
+			final Tokenization tokenization) {
 		this.uttProcessingOptions = uttProcessingOptions;
 	}
-	
-	private static final PhrasalHeadFilteringPredicate LOCATIONAL_PP_PRUNING_MATCHER = new PhrasalHeadFilteringPredicate(
-			Collections.singletonMap("PP", EnglishLocationalPrepositions.get()), new CollinsHeadFinder());
-
-	
-	private static final Predicate<Tree> ANY_SUBTREE_MATCHER = tree -> true;
-	
-	private Optional<TokenizingEventDialogueTransformer> createParsingTokenizer(Executor executor, boolean lemmatize){
-		final Optional<TokenizingEventDialogueTransformer> result;
-		Supplier<StanfordCoreNLP> annotatorInst = StanfordCoreNLPConfigurationVariant.TOKENIZING_PARSING.apply(executor);
-		final Function<CoreLabel, String> parserTokenizer = lemmatize ? CoreLabel::lemma : CoreLabel::word;
-		if (uttProcessingOptions.contains(UtteranceProcessingOption.NPS_ONLY)) {
-			final Predicate<Tree> ppFilter = uttProcessingOptions.contains(UtteranceProcessingOption.PP_REMOVAL) ? LOCATIONAL_PP_PRUNING_MATCHER : ANY_SUBTREE_MATCHER; 
-			final TokenizingEventDialogueTransformer transformer = new TokenizingEventDialogueTransformer(new PhraseExtractingParsingTokenizer(
-					annotatorInst, parserTokenizer,
-					NP_WHITELISTING_PHRASE_MATCHER, ppFilter));
-			result = Optional.of(transformer);
-		} else if (uttProcessingOptions.contains(UtteranceProcessingOption.PP_REMOVAL)) {
-			final TokenizingEventDialogueTransformer transformer = new TokenizingEventDialogueTransformer(new se.kth.speech.nlp.stanford.ParsingTokenizer(
-					annotatorInst,
-					LOCATIONAL_PP_PRUNING_MATCHER, parserTokenizer));
-			result = Optional.of(transformer);
-		} else {
-			result = Optional.empty();
-		}		
-		return result;
-	}
-	
-	private static final Predicate<Tree> NP_WHITELISTING_PHRASE_MATCHER = subTree -> {
-		final Label label = subTree.label();
-		return label == null ? false : "NP".equals(label.value());
-	};
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.util.function.Function#apply(java.lang.Object)
 	 */
 	@Override
-	public EventDialogueTransformer apply(Executor executor) {
+	public EventDialogueTransformer apply(final Executor executor) {
 		final List<EventDialogueTransformer> chain = new ArrayList<>(uttProcessingOptions.size());
 		if (uttProcessingOptions.contains(UtteranceProcessingOption.INSTRUCTOR_ONLY)) {
 			chain.add(INST_UTT_DIAG_TRANSFORMER);
 		}
 
-		for (Entry<UtteranceProcessingOption, EventDialogueTransformer> preParsingOptCleaner : UNIFIABLE_PRE_PARSING_CLEANERS) {
+		for (final Entry<UtteranceProcessingOption, EventDialogueTransformer> preParsingOptCleaner : UNIFIABLE_PRE_PARSING_CLEANERS) {
 			if (uttProcessingOptions.contains(preParsingOptCleaner.getKey())) {
 				chain.add(preParsingOptCleaner.getValue());
 			}
 		}
 
-		boolean lemmatize = uttProcessingOptions.contains(UtteranceProcessingOption.LEMMATIZE);
+		final boolean lemmatize = uttProcessingOptions.contains(UtteranceProcessingOption.LEMMATIZE);
 		final Optional<ParsingTokenization> tokenization = createParsingTokenizer(executor, lemmatize);
 		tokenization.ifPresent(tok -> tok.apply(executor));
 
 		// Add stopword filter to the chain after parsing in order to
 		// prevent it from negatively affecting parsing accuracy
-		if (uttProcessingOptions.contains(UtteranceProcessingOption.REMOVE_STOPWORDS)){
+		if (uttProcessingOptions.contains(UtteranceProcessingOption.REMOVE_STOPWORDS)) {
 			final Set<String> fillerWords = SnowballPorter2EnglishStopwords.Variant.CANONICAL.get();
 			chain.add(new TokenFilteringEventDialogueTransformer(token -> !fillerWords.contains(token)));
 		}
@@ -153,6 +131,30 @@ public final class UtteranceProcessorFactory implements Function<Executor, Event
 				.collect(TokenizationAbbreviations.JOINER);
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	private Optional<TokenizingEventDialogueTransformer> createParsingTokenizer(final Executor executor,
+			final boolean lemmatize) {
+		final Optional<TokenizingEventDialogueTransformer> result;
+		final Supplier<StanfordCoreNLP> annotatorInst = StanfordCoreNLPConfigurationVariant.TOKENIZING_PARSING
+				.apply(executor);
+		final Function<CoreLabel, String> parserTokenizer = lemmatize ? CoreLabel::lemma : CoreLabel::word;
+		final boolean removePps = uttProcessingOptions.contains(UtteranceProcessingOption.PP_REMOVAL);
+		if (uttProcessingOptions.contains(UtteranceProcessingOption.NPS_ONLY)) {
+			final Predicate<Tree> ppFilter = removePps ? LOCATIONAL_PP_PRUNING_MATCHER : ANY_SUBTREE_MATCHER;
+			final TokenizingEventDialogueTransformer transformer = new TokenizingEventDialogueTransformer(
+					new PhraseExtractingParsingTokenizer(annotatorInst, parserTokenizer, NP_WHITELISTING_PHRASE_MATCHER,
+							ppFilter));
+			result = Optional.of(transformer);
+		} else if (removePps) {
+			final TokenizingEventDialogueTransformer transformer = new TokenizingEventDialogueTransformer(
+					new se.kth.speech.nlp.stanford.ParsingTokenizer(annotatorInst, LOCATIONAL_PP_PRUNING_MATCHER,
+							parserTokenizer));
+			result = Optional.of(transformer);
+		} else {
+			result = Optional.empty();
+		}
+		return result;
 	}
 
 }
