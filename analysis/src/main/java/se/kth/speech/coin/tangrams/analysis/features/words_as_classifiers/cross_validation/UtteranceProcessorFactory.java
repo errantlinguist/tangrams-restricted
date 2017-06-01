@@ -16,7 +16,9 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation;
 
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.Executor;
 import java.util.function.Function;
 
@@ -27,23 +29,37 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.
  * @since 1 Jun 2017
  *
  */
-public final class UtteranceProcessorFactory implements Function<Executor, EventDialogueTransformer> {
+public final class UtteranceProcessorFactory implements Function<Executor, EventDialogueTransformer>, HasAbbreviation {
 
-	private final Collection<UtteranceProcessingOption> uttPreprocessingOptions;
+	private final Collection<UtteranceProcessingOption> uttProcessingOptions;
+	
+	private static final List<UtteranceProcessingOption> PROCESSING_STEP_ORDERING = createProcessingStepOrdering();
 
+	private static 	List<UtteranceProcessingOption> createProcessingStepOrdering(){
+		List<UtteranceProcessingOption> result = Arrays.asList(UtteranceProcessingOption.INSTRUCTOR_ONLY,UtteranceProcessingOption.REMOVE_DISFLUENCIES,UtteranceProcessingOption.REMOVE_FILLERS,UtteranceProcessingOption.DEDUPLICATE_TOKENS,UtteranceProcessingOption.NPS_ONLY,UtteranceProcessingOption.PP_REMOVAL,UtteranceProcessingOption.LEMMATIZE,UtteranceProcessingOption.REMOVE_STOPWORDS);
+		assert result.size() == UtteranceProcessingOption.values().length;
+		return result;
+	}
+			
 	/**
 	 * 
 	 */
-	public UtteranceProcessorFactory(Collection<UtteranceProcessingOption> uttPreprocessingOptions, Tokenization tokenization) {
-		this.uttPreprocessingOptions = uttPreprocessingOptions;
-		// TODO Auto-generated constructor stub
+	public UtteranceProcessorFactory(Collection<UtteranceProcessingOption> uttProcessingOptions, Tokenization tokenization) {
+		this.uttProcessingOptions = uttProcessingOptions;
 	}
 
 	/* (non-Javadoc)
 	 * @see java.util.function.Function#apply(java.lang.Object)
 	 */
 	@Override
-	public EventDialogueTransformer apply(Executor t) {
+	public EventDialogueTransformer apply(Executor executor) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String getAbbreviation() {
+		uttProcessingOptions.stream().map(UtteranceProcessingOption::getAbbreviation).collect(TokenizationAbbreviations.JOINER);
 		// TODO Auto-generated method stub
 		return null;
 	}
