@@ -41,7 +41,7 @@ public final class SessionTester {
 
 	public static final class Result implements SessionTestStatistics {
 
-		private final List<Entry<EventDialogue, EventDialogueTester.Result>> diagTestResults;
+		private final List<Entry<EventDialogue, EventDialogueTestResults>> diagTestResults;
 
 		private final Int2IntMap goldStdReferentIdCounts;
 
@@ -55,7 +55,7 @@ public final class SessionTester {
 		 * @param uttDiag
 		 * @param results
 		 */
-		public void add(final Entry<EventDialogue, EventDialogueTester.Result> diagTestResults) {
+		public void add(final Entry<EventDialogue, EventDialogueTestResults> diagTestResults) {
 			this.diagTestResults.add(diagTestResults);
 			final int refId = diagTestResults.getValue().getGoldStandardReferentId();
 			goldStdReferentIdCounts.put(refId, goldStdReferentIdCounts.get(refId) + 1);
@@ -69,7 +69,7 @@ public final class SessionTester {
 		/**
 		 * @return the diagResults
 		 */
-		public List<Entry<EventDialogue, EventDialogueTester.Result>> getDialogueTestResults() {
+		public List<Entry<EventDialogue, EventDialogueTestResults>> getDialogueTestResults() {
 			return diagTestResults;
 		}
 
@@ -142,7 +142,7 @@ public final class SessionTester {
 		 */
 		@Override
 		public int totalTokensTested() {
-			return diagTestResults.stream().map(Entry::getValue).mapToInt(EventDialogueTester.Result::totalTokensTested)
+			return diagTestResults.stream().map(Entry::getValue).mapToInt(EventDialogueTestResults::totalTokensTested)
 					.sum();
 		}
 
@@ -155,14 +155,14 @@ public final class SessionTester {
 		 */
 		@Override
 		public int totalUtteranceCount() {
-			return diagTestResults.stream().map(Entry::getValue)
-					.mapToInt(EventDialogueTester.Result::totalUtteranceCount).sum();
+			return diagTestResults.stream().map(Entry::getValue).mapToInt(EventDialogueTestResults::totalUtteranceCount)
+					.sum();
 		}
 
 		@Override
 		public int totalUtterancesTested() {
 			return diagTestResults.stream().map(Entry::getValue)
-					.mapToInt(EventDialogueTester.Result::totalUtterancesTested).sum();
+					.mapToInt(EventDialogueTestResults::totalUtterancesTested).sum();
 		}
 
 		/*
@@ -192,8 +192,8 @@ public final class SessionTester {
 
 		private double sumRank() {
 			double result = 0.0;
-			for (final Entry<EventDialogue, EventDialogueTester.Result> diagTestResultsEntry : diagTestResults) {
-				final EventDialogueTester.Result diagTestResults = diagTestResultsEntry.getValue();
+			for (final Entry<EventDialogue, EventDialogueTestResults> diagTestResultsEntry : diagTestResults) {
+				final EventDialogueTestResults diagTestResults = diagTestResultsEntry.getValue();
 				result += diagTestResults.rank();
 			}
 			return result;
@@ -203,8 +203,8 @@ public final class SessionTester {
 			double result = 0.0;
 			// TODO: Find a better way to calculate MRR, which avoids cumulative
 			// floating-point precision errors
-			for (final Entry<EventDialogue, EventDialogueTester.Result> diagTestResultsEntry : diagTestResults) {
-				final EventDialogueTester.Result diagTestResults = diagTestResultsEntry.getValue();
+			for (final Entry<EventDialogue, EventDialogueTestResults> diagTestResultsEntry : diagTestResults) {
+				final EventDialogueTestResults diagTestResults = diagTestResultsEntry.getValue();
 				final double diagRRSum = diagTestResults.reciprocalRank();
 				result += diagRRSum;
 			}
@@ -232,10 +232,10 @@ public final class SessionTester {
 
 		LOGGER.info("Testing {} individual dialogue(s).", uttDiags.size());
 		for (final EventDialogue uttDiag : uttDiags) {
-			final Optional<EventDialogueTester.Result> optTestResults = diagTester.apply(uttDiag,
+			final Optional<EventDialogueTestResults> optTestResults = diagTester.apply(uttDiag,
 					sessionEventDiagMgr.getGameHistory());
 			if (optTestResults.isPresent()) {
-				final EventDialogueTester.Result results = optTestResults.get();
+				final EventDialogueTestResults results = optTestResults.get();
 				result.add(new MutablePair<>(uttDiag, results));
 			} else {
 				LOGGER.debug("No utterances tested for {}.", uttDiag);

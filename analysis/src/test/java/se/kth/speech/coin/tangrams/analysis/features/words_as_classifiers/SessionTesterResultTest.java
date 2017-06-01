@@ -35,7 +35,7 @@ import se.kth.speech.coin.tangrams.analysis.Utterance;
  */
 public final class SessionTesterResultTest {
 
-	private static EventDialogueTester.Result createMockDiagTestResult(final int rank) {
+	private static EventDialogueTestResults createMockDiagTestResult(final int rank) {
 		final Int2DoubleMap referentConfidenceVals = new Int2DoubleOpenHashMap();
 		final int[] expectedRanking = new int[4];
 		referentConfidenceVals.put(3, 0.23245);
@@ -51,7 +51,7 @@ public final class SessionTesterResultTest {
 				3.3f);
 		final EventDialogue transformedDiag = new EventDialogue(Arrays.asList(new Event()), Arrays.asList(testUtt));
 		final int totalDiagUttCount = 1;
-		return new EventDialogueTester.Result(referentConfidenceVals, goldStandardReferentId, transformedDiag,
+		return new EventDialogueTestResults(referentConfidenceVals, goldStandardReferentId, transformedDiag,
 				totalDiagUttCount);
 	}
 
@@ -62,9 +62,9 @@ public final class SessionTesterResultTest {
 				3.3f);
 		final EventDialogue diag = new EventDialogue(Arrays.asList(new Event()), Arrays.asList(testUtt));
 
-		final EventDialogueTester.Result diagTestResult1 = createMockDiagTestResult(1);
+		final EventDialogueTestResults diagTestResult1 = createMockDiagTestResult(1);
 		testInst.add(new MutablePair<>(diag, diagTestResult1));
-		final EventDialogueTester.Result diagTestResult2 = createMockDiagTestResult(2);
+		final EventDialogueTestResults diagTestResult2 = createMockDiagTestResult(2);
 		testInst.add(new MutablePair<>(diag, diagTestResult2));
 		Assert.assertEquals(1.5, testInst.meanRank(), 0.00001);
 	}
@@ -76,9 +76,9 @@ public final class SessionTesterResultTest {
 				3.3f);
 		final EventDialogue diag = new EventDialogue(Arrays.asList(new Event()), Arrays.asList(testUtt));
 
-		final EventDialogueTester.Result diagTestResult1 = createMockDiagTestResult(1);
+		final EventDialogueTestResults diagTestResult1 = createMockDiagTestResult(1);
 		testInst.add(new MutablePair<>(diag, diagTestResult1));
-		final EventDialogueTester.Result diagTestResult2 = createMockDiagTestResult(2);
+		final EventDialogueTestResults diagTestResult2 = createMockDiagTestResult(2);
 		testInst.add(new MutablePair<>(diag, diagTestResult2));
 		Assert.assertEquals(0.75, testInst.meanReciprocalRank(), 0.00001);
 	}

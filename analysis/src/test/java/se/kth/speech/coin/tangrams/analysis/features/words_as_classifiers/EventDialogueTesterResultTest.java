@@ -57,7 +57,7 @@ public final class EventDialogueTesterResultTest {
 				3.3f);
 		final EventDialogue transformedDiag = new EventDialogue(Arrays.asList(new Event()), Arrays.asList(testUtt));
 		final int totalDiagUttCount = 1;
-		final EventDialogueTester.Result testInst = new EventDialogueTester.Result(referentConfidenceVals,
+		final EventDialogueTestResults testInst = new EventDialogueTestResults(referentConfidenceVals,
 				goldStandardReferentId, transformedDiag, totalDiagUttCount);
 		Assert.assertEquals(3, testInst.rank(), 0.00001);
 	}
@@ -74,7 +74,7 @@ public final class EventDialogueTesterResultTest {
 				3.3f);
 		final EventDialogue transformedDiag = new EventDialogue(Arrays.asList(new Event()), Arrays.asList(testUtt));
 		final int totalDiagUttCount = 1;
-		final EventDialogueTester.Result testInst = new EventDialogueTester.Result(referentConfidenceVals,
+		final EventDialogueTestResults testInst = new EventDialogueTestResults(referentConfidenceVals,
 				goldStandardReferentId, transformedDiag, totalDiagUttCount);
 		Assert.assertEquals(1, testInst.rank(), 0.00001);
 	}
@@ -91,7 +91,7 @@ public final class EventDialogueTesterResultTest {
 				3.3f);
 		final EventDialogue transformedDiag = new EventDialogue(Arrays.asList(new Event()), Arrays.asList(testUtt));
 		final int totalDiagUttCount = 1;
-		final EventDialogueTester.Result testInst = new EventDialogueTester.Result(referentConfidenceVals,
+		final EventDialogueTestResults testInst = new EventDialogueTestResults(referentConfidenceVals,
 				goldStandardReferentId, transformedDiag, totalDiagUttCount);
 		Assert.assertEquals(0.33333, testInst.reciprocalRank(), 0.00001);
 	}
@@ -108,7 +108,7 @@ public final class EventDialogueTesterResultTest {
 				3.3f);
 		final EventDialogue transformedDiag = new EventDialogue(Arrays.asList(new Event()), Arrays.asList(testUtt));
 		final int totalDiagUttCount = 1;
-		final EventDialogueTester.Result testInst = new EventDialogueTester.Result(referentConfidenceVals,
+		final EventDialogueTestResults testInst = new EventDialogueTestResults(referentConfidenceVals,
 				goldStandardReferentId, transformedDiag, totalDiagUttCount);
 		Assert.assertEquals(1, testInst.reciprocalRank(), 0.00001);
 	}

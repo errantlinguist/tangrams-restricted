@@ -53,7 +53,7 @@ import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
 import se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttributeContext;
 import se.kth.speech.coin.tangrams.analysis.features.weka.WordClassInstancesFactory;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.EventDialogueTester;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.EventDialogueTestResults;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.ReferentConfidenceMapFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.SessionTestStatistics;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.SessionTester;
@@ -128,7 +128,7 @@ public final class Tester {
 			this.iterCount = iterCount;
 		}
 
-		public Stream<Entry<EventDialogue, EventDialogueTester.Result>> getAllDialogueTestResults() {
+		public Stream<Entry<EventDialogue, EventDialogueTestResults>> getAllDialogueTestResults() {
 			return sessionResults.values().stream().flatMap(List::stream)
 					.map(CrossValidationTestSummary::getTestResults).map(SessionTester.Result::getDialogueTestResults)
 					.flatMap(List::stream);

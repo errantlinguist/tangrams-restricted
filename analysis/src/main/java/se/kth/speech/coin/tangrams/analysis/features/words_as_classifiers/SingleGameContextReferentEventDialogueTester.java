@@ -51,9 +51,9 @@ public final class SingleGameContextReferentEventDialogueTester implements Event
 	}
 
 	@Override
-	public Optional<Result> apply(final EventDialogue uttDiag, final GameHistory history)
+	public Optional<EventDialogueTestResults> apply(final EventDialogue uttDiag, final GameHistory history)
 			throws ClassificationException {
-		final Optional<Result> result;
+		final Optional<EventDialogueTestResults> result;
 		final EventDialogue transformedDiag = diagTransformer.apply(uttDiag);
 
 		final List<Utterance> allUtts = transformedDiag.getUtts();
@@ -68,7 +68,7 @@ public final class SingleGameContextReferentEventDialogueTester implements Event
 			if (optReferentConfidenceVals.isPresent()) {
 				final Int2DoubleMap referentConfidenceVals = optReferentConfidenceVals.get();
 				result = uttCtx.findLastSelectedEntityId().map(goldStandardEntityId -> {
-					return new Result(referentConfidenceVals, goldStandardEntityId, transformedDiag,
+					return new EventDialogueTestResults(referentConfidenceVals, goldStandardEntityId, transformedDiag,
 							uttDiag.getUtts().size());
 				});
 			} else {

@@ -52,7 +52,7 @@ import se.kth.speech.coin.tangrams.analysis.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.Utterance;
 import se.kth.speech.coin.tangrams.analysis.UtteranceDialogueRepresentationStringFactory;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.EventDialogueTester;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.EventDialogueTestResults;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.SessionTester;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.Tester.CrossValidationTestSummary;
 
@@ -228,7 +228,7 @@ public final class DialogueAnalysisWriter implements Consumer<Tester.Result> {
 				final int iterNo = sessionResultIter.nextIndex();
 				if (iterNo <= maxIters) {
 					int sessionDialogueOrder = 1;
-					for (final Entry<EventDialogue, EventDialogueTester.Result> diagTestResults : sessionResults
+					for (final Entry<EventDialogue, EventDialogueTestResults> diagTestResults : sessionResults
 							.getDialogueTestResults()) {
 						writeRow(inpath, iterNo, sessionDialogueOrder++, diagTestResults);
 					}
@@ -252,11 +252,11 @@ public final class DialogueAnalysisWriter implements Consumer<Tester.Result> {
 	}
 
 	private void writeRow(final Object key, final Integer iterNo, final Integer sequenceOrder,
-			final Entry<EventDialogue, EventDialogueTester.Result> diagTestResults) {
+			final Entry<EventDialogue, EventDialogueTestResults> diagTestResults) {
 		final EventDialogue diag = diagTestResults.getKey();
 		final String timestamp = diag.getFirstEvent().map(Event::getTime).orElse("(no event found for dialogue)");
 		final String uttDiagRepr = UTT_DIAG_REPR_FACTORY.apply(diag.getUtts().iterator());
-		final EventDialogueTester.Result testResults = diagTestResults.getValue();
+		final EventDialogueTestResults testResults = diagTestResults.getValue();
 		final Stream<Utterance> uttsTested = testResults.utterancesTested();
 		final String testedUttDiagRepr = UTT_DIAG_REPR_FACTORY.apply(uttsTested.iterator());
 
