@@ -33,7 +33,7 @@ import se.kth.speech.coin.tangrams.analysis.Utterance;
  * @since Jun 1, 2017
  *
  */
-public final class SessionTesterResultTest {
+public final class SessionTestResultsTest {
 
 	private static EventDialogueTestResults createMockDiagTestResult(final int rank) {
 		final Int2DoubleMap referentConfidenceVals = new Int2DoubleOpenHashMap();
