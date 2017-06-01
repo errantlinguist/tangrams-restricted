@@ -26,25 +26,89 @@ final class TrainingContext {
 
 	private final ApplicationContext appCtx;
 
-	private final EventDialogueTransformer diagTransformer;
-
-	// private final TokenFiltering tokenFilteringMethod;
-	//
-	// private final Tokenization tokenizationMethod;
-	//
-	// private final UtteranceFiltering uttFilteringMethod;
-
 	private final ExecutorService backgroundJobExecutor;
 
-	TrainingContext(final UtteranceFiltering uttFilteringMethod, final Tokenization tokenizationMethod,
-			final TokenFiltering tokenFilteringMethod, final EventDialogueTransformer diagTransformer,
-			final ApplicationContext appCtx, final ExecutorService backgroundJobExecutor) {
-		// this.uttFilteringMethod = uttFilteringMethod;
-		// this.tokenizationMethod = tokenizationMethod;
-		// this.tokenFilteringMethod = tokenFilteringMethod;
+	private final EventDialogueTransformer diagTransformer;
+
+	TrainingContext(final EventDialogueTransformer diagTransformer, final ApplicationContext appCtx,
+			final ExecutorService backgroundJobExecutor) {
 		this.diagTransformer = diagTransformer;
 		this.appCtx = appCtx;
 		this.backgroundJobExecutor = backgroundJobExecutor;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(final Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (!(obj instanceof TrainingContext)) {
+			return false;
+		}
+		final TrainingContext other = (TrainingContext) obj;
+		if (appCtx == null) {
+			if (other.appCtx != null) {
+				return false;
+			}
+		} else if (!appCtx.equals(other.appCtx)) {
+			return false;
+		}
+		if (backgroundJobExecutor == null) {
+			if (other.backgroundJobExecutor != null) {
+				return false;
+			}
+		} else if (!backgroundJobExecutor.equals(other.backgroundJobExecutor)) {
+			return false;
+		}
+		if (diagTransformer == null) {
+			if (other.diagTransformer != null) {
+				return false;
+			}
+		} else if (!diagTransformer.equals(other.diagTransformer)) {
+			return false;
+		}
+		return true;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + (appCtx == null ? 0 : appCtx.hashCode());
+		result = prime * result + (backgroundJobExecutor == null ? 0 : backgroundJobExecutor.hashCode());
+		result = prime * result + (diagTransformer == null ? 0 : diagTransformer.hashCode());
+		return result;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		final StringBuilder builder = new StringBuilder();
+		builder.append("TrainingContext [appCtx=");
+		builder.append(appCtx);
+		builder.append(", diagTransformer=");
+		builder.append(diagTransformer);
+		builder.append(", backgroundJobExecutor=");
+		builder.append(backgroundJobExecutor);
+		builder.append("]");
+		return builder.toString();
 	}
 
 	/**
