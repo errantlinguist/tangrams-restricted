@@ -128,8 +128,9 @@ public final class UtteranceProcessorFactory implements Function<Executor, Event
 		if (parsingTomenizer.isPresent()) {
 			chain.add(parsingTomenizer.get());
 		} else if (lemmatize) {
-			chain.add(new TokenizingEventDialogueTransformer(
-					new Lemmatizer(StanfordCoreNLPConfigurationVariant.TOKENIZING_LEMMATIZING.apply(executor))));
+			final Supplier<StanfordCoreNLP> annotatorSupplier = StanfordCoreNLPConfigurationVariant.TOKENIZING_LEMMATIZING
+					.apply(executor);
+			chain.add(new TokenizingEventDialogueTransformer(new Lemmatizer(annotatorSupplier)));
 		}
 
 		// Add stopword filter to the chain after parsing in order to
