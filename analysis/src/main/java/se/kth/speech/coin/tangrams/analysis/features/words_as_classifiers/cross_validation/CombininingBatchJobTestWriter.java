@@ -54,6 +54,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
+import se.kth.speech.coin.tangrams.CLIParameters;
 import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.StatisticsWriter.SummaryDatum;
@@ -130,18 +131,6 @@ public final class CombininingBatchJobTestWriter implements Consumer<BatchJobSum
 		private static Options createOptions() {
 			final Options result = new Options();
 			Arrays.stream(Parameter.values()).map(Parameter::get).forEach(result::addOption);
-			return result;
-		}
-
-		private static OptionalInt parseIterCount(final CommandLine cl) throws ParseException {
-			final Number optVal = (Number) cl.getParsedOptionValue(Parameter.ITER_COUNT.optName);
-			final OptionalInt result;
-			if (optVal == null) {
-				result = OptionalInt.empty();
-			} else {
-				final int val = optVal.intValue();
-				result = OptionalInt.of(val);
-			}
 			return result;
 		}
 
@@ -227,7 +216,8 @@ public final class CombininingBatchJobTestWriter implements Consumer<BatchJobSum
 			} else {
 				final Consumer<Tester> testerConfigurator;
 				{
-					final OptionalInt optIterCount = Parameter.parseIterCount(cl);
+					final OptionalInt optIterCount = CLIParameters
+							.parseIterCount((Number) cl.getParsedOptionValue(Parameter.ITER_COUNT.optName));
 					if (optIterCount.isPresent()) {
 						final int iterCount = optIterCount.getAsInt();
 						LOGGER.info("Will run {} training/testing iteration(s).", iterCount);
@@ -258,8 +248,8 @@ public final class CombininingBatchJobTestWriter implements Consumer<BatchJobSum
 							!appendSummary);
 					try (final ClassPathXmlApplicationContext appCtx = new ClassPathXmlApplicationContext(
 							"combining-batch-tester.xml", CombininingBatchJobTestWriter.class)) {
-						final CombiningBatchJobTester tester = new CombiningBatchJobTester(backgroundJobExecutor, appCtx, writer,
-								testerConfigurator);
+						final CombiningBatchJobTester tester = new CombiningBatchJobTester(backgroundJobExecutor,
+								appCtx, writer, testerConfigurator);
 						final CombiningBatchJobTester.Input input = new CombiningBatchJobTester.Input(
 								uttFilteringMethods, tokenizationMethods, tokenFilteringMethods, trainingMethods,
 								allSessionDataFuture.get());

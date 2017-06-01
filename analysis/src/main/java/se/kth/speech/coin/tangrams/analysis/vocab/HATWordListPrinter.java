@@ -23,7 +23,6 @@ import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.NavigableSet;
@@ -45,6 +44,7 @@ import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import se.kth.speech.coin.tangrams.CLIParameters;
 import se.kth.speech.hat.xsd.Annotation;
 
 /**
@@ -74,20 +74,6 @@ public final class HATWordListPrinter {
 		private static Options createOptions() {
 			final Options result = new Options();
 			Arrays.stream(Parameter.values()).map(Parameter::get).forEach(result::addOption);
-			return result;
-		}
-
-		private static PrintWriter parseOutpath(final CommandLine cl) throws ParseException, IOException {
-			final PrintWriter result;
-			final File outfile = (File) cl.getParsedOptionValue(Parameter.OUTFILE.optName);
-			if (outfile == null) {
-				LOGGER.info("No output file path specified; Writing to standard output.");
-				result = new PrintWriter(System.out);
-			} else {
-				LOGGER.info("Output file path is \"{}\".", outfile);
-				result = new PrintWriter(Files.newBufferedWriter(outfile.toPath(), StandardOpenOption.CREATE,
-						StandardOpenOption.TRUNCATE_EXISTING));
-			}
 			return result;
 		}
 
@@ -145,7 +131,8 @@ public final class HATWordListPrinter {
 				}
 				case 1: {
 					final Path inpath = inpaths[0];
-					try (final PrintWriter out = Parameter.parseOutpath(cl)) {
+					try (final PrintWriter out = CLIParameters
+							.parseOutpath((File) cl.getParsedOptionValue(Parameter.OUTFILE.optName))) {
 						run(inpath, out);
 					}
 					break;

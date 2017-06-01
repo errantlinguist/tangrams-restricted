@@ -25,7 +25,6 @@ import java.math.RoundingMode;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -49,6 +48,7 @@ import org.slf4j.LoggerFactory;
 import com.eclipsesource.json.JsonObject;
 
 import iristk.system.Event;
+import se.kth.speech.coin.tangrams.CLIParameters;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
 import se.kth.speech.coin.tangrams.view.UserPrompts;
 
@@ -89,19 +89,6 @@ public final class LoggedEventTimeStretcher {
 			return result;
 		}
 
-		private static PrintWriter parseOutpath(final CommandLine cl) throws ParseException, IOException {
-			final PrintWriter result;
-			final File outfile = (File) cl.getParsedOptionValue(Parameter.OUTPATH.optName);
-			if (outfile == null) {
-				LOGGER.info("No output file path specified; Writing to standard output.");
-				result = new PrintWriter(System.out);
-			} else {
-				LOGGER.info("Output file path is \"{}\".", outfile);
-				result = new PrintWriter(Files.newBufferedWriter(outfile.toPath(), StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING));
-			}
-			return result;
-		}
-
 		private static void printHelp() {
 			final HelpFormatter formatter = new HelpFormatter();
 			formatter.printHelp(LoggedEventTimeStretcher.class.getSimpleName() + " INPATH", OPTIONS);
@@ -130,7 +117,8 @@ public final class LoggedEventTimeStretcher {
 				LOGGER.info("Will read event log data from \"{}\".", inpath);
 				final BigDecimal stretchFactor = new BigDecimal(cl.getOptionValue(Parameter.FACTOR.optName));
 				LOGGER.info("Will stretch logged events by a factor of {}.", stretchFactor);
-				try (final PrintWriter out = Parameter.parseOutpath(cl)) {
+				try (final PrintWriter out = CLIParameters
+						.parseOutpath((File) cl.getParsedOptionValue(Parameter.OUTPATH.optName))) {
 					run(inpath, stretchFactor, out);
 				}
 				break;

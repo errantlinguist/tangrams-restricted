@@ -19,20 +19,15 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.nio.file.FileVisitOption;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.EnumMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.OptionalInt;
-import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -48,10 +43,9 @@ import org.apache.commons.cli.MissingOptionException;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.context.support.FileSystemXmlApplicationContext;
 
+import se.kth.speech.coin.tangrams.CLIParameters;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.SessionTestResults;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.Tester.CrossValidationTestSummary;
@@ -120,57 +114,6 @@ public final class StatisticsWriter implements Consumer<Tester.Result> {
 			return result;
 		}
 
-		private static Set<String> parseAppCtxDefPaths(final CommandLine cl) throws IOException {
-			final String[] appCtxLocs = cl.getOptionValues(Parameter.APP_CONTEXT_DEFINITIONS.optName);
-			final Set<String> result = new HashSet<>();
-			for (final String appCtxLoc : appCtxLocs) {
-				final Path appCtxPath = Paths.get(appCtxLoc);
-				try (Stream<Path> childPaths = Files.walk(appCtxPath, FileVisitOption.FOLLOW_LINKS)) {
-					final Stream<Path> xmlFilePaths = childPaths.filter(inpath -> {
-						boolean shouldBeParsed = false;
-						try {
-							final String contentType = Files.probeContentType(inpath);
-							shouldBeParsed = contentType != null && contentType.endsWith("/xml");
-						} catch (final IOException e) {
-							LOGGER.warn("A(n) {} occurred while probing the content type of \"{}\"; Skipping file.",
-									new Object[] { e.getClass().getSimpleName(), inpath }, e);
-							shouldBeParsed = true;
-						}
-						return shouldBeParsed;
-					});
-					xmlFilePaths.map(Path::toAbsolutePath).map(Path::toString).forEach(result::add);
-				}
-			}
-			return result;
-		}
-
-		private static OptionalInt parseIterCount(final CommandLine cl) throws ParseException {
-			final Number optVal = (Number) cl.getParsedOptionValue(Parameter.ITER_COUNT.optName);
-			final OptionalInt result;
-			if (optVal == null) {
-				result = OptionalInt.empty();
-			} else {
-				final int val = optVal.intValue();
-				LOGGER.info("Will run {} training/testing iteration(s).", val);
-				result = OptionalInt.of(val);
-			}
-			return result;
-		}
-
-		private static PrintWriter parseOutpath(final CommandLine cl) throws ParseException, IOException {
-			final PrintWriter result;
-			final File outfile = (File) cl.getParsedOptionValue(Parameter.OUTPATH.optName);
-			if (outfile == null) {
-				LOGGER.info("No output file path specified; Writing to standard output.");
-				result = new PrintWriter(System.out);
-			} else {
-				LOGGER.info("Output file path is \"{}\".", outfile);
-				result = new PrintWriter(Files.newBufferedWriter(outfile.toPath(), StandardOpenOption.CREATE,
-						StandardOpenOption.TRUNCATE_EXISTING));
-			}
-			return result;
-		}
-
 		private static void printHelp() {
 			final HelpFormatter formatter = new HelpFormatter();
 			formatter.printHelp(StatisticsWriter.class.getSimpleName() + " INPATHS...", OPTIONS);
@@ -183,8 +126,6 @@ public final class StatisticsWriter implements Consumer<Tester.Result> {
 		}
 
 	}
-
-	private static final Logger LOGGER = LoggerFactory.getLogger(StatisticsWriter.class);
 
 	private static final Collector<CharSequence, ?, String> ROW_CELL_JOINER = Collectors.joining("\t");
 
@@ -211,13 +152,17 @@ public final class StatisticsWriter implements Consumer<Tester.Result> {
 				throw new MissingOptionException("No input path(s) specified.");
 
 			} else {
-				final String[] appCtxLocs = Parameter.parseAppCtxDefPaths(cl).stream().toArray(String[]::new);
-				final OptionalInt iterCount = Parameter.parseIterCount(cl);
+				final String[] appCtxLocs = CLIParameters
+						.parseAppCtxDefPaths(cl.getOptionValues(Parameter.APP_CONTEXT_DEFINITIONS.optName)).stream()
+						.toArray(String[]::new);
+				final OptionalInt iterCount = CLIParameters
+						.parseIterCount((Number) cl.getParsedOptionValue(Parameter.ITER_COUNT.optName));
 				try (final FileSystemXmlApplicationContext appCtx = new FileSystemXmlApplicationContext(appCtxLocs)) {
 					final Tester tester = appCtx.getBean(Tester.class);
 					iterCount.ifPresent(tester::setIterCount);
 					final Tester.Result testResults = tester.apply(TestSessionData.readTestSessionData(inpaths));
-					try (PrintWriter out = Parameter.parseOutpath(cl)) {
+					try (PrintWriter out = CLIParameters
+							.parseOutpath((File) cl.getParsedOptionValue(Parameter.OUTPATH.optName))) {
 						final StatisticsWriter writer = new StatisticsWriter(out);
 						writer.accept(testResults);
 					}
