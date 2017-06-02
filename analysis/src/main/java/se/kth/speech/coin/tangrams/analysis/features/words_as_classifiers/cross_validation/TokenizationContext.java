@@ -17,71 +17,40 @@
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation;
 
 import java.util.Set;
+import java.util.concurrent.Executor;
 
-final class TestParameters {
+final class TokenizationContext {
 
 	private final Set<Cleaning> cleaning;
 
-	private final TokenFiltering tokenFiltering;
-
-	private final Tokenization tokenization;
+	private final Executor executor;
 
 	private final TokenType tokenType;
 
-	private final Training trainingMethod;
-
-	private final UtteranceFiltering uttFiltering;
-
-	TestParameters(final UtteranceFiltering uttFiltering, final Set<Cleaning> cleaning, final Tokenization tokenization,
-			final TokenType tokenType, final TokenFiltering tokenFiltering, final Training trainingMethod) {
-		this.uttFiltering = uttFiltering;
+	TokenizationContext(final Set<Cleaning> cleaning, final TokenType tokenType, final Executor executor) {
 		this.cleaning = cleaning;
-		this.tokenization = tokenization;
 		this.tokenType = tokenType;
-		this.tokenFiltering = tokenFiltering;
-		this.trainingMethod = trainingMethod;
+		this.executor = executor;
 	}
 
 	/**
 	 * @return the cleaning
 	 */
-	public Set<Cleaning> getCleaning() {
+	Set<Cleaning> getCleaning() {
 		return cleaning;
 	}
 
 	/**
-	 * @return the tokenFiltering
+	 * @return the executor
 	 */
-	public TokenFiltering getTokenFiltering() {
-		return tokenFiltering;
-	}
-
-	/**
-	 * @return the tokenization
-	 */
-	public Tokenization getTokenization() {
-		return tokenization;
+	Executor getExecutor() {
+		return executor;
 	}
 
 	/**
 	 * @return the tokenType
 	 */
-	public TokenType getTokenType() {
+	TokenType getTokenType() {
 		return tokenType;
 	}
-
-	/**
-	 * @return the trainingMethod
-	 */
-	public Training getTrainingMethod() {
-		return trainingMethod;
-	}
-
-	/**
-	 * @return the uttFiltering
-	 */
-	public UtteranceFiltering getUttFiltering() {
-		return uttFiltering;
-	}
-
 }

@@ -19,6 +19,8 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross
 import java.io.IOException;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -33,6 +35,8 @@ import org.springframework.context.ApplicationContext;
 import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
 import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManagerCacheSupplier;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.CachingEventDialogueTransformer;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.ChainedEventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.TrainingInstancesFactory;
 
@@ -47,13 +51,27 @@ public final class CombiningBatchJobTester {
 
 		private final Map<SessionDataManager, Path> allSessions;
 
+		private final Iterable<Set<Cleaning>> cleaningMethods;
+
+		private final Iterable<TokenFiltering> tokenFilteringMethods;
+
+		private final Iterable<Tokenization> tokenizationMethods;
+
+		private final Iterable<TokenType> tokenTypes;
+
 		private final Iterable<Training> trainingMethods;
 
-		private final Iterable<Set<UtteranceProcessingOption>> uttProcessingOptSets;
+		private final Iterable<UtteranceFiltering> uttFilteringMethods;
 
-		public Input(final Iterable<Set<UtteranceProcessingOption>> uttProcessingOptSets,
+		public Input(final Iterable<UtteranceFiltering> uttFilteringMethods,
+				final Iterable<Set<Cleaning>> cleaningMethods, final Iterable<Tokenization> tokenizationMethods,
+				final Iterable<TokenType> tokenTypes, final Iterable<TokenFiltering> tokenFilteringMethods,
 				final Iterable<Training> trainingMethods, final Map<SessionDataManager, Path> allSessions) {
-			this.uttProcessingOptSets = uttProcessingOptSets;
+			this.uttFilteringMethods = uttFilteringMethods;
+			this.cleaningMethods = cleaningMethods;
+			this.tokenizationMethods = tokenizationMethods;
+			this.tokenTypes = tokenTypes;
+			this.tokenFilteringMethods = tokenFilteringMethods;
 			this.trainingMethods = trainingMethods;
 			this.allSessions = allSessions;
 		}
@@ -88,26 +106,49 @@ public final class CombiningBatchJobTester {
 	public void accept(final Input input) throws ClassificationException, ExecutionException, IOException {
 		final SessionEventDialogueManagerCacheSupplier sessionDiagMgrCacheSupplier = appCtx
 				.getBean(SessionEventDialogueManagerCacheSupplier.class);
-		for (final Set<UtteranceProcessingOption> uttProcessingOpts : input.uttProcessingOptSets) {
-			final UtteranceProcessorFactory uttProcessorFactory = new UtteranceProcessorFactory(uttProcessingOpts);
-			final EventDialogueTransformer diagTransformer = uttProcessorFactory.apply(backgroundJobExecutor);
-			final TrainingContext trainingCtx = new TrainingContext(diagTransformer, appCtx, backgroundJobExecutor);
-			for (final Training trainingMethod : input.trainingMethods) {
-				final Entry<TrainingInstancesFactory, Integer> trainingInstsFactoryIterCount = trainingMethod
-						.apply(trainingCtx);
-				final TestSetFactory testSetFactory = new TestSetFactory(trainingInstsFactoryIterCount.getKey(),
-						sessionDiagMgrCacheSupplier);
-				final Tester tester = appCtx.getBean(Tester.class, testSetFactory, diagTransformer,
-						backgroundJobExecutor);
-				tester.setIterCount(trainingInstsFactoryIterCount.getValue());
-				testerConfigurator.accept(tester);
-				final TestParameters testParams = new TestParameters(uttProcessorFactory.getAbbreviation(), trainingMethod);
-				LOGGER.info("Testing {}.", testParams);
 
-				final LocalDateTime testTimestamp = LocalDateTime.now();
-				final Tester.Result testResults = tester.apply(input.allSessions);
-				final BatchJobSummary batchSummary = new BatchJobSummary(testTimestamp, testParams, testResults);
-				batchJobResultHandler.accept(batchSummary);
+		for (final UtteranceFiltering uttFilteringMethod : input.uttFilteringMethods) {
+			final EventDialogueTransformer uttFilter = uttFilteringMethod.get();
+
+			for (final Set<Cleaning> cleaningMethodSet : input.cleaningMethods) {
+				for (final Tokenization tokenizationMethod : input.tokenizationMethods) {
+					for (final TokenType tokenType : input.tokenTypes) {
+						final TokenizationContext tokenizationContext = new TokenizationContext(cleaningMethodSet,
+								tokenType, backgroundJobExecutor);
+						final EventDialogueTransformer tokenizer = tokenizationMethod.apply(tokenizationContext);
+
+						for (final TokenFiltering tokenFilteringMethod : input.tokenFilteringMethods) {
+							final EventDialogueTransformer tokenFilter = tokenFilteringMethod.get();
+
+							final List<EventDialogueTransformer> diagTransformers = Arrays.asList(uttFilter, tokenizer,
+									tokenFilter);
+							final CachingEventDialogueTransformer cachingDiagTransformer = new CachingEventDialogueTransformer(
+									new ChainedEventDialogueTransformer(diagTransformers));
+							final TrainingContext trainingCtx = new TrainingContext(cachingDiagTransformer, appCtx,
+									backgroundJobExecutor);
+							for (final Training trainingMethod : input.trainingMethods) {
+								final Entry<TrainingInstancesFactory, Integer> trainingInstsFactoryIterCount = trainingMethod
+										.apply(trainingCtx);
+								final TestSetFactory testSetFactory = new TestSetFactory(
+										trainingInstsFactoryIterCount.getKey(), sessionDiagMgrCacheSupplier);
+								final Tester tester = appCtx.getBean(Tester.class, testSetFactory,
+										cachingDiagTransformer, backgroundJobExecutor);
+								tester.setIterCount(trainingInstsFactoryIterCount.getValue());
+								testerConfigurator.accept(tester);
+								final TestParameters testParams = new TestParameters(uttFilteringMethod,
+										cleaningMethodSet, tokenizationMethod, tokenType, tokenFilteringMethod,
+										trainingMethod);
+								LOGGER.info("Testing {}.", testParams);
+
+								final LocalDateTime testTimestamp = LocalDateTime.now();
+								final Tester.Result testResults = tester.apply(input.allSessions);
+								final BatchJobSummary batchSummary = new BatchJobSummary(testTimestamp, testParams,
+										testResults);
+								batchJobResultHandler.accept(batchSummary);
+							}
+						}
+					}
+				}
 			}
 		}
 	}

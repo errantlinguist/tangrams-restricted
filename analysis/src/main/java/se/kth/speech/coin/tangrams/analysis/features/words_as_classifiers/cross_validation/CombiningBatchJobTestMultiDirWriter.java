@@ -77,6 +77,13 @@ public final class CombiningBatchJobTestMultiDirWriter implements Consumer<Batch
 						.build();
 			}
 		},
+		CLEANING("c") {
+			@Override
+			public Option get() {
+				return Option.builder(optName).longOpt("cleaning").desc("A list of cleaning method(s) to use.")
+						.hasArgs().argName("name").build();
+			}
+		},
 		HELP("?") {
 			@Override
 			public Option get() {
@@ -98,18 +105,39 @@ public final class CombiningBatchJobTestMultiDirWriter implements Consumer<Batch
 						.argName("path").type(File.class).required().build();
 			}
 		},
-		UTT_PROCESSING("u") {
+		TOKEN_FILTERS("f") {
 			@Override
 			public Option get() {
 				return Option.builder(optName).longOpt("token-filters")
-						.desc("A list of token processing option(s) to use.").hasArgs().argName("name").build();
+						.desc("A list of token filtering method(s) to use.").hasArgs().argName("name").build();
 			}
 		},
-		TRAINING("t") {
+		TOKEN_TYPES("tt") {
+			@Override
+			public Option get() {
+				return Option.builder(optName).longOpt("token-types").desc("A list of token type(s) to use.").hasArgs()
+						.argName("name").build();
+			}
+		},
+		TOKENIZERS("to") {
+			@Override
+			public Option get() {
+				return Option.builder(optName).longOpt("tokenizers").desc("A list of tokenization method(s) to use.")
+						.hasArgs().argName("name").build();
+			}
+		},
+		TRAINING("tr") {
 			@Override
 			public Option get() {
 				return Option.builder(optName).longOpt("training").desc("A list of training method(s) to use.")
 						.hasArgs().argName("name").build();
+			}
+		},
+		UTT_FILTERS("u") {
+			@Override
+			public Option get() {
+				return Option.builder(optName).longOpt("utt-filters")
+						.desc("A list of utterance filtering method(s) to use.").hasArgs().argName("name").build();
 			}
 		};
 
@@ -121,21 +149,56 @@ public final class CombiningBatchJobTestMultiDirWriter implements Consumer<Batch
 			return result;
 		}
 
-		private static Set<Training> parseTrainingMethods(final CommandLine cl) {
-			final String[] names = cl.getOptionValues(Parameter.TRAINING.optName);
-			final Stream<Training> insts = names == null ? Arrays.stream(Training.values())
-					: Arrays.stream(names).map(Training::valueOf);
-			final Set<Training> result = EnumSet.noneOf(Training.class);
+		private static Set<Cleaning> parseCleaningMethods(final CommandLine cl) {
+			final String[] names = cl.getOptionValues(Parameter.CLEANING.optName);
+			final Stream<Cleaning> insts = names == null ? Arrays.stream(Cleaning.values())
+					: Arrays.stream(names).map(Cleaning::valueOf);
+			final EnumSet<Cleaning> result = EnumSet.noneOf(Cleaning.class);
 			insts.forEach(result::add);
 			return result;
 		}
 
-		private static Set<UtteranceProcessingOption> parseUtteranceProcessingOptions(final CommandLine cl) {
-			final String[] names = cl.getOptionValues(Parameter.UTT_PROCESSING.optName);
-			final Stream<UtteranceProcessingOption> insts = names == null
-					? Arrays.stream(UtteranceProcessingOption.values())
-					: Arrays.stream(names).map(UtteranceProcessingOption::valueOf);
-			final Set<UtteranceProcessingOption> result = EnumSet.noneOf(UtteranceProcessingOption.class);
+		private static Set<TokenFiltering> parseTokenFilteringMethods(final CommandLine cl) {
+			final String[] names = cl.getOptionValues(Parameter.TOKEN_FILTERS.optName);
+			final Stream<TokenFiltering> insts = names == null ? Arrays.stream(TokenFiltering.values())
+					: Arrays.stream(names).map(TokenFiltering::valueOf);
+			final EnumSet<TokenFiltering> result = EnumSet.noneOf(TokenFiltering.class);
+			insts.forEach(result::add);
+			return result;
+		}
+
+		private static Set<Tokenization> parseTokenizationMethods(final CommandLine cl) {
+			final String[] names = cl.getOptionValues(Parameter.TOKENIZERS.optName);
+			final Stream<Tokenization> insts = names == null ? Arrays.stream(Tokenization.values())
+					: Arrays.stream(names).map(Tokenization::valueOf);
+			final EnumSet<Tokenization> result = EnumSet.noneOf(Tokenization.class);
+			insts.forEach(result::add);
+			return result;
+		}
+
+		private static Set<TokenType> parseTokenTypes(final CommandLine cl) {
+			final String[] names = cl.getOptionValues(Parameter.TOKEN_TYPES.optName);
+			final Stream<TokenType> insts = names == null ? Arrays.stream(TokenType.values())
+					: Arrays.stream(names).map(TokenType::valueOf);
+			final EnumSet<TokenType> result = EnumSet.noneOf(TokenType.class);
+			insts.forEach(result::add);
+			return result;
+		}
+
+		private static Set<Training> parseTrainingMethods(final CommandLine cl) {
+			final String[] names = cl.getOptionValues(Parameter.TRAINING.optName);
+			final Stream<Training> insts = names == null ? Arrays.stream(Training.values())
+					: Arrays.stream(names).map(Training::valueOf);
+			final EnumSet<Training> result = EnumSet.noneOf(Training.class);
+			insts.forEach(result::add);
+			return result;
+		}
+
+		private static Set<UtteranceFiltering> parseUttFilteringMethods(final CommandLine cl) {
+			final String[] names = cl.getOptionValues(Parameter.UTT_FILTERS.optName);
+			final Stream<UtteranceFiltering> insts = names == null ? Arrays.stream(UtteranceFiltering.values())
+					: Arrays.stream(names).map(UtteranceFiltering::valueOf);
+			final EnumSet<UtteranceFiltering> result = EnumSet.noneOf(UtteranceFiltering.class);
 			insts.forEach(result::add);
 			return result;
 		}
@@ -181,6 +244,10 @@ public final class CombiningBatchJobTestMultiDirWriter implements Consumer<Batch
 				throw new MissingOptionException("No input path(s) specified.");
 
 			} else {
+				final ExecutorService backgroundJobExecutor = createBackgroundJobExecutor();
+				final Future<Map<SessionDataManager, Path>> allSessionDataFuture = backgroundJobExecutor
+						.submit(() -> TestSessionData.readTestSessionData(inpaths));
+
 				final Consumer<Tester> testerConfigurator;
 				{
 					final OptionalInt optIterCount = CLIParameters
@@ -195,31 +262,37 @@ public final class CombiningBatchJobTestMultiDirWriter implements Consumer<Batch
 						};
 					}
 				}
+
 				final Path outdir = ((File) cl.getParsedOptionValue(Parameter.OUTPATH.optName)).toPath();
 				LOGGER.info("Will write data to \"{}\".", outdir);
 				final boolean appendSummary = cl.hasOption(Parameter.APPEND_SUMMARY.optName);
 				LOGGER.info("Append to summary rather than truncate? {}", appendSummary);
-				final Set<UtteranceProcessingOption> uttProcessingOpts = Parameter.parseUtteranceProcessingOptions(cl);
-				LOGGER.info("Utterance processing options: {}", uttProcessingOpts);
+				final Set<UtteranceFiltering> uttFilteringMethods = Parameter.parseUttFilteringMethods(cl);
+				LOGGER.info("Utterance filtering methods: {}", uttFilteringMethods);
+				final Set<Cleaning> cleaningMethods = Parameter.parseCleaningMethods(cl);
+				LOGGER.info("Cleaning methods: {}", cleaningMethods);
+				final Future<Set<Set<Cleaning>>> cleaningMethodSets = backgroundJobExecutor
+						.submit(() -> Sets.powerSet(cleaningMethods));
+				final Set<Tokenization> tokenizationMethods = Parameter.parseTokenizationMethods(cl);
+				LOGGER.info("Tokenization methods: {}", tokenizationMethods);
+				final Set<TokenType> tokenTypes = Parameter.parseTokenTypes(cl);
+				LOGGER.info("Token types: {}", tokenTypes);
+				final Set<TokenFiltering> tokenFilteringMethods = Parameter.parseTokenFilteringMethods(cl);
+				LOGGER.info("Token filtering methods: {}", tokenFilteringMethods);
 				final Set<Training> trainingMethods = Parameter.parseTrainingMethods(cl);
 				LOGGER.info("Training methods: {}", trainingMethods);
-				final ExecutorService backgroundJobExecutor = createBackgroundJobExecutor();
-				final Future<Set<Set<UtteranceProcessingOption>>> futureUttProcessingOptSets = backgroundJobExecutor
-						.submit(() -> Sets.powerSet(uttProcessingOpts));
+
 				try {
-					final Future<Map<SessionDataManager, Path>> allSessionDataFuture = backgroundJobExecutor
-							.submit(() -> TestSessionData.readTestSessionData(inpaths));
+
 					final CombiningBatchJobTestMultiDirWriter writer = new CombiningBatchJobTestMultiDirWriter(outdir,
 							!appendSummary);
 					try (final ClassPathXmlApplicationContext appCtx = new ClassPathXmlApplicationContext(
 							"combining-batch-tester.xml", CombiningBatchJobTestMultiDirWriter.class)) {
 						final CombiningBatchJobTester tester = new CombiningBatchJobTester(backgroundJobExecutor,
 								appCtx, writer, testerConfigurator);
-						final Set<Set<UtteranceProcessingOption>> uttProcessingOptSets = futureUttProcessingOptSets
-								.get();
-						LOGGER.info("Testing {} combination(s) of utterance processing options.", uttProcessingOptSets.size());
 						final CombiningBatchJobTester.Input input = new CombiningBatchJobTester.Input(
-								uttProcessingOptSets, trainingMethods, allSessionDataFuture.get());
+								uttFilteringMethods, cleaningMethodSets.get(), tokenizationMethods, tokenTypes,
+								tokenFilteringMethods, trainingMethods, allSessionDataFuture.get());
 						tester.accept(input);
 					}
 					LOGGER.info("Shutting down executor service.");
@@ -290,11 +363,30 @@ public final class CombiningBatchJobTestMultiDirWriter implements Consumer<Batch
 	}
 
 	private static Stream<String> createTestMethodColumnHeaders() {
-		return Stream.of(UtteranceProcessingOption.class.getSimpleName(), Training.class.getSimpleName());
+		final Stream.Builder<String> resultBuilder = Stream.builder();
+		resultBuilder.add(UtteranceFiltering.class.getSimpleName());
+		final String cleaningMethodPrefix = Cleaning.class.getSimpleName() + "-";
+		Arrays.stream(Cleaning.values()).map(method -> cleaningMethodPrefix + cleaningMethodPrefix)
+				.forEachOrdered(resultBuilder);
+		resultBuilder.add(Tokenization.class.getSimpleName().toString());
+		resultBuilder.add(TokenType.class.getSimpleName());
+		resultBuilder.add(TokenFiltering.class.getSimpleName());
+		resultBuilder.add(Training.class.getSimpleName());
+		return resultBuilder.build();
 	}
 
 	private static Stream<String> createTestMethodRowCellValues(final TestParameters testParams) {
-		return Stream.of(testParams.getUttProcessingMethodDesc(), testParams.getTrainingMethod().getAbbreviation());
+		final Stream.Builder<String> resultBuilder = Stream.builder();
+		resultBuilder.add(testParams.getUttFiltering().toString());
+		final Set<Cleaning> cleaningMethods = testParams.getCleaning();
+		Arrays.stream(Cleaning.values()).map(cleaningMethods::contains).map(Object::toString)
+				.forEachOrdered(resultBuilder);
+		;
+		resultBuilder.add(testParams.getTokenization().toString());
+		resultBuilder.add(testParams.getTokenType().toString());
+		resultBuilder.add(testParams.getTokenFiltering().toString());
+		resultBuilder.add(testParams.getTrainingMethod().toString());
+		return resultBuilder.build();
 	}
 
 	private static void shutdownExceptionally(final ExecutorService executor) {

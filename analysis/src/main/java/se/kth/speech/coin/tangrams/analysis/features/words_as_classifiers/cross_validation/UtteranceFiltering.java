@@ -16,6 +16,25 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation;
 
-interface HasAbbreviation {
-	String getAbbreviation();
+import java.util.function.Supplier;
+
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.DummyEventDialogueTransformer;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EventDialogueTransformer;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.InstructorUtteranceFilteringEventDialogueTransformer;
+
+enum UtteranceFiltering implements Supplier<EventDialogueTransformer> {
+	ALL_UTTS(new DummyEventDialogueTransformer()), INSTRUCTOR_UTTS(
+			new InstructorUtteranceFilteringEventDialogueTransformer());
+
+	private final EventDialogueTransformer held;
+
+	private UtteranceFiltering(final EventDialogueTransformer held) {
+		this.held = held;
+	}
+
+	@Override
+	public EventDialogueTransformer get() {
+		return held;
+	}
+
 }
