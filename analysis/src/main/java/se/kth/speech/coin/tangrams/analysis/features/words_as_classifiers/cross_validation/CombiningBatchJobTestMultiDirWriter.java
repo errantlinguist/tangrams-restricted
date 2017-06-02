@@ -106,7 +106,7 @@ public final class CombiningBatchJobTestMultiDirWriter implements Consumer<Batch
 						.argName("path").type(File.class).required().build();
 			}
 		},
-		TOKEN_FILTERS("f") {
+		TOKEN_FILTERS("tf") {
 			@Override
 			public Option get() {
 				return Option.builder(optName).longOpt("token-filters")
