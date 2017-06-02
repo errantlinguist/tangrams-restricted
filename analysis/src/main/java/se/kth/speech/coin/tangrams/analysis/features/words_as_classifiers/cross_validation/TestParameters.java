@@ -84,4 +84,28 @@ final class TestParameters {
 		return uttFiltering;
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		final StringBuilder builder = new StringBuilder();
+		builder.append("TestParameters [cleaning=");
+		builder.append(cleaning);
+		builder.append(", tokenFiltering=");
+		builder.append(tokenFiltering);
+		builder.append(", tokenization=");
+		builder.append(tokenization);
+		builder.append(", tokenType=");
+		builder.append(tokenType);
+		builder.append(", trainingMethod=");
+		builder.append(trainingMethod);
+		builder.append(", uttFiltering=");
+		builder.append(uttFiltering);
+		builder.append("]");
+		return builder.toString();
+	}
+
 }
