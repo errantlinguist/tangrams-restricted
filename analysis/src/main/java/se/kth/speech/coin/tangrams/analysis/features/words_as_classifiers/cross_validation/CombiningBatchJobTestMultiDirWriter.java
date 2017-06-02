@@ -80,7 +80,8 @@ public final class CombiningBatchJobTestMultiDirWriter implements Consumer<Batch
 		CLEANING("c") {
 			@Override
 			public Option get() {
-				return Option.builder(optName).longOpt("cleaning").desc("A list of cleaning method(s) to use.")
+				return Option.builder(optName).longOpt("cleaning").desc(
+						"A list of cleaning method(s) to use Possible values: " + Arrays.toString(Cleaning.values()))
 						.hasArgs().argName("name").build();
 			}
 		},
@@ -109,27 +110,33 @@ public final class CombiningBatchJobTestMultiDirWriter implements Consumer<Batch
 			@Override
 			public Option get() {
 				return Option.builder(optName).longOpt("token-filters")
-						.desc("A list of token filtering method(s) to use.").hasArgs().argName("name").build();
+						.desc("A list of token filtering method(s) to use. Possible values: "
+								+ Arrays.toString(TokenFiltering.values()))
+						.hasArgs().argName("name").build();
 			}
 		},
 		TOKEN_TYPES("tt") {
 			@Override
 			public Option get() {
-				return Option.builder(optName).longOpt("token-types").desc("A list of token type(s) to use.").hasArgs()
-						.argName("name").build();
+				return Option.builder(optName).longOpt("token-types")
+						.desc("A list of token type(s) to use Possible values: " + Arrays.toString(TokenType.values()))
+						.hasArgs().argName("name").build();
 			}
 		},
 		TOKENIZERS("to") {
 			@Override
 			public Option get() {
-				return Option.builder(optName).longOpt("tokenizers").desc("A list of tokenization method(s) to use.")
+				return Option.builder(optName).longOpt("tokenizers")
+						.desc("A list of tokenization method(s) to use Possible values: "
+								+ Arrays.toString(Tokenization.values()))
 						.hasArgs().argName("name").build();
 			}
 		},
 		TRAINING("tr") {
 			@Override
 			public Option get() {
-				return Option.builder(optName).longOpt("training").desc("A list of training method(s) to use.")
+				return Option.builder(optName).longOpt("training").desc(
+						"A list of training method(s) to use Possible values: " + Arrays.toString(Training.values()))
 						.hasArgs().argName("name").build();
 			}
 		},
@@ -137,7 +144,9 @@ public final class CombiningBatchJobTestMultiDirWriter implements Consumer<Batch
 			@Override
 			public Option get() {
 				return Option.builder(optName).longOpt("utt-filters")
-						.desc("A list of utterance filtering method(s) to use.").hasArgs().argName("name").build();
+						.desc("A list of utterance filtering method(s) to use Possible values: "
+								+ Arrays.toString(UtteranceFiltering.values()))
+						.hasArgs().argName("name").build();
 			}
 		};
 
