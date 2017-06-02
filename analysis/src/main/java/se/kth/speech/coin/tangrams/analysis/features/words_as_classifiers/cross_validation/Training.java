@@ -60,7 +60,7 @@ enum Training implements Function<TrainingContext, Entry<TrainingInstancesFactor
 		}
 
 	},
-	SENTIMENT_ANALYZING {
+	SENTIMENT {
 		@Override
 		public Entry<TrainingInstancesFactory, Integer> apply(final TrainingContext trainingCtx) {
 			final ApplicationContext appCtx = trainingCtx.getAppCtx();
