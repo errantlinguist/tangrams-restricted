@@ -50,7 +50,6 @@ import se.kth.speech.coin.tangrams.CLIParameters;
 import se.kth.speech.coin.tangrams.analysis.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.EventDialogueTestResults;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.SessionTestResults;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.Tester.CrossValidationTestSummary;
 
 /**
@@ -210,7 +209,6 @@ public final class DialogueAnalysisWriter implements Consumer<Tester.Result> {
 		this.dataToWrite = dataToWrite;
 		rowDataFactory = new DialogueAnalysisSummaryFactory(dataToWrite);
 	}
-
 	@Override
 	public void accept(final Tester.Result cvtestResults) {
 		out.println(dataToWrite.stream().map(Enum::toString).collect(ROW_CELL_JOINER));
@@ -222,13 +220,12 @@ public final class DialogueAnalysisWriter implements Consumer<Tester.Result> {
 			for (final ListIterator<CrossValidationTestSummary> sessionResultIter = sessionResultList
 					.listIterator(); sessionResultIter.hasNext();) {
 				final CrossValidationTestSummary cvTestSummary = sessionResultIter.next();
-				final SessionTestResults sessionResults = cvTestSummary.getTestResults();
 				// NOTE: This should remain here, after "Iterator.next()", so
 				// that the printed first iteration is "1" rather than "0"
 				final int iterNo = sessionResultIter.nextIndex();
 				if (iterNo <= maxIters) {
 					int sessionDialogueOrder = 1;
-					for (final Entry<EventDialogue, EventDialogueTestResults> diagTestResults : sessionResults
+					for (final Entry<EventDialogue, EventDialogueTestResults> diagTestResults : cvTestSummary.getTestResults()
 							.getDialogueTestResults()) {
 						final Map<DialogueAnalysisSummaryFactory.SummaryDatum, Object> rowData = rowDataFactory
 								.apply(new DialogueAnalysisSummaryFactory.Input(inpath, "Success", iterNo,
