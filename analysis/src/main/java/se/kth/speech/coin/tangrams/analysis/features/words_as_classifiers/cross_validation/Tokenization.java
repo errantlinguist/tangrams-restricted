@@ -42,6 +42,7 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.
 import se.kth.speech.nlp.Disfluencies;
 import se.kth.speech.nlp.EnglishLocationalPrepositions;
 import se.kth.speech.nlp.SnowballPorter2EnglishStopwords;
+import se.kth.speech.nlp.stanford.Lemmatizer;
 import se.kth.speech.nlp.stanford.ParsingTokenizer;
 import se.kth.speech.nlp.stanford.PhrasalHeadFilteringPredicate;
 import se.kth.speech.nlp.stanford.PhraseExtractingParsingTokenizer;
@@ -58,9 +59,9 @@ enum Tokenization implements Function<TokenizationContext, EventDialogueTransfor
 			case INFLECTED:
 				tokenizer = new Tokenizer(StanfordCoreNLPConfigurationVariant.TOKENIZING.get());
 				break;
-//			case LEMMA:
-//				tokenizer = new Lemmatizer(StanfordCoreNLPConfigurationVariant.TOKENIZING_LEMMATIZING.get());
-//				break;
+			case LEMMA:
+				tokenizer = new Lemmatizer(StanfordCoreNLPConfigurationVariant.TOKENIZING_LEMMATIZING.get());
+				break;
 			default:
 				throw new AssertionError("No logic for handling enum.");
 			}
