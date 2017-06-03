@@ -398,7 +398,7 @@ public final class CombiningBatchJobTestMultiDirWriter {
 	private static Stream<String> createRowCellValues(final BatchJobSummary summary, final Path outdirPath) {
 		final Stream.Builder<String> resultBuilder = Stream.builder();
 		resultBuilder.add(TIMESTAMP_FORMATTER.format(summary.getTestTimestamp()));
-		resultBuilder.add("Finished successfully.");
+		resultBuilder.add("Success");
 		createTestMethodRowCellValues(summary.getTestParams(),
 				CombiningBatchJobTestMultiDirWriter::createCleaningMethodBooleanValues).forEachOrdered(resultBuilder);
 		final Map<SummaryDatum, Object> configSummary = StatisticsWriter.createSummaryDataMap(null,
