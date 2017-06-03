@@ -84,7 +84,7 @@ public final class SessionEventDialogueManager {
 
 	private final BiMap<String, String> playerSourceIds;
 
-	private List<EventDialogue> uttDialogues;
+	private final List<EventDialogue> uttDialogues;
 
 	SessionEventDialogueManager(final SessionDataManager sessionData,
 			final BiFunction<ListIterator<Utterance>, GameHistory, Stream<EventDialogue>> eventDiagFactory)
@@ -128,7 +128,7 @@ public final class SessionEventDialogueManager {
 				Arrays.asList(new EventDialogueCreatingClosure(uttAnnots, gameHistory, segUttFactory, eventDiagFactory)
 						.get().toArray(EventDialogue[]::new)));
 	}
-
+	
 	public GameHistory getGameHistory() {
 		return gameHistory;
 	}
