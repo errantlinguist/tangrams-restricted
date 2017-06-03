@@ -121,14 +121,11 @@ public final class SessionEventDialogueManager {
 			final String sourceId = seg.getSource();
 			return sourcePlayerIds.get(sourceId);
 		});
-		final List<Utterance> utts = Arrays.asList(segUttFactory.create(uttAnnots.getSegments().getSegment().stream())
-				.flatMap(List::stream).toArray(Utterance[]::new));
-		LOGGER.debug("Creating dialogues for {} annotated utterance(s).", utts.size());
 		uttDialogues = Collections.unmodifiableList(
 				Arrays.asList(new EventDialogueCreatingClosure(uttAnnots, gameHistory, segUttFactory, eventDiagFactory)
 						.get().toArray(EventDialogue[]::new)));
 	}
-	
+
 	public GameHistory getGameHistory() {
 		return gameHistory;
 	}
