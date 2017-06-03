@@ -21,7 +21,6 @@ import java.util.function.Supplier;
 
 import javax.inject.Inject;
 import javax.inject.Named;
-import javax.xml.bind.JAXBException;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -44,7 +43,7 @@ public final class SessionEventDialogueManagerCacheSupplier
 
 				@Override
 				public SessionEventDialogueManager load(final SessionDataManager key)
-						throws JAXBException, IOException {
+						throws IOException {
 					return new SessionEventDialogueManager(key, eventDiagFactory);
 				}
 
