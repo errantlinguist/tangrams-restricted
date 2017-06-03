@@ -437,7 +437,7 @@ public final class Tester {
 
 			final WordClassificationData trainingData = testSet.getValue();
 			final Optional<Instances> oovInstances = smoother.redistributeMass(trainingData);
-			LOGGER.debug("{} instance(s) for out-of-vocabulary class.", oovInstances.map(Instances::size).orElse(0));
+			LOGGER.info("{} instance(s) for out-of-vocabulary class.", oovInstances.map(Instances::size).orElse(0));
 			final EventDialogueClassifier diagClassifier = createDialogueClassifier(trainingData, testSessionData);
 
 			final SessionTestResults testResults = testSession(sessionDiagMgrCacheSupplier.get().get(testSessionData),
