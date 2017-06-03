@@ -24,6 +24,7 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.OptionalInt;
 import java.util.concurrent.ExecutionException;
@@ -45,11 +46,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.support.FileSystemXmlApplicationContext;
 
-import iristk.system.Event;
 import se.kth.speech.coin.tangrams.CLIParameters;
 import se.kth.speech.coin.tangrams.analysis.EventDialogue;
-import se.kth.speech.coin.tangrams.analysis.Utterance;
-import se.kth.speech.coin.tangrams.analysis.UtteranceDialogueRepresentationStringFactory;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.EventDialogueTestResults;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.SessionTestResults;
@@ -128,15 +126,11 @@ public final class DialogueAnalysisWriter implements Consumer<Tester.Result> {
 
 	}
 
-	private static final List<String> COL_HEADERS = Arrays.asList("INPATH", "TEST_ITER", "SESSION_ORDER", "EVENT_TIME",
-			"DIALOGUE", "DIALOGUE_AS_TESTED", "GOLD_STD_ID", "RANK", "RR", "TESTED_UTT_COUNT", "TOTAL_UTT_COUNT",
-			"MEAN_DIAG_UTTS_TESTED", "TOKEN_COUNT", "MEAN_TOKENS_PER_UTT");
+	private static final List<DialogueAnalysisSummaryFactory.SummaryDatum> DEFAULT_DATA_TO_WRITE = createDefaultDatumOrderingList();
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(DialogueAnalysisWriter.class);
 
 	private static final Collector<CharSequence, ?, String> ROW_CELL_JOINER = Collectors.joining("\t");
-
-	private static final UtteranceDialogueRepresentationStringFactory UTT_DIAG_REPR_FACTORY = new UtteranceDialogueRepresentationStringFactory();
 
 	public static void main(final CommandLine cl)
 			throws ParseException, IOException, ClassificationException, ExecutionException {
@@ -178,18 +172,47 @@ public final class DialogueAnalysisWriter implements Consumer<Tester.Result> {
 		}
 	}
 
+	private static List<DialogueAnalysisSummaryFactory.SummaryDatum> createDefaultDatumOrderingList() {
+		final List<DialogueAnalysisSummaryFactory.SummaryDatum> result = Arrays.asList(
+				DialogueAnalysisSummaryFactory.SummaryDatum.KEY, DialogueAnalysisSummaryFactory.SummaryDatum.TEST_ITER,
+				DialogueAnalysisSummaryFactory.SummaryDatum.SESSION_ORDER,
+				DialogueAnalysisSummaryFactory.SummaryDatum.EVENT_TIME,
+				DialogueAnalysisSummaryFactory.SummaryDatum.DIALOGUE,
+				DialogueAnalysisSummaryFactory.SummaryDatum.DIALOGUE_AS_TESTED,
+				DialogueAnalysisSummaryFactory.SummaryDatum.GOLD_STD_ID,
+				DialogueAnalysisSummaryFactory.SummaryDatum.RANK, DialogueAnalysisSummaryFactory.SummaryDatum.RR,
+				DialogueAnalysisSummaryFactory.SummaryDatum.TESTED_UTT_COUNT,
+				DialogueAnalysisSummaryFactory.SummaryDatum.TOTAL_UTT_COUNT,
+				DialogueAnalysisSummaryFactory.SummaryDatum.MEAN_DIAG_UTTS_TESTED,
+				DialogueAnalysisSummaryFactory.SummaryDatum.TOKEN_COUNT,
+				DialogueAnalysisSummaryFactory.SummaryDatum.MEAN_TOKENS_PER_UTT);
+		assert result.size() == DialogueAnalysisSummaryFactory.SummaryDatum.values().length;
+		return result;
+	}
+
+	private final List<DialogueAnalysisSummaryFactory.SummaryDatum> dataToWrite;
+
 	private final int maxIters;
 
 	private final PrintWriter out;
 
+	private final DialogueAnalysisSummaryFactory rowDataFactory;
+
 	public DialogueAnalysisWriter(final PrintWriter out, final int maxIters) {
+		this(out, maxIters, DEFAULT_DATA_TO_WRITE);
+	}
+
+	public DialogueAnalysisWriter(final PrintWriter out, final int maxIters,
+			final List<DialogueAnalysisSummaryFactory.SummaryDatum> dataToWrite) {
 		this.out = out;
 		this.maxIters = maxIters;
+		this.dataToWrite = dataToWrite;
+		rowDataFactory = new DialogueAnalysisSummaryFactory(dataToWrite);
 	}
 
 	@Override
 	public void accept(final Tester.Result cvtestResults) {
-		out.println(COL_HEADERS.stream().collect(ROW_CELL_JOINER));
+		out.println(dataToWrite.stream().map(Enum::toString).collect(ROW_CELL_JOINER));
 
 		for (final Entry<Path, List<CrossValidationTestSummary>> infileSessionResults : cvtestResults
 				.getSessionResults().entrySet()) {
@@ -206,7 +229,11 @@ public final class DialogueAnalysisWriter implements Consumer<Tester.Result> {
 					int sessionDialogueOrder = 1;
 					for (final Entry<EventDialogue, EventDialogueTestResults> diagTestResults : sessionResults
 							.getDialogueTestResults()) {
-						writeRow(inpath, iterNo, sessionDialogueOrder++, diagTestResults);
+						final Map<DialogueAnalysisSummaryFactory.SummaryDatum, Object> rowData = rowDataFactory
+								.apply(new DialogueAnalysisSummaryFactory.Input(inpath, iterNo, sessionDialogueOrder++,
+										diagTestResults));
+						final Stream<String> rowCellVals = dataToWrite.stream().map(rowData::get).map(Object::toString);
+						out.print(rowCellVals.collect(ROW_CELL_JOINER));
 					}
 				} else {
 					LOGGER.debug("Maximum iteration output reached ({}).", maxIters);
@@ -214,24 +241,6 @@ public final class DialogueAnalysisWriter implements Consumer<Tester.Result> {
 				}
 			}
 		}
-	}
-
-	private void writeRow(final Object key, final Integer iterNo, final Integer sequenceOrder,
-			final Entry<EventDialogue, EventDialogueTestResults> diagTestResults) {
-		final EventDialogue diag = diagTestResults.getKey();
-		final String timestamp = diag.getFirstEvent().map(Event::getTime).orElse("(no event found for dialogue)");
-		final String uttDiagRepr = UTT_DIAG_REPR_FACTORY.apply(diag.getUtts().iterator());
-		final EventDialogueTestResults testResults = diagTestResults.getValue();
-		final Stream<Utterance> uttsTested = testResults.testedUtterances();
-		final String testedUttDiagRepr = UTT_DIAG_REPR_FACTORY.apply(uttsTested.iterator());
-
-		final List<Object> cellVals = Arrays.asList(key, iterNo, sequenceOrder, timestamp, uttDiagRepr,
-				testedUttDiagRepr, testResults.getGoldStandardReferentId(), testResults.rank(),
-				testResults.reciprocalRank(), testResults.testedUtteranceCount(), testResults.totalUtteranceCount(),
-				testResults.meanUtterancesTested(), testResults.testedTokenCount(),
-				testResults.meanTokensPerTestedUtterance());
-		assert cellVals.size() == COL_HEADERS.size();
-		out.println(cellVals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
 	}
 
 }
