@@ -26,6 +26,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import org.slf4j.Logger;
@@ -46,6 +47,32 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.traini
  *
  */
 public final class CombiningBatchJobTester {
+
+	public static final class IncompleteResults {
+
+		private final TestParameters testParams;
+
+		private final LocalDateTime testStartTime;
+
+		private IncompleteResults(final TestParameters testParams, final LocalDateTime testStartTime) {
+			this.testParams = testParams;
+			this.testStartTime = testStartTime;
+		}
+
+		/**
+		 * @return the testParams
+		 */
+		public TestParameters getTestParams() {
+			return testParams;
+		}
+
+		/**
+		 * @return the testStartTime
+		 */
+		public LocalDateTime getTestStartTime() {
+			return testStartTime;
+		}
+	}
 
 	public static final class Input {
 
@@ -87,19 +114,16 @@ public final class CombiningBatchJobTester {
 
 	private final Consumer<? super Tester> testerConfigurator;
 
-	public CombiningBatchJobTester(final ExecutorService backgroundJobExecutor, final ApplicationContext appCtx,
-			final Consumer<? super BatchJobSummary> batchJobResultHandler) {
-		this(backgroundJobExecutor, appCtx, batchJobResultHandler, tester -> {
-			// Do nothing
-		});
-	}
+	private final BiConsumer<? super IncompleteResults, ? super Throwable> errorHandler;
 
 	public CombiningBatchJobTester(final ExecutorService backgroundJobExecutor, final ApplicationContext appCtx,
 			final Consumer<? super BatchJobSummary> batchJobResultHandler,
+			final BiConsumer<? super IncompleteResults, ? super Throwable> errorHandler,
 			final Consumer<? super Tester> testerConfigurator) {
 		this.backgroundJobExecutor = backgroundJobExecutor;
 		this.appCtx = appCtx;
 		this.batchJobResultHandler = batchJobResultHandler;
+		this.errorHandler = errorHandler;
 		this.testerConfigurator = testerConfigurator;
 	}
 
@@ -111,10 +135,10 @@ public final class CombiningBatchJobTester {
 			final EventDialogueTransformer uttFilter = uttFilteringMethod.get();
 
 			for (final Set<Cleaning> cleaningMethodSet : input.cleaningMethods) {
-				for (final Tokenization tokenizationMethod : input.tokenizationMethods) {
-					for (final TokenType tokenType : input.tokenTypes) {
-						final TokenizationContext tokenizationContext = new TokenizationContext(cleaningMethodSet,
-								tokenType, backgroundJobExecutor);
+				for (final TokenType tokenType : input.tokenTypes) {
+					final TokenizationContext tokenizationContext = new TokenizationContext(cleaningMethodSet,
+							tokenType, backgroundJobExecutor);
+					for (final Tokenization tokenizationMethod : input.tokenizationMethods) {
 						final EventDialogueTransformer tokenizer = tokenizationMethod.apply(tokenizationContext);
 
 						for (final TokenFiltering tokenFilteringMethod : input.tokenFilteringMethods) {
@@ -126,6 +150,7 @@ public final class CombiningBatchJobTester {
 									new ChainedEventDialogueTransformer(diagTransformers));
 							final TrainingContext trainingCtx = new TrainingContext(cachingDiagTransformer, appCtx,
 									backgroundJobExecutor);
+
 							for (final Training trainingMethod : input.trainingMethods) {
 								final Entry<TrainingInstancesFactory, Integer> trainingInstsFactoryIterCount = trainingMethod
 										.apply(trainingCtx);
@@ -141,10 +166,14 @@ public final class CombiningBatchJobTester {
 								LOGGER.info("Testing {}.", testParams);
 
 								final LocalDateTime testTimestamp = LocalDateTime.now();
-								final Tester.Result testResults = tester.apply(input.allSessions);
-								final BatchJobSummary batchSummary = new BatchJobSummary(testTimestamp, testParams,
-										testResults);
-								batchJobResultHandler.accept(batchSummary);
+								try {
+									final Tester.Result testResults = tester.apply(input.allSessions);
+									final BatchJobSummary batchSummary = new BatchJobSummary(testTimestamp, testParams,
+											testResults);
+									batchJobResultHandler.accept(batchSummary);
+								} catch (final Throwable thrown) {
+									errorHandler.accept(new IncompleteResults(testParams, testTimestamp), thrown);
+								}
 							}
 						}
 					}

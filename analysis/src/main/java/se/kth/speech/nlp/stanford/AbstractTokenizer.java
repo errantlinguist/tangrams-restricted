@@ -18,7 +18,6 @@ package se.kth.speech.nlp.stanford;
 
 import java.util.List;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 import edu.stanford.nlp.pipeline.Annotation;
 import edu.stanford.nlp.pipeline.Annotator;
@@ -30,10 +29,10 @@ import edu.stanford.nlp.pipeline.Annotator;
  */
 public abstract class AbstractTokenizer implements Function<String, List<String>> {
 
-	private final Supplier<? extends Annotator> annotatorSupplier;
+	private final Annotator annotator;
 
-	public AbstractTokenizer(final Supplier<? extends Annotator> annotatorSupplier) {
-		this.annotatorSupplier = annotatorSupplier;
+	public AbstractTokenizer(final Annotator annotator) {
+		this.annotator = annotator;
 
 	}
 
@@ -52,14 +51,14 @@ public abstract class AbstractTokenizer implements Function<String, List<String>
 	public String toString() {
 		final StringBuilder builder = new StringBuilder();
 		builder.append("AbstractStanfordCoreNLPTokenizer [annotator=");
-		builder.append(annotatorSupplier);
+		builder.append(annotator);
 		builder.append("]");
 		return builder.toString();
 	}
 
 	private Annotation annotate(final String input) {
 		final Annotation result = new Annotation(input);
-		annotatorSupplier.get().annotate(result);
+		annotator.annotate(result);
 		return result;
 	}
 

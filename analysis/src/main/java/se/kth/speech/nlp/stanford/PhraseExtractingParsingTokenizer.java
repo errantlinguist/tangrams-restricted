@@ -23,7 +23,6 @@ import java.util.Deque;
 import java.util.List;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 
 import edu.stanford.nlp.ling.CoreAnnotations.SentencesAnnotation;
 import edu.stanford.nlp.ling.CoreLabel;
@@ -46,14 +45,16 @@ public final class PhraseExtractingParsingTokenizer extends AbstractTokenizer {
 
 	private final Predicate<? super Tree> subTreeMatcher;
 
-	public PhraseExtractingParsingTokenizer(final Supplier<? extends Annotator> annotatorSupplier, Function<? super CoreLabel, String> labelTokenExtractor,
+	public PhraseExtractingParsingTokenizer(final Annotator annotator,
+			final Function<? super CoreLabel, String> labelTokenExtractor,
 			final Predicate<? super Tree> subTreeMatcher) {
-		this(annotatorSupplier, labelTokenExtractor, subTreeMatcher, subTreeBranch -> true);
+		this(annotator, labelTokenExtractor, subTreeMatcher, subTreeBranch -> true);
 	}
-	
-	public PhraseExtractingParsingTokenizer(final Supplier<? extends Annotator> annotatorSupplier, Function<? super CoreLabel, String> labelTokenExtractor,
-			final Predicate<? super Tree> subTreeMatcher, final Predicate<Tree> subTreeBranchPruningPositiveFilter) {
-		super(annotatorSupplier);
+
+	public PhraseExtractingParsingTokenizer(final Annotator annotator,
+			final Function<? super CoreLabel, String> labelTokenExtractor, final Predicate<? super Tree> subTreeMatcher,
+			final Predicate<Tree> subTreeBranchPruningPositiveFilter) {
+		super(annotator);
 		this.labelTokenExtractor = labelTokenExtractor;
 		this.subTreeMatcher = subTreeMatcher;
 		this.subTreeBranchPruningPositiveFilter = subTreeBranchPruningPositiveFilter;
@@ -90,7 +91,7 @@ public final class PhraseExtractingParsingTokenizer extends AbstractTokenizer {
 			}
 
 			for (final Tree extractedPhrase : extractedPhrases) {
-				List<CoreLabel> phaseLabels = extractedPhrase.taggedLabeledYield();
+				final List<CoreLabel> phaseLabels = extractedPhrase.taggedLabeledYield();
 				resultWords.addAll(phaseLabels);
 			}
 		}

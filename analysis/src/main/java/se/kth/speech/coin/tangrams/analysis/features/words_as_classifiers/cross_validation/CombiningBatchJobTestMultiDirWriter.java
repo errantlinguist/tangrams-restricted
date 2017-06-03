@@ -26,6 +26,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
+import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +37,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
@@ -58,6 +60,7 @@ import com.google.common.collect.Sets;
 import se.kth.speech.coin.tangrams.CLIParameters;
 import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.CombiningBatchJobTester.IncompleteResults;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.StatisticsWriter.SummaryDatum;
 import se.kth.speech.coin.tangrams.iristk.EventTimes;
 
@@ -66,7 +69,7 @@ import se.kth.speech.coin.tangrams.iristk.EventTimes;
  * @since 24 May 2017
  *
  */
-public final class CombiningBatchJobTestMultiDirWriter implements Consumer<BatchJobSummary> {
+public final class CombiningBatchJobTestMultiDirWriter {
 
 	private enum Parameter implements Supplier<Option> {
 		APPEND_SUMMARY("a") {
@@ -99,6 +102,13 @@ public final class CombiningBatchJobTestMultiDirWriter implements Consumer<Batch
 						.hasArgs().argName("count").type(Number.class).build();
 			}
 		},
+		NO_CLOBBER("nc"){
+			public Option get() {
+				return Option.builder(optName).longOpt("append")
+						.desc("If this flag is present, existing batch result directories will not be overwritten.")
+						.build();
+			}
+		},
 		OUTPATH("o") {
 			@Override
 			public Option get() {
@@ -115,7 +125,7 @@ public final class CombiningBatchJobTestMultiDirWriter implements Consumer<Batch
 						.hasArgs().argName("name").build();
 			}
 		},
-		TOKEN_TYPES("tt") {
+		TOKEN_TYPES("ty") {
 			@Override
 			public Option get() {
 				return Option.builder(optName).longOpt("token-types")
@@ -229,7 +239,9 @@ public final class CombiningBatchJobTestMultiDirWriter implements Consumer<Batch
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(CombiningBatchJobTestMultiDirWriter.class);
 
-	private static final Collector<CharSequence, ?, String> METHOD_KEY_NAME_JOINER = Collectors.joining("_");
+	private static final Collector<CharSequence, ?, String> BATCH_DIR_METHOD_NAME_JOINER = Collectors.joining(",");
+
+	private static final String NULL_CELL_VALUE_REPR = "?";
 
 	private static final Collector<CharSequence, ?, String> ROW_CELL_JOINER = Collectors.joining("\t");
 
@@ -242,7 +254,7 @@ public final class CombiningBatchJobTestMultiDirWriter implements Consumer<Batch
 				SummaryDatum.UTTERANCES_TESTED, SummaryDatum.MEAN_UTTERANCES_PER_DIALOGUE);
 		COL_HEADERS = createColHeaderList(SUMMARY_DATA_TO_WRITE);
 	}
-
+	
 	public static void main(final CommandLine cl)
 			throws ParseException, InterruptedException, ExecutionException, ClassificationException, IOException {
 		if (cl.hasOption(Parameter.HELP.optName)) {
@@ -276,6 +288,8 @@ public final class CombiningBatchJobTestMultiDirWriter implements Consumer<Batch
 				LOGGER.info("Will write data to \"{}\".", outdir);
 				final boolean appendSummary = cl.hasOption(Parameter.APPEND_SUMMARY.optName);
 				LOGGER.info("Append to summary rather than truncate? {}", appendSummary);
+				final boolean noClobber = cl.hasOption(Parameter.NO_CLOBBER.optName);
+				LOGGER.info("Don't clobber old batch results? {}", appendSummary);
 				final Set<UtteranceFiltering> uttFilteringMethods = Parameter.parseUttFilteringMethods(cl);
 				LOGGER.info("Utterance filtering methods: {}", uttFilteringMethods);
 				final Set<Cleaning> cleaningMethods = Parameter.parseCleaningMethods(cl);
@@ -298,7 +312,7 @@ public final class CombiningBatchJobTestMultiDirWriter implements Consumer<Batch
 					try (final ClassPathXmlApplicationContext appCtx = new ClassPathXmlApplicationContext(
 							"combining-batch-tester.xml", CombiningBatchJobTestMultiDirWriter.class)) {
 						final CombiningBatchJobTester tester = new CombiningBatchJobTester(backgroundJobExecutor,
-								appCtx, writer, testerConfigurator);
+								appCtx, writer::write, writer::writeError, testerConfigurator);
 						final CombiningBatchJobTester.Input input = new CombiningBatchJobTester.Input(
 								uttFilteringMethods, cleaningMethodSets.get(), tokenizationMethods, tokenTypes,
 								tokenFilteringMethods, trainingMethods, allSessionDataFuture.get());
@@ -345,13 +359,35 @@ public final class CombiningBatchJobTestMultiDirWriter implements Consumer<Batch
 	}
 
 	private static String createBatchOutdirName(final TestParameters testParams) {
-		final Stream<String> rowCellVals = createTestMethodRowCellValues(testParams);
-		return rowCellVals.collect(METHOD_KEY_NAME_JOINER);
+		final Stream<String> rowCellVals = createTestMethodRowCellValues(testParams,
+				CombiningBatchJobTestMultiDirWriter::createCleaningMethodSetValues);
+		return rowCellVals.collect(BATCH_DIR_METHOD_NAME_JOINER);
+	}
+
+	private static Stream<String> createCleaningMethodBooleanValues(final Set<Cleaning> cleaningMethods) {
+		return Arrays.stream(Cleaning.values()).map(cleaningMethods::contains).map(Object::toString);
+	}
+
+	private static Stream<String> createCleaningMethodSetValues(final EnumSet<Cleaning> cleaningMethods) {
+		return cleaningMethods.stream().map(Cleaning::toString);
+	}
+
+	private static Stream<String> createCleaningMethodSetValues(final Set<Cleaning> cleaningMethods) {
+		final EnumSet<Cleaning> downcast;
+		if (cleaningMethods instanceof EnumSet<?>) {
+			downcast = (EnumSet<Cleaning>) cleaningMethods;
+		} else if (cleaningMethods.isEmpty()) {
+			downcast = EnumSet.noneOf(Cleaning.class);
+		} else {
+			downcast = EnumSet.copyOf(cleaningMethods);
+		}
+		return createCleaningMethodSetValues(downcast);
 	}
 
 	private static List<String> createColHeaderList(final List<SummaryDatum> summaryDataToWrite) {
 		final Stream.Builder<String> resultBuilder = Stream.builder();
 		resultBuilder.add("TIME");
+		resultBuilder.accept("DESC");
 		createTestMethodColumnHeaders().forEachOrdered(resultBuilder);
 		resultBuilder.add("OUTDIR");
 		resultBuilder.add("ITER_COUNT");
@@ -362,9 +398,26 @@ public final class CombiningBatchJobTestMultiDirWriter implements Consumer<Batch
 	private static Stream<String> createRowCellValues(final BatchJobSummary summary, final Path outdirPath) {
 		final Stream.Builder<String> resultBuilder = Stream.builder();
 		resultBuilder.add(TIMESTAMP_FORMATTER.format(summary.getTestTimestamp()));
-		createTestMethodRowCellValues(summary.getTestParams()).forEachOrdered(resultBuilder);
+		resultBuilder.add("Finished successfully.");
+		createTestMethodRowCellValues(summary.getTestParams(),
+				CombiningBatchJobTestMultiDirWriter::createCleaningMethodBooleanValues).forEachOrdered(resultBuilder);
 		final Map<SummaryDatum, Object> configSummary = StatisticsWriter.createSummaryDataMap(null,
 				summary.getTestResults());
+		resultBuilder.add(outdirPath.toString());
+		resultBuilder.add(configSummary.get(SummaryDatum.TEST_ITERATION).toString());
+		SUMMARY_DATA_TO_WRITE.stream().map(configSummary::get).map(Object::toString).forEachOrdered(resultBuilder);
+		return resultBuilder.build();
+	}
+
+	private static Stream<String> createRowCellValues(final IncompleteResults incompleteResults, final String errorDesc,
+			final Path outdirPath) {
+		final Stream.Builder<String> resultBuilder = Stream.builder();
+		resultBuilder.add(TIMESTAMP_FORMATTER.format(incompleteResults.getTestStartTime()));
+		resultBuilder.add(errorDesc);
+		createTestMethodRowCellValues(incompleteResults.getTestParams(),
+				CombiningBatchJobTestMultiDirWriter::createCleaningMethodBooleanValues).forEachOrdered(resultBuilder);
+		final Map<SummaryDatum, Object> configSummary = new EnumMap<>(SummaryDatum.class);
+		Arrays.stream(SummaryDatum.values()).forEach(datum -> configSummary.put(datum, NULL_CELL_VALUE_REPR));
 		resultBuilder.add(outdirPath.toString());
 		resultBuilder.add(configSummary.get(SummaryDatum.TEST_ITERATION).toString());
 		SUMMARY_DATA_TO_WRITE.stream().map(configSummary::get).map(Object::toString).forEachOrdered(resultBuilder);
@@ -375,8 +428,7 @@ public final class CombiningBatchJobTestMultiDirWriter implements Consumer<Batch
 		final Stream.Builder<String> resultBuilder = Stream.builder();
 		resultBuilder.add(UtteranceFiltering.class.getSimpleName());
 		final String cleaningMethodPrefix = Cleaning.class.getSimpleName() + "-";
-		Arrays.stream(Cleaning.values()).map(method -> cleaningMethodPrefix + cleaningMethodPrefix)
-				.forEachOrdered(resultBuilder);
+		Arrays.stream(Cleaning.values()).map(method -> cleaningMethodPrefix + method).forEachOrdered(resultBuilder);
 		resultBuilder.add(Tokenization.class.getSimpleName().toString());
 		resultBuilder.add(TokenType.class.getSimpleName());
 		resultBuilder.add(TokenFiltering.class.getSimpleName());
@@ -384,13 +436,12 @@ public final class CombiningBatchJobTestMultiDirWriter implements Consumer<Batch
 		return resultBuilder.build();
 	}
 
-	private static Stream<String> createTestMethodRowCellValues(final TestParameters testParams) {
+	private static Stream<String> createTestMethodRowCellValues(final TestParameters testParams,
+			final Function<? super Set<Cleaning>, Stream<String>> cleaningMethodReprFactory) {
 		final Stream.Builder<String> resultBuilder = Stream.builder();
 		resultBuilder.add(testParams.getUttFiltering().toString());
 		final Set<Cleaning> cleaningMethods = testParams.getCleaning();
-		Arrays.stream(Cleaning.values()).map(cleaningMethods::contains).map(Object::toString)
-				.forEachOrdered(resultBuilder);
-		;
+		cleaningMethodReprFactory.apply(cleaningMethods).forEachOrdered(resultBuilder);
 		resultBuilder.add(testParams.getTokenization().toString());
 		resultBuilder.add(testParams.getTokenType().toString());
 		resultBuilder.add(testParams.getTokenFiltering().toString());
@@ -417,17 +468,10 @@ public final class CombiningBatchJobTestMultiDirWriter implements Consumer<Batch
 		summaryFile = outdir.resolve("batch-summary.tsv");
 	}
 
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see java.util.function.Consumer#accept(java.lang.Object)
-	 */
-	@Override
-	public void accept(final BatchJobSummary summary) {
+	public void write(final BatchJobSummary summary) {
 		final TestParameters testParams = summary.getTestParams();
-		final String batchOutdirName = createBatchOutdirName(testParams);
 		try {
-			final Path batchOutdir = Files.createDirectories(outdir.resolve(batchOutdirName));
+			final Path batchOutdir = Files.createDirectories(createBatchOutdir(testParams));
 			LOGGER.info("Will write results of testing {} to \"{}\".", testParams, batchOutdir);
 			final BatchTestResultWriter testWriter = new BatchTestResultWriter(batchOutdir);
 			final Tester.Result testResults = summary.getTestResults();
@@ -436,6 +480,36 @@ public final class CombiningBatchJobTestMultiDirWriter implements Consumer<Batch
 		} catch (final IOException e) {
 			throw new UncheckedIOException(e);
 		}
+	}
+
+	public void writeError(final IncompleteResults incompleteResults, final Throwable thrown) {
+		if (thrown instanceof OutOfMemoryError) {
+			Runtime.getRuntime().gc();
+		}
+		try {
+			if (createNewSummary) {
+				writeInitialSummaryFile();
+				createNewSummary = false;
+			}
+			final Path batchOutdir = Files.createDirectories(createBatchOutdir(incompleteResults.getTestParams()));
+			final String errorDesc = String.format("%s: %s", thrown.getClass(), thrown.getLocalizedMessage());
+			try (final BufferedWriter summaryWriter = createAppendingSummaryWriter()) {
+				summaryWriter.newLine();
+				final Stream<String> rowCellVals = createRowCellValues(incompleteResults, errorDesc, batchOutdir);
+				summaryWriter.write(rowCellVals.collect(ROW_CELL_JOINER));
+			}
+		} catch (final IOException e) {
+			throw new UncheckedIOException(e);
+		}
+	}
+
+	private BufferedWriter createAppendingSummaryWriter() throws IOException {
+		return Files.newBufferedWriter(summaryFile, StandardOpenOption.APPEND);
+	}
+
+	private Path createBatchOutdir(final TestParameters testParams) {
+		final String batchOutdirName = createBatchOutdirName(testParams);
+		return outdir.resolve(batchOutdirName);
 	}
 
 	private void writeInitialSummaryFile() throws IOException {
@@ -451,7 +525,7 @@ public final class CombiningBatchJobTestMultiDirWriter implements Consumer<Batch
 			writeInitialSummaryFile();
 			createNewSummary = false;
 		}
-		try (final BufferedWriter summaryWriter = Files.newBufferedWriter(summaryFile, StandardOpenOption.APPEND)) {
+		try (final BufferedWriter summaryWriter = createAppendingSummaryWriter()) {
 			summaryWriter.newLine();
 			final Stream<String> rowCellVals = createRowCellValues(summary, batchOutdir);
 			summaryWriter.write(rowCellVals.collect(ROW_CELL_JOINER));

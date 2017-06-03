@@ -22,8 +22,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 import org.junit.Assert;
 import org.junit.experimental.theories.DataPoints;
@@ -49,13 +47,11 @@ public final class PhraseExtractingParsingTokenizerTest {
 	private static final PhraseExtractingParsingTokenizer TEST_INST;
 
 	static {
-		final ExecutorService executor = Executors.newSingleThreadExecutor();
 		TEST_INST = new PhraseExtractingParsingTokenizer(
-				StanfordCoreNLPConfigurationVariant.TOKENIZING_PARSING.apply(executor), CoreLabel::word, subTree -> {
+				StanfordCoreNLPConfigurationVariant.TOKENIZING_PARSING.get(), CoreLabel::word, subTree -> {
 					final Label label = subTree.label();
 					return label == null ? false : "NP".equals(label.value());
 				});
-		executor.shutdown();
 	}
 
 	private static Map<String, List<String>> createInputExpectedOutputMap() {

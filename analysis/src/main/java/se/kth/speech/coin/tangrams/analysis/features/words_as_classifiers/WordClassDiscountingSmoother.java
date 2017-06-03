@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.function.Function;
 
 import javax.inject.Inject;
@@ -83,13 +82,28 @@ public final class WordClassDiscountingSmoother {
 		return result;
 	}
 
-	public Optional<Instances> redistributeMass(final WordClassificationData trainingData) {
-		return redistributeMass(trainingData, minCount, oovClassName);
+	public Instances redistributeMass(final WordClassificationData trainingData) {
+		List<Entry<String, Instances>> addendClassInsts = createdAddendClassInstList(trainingData, minCount, oovClassName);
+		if (addendClassInsts.isEmpty()){
+			throw new IllegalArgumentException(String.format("Could not find any word classes with fewer than %s instance(s).", minCount));
+		}
+//		int freqToDiscount = minCount - 1;
+//		do {
+//			freqToDiscount++;
+//			addendClassInsts = createdAddendClassInstList(trainingData, freqToDiscount, oovClassName);
+//		} while (addendClassInsts.isEmpty());
+//		if (freqToDiscount != minCount) {
+//			LOGGER.warn(
+//					"Could not find word classes with fewer than {} instance(s); Using those with fewer than {} instad.",
+//					minCount, freqToDiscount);
+//		}
+//		assert !addendClassInsts.isEmpty();
+		return redistributeMass(trainingData, oovClassName, addendClassInsts);
 	}
 
-	private Optional<Instances> redistributeMass(final WordClassificationData trainingData, final int minCount,
-			final String augendClassName) {
-		final List<Entry<String, Instances>> addendClassInsts = new ArrayList<>();
+	private List<Entry<String, Instances>> createdAddendClassInstList(final WordClassificationData trainingData,
+			final int minCount, final String augendClassName) {
+		final List<Entry<String, Instances>> result = new ArrayList<>();
 
 		final Map<String, Instances> classInsts = trainingData.getClassInstances();
 		for (final ObjectIterator<Object2IntMap.Entry<String>> observationCountIter = trainingData
@@ -100,25 +114,23 @@ public final class WordClassDiscountingSmoother {
 				final String className = observationCount.getKey();
 				LOGGER.debug("Class \"{}\" has fewer than {} instances; Will redistribute to \"{}\".",
 						new Object[] { className, minCount, augendClassName });
-				addendClassInsts.add(new MutablePair<>(className, classInsts.remove(className)));
+				result.add(new MutablePair<>(className, classInsts.remove(className)));
 				observationCountIter.remove();
 			}
 
 		}
-
-		final Optional<Instances> result;
-		if (addendClassInsts.isEmpty()) {
-			result = Optional.empty();
-		} else {
-			final Instances augendInsts = classInsts.computeIfAbsent(augendClassName, k -> {
-				final int totalInstCount = addendClassInsts.stream().map(Entry::getValue)
-						.mapToInt(Instances::numAttributes).sum();
-				return classInstsFactory.apply(WordClasses.createRelationName(augendClassName), totalInstCount);
-			});
-			addendClassInsts.stream().forEach(addendClassInst -> augendInsts.addAll(addendClassInst.getValue()));
-			result = Optional.of(augendInsts);
-		}
 		return result;
+	}
+
+	private Instances redistributeMass(final WordClassificationData trainingData, final String augendClassName,
+			final List<Entry<String, Instances>> addendClassInsts) {
+		final Instances augendInsts = trainingData.getClassInstances().computeIfAbsent(augendClassName, k -> {
+			final int totalInstCount = addendClassInsts.stream().map(Entry::getValue).mapToInt(Instances::numAttributes)
+					.sum();
+			return classInstsFactory.apply(WordClasses.createRelationName(augendClassName), totalInstCount);
+		});
+		addendClassInsts.stream().forEach(addendClassInst -> augendInsts.addAll(addendClassInst.getValue()));
+		return augendInsts;
 	}
 
 }

@@ -311,7 +311,7 @@ public final class Tester {
 		// estimated number of entities per game *
 		// estimated number of utterances per dialogue * estimated number of
 		// tokens (i.e. n-grams) per utterance
-		final long estimate = lineCount / 4 * 20 * 4 * 20;
+		final long estimate = lineCount / 4 * 20 * 4 * 10;
 		int result = Integer.MAX_VALUE;
 		try {
 			result = Math.toIntExact(estimate);
@@ -436,8 +436,8 @@ public final class Tester {
 			LOGGER.info("Running cross-validation test on data from \"{}\".", infilePath);
 
 			final WordClassificationData trainingData = testSet.getValue();
-			final Optional<Instances> oovInstances = smoother.redistributeMass(trainingData);
-			LOGGER.info("{} instance(s) for out-of-vocabulary class.", oovInstances.map(Instances::size).orElse(0));
+			final Instances oovInstances = smoother.redistributeMass(trainingData);
+			LOGGER.info("{} instance(s) for out-of-vocabulary class.", oovInstances.size());
 			final EventDialogueClassifier diagClassifier = createDialogueClassifier(trainingData, testSessionData);
 
 			final SessionTestResults testResults = testSession(sessionDiagMgrCacheSupplier.get().get(testSessionData),
