@@ -104,7 +104,7 @@ public final class SessionEventDialogueManager {
 
 	private Reference<Entry<String, GameHistory>> idGameHistory = new SoftReference<>(null);
 
-	private Supplier<Entry<String, GameHistory>> idGameHistoryLoader;
+	private final Supplier<Entry<String, GameHistory>> idGameHistoryLoader;
 
 	private final Supplier<List<EventDialogue>> uttDialogueFactory;
 
