@@ -138,8 +138,8 @@ enum Tokenization implements Function<TokenizationContext, EventDialogueTransfor
 				TokenType.class);
 		result.put(TokenType.INFLECTED,
 				new MutablePair<>(CoreLabel::word, StanfordCoreNLPConfigurationVariant.TOKENIZING_PARSING));
-//		result.put(TokenType.LEMMA, new MutablePair<>(CoreLabel::lemma,
-//				StanfordCoreNLPConfigurationVariant.TOKENIZING_LEMMATIZING_PARSING));
+		result.put(TokenType.LEMMA, new MutablePair<>(CoreLabel::lemma,
+				StanfordCoreNLPConfigurationVariant.TOKENIZING_LEMMATIZING_PARSING));
 		assert result.size() == TokenType.values().length;
 		return result;
 	}
