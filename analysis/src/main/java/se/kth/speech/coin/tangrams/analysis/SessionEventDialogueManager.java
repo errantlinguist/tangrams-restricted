@@ -17,6 +17,9 @@
 package se.kth.speech.coin.tangrams.analysis;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.lang.ref.Reference;
+import java.lang.ref.SoftReference;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -47,13 +50,13 @@ public final class SessionEventDialogueManager {
 
 	private static class EventDialogueCreatingClosure implements Supplier<Stream<EventDialogue>> {
 
-		private final Annotation uttAnnots;
+		private final BiFunction<ListIterator<Utterance>, GameHistory, Stream<EventDialogue>> eventDiagFactory;
 
 		private final GameHistory gameHistory;
 
 		private final SegmentUtteranceFactory segUttFactory;
 
-		private final BiFunction<ListIterator<Utterance>, GameHistory, Stream<EventDialogue>> eventDiagFactory;
+		private final Annotation uttAnnots;
 
 		private EventDialogueCreatingClosure(final Annotation uttAnnots, final GameHistory gameHistory,
 				final SegmentUtteranceFactory segUttFactory,
@@ -76,18 +79,8 @@ public final class SessionEventDialogueManager {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SessionEventDialogueManager.class);
 
-	private final Entry<String, GameHistory> idGameHistory;
-
-	private final List<EventDialogue> uttDialogues;
-
-	SessionEventDialogueManager(final SessionDataManager sessionData,
-			final BiFunction<ListIterator<Utterance>, GameHistory, Stream<EventDialogue>> eventDiagFactory)
-			throws JAXBException, IOException {
-		final Path hatInfilePath = sessionData.getHATFilePath();
-		LOGGER.info("Reading annotations from \"{}\".", hatInfilePath);
-		final Annotation uttAnnots = HAT.readAnnotation(hatInfilePath.toFile());
-
-		final Path eventLogPath = sessionData.getCanonicalEventLogPath();
+	private static Entry<String, GameHistory> loadGameHistory(final Path eventLogPath) throws IOException {
+		Entry<String, GameHistory> result;
 		LOGGER.info("Reading game histories from \"{}\".", eventLogPath);
 		final Map<String, GameHistory> gameHistories = LoggedEvents.parseGameHistories(Files.lines(eventLogPath),
 				LoggedEvents.VALID_MODEL_MIN_REQUIRED_EVENT_MATCHER);
@@ -97,8 +90,8 @@ public final class SessionEventDialogueManager {
 			throw new IllegalArgumentException(String.format("Event log \"%s\" contains no games.", eventLogPath));
 		}
 		case 1: {
-			idGameHistory = gameHistories.entrySet().iterator().next();
-			LOGGER.debug("Parsed history for game \"{}\".", idGameHistory.getKey());
+			result = gameHistories.entrySet().iterator().next();
+			LOGGER.debug("Parsed history for game \"{}\".", result.getKey());
 			break;
 		}
 		default: {
@@ -106,30 +99,84 @@ public final class SessionEventDialogueManager {
 					.format("Event log \"%s\" contains multiple games; Not (currently) supported.", eventLogPath));
 		}
 		}
+		return result;
+	}
 
-		final Map<String, String> sourcePlayerIds = sessionData.getPlayerData().getPlayerSourceIds().inverse();
-		final SegmentUtteranceFactory segUttFactory = new SegmentUtteranceFactory(seg -> {
-			final String sourceId = seg.getSource();
-			return sourcePlayerIds.get(sourceId);
-		});
-		uttDialogues = Collections.unmodifiableList(Arrays.asList(
-				new EventDialogueCreatingClosure(uttAnnots, idGameHistory.getValue(), segUttFactory, eventDiagFactory)
-						.get().toArray(EventDialogue[]::new)));
+	private Reference<Entry<String, GameHistory>> idGameHistory = new SoftReference<>(null);
+
+	private Supplier<Entry<String, GameHistory>> idGameHistoryLoader;
+
+	private final Supplier<List<EventDialogue>> uttDialogueFactory;
+
+	private Reference<List<EventDialogue>> uttDialogues = new SoftReference<>(null);
+
+	SessionEventDialogueManager(final SessionDataManager sessionData,
+			final BiFunction<ListIterator<Utterance>, GameHistory, Stream<EventDialogue>> eventDiagFactory)
+			throws JAXBException, IOException {
+		idGameHistoryLoader = () -> {
+			try {
+				return loadGameHistory(sessionData.getCanonicalEventLogPath());
+			} catch (final IOException ioe) {
+				throw new UncheckedIOException(ioe);
+			}
+		};
+
+		uttDialogueFactory = () -> {
+			final Map<String, String> sourcePlayerIds = sessionData.getPlayerData().getPlayerSourceIds().inverse();
+			final SegmentUtteranceFactory segUttFactory = new SegmentUtteranceFactory(seg -> {
+				final String sourceId = seg.getSource();
+				return sourcePlayerIds.get(sourceId);
+			});
+			final Path hatInfilePath = sessionData.getHATFilePath();
+			LOGGER.info("Reading annotations from \"{}\".", hatInfilePath);
+			try {
+				final Annotation uttAnnots = HAT.readAnnotation(hatInfilePath.toFile());
+				return Collections.unmodifiableList(
+						Arrays.asList(new EventDialogueCreatingClosure(uttAnnots, fetchIdGameHistory().getValue(),
+								segUttFactory, eventDiagFactory).get().toArray(EventDialogue[]::new)));
+			} catch (final JAXBException jaxBE) {
+				throw new RuntimeException(jaxBE);
+			}
+		};
 	}
 
 	public GameHistory getGameHistory() {
-		return idGameHistory.getValue();
+		return fetchIdGameHistory().getValue();
 	}
 
 	/**
 	 * @return the gameId
 	 */
 	public String getGameId() {
-		return idGameHistory.getKey();
+		return fetchIdGameHistory().getKey();
 	}
 
 	public List<EventDialogue> getUttDialogues() {
-		return uttDialogues;
+		List<EventDialogue> result = uttDialogues.get();
+		if (result == null) {
+			synchronized (this) {
+				result = uttDialogues.get();
+				if (result == null) {
+					result = uttDialogueFactory.get();
+					uttDialogues = new SoftReference<>(result);
+				}
+			}
+		}
+		return result;
+	}
+
+	private Entry<String, GameHistory> fetchIdGameHistory() {
+		Entry<String, GameHistory> result = idGameHistory.get();
+		if (result == null) {
+			synchronized (this) {
+				result = idGameHistory.get();
+				if (result == null) {
+					result = idGameHistoryLoader.get();
+					idGameHistory = new SoftReference<>(result);
+				}
+			}
+		}
+		return result;
 	}
 
 }
