@@ -34,8 +34,6 @@ import javax.xml.bind.JAXBException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.BiMap;
-
 import iristk.util.HAT;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
 import se.kth.speech.hat.xsd.Annotation;
@@ -82,8 +80,6 @@ public final class SessionEventDialogueManager {
 
 	private final String gameId;
 
-	private final BiMap<String, String> playerSourceIds;
-
 	private final List<EventDialogue> uttDialogues;
 
 	SessionEventDialogueManager(final SessionDataManager sessionData,
@@ -115,8 +111,7 @@ public final class SessionEventDialogueManager {
 		}
 		}
 
-		playerSourceIds = sessionData.getPlayerData().getPlayerSourceIds();
-		final Map<String, String> sourcePlayerIds = playerSourceIds.inverse();
+		final Map<String, String> sourcePlayerIds =  sessionData.getPlayerData().getPlayerSourceIds().inverse();
 		final SegmentUtteranceFactory segUttFactory = new SegmentUtteranceFactory(seg -> {
 			final String sourceId = seg.getSource();
 			return sourcePlayerIds.get(sourceId);
@@ -135,13 +130,6 @@ public final class SessionEventDialogueManager {
 	 */
 	public String getGameId() {
 		return gameId;
-	}
-
-	/**
-	 * @return the playerSourceIds
-	 */
-	public BiMap<String, String> getPlayerSourceIds() {
-		return playerSourceIds;
 	}
 
 	public List<EventDialogue> getUttDialogues() {
