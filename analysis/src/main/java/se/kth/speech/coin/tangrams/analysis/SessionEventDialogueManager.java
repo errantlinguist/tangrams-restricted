@@ -76,9 +76,7 @@ public final class SessionEventDialogueManager {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SessionEventDialogueManager.class);
 
-	private final GameHistory gameHistory;
-
-	private final String gameId;
+	private final Entry<String, GameHistory> idGameHistory;
 
 	private final List<EventDialogue> uttDialogues;
 
@@ -99,10 +97,8 @@ public final class SessionEventDialogueManager {
 			throw new IllegalArgumentException(String.format("Event log \"%s\" contains no games.", eventLogPath));
 		}
 		case 1: {
-			final Entry<String, GameHistory> gameHistoryToUse = gameHistories.entrySet().iterator().next();
-			gameId = gameHistoryToUse.getKey();
-			LOGGER.debug("Parsed history for game \"{}\".", gameId);
-			gameHistory = gameHistoryToUse.getValue();
+			idGameHistory = gameHistories.entrySet().iterator().next();
+			LOGGER.debug("Parsed history for game \"{}\".", idGameHistory.getKey());
 			break;
 		}
 		default: {
@@ -111,25 +107,25 @@ public final class SessionEventDialogueManager {
 		}
 		}
 
-		final Map<String, String> sourcePlayerIds =  sessionData.getPlayerData().getPlayerSourceIds().inverse();
+		final Map<String, String> sourcePlayerIds = sessionData.getPlayerData().getPlayerSourceIds().inverse();
 		final SegmentUtteranceFactory segUttFactory = new SegmentUtteranceFactory(seg -> {
 			final String sourceId = seg.getSource();
 			return sourcePlayerIds.get(sourceId);
 		});
-		uttDialogues = Collections.unmodifiableList(
-				Arrays.asList(new EventDialogueCreatingClosure(uttAnnots, gameHistory, segUttFactory, eventDiagFactory)
+		uttDialogues = Collections.unmodifiableList(Arrays.asList(
+				new EventDialogueCreatingClosure(uttAnnots, idGameHistory.getValue(), segUttFactory, eventDiagFactory)
 						.get().toArray(EventDialogue[]::new)));
 	}
 
 	public GameHistory getGameHistory() {
-		return gameHistory;
+		return idGameHistory.getValue();
 	}
 
 	/**
 	 * @return the gameId
 	 */
 	public String getGameId() {
-		return gameId;
+		return idGameHistory.getKey();
 	}
 
 	public List<EventDialogue> getUttDialogues() {
