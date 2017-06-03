@@ -277,7 +277,7 @@ public final class CombiningBatchJobTestSingleFileWriter {
 
 				try (PrintWriter out = CLIParameters
 						.parseOutpath((File) cl.getParsedOptionValue(Parameter.OUTPATH.optName))) {
-					final CombiningBatchJobTestSingleFileWriter writer = new CombiningBatchJobTestSingleFileWriter(out, false);
+					final CombiningBatchJobTestSingleFileWriter writer = new CombiningBatchJobTestSingleFileWriter(out, true);
 					try (final ClassPathXmlApplicationContext appCtx = new ClassPathXmlApplicationContext(
 							"combining-batch-tester.xml", CombiningBatchJobTestSingleFileWriter.class)) {
 						final CombiningBatchJobTester tester = new CombiningBatchJobTester(backgroundJobExecutor,
