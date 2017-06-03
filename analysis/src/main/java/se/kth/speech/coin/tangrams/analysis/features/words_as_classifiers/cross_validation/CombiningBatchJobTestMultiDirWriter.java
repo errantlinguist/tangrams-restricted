@@ -475,7 +475,7 @@ public final class CombiningBatchJobTestMultiDirWriter {
 			LOGGER.info("Will write results of testing {} to \"{}\".", testParams, batchOutdir);
 			final BatchTestResultWriter testWriter = new BatchTestResultWriter(batchOutdir);
 			final Tester.Result testResults = summary.getTestResults();
-			testWriter.apply(testResults);
+			testWriter.accept(testResults);
 			writeSummary(summary, batchOutdir);
 		} catch (final IOException e) {
 			throw new UncheckedIOException(e);

@@ -51,7 +51,7 @@ public final class BatchTestResultWriter {
 		this.fileOpenOpts = fileOpenOpts;
 	}
 
-	public void apply(final Tester.Result result) throws IOException {
+	public void accept(final Tester.Result result) throws IOException {
 		final Path statsFilePath = outdir.resolve("stats.tsv");
 		try (final PrintWriter out = new PrintWriter(Files.newBufferedWriter(statsFilePath, fileOpenOpts))) {
 			final StatisticsWriter writer = new StatisticsWriter(out);
