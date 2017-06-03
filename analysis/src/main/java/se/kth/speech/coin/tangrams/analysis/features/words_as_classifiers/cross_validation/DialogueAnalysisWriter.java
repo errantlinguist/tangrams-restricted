@@ -214,17 +214,6 @@ public final class DialogueAnalysisWriter implements Consumer<Tester.Result> {
 				}
 			}
 		}
-
-		// out.println("SESSION TOTALS");
-		// for (final Entry<Path, SessionTester.Result> infileSessionResults :
-		// cvtestResults.getSessionResults()
-		// .entrySet()) {
-		// final Path inpath = infileSessionResults.getKey();
-		// final SessionTester.Result sessionResults =
-		// infileSessionResults.getValue();
-		// writeSessionSummary(inpath, sessionResults);
-		// }
-		// writeSummaryTotals(cvtestResults);
 	}
 
 	private void writeRow(final Object key, final Integer iterNo, final Integer sequenceOrder,
@@ -244,39 +233,5 @@ public final class DialogueAnalysisWriter implements Consumer<Tester.Result> {
 		assert cellVals.size() == COL_HEADERS.size();
 		out.println(cellVals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
 	}
-
-	// private void writeSessionSummary(Object key, final SessionTester.Result
-	// sessionResults) {
-	// final List<Object> cellVals = Arrays.asList(key, "", "", "",
-	// sessionResults.meanRank(), sessionResults.meanReciprocalRank(),
-	// sessionResults.meanUtterancesTestedPerDialogue(),
-	// sessionResults.meanUtteranceTotalPerDialogue(),
-	// sessionResults.meanUtterancesTestedPerDialogue(),
-	// sessionResults.totalTokensTested(),
-	// sessionResults.meanTokensPerTestedUtterance(),
-	// sessionResults.getGoldStdReferentIdCounts().size());
-	// assert cellVals.size() == COL_HEADERS.size();
-	// out.println(cellVals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
-	// }
-
-	// private void writeSummaryTotals(final CrossValidationTester.Result
-	// cvtestResults) {
-	// final SessionTester.Result totalSessionResults =
-	// cvtestResults.totalResults();
-	// final int uttsTestedCount = totalSessionResults.totalUtterancesTested();
-	// final int totalDiagUtts = totalSessionResults.totalUtteranceCount();
-	// final double meanDiagUttsTested = uttsTestedCount / (double)
-	// totalDiagUtts;
-	// final List<Object> cellVals = Arrays.asList("SUMMARY: ALL DIALOGUES AS
-	// ONE SESSION", "", "", "",
-	// totalSessionResults.meanRank(), totalSessionResults.meanReciprocalRank(),
-	// totalSessionResults.meanUtterancesTestedPerDialogue(),
-	// totalSessionResults.meanUtteranceTotalPerDialogue(), meanDiagUttsTested,
-	// totalSessionResults.totalTokensTested(),
-	// totalSessionResults.meanTokensPerTestedUtterance(),
-	// cvtestResults.meanGoldStandardUniqueReferentIdCount());
-	// assert cellVals.size() == COL_HEADERS.size();
-	// out.println(cellVals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
-	// }
 
 }
