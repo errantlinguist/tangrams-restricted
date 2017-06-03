@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -106,15 +107,18 @@ public final class CombiningBatchJobTester {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(CombiningBatchJobTester.class);
 
+	private static final Set<Cleaning> MIN_REQUIRED_PRE_SENTIMENT_CLEANING_METHODS = EnumSet.of(Cleaning.DISFLUENCIES,
+			Cleaning.DUPLICATES, Cleaning.FILLERS);
+
 	private final ApplicationContext appCtx;
 
 	private final ExecutorService backgroundJobExecutor;
 
 	private final Consumer<? super BatchJobSummary> batchJobResultHandler;
 
-	private final Consumer<? super Tester> testerConfigurator;
-
 	private final BiConsumer<? super IncompleteResults, ? super Throwable> errorHandler;
+
+	private final Consumer<? super Tester> testerConfigurator;
 
 	public CombiningBatchJobTester(final ExecutorService backgroundJobExecutor, final ApplicationContext appCtx,
 			final Consumer<? super BatchJobSummary> batchJobResultHandler,
@@ -131,50 +135,66 @@ public final class CombiningBatchJobTester {
 		final SessionEventDialogueManagerCacheSupplier sessionDiagMgrCacheSupplier = appCtx
 				.getBean(SessionEventDialogueManagerCacheSupplier.class);
 
-		for (final UtteranceFiltering uttFilteringMethod : input.uttFilteringMethods) {
-			final EventDialogueTransformer uttFilter = uttFilteringMethod.get();
+		for (final Set<Cleaning> cleaningMethodSet : input.cleaningMethods) {
+			for (final Training trainingMethod : input.trainingMethods) {
+				switch (trainingMethod) {
+				case SENTIMENT: {
+					if (cleaningMethodSet.containsAll(MIN_REQUIRED_PRE_SENTIMENT_CLEANING_METHODS)) {
+						test(input, cleaningMethodSet, trainingMethod, sessionDiagMgrCacheSupplier);
+					} else {
+						LOGGER.warn("Cleaning methods ({}) not ideal for sentiment parsing; Skipping.",
+								cleaningMethodSet);
+					}
+					break;
+				}
+				default: {
+					// Do all combinations
+					test(input, cleaningMethodSet, trainingMethod, sessionDiagMgrCacheSupplier);
+					break;
+				}
+				}
+			}
+		}
+	}
 
-			for (final Set<Cleaning> cleaningMethodSet : input.cleaningMethods) {
+	private void test(final Input input, final Set<Cleaning> cleaningMethodSet, final Training trainingMethod,
+			final SessionEventDialogueManagerCacheSupplier sessionDiagMgrCacheSupplier) {
+		for (final UtteranceFiltering uttFilteringMethod : input.uttFilteringMethods) {
+			for (final Tokenization tokenizationMethod : input.tokenizationMethods) {
 				for (final TokenType tokenType : input.tokenTypes) {
 					final TokenizationContext tokenizationContext = new TokenizationContext(cleaningMethodSet,
 							tokenType, backgroundJobExecutor);
-					for (final Tokenization tokenizationMethod : input.tokenizationMethods) {
-						final EventDialogueTransformer tokenizer = tokenizationMethod.apply(tokenizationContext);
+					final EventDialogueTransformer tokenizer = tokenizationMethod.apply(tokenizationContext);
 
-						for (final TokenFiltering tokenFilteringMethod : input.tokenFilteringMethods) {
-							final EventDialogueTransformer tokenFilter = tokenFilteringMethod.get();
+					for (final TokenFiltering tokenFilteringMethod : input.tokenFilteringMethods) {
+						final EventDialogueTransformer tokenFilter = tokenFilteringMethod.get();
 
-							final List<EventDialogueTransformer> diagTransformers = Arrays.asList(uttFilter, tokenizer,
-									tokenFilter);
-							final CachingEventDialogueTransformer cachingDiagTransformer = new CachingEventDialogueTransformer(
-									new ChainedEventDialogueTransformer(diagTransformers));
-							final TrainingContext trainingCtx = new TrainingContext(cachingDiagTransformer, appCtx,
-									backgroundJobExecutor);
+						final List<EventDialogueTransformer> diagTransformers = Arrays.asList(uttFilteringMethod.get(),
+								tokenizer, tokenFilter);
+						final CachingEventDialogueTransformer cachingDiagTransformer = new CachingEventDialogueTransformer(
+								new ChainedEventDialogueTransformer(diagTransformers));
+						final TrainingContext trainingCtx = new TrainingContext(cachingDiagTransformer, appCtx,
+								backgroundJobExecutor);
+						final Entry<TrainingInstancesFactory, Integer> trainingInstsFactoryIterCount = trainingMethod
+								.apply(trainingCtx);
+						final TestSetFactory testSetFactory = new TestSetFactory(trainingInstsFactoryIterCount.getKey(),
+								sessionDiagMgrCacheSupplier);
+						final Tester tester = appCtx.getBean(Tester.class, testSetFactory, cachingDiagTransformer,
+								backgroundJobExecutor);
+						tester.setIterCount(trainingInstsFactoryIterCount.getValue());
+						testerConfigurator.accept(tester);
+						final TestParameters testParams = new TestParameters(uttFilteringMethod, cleaningMethodSet,
+								tokenizationMethod, tokenType, tokenFilteringMethod, trainingMethod);
+						LOGGER.info("Testing {}.", testParams);
 
-							for (final Training trainingMethod : input.trainingMethods) {
-								final Entry<TrainingInstancesFactory, Integer> trainingInstsFactoryIterCount = trainingMethod
-										.apply(trainingCtx);
-								final TestSetFactory testSetFactory = new TestSetFactory(
-										trainingInstsFactoryIterCount.getKey(), sessionDiagMgrCacheSupplier);
-								final Tester tester = appCtx.getBean(Tester.class, testSetFactory,
-										cachingDiagTransformer, backgroundJobExecutor);
-								tester.setIterCount(trainingInstsFactoryIterCount.getValue());
-								testerConfigurator.accept(tester);
-								final TestParameters testParams = new TestParameters(uttFilteringMethod,
-										cleaningMethodSet, tokenizationMethod, tokenType, tokenFilteringMethod,
-										trainingMethod);
-								LOGGER.info("Testing {}.", testParams);
-
-								final LocalDateTime testTimestamp = LocalDateTime.now();
-								try {
-									final Tester.Result testResults = tester.apply(input.allSessions);
-									final BatchJobSummary batchSummary = new BatchJobSummary(testTimestamp, testParams,
-											testResults);
-									batchJobResultHandler.accept(batchSummary);
-								} catch (final Throwable thrown) {
-									errorHandler.accept(new IncompleteResults(testParams, testTimestamp), thrown);
-								}
-							}
+						final LocalDateTime testTimestamp = LocalDateTime.now();
+						try {
+							final Tester.Result testResults = tester.apply(input.allSessions);
+							final BatchJobSummary batchSummary = new BatchJobSummary(testTimestamp, testParams,
+									testResults);
+							batchJobResultHandler.accept(batchSummary);
+						} catch (final Throwable thrown) {
+							errorHandler.accept(new IncompleteResults(testParams, testTimestamp), thrown);
 						}
 					}
 				}
