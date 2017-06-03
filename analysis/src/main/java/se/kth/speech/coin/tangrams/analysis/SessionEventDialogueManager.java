@@ -17,7 +17,6 @@
 package se.kth.speech.coin.tangrams.analysis;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
 import java.nio.file.Files;
@@ -102,9 +101,7 @@ public final class SessionEventDialogueManager {
 		return result;
 	}
 
-	private Reference<Entry<String, GameHistory>> idGameHistory = new SoftReference<>(null);
-
-	private final Supplier<Entry<String, GameHistory>> idGameHistoryLoader;
+	private final Entry<String, GameHistory> idGameHistory;
 
 	private final Supplier<List<EventDialogue>> uttDialogueFactory;
 
@@ -112,14 +109,8 @@ public final class SessionEventDialogueManager {
 
 	SessionEventDialogueManager(final SessionDataManager sessionData,
 			final BiFunction<ListIterator<Utterance>, GameHistory, Stream<EventDialogue>> eventDiagFactory)
-			throws JAXBException, IOException {
-		idGameHistoryLoader = () -> {
-			try {
-				return loadGameHistory(sessionData.getCanonicalEventLogPath());
-			} catch (final IOException ioe) {
-				throw new UncheckedIOException(ioe);
-			}
-		};
+			throws IOException {
+		idGameHistory = loadGameHistory(sessionData.getCanonicalEventLogPath());
 
 		uttDialogueFactory = () -> {
 			final Map<String, String> sourcePlayerIds = sessionData.getPlayerData().getPlayerSourceIds().inverse();
@@ -132,7 +123,7 @@ public final class SessionEventDialogueManager {
 			try {
 				final Annotation uttAnnots = HAT.readAnnotation(hatInfilePath.toFile());
 				return Collections.unmodifiableList(
-						Arrays.asList(new EventDialogueCreatingClosure(uttAnnots, fetchIdGameHistory().getValue(),
+						Arrays.asList(new EventDialogueCreatingClosure(uttAnnots, idGameHistory.getValue(),
 								segUttFactory, eventDiagFactory).get().toArray(EventDialogue[]::new)));
 			} catch (final JAXBException jaxBE) {
 				throw new RuntimeException(jaxBE);
@@ -141,14 +132,14 @@ public final class SessionEventDialogueManager {
 	}
 
 	public GameHistory getGameHistory() {
-		return fetchIdGameHistory().getValue();
+		return idGameHistory.getValue();
 	}
 
 	/**
 	 * @return the gameId
 	 */
 	public String getGameId() {
-		return fetchIdGameHistory().getKey();
+		return idGameHistory.getKey();
 	}
 
 	public List<EventDialogue> getUttDialogues() {
@@ -159,20 +150,6 @@ public final class SessionEventDialogueManager {
 				if (result == null) {
 					result = uttDialogueFactory.get();
 					uttDialogues = new SoftReference<>(result);
-				}
-			}
-		}
-		return result;
-	}
-
-	private Entry<String, GameHistory> fetchIdGameHistory() {
-		Entry<String, GameHistory> result = idGameHistory.get();
-		if (result == null) {
-			synchronized (this) {
-				result = idGameHistory.get();
-				if (result == null) {
-					result = idGameHistoryLoader.get();
-					idGameHistory = new SoftReference<>(result);
 				}
 			}
 		}
