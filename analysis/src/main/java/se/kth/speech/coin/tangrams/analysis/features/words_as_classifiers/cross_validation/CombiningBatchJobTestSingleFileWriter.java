@@ -277,7 +277,8 @@ public final class CombiningBatchJobTestSingleFileWriter {
 
 				try (PrintWriter out = CLIParameters
 						.parseOutpath((File) cl.getParsedOptionValue(Parameter.OUTPATH.optName))) {
-					final CombiningBatchJobTestSingleFileWriter writer = new CombiningBatchJobTestSingleFileWriter(out, true);
+					final CombiningBatchJobTestSingleFileWriter writer = new CombiningBatchJobTestSingleFileWriter(out,
+							true);
 					try (final ClassPathXmlApplicationContext appCtx = new ClassPathXmlApplicationContext(
 							"combining-batch-tester.xml", CombiningBatchJobTestSingleFileWriter.class)) {
 						final CombiningBatchJobTester tester = new CombiningBatchJobTester(backgroundJobExecutor,
@@ -331,12 +332,13 @@ public final class CombiningBatchJobTestSingleFileWriter {
 		return Arrays.stream(Cleaning.values()).map(cleaningMethods::contains).map(Object::toString);
 	}
 
-	private static Stream<String> createColHeaders(final List<DialogueAnalysisSummaryFactory.SummaryDatum> summaryDataToWrite) {
+	private static Stream<String> createColHeaders(
+			final List<DialogueAnalysisSummaryFactory.SummaryDatum> summaryDataToWrite) {
 		final Stream.Builder<String> resultBuilder = Stream.builder();
 		resultBuilder.add("TIME");
 		createTestMethodColumnHeaders().forEachOrdered(resultBuilder);
-		resultBuilder.add("ITER_COUNT");
-		summaryDataToWrite.stream().map(DialogueAnalysisSummaryFactory.SummaryDatum::toString).forEachOrdered(resultBuilder);
+		summaryDataToWrite.stream().map(DialogueAnalysisSummaryFactory.SummaryDatum::toString)
+				.forEachOrdered(resultBuilder);
 		return resultBuilder.build();
 	}
 
@@ -396,11 +398,11 @@ public final class CombiningBatchJobTestSingleFileWriter {
 
 	private boolean writeHeader;
 
-	public CombiningBatchJobTestSingleFileWriter(final PrintWriter out, boolean writeHeader) {
+	public CombiningBatchJobTestSingleFileWriter(final PrintWriter out, final boolean writeHeader) {
 		this(out, writeHeader, DEFAULT_DATA_TO_WRITE);
 	}
 
-	public CombiningBatchJobTestSingleFileWriter(final PrintWriter out, boolean writeHeader,
+	public CombiningBatchJobTestSingleFileWriter(final PrintWriter out, final boolean writeHeader,
 			final List<DialogueAnalysisSummaryFactory.SummaryDatum> dataToWrite) {
 		this.out = out;
 		this.writeHeader = writeHeader;
@@ -434,8 +436,9 @@ public final class CombiningBatchJobTestSingleFileWriter {
 									sessionDialogueOrder++, diagTestResults));
 					final Stream<String> diagAnalysisRowCellVals = dataToWrite.stream().map(rowData::get)
 							.map(Object::toString);
-					out.println(Stream.concat(Arrays.stream(testParamRowCellValues), diagAnalysisRowCellVals)
-							.collect(ROW_CELL_JOINER));
+					final String row = Stream.concat(Arrays.stream(testParamRowCellValues), diagAnalysisRowCellVals)
+							.collect(ROW_CELL_JOINER);
+					out.println(row);
 				}
 			}
 		}
