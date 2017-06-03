@@ -55,12 +55,13 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import com.google.common.collect.Sets;
 
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import se.kth.speech.coin.tangrams.CLIParameters;
 import se.kth.speech.coin.tangrams.analysis.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
+import se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttributeContext;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.EventDialogueTestResults;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.SessionTestResults;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.CombiningBatchJobTester.IncompleteResults;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.Tester.CrossValidationTestSummary;
 import se.kth.speech.coin.tangrams.iristk.EventTimes;
@@ -337,6 +338,7 @@ public final class CombiningBatchJobTestSingleFileWriter {
 		final Stream.Builder<String> resultBuilder = Stream.builder();
 		resultBuilder.add("TIME");
 		createTestMethodColumnHeaders().forEachOrdered(resultBuilder);
+		createTrainingDataColHeaders().forEachOrdered(resultBuilder);
 		summaryDataToWrite.stream().map(DialogueAnalysisSummaryFactory.SummaryDatum::toString)
 				.forEachOrdered(resultBuilder);
 		return resultBuilder.build();
@@ -384,6 +386,18 @@ public final class CombiningBatchJobTestSingleFileWriter {
 		return resultBuilder.build();
 	}
 
+	/**
+	 * @return
+	 */
+	private static Stream<String> createTrainingDataColHeaders() {
+		return EntityInstanceAttributeContext.getClassValues().stream().map(classVal -> "TRAIN_INSTS-" + classVal);
+	}
+
+	private static Stream<Object> createTrainingDataRowCellValues(final CrossValidationTestSummary cvTestSummary) {
+		final Object2IntMap<String> trainingInstCounts = cvTestSummary.getTrainingInstanceCounts();
+		return EntityInstanceAttributeContext.getClassValues().stream().map(trainingInstCounts::getInt);
+	}
+
 	private static void shutdownExceptionally(final ExecutorService executor) {
 		LOGGER.debug("Emergency executor service shutdown.");
 		executor.shutdownNow();
@@ -424,20 +438,24 @@ public final class CombiningBatchJobTestSingleFileWriter {
 			for (final ListIterator<CrossValidationTestSummary> sessionResultIter = sessionResultList
 					.listIterator(); sessionResultIter.hasNext();) {
 				final CrossValidationTestSummary cvTestSummary = sessionResultIter.next();
-				final SessionTestResults sessionResults = cvTestSummary.getTestResults();
+				final String[] trainingRowCellVals = createTrainingDataRowCellValues(cvTestSummary)
+						.map(Object::toString).toArray(String[]::new);
 				// NOTE: This should remain here, after "Iterator.next()", so
 				// that the printed first iteration is "1" rather than "0"
 				final int iterNo = sessionResultIter.nextIndex();
 				int sessionDialogueOrder = 1;
-				for (final Entry<EventDialogue, EventDialogueTestResults> diagTestResults : sessionResults
-						.getDialogueTestResults()) {
+				for (final Entry<EventDialogue, EventDialogueTestResults> diagTestResults : cvTestSummary
+						.getTestResults().getDialogueTestResults()) {
 					final Map<DialogueAnalysisSummaryFactory.SummaryDatum, Object> rowData = rowDataFactory
 							.apply(new DialogueAnalysisSummaryFactory.Input(inpath, "Success", iterNo,
 									sessionDialogueOrder++, diagTestResults));
 					final Stream<String> diagAnalysisRowCellVals = dataToWrite.stream().map(rowData::get)
 							.map(Object::toString);
-					final String row = Stream.concat(Arrays.stream(testParamRowCellValues), diagAnalysisRowCellVals)
-							.collect(ROW_CELL_JOINER);
+					final Stream.Builder<String> rowCellValBuilder = Stream.builder();
+					Arrays.stream(testParamRowCellValues).forEachOrdered(rowCellValBuilder);
+					Arrays.stream(trainingRowCellVals).forEachOrdered(rowCellValBuilder);
+					diagAnalysisRowCellVals.forEachOrdered(rowCellValBuilder);
+					final String row = rowCellValBuilder.build().collect(ROW_CELL_JOINER);
 					out.println(row);
 				}
 			}
