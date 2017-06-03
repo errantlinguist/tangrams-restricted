@@ -492,7 +492,7 @@ public final class CombiningBatchJobTestMultiDirWriter {
 				createNewSummary = false;
 			}
 			final Path batchOutdir = Files.createDirectories(createBatchOutdir(incompleteResults.getTestParams()));
-			final String errorDesc = String.format("%s: %s", thrown.getClass(), thrown.getLocalizedMessage());
+			final String errorDesc = String.format("%s: %s", thrown.getClass().getName(), thrown.getLocalizedMessage());
 			try (final BufferedWriter summaryWriter = createAppendingSummaryWriter()) {
 				summaryWriter.newLine();
 				final Stream<String> rowCellVals = createRowCellValues(incompleteResults, errorDesc, batchOutdir);
