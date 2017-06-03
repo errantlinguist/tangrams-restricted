@@ -108,7 +108,7 @@ public final class CombiningBatchJobTester {
 	private static final Logger LOGGER = LoggerFactory.getLogger(CombiningBatchJobTester.class);
 
 	private static final Set<Cleaning> MIN_REQUIRED_PRE_SENTIMENT_CLEANING_METHODS = EnumSet.of(Cleaning.DISFLUENCIES,
-			Cleaning.DUPLICATES, Cleaning.FILLERS);
+			Cleaning.DUPLICATES);
 
 	private final ApplicationContext appCtx;
 
