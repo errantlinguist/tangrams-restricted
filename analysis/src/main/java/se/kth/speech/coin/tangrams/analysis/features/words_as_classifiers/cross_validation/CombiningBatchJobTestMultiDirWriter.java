@@ -289,7 +289,8 @@ public final class CombiningBatchJobTestMultiDirWriter {
 				final boolean appendSummary = cl.hasOption(Parameter.APPEND_SUMMARY.optName);
 				LOGGER.info("Append to summary rather than truncate? {}", appendSummary);
 				final boolean noClobber = cl.hasOption(Parameter.NO_CLOBBER.optName);
-				LOGGER.info("Don't clobber old batch results? {}", appendSummary);
+				LOGGER.info("Don't clobber old batch results? {}", noClobber);
+				// TODO: Finish "noclobber" opt impl
 				final Set<UtteranceFiltering> uttFilteringMethods = Parameter.parseUttFilteringMethods(cl);
 				LOGGER.info("Utterance filtering methods: {}", uttFilteringMethods);
 				final Set<Cleaning> cleaningMethods = Parameter.parseCleaningMethods(cl);
