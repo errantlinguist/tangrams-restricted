@@ -19,13 +19,8 @@ package se.kth.speech.nlp.stanford;
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
 import java.util.Properties;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Future;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
@@ -39,7 +34,7 @@ import edu.stanford.nlp.pipeline.StanfordCoreNLP;
  * @since 29 May 2017
  *
  */
-public enum StanfordCoreNLPConfigurationVariant implements Function<Executor, Supplier<StanfordCoreNLP>> {
+public enum StanfordCoreNLPConfigurationVariant implements Supplier<StanfordCoreNLP> {
 	TOKENIZING {
 
 		@Override
@@ -75,6 +70,18 @@ public enum StanfordCoreNLPConfigurationVariant implements Function<Executor, Su
 			return result;
 		}
 	},
+	TOKENIZING_LEMMATIZING_PARSING {
+
+		@Override
+		protected Properties createProps() {
+			final Properties result = createDefaultProps();
+			// https://stanfordnlp.github.io/CoreNLP/annotators.html
+			final Stream<String> annotatorNames = Stream.of(Annotator.STANFORD_TOKENIZE, Annotator.STANFORD_SSPLIT,
+					Annotator.STANFORD_POS, Annotator.STANFORD_LEMMA, Annotator.STANFORD_PARSE);
+			result.setProperty("annotators", annotatorNames.collect(OPTION_MULTIVALUE_DELIMITER));
+			return result;
+		}
+	},
 	TOKENIZING_PARSING_SENTIMENT {
 
 		@Override
@@ -88,7 +95,7 @@ public enum StanfordCoreNLPConfigurationVariant implements Function<Executor, Su
 		}
 	};
 
-	private static final ConcurrentMap<StanfordCoreNLPConfigurationVariant, Reference<Supplier<StanfordCoreNLP>>> INSTANCES = new ConcurrentHashMap<>(
+	private static final ConcurrentMap<StanfordCoreNLPConfigurationVariant, Reference<StanfordCoreNLP>> INSTANCES = new ConcurrentHashMap<>(
 			StanfordCoreNLPConfigurationVariant.values().length);
 
 	private static final Collector<CharSequence, ?, String> OPTION_MULTIVALUE_DELIMITER = Collectors.joining(",");
@@ -120,31 +127,17 @@ public enum StanfordCoreNLPConfigurationVariant implements Function<Executor, Su
 		return result;
 	}
 
-	private static <T> Supplier<T> wrapFuture(final Future<? extends T> fut) {
-		return () -> {
-			try {
-				return fut.get();
-			} catch (InterruptedException | ExecutionException e) {
-				throw new RuntimeException(e);
-			}
-		};
-	}
-
 	@Override
-	public Supplier<StanfordCoreNLP> apply(final Executor executor) {
-		final Reference<Supplier<StanfordCoreNLP>> ref = INSTANCES.compute(this, (key, oldValue) -> {
-			final Reference<Supplier<StanfordCoreNLP>> newValue;
+	public StanfordCoreNLP get() {
+		final Reference<StanfordCoreNLP> ref = INSTANCES.compute(this, (key, oldValue) -> {
+			final Reference<StanfordCoreNLP> newValue;
 			if (oldValue == null) {
 				// No instance has yet been created; Create one
-				final CompletableFuture<StanfordCoreNLP> futureInst = CompletableFuture
-						.supplyAsync(() -> new StanfordCoreNLP(createProps()), executor);
-				newValue = new SoftReference<>(wrapFuture(futureInst));
+				newValue = new SoftReference<>(new StanfordCoreNLP(createProps()));
 			} else if (oldValue.get() == null) {
 				// The old instance has already been deleted; Replace it with a
 				// new reference to a new instance
-				final CompletableFuture<StanfordCoreNLP> futureInst = CompletableFuture
-						.supplyAsync(() -> new StanfordCoreNLP(createProps()), executor);
-				newValue = new SoftReference<>(wrapFuture(futureInst));
+				newValue = new SoftReference<>(new StanfordCoreNLP(createProps()));
 			} else {
 				// The existing instance has not yet been deleted; Re-use it
 				newValue = oldValue;
