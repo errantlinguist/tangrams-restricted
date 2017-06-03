@@ -23,6 +23,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
+import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.ListIterator;
@@ -464,8 +465,22 @@ public final class CombiningBatchJobTestSingleFileWriter {
 
 	public void writeError(final IncompleteResults incompleteResults, final Throwable thrown) {
 		final String errorDesc = String.format("%s: %s", thrown.getClass().getName(), thrown.getLocalizedMessage());
-		// TODO: Finish
-		throw new RuntimeException(thrown);
+
+		final Stream.Builder<String> rowCellValBuilder = Stream.builder();
+		rowCellValBuilder.add(TIMESTAMP_FORMATTER.format(incompleteResults.getTestStartTime()));
+		createTestMethodRowCellValues(incompleteResults.getTestParams(),
+				CombiningBatchJobTestSingleFileWriter::createCleaningMethodBooleanValues)
+						.forEachOrdered(rowCellValBuilder);
+		EntityInstanceAttributeContext.getClassValues().stream().map(val -> NULL_CELL_VALUE_REPR)
+				.forEach(rowCellValBuilder);
+		final Map<DialogueAnalysisSummaryFactory.SummaryDatum, Object> rowData = new EnumMap<>(
+				DialogueAnalysisSummaryFactory.SummaryDatum.class);
+		dataToWrite.forEach(datum -> rowData.put(datum, NULL_CELL_VALUE_REPR));
+		rowData.put(DialogueAnalysisSummaryFactory.SummaryDatum.DESCRIPTION, errorDesc);
+		final Stream<String> diagAnalysisRowCellVals = dataToWrite.stream().map(rowData::get).map(Object::toString);
+		diagAnalysisRowCellVals.forEachOrdered(rowCellValBuilder);
+		final String row = rowCellValBuilder.build().collect(ROW_CELL_JOINER);
+		out.println(row);
 	}
 
 	private Stream<String> createTestParamRowCellValues(final BatchJobSummary summary) {
