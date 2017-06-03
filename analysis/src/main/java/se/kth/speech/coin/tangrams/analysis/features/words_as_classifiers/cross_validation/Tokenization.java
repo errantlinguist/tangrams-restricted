@@ -50,7 +50,7 @@ import se.kth.speech.nlp.stanford.StanfordCoreNLPConfigurationVariant;
 import se.kth.speech.nlp.stanford.Tokenizer;
 
 enum Tokenization implements Function<TokenizationContext, EventDialogueTransformer> {
-	BASIC_TOKENIZER {
+	BASIC {
 
 		@Override
 		protected TokenizingEventDialogueTransformer createMainTransformer(final TokenizationContext context) {
