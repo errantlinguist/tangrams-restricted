@@ -17,8 +17,6 @@
 package se.kth.speech.coin.tangrams.analysis;
 
 import java.io.IOException;
-import java.lang.ref.Reference;
-import java.lang.ref.SoftReference;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
@@ -103,16 +101,14 @@ public final class SessionEventDialogueManager {
 
 	private final Entry<String, GameHistory> idGameHistory;
 
-	private final Supplier<List<EventDialogue>> uttDialogueFactory;
-
-	private Reference<List<EventDialogue>> uttDialogues = new SoftReference<>(null);
+	private final List<EventDialogue> uttDialogues;
 
 	SessionEventDialogueManager(final SessionDataManager sessionData,
 			final BiFunction<ListIterator<Utterance>, GameHistory, Stream<EventDialogue>> eventDiagFactory)
 			throws IOException {
 		idGameHistory = loadGameHistory(sessionData.getCanonicalEventLogPath());
 
-		uttDialogueFactory = () -> {
+		final Supplier<List<EventDialogue>> uttDialogueFactory = () -> {
 			final Map<String, String> sourcePlayerIds = sessionData.getPlayerData().getPlayerSourceIds().inverse();
 			final SegmentUtteranceFactory segUttFactory = new SegmentUtteranceFactory(seg -> {
 				final String sourceId = seg.getSource();
@@ -129,6 +125,7 @@ public final class SessionEventDialogueManager {
 				throw new RuntimeException(jaxBE);
 			}
 		};
+		uttDialogues = uttDialogueFactory.get();
 	}
 
 	public GameHistory getGameHistory() {
@@ -143,17 +140,7 @@ public final class SessionEventDialogueManager {
 	}
 
 	public List<EventDialogue> getUttDialogues() {
-		List<EventDialogue> result = uttDialogues.get();
-		if (result == null) {
-			synchronized (this) {
-				result = uttDialogues.get();
-				if (result == null) {
-					result = uttDialogueFactory.get();
-					uttDialogues = new SoftReference<>(result);
-				}
-			}
-		}
-		return result;
+		return uttDialogues;
 	}
 
 }
