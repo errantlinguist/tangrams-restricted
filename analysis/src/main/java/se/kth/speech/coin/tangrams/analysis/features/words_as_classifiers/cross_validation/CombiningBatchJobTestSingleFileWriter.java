@@ -334,7 +334,6 @@ public final class CombiningBatchJobTestSingleFileWriter {
 	private static Stream<String> createColHeaders(final List<DialogueAnalysisSummaryFactory.SummaryDatum> summaryDataToWrite) {
 		final Stream.Builder<String> resultBuilder = Stream.builder();
 		resultBuilder.add("TIME");
-		resultBuilder.accept("DESC");
 		createTestMethodColumnHeaders().forEachOrdered(resultBuilder);
 		resultBuilder.add("ITER_COUNT");
 		summaryDataToWrite.stream().map(DialogueAnalysisSummaryFactory.SummaryDatum::toString).forEachOrdered(resultBuilder);
@@ -451,7 +450,6 @@ public final class CombiningBatchJobTestSingleFileWriter {
 	private Stream<String> createTestParamRowCellValues(final BatchJobSummary summary) {
 		final Stream.Builder<String> resultBuilder = Stream.builder();
 		resultBuilder.add(TIMESTAMP_FORMATTER.format(summary.getTestTimestamp()));
-		resultBuilder.add("Success");
 		createTestMethodRowCellValues(summary.getTestParams(),
 				CombiningBatchJobTestSingleFileWriter::createCleaningMethodBooleanValues).forEachOrdered(resultBuilder);
 		return resultBuilder.build();
