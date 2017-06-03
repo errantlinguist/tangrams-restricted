@@ -175,6 +175,7 @@ public final class DialogueAnalysisWriter implements Consumer<Tester.Result> {
 	private static List<DialogueAnalysisSummaryFactory.SummaryDatum> createDefaultDatumOrderingList() {
 		final List<DialogueAnalysisSummaryFactory.SummaryDatum> result = Arrays.asList(
 				DialogueAnalysisSummaryFactory.SummaryDatum.KEY, DialogueAnalysisSummaryFactory.SummaryDatum.TEST_ITER,
+				DialogueAnalysisSummaryFactory.SummaryDatum.DESCRIPTION,
 				DialogueAnalysisSummaryFactory.SummaryDatum.SESSION_ORDER,
 				DialogueAnalysisSummaryFactory.SummaryDatum.EVENT_TIME,
 				DialogueAnalysisSummaryFactory.SummaryDatum.DIALOGUE,
@@ -230,8 +231,8 @@ public final class DialogueAnalysisWriter implements Consumer<Tester.Result> {
 					for (final Entry<EventDialogue, EventDialogueTestResults> diagTestResults : sessionResults
 							.getDialogueTestResults()) {
 						final Map<DialogueAnalysisSummaryFactory.SummaryDatum, Object> rowData = rowDataFactory
-								.apply(new DialogueAnalysisSummaryFactory.Input(inpath, iterNo, sessionDialogueOrder++,
-										diagTestResults));
+								.apply(new DialogueAnalysisSummaryFactory.Input(inpath, "Success", iterNo,
+										sessionDialogueOrder++, diagTestResults));
 						final Stream<String> rowCellVals = dataToWrite.stream().map(rowData::get).map(Object::toString);
 						out.print(rowCellVals.collect(ROW_CELL_JOINER));
 					}

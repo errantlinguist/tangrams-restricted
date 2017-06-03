@@ -142,16 +142,59 @@ public final class CombiningBatchJobTester {
 					if (cleaningMethodSet.containsAll(MIN_REQUIRED_PRE_SENTIMENT_CLEANING_METHODS)) {
 						test(input, cleaningMethodSet, trainingMethod, sessionDiagMgrCacheSupplier);
 					} else {
-						LOGGER.warn("Cleaning methods ({}) not ideal for sentiment parsing; Skipping.",
+						LOGGER.warn("Cleaning methods ({}) not ideal for sentiment analysis; Skipping.",
 								cleaningMethodSet);
 					}
 					break;
 				}
 				default: {
-					// Do all combinations
+					// Use all combinations
 					test(input, cleaningMethodSet, trainingMethod, sessionDiagMgrCacheSupplier);
 					break;
 				}
+				}
+			}
+		}
+	}
+
+	private void test(final Input input, final Set<Cleaning> cleaningMethodSet, final Tokenization tokenizationMethod,
+			final Training trainingMethod, final SessionEventDialogueManagerCacheSupplier sessionDiagMgrCacheSupplier) {
+		for (final UtteranceFiltering uttFilteringMethod : input.uttFilteringMethods) {
+			for (final TokenType tokenType : input.tokenTypes) {
+				final TokenizationContext tokenizationContext = new TokenizationContext(cleaningMethodSet, tokenType,
+						backgroundJobExecutor);
+				final EventDialogueTransformer tokenizer = tokenizationMethod.apply(tokenizationContext);
+
+				for (final TokenFiltering tokenFilteringMethod : input.tokenFilteringMethods) {
+					final EventDialogueTransformer tokenFilter = tokenFilteringMethod.get();
+
+					final List<EventDialogueTransformer> diagTransformers = Arrays.asList(uttFilteringMethod.get(),
+							tokenizer, tokenFilter);
+					final CachingEventDialogueTransformer cachingDiagTransformer = new CachingEventDialogueTransformer(
+							new ChainedEventDialogueTransformer(diagTransformers));
+					final TrainingContext trainingCtx = new TrainingContext(cachingDiagTransformer, appCtx,
+							backgroundJobExecutor);
+					final Entry<TrainingInstancesFactory, Integer> trainingInstsFactoryIterCount = trainingMethod
+							.apply(trainingCtx);
+					final TestSetFactory testSetFactory = new TestSetFactory(trainingInstsFactoryIterCount.getKey(),
+							sessionDiagMgrCacheSupplier);
+					final Tester tester = appCtx.getBean(Tester.class, testSetFactory, cachingDiagTransformer,
+							backgroundJobExecutor);
+					tester.setIterCount(trainingInstsFactoryIterCount.getValue());
+					testerConfigurator.accept(tester);
+					final TestParameters testParams = new TestParameters(uttFilteringMethod, cleaningMethodSet,
+							tokenizationMethod, tokenType, tokenFilteringMethod, trainingMethod);
+					LOGGER.info("Testing {}.", testParams);
+
+					final LocalDateTime testTimestamp = LocalDateTime.now();
+					try {
+						final Tester.Result testResults = tester.apply(input.allSessions);
+						final BatchJobSummary batchSummary = new BatchJobSummary(testTimestamp, testParams,
+								testResults);
+						batchJobResultHandler.accept(batchSummary);
+					} catch (final Throwable thrown) {
+						errorHandler.accept(new IncompleteResults(testParams, testTimestamp), thrown);
+					}
 				}
 			}
 		}
@@ -161,6 +204,23 @@ public final class CombiningBatchJobTester {
 			final SessionEventDialogueManagerCacheSupplier sessionDiagMgrCacheSupplier) {
 		for (final UtteranceFiltering uttFilteringMethod : input.uttFilteringMethods) {
 			for (final Tokenization tokenizationMethod : input.tokenizationMethods) {
+				switch (tokenizationMethod) {
+				case BASIC: {
+					// Use all combinations
+					test(input, cleaningMethodSet, tokenizationMethod, trainingMethod, sessionDiagMgrCacheSupplier);
+					break;
+				}
+				default: {
+					// Only do if cleaning
+					if (cleaningMethodSet.containsAll(MIN_REQUIRED_PRE_SENTIMENT_CLEANING_METHODS)) {
+						test(input, cleaningMethodSet, tokenizationMethod, trainingMethod, sessionDiagMgrCacheSupplier);
+					} else {
+						LOGGER.warn("Cleaning methods ({}) not ideal for parsing; Skipping.", cleaningMethodSet);
+					}
+					break;
+				}
+
+				}
 				for (final TokenType tokenType : input.tokenTypes) {
 					final TokenizationContext tokenizationContext = new TokenizationContext(cleaningMethodSet,
 							tokenType, backgroundJobExecutor);

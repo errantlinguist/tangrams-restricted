@@ -40,13 +40,19 @@ final class DialogueAnalysisSummaryFactory implements
 	public static final class Input {
 
 		private final Entry<EventDialogue, EventDialogueTestResults> diagTestResults;
+
 		private final Integer iterNo;
+
 		private final Object key;
+
+		private final String desc;
+
 		private final Integer sequenceOrder;
 
-		public Input(final Object key, final Integer iterNo, final Integer sequenceOrder,
+		public Input(final Object key, final String desc, final Integer iterNo, final Integer sequenceOrder,
 				final Entry<EventDialogue, EventDialogueTestResults> diagTestResults) {
 			this.key = key;
+			this.desc = desc;
 			this.iterNo = iterNo;
 			this.sequenceOrder = sequenceOrder;
 			this.diagTestResults = diagTestResults;
@@ -214,6 +220,17 @@ final class DialogueAnalysisSummaryFactory implements
 			@Override
 			public Object apply(final Input input) {
 				return input.diagTestResults.getValue().totalUtteranceCount();
+			}
+		},
+		DESCRIPTION {
+			/*
+			 * (non-Javadoc)
+			 *
+			 * @see java.util.function.Function#apply(java.lang.Object)
+			 */
+			@Override
+			public Object apply(final Input input) {
+				return input.desc;
 			}
 		};
 	}
