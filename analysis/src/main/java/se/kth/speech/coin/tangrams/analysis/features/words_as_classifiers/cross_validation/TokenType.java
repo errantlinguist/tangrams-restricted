@@ -22,6 +22,7 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross
  *
  */
 enum TokenType {
-	INFLECTED, LEMMA;
+	INFLECTED;
+//	LEMMA;
 
 }
