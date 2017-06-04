@@ -332,6 +332,7 @@ public final class TangramsClient implements Runnable {
 
 	private static void signalGameStart() {
 		try {
+			// FIXME: Maven corrupts this file because of resource filtering
 			playSound("game-start.wav");
 		} catch (final LineUnavailableException e) {
 			throw new RuntimeException(e);
