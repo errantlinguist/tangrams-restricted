@@ -28,8 +28,13 @@ import se.kth.speech.nlp.SnowballPorter2EnglishStopwordSetFactory;
 import se.kth.speech.nlp.SnowballPorter2EnglishStopwords;
 
 enum TokenFiltering implements Supplier<EventDialogueTransformer> {
-	NO_FILTER(new DummyEventDialogueTransformer()), STOPWORDS_FILLERS(createStopwordFilteringTransformer(EnumSet
-			.of(SnowballPorter2EnglishStopwords.Variant.CANONICAL, SnowballPorter2EnglishStopwords.Variant.FILLERS)));
+	FILLERS(new TokenFilteringEventDialogueTransformer(
+			SnowballPorter2EnglishStopwords.Variant.FILLERS.get())), NO_FILTER(
+					new DummyEventDialogueTransformer()), STOPWORDS(new TokenFilteringEventDialogueTransformer(
+							SnowballPorter2EnglishStopwords.Variant.CANONICAL.get())), STOPWORDS_FILLERS(
+									createStopwordFilteringTransformer(
+											EnumSet.of(SnowballPorter2EnglishStopwords.Variant.CANONICAL,
+													SnowballPorter2EnglishStopwords.Variant.FILLERS)));
 
 	private static TokenFilteringEventDialogueTransformer createStopwordFilteringTransformer(
 			final Collection<SnowballPorter2EnglishStopwords.Variant> variantsToUnify) {
