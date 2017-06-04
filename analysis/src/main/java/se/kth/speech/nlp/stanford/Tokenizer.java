@@ -24,7 +24,6 @@ import edu.stanford.nlp.ling.CoreAnnotations.TextAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.TokensAnnotation;
 import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.pipeline.Annotation;
-import edu.stanford.nlp.pipeline.Annotator;
 import edu.stanford.nlp.util.CoreMap;
 
 /**
@@ -34,8 +33,8 @@ import edu.stanford.nlp.util.CoreMap;
  */
 public final class Tokenizer extends AbstractTokenizer {
 
-	public Tokenizer(final Annotator annotator) {
-		super(annotator);
+	public Tokenizer(final StanfordCoreNLPConfigurationVariant annotConfig) {
+		super(annotConfig);
 	}
 
 	/*

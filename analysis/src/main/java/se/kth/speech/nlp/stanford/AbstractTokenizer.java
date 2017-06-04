@@ -16,8 +16,16 @@
 */
 package se.kth.speech.nlp.stanford;
 
+import java.lang.ref.Reference;
+import java.lang.ref.SoftReference;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
+
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 
 import edu.stanford.nlp.pipeline.Annotation;
 import edu.stanford.nlp.pipeline.Annotator;
@@ -29,37 +37,55 @@ import edu.stanford.nlp.pipeline.Annotator;
  */
 public abstract class AbstractTokenizer implements Function<String, List<String>> {
 
-	private final Annotator annotator;
+	private static final ConcurrentMap<StanfordCoreNLPConfigurationVariant, Reference<LoadingCache<String, Annotation>>> CONFIG_CACHES = new ConcurrentHashMap<>(
+			StanfordCoreNLPConfigurationVariant.values().length);
 
-	public AbstractTokenizer(final Annotator annotator) {
-		this.annotator = annotator;
+	private static Annotation annotate(final String input, final StanfordCoreNLPConfigurationVariant config) {
+		final Annotator annotator = config.get();
+		final Annotation result = new Annotation(input);
+		annotator.annotate(result);
+		return result;
+	}
 
+	private static final LoadingCache<String, Annotation> createCache(
+			final StanfordCoreNLPConfigurationVariant annotConfig) {
+		return CacheBuilder.newBuilder().softValues().initialCapacity(2000)
+				.build(CacheLoader.from(str -> annotate(str, annotConfig)));
+	}
+
+	private static LoadingCache<String, Annotation> fetchCache(final StanfordCoreNLPConfigurationVariant annotConfig) {
+		final Reference<LoadingCache<String, Annotation>> ref = CONFIG_CACHES.compute(annotConfig, (key, oldValue) -> {
+			final Reference<LoadingCache<String, Annotation>> newValue;
+			if (oldValue == null) {
+				// No instance has yet been created; Create one
+				newValue = new SoftReference<>(createCache(key));
+			} else if (oldValue.get() == null) {
+				// The old instance has already been deleted; Replace it
+				// with a new reference to a new instance
+				newValue = new SoftReference<>(createCache(key));
+			} else {
+				// The existing instance has not yet been deleted;
+				// Re-use it
+				newValue = oldValue;
+			}
+			return newValue;
+		});
+		return ref.get();
+	}
+
+	private final LoadingCache<String, Annotation> cache;
+
+	final StanfordCoreNLPConfigurationVariant annotConfig;
+
+	public AbstractTokenizer(final StanfordCoreNLPConfigurationVariant annotConfig) {
+		this.annotConfig = annotConfig;
+		cache = fetchCache(annotConfig);
 	}
 
 	@Override
 	public final List<String> apply(final String input) {
-		final Annotation annot = annotate(input);
+		final Annotation annot = cache.getUnchecked(input);
 		return tokenize(annot);
-	}
-
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see java.lang.Object#toString()
-	 */
-	@Override
-	public String toString() {
-		final StringBuilder builder = new StringBuilder();
-		builder.append("AbstractStanfordCoreNLPTokenizer [annotator=");
-		builder.append(annotator);
-		builder.append("]");
-		return builder.toString();
-	}
-
-	private Annotation annotate(final String input) {
-		final Annotation result = new Annotation(input);
-		annotator.annotate(result);
-		return result;
 	}
 
 	protected abstract List<String> tokenize(Annotation annot);

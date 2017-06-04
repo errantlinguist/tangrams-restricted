@@ -27,7 +27,6 @@ import java.util.function.Predicate;
 import edu.stanford.nlp.ling.CoreAnnotations.SentencesAnnotation;
 import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.pipeline.Annotation;
-import edu.stanford.nlp.pipeline.Annotator;
 import edu.stanford.nlp.trees.Tree;
 import edu.stanford.nlp.trees.TreeCoreAnnotations.TreeAnnotation;
 import edu.stanford.nlp.util.CoreMap;
@@ -45,16 +44,16 @@ public final class PhraseExtractingParsingTokenizer extends AbstractTokenizer {
 
 	private final Predicate<? super Tree> subTreeMatcher;
 
-	public PhraseExtractingParsingTokenizer(final Annotator annotator,
+	public PhraseExtractingParsingTokenizer(final StanfordCoreNLPConfigurationVariant annotConfig,
 			final Function<? super CoreLabel, String> labelTokenExtractor,
 			final Predicate<? super Tree> subTreeMatcher) {
-		this(annotator, labelTokenExtractor, subTreeMatcher, subTreeBranch -> true);
+		this(annotConfig, labelTokenExtractor, subTreeMatcher, subTreeBranch -> true);
 	}
 
-	public PhraseExtractingParsingTokenizer(final Annotator annotator,
+	public PhraseExtractingParsingTokenizer(final StanfordCoreNLPConfigurationVariant annotConfig,
 			final Function<? super CoreLabel, String> labelTokenExtractor, final Predicate<? super Tree> subTreeMatcher,
 			final Predicate<Tree> subTreeBranchPruningPositiveFilter) {
-		super(annotator);
+		super(annotConfig);
 		this.labelTokenExtractor = labelTokenExtractor;
 		this.subTreeMatcher = subTreeMatcher;
 		this.subTreeBranchPruningPositiveFilter = subTreeBranchPruningPositiveFilter;

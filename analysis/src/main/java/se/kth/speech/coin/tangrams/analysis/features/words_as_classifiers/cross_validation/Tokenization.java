@@ -30,7 +30,6 @@ import java.util.function.Supplier;
 
 import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.ling.Label;
-import edu.stanford.nlp.pipeline.StanfordCoreNLP;
 import edu.stanford.nlp.trees.CollinsHeadFinder;
 import edu.stanford.nlp.trees.Tree;
 import se.kth.speech.MutablePair;
@@ -57,10 +56,10 @@ enum Tokenization implements Function<TokenizationContext, EventDialogueTransfor
 			final Function<String, List<String>> tokenizer;
 			switch (context.getTokenType()) {
 			case INFLECTED:
-				tokenizer = new Tokenizer(StanfordCoreNLPConfigurationVariant.TOKENIZING.get());
+				tokenizer = new Tokenizer(StanfordCoreNLPConfigurationVariant.TOKENIZING);
 				break;
 			case LEMMA:
-				tokenizer = new Lemmatizer(StanfordCoreNLPConfigurationVariant.TOKENIZING_LEMMATIZING.get());
+				tokenizer = new Lemmatizer(StanfordCoreNLPConfigurationVariant.TOKENIZING_LEMMATIZING);
 				break;
 			default:
 				throw new AssertionError("No logic for handling enum.");
@@ -72,20 +71,20 @@ enum Tokenization implements Function<TokenizationContext, EventDialogueTransfor
 
 		@Override
 		protected TokenizingEventDialogueTransformer createMainTransformer(final TokenizationContext context) {
-			final Entry<Function<CoreLabel, String>, Supplier<StanfordCoreNLP>> tokenExtractor = TOKEN_TYPE_EXTRACTORS
+			final Entry<Function<CoreLabel, String>, StanfordCoreNLPConfigurationVariant> tokenExtractor = TOKEN_TYPE_EXTRACTORS
 					.get(context.getTokenType());
 			return new TokenizingEventDialogueTransformer(new PhraseExtractingParsingTokenizer(
-					tokenExtractor.getValue().get(), tokenExtractor.getKey(), NP_WHITELISTING_PHRASE_MATCHER));
+					tokenExtractor.getValue(), tokenExtractor.getKey(), NP_WHITELISTING_PHRASE_MATCHER));
 		}
 	},
 	NPS_WITHOUT_PPS {
 
 		@Override
 		protected TokenizingEventDialogueTransformer createMainTransformer(final TokenizationContext context) {
-			final Entry<Function<CoreLabel, String>, Supplier<StanfordCoreNLP>> tokenExtractor = TOKEN_TYPE_EXTRACTORS
+			final Entry<Function<CoreLabel, String>, StanfordCoreNLPConfigurationVariant> tokenExtractor = TOKEN_TYPE_EXTRACTORS
 					.get(context.getTokenType());
 			return new TokenizingEventDialogueTransformer(
-					new PhraseExtractingParsingTokenizer(tokenExtractor.getValue().get(), tokenExtractor.getKey(),
+					new PhraseExtractingParsingTokenizer(tokenExtractor.getValue(), tokenExtractor.getKey(),
 							NP_WHITELISTING_PHRASE_MATCHER, LOCATIONAL_PP_PRUNING_MATCHER));
 		}
 	},
@@ -93,12 +92,16 @@ enum Tokenization implements Function<TokenizationContext, EventDialogueTransfor
 
 		@Override
 		protected TokenizingEventDialogueTransformer createMainTransformer(final TokenizationContext context) {
-			final Entry<Function<CoreLabel, String>, Supplier<StanfordCoreNLP>> tokenExtractor = TOKEN_TYPE_EXTRACTORS
+			final Entry<Function<CoreLabel, String>, StanfordCoreNLPConfigurationVariant> tokenExtractor = TOKEN_TYPE_EXTRACTORS
 					.get(context.getTokenType());
-			return new TokenizingEventDialogueTransformer(new ParsingTokenizer(tokenExtractor.getValue().get(),
+			return new TokenizingEventDialogueTransformer(new ParsingTokenizer(tokenExtractor.getValue(),
 					LOCATIONAL_PP_PRUNING_MATCHER, tokenExtractor.getKey()));
 		}
 	};
+
+	private static final List<Cleaning> CLEANING_ORDERING = createCleaningOrderingList();
+
+	private static final Map<Cleaning, Supplier<EventDialogueTransformer>> CLEANING_TRANSFORMERS = createCleaningTransformerSupplierMap();
 
 	private static final PhrasalHeadFilteringPredicate LOCATIONAL_PP_PRUNING_MATCHER = new PhrasalHeadFilteringPredicate(
 			Collections.singletonMap("PP", EnglishLocationalPrepositions.get()), new CollinsHeadFinder());
@@ -108,11 +111,7 @@ enum Tokenization implements Function<TokenizationContext, EventDialogueTransfor
 		return label == null ? false : "NP".equals(label.value());
 	};
 
-	private static final Map<TokenType, Entry<Function<CoreLabel, String>, Supplier<StanfordCoreNLP>>> TOKEN_TYPE_EXTRACTORS = createTokenTypeExtractorMap();
-
-	private static final List<Cleaning> CLEANING_ORDERING = createCleaningOrderingList();
-
-	private static final Map<Cleaning, Supplier<EventDialogueTransformer>> CLEANING_TRANSFORMERS = createCleaningTransformerSupplierMap();
+	private static final Map<TokenType, Entry<Function<CoreLabel, String>, StanfordCoreNLPConfigurationVariant>> TOKEN_TYPE_EXTRACTORS = createTokenTypeExtractorMap();
 
 	private static List<Cleaning> createCleaningOrderingList() {
 		final List<Cleaning> result = Arrays.asList(Cleaning.DISFLUENCIES, Cleaning.FILLERS, Cleaning.DUPLICATES);
@@ -133,8 +132,8 @@ enum Tokenization implements Function<TokenizationContext, EventDialogueTransfor
 		return result;
 	}
 
-	private static Map<TokenType, Entry<Function<CoreLabel, String>, Supplier<StanfordCoreNLP>>> createTokenTypeExtractorMap() {
-		final Map<TokenType, Entry<Function<CoreLabel, String>, Supplier<StanfordCoreNLP>>> result = new EnumMap<>(
+	private static Map<TokenType, Entry<Function<CoreLabel, String>, StanfordCoreNLPConfigurationVariant>> createTokenTypeExtractorMap() {
+		final Map<TokenType, Entry<Function<CoreLabel, String>, StanfordCoreNLPConfigurationVariant>> result = new EnumMap<>(
 				TokenType.class);
 		result.put(TokenType.INFLECTED,
 				new MutablePair<>(CoreLabel::word, StanfordCoreNLPConfigurationVariant.TOKENIZING_PARSING));
