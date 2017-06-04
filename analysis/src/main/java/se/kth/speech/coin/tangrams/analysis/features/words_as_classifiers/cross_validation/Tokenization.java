@@ -126,7 +126,7 @@ enum Tokenization implements Function<TokenizationContext, EventDialogueTransfor
 		result.put(Cleaning.DUPLICATES, () -> new DuplicateTokenFilteringEventDialogueTransformer());
 		result.put(Cleaning.FILLERS, () -> {
 			final Set<String> fillerWords = SnowballPorter2EnglishStopwords.Variant.FILLERS.get();
-			return new TokenFilteringEventDialogueTransformer(token -> fillerWords.contains(token));
+			return new TokenFilteringEventDialogueTransformer(fillerWords);
 		});
 		assert result.size() == Cleaning.values().length;
 		return result;
