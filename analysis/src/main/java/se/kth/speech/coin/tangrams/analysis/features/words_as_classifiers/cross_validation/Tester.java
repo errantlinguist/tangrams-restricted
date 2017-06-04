@@ -452,6 +452,7 @@ public final class Tester {
 	private Optional<EventDialogueTestResults> testDialogue(final EventDialogue uttDiag, final GameHistory history,
 			final EventDialogueClassifier diagClassifier) throws ClassificationException {
 		final Optional<EventDialogueTestResults> result;
+		// TODO: Extract this from the method so that dialogue testing can be paralleized
 		final EventDialogue transformedDiag = diagTransformer.apply(uttDiag);
 
 		final List<Utterance> allUtts = transformedDiag.getUtts();
