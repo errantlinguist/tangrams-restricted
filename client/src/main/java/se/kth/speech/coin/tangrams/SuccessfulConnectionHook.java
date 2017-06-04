@@ -66,5 +66,6 @@ final class SuccessfulConnectionHook implements Runnable {
 		// Create recording output file and start
 		// recording
 		recordingManager.accept(playerId);
+		connectionStatusView.getToolkit().beep();
 	}
 }
