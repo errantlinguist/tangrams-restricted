@@ -126,6 +126,12 @@ public final class CombiningBatchJobTestMultiDirWriter {
 						.hasArgs().argName("name").build();
 			}
 		},
+		/**
+		 * FIXME: Something is very wrong with the parsing of the CLI options:
+		 * When you add this option, the preceding option considers the flag
+		 * e.g.&nbsp;"-ty" as one of <em>its own</em> values, rather than
+		 * another option.
+		 */
 		TOKEN_TYPES("ty") {
 			@Override
 			public Option get() {
