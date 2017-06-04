@@ -107,9 +107,11 @@ public final class CombiningBatchJobTester {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(CombiningBatchJobTester.class);
 
-//	private static final Set<Cleaning> MIN_REQUIRED_PRE_SENTIMENT_CLEANING_METHODS = EnumSet.of(Cleaning.DISFLUENCIES,
-//			Cleaning.DUPLICATES);
-	
+	// private static final Set<Cleaning>
+	// MIN_REQUIRED_PRE_SENTIMENT_CLEANING_METHODS =
+	// EnumSet.of(Cleaning.DISFLUENCIES,
+	// Cleaning.DUPLICATES);
+
 	private static final Set<Cleaning> MIN_REQUIRED_PRE_SENTIMENT_CLEANING_METHODS = EnumSet.noneOf(Cleaning.class);
 
 	private final ApplicationContext appCtx;
@@ -221,8 +223,8 @@ public final class CombiningBatchJobTester {
 					}
 					break;
 				}
-
 				}
+
 				for (final TokenType tokenType : input.tokenTypes) {
 					final TokenizationContext tokenizationContext = new TokenizationContext(cleaningMethodSet,
 							tokenType, backgroundJobExecutor);

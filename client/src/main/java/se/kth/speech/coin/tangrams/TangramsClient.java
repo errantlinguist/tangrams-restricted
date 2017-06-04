@@ -19,6 +19,7 @@ package se.kth.speech.coin.tangrams;
 import java.awt.Component;
 import java.awt.EventQueue;
 import java.awt.Point;
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -39,6 +40,13 @@ import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.Clip;
+import javax.sound.sampled.Line;
+import javax.sound.sampled.LineEvent;
+import javax.sound.sampled.LineListener;
+import javax.sound.sampled.LineUnavailableException;
+import javax.sound.sampled.UnsupportedAudioFileException;
 import javax.swing.JOptionPane;
 
 import org.apache.commons.cli.CommandLine;
@@ -253,6 +261,24 @@ public final class TangramsClient implements Runnable {
 		return username + "_" + System.currentTimeMillis();
 	}
 
+	private static void playSound(final String resLoc)
+			throws LineUnavailableException, IOException, UnsupportedAudioFileException {
+		final Clip clip = (Clip) AudioSystem.getLine(new Line.Info(Clip.class));
+		clip.addLineListener(new LineListener() {
+			@Override
+			public void update(final LineEvent event) {
+				if (event.getType() == LineEvent.Type.STOP) {
+					clip.close();
+				}
+			}
+		});
+		// https://stackoverflow.com/a/5529906/1391325
+		clip.open(AudioSystem.getAudioInputStream(new BufferedInputStream(Files.newInputStream(Paths.get("D:\\Users\\tcshore\\src\\com.github.errantlinguist\\tangrams-restricted\\client\\target\\classes\\se\\kth\\speech\\coin\\tangrams\\game-start.wav")))));
+//		clip.open(AudioSystem.getAudioInputStream(TangramsClient.class.getResource(resLoc)));
+//		clip.open(AudioSystem.getAudioInputStream(new BufferedInputStream(TangramsClient.class.getResourceAsStream(resLoc))));
+		clip.start();
+	}
+
 	private static String promptGameId(final Component dialogParentComponent) {
 		String result = null;
 		boolean parsedInput = false;
@@ -302,6 +328,18 @@ public final class TangramsClient implements Runnable {
 			}
 		} while (!parsedInput);
 		return result;
+	}
+
+	private static void signalGameStart() {
+		try {
+			playSound("game-start.wav");
+		} catch (final LineUnavailableException e) {
+			throw new RuntimeException(e);
+		} catch (final IOException e) {
+			throw new UncheckedIOException(e);
+		} catch (final UnsupportedAudioFileException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	private final boolean analysisEnabled;
@@ -392,7 +430,9 @@ public final class TangramsClient implements Runnable {
 													"Handling game state data received from server for game \"{}\".",
 													gameId);
 											final SuccessfulConnectionHook connectionHook = new SuccessfulConnectionHook(
-													connectionStatusView, recordingHooks.getKey(), playerId);
+													connectionStatusView, recordingHooks.getKey()
+															.andThen(recordedPlayerId -> signalGameStart()),
+													playerId);
 											try {
 												EventQueue.invokeAndWait(connectionHook);
 
