@@ -356,7 +356,7 @@ public final class CombiningBatchJobTestSingleFileWriter {
 				DialogueAnalysisSummaryFactory.SummaryDatum.EVENT_TIME,
 				// DialogueAnalysisSummaryFactory.SummaryDatum.DIALOGUE,
 				// DialogueAnalysisSummaryFactory.SummaryDatum.DIALOGUE_AS_TESTED,
-				DialogueAnalysisSummaryFactory.SummaryDatum.GOLD_STD_ID,
+//				DialogueAnalysisSummaryFactory.SummaryDatum.GOLD_STD_ID,
 				DialogueAnalysisSummaryFactory.SummaryDatum.RANK,
 				DialogueAnalysisSummaryFactory.SummaryDatum.TESTED_UTT_COUNT,
 				DialogueAnalysisSummaryFactory.SummaryDatum.TOTAL_UTT_COUNT,
