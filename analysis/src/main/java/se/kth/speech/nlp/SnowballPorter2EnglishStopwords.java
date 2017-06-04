@@ -127,11 +127,11 @@ public final class SnowballPorter2EnglishStopwords {
 			try {
 				if (oldValue == null) {
 					// No instance has yet been created; Create one
-					newValue = new SoftReference<>(loadStopwordSet(resLoc));
+					newValue = new SoftReference<>(loadStopwordSet(key));
 				} else if (oldValue.get() == null) {
 					// The old instance has already been deleted; Replace it
 					// with a new reference to a new instance
-					newValue = new SoftReference<>(loadStopwordSet(resLoc));
+					newValue = new SoftReference<>(loadStopwordSet(key));
 				} else {
 					// The existing instance has not yet been deleted;
 					// Re-use it
