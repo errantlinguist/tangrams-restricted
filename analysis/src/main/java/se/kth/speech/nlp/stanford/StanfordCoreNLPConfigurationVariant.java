@@ -133,11 +133,11 @@ public enum StanfordCoreNLPConfigurationVariant implements Supplier<StanfordCore
 			final Reference<StanfordCoreNLP> newValue;
 			if (oldValue == null) {
 				// No instance has yet been created; Create one
-				newValue = new SoftReference<>(new StanfordCoreNLP(createProps()));
+				newValue = new SoftReference<>(new StanfordCoreNLP(key.createProps()));
 			} else if (oldValue.get() == null) {
 				// The old instance has already been deleted; Replace it with a
 				// new reference to a new instance
-				newValue = new SoftReference<>(new StanfordCoreNLP(createProps()));
+				newValue = new SoftReference<>(new StanfordCoreNLP(key.createProps()));
 			} else {
 				// The existing instance has not yet been deleted; Re-use it
 				newValue = oldValue;
