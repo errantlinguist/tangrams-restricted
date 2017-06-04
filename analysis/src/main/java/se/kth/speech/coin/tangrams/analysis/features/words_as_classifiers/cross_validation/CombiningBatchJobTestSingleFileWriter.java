@@ -224,15 +224,25 @@ public final class CombiningBatchJobTestSingleFileWriter {
 
 	}
 
+	private static final List<DialogueAnalysisSummaryFactory.SummaryDatum> DEFAULT_DATA_TO_WRITE = createDefaultDatumOrderingList();
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(CombiningBatchJobTestSingleFileWriter.class);
 
 	private static final String NULL_CELL_VALUE_REPR = "?";
 
 	private static final Collector<CharSequence, ?, String> ROW_CELL_JOINER = Collectors.joining("\t");
 
-	private static final DateTimeFormatter TIMESTAMP_FORMATTER = EventTimes.FORMATTER;
+	/**
+	 * <strong>NOTE:</strong> This is for SPSS compability, which does not allow
+	 * e.g.&nbsp;<code>"-"</code> as part of a variable name.
+	 * 
+	 * @see <a href=
+	 *      "https://www.ibm.com/support/knowledgecenter/en/SSLVMB_21.0.0/com.ibm.spss.statistics.help/syn_variables_variable_names.htm">SPSS
+	 *      documentation</a>
+	 */
+	private static final String SUBCOL_NAME_DELIM = "#";
 
-	private static final List<DialogueAnalysisSummaryFactory.SummaryDatum> DEFAULT_DATA_TO_WRITE = createDefaultDatumOrderingList();
+	private static final DateTimeFormatter TIMESTAMP_FORMATTER = EventTimes.FORMATTER;
 
 	public static void main(final CommandLine cl)
 			throws ParseException, InterruptedException, ExecutionException, ClassificationException, IOException {
@@ -356,7 +366,7 @@ public final class CombiningBatchJobTestSingleFileWriter {
 				DialogueAnalysisSummaryFactory.SummaryDatum.EVENT_TIME,
 				// DialogueAnalysisSummaryFactory.SummaryDatum.DIALOGUE,
 				// DialogueAnalysisSummaryFactory.SummaryDatum.DIALOGUE_AS_TESTED,
-//				DialogueAnalysisSummaryFactory.SummaryDatum.GOLD_STD_ID,
+				// DialogueAnalysisSummaryFactory.SummaryDatum.GOLD_STD_ID,
 				DialogueAnalysisSummaryFactory.SummaryDatum.RANK,
 				DialogueAnalysisSummaryFactory.SummaryDatum.TESTED_UTT_COUNT,
 				DialogueAnalysisSummaryFactory.SummaryDatum.TOTAL_UTT_COUNT,
@@ -368,7 +378,7 @@ public final class CombiningBatchJobTestSingleFileWriter {
 	private static Stream<String> createTestMethodColumnHeaders() {
 		final Stream.Builder<String> resultBuilder = Stream.builder();
 		resultBuilder.add(UtteranceFiltering.class.getSimpleName());
-		final String cleaningMethodPrefix = Cleaning.class.getSimpleName() + "-";
+		final String cleaningMethodPrefix = Cleaning.class.getSimpleName() + SUBCOL_NAME_DELIM;
 		Arrays.stream(Cleaning.values()).map(method -> cleaningMethodPrefix + method).forEachOrdered(resultBuilder);
 		resultBuilder.add(Tokenization.class.getSimpleName().toString());
 		resultBuilder.add(TokenType.class.getSimpleName());
@@ -394,7 +404,8 @@ public final class CombiningBatchJobTestSingleFileWriter {
 	 * @return
 	 */
 	private static Stream<String> createTrainingDataColHeaders() {
-		return EntityInstanceAttributeContext.getClassValues().stream().map(classVal -> "TRAIN_INSTS-" + classVal);
+		return EntityInstanceAttributeContext.getClassValues().stream()
+				.map(classVal -> "TRAIN_INSTS" + SUBCOL_NAME_DELIM + classVal);
 	}
 
 	private static Stream<Object> createTrainingDataRowCellValues(final CrossValidationTestSummary cvTestSummary) {
@@ -408,9 +419,9 @@ public final class CombiningBatchJobTestSingleFileWriter {
 		LOGGER.debug("Successfully shut down executor service.");
 	}
 
-	private final PrintWriter out;
-
 	private final List<DialogueAnalysisSummaryFactory.SummaryDatum> dataToWrite;
+
+	private final PrintWriter out;
 
 	private final DialogueAnalysisSummaryFactory rowDataFactory;
 
