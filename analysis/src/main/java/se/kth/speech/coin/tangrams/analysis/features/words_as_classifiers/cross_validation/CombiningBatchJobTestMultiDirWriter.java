@@ -41,6 +41,7 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.apache.commons.cli.CommandLine;
@@ -366,7 +367,9 @@ public final class CombiningBatchJobTestMultiDirWriter {
 	}
 
 	private static Stream<String> createCleaningMethodBooleanValues(final Set<Cleaning> cleaningMethods) {
-		return Arrays.stream(Cleaning.values()).map(cleaningMethods::contains).map(Object::toString);
+		final IntStream vals = Arrays.stream(Cleaning.values()).map(cleaningMethods::contains)
+				.mapToInt(boolVal -> boolVal ? 1 : 0);
+		return vals.mapToObj(Integer::toString);
 	}
 
 	private static Stream<String> createCleaningMethodSetValues(final EnumSet<Cleaning> cleaningMethods) {
