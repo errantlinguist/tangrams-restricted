@@ -106,8 +106,7 @@ public final class TestSetFactory {
 			final List<SessionEventDialogueManager> trainingSessionEvtDiagMgrs = new ArrayList<>(
 					trainingSessionDataMgrs.length);
 			for (final SessionDataManager trainingSessionDatum : trainingSessionDataMgrs) {
-				SessionEventDialogueManager sessionEventDiagMgr;
-				sessionEventDiagMgr = sessionDiagMgrCacheSupplier.get().get(trainingSessionDatum);
+				final SessionEventDialogueManager sessionEventDiagMgr = sessionDiagMgrCacheSupplier.get().get(trainingSessionDatum);
 				trainingSessionEvtDiagMgrs.add(sessionEventDiagMgr);
 			}
 			trainingData = instancesFactory.apply(trainingSessionEvtDiagMgrs);
