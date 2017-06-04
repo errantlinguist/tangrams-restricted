@@ -75,10 +75,7 @@ public abstract class AbstractTokenizer implements Function<String, List<String>
 
 	private final LoadingCache<String, Annotation> cache;
 
-	final StanfordCoreNLPConfigurationVariant annotConfig;
-
 	public AbstractTokenizer(final StanfordCoreNLPConfigurationVariant annotConfig) {
-		this.annotConfig = annotConfig;
 		cache = fetchCache(annotConfig);
 	}
 
