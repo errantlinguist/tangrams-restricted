@@ -56,7 +56,7 @@ enum Training implements Function<TrainingContext, Entry<TrainingInstancesFactor
 					.getBean(EntityFeatureExtractionContextFactory.class);
 			final OnePositiveOneNegativeInstanceFactory instsFactory = new OnePositiveOneNegativeInstanceFactory(
 					entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory, RND);
-			return new MutablePair<>(instsFactory, 10);
+			return new MutablePair<>(instsFactory, 5);
 		}
 
 	},
