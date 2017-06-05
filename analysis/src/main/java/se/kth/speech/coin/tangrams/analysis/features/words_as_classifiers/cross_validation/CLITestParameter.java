@@ -21,6 +21,7 @@ import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Set;
 import java.util.function.Supplier;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import org.apache.commons.cli.CommandLine;
@@ -38,7 +39,7 @@ enum CLITestParameter implements Supplier<Option> {
 			final Cleaning[] possibleVals = Cleaning.values();
 			return Option.builder(optName).longOpt("cleaning")
 					.desc("A list of cleaning method(s) to use Possible values: " + Arrays.toString(possibleVals))
-					.hasArgs().argName("name").build();
+					.optionalArg(true).argName("name").build();
 		}
 	},
 	HELP("?") {
@@ -68,21 +69,15 @@ enum CLITestParameter implements Supplier<Option> {
 			final TokenFiltering[] possibleVals = TokenFiltering.values();
 			return Option.builder(optName).longOpt("token-filters").desc(
 					"A list of token filtering method(s) to use. Possible values: " + Arrays.toString(possibleVals))
-					.hasArgs().argName("name").build();
+					.hasArg().argName("name").build();
 		}
 	},
-	/**
-	 * FIXME: Something is very wrong with the parsing of the CLI options: When
-	 * you add this option, the preceding option considers the flag
-	 * e.g.&nbsp;"-ty" as one of <em>its own</em> values, rather than another
-	 * option.
-	 */
 	TOKEN_TYPES("ty") {
 		@Override
 		public Option get() {
 			final TokenType[] possibleVals = TokenType.values();
 			return Option.builder(optName).longOpt("token-types")
-					.desc("A list of token type(s) to use Possible values: " + Arrays.toString(possibleVals)).hasArgs()
+					.desc("A list of token type(s) to use Possible values: " + Arrays.toString(possibleVals)).hasArg()
 					.argName("name").build();
 		}
 	},
@@ -92,7 +87,7 @@ enum CLITestParameter implements Supplier<Option> {
 			final Tokenization[] possibleVals = Tokenization.values();
 			return Option.builder(optName).longOpt("tokenizers")
 					.desc("A list of tokenization method(s) to use Possible values: " + Arrays.toString(possibleVals))
-					.hasArgs().argName("name").build();
+					.hasArg().argName("name").build();
 		}
 	},
 	TRAINING("tr") {
@@ -101,7 +96,7 @@ enum CLITestParameter implements Supplier<Option> {
 			final Training[] possibleVals = Training.values();
 			return Option.builder(optName).longOpt("training")
 					.desc("A list of training method(s) to use Possible values: " + Arrays.toString(possibleVals))
-					.hasArgs().argName("name").build();
+					.hasArg().argName("name").build();
 		}
 	},
 	UTT_FILTERS("u") {
@@ -110,12 +105,19 @@ enum CLITestParameter implements Supplier<Option> {
 			final UtteranceFiltering[] possibleVals = UtteranceFiltering.values();
 			return Option.builder(optName).longOpt("utt-filters").desc(
 					"A list of utterance filtering method(s) to use Possible values: " + Arrays.toString(possibleVals))
-					.hasArgs().argName("name").build();
+					.hasArg().argName("name").build();
 		}
 	};
 
+	private static final Pattern MULTI_OPT_VALUE_DELIMITER = Pattern.compile("\\s+");
+
+	private static String[] parseOptEnumValueNames(final CommandLine cl, final String optName) {
+		final String val = cl.getOptionValue(optName);
+		return val == null ? null : MULTI_OPT_VALUE_DELIMITER.split(val);
+	}
+
 	static Set<Cleaning> parseCleaningMethods(final CommandLine cl) {
-		final String[] names = cl.getOptionValues(CLITestParameter.CLEANING.optName);
+		final String[] names = parseOptEnumValueNames(cl, CLITestParameter.CLEANING.optName);
 		final Stream<Cleaning> insts = names == null ? Arrays.stream(Cleaning.values())
 				: Arrays.stream(names).map(String::trim).filter(str -> !str.isEmpty()).map(Cleaning::valueOf);
 		final EnumSet<Cleaning> result = EnumSet.noneOf(Cleaning.class);
@@ -124,7 +126,7 @@ enum CLITestParameter implements Supplier<Option> {
 	}
 
 	static Set<TokenFiltering> parseTokenFilteringMethods(final CommandLine cl) {
-		final String[] names = cl.getOptionValues(CLITestParameter.TOKEN_FILTERS.optName);
+		final String[] names = parseOptEnumValueNames(cl, CLITestParameter.TOKEN_FILTERS.optName);
 		final Stream<TokenFiltering> insts = names == null ? Arrays.stream(TokenFiltering.values())
 				: Arrays.stream(names).map(String::trim).filter(str -> !str.isEmpty()).map(TokenFiltering::valueOf);
 		final EnumSet<TokenFiltering> result = EnumSet.noneOf(TokenFiltering.class);
@@ -133,7 +135,7 @@ enum CLITestParameter implements Supplier<Option> {
 	}
 
 	static Set<Tokenization> parseTokenizationMethods(final CommandLine cl) {
-		final String[] names = cl.getOptionValues(CLITestParameter.TOKENIZERS.optName);
+		final String[] names = parseOptEnumValueNames(cl, CLITestParameter.TOKENIZERS.optName);
 		final Stream<Tokenization> insts = names == null ? Arrays.stream(Tokenization.values())
 				: Arrays.stream(names).map(String::trim).filter(str -> !str.isEmpty()).map(Tokenization::valueOf);
 		final EnumSet<Tokenization> result = EnumSet.noneOf(Tokenization.class);
@@ -142,7 +144,7 @@ enum CLITestParameter implements Supplier<Option> {
 	}
 
 	static Set<TokenType> parseTokenTypes(final CommandLine cl) {
-		final String[] names = cl.getOptionValues(CLITestParameter.TOKEN_TYPES.optName);
+		final String[] names = parseOptEnumValueNames(cl, CLITestParameter.TOKEN_TYPES.optName);
 		final Stream<TokenType> insts = names == null ? Arrays.stream(TokenType.values())
 				: Arrays.stream(names).map(String::trim).filter(str -> !str.isEmpty()).map(TokenType::valueOf);
 		final EnumSet<TokenType> result = EnumSet.noneOf(TokenType.class);
@@ -151,7 +153,7 @@ enum CLITestParameter implements Supplier<Option> {
 	}
 
 	static Set<Training> parseTrainingMethods(final CommandLine cl) {
-		final String[] names = cl.getOptionValues(CLITestParameter.TRAINING.optName);
+		final String[] names = parseOptEnumValueNames(cl, CLITestParameter.TRAINING.optName);
 		final Stream<Training> insts = names == null ? Arrays.stream(Training.values())
 				: Arrays.stream(names).map(String::trim).filter(str -> !str.isEmpty()).map(Training::valueOf);
 		final EnumSet<Training> result = EnumSet.noneOf(Training.class);
@@ -160,7 +162,7 @@ enum CLITestParameter implements Supplier<Option> {
 	}
 
 	static Set<UtteranceFiltering> parseUttFilteringMethods(final CommandLine cl) {
-		final String[] names = cl.getOptionValues(CLITestParameter.UTT_FILTERS.optName);
+		final String[] names = parseOptEnumValueNames(cl, CLITestParameter.UTT_FILTERS.optName);
 		final Stream<UtteranceFiltering> insts = names == null ? Arrays.stream(UtteranceFiltering.values())
 				: Arrays.stream(names).map(String::trim).filter(str -> !str.isEmpty()).map(UtteranceFiltering::valueOf);
 		final EnumSet<UtteranceFiltering> result = EnumSet.noneOf(UtteranceFiltering.class);
