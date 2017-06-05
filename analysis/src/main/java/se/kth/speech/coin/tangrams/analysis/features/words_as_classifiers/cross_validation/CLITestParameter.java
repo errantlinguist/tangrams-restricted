@@ -81,7 +81,7 @@ enum CLITestParameter implements Supplier<Option> {
 					.argName("name").build();
 		}
 	},
-	TOKENIZERS("to") {
+	TOKENIZERS("tok") {
 		@Override
 		public Option get() {
 			final Tokenization[] possibleVals = Tokenization.values();
