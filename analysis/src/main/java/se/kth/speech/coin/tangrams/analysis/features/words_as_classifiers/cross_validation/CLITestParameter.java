@@ -39,7 +39,7 @@ enum CLITestParameter implements Supplier<Option> {
 			final Cleaning[] possibleVals = Cleaning.values();
 			return Option.builder(optName).longOpt("cleaning")
 					.desc("A list of cleaning method(s) to use Possible values: " + Arrays.toString(possibleVals))
-					.optionalArg(true).argName("name").build();
+					.hasArg().argName("name").build();
 		}
 	},
 	HELP("?") {
