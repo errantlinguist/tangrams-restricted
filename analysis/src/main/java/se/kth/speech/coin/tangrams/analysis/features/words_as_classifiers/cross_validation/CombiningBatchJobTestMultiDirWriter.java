@@ -34,11 +34,9 @@ import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.apache.commons.cli.CommandLine;
@@ -191,15 +189,9 @@ public final class CombiningBatchJobTestMultiDirWriter {
 	}
 
 	private static String createBatchOutdirName(final TestParameters testParams) {
-		final Stream<String> rowCellVals = createTestMethodRowCellValues(testParams,
+		final Stream<String> rowCellVals = TestParameterReporting.createTestMethodRowCellValues(testParams,
 				CombiningBatchJobTestMultiDirWriter::createCleaningMethodSetValues);
 		return rowCellVals.collect(BATCH_DIR_METHOD_NAME_JOINER);
-	}
-
-	private static Stream<String> createCleaningMethodBooleanValues(final Set<Cleaning> cleaningMethods) {
-		final IntStream vals = Arrays.stream(Cleaning.values()).map(cleaningMethods::contains)
-				.mapToInt(boolVal -> boolVal ? 1 : 0);
-		return vals.mapToObj(Integer::toString);
 	}
 
 	private static Stream<String> createCleaningMethodSetValues(final EnumSet<Cleaning> cleaningMethods) {
@@ -233,8 +225,8 @@ public final class CombiningBatchJobTestMultiDirWriter {
 		final Stream.Builder<String> resultBuilder = Stream.builder();
 		resultBuilder.add(TIMESTAMP_FORMATTER.format(summary.getTestTimestamp()));
 		resultBuilder.add("Success");
-		createTestMethodRowCellValues(summary.getTestParams(),
-				CombiningBatchJobTestMultiDirWriter::createCleaningMethodBooleanValues).forEachOrdered(resultBuilder);
+		TestParameterReporting.createTestMethodRowCellValues(summary.getTestParams(),
+				TestParameterReporting::createCleaningMethodBooleanValues).forEachOrdered(resultBuilder);
 		final Map<SummaryDatum, Object> configSummary = StatisticsWriter.createSummaryDataMap(null,
 				summary.getTestResults());
 		resultBuilder.add(outdirPath.toString());
@@ -248,8 +240,8 @@ public final class CombiningBatchJobTestMultiDirWriter {
 		final Stream.Builder<String> resultBuilder = Stream.builder();
 		resultBuilder.add(TIMESTAMP_FORMATTER.format(incompleteResults.getTestStartTime()));
 		resultBuilder.add(errorDesc);
-		createTestMethodRowCellValues(incompleteResults.getTestParams(),
-				CombiningBatchJobTestMultiDirWriter::createCleaningMethodBooleanValues).forEachOrdered(resultBuilder);
+		TestParameterReporting.createTestMethodRowCellValues(incompleteResults.getTestParams(),
+				TestParameterReporting::createCleaningMethodBooleanValues).forEachOrdered(resultBuilder);
 		final Map<SummaryDatum, Object> configSummary = new EnumMap<>(SummaryDatum.class);
 		Arrays.stream(SummaryDatum.values()).forEach(datum -> configSummary.put(datum, NULL_CELL_VALUE_REPR));
 		resultBuilder.add(outdirPath.toString());
@@ -267,19 +259,6 @@ public final class CombiningBatchJobTestMultiDirWriter {
 		resultBuilder.add(TokenType.class.getSimpleName());
 		resultBuilder.add(TokenFiltering.class.getSimpleName());
 		resultBuilder.add(Training.class.getSimpleName());
-		return resultBuilder.build();
-	}
-
-	private static Stream<String> createTestMethodRowCellValues(final TestParameters testParams,
-			final Function<? super Set<Cleaning>, Stream<String>> cleaningMethodReprFactory) {
-		final Stream.Builder<String> resultBuilder = Stream.builder();
-		resultBuilder.add(testParams.getUttFiltering().toString());
-		final Set<Cleaning> cleaningMethods = testParams.getCleaning();
-		cleaningMethodReprFactory.apply(cleaningMethods).forEachOrdered(resultBuilder);
-		resultBuilder.add(testParams.getTokenization().toString());
-		resultBuilder.add(testParams.getTokenType().toString());
-		resultBuilder.add(testParams.getTokenFiltering().toString());
-		resultBuilder.add(testParams.getTrainingMethod().toString());
 		return resultBuilder.build();
 	}
 
