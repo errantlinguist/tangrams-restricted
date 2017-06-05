@@ -94,7 +94,7 @@ public final class CombiningBatchJobTestSingleFileWriter {
 			public Option get() {
 				return Option.builder(optName).longOpt("iter-count")
 						.desc("The number of training/testing iterations to run for each cross-validation dataset.")
-						.hasArgs().argName("count").type(Number.class).build();
+						.hasArg().argName("count").type(Number.class).build();
 			}
 		},
 		OUTPATH("o") {
