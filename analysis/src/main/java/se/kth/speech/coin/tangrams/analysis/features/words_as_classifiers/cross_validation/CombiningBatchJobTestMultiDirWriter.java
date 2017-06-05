@@ -22,7 +22,6 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
@@ -32,10 +31,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.OptionalInt;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.Future;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -48,7 +45,6 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.MissingOptionException;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
@@ -56,11 +52,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
-import com.google.common.collect.Sets;
-
 import se.kth.speech.coin.tangrams.CLIParameters;
-import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
-import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.CombiningBatchJobTester.IncompleteResults;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.StatisticsWriter.SummaryDatum;
 import se.kth.speech.coin.tangrams.iristk.EventTimes;
@@ -132,20 +124,15 @@ public final class CombiningBatchJobTestMultiDirWriter {
 		COL_HEADERS = createColHeaderList(SUMMARY_DATA_TO_WRITE);
 	}
 
-	public static void main(final CommandLine cl)
-			throws ParseException, InterruptedException, ExecutionException, ClassificationException, IOException {
+	public static void main(final CommandLine cl) throws Exception {
 		if (cl.hasOption(CLITestParameter.HELP.optName)) {
 			Parameter.printHelp();
 		} else {
-			final List<Path> inpaths = Arrays.asList(cl.getArgList().stream().map(String::trim).filter(path -> !path.isEmpty()).map(Paths::get).toArray(Path[]::new));
-			if (inpaths.isEmpty()) {
-				throw new MissingOptionException("No input path(s) specified.");
-
-			} else {
-				final ExecutorService backgroundJobExecutor = createBackgroundJobExecutor();
-				final Future<Map<SessionDataManager, Path>> allSessionDataFuture = backgroundJobExecutor
-						.submit(() -> TestSessionData.readTestSessionData(inpaths));
-
+			final ExecutorService backgroundJobExecutor = createBackgroundJobExecutor();
+			final CombiningBatchJobTesterCLIInputFactory inputFactory = new CombiningBatchJobTesterCLIInputFactory(
+					backgroundJobExecutor);
+			try {
+				final CombiningBatchJobTester.Input input = inputFactory.apply(cl);
 				final Consumer<Tester> testerConfigurator;
 				{
 					final OptionalInt optIterCount = CLIParameters
@@ -168,60 +155,27 @@ public final class CombiningBatchJobTestMultiDirWriter {
 				final boolean noClobber = cl.hasOption(Parameter.NO_CLOBBER.optName);
 				LOGGER.info("Don't clobber old batch results? {}", noClobber);
 				// TODO: Finish "noclobber" opt impl
-				final Set<UtteranceFiltering> uttFilteringMethods = CLITestParameter.parseUttFilteringMethods(cl);
-				LOGGER.info("Utterance filtering methods: {}", uttFilteringMethods);
-				final Set<Cleaning> cleaningMethods = CLITestParameter.parseCleaningMethods(cl);
-				LOGGER.info("Cleaning methods: {}", cleaningMethods);
-				final Future<Set<Set<Cleaning>>> cleaningMethodSets = backgroundJobExecutor
-						.submit(() -> Sets.powerSet(cleaningMethods));
-				final Set<Tokenization> tokenizationMethods = CLITestParameter.parseTokenizationMethods(cl);
-				LOGGER.info("Tokenization methods: {}", tokenizationMethods);
-				final Set<TokenType> tokenTypes = CLITestParameter.parseTokenTypes(cl);
-				LOGGER.info("Token types: {}", tokenTypes);
-				final Set<TokenFiltering> tokenFilteringMethods = CLITestParameter.parseTokenFilteringMethods(cl);
-				LOGGER.info("Token filtering methods: {}", tokenFilteringMethods);
-				final Set<Training> trainingMethods = CLITestParameter.parseTrainingMethods(cl);
-				LOGGER.info("Training methods: {}", trainingMethods);
 
-				try {
-
-					final CombiningBatchJobTestMultiDirWriter writer = new CombiningBatchJobTestMultiDirWriter(outdir,
-							!appendSummary);
-					try (final ClassPathXmlApplicationContext appCtx = new ClassPathXmlApplicationContext(
-							"combining-batch-tester.xml", CombiningBatchJobTestMultiDirWriter.class)) {
-						final CombiningBatchJobTester tester = new CombiningBatchJobTester(backgroundJobExecutor,
-								appCtx, writer::write, writer::writeError, testerConfigurator);
-						final CombiningBatchJobTester.Input input = new CombiningBatchJobTester.Input(
-								uttFilteringMethods, cleaningMethodSets.get(), tokenizationMethods, tokenTypes,
-								tokenFilteringMethods, trainingMethods, allSessionDataFuture.get());
-						tester.accept(input);
-					}
-					LOGGER.info("Shutting down executor service.");
-					backgroundJobExecutor.shutdown();
-					LOGGER.info("Successfully shut down executor service.");
-
-				} catch (final InterruptedException e) {
-					shutdownExceptionally(backgroundJobExecutor);
-					throw e;
-				} catch (final ExecutionException e) {
-					shutdownExceptionally(backgroundJobExecutor);
-					throw e;
-				} catch (final ClassificationException e) {
-					shutdownExceptionally(backgroundJobExecutor);
-					throw e;
-				} catch (final IOException e) {
-					shutdownExceptionally(backgroundJobExecutor);
-					throw e;
-				} catch (final RuntimeException e) {
-					shutdownExceptionally(backgroundJobExecutor);
-					throw e;
+				final CombiningBatchJobTestMultiDirWriter writer = new CombiningBatchJobTestMultiDirWriter(outdir,
+						!appendSummary);
+				try (final ClassPathXmlApplicationContext appCtx = new ClassPathXmlApplicationContext(
+						"combining-batch-tester.xml", CombiningBatchJobTestMultiDirWriter.class)) {
+					final CombiningBatchJobTester tester = new CombiningBatchJobTester(backgroundJobExecutor, appCtx,
+							writer::write, writer::writeError, testerConfigurator);
+					tester.accept(input);
 				}
+				LOGGER.info("Shutting down executor service.");
+				backgroundJobExecutor.shutdown();
+				LOGGER.info("Successfully shut down executor service.");
+
+			} catch (final Exception e) {
+				shutdownExceptionally(backgroundJobExecutor);
+				throw e;
 			}
 		}
 	}
 
-	public static void main(final String[] args)
-			throws IOException, ClassificationException, ExecutionException, InterruptedException {
+	public static void main(final String[] args) throws Exception {
 		final CommandLineParser parser = new DefaultParser();
 		try {
 			final CommandLine cl = parser.parse(Parameter.OPTIONS, args);

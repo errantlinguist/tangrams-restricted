@@ -17,13 +17,10 @@
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.ListIterator;
@@ -31,10 +28,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.OptionalInt;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.Future;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collector;
@@ -46,7 +41,6 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
-import org.apache.commons.cli.MissingOptionException;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
@@ -56,8 +50,6 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import se.kth.speech.coin.tangrams.CLIParameters;
 import se.kth.speech.coin.tangrams.analysis.EventDialogue;
-import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
-import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
 import se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttributeContext;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.EventDialogueTestResults;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.CombiningBatchJobTester.IncompleteResults;
@@ -93,20 +85,15 @@ public final class CombiningBatchJobTestSingleFileWriter {
 
 	private static final DateTimeFormatter TIMESTAMP_FORMATTER = EventTimes.FORMATTER;
 
-	public static void main(final CommandLine cl)
-			throws ParseException, InterruptedException, ExecutionException, ClassificationException, IOException {
+	public static void main(final CommandLine cl) throws Exception {
 		if (cl.hasOption(CLITestParameter.HELP.optName)) {
 			printHelp();
 		} else {
-			final List<Path> inpaths = Arrays.asList(cl.getArgList().stream().map(String::trim).filter(path -> !path.isEmpty()).map(Paths::get).toArray(Path[]::new));
-			if (inpaths.isEmpty()) {
-				throw new MissingOptionException("No input path(s) specified.");
-
-			} else {
-				final ExecutorService backgroundJobExecutor = createBackgroundJobExecutor();
-				final Future<Map<SessionDataManager, Path>> allSessionDataFuture = backgroundJobExecutor
-						.submit(() -> TestSessionData.readTestSessionData(inpaths));
-
+			final ExecutorService backgroundJobExecutor = createBackgroundJobExecutor();
+			final CombiningBatchJobTesterCLIInputFactory inputFactory = new CombiningBatchJobTesterCLIInputFactory(
+					backgroundJobExecutor);
+			try {
+				final CombiningBatchJobTester.Input input = inputFactory.apply(cl);
 				final Consumer<Tester> testerConfigurator;
 				{
 					final OptionalInt optIterCount = CLIParameters
@@ -122,22 +109,6 @@ public final class CombiningBatchJobTestSingleFileWriter {
 					}
 				}
 
-				final Set<UtteranceFiltering> uttFilteringMethods = CLITestParameter.parseUttFilteringMethods(cl);
-				LOGGER.info("Utterance filtering methods: {}", uttFilteringMethods);
-				final Set<Cleaning> cleaningMethods = CLITestParameter.parseCleaningMethods(cl);
-				LOGGER.info("Cleaning methods: {}", cleaningMethods);
-				// final Future<Set<Set<Cleaning>>> cleaningMethodSets =
-				// backgroundJobExecutor
-				// .submit(() -> Sets.powerSet(cleaningMethods));
-				final Set<Tokenization> tokenizationMethods = CLITestParameter.parseTokenizationMethods(cl);
-				LOGGER.info("Tokenization methods: {}", tokenizationMethods);
-				final Set<TokenType> tokenTypes = CLITestParameter.parseTokenTypes(cl);
-				LOGGER.info("Token types: {}", tokenTypes);
-				final Set<TokenFiltering> tokenFilteringMethods = CLITestParameter.parseTokenFilteringMethods(cl);
-				LOGGER.info("Token filtering methods: {}", tokenFilteringMethods);
-				final Set<Training> trainingMethods = CLITestParameter.parseTrainingMethods(cl);
-				LOGGER.info("Training methods: {}", trainingMethods);
-
 				try (PrintWriter out = CLIParameters
 						.parseOutpath((File) cl.getParsedOptionValue(CLITestParameter.OUTPATH.optName))) {
 					final CombiningBatchJobTestSingleFileWriter writer = new CombiningBatchJobTestSingleFileWriter(out,
@@ -146,37 +117,21 @@ public final class CombiningBatchJobTestSingleFileWriter {
 							"combining-batch-tester.xml", CombiningBatchJobTestSingleFileWriter.class)) {
 						final CombiningBatchJobTester tester = new CombiningBatchJobTester(backgroundJobExecutor,
 								appCtx, writer::write, writer::writeError, testerConfigurator);
-						final CombiningBatchJobTester.Input input = new CombiningBatchJobTester.Input(
-								uttFilteringMethods, Collections.singleton(cleaningMethods), tokenizationMethods,
-								tokenTypes, tokenFilteringMethods, trainingMethods, allSessionDataFuture.get());
 						tester.accept(input);
 					}
 					LOGGER.info("Shutting down executor service.");
 					backgroundJobExecutor.shutdown();
 					LOGGER.info("Successfully shut down executor service.");
 
-				} catch (final InterruptedException e) {
-					shutdownExceptionally(backgroundJobExecutor);
-					throw e;
-				} catch (final ExecutionException e) {
-					shutdownExceptionally(backgroundJobExecutor);
-					throw e;
-				} catch (final ClassificationException e) {
-					shutdownExceptionally(backgroundJobExecutor);
-					throw e;
-				} catch (final IOException e) {
-					shutdownExceptionally(backgroundJobExecutor);
-					throw e;
-				} catch (final RuntimeException e) {
-					shutdownExceptionally(backgroundJobExecutor);
-					throw e;
 				}
+			} catch (final Exception e) {
+				shutdownExceptionally(backgroundJobExecutor);
+				throw e;
 			}
 		}
 	}
 
-	public static void main(final String[] args)
-			throws IOException, ClassificationException, ExecutionException, InterruptedException {
+	public static void main(final String[] args) throws Exception {
 		final CommandLineParser parser = new DefaultParser();
 		try {
 			final CommandLine cl = parser.parse(OPTIONS, args);
