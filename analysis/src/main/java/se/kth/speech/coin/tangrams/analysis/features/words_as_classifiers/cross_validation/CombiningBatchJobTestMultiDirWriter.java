@@ -178,7 +178,7 @@ public final class CombiningBatchJobTestMultiDirWriter {
 		private static Set<Cleaning> parseCleaningMethods(final CommandLine cl) {
 			final String[] names = cl.getOptionValues(Parameter.CLEANING.optName);
 			final Stream<Cleaning> insts = names == null ? Arrays.stream(Cleaning.values())
-					: Arrays.stream(names).map(Cleaning::valueOf);
+					: Arrays.stream(names).map(String::trim).filter(str -> !str.isEmpty()).map(Cleaning::valueOf);
 			final EnumSet<Cleaning> result = EnumSet.noneOf(Cleaning.class);
 			insts.forEach(result::add);
 			return result;
@@ -187,7 +187,7 @@ public final class CombiningBatchJobTestMultiDirWriter {
 		private static Set<TokenFiltering> parseTokenFilteringMethods(final CommandLine cl) {
 			final String[] names = cl.getOptionValues(Parameter.TOKEN_FILTERS.optName);
 			final Stream<TokenFiltering> insts = names == null ? Arrays.stream(TokenFiltering.values())
-					: Arrays.stream(names).map(TokenFiltering::valueOf);
+					: Arrays.stream(names).map(String::trim).filter(str -> !str.isEmpty()).map(TokenFiltering::valueOf);
 			final EnumSet<TokenFiltering> result = EnumSet.noneOf(TokenFiltering.class);
 			insts.forEach(result::add);
 			return result;
@@ -196,7 +196,7 @@ public final class CombiningBatchJobTestMultiDirWriter {
 		private static Set<Tokenization> parseTokenizationMethods(final CommandLine cl) {
 			final String[] names = cl.getOptionValues(Parameter.TOKENIZERS.optName);
 			final Stream<Tokenization> insts = names == null ? Arrays.stream(Tokenization.values())
-					: Arrays.stream(names).map(Tokenization::valueOf);
+					: Arrays.stream(names).map(String::trim).filter(str -> !str.isEmpty()).map(Tokenization::valueOf);
 			final EnumSet<Tokenization> result = EnumSet.noneOf(Tokenization.class);
 			insts.forEach(result::add);
 			return result;
@@ -205,7 +205,7 @@ public final class CombiningBatchJobTestMultiDirWriter {
 		private static Set<TokenType> parseTokenTypes(final CommandLine cl) {
 			final String[] names = cl.getOptionValues(Parameter.TOKEN_TYPES.optName);
 			final Stream<TokenType> insts = names == null ? Arrays.stream(TokenType.values())
-					: Arrays.stream(names).map(TokenType::valueOf);
+					: Arrays.stream(names).map(String::trim).filter(str -> !str.isEmpty()).map(TokenType::valueOf);
 			final EnumSet<TokenType> result = EnumSet.noneOf(TokenType.class);
 			insts.forEach(result::add);
 			return result;
@@ -214,7 +214,7 @@ public final class CombiningBatchJobTestMultiDirWriter {
 		private static Set<Training> parseTrainingMethods(final CommandLine cl) {
 			final String[] names = cl.getOptionValues(Parameter.TRAINING.optName);
 			final Stream<Training> insts = names == null ? Arrays.stream(Training.values())
-					: Arrays.stream(names).map(Training::valueOf);
+					: Arrays.stream(names).map(String::trim).filter(str -> !str.isEmpty()).map(Training::valueOf);
 			final EnumSet<Training> result = EnumSet.noneOf(Training.class);
 			insts.forEach(result::add);
 			return result;
@@ -223,7 +223,7 @@ public final class CombiningBatchJobTestMultiDirWriter {
 		private static Set<UtteranceFiltering> parseUttFilteringMethods(final CommandLine cl) {
 			final String[] names = cl.getOptionValues(Parameter.UTT_FILTERS.optName);
 			final Stream<UtteranceFiltering> insts = names == null ? Arrays.stream(UtteranceFiltering.values())
-					: Arrays.stream(names).map(UtteranceFiltering::valueOf);
+					: Arrays.stream(names).map(String::trim).filter(str -> !str.isEmpty()).map(UtteranceFiltering::valueOf);
 			final EnumSet<UtteranceFiltering> result = EnumSet.noneOf(UtteranceFiltering.class);
 			insts.forEach(result::add);
 			return result;
