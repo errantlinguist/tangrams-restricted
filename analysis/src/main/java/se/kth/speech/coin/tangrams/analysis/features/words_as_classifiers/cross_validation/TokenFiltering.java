@@ -16,37 +16,16 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation;
 
-import java.util.Collection;
-import java.util.EnumSet;
-import java.util.Set;
 import java.util.function.Supplier;
 
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.DummyEventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.TokenFilteringEventDialogueTransformer;
-import se.kth.speech.nlp.SnowballPorter2EnglishStopwordSetFactory;
 import se.kth.speech.nlp.SnowballPorter2EnglishStopwords;
 
 enum TokenFiltering implements Supplier<EventDialogueTransformer> {
-	FILLERS(new TokenFilteringEventDialogueTransformer(
-			SnowballPorter2EnglishStopwords.Variant.FILLERS.get())), NO_FILTER(
-					new DummyEventDialogueTransformer()), STOPWORDS(new TokenFilteringEventDialogueTransformer(
-							SnowballPorter2EnglishStopwords.Variant.CANONICAL.get())), STOPWORDS_FILLERS(
-									createStopwordFilteringTransformer(
-											EnumSet.of(SnowballPorter2EnglishStopwords.Variant.CANONICAL,
-													SnowballPorter2EnglishStopwords.Variant.FILLERS)));
-
-	private static TokenFilteringEventDialogueTransformer createStopwordFilteringTransformer(
-			final Collection<SnowballPorter2EnglishStopwords.Variant> variantsToUnify) {
-		return new TokenFilteringEventDialogueTransformer(createStopwordSet(variantsToUnify));
-	}
-
-	private static Set<String> createStopwordSet(
-			final Collection<SnowballPorter2EnglishStopwords.Variant> variantsToUnify) {
-		final SnowballPorter2EnglishStopwordSetFactory factory = new SnowballPorter2EnglishStopwordSetFactory();
-		factory.setVariantsToUnify(variantsToUnify);
-		return factory.getObject();
-	}
+	NO_FILTER(new DummyEventDialogueTransformer()), STOPWORDS(
+			new TokenFilteringEventDialogueTransformer(SnowballPorter2EnglishStopwords.Variant.CANONICAL.get()));
 
 	private final EventDialogueTransformer held;
 
