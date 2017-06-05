@@ -33,8 +33,6 @@ import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.TrainingDataWriter;
-
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
  * @since 1 Jun 2017
