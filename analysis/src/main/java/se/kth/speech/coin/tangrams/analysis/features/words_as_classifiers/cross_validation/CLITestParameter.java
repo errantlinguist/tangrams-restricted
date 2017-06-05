@@ -18,6 +18,7 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Set;
 import java.util.function.Supplier;
@@ -26,6 +27,10 @@ import java.util.stream.Stream;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import edu.stanford.nlp.util.Sets;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -61,6 +66,14 @@ enum CLITestParameter implements Supplier<Option> {
 		public Option get() {
 			return Option.builder(optName).longOpt("outpath").desc("The path to write the data to.").hasArg()
 					.argName("path").type(File.class).required().build();
+		}
+	},
+	TEST_CLEANING_POWERSET("cp") {
+		@Override
+		public Option get() {
+			return Option.builder(optName).longOpt("cleaning-powerset")
+					.desc("If this flag is present, the powerset of the supplied cleaning methods is tested rather than the set itself.")
+					.build();
 		}
 	},
 	TOKEN_FILTERS("tf") {
@@ -109,20 +122,29 @@ enum CLITestParameter implements Supplier<Option> {
 		}
 	};
 
+	private static final Logger LOGGER = LoggerFactory.getLogger(CLITestParameter.class);
+
 	private static final Pattern MULTI_OPT_VALUE_DELIMITER = Pattern.compile("\\s+");
 
-	private static String[] parseOptEnumValueNames(final CommandLine cl, final String optName) {
-		final String val = cl.getOptionValue(optName);
-		return val == null ? null : MULTI_OPT_VALUE_DELIMITER.split(val);
-	}
-
-	static Set<Cleaning> parseCleaningMethods(final CommandLine cl) {
+	private static Set<Cleaning> parseCleaningMethods(final CommandLine cl) {
 		final String[] names = parseOptEnumValueNames(cl, CLITestParameter.CLEANING.optName);
 		final Stream<Cleaning> insts = names == null ? Stream.empty()
 				: Arrays.stream(names).map(String::trim).filter(str -> !str.isEmpty()).map(Cleaning::valueOf);
 		final EnumSet<Cleaning> result = EnumSet.noneOf(Cleaning.class);
 		insts.forEach(result::add);
 		return result;
+	}
+
+	private static String[] parseOptEnumValueNames(final CommandLine cl, final String optName) {
+		final String val = cl.getOptionValue(optName);
+		return val == null ? null : MULTI_OPT_VALUE_DELIMITER.split(val);
+	}
+
+	static Set<Set<Cleaning>> parseCleaningMethodSets(final CommandLine cl) {
+		final Set<Cleaning> cleaningMethods = parseCleaningMethods(cl);
+		LOGGER.info("Cleaning methods: {}", cleaningMethods);
+		return cl.hasOption(CLITestParameter.TEST_CLEANING_POWERSET.optName) ? Sets.powerSet(cleaningMethods)
+				: Collections.singleton(cleaningMethods);
 	}
 
 	static Set<TokenFiltering> parseTokenFilteringMethods(final CommandLine cl) {

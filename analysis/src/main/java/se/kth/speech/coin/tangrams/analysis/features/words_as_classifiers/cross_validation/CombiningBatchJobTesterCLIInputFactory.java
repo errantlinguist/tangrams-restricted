@@ -19,7 +19,6 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -63,11 +62,11 @@ final class CombiningBatchJobTesterCLIInputFactory {
 			if (uttFilteringMethods.isEmpty()) {
 				throw new IllegalArgumentException("No utterance filtering method(s) specified.");
 			}
-			final Set<Cleaning> cleaningMethods = CLITestParameter.parseCleaningMethods(cl);
-			LOGGER.info("Cleaning methods: {}", cleaningMethods);
-			// final Future<Set<Set<Cleaning>>> cleaningMethodSets =
-			// backgroundJobExecutor
-			// .submit(() -> Sets.powerSet(cleaningMethods));
+			final Set<Set<Cleaning>> cleaningMethodSets = CLITestParameter.parseCleaningMethodSets(cl);
+			if (cleaningMethodSets.isEmpty()) {
+				throw new IllegalArgumentException("No cleaning method set(s) specified.");
+			}
+			LOGGER.info("Cleaning method sets: {}", cleaningMethodSets);
 			final Set<Tokenization> tokenizationMethods = CLITestParameter.parseTokenizationMethods(cl);
 			if (tokenizationMethods.isEmpty()) {
 				throw new IllegalArgumentException("No tokenization method(s) specified.");
@@ -89,9 +88,8 @@ final class CombiningBatchJobTesterCLIInputFactory {
 			}
 			LOGGER.info("Training methods: {}", trainingMethods);
 
-			return new CombiningBatchJobTester.Input(uttFilteringMethods, Collections.singleton(cleaningMethods),
-					tokenizationMethods, tokenTypes, tokenFilteringMethods, trainingMethods,
-					allSessionDataFuture.get());
+			return new CombiningBatchJobTester.Input(uttFilteringMethods, cleaningMethodSets, tokenizationMethods,
+					tokenTypes, tokenFilteringMethods, trainingMethods, allSessionDataFuture.get());
 		}
 	}
 
