@@ -42,7 +42,7 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.traini
  */
 public final class CLIParameters {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(TrainingDataWriter.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(CLIParameters.class);
 
 	public static Set<String> parseAppCtxDefPaths(final String[] appCtxLocs) throws IOException {
 		final Set<String> result = new HashSet<>();
