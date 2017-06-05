@@ -194,10 +194,6 @@ public final class CombiningBatchJobTestMultiDirWriter {
 		return rowCellVals.collect(BATCH_DIR_METHOD_NAME_JOINER);
 	}
 
-	private static Stream<String> createCleaningMethodSetValues(final EnumSet<Cleaning> cleaningMethods) {
-		return cleaningMethods.stream().map(Cleaning::toString);
-	}
-
 	private static Stream<String> createCleaningMethodSetValues(final Set<Cleaning> cleaningMethods) {
 		final EnumSet<Cleaning> downcast;
 		if (cleaningMethods instanceof EnumSet<?>) {
@@ -207,7 +203,7 @@ public final class CombiningBatchJobTestMultiDirWriter {
 		} else {
 			downcast = EnumSet.copyOf(cleaningMethods);
 		}
-		return createCleaningMethodSetValues(downcast);
+		return downcast.stream().map(Cleaning::toString);
 	}
 
 	private static List<String> createColHeaderList(final List<SummaryDatum> summaryDataToWrite) {
