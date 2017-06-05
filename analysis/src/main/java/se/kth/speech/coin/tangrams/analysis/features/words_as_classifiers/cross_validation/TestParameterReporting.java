@@ -49,18 +49,6 @@ final class TestParameterReporting {
 
 	static final DateTimeFormatter TIMESTAMP_FORMATTER = EventTimes.FORMATTER;
 
-	private static Stream<String> createTestMethodColumnHeaders() {
-		final Stream.Builder<String> resultBuilder = Stream.builder();
-		resultBuilder.add(UtteranceFiltering.class.getSimpleName());
-		final String cleaningMethodPrefix = Cleaning.class.getSimpleName() + SUBCOL_NAME_DELIM;
-		Arrays.stream(Cleaning.values()).map(method -> cleaningMethodPrefix + method).forEachOrdered(resultBuilder);
-		resultBuilder.add(Tokenization.class.getSimpleName().toString());
-		resultBuilder.add(TokenType.class.getSimpleName());
-		resultBuilder.add(TokenFiltering.class.getSimpleName());
-		resultBuilder.add(Training.class.getSimpleName());
-		return resultBuilder.build();
-	}
-
 	private static Stream<String> createTrainingDataColHeaders() {
 		return EntityInstanceAttributeContext.getClassValues().stream()
 				.map(classVal -> "TRAIN_INSTS" + SUBCOL_NAME_DELIM + classVal);
@@ -79,6 +67,18 @@ final class TestParameterReporting {
 		createTrainingDataColHeaders().forEachOrdered(resultBuilder);
 		summaryDataToWrite.stream().map(DialogueAnalysisSummaryFactory.SummaryDatum::toString)
 				.forEachOrdered(resultBuilder);
+		return resultBuilder.build();
+	}
+
+	static Stream<String> createTestMethodColumnHeaders() {
+		final Stream.Builder<String> resultBuilder = Stream.builder();
+		resultBuilder.add(UtteranceFiltering.class.getSimpleName());
+		final String cleaningMethodPrefix = Cleaning.class.getSimpleName() + SUBCOL_NAME_DELIM;
+		Arrays.stream(Cleaning.values()).map(method -> cleaningMethodPrefix + method).forEachOrdered(resultBuilder);
+		resultBuilder.add(Tokenization.class.getSimpleName().toString());
+		resultBuilder.add(TokenType.class.getSimpleName());
+		resultBuilder.add(TokenFiltering.class.getSimpleName());
+		resultBuilder.add(Training.class.getSimpleName());
 		return resultBuilder.build();
 	}
 

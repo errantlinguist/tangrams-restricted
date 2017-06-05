@@ -210,7 +210,7 @@ public final class CombiningBatchJobTestMultiDirWriter {
 		final Stream.Builder<String> resultBuilder = Stream.builder();
 		resultBuilder.add("TIME");
 		resultBuilder.accept("DESC");
-		createTestMethodColumnHeaders().forEachOrdered(resultBuilder);
+		TestParameterReporting.createTestMethodColumnHeaders().forEachOrdered(resultBuilder);
 		resultBuilder.add("OUTDIR");
 		resultBuilder.add("ITER_COUNT");
 		summaryDataToWrite.stream().map(SummaryDatum::toString).forEachOrdered(resultBuilder);
@@ -243,18 +243,6 @@ public final class CombiningBatchJobTestMultiDirWriter {
 		resultBuilder.add(outdirPath.toString());
 		resultBuilder.add(configSummary.get(SummaryDatum.TEST_ITERATION).toString());
 		SUMMARY_DATA_TO_WRITE.stream().map(configSummary::get).map(Object::toString).forEachOrdered(resultBuilder);
-		return resultBuilder.build();
-	}
-
-	private static Stream<String> createTestMethodColumnHeaders() {
-		final Stream.Builder<String> resultBuilder = Stream.builder();
-		resultBuilder.add(UtteranceFiltering.class.getSimpleName());
-		final String cleaningMethodPrefix = Cleaning.class.getSimpleName() + "-";
-		Arrays.stream(Cleaning.values()).map(method -> cleaningMethodPrefix + method).forEachOrdered(resultBuilder);
-		resultBuilder.add(Tokenization.class.getSimpleName().toString());
-		resultBuilder.add(TokenType.class.getSimpleName());
-		resultBuilder.add(TokenFiltering.class.getSimpleName());
-		resultBuilder.add(Training.class.getSimpleName());
 		return resultBuilder.build();
 	}
 
