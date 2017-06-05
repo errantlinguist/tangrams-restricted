@@ -23,6 +23,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.List;
@@ -54,8 +55,6 @@ import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
-
-import com.google.common.collect.Sets;
 
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import se.kth.speech.coin.tangrams.CLIParameters;
@@ -283,8 +282,8 @@ public final class CombiningBatchJobTestSingleFileWriter {
 				LOGGER.info("Utterance filtering methods: {}", uttFilteringMethods);
 				final Set<Cleaning> cleaningMethods = Parameter.parseCleaningMethods(cl);
 				LOGGER.info("Cleaning methods: {}", cleaningMethods);
-				final Future<Set<Set<Cleaning>>> cleaningMethodSets = backgroundJobExecutor
-						.submit(() -> Sets.powerSet(cleaningMethods));
+//				final Future<Set<Set<Cleaning>>> cleaningMethodSets = backgroundJobExecutor
+//						.submit(() -> Sets.powerSet(cleaningMethods));
 				final Set<Tokenization> tokenizationMethods = Parameter.parseTokenizationMethods(cl);
 				LOGGER.info("Tokenization methods: {}", tokenizationMethods);
 				final Set<TokenType> tokenTypes = Parameter.parseTokenTypes(cl);
@@ -303,7 +302,7 @@ public final class CombiningBatchJobTestSingleFileWriter {
 						final CombiningBatchJobTester tester = new CombiningBatchJobTester(backgroundJobExecutor,
 								appCtx, writer::write, writer::writeError, testerConfigurator);
 						final CombiningBatchJobTester.Input input = new CombiningBatchJobTester.Input(
-								uttFilteringMethods, cleaningMethodSets.get(), tokenizationMethods, tokenTypes,
+								uttFilteringMethods, Collections.singleton(cleaningMethods), tokenizationMethods, tokenTypes,
 								tokenFilteringMethods, trainingMethods, allSessionDataFuture.get());
 						tester.accept(input);
 					}
