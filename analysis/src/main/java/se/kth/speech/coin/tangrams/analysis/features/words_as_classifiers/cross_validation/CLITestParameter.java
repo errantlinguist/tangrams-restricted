@@ -118,7 +118,7 @@ enum CLITestParameter implements Supplier<Option> {
 
 	static Set<Cleaning> parseCleaningMethods(final CommandLine cl) {
 		final String[] names = parseOptEnumValueNames(cl, CLITestParameter.CLEANING.optName);
-		final Stream<Cleaning> insts = names == null ? Arrays.stream(Cleaning.values())
+		final Stream<Cleaning> insts = names == null ? Stream.empty()
 				: Arrays.stream(names).map(String::trim).filter(str -> !str.isEmpty()).map(Cleaning::valueOf);
 		final EnumSet<Cleaning> result = EnumSet.noneOf(Cleaning.class);
 		insts.forEach(result::add);
@@ -127,7 +127,7 @@ enum CLITestParameter implements Supplier<Option> {
 
 	static Set<TokenFiltering> parseTokenFilteringMethods(final CommandLine cl) {
 		final String[] names = parseOptEnumValueNames(cl, CLITestParameter.TOKEN_FILTERS.optName);
-		final Stream<TokenFiltering> insts = names == null ? Arrays.stream(TokenFiltering.values())
+		final Stream<TokenFiltering> insts = names == null ? Stream.empty()
 				: Arrays.stream(names).map(String::trim).filter(str -> !str.isEmpty()).map(TokenFiltering::valueOf);
 		final EnumSet<TokenFiltering> result = EnumSet.noneOf(TokenFiltering.class);
 		insts.forEach(result::add);
@@ -136,7 +136,7 @@ enum CLITestParameter implements Supplier<Option> {
 
 	static Set<Tokenization> parseTokenizationMethods(final CommandLine cl) {
 		final String[] names = parseOptEnumValueNames(cl, CLITestParameter.TOKENIZERS.optName);
-		final Stream<Tokenization> insts = names == null ? Arrays.stream(Tokenization.values())
+		final Stream<Tokenization> insts = names == null ? Stream.empty()
 				: Arrays.stream(names).map(String::trim).filter(str -> !str.isEmpty()).map(Tokenization::valueOf);
 		final EnumSet<Tokenization> result = EnumSet.noneOf(Tokenization.class);
 		insts.forEach(result::add);
@@ -145,7 +145,7 @@ enum CLITestParameter implements Supplier<Option> {
 
 	static Set<TokenType> parseTokenTypes(final CommandLine cl) {
 		final String[] names = parseOptEnumValueNames(cl, CLITestParameter.TOKEN_TYPES.optName);
-		final Stream<TokenType> insts = names == null ? Arrays.stream(TokenType.values())
+		final Stream<TokenType> insts = names == null ? Stream.empty()
 				: Arrays.stream(names).map(String::trim).filter(str -> !str.isEmpty()).map(TokenType::valueOf);
 		final EnumSet<TokenType> result = EnumSet.noneOf(TokenType.class);
 		insts.forEach(result::add);
@@ -154,7 +154,7 @@ enum CLITestParameter implements Supplier<Option> {
 
 	static Set<Training> parseTrainingMethods(final CommandLine cl) {
 		final String[] names = parseOptEnumValueNames(cl, CLITestParameter.TRAINING.optName);
-		final Stream<Training> insts = names == null ? Arrays.stream(Training.values())
+		final Stream<Training> insts = names == null ? Stream.empty()
 				: Arrays.stream(names).map(String::trim).filter(str -> !str.isEmpty()).map(Training::valueOf);
 		final EnumSet<Training> result = EnumSet.noneOf(Training.class);
 		insts.forEach(result::add);
@@ -163,7 +163,7 @@ enum CLITestParameter implements Supplier<Option> {
 
 	static Set<UtteranceFiltering> parseUttFilteringMethods(final CommandLine cl) {
 		final String[] names = parseOptEnumValueNames(cl, CLITestParameter.UTT_FILTERS.optName);
-		final Stream<UtteranceFiltering> insts = names == null ? Arrays.stream(UtteranceFiltering.values())
+		final Stream<UtteranceFiltering> insts = names == null ? Stream.empty()
 				: Arrays.stream(names).map(String::trim).filter(str -> !str.isEmpty()).map(UtteranceFiltering::valueOf);
 		final EnumSet<UtteranceFiltering> result = EnumSet.noneOf(UtteranceFiltering.class);
 		insts.forEach(result::add);
