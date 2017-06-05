@@ -280,6 +280,8 @@ public final class CombiningBatchJobTestMultiDirWriter {
 	}
 
 	public void writeError(final IncompleteResults incompleteResults, final Throwable thrown) {
+		LOGGER.error(String.format("An error occurred while running test which was started at \"%s\"."),
+				TestParameterReporting.TIMESTAMP_FORMATTER.format(incompleteResults.getTestStartTime()), thrown);
 		if (thrown instanceof OutOfMemoryError) {
 			Runtime.getRuntime().gc();
 		}
