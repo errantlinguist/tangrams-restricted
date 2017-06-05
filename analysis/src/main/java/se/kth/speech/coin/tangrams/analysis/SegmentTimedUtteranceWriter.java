@@ -129,7 +129,7 @@ public final class SegmentTimedUtteranceWriter {
 			if (cl.hasOption(Parameter.HELP.optName)) {
 				Parameter.printHelp();
 			} else {
-				final File[] infiles = cl.getArgList().stream().map(File::new).toArray(File[]::new);
+				final File[] infiles = cl.getArgList().stream().map(String::trim).filter(path -> !path.isEmpty()).map(File::new).toArray(File[]::new);
 				if (infiles.length < 1) {
 					throw new MissingOptionException("No input file(s) specified.");
 
