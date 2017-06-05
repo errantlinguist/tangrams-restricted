@@ -72,7 +72,7 @@ enum CLITestParameter implements Supplier<Option> {
 					.hasArg().argName("name").build();
 		}
 	},
-	TOKEN_TYPES("ty") {
+	TOKEN_TYPES("tt") {
 		@Override
 		public Option get() {
 			final TokenType[] possibleVals = TokenType.values();
@@ -99,7 +99,7 @@ enum CLITestParameter implements Supplier<Option> {
 					.hasArg().argName("name").build();
 		}
 	},
-	UTT_FILTERS("u") {
+	UTT_FILTERS("uf") {
 		@Override
 		public Option get() {
 			final UtteranceFiltering[] possibleVals = UtteranceFiltering.values();
