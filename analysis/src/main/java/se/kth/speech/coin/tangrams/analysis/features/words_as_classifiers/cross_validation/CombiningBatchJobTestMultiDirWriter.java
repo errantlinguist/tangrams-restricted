@@ -81,89 +81,12 @@ public final class CombiningBatchJobTestMultiDirWriter {
 						.build();
 			}
 		},
-		CLEANING("c") {
+		NO_CLOBBER("nc") {
 			@Override
-			public Option get() {
-				return Option.builder(optName).longOpt("cleaning").desc(
-						"A list of cleaning method(s) to use Possible values: " + Arrays.toString(Cleaning.values()))
-						.hasArgs().argName("name").build();
-			}
-		},
-		HELP("?") {
-			@Override
-			public Option get() {
-				return Option.builder(optName).longOpt("help").desc("Prints this message.").build();
-			}
-		},
-		ITER_COUNT("i") {
-			@Override
-			public Option get() {
-				return Option.builder(optName).longOpt("iter-count")
-						.desc("The number of training/testing iterations to run for each cross-validation dataset.")
-						.hasArg().argName("count").type(Number.class).build();
-			}
-		},
-		NO_CLOBBER("nc"){
 			public Option get() {
 				return Option.builder(optName).longOpt("append")
 						.desc("If this flag is present, existing batch result directories will not be overwritten.")
 						.build();
-			}
-		},
-		OUTPATH("o") {
-			@Override
-			public Option get() {
-				return Option.builder(optName).longOpt("outpath").desc("The path to write the data to.").hasArg()
-						.argName("path").type(File.class).required().build();
-			}
-		},
-		TOKEN_FILTERS("tf") {
-			@Override
-			public Option get() {
-				return Option.builder(optName).longOpt("token-filters")
-						.desc("A list of token filtering method(s) to use. Possible values: "
-								+ Arrays.toString(TokenFiltering.values()))
-						.hasArgs().argName("name").build();
-			}
-		},
-		/**
-		 * FIXME: Something is very wrong with the parsing of the CLI options:
-		 * When you add this option, the preceding option considers the flag
-		 * e.g.&nbsp;"-ty" as one of <em>its own</em> values, rather than
-		 * another option.
-		 */
-		TOKEN_TYPES("ty") {
-			@Override
-			public Option get() {
-				return Option.builder(optName).longOpt("token-types")
-						.desc("A list of token type(s) to use Possible values: " + Arrays.toString(TokenType.values()))
-						.hasArgs().argName("name").build();
-			}
-		},
-		TOKENIZERS("to") {
-			@Override
-			public Option get() {
-				return Option.builder(optName).longOpt("tokenizers")
-						.desc("A list of tokenization method(s) to use Possible values: "
-								+ Arrays.toString(Tokenization.values()))
-						.hasArgs().argName("name").build();
-			}
-		},
-		TRAINING("tr") {
-			@Override
-			public Option get() {
-				return Option.builder(optName).longOpt("training").desc(
-						"A list of training method(s) to use Possible values: " + Arrays.toString(Training.values()))
-						.hasArgs().argName("name").build();
-			}
-		},
-		UTT_FILTERS("u") {
-			@Override
-			public Option get() {
-				return Option.builder(optName).longOpt("utt-filters")
-						.desc("A list of utterance filtering method(s) to use Possible values: "
-								+ Arrays.toString(UtteranceFiltering.values()))
-						.hasArgs().argName("name").build();
 			}
 		};
 
@@ -171,61 +94,8 @@ public final class CombiningBatchJobTestMultiDirWriter {
 
 		private static Options createOptions() {
 			final Options result = new Options();
+			Arrays.stream(CLITestParameter.values()).map(CLITestParameter::get).forEach(result::addOption);
 			Arrays.stream(Parameter.values()).map(Parameter::get).forEach(result::addOption);
-			return result;
-		}
-
-		private static Set<Cleaning> parseCleaningMethods(final CommandLine cl) {
-			final String[] names = cl.getOptionValues(Parameter.CLEANING.optName);
-			final Stream<Cleaning> insts = names == null ? Arrays.stream(Cleaning.values())
-					: Arrays.stream(names).map(String::trim).filter(str -> !str.isEmpty()).map(Cleaning::valueOf);
-			final EnumSet<Cleaning> result = EnumSet.noneOf(Cleaning.class);
-			insts.forEach(result::add);
-			return result;
-		}
-
-		private static Set<TokenFiltering> parseTokenFilteringMethods(final CommandLine cl) {
-			final String[] names = cl.getOptionValues(Parameter.TOKEN_FILTERS.optName);
-			final Stream<TokenFiltering> insts = names == null ? Arrays.stream(TokenFiltering.values())
-					: Arrays.stream(names).map(String::trim).filter(str -> !str.isEmpty()).map(TokenFiltering::valueOf);
-			final EnumSet<TokenFiltering> result = EnumSet.noneOf(TokenFiltering.class);
-			insts.forEach(result::add);
-			return result;
-		}
-
-		private static Set<Tokenization> parseTokenizationMethods(final CommandLine cl) {
-			final String[] names = cl.getOptionValues(Parameter.TOKENIZERS.optName);
-			final Stream<Tokenization> insts = names == null ? Arrays.stream(Tokenization.values())
-					: Arrays.stream(names).map(String::trim).filter(str -> !str.isEmpty()).map(Tokenization::valueOf);
-			final EnumSet<Tokenization> result = EnumSet.noneOf(Tokenization.class);
-			insts.forEach(result::add);
-			return result;
-		}
-
-		private static Set<TokenType> parseTokenTypes(final CommandLine cl) {
-			final String[] names = cl.getOptionValues(Parameter.TOKEN_TYPES.optName);
-			final Stream<TokenType> insts = names == null ? Arrays.stream(TokenType.values())
-					: Arrays.stream(names).map(String::trim).filter(str -> !str.isEmpty()).map(TokenType::valueOf);
-			final EnumSet<TokenType> result = EnumSet.noneOf(TokenType.class);
-			insts.forEach(result::add);
-			return result;
-		}
-
-		private static Set<Training> parseTrainingMethods(final CommandLine cl) {
-			final String[] names = cl.getOptionValues(Parameter.TRAINING.optName);
-			final Stream<Training> insts = names == null ? Arrays.stream(Training.values())
-					: Arrays.stream(names).map(String::trim).filter(str -> !str.isEmpty()).map(Training::valueOf);
-			final EnumSet<Training> result = EnumSet.noneOf(Training.class);
-			insts.forEach(result::add);
-			return result;
-		}
-
-		private static Set<UtteranceFiltering> parseUttFilteringMethods(final CommandLine cl) {
-			final String[] names = cl.getOptionValues(Parameter.UTT_FILTERS.optName);
-			final Stream<UtteranceFiltering> insts = names == null ? Arrays.stream(UtteranceFiltering.values())
-					: Arrays.stream(names).map(String::trim).filter(str -> !str.isEmpty()).map(UtteranceFiltering::valueOf);
-			final EnumSet<UtteranceFiltering> result = EnumSet.noneOf(UtteranceFiltering.class);
-			insts.forEach(result::add);
 			return result;
 		}
 
@@ -242,11 +112,11 @@ public final class CombiningBatchJobTestMultiDirWriter {
 
 	}
 
+	private static final Collector<CharSequence, ?, String> BATCH_DIR_METHOD_NAME_JOINER = Collectors.joining(",");
+
 	private static final List<String> COL_HEADERS;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(CombiningBatchJobTestMultiDirWriter.class);
-
-	private static final Collector<CharSequence, ?, String> BATCH_DIR_METHOD_NAME_JOINER = Collectors.joining(",");
 
 	private static final String NULL_CELL_VALUE_REPR = "?";
 
@@ -261,10 +131,10 @@ public final class CombiningBatchJobTestMultiDirWriter {
 				SummaryDatum.UTTERANCES_TESTED, SummaryDatum.MEAN_UTTERANCES_PER_DIALOGUE);
 		COL_HEADERS = createColHeaderList(SUMMARY_DATA_TO_WRITE);
 	}
-	
+
 	public static void main(final CommandLine cl)
 			throws ParseException, InterruptedException, ExecutionException, ClassificationException, IOException {
-		if (cl.hasOption(Parameter.HELP.optName)) {
+		if (cl.hasOption(CLITestParameter.HELP.optName)) {
 			Parameter.printHelp();
 		} else {
 			final List<Path> inpaths = Arrays.asList(cl.getArgList().stream().map(Paths::get).toArray(Path[]::new));
@@ -279,7 +149,7 @@ public final class CombiningBatchJobTestMultiDirWriter {
 				final Consumer<Tester> testerConfigurator;
 				{
 					final OptionalInt optIterCount = CLIParameters
-							.parseIterCount((Number) cl.getParsedOptionValue(Parameter.ITER_COUNT.optName));
+							.parseIterCount((Number) cl.getParsedOptionValue(CLITestParameter.ITER_COUNT.optName));
 					if (optIterCount.isPresent()) {
 						final int iterCount = optIterCount.getAsInt();
 						LOGGER.info("Will run {} training/testing iteration(s).", iterCount);
@@ -291,26 +161,26 @@ public final class CombiningBatchJobTestMultiDirWriter {
 					}
 				}
 
-				final Path outdir = ((File) cl.getParsedOptionValue(Parameter.OUTPATH.optName)).toPath();
+				final Path outdir = ((File) cl.getParsedOptionValue(CLITestParameter.OUTPATH.optName)).toPath();
 				LOGGER.info("Will write data to \"{}\".", outdir);
 				final boolean appendSummary = cl.hasOption(Parameter.APPEND_SUMMARY.optName);
 				LOGGER.info("Append to summary rather than truncate? {}", appendSummary);
 				final boolean noClobber = cl.hasOption(Parameter.NO_CLOBBER.optName);
 				LOGGER.info("Don't clobber old batch results? {}", noClobber);
 				// TODO: Finish "noclobber" opt impl
-				final Set<UtteranceFiltering> uttFilteringMethods = Parameter.parseUttFilteringMethods(cl);
+				final Set<UtteranceFiltering> uttFilteringMethods = CLITestParameter.parseUttFilteringMethods(cl);
 				LOGGER.info("Utterance filtering methods: {}", uttFilteringMethods);
-				final Set<Cleaning> cleaningMethods = Parameter.parseCleaningMethods(cl);
+				final Set<Cleaning> cleaningMethods = CLITestParameter.parseCleaningMethods(cl);
 				LOGGER.info("Cleaning methods: {}", cleaningMethods);
 				final Future<Set<Set<Cleaning>>> cleaningMethodSets = backgroundJobExecutor
 						.submit(() -> Sets.powerSet(cleaningMethods));
-				final Set<Tokenization> tokenizationMethods = Parameter.parseTokenizationMethods(cl);
+				final Set<Tokenization> tokenizationMethods = CLITestParameter.parseTokenizationMethods(cl);
 				LOGGER.info("Tokenization methods: {}", tokenizationMethods);
-				final Set<TokenType> tokenTypes = Parameter.parseTokenTypes(cl);
+				final Set<TokenType> tokenTypes = CLITestParameter.parseTokenTypes(cl);
 				LOGGER.info("Token types: {}", tokenTypes);
-				final Set<TokenFiltering> tokenFilteringMethods = Parameter.parseTokenFilteringMethods(cl);
+				final Set<TokenFiltering> tokenFilteringMethods = CLITestParameter.parseTokenFilteringMethods(cl);
 				LOGGER.info("Token filtering methods: {}", tokenFilteringMethods);
-				final Set<Training> trainingMethods = Parameter.parseTrainingMethods(cl);
+				final Set<Training> trainingMethods = CLITestParameter.parseTrainingMethods(cl);
 				LOGGER.info("Training methods: {}", trainingMethods);
 
 				try {

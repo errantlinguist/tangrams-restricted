@@ -25,7 +25,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumMap;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -38,7 +37,6 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -49,7 +47,6 @@ import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.MissingOptionException;
-import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
@@ -74,173 +71,20 @@ import se.kth.speech.coin.tangrams.iristk.EventTimes;
  */
 public final class CombiningBatchJobTestSingleFileWriter {
 
-	private enum Parameter implements Supplier<Option> {
-		CLEANING("c") {
-			@Override
-			public Option get() {
-				return Option.builder(optName).longOpt("cleaning").desc(
-						"A list of cleaning method(s) to use Possible values: " + Arrays.toString(Cleaning.values()))
-						.hasArgs().argName("name").build();
-			}
-		},
-		HELP("?") {
-			@Override
-			public Option get() {
-				return Option.builder(optName).longOpt("help").desc("Prints this message.").build();
-			}
-		},
-		ITER_COUNT("i") {
-			@Override
-			public Option get() {
-				return Option.builder(optName).longOpt("iter-count")
-						.desc("The number of training/testing iterations to run for each cross-validation dataset.")
-						.hasArg().argName("count").type(Number.class).build();
-			}
-		},
-		OUTPATH("o") {
-			@Override
-			public Option get() {
-				return Option.builder(optName).longOpt("outpath").desc("The path to write the data to.").hasArg()
-						.argName("path").type(File.class).required().build();
-			}
-		},
-		TOKEN_FILTERS("tf") {
-			@Override
-			public Option get() {
-				return Option.builder(optName).longOpt("token-filters")
-						.desc("A list of token filtering method(s) to use. Possible values: "
-								+ Arrays.toString(TokenFiltering.values()))
-						.hasArgs().argName("name").build();
-			}
-		},
-		/**
-		 * FIXME: Something is very wrong with the parsing of the CLI options:
-		 * When you add this option, the preceding option considers the flag
-		 * e.g.&nbsp;"-ty" as one of <em>its own</em> values, rather than
-		 * another option.
-		 */
-		TOKEN_TYPES("ty") {
-			@Override
-			public Option get() {
-				return Option.builder(optName).longOpt("token-types")
-						.desc("A list of token type(s) to use Possible values: " + Arrays.toString(TokenType.values()))
-						.hasArgs().argName("name").build();
-			}
-		},
-		TOKENIZERS("to") {
-			@Override
-			public Option get() {
-				return Option.builder(optName).longOpt("tokenizers")
-						.desc("A list of tokenization method(s) to use Possible values: "
-								+ Arrays.toString(Tokenization.values()))
-						.hasArgs().argName("name").build();
-			}
-		},
-		TRAINING("tr") {
-			@Override
-			public Option get() {
-				return Option.builder(optName).longOpt("training").desc(
-						"A list of training method(s) to use Possible values: " + Arrays.toString(Training.values()))
-						.hasArgs().argName("name").build();
-			}
-		},
-		UTT_FILTERS("u") {
-			@Override
-			public Option get() {
-				return Option.builder(optName).longOpt("utt-filters")
-						.desc("A list of utterance filtering method(s) to use Possible values: "
-								+ Arrays.toString(UtteranceFiltering.values()))
-						.hasArgs().argName("name").build();
-			}
-		};
-
-		private static final Options OPTIONS = createOptions();
-
-		private static Options createOptions() {
-			final Options result = new Options();
-			Arrays.stream(Parameter.values()).map(Parameter::get).forEach(result::addOption);
-			return result;
-		}
-
-		private static Set<Cleaning> parseCleaningMethods(final CommandLine cl) {
-			final String[] names = cl.getOptionValues(Parameter.CLEANING.optName);
-			final Stream<Cleaning> insts = names == null ? Arrays.stream(Cleaning.values())
-					: Arrays.stream(names).map(String::trim).filter(str -> !str.isEmpty()).map(Cleaning::valueOf);
-			final EnumSet<Cleaning> result = EnumSet.noneOf(Cleaning.class);
-			insts.forEach(result::add);
-			return result;
-		}
-
-		private static Set<TokenFiltering> parseTokenFilteringMethods(final CommandLine cl) {
-			final String[] names = cl.getOptionValues(Parameter.TOKEN_FILTERS.optName);
-			final Stream<TokenFiltering> insts = names == null ? Arrays.stream(TokenFiltering.values())
-					: Arrays.stream(names).map(String::trim).filter(str -> !str.isEmpty()).map(TokenFiltering::valueOf);
-			final EnumSet<TokenFiltering> result = EnumSet.noneOf(TokenFiltering.class);
-			insts.forEach(result::add);
-			return result;
-		}
-
-		private static Set<Tokenization> parseTokenizationMethods(final CommandLine cl) {
-			final String[] names = cl.getOptionValues(Parameter.TOKENIZERS.optName);
-			final Stream<Tokenization> insts = names == null ? Arrays.stream(Tokenization.values())
-					: Arrays.stream(names).map(String::trim).filter(str -> !str.isEmpty()).map(Tokenization::valueOf);
-			final EnumSet<Tokenization> result = EnumSet.noneOf(Tokenization.class);
-			insts.forEach(result::add);
-			return result;
-		}
-
-		private static Set<TokenType> parseTokenTypes(final CommandLine cl) {
-			final String[] names = cl.getOptionValues(Parameter.TOKEN_TYPES.optName);
-			final Stream<TokenType> insts = names == null ? Arrays.stream(TokenType.values())
-					: Arrays.stream(names).map(String::trim).filter(str -> !str.isEmpty()).map(TokenType::valueOf);
-			final EnumSet<TokenType> result = EnumSet.noneOf(TokenType.class);
-			insts.forEach(result::add);
-			return result;
-		}
-
-		private static Set<Training> parseTrainingMethods(final CommandLine cl) {
-			final String[] names = cl.getOptionValues(Parameter.TRAINING.optName);
-			final Stream<Training> insts = names == null ? Arrays.stream(Training.values())
-					: Arrays.stream(names).map(String::trim).filter(str -> !str.isEmpty()).map(Training::valueOf);
-			final EnumSet<Training> result = EnumSet.noneOf(Training.class);
-			insts.forEach(result::add);
-			return result;
-		}
-
-		private static Set<UtteranceFiltering> parseUttFilteringMethods(final CommandLine cl) {
-			final String[] names = cl.getOptionValues(Parameter.UTT_FILTERS.optName);
-			final Stream<UtteranceFiltering> insts = names == null ? Arrays.stream(UtteranceFiltering.values())
-					: Arrays.stream(names).map(String::trim).filter(str -> !str.isEmpty()).map(UtteranceFiltering::valueOf);
-			final EnumSet<UtteranceFiltering> result = EnumSet.noneOf(UtteranceFiltering.class);
-			insts.forEach(result::add);
-			return result;
-		}
-
-		private static void printHelp() {
-			final HelpFormatter formatter = new HelpFormatter();
-			formatter.printHelp(CombiningBatchJobTestSingleFileWriter.class.getSimpleName() + " INPATHS...", OPTIONS);
-		}
-
-		protected final String optName;
-
-		private Parameter(final String optName) {
-			this.optName = optName;
-		}
-
-	}
-
 	private static final List<DialogueAnalysisSummaryFactory.SummaryDatum> DEFAULT_DATA_TO_WRITE = createDefaultDatumOrderingList();
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(CombiningBatchJobTestSingleFileWriter.class);
 
 	private static final String NULL_CELL_VALUE_REPR = "?";
 
+	private static final Options OPTIONS = createOptions();
+
 	private static final Collector<CharSequence, ?, String> ROW_CELL_JOINER = Collectors.joining("\t");
 
 	/**
 	 * <strong>NOTE:</strong> This is for SPSS compability, which does not allow
 	 * e.g.&nbsp;<code>"-"</code> as part of a variable name.
-	 * 
+	 *
 	 * @see <a href=
 	 *      "https://www.ibm.com/support/knowledgecenter/en/SSLVMB_21.0.0/com.ibm.spss.statistics.help/syn_variables_variable_names.htm">SPSS
 	 *      documentation</a>
@@ -251,8 +95,8 @@ public final class CombiningBatchJobTestSingleFileWriter {
 
 	public static void main(final CommandLine cl)
 			throws ParseException, InterruptedException, ExecutionException, ClassificationException, IOException {
-		if (cl.hasOption(Parameter.HELP.optName)) {
-			Parameter.printHelp();
+		if (cl.hasOption(CLITestParameter.HELP.optName)) {
+			printHelp();
 		} else {
 			final List<Path> inpaths = Arrays.asList(cl.getArgList().stream().map(Paths::get).toArray(Path[]::new));
 			if (inpaths.isEmpty()) {
@@ -266,7 +110,7 @@ public final class CombiningBatchJobTestSingleFileWriter {
 				final Consumer<Tester> testerConfigurator;
 				{
 					final OptionalInt optIterCount = CLIParameters
-							.parseIterCount((Number) cl.getParsedOptionValue(Parameter.ITER_COUNT.optName));
+							.parseIterCount((Number) cl.getParsedOptionValue(CLITestParameter.ITER_COUNT.optName));
 					if (optIterCount.isPresent()) {
 						final int iterCount = optIterCount.getAsInt();
 						LOGGER.info("Will run {} training/testing iteration(s).", iterCount);
@@ -278,23 +122,24 @@ public final class CombiningBatchJobTestSingleFileWriter {
 					}
 				}
 
-				final Set<UtteranceFiltering> uttFilteringMethods = Parameter.parseUttFilteringMethods(cl);
+				final Set<UtteranceFiltering> uttFilteringMethods = CLITestParameter.parseUttFilteringMethods(cl);
 				LOGGER.info("Utterance filtering methods: {}", uttFilteringMethods);
-				final Set<Cleaning> cleaningMethods = Parameter.parseCleaningMethods(cl);
+				final Set<Cleaning> cleaningMethods = CLITestParameter.parseCleaningMethods(cl);
 				LOGGER.info("Cleaning methods: {}", cleaningMethods);
-//				final Future<Set<Set<Cleaning>>> cleaningMethodSets = backgroundJobExecutor
-//						.submit(() -> Sets.powerSet(cleaningMethods));
-				final Set<Tokenization> tokenizationMethods = Parameter.parseTokenizationMethods(cl);
+				// final Future<Set<Set<Cleaning>>> cleaningMethodSets =
+				// backgroundJobExecutor
+				// .submit(() -> Sets.powerSet(cleaningMethods));
+				final Set<Tokenization> tokenizationMethods = CLITestParameter.parseTokenizationMethods(cl);
 				LOGGER.info("Tokenization methods: {}", tokenizationMethods);
-				final Set<TokenType> tokenTypes = Parameter.parseTokenTypes(cl);
+				final Set<TokenType> tokenTypes = CLITestParameter.parseTokenTypes(cl);
 				LOGGER.info("Token types: {}", tokenTypes);
-				final Set<TokenFiltering> tokenFilteringMethods = Parameter.parseTokenFilteringMethods(cl);
+				final Set<TokenFiltering> tokenFilteringMethods = CLITestParameter.parseTokenFilteringMethods(cl);
 				LOGGER.info("Token filtering methods: {}", tokenFilteringMethods);
-				final Set<Training> trainingMethods = Parameter.parseTrainingMethods(cl);
+				final Set<Training> trainingMethods = CLITestParameter.parseTrainingMethods(cl);
 				LOGGER.info("Training methods: {}", trainingMethods);
 
 				try (PrintWriter out = CLIParameters
-						.parseOutpath((File) cl.getParsedOptionValue(Parameter.OUTPATH.optName))) {
+						.parseOutpath((File) cl.getParsedOptionValue(CLITestParameter.OUTPATH.optName))) {
 					final CombiningBatchJobTestSingleFileWriter writer = new CombiningBatchJobTestSingleFileWriter(out,
 							true);
 					try (final ClassPathXmlApplicationContext appCtx = new ClassPathXmlApplicationContext(
@@ -302,8 +147,8 @@ public final class CombiningBatchJobTestSingleFileWriter {
 						final CombiningBatchJobTester tester = new CombiningBatchJobTester(backgroundJobExecutor,
 								appCtx, writer::write, writer::writeError, testerConfigurator);
 						final CombiningBatchJobTester.Input input = new CombiningBatchJobTester.Input(
-								uttFilteringMethods, Collections.singleton(cleaningMethods), tokenizationMethods, tokenTypes,
-								tokenFilteringMethods, trainingMethods, allSessionDataFuture.get());
+								uttFilteringMethods, Collections.singleton(cleaningMethods), tokenizationMethods,
+								tokenTypes, tokenFilteringMethods, trainingMethods, allSessionDataFuture.get());
 						tester.accept(input);
 					}
 					LOGGER.info("Shutting down executor service.");
@@ -334,11 +179,11 @@ public final class CombiningBatchJobTestSingleFileWriter {
 			throws IOException, ClassificationException, ExecutionException, InterruptedException {
 		final CommandLineParser parser = new DefaultParser();
 		try {
-			final CommandLine cl = parser.parse(Parameter.OPTIONS, args);
+			final CommandLine cl = parser.parse(OPTIONS, args);
 			main(cl);
 		} catch (final ParseException e) {
 			System.out.println(String.format("An error occured while parsing the command-line arguments: %s", e));
-			Parameter.printHelp();
+			printHelp();
 		}
 	}
 
@@ -380,6 +225,12 @@ public final class CombiningBatchJobTestSingleFileWriter {
 		return result;
 	}
 
+	private static Options createOptions() {
+		final Options result = new Options();
+		Arrays.stream(CLITestParameter.values()).map(CLITestParameter::get).forEach(result::addOption);
+		return result;
+	}
+
 	private static Stream<String> createTestMethodColumnHeaders() {
 		final Stream.Builder<String> resultBuilder = Stream.builder();
 		resultBuilder.add(UtteranceFiltering.class.getSimpleName());
@@ -416,6 +267,11 @@ public final class CombiningBatchJobTestSingleFileWriter {
 	private static Stream<Object> createTrainingDataRowCellValues(final CrossValidationTestSummary cvTestSummary) {
 		final Object2IntMap<String> trainingInstCounts = cvTestSummary.getTrainingInstanceCounts();
 		return EntityInstanceAttributeContext.getClassValues().stream().map(trainingInstCounts::getInt);
+	}
+
+	private static void printHelp() {
+		final HelpFormatter formatter = new HelpFormatter();
+		formatter.printHelp(CombiningBatchJobTestSingleFileWriter.class.getSimpleName() + " INPATHS...", OPTIONS);
 	}
 
 	private static void shutdownExceptionally(final ExecutorService executor) {
