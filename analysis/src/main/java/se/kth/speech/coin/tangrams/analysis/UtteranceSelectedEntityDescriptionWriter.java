@@ -379,7 +379,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 				final String playerId = playerHistory.getKey();
 				final GameHistory history = playerHistory.getValue();
 				final Path outfilePath = extantOutdir
-						.resolve(outfileNamePrefix + "_GAME-" + gameId + "_LOG-" + playerId + ".txt");
+						.resolve(outfileNamePrefix + "_GAME-" + gameId + "_LOG-" + playerId + ".tsv");
 				LOGGER.info("Writing utterances from perspective of \"{}\" to \"{}\".", playerId, outfilePath);
 				try (BufferedWriter writer = Files.newBufferedWriter(outfilePath, StandardOpenOption.CREATE,
 						StandardOpenOption.TRUNCATE_EXISTING)) {
