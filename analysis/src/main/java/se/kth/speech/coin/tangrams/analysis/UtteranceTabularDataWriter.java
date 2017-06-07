@@ -122,6 +122,7 @@ class UtteranceTabularDataWriter {
 			while (firstHeader.size() < resultColCount) {
 				firstHeader.add(padding);
 			}
+			firstHeader.add("DIALOGUE");
 
 			// Add subheader for image description-specific features,
 			// e.g.
