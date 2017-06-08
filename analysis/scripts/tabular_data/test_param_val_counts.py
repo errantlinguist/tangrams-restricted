@@ -14,7 +14,7 @@ __SUBCOL_NAME_DELIM = "#";
 
 __DEFAULT_PARAM_NAME_WHITELIST = frozenset(("UtteranceFiltering", "Cleaning", "Tokenization", "TokenType", "TokenFilter", "Training"))
 
-_DICT_ENTRY_KEY_SORT_KEY = lambda x: x[0]
+_DICT_ENTRY_KEY_SORT_KEY = lambda item: item[0]
 
 
 class ParameterValues(object):
