@@ -2,7 +2,6 @@
 
 from collections import Counter, defaultdict
 from decimal import Decimal, InvalidOperation
-from statistics import mean
 import sys
 
 __COL_DELIM = "\t"
