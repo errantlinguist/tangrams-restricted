@@ -40,7 +40,7 @@ class ParameterValues(object):
 		subtype_vals = subtypes[param_subtype]
 		subtype_vals[value] += 1
 		
-def read_param_values(infile_paths, param_whitelisting_filter):
+def read_test_param_values(infile_paths, param_whitelisting_filter):
 	result = ParameterValues()
 	for infile_path in infile_paths:
 		print("Reading test parameters from \"%s\"." % infile_path, file=sys.stderr)
@@ -94,7 +94,7 @@ if __name__ == "__main__":
 		print("Will print only parameters which match at least one of the following regexes: %s" % sorted(param_name_regexes), file=sys.stderr)
 		whitelisted_param_pattern = re.compile(__unify_regexes(param_name_regexes))
 		param_whitelisting_filter = lambda param_name: whitelisted_param_pattern.match(param_name) is not None
-		param_vals = read_param_values(infile_paths, param_whitelisting_filter)
+		param_vals = read_test_param_values(infile_paths, param_whitelisting_filter)
 		col_names = ("Parameter", "Subtype", "Value", "Count")
 		print(__COL_DELIM.join(col_names))
 		for param_val_row_count in param_vals.iter_param_val_counts():
