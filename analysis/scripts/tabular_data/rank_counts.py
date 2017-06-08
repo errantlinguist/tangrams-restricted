@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from collections import defaultdict
+from collections import Counter
 
 __COL_DELIM = "\t"
 __RANK_COL_NAME = "RANK"
@@ -11,7 +11,7 @@ def __rank_idx(header):
 	return col_names.index(__RANK_COL_NAME)
 
 def parse_rank_counts(lines):
-	result = defaultdict(int)
+	result = Counter()
 	rank_idx = __rank_idx(next(lines))
 	for line in lines:
 		line = line.strip()
