@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from collections import defaultdict
+from decimal import Decimal
 from statistics import mean
 
 __COL_DELIM = "\t"
@@ -21,7 +22,7 @@ def parse_token_count_ranks(lines):
 		line = line.strip()
 		row_vals = line.split(__COL_DELIM)
 		token_count = int(row_vals[token_count_idx])
-		rank = float(row_vals[rank_idx])
+		rank = Decimal(row_vals[rank_idx])
 		result[token_count].append(rank)
 		
 	return result

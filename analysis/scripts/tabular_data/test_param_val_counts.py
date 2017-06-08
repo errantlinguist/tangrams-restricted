@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from collections import Counter, defaultdict
+from decimal import Decimal, InvalidOperation
 from statistics import mean
 import sys
 
@@ -59,8 +60,8 @@ def read_param_values(infile_paths, param_whitelisting_filter):
 							row_val = int(row_val)
 						except ValueError:
 							try:
-								row_val = float(row_val)
-							except ValueError:
+								row_val = Decimal(row_val)
+							except InvalidOperation:
 								pass
 						result.put(param, param_subtype, row_val)
 					

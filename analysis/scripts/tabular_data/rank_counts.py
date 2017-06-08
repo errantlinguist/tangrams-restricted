@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from collections import Counter
+from decimal import Decimal
 
 __COL_DELIM = "\t"
 __RANK_COL_NAME = "RANK"
@@ -16,7 +17,7 @@ def parse_rank_counts(lines):
 	for line in lines:
 		line = line.strip()
 		row_vals = line.split(__COL_DELIM)
-		rank = float(row_vals[rank_idx])
+		rank = Decimal(row_vals[rank_idx])
 		result[rank] += 1
 		
 	return result
