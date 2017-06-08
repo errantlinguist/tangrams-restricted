@@ -12,7 +12,7 @@ if __name__ == "__main__":
 	import sys
 	
 	print("tokencount")
-	with open(sys.argv[1]) as infile:
+	with open(sys.argv[1], 'r') as infile:
 		token_count_idx = __token_count_idx(next(infile))
 		for line in infile:
 			line = line.strip()

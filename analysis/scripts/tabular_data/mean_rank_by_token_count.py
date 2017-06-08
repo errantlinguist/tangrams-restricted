@@ -28,7 +28,7 @@ def parse_token_count_ranks(lines):
 
 if __name__ == "__main__":
 	import sys
-	with open(sys.argv[1]) as infile:
+	with open(sys.argv[1], 'r') as infile:
 		token_count_ranks = parse_token_count_ranks(infile)
 
 	mean_ranks = dict((token_count, mean(ranks)) for token_count, ranks in token_count_ranks.items())

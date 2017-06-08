@@ -23,7 +23,7 @@ def parse_rank_counts(lines):
 
 if __name__ == "__main__":
 	import sys
-	with open(sys.argv[1]) as infile:
+	with open(sys.argv[1], 'r') as infile:
 		rank_counts = parse_rank_counts(infile)
 
 	sorted_rank_counts = sorted(rank_counts.items(), key=lambda item: item[0])

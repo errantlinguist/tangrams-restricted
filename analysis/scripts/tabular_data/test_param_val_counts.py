@@ -44,7 +44,7 @@ def read_param_values(infile_paths, param_whitelisting_filter):
 	result = ParameterValues()
 	for infile_path in infile_paths:
 		print("Reading test parameters from \"%s\"." % infile_path, file=sys.stderr)
-		with open(infile_path) as infile:
+		with open(infile_path, 'r') as infile:
 			col_names = __create_col_name_list(next(infile))
 			for line in infile:
 				line = line.strip()
