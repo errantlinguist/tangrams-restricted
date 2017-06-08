@@ -32,7 +32,7 @@ if __name__ == "__main__":
 		token_count_ranks = parse_token_count_ranks(infile)
 
 	median_ranks = dict((token_count, median(ranks)) for token_count, ranks in token_count_ranks.items())
-	sorted_median_ranks = sorted(median_ranks.items(), key=lambda x: x[0])
+	sorted_median_ranks = sorted(median_ranks.items(), key=lambda item: item[0])
 	print(__COL_DELIM.join(("tokencount", "medianrank")))
 	for token_count, median_rank in sorted_median_ranks:
 		print(__COL_DELIM.join((str(token_count), str(median_rank))))

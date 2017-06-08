@@ -32,7 +32,7 @@ if __name__ == "__main__":
 		token_count_ranks = parse_token_count_ranks(infile)
 
 	mean_ranks = dict((token_count, mean(ranks)) for token_count, ranks in token_count_ranks.items())
-	sorted_mean_ranks = sorted(mean_ranks.items(), key=lambda x: x[0])
+	sorted_mean_ranks = sorted(mean_ranks.items(), key=lambda item: item[0])
 	print(__COL_DELIM.join(("tokencount", "meanrank")))
 	for token_count, mean_rank in sorted_mean_ranks:
 		print(__COL_DELIM.join((str(token_count), str(mean_rank))))
