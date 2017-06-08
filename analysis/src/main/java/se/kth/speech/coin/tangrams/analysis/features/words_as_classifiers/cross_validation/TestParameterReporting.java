@@ -38,7 +38,7 @@ import se.kth.speech.coin.tangrams.iristk.EventTimes;
 final class TestParameterReporting {
 
 	/**
-	 * <strong>NOTE:</strong> This is for SPSS compability, which does not allow
+	 * <strong>NOTE:</strong> This is for SPSS compatibility, which does not allow
 	 * e.g.&nbsp;<code>"-"</code> as part of a variable name.
 	 *
 	 * @see <a href=
