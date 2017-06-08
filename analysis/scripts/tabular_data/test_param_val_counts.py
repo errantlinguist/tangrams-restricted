@@ -64,11 +64,6 @@ def read_param_values(infile_paths, param_whitelisting_filter):
 					
 	return result
 
-def __create_col_idx_map(header):
-	header = header.strip()
-	col_names = header.split(__COL_DELIM)
-	return dict((col_name, idx) for idx, col_name in enumerate(col_names))
-
 def __create_col_name_list(header):
 	header = header.strip()
 	return header.split(__COL_DELIM)
