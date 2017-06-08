@@ -13,7 +13,10 @@ NOTE: This is for SPSS compatibility, which does not allow e.g."-" as part of a 
 '''
 __SUBCOL_NAME_DELIM = "#";
 
+__DEFAULT_PARAM_NAME_WHITELIST = frozenset(("UtteranceFiltering", "Cleaning", "Tokenization", "TokenType", "TokenFilter", "Training"))
+
 _DICT_ENTRY_KEY_SORT_KEY = lambda x: x[0]
+
 
 class ParameterValues(object):
 
@@ -67,19 +70,31 @@ def read_param_values(infile_paths, param_whitelisting_filter):
 def __create_col_name_list(header):
 	header = header.strip()
 	return header.split(__COL_DELIM)
+
+def __unify_regexes(regexes):
+	if len(regexes) < 2:
+		result = regexes
+	else:		
+		group_start = "(?:"
+		group_end = ")"
+		union_delim = group_end + "|" + group_start
+		result = group_start + union_delim.join(regexes) + group_end
+	return result
 	
 if __name__ == "__main__":
+	import re
 	if len(sys.argv) < 2:
-		raise ValueError("Usage: %s INFILE WHITELISTED_PARAMS... > OUTFILE" % sys.argv[0])
+		raise ValueError("Usage: %s INFILE [PARAM_NAME_REGEXES...] > OUTFILE" % sys.argv[0])
 	else:
 		infile_paths = sys.argv[1:2]
-		whitelisted_param_names = sys.argv[2:]
-		if whitelisted_param_names:
-			whitelisted_param_names = set(whitelisted_param_names)
-			print("Will print only the following parameters: %s" % sorted(whitelisted_param_names), file=sys.stderr)
-			param_whitelisting_filter = lambda param_name: param_name in whitelisted_param_names
+		input_param_name_regexes = sys.argv[2:]
+		if input_param_name_regexes:
+			param_name_regexes = frozenset(input_param_name_regexes)
 		else:
-			param_whitelisting_filter = (lambda param_name: True)
+			param_name_regexes = __DEFAULT_PARAM_NAME_WHITELIST
+		print("Will print only parameters which match at least one of the following regexes: %s" % sorted(param_name_regexes), file=sys.stderr)
+		whitelisted_param_pattern = re.compile(__unify_regexes(param_name_regexes))
+		param_whitelisting_filter = lambda param_name: whitelisted_param_pattern.match(param_name) is not None
 		param_vals = read_param_values(infile_paths, param_whitelisting_filter)
 		col_names = ("Parameter", "Subtype", "Value", "Count")
 		print(__COL_DELIM.join(col_names))
