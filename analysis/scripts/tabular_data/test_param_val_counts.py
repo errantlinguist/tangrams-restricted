@@ -74,12 +74,12 @@ if __name__ == "__main__":
 	else:
 		infile_paths = sys.argv[1:2]
 		whitelisted_param_names = sys.argv[2:]
-		if len(whitelisted_param_names) < 1:
-			param_whitelisting_filter = (lambda param_name: True)
-		else:
+		if whitelisted_param_names:
 			whitelisted_param_names = set(whitelisted_param_names)
 			print("Will print only the following parameters: %s" % sorted(whitelisted_param_names), file=sys.stderr)
 			param_whitelisting_filter = lambda param_name: param_name in whitelisted_param_names
+		else:
+			param_whitelisting_filter = (lambda param_name: True)
 		param_vals = read_param_values(infile_paths, param_whitelisting_filter)
 		col_names = ("Parameter", "Subtype", "Value", "Count")
 		print(__COL_DELIM.join(col_names))
