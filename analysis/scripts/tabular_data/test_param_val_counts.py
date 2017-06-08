@@ -30,11 +30,11 @@ class ParameterValues(object):
 					yield (param, subtype, val, count)
 		
 	def put(self, param, param_subtype, value):
-		subtypes = self.param_subtypes.get(param)
-		if subtypes is None:
+		try:
+			subtypes = self.param_subtypes[param]
+		except KeyError:
 			subtypes = defaultdict(Counter)
 			self.param_subtypes[param] = subtypes
-			
 		subtype_vals = subtypes[param_subtype]
 		subtype_vals[value] += 1
 		
