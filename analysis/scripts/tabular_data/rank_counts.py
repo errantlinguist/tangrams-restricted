@@ -26,7 +26,7 @@ if __name__ == "__main__":
 	with open(sys.argv[1]) as infile:
 		rank_counts = parse_rank_counts(infile)
 
-	sorted_rank_counts = sorted(rank_counts.items(), key=lambda x: x[0])
+	sorted_rank_counts = sorted(rank_counts.items(), key=lambda item: item[0])
 	print(__COL_DELIM.join(("rank", "count")))
 	for rank, count in sorted_rank_counts:
 		print(__COL_DELIM.join((str(rank), str(count))))
