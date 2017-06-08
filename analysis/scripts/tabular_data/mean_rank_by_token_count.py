@@ -1,8 +1,7 @@
 #!/usr/bin/env python3
 
 from collections import defaultdict
-from decimal import Decimal
-from statistics import mean
+import numpy
 
 __COL_DELIM = "\t"
 __RANK_COL_NAME = "RANK"
@@ -22,7 +21,7 @@ def parse_token_count_ranks(lines):
 		line = line.strip()
 		row_vals = line.split(__COL_DELIM)
 		token_count = int(row_vals[token_count_idx])
-		rank = Decimal(row_vals[rank_idx])
+		rank = float(row_vals[rank_idx])
 		result[token_count].append(rank)
 		
 	return result
@@ -32,8 +31,10 @@ if __name__ == "__main__":
 	with open(sys.argv[1], 'r') as infile:
 		token_count_ranks = parse_token_count_ranks(infile)
 
-	mean_ranks = dict((token_count, mean(ranks)) for token_count, ranks in token_count_ranks.items())
-	sorted_mean_ranks = sorted(mean_ranks.items(), key=lambda item: item[0])
-	print(__COL_DELIM.join(("tokencount", "meanrank")))
-	for token_count, mean_rank in sorted_mean_ranks:
-		print(__COL_DELIM.join((str(token_count), str(mean_rank))))
+	print(__COL_DELIM.join(("tokencount", "meanrank", "ranksd")))	
+	for token_count, ranks in sorted(token_count_ranks.items(), key=lambda item: item[0]):
+		rank_arr = numpy.array(ranks, copy=False)
+		mean = numpy.mean(rank_arr)
+		std = numpy.std(rank_arr)
+		row_vals = (token_count, mean, std)
+		print(__COL_DELIM.join((str(token_count), str(mean), str(std))))
