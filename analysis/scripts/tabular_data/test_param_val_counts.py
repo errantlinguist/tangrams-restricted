@@ -3,7 +3,6 @@
 from collections import Counter, defaultdict
 from statistics import mean
 import sys
-from pip._vendor.pyparsing import White
 
 __COL_DELIM = "\t"
 '''
