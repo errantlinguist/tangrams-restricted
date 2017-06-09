@@ -203,6 +203,7 @@ final class InteractiveGameBoardPanel extends AbstractGameBoardPanel implements 
 		final Supplier<SimpleDateFormat> dateFormatSupplier = TIME_FORMAT::get;
 		localTurnCompletionViewLogger = new TimestampingCompletedTurnLogger(screenshotLogger, dateFormatSupplier);
 		viewLogger = new TimestampingScreenshotLogger(screenshotLogger, dateFormatSupplier);
+		// https://stackoverflow.com/a/5777914/1391325
 		addAncestorListener(new AncestorListener(){
 
 			@Override
