@@ -4,13 +4,8 @@ from collections import Counter, defaultdict
 from decimal import Decimal, InvalidOperation
 import sys
 
-__COL_DELIM = "\t"
-'''
-NOTE: This is for SPSS compatibility, which does not allow e.g."-" as part of a variable name.
- 
-@see https://www.ibm.com/support/knowledgecenter/en/SSLVMB_21.0.0/com.ibm.spss.statistics.help/syn_variables_variable_names.htm
-'''
-__SUBCOL_NAME_DELIM = "#";
+from common import COL_DELIM, SUBCOL_NAME_DELIM
+
 
 __DEFAULT_PARAM_NAME_WHITELIST = frozenset(("UtteranceFiltering", "Cleaning", "Tokenization", "TokenType", "TokenFilter", "Training"))
 
@@ -48,10 +43,10 @@ def read_test_param_values(infile_paths, param_whitelisting_filter):
 			col_names = __create_col_name_list(next(infile))
 			for line in infile:
 				line = line.strip()
-				row_vals = line.split(__COL_DELIM)
+				row_vals = line.split(COL_DELIM)
 				col_row_values = zip(col_names, row_vals)
 				for col_name, row_val in col_row_values:
-					sub_col_names = col_name.split(__SUBCOL_NAME_DELIM, 2)
+					sub_col_names = col_name.split(SUBCOL_NAME_DELIM, 2)
 					param = sub_col_names[0]
 					if param_whitelisting_filter(param):
 						param_subtype = sub_col_names[1] if len(sub_col_names) > 1 else ""
@@ -68,7 +63,7 @@ def read_test_param_values(infile_paths, param_whitelisting_filter):
 
 def __create_col_name_list(header):
 	header = header.strip()
-	return header.split(__COL_DELIM)
+	return header.split(COL_DELIM)
 
 def __unify_regexes(regexes):
 	if len(regexes) < 2:
@@ -96,9 +91,9 @@ if __name__ == "__main__":
 		param_whitelisting_filter = lambda param_name: whitelisted_param_pattern.match(param_name) is not None
 		param_vals = read_test_param_values(infile_paths, param_whitelisting_filter)
 		col_names = ("Parameter", "Subtype", "Value", "Count")
-		print(__COL_DELIM.join(col_names))
+		print(COL_DELIM.join(col_names))
 		for param_val_row_count in param_vals.iter_param_val_counts():
-			row = __COL_DELIM.join(str(cell) for cell in param_val_row_count)	
+			row = COL_DELIM.join(str(cell) for cell in param_val_row_count)	
 			print(row)		
 	
 	
