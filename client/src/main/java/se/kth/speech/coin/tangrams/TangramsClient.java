@@ -272,9 +272,7 @@ public final class TangramsClient implements Runnable {
 			}
 		});
 		// https://stackoverflow.com/a/5529906/1391325
-//		clip.open(AudioSystem.getAudioInputStream(new BufferedInputStream(Files.newInputStream(Paths.get("D:\\Users\\tcshore\\src\\com.github.errantlinguist\\tangrams-restricted\\client\\target\\classes\\se\\kth\\speech\\coin\\tangrams\\game-start.wav")))));
 		clip.open(AudioSystem.getAudioInputStream(TangramsClient.class.getResource(resLoc)));
-//		clip.open(AudioSystem.getAudioInputStream(new BufferedInputStream(TangramsClient.class.getResourceAsStream(resLoc))));
 		clip.start();
 	}
 
