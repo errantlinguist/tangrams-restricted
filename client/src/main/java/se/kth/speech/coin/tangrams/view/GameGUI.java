@@ -117,7 +117,7 @@ public final class GameGUI implements Runnable {
 
 	private final Point viewCenterpoint;
 
-	private final WindowListener viewClosedListener;;
+	private final WindowListener viewClosedListener;
 
 	private final InteractiveGameViewFrameFactory viewFactory;
 
