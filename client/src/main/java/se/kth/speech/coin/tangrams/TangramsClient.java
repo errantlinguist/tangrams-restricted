@@ -466,13 +466,9 @@ public final class TangramsClient implements Runnable {
 														final Supplier<Path> sessionLogArchiver = new SessionLogArchiver(
 																rootLogDirPath, systemLoggingStartTime,
 																timestampedLogDirPathSupplier, playerId);
-														// Future<Path>
-														// archivePath =
-														// backgroundJobService.submit(sessionLogArchiver);
 														CompletableFuture
 																.supplyAsync(sessionLogArchiver, backgroundJobService)
 																.thenAccept(logArchivePostprocessingHook);
-														// backgroundJobService.execute(sessionLogArchiver);
 														backgroundJobService.shutdown();
 													});
 												};
