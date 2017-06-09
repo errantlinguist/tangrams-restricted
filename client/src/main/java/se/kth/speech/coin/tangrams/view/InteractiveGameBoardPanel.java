@@ -42,6 +42,8 @@ import java.util.stream.Stream;
 
 import javax.swing.JOptionPane;
 import javax.swing.SwingWorker;
+import javax.swing.event.AncestorEvent;
+import javax.swing.event.AncestorListener;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -201,6 +203,23 @@ final class InteractiveGameBoardPanel extends AbstractGameBoardPanel implements 
 		final Supplier<SimpleDateFormat> dateFormatSupplier = TIME_FORMAT::get;
 		localTurnCompletionViewLogger = new TimestampingCompletedTurnLogger(screenshotLogger, dateFormatSupplier);
 		viewLogger = new TimestampingScreenshotLogger(screenshotLogger, dateFormatSupplier);
+		addAncestorListener(new AncestorListener(){
+
+			@Override
+			public void ancestorAdded(AncestorEvent event) {
+				viewLogger.accept(InteractiveGameBoardPanel.this, "game-start-");
+				InteractiveGameBoardPanel.this.removeAncestorListener(this);
+			}
+
+			@Override
+			public void ancestorRemoved(AncestorEvent event) {
+			}
+
+			@Override
+			public void ancestorMoved(AncestorEvent event) {
+			}
+			
+		});
 		selectingMouseListener = new DisablingMouseAdapter(new SelectingMouseAdapter());
 		updateMouseListener(controller.getRole());
 		addDisablingMouseListener(selectingMouseListener);
