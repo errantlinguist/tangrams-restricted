@@ -4,8 +4,8 @@ from collections import defaultdict
 
 import numpy
 
-from statsmodels import robust
 from common import COL_DELIM, parse_token_count_ranks
+from statsmodels import robust
 
 
 if __name__ == "__main__":
