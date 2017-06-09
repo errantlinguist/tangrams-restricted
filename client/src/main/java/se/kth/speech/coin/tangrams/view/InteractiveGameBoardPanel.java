@@ -51,7 +51,7 @@ import com.google.common.collect.Maps;
 
 import se.kth.speech.SpatialMatrix;
 import se.kth.speech.SpatialRegion;
-import se.kth.speech.awt.ComponentResizedHookEventListener;
+import se.kth.speech.awt.ComponentResizedEventListeningHookRunner;
 import se.kth.speech.awt.DisablingMouseAdapter;
 import se.kth.speech.coin.tangrams.game.Controller;
 import se.kth.speech.coin.tangrams.game.GameplayController;
@@ -209,11 +209,11 @@ final class InteractiveGameBoardPanel extends AbstractGameBoardPanel implements 
 		// component
 		final int uniqueRegionCount = posMatrix.getElementPlacements().getMinimalRegions().size();
 		compCoordStartIdxs = Maps.newHashMapWithExpectedSize(uniqueRegionCount);
-		addComponentListener(new ComponentResizedHookEventListener(compCoordStartIdxs::clear));
+		addComponentListener(new ComponentResizedEventListeningHookRunner(compCoordStartIdxs::clear));
 		compCoordSizes = Maps.newHashMapWithExpectedSize(uniqueRegionCount);
-		addComponentListener(new ComponentResizedHookEventListener(compCoordSizes::clear));
+		addComponentListener(new ComponentResizedEventListeningHookRunner(compCoordSizes::clear));
 		imgsScaledToGridSize = Maps.newHashMapWithExpectedSize(posMatrix.getUniqueElementCount());
-		addComponentListener(new ComponentResizedHookEventListener(imgsScaledToGridSize::clear));
+		addComponentListener(new ComponentResizedEventListeningHookRunner(imgsScaledToGridSize::clear));
 
 		{
 			final int[] minSizeDims = createMinimumDimLengths(posMatrix.getDimensions()).toArray();
