@@ -60,7 +60,7 @@ class UtteranceTabularDataWriter {
 
 	private static final String TABLE_STRING_REPR_ROW_DELIMITER;
 
-	private static final UtteranceDialogueRepresentationStringFactory UTT_DIAG_REPR_FACTORY = new UtteranceDialogueRepresentationStringFactory();;
+	private static final UtteranceDialogueRepresentationStringFactory UTT_DIAG_REPR_FACTORY = new UtteranceDialogueRepresentationStringFactory();
 
 	static {
 		TABLE_STRING_REPR_ROW_DELIMITER = System.lineSeparator();
