@@ -20,15 +20,7 @@ class TestParameterCombinationValueMappings(object):
 		
 	def __repr__(self):
 		return self.__class__.__name__ + str(self.__dict__)
-	
-	@property
-	def param_combination_rank_counts(self):
-		for param, subtypes in sorted(self.param_subtypes.items(), key=_DICT_ENTRY_KEY_SORT_KEY):
-			for subtype, vals in sorted(subtypes.items(), key=_DICT_ENTRY_KEY_SORT_KEY):
-				for val, rank_counts in sorted(vals.items(), key=_DICT_ENTRY_KEY_SORT_KEY):
-					for rank, count in sorted(rank_counts.items(), key=_DICT_ENTRY_KEY_SORT_KEY):
-						yield (param, subtype, val, rank, count)
-		
+			
 	def add(self, param, param_subtype, param_value, param_value_mapping):
 		try:
 			subtypes = self.param_subtypes[param]
@@ -38,6 +30,14 @@ class TestParameterCombinationValueMappings(object):
 		subtype_vals = subtypes[param_subtype]
 		subtype_val_mappings = subtype_vals[param_value]
 		subtype_val_mappings[param_value_mapping] += 1
+		
+	@property
+	def param_combination_rank_counts(self):
+		for param, subtypes in sorted(self.param_subtypes.items(), key=_DICT_ENTRY_KEY_SORT_KEY):
+			for subtype, vals in sorted(subtypes.items(), key=_DICT_ENTRY_KEY_SORT_KEY):
+				for val, rank_counts in sorted(vals.items(), key=_DICT_ENTRY_KEY_SORT_KEY):
+					for rank, count in sorted(rank_counts.items(), key=_DICT_ENTRY_KEY_SORT_KEY):
+						yield (param, subtype, val, rank, count)
 		
 def read_test_param_combination_ranks(infile_paths, test_param_whitelisting_filter):
 	result = TestParameterCombinationValueMappings()

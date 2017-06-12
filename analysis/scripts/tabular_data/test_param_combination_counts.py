@@ -17,14 +17,7 @@ class TestParameterCombinationCounts(object):
 		
 	def __repr__(self):
 		return self.__class__.__name__ + str(self.__dict__)
-	
-	@property
-	def param_combination_counts(self):
-		for param, subtypes in sorted(self.param_subtypes.items(), key=_DICT_ENTRY_KEY_SORT_KEY):
-			for subtype, vals in sorted(subtypes.items(), key=_DICT_ENTRY_KEY_SORT_KEY):
-				for val, count in sorted(vals.items(), key=_DICT_ENTRY_KEY_SORT_KEY):
-					yield (param, subtype, val, count)
-		
+			
 	def add(self, param, param_subtype, param_value):
 		try:
 			subtypes = self.param_subtypes[param]
@@ -33,6 +26,13 @@ class TestParameterCombinationCounts(object):
 			self.param_subtypes[param] = subtypes
 		subtype_vals = subtypes[param_subtype]
 		subtype_vals[param_value] += 1
+		
+	@property
+	def param_combination_counts(self):
+		for param, subtypes in sorted(self.param_subtypes.items(), key=_DICT_ENTRY_KEY_SORT_KEY):
+			for subtype, vals in sorted(subtypes.items(), key=_DICT_ENTRY_KEY_SORT_KEY):
+				for val, count in sorted(vals.items(), key=_DICT_ENTRY_KEY_SORT_KEY):
+					yield (param, subtype, val, count)
 		
 def read_test_param_combinations(infile_paths, test_param_whitelisting_filter):
 	result = TestParameterCombinationCounts()
