@@ -73,6 +73,8 @@ if __name__ == "__main__":
 		whitelisted_param_pattern = re.compile(unify_regexes(param_name_regexes))
 		param_whitelisting_filter = lambda param_name: whitelisted_param_pattern.match(param_name) is not None
 		param_combination_ranks = read_test_param_combination_ranks(infile_paths, param_whitelisting_filter)
+		col_names = ("Parameter", "Subtype", "Value", "Rank", "Count")
+		print(COL_DELIM.join(col_names))
 		for iter_param_combination_rank_count in param_combination_ranks.iter_param_combination_rank_counts():
 			row = COL_DELIM.join(str(cell) for cell in iter_param_combination_rank_count)	
 			print(row)					
