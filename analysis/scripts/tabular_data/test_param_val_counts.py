@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 from collections import Counter, defaultdict
-from decimal import Decimal, InvalidOperation
 import sys
 
 from common import COL_DELIM, create_subcol_name_idx_map, parse_row_cells, parse_test_param_subtype_value
