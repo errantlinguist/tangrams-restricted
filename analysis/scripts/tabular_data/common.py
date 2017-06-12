@@ -1,5 +1,6 @@
 from collections import defaultdict
 
+
 COL_DELIM = "\t"
 '''
 NOTE: This is for SPSS compatibility, which does not allow e.g."-" as part of a variable name.
