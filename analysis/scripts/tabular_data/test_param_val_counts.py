@@ -12,7 +12,7 @@ __DEFAULT_PARAM_NAME_WHITELIST = frozenset(("UtteranceFiltering", "Cleaning", "T
 _DICT_ENTRY_KEY_SORT_KEY = lambda item: item[0]
 
 
-class ParameterValues(object):
+class TestParameterCombinationCounts(object):
 
 	def __init__(self):
 		self.param_subtypes = {}
@@ -26,17 +26,17 @@ class ParameterValues(object):
 				for val, count in sorted(vals.items(), key=_DICT_ENTRY_KEY_SORT_KEY):
 					yield (param, subtype, val, count)
 		
-	def put(self, param, param_subtype, value):
+	def add(self, param, param_subtype, param_value):
 		try:
 			subtypes = self.param_subtypes[param]
 		except KeyError:
 			subtypes = defaultdict(Counter)
 			self.param_subtypes[param] = subtypes
 		subtype_vals = subtypes[param_subtype]
-		subtype_vals[value] += 1
+		subtype_vals[param_value] += 1
 		
 def read_test_param_values(infile_paths, param_whitelisting_filter):
-	result = ParameterValues()
+	result = TestParameterCombinationCounts()
 	for infile_path in infile_paths:
 		print("Reading test parameters from \"%s\"." % infile_path, file=sys.stderr)
 		with open(infile_path, 'r') as infile:
@@ -50,7 +50,7 @@ def read_test_param_values(infile_paths, param_whitelisting_filter):
 					param = sub_col_names[0]
 					if param_whitelisting_filter(param):
 						param_subtype = sub_col_names[1] if len(sub_col_names) > 1 else ""
-						result.put(param, param_subtype, __parse_row_value(row_val))
+						result.add(param, param_subtype, __parse_row_value(row_val))
 					
 	return result
 
