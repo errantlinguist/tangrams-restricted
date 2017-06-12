@@ -56,6 +56,16 @@ def split_subcol_names(col_name):
 	subcol_name = sub_col_names[1] if len(sub_col_names) > 1 else ""
 	return col_name, subcol_name
 
+def unify_regexes(regexes):
+	if len(regexes) < 2:
+		result = regexes
+	else:		
+		group_start = "(?:"
+		group_end = ")"
+		union_delim = group_end + "|" + group_start
+		result = group_start + union_delim.join(regexes) + group_end
+	return result
+
 def __token_count_rank_idxs(header):
 	header = header.strip()
 	col_names = header.split(COL_DELIM)

@@ -3,7 +3,7 @@
 from collections import Counter, defaultdict
 import sys
 
-from common import COL_DELIM, create_subcol_name_idx_map, parse_row_cells, parse_test_param_subtype_value
+from common import COL_DELIM, create_subcol_name_idx_map, parse_row_cells, parse_test_param_subtype_value, unify_regexes
 
 
 __DEFAULT_PARAM_NAME_WHITELIST = frozenset(("UtteranceFiltering", "Cleaning", "Tokenization", "TokenType", "TokenFilter", "Training"))
@@ -49,16 +49,6 @@ def read_test_param_values(infile_paths, test_param_whitelisting_filter):
 					result.add(test_param_name, test_param_subtype, param_val)
 					
 	return result
-
-def __unify_regexes(regexes):
-	if len(regexes) < 2:
-		result = regexes
-	else:		
-		group_start = "(?:"
-		group_end = ")"
-		union_delim = group_end + "|" + group_start
-		result = group_start + union_delim.join(regexes) + group_end
-	return result
 	
 if __name__ == "__main__":
 	import re
@@ -72,7 +62,7 @@ if __name__ == "__main__":
 		else:
 			param_name_regexes = __DEFAULT_PARAM_NAME_WHITELIST
 		print("Will print only parameters which match at least one of the following regexes: %s" % sorted(param_name_regexes), file=sys.stderr)
-		whitelisted_param_pattern = re.compile(__unify_regexes(param_name_regexes))
+		whitelisted_param_pattern = re.compile(unify_regexes(param_name_regexes))
 		param_whitelisting_filter = lambda param_name: whitelisted_param_pattern.match(param_name) is not None
 		param_vals = read_test_param_values(infile_paths, param_whitelisting_filter)
 		col_names = ("Parameter", "Subtype", "Value", "Count")
