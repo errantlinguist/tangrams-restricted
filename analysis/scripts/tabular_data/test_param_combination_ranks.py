@@ -70,7 +70,7 @@ if __name__ == "__main__":
 			param_name_regexes = frozenset(input_param_name_regexes)
 		else:
 			param_name_regexes = __DEFAULT_PARAM_NAME_WHITELIST
-		print("Will print median ranks for combinations of parameters matching following regexes: %s" % sorted(param_name_regexes), file=sys.stderr)
+		print("Will print ranks for combinations of parameters matching following regexes: %s" % sorted(param_name_regexes), file=sys.stderr)
 		whitelisted_param_pattern = re.compile(unify_regexes(param_name_regexes))
 		param_whitelisting_filter = lambda param_name: whitelisted_param_pattern.match(param_name) is not None
 		param_combination_ranks = read_test_param_combination_ranks(infile_paths, param_whitelisting_filter)
