@@ -221,6 +221,44 @@ public final class Tester {
 		 *
 		 * @see
 		 * se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.
+		 * EventDialogueTestStatistics#totalTokensTested()
+		 */
+		@Override
+		public int testedTokenCount() {
+			return totalResults.testedTokenCount();
+		}
+
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see
+		 * se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.
+		 * EventDialogueTestStatistics#totalUtterancesTested()
+		 */
+		@Override
+		public int testedUtteranceCount() {
+			return totalResults.testedUtteranceCount();
+		}
+
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see
+		 * se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.
+		 * EventDialogueTestStatistics#utterancesTested()
+		 */
+		@Override
+		public Stream<Utterance> testedUtterances() {
+			return sessionResults.values().stream().flatMap(List::stream)
+					.map(CrossValidationTestSummary::getTestResults).map(SessionTestStatistics::testedUtterances)
+					.flatMap(Function.identity());
+		}
+
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see
+		 * se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.
 		 * CrossValidationTestStatistics#totalDialoguesTested()
 		 */
 		@Override
@@ -242,18 +280,6 @@ public final class Tester {
 		 *
 		 * @see
 		 * se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.
-		 * EventDialogueTestStatistics#totalTokensTested()
-		 */
-		@Override
-		public int testedTokenCount() {
-			return totalResults.testedTokenCount();
-		}
-
-		/*
-		 * (non-Javadoc)
-		 *
-		 * @see
-		 * se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.
 		 * EventDialogueTestStatistics#totalUtteranceCount()
 		 */
 		@Override
@@ -266,37 +292,11 @@ public final class Tester {
 		 *
 		 * @see
 		 * se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.
-		 * EventDialogueTestStatistics#totalUtterancesTested()
-		 */
-		@Override
-		public int testedUtteranceCount() {
-			return totalResults.testedUtteranceCount();
-		}
-
-		/*
-		 * (non-Javadoc)
-		 *
-		 * @see
-		 * se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.
 		 * SessionTestStatistics#uniqueGoldStandardReferentIdCount()
 		 */
 		@Override
 		public int uniqueGoldStandardReferentIdCount() {
 			throw new UnsupportedOperationException("Cannot compare reference IDs across sessions.");
-		}
-
-		/*
-		 * (non-Javadoc)
-		 *
-		 * @see
-		 * se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.
-		 * EventDialogueTestStatistics#utterancesTested()
-		 */
-		@Override
-		public Stream<Utterance> testedUtterances() {
-			return sessionResults.values().stream().flatMap(List::stream)
-					.map(CrossValidationTestSummary::getTestResults).map(SessionTestStatistics::testedUtterances)
-					.flatMap(Function.identity());
 		}
 
 	}
@@ -406,17 +406,18 @@ public final class Tester {
 			final Instances trainingInsts = classInstancesEntry.getValue();
 			LOGGER.debug("{} instance(s) for class \"{}\".", trainingInsts.size(), className);
 			final CompletableFuture<Void> trainingJob = CompletableFuture.runAsync(() -> {
+				final Logistic classifier = new Logistic();
 				try {
-					final Logistic classifier = new Logistic();
 					classifier.buildClassifier(trainingInsts);
-					final Logistic oldClassifier = result.put(className, classifier);
-					if (oldClassifier != null) {
-						throw new IllegalArgumentException(
-								String.format("More than one file for word class \"%s\".", className));
-					}
 				} catch (final Exception e) {
 					throw new RuntimeException(e);
 				}
+				final Logistic oldClassifier = result.put(className, classifier);
+				if (oldClassifier != null) {
+					throw new IllegalArgumentException(
+							String.format("More than one file for word class \"%s\".", className));
+				}
+
 			}, backgroundJobExecutor);
 			trainingJobs.add(trainingJob);
 		}
@@ -452,7 +453,8 @@ public final class Tester {
 	private Optional<EventDialogueTestResults> testDialogue(final EventDialogue uttDiag, final GameHistory history,
 			final EventDialogueClassifier diagClassifier) throws ClassificationException {
 		final Optional<EventDialogueTestResults> result;
-		// TODO: Extract this from the method so that dialogue testing can be parallelized
+		// TODO: Extract this from the method so that dialogue testing can be
+		// parallelized
 		final EventDialogue transformedDiag = diagTransformer.apply(uttDiag);
 
 		final List<Utterance> allUtts = transformedDiag.getUtts();
