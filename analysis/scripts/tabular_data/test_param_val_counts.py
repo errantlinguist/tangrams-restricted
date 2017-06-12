@@ -4,7 +4,7 @@ from collections import Counter, defaultdict
 from decimal import Decimal, InvalidOperation
 import sys
 
-from common import COL_DELIM, split_subcol_names
+from common import COL_DELIM, create_col_name_list, split_subcol_names
 
 
 __DEFAULT_PARAM_NAME_WHITELIST = frozenset(("UtteranceFiltering", "Cleaning", "Tokenization", "TokenType", "TokenFilter", "Training"))
@@ -40,7 +40,7 @@ def read_test_param_values(infile_paths, param_whitelisting_filter):
 	for infile_path in infile_paths:
 		print("Reading test parameters from \"%s\"." % infile_path, file=sys.stderr)
 		with open(infile_path, 'r') as infile:
-			col_names = __create_col_name_list(next(infile))
+			col_names = create_col_name_list(next(infile))
 			for line in infile:
 				line = line.strip()
 				row_vals = line.split(COL_DELIM)
@@ -60,10 +60,6 @@ def read_test_param_values(infile_paths, param_whitelisting_filter):
 						result.put(param, param_subtype, row_val)
 					
 	return result
-
-def __create_col_name_list(header):
-	header = header.strip()
-	return header.split(COL_DELIM)
 
 def __unify_regexes(regexes):
 	if len(regexes) < 2:
