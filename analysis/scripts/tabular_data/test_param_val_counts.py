@@ -4,7 +4,7 @@ from collections import Counter, defaultdict
 from decimal import Decimal, InvalidOperation
 import sys
 
-from common import COL_DELIM, SUBCOL_NAME_DELIM
+from common import COL_DELIM, split_subcol_names
 
 
 __DEFAULT_PARAM_NAME_WHITELIST = frozenset(("UtteranceFiltering", "Cleaning", "Tokenization", "TokenType", "TokenFilter", "Training"))
@@ -46,7 +46,7 @@ def read_test_param_values(infile_paths, param_whitelisting_filter):
 				row_vals = line.split(COL_DELIM)
 				col_row_values = zip(col_names, row_vals)
 				for col_name, row_val in col_row_values:
-					sub_col_names = col_name.split(SUBCOL_NAME_DELIM, 2)
+					sub_col_names = split_subcol_names(col_name)
 					param = sub_col_names[0]
 					if param_whitelisting_filter(param):
 						param_subtype = sub_col_names[1] if len(sub_col_names) > 1 else ""

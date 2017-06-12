@@ -29,3 +29,6 @@ def parse_token_count_ranks(lines, rank_datatype=float):
 		result[token_count].append(rank)
 		
 	return result
+
+def split_subcol_names(col_name):
+	return col_name.split(SUBCOL_NAME_DELIM, 2)
