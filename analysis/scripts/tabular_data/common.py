@@ -1,4 +1,5 @@
 from collections import defaultdict
+from decimal import Decimal, InvalidOperation
 
 
 COL_DELIM = "\t"
@@ -25,6 +26,17 @@ def create_subcol_name_idx_map(header, col_name_whitelisting_filter):
 def parse_row_cells(line):
 	line = line.strip()
 	return line.split(COL_DELIM)
+
+def parse_test_param_subtype_value(row_cell_val):
+	result = row_cell_val
+	try:
+		result = int(result)
+	except ValueError:
+		try:
+			result = Decimal(result)
+		except InvalidOperation:
+			pass
+	return result
 
 def parse_token_count_ranks(lines, rank_datatype=float):
 	result = defaultdict(list)

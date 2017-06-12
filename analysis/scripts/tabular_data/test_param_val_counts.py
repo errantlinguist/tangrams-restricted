@@ -4,7 +4,7 @@ from collections import Counter, defaultdict
 from decimal import Decimal, InvalidOperation
 import sys
 
-from common import COL_DELIM, create_subcol_name_idx_map, parse_row_cells
+from common import COL_DELIM, create_subcol_name_idx_map, parse_row_cells, parse_test_param_subtype_value
 
 
 __DEFAULT_PARAM_NAME_WHITELIST = frozenset(("UtteranceFiltering", "Cleaning", "Tokenization", "TokenType", "TokenFilter", "Training"))
@@ -46,20 +46,9 @@ def read_test_param_values(infile_paths, test_param_whitelisting_filter):
 				for subcol_names, idx in subcol_name_idxs.items():
 					test_param_name = subcol_names[0]
 					test_param_subtype = subcol_names[1]
-					param_val = __parse_row_value(row[idx])
+					param_val = parse_test_param_subtype_value(row[idx])
 					result.add(test_param_name, test_param_subtype, param_val)
 					
-	return result
-
-def __parse_row_value(row_val):
-	result = row_val
-	try:
-		result = int(result)
-	except ValueError:
-		try:
-			result = Decimal(result)
-		except InvalidOperation:
-			pass
 	return result
 
 def __unify_regexes(regexes):
