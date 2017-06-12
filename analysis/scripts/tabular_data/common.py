@@ -13,6 +13,17 @@ RANK_COL_NAME = "RANK"
 TOKEN_COUNT_COL_NAME = "TOKEN_COUNT"
 
 
+def create_col_name_idx_map(header, test_param_whitelisting_filter):
+	col_names = create_col_name_list(header)
+	result = {}
+	for idx, col_name in enumerate(col_names):
+		sub_col_names = split_subcol_names(col_name)
+		param = sub_col_names[0]
+		if test_param_whitelisting_filter(param):
+			# Put the original, un-split col name into the directory
+			result[col_name] = idx
+	return result
+
 def create_col_name_list(header):
 	header = header.strip()
 	return header.split(COL_DELIM)
