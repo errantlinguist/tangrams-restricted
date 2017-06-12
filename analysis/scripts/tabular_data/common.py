@@ -46,7 +46,7 @@ def parse_token_count_ranks(lines, rank_datatype=float):
 		line = line.strip()
 		row_vals = line.split(COL_DELIM)
 		token_count = int(row_vals[token_count_idx])
-		rank = rank_datatype=(row_vals[rank_idx])
+		rank = rank_datatype(row_vals[rank_idx])
 		result[token_count].append(rank)
 		
 	return result
