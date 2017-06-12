@@ -11,15 +11,15 @@ __DEFAULT_PARAM_NAME_WHITELIST = TEST_PARAM_COL_NAMES
 _DICT_ENTRY_KEY_SORT_KEY = lambda item: item[0]
 
 class TestParameterCombinationValueMappings(object):
-	
-	def _create_nested_counter_dict():
-		return defaultdict(Counter)
 
 	def __init__(self):
 		self.param_subtypes = {}
 		
 	def __repr__(self):
 		return self.__class__.__name__ + str(self.__dict__)
+	
+	def _create_nested_counter_dict():
+		return defaultdict(Counter)
 			
 	def add(self, param, param_subtype, param_value, param_value_mapping):
 		try:
