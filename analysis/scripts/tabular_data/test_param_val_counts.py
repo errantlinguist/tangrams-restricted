@@ -17,7 +17,7 @@ class TestParameterCombinationCounts(object):
 	def __init__(self):
 		self.param_subtypes = {}
 		
-	def __repr__(self, *args, **kwargs):
+	def __repr__(self):
 		return self.__class__.__name__ + str(self.__dict__)
 	
 	def iter_param_val_counts(self):
