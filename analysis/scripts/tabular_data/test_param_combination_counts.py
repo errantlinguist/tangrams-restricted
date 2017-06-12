@@ -10,7 +10,6 @@ __DEFAULT_PARAM_NAME_WHITELIST = TEST_PARAM_COL_NAMES
 
 _DICT_ENTRY_KEY_SORT_KEY = lambda item: item[0]
 
-
 class TestParameterCombinationCounts(object):
 
 	def __init__(self):
