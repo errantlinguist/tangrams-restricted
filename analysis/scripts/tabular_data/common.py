@@ -37,14 +37,17 @@ def parse_test_param_subtype_value(row_cell_val):
 			pass
 	return result
 
-def parse_token_count_ranks(lines, rank_datatype=float):
+def parse_token_count_ranks(lines, rank_cell_val_transformer=None):
+	if not rank_cell_val_transformer:
+		rank_cell_val_transformer = lambda rank_cell_value : float(rank_cell_value)	
+	
 	result = defaultdict(list)
 	token_count_idx, rank_idx = __token_count_rank_idxs(next(lines))
 	for line in lines:
 		line = line.strip()
 		row_vals = line.split(COL_DELIM)
 		token_count = int(row_vals[token_count_idx])
-		rank = rank_datatype(row_vals[rank_idx])
+		rank = rank_cell_val_transformer(row_vals[rank_idx])
 		result[token_count].append(rank)
 		
 	return result
