@@ -3,10 +3,10 @@
 from collections import Counter, defaultdict
 import sys
 
-from common import COL_DELIM, create_subcol_name_idx_map, parse_row_cells, parse_test_param_subtype_value, unify_regexes
+from common import COL_DELIM, TEST_PARAM_COL_NAMES, create_subcol_name_idx_map, parse_row_cells, parse_test_param_subtype_value, unify_regexes
 
 
-__DEFAULT_PARAM_NAME_WHITELIST = frozenset(("UtteranceFiltering", "Cleaning", "Tokenization", "TokenType", "TokenFilter", "Training"))
+__DEFAULT_PARAM_NAME_WHITELIST = TEST_PARAM_COL_NAMES
 
 _DICT_ENTRY_KEY_SORT_KEY = lambda item: item[0]
 

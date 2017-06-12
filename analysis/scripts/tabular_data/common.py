@@ -12,6 +12,7 @@ SUBCOL_NAME_DELIM = "#"
 
 RANK_COL_NAME = "RANK"
 TOKEN_COUNT_COL_NAME = "TOKEN_COUNT"
+TEST_PARAM_COL_NAMES = frozenset(("UtteranceFiltering", "Cleaning", "Tokenization", "TokenType", "TokenFilter", "Training"))
 
 
 def create_subcol_name_idx_map(header, col_name_whitelisting_filter):
