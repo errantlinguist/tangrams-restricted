@@ -18,7 +18,8 @@ class TestParameterCombinationCounts(object):
 	def __repr__(self):
 		return self.__class__.__name__ + str(self.__dict__)
 	
-	def iter_param_val_counts(self):
+	@property
+	def param_combination_counts(self):
 		for param, subtypes in sorted(self.param_subtypes.items(), key=_DICT_ENTRY_KEY_SORT_KEY):
 			for subtype, vals in sorted(subtypes.items(), key=_DICT_ENTRY_KEY_SORT_KEY):
 				for val, count in sorted(vals.items(), key=_DICT_ENTRY_KEY_SORT_KEY):
@@ -66,8 +67,8 @@ if __name__ == "__main__":
 		param_vals = read_test_param_combinations(infile_paths, param_whitelisting_filter)
 		col_names = ("Parameter", "Subtype", "Value", "Count")
 		print(COL_DELIM.join(col_names))
-		for param_val_row_count in param_vals.iter_param_val_counts():
-			row = COL_DELIM.join(str(cell) for cell in param_val_row_count)	
+		for param_combination_count in param_vals.param_combination_counts:
+			row = COL_DELIM.join(str(cell) for cell in param_combination_count)	
 			print(row)		
 	
 	

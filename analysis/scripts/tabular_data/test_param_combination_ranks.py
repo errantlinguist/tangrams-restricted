@@ -21,7 +21,8 @@ class TestParameterCombinationValueMappings(object):
 	def __repr__(self):
 		return self.__class__.__name__ + str(self.__dict__)
 	
-	def iter_param_combination_rank_counts(self):
+	@property
+	def param_combination_rank_counts(self):
 		for param, subtypes in sorted(self.param_subtypes.items(), key=_DICT_ENTRY_KEY_SORT_KEY):
 			for subtype, vals in sorted(subtypes.items(), key=_DICT_ENTRY_KEY_SORT_KEY):
 				for val, rank_counts in sorted(vals.items(), key=_DICT_ENTRY_KEY_SORT_KEY):
@@ -75,7 +76,7 @@ if __name__ == "__main__":
 		param_combination_ranks = read_test_param_combination_ranks(infile_paths, param_whitelisting_filter)
 		col_names = ("Parameter", "Subtype", "Value", "Rank", "Count")
 		print(COL_DELIM.join(col_names))
-		for iter_param_combination_rank_count in param_combination_ranks.iter_param_combination_rank_counts():
+		for param_combination_rank_count in param_combination_ranks.param_combination_rank_counts:
 			row = COL_DELIM.join(str(cell) for cell in iter_param_combination_rank_count)	
 			print(row)					
 	
