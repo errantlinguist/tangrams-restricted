@@ -39,7 +39,10 @@ class TestParameterCombinationValueMappings(object):
 					for rank, count in sorted(rank_counts.items(), key=_DICT_ENTRY_KEY_SORT_KEY):
 						yield (param, subtype, val, rank, count)
 		
-def read_test_param_combination_ranks(infile_paths, test_param_whitelisting_filter):
+def read_test_param_combination_ranks(infile_paths, test_param_whitelisting_filter, rank_transformer=None):
+	if not rank_transformer:
+		rank_transformer = lambda rank_cell_value : float(rank_cell_value)
+		
 	result = TestParameterCombinationValueMappings()
 	for infile_path in infile_paths:
 		print("Reading test parameters from \"%s\"." % infile_path, file=sys.stderr)
@@ -50,7 +53,7 @@ def read_test_param_combination_ranks(infile_paths, test_param_whitelisting_filt
 			
 			rows = (parse_row_cells(line) for line in infile)
 			for row in rows:
-				rank = float(row[rank_idx])
+				rank = rank_transformer(row[rank_idx])
 				for subcol_names, idx in subcol_name_idxs.items():
 					test_param_name = subcol_names[0]
 					test_param_subtype = subcol_names[1]
