@@ -11,12 +11,6 @@ SUBCOL_NAME_DELIM = "#"
 RANK_COL_NAME = "RANK"
 TOKEN_COUNT_COL_NAME = "TOKEN_COUNT"
 
-def __token_count_rank_idxs(header):
-	header = header.strip()
-	col_names = header.split(COL_DELIM)
-	rank_idx = col_names.index(RANK_COL_NAME)
-	token_count_idx = col_names.index(TOKEN_COUNT_COL_NAME)
-	return token_count_idx, rank_idx
 
 def create_col_name_list(header):
 	header = header.strip()
@@ -36,3 +30,10 @@ def parse_token_count_ranks(lines, rank_datatype=float):
 
 def split_subcol_names(col_name):
 	return col_name.split(SUBCOL_NAME_DELIM, 2)
+
+def __token_count_rank_idxs(header):
+	header = header.strip()
+	col_names = header.split(COL_DELIM)
+	rank_idx = col_names.index(RANK_COL_NAME)
+	token_count_idx = col_names.index(TOKEN_COUNT_COL_NAME)
+	return token_count_idx, rank_idx
