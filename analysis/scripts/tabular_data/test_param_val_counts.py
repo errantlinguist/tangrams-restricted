@@ -50,15 +50,19 @@ def read_test_param_values(infile_paths, param_whitelisting_filter):
 					param = sub_col_names[0]
 					if param_whitelisting_filter(param):
 						param_subtype = sub_col_names[1] if len(sub_col_names) > 1 else ""
-						try:
-							row_val = int(row_val)
-						except ValueError:
-							try:
-								row_val = Decimal(row_val)
-							except InvalidOperation:
-								pass
-						result.put(param, param_subtype, row_val)
+						result.put(param, param_subtype, __parse_row_value(row_val))
 					
+	return result
+
+def __parse_row_value(row_val):
+	result = row_val
+	try:
+		result = int(result)
+	except ValueError:
+		try:
+			result = Decimal(result)
+		except InvalidOperation:
+			pass
 	return result
 
 def __unify_regexes(regexes):
