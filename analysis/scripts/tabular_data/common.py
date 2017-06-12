@@ -26,10 +26,6 @@ def parse_row_cells(line):
 	line = line.strip()
 	return line.split(COL_DELIM)
 
-def parse_subcol_name_idx_map(header, col_name_whitelisting_filter):
-	col_names = parse_row_cells(header)
-	return create_subcol_name_idx_map(col_names, col_name_whitelisting_filter)
-
 def parse_test_param_subtype_value(row_cell_val):
 	result = row_cell_val
 	try:
