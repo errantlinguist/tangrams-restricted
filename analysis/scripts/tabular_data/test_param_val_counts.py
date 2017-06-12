@@ -4,7 +4,7 @@ from collections import Counter, defaultdict
 from decimal import Decimal, InvalidOperation
 import sys
 
-from common import COL_DELIM, create_col_name_list, split_subcol_names
+from common import COL_DELIM, create_subcol_name_idx_map, parse_row_cells
 
 
 __DEFAULT_PARAM_NAME_WHITELIST = frozenset(("UtteranceFiltering", "Cleaning", "Tokenization", "TokenType", "TokenFilter", "Training"))
@@ -35,22 +35,19 @@ class TestParameterCombinationCounts(object):
 		subtype_vals = subtypes[param_subtype]
 		subtype_vals[param_value] += 1
 		
-def read_test_param_values(infile_paths, param_whitelisting_filter):
+def read_test_param_values(infile_paths, test_param_whitelisting_filter):
 	result = TestParameterCombinationCounts()
 	for infile_path in infile_paths:
 		print("Reading test parameters from \"%s\"." % infile_path, file=sys.stderr)
 		with open(infile_path, 'r') as infile:
-			col_names = create_col_name_list(next(infile))
-			for line in infile:
-				line = line.strip()
-				row_vals = line.split(COL_DELIM)
-				col_row_values = zip(col_names, row_vals)
-				for col_name, row_val in col_row_values:
-					sub_col_names = split_subcol_names(col_name)
-					param = sub_col_names[0]
-					if param_whitelisting_filter(param):
-						param_subtype = sub_col_names[1] if len(sub_col_names) > 1 else ""
-						result.add(param, param_subtype, __parse_row_value(row_val))
+			subcol_name_idxs = create_subcol_name_idx_map(next(infile), test_param_whitelisting_filter)
+			rows = (parse_row_cells(line) for line in infile)
+			for row in rows:
+				for subcol_names, idx in subcol_name_idxs.items():
+					test_param_name = subcol_names[0]
+					test_param_subtype = subcol_names[1]
+					param_val = __parse_row_value(row[idx])
+					result.add(test_param_name, test_param_subtype, param_val)
 					
 	return result
 

@@ -13,20 +13,18 @@ RANK_COL_NAME = "RANK"
 TOKEN_COUNT_COL_NAME = "TOKEN_COUNT"
 
 
-def create_col_name_idx_map(header, test_param_whitelisting_filter):
-	col_names = create_col_name_list(header)
+def create_subcol_name_idx_map(header, col_name_whitelisting_filter):
+	col_names = parse_row_cells(header)
 	result = {}
 	for idx, col_name in enumerate(col_names):
-		sub_col_names = split_subcol_names(col_name)
-		test_param_name = sub_col_names[0]
-		if test_param_whitelisting_filter(test_param_name):
-			# Put the original, un-split col name into the directory
-			result[col_name] = idx
+		subcol_names = split_subcol_names(col_name)
+		if col_name_whitelisting_filter(subcol_names[0]):
+			result[subcol_names] = idx
 	return result
 
-def create_col_name_list(header):
-	header = header.strip()
-	return header.split(COL_DELIM)
+def parse_row_cells(line):
+	line = line.strip()
+	return line.split(COL_DELIM)
 
 def parse_token_count_ranks(lines, rank_datatype=float):
 	result = defaultdict(list)
@@ -41,7 +39,10 @@ def parse_token_count_ranks(lines, rank_datatype=float):
 	return result
 
 def split_subcol_names(col_name):
-	return col_name.split(SUBCOL_NAME_DELIM, 2)
+	sub_col_names = col_name.split(SUBCOL_NAME_DELIM, 2)
+	col_name = sub_col_names[0]
+	subcol_name = sub_col_names[1] if len(sub_col_names) > 1 else ""
+	return col_name, subcol_name
 
 def __token_count_rank_idxs(header):
 	header = header.strip()
