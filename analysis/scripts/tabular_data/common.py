@@ -18,8 +18,8 @@ def create_col_name_idx_map(header, test_param_whitelisting_filter):
 	result = {}
 	for idx, col_name in enumerate(col_names):
 		sub_col_names = split_subcol_names(col_name)
-		param = sub_col_names[0]
-		if test_param_whitelisting_filter(param):
+		test_param_name = sub_col_names[0]
+		if test_param_whitelisting_filter(test_param_name):
 			# Put the original, un-split col name into the directory
 			result[col_name] = idx
 	return result
