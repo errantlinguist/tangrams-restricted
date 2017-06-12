@@ -3,7 +3,7 @@
 from collections import Counter, defaultdict
 import sys
 
-from common import COL_DELIM, TEST_PARAM_COL_NAMES, create_subcol_name_idx_map, parse_row_cells, parse_test_param_subtype_value, unify_regexes
+from common import COL_DELIM, TEST_PARAM_COL_NAMES, parse_subcol_name_idx_map, parse_row_cells, parse_test_param_subtype_value, unify_regexes
 
 
 __DEFAULT_PARAM_NAME_WHITELIST = TEST_PARAM_COL_NAMES
@@ -39,7 +39,7 @@ def read_test_param_combinations(infile_paths, test_param_whitelisting_filter):
 	for infile_path in infile_paths:
 		print("Reading test parameters from \"%s\"." % infile_path, file=sys.stderr)
 		with open(infile_path, 'r') as infile:
-			subcol_name_idxs = create_subcol_name_idx_map(next(infile), test_param_whitelisting_filter)
+			subcol_name_idxs = parse_subcol_name_idx_map(next(infile), test_param_whitelisting_filter)
 			rows = (parse_row_cells(line) for line in infile)
 			for row in rows:
 				for subcol_names, idx in subcol_name_idxs.items():
