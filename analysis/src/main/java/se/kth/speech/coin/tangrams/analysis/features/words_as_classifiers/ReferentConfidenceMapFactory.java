@@ -42,6 +42,8 @@ import weka.core.Instance;
  */
 public final class ReferentConfidenceMapFactory {
 
+	private static final String INST_CLASS_VAL = Boolean.TRUE.toString();
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(ReferentConfidenceMapFactory.class);
 
 	@Inject
@@ -54,15 +56,13 @@ public final class ReferentConfidenceMapFactory {
 
 	private final Function<? super String, ? extends Classifier> wordClassifiers;
 
-	public ReferentConfidenceMapFactory(
-			final Function<? super String, ? extends Classifier> wordClassifiers,
+	public ReferentConfidenceMapFactory(final Function<? super String, ? extends Classifier> wordClassifiers,
 			final Function<? super EntityFeature.Extractor.Context, ? extends Instance> testInstFactory) {
 		this.wordClassifiers = wordClassifiers;
 		this.testInstFactory = testInstFactory;
 	}
 
-	public Int2DoubleMap apply(final List<String> tokens, final GameContext uttCtx)
-			throws ClassificationException {
+	public Int2DoubleMap apply(final List<String> tokens, final GameContext uttCtx) throws ClassificationException {
 		LOGGER.debug("Getting entity reference confidence measures for linguistic tokens: {}.", tokens);
 		// TODO: Cache mapping of word classes -> classifiers?
 		final List<Classifier> classifiers = smoother.createNGramClassifierList(tokens, wordClassifiers);
@@ -78,7 +78,7 @@ public final class ReferentConfidenceMapFactory {
 				try {
 					final double[] classValProbs = classifier.distributionForInstance(testInst);
 					final double classValProb = AttributeValues.findNominalClassValueProbability(testInst,
-							classValProbs, Boolean.TRUE.toString());
+							classValProbs, INST_CLASS_VAL);
 					confidenceSum += classValProb;
 				} catch (final Exception e) {
 					throw new ClassificationException(e);
