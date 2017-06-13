@@ -64,12 +64,9 @@ if __name__ == "__main__":
 			row = []
 			ordered_param_vals = tuple((param_vals[param_name] for param_name in param_name_ordering))
 			row.extend(ordered_param_vals)
-			for training_param_val in training_param_value_ordering:
-				ordered_training_param_val_rank = "?"
-				try: 
-					ordered_training_param_val_rank = training_param_ranks[training_param_val]
-				except KeyError as e:
-					print("No training value parameter value \"%s\" used for other param values \"%s\"." % (e, param_vals), file=sys.stderr)
-				row.append(ordered_training_param_val_rank)
-				
-			print(COL_DELIM.join(str(cell) for cell in row))	
+			try: 
+				ordered_training_param_val_ranks = (training_param_ranks[training_param_val] for training_param_val in training_param_value_ordering)
+				row.extend(ordered_training_param_val_ranks)
+				print(COL_DELIM.join(str(cell) for cell in row))	
+			except KeyError as e:
+				print("No training value parameter value \"%s\" used for other param values \"%s\"; Omitting entire row from output." % (e, param_vals), file=sys.stderr)
