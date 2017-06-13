@@ -17,14 +17,14 @@ TRAINING_COL_NAME = "Training"
 _DICT_ENTRY_KEY_SORT_KEY = lambda item: item[0]
 
 
-def parse_test_param_training_param_ranks(lines, param_whitelisting_filter):
+def parse_test_param_training_param_ranks(lines):
 	test_param_iter_training_param_ranks = defaultdict(__create_nested_defaultdict)
 	param_names = set()
 	unique_training_param_values = set()
 	
 	rows = (parse_row_cells(line) for line in lines)
 	col_names = next(rows)
-	param_col_name_idxs = create_col_name_idx_map(col_names, param_whitelisting_filter)	
+	param_col_name_idxs = create_col_name_idx_map(col_names, create_param_whitelisting_filter(WITHIN_SUBJECTS_FACTOR_COL_NAMES))	
 	param_names.update(param_col_name_idxs.keys())
 	training_param_idx = col_names.index(TRAINING_COL_NAME)
 	test_iter_param_idx = col_names.index(TEST_ITER_COL_NAME)
@@ -51,11 +51,9 @@ if __name__ == "__main__":
 	else:
 		infile_path = sys.argv[1]
 		input_param_name_regexes = sys.argv[2:]
-		param_whitelisting_filter = create_param_whitelisting_filter(WITHIN_SUBJECTS_FACTOR_COL_NAMES)
-		
 		print("Reading test results from \"%s\"." % infile_path, file=sys.stderr)
 		with open(infile_path, 'r') as infile:
-			test_param_iter_training_param_ranks, param_names, unique_training_param_values = parse_test_param_training_param_ranks(infile, param_whitelisting_filter)
+			test_param_iter_training_param_ranks, param_names, unique_training_param_values = parse_test_param_training_param_ranks(infile)
 				
 		param_name_ordering = tuple(sorted(param_names))
 		training_param_value_ordering = tuple(sorted(unique_training_param_values))
