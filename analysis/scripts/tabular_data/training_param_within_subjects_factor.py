@@ -17,7 +17,7 @@ TRAINING_COL_NAME = "Training"
 _DICT_ENTRY_KEY_SORT_KEY = lambda item: item[0]
 
 
-def parse_test_param_training_param_ranks(lines):
+def parse_test_param_training_param_ranks(lines, param_whitelisting_filter):
 	test_param_iter_training_param_ranks = defaultdict(__create_nested_defaultdict)
 	param_names = set()
 	unique_training_param_values = set()
@@ -55,7 +55,7 @@ if __name__ == "__main__":
 		
 		print("Reading test results from \"%s\"." % infile_path, file=sys.stderr)
 		with open(infile_path, 'r') as infile:
-			test_param_iter_training_param_ranks, param_names, unique_training_param_values = parse_test_param_training_param_ranks(infile)
+			test_param_iter_training_param_ranks, param_names, unique_training_param_values = parse_test_param_training_param_ranks(infile, param_whitelisting_filter)
 				
 		param_name_ordering = tuple(sorted(param_names))
 		training_param_value_ordering = tuple(sorted(unique_training_param_values))
