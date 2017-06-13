@@ -18,4 +18,4 @@ if __name__ == "__main__":
 		mean = numpy.mean(rank_arr)
 		std = numpy.std(rank_arr)
 		row_vals = (token_count, mean, std)
-		print(COL_DELIM.join((str(token_count), str(mean), str(std))))
+		print(COL_DELIM.join((str(val) for val in row_vals)))

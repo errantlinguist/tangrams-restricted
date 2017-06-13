@@ -19,4 +19,4 @@ if __name__ == "__main__":
 		median = numpy.median(rank_arr)
 		mad = robust.mad(rank_arr)
 		row_vals = (token_count, median, mad)
-		print(COL_DELIM.join((str(token_count), str(median), str(mad))))
+		print(COL_DELIM.join((str(val) for val in row_vals)))

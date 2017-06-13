@@ -3,84 +3,55 @@
 from collections import Counter, defaultdict
 import sys
 
-from common import COL_DELIM, RANK_COL_NAME, TEST_PARAM_COL_NAMES, create_subcol_name_idx_map, parse_row_cells, parse_test_param_subtype_value, unify_regexes
+from common import COL_DELIM, RANK_COL_NAME, parse_row_cells
+from test_param_combinations import create_param_whitelisting_filter, create_col_name_idx_map, parse_test_param_subtype_value
 
 
-__DEFAULT_PARAM_NAME_WHITELIST = TEST_PARAM_COL_NAMES
-
-_DICT_ENTRY_KEY_SORT_KEY = lambda item: item[0]
-
-class TestParameterCombinationValueMappings(object):
-
-	def __init__(self):
-		self.param_subtypes = {}
-		
-	def __repr__(self):
-		return self.__class__.__name__ + str(self.__dict__)
-	
-	def _create_nested_counter_dict():
-		return defaultdict(Counter)
-			
-	def add(self, param, param_subtype, param_value, param_value_mapping):
-		try:
-			subtypes = self.param_subtypes[param]
-		except KeyError:
-			subtypes = defaultdict(TestParameterCombinationValueMappings._create_nested_counter_dict)
-			self.param_subtypes[param] = subtypes
-		subtype_vals = subtypes[param_subtype]
-		subtype_val_mappings = subtype_vals[param_value]
-		subtype_val_mappings[param_value_mapping] += 1
-		
-	@property
-	def param_combination_rank_counts(self):
-		for param, subtypes in sorted(self.param_subtypes.items(), key=_DICT_ENTRY_KEY_SORT_KEY):
-			for subtype, vals in sorted(subtypes.items(), key=_DICT_ENTRY_KEY_SORT_KEY):
-				for val, rank_counts in sorted(vals.items(), key=_DICT_ENTRY_KEY_SORT_KEY):
-					for rank, count in sorted(rank_counts.items(), key=_DICT_ENTRY_KEY_SORT_KEY):
-						yield (param, subtype, val, rank, count)
-		
 def read_test_param_combination_ranks(infile_paths, test_param_whitelisting_filter, rank_cell_val_transformer=None):
 	if not rank_cell_val_transformer:
 		rank_cell_val_transformer = lambda rank_cell_value : float(rank_cell_value)
 		
-	result = TestParameterCombinationValueMappings()
+	param_combination_ranks = defaultdict(Counter)
+	param_names = set()
 	for infile_path in infile_paths:
 		print("Reading test parameters from \"%s\"." % infile_path, file=sys.stderr)
 		with open(infile_path, 'r') as infile:
-			col_names = parse_row_cells(next(infile))
-			subcol_name_idxs = create_subcol_name_idx_map(col_names, test_param_whitelisting_filter)
+			rows = (parse_row_cells(line) for line in infile)
+			col_names = next(rows)
+			param_col_name_idxs = create_col_name_idx_map(col_names, test_param_whitelisting_filter)
+			param_names.update(param_col_name_idxs.keys())
 			rank_idx = col_names.index(RANK_COL_NAME)
 			
-			rows = (parse_row_cells(line) for line in infile)
 			for row in rows:
+				param_vals = tuple((col_name, parse_test_param_subtype_value(row[idx])) for (col_name, idx) in param_col_name_idxs.items())
+				param_combination_rank_counts = param_combination_ranks[param_vals]
 				rank = rank_cell_val_transformer(row[rank_idx])
-				for subcol_names, idx in subcol_name_idxs.items():
-					test_param_name = subcol_names[0]
-					test_param_subtype = subcol_names[1]
-					param_val = parse_test_param_subtype_value(row[idx])
-					result.add(test_param_name, test_param_subtype, param_val, rank)
-					
-	return result
+				param_combination_rank_counts[rank] += 1
+		
+	return param_combination_ranks, param_names
 	
 if __name__ == "__main__":
-	import re
 	if len(sys.argv) < 2:
 		raise ValueError("Usage: %s INFILE [PARAM_NAME_REGEXES...] > OUTFILE" % sys.argv[0])
 	else:
 		infile_paths = sys.argv[1:2]
 		input_param_name_regexes = sys.argv[2:]
-		if input_param_name_regexes:
-			param_name_regexes = frozenset(input_param_name_regexes)
-		else:
-			param_name_regexes = __DEFAULT_PARAM_NAME_WHITELIST
-		print("Will print ranks for combinations of parameters matching following regexes: %s" % sorted(param_name_regexes), file=sys.stderr)
-		whitelisted_param_pattern = re.compile(unify_regexes(param_name_regexes))
-		param_whitelisting_filter = lambda param_name: whitelisted_param_pattern.match(param_name) is not None
-		param_combination_ranks = read_test_param_combination_ranks(infile_paths, param_whitelisting_filter)
-		col_names = ("Parameter", "Subtype", "Value", "Rank", "Count")
+		param_whitelisting_filter = create_param_whitelisting_filter(input_param_name_regexes)
+		param_combination_ranks, param_names = read_test_param_combination_ranks(infile_paths, param_whitelisting_filter)
+		param_name_ordering = tuple(sorted(param_names))
+		col_names = []
+		col_names.extend(param_name_ordering)
+		col_names.append("Rank")
+		col_names.append("Count")
 		print(COL_DELIM.join(col_names))
-		for param_combination_rank_count in param_combination_ranks.param_combination_rank_counts:
-			row = COL_DELIM.join(str(cell) for cell in iter_param_combination_rank_count)	
-			print(row)					
+		for param_combination, rank_counts in param_combination_ranks.items():
+			param_vals = dict(param_combination)
+			ordered_param_vals = tuple((param_vals[param_name] for param_name in param_name_ordering))
+			for rank, count in sorted(rank_counts.items(), key=lambda item: item[0]):
+				row = []	
+				row.extend(ordered_param_vals)
+				row.append(rank)
+				row.append(count)
+				print(COL_DELIM.join(str(cell) for cell in row))				
 	
 	

@@ -11,7 +11,7 @@ from statsmodels import robust
 if __name__ == "__main__":
 	import sys
 	
-	rank_cell_val_transformer= lambda rank_cell_value : 1.0 / numpy.float128(rank_cell_value)
+	rank_cell_val_transformer = lambda rank_cell_value : 1.0 / numpy.float128(rank_cell_value)
 	with open(sys.argv[1], 'r') as infile:
 		common = parse_token_count_ranks(infile, rank_cell_val_transformer)
 	
@@ -21,4 +21,4 @@ if __name__ == "__main__":
 		median = numpy.median(rank_arr)
 		mad = robust.mad(rank_arr)
 		row_vals = (token_count, median, mad)
-		print(COL_DELIM.join((str(token_count), str(median), str(mad))))
+		print(COL_DELIM.join((str(val) for val in row_vals)))

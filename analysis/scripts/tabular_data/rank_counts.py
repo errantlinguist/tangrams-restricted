@@ -3,20 +3,18 @@
 from collections import Counter
 from decimal import Decimal
 
-from common import COL_DELIM, RANK_COL_NAME
+from common import COL_DELIM, RANK_COL_NAME, parse_row_cells
 
 
 def __rank_idx(header):
-	header = header.strip()
-	col_names = header.split(COL_DELIM)
+	col_names = parse_row_cells(header)
 	return col_names.index(RANK_COL_NAME)
 
 def parse_rank_counts(lines):
 	result = Counter()
 	rank_idx = __rank_idx(next(lines))
 	for line in lines:
-		line = line.strip()
-		row_vals = line.split(COL_DELIM)
+		row_vals = parse_row_cells(line)
 		rank = Decimal(row_vals[rank_idx])
 		result[rank] += 1
 		
