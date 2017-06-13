@@ -6,7 +6,10 @@ from common import split_subcol_names, unify_regexes
 
 TEST_PARAM_COL_NAMES = frozenset(("UtteranceFiltering", "Cleaning", "Tokenization", "TokenType", "TokenFilter", "Training"))
 
-def create_col_name_idx_map(col_names, col_name_whitelisting_filter):
+def create_col_name_idx_map(col_names, col_name_whitelisting_filter=None):
+	if not col_name_whitelisting_filter:
+		col_name_whitelisting_filter = lambda col_name : True
+		
 	result = {}
 	for idx, col_name in enumerate(col_names):
 		subcol_names = split_subcol_names(col_name)
