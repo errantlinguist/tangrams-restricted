@@ -16,47 +16,40 @@ TRAINING_COL_NAME = "Training"
 
 _DICT_ENTRY_KEY_SORT_KEY = lambda item: item[0]
 
+class TrainingParamDatum(object):
+	def __init__(self, rank, covariates):
+		self.rank = rank
+		self.covariates = covariates
+		
+	def __repr__(self):
+		return self.__class__.__name__ + str(self.__dict__)
+
+class TestIterDatum(object):
+	
+	def __init__(self):
+		self.training_param_data = {}
+		
+	def __repr__(self):
+		return self.__class__.__name__ + str(self.__dict__)
+
 class SubjectGroup(object):
 	
 	def __init__(self):
-		self.iter_training_param_ranks = {}
-		self.iter_param_covariates = {}
+		self.iter_data = {}
 		
-	def get_ranks(self, test_iter):
-		return self.iter_training_param_ranks[test_iter]
-	
-	def fetch_ranks(self, test_iter):
-		try:
-			result = self.get_ranks(test_iter)
-		except KeyError:
-			result = {}
-			self.iter_training_param_ranks[test_iter] = result
-		return result
-	
-	def get_param_covariates(self, test_iter, training_param):
-		return self.iter_param_covariates[test_iter][training_param]
-				
-	def fetch_param_covariates(self, test_iter, training_param):
-		param_covariates = self.__fetch_iter_param_covariates(test_iter)
-		try:
-			result = param_covariates[training_param]
-		except KeyError:
-			result = {}
-			param_covariates[training_param] = result
-		return result
-	
-	def put_iter_param_covariates(self, test_iter, training_param, covariates):
-		param_covariates = self.__fetch_iter_param_covariates(test_iter)
-		param_covariates[training_param] = covariates
-			
-	def __fetch_iter_param_covariates(self, test_iter):
-		try:
-			result = self.iter_param_covariates[test_iter]
-		except KeyError:
-			result = {}
-			self.iter_param_covariates[test_iter] = result
-		return result
+	def __repr__(self):
+		return self.__class__.__name__ + str(self.__dict__)
 		
+	def get_iter_data(self, test_iter):
+		return self.iter_data[test_iter]
+	
+	def fetch_iter_data(self, test_iter):
+		try:
+			result = self.get_iter_data(test_iter)
+		except KeyError:
+			result = TestIterDatum()
+			self.iter_data[test_iter] = result
+		return result
 
 def parse_test_param_training_param_ranks(lines):
 	test_param_subject_groups = defaultdict(SubjectGroup)
@@ -76,14 +69,12 @@ def parse_test_param_training_param_ranks(lines):
 		param_vals = tuple((col_name, parse_test_param_subtype_value(row[idx])) for (col_name, idx) in param_col_name_idxs.items())
 		subject_group = test_param_subject_groups[param_vals]
 		test_iter = int(row[test_iter_param_idx])
-		training_param_ranks = subject_group.fetch_ranks(test_iter)
+		iter_data = subject_group.fetch_iter_data(test_iter)
 		training_param_val = row[training_param_idx]
 		unique_training_param_values.add(training_param_val)
 		rank = Decimal(row[rank_idx])
-		training_param_ranks[training_param_val] = rank
-		
 		param_covariates = dict((covariate_col_name, parse_test_param_subtype_value(row[idx])) for covariate_col_name, idx in covariate_val_col_name_idxs.items())
-		subject_group.put_iter_param_covariates(test_iter, training_param_val, param_covariates)
+		iter_data.training_param_data[training_param_val] = TrainingParamDatum(rank, param_covariates)
 		
 	return test_param_subject_groups, param_names, unique_training_param_values
 
@@ -107,22 +98,34 @@ if __name__ == "__main__":
 		col_names.append(TEST_ITER_COL_NAME)
 		training_factor_col_names = ((TRAINING_COL_NAME + SUBCOL_NAME_DELIM + param_value) for param_value in training_param_value_ordering)
 		col_names.extend(training_factor_col_names)
+		covariate_subcol_name_ordering = tuple(sorted(COVARIATE_COL_NAMES))
+		for training_param_value in training_param_value_ordering:
+			param_covariate_col_names = ((col_name + SUBCOL_NAME_DELIM + training_param_value) for col_name in covariate_subcol_name_ordering)
+			col_names.extend(param_covariate_col_names)
 		print(COL_DELIM.join(col_names))
 
 		for param_combination, subj_group in sorted(test_param_subject_groups.items(), key=_DICT_ENTRY_KEY_SORT_KEY):
 			param_vals = dict(param_combination)
 			ordered_param_vals = tuple((param_vals[param_name] for param_name in param_name_ordering))
-			for test_iter, training_param_ranks in subj_group.iter_training_param_ranks.items():
+			
+			for test_iter, iter_datum in subj_group.iter_data.items():
 				row = []
 				row.extend(ordered_param_vals)
 				row.append(test_iter)
 				
+				ranks_to_append = []
+				covariates_to_append = []
 				for training_param_val in training_param_value_ordering:
 					try: 
-						rank = training_param_ranks[training_param_val]
+						training_param_datum = iter_datum.training_param_data[training_param_val]
 					except KeyError as e:
-						print("No training value parameter value \"%s\" used for other param values \"%s\" for test iter %d; Substituting values from first test iter." % (e, param_vals, test_iter), file=sys.stderr)
-						first_iter_training_param_ranks = subj_group.iter_training_param_ranks[1]
-						rank = first_iter_training_param_ranks.get(training_param_val)
-					row.append(rank)
+						print("No training param data %s used for other param values \"%s\" for test iter %d; Substituting values from first test iter." % (e, param_vals, test_iter), file=sys.stderr)
+						first_iter_datum = subj_group.iter_data[1]
+						training_param_datum = first_iter_datum.training_param_data[training_param_val]
+					
+					ranks_to_append.append(training_param_datum.rank)
+					covariates_to_append.extend((training_param_datum.covariates[col_name] for col_name in covariate_subcol_name_ordering))
+
+				row.extend(ranks_to_append)
+				row.extend(covariates_to_append)
 				print(COL_DELIM.join(str(cell) for cell in row))		
