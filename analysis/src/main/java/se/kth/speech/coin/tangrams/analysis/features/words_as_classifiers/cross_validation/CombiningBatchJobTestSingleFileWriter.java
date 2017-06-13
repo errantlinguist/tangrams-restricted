@@ -130,10 +130,11 @@ public final class CombiningBatchJobTestSingleFileWriter {
 
 	private static List<DialogueAnalysisSummaryFactory.SummaryDatum> createDefaultDatumOrderingList() {
 		final List<DialogueAnalysisSummaryFactory.SummaryDatum> result = Arrays.asList(
-				DialogueAnalysisSummaryFactory.SummaryDatum.KEY, DialogueAnalysisSummaryFactory.SummaryDatum.TEST_ITER,
+				DialogueAnalysisSummaryFactory.SummaryDatum.KEY,
 				DialogueAnalysisSummaryFactory.SummaryDatum.DESCRIPTION,
 				DialogueAnalysisSummaryFactory.SummaryDatum.SESSION_ORDER,
 				DialogueAnalysisSummaryFactory.SummaryDatum.EVENT_TIME,
+				DialogueAnalysisSummaryFactory.SummaryDatum.TEST_ITER,
 				// DialogueAnalysisSummaryFactory.SummaryDatum.DIALOGUE,
 				// DialogueAnalysisSummaryFactory.SummaryDatum.DIALOGUE_AS_TESTED,
 				// DialogueAnalysisSummaryFactory.SummaryDatum.GOLD_STD_ID,
