@@ -33,6 +33,17 @@ import edu.stanford.nlp.util.CoreMap;
  */
 public final class Tokenizer extends AbstractTokenizer {
 
+	private static void addTokens(final CoreMap sent, final ArrayList<String> resultWords) {
+		// a CoreLabel is a CoreMap with additional token-specific methods
+		final List<CoreLabel> tokens = sent.get(TokensAnnotation.class);
+		resultWords.ensureCapacity(resultWords.size() + tokens.size());
+		for (final CoreLabel token : tokens) {
+			// this is the text of the token
+			final String word = token.get(TextAnnotation.class);
+			resultWords.add(word);
+		}
+	}
+
 	public Tokenizer(final StanfordCoreNLPConfigurationVariant annotConfig) {
 		super(annotConfig);
 	}
@@ -50,14 +61,7 @@ public final class Tokenizer extends AbstractTokenizer {
 		final ArrayList<String> result = new ArrayList<>(16 * sents.size());
 		// traversing the words in the current sentence
 		for (final CoreMap sent : sents) {
-			// a CoreLabel is a CoreMap with additional token-specific methods
-			final List<CoreLabel> tokens = sent.get(TokensAnnotation.class);
-			result.ensureCapacity(result.size() + tokens.size());
-			for (final CoreLabel token : tokens) {
-				// this is the text of the token
-				final String word = token.get(TextAnnotation.class);
-				result.add(word);
-			}
+			addTokens(sent, result);
 		}
 		return result;
 	}

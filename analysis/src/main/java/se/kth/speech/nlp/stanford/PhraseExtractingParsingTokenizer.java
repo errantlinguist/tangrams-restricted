@@ -24,7 +24,11 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import edu.stanford.nlp.ling.CoreAnnotations.SentencesAnnotation;
+import edu.stanford.nlp.ling.CoreAnnotations.TokensAnnotation;
 import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.pipeline.Annotation;
 import edu.stanford.nlp.trees.Tree;
@@ -37,6 +41,31 @@ import edu.stanford.nlp.util.CoreMap;
  *
  */
 public final class PhraseExtractingParsingTokenizer extends AbstractTokenizer {
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(PhraseExtractingParsingTokenizer.class);
+
+	private static void addTokens(final CoreMap sent, final ArrayList<CoreLabel> resultWords) {
+		// a CoreLabel is a CoreMap with additional token-specific methods
+		final List<CoreLabel> tokens = sent.get(TokensAnnotation.class);
+		resultWords.ensureCapacity(resultWords.size() + tokens.size());
+		for (final CoreLabel token : tokens) {
+			// this is the text of the token
+			resultWords.add(token);
+		}
+	}
+
+	private static void handleExtractedPhrases(final CoreMap sent, final List<Tree> extractedPhrases,
+			final ArrayList<CoreLabel> resultWords) {
+		if (extractedPhrases.isEmpty()) {
+			LOGGER.info("No phrases extracted; Falling back to using entire sentence.");
+			addTokens(sent, resultWords);
+		} else {
+			for (final Tree extractedPhrase : extractedPhrases) {
+				final List<CoreLabel> phaseLabels = extractedPhrase.taggedLabeledYield();
+				resultWords.addAll(phaseLabels);
+			}
+		}
+	}
 
 	private final Function<? super CoreLabel, String> labelTokenExtractor;
 
@@ -89,10 +118,7 @@ public final class PhraseExtractingParsingTokenizer extends AbstractTokenizer {
 				}
 			}
 
-			for (final Tree extractedPhrase : extractedPhrases) {
-				final List<CoreLabel> phaseLabels = extractedPhrase.taggedLabeledYield();
-				resultWords.addAll(phaseLabels);
-			}
+			handleExtractedPhrases(sent, extractedPhrases, resultWords);
 		}
 		return Arrays.asList(resultWords.stream().map(labelTokenExtractor).toArray(String[]::new));
 	}
