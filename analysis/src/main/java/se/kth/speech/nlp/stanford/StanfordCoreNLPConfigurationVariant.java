@@ -121,7 +121,7 @@ public enum StanfordCoreNLPConfigurationVariant implements Supplier<StanfordCore
 		// https://stanfordnlp.github.io/CoreNLP/sentiment.html
 		result.setProperty("sentiment.model", "edu/stanford/nlp/models/sentiment/sentiment.binary.ser.gz");
 		// https://stanfordnlp.github.io/CoreNLP/ssplit.html
-		result.setProperty("ssplit.isOneSentence", "true");
+//		result.setProperty("ssplit.isOneSentence", "true");
 		// https://stanfordnlp.github.io/CoreNLP/tokenize.html
 		result.setProperty("tokenize.language", "en");
 		return result;
