@@ -57,7 +57,7 @@ public final class PhraseExtractingParsingTokenizer extends AbstractTokenizer {
 	private static void handleExtractedPhrases(final CoreMap sent, final List<Tree> extractedPhrases,
 			final ArrayList<CoreLabel> resultWords) {
 		if (extractedPhrases.isEmpty()) {
-			LOGGER.info("No phrases extracted; Falling back to using entire sentence.");
+			LOGGER.info("No phrases extracted; Falling back to using entire sentence: " + sent.toString());
 			addTokens(sent, resultWords);
 		} else {
 			for (final Tree extractedPhrase : extractedPhrases) {
