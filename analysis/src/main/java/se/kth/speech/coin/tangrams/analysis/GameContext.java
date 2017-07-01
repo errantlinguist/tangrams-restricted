@@ -81,7 +81,7 @@ public final class GameContext {
 		return result;
 	}
 
-	private static <V> Stream<V> getValuesDescendingOrder(final NavigableMap<?, ? extends List<? extends V>> map) {
+	private static Stream<Event> getEventsDescendingOrder(final NavigableMap<?, ? extends List<Event>> map) {
 		return map.descendingMap().values().stream().map(Lists::reverse).flatMap(List::stream);
 	}
 
@@ -206,7 +206,7 @@ public final class GameContext {
 		final NavigableMap<LocalDateTime, List<Event>> timedEvents = getPrecedingEvents();
 		// Look for the last matching event (iterating
 		// backwards)
-		final Stream<Event> eventsDescTime = getValuesDescendingOrder(timedEvents);
+		final Stream<Event> eventsDescTime = getEventsDescendingOrder(timedEvents);
 		return eventsDescTime.filter(matcher).findFirst();
 	}
 
@@ -243,7 +243,7 @@ public final class GameContext {
 		final NavigableMap<LocalDateTime, List<Event>> timedEvents = getPrecedingEvents();
 		// Look for the last time the event was seen (iterating
 		// backwards)
-		final Stream<Event> eventsDescTime = getValuesDescendingOrder(timedEvents);
+		final Stream<Event> eventsDescTime = getEventsDescendingOrder(timedEvents);
 		return findFirstMatchingDistance(eventsDescTime, matcher);
 	}
 
@@ -291,7 +291,7 @@ public final class GameContext {
 	}
 
 	public Stream<Event> getPrecedingEventsDescendingOrder() {
-		return getValuesDescendingOrder(getPrecedingEvents());
+		return getEventsDescendingOrder(getPrecedingEvents());
 	}
 
 	/**
