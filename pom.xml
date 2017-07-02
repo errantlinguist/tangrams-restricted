@@ -13,11 +13,21 @@
 	<url>https://www.kth.se/csc/forskning/tmh/research</url>
 
 	<modules>
+		<module>analysis</module>
 		<module>client</module>
 		<module>game</module>
 		<module>server</module>
-		<module>analysis</module>
 	</modules>
+	
+	<profiles>
+		<profile>
+			<id>analysis</id>
+			<modules>
+				<module>analysis</module>
+				<module>game</module>
+			</modules>
+		</profile>
+	</profiles>
 
 	<properties>
 		<javac.version>1.8</javac.version>
