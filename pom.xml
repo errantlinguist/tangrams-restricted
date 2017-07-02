@@ -18,7 +18,7 @@
 		<module>game</module>
 		<module>server</module>
 	</modules>
-	
+
 	<profiles>
 		<profile>
 			<id>analysis</id>
@@ -32,6 +32,7 @@
 	<properties>
 		<javac.version>1.8</javac.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<slf4j.version>1.7.25</slf4j.version>
 	</properties>
 
 	<dependencyManagement>
@@ -60,6 +61,11 @@
 				<groupId>it.unimi.dsi</groupId>
 				<artifactId>fastutil</artifactId>
 				<version>7.2.0</version>
+			</dependency>
+			<dependency>
+				<groupId>org.slf4j</groupId>
+				<artifactId>slf4j-api</artifactId>
+				<version>${slf4j.version}</version>
 			</dependency>
 
 			<!-- Testing -->
