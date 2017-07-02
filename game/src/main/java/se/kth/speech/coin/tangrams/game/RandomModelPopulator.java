@@ -32,7 +32,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import org.mozilla.javascript.edu.emory.mathcs.backport.java.util.Collections;
+import java.util.Collections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -174,7 +174,7 @@ final class RandomModelPopulator implements Consumer<Random> {
 		}
 		// Now that the ID map has been created, sort the list so that the
 		// biggest images come first
-		final Comparator<? extends Entry<ImageViewInfo, ? extends Image>> imgViewInfoSizeComparatorDesc = Comparator
+		final Comparator<Entry<ImageViewInfo, ? extends Image>> imgViewInfoSizeComparatorDesc = Comparator
 				.comparing(imgViewInfoLoadedImg -> imgViewInfoLoadedImg.getKey().getVisualization().getSize(),
 						ImageSize.getSizeComparator().reversed());
 		Collections.sort(imgViewInfoLoadedImgs, imgViewInfoSizeComparatorDesc);
