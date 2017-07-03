@@ -65,7 +65,7 @@ public final class RandomMatrixPositionFiller<I, E>
 
 	@Override
 	public Set<I> apply(final Collection<? extends Entry<? extends E, ? extends I>> elementIds) {
-		LOGGER.info("Trying to place {} elements.", elementIds.size());
+		LOGGER.debug("Trying to place {} elements.", elementIds.size());
 		// FIXME: Create the element position sizes here and then only get the
 		// sub-regions of appropriate size in order to avoid a combinatorial
 		// explosion
@@ -85,7 +85,7 @@ public final class RandomMatrixPositionFiller<I, E>
 				result.add(id);
 			}
 		}
-		LOGGER.info("Added element IDs {}.", result);
+		LOGGER.debug("Added element IDs {}.", result);
 		return result;
 	}
 
