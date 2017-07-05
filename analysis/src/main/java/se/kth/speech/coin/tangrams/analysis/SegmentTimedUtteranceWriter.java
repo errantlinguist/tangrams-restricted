@@ -28,6 +28,7 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import javax.xml.bind.JAXBException;
+import javax.xml.bind.Unmarshaller;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -42,12 +43,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import iristk.system.Event;
-import iristk.util.HAT;
 import se.kth.speech.MutablePair;
 import se.kth.speech.TimestampArithmetic;
 import se.kth.speech.coin.tangrams.iristk.EventTimes;
 import se.kth.speech.coin.tangrams.iristk.EventTypeMatcher;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
+import se.kth.speech.coin.tangrams.iristk.io.HatIO;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
 import se.kth.speech.hat.xsd.Annotation;
 import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
@@ -129,7 +130,8 @@ public final class SegmentTimedUtteranceWriter {
 			if (cl.hasOption(Parameter.HELP.optName)) {
 				Parameter.printHelp();
 			} else {
-				final File[] infiles = cl.getArgList().stream().map(String::trim).filter(path -> !path.isEmpty()).map(File::new).toArray(File[]::new);
+				final File[] infiles = cl.getArgList().stream().map(String::trim).filter(path -> !path.isEmpty())
+						.map(File::new).toArray(File[]::new);
 				if (infiles.length < 1) {
 					throw new MissingOptionException("No input file(s) specified.");
 
@@ -153,9 +155,10 @@ public final class SegmentTimedUtteranceWriter {
 					}
 					LOGGER.info("Initial timestamp is \"{}\".", EventTimes.FORMATTER.format(initialTime));
 
+					final Unmarshaller unmarshaller = HatIO.fetchContext().createUnmarshaller();
 					for (final File infile : infiles) {
 						LOGGER.info("Reading annotations from \"{}\".", infile);
-						final Annotation uttAnnots = HAT.readAnnotation(infile);
+						final Annotation uttAnnots = (Annotation) unmarshaller.unmarshal(infile);
 						final List<Segment> segments = uttAnnots.getSegments().getSegment();
 						// Just use the source ID as the speaker ID
 						final SegmentUtteranceFactory segUttFactory = new SegmentUtteranceFactory(Segment::getSource);

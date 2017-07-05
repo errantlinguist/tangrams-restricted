@@ -30,11 +30,12 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import javax.xml.bind.JAXBException;
+import javax.xml.bind.Unmarshaller;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import iristk.util.HAT;
+import se.kth.speech.coin.tangrams.iristk.io.HatIO;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
 import se.kth.speech.hat.xsd.Annotation;
 
@@ -117,7 +118,8 @@ public final class SessionEventDialogueManager {
 			final Path hatInfilePath = sessionData.getHATFilePath();
 			LOGGER.info("Reading annotations from \"{}\".", hatInfilePath);
 			try {
-				final Annotation uttAnnots = HAT.readAnnotation(hatInfilePath.toFile());
+				final Unmarshaller unmarshaller = HatIO.fetchContext().createUnmarshaller();
+				final Annotation uttAnnots = (Annotation) unmarshaller.unmarshal(hatInfilePath.toFile());
 				return Collections.unmodifiableList(
 						Arrays.asList(new EventDialogueCreatingClosure(uttAnnots, idGameHistory.getValue(),
 								segUttFactory, eventDiagFactory).get().toArray(EventDialogue[]::new)));

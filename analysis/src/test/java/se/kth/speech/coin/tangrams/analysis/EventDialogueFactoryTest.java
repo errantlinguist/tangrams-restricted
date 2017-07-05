@@ -16,20 +16,21 @@
 */
 package se.kth.speech.coin.tangrams.analysis;
 
-import java.io.File;
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 
 import org.junit.Assert;
@@ -38,7 +39,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import iristk.system.Event;
-import iristk.util.HAT;
+import se.kth.speech.coin.tangrams.TestDataResources;
+import se.kth.speech.coin.tangrams.iristk.io.HatIO;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
 import se.kth.speech.hat.xsd.Annotation;
 import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
@@ -51,6 +53,8 @@ import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
 public final class EventDialogueFactoryTest {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(EventDialogueFactoryTest.class);
+
+	private static final JAXBContext JC = HatIO.fetchContext();
 
 	/**
 	 * Test method for
@@ -69,12 +73,14 @@ public final class EventDialogueFactoryTest {
 			throws URISyntaxException, IOException, JAXBException {
 		final String singleMoveSessionDataResLocStr = TestDataResources.SESSION_DATA_DIR
 				+ "/karey-tangram_Jutta-ONEMOVE";
-		final URL eventLogUrl = EventDialogueFactoryTest.class
+		final URL eventLogUrl = TestDataResources.class
 				.getResource(singleMoveSessionDataResLocStr + "/events-karey.txt");
-		final Path eventLogPath = Paths.get(eventLogUrl.toURI());
-		LOGGER.info("Reading event history from \"{}\".", eventLogPath);
-		final Map<String, GameHistory> gameHistories = LoggedEvents.parseGameHistories(Files.lines(eventLogPath),
-				eventFilter);
+		LOGGER.info("Reading event history from \"{}\".", eventLogUrl);
+		Map<String, GameHistory> gameHistories = Collections.emptyMap();
+		try (BufferedReader eventLogReader = new BufferedReader(new InputStreamReader(eventLogUrl.openStream()))) {
+			final Stream<String> eventLines = eventLogReader.lines();
+			gameHistories = LoggedEvents.parseGameHistories(eventLines, eventFilter);
+		}
 		Assert.assertEquals(gameHistories.size(), 1);
 		final GameHistory history = gameHistories.values().iterator().next();
 		// TODO: Make a LoggedEventsTest class and put this assertion in that
@@ -82,10 +88,10 @@ public final class EventDialogueFactoryTest {
 		final List<Event> historyEvents = history.getEventSequence().collect(Collectors.toList());
 		Assert.assertTrue(historyEvents.stream().allMatch(eventFilter));
 
-		final URL hatInfileUrl = EventDialogueFactoryTest.class
+		final URL hatInfileUrl = TestDataResources.class
 				.getResource(singleMoveSessionDataResLocStr + "/utts.xml");
 		LOGGER.info("Reading annotations from \"{}\".", hatInfileUrl);
-		final Annotation uttAnnots = HAT.readAnnotation(new File(hatInfileUrl.toURI()));
+		final Annotation uttAnnots = (Annotation) JC.createUnmarshaller().unmarshal(hatInfileUrl);
 
 		final SegmentUtteranceFactory segUttFactory = new SegmentUtteranceFactory(Segment::getSource);
 		final List<Utterance> utts = segUttFactory.create(uttAnnots.getSegments().getSegment().stream())

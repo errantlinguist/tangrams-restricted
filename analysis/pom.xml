@@ -17,9 +17,14 @@
 	<dependencies>
 		<dependency>
 			<groupId>${project.groupId}</groupId>
-			<artifactId>client</artifactId>
+			<artifactId>game</artifactId>
 			<version>${project.version}</version>
 		</dependency>
+		<!-- <dependency> -->
+		<!-- <groupId>${project.groupId}</groupId> -->
+		<!-- <artifactId>hat</artifactId> -->
+		<!-- <version>${project.version}</version> -->
+		<!-- </dependency> -->
 
 		<dependency>
 			<groupId>javax.inject</groupId>
@@ -29,6 +34,10 @@
 		<dependency>
 			<groupId>commons-cli</groupId>
 			<artifactId>commons-cli</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>com.google.guava</groupId>
+			<artifactId>guava</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>edu.stanford.nlp</groupId>
@@ -55,6 +64,10 @@
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-context</artifactId>
 			<version>4.3.8.RELEASE</version>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-simple</artifactId>
 		</dependency>
 
 		<!-- Testing -->
@@ -83,20 +96,29 @@
 			<plugin>
 				<artifactId>maven-source-plugin</artifactId>
 			</plugin>
+			<plugin>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>2.20</version>
+				<configuration>
+<!-- 					<useSystemClassLoader>false</useSystemClassLoader> -->
+<!-- 					<reuseForks>false</reuseForks> -->
+<!-- 					<forkCount>1</forkCount> -->
+				</configuration>
+			</plugin>
 		</plugins>
 
 		<resources>
 			<resource>
 				<directory>src/main/resources</directory>
-				<filtering>true</filtering>
+<!-- 				<filtering>true</filtering> -->
 			</resource>
-			<resource>
-				<directory />
-				<filtering>true</filtering>
-				<includes>
-					<include>**/project.properties</include>
-				</includes>
-			</resource>
+<!-- 			<resource> -->
+<!-- 				<directory /> -->
+<!-- 				<filtering>true</filtering> -->
+<!-- 				<includes> -->
+<!-- 					<include>**/project.properties</include> -->
+<!-- 				</includes> -->
+<!-- 			</resource> -->
 		</resources>
 	</build>
 </project>

@@ -106,6 +106,13 @@ public final class SegmentUtteranceFactory {
 		return result;
 	}
 
+	/**
+	 * @return the metaLanguageTokens
+	 */
+	static Set<String> getMetaLanguageTokens() {
+		return META_LANGUAGE_TOKENS;
+	}
+
 	private final Function<? super Segment, String> segmentSpeakerIdFactory;
 
 	public SegmentUtteranceFactory(final Function<? super Segment, String> segmentSpeakerIdFactory) {

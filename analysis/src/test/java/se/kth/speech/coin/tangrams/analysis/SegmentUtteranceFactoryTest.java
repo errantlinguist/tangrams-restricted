@@ -16,14 +16,16 @@
 */
 package se.kth.speech.coin.tangrams.analysis;
 
-import java.io.File;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.xml.bind.JAXBException;
 
@@ -36,7 +38,8 @@ import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import iristk.util.HAT;
+import se.kth.speech.coin.tangrams.TestDataResources;
+import se.kth.speech.coin.tangrams.iristk.io.HatIO;
 import se.kth.speech.hat.xsd.Annotation;
 import se.kth.speech.hat.xsd.Annotation.Segments;
 import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
@@ -56,9 +59,13 @@ public final class SegmentUtteranceFactoryTest {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SegmentUtteranceFactoryTest.class);
 
+	private static final Collector<CharSequence, ?, String> SEG_CONTENT_JOINER = Collectors.joining(" ");
+
 	private static final SegmentUtteranceFactory TEST_INST = new SegmentUtteranceFactory(Segment::getSource);
 
 	private static final Collector<CharSequence, ?, String> TOKEN_JOINING_COLLECTOR = Collectors.joining(" ");
+
+	private static final Pattern WHITESPACE_PATTERN = Pattern.compile("\\s+");
 
 	@BeforeClass
 	public static void loadAnnotations() throws URISyntaxException, JAXBException {
@@ -76,10 +83,19 @@ public final class SegmentUtteranceFactoryTest {
 	}
 
 	private static Annotation readAnnotations() throws URISyntaxException, JAXBException {
-		final URL testAnnotFileUrl = SegmentUtteranceFactoryTest.class.getResource(TestDataResources.ROOT_DIR + "/test-hat.xml");
-		LOGGER.info("Reading test annotations from \"{}\".", testAnnotFileUrl);
-		final File testAnnotFile = new File(testAnnotFileUrl.toURI());
-		return HAT.readAnnotation(testAnnotFile);
+		final String resLoc = TestDataResources.createResourceLocator("test-hat.xml");
+		LOGGER.debug("Reading test annotations from resource locator \"{}\".", resLoc);
+		final URL testAnnotFileUrl = TestDataResources.class.getResource(resLoc);
+		LOGGER.info("Reading test annotations from URL \"{}\".", testAnnotFileUrl);
+		return (Annotation) HatIO.fetchContext().createUnmarshaller().unmarshal(testAnnotFileUrl);
+	}
+
+	private static boolean shouldHaveUtts(final Segment seg) {
+		final Set<String> metaLangTokens = SegmentUtteranceFactory.getMetaLanguageTokens();
+		final Stream<String> segTokenContents = seg.getTranscription().getSegmentOrT().stream().map(T.class::cast)
+				.map(T::getContent).map(String::trim);
+		final Stream<String> tokenizedSegTokenContents = segTokenContents.flatMap(WHITESPACE_PATTERN::splitAsStream);
+		return tokenizedSegTokenContents.anyMatch(token -> !metaLangTokens.contains(token));
 	}
 
 	/**
@@ -88,19 +104,28 @@ public final class SegmentUtteranceFactoryTest {
 	 */
 	@Theory
 	public void testCreateSegment(final Segment seg) {
-		LOGGER.info("Testing segment \"{}\".", SegmentUtteranceFactory.createSegmentTokenList(seg).stream()
+		LOGGER.debug("Testing segment \"{}\".", SegmentUtteranceFactory.createSegmentTokenList(seg).stream()
 				.map(T::getContent).collect(TOKEN_JOINING_COLLECTOR));
 		final List<Utterance> utts = TEST_INST.create(seg);
-		Assert.assertFalse(utts.isEmpty());
-		final Float actualStart = seg.getStart();
-		final Float actualEnd = seg.getEnd();
-		final double minStart = utts.stream().mapToDouble(Utterance::getStartTime).min().getAsDouble();
-		Assert.assertEquals(actualStart.doubleValue(), minStart, DOUBLE_DELTA);
-		final double maxEnd = utts.stream().mapToDouble(Utterance::getEndTime).max().getAsDouble();
-		Assert.assertEquals(actualEnd.doubleValue(), maxEnd, DOUBLE_DELTA);
-		for (final Utterance utt : utts) {
-			Assert.assertTrue(actualStart <= utt.getStartTime());
-			Assert.assertTrue(actualEnd >= utt.getEndTime());
+
+		final boolean shouldHaveUtts = shouldHaveUtts(seg);
+		final boolean hasUtts = !utts.isEmpty();
+		Assert.assertEquals(shouldHaveUtts, hasUtts);
+		if (hasUtts) {
+			final Float actualStart = seg.getStart();
+			final Float actualEnd = seg.getEnd();
+			final double minStart = utts.stream().mapToDouble(Utterance::getStartTime).min().getAsDouble();
+			Assert.assertEquals(actualStart.doubleValue(), minStart, DOUBLE_DELTA);
+			final double maxEnd = utts.stream().mapToDouble(Utterance::getEndTime).max().getAsDouble();
+			Assert.assertEquals(actualEnd.doubleValue(), maxEnd, DOUBLE_DELTA);
+			for (final Utterance utt : utts) {
+				Assert.assertTrue(actualStart <= utt.getStartTime());
+				Assert.assertTrue(actualEnd >= utt.getEndTime());
+			}
+		} else {
+			final String segContent = seg.getTranscription().getSegmentOrT().stream().map(T.class::cast)
+					.map(T::getContent).collect(SEG_CONTENT_JOINER);
+			LOGGER.info("Segment content \"{}\" was converted into an empty utterance list.", segContent);
 		}
 	}
 

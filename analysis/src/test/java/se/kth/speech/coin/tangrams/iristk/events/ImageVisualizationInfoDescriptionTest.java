@@ -20,6 +20,10 @@ import org.junit.Assert;
 import org.junit.Test;
 
 /**
+ * Created to investigate a case of {@link java.lang.NoClassDefFoundError} when
+ * instantiating
+ * {@link se.kth.speech.coin.tangrams.iristk.events.ImageVisualizationInfoDescription}.
+ *
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
  * @since Jul 5, 2017
  *

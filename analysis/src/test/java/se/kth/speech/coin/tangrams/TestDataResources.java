@@ -14,7 +14,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech.coin.tangrams.analysis;
+package se.kth.speech.coin.tangrams;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -33,15 +33,19 @@ import java.util.List;
  * @since 17 May 2017
  *
  */
-final class TestDataResources {
+public final class TestDataResources {
 
-	static final String ROOT_DIR;
+	private static final String ROOT_DIR;
 
-	static final String SESSION_DATA_DIR;
+	public static final String SESSION_DATA_DIR;
 
 	static {
 		ROOT_DIR = "test-data";
-		SESSION_DATA_DIR = ROOT_DIR + "/sessions";
+		SESSION_DATA_DIR = createResourceLocator("sessions");
+	}
+
+	public static String createResourceLocator(final String resourceName) {
+		return ROOT_DIR + "/" + resourceName;
 	}
 
 	public static List<Path> createSessionDataDirectoryPathList() {
