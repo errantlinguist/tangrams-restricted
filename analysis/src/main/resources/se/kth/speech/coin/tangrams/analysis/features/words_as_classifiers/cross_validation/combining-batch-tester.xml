@@ -7,7 +7,7 @@
          http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
         http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd">
 
-	<import resource="../context.xml"/>
+	<import resource="classpath*:/se/kth/speech/coin/tangrams/analysis/features/words_as_classifiers/context.xml"/>
 	
 	<bean id="smoother"
 		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordClassDiscountingSmoother">
