@@ -12,20 +12,42 @@
 	<description>A game for organizing tangrams in the fewest number of moves using two players.</description>
 	<url>https://www.kth.se/csc/forskning/tmh/research</url>
 
-	<modules>
-		<module>analysis</module>
-		<module>client</module>
-		<module>game</module>
-		<module>server</module>
-	</modules>
-
 	<profiles>
 		<profile>
+			<id>all</id>
+			<modules>
+				<module>analysis</module>
+				<module>client</module>
+				<module>game</module>
+				<module>server</module>
+			</modules>
+		</profile>
+		<profile>
 			<id>analysis</id>
+			<activation>
+				<activeByDefault>true</activeByDefault>
+			</activation>
 			<modules>
 				<module>analysis</module>
 				<module>game</module>
 			</modules>
+		</profile>
+		<profile>
+			<id>analysis-notest</id>
+			<modules>
+				<module>analysis</module>
+				<module>game</module>
+			</modules>
+			<build>
+				<plugins>
+					<plugin>
+						<artifactId>maven-surefire-plugin</artifactId>
+						<configuration>
+							<skipTests>true</skipTests>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
 		</profile>
 	</profiles>
 
@@ -96,6 +118,10 @@
 		<pluginManagement>
 			<plugins>
 				<plugin>
+					<artifactId>maven-assembly-plugin</artifactId>
+					<version>3.0.0</version>
+				</plugin>
+				<plugin>
 					<artifactId>maven-compiler-plugin</artifactId>
 					<version>3.1</version>
 					<configuration>
@@ -104,23 +130,16 @@
 					</configuration>
 				</plugin>
 				<plugin>
-					<artifactId>maven-jar-plugin</artifactId>
-					<version>3.0.2</version>
-					<executions>
-						<execution>
-							<goals>
-								<goal>test-jar</goal>
-							</goals>
-						</execution>
-					</executions>
-				</plugin>
-				<plugin>
 					<artifactId>maven-javadoc-plugin</artifactId>
 					<version>2.10.1</version>
 				</plugin>
 				<plugin>
 					<artifactId>maven-source-plugin</artifactId>
 					<version>3.0.1</version>
+				</plugin>
+				<plugin>
+					<artifactId>maven-surefire-plugin</artifactId>
+					<version>2.20</version>
 				</plugin>
 			</plugins>
 		</pluginManagement>
