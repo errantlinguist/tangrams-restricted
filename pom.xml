@@ -16,7 +16,6 @@
 		<module>analysis</module>
 		<module>client</module>
 		<module>game</module>
-		<module>hat</module>
 		<module>server</module>
 	</modules>
 
