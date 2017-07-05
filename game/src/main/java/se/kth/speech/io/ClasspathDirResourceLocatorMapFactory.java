@@ -64,6 +64,7 @@ public final class ClasspathDirResourceLocatorMapFactory<K, M extends Map<K, URL
 	public M apply(final String dirToMap) {
 		final M result = supplier.get();
 
+		LOGGER.debug("Creating map of resource dir \"{}\".", dirToMap);
 		try (BufferedReader br = new BufferedReader(
 				new InputStreamReader(loadingClass.getResourceAsStream(dirToMap)))) {
 			for (String line = br.readLine(); line != null; line = br.readLine()) {
