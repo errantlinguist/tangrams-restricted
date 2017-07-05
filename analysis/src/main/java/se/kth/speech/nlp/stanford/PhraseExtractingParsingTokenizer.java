@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Deque;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -54,18 +55,7 @@ public final class PhraseExtractingParsingTokenizer extends AbstractTokenizer {
 		}
 	}
 
-	private static void handleExtractedPhrases(final CoreMap sent, final List<Tree> extractedPhrases,
-			final ArrayList<CoreLabel> resultWords) {
-		if (extractedPhrases.isEmpty()) {
-			LOGGER.info("No phrases extracted; Falling back to using entire sentence: " + sent.toString());
-			addTokens(sent, resultWords);
-		} else {
-			for (final Tree extractedPhrase : extractedPhrases) {
-				final List<CoreLabel> phaseLabels = extractedPhrase.taggedLabeledYield();
-				resultWords.addAll(phaseLabels);
-			}
-		}
-	}
+	private final AtomicInteger failedExtractionCount = new AtomicInteger(0);
 
 	private final Function<? super CoreLabel, String> labelTokenExtractor;
 
@@ -86,6 +76,23 @@ public final class PhraseExtractingParsingTokenizer extends AbstractTokenizer {
 		this.labelTokenExtractor = labelTokenExtractor;
 		this.subTreeMatcher = subTreeMatcher;
 		this.subTreeBranchPruningPositiveFilter = subTreeBranchPruningPositiveFilter;
+	}
+
+	private void handleExtractedPhrases(final CoreMap sent, final List<Tree> extractedPhrases,
+			final ArrayList<CoreLabel> resultWords) {
+		if (extractedPhrases.isEmpty()) {
+			final int newFailedExtractionCount = failedExtractionCount.incrementAndGet();
+//			LOGGER.info("No phrases extracted ({} total failures); Giving up for sentence \"{}\".",
+//					newFailedExtractionCount, sent.toString());
+			 LOGGER.info("No phrases extracted ({} total failures); Falling back to using entire sentence \"{}\".", newFailedExtractionCount,
+			 sent.toString());
+			 addTokens(sent, resultWords);
+		} else {
+			for (final Tree extractedPhrase : extractedPhrases) {
+				final List<CoreLabel> phaseLabels = extractedPhrase.taggedLabeledYield();
+				resultWords.addAll(phaseLabels);
+			}
+		}
 	}
 
 	/*
