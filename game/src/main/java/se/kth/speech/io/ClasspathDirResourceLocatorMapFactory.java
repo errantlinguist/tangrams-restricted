@@ -17,17 +17,14 @@
 package se.kth.speech.io;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.UncheckedIOException;
-import java.net.JarURLConnection;
 import java.net.URL;
-import java.net.URLConnection;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,28 +36,29 @@ import org.slf4j.LoggerFactory;
  */
 public final class ClasspathDirResourceLocatorMapFactory<K, M extends Map<K, URL>> implements Function<String, M> {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(ClasspathDirResourceLocatorMapFactory.class);
+	private static class ClassLoadingResDirStreamFactory implements Function<String, Stream<String>> {
 
-	/**
-	 *
-	 * @param resUrl
-	 * @param instream
-	 * @throws IOException
-	 *
-	 * @see <a href="https://bugs.openjdk.java.net/browse/JDK-8080094">OpenJDK
-	 *      bug report</a>
-	 */
-	private static void close(final URL resUrl, final InputStream instream) throws IOException {
-		final URLConnection connection = resUrl.openConnection();
-		if (connection instanceof JarURLConnection) {
-			final JarURLConnection jar = (JarURLConnection) connection;
-			if (jar.getUseCaches()) {
-				jar.getJarFile().close();
-			}
-		} else {
-			instream.close();
+		private final Class<?> loadingClass;
+
+		private ClassLoadingResDirStreamFactory(final Class<?> loadingClass) {
+			this.loadingClass = loadingClass;
 		}
+
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see java.util.function.Function#apply(java.lang.Object)
+		 */
+		@Override
+		public Stream<String> apply(final String dirName) {
+			final InputStream is = loadingClass.getResourceAsStream(dirName);
+			final BufferedReader br = new BufferedReader(new InputStreamReader(is));
+			return br.lines();
+		}
+
 	}
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(ClasspathDirResourceLocatorMapFactory.class);
 
 	private final Function<? super String, ? extends K> fileResourceNameFactory;
 
@@ -70,15 +68,20 @@ public final class ClasspathDirResourceLocatorMapFactory<K, M extends Map<K, URL
 
 	private final Supplier<? extends M> supplier;
 
+	private final Function<? super String, Stream<String>> resDirStreamFactory;
+
 	public ClasspathDirResourceLocatorMapFactory(final Class<?> loadingClass, final Supplier<? extends M> supplier,
 			final Predicate<? super String> pathFilter,
 			final Function<? super String, ? extends K> fileResourceNameFactory) {
-		this(loadingClass::getResource, supplier, pathFilter, fileResourceNameFactory);
+		this(new ClassLoadingResDirStreamFactory(loadingClass), loadingClass::getResource, supplier, pathFilter,
+				fileResourceNameFactory);
 	}
 
-	public ClasspathDirResourceLocatorMapFactory(final Function<? super String, ? extends URL> resourceUrlFactory,
-			final Supplier<? extends M> supplier, final Predicate<? super String> pathFilter,
+	public ClasspathDirResourceLocatorMapFactory(final Function<? super String, Stream<String>> resDirStreamFactory,
+			final Function<? super String, ? extends URL> resourceUrlFactory, final Supplier<? extends M> supplier,
+			final Predicate<? super String> pathFilter,
 			final Function<? super String, ? extends K> fileResourceNameFactory) {
+		this.resDirStreamFactory = resDirStreamFactory;
 		this.resourceUrlFactory = resourceUrlFactory;
 		this.supplier = supplier;
 		this.pathFilter = pathFilter;
@@ -93,31 +96,15 @@ public final class ClasspathDirResourceLocatorMapFactory<K, M extends Map<K, URL
 	@Override
 	public M apply(final String dirToMap) {
 		LOGGER.debug("Creating map of resource dir \"{}\".", dirToMap);
-		final URL dirUrl = resourceUrlFactory.apply(dirToMap);
-		LOGGER.debug("Reading URL \"{}\".", dirUrl);
-
 		final M result = supplier.get();
 
-		try {
-			InputStream dirInstream = null;
-			try {
-				dirInstream = dirUrl.openStream();
-				final BufferedReader br = new BufferedReader(new InputStreamReader(dirInstream));
-				for (String line = br.readLine(); line != null; line = br.readLine()) {
-					if (pathFilter.test(line)) {
-						final K fileResourceName = fileResourceNameFactory.apply(line);
-						final URL resource = resourceUrlFactory.apply(dirToMap + "/" + line);
-						result.put(fileResourceName, resource);
-					}
-				}
-			} finally {
-				close(dirUrl, dirInstream);
-			}
-		} catch (final IOException e) {
-			final UncheckedIOException ne = new UncheckedIOException(e);
-			LOGGER.error("Caught a checked {}; Re-throwing as an unchecked {}.", e.getClass().getSimpleName(),
-					ne.getClass().getSimpleName());
-			throw ne;
+		try (final Stream<String> dirInstream = resDirStreamFactory.apply(dirToMap)) {
+			final Stream<String> validPaths = dirInstream.filter(pathFilter);
+			validPaths.forEach(validPath -> {
+				final K fileResourceName = fileResourceNameFactory.apply(validPath);
+				final URL resource = resourceUrlFactory.apply(dirToMap + "/" + validPath);
+				result.put(fileResourceName, resource);
+			});
 		}
 
 		return result;

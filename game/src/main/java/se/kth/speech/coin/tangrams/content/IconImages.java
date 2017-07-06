@@ -28,6 +28,7 @@ import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import com.github.errantlinguist.ClassProperties;
 
@@ -71,8 +72,10 @@ public final class IconImages {
 	}
 
 	public static NavigableMap<String, URL> createImageResourceMap(
+			final Function<? super String, Stream<String>> resDirStreamFactory,
 			final Function<? super String, ? extends URL> resourceUrlFactory) {
-		return createImageResourceMap(DEFAULT_IMG_RES_CONTENT_TYPE_REGEX, RESOURCE_NAME_FACTORY, resourceUrlFactory);
+		return createImageResourceMap(DEFAULT_IMG_RES_CONTENT_TYPE_REGEX, RESOURCE_NAME_FACTORY, resDirStreamFactory,
+				resourceUrlFactory);
 	}
 
 	/**
@@ -80,6 +83,24 @@ public final class IconImages {
 	 */
 	public static NavigableMap<String, URL> createImageResourceMap(final String resourceContentTypeRegex) {
 		return createImageResourceMap(resourceContentTypeRegex, RESOURCE_NAME_FACTORY);
+	}
+
+	/**
+	 * @return the defaultImgResContentTypeRegex
+	 */
+	public static String getDefaultImgResContentTypeRegex() {
+		return DEFAULT_IMG_RES_CONTENT_TYPE_REGEX;
+	}
+
+	/**
+	 * @return the iconNameComparator
+	 */
+	public static Comparator<String> getIconNameComparator() {
+		return ICON_NAME_COMPARATOR;
+	}
+
+	public static String getImageResourceDirLocator() {
+		return ImageType.ICON.getDirLocator();
 	}
 
 	/**
@@ -91,18 +112,21 @@ public final class IconImages {
 
 	private static NavigableMap<String, URL> createImageResourceMap(final String resourceContentTypeRegex,
 			final Function<? super String, String> resourceNameFactory) {
-		final Class<?> loadingClass = IconImages.class;
-		return createImageResourceMap(resourceContentTypeRegex, resourceNameFactory, loadingClass::getResource);
+		final Predicate<String> imgFilter = new FileResourceLocatorContentTypePatternFilter(
+				Pattern.compile(resourceContentTypeRegex));
+		return new ClasspathDirResourceLocatorMapFactory<>(IconImages.class, () -> new TreeMap<>(ICON_NAME_COMPARATOR),
+				imgFilter, resourceNameFactory).apply(getImageResourceDirLocator());
 	}
 
 	private static NavigableMap<String, URL> createImageResourceMap(final String resourceContentTypeRegex,
 			final Function<? super String, String> resourceNameFactory,
+			final Function<? super String, Stream<String>> resDirStreamFactory,
 			final Function<? super String, ? extends URL> resourceUrlFactory) {
 		final Predicate<String> imgFilter = new FileResourceLocatorContentTypePatternFilter(
 				Pattern.compile(resourceContentTypeRegex));
-		return new ClasspathDirResourceLocatorMapFactory<>(resourceUrlFactory,
+		return new ClasspathDirResourceLocatorMapFactory<>(resDirStreamFactory, resourceUrlFactory,
 				() -> new TreeMap<>(ICON_NAME_COMPARATOR), imgFilter, resourceNameFactory)
-						.apply(ImageType.ICON.getDirLocator());
+						.apply(getImageResourceDirLocator());
 	}
 
 	private IconImages() {
