@@ -17,6 +17,7 @@
 package se.kth.speech.coin.tangrams.content;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.net.URL;
 import java.util.Arrays;
@@ -43,6 +44,8 @@ import se.kth.speech.io.FileResourceLocatorContentTypePatternFilter;
  */
 public final class IconImages {
 
+	private static final String DEFAULT_IMG_RES_CONTENT_TYPE_REGEX = "image/(?!svg).+";
+
 	private static final Comparator<String> ICON_NAME_COMPARATOR;
 
 	private static final Pattern MULTIVALUE_PROP_DELIM_PATTERN = Pattern.compile("\\s*,\\s*");
@@ -65,7 +68,14 @@ public final class IconImages {
 	}
 
 	public static NavigableMap<String, URL> createImageResourceMap() {
-		return createImageResourceMap("image/(?!svg).+", RESOURCE_NAME_FACTORY);
+		return createImageResourceMap(DEFAULT_IMG_RES_CONTENT_TYPE_REGEX, RESOURCE_NAME_FACTORY);
+	}
+
+	public static NavigableMap<String, URL> createImageResourceMap(
+			final Function<? super String, ? extends InputStream> resourceStreamFactory,
+			final Function<? super String, ? extends URL> resourceUrlFactory) {
+		return createImageResourceMap(DEFAULT_IMG_RES_CONTENT_TYPE_REGEX, RESOURCE_NAME_FACTORY, resourceStreamFactory,
+				resourceUrlFactory);
 	}
 
 	/**
@@ -84,10 +94,20 @@ public final class IconImages {
 
 	private static NavigableMap<String, URL> createImageResourceMap(final String resourceContentTypeRegex,
 			final Function<? super String, String> resourceNameFactory) {
+		final Class<?> loadingClass = IconImages.class;
+		return createImageResourceMap(resourceContentTypeRegex, resourceNameFactory, loadingClass::getResourceAsStream,
+				loadingClass::getResource);
+	}
+
+	private static NavigableMap<String, URL> createImageResourceMap(final String resourceContentTypeRegex,
+			final Function<? super String, String> resourceNameFactory,
+			final Function<? super String, ? extends InputStream> resourceStreamFactory,
+			final Function<? super String, ? extends URL> resourceUrlFactory) {
 		final Predicate<String> imgFilter = new FileResourceLocatorContentTypePatternFilter(
 				Pattern.compile(resourceContentTypeRegex));
-		return new ClasspathDirResourceLocatorMapFactory<>(IconImages.class, () -> new TreeMap<>(ICON_NAME_COMPARATOR),
-				imgFilter, resourceNameFactory).apply(ImageType.ICON.getDirLocator());
+		return new ClasspathDirResourceLocatorMapFactory<>(resourceStreamFactory, resourceUrlFactory,
+				() -> new TreeMap<>(ICON_NAME_COMPARATOR), imgFilter, resourceNameFactory)
+						.apply(ImageType.ICON.getDirLocator());
 	}
 
 	private IconImages() {
