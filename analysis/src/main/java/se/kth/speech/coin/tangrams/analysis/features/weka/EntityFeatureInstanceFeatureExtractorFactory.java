@@ -40,17 +40,10 @@ public final class EntityFeatureInstanceFeatureExtractorFactory
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(EntityFeatureInstanceFeatureExtractorFactory.class);
 
-	private static InstanceFeatureExtractor<EntityFeature, EntityFeature.Extractor.Context> create() {
-		LOGGER.info("Creating new Instance feature extractor.");
-		final NavigableMap<String, URL> namedImgResources = IconImages.createImageResourceMap();
-		LOGGER.info("Created named image resource map of size {}.", namedImgResources.size());
-		final EntityFeature.Extractor fExtr = new EntityFeature.Extractor();
-		final Map<EntityFeature, Attribute> fAttrs = EntityFeature.Extractor
-				.createFeatureAttrMap(new ArrayList<>(namedImgResources.keySet()));
-		return new InstanceFeatureExtractor<>(fExtr, fAttrs);
-	}
-
 	private InstanceFeatureExtractor<EntityFeature, EntityFeature.Extractor.Context> inst = null;
+
+	// @Inject
+	// private ResourceLoader resourceLoader;
 
 	/*
 	 * (non-Javadoc)
@@ -67,7 +60,7 @@ public final class EntityFeatureInstanceFeatureExtractorFactory
 			}
 		}
 		return inst;
-	}
+	};
 
 	/*
 	 * (non-Javadoc)
@@ -88,4 +81,29 @@ public final class EntityFeatureInstanceFeatureExtractorFactory
 	public boolean isSingleton() {
 		return true;
 	}
+
+	private InstanceFeatureExtractor<EntityFeature, EntityFeature.Extractor.Context> create() {
+		LOGGER.info("Creating new Instance feature extractor.");
+		final NavigableMap<String, URL> namedImgResources = IconImages.createImageResourceMap();
+		LOGGER.info("Created named image resource map of size {}.", namedImgResources.size());
+		final EntityFeature.Extractor fExtr = new EntityFeature.Extractor();
+		final Map<EntityFeature, Attribute> fAttrs = EntityFeature.Extractor
+				.createFeatureAttrMap(new ArrayList<>(namedImgResources.keySet()));
+		return new InstanceFeatureExtractor<>(fExtr, fAttrs);
+	}
+
+	// private URL createImgResUrl(final String resName) {
+	// final String resLoc = "classpath:/se/kth/speech/coin/tangrams/content/" +
+	// resName;
+	// LOGGER.info("Loading resource at \"{}\".", resLoc);
+	// final Resource res = resourceLoader.getResource(resLoc);
+	// if (!res.exists()) {
+	// throw new IllegalArgumentException("Nonexistent resource.");
+	// }
+	// try {
+	// return res.getURL();
+	// } catch (final IOException e) {
+	// throw new UncheckedIOException(e);
+	// }
+	// }
 }

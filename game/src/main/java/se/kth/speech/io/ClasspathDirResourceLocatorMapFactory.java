@@ -21,7 +21,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
+import java.net.JarURLConnection;
 import java.net.URL;
+import java.net.URLConnection;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -39,29 +41,44 @@ public final class ClasspathDirResourceLocatorMapFactory<K, M extends Map<K, URL
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(ClasspathDirResourceLocatorMapFactory.class);
 
+	/**
+	 *
+	 * @param resUrl
+	 * @param instream
+	 * @throws IOException
+	 *
+	 * @see <a href="https://bugs.openjdk.java.net/browse/JDK-8080094">OpenJDK
+	 *      bug report</a>
+	 */
+	private static void close(final URL resUrl, final InputStream instream) throws IOException {
+		final URLConnection connection = resUrl.openConnection();
+		if (connection instanceof JarURLConnection) {
+			final JarURLConnection jar = (JarURLConnection) connection;
+			if (jar.getUseCaches()) {
+				jar.getJarFile().close();
+			}
+		} else {
+			instream.close();
+		}
+	}
+
 	private final Function<? super String, ? extends K> fileResourceNameFactory;
 
 	private final Predicate<? super String> pathFilter;
 
-	private final Supplier<? extends M> supplier;
-
-	private final Function<? super String, ? extends InputStream> resourceStreamFactory;
-
 	private final Function<? super String, ? extends URL> resourceUrlFactory;
+
+	private final Supplier<? extends M> supplier;
 
 	public ClasspathDirResourceLocatorMapFactory(final Class<?> loadingClass, final Supplier<? extends M> supplier,
 			final Predicate<? super String> pathFilter,
 			final Function<? super String, ? extends K> fileResourceNameFactory) {
-		this(loadingClass::getResourceAsStream, loadingClass::getResource, supplier, pathFilter,
-				fileResourceNameFactory);
+		this(loadingClass::getResource, supplier, pathFilter, fileResourceNameFactory);
 	}
 
-	public ClasspathDirResourceLocatorMapFactory(
-			final Function<? super String, ? extends InputStream> resourceStreamFactory,
-			final Function<? super String, ? extends URL> resourceUrlFactory, final Supplier<? extends M> supplier,
-			final Predicate<? super String> pathFilter,
+	public ClasspathDirResourceLocatorMapFactory(final Function<? super String, ? extends URL> resourceUrlFactory,
+			final Supplier<? extends M> supplier, final Predicate<? super String> pathFilter,
 			final Function<? super String, ? extends K> fileResourceNameFactory) {
-		this.resourceStreamFactory = resourceStreamFactory;
 		this.resourceUrlFactory = resourceUrlFactory;
 		this.supplier = supplier;
 		this.pathFilter = pathFilter;
@@ -75,16 +92,26 @@ public final class ClasspathDirResourceLocatorMapFactory<K, M extends Map<K, URL
 	 */
 	@Override
 	public M apply(final String dirToMap) {
+		LOGGER.debug("Creating map of resource dir \"{}\".", dirToMap);
+		final URL dirUrl = resourceUrlFactory.apply(dirToMap);
+		LOGGER.debug("Reading URL \"{}\".", dirUrl);
+
 		final M result = supplier.get();
 
-		LOGGER.debug("Creating map of resource dir \"{}\".", dirToMap);
-		try (BufferedReader br = new BufferedReader(new InputStreamReader(resourceStreamFactory.apply(dirToMap)))) {
-			for (String line = br.readLine(); line != null; line = br.readLine()) {
-				if (pathFilter.test(line)) {
-					final K fileResourceName = fileResourceNameFactory.apply(line);
-					final URL resource = resourceUrlFactory.apply(dirToMap + "/" + line);
-					result.put(fileResourceName, resource);
+		try {
+			InputStream dirInstream = null;
+			try {
+				dirInstream = dirUrl.openStream();
+				final BufferedReader br = new BufferedReader(new InputStreamReader(dirInstream));
+				for (String line = br.readLine(); line != null; line = br.readLine()) {
+					if (pathFilter.test(line)) {
+						final K fileResourceName = fileResourceNameFactory.apply(line);
+						final URL resource = resourceUrlFactory.apply(dirToMap + "/" + line);
+						result.put(fileResourceName, resource);
+					}
 				}
+			} finally {
+				close(dirUrl, dirInstream);
 			}
 		} catch (final IOException e) {
 			final UncheckedIOException ne = new UncheckedIOException(e);

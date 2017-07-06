@@ -17,7 +17,6 @@
 package se.kth.speech.coin.tangrams.content;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.net.URL;
 import java.util.Arrays;
@@ -72,10 +71,8 @@ public final class IconImages {
 	}
 
 	public static NavigableMap<String, URL> createImageResourceMap(
-			final Function<? super String, ? extends InputStream> resourceStreamFactory,
 			final Function<? super String, ? extends URL> resourceUrlFactory) {
-		return createImageResourceMap(DEFAULT_IMG_RES_CONTENT_TYPE_REGEX, RESOURCE_NAME_FACTORY, resourceStreamFactory,
-				resourceUrlFactory);
+		return createImageResourceMap(DEFAULT_IMG_RES_CONTENT_TYPE_REGEX, RESOURCE_NAME_FACTORY, resourceUrlFactory);
 	}
 
 	/**
@@ -95,17 +92,15 @@ public final class IconImages {
 	private static NavigableMap<String, URL> createImageResourceMap(final String resourceContentTypeRegex,
 			final Function<? super String, String> resourceNameFactory) {
 		final Class<?> loadingClass = IconImages.class;
-		return createImageResourceMap(resourceContentTypeRegex, resourceNameFactory, loadingClass::getResourceAsStream,
-				loadingClass::getResource);
+		return createImageResourceMap(resourceContentTypeRegex, resourceNameFactory, loadingClass::getResource);
 	}
 
 	private static NavigableMap<String, URL> createImageResourceMap(final String resourceContentTypeRegex,
 			final Function<? super String, String> resourceNameFactory,
-			final Function<? super String, ? extends InputStream> resourceStreamFactory,
 			final Function<? super String, ? extends URL> resourceUrlFactory) {
 		final Predicate<String> imgFilter = new FileResourceLocatorContentTypePatternFilter(
 				Pattern.compile(resourceContentTypeRegex));
-		return new ClasspathDirResourceLocatorMapFactory<>(resourceStreamFactory, resourceUrlFactory,
+		return new ClasspathDirResourceLocatorMapFactory<>(resourceUrlFactory,
 				() -> new TreeMap<>(ICON_NAME_COMPARATOR), imgFilter, resourceNameFactory)
 						.apply(ImageType.ICON.getDirLocator());
 	}
