@@ -49,10 +49,12 @@ public final class EntityFeatureInstanceFeatureExtractorFactory
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(EntityFeatureInstanceFeatureExtractorFactory.class);
 
+	private static final String RES_LOC_PREFIX = "classpath:/se/kth/speech/coin/tangrams/content/";
+
 	private InstanceFeatureExtractor<EntityFeature, EntityFeature.Extractor.Context> inst = null;
 
 	@Inject
-	private ResourceLoader resourceLoader;
+	private ResourceLoader resourceLoader;;
 
 	/*
 	 * (non-Javadoc)
@@ -69,7 +71,7 @@ public final class EntityFeatureInstanceFeatureExtractorFactory
 			}
 		}
 		return inst;
-	};
+	}
 
 	/*
 	 * (non-Javadoc)
@@ -108,7 +110,7 @@ public final class EntityFeatureInstanceFeatureExtractorFactory
 	}
 
 	private Stream<String> createImgResDirStream(final String dirName) {
-		final String dirFileLoc = "classpath:/se/kth/speech/coin/tangrams/content/" + dirName + "/*";
+		final String dirFileLoc = RES_LOC_PREFIX + dirName + "/*";
 		LOGGER.info("Loading resources at \"{}\".", dirFileLoc);
 		try {
 			final Resource[] resources = ResourcePatternUtils.getResourcePatternResolver(resourceLoader)
@@ -120,7 +122,7 @@ public final class EntityFeatureInstanceFeatureExtractorFactory
 	}
 
 	private URL createImgResUrl(final String resName) {
-		final String resLoc = "classpath:/se/kth/speech/coin/tangrams/content/" + resName;
+		final String resLoc = RES_LOC_PREFIX + resName;
 		LOGGER.info("Loading resource at \"{}\".", resLoc);
 		final Resource res = resourceLoader.getResource(resLoc);
 		if (!res.exists()) {
