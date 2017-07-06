@@ -43,7 +43,7 @@ public final class EntityFeatureInstanceFeatureExtractorFactory
 	private static InstanceFeatureExtractor<EntityFeature, EntityFeature.Extractor.Context> create() {
 		LOGGER.info("Creating new Instance feature extractor.");
 		final NavigableMap<String, URL> namedImgResources = IconImages.createImageResourceMap();
-		LOGGER.info("Creating named image resource map of size {}.", namedImgResources.size());
+		LOGGER.info("Created named image resource map of size {}.", namedImgResources.size());
 		final EntityFeature.Extractor fExtr = new EntityFeature.Extractor();
 		final Map<EntityFeature, Attribute> fAttrs = EntityFeature.Extractor
 				.createFeatureAttrMap(new ArrayList<>(namedImgResources.keySet()));
