@@ -49,7 +49,7 @@ import se.kth.speech.ComparableValueMaps;
  */
 public final class RandomImageVisualizationInfoFactory implements IntFunction<ImageVisualizationInfo> {
 
-	private static final Collection<URL> DEFAULT_IMG_RESOURCES = IconImages.getImageResources().values();
+	private static final Collection<URL> DEFAULT_IMG_RESOURCES = IconImages.createImageResourceMap().values();
 
 	private static final List<ImageSize> DEFAULT_IMG_SIZES = Arrays.asList(ImageSize.values());
 

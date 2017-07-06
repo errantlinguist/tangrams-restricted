@@ -59,7 +59,7 @@ public final class ImageVisualizationInfoDatumTest {
 	private static final Logger LOGGER = LoggerFactory.getLogger(ImageVisualizationInfoDatumTest.class);
 
 	static {
-		STANDARD_TEST_URLS = IconImages.getImageResources().values();
+		STANDARD_TEST_URLS = IconImages.createImageResourceMap().values();
 		final Supplier<String> randomStrFactory = new RandomStringFactory(4);
 		RANDOM_TEST_URLS = STANDARD_TEST_URLS.stream().map(url -> appendAnyString(url, randomStrFactory))
 				.toArray(URL[]::new);

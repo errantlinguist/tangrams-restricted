@@ -65,7 +65,7 @@ public final class ImageEdgeCounter implements ToIntFunction<String> {
 	}
 
 	// private static final Function<String, URL> LOCAL_RES_LOC_FACTORY =
-	// IconImages.getImageResources()::get;
+	// IconImages.createImageResourceMap()::get;
 
 	@Override
 	public int applyAsInt(final String resourceName) {

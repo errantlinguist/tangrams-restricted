@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URL;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.NavigableMap;
@@ -44,8 +43,6 @@ import se.kth.speech.io.FileResourceLocatorContentTypePatternFilter;
  */
 public final class IconImages {
 
-	private static final NavigableMap<String, URL> ICON_IMAGE_RESOURCES;
-
 	private static final Comparator<String> ICON_NAME_COMPARATOR;
 
 	private static final Pattern MULTIVALUE_PROP_DELIM_PATTERN = Pattern.compile("\\s*,\\s*");
@@ -62,23 +59,19 @@ public final class IconImages {
 					.nullsLast(Lists.comparingByIndex(imageOrderingNames).thenComparing(Comparator.naturalOrder()));
 
 			RESOURCE_NAME_FACTORY = resourceLoc -> FileNames.splitBase(resourceLoc)[0];
-			ICON_IMAGE_RESOURCES = Collections.unmodifiableNavigableMap(createImageResourceMap("image/(?!svg).+", RESOURCE_NAME_FACTORY));
 		} catch (final IOException e) {
 			throw new UncheckedIOException(e);
 		}
 	}
 
-	/**
-	 * @return the named icon image resources
-	 */
-	public static NavigableMap<String, URL> getImageResources() {
-		return ICON_IMAGE_RESOURCES;
+	public static NavigableMap<String, URL> createImageResourceMap() {
+		return createImageResourceMap("image/(?!svg).+", RESOURCE_NAME_FACTORY);
 	}
 
 	/**
 	 * @return the named icon image resources
 	 */
-	public static NavigableMap<String, URL> getImageResources(final String resourceContentTypeRegex) {
+	public static NavigableMap<String, URL> createImageResourceMap(final String resourceContentTypeRegex) {
 		return createImageResourceMap(resourceContentTypeRegex, RESOURCE_NAME_FACTORY);
 	}
 

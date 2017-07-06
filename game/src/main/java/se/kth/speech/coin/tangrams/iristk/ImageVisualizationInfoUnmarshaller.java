@@ -32,7 +32,7 @@ public final class ImageVisualizationInfoUnmarshaller
 	private final Function<? super String, ? extends URL> resourceNameLocFactory;
 
 	public ImageVisualizationInfoUnmarshaller() {
-		this(IconImages.getImageResources()::get);
+		this(IconImages.createImageResourceMap()::get);
 	}
 
 	public ImageVisualizationInfoUnmarshaller(final Function<? super String, ? extends URL> resourceNameLocFactory) {
