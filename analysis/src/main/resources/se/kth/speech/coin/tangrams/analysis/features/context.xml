@@ -7,20 +7,24 @@
          http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
         http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd">
 
-	<import resource="classpath*:/se/kth/speech/coin/tangrams/analysis//context.xml"/>
+	<import resource="classpath*:/se/kth/speech/coin/tangrams/analysis//context.xml" />
 	<context:component-scan base-package="se.kth.speech.coin.tangrams.analysis.features" />
 
-	<bean id="entity-inst-feature-extractor"
-		class="se.kth.speech.coin.tangrams.analysis.features.weka.InstanceFeatureExtractor">
-		<description>The bean responsible for extracting features representing given entities (which are potential referents) and then configuring &quot;weka.core.Instance&quot; instances to represent the values of these features.</description>
-		<constructor-arg
-			value="#{ T(se.kth.speech.coin.tangrams.analysis.features.EntityFeature.Extractor).createFeatureAttrMap(T(se.kth.speech.coin.tangrams.content.IconImages).createImageResourceMap().keySet()) }"></constructor-arg>
+	<bean id="entity-inst-feature-extractor-factory"
+		class="se.kth.speech.coin.tangrams.analysis.features.weka.EntityFeatureInstanceFeatureExtractorFactory">
+		<description>The bean responsible for creating an object for
+			extracting features representing given entities (which are potential
+			referents) and then configuring &quot;weka.core.Instance&quot;
+			instances to represent the values of these features.</description>
 	</bean>
 
 	<bean id="entity-inst-attr-ctx"
 		class="se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttributeContext">
-		<description>This bean encapsulates the logic and data required for creating and manipulating &quot;weka.core.Instance&quot; instances which represent individual referenceable entities in the game session.</description>
-		<constructor-arg ref="entity-inst-feature-extractor" />
+		<description>This bean encapsulates the logic and data required for
+			creating and manipulating &quot;weka.core.Instance&quot; instances
+			which represent individual referenceable entities in the game
+			session.</description>
+		<constructor-arg ref="entity-inst-feature-extractor-factory" />
 		<constructor-arg value="IS_REFERENT" />
 	</bean>
 
