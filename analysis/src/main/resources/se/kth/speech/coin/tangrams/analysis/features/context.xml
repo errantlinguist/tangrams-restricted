@@ -19,7 +19,7 @@
 	</bean>
 
 	<bean id="entity-inst-attr-ctx"
-		class="se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttributeContext" lazy-init="true">
+		class="se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttributeContext">
 		<description>This bean encapsulates the logic and data required for
 			creating and manipulating &quot;weka.core.Instance&quot; instances
 			which represent individual referenceable entities in the game
