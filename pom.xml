@@ -32,23 +32,6 @@
 				<module>game</module>
 			</modules>
 		</profile>
-		<profile>
-			<id>analysis-notest</id>
-			<modules>
-				<module>analysis</module>
-				<module>game</module>
-			</modules>
-			<build>
-				<plugins>
-					<plugin>
-						<artifactId>maven-surefire-plugin</artifactId>
-						<configuration>
-							<skipTests>true</skipTests>
-						</configuration>
-					</plugin>
-				</plugins>
-			</build>
-		</profile>
 	</profiles>
 
 	<properties>
