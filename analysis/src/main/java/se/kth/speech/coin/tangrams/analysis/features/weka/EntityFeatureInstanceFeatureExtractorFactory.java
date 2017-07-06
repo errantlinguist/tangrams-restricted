@@ -16,9 +16,13 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.weka;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.NavigableMap;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.FactoryBean;
 
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
@@ -34,10 +38,15 @@ import weka.core.Attribute;
 public final class EntityFeatureInstanceFeatureExtractorFactory
 		implements FactoryBean<InstanceFeatureExtractor<EntityFeature, EntityFeature.Extractor.Context>> {
 
+	private static final Logger LOGGER = LoggerFactory.getLogger(EntityFeatureInstanceFeatureExtractorFactory.class);
+
 	private static InstanceFeatureExtractor<EntityFeature, EntityFeature.Extractor.Context> create() {
+		LOGGER.info("Creating new Instance feature extractor.");
+		final NavigableMap<String, URL> namedImgResources = IconImages.createImageResourceMap();
+		LOGGER.info("Creating named image resource map of size {}.", namedImgResources.size());
 		final EntityFeature.Extractor fExtr = new EntityFeature.Extractor();
 		final Map<EntityFeature, Attribute> fAttrs = EntityFeature.Extractor
-				.createFeatureAttrMap(new ArrayList<>(IconImages.createImageResourceMap().keySet()));
+				.createFeatureAttrMap(new ArrayList<>(namedImgResources.keySet()));
 		return new InstanceFeatureExtractor<>(fExtr, fAttrs);
 	}
 
@@ -45,7 +54,7 @@ public final class EntityFeatureInstanceFeatureExtractorFactory
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see org.springframework.beans.factory.FactoryBean#getObject()
 	 */
 	@Override
@@ -62,7 +71,7 @@ public final class EntityFeatureInstanceFeatureExtractorFactory
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see org.springframework.beans.factory.FactoryBean#getObjectType()
 	 */
 	@Override
@@ -72,7 +81,7 @@ public final class EntityFeatureInstanceFeatureExtractorFactory
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see org.springframework.beans.factory.FactoryBean#isSingleton()
 	 */
 	@Override
