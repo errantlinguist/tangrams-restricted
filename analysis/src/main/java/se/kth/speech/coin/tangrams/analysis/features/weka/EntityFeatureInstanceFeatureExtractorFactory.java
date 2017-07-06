@@ -97,8 +97,6 @@ public final class EntityFeatureInstanceFeatureExtractorFactory
 		LOGGER.info("Creating new Instance feature extractor.");
 		final NavigableMap<String, URL> namedImgResources = IconImages
 				.createImageResourceMap(this::createImgResDirStream, this::createImgResUrl);
-		// https://stackoverflow.com/questions/27238746/how-to-load-all-files-of-a-folder-to-a-list-of-resources-in-spring
-		// https://stackoverflow.com/questions/3923129/get-a-list-of-resources-from-classpath-directory
 		LOGGER.info("Created named image resource map of size {}.", namedImgResources.size());
 		final EntityFeature.Extractor fExtr = new EntityFeature.Extractor();
 		final Map<EntityFeature, Attribute> fAttrs = EntityFeature.Extractor
@@ -110,6 +108,8 @@ public final class EntityFeatureInstanceFeatureExtractorFactory
 		final String dirFileLoc = RES_LOC_PREFIX + dirName + "/*";
 		LOGGER.info("Loading resources at \"{}\".", dirFileLoc);
 		try {
+			// https://stackoverflow.com/questions/27238746/how-to-load-all-files-of-a-folder-to-a-list-of-resources-in-spring
+			// https://stackoverflow.com/questions/3923129/get-a-list-of-resources-from-classpath-directory
 			final Resource[] resources = ResourcePatternUtils.getResourcePatternResolver(resourceLoader)
 					.getResources(dirFileLoc);
 			return Arrays.stream(resources).map(Resource::getFilename);
