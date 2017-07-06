@@ -18,6 +18,7 @@ package se.kth.speech.io;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
 import java.net.URL;
@@ -40,16 +41,28 @@ public final class ClasspathDirResourceLocatorMapFactory<K, M extends Map<K, URL
 
 	private final Function<? super String, ? extends K> fileResourceNameFactory;
 
-	private final Class<?> loadingClass;
-
 	private final Predicate<? super String> pathFilter;
 
 	private final Supplier<? extends M> supplier;
 
+	private final Function<? super String, ? extends InputStream> resourceStreamFactory;
+
+	private final Function<? super String, ? extends URL> resourceUrlFactory;
+
 	public ClasspathDirResourceLocatorMapFactory(final Class<?> loadingClass, final Supplier<? extends M> supplier,
 			final Predicate<? super String> pathFilter,
 			final Function<? super String, ? extends K> fileResourceNameFactory) {
-		this.loadingClass = loadingClass;
+		this(loadingClass::getResourceAsStream, loadingClass::getResource, supplier, pathFilter,
+				fileResourceNameFactory);
+	}
+
+	public ClasspathDirResourceLocatorMapFactory(
+			final Function<? super String, ? extends InputStream> resourceStreamFactory,
+			final Function<? super String, ? extends URL> resourceUrlFactory, final Supplier<? extends M> supplier,
+			final Predicate<? super String> pathFilter,
+			final Function<? super String, ? extends K> fileResourceNameFactory) {
+		this.resourceStreamFactory = resourceStreamFactory;
+		this.resourceUrlFactory = resourceUrlFactory;
 		this.supplier = supplier;
 		this.pathFilter = pathFilter;
 		this.fileResourceNameFactory = fileResourceNameFactory;
@@ -65,12 +78,11 @@ public final class ClasspathDirResourceLocatorMapFactory<K, M extends Map<K, URL
 		final M result = supplier.get();
 
 		LOGGER.debug("Creating map of resource dir \"{}\".", dirToMap);
-		try (BufferedReader br = new BufferedReader(
-				new InputStreamReader(loadingClass.getResourceAsStream(dirToMap)))) {
+		try (BufferedReader br = new BufferedReader(new InputStreamReader(resourceStreamFactory.apply(dirToMap)))) {
 			for (String line = br.readLine(); line != null; line = br.readLine()) {
 				if (pathFilter.test(line)) {
 					final K fileResourceName = fileResourceNameFactory.apply(line);
-					final URL resource = loadingClass.getResource(dirToMap + "/" + line);
+					final URL resource = resourceUrlFactory.apply(dirToMap + "/" + line);
 					result.put(fileResourceName, resource);
 				}
 			}
