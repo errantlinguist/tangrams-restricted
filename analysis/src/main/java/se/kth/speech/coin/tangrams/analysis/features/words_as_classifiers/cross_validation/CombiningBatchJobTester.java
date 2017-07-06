@@ -131,6 +131,7 @@ public final class CombiningBatchJobTester {
 	}
 
 	public void accept(final Input input) throws ClassificationException, ExecutionException, IOException {
+		LOGGER.debug("Bean names: {}", Arrays.toString(appCtx.getBeanDefinitionNames()));
 		final SessionEventDialogueManagerCacheSupplier sessionDiagMgrCacheSupplier = appCtx
 				.getBean(SessionEventDialogueManagerCacheSupplier.class);
 
