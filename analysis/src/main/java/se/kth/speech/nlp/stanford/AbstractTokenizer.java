@@ -23,6 +23,9 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -39,6 +42,8 @@ public abstract class AbstractTokenizer implements Function<String, List<String>
 
 	private static final ConcurrentMap<StanfordCoreNLPConfigurationVariant, Reference<LoadingCache<String, Annotation>>> CONFIG_CACHES = new ConcurrentHashMap<>(
 			StanfordCoreNLPConfigurationVariant.values().length);
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(AbstractTokenizer.class);
 
 	private static Annotation annotate(final String input, final StanfordCoreNLPConfigurationVariant config) {
 		final Annotator annotator = config.get();
@@ -82,7 +87,9 @@ public abstract class AbstractTokenizer implements Function<String, List<String>
 	@Override
 	public final List<String> apply(final String input) {
 		final Annotation annot = cache.getUnchecked(input);
-		return tokenize(annot);
+		final List<String> result = tokenize(annot);
+		LOGGER.debug("Tokenized \"{}\" to {}.", input, result);
+		return result;
 	}
 
 	protected abstract List<String> tokenize(Annotation annot);
