@@ -18,7 +18,6 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross
 
 import java.lang.ref.SoftReference;
 import java.util.Map.Entry;
-import java.util.Random;
 import java.util.function.Function;
 
 import org.springframework.context.ApplicationContext;
@@ -29,7 +28,6 @@ import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionCont
 import se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttributeContext;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.ReferentConfidenceMapFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EventDialogueClassifier;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.IsolatedUtteranceEventDialogueClassifier;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.SentimentAnalyzingEventDialogueClassifier;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.OnePositiveMaximumNegativeInstancesFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.OnePositiveOneNegativeInstanceFactory;
@@ -54,7 +52,7 @@ enum Training {
 
 		@Override
 		public Function<ReferentConfidenceMapFactory, EventDialogueClassifier> getClassifierFactory() {
-			return SIMPLE_CLASSIFIER_FACTORY;
+			return TrainingConstants.SIMPLE_CLASSIFIER_FACTORY;
 		}
 
 		@Override
@@ -71,13 +69,13 @@ enum Training {
 			final EntityFeatureExtractionContextFactory extCtxFactory = appCtx
 					.getBean(EntityFeatureExtractionContextFactory.class);
 			final OnePositiveOneNegativeInstanceFactory instsFactory = new OnePositiveOneNegativeInstanceFactory(
-					entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory, RND);
+					entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory, TrainingConstants.RND);
 			return new MutablePair<>(instsFactory, 5);
 		};
 
 		@Override
 		public Function<ReferentConfidenceMapFactory, EventDialogueClassifier> getClassifierFactory() {
-			return SIMPLE_CLASSIFIER_FACTORY;
+			return TrainingConstants.SIMPLE_CLASSIFIER_FACTORY;
 		}
 
 		@Override
@@ -113,7 +111,7 @@ enum Training {
 
 		private CachingUtteranceSentimentRanker createUttSentimentRanker() {
 			final StanfordCoreNLP pipeline = StanfordCoreNLPConfigurationVariant.TOKENIZING_PARSING_SENTIMENT.get();
-			return new CachingUtteranceSentimentRanker(pipeline, ESTIMATED_UNIQUE_UTT_COUNT);
+			return new CachingUtteranceSentimentRanker(pipeline, TrainingConstants.ESTIMATED_UNIQUE_UTT_COUNT);
 		}
 
 		private CachingUtteranceSentimentRanker fetchUttSentimentRanker() {
@@ -130,12 +128,6 @@ enum Training {
 			return result;
 		}
 	};
-
-	private static final int ESTIMATED_UNIQUE_UTT_COUNT = 2000;
-
-	private static final Random RND = new Random(1);
-
-	private static final Function<ReferentConfidenceMapFactory, EventDialogueClassifier> SIMPLE_CLASSIFIER_FACTORY = IsolatedUtteranceEventDialogueClassifier::new;
 
 	/**
 	 * @return the classifierFactory
