@@ -16,7 +16,6 @@
 */
 package se.kth.speech.coin.tangrams.analysis;
 
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
@@ -363,8 +362,8 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 
 		{
 			Annotation uttAnnots = null;
-			try (BufferedReader reader = Files.newBufferedReader(hatInfilePath)) {
-				uttAnnots = (Annotation) HatIO.fetchContext().createUnmarshaller().unmarshal(reader);
+			try (InputStream instream = Files.newInputStream(hatInfilePath)) {
+				uttAnnots = (Annotation) HatIO.fetchContext().createUnmarshaller().unmarshal(instream);
 			}
 			final List<Segment> segs = uttAnnots.getSegments().getSegment();
 			final List<Utterance> utts = Arrays
