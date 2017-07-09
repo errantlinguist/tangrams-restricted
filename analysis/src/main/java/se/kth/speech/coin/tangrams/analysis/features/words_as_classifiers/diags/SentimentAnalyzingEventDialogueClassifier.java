@@ -43,6 +43,10 @@ public final class SentimentAnalyzingEventDialogueClassifier implements EventDia
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SentimentAnalyzingEventDialogueClassifier.class);
 
+	private static final ExampleHandler NULL_EXAMPLE_HANDLER = (wordClass, weight) -> {
+		// Do nothing
+	};
+
 	private final ReferentConfidenceMapFactory referentConfidenceMapFactory;
 
 	private final ToDoubleFunction<? super Utterance> uttSentimentRanker;
@@ -77,13 +81,15 @@ public final class SentimentAnalyzingEventDialogueClassifier implements EventDia
 				final List<WeightedWordClass> weightedWordClasses = new ArrayList<>(allUtts.size() * 16);
 				final ExampleHandler referentPositiveExampleHandler = (wordClass, weight) -> weightedWordClasses
 						.add(new WeightedWordClass(wordClass, weight));
-				final ExampleHandler referentNegativeExampleHandler = (wordClass, weight) -> {
-					LOGGER.debug("Using word class \"{}\" with a negative weight.", wordClass);
-					weightedWordClasses.add(new WeightedWordClass(wordClass, -weight));
-				};
-				final ExampleHandler otherEntityNegativeExampleHandler = (wordClass, weight) -> {
-					// Do nothing
-				};
+				// final ExampleHandler referentNegativeExampleHandler =
+				// (wordClass, weight) -> {
+				// LOGGER.debug("Using word class \"{}\" with a negative
+				// weight.", wordClass);
+				// weightedWordClasses.add(new WeightedWordClass(wordClass,
+				// -weight));
+				// };
+				final ExampleHandler referentNegativeExampleHandler = NULL_EXAMPLE_HANDLER;
+				final ExampleHandler otherEntityNegativeExampleHandler = NULL_EXAMPLE_HANDLER;
 				final EventDialogueUtteranceSentimentSorter uttSorter = new EventDialogueUtteranceSentimentSorter(
 						uttSentimentRanker, referentPositiveExampleHandler, referentNegativeExampleHandler,
 						otherEntityNegativeExampleHandler);
