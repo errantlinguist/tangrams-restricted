@@ -168,12 +168,18 @@ class UtteranceTabularDataWriter {
 				sb.append(System.lineSeparator());
 				final Event prevEvent = prevEventDiag.getFirstEvent().orElse(null);
 				final List<Utterance> prevUtts = prevEventDiag.getUtts();
-				final Utterance prevUtt = prevUtts.get(prevUtts.size() - 1);
-				final String speakingPlayerId = prevUtt.getSpeakerId();
-				sb.append(String.format(
-						"Last utt before event: \"%s\"; speaking player ID: \"%s\"; start: %f; end: %f; segment ID: \"%s\"; event ID: \"%s\"; event time: \"%s\"",
-						prevUtt.getTokenStr(), speakingPlayerId, prevUtt.getStartTime(),
-						prevUtt.getEndTime(), prevUtt.getSegmentId(), prevEvent.getId(), prevEvent.getTime()));
+
+				if (prevUtts.isEmpty()) {
+					sb.append(String.format("Last utt before event: (NONE); event ID: \"%s\"; event time: \"%s\"",
+							prevEvent.getId(), prevEvent.getTime()));
+				} else {
+					final Utterance prevUtt = prevUtts.get(prevUtts.size() - 1);
+					final String speakingPlayerId = prevUtt.getSpeakerId();
+					sb.append(String.format(
+							"Last utt before event: \"%s\"; speaking player ID: \"%s\"; start: %f; end: %f; segment ID: \"%s\"; event ID: \"%s\"; event time: \"%s\"",
+							prevUtt.getTokenStr(), speakingPlayerId, prevUtt.getStartTime(), prevUtt.getEndTime(),
+							prevUtt.getSegmentId(), prevEvent.getId(), prevEvent.getTime()));
+				}
 			}
 		}
 		{
@@ -197,8 +203,8 @@ class UtteranceTabularDataWriter {
 					final String speakingPlayerId = nextUtt.getSpeakerId();
 					sb.append(String.format(
 							"Next utt after event: \"%s\"; speaking player ID: \"%s\"; start: %f; end: %f; segment ID: \"%s\"; event ID: \"%s\"; event time: \"%s\"",
-							nextUtt.getTokenStr(), speakingPlayerId, nextUtt.getStartTime(),
-							nextUtt.getEndTime(), nextUtt.getSegmentId(), nextEvent.getId(), nextEvent.getTime()));
+							nextUtt.getTokenStr(), speakingPlayerId, nextUtt.getStartTime(), nextUtt.getEndTime(),
+							nextUtt.getSegmentId(), nextEvent.getId(), nextEvent.getTime()));
 				}
 			}
 		}
