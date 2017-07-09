@@ -22,6 +22,7 @@ import java.util.function.Function;
 
 import org.springframework.context.ApplicationContext;
 
+import edu.stanford.nlp.pipeline.StanfordCoreNLP;
 import se.kth.speech.MutablePair;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionContextFactory;
 import se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttributeContext;
@@ -29,6 +30,7 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.traini
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.OnePositiveOneNegativeInstanceFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.SentimentAnalyzingInstancesFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.TrainingInstancesFactory;
+import se.kth.speech.nlp.stanford.CachingUtteranceSentimentRanker;
 import se.kth.speech.nlp.stanford.StanfordCoreNLPConfigurationVariant;
 
 enum Training implements Function<TrainingContext, Entry<TrainingInstancesFactory, Integer>> {
@@ -68,11 +70,11 @@ enum Training implements Function<TrainingContext, Entry<TrainingInstancesFactor
 					.getBean(EntityInstanceAttributeContext.class);
 			final EntityFeatureExtractionContextFactory extCtxFactory = appCtx
 					.getBean(EntityFeatureExtractionContextFactory.class);
-			final SentimentAnalyzingInstancesFactory instsFactory = new SentimentAnalyzingInstancesFactory(
-					entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory,
-					StanfordCoreNLPConfigurationVariant.TOKENIZING_PARSING_SENTIMENT
-							.get(),
+			final StanfordCoreNLP pipeline = StanfordCoreNLPConfigurationVariant.TOKENIZING_PARSING_SENTIMENT.get();
+			final CachingUtteranceSentimentRanker uttSentimentRanker = new CachingUtteranceSentimentRanker(pipeline,
 					ESTIMATED_UNIQUE_UTT_COUNT);
+			final SentimentAnalyzingInstancesFactory instsFactory = new SentimentAnalyzingInstancesFactory(
+					entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory, uttSentimentRanker);
 			return new MutablePair<>(instsFactory, 1);
 		}
 	};
