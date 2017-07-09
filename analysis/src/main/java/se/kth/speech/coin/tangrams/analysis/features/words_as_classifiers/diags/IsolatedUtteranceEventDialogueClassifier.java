@@ -26,6 +26,7 @@ import se.kth.speech.coin.tangrams.analysis.GameContext;
 import se.kth.speech.coin.tangrams.analysis.Utterance;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.ReferentConfidenceMapFactory;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WeightedWordClass;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -73,9 +74,11 @@ public final class IsolatedUtteranceEventDialogueClassifier implements EventDial
 	private Int2DoubleMap createReferentConfidenceMap(final List<Utterance> dialogueUtts, final GameContext uttCtx)
 			throws ClassificationException {
 		final int estAvgUttTokenCount = 8;
-		final List<String> diagTokens = new ArrayList<>(dialogueUtts.size() * estAvgUttTokenCount);
+		final List<WeightedWordClass> diagTokens = new ArrayList<>(dialogueUtts.size() * estAvgUttTokenCount);
 		for (final Utterance dialogUtt : dialogueUtts) {
-			diagTokens.addAll(dialogUtt.getTokens());
+			for (final String token : dialogUtt.getTokens()) {
+				diagTokens.add(new WeightedWordClass(token, 1.0));
+			}
 		}
 		return referentConfidenceMapFactory.apply(diagTokens, uttCtx);
 	}

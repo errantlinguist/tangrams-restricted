@@ -42,6 +42,48 @@ final class TestParameters {
 		this.trainingMethod = trainingMethod;
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(final Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (!(obj instanceof TestParameters)) {
+			return false;
+		}
+		final TestParameters other = (TestParameters) obj;
+		if (cleaning == null) {
+			if (other.cleaning != null) {
+				return false;
+			}
+		} else if (!cleaning.equals(other.cleaning)) {
+			return false;
+		}
+		if (tokenFiltering != other.tokenFiltering) {
+			return false;
+		}
+		if (tokenType != other.tokenType) {
+			return false;
+		}
+		if (tokenization != other.tokenization) {
+			return false;
+		}
+		if (trainingMethod != other.trainingMethod) {
+			return false;
+		}
+		if (uttFiltering != other.uttFiltering) {
+			return false;
+		}
+		return true;
+	}
+
 	/**
 	 * @return the cleaning
 	 */
@@ -82,6 +124,24 @@ final class TestParameters {
 	 */
 	public UtteranceFiltering getUttFiltering() {
 		return uttFiltering;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + (cleaning == null ? 0 : cleaning.hashCode());
+		result = prime * result + (tokenFiltering == null ? 0 : tokenFiltering.hashCode());
+		result = prime * result + (tokenType == null ? 0 : tokenType.hashCode());
+		result = prime * result + (tokenization == null ? 0 : tokenization.hashCode());
+		result = prime * result + (trainingMethod == null ? 0 : trainingMethod.hashCode());
+		result = prime * result + (uttFiltering == null ? 0 : uttFiltering.hashCode());
+		return result;
 	}
 
 	/*

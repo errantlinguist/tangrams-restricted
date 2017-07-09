@@ -62,10 +62,12 @@ public final class ReferentConfidenceMapFactory {
 		this.testInstFactory = testInstFactory;
 	}
 
-	public Int2DoubleMap apply(final List<String> tokens, final GameContext uttCtx) throws ClassificationException {
+	public Int2DoubleMap apply(final List<WeightedWordClass> tokens, final GameContext uttCtx)
+			throws ClassificationException {
 		LOGGER.debug("Getting entity reference confidence measures for linguistic tokens: {}.", tokens);
 		// TODO: Cache mapping of word classes -> classifiers?
-		final List<Classifier> classifiers = smoother.createNGramClassifierList(tokens, wordClassifiers);
+		final WeightedClassifier[] weightedClassifiers = smoother
+				.createClassifierWeighting(tokens.stream(), wordClassifiers).toArray(WeightedClassifier[]::new);
 		final IntList entityIds = uttCtx.getEntityIds();
 		final Int2DoubleMap result = new Int2DoubleOpenHashMap(entityIds.size());
 		for (final int entityId : entityIds) {
@@ -74,17 +76,18 @@ public final class ReferentConfidenceMapFactory {
 			final EntityFeature.Extractor.Context extContext = extCtxFactory.apply(uttCtx, entityId);
 			final Instance testInst = testInstFactory.apply(extContext);
 			double confidenceSum = 0.0;
-			for (final Classifier classifier : classifiers) {
+			for (final WeightedClassifier weightedClassifier : weightedClassifiers) {
+				final Classifier classifier = weightedClassifier.getClassifier();
 				try {
 					final double[] classValProbs = classifier.distributionForInstance(testInst);
 					final double classValProb = AttributeValues.findNominalClassValueProbability(testInst,
 							classValProbs, INST_CLASS_VAL);
-					confidenceSum += classValProb;
+					confidenceSum += (classValProb * weightedClassifier.getWeight());
 				} catch (final Exception e) {
 					throw new ClassificationException(e);
 				}
 			}
-			final double normalizedConfidence = confidenceSum / classifiers.size();
+			final double normalizedConfidence = confidenceSum / weightedClassifiers.length;
 			result.put(entityId, normalizedConfidence);
 		}
 		return result;

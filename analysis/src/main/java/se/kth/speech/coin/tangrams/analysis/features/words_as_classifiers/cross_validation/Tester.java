@@ -327,6 +327,8 @@ public final class Tester {
 	private BeanFactory beanFactory;
 
 	private final EventDialogueTransformer diagTransformer;
+	
+	private final Function<? super ReferentConfidenceMapFactory, ? extends EventDialogueClassifier> classifierFactory;
 
 	@Inject
 	private EntityInstanceAttributeContext entInstAttrCtx;
@@ -344,10 +346,11 @@ public final class Tester {
 
 	private final TestSetFactory testSetFactory;
 
-	public Tester(final TestSetFactory testSetFactory, final EventDialogueTransformer diagTransformer,
+	public Tester(final TestSetFactory testSetFactory, final EventDialogueTransformer diagTransformer, final Function<? super ReferentConfidenceMapFactory, ? extends EventDialogueClassifier> classifierFactory,
 			final Executor backgroundJobExecutor) {
 		this.testSetFactory = testSetFactory;
 		this.diagTransformer = diagTransformer;
+		this.classifierFactory = classifierFactory;
 		this.backgroundJobExecutor = backgroundJobExecutor;
 	}
 
@@ -382,7 +385,7 @@ public final class Tester {
 	public void setIterCount(final int iterCount) {
 		this.iterCount = iterCount;
 	}
-
+	
 	private EventDialogueClassifier createDialogueClassifier(final WordClassificationData trainingData,
 			final SessionDataManager testSessionData) throws IOException {
 		final Function<String, Logistic> wordClassifierGetter = createWordClassifierMap(
@@ -393,7 +396,7 @@ public final class Tester {
 				.createInstFactory(testInsts);
 		final ReferentConfidenceMapFactory referentConfidenceMapFactory = beanFactory
 				.getBean(ReferentConfidenceMapFactory.class, wordClassifierGetter, testInstFactory);
-		return beanFactory.getBean(EventDialogueClassifier.class, referentConfidenceMapFactory);
+		return classifierFactory.apply(referentConfidenceMapFactory);
 	}
 
 	private ConcurrentMap<String, Logistic> createWordClassifierMap(

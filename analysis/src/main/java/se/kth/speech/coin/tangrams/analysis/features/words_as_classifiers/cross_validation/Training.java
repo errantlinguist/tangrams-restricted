@@ -16,6 +16,7 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation;
 
+import java.lang.ref.SoftReference;
 import java.util.Map.Entry;
 import java.util.Random;
 import java.util.function.Function;
@@ -26,6 +27,10 @@ import edu.stanford.nlp.pipeline.StanfordCoreNLP;
 import se.kth.speech.MutablePair;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionContextFactory;
 import se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttributeContext;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.ReferentConfidenceMapFactory;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EventDialogueClassifier;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.IsolatedUtteranceEventDialogueClassifier;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.SentimentAnalyzingEventDialogueClassifier;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.OnePositiveMaximumNegativeInstancesFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.OnePositiveOneNegativeInstanceFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.SentimentAnalyzingInstancesFactory;
@@ -33,10 +38,10 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.traini
 import se.kth.speech.nlp.stanford.CachingUtteranceSentimentRanker;
 import se.kth.speech.nlp.stanford.StanfordCoreNLPConfigurationVariant;
 
-enum Training implements Function<TrainingContext, Entry<TrainingInstancesFactory, Integer>> {
+enum Training {
 	ALL_NEG {
-		@Override
-		public Entry<TrainingInstancesFactory, Integer> apply(final TrainingContext trainingCtx) {
+
+		private final Function<TrainingContext, Entry<TrainingInstancesFactory, Integer>> trainingInstsFactoryFactory = trainingCtx -> {
 			final ApplicationContext appCtx = trainingCtx.getAppCtx();
 			final EntityInstanceAttributeContext entityInstAttrCtx = appCtx
 					.getBean(EntityInstanceAttributeContext.class);
@@ -45,12 +50,21 @@ enum Training implements Function<TrainingContext, Entry<TrainingInstancesFactor
 			final OnePositiveMaximumNegativeInstancesFactory instsFactory = new OnePositiveMaximumNegativeInstancesFactory(
 					entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory);
 			return new MutablePair<>(instsFactory, 1);
+		};
+
+		@Override
+		public Function<ReferentConfidenceMapFactory, EventDialogueClassifier> getClassifierFactory() {
+			return SIMPLE_CLASSIFIER_FACTORY;
+		}
+
+		@Override
+		public Function<TrainingContext, Entry<TrainingInstancesFactory, Integer>> getTrainingInstsFactoryFactory() {
+			return trainingInstsFactoryFactory;
 		}
 	},
 	ONE_NEG {
 
-		@Override
-		public Entry<TrainingInstancesFactory, Integer> apply(final TrainingContext trainingCtx) {
+		private final Function<TrainingContext, Entry<TrainingInstancesFactory, Integer>> trainingInstsFactoryFactory = trainingCtx -> {
 			final ApplicationContext appCtx = trainingCtx.getAppCtx();
 			final EntityInstanceAttributeContext entityInstAttrCtx = appCtx
 					.getBean(EntityInstanceAttributeContext.class);
@@ -59,28 +73,78 @@ enum Training implements Function<TrainingContext, Entry<TrainingInstancesFactor
 			final OnePositiveOneNegativeInstanceFactory instsFactory = new OnePositiveOneNegativeInstanceFactory(
 					entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory, RND);
 			return new MutablePair<>(instsFactory, 5);
+		};
+
+		@Override
+		public Function<ReferentConfidenceMapFactory, EventDialogueClassifier> getClassifierFactory() {
+			return SIMPLE_CLASSIFIER_FACTORY;
 		}
 
+		@Override
+		public Function<TrainingContext, Entry<TrainingInstancesFactory, Integer>> getTrainingInstsFactoryFactory() {
+			return trainingInstsFactoryFactory;
+		}
 	},
 	SENTIMENT {
-		@Override
-		public Entry<TrainingInstancesFactory, Integer> apply(final TrainingContext trainingCtx) {
+
+		private final Function<TrainingContext, Entry<TrainingInstancesFactory, Integer>> trainingInstsFactoryFactory = trainingCtx -> {
 			final ApplicationContext appCtx = trainingCtx.getAppCtx();
 			final EntityInstanceAttributeContext entityInstAttrCtx = appCtx
 					.getBean(EntityInstanceAttributeContext.class);
 			final EntityFeatureExtractionContextFactory extCtxFactory = appCtx
 					.getBean(EntityFeatureExtractionContextFactory.class);
-			final StanfordCoreNLP pipeline = StanfordCoreNLPConfigurationVariant.TOKENIZING_PARSING_SENTIMENT.get();
-			final CachingUtteranceSentimentRanker uttSentimentRanker = new CachingUtteranceSentimentRanker(pipeline,
-					ESTIMATED_UNIQUE_UTT_COUNT);
 			final SentimentAnalyzingInstancesFactory instsFactory = new SentimentAnalyzingInstancesFactory(
-					entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory, uttSentimentRanker);
+					entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory, fetchUttSentimentRanker());
 			return new MutablePair<>(instsFactory, 1);
+		};
+
+		private SoftReference<CachingUtteranceSentimentRanker> uttSentimentRanker = new SoftReference<>(null);
+
+		@Override
+		public Function<ReferentConfidenceMapFactory, EventDialogueClassifier> getClassifierFactory() {
+			return (refConfMapFactory) -> new SentimentAnalyzingEventDialogueClassifier(fetchUttSentimentRanker(),
+					refConfMapFactory);
+		}
+
+		@Override
+		public Function<TrainingContext, Entry<TrainingInstancesFactory, Integer>> getTrainingInstsFactoryFactory() {
+			return trainingInstsFactoryFactory;
+		}
+
+		private CachingUtteranceSentimentRanker createUttSentimentRanker() {
+			final StanfordCoreNLP pipeline = StanfordCoreNLPConfigurationVariant.TOKENIZING_PARSING_SENTIMENT.get();
+			return new CachingUtteranceSentimentRanker(pipeline, ESTIMATED_UNIQUE_UTT_COUNT);
+		}
+
+		private CachingUtteranceSentimentRanker fetchUttSentimentRanker() {
+			CachingUtteranceSentimentRanker result = uttSentimentRanker.get();
+			if (result == null) {
+				synchronized (SENTIMENT) {
+					result = uttSentimentRanker.get();
+					if (result == null) {
+						result = createUttSentimentRanker();
+						uttSentimentRanker = new SoftReference<>(result);
+					}
+				}
+			}
+			return result;
 		}
 	};
 
 	private static final int ESTIMATED_UNIQUE_UTT_COUNT = 2000;
 
 	private static final Random RND = new Random(1);
+
+	private static final Function<ReferentConfidenceMapFactory, EventDialogueClassifier> SIMPLE_CLASSIFIER_FACTORY = IsolatedUtteranceEventDialogueClassifier::new;
+
+	/**
+	 * @return the classifierFactory
+	 */
+	public abstract Function<ReferentConfidenceMapFactory, EventDialogueClassifier> getClassifierFactory();
+
+	/**
+	 * @return the trainingMethod
+	 */
+	public abstract Function<TrainingContext, Entry<TrainingInstancesFactory, Integer>> getTrainingInstsFactoryFactory();
 
 }

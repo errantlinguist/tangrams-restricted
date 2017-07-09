@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
@@ -67,37 +68,39 @@ public final class WordClassDiscountingSmoother {
 		this.minCount = minCount;
 	}
 
-	public List<Classifier> createNGramClassifierList(final List<String> wordClasses,
+	public Stream<WeightedClassifier> createClassifierWeighting(final Stream<WeightedWordClass> wordClasses,
 			final Function<? super String, ? extends Classifier> wordClassifiers) {
-		final List<Classifier> result = new ArrayList<>(wordClasses.size());
-		for (final String wordClass : wordClasses) {
+		return wordClasses.map(wordClass -> {
 			LOGGER.debug("Getting classifier for class \"{}\".", wordClass);
-			Classifier classifier = wordClassifiers.apply(wordClass);
+			Classifier classifier = wordClassifiers.apply(wordClass.getName());
 			if (classifier == null) {
 				LOGGER.debug("Getting distribution for OOV classes (\"{}\").", oovClassName);
 				classifier = wordClassifiers.apply(oovClassName);
 			}
-			result.add(classifier);
-		}
-		return result;
+			return new WeightedClassifier(classifier, wordClass.getWeight());
+		});
 	}
 
 	public Instances redistributeMass(final WordClassificationData trainingData) {
-		List<Entry<String, Instances>> addendClassInsts = createdAddendClassInstList(trainingData, minCount, oovClassName);
-		if (addendClassInsts.isEmpty()){
-			throw new IllegalArgumentException(String.format("Could not find any word classes with fewer than %s instance(s).", minCount));
+		final List<Entry<String, Instances>> addendClassInsts = createdAddendClassInstList(trainingData, minCount,
+				oovClassName);
+		if (addendClassInsts.isEmpty()) {
+			throw new IllegalArgumentException(
+					String.format("Could not find any word classes with fewer than %s instance(s).", minCount));
 		}
-//		int freqToDiscount = minCount - 1;
-//		do {
-//			freqToDiscount++;
-//			addendClassInsts = createdAddendClassInstList(trainingData, freqToDiscount, oovClassName);
-//		} while (addendClassInsts.isEmpty());
-//		if (freqToDiscount != minCount) {
-//			LOGGER.warn(
-//					"Could not find word classes with fewer than {} instance(s); Using those with fewer than {} instad.",
-//					minCount, freqToDiscount);
-//		}
-//		assert !addendClassInsts.isEmpty();
+		// int freqToDiscount = minCount - 1;
+		// do {
+		// freqToDiscount++;
+		// addendClassInsts = createdAddendClassInstList(trainingData,
+		// freqToDiscount, oovClassName);
+		// } while (addendClassInsts.isEmpty());
+		// if (freqToDiscount != minCount) {
+		// LOGGER.warn(
+		// "Could not find word classes with fewer than {} instance(s); Using
+		// those with fewer than {} instad.",
+		// minCount, freqToDiscount);
+		// }
+		// assert !addendClassInsts.isEmpty();
 		return redistributeMass(trainingData, oovClassName, addendClassInsts);
 	}
 
