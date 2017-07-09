@@ -18,17 +18,13 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.train
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map.Entry;
-import java.util.function.Predicate;
 import java.util.function.ToDoubleFunction;
-import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import it.unimi.dsi.fastutil.ints.IntList;
-import se.kth.speech.Iterators;
 import se.kth.speech.MutablePair;
 import se.kth.speech.coin.tangrams.analysis.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.GameContext;
@@ -41,6 +37,8 @@ import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionCont
 import se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttributeContext;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.UtteranceGameContexts;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EventDialogueTransformer;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EventDialogueUtteranceSentimentSorter;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EventDialogueUtteranceSentimentSorter.ExampleHandler;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.UtteranceMatchers;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 import weka.core.Instance;
@@ -146,72 +144,17 @@ public final class SentimentAnalyzingInstancesFactory extends AbstractSizeEstima
 					LOGGER.debug("Creating positive and negative examples for entity selected by player \"{}\".",
 							event.getString(GameManagementEvent.Attribute.PLAYER_ID.toString()));
 					final BooleanTrainingContexts trainingContexts = createTrainingContexts(allUtts.get(0), history);
-					final Predicate<Utterance> instructorUttMatcher = UtteranceMatchers
-							.createEventSubmitterUtteranceMatcher(event);
-
-					final ListIterator<Utterance> uttIter = allUtts.listIterator();
-					while (uttIter.hasNext()) {
-						final java.util.Map.Entry<Stream<Utterance>, Utterance> preInstructorUtts = Iterators
-								.findElementsBeforeDelimiter(uttIter, instructorUttMatcher);
-						final Utterance firstInstructorUtt = preInstructorUtts.getValue();
-
-						final double firstInstructorUttSentimentRank = uttSentimentRanker
-								.applyAsDouble(firstInstructorUtt);
-						if (firstInstructorUttSentimentRank < 0) {
-							// Use the other player's utterances which came
-							// before this instructor utterance as negative
-							// examples
-							final double weight = Math.abs(firstInstructorUttSentimentRank);
-							final Stream<String> preInstructorWordClasses = preInstructorUtts.getKey()
-									.map(Utterance::getTokens).flatMap(List::stream);
-							preInstructorWordClasses.forEach(wordClass -> {
-								LOGGER.debug(
-										"Processing negative observation of word class \"{}\" from non-instructor utterance with weight {}.",
-										wordClass, weight);
-								// For each entity which is selected, add a
-								// negative example for this observation: The
-								// utterance being processed does NOT correspond
-								// to the selected entity
-								addWeightedExamples(wordClass, trainingData, trainingContexts.positive, weight,
-										NEGATIVE_EXAMPLE_LABEL);
-							});
-						} else if (firstInstructorUttSentimentRank > 0) {
-							// Use the other player's utterances which came
-							// before this instructor utterance as positive
-							// examples
-							final Stream<String> preInstructorWordClasses = preInstructorUtts.getKey()
-									.map(Utterance::getTokens).flatMap(List::stream);
-							preInstructorWordClasses.forEach(wordClass -> {
-								LOGGER.debug(
-										"Processing positive observation of word class \"{}\" from non-instructor utterance with weight {}.",
-										wordClass, firstInstructorUttSentimentRank);
-								// For each entity which is selected, add a
-								// positive example for this observation: The
-								// utterance being processed DOES correspond to
-								// the selected entity
-								addWeightedExamples(wordClass, trainingData, trainingContexts.positive,
-										firstInstructorUttSentimentRank, POSITIVE_EXAMPLE_LABEL);
-								// For each entity which is NOT selected, add a
-								// negative example for this observation: The
-								// utterance being processed does NOT correspond
-								// to these non-selected entities
-								addWeightedExamples(wordClass, trainingData, trainingContexts.negative,
-										firstInstructorUttSentimentRank, NEGATIVE_EXAMPLE_LABEL);
-							});
-						}
-
-						final double instructorObservationWeight = firstInstructorUttSentimentRank <= 0.0 ? 1.0
-								: firstInstructorUttSentimentRank;
-						firstInstructorUtt.getTokens().stream().forEach(wordClass -> {
-							LOGGER.debug(
-									"Processing positive observation of word class \"{}\" from instructor utterance with weight {}.",
-									wordClass, instructorObservationWeight);
-							addWeightedExamples(wordClass, trainingData, trainingContexts.positive,
-									instructorObservationWeight, POSITIVE_EXAMPLE_LABEL);
-							addWeightedExamples(wordClass, trainingData, trainingContexts.negative,
-									instructorObservationWeight, NEGATIVE_EXAMPLE_LABEL);
-						});
-					}
+					final ExampleHandler referentPositiveExampleHandler = (wordClass, weight) -> addWeightedExamples(
+							wordClass, trainingData, trainingContexts.positive, weight, POSITIVE_EXAMPLE_LABEL);
+					final ExampleHandler referentNegativeExampleHandler = (wordClass, weight) -> addWeightedExamples(
+							wordClass, trainingData, trainingContexts.positive, weight, NEGATIVE_EXAMPLE_LABEL);
+					final ExampleHandler otherEntityNegativeExampleHandler = (wordClass, weight) -> addWeightedExamples(
+							wordClass, trainingData, trainingContexts.negative, weight, NEGATIVE_EXAMPLE_LABEL);
+					final EventDialogueUtteranceSentimentSorter uttSorter = new EventDialogueUtteranceSentimentSorter(
+							uttSentimentRanker, referentPositiveExampleHandler, referentNegativeExampleHandler,
+							otherEntityNegativeExampleHandler);
+					uttSorter.accept(allUtts.listIterator(),
+							UtteranceMatchers.createEventSubmitterUtteranceMatcher(event));
 				}
 			});
 		});
