@@ -21,22 +21,13 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map.Entry;
 import java.util.function.Predicate;
+import java.util.function.ToDoubleFunction;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import edu.stanford.nlp.ling.CoreAnnotations.SentencesAnnotation;
-import edu.stanford.nlp.pipeline.Annotation;
-import edu.stanford.nlp.pipeline.Annotator;
-import edu.stanford.nlp.sentiment.RNNOptions;
-import edu.stanford.nlp.sentiment.SentimentCoreAnnotations.SentimentClass;
-import edu.stanford.nlp.util.CoreMap;
 import it.unimi.dsi.fastutil.ints.IntList;
-import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
-import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
-import it.unimi.dsi.fastutil.objects.Object2IntMap;
-import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import se.kth.speech.Iterators;
 import se.kth.speech.MutablePair;
 import se.kth.speech.coin.tangrams.analysis.EventDialogue;
@@ -82,40 +73,19 @@ public final class SentimentAnalyzingInstancesFactory extends AbstractSizeEstima
 
 	private static final String POSITIVE_EXAMPLE_LABEL = Boolean.TRUE.toString();
 
-	private static final Object2IntMap<String> SENTIMENT_LABEL_WEIGHTS = createSentimentClassWeightMap();
-
-	/**
-	 *
-	 * @see edu.stanford.nlp.sentiment.RNNOptions#DEFAULT_CLASS_NAMES
-	 */
-	private static Object2IntMap<String> createSentimentClassWeightMap() {
-		final String[] classNames = RNNOptions.DEFAULT_CLASS_NAMES;
-		final Object2IntMap<String> result = new Object2IntOpenHashMap<>(classNames.length);
-		result.defaultReturnValue(0);
-		result.put("Very negative", -2);
-		result.put("Negative", -1);
-		result.put("Neutral", 0);
-		result.put("Positive", 1);
-		result.put("Very positive", 2);
-		return result;
-	}
-
-	private final Annotator annotator;
-
 	private final EventDialogueTransformer diagTransformer;
 
 	private final EntityFeatureExtractionContextFactory extCtxFactory;
 
-	private final Object2DoubleMap<Utterance> uttWeightCache;
+	private final ToDoubleFunction<? super Utterance> uttSentimentRanker;
 
 	public SentimentAnalyzingInstancesFactory(final EntityInstanceAttributeContext entityInstAttrCtx,
 			final EventDialogueTransformer diagTransformer, final EntityFeatureExtractionContextFactory extCtxFactory,
-			final Annotator annotator, final int expectedUniqueUttCount) {
+			final ToDoubleFunction<? super Utterance> uttSentimentRanker) {
 		super(entityInstAttrCtx);
 		this.diagTransformer = diagTransformer;
 		this.extCtxFactory = extCtxFactory;
-		this.annotator = annotator;
-		uttWeightCache = new Object2DoubleOpenHashMap<>(expectedUniqueUttCount);
+		this.uttSentimentRanker = uttSentimentRanker;
 	}
 
 	private void addWeightedExamples(final String wordClass, final WordClassificationData trainingData,
@@ -130,25 +100,6 @@ public final class SentimentAnalyzingInstancesFactory extends AbstractSizeEstima
 		}
 		// Add examples
 		trainingData.addObservation(wordClass, trainingInsts.stream());
-	}
-
-	private double calculateUttSentimentRank(final Utterance utt) {
-		final Annotation annot = new Annotation(utt.getTokenStr());
-		annotator.annotate(annot);
-		final List<CoreMap> sents = annot.get(SentencesAnnotation.class);
-		final double result;
-		if (sents.isEmpty()) {
-			result = 0.0;
-		} else {
-			int rankSum = 0;
-			// traversing the words in the current sentence
-			for (final CoreMap sent : sents) {
-				final String sentimentClass = sent.get(SentimentClass.class);
-				rankSum += SENTIMENT_LABEL_WEIGHTS.getInt(sentimentClass);
-			}
-			result = rankSum / (double) sents.size();
-		}
-		return result;
 	}
 
 	private BooleanTrainingContexts createTrainingContexts(final GameContext uttCtx, final int selectedEntityId) {
@@ -172,20 +123,6 @@ public final class SentimentAnalyzingInstancesFactory extends AbstractSizeEstima
 		final int selectedEntityId = uttCtx.findLastSelectedEntityId().get();
 		LOGGER.debug("Creating positive and negative examples for entity ID \"{}\".", selectedEntityId);
 		return createTrainingContexts(uttCtx, selectedEntityId);
-	}
-
-	private double fetchUttSentimentRank(final Utterance utt) {
-		final double result;
-		if (uttWeightCache.containsKey(utt)) {
-			result = uttWeightCache.getDouble(utt);
-		} else {
-			// Calculate the weight without any locking because it's okay if
-			// weight is sometimes calculated more than once per utt inst-- this
-			// function is stateless
-			result = calculateUttSentimentRank(utt);
-			uttWeightCache.put(utt, result);
-		}
-		return result;
 	}
 
 	@Override
@@ -218,7 +155,8 @@ public final class SentimentAnalyzingInstancesFactory extends AbstractSizeEstima
 								.findElementsBeforeDelimiter(uttIter, instructorUttMatcher);
 						final Utterance firstInstructorUtt = preInstructorUtts.getValue();
 
-						final double firstInstructorUttSentimentRank = fetchUttSentimentRank(firstInstructorUtt);
+						final double firstInstructorUttSentimentRank = uttSentimentRanker
+								.applyAsDouble(firstInstructorUtt);
 						if (firstInstructorUttSentimentRank < 0) {
 							// Use the other player's utterances which came
 							// before this instructor utterance as negative
