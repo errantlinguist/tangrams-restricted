@@ -152,6 +152,7 @@ buildNumber.properties
 
 ## PYTHON
 __pycache__/
+*.pyc
 
 ## PROJECT-SPECIFIC IGNORE STATEMENTS
 cache/
