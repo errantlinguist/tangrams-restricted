@@ -38,7 +38,6 @@ import se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttribut
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.UtteranceGameContexts;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.SentimentAnalyzingEventDialogueUtteranceSorter;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.SentimentAnalyzingEventDialogueUtteranceSorter.ExampleHandler;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.UtteranceMatchers;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 import weka.core.Instance;
@@ -144,17 +143,20 @@ public final class SentimentAnalyzingInstancesFactory extends AbstractSizeEstima
 					LOGGER.debug("Creating positive and negative examples for entity selected by player \"{}\".",
 							event.getString(GameManagementEvent.Attribute.PLAYER_ID.toString()));
 					final BooleanTrainingContexts trainingContexts = createTrainingContexts(allUtts.get(0), history);
-					final ExampleHandler referentPositiveExampleHandler = (wordClass, weight) -> addWeightedExamples(
-							wordClass, trainingData, trainingContexts.positive, weight, POSITIVE_EXAMPLE_LABEL);
-					final ExampleHandler referentNegativeExampleHandler = (wordClass, weight) -> addWeightedExamples(
-							wordClass, trainingData, trainingContexts.positive, weight, NEGATIVE_EXAMPLE_LABEL);
-					final ExampleHandler otherEntityNegativeExampleHandler = (wordClass, weight) -> addWeightedExamples(
-							wordClass, trainingData, trainingContexts.negative, weight, NEGATIVE_EXAMPLE_LABEL);
 					final SentimentAnalyzingEventDialogueUtteranceSorter uttSorter = new SentimentAnalyzingEventDialogueUtteranceSorter(
-							uttSentimentRanker, referentPositiveExampleHandler, referentNegativeExampleHandler,
-							otherEntityNegativeExampleHandler);
-					uttSorter.accept(allUtts.listIterator(),
+							uttSentimentRanker);
+					final SentimentAnalyzingEventDialogueUtteranceSorter.Result sortedUtts = uttSorter.apply(allUtts,
 							UtteranceMatchers.createEventSubmitterUtteranceMatcher(event));
+					final double observationWeight = 1.0;
+					sortedUtts.getRefPosExamples().stream().map(Utterance::getTokens).flatMap(List::stream)
+							.forEach(token -> addWeightedExamples(token, trainingData, trainingContexts.positive,
+									observationWeight, POSITIVE_EXAMPLE_LABEL));
+					sortedUtts.getRefNegExamples().stream().map(Utterance::getTokens).flatMap(List::stream)
+							.forEach(token -> addWeightedExamples(token, trainingData, trainingContexts.positive,
+									observationWeight, NEGATIVE_EXAMPLE_LABEL));
+					sortedUtts.getOtherEntityNegativeExamples().stream().map(Utterance::getTokens).flatMap(List::stream)
+							.forEach(token -> addWeightedExamples(token, trainingData, trainingContexts.negative,
+									observationWeight, NEGATIVE_EXAMPLE_LABEL));
 				}
 			});
 		});

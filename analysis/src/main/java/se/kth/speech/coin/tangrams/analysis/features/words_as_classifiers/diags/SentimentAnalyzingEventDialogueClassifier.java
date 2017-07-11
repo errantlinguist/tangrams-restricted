@@ -32,7 +32,6 @@ import se.kth.speech.coin.tangrams.analysis.Utterance;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.ReferentConfidenceMapFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WeightedWordClass;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.SentimentAnalyzingEventDialogueUtteranceSorter.ExampleHandler;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -42,10 +41,6 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.
 public final class SentimentAnalyzingEventDialogueClassifier implements EventDialogueClassifier {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SentimentAnalyzingEventDialogueClassifier.class);
-
-	private static final ExampleHandler NULL_EXAMPLE_HANDLER = (wordClass, weight) -> {
-		// Do nothing
-	};
 
 	private final ReferentConfidenceMapFactory referentConfidenceMapFactory;
 
@@ -72,28 +67,23 @@ public final class SentimentAnalyzingEventDialogueClassifier implements EventDia
 		final Optional<Event> optFirstEvent = transformedDiag.getFirstEvent();
 		if (optFirstEvent.isPresent()) {
 			final Event event = optFirstEvent.get();
-			LOGGER.debug("Extracting features for utterances for event: {}", event);
+			LOGGER.debug("Classifying utterances for event: {}", event);
 			final List<Utterance> allUtts = transformedDiag.getUtts();
 			if (allUtts.isEmpty()) {
-				LOGGER.debug("No utterances to train with for {}.", transformedDiag);
+				LOGGER.debug("No utterances to classify for {}.", transformedDiag);
 				result = Optional.empty();
 			} else {
 				final List<WeightedWordClass> weightedWordClasses = new ArrayList<>(allUtts.size() * 16);
-				final ExampleHandler referentPositiveExampleHandler = (wordClass, weight) -> weightedWordClasses
-						.add(new WeightedWordClass(wordClass, weight));
-				// final ExampleHandler referentNegativeExampleHandler =
-				// (wordClass, weight) -> {
-				// LOGGER.debug("Using word class \"{}\" with a negative
-				// weight.", wordClass);
-				// weightedWordClasses.add(new WeightedWordClass(wordClass,
-				// -weight));
-				// };
-				final ExampleHandler referentNegativeExampleHandler = NULL_EXAMPLE_HANDLER;
-				final ExampleHandler otherEntityNegativeExampleHandler = NULL_EXAMPLE_HANDLER;
 				final SentimentAnalyzingEventDialogueUtteranceSorter uttSorter = new SentimentAnalyzingEventDialogueUtteranceSorter(
-						uttSentimentRanker, referentPositiveExampleHandler, referentNegativeExampleHandler,
-						otherEntityNegativeExampleHandler);
-				uttSorter.accept(allUtts.listIterator(), UtteranceMatchers.createEventSubmitterUtteranceMatcher(event));
+						uttSentimentRanker);
+				final SentimentAnalyzingEventDialogueUtteranceSorter.Result sortedUtts = uttSorter.apply(allUtts,
+						UtteranceMatchers.createEventSubmitterUtteranceMatcher(event));
+				sortedUtts.getRefPosExamples().forEach(utt -> {
+					LOGGER.debug("Processing referent positive example: {}", utt);
+					utt.getTokens().stream().map(token -> new WeightedWordClass(token, 1.0))
+							.forEach(weightedWordClasses::add);
+				});
+
 				result = Optional.of(referentConfidenceMapFactory.apply(weightedWordClasses, ctx));
 			}
 		} else
