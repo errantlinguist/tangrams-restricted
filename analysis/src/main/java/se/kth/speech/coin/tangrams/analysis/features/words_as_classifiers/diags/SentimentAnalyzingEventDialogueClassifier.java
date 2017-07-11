@@ -32,7 +32,7 @@ import se.kth.speech.coin.tangrams.analysis.Utterance;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.ReferentConfidenceMapFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WeightedWordClass;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EventDialogueUtteranceSentimentSorter.ExampleHandler;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.SentimentAnalyzingEventDialogueUtteranceSorter.ExampleHandler;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -90,7 +90,7 @@ public final class SentimentAnalyzingEventDialogueClassifier implements EventDia
 				// };
 				final ExampleHandler referentNegativeExampleHandler = NULL_EXAMPLE_HANDLER;
 				final ExampleHandler otherEntityNegativeExampleHandler = NULL_EXAMPLE_HANDLER;
-				final EventDialogueUtteranceSentimentSorter uttSorter = new EventDialogueUtteranceSentimentSorter(
+				final SentimentAnalyzingEventDialogueUtteranceSorter uttSorter = new SentimentAnalyzingEventDialogueUtteranceSorter(
 						uttSentimentRanker, referentPositiveExampleHandler, referentNegativeExampleHandler,
 						otherEntityNegativeExampleHandler);
 				uttSorter.accept(allUtts.listIterator(), UtteranceMatchers.createEventSubmitterUtteranceMatcher(event));

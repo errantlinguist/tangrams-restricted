@@ -37,8 +37,8 @@ import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionCont
 import se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttributeContext;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.UtteranceGameContexts;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EventDialogueTransformer;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EventDialogueUtteranceSentimentSorter;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EventDialogueUtteranceSentimentSorter.ExampleHandler;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.SentimentAnalyzingEventDialogueUtteranceSorter;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.SentimentAnalyzingEventDialogueUtteranceSorter.ExampleHandler;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.UtteranceMatchers;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 import weka.core.Instance;
@@ -150,7 +150,7 @@ public final class SentimentAnalyzingInstancesFactory extends AbstractSizeEstima
 							wordClass, trainingData, trainingContexts.positive, weight, NEGATIVE_EXAMPLE_LABEL);
 					final ExampleHandler otherEntityNegativeExampleHandler = (wordClass, weight) -> addWeightedExamples(
 							wordClass, trainingData, trainingContexts.negative, weight, NEGATIVE_EXAMPLE_LABEL);
-					final EventDialogueUtteranceSentimentSorter uttSorter = new EventDialogueUtteranceSentimentSorter(
+					final SentimentAnalyzingEventDialogueUtteranceSorter uttSorter = new SentimentAnalyzingEventDialogueUtteranceSorter(
 							uttSentimentRanker, referentPositiveExampleHandler, referentNegativeExampleHandler,
 							otherEntityNegativeExampleHandler);
 					uttSorter.accept(allUtts.listIterator(),

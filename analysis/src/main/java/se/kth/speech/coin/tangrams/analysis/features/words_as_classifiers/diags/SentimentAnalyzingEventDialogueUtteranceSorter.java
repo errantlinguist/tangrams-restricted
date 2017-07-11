@@ -33,14 +33,14 @@ import se.kth.speech.coin.tangrams.analysis.Utterance;
  * @since Jul 9, 2017
  *
  */
-public final class EventDialogueUtteranceSentimentSorter {
+public final class SentimentAnalyzingEventDialogueUtteranceSorter {
 
 	public static interface ExampleHandler {
 
 		public void accept(String wordClass, double weight);
 	}
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(EventDialogueUtteranceSentimentSorter.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(SentimentAnalyzingEventDialogueUtteranceSorter.class);
 
 	private final ExampleHandler referentNegativeExampleHandler;
 
@@ -50,7 +50,7 @@ public final class EventDialogueUtteranceSentimentSorter {
 
 	private final ToDoubleFunction<? super Utterance> uttSentimentRanker;
 
-	public EventDialogueUtteranceSentimentSorter(final ToDoubleFunction<? super Utterance> uttSentimentRanker,
+	public SentimentAnalyzingEventDialogueUtteranceSorter(final ToDoubleFunction<? super Utterance> uttSentimentRanker,
 			final ExampleHandler referentPositiveExampleHandler, final ExampleHandler referentNegativeExampleHandler,
 			final ExampleHandler otherEntityNegativeExampleHandler) {
 		this.uttSentimentRanker = uttSentimentRanker;
