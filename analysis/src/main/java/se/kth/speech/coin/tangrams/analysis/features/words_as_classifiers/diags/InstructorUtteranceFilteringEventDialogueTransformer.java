@@ -42,7 +42,7 @@ public final class InstructorUtteranceFilteringEventDialogueTransformer implemen
 
 	private static Optional<List<Utterance>> createInstructorUttList(final EventDialogue uttDiag) {
 		return uttDiag.getFirstEvent().map(event -> {
-			LOGGER.debug("Classifying entity referred to by instructor for {}.", event);
+			LOGGER.debug("Filtering utterances not from instructor for {}.", event);
 			final Predicate<Utterance> instructorUttMatcher = UtteranceMatchers
 					.createEventSubmitterUtteranceMatcher(event);
 			final List<Utterance> allUtts = uttDiag.getUtts();
