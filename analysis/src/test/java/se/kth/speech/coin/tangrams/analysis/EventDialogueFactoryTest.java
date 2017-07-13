@@ -85,8 +85,7 @@ public final class EventDialogueFactoryTest {
 		}
 		Assert.assertEquals(gameHistories.size(), 1);
 		final GameHistory history = gameHistories.values().iterator().next();
-		final List<Event> historyEvents = history.getEventSequence().collect(Collectors.toList());
-
+		
 		final URL hatInfileUrl = TestDataResources.class.getResource(singleMoveSessionDataResLocStr + "/utts.xml");
 		LOGGER.info("Reading annotations from \"{}\".", hatInfileUrl);
 		final Annotation uttAnnots = (Annotation) JC.createUnmarshaller().unmarshal(hatInfileUrl);
@@ -102,6 +101,7 @@ public final class EventDialogueFactoryTest {
 		final int expectedDiagCount = Math.toIntExact(history.getEventSequence().count());
 		Assert.assertEquals(expectedDiagCount, actualDiagList.size());
 
+		final List<Event> historyEvents = history.getEventSequence().collect(Collectors.toList());
 		final Iterator<Event> expectedEventIter = historyEvents.iterator();
 		final Iterator<EventDialogue> actualDiagIter = actualDiagList.iterator();
 		while (expectedEventIter.hasNext()) {
