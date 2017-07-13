@@ -30,11 +30,8 @@ final class TestParameters {
 
 	private final Training trainingMethod;
 
-	private final UtteranceFiltering uttFiltering;
-
-	TestParameters(final UtteranceFiltering uttFiltering, final Set<Cleaning> cleaning, final Tokenization tokenization,
-			final TokenType tokenType, final TokenFiltering tokenFiltering, final Training trainingMethod) {
-		this.uttFiltering = uttFiltering;
+	TestParameters(final Set<Cleaning> cleaning, final Tokenization tokenization, final TokenType tokenType,
+			final TokenFiltering tokenFiltering, final Training trainingMethod) {
 		this.cleaning = cleaning;
 		this.tokenization = tokenization;
 		this.tokenType = tokenType;
@@ -44,7 +41,7 @@ final class TestParameters {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#equals(java.lang.Object)
 	 */
 	@Override
@@ -76,9 +73,6 @@ final class TestParameters {
 			return false;
 		}
 		if (trainingMethod != other.trainingMethod) {
-			return false;
-		}
-		if (uttFiltering != other.uttFiltering) {
 			return false;
 		}
 		return true;
@@ -119,16 +113,9 @@ final class TestParameters {
 		return trainingMethod;
 	}
 
-	/**
-	 * @return the uttFiltering
-	 */
-	public UtteranceFiltering getUttFiltering() {
-		return uttFiltering;
-	}
-
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#hashCode()
 	 */
 	@Override
@@ -140,13 +127,12 @@ final class TestParameters {
 		result = prime * result + (tokenType == null ? 0 : tokenType.hashCode());
 		result = prime * result + (tokenization == null ? 0 : tokenization.hashCode());
 		result = prime * result + (trainingMethod == null ? 0 : trainingMethod.hashCode());
-		result = prime * result + (uttFiltering == null ? 0 : uttFiltering.hashCode());
 		return result;
 	}
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#toString()
 	 */
 	@Override
@@ -162,8 +148,6 @@ final class TestParameters {
 		builder.append(tokenType);
 		builder.append(", trainingMethod=");
 		builder.append(trainingMethod);
-		builder.append(", uttFiltering=");
-		builder.append(uttFiltering);
 		builder.append("]");
 		return builder.toString();
 	}

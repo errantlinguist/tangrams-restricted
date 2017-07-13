@@ -38,8 +38,8 @@ import se.kth.speech.coin.tangrams.iristk.EventTimes;
 final class TestParameterReporting {
 
 	/**
-	 * <strong>NOTE:</strong> This is for SPSS compatibility, which does not allow
-	 * e.g.&nbsp;<code>"-"</code> as part of a variable name.
+	 * <strong>NOTE:</strong> This is for SPSS compatibility, which does not
+	 * allow e.g.&nbsp;<code>"-"</code> as part of a variable name.
 	 *
 	 * @see <a href=
 	 *      "https://www.ibm.com/support/knowledgecenter/en/SSLVMB_21.0.0/com.ibm.spss.statistics.help/syn_variables_variable_names.htm">SPSS
@@ -72,7 +72,6 @@ final class TestParameterReporting {
 
 	static Stream<String> createTestMethodColumnHeaders() {
 		final Stream.Builder<String> resultBuilder = Stream.builder();
-		resultBuilder.add(UtteranceFiltering.class.getSimpleName());
 		final String cleaningMethodPrefix = Cleaning.class.getSimpleName() + SUBCOL_NAME_DELIM;
 		Arrays.stream(Cleaning.values()).map(method -> cleaningMethodPrefix + method).forEachOrdered(resultBuilder);
 		resultBuilder.add(Tokenization.class.getSimpleName().toString());
@@ -85,7 +84,6 @@ final class TestParameterReporting {
 	static Stream<String> createTestMethodRowCellValues(final TestParameters testParams,
 			final Function<? super Set<Cleaning>, Stream<String>> cleaningMethodReprFactory) {
 		final Stream.Builder<String> resultBuilder = Stream.builder();
-		resultBuilder.add(testParams.getUttFiltering().toString());
 		final Set<Cleaning> cleaningMethods = testParams.getCleaning();
 		cleaningMethodReprFactory.apply(cleaningMethods).forEachOrdered(resultBuilder);
 		resultBuilder.add(testParams.getTokenization().toString());

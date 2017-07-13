@@ -71,8 +71,8 @@ enum CLITestParameter implements Supplier<Option> {
 	TEST_CLEANING_POWERSET("cp") {
 		@Override
 		public Option get() {
-			return Option.builder(optName).longOpt("cleaning-powerset")
-					.desc("If this flag is present, the powerset of the supplied cleaning methods is tested rather than the set itself.")
+			return Option.builder(optName).longOpt("cleaning-powerset").desc(
+					"If this flag is present, the powerset of the supplied cleaning methods is tested rather than the set itself.")
 					.build();
 		}
 	},
@@ -109,15 +109,6 @@ enum CLITestParameter implements Supplier<Option> {
 			final Training[] possibleVals = Training.values();
 			return Option.builder(optName).longOpt("training")
 					.desc("A list of training method(s) to use Possible values: " + Arrays.toString(possibleVals))
-					.hasArg().argName("name").build();
-		}
-	},
-	UTT_FILTERS("uf") {
-		@Override
-		public Option get() {
-			final UtteranceFiltering[] possibleVals = UtteranceFiltering.values();
-			return Option.builder(optName).longOpt("utt-filters").desc(
-					"A list of utterance filtering method(s) to use Possible values: " + Arrays.toString(possibleVals))
 					.hasArg().argName("name").build();
 		}
 	};
@@ -179,15 +170,6 @@ enum CLITestParameter implements Supplier<Option> {
 		final Stream<Training> insts = names == null ? Stream.empty()
 				: Arrays.stream(names).map(String::trim).filter(str -> !str.isEmpty()).map(Training::valueOf);
 		final EnumSet<Training> result = EnumSet.noneOf(Training.class);
-		insts.forEach(result::add);
-		return result;
-	}
-
-	static Set<UtteranceFiltering> parseUttFilteringMethods(final CommandLine cl) {
-		final String[] names = parseOptEnumValueNames(cl, CLITestParameter.UTT_FILTERS.optName);
-		final Stream<UtteranceFiltering> insts = names == null ? Stream.empty()
-				: Arrays.stream(names).map(String::trim).filter(str -> !str.isEmpty()).map(UtteranceFiltering::valueOf);
-		final EnumSet<UtteranceFiltering> result = EnumSet.noneOf(UtteranceFiltering.class);
 		insts.forEach(result::add);
 		return result;
 	}

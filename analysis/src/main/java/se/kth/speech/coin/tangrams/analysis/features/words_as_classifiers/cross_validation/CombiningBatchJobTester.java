@@ -91,13 +91,9 @@ public final class CombiningBatchJobTester {
 
 		private final Iterable<Training> trainingMethods;
 
-		private final Iterable<UtteranceFiltering> uttFilteringMethods;
-
-		public Input(final Iterable<UtteranceFiltering> uttFilteringMethods,
-				final Iterable<Set<Cleaning>> cleaningMethods, final Iterable<Tokenization> tokenizationMethods,
+		public Input(final Iterable<Set<Cleaning>> cleaningMethods, final Iterable<Tokenization> tokenizationMethods,
 				final Iterable<TokenType> tokenTypes, final Iterable<TokenFiltering> tokenFilteringMethods,
 				final Iterable<Training> trainingMethods, final Map<SessionDataManager, Path> allSessions) {
-			this.uttFilteringMethods = uttFilteringMethods;
 			this.cleaningMethods = cleaningMethods;
 			this.tokenizationMethods = tokenizationMethods;
 			this.tokenTypes = tokenTypes;
@@ -137,46 +133,43 @@ public final class CombiningBatchJobTester {
 
 		for (final Set<Cleaning> cleaningMethodSet : input.cleaningMethods) {
 			for (final Training trainingMethod : input.trainingMethods) {
-				for (final UtteranceFiltering uttFilteringMethod : input.uttFilteringMethods) {
-					for (final Tokenization tokenizationMethod : input.tokenizationMethods) {
-						for (final TokenType tokenType : input.tokenTypes) {
-							final TokenizationContext tokenizationContext = new TokenizationContext(cleaningMethodSet,
-									tokenType, backgroundJobExecutor);
-							final EventDialogueTransformer tokenizer = tokenizationMethod.apply(tokenizationContext);
+				for (final Tokenization tokenizationMethod : input.tokenizationMethods) {
+					for (final TokenType tokenType : input.tokenTypes) {
+						final TokenizationContext tokenizationContext = new TokenizationContext(cleaningMethodSet,
+								tokenType, backgroundJobExecutor);
+						final EventDialogueTransformer tokenizer = tokenizationMethod.apply(tokenizationContext);
 
-							for (final TokenFiltering tokenFilteringMethod : input.tokenFilteringMethods) {
-								final EventDialogueTransformer tokenFilter = tokenFilteringMethod.get();
+						for (final TokenFiltering tokenFilteringMethod : input.tokenFilteringMethods) {
+							final EventDialogueTransformer tokenFilter = tokenFilteringMethod.get();
 
-								final List<EventDialogueTransformer> diagTransformers = Arrays
-										.asList(uttFilteringMethod.get(), tokenizer, tokenFilter);
-								final CachingEventDialogueTransformer cachingDiagTransformer = new CachingEventDialogueTransformer(
-										new ChainedEventDialogueTransformer(diagTransformers));
-								final TrainingContext trainingCtx = new TrainingContext(cachingDiagTransformer, appCtx,
-										backgroundJobExecutor);
-								final Entry<TrainingInstancesFactory, Integer> trainingInstsFactoryIterCount = trainingMethod
-										.getTrainingInstsFactoryFactory().apply(trainingCtx);
-								final TestSetFactory testSetFactory = new TestSetFactory(
-										trainingInstsFactoryIterCount.getKey(), sessionDiagMgrCacheSupplier);
-								final Function<ReferentConfidenceMapFactory, EventDialogueClassifier> classifierFactory = trainingMethod
-										.getClassifierFactory();
-								final Tester tester = appCtx.getBean(Tester.class, testSetFactory,
-										cachingDiagTransformer, classifierFactory, backgroundJobExecutor);
-								tester.setIterCount(trainingInstsFactoryIterCount.getValue());
-								testerConfigurator.accept(tester);
-								final TestParameters testParams = new TestParameters(uttFilteringMethod,
-										cleaningMethodSet, tokenizationMethod, tokenType, tokenFilteringMethod,
-										trainingMethod);
-								LOGGER.info("Testing {}.", testParams);
+							final List<EventDialogueTransformer> diagTransformers = Arrays.asList(tokenizer,
+									tokenFilter);
+							final CachingEventDialogueTransformer cachingDiagTransformer = new CachingEventDialogueTransformer(
+									new ChainedEventDialogueTransformer(diagTransformers));
+							final TrainingContext trainingCtx = new TrainingContext(cachingDiagTransformer, appCtx,
+									backgroundJobExecutor);
+							final Entry<TrainingInstancesFactory, Integer> trainingInstsFactoryIterCount = trainingMethod
+									.getTrainingInstsFactoryFactory().apply(trainingCtx);
+							final TestSetFactory testSetFactory = new TestSetFactory(
+									trainingInstsFactoryIterCount.getKey(), sessionDiagMgrCacheSupplier);
+							final Function<ReferentConfidenceMapFactory, EventDialogueClassifier> classifierFactory = trainingMethod
+									.getClassifierFactory();
+							final Tester tester = appCtx.getBean(Tester.class, testSetFactory, cachingDiagTransformer,
+									classifierFactory, backgroundJobExecutor);
+							tester.setIterCount(trainingInstsFactoryIterCount.getValue());
+							testerConfigurator.accept(tester);
+							final TestParameters testParams = new TestParameters(cleaningMethodSet, tokenizationMethod,
+									tokenType, tokenFilteringMethod, trainingMethod);
+							LOGGER.info("Testing {}.", testParams);
 
-								final LocalDateTime testTimestamp = LocalDateTime.now();
-								try {
-									final Tester.Result testResults = tester.apply(input.allSessions);
-									final BatchJobSummary batchSummary = new BatchJobSummary(testTimestamp, testParams,
-											testResults);
-									batchJobResultHandler.accept(batchSummary);
-								} catch (final Throwable thrown) {
-									errorHandler.accept(new IncompleteResults(testParams, testTimestamp), thrown);
-								}
+							final LocalDateTime testTimestamp = LocalDateTime.now();
+							try {
+								final Tester.Result testResults = tester.apply(input.allSessions);
+								final BatchJobSummary batchSummary = new BatchJobSummary(testTimestamp, testParams,
+										testResults);
+								batchJobResultHandler.accept(batchSummary);
+							} catch (final Throwable thrown) {
+								errorHandler.accept(new IncompleteResults(testParams, testTimestamp), thrown);
 							}
 						}
 					}

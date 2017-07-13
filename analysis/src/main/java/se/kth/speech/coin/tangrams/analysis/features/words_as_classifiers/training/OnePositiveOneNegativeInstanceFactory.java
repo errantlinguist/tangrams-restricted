@@ -16,9 +16,10 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training;
 
+import java.util.Arrays;
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.Random;
+import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -32,10 +33,14 @@ import se.kth.speech.coin.tangrams.analysis.GameHistory;
 import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManager;
 import se.kth.speech.coin.tangrams.analysis.Utterance;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
+import se.kth.speech.coin.tangrams.analysis.features.EntityFeature.Extractor.Context;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionContextFactory;
 import se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttributeContext;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.UtteranceGameContexts;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.CachingEventDialogueTransformer;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.ChainedEventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EventDialogueTransformer;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.InstructorUtteranceFilteringEventDialogueTransformer;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 import se.kth.speech.fastutil.RandomIntLists;
 import weka.core.Instance;
@@ -62,34 +67,99 @@ import weka.core.Instances;
  */
 public final class OnePositiveOneNegativeInstanceFactory extends AbstractSizeEstimatingInstancesMapFactory {
 
+	private static final class BooleanTrainingContexts {
+
+		private final EntityFeature.Extractor.Context neg;
+
+		private final EntityFeature.Extractor.Context pos;
+
+		private BooleanTrainingContexts(final EntityFeature.Extractor.Context pos,
+				final EntityFeature.Extractor.Context neg) {
+			this.pos = pos;
+			this.neg = neg;
+		}
+	}
+
+	/**
+	 * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
+	 * @since Jul 13, 2017
+	 *
+	 */
+	private static final class BooleanTrainingContextsFactory
+			implements BiFunction<Utterance, GameHistory, BooleanTrainingContexts> {
+
+		private final EntityFeatureExtractionContextFactory extCtxFactory;
+
+		private final Random rnd;
+
+		private BooleanTrainingContextsFactory(final EntityFeatureExtractionContextFactory extCtxFactory,
+				final Random rnd) {
+			this.extCtxFactory = extCtxFactory;
+			this.rnd = rnd;
+		}
+
+		@Override
+		public BooleanTrainingContexts apply(final Utterance utt, final GameHistory history) {
+			final GameContext uttCtx = UtteranceGameContexts.createSingleContext(utt, history);
+			final int selectedEntityId = uttCtx.findLastSelectedEntityId().get();
+			LOGGER.debug("Creating positive and negative examples for entity ID \"{}\".", selectedEntityId);
+			return new BooleanTrainingContexts(extCtxFactory.apply(uttCtx, selectedEntityId),
+					extCtxFactory.apply(uttCtx, findRandomEntityId(uttCtx, selectedEntityId)));
+		}
+
+		private int findRandomEntityId(final GameContext ctx, final int complementId) {
+			final IntList entityIds = ctx.getEntityIds();
+			int result = RandomIntLists.getRandomValue(entityIds, rnd);
+			while (result == complementId) {
+				result = RandomIntLists.getRandomValue(entityIds, rnd);
+			}
+			return result;
+		}
+
+	}
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(OnePositiveOneNegativeInstanceFactory.class);
 
 	private static final String NEGATIVE_EXAMPLE_LABEL = Boolean.FALSE.toString();
 
 	private static final String POSITIVE_EXAMPLE_LABEL = Boolean.TRUE.toString();
 
-	private final EventDialogueTransformer diagTransformer;
+	private static CachingEventDialogueTransformer createInstrUttFilteringTransformer(
+			final EventDialogueTransformer diagTransformer) {
+		final ChainedEventDialogueTransformer chained = new ChainedEventDialogueTransformer(
+				Arrays.asList(new InstructorUtteranceFilteringEventDialogueTransformer(), diagTransformer));
+		return new CachingEventDialogueTransformer(chained);
+	}
 
-	private final EntityFeatureExtractionContextFactory extCtxFactory;
+	private static Stream<String> getWordClasses(final List<Utterance> utts) {
+		return utts.stream().map(Utterance::getTokens).flatMap(List::stream);
+	}
 
-	private final Random rnd;
+	private final CachingEventDialogueTransformer instrDiagTransformer;
+
+	private final BooleanTrainingContextsFactory trainingCtxsFactory;
 
 	public OnePositiveOneNegativeInstanceFactory(final EntityInstanceAttributeContext entityInstAttrCtx,
 			final EventDialogueTransformer diagTransformer, final EntityFeatureExtractionContextFactory extCtxFactory,
 			final Random rnd) {
-		super(entityInstAttrCtx);
-		this.diagTransformer = diagTransformer;
-		this.extCtxFactory = extCtxFactory;
-		this.rnd = rnd;
+		this(entityInstAttrCtx, diagTransformer, new BooleanTrainingContextsFactory(extCtxFactory, rnd));
 	}
 
-	private int findRandomEntityId(final GameContext ctx, final int complementId) {
-		final IntList entityIds = ctx.getEntityIds();
-		int result = RandomIntLists.getRandomValue(entityIds, rnd);
-		while (result == complementId) {
-			result = RandomIntLists.getRandomValue(entityIds, rnd);
-		}
-		return result;
+	private OnePositiveOneNegativeInstanceFactory(final EntityInstanceAttributeContext entityInstAttrCtx,
+			final EventDialogueTransformer diagTransformer, final BooleanTrainingContextsFactory trainingCtxsFactory) {
+		super(entityInstAttrCtx);
+		instrDiagTransformer = createInstrUttFilteringTransformer(diagTransformer);
+		this.trainingCtxsFactory = trainingCtxsFactory;
+	}
+
+	private void addWeightedExamples(final String wordClass, final WordClassificationData trainingData,
+			final Context trainingContext, final double weight, final String classValue) {
+		assert weight > 0.0;
+		final Instances classInsts = trainingData.fetchWordInstances(wordClass);
+		final Instance trainingInst = createTokenInstance(classInsts, trainingContext, classValue);
+		trainingInst.setWeight(weight);
+		// Add example
+		trainingData.addObservation(wordClass, Stream.of(new MutablePair<>(trainingInst, classValue)));
 	}
 
 	@Override
@@ -103,42 +173,27 @@ public final class OnePositiveOneNegativeInstanceFactory extends AbstractSizeEst
 		uttDialogues.forEach(uttDialogue -> {
 			uttDialogue.getFirstEvent().ifPresent(event -> {
 				LOGGER.debug("Extracting features for utterances for event: {}", event);
-				final EventDialogue transformedDiag = diagTransformer.apply(uttDialogue);
-				final List<Utterance> allUtts = transformedDiag.getUtts();
-				if (allUtts.isEmpty()) {
+				final EventDialogue transformedDiag = instrDiagTransformer.apply(uttDialogue);
+				final List<Utterance> utts = transformedDiag.getUtts();
+				if (utts.isEmpty()) {
 					LOGGER.debug("No utterances to train with for {}.", transformedDiag);
 				} else {
 					// Just use the game context for the first utterance for all
 					// utterances processed for the given dialogue
-					final Utterance firstUtt = allUtts.get(0);
+					final Utterance firstUtt = utts.get(0);
 					final GameContext uttCtx = UtteranceGameContexts.createSingleContext(firstUtt, history);
 					final int selectedEntityId = uttCtx.findLastSelectedEntityId().get();
 					LOGGER.debug(
 							"Creating positive and negative examples for entity ID \"{}\", which is selected by player \"{}\".",
 							selectedEntityId, event.getString(GameManagementEvent.Attribute.PLAYER_ID.toString()));
-					final EntityFeature.Extractor.Context positiveTrainingContext = extCtxFactory.apply(uttCtx,
-							selectedEntityId);
-
-					final EntityFeature.Extractor.Context negativeTrainingContext = extCtxFactory.apply(uttCtx,
-							findRandomEntityId(uttCtx, selectedEntityId));
-					final Stream<String> wordClasses = allUtts.stream().map(Utterance::getTokens).flatMap(List::stream);
-					wordClasses.forEach(wordClass -> {
-						final Instances classInsts = trainingData.fetchWordInstances(wordClass);
-						final Stream.Builder<Entry<Instance, String>> trainingInsts = Stream.builder();
-						{
-							// Add positive training example
-							final String classValue = POSITIVE_EXAMPLE_LABEL;
-							trainingInsts.add(new MutablePair<>(
-									createTokenInstance(classInsts, positiveTrainingContext, classValue), classValue));
-						}
-						{
-							// Add negative training example
-							final String classValue = NEGATIVE_EXAMPLE_LABEL;
-							trainingInsts.add(new MutablePair<>(
-									createTokenInstance(classInsts, negativeTrainingContext, classValue), classValue));
-							trainingData.addObservation(wordClass, trainingInsts.build());
-						}
-					});
+					final BooleanTrainingContexts trainingContexts = trainingCtxsFactory.apply(firstUtt, history);
+					final double observationWeight = 1.0;
+					// Instances for referent entity
+					getWordClasses(utts).forEach(token -> addWeightedExamples(token, trainingData, trainingContexts.pos,
+							observationWeight, POSITIVE_EXAMPLE_LABEL));
+					// Instances for non-referent entities
+					getWordClasses(utts).forEach(token -> addWeightedExamples(token, trainingData, trainingContexts.neg,
+							observationWeight, NEGATIVE_EXAMPLE_LABEL));
 				}
 			});
 		});

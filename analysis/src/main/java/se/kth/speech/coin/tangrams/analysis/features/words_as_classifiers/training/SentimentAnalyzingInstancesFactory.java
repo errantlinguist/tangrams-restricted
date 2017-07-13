@@ -20,14 +20,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.function.ToDoubleFunction;
+import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import it.unimi.dsi.fastutil.ints.IntList;
 import se.kth.speech.MutablePair;
 import se.kth.speech.coin.tangrams.analysis.EventDialogue;
-import se.kth.speech.coin.tangrams.analysis.GameContext;
 import se.kth.speech.coin.tangrams.analysis.GameHistory;
 import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManager;
 import se.kth.speech.coin.tangrams.analysis.Utterance;
@@ -35,7 +34,6 @@ import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature.Extractor.Context;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionContextFactory;
 import se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttributeContext;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.UtteranceGameContexts;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.SentimentAnalyzingEventDialogueUtteranceSorter;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.UtteranceMatchers;
@@ -50,38 +48,34 @@ import weka.core.Instances;
  */
 public final class SentimentAnalyzingInstancesFactory extends AbstractSizeEstimatingInstancesMapFactory {
 
-	private static class BooleanTrainingContexts {
-
-		private final List<EntityFeature.Extractor.Context> negative;
-
-		private final List<EntityFeature.Extractor.Context> positive;
-
-		private BooleanTrainingContexts(final List<EntityFeature.Extractor.Context> positive,
-				final List<EntityFeature.Extractor.Context> negative) {
-			this.positive = positive;
-			this.negative = negative;
-		}
-
-	}
-
 	private static final Logger LOGGER = LoggerFactory.getLogger(SentimentAnalyzingInstancesFactory.class);
 
 	private static final String NEGATIVE_EXAMPLE_LABEL = Boolean.FALSE.toString();
 
 	private static final String POSITIVE_EXAMPLE_LABEL = Boolean.TRUE.toString();
 
+	private static Stream<String> getWordClasses(final List<Utterance> utts) {
+		return utts.stream().map(Utterance::getTokens).flatMap(List::stream);
+	}
+
 	private final EventDialogueTransformer diagTransformer;
 
-	private final EntityFeatureExtractionContextFactory extCtxFactory;
+	private final BooleanTrainingContextsFactory trainingCtxsFactory;
 
 	private final ToDoubleFunction<? super Utterance> uttSentimentRanker;
 
 	public SentimentAnalyzingInstancesFactory(final EntityInstanceAttributeContext entityInstAttrCtx,
 			final EventDialogueTransformer diagTransformer, final EntityFeatureExtractionContextFactory extCtxFactory,
 			final ToDoubleFunction<? super Utterance> uttSentimentRanker) {
+		this(entityInstAttrCtx, diagTransformer, new BooleanTrainingContextsFactory(extCtxFactory), uttSentimentRanker);
+	}
+
+	private SentimentAnalyzingInstancesFactory(final EntityInstanceAttributeContext entityInstAttrCtx,
+			final EventDialogueTransformer diagTransformer, final BooleanTrainingContextsFactory trainingCtxsFactory,
+			final ToDoubleFunction<? super Utterance> uttSentimentRanker) {
 		super(entityInstAttrCtx);
 		this.diagTransformer = diagTransformer;
-		this.extCtxFactory = extCtxFactory;
+		this.trainingCtxsFactory = trainingCtxsFactory;
 		this.uttSentimentRanker = uttSentimentRanker;
 	}
 
@@ -92,34 +86,11 @@ public final class SentimentAnalyzingInstancesFactory extends AbstractSizeEstima
 		final List<Entry<Instance, String>> trainingInsts = new ArrayList<>(trainingContexts.size());
 		for (final Context trainingContext : trainingContexts) {
 			final Instance trainingInst = createTokenInstance(classInsts, trainingContext, classValue);
-			trainingInsts.add(new MutablePair<>(trainingInst, classValue));
 			trainingInst.setWeight(weight);
+			trainingInsts.add(new MutablePair<>(trainingInst, classValue));
 		}
 		// Add examples
 		trainingData.addObservation(wordClass, trainingInsts.stream());
-	}
-
-	private BooleanTrainingContexts createTrainingContexts(final GameContext uttCtx, final int selectedEntityId) {
-		final IntList entityIds = uttCtx.getEntityIds();
-		final List<EntityFeature.Extractor.Context> positive = new ArrayList<>(1);
-		final List<EntityFeature.Extractor.Context> negative = new ArrayList<>(entityIds.size() - 1);
-		for (final int entityId : uttCtx.getEntityIds()) {
-			final EntityFeature.Extractor.Context context = extCtxFactory.apply(uttCtx, entityId);
-			final boolean examplePolarity = entityId == selectedEntityId;
-			if (examplePolarity) {
-				positive.add(context);
-			} else {
-				negative.add(context);
-			}
-		}
-		return new BooleanTrainingContexts(positive, negative);
-	}
-
-	private BooleanTrainingContexts createTrainingContexts(final Utterance utt, final GameHistory history) {
-		final GameContext uttCtx = UtteranceGameContexts.createSingleContext(utt, history);
-		final int selectedEntityId = uttCtx.findLastSelectedEntityId().get();
-		LOGGER.debug("Creating positive and negative examples for entity ID \"{}\".", selectedEntityId);
-		return createTrainingContexts(uttCtx, selectedEntityId);
 	}
 
 	@Override
@@ -142,20 +113,23 @@ public final class SentimentAnalyzingInstancesFactory extends AbstractSizeEstima
 					// utterances processed for the given dialogue
 					LOGGER.debug("Creating positive and negative examples for entity selected by player \"{}\".",
 							event.getString(GameManagementEvent.Attribute.PLAYER_ID.toString()));
-					final BooleanTrainingContexts trainingContexts = createTrainingContexts(allUtts.get(0), history);
+					final BooleanTrainingContexts trainingContexts = trainingCtxsFactory.apply(allUtts.get(0), history);
 					final SentimentAnalyzingEventDialogueUtteranceSorter uttSorter = new SentimentAnalyzingEventDialogueUtteranceSorter(
 							uttSentimentRanker);
 					final SentimentAnalyzingEventDialogueUtteranceSorter.Result sortedUtts = uttSorter.apply(allUtts,
 							UtteranceMatchers.createEventSubmitterUtteranceMatcher(event));
 					final double observationWeight = 1.0;
-					sortedUtts.getRefPosExamples().stream().map(Utterance::getTokens).flatMap(List::stream)
-							.forEach(token -> addWeightedExamples(token, trainingData, trainingContexts.positive,
-									observationWeight, POSITIVE_EXAMPLE_LABEL));
-					sortedUtts.getRefNegExamples().stream().map(Utterance::getTokens).flatMap(List::stream)
-							.forEach(token -> addWeightedExamples(token, trainingData, trainingContexts.positive,
-									observationWeight, NEGATIVE_EXAMPLE_LABEL));
+					{
+						// Instances for referent entity
+						final List<EntityFeature.Extractor.Context> positiveCtxs = trainingContexts.getPositive();
+						getWordClasses(sortedUtts.getRefPosExamples()).forEach(token -> addWeightedExamples(token,
+								trainingData, positiveCtxs, observationWeight, POSITIVE_EXAMPLE_LABEL));
+						getWordClasses(sortedUtts.getRefNegExamples()).forEach(token -> addWeightedExamples(token,
+								trainingData, positiveCtxs, observationWeight, NEGATIVE_EXAMPLE_LABEL));
+					}
+					// Instances for non-referent entities
 					sortedUtts.getOtherEntityNegativeExamples().stream().map(Utterance::getTokens).flatMap(List::stream)
-							.forEach(token -> addWeightedExamples(token, trainingData, trainingContexts.negative,
+							.forEach(token -> addWeightedExamples(token, trainingData, trainingContexts.getNegative(),
 									observationWeight, NEGATIVE_EXAMPLE_LABEL));
 				}
 			});

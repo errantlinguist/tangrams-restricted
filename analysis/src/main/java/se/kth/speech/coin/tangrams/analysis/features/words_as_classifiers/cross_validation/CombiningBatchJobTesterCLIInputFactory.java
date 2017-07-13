@@ -57,11 +57,6 @@ final class CombiningBatchJobTesterCLIInputFactory {
 		} else {
 			final Future<Map<SessionDataManager, Path>> allSessionDataFuture = backgroundJobExecutor
 					.submit(() -> TestSessionData.readTestSessionData(inpaths));
-			final Set<UtteranceFiltering> uttFilteringMethods = CLITestParameter.parseUttFilteringMethods(cl);
-			LOGGER.info("Utterance filtering methods: {}", uttFilteringMethods);
-			if (uttFilteringMethods.isEmpty()) {
-				throw new IllegalArgumentException("No utterance filtering method(s) specified.");
-			}
 			final Set<Set<Cleaning>> cleaningMethodSets = CLITestParameter.parseCleaningMethodSets(cl);
 			if (cleaningMethodSets.isEmpty()) {
 				throw new IllegalArgumentException("No cleaning method set(s) specified.");
@@ -88,8 +83,8 @@ final class CombiningBatchJobTesterCLIInputFactory {
 			}
 			LOGGER.info("Training methods: {}", trainingMethods);
 
-			return new CombiningBatchJobTester.Input(uttFilteringMethods, cleaningMethodSets, tokenizationMethods,
-					tokenTypes, tokenFilteringMethods, trainingMethods, allSessionDataFuture.get());
+			return new CombiningBatchJobTester.Input(cleaningMethodSets, tokenizationMethods, tokenTypes,
+					tokenFilteringMethods, trainingMethods, allSessionDataFuture.get());
 		}
 	}
 
