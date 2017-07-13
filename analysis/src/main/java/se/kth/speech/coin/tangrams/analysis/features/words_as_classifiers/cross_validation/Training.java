@@ -17,6 +17,8 @@
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation;
 
 import java.lang.ref.SoftReference;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.function.Function;
 
@@ -27,7 +29,11 @@ import se.kth.speech.MutablePair;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionContextFactory;
 import se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttributeContext;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.ReferentConfidenceMapFactory;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.CachingEventDialogueTransformer;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.ChainedEventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EventDialogueClassifier;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EventDialogueTransformer;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.InstructorUtteranceFilteringEventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.SentimentAnalyzingEventDialogueClassifier;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.OnePositiveMaximumNegativeInstancesFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.OnePositiveOneNegativeInstanceFactory;
@@ -49,6 +55,12 @@ enum Training {
 					entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory);
 			return new MutablePair<>(instsFactory, 1);
 		};
+
+		@Override
+		public CachingEventDialogueTransformer createSymmetricalTrainingTestingEvgDiagTransformer(
+				final List<EventDialogueTransformer> diagTransformers) {
+			return createInstrUttFilteringTransformer(diagTransformers);
+		}
 
 		@Override
 		public Function<ReferentConfidenceMapFactory, EventDialogueClassifier> getClassifierFactory() {
@@ -74,6 +86,12 @@ enum Training {
 		};
 
 		@Override
+		public CachingEventDialogueTransformer createSymmetricalTrainingTestingEvgDiagTransformer(
+				final List<EventDialogueTransformer> diagTransformers) {
+			return createInstrUttFilteringTransformer(diagTransformers);
+		}
+
+		@Override
 		public Function<ReferentConfidenceMapFactory, EventDialogueClassifier> getClassifierFactory() {
 			return TrainingConstants.SIMPLE_CLASSIFIER_FACTORY;
 		}
@@ -92,12 +110,19 @@ enum Training {
 			final EntityFeatureExtractionContextFactory extCtxFactory = appCtx
 					.getBean(EntityFeatureExtractionContextFactory.class);
 			final SentimentAnalyzingInstancesFactory instsFactory = new SentimentAnalyzingInstancesFactory(
-					entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory,
-					fetchUttSentimentRanker());
+					entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory, fetchUttSentimentRanker());
 			return new MutablePair<>(instsFactory, 1);
 		};
 
 		private SoftReference<CachingUtteranceSentimentRanker> uttSentimentRanker = new SoftReference<>(null);
+
+		@Override
+		public CachingEventDialogueTransformer createSymmetricalTrainingTestingEvgDiagTransformer(
+				final List<EventDialogueTransformer> diagTransformers) {
+			final ChainedEventDialogueTransformer chainedTransformer = new ChainedEventDialogueTransformer(
+					diagTransformers);
+			return new CachingEventDialogueTransformer(chainedTransformer);
+		}
 
 		@Override
 		public Function<ReferentConfidenceMapFactory, EventDialogueClassifier> getClassifierFactory() {
@@ -129,6 +154,20 @@ enum Training {
 			return result;
 		}
 	};
+
+	private static final InstructorUtteranceFilteringEventDialogueTransformer INSTR_UTT_FILTER = new InstructorUtteranceFilteringEventDialogueTransformer();
+
+	private static CachingEventDialogueTransformer createInstrUttFilteringTransformer(
+			final List<EventDialogueTransformer> diagTransformers) {
+		final List<EventDialogueTransformer> chain = new ArrayList<>(diagTransformers.size() + 1);
+		chain.add(INSTR_UTT_FILTER);
+		chain.addAll(diagTransformers);
+		final ChainedEventDialogueTransformer chainedTransformer = new ChainedEventDialogueTransformer(chain);
+		return new CachingEventDialogueTransformer(chainedTransformer);
+	}
+
+	public abstract CachingEventDialogueTransformer createSymmetricalTrainingTestingEvgDiagTransformer(
+			final List<EventDialogueTransformer> diagTransformers);
 
 	/**
 	 * @return the classifierFactory

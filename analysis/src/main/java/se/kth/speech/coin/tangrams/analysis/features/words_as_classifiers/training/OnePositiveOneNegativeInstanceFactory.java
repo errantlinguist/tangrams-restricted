@@ -16,7 +16,6 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 import java.util.function.BiFunction;
@@ -37,10 +36,7 @@ import se.kth.speech.coin.tangrams.analysis.features.EntityFeature.Extractor.Con
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionContextFactory;
 import se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttributeContext;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.UtteranceGameContexts;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.CachingEventDialogueTransformer;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.ChainedEventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EventDialogueTransformer;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.InstructorUtteranceFilteringEventDialogueTransformer;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 import se.kth.speech.fastutil.RandomIntLists;
 import weka.core.Instance;
@@ -124,18 +120,11 @@ public final class OnePositiveOneNegativeInstanceFactory extends AbstractSizeEst
 
 	private static final String POSITIVE_EXAMPLE_LABEL = Boolean.TRUE.toString();
 
-	private static CachingEventDialogueTransformer createInstrUttFilteringTransformer(
-			final EventDialogueTransformer diagTransformer) {
-		final ChainedEventDialogueTransformer chained = new ChainedEventDialogueTransformer(
-				Arrays.asList(new InstructorUtteranceFilteringEventDialogueTransformer(), diagTransformer));
-		return new CachingEventDialogueTransformer(chained);
-	}
-
 	private static Stream<String> getWordClasses(final List<Utterance> utts) {
 		return utts.stream().map(Utterance::getTokens).flatMap(List::stream);
 	}
 
-	private final CachingEventDialogueTransformer instrDiagTransformer;
+	private final EventDialogueTransformer diagTransformer;
 
 	private final BooleanTrainingContextsFactory trainingCtxsFactory;
 
@@ -148,7 +137,7 @@ public final class OnePositiveOneNegativeInstanceFactory extends AbstractSizeEst
 	private OnePositiveOneNegativeInstanceFactory(final EntityInstanceAttributeContext entityInstAttrCtx,
 			final EventDialogueTransformer diagTransformer, final BooleanTrainingContextsFactory trainingCtxsFactory) {
 		super(entityInstAttrCtx);
-		instrDiagTransformer = createInstrUttFilteringTransformer(diagTransformer);
+		this.diagTransformer = diagTransformer;
 		this.trainingCtxsFactory = trainingCtxsFactory;
 	}
 
@@ -173,7 +162,7 @@ public final class OnePositiveOneNegativeInstanceFactory extends AbstractSizeEst
 		uttDialogues.forEach(uttDialogue -> {
 			uttDialogue.getFirstEvent().ifPresent(event -> {
 				LOGGER.debug("Extracting features for utterances for event: {}", event);
-				final EventDialogue transformedDiag = instrDiagTransformer.apply(uttDialogue);
+				final EventDialogue transformedDiag = diagTransformer.apply(uttDialogue);
 				final List<Utterance> utts = transformedDiag.getUtts();
 				if (utts.isEmpty()) {
 					LOGGER.debug("No utterances to train with for {}.", transformedDiag);

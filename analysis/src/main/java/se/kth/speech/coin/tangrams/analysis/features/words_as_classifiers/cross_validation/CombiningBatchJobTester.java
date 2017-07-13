@@ -20,7 +20,6 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -39,7 +38,6 @@ import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManagerCacheSupp
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.ReferentConfidenceMapFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.CachingEventDialogueTransformer;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.ChainedEventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EventDialogueClassifier;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.TrainingInstancesFactory;
@@ -142,11 +140,10 @@ public final class CombiningBatchJobTester {
 						for (final TokenFiltering tokenFilteringMethod : input.tokenFilteringMethods) {
 							final EventDialogueTransformer tokenFilter = tokenFilteringMethod.get();
 
-							final List<EventDialogueTransformer> diagTransformers = Arrays.asList(tokenizer,
-									tokenFilter);
-							final CachingEventDialogueTransformer cachingDiagTransformer = new CachingEventDialogueTransformer(
-									new ChainedEventDialogueTransformer(diagTransformers));
-							final TrainingContext trainingCtx = new TrainingContext(cachingDiagTransformer, appCtx,
+							final CachingEventDialogueTransformer symmetricalDiagTransformer = trainingMethod
+									.createSymmetricalTrainingTestingEvgDiagTransformer(
+											Arrays.asList(tokenizer, tokenFilter));
+							final TrainingContext trainingCtx = new TrainingContext(symmetricalDiagTransformer, appCtx,
 									backgroundJobExecutor);
 							final Entry<TrainingInstancesFactory, Integer> trainingInstsFactoryIterCount = trainingMethod
 									.getTrainingInstsFactoryFactory().apply(trainingCtx);
@@ -154,8 +151,8 @@ public final class CombiningBatchJobTester {
 									trainingInstsFactoryIterCount.getKey(), sessionDiagMgrCacheSupplier);
 							final Function<ReferentConfidenceMapFactory, EventDialogueClassifier> classifierFactory = trainingMethod
 									.getClassifierFactory();
-							final Tester tester = appCtx.getBean(Tester.class, testSetFactory, cachingDiagTransformer,
-									classifierFactory, backgroundJobExecutor);
+							final Tester tester = appCtx.getBean(Tester.class, testSetFactory,
+									symmetricalDiagTransformer, classifierFactory, backgroundJobExecutor);
 							tester.setIterCount(trainingInstsFactoryIterCount.getValue());
 							testerConfigurator.accept(tester);
 							final TestParameters testParams = new TestParameters(cleaningMethodSet, tokenizationMethod,
