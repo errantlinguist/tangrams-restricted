@@ -75,6 +75,8 @@ public final class EventDialogueFactoryTest {
 			throws URISyntaxException, IOException, JAXBException {
 		final String singleMoveSessionDataResLocStr = TestDataResources.SESSION_DATA_DIR
 				+ "/karey-tangram_Jutta-ONEMOVE";
+		
+		// Game history
 		final URL eventLogUrl = TestDataResources.class
 				.getResource(singleMoveSessionDataResLocStr + "/events-karey.txt");
 		LOGGER.info("Reading event history from \"{}\".", eventLogUrl);
@@ -86,6 +88,7 @@ public final class EventDialogueFactoryTest {
 		Assert.assertEquals(gameHistories.size(), 1);
 		final GameHistory history = gameHistories.values().iterator().next();
 		
+		// Utts
 		final URL hatInfileUrl = TestDataResources.class.getResource(singleMoveSessionDataResLocStr + "/utts.xml");
 		LOGGER.info("Reading annotations from \"{}\".", hatInfileUrl);
 		final Annotation uttAnnots = (Annotation) JC.createUnmarshaller().unmarshal(hatInfileUrl);
