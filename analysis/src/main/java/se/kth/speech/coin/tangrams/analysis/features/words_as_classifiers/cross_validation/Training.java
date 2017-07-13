@@ -65,31 +65,7 @@ enum Training {
 			return TrainingConstants.SIMPLE_CLASSIFIER_FACTORY;
 		}
 	},
-	ONE_NEG(1) {
-
-		@Override
-		public CachingEventDialogueTransformer createSymmetricalTrainingTestingEvgDiagTransformer(
-				final List<EventDialogueTransformer> diagTransformers) {
-			return createInstrUttFilteringTransformer(diagTransformers);
-		}
-
-		@Override
-		public TrainingInstancesFactory createTrainingInstsFactoryIterCount(final TrainingContext trainingCtx) {
-			final ApplicationContext appCtx = trainingCtx.getAppCtx();
-			final EntityInstanceAttributeContext entityInstAttrCtx = appCtx
-					.getBean(EntityInstanceAttributeContext.class);
-			final EntityFeatureExtractionContextFactory extCtxFactory = appCtx
-					.getBean(EntityFeatureExtractionContextFactory.class);
-			return new OnePositiveOneNegativeInstanceFactory(entityInstAttrCtx, trainingCtx.getDiagTransformer(),
-					extCtxFactory, TrainingConstants.RND);
-		}
-
-		@Override
-		public Function<ReferentConfidenceMapFactory, EventDialogueClassifier> getClassifierFactory() {
-			return TrainingConstants.SIMPLE_CLASSIFIER_FACTORY;
-		}
-	},
-	SENTIMENT(5) {
+	DIALOGIC(5) {
 
 		private SoftReference<CachingUtteranceSentimentRanker> uttSentimentRanker = new SoftReference<>(null);
 
@@ -126,7 +102,7 @@ enum Training {
 		private CachingUtteranceSentimentRanker fetchUttSentimentRanker() {
 			CachingUtteranceSentimentRanker result = uttSentimentRanker.get();
 			if (result == null) {
-				synchronized (SENTIMENT) {
+				synchronized (DIALOGIC) {
 					result = uttSentimentRanker.get();
 					if (result == null) {
 						result = createUttSentimentRanker();
@@ -135,6 +111,30 @@ enum Training {
 				}
 			}
 			return result;
+		}
+	},
+	ONE_NEG(1) {
+
+		@Override
+		public CachingEventDialogueTransformer createSymmetricalTrainingTestingEvgDiagTransformer(
+				final List<EventDialogueTransformer> diagTransformers) {
+			return createInstrUttFilteringTransformer(diagTransformers);
+		}
+
+		@Override
+		public TrainingInstancesFactory createTrainingInstsFactoryIterCount(final TrainingContext trainingCtx) {
+			final ApplicationContext appCtx = trainingCtx.getAppCtx();
+			final EntityInstanceAttributeContext entityInstAttrCtx = appCtx
+					.getBean(EntityInstanceAttributeContext.class);
+			final EntityFeatureExtractionContextFactory extCtxFactory = appCtx
+					.getBean(EntityFeatureExtractionContextFactory.class);
+			return new OnePositiveOneNegativeInstanceFactory(entityInstAttrCtx, trainingCtx.getDiagTransformer(),
+					extCtxFactory, TrainingConstants.RND);
+		}
+
+		@Override
+		public Function<ReferentConfidenceMapFactory, EventDialogueClassifier> getClassifierFactory() {
+			return TrainingConstants.SIMPLE_CLASSIFIER_FACTORY;
 		}
 	};
 
