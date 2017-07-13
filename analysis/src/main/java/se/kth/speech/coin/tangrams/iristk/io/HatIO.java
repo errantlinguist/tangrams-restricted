@@ -29,17 +29,17 @@ import javax.xml.bind.JAXBException;
  */
 public final class HatIO {
 
-	private static Reference<JAXBContext> JC = new SoftReference<>(null);
+	private static Reference<JAXBContext> jc = new SoftReference<>(null);
 
 	public static JAXBContext fetchContext() {
-		JAXBContext result = JC.get();
+		JAXBContext result = jc.get();
 		if (result == null) {
 			synchronized (HatIO.class) {
-				result = JC.get();
+				result = jc.get();
 				if (result == null) {
 					try {
 						result = JAXBContext.newInstance("se.kth.speech.hat.xsd");
-						JC = new SoftReference<>(result);
+						jc = new SoftReference<>(result);
 					} catch (final JAXBException e) {
 						throw new RuntimeException(e);
 					}
