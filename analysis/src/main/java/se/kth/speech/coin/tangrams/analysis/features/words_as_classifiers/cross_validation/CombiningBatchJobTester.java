@@ -21,7 +21,6 @@ import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -142,14 +141,14 @@ public final class CombiningBatchJobTester {
 											Arrays.asList(tokenizer, tokenFilter));
 							final TrainingContext trainingCtx = new TrainingContext(symmetricalDiagTransformer, appCtx,
 									backgroundJobExecutor);
-							final Entry<TrainingInstancesFactory, Integer> trainingInstsFactoryIterCount = trainingMethod
+							final TrainingInstancesFactory trainingInstsFactory = trainingMethod
 									.createTrainingInstsFactoryIterCount(trainingCtx);
-							final TestSetFactory testSetFactory = new TestSetFactory(
-									trainingInstsFactoryIterCount.getKey(), sessionDiagMgrCacheSupplier);
+							final TestSetFactory testSetFactory = new TestSetFactory(trainingInstsFactory,
+									sessionDiagMgrCacheSupplier);
 							final Tester tester = appCtx.getBean(Tester.class, testSetFactory,
 									symmetricalDiagTransformer, trainingMethod.getClassifierFactory(),
 									backgroundJobExecutor);
-							tester.setIterCount(trainingInstsFactoryIterCount.getValue());
+							tester.setIterCount(trainingMethod.getIterCount());
 							testerConfigurator.accept(tester);
 							final TestParameters testParams = new TestParameters(cleaningMethodSet, tokenizationMethod,
 									tokenType, tokenFilteringMethod, trainingMethod);
