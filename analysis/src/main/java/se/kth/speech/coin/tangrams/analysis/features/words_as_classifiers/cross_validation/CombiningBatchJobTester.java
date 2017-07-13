@@ -27,7 +27,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,9 +35,7 @@ import org.springframework.context.ApplicationContext;
 import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
 import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManagerCacheSupplier;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.ReferentConfidenceMapFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.CachingEventDialogueTransformer;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EventDialogueClassifier;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.TrainingInstancesFactory;
 
@@ -149,10 +146,9 @@ public final class CombiningBatchJobTester {
 									.getTrainingInstsFactoryFactory().apply(trainingCtx);
 							final TestSetFactory testSetFactory = new TestSetFactory(
 									trainingInstsFactoryIterCount.getKey(), sessionDiagMgrCacheSupplier);
-							final Function<ReferentConfidenceMapFactory, EventDialogueClassifier> classifierFactory = trainingMethod
-									.getClassifierFactory();
 							final Tester tester = appCtx.getBean(Tester.class, testSetFactory,
-									symmetricalDiagTransformer, classifierFactory, backgroundJobExecutor);
+									symmetricalDiagTransformer, trainingMethod.getClassifierFactory(),
+									backgroundJobExecutor);
 							tester.setIterCount(trainingInstsFactoryIterCount.getValue());
 							testerConfigurator.accept(tester);
 							final TestParameters testParams = new TestParameters(cleaningMethodSet, tokenizationMethod,
