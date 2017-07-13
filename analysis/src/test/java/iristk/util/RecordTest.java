@@ -40,14 +40,17 @@ public final class RecordTest {
 			super();
 		}
 
-		public TestRecord(final Map map) {
+		@SuppressWarnings("unused")
+		public TestRecord(final Map<?, ?> map) {
 			super(map);
 		}
 
+		@SuppressWarnings("unused")
 		public TestRecord(final Object... init) {
 			super(init);
 		}
 
+		@SuppressWarnings("unused")
 		public TestRecord(final Record initRecord, final Object... init) {
 			super(initRecord, init);
 		}

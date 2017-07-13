@@ -41,18 +41,22 @@ public final class EventTest {
 			super();
 		}
 
+		@SuppressWarnings("unused")
 		public TestEvent(final Event event) {
 			super(event);
 		}
 
+		@SuppressWarnings("unused")
 		public TestEvent(final String name) {
 			super(name);
 		}
 
+		@SuppressWarnings("unused")
 		public TestEvent(final String name, final Object... params) {
 			super(name, params);
 		}
 
+		@SuppressWarnings("unused")
 		public TestEvent(final String name, final Record parameters) {
 			super(name, parameters);
 		}
