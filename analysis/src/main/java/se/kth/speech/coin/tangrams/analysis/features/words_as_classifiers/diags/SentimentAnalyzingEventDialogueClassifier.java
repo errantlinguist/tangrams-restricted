@@ -77,7 +77,7 @@ public final class SentimentAnalyzingEventDialogueClassifier implements EventDia
 				final SentimentAnalyzingEventDialogueUtteranceSorter uttSorter = new SentimentAnalyzingEventDialogueUtteranceSorter(
 						uttSentimentRanker);
 				final SentimentAnalyzingEventDialogueUtteranceSorter.Result sortedUtts = uttSorter.apply(allUtts,
-						UtteranceMatchers.createEventSubmitterUtteranceMatcher(event));
+						event);
 				sortedUtts.getRefPosExamples().forEach(utt -> {
 					LOGGER.debug("Processing referent positive example: {}", utt);
 					utt.getTokens().stream().map(token -> new WeightedWordClass(token, 1.0))

@@ -36,7 +36,6 @@ import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionCont
 import se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttributeContext;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.SentimentAnalyzingEventDialogueUtteranceSorter;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.UtteranceMatchers;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 import weka.core.Instance;
 import weka.core.Instances;
@@ -117,7 +116,7 @@ public final class SentimentAnalyzingInstancesFactory extends AbstractSizeEstima
 					final SentimentAnalyzingEventDialogueUtteranceSorter uttSorter = new SentimentAnalyzingEventDialogueUtteranceSorter(
 							uttSentimentRanker);
 					final SentimentAnalyzingEventDialogueUtteranceSorter.Result sortedUtts = uttSorter.apply(allUtts,
-							UtteranceMatchers.createEventSubmitterUtteranceMatcher(event));
+							event);
 					final double observationWeight = 1.0;
 					{
 						// Instances for referent entity

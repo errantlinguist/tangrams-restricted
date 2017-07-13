@@ -25,6 +25,7 @@ import java.util.function.Predicate;
 import java.util.function.ToDoubleFunction;
 import java.util.stream.Stream;
 
+import iristk.system.Event;
 import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
 import se.kth.speech.Iterators;
@@ -35,8 +36,8 @@ import se.kth.speech.coin.tangrams.analysis.Utterance;
  * @since Jul 9, 2017
  *
  */
-public final class SentimentAnalyzingEventDialogueUtteranceSorter implements
-		BiFunction<List<Utterance>, Predicate<Utterance>, SentimentAnalyzingEventDialogueUtteranceSorter.Result> {
+public final class SentimentAnalyzingEventDialogueUtteranceSorter
+		implements BiFunction<List<Utterance>, Event, SentimentAnalyzingEventDialogueUtteranceSorter.Result> {
 
 	public static final class Result {
 
@@ -180,7 +181,11 @@ public final class SentimentAnalyzingEventDialogueUtteranceSorter implements
 	}
 
 	@Override
-	public Result apply(final List<Utterance> utts, final Predicate<Utterance> instructorUttMatcher) {
+	public Result apply(final List<Utterance> utts, final Event event) {
+		return apply(utts, UtteranceMatchers.createEventSubmitterUtteranceMatcher(event));
+	}
+
+	private Result apply(final List<Utterance> utts, final Predicate<Utterance> instructorUttMatcher) {
 		final int listLen = utts.isEmpty() ? 0 : utts.size() / 3 + 1;
 		final List<Utterance> refPosExamples = new ArrayList<>(listLen);
 		final List<Utterance> refNegExamples = new ArrayList<>(listLen);
