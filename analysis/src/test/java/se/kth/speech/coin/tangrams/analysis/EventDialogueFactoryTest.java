@@ -86,7 +86,6 @@ public final class EventDialogueFactoryTest {
 		Assert.assertEquals(gameHistories.size(), 1);
 		final GameHistory history = gameHistories.values().iterator().next();
 		final List<Event> historyEvents = history.getEventSequence().collect(Collectors.toList());
-		Assert.assertTrue(historyEvents.stream().allMatch(eventFilter));
 
 		final URL hatInfileUrl = TestDataResources.class.getResource(singleMoveSessionDataResLocStr + "/utts.xml");
 		LOGGER.info("Reading annotations from \"{}\".", hatInfileUrl);
