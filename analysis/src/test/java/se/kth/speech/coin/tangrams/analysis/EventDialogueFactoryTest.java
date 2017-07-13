@@ -52,9 +52,11 @@ import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
  */
 public final class EventDialogueFactoryTest {
 
+	private static final JAXBContext JC = HatIO.fetchContext();
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(EventDialogueFactoryTest.class);
 
-	private static final JAXBContext JC = HatIO.fetchContext();
+	private static final SegmentUtteranceFactory SEG_UTT_FACTORY = new SegmentUtteranceFactory(Segment::getSource);
 
 	/**
 	 * Test method for
@@ -88,13 +90,10 @@ public final class EventDialogueFactoryTest {
 		final List<Event> historyEvents = history.getEventSequence().collect(Collectors.toList());
 		Assert.assertTrue(historyEvents.stream().allMatch(eventFilter));
 
-		final URL hatInfileUrl = TestDataResources.class
-				.getResource(singleMoveSessionDataResLocStr + "/utts.xml");
+		final URL hatInfileUrl = TestDataResources.class.getResource(singleMoveSessionDataResLocStr + "/utts.xml");
 		LOGGER.info("Reading annotations from \"{}\".", hatInfileUrl);
 		final Annotation uttAnnots = (Annotation) JC.createUnmarshaller().unmarshal(hatInfileUrl);
-
-		final SegmentUtteranceFactory segUttFactory = new SegmentUtteranceFactory(Segment::getSource);
-		final List<Utterance> utts = segUttFactory.create(uttAnnots.getSegments().getSegment().stream())
+		final List<Utterance> utts = SEG_UTT_FACTORY.create(uttAnnots.getSegments().getSegment().stream())
 				.flatMap(List::stream).collect(Collectors.toList());
 
 		final EventDialogueFactory testInst = new EventDialogueFactory(eventFilter);
