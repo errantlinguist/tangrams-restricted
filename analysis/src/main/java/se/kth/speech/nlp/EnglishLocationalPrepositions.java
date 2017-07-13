@@ -20,14 +20,11 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
-import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.regex.Pattern;
 
 import org.slf4j.Logger;
@@ -42,33 +39,24 @@ import com.google.common.collect.Sets;
  */
 public final class EnglishLocationalPrepositions {
 
-	private static final ConcurrentMap<Class<EnglishLocationalPrepositions>, Reference<Set<List<String>>>> INSTANCES = new ConcurrentHashMap<>(
-			1);
+	private static SoftReference<Set<List<String>>> list = new SoftReference<>(null);
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(EnglishLocationalPrepositions.class);
 
 	private static final Pattern WHITESPACE_PATTERN = Pattern.compile("\\s+");
 
 	public static Set<List<String>> get() {
-		final Reference<Set<List<String>>> ref = INSTANCES.compute(EnglishLocationalPrepositions.class,
-				(key, oldValue) -> {
-					final Reference<Set<List<String>>> newValue;
-					if (oldValue == null) {
-						// No instance has yet been created; Create one
-						newValue = new SoftReference<>(loadSet());
-					} else if (oldValue.get() == null) {
-						// The old instance has already been deleted; Replace it
-						// with a
-						// new reference to a new instance
-						newValue = new SoftReference<>(loadSet());
-					} else {
-						// The existing instance has not yet been deleted;
-						// Re-use it
-						newValue = oldValue;
-					}
-					return newValue;
-				});
-		return ref.get();
+		Set<List<String>> result = list.get();
+		if (result == null) {
+			synchronized (EnglishLocationalPrepositions.class) {
+				result = list.get();
+				if (result == null) {
+					result = loadSet();
+					list = new SoftReference<>(result);
+				}
+			}
+		}
+		return result;
 	}
 
 	private static List<List<String>> loadList() {
