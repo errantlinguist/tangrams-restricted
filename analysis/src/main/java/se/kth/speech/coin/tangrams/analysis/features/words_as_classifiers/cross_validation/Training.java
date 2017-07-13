@@ -45,7 +45,14 @@ import se.kth.speech.nlp.stanford.StanfordCoreNLPConfigurationVariant;
 enum Training {
 	ALL_NEG {
 
-		private final Function<TrainingContext, Entry<TrainingInstancesFactory, Integer>> trainingInstsFactoryFactory = trainingCtx -> {
+		@Override
+		public CachingEventDialogueTransformer createSymmetricalTrainingTestingEvgDiagTransformer(
+				final List<EventDialogueTransformer> diagTransformers) {
+			return createInstrUttFilteringTransformer(diagTransformers);
+		}
+
+		@Override
+		public Entry<TrainingInstancesFactory, Integer> createTrainingInstsFactory(final TrainingContext trainingCtx) {
 			final ApplicationContext appCtx = trainingCtx.getAppCtx();
 			final EntityInstanceAttributeContext entityInstAttrCtx = appCtx
 					.getBean(EntityInstanceAttributeContext.class);
@@ -54,7 +61,14 @@ enum Training {
 			final OnePositiveMaximumNegativeInstancesFactory instsFactory = new OnePositiveMaximumNegativeInstancesFactory(
 					entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory);
 			return new MutablePair<>(instsFactory, 1);
-		};
+		}
+
+		@Override
+		public Function<ReferentConfidenceMapFactory, EventDialogueClassifier> getClassifierFactory() {
+			return TrainingConstants.SIMPLE_CLASSIFIER_FACTORY;
+		}
+	},
+	ONE_NEG {
 
 		@Override
 		public CachingEventDialogueTransformer createSymmetricalTrainingTestingEvgDiagTransformer(
@@ -63,18 +77,7 @@ enum Training {
 		}
 
 		@Override
-		public Function<ReferentConfidenceMapFactory, EventDialogueClassifier> getClassifierFactory() {
-			return TrainingConstants.SIMPLE_CLASSIFIER_FACTORY;
-		}
-
-		@Override
-		public Function<TrainingContext, Entry<TrainingInstancesFactory, Integer>> getTrainingInstsFactoryFactory() {
-			return trainingInstsFactoryFactory;
-		}
-	},
-	ONE_NEG {
-
-		private final Function<TrainingContext, Entry<TrainingInstancesFactory, Integer>> trainingInstsFactoryFactory = trainingCtx -> {
+		public Entry<TrainingInstancesFactory, Integer> createTrainingInstsFactory(final TrainingContext trainingCtx) {
 			final ApplicationContext appCtx = trainingCtx.getAppCtx();
 			final EntityInstanceAttributeContext entityInstAttrCtx = appCtx
 					.getBean(EntityInstanceAttributeContext.class);
@@ -83,36 +86,14 @@ enum Training {
 			final OnePositiveOneNegativeInstanceFactory instsFactory = new OnePositiveOneNegativeInstanceFactory(
 					entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory, TrainingConstants.RND);
 			return new MutablePair<>(instsFactory, 5);
-		};
-
-		@Override
-		public CachingEventDialogueTransformer createSymmetricalTrainingTestingEvgDiagTransformer(
-				final List<EventDialogueTransformer> diagTransformers) {
-			return createInstrUttFilteringTransformer(diagTransformers);
 		}
 
 		@Override
 		public Function<ReferentConfidenceMapFactory, EventDialogueClassifier> getClassifierFactory() {
 			return TrainingConstants.SIMPLE_CLASSIFIER_FACTORY;
 		}
-
-		@Override
-		public Function<TrainingContext, Entry<TrainingInstancesFactory, Integer>> getTrainingInstsFactoryFactory() {
-			return trainingInstsFactoryFactory;
-		}
 	},
 	SENTIMENT {
-
-		private final Function<TrainingContext, Entry<TrainingInstancesFactory, Integer>> trainingInstsFactoryFactory = trainingCtx -> {
-			final ApplicationContext appCtx = trainingCtx.getAppCtx();
-			final EntityInstanceAttributeContext entityInstAttrCtx = appCtx
-					.getBean(EntityInstanceAttributeContext.class);
-			final EntityFeatureExtractionContextFactory extCtxFactory = appCtx
-					.getBean(EntityFeatureExtractionContextFactory.class);
-			final SentimentAnalyzingInstancesFactory instsFactory = new SentimentAnalyzingInstancesFactory(
-					entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory, fetchUttSentimentRanker());
-			return new MutablePair<>(instsFactory, 1);
-		};
 
 		private SoftReference<CachingUtteranceSentimentRanker> uttSentimentRanker = new SoftReference<>(null);
 
@@ -125,14 +106,21 @@ enum Training {
 		}
 
 		@Override
-		public Function<ReferentConfidenceMapFactory, EventDialogueClassifier> getClassifierFactory() {
-			return (refConfMapFactory) -> new SentimentAnalyzingEventDialogueClassifier(fetchUttSentimentRanker(),
-					refConfMapFactory);
+		public Entry<TrainingInstancesFactory, Integer> createTrainingInstsFactory(final TrainingContext trainingCtx) {
+			final ApplicationContext appCtx = trainingCtx.getAppCtx();
+			final EntityInstanceAttributeContext entityInstAttrCtx = appCtx
+					.getBean(EntityInstanceAttributeContext.class);
+			final EntityFeatureExtractionContextFactory extCtxFactory = appCtx
+					.getBean(EntityFeatureExtractionContextFactory.class);
+			final SentimentAnalyzingInstancesFactory instsFactory = new SentimentAnalyzingInstancesFactory(
+					entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory, fetchUttSentimentRanker());
+			return new MutablePair<>(instsFactory, 1);
 		}
 
 		@Override
-		public Function<TrainingContext, Entry<TrainingInstancesFactory, Integer>> getTrainingInstsFactoryFactory() {
-			return trainingInstsFactoryFactory;
+		public Function<ReferentConfidenceMapFactory, EventDialogueClassifier> getClassifierFactory() {
+			return (refConfMapFactory) -> new SentimentAnalyzingEventDialogueClassifier(fetchUttSentimentRanker(),
+					refConfMapFactory);
 		}
 
 		private CachingUtteranceSentimentRanker createUttSentimentRanker() {
@@ -169,14 +157,11 @@ enum Training {
 	public abstract CachingEventDialogueTransformer createSymmetricalTrainingTestingEvgDiagTransformer(
 			final List<EventDialogueTransformer> diagTransformers);
 
+	public abstract Entry<TrainingInstancesFactory, Integer> createTrainingInstsFactory(TrainingContext trainingCtx);
+
 	/**
 	 * @return the classifierFactory
 	 */
 	public abstract Function<ReferentConfidenceMapFactory, EventDialogueClassifier> getClassifierFactory();
-
-	/**
-	 * @return the trainingMethod
-	 */
-	public abstract Function<TrainingContext, Entry<TrainingInstancesFactory, Integer>> getTrainingInstsFactoryFactory();
 
 }
