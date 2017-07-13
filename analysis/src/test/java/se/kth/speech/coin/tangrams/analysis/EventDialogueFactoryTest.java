@@ -85,8 +85,6 @@ public final class EventDialogueFactoryTest {
 		}
 		Assert.assertEquals(gameHistories.size(), 1);
 		final GameHistory history = gameHistories.values().iterator().next();
-		// TODO: Make a LoggedEventsTest class and put this assertion in that
-		// class
 		final List<Event> historyEvents = history.getEventSequence().collect(Collectors.toList());
 		Assert.assertTrue(historyEvents.stream().allMatch(eventFilter));
 
