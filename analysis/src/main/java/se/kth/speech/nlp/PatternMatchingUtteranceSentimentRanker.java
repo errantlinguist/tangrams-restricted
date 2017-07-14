@@ -21,13 +21,12 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
 import java.lang.ref.SoftReference;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 import java.util.function.ToDoubleFunction;
 import java.util.regex.Pattern;
 
@@ -127,7 +126,7 @@ public final class PatternMatchingUtteranceSentimentRanker implements ToDoubleFu
 	 */
 	@Override
 	public double applyAsDouble(final Utterance utt) {
-		final Set<List<String>> maxLengthSentimentTokenSeqs = createMaxLengthMatchingTokenSeqSet(utt.getTokens());
+		final List<List<String>> maxLengthSentimentTokenSeqs = createMaxLengthMatchingTokenSeqList(utt.getTokens());
 		final double sentRankSum = maxLengthSentimentTokenSeqs.stream().mapToDouble(sentimentRanks::getDouble).sum();
 		assert !Double.isNaN(sentRankSum);
 		final double result;
@@ -141,32 +140,27 @@ public final class PatternMatchingUtteranceSentimentRanker implements ToDoubleFu
 		return result;
 	}
 
-	private Set<List<String>> createMaxLengthMatchingTokenSeqSet(final List<String> tokens) {
-		Set<List<String>> result;
-		if (sentimentRanks.containsKey(tokens)) {
-			result = Collections.singleton(tokens);
-		} else {
-			result = new HashSet<>();
-			int maxTokenSeqLength = Integer.MIN_VALUE;
+	private List<List<String>> createMaxLengthMatchingTokenSeqList(final List<String> tokens) {
+		List<List<String>> result = new ArrayList<>();
+		int maxTokenSeqLength = Integer.MIN_VALUE;
 
-			final ObjectSortedSet<List<String>> shorterTokenSeqs = sentimentRanks.keySet().tailSet(tokens);
-			for (final List<String> sentimentTokenSeq : shorterTokenSeqs) {
-				// https://stackoverflow.com/a/32865087
-				if (Collections.indexOfSubList(tokens, sentimentTokenSeq) > -1) {
-					final int tokenSeqLength = sentimentTokenSeq.size();
-					if (maxTokenSeqLength < tokenSeqLength) {
-						// Reset the set of longest matching sequences
-						result = new HashSet<>();
-						result.add(sentimentTokenSeq);
-						maxTokenSeqLength = tokenSeqLength;
-					} else if (maxTokenSeqLength == tokenSeqLength) {
-						result.add(sentimentTokenSeq);
-					} else if (!result.isEmpty()) {
-						// The next elements can only be shorter than the ones
-						// which
-						// have already been seen; Break out of the loop
-						break;
-					}
+		final ObjectSortedSet<List<String>> eqOrShorterTokenSeqs = sentimentRanks.keySet().tailSet(tokens);
+		for (final List<String> sentimentTokenSeq : eqOrShorterTokenSeqs) {
+			// https://stackoverflow.com/a/32865087
+			if (Collections.indexOfSubList(tokens, sentimentTokenSeq) > -1) {
+				final int tokenSeqLength = sentimentTokenSeq.size();
+				if (maxTokenSeqLength < tokenSeqLength) {
+					// Reset the set of longest matching sequences
+					result = new ArrayList<>();
+					result.add(sentimentTokenSeq);
+					maxTokenSeqLength = tokenSeqLength;
+				} else if (maxTokenSeqLength == tokenSeqLength) {
+					result.add(sentimentTokenSeq);
+				} else if (!result.isEmpty()) {
+					// The next elements can only be shorter than the ones
+					// which
+					// have already been seen; Break out of the loop
+					break;
 				}
 			}
 		}
