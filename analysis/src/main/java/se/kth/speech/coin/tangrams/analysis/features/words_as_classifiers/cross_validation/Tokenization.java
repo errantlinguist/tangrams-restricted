@@ -73,8 +73,9 @@ enum Tokenization implements Function<TokenizationContext, EventDialogueTransfor
 		protected TokenizingEventDialogueTransformer createMainTransformer(final TokenizationContext context) {
 			final Entry<Function<CoreLabel, String>, StanfordCoreNLPConfigurationVariant> tokenExtractor = TOKEN_TYPE_EXTRACTORS
 					.get(context.getTokenType());
-			return new TokenizingEventDialogueTransformer(new PhraseExtractingParsingTokenizer(
-					tokenExtractor.getValue(), tokenExtractor.getKey(), NP_WHITELISTING_PHRASE_MATCHER));
+			return new TokenizingEventDialogueTransformer(
+					new PhraseExtractingParsingTokenizer(tokenExtractor.getValue(), tokenExtractor.getKey(),
+							NP_WHITELISTING_PHRASE_MATCHER, context.getExtractionResultsHook()));
 		}
 	},
 	NPS_WITHOUT_PPS {
@@ -83,9 +84,9 @@ enum Tokenization implements Function<TokenizationContext, EventDialogueTransfor
 		protected TokenizingEventDialogueTransformer createMainTransformer(final TokenizationContext context) {
 			final Entry<Function<CoreLabel, String>, StanfordCoreNLPConfigurationVariant> tokenExtractor = TOKEN_TYPE_EXTRACTORS
 					.get(context.getTokenType());
-			return new TokenizingEventDialogueTransformer(
-					new PhraseExtractingParsingTokenizer(tokenExtractor.getValue(), tokenExtractor.getKey(),
-							NP_WHITELISTING_PHRASE_MATCHER, LOCATIONAL_PP_PRUNING_MATCHER));
+			return new TokenizingEventDialogueTransformer(new PhraseExtractingParsingTokenizer(
+					tokenExtractor.getValue(), tokenExtractor.getKey(), NP_WHITELISTING_PHRASE_MATCHER,
+					LOCATIONAL_PP_PRUNING_MATCHER, context.getExtractionResultsHook()));
 		}
 	},
 	PP_REMOVER {

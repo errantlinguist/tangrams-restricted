@@ -16,14 +16,16 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation;
 
-import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
+import java.util.function.ToDoubleFunction;
 
 import org.springframework.context.ApplicationContext;
 
-import edu.stanford.nlp.pipeline.StanfordCoreNLP;
+import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
+import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
+import se.kth.speech.coin.tangrams.analysis.Utterance;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionContextFactory;
 import se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttributeContext;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.ReferentConfidenceMapFactory;
@@ -37,8 +39,7 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.traini
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.OnePositiveOneNegativeInstanceFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.SentimentAnalyzingInstancesFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.TrainingInstancesFactory;
-import se.kth.speech.nlp.stanford.CachingUtteranceSentimentRanker;
-import se.kth.speech.nlp.stanford.StanfordCoreNLPConfigurationVariant;
+import se.kth.speech.nlp.PatternMatchingUtteranceSentimentRanker;
 
 enum Training {
 	ALL_NEG(1) {
@@ -67,8 +68,6 @@ enum Training {
 	},
 	DIALOGIC(5) {
 
-		private SoftReference<CachingUtteranceSentimentRanker> uttSentimentRanker = new SoftReference<>(null);
-
 		@Override
 		public CachingEventDialogueTransformer createSymmetricalTrainingTestingEvgDiagTransformer(
 				final List<EventDialogueTransformer> diagTransformers) {
@@ -85,33 +84,35 @@ enum Training {
 			final EntityFeatureExtractionContextFactory extCtxFactory = appCtx
 					.getBean(EntityFeatureExtractionContextFactory.class);
 			return new SentimentAnalyzingInstancesFactory(entityInstAttrCtx, trainingCtx.getDiagTransformer(),
-					extCtxFactory, fetchUttSentimentRanker());
+					extCtxFactory, createCachingUttSentimentRanker());
 		}
 
 		@Override
 		public Function<ReferentConfidenceMapFactory, EventDialogueClassifier> getClassifierFactory() {
-			return (refConfMapFactory) -> new SentimentAnalyzingEventDialogueClassifier(fetchUttSentimentRanker(),
-					refConfMapFactory);
+			return (refConfMapFactory) -> new SentimentAnalyzingEventDialogueClassifier(
+					createCachingUttSentimentRanker(), refConfMapFactory);
 		}
 
-		private CachingUtteranceSentimentRanker createUttSentimentRanker() {
-			final StanfordCoreNLP pipeline = StanfordCoreNLPConfigurationVariant.TOKENIZING_PARSING_SENTIMENT.get();
-			return new CachingUtteranceSentimentRanker(pipeline, TrainingConstants.ESTIMATED_UNIQUE_UTT_COUNT);
-		}
-
-		private CachingUtteranceSentimentRanker fetchUttSentimentRanker() {
-			CachingUtteranceSentimentRanker result = uttSentimentRanker.get();
-			if (result == null) {
-				synchronized (DIALOGIC) {
-					result = uttSentimentRanker.get();
-					if (result == null) {
-						result = createUttSentimentRanker();
-						uttSentimentRanker = new SoftReference<>(result);
+		private ToDoubleFunction<Utterance> createCachingUttSentimentRanker() {
+			final Object2DoubleMap<Utterance> cache = new Object2DoubleOpenHashMap<>(
+					TrainingConstants.ESTIMATED_UNIQUE_UTT_COUNT);
+			cache.defaultReturnValue(Double.NaN);
+			final PatternMatchingUtteranceSentimentRanker ranker = new PatternMatchingUtteranceSentimentRanker();
+			return utt -> {
+				double result = cache.getDouble(utt);
+				if (Double.isNaN(result)) {
+					synchronized (cache) {
+						result = cache.getDouble(utt);
+						if (Double.isNaN(result)) {
+							result = ranker.applyAsDouble(utt);
+							cache.put(utt, result);
+						}
 					}
 				}
-			}
-			return result;
+				return result;
+			};
 		}
+
 	},
 	ONE_NEG(1) {
 

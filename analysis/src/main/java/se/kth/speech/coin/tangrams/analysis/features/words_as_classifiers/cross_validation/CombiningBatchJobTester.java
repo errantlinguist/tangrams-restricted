@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
@@ -31,6 +32,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
 
+import edu.stanford.nlp.trees.Tree;
+import edu.stanford.nlp.util.CoreMap;
 import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
 import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManagerCacheSupplier;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
@@ -107,17 +110,21 @@ public final class CombiningBatchJobTester {
 
 	private final BiConsumer<? super IncompleteResults, ? super Throwable> errorHandler;
 
+	private final BiConsumer<? super CoreMap, ? super List<Tree>> extractionResultsHook;
+
 	private final Consumer<? super Tester> testerConfigurator;
 
 	public CombiningBatchJobTester(final ExecutorService backgroundJobExecutor, final ApplicationContext appCtx,
 			final Consumer<? super BatchJobSummary> batchJobResultHandler,
 			final BiConsumer<? super IncompleteResults, ? super Throwable> errorHandler,
-			final Consumer<? super Tester> testerConfigurator) {
+			final Consumer<? super Tester> testerConfigurator,
+			final BiConsumer<? super CoreMap, ? super List<Tree>> extractionResultsHook) {
 		this.backgroundJobExecutor = backgroundJobExecutor;
 		this.appCtx = appCtx;
 		this.batchJobResultHandler = batchJobResultHandler;
 		this.errorHandler = errorHandler;
 		this.testerConfigurator = testerConfigurator;
+		this.extractionResultsHook = extractionResultsHook;
 	}
 
 	public void accept(final Input input) throws ClassificationException, ExecutionException, IOException {
@@ -130,7 +137,7 @@ public final class CombiningBatchJobTester {
 				for (final Tokenization tokenizationMethod : input.tokenizationMethods) {
 					for (final TokenType tokenType : input.tokenTypes) {
 						final TokenizationContext tokenizationContext = new TokenizationContext(cleaningMethodSet,
-								tokenType, backgroundJobExecutor);
+								tokenType, backgroundJobExecutor, extractionResultsHook);
 						final EventDialogueTransformer tokenizer = tokenizationMethod.apply(tokenizationContext);
 
 						for (final TokenFiltering tokenFilteringMethod : input.tokenFilteringMethods) {

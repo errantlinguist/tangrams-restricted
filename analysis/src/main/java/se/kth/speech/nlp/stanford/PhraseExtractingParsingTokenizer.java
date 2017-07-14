@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.Deque;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -63,30 +64,33 @@ public final class PhraseExtractingParsingTokenizer extends AbstractTokenizer {
 
 	private final Predicate<? super Tree> subTreeMatcher;
 
+	private final BiConsumer<? super CoreMap, ? super List<Tree>> extractionResultsHook;
+
 	public PhraseExtractingParsingTokenizer(final StanfordCoreNLPConfigurationVariant annotConfig,
-			final Function<? super CoreLabel, String> labelTokenExtractor,
-			final Predicate<? super Tree> subTreeMatcher) {
-		this(annotConfig, labelTokenExtractor, subTreeMatcher, subTreeBranch -> true);
+			final Function<? super CoreLabel, String> labelTokenExtractor, final Predicate<? super Tree> subTreeMatcher,
+			final BiConsumer<? super CoreMap, ? super List<Tree>> extractionResultsHook) {
+		this(annotConfig, labelTokenExtractor, subTreeMatcher, subTreeBranch -> true, extractionResultsHook);
 	}
 
 	public PhraseExtractingParsingTokenizer(final StanfordCoreNLPConfigurationVariant annotConfig,
 			final Function<? super CoreLabel, String> labelTokenExtractor, final Predicate<? super Tree> subTreeMatcher,
-			final Predicate<Tree> subTreeBranchPruningPositiveFilter) {
+			final Predicate<Tree> subTreeBranchPruningPositiveFilter,
+			final BiConsumer<? super CoreMap, ? super List<Tree>> extractionResultsHook) {
 		super(annotConfig);
 		this.labelTokenExtractor = labelTokenExtractor;
 		this.subTreeMatcher = subTreeMatcher;
 		this.subTreeBranchPruningPositiveFilter = subTreeBranchPruningPositiveFilter;
+		this.extractionResultsHook = extractionResultsHook;
 	}
 
 	private void handleExtractedPhrases(final CoreMap sent, final List<Tree> extractedPhrases,
 			final ArrayList<CoreLabel> resultWords) {
+		extractionResultsHook.accept(sent, extractedPhrases);
 		if (extractedPhrases.isEmpty()) {
 			final int newFailedExtractionCount = failedExtractionCount.incrementAndGet();
-//			LOGGER.info("No phrases extracted ({} total failures); Giving up for sentence \"{}\".",
-//					newFailedExtractionCount, sent.toString());
-			 LOGGER.info("No phrases extracted ({} total failures); Falling back to using entire sentence \"{}\".", newFailedExtractionCount,
-			 sent.toString());
-			 addTokens(sent, resultWords);
+			LOGGER.debug("No phrases extracted ({} total failures); Falling back to using entire sentence \"{}\".",
+					newFailedExtractionCount, sent.toString());
+			addTokens(sent, resultWords);
 		} else {
 			for (final Tree extractedPhrase : extractedPhrases) {
 				final List<CoreLabel> phaseLabels = extractedPhrase.taggedLabeledYield();

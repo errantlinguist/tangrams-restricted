@@ -16,9 +16,13 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation;
 
+import java.io.BufferedWriter;
 import java.io.File;
 import java.io.PrintWriter;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.List;
@@ -59,6 +63,8 @@ public final class CombiningBatchJobTestSingleFileWriter {
 
 	private static final List<DialogueAnalysisSummaryFactory.SummaryDatum> DEFAULT_DATA_TO_WRITE = createDefaultDatumOrderingList();
 
+	private static final String EXTRACTION_LOG_FILE_SUFFIX = ".extraction.tsv";
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(CombiningBatchJobTestSingleFileWriter.class);
 
 	private static final String NULL_CELL_VALUE_REPR = "?";
@@ -91,20 +97,36 @@ public final class CombiningBatchJobTestSingleFileWriter {
 					}
 				}
 
-				try (PrintWriter out = CLIParameters
-						.parseOutpath((File) cl.getParsedOptionValue(CLITestParameter.OUTPATH.optName))) {
-					final CombiningBatchJobTestSingleFileWriter writer = new CombiningBatchJobTestSingleFileWriter(out,
-							true);
-					try (final ClassPathXmlApplicationContext appCtx = new ClassPathXmlApplicationContext(
-							"combining-batch-tester.xml", CombiningBatchJobTestSingleFileWriter.class)) {
-						final CombiningBatchJobTester tester = new CombiningBatchJobTester(backgroundJobExecutor,
-								appCtx, writer::write, writer::writeError, testerConfigurator);
-						tester.accept(input);
-					}
-					LOGGER.info("Shutting down executor service.");
-					backgroundJobExecutor.shutdown();
-					LOGGER.info("Successfully shut down executor service.");
+				final File outFile = (File) cl.getParsedOptionValue(CLITestParameter.OUTPATH.optName);
 
+				Path extractionLogOutPath;
+				if (outFile == null) {
+					final String filename = CombiningBatchJobTester.class.getSimpleName() + "-"
+							+ System.currentTimeMillis() + EXTRACTION_LOG_FILE_SUFFIX;
+					extractionLogOutPath = Paths.get(System.getProperty("user.dir"), filename);
+				} else {
+					extractionLogOutPath = Paths.get(outFile.getPath() + EXTRACTION_LOG_FILE_SUFFIX);
+				}
+				LOGGER.info("Will write phrase-extraction log to \"{}\".", extractionLogOutPath);
+				try (BufferedWriter extrLogOut = Files.newBufferedWriter(extractionLogOutPath,
+						StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
+					final ExtractionLogWriter extrLogWriter = new ExtractionLogWriter(extrLogOut);
+
+					try (PrintWriter out = CLIParameters.parseOutpath(outFile)) {
+						final CombiningBatchJobTestSingleFileWriter writer = new CombiningBatchJobTestSingleFileWriter(
+								out, true);
+						try (final ClassPathXmlApplicationContext appCtx = new ClassPathXmlApplicationContext(
+								"combining-batch-tester.xml", CombiningBatchJobTestSingleFileWriter.class)) {
+							final CombiningBatchJobTester tester = new CombiningBatchJobTester(backgroundJobExecutor,
+									appCtx, writer::write, writer::writeError, testerConfigurator,
+									extrLogWriter);
+							tester.accept(input);
+						}
+						LOGGER.info("Shutting down executor service.");
+						backgroundJobExecutor.shutdown();
+						LOGGER.info("Successfully shut down executor service.");
+
+					}
 				}
 			} catch (final Exception e) {
 				shutdownExceptionally(backgroundJobExecutor);
@@ -223,7 +245,10 @@ public final class CombiningBatchJobTestSingleFileWriter {
 	}
 
 	public void writeError(final IncompleteResults incompleteResults, final Throwable thrown) {
-		LOGGER.error(String.format("An error occurred while running test which was started at \"%s\".", TestParameterReporting.TIMESTAMP_FORMATTER.format(incompleteResults.getTestStartTime())), thrown);
+		LOGGER.error(
+				String.format("An error occurred while running test which was started at \"%s\".",
+						TestParameterReporting.TIMESTAMP_FORMATTER.format(incompleteResults.getTestStartTime())),
+				thrown);
 		final String errorDesc = String.format("%s: %s", thrown.getClass().getName(), thrown.getLocalizedMessage());
 
 		final Stream.Builder<String> rowCellValBuilder = Stream.builder();

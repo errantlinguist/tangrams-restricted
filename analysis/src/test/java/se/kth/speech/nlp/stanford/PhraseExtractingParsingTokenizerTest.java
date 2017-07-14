@@ -47,10 +47,12 @@ public final class PhraseExtractingParsingTokenizerTest {
 	private static final PhraseExtractingParsingTokenizer TEST_INST;
 
 	static {
-		TEST_INST = new PhraseExtractingParsingTokenizer(
-				StanfordCoreNLPConfigurationVariant.TOKENIZING_PARSING, CoreLabel::word, subTree -> {
+		TEST_INST = new PhraseExtractingParsingTokenizer(StanfordCoreNLPConfigurationVariant.TOKENIZING_PARSING,
+				CoreLabel::word, subTree -> {
 					final Label label = subTree.label();
 					return label == null ? false : "NP".equals(label.value());
+				}, (sent, extractedPhrases) -> {
+					// Do nothing
 				});
 	}
 

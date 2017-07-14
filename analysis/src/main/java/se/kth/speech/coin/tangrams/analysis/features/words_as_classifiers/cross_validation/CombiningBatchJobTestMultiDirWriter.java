@@ -66,8 +66,8 @@ public final class CombiningBatchJobTestMultiDirWriter {
 		APPEND_SUMMARY("a") {
 			@Override
 			public Option get() {
-				return Option.builder(optName).longOpt("append")
-						.desc("If this flag is present, the summary file is appended to rather than being truncated and written anew.")
+				return Option.builder(optName).longOpt("append").desc(
+						"If this flag is present, the summary file is appended to rather than being truncated and written anew.")
 						.build();
 			}
 		},
@@ -159,7 +159,9 @@ public final class CombiningBatchJobTestMultiDirWriter {
 				try (final ClassPathXmlApplicationContext appCtx = new ClassPathXmlApplicationContext(
 						"combining-batch-tester.xml", CombiningBatchJobTestMultiDirWriter.class)) {
 					final CombiningBatchJobTester tester = new CombiningBatchJobTester(backgroundJobExecutor, appCtx,
-							writer::write, writer::writeError, testerConfigurator);
+							writer::write, writer::writeError, testerConfigurator, (sent, extractedPhrases) -> {
+								// Do nothing
+							});
 					tester.accept(input);
 				}
 				LOGGER.info("Shutting down executor service.");
@@ -280,7 +282,10 @@ public final class CombiningBatchJobTestMultiDirWriter {
 	}
 
 	public void writeError(final IncompleteResults incompleteResults, final Throwable thrown) {
-		LOGGER.error(String.format("An error occurred while running test which was started at \"%s\".", TestParameterReporting.TIMESTAMP_FORMATTER.format(incompleteResults.getTestStartTime())), thrown);
+		LOGGER.error(
+				String.format("An error occurred while running test which was started at \"%s\".",
+						TestParameterReporting.TIMESTAMP_FORMATTER.format(incompleteResults.getTestStartTime())),
+				thrown);
 		if (thrown instanceof OutOfMemoryError) {
 			Runtime.getRuntime().gc();
 		}
