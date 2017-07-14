@@ -43,7 +43,7 @@ public final class SentimentAnalyzingEventDialogueUtteranceSorter
 	 * @FIXME: Add structure which allows one to see which selector utts preceding which instructor utt
 	 * 
 	 * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
-	 * @since Jul 13, 2017
+	 * @since Jul 9, 2017
 	 *
 	 */
 	public static final class Result {
