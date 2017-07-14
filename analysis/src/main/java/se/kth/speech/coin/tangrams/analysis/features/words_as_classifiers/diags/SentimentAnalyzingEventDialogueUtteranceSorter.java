@@ -39,6 +39,13 @@ import se.kth.speech.coin.tangrams.analysis.Utterance;
 public final class SentimentAnalyzingEventDialogueUtteranceSorter
 		implements BiFunction<List<Utterance>, Event, SentimentAnalyzingEventDialogueUtteranceSorter.Result> {
 
+	/**
+	 * @FIXME: Add structure which allows one to see which selector utts preceding which instructor utt
+	 * 
+	 * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
+	 * @since Jul 13, 2017
+	 *
+	 */
 	public static final class Result {
 
 		private final List<Utterance> otherEntityNegativeExamples;
