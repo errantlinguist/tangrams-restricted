@@ -129,6 +129,7 @@ public final class PatternMatchingUtteranceSentimentRanker implements ToDoubleFu
 	public double applyAsDouble(final Utterance utt) {
 		final Set<List<String>> maxLengthSentimentTokenSeqs = createMaxLengthMatchingTokenSeqSet(utt.getTokens());
 		final double sentRankSum = maxLengthSentimentTokenSeqs.stream().mapToDouble(sentimentRanks::getDouble).sum();
+		assert !Double.isNaN(sentRankSum);
 		final double result;
 		if (sentRankSum < 0) {
 			result = -1.0;
