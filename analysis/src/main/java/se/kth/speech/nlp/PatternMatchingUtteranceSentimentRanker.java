@@ -35,8 +35,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import it.unimi.dsi.fastutil.objects.Object2DoubleAVLTreeMap;
-import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 import it.unimi.dsi.fastutil.objects.Object2DoubleSortedMap;
+import it.unimi.dsi.fastutil.objects.ObjectSortedSet;
 import se.kth.speech.coin.tangrams.analysis.Utterance;
 
 /**
@@ -110,13 +110,13 @@ public final class PatternMatchingUtteranceSentimentRanker implements ToDoubleFu
 		return result;
 	}
 
-	private final Object2DoubleMap<List<String>> sentimentRanks;
+	private final Object2DoubleSortedMap<List<String>> sentimentRanks;
 
 	public PatternMatchingUtteranceSentimentRanker() {
 		this(fetchSentimentRanks());
 	}
 
-	private PatternMatchingUtteranceSentimentRanker(final Object2DoubleMap<List<String>> sentimentRanks) {
+	private PatternMatchingUtteranceSentimentRanker(final Object2DoubleSortedMap<List<String>> sentimentRanks) {
 		this.sentimentRanks = sentimentRanks;
 	}
 
@@ -149,7 +149,8 @@ public final class PatternMatchingUtteranceSentimentRanker implements ToDoubleFu
 			result = new HashSet<>();
 			int maxTokenSeqLength = Integer.MIN_VALUE;
 
-			for (final List<String> sentimentTokenSeq : sentimentRanks.keySet()) {
+			final ObjectSortedSet<List<String>> shorterTokenSeqs = sentimentRanks.keySet().tailSet(tokens);
+			for (final List<String> sentimentTokenSeq : shorterTokenSeqs) {
 				// https://stackoverflow.com/a/32865087
 				if (Collections.indexOfSubList(tokens, sentimentTokenSeq) > -1) {
 					final int tokenSeqLength = sentimentTokenSeq.size();
