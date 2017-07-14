@@ -21,8 +21,10 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.UncheckedIOException;
 import java.lang.ref.SoftReference;
-import java.util.Collection;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.function.ToDoubleFunction;
 import java.util.regex.Pattern;
@@ -32,8 +34,6 @@ import org.slf4j.LoggerFactory;
 
 import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
-import it.unimi.dsi.fastutil.objects.Object2IntMap;
-import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import se.kth.speech.coin.tangrams.analysis.Utterance;
 
 /**
@@ -47,21 +47,12 @@ public final class PatternMatchingUtteranceSentimentRanker implements ToDoubleFu
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(PatternMatchingUtteranceSentimentRanker.class);
 
-	private static SoftReference<Object2DoubleMap<String>> singletonSentimentRanksRef = new SoftReference<>(null);
+	private static SoftReference<Object2DoubleMap<List<String>>> singletonSentimentRanksRef = new SoftReference<>(null);
 
 	private static final Pattern WHITESPACE_PATTERN = Pattern.compile("\\s+");
 
-	private static Object2IntMap<String> createTokenSequenceLengthMap(final Collection<String> tokenSeqs) {
-		final Object2IntMap<String> result = new Object2IntOpenHashMap<>(tokenSeqs.size());
-		for (final String tokenSeq : tokenSeqs) {
-			final String[] tokens = WHITESPACE_PATTERN.split(tokenSeq);
-			result.put(tokenSeq, tokens.length);
-		}
-		return result;
-	}
-
-	private static Object2DoubleMap<String> fetchSentimentRanks() {
-		Object2DoubleMap<String> result = singletonSentimentRanksRef.get();
+	private static Object2DoubleMap<List<String>> fetchSentimentRanks() {
+		Object2DoubleMap<List<String>> result = singletonSentimentRanksRef.get();
 		if (result == null) {
 			synchronized (PatternMatchingUtteranceSentimentRanker.class) {
 				result = singletonSentimentRanksRef.get();
@@ -74,15 +65,16 @@ public final class PatternMatchingUtteranceSentimentRanker implements ToDoubleFu
 		return result;
 	}
 
-	private static Object2DoubleMap<String> loadSentimentRankMap() {
-		final Object2DoubleMap<String> result = new Object2DoubleOpenHashMap<>();
+	private static Object2DoubleMap<List<String>> loadSentimentRankMap() {
+		final Object2DoubleMap<List<String>> result = new Object2DoubleOpenHashMap<>();
 		result.defaultReturnValue(Double.NaN);
 		try (final BufferedReader reader = new BufferedReader(new InputStreamReader(
 				PatternMatchingUtteranceSentimentRanker.class.getResourceAsStream("sentiment-patterns.tsv")))) {
 			for (String line = reader.readLine(); line != null; line = reader.readLine()) {
 				final String[] row = COLUMN_DELIMITER_PATTERN.split(line);
 				final double sentimentRank = Double.parseDouble(row[0]);
-				result.put(row[1], sentimentRank);
+				final List<String> tokens = Arrays.asList(WHITESPACE_PATTERN.split(row[1]));
+				result.put(tokens, sentimentRank);
 			}
 		} catch (final IOException e) {
 			throw new UncheckedIOException(e);
@@ -91,17 +83,14 @@ public final class PatternMatchingUtteranceSentimentRanker implements ToDoubleFu
 		return result;
 	}
 
-	private final Object2DoubleMap<String> sentimentRanks;
-
-	private final Object2IntMap<String> tokenSeqLengths;
+	private final Object2DoubleMap<List<String>> sentimentRanks;
 
 	public PatternMatchingUtteranceSentimentRanker() {
 		this(fetchSentimentRanks());
 	}
 
-	private PatternMatchingUtteranceSentimentRanker(final Object2DoubleMap<String> sentimentRanks) {
+	private PatternMatchingUtteranceSentimentRanker(final Object2DoubleMap<List<String>> sentimentRanks) {
 		this.sentimentRanks = sentimentRanks;
-		tokenSeqLengths = createTokenSequenceLengthMap(sentimentRanks.keySet());
 	}
 
 	/*
@@ -111,8 +100,7 @@ public final class PatternMatchingUtteranceSentimentRanker implements ToDoubleFu
 	 */
 	@Override
 	public double applyAsDouble(final Utterance utt) {
-		final String tokenRepr = utt.getTokenStr();
-		final Set<String> maxLengthSentimentTokenSeqs = createMaxLengthMatchingTokenSeqSet(tokenRepr);
+		final Set<List<String>> maxLengthSentimentTokenSeqs = createMaxLengthMatchingTokenSeqSet(utt.getTokens());
 		final double sentRankSum = maxLengthSentimentTokenSeqs.stream().mapToDouble(sentimentRanks::getDouble).sum();
 		final double result;
 		if (sentRankSum < 0) {
@@ -125,13 +113,14 @@ public final class PatternMatchingUtteranceSentimentRanker implements ToDoubleFu
 		return result;
 	}
 
-	private Set<String> createMaxLengthMatchingTokenSeqSet(final String tokenRepr) {
-		Set<String> result = new HashSet<>();
+	private Set<List<String>> createMaxLengthMatchingTokenSeqSet(final List<String> tokens) {
+		Set<List<String>> result = new HashSet<>();
 		int maxTokenSeqLength = Integer.MIN_VALUE;
 
-		for (final String sentimentTokenSeq : sentimentRanks.keySet()) {
-			if (tokenRepr.contains(sentimentTokenSeq)) {
-				final int tokenSeqLength = tokenSeqLengths.getInt(sentimentTokenSeq);
+		for (final List<String> sentimentTokenSeq : sentimentRanks.keySet()) {
+			// https://stackoverflow.com/a/32865087
+			if (Collections.indexOfSubList(tokens, sentimentTokenSeq) > -1) {
+				final int tokenSeqLength = sentimentTokenSeq.size();
 				if (maxTokenSeqLength < tokenSeqLength) {
 					// Reset the set of longest matching sequences
 					result = new HashSet<>();
