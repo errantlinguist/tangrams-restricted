@@ -74,17 +74,16 @@ public final class SentimentAnalyzingEventDialogueUtteranceSorterTest {
 		event.setTime(EventTimes.FORMATTER.format(LocalDateTime.now()));
 		event.put(GameManagementEvent.Attribute.PLAYER_ID.toString(), instructorPlayerId);
 		final List<Utterance> utts = Arrays.asList(
-				new Utterance("1", instructorPlayerId, Arrays.asList("it's the red one"), 0.02f, 1.0f),
-				new Utterance("2", selectorPlayerId, Arrays.asList("the big one right"), 1.2f, 2.0f),
-				new Utterance("3", instructorPlayerId, Arrays.asList("yeah right"), 2.2f, 3.0f));
+				new Utterance("1", instructorPlayerId, Arrays.asList("it's", "the", "red", "one"), 0.02f, 1.0f),
+				new Utterance("2", selectorPlayerId, Arrays.asList("the", "big", "one", "right"), 1.2f, 2.0f),
+				new Utterance("3", instructorPlayerId, Arrays.asList("yeah", "right"), 2.2f, 3.0f));
 
 		final SentimentAnalyzingEventDialogueUtteranceSorter testInst = createTestInst();
 		final Result result = testInst.apply(utts, event);
 		LOGGER.debug("{}", result);
 		final long nonZeroSentimentRankCount = countNonZeroValues(
 				result.getUttSentimentRanks().object2DoubleEntrySet());
-		// TODO: Finish
-//		Assert.assertEquals(nonZeroSentimentRankCount, 1);
+		Assert.assertEquals(nonZeroSentimentRankCount, 1);
 		final boolean shouldHaveUttsFromOtherSpeaker = !result.getUttSentimentRanks().isEmpty();
 		Assert.assertTrue(shouldHaveUttsFromOtherSpeaker);
 		final Set<String> refPosExampleSpeakerIds = result.getRefPosExamples().stream().map(Utterance::getSpeakerId)
