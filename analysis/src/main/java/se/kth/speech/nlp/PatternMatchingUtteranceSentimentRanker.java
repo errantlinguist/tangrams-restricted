@@ -144,7 +144,9 @@ public final class PatternMatchingUtteranceSentimentRanker implements ToDoubleFu
 		List<List<String>> result = new ArrayList<>();
 		int maxTokenSeqLength = Integer.MIN_VALUE;
 
-		final ObjectSortedSet<List<String>> eqOrShorterTokenSeqs = sentimentRanks.keySet().tailSet(tokens);
+		final ObjectSortedSet<List<String>> allSentimentTokenSeqs = sentimentRanks.keySet();
+		final ObjectSortedSet<List<String>> eqOrShorterTokenSeqs = allSentimentTokenSeqs.tailSet(tokens);
+		assert allSentimentTokenSeqs.contains(tokens) == eqOrShorterTokenSeqs.contains(tokens);
 		for (final List<String> sentimentTokenSeq : eqOrShorterTokenSeqs) {
 			// https://stackoverflow.com/a/32865087
 			if (Collections.indexOfSubList(tokens, sentimentTokenSeq) > -1) {
