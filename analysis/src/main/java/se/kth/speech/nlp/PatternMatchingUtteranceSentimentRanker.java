@@ -27,6 +27,9 @@ import java.util.Set;
 import java.util.function.ToDoubleFunction;
 import java.util.regex.Pattern;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
@@ -41,6 +44,8 @@ import se.kth.speech.coin.tangrams.analysis.Utterance;
 public final class PatternMatchingUtteranceSentimentRanker implements ToDoubleFunction<Utterance> {
 
 	private static final Pattern COLUMN_DELIMITER_PATTERN = Pattern.compile("\\t");
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(PatternMatchingUtteranceSentimentRanker.class);
 
 	private static SoftReference<Object2DoubleMap<String>> singletonSentimentRanksRef = new SoftReference<>(null);
 
@@ -72,9 +77,8 @@ public final class PatternMatchingUtteranceSentimentRanker implements ToDoubleFu
 	private static Object2DoubleMap<String> loadSentimentRankMap() {
 		final Object2DoubleMap<String> result = new Object2DoubleOpenHashMap<>();
 		result.defaultReturnValue(Double.NaN);
-		try (final BufferedReader reader = new BufferedReader(
-				new InputStreamReader(PatternMatchingUtteranceSentimentRanker.class
-						.getResourceAsStream("sentiment-patterns.tsv")))) {
+		try (final BufferedReader reader = new BufferedReader(new InputStreamReader(
+				PatternMatchingUtteranceSentimentRanker.class.getResourceAsStream("sentiment-patterns.tsv")))) {
 			for (String line = reader.readLine(); line != null; line = reader.readLine()) {
 				final String[] row = COLUMN_DELIMITER_PATTERN.split(line);
 				final double sentimentRank = Double.parseDouble(row[0]);
@@ -83,6 +87,7 @@ public final class PatternMatchingUtteranceSentimentRanker implements ToDoubleFu
 		} catch (final IOException e) {
 			throw new UncheckedIOException(e);
 		}
+		LOGGER.info("Loaded sentiment data map of size {}.", result.size());
 		return result;
 	}
 
