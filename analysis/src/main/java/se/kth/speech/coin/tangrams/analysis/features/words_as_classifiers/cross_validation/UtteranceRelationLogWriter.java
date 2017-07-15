@@ -21,11 +21,13 @@ import java.io.UncheckedIOException;
 import java.io.Writer;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import iristk.system.Event;
+import se.kth.speech.coin.tangrams.analysis.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.Utterance;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.UtteranceRelation;
 
@@ -34,7 +36,7 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.
  * @since Jul 15, 2017
  *
  */
-final class UtteranceRelationLogWriter implements Consumer<Iterable<UtteranceRelation>> {
+final class UtteranceRelationLogWriter implements BiConsumer<EventDialogue, Iterable<UtteranceRelation>> {
 
 	private static final String COL_DELIM = "\t";
 
@@ -49,16 +51,13 @@ final class UtteranceRelationLogWriter implements Consumer<Iterable<UtteranceRel
 		writeHeader();
 	}
 
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see java.util.function.Consumer#accept(java.lang.Object)
-	 */
 	@Override
-	public void accept(final Iterable<UtteranceRelation> uttRels) {
+	public void accept(final EventDialogue evtDiag, final Iterable<UtteranceRelation> uttRels) {
 		try {
+			final Event firstEvent = evtDiag.getFirstEvent().get();
+			int relNo = 1;
 			for (final UtteranceRelation uttRel : uttRels) {
-				writeRow(uttRel);
+				writeRow(firstEvent.getTime(), relNo++, uttRel);
 			}
 		} catch (final IOException e) {
 			throw new UncheckedIOException(e);
@@ -67,6 +66,10 @@ final class UtteranceRelationLogWriter implements Consumer<Iterable<UtteranceRel
 	}
 
 	private void writeHeader() throws IOException {
+		writer.write("EVENT_TIME");
+		writer.write(COL_DELIM);
+		writer.write("DIAG_REL_NO");
+		writer.write(COL_DELIM);
 		writer.write("INSTR_UTT");
 		writer.write(COL_DELIM);
 		writer.write("INSTR_UTT_TOKEN_COUNT");
@@ -80,8 +83,12 @@ final class UtteranceRelationLogWriter implements Consumer<Iterable<UtteranceRel
 		writer.write("PREV_UTTS");
 	}
 
-	private void writeRow(final UtteranceRelation uttRel) throws IOException {
+	private void writeRow(final String eventTime, final int relNo, final UtteranceRelation uttRel) throws IOException {
 		writer.write(ROW_DELIM);
+		writer.write(eventTime);
+		writer.write(COL_DELIM);
+		writer.write(Integer.toString(relNo));
+		writer.write(COL_DELIM);
 		final Utterance instrUtt = uttRel.getSentimentUtt();
 		writer.write(instrUtt.getTokenStr());
 		writer.write(COL_DELIM);

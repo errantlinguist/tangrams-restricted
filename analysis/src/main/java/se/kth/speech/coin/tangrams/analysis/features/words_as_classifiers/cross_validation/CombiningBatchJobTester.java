@@ -34,6 +34,7 @@ import org.springframework.context.ApplicationContext;
 
 import edu.stanford.nlp.trees.Tree;
 import edu.stanford.nlp.util.CoreMap;
+import se.kth.speech.coin.tangrams.analysis.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
 import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManagerCacheSupplier;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
@@ -115,14 +116,14 @@ public final class CombiningBatchJobTester {
 
 	private final Consumer<? super Tester> testerConfigurator;
 
-	private final Consumer<? super List<UtteranceRelation>> uttRelHandler;
+	private final BiConsumer<? super EventDialogue, ? super List<UtteranceRelation>> uttRelHandler;
 
 	public CombiningBatchJobTester(final ExecutorService backgroundJobExecutor, final ApplicationContext appCtx,
 			final Consumer<? super BatchJobSummary> batchJobResultHandler,
 			final BiConsumer<? super IncompleteResults, ? super Throwable> errorHandler,
 			final Consumer<? super Tester> testerConfigurator,
 			final BiConsumer<? super CoreMap, ? super List<Tree>> extractionResultsHook,
-			final Consumer<? super List<UtteranceRelation>> uttRelHandler) {
+			final BiConsumer<? super EventDialogue, ? super List<UtteranceRelation>> uttRelHandler) {
 		this.backgroundJobExecutor = backgroundJobExecutor;
 		this.appCtx = appCtx;
 		this.batchJobResultHandler = batchJobResultHandler;

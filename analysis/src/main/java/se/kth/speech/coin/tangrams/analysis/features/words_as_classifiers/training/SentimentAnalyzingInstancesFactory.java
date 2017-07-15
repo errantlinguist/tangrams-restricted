@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.ToDoubleFunction;
 
@@ -63,7 +63,7 @@ public final class SentimentAnalyzingInstancesFactory extends AbstractSizeEstima
 
 	private final BooleanTrainingContextsFactory trainingCtxsFactory;
 
-	private final Consumer<? super List<UtteranceRelation>> uttRelHandler;
+	private final BiConsumer<? super EventDialogue, ? super List<UtteranceRelation>> uttRelHandler;
 
 	private final ToDoubleFunction<? super Utterance> uttSentimentRanker;
 
@@ -71,7 +71,7 @@ public final class SentimentAnalyzingInstancesFactory extends AbstractSizeEstima
 			final EventDialogueTransformer diagTransformer, final EntityFeatureExtractionContextFactory extCtxFactory,
 			final ToDoubleFunction<? super Utterance> uttSentimentRanker,
 			final Function<? super Collection<UtteranceRelation>, EntityReferringLanguageWordClasses> entityRefLangExFactory,
-			final Consumer<? super List<UtteranceRelation>> uttRelHandler) {
+			final BiConsumer<? super EventDialogue, ? super List<UtteranceRelation>> uttRelHandler) {
 		this(entityInstAttrCtx, diagTransformer, new BooleanTrainingContextsFactory(extCtxFactory), uttSentimentRanker,
 				entityRefLangExFactory, uttRelHandler);
 	}
@@ -80,7 +80,7 @@ public final class SentimentAnalyzingInstancesFactory extends AbstractSizeEstima
 			final EventDialogueTransformer diagTransformer, final BooleanTrainingContextsFactory trainingCtxsFactory,
 			final ToDoubleFunction<? super Utterance> uttSentimentRanker,
 			final Function<? super Collection<UtteranceRelation>, EntityReferringLanguageWordClasses> entityRefLangExFactory,
-			final Consumer<? super List<UtteranceRelation>> uttRelHandler) {
+			final BiConsumer<? super EventDialogue, ? super List<UtteranceRelation>> uttRelHandler) {
 		super(entityInstAttrCtx);
 		this.diagTransformer = diagTransformer;
 		this.trainingCtxsFactory = trainingCtxsFactory;
@@ -127,7 +127,7 @@ public final class SentimentAnalyzingInstancesFactory extends AbstractSizeEstima
 					final SentimentAnalyzingEventDialogueUtteranceSorter uttSorter = new SentimentAnalyzingEventDialogueUtteranceSorter(
 							uttSentimentRanker);
 					final List<UtteranceRelation> uttRels = uttSorter.apply(allUtts, event);
-					uttRelHandler.accept(uttRels);
+					uttRelHandler.accept(uttDialogue, uttRels);
 
 					final EntityReferringLanguageWordClasses entityRefLangExs = entityRefLangExFactory.apply(uttRels);
 					{

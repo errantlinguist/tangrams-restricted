@@ -18,10 +18,11 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross
 
 import java.util.List;
 import java.util.concurrent.ExecutorService;
-import java.util.function.Consumer;
+import java.util.function.BiConsumer;
 
 import org.springframework.context.ApplicationContext;
 
+import se.kth.speech.coin.tangrams.analysis.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.UtteranceRelation;
 
@@ -33,11 +34,11 @@ final class TrainingContext {
 
 	private final EventDialogueTransformer diagTransformer;
 
-	private final Consumer<? super List<UtteranceRelation>> uttRelHandler;
+	private final BiConsumer<? super EventDialogue, ? super List<UtteranceRelation>> uttRelHandler;
 
 	TrainingContext(final EventDialogueTransformer diagTransformer, final ApplicationContext appCtx,
 			final ExecutorService backgroundJobExecutor,
-			final Consumer<? super List<UtteranceRelation>> uttRelHandler) {
+			final BiConsumer<? super EventDialogue, ? super List<UtteranceRelation>> uttRelHandler) {
 		this.diagTransformer = diagTransformer;
 		this.appCtx = appCtx;
 		this.backgroundJobExecutor = backgroundJobExecutor;
@@ -152,7 +153,7 @@ final class TrainingContext {
 	/**
 	 * @return the uttRelHandler
 	 */
-	Consumer<? super List<UtteranceRelation>> getUttRelHandler() {
+	BiConsumer<? super EventDialogue, ? super List<UtteranceRelation>> getUttRelHandler() {
 		return uttRelHandler;
 	}
 

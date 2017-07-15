@@ -161,7 +161,7 @@ public final class CombiningBatchJobTestMultiDirWriter {
 					final CombiningBatchJobTester tester = new CombiningBatchJobTester(backgroundJobExecutor, appCtx,
 							writer::write, writer::writeError, testerConfigurator, (sent, extractedPhrases) -> {
 								// Do nothing
-							}, uttRels -> {
+							}, (evtDiag, uttRels) -> {
 								// Do nothing
 							});
 					tester.accept(input);
