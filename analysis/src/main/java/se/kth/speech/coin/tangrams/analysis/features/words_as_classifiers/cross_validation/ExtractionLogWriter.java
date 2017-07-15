@@ -35,12 +35,11 @@ final class ExtractionLogWriter implements BiConsumer<CoreMap, List<Tree>> {
 
 	private static final String ROW_DELIM = System.lineSeparator();
 
-	private boolean hasStartedWriting;
-
 	private final Writer writer;
 
-	ExtractionLogWriter(final Writer writer) {
+	ExtractionLogWriter(final Writer writer) throws IOException {
 		this.writer = writer;
+		writeHeader();
 	}
 
 	/*
@@ -52,11 +51,6 @@ final class ExtractionLogWriter implements BiConsumer<CoreMap, List<Tree>> {
 	@Override
 	public void accept(final CoreMap sent, final List<Tree> extractedPhrases) {
 		try {
-			if (!hasStartedWriting) {
-				writeHeader();
-				hasStartedWriting = true;
-			}
-
 			writer.write(ROW_DELIM);
 			final String sentRepr = sent.toString();
 			writer.write(sentRepr);

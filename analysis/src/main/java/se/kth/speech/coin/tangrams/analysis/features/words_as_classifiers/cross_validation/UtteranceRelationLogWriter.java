@@ -42,12 +42,11 @@ final class UtteranceRelationLogWriter implements Consumer<Iterable<UtteranceRel
 
 	private static final Collector<CharSequence, ?, String> UTT_REPR_JOINER = Collectors.joining("\", \"", "\"", "\"");
 
-	private boolean hasStartedWriting;
-
 	private final Writer writer;
 
-	UtteranceRelationLogWriter(final Writer writer) {
+	UtteranceRelationLogWriter(final Writer writer) throws IOException {
 		this.writer = writer;
+		writeHeader();
 	}
 
 	/*
@@ -58,11 +57,6 @@ final class UtteranceRelationLogWriter implements Consumer<Iterable<UtteranceRel
 	@Override
 	public void accept(final Iterable<UtteranceRelation> uttRels) {
 		try {
-			if (!hasStartedWriting) {
-				writeHeader();
-				hasStartedWriting = true;
-			}
-
 			for (final UtteranceRelation uttRel : uttRels) {
 				writeRow(uttRel);
 			}
