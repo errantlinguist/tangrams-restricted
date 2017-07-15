@@ -76,6 +76,10 @@ public final class SentimentWeightedWordClassFactory
 			// the non-selected entity
 			otherEntityNegativeExamples.add(ex);
 		};
+		// For language which is explicitly not referring to the referent, add a
+		// negative example but no positive example for others becuse it can't
+		// be determined what the language actually refers to
+		final Consumer<WeightedWordClass> refNegExampleHandler = refNegExamples::add;
 		for (final UtteranceRelation uttRel : uttRels) {
 			// Add all language from the instructor
 			getWordClasses(uttRel.getSentimentUtt())
@@ -90,7 +94,7 @@ public final class SentimentWeightedWordClassFactory
 				// examples
 				getWordClasses(uttRel.getPrevUtts())
 						.map(token -> new WeightedWordClass(token, otherUttObsevationWeight))
-						.forEach(refNegExamples::add);
+						.forEach(refNegExampleHandler);
 			} else if (sentValue > 0) {
 				// Use the other player's utterances which came
 				// before this instructor utterance as positive
