@@ -16,12 +16,17 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 import java.util.function.Function;
 import java.util.function.ToDoubleFunction;
 
 import org.springframework.context.ApplicationContext;
+
+import com.github.errantlinguist.ClassProperties;
 
 import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
@@ -69,8 +74,7 @@ enum Training {
 	},
 	DIALOGIC(1) {
 
-		private final SentimentWeightedWordClassFactory sentWordClassFactory = new SentimentWeightedWordClassFactory(
-				1.0, 2.0);
+		private final SentimentWeightedWordClassFactory sentWordClassFactory = createSentWordClassFactory();
 
 		@Override
 		public CachingEventDialogueTransformer createSymmetricalTrainingTestingEvgDiagTransformer(
@@ -153,6 +157,18 @@ enum Training {
 		chain.addAll(diagTransformers);
 		final ChainedEventDialogueTransformer chainedTransformer = new ChainedEventDialogueTransformer(chain);
 		return new CachingEventDialogueTransformer(chainedTransformer);
+	}
+
+	private static SentimentWeightedWordClassFactory createSentWordClassFactory() {
+		try {
+			final Properties props = ClassProperties.load(Training.class);
+			return new SentimentWeightedWordClassFactory(
+					Double.parseDouble(props.getProperty("instrUttObservationWeight")),
+					Double.parseDouble(props.getProperty("otherUttObsevationWeight")));
+		} catch (final IOException e) {
+			throw new UncheckedIOException(e);
+		}
+
 	}
 
 	private int iterCount;
