@@ -16,20 +16,18 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags;
 
-import java.util.List;
-
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WeightedWordClass;
+import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 
 public final class EntityReferringLanguageWordClasses {
 
-	private final List<WeightedWordClass> otherEntityNegativeExamples;
+	private final Object2DoubleMap<String> otherEntityNegativeExamples;
 
-	private final List<WeightedWordClass> refNegExamples;
+	private final Object2DoubleMap<String> refNegExamples;
 
-	private final List<WeightedWordClass> refPosExamples;
+	private final Object2DoubleMap<String> refPosExamples;
 
-	EntityReferringLanguageWordClasses(final List<WeightedWordClass> refPosExamples,
-			final List<WeightedWordClass> refNegExamples, final List<WeightedWordClass> otherEntityNegativeExamples) {
+	EntityReferringLanguageWordClasses(final Object2DoubleMap<String> refPosExamples,
+			final Object2DoubleMap<String> refNegExamples, final Object2DoubleMap<String> otherEntityNegativeExamples) {
 		this.refPosExamples = refPosExamples;
 		this.refNegExamples = refNegExamples;
 		this.otherEntityNegativeExamples = otherEntityNegativeExamples;
@@ -79,21 +77,21 @@ public final class EntityReferringLanguageWordClasses {
 	/**
 	 * @return the otherEntityNegativeExamples
 	 */
-	public List<WeightedWordClass> getOtherEntityNegativeExamples() {
+	public Object2DoubleMap<String> getOtherEntityNegativeExamples() {
 		return otherEntityNegativeExamples;
 	}
 
 	/**
 	 * @return the refNegExamples
 	 */
-	public List<WeightedWordClass> getRefNegExamples() {
+	public Object2DoubleMap<String> getRefNegExamples() {
 		return refNegExamples;
 	}
 
 	/**
 	 * @return the refPosExamples
 	 */
-	public List<WeightedWordClass> getRefPosExamples() {
+	public Object2DoubleMap<String> getRefPosExamples() {
 		return refPosExamples;
 	}
 

@@ -28,6 +28,7 @@ import javax.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import se.kth.speech.MutablePair;
@@ -68,16 +69,17 @@ public final class WordClassDiscountingSmoother {
 		this.minCount = minCount;
 	}
 
-	public Stream<WeightedClassifier> createClassifierWeighting(final Stream<WeightedWordClass> wordClasses,
+	public Stream<WeightedClassifier> createClassifierWeighting(
+			final Stream<Object2DoubleMap.Entry<String>> wordClasses,
 			final Function<? super String, ? extends Classifier> wordClassifiers) {
 		return wordClasses.map(wordClass -> {
 			LOGGER.debug("Getting classifier for class \"{}\".", wordClass);
-			Classifier classifier = wordClassifiers.apply(wordClass.getName());
+			Classifier classifier = wordClassifiers.apply(wordClass.getKey());
 			if (classifier == null) {
 				LOGGER.debug("Getting distribution for OOV classes (\"{}\").", oovClassName);
 				classifier = wordClassifiers.apply(oovClassName);
 			}
-			return new WeightedClassifier(classifier, wordClass.getWeight());
+			return new WeightedClassifier(classifier, wordClass.getDoubleValue());
 		});
 	}
 

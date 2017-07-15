@@ -16,7 +16,6 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers;
 
-import java.util.List;
 import java.util.function.Function;
 
 import javax.inject.Inject;
@@ -27,6 +26,7 @@ import org.slf4j.LoggerFactory;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import it.unimi.dsi.fastutil.ints.Int2DoubleOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntList;
+import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 import se.kth.speech.coin.tangrams.analysis.GameContext;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
@@ -62,12 +62,13 @@ public final class ReferentConfidenceMapFactory {
 		this.testInstFactory = testInstFactory;
 	}
 
-	public Int2DoubleMap apply(final List<WeightedWordClass> tokens, final GameContext uttCtx)
+	public Int2DoubleMap apply(final Object2DoubleMap<String> tokens, final GameContext uttCtx)
 			throws ClassificationException {
 		LOGGER.debug("Getting entity reference confidence measures for linguistic tokens: {}.", tokens);
 		// TODO: Cache mapping of word classes -> classifiers?
 		final WeightedClassifier[] weightedClassifiers = smoother
-				.createClassifierWeighting(tokens.stream(), wordClassifiers).toArray(WeightedClassifier[]::new);
+				.createClassifierWeighting(tokens.object2DoubleEntrySet().stream(), wordClassifiers)
+				.toArray(WeightedClassifier[]::new);
 		final IntList entityIds = uttCtx.getEntityIds();
 		final Int2DoubleMap result = new Int2DoubleOpenHashMap(entityIds.size());
 		for (final int entityId : entityIds) {
@@ -82,7 +83,7 @@ public final class ReferentConfidenceMapFactory {
 					final double[] classValProbs = classifier.distributionForInstance(testInst);
 					final double classValProb = AttributeValues.findNominalClassValueProbability(testInst,
 							classValProbs, INST_CLASS_VAL);
-					confidenceSum += (classValProb * weightedClassifier.getWeight());
+					confidenceSum += classValProb * weightedClassifier.getWeight();
 				} catch (final Exception e) {
 					throw new ClassificationException(e);
 				}

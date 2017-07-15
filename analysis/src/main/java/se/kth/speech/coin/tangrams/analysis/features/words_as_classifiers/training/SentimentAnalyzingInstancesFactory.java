@@ -133,19 +133,19 @@ public final class SentimentAnalyzingInstancesFactory extends AbstractSizeEstima
 					{
 						// Instances for referent entity
 						final List<EntityFeature.Extractor.Context> positiveCtxs = trainingContexts.getPositive();
-						entityRefLangExs.getRefPosExamples().stream()
-								.forEach(langEx -> addWeightedExamples(langEx.getName(), trainingData, positiveCtxs,
-										langEx.getWeight(), POSITIVE_EXAMPLE_LABEL));
-						entityRefLangExs.getRefNegExamples().stream()
-								.forEach(langEx -> addWeightedExamples(langEx.getName(), trainingData, positiveCtxs,
-										langEx.getWeight(), NEGATIVE_EXAMPLE_LABEL));
+						entityRefLangExs.getRefPosExamples().object2DoubleEntrySet().stream()
+								.forEach(langEx -> addWeightedExamples(langEx.getKey(), trainingData, positiveCtxs,
+										langEx.getDoubleValue(), POSITIVE_EXAMPLE_LABEL));
+						entityRefLangExs.getRefNegExamples().object2DoubleEntrySet().stream()
+								.forEach(langEx -> addWeightedExamples(langEx.getKey(), trainingData, positiveCtxs,
+										langEx.getDoubleValue(), NEGATIVE_EXAMPLE_LABEL));
 					}
 					{
 						// Instances for non-referent entities
 						final List<EntityFeature.Extractor.Context> negativeCtxs = trainingContexts.getNegative();
-						entityRefLangExs.getOtherEntityNegativeExamples().stream()
-								.forEach(langEx -> addWeightedExamples(langEx.getName(), trainingData, negativeCtxs,
-										langEx.getWeight(), NEGATIVE_EXAMPLE_LABEL));
+						entityRefLangExs.getOtherEntityNegativeExamples().object2DoubleEntrySet().stream()
+								.forEach(langEx -> addWeightedExamples(langEx.getKey(), trainingData, negativeCtxs,
+										langEx.getDoubleValue(), NEGATIVE_EXAMPLE_LABEL));
 					}
 				}
 			});

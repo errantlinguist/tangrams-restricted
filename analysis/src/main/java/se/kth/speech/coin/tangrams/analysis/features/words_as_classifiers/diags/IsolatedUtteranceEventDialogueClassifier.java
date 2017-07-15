@@ -16,17 +16,17 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
+import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
+import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
 import se.kth.speech.coin.tangrams.analysis.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.GameContext;
 import se.kth.speech.coin.tangrams.analysis.Utterance;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.ReferentConfidenceMapFactory;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WeightedWordClass;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -73,11 +73,10 @@ public final class IsolatedUtteranceEventDialogueClassifier implements EventDial
 	 */
 	private Int2DoubleMap createReferentConfidenceMap(final List<Utterance> dialogueUtts, final GameContext uttCtx)
 			throws ClassificationException {
-		final int estAvgUttTokenCount = 8;
-		final List<WeightedWordClass> diagTokens = new ArrayList<>(dialogueUtts.size() * estAvgUttTokenCount);
+		final Object2DoubleMap<String> diagTokens = new Object2DoubleOpenHashMap<>(dialogueUtts.size() * 4);
 		for (final Utterance dialogUtt : dialogueUtts) {
 			for (final String token : dialogUtt.getTokens()) {
-				diagTokens.add(new WeightedWordClass(token, 1.0));
+				diagTokens.put(token, diagTokens.getDouble(token) + 1.0);
 			}
 		}
 		return referentConfidenceMapFactory.apply(diagTokens, uttCtx);
