@@ -58,10 +58,7 @@ final class ExtractionLogWriter implements BiConsumer<CoreMap, List<Tree>> {
 			}
 
 			writer.write(ROW_DELIM);
-			String sentRepr = sent.toString();
-			if ("there you goyeah ah okay".equals(sentRepr) || "bluethe big house on the right side".equals(sentRepr)) {
-				System.out.println("FOUND!!!");
-			}
+			final String sentRepr = sent.toString();
 			writer.write(sentRepr);
 			writer.write(COL_DELIM);
 			writer.write(Integer.toString(extractedPhrases.size()));
