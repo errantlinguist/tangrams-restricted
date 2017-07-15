@@ -27,6 +27,8 @@ import org.slf4j.LoggerFactory;
 
 import iristk.system.Event;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
+import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
+import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
 import se.kth.speech.coin.tangrams.analysis.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.GameContext;
 import se.kth.speech.coin.tangrams.analysis.Utterance;
@@ -81,7 +83,15 @@ public final class SentimentAnalyzingEventDialogueClassifier implements EventDia
 						uttSentimentRanker);
 				final List<UtteranceRelation> uttRels = uttSorter.apply(allUtts, event);
 				final EntityReferringLanguageWordClasses entityRefLangExs = entityRefLangExFactory.apply(uttRels);
-				result = Optional.of(referentConfidenceMapFactory.apply(entityRefLangExs.getRefPosExamples(), ctx));
+				final Object2DoubleMap<String> refPosExs = entityRefLangExs.getRefPosExamples();
+				final Object2DoubleMap<String> refNegExs = entityRefLangExs.getRefNegExamples();
+				final Object2DoubleMap<String> refExs = new Object2DoubleOpenHashMap<>(
+						refPosExs.size() + refNegExs.size());
+				refPosExs.object2DoubleEntrySet().stream()
+						.forEach(entry -> refExs.put(entry.getKey(), entry.getDoubleValue()));
+				refNegExs.object2DoubleEntrySet().stream()
+						.forEach(entry -> refExs.put(entry.getKey(), -entry.getDoubleValue()));
+				result = Optional.of(referentConfidenceMapFactory.apply(refExs, ctx));
 			}
 		} else
 
