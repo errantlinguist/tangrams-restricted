@@ -67,7 +67,7 @@ enum Training {
 			return TrainingConstants.SIMPLE_CLASSIFIER_FACTORY;
 		}
 	},
-	DIALOGIC(5) {
+	DIALOGIC(1) {
 
 		private final SentimentWeightedWordClassFactory sentWordClassFactory = new SentimentWeightedWordClassFactory(
 				1.0, 2.0);
@@ -119,7 +119,7 @@ enum Training {
 		}
 
 	},
-	ONE_NEG(1) {
+	ONE_NEG(5) {
 
 		@Override
 		public CachingEventDialogueTransformer createSymmetricalTrainingTestingEvgDiagTransformer(
