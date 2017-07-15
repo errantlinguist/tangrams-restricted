@@ -16,11 +16,14 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation;
 
+import java.util.List;
 import java.util.concurrent.ExecutorService;
+import java.util.function.Consumer;
 
 import org.springframework.context.ApplicationContext;
 
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EventDialogueTransformer;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.UtteranceRelation;
 
 final class TrainingContext {
 
@@ -30,16 +33,20 @@ final class TrainingContext {
 
 	private final EventDialogueTransformer diagTransformer;
 
+	private final Consumer<? super List<UtteranceRelation>> uttRelHandler;
+
 	TrainingContext(final EventDialogueTransformer diagTransformer, final ApplicationContext appCtx,
-			final ExecutorService backgroundJobExecutor) {
+			final ExecutorService backgroundJobExecutor,
+			final Consumer<? super List<UtteranceRelation>> uttRelHandler) {
 		this.diagTransformer = diagTransformer;
 		this.appCtx = appCtx;
 		this.backgroundJobExecutor = backgroundJobExecutor;
+		this.uttRelHandler = uttRelHandler;
 	}
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#equals(java.lang.Object)
 	 */
 	@Override
@@ -75,12 +82,19 @@ final class TrainingContext {
 		} else if (!diagTransformer.equals(other.diagTransformer)) {
 			return false;
 		}
+		if (uttRelHandler == null) {
+			if (other.uttRelHandler != null) {
+				return false;
+			}
+		} else if (!uttRelHandler.equals(other.uttRelHandler)) {
+			return false;
+		}
 		return true;
 	}
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#hashCode()
 	 */
 	@Override
@@ -90,12 +104,13 @@ final class TrainingContext {
 		result = prime * result + (appCtx == null ? 0 : appCtx.hashCode());
 		result = prime * result + (backgroundJobExecutor == null ? 0 : backgroundJobExecutor.hashCode());
 		result = prime * result + (diagTransformer == null ? 0 : diagTransformer.hashCode());
+		result = prime * result + (uttRelHandler == null ? 0 : uttRelHandler.hashCode());
 		return result;
 	}
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#toString()
 	 */
 	@Override
@@ -103,10 +118,12 @@ final class TrainingContext {
 		final StringBuilder builder = new StringBuilder();
 		builder.append("TrainingContext [appCtx=");
 		builder.append(appCtx);
-		builder.append(", diagTransformer=");
-		builder.append(diagTransformer);
 		builder.append(", backgroundJobExecutor=");
 		builder.append(backgroundJobExecutor);
+		builder.append(", diagTransformer=");
+		builder.append(diagTransformer);
+		builder.append(", uttRelHandler=");
+		builder.append(uttRelHandler);
 		builder.append("]");
 		return builder.toString();
 	}
@@ -130,6 +147,13 @@ final class TrainingContext {
 	 */
 	EventDialogueTransformer getDiagTransformer() {
 		return diagTransformer;
+	}
+
+	/**
+	 * @return the uttRelHandler
+	 */
+	Consumer<? super List<UtteranceRelation>> getUttRelHandler() {
+		return uttRelHandler;
 	}
 
 }

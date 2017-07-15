@@ -18,6 +18,7 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross
 
 import java.io.BufferedWriter;
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -65,6 +66,8 @@ public final class CombiningBatchJobTestSingleFileWriter {
 
 	private static final String EXTRACTION_LOG_FILE_SUFFIX = ".extraction.tsv";
 
+	private static final String UTT_REL_LOG_FILE_SUFFIX = ".uttrels.tsv";
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(CombiningBatchJobTestSingleFileWriter.class);
 
 	private static final String NULL_CELL_VALUE_REPR = "?";
@@ -72,6 +75,36 @@ public final class CombiningBatchJobTestSingleFileWriter {
 	private static final Options OPTIONS = createOptions();
 
 	private static final Collector<CharSequence, ?, String> ROW_CELL_JOINER = Collectors.joining("\t");
+
+	private static BufferedWriter createUttRelFileWriter(File outFile) throws IOException {
+		Path uttRelLogOutPath;
+		final String suffix = UTT_REL_LOG_FILE_SUFFIX;
+		if (outFile == null) {
+			final String filename = CombiningBatchJobTester.class.getSimpleName() + "-" + System.currentTimeMillis()
+					+ suffix;
+			uttRelLogOutPath = Paths.get(System.getProperty("user.dir"), filename);
+		} else {
+			uttRelLogOutPath = Paths.get(outFile.getPath() + suffix);
+		}
+		LOGGER.info("Will write dialogue utterance relation log to \"{}\".", uttRelLogOutPath);
+		return Files.newBufferedWriter(uttRelLogOutPath, StandardOpenOption.CREATE,
+				StandardOpenOption.TRUNCATE_EXISTING);
+	}
+
+	private static BufferedWriter createExtrLogFileWriter(File outFile) throws IOException {
+		Path extractionLogOutPath;
+		final String suffix = EXTRACTION_LOG_FILE_SUFFIX;
+		if (outFile == null) {
+			final String filename = CombiningBatchJobTester.class.getSimpleName() + "-" + System.currentTimeMillis()
+					+ suffix;
+			extractionLogOutPath = Paths.get(System.getProperty("user.dir"), filename);
+		} else {
+			extractionLogOutPath = Paths.get(outFile.getPath() + suffix);
+		}
+		LOGGER.info("Will write phrase-extraction log to \"{}\".", extractionLogOutPath);
+		return Files.newBufferedWriter(extractionLogOutPath, StandardOpenOption.CREATE,
+				StandardOpenOption.TRUNCATE_EXISTING);
+	}
 
 	public static void main(final CommandLine cl) throws Exception {
 		if (cl.hasOption(CLITestParameter.HELP.optName)) {
@@ -99,33 +132,25 @@ public final class CombiningBatchJobTestSingleFileWriter {
 
 				final File outFile = (File) cl.getParsedOptionValue(CLITestParameter.OUTPATH.optName);
 
-				Path extractionLogOutPath;
-				if (outFile == null) {
-					final String filename = CombiningBatchJobTester.class.getSimpleName() + "-"
-							+ System.currentTimeMillis() + EXTRACTION_LOG_FILE_SUFFIX;
-					extractionLogOutPath = Paths.get(System.getProperty("user.dir"), filename);
-				} else {
-					extractionLogOutPath = Paths.get(outFile.getPath() + EXTRACTION_LOG_FILE_SUFFIX);
-				}
-				LOGGER.info("Will write phrase-extraction log to \"{}\".", extractionLogOutPath);
-				try (BufferedWriter extrLogOut = Files.newBufferedWriter(extractionLogOutPath,
-						StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
-					final ExtractionLogWriter extrLogWriter = new ExtractionLogWriter(extrLogOut);
+				try (PrintWriter out = CLIParameters.parseOutpath(outFile)) {
+					final CombiningBatchJobTestSingleFileWriter writer = new CombiningBatchJobTestSingleFileWriter(out,
+							true);
 
-					try (PrintWriter out = CLIParameters.parseOutpath(outFile)) {
-						final CombiningBatchJobTestSingleFileWriter writer = new CombiningBatchJobTestSingleFileWriter(
-								out, true);
-						try (final ClassPathXmlApplicationContext appCtx = new ClassPathXmlApplicationContext(
-								"combining-batch-tester.xml", CombiningBatchJobTestSingleFileWriter.class)) {
-							final CombiningBatchJobTester tester = new CombiningBatchJobTester(backgroundJobExecutor,
-									appCtx, writer::write, writer::writeError, testerConfigurator,
-									extrLogWriter);
-							tester.accept(input);
+					try (BufferedWriter extrLogOut = createExtrLogFileWriter(outFile)) {
+						try (BufferedWriter uttRelLogOut = createUttRelFileWriter(outFile)) {
+
+							try (final ClassPathXmlApplicationContext appCtx = new ClassPathXmlApplicationContext(
+									"combining-batch-tester.xml", CombiningBatchJobTestSingleFileWriter.class)) {
+								final CombiningBatchJobTester tester = new CombiningBatchJobTester(
+										backgroundJobExecutor, appCtx, writer::write, writer::writeError,
+										testerConfigurator, new ExtractionLogWriter(extrLogOut), new UtteranceRelationLogWriter(uttRelLogOut));
+								tester.accept(input);
+							}
+							LOGGER.info("Shutting down executor service.");
+							backgroundJobExecutor.shutdown();
+							LOGGER.info("Successfully shut down executor service.");
+
 						}
-						LOGGER.info("Shutting down executor service.");
-						backgroundJobExecutor.shutdown();
-						LOGGER.info("Successfully shut down executor service.");
-
 					}
 				}
 			} catch (final Exception e) {

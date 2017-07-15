@@ -88,7 +88,8 @@ enum Training {
 			final EntityFeatureExtractionContextFactory extCtxFactory = appCtx
 					.getBean(EntityFeatureExtractionContextFactory.class);
 			return new SentimentAnalyzingInstancesFactory(entityInstAttrCtx, trainingCtx.getDiagTransformer(),
-					extCtxFactory, createCachingUttSentimentRanker(), sentWordClassFactory);
+					extCtxFactory, createCachingUttSentimentRanker(), sentWordClassFactory,
+					trainingCtx.getUttRelHandler());
 		};
 
 		@Override

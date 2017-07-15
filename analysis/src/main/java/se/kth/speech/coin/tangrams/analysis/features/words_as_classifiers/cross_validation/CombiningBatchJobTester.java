@@ -39,6 +39,7 @@ import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManagerCacheSupp
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.CachingEventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EventDialogueTransformer;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.UtteranceRelation;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.TrainingInstancesFactory;
 
 /**
@@ -114,17 +115,21 @@ public final class CombiningBatchJobTester {
 
 	private final Consumer<? super Tester> testerConfigurator;
 
+	private final Consumer<? super List<UtteranceRelation>> uttRelHandler;
+
 	public CombiningBatchJobTester(final ExecutorService backgroundJobExecutor, final ApplicationContext appCtx,
 			final Consumer<? super BatchJobSummary> batchJobResultHandler,
 			final BiConsumer<? super IncompleteResults, ? super Throwable> errorHandler,
 			final Consumer<? super Tester> testerConfigurator,
-			final BiConsumer<? super CoreMap, ? super List<Tree>> extractionResultsHook) {
+			final BiConsumer<? super CoreMap, ? super List<Tree>> extractionResultsHook,
+			final Consumer<? super List<UtteranceRelation>> uttRelHandler) {
 		this.backgroundJobExecutor = backgroundJobExecutor;
 		this.appCtx = appCtx;
 		this.batchJobResultHandler = batchJobResultHandler;
 		this.errorHandler = errorHandler;
 		this.testerConfigurator = testerConfigurator;
 		this.extractionResultsHook = extractionResultsHook;
+		this.uttRelHandler = uttRelHandler;
 	}
 
 	public void accept(final Input input) throws ClassificationException, ExecutionException, IOException {
@@ -147,7 +152,7 @@ public final class CombiningBatchJobTester {
 									.createSymmetricalTrainingTestingEvgDiagTransformer(
 											Arrays.asList(tokenizer, tokenFilter));
 							final TrainingContext trainingCtx = new TrainingContext(symmetricalDiagTransformer, appCtx,
-									backgroundJobExecutor);
+									backgroundJobExecutor, uttRelHandler);
 							final TrainingInstancesFactory trainingInstsFactory = trainingMethod
 									.createTrainingInstsFactoryIterCount(trainingCtx);
 							final TestSetFactory testSetFactory = new TestSetFactory(trainingInstsFactory,
