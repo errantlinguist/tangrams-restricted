@@ -35,6 +35,7 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.InstructorUtteranceFilteringEventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.SentimentAnalyzingEventDialogueClassifier;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.SentimentWeightedWordClassFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.OnePositiveMaximumNegativeInstancesFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.OnePositiveOneNegativeInstanceFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.SentimentAnalyzingInstancesFactory;
@@ -68,6 +69,9 @@ enum Training {
 	},
 	DIALOGIC(5) {
 
+		private final SentimentWeightedWordClassFactory sentWordClassFactory = new SentimentWeightedWordClassFactory(
+				1.0, 2.0);
+
 		@Override
 		public CachingEventDialogueTransformer createSymmetricalTrainingTestingEvgDiagTransformer(
 				final List<EventDialogueTransformer> diagTransformers) {
@@ -84,13 +88,13 @@ enum Training {
 			final EntityFeatureExtractionContextFactory extCtxFactory = appCtx
 					.getBean(EntityFeatureExtractionContextFactory.class);
 			return new SentimentAnalyzingInstancesFactory(entityInstAttrCtx, trainingCtx.getDiagTransformer(),
-					extCtxFactory, createCachingUttSentimentRanker());
-		}
+					extCtxFactory, createCachingUttSentimentRanker(), sentWordClassFactory);
+		};
 
 		@Override
 		public Function<ReferentConfidenceMapFactory, EventDialogueClassifier> getClassifierFactory() {
 			return (refConfMapFactory) -> new SentimentAnalyzingEventDialogueClassifier(
-					createCachingUttSentimentRanker(), refConfMapFactory);
+					createCachingUttSentimentRanker(), sentWordClassFactory, refConfMapFactory);
 		}
 
 		private ToDoubleFunction<Utterance> createCachingUttSentimentRanker() {

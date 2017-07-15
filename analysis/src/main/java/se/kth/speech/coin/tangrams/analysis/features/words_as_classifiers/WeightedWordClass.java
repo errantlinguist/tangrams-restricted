@@ -57,6 +57,20 @@ public final class WeightedWordClass {
 		return true;
 	}
 
+	/**
+	 * @return the name
+	 */
+	public String getName() {
+		return name;
+	}
+
+	/**
+	 * @return the weight
+	 */
+	public double getWeight() {
+		return weight;
+	}
+
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -87,19 +101,5 @@ public final class WeightedWordClass {
 		builder.append(weight);
 		builder.append("]");
 		return builder.toString();
-	}
-
-	/**
-	 * @return the name
-	 */
-	String getName() {
-		return name;
-	}
-
-	/**
-	 * @return the weight
-	 */
-	double getWeight() {
-		return weight;
 	}
 }

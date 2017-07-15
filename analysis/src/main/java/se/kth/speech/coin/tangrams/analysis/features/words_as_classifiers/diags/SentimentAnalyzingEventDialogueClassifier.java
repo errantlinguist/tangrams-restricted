@@ -16,9 +16,10 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags;
 
-import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.function.ToDoubleFunction;
 
 import org.slf4j.Logger;
@@ -31,7 +32,6 @@ import se.kth.speech.coin.tangrams.analysis.GameContext;
 import se.kth.speech.coin.tangrams.analysis.Utterance;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.ReferentConfidenceMapFactory;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WeightedWordClass;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -42,13 +42,17 @@ public final class SentimentAnalyzingEventDialogueClassifier implements EventDia
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SentimentAnalyzingEventDialogueClassifier.class);
 
+	private final Function<? super Collection<UtteranceRelation>, EntityReferringLanguageWordClasses> entityRefLangExFactory;
+
 	private final ReferentConfidenceMapFactory referentConfidenceMapFactory;
 
 	private final ToDoubleFunction<? super Utterance> uttSentimentRanker;
 
 	public SentimentAnalyzingEventDialogueClassifier(final ToDoubleFunction<? super Utterance> uttSentimentRanker,
+			final Function<? super Collection<UtteranceRelation>, EntityReferringLanguageWordClasses> entityRefLangExFactory,
 			final ReferentConfidenceMapFactory referentConfidenceMapFactory) {
 		this.uttSentimentRanker = uttSentimentRanker;
+		this.entityRefLangExFactory = entityRefLangExFactory;
 		this.referentConfidenceMapFactory = referentConfidenceMapFactory;
 	}
 
@@ -73,18 +77,11 @@ public final class SentimentAnalyzingEventDialogueClassifier implements EventDia
 				LOGGER.debug("No utterances to classify for {}.", transformedDiag);
 				result = Optional.empty();
 			} else {
-				final List<WeightedWordClass> weightedWordClasses = new ArrayList<>(allUtts.size() * 16);
 				final SentimentAnalyzingEventDialogueUtteranceSorter uttSorter = new SentimentAnalyzingEventDialogueUtteranceSorter(
 						uttSentimentRanker);
-				final SentimentAnalyzingEventDialogueUtteranceSorter.Result sortedUtts = uttSorter.apply(allUtts,
-						event);
-				sortedUtts.getRefPosExamples().forEach(utt -> {
-					LOGGER.debug("Processing referent positive example: {}", utt);
-					utt.getTokens().stream().map(token -> new WeightedWordClass(token, 1.0))
-							.forEach(weightedWordClasses::add);
-				});
-
-				result = Optional.of(referentConfidenceMapFactory.apply(weightedWordClasses, ctx));
+				final List<UtteranceRelation> uttRels = uttSorter.apply(allUtts, event);
+				final EntityReferringLanguageWordClasses entityRefLangExs = entityRefLangExFactory.apply(uttRels);
+				result = Optional.of(referentConfidenceMapFactory.apply(entityRefLangExs.getRefPosExamples(), ctx));
 			}
 		} else
 

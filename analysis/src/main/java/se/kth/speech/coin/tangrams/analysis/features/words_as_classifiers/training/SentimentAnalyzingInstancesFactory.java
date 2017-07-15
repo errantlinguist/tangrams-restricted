@@ -17,10 +17,11 @@
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.function.Function;
 import java.util.function.ToDoubleFunction;
-import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,8 +35,10 @@ import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature.Extractor.Context;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionContextFactory;
 import se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttributeContext;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EntityReferringLanguageWordClasses;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.SentimentAnalyzingEventDialogueUtteranceSorter;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.UtteranceRelation;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 import weka.core.Instance;
 import weka.core.Instances;
@@ -53,29 +56,31 @@ public final class SentimentAnalyzingInstancesFactory extends AbstractSizeEstima
 
 	private static final String POSITIVE_EXAMPLE_LABEL = Boolean.TRUE.toString();
 
-	private static Stream<String> getWordClasses(final List<Utterance> utts) {
-		return utts.stream().map(Utterance::getTokens).flatMap(List::stream);
-	}
-
 	private final EventDialogueTransformer diagTransformer;
 
 	private final BooleanTrainingContextsFactory trainingCtxsFactory;
 
 	private final ToDoubleFunction<? super Utterance> uttSentimentRanker;
 
+	private final Function<? super Collection<UtteranceRelation>, EntityReferringLanguageWordClasses> entityRefLangExFactory;
+
 	public SentimentAnalyzingInstancesFactory(final EntityInstanceAttributeContext entityInstAttrCtx,
 			final EventDialogueTransformer diagTransformer, final EntityFeatureExtractionContextFactory extCtxFactory,
-			final ToDoubleFunction<? super Utterance> uttSentimentRanker) {
-		this(entityInstAttrCtx, diagTransformer, new BooleanTrainingContextsFactory(extCtxFactory), uttSentimentRanker);
+			final ToDoubleFunction<? super Utterance> uttSentimentRanker,
+			final Function<? super Collection<UtteranceRelation>, EntityReferringLanguageWordClasses> entityRefLangExFactory) {
+		this(entityInstAttrCtx, diagTransformer, new BooleanTrainingContextsFactory(extCtxFactory), uttSentimentRanker,
+				entityRefLangExFactory);
 	}
 
 	private SentimentAnalyzingInstancesFactory(final EntityInstanceAttributeContext entityInstAttrCtx,
 			final EventDialogueTransformer diagTransformer, final BooleanTrainingContextsFactory trainingCtxsFactory,
-			final ToDoubleFunction<? super Utterance> uttSentimentRanker) {
+			final ToDoubleFunction<? super Utterance> uttSentimentRanker,
+			final Function<? super Collection<UtteranceRelation>, EntityReferringLanguageWordClasses> entityRefLangExFactory) {
 		super(entityInstAttrCtx);
 		this.diagTransformer = diagTransformer;
 		this.trainingCtxsFactory = trainingCtxsFactory;
 		this.uttSentimentRanker = uttSentimentRanker;
+		this.entityRefLangExFactory = entityRefLangExFactory;
 	}
 
 	private void addWeightedExamples(final String wordClass, final WordClassificationData trainingData,
@@ -115,21 +120,25 @@ public final class SentimentAnalyzingInstancesFactory extends AbstractSizeEstima
 					final BooleanTrainingContexts trainingContexts = trainingCtxsFactory.apply(allUtts.get(0), history);
 					final SentimentAnalyzingEventDialogueUtteranceSorter uttSorter = new SentimentAnalyzingEventDialogueUtteranceSorter(
 							uttSentimentRanker);
-					final SentimentAnalyzingEventDialogueUtteranceSorter.Result sortedUtts = uttSorter.apply(allUtts,
-							event);
-					final double observationWeight = 1.0;
+					final List<UtteranceRelation> uttRels = uttSorter.apply(allUtts, event);
+					final EntityReferringLanguageWordClasses entityRefLangExs = entityRefLangExFactory.apply(uttRels);
 					{
 						// Instances for referent entity
 						final List<EntityFeature.Extractor.Context> positiveCtxs = trainingContexts.getPositive();
-						getWordClasses(sortedUtts.getRefPosExamples()).forEach(token -> addWeightedExamples(token,
-								trainingData, positiveCtxs, observationWeight, POSITIVE_EXAMPLE_LABEL));
-						getWordClasses(sortedUtts.getRefNegExamples()).forEach(token -> addWeightedExamples(token,
-								trainingData, positiveCtxs, observationWeight, NEGATIVE_EXAMPLE_LABEL));
+						entityRefLangExs.getRefPosExamples().stream()
+								.forEach(langEx -> addWeightedExamples(langEx.getName(), trainingData, positiveCtxs,
+										langEx.getWeight(), POSITIVE_EXAMPLE_LABEL));
+						entityRefLangExs.getRefNegExamples().stream()
+								.forEach(langEx -> addWeightedExamples(langEx.getName(), trainingData, positiveCtxs,
+										langEx.getWeight(), NEGATIVE_EXAMPLE_LABEL));
 					}
-					// Instances for non-referent entities
-					sortedUtts.getOtherEntityNegativeExamples().stream().map(Utterance::getTokens).flatMap(List::stream)
-							.forEach(token -> addWeightedExamples(token, trainingData, trainingContexts.getNegative(),
-									observationWeight, NEGATIVE_EXAMPLE_LABEL));
+					{
+						// Instances for non-referent entities
+						final List<EntityFeature.Extractor.Context> negativeCtxs = trainingContexts.getNegative();
+						entityRefLangExs.getOtherEntityNegativeExamples().stream()
+								.forEach(langEx -> addWeightedExamples(langEx.getName(), trainingData, negativeCtxs,
+										langEx.getWeight(), NEGATIVE_EXAMPLE_LABEL));
+					}
 				}
 			});
 		});
