@@ -77,7 +77,7 @@ public final class SentimentWeightedWordClassFactory
 			otherEntityNegativeExamples.add(ex);
 		};
 		// For language which is explicitly not referring to the referent, add a
-		// negative example but no positive example for others becuse it can't
+		// negative example but no positive example for others because it can't
 		// be determined what the language actually refers to
 		final Consumer<WeightedWordClass> refNegExampleHandler = refNegExamples::add;
 		for (final UtteranceRelation uttRel : uttRels) {
