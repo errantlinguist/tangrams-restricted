@@ -120,7 +120,7 @@ public final class EntityFeatureInstanceFeatureExtractorFactory
 
 	private URL createImgResUrl(final String resName) {
 		final String resLoc = RES_LOC_PREFIX + resName;
-		LOGGER.info("Loading resource at \"{}\".", resLoc);
+		LOGGER.debug("Loading resource at \"{}\".", resLoc);
 		final Resource res = resourceLoader.getResource(resLoc);
 		if (!res.exists()) {
 			throw new IllegalArgumentException("Nonexistent resource.");
