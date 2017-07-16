@@ -58,6 +58,18 @@ public enum StanfordCoreNLPConfigurationVariant implements Supplier<StanfordCore
 			return result;
 		}
 	},
+	TOKENIZING_LEMMATIZING_PARSING {
+
+		@Override
+		protected Properties createProps() {
+			final Properties result = createDefaultProps();
+			// https://stanfordnlp.github.io/CoreNLP/annotators.html
+			final Stream<String> annotatorNames = Stream.of(Annotator.STANFORD_TOKENIZE, Annotator.STANFORD_SSPLIT,
+					Annotator.STANFORD_POS, Annotator.STANFORD_LEMMA, Annotator.STANFORD_PARSE);
+			result.setProperty("annotators", annotatorNames.collect(OPTION_MULTIVALUE_DELIMITER));
+			return result;
+		}
+	},
 	TOKENIZING_PARSING {
 
 		@Override
@@ -78,18 +90,6 @@ public enum StanfordCoreNLPConfigurationVariant implements Supplier<StanfordCore
 			// https://stanfordnlp.github.io/CoreNLP/annotators.html
 			final Stream<String> annotatorNames = Stream.of(Annotator.STANFORD_TOKENIZE, Annotator.STANFORD_SSPLIT,
 					Annotator.STANFORD_POS, Annotator.STANFORD_PARSE, Annotator.STANFORD_SENTIMENT);
-			result.setProperty("annotators", annotatorNames.collect(OPTION_MULTIVALUE_DELIMITER));
-			return result;
-		}
-	},
-	TOKENIZING_LEMMATIZING_PARSING {
-
-		@Override
-		protected Properties createProps() {
-			final Properties result = createDefaultProps();
-			// https://stanfordnlp.github.io/CoreNLP/annotators.html
-			final Stream<String> annotatorNames = Stream.of(Annotator.STANFORD_TOKENIZE, Annotator.STANFORD_SSPLIT,
-					Annotator.STANFORD_POS, Annotator.STANFORD_LEMMA, Annotator.STANFORD_PARSE);
 			result.setProperty("annotators", annotatorNames.collect(OPTION_MULTIVALUE_DELIMITER));
 			return result;
 		}
