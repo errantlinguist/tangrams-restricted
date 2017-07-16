@@ -7,7 +7,7 @@ import sys
 from common import COL_DELIM, RANK_COL_NAME, SUBCOL_NAME_DELIM
 from decimal import Decimal
 
-COVARIATE_COL_NAMES = frozenset(("DIALOGIC_INFO",))
+COVARIATE_COL_NAMES = frozenset(("DIALOGIC_INFO", "TESTED_UTT_COUNT", "TOTAL_UTT_COUNT", "TOKEN_COUNT"))
 RANK_COL_NAME = "RANK"
 TRAINING_COL_NAME = "Training"
 TRAINING_METHODS_TO_COMPARE = frozenset(("DIALOGIC", "ALL_NEG"))
@@ -79,7 +79,8 @@ def print_training_method_rank_comparison(training_method_rank_comparison):
 	sorted_covariate_names = tuple(sorted(COVARIATE_COL_NAMES))
 	for training_method in sorted_training_method_names:
 		col_names.append(RANK_COL_NAME + SUBCOL_NAME_DELIM + training_method)
-		for covariate_name in sorted_covariate_names:
+	for covariate_name in sorted_covariate_names:
+		for training_method in sorted_training_method_names:
 			col_names.append(covariate_name + SUBCOL_NAME_DELIM + training_method)
 		
 	print(COL_DELIM.join(col_names))
@@ -88,17 +89,24 @@ def print_training_method_rank_comparison(training_method_rank_comparison):
 		for session_diag_order, test_iters in sorted(session_diags.items(), key=natural_dict_sorting_key):
 			for test_iter, test_results in sorted(test_iters.items(), key=natural_dict_sorting_key):
 				row_cells = [session_key, session_diag_order, test_iter]
+				
+				training_results = []
 				for training_method in sorted_training_method_names:
 					rank = UNKNOWN_VAL_REPR
-					covariate_vals = (UNKNOWN_VAL_REPR for covariate_name in sorted_covariate_names)
+					covariate_vals = dict((covariate_name, UNKNOWN_VAL_REPR) for covariate_name in sorted_covariate_names)
 					try:
 						training_method_results = test_results[training_method]
 						rank = training_method_results.rank
-						covariate_vals = (training_method_results.covariates[covariate_name] for covariate_name in sorted_covariate_names)
+						covariate_vals = training_method_results.covariates
 					except KeyError:
 						print("No results for training method \"%s\" found for key \"%s\", session order %s, test iteration %s." % (training_method, session_key, session_diag_order, test_iter), file=sys.stderr)
-					row_cells.append(rank)
-					row_cells.extend(covariate_vals)
+					training_results.append((rank, covariate_vals))
+				
+				for datum in training_results:
+					row_cells.append(datum[0])
+				for covariate_name in sorted_covariate_names:
+					for datum in training_results:
+						row_cells.append(datum[1][covariate_name])
 				print(COL_DELIM.join(str(cell) for cell in row_cells))	
 					
 		
@@ -115,9 +123,4 @@ if __name__ == "__main__":
 		with open(infile_path, 'r') as lines:
 			rows = (line.strip().split(COL_DELIM) for line in lines)
 			training_method_rank_comparison = create_training_method_rank_comparison(rows)
-			print_training_method_rank_comparison(training_method_rank_comparison)
-			#print(training_method_rank_comparison)
-					
-					
-					
-					
+			print_training_method_rank_comparison(training_method_rank_comparison)					
