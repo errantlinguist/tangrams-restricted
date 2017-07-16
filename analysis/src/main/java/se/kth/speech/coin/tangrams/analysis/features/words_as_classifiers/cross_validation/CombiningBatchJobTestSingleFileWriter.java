@@ -290,6 +290,7 @@ public final class CombiningBatchJobTestSingleFileWriter {
 		diagAnalysisRowCellVals.forEachOrdered(rowCellValBuilder);
 		final String row = rowCellValBuilder.build().collect(ROW_CELL_JOINER);
 		out.println(row);
+		throw new RuntimeException(thrown);
 	}
 
 }
