@@ -125,7 +125,7 @@ public final class SegmentUtteranceFactoryTest {
 		} else {
 			final String segContent = seg.getTranscription().getSegmentOrT().stream().map(T.class::cast)
 					.map(T::getContent).collect(SEG_CONTENT_JOINER);
-			LOGGER.info("Segment content \"{}\" was converted into an empty utterance list.", segContent);
+			LOGGER.debug("Segment content \"{}\" was converted into an empty utterance list.", segContent);
 		}
 	}
 
