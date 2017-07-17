@@ -120,6 +120,7 @@ public enum StanfordCoreNLPConfigurationVariant implements Supplier<StanfordCore
 				"edu/stanford/nlp/models/pos-tagger/english-bidirectional/english-bidirectional-distsim.tagger");
 		// https://stanfordnlp.github.io/CoreNLP/sentiment.html
 		result.setProperty("sentiment.model", "edu/stanford/nlp/models/sentiment/sentiment.ser.gz");
+//		result.setProperty("sentiment.model", "edu/stanford/nlp/models/sentiment/sentiment.binary.ser.gz");
 		// https://stanfordnlp.github.io/CoreNLP/ssplit.html
 //		result.setProperty("ssplit.isOneSentence", "true");
 		// https://stanfordnlp.github.io/CoreNLP/tokenize.html
