@@ -45,7 +45,7 @@ final class TestParameterReporting {
 	 *      "https://www.ibm.com/support/knowledgecenter/en/SSLVMB_21.0.0/com.ibm.spss.statistics.help/syn_variables_variable_names.htm">SPSS
 	 *      documentation</a>
 	 */
-	private static final String SUBCOL_NAME_DELIM = "#";
+	private static final String SUBCOL_NAME_DELIM = ".";
 
 	static final DateTimeFormatter TIMESTAMP_FORMATTER = EventTimes.FORMATTER;
 
