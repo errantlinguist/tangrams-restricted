@@ -40,20 +40,20 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.Refere
  * @since Jul 9, 2017
  *
  */
-public final class SentimentAnalyzingEventDialogueClassifier implements EventDialogueClassifier {
+public final class DialogicEventDialogueClassifier implements EventDialogueClassifier {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(SentimentAnalyzingEventDialogueClassifier.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(DialogicEventDialogueClassifier.class);
 
 	private final Function<? super Collection<UtteranceRelation>, EntityReferringLanguageWordClasses> entityRefLangExFactory;
 
 	private final ReferentConfidenceMapFactory referentConfidenceMapFactory;
 
-	private final ToDoubleFunction<? super Utterance> uttSentimentRanker;
+	private final ToDoubleFunction<? super Utterance> uttAcceptanceRanker;
 
-	public SentimentAnalyzingEventDialogueClassifier(final ToDoubleFunction<? super Utterance> uttSentimentRanker,
+	public DialogicEventDialogueClassifier(final ToDoubleFunction<? super Utterance> uttAcceptanceRanker,
 			final Function<? super Collection<UtteranceRelation>, EntityReferringLanguageWordClasses> entityRefLangExFactory,
 			final ReferentConfidenceMapFactory referentConfidenceMapFactory) {
-		this.uttSentimentRanker = uttSentimentRanker;
+		this.uttAcceptanceRanker = uttAcceptanceRanker;
 		this.entityRefLangExFactory = entityRefLangExFactory;
 		this.referentConfidenceMapFactory = referentConfidenceMapFactory;
 	}
@@ -79,8 +79,8 @@ public final class SentimentAnalyzingEventDialogueClassifier implements EventDia
 				LOGGER.debug("No utterances to classify for {}.", transformedDiag);
 				result = Optional.empty();
 			} else {
-				final SentimentAnalyzingEventDialogueUtteranceSorter uttSorter = new SentimentAnalyzingEventDialogueUtteranceSorter(
-						uttSentimentRanker);
+				final DialogicEventDialogueUtteranceSorter uttSorter = new DialogicEventDialogueUtteranceSorter(
+						uttAcceptanceRanker);
 				final List<UtteranceRelation> uttRels = uttSorter.apply(allUtts, event);
 				final EntityReferringLanguageWordClasses entityRefLangExs = entityRefLangExFactory.apply(uttRels);
 				final Object2DoubleMap<String> refPosExs = entityRefLangExs.getRefPosExamples();

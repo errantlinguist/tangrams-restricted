@@ -22,15 +22,15 @@ import se.kth.speech.coin.tangrams.analysis.Utterance;
 
 public final class UtteranceRelation {
 
+	private final Utterance acceptanceUtt;
+
+	private final double acceptanceValue;
+
 	private final List<Utterance> prevUtts;
 
-	private final Utterance sentimentUtt;
-
-	private final double sentimentValue;
-
-	UtteranceRelation(final Utterance sentimentUtt, final double sentimentValue, final List<Utterance> prevUtts) {
-		this.sentimentUtt = sentimentUtt;
-		this.sentimentValue = sentimentValue;
+	UtteranceRelation(final Utterance acceptanceUtt, final double acceptanceValue, final List<Utterance> prevUtts) {
+		this.acceptanceUtt = acceptanceUtt;
+		this.acceptanceValue = acceptanceValue;
 		this.prevUtts = prevUtts;
 	}
 
@@ -58,17 +58,31 @@ public final class UtteranceRelation {
 		} else if (!prevUtts.equals(other.prevUtts)) {
 			return false;
 		}
-		if (sentimentUtt == null) {
-			if (other.sentimentUtt != null) {
+		if (acceptanceUtt == null) {
+			if (other.acceptanceUtt != null) {
 				return false;
 			}
-		} else if (!sentimentUtt.equals(other.sentimentUtt)) {
+		} else if (!acceptanceUtt.equals(other.acceptanceUtt)) {
 			return false;
 		}
-		if (Double.doubleToLongBits(sentimentValue) != Double.doubleToLongBits(other.sentimentValue)) {
+		if (Double.doubleToLongBits(acceptanceValue) != Double.doubleToLongBits(other.acceptanceValue)) {
 			return false;
 		}
 		return true;
+	}
+
+	/**
+	 * @return the acceptanceUtt
+	 */
+	public Utterance getAcceptanceUtt() {
+		return acceptanceUtt;
+	}
+
+	/**
+	 * @return the acceptanceValue
+	 */
+	public double getAcceptanceValue() {
+		return acceptanceValue;
 	}
 
 	/**
@@ -76,20 +90,6 @@ public final class UtteranceRelation {
 	 */
 	public List<Utterance> getPrevUtts() {
 		return prevUtts;
-	}
-
-	/**
-	 * @return the sentimentUtt
-	 */
-	public Utterance getSentimentUtt() {
-		return sentimentUtt;
-	}
-
-	/**
-	 * @return the sentimentValue
-	 */
-	public double getSentimentValue() {
-		return sentimentValue;
 	}
 
 	/*
@@ -102,9 +102,9 @@ public final class UtteranceRelation {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + (prevUtts == null ? 0 : prevUtts.hashCode());
-		result = prime * result + (sentimentUtt == null ? 0 : sentimentUtt.hashCode());
+		result = prime * result + (acceptanceUtt == null ? 0 : acceptanceUtt.hashCode());
 		long temp;
-		temp = Double.doubleToLongBits(sentimentValue);
+		temp = Double.doubleToLongBits(acceptanceValue);
 		result = prime * result + (int) (temp ^ temp >>> 32);
 		return result;
 	}
@@ -117,10 +117,10 @@ public final class UtteranceRelation {
 	@Override
 	public String toString() {
 		final StringBuilder builder = new StringBuilder();
-		builder.append("UtteranceRelation [sentimentUtt=");
-		builder.append(sentimentUtt);
-		builder.append(", sentimentValue=");
-		builder.append(sentimentValue);
+		builder.append("UtteranceRelation [acceptanceUtt=");
+		builder.append(acceptanceUtt);
+		builder.append(", acceptanceValue=");
+		builder.append(acceptanceValue);
 		builder.append(", prevUtts=");
 		builder.append(prevUtts);
 		builder.append("]");

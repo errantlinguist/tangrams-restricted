@@ -38,7 +38,7 @@ import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionCont
 import se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttributeContext;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EntityReferringLanguageWordClasses;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EventDialogueTransformer;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.SentimentAnalyzingEventDialogueUtteranceSorter;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.DialogicEventDialogueUtteranceSorter;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.UtteranceRelation;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 import weka.core.Instance;
@@ -49,9 +49,9 @@ import weka.core.Instances;
  * @since May 30, 2017
  *
  */
-public final class SentimentAnalyzingInstancesFactory extends AbstractSizeEstimatingInstancesMapFactory {
+public final class DialogicInstancesFactory extends AbstractSizeEstimatingInstancesMapFactory {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(SentimentAnalyzingInstancesFactory.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(DialogicInstancesFactory.class);
 
 	private static final String NEGATIVE_EXAMPLE_LABEL = Boolean.FALSE.toString();
 
@@ -65,26 +65,26 @@ public final class SentimentAnalyzingInstancesFactory extends AbstractSizeEstima
 
 	private final BiConsumer<? super EventDialogue, ? super List<UtteranceRelation>> uttRelHandler;
 
-	private final ToDoubleFunction<? super Utterance> uttSentimentRanker;
+	private final ToDoubleFunction<? super Utterance> uttAcceptanceRanker;
 
-	public SentimentAnalyzingInstancesFactory(final EntityInstanceAttributeContext entityInstAttrCtx,
+	public DialogicInstancesFactory(final EntityInstanceAttributeContext entityInstAttrCtx,
 			final EventDialogueTransformer diagTransformer, final EntityFeatureExtractionContextFactory extCtxFactory,
-			final ToDoubleFunction<? super Utterance> uttSentimentRanker,
+			final ToDoubleFunction<? super Utterance> uttAcceptanceRanker,
 			final Function<? super Collection<UtteranceRelation>, EntityReferringLanguageWordClasses> entityRefLangExFactory,
 			final BiConsumer<? super EventDialogue, ? super List<UtteranceRelation>> uttRelHandler) {
-		this(entityInstAttrCtx, diagTransformer, new BooleanTrainingContextsFactory(extCtxFactory), uttSentimentRanker,
+		this(entityInstAttrCtx, diagTransformer, new BooleanTrainingContextsFactory(extCtxFactory), uttAcceptanceRanker,
 				entityRefLangExFactory, uttRelHandler);
 	}
 
-	private SentimentAnalyzingInstancesFactory(final EntityInstanceAttributeContext entityInstAttrCtx,
+	private DialogicInstancesFactory(final EntityInstanceAttributeContext entityInstAttrCtx,
 			final EventDialogueTransformer diagTransformer, final BooleanTrainingContextsFactory trainingCtxsFactory,
-			final ToDoubleFunction<? super Utterance> uttSentimentRanker,
+			final ToDoubleFunction<? super Utterance> uttAcceptanceRanker,
 			final Function<? super Collection<UtteranceRelation>, EntityReferringLanguageWordClasses> entityRefLangExFactory,
 			final BiConsumer<? super EventDialogue, ? super List<UtteranceRelation>> uttRelHandler) {
 		super(entityInstAttrCtx);
 		this.diagTransformer = diagTransformer;
 		this.trainingCtxsFactory = trainingCtxsFactory;
-		this.uttSentimentRanker = uttSentimentRanker;
+		this.uttAcceptanceRanker = uttAcceptanceRanker;
 		this.entityRefLangExFactory = entityRefLangExFactory;
 		this.uttRelHandler = uttRelHandler;
 	}
@@ -124,8 +124,8 @@ public final class SentimentAnalyzingInstancesFactory extends AbstractSizeEstima
 					LOGGER.debug("Creating positive and negative examples for entity selected by player \"{}\".",
 							event.getString(GameManagementEvent.Attribute.PLAYER_ID.toString()));
 					final BooleanTrainingContexts trainingContexts = trainingCtxsFactory.apply(allUtts.get(0), history);
-					final SentimentAnalyzingEventDialogueUtteranceSorter uttSorter = new SentimentAnalyzingEventDialogueUtteranceSorter(
-							uttSentimentRanker);
+					final DialogicEventDialogueUtteranceSorter uttSorter = new DialogicEventDialogueUtteranceSorter(
+							uttAcceptanceRanker);
 					final List<UtteranceRelation> uttRels = uttSorter.apply(allUtts, event);
 					uttRelHandler.accept(uttDialogue, uttRels);
 

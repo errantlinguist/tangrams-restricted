@@ -39,13 +39,13 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EventDialogueClassifier;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.InstructorUtteranceFilteringEventDialogueTransformer;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.SentimentAnalyzingEventDialogueClassifier;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.SentimentWeightedWordClassFactory;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.DialogicEventDialogueClassifier;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.DialogicWeightedWordClassFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.OnePositiveMaximumNegativeInstancesFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.OnePositiveOneNegativeInstanceFactory;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.SentimentAnalyzingInstancesFactory;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.DialogicInstancesFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.TrainingInstancesFactory;
-import se.kth.speech.nlp.PatternMatchingUtteranceSentimentRanker;
+import se.kth.speech.nlp.PatternMatchingUtteranceAcceptanceRanker;
 
 enum Training {
 	ALL_NEG(1) {
@@ -74,7 +74,7 @@ enum Training {
 	},
 	DIALOGIC(1) {
 
-		private final SentimentWeightedWordClassFactory sentWordClassFactory = createSentWordClassFactory();
+		private final DialogicWeightedWordClassFactory diagWordClassFactory = createDiagWordClassFactory();
 
 		@Override
 		public CachingEventDialogueTransformer createSymmetricalTrainingTestingEvgDiagTransformer(
@@ -91,22 +91,22 @@ enum Training {
 					.getBean(EntityInstanceAttributeContext.class);
 			final EntityFeatureExtractionContextFactory extCtxFactory = appCtx
 					.getBean(EntityFeatureExtractionContextFactory.class);
-			return new SentimentAnalyzingInstancesFactory(entityInstAttrCtx, trainingCtx.getDiagTransformer(),
-					extCtxFactory, createCachingUttSentimentRanker(), sentWordClassFactory,
+			return new DialogicInstancesFactory(entityInstAttrCtx, trainingCtx.getDiagTransformer(),
+					extCtxFactory, createCachingUttAcceptanceRanker(), diagWordClassFactory,
 					trainingCtx.getUttRelHandler());
 		};
 
 		@Override
 		public Function<ReferentConfidenceMapFactory, EventDialogueClassifier> getClassifierFactory() {
-			return (refConfMapFactory) -> new SentimentAnalyzingEventDialogueClassifier(
-					createCachingUttSentimentRanker(), sentWordClassFactory, refConfMapFactory);
+			return (refConfMapFactory) -> new DialogicEventDialogueClassifier(
+					createCachingUttAcceptanceRanker(), diagWordClassFactory, refConfMapFactory);
 		}
 
-		private ToDoubleFunction<Utterance> createCachingUttSentimentRanker() {
+		private ToDoubleFunction<Utterance> createCachingUttAcceptanceRanker() {
 			final Object2DoubleMap<Utterance> cache = new Object2DoubleOpenHashMap<>(
 					TrainingConstants.ESTIMATED_UNIQUE_UTT_COUNT);
 			cache.defaultReturnValue(Double.NaN);
-			final PatternMatchingUtteranceSentimentRanker ranker = new PatternMatchingUtteranceSentimentRanker();
+			final PatternMatchingUtteranceAcceptanceRanker ranker = new PatternMatchingUtteranceAcceptanceRanker();
 			return utt -> {
 				double result = cache.getDouble(utt);
 				if (Double.isNaN(result)) {
@@ -150,6 +150,18 @@ enum Training {
 
 	private static final InstructorUtteranceFilteringEventDialogueTransformer INSTR_UTT_FILTER = new InstructorUtteranceFilteringEventDialogueTransformer();
 
+	private static DialogicWeightedWordClassFactory createDiagWordClassFactory() {
+		try {
+			final Properties props = ClassProperties.load(Training.class);
+			return new DialogicWeightedWordClassFactory(
+					Double.parseDouble(props.getProperty("instrUttObservationWeight")),
+					Double.parseDouble(props.getProperty("otherUttObsevationWeight")));
+		} catch (final IOException e) {
+			throw new UncheckedIOException(e);
+		}
+
+	}
+
 	private static CachingEventDialogueTransformer createInstrUttFilteringTransformer(
 			final List<EventDialogueTransformer> diagTransformers) {
 		final List<EventDialogueTransformer> chain = new ArrayList<>(diagTransformers.size() + 1);
@@ -157,18 +169,6 @@ enum Training {
 		chain.addAll(diagTransformers);
 		final ChainedEventDialogueTransformer chainedTransformer = new ChainedEventDialogueTransformer(chain);
 		return new CachingEventDialogueTransformer(chainedTransformer);
-	}
-
-	private static SentimentWeightedWordClassFactory createSentWordClassFactory() {
-		try {
-			final Properties props = ClassProperties.load(Training.class);
-			return new SentimentWeightedWordClassFactory(
-					Double.parseDouble(props.getProperty("instrUttObservationWeight")),
-					Double.parseDouble(props.getProperty("otherUttObsevationWeight")));
-		} catch (final IOException e) {
-			throw new UncheckedIOException(e);
-		}
-
 	}
 
 	private int iterCount;

@@ -35,14 +35,14 @@ import se.kth.speech.coin.tangrams.analysis.Utterance;
  * @since Jul 9, 2017
  *
  */
-public final class SentimentAnalyzingEventDialogueUtteranceSorter
+public final class DialogicEventDialogueUtteranceSorter
 		implements BiFunction<List<Utterance>, Event, List<UtteranceRelation>> {
 
-	private final ToDoubleFunction<? super Utterance> uttSentimentRanker;
+	private final ToDoubleFunction<? super Utterance> uttAcceptanceRanker;
 
-	public SentimentAnalyzingEventDialogueUtteranceSorter(
-			final ToDoubleFunction<? super Utterance> uttSentimentRanker) {
-		this.uttSentimentRanker = uttSentimentRanker;
+	public DialogicEventDialogueUtteranceSorter(
+			final ToDoubleFunction<? super Utterance> uttAcceptanceRanker) {
+		this.uttAcceptanceRanker = uttAcceptanceRanker;
 	}
 
 	@Override
@@ -58,8 +58,8 @@ public final class SentimentAnalyzingEventDialogueUtteranceSorter
 					instructorUttMatcher);
 			final Utterance firstInstructorUtt = preInstructorUtts.getValue();
 
-			final double firstInstructorUttSentimentRank = uttSentimentRanker.applyAsDouble(firstInstructorUtt);
-			result.add(new UtteranceRelation(firstInstructorUtt, firstInstructorUttSentimentRank,
+			final double firstInstructorUttAcceptanceRank = uttAcceptanceRanker.applyAsDouble(firstInstructorUtt);
+			result.add(new UtteranceRelation(firstInstructorUtt, firstInstructorUttAcceptanceRank,
 					Arrays.asList(preInstructorUtts.getKey().toArray(Utterance[]::new))));
 		}
 

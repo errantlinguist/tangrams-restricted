@@ -43,32 +43,32 @@ import se.kth.speech.coin.tangrams.analysis.Utterance;
  * @since Jul 13, 2017
  *
  */
-public final class PatternMatchingUtteranceSentimentRanker implements ToDoubleFunction<Utterance> {
+public final class PatternMatchingUtteranceAcceptanceRanker implements ToDoubleFunction<Utterance> {
 
 	private static final Pattern COLUMN_DELIMITER_PATTERN = Pattern.compile("\\t");
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(PatternMatchingUtteranceSentimentRanker.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(PatternMatchingUtteranceAcceptanceRanker.class);
 
-	private static SoftReference<Object2DoubleSortedMap<List<String>>> singletonSentimentRanksRef = new SoftReference<>(
+	private static SoftReference<Object2DoubleSortedMap<List<String>>> singletonAcceptanceRanksRef = new SoftReference<>(
 			null);
 
 	private static final Pattern WHITESPACE_PATTERN = Pattern.compile("\\s+");
 
-	private static Object2DoubleSortedMap<List<String>> fetchSentimentRanks() {
-		Object2DoubleSortedMap<List<String>> result = singletonSentimentRanksRef.get();
+	private static Object2DoubleSortedMap<List<String>> fetchAcceptanceRanks() {
+		Object2DoubleSortedMap<List<String>> result = singletonAcceptanceRanksRef.get();
 		if (result == null) {
-			synchronized (PatternMatchingUtteranceSentimentRanker.class) {
-				result = singletonSentimentRanksRef.get();
+			synchronized (PatternMatchingUtteranceAcceptanceRanker.class) {
+				result = singletonAcceptanceRanksRef.get();
 				if (result == null) {
-					result = loadSentimentRankMap();
-					singletonSentimentRanksRef = new SoftReference<>(result);
+					result = loadAcceptanceRankMap();
+					singletonAcceptanceRanksRef = new SoftReference<>(result);
 				}
 			}
 		}
 		return result;
 	}
 
-	private static Object2DoubleSortedMap<List<String>> loadSentimentRankMap() {
+	private static Object2DoubleSortedMap<List<String>> loadAcceptanceRankMap() {
 		final Comparator<List<String>> tokenSeqComparator = new Comparator<List<String>>() {
 
 			@Override
@@ -95,28 +95,28 @@ public final class PatternMatchingUtteranceSentimentRanker implements ToDoubleFu
 		final Object2DoubleSortedMap<List<String>> result = new Object2DoubleAVLTreeMap<>(tokenSeqComparator);
 		result.defaultReturnValue(Double.NaN);
 		try (final BufferedReader reader = new BufferedReader(new InputStreamReader(
-				PatternMatchingUtteranceSentimentRanker.class.getResourceAsStream("sentiment-patterns.tsv")))) {
+				PatternMatchingUtteranceAcceptanceRanker.class.getResourceAsStream("acceptance-patterns.tsv")))) {
 			for (String line = reader.readLine(); line != null; line = reader.readLine()) {
 				final String[] row = COLUMN_DELIMITER_PATTERN.split(line);
-				final double sentimentRank = Double.parseDouble(row[0]);
+				final double acceptanceRank = Double.parseDouble(row[0]);
 				final List<String> tokens = Arrays.asList(WHITESPACE_PATTERN.split(row[1]));
-				result.put(tokens, sentimentRank);
+				result.put(tokens, acceptanceRank);
 			}
 		} catch (final IOException e) {
 			throw new UncheckedIOException(e);
 		}
-		LOGGER.info("Loaded sentiment data map of size {}.", result.size());
+		LOGGER.info("Loaded acceptance data map of size {}.", result.size());
 		return result;
 	}
 
-	private final Object2DoubleSortedMap<List<String>> sentimentRanks;
+	private final Object2DoubleSortedMap<List<String>> acceptanceRanks;
 
-	public PatternMatchingUtteranceSentimentRanker() {
-		this(fetchSentimentRanks());
+	public PatternMatchingUtteranceAcceptanceRanker() {
+		this(fetchAcceptanceRanks());
 	}
 
-	private PatternMatchingUtteranceSentimentRanker(final Object2DoubleSortedMap<List<String>> sentimentRanks) {
-		this.sentimentRanks = sentimentRanks;
+	private PatternMatchingUtteranceAcceptanceRanker(final Object2DoubleSortedMap<List<String>> acceptanceRanks) {
+		this.acceptanceRanks = acceptanceRanks;
 	}
 
 	/*
@@ -126,8 +126,8 @@ public final class PatternMatchingUtteranceSentimentRanker implements ToDoubleFu
 	 */
 	@Override
 	public double applyAsDouble(final Utterance utt) {
-		final List<List<String>> maxLengthSentimentTokenSeqs = createMaxLengthMatchingTokenSeqList(utt.getTokens());
-		final double sentRankSum = maxLengthSentimentTokenSeqs.stream().mapToDouble(sentimentRanks::getDouble).sum();
+		final List<List<String>> maxLengthAcceptanceTokenSeqs = createMaxLengthMatchingTokenSeqList(utt.getTokens());
+		final double sentRankSum = maxLengthAcceptanceTokenSeqs.stream().mapToDouble(acceptanceRanks::getDouble).sum();
 		assert !Double.isNaN(sentRankSum);
 		final double result;
 		if (sentRankSum < 0) {
@@ -144,20 +144,20 @@ public final class PatternMatchingUtteranceSentimentRanker implements ToDoubleFu
 		List<List<String>> result = new ArrayList<>();
 		int maxTokenSeqLength = Integer.MIN_VALUE;
 
-		final ObjectSortedSet<List<String>> allSentimentTokenSeqs = sentimentRanks.keySet();
-		final ObjectSortedSet<List<String>> eqOrShorterTokenSeqs = allSentimentTokenSeqs.tailSet(tokens);
-		assert allSentimentTokenSeqs.contains(tokens) == eqOrShorterTokenSeqs.contains(tokens);
-		for (final List<String> sentimentTokenSeq : eqOrShorterTokenSeqs) {
+		final ObjectSortedSet<List<String>> allAcceptanceTokenSeqs = acceptanceRanks.keySet();
+		final ObjectSortedSet<List<String>> eqOrShorterTokenSeqs = allAcceptanceTokenSeqs.tailSet(tokens);
+		assert allAcceptanceTokenSeqs.contains(tokens) == eqOrShorterTokenSeqs.contains(tokens);
+		for (final List<String> acceptanceTokenSeq : eqOrShorterTokenSeqs) {
 			// https://stackoverflow.com/a/32865087
-			if (Collections.indexOfSubList(tokens, sentimentTokenSeq) > -1) {
-				final int tokenSeqLength = sentimentTokenSeq.size();
+			if (Collections.indexOfSubList(tokens, acceptanceTokenSeq) > -1) {
+				final int tokenSeqLength = acceptanceTokenSeq.size();
 				if (maxTokenSeqLength < tokenSeqLength) {
 					// Reset the set of longest matching sequences
 					result = new ArrayList<>();
-					result.add(sentimentTokenSeq);
+					result.add(acceptanceTokenSeq);
 					maxTokenSeqLength = tokenSeqLength;
 				} else if (maxTokenSeqLength == tokenSeqLength) {
-					result.add(sentimentTokenSeq);
+					result.add(acceptanceTokenSeq);
 				} else if (!result.isEmpty()) {
 					// The next elements can only be shorter than the ones
 					// which

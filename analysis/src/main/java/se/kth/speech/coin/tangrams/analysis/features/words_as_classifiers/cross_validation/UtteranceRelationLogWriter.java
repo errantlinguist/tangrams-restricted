@@ -89,12 +89,12 @@ final class UtteranceRelationLogWriter implements BiConsumer<EventDialogue, Iter
 		writer.write(COL_DELIM);
 		writer.write(Integer.toString(relNo));
 		writer.write(COL_DELIM);
-		final Utterance instrUtt = uttRel.getSentimentUtt();
+		final Utterance instrUtt = uttRel.getAcceptanceUtt();
 		writer.write(instrUtt.getTokenStr());
 		writer.write(COL_DELIM);
 		writer.write(Long.toString(instrUtt.getTokens().stream().count()));
 		writer.write(COL_DELIM);
-		writer.write(Double.toString(uttRel.getSentimentValue()));
+		writer.write(Double.toString(uttRel.getAcceptanceValue()));
 		writer.write(COL_DELIM);
 		final List<Utterance> prevUtts = uttRel.getPrevUtts();
 		writer.write(Integer.toString(prevUtts.size()));

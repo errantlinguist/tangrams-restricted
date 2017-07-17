@@ -30,11 +30,11 @@ import se.kth.speech.coin.tangrams.analysis.Utterance;
  * @since Jul 15, 2017
  *
  */
-public final class SentimentWeightedWordClassFactory
+public final class DialogicWeightedWordClassFactory
 		implements Function<Collection<UtteranceRelation>, EntityReferringLanguageWordClasses> {
 
 	private static Stream<String> getWordClasses(final List<Utterance> utts) {
-		return utts.stream().flatMap(SentimentWeightedWordClassFactory::getWordClasses);
+		return utts.stream().flatMap(DialogicWeightedWordClassFactory::getWordClasses);
 	}
 
 	private static Stream<String> getWordClasses(final Utterance utt) {
@@ -45,7 +45,7 @@ public final class SentimentWeightedWordClassFactory
 
 	private final double otherUttObsevationWeight;
 
-	public SentimentWeightedWordClassFactory(final double instrUttObservationWeight,
+	public DialogicWeightedWordClassFactory(final double instrUttObservationWeight,
 			final double otherUttObsevationWeight) {
 		this.instrUttObservationWeight = instrUttObservationWeight;
 		this.otherUttObsevationWeight = otherUttObsevationWeight;
@@ -66,7 +66,7 @@ public final class SentimentWeightedWordClassFactory
 				estimatedExampleSetCount);
 		for (final UtteranceRelation uttRel : uttRels) {
 			// Add all language from the instructor
-			getWordClasses(uttRel.getSentimentUtt()).forEach(wordClass -> {
+			getWordClasses(uttRel.getAcceptanceUtt()).forEach(wordClass -> {
 				// For each entity which is selected, process a
 				// positive example for this observation: The
 				// utterance being processed DOES correspond to
@@ -81,8 +81,8 @@ public final class SentimentWeightedWordClassFactory
 			});
 
 			// Process non-instructor language
-			final double sentValue = uttRel.getSentimentValue();
-			if (sentValue < 0) {
+			final double acceptanceValue = uttRel.getAcceptanceValue();
+			if (acceptanceValue < 0) {
 				// Use the other player's utterances which came
 				// before this instructor utterance as negative
 				// examples for the referent but not anything for the
@@ -90,7 +90,7 @@ public final class SentimentWeightedWordClassFactory
 				// be determined what the language actually refers to
 				getWordClasses(uttRel.getPrevUtts()).forEach(wordClass -> refNegExamples.put(wordClass,
 						refNegExamples.getDouble(wordClass) + otherUttObsevationWeight));
-			} else if (sentValue > 0) {
+			} else if (acceptanceValue > 0) {
 				// Use the other player's utterances which came
 				// before this instructor utterance as positive
 				// examples

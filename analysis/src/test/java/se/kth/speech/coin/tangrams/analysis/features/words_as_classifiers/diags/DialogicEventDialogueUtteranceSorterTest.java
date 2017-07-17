@@ -36,26 +36,25 @@ import iristk.system.Event;
 import se.kth.speech.coin.tangrams.analysis.Utterance;
 import se.kth.speech.coin.tangrams.iristk.EventTimes;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
-import se.kth.speech.nlp.PatternMatchingUtteranceSentimentRanker;
+import se.kth.speech.nlp.PatternMatchingUtteranceAcceptanceRanker;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
  * @since Jul 13, 2017
  *
  */
-public final class SentimentAnalyzingEventDialogueUtteranceSorterTest {
+public final class DialogicEventDialogueUtteranceSorterTest {
 
-	private static final Logger LOGGER = LoggerFactory
-			.getLogger(SentimentAnalyzingEventDialogueUtteranceSorterTest.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(DialogicEventDialogueUtteranceSorterTest.class);
 
-	private static SentimentAnalyzingEventDialogueUtteranceSorter createTestInst() {
-		final ToDoubleFunction<Utterance> uttSentimentRanker = new PatternMatchingUtteranceSentimentRanker();
-		return new SentimentAnalyzingEventDialogueUtteranceSorter(uttSentimentRanker);
+	private static DialogicEventDialogueUtteranceSorter createTestInst() {
+		final ToDoubleFunction<Utterance> uttAcceptanceRanker = new PatternMatchingUtteranceAcceptanceRanker();
+		return new DialogicEventDialogueUtteranceSorter(uttAcceptanceRanker);
 	}
 
 	/**
 	 * Test method for
-	 * {@link se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.SentimentAnalyzingEventDialogueUtteranceSorter#apply(java.util.List, java.util.function.Predicate)}.
+	 * {@link se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.DialogicEventDialogueUtteranceSorter#apply(java.util.List, java.util.function.Predicate)}.
 	 *
 	 * @throws JAXBException
 	 * @throws IOException
@@ -72,15 +71,15 @@ public final class SentimentAnalyzingEventDialogueUtteranceSorterTest {
 				new Utterance("2", selectorPlayerId, Arrays.asList("the", "big", "one", "right"), 1.2f, 2.0f),
 				new Utterance("3", instructorPlayerId, Arrays.asList("yeah", "right"), 2.2f, 3.0f));
 
-		final SentimentAnalyzingEventDialogueUtteranceSorter testInst = createTestInst();
+		final DialogicEventDialogueUtteranceSorter testInst = createTestInst();
 		final List<UtteranceRelation> result = testInst.apply(utts, event);
 		LOGGER.debug("{}", result);
-		final long nonZeroSentimentRankCount = result.stream().mapToDouble(UtteranceRelation::getSentimentValue)
+		final long nonZeroAcceptanceRankCount = result.stream().mapToDouble(UtteranceRelation::getAcceptanceValue)
 				.filter(val -> val != 0.0).count();
-		Assert.assertEquals(nonZeroSentimentRankCount, 1);
-		final Set<String> sentUttSpeakerIds = result.stream().map(UtteranceRelation::getSentimentUtt)
+		Assert.assertEquals(nonZeroAcceptanceRankCount, 1);
+		final Set<String> acceptanceUttSpeakerIds = result.stream().map(UtteranceRelation::getAcceptanceUtt)
 				.map(Utterance::getSpeakerId).collect(Collectors.toSet());
-		Assert.assertEquals(Collections.singleton(instructorPlayerId), sentUttSpeakerIds);
+		Assert.assertEquals(Collections.singleton(instructorPlayerId), acceptanceUttSpeakerIds);
 		final Set<String> otherUttSpeakerIds = result.stream().map(UtteranceRelation::getPrevUtts).flatMap(List::stream)
 				.map(Utterance::getSpeakerId).collect(Collectors.toSet());
 		Assert.assertEquals(Collections.singleton(selectorPlayerId), otherUttSpeakerIds);
