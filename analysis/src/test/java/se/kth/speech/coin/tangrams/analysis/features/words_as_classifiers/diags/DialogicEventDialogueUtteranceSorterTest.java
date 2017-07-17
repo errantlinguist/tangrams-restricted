@@ -48,6 +48,7 @@ public final class DialogicEventDialogueUtteranceSorterTest {
 	private static final Logger LOGGER = LoggerFactory.getLogger(DialogicEventDialogueUtteranceSorterTest.class);
 
 	private static DialogicEventDialogueUtteranceSorter createTestInst() {
+//		final ToDoubleFunction<Utterance> uttAcceptanceRanker = new CachingUtteranceSentimentRanker(StanfordCoreNLPConfigurationVariant.TOKENIZING_PARSING_SENTIMENT.get(), 3);
 		final ToDoubleFunction<Utterance> uttAcceptanceRanker = new PatternMatchingUtteranceAcceptanceRanker();
 		return new DialogicEventDialogueUtteranceSorter(uttAcceptanceRanker);
 	}
@@ -76,7 +77,7 @@ public final class DialogicEventDialogueUtteranceSorterTest {
 		LOGGER.debug("{}", result);
 		final long nonZeroAcceptanceRankCount = result.stream().mapToDouble(UtteranceRelation::getAcceptanceValue)
 				.filter(val -> val != 0.0).count();
-		Assert.assertEquals(nonZeroAcceptanceRankCount, 1);
+		Assert.assertEquals(1, nonZeroAcceptanceRankCount);
 		final Set<String> acceptanceUttSpeakerIds = result.stream().map(UtteranceRelation::getAcceptanceUtt)
 				.map(Utterance::getSpeakerId).collect(Collectors.toSet());
 		Assert.assertEquals(Collections.singleton(instructorPlayerId), acceptanceUttSpeakerIds);
