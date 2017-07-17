@@ -104,6 +104,7 @@ public enum StanfordCoreNLPConfigurationVariant implements Supplier<StanfordCore
 		final Properties result = new Properties();
 		// https://stanfordnlp.github.io/CoreNLP/api.html
 		// https://stanfordnlp.github.io/CoreNLP/parse.html
+		result.setProperty("parse.binaryTrees", "true");
 		// result.setProperty("parse.model",
 		// "edu/stanford/nlp/models/lexparser/englishPCFG.ser.gz");
 		// result.setProperty("parse.model",
