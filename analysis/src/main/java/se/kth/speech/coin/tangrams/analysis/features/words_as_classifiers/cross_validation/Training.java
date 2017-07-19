@@ -57,7 +57,7 @@ enum Training {
 		}
 
 		@Override
-		public TrainingInstancesFactory createTrainingInstsFactoryIterCount(final TrainingContext trainingCtx) {
+		public TrainingInstancesFactory createTrainingInstsFactory(final TrainingContext trainingCtx) {
 			final ApplicationContext appCtx = trainingCtx.getAppCtx();
 			final EntityInstanceAttributeContext entityInstAttrCtx = appCtx
 					.getBean(EntityInstanceAttributeContext.class);
@@ -85,7 +85,7 @@ enum Training {
 		}
 
 		@Override
-		public TrainingInstancesFactory createTrainingInstsFactoryIterCount(final TrainingContext trainingCtx) {
+		public TrainingInstancesFactory createTrainingInstsFactory(final TrainingContext trainingCtx) {
 			final ApplicationContext appCtx = trainingCtx.getAppCtx();
 			final EntityInstanceAttributeContext entityInstAttrCtx = appCtx
 					.getBean(EntityInstanceAttributeContext.class);
@@ -132,7 +132,7 @@ enum Training {
 		}
 
 		@Override
-		public TrainingInstancesFactory createTrainingInstsFactoryIterCount(final TrainingContext trainingCtx) {
+		public TrainingInstancesFactory createTrainingInstsFactory(final TrainingContext trainingCtx) {
 			final ApplicationContext appCtx = trainingCtx.getAppCtx();
 			final EntityInstanceAttributeContext entityInstAttrCtx = appCtx
 					.getBean(EntityInstanceAttributeContext.class);
@@ -180,7 +180,7 @@ enum Training {
 	public abstract CachingEventDialogueTransformer createSymmetricalTrainingTestingEvgDiagTransformer(
 			final List<EventDialogueTransformer> diagTransformers);
 
-	public abstract TrainingInstancesFactory createTrainingInstsFactoryIterCount(TrainingContext trainingCtx);
+	public abstract TrainingInstancesFactory createTrainingInstsFactory(TrainingContext trainingCtx);
 
 	/**
 	 * @return the classifierFactory

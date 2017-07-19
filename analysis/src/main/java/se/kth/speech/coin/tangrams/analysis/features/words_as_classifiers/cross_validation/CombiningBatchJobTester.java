@@ -155,7 +155,7 @@ public final class CombiningBatchJobTester {
 							final TrainingContext trainingCtx = new TrainingContext(symmetricalDiagTransformer, appCtx,
 									backgroundJobExecutor, uttRelHandler);
 							final TrainingInstancesFactory trainingInstsFactory = trainingMethod
-									.createTrainingInstsFactoryIterCount(trainingCtx);
+									.createTrainingInstsFactory(trainingCtx);
 							final TestSetFactory testSetFactory = new TestSetFactory(trainingInstsFactory,
 									sessionDiagMgrCacheSupplier);
 							final Tester tester = appCtx.getBean(Tester.class, testSetFactory,
