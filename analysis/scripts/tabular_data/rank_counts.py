@@ -22,10 +22,13 @@ def parse_rank_counts(lines):
 
 if __name__ == "__main__":
 	import sys
-	with open(sys.argv[1], 'r') as infile:
-		rank_counts = parse_rank_counts(infile)
+	if len(sys.argv) != 2:
+		raise ValueError("Usage: %s INFILE > OUTFILE" % sys.argv[0])
+	else:
+		with open(sys.argv[1], 'r') as infile:
+			rank_counts = parse_rank_counts(infile)
 
-	sorted_rank_counts = sorted(rank_counts.items(), key=lambda item: item[0])
-	print(COL_DELIM.join(("rank", "count")))
-	for rank, count in sorted_rank_counts:
-		print(COL_DELIM.join((str(rank), str(count))))
+		sorted_rank_counts = sorted(rank_counts.items(), key=lambda item: item[0])
+		print(COL_DELIM.join(("rank", "count")))
+		for rank, count in sorted_rank_counts:
+			print(COL_DELIM.join((str(rank), str(count))))
