@@ -4,10 +4,10 @@ from collections import defaultdict
 import re
 import sys
 
-from common import COL_DELIM, RANK_COL_NAME, SUBCOL_NAME_DELIM
+from common import COL_DELIM, RANK_COL_NAME, SUBCOL_NAME_DELIM, TOKEN_COUNT_COL_NAME
 from decimal import Decimal
 
-COVARIATE_COL_NAMES = frozenset(("DIALOGIC_INFO", "TESTED_UTT_COUNT", "TOTAL_UTT_COUNT", "TOKEN_COUNT"))
+COVARIATE_COL_NAMES = frozenset(("DIALOGIC_INFO", "TESTED_UTT_COUNT", "TOTAL_UTT_COUNT", TOKEN_COUNT_COL_NAME))
 RANK_COL_NAME = "RANK"
 TRAINING_COL_NAME = "Training"
 TRAINING_METHODS_TO_COMPARE = frozenset(("DIALOGIC", "ALL_NEG"))
