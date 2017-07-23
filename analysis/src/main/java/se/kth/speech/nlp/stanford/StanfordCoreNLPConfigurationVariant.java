@@ -16,6 +16,9 @@
 */
 package se.kth.speech.nlp.stanford;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.UncheckedIOException;
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
 import java.util.Properties;
@@ -39,7 +42,7 @@ public enum StanfordCoreNLPConfigurationVariant implements Supplier<StanfordCore
 
 		@Override
 		protected Properties createProps() {
-			final Properties result = createDefaultProps();
+			final Properties result = new Properties(DEFAULT_PROPS);
 			// https://stanfordnlp.github.io/CoreNLP/annotators.html
 			final Stream<String> annotatorNames = Stream.of(Annotator.STANFORD_TOKENIZE, Annotator.STANFORD_SSPLIT);
 			result.setProperty("annotators", annotatorNames.collect(OPTION_MULTIVALUE_DELIMITER));
@@ -50,7 +53,7 @@ public enum StanfordCoreNLPConfigurationVariant implements Supplier<StanfordCore
 
 		@Override
 		protected Properties createProps() {
-			final Properties result = createDefaultProps();
+			final Properties result = new Properties(DEFAULT_PROPS);
 			// https://stanfordnlp.github.io/CoreNLP/annotators.html
 			final Stream<String> annotatorNames = Stream.of(Annotator.STANFORD_TOKENIZE, Annotator.STANFORD_SSPLIT,
 					Annotator.STANFORD_POS, Annotator.STANFORD_LEMMA);
@@ -62,7 +65,7 @@ public enum StanfordCoreNLPConfigurationVariant implements Supplier<StanfordCore
 
 		@Override
 		protected Properties createProps() {
-			final Properties result = createDefaultProps();
+			final Properties result = new Properties(DEFAULT_PROPS);
 			// https://stanfordnlp.github.io/CoreNLP/annotators.html
 			final Stream<String> annotatorNames = Stream.of(Annotator.STANFORD_TOKENIZE, Annotator.STANFORD_SSPLIT,
 					Annotator.STANFORD_POS, Annotator.STANFORD_LEMMA, Annotator.STANFORD_PARSE);
@@ -74,7 +77,7 @@ public enum StanfordCoreNLPConfigurationVariant implements Supplier<StanfordCore
 
 		@Override
 		protected Properties createProps() {
-			final Properties result = createDefaultProps();
+			final Properties result = new Properties(DEFAULT_PROPS);
 			// https://stanfordnlp.github.io/CoreNLP/annotators.html
 			final Stream<String> annotatorNames = Stream.of(Annotator.STANFORD_TOKENIZE, Annotator.STANFORD_SSPLIT,
 					Annotator.STANFORD_POS, Annotator.STANFORD_PARSE);
@@ -86,7 +89,7 @@ public enum StanfordCoreNLPConfigurationVariant implements Supplier<StanfordCore
 
 		@Override
 		protected Properties createProps() {
-			final Properties result = createDefaultProps();
+			final Properties result = new Properties(DEFAULT_PROPS);
 			// https://stanfordnlp.github.io/CoreNLP/annotators.html
 			final Stream<String> annotatorNames = Stream.of(Annotator.STANFORD_TOKENIZE, Annotator.STANFORD_SSPLIT,
 					Annotator.STANFORD_POS, Annotator.STANFORD_PARSE, Annotator.STANFORD_SENTIMENT);
@@ -95,37 +98,21 @@ public enum StanfordCoreNLPConfigurationVariant implements Supplier<StanfordCore
 		}
 	};
 
+	private static final Properties DEFAULT_PROPS = loadDefaultPipelineProperties();
+
 	private static final ConcurrentMap<StanfordCoreNLPConfigurationVariant, Reference<StanfordCoreNLP>> INSTANCES = new ConcurrentHashMap<>(
 			StanfordCoreNLPConfigurationVariant.values().length);
 
 	private static final Collector<CharSequence, ?, String> OPTION_MULTIVALUE_DELIMITER = Collectors.joining(",");
 
-	private static Properties createDefaultProps() {
+	private static Properties loadDefaultPipelineProperties() {
 		final Properties result = new Properties();
-		// https://stanfordnlp.github.io/CoreNLP/api.html
-		// https://stanfordnlp.github.io/CoreNLP/parse.html
-		result.setProperty("parse.binaryTrees", "true");
-		// result.setProperty("parse.model",
-		// "edu/stanford/nlp/models/lexparser/englishPCFG.ser.gz");
-		// result.setProperty("parse.model",
-		// "edu/stanford/nlp/models/lexparser/englishPCFG.caseless.ser.gz");
-		// result.setProperty("parse.model",
-		// "edu/stanford/nlp/models/lexparser/englishFactored.ser.gz");
-		result.setProperty("parse.model", "edu/stanford/nlp/models/srparser/englishSR.ser.gz");
-		// https://stanfordnlp.github.io/CoreNLP/pos.html
-		// result.setProperty("pos.model",
-		// "edu/stanford/nlp/models/pos-tagger/english-left3words/english-left3words-distsim.tagger");
-		// result.setProperty("pos.model",
-		// "edu/stanford/nlp/models/pos-tagger/english-caseless-left3words-distsim.tagger");
-		result.setProperty("pos.model",
-				"edu/stanford/nlp/models/pos-tagger/english-bidirectional/english-bidirectional-distsim.tagger");
-		// https://stanfordnlp.github.io/CoreNLP/sentiment.html
-		result.setProperty("sentiment.model", "edu/stanford/nlp/models/sentiment/sentiment.ser.gz");
-//		result.setProperty("sentiment.model", "edu/stanford/nlp/models/sentiment/sentiment.binary.ser.gz");
-		// https://stanfordnlp.github.io/CoreNLP/ssplit.html
-//		result.setProperty("ssplit.isOneSentence", "true");
-		// https://stanfordnlp.github.io/CoreNLP/tokenize.html
-		result.setProperty("tokenize.language", "en");
+		try (InputStream is = StanfordCoreNLPConfigurationVariant.class
+				.getResourceAsStream("corenlp-defaults.properties")) {
+			result.load(is);
+		} catch (final IOException e) {
+			throw new UncheckedIOException(e);
+		}
 		return result;
 	}
 
