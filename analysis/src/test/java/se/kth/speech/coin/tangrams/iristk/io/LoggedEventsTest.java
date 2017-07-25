@@ -20,11 +20,11 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.xml.bind.JAXBException;
@@ -52,7 +52,7 @@ public final class LoggedEventsTest {
 
 	@BeforeClass
 	public static void initEventLines() throws IOException {
-		eventLines = readEventLines().collect(Collectors.toList());
+		eventLines = Arrays.asList(readEventLines().toArray(String[]::new));
 		LOGGER.info("Read {} line(s) from test history log.", eventLines.size());
 	}
 
@@ -84,10 +84,9 @@ public final class LoggedEventsTest {
 	 */
 	@Test
 	public void testParseLoggedEvents() {
-		final List<Event> parsedEvents = LoggedEvents.parseLoggedEvents(eventLines.stream())
-				.collect(Collectors.toList());
-		Assert.assertFalse(parsedEvents.isEmpty());
-		Assert.assertTrue(parsedEvents.stream().allMatch(event -> {
+		final Event[] parsedEvents = LoggedEvents.parseLoggedEvents(eventLines.stream()).toArray(Event[]::new);
+		Assert.assertTrue(parsedEvents.length > 0);
+		Assert.assertTrue(Arrays.stream(parsedEvents).allMatch(event -> {
 			final Class<? extends Event> instClass = event.getClass();
 			return Event.class.equals(instClass);
 		}));
@@ -99,8 +98,8 @@ public final class LoggedEventsTest {
 				eventFilter);
 		Assert.assertEquals(gameHistories.size(), 1);
 		final GameHistory history = gameHistories.values().iterator().next();
-		final List<Event> historyEvents = history.getEventSequence().collect(Collectors.toList());
-		Assert.assertTrue(historyEvents.stream().allMatch(eventFilter));
+		final Stream<Event> historyEvents = history.getEventSequence();
+		Assert.assertTrue(historyEvents.allMatch(eventFilter));
 	}
 
 }

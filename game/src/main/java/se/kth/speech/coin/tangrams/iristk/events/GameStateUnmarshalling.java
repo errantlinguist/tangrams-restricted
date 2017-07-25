@@ -16,10 +16,9 @@
 */
 package se.kth.speech.coin.tangrams.iristk.events;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -46,8 +45,8 @@ public final class GameStateUnmarshalling {
 	public static SpatialMatrix<Integer> createModel(final ModelDescription modelDesc,
 			final SpatialMatrix.Factory factory) {
 		final List<String> nullableCoordOccupants = modelDesc.getCoordOccupants();
-		final List<Integer> coordOccupants = nullableCoordOccupants.stream().map(NULLABLE_INTEGER_GETTER)
-				.collect(Collectors.toCollection(() -> new ArrayList<>(nullableCoordOccupants.size())));
+		final List<Integer> coordOccupants = Arrays
+				.asList(nullableCoordOccupants.stream().map(NULLABLE_INTEGER_GETTER).toArray(Integer[]::new));
 		LOGGER.debug("Creating model with coord occupant vector: {}", coordOccupants);
 		final int colCount = modelDesc.getColCount();
 		final Matrix<Integer> backingMatrix = new Matrix<>(coordOccupants, colCount);

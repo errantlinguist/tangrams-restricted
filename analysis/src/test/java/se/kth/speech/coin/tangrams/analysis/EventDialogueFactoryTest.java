@@ -21,13 +21,13 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.xml.bind.JAXBContext;
@@ -75,7 +75,7 @@ public final class EventDialogueFactoryTest {
 			throws URISyntaxException, IOException, JAXBException {
 		final String singleMoveSessionDataResLocStr = TestDataResources.SESSION_DATA_DIR
 				+ "/karey-tangram_Jutta-ONEMOVE";
-		
+
 		// Game history
 		final URL eventLogUrl = TestDataResources.class
 				.getResource(singleMoveSessionDataResLocStr + "/events-karey.txt");
@@ -87,25 +87,24 @@ public final class EventDialogueFactoryTest {
 		}
 		Assert.assertEquals(gameHistories.size(), 1);
 		final GameHistory history = gameHistories.values().iterator().next();
-		
+
 		// Utts
 		final URL hatInfileUrl = TestDataResources.class.getResource(singleMoveSessionDataResLocStr + "/utts.xml");
 		LOGGER.info("Reading annotations from \"{}\".", hatInfileUrl);
 		final Annotation uttAnnots = (Annotation) JC.createUnmarshaller().unmarshal(hatInfileUrl);
-		final List<Utterance> utts = SEG_UTT_FACTORY.create(uttAnnots.getSegments().getSegment().stream())
-				.flatMap(List::stream).collect(Collectors.toList());
+		final List<Utterance> utts = Arrays.asList(SEG_UTT_FACTORY.create(uttAnnots.getSegments().getSegment().stream())
+				.flatMap(List::stream).toArray(Utterance[]::new));
 
 		final EventDialogueFactory testInst = new EventDialogueFactory(eventFilter);
-		final List<EventDialogue> actualDiagList = testInst.apply(utts.listIterator(), history)
-				.collect(Collectors.toList());
+		final List<EventDialogue> actualDiagList = Arrays
+				.asList(testInst.apply(utts.listIterator(), history).toArray(EventDialogue[]::new));
 		// NOTE: If there are utterances in the test data before the timestamp
 		// of the first event, then this should be the history event count plus
 		// one
 		final int expectedDiagCount = Math.toIntExact(history.getEventSequence().count());
 		Assert.assertEquals(expectedDiagCount, actualDiagList.size());
 
-		final List<Event> historyEvents = history.getEventSequence().collect(Collectors.toList());
-		final Iterator<Event> expectedEventIter = historyEvents.iterator();
+		final Iterator<Event> expectedEventIter = history.getEventSequence().iterator();
 		final Iterator<EventDialogue> actualDiagIter = actualDiagList.iterator();
 		while (expectedEventIter.hasNext()) {
 			final Event expectedEvent = expectedEventIter.next();

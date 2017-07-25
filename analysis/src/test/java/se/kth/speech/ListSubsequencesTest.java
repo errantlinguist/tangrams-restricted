@@ -16,6 +16,7 @@
 */
 package se.kth.speech;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
@@ -39,7 +40,7 @@ public final class ListSubsequencesTest {
 	public void testCreateDeduplicatedAdjacentSubsequenceListEven() {
 		final List<String> duplicatedSubseq = Arrays.asList("I", "can't");
 		final List<List<String>> repetitions = Arrays.asList(duplicatedSubseq, duplicatedSubseq);
-		final List<String> input = repetitions.stream().flatMap(List::stream).collect(Collectors.toList());
+		final List<String> input = Arrays.asList(repetitions.stream().flatMap(List::stream).toArray(String[]::new));
 		final List<String> expected = duplicatedSubseq;
 		final List<String> actual = ListSubsequences.createDeduplicatedAdjacentSubsequenceList(input);
 		Assert.assertEquals(expected, actual);
@@ -154,8 +155,10 @@ public final class ListSubsequencesTest {
 	@Test
 	public void testCreateSubsequenceListLengthOne() {
 		final List<String> input = Arrays.asList("I", "can't", "do", "it", "well");
-		final List<List<String>> expected = input.stream().map(Collections::singletonList).collect(Collectors.toList());
-		final List<List<String>> actual = ListSubsequences.createSubsequenceList(input, 1);
+		final int subseqLen = 1;
+		final List<List<String>> expected = input.stream().map(Collections::singletonList)
+				.collect(Collectors.toCollection(() -> new ArrayList<>(input.size() + 1 / subseqLen)));
+		final List<List<String>> actual = ListSubsequences.createSubsequenceList(input, subseqLen);
 		Assert.assertEquals(expected, actual);
 	}
 
@@ -180,7 +183,7 @@ public final class ListSubsequencesTest {
 	public void testCreateSubsequenceListSame() {
 		final List<String> duplicatedSubseq = Arrays.asList("I", "can't");
 		final List<List<String>> expected = Arrays.asList(duplicatedSubseq, duplicatedSubseq);
-		final List<String> input = expected.stream().flatMap(List::stream).collect(Collectors.toList());
+		final List<String> input = Arrays.asList(expected.stream().flatMap(List::stream).toArray(String[]::new));
 		final List<List<String>> actual = ListSubsequences.createSubsequenceList(input, 2);
 		Assert.assertEquals(expected, actual);
 	}

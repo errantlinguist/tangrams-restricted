@@ -16,10 +16,9 @@
 */
 package se.kth.speech.coin.tangrams.iristk.events;
 
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 import iristk.util.Record;
 import se.kth.speech.Matrix;
@@ -82,8 +81,7 @@ public final class ModelDescription extends Record {
 	 */
 	public void setModel(final Matrix<Integer> model) {
 		final List<Integer> coordOccupants = model.getValues();
-		setCoordOccupants(coordOccupants.stream().map(Objects::toString)
-				.collect(Collectors.toCollection(() -> new ArrayList<>(coordOccupants.size()))));
+		setCoordOccupants(Arrays.asList(coordOccupants.stream().map(Objects::toString).toArray(String[]::new)));
 		setColCount(model.getDimensions()[1]);
 	}
 

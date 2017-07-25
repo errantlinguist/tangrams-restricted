@@ -26,7 +26,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.IntFunction;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
@@ -190,8 +189,8 @@ public final class SpatialMatrix<E> {
 		final int x = dims[0];
 		final int y = dims[1];
 		final Table<Integer, Integer, C> result = ArrayTable.create(
-				IntStream.rangeClosed(1, x).boxed().collect(Collectors.toCollection(() -> new ArrayList<>(x))),
-				IntStream.rangeClosed(1, y).boxed().collect(Collectors.toCollection(() -> new ArrayList<>(y))));
+				Arrays.asList(IntStream.rangeClosed(1, x).boxed().toArray(Integer[]::new)),
+				Arrays.asList(IntStream.rangeClosed(1, y).boxed().toArray(Integer[]::new)));
 		for (int xLowerBound = 0; xLowerBound < x; ++xLowerBound) {
 			for (int xUpperBound = xLowerBound + 1; xUpperBound <= x; ++xUpperBound) {
 				final int xLength = SpatialRegion.getLength(xLowerBound, xUpperBound);

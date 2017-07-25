@@ -18,10 +18,9 @@ package se.kth.speech.coin.tangrams.iristk.events;
 
 import java.awt.Color;
 import java.net.URL;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import iristk.util.Record;
 import se.kth.speech.URLFilenameFactory;
@@ -117,8 +116,7 @@ public final class ImageVisualizationInfoDescription extends Record {
 
 	public ImageVisualizationInfoDescription(final ImageVisualizationInfo imgVizInfo) {
 		final List<ImageVisualizationInfo.Datum> imgVizInfoData = imgVizInfo.getData();
-		final List<Datum> data = imgVizInfoData.stream().map(Datum::new)
-				.collect(Collectors.toCollection(() -> new ArrayList<>(imgVizInfoData.size())));
+		final List<Datum> data = Arrays.asList(imgVizInfoData.stream().map(Datum::new).toArray(Datum[]::new));
 		setData(data);
 		setUniqueImgResourceCount(imgVizInfo.getUniqueImageResourceCount());
 	}

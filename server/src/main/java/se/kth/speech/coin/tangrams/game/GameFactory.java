@@ -209,6 +209,10 @@ public final class GameFactory implements Function<String, Game<Integer>> {
 	private static List<Color> createRandomColorList(final Random rnd,
 			final Collection<? super Color> blacklistedColors, final int size) {
 		final RandomHueColorFactory colorFactory = new RandomHueColorFactory(rnd);
+		// NOTE: Using "Collectors.toCollection(...)" with an explicit size is
+		// better here than using "toArray(..)" because Stream.filter(...) can't
+		// deduce the result array size itself
+		// <https://stackoverflow.com/questions/45275402/java-create-a-list-with-n-objects/45275859#comment-77531249>
 		return Stream.generate(colorFactory).filter(color -> !blacklistedColors.contains(color)).distinct().limit(size)
 				.collect(Collectors.toCollection(() -> new ArrayList<>(size)));
 	}

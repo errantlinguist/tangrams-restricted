@@ -53,8 +53,7 @@ public final class TemporalGameContexts {
 			final Collection<List<Event>> timedEvents = eventsDuringUtt.values();
 			// if (LOGGER.isDebugEnabled()) {
 			// final List<Event> allEventsDuringUtt =
-			// timedEvents.stream().flatMap(Collection::stream)
-			// .collect(Collectors.toList());
+			// Arrays.asList(timedEvents.stream().flatMap(Collection::stream).toArray(Event[]::new));
 			// final String delim = System.lineSeparator() + '\t';
 			// final String uttRepr =
 			// allEventsDuringUtt.stream().map(Event::toString)

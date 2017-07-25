@@ -32,7 +32,6 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.function.IntFunction;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -209,8 +208,8 @@ public final class RandomImageVisualizationInfoFactory implements IntFunction<Im
 	public ImageVisualizationInfo apply(final int pieceCount) {
 		final Stream<ImageVisualizationInfo.Datum> imgVisualizationInfoData = Stream.generate(datumIter::next)
 				.limit(pieceCount);
-		final List<ImageVisualizationInfo.Datum> imgVisualizationInfoDataList = imgVisualizationInfoData
-				.collect(Collectors.toCollection(() -> new ArrayList<>(pieceCount)));
+		final List<ImageVisualizationInfo.Datum> imgVisualizationInfoDataList = Arrays
+				.asList(imgVisualizationInfoData.toArray(ImageVisualizationInfo.Datum[]::new));
 		return new ImageVisualizationInfo(imgVisualizationInfoDataList, imgResourceUsageCounts.size());
 	}
 

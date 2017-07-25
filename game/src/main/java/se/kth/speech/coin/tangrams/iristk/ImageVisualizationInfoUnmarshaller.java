@@ -17,10 +17,9 @@
 package se.kth.speech.coin.tangrams.iristk;
 
 import java.net.URL;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import se.kth.speech.coin.tangrams.content.IconImages;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
@@ -47,8 +46,8 @@ public final class ImageVisualizationInfoUnmarshaller
 	@Override
 	public ImageVisualizationInfo apply(final ImageVisualizationInfoDescription desc) {
 		final List<ImageVisualizationInfoDescription.Datum> descData = desc.getData();
-		final List<ImageVisualizationInfo.Datum> data = descData.stream().map(this::createImageVisualizationInfo)
-				.collect(Collectors.toCollection(() -> new ArrayList<>(descData.size())));
+		final List<ImageVisualizationInfo.Datum> data = Arrays.asList(
+				descData.stream().map(this::createImageVisualizationInfo).toArray(ImageVisualizationInfo.Datum[]::new));
 		return new ImageVisualizationInfo(data, desc.getUniqueImgResourceCount());
 	}
 
