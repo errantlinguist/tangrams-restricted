@@ -16,6 +16,8 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers;
 
+import java.util.Iterator;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -43,13 +45,13 @@ public final class UtteranceGameContexts {
 		LOGGER.debug(
 				"Creating a context based on the logged game history, which is then seen from the perspective of player \"{}\".",
 				perspectivePlayerId);
-		final GameContext[] ctxs = TemporalGameContexts
-				.create(history, dialogueUtt.getStartTime(), dialogueUtt.getEndTime(), perspectivePlayerId)
-				.toArray(GameContext[]::new);
-		if (ctxs.length > 1) {
+		final Iterator<GameContext> ctxIter = TemporalGameContexts
+				.create(history, dialogueUtt.getStartTime(), dialogueUtt.getEndTime(), perspectivePlayerId).iterator();
+		final GameContext result = ctxIter.next();
+		if (ctxIter.hasNext()) {
 			LOGGER.warn("More than one game context found for {}; Only using the first one.", dialogueUtt);
 		}
-		return ctxs[0];
+		return result;
 	}
 
 	private UtteranceGameContexts() {
