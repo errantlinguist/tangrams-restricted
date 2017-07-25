@@ -72,7 +72,7 @@ public final class ListSubsequences {
 		if (subseqLength < 1) {
 			throw new IllegalArgumentException("Subsequence length must be positive.");
 		} else {
-			result = new ArrayList<>(list.size() + 1 / subseqLength);
+			result = new ArrayList<>(Math.max(list.size() / subseqLength, 1));
 			final int maxSubseqStart = list.size() - subseqLength;
 			int lastSubseqEnd = 0;
 			for (int subseqStart = 0; subseqStart < maxSubseqStart; subseqStart += subseqLength) {

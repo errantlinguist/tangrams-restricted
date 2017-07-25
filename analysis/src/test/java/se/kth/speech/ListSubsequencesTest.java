@@ -157,7 +157,7 @@ public final class ListSubsequencesTest {
 		final List<String> input = Arrays.asList("I", "can't", "do", "it", "well");
 		final int subseqLen = 1;
 		final List<List<String>> expected = input.stream().map(Collections::singletonList)
-				.collect(Collectors.toCollection(() -> new ArrayList<>(input.size() + 1 / subseqLen)));
+				.collect(Collectors.toCollection(() -> new ArrayList<>(Math.max(input.size() / subseqLen, 1))));
 		final List<List<String>> actual = ListSubsequences.createSubsequenceList(input, subseqLen);
 		Assert.assertEquals(expected, actual);
 	}
