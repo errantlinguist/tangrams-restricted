@@ -43,6 +43,7 @@ import java.util.Set;
 
 import org.apache.commons.io.IOUtils;
 
+import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
@@ -636,7 +637,7 @@ public class Record {
 	 */
 	public static Record fromJSON(String string) throws JsonToRecordException {
 		try {
-			JsonObject jsonObject = JsonObject.readFrom(string);
+			JsonObject jsonObject = Json.parse(string).asObject();
 			return parseJsonObject(jsonObject);
 		} catch (ParseException e) {
 			throw new JsonToRecordException(e.getMessage());
@@ -645,7 +646,7 @@ public class Record {
 	
 	public static Object fromJSONValue(String string) throws JsonToRecordException {
 		try {
-			JsonValue json = JsonValue.readFrom(string);
+			JsonValue json = Json.parse(string).asObject();
 			return parseJsonValue(json);
 		} catch (ParseException e) {
 			throw new JsonToRecordException(e.getMessage());
