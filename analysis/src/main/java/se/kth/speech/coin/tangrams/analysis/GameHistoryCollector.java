@@ -67,7 +67,7 @@ public final class GameHistoryCollector
 				LOGGER.debug("Ignoring broker event named \"{}\".", eventName);
 			} else {
 				final String time = event.getTime();
-				LOGGER.debug("Found {} sent at \"{}\".", new Object[] { event.getClass().getSimpleName(), time });
+				LOGGER.debug("Found {} sent at \"{}\".", event.getClass().getSimpleName(), time);
 				final String gameId = event.getString(GameManagementEvent.Attribute.GAME_ID.toString());
 				final LocalDateTime timestamp = EventTimes.parseEventTime(time);
 				accept(gameHistories, gameId, timestamp, gameEventType, event);
@@ -77,14 +77,13 @@ public final class GameHistoryCollector
 		private void accept(final Map<String, GameHistory> gameHistories, final String gameId, final LocalDateTime time,
 				final GameManagementEvent gameEventType, final Event event) {
 			if (ignoredEventTypes.contains(gameEventType)) {
-				LOGGER.debug("Ignored event of type {} sent at \"{}\".", new Object[] { gameEventType, time });
+				LOGGER.debug("Ignored event of type {} sent at \"{}\".", gameEventType, time);
 			} else {
 				switch (gameEventType) {
 				case GAME_READY_RESPONSE: {
 					final GameStateDescription gameDesc = (GameStateDescription) event
 							.get(GameManagementEvent.Attribute.GAME_STATE.toString());
-					LOGGER.debug("Found {} sent at \"{}\".",
-							new Object[] { gameDesc.getClass().getSimpleName(), time });
+					LOGGER.debug("Found {} sent at \"{}\".", gameDesc.getClass().getSimpleName(), time);
 					putInitialState(gameHistories, gameId, time, gameDesc);
 					break;
 				}
