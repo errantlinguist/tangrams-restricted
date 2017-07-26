@@ -1,5 +1,5 @@
 # tangrams-restricted
-A game for organizing tangrams in the fewest number of moves using two players. More restricted than [the original version](https://github.com/errantlinguist/tangrams).
+A game for organizing tangrams in the fewest number of moves using two players. More restricted than the now-defunct original version.
 
 * **Since:** 2017-03-02
 * **Author:** Todd Shore
