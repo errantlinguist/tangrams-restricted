@@ -225,7 +225,7 @@ public class Record implements Cloneable {
 	public synchronized Object get(String field) {
 		if (field == null)
 			return null;
-		//if (field.contains(".")) {
+		//if (field.contains('.')) {
 		//	System.err.println("Warning: use of dots when accessing record fields is deprecated: " + field);
 		//	field = field.replace('.', SUBFIELD_NAME_DELIM);
 		//}
@@ -279,7 +279,7 @@ public class Record implements Cloneable {
 
 	public synchronized void put(String field, Object value) {
 		if (field != null) {
-			//if (field.contains(".")) {
+			//if (field.contains('.')) {
 			//	System.err.println("Warning: use of dots when accessing record fields is deprecated: " + field);
 			//	field = field.replace('.', SUBFIELD_NAME_DELIM);
 			//}
@@ -345,7 +345,7 @@ public class Record implements Cloneable {
 	}
 
 	public synchronized boolean has(String field) {
-		//if (field.contains(".")) {
+		//if (field.contains('.')) {
 		//	System.err.println("Warning: use of dots when accessing record fields is deprecated: " + field);
 		//	field = field.replace('.', SUBFIELD_NAME_DELIM);
 		//}
