@@ -19,7 +19,12 @@ package se.kth.speech.coin.tangrams.analysis;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 final class PlayerGameContextFactory {
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(PlayerGameContextFactory.class);
 
 	private final Function<? super String, GameHistory> playerGameHistoryGetter;
 
@@ -27,9 +32,8 @@ final class PlayerGameContextFactory {
 		this.playerGameHistoryGetter = playerGameHistoryGetter;
 	}
 
-	public Stream<GameContext> create(final float startTime, final float endTime,
-			final String perspectivePlayerId) {
-		UtteranceSelectedEntityDescriptionWriter.LOGGER.debug("Creating a context based on the logged game history from the perspective of player \"{}\".",
+	public Stream<GameContext> create(final float startTime, final float endTime, final String perspectivePlayerId) {
+		LOGGER.debug("Creating a context based on the logged game history from the perspective of player \"{}\".",
 				perspectivePlayerId);
 		final GameHistory history = playerGameHistoryGetter.apply(perspectivePlayerId);
 		return TemporalGameContexts.create(history, startTime, endTime, perspectivePlayerId);
