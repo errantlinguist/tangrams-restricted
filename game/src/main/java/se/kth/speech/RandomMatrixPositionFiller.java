@@ -79,9 +79,7 @@ public final class RandomMatrixPositionFiller<I, E>
 				LOGGER.debug("Adding {}.", element);
 				final I id = elementId.getValue();
 				final SpatialRegion placementResult = placePieceRandomly(element, id, subRegionsToTry);
-				if (LOGGER.isDebugEnabled()) {
-					LOGGER.debug("Added {} (with ID \"{}\") to {}.", new Object[] { element, id, placementResult });
-				}
+				LOGGER.debug("Added {} (with ID \"{}\") to {}.", element, id, placementResult );
 				result.add(id);
 			}
 		}
