@@ -32,10 +32,10 @@ import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 import se.kth.speech.coin.tangrams.game.Game;
 import se.kth.speech.coin.tangrams.game.GameFactory;
 import se.kth.speech.coin.tangrams.game.GameFactory.Parameter;
+import se.kth.speech.coin.tangrams.game.PlayerRole;
 import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
 import se.kth.speech.coin.tangrams.iristk.events.ImageVisualizationInfoDescription;
 import se.kth.speech.coin.tangrams.iristk.events.ModelDescription;
-import se.kth.speech.coin.tangrams.game.PlayerRole;
 
 public final class GameManagementServerModule extends IrisModule {
 
@@ -88,8 +88,7 @@ public final class GameManagementServerModule extends IrisModule {
 			switch (gameEventType) {
 			case PLAYER_JOIN_REQUEST: {
 				final String joinedPlayerId = event.getString(GameManagementEvent.Attribute.PLAYER_ID.toString());
-				LOGGER.info("Received join request from player \"{}\" for game \"{}\".",
-						new Object[] { joinedPlayerId, gameId });
+				LOGGER.info("Received join request from player \"{}\" for game \"{}\".", joinedPlayerId, gameId);
 				newGames.compute(gameId, (key, oldVal) -> {
 					final Game<Integer> newVal;
 
@@ -113,8 +112,7 @@ public final class GameManagementServerModule extends IrisModule {
 				break;
 			}
 			default: {
-				LOGGER.debug("Ignoring broker event for game \"{}\" of event type \"{}\".",
-						new Object[] { gameId, gameEventType });
+				LOGGER.debug("Ignoring broker event for game \"{}\" of event type \"{}\".", gameId, gameEventType);
 				break;
 			}
 			}
@@ -144,8 +142,7 @@ public final class GameManagementServerModule extends IrisModule {
 		final PlayerRole roleToFill = foundRoleToFill.get();
 		final String oldRolePlayerId = playerRoles.put(roleToFill, joinedPlayerId);
 		assert oldRolePlayerId == null;
-		LOGGER.debug("Added player \"{}\" to game \"{}\" with role {}.",
-				new Object[] { joinedPlayerId, gameId, roleToFill });
+		LOGGER.debug("Added player \"{}\" to game \"{}\" with role {}.", joinedPlayerId, gameId, roleToFill);
 		{
 			final Event joinResponse = GameManagementEvent.PLAYER_JOIN_RESPONSE.createEvent(gameId);
 			joinResponse.put(GameManagementEvent.Attribute.PLAYER_ID.toString(), joinedPlayerId);
@@ -153,7 +150,7 @@ public final class GameManagementServerModule extends IrisModule {
 			final String joinTimestamp = getSystem().getTimestamp(joinTime);
 			joinResponse.put(GameManagementEvent.Attribute.TIMESTAMP.toString(), joinTimestamp);
 			LOGGER.info("Sending broker event acknowledging the joining of player \"{}\" to game \"{}\".",
-					new Object[] { joinedPlayerId, gameId });
+					joinedPlayerId, gameId);
 			send(joinResponse);
 		}
 		// Check if the game is now ready
