@@ -35,6 +35,7 @@ import java.util.regex.Matcher;
 
 import sun.misc.Unsafe;
 
+@SuppressWarnings("restriction")
 public class Utils {
 
 	public static String readTextFile(File file) throws IOException {

@@ -59,6 +59,7 @@ import javafx.util.converter.LocalDateTimeStringConverter;
  * <p> Using kleen stars (*), it is also possible to search the hierarchy using the {@code has()} method. Thus, {@code myRecord.has("*:bar")} will return true.   
  *  */
 
+@SuppressWarnings("restriction")
 public class Record {
 	
 	private static final Object[] EMPTY_VARARGS_ARRAY = null;
