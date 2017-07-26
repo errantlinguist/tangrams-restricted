@@ -232,8 +232,6 @@ class UtteranceTabularDataWriter {
 			final String imgVizInfoDesc;
 			if (optEvent.isPresent()) {
 				final Event event = optEvent.get();
-				final StringWriter strWriter = new StringWriter(256);
-
 				final float contextStartTime;
 				final float contextEndTime;
 				if (eventUtts.isEmpty()) {
@@ -274,6 +272,7 @@ class UtteranceTabularDataWriter {
 					writer.write(featureVectorRepr);
 				}
 				writer.write(TABLE_STRING_REPR_COL_DELIMITER);
+				final StringWriter strWriter = new StringWriter(256);
 				{
 					final ImageVisualizationInfoTableRowWriter imgInfoDescWriter = new ImageVisualizationInfoTableRowWriter(
 							strWriter);
@@ -283,8 +282,8 @@ class UtteranceTabularDataWriter {
 							.get(selectedPieceId);
 					imgInfoDescWriter.write(selectedPieceId, selectedPieceImgVizInfo);
 				}
-
 				imgVizInfoDesc = strWriter.toString();
+
 			} else {
 				imgVizInfoDesc = createBlankImgDesc(colHeaders);
 			}
