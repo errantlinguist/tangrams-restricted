@@ -29,7 +29,6 @@ import java.util.NavigableSet;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 
@@ -45,6 +44,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import se.kth.speech.coin.tangrams.CLIParameters;
+import se.kth.speech.coin.tangrams.iristk.io.HatIO;
 import se.kth.speech.hat.xsd.Annotation;
 
 /**
@@ -92,30 +92,21 @@ public final class HATWordListPrinter {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(HATWordListPrinter.class);
 
-	private static final ThreadLocal<Unmarshaller> UNMARSHALLER;
-
-	static {
-		try {
-			final JAXBContext jc = JAXBContext.newInstance("se.kth.speech.hat.xsd");
-			UNMARSHALLER = new ThreadLocal<Unmarshaller>() {
-				/*
-				 * (non-Javadoc)
-				 *
-				 * @see java.lang.ThreadLocal#initialValue()
-				 */
-				@Override
-				protected Unmarshaller initialValue() {
-					try {
-						return jc.createUnmarshaller();
-					} catch (final JAXBException e) {
-						throw new RuntimeException(e);
-					}
-				}
-			};
-		} catch (final JAXBException e) {
-			throw new RuntimeException(e);
+	private static final ThreadLocal<Unmarshaller> UNMARSHALLER = new ThreadLocal<Unmarshaller>() {
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see java.lang.ThreadLocal#initialValue()
+		 */
+		@Override
+		protected Unmarshaller initialValue() {
+			try {
+				return HatIO.fetchContext().createUnmarshaller();
+			} catch (final JAXBException e) {
+				throw new RuntimeException(e);
+			}
 		}
-	}
+	};
 
 	public static void main(final String[] args) throws IOException {
 		final CommandLineParser parser = new DefaultParser();
@@ -124,7 +115,8 @@ public final class HATWordListPrinter {
 			if (cl.hasOption(Parameter.HELP.optName)) {
 				Parameter.printHelp();
 			} else {
-				final Path[] inpaths = cl.getArgList().stream().map(String::trim).filter(path -> !path.isEmpty()).map(Paths::get).toArray(Path[]::new);
+				final Path[] inpaths = cl.getArgList().stream().map(String::trim).filter(path -> !path.isEmpty())
+						.map(Paths::get).toArray(Path[]::new);
 				switch (inpaths.length) {
 				case 0: {
 					throw new MissingOptionException("No input path specified.");
