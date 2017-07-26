@@ -92,7 +92,8 @@ public class Record implements Cloneable {
 		public RecordInfo(Class<? extends Record> clazz) {
 			final HashMap<String,Integer> order = new HashMap<>();
 			setupFields(clazz, order);
-			orderedFields = new ArrayList<String>(getMethodFields.keySet());
+			orderedFields = new ArrayList<String>(getMethodFields.size() + classFields.size());
+			orderedFields.addAll(getMethodFields.keySet());
 			orderedFields.addAll(classFields.keySet());
 			Collections.sort(orderedFields, new Comparator<String>() {
 				@Override
