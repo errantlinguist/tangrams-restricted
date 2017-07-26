@@ -51,7 +51,11 @@ public final class FileResourceLocatorContentTypePatternFilter implements Predic
 		} else {
 			try {
 				final String mimeType = Files.probeContentType(resourceLocPath);
-				result = contentTypePattern.matcher(mimeType).matches();
+				if (mimeType == null){
+					result = false;
+				} else {
+					result = contentTypePattern.matcher(mimeType).matches();	
+				}
 			} catch (final IOException e) {
 				throw new UncheckedIOException(e);
 			}
