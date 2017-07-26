@@ -116,14 +116,14 @@ public final class UtteranceRelation {
 	 */
 	@Override
 	public String toString() {
-		final StringBuilder builder = new StringBuilder();
+		final StringBuilder builder = new StringBuilder(128);
 		builder.append("UtteranceRelation [acceptanceUtt=");
 		builder.append(acceptanceUtt);
 		builder.append(", acceptanceValue=");
 		builder.append(acceptanceValue);
 		builder.append(", prevUtts=");
 		builder.append(prevUtts);
-		builder.append("]");
+		builder.append(']');
 		return builder.toString();
 	}
 }

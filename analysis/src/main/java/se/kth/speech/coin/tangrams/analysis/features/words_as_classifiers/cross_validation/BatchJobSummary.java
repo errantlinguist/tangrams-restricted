@@ -40,14 +40,14 @@ public final class BatchJobSummary {
 	 */
 	@Override
 	public String toString() {
-		final StringBuilder builder = new StringBuilder();
+		final StringBuilder builder = new StringBuilder(128);
 		builder.append("BatchJobSummary [testParams=");
 		builder.append(testParams);
 		builder.append(", testResults=");
 		builder.append(testResults);
 		builder.append(", testTimestamp=");
 		builder.append(testTimestamp);
-		builder.append("]");
+		builder.append(']');
 		return builder.toString();
 	}
 

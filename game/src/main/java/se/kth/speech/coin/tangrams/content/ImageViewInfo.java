@@ -137,7 +137,7 @@ public final class ImageViewInfo {
 		 */
 		@Override
 		public String toString() {
-			final StringBuilder builder = new StringBuilder();
+			final StringBuilder builder = new StringBuilder(192);
 			builder.append("RasterizationInfo [getWidth()=");
 			builder.append(getWidth());
 			builder.append(", getHeight()=");

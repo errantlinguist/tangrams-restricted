@@ -273,7 +273,7 @@ public final class Matrix<E> {
 	 */
 	@Override
 	public String toString() {
-		final StringBuilder builder = new StringBuilder();
+		final StringBuilder builder = new StringBuilder(128);
 		builder.append("Matrix [getDimensions()=");
 		builder.append(Arrays.toString(getDimensions()));
 		builder.append(", values=");

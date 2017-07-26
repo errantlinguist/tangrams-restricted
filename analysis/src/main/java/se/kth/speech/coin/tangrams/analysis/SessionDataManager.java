@@ -169,14 +169,14 @@ public final class SessionDataManager {
 	 */
 	@Override
 	public String toString() {
-		final StringBuilder builder = new StringBuilder();
+		final StringBuilder builder = new StringBuilder(128);
 		builder.append("SessionDataManager [canonicalEventLogPath=");
 		builder.append(canonicalEventLogPath);
 		builder.append(", hatFilePath=");
 		builder.append(hatFilePath);
 		builder.append(", playerData=");
 		builder.append(playerData);
-		builder.append("]");
+		builder.append(']');
 		return builder.toString();
 	}
 

@@ -76,7 +76,7 @@ public final class CombiningBatchJobTestSingleFileWriter {
 
 	private static final Collector<CharSequence, ?, String> ROW_CELL_JOINER = Collectors.joining("\t");
 
-	private static BufferedWriter createUttRelFileWriter(File outFile) throws IOException {
+	private static BufferedWriter createUttRelFileWriter(final File outFile) throws IOException {
 		Path uttRelLogOutPath;
 		final String suffix = UTT_REL_LOG_FILE_SUFFIX;
 		if (outFile == null) {

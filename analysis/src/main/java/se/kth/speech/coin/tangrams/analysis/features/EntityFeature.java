@@ -153,7 +153,7 @@ public enum EntityFeature {
 			 */
 			@Override
 			public String toString() {
-				final StringBuilder builder = new StringBuilder();
+				final StringBuilder builder = new StringBuilder(256);
 				builder.append("Context [modelArea=");
 				builder.append(modelArea);
 				builder.append(", modelDims=");
@@ -164,7 +164,7 @@ public enum EntityFeature {
 				builder.append(pieceImgVizInfoDatum);
 				builder.append(", pieceRegion=");
 				builder.append(pieceRegion);
-				builder.append("]");
+				builder.append(']');
 				return builder.toString();
 			}
 		}

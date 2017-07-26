@@ -241,7 +241,7 @@ public final class SpatialRegion {
 	 */
 	@Override
 	public String toString() {
-		final StringBuilder builder = new StringBuilder();
+		final StringBuilder builder = new StringBuilder(48);
 		builder.append("SpatialRegion [x=[");
 		builder.append(xLowerBound);
 		builder.append(", ");
@@ -250,8 +250,7 @@ public final class SpatialRegion {
 		builder.append(yLowerBound);
 		builder.append(", ");
 		builder.append(yUpperBound);
-		builder.append(')');
-		builder.append(']');
+		builder.append(")]");
 		return builder.toString();
 	}
 

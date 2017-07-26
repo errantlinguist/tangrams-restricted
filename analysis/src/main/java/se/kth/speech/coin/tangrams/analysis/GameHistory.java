@@ -132,7 +132,7 @@ public final class GameHistory {
 	 */
 	@Override
 	public String toString() {
-		final StringBuilder builder = new StringBuilder();
+		final StringBuilder builder = new StringBuilder(64 * events.size() + 1);
 		builder.append("GameHistory [startTime=");
 		builder.append(startTime);
 		builder.append(", initialState=");

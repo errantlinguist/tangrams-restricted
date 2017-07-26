@@ -91,8 +91,9 @@ public final class CLIParameters {
 	}
 
 	public static String parseOutputType(String outExt) {
-		if (!outExt.startsWith(".")) {
-			outExt = "." + outExt;
+		final char extPrefix = '.';
+		if (outExt.charAt(0) != extPrefix) {
+			outExt = extPrefix + outExt;
 		}
 		return outExt;
 	}

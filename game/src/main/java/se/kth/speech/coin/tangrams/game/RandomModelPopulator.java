@@ -79,7 +79,7 @@ final class RandomModelPopulator implements Consumer<Random> {
 		 */
 		@Override
 		public String toString() {
-			final StringBuilder builder = new StringBuilder();
+			final StringBuilder builder = new StringBuilder(160);
 			builder.append("PositionGridSizeSummary [minImgGridSize=");
 			builder.append(Arrays.toString(minImgGridSize));
 			builder.append(", maxImgGridSize=");

@@ -82,12 +82,12 @@ public final class WeightedClassifier {
 	 */
 	@Override
 	public String toString() {
-		final StringBuilder builder = new StringBuilder();
+		final StringBuilder builder = new StringBuilder(96);
 		builder.append("WeightedClassifier [classifier=");
 		builder.append(classifier);
 		builder.append(", weight=");
 		builder.append(weight);
-		builder.append("]");
+		builder.append(']');
 		return builder.toString();
 	}
 

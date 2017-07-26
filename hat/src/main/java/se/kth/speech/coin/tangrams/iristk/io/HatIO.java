@@ -57,7 +57,7 @@ public final class HatIO {
 						result = JAXBContext.newInstance(ANNOT_CONTEXT);
 						jc = new SoftReference<>(result);
 					} catch (final JAXBException e) {
-						throw new RuntimeException(e);
+						throw new AssertionError(e);
 					}
 				}
 			}

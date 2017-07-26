@@ -47,7 +47,7 @@ public final class FileNames {
 		// http://stackoverflow.com/a/894133/1391325
 		ILLEGAL_CHARACTERS = new char[] { '/', '\n', '\r', '\t', '\0', '\f', '`', '?', '*', '\\', '<', '>', '|', '\"',
 				':' };
-		final String regex = "[" + Pattern.quote(new String(ILLEGAL_CHARACTERS)) + "]";
+		final String regex = "[" + Pattern.quote(new String(ILLEGAL_CHARACTERS)) + ']';
 		ILLEGAL_CHAR_PATTERN = Pattern.compile(regex);
 	}
 

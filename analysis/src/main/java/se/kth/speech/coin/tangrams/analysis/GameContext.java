@@ -323,7 +323,7 @@ public final class GameContext {
 	 */
 	@Override
 	public String toString() {
-		final StringBuilder builder = new StringBuilder();
+		final StringBuilder builder = new StringBuilder(64 * history.getEvents().size() + 1);
 		builder.append("GameContext [events=");
 		builder.append(history);
 		builder.append(", time=");

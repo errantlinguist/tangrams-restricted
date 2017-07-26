@@ -121,7 +121,7 @@ public final class ImageVisualizationInfo {
 		 */
 		@Override
 		public String toString() {
-			final StringBuilder builder = new StringBuilder();
+			final StringBuilder builder = new StringBuilder(64);
 			builder.append("Datum [resourceLoc=");
 			builder.append(resourceLoc);
 			builder.append(", color=");

@@ -198,13 +198,6 @@ public final class StatisticsWriter implements Consumer<Tester.Result> {
 		return result;
 	}
 
-	/**
-	 * @return the summaryDatumColumnOrdering
-	 */
-	protected static List<SummaryDatum> getSummaryDatumColumnOrdering() {
-		return SUMMARY_DATUM_COLUMN_ORDERING;
-	}
-
 	private final PrintWriter out;
 
 	public StatisticsWriter(final PrintWriter out) {

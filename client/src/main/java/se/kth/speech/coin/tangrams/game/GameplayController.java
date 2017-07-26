@@ -89,7 +89,7 @@ public final class GameplayController implements Controller {
 		 */
 		@Override
 		public String toString() {
-			final StringBuilder builder = new StringBuilder();
+			final StringBuilder builder = new StringBuilder(64 + 4 * lastPieceMoveTurnsById.length);
 			builder.append("History [lastPieceMoveTurnsById=");
 			builder.append(Arrays.toString(lastPieceMoveTurnsById));
 			builder.append(", pieceMoveCounts=");

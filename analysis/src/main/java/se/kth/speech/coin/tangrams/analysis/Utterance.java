@@ -185,7 +185,7 @@ public final class Utterance implements Comparable<Utterance> {
 	 */
 	@Override
 	public String toString() {
-		final StringBuilder builder = new StringBuilder();
+		final StringBuilder builder = new StringBuilder(96 + 4 * tokens.size());
 		builder.append("Utterance [startTime=");
 		builder.append(startTime);
 		builder.append(", endTime=");
@@ -196,7 +196,7 @@ public final class Utterance implements Comparable<Utterance> {
 		builder.append(segmentId);
 		builder.append(", tokens=");
 		builder.append(tokens);
-		builder.append("]");
+		builder.append(']');
 		return builder.toString();
 	}
 }

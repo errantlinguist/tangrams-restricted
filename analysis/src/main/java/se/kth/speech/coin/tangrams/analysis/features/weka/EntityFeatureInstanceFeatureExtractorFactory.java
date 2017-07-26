@@ -51,7 +51,7 @@ public final class EntityFeatureInstanceFeatureExtractorFactory
 
 	private static final String RES_LOC_PREFIX = "classpath:/se/kth/speech/coin/tangrams/content/";
 
-	private InstanceFeatureExtractor<EntityFeature, EntityFeature.Extractor.Context> inst = null;
+	private InstanceFeatureExtractor<EntityFeature, EntityFeature.Extractor.Context> inst;
 
 	@Inject
 	private ResourceLoader resourceLoader;;

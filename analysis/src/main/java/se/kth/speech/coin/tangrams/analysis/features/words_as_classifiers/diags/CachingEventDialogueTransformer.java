@@ -96,10 +96,10 @@ public final class CachingEventDialogueTransformer implements EventDialogueTrans
 	 */
 	@Override
 	public String toString() {
-		final StringBuilder builder = new StringBuilder();
+		final StringBuilder builder = new StringBuilder(128);
 		builder.append("CachingEventDialogueTransformer [transformedDiags=");
 		builder.append(transformedDiags);
-		builder.append("]");
+		builder.append(']');
 		return builder.toString();
 	}
 

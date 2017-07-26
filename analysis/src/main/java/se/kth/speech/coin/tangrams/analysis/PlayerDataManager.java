@@ -177,12 +177,12 @@ public final class PlayerDataManager {
 	 */
 	@Override
 	public String toString() {
-		final StringBuilder builder = new StringBuilder();
+		final StringBuilder builder = new StringBuilder(64 * playerEventLogs.size() + 1);
 		builder.append("PlayerDataManager [playerEventLogs=");
 		builder.append(playerEventLogs);
 		builder.append(", playerSourceIds=");
 		builder.append(playerSourceIds);
-		builder.append("]");
+		builder.append(']');
 		return builder.toString();
 	}
 

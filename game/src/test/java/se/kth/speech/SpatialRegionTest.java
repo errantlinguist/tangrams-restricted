@@ -146,7 +146,7 @@ public final class SpatialRegionTest {
 		final boolean r1Test = r1.intersects(r2);
 		final boolean r2Test = r2.intersects(r1);
 		if (!r1Test == r2Test) {
-			final StringBuilder sb = new StringBuilder();
+			final StringBuilder sb = new StringBuilder(48);
 			sb.append(r1);
 			sb.append(" was evaluated");
 			if (!r1Test) {

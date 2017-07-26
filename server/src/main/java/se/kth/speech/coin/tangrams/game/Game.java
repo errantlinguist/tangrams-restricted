@@ -74,7 +74,7 @@ public final class Game<T> {
 	 */
 	@Override
 	public String toString() {
-		final StringBuilder builder = new StringBuilder();
+		final StringBuilder builder = new StringBuilder(256);
 		builder.append("Game [imgVisualizationInfo=");
 		builder.append(imgVisualizationInfo);
 		builder.append(", model=");

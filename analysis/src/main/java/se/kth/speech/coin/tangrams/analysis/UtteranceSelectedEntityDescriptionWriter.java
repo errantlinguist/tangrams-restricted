@@ -111,8 +111,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 		}
 
 		private static String parseOutfilePrefix(final CommandLine cl, final Path inpath) {
-			final String prefix = cl.getOptionValue(Parameter.OUTFILE_PREFIX.optName, DEFAULT_OUTFILE_PREFIX);
-			return prefix;
+			return cl.getOptionValue(Parameter.OUTFILE_PREFIX.optName, DEFAULT_OUTFILE_PREFIX);
 		}
 
 		private static void printHelp() {

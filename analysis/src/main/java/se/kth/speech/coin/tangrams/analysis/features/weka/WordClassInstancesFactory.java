@@ -36,11 +36,11 @@ public final class WordClassInstancesFactory implements BiFunction<String, Integ
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.util.function.IntFunction#apply(int)
 	 */
 	@Override
-	public Instances apply(String relName, final Integer initialCapacity) {
+	public Instances apply(final String relName, final Integer initialCapacity) {
 		final Instances result = new Instances(relName, entInstAttrCtx.getAttrs(), initialCapacity);
 		result.setClass(entInstAttrCtx.getClassAttr());
 		return result;

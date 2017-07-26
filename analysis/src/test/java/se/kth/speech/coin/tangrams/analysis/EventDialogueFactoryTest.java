@@ -67,11 +67,11 @@ public final class EventDialogueFactoryTest {
 	 * @throws JAXBException
 	 */
 	@Test
-	public final void testApply() throws URISyntaxException, IOException, JAXBException {
+	public void testApply() throws URISyntaxException, IOException, JAXBException {
 		testApply(event -> true);
 	}
 
-	private final void testApply(final Predicate<? super Event> eventFilter)
+	private void testApply(final Predicate<? super Event> eventFilter)
 			throws URISyntaxException, IOException, JAXBException {
 		final String singleMoveSessionDataResLocStr = TestDataResources.SESSION_DATA_DIR
 				+ "/karey-tangram_Jutta-ONEMOVE";

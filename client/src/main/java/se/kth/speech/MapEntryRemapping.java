@@ -119,7 +119,7 @@ public final class MapEntryRemapping<K, V> {
 	 */
 	@Override
 	public String toString() {
-		final StringBuilder builder = new StringBuilder();
+		final StringBuilder builder = new StringBuilder(64);
 		builder.append("MapEntryRemapping [key=");
 		builder.append(key);
 		builder.append(", oldValue=");

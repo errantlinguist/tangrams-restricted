@@ -151,7 +151,7 @@ public final class MutablePair<L, R> implements Entry<L, R> {
 	 */
 	@Override
 	public String toString() {
-		final StringBuilder builder = new StringBuilder();
+		final StringBuilder builder = new StringBuilder(128);
 		builder.append("MutablePair [getLeft()=");
 		builder.append(getLeft());
 		builder.append(", getRight()=");

@@ -52,7 +52,7 @@ public abstract class AbstractTokenizer implements Function<String, List<String>
 		return result;
 	}
 
-	private static final LoadingCache<String, Annotation> createCache(
+	private static LoadingCache<String, Annotation> createCache(
 			final StanfordCoreNLPConfigurationVariant annotConfig) {
 		return CacheBuilder.newBuilder().softValues().initialCapacity(2000)
 				.build(CacheLoader.from(str -> annotate(str, annotConfig)));

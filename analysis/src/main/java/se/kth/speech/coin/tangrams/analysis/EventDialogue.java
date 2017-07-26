@@ -110,12 +110,12 @@ public final class EventDialogue {
 	 */
 	@Override
 	public String toString() {
-		final StringBuilder builder = new StringBuilder();
+		final StringBuilder builder = new StringBuilder(64 * (dialogueEvents.size() + utts.size() + 1));
 		builder.append("EventDialogue [dialogueEvents=");
 		builder.append(dialogueEvents);
 		builder.append(", utts=");
 		builder.append(utts);
-		builder.append("]");
+		builder.append(']');
 		return builder.toString();
 	}
 

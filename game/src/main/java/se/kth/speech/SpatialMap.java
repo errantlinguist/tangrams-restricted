@@ -224,10 +224,12 @@ public final class SpatialMap<E> {
 	 */
 	@Override
 	public String toString() {
-		final StringBuilder builder = new StringBuilder();
-		builder.append("SpatialMap - regionElements:");
+		final String prefix = "SpatialMap - regionElements: ";
+		final String regionRepr = createRegionStringRepr();
+		final StringBuilder builder = new StringBuilder(prefix.length() + regionRepr.length());
+		builder.append(prefix);
 		builder.append(TABLE_STRING_REPR_ROW_DELIMITER);
-		builder.append(createRegionStringRepr());
+		builder.append(regionRepr);
 		return builder.toString();
 	}
 

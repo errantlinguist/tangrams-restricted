@@ -25,7 +25,7 @@ import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
  * @since 5 May 2017
  *
  */
-public class GameStateDescriptions {
+public final class GameStateDescriptions {
 
 	public static GameStateDescription findAnyEquivalentGameState(final Iterator<GameStateDescription> gameDescs) {
 		final GameStateDescription result = gameDescs.next();

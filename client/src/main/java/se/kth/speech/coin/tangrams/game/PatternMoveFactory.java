@@ -126,7 +126,7 @@ public final class PatternMoveFactory
 	 */
 	@Override
 	public String toString() {
-		final StringBuilder builder = new StringBuilder();
+		final StringBuilder builder = new StringBuilder(256);
 		builder.append("PatternMoveFactory [posMatrix=");
 		builder.append(posMatrix);
 		builder.append(", rnd=");

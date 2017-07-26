@@ -86,7 +86,7 @@ public final class EventSubmittingPlayerMatcher implements Predicate<Event> {
 	 */
 	@Override
 	public String toString() {
-		final StringBuilder builder = new StringBuilder();
+		final StringBuilder builder = new StringBuilder(64);
 		builder.append("EventSubmittingPlayerMatcher [playerId=");
 		builder.append(playerId);
 		builder.append(']');

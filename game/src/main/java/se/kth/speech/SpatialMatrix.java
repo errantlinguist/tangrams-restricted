@@ -390,7 +390,7 @@ public final class SpatialMatrix<E> {
 	 */
 	@Override
 	public String toString() {
-		final StringBuilder builder = new StringBuilder();
+		final StringBuilder builder = new StringBuilder(128);
 		builder.append("SpatialMatrix [positionMatrix=");
 		builder.append(positionMatrix);
 		builder.append(']');

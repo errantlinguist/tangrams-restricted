@@ -137,7 +137,7 @@ final class TestParameters {
 	 */
 	@Override
 	public String toString() {
-		final StringBuilder builder = new StringBuilder();
+		final StringBuilder builder = new StringBuilder(128);
 		builder.append("TestParameters [cleaning=");
 		builder.append(cleaning);
 		builder.append(", tokenFiltering=");
@@ -148,7 +148,7 @@ final class TestParameters {
 		builder.append(tokenType);
 		builder.append(", trainingMethod=");
 		builder.append(trainingMethod);
-		builder.append("]");
+		builder.append(']');
 		return builder.toString();
 	}
 

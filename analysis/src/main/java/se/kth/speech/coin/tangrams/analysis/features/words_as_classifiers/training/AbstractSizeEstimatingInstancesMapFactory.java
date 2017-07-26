@@ -55,7 +55,7 @@ public abstract class AbstractSizeEstimatingInstancesMapFactory implements Train
 		return result;
 	}
 
-	private static int estimateVocabTypeTokenCount(final String token, final Collection<?> sessionData) {
+	private static int estimateVocabTypeTokenCount(final Collection<?> sessionData) {
 		// Number of sessions * estimated number of dialogues per session *
 		// estimated number of utterances per dialogue * estimated number of
 		// tokens (i.e. n-grams) per utterance
@@ -82,7 +82,7 @@ public abstract class AbstractSizeEstimatingInstancesMapFactory implements Train
 		final Function<String, Instances> classInstancesFetcher = className -> classInstances.computeIfAbsent(className,
 				key -> {
 					final Instances instances = new Instances(WordClasses.createRelationName(key),
-							entityInstAttrCtx.getAttrs(), estimateVocabTypeTokenCount(key, sessionEventDiagMgrs));
+							entityInstAttrCtx.getAttrs(), estimateVocabTypeTokenCount(sessionEventDiagMgrs));
 					instances.setClass(entityInstAttrCtx.getClassAttr());
 					return instances;
 				});

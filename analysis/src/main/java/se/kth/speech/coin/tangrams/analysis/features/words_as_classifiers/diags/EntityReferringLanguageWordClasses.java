@@ -117,14 +117,14 @@ public final class EntityReferringLanguageWordClasses {
 	 */
 	@Override
 	public String toString() {
-		final StringBuilder builder = new StringBuilder();
+		final StringBuilder builder = new StringBuilder(16 * refPosExamples.size() + refNegExamples.size() + otherEntityNegativeExamples.size());
 		builder.append("EntityReferringLanguageWordClasses [refPosExamples=");
 		builder.append(refPosExamples);
 		builder.append(", refNegExamples=");
 		builder.append(refNegExamples);
 		builder.append(", otherEntityNegativeExamples=");
 		builder.append(otherEntityNegativeExamples);
-		builder.append("]");
+		builder.append(']');
 		return builder.toString();
 	}
 

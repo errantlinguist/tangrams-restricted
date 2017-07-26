@@ -107,10 +107,10 @@ public class ChainedEventDialogueTransformer implements EventDialogueTransformer
 	 */
 	@Override
 	public String toString() {
-		final StringBuilder builder = new StringBuilder();
+		final StringBuilder builder = new StringBuilder(128);
 		builder.append("ChainedEventDialogueTransformer [decorated=");
 		builder.append(decorated);
-		builder.append("]");
+		builder.append(']');
 		return builder.toString();
 	}
 

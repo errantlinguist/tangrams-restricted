@@ -172,7 +172,7 @@ public final class GameState {
 	 */
 	@Override
 	public String toString() {
-		final StringBuilder builder = new StringBuilder();
+		final StringBuilder builder = new StringBuilder(256);
 		builder.append("GameState [allowFailedPlacements=");
 		builder.append(allowFailedPlacements);
 		builder.append(", controller=");

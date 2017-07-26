@@ -797,7 +797,7 @@ public class Record {
 			result += item;
 			n++;
 		}
-		result += "]";
+		result += ']';
 		return result;
 	}
 

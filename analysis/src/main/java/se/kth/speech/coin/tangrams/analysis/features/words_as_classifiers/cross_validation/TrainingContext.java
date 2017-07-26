@@ -116,7 +116,7 @@ final class TrainingContext {
 	 */
 	@Override
 	public String toString() {
-		final StringBuilder builder = new StringBuilder();
+		final StringBuilder builder = new StringBuilder(160);
 		builder.append("TrainingContext [appCtx=");
 		builder.append(appCtx);
 		builder.append(", backgroundJobExecutor=");
@@ -125,7 +125,7 @@ final class TrainingContext {
 		builder.append(diagTransformer);
 		builder.append(", uttRelHandler=");
 		builder.append(uttRelHandler);
-		builder.append("]");
+		builder.append(']');
 		return builder.toString();
 	}
 
