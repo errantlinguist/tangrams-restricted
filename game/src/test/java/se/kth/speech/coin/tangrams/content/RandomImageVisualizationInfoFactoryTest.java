@@ -34,6 +34,7 @@ import org.junit.runner.RunWith;
 
 import com.google.common.collect.Sets;
 
+import se.kth.speech.RandomTests;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo.Datum;
 import se.kth.speech.junit.IteratorEqualityAsserter;
 
@@ -46,7 +47,7 @@ import se.kth.speech.junit.IteratorEqualityAsserter;
 public final class RandomImageVisualizationInfoFactoryTest {
 
 	@DataPoints
-	public static final long[] TEST_SEEDS = new Random().longs().distinct().limit(10).toArray();
+	public static final long[] TEST_SEEDS = RandomTests.getSeed().longs().distinct().limit(10).toArray();
 
 	private static final IteratorEqualityAsserter<Object> ITER_EQUALITY_ASSERTER = new IteratorEqualityAsserter<>();
 
