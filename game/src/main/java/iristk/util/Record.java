@@ -69,6 +69,8 @@ public class Record implements Cloneable {
 	
 	private static final Object[] EMPTY_VARARGS_ARRAY = null;
 	
+	private static final char SUBFIELD_NAME_DELIM = ':';
+	
 	private static ConcurrentMap<Class<?>,RecordInfo> recordInfo = new ConcurrentHashMap<>();
 
 	private final HashMap<String, Object> dynamicFields = new HashMap<String,Object>();
@@ -199,7 +201,7 @@ public class Record implements Cloneable {
 		} else if (obj instanceof List) {
 			List<?> list = (List<?>)obj;
 			try {
-				final int subfieldNameDelimIdx = field.indexOf(':');
+				final int subfieldNameDelimIdx = field.indexOf(SUBFIELD_NAME_DELIM);
 				if (subfieldNameDelimIdx > -1) {
 					String subf = field.substring(0, subfieldNameDelimIdx);
 					String rest = field.substring(subfieldNameDelimIdx + 1);
@@ -225,9 +227,9 @@ public class Record implements Cloneable {
 			return null;
 		//if (field.contains(".")) {
 		//	System.err.println("Warning: use of dots when accessing record fields is deprecated: " + field);
-		//	field = field.replace(".", ":");
+		//	field = field.replace('.', SUBFIELD_NAME_DELIM);
 		//}
-		final int subfieldNameDelimIdx = field.indexOf(':');
+		final int subfieldNameDelimIdx = field.indexOf(SUBFIELD_NAME_DELIM);
 		if (subfieldNameDelimIdx > -1) {
 			String subf = field.substring(0, subfieldNameDelimIdx);
 			String rest = field.substring(subfieldNameDelimIdx + 1);
@@ -279,9 +281,9 @@ public class Record implements Cloneable {
 		if (field != null) {
 			//if (field.contains(".")) {
 			//	System.err.println("Warning: use of dots when accessing record fields is deprecated: " + field);
-			//	field = field.replace(".", ":");
+			//	field = field.replace('.', SUBFIELD_NAME_DELIM);
 			//}
-			final int subfieldNameDelimIdx = field.indexOf(':');
+			final int subfieldNameDelimIdx = field.indexOf(SUBFIELD_NAME_DELIM);
 			if (subfieldNameDelimIdx > -1) {
 				String fn = field.substring(0, subfieldNameDelimIdx);
 				String rest = field.substring(subfieldNameDelimIdx + 1);
@@ -345,9 +347,9 @@ public class Record implements Cloneable {
 	public synchronized boolean has(String field) {
 		//if (field.contains(".")) {
 		//	System.err.println("Warning: use of dots when accessing record fields is deprecated: " + field);
-		//	field = field.replace(".", ":");
+		//	field = field.replace('.', SUBFIELD_NAME_DELIM);
 		//}
-		final int subfieldNameDelimIdx = field.indexOf(':');
+		final int subfieldNameDelimIdx = field.indexOf(SUBFIELD_NAME_DELIM);
 		if (subfieldNameDelimIdx > -1) {
 			String subField = field.substring(0, subfieldNameDelimIdx);
 			String rest = field.substring(subfieldNameDelimIdx + 1);
@@ -895,7 +897,7 @@ public class Record implements Cloneable {
 	public static Record fromProperties(Properties prop) {
 		Record rec = new Record();
 		for (Object key : prop.keySet()) {
-			rec.put(key.toString().replace(".", ":"), prop.get(key));
+			rec.put(key.toString().replace('.', SUBFIELD_NAME_DELIM), prop.get(key));
 		}
 		return rec;
 	}
