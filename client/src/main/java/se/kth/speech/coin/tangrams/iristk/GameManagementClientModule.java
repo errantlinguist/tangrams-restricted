@@ -153,7 +153,7 @@ public final class GameManagementClientModule extends IrisModule implements Game
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see
 	 * se.kth.speech.coin.tangrams.iristk.GameManagementClient#rejectSelection(
 	 * java.lang.Integer, se.kth.speech.coin.tangrams.iristk.events.Area2D)
@@ -162,14 +162,13 @@ public final class GameManagementClientModule extends IrisModule implements Game
 	public void rejectSelection(final Integer pieceId, final Area2D area) {
 		final Event request = createPlayerEvent(GameManagementEvent.SELECTION_REJECTION);
 		request.put(GameManagementEvent.Attribute.SELECTION.toString(), new Selection(pieceId, area));
-		LOGGER.info("Sending broker event for rejecting selection of piece \"{}\" by \"{}\".",
-				new Object[] { pieceId, playerId });
+		LOGGER.info("Sending broker event for rejecting selection of piece \"{}\" by \"{}\".", pieceId, playerId);
 		send(request);
 	}
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see
 	 * se.kth.speech.coin.tangrams.iristk.GameManagementClient#requestJoinGame()
 	 */
@@ -182,7 +181,7 @@ public final class GameManagementClientModule extends IrisModule implements Game
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see
 	 * se.kth.speech.coin.tangrams.iristk.GameManagementClient#requestNextMove(
 	 * se.kth.speech.coin.tangrams.iristk.events.Move)
@@ -197,7 +196,7 @@ public final class GameManagementClientModule extends IrisModule implements Game
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see
 	 * se.kth.speech.coin.tangrams.iristk.GameManagementClient#requestSelection(
 	 * java.lang.Integer, se.kth.speech.coin.tangrams.iristk.events.Area2D)
@@ -206,13 +205,13 @@ public final class GameManagementClientModule extends IrisModule implements Game
 	public void requestSelection(final Integer pieceId, final Area2D area) {
 		final Event request = createPlayerEvent(GameManagementEvent.SELECTION_REQUEST);
 		request.put(GameManagementEvent.Attribute.SELECTION.toString(), new Selection(pieceId, area));
-		LOGGER.info("Sending broker event for selecting piece \"{}\" by \"{}\".", new Object[] { pieceId, playerId });
+		LOGGER.info("Sending broker event for selecting piece \"{}\" by \"{}\".", pieceId, playerId);
 		send(request);
 	}
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see se.kth.speech.coin.tangrams.iristk.GameManagementClient#
 	 * requestTurnCompletion(se.kth.speech.coin.tangrams.iristk.events.Move)
 	 */
