@@ -178,14 +178,17 @@ public class Record implements Cloneable {
 
 	public synchronized Class<?> getFieldClass(String fieldName) {
 		RecordInfo info = getRecordInfo();
-		if (info.classFields.containsKey(fieldName)) {
-			return info.classFields.get(fieldName).getType();
+		Field classField = info.classFields.get(fieldName);
+		if (classField != null) {
+			return classField.getType();
 		}
-		if (info.setMethodFields.containsKey(fieldName)) {
-			return info.setMethodFields.get(fieldName).getParameterTypes()[0];
+		Method setMethod = info.setMethodFields.get(fieldName);
+		if (setMethod != null) {
+			return setMethod.getParameterTypes()[0];
 		}
-		if (info.getMethodFields.containsKey(fieldName)) {
-			return info.getMethodFields.get(fieldName).getReturnType();
+		Method getMethod = info.getMethodFields.get(fieldName);
+		if (getMethod != null) {
+			return getMethod.getReturnType();
 		}
 		Object val = dynamicFields.get(fieldName);
 		if (val != null)
