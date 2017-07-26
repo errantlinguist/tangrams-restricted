@@ -167,10 +167,6 @@ final class InteractiveGameBoardPanel extends AbstractGameBoardPanel implements 
 
 	private final ExecutorService backgroundJobService;
 
-	private final Map<SpatialRegion, int[]> compCoordSizes;
-
-	private final Map<SpatialRegion, int[]> compCoordStartIdxs;
-
 	private final GameplayController controller;
 
 	private final Map<Image, Image> imgsScaledToGridSize;
@@ -204,22 +200,22 @@ final class InteractiveGameBoardPanel extends AbstractGameBoardPanel implements 
 		localTurnCompletionViewLogger = new TimestampingCompletedTurnLogger(screenshotLogger, dateFormatSupplier);
 		viewLogger = new TimestampingScreenshotLogger(screenshotLogger, dateFormatSupplier);
 		// https://stackoverflow.com/a/5777914/1391325
-		addAncestorListener(new AncestorListener(){
+		addAncestorListener(new AncestorListener() {
 
 			@Override
-			public void ancestorAdded(AncestorEvent event) {
+			public void ancestorAdded(final AncestorEvent event) {
 				viewLogger.accept(InteractiveGameBoardPanel.this, "game-start-");
 				InteractiveGameBoardPanel.this.removeAncestorListener(this);
 			}
 
 			@Override
-			public void ancestorRemoved(AncestorEvent event) {
+			public void ancestorMoved(final AncestorEvent event) {
 			}
 
 			@Override
-			public void ancestorMoved(AncestorEvent event) {
+			public void ancestorRemoved(final AncestorEvent event) {
 			}
-			
+
 		});
 		selectingMouseListener = new DisablingMouseAdapter(new SelectingMouseAdapter());
 		updateMouseListener(controller.getRole());
@@ -227,11 +223,6 @@ final class InteractiveGameBoardPanel extends AbstractGameBoardPanel implements 
 
 		// Caching of elements which are dependent on the (current) size of this
 		// component
-		final int uniqueRegionCount = posMatrix.getElementPlacements().getMinimalRegions().size();
-		compCoordStartIdxs = Maps.newHashMapWithExpectedSize(uniqueRegionCount);
-		addComponentListener(new ComponentResizedEventHookRunningComponentListener(compCoordStartIdxs::clear));
-		compCoordSizes = Maps.newHashMapWithExpectedSize(uniqueRegionCount);
-		addComponentListener(new ComponentResizedEventHookRunningComponentListener(compCoordSizes::clear));
 		imgsScaledToGridSize = Maps.newHashMapWithExpectedSize(posMatrix.getUniqueElementCount());
 		addComponentListener(new ComponentResizedEventHookRunningComponentListener(imgsScaledToGridSize::clear));
 
