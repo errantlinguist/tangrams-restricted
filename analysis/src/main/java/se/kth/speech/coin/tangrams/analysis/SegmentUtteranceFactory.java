@@ -83,8 +83,7 @@ public final class SegmentUtteranceFactory {
 	static void addSegmentTokens(final ArrayList<? super T> tokens, final Segment segment) {
 		final Transcription transcription = segment.getTranscription();
 		if (transcription == null) {
-			LOGGER.warn("Segment ID \"{}\" has no {} element.",
-					new Object[] { segment.getId(), Transcription.class.getSimpleName() });
+			LOGGER.warn("Segment ID \"{}\" has no {} element.", segment.getId(), Transcription.class.getSimpleName());
 		} else {
 			addSegmentTokens(tokens, transcription.getSegmentOrT());
 		}
@@ -94,8 +93,7 @@ public final class SegmentUtteranceFactory {
 		final Transcription transcription = segment.getTranscription();
 		final List<T> result;
 		if (transcription == null) {
-			LOGGER.warn("Segment ID \"{}\" has no {} element.",
-					new Object[] { segment.getId(), Transcription.class.getSimpleName() });
+			LOGGER.warn("Segment ID \"{}\" has no {} element.", segment.getId(), Transcription.class.getSimpleName());
 			result = Collections.emptyList();
 		} else {
 			final List<Object> children = transcription.getSegmentOrT();
@@ -123,15 +121,14 @@ public final class SegmentUtteranceFactory {
 		final List<Utterance> result = new ArrayList<>(1);
 		final Transcription transcription = segment.getTranscription();
 		if (transcription == null) {
-			LOGGER.warn("Segment ID \"{}\" has no {} element.",
-					new Object[] { segment.getId(), Transcription.class.getSimpleName() });
+			LOGGER.warn("Segment ID \"{}\" has no {} element.", segment.getId(), Transcription.class.getSimpleName());
 		} else {
 			final List<Object> children = transcription.getSegmentOrT();
 			// TODO: make this recursive
 			children.stream().filter(child -> child instanceof Segment).findAny().ifPresent(childSeg -> {
 				LOGGER.warn(
 						"Segment ID \"{}\" contains child {} instances; Multi-level transcriptions not (yet) supported.",
-						new Object[] { segment.getId(), Segment.class.getSimpleName() });
+						segment.getId(), Segment.class.getSimpleName());
 			});
 			final Float segStartTime = segment.getStart();
 			assert segStartTime != null;
