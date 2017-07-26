@@ -117,7 +117,7 @@ public class Converters {
 			return Arrays.asList(object);
 	}
 	
-	public static List asList(Object... objects) {
+	public static List<Object> asList(Object... objects) {
 		return Arrays.asList(objects);	
 	}
 
@@ -127,7 +127,7 @@ public class Converters {
 		else if (object instanceof Record)
 			return (Record)object;
 		else if (object instanceof Map)
-			return new Record((Map)object);
+			return new Record((Map<?,?>)object);
 		else 
 			return null;
 	}
