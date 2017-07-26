@@ -38,9 +38,6 @@
 				</executions>
 				<configuration>
 					<packageName>${hat.package}</packageName>
-					<sources>
-						<source>src/main/resources/hat.xsd</source>
-					</sources>
 				</configuration>
 			</plugin>
 		</plugins>
