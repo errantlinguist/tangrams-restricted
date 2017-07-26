@@ -40,6 +40,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 
 import org.apache.commons.io.IOUtils;
 
@@ -48,6 +50,8 @@ import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
 import com.eclipsesource.json.ParseException;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
 import javafx.util.converter.LocalDateStringConverter;
 import javafx.util.converter.LocalDateTimeStringConverter;
@@ -65,16 +69,12 @@ public class Record implements Cloneable {
 	
 	private static final Object[] EMPTY_VARARGS_ARRAY = null;
 	
-	private static HashMap<Class<?>,RecordInfo> recordInfo = new HashMap<>();
+	private static ConcurrentMap<Class<?>,RecordInfo> recordInfo = new ConcurrentHashMap<>();
 
 	private final HashMap<String, Object> dynamicFields = new HashMap<String,Object>();
 	
 	public Record() {
-		synchronized (Record.class) {
-			if (!recordInfo.containsKey(getClass())) {
-				recordInfo.put(getClass(), new RecordInfo(getClass()));
-			}
-		}
+		recordInfo.computeIfAbsent(getClass(), cls -> new RecordInfo(getClass()));
 	}
 	
 	private RecordInfo getRecordInfo() {
@@ -227,10 +227,10 @@ public class Record implements Cloneable {
 		//	System.err.println("Warning: use of dots when accessing record fields is deprecated: " + field);
 		//	field = field.replace(".", ":");
 		//}
-		if (field.contains(":")) {
-			int i = field.indexOf(":");
-			String subf = field.substring(0, i);
-			String rest = field.substring(i + 1);
+		int subfieldNameDelimIdx = field.indexOf(':');
+		if (subfieldNameDelimIdx > -1) {
+			String subf = field.substring(0, subfieldNameDelimIdx);
+			String rest = field.substring(subfieldNameDelimIdx + 1);
 			Object sub = get(subf);
 			return get(sub, rest);
 		} else {
@@ -323,9 +323,9 @@ public class Record implements Cloneable {
 				Field setField = info.classFields.get(field);
 				if (setField != null) {
 					try {
-						if(setField.getType().equals(java.time.LocalDate.class)) {
+						if(setField.getType().equals(LocalDate.class)) {
 							setField.set(this, new LocalDateStringConverter().fromString((String) value));
-						} else if(setField.getType().equals(java.time.LocalDateTime.class)) {
+						} else if(setField.getType().equals(LocalDateTime.class)) {
 							setField.set(this, new LocalDateTimeStringConverter().fromString((String) value));
 						} else {
 							setField.set(this, asType(value, setField.getType()));
@@ -446,28 +446,37 @@ public class Record implements Cloneable {
 	}
 
 	public synchronized List<String> getFieldsOrdered() {
-		List<String> fields = new ArrayList<>();
 		RecordInfo info = getRecordInfo();
-		fields.addAll(info.orderedFields);
-		fields.addAll(dynamicFields.keySet());
+		List<String> orderedFieldNames = info.orderedFields;
+		Set<String> dynamicFieldNames = dynamicFields.keySet();
+		List<String> fields = new ArrayList<>(orderedFieldNames.size() + dynamicFieldNames.size());
+		fields.addAll(orderedFieldNames);
+		fields.addAll(dynamicFieldNames);
 		return fields;
 	}
 
 	public synchronized Set<String> getFields() {
-		HashSet<String> fields = new HashSet<>();
-		fields.addAll(dynamicFields.keySet());
+		Set<String> dynamicFieldNames = dynamicFields.keySet();
 		RecordInfo info = getRecordInfo();
-		fields.addAll(info.classFields.keySet());
-		fields.addAll(info.getMethodFields.keySet());
+		Set<String> classFieldNames = info.classFields.keySet();
+		Set<String> getMethodFieldNames = info.getMethodFields.keySet();
+		HashSet<String> fields = Sets.newHashSetWithExpectedSize(dynamicFieldNames.size() + classFieldNames.size() + getMethodFieldNames.size());
+		fields.addAll(dynamicFieldNames);
+		fields.addAll(classFieldNames);
+		fields.addAll(getMethodFieldNames);
 		return fields;
 	}
 
 	public synchronized Set<String> getPersistentFields() {
-		HashSet<String> fields = new HashSet<>();
-		fields.addAll(dynamicFields.keySet());
+		Set<String> dynamicFieldNames = dynamicFields.keySet();
 		RecordInfo info = getRecordInfo();
-		fields.addAll(info.classFields.keySet());
-		for (String f : info.getMethodFields.keySet()) {
+		Set<String> classFieldNames = info.classFields.keySet();
+		Set<String> getMethodFieldNames = info.getMethodFields.keySet();
+		HashSet<String> fields = Sets.newHashSetWithExpectedSize(dynamicFieldNames.size() + classFieldNames.size() + getMethodFieldNames.size());		
+		
+		fields.addAll(dynamicFieldNames);
+		fields.addAll(classFieldNames);
+		for (String f : getMethodFieldNames) {
 			if (info.setMethodFields.containsKey(f))
 				fields.add(f);
 		}
@@ -502,7 +511,7 @@ public class Record implements Cloneable {
 	}
 
 	public Map<String,Object> toMap() {
-		HashMap<String,Object> map = new HashMap<String,Object>(size());
+		HashMap<String,Object> map = Maps.newHashMapWithExpectedSize(size());
 		for (String field : getFields()) {
 			map.put(field, get(field));
 		}
@@ -717,9 +726,10 @@ public class Record implements Cloneable {
 		} else if (value.isBoolean()) {
 			return value.asBoolean();
 		} else if (value.isArray()) {
-			ArrayList<Object> array = new ArrayList<Object>();
 			JsonArray ja = value.asArray();
-			for (int i = 0; i < ja.size(); i++) {
+			final int arraySize = ja.size();
+			ArrayList<Object> array = new ArrayList<Object>(arraySize);
+			for (int i = 0; i < arraySize; i++) {
 				array.add(parseJsonValue(ja.get(i)));
 			}
 			return array;
@@ -781,7 +791,7 @@ public class Record implements Cloneable {
 	private static String toStringIndent(List<?> list, int level) {
 		String result = "[";
 		boolean multiline = false;
-		List<String> items = new ArrayList<>();
+		List<String> items = new ArrayList<>(list.size());
 		for (Object item : list) {
 			String value = value(item, level + 1);
 			items.add(value);
@@ -998,8 +1008,9 @@ public class Record implements Cloneable {
 	}
 
 	public List<Object> getValues() {
-		ArrayList<Object> values = new ArrayList<>();
-		for (String field : getFields()) {
+		Set<String> fieldNames = getFields();
+		ArrayList<Object> values = new ArrayList<>(fieldNames.size());
+		for (String field : fieldNames) {
 			Object value = get(field);
 			if (value != null)
 				values.add(value);
