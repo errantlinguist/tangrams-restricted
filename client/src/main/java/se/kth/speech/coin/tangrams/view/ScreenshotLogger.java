@@ -68,8 +68,7 @@ final class ScreenshotLogger implements BiConsumer<Component, String> {
 		executor.submit(() -> {
 			final Path outdir = outdirPathSupplier.get();
 			final String playerId = playerIdGetter.get();
-			LOGGER.debug("Creating and saving screenshot \"{}\", taken by \"{}\".",
-					new Object[] { filenamePrefix, playerId });
+			LOGGER.debug("Creating and saving screenshot \"{}\", taken by \"{}\".", filenamePrefix, playerId);
 			try {
 				final String outfileName = filenamePrefix + "-" + playerIdGetter.get() + ".png";
 				try (final OutputStream os = Files.newOutputStream(outdir.resolve(outfileName))) {
