@@ -18,7 +18,7 @@ import java.util.Map;
 
 public class Converters {
 	
-	public static Object asType(Object object, Class type) {
+	public static Object asType(Object object, Class<?> type) {
 		if (object == null)
 			return null;
 		else if (object.getClass() == type)
@@ -45,7 +45,7 @@ public class Converters {
 			return object;
 	}
 
-	private static Record asDerivedRecord(Record object, Class type) {
+	private static Record asDerivedRecord(Record object, Class<?> type) {
 		try {
 			Record record = (Record) type.newInstance();
 			record.putAllExceptNull(object);
@@ -91,7 +91,7 @@ public class Converters {
 		else if (object instanceof String) 
 			return !((String)object).equalsIgnoreCase("false");
 		else if (object instanceof Collection) 
-			return ((Collection)object).size() > 0;
+			return ((Collection<?>)object).size() > 0;
 			else return true;
 	}
 
@@ -102,15 +102,17 @@ public class Converters {
 			return asBoolean(object);
 	}
 
-	public static List asList(Object object) {
+	public static List<Object> asList(Object object) {
 		if (object == null)
 			return null;
-		else if (object instanceof List)
-			return (List)object;
-		else if (object instanceof Record)
-			return new ArrayList(((Record)object).getValues());
+		else if (object instanceof List) {
+			@SuppressWarnings("unchecked")
+			final List<Object> result = (List<Object>)object;
+			return result;
+		} else if (object instanceof Record)
+			return new ArrayList<>(((Record)object).getValues());
 		else if (object instanceof Collection)
-			return new ArrayList((Collection)object);
+			return new ArrayList<>((Collection<?>)object);
 		else 
 			return Arrays.asList(object);
 	}

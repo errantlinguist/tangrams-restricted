@@ -14,7 +14,6 @@ import static iristk.util.Converters.*;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -62,6 +61,8 @@ import javafx.util.converter.LocalDateTimeStringConverter;
 
 public class Record {
 	
+	private static final Object[] EMPTY_VARARGS_ARRAY = null;
+	
 	private static HashMap<Class<?>,RecordInfo> recordInfo = new HashMap<>();
 
 	private final HashMap<String, Object> dynamicFields = new HashMap<String,Object>();
@@ -97,7 +98,7 @@ public class Record {
 			});
 		}
 		
-		private void setupFields(Class<? extends Record> clazz, HashMap<String, Integer> order) {
+		private void setupFields(Class<?> clazz, HashMap<String, Integer> order) {
 			for (Field field : clazz.getDeclaredFields()) {
 				if (field.isAnnotationPresent(RecordField.class)) {
 					field.setAccessible(true);
@@ -120,14 +121,14 @@ public class Record {
 					}
 				}
 			}
-			Class s = clazz.getSuperclass();
+			Class<?> s = clazz.getSuperclass();
 			if (s != null)
 				setupFields(s, order);
 		}
 
 	}
 
-	public Record(Map map) {
+	public Record(Map<?,?> map) {
 		this();
 		putAll(map);
 	}
@@ -165,7 +166,7 @@ public class Record {
 		}
 	}
 
-	public void putAll(Map map) {
+	public void putAll(Map<?,?> map) {
 		for (Object key : map.keySet()) {
 			put(key.toString(), map.get(key));
 		}
@@ -194,7 +195,7 @@ public class Record {
 		} else if (obj instanceof Record) {
 			return ((Record)obj).get(field);
 		} else if (obj instanceof List) {
-			List list = (List)obj;
+			List<?> list = (List<?>)obj;
 			try {
 				if (field.contains(":")) {
 					int i = field.indexOf(":");
@@ -438,7 +439,7 @@ public class Record {
 		return asRecord(get(field));
 	}
 
-	public List getList(String field) {
+	public List<Object> getList(String field) {
 		return asList(get(field));
 	}
 
@@ -486,8 +487,8 @@ public class Record {
 
 	@Override
 	public String toString() {
-		Map map = toMap();
-		for (Object key : new ArrayList<String>(map.keySet())) {
+		Map<String,Object> map = toMap();
+		for (String key : new ArrayList<String>(map.keySet())) {
 			Object val = map.get(key);
 			if (val instanceof Double || val instanceof Float) {
 				map.put(key, String.format(Locale.US, "%.2f", val));
@@ -498,7 +499,7 @@ public class Record {
 		return getClass().getSimpleName() + map.toString(); 
 	}
 
-	public Map toMap() {
+	public Map<String,Object> toMap() {
 		HashMap<String,Object> map = new HashMap<String,Object>(size());
 		for (String field : getFields()) {
 			map.put(field, get(field));
@@ -548,7 +549,7 @@ public class Record {
 				} else if (val instanceof Record) {
 					json.add(key, ((Record)val).toJSON());
 				} else if (val instanceof List) {
-					json.add(key, toJsonArray((List)val));
+					json.add(key, toJsonArray((List<?>)val));
 				} else if (val instanceof LocalDateTime) {
 					json.add(key, new LocalDateTimeStringConverter().toString((LocalDateTime) val));
 				} else if (val instanceof LocalDate) {
@@ -582,7 +583,7 @@ public class Record {
 		printStream.close();
 	}
 
-	private static JsonArray toJsonArray(List list) {
+	private static JsonArray toJsonArray(List<?> list) {
 		JsonArray arr = new JsonArray();
 		for (Object val : list) {
 			if (val instanceof Float) {
@@ -600,7 +601,7 @@ public class Record {
 			} else if (val instanceof Record) {
 				arr.add(((Record)val).toJSON());
 			} else if (val instanceof List) {
-				arr.add(toJsonArray((List)val));
+				arr.add(toJsonArray((List<?>)val));
 			} else if (val instanceof LocalDateTime) {
 				arr.add(new LocalDateTimeStringConverter().toString((LocalDateTime) val));
 			} else if (val instanceof LocalDate) {
@@ -657,7 +658,7 @@ public class Record {
 				try {
 					Constructor<?> constructor = Class.forName(json.get("class").asString()).getDeclaredConstructor();
 					constructor.setAccessible(true);
-					record = (Record) constructor.newInstance(null);
+					record = (Record) constructor.newInstance(EMPTY_VARARGS_ARRAY);
 				} catch (ClassNotFoundException e) {
 					record = new Record();
 				}
@@ -690,6 +691,11 @@ public class Record {
 	}
 
 	public static class JsonToRecordException extends IOException {
+
+		/**
+		 * 
+		 */
+		private static final long serialVersionUID = -6691786725241458797L;
 
 		public JsonToRecordException(String message) {
 			super(message);
@@ -749,7 +755,7 @@ public class Record {
 
 	private static String value(Object o, int level) {
 		if (o instanceof List) {
-			return toStringIndent(((List)o), level);
+			return toStringIndent(((List<?>)o), level);
 		} else if (o instanceof Record) {
 			return ((Record)o).toStringIndent(level);
 		} else if (o instanceof Double || o instanceof Float) {
@@ -770,7 +776,7 @@ public class Record {
 		return result;
 	}
 
-	private static String toStringIndent(List list, int level) {
+	private static String toStringIndent(List<?> list, int level) {
 		String result = "[";
 		boolean multiline = false;
 		List<String> items = new ArrayList<>();
@@ -898,7 +904,7 @@ public class Record {
 		try {
 			Constructor<?> constructor = getClass().getDeclaredConstructor();
 			constructor.setAccessible(true);
-			Record clone = (Record) constructor.newInstance(null);
+			Record clone = (Record) constructor.newInstance(EMPTY_VARARGS_ARRAY);
 			clone.putAll(this);
 			return clone;
 		} catch (InstantiationException e) {
@@ -921,7 +927,7 @@ public class Record {
 		try {
 			Constructor<?> constructor = getClass().getDeclaredConstructor();
 			constructor.setAccessible(true);
-			Record clone = (Record) constructor.newInstance(null);
+			Record clone = (Record) constructor.newInstance(EMPTY_VARARGS_ARRAY);
 			for (String field : this.getFields()) {
 				Object value = get(field);
 				if (value != null) {
@@ -977,7 +983,9 @@ public class Record {
 			if (value != null) {
 				Object existing = this.get(field);
 				if (existing instanceof List) {
-					((List)existing).addAll((List)value);
+					@SuppressWarnings("unchecked")
+					final List<Object> downcast = (List<Object>)existing;
+					downcast.addAll((List<?>)value);
 				} else if (existing instanceof Record && value instanceof Record) {
 					((Record)existing).adjoin((Record)value);
 				} else {
@@ -987,8 +995,8 @@ public class Record {
 		}
 	}
 
-	public List getValues() {
-		ArrayList values = new ArrayList();
+	public List<Object> getValues() {
+		ArrayList<Object> values = new ArrayList<>();
 		for (String field : getFields()) {
 			Object value = get(field);
 			if (value != null)
