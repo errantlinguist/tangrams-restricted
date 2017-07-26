@@ -23,7 +23,6 @@ import java.awt.font.TextAttribute;
 import java.text.AttributedCharacterIterator.Attribute;
 import java.util.Collections;
 import java.util.Map;
-import java.util.function.Supplier;
 
 import javax.swing.BoxLayout;
 import javax.swing.JFrame;
@@ -33,8 +32,6 @@ import javax.swing.table.JTableHeader;
 
 import com.google.common.collect.Maps;
 
-import se.kth.speech.MapEntryRemapping;
-import se.kth.speech.SpatialRegion;
 import se.kth.speech.coin.tangrams.game.Controller;
 
 /**
@@ -57,7 +54,6 @@ public class BasicGameViewFrame extends JFrame {
 	}
 
 	BasicGameViewFrame(final AbstractGameBoardPanel boardPanel, final Controller controller,
-			final Supplier<? extends MapEntryRemapping<Integer, SpatialRegion>> moveFactory,
 			final Dimension preferredSize) {
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		setPreferredSize(preferredSize);

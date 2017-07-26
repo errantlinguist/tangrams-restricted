@@ -135,7 +135,7 @@ final class InteractiveGameViewFrame extends BasicGameViewFrame implements Contr
 	InteractiveGameViewFrame(final AbstractGameBoardPanel boardPanel, final GameplayController controller,
 			final Supplier<? extends MapEntryRemapping<Integer, SpatialRegion>> moveFactory,
 			final Dimension preferredSize) {
-		super(boardPanel, controller, moveFactory, preferredSize);
+		super(boardPanel, controller, preferredSize);
 		controller.getListeners().add(this);
 		final PlayerRole initialRole = controller.getRole();
 		{
