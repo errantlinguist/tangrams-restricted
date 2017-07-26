@@ -167,9 +167,9 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 
 	private static final List<FileNameExtensionFilter> FILE_FILTERS;
 
-	private static final Path SETTINGS_DIR;
+	private static final Logger LOGGER = LoggerFactory.getLogger(UtteranceSelectedEntityDescriptionWriter.class);
 
-	static final Logger LOGGER = LoggerFactory.getLogger(UtteranceSelectedEntityDescriptionWriter.class);
+	private static final Path SETTINGS_DIR;
 
 	static {
 		FILE_FILTERS = Arrays.asList(new FileNameExtensionFilter("Property files (*.properties)", "properties"));

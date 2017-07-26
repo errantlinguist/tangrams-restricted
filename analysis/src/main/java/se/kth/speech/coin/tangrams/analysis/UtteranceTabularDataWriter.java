@@ -32,6 +32,9 @@ import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import iristk.system.Event;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionContextFactory;
@@ -53,6 +56,8 @@ class UtteranceTabularDataWriter {
 			new EventTypeMatcher(GameManagementEvent.NEXT_TURN_REQUEST));
 
 	private static final ImageVisualizationInfoUnmarshaller IMG_VIZ_INFO_UNMARSHALLER = new ImageVisualizationInfoUnmarshaller();
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(UtteranceTabularDataWriter.class);
 
 	private static final String NULL_VALUE_REPR = "-";
 
@@ -251,7 +256,7 @@ class UtteranceTabularDataWriter {
 						throw new IllegalArgumentException(String.format("No utterances for event \"%s\".", event));
 					} else {
 						final String msg = createNoEventUtterancesMsg(event, eventDiags, eventDiagIter.nextIndex() - 1);
-						UtteranceSelectedEntityDescriptionWriter.LOGGER.warn(msg);
+						LOGGER.warn(msg);
 						final LocalDateTime eventTime = EventTimes.parseEventTime(event.getTime());
 						final Duration gameDuration = Duration.between(history.getStartTime(), eventTime);
 						final float offset = gameDuration.toMillis() / 1000.0f;
@@ -308,4 +313,5 @@ class UtteranceTabularDataWriter {
 			writer.write(eventDialogStr);
 		}
 	}
+
 }
