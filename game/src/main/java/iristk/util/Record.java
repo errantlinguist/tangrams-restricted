@@ -69,18 +69,18 @@ public class Record implements Cloneable {
 	
 	private static final Object[] EMPTY_VARARGS_ARRAY = null;
 	
-	private static final char SUBFIELD_NAME_DELIM = ':';
+	private static final ConcurrentMap<Class<?>,RecordInfo> RECORD_INFO = new ConcurrentHashMap<>();
 	
-	private static ConcurrentMap<Class<?>,RecordInfo> recordInfo = new ConcurrentHashMap<>();
+	private static final char SUBFIELD_NAME_DELIM = ':';
 
 	private final HashMap<String, Object> dynamicFields = new HashMap<String,Object>();
 	
 	public Record() {
-		recordInfo.computeIfAbsent(getClass(), cls -> new RecordInfo(getClass()));
+		RECORD_INFO.computeIfAbsent(getClass(), cls -> new RecordInfo(getClass()));
 	}
 	
 	private RecordInfo getRecordInfo() {
-		return recordInfo.get(getClass());
+		return RECORD_INFO.get(getClass());
 	}
 	
 	private static class RecordInfo {
