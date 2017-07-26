@@ -53,7 +53,6 @@ import com.google.common.collect.Maps;
 
 import se.kth.speech.SpatialMatrix;
 import se.kth.speech.SpatialRegion;
-import se.kth.speech.awt.ComponentResizedEventHookRunningComponentListener;
 import se.kth.speech.awt.DisablingMouseAdapter;
 import se.kth.speech.coin.tangrams.game.Controller;
 import se.kth.speech.coin.tangrams.game.GameplayController;
@@ -169,8 +168,6 @@ final class InteractiveGameBoardPanel extends AbstractGameBoardPanel implements 
 
 	private final GameplayController controller;
 
-	private final Map<Image, Image> imgsScaledToGridSize;
-
 	private final BiConsumer<? super InteractiveGameBoardPanel, ? super Turn> localTurnCompletionViewLogger;
 
 	private final SpatialMatrix<Integer> posMatrix;
@@ -210,21 +207,18 @@ final class InteractiveGameBoardPanel extends AbstractGameBoardPanel implements 
 
 			@Override
 			public void ancestorMoved(final AncestorEvent event) {
+				// Do nothing
 			}
 
 			@Override
 			public void ancestorRemoved(final AncestorEvent event) {
+				// Do nothing
 			}
 
 		});
 		selectingMouseListener = new DisablingMouseAdapter(new SelectingMouseAdapter());
 		updateMouseListener(controller.getRole());
 		addDisablingMouseListener(selectingMouseListener);
-
-		// Caching of elements which are dependent on the (current) size of this
-		// component
-		imgsScaledToGridSize = Maps.newHashMapWithExpectedSize(posMatrix.getUniqueElementCount());
-		addComponentListener(new ComponentResizedEventHookRunningComponentListener(imgsScaledToGridSize::clear));
 
 		{
 			final int[] minSizeDims = createMinimumDimLengths(posMatrix.getDimensions()).toArray();
