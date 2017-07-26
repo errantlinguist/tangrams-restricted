@@ -138,11 +138,14 @@ class UtteranceTabularDataWriter {
 				// Add padding for feature-derived descriptions
 				featuresToDescribe.stream().map(feature -> padding).forEach(nextHeader::add);
 				nextHeader.addAll(nextImgDescHeader);
+				// Add padding for dialogue col
+				nextHeader.add(padding);
 			}
 
 		} else {
 			result = Collections.emptyList();
 		}
+		assert result.stream().mapToInt(List::size).boxed().collect(Collectors.toSet()).size() <= 1;
 		return result;
 	}
 
