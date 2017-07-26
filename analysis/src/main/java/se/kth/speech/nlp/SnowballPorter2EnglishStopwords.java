@@ -101,10 +101,10 @@ public final class SnowballPorter2EnglishStopwords {
 		}
 	}
 
-	public static Stream<String> parse(final String line) {
+	private static Stream<String> parse(final String line) {
 		final int commentStartIdx = line.indexOf(COMMENT_DELIM);
 		String content;
-		if (commentStartIdx < 1) {
+		if (commentStartIdx < 0) {
 			content = line;
 		} else {
 			content = line.substring(0, commentStartIdx);
