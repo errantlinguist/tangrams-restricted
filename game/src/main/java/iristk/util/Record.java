@@ -61,7 +61,7 @@ import javafx.util.converter.LocalDateTimeStringConverter;
  *  */
 
 @SuppressWarnings("restriction")
-public class Record {
+public class Record implements Cloneable {
 	
 	private static final Object[] EMPTY_VARARGS_ARRAY = null;
 	

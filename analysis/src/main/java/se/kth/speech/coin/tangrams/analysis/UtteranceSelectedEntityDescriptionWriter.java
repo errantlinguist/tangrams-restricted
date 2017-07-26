@@ -226,7 +226,19 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 	}
 
 	private static String createOutfileInfix(final Path inpath) {
-		final String parentDirName = inpath.getParent().getFileName().toString();
+		final Path parent = inpath.getParent();
+		final String defaultParentDirName = "ROOT_DIR";
+		final String parentDirName;
+		if (parent == null) {
+			parentDirName = defaultParentDirName;
+		} else {
+			final Path parentFileName = parent.getFileName();
+			if (parentFileName == null) {
+				parentDirName = defaultParentDirName;
+			} else {
+				parentDirName = parentFileName.toString();
+			}
+		}
 		final String fileBaseName = FileNames.splitBase(inpath.getFileName().toString())[0];
 		return parentDirName + "-" + fileBaseName;
 	}

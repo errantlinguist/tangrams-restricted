@@ -315,7 +315,10 @@ public final class CombiningBatchJobTestMultiDirWriter {
 	}
 
 	private void writeInitialSummaryFile() throws IOException {
-		Files.createDirectories(summaryFile.getParent());
+		final Path parent = summaryFile.getParent();
+		if (parent != null) {
+			Files.createDirectories(parent);	
+		}
 		try (final BufferedWriter summaryWriter = Files.newBufferedWriter(summaryFile, StandardOpenOption.CREATE,
 				StandardOpenOption.TRUNCATE_EXISTING)) {
 			summaryWriter.write(COL_HEADERS.stream().collect(ROW_CELL_JOINER));

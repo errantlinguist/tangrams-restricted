@@ -33,6 +33,7 @@ import org.mockito.Mockito;
 
 import se.kth.speech.MapEntryRemapping;
 import se.kth.speech.Matrix;
+import se.kth.speech.RandomTests;
 import se.kth.speech.SpatialMatrix;
 import se.kth.speech.SpatialRegion;
 import se.kth.speech.coin.tangrams.MatrixTests;
@@ -53,7 +54,7 @@ public final class GameplayControllerHistoryTest {
 	public static final Collection<SpatialMatrix<Integer>> TEST_MODELS;
 
 	@DataPoints("seeds")
-	public static final long[] TEST_SEEDS = new Random().longs().distinct().limit(5).toArray();
+	public static final long[] TEST_SEEDS = RandomTests.getSeed().longs().distinct().limit(5).toArray();
 
 	private static final GameManagementClient CLIENT = Mockito.mock(GameManagementClient.class);
 
@@ -86,14 +87,16 @@ public final class GameplayControllerHistoryTest {
 
 	@Theory
 	public void testGetTurnCountNoMoves(final SpatialMatrix<Integer> model, final long seed) {
-		final GameplayController controller = new GameplayController(model, "localPlayer", PlayerRole.MOVE_SUBMISSION, CLIENT);
+		final GameplayController controller = new GameplayController(model, "localPlayer", PlayerRole.MOVE_SUBMISSION,
+				CLIENT);
 		final GameplayController.History history = controller.getHistory();
 		Assert.assertEquals(0, history.getTurnCount());
 	}
 
 	@Theory
 	public void testGetTurnCountOneTurn(final SpatialMatrix<Integer> model, final long seed) {
-		final GameplayController controller = new GameplayController(model, "localPlayer", PlayerRole.MOVE_SUBMISSION, CLIENT);
+		final GameplayController controller = new GameplayController(model, "localPlayer", PlayerRole.MOVE_SUBMISSION,
+				CLIENT);
 		final Random rnd = new Random(seed);
 		submitRandomTurn(controller, rnd);
 		final GameplayController.History history = controller.getHistory();
