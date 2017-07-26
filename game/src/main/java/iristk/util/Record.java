@@ -199,10 +199,10 @@ public class Record implements Cloneable {
 		} else if (obj instanceof List) {
 			List<?> list = (List<?>)obj;
 			try {
-				if (field.contains(":")) {
-					int i = field.indexOf(":");
-					String subf = field.substring(0, i);
-					String rest = field.substring(i + 1);
+				final int subfieldNameDelimIdx = field.indexOf(':');
+				if (subfieldNameDelimIdx > -1) {
+					String subf = field.substring(0, subfieldNameDelimIdx);
+					String rest = field.substring(subfieldNameDelimIdx + 1);
 					int li = Integer.parseInt(subf);
 					if (li < list.size()) {
 						Object sub = list.get(li);
@@ -227,7 +227,7 @@ public class Record implements Cloneable {
 		//	System.err.println("Warning: use of dots when accessing record fields is deprecated: " + field);
 		//	field = field.replace(".", ":");
 		//}
-		int subfieldNameDelimIdx = field.indexOf(':');
+		final int subfieldNameDelimIdx = field.indexOf(':');
 		if (subfieldNameDelimIdx > -1) {
 			String subf = field.substring(0, subfieldNameDelimIdx);
 			String rest = field.substring(subfieldNameDelimIdx + 1);
@@ -281,10 +281,10 @@ public class Record implements Cloneable {
 			//	System.err.println("Warning: use of dots when accessing record fields is deprecated: " + field);
 			//	field = field.replace(".", ":");
 			//}
-			if (field.contains(":")) {
-				int i = field.indexOf(":");
-				String fn = field.substring(0, i);
-				String rest = field.substring(i + 1);
+			final int subfieldNameDelimIdx = field.indexOf(':');
+			if (subfieldNameDelimIdx > -1) {
+				String fn = field.substring(0, subfieldNameDelimIdx);
+				String rest = field.substring(subfieldNameDelimIdx + 1);
 				String[] subFields;
 				if (fn.equals("*")) {
 					subFields = dynamicFields.keySet().toArray(new String[0]);
@@ -347,10 +347,10 @@ public class Record implements Cloneable {
 		//	System.err.println("Warning: use of dots when accessing record fields is deprecated: " + field);
 		//	field = field.replace(".", ":");
 		//}
-		if (field.contains(":")) {
-			int i = field.indexOf(":");
-			String subField = field.substring(0, i);
-			String rest = field.substring(i + 1);
+		final int subfieldNameDelimIdx = field.indexOf(':');
+		if (subfieldNameDelimIdx > -1) {
+			String subField = field.substring(0, subfieldNameDelimIdx);
+			String rest = field.substring(subfieldNameDelimIdx + 1);
 			if (subField.equals("*")) {
 				for (String key : getFields()) {
 					Object sub = get(key);
