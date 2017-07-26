@@ -117,8 +117,8 @@ public final class WordClassDiscountingSmoother {
 			final int count = observationCount.getIntValue();
 			if (count < minCount) {
 				final String className = observationCount.getKey();
-				LOGGER.debug("Class \"{}\" has fewer than {} instances; Will redistribute to \"{}\".",
-						new Object[] { className, minCount, augendClassName });
+				LOGGER.debug("Class \"{}\" has fewer than {} instances; Will redistribute to \"{}\".", className,
+						minCount, augendClassName);
 				result.add(new MutablePair<>(className, classInsts.remove(className)));
 				observationCountIter.remove();
 			}
