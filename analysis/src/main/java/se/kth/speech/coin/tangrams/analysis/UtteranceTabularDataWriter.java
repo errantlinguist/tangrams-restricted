@@ -45,6 +45,10 @@ import se.kth.speech.coin.tangrams.iristk.events.Move;
 
 class UtteranceTabularDataWriter {
 
+	private enum LanguageFeature {
+		DIALOGUE;
+	}
+
 	private static final EventDialogueFactory EVENT_DIAG_FACTORY = new EventDialogueFactory(
 			new EventTypeMatcher(GameManagementEvent.NEXT_TURN_REQUEST));
 
@@ -72,11 +76,16 @@ class UtteranceTabularDataWriter {
 		TABLE_ROW_CELL_JOINER = Collectors.joining(TABLE_STRING_REPR_COL_DELIMITER);
 	}
 
-	private static String createBlankImgDesc(final List<List<String>> colHeaders) {
-		final int colCount = colHeaders.stream().mapToInt(List::size).max().getAsInt();
+	private static String createBlankImgDesc(final List<String> imgFeatureCols) {
+		final int colCount = imgFeatureCols.size();
 		final String[] blankCells = new String[colCount];
 		Arrays.fill(blankCells, NULL_VALUE_REPR);
 		return Arrays.stream(blankCells).collect(TABLE_ROW_CELL_JOINER);
+	}
+
+	private static List<String> getImgFeatureCols(final List<String> cols) {
+		final int imgFeatureEndIdx = cols.size() - LanguageFeature.values().length;
+		return cols.subList(0, imgFeatureEndIdx);
 	}
 
 	private final EntityFeatureExtractionContextFactory extractionContextFactory;
@@ -122,7 +131,7 @@ class UtteranceTabularDataWriter {
 			while (firstHeader.size() < resultColCount) {
 				firstHeader.add(padding);
 			}
-			firstHeader.add("DIALOGUE");
+			firstHeader.add(LanguageFeature.DIALOGUE.toString());
 
 			// Add subheader for image description-specific features,
 			// e.g.
@@ -138,8 +147,8 @@ class UtteranceTabularDataWriter {
 				// Add padding for feature-derived descriptions
 				featuresToDescribe.stream().map(feature -> padding).forEach(nextHeader::add);
 				nextHeader.addAll(nextImgDescHeader);
-				// Add padding for dialogue col
-				nextHeader.add(padding);
+				// Add padding for language col(s)
+				Arrays.stream(LanguageFeature.values()).forEach(langFeature -> nextHeader.add(padding));
 			}
 
 		} else {
@@ -270,7 +279,8 @@ class UtteranceTabularDataWriter {
 						featureVectorRepr = featureVals.map(opt -> opt.map(Object::toString).orElse(NULL_VALUE_REPR))
 								.collect(TABLE_ROW_CELL_JOINER);
 					} else {
-						featureVectorRepr = createBlankImgDesc(colHeaders);
+						final List<String> imgFeatureCols = getImgFeatureCols(colHeaders.get(0));
+						featureVectorRepr = createBlankImgDesc(imgFeatureCols);
 					}
 					writer.write(featureVectorRepr);
 				}
@@ -288,7 +298,8 @@ class UtteranceTabularDataWriter {
 				imgVizInfoDesc = strWriter.toString();
 
 			} else {
-				imgVizInfoDesc = createBlankImgDesc(colHeaders);
+				final List<String> imgFeatureCols = getImgFeatureCols(colHeaders.get(0));
+				imgVizInfoDesc = createBlankImgDesc(imgFeatureCols);
 			}
 			writer.write(imgVizInfoDesc);
 			writer.write(TABLE_STRING_REPR_COL_DELIMITER);
