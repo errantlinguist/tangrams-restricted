@@ -19,7 +19,6 @@ package se.kth.speech.coin.tangrams.iristk;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.io.UncheckedIOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.nio.file.Files;
@@ -28,11 +27,10 @@ import java.nio.file.Paths;
 import java.sql.Timestamp;
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
-
-import javax.swing.JFileChooser;
-import javax.swing.filechooser.FileNameExtensionFilter;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -50,7 +48,6 @@ import com.eclipsesource.json.JsonObject;
 import iristk.system.Event;
 import se.kth.speech.coin.tangrams.CLIParameters;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
-import se.kth.speech.coin.tangrams.view.UserPrompts;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -65,6 +62,14 @@ public final class LoggedEventTimeStretcher {
 			public Option get() {
 				return Option.builder(optName).longOpt("factor").desc("The amount to stretch the times by.").hasArg()
 						.argName("value").required().build();
+			}
+		},
+		EVENT_SENDER_PATTERN("p") {
+			@Override
+			public Option get() {
+				return Option.builder(optName).longOpt("pattern")
+						.desc("A regular expression matching the sender ID of the events to change.").hasArg()
+						.argName("regex").required().build();
 			}
 		},
 		HELP("?") {
@@ -107,7 +112,8 @@ public final class LoggedEventTimeStretcher {
 		if (cl.hasOption(Parameter.HELP.optName)) {
 			Parameter.printHelp();
 		} else {
-			final Path[] inpaths = cl.getArgList().stream().map(String::trim).filter(path -> !path.isEmpty()).map(Paths::get).toArray(Path[]::new);
+			final Path[] inpaths = cl.getArgList().stream().map(String::trim).filter(path -> !path.isEmpty())
+					.map(Paths::get).toArray(Path[]::new);
 			switch (inpaths.length) {
 			case 0: {
 				throw new MissingOptionException("No input path specified.");
@@ -115,11 +121,17 @@ public final class LoggedEventTimeStretcher {
 			case 1: {
 				final Path inpath = inpaths[0];
 				LOGGER.info("Will read event log data from \"{}\".", inpath);
+				final Pattern evtSenderPattern = Pattern
+						.compile(cl.getOptionValue(Parameter.EVENT_SENDER_PATTERN.optName));
+				LOGGER.info("Using \"{}\" to match sender ID.", evtSenderPattern.pattern());
 				final BigDecimal stretchFactor = new BigDecimal(cl.getOptionValue(Parameter.FACTOR.optName));
 				LOGGER.info("Will stretch logged events by a factor of {}.", stretchFactor);
 				try (final PrintWriter out = CLIParameters
 						.parseOutpath((File) cl.getParsedOptionValue(Parameter.OUTPATH.optName))) {
-					run(inpath, stretchFactor, out);
+					run(inpath, evt -> {
+						final String playerId = evt.getString(GameManagementEvent.Attribute.PLAYER_ID.toString());
+						return playerId == null ? false : evtSenderPattern.matcher(playerId).matches();
+					}, stretchFactor, out);
 				}
 				break;
 			}
@@ -131,30 +143,28 @@ public final class LoggedEventTimeStretcher {
 	}
 
 	public static void main(final String[] args) throws IOException {
-		if (args.length < 1) {
-			runInteractively();
-		} else {
-			final CommandLineParser parser = new DefaultParser();
-			try {
-				final CommandLine cl = parser.parse(Parameter.OPTIONS, args);
-				main(cl);
-			} catch (final ParseException e) {
-				System.out.println(String.format("An error occured while parsing the command-line arguments: %s", e));
-				Parameter.printHelp();
-			}
+		final CommandLineParser parser = new DefaultParser();
+		try {
+			final CommandLine cl = parser.parse(Parameter.OPTIONS, args);
+			main(cl);
+		} catch (final ParseException e) {
+			System.out.println(String.format("An error occured while parsing the command-line arguments: %s", e));
+			Parameter.printHelp();
 		}
 	}
 
-	private static void run(final Path inpath, final BigDecimal stretchFactor, final PrintWriter out)
-			throws IOException {
+	private static void run(final Path inpath, final Predicate<? super Event> evtFilter, final BigDecimal stretchFactor,
+			final PrintWriter out) throws IOException {
 		LOGGER.info("Reading event log data from \"{}\".", inpath);
 		final Stream<Event> events = LoggedEvents.parseLoggedEvents(Files.lines(inpath));
 		LOGGER.info("Stretching logged events by a factor of {}.", stretchFactor);
 		final Stream<Event> shiftedEvents = events.map(event -> {
-			final Timestamp timestamp = Timestamp.valueOf(event.getTime());
-			final BigDecimal newTimeMills = stretchFactor.multiply(new BigDecimal(timestamp.getTime()));
-			timestamp.setTime(newTimeMills.setScale(0, RoundingMode.HALF_UP).longValue());
-			event.setTime(timestamp.toString());
+			if (evtFilter.test(event)) {
+				final Timestamp timestamp = Timestamp.valueOf(event.getTime());
+				final BigDecimal newTimeMills = stretchFactor.multiply(new BigDecimal(timestamp.getTime()));
+				timestamp.setTime(newTimeMills.setScale(0, RoundingMode.HALF_UP).longValue());
+				event.setTime(timestamp.toString());
+			}
 			return event;
 		});
 
@@ -167,29 +177,4 @@ public final class LoggedEventTimeStretcher {
 			}
 		}
 	}
-
-	private static void runInteractively() {
-		final JFileChooser fileChooser = new JFileChooser(System.getProperty("user.dir"));
-		fileChooser.setDialogTitle("Input file");
-		fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
-		fileChooser.setFileFilter(new FileNameExtensionFilter("Text files (*.txt)", "txt"));
-		UserPrompts.promptFile(fileChooser).map(File::toPath).ifPresent(inpath -> {
-			LOGGER.info("Will read event log data from \"{}\".", inpath);
-			fileChooser.setDialogTitle("Output file");
-			fileChooser.setDialogType(JFileChooser.SAVE_DIALOG);
-			UserPrompts.promptFile(fileChooser).ifPresent(outpath -> {
-				LOGGER.info("Will write data to \"{}\".", outpath);
-				UserPrompts.promptDecimalFraction("Enter factor to stretch event times by.")
-						.ifPresent(stretchFactor -> {
-							LOGGER.info("Will stretch logged events by a factor of {}.", stretchFactor);
-							try (PrintWriter writer = new PrintWriter(outpath)) {
-								run(inpath, stretchFactor, writer);
-							} catch (final IOException e) {
-								throw new UncheckedIOException(e);
-							}
-						});
-			});
-		});
-	}
-
 }
