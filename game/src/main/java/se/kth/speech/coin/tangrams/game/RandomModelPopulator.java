@@ -209,7 +209,7 @@ final class RandomModelPopulator implements Consumer<Random> {
 		final double gridSize = posMatrix.getPositionMatrix().getValues().size();
 		final double nonNullCells = posMatrix.getCells().filter(Objects::nonNull).count();
 		final double occupiedCellRatio = nonNullCells / gridSize;
-		LOGGER.info("Created matrix with {} occupied space.", occupiedCellRatio);
+		LOGGER.debug("Created matrix with {} occupied space.", occupiedCellRatio);
 		return occupiedCellRatio > occupiedGridArea;
 	}
 
