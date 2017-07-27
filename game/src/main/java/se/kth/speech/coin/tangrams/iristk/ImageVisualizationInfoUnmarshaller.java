@@ -16,27 +16,15 @@
 */
 package se.kth.speech.coin.tangrams.iristk;
 
-import java.net.URL;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
 
-import se.kth.speech.coin.tangrams.content.IconImages;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 import se.kth.speech.coin.tangrams.iristk.events.ImageVisualizationInfoDescription;
 
 public final class ImageVisualizationInfoUnmarshaller
 		implements Function<ImageVisualizationInfoDescription, ImageVisualizationInfo> {
-
-	private final Function<? super String, ? extends URL> resourceNameLocFactory;
-
-	public ImageVisualizationInfoUnmarshaller() {
-		this(IconImages.createImageResourceMap()::get);
-	}
-
-	public ImageVisualizationInfoUnmarshaller(final Function<? super String, ? extends URL> resourceNameLocFactory) {
-		this.resourceNameLocFactory = resourceNameLocFactory;
-	}
 
 	/*
 	 * (non-Javadoc)
@@ -54,8 +42,7 @@ public final class ImageVisualizationInfoUnmarshaller
 	private ImageVisualizationInfo.Datum createImageVisualizationInfo(
 			final ImageVisualizationInfoDescription.Datum desc) {
 		final String resourceName = desc.getResourceName();
-		final URL resourceLoc = resourceNameLocFactory.apply(resourceName);
-		return new ImageVisualizationInfo.Datum(resourceLoc, desc.getColor(), desc.getSize());
+		return new ImageVisualizationInfo.Datum(resourceName, desc.getColor(), desc.getSize());
 	}
 
 }

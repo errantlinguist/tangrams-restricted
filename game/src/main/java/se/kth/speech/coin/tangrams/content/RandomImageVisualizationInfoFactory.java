@@ -17,7 +17,6 @@
 package se.kth.speech.coin.tangrams.content;
 
 import java.awt.Color;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -48,7 +47,7 @@ import se.kth.speech.ComparableValueMaps;
  */
 public final class RandomImageVisualizationInfoFactory implements IntFunction<ImageVisualizationInfo> {
 
-	private static final Collection<URL> DEFAULT_IMG_RESOURCES = IconImages.createImageResourceMap().values();
+	private static final Collection<String> DEFAULT_IMG_RESOURCES = IconImages.getImageResourceNames();
 
 	private static final List<ImageSize> DEFAULT_IMG_SIZES = Arrays.asList(ImageSize.values());
 
@@ -71,9 +70,9 @@ public final class RandomImageVisualizationInfoFactory implements IntFunction<Im
 						String.format("Created all %d possible combinations.", combinationCount()));
 			}
 			final ImageVisualizationInfo.Datum result;
-			final Optional<URL> resourceLoc = nextImgResourceLocator();
-			if (resourceLoc.isPresent()) {
-				final URL r = resourceLoc.get();
+			final Optional<String> resourceName = nextImgResourceName();
+			if (resourceName.isPresent()) {
+				final String r = resourceName.get();
 				LOGGER.debug("Next img resource is {}.", r);
 				final Optional<Color> color = nextColor();
 				if (color.isPresent()) {
@@ -96,11 +95,11 @@ public final class RandomImageVisualizationInfoFactory implements IntFunction<Im
 			return result;
 		}
 
-		private ImageVisualizationInfo.Datum createInstance(final URL resourceLoc, final Color color,
+		private ImageVisualizationInfo.Datum createInstance(final String resourceName, final Color color,
 				final ImageSize size) {
 			LOGGER.debug("Creating instance number {}.", createdInstanceCount);
-			final ImageVisualizationInfo.Datum result = new ImageVisualizationInfo.Datum(resourceLoc, color, size);
-			incrementImageResourceCount(resourceLoc);
+			final ImageVisualizationInfo.Datum result = new ImageVisualizationInfo.Datum(resourceName, color, size);
+			incrementImageResourceCount(resourceName);
 			incrementColorCount(color);
 			incrementSizeCount(size);
 			createdInstanceCount++;
@@ -109,11 +108,11 @@ public final class RandomImageVisualizationInfoFactory implements IntFunction<Im
 		}
 	};
 
-	private final Map<URL, Integer> imgResourceUsageCounts;
+	private final Map<String, Integer> imgResourceUsageCounts;
 
 	private Color lastColor;
 
-	private URL lastImgResource;
+	private String lastImgResource;
 
 	private ImageSize lastSize;
 
@@ -147,10 +146,10 @@ public final class RandomImageVisualizationInfoFactory implements IntFunction<Im
 	 *            across instances.
 	 * @param imgResources
 	 *            A mapping of icon names mapped to their corresponding image
-	 *            {@link URL} resource locators.
+	 *            resource names.
 	 */
 	public RandomImageVisualizationInfoFactory(final Random rnd, final List<? extends Color> uniqueImgColors,
-			final Collection<? extends URL> imgResources) {
+			final Collection<String> imgResources) {
 		this(rnd, uniqueImgColors, DEFAULT_IMG_SIZES, imgResources);
 	}
 
@@ -190,14 +189,14 @@ public final class RandomImageVisualizationInfoFactory implements IntFunction<Im
 	 *            invocations.
 	 * @param imgResources
 	 *            A mapping of icon names mapped to their corresponding image
-	 *            {@link URL} resource locators.
+	 *            resource names.
 	 */
 	public RandomImageVisualizationInfoFactory(final Random rnd, final List<? extends Color> uniqueImgColors,
-			final List<ImageSize> sizes, final Collection<? extends URL> imgResources) {
+			final List<ImageSize> sizes, final Collection<String> imgResources) {
 		this.rnd = rnd;
 		createdInstanceCount = 0;
 		imgResourceUsageCounts = Maps.newLinkedHashMapWithExpectedSize(imgResources.size());
-		imgResources.forEach(loc -> imgResourceUsageCounts.put(loc, 0));
+		imgResources.forEach(res -> imgResourceUsageCounts.put(res, 0));
 		colorUsageCounts = Maps.newLinkedHashMapWithExpectedSize(uniqueImgColors.size());
 		uniqueImgColors.forEach(color -> colorUsageCounts.put(color, 0));
 		sizeUsageCounts = new EnumMap<>(ImageSize.class);
@@ -235,7 +234,7 @@ public final class RandomImageVisualizationInfoFactory implements IntFunction<Im
 	/**
 	 * @return the imgResourceUsageCounts
 	 */
-	public Map<URL, Integer> getImgResourceUsageCounts() {
+	public Map<String, Integer> getImgResourceUsageCounts() {
 		return Collections.unmodifiableMap(imgResourceUsageCounts);
 	}
 
@@ -258,7 +257,7 @@ public final class RandomImageVisualizationInfoFactory implements IntFunction<Im
 		ComparableValueMaps.incrementCount(colorUsageCounts, key);
 	}
 
-	private void incrementImageResourceCount(final URL key) {
+	private void incrementImageResourceCount(final String key) {
 		ComparableValueMaps.incrementCount(imgResourceUsageCounts, key);
 	}
 
@@ -278,12 +277,12 @@ public final class RandomImageVisualizationInfoFactory implements IntFunction<Im
 		return result;
 	}
 
-	private Optional<URL> nextImgResourceLocator() {
-		final Entry<Set<URL>, Integer> i = ComparableValueMaps.findMinValues(imgResourceUsageCounts);
-		final List<URL> keys = new ArrayList<>(i.getKey());
+	private Optional<String> nextImgResourceName() {
+		final Entry<Set<String>, Integer> i = ComparableValueMaps.findMinValues(imgResourceUsageCounts);
+		final List<String> keys = new ArrayList<>(i.getKey());
 		Collections.shuffle(keys, rnd);
 		LOGGER.debug("Min img resources: {}; value: {}", keys, i.getValue());
-		final Optional<URL> result = keys.stream().filter(key -> !key.equals(lastImgResource)).findFirst();
+		final Optional<String> result = keys.stream().filter(key -> !key.equals(lastImgResource)).findFirst();
 		if (result.isPresent()) {
 			lastImgResource = result.get();
 		}

@@ -77,8 +77,9 @@ public final class ImageLoadingImageViewInfoFactory
 
 	@Override
 	public Entry<ImageViewInfo, Image> apply(final ImageVisualizationInfo.Datum imgVisualizationInfoDatum) {
-		final URL imgResourceLoc = imgVisualizationInfoDatum.getResourceLoc();
-		final BufferedImage initialImg = resourceImgFactory.apply(imgResourceLoc);
+		final String imgResourceName = imgVisualizationInfoDatum.getResourceName();
+		final BufferedImage initialImg = resourceImgFactory
+				.apply(IconImages.getImageUrl(ImageType.ICON, imgResourceName));
 		final IntSupplier widthGetter = initialImg::getWidth;
 		final IntSupplier heightGetter = initialImg::getHeight;
 		// Size/aspect ratio calculation

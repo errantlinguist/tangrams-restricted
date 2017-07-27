@@ -50,7 +50,7 @@ public final class ImageVisualizationInfoDescription extends Record {
 		}
 
 		public Datum(final ImageVisualizationInfo.Datum imgVisualizationInfo) {
-			setResourceName(imgVisualizationInfo.getResourceLoc());
+			setResourceName(imgVisualizationInfo.getResourceName());
 			setColor(imgVisualizationInfo.getColor());
 			setSize(imgVisualizationInfo.getSize());
 		}

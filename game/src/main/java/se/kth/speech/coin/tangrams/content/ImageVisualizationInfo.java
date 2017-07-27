@@ -17,7 +17,6 @@
 package se.kth.speech.coin.tangrams.content;
 
 import java.awt.Color;
-import java.net.URL;
 import java.util.Collections;
 import java.util.List;
 
@@ -31,12 +30,12 @@ public final class ImageVisualizationInfo {
 	public static final class Datum {
 		private final Color color;
 
-		private final URL resourceLoc;
+		private final String resourceName;
 
 		private final ImageSize size;
 
-		public Datum(final URL resourceLoc, final Color color, final ImageSize size) {
-			this.resourceLoc = resourceLoc;
+		public Datum(final String resourceName, final Color color, final ImageSize size) {
+			this.resourceName = resourceName;
 			this.color = color;
 			this.size = size;
 		}
@@ -65,11 +64,11 @@ public final class ImageVisualizationInfo {
 			} else if (!color.equals(other.color)) {
 				return false;
 			}
-			if (resourceLoc == null) {
-				if (other.resourceLoc != null) {
+			if (resourceName == null) {
+				if (other.resourceName != null) {
 					return false;
 				}
-			} else if (!resourceLoc.equals(other.resourceLoc)) {
+			} else if (!resourceName.equals(other.resourceName)) {
 				return false;
 			}
 			if (size != other.size) {
@@ -86,10 +85,10 @@ public final class ImageVisualizationInfo {
 		}
 
 		/**
-		 * @return the resourceLoc
+		 * @return the resourceName
 		 */
-		public URL getResourceLoc() {
-			return resourceLoc;
+		public String getResourceName() {
+			return resourceName;
 		}
 
 		/**
@@ -109,7 +108,7 @@ public final class ImageVisualizationInfo {
 			final int prime = 31;
 			int result = 1;
 			result = prime * result + (color == null ? 0 : color.hashCode());
-			result = prime * result + (resourceLoc == null ? 0 : resourceLoc.hashCode());
+			result = prime * result + (resourceName == null ? 0 : resourceName.hashCode());
 			result = prime * result + (size == null ? 0 : size.hashCode());
 			return result;
 		}
@@ -122,8 +121,8 @@ public final class ImageVisualizationInfo {
 		@Override
 		public String toString() {
 			final StringBuilder builder = new StringBuilder(64);
-			builder.append("Datum [resourceLoc=");
-			builder.append(resourceLoc);
+			builder.append("Datum [resourceName=");
+			builder.append(resourceName);
 			builder.append(", color=");
 			builder.append(color);
 			builder.append(", size=");

@@ -20,22 +20,24 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URL;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.NavigableMap;
 import java.util.Properties;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.github.errantlinguist.ClassProperties;
 
 import se.kth.speech.Lists;
-import se.kth.speech.io.ClasspathDirResourceLocatorMapFactory;
 import se.kth.speech.io.FileNames;
-import se.kth.speech.io.FileResourceLocatorContentTypePatternFilter;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -44,36 +46,51 @@ import se.kth.speech.io.FileResourceLocatorContentTypePatternFilter;
  */
 public final class IconImages {
 
-	private static final String DEFAULT_IMG_RES_CONTENT_TYPE_REGEX = "image/(?!svg).+";
-
 	private static final Comparator<String> ICON_NAME_COMPARATOR;
 
 	private static final Pattern MULTIVALUE_PROP_DELIM_PATTERN = Pattern.compile("\\s*,\\s*");
 
-	private static final Function<String, String> RESOURCE_NAME_FACTORY = resourceLoc -> FileNames.splitBase(resourceLoc)[0];
+	private static final Function<String, String> RESOURCE_NAME_FACTORY = resourceLoc -> FileNames
+			.splitBase(resourceLoc)[0];
+	
+	private static final Set<String> IMAGE_RESOURCE_NAMES;
+	
+	private static final String IMG_FILENAME_SUFFIX;
 
 	static {
 		try {
 			final Properties props = ClassProperties.load(IconImages.class);
+			IMG_FILENAME_SUFFIX = props.getProperty("image.filenameSuffix");
 			final String imageOrderingStr = props.getProperty("image.ordering");
-			final List<String> imageOrderingNames = Arrays
+			List<String> orderedImgNames = Arrays
 					.asList(MULTIVALUE_PROP_DELIM_PATTERN.split(imageOrderingStr));
 			ICON_NAME_COMPARATOR = Comparator
-					.nullsLast(Lists.comparingByIndex(imageOrderingNames).thenComparing(Comparator.naturalOrder()));
+					.nullsLast(Lists.comparingByIndex(orderedImgNames).thenComparing(Comparator.naturalOrder()));
+			IMAGE_RESOURCE_NAMES = Collections.unmodifiableSet(new HashSet<>(orderedImgNames));
 		} catch (final IOException e) {
 			throw new UncheckedIOException(e);
 		}
 	}
-
-	public static NavigableMap<String, URL> createImageResourceMap() {
-		return createImageResourceMap(DEFAULT_IMG_RES_CONTENT_TYPE_REGEX, RESOURCE_NAME_FACTORY);
+	
+	public static Set<String> getImageResourceNames(){
+		return IMAGE_RESOURCE_NAMES;
 	}
-
-	public static NavigableMap<String, URL> createImageResourceMap(
-			final Function<? super String, Stream<String>> resDirStreamFactory,
-			final Function<? super String, ? extends URL> resourceUrlFactory) {
-		return createImageResourceMap(DEFAULT_IMG_RES_CONTENT_TYPE_REGEX, RESOURCE_NAME_FACTORY, resDirStreamFactory,
-				resourceUrlFactory);
+	
+	public static URL getImageUrl(ImageType imgType, String imgName){
+		return imgType.getFileUrl(imgName + IMG_FILENAME_SUFFIX);
+	}
+	
+	public static NavigableMap<String, URL> createImageResourceMap(final Function<? super String, ? extends URL> resourceUrlFactory) {
+		NavigableMap<String, URL> result = new TreeMap<>(ICON_NAME_COMPARATOR);
+		for (String imgName : IMAGE_RESOURCE_NAMES){
+//			String resLoc = ImageType.ICON.getDirLocator() + '/' + imgName + IMG_FILENAME_SUFFIX;
+			String resLoc = "/se/kth/speech/coin/tangrams/content/" + ImageType.ICON.getDirLocator() + '/' + imgName + IMG_FILENAME_SUFFIX;
+			LOGGER.info("Processing image file at \"{}\".", resLoc);
+			URL imgUrl = resourceUrlFactory.apply(resLoc);
+			LOGGER.info("URL for image \"{}\" is \"{}\".", imgName, imgUrl);
+			result.put(imgName, imgUrl);
+		}
+		return result;
 	}
 
 	/**
@@ -82,29 +99,8 @@ public final class IconImages {
 	public static Function<String, String> getResourceNameFactory() {
 		return RESOURCE_NAME_FACTORY;
 	}
-
-	private static NavigableMap<String, URL> createImageResourceMap(final String resourceContentTypeRegex,
-			final Function<? super String, String> resourceNameFactory) {
-		final Predicate<String> imgFilter = new FileResourceLocatorContentTypePatternFilter(
-				Pattern.compile(resourceContentTypeRegex));
-		return new ClasspathDirResourceLocatorMapFactory<>(IconImages.class, () -> new TreeMap<>(ICON_NAME_COMPARATOR),
-				imgFilter, resourceNameFactory).apply(getImageResourceDirLocator());
-	}
-
-	private static NavigableMap<String, URL> createImageResourceMap(final String resourceContentTypeRegex,
-			final Function<? super String, String> resourceNameFactory,
-			final Function<? super String, Stream<String>> resDirStreamFactory,
-			final Function<? super String, ? extends URL> resourceUrlFactory) {
-		final Predicate<String> imgFilter = new FileResourceLocatorContentTypePatternFilter(
-				Pattern.compile(resourceContentTypeRegex));
-		return new ClasspathDirResourceLocatorMapFactory<>(resDirStreamFactory, resourceUrlFactory,
-				() -> new TreeMap<>(ICON_NAME_COMPARATOR), imgFilter, resourceNameFactory)
-						.apply(getImageResourceDirLocator());
-	}
-
-	private static String getImageResourceDirLocator() {
-		return ImageType.ICON.getDirLocator();
-	}
+	
+	private static final Logger LOGGER = LoggerFactory.getLogger(IconImages.class);
 
 	private IconImages() {
 

@@ -17,8 +17,6 @@
 package se.kth.speech.coin.tangrams.content;
 
 import java.awt.Color;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.Collection;
 import java.util.Random;
 import java.util.function.Supplier;
@@ -30,8 +28,6 @@ import org.junit.experimental.theories.DataPoints;
 import org.junit.experimental.theories.Theories;
 import org.junit.experimental.theories.Theory;
 import org.junit.runner.RunWith;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import se.kth.speech.RandomStringFactory;
 
@@ -44,10 +40,10 @@ import se.kth.speech.RandomStringFactory;
 public final class ImageVisualizationInfoDatumTest {
 
 	@DataPoints
-	public static final URL[] RANDOM_TEST_URLS;
+	public static final String[] RANDOM_TEST_RESOURCES;
 
 	@DataPoints
-	public static final Collection<URL> STANDARD_TEST_URLS;
+	public static final Collection<String> STANDARD_TEST_RESOURCES;
 
 	@DataPoints
 	public static final Color[] TEST_COLORS = Stream.generate(() -> createRandomColor(new Random())).distinct().limit(4)
@@ -56,26 +52,16 @@ public final class ImageVisualizationInfoDatumTest {
 	@DataPoints
 	public static final ImageSize[] TEST_SIZES = ImageSize.values();
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(ImageVisualizationInfoDatumTest.class);
-
 	static {
-		STANDARD_TEST_URLS = IconImages.createImageResourceMap().values();
+		STANDARD_TEST_RESOURCES = IconImages.getImageResourceNames();
 		final Supplier<String> randomStrFactory = new RandomStringFactory(4);
-		RANDOM_TEST_URLS = STANDARD_TEST_URLS.stream().map(url -> appendAnyString(url, randomStrFactory))
-				.toArray(URL[]::new);
+		RANDOM_TEST_RESOURCES = STANDARD_TEST_RESOURCES.stream().map(url -> appendAnyString(url, randomStrFactory))
+				.toArray(String[]::new);
 	}
 
-	private static URL appendAnyString(final URL url, final Supplier<String> strSupplier) {
-		URL result = null;
-		do {
-			final String suffix = strSupplier.get();
-			try {
-				result = new URL(url, suffix);
-			} catch (final MalformedURLException e) {
-				LOGGER.debug("Swallowing exception.", e);
-			}
-		} while (result == null);
-		return result;
+	private static String appendAnyString(final String url, final Supplier<String> strSupplier) {
+		final String suffix = strSupplier.get();
+		return url + '/' + suffix;
 	}
 
 	private static Color createRandomColor(final Random rnd) {
@@ -90,7 +76,7 @@ public final class ImageVisualizationInfoDatumTest {
 	 * {@link se.kth.speech.coin.tangrams.content.ImageVisualizationInfo.Datum#equals(java.lang.Object)}.
 	 */
 	@Theory
-	public void testEqualsObjectCommutativity(final URL u1, final Color c1, final ImageSize s1, final URL u2,
+	public void testEqualsObjectCommutativity(final String u1, final Color c1, final ImageSize s1, final String u2,
 			final Color c2, final ImageSize s2) {
 		final ImageVisualizationInfo.Datum o1 = new ImageVisualizationInfo.Datum(u1, c1, s1);
 		final ImageVisualizationInfo.Datum o2 = new ImageVisualizationInfo.Datum(u2, c2, s2);
@@ -104,8 +90,8 @@ public final class ImageVisualizationInfoDatumTest {
 	 * {@link se.kth.speech.coin.tangrams.content.ImageVisualizationInfo.Datum#equals(java.lang.Object)}.
 	 */
 	@Theory
-	public void testEqualsObjectNegative(final URL u1, final Color c1, final ImageSize s1, final URL u2, final Color c2,
-			final ImageSize s2) {
+	public void testEqualsObjectNegative(final String u1, final Color c1, final ImageSize s1, final String u2,
+			final Color c2, final ImageSize s2) {
 		Assume.assumeFalse(u1.equals(u2) && c1.equals(c2) && s1.equals(s2));
 		final ImageVisualizationInfo.Datum o1 = new ImageVisualizationInfo.Datum(u1, c1, s1);
 		final ImageVisualizationInfo.Datum o2 = new ImageVisualizationInfo.Datum(u2, c2, s2);
@@ -117,8 +103,8 @@ public final class ImageVisualizationInfoDatumTest {
 	 * {@link se.kth.speech.coin.tangrams.content.ImageVisualizationInfo.Datum#equals(java.lang.Object)}.
 	 */
 	@Theory
-	public void testEqualsObjectPositive(final URL u1, final Color c1, final ImageSize s1, final URL u2, final Color c2,
-			final ImageSize s2) {
+	public void testEqualsObjectPositive(final String u1, final Color c1, final ImageSize s1, final String u2,
+			final Color c2, final ImageSize s2) {
 		Assume.assumeTrue(u1.equals(u2));
 		Assume.assumeTrue(c1.equals(c2));
 		Assume.assumeTrue(s1.equals(s2));
@@ -132,7 +118,7 @@ public final class ImageVisualizationInfoDatumTest {
 	 * {@link se.kth.speech.coin.tangrams.content.ImageVisualizationInfo.Datum#hashCode()}.
 	 */
 	@Theory
-	public void testHashCodeEqual(final URL u1, final Color c1, final ImageSize s1, final URL u2, final Color c2,
+	public void testHashCodeEqual(final String u1, final Color c1, final ImageSize s1, final String u2, final Color c2,
 			final ImageSize s2) {
 		final ImageVisualizationInfo.Datum o1 = new ImageVisualizationInfo.Datum(u1, c1, s1);
 		final ImageVisualizationInfo.Datum o2 = new ImageVisualizationInfo.Datum(u2, c2, s2);
@@ -147,8 +133,8 @@ public final class ImageVisualizationInfoDatumTest {
 	 * {@link se.kth.speech.coin.tangrams.content.ImageVisualizationInfo.Datum#hashCode()}.
 	 */
 	@Theory
-	public void testHashCodeSameData(final URL u1, final Color c1, final ImageSize s1, final URL u2, final Color c2,
-			final ImageSize s2) {
+	public void testHashCodeSameData(final String u1, final Color c1, final ImageSize s1, final String u2,
+			final Color c2, final ImageSize s2) {
 		Assume.assumeTrue(u1.equals(u2));
 		Assume.assumeTrue(c1.equals(c2));
 		Assume.assumeTrue(s1.equals(s2));
@@ -161,10 +147,10 @@ public final class ImageVisualizationInfoDatumTest {
 
 	/**
 	 * Test method for
-	 * {@link se.kth.speech.coin.tangrams.content.ImageVisualizationInfo.Datum#Datum(java.net.URL, java.awt.Color, se.kth.speech.coin.tangrams.content.ImageSize)}.
+	 * {@link se.kth.speech.coin.tangrams.content.ImageVisualizationInfo.Datum#Datum(java.lang.String, java.awt.Color, se.kth.speech.coin.tangrams.content.ImageSize)}.
 	 */
 	@Theory
-	public void testImageVisualizationInfoDatum(final URL u, final Color c, final ImageSize s) {
+	public void testImageVisualizationInfoDatum(final String u, final Color c, final ImageSize s) {
 		new ImageVisualizationInfo.Datum(u, c, s);
 	}
 

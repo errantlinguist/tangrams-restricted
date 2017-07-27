@@ -20,10 +20,8 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.NavigableMap;
-import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
@@ -32,7 +30,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.FactoryBean;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
-import org.springframework.core.io.support.ResourcePatternUtils;
 
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature.Extractor.Context;
@@ -49,7 +46,10 @@ public final class EntityFeatureInstanceFeatureExtractorFactory
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(EntityFeatureInstanceFeatureExtractorFactory.class);
 
-	private static final String RES_LOC_PREFIX = "classpath:/se/kth/speech/coin/tangrams/content/";
+	// private static final String RES_LOC_PREFIX =
+	// "classpath:/se/kth/speech/coin/tangrams/content/";
+
+	private static final String RES_LOC_PREFIX = "classpath:";
 
 	private InstanceFeatureExtractor<EntityFeature, EntityFeature.Extractor.Context> inst;
 
@@ -95,8 +95,7 @@ public final class EntityFeatureInstanceFeatureExtractorFactory
 
 	private InstanceFeatureExtractor<EntityFeature, EntityFeature.Extractor.Context> create() throws IOException {
 		LOGGER.info("Creating new Instance feature extractor.");
-		final NavigableMap<String, URL> namedImgResources = IconImages
-				.createImageResourceMap(this::createImgResDirStream, this::createImgResUrl);
+		final NavigableMap<String, URL> namedImgResources = IconImages.createImageResourceMap(this::createImgResUrl);
 		LOGGER.info("Created named image resource map of size {}.", namedImgResources.size());
 		final EntityFeature.Extractor fExtr = new EntityFeature.Extractor();
 		final Map<EntityFeature, Attribute> fAttrs = EntityFeature.Extractor
@@ -104,24 +103,10 @@ public final class EntityFeatureInstanceFeatureExtractorFactory
 		return new InstanceFeatureExtractor<>(fExtr, fAttrs);
 	}
 
-	private Stream<String> createImgResDirStream(final String dirName) {
-		final String dirFileLoc = RES_LOC_PREFIX + dirName + "/*";
-		LOGGER.info("Loading resources at \"{}\".", dirFileLoc);
-		try {
-			// https://stackoverflow.com/questions/27238746/how-to-load-all-files-of-a-folder-to-a-list-of-resources-in-spring
-			// https://stackoverflow.com/questions/3923129/get-a-list-of-resources-from-classpath-directory
-			final Resource[] resources = ResourcePatternUtils.getResourcePatternResolver(resourceLoader)
-					.getResources(dirFileLoc);
-			return Arrays.stream(resources).map(Resource::getFilename);
-		} catch (final IOException e) {
-			throw new UncheckedIOException(e);
-		}
-	}
-
-	private URL createImgResUrl(final String resName) {
-		final String resLoc = RES_LOC_PREFIX + resName;
-		LOGGER.debug("Loading resource at \"{}\".", resLoc);
-		final Resource res = resourceLoader.getResource(resLoc);
+	private URL createImgResUrl(final String resLoc) {
+		final String prefixedResLoc = RES_LOC_PREFIX + resLoc;
+		LOGGER.debug("Loading resource at \"{}\".", prefixedResLoc);
+		final Resource res = resourceLoader.getResource(prefixedResLoc);
 		if (!res.exists()) {
 			throw new IllegalArgumentException("Nonexistent resource.");
 		}
