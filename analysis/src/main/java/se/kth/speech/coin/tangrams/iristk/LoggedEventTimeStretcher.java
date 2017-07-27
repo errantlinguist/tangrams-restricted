@@ -160,10 +160,7 @@ public final class LoggedEventTimeStretcher {
 		LOGGER.info("Stretching logged events by a factor of {}.", stretchFactor);
 		final Stream<Event> shiftedEvents = events.map(event -> {
 			if (evtFilter.test(event)) {
-				final Timestamp timestamp = Timestamp.valueOf(event.getTime());
-				final BigDecimal newTimeMills = stretchFactor.multiply(new BigDecimal(timestamp.getTime()));
-				timestamp.setTime(newTimeMills.setScale(0, RoundingMode.HALF_UP).longValue());
-				event.setTime(timestamp.toString());
+				stretchTime(event, stretchFactor);
 			}
 			return event;
 		});
@@ -176,5 +173,12 @@ public final class LoggedEventTimeStretcher {
 				out.print(eventReprIter.next());
 			}
 		}
+	}
+
+	private static void stretchTime(final Event event, final BigDecimal stretchFactor) {
+		final Timestamp timestamp = Timestamp.valueOf(event.getTime());
+		final BigDecimal newTimeMills = stretchFactor.multiply(new BigDecimal(timestamp.getTime()));
+		timestamp.setTime(newTimeMills.setScale(0, RoundingMode.HALF_UP).longValue());
+		event.setTime(timestamp.toString());
 	}
 }
