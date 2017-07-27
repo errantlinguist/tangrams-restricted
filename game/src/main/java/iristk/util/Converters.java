@@ -15,6 +15,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public class Converters {
 	
@@ -59,10 +60,7 @@ public class Converters {
 	}
 
 	public static String asString(Object object) {
-		if (object == null)
-			return null;
-		else
-			return object.toString();
+		return asString(object, null);
 	}
 	/**
 	 * Returns object as a String, unless it is null in which case def is returned.
@@ -71,10 +69,7 @@ public class Converters {
 	 * @return String version of object
 	 */
 	public static String asString(Object object, String def) {
-		if (object == null)
-			return def;
-		else
-			return object.toString();
+		return Objects.toString(object, def);
 	}	
 
 	public static boolean asBoolean(Object object) {
@@ -163,8 +158,7 @@ public class Converters {
 		} else if (object instanceof String) {
 			try {
 				String s = (String)object;
-				if (s.contains(","))
-					s = s.replace(",", ".");
+				s = s.replace(',', '.');
 				return Double.parseDouble(s);
 			} catch (NumberFormatException e) {
 				return null;
