@@ -54,7 +54,7 @@ import se.kth.speech.coin.tangrams.iristk.events.Move;
 class UtteranceTabularDataWriter {
 
 	private enum EventDatum {
-		LAST_RND_TIME, LAST_RND_TIME_DIFF, TIME;
+		LAST_RND_TIME, LAST_RND_TIME_DIFF, MOVE_SUBMITTER, TIME;
 	}
 
 	private enum LanguageDatum {
@@ -307,6 +307,8 @@ class UtteranceTabularDataWriter {
 					writer.write(lastRndEvtTimeDiff.toString());
 				}
 				writer.write(TABLE_STRING_REPR_COL_DELIMITER);
+				writer.write(firstDiagEvent.getString(GameManagementEvent.Attribute.PLAYER_ID.toString()));
+				writer.write(TABLE_STRING_REPR_COL_DELIMITER);
 				writer.write(firstDiagEvent.getTime());
 				writer.write(TABLE_STRING_REPR_COL_DELIMITER);
 				{
@@ -336,7 +338,8 @@ class UtteranceTabularDataWriter {
 					final Integer selectedPieceId = move.getPieceId();
 					final ImageVisualizationInfo.Datum selectedPieceImgVizInfo = imgVizInfo.getData()
 							.get(selectedPieceId);
-					LOGGER.debug("Writing selected piece (ID {}) viz info: {} ", selectedPieceId, selectedPieceImgVizInfo);
+					LOGGER.debug("Writing selected piece (ID {}) viz info: {} ", selectedPieceId,
+							selectedPieceImgVizInfo);
 					imgInfoDescWriter.write(selectedPieceId, selectedPieceImgVizInfo);
 				}
 				evtImgVizInfoDesc = strWriter.toString();
