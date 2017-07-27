@@ -163,10 +163,7 @@ public final class LoggedEventTimeShifter {
 		final BigDecimal addendInMills = addendInSecs.multiply(SECS_TO_MILLS_FACTOR);
 		final Stream<Event> shiftedEvents = events.map(event -> {
 			if (evtFilter.test(event)) {
-				final Timestamp timestamp = Timestamp.valueOf(event.getTime());
-				final BigDecimal newTimeMills = addendInMills.add(new BigDecimal(timestamp.getTime()));
-				timestamp.setTime(newTimeMills.setScale(0, RoundingMode.HALF_UP).longValue());
-				event.setTime(timestamp.toString());
+				shiftTime(event, addendInMills);
 			}
 			return event;
 		});
@@ -179,6 +176,13 @@ public final class LoggedEventTimeShifter {
 				out.print(eventReprIter.next());
 			}
 		}
+	}
+
+	private static void shiftTime(final Event event, final BigDecimal addendInMills) {
+		final Timestamp timestamp = Timestamp.valueOf(event.getTime());
+		final BigDecimal newTimeMills = addendInMills.add(new BigDecimal(timestamp.getTime()));
+		timestamp.setTime(newTimeMills.setScale(0, RoundingMode.HALF_UP).longValue());
+		event.setTime(timestamp.toString());
 	}
 
 }
