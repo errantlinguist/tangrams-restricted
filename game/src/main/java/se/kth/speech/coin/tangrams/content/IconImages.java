@@ -79,24 +79,6 @@ public final class IconImages {
 	}
 
 	/**
-	 * @return the defaultImgResContentTypeRegex
-	 */
-	public static String getDefaultImgResContentTypeRegex() {
-		return DEFAULT_IMG_RES_CONTENT_TYPE_REGEX;
-	}
-
-	/**
-	 * @return the iconNameComparator
-	 */
-	public static Comparator<String> getIconNameComparator() {
-		return ICON_NAME_COMPARATOR;
-	}
-
-	public static String getImageResourceDirLocator() {
-		return ImageType.ICON.getDirLocator();
-	}
-
-	/**
 	 * @return the resourceNameFactory
 	 */
 	public static Function<String, String> getResourceNameFactory() {
@@ -120,6 +102,10 @@ public final class IconImages {
 		return new ClasspathDirResourceLocatorMapFactory<>(resDirStreamFactory, resourceUrlFactory,
 				() -> new TreeMap<>(ICON_NAME_COMPARATOR), imgFilter, resourceNameFactory)
 						.apply(getImageResourceDirLocator());
+	}
+
+	private static String getImageResourceDirLocator() {
+		return ImageType.ICON.getDirLocator();
 	}
 
 	private IconImages() {
