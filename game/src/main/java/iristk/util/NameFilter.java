@@ -31,7 +31,7 @@ import java.util.regex.Pattern;
  */
 public class NameFilter {
 
-	private static HashMap<String,NameFilter> cachedFilters = new HashMap<String,NameFilter>();
+	private static final HashMap<String,NameFilter> CACHED_FILTERS = new HashMap<String,NameFilter>();
 	
 	/**
 	 * A static filter that accepts anything
@@ -72,12 +72,12 @@ public class NameFilter {
 	 * Creates a filter by parsing a pattern string
 	 */
 	public static synchronized NameFilter compile(String patt) {
-		if (cachedFilters.containsKey(patt))
-			return cachedFilters.get(patt);
+		if (CACHED_FILTERS.containsKey(patt))
+			return CACHED_FILTERS.get(patt);
 		if (!patt.matches("[A-Za-z0-9_\\!\\.\\*; ]*"))
 			throw new IllegalArgumentException("NamePattern illegal: " + patt);
 		NameFilter filter = new NameFilter(patt);
-		cachedFilters.put(patt, filter);
+		CACHED_FILTERS.put(patt, filter);
 		return filter;
 	}
 
