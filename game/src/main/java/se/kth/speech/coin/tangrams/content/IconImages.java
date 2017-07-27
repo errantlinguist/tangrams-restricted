@@ -79,13 +79,6 @@ public final class IconImages {
 	}
 
 	/**
-	 * @return the named icon image resources
-	 */
-	public static NavigableMap<String, URL> createImageResourceMap(final String resourceContentTypeRegex) {
-		return createImageResourceMap(resourceContentTypeRegex, RESOURCE_NAME_FACTORY);
-	}
-
-	/**
 	 * @return the defaultImgResContentTypeRegex
 	 */
 	public static String getDefaultImgResContentTypeRegex() {
