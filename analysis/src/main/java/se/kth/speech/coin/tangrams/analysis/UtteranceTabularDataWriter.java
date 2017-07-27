@@ -61,9 +61,7 @@ class UtteranceTabularDataWriter {
 		DIALOGUE;
 	}
 
-	private static final String COL_HEADER_PADDING;
-
-	private static final Supplier<String> COL_HEADER_PADDING_SUPPLIER;
+	private static final Supplier<String> COL_HEADER_PADDING_SUPPLIER = () -> "";
 
 	private static final EventDialogueFactory EVENT_DIAG_FACTORY = new EventDialogueFactory(
 			new EventTypeMatcher(GameManagementEvent.NEXT_TURN_REQUEST));
@@ -96,11 +94,6 @@ class UtteranceTabularDataWriter {
 	static {
 		TABLE_STRING_REPR_COL_DELIMITER = "\t";
 		TABLE_ROW_CELL_JOINER = Collectors.joining(TABLE_STRING_REPR_COL_DELIMITER);
-	}
-
-	static {
-		COL_HEADER_PADDING = "";
-		COL_HEADER_PADDING_SUPPLIER = () -> COL_HEADER_PADDING;
 	}
 
 	private static BigDecimal calculateTimeDiffSecs(final Event firstEvt, final Event nextEvt) {
@@ -163,7 +156,7 @@ class UtteranceTabularDataWriter {
 			firstHeader.addAll(firstImgDescHeader);
 			Arrays.stream(LanguageDatum.values()).map(LanguageDatum::toString).forEachOrdered(firstHeader::add);
 			while (firstHeader.size() < resultColCount) {
-				firstHeader.add(COL_HEADER_PADDING);
+				firstHeader.add(COL_HEADER_PADDING_SUPPLIER.get());
 			}
 
 			// Add subheader for image description-specific features,
