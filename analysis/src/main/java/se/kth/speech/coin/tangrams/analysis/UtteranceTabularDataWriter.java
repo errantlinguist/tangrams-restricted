@@ -72,7 +72,7 @@ class UtteranceTabularDataWriter {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(UtteranceTabularDataWriter.class);
 
-	private static final BigDecimal MICROS_TO_SECS_DIVISOR = new BigDecimal("1000000");
+	private static final BigDecimal NANOS_TO_SECS_DIVISOR = new BigDecimal("1000000000");
 
 	private static final String NULL_VALUE_REPR = "-";
 
@@ -99,8 +99,8 @@ class UtteranceTabularDataWriter {
 	private static BigDecimal calculateTimeDiffSecs(final Event firstEvt, final Event nextEvt) {
 		final LocalDateTime firstTime = EventTimes.parseEventTime(firstEvt.getTime());
 		final LocalDateTime nextTime = EventTimes.parseEventTime(nextEvt.getTime());
-		final long diffMicros = ChronoUnit.MICROS.between(firstTime, nextTime);
-		return new BigDecimal(diffMicros).divide(MICROS_TO_SECS_DIVISOR, EVT_TIME_DIFF_CTX);
+		final long diffNanos = ChronoUnit.NANOS.between(firstTime, nextTime);
+		return new BigDecimal(diffNanos).divide(NANOS_TO_SECS_DIVISOR, EVT_TIME_DIFF_CTX);
 	}
 
 	private static String createBlankEvtImgDesc(final List<String> evtImgFeatureCols) {
