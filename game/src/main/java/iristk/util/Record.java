@@ -52,6 +52,7 @@ import com.eclipsesource.json.JsonValue;
 import com.eclipsesource.json.ParseException;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
+import com.google.common.collect.Sets.SetView;
 
 import javafx.util.converter.LocalDateStringConverter;
 import javafx.util.converter.LocalDateTimeStringConverter;
@@ -477,15 +478,11 @@ public class Record implements Cloneable {
 		Set<String> dynamicFieldNames = dynamicFields.keySet();
 		RecordInfo info = getRecordInfo();
 		Set<String> classFieldNames = info.classFields.keySet();
-		Set<String> getMethodFieldNames = info.getMethodFields.keySet();
-		HashSet<String> fields = Sets.newHashSetWithExpectedSize(dynamicFieldNames.size() + classFieldNames.size() + getMethodFieldNames.size());		
-		
+		SetView<String> mutableMethodFieldNames = Sets.intersection(info.getMethodFields.keySet(), info.setMethodFields.keySet());
+		HashSet<String> fields = Sets.newHashSetWithExpectedSize(dynamicFieldNames.size() + classFieldNames.size() + mutableMethodFieldNames.size());		
 		fields.addAll(dynamicFieldNames);
 		fields.addAll(classFieldNames);
-		for (String f : getMethodFieldNames) {
-			if (info.setMethodFields.containsKey(f))
-				fields.add(f);
-		}
+		fields.addAll(mutableMethodFieldNames);
 		return fields;
 	}
 
