@@ -50,7 +50,7 @@ public final class IconImages {
 
 	private static final Pattern MULTIVALUE_PROP_DELIM_PATTERN = Pattern.compile("\\s*,\\s*");
 
-	private static final Function<String, String> RESOURCE_NAME_FACTORY;
+	private static final Function<String, String> RESOURCE_NAME_FACTORY = resourceLoc -> FileNames.splitBase(resourceLoc)[0];
 
 	static {
 		try {
@@ -60,8 +60,6 @@ public final class IconImages {
 					.asList(MULTIVALUE_PROP_DELIM_PATTERN.split(imageOrderingStr));
 			ICON_NAME_COMPARATOR = Comparator
 					.nullsLast(Lists.comparingByIndex(imageOrderingNames).thenComparing(Comparator.naturalOrder()));
-
-			RESOURCE_NAME_FACTORY = resourceLoc -> FileNames.splitBase(resourceLoc)[0];
 		} catch (final IOException e) {
 			throw new UncheckedIOException(e);
 		}
