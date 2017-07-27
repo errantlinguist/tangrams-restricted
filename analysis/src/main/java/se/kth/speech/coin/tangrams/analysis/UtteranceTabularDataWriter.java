@@ -336,6 +336,7 @@ class UtteranceTabularDataWriter {
 					final Integer selectedPieceId = move.getPieceId();
 					final ImageVisualizationInfo.Datum selectedPieceImgVizInfo = imgVizInfo.getData()
 							.get(selectedPieceId);
+					LOGGER.debug("Writing selected piece (ID {}) viz info: {} ", selectedPieceId, selectedPieceImgVizInfo);
 					imgInfoDescWriter.write(selectedPieceId, selectedPieceImgVizInfo);
 				}
 				evtImgVizInfoDesc = strWriter.toString();

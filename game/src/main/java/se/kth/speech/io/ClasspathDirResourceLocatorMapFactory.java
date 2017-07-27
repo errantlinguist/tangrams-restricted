@@ -103,6 +103,7 @@ public final class ClasspathDirResourceLocatorMapFactory<K, M extends Map<K, URL
 			validPaths.forEach(validPath -> {
 				final K fileResourceName = fileResourceNameFactory.apply(validPath);
 				final URL resource = resourceUrlFactory.apply(dirToMap + "/" + validPath);
+				LOGGER.debug("Created URL \"{}\" for resource name \"{}\".", resource, fileResourceName);
 				result.put(fileResourceName, resource);
 			});
 		}
