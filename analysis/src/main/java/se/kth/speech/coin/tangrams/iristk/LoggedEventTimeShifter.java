@@ -108,6 +108,8 @@ public final class LoggedEventTimeShifter {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(LoggedEventTimeShifter.class);
 
+	private static final BigDecimal SECS_TO_MILLS_FACTOR = new BigDecimal(1000);
+
 	public static void main(final CommandLine cl) throws IOException, ParseException {
 		if (cl.hasOption(Parameter.HELP.optName)) {
 			Parameter.printHelp();
@@ -158,13 +160,13 @@ public final class LoggedEventTimeShifter {
 		LOGGER.info("Reading event log data from \"{}\".", inpath);
 		final Stream<Event> events = LoggedEvents.parseLoggedEvents(Files.lines(inpath));
 		LOGGER.info("Shifting logged events by {} second(s).", addendInSecs);
-		final BigDecimal addendInMills = addendInSecs.multiply(new BigDecimal(1000));
+		final BigDecimal addendInMills = addendInSecs.multiply(SECS_TO_MILLS_FACTOR);
 		final Stream<Event> shiftedEvents = events.map(event -> {
-			if (evtFilter.test(event)){
+			if (evtFilter.test(event)) {
 				final Timestamp timestamp = Timestamp.valueOf(event.getTime());
 				final BigDecimal newTimeMills = addendInMills.add(new BigDecimal(timestamp.getTime()));
 				timestamp.setTime(newTimeMills.setScale(0, RoundingMode.HALF_UP).longValue());
-				event.setTime(timestamp.toString());	
+				event.setTime(timestamp.toString());
 			}
 			return event;
 		});
