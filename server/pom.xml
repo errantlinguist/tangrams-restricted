@@ -57,6 +57,11 @@
 
 		<resources>
 			<resource>
+				<!-- NOTE: This must be set explicitly because just having the additional resource below overrides Maven's defaults -->
+				<directory>src/main/resources</directory>
+				<filtering>false</filtering>
+			</resource>
+			<resource>
 				<directory />
 				<filtering>true</filtering>
 				<includes>
