@@ -19,8 +19,12 @@ package se.kth.speech.coin.tangrams.analysis;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.math.BigDecimal;
+import java.math.MathContext;
+import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -28,6 +32,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -48,16 +53,28 @@ import se.kth.speech.coin.tangrams.iristk.events.Move;
 
 class UtteranceTabularDataWriter {
 
-	private enum LanguageFeature {
+	private enum EventDatum {
+		LAST_RND_TIME, LAST_RND_TIME_DIFF, TIME;
+	}
+
+	private enum LanguageDatum {
 		DIALOGUE;
 	}
+
+	private static final String COL_HEADER_PADDING;
+
+	private static final Supplier<String> COL_HEADER_PADDING_SUPPLIER;
 
 	private static final EventDialogueFactory EVENT_DIAG_FACTORY = new EventDialogueFactory(
 			new EventTypeMatcher(GameManagementEvent.NEXT_TURN_REQUEST));
 
+	private static final MathContext EVT_TIME_DIFF_CTX = new MathContext(16, RoundingMode.HALF_UP);
+
 	private static final ImageVisualizationInfoUnmarshaller IMG_VIZ_INFO_UNMARSHALLER = new ImageVisualizationInfoUnmarshaller();
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(UtteranceTabularDataWriter.class);
+
+	private static final BigDecimal MICROS_TO_SECS_DIVISOR = new BigDecimal("1000000");
 
 	private static final String NULL_VALUE_REPR = "-";
 
@@ -81,15 +98,27 @@ class UtteranceTabularDataWriter {
 		TABLE_ROW_CELL_JOINER = Collectors.joining(TABLE_STRING_REPR_COL_DELIMITER);
 	}
 
-	private static String createBlankImgDesc(final List<String> imgFeatureCols) {
-		final int colCount = imgFeatureCols.size();
+	static {
+		COL_HEADER_PADDING = "";
+		COL_HEADER_PADDING_SUPPLIER = () -> COL_HEADER_PADDING;
+	}
+
+	private static BigDecimal calculateTimeDiffSecs(final Event firstEvt, final Event nextEvt) {
+		final LocalDateTime firstTime = EventTimes.parseEventTime(firstEvt.getTime());
+		final LocalDateTime nextTime = EventTimes.parseEventTime(nextEvt.getTime());
+		final long diffMicros = ChronoUnit.MICROS.between(firstTime, nextTime);
+		return new BigDecimal(diffMicros).divide(MICROS_TO_SECS_DIVISOR, EVT_TIME_DIFF_CTX);
+	}
+
+	private static String createBlankEvtImgDesc(final List<String> evtImgFeatureCols) {
+		final int colCount = evtImgFeatureCols.size();
 		final String[] blankCells = new String[colCount];
 		Arrays.fill(blankCells, NULL_VALUE_REPR);
 		return Arrays.stream(blankCells).collect(TABLE_ROW_CELL_JOINER);
 	}
 
-	private static List<String> getImgFeatureCols(final List<String> cols) {
-		final int imgFeatureEndIdx = cols.size() - LanguageFeature.values().length;
+	private static List<String> getEvtImgFeatureCols(final List<String> cols) {
+		final int imgFeatureEndIdx = cols.size() - LanguageDatum.values().length;
 		return cols.subList(0, imgFeatureEndIdx);
 	}
 
@@ -119,7 +148,7 @@ class UtteranceTabularDataWriter {
 	private List<List<String>> createColHeaders() {
 		final List<List<String>> imgViewDescColHeaders = ImageVisualizationInfoTableRowWriter.createColumnHeaders();
 		final int resultColCount = imgViewDescColHeaders.stream().mapToInt(List::size).max().getAsInt()
-				+ featuresToDescribe.size() + 1;
+				+ EventDatum.values().length + featuresToDescribe.size() + LanguageDatum.values().length;
 
 		final Iterator<List<String>> imgDescHeaderIter = imgViewDescColHeaders.iterator();
 		List<List<String>> result;
@@ -128,32 +157,30 @@ class UtteranceTabularDataWriter {
 			final List<String> firstHeader = new ArrayList<>(resultColCount);
 			result.add(firstHeader);
 
-			firstHeader.add("TIME");
+			Arrays.stream(EventDatum.values()).map(EventDatum::toString).forEachOrdered(firstHeader::add);
 			featuresToDescribe.stream().map(Object::toString).forEachOrdered(firstHeader::add);
 			final List<String> firstImgDescHeader = imgDescHeaderIter.next();
 			firstHeader.addAll(firstImgDescHeader);
-			final String padding = "";
+			Arrays.stream(LanguageDatum.values()).map(LanguageDatum::toString).forEachOrdered(firstHeader::add);
 			while (firstHeader.size() < resultColCount) {
-				firstHeader.add(padding);
+				firstHeader.add(COL_HEADER_PADDING);
 			}
-			firstHeader.add(LanguageFeature.DIALOGUE.toString());
 
 			// Add subheader for image description-specific features,
-			// e.g.
-			// color
-			// features
+			// e.g. color features
 			while (imgDescHeaderIter.hasNext()) {
 				final List<String> nextImgDescHeader = imgDescHeaderIter.next();
 				final List<String> nextHeader = new ArrayList<>(resultColCount);
 				result.add(nextHeader);
 
-				// Add padding for timestamp col
-				nextHeader.add(padding);
+				// Add padding for evt cols
+				Stream.generate(COL_HEADER_PADDING_SUPPLIER).limit(EventDatum.values().length).forEach(nextHeader::add);
 				// Add padding for feature-derived descriptions
-				featuresToDescribe.stream().map(feature -> padding).forEach(nextHeader::add);
+				Stream.generate(COL_HEADER_PADDING_SUPPLIER).limit(featuresToDescribe.size()).forEach(nextHeader::add);
 				nextHeader.addAll(nextImgDescHeader);
-				// Add padding for language col(s)
-				Arrays.stream(LanguageFeature.values()).forEach(langFeature -> nextHeader.add(padding));
+				// Add padding for language cols
+				Stream.generate(COL_HEADER_PADDING_SUPPLIER).limit(LanguageDatum.values().length)
+						.forEach(nextHeader::add);
 			}
 
 		} else {
@@ -165,7 +192,7 @@ class UtteranceTabularDataWriter {
 
 	private String createNoEventUtterancesMsg(final Event event, final List<EventDialogue> eventDiags,
 			final int eventIdx) {
-		final StringBuilder sb = new StringBuilder(128);
+		final StringBuilder sb = new StringBuilder(256);
 		sb.append("No utterances for event index ");
 		sb.append(eventIdx);
 		sb.append(" \"");
@@ -239,25 +266,31 @@ class UtteranceTabularDataWriter {
 		final String colHeaderStr = colHeaders.stream().map(header -> header.stream().collect(TABLE_ROW_CELL_JOINER))
 				.collect(TABLE_ROW_JOINER);
 		writer.write(colHeaderStr);
+
+		Event lastRoundEvent = null;
 		for (final ListIterator<EventDialogue> eventDiagIter = eventDiags.listIterator(); eventDiagIter.hasNext();) {
 			final EventDialogue eventDiag = eventDiagIter.next();
 			writer.write(TABLE_STRING_REPR_ROW_DELIMITER);
 
-			final Optional<Event> optEvent = eventDiag.getFirstEvent();
-			final List<Utterance> eventUtts = eventDiag.getUtts();
-
-			final String imgVizInfoDesc;
-			if (optEvent.isPresent()) {
-				final Event event = optEvent.get();
+			final String evtImgVizInfoDesc;
+			final List<Event> diagEvts = eventDiag.getDialogueEvents();
+			final List<Utterance> diagUtts = eventDiag.getUtts();
+			if (diagEvts.isEmpty()) {
+				final List<String> evtImgFeatureCols = getEvtImgFeatureCols(colHeaders.get(0));
+				evtImgVizInfoDesc = createBlankEvtImgDesc(evtImgFeatureCols);
+			} else {
+				final Event firstDiagEvent = diagEvts.iterator().next();
 				final float contextStartTime;
 				final float contextEndTime;
-				if (eventUtts.isEmpty()) {
+				if (diagUtts.isEmpty()) {
 					if (strict) {
-						throw new IllegalArgumentException(String.format("No utterances for event \"%s\".", event));
+						throw new IllegalArgumentException(
+								String.format("No utterances for event \"%s\".", firstDiagEvent));
 					} else {
-						final String msg = createNoEventUtterancesMsg(event, eventDiags, eventDiagIter.nextIndex() - 1);
+						final String msg = createNoEventUtterancesMsg(firstDiagEvent, eventDiags,
+								eventDiagIter.nextIndex() - 1);
 						LOGGER.warn(msg);
-						final LocalDateTime eventTime = EventTimes.parseEventTime(event.getTime());
+						final LocalDateTime eventTime = EventTimes.parseEventTime(firstDiagEvent.getTime());
 						final Duration gameDuration = Duration.between(history.getStartTime(), eventTime);
 						final float offset = gameDuration.toMillis() / 1000.0f;
 						contextStartTime = offset;
@@ -265,11 +298,23 @@ class UtteranceTabularDataWriter {
 					}
 				} else {
 					// Just use the context of the first utterance
-					final Utterance firstUtt = eventUtts.iterator().next();
+					final Utterance firstUtt = diagUtts.iterator().next();
 					contextStartTime = firstUtt.getStartTime();
 					contextEndTime = firstUtt.getEndTime();
 				}
-				writer.write(event.getTime());
+
+				if (lastRoundEvent == null) {
+					writer.write(NULL_VALUE_REPR);
+					writer.write(TABLE_STRING_REPR_COL_DELIMITER);
+					writer.write(NULL_VALUE_REPR);
+				} else {
+					writer.write(lastRoundEvent.getTime());
+					writer.write(TABLE_STRING_REPR_COL_DELIMITER);
+					final BigDecimal lastRndEvtTimeDiff = calculateTimeDiffSecs(lastRoundEvent, firstDiagEvent);
+					writer.write(lastRndEvtTimeDiff.toString());
+				}
+				writer.write(TABLE_STRING_REPR_COL_DELIMITER);
+				writer.write(firstDiagEvent.getTime());
 				writer.write(TABLE_STRING_REPR_COL_DELIMITER);
 				{
 					final GameContext context = uttContextFactory.create(contextStartTime, contextEndTime, playerId)
@@ -284,8 +329,8 @@ class UtteranceTabularDataWriter {
 						featureVectorRepr = featureVals.map(opt -> opt.map(Object::toString).orElse(NULL_VALUE_REPR))
 								.collect(TABLE_ROW_CELL_JOINER);
 					} else {
-						final List<String> imgFeatureCols = getImgFeatureCols(colHeaders.get(0));
-						featureVectorRepr = createBlankImgDesc(imgFeatureCols);
+						final List<String> evtImgFeatureCols = getEvtImgFeatureCols(colHeaders.get(0));
+						featureVectorRepr = createBlankEvtImgDesc(evtImgFeatureCols);
 					}
 					writer.write(featureVectorRepr);
 				}
@@ -294,22 +339,20 @@ class UtteranceTabularDataWriter {
 				{
 					final ImageVisualizationInfoTableRowWriter imgInfoDescWriter = new ImageVisualizationInfoTableRowWriter(
 							strWriter);
-					final Move move = (Move) event.get(GameManagementEvent.Attribute.MOVE.toString());
+					final Move move = (Move) firstDiagEvent.get(GameManagementEvent.Attribute.MOVE.toString());
 					final Integer selectedPieceId = move.getPieceId();
 					final ImageVisualizationInfo.Datum selectedPieceImgVizInfo = imgVizInfo.getData()
 							.get(selectedPieceId);
 					imgInfoDescWriter.write(selectedPieceId, selectedPieceImgVizInfo);
 				}
-				imgVizInfoDesc = strWriter.toString();
-
-			} else {
-				final List<String> imgFeatureCols = getImgFeatureCols(colHeaders.get(0));
-				imgVizInfoDesc = createBlankImgDesc(imgFeatureCols);
+				evtImgVizInfoDesc = strWriter.toString();
+				lastRoundEvent = diagEvts.get(diagEvts.size() - 1);
 			}
-			writer.write(imgVizInfoDesc);
+
+			writer.write(evtImgVizInfoDesc);
 			writer.write(TABLE_STRING_REPR_COL_DELIMITER);
 
-			final String eventDialogStr = UTT_DIAG_REPR_FACTORY.apply(eventUtts.iterator());
+			final String eventDialogStr = UTT_DIAG_REPR_FACTORY.apply(diagUtts.iterator());
 			writer.write(eventDialogStr);
 		}
 	}
