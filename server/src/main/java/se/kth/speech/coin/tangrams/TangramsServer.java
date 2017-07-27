@@ -112,12 +112,12 @@ public final class TangramsServer implements Runnable {
 			return result;
 		}
 
-		private static int parseBrokerPort(final CommandLine cl) throws ParseException {
+		private static int parseBrokerPort(final CommandLine cl, final int defaultPort) throws ParseException {
 			final int result;
 			{
 				final Number paramValue = (Number) cl.getParsedOptionValue(Parameter.BROKER_PORT.optName);
 				if (paramValue == null) {
-					result = Integer.parseInt(PROPS.getProperty("broker.port"));
+					result = defaultPort;
 					LOGGER.info("No broker port provided; Using default \"{}\".", result);
 				} else {
 					result = paramValue.intValue();
@@ -140,19 +140,7 @@ public final class TangramsServer implements Runnable {
 
 	}
 
-	public static final String BROKER_TICKET = "tangrams";
-
 	private static final Logger LOGGER = LoggerFactory.getLogger(TangramsServer.class);
-
-	private static final Properties PROPS;
-
-	static {
-		try {
-			PROPS = ClassProperties.load(TangramsServer.class);
-		} catch (final IOException e) {
-			throw new UncheckedIOException(e);
-		}
-	}
 
 	public static void main(final String[] args) {
 		final CommandLineParser parser = new DefaultParser();
@@ -163,7 +151,9 @@ public final class TangramsServer implements Runnable {
 			} else {
 				final String brokerHost = cl.getOptionValue(Parameter.BROKER_HOST.optName);
 				try {
-					final int brokerPort = Parameter.parseBrokerPort(cl);
+					final Properties props = ClassProperties.load(TangramsServer.class);
+					final int brokerPort = Parameter.parseBrokerPort(cl,
+							Integer.parseInt(props.getProperty("broker.port")));
 					// final FlagSettingUncaughtExceptionHandler
 					// brokerExceptionHandler = new
 					// FlagSettingUncaughtExceptionHandler();
@@ -183,7 +173,7 @@ public final class TangramsServer implements Runnable {
 					}
 
 					// if (!brokerExceptionHandler.wasExceptionHandled.get()) {
-					final TangramsServer server = new TangramsServer(PROPS.getProperty("broker.ticket"), brokerHost,
+					final TangramsServer server = new TangramsServer(props.getProperty("broker.ticket"), brokerHost,
 							brokerPort);
 					server.run();
 					// }
@@ -191,6 +181,8 @@ public final class TangramsServer implements Runnable {
 				} catch (final ParseException e) {
 					System.out.println(String.format("Could not parse port: %s", e.getLocalizedMessage()));
 					Parameter.printHelp();
+				} catch (final IOException e) {
+					throw new UncheckedIOException(e);
 				}
 			}
 
