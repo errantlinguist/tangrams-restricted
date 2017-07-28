@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 
 from collections import Counter
+import mimetypes
+import os
+import os.path
 import re
 import xml.etree.ElementTree
 
@@ -29,10 +32,7 @@ def walk_xml_files(inpaths):
 					
 
 if __name__ == "__main__":
-	import mimetypes
 	import sys
-	import os
-	import os.path
 	
 	if len(sys.argv) < 2:
 		raise ValueError("Usage: %s INPUT_PATHS... > OUTFILE" % sys.argv[0])
