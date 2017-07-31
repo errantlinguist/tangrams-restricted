@@ -141,11 +141,6 @@ public abstract class AbstractGameBoardPanel extends JPanel {
 	private final SpatialMatrix<Integer> posMatrix;
 
 	AbstractGameBoardPanel(final SpatialMatrix<Integer> posMatrix,
-			final Function<? super Integer, ? extends Image> pieceIdImageFactory, final Color highlightColor) {
-		this(posMatrix, pieceIdImageFactory, highlightColor, false);
-	}
-
-	AbstractGameBoardPanel(final SpatialMatrix<Integer> posMatrix,
 			final Function<? super Integer, ? extends Image> pieceIdImageFactory, final Color highlightColor,
 			final boolean analysisEnabled) {
 		this.posMatrix = posMatrix;
