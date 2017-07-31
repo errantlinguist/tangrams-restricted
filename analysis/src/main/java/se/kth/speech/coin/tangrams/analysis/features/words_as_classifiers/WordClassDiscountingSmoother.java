@@ -69,7 +69,7 @@ public final class WordClassDiscountingSmoother {
 		this.minCount = minCount;
 	}
 
-	public Stream<WeightedClassifier> createClassifierWeighting(
+	Stream<WeightedClassifier> createClassifierWeighting(
 			final Stream<Object2DoubleMap.Entry<String>> wordClasses,
 			final Function<? super String, ? extends Classifier> wordClassifiers) {
 		return wordClasses.map(wordClass -> {
