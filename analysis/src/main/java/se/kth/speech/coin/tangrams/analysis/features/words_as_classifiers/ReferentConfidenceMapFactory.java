@@ -56,7 +56,7 @@ public final class ReferentConfidenceMapFactory {
 
 	private final Function<? super String, ? extends Classifier> wordClassifiers;
 
-	public ReferentConfidenceMapFactory(final Function<? super String, ? extends Classifier> wordClassifiers,
+	public ReferentConfidenceMapFactory(final Function<? super String, ? extends Classifier> wordClassifiers, // NO_UCD (unused code)
 			final Function<? super EntityFeature.Extractor.Context, ? extends Instance> testInstFactory) {
 		this.wordClassifiers = wordClassifiers;
 		this.testInstFactory = testInstFactory;
