@@ -38,7 +38,7 @@ public final class ImageVisualizationInfoTableWriter {
 		this(writer, new ImageVisualizationInfoTableRowWriter(writer));
 	}
 
-	public ImageVisualizationInfoTableWriter(final Writer writer,
+	private ImageVisualizationInfoTableWriter(final Writer writer,
 			final ImageVisualizationInfoTableRowWriter rowWriter) {
 		this.writer = writer;
 		this.rowWriter = rowWriter;
