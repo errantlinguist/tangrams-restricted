@@ -56,7 +56,7 @@ public final class EntityInstanceAttributeContext {
 
 	private final InstanceFeatureExtractor<EntityFeature, EntityFeature.Extractor.Context> extractor;
 
-	public EntityInstanceAttributeContext(
+	public EntityInstanceAttributeContext( // NO_UCD (unused code)
 			final InstanceFeatureExtractor<EntityFeature, EntityFeature.Extractor.Context> extractor,
 			final String classAttrName) {
 		this.extractor = extractor;
