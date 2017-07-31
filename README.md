@@ -8,7 +8,7 @@ A game for organizing tangrams in the fewest number of moves using two players. 
 
 ## Requirements
 
-* [IrisTK](http://iristk.net/) version 2017.01.27+. Currently the only way to include this is to import both this project and that of IrisTK into Eclipse and then to add the IrisTK project as a "required project on the build path".
+* For the `client` and `server` modules, [IrisTK](http://iristk.net/) version 2017.01.27+. Currently the only way to include this is to import both this project and that of IrisTK into Eclipse and then to add the IrisTK project as a "required project on the build path" to the Eclipse projects representing both modules.
 
 ## To do
 
