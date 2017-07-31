@@ -51,7 +51,7 @@ import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 import se.kth.speech.coin.tangrams.iristk.ImageVisualizationInfoUnmarshaller;
 import se.kth.speech.coin.tangrams.iristk.events.Move;
 
-class UtteranceTabularDataWriter {
+final class UtteranceTabularDataWriter {
 
 	private enum EventDatum {
 		LAST_RND_TIME, LAST_RND_TIME_DIFF, MOVE_SUBMITTER, TIME;
