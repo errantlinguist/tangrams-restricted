@@ -129,7 +129,4 @@
 			</plugins>
 		</pluginManagement>
 	</build>
-	<modules>
-		<module>hat</module>
-	</modules>
 </project>
