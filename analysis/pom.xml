@@ -9,6 +9,7 @@
 	</parent>
 
 	<artifactId>analysis</artifactId>
+	<description>Tools for offline analysis of data collected from the tangrams game.</description>
 
 	<properties>
 		<stanford-corenlp.version>3.7.0</stanford-corenlp.version>
