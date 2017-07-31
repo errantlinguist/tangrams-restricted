@@ -28,7 +28,7 @@ import se.kth.speech.coin.tangrams.analysis.Utterance;
  * @since May 27, 2017
  *
  */
-public abstract class AbstractUtteranceTransformingEventDialogueTransformer implements EventDialogueTransformer {
+abstract class AbstractUtteranceTransformingEventDialogueTransformer implements EventDialogueTransformer {
 
 	/*
 	 * (non-Javadoc)
