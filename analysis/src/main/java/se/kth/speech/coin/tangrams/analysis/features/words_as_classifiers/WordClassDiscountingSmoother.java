@@ -60,11 +60,11 @@ public final class WordClassDiscountingSmoother {
 
 	private final String oovClassName;
 
-	public WordClassDiscountingSmoother(final int minCount) {
+	public WordClassDiscountingSmoother(final int minCount) { // NO_UCD (unused code)
 		this(minCount, null);
 	}
 
-	public WordClassDiscountingSmoother(final int minCount, final String oovClassName) {
+	public WordClassDiscountingSmoother(final int minCount, final String oovClassName) { // NO_UCD (use private)
 		this.oovClassName = oovClassName;
 		this.minCount = minCount;
 	}
