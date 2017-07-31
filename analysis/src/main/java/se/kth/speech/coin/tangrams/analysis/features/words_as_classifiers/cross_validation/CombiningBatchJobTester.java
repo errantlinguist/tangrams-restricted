@@ -143,7 +143,7 @@ final class CombiningBatchJobTester {
 				for (final Tokenization tokenizationMethod : input.tokenizationMethods) {
 					for (final TokenType tokenType : input.tokenTypes) {
 						final TokenizationContext tokenizationContext = new TokenizationContext(cleaningMethodSet,
-								tokenType, backgroundJobExecutor, extractionResultsHook);
+								tokenType, extractionResultsHook);
 						final EventDialogueTransformer tokenizer = tokenizationMethod.apply(tokenizationContext);
 
 						for (final TokenFiltering tokenFilteringMethod : input.tokenFilteringMethods) {

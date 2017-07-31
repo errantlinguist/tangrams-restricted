@@ -18,7 +18,6 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross
 
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.Executor;
 import java.util.function.BiConsumer;
 
 import edu.stanford.nlp.trees.Tree;
@@ -28,17 +27,14 @@ final class TokenizationContext {
 
 	private final Set<Cleaning> cleaning;
 
-	private final Executor executor;
+	private final BiConsumer<? super CoreMap, ? super List<Tree>> extractionResultsHook;
 
 	private final TokenType tokenType;
 
-	private final BiConsumer<? super CoreMap, ? super List<Tree>> extractionResultsHook;
-
-	TokenizationContext(final Set<Cleaning> cleaning, final TokenType tokenType, final Executor executor,
+	TokenizationContext(final Set<Cleaning> cleaning, final TokenType tokenType,
 			final BiConsumer<? super CoreMap, ? super List<Tree>> extractionResultsHook) {
 		this.cleaning = cleaning;
 		this.tokenType = tokenType;
-		this.executor = executor;
 		this.extractionResultsHook = extractionResultsHook;
 	}
 
@@ -47,13 +43,6 @@ final class TokenizationContext {
 	 */
 	Set<Cleaning> getCleaning() {
 		return cleaning;
-	}
-
-	/**
-	 * @return the executor
-	 */
-	Executor getExecutor() {
-		return executor;
 	}
 
 	/**
