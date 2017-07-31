@@ -12,14 +12,6 @@
 	<description>A game for organizing tangrams in the fewest number of moves using two players.</description>
 	<url>https://www.kth.se/csc/forskning/tmh/research</url>
 
-	<modules>
-		<module>analysis</module>
-		<module>client</module>
-		<module>game</module>
-		<module>hat</module>
-		<module>server</module>
-	</modules>
-
 	<profiles>
 		<profile>
 			<id>all</id>
@@ -137,4 +129,7 @@
 			</plugins>
 		</pluginManagement>
 	</build>
+	<modules>
+		<module>hat</module>
+	</modules>
 </project>
