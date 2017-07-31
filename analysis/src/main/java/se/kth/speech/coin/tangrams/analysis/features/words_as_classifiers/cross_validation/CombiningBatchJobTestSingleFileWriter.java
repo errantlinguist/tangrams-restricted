@@ -60,7 +60,7 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_
  * @since 24 May 2017
  *
  */
-final class CombiningBatchJobTestSingleFileWriter {
+final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 
 	private static final List<DialogueAnalysisSummaryFactory.SummaryDatum> DEFAULT_DATA_TO_WRITE = createDefaultDatumOrderingList();
 
@@ -218,11 +218,11 @@ final class CombiningBatchJobTestSingleFileWriter {
 
 	private boolean writeHeader;
 
-	public CombiningBatchJobTestSingleFileWriter(final PrintWriter out, final boolean writeHeader) {
+	private CombiningBatchJobTestSingleFileWriter(final PrintWriter out, final boolean writeHeader) {
 		this(out, writeHeader, DEFAULT_DATA_TO_WRITE);
 	}
 
-	public CombiningBatchJobTestSingleFileWriter(final PrintWriter out, final boolean writeHeader,
+	private CombiningBatchJobTestSingleFileWriter(final PrintWriter out, final boolean writeHeader,
 			final List<DialogueAnalysisSummaryFactory.SummaryDatum> dataToWrite) {
 		this.out = out;
 		this.writeHeader = writeHeader;
