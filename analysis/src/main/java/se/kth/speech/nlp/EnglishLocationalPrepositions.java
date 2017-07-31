@@ -39,7 +39,7 @@ import com.google.common.collect.Sets;
  */
 public final class EnglishLocationalPrepositions {
 
-	private static SoftReference<Set<List<String>>> list = new SoftReference<>(null);
+	private static volatile SoftReference<Set<List<String>>> list = new SoftReference<>(null);
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(EnglishLocationalPrepositions.class);
 

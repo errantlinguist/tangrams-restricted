@@ -35,7 +35,7 @@ public final class HatIO {
 
 	private static final String ANNOT_CONTEXT;
 
-	private static Reference<JAXBContext> jc = new SoftReference<>(null);
+	private static volatile Reference<JAXBContext> jc = new SoftReference<>(null);
 
 	static {
 		try (InputStream is = HatIO.class.getResourceAsStream("/hat.properties")) {

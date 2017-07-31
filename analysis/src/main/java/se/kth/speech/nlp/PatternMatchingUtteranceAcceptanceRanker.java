@@ -49,7 +49,7 @@ public final class PatternMatchingUtteranceAcceptanceRanker implements ToDoubleF
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(PatternMatchingUtteranceAcceptanceRanker.class);
 
-	private static SoftReference<Object2DoubleSortedMap<List<String>>> singletonAcceptanceRanksRef = new SoftReference<>(
+	private static volatile SoftReference<Object2DoubleSortedMap<List<String>>> singletonAcceptanceRanksRef = new SoftReference<>(
 			null);
 
 	private static final Pattern WHITESPACE_PATTERN = Pattern.compile("\\s+");

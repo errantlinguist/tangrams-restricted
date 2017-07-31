@@ -51,7 +51,7 @@ public final class EntityFeatureInstanceFeatureExtractorFactory
 
 	private static final String RES_LOC_PREFIX = "classpath:";
 
-	private InstanceFeatureExtractor<EntityFeature, EntityFeature.Extractor.Context> inst;
+	private volatile InstanceFeatureExtractor<EntityFeature, EntityFeature.Extractor.Context> inst;
 
 	@Inject
 	private ResourceLoader resourceLoader;;
