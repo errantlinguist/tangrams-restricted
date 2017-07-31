@@ -41,14 +41,14 @@ import se.kth.speech.coin.tangrams.iristk.EventTimes;
  * @since 4 May 2017
  *
  */
-public final class EventDialogueFactory
+public final class EventDialogueFactory // NO_UCD (use default)
 		implements BiFunction<ListIterator<Utterance>, GameHistory, Stream<EventDialogue>> {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(EventDialogueFactory.class);
 
 	private final Predicate<? super Event> dialogueEventDelimiter;
 
-	public EventDialogueFactory(final Predicate<? super Event> dialogueEventDelimiter) {
+	public EventDialogueFactory(final Predicate<? super Event> dialogueEventDelimiter) { // NO_UCD (use default)
 		this.dialogueEventDelimiter = dialogueEventDelimiter;
 	}
 

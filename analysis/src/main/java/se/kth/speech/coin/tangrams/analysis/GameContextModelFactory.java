@@ -46,7 +46,7 @@ import se.kth.speech.coin.tangrams.iristk.events.Move;
  * @since 27 Apr 2017
  *
  */
-public final class GameContextModelFactory implements Function<GameContext, SpatialMatrix<Integer>> {
+public final class GameContextModelFactory implements Function<GameContext, SpatialMatrix<Integer>> { // NO_UCD (use default)
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(GameContextModelFactory.class);
 
@@ -96,7 +96,7 @@ public final class GameContextModelFactory implements Function<GameContext, Spat
 
 	private final Function<? super ModelDescription, SpatialMatrix<Integer>> initialGameModelFactory;
 
-	public GameContextModelFactory(final int expectedUniqueModelCount) {
+	public GameContextModelFactory(final int expectedUniqueModelCount) { // NO_UCD (use default)
 		this(createCachingInitialGameModelFactory(expectedUniqueModelCount));
 	}
 
