@@ -60,7 +60,7 @@ import se.kth.speech.coin.tangrams.iristk.EventTimes;
  * @since 24 May 2017
  *
  */
-final class CombiningBatchJobTestMultiDirWriter {
+final class CombiningBatchJobTestMultiDirWriter { // NO_UCD (use default)
 
 	private enum Parameter implements Supplier<Option> {
 		APPEND_SUMMARY("a") {
