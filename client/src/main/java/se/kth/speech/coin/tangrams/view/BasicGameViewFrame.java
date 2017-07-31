@@ -53,7 +53,7 @@ public class BasicGameViewFrame extends JFrame {
 		return result;
 	}
 
-	BasicGameViewFrame(final AbstractGameBoardPanel boardPanel, final Controller controller,
+	protected BasicGameViewFrame(final AbstractGameBoardPanel boardPanel, final Controller controller,
 			final Dimension preferredSize) {
 		setDefaultCloseOperation(DISPOSE_ON_CLOSE);
 		setPreferredSize(preferredSize);
