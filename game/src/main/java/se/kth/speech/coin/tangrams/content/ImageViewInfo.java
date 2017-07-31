@@ -24,22 +24,6 @@ import se.kth.speech.MathDivisors;
 
 public final class ImageViewInfo {
 
-	public enum Orientation {
-		LANDSCAPE, PORTRAIT, SQUARE;
-
-		static Orientation getOrientation(final int width, final int height) {
-			final Orientation result;
-			if (width < height) {
-				result = Orientation.PORTRAIT;
-			} else if (height < width) {
-				result = Orientation.LANDSCAPE;
-			} else {
-				result = Orientation.SQUARE;
-			}
-			return result;
-		}
-	}
-
 	public static final class RasterizationInfo {
 
 		private static int getGcd(final int width, final int height) {
@@ -104,10 +88,6 @@ public final class ImageViewInfo {
 			return heightGetter.getAsInt();
 		}
 
-		public Orientation getOrientation() {
-			return Orientation.getOrientation(getWidth(), getHeight());
-		}
-
 		public int getWidth() {
 			return widthGetter.getAsInt();
 		}
@@ -142,8 +122,6 @@ public final class ImageViewInfo {
 			builder.append(getWidth());
 			builder.append(", getHeight()=");
 			builder.append(getHeight());
-			builder.append(", getOrientation()=");
-			builder.append(getOrientation());
 			builder.append(", getWidthHeightQuotient()=");
 			builder.append(getWidthHeightQuotient());
 			builder.append(", getAspectRatio()=");
