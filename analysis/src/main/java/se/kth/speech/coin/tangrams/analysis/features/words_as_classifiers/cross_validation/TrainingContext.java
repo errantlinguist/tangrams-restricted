@@ -17,7 +17,6 @@
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation;
 
 import java.util.List;
-import java.util.concurrent.ExecutorService;
 import java.util.function.BiConsumer;
 
 import org.springframework.context.ApplicationContext;
@@ -30,18 +29,14 @@ final class TrainingContext {
 
 	private final ApplicationContext appCtx;
 
-	private final ExecutorService backgroundJobExecutor;
-
 	private final EventDialogueTransformer diagTransformer;
 
 	private final BiConsumer<? super EventDialogue, ? super List<UtteranceRelation>> uttRelHandler;
 
 	TrainingContext(final EventDialogueTransformer diagTransformer, final ApplicationContext appCtx,
-			final ExecutorService backgroundJobExecutor,
 			final BiConsumer<? super EventDialogue, ? super List<UtteranceRelation>> uttRelHandler) {
 		this.diagTransformer = diagTransformer;
 		this.appCtx = appCtx;
-		this.backgroundJobExecutor = backgroundJobExecutor;
 		this.uttRelHandler = uttRelHandler;
 	}
 
@@ -67,13 +62,6 @@ final class TrainingContext {
 				return false;
 			}
 		} else if (!appCtx.equals(other.appCtx)) {
-			return false;
-		}
-		if (backgroundJobExecutor == null) {
-			if (other.backgroundJobExecutor != null) {
-				return false;
-			}
-		} else if (!backgroundJobExecutor.equals(other.backgroundJobExecutor)) {
 			return false;
 		}
 		if (diagTransformer == null) {
@@ -103,7 +91,6 @@ final class TrainingContext {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + (appCtx == null ? 0 : appCtx.hashCode());
-		result = prime * result + (backgroundJobExecutor == null ? 0 : backgroundJobExecutor.hashCode());
 		result = prime * result + (diagTransformer == null ? 0 : diagTransformer.hashCode());
 		result = prime * result + (uttRelHandler == null ? 0 : uttRelHandler.hashCode());
 		return result;
@@ -119,8 +106,6 @@ final class TrainingContext {
 		final StringBuilder builder = new StringBuilder(160);
 		builder.append("TrainingContext [appCtx=");
 		builder.append(appCtx);
-		builder.append(", backgroundJobExecutor=");
-		builder.append(backgroundJobExecutor);
 		builder.append(", diagTransformer=");
 		builder.append(diagTransformer);
 		builder.append(", uttRelHandler=");
@@ -134,13 +119,6 @@ final class TrainingContext {
 	 */
 	ApplicationContext getAppCtx() {
 		return appCtx;
-	}
-
-	/**
-	 * @return the backgroundJobExecutor
-	 */
-	ExecutorService getBackgroundJobExecutor() {
-		return backgroundJobExecutor;
 	}
 
 	/**

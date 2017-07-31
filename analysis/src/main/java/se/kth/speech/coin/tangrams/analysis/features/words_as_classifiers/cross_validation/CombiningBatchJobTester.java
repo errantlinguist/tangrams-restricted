@@ -153,7 +153,7 @@ final class CombiningBatchJobTester {
 									.createSymmetricalTrainingTestingEvgDiagTransformer(
 											Arrays.asList(tokenizer, tokenFilter));
 							final TrainingContext trainingCtx = new TrainingContext(symmetricalDiagTransformer, appCtx,
-									backgroundJobExecutor, uttRelHandler);
+									uttRelHandler);
 							final TrainingInstancesFactory trainingInstsFactory = trainingMethod
 									.createTrainingInstsFactory(trainingCtx);
 							final TestSetFactory testSetFactory = new TestSetFactory(trainingInstsFactory,
