@@ -12,6 +12,33 @@
 	<description>A game for organizing tangrams in the fewest number of moves using two players.</description>
 	<url>https://www.kth.se/csc/forskning/tmh/research</url>
 
+	<licenses>
+		<license>
+			<name>GNU General Public License, Version 3</name>
+			<url>https://www.gnu.org/licenses/gpl-3.0.html</url>
+			<distribution>repo</distribution>
+			<comments>The license for the entire project.</comments>
+		</license>
+		<license>
+			<name>Creative Commons Attribution 3.0 Unported License</name>
+			<url>https://creativecommons.org/licenses/by/3.0/</url>
+			<distribution>repo</distribution>
+			<comments>The license for selected audio content.</comments>
+		</license>
+	</licenses>
+
+	<developers>
+		<developer>
+			<id>tshore</id>
+			<name>Todd Shore</name>
+			<email>errantlinguist+github@gmail.com</email>
+			<roles>
+				<role>architect</role>
+				<role>developer</role>
+			</roles>
+		</developer>
+	</developers>
+
 	<profiles>
 		<profile>
 			<id>all</id>
