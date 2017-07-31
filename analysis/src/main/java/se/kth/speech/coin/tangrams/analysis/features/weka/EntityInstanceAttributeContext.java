@@ -68,13 +68,6 @@ public final class EntityInstanceAttributeContext {
 		attrs.add(classAttr);
 	}
 
-	public Instance createInstance(final EntityFeature.Extractor.Context extractionContext, final Instances insts) {
-		final Instance result = new DenseInstance(attrs.size());
-		result.setDataset(insts);
-		extractor.accept(result, extractionContext);
-		return result;
-	}
-
 	public Function<EntityFeature.Extractor.Context, Instance> createInstFactory(final Instances insts) {
 		return ctx -> {
 			final Instance result = createInstance(ctx, insts);
@@ -109,6 +102,13 @@ public final class EntityInstanceAttributeContext {
 	 */
 	public InstanceFeatureExtractor<EntityFeature, EntityFeature.Extractor.Context> getExtractor() {
 		return extractor;
+	}
+
+	private Instance createInstance(final EntityFeature.Extractor.Context extractionContext, final Instances insts) {
+		final Instance result = new DenseInstance(attrs.size());
+		result.setDataset(insts);
+		extractor.accept(result, extractionContext);
+		return result;
 	}
 
 }
