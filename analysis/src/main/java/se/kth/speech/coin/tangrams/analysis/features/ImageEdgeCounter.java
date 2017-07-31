@@ -60,7 +60,7 @@ public final class ImageEdgeCounter implements ToIntFunction<String> {
 		this(createPropValMap(loadEdgeCountProps()));
 	}
 
-	public ImageEdgeCounter(final Object2IntMap<String> resourceEdgeCounts) {
+	public ImageEdgeCounter(final Object2IntMap<String> resourceEdgeCounts) { // NO_UCD (use private)
 		this.resourceEdgeCounts = resourceEdgeCounts;
 	}
 
