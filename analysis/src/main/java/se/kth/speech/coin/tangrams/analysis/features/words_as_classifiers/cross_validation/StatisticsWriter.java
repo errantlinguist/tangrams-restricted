@@ -69,11 +69,7 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_
  *      </ul>
  *
  */
-public final class StatisticsWriter implements Consumer<Tester.Result> {
-
-	public enum SummaryDatum {
-		DIALOGUE_COUNT, KEY, MEAN_RANK, MEAN_UTTERANCES_PER_DIALOGUE, MRR, TEST_ITERATION, UTTERANCES_TESTED
-	}
+final class StatisticsWriter implements Consumer<Tester.Result> {
 
 	private enum Parameter implements Supplier<Option> {
 		APP_CONTEXT_DEFINITIONS("c") {
@@ -127,6 +123,10 @@ public final class StatisticsWriter implements Consumer<Tester.Result> {
 
 	}
 
+	enum SummaryDatum {
+		DIALOGUE_COUNT, KEY, MEAN_RANK, MEAN_UTTERANCES_PER_DIALOGUE, MRR, TEST_ITERATION, UTTERANCES_TESTED
+	}
+
 	private static final Collector<CharSequence, ?, String> ROW_CELL_JOINER = Collectors.joining("\t");
 
 	private static final List<SummaryDatum> SUMMARY_DATUM_COLUMN_ORDERING;
@@ -136,39 +136,6 @@ public final class StatisticsWriter implements Consumer<Tester.Result> {
 				SummaryDatum.MEAN_RANK, SummaryDatum.MRR, SummaryDatum.DIALOGUE_COUNT, SummaryDatum.UTTERANCES_TESTED,
 				SummaryDatum.MEAN_UTTERANCES_PER_DIALOGUE);
 		assert SUMMARY_DATUM_COLUMN_ORDERING.size() == SummaryDatum.values().length;
-	}
-
-	public static Map<SummaryDatum, Object> createSummaryDataMap(final Object key, final Tester.Result testResults) {
-		return createSessionSummaryDataMap(key, testResults.iterCount(), testResults.totalResults());
-	}
-
-	public static void main(final CommandLine cl)
-			throws ParseException, IOException, ClassificationException, ExecutionException {
-		if (cl.hasOption(Parameter.HELP.optName)) {
-			Parameter.printHelp();
-		} else {
-			final List<Path> inpaths = Arrays.asList(cl.getArgList().stream().map(String::trim).filter(path -> !path.isEmpty()).map(Paths::get).toArray(Path[]::new));
-			if (inpaths.isEmpty()) {
-				throw new MissingOptionException("No input path(s) specified.");
-
-			} else {
-				final String[] appCtxLocs = CLIParameters
-						.parseAppCtxDefPaths(cl.getOptionValues(Parameter.APP_CONTEXT_DEFINITIONS.optName)).stream()
-						.toArray(String[]::new);
-				final OptionalInt iterCount = CLIParameters
-						.parseIterCount((Number) cl.getParsedOptionValue(Parameter.ITER_COUNT.optName));
-				try (final FileSystemXmlApplicationContext appCtx = new FileSystemXmlApplicationContext(appCtxLocs)) {
-					final Tester tester = appCtx.getBean(Tester.class);
-					iterCount.ifPresent(tester::setIterCount);
-					final Tester.Result testResults = tester.apply(TestSessionData.readTestSessionData(inpaths));
-					try (PrintWriter out = CLIParameters
-							.parseOutpath((File) cl.getParsedOptionValue(Parameter.OUTPATH.optName))) {
-						final StatisticsWriter writer = new StatisticsWriter(out);
-						writer.accept(testResults);
-					}
-				}
-			}
-		}
 	}
 
 	public static void main(final String[] args) throws IOException, ClassificationException, ExecutionException {
@@ -198,9 +165,42 @@ public final class StatisticsWriter implements Consumer<Tester.Result> {
 		return result;
 	}
 
+	private static void main(final CommandLine cl)
+			throws ParseException, IOException, ClassificationException, ExecutionException {
+		if (cl.hasOption(Parameter.HELP.optName)) {
+			Parameter.printHelp();
+		} else {
+			final List<Path> inpaths = Arrays.asList(cl.getArgList().stream().map(String::trim).filter(path -> !path.isEmpty()).map(Paths::get).toArray(Path[]::new));
+			if (inpaths.isEmpty()) {
+				throw new MissingOptionException("No input path(s) specified.");
+
+			} else {
+				final String[] appCtxLocs = CLIParameters
+						.parseAppCtxDefPaths(cl.getOptionValues(Parameter.APP_CONTEXT_DEFINITIONS.optName)).stream()
+						.toArray(String[]::new);
+				final OptionalInt iterCount = CLIParameters
+						.parseIterCount((Number) cl.getParsedOptionValue(Parameter.ITER_COUNT.optName));
+				try (final FileSystemXmlApplicationContext appCtx = new FileSystemXmlApplicationContext(appCtxLocs)) {
+					final Tester tester = appCtx.getBean(Tester.class);
+					iterCount.ifPresent(tester::setIterCount);
+					final Tester.Result testResults = tester.apply(TestSessionData.readTestSessionData(inpaths));
+					try (PrintWriter out = CLIParameters
+							.parseOutpath((File) cl.getParsedOptionValue(Parameter.OUTPATH.optName))) {
+						final StatisticsWriter writer = new StatisticsWriter(out);
+						writer.accept(testResults);
+					}
+				}
+			}
+		}
+	}
+
+	static Map<SummaryDatum, Object> createSummaryDataMap(final Object key, final Tester.Result testResults) {
+		return createSessionSummaryDataMap(key, testResults.iterCount(), testResults.totalResults());
+	}
+
 	private final PrintWriter out;
 
-	public StatisticsWriter(final PrintWriter out) {
+	StatisticsWriter(final PrintWriter out) {
 		this.out = out;
 	}
 

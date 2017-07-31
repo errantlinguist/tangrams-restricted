@@ -18,7 +18,7 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers;
 
 import weka.classifiers.Classifier;
 
-public final class WeightedClassifier {
+final class WeightedClassifier {
 
 	private final Classifier classifier;
 

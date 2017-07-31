@@ -30,7 +30,7 @@ import se.kth.speech.nlp.lucene.StringTokenizer;
  * @since 24 May 2017
  *
  */
-public final class LuceneAnalyzingEventDialogueTransformer
+public final class LuceneAnalyzingEventDialogueTransformer // NO_UCD (unused code)
 		extends AbstractUtteranceTransformingEventDialogueTransformer {
 
 	private static Function<String, Stream<String>> createTokenTransformer(final Analyzer analyzer) {

@@ -64,7 +64,7 @@ public final class UtteranceDialogueRepresentationStringFactory implements Funct
 		this(DEFAULT_WORD_JOINER, DEFAULT_SENTENCE_JOINER);
 	}
 
-	public UtteranceDialogueRepresentationStringFactory(final Collector<? super CharSequence, ?, String> wordJoiner,
+	private UtteranceDialogueRepresentationStringFactory(final Collector<? super CharSequence, ?, String> wordJoiner,
 			final Collector<? super CharSequence, ?, String> sentenceJoiner) {
 		this.wordJoiner = wordJoiner;
 		this.sentenceJoiner = sentenceJoiner;

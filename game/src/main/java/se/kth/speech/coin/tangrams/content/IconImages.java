@@ -48,15 +48,17 @@ public final class IconImages {
 
 	private static final Comparator<String> ICON_NAME_COMPARATOR;
 
+	private static final Set<String> IMAGE_RESOURCE_NAMES;
+
+	private static final String IMG_FILENAME_SUFFIX;
+	
+	private static final Logger LOGGER = LoggerFactory.getLogger(IconImages.class);
+	
 	private static final Pattern MULTIVALUE_PROP_DELIM_PATTERN = Pattern.compile("\\s*,\\s*");
 
 	private static final Function<String, String> RESOURCE_NAME_FACTORY = resourceLoc -> FileNames
 			.splitBase(resourceLoc)[0];
 	
-	private static final Set<String> IMAGE_RESOURCE_NAMES;
-	
-	private static final String IMG_FILENAME_SUFFIX;
-
 	static {
 		try {
 			final Properties props = ClassProperties.load(IconImages.class);
@@ -72,14 +74,6 @@ public final class IconImages {
 		}
 	}
 	
-	public static Set<String> getImageResourceNames(){
-		return IMAGE_RESOURCE_NAMES;
-	}
-	
-	public static URL getImageUrl(ImageType imgType, String imgName){
-		return imgType.getFileUrl(imgName + IMG_FILENAME_SUFFIX);
-	}
-	
 	public static NavigableMap<String, URL> createImageResourceMap(final Function<? super String, ? extends URL> resourceUrlFactory) {
 		NavigableMap<String, URL> result = new TreeMap<>(ICON_NAME_COMPARATOR);
 		for (String imgName : IMAGE_RESOURCE_NAMES){
@@ -92,15 +86,21 @@ public final class IconImages {
 		}
 		return result;
 	}
-
+	
 	/**
 	 * @return the resourceNameFactory
 	 */
 	public static Function<String, String> getResourceNameFactory() {
 		return RESOURCE_NAME_FACTORY;
 	}
+
+	static Set<String> getImageResourceNames(){
+		return IMAGE_RESOURCE_NAMES;
+	}
 	
-	private static final Logger LOGGER = LoggerFactory.getLogger(IconImages.class);
+	static URL getImageUrl(ImageType imgType, String imgName){
+		return imgType.getFileUrl(imgName + IMG_FILENAME_SUFFIX);
+	}
 
 	private IconImages() {
 

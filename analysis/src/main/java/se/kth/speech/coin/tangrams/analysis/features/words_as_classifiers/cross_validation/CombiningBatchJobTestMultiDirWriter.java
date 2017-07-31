@@ -60,7 +60,7 @@ import se.kth.speech.coin.tangrams.iristk.EventTimes;
  * @since 24 May 2017
  *
  */
-public final class CombiningBatchJobTestMultiDirWriter {
+final class CombiningBatchJobTestMultiDirWriter {
 
 	private enum Parameter implements Supplier<Option> {
 		APPEND_SUMMARY("a") {
@@ -120,61 +120,6 @@ public final class CombiningBatchJobTestMultiDirWriter {
 		SUMMARY_DATA_TO_WRITE = Arrays.asList(SummaryDatum.MEAN_RANK, SummaryDatum.MRR, SummaryDatum.DIALOGUE_COUNT,
 				SummaryDatum.UTTERANCES_TESTED, SummaryDatum.MEAN_UTTERANCES_PER_DIALOGUE);
 		COL_HEADERS = createColHeaderList(SUMMARY_DATA_TO_WRITE);
-	}
-
-	public static void main(final CommandLine cl) throws Exception {
-		if (cl.hasOption(CLITestParameter.HELP.optName)) {
-			Parameter.printHelp();
-		} else {
-			final ExecutorService backgroundJobExecutor = createBackgroundJobExecutor();
-			final CombiningBatchJobTesterCLIInputFactory inputFactory = new CombiningBatchJobTesterCLIInputFactory(
-					backgroundJobExecutor);
-			try {
-				final CombiningBatchJobTester.Input input = inputFactory.apply(cl);
-				final Consumer<Tester> testerConfigurator;
-				{
-					final OptionalInt optIterCount = CLIParameters
-							.parseIterCount((Number) cl.getParsedOptionValue(CLITestParameter.ITER_COUNT.optName));
-					if (optIterCount.isPresent()) {
-						final int iterCount = optIterCount.getAsInt();
-						LOGGER.info("Will run {} training/testing iteration(s).", iterCount);
-						testerConfigurator = tester -> tester.setIterCount(iterCount);
-					} else {
-						testerConfigurator = tester -> {
-							// Do nothing
-						};
-					}
-				}
-
-				final Path outdir = ((File) cl.getParsedOptionValue(CLITestParameter.OUTPATH.optName)).toPath();
-				LOGGER.info("Will write data to \"{}\".", outdir);
-				final boolean appendSummary = cl.hasOption(Parameter.APPEND_SUMMARY.optName);
-				LOGGER.info("Append to summary rather than truncate? {}", appendSummary);
-				final boolean noClobber = cl.hasOption(Parameter.NO_CLOBBER.optName);
-				LOGGER.info("Don't clobber old batch results? {}", noClobber);
-				// TODO: Finish "noclobber" opt impl
-
-				final CombiningBatchJobTestMultiDirWriter writer = new CombiningBatchJobTestMultiDirWriter(outdir,
-						!appendSummary);
-				try (final ClassPathXmlApplicationContext appCtx = new ClassPathXmlApplicationContext(
-						"combining-batch-tester.xml", CombiningBatchJobTestMultiDirWriter.class)) {
-					final CombiningBatchJobTester tester = new CombiningBatchJobTester(backgroundJobExecutor, appCtx,
-							writer::write, writer::writeError, testerConfigurator, (sent, extractedPhrases) -> {
-								// Do nothing
-							}, (evtDiag, uttRels) -> {
-								// Do nothing
-							});
-					tester.accept(input);
-				}
-				LOGGER.info("Shutting down executor service.");
-				backgroundJobExecutor.shutdown();
-				LOGGER.info("Successfully shut down executor service.");
-
-			} catch (final Exception e) {
-				shutdownExceptionally(backgroundJobExecutor);
-				throw e;
-			}
-		}
 	}
 
 	public static void main(final String[] args) throws Exception {
@@ -250,6 +195,61 @@ public final class CombiningBatchJobTestMultiDirWriter {
 		return resultBuilder.build();
 	}
 
+	private static void main(final CommandLine cl) throws Exception {
+		if (cl.hasOption(CLITestParameter.HELP.optName)) {
+			Parameter.printHelp();
+		} else {
+			final ExecutorService backgroundJobExecutor = createBackgroundJobExecutor();
+			final CombiningBatchJobTesterCLIInputFactory inputFactory = new CombiningBatchJobTesterCLIInputFactory(
+					backgroundJobExecutor);
+			try {
+				final CombiningBatchJobTester.Input input = inputFactory.apply(cl);
+				final Consumer<Tester> testerConfigurator;
+				{
+					final OptionalInt optIterCount = CLIParameters
+							.parseIterCount((Number) cl.getParsedOptionValue(CLITestParameter.ITER_COUNT.optName));
+					if (optIterCount.isPresent()) {
+						final int iterCount = optIterCount.getAsInt();
+						LOGGER.info("Will run {} training/testing iteration(s).", iterCount);
+						testerConfigurator = tester -> tester.setIterCount(iterCount);
+					} else {
+						testerConfigurator = tester -> {
+							// Do nothing
+						};
+					}
+				}
+
+				final Path outdir = ((File) cl.getParsedOptionValue(CLITestParameter.OUTPATH.optName)).toPath();
+				LOGGER.info("Will write data to \"{}\".", outdir);
+				final boolean appendSummary = cl.hasOption(Parameter.APPEND_SUMMARY.optName);
+				LOGGER.info("Append to summary rather than truncate? {}", appendSummary);
+				final boolean noClobber = cl.hasOption(Parameter.NO_CLOBBER.optName);
+				LOGGER.info("Don't clobber old batch results? {}", noClobber);
+				// TODO: Finish "noclobber" opt impl
+
+				final CombiningBatchJobTestMultiDirWriter writer = new CombiningBatchJobTestMultiDirWriter(outdir,
+						!appendSummary);
+				try (final ClassPathXmlApplicationContext appCtx = new ClassPathXmlApplicationContext(
+						"combining-batch-tester.xml", CombiningBatchJobTestMultiDirWriter.class)) {
+					final CombiningBatchJobTester tester = new CombiningBatchJobTester(backgroundJobExecutor, appCtx,
+							writer::write, writer::writeError, testerConfigurator, (sent, extractedPhrases) -> {
+								// Do nothing
+							}, (evtDiag, uttRels) -> {
+								// Do nothing
+							});
+					tester.accept(input);
+				}
+				LOGGER.info("Shutting down executor service.");
+				backgroundJobExecutor.shutdown();
+				LOGGER.info("Successfully shut down executor service.");
+
+			} catch (final Exception e) {
+				shutdownExceptionally(backgroundJobExecutor);
+				throw e;
+			}
+		}
+	}
+
 	private static void shutdownExceptionally(final ExecutorService executor) {
 		LOGGER.debug("Emergency executor service shutdown.");
 		executor.shutdownNow();
@@ -262,14 +262,23 @@ public final class CombiningBatchJobTestMultiDirWriter {
 
 	private final Path summaryFile;
 
-	public CombiningBatchJobTestMultiDirWriter(final Path outdir, final boolean createNewSummary) {
+	private CombiningBatchJobTestMultiDirWriter(final Path outdir, final boolean createNewSummary) {
 		this.outdir = outdir;
 		this.createNewSummary = createNewSummary;
 
 		summaryFile = outdir.resolve("batch-summary.tsv");
 	}
 
-	public void write(final BatchJobSummary summary) {
+	private BufferedWriter createAppendingSummaryWriter() throws IOException {
+		return Files.newBufferedWriter(summaryFile, StandardOpenOption.APPEND);
+	}
+
+	private Path createBatchOutdir(final TestParameters testParams) {
+		final String batchOutdirName = createBatchOutdirName(testParams);
+		return outdir.resolve(batchOutdirName);
+	}
+
+	private void write(final BatchJobSummary summary) {
 		final TestParameters testParams = summary.getTestParams();
 		try {
 			final Path batchOutdir = Files.createDirectories(createBatchOutdir(testParams));
@@ -283,7 +292,7 @@ public final class CombiningBatchJobTestMultiDirWriter {
 		}
 	}
 
-	public void writeError(final IncompleteResults incompleteResults, final Throwable thrown) {
+	private void writeError(final IncompleteResults incompleteResults, final Throwable thrown) {
 		LOGGER.error(
 				String.format("An error occurred while running test which was started at \"%s\".",
 						TestParameterReporting.TIMESTAMP_FORMATTER.format(incompleteResults.getTestStartTime())),
@@ -303,15 +312,6 @@ public final class CombiningBatchJobTestMultiDirWriter {
 		} catch (final IOException e) {
 			throw new UncheckedIOException(e);
 		}
-	}
-
-	private BufferedWriter createAppendingSummaryWriter() throws IOException {
-		return Files.newBufferedWriter(summaryFile, StandardOpenOption.APPEND);
-	}
-
-	private Path createBatchOutdir(final TestParameters testParams) {
-		final String batchOutdirName = createBatchOutdirName(testParams);
-		return outdir.resolve(batchOutdirName);
 	}
 
 	private void writeInitialSummaryFile() throws IOException {

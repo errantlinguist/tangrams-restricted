@@ -70,7 +70,7 @@ import weka.core.converters.ConverterUtils;
  *      </ul>
  *
  */
-public final class TrainingDataWriter {
+final class TrainingDataWriter {
 
 	private enum Parameter implements Supplier<Option> {
 		APP_CONTEXT_DEFINITIONS("c") {
@@ -124,13 +124,22 @@ public final class TrainingDataWriter {
 
 	}
 
-	public static final String TEST_FILE_NAME_BASE = "test";
-
-	public static final String TRAINING_FILE_NAME_PREFIX = "train-";
-
 	private static final Logger LOGGER = LoggerFactory.getLogger(TrainingDataWriter.class);
 
-	public static void main(final CommandLine cl) throws ParseException, ExecutionException, IOException {
+	private static final String TRAINING_FILE_NAME_PREFIX = "train-";
+
+	public static void main(final String[] args) throws ExecutionException, IOException {
+		final CommandLineParser parser = new DefaultParser();
+		try {
+			final CommandLine cl = parser.parse(Parameter.OPTIONS, args);
+			main(cl);
+		} catch (final ParseException e) {
+			System.out.println(String.format("An error occured while parsing the command-line arguments: %s", e));
+			Parameter.printHelp();
+		}
+	}
+
+	private static void main(final CommandLine cl) throws ParseException, ExecutionException, IOException {
 		if (cl.hasOption(Parameter.HELP.optName)) {
 			Parameter.printHelp();
 		} else {
@@ -156,30 +165,19 @@ public final class TrainingDataWriter {
 		}
 	}
 
-	public static void main(final String[] args) throws ExecutionException, IOException {
-		final CommandLineParser parser = new DefaultParser();
-		try {
-			final CommandLine cl = parser.parse(Parameter.OPTIONS, args);
-			main(cl);
-		} catch (final ParseException e) {
-			System.out.println(String.format("An error occured while parsing the command-line arguments: %s", e));
-			Parameter.printHelp();
-		}
-	}
-
 	private final File outdir;
 
 	private final String outfileExt;
 
 	private final TestSetFactory testSetFactory;
 
-	public TrainingDataWriter(final TestSetFactory testSetFactory, final File outdir, final String outfileExt) {
+	private TrainingDataWriter(final TestSetFactory testSetFactory, final File outdir, final String outfileExt) {
 		this.testSetFactory = testSetFactory;
 		this.outdir = outdir;
 		this.outfileExt = outfileExt;
 	}
 
-	public void accept(final Iterable<Path> inpaths) throws ExecutionException, IOException {
+	private void accept(final Iterable<Path> inpaths) throws ExecutionException, IOException {
 		final Map<Path, SessionDataManager> infileSessionData = SessionDataManager.createFileSessionDataMap(inpaths);
 		final Map<SessionDataManager, Path> allSessions = infileSessionData.entrySet().stream()
 				.collect(Collectors.toMap(Entry::getValue, Entry::getKey));

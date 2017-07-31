@@ -43,7 +43,7 @@ import se.kth.speech.coin.tangrams.iristk.events.Selection;
  */
 public final class GameplayController implements Controller {
 
-	public final class History {
+	final class History {
 
 		private final int[] lastPieceMoveTurnsById;
 

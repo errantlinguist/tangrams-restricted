@@ -58,7 +58,7 @@ import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
  * @since Apr 29, 2017
  *
  */
-public final class LoggedEventTimeLatencySummaryWriter {
+final class LoggedEventTimeLatencySummaryWriter {
 
 	private enum Parameter implements Supplier<Option> {
 		EVENT_SENDER_PATTERN("p") {
@@ -103,8 +103,6 @@ public final class LoggedEventTimeLatencySummaryWriter {
 		}
 	}
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(LoggedEventTimeLatencySummaryWriter.class);
-
 	private static final Comparator<Event> EVENT_TIME_COMPARATOR = Comparator.comparing(Event::getTime,
 			(timeStr1, timeStr2) -> {
 				final LocalDateTime time1 = EventTimes.parseEventTime(timeStr1);
@@ -112,37 +110,7 @@ public final class LoggedEventTimeLatencySummaryWriter {
 				return time1.compareTo(time2);
 			});
 
-	public static void main(final CommandLine cl) throws IOException, ParseException {
-		if (cl.hasOption(Parameter.HELP.optName)) {
-			Parameter.printHelp();
-		} else {
-			final Path[] inpaths = cl.getArgList().stream().map(String::trim).filter(path -> !path.isEmpty())
-					.map(Paths::get).toArray(Path[]::new);
-			switch (inpaths.length) {
-			case 0: {
-				throw new MissingOptionException("No input path specified.");
-			}
-			case 1: {
-				final Path inpath = inpaths[0];
-				LOGGER.info("Will read event log data from \"{}\".", inpath);
-				final Pattern evtSenderPattern = Pattern
-						.compile(cl.getOptionValue(Parameter.EVENT_SENDER_PATTERN.optName));
-				LOGGER.info("Using \"{}\" to match sender ID.", evtSenderPattern.pattern());
-				try (final PrintWriter out = CLIParameters
-						.parseOutpath((File) cl.getParsedOptionValue(Parameter.OUTPATH.optName))) {
-					run(inpath, evt -> {
-						final String playerId = evt.getString(GameManagementEvent.Attribute.PLAYER_ID.toString());
-						return playerId == null ? false : evtSenderPattern.matcher(playerId).matches();
-					}, out);
-				}
-				break;
-			}
-			default: {
-				throw new IllegalArgumentException("No support for multiple inpaths (yet).");
-			}
-			}
-		}
-	}
+	private static final Logger LOGGER = LoggerFactory.getLogger(LoggedEventTimeLatencySummaryWriter.class);
 
 	public static void main(final String[] args) throws IOException {
 		final CommandLineParser parser = new DefaultParser();
@@ -177,6 +145,38 @@ public final class LoggedEventTimeLatencySummaryWriter {
 			}
 		}
 		return b.build();
+	}
+
+	private static void main(final CommandLine cl) throws IOException, ParseException {
+		if (cl.hasOption(Parameter.HELP.optName)) {
+			Parameter.printHelp();
+		} else {
+			final Path[] inpaths = cl.getArgList().stream().map(String::trim).filter(path -> !path.isEmpty())
+					.map(Paths::get).toArray(Path[]::new);
+			switch (inpaths.length) {
+			case 0: {
+				throw new MissingOptionException("No input path specified.");
+			}
+			case 1: {
+				final Path inpath = inpaths[0];
+				LOGGER.info("Will read event log data from \"{}\".", inpath);
+				final Pattern evtSenderPattern = Pattern
+						.compile(cl.getOptionValue(Parameter.EVENT_SENDER_PATTERN.optName));
+				LOGGER.info("Using \"{}\" to match sender ID.", evtSenderPattern.pattern());
+				try (final PrintWriter out = CLIParameters
+						.parseOutpath((File) cl.getParsedOptionValue(Parameter.OUTPATH.optName))) {
+					run(inpath, evt -> {
+						final String playerId = evt.getString(GameManagementEvent.Attribute.PLAYER_ID.toString());
+						return playerId == null ? false : evtSenderPattern.matcher(playerId).matches();
+					}, out);
+				}
+				break;
+			}
+			default: {
+				throw new IllegalArgumentException("No support for multiple inpaths (yet).");
+			}
+			}
+		}
 	}
 
 	private static void run(final Path inpath, final Predicate<? super Event> evtFilter, final PrintWriter out)

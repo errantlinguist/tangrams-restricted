@@ -52,7 +52,7 @@ import se.kth.speech.coin.tangrams.iristk.IrisSystemStopper;
  * @since 10 Jan 2017
  *
  */
-public final class TangramsServer implements Runnable {
+final class TangramsServer implements Runnable {
 
 	// private static class FlagSettingUncaughtExceptionHandler implements
 	// UncaughtExceptionHandler {
@@ -198,7 +198,7 @@ public final class TangramsServer implements Runnable {
 
 	private final String brokerTicket;
 
-	public TangramsServer(final String brokerTicket, final String brokerHost, final int brokerPort) {
+	private TangramsServer(final String brokerTicket, final String brokerHost, final int brokerPort) {
 		this.brokerTicket = brokerTicket;
 		this.brokerHost = brokerHost;
 		this.brokerPort = brokerPort;

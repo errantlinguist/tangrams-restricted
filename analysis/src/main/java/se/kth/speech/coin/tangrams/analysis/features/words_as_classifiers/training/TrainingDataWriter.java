@@ -68,7 +68,7 @@ import weka.core.converters.ConverterUtils;
  *      </ul>
  *
  */
-public final class TrainingDataWriter {
+final class TrainingDataWriter {
 
 	private enum Parameter implements Supplier<Option> {
 		APP_CONTEXT_DEFINITIONS("c") {
@@ -124,7 +124,18 @@ public final class TrainingDataWriter {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(TrainingDataWriter.class);
 
-	public static void main(final CommandLine cl) throws IOException, JAXBException, ParseException {
+	public static void main(final String[] args) throws IOException, JAXBException {
+		final CommandLineParser parser = new DefaultParser();
+		try {
+			final CommandLine cl = parser.parse(Parameter.OPTIONS, args);
+			main(cl);
+		} catch (final ParseException e) {
+			System.out.println(String.format("An error occured while parsing the command-line arguments: %s", e));
+			Parameter.printHelp();
+		}
+	}
+
+	private static void main(final CommandLine cl) throws IOException, JAXBException, ParseException {
 		if (cl.hasOption(Parameter.HELP.optName)) {
 			Parameter.printHelp();
 		} else {
@@ -167,28 +178,17 @@ public final class TrainingDataWriter {
 		}
 	}
 
-	public static void main(final String[] args) throws IOException, JAXBException {
-		final CommandLineParser parser = new DefaultParser();
-		try {
-			final CommandLine cl = parser.parse(Parameter.OPTIONS, args);
-			main(cl);
-		} catch (final ParseException e) {
-			System.out.println(String.format("An error occured while parsing the command-line arguments: %s", e));
-			Parameter.printHelp();
-		}
-	}
-
 	private final TrainingInstancesFactory instancesFactory;
 
 	private final SessionEventDialogueManagerCacheSupplier sessionEvtDiagMgrSupplier;
 
-	public TrainingDataWriter(final TrainingInstancesFactory instancesFactory,
+	private TrainingDataWriter(final TrainingInstancesFactory instancesFactory,
 			final SessionEventDialogueManagerCacheSupplier sessionEvtDiagMgrSupplier) {
 		this.instancesFactory = instancesFactory;
 		this.sessionEvtDiagMgrSupplier = sessionEvtDiagMgrSupplier;
 	}
 
-	public WordClassificationData apply(final Iterable<Path> inpaths) throws IOException, JAXBException {
+	private WordClassificationData apply(final Iterable<Path> inpaths) throws IOException, JAXBException {
 		final Collection<SessionDataManager> infileSessionData = SessionDataManager.createFileSessionDataMap(inpaths)
 				.values();
 		final List<SessionEventDialogueManager> sessionEvtDiagMgrs = new ArrayList<>(infileSessionData.size());

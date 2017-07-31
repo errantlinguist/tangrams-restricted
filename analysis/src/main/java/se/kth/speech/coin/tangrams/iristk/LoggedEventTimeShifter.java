@@ -54,7 +54,7 @@ import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
  * @since Apr 29, 2017
  *
  */
-public final class LoggedEventTimeShifter {
+final class LoggedEventTimeShifter {
 
 	private enum Parameter implements Supplier<Option> {
 		ADDEND("a") {
@@ -110,7 +110,18 @@ public final class LoggedEventTimeShifter {
 
 	private static final BigDecimal SECS_TO_MILLS_FACTOR = new BigDecimal(1000);
 
-	public static void main(final CommandLine cl) throws IOException, ParseException {
+	public static void main(final String[] args) throws IOException {
+		final CommandLineParser parser = new DefaultParser();
+		try {
+			final CommandLine cl = parser.parse(Parameter.OPTIONS, args);
+			main(cl);
+		} catch (final ParseException e) {
+			System.out.println(String.format("An error occured while parsing the command-line arguments: %s", e));
+			Parameter.printHelp();
+		}
+	}
+
+	private static void main(final CommandLine cl) throws IOException, ParseException {
 		if (cl.hasOption(Parameter.HELP.optName)) {
 			Parameter.printHelp();
 		} else {
@@ -141,17 +152,6 @@ public final class LoggedEventTimeShifter {
 				throw new IllegalArgumentException("No support for multiple inpaths (yet).");
 			}
 			}
-		}
-	}
-
-	public static void main(final String[] args) throws IOException {
-		final CommandLineParser parser = new DefaultParser();
-		try {
-			final CommandLine cl = parser.parse(Parameter.OPTIONS, args);
-			main(cl);
-		} catch (final ParseException e) {
-			System.out.println(String.format("An error occured while parsing the command-line arguments: %s", e));
-			Parameter.printHelp();
 		}
 	}
 

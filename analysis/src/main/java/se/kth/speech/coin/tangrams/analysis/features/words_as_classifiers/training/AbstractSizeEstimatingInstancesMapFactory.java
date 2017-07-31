@@ -40,7 +40,7 @@ import weka.core.Instances;
  * @since May 26, 2017
  *
  */
-public abstract class AbstractSizeEstimatingInstancesMapFactory implements TrainingInstancesFactory {
+abstract class AbstractSizeEstimatingInstancesMapFactory implements TrainingInstancesFactory {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(AbstractSizeEstimatingInstancesMapFactory.class);
 

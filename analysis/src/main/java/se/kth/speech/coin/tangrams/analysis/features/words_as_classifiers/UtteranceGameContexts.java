@@ -40,7 +40,7 @@ public final class UtteranceGameContexts {
 		return createSingleContext(dialogueUtt, history, speakerId);
 	}
 
-	public static GameContext createSingleContext(final Utterance dialogueUtt, final GameHistory history,
+	private static GameContext createSingleContext(final Utterance dialogueUtt, final GameHistory history,
 			final String perspectivePlayerId) {
 		LOGGER.debug(
 				"Creating a context based on the logged game history, which is then seen from the perspective of player \"{}\".",

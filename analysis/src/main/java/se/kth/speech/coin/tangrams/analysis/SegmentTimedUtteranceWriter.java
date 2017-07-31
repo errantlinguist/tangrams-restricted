@@ -58,8 +58,8 @@ import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
  * @since 5 May 2017
  *
  */
-public final class SegmentTimedUtteranceWriter {
-
+final class SegmentTimedUtteranceWriter {
+	
 	private enum Parameter implements Supplier<Option> {
 		EVENT_LOG(EVENT_LOG_OPT_NAME) {
 			@Override
@@ -189,6 +189,10 @@ public final class SegmentTimedUtteranceWriter {
 		LOGGER.info("Reading log at \"{}\" to find timestamp.", eventLogFilePath);
 		return EventTimes.parseEventTime(LoggedEvents.parseLoggedEvents(Files.lines(eventLogFilePath))
 				.filter(INITIAL_EVENT_PREDICATE).findFirst().get().getTime());
+	}
+
+	private SegmentTimedUtteranceWriter(){
+		
 	}
 
 }

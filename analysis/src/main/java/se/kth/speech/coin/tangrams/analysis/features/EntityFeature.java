@@ -69,7 +69,7 @@ public enum EntityFeature {
 
 			private final SpatialRegion pieceRegion;
 
-			public Context(final ImageVisualizationInfoDescription.Datum pieceImgVizInfoDatum,
+			Context(final ImageVisualizationInfoDescription.Datum pieceImgVizInfoDatum,
 					final SpatialRegion pieceRegion, final int[] modelDims, final double modelArea,
 					final ToIntFunction<? super String> namedResourceEdgeCountFactory) {
 				this.pieceImgVizInfoDatum = pieceImgVizInfoDatum;
@@ -179,12 +179,11 @@ public enum EntityFeature {
 			assert DEFAULT_ORDERING.size() == EntityFeature.values().length;
 		}
 
-		public static Map<EntityFeature, Attribute> createFeatureAttrMap(final Iterable<EntityFeature> features,
-				final List<String> shapeVals) {
-			return createFeatureAttrMap(features, DEFAULT_ATTR_NAME_PREFIX, shapeVals);
+		public static Map<EntityFeature, Attribute> createFeatureAttrMap(final List<String> shapeVals) {
+			return createFeatureAttrMap(DEFAULT_ATTR_NAME_PREFIX, shapeVals);
 		}
 
-		public static Map<EntityFeature, Attribute> createFeatureAttrMap(final Iterable<EntityFeature> features,
+		private static Map<EntityFeature, Attribute> createFeatureAttrMap(final Iterable<EntityFeature> features,
 				final String attrNamePrefix, final List<String> shapeVals) {
 			final Map<EntityFeature, Function<String, Attribute>> attrFactories = createFeatureTypedAttrFactoryMap(
 					shapeVals);
@@ -196,16 +195,12 @@ public enum EntityFeature {
 			return result;
 		}
 
-		public static Map<EntityFeature, Attribute> createFeatureAttrMap(final List<String> shapeVals) {
-			return createFeatureAttrMap(DEFAULT_ATTR_NAME_PREFIX, shapeVals);
-		}
-
-		public static Map<EntityFeature, Attribute> createFeatureAttrMap(final String attrNamePrefix,
+		private static Map<EntityFeature, Attribute> createFeatureAttrMap(final String attrNamePrefix,
 				final List<String> shapeVals) {
 			return createFeatureAttrMap(EnumSet.allOf(EntityFeature.class), attrNamePrefix, shapeVals);
 		}
 
-		public static Map<EntityFeature, Function<String, Attribute>> createFeatureTypedAttrFactoryMap(
+		private static Map<EntityFeature, Function<String, Attribute>> createFeatureTypedAttrFactoryMap(
 				final List<String> shapeVals) {
 			final Map<EntityFeature, Function<String, Attribute>> result = new EnumMap<>(EntityFeature.class);
 			final Function<String, Attribute> doubleVal = name -> new Attribute(name);

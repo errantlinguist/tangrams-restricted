@@ -33,7 +33,7 @@ public final class Turn {
 
 	private final int sequenceNumber;
 
-	public Turn(final String playerId, final Entry<SpatialRegion, SpatialRegion> move, final int sequenceNumber) {
+	Turn(final String playerId, final Entry<SpatialRegion, SpatialRegion> move, final int sequenceNumber) {
 		this.playerId = playerId;
 		this.move = move;
 		this.sequenceNumber = sequenceNumber;

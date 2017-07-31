@@ -27,7 +27,7 @@ import se.kth.speech.coin.tangrams.iristk.events.CoordinatePoint2D;
  * @since 24 Mar 2017
  *
  */
-public final class SpatialRegionAreaFactory implements Function<SpatialRegion, Area2D> {
+final class SpatialRegionAreaFactory implements Function<SpatialRegion, Area2D> {
 
 	private static CoordinatePoint2D createEndCoords(final SpatialRegion region) {
 		return new CoordinatePoint2D(region.getXUpperBound(), region.getYUpperBound());

@@ -48,9 +48,9 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.traini
  * @since 24 May 2017
  *
  */
-public final class CombiningBatchJobTester {
+final class CombiningBatchJobTester {
 
-	public static final class IncompleteResults {
+	static final class IncompleteResults {
 
 		private final TestParameters testParams;
 
@@ -76,7 +76,7 @@ public final class CombiningBatchJobTester {
 		}
 	}
 
-	public static final class Input {
+	static final class Input {
 
 		private final Map<SessionDataManager, Path> allSessions;
 
@@ -90,7 +90,7 @@ public final class CombiningBatchJobTester {
 
 		private final Iterable<Training> trainingMethods;
 
-		public Input(final Iterable<Set<Cleaning>> cleaningMethods, final Iterable<Tokenization> tokenizationMethods,
+		Input(final Iterable<Set<Cleaning>> cleaningMethods, final Iterable<Tokenization> tokenizationMethods,
 				final Iterable<TokenType> tokenTypes, final Iterable<TokenFiltering> tokenFilteringMethods,
 				final Iterable<Training> trainingMethods, final Map<SessionDataManager, Path> allSessions) {
 			this.cleaningMethods = cleaningMethods;
@@ -118,7 +118,7 @@ public final class CombiningBatchJobTester {
 
 	private final BiConsumer<? super EventDialogue, ? super List<UtteranceRelation>> uttRelHandler;
 
-	public CombiningBatchJobTester(final ExecutorService backgroundJobExecutor, final ApplicationContext appCtx,
+	CombiningBatchJobTester(final ExecutorService backgroundJobExecutor, final ApplicationContext appCtx,
 			final Consumer<? super BatchJobSummary> batchJobResultHandler,
 			final BiConsumer<? super IncompleteResults, ? super Throwable> errorHandler,
 			final Consumer<? super Tester> testerConfigurator,
@@ -133,7 +133,7 @@ public final class CombiningBatchJobTester {
 		this.uttRelHandler = uttRelHandler;
 	}
 
-	public void accept(final Input input) throws ClassificationException, ExecutionException, IOException {
+	void accept(final Input input) throws ClassificationException, ExecutionException, IOException {
 		LOGGER.debug("Bean names: {}", Arrays.toString(appCtx.getBeanDefinitionNames()));
 		final SessionEventDialogueManagerCacheSupplier sessionDiagMgrCacheSupplier = appCtx
 				.getBean(SessionEventDialogueManagerCacheSupplier.class);

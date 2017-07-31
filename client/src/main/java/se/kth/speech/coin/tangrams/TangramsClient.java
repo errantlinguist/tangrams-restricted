@@ -78,7 +78,7 @@ import se.kth.speech.coin.tangrams.view.GameGUI;
  * @since 16 Nov 2016
  *
  */
-public final class TangramsClient implements Runnable {
+final class TangramsClient implements Runnable {
 
 	private enum Parameter implements Supplier<Option> {
 		ANALYSIS("a") {
@@ -351,7 +351,7 @@ public final class TangramsClient implements Runnable {
 
 	private final boolean recordingEnabled;
 
-	public TangramsClient(final String brokerTicket, final String brokerHost, final int brokerPort,
+	private TangramsClient(final String brokerTicket, final String brokerHost, final int brokerPort,
 			final boolean analysisEnabled, final boolean recordingEnabled,
 			final Consumer<? super Path> logArchivePostprocessingHook) {
 		this.brokerTicket = brokerTicket;

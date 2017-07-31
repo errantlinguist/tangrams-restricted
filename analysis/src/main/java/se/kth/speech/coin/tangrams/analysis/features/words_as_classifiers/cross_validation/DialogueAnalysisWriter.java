@@ -71,7 +71,7 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_
  *      </ul>
  *
  */
-public final class DialogueAnalysisWriter implements Consumer<Tester.Result> {
+final class DialogueAnalysisWriter implements Consumer<Tester.Result> {
 
 	private enum Parameter implements Supplier<Option> {
 		APP_CONTEXT_DEFINITIONS("c") {
@@ -131,35 +131,6 @@ public final class DialogueAnalysisWriter implements Consumer<Tester.Result> {
 
 	private static final Collector<CharSequence, ?, String> ROW_CELL_JOINER = Collectors.joining("\t");
 
-	public static void main(final CommandLine cl)
-			throws ParseException, IOException, ClassificationException, ExecutionException {
-		if (cl.hasOption(Parameter.HELP.optName)) {
-			Parameter.printHelp();
-		} else {
-			final List<Path> inpaths = Arrays.asList(cl.getArgList().stream().map(String::trim).filter(path -> !path.isEmpty()).map(Paths::get).toArray(Path[]::new));
-			if (inpaths.isEmpty()) {
-				throw new MissingOptionException("No input path(s) specified.");
-
-			} else {
-				final String[] appCtxLocs = CLIParameters
-						.parseAppCtxDefPaths(cl.getOptionValues(Parameter.APP_CONTEXT_DEFINITIONS.optName)).stream()
-						.toArray(String[]::new);
-				final OptionalInt iterCount = CLIParameters
-						.parseIterCount((Number) cl.getParsedOptionValue(Parameter.ITER_COUNT.optName));
-				try (final FileSystemXmlApplicationContext appCtx = new FileSystemXmlApplicationContext(appCtxLocs)) {
-					final Tester tester = appCtx.getBean(Tester.class);
-					iterCount.ifPresent(tester::setIterCount);
-					final Tester.Result testResults = tester.apply(TestSessionData.readTestSessionData(inpaths));
-					try (PrintWriter out = CLIParameters
-							.parseOutpath((File) cl.getParsedOptionValue(Parameter.OUTPATH.optName))) {
-						final DialogueAnalysisWriter writer = new DialogueAnalysisWriter(out, tester.getIterCount());
-						writer.accept(testResults);
-					}
-				}
-			}
-		}
-	}
-
 	public static void main(final String[] args) throws IOException, ClassificationException, ExecutionException {
 		final CommandLineParser parser = new DefaultParser();
 		try {
@@ -191,6 +162,35 @@ public final class DialogueAnalysisWriter implements Consumer<Tester.Result> {
 		return result;
 	}
 
+	private static void main(final CommandLine cl)
+			throws ParseException, IOException, ClassificationException, ExecutionException {
+		if (cl.hasOption(Parameter.HELP.optName)) {
+			Parameter.printHelp();
+		} else {
+			final List<Path> inpaths = Arrays.asList(cl.getArgList().stream().map(String::trim).filter(path -> !path.isEmpty()).map(Paths::get).toArray(Path[]::new));
+			if (inpaths.isEmpty()) {
+				throw new MissingOptionException("No input path(s) specified.");
+
+			} else {
+				final String[] appCtxLocs = CLIParameters
+						.parseAppCtxDefPaths(cl.getOptionValues(Parameter.APP_CONTEXT_DEFINITIONS.optName)).stream()
+						.toArray(String[]::new);
+				final OptionalInt iterCount = CLIParameters
+						.parseIterCount((Number) cl.getParsedOptionValue(Parameter.ITER_COUNT.optName));
+				try (final FileSystemXmlApplicationContext appCtx = new FileSystemXmlApplicationContext(appCtxLocs)) {
+					final Tester tester = appCtx.getBean(Tester.class);
+					iterCount.ifPresent(tester::setIterCount);
+					final Tester.Result testResults = tester.apply(TestSessionData.readTestSessionData(inpaths));
+					try (PrintWriter out = CLIParameters
+							.parseOutpath((File) cl.getParsedOptionValue(Parameter.OUTPATH.optName))) {
+						final DialogueAnalysisWriter writer = new DialogueAnalysisWriter(out, tester.getIterCount());
+						writer.accept(testResults);
+					}
+				}
+			}
+		}
+	}
+
 	private final List<DialogueAnalysisSummaryFactory.SummaryDatum> dataToWrite;
 
 	private final int maxIters;
@@ -199,16 +199,16 @@ public final class DialogueAnalysisWriter implements Consumer<Tester.Result> {
 
 	private final DialogueAnalysisSummaryFactory rowDataFactory;
 
-	public DialogueAnalysisWriter(final PrintWriter out, final int maxIters) {
-		this(out, maxIters, DEFAULT_DATA_TO_WRITE);
-	}
-
-	public DialogueAnalysisWriter(final PrintWriter out, final int maxIters,
+	private DialogueAnalysisWriter(final PrintWriter out, final int maxIters,
 			final List<DialogueAnalysisSummaryFactory.SummaryDatum> dataToWrite) {
 		this.out = out;
 		this.maxIters = maxIters;
 		this.dataToWrite = dataToWrite;
 		rowDataFactory = new DialogueAnalysisSummaryFactory(dataToWrite);
+	}
+
+	DialogueAnalysisWriter(final PrintWriter out, final int maxIters) {
+		this(out, maxIters, DEFAULT_DATA_TO_WRITE);
 	}
 	@Override
 	public void accept(final Tester.Result cvtestResults) {

@@ -40,23 +40,6 @@ public final class SessionDataManager {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SessionDataManager.class);
 
-	public static SessionDataManager create(final Path inpath) throws IOException {
-		LOGGER.info("Reading session properties from \"{}\".", inpath);
-		final Properties props = new Properties();
-		try (final InputStream propsInstream = Files.newInputStream(inpath)) {
-			props.load(propsInstream);
-		}
-		return create(props, inpath.getParent());
-	}
-
-	public static SessionDataManager create(final Properties props, final Path baseDir) {
-		final Path hatInfilePath = RelativePaths.resolveIfNotAbsolute(Paths.get(props.getProperty("hat")), baseDir);
-		final Path canonicalEventLogPath = RelativePaths
-				.resolveIfNotAbsolute(Paths.get(props.getProperty("canonicalEvents")), baseDir);
-		final PlayerDataManager playerData = PlayerDataManager.create(props, baseDir);
-		return new SessionDataManager(hatInfilePath, canonicalEventLogPath, playerData);
-	}
-
 	public static Map<Path, SessionDataManager> createFileSessionDataMap(final Iterable<Path> inpaths)
 			throws IOException {
 		final Map<Path, SessionDataManager> result = new HashMap<>();
@@ -70,6 +53,23 @@ public final class SessionDataManager {
 			}
 		}
 		return result;
+	}
+
+	static SessionDataManager create(final Path inpath) throws IOException {
+		LOGGER.info("Reading session properties from \"{}\".", inpath);
+		final Properties props = new Properties();
+		try (final InputStream propsInstream = Files.newInputStream(inpath)) {
+			props.load(propsInstream);
+		}
+		return create(props, inpath.getParent());
+	}
+
+	static SessionDataManager create(final Properties props, final Path baseDir) {
+		final Path hatInfilePath = RelativePaths.resolveIfNotAbsolute(Paths.get(props.getProperty("hat")), baseDir);
+		final Path canonicalEventLogPath = RelativePaths
+				.resolveIfNotAbsolute(Paths.get(props.getProperty("canonicalEvents")), baseDir);
+		final PlayerDataManager playerData = PlayerDataManager.create(props, baseDir);
+		return new SessionDataManager(hatInfilePath, canonicalEventLogPath, playerData);
 	}
 
 	private final Path canonicalEventLogPath;

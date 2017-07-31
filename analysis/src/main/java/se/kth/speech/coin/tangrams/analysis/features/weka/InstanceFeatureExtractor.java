@@ -42,7 +42,7 @@ public final class InstanceFeatureExtractor<F, C> implements BiConsumer<Instance
 
 	private final Map<F, Attribute> featureAttrs;
 
-	public InstanceFeatureExtractor(final FeatureExtractor<F, C> extractor, final Map<F, Attribute> featureAttrs) {
+	InstanceFeatureExtractor(final FeatureExtractor<F, C> extractor, final Map<F, Attribute> featureAttrs) {
 		this.extractor = extractor;
 		this.featureAttrs = Collections.unmodifiableMap(featureAttrs);
 	}

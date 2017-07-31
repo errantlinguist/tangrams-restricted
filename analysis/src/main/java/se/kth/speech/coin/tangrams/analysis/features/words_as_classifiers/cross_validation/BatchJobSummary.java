@@ -18,7 +18,7 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross
 
 import java.time.LocalDateTime;
 
-public final class BatchJobSummary {
+final class BatchJobSummary {
 
 	private final TestParameters testParams;
 

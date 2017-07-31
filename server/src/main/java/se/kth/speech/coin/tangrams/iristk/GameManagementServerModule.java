@@ -58,7 +58,7 @@ public final class GameManagementServerModule extends IrisModule {
 		this(gameFactory, new ConcurrentHashMap<>());
 	}
 
-	public GameManagementServerModule(final GameFactory gameFactory,
+	private GameManagementServerModule(final GameFactory gameFactory,
 			final ConcurrentMap<String, Game<Integer>> newGames) {
 		this.gameFactory = gameFactory;
 		this.newGames = newGames;

@@ -70,7 +70,7 @@ import se.kth.speech.io.FileNames;
  * @since 4 May 2017
  *
  */
-public final class UtteranceSelectedEntityDescriptionWriter {
+final class UtteranceSelectedEntityDescriptionWriter {
 
 	private enum Parameter implements Supplier<Option> {
 		HELP("?") {
@@ -182,33 +182,6 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 				.resolve(UtteranceSelectedEntityDescriptionWriter.class.getName() + ".properties");
 	}
 
-	public static void main(final CommandLine cl) throws IOException, JAXBException, ParseException {
-		if (cl.hasOption(Parameter.HELP.optName)) {
-			Parameter.printHelp();
-		} else {
-			final Path[] inpaths = cl.getArgList().stream().map(String::trim).filter(path -> !path.isEmpty())
-					.map(Paths::get).toArray(Path[]::new);
-			if (inpaths.length < 1) {
-				throw new MissingOptionException("No input path(s) specified.");
-
-			} else {
-				final Path outpath = ((File) cl.getParsedOptionValue(Parameter.OUTPATH.optName)).toPath();
-				LOGGER.info("Will write data to \"{}\".", outpath);
-				final boolean strict = cl.hasOption(Parameter.STRICT.optName);
-				for (final Path inpath : inpaths) {
-					LOGGER.info("Will read batch job data from \"{}\".", inpath);
-					final String outfileNamePrefix = Parameter.parseOutfilePrefix(cl, inpath);
-					LOGGER.info("Will prefix each output file for input \"{}\" with \"{}\".", inpath,
-							outfileNamePrefix);
-					final UtteranceSelectedEntityDescriptionWriter writer = createWriter(outpath, outfileNamePrefix,
-							strict);
-					writer.accept(inpath);
-				}
-			}
-
-		}
-	}
-
 	public static void main(final String[] args) throws IOException, JAXBException {
 		if (args.length < 1) {
 			runInteractively();
@@ -272,6 +245,33 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 		}
 	}
 
+	private static void main(final CommandLine cl) throws IOException, JAXBException, ParseException {
+		if (cl.hasOption(Parameter.HELP.optName)) {
+			Parameter.printHelp();
+		} else {
+			final Path[] inpaths = cl.getArgList().stream().map(String::trim).filter(path -> !path.isEmpty())
+					.map(Paths::get).toArray(Path[]::new);
+			if (inpaths.length < 1) {
+				throw new MissingOptionException("No input path(s) specified.");
+
+			} else {
+				final Path outpath = ((File) cl.getParsedOptionValue(Parameter.OUTPATH.optName)).toPath();
+				LOGGER.info("Will write data to \"{}\".", outpath);
+				final boolean strict = cl.hasOption(Parameter.STRICT.optName);
+				for (final Path inpath : inpaths) {
+					LOGGER.info("Will read batch job data from \"{}\".", inpath);
+					final String outfileNamePrefix = Parameter.parseOutfilePrefix(cl, inpath);
+					LOGGER.info("Will prefix each output file for input \"{}\" with \"{}\".", inpath,
+							outfileNamePrefix);
+					final UtteranceSelectedEntityDescriptionWriter writer = createWriter(outpath, outfileNamePrefix,
+							strict);
+					writer.accept(inpath);
+				}
+			}
+
+		}
+	}
+
 	private static void runInteractively() throws IOException {
 		LookAndFeels.setLookAndFeel();
 		final Settings settings = loadClassSettings();
@@ -326,7 +326,7 @@ public final class UtteranceSelectedEntityDescriptionWriter {
 
 	private final boolean strict;
 
-	public UtteranceSelectedEntityDescriptionWriter(final EntityFeature.Extractor extractor,
+	private UtteranceSelectedEntityDescriptionWriter(final EntityFeature.Extractor extractor,
 			final List<EntityFeature> featuresToDescribe, final Path outdir, final String outfileNamePrefix,
 			final boolean strict) {
 		this.extractor = extractor;

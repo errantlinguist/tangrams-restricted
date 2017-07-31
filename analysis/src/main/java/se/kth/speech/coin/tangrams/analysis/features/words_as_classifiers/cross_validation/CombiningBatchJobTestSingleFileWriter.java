@@ -60,13 +60,11 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_
  * @since 24 May 2017
  *
  */
-public final class CombiningBatchJobTestSingleFileWriter {
+final class CombiningBatchJobTestSingleFileWriter {
 
 	private static final List<DialogueAnalysisSummaryFactory.SummaryDatum> DEFAULT_DATA_TO_WRITE = createDefaultDatumOrderingList();
 
 	private static final String EXTRACTION_LOG_FILE_SUFFIX = ".extraction.tsv";
-
-	private static final String UTT_REL_LOG_FILE_SUFFIX = ".uttrels.tsv";
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(CombiningBatchJobTestSingleFileWriter.class);
 
@@ -76,19 +74,39 @@ public final class CombiningBatchJobTestSingleFileWriter {
 
 	private static final Collector<CharSequence, ?, String> ROW_CELL_JOINER = Collectors.joining("\t");
 
-	private static BufferedWriter createUttRelFileWriter(final File outFile) throws IOException {
-		Path uttRelLogOutPath;
-		final String suffix = UTT_REL_LOG_FILE_SUFFIX;
-		if (outFile == null) {
-			final String filename = CombiningBatchJobTester.class.getSimpleName() + "-" + System.currentTimeMillis()
-					+ suffix;
-			uttRelLogOutPath = Paths.get(System.getProperty("user.dir"), filename);
-		} else {
-			uttRelLogOutPath = Paths.get(outFile.getPath() + suffix);
+	private static final String UTT_REL_LOG_FILE_SUFFIX = ".uttrels.tsv";
+
+	public static void main(final String[] args) throws Exception {
+		final CommandLineParser parser = new DefaultParser();
+		try {
+			final CommandLine cl = parser.parse(OPTIONS, args);
+			main(cl);
+		} catch (final ParseException e) {
+			System.out.println(String.format("An error occured while parsing the command-line arguments: %s", e));
+			printHelp();
 		}
-		LOGGER.info("Will write dialogue utterance relation log to \"{}\".", uttRelLogOutPath);
-		return Files.newBufferedWriter(uttRelLogOutPath, StandardOpenOption.CREATE,
-				StandardOpenOption.TRUNCATE_EXISTING);
+	}
+
+	private static ExecutorService createBackgroundJobExecutor() {
+		return ForkJoinPool.commonPool();
+	}
+
+	private static List<DialogueAnalysisSummaryFactory.SummaryDatum> createDefaultDatumOrderingList() {
+		final List<DialogueAnalysisSummaryFactory.SummaryDatum> result = Arrays.asList(
+				DialogueAnalysisSummaryFactory.SummaryDatum.KEY,
+				DialogueAnalysisSummaryFactory.SummaryDatum.DESCRIPTION,
+				DialogueAnalysisSummaryFactory.SummaryDatum.SESSION_ORDER,
+				DialogueAnalysisSummaryFactory.SummaryDatum.EVENT_TIME,
+				DialogueAnalysisSummaryFactory.SummaryDatum.TEST_ITER,
+				// DialogueAnalysisSummaryFactory.SummaryDatum.DIALOGUE,
+				// DialogueAnalysisSummaryFactory.SummaryDatum.DIALOGUE_AS_TESTED,
+				// DialogueAnalysisSummaryFactory.SummaryDatum.GOLD_STD_ID,
+				DialogueAnalysisSummaryFactory.SummaryDatum.RANK,
+				DialogueAnalysisSummaryFactory.SummaryDatum.TESTED_UTT_COUNT,
+				DialogueAnalysisSummaryFactory.SummaryDatum.TOTAL_UTT_COUNT,
+				DialogueAnalysisSummaryFactory.SummaryDatum.TOKEN_COUNT);
+		assert result.size() <= DialogueAnalysisSummaryFactory.SummaryDatum.values().length;
+		return result;
 	}
 
 	private static BufferedWriter createExtrLogFileWriter(File outFile) throws IOException {
@@ -106,7 +124,28 @@ public final class CombiningBatchJobTestSingleFileWriter {
 				StandardOpenOption.TRUNCATE_EXISTING);
 	}
 
-	public static void main(final CommandLine cl) throws Exception {
+	private static Options createOptions() {
+		final Options result = new Options();
+		Arrays.stream(CLITestParameter.values()).map(CLITestParameter::get).forEach(result::addOption);
+		return result;
+	}
+
+	private static BufferedWriter createUttRelFileWriter(final File outFile) throws IOException {
+		Path uttRelLogOutPath;
+		final String suffix = UTT_REL_LOG_FILE_SUFFIX;
+		if (outFile == null) {
+			final String filename = CombiningBatchJobTester.class.getSimpleName() + "-" + System.currentTimeMillis()
+					+ suffix;
+			uttRelLogOutPath = Paths.get(System.getProperty("user.dir"), filename);
+		} else {
+			uttRelLogOutPath = Paths.get(outFile.getPath() + suffix);
+		}
+		LOGGER.info("Will write dialogue utterance relation log to \"{}\".", uttRelLogOutPath);
+		return Files.newBufferedWriter(uttRelLogOutPath, StandardOpenOption.CREATE,
+				StandardOpenOption.TRUNCATE_EXISTING);
+	}
+
+	private static void main(final CommandLine cl) throws Exception {
 		if (cl.hasOption(CLITestParameter.HELP.optName)) {
 			printHelp();
 		} else {
@@ -158,45 +197,6 @@ public final class CombiningBatchJobTestSingleFileWriter {
 				throw e;
 			}
 		}
-	}
-
-	public static void main(final String[] args) throws Exception {
-		final CommandLineParser parser = new DefaultParser();
-		try {
-			final CommandLine cl = parser.parse(OPTIONS, args);
-			main(cl);
-		} catch (final ParseException e) {
-			System.out.println(String.format("An error occured while parsing the command-line arguments: %s", e));
-			printHelp();
-		}
-	}
-
-	private static ExecutorService createBackgroundJobExecutor() {
-		return ForkJoinPool.commonPool();
-	}
-
-	private static List<DialogueAnalysisSummaryFactory.SummaryDatum> createDefaultDatumOrderingList() {
-		final List<DialogueAnalysisSummaryFactory.SummaryDatum> result = Arrays.asList(
-				DialogueAnalysisSummaryFactory.SummaryDatum.KEY,
-				DialogueAnalysisSummaryFactory.SummaryDatum.DESCRIPTION,
-				DialogueAnalysisSummaryFactory.SummaryDatum.SESSION_ORDER,
-				DialogueAnalysisSummaryFactory.SummaryDatum.EVENT_TIME,
-				DialogueAnalysisSummaryFactory.SummaryDatum.TEST_ITER,
-				// DialogueAnalysisSummaryFactory.SummaryDatum.DIALOGUE,
-				// DialogueAnalysisSummaryFactory.SummaryDatum.DIALOGUE_AS_TESTED,
-				// DialogueAnalysisSummaryFactory.SummaryDatum.GOLD_STD_ID,
-				DialogueAnalysisSummaryFactory.SummaryDatum.RANK,
-				DialogueAnalysisSummaryFactory.SummaryDatum.TESTED_UTT_COUNT,
-				DialogueAnalysisSummaryFactory.SummaryDatum.TOTAL_UTT_COUNT,
-				DialogueAnalysisSummaryFactory.SummaryDatum.TOKEN_COUNT);
-		assert result.size() <= DialogueAnalysisSummaryFactory.SummaryDatum.values().length;
-		return result;
-	}
-
-	private static Options createOptions() {
-		final Options result = new Options();
-		Arrays.stream(CLITestParameter.values()).map(CLITestParameter::get).forEach(result::addOption);
-		return result;
 	}
 
 	private static void printHelp() {

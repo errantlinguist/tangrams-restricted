@@ -31,7 +31,7 @@ import org.slf4j.LoggerFactory;
  * @since 24 May 2017
  *
  */
-public final class BatchTestResultWriter {
+final class BatchTestResultWriter {
 
 	private static final StandardOpenOption[] DEFAULT_FILE_OPEN_OPTS = new StandardOpenOption[] {
 			StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING };
@@ -42,16 +42,16 @@ public final class BatchTestResultWriter {
 
 	private final Path outdir;
 
-	public BatchTestResultWriter(final Path outdir) {
-		this(outdir, DEFAULT_FILE_OPEN_OPTS);
-	}
-
-	public BatchTestResultWriter(final Path outdir, final OpenOption[] fileOpenOpts) {
+	private BatchTestResultWriter(final Path outdir, final OpenOption[] fileOpenOpts) {
 		this.outdir = outdir;
 		this.fileOpenOpts = fileOpenOpts;
 	}
 
-	public void accept(final Tester.Result result) throws IOException {
+	BatchTestResultWriter(final Path outdir) {
+		this(outdir, DEFAULT_FILE_OPEN_OPTS);
+	}
+
+	void accept(final Tester.Result result) throws IOException {
 		final Path statsFilePath = outdir.resolve("stats.tsv");
 		try (final PrintWriter out = new PrintWriter(Files.newBufferedWriter(statsFilePath, fileOpenOpts))) {
 			final StatisticsWriter writer = new StatisticsWriter(out);

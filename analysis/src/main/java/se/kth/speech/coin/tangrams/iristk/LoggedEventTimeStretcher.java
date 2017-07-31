@@ -54,22 +54,22 @@ import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
  * @since Apr 29, 2017
  *
  */
-public final class LoggedEventTimeStretcher {
+final class LoggedEventTimeStretcher {
 
 	private enum Parameter implements Supplier<Option> {
-		FACTOR("f") {
-			@Override
-			public Option get() {
-				return Option.builder(optName).longOpt("factor").desc("The amount to stretch the times by.").hasArg()
-						.argName("value").required().build();
-			}
-		},
 		EVENT_SENDER_PATTERN("p") {
 			@Override
 			public Option get() {
 				return Option.builder(optName).longOpt("pattern")
 						.desc("A regular expression matching the sender ID of the events to change.").hasArg()
 						.argName("regex").required().build();
+			}
+		},
+		FACTOR("f") {
+			@Override
+			public Option get() {
+				return Option.builder(optName).longOpt("factor").desc("The amount to stretch the times by.").hasArg()
+						.argName("value").required().build();
 			}
 		},
 		HELP("?") {
@@ -108,7 +108,18 @@ public final class LoggedEventTimeStretcher {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(LoggedEventTimeStretcher.class);
 
-	public static void main(final CommandLine cl) throws IOException, ParseException {
+	public static void main(final String[] args) throws IOException {
+		final CommandLineParser parser = new DefaultParser();
+		try {
+			final CommandLine cl = parser.parse(Parameter.OPTIONS, args);
+			main(cl);
+		} catch (final ParseException e) {
+			System.out.println(String.format("An error occured while parsing the command-line arguments: %s", e));
+			Parameter.printHelp();
+		}
+	}
+
+	private static void main(final CommandLine cl) throws IOException, ParseException {
 		if (cl.hasOption(Parameter.HELP.optName)) {
 			Parameter.printHelp();
 		} else {
@@ -139,17 +150,6 @@ public final class LoggedEventTimeStretcher {
 				throw new IllegalArgumentException("No support for multiple inpaths (yet).");
 			}
 			}
-		}
-	}
-
-	public static void main(final String[] args) throws IOException {
-		final CommandLineParser parser = new DefaultParser();
-		try {
-			final CommandLine cl = parser.parse(Parameter.OPTIONS, args);
-			main(cl);
-		} catch (final ParseException e) {
-			System.out.println(String.format("An error occured while parsing the command-line arguments: %s", e));
-			Parameter.printHelp();
 		}
 	}
 

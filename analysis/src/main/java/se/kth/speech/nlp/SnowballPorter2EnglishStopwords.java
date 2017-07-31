@@ -87,37 +87,6 @@ public final class SnowballPorter2EnglishStopwords {
 	 * least they should be).
 	 *
 	 * @return A new {@Set} of (lowercase) strings representing the stoplist.
-	 */
-	public static Set<String> loadStopwordSet(final Collection<Variant> variantsToUnify) {
-		final String[] resLocs = variantsToUnify.stream().map(Variant::getResLoc).toArray(String[]::new);
-		try {
-			final List<String> words = loadStopwordList(resLocs);
-			final Set<String> result = Sets.newHashSetWithExpectedSize(words.size());
-			result.addAll(words);
-			LOGGER.info("Read stopword set of size {} from {}.", result.size(), Arrays.asList(resLocs));
-			return result;
-		} catch (final IOException e) {
-			throw new UncheckedIOException(e);
-		}
-	}
-
-	private static Stream<String> parse(final String line) {
-		final int commentStartIdx = line.indexOf(COMMENT_DELIM);
-		String content;
-		if (commentStartIdx < 0) {
-			content = line;
-		} else {
-			content = line.substring(0, commentStartIdx);
-		}
-		content = content.trim();
-		return content.isEmpty() ? Stream.empty() : Stream.of(content);
-	}
-
-	/**
-	 * <strong>NOTE:</strong> All words in the stoplist are lowercase (or at
-	 * least they should be).
-	 *
-	 * @return A new {@Set} of (lowercase) strings representing the stoplist.
 	 * @throws UncheckedIOException
 	 *             If an error occurs while reading the stoplist file.
 	 */
@@ -182,6 +151,37 @@ public final class SnowballPorter2EnglishStopwords {
 		load(resLoc, result);
 		LOGGER.info("Read stopword set of size {} from \"{}\".", result.size(), resLoc);
 		return result;
+	}
+
+	private static Stream<String> parse(final String line) {
+		final int commentStartIdx = line.indexOf(COMMENT_DELIM);
+		String content;
+		if (commentStartIdx < 0) {
+			content = line;
+		} else {
+			content = line.substring(0, commentStartIdx);
+		}
+		content = content.trim();
+		return content.isEmpty() ? Stream.empty() : Stream.of(content);
+	}
+
+	/**
+	 * <strong>NOTE:</strong> All words in the stoplist are lowercase (or at
+	 * least they should be).
+	 *
+	 * @return A new {@Set} of (lowercase) strings representing the stoplist.
+	 */
+	static Set<String> loadStopwordSet(final Collection<Variant> variantsToUnify) {
+		final String[] resLocs = variantsToUnify.stream().map(Variant::getResLoc).toArray(String[]::new);
+		try {
+			final List<String> words = loadStopwordList(resLocs);
+			final Set<String> result = Sets.newHashSetWithExpectedSize(words.size());
+			result.addAll(words);
+			LOGGER.info("Read stopword set of size {} from {}.", result.size(), Arrays.asList(resLocs));
+			return result;
+		} catch (final IOException e) {
+			throw new UncheckedIOException(e);
+		}
 	}
 
 	private SnowballPorter2EnglishStopwords() {

@@ -38,7 +38,7 @@ import edu.stanford.nlp.pipeline.Annotator;
  * @since Apr 14, 2017
  *
  */
-public abstract class AbstractTokenizer implements Function<String, List<String>> {
+abstract class AbstractTokenizer implements Function<String, List<String>> {
 
 	private static final ConcurrentMap<StanfordCoreNLPConfigurationVariant, Reference<LoadingCache<String, Annotation>>> CONFIG_CACHES = new ConcurrentHashMap<>(
 			StanfordCoreNLPConfigurationVariant.values().length);
@@ -80,7 +80,7 @@ public abstract class AbstractTokenizer implements Function<String, List<String>
 
 	private final LoadingCache<String, Annotation> cache;
 
-	public AbstractTokenizer(final StanfordCoreNLPConfigurationVariant annotConfig) {
+	AbstractTokenizer(final StanfordCoreNLPConfigurationVariant annotConfig) {
 		cache = fetchCache(annotConfig);
 	}
 

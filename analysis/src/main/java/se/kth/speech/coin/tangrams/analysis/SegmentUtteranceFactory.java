@@ -40,7 +40,7 @@ import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
 import se.kth.speech.hat.xsd.Transcription;
 import se.kth.speech.hat.xsd.Transcription.T;
 
-public final class SegmentUtteranceFactory {
+final class SegmentUtteranceFactory {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SegmentUtteranceFactory.class);
 
@@ -65,11 +65,7 @@ public final class SegmentUtteranceFactory {
 		}
 	}
 
-	private static int estimateTokenCount(final List<Object> children) {
-		return Math.max(children.size(), 16);
-	}
-
-	static void addSegmentTokens(final ArrayList<? super T> tokens, final Collection<Object> children) {
+	private static void addSegmentTokens(final ArrayList<? super T> tokens, final Collection<Object> children) {
 		tokens.ensureCapacity(tokens.size() + children.size());
 		for (final Object child : children) {
 			if (child instanceof Segment) {
@@ -80,13 +76,17 @@ public final class SegmentUtteranceFactory {
 		}
 	}
 
-	static void addSegmentTokens(final ArrayList<? super T> tokens, final Segment segment) {
+	private static void addSegmentTokens(final ArrayList<? super T> tokens, final Segment segment) {
 		final Transcription transcription = segment.getTranscription();
 		if (transcription == null) {
 			LOGGER.warn("Segment ID \"{}\" has no {} element.", segment.getId(), Transcription.class.getSimpleName());
 		} else {
 			addSegmentTokens(tokens, transcription.getSegmentOrT());
 		}
+	}
+
+	private static int estimateTokenCount(final List<Object> children) {
+		return Math.max(children.size(), 16);
 	}
 
 	static List<T> createSegmentTokenList(final Segment segment) {
@@ -113,11 +113,11 @@ public final class SegmentUtteranceFactory {
 
 	private final Function<? super Segment, String> segmentSpeakerIdFactory;
 
-	public SegmentUtteranceFactory(final Function<? super Segment, String> segmentSpeakerIdFactory) {
+	SegmentUtteranceFactory(final Function<? super Segment, String> segmentSpeakerIdFactory) {
 		this.segmentSpeakerIdFactory = segmentSpeakerIdFactory;
 	}
 
-	public List<Utterance> create(final Segment segment) {
+	List<Utterance> create(final Segment segment) {
 		final List<Utterance> result = new ArrayList<>(1);
 		final Transcription transcription = segment.getTranscription();
 		if (transcription == null) {
@@ -162,7 +162,7 @@ public final class SegmentUtteranceFactory {
 		return result;
 	}
 
-	public Stream<List<Utterance>> create(final Stream<Segment> segments) {
+	Stream<List<Utterance>> create(final Stream<Segment> segments) {
 		return segments.sorted(TEMPORAL_SEGMENT_COMPARATOR).map(this::create);
 	}
 

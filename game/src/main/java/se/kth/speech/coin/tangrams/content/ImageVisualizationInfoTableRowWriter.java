@@ -150,7 +150,7 @@ public final class ImageVisualizationInfoTableRowWriter {
 		colorInfoWriter.append(datum.getColor());
 	}
 
-	public void writeHeader() throws IOException {
+	void writeHeader() throws IOException {
 		final List<List<String>> headers = createColumnHeaders();
 		final String headerStr = headers.stream().map(header -> header.stream().collect(TABLE_ROW_CELL_JOINER))
 				.collect(TABLE_ROW_JOINER);

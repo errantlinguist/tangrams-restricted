@@ -33,9 +33,9 @@ import weka.core.Instances;
  */
 public final class WordClassificationData {
 
-	private final Map<String, Instances> classInsts;
-
 	private final Function<String, Instances> classInstancesFetcher;
+
+	private final Map<String, Instances> classInsts;
 
 	private final Object2IntMap<String> classObservationCounts;
 
@@ -50,10 +50,6 @@ public final class WordClassificationData {
 
 		trainingInstanceCounts = new Object2IntOpenHashMap<>(2);
 		trainingInstanceCounts.defaultReturnValue(0);
-	}
-
-	public Instances fetchWordInstances(final String wordClass) {
-		return classInstancesFetcher.apply(wordClass);
 	}
 
 	/**
@@ -86,6 +82,10 @@ public final class WordClassificationData {
 			trainingInstanceCounts.put(classValue, trainingInstanceCounts.getInt(classValue) + 1);
 		});
 		classObservationCounts.put(wordClass, classObservationCounts.getInt(wordClass) + 1);
+	}
+
+	Instances fetchWordInstances(final String wordClass) {
+		return classInstancesFetcher.apply(wordClass);
 	}
 
 }

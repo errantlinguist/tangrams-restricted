@@ -39,11 +39,11 @@ import se.kth.speech.io.RelativePaths;
  * @since 4 May 2017
  *
  */
-public final class PlayerDataManager {
+final class PlayerDataManager {
 
 	private static final Pattern PLAYER_PROP_NAME_PATTERN = Pattern.compile("player\\.([^\\.]+)\\.(.+)");
 
-	public static PlayerDataManager create(final Properties props, final Path baseDir) {
+	static PlayerDataManager create(final Properties props, final Path baseDir) {
 		final Set<Entry<Object, Object>> propsEntries = props.entrySet();
 		final BiMap<String, String> playerIds = HashBiMap.create(propsEntries.size());
 		final BiMap<String, String> sourceIds = HashBiMap.create(propsEntries.size());
@@ -103,7 +103,7 @@ public final class PlayerDataManager {
 
 	private final BiMap<String, String> playerSourceIds;
 
-	public PlayerDataManager(final BiMap<String, String> playerSourceIds, final Map<String, Path> playerEventLogs) {
+	private PlayerDataManager(final BiMap<String, String> playerSourceIds, final Map<String, Path> playerEventLogs) {
 		this.playerSourceIds = Maps.unmodifiableBiMap(playerSourceIds);
 		this.playerEventLogs = Collections.unmodifiableMap(playerEventLogs);
 	}
