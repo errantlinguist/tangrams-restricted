@@ -106,10 +106,10 @@ public final class SessionEventDialogueManager {
 
 	SessionEventDialogueManager(final SessionDataManager sessionData,
 			final BiFunction<ListIterator<Utterance>, GameHistory, Stream<EventDialogue>> eventDiagFactory)
-			throws IOException {
+			throws IOException, JAXBException {
 		idGameHistory = loadGameHistory(sessionData.getCanonicalEventLogPath());
 
-		final Supplier<List<EventDialogue>> uttDialogueFactory = () -> {
+		{
 			final Map<String, String> sourcePlayerIds = sessionData.getPlayerData().getPlayerSourceIds().inverse();
 			final SegmentUtteranceFactory segUttFactory = new SegmentUtteranceFactory(seg -> {
 				final String sourceId = seg.getSource();
@@ -117,17 +117,11 @@ public final class SessionEventDialogueManager {
 			});
 			final Path hatInfilePath = sessionData.getHATFilePath();
 			LOGGER.info("Reading annotations from \"{}\".", hatInfilePath);
-			try {
-				final Unmarshaller unmarshaller = HatIO.fetchContext().createUnmarshaller();
-				final Annotation uttAnnots = (Annotation) unmarshaller.unmarshal(hatInfilePath.toFile());
-				return Collections.unmodifiableList(
-						Arrays.asList(new EventDialogueCreatingClosure(uttAnnots, idGameHistory.getValue(),
-								segUttFactory, eventDiagFactory).get().toArray(EventDialogue[]::new)));
-			} catch (final JAXBException jaxBE) {
-				throw new RuntimeException(jaxBE);
-			}
-		};
-		uttDialogues = uttDialogueFactory.get();
+			final Unmarshaller unmarshaller = HatIO.fetchContext().createUnmarshaller();
+			final Annotation uttAnnots = (Annotation) unmarshaller.unmarshal(hatInfilePath.toFile());
+			uttDialogues = Collections.unmodifiableList(Arrays.asList(new EventDialogueCreatingClosure(uttAnnots,
+					idGameHistory.getValue(), segUttFactory, eventDiagFactory).get().toArray(EventDialogue[]::new)));
+		}
 	}
 
 	public GameHistory getGameHistory() {
