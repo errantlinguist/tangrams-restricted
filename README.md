@@ -12,7 +12,7 @@ A game for organizing tangrams in the fewest number of moves using two players. 
 
 ## To do
 
-* Add feature for measuring the similarity of two models (e.g. one seeded for "1" vs. one seeded for "2")
+* Add feature for measuring the similarity of two game models, i.e. the similarity of the initial state of two different games (e.g. one seeded for "1" vs. one seeded for "2")
 * Add timer which stops the game (and recording) after e.g. 15 minutes
 * Add "submission\_time" attr to each game event so that *that* timestamp can be used instead of the "event\_time" attr, which is actually the time the client received the event (thereby adding a degree of lag)
 * Add error handling for re-sending an event if the connection is lost (e.g. implement an "event received" event reply which the sending client waits for)
