@@ -309,8 +309,8 @@ public class Record implements Cloneable {
 					}
 				}
 			} else if (field.equals("*")) {
-				for (String f : dynamicFields.keySet()) {
-					dynamicFields.put(f, value);
+				for (final Map.Entry<String,Object> dynamicFieldVal : dynamicFields.entrySet()) {
+					dynamicFieldVal.setValue(value);
 				}
 			} else {
 				RecordInfo info = getRecordInfo();
