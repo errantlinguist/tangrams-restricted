@@ -41,10 +41,6 @@ public final class IntArrays {
 		return c;
 	}
 
-	public static int[] copy(final int[] arr) {
-		return Arrays.copyOf(arr, arr.length);
-	}
-
 	public static void mutate(final int[] mutand, final int[] applicand, final IntBinaryOperator operator) {
 		final int minDimCount = Math.min(mutand.length, mutand.length);
 		for (int i = 0; i < minDimCount; ++i) {
