@@ -70,7 +70,6 @@ import javafx.util.converter.LocalDateTimeStringConverter;
  * <p> There are also convenience functions for getting a value of the right type. For example, {@code myRecord.getInt("foo:bar")} will try to convert the value to an Integer. If this fails the method will return null.
  * <p> Using kleen stars (*), it is also possible to search the hierarchy using the {@code has()} method. Thus, {@code myRecord.has("*:bar")} will return true.   
  *  */
-
 @SuppressWarnings("restriction")
 public class Record implements Cloneable {
 	
