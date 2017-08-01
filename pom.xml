@@ -84,6 +84,7 @@
 			<dependency>
 				<groupId>com.eclipsesource.minimal-json</groupId>
 				<artifactId>minimal-json</artifactId>
+				<!-- NOTE: IrisTK actually uses 0.9.3 but that version isn't publicly available anymore -->
 				<version>0.9.4</version>
 			</dependency>
 			<dependency>

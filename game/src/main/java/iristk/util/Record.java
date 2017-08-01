@@ -10,7 +10,14 @@
  ******************************************************************************/
 package iristk.util;
 
-import static iristk.util.Converters.*;
+import static iristk.util.Converters.asBoolean;
+import static iristk.util.Converters.asDouble;
+import static iristk.util.Converters.asFloat;
+import static iristk.util.Converters.asInteger;
+import static iristk.util.Converters.asList;
+import static iristk.util.Converters.asRecord;
+import static iristk.util.Converters.asString;
+import static iristk.util.Converters.asType;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -45,7 +52,6 @@ import java.util.concurrent.ConcurrentMap;
 
 import org.apache.commons.io.IOUtils;
 
-import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonArray;
 import com.eclipsesource.json.JsonObject;
 import com.eclipsesource.json.JsonValue;
@@ -448,7 +454,7 @@ public class Record implements Cloneable {
 		return asRecord(get(field));
 	}
 
-	public List<Object> getList(String field) {
+	public List<?> getList(String field) {
 		return asList(get(field));
 	}
 
@@ -649,7 +655,8 @@ public class Record implements Cloneable {
 	 */
 	public static Record fromJSON(String string) throws JsonToRecordException {
 		try {
-			JsonObject jsonObject = Json.parse(string).asObject();
+			@SuppressWarnings("deprecation")
+			JsonObject jsonObject = JsonObject.readFrom(string);
 			return parseJsonObject(jsonObject);
 		} catch (ParseException e) {
 			throw new JsonToRecordException(e.getMessage());
@@ -658,7 +665,8 @@ public class Record implements Cloneable {
 	
 	public static Object fromJSONValue(String string) throws JsonToRecordException {
 		try {
-			JsonValue json = Json.parse(string).asObject();
+			@SuppressWarnings("deprecation")
+			JsonValue json = JsonObject.readFrom(string);
 			return parseJsonValue(json);
 		} catch (ParseException e) {
 			throw new JsonToRecordException(e.getMessage());
@@ -731,7 +739,7 @@ public class Record implements Cloneable {
 		} else if (value.isArray()) {
 			JsonArray ja = value.asArray();
 			final int arraySize = ja.size();
-			ArrayList<Object> array = new ArrayList<Object>(arraySize);
+			ArrayList<Object> array = new ArrayList<>(arraySize);
 			for (int i = 0; i < arraySize; i++) {
 				array.add(parseJsonValue(ja.get(i)));
 			}
@@ -1010,7 +1018,7 @@ public class Record implements Cloneable {
 		}
 	}
 
-	public List<Object> getValues() {
+	public List<?> getValues() {
 		Set<String> fieldNames = getFields();
 		ArrayList<Object> values = new ArrayList<>(fieldNames.size());
 		for (String field : fieldNames) {
