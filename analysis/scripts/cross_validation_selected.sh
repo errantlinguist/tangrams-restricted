@@ -4,10 +4,10 @@ CLASSPATH="target/analysis-0.0.1-SNAPSHOT-jar-with-dependencies.jar"
 HEAP_SIZE="5120m"
 MAIN_CLASS="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.CombiningBatchJobTestSingleFileWriter"
 
-USAGE_MSG="Usage: $0 INPATH OUTDIR"
+usage_msg="Usage: $0 INPATH OUTDIR"
 
-inpath="${1?"${USAGE_MSG}"}"
-outdir="${2?"${USAGE_MSG}"}"
+inpath="${1?"${usage_msg}"}"
+outdir="${2?"${usage_msg}"}"
 
 # https://stackoverflow.com/a/3466183/1391325
 case `uname -s` in
