@@ -20,15 +20,15 @@ then
 else
 	script_name="${0##*/}"
 	# http://mywiki.wooledge.org/BashFAQ/028#Using_PWD
-	if [ -f "./${script_name}" ]
+	if [ -f "${SCRIPTS_DIR_NAME}/${script_name}" ]
 	then
-		# PWD is the scripts directory; Go one level up
-		cd ..
+		# PWD is correct
 		exit_code=0
 	else
-		if [ -f "${SCRIPTS_DIR_NAME}/${script_name}" ]
+		if [ -f "./${script_name}" ]
 		then
-			# PWD is correct
+			# PWD is the scripts directory; Go one level up
+			cd ..
 			exit_code=0
 		else
 			echo "Current working directory must be the base project directory, i.e. parent to the directory \"${SCRIPTS_DIR_NAME}\".
