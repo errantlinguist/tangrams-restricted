@@ -26,4 +26,4 @@ IF /I "%arg_count%" EQU "2" (
 	set /A exit_code=160
 )
 
-exit /b %exit_code%
+exit /B %exit_code%
