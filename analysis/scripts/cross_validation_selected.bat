@@ -38,5 +38,4 @@ if exist "%CLASSPATH_JARFILE%" (
 	set /A exit_status=%EXIT_USAGE%
 )
 
-endlocal
-exit /B %exit_status%
+exit /B !exit_status!
