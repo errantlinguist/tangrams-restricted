@@ -30,7 +30,6 @@ if exist "%CLASSPATH_JARFILE%" (
 		set /A exit_status=!ERRORLEVEL!
 	) else (
 		echo %usage_msg%
-		rem https://msdn.microsoft.com/en-us/library/windows/desktop/ms681382(v=vs.85).aspx#ERROR_BAD_ARGUMENTS
 		set /A exit_status=%EXIT_USAGE%
 	)
 ) else (
