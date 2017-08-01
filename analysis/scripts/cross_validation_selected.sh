@@ -4,8 +4,6 @@ CLASSPATH="target/analysis-0.0.1-SNAPSHOT-jar-with-dependencies.jar"
 HEAP_SIZE="5120m"
 MAIN_CLASS="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.CombiningBatchJobTestSingleFileWriter"
 
-exit_code=1
-
 USAGE_MSG="Usage: $0 INPATH OUTDIR"
 
 inpath="${1?"${USAGE_MSG}"}"
