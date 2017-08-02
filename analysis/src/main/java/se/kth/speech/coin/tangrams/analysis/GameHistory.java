@@ -24,10 +24,16 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Stream;
 
+import com.google.common.collect.Lists;
+
 import iristk.system.Event;
 import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
 
 public final class GameHistory {
+
+	private static Stream<Event> getEventsDescendingOrder(final NavigableMap<?, ? extends List<Event>> map) {
+		return map.descendingMap().values().stream().map(Lists::reverse).flatMap(List::stream);
+	}
 
 	private final NavigableMap<LocalDateTime, List<Event>> events = new TreeMap<>();
 
@@ -89,12 +95,22 @@ public final class GameHistory {
 	}
 
 	/**
-	 * 
+	 *
 	 * @return A {@link Stream} of all {@link Event events}, in the sequence
 	 *         they occurred in the game.
 	 */
 	public Stream<Event> getEventSequence() {
 		return getEvents().values().stream().flatMap(List::stream);
+	}
+
+	/**
+	 *
+	 * @return A {@link Stream} of all {@link Event events}, in descending order
+	 *         according to the time they occurred, i.e.&nbsp; The last event
+	 *         appears first in the returned {@code Stream}.
+	 */
+	public Stream<Event> getEventSequenceDescendingOrder() {
+		return getEventsDescendingOrder(getEvents());
 	}
 
 	/**
