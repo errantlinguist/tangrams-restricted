@@ -172,7 +172,7 @@ final class UtteranceSelectedEntityDescriptionWriter {
 
 		/*
 		 * (non-Javadoc)
-		 * 
+		 *
 		 * @see java.lang.ThreadLocal#initialValue()
 		 */
 		@Override
@@ -233,6 +233,21 @@ final class UtteranceSelectedEntityDescriptionWriter {
 		}
 		final String fileBaseName = FileNames.splitBase(inpath.getFileName().toString())[0];
 		return parentDirName + "-" + fileBaseName;
+	}
+
+	private static List<Utterance> createUtteranceList(final SessionDataManager sessionData)
+			throws JAXBException, IOException {
+		final PlayerDataManager playerData = sessionData.getPlayerData();
+		final Map<String, String> sourcePlayerIds = playerData.getPlayerSourceIds().inverse();
+		final SegmentUtteranceFactory segUttFactory = new SegmentUtteranceFactory(seg -> {
+			final String sourceId = seg.getSource();
+			return sourcePlayerIds.get(sourceId);
+		});
+		final Path hatInfilePath = sessionData.getHATFilePath();
+		LOGGER.info("Reading HAT annotations at \"{}\".", hatInfilePath);
+		final Annotation uttAnnots = readAnnotations(hatInfilePath);
+		final List<Segment> segs = uttAnnots.getSegments().getSegment();
+		return Arrays.asList(segUttFactory.create(segs.stream()).flatMap(List::stream).toArray(Utterance[]::new));
 	}
 
 	private static UtteranceSelectedEntityDescriptionWriter createWriter(final Path outpath,
@@ -388,42 +403,29 @@ final class UtteranceSelectedEntityDescriptionWriter {
 		final EntityFeatureExtractionContextFactory extractionContextFactory = new EntityFeatureExtractionContextFactory(
 				new GameContextModelFactory(uniqueModelDescriptionCount), new ImageEdgeCounter());
 
-		final Map<String, String> sourcePlayerIds = playerData.getPlayerSourceIds().inverse();
-		final SegmentUtteranceFactory segUttFactory = new SegmentUtteranceFactory(seg -> {
-			final String sourceId = seg.getSource();
-			return sourcePlayerIds.get(sourceId);
-		});
+		final boolean outdirAlreadyExists = Files.exists(outdir);
+		final Path extantOutdir = Files.createDirectories(outdir);
+		if (!outdirAlreadyExists) {
+			LOGGER.info("Created output directory \"{}\".", extantOutdir);
+		}
 
-		final Path hatInfilePath = sessionData.getHATFilePath();
+		final List<Utterance> utts = createUtteranceList(sessionData);
+		for (final String gameId : playerGameIdIntersection) {
+			LOGGER.debug("Processing game \"{}\".", gameId);
+			final Map<String, GameHistory> playerHistories = gamePlayerHistoryTable.row(gameId);
 
-		{
-			final Annotation uttAnnots = readAnnotations(hatInfilePath);
-			final List<Segment> segs = uttAnnots.getSegments().getSegment();
-			final List<Utterance> utts = Arrays
-					.asList(segUttFactory.create(segs.stream()).flatMap(List::stream).toArray(Utterance[]::new));
-
-			final boolean outdirAlreadyExists = Files.exists(outdir);
-			final Path extantOutdir = Files.createDirectories(outdir);
-			if (!outdirAlreadyExists) {
-				LOGGER.info("Created output directory \"{}\".", extantOutdir);
-			}
-			for (final String gameId : playerGameIdIntersection) {
-				LOGGER.debug("Processing game \"{}\".", gameId);
-				final Map<String, GameHistory> playerHistories = gamePlayerHistoryTable.row(gameId);
-
-				final UtteranceTabularDataWriter gameWriter = new UtteranceTabularDataWriter(utts,
-						new PlayerGameContextFactory(playerHistories::get), extractor, featuresToDescribe,
-						extractionContextFactory, strict);
-				for (final Entry<String, GameHistory> playerHistory : playerHistories.entrySet()) {
-					final String playerId = playerHistory.getKey();
-					final GameHistory history = playerHistory.getValue();
-					final Path outfilePath = extantOutdir
-							.resolve(outfileNamePrefix + "_GAME-" + gameId + "_LOG-" + playerId + ".tsv");
-					LOGGER.info("Writing utterances from perspective of \"{}\" to \"{}\".", playerId, outfilePath);
-					try (BufferedWriter writer = Files.newBufferedWriter(outfilePath, StandardOpenOption.CREATE,
-							StandardOpenOption.TRUNCATE_EXISTING)) {
-						gameWriter.write(playerId, history, writer);
-					}
+			final UtteranceTabularDataWriter gameWriter = new UtteranceTabularDataWriter(utts,
+					new PlayerGameContextFactory(playerHistories::get), extractor, featuresToDescribe,
+					extractionContextFactory, strict);
+			for (final Entry<String, GameHistory> playerHistory : playerHistories.entrySet()) {
+				final String playerId = playerHistory.getKey();
+				final GameHistory history = playerHistory.getValue();
+				final Path outfilePath = extantOutdir
+						.resolve(outfileNamePrefix + "_GAME-" + gameId + "_LOG-" + playerId + ".tsv");
+				LOGGER.info("Writing utterances from perspective of \"{}\" to \"{}\".", playerId, outfilePath);
+				try (BufferedWriter writer = Files.newBufferedWriter(outfilePath, StandardOpenOption.CREATE,
+						StandardOpenOption.TRUNCATE_EXISTING)) {
+					gameWriter.write(playerId, history, writer);
 				}
 			}
 		}
