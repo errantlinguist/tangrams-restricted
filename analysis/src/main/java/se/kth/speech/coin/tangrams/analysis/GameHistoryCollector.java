@@ -48,10 +48,10 @@ public final class GameHistoryCollector
 
 	private static class Accumulator implements BiConsumer<Map<String, GameHistory>, Event> {
 
+		private static final String GAME_END_EVENT_NAME = "monitor.system.disconnected";
+
 		private static final Set<GameManagementEvent> IGNORED_EVENT_TYPES = EnumSet
 				.of(GameManagementEvent.PLAYER_JOIN_REQUEST, GameManagementEvent.PLAYER_JOIN_RESPONSE);
-
-		private static final String GAME_END_EVENT_NAME = "monitor.system.disconnected";
 
 		/*
 		 * (non-Javadoc)
@@ -201,9 +201,9 @@ public final class GameHistoryCollector
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(GameHistoryCollector.class);
 
-	private final Supplier<Map<String, GameHistory>> supplier;
-
 	private final Accumulator accumulator;
+
+	private final Supplier<Map<String, GameHistory>> supplier;
 
 	public GameHistoryCollector(final Supplier<Map<String, GameHistory>> supplier) {
 		this.supplier = supplier;
