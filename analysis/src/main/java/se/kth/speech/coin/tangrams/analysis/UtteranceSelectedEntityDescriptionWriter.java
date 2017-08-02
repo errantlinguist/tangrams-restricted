@@ -272,6 +272,12 @@ final class UtteranceSelectedEntityDescriptionWriter {
 		}
 	}
 
+	private static Annotation readAnnotations(final Path hatInfilePath) throws JAXBException, IOException {
+		try (InputStream instream = Files.newInputStream(hatInfilePath)) {
+			return (Annotation) HatIO.fetchContext().createUnmarshaller().unmarshal(instream);
+		}
+	}
+
 	private static void runInteractively() throws IOException {
 		LookAndFeels.setLookAndFeel();
 		final Settings settings = loadClassSettings();
@@ -372,10 +378,7 @@ final class UtteranceSelectedEntityDescriptionWriter {
 		final Path hatInfilePath = sessionData.getHATFilePath();
 
 		{
-			Annotation uttAnnots = null;
-			try (InputStream instream = Files.newInputStream(hatInfilePath)) {
-				uttAnnots = (Annotation) HatIO.fetchContext().createUnmarshaller().unmarshal(instream);
-			}
+			final Annotation uttAnnots = readAnnotations(hatInfilePath);
 			final List<Segment> segs = uttAnnots.getSegments().getSegment();
 			final List<Utterance> utts = Arrays
 					.asList(segUttFactory.create(segs.stream()).flatMap(List::stream).toArray(Utterance[]::new));
