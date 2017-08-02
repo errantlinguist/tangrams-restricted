@@ -46,10 +46,12 @@ import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
 public final class GameHistoryCollector
 		implements Collector<Event, Map<String, GameHistory>, Map<String, GameHistory>> {
 
-	private static final BiConsumer<Map<String, GameHistory>, Event> ACCUMULATOR = new BiConsumer<Map<String, GameHistory>, Event>() {
+	private static class Accumulator implements BiConsumer<Map<String, GameHistory>, Event> {
 
-		private final Set<GameManagementEvent> ignoredEventTypes = EnumSet.of(GameManagementEvent.PLAYER_JOIN_REQUEST,
-				GameManagementEvent.PLAYER_JOIN_RESPONSE);
+		private static final Set<GameManagementEvent> IGNORED_EVENT_TYPES = EnumSet
+				.of(GameManagementEvent.PLAYER_JOIN_REQUEST, GameManagementEvent.PLAYER_JOIN_RESPONSE);
+
+		private static final String GAME_END_EVENT_NAME = "monitor.system.disconnected";
 
 		/*
 		 * (non-Javadoc)
@@ -62,9 +64,17 @@ public final class GameHistoryCollector
 			final String eventName = event.getName();
 			final GameManagementEvent gameEventType = GameManagementEvent.getEventType(eventName);
 			if (gameEventType == null) {
-				// The broker event is not a relevant tangrams game event;
-				// Ignore it
-				LOGGER.debug("Ignoring broker event named \"{}\".", eventName);
+				if (GAME_END_EVENT_NAME.equals(eventName)) {
+					final String time = event.getTime();
+					LOGGER.debug("Found end-game event sent at {}.", time);
+					// final LocalDateTime timestamp =
+					// EventTimes.parseEventTime(time);
+					// TODO: Add a "gameEnd" attribute to GameHistory class
+				} else {
+					// The broker event is not a relevant tangrams game event;
+					// Ignore it
+					LOGGER.debug("Ignoring broker event named \"{}\".", eventName);
+				}
 			} else {
 				final String time = event.getTime();
 				LOGGER.debug("Found {} sent at \"{}\".", event.getClass().getSimpleName(), time);
@@ -76,7 +86,7 @@ public final class GameHistoryCollector
 
 		private void accept(final Map<String, GameHistory> gameHistories, final String gameId, final LocalDateTime time,
 				final GameManagementEvent gameEventType, final Event event) {
-			if (ignoredEventTypes.contains(gameEventType)) {
+			if (IGNORED_EVENT_TYPES.contains(gameEventType)) {
 				LOGGER.debug("Ignored event of type {} sent at \"{}\".", gameEventType, time);
 			} else {
 				switch (gameEventType) {
@@ -134,7 +144,7 @@ public final class GameHistoryCollector
 				return result;
 			});
 		}
-	};
+	}
 
 	private static final Set<Characteristics> CHARACTERISTICS = EnumSet.of(Characteristics.UNORDERED,
 			Characteristics.IDENTITY_FINISH);
@@ -193,8 +203,11 @@ public final class GameHistoryCollector
 
 	private final Supplier<Map<String, GameHistory>> supplier;
 
+	private final Accumulator accumulator;
+
 	public GameHistoryCollector(final Supplier<Map<String, GameHistory>> supplier) {
 		this.supplier = supplier;
+		accumulator = new Accumulator();
 	}
 
 	/*
@@ -204,7 +217,7 @@ public final class GameHistoryCollector
 	 */
 	@Override
 	public BiConsumer<Map<String, GameHistory>, Event> accumulator() {
-		return ACCUMULATOR;
+		return accumulator;
 	}
 
 	/*
