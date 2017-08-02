@@ -48,7 +48,9 @@ public final class EventDialogueFactory // NO_UCD (use default)
 
 	private final Predicate<? super Event> dialogueEventDelimiter;
 
-	public EventDialogueFactory(final Predicate<? super Event> dialogueEventDelimiter) { // NO_UCD (use default)
+	public EventDialogueFactory(final Predicate<? super Event> dialogueEventDelimiter) { // NO_UCD
+																							// (use
+																							// default)
 		this.dialogueEventDelimiter = dialogueEventDelimiter;
 	}
 
@@ -92,6 +94,9 @@ public final class EventDialogueFactory // NO_UCD (use default)
 		while (utts.hasNext()) {
 			lastEventUtts.add(utts.next());
 		}
+		// TODO: Don't use the last round in each session because it's full of
+		// junk language: In reality, the "last" round is the last round which
+		// the players successfully completed
 		resultBuilder.accept(new EventDialogue(Collections.singletonList(currentEvent), lastEventUtts));
 		return resultBuilder.build();
 	}
