@@ -75,6 +75,24 @@ public final class SessionEventDialogueManager {
 		}
 	}
 
+	private static final ThreadLocal<Unmarshaller> HAT_UNMARSHALLER = new ThreadLocal<Unmarshaller>() {
+
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see java.lang.ThreadLocal#initialValue()
+		 */
+		@Override
+		protected Unmarshaller initialValue() {
+			try {
+				return HatIO.fetchContext().createUnmarshaller();
+			} catch (final JAXBException e) {
+				throw new RuntimeException(e);
+			}
+		}
+
+	};
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(SessionEventDialogueManager.class);
 
 	private static Entry<String, GameHistory> loadGameHistory(final Path eventLogPath) throws IOException {
@@ -117,8 +135,7 @@ public final class SessionEventDialogueManager {
 			});
 			final Path hatInfilePath = sessionData.getHATFilePath();
 			LOGGER.info("Reading annotations from \"{}\".", hatInfilePath);
-			final Unmarshaller unmarshaller = HatIO.fetchContext().createUnmarshaller();
-			final Annotation uttAnnots = (Annotation) unmarshaller.unmarshal(hatInfilePath.toFile());
+			final Annotation uttAnnots = (Annotation) HAT_UNMARSHALLER.get().unmarshal(hatInfilePath.toFile());
 			uttDialogues = Collections.unmodifiableList(Arrays.asList(new EventDialogueCreatingClosure(uttAnnots,
 					idGameHistory.getValue(), segUttFactory, eventDiagFactory).get().toArray(EventDialogue[]::new)));
 		}
