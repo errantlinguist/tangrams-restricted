@@ -50,7 +50,7 @@ public final class HatIO {
 	public static JAXBContext fetchContext() {
 		JAXBContext result = jc.get();
 		if (result == null) {
-			synchronized (HatIO.class) {
+			synchronized (jc) {
 				result = jc.get();
 				if (result == null) {
 					try {

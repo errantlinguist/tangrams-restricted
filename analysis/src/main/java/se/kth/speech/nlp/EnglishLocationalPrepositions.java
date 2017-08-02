@@ -48,7 +48,7 @@ public final class EnglishLocationalPrepositions {
 	public static Set<List<String>> get() {
 		Set<List<String>> result = list.get();
 		if (result == null) {
-			synchronized (EnglishLocationalPrepositions.class) {
+			synchronized (list) {
 				result = list.get();
 				if (result == null) {
 					result = loadSet();
