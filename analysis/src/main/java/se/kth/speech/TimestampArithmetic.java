@@ -16,11 +16,8 @@
 */
 package se.kth.speech;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -28,14 +25,6 @@ import java.time.temporal.ChronoUnit;
  *
  */
 public final class TimestampArithmetic {
-
-	private static final BigDecimal NANOS_TO_SECS_DIVISOR = new BigDecimal("1000000000");
-
-	public static BigDecimal calculateOffset(final LocalDateTime start, final LocalDateTime end,
-			final RoundingMode roundingMode) {
-		final long nanosBetween = ChronoUnit.NANOS.between(start, end);
-		return new BigDecimal(nanosBetween).divide(NANOS_TO_SECS_DIVISOR, roundingMode);
-	}
 
 	public static LocalDateTime createOffsetTimestamp(final LocalDateTime augend, final double offsetSecs) {
 		final long wholePart = Math.round(Math.floor(offsetSecs));
