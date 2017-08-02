@@ -40,6 +40,7 @@ import java.util.function.Supplier;
 import javax.swing.JFileChooser;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.xml.bind.JAXBException;
+import javax.xml.bind.Unmarshaller;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -167,6 +168,24 @@ final class UtteranceSelectedEntityDescriptionWriter {
 
 	private static final List<FileNameExtensionFilter> FILE_FILTERS;
 
+	private static final ThreadLocal<Unmarshaller> HAT_UNMARSHALLER = new ThreadLocal<Unmarshaller>() {
+
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see java.lang.ThreadLocal#initialValue()
+		 */
+		@Override
+		protected Unmarshaller initialValue() {
+			try {
+				return HatIO.fetchContext().createUnmarshaller();
+			} catch (final JAXBException e) {
+				throw new RuntimeException(e);
+			}
+		}
+
+	};
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(UtteranceSelectedEntityDescriptionWriter.class);
 
 	private static final Path SETTINGS_DIR;
@@ -274,7 +293,7 @@ final class UtteranceSelectedEntityDescriptionWriter {
 
 	private static Annotation readAnnotations(final Path hatInfilePath) throws JAXBException, IOException {
 		try (InputStream instream = Files.newInputStream(hatInfilePath)) {
-			return (Annotation) HatIO.fetchContext().createUnmarshaller().unmarshal(instream);
+			return (Annotation) HAT_UNMARSHALLER.get().unmarshal(instream);
 		}
 	}
 
