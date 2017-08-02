@@ -57,7 +57,7 @@ public final class PatternMatchingUtteranceAcceptanceRanker implements ToDoubleF
 	private static Object2DoubleSortedMap<List<String>> fetchAcceptanceRanks() {
 		Object2DoubleSortedMap<List<String>> result = singletonAcceptanceRanksRef.get();
 		if (result == null) {
-			synchronized (singletonAcceptanceRanksRef) {
+			synchronized (PatternMatchingUtteranceAcceptanceRanker.class) {
 				result = singletonAcceptanceRanksRef.get();
 				if (result == null) {
 					result = loadAcceptanceRankMap();
