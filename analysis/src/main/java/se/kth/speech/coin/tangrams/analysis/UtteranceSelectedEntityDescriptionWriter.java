@@ -244,7 +244,7 @@ final class UtteranceSelectedEntityDescriptionWriter {
 			return sourcePlayerIds.get(sourceId);
 		});
 		final Path hatInfilePath = sessionData.getHATFilePath();
-		LOGGER.info("Reading HAT annotations at \"{}\".", hatInfilePath);
+		LOGGER.debug("Reading HAT annotations at \"{}\".", hatInfilePath);
 		final Annotation uttAnnots = readAnnotations(hatInfilePath);
 		final List<Segment> segs = uttAnnots.getSegments().getSegment();
 		return Arrays.asList(segUttFactory.create(segs.stream()).flatMap(List::stream).toArray(Utterance[]::new));
