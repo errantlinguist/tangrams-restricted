@@ -88,6 +88,11 @@ public final class GameHistory {
 		return Collections.unmodifiableNavigableMap(events);
 	}
 
+	/**
+	 * 
+	 * @return A {@link Stream} of all {@link Event events}, in the sequence
+	 *         they occurred in the game.
+	 */
 	public Stream<Event> getEventSequence() {
 		return getEvents().values().stream().flatMap(List::stream);
 	}
