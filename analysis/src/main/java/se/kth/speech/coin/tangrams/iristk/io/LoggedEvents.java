@@ -244,6 +244,53 @@ public final class LoggedEvents {
 
 	/**
 	 *
+	 * @param eventLogPath
+	 *            A {@link Path} to the logged events to parse, one on each
+	 *            line.
+	 * @return A new {@link Map} of game IDs to their respective
+	 *         {@link GameHistory histories}.
+	 * @throws IOException
+	 *             If an I/O error occurs while opening the file.
+	 */
+	public static Map<String, GameHistory> readGameHistories(final Path eventLogPath) throws IOException {
+		return readGameHistories(eventLogPath, DEFAULT_EVENT_FILTER);
+	}
+
+	/**
+	 *
+	 * @param eventLogPath
+	 *            A {@link Path} to the logged events to parse, one on each
+	 *            line.
+	 * @param eventFilter
+	 *            A positive (i.e.&nbsp;whitelisting) filter for the
+	 *            {@link Event events} to include.
+	 * @return A new {@link Map} of game IDs to their respective
+	 *         {@link GameHistory histories}.
+	 * @throws IOException
+	 *             IOException If an I/O error occurs while opening the file.
+	 */
+	public static Map<String, GameHistory> readGameHistories(final Path eventLogPath,
+			final Predicate<? super Event> eventFilter) throws IOException {
+		final Stream<String> lines = readLines(eventLogPath);
+		return parseGameHistories(lines, eventFilter);
+	}
+
+	/**
+	 *
+	 * @param eventLogPath
+	 *            A {@link Path} to the logged events to parse, one on each
+	 *            line.
+	 * @return The successfully-parsed {@link Event} instances.
+	 * @throws IOException
+	 *             If an I/O error occurs while opening the file.
+	 */
+	public static Stream<Event> readLoggedEvents(final Path eventLogPath) throws IOException {
+		final Stream<String> lines = readLines(eventLogPath);
+		return parseLoggedEvents(lines);
+	}
+
+	/**
+	 *
 	 * @param playerGameHistories
 	 *            A {@link Table}, with game ID as the row key and player ID as
 	 *            the column key, mapping to the relevant {@link GameHistory}
@@ -266,7 +313,7 @@ public final class LoggedEvents {
 			final String playerId = playerEventLogFilePath.getKey();
 			LOGGER.info("Reading session event log for player \"{}\".", playerId);
 			final Path eventLogFile = playerEventLogFilePath.getValue();
-			try (final Stream<String> lines = Files.lines(eventLogFile, LoggingFormats.ENCODING)) {
+			try (final Stream<String> lines = readLines(eventLogFile)) {
 				final Map<String, GameHistory> gameHistories = parseGameHistories(lines, eventFilter);
 				gameHistories.forEach((gameId, history) -> {
 					playerGameHistories.put(gameId, playerId, history);
@@ -281,6 +328,10 @@ public final class LoggedEvents {
 			GameStateDescriptions
 					.findAnyEquivalentGameState(gameHistories.map(GameHistory::getInitialState).iterator());
 		});
+	}
+
+	private static Stream<String> readLines(final Path eventLogPath) throws IOException {
+		return Files.lines(eventLogPath, Record.JSON_CHARSET);
 	}
 
 	private LoggedEvents() {

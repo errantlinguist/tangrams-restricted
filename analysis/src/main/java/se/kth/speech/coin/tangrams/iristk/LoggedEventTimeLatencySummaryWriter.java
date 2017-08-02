@@ -19,7 +19,6 @@ package se.kth.speech.coin.tangrams.iristk;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
@@ -182,8 +181,7 @@ final class LoggedEventTimeLatencySummaryWriter {
 	private static void run(final Path inpath, final Predicate<? super Event> evtFilter, final PrintWriter out)
 			throws IOException {
 		LOGGER.info("Reading event log data from \"{}\".", inpath);
-		final List<Event> events = Arrays
-				.asList(LoggedEvents.parseLoggedEvents(Files.lines(inpath)).toArray(Event[]::new));
+		final List<Event> events = Arrays.asList(LoggedEvents.readLoggedEvents(inpath).toArray(Event[]::new));
 		LOGGER.info("Read {} event(s) from file.", events.size());
 		events.sort(EVENT_TIME_COMPARATOR);
 

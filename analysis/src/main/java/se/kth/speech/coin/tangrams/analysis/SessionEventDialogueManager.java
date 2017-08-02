@@ -17,7 +17,6 @@
 package se.kth.speech.coin.tangrams.analysis;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collections;
@@ -98,7 +97,7 @@ public final class SessionEventDialogueManager {
 	private static Entry<String, GameHistory> loadGameHistory(final Path eventLogPath) throws IOException {
 		Entry<String, GameHistory> result;
 		LOGGER.info("Reading game histories from \"{}\".", eventLogPath);
-		final Map<String, GameHistory> gameHistories = LoggedEvents.parseGameHistories(Files.lines(eventLogPath),
+		final Map<String, GameHistory> gameHistories = LoggedEvents.readGameHistories(eventLogPath,
 				LoggedEvents.VALID_MODEL_MIN_REQUIRED_EVENT_MATCHER);
 		final int gameCount = gameHistories.size();
 		switch (gameCount) {

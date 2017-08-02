@@ -35,6 +35,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
+import java.nio.charset.Charset;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -72,6 +73,8 @@ import javafx.util.converter.LocalDateTimeStringConverter;
  *  */
 @SuppressWarnings("restriction")
 public class Record implements Cloneable {
+	
+	public static final Charset JSON_CHARSET = Utils.IO_CHARSET;
 	
 	private static final Object[] EMPTY_VARARGS_ARRAY = null;
 	
@@ -633,7 +636,7 @@ public class Record implements Cloneable {
 	}
 
 	public static Record fromJSON(URL resource) throws IOException, JsonToRecordException {
-		return fromJSON(IOUtils.toString(resource.openStream(), "UTF-8"));
+		return fromJSON(IOUtils.toString(resource.openStream(), JSON_CHARSET.name()));
 	}
 	
 	/**

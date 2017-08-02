@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.sql.Timestamp;
@@ -156,7 +155,7 @@ final class LoggedEventTimeStretcher {
 	private static void run(final Path inpath, final Predicate<? super Event> evtFilter, final BigDecimal stretchFactor,
 			final PrintWriter out) throws IOException {
 		LOGGER.info("Reading event log data from \"{}\".", inpath);
-		final Stream<Event> events = LoggedEvents.parseLoggedEvents(Files.lines(inpath));
+		final Stream<Event> events = LoggedEvents.readLoggedEvents(inpath);
 		LOGGER.info("Stretching logged events by a factor of {}.", stretchFactor);
 		final Stream<Event> shiftedEvents = events.map(event -> {
 			if (evtFilter.test(event)) {

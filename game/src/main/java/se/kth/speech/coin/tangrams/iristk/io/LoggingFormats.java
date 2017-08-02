@@ -16,8 +16,6 @@
 */
 package se.kth.speech.coin.tangrams.iristk.io;
 
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 
 /**
@@ -40,8 +38,6 @@ public final class LoggingFormats {
 		}
 
 	};
-
-	public static final Charset ENCODING = StandardCharsets.UTF_8;
 
 	public static final ThreadLocal<SimpleDateFormat> TIME_FORMAT = new ThreadLocal<SimpleDateFormat>() {
 

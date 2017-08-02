@@ -18,7 +18,6 @@ package se.kth.speech.coin.tangrams.analysis;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.EnumSet;
@@ -59,7 +58,7 @@ import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
  *
  */
 final class SegmentTimedUtteranceWriter {
-	
+
 	private enum Parameter implements Supplier<Option> {
 		EVENT_LOG(EVENT_LOG_OPT_NAME) {
 			@Override
@@ -187,12 +186,12 @@ final class SegmentTimedUtteranceWriter {
 
 	private static LocalDateTime parseInitialTime(final Path eventLogFilePath) throws IOException {
 		LOGGER.info("Reading log at \"{}\" to find timestamp.", eventLogFilePath);
-		return EventTimes.parseEventTime(LoggedEvents.parseLoggedEvents(Files.lines(eventLogFilePath))
+		return EventTimes.parseEventTime(LoggedEvents.readLoggedEvents(eventLogFilePath)
 				.filter(INITIAL_EVENT_PREDICATE).findFirst().get().getTime());
 	}
 
-	private SegmentTimedUtteranceWriter(){
-		
+	private SegmentTimedUtteranceWriter() {
+
 	}
 
 }
