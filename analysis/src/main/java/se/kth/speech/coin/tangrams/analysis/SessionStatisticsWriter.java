@@ -120,7 +120,7 @@ final class SessionStatisticsWriter {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SessionStatisticsWriter.class);
 
-	private static final MathContext MEAN_DIV_CTX = MathContext.DECIMAL64;
+	private static final MathContext MEAN_DIVISION_CTX = MathContext.DECIMAL64;
 
 	private static final BigDecimal NANOS_TO_SECS_DIVISOR = new BigDecimal("1000000000");
 
@@ -302,11 +302,11 @@ final class SessionStatisticsWriter {
 			final BigDecimal gameSessionCount = new BigDecimal(getGameSummaries(sessionSummaries).count());
 			final BigDecimal totalDuration = getGameSummaries(sessionSummaries).map(GameSummary::getDuration)
 					.map(SessionStatisticsWriter::toSeconds).reduce((augend, addend) -> augend.add(addend)).get();
-			final BigDecimal meanDuration = totalDuration.divide(gameSessionCount, MEAN_DIV_CTX);
+			final BigDecimal meanDuration = totalDuration.divide(gameSessionCount, MEAN_DIVISION_CTX);
 			final long totalRoundCount = getGameSummaries(sessionSummaries).mapToLong(GameSummary::getRoundCount).sum();
-			final BigDecimal meanRoundCount = new BigDecimal(totalRoundCount).divide(gameSessionCount, MEAN_DIV_CTX);
+			final BigDecimal meanRoundCount = new BigDecimal(totalRoundCount).divide(gameSessionCount, MEAN_DIVISION_CTX);
 			final long totalUttCount = getGameSummaries(sessionSummaries).mapToLong(GameSummary::getUttCount).sum();
-			final BigDecimal meanUttCount = new BigDecimal(totalUttCount).divide(gameSessionCount, MEAN_DIV_CTX);
+			final BigDecimal meanUttCount = new BigDecimal(totalUttCount).divide(gameSessionCount, MEAN_DIVISION_CTX);
 			final List<Object> meanVals = Arrays.asList("MEAN", "", meanDuration, meanRoundCount, meanUttCount);
 			out.print(meanVals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
 			out.print(ROW_DELIMITER);
