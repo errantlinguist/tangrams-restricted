@@ -110,7 +110,7 @@ final class DialogueAnalysisSummaryFactory implements
 			}
 		},
 
-		KEY {
+		DYAD {
 			/*
 			 * (non-Javadoc)
 			 *

@@ -31,14 +31,14 @@ def create_training_method_rank_comparison(rows):
 	covariate_col_name_idxs = [(col_name, idx) for (col_name, idx) in col_name_idxs.items() if col_name in COVARIATE_COL_NAMES]
 	
 	training_method_idx = col_name_idxs[TRAINING_COL_NAME]
-	key_idx = col_name_idxs["KEY"]
+	dyad_idx = col_name_idxs["DYAD"]
 	session_order_idx = col_name_idxs["SESSION_ORDER"]
 	test_iter_idx = col_name_idxs["TEST_ITER"]
 	rank_idx = col_name_idxs[RANK_COL_NAME]
 	for row in rows:
 		training_method = row[training_method_idx]
 		if training_method in TRAINING_METHODS_TO_COMPARE:
-			session_diags = result[row[key_idx]]
+			session_diags = result[row[dyad_idx]]
 			diag_test_iters = session_diags[row[session_order_idx]]
 			test_iter = row[test_iter_idx]
 			try:
@@ -74,7 +74,7 @@ def __atoi(text):
 	return int(text) if text.isdigit() else text
 	
 def print_training_method_rank_comparison(training_method_rank_comparison):
-	col_names = ["KEY", "SESSION_ORDER", "TEST_ITER"]
+	col_names = ["DYAD", "SESSION_ORDER", "TEST_ITER"]
 	sorted_training_method_names = tuple(sorted(TRAINING_METHODS_TO_COMPARE))
 	sorted_covariate_names = tuple(sorted(COVARIATE_COL_NAMES))
 	for training_method in sorted_training_method_names:

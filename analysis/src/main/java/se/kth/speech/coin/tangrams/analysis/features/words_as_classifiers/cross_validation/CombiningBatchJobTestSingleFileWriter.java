@@ -93,7 +93,7 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 
 	private static List<DialogueAnalysisSummaryFactory.SummaryDatum> createDefaultDatumOrderingList() {
 		final List<DialogueAnalysisSummaryFactory.SummaryDatum> result = Arrays.asList(
-				DialogueAnalysisSummaryFactory.SummaryDatum.KEY,
+				DialogueAnalysisSummaryFactory.SummaryDatum.DYAD,
 				DialogueAnalysisSummaryFactory.SummaryDatum.DESCRIPTION,
 				DialogueAnalysisSummaryFactory.SummaryDatum.SESSION_ORDER,
 				DialogueAnalysisSummaryFactory.SummaryDatum.EVENT_TIME,
