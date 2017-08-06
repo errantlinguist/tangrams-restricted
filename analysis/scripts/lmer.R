@@ -17,19 +17,19 @@ library(MASS)
 library(MuMIn)
 library(ggplot2)
 
-cv_results <- read.table(infile, sep="\t", header=TRUE)
-orig_sample_size <- nrow(cv_results)
-print(sprintf("Read %d cross-validation samples.", orig_sample_size), quote = FALSE)
+cvResults <- read.table(infile, sep="\t", header=TRUE)
+origSampleSize <- nrow(cvResults)
+print(sprintf("Read %d cross-validation samples.", origSampleSize), quote = FALSE)
 
 #Take out the observation(s) with token count over 200 (in this data: one data point)
-cv_results[!cv_results$TOKEN_COUNT>200,] -> cv_results
-sample_size_without_outliers <- nrow(cv_results)
-print(sprintf("Removed %d outlier.", orig_sample_size - sample_size_without_outliers), quote = FALSE)
+cvResults[!cvResults$TOKEN_COUNT>200,] -> cvResults
+sampleSizeWithoutOutliers <- nrow(cvResults)
+print(sprintf("Removed %d outlier.", origSampleSize - sampleSizeWithoutOutliers), quote = FALSE)
 
-ref_level <- "ALL_NEG"
+refLevel <- "ALL_NEG"
 #Set the reference level for Training
-relevel(cv_results$Training, ref=ref_level) -> cv_results$Training
-print(sprintf("Set training reference level to \"%s\".", ref_level), quote = FALSE)
+relevel(cvResults$Training, ref=refLevel) -> cvResults$Training
+print(sprintf("Set training reference level to \"%s\".", refLevel), quote = FALSE)
 
 #Linear Mixed Model where RANK is the dependent variable (the stuff you predict), TOKEN_COUNT, Training and 
 #SESSION_ORDER are your fixed effects (the stuff you are interested in that you think might have an effect on RANK),
@@ -37,18 +37,18 @@ print(sprintf("Set training reference level to \"%s\".", ref_level), quote = FAL
 #the participants in a sessions might have introduced. The assumption is effect is random, i.e. following a Gaussian.
 
 #Model m.additive is an additive model (only main effects)
-m.additive <- lmer(RANK ~ TOKEN_COUNT + Training + SESSION_ORDER +  (1|DYAD), data=cv_results, REML=FALSE)
+m.additive <- lmer(RANK ~ TOKEN_COUNT + Training + SESSION_ORDER +  (1|DYAD), data=cvResults, REML=FALSE)
 #Model m.interaction is an interaction model (interaction btw token count and trainng)
-m.interaction <- lmer(RANK ~ TOKEN_COUNT * Training + SESSION_ORDER +  (1|DYAD), data=cv_results, REML=FALSE)
-#Model m.cubic_nonlinear includes a cubic nonlinear term for token count, does not significantly improve the model
-#m.cubic_nonlinear <- lmer(RANK ~ I(TOKEN_COUNT^2) * Training + SESSION_ORDER +  (1|DYAD), data=cv_results, REML=FALSE)
+m.interaction <- lmer(RANK ~ TOKEN_COUNT * Training + SESSION_ORDER +  (1|DYAD), data=cvResults, REML=FALSE)
+#Model m.cubicNonlinear includes a cubic nonlinear term for token count, does not significantly improve the model
+#m.cubicNonlinear <- lmer(RANK ~ I(TOKEN_COUNT^2) * Training + SESSION_ORDER +  (1|DYAD), data=cvResults, REML=FALSE)
 
 #This is a test for whether the interaction model improved anything over the additive model.
 p <- anova(m.additive, m.interaction)
 p$Chisq
 p$`Pr(>Chisq)`
 
-#Data: cv_results
+#Data: cvResults
 #Models:
 #  object: RANK ~ TOKEN_COUNT + Training + SESSION_ORDER + (1 | DYAD)
 #..1: RANK ~ TOKEN_COUNT * Training + SESSION_ORDER + (1 | DYAD)
@@ -58,7 +58,7 @@ p$`Pr(>Chisq)`
 #   ---
 #   Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
-#plot(cv_results$RANK~cv_results$Training|cv_results$DYAD)
+#plot(cvResults$RANK~cvResults$Training|cvResults$DYAD)
 
 # http://mindingthebrain.blogspot.se/2014/02/three-ways-to-get-parameter-specific-p.html
 # extract coefficients
@@ -74,7 +74,7 @@ summary(m.interaction)
 # Linear mixed model fit by maximum likelihood t-tests use Satterthwaite approximations to degrees of
 # freedom [lmerMod]
 # Formula: RANK ~ TOKEN_COUNT * Training + SESSION_ORDER + (1 | DYAD)
-# Data: cv_results
+# Data: cvResults
 # 
 # AIC      BIC   logLik deviance df.resid 
 # 42918.6  42980.6 -21450.3  42900.6     7200 
@@ -107,5 +107,5 @@ qqnorm(resid(m.interaction))
 r.squaredGLMM(m.interaction)
 
 
-#ggplot(aes(x=factor(TOKEN_COUNT), y=RANK, fill=factor(TOKEN_COUNT)), data=cv_results)+geom_boxplot()+theme_jlre+facet_wrap(~Training)
-ggplot(aes(x=factor(TOKEN_COUNT), y=RANK, fill=factor(TOKEN_COUNT)), data=cv_results)+geom_boxplot()+facet_wrap(~Training)
+#ggplot(aes(x=factor(TOKEN_COUNT), y=RANK, fill=factor(TOKEN_COUNT)), data=cvResults)+geom_boxplot()+theme_jlre+facet_wrap(~Training)
+ggplot(aes(x=factor(TOKEN_COUNT), y=RANK, fill=factor(TOKEN_COUNT)), data=cvResults)+geom_boxplot()+facet_wrap(~Training)
