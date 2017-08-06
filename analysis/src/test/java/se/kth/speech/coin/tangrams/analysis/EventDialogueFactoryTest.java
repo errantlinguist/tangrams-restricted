@@ -101,18 +101,21 @@ public final class EventDialogueFactoryTest {
 		// NOTE: If there are utterances in the test data before the timestamp
 		// of the first event, then this should be the history event count plus
 		// one
-		final List<Event> expectedEvents = Arrays.asList(history.getEventSequence().toArray(Event[]::new));
-		Assert.assertEquals(expectedEvents.size(), actualDiagList.size());
+		final List<Event> events = Arrays.asList(history.getEventSequence().toArray(Event[]::new));
+		{
+			final List<Event> expectedEvents = events;
+			Assert.assertEquals(expectedEvents.size(), actualDiagList.size());
 
-		final Iterator<Event> expectedEventIter = expectedEvents.iterator();
-		final Iterator<EventDialogue> actualDiagIter = actualDiagList.iterator();
-		while (expectedEventIter.hasNext()) {
-			final Event expectedEvent = expectedEventIter.next();
-			Assert.assertTrue(actualDiagIter.hasNext());
-			final EventDialogue actualDiag = actualDiagIter.next();
-			final Optional<Event> actualOptLastEvent = actualDiag.getFirstEvent();
-			Assert.assertTrue(actualOptLastEvent.isPresent());
-			Assert.assertEquals(expectedEvent, actualOptLastEvent.get());
+			final Iterator<Event> expectedEventIter = expectedEvents.iterator();
+			final Iterator<EventDialogue> actualDiagIter = actualDiagList.iterator();
+			while (expectedEventIter.hasNext()) {
+				final Event expectedEvent = expectedEventIter.next();
+				Assert.assertTrue(actualDiagIter.hasNext());
+				final EventDialogue actualDiag = actualDiagIter.next();
+				final Optional<Event> actualOptLastEvent = actualDiag.getFirstEvent();
+				Assert.assertTrue(actualOptLastEvent.isPresent());
+				Assert.assertEquals(expectedEvent, actualOptLastEvent.get());
+			}
 		}
 	}
 
