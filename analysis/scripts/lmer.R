@@ -3,13 +3,13 @@
 args <- commandArgs(trailingOnly = TRUE)
 if(length(args) < 1)
 {
-  stop("Usage: <scriptname> INFILE")
+	stop("Usage: <scriptname> INFILE")
 }
 
 infile <-args[1]
 if (!file_test("-f", infile)) 
 {
-  stop(sprintf("No file found at \"%s\".", infile));
+	stop(sprintf("No file found at \"%s\".", infile));
 }
 
 library(lmerTest)
