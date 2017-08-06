@@ -18,13 +18,18 @@ library(MuMIn)
 library(ggplot2)
 
 cv_results <- read.table(infile, sep="\t", header=TRUE)
+orig_sample_size <- nrow(cv_results)
+print(sprintf("Read %d cross-validation samples.", orig_sample_size), quote = FALSE)
 
 #Take out the observation(s) with token count over 200 (in this data: one data point)
 cv_results[!cv_results$TOKEN_COUNT>200,] -> cv_results
+sample_size_without_outliers <- nrow(cv_results)
+print(sprintf("Removed %d outlier.", orig_sample_size - sample_size_without_outliers), quote = FALSE)
 
-#Set the reference level for Training to ONE_NEG
-relevel(cv_results$Training, ref="ALL_NEG") -> cv_results$Training
-#relevel(cv_results$Training, ref="ONE_NEG") -> cv_results$Training
+ref_level <- "ALL_NEG"
+#Set the reference level for Training
+relevel(cv_results$Training, ref=ref_level) -> cv_results$Training
+print(sprintf("Set training reference level to \"%s\".", ref_level), quote = FALSE)
 
 #Linear Mixed Model where RANK is the dependent variable (the stuff you predict), TOKEN_COUNT, Training and 
 #SESSION_ORDER are your fixed effects (the stuff you are interested in that you think might have an effect on RANK),
