@@ -42,10 +42,6 @@ public final class SessionTestResults implements SessionTestStatistics {
 		goldStdReferentIdCounts.defaultReturnValue(0);
 	}
 
-	/**
-	 * @param uttDiag
-	 * @param results
-	 */
 	public void add(final Entry<EventDialogue, EventDialogueTestResults> diagTestResults) {
 		this.diagTestResults.add(diagTestResults);
 		final int refId = diagTestResults.getValue().getGoldStandardReferentId();
