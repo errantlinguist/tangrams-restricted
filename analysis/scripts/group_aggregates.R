@@ -12,11 +12,6 @@ if (!file_test("-f", infile))
 	stop(sprintf("No file found at \"%s\".", infile));
 }
 
-library(lmerTest)
-library(MASS)
-library(MuMIn)
-library(ggplot2)
-
 cv_results <- read.table(infile, sep="\t", header=TRUE)
 
 #Take out the observation(s) with token count over 200 (in this data: one data point)
