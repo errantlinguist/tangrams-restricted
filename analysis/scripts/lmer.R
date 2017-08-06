@@ -15,7 +15,6 @@ if (!file_test("-f", infile))
 library(lmerTest)
 library(MASS)
 library(MuMIn)
-library(ggplot2)
 
 cvResults <- read.table(infile, sep="\t", header=TRUE)
 origSampleSize <- nrow(cvResults)
@@ -102,10 +101,10 @@ summary(m.interaction)
 #   Signif. codes:  0 '***' 0.001 '**' 0.01 '*' 0.05 '.' 0.1 ' ' 1
 
 
-qqnorm(resid(m.interaction))
+#qqnorm(resid(m.interaction))
 
-r.squaredGLMM(m.interaction)
+#r.squaredGLMM(m.interaction)
 
-
+#library(ggplot2)
 #ggplot(aes(x=factor(TOKEN_COUNT), y=RANK, fill=factor(TOKEN_COUNT)), data=cvResults)+geom_boxplot()+theme_jlre+facet_wrap(~Training)
-ggplot(aes(x=factor(TOKEN_COUNT), y=RANK, fill=factor(TOKEN_COUNT)), data=cvResults)+geom_boxplot()+facet_wrap(~Training)
+#ggplot(aes(x=factor(TOKEN_COUNT), y=RANK, fill=factor(TOKEN_COUNT)), data=cvResults)+geom_boxplot()+facet_wrap(~Training)
