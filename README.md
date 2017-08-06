@@ -8,7 +8,7 @@ A game for organizing tangrams in the fewest number of moves using two players. 
 
 ## Requirements
 
-* For the `client` and `server` modules, [IrisTK](http://iristk.net/) version 2017.01.27+. Currently the only way to include this is to import both this project and that of IrisTK into Eclipse and then to add the IrisTK project as a "required project on the build path" to the Eclipse projects representing both modules.
+* For the `client` and `server` modules, [IrisTK](http://iristk.net/) version 2017.01.27+. Currently the only way to include this is to import both this project and that of IrisTK into Eclipse and then to add the IrisTK project as a "required project on the build path" to the Eclipse projects representing both modules. [A fork of IrisTK](https://github.com/errantlinguist/IrisTK) contains the exact same classes which had to be included in this Maven project in order to get the whole thing to work together, so it's best to use that fork for the Eclipse IrisTK project to use as a dependency so that there's no possibility of getting two different versions of the same class on the classpath.
 
 ## To do
 
