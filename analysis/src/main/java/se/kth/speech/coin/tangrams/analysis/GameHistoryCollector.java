@@ -36,6 +36,7 @@ import org.slf4j.LoggerFactory;
 import iristk.system.Event;
 import se.kth.speech.coin.tangrams.iristk.EventTimes;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
+import se.kth.speech.coin.tangrams.iristk.events.EventSystems;
 import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
 
 /**
@@ -65,11 +66,23 @@ public final class GameHistoryCollector
 			final GameManagementEvent gameEventType = GameManagementEvent.getEventType(eventName);
 			if (gameEventType == null) {
 				if (GAME_END_EVENT_NAME.equals(eventName)) {
-					final String time = event.getTime();
-					LOGGER.debug("Found end-game event sent at {}.", time);
-					// final LocalDateTime timestamp =
-					// EventTimes.parseEventTime(time);
-					// TODO: Add a "gameEnd" attribute to GameHistory class
+					// Ensure that the disconnection event is for the
+					// tangrams game
+					final String eventSystem = event.getString("system");
+					if (EventSystems.NAME.equals(eventSystem)) {
+						final String time = event.getTime();
+						LOGGER.debug("Found end-game event sent at {}.", time);
+						// TODO: Add a "gameEnd" attribute to GameHistory class
+						// final LocalDateTime timestamp =
+						// EventTimes.parseEventTime(time);
+						// clientDisconnectionTimes.put(timestamp,
+						// Boolean.TRUE);
+					} else {
+						// The broker event is not a relevant tangrams game
+						// event;
+						// Ignore it
+						LOGGER.debug("Ignoring broker event named \"{}\" for system \"{}\".", eventName, eventSystem);
+					}
 				} else {
 					// The broker event is not a relevant tangrams game event;
 					// Ignore it

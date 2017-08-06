@@ -68,6 +68,7 @@ import se.kth.speech.awt.LookAndFeels;
 import se.kth.speech.coin.tangrams.iristk.GameManagementClientModule;
 import se.kth.speech.coin.tangrams.iristk.ImageVisualizationInfoUnmarshaller;
 import se.kth.speech.coin.tangrams.iristk.IrisSystemStopper;
+import se.kth.speech.coin.tangrams.iristk.events.EventSystems;
 import se.kth.speech.coin.tangrams.iristk.io.LogDirectoryFactory;
 import se.kth.speech.coin.tangrams.view.ConnectionStatusFrame;
 import se.kth.speech.coin.tangrams.view.GameGUI;
@@ -375,7 +376,7 @@ final class TangramsClient implements Runnable {
 			} else {
 				LOGGER.info("Starting IrisTK broker client for player ID \"{}\".", playerId);
 				try {
-					final IrisSystem system = new IrisSystem(getClass().getSimpleName(), new File("."));
+					final IrisSystem system = new IrisSystem(EventSystems.NAME, new File("."));
 					final Runnable irisSystemStopper = new IrisSystemStopper(system);
 					// Try clause for ensuring that the IrisTK system gets
 					// properly shut down in the case an exception occurs
