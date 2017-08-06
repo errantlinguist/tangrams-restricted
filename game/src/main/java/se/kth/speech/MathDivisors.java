@@ -49,7 +49,9 @@ public final class MathDivisors {
 	 * @see <a href=
 	 *      "http://codereview.stackexchange.com/a/58711">StackExchange</a>
 	 * @param value
-	 * @return
+	 *            The value to compute all divisors of.
+	 * @return A new {@link List} of {@link Integer} values which are divisors
+	 *         of the given value.
 	 */
 	public static List<Integer> createDivisorList(final int value) {
 		final int maxPossible = value / 2;
@@ -132,8 +134,15 @@ public final class MathDivisors {
 	/**
 	 * @see <a href=
 	 *      "http://codereview.stackexchange.com/a/58711">StackExchange</a>
+	 * @param divisors
+	 *            An {@link Iterator} of values to check for their ability to
+	 *            divide the provided values.
 	 * @param first
-	 * @return
+	 *            The first value for which all values in <code>divisors</code>
+	 *            must be valid divisors.
+	 * @param next
+	 *            The next values for which all values in <code>divisors</code>
+	 *            must be valid divisors.
 	 */
 	public static void removeNonDivisors(final Iterator<Integer> divisors, final int first, final int... next) {
 		while (divisors.hasNext()) {
@@ -153,8 +162,12 @@ public final class MathDivisors {
 	/**
 	 * @see <a href=
 	 *      "http://codereview.stackexchange.com/a/58711">StackExchange</a>
-	 * @param first
-	 * @return
+	 * @param divisors
+	 *            An {@link Iterator} of values to check for their ability to
+	 *            divide the provided values.
+	 * @param values
+	 *            An {@link Iterable} object containing values for which all
+	 *            values in <code>divisors</code> must be valid divisors.
 	 */
 	public static void removeNonDivisors(final Iterator<Integer> divisors, final Iterable<Integer> values) {
 		while (divisors.hasNext()) {
@@ -174,9 +187,6 @@ public final class MathDivisors {
 		}
 	}
 
-	/**
-	 *
-	 */
 	private MathDivisors() {
 	}
 

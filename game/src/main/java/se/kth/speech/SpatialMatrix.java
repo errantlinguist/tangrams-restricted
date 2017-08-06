@@ -306,7 +306,7 @@ public final class SpatialMatrix<E> {
 	}
 
 	/**
-	 * @return
+	 * @return The dimensions of the backing {@link #positionMatrix matrix}.
 	 */
 	public int[] getDimensions() {
 		return positionMatrix.getDimensions();
@@ -360,11 +360,12 @@ public final class SpatialMatrix<E> {
 	}
 
 	/**
-	 * @param result
-	 * @return
+	 * @param region
+	 *            The {@link SpatialRegion} to check.
+	 * @return <code>true</code> iff the region is occupied by an element.
 	 */
-	public boolean isOccupied(final SpatialRegion result) {
-		return elementPlacements.isOccupied(result);
+	public boolean isOccupied(final SpatialRegion region) {
+		return elementPlacements.isOccupied(region);
 	}
 
 	public void placeElement(final E element, final SpatialRegion target) {

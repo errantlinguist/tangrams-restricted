@@ -34,14 +34,22 @@ public final class SpatialRegion {
 	 * @see <a href=
 	 *      "http://stackoverflow.com/a/17394265/1391325">StackOverflow</a>
 	 * @param r1x1
+	 *            <em>x</em> start for the first region.
 	 * @param r1x2
+	 *            <em>x</em> end for the first region.
 	 * @param r1y1
+	 *            <em>y</em> start for the first region.
 	 * @param r1y2
+	 *            <em>y</em> end for the first region.
 	 * @param r2x1
+	 *            <em>x</em> start for the second region.
 	 * @param r2x2
+	 *            <em>x</em> end for the second region.
 	 * @param r2y1
+	 *            <em>y</em> start for the second region.
 	 * @param r2y2
-	 * @return
+	 *            <em>y</em> end for the second region.
+	 * @return <code>true</code> iff the two regions are intersecting.
 	 */
 	public static boolean intersects(final int r1x1, final int r1x2, final int r1y1, final int r1y2, final int r2x1,
 			final int r2x2, final int r2y1, final int r2y2) {
@@ -70,14 +78,22 @@ public final class SpatialRegion {
 	 * @see <a href=
 	 *      "http://stackoverflow.com/q/17394089/1391325">StackOverflow</a>
 	 * @param r1x1
+	 *            <em>x</em> start for the first region.
 	 * @param r1x2
+	 *            <em>x</em> end for the first region.
 	 * @param r1y1
+	 *            <em>y</em> start for the first region.
 	 * @param r1y2
+	 *            <em>y</em> end for the first region.
 	 * @param r2x1
+	 *            <em>x</em> start for the second region.
 	 * @param r2x2
+	 *            <em>x</em> end for the second region.
 	 * @param r2y1
+	 *            <em>y</em> start for the second region.
 	 * @param r2y2
-	 * @return
+	 *            <em>y</em> end for the second region.
+	 * @return <code>true</code> iff the first region subsumes the second.
 	 */
 	public static boolean subsumes(final int r1x1, final int r1x2, final int r1y1, final int r1y2, final int r2x1,
 			final int r2x2, final int r2y1, final int r2y2) {

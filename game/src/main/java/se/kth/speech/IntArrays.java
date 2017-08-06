@@ -28,8 +28,12 @@ public final class IntArrays {
 	/**
 	 * @see <a href="http://stackoverflow.com/a/80503/1391325">Source on SO</a>
 	 * @param a
+	 *            The first array to concatenate.
 	 * @param b
-	 * @return
+	 *            The second array.
+	 * @return A new array with a length comprising the sum of the length of
+	 *         both given arrays, with the values of <code>b</code> following
+	 *         those of <code>a</code>.
 	 */
 	public static int[] concatenate(final int[] a, final int[] b) {
 		final int aLen = a.length;

@@ -52,7 +52,7 @@ public enum GameManagementEvent {
 	PLAYER_JOIN_REQUEST("playerlist.add.request"),
 	/**
 	 * An event representing a response by the sending client to
-	 * {@link #PLAYER_LIST_UPDATE_REQUEST a request for a current list of the
+	 * {@link #PLAYER_JOIN_REQUEST a request for a current list of the
 	 * players active in a game}.
 	 */
 	PLAYER_JOIN_RESPONSE("playerlist.add.response"),

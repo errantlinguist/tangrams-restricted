@@ -124,12 +124,13 @@ public final class RandomImageVisualizationInfoFactory implements IntFunction<Im
 	private final Map<ImageSize, Integer> sizeUsageCounts;
 
 	/**
-	 * @param maxSharedAttrCount
-	 *            The maximum number of attributes an image may share with
-	 *            another image.
 	 * @param rnd
 	 *            The {@link Random} instance to use for randomization.
-	 *
+	 * @param uniqueImgColors
+	 *            An ordered sequence of the unique {@link Color} instances to
+	 *            use for coloring the icon images. <strong>NOTE:</strong> This
+	 *            is ordered so that the iteration order of image data is stable
+	 *            across instances.
 	 */
 	public RandomImageVisualizationInfoFactory(final Random rnd, final List<? extends Color> uniqueImgColors) {
 		this(rnd, uniqueImgColors, DEFAULT_IMG_SIZES);

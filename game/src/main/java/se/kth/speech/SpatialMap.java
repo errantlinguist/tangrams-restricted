@@ -177,7 +177,8 @@ public final class SpatialMap<E> {
 
 	/**
 	 * @param region
-	 * @return
+	 *            The {@link SpatialRegion} to check.
+	 * @return <code>true</code> iff the region is occupied by an element.
 	 */
 	public boolean isOccupied(final SpatialRegion region) {
 		boolean result = false;

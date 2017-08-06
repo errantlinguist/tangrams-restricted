@@ -40,14 +40,13 @@ import weka.core.Instances;
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
  * @since 16 May 2017
- * @see <a href="http://www.aclweb.org/anthology/P15-1029">Casey Kennington,
+ * @see <a href="http://www.aclweb.org/anthology/P15-1029">Casey Kennington
  *      &amp; David Schlangen. &ldquo;Simple Learning and Compositional
  *      Application of Perceptually Grounded Word Meanings for Incremental
  *      Reference Resolution&rdquo;. In <em>Proceedings of the 53<sup>rd</sup>
  *      Annual Meeting of the Association for Computational Linguistics and the
  *      7<sup>th</sup> International Joint Conference on Natural Language
- *      Processing</em><a>.
- *
+ *      Processing</em>.</a>
  */
 public final class WordClassDiscountingSmoother {
 
@@ -60,27 +59,16 @@ public final class WordClassDiscountingSmoother {
 
 	private final String oovClassName;
 
-	public WordClassDiscountingSmoother(final int minCount) { // NO_UCD (unused code)
+	public WordClassDiscountingSmoother(final int minCount) { // NO_UCD (unused
+																// code)
 		this(minCount, null);
 	}
 
-	public WordClassDiscountingSmoother(final int minCount, final String oovClassName) { // NO_UCD (use private)
+	public WordClassDiscountingSmoother(final int minCount, final String oovClassName) { // NO_UCD
+																							// (use
+																							// private)
 		this.oovClassName = oovClassName;
 		this.minCount = minCount;
-	}
-
-	Stream<WeightedClassifier> createClassifierWeighting(
-			final Stream<Object2DoubleMap.Entry<String>> wordClasses,
-			final Function<? super String, ? extends Classifier> wordClassifiers) {
-		return wordClasses.map(wordClass -> {
-			LOGGER.debug("Getting classifier for class \"{}\".", wordClass);
-			Classifier classifier = wordClassifiers.apply(wordClass.getKey());
-			if (classifier == null) {
-				LOGGER.debug("Getting distribution for OOV classes (\"{}\").", oovClassName);
-				classifier = wordClassifiers.apply(oovClassName);
-			}
-			return new WeightedClassifier(classifier, wordClass.getDoubleValue());
-		});
 	}
 
 	public Instances redistributeMass(final WordClassificationData trainingData) {
@@ -136,6 +124,19 @@ public final class WordClassDiscountingSmoother {
 		});
 		addendClassInsts.stream().forEach(addendClassInst -> augendInsts.addAll(addendClassInst.getValue()));
 		return augendInsts;
+	}
+
+	Stream<WeightedClassifier> createClassifierWeighting(final Stream<Object2DoubleMap.Entry<String>> wordClasses,
+			final Function<? super String, ? extends Classifier> wordClassifiers) {
+		return wordClasses.map(wordClass -> {
+			LOGGER.debug("Getting classifier for class \"{}\".", wordClass);
+			Classifier classifier = wordClassifiers.apply(wordClass.getKey());
+			if (classifier == null) {
+				LOGGER.debug("Getting distribution for OOV classes (\"{}\").", oovClassName);
+				classifier = wordClassifiers.apply(oovClassName);
+			}
+			return new WeightedClassifier(classifier, wordClass.getDoubleValue());
+		});
 	}
 
 }

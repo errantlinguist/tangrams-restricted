@@ -22,6 +22,7 @@ import java.lang.reflect.Modifier;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -38,8 +39,20 @@ public final class Colors {
 	private static final Logger LOGGER = LoggerFactory.getLogger(Colors.class);
 
 	/**
-	 * @return
-	 * @throws IllegalAccessException
+	 * Reflectively finds all &ldquo;standard&rdquo; Java colors, which can be
+	 * found using {@link Color#getColor(String)}.
+	 *
+	 * @param nameTransformer
+	 *            A {@link Function} for transforming the canonical Java field
+	 *            names for each color into the {@link Entry#getValue()
+	 *            value} for the color in the result {@link Map}.
+	 * @param nameCollFactory
+	 *            A {@link Supplier} which supplies {@link Collection} objects
+	 *            to use for containing the transformed color name(s) for each
+	 *            newly-processed color.
+	 * @return A {@code Map} of standard Java {@link Integer} RGB color values
+	 *         to a {@code Collection} representing each name which is
+	 *         associated with that value.
 	 * @see <a href=
 	 *      "http://stackoverflow.com/a/4126126/1391325">StackOverflow</a>
 	 */
