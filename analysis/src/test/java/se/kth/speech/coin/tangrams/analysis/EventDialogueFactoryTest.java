@@ -103,7 +103,7 @@ public final class EventDialogueFactoryTest {
 		// one
 		final List<Event> events = Arrays.asList(history.getEventSequence().toArray(Event[]::new));
 		{
-			final List<Event> expectedEvents = events;
+			final List<Event> expectedEvents = events.subList(0, events.size() -1);
 			Assert.assertEquals(expectedEvents.size(), actualDiagList.size());
 
 			final Iterator<Event> expectedEventIter = expectedEvents.iterator();

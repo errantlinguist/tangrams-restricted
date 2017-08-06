@@ -19,7 +19,6 @@ package se.kth.speech.coin.tangrams.analysis;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
@@ -90,14 +89,14 @@ public final class EventDialogueFactory // NO_UCD (use default)
 		}
 
 		// Get the utterances after the last event
-		final List<Utterance> lastEventUtts = new ArrayList<>();
-		while (utts.hasNext()) {
-			lastEventUtts.add(utts.next());
-		}
+//		final List<Utterance> lastEventUtts = new ArrayList<>();
+//		while (utts.hasNext()) {
+//			lastEventUtts.add(utts.next());
+//		}
 		// TODO: Don't use the last round in each session because it's full of
 		// junk language: In reality, the "last" round is the last round which
 		// the players successfully completed
-		resultBuilder.accept(new EventDialogue(Collections.singletonList(currentEvent), lastEventUtts));
+//		resultBuilder.accept(new EventDialogue(Collections.singletonList(currentEvent), lastEventUtts));
 		return resultBuilder.build();
 	}
 
