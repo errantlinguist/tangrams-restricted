@@ -101,7 +101,7 @@ public final class EventDialogueFactoryTest {
 		// NOTE: If there are utterances in the test data before the timestamp
 		// of the first event, then this should be the history event count plus
 		// one
-		List<Event> expectedEvents = Arrays.asList(history.getEventSequence().toArray(Event[]::new));
+		final List<Event> expectedEvents = Arrays.asList(history.getEventSequence().toArray(Event[]::new));
 		final int expectedDiagCount = expectedEvents.size();
 		Assert.assertEquals(expectedDiagCount, actualDiagList.size());
 
