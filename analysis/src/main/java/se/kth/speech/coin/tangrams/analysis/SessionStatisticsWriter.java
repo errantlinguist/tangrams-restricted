@@ -131,11 +131,6 @@ final class SessionStatisticsWriter {
 
 	private static final String ROW_DELIMITER = System.lineSeparator();
 
-	/**
-	 * @param args
-	 * @throws IOException
-	 * @throws JAXBException
-	 */
 	public static void main(final String[] args) throws JAXBException, IOException {
 		final Path[] inpaths = Arrays.stream(args).map(String::trim).filter(path -> !path.isEmpty()).map(Paths::get)
 				.toArray(Path[]::new);
