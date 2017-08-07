@@ -271,8 +271,9 @@ public final class LoggedEvents {
 	 */
 	public static Map<String, GameHistory> readGameHistories(final Path eventLogPath,
 			final Predicate<? super Event> eventFilter) throws IOException {
-		final Stream<String> lines = readLines(eventLogPath);
-		return parseGameHistories(lines, eventFilter);
+		try (final Stream<String> lines = readLines(eventLogPath)) {
+			return parseGameHistories(lines, eventFilter);
+		}
 	}
 
 	/**

@@ -155,21 +155,23 @@ final class LoggedEventTimeStretcher {
 	private static void run(final Path inpath, final Predicate<? super Event> evtFilter, final BigDecimal stretchFactor,
 			final PrintWriter out) throws IOException {
 		LOGGER.info("Reading event log data from \"{}\".", inpath);
-		final Stream<Event> events = LoggedEvents.readLoggedEvents(inpath);
-		LOGGER.info("Stretching logged events by a factor of {}.", stretchFactor);
-		final Stream<Event> shiftedEvents = events.map(event -> {
-			if (evtFilter.test(event)) {
-				stretchTime(event, stretchFactor);
-			}
-			return event;
-		});
+		try (final Stream<Event> events = LoggedEvents.readLoggedEvents(inpath)) {
+			LOGGER.info("Stretching logged events by a factor of {}.", stretchFactor);
+			final Stream<Event> shiftedEvents = events.map(event -> {
+				if (evtFilter.test(event)) {
+					stretchTime(event, stretchFactor);
+				}
+				return event;
+			});
 
-		final Iterator<String> eventReprIter = shiftedEvents.map(Event::toJSON).map(JsonObject::toString).iterator();
-		if (eventReprIter.hasNext()) {
-			out.print(eventReprIter.next());
-			while (eventReprIter.hasNext()) {
-				out.println();
+			final Iterator<String> eventReprIter = shiftedEvents.map(Event::toJSON).map(JsonObject::toString)
+					.iterator();
+			if (eventReprIter.hasNext()) {
 				out.print(eventReprIter.next());
+				while (eventReprIter.hasNext()) {
+					out.println();
+					out.print(eventReprIter.next());
+				}
 			}
 		}
 	}

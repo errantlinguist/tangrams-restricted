@@ -186,8 +186,10 @@ final class SegmentTimedUtteranceWriter {
 
 	private static LocalDateTime parseInitialTime(final Path eventLogFilePath) throws IOException {
 		LOGGER.info("Reading log at \"{}\" to find timestamp.", eventLogFilePath);
-		return EventTimes.parseEventTime(LoggedEvents.readLoggedEvents(eventLogFilePath)
-				.filter(INITIAL_EVENT_PREDICATE).findFirst().get().getTime());
+		try (Stream<Event> initialEvents = LoggedEvents.readLoggedEvents(eventLogFilePath)
+				.filter(INITIAL_EVENT_PREDICATE)) {
+			return EventTimes.parseEventTime(initialEvents.findFirst().get().getTime());
+		}
 	}
 
 	private SegmentTimedUtteranceWriter() {

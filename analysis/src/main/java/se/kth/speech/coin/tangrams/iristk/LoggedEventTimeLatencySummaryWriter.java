@@ -24,6 +24,7 @@ import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
@@ -181,7 +182,11 @@ final class LoggedEventTimeLatencySummaryWriter {
 	private static void run(final Path inpath, final Predicate<? super Event> evtFilter, final PrintWriter out)
 			throws IOException {
 		LOGGER.info("Reading event log data from \"{}\".", inpath);
-		final List<Event> events = Arrays.asList(LoggedEvents.readLoggedEvents(inpath).toArray(Event[]::new));
+
+		List<Event> events = Collections.emptyList();
+		try (Stream<Event> eventStream = LoggedEvents.readLoggedEvents(inpath)) {
+			events = Arrays.asList(eventStream.toArray(Event[]::new));
+		}
 		LOGGER.info("Read {} event(s) from file.", events.size());
 		events.sort(EVENT_TIME_COMPARATOR);
 

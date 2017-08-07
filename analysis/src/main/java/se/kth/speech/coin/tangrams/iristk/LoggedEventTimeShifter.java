@@ -157,22 +157,25 @@ final class LoggedEventTimeShifter {
 	private static void run(final Path inpath, final Predicate<? super Event> evtFilter, final BigDecimal addendInSecs,
 			final PrintWriter out) throws IOException {
 		LOGGER.info("Reading event log data from \"{}\".", inpath);
-		final Stream<Event> events = LoggedEvents.readLoggedEvents(inpath);
-		LOGGER.info("Shifting logged events by {} second(s).", addendInSecs);
-		final BigDecimal addendInMills = addendInSecs.multiply(SECS_TO_MILLS_FACTOR);
-		final Stream<Event> shiftedEvents = events.map(event -> {
-			if (evtFilter.test(event)) {
-				shiftTime(event, addendInMills);
-			}
-			return event;
-		});
 
-		final Iterator<String> eventReprIter = shiftedEvents.map(Event::toJSON).map(JsonObject::toString).iterator();
-		if (eventReprIter.hasNext()) {
-			out.print(eventReprIter.next());
-			while (eventReprIter.hasNext()) {
-				out.println();
+		try (final Stream<Event> events = LoggedEvents.readLoggedEvents(inpath)) {
+			LOGGER.info("Shifting logged events by {} second(s).", addendInSecs);
+			final BigDecimal addendInMills = addendInSecs.multiply(SECS_TO_MILLS_FACTOR);
+			final Stream<Event> shiftedEvents = events.map(event -> {
+				if (evtFilter.test(event)) {
+					shiftTime(event, addendInMills);
+				}
+				return event;
+			});
+
+			final Iterator<String> eventReprIter = shiftedEvents.map(Event::toJSON).map(JsonObject::toString)
+					.iterator();
+			if (eventReprIter.hasNext()) {
 				out.print(eventReprIter.next());
+				while (eventReprIter.hasNext()) {
+					out.println();
+					out.print(eventReprIter.next());
+				}
 			}
 		}
 	}
