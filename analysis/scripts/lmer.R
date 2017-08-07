@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 
-args <- commandArgs(trailingOnly = TRUE)
+args <- commandArgs(trailingOnly=TRUE)
 if(length(args) < 1)
 {
 	stop("Usage: <scriptname> INFILE")
@@ -18,17 +18,17 @@ library(MuMIn)
 
 cvResults <- read.table(infile, sep="\t", header=TRUE)
 origSampleSize <- nrow(cvResults)
-print(sprintf("Read %d cross-validation samples.", origSampleSize), quote = FALSE)
+print(sprintf("Read %d cross-validation samples.", origSampleSize), quote=FALSE)
 
 #Take out the observation(s) with token count over 200 (in this data: one data point)
 cvResults[!cvResults$TOKEN_COUNT>200,] -> cvResults
 sampleSizeWithoutOutliers <- nrow(cvResults)
-print(sprintf("Removed %d outlier.", origSampleSize - sampleSizeWithoutOutliers), quote = FALSE)
+print(sprintf("Removed %d outlier.", origSampleSize - sampleSizeWithoutOutliers), quote=FALSE)
 
 refLevel <- "ALL_NEG"
 #Set the reference level for Training
 relevel(cvResults$Training, ref=refLevel) -> cvResults$Training
-print(sprintf("Set training reference level to \"%s\".", refLevel), quote = FALSE)
+print(sprintf("Set training reference level to \"%s\".", refLevel), quote=FALSE)
 
 #Linear Mixed Model where RANK is the dependent variable (the stuff you predict), TOKEN_COUNT, Training and 
 #SESSION_ORDER are your fixed effects (the stuff you are interested in that you think might have an effect on RANK),
