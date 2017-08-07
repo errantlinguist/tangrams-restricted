@@ -66,10 +66,11 @@ final class ScreenshotLogger implements BiConsumer<Component, String> {
 	public void accept(final Component view, final String filenamePrefix) {
 		final BufferedImage img = ComponentImageCapture.createScreenshot(view);
 		executor.submit(() -> {
-			final Path outdir = outdirPathSupplier.get();
-			final String playerId = playerIdGetter.get();
-			LOGGER.debug("Creating and saving screenshot \"{}\", taken by \"{}\".", filenamePrefix, playerId);
 			try {
+				final Path outdir = outdirPathSupplier.get();
+				Files.createDirectories(outdir);
+				final String playerId = playerIdGetter.get();
+				LOGGER.debug("Creating and saving screenshot \"{}\", taken by \"{}\".", filenamePrefix, playerId);
 				final String outfileName = filenamePrefix + "-" + playerIdGetter.get() + ".png";
 				try (final OutputStream os = Files.newOutputStream(outdir.resolve(outfileName))) {
 					// write the image as a PNG

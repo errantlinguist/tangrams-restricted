@@ -124,8 +124,9 @@ public final class GameGUI implements Runnable {
 	public GameGUI(final String title, final Point viewCenterpoint, final GameState gameState,
 			final Supplier<? extends Path> logOutdirPathSupplier, final ExecutorService backgroundJobService,
 			final Runnable closeHook, final boolean analysisEnabled) {
+		final Supplier<Path> screenshotDirSupplier = () -> logOutdirPathSupplier.get().resolve("screenshots");
 		viewFactory = new InteractiveGameViewFrameFactory(
-				new ScreenshotLogger(logOutdirPathSupplier, () -> gameState.getController().getPlayerId(),
+				new ScreenshotLogger(screenshotDirSupplier, () -> gameState.getController().getPlayerId(),
 						backgroundJobService),
 				createImgVizInfoWriter(backgroundJobService, logOutdirPathSupplier), backgroundJobService,
 				analysisEnabled);
