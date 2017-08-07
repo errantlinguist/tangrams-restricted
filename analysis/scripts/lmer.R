@@ -18,12 +18,12 @@ library(MuMIn)
 
 cvResults <- read.table(infile, sep="\t", header=TRUE)
 origSampleSize <- nrow(cvResults)
-print(sprintf("Read %d cross-validation samples.", origSampleSize), quote=FALSE)
+print(sprintf("Read %d cross-validation sample(s).", origSampleSize), quote=FALSE)
 
 #Take out the observation(s) with token count over 200 (in this data: one data point)
 cvResults[!cvResults$TOKEN_COUNT>200,] -> cvResults
 sampleSizeWithoutOutliers <- nrow(cvResults)
-print(sprintf("Removed %d outlier.", origSampleSize - sampleSizeWithoutOutliers), quote=FALSE)
+print(sprintf("Removed %d outlier(s).", origSampleSize - sampleSizeWithoutOutliers), quote=FALSE)
 
 refLevel <- "ALL_NEG"
 #Set the reference level for Training
