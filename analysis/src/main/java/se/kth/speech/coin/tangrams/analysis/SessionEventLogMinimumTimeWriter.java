@@ -26,7 +26,6 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NavigableSet;
@@ -95,8 +94,8 @@ final class SessionEventLogMinimumTimeWriter {
 	private final Map<Event, LocalDateTime> eventTimes;
 
 	private SessionEventLogMinimumTimeWriter(final int expectedEventCount) {
-		eventsWithoutTime = new HashMap<>(expectedEventCount);
-		eventTimes = new HashMap<>(expectedEventCount);
+		eventsWithoutTime = Maps.newHashMapWithExpectedSize(expectedEventCount);
+		eventTimes = Maps.newHashMapWithExpectedSize(expectedEventCount);
 	}
 
 	private void accept(final Path inpath) throws IOException {
