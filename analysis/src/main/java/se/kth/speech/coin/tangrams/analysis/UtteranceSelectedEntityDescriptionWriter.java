@@ -427,5 +427,23 @@ final class UtteranceSelectedEntityDescriptionWriter {
 				}
 			}
 		}
+
+		final Path canonicalEventLogPath = sessionData.getCanonicalEventLogPath();
+		LOGGER.info("Reading canonical event log at \"{}\".", canonicalEventLogPath);
+		final Map<String, GameHistory> canonicalGameHistories = LoggedEvents.readGameHistories(canonicalEventLogPath,
+				EVENT_FILTER);
+		for (final String gameId : playerGameIdIntersection) {
+			final GameHistory history = canonicalGameHistories.get(gameId);
+			if (history == null) {
+				LOGGER.warn("No canonical history for game ID \"{}\".", gameId);
+			} else {
+				final Path outfilePath = extantOutdir.resolve(outfileNamePrefix + "_GAME-" + gameId + "_CANONICAL.tsv");
+				LOGGER.info("Writing utterances from canonical perspective to \"{}\".", outfilePath);
+				try (BufferedWriter writer = Files.newBufferedWriter(outfilePath, StandardOpenOption.CREATE,
+						StandardOpenOption.TRUNCATE_EXISTING)) {
+					gameWriter.write(history, writer);
+				}
+			}
+		}
 	}
 }
