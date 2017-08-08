@@ -23,9 +23,10 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 import com.google.common.collect.Sets;
+
+import it.unimi.dsi.fastutil.booleans.BooleanArrayList;
 
 /**
  * Useful for mapping classes which have no proper {@link Object#hashCode()}
@@ -113,22 +114,27 @@ public final class EqualityMap<K, V> implements Map<K, V> {
 
 	}
 
+	private final BooleanArrayList idxOccupations;
+
 	private final ArrayList<K> keys;
+
+	private int size;
 
 	private final ArrayList<V> values;
 
 	public EqualityMap() {
-		this(new ArrayList<>(), new ArrayList<>());
+		this(new ArrayList<>(), new ArrayList<>(), new BooleanArrayList());
 	}
 
 	public EqualityMap(final int initialCapacity) {
-		this(new ArrayList<>(initialCapacity), new ArrayList<>(initialCapacity));
+		this(new ArrayList<>(initialCapacity), new ArrayList<>(initialCapacity), new BooleanArrayList(initialCapacity));
 	}
 
-	private EqualityMap(final ArrayList<K> keys, final ArrayList<V> values) {
+	private EqualityMap(final ArrayList<K> keys, final ArrayList<V> values, final BooleanArrayList idxOccupations) {
 		assert keys.size() == values.size();
 		this.keys = keys;
 		this.values = values;
+		this.idxOccupations = idxOccupations;
 	}
 
 	/*
@@ -140,6 +146,7 @@ public final class EqualityMap<K, V> implements Map<K, V> {
 	public void clear() {
 		keys.clear();
 		values.clear();
+		idxOccupations.clear();
 	}
 
 	/*
@@ -162,10 +169,6 @@ public final class EqualityMap<K, V> implements Map<K, V> {
 		return values.contains(value);
 	}
 
-	public Stream<Entry<K, V>> entries() {
-		return IntStream.of(0, size()).mapToObj(IndexedEntry::new);
-	}
-
 	/*
 	 * (non-Javadoc)
 	 *
@@ -173,7 +176,9 @@ public final class EqualityMap<K, V> implements Map<K, V> {
 	 */
 	@Override
 	public Set<Entry<K, V>> entrySet() {
-		return entries().collect(Collectors.toCollection(() -> Sets.newHashSetWithExpectedSize(size())));
+		final int currentSize = size();
+		return occupiedIdxs().mapToObj(IndexedEntry::new)
+				.collect(Collectors.toCollection(() -> Sets.newHashSetWithExpectedSize(currentSize)));
 	}
 
 	/*
@@ -183,31 +188,18 @@ public final class EqualityMap<K, V> implements Map<K, V> {
 	 */
 	@Override
 	public boolean equals(final Object obj) {
+		final boolean result;
 		if (this == obj) {
-			return true;
+			result = true;
+		} else if (obj == null) {
+			result = false;
+		} else if (obj instanceof EqualityMap) {
+			final EqualityMap<?, ?> other = (EqualityMap<?, ?>) obj;
+			result = Objects.equals(this.entrySet(), other.entrySet());
+		} else {
+			result = false;
 		}
-		if (obj == null) {
-			return false;
-		}
-		if (!(obj instanceof EqualityMap)) {
-			return false;
-		}
-		final EqualityMap<?, ?> other = (EqualityMap<?, ?>) obj;
-		if (keys == null) {
-			if (other.keys != null) {
-				return false;
-			}
-		} else if (!keys.equals(other.keys)) {
-			return false;
-		}
-		if (values == null) {
-			if (other.values != null) {
-				return false;
-			}
-		} else if (!values.equals(other.values)) {
-			return false;
-		}
-		return true;
+		return result;
 	}
 
 	/*
@@ -230,8 +222,7 @@ public final class EqualityMap<K, V> implements Map<K, V> {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + (keys == null ? 0 : keys.hashCode());
-		result = prime * result + (values == null ? 0 : values.hashCode());
+		result = prime * result + Objects.hashCode(entrySet());
 		return result;
 	}
 
@@ -242,7 +233,7 @@ public final class EqualityMap<K, V> implements Map<K, V> {
 	 */
 	@Override
 	public boolean isEmpty() {
-		return keys.isEmpty();
+		return size() <= 0;
 	}
 
 	/*
@@ -252,9 +243,9 @@ public final class EqualityMap<K, V> implements Map<K, V> {
 	 */
 	@Override
 	public Set<K> keySet() {
-		final Set<K> result = Sets.newHashSetWithExpectedSize(size());
-		result.addAll(keys);
-		return result;
+		final int currentSize = size();
+		return occupiedIdxs().mapToObj(keys::get)
+				.collect(Collectors.toCollection(() -> Sets.newLinkedHashSetWithExpectedSize(currentSize)));
 	}
 
 	/*
@@ -270,6 +261,8 @@ public final class EqualityMap<K, V> implements Map<K, V> {
 			keyIdx = keys.size();
 			keys.add(key);
 			values.add(value);
+			idxOccupations.add(true);
+			size++;
 			result = null;
 		} else {
 			result = values.set(keyIdx, value);
@@ -285,8 +278,7 @@ public final class EqualityMap<K, V> implements Map<K, V> {
 	@Override
 	public void putAll(final Map<? extends K, ? extends V> m) {
 		final int minSize = m.size();
-		keys.ensureCapacity(minSize);
-		values.ensureCapacity(minSize);
+		ensureCapacity(minSize);
 		m.forEach(this::put);
 	}
 
@@ -297,12 +289,14 @@ public final class EqualityMap<K, V> implements Map<K, V> {
 	 */
 	@Override
 	public V remove(final Object key) {
-		V result;
+		final V result;
 		final int keyIdx = keys.indexOf(key);
 		if (keyIdx < 0) {
 			result = null;
 		} else {
 			result = values.set(keyIdx, null);
+			idxOccupations.set(keyIdx, false);
+			size--;
 		}
 		return result;
 	}
@@ -314,7 +308,7 @@ public final class EqualityMap<K, V> implements Map<K, V> {
 	 */
 	@Override
 	public int size() {
-		return keys.size();
+		return size;
 	}
 
 	/*
@@ -339,6 +333,16 @@ public final class EqualityMap<K, V> implements Map<K, V> {
 	@Override
 	public Collection<V> values() {
 		return values;
+	}
+
+	private void ensureCapacity(final int capacity) {
+		keys.ensureCapacity(capacity);
+		values.ensureCapacity(capacity);
+		idxOccupations.ensureCapacity(capacity);
+	}
+
+	private IntStream occupiedIdxs() {
+		return IntStream.range(0, idxOccupations.size()).filter(idxOccupations::getBoolean);
 	}
 
 }
