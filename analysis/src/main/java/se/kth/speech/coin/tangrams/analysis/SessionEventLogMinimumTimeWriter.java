@@ -72,7 +72,7 @@ final class SessionEventLogMinimumTimeWriter {
 					EXPECTED_AVERAGE_EVENT_COUNT);
 			for (final Path inpath : inpaths) {
 				LOGGER.info("Will read batch job data from \"{}\".", inpath);
-				writer.processSessions(inpath);
+				writer.accept(inpath);
 			}
 		}
 
@@ -97,6 +97,15 @@ final class SessionEventLogMinimumTimeWriter {
 	private SessionEventLogMinimumTimeWriter(final int expectedEventCount) {
 		eventsWithoutTime = new HashMap<>(expectedEventCount);
 		eventTimes = new HashMap<>(expectedEventCount);
+	}
+
+	private void accept(final Path inpath) throws JAXBException, IOException {
+		final Path[] infilePaths = Files.walk(inpath, FileVisitOption.FOLLOW_LINKS).filter(Files::isRegularFile)
+				.filter(filePath -> filePath.getFileName().toString().endsWith(".properties")).toArray(Path[]::new);
+		for (final Path infilePath : infilePaths) {
+			LOGGER.info("Reading batch job properties from \"{}\".", infilePath);
+			processSession(infilePath, createOutfilePath(infilePath));
+		}
 	}
 
 	private LocalDateTime fetchEventTime(final Event event) {
@@ -153,14 +162,5 @@ final class SessionEventLogMinimumTimeWriter {
 		// https://stackoverflow.com/a/20130475/1391325
 		Files.write(outfilePath, (Iterable<String>) jsonLines::iterator, LoggedEvents.CHARSET,
 				StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
-	}
-
-	private void processSessions(final Path inpath) throws JAXBException, IOException {
-		final Path[] infilePaths = Files.walk(inpath, FileVisitOption.FOLLOW_LINKS).filter(Files::isRegularFile)
-				.filter(filePath -> filePath.getFileName().toString().endsWith(".properties")).toArray(Path[]::new);
-		for (final Path infilePath : infilePaths) {
-			LOGGER.info("Reading batch job properties from \"{}\".", infilePath);
-			processSession(infilePath, createOutfilePath(infilePath));
-		}
 	}
 }
