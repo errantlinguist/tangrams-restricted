@@ -19,8 +19,11 @@ package se.kth.speech;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.ListIterator;
+import java.util.Map.Entry;
 import java.util.OptionalInt;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -79,6 +82,31 @@ public final class Lists {
 
 		return result;
 
+	}
+
+	public static <T> Stream<T> unifySequenceElements(final List<T> first, final List<? extends T> second) {
+		final Stream.Builder<T> resultBuilder = Stream.builder();
+		int secondIdx = 0;
+		for (final T nextElem : first) {
+			resultBuilder.add(nextElem);
+			final ListIterator<? extends T> secondIter = second.listIterator(secondIdx);
+//			if (secondIter.hasNext()){
+//				
+//			} else {
+//				break;
+//			}
+			while (secondIter.hasNext()) {
+				// Get all element in the second list which are between the
+				// position of the given element in the first list and the
+				// position
+				// of the equivalent element in the second list
+				final Entry<Stream<T>, T> elemsBetween = Iterators.findElementsBeforeDelimiter(secondIter,
+						nextElem::equals);
+				elemsBetween.getKey().forEachOrdered(resultBuilder);
+			}
+			secondIdx = secondIter.nextIndex();
+		}
+		return resultBuilder.build();
 	}
 
 	private Lists() {

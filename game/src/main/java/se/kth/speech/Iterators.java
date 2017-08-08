@@ -21,8 +21,6 @@ import java.util.Map.Entry;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-import org.apache.commons.lang3.tuple.Pair;
-
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
  * @since 30 May 2017
@@ -44,9 +42,9 @@ public final class Iterators {
 					elemsBefore.add(next);
 				}
 			} while (iter.hasNext());
-			result = Pair.of(elemsBefore.build(), next);
+			result = new MutablePair<>(elemsBefore.build(), next);
 		} else {
-			result = Pair.of(Stream.empty(), null);
+			result = new MutablePair<>(Stream.empty(), null);
 		}
 		return result;
 	}
