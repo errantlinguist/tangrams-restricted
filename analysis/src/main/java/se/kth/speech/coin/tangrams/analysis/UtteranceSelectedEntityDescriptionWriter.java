@@ -381,10 +381,6 @@ final class UtteranceSelectedEntityDescriptionWriter {
 				.filter(filePath -> filePath.getFileName().toString().endsWith(".properties")).toArray(Path[]::new);
 		for (final Path infilePath : infilePaths) {
 			LOGGER.info("Reading batch job properties from \"{}\".", infilePath);
-			final Properties props = new Properties();
-			try (final InputStream propsInstream = Files.newInputStream(infilePath)) {
-				props.load(propsInstream);
-			}
 			final String outfileInfix = createOutfileInfix(infilePath);
 			final SessionDataManager sessionData = SessionDataManager.create(infilePath);
 			accept(sessionData, outfileNamePrefix + outfileInfix);
