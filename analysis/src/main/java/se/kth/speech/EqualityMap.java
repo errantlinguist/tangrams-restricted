@@ -295,7 +295,8 @@ public final class EqualityMap<K, V> implements Map<K, V> {
 			result = null;
 		} else {
 			result = values.set(keyIdx, null);
-			idxOccupations.set(keyIdx, false);
+			final boolean wasOccupied = idxOccupations.set(keyIdx, false);
+			assert wasOccupied;
 			size--;
 		}
 		return result;
