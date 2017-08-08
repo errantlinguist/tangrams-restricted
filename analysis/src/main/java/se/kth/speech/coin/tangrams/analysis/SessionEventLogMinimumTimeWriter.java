@@ -94,8 +94,8 @@ final class SessionEventLogMinimumTimeWriter {
 	private final Map<Event, LocalDateTime> eventTimes;
 
 	private SessionEventLogMinimumTimeWriter(final int expectedEventCount) {
-		eventsWithoutTime = Maps.newHashMapWithExpectedSize(expectedEventCount);
-		eventTimes = Maps.newHashMapWithExpectedSize(expectedEventCount);
+		eventsWithoutTime = new EqualityMap<>(expectedEventCount);
+		eventTimes = new EqualityMap<>(expectedEventCount);
 	}
 
 	private void accept(final Path inpath) throws IOException {
