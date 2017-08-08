@@ -57,13 +57,9 @@ import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
  */
 final class SessionEventLogMinimumTimeWriter {
 
-	private static final int EXPECTED_AVERAGE_EVENT_COUNT;
+	private static final int EXPECTED_AVERAGE_EVENT_COUNT = 150;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SessionEventLogMinimumTimeWriter.class);
-
-	static {
-		EXPECTED_AVERAGE_EVENT_COUNT = 150;
-	}
 
 	public static void main(final String[] args) throws JAXBException, IOException {
 		final Path[] inpaths = Arrays.stream(args).map(String::trim).filter(path -> !path.isEmpty()).map(Paths::get)
