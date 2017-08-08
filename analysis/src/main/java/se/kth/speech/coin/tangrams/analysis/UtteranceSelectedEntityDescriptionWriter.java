@@ -410,12 +410,11 @@ final class UtteranceSelectedEntityDescriptionWriter {
 		}
 
 		final List<Utterance> utts = createUtteranceList(sessionData);
+		final UtteranceTabularDataWriter gameWriter = new UtteranceTabularDataWriter(utts, extractor,
+				featuresToDescribe, extractionContextFactory, strict);
 		for (final String gameId : playerGameIdIntersection) {
 			LOGGER.debug("Processing game \"{}\".", gameId);
 			final Map<String, GameHistory> playerHistories = gamePlayerHistoryTable.row(gameId);
-
-			final UtteranceTabularDataWriter gameWriter = new UtteranceTabularDataWriter(utts, extractor,
-					featuresToDescribe, extractionContextFactory, strict);
 			for (final Entry<String, GameHistory> playerHistory : playerHistories.entrySet()) {
 				final String playerId = playerHistory.getKey();
 				final GameHistory history = playerHistory.getValue();
@@ -424,7 +423,7 @@ final class UtteranceSelectedEntityDescriptionWriter {
 				LOGGER.info("Writing utterances from perspective of \"{}\" to \"{}\".", playerId, outfilePath);
 				try (BufferedWriter writer = Files.newBufferedWriter(outfilePath, StandardOpenOption.CREATE,
 						StandardOpenOption.TRUNCATE_EXISTING)) {
-					gameWriter.write(playerId, history, writer);
+					gameWriter.write(history, writer);
 				}
 			}
 		}

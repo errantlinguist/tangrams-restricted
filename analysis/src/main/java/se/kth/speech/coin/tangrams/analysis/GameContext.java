@@ -82,14 +82,11 @@ public final class GameContext {
 
 	private final GameHistory history;
 
-	private final String perspectivePlayerId;
-
 	private final LocalDateTime time;
 
-	GameContext(final GameHistory history, final LocalDateTime time, final String perspectivePlayerId) {
+	GameContext(final GameHistory history, final LocalDateTime time) {
 		this.history = history;
 		this.time = time;
-		this.perspectivePlayerId = perspectivePlayerId;
 		entityIds = IntLists.unmodifiable(createEntityIdList());
 	}
 
@@ -115,13 +112,6 @@ public final class GameContext {
 				return false;
 			}
 		} else if (!history.equals(other.history)) {
-			return false;
-		}
-		if (perspectivePlayerId == null) {
-			if (other.perspectivePlayerId != null) {
-				return false;
-			}
-		} else if (!perspectivePlayerId.equals(other.perspectivePlayerId)) {
 			return false;
 		}
 		if (time == null) {
@@ -236,13 +226,6 @@ public final class GameContext {
 		return history;
 	}
 
-	/**
-	 * @return the playerId
-	 */
-	public String getPersepectivePlayerId() {
-		return perspectivePlayerId;
-	}
-
 	public NavigableMap<LocalDateTime, List<Event>> getPrecedingEvents() {
 		return history.getEvents().headMap(time, true);
 	}
@@ -268,7 +251,6 @@ public final class GameContext {
 		final int prime = 31;
 		int result = 1;
 		result = prime * result + (history == null ? 0 : history.hashCode());
-		result = prime * result + (perspectivePlayerId == null ? 0 : perspectivePlayerId.hashCode());
 		result = prime * result + (time == null ? 0 : time.hashCode());
 		return result;
 	}
@@ -285,8 +267,6 @@ public final class GameContext {
 		builder.append(history);
 		builder.append(", time=");
 		builder.append(time);
-		builder.append(", perspectivePlayerId=");
-		builder.append(perspectivePlayerId);
 		builder.append(']');
 		return builder.toString();
 	}

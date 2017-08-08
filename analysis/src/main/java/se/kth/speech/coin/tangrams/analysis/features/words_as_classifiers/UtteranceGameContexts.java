@@ -36,17 +36,8 @@ public final class UtteranceGameContexts {
 	private static final Logger LOGGER = LoggerFactory.getLogger(UtteranceGameContexts.class);
 
 	public static GameContext createSingleContext(final Utterance dialogueUtt, final GameHistory history) {
-		final String speakerId = dialogueUtt.getSpeakerId();
-		return createSingleContext(dialogueUtt, history, speakerId);
-	}
-
-	private static GameContext createSingleContext(final Utterance dialogueUtt, final GameHistory history,
-			final String perspectivePlayerId) {
-		LOGGER.debug(
-				"Creating a context based on the logged game history, which is then seen from the perspective of player \"{}\".",
-				perspectivePlayerId);
 		final Iterator<GameContext> ctxIter = TemporalGameContexts
-				.create(history, dialogueUtt.getStartTime(), dialogueUtt.getEndTime(), perspectivePlayerId).iterator();
+				.create(history, dialogueUtt.getStartTime(), dialogueUtt.getEndTime()).iterator();
 		final GameContext result = ctxIter.next();
 		if (ctxIter.hasNext()) {
 			LOGGER.warn("More than one game context found for {}; Only using the first one.", dialogueUtt);

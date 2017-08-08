@@ -33,8 +33,7 @@ import se.kth.speech.coin.tangrams.iristk.EventTimes;
  */
 public final class TemporalGameContexts {
 
-	public static Stream<GameContext> create(final GameHistory history, final float startTime, final float endTime,
-			final String perspectivePlayerId) {
+	public static Stream<GameContext> create(final GameHistory history, final float startTime, final float endTime) {
 		final NavigableMap<LocalDateTime, List<Event>> events = history.getEvents();
 		final LocalDateTime gameStartTime = history.getStartTime();
 		final LocalDateTime uttStartTimestamp = TimestampArithmetic.createOffsetTimestamp(gameStartTime, startTime);
@@ -46,7 +45,7 @@ public final class TemporalGameContexts {
 
 		final Stream.Builder<GameContext> resultBuilder = Stream.builder();
 		if (eventsDuringUtt.isEmpty()) {
-			resultBuilder.accept(new GameContext(history, uttStartTimestamp, perspectivePlayerId));
+			resultBuilder.accept(new GameContext(history, uttStartTimestamp));
 		} else {
 			// Create one data point for each event found during the utterance
 			// TODO: estimate partitions for utterance: By phones?
@@ -66,8 +65,7 @@ public final class TemporalGameContexts {
 			final Stream<Event> allEventsDuringUtt = timedEvents.stream().flatMap(Collection::stream);
 			final Stream<LocalDateTime> allTimestampsDuringUtt = allEventsDuringUtt.map(Event::getTime)
 					.map(EventTimes::parseEventTime);
-			allTimestampsDuringUtt
-					.map(timestampDuringUtt -> new GameContext(history, timestampDuringUtt, perspectivePlayerId))
+			allTimestampsDuringUtt.map(timestampDuringUtt -> new GameContext(history, timestampDuringUtt))
 					.forEachOrdered(resultBuilder);
 		}
 		return resultBuilder.build();

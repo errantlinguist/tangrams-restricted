@@ -245,7 +245,7 @@ final class UtteranceTabularDataWriter {
 		return sb.toString();
 	}
 
-	void write(final String playerId, final GameHistory history, final Writer writer) throws IOException {
+	void write(final GameHistory history, final Writer writer) throws IOException {
 		// The visualization info for the given game
 		final ImageVisualizationInfo imgVizInfo = IMG_VIZ_INFO_UNMARSHALLER
 				.apply(history.getInitialState().getImageVisualizationInfoDescription());
@@ -309,8 +309,8 @@ final class UtteranceTabularDataWriter {
 				writer.write(firstDiagEvent.getTime());
 				writer.write(TABLE_STRING_REPR_COL_DELIMITER);
 				{
-					final GameContext context = TemporalGameContexts
-							.create(history, contextStartTime, contextEndTime, playerId).findFirst().get();
+					final GameContext context = TemporalGameContexts.create(history, contextStartTime, contextEndTime)
+							.findFirst().get();
 					final Optional<Integer> optSelectedEntityId = context.findLastSelectedEntityId();
 					final String featureVectorRepr;
 					if (optSelectedEntityId.isPresent()) {
