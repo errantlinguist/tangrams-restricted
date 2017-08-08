@@ -24,10 +24,10 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.ToDoubleFunction;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import se.kth.speech.MutablePair;
 import se.kth.speech.coin.tangrams.analysis.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.GameHistory;
 import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManager;
@@ -36,9 +36,9 @@ import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature.Extractor.Context;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionContextFactory;
 import se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttributeContext;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.DialogicEventDialogueUtteranceSorter;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EntityReferringLanguageWordClasses;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EventDialogueTransformer;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.DialogicEventDialogueUtteranceSorter;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.UtteranceRelation;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 import weka.core.Instance;
@@ -63,9 +63,9 @@ public final class DialogicInstancesFactory extends AbstractSizeEstimatingInstan
 
 	private final BooleanTrainingContextsFactory trainingCtxsFactory;
 
-	private final BiConsumer<? super EventDialogue, ? super List<UtteranceRelation>> uttRelHandler;
-
 	private final ToDoubleFunction<? super Utterance> uttAcceptanceRanker;
+
+	private final BiConsumer<? super EventDialogue, ? super List<UtteranceRelation>> uttRelHandler;
 
 	public DialogicInstancesFactory(final EntityInstanceAttributeContext entityInstAttrCtx,
 			final EventDialogueTransformer diagTransformer, final EntityFeatureExtractionContextFactory extCtxFactory,
@@ -97,7 +97,7 @@ public final class DialogicInstancesFactory extends AbstractSizeEstimatingInstan
 		for (final Context trainingContext : trainingContexts) {
 			final Instance trainingInst = createTokenInstance(classInsts, trainingContext, classValue);
 			trainingInst.setWeight(weight);
-			trainingInsts.add(new MutablePair<>(trainingInst, classValue));
+			trainingInsts.add(Pair.of(trainingInst, classValue));
 		}
 		// Add examples
 		trainingData.addObservation(wordClass, trainingInsts.stream());

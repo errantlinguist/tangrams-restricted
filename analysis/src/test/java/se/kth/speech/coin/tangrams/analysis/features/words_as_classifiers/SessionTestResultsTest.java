@@ -19,6 +19,7 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers;
 import java.util.Arrays;
 import java.util.stream.IntStream;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.theories.DataPoint;
@@ -30,7 +31,6 @@ import org.junit.runner.RunWith;
 import iristk.system.Event;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import it.unimi.dsi.fastutil.ints.Int2DoubleOpenHashMap;
-import se.kth.speech.MutablePair;
 import se.kth.speech.coin.tangrams.analysis.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.Utterance;
 
@@ -88,7 +88,7 @@ public final class SessionTestResultsTest {
 		final SessionTestResults result = new SessionTestResults(ranks.length);
 		for (final int rank : ranks) {
 			final EventDialogueTestResults diagTestResult = createMockDiagTestResult(rank);
-			result.add(new MutablePair<>(diagTestResult.getTransformedDiag(), diagTestResult));
+			result.add(Pair.of(diagTestResult.getTransformedDiag(), diagTestResult));
 		}
 		return result;
 	}
@@ -120,9 +120,9 @@ public final class SessionTestResultsTest {
 		final EventDialogue diag = new EventDialogue(Arrays.asList(new Event()), Arrays.asList(testUtt));
 
 		final EventDialogueTestResults diagTestResult1 = createMockDiagTestResult(1);
-		testInst.add(new MutablePair<>(diag, diagTestResult1));
+		testInst.add(Pair.of(diag, diagTestResult1));
 		final EventDialogueTestResults diagTestResult2 = createMockDiagTestResult(2);
-		testInst.add(new MutablePair<>(diag, diagTestResult2));
+		testInst.add(Pair.of(diag, diagTestResult2));
 		Assert.assertEquals(0.75, testInst.meanReciprocalRank(), 0.00001);
 	}
 

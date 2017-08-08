@@ -25,13 +25,13 @@ import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.ObjectIterator;
-import se.kth.speech.MutablePair;
 import se.kth.speech.coin.tangrams.analysis.features.weka.WordClassInstancesFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.WordClassificationData;
 import weka.classifiers.Classifier;
@@ -107,7 +107,7 @@ public final class WordClassDiscountingSmoother {
 				final String className = observationCount.getKey();
 				LOGGER.debug("Class \"{}\" has fewer than {} instances; Will redistribute to \"{}\".", className,
 						minCount, augendClassName);
-				result.add(new MutablePair<>(className, classInsts.remove(className)));
+				result.add(Pair.of(className, classInsts.remove(className)));
 				observationCountIter.remove();
 			}
 

@@ -25,7 +25,7 @@ import java.util.function.Function;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
-import se.kth.speech.MutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -114,7 +114,7 @@ public final class UtteranceDialogueRepresentationStringFactory implements Funct
 				final Utterance nextUtt = uttIter.next();
 				final String nextSpeakerId = nextUtt.getSpeakerId();
 				if (!Objects.equals(speakerId, nextSpeakerId)) {
-					result.add(new MutablePair<>(speakerId, diagTurnUttReprs.stream().collect(sentenceJoiner)));
+					result.add(Pair.of(speakerId, diagTurnUttReprs.stream().collect(sentenceJoiner)));
 					speakerId = nextSpeakerId;
 					diagTurnUttReprs = new ArrayList<>();
 				}
@@ -122,7 +122,7 @@ public final class UtteranceDialogueRepresentationStringFactory implements Funct
 			}
 
 			if (!diagTurnUttReprs.isEmpty()) {
-				result.add(new MutablePair<>(speakerId, diagTurnUttReprs.stream().collect(sentenceJoiner)));
+				result.add(Pair.of(speakerId, diagTurnUttReprs.stream().collect(sentenceJoiner)));
 			}
 
 		}

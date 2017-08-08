@@ -28,11 +28,12 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
+import org.apache.commons.lang3.tuple.Pair;
+
 import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.ling.Label;
 import edu.stanford.nlp.trees.CollinsHeadFinder;
 import edu.stanford.nlp.trees.Tree;
-import se.kth.speech.MutablePair;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.ChainedEventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.DuplicateTokenFilteringEventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EventDialogueTransformer;
@@ -137,9 +138,9 @@ enum Tokenization implements Function<TokenizationContext, EventDialogueTransfor
 		final Map<TokenType, Entry<Function<CoreLabel, String>, StanfordCoreNLPConfigurationVariant>> result = new EnumMap<>(
 				TokenType.class);
 		result.put(TokenType.INFLECTED,
-				new MutablePair<>(CoreLabel::word, StanfordCoreNLPConfigurationVariant.TOKENIZING_PARSING));
-		result.put(TokenType.LEMMA, new MutablePair<>(CoreLabel::lemma,
-				StanfordCoreNLPConfigurationVariant.TOKENIZING_LEMMATIZING_PARSING));
+				Pair.of(CoreLabel::word, StanfordCoreNLPConfigurationVariant.TOKENIZING_PARSING));
+		result.put(TokenType.LEMMA,
+				Pair.of(CoreLabel::lemma, StanfordCoreNLPConfigurationVariant.TOKENIZING_LEMMATIZING_PARSING));
 		assert result.size() == TokenType.values().length;
 		return result;
 	}

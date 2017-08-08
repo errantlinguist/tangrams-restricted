@@ -25,10 +25,10 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import se.kth.speech.MutablePair;
 import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
 import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManager;
 import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManagerCacheSupplier;
@@ -106,13 +106,14 @@ public final class TestSetFactory {
 			final List<SessionEventDialogueManager> trainingSessionEvtDiagMgrs = new ArrayList<>(
 					trainingSessionDataMgrs.length);
 			for (final SessionDataManager trainingSessionDatum : trainingSessionDataMgrs) {
-				final SessionEventDialogueManager sessionEventDiagMgr = sessionDiagMgrCacheSupplier.get().get(trainingSessionDatum);
+				final SessionEventDialogueManager sessionEventDiagMgr = sessionDiagMgrCacheSupplier.get()
+						.get(trainingSessionDatum);
 				trainingSessionEvtDiagMgrs.add(sessionEventDiagMgr);
 			}
 			trainingData = instancesFactory.apply(trainingSessionEvtDiagMgrs);
 		}
 		LOGGER.info("Created training data for {} class(es).", trainingData.getClassInstances().size());
-		return new MutablePair<>(testSessionDataMgr, trainingData);
+		return Pair.of(testSessionDataMgr, trainingData);
 	}
 
 }

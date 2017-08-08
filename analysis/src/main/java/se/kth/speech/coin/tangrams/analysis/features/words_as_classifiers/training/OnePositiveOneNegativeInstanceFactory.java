@@ -21,11 +21,11 @@ import java.util.Random;
 import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import it.unimi.dsi.fastutil.ints.IntList;
-import se.kth.speech.MutablePair;
 import se.kth.speech.coin.tangrams.analysis.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.GameContext;
 import se.kth.speech.coin.tangrams.analysis.GameHistory;
@@ -148,7 +148,7 @@ public final class OnePositiveOneNegativeInstanceFactory extends AbstractSizeEst
 		final Instance trainingInst = createTokenInstance(classInsts, trainingContext, classValue);
 		trainingInst.setWeight(weight);
 		// Add example
-		trainingData.addObservation(wordClass, Stream.of(new MutablePair<>(trainingInst, classValue)));
+		trainingData.addObservation(wordClass, Stream.of(Pair.of(trainingInst, classValue)));
 	}
 
 	@Override

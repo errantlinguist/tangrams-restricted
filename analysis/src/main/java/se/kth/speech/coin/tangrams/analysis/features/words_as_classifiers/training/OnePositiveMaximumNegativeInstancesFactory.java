@@ -21,10 +21,10 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.stream.Stream;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import se.kth.speech.MutablePair;
 import se.kth.speech.coin.tangrams.analysis.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.GameHistory;
 import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManager;
@@ -93,7 +93,7 @@ public final class OnePositiveMaximumNegativeInstancesFactory extends AbstractSi
 		for (final Context trainingContext : trainingContexts) {
 			final Instance trainingInst = createTokenInstance(classInsts, trainingContext, classValue);
 			trainingInst.setWeight(weight);
-			trainingInsts.add(new MutablePair<>(trainingInst, classValue));
+			trainingInsts.add(Pair.of(trainingInst, classValue));
 		}
 		// Add examples
 		trainingData.addObservation(wordClass, trainingInsts.stream());

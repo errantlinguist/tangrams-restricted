@@ -22,6 +22,7 @@ import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -38,11 +39,11 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.OptionGroup;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import iristk.system.Event;
-import se.kth.speech.MutablePair;
 import se.kth.speech.TimestampArithmetic;
 import se.kth.speech.coin.tangrams.iristk.EventTimes;
 import se.kth.speech.coin.tangrams.iristk.EventTypeMatcher;
@@ -162,14 +163,14 @@ final class SegmentTimedUtteranceWriter {
 						// Just use the source ID as the speaker ID
 						final SegmentUtteranceFactory segUttFactory = new SegmentUtteranceFactory(Segment::getSource);
 						final Stream<Utterance> utts = segUttFactory.create(segments.stream()).flatMap(List::stream);
-						final Stream<MutablePair<String, String>> uttReprTimestamps = utts.map(utt -> {
+						final Stream<Entry<String, String>> uttReprTimestamps = utts.map(utt -> {
 							final float startTime = utt.getStartTime();
 							final String uttRepr = utt.getTokenStr();
 							LOGGER.debug("Start time for \"{}\" is{}.", uttRepr, startTime);
 							final LocalDateTime uttTime = TimestampArithmetic.createOffsetTimestamp(initialTime,
 									startTime);
 							final String uttTimestamp = uttTime.format(EventTimes.FORMATTER);
-							return new MutablePair<>(uttRepr, uttTimestamp);
+							return Pair.of(uttRepr, uttTimestamp);
 						});
 						System.out.println("UTTERANCE\tTIME");
 						uttReprTimestamps.map(uttRepr -> String.format("%s\t%s", uttRepr.getKey(), uttRepr.getValue()))

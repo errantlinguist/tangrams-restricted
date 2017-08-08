@@ -37,6 +37,7 @@ import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.BeanFactory;
@@ -46,7 +47,6 @@ import com.google.common.collect.Maps;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
-import se.kth.speech.MutablePair;
 import se.kth.speech.coin.tangrams.analysis.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.GameContext;
 import se.kth.speech.coin.tangrams.analysis.GameHistory;
@@ -326,9 +326,9 @@ public final class Tester {
 	@Inject
 	private BeanFactory beanFactory;
 
-	private final EventDialogueTransformer diagTransformer;
-	
 	private final Function<? super ReferentConfidenceMapFactory, ? extends EventDialogueClassifier> classifierFactory;
+
+	private final EventDialogueTransformer diagTransformer;
 
 	@Inject
 	private EntityInstanceAttributeContext entInstAttrCtx;
@@ -346,7 +346,8 @@ public final class Tester {
 
 	private final TestSetFactory testSetFactory;
 
-	public Tester(final TestSetFactory testSetFactory, final EventDialogueTransformer diagTransformer, final Function<? super ReferentConfidenceMapFactory, ? extends EventDialogueClassifier> classifierFactory,
+	public Tester(final TestSetFactory testSetFactory, final EventDialogueTransformer diagTransformer,
+			final Function<? super ReferentConfidenceMapFactory, ? extends EventDialogueClassifier> classifierFactory,
 			final Executor backgroundJobExecutor) {
 		this.testSetFactory = testSetFactory;
 		this.diagTransformer = diagTransformer;
@@ -385,7 +386,7 @@ public final class Tester {
 	public void setIterCount(final int iterCount) {
 		this.iterCount = iterCount;
 	}
-	
+
 	private EventDialogueClassifier createDialogueClassifier(final WordClassificationData trainingData,
 			final SessionDataManager testSessionData) throws IOException {
 		final Function<String, Logistic> wordClassifierGetter = createWordClassifierMap(
@@ -494,7 +495,7 @@ public final class Tester {
 					sessionEventDiagMgr.getGameHistory(), diagClassifier);
 			if (optTestResults.isPresent()) {
 				final EventDialogueTestResults results = optTestResults.get();
-				result.add(new MutablePair<>(uttDiag, results));
+				result.add(Pair.of(uttDiag, results));
 			} else {
 				LOGGER.debug("No utterances tested for {}.", uttDiag);
 			}
