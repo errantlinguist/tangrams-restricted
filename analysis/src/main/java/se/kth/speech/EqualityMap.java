@@ -18,7 +18,6 @@ package se.kth.speech;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -114,9 +113,9 @@ public final class EqualityMap<K, V> implements Map<K, V> {
 
 	}
 
-	private final List<K> keys;
+	private final ArrayList<K> keys;
 
-	private final List<V> values;
+	private final ArrayList<V> values;
 
 	public EqualityMap() {
 		this(new ArrayList<>(), new ArrayList<>());
@@ -126,7 +125,7 @@ public final class EqualityMap<K, V> implements Map<K, V> {
 		this(new ArrayList<>(initialCapacity), new ArrayList<>(initialCapacity));
 	}
 
-	private EqualityMap(final List<K> keys, final List<V> values) {
+	private EqualityMap(final ArrayList<K> keys, final ArrayList<V> values) {
 		assert keys.size() == values.size();
 		this.keys = keys;
 		this.values = values;
@@ -285,6 +284,9 @@ public final class EqualityMap<K, V> implements Map<K, V> {
 	 */
 	@Override
 	public void putAll(final Map<? extends K, ? extends V> m) {
+		final int minSize = m.size();
+		keys.ensureCapacity(minSize);
+		values.ensureCapacity(minSize);
 		m.forEach(this::put);
 	}
 
