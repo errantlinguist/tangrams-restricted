@@ -333,8 +333,9 @@ public final class EqualityMap<K, V> implements Map<K, V> {
 	 */
 	@Override
 	public Collection<V> values() {
-		int currentSize = size();
-		return occupiedIdxs().mapToObj(values::get).collect(Collectors.toCollection(() -> new ArrayList<>(currentSize)));
+		final int currentSize = size();
+		return occupiedIdxs().mapToObj(values::get)
+				.collect(Collectors.toCollection(() -> new ArrayList<>(currentSize)));
 	}
 
 	private void ensureCapacity(final int capacity) {
