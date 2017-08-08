@@ -123,15 +123,12 @@ final class UtteranceTabularDataWriter {
 
 	private final boolean strict;
 
-	private final PlayerGameContextFactory uttContextFactory;
-
 	private final List<Utterance> utts;
 
-	UtteranceTabularDataWriter(final List<Utterance> utts, final PlayerGameContextFactory uttContextFactory,
-			final EntityFeature.Extractor extractor, final List<EntityFeature> featuresToDescribe,
+	UtteranceTabularDataWriter(final List<Utterance> utts, final EntityFeature.Extractor extractor,
+			final List<EntityFeature> featuresToDescribe,
 			final EntityFeatureExtractionContextFactory extractionContextFactory, final boolean strict) {
 		this.utts = utts;
-		this.uttContextFactory = uttContextFactory;
 		this.extractor = extractor;
 		this.featuresToDescribe = featuresToDescribe;
 		this.extractionContextFactory = extractionContextFactory;
@@ -312,8 +309,8 @@ final class UtteranceTabularDataWriter {
 				writer.write(firstDiagEvent.getTime());
 				writer.write(TABLE_STRING_REPR_COL_DELIMITER);
 				{
-					final GameContext context = uttContextFactory.create(contextStartTime, contextEndTime, playerId)
-							.findFirst().get();
+					final GameContext context = TemporalGameContexts
+							.create(history, contextStartTime, contextEndTime, playerId).findFirst().get();
 					final Optional<Integer> optSelectedEntityId = context.findLastSelectedEntityId();
 					final String featureVectorRepr;
 					if (optSelectedEntityId.isPresent()) {

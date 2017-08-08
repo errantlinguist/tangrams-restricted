@@ -35,6 +35,7 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import javax.swing.JFileChooser;
@@ -55,6 +56,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Table;
 
+import iristk.system.Event;
 import se.kth.speech.awt.LookAndFeels;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionContextFactory;
@@ -200,6 +202,8 @@ final class UtteranceSelectedEntityDescriptionWriter {
 		CLASS_SETTINGS_INFILE_PATH = SETTINGS_DIR
 				.resolve(UtteranceSelectedEntityDescriptionWriter.class.getName() + ".properties");
 	}
+
+	private static final Predicate<Event> EVENT_FILTER = LoggedEvents.VALID_MODEL_MIN_REQUIRED_EVENT_MATCHER;
 
 	public static void main(final String[] args) throws IOException, JAXBException {
 		if (args.length < 1) {
@@ -390,8 +394,8 @@ final class UtteranceSelectedEntityDescriptionWriter {
 	private void accept(final SessionDataManager sessionData, final String outfileNamePrefix)
 			throws JAXBException, IOException {
 		final PlayerDataManager playerData = sessionData.getPlayerData();
-		final Table<String, String, GameHistory> gamePlayerHistoryTable = LoggedEvents.createPlayerGameHistoryTable(
-				playerData.getPlayerEventLogs().entrySet(), LoggedEvents.VALID_MODEL_MIN_REQUIRED_EVENT_MATCHER);
+		final Table<String, String, GameHistory> gamePlayerHistoryTable = LoggedEvents
+				.createPlayerGameHistoryTable(playerData.getPlayerEventLogs().entrySet(), EVENT_FILTER);
 		final Set<String> playerGameIdIntersection = new HashSet<>(gamePlayerHistoryTable.rowKeySet());
 		gamePlayerHistoryTable.columnMap().values().stream().map(Map::keySet)
 				.forEach(playerGameIdIntersection::retainAll);
@@ -410,9 +414,8 @@ final class UtteranceSelectedEntityDescriptionWriter {
 			LOGGER.debug("Processing game \"{}\".", gameId);
 			final Map<String, GameHistory> playerHistories = gamePlayerHistoryTable.row(gameId);
 
-			final UtteranceTabularDataWriter gameWriter = new UtteranceTabularDataWriter(utts,
-					new PlayerGameContextFactory(playerHistories::get), extractor, featuresToDescribe,
-					extractionContextFactory, strict);
+			final UtteranceTabularDataWriter gameWriter = new UtteranceTabularDataWriter(utts, extractor,
+					featuresToDescribe, extractionContextFactory, strict);
 			for (final Entry<String, GameHistory> playerHistory : playerHistories.entrySet()) {
 				final String playerId = playerHistory.getKey();
 				final GameHistory history = playerHistory.getValue();
