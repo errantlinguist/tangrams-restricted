@@ -18,26 +18,101 @@ package se.kth.speech;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
-import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import com.google.common.collect.Sets;
 
-import se.kth.speech.MutablePair;
-
 /**
- * Useful for mapping classes which have no proper
- * {@link Object#hashCode()} functionality.
- * 
+ * Useful for mapping classes which have no proper {@link Object#hashCode()}
+ * functionality.
+ *
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
  * @since May 1, 2017
  *
  */
 public final class EqualityMap<K, V> implements Map<K, V> {
+
+	private class IndexedEntry implements Entry<K, V> {
+
+		private final int idx;
+
+		private IndexedEntry(final int idx) {
+			this.idx = idx;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see java.lang.Object#equals(java.lang.Object)
+		 */
+		@Override
+		public boolean equals(final Object obj) {
+			final boolean result;
+			if (this == obj) {
+				result = true;
+			} else if (obj == null) {
+				result = false;
+			} else if (obj instanceof Entry<?, ?>) {
+				final Entry<?, ?> other = (Entry<?, ?>) obj;
+				result = Objects.equals(this.getKey(), other.getKey())
+						&& Objects.equals(this.getValue(), other.getValue());
+			} else {
+				result = false;
+			}
+			return result;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see java.util.Map.Entry#getKey()
+		 */
+		@Override
+		public K getKey() {
+			return keys.get(idx);
+		}
+
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see java.util.Map.Entry#getValue()
+		 */
+		@Override
+		public V getValue() {
+			return values.get(idx);
+		}
+
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see java.lang.Object#hashCode()
+		 */
+		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + Objects.hashCode(getKey());
+			result = prime * result + Objects.hashCode(getValue());
+			return result;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see java.util.Map.Entry#setValue(java.lang.Object)
+		 */
+		@Override
+		public V setValue(final V value) {
+			return values.set(idx, value);
+		}
+
+	}
 
 	private final List<K> keys;
 
@@ -89,10 +164,7 @@ public final class EqualityMap<K, V> implements Map<K, V> {
 	}
 
 	public Stream<Entry<K, V>> entries() {
-		final Iterator<K> keyIter = keys.iterator();
-		final Iterator<V> valueIter = values.iterator();
-		final Supplier<Entry<K, V>> entryFactory = () -> new MutablePair<>(keyIter.next(), valueIter.next());
-		return Stream.generate(entryFactory).limit(size());
+		return IntStream.of(0, size()).mapToObj(IndexedEntry::new);
 	}
 
 	/*
@@ -102,14 +174,12 @@ public final class EqualityMap<K, V> implements Map<K, V> {
 	 */
 	@Override
 	public Set<Entry<K, V>> entrySet() {
-		final Set<Entry<K, V>> result = Sets.newHashSetWithExpectedSize(size());
-		entries().forEach(result::add);
-		return result;
+		return entries().collect(Collectors.toCollection(() -> Sets.newHashSetWithExpectedSize(size())));
 	}
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#equals(java.lang.Object)
 	 */
 	@Override
@@ -154,7 +224,7 @@ public final class EqualityMap<K, V> implements Map<K, V> {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#hashCode()
 	 */
 	@Override
@@ -247,7 +317,7 @@ public final class EqualityMap<K, V> implements Map<K, V> {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#toString()
 	 */
 	@Override
