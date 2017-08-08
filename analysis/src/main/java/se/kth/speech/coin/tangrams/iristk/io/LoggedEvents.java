@@ -18,6 +18,7 @@ package se.kth.speech.coin.tangrams.iristk.io;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.charset.Charset;
 import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -53,6 +54,8 @@ import se.kth.speech.coin.tangrams.iristk.GameStateDescriptions;
  *
  */
 public final class LoggedEvents {
+
+	public static final Charset CHARSET = Record.JSON_CHARSET;
 
 	public static final EventTypeMatcher VALID_MODEL_MIN_REQUIRED_EVENT_MATCHER = new EventTypeMatcher(
 			GameManagementEvent.getGameModelStateChangingEvents());
@@ -332,7 +335,7 @@ public final class LoggedEvents {
 	}
 
 	private static Stream<String> readLines(final Path eventLogPath) throws IOException {
-		return Files.lines(eventLogPath, Record.JSON_CHARSET);
+		return Files.lines(eventLogPath, CHARSET);
 	}
 
 	private LoggedEvents() {
