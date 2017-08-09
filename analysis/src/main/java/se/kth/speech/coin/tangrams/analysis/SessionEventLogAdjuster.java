@@ -42,7 +42,9 @@ import java.util.stream.Stream;
 
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.ScrollPaneConstants;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.AbstractTableModel;
 import javax.xml.bind.JAXBException;
@@ -319,14 +321,10 @@ final class SessionEventLogAdjuster {
 		final Stream<EventDialogue> diags = EVENT_DIAG_FACTORY.apply(utts.listIterator(), history);
 		final JTable diagTable = new JTable(new EventDialogueTableModel(diags.toArray(EventDialogue[]::new)));
 		final Container content = frame.getContentPane();
-		// final JTableHeader tableHeader = diagTable.getTableHeader();
-		// content.add(tableHeader);
-		content.add(diagTable);
 		// https://stackoverflow.com/a/2452758/1391325
-		// content.add(new JScrollPane(diagTable,
-		// JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-		// JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED));
-		// diagTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+		content.add(new JScrollPane(diagTable, ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
+				ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED));
+		diagTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 
 		// TODO: Finish
 		frame.pack();
