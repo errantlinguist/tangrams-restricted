@@ -41,7 +41,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.xml.bind.JAXBException;
-import javax.xml.bind.Unmarshaller;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,10 +48,7 @@ import org.slf4j.LoggerFactory;
 import iristk.system.Event;
 import se.kth.speech.coin.tangrams.iristk.EventTypeMatcher;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
-import se.kth.speech.coin.tangrams.iristk.io.HatIO;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
-import se.kth.speech.hat.xsd.Annotation;
-import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -99,24 +95,6 @@ final class SessionStatisticsWriter {
 
 	private static final List<String> COLUMN_HEADERS = Arrays.asList("INPATH", "GAME_ID", "DURATION", "ROUND_COUNT",
 			"UTT_COUNT");
-
-	private static final ThreadLocal<Unmarshaller> HAT_UNMARSHALLER = new ThreadLocal<Unmarshaller>() {
-
-		/*
-		 * (non-Javadoc)
-		 *
-		 * @see java.lang.ThreadLocal#initialValue()
-		 */
-		@Override
-		protected Unmarshaller initialValue() {
-			try {
-				return HatIO.fetchContext().createUnmarshaller();
-			} catch (final JAXBException e) {
-				throw new RuntimeException(e);
-			}
-		}
-
-	};
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SessionStatisticsWriter.class);
 
@@ -178,25 +156,10 @@ final class SessionStatisticsWriter {
 
 	private static NavigableMap<String, GameSummary> createSessionSummary(final SessionDataManager sessionData)
 			throws JAXBException, IOException {
-		final List<Utterance> utts = createUtteranceList(sessionData);
+		final List<Utterance> utts = SessionUtterances.createUtteranceList(sessionData);
 		final Path eventLogPath = sessionData.getCanonicalEventLogPath();
 		LOGGER.debug("Reading event log at \"{}\".", eventLogPath);
 		return createGameSummaryMap(eventLogPath, utts);
-	}
-
-	private static List<Utterance> createUtteranceList(final SessionDataManager sessionData)
-			throws JAXBException, IOException {
-		final PlayerDataManager playerData = sessionData.getPlayerData();
-		final Map<String, String> sourcePlayerIds = playerData.getPlayerSourceIds().inverse();
-		final SegmentUtteranceFactory segUttFactory = new SegmentUtteranceFactory(seg -> {
-			final String sourceId = seg.getSource();
-			return sourcePlayerIds.get(sourceId);
-		});
-		final Path hatInfilePath = sessionData.getHATFilePath();
-		LOGGER.debug("Reading HAT annotations at \"{}\".", hatInfilePath);
-		final Annotation uttAnnots = readAnnotations(hatInfilePath);
-		final List<Segment> segs = uttAnnots.getSegments().getSegment();
-		return Arrays.asList(segUttFactory.create(segs.stream()).flatMap(List::stream).toArray(Utterance[]::new));
 	}
 
 	private static Stream<GameSummary> getGameSummaries(
@@ -206,7 +169,8 @@ final class SessionStatisticsWriter {
 
 	private static Stream<Utterance> getUtterancesBetween(final List<Utterance> utts, final LocalDateTime start,
 			final LocalDateTime end) {
-		final ClosedTemporalIntervalUtteranceFilter temporalFilter = new ClosedTemporalIntervalUtteranceFilter(start, end);
+		final ClosedTemporalIntervalUtteranceFilter temporalFilter = new ClosedTemporalIntervalUtteranceFilter(start,
+				end);
 		return utts.stream().filter(temporalFilter);
 	}
 
@@ -224,12 +188,6 @@ final class SessionStatisticsWriter {
 			final SessionDataManager sessionData = SessionDataManager.create(infilePath);
 			final NavigableMap<String, GameSummary> sessionSummary = createSessionSummary(sessionData);
 			sessionSummaries.put(infilePath, sessionSummary);
-		}
-	}
-
-	private static Annotation readAnnotations(final Path hatInfilePath) throws JAXBException, IOException {
-		try (InputStream instream = Files.newInputStream(hatInfilePath)) {
-			return (Annotation) HAT_UNMARSHALLER.get().unmarshal(instream);
 		}
 	}
 
@@ -299,7 +257,8 @@ final class SessionStatisticsWriter {
 					.map(SessionStatisticsWriter::toSeconds).reduce((augend, addend) -> augend.add(addend)).get();
 			final BigDecimal meanDuration = totalDuration.divide(gameSessionCount, MEAN_DIVISION_CTX);
 			final long totalRoundCount = getGameSummaries(sessionSummaries).mapToLong(GameSummary::getRoundCount).sum();
-			final BigDecimal meanRoundCount = new BigDecimal(totalRoundCount).divide(gameSessionCount, MEAN_DIVISION_CTX);
+			final BigDecimal meanRoundCount = new BigDecimal(totalRoundCount).divide(gameSessionCount,
+					MEAN_DIVISION_CTX);
 			final long totalUttCount = getGameSummaries(sessionSummaries).mapToLong(GameSummary::getUttCount).sum();
 			final BigDecimal meanUttCount = new BigDecimal(totalUttCount).divide(gameSessionCount, MEAN_DIVISION_CTX);
 			final List<Object> meanVals = Arrays.asList("MEAN", "", meanDuration, meanRoundCount, meanUttCount);

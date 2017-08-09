@@ -41,7 +41,6 @@ import java.util.function.Supplier;
 import javax.swing.JFileChooser;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.xml.bind.JAXBException;
-import javax.xml.bind.Unmarshaller;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -61,11 +60,8 @@ import se.kth.speech.awt.LookAndFeels;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionContextFactory;
 import se.kth.speech.coin.tangrams.analysis.features.ImageEdgeCounter;
-import se.kth.speech.coin.tangrams.iristk.io.HatIO;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
 import se.kth.speech.coin.tangrams.view.UserPrompts;
-import se.kth.speech.hat.xsd.Annotation;
-import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
 import se.kth.speech.io.FileNames;
 
 /**
@@ -168,25 +164,9 @@ final class UtteranceSelectedEntityDescriptionWriter {
 
 	private static final String DEFAULT_OUTFILE_PREFIX = "";
 
+	private static final Predicate<Event> EVENT_FILTER = LoggedEvents.VALID_MODEL_MIN_REQUIRED_EVENT_MATCHER;
+
 	private static final List<FileNameExtensionFilter> FILE_FILTERS;
-
-	private static final ThreadLocal<Unmarshaller> HAT_UNMARSHALLER = new ThreadLocal<Unmarshaller>() {
-
-		/*
-		 * (non-Javadoc)
-		 *
-		 * @see java.lang.ThreadLocal#initialValue()
-		 */
-		@Override
-		protected Unmarshaller initialValue() {
-			try {
-				return HatIO.fetchContext().createUnmarshaller();
-			} catch (final JAXBException e) {
-				throw new RuntimeException(e);
-			}
-		}
-
-	};
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(UtteranceSelectedEntityDescriptionWriter.class);
 
@@ -202,8 +182,6 @@ final class UtteranceSelectedEntityDescriptionWriter {
 		CLASS_SETTINGS_INFILE_PATH = SETTINGS_DIR
 				.resolve(UtteranceSelectedEntityDescriptionWriter.class.getName() + ".properties");
 	}
-
-	private static final Predicate<Event> EVENT_FILTER = LoggedEvents.VALID_MODEL_MIN_REQUIRED_EVENT_MATCHER;
 
 	public static void main(final String[] args) throws IOException, JAXBException {
 		if (args.length < 1) {
@@ -237,21 +215,6 @@ final class UtteranceSelectedEntityDescriptionWriter {
 		}
 		final String fileBaseName = FileNames.splitBase(inpath.getFileName().toString())[0];
 		return parentDirName + "-" + fileBaseName;
-	}
-
-	private static List<Utterance> createUtteranceList(final SessionDataManager sessionData)
-			throws JAXBException, IOException {
-		final PlayerDataManager playerData = sessionData.getPlayerData();
-		final Map<String, String> sourcePlayerIds = playerData.getPlayerSourceIds().inverse();
-		final SegmentUtteranceFactory segUttFactory = new SegmentUtteranceFactory(seg -> {
-			final String sourceId = seg.getSource();
-			return sourcePlayerIds.get(sourceId);
-		});
-		final Path hatInfilePath = sessionData.getHATFilePath();
-		LOGGER.debug("Reading HAT annotations at \"{}\".", hatInfilePath);
-		final Annotation uttAnnots = readAnnotations(hatInfilePath);
-		final List<Segment> segs = uttAnnots.getSegments().getSegment();
-		return Arrays.asList(segUttFactory.create(segs.stream()).flatMap(List::stream).toArray(Utterance[]::new));
 	}
 
 	private static UtteranceSelectedEntityDescriptionWriter createWriter(final Path outpath,
@@ -307,12 +270,6 @@ final class UtteranceSelectedEntityDescriptionWriter {
 				}
 			}
 
-		}
-	}
-
-	private static Annotation readAnnotations(final Path hatInfilePath) throws JAXBException, IOException {
-		try (InputStream instream = Files.newInputStream(hatInfilePath)) {
-			return (Annotation) HAT_UNMARSHALLER.get().unmarshal(instream);
 		}
 	}
 
@@ -409,7 +366,7 @@ final class UtteranceSelectedEntityDescriptionWriter {
 			LOGGER.info("Created output directory \"{}\".", extantOutdir);
 		}
 
-		final List<Utterance> utts = createUtteranceList(sessionData);
+		final List<Utterance> utts = SessionUtterances.createUtteranceList(sessionData);
 		final UtteranceTabularDataWriter gameWriter = new UtteranceTabularDataWriter(utts, extractor,
 				featuresToDescribe, extractionContextFactory, strict);
 		for (final String gameId : playerGameIdIntersection) {
