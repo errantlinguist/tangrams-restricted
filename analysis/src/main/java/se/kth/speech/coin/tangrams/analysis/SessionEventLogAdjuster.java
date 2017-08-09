@@ -18,6 +18,7 @@ package se.kth.speech.coin.tangrams.analysis;
 
 import java.awt.Component;
 import java.awt.Container;
+import java.awt.Dimension;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -515,7 +516,16 @@ final class SessionEventLogAdjuster {
 		content.add(new JScrollPane(diagTable, ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
 				ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED));
 		diagTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-
+		final Dimension diagTablereferredScrollableViewportSize = diagTable.getPreferredScrollableViewportSize();
+		// http://stackoverflow.com/a/1936582/1391325
+		final Dimension screenSize = frame.getToolkit().getScreenSize();
+		final double scaleFactor = 1.0;
+		final Dimension maxPreferredSize = new Dimension(Math.toIntExact(Math.round(screenSize.width * scaleFactor)),
+				Math.toIntExact(Math.round(screenSize.height * scaleFactor)));
+		if (diagTablereferredScrollableViewportSize.width < maxPreferredSize.width) {
+			diagTablereferredScrollableViewportSize.width = maxPreferredSize.width;
+		}
+		diagTable.setPreferredScrollableViewportSize(diagTablereferredScrollableViewportSize);
 		// TODO: Finish
 		frame.pack();
 		frame.setVisible(true);
