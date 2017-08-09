@@ -30,7 +30,9 @@ import it.unimi.dsi.fastutil.booleans.BooleanArrayList;
 
 /**
  * Useful for mapping classes which have no proper {@link Object#hashCode()}
- * functionality.
+ * functionality. <strong>TODO:</strong> Make changes to collections returned by
+ * {@link #keySet()} {@link #entrySet()} and {@link #values()} propagate to
+ * backing arrays and vice versa
  *
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
  * @since May 1, 2017
