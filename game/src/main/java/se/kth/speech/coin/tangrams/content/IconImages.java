@@ -77,11 +77,10 @@ public final class IconImages {
 	public static NavigableMap<String, URL> createImageResourceMap(final Function<? super String, ? extends URL> resourceUrlFactory) {
 		NavigableMap<String, URL> result = new TreeMap<>(ICON_NAME_COMPARATOR);
 		for (String imgName : IMAGE_RESOURCE_NAMES){
-//			String resLoc = ImageType.ICON.getDirLocator() + '/' + imgName + IMG_FILENAME_SUFFIX;
 			String resLoc = "/se/kth/speech/coin/tangrams/content/" + ImageType.ICON.getDirLocator() + '/' + imgName + IMG_FILENAME_SUFFIX;
-			LOGGER.info("Processing image file at \"{}\".", resLoc);
+			LOGGER.debug("Processing image file at \"{}\".", resLoc);
 			URL imgUrl = resourceUrlFactory.apply(resLoc);
-			LOGGER.info("URL for image \"{}\" is \"{}\".", imgName, imgUrl);
+			LOGGER.debug("URL for image \"{}\" is \"{}\".", imgName, imgUrl);
 			result.put(imgName, imgUrl);
 		}
 		return result;
