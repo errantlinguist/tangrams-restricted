@@ -45,6 +45,9 @@ import javax.xml.bind.JAXBException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import iristk.system.Event;
+import se.kth.speech.coin.tangrams.iristk.EventTimes;
+
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
  * @since 2 Aug 2017
@@ -123,14 +126,18 @@ final class SessionStatisticsWriter {
 		// actually finished
 		// TODO: Remove this once one adding the remove-last-round functionality
 		// to the EventDialogue factory
-		final List<EventDialogue> completedDiags = diags.subList(0, diags.size() - 1);
+		final int lastDiagIdx = diags.size() - 1;
+		final List<EventDialogue> completedDiags = diags.subList(0, lastDiagIdx);
 
 		final long roundCount = completedDiags.size();
-		final LocalDateTime gameStart = history.getStartTime();
-		final LocalDateTime lastTurnRequestTime = history.getEvents().lastKey();
-		final Duration duration = Duration.between(gameStart, lastTurnRequestTime);
 		final long uttCount = completedDiags.stream().map(EventDialogue::getUtts).flatMap(List::stream).count();
 		assert uttCount > 0;
+
+		final LocalDateTime gameStart = history.getStartTime();
+		final Event gameOverEvent = diags.get(lastDiagIdx).getFirstEvent().get();
+		final LocalDateTime lastTurnRequestTime = EventTimes.parseEventTime(gameOverEvent.getTime());
+		final Duration duration = Duration.between(gameStart, lastTurnRequestTime);
+
 		return new GameSummary(roundCount, duration, uttCount);
 	}
 
