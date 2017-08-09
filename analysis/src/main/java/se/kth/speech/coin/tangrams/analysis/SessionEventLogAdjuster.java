@@ -49,6 +49,7 @@ import javax.swing.JTable;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.AbstractTableModel;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableModel;
@@ -75,7 +76,7 @@ import se.kth.speech.coin.tangrams.view.UserPrompts;
  */
 final class SessionEventLogAdjuster {
 
-	private static class EventDialogueAdjustingTable extends JTable {
+	private class EventDialogueAdjustingTable extends JTable {
 
 		/**
 		 *
@@ -85,6 +86,8 @@ final class SessionEventLogAdjuster {
 		public EventDialogueAdjustingTable(final TableModel dm) {
 			super(dm);
 			IntStream.range(0, getColumnCount()).forEach(this::setOptimumWidth);
+			setCellSelectionEnabled(true);
+			setDefaultRenderer(Utterance.class, new UtteranceCellRenderer());
 		}
 
 		private void setOptimumWidth(final int columnIdx) {
@@ -111,8 +114,6 @@ final class SessionEventLogAdjuster {
 
 	private static class EventDialogueTableModel extends AbstractTableModel {
 
-		private static final int ESTIMATED_UTTS_PER_DIAG_COUNT = 16;
-
 		private static final String NULL_VALUE_REPR = "-";
 
 		/**
@@ -120,15 +121,26 @@ final class SessionEventLogAdjuster {
 		 */
 		private static final long serialVersionUID = -4475137472007680337L;
 
-		private static final Collector<CharSequence, ?, String> WORD_JOINER = Collectors.joining(" ");
-
 		private final EventDialogue[] diags;
-
-		private final ConcurrentMap<List<String>, String> tokenSeqReprs;
 
 		private EventDialogueTableModel(final EventDialogue[] diags) {
 			this.diags = diags;
-			tokenSeqReprs = new ConcurrentHashMap<>(diags.length * ESTIMATED_UTTS_PER_DIAG_COUNT);
+		}
+
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see javax.swing.table.AbstractTableModel#getColumnClass(int)
+		 */
+		@Override
+		public Class<?> getColumnClass(final int columnIndex) {
+			Class<?> result;
+			if (columnIndex == 0) {
+				result = String.class;
+			} else {
+				result = Utterance.class;
+			}
+			return result;
 		}
 
 		/*
@@ -181,24 +193,8 @@ final class SessionEventLogAdjuster {
 			if (columnIndex == 0) {
 				result = diag.getFirstEvent().map(Event::getTime).orElse(NULL_VALUE_REPR);
 			} else {
-				result = getUttRepr(diag, columnIndex);
-			}
-			return result;
-		}
-
-		private String fetchTokenSeqRepr(final List<String> tokenSeq) {
-			return tokenSeqReprs.computeIfAbsent(tokenSeq, key -> key.stream().collect(WORD_JOINER));
-		}
-
-		private String getUttRepr(final EventDialogue diag, final int columnIndex) {
-			final List<Utterance> diagUtts = diag.getUtts();
-			final String result;
-			if (diagUtts.size() <= columnIndex) {
-				result = null;
-			} else {
-				final Utterance diagUtt = diagUtts.get(columnIndex);
-				final List<String> uttTokens = diagUtt.getTokens();
-				result = fetchTokenSeqRepr(uttTokens);
+				final List<Utterance> diagUtts = diag.getUtts();
+				result = diagUtts.size() <= columnIndex ? null : diagUtts.get(columnIndex);
 			}
 			return result;
 		}
@@ -227,9 +223,35 @@ final class SessionEventLogAdjuster {
 		}
 	}
 
+	private class UtteranceCellRenderer extends DefaultTableCellRenderer {
+
+		/**
+		 *
+		 */
+		private static final long serialVersionUID = 7163183785329244497L;
+
+		@Override
+		public void setValue(final Object value) {
+			// http://docs.oracle.com/javase/tutorial/uiswing/components/table.html#renderer
+			final String repr;
+			if (value == null) {
+				repr = "";
+			} else {
+				final Utterance utt = (Utterance) value;
+				final List<String> uttTokens = utt.getTokens();
+				repr = fetchTokenSeqRepr(uttTokens);
+			}
+			setText(repr);
+		}
+	}
+
 	private static final Path CLASS_SETTINGS_INFILE_PATH;
 
 	private static final FileNameExtensionFilter DEFAULT_FILE_FILTER;
+
+	private static final int ESTIMATED_DIAGS_PER_SESSION = 96;
+
+	private static final int ESTIMATED_UNIQUE_TOKEN_SEQ_PER_DIAG_COUNT = 8;
 
 	private static final EventDialogueFactory EVENT_DIAG_FACTORY = new EventDialogueFactory(
 			new EventTypeMatcher(GameManagementEvent.NEXT_TURN_REQUEST));
@@ -241,6 +263,8 @@ final class SessionEventLogAdjuster {
 	private static final Logger LOGGER = LoggerFactory.getLogger(SessionEventLogAdjuster.class);
 
 	private static final Path SETTINGS_DIR;
+
+	private static final Collector<CharSequence, ?, String> WORD_JOINER = Collectors.joining(" ");
 
 	static {
 		SETTINGS_DIR = Paths.get(".settings");
@@ -325,7 +349,11 @@ final class SessionEventLogAdjuster {
 		return result;
 	}
 
+	private final ConcurrentMap<List<String>, String> tokenSeqReprs;
+
 	private SessionEventLogAdjuster() {
+		tokenSeqReprs = new ConcurrentHashMap<>(
+				ESTIMATED_DIAGS_PER_SESSION * ESTIMATED_UNIQUE_TOKEN_SEQ_PER_DIAG_COUNT);
 	}
 
 	private void accept(final SessionDataManager sessionData) throws JAXBException, IOException {
@@ -353,6 +381,10 @@ final class SessionEventLogAdjuster {
 				visualize(title, history, utts);
 			}
 		}
+	}
+
+	private String fetchTokenSeqRepr(final List<String> tokenSeq) {
+		return tokenSeqReprs.computeIfAbsent(tokenSeq, key -> key.stream().collect(WORD_JOINER));
 	}
 
 	private void visualize(final String title, final GameHistory history, final List<Utterance> utts) {
