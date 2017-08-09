@@ -105,6 +105,7 @@ final class SessionEventLogAdjuster {
 		 *
 		 */
 		private static final long serialVersionUID = -4475137472007680337L;
+		
 		private static final Collector<CharSequence, ?, String> WORD_JOINER = Collectors.joining(" ");
 
 		private final EventDialogue[] diags;
