@@ -45,11 +45,6 @@ import javax.xml.bind.JAXBException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import iristk.system.Event;
-import se.kth.speech.coin.tangrams.iristk.EventTypeMatcher;
-import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
-import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
-
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
  * @since 2 Aug 2017
@@ -102,9 +97,6 @@ final class SessionStatisticsWriter {
 
 	private static final BigDecimal NANOS_TO_SECS_DIVISOR = new BigDecimal("1000000000");
 
-	private static final EventTypeMatcher NEXT_TURN_REQUEST_EVENT_MATCHER = new EventTypeMatcher(
-			GameManagementEvent.NEXT_TURN_REQUEST);
-
 	private static final Collector<CharSequence, ?, String> ROW_CELL_JOINER = Collectors.joining("\t");
 
 	private static final String ROW_DELIMITER = System.lineSeparator();
@@ -126,52 +118,35 @@ final class SessionStatisticsWriter {
 
 	}
 
-	private static GameSummary createGameSummary(final GameHistory history, final List<Utterance> utts) {
-		final Stream<Event> events = history.getEventSequence();
-		final Stream<Event> nextTurnRequestEvents = events.filter(NEXT_TURN_REQUEST_EVENT_MATCHER);
+	private static GameSummary createGameSummary(final GameHistory history, final List<EventDialogue> diags) {
 		// Remove one from count because the last round of the game is never
 		// actually finished
-		final long roundCount = nextTurnRequestEvents.count() - 1;
+		// TODO: Remove this once one adding the remove-last-round functionality
+		// to the EventDialogue factory
+		final List<EventDialogue> completedDiags = diags.subList(0, diags.size() - 1);
+
+		final long roundCount = completedDiags.size();
 		final LocalDateTime gameStart = history.getStartTime();
 		final LocalDateTime lastTurnRequestTime = history.getEvents().lastKey();
 		final Duration duration = Duration.between(gameStart, lastTurnRequestTime);
-		final long uttCount = getUtterancesBetween(utts, gameStart, lastTurnRequestTime).count();
+		final long uttCount = completedDiags.stream().map(EventDialogue::getUtts).flatMap(List::stream).count();
 		assert uttCount > 0;
 		return new GameSummary(roundCount, duration, uttCount);
 	}
 
-	private static NavigableMap<String, GameSummary> createGameSummaryMap(final Path eventLogPath,
-			final List<Utterance> utts) throws IOException {
-		final Map<String, GameHistory> gameHistories = LoggedEvents.readGameHistories(eventLogPath);
-		final NavigableMap<String, GameSummary> result = new TreeMap<>();
-		for (final Entry<String, GameHistory> gameHistory : gameHistories.entrySet()) {
-			final String gameId = gameHistory.getKey();
-			LOGGER.debug("Processing game \"{}\".", gameId);
-			final GameHistory history = gameHistory.getValue();
-			final GameSummary summary = createGameSummary(history, utts);
-			result.put(gameId, summary);
-		}
-		return result;
-	}
-
-	private static NavigableMap<String, GameSummary> createSessionSummary(final SessionDataManager sessionData)
+	private static NavigableMap<String, GameSummary> createSessionGameSummaries(final SessionDataManager sessionData)
 			throws JAXBException, IOException {
-		final List<Utterance> utts = SessionUtterances.createUtteranceList(sessionData);
-		final Path eventLogPath = sessionData.getCanonicalEventLogPath();
-		LOGGER.debug("Reading event log at \"{}\".", eventLogPath);
-		return createGameSummaryMap(eventLogPath, utts);
+		final SessionEventDialogueManager sessionDiagMgr = new SessionEventDialogueManager(sessionData);
+		final SessionEventDialogueManager.SessionGame canonicalGame = sessionDiagMgr.getCanonicalGame();
+		final GameSummary summary = createGameSummary(canonicalGame.getHistory(), canonicalGame.getUttDialogues());
+		final NavigableMap<String, GameSummary> result = new TreeMap<>();
+		result.put(canonicalGame.getGameId(), summary);
+		return result;
 	}
 
 	private static Stream<GameSummary> getGameSummaries(
 			final Collection<? extends Entry<Path, ? extends Map<String, GameSummary>>> sessionSummaries) {
 		return sessionSummaries.stream().map(Entry::getValue).map(Map::values).flatMap(Collection::stream);
-	}
-
-	private static Stream<Utterance> getUtterancesBetween(final List<Utterance> utts, final LocalDateTime start,
-			final LocalDateTime end) {
-		final ClosedTemporalIntervalUtteranceFilter temporalFilter = new ClosedTemporalIntervalUtteranceFilter(start,
-				end);
-		return utts.stream().filter(temporalFilter);
 	}
 
 	private static void putSessionSummaries(final Path inpath,
@@ -186,7 +161,7 @@ final class SessionStatisticsWriter {
 				props.load(propsInstream);
 			}
 			final SessionDataManager sessionData = SessionDataManager.create(infilePath);
-			final NavigableMap<String, GameSummary> sessionSummary = createSessionSummary(sessionData);
+			final NavigableMap<String, GameSummary> sessionSummary = createSessionGameSummaries(sessionData);
 			sessionSummaries.put(infilePath, sessionSummary);
 		}
 	}
