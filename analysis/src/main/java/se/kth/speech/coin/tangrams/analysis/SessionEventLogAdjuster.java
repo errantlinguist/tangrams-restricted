@@ -44,9 +44,12 @@ import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.ListSelectionModel;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.AbstractTableModel;
+import javax.swing.table.TableColumnModel;
+import javax.swing.table.TableModel;
 import javax.xml.bind.JAXBException;
 
 import org.slf4j.Logger;
@@ -69,6 +72,40 @@ import se.kth.speech.coin.tangrams.view.UserPrompts;
  *
  */
 final class SessionEventLogAdjuster {
+
+	private static class EventDialogueAdjustingTable extends JTable {
+
+		/**
+		 *
+		 */
+		private static final long serialVersionUID = 5176564593731003375L;
+
+		/**
+		 * @param dm
+		 */
+		public EventDialogueAdjustingTable(final TableModel dm) {
+			super(dm);
+		}
+
+		/**
+		 * @param dm
+		 * @param cm
+		 */
+		public EventDialogueAdjustingTable(final TableModel dm, final TableColumnModel cm) {
+			super(dm, cm);
+		}
+
+		/**
+		 * @param dm
+		 * @param cm
+		 * @param sm
+		 */
+		public EventDialogueAdjustingTable(final TableModel dm, final TableColumnModel cm,
+				final ListSelectionModel sm) {
+			super(dm, cm, sm);
+		}
+
+	}
 
 	private static class EventDialogueTableModel extends AbstractTableModel {
 
@@ -319,7 +356,8 @@ final class SessionEventLogAdjuster {
 		final JFrame frame = new JFrame(title);
 
 		final Stream<EventDialogue> diags = EVENT_DIAG_FACTORY.apply(utts.listIterator(), history);
-		final JTable diagTable = new JTable(new EventDialogueTableModel(diags.toArray(EventDialogue[]::new)));
+		final EventDialogueAdjustingTable diagTable = new EventDialogueAdjustingTable(
+				new EventDialogueTableModel(diags.toArray(EventDialogue[]::new)));
 		final Container content = frame.getContentPane();
 		// https://stackoverflow.com/a/2452758/1391325
 		content.add(new JScrollPane(diagTable, ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
