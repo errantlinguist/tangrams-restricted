@@ -16,6 +16,7 @@
 */
 package se.kth.speech.coin.tangrams.analysis;
 
+import java.awt.Component;
 import java.awt.Container;
 import java.io.File;
 import java.io.IOException;
@@ -38,17 +39,18 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.function.Predicate;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
-import javax.swing.ListSelectionModel;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.AbstractTableModel;
-import javax.swing.table.TableColumnModel;
+import javax.swing.table.TableCellRenderer;
+import javax.swing.table.TableColumn;
 import javax.swing.table.TableModel;
 import javax.xml.bind.JAXBException;
 
@@ -82,15 +84,27 @@ final class SessionEventLogAdjuster {
 
 		public EventDialogueAdjustingTable(final TableModel dm) {
 			super(dm);
+			IntStream.range(0, getColumnCount()).forEach(this::setOptimumWidth);
 		}
 
-		public EventDialogueAdjustingTable(final TableModel dm, final TableColumnModel cm) {
-			super(dm, cm);
-		}
+		private void setOptimumWidth(final int columnIdx) {
+			// https://tips4java.wordpress.com/2008/11/10/table-column-adjuster/
+			final TableColumn tableColumn = getColumnModel().getColumn(columnIdx);
+			int preferredWidth = tableColumn.getMinWidth();
+			final int maxWidth = tableColumn.getMaxWidth();
+			for (int row = 0; row < getRowCount(); row++) {
+				final TableCellRenderer cellRenderer = getCellRenderer(row, columnIdx);
+				final Component c = prepareRenderer(cellRenderer, row, columnIdx);
+				final int width = c.getPreferredSize().width + getIntercellSpacing().width;
+				preferredWidth = Math.max(preferredWidth, width);
 
-		public EventDialogueAdjustingTable(final TableModel dm, final TableColumnModel cm,
-				final ListSelectionModel sm) {
-			super(dm, cm, sm);
+				// We've exceeded the maximum width, no need to check other rows
+				if (preferredWidth >= maxWidth) {
+					preferredWidth = maxWidth;
+					break;
+				}
+			}
+			tableColumn.setPreferredWidth(preferredWidth);
 		}
 
 	}
@@ -105,7 +119,7 @@ final class SessionEventLogAdjuster {
 		 *
 		 */
 		private static final long serialVersionUID = -4475137472007680337L;
-		
+
 		private static final Collector<CharSequence, ?, String> WORD_JOINER = Collectors.joining(" ");
 
 		private final EventDialogue[] diags;
