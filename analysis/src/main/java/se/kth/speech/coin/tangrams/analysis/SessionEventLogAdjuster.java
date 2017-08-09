@@ -247,7 +247,8 @@ final class SessionEventLogAdjuster {
 			final EventAttribute colEventAttr = getColumnAttribute(columnIndex);
 			if (colEventAttr == null) {
 				final List<Utterance> diagUtts = diag.getUtts();
-				result = diagUtts.size() <= columnIndex ? null : diagUtts.get(columnIndex);
+				final int diagUttIdx = columnIndex - EventAttribute.values().length;
+				result = diagUtts.size() <= diagUttIdx ? null : diagUtts.get(diagUttIdx);
 			} else {
 				switch (colEventAttr) {
 				case SENDER: {
