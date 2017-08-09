@@ -133,10 +133,11 @@ public final class EqualityMap<K, V> implements Map<K, V> {
 	}
 
 	private EqualityMap(final ArrayList<K> keys, final ArrayList<V> values, final BooleanArrayList idxOccupations) {
-		assert keys.size() == values.size();
 		this.keys = keys;
 		this.values = values;
+		assert keys.size() == values.size();
 		this.idxOccupations = idxOccupations;
+		assert keys.size() == idxOccupations.size();
 	}
 
 	/*
