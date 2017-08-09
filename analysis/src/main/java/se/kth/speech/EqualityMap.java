@@ -112,6 +112,22 @@ public final class EqualityMap<K, V> implements Map<K, V> {
 			return values.set(idx, value);
 		}
 
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see java.lang.Object#toString()
+		 */
+		@Override
+		public String toString() {
+			final StringBuilder builder = new StringBuilder(64);
+			builder.append("IndexedEntry [getKey()=");
+			builder.append(getKey());
+			builder.append(", getValue()=");
+			builder.append(getValue());
+			builder.append("]");
+			return builder.toString();
+		}
+
 	}
 
 	/**
