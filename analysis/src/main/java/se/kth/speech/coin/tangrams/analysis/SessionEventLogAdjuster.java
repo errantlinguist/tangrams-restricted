@@ -80,26 +80,14 @@ final class SessionEventLogAdjuster {
 		 */
 		private static final long serialVersionUID = 5176564593731003375L;
 
-		/**
-		 * @param dm
-		 */
 		public EventDialogueAdjustingTable(final TableModel dm) {
 			super(dm);
 		}
 
-		/**
-		 * @param dm
-		 * @param cm
-		 */
 		public EventDialogueAdjustingTable(final TableModel dm, final TableColumnModel cm) {
 			super(dm, cm);
 		}
 
-		/**
-		 * @param dm
-		 * @param cm
-		 * @param sm
-		 */
 		public EventDialogueAdjustingTable(final TableModel dm, final TableColumnModel cm,
 				final ListSelectionModel sm) {
 			super(dm, cm, sm);
