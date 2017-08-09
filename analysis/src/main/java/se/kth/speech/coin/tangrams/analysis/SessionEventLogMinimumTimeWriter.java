@@ -33,8 +33,6 @@ import java.util.TreeSet;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import javax.xml.bind.JAXBException;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,7 +58,7 @@ final class SessionEventLogMinimumTimeWriter {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SessionEventLogMinimumTimeWriter.class);
 
-	public static void main(final String[] args) throws JAXBException, IOException {
+	public static void main(final String[] args) throws IOException {
 		final Path[] inpaths = Arrays.stream(args).map(String::trim).filter(path -> !path.isEmpty()).map(Paths::get)
 				.toArray(Path[]::new);
 		if (inpaths.length < 1) {
