@@ -150,6 +150,10 @@ final class SessionEventLogAdjuster {
 		 */
 		private static final long serialVersionUID = -4475137472007680337L;
 
+		private static int getUtteranceListIdx(final int columnIndex) {
+			return columnIndex - EventAttribute.values().length;
+		}
+
 		private final EventDialogue[] diags;
 
 		private EventDialogueTableModel(final EventDialogue[] diags) {
@@ -207,7 +211,8 @@ final class SessionEventLogAdjuster {
 			final String result;
 			final EventAttribute colEventAttr = getColumnAttribute(column);
 			if (colEventAttr == null) {
-				result = "UTT_" + column;
+				final int uttIdx = getUtteranceListIdx(column);
+				result = "UTT_" + uttIdx;
 			} else {
 				switch (colEventAttr) {
 				case SENDER: {
@@ -248,7 +253,7 @@ final class SessionEventLogAdjuster {
 			final EventAttribute colEventAttr = getColumnAttribute(columnIndex);
 			if (colEventAttr == null) {
 				final List<Utterance> diagUtts = diag.getUtts();
-				final int diagUttIdx = columnIndex - EventAttribute.values().length;
+				final int diagUttIdx = getUtteranceListIdx(columnIndex);
 				result = diagUtts.size() <= diagUttIdx ? null : diagUtts.get(diagUttIdx);
 			} else {
 				switch (colEventAttr) {
