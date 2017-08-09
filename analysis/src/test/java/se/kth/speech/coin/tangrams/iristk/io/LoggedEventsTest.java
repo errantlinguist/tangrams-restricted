@@ -27,8 +27,6 @@ import java.util.Map;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-import javax.xml.bind.JAXBException;
-
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -68,12 +66,9 @@ public final class LoggedEventsTest {
 	/**
 	 * Test method for
 	 * {@link se.kth.speech.coin.tangrams.iristk.io.LoggedEvents#parseGameHistories(java.util.stream.Stream, java.util.function.Predicate)}.
-	 *
-	 * @throws IOException
-	 * @throws JAXBException
 	 */
 	@Test
-	public void testParseGameHistoriesStreamOfStringPredicateOfQsuperEvent() throws IOException, JAXBException {
+	public void testParseGameHistoriesStreamOfStringPredicateOfQsuperEvent() {
 		testParseGameHistoriesStreamOfStringPredicateOfQsuperEvent(event -> true);
 	}
 
@@ -92,8 +87,8 @@ public final class LoggedEventsTest {
 		}));
 	}
 
-	private void testParseGameHistoriesStreamOfStringPredicateOfQsuperEvent(final Predicate<? super Event> eventFilter)
-			throws IOException, JAXBException {
+	private void testParseGameHistoriesStreamOfStringPredicateOfQsuperEvent(
+			final Predicate<? super Event> eventFilter) {
 		final Map<String, GameHistory> gameHistories = LoggedEvents.parseGameHistories(eventLines.stream(),
 				eventFilter);
 		Assert.assertEquals(gameHistories.size(), 1);

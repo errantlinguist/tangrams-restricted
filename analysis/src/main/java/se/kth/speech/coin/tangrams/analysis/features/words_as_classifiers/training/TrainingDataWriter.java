@@ -27,8 +27,6 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.function.Supplier;
 
-import javax.xml.bind.JAXBException;
-
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -124,7 +122,7 @@ final class TrainingDataWriter {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(TrainingDataWriter.class);
 
-	public static void main(final String[] args) throws IOException, JAXBException {
+	public static void main(final String[] args) throws IOException {
 		final CommandLineParser parser = new DefaultParser();
 		try {
 			final CommandLine cl = parser.parse(Parameter.OPTIONS, args);
@@ -135,11 +133,12 @@ final class TrainingDataWriter {
 		}
 	}
 
-	private static void main(final CommandLine cl) throws IOException, JAXBException, ParseException {
+	private static void main(final CommandLine cl) throws IOException, ParseException {
 		if (cl.hasOption(Parameter.HELP.optName)) {
 			Parameter.printHelp();
 		} else {
-			final List<Path> inpaths = Arrays.asList(cl.getArgList().stream().map(String::trim).filter(path -> !path.isEmpty()).map(Paths::get).toArray(Path[]::new));
+			final List<Path> inpaths = Arrays.asList(cl.getArgList().stream().map(String::trim)
+					.filter(path -> !path.isEmpty()).map(Paths::get).toArray(Path[]::new));
 			if (inpaths.isEmpty()) {
 				throw new MissingOptionException("No input path(s) specified.");
 
@@ -188,7 +187,7 @@ final class TrainingDataWriter {
 		this.sessionEvtDiagMgrSupplier = sessionEvtDiagMgrSupplier;
 	}
 
-	private WordClassificationData apply(final Iterable<Path> inpaths) throws IOException, JAXBException {
+	private WordClassificationData apply(final Iterable<Path> inpaths) throws IOException {
 		final Collection<SessionDataManager> infileSessionData = SessionDataManager.createFileSessionDataMap(inpaths)
 				.values();
 		final List<SessionEventDialogueManager> sessionEvtDiagMgrs = new ArrayList<>(infileSessionData.size());
