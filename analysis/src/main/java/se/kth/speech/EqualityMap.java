@@ -26,8 +26,6 @@ import java.util.stream.IntStream;
 
 import com.google.common.collect.Sets;
 
-import it.unimi.dsi.fastutil.booleans.BooleanArrayList;
-
 /**
  * Useful for mapping classes which have no proper {@link Object#hashCode()}
  * functionality. <strong>TODO:</strong> Make changes to collections returned by
@@ -116,7 +114,7 @@ public final class EqualityMap<K, V> implements Map<K, V> {
 
 	}
 
-	private final BooleanArrayList idxOccupations;
+	private final ArrayList<Boolean> idxOccupations;
 
 	private final ArrayList<K> keys;
 
@@ -125,14 +123,15 @@ public final class EqualityMap<K, V> implements Map<K, V> {
 	private final ArrayList<V> values;
 
 	public EqualityMap() {
-		this(new ArrayList<>(), new ArrayList<>(), new BooleanArrayList());
+		this(new ArrayList<>(), new ArrayList<>(), new ArrayList<Boolean>());
 	}
 
 	public EqualityMap(final int initialCapacity) {
-		this(new ArrayList<>(initialCapacity), new ArrayList<>(initialCapacity), new BooleanArrayList(initialCapacity));
+		this(new ArrayList<>(initialCapacity), new ArrayList<>(initialCapacity),
+				new ArrayList<Boolean>(initialCapacity));
 	}
 
-	private EqualityMap(final ArrayList<K> keys, final ArrayList<V> values, final BooleanArrayList idxOccupations) {
+	private EqualityMap(final ArrayList<K> keys, final ArrayList<V> values, final ArrayList<Boolean> idxOccupations) {
 		this.keys = keys;
 		this.values = values;
 		assert keys.size() == values.size();
@@ -348,7 +347,7 @@ public final class EqualityMap<K, V> implements Map<K, V> {
 	}
 
 	private IntStream occupiedIdxs() {
-		return IntStream.range(0, idxOccupations.size()).filter(idxOccupations::getBoolean);
+		return IntStream.range(0, idxOccupations.size()).filter(idxOccupations::get);
 	}
 
 }
