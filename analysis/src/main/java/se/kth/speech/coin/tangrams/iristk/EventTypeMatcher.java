@@ -30,8 +30,9 @@ public final class EventTypeMatcher implements Predicate<Event> {
 		this.acceptedTypes = acceptedTypes;
 	}
 
-	public EventTypeMatcher(final GameManagementEvent acceptedType) {
-		this(EnumSet.of(acceptedType));
+	public EventTypeMatcher(final GameManagementEvent firstAcceptedType,
+			final GameManagementEvent... nextAcceptedTypes) {
+		this(EnumSet.of(firstAcceptedType, nextAcceptedTypes));
 	}
 
 	/*
