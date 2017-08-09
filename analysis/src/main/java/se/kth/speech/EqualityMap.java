@@ -114,6 +114,11 @@ public final class EqualityMap<K, V> implements Map<K, V> {
 
 	}
 
+	/**
+	 * Default initial capacity.
+	 */
+	private static final int DEFAULT_CAPACITY = 10;
+
 	private final ArrayList<Boolean> idxOccupations;
 
 	private final ArrayList<K> keys;
@@ -123,7 +128,7 @@ public final class EqualityMap<K, V> implements Map<K, V> {
 	private final ArrayList<V> values;
 
 	public EqualityMap() {
-		this(new ArrayList<>(), new ArrayList<>(), new ArrayList<Boolean>());
+		this(DEFAULT_CAPACITY);
 	}
 
 	public EqualityMap(final int initialCapacity) {
