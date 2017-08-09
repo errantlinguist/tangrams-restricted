@@ -486,13 +486,14 @@ public final class Tester {
 
 	private SessionTestResults testSession(final SessionEventDialogueManager sessionEventDiagMgr,
 			final EventDialogueClassifier diagClassifier) throws ClassificationException {
-		final List<EventDialogue> uttDiags = sessionEventDiagMgr.getUttDialogues();
+		final SessionEventDialogueManager.SessionGame canonicalGame = sessionEventDiagMgr.getCanonicalGame();
+		final List<EventDialogue> uttDiags = canonicalGame.getUttDialogues();
 		final SessionTestResults result = new SessionTestResults(uttDiags.size());
 
 		LOGGER.info("Testing {} individual dialogue(s).", uttDiags.size());
 		for (final EventDialogue uttDiag : uttDiags) {
-			final Optional<EventDialogueTestResults> optTestResults = testDialogue(uttDiag,
-					sessionEventDiagMgr.getGameHistory(), diagClassifier);
+			final Optional<EventDialogueTestResults> optTestResults = testDialogue(uttDiag, canonicalGame.getHistory(),
+					diagClassifier);
 			if (optTestResults.isPresent()) {
 				final EventDialogueTestResults results = optTestResults.get();
 				result.add(Pair.of(uttDiag, results));

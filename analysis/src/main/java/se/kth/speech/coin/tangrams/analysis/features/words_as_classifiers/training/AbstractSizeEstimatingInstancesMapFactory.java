@@ -91,12 +91,12 @@ abstract class AbstractSizeEstimatingInstancesMapFactory implements TrainingInst
 		final WordClassificationData result = new WordClassificationData(classInstances, classObservationCounts,
 				classInstancesFetcher);
 		for (final SessionEventDialogueManager sessionEventDiagMgr : sessionEventDiagMgrs) {
-			addTrainingData(sessionEventDiagMgr, result);
+			addTrainingData(sessionEventDiagMgr.getCanonicalGame(), result);
 		}
 		return result;
 	}
 
-	protected abstract void addTrainingData(SessionEventDialogueManager sessionEventDiagMgr,
+	protected abstract void addTrainingData(final SessionEventDialogueManager.SessionGame sessionGame,
 			WordClassificationData trainingData);
 
 	protected Instance createTokenInstance(final Instances classInsts,

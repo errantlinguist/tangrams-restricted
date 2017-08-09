@@ -350,6 +350,7 @@ final class UtteranceSelectedEntityDescriptionWriter {
 
 	private void accept(final SessionDataManager sessionData, final String outfileNamePrefix)
 			throws JAXBException, IOException {
+		final SessionEventDialogueManager sessionEvtDiagMgr = new SessionEventDialogueManager(sessionData);
 		final PlayerDataManager playerData = sessionData.getPlayerData();
 		final Table<String, String, GameHistory> gamePlayerHistoryTable = LoggedEvents
 				.createPlayerGameHistoryTable(playerData.getPlayerEventLogs().entrySet(), EVENT_FILTER);
@@ -359,48 +360,40 @@ final class UtteranceSelectedEntityDescriptionWriter {
 		final int uniqueModelDescriptionCount = gamePlayerHistoryTable.values().size();
 		final EntityFeatureExtractionContextFactory extractionContextFactory = new EntityFeatureExtractionContextFactory(
 				new GameContextModelFactory(uniqueModelDescriptionCount), new ImageEdgeCounter());
+		final UtteranceTabularDataWriter gameWriter = new UtteranceTabularDataWriter(extractor, featuresToDescribe,
+				extractionContextFactory, strict);
 
+		final Path extantOutdir = ensureExtantOutdir();
+		for (final Entry<String, SessionEventDialogueManager.SessionGame> playerPerspectiveGame : sessionEvtDiagMgr
+				.createPlayerPerspectiveGameMap().entrySet()) {
+			final SessionEventDialogueManager.SessionGame sessionGame = playerPerspectiveGame.getValue();
+			final String playerId = playerPerspectiveGame.getKey();
+			final String gameId = sessionGame.getGameId();
+			final Path outfilePath = extantOutdir
+					.resolve(outfileNamePrefix + "_GAME-" + gameId + "_LOG-" + playerId + ".tsv");
+			LOGGER.info("Writing utterances from perspective of \"{}\" to \"{}\".", playerId, outfilePath);
+			try (BufferedWriter writer = Files.newBufferedWriter(outfilePath, StandardOpenOption.CREATE,
+					StandardOpenOption.TRUNCATE_EXISTING)) {
+				gameWriter.write(sessionGame, writer);
+			}
+		}
+
+		final SessionEventDialogueManager.SessionGame canonicalSessionGame = sessionEvtDiagMgr.getCanonicalGame();
+		final Path outfilePath = extantOutdir
+				.resolve(outfileNamePrefix + "_GAME-" + canonicalSessionGame.getGameId() + "_CANONICAL.tsv");
+		LOGGER.info("Writing utterances from canonical perspective to \"{}\".", outfilePath);
+		try (BufferedWriter writer = Files.newBufferedWriter(outfilePath, StandardOpenOption.CREATE,
+				StandardOpenOption.TRUNCATE_EXISTING)) {
+			gameWriter.write(canonicalSessionGame, writer);
+		}
+	}
+
+	private Path ensureExtantOutdir() throws IOException {
 		final boolean outdirAlreadyExists = Files.exists(outdir);
-		final Path extantOutdir = Files.createDirectories(outdir);
+		final Path result = Files.createDirectories(outdir);
 		if (!outdirAlreadyExists) {
-			LOGGER.info("Created output directory \"{}\".", extantOutdir);
+			LOGGER.info("Created output directory \"{}\".", result);
 		}
-
-		final List<Utterance> utts = SessionUtterances.createUtteranceList(sessionData);
-		final UtteranceTabularDataWriter gameWriter = new UtteranceTabularDataWriter(utts, extractor,
-				featuresToDescribe, extractionContextFactory, strict);
-		for (final String gameId : playerGameIdIntersection) {
-			LOGGER.debug("Processing game \"{}\".", gameId);
-			final Map<String, GameHistory> playerHistories = gamePlayerHistoryTable.row(gameId);
-			for (final Entry<String, GameHistory> playerHistory : playerHistories.entrySet()) {
-				final String playerId = playerHistory.getKey();
-				final GameHistory history = playerHistory.getValue();
-				final Path outfilePath = extantOutdir
-						.resolve(outfileNamePrefix + "_GAME-" + gameId + "_LOG-" + playerId + ".tsv");
-				LOGGER.info("Writing utterances from perspective of \"{}\" to \"{}\".", playerId, outfilePath);
-				try (BufferedWriter writer = Files.newBufferedWriter(outfilePath, StandardOpenOption.CREATE,
-						StandardOpenOption.TRUNCATE_EXISTING)) {
-					gameWriter.write(history, writer);
-				}
-			}
-		}
-
-		final Path canonicalEventLogPath = sessionData.getCanonicalEventLogPath();
-		LOGGER.info("Reading canonical event log at \"{}\".", canonicalEventLogPath);
-		final Map<String, GameHistory> canonicalGameHistories = LoggedEvents.readGameHistories(canonicalEventLogPath,
-				EVENT_FILTER);
-		for (final String gameId : playerGameIdIntersection) {
-			final GameHistory history = canonicalGameHistories.get(gameId);
-			if (history == null) {
-				LOGGER.warn("No canonical history for game ID \"{}\".", gameId);
-			} else {
-				final Path outfilePath = extantOutdir.resolve(outfileNamePrefix + "_GAME-" + gameId + "_CANONICAL.tsv");
-				LOGGER.info("Writing utterances from canonical perspective to \"{}\".", outfilePath);
-				try (BufferedWriter writer = Files.newBufferedWriter(outfilePath, StandardOpenOption.CREATE,
-						StandardOpenOption.TRUNCATE_EXISTING)) {
-					gameWriter.write(history, writer);
-				}
-			}
-		}
+		return result;
 	}
 }

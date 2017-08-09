@@ -152,13 +152,13 @@ public final class OnePositiveOneNegativeInstanceFactory extends AbstractSizeEst
 	}
 
 	@Override
-	protected void addTrainingData(final SessionEventDialogueManager sessionEventDiagMgr,
+	protected void addTrainingData(final SessionEventDialogueManager.SessionGame sessionGame,
 			final WordClassificationData trainingData) {
-		final String gameId = sessionEventDiagMgr.getGameId();
+		final String gameId = sessionGame.getGameId();
 		LOGGER.debug("Processing game \"{}\".", gameId);
-		final GameHistory history = sessionEventDiagMgr.getGameHistory();
+		final GameHistory history = sessionGame.getHistory();
 
-		final List<EventDialogue> uttDialogues = sessionEventDiagMgr.getUttDialogues();
+		final List<EventDialogue> uttDialogues = sessionGame.getUttDialogues();
 		uttDialogues.forEach(uttDialogue -> {
 			uttDialogue.getFirstEvent().ifPresent(event -> {
 				LOGGER.debug("Extracting features for utterances for event: {}", event);

@@ -19,24 +19,22 @@ package se.kth.speech.coin.tangrams.analysis;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.function.BiFunction;
-import java.util.function.Supplier;
-import java.util.stream.Stream;
 
 import javax.xml.bind.JAXBException;
-import javax.xml.bind.Unmarshaller;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import se.kth.speech.coin.tangrams.iristk.io.HatIO;
+import com.google.common.collect.Maps;
+
+import se.kth.speech.coin.tangrams.iristk.EventTypeMatcher;
+import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
-import se.kth.speech.hat.xsd.Annotation;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -45,54 +43,64 @@ import se.kth.speech.hat.xsd.Annotation;
  */
 public final class SessionEventDialogueManager {
 
-	private static class EventDialogueCreatingClosure implements Supplier<Stream<EventDialogue>> {
+	public static final class SessionGame {
 
-		private final BiFunction<ListIterator<Utterance>, GameHistory, Stream<EventDialogue>> eventDiagFactory;
+		private final String gameId;
 
-		private final GameHistory gameHistory;
+		private final GameHistory history;
 
-		private final SegmentUtteranceFactory segUttFactory;
+		private final List<EventDialogue> uttDialogues;
 
-		private final Annotation uttAnnots;
-
-		private EventDialogueCreatingClosure(final Annotation uttAnnots, final GameHistory gameHistory,
-				final SegmentUtteranceFactory segUttFactory,
-				final BiFunction<ListIterator<Utterance>, GameHistory, Stream<EventDialogue>> eventDiagFactory) {
-			this.uttAnnots = uttAnnots;
-			this.gameHistory = gameHistory;
-			this.segUttFactory = segUttFactory;
-			this.eventDiagFactory = eventDiagFactory;
+		private SessionGame(final String gameId, final GameHistory history, final List<EventDialogue> uttDialogues) {
+			this.gameId = gameId;
+			this.history = history;
+			this.uttDialogues = uttDialogues;
 		}
 
-		@Override
-		public Stream<EventDialogue> get() {
-			final List<Utterance> utts = Arrays
-					.asList(segUttFactory.create(uttAnnots.getSegments().getSegment().stream()).flatMap(List::stream)
-							.toArray(Utterance[]::new));
-			LOGGER.debug("Creating dialogues for {} annotated utterance(s).", utts.size());
-			return eventDiagFactory.apply(utts.listIterator(), gameHistory);
+		/**
+		 * @return the gameId
+		 */
+		public String getGameId() {
+			return gameId;
+		}
+
+		public GameHistory getHistory() {
+			return history;
+		}
+
+		public List<EventDialogue> getUttDialogues() {
+			return uttDialogues;
 		}
 	}
 
-	private static final ThreadLocal<Unmarshaller> HAT_UNMARSHALLER = new ThreadLocal<Unmarshaller>() {
-
-		/*
-		 * (non-Javadoc)
-		 *
-		 * @see java.lang.ThreadLocal#initialValue()
-		 */
-		@Override
-		protected Unmarshaller initialValue() {
-			try {
-				return HatIO.fetchContext().createUnmarshaller();
-			} catch (final JAXBException e) {
-				throw new RuntimeException(e);
-			}
-		}
-
-	};
+	/**
+	 * This is used to create a sequence of individual event dialogues from a
+	 * sequence of individual utterances combined with the history of the game
+	 * session in which these utterances were made.
+	 */
+	private static final EventDialogueFactory EVT_DIAG_FACTORY = new EventDialogueFactory(
+			new EventTypeMatcher(GameManagementEvent.NEXT_TURN_REQUEST));
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SessionEventDialogueManager.class);
+
+	private static SessionGame createGame(final Path eventLogPath, final List<Utterance> utts) throws IOException {
+		final Entry<String, GameHistory> gameIdHistory = loadGameHistory(eventLogPath);
+		final GameHistory history = gameIdHistory.getValue();
+		return new SessionGame(gameIdHistory.getKey(), history, Collections.unmodifiableList(
+				Arrays.asList(EVT_DIAG_FACTORY.apply(utts.listIterator(), history).toArray(EventDialogue[]::new))));
+	}
+
+	private static Map<String, SessionGame> createPlayerPerspectiveGameMap(
+			final Collection<Entry<String, Path>> playerEventLogPaths, final List<Utterance> utts) throws IOException {
+		final Map<String, SessionGame> result = Maps.newHashMapWithExpectedSize(playerEventLogPaths.size());
+		for (final Entry<String, Path> playerEventLogPath : playerEventLogPaths) {
+			final String playerId = playerEventLogPath.getKey();
+			final Path eventLogPath = playerEventLogPath.getValue();
+			final SessionGame sessionGame = createGame(eventLogPath, utts);
+			result.put(playerId, sessionGame);
+		}
+		return result;
+	}
 
 	private static Entry<String, GameHistory> loadGameHistory(final Path eventLogPath) throws IOException {
 		Entry<String, GameHistory> result;
@@ -100,6 +108,7 @@ public final class SessionEventDialogueManager {
 		final Map<String, GameHistory> gameHistories = LoggedEvents.readGameHistories(eventLogPath,
 				LoggedEvents.VALID_MODEL_MIN_REQUIRED_EVENT_MATCHER);
 		final int gameCount = gameHistories.size();
+		// TODO: Support multiple games in one session
 		switch (gameCount) {
 		case 0: {
 			throw new IllegalArgumentException(String.format("Event log \"%s\" contains no games.", eventLogPath));
@@ -117,42 +126,26 @@ public final class SessionEventDialogueManager {
 		return result;
 	}
 
-	private final Entry<String, GameHistory> idGameHistory;
+	private final SessionGame canonicalGame;
 
-	private final List<EventDialogue> uttDialogues;
+	private final Map<String, Path> playerEventLogs;
 
-	SessionEventDialogueManager(final SessionDataManager sessionData,
-			final BiFunction<ListIterator<Utterance>, GameHistory, Stream<EventDialogue>> eventDiagFactory)
-			throws IOException, JAXBException {
-		idGameHistory = loadGameHistory(sessionData.getCanonicalEventLogPath());
+	private final List<Utterance> utts;
 
-		{
-			final Map<String, String> sourcePlayerIds = sessionData.getPlayerData().getPlayerSourceIds().inverse();
-			final SegmentUtteranceFactory segUttFactory = new SegmentUtteranceFactory(seg -> {
-				final String sourceId = seg.getSource();
-				return sourcePlayerIds.get(sourceId);
-			});
-			final Path hatInfilePath = sessionData.getHATFilePath();
-			LOGGER.info("Reading annotations from \"{}\".", hatInfilePath);
-			final Annotation uttAnnots = (Annotation) HAT_UNMARSHALLER.get().unmarshal(hatInfilePath.toFile());
-			uttDialogues = Collections.unmodifiableList(Arrays.asList(new EventDialogueCreatingClosure(uttAnnots,
-					idGameHistory.getValue(), segUttFactory, eventDiagFactory).get().toArray(EventDialogue[]::new)));
-		}
+	SessionEventDialogueManager(final SessionDataManager sessionData) throws IOException, JAXBException {
+		utts = SessionUtterances.createUtteranceList(sessionData);
+		LOGGER.debug("Creating dialogues for {} annotated utterance(s).", utts.size());
+
+		canonicalGame = createGame(sessionData.getCanonicalEventLogPath(), utts);
+		playerEventLogs = sessionData.getPlayerData().getPlayerEventLogs();
 	}
 
-	public GameHistory getGameHistory() {
-		return idGameHistory.getValue();
+	public Map<String, SessionGame> createPlayerPerspectiveGameMap() throws IOException {
+		return createPlayerPerspectiveGameMap(playerEventLogs.entrySet(), utts);
 	}
 
-	/**
-	 * @return the gameId
-	 */
-	public String getGameId() {
-		return idGameHistory.getKey();
-	}
-
-	public List<EventDialogue> getUttDialogues() {
-		return uttDialogues;
+	public SessionGame getCanonicalGame() {
+		return canonicalGame;
 	}
 
 }

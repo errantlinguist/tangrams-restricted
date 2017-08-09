@@ -46,7 +46,6 @@ import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionCont
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfoTableRowWriter;
 import se.kth.speech.coin.tangrams.iristk.EventTimes;
-import se.kth.speech.coin.tangrams.iristk.EventTypeMatcher;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 import se.kth.speech.coin.tangrams.iristk.ImageVisualizationInfoUnmarshaller;
 import se.kth.speech.coin.tangrams.iristk.events.Move;
@@ -62,9 +61,6 @@ final class UtteranceTabularDataWriter {
 	}
 
 	private static final Supplier<String> COL_HEADER_PADDING_SUPPLIER = () -> "";
-
-	private static final EventDialogueFactory EVENT_DIAG_FACTORY = new EventDialogueFactory(
-			new EventTypeMatcher(GameManagementEvent.NEXT_TURN_REQUEST));
 
 	private static final MathContext EVT_TIME_DIFF_CTX = new MathContext(16, RoundingMode.HALF_UP);
 
@@ -123,12 +119,8 @@ final class UtteranceTabularDataWriter {
 
 	private final boolean strict;
 
-	private final List<Utterance> utts;
-
-	UtteranceTabularDataWriter(final List<Utterance> utts, final EntityFeature.Extractor extractor,
-			final List<EntityFeature> featuresToDescribe,
+	UtteranceTabularDataWriter(final EntityFeature.Extractor extractor, final List<EntityFeature> featuresToDescribe,
 			final EntityFeatureExtractionContextFactory extractionContextFactory, final boolean strict) {
-		this.utts = utts;
 		this.extractor = extractor;
 		this.featuresToDescribe = featuresToDescribe;
 		this.extractionContextFactory = extractionContextFactory;
@@ -245,12 +237,12 @@ final class UtteranceTabularDataWriter {
 		return sb.toString();
 	}
 
-	void write(final GameHistory history, final Writer writer) throws IOException {
+	void write(final SessionEventDialogueManager.SessionGame sessionGame, final Writer writer) throws IOException {
 		// The visualization info for the given game
+		final GameHistory history = sessionGame.getHistory();
 		final ImageVisualizationInfo imgVizInfo = IMG_VIZ_INFO_UNMARSHALLER
 				.apply(history.getInitialState().getImageVisualizationInfoDescription());
-		final List<EventDialogue> eventDiags = Arrays
-				.asList(EVENT_DIAG_FACTORY.apply(utts.listIterator(), history).toArray(EventDialogue[]::new));
+		final List<EventDialogue> eventDiags = sessionGame.getUttDialogues();
 
 		final List<List<String>> colHeaders = createColHeaders();
 		final String colHeaderStr = colHeaders.stream().map(header -> header.stream().collect(TABLE_ROW_CELL_JOINER))

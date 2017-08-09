@@ -19,7 +19,6 @@ package se.kth.speech.coin.tangrams.analysis;
 import java.io.IOException;
 import java.util.function.Supplier;
 
-import javax.inject.Inject;
 import javax.inject.Named;
 import javax.xml.bind.JAXBException;
 
@@ -36,16 +35,13 @@ import com.google.common.cache.LoadingCache;
 public final class SessionEventDialogueManagerCacheSupplier
 		implements Supplier<LoadingCache<SessionDataManager, SessionEventDialogueManager>> {
 
-	@Inject
-	private EventDialogueFactory eventDiagFactory;
-
 	private final LoadingCache<SessionDataManager, SessionEventDialogueManager> instances = CacheBuilder.newBuilder()
 			.build(new CacheLoader<SessionDataManager, SessionEventDialogueManager>() {
 
 				@Override
 				public SessionEventDialogueManager load(final SessionDataManager key)
 						throws IOException, JAXBException {
-					return new SessionEventDialogueManager(key, eventDiagFactory);
+					return new SessionEventDialogueManager(key);
 				}
 
 			});

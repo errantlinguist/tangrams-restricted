@@ -40,16 +40,14 @@ import se.kth.speech.coin.tangrams.iristk.EventTimes;
  * @since 4 May 2017
  *
  */
-public final class EventDialogueFactory // NO_UCD (use default)
+final class EventDialogueFactory // NO_UCD (use default)
 		implements BiFunction<ListIterator<Utterance>, GameHistory, Stream<EventDialogue>> {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(EventDialogueFactory.class);
 
 	private final Predicate<? super Event> dialogueEventDelimiter;
 
-	public EventDialogueFactory(final Predicate<? super Event> dialogueEventDelimiter) { // NO_UCD
-																							// (use
-																							// default)
+	EventDialogueFactory(final Predicate<? super Event> dialogueEventDelimiter) {
 		this.dialogueEventDelimiter = dialogueEventDelimiter;
 	}
 
@@ -89,14 +87,16 @@ public final class EventDialogueFactory // NO_UCD (use default)
 		}
 
 		// Get the utterances after the last event
-//		final List<Utterance> lastEventUtts = new ArrayList<>();
-//		while (utts.hasNext()) {
-//			lastEventUtts.add(utts.next());
-//		}
+		// final List<Utterance> lastEventUtts = new ArrayList<>();
+		// while (utts.hasNext()) {
+		// lastEventUtts.add(utts.next());
+		// }
 		// TODO: Don't use the last round in each session because it's full of
 		// junk language: In reality, the "last" round is the last round which
 		// the players successfully completed
-//		resultBuilder.accept(new EventDialogue(Collections.singletonList(currentEvent), lastEventUtts));
+		// resultBuilder.accept(new
+		// EventDialogue(Collections.singletonList(currentEvent),
+		// lastEventUtts));
 		return resultBuilder.build();
 	}
 
