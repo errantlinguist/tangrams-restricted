@@ -239,7 +239,8 @@ final class SessionEventLogAdjuster {
 			} else {
 				final Utterance utt = (Utterance) value;
 				final List<String> uttTokens = utt.getTokens();
-				repr = fetchTokenSeqRepr(uttTokens);
+				final String tokenSeqRepr = fetchTokenSeqRepr(uttTokens);
+				repr = String.format("**%s**: %s", utt.getSpeakerId(), tokenSeqRepr);
 			}
 			setText(repr);
 		}
