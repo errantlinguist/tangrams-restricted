@@ -123,6 +123,11 @@ final class SegmentTimedUtteranceWriter {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SegmentTimedUtteranceWriter.class);
 
+	/**
+	 * Just use the source ID as the speaker ID
+	 */
+	private static final SegmentUtteranceFactory SEG_UTT_FACTORY = new SegmentUtteranceFactory(Segment::getSource);
+
 	public static void main(final String[] args) throws JAXBException, IOException {
 		final CommandLineParser parser = new DefaultParser();
 		try {
@@ -160,9 +165,7 @@ final class SegmentTimedUtteranceWriter {
 						LOGGER.info("Reading annotations from \"{}\".", infile);
 						final Annotation uttAnnots = (Annotation) unmarshaller.unmarshal(infile);
 						final List<Segment> segments = uttAnnots.getSegments().getSegment();
-						// Just use the source ID as the speaker ID
-						final SegmentUtteranceFactory segUttFactory = new SegmentUtteranceFactory(Segment::getSource);
-						final Stream<Utterance> utts = segUttFactory.create(segments.stream()).flatMap(List::stream);
+						final Stream<Utterance> utts = SEG_UTT_FACTORY.create(segments.stream()).flatMap(List::stream);
 						final Stream<Entry<String, String>> uttReprTimestamps = utts.map(utt -> {
 							final float startTime = utt.getStartTime();
 							final String uttRepr = utt.getTokenStr();
