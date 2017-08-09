@@ -45,7 +45,6 @@ import javax.swing.JFrame;
 import javax.swing.JTable;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.AbstractTableModel;
-import javax.swing.table.JTableHeader;
 import javax.xml.bind.JAXBException;
 
 import org.slf4j.Logger;
@@ -73,6 +72,8 @@ final class SessionEventLogAdjuster {
 
 		private static final int ESTIMATED_UTTS_PER_DIAG_COUNT = 16;
 
+		private static final String NULL_VALUE_REPR = "-";
+
 		/**
 		 *
 		 */
@@ -97,8 +98,23 @@ final class SessionEventLogAdjuster {
 		public int getColumnCount() {
 			final int maxUttCount = Arrays.stream(diags).map(EventDialogue::getUtts).mapToInt(List::size).max()
 					.orElse(0);
-			// TODO: Add extra columns for e.g. event timestamp
-			return maxUttCount;
+			return maxUttCount + 1;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see javax.swing.table.AbstractTableModel#getColumnName(int)
+		 */
+		@Override
+		public String getColumnName(final int column) {
+			final String result;
+			if (column == 0) {
+				result = "FIRST_EVT_TIME";
+			} else {
+				result = "UTT_" + column;
+			}
+			return result;
 		}
 
 		/*
@@ -119,8 +135,22 @@ final class SessionEventLogAdjuster {
 		@Override
 		public Object getValueAt(final int rowIndex, final int columnIndex) {
 			final EventDialogue diag = diags[rowIndex];
-			final List<Utterance> diagUtts = diag.getUtts();
 			final Object result;
+			if (columnIndex == 0) {
+				result = diag.getFirstEvent().map(Event::getTime).orElse(NULL_VALUE_REPR);
+			} else {
+				result = getUttRepr(diag, columnIndex);
+			}
+			return result;
+		}
+
+		private String fetchTokenSeqRepr(final List<String> tokenSeq) {
+			return tokenSeqReprs.computeIfAbsent(tokenSeq, key -> key.stream().collect(WORD_JOINER));
+		}
+
+		private String getUttRepr(final EventDialogue diag, final int columnIndex) {
+			final List<Utterance> diagUtts = diag.getUtts();
+			final String result;
 			if (diagUtts.size() <= columnIndex) {
 				result = null;
 			} else {
@@ -129,10 +159,6 @@ final class SessionEventLogAdjuster {
 				result = fetchTokenSeqRepr(uttTokens);
 			}
 			return result;
-		}
-
-		private String fetchTokenSeqRepr(final List<String> tokenSeq) {
-			return tokenSeqReprs.computeIfAbsent(tokenSeq, key -> key.stream().collect(WORD_JOINER));
 		}
 
 	}
@@ -293,9 +319,14 @@ final class SessionEventLogAdjuster {
 		final Stream<EventDialogue> diags = EVENT_DIAG_FACTORY.apply(utts.listIterator(), history);
 		final JTable diagTable = new JTable(new EventDialogueTableModel(diags.toArray(EventDialogue[]::new)));
 		final Container content = frame.getContentPane();
-		final JTableHeader tableHeader = diagTable.getTableHeader();
-		content.add(tableHeader);
+		// final JTableHeader tableHeader = diagTable.getTableHeader();
+		// content.add(tableHeader);
 		content.add(diagTable);
+		// https://stackoverflow.com/a/2452758/1391325
+		// content.add(new JScrollPane(diagTable,
+		// JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+		// JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED));
+		// diagTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 
 		// TODO: Finish
 		frame.pack();
