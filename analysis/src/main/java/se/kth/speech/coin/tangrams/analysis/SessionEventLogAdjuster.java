@@ -52,6 +52,7 @@ import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
+import javax.swing.table.TableColumnModel;
 import javax.swing.table.TableModel;
 import javax.xml.bind.JAXBException;
 
@@ -76,6 +77,10 @@ import se.kth.speech.coin.tangrams.view.UserPrompts;
  */
 final class SessionEventLogAdjuster {
 
+	private enum EventAttribute {
+		SENDER, TIME;
+	}
+
 	private class EventDialogueAdjustingTable extends JTable {
 
 		/**
@@ -85,9 +90,34 @@ final class SessionEventLogAdjuster {
 
 		public EventDialogueAdjustingTable(final TableModel dm) {
 			super(dm);
-			IntStream.range(0, getColumnCount()).forEach(this::setOptimumWidth);
 			setCellSelectionEnabled(true);
+			setColumnEventAttributeRenderers();
 			setDefaultRenderer(Utterance.class, new UtteranceCellRenderer());
+
+			// Set widths using the newly-set renderers
+			IntStream.range(0, getColumnCount()).forEach(this::setOptimumWidth);
+		}
+
+		private void setColumnEventAttributeRenderers() {
+			final EventAttribute[] attrs = EventAttribute.values();
+			final TableColumnModel colModel = getColumnModel();
+			for (int i = 0; i < attrs.length; ++i) {
+				final EventAttribute attr = attrs[i];
+				final TableColumn col = colModel.getColumn(i);
+				switch (attr) {
+				case SENDER: {
+					col.setCellRenderer(new EventSenderRenderer());
+					break;
+				}
+				case TIME: {
+					col.setCellRenderer(new EventTimeRenderer());
+					break;
+				}
+				default: {
+					throw new AssertionError("No logic for handing switch case.");
+				}
+				}
+			}
 		}
 
 		private void setOptimumWidth(final int columnIdx) {
@@ -114,8 +144,6 @@ final class SessionEventLogAdjuster {
 
 	private static class EventDialogueTableModel extends AbstractTableModel {
 
-		private static final String NULL_VALUE_REPR = "-";
-
 		/**
 		 *
 		 */
@@ -134,11 +162,24 @@ final class SessionEventLogAdjuster {
 		 */
 		@Override
 		public Class<?> getColumnClass(final int columnIndex) {
-			Class<?> result;
-			if (columnIndex == 0) {
-				result = String.class;
-			} else {
+			final Class<?> result;
+			final EventAttribute colEventAttr = getColumnAttribute(columnIndex);
+			if (colEventAttr == null) {
 				result = Utterance.class;
+			} else {
+				switch (colEventAttr) {
+				case SENDER: {
+					result = Event.class;
+					break;
+				}
+				case TIME: {
+					result = Event.class;
+					break;
+				}
+				default: {
+					throw new AssertionError("No logic for handing switch case.");
+				}
+				}
 			}
 			return result;
 		}
@@ -163,10 +204,23 @@ final class SessionEventLogAdjuster {
 		@Override
 		public String getColumnName(final int column) {
 			final String result;
-			if (column == 0) {
-				result = "FIRST_EVT_TIME";
-			} else {
+			final EventAttribute colEventAttr = getColumnAttribute(column);
+			if (colEventAttr == null) {
 				result = "UTT_" + column;
+			} else {
+				switch (colEventAttr) {
+				case SENDER: {
+					result = "FIRST_EVT_SENDER";
+					break;
+				}
+				case TIME: {
+					result = "FIRST_EVT_TIME";
+					break;
+				}
+				default: {
+					throw new AssertionError("No logic for handing switch case.");
+				}
+				}
 			}
 			return result;
 		}
@@ -190,15 +244,69 @@ final class SessionEventLogAdjuster {
 		public Object getValueAt(final int rowIndex, final int columnIndex) {
 			final EventDialogue diag = diags[rowIndex];
 			final Object result;
-			if (columnIndex == 0) {
-				result = diag.getFirstEvent().map(Event::getTime).orElse(NULL_VALUE_REPR);
-			} else {
+			final EventAttribute colEventAttr = getColumnAttribute(columnIndex);
+			if (colEventAttr == null) {
 				final List<Utterance> diagUtts = diag.getUtts();
 				result = diagUtts.size() <= columnIndex ? null : diagUtts.get(columnIndex);
+			} else {
+				switch (colEventAttr) {
+				case SENDER: {
+					result = diag.getFirstEvent().orElse(null);
+					break;
+				}
+				case TIME: {
+					result = diag.getFirstEvent().orElse(null);
+					break;
+				}
+				default: {
+					throw new AssertionError("No logic for handing switch case.");
+				}
+				}
 			}
 			return result;
 		}
 
+	}
+
+	private static class EventSenderRenderer extends DefaultTableCellRenderer {
+		/**
+		 *
+		 */
+		private static final long serialVersionUID = 1591902695449966670L;
+
+		@Override
+		public void setValue(final Object value) {
+			// http://docs.oracle.com/javase/tutorial/uiswing/components/table.html#renderer
+			final String repr;
+			if (value == null) {
+				repr = NULL_VALUE_REPR;
+			} else {
+				final Event event = (Event) value;
+				repr = event.getString(GameManagementEvent.Attribute.PLAYER_ID.toString(), NULL_VALUE_REPR);
+			}
+			setText(repr);
+		}
+	}
+
+	private static class EventTimeRenderer extends DefaultTableCellRenderer {
+		/**
+		 *
+		 */
+		private static final long serialVersionUID = 1591902695449966670L;
+
+		@Override
+		public void setValue(final Object value) {
+			// http://docs.oracle.com/javase/tutorial/uiswing/components/table.html#renderer
+			final String repr;
+			if (value == null) {
+				repr = NULL_VALUE_REPR;
+			} else {
+				final Event event = (Event) value;
+				final String time = event.getTime();
+				repr = time == null ? NULL_VALUE_REPR : time;
+			}
+			setText(repr);
+		}
 	}
 
 	private static class Settings {
@@ -228,7 +336,7 @@ final class SessionEventLogAdjuster {
 		/**
 		 *
 		 */
-		private static final long serialVersionUID = 7163183785329244497L;
+		private static final long serialVersionUID = -259987246089416410L;
 
 		@Override
 		public void setValue(final Object value) {
@@ -262,6 +370,8 @@ final class SessionEventLogAdjuster {
 	private static final List<FileNameExtensionFilter> FILE_FILTERS;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SessionEventLogAdjuster.class);
+
+	private static final String NULL_VALUE_REPR = "-";
 
 	private static final Path SETTINGS_DIR;
 
@@ -299,6 +409,11 @@ final class SessionEventLogAdjuster {
 
 	private static String createHistoryTitleStr(final String gameId, final GameHistory history) {
 		return String.format("Game %s, started at %s", gameId, history.getStartTime());
+	}
+
+	private static EventAttribute getColumnAttribute(final int colIdx) {
+		final EventAttribute[] atts = EventAttribute.values();
+		return atts.length <= colIdx ? null : atts[colIdx];
 	}
 
 	private static Settings loadClassSettings() {
