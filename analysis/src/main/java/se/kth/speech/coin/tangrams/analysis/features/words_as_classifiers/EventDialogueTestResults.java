@@ -100,7 +100,7 @@ public final class EventDialogueTestResults implements EventDialogueTestStatisti
 
 	@Override
 	public int testedUtteranceCount() {
-		return transformedDiag.getUtts().size();
+		return transformedDiag.getUtterances().size();
 	}
 
 	/**
@@ -108,7 +108,7 @@ public final class EventDialogueTestResults implements EventDialogueTestStatisti
 	 */
 	@Override
 	public Stream<Utterance> testedUtterances() {
-		return transformedDiag.getUtts().stream();
+		return transformedDiag.getUtterances().stream();
 	}
 
 }

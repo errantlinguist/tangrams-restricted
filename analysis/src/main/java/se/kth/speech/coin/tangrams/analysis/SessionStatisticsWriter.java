@@ -132,7 +132,7 @@ final class SessionStatisticsWriter {
 		final List<EventDialogue> completedDiags = diags.subList(0, lastDiagIdx);
 
 		final long roundCount = completedDiags.size();
-		final long uttCount = completedDiags.stream().map(EventDialogue::getUtts).flatMap(List::stream).count();
+		final long uttCount = completedDiags.stream().map(EventDialogue::getUtterances).flatMap(List::stream).count();
 		assert uttCount > 0;
 
 		final LocalDateTime gameStart = history.getStartTime();

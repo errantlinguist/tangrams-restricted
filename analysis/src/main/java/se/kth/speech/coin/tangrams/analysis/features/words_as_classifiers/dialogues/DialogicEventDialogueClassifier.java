@@ -74,7 +74,7 @@ public final class DialogicEventDialogueClassifier implements EventDialogueClass
 		if (optFirstEvent.isPresent()) {
 			final Event event = optFirstEvent.get();
 			LOGGER.debug("Classifying utterances for event: {}", event);
-			final List<Utterance> allUtts = transformedDiag.getUtts();
+			final List<Utterance> allUtts = transformedDiag.getUtterances();
 			if (allUtts.isEmpty()) {
 				LOGGER.debug("No utterances to classify for {}.", transformedDiag);
 				result = Optional.empty();

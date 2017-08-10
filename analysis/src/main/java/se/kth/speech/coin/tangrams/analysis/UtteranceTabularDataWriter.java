@@ -188,7 +188,7 @@ final class UtteranceTabularDataWriter {
 			EventDialogue prevEventDiag = null;
 			while (eventDiagIter.hasPrevious()) {
 				prevEventDiag = eventDiagIter.previous();
-				final List<Utterance> prevUtts = prevEventDiag.getUtts();
+				final List<Utterance> prevUtts = prevEventDiag.getUtterances();
 				if (!prevUtts.isEmpty()) {
 					break;
 				}
@@ -196,7 +196,7 @@ final class UtteranceTabularDataWriter {
 			if (prevEventDiag != null) {
 				sb.append(System.lineSeparator());
 				final Event prevEvent = prevEventDiag.getFirstEvent().orElse(null);
-				final List<Utterance> prevUtts = prevEventDiag.getUtts();
+				final List<Utterance> prevUtts = prevEventDiag.getUtterances();
 
 				if (prevUtts.isEmpty()) {
 					sb.append(String.format("Last utt before event: (NONE); event ID: \"%s\"; event time: \"%s\"",
@@ -216,7 +216,7 @@ final class UtteranceTabularDataWriter {
 			EventDialogue nextEventDiag = null;
 			while (eventDiagIter.hasNext()) {
 				nextEventDiag = eventDiagIter.next();
-				final List<Utterance> nextUtts = nextEventDiag.getUtts();
+				final List<Utterance> nextUtts = nextEventDiag.getUtterances();
 				if (!nextUtts.isEmpty()) {
 					break;
 				}
@@ -224,7 +224,7 @@ final class UtteranceTabularDataWriter {
 			if (nextEventDiag != null) {
 				sb.append(System.lineSeparator());
 				final Event nextEvent = nextEventDiag.getFirstEvent().orElse(null);
-				final List<Utterance> nextUtts = nextEventDiag.getUtts();
+				final List<Utterance> nextUtts = nextEventDiag.getUtterances();
 				if (nextUtts.isEmpty()) {
 					// Do nothing
 				} else {
@@ -258,8 +258,8 @@ final class UtteranceTabularDataWriter {
 			writer.write(TABLE_STRING_REPR_ROW_DELIMITER);
 
 			final String evtImgVizInfoDesc;
-			final List<Event> diagEvts = eventDiag.getDialogueEvents();
-			final List<Utterance> diagUtts = eventDiag.getUtts();
+			final List<Event> diagEvts = eventDiag.getEvents();
+			final List<Utterance> diagUtts = eventDiag.getUtterances();
 			if (diagEvts.isEmpty()) {
 				final List<String> evtImgFeatureCols = getEvtImgFeatureCols(colHeaders.get(0));
 				evtImgVizInfoDesc = createBlankEvtImgDesc(evtImgFeatureCols);

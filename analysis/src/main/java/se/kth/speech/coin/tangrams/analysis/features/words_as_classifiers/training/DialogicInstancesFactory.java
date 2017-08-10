@@ -115,7 +115,7 @@ public final class DialogicInstancesFactory extends AbstractSizeEstimatingInstan
 			uttDialogue.getFirstEvent().ifPresent(event -> {
 				LOGGER.debug("Extracting features for utterances for event: {}", event);
 				final EventDialogue transformedDiag = diagTransformer.apply(uttDialogue);
-				final List<Utterance> allUtts = transformedDiag.getUtts();
+				final List<Utterance> allUtts = transformedDiag.getUtterances();
 				if (allUtts.isEmpty()) {
 					LOGGER.debug("No utterances to train with for {}.", transformedDiag);
 				} else {

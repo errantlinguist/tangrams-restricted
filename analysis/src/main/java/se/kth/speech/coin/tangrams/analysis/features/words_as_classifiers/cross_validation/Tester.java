@@ -461,7 +461,7 @@ public final class Tester {
 		// parallelized
 		final EventDialogue transformedDiag = diagTransformer.apply(uttDiag);
 
-		final List<Utterance> allUtts = transformedDiag.getUtts();
+		final List<Utterance> allUtts = transformedDiag.getUtterances();
 		if (allUtts.isEmpty()) {
 			result = Optional.empty();
 		} else {
@@ -474,7 +474,7 @@ public final class Tester {
 				final Int2DoubleMap referentConfidenceVals = optReferentConfidenceVals.get();
 				result = uttCtx.findLastSelectedEntityId().map(goldStandardEntityId -> {
 					return new EventDialogueTestResults(referentConfidenceVals, goldStandardEntityId, transformedDiag,
-							uttDiag.getUtts().size());
+							uttDiag.getUtterances().size());
 				});
 			} else {
 				result = Optional.empty();

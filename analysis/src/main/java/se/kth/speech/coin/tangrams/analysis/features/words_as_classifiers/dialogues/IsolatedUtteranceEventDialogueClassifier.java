@@ -45,7 +45,7 @@ public final class IsolatedUtteranceEventDialogueClassifier implements EventDial
 	public Optional<Int2DoubleMap> apply(final EventDialogue diag, final GameContext ctx)
 			throws ClassificationException {
 		final Optional<Int2DoubleMap> result;
-		final List<Utterance> uttsToClassify = diag.getUtts();
+		final List<Utterance> uttsToClassify = diag.getUtterances();
 		if (uttsToClassify.isEmpty()) {
 			result = Optional.empty();
 		} else {

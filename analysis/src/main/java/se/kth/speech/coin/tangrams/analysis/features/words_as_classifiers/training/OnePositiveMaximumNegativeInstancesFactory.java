@@ -111,7 +111,7 @@ public final class OnePositiveMaximumNegativeInstancesFactory extends AbstractSi
 			uttDialogue.getFirstEvent().ifPresent(event -> {
 				LOGGER.debug("Extracting features for utterances for event: {}", event);
 				final EventDialogue transformedDiag = diagTransformer.apply(uttDialogue);
-				final List<Utterance> utts = transformedDiag.getUtts();
+				final List<Utterance> utts = transformedDiag.getUtterances();
 				if (utts.isEmpty()) {
 					LOGGER.debug("No utterances to train with for {}.", transformedDiag);
 				} else {

@@ -38,8 +38,8 @@ abstract class AbstractUtteranceTransformingEventDialogueTransformer implements 
 	@Override
 	public EventDialogue apply(final EventDialogue diag) {
 		final List<Utterance> newUtts = Arrays
-				.asList(diag.getUtts().stream().flatMap(this::transformUtt).toArray(Utterance[]::new));
-		return new EventDialogue(diag.getDialogueEvents(), newUtts);
+				.asList(diag.getUtterances().stream().flatMap(this::transformUtt).toArray(Utterance[]::new));
+		return new EventDialogue(diag.getEvents(), newUtts);
 	}
 
 	protected abstract Stream<Utterance> transformUtt(final Utterance utt);

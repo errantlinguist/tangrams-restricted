@@ -69,7 +69,7 @@ final class DialogueAnalysisSummaryFactory implements
 			@Override
 			public Object apply(final Input input) {
 				final EventDialogue diag = input.diagTestResults.getKey();
-				return UTT_DIAG_REPR_FACTORY.apply(diag.getUtts().iterator());
+				return UTT_DIAG_REPR_FACTORY.apply(diag.getUtterances().iterator());
 			}
 		},
 		DIALOGUE_AS_TESTED {

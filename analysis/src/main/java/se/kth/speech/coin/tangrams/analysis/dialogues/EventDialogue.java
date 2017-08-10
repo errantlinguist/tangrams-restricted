@@ -28,12 +28,12 @@ import iristk.system.Event;
  */
 public final class EventDialogue {
 
-	private final List<Event> dialogueEvents;
+	private final List<Event> events;
 
 	private final List<Utterance> utts;
 
-	public EventDialogue(final List<Event> dialogueEvents, final List<Utterance> utts) {
-		this.dialogueEvents = dialogueEvents;
+	public EventDialogue(final List<Event> events, final List<Utterance> utts) {
+		this.events = events;
 		this.utts = utts;
 	}
 
@@ -54,11 +54,11 @@ public final class EventDialogue {
 			return false;
 		}
 		final EventDialogue other = (EventDialogue) obj;
-		if (dialogueEvents == null) {
-			if (other.dialogueEvents != null) {
+		if (events == null) {
+			if (other.events != null) {
 				return false;
 			}
-		} else if (!dialogueEvents.equals(other.dialogueEvents)) {
+		} else if (!events.equals(other.events)) {
 			return false;
 		}
 		if (utts == null) {
@@ -72,20 +72,20 @@ public final class EventDialogue {
 	}
 
 	/**
-	 * @return the dialogueEvents
+	 * @return the events
 	 */
-	public List<Event> getDialogueEvents() {
-		return dialogueEvents;
+	public List<Event> getEvents() {
+		return events;
 	}
 
 	public Optional<Event> getFirstEvent() {
-		return dialogueEvents.isEmpty() ? Optional.empty() : Optional.of(dialogueEvents.iterator().next());
+		return events.isEmpty() ? Optional.empty() : Optional.of(events.iterator().next());
 	}
 
 	/**
 	 * @return the utts
 	 */
-	public List<Utterance> getUtts() {
+	public List<Utterance> getUtterances() {
 		return utts;
 	}
 
@@ -98,7 +98,7 @@ public final class EventDialogue {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + (dialogueEvents == null ? 0 : dialogueEvents.hashCode());
+		result = prime * result + (events == null ? 0 : events.hashCode());
 		result = prime * result + (utts == null ? 0 : utts.hashCode());
 		return result;
 	}
@@ -110,9 +110,9 @@ public final class EventDialogue {
 	 */
 	@Override
 	public String toString() {
-		final StringBuilder builder = new StringBuilder(64 * (dialogueEvents.size() + utts.size() + 1));
-		builder.append("EventDialogue [dialogueEvents=");
-		builder.append(dialogueEvents);
+		final StringBuilder builder = new StringBuilder(64 * (events.size() + utts.size() + 1));
+		builder.append("EventDialogue [events=");
+		builder.append(events);
 		builder.append(", utts=");
 		builder.append(utts);
 		builder.append(']');

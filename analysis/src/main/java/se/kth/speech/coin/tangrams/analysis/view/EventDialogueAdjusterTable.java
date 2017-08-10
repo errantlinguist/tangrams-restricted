@@ -69,7 +69,7 @@ final class EventDialogueAdjusterTable extends JTable {
 			}
 			case LAST_EVENT_TIME: {
 				final Function<EventDialogue, Optional<Event>> lastEventGetter = evtDiag -> {
-					final List<Event> events = evtDiag.getDialogueEvents();
+					final List<Event> events = evtDiag.getEvents();
 					return events.isEmpty() ? Optional.empty()
 							: Optional.of(events.listIterator(events.size()).previous());
 				};

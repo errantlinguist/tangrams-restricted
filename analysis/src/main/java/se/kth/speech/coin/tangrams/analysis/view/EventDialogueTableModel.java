@@ -100,7 +100,7 @@ final class EventDialogueTableModel extends AbstractTableModel {
 	 */
 	@Override
 	public int getColumnCount() {
-		final int maxUttCount = Arrays.stream(diags).map(EventDialogue::getUtts).mapToInt(List::size).max().orElse(0);
+		final int maxUttCount = Arrays.stream(diags).map(EventDialogue::getUtterances).mapToInt(List::size).max().orElse(0);
 		return maxUttCount + 1;
 	}
 
@@ -143,7 +143,7 @@ final class EventDialogueTableModel extends AbstractTableModel {
 		final Object result;
 		final EventDialogueAttribute colEventDiagAttr = getColumnEventDialogueAttribute(columnIndex);
 		if (colEventDiagAttr == null) {
-			final List<Utterance> diagUtts = diag.getUtts();
+			final List<Utterance> diagUtts = diag.getUtterances();
 			final int diagUttIdx = AttributeType.UTTERANCE.getValueListIdx(columnIndex);
 			result = diagUtts.size() <= diagUttIdx ? null : diagUtts.get(diagUttIdx);
 		} else {

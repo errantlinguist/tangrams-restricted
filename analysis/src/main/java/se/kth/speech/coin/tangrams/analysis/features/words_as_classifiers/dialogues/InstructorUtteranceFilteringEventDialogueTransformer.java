@@ -45,7 +45,7 @@ public final class InstructorUtteranceFilteringEventDialogueTransformer implemen
 			LOGGER.debug("Filtering utterances not from instructor for {}.", event);
 			final Predicate<Utterance> instructorUttMatcher = UtteranceMatchers
 					.createEventSubmitterUtteranceMatcher(event);
-			final List<Utterance> allUtts = uttDiag.getUtts();
+			final List<Utterance> allUtts = uttDiag.getUtterances();
 			return Arrays.asList(allUtts.stream().filter(instructorUttMatcher).toArray(Utterance[]::new));
 		});
 	}
@@ -58,7 +58,7 @@ public final class InstructorUtteranceFilteringEventDialogueTransformer implemen
 	@Override
 	public EventDialogue apply(final EventDialogue diag) {
 		final List<Utterance> filteredUtts = createInstructorUttList(diag).orElse(EMPTY_UTT_LIST);
-		return new EventDialogue(diag.getDialogueEvents(), filteredUtts);
+		return new EventDialogue(diag.getEvents(), filteredUtts);
 	}
 
 }
