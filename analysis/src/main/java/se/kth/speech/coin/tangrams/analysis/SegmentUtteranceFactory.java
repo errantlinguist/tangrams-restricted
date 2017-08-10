@@ -125,12 +125,7 @@ final class SegmentUtteranceFactory {
 			LOGGER.warn("Segment ID \"{}\" has no {} element.", segment.getId(), Transcription.class.getSimpleName());
 		} else {
 			final List<Object> children = transcription.getSegmentOrT();
-			// TODO: make this recursive
-			children.stream().filter(child -> child instanceof Segment).findAny().ifPresent(childSeg -> {
-				LOGGER.warn(
-						"Segment ID \"{}\" contains child {} instances; Multi-level transcriptions not (yet) supported.",
-						segment.getId(), Segment.class.getSimpleName());
-			});
+			// TODO: make this recursively create individual Utterances for each child Segment
 			final Float segStartTime = segment.getStart();
 			assert segStartTime != null;
 			final Float segEndTime = segment.getEnd();
@@ -141,6 +136,9 @@ final class SegmentUtteranceFactory {
 				final String speakerId = segmentSpeakerIdFactory.apply(segment);
 				for (final Object child : children) {
 					if (child instanceof Segment) {
+						LOGGER.warn(
+								"Segment ID \"{}\" contains child {} instances; Multi-level transcriptions not (yet) supported.",
+								segment.getId(), Segment.class.getSimpleName());
 						final Segment childSeg = (Segment) child;
 						addSegmentTokens(tokens, childSeg);
 					} else {
