@@ -125,7 +125,7 @@ final class EventDialogueAdjusterTable extends JTable {
 				}
 			}
 		} else {
-			// We've exceeded the maximum width, no need to the rows
+			// We've exceeded the maximum width, no need to check the rows
 			preferredWidth = maxWidth;
 		}
 		tableColumn.setPreferredWidth(preferredWidth);
