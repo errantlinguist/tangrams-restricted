@@ -28,14 +28,10 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Properties;
-import java.util.Set;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import javax.swing.JFileChooser;
@@ -53,14 +49,10 @@ import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.Table;
-
-import iristk.system.Event;
 import se.kth.speech.awt.LookAndFeels;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionContextFactory;
 import se.kth.speech.coin.tangrams.analysis.features.ImageEdgeCounter;
-import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
 import se.kth.speech.coin.tangrams.view.UserPrompts;
 import se.kth.speech.io.FileNames;
 
@@ -163,8 +155,6 @@ final class UtteranceSelectedEntityDescriptionWriter {
 	private static final FileNameExtensionFilter DEFAULT_FILE_FILTER;
 
 	private static final String DEFAULT_OUTFILE_PREFIX = "";
-
-	private static final Predicate<Event> EVENT_FILTER = LoggedEvents.VALID_MODEL_MIN_REQUIRED_EVENT_MATCHER;
 
 	private static final List<FileNameExtensionFilter> FILE_FILTERS;
 
@@ -351,15 +341,8 @@ final class UtteranceSelectedEntityDescriptionWriter {
 	private void accept(final SessionDataManager sessionData, final String outfileNamePrefix)
 			throws JAXBException, IOException {
 		final SessionEventDialogueManager sessionEvtDiagMgr = new SessionEventDialogueManager(sessionData);
-		final PlayerDataManager playerData = sessionData.getPlayerData();
-		final Table<String, String, GameHistory> gamePlayerHistoryTable = LoggedEvents
-				.createPlayerGameHistoryTable(playerData.getPlayerEventLogs().entrySet(), EVENT_FILTER);
-		final Set<String> playerGameIdIntersection = new HashSet<>(gamePlayerHistoryTable.rowKeySet());
-		gamePlayerHistoryTable.columnMap().values().stream().map(Map::keySet)
-				.forEach(playerGameIdIntersection::retainAll);
-		final int uniqueModelDescriptionCount = gamePlayerHistoryTable.values().size();
 		final EntityFeatureExtractionContextFactory extractionContextFactory = new EntityFeatureExtractionContextFactory(
-				new GameContextModelFactory(uniqueModelDescriptionCount), new ImageEdgeCounter());
+				new GameContextModelFactory(2), new ImageEdgeCounter());
 		final UtteranceTabularDataWriter gameWriter = new UtteranceTabularDataWriter(extractor, featuresToDescribe,
 				extractionContextFactory, strict);
 
