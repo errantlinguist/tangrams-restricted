@@ -125,10 +125,8 @@ final class SessionEventLogAdjuster {
 	}
 
 	private static void loadClassSettingsProps(final Properties props) throws IOException {
-		final Path classSettingsInfilePath = SETTINGS_DIR
-				.resolve(SessionEventLogAdjuster.class.getName() + ".properties");
 		Files.createDirectories(SETTINGS_DIR);
-		try (InputStream classSettingsPropsInstream = Files.newInputStream(classSettingsInfilePath)) {
+		try (InputStream classSettingsPropsInstream = Files.newInputStream(CLASS_SETTINGS_INFILE_PATH)) {
 			props.load(classSettingsPropsInstream);
 		}
 	}
