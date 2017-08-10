@@ -167,23 +167,4 @@ final class SegmentUtteranceFactory {
 		return segments.sorted(TEMPORAL_SEGMENT_COMPARATOR).map(this::create);
 	}
 
-	// private Optional<Utterance> create(final String segmentId, final List<T>
-	// tokenAnnots,
-	// final float previousUttEndTime, final float nextUttStartTime) {
-	// final Float firstTokenStartTime = tokenAnnots.get(0).getStart();
-	// final float seqStartTime = firstTokenStartTime == null ?
-	// previousUttEndTime : firstTokenStartTime;
-	// final Float lastTokenEndTime = tokenAnnots.get(tokenAnnots.size() -
-	// 1).getEnd();
-	// final float seqEndTime = lastTokenEndTime == null ? nextUttStartTime :
-	// lastTokenEndTime;
-	// final Stream<String> tokenForms =
-	// tokenAnnots.stream().map(T::getContent);
-	// final List<String> tokens =
-	// tokenizer.apply(tokenForms.collect(TOKEN_JOINING_COLLECTOR));
-	// return tokens.isEmpty() ? Optional.empty()
-	// : Optional.of(new Utterance(segmentId, tokens, seqStartTime,
-	// seqEndTime));
-	// }
-
 }
