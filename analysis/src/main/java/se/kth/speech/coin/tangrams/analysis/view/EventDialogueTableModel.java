@@ -86,9 +86,9 @@ final class EventDialogueTableModel extends AbstractTableModel {
 		final Class<?> result;
 		final EventDialogueAttribute colEventDiagAttr = getColumnEventDialogueAttribute(columnIndex);
 		if (colEventDiagAttr == null) {
-			result = AttributeType.UTTERANCE.valueClass;
+			result = AttributeType.UTTERANCE.getValueClass();
 		} else {
-			result = AttributeType.EVENT_DIALOGUE.valueClass;
+			result = AttributeType.EVENT_DIALOGUE.getValueClass();
 		}
 		return result;
 	}

@@ -54,7 +54,7 @@ enum AttributeType {
 
 	private static final int EVENT_DIALOGUE_ATTR_COUNT = EventDialogueAttribute.values().length;
 
-	final Class<?> valueClass;
+	private final Class<?> valueClass;
 
 	private AttributeType(final Class<?> valueClass) {
 		this.valueClass = valueClass;
@@ -87,5 +87,12 @@ enum AttributeType {
 	protected boolean isMatchingTypeColumn(final TableModel model, final int colIdx) {
 		final Class<?> colClass = model.getColumnClass(colIdx);
 		return valueClass.isAssignableFrom(colClass);
+	}
+
+	/**
+	 * @return the valueClass
+	 */
+	Class<?> getValueClass() {
+		return valueClass;
 	}
 }
