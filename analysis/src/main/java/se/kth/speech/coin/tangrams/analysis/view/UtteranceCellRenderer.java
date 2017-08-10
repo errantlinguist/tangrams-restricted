@@ -28,7 +28,7 @@ final class UtteranceCellRenderer extends DefaultTableCellRenderer {
 
 	private static final int ESTIMATED_DIAGS_PER_SESSION = 96;
 
-	private static final int ESTIMATED_UNIQUE_UTTS_PER_DIAG = 8;
+	private static final int ESTIMATED_UNIQUE_UTTS_PER_DIAG = 4;
 
 	/**
 	 *
