@@ -40,7 +40,7 @@ public final class UtteranceGameContexts {
 				.create(history, dialogueUtt.getStartTime(), dialogueUtt.getEndTime()).iterator();
 		final GameContext result = ctxIter.next();
 		if (ctxIter.hasNext()) {
-			LOGGER.warn("More than one game context found for {}; Only using the first one.", dialogueUtt);
+			LOGGER.debug("More than one game context found for {}; Only using the first one.", dialogueUtt);
 		}
 		return result;
 	}
