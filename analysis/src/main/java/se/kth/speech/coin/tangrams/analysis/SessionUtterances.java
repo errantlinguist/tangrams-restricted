@@ -30,6 +30,9 @@ import javax.xml.bind.Unmarshaller;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
+import se.kth.speech.coin.tangrams.analysis.io.PlayerDataManager;
+import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
 import se.kth.speech.coin.tangrams.iristk.io.HatIO;
 import se.kth.speech.hat.xsd.Annotation;
 import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
@@ -61,7 +64,7 @@ final class SessionUtterances {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SessionUtterances.class);
 
-	public static List<Utterance> createUtteranceList(final SessionDataManager sessionData)
+	static List<Utterance> createUtteranceList(final SessionDataManager sessionData)
 			throws JAXBException, IOException {
 		final PlayerDataManager playerData = sessionData.getPlayerData();
 		final Map<String, String> sourcePlayerIds = playerData.getPlayerSourceIds().inverse();
