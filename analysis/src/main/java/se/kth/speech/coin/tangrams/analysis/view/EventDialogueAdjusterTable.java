@@ -83,7 +83,7 @@ final class EventDialogueAdjusterTable extends JTable {
 		}
 	}
 
-	public EventDialogueAdjusterTable(final TableModel dm, final UtteranceCellRenderer uttCellRenderer) {
+	EventDialogueAdjusterTable(final TableModel dm, final UtteranceCellRenderer uttCellRenderer) {
 		super(dm);
 		setCellSelectionEnabled(true);
 		setAutoResizeMode(JTable.AUTO_RESIZE_OFF);

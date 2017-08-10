@@ -35,7 +35,7 @@ final class EventDialogueAdjusterFrame extends JFrame {
 	 */
 	private static final long serialVersionUID = -5412327154602984470L;
 
-	public EventDialogueAdjusterFrame(final String title, final LocalDateTime gameStartTime,
+	EventDialogueAdjusterFrame(final String title, final LocalDateTime gameStartTime,
 			final EventDialogueAdjusterTable diagTable) throws HeadlessException {
 		super(title);
 		final Container content = getContentPane();
