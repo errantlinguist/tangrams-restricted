@@ -51,10 +51,10 @@ public final class SessionEventDialogueManager {
 
 		private final GameHistory history;
 
-		private SessionGame(final String gameId, final GameHistory history, final List<EventDialogue> uttDialogues) {
+		private SessionGame(final String gameId, final GameHistory history, final List<EventDialogue> eventDialogues) {
 			this.gameId = gameId;
 			this.history = history;
-			eventDialogues = uttDialogues;
+			this.eventDialogues = eventDialogues;
 		}
 
 		public List<EventDialogue> getEventDialogues() {
