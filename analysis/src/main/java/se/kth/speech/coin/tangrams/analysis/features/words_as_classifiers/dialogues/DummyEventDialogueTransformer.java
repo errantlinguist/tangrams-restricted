@@ -14,34 +14,25 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags;
-
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Stream;
+package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues;
 
 import se.kth.speech.coin.tangrams.analysis.EventDialogue;
-import se.kth.speech.coin.tangrams.analysis.Utterance;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
  * @since May 27, 2017
  *
  */
-abstract class AbstractUtteranceTransformingEventDialogueTransformer implements EventDialogueTransformer {
+public final class DummyEventDialogueTransformer implements EventDialogueTransformer {
 
 	/*
 	 * (non-Javadoc)
-	 *
+	 * 
 	 * @see java.util.function.Function#apply(java.lang.Object)
 	 */
 	@Override
 	public EventDialogue apply(final EventDialogue diag) {
-		final List<Utterance> newUtts = Arrays
-				.asList(diag.getUtts().stream().flatMap(this::transformUtt).toArray(Utterance[]::new));
-		return new EventDialogue(diag.getDialogueEvents(), newUtts);
+		return diag;
 	}
-
-	protected abstract Stream<Utterance> transformUtt(final Utterance utt);
 
 }

@@ -34,6 +34,8 @@ import org.slf4j.LoggerFactory;
 
 import iristk.system.Event;
 import se.kth.speech.coin.tangrams.analysis.Utterance;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.DialogicEventDialogueUtteranceSorter;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.UtteranceRelation;
 import se.kth.speech.coin.tangrams.iristk.EventTimes;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 import se.kth.speech.nlp.PatternMatchingUtteranceAcceptanceRanker;
@@ -55,7 +57,7 @@ public final class DialogicEventDialogueUtteranceSorterTest {
 
 	/**
 	 * Test method for
-	 * {@link se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.DialogicEventDialogueUtteranceSorter#apply(java.util.List, java.util.function.Predicate)}.
+	 * {@link se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.DialogicEventDialogueUtteranceSorter#apply(java.util.List, java.util.function.Predicate)}.
 	 *
 	 * @throws JAXBException
 	 * @throws IOException

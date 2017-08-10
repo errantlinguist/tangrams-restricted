@@ -64,8 +64,8 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.Sessio
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.SessionTestStatistics;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.UtteranceGameContexts;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordClassDiscountingSmoother;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EventDialogueClassifier;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EventDialogueTransformer;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.EventDialogueClassifier;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.EventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.WordClassificationData;
 import weka.classifiers.functions.Logistic;
 import weka.core.Instance;

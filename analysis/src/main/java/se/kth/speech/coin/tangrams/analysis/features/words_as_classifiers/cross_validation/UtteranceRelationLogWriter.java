@@ -29,7 +29,7 @@ import java.util.stream.Stream;
 import iristk.system.Event;
 import se.kth.speech.coin.tangrams.analysis.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.Utterance;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.UtteranceRelation;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.UtteranceRelation;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>

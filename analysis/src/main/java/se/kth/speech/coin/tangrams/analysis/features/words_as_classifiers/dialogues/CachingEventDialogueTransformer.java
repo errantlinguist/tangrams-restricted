@@ -14,11 +14,11 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags;
+package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues;
 
-import java.util.Iterator;
-import java.util.List;
-import java.util.function.Function;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 
 import se.kth.speech.coin.tangrams.analysis.EventDialogue;
 
@@ -27,27 +27,16 @@ import se.kth.speech.coin.tangrams.analysis.EventDialogue;
  * @since May 25, 2017
  *
  */
-public class ChainedEventDialogueTransformer implements EventDialogueTransformer {
+public final class CachingEventDialogueTransformer implements EventDialogueTransformer {
 
-	private static Function<? super EventDialogue, EventDialogue> createDecorated(
-			final Iterable<? extends Function<? super EventDialogue, EventDialogue>> diagTransformers) {
-		final Iterator<? extends Function<? super EventDialogue, EventDialogue>> transformerIter = diagTransformers
-				.iterator();
-		Function<? super EventDialogue, EventDialogue> result = transformerIter.next();
-		while (transformerIter.hasNext()) {
-			result = result.andThen(transformerIter.next());
-		}
-		return result;
+	private final LoadingCache<EventDialogue, EventDialogue> transformedDiags;
+
+	public CachingEventDialogueTransformer(final EventDialogueTransformer decorated) {
+		this(CacheBuilder.newBuilder().weakKeys().softValues().build(CacheLoader.from(decorated::apply)));
 	}
 
-	private final Function<? super EventDialogue, EventDialogue> decorated;
-
-	public ChainedEventDialogueTransformer(final List<? extends EventDialogueTransformer> diagTransformers) {
-		this(createDecorated(diagTransformers));
-	}
-
-	private ChainedEventDialogueTransformer(final Function<? super EventDialogue, EventDialogue> decorated) {
-		this.decorated = decorated;
+	private CachingEventDialogueTransformer(final LoadingCache<EventDialogue, EventDialogue> transformedDiags) {
+		this.transformedDiags = transformedDiags;
 	}
 
 	/*
@@ -57,7 +46,7 @@ public class ChainedEventDialogueTransformer implements EventDialogueTransformer
 	 */
 	@Override
 	public EventDialogue apply(final EventDialogue diag) {
-		return decorated.apply(diag);
+		return transformedDiags.getUnchecked(diag);
 	}
 
 	/*
@@ -73,15 +62,15 @@ public class ChainedEventDialogueTransformer implements EventDialogueTransformer
 		if (obj == null) {
 			return false;
 		}
-		if (!(obj instanceof ChainedEventDialogueTransformer)) {
+		if (!(obj instanceof CachingEventDialogueTransformer)) {
 			return false;
 		}
-		final ChainedEventDialogueTransformer other = (ChainedEventDialogueTransformer) obj;
-		if (decorated == null) {
-			if (other.decorated != null) {
+		final CachingEventDialogueTransformer other = (CachingEventDialogueTransformer) obj;
+		if (transformedDiags == null) {
+			if (other.transformedDiags != null) {
 				return false;
 			}
-		} else if (!decorated.equals(other.decorated)) {
+		} else if (!transformedDiags.equals(other.transformedDiags)) {
 			return false;
 		}
 		return true;
@@ -96,7 +85,7 @@ public class ChainedEventDialogueTransformer implements EventDialogueTransformer
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + (decorated == null ? 0 : decorated.hashCode());
+		result = prime * result + (transformedDiags == null ? 0 : transformedDiags.hashCode());
 		return result;
 	}
 
@@ -108,8 +97,8 @@ public class ChainedEventDialogueTransformer implements EventDialogueTransformer
 	@Override
 	public String toString() {
 		final StringBuilder builder = new StringBuilder(128);
-		builder.append("ChainedEventDialogueTransformer [decorated=");
-		builder.append(decorated);
+		builder.append("CachingEventDialogueTransformer [transformedDiags=");
+		builder.append(transformedDiags);
 		builder.append(']');
 		return builder.toString();
 	}

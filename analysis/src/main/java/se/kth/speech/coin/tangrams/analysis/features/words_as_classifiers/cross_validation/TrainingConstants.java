@@ -20,8 +20,8 @@ import java.util.Random;
 import java.util.function.Function;
 
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.ReferentConfidenceMapFactory;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EventDialogueClassifier;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.IsolatedUtteranceEventDialogueClassifier;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.EventDialogueClassifier;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.IsolatedUtteranceEventDialogueClassifier;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>

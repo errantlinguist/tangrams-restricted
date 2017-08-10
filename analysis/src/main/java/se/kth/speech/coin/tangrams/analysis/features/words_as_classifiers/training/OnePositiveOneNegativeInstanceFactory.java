@@ -36,7 +36,7 @@ import se.kth.speech.coin.tangrams.analysis.features.EntityFeature.Extractor.Con
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionContextFactory;
 import se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttributeContext;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.UtteranceGameContexts;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EventDialogueTransformer;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.EventDialogueTransformer;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 import se.kth.speech.fastutil.RandomIntLists;
 import weka.core.Instance;

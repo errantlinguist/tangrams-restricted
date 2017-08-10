@@ -18,9 +18,9 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross
 
 import java.util.function.Supplier;
 
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.DummyEventDialogueTransformer;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.EventDialogueTransformer;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.TokenFilteringEventDialogueTransformer;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.DummyEventDialogueTransformer;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.EventDialogueTransformer;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.TokenFilteringEventDialogueTransformer;
 import se.kth.speech.nlp.SnowballPorter2EnglishStopwords;
 
 enum TokenFiltering implements Supplier<EventDialogueTransformer> {

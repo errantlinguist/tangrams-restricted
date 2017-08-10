@@ -14,14 +14,13 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags;
+package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues;
 
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
-import java.util.function.Predicate;
 import java.util.stream.Stream;
 
+import se.kth.speech.ListSubsequences;
 import se.kth.speech.coin.tangrams.analysis.Utterance;
 
 /**
@@ -29,27 +28,20 @@ import se.kth.speech.coin.tangrams.analysis.Utterance;
  * @since May 27, 2017
  *
  */
-public final class TokenFilteringEventDialogueTransformer
+public final class DuplicateTokenFilteringEventDialogueTransformer
 		extends AbstractUtteranceTransformingEventDialogueTransformer {
-
-	private final Predicate<? super String> positiveTokenFilter;
-
-	public TokenFilteringEventDialogueTransformer(final Collection<? super String> tokenBlacklist) {
-		this(token -> !tokenBlacklist.contains(token));
-	}
-
-	public TokenFilteringEventDialogueTransformer(final Predicate<? super String> positiveTokenFilter) {
-		this.positiveTokenFilter = positiveTokenFilter;
-	}
 
 	@Override
 	protected Stream<Utterance> transformUtt(final Utterance utt) {
 		final List<String> oldTokens = utt.getTokens();
-		final Stream<String> newTokens = oldTokens.stream().filter(positiveTokenFilter);
+		final List<List<String>> bigrams = ListSubsequences.createSubsequenceList(oldTokens, 2);
+		final List<List<String>> dedupBigrams = ListSubsequences
+				.createDeduplicatedAdjacentSubsequenceListFromListOfSubsequences(bigrams);
+		final Stream<String> newTokens = dedupBigrams.stream().flatMap(List::stream);
 		final String[] newTokenArr = newTokens.toArray(String[]::new);
-		return newTokenArr.length < 1 ? Stream.empty()
-				: Stream.of(new Utterance(utt.getSegmentId(), utt.getSpeakerId(), Arrays.asList(newTokenArr),
-						utt.getStartTime(), utt.getEndTime()));
+		assert newTokenArr.length > 0;
+		return Stream.of(new Utterance(utt.getSegmentId(), utt.getSpeakerId(), Arrays.asList(newTokenArr),
+				utt.getStartTime(), utt.getEndTime()));
 	}
 
 }

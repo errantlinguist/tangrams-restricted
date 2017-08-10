@@ -14,13 +14,13 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags;
+package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 
-import se.kth.speech.ListSubsequences;
+import se.kth.speech.coin.tangrams.analysis.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.Utterance;
 
 /**
@@ -28,20 +28,20 @@ import se.kth.speech.coin.tangrams.analysis.Utterance;
  * @since May 27, 2017
  *
  */
-public final class DuplicateTokenFilteringEventDialogueTransformer
-		extends AbstractUtteranceTransformingEventDialogueTransformer {
+abstract class AbstractUtteranceTransformingEventDialogueTransformer implements EventDialogueTransformer {
 
+	/*
+	 * (non-Javadoc)
+	 *
+	 * @see java.util.function.Function#apply(java.lang.Object)
+	 */
 	@Override
-	protected Stream<Utterance> transformUtt(final Utterance utt) {
-		final List<String> oldTokens = utt.getTokens();
-		final List<List<String>> bigrams = ListSubsequences.createSubsequenceList(oldTokens, 2);
-		final List<List<String>> dedupBigrams = ListSubsequences
-				.createDeduplicatedAdjacentSubsequenceListFromListOfSubsequences(bigrams);
-		final Stream<String> newTokens = dedupBigrams.stream().flatMap(List::stream);
-		final String[] newTokenArr = newTokens.toArray(String[]::new);
-		assert newTokenArr.length > 0;
-		return Stream.of(new Utterance(utt.getSegmentId(), utt.getSpeakerId(), Arrays.asList(newTokenArr),
-				utt.getStartTime(), utt.getEndTime()));
+	public EventDialogue apply(final EventDialogue diag) {
+		final List<Utterance> newUtts = Arrays
+				.asList(diag.getUtts().stream().flatMap(this::transformUtt).toArray(Utterance[]::new));
+		return new EventDialogue(diag.getDialogueEvents(), newUtts);
 	}
+
+	protected abstract Stream<Utterance> transformUtt(final Utterance utt);
 
 }

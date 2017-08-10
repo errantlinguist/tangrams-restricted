@@ -16,7 +16,7 @@
 	</bean>
 	
 	<bean id="dialogue-classifier"
-		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.IsolatedUtteranceEventDialogueClassifier"
+		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.IsolatedUtteranceEventDialogueClassifier"
 		scope="prototype">
 	</bean>
 	

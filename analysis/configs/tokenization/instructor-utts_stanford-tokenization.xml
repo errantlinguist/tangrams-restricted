@@ -13,17 +13,17 @@
 			testing are those which were made by the instructor for the turn
 			which the dialogue has as a context. Tokenizes utterances using Stanford CoreNLP's tokenizer (https://stanfordnlp.github.io/CoreNLP/tokenize.html).</description>
 
-		<bean id="dialogue-transformer" class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.CachingEventDialogueTransformer">
+		<bean id="dialogue-transformer" class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.CachingEventDialogueTransformer">
 			<constructor-arg>
-				<bean class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.ChainedEventDialogueTransformer">
+				<bean class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.ChainedEventDialogueTransformer">
 					<constructor-arg>
 						<util:list>
-							<bean class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.InstructorUtteranceFilteringEventDialogueTransformer">
+							<bean class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.InstructorUtteranceFilteringEventDialogueTransformer">
 								<description>For each dialogue, the only utterances used for training and
 						testing are those which were made by the instructor for the turn
 						which the dialogue has as a context.</description>
 							</bean>
-							<bean class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.diags.TokenizingEventDialogueTransformer">
+							<bean class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.TokenizingEventDialogueTransformer">
 								<description>Tokenizes utterances using Stanford CoreNLP's tokenizer (https://stanfordnlp.github.io/CoreNLP/tokenize.html).</description>
 								<constructor-arg ref="stanford-tokenizer" />
 							</bean>
