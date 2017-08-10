@@ -44,7 +44,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ForkJoinPool;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -77,9 +76,7 @@ import iristk.system.Event;
 import se.kth.speech.TimestampArithmetic;
 import se.kth.speech.awt.LookAndFeels;
 import se.kth.speech.coin.tangrams.iristk.EventTimes;
-import se.kth.speech.coin.tangrams.iristk.EventTypeMatcher;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
-import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
 import se.kth.speech.coin.tangrams.view.UserPrompts;
 
 /**
@@ -556,11 +553,6 @@ final class SessionEventLogAdjuster {
 	private static final int ESTIMATED_UNIQUE_TOKEN_SEQ_PER_DIAG_COUNT = 8;
 
 	private static final Map<EventAttribute, Integer> EVENT_ATTR_IDXS = createEventAttributeIndexMap();
-
-	private static final EventDialogueFactory EVENT_DIAG_FACTORY = new EventDialogueFactory(
-			new EventTypeMatcher(GameManagementEvent.NEXT_TURN_REQUEST));
-
-	private static final Predicate<Event> EVENT_FILTER = LoggedEvents.VALID_MODEL_MIN_REQUIRED_EVENT_MATCHER;
 
 	private static final List<FileNameExtensionFilter> FILE_FILTERS;
 
