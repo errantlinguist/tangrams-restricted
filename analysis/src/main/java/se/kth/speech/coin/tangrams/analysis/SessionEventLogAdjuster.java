@@ -176,7 +176,7 @@ final class SessionEventLogAdjuster {
 				}
 				}
 			});
-
+			
 			uttPopupMenu.add(deleteItem);
 			diagTable.setComponentPopupMenu(uttPopupMenu);
 		}
@@ -534,22 +534,7 @@ final class SessionEventLogAdjuster {
 		return String.format("Game %s, started at %s", gameId, history.getStartTime());
 	}
 
-	private static TableCellRenderer getColHeaderRenderer(final TableColumn tableColumn, final JTableHeader header) {
-		final TableCellRenderer colRenderer = tableColumn.getHeaderRenderer();
-		return colRenderer == null ? header.getDefaultRenderer() : colRenderer;
-	}
-
-	private static EventAttribute getColumnAttribute(final int colIdx) {
-		final EventAttribute[] atts = EventAttribute.values();
-		return atts.length <= colIdx ? null : atts[colIdx];
-	}
-
-	private static TableColumn getEventAttributeColumn(final TableColumnModel colModel, final EventAttribute attr) {
-		final int colIdx = EVENT_ATTR_IDXS.get(attr);
-		return colModel.getColumn(colIdx);
-	}
-
-	private static List<TableColumn> getUtteranceColumns(final TableColumnModel colModel) {
+	private static List<TableColumn> createtUtteranceColumnList(final TableColumnModel colModel) {
 		final int resultSize = colModel.getColumnCount() - EventAttribute.values().length;
 		final List<TableColumn> result = new ArrayList<>(resultSize);
 		final Enumeration<TableColumn> cols = colModel.getColumns();
@@ -563,6 +548,21 @@ final class SessionEventLogAdjuster {
 			colIdx++;
 		}
 		return result;
+	}
+
+	private static TableCellRenderer getColHeaderRenderer(final TableColumn tableColumn, final JTableHeader header) {
+		final TableCellRenderer colRenderer = tableColumn.getHeaderRenderer();
+		return colRenderer == null ? header.getDefaultRenderer() : colRenderer;
+	}
+
+	private static EventAttribute getColumnAttribute(final int colIdx) {
+		final EventAttribute[] atts = EventAttribute.values();
+		return atts.length <= colIdx ? null : atts[colIdx];
+	}
+
+	private static TableColumn getEventAttributeColumn(final TableColumnModel colModel, final EventAttribute attr) {
+		final int colIdx = EVENT_ATTR_IDXS.get(attr);
+		return colModel.getColumn(colIdx);
 	}
 
 	private static boolean isEventAttributeColumn(final int colIdx) {
