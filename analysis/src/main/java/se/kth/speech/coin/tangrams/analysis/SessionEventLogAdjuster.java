@@ -19,6 +19,11 @@ package se.kth.speech.coin.tangrams.analysis;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
+import java.awt.EventQueue;
+import java.awt.HeadlessException;
+import java.awt.Point;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -45,9 +50,16 @@ import java.util.stream.Stream;
 
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
+import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.ScrollPaneConstants;
+import javax.swing.SwingUtilities;
+import javax.swing.WindowConstants;
+import javax.swing.event.PopupMenuEvent;
+import javax.swing.event.PopupMenuListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -82,16 +94,81 @@ final class SessionEventLogAdjuster {
 		SENDER, TIME;
 	}
 
-	private class EventDialogueAdjustingTable extends JTable {
+	private class EventDialogueAdjusterFrame extends JFrame {
+
+		/**
+		 *
+		 */
+		private static final long serialVersionUID = -5412327154602984470L;
+
+		public EventDialogueAdjusterFrame(final String title, final EventDialogueAdjusterTable diagTable)
+				throws HeadlessException {
+			super(title);
+			final Container content = getContentPane();
+			// https://stackoverflow.com/a/2452758/1391325
+			content.add(new JScrollPane(diagTable, ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
+					ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED));
+			final JPopupMenu popupMenu = new JPopupMenu();
+			popupMenu.addPopupMenuListener(new PopupMenuListener() {
+
+				@Override
+				public void popupMenuCanceled(final PopupMenuEvent e) {
+					LOGGER.info("Popup menu cancelled.");
+				}
+
+				@Override
+				public void popupMenuWillBecomeInvisible(final PopupMenuEvent e) {
+					LOGGER.info("Popup menu will become invisible.");
+				}
+
+				@Override
+				public void popupMenuWillBecomeVisible(final PopupMenuEvent e) {
+					EventQueue.invokeLater(new Runnable() {
+						@Override
+						public void run() {
+							final Point selectionPoint = SwingUtilities.convertPoint(popupMenu, new Point(0, 0),
+									diagTable);
+							final int rowAtPoint = diagTable.rowAtPoint(selectionPoint);
+							if (rowAtPoint > -1) {
+								diagTable.setRowSelectionInterval(rowAtPoint, rowAtPoint);
+							}
+							final int colAtPoint = diagTable.columnAtPoint(selectionPoint);
+							if (colAtPoint > -1) {
+								diagTable.setColumnSelectionInterval(colAtPoint, colAtPoint);
+							}
+							LOGGER.info("Cell at {}*{} selected.", diagTable.getSelectedRow(),
+									diagTable.getSelectedColumn());
+						}
+					});
+				}
+			});
+			final JMenuItem deleteItem = new JMenuItem("Delete");
+			deleteItem.addActionListener(new ActionListener() {
+
+				@Override
+				public void actionPerformed(final ActionEvent e) {
+					JOptionPane.showMessageDialog(EventDialogueAdjusterFrame.this,
+							"Right-click performed on table and choose DELETE");
+				}
+			});
+			popupMenu.add(deleteItem);
+			diagTable.setComponentPopupMenu(popupMenu);
+		}
+
+	}
+
+	private class EventDialogueAdjusterTable extends JTable {
 
 		/**
 		 *
 		 */
 		private static final long serialVersionUID = 5176564593731003375L;
 
-		public EventDialogueAdjustingTable(final TableModel dm) {
+		public EventDialogueAdjusterTable(final TableModel dm) {
 			super(dm);
 			setCellSelectionEnabled(true);
+			setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
+
 			setColumnEventAttributeRenderers();
 			setDefaultRenderer(Utterance.class, new UtteranceCellRenderer());
 
@@ -472,6 +549,19 @@ final class SessionEventLogAdjuster {
 		return result;
 	}
 
+	private static void setMaxPreferredScrollableViewportSize(final JTable table) {
+		final Dimension diagTablereferredScrollableViewportSize = table.getPreferredScrollableViewportSize();
+		// http://stackoverflow.com/a/1936582/1391325
+		final Dimension screenSize = table.getToolkit().getScreenSize();
+		final double scaleFactor = 1.0;
+		final Dimension maxPreferredSize = new Dimension(Math.toIntExact(Math.round(screenSize.width * scaleFactor)),
+				Math.toIntExact(Math.round(screenSize.height * scaleFactor)));
+		if (diagTablereferredScrollableViewportSize.width < maxPreferredSize.width) {
+			diagTablereferredScrollableViewportSize.width = maxPreferredSize.width;
+		}
+		table.setPreferredScrollableViewportSize(diagTablereferredScrollableViewportSize);
+	}
+
 	private final ConcurrentMap<List<String>, String> tokenSeqReprs;
 
 	private SessionEventLogAdjuster() {
@@ -511,27 +601,13 @@ final class SessionEventLogAdjuster {
 	}
 
 	private void visualize(final String title, final GameHistory history, final List<Utterance> utts) {
-		final JFrame frame = new JFrame(title);
-
 		final Stream<EventDialogue> diags = EVENT_DIAG_FACTORY.apply(utts.listIterator(), history);
-		final EventDialogueAdjustingTable diagTable = new EventDialogueAdjustingTable(
+		final EventDialogueAdjusterTable diagTable = new EventDialogueAdjusterTable(
 				new EventDialogueTableModel(diags.toArray(EventDialogue[]::new)));
-		final Container content = frame.getContentPane();
-		// https://stackoverflow.com/a/2452758/1391325
-		content.add(new JScrollPane(diagTable, ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
-				ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED));
-		diagTable.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-		final Dimension diagTablereferredScrollableViewportSize = diagTable.getPreferredScrollableViewportSize();
-		// http://stackoverflow.com/a/1936582/1391325
-		final Dimension screenSize = frame.getToolkit().getScreenSize();
-		final double scaleFactor = 1.0;
-		final Dimension maxPreferredSize = new Dimension(Math.toIntExact(Math.round(screenSize.width * scaleFactor)),
-				Math.toIntExact(Math.round(screenSize.height * scaleFactor)));
-		if (diagTablereferredScrollableViewportSize.width < maxPreferredSize.width) {
-			diagTablereferredScrollableViewportSize.width = maxPreferredSize.width;
-		}
-		diagTable.setPreferredScrollableViewportSize(diagTablereferredScrollableViewportSize);
-		// TODO: Finish
+		setMaxPreferredScrollableViewportSize(diagTable);
+
+		final EventDialogueAdjusterFrame frame = new EventDialogueAdjusterFrame(title, diagTable);
+		frame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 		frame.pack();
 		frame.setVisible(true);
 	}
