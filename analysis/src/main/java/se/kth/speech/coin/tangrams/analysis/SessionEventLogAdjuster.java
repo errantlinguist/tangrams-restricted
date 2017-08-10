@@ -95,13 +95,13 @@ final class SessionEventLogAdjuster {
 
 			@Override
 			protected int getValueListSize(final TableColumnModel colModel) {
-				return EVENT_ATTR_COUNT;
+				return EVENT_DIALOGUE_ATTR_COUNT;
 			}
 		},
 		UTTERANCE(Utterance.class) {
 			@Override
 			protected int getValueListIdx(final int columnIndex) {
-				return columnIndex - EVENT_ATTR_COUNT;
+				return columnIndex - EVENT_DIALOGUE_ATTR_COUNT;
 			}
 
 			@Override
@@ -110,7 +110,7 @@ final class SessionEventLogAdjuster {
 			}
 		};
 
-		private static final int EVENT_ATTR_COUNT = EventDialogueAttribute.values().length;
+		private static final int EVENT_DIALOGUE_ATTR_COUNT = EventDialogueAttribute.values().length;
 
 		private final Class<?> valueClass;
 
