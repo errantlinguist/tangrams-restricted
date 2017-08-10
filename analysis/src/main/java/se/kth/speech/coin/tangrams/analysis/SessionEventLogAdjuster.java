@@ -81,8 +81,6 @@ final class SessionEventLogAdjuster {
 
 	private static final Path SETTINGS_DIR;
 
-	static final String NULL_VALUE_REPR = "-";
-
 	static {
 		SETTINGS_DIR = Paths.get(".settings");
 		CLASS_SETTINGS_INFILE_PATH = SETTINGS_DIR.resolve(SessionEventLogAdjuster.class.getName() + ".properties");
