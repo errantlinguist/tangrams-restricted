@@ -14,16 +14,13 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech.coin.tangrams.analysis;
+package se.kth.speech.coin.tangrams.analysis.dialogues;
 
 import java.util.Arrays;
 import java.util.stream.Stream;
 
 import org.junit.Assert;
 import org.junit.Test;
-
-import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
-import se.kth.speech.coin.tangrams.analysis.dialogues.UtteranceDialogueRepresentationStringFactory;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
