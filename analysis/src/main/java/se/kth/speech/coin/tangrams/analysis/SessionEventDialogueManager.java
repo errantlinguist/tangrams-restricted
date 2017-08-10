@@ -105,8 +105,7 @@ public final class SessionEventDialogueManager {
 	private static Entry<String, GameHistory> loadGameHistory(final Path eventLogPath) throws IOException {
 		Entry<String, GameHistory> result;
 		LOGGER.info("Reading game histories from \"{}\".", eventLogPath);
-		final Map<String, GameHistory> gameHistories = LoggedEvents.readGameHistories(eventLogPath,
-				LoggedEvents.VALID_MODEL_MIN_REQUIRED_EVENT_MATCHER);
+		final Map<String, GameHistory> gameHistories = LoggedEvents.readGameHistories(eventLogPath);
 		final int gameCount = gameHistories.size();
 		// TODO: Support multiple games in one session
 		switch (gameCount) {

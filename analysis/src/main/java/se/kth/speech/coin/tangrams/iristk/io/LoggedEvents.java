@@ -44,8 +44,6 @@ import iristk.util.Record;
 import iristk.util.Record.JsonToRecordException;
 import se.kth.speech.coin.tangrams.analysis.GameHistory;
 import se.kth.speech.coin.tangrams.analysis.GameHistoryCollector;
-import se.kth.speech.coin.tangrams.iristk.EventTypeMatcher;
-import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 import se.kth.speech.coin.tangrams.iristk.GameStateDescriptions;
 
 /**
@@ -56,9 +54,6 @@ import se.kth.speech.coin.tangrams.iristk.GameStateDescriptions;
 public final class LoggedEvents {
 
 	public static final Charset CHARSET = Record.JSON_CHARSET;
-
-	public static final EventTypeMatcher VALID_MODEL_MIN_REQUIRED_EVENT_MATCHER = new EventTypeMatcher(
-			GameManagementEvent.getGameModelStateChangingEvents());
 
 	private static final Predicate<Event> DEFAULT_EVENT_FILTER = event -> true;
 
