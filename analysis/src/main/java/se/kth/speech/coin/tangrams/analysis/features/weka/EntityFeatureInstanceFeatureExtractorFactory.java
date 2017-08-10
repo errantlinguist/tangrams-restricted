@@ -46,15 +46,12 @@ public final class EntityFeatureInstanceFeatureExtractorFactory
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(EntityFeatureInstanceFeatureExtractorFactory.class);
 
-	// private static final String RES_LOC_PREFIX =
-	// "classpath:/se/kth/speech/coin/tangrams/content/";
-
 	private static final String RES_LOC_PREFIX = "classpath:";
 
 	private volatile InstanceFeatureExtractor<EntityFeature, EntityFeature.Extractor.Context> inst;
 
 	@Inject
-	private ResourceLoader resourceLoader;;
+	private ResourceLoader resourceLoader;
 
 	/*
 	 * (non-Javadoc)
