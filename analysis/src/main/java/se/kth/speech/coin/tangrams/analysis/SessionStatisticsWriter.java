@@ -145,7 +145,7 @@ final class SessionStatisticsWriter {
 			throws JAXBException, IOException {
 		final SessionEventDialogueManager sessionDiagMgr = new SessionEventDialogueManager(sessionData);
 		final SessionEventDialogueManager.SessionGame canonicalGame = sessionDiagMgr.getCanonicalGame();
-		final GameSummary summary = createGameSummary(canonicalGame.getHistory(), canonicalGame.getUttDialogues());
+		final GameSummary summary = createGameSummary(canonicalGame.getHistory(), canonicalGame.getEventDialogues());
 		final NavigableMap<String, GameSummary> result = new TreeMap<>();
 		result.put(canonicalGame.getGameId(), summary);
 		return result;

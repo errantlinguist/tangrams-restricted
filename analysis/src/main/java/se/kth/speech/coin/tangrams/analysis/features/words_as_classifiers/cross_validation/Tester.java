@@ -487,7 +487,7 @@ public final class Tester {
 	private SessionTestResults testSession(final SessionEventDialogueManager sessionEventDiagMgr,
 			final EventDialogueClassifier diagClassifier) throws ClassificationException {
 		final SessionEventDialogueManager.SessionGame canonicalGame = sessionEventDiagMgr.getCanonicalGame();
-		final List<EventDialogue> uttDiags = canonicalGame.getUttDialogues();
+		final List<EventDialogue> uttDiags = canonicalGame.getEventDialogues();
 		final SessionTestResults result = new SessionTestResults(uttDiags.size());
 
 		LOGGER.info("Testing {} individual dialogue(s).", uttDiags.size());

@@ -745,7 +745,7 @@ final class SessionEventLogAdjuster {
 	private void visualize(final SessionEventDialogueManager.SessionGame game) {
 		final LocalDateTime gameStart = game.getHistory().getStartTime();
 		final String title = createHistoryTitleStr(game.getGameId(), gameStart);
-		final List<EventDialogue> diags = game.getUttDialogues();
+		final List<EventDialogue> diags = game.getEventDialogues();
 		final EventDialogueAdjusterTable diagTable = new EventDialogueAdjusterTable(
 				new EventDialogueTableModel(diags.toArray(new EventDialogue[diags.size()])),
 				new UtteranceCellRenderer(this::fetchTokenSeqRepr));

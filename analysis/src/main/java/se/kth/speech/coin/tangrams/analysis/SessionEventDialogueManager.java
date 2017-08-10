@@ -45,16 +45,20 @@ public final class SessionEventDialogueManager {
 
 	public static final class SessionGame {
 
+		private final List<EventDialogue> eventDialogues;
+
 		private final String gameId;
 
 		private final GameHistory history;
 
-		private final List<EventDialogue> uttDialogues;
-
 		private SessionGame(final String gameId, final GameHistory history, final List<EventDialogue> uttDialogues) {
 			this.gameId = gameId;
 			this.history = history;
-			this.uttDialogues = uttDialogues;
+			eventDialogues = uttDialogues;
+		}
+
+		public List<EventDialogue> getEventDialogues() {
+			return eventDialogues;
 		}
 
 		/**
@@ -66,10 +70,6 @@ public final class SessionEventDialogueManager {
 
 		public GameHistory getHistory() {
 			return history;
-		}
-
-		public List<EventDialogue> getUttDialogues() {
-			return uttDialogues;
 		}
 	}
 

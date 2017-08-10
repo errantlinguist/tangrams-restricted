@@ -242,7 +242,7 @@ final class UtteranceTabularDataWriter {
 		final GameHistory history = sessionGame.getHistory();
 		final ImageVisualizationInfo imgVizInfo = IMG_VIZ_INFO_UNMARSHALLER
 				.apply(history.getInitialState().getImageVisualizationInfoDescription());
-		final List<EventDialogue> eventDiags = sessionGame.getUttDialogues();
+		final List<EventDialogue> eventDiags = sessionGame.getEventDialogues();
 
 		final List<List<String>> colHeaders = createColHeaders();
 		final String colHeaderStr = colHeaders.stream().map(header -> header.stream().collect(TABLE_ROW_CELL_JOINER))
