@@ -55,8 +55,6 @@ final class EventDialogueFactory // NO_UCD (use default)
 
 	@Override
 	public Stream<EventDialogue> apply(final ListIterator<Utterance> utts, final GameHistory history) {
-		// final Stream<Event> events =
-		// history.getEventSequence().filter(dialogueEventDelimiter);
 		final Stream<Event> events = history.getEventSequence();
 		final LocalDateTime gameStartTime = history.getStartTime();
 
