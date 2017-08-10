@@ -16,7 +16,8 @@
 */
 package se.kth.speech.coin.tangrams.analysis.view;
 
-import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
 
 import javax.swing.table.DefaultTableCellRenderer;
@@ -25,15 +26,24 @@ import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 
 final class UtteranceCellRenderer extends DefaultTableCellRenderer {
 
+	private static final int ESTIMATED_DIAGS_PER_SESSION = 96;
+
+	private static final int ESTIMATED_UNIQUE_UTTS_PER_DIAG = 8;
+
 	/**
 	 *
 	 */
 	private static final long serialVersionUID = -259987246089416410L;
 
-	private final Function<? super List<String>, String> tokenSeqReprFactory;
+	private static final Function<Utterance, String> UTT_REPR_FACTORY = utt -> {
+		final String tokenSeqRepr = utt.getTokenStr();
+		return String.format("**%s:** %s", utt.getSpeakerId(), tokenSeqRepr);
+	};
 
-	UtteranceCellRenderer(final Function<? super List<String>, String> tokenSeqReprFactory) {
-		this.tokenSeqReprFactory = tokenSeqReprFactory;
+	private final ConcurrentMap<Utterance, String> uttReprs;
+
+	UtteranceCellRenderer() {
+		uttReprs = new ConcurrentHashMap<>(ESTIMATED_DIAGS_PER_SESSION * ESTIMATED_UNIQUE_UTTS_PER_DIAG);
 	}
 
 	@Override
@@ -44,10 +54,9 @@ final class UtteranceCellRenderer extends DefaultTableCellRenderer {
 			repr = "";
 		} else {
 			final Utterance utt = (Utterance) value;
-			final List<String> uttTokens = utt.getTokens();
-			final String tokenSeqRepr = tokenSeqReprFactory.apply(uttTokens);
-			repr = String.format("**%s:** %s", utt.getSpeakerId(), tokenSeqRepr);
+			repr = uttReprs.computeIfAbsent(utt, UTT_REPR_FACTORY);
 		}
 		setText(repr);
 	}
+
 }

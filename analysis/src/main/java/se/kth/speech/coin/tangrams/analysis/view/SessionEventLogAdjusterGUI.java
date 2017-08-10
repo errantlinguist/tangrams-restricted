@@ -19,10 +19,6 @@ package se.kth.speech.coin.tangrams.analysis.view;
 import java.awt.Dimension;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
 
 import javax.swing.JTable;
 import javax.swing.WindowConstants;
@@ -36,12 +32,6 @@ import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
  *
  */
 public final class SessionEventLogAdjusterGUI implements Runnable {
-
-	private static final int ESTIMATED_DIAGS_PER_SESSION = 96;
-
-	private static final int ESTIMATED_UNIQUE_TOKEN_SEQ_PER_DIAG_COUNT = 8;
-
-	private static final Collector<CharSequence, ?, String> WORD_JOINER = Collectors.joining(" ");
 
 	private static String createHistoryTitleStr(final String gameId, final LocalDateTime startTime) {
 		return String.format("Game %s, started at %s", gameId, startTime);
@@ -62,12 +52,8 @@ public final class SessionEventLogAdjusterGUI implements Runnable {
 
 	private final SessionEventDialogueManager.SessionGame game;
 
-	private final ConcurrentMap<List<String>, String> tokenSeqReprs;
-
 	public SessionEventLogAdjusterGUI(final SessionEventDialogueManager.SessionGame game) {
 		this.game = game;
-		tokenSeqReprs = new ConcurrentHashMap<>(
-				ESTIMATED_DIAGS_PER_SESSION * ESTIMATED_UNIQUE_TOKEN_SEQ_PER_DIAG_COUNT);
 	}
 
 	/*
@@ -80,17 +66,13 @@ public final class SessionEventLogAdjusterGUI implements Runnable {
 		vizualize(game);
 	}
 
-	private String fetchTokenSeqRepr(final List<String> tokenSeq) {
-		return tokenSeqReprs.computeIfAbsent(tokenSeq, key -> key.stream().collect(WORD_JOINER));
-	}
-
 	private void vizualize(final SessionEventDialogueManager.SessionGame game) {
 		final LocalDateTime gameStart = game.getHistory().getStartTime();
 		final String title = createHistoryTitleStr(game.getGameId(), gameStart);
 		final List<EventDialogue> diags = game.getEventDialogues();
 		final EventDialogueAdjusterTable diagTable = new EventDialogueAdjusterTable(
 				new EventDialogueTableModel(diags.toArray(new EventDialogue[diags.size()])),
-				new UtteranceCellRenderer(this::fetchTokenSeqRepr));
+				new UtteranceCellRenderer());
 		setMaxPreferredScrollableViewportSize(diagTable);
 
 		final EventDialogueAdjusterFrame frame = new EventDialogueAdjusterFrame(title, gameStart, diagTable);
