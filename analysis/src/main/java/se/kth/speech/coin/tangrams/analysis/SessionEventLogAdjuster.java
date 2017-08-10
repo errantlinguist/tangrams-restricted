@@ -96,7 +96,7 @@ import se.kth.speech.coin.tangrams.view.UserPrompts;
 final class SessionEventLogAdjuster {
 
 	private enum AttributeType {
-		EVENT(Event.class) {
+		EVENT(EventDialogue.class) {
 			@Override
 			protected int getValueListIdx(final int columnIndex) {
 				return columnIndex;
@@ -243,6 +243,50 @@ final class SessionEventLogAdjuster {
 
 	}
 
+	private static class EventDialogueFirstEventSenderRenderer extends DefaultTableCellRenderer {
+		/**
+		 *
+		 */
+		private static final long serialVersionUID = 1591902695449966670L;
+
+		@Override
+		public void setValue(final Object value) {
+			// http://docs.oracle.com/javase/tutorial/uiswing/components/table.html#renderer
+			final String repr;
+			if (value == null) {
+				repr = NULL_VALUE_REPR;
+			} else {
+				final EventDialogue eventDiag = (EventDialogue) value;
+				final Optional<Event> firstEvent = eventDiag.getFirstEvent();
+				repr = firstEvent.map(
+						event -> event.getString(GameManagementEvent.Attribute.PLAYER_ID.toString(), NULL_VALUE_REPR))
+						.orElse(NULL_VALUE_REPR);
+			}
+			setText(repr);
+		}
+	}
+
+	private static class EventDialogueFirstEventTimeRenderer extends DefaultTableCellRenderer {
+		/**
+		 *
+		 */
+		private static final long serialVersionUID = 1591902695449966670L;
+
+		@Override
+		public void setValue(final Object value) {
+			// http://docs.oracle.com/javase/tutorial/uiswing/components/table.html#renderer
+			final String repr;
+			if (value == null) {
+				repr = NULL_VALUE_REPR;
+			} else {
+				final EventDialogue eventDiag = (EventDialogue) value;
+				final Optional<Event> firstEvent = eventDiag.getFirstEvent();
+				repr = firstEvent.map(Event::getTime).orElse(NULL_VALUE_REPR);
+			}
+			setText(repr);
+		}
+	}
+
 	private static class EventDialogueTableModel extends AbstractTableModel {
 
 		/**
@@ -270,11 +314,11 @@ final class SessionEventLogAdjuster {
 			} else {
 				switch (colEventAttr) {
 				case SENDER: {
-					result = Event.class;
+					result = EventDialogue.class;
 					break;
 				}
 				case TIME: {
-					result = Event.class;
+					result = EventDialogue.class;
 					break;
 				}
 				default: {
@@ -354,11 +398,11 @@ final class SessionEventLogAdjuster {
 			} else {
 				switch (colEventAttr) {
 				case SENDER: {
-					result = diag.getFirstEvent().orElse(null);
+					result = diag;
 					break;
 				}
 				case TIME: {
-					result = diag.getFirstEvent().orElse(null);
+					result = diag;
 					break;
 				}
 				default: {
@@ -369,47 +413,6 @@ final class SessionEventLogAdjuster {
 			return result;
 		}
 
-	}
-
-	private static class EventSenderRenderer extends DefaultTableCellRenderer {
-		/**
-		 *
-		 */
-		private static final long serialVersionUID = 1591902695449966670L;
-
-		@Override
-		public void setValue(final Object value) {
-			// http://docs.oracle.com/javase/tutorial/uiswing/components/table.html#renderer
-			final String repr;
-			if (value == null) {
-				repr = NULL_VALUE_REPR;
-			} else {
-				final Event event = (Event) value;
-				repr = event.getString(GameManagementEvent.Attribute.PLAYER_ID.toString(), NULL_VALUE_REPR);
-			}
-			setText(repr);
-		}
-	}
-
-	private static class EventTimeRenderer extends DefaultTableCellRenderer {
-		/**
-		 *
-		 */
-		private static final long serialVersionUID = 1591902695449966670L;
-
-		@Override
-		public void setValue(final Object value) {
-			// http://docs.oracle.com/javase/tutorial/uiswing/components/table.html#renderer
-			final String repr;
-			if (value == null) {
-				repr = NULL_VALUE_REPR;
-			} else {
-				final Event event = (Event) value;
-				final String time = event.getTime();
-				repr = time == null ? NULL_VALUE_REPR : time;
-			}
-			setText(repr);
-		}
 	}
 
 	private static class FollowingEventTimeMinimizer implements ActionListener {
@@ -451,29 +454,38 @@ final class SessionEventLogAdjuster {
 					final LocalDateTime lastUttEndTime = TimestampArithmetic.createOffsetTimestamp(gameStartTime,
 							lastUtt.getEndTime());
 					try {
-						final Event followingRowEvent = (Event) diagTable.getValueAt(rowIdx + 1, eventAttrColIdx);
-						final String followingRowEventTimeStr = followingRowEvent.getTime();
-						final LocalDateTime followingRowEventTime = EventTimes.parseEventTime(followingRowEventTimeStr);
-						final int timeCmp = lastUttEndTime.compareTo(followingRowEventTime);
-						if (timeCmp < 0) {
-							final String newEventTimeStr = EventTimes.FORMATTER.format(lastUttEndTime);
-							followingRowEvent.setTime(newEventTimeStr);
-							LOGGER.info("Set time of event ID \"{}\" to \"{}\".", followingRowEvent.getId(),
-									newEventTimeStr);
-							diagTable.repaint();
-						} else if (timeCmp > 0) {
-							JOptionPane.showMessageDialog(dialogueMessageParentComponent,
-									String.format(
-											"End time of preceding event's last utterance (\"%s\") is after the time of the following event (\"%s\", ID \"%s\"), i.e. the utterance overlaps the start of the next event.",
-											EventTimes.FORMATTER.format(lastUttEndTime), followingRowEventTimeStr,
-											followingRowEvent.getId()),
-									"Overlapping times", JOptionPane.WARNING_MESSAGE);
+						final EventDialogue followingRowEventDiag = (EventDialogue) diagTable.getValueAt(rowIdx + 1,
+								eventAttrColIdx);
+						final Optional<Event> optFollowingRowFirstEvent = followingRowEventDiag.getFirstEvent();
+						if (optFollowingRowFirstEvent.isPresent()) {
+							final Event followingRowFirstEvent = optFollowingRowFirstEvent.get();
+							final String followingRowEventTimeStr = followingRowFirstEvent.getTime();
+							final LocalDateTime followingRowEventTime = EventTimes
+									.parseEventTime(followingRowEventTimeStr);
+							final int timeCmp = lastUttEndTime.compareTo(followingRowEventTime);
+							if (timeCmp < 0) {
+								final String newEventTimeStr = EventTimes.FORMATTER.format(lastUttEndTime);
+								followingRowFirstEvent.setTime(newEventTimeStr);
+								LOGGER.info("Set time of event ID \"{}\" to \"{}\".", followingRowFirstEvent.getId(),
+										newEventTimeStr);
+								diagTable.repaint();
+							} else if (timeCmp > 0) {
+								JOptionPane.showMessageDialog(dialogueMessageParentComponent, String.format(
+										"End time of preceding event's last utterance (\"%s\") is after the time of the following event (\"%s\", ID \"%s\"), i.e. the utterance overlaps the start of the next event.",
+										EventTimes.FORMATTER.format(lastUttEndTime), followingRowEventTimeStr,
+										followingRowFirstEvent.getId()), "Overlapping times",
+										JOptionPane.WARNING_MESSAGE);
+							} else {
+								JOptionPane.showMessageDialog(dialogueMessageParentComponent, String.format(
+										"Time of event ID \"%s\" is already equal to the end time of the preceding event's last utterance (\"%s\").",
+										followingRowFirstEvent.getId(), followingRowEventTimeStr));
+							}
 						} else {
 							JOptionPane.showMessageDialog(dialogueMessageParentComponent,
-									String.format(
-											"Time of event ID \"%s\" is already equal to the end time of the preceding event's last utterance (\"%s\").",
-											followingRowEvent.getId(), followingRowEventTimeStr));
+									"Following event dialogue does not have an event.", "No following event",
+									JOptionPane.WARNING_MESSAGE);
 						}
+
 					} catch (final ArrayIndexOutOfBoundsException ex) {
 						JOptionPane.showMessageDialog(dialogueMessageParentComponent,
 								String.format("No row for index %s.", ex.getLocalizedMessage()),
@@ -682,11 +694,11 @@ final class SessionEventLogAdjuster {
 			final TableColumn col = colModel.getColumn(i);
 			switch (attr) {
 			case SENDER: {
-				col.setCellRenderer(new EventSenderRenderer());
+				col.setCellRenderer(new EventDialogueFirstEventSenderRenderer());
 				break;
 			}
 			case TIME: {
-				col.setCellRenderer(new EventTimeRenderer());
+				col.setCellRenderer(new EventDialogueFirstEventTimeRenderer());
 				break;
 			}
 			default: {
