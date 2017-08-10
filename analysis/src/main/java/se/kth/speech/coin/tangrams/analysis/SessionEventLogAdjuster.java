@@ -32,7 +32,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.EnumMap;
+import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -156,6 +159,24 @@ final class SessionEventLogAdjuster {
 				}
 			});
 
+			final TableColumnModel colModel = diagTable.getColumnModel();
+			// TODO: Define popup menus for editing event attributes
+			createEventAttributeColumnMap(colModel).forEach((eventAttr, column) -> {
+				switch (eventAttr) {
+				case SENDER: {
+					LOGGER.debug("No popup menu defined for {}.", eventAttr);
+					break;
+				}
+				case TIME: {
+					LOGGER.debug("No popup menu defined for {}.", eventAttr);
+					break;
+				}
+				default: {
+					throw new AssertionError("No logic for handing switch case.");
+				}
+				}
+			});
+
 			uttPopupMenu.add(deleteItem);
 			diagTable.setComponentPopupMenu(uttPopupMenu);
 		}
@@ -174,33 +195,11 @@ final class SessionEventLogAdjuster {
 			setCellSelectionEnabled(true);
 			setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 
-			setColumnEventAttributeRenderers();
+			setColumnEventAttributeRenderers(getColumnModel());
 			setDefaultRenderer(Utterance.class, uttCellRenderer);
 
 			// Set widths using the newly-set renderers
 			IntStream.range(0, getColumnCount()).forEach(this::setOptimumPreferredWidth);
-		}
-
-		private void setColumnEventAttributeRenderers() {
-			final EventAttribute[] attrs = EventAttribute.values();
-			final TableColumnModel colModel = getColumnModel();
-			for (int i = 0; i < attrs.length; ++i) {
-				final EventAttribute attr = attrs[i];
-				final TableColumn col = colModel.getColumn(i);
-				switch (attr) {
-				case SENDER: {
-					col.setCellRenderer(new EventSenderRenderer());
-					break;
-				}
-				case TIME: {
-					col.setCellRenderer(new EventTimeRenderer());
-					break;
-				}
-				default: {
-					throw new AssertionError("No logic for handing switch case.");
-				}
-				}
-			}
 		}
 
 		private void setOptimumPreferredWidth(final int columnIdx) {
@@ -473,6 +472,8 @@ final class SessionEventLogAdjuster {
 
 	private static final int ESTIMATED_UNIQUE_TOKEN_SEQ_PER_DIAG_COUNT = 8;
 
+	private static final Map<EventAttribute, Integer> EVENT_ATTR_IDXS = createEventAttributeIndexMap();
+
 	private static final EventDialogueFactory EVENT_DIAG_FACTORY = new EventDialogueFactory(
 			new EventTypeMatcher(GameManagementEvent.NEXT_TURN_REQUEST));
 
@@ -518,6 +519,17 @@ final class SessionEventLogAdjuster {
 		adjuster.accept(sessionData);
 	}
 
+	private static Map<EventAttribute, Integer> createEventAttributeIndexMap() {
+		final Map<EventAttribute, Integer> result = new EnumMap<>(EventAttribute.class);
+		final EventAttribute[] attrs = EventAttribute.values();
+		for (int i = 0; i < attrs.length; ++i) {
+			final EventAttribute attr = attrs[i];
+			result.put(attr, i);
+		}
+		assert result.size() == attrs.length;
+		return result;
+	}
+
 	private static String createHistoryTitleStr(final String gameId, final GameHistory history) {
 		return String.format("Game %s, started at %s", gameId, history.getStartTime());
 	}
@@ -530,6 +542,31 @@ final class SessionEventLogAdjuster {
 	private static EventAttribute getColumnAttribute(final int colIdx) {
 		final EventAttribute[] atts = EventAttribute.values();
 		return atts.length <= colIdx ? null : atts[colIdx];
+	}
+
+	private static TableColumn getEventAttributeColumn(final TableColumnModel colModel, final EventAttribute attr) {
+		final int colIdx = EVENT_ATTR_IDXS.get(attr);
+		return colModel.getColumn(colIdx);
+	}
+
+	private static List<TableColumn> getUtteranceColumns(final TableColumnModel colModel) {
+		final int resultSize = colModel.getColumnCount() - EventAttribute.values().length;
+		final List<TableColumn> result = new ArrayList<>(resultSize);
+		final Enumeration<TableColumn> cols = colModel.getColumns();
+
+		int colIdx = 0;
+		while (result.size() < resultSize && cols.hasMoreElements()) {
+			final TableColumn col = cols.nextElement();
+			if (!isEventAttributeColumn(colIdx)) {
+				result.add(col);
+			}
+			colIdx++;
+		}
+		return result;
+	}
+
+	private static boolean isEventAttributeColumn(final int colIdx) {
+		return EventAttribute.values().length < colIdx;
 	}
 
 	private static Settings loadClassSettings() {
@@ -581,6 +618,27 @@ final class SessionEventLogAdjuster {
 		return result;
 	}
 
+	private static void setColumnEventAttributeRenderers(final TableColumnModel colModel) {
+		final EventAttribute[] attrs = EventAttribute.values();
+		for (int i = 0; i < attrs.length; ++i) {
+			final EventAttribute attr = attrs[i];
+			final TableColumn col = colModel.getColumn(i);
+			switch (attr) {
+			case SENDER: {
+				col.setCellRenderer(new EventSenderRenderer());
+				break;
+			}
+			case TIME: {
+				col.setCellRenderer(new EventTimeRenderer());
+				break;
+			}
+			default: {
+				throw new AssertionError("No logic for handing switch case.");
+			}
+			}
+		}
+	}
+
 	private static void setMaxPreferredScrollableViewportSize(final JTable table) {
 		final Dimension diagTablereferredScrollableViewportSize = table.getPreferredScrollableViewportSize();
 		// http://stackoverflow.com/a/1936582/1391325
@@ -626,6 +684,16 @@ final class SessionEventLogAdjuster {
 				visualize(title, history, utts);
 			}
 		}
+	}
+
+	private Map<EventAttribute, TableColumn> createEventAttributeColumnMap(final TableColumnModel colModel) {
+		final Map<EventAttribute, TableColumn> result = new EnumMap<>(EventAttribute.class);
+		final EventAttribute[] attrs = EventAttribute.values();
+		for (final EventAttribute attr : EventAttribute.values()) {
+			result.put(attr, getEventAttributeColumn(colModel, attr));
+		}
+		assert result.size() == attrs.length;
+		return result;
 	}
 
 	private String fetchTokenSeqRepr(final List<String> tokenSeq) {
