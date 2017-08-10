@@ -24,7 +24,7 @@ import org.slf4j.LoggerFactory;
 import se.kth.speech.coin.tangrams.analysis.GameContext;
 import se.kth.speech.coin.tangrams.analysis.GameHistory;
 import se.kth.speech.coin.tangrams.analysis.TemporalGameContexts;
-import se.kth.speech.coin.tangrams.analysis.Utterance;
+import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>

@@ -26,6 +26,8 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 
+import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
+
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
  * @since May 16, 2017

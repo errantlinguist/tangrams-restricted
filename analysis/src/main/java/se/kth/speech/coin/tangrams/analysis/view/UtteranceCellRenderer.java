@@ -21,7 +21,7 @@ import java.util.function.Function;
 
 import javax.swing.table.DefaultTableCellRenderer;
 
-import se.kth.speech.coin.tangrams.analysis.Utterance;
+import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 
 final class UtteranceCellRenderer extends DefaultTableCellRenderer {
 

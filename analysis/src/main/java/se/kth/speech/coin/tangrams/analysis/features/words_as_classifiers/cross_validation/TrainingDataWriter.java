@@ -44,8 +44,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.support.FileSystemXmlApplicationContext;
 
 import se.kth.speech.coin.tangrams.CLIParameters;
-import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.WordClassificationData;
+import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
 import se.kth.speech.io.FileNames;
 import weka.core.Instances;
 import weka.core.converters.AbstractFileSaver;

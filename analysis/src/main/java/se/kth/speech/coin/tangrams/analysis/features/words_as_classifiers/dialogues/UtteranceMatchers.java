@@ -19,7 +19,7 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialo
 import java.util.function.Predicate;
 
 import iristk.system.Event;
-import se.kth.speech.coin.tangrams.analysis.Utterance;
+import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 
 /**

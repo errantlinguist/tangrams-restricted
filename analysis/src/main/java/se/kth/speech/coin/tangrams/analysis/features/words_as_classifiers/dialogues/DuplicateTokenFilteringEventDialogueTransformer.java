@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import se.kth.speech.ListSubsequences;
-import se.kth.speech.coin.tangrams.analysis.Utterance;
+import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>

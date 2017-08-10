@@ -22,7 +22,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
-import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
+import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>

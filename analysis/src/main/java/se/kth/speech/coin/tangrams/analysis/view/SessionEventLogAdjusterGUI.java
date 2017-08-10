@@ -27,8 +27,8 @@ import java.util.stream.Collectors;
 import javax.swing.JTable;
 import javax.swing.WindowConstants;
 
-import se.kth.speech.coin.tangrams.analysis.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManager;
+import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>

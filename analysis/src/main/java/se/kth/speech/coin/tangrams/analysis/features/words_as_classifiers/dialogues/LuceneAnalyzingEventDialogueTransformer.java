@@ -22,7 +22,7 @@ import java.util.stream.Stream;
 
 import org.apache.lucene.analysis.Analyzer;
 
-import se.kth.speech.coin.tangrams.analysis.Utterance;
+import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.nlp.lucene.StringTokenizer;
 
 /**

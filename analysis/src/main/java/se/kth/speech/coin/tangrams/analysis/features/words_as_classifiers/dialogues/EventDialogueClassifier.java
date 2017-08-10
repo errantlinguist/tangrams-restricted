@@ -19,8 +19,8 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialo
 import java.util.Optional;
 
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
-import se.kth.speech.coin.tangrams.analysis.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.GameContext;
+import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
 
 /**

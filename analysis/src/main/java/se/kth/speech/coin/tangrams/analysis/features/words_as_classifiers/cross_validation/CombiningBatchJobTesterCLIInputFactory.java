@@ -31,8 +31,8 @@ import org.apache.commons.cli.MissingOptionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import se.kth.speech.coin.tangrams.analysis.SessionDataManager;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.CombiningBatchJobTester.Input;
+import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>

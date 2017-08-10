@@ -28,7 +28,7 @@ import java.util.stream.Stream;
 
 import iristk.system.Event;
 import se.kth.speech.Iterators;
-import se.kth.speech.coin.tangrams.analysis.Utterance;
+import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>

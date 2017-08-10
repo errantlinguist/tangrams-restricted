@@ -17,8 +17,8 @@
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers;
 
 import it.unimi.dsi.fastutil.ints.IntSet;
-import se.kth.speech.coin.tangrams.analysis.EventDialogue;
-import se.kth.speech.coin.tangrams.analysis.Utterance;
+import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
+import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>

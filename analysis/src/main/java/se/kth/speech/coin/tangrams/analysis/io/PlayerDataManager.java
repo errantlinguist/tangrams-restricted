@@ -14,7 +14,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech.coin.tangrams.analysis;
+package se.kth.speech.coin.tangrams.analysis.io;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -39,7 +39,7 @@ import se.kth.speech.io.RelativePaths;
  * @since 4 May 2017
  *
  */
-final class PlayerDataManager {
+public final class PlayerDataManager {
 
 	private static final Pattern PLAYER_PROP_NAME_PATTERN = Pattern.compile("player\\.([^\\.]+)\\.(.+)");
 

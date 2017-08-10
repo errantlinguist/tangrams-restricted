@@ -22,6 +22,9 @@ import java.util.stream.Stream;
 import org.junit.Assert;
 import org.junit.Test;
 
+import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
+import se.kth.speech.coin.tangrams.analysis.dialogues.UtteranceDialogueRepresentationStringFactory;
+
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
  * @since 19 May 2017

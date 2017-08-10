@@ -21,7 +21,7 @@ import java.util.function.BiConsumer;
 
 import org.springframework.context.ApplicationContext;
 
-import se.kth.speech.coin.tangrams.analysis.EventDialogue;
+import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.EventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.UtteranceRelation;
 

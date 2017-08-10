@@ -18,8 +18,8 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers;
 
 import java.util.stream.Stream;
 
-import se.kth.speech.coin.tangrams.analysis.EventDialogue;
-import se.kth.speech.coin.tangrams.analysis.Utterance;
+import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
+import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 
 interface EventDialogueTestStatistics {
 

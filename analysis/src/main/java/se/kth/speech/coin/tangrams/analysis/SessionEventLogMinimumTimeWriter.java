@@ -41,6 +41,7 @@ import com.google.common.collect.Maps;
 
 import iristk.system.Event;
 import se.kth.speech.EqualityMap;
+import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
 import se.kth.speech.coin.tangrams.iristk.EventTimes;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
 

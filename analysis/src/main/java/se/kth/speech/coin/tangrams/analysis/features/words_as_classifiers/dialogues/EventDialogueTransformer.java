@@ -18,7 +18,7 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialo
 
 import java.util.function.Function;
 
-import se.kth.speech.coin.tangrams.analysis.EventDialogue;
+import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>

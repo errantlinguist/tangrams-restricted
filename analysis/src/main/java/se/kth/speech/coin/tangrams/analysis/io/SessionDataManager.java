@@ -14,7 +14,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech.coin.tangrams.analysis;
+package se.kth.speech.coin.tangrams.analysis.io;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -40,6 +40,15 @@ public final class SessionDataManager {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SessionDataManager.class);
 
+	public static SessionDataManager create(final Path inpath) throws IOException {
+		LOGGER.info("Reading session properties from \"{}\".", inpath);
+		final Properties props = new Properties();
+		try (final InputStream propsInstream = Files.newInputStream(inpath)) {
+			props.load(propsInstream);
+		}
+		return create(props, inpath.getParent());
+	}
+
 	public static Map<Path, SessionDataManager> createFileSessionDataMap(final Iterable<Path> inpaths)
 			throws IOException {
 		final Map<Path, SessionDataManager> result = new HashMap<>();
@@ -55,16 +64,7 @@ public final class SessionDataManager {
 		return result;
 	}
 
-	static SessionDataManager create(final Path inpath) throws IOException {
-		LOGGER.info("Reading session properties from \"{}\".", inpath);
-		final Properties props = new Properties();
-		try (final InputStream propsInstream = Files.newInputStream(inpath)) {
-			props.load(propsInstream);
-		}
-		return create(props, inpath.getParent());
-	}
-
-	static SessionDataManager create(final Properties props, final Path baseDir) {
+	private static SessionDataManager create(final Properties props, final Path baseDir) {
 		final Path hatInfilePath = RelativePaths.resolveIfNotAbsolute(Paths.get(props.getProperty("hat")), baseDir);
 		final Path canonicalEventLogPath = RelativePaths
 				.resolveIfNotAbsolute(Paths.get(props.getProperty("canonicalEvents")), baseDir);

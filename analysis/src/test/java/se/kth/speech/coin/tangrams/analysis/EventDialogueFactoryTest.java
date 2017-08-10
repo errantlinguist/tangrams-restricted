@@ -40,6 +40,8 @@ import org.slf4j.LoggerFactory;
 
 import iristk.system.Event;
 import se.kth.speech.coin.tangrams.TestDataResources;
+import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
+import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.coin.tangrams.iristk.io.HatIO;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
 import se.kth.speech.hat.xsd.Annotation;

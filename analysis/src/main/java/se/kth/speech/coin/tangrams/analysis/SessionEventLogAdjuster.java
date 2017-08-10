@@ -38,6 +38,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import se.kth.speech.awt.LookAndFeels;
+import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
 import se.kth.speech.coin.tangrams.analysis.view.SessionEventLogAdjusterGUI;
 import se.kth.speech.coin.tangrams.view.UserPrompts;
 

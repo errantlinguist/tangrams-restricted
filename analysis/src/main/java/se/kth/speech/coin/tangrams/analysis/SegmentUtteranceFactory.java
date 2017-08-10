@@ -37,6 +37,7 @@ import com.github.errantlinguist.ClassProperties;
 import com.google.common.collect.Sets;
 
 import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
+import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.hat.xsd.Transcription;
 import se.kth.speech.hat.xsd.Transcription.T;
 

@@ -22,7 +22,7 @@ import java.util.function.Function;
 import javax.swing.table.DefaultTableCellRenderer;
 
 import iristk.system.Event;
-import se.kth.speech.coin.tangrams.analysis.EventDialogue;
+import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 
 final class EventDialogueFirstEventSenderRenderer extends DefaultTableCellRenderer {
