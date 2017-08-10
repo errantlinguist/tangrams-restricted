@@ -56,8 +56,6 @@ final class EventDialogueFactory // NO_UCD (use default)
 	@Override
 	public Stream<EventDialogue> apply(final ListIterator<Utterance> utts, final GameHistory history) {
 		final Stream<Event> events = history.getEventSequence();
-		final LocalDateTime gameStartTime = history.getStartTime();
-
 		final Iterator<Event> eventIter = events.iterator();
 		// Find the set of elements before the first one delimiting a dialogue
 		final Entry<Stream<Event>, Event> preDialogueEvents = Iterators.findElementsBeforeDelimiter(eventIter,
@@ -66,6 +64,7 @@ final class EventDialogueFactory // NO_UCD (use default)
 
 		final Stream.Builder<EventDialogue> resultBuilder = Stream.builder();
 
+		final LocalDateTime gameStartTime = history.getStartTime();
 		final List<Utterance> firstUtts = createPreEventUtteranceList(utts, currentEvent, gameStartTime);
 		if (firstUtts.isEmpty()) {
 			LOGGER.debug("No utterances before first event.");
