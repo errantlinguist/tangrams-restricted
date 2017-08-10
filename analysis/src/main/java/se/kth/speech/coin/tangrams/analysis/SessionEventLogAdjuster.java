@@ -63,6 +63,7 @@ import javax.swing.event.PopupMenuListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.JTableHeader;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
@@ -108,8 +109,8 @@ final class SessionEventLogAdjuster {
 			// https://stackoverflow.com/a/2452758/1391325
 			content.add(new JScrollPane(diagTable, ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
 					ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED));
-			final JPopupMenu popupMenu = new JPopupMenu();
-			popupMenu.addPopupMenuListener(new PopupMenuListener() {
+			final JPopupMenu uttPopupMenu = new JPopupMenu();
+			uttPopupMenu.addPopupMenuListener(new PopupMenuListener() {
 
 				@Override
 				public void popupMenuCanceled(final PopupMenuEvent e) {
@@ -126,7 +127,7 @@ final class SessionEventLogAdjuster {
 					EventQueue.invokeLater(new Runnable() {
 						@Override
 						public void run() {
-							final Point selectionPoint = SwingUtilities.convertPoint(popupMenu, new Point(0, 0),
+							final Point selectionPoint = SwingUtilities.convertPoint(uttPopupMenu, new Point(0, 0),
 									diagTable);
 							final int rowAtPoint = diagTable.rowAtPoint(selectionPoint);
 							if (rowAtPoint > -1) {
@@ -142,17 +143,19 @@ final class SessionEventLogAdjuster {
 					});
 				}
 			});
-			final JMenuItem deleteItem = new JMenuItem("Delete");
+			final JMenuItem deleteItem = new JMenuItem("Move to previous utt");
 			deleteItem.addActionListener(new ActionListener() {
 
 				@Override
 				public void actionPerformed(final ActionEvent e) {
+					final int selectedRow = diagTable.getSelectedRow();
+					final int selectedCol = diagTable.getSelectedColumn();
 					JOptionPane.showMessageDialog(EventDialogueAdjusterFrame.this,
 							"Right-click performed on table and choose DELETE");
 				}
 			});
-			popupMenu.add(deleteItem);
-			diagTable.setComponentPopupMenu(popupMenu);
+			uttPopupMenu.add(deleteItem);
+			diagTable.setComponentPopupMenu(uttPopupMenu);
 		}
 
 	}
@@ -199,9 +202,13 @@ final class SessionEventLogAdjuster {
 		}
 
 		private void setOptimumWidth(final int columnIdx) {
+			final String colName = getColumnName(columnIdx);
+			final JTableHeader header = getTableHeader();
+			final int headerNameWidth = header.getFontMetrics(header.getFont()).stringWidth(colName);
 			// https://tips4java.wordpress.com/2008/11/10/table-column-adjuster/
-			final TableColumn tableColumn = getColumnModel().getColumn(columnIdx);
-			int preferredWidth = tableColumn.getMinWidth();
+			final TableColumnModel colModel = getColumnModel();
+			final TableColumn tableColumn = colModel.getColumn(columnIdx);
+			int preferredWidth = Math.max(headerNameWidth, tableColumn.getMinWidth());
 			final int maxWidth = tableColumn.getMaxWidth();
 			for (int row = 0; row < getRowCount(); row++) {
 				final TableCellRenderer cellRenderer = getCellRenderer(row, columnIdx);
