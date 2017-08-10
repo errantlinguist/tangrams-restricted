@@ -50,18 +50,6 @@ public final class TemporalGameContexts {
 			// Create one data point for each event found during the utterance
 			// TODO: estimate partitions for utterance: By phones?
 			final Collection<List<Event>> timedEvents = eventsDuringUtt.values();
-			// if (LOGGER.isDebugEnabled()) {
-			// final List<Event> allEventsDuringUtt =
-			// Arrays.asList(timedEvents.stream().flatMap(Collection::stream).toArray(Event[]::new));
-			// final String delim = System.lineSeparator() + '\t';
-			// final String uttRepr =
-			// allEventsDuringUtt.stream().map(Event::toString)
-			// .collect(Collectors.joining(delim));
-			// LOGGER.debug("Found {} event(s) during utterance \"{}\"
-			// subsequence: \"{}\"" + delim + "{}",
-			// new Object[] { allEventsDuringUtt.size(), utt.getSegmentId(),
-			// utt.getTokens().stream().collect(TOKEN_FORM_JOINER), uttRepr });
-			// }
 			final Stream<Event> allEventsDuringUtt = timedEvents.stream().flatMap(Collection::stream);
 			final Stream<LocalDateTime> allTimestampsDuringUtt = allEventsDuringUtt.map(Event::getTime)
 					.map(EventTimes::parseEventTime);
