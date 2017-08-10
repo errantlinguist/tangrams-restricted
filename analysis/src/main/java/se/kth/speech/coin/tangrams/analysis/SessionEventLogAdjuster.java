@@ -176,7 +176,7 @@ final class SessionEventLogAdjuster {
 			setDefaultRenderer(Utterance.class, new UtteranceCellRenderer());
 
 			// Set widths using the newly-set renderers
-			IntStream.range(0, getColumnCount()).forEach(this::setOptimumWidth);
+			IntStream.range(0, getColumnCount()).forEach(this::setOptimumPreferredWidth);
 		}
 
 		private void setColumnEventAttributeRenderers() {
@@ -201,26 +201,38 @@ final class SessionEventLogAdjuster {
 			}
 		}
 
-		private void setOptimumWidth(final int columnIdx) {
-			final String colName = getColumnName(columnIdx);
+		private void setOptimumPreferredWidth(final int columnIdx) {
 			final JTableHeader header = getTableHeader();
-			final int headerNameWidth = header.getFontMetrics(header.getFont()).stringWidth(colName);
-			// https://tips4java.wordpress.com/2008/11/10/table-column-adjuster/
 			final TableColumnModel colModel = getColumnModel();
 			final TableColumn tableColumn = colModel.getColumn(columnIdx);
-			int preferredWidth = Math.max(headerNameWidth, tableColumn.getMinWidth());
-			final int maxWidth = tableColumn.getMaxWidth();
-			for (int row = 0; row < getRowCount(); row++) {
-				final TableCellRenderer cellRenderer = getCellRenderer(row, columnIdx);
-				final Component c = prepareRenderer(cellRenderer, row, columnIdx);
-				final int width = c.getPreferredSize().width + getIntercellSpacing().width;
-				preferredWidth = Math.max(preferredWidth, width);
+			final TableCellRenderer colRenderer = getColHeaderRenderer(tableColumn, header);
+			final Object colHeaderValue = tableColumn.getHeaderValue();
+			LOGGER.debug("Calculating width for column header value \"{}\", for column {}.", colHeaderValue, columnIdx);
+			final Component colHeaderCellRendererComponent = colRenderer.getTableCellRendererComponent(this,
+					colHeaderValue, false, false, -1, columnIdx);
+			final int headerCellWdith = colHeaderCellRendererComponent.getPreferredSize().width;
 
-				// We've exceeded the maximum width, no need to check other rows
-				if (preferredWidth >= maxWidth) {
-					preferredWidth = maxWidth;
-					break;
+			// https://tips4java.wordpress.com/2008/11/10/table-column-adjuster/
+			final int intercellSpacingWidth = getIntercellSpacing().width;
+			final int maxWidth = tableColumn.getMaxWidth();
+			int preferredWidth = Math.max(headerCellWdith, tableColumn.getMinWidth());
+			if (preferredWidth < maxWidth) {
+				for (int row = 0; row < getRowCount(); row++) {
+					final TableCellRenderer cellRenderer = getCellRenderer(row, columnIdx);
+					final Component c = prepareRenderer(cellRenderer, row, columnIdx);
+					final int cellWidth = c.getPreferredSize().width + intercellSpacingWidth;
+					preferredWidth = Math.max(preferredWidth, cellWidth);
+
+					if (preferredWidth >= maxWidth) {
+						// We've exceeded the maximum width, no need to check
+						// other rows
+						preferredWidth = maxWidth;
+						break;
+					}
 				}
+			} else {
+				// We've exceeded the maximum width, no need to the rows
+				preferredWidth = maxWidth;
 			}
 			tableColumn.setPreferredWidth(preferredWidth);
 		}
@@ -500,6 +512,11 @@ final class SessionEventLogAdjuster {
 
 	private static String createHistoryTitleStr(final String gameId, final GameHistory history) {
 		return String.format("Game %s, started at %s", gameId, history.getStartTime());
+	}
+
+	private static TableCellRenderer getColHeaderRenderer(final TableColumn tableColumn, final JTableHeader header) {
+		final TableCellRenderer colRenderer = tableColumn.getHeaderRenderer();
+		return colRenderer == null ? header.getDefaultRenderer() : colRenderer;
 	}
 
 	private static EventAttribute getColumnAttribute(final int colIdx) {
