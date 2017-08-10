@@ -346,7 +346,7 @@ final class SessionEventLogAdjuster {
 			final EventDialogueAttribute colEventDiagAttr = getColumnEventDialogueAttribute(column);
 			if (colEventDiagAttr == null) {
 				final int uttIdx = AttributeType.UTTERANCE.getValueListIdx(column);
-				result = Utterance.class.getSimpleName() + uttIdx;
+				result = Utterance.class.getSimpleName() + "_" + uttIdx;
 			} else {
 				result = colEventDiagAttr.toString();
 			}
