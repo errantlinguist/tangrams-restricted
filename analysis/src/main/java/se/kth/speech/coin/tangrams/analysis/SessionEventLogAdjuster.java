@@ -42,6 +42,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ForkJoinPool;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
@@ -154,26 +155,27 @@ final class SessionEventLogAdjuster {
 							"Right-click performed on table and choose DELETE");
 				}
 			});
+
 			uttPopupMenu.add(deleteItem);
 			diagTable.setComponentPopupMenu(uttPopupMenu);
 		}
 
 	}
 
-	private class EventDialogueAdjusterTable extends JTable {
+	private static class EventDialogueAdjusterTable extends JTable {
 
 		/**
 		 *
 		 */
 		private static final long serialVersionUID = 5176564593731003375L;
 
-		public EventDialogueAdjusterTable(final TableModel dm) {
+		public EventDialogueAdjusterTable(final TableModel dm, final UtteranceCellRenderer uttCellRenderer) {
 			super(dm);
 			setCellSelectionEnabled(true);
 			setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 
 			setColumnEventAttributeRenderers();
-			setDefaultRenderer(Utterance.class, new UtteranceCellRenderer());
+			setDefaultRenderer(Utterance.class, uttCellRenderer);
 
 			// Set widths using the newly-set renderers
 			IntStream.range(0, getColumnCount()).forEach(this::setOptimumPreferredWidth);
@@ -434,12 +436,18 @@ final class SessionEventLogAdjuster {
 		}
 	}
 
-	private class UtteranceCellRenderer extends DefaultTableCellRenderer {
+	private static class UtteranceCellRenderer extends DefaultTableCellRenderer {
 
 		/**
 		 *
 		 */
 		private static final long serialVersionUID = -259987246089416410L;
+
+		private final Function<? super List<String>, String> tokenSeqReprFactory;
+
+		private UtteranceCellRenderer(final Function<? super List<String>, String> tokenSeqReprFactory) {
+			this.tokenSeqReprFactory = tokenSeqReprFactory;
+		}
 
 		@Override
 		public void setValue(final Object value) {
@@ -450,7 +458,7 @@ final class SessionEventLogAdjuster {
 			} else {
 				final Utterance utt = (Utterance) value;
 				final List<String> uttTokens = utt.getTokens();
-				final String tokenSeqRepr = fetchTokenSeqRepr(uttTokens);
+				final String tokenSeqRepr = tokenSeqReprFactory.apply(uttTokens);
 				repr = String.format("**%s**: %s", utt.getSpeakerId(), tokenSeqRepr);
 			}
 			setText(repr);
@@ -627,7 +635,8 @@ final class SessionEventLogAdjuster {
 	private void visualize(final String title, final GameHistory history, final List<Utterance> utts) {
 		final Stream<EventDialogue> diags = EVENT_DIAG_FACTORY.apply(utts.listIterator(), history);
 		final EventDialogueAdjusterTable diagTable = new EventDialogueAdjusterTable(
-				new EventDialogueTableModel(diags.toArray(EventDialogue[]::new)));
+				new EventDialogueTableModel(diags.toArray(EventDialogue[]::new)),
+				new UtteranceCellRenderer(this::fetchTokenSeqRepr));
 		setMaxPreferredScrollableViewportSize(diagTable);
 
 		final EventDialogueAdjusterFrame frame = new EventDialogueAdjusterFrame(title, diagTable);
