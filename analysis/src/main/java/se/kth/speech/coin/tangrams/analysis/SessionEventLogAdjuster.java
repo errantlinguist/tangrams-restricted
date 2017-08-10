@@ -141,7 +141,7 @@ final class SessionEventLogAdjuster {
 		fileChooser.setFileSelectionMode(JFileChooser.FILES_AND_DIRECTORIES);
 		final Optional<Path> result = UserPrompts.promptFile(fileChooser).map(File::toPath);
 		result.ifPresent(inpath -> {
-			LOGGER.info("Will read batch job data from \"{}\".", inpath);
+			LOGGER.debug("Will read batch job data from \"{}\".", inpath);
 			settings.setInpath(inpath.toString());
 
 			ForkJoinPool.commonPool().submit(() -> {
