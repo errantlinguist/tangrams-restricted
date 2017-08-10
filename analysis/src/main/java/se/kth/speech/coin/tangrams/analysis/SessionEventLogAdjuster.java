@@ -35,13 +35,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.Enumeration;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ForkJoinPool;
@@ -75,13 +73,9 @@ import javax.xml.bind.JAXBException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.Table;
-
 import iristk.system.Event;
 import se.kth.speech.TimestampArithmetic;
 import se.kth.speech.awt.LookAndFeels;
-import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionContextFactory;
-import se.kth.speech.coin.tangrams.analysis.features.ImageEdgeCounter;
 import se.kth.speech.coin.tangrams.iristk.EventTimes;
 import se.kth.speech.coin.tangrams.iristk.EventTypeMatcher;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
@@ -619,8 +613,8 @@ final class SessionEventLogAdjuster {
 		return result;
 	}
 
-	private static String createHistoryTitleStr(final String gameId, final GameHistory history) {
-		return String.format("Game %s, started at %s", gameId, history.getStartTime());
+	private static String createHistoryTitleStr(final String gameId, final LocalDateTime startTime) {
+		return String.format("Game %s, started at %s", gameId, startTime);
 	}
 
 	private static TableCellRenderer getColHeaderRenderer(final TableColumn tableColumn, final JTableHeader header) {
@@ -729,30 +723,9 @@ final class SessionEventLogAdjuster {
 	}
 
 	private void accept(final SessionDataManager sessionData) throws JAXBException, IOException {
-		final PlayerDataManager playerData = sessionData.getPlayerData();
-		final Table<String, String, GameHistory> gamePlayerHistoryTable = LoggedEvents
-				.createPlayerGameHistoryTable(playerData.getPlayerEventLogs().entrySet(), EVENT_FILTER);
-		final Set<String> playerGameIdIntersection = new HashSet<>(gamePlayerHistoryTable.rowKeySet());
-		gamePlayerHistoryTable.columnMap().values().stream().map(Map::keySet)
-				.forEach(playerGameIdIntersection::retainAll);
-		final int uniqueModelDescriptionCount = gamePlayerHistoryTable.values().size();
-		final EntityFeatureExtractionContextFactory extractionContextFactory = new EntityFeatureExtractionContextFactory(
-				new GameContextModelFactory(uniqueModelDescriptionCount), new ImageEdgeCounter());
-
-		final List<Utterance> utts = SessionUtterances.createUtteranceList(sessionData);
-		final Path canonicalEventLogPath = sessionData.getCanonicalEventLogPath();
-		LOGGER.info("Reading canonical event log at \"{}\".", canonicalEventLogPath);
-		final Map<String, GameHistory> canonicalGameHistories = LoggedEvents.readGameHistories(canonicalEventLogPath,
-				EVENT_FILTER);
-		for (final String gameId : playerGameIdIntersection) {
-			final GameHistory history = canonicalGameHistories.get(gameId);
-			if (history == null) {
-				LOGGER.warn("No canonical history for game ID \"{}\".", gameId);
-			} else {
-				final String title = createHistoryTitleStr(gameId, history);
-				visualize(title, history, utts);
-			}
-		}
+		final SessionEventDialogueManager sessionEvtDiagMgr = new SessionEventDialogueManager(sessionData);
+		final SessionEventDialogueManager.SessionGame canonicalGame = sessionEvtDiagMgr.getCanonicalGame();
+		visualize(canonicalGame);
 	}
 
 	private Map<EventAttribute, TableColumn> createEventAttributeColumnMap(final TableColumnModel colModel) {
@@ -769,15 +742,16 @@ final class SessionEventLogAdjuster {
 		return tokenSeqReprs.computeIfAbsent(tokenSeq, key -> key.stream().collect(WORD_JOINER));
 	}
 
-	private void visualize(final String title, final GameHistory history, final List<Utterance> utts) {
-		final Stream<EventDialogue> diags = EVENT_DIAG_FACTORY.apply(utts.listIterator(), history);
+	private void visualize(final SessionEventDialogueManager.SessionGame game) {
+		final LocalDateTime gameStart = game.getHistory().getStartTime();
+		final String title = createHistoryTitleStr(game.getGameId(), gameStart);
+		final List<EventDialogue> diags = game.getUttDialogues();
 		final EventDialogueAdjusterTable diagTable = new EventDialogueAdjusterTable(
-				new EventDialogueTableModel(diags.toArray(EventDialogue[]::new)),
+				new EventDialogueTableModel(diags.toArray(new EventDialogue[diags.size()])),
 				new UtteranceCellRenderer(this::fetchTokenSeqRepr));
 		setMaxPreferredScrollableViewportSize(diagTable);
 
-		final EventDialogueAdjusterFrame frame = new EventDialogueAdjusterFrame(title, history.getStartTime(),
-				diagTable);
+		final EventDialogueAdjusterFrame frame = new EventDialogueAdjusterFrame(title, gameStart, diagTable);
 		frame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 		frame.pack();
 		frame.setVisible(true);
