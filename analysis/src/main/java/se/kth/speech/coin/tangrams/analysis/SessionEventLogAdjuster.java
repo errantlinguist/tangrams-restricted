@@ -105,7 +105,6 @@ final class SessionEventLogAdjuster {
 	}
 
 	private static void accept(final Path infile) throws JAXBException, IOException {
-		LOGGER.info("Reading \"{}\".", infile);
 		final SessionDataManager sessionData = SessionDataManager.create(infile);
 		final SessionEventDialogueManager sessionEvtDiagMgr = new SessionEventDialogueManager(sessionData);
 		final SessionEventDialogueManager.SessionGame canonicalGame = sessionEvtDiagMgr.getCanonicalGame();
