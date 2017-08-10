@@ -101,13 +101,6 @@ public final class Utterance implements Comparable<Utterance> {
 		if (Float.floatToIntBits(startTime) != Float.floatToIntBits(other.startTime)) {
 			return false;
 		}
-		if (tokenStr == null) {
-			if (other.tokenStr != null) {
-				return false;
-			}
-		} else if (!tokenStr.equals(other.tokenStr)) {
-			return false;
-		}
 		if (tokens == null) {
 			if (other.tokens != null) {
 				return false;
@@ -173,7 +166,6 @@ public final class Utterance implements Comparable<Utterance> {
 		result = prime * result + (segmentId == null ? 0 : segmentId.hashCode());
 		result = prime * result + (speakerId == null ? 0 : speakerId.hashCode());
 		result = prime * result + Float.floatToIntBits(startTime);
-		result = prime * result + (tokenStr == null ? 0 : tokenStr.hashCode());
 		result = prime * result + (tokens == null ? 0 : tokens.hashCode());
 		return result;
 	}
