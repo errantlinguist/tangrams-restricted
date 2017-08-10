@@ -19,9 +19,7 @@ package se.kth.speech.coin.tangrams.analysis;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
-import java.awt.EventQueue;
 import java.awt.HeadlessException;
-import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
@@ -32,6 +30,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumMap;
@@ -39,6 +38,7 @@ import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
@@ -52,18 +52,16 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import javax.swing.BoxLayout;
+import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
-import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
-import javax.swing.JPopupMenu;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.ScrollPaneConstants;
-import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
-import javax.swing.event.PopupMenuEvent;
-import javax.swing.event.PopupMenuListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -80,9 +78,11 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.Table;
 
 import iristk.system.Event;
+import se.kth.speech.TimestampArithmetic;
 import se.kth.speech.awt.LookAndFeels;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionContextFactory;
 import se.kth.speech.coin.tangrams.analysis.features.ImageEdgeCounter;
+import se.kth.speech.coin.tangrams.iristk.EventTimes;
 import se.kth.speech.coin.tangrams.iristk.EventTypeMatcher;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
@@ -95,90 +95,93 @@ import se.kth.speech.coin.tangrams.view.UserPrompts;
  */
 final class SessionEventLogAdjuster {
 
+	private enum AttributeType {
+		EVENT(Event.class) {
+			@Override
+			protected int getValueListIdx(final int columnIndex) {
+				return columnIndex;
+			}
+
+			@Override
+			protected int getValueListSize(final TableColumnModel colModel) {
+				return EVENT_ATTR_COUNT;
+			}
+		},
+		UTTERANCE(Utterance.class) {
+			@Override
+			protected int getValueListIdx(final int columnIndex) {
+				return columnIndex - EVENT_ATTR_COUNT;
+			}
+
+			@Override
+			protected int getValueListSize(final TableColumnModel colModel) {
+				return colModel.getColumnCount() - EVENT.getValueListSize(colModel);
+			}
+		};
+
+		private static final int EVENT_ATTR_COUNT = EventAttribute.values().length;
+
+		private final Class<?> valueClass;
+
+		private AttributeType(final Class<?> valueClass) {
+			this.valueClass = valueClass;
+		}
+
+		private List<TableColumn> createColumnList(final TableModel model, final TableColumnModel colModel) {
+			final int resultSize = getValueListSize(colModel);
+			final List<TableColumn> result = new ArrayList<>(resultSize);
+			final Enumeration<TableColumn> cols = colModel.getColumns();
+
+			int colIdx = 0;
+			while (result.size() < resultSize && cols.hasMoreElements()) {
+				final TableColumn col = cols.nextElement();
+				if (isMatchingTypeColumn(model, colIdx)) {
+					result.add(col);
+				}
+				colIdx++;
+			}
+			return result;
+		}
+
+		protected IntStream getMatchingTypeColumnIndices(final TableModel model) {
+			return IntStream.range(0, model.getColumnCount()).filter(colIdx -> isMatchingTypeColumn(model, colIdx));
+		}
+
+		protected abstract int getValueListIdx(final int columnIndex);
+
+		protected abstract int getValueListSize(final TableColumnModel colModel);
+
+		protected boolean isMatchingTypeColumn(final TableModel model, final int colIdx) {
+			final Class<?> colClass = model.getColumnClass(colIdx);
+			return valueClass.isAssignableFrom(colClass);
+		}
+	}
+
 	private enum EventAttribute {
 		SENDER, TIME;
 	}
 
-	private class EventDialogueAdjusterFrame extends JFrame {
+	private static class EventDialogueAdjusterFrame extends JFrame {
 
 		/**
 		 *
 		 */
 		private static final long serialVersionUID = -5412327154602984470L;
 
-		public EventDialogueAdjusterFrame(final String title, final EventDialogueAdjusterTable diagTable)
-				throws HeadlessException {
+		public EventDialogueAdjusterFrame(final String title, final LocalDateTime gameStartTime,
+				final EventDialogueAdjusterTable diagTable) throws HeadlessException {
 			super(title);
 			final Container content = getContentPane();
+			content.setLayout(new BoxLayout(content, BoxLayout.PAGE_AXIS));
 			// https://stackoverflow.com/a/2452758/1391325
 			content.add(new JScrollPane(diagTable, ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
 					ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED));
-			final JPopupMenu uttPopupMenu = new JPopupMenu();
-			uttPopupMenu.addPopupMenuListener(new PopupMenuListener() {
 
-				@Override
-				public void popupMenuCanceled(final PopupMenuEvent e) {
-					LOGGER.info("Popup menu cancelled.");
-				}
-
-				@Override
-				public void popupMenuWillBecomeInvisible(final PopupMenuEvent e) {
-					LOGGER.info("Popup menu will become invisible.");
-				}
-
-				@Override
-				public void popupMenuWillBecomeVisible(final PopupMenuEvent e) {
-					EventQueue.invokeLater(new Runnable() {
-						@Override
-						public void run() {
-							final Point selectionPoint = SwingUtilities.convertPoint(uttPopupMenu, new Point(0, 0),
-									diagTable);
-							final int rowAtPoint = diagTable.rowAtPoint(selectionPoint);
-							if (rowAtPoint > -1) {
-								diagTable.setRowSelectionInterval(rowAtPoint, rowAtPoint);
-							}
-							final int colAtPoint = diagTable.columnAtPoint(selectionPoint);
-							if (colAtPoint > -1) {
-								diagTable.setColumnSelectionInterval(colAtPoint, colAtPoint);
-							}
-							LOGGER.info("Cell at {}*{} selected.", diagTable.getSelectedRow(),
-									diagTable.getSelectedColumn());
-						}
-					});
-				}
-			});
-			final JMenuItem deleteItem = new JMenuItem("Move to previous utt");
-			deleteItem.addActionListener(new ActionListener() {
-
-				@Override
-				public void actionPerformed(final ActionEvent e) {
-					final int selectedRow = diagTable.getSelectedRow();
-					final int selectedCol = diagTable.getSelectedColumn();
-					JOptionPane.showMessageDialog(EventDialogueAdjusterFrame.this,
-							"Right-click performed on table and choose DELETE");
-				}
-			});
-
-			final TableColumnModel colModel = diagTable.getColumnModel();
-			// TODO: Define popup menus for editing event attributes
-			createEventAttributeColumnMap(colModel).forEach((eventAttr, column) -> {
-				switch (eventAttr) {
-				case SENDER: {
-					LOGGER.debug("No popup menu defined for {}.", eventAttr);
-					break;
-				}
-				case TIME: {
-					LOGGER.debug("No popup menu defined for {}.", eventAttr);
-					break;
-				}
-				default: {
-					throw new AssertionError("No logic for handing switch case.");
-				}
-				}
-			});
-			
-			uttPopupMenu.add(deleteItem);
-			diagTable.setComponentPopupMenu(uttPopupMenu);
+			final JPanel actionPanel = new JPanel();
+			content.add(actionPanel);
+			final JButton minimizeEventTimeButton = new JButton("Minimize event time");
+			minimizeEventTimeButton.addActionListener(new FollowingEventTimeMinimizer(diagTable, this, gameStartTime));
+			actionPanel.add(minimizeEventTimeButton);
 		}
 
 	}
@@ -247,10 +250,6 @@ final class SessionEventLogAdjuster {
 		 */
 		private static final long serialVersionUID = -4475137472007680337L;
 
-		private static int getUtteranceListIdx(final int columnIndex) {
-			return columnIndex - EventAttribute.values().length;
-		}
-
 		private final EventDialogue[] diags;
 
 		private EventDialogueTableModel(final EventDialogue[] diags) {
@@ -308,7 +307,7 @@ final class SessionEventLogAdjuster {
 			final String result;
 			final EventAttribute colEventAttr = getColumnAttribute(column);
 			if (colEventAttr == null) {
-				final int uttIdx = getUtteranceListIdx(column);
+				final int uttIdx = AttributeType.UTTERANCE.getValueListIdx(column);
 				result = "UTT_" + uttIdx;
 			} else {
 				switch (colEventAttr) {
@@ -350,7 +349,7 @@ final class SessionEventLogAdjuster {
 			final EventAttribute colEventAttr = getColumnAttribute(columnIndex);
 			if (colEventAttr == null) {
 				final List<Utterance> diagUtts = diag.getUtts();
-				final int diagUttIdx = getUtteranceListIdx(columnIndex);
+				final int diagUttIdx = AttributeType.UTTERANCE.getValueListIdx(columnIndex);
 				result = diagUtts.size() <= diagUttIdx ? null : diagUtts.get(diagUttIdx);
 			} else {
 				switch (colEventAttr) {
@@ -411,6 +410,84 @@ final class SessionEventLogAdjuster {
 			}
 			setText(repr);
 		}
+	}
+
+	private static class FollowingEventTimeMinimizer implements ActionListener {
+
+		private final JTable diagTable;
+
+		private final Component dialogueMessageParentComponent;
+
+		private final LocalDateTime gameStartTime;
+
+		private FollowingEventTimeMinimizer(final JTable diagTable, final Component dialogueMessageParentComponent,
+				final LocalDateTime gameStartTime) {
+			this.diagTable = diagTable;
+			this.dialogueMessageParentComponent = dialogueMessageParentComponent;
+			this.gameStartTime = gameStartTime;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see java.awt.event.ActionListener#actionPerformed(java.awt.event.
+		 * ActionEvent)
+		 */
+		@Override
+		public void actionPerformed(final ActionEvent event) {
+			final TableModel model = diagTable.getModel();
+			// Find the index of any column with Event instances as cell
+			// values
+			final int eventAttrColIdx = IntStream.range(0, diagTable.getColumnCount())
+					.filter(colIdx -> AttributeType.EVENT.isMatchingTypeColumn(model, colIdx)).findAny().getAsInt();
+			final int[] selectedRows = diagTable.getSelectedRows();
+			for (final int rowIdx : selectedRows) {
+				final IntStream uttColIdxs = AttributeType.UTTERANCE.getMatchingTypeColumnIndices(model);
+				final Stream<Object> uttColVals = uttColIdxs.mapToObj(colIdx -> diagTable.getValueAt(rowIdx, colIdx));
+				final Stream<Utterance> nonNullUtts = uttColVals.filter(Objects::nonNull).map(Utterance.class::cast);
+				final Optional<Utterance> optLastUtt = nonNullUtts.reduce((first, second) -> second);
+				if (optLastUtt.isPresent()) {
+					final Utterance lastUtt = optLastUtt.get();
+					final LocalDateTime lastUttEndTime = TimestampArithmetic.createOffsetTimestamp(gameStartTime,
+							lastUtt.getEndTime());
+					try {
+						final Event followingRowEvent = (Event) diagTable.getValueAt(rowIdx + 1, eventAttrColIdx);
+						final String followingRowEventTimeStr = followingRowEvent.getTime();
+						final LocalDateTime followingRowEventTime = EventTimes.parseEventTime(followingRowEventTimeStr);
+						final int timeCmp = lastUttEndTime.compareTo(followingRowEventTime);
+						if (timeCmp < 0) {
+							final String newEventTimeStr = EventTimes.FORMATTER.format(lastUttEndTime);
+							followingRowEvent.setTime(newEventTimeStr);
+							LOGGER.info("Set time of event ID \"{}\" to \"{}\".", followingRowEvent.getId(),
+									newEventTimeStr);
+							diagTable.repaint();
+						} else if (timeCmp > 0) {
+							JOptionPane.showMessageDialog(dialogueMessageParentComponent,
+									String.format(
+											"End time of preceding event's last utterance (\"%s\") is after the time of the following event (\"%s\", ID \"%s\"), i.e. the utterance overlaps the start of the next event.",
+											EventTimes.FORMATTER.format(lastUttEndTime), followingRowEventTimeStr,
+											followingRowEvent.getId()),
+									"Overlapping times", JOptionPane.WARNING_MESSAGE);
+						} else {
+							JOptionPane.showMessageDialog(dialogueMessageParentComponent,
+									String.format(
+											"Time of event ID \"%s\" is already equal to the end time of the preceding event's last utterance (\"%s\").",
+											followingRowEvent.getId(), followingRowEventTimeStr));
+						}
+					} catch (final ArrayIndexOutOfBoundsException ex) {
+						JOptionPane.showMessageDialog(dialogueMessageParentComponent,
+								String.format("No row for index %s.", ex.getLocalizedMessage()),
+								ex.getClass().getSimpleName(), JOptionPane.WARNING_MESSAGE);
+					}
+
+				} else {
+					JOptionPane.showMessageDialog(dialogueMessageParentComponent,
+							"Cannot minimize event time to last utterance end time because utterance list is empty.",
+							"No utterances", JOptionPane.WARNING_MESSAGE);
+				}
+			}
+		}
+
 	}
 
 	private static class Settings {
@@ -534,22 +611,6 @@ final class SessionEventLogAdjuster {
 		return String.format("Game %s, started at %s", gameId, history.getStartTime());
 	}
 
-	private static List<TableColumn> createtUtteranceColumnList(final TableColumnModel colModel) {
-		final int resultSize = colModel.getColumnCount() - EventAttribute.values().length;
-		final List<TableColumn> result = new ArrayList<>(resultSize);
-		final Enumeration<TableColumn> cols = colModel.getColumns();
-
-		int colIdx = 0;
-		while (result.size() < resultSize && cols.hasMoreElements()) {
-			final TableColumn col = cols.nextElement();
-			if (!isEventAttributeColumn(colIdx)) {
-				result.add(col);
-			}
-			colIdx++;
-		}
-		return result;
-	}
-
 	private static TableCellRenderer getColHeaderRenderer(final TableColumn tableColumn, final JTableHeader header) {
 		final TableCellRenderer colRenderer = tableColumn.getHeaderRenderer();
 		return colRenderer == null ? header.getDefaultRenderer() : colRenderer;
@@ -563,10 +624,6 @@ final class SessionEventLogAdjuster {
 	private static TableColumn getEventAttributeColumn(final TableColumnModel colModel, final EventAttribute attr) {
 		final int colIdx = EVENT_ATTR_IDXS.get(attr);
 		return colModel.getColumn(colIdx);
-	}
-
-	private static boolean isEventAttributeColumn(final int colIdx) {
-		return EventAttribute.values().length < colIdx;
 	}
 
 	private static Settings loadClassSettings() {
@@ -707,7 +764,8 @@ final class SessionEventLogAdjuster {
 				new UtteranceCellRenderer(this::fetchTokenSeqRepr));
 		setMaxPreferredScrollableViewportSize(diagTable);
 
-		final EventDialogueAdjusterFrame frame = new EventDialogueAdjusterFrame(title, diagTable);
+		final EventDialogueAdjusterFrame frame = new EventDialogueAdjusterFrame(title, history.getStartTime(),
+				diagTable);
 		frame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 		frame.pack();
 		frame.setVisible(true);
