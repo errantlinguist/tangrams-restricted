@@ -87,7 +87,7 @@ import se.kth.speech.coin.tangrams.view.UserPrompts;
 final class SessionEventLogAdjuster {
 
 	private enum AttributeType {
-		EVENT(EventDialogue.class) {
+		EVENT_DIALOGUE(EventDialogue.class) {
 			@Override
 			protected int getValueListIdx(final int columnIndex) {
 				return columnIndex;
@@ -106,11 +106,11 @@ final class SessionEventLogAdjuster {
 
 			@Override
 			protected int getValueListSize(final TableColumnModel colModel) {
-				return colModel.getColumnCount() - EVENT.getValueListSize(colModel);
+				return colModel.getColumnCount() - EVENT_DIALOGUE.getValueListSize(colModel);
 			}
 		};
 
-		private static final int EVENT_ATTR_COUNT = EventAttribute.values().length;
+		private static final int EVENT_ATTR_COUNT = EventDialogueAttribute.values().length;
 
 		private final Class<?> valueClass;
 
@@ -146,10 +146,6 @@ final class SessionEventLogAdjuster {
 			final Class<?> colClass = model.getColumnClass(colIdx);
 			return valueClass.isAssignableFrom(colClass);
 		}
-	}
-
-	private enum EventAttribute {
-		SENDER, TIME;
 	}
 
 	private static class EventDialogueAdjusterFrame extends JFrame {
@@ -189,7 +185,7 @@ final class SessionEventLogAdjuster {
 			setCellSelectionEnabled(true);
 			setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 
-			setColumnEventAttributeRenderers(getColumnModel());
+			setColumnEventDialogueAttributeRenderers(getColumnModel());
 			setDefaultRenderer(Utterance.class, uttCellRenderer);
 
 			// Set widths using the newly-set renderers
@@ -234,11 +230,22 @@ final class SessionEventLogAdjuster {
 
 	}
 
-	private static class EventDialogueFirstEventSenderRenderer extends DefaultTableCellRenderer {
+	private enum EventDialogueAttribute {
+		FIRST_EVENT_SENDER, FIRST_EVENT_TIME, LAST_EVENT_TIME;
+	}
+
+	private static class EventDialogueEventTimeRenderer extends DefaultTableCellRenderer {
+
 		/**
 		 *
 		 */
 		private static final long serialVersionUID = 1591902695449966670L;
+
+		private final Function<? super EventDialogue, Optional<Event>> eventGetter;
+
+		private EventDialogueEventTimeRenderer(final Function<? super EventDialogue, Optional<Event>> eventGetter) {
+			this.eventGetter = eventGetter;
+		}
 
 		@Override
 		public void setValue(final Object value) {
@@ -248,20 +255,26 @@ final class SessionEventLogAdjuster {
 				repr = NULL_VALUE_REPR;
 			} else {
 				final EventDialogue eventDiag = (EventDialogue) value;
-				final Optional<Event> firstEvent = eventDiag.getFirstEvent();
-				repr = firstEvent.map(
-						event -> event.getString(GameManagementEvent.Attribute.PLAYER_ID.toString(), NULL_VALUE_REPR))
-						.orElse(NULL_VALUE_REPR);
+				final Optional<Event> optEvent = eventGetter.apply(eventDiag);
+				repr = optEvent.map(Event::getTime).orElse(NULL_VALUE_REPR);
 			}
 			setText(repr);
 		}
 	}
 
-	private static class EventDialogueFirstEventTimeRenderer extends DefaultTableCellRenderer {
+	private static class EventDialogueFirstEventSenderRenderer extends DefaultTableCellRenderer {
+
 		/**
 		 *
 		 */
 		private static final long serialVersionUID = 1591902695449966670L;
+
+		private final Function<? super EventDialogue, Optional<Event>> eventGetter;
+
+		private EventDialogueFirstEventSenderRenderer(
+				final Function<? super EventDialogue, Optional<Event>> eventGetter) {
+			this.eventGetter = eventGetter;
+		}
 
 		@Override
 		public void setValue(final Object value) {
@@ -271,8 +284,10 @@ final class SessionEventLogAdjuster {
 				repr = NULL_VALUE_REPR;
 			} else {
 				final EventDialogue eventDiag = (EventDialogue) value;
-				final Optional<Event> firstEvent = eventDiag.getFirstEvent();
-				repr = firstEvent.map(Event::getTime).orElse(NULL_VALUE_REPR);
+				final Optional<? extends Event> optEvent = eventGetter.apply(eventDiag);
+				repr = optEvent.map(
+						event -> event.getString(GameManagementEvent.Attribute.PLAYER_ID.toString(), NULL_VALUE_REPR))
+						.orElse(NULL_VALUE_REPR);
 			}
 			setText(repr);
 		}
@@ -299,23 +314,11 @@ final class SessionEventLogAdjuster {
 		@Override
 		public Class<?> getColumnClass(final int columnIndex) {
 			final Class<?> result;
-			final EventAttribute colEventAttr = getColumnAttribute(columnIndex);
-			if (colEventAttr == null) {
-				result = Utterance.class;
+			final EventDialogueAttribute colEventDiagAttr = getColumnEventDialogueAttribute(columnIndex);
+			if (colEventDiagAttr == null) {
+				result = AttributeType.UTTERANCE.valueClass;
 			} else {
-				switch (colEventAttr) {
-				case SENDER: {
-					result = EventDialogue.class;
-					break;
-				}
-				case TIME: {
-					result = EventDialogue.class;
-					break;
-				}
-				default: {
-					throw new AssertionError("No logic for handing switch case.");
-				}
-				}
+				result = AttributeType.EVENT_DIALOGUE.valueClass;
 			}
 			return result;
 		}
@@ -340,24 +343,12 @@ final class SessionEventLogAdjuster {
 		@Override
 		public String getColumnName(final int column) {
 			final String result;
-			final EventAttribute colEventAttr = getColumnAttribute(column);
-			if (colEventAttr == null) {
+			final EventDialogueAttribute colEventDiagAttr = getColumnEventDialogueAttribute(column);
+			if (colEventDiagAttr == null) {
 				final int uttIdx = AttributeType.UTTERANCE.getValueListIdx(column);
-				result = "UTT_" + uttIdx;
+				result = Utterance.class.getSimpleName() + uttIdx;
 			} else {
-				switch (colEventAttr) {
-				case SENDER: {
-					result = "FIRST_EVT_SENDER";
-					break;
-				}
-				case TIME: {
-					result = "FIRST_EVT_TIME";
-					break;
-				}
-				default: {
-					throw new AssertionError("No logic for handing switch case.");
-				}
-				}
+				result = colEventDiagAttr.toString();
 			}
 			return result;
 		}
@@ -381,25 +372,13 @@ final class SessionEventLogAdjuster {
 		public Object getValueAt(final int rowIndex, final int columnIndex) {
 			final EventDialogue diag = diags[rowIndex];
 			final Object result;
-			final EventAttribute colEventAttr = getColumnAttribute(columnIndex);
-			if (colEventAttr == null) {
+			final EventDialogueAttribute colEventDiagAttr = getColumnEventDialogueAttribute(columnIndex);
+			if (colEventDiagAttr == null) {
 				final List<Utterance> diagUtts = diag.getUtts();
 				final int diagUttIdx = AttributeType.UTTERANCE.getValueListIdx(columnIndex);
 				result = diagUtts.size() <= diagUttIdx ? null : diagUtts.get(diagUttIdx);
 			} else {
-				switch (colEventAttr) {
-				case SENDER: {
-					result = diag;
-					break;
-				}
-				case TIME: {
-					result = diag;
-					break;
-				}
-				default: {
-					throw new AssertionError("No logic for handing switch case.");
-				}
-				}
+				result = diag;
 			}
 			return result;
 		}
@@ -433,7 +412,8 @@ final class SessionEventLogAdjuster {
 			// Find the index of any column with Event instances as cell
 			// values
 			final int eventAttrColIdx = IntStream.range(0, diagTable.getColumnCount())
-					.filter(colIdx -> AttributeType.EVENT.isMatchingTypeColumn(model, colIdx)).findAny().getAsInt();
+					.filter(colIdx -> AttributeType.EVENT_DIALOGUE.isMatchingTypeColumn(model, colIdx)).findAny()
+					.getAsInt();
 			final int[] selectedRows = diagTable.getSelectedRows();
 			for (final int rowIdx : selectedRows) {
 				final IntStream uttColIdxs = AttributeType.UTTERANCE.getMatchingTypeColumnIndices(model);
@@ -552,7 +532,7 @@ final class SessionEventLogAdjuster {
 
 	private static final int ESTIMATED_UNIQUE_TOKEN_SEQ_PER_DIAG_COUNT = 8;
 
-	private static final Map<EventAttribute, Integer> EVENT_ATTR_IDXS = createEventAttributeIndexMap();
+	private static final Map<EventDialogueAttribute, Integer> EVENT_DIALOGUE_ATTR_IDXS = createEventDialogueAttributeIndexMap();
 
 	private static final List<FileNameExtensionFilter> FILE_FILTERS;
 
@@ -594,11 +574,22 @@ final class SessionEventLogAdjuster {
 		adjuster.accept(sessionData);
 	}
 
-	private static Map<EventAttribute, Integer> createEventAttributeIndexMap() {
-		final Map<EventAttribute, Integer> result = new EnumMap<>(EventAttribute.class);
-		final EventAttribute[] attrs = EventAttribute.values();
+	private static Map<EventDialogueAttribute, TableColumn> createEventDialogueAttributeColumnMap(
+			final TableColumnModel colModel) {
+		final Map<EventDialogueAttribute, TableColumn> result = new EnumMap<>(EventDialogueAttribute.class);
+		final EventDialogueAttribute[] attrs = EventDialogueAttribute.values();
+		for (final EventDialogueAttribute attr : EventDialogueAttribute.values()) {
+			result.put(attr, getEventDialogueAttributeColumn(colModel, attr));
+		}
+		assert result.size() == attrs.length;
+		return result;
+	}
+
+	private static Map<EventDialogueAttribute, Integer> createEventDialogueAttributeIndexMap() {
+		final Map<EventDialogueAttribute, Integer> result = new EnumMap<>(EventDialogueAttribute.class);
+		final EventDialogueAttribute[] attrs = EventDialogueAttribute.values();
 		for (int i = 0; i < attrs.length; ++i) {
-			final EventAttribute attr = attrs[i];
+			final EventDialogueAttribute attr = attrs[i];
 			result.put(attr, i);
 		}
 		assert result.size() == attrs.length;
@@ -614,13 +605,14 @@ final class SessionEventLogAdjuster {
 		return colRenderer == null ? header.getDefaultRenderer() : colRenderer;
 	}
 
-	private static EventAttribute getColumnAttribute(final int colIdx) {
-		final EventAttribute[] atts = EventAttribute.values();
+	private static EventDialogueAttribute getColumnEventDialogueAttribute(final int colIdx) {
+		final EventDialogueAttribute[] atts = EventDialogueAttribute.values();
 		return atts.length <= colIdx ? null : atts[colIdx];
 	}
 
-	private static TableColumn getEventAttributeColumn(final TableColumnModel colModel, final EventAttribute attr) {
-		final int colIdx = EVENT_ATTR_IDXS.get(attr);
+	private static TableColumn getEventDialogueAttributeColumn(final TableColumnModel colModel,
+			final EventDialogueAttribute attr) {
+		final int colIdx = EVENT_DIALOGUE_ATTR_IDXS.get(attr);
 		return colModel.getColumn(colIdx);
 	}
 
@@ -673,18 +665,27 @@ final class SessionEventLogAdjuster {
 		return result;
 	}
 
-	private static void setColumnEventAttributeRenderers(final TableColumnModel colModel) {
-		final EventAttribute[] attrs = EventAttribute.values();
+	private static void setColumnEventDialogueAttributeRenderers(final TableColumnModel colModel) {
+		final EventDialogueAttribute[] attrs = EventDialogueAttribute.values();
 		for (int i = 0; i < attrs.length; ++i) {
-			final EventAttribute attr = attrs[i];
+			final EventDialogueAttribute attr = attrs[i];
 			final TableColumn col = colModel.getColumn(i);
 			switch (attr) {
-			case SENDER: {
-				col.setCellRenderer(new EventDialogueFirstEventSenderRenderer());
+			case FIRST_EVENT_SENDER: {
+				col.setCellRenderer(new EventDialogueFirstEventSenderRenderer(EventDialogue::getFirstEvent));
 				break;
 			}
-			case TIME: {
-				col.setCellRenderer(new EventDialogueFirstEventTimeRenderer());
+			case FIRST_EVENT_TIME: {
+				col.setCellRenderer(new EventDialogueEventTimeRenderer(EventDialogue::getFirstEvent));
+				break;
+			}
+			case LAST_EVENT_TIME: {
+				final Function<EventDialogue, Optional<Event>> lastEventGetter = evtDiag -> {
+					final List<Event> events = evtDiag.getDialogueEvents();
+					return events.isEmpty() ? Optional.empty()
+							: Optional.of(events.listIterator(events.size()).previous());
+				};
+				col.setCellRenderer(new EventDialogueEventTimeRenderer(lastEventGetter));
 				break;
 			}
 			default: {
@@ -718,16 +719,6 @@ final class SessionEventLogAdjuster {
 		final SessionEventDialogueManager sessionEvtDiagMgr = new SessionEventDialogueManager(sessionData);
 		final SessionEventDialogueManager.SessionGame canonicalGame = sessionEvtDiagMgr.getCanonicalGame();
 		visualize(canonicalGame);
-	}
-
-	private Map<EventAttribute, TableColumn> createEventAttributeColumnMap(final TableColumnModel colModel) {
-		final Map<EventAttribute, TableColumn> result = new EnumMap<>(EventAttribute.class);
-		final EventAttribute[] attrs = EventAttribute.values();
-		for (final EventAttribute attr : EventAttribute.values()) {
-			result.put(attr, getEventAttributeColumn(colModel, attr));
-		}
-		assert result.size() == attrs.length;
-		return result;
 	}
 
 	private String fetchTokenSeqRepr(final List<String> tokenSeq) {
