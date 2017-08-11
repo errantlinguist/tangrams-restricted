@@ -114,12 +114,12 @@ public final class EqualityMap<K, V> implements Map<K, V> {
 
 		/*
 		 * (non-Javadoc)
-		 * 
+		 *
 		 * @see java.lang.Object#toString()
 		 */
 		@Override
 		public String toString() {
-			final StringBuilder builder = new StringBuilder(128);
+			final StringBuilder builder = new StringBuilder(64);
 			builder.append("IndexedEntry [getKey()=");
 			builder.append(getKey());
 			builder.append(", getValue()=");
@@ -342,9 +342,10 @@ public final class EqualityMap<K, V> implements Map<K, V> {
 	 */
 	@Override
 	public String toString() {
-		final StringBuilder builder = new StringBuilder();
+		final Set<Entry<K, V>> entrySet = entrySet();
+		final StringBuilder builder = new StringBuilder(64 * entrySet.size() + 32);
 		builder.append("EqualityMap [entrySet()=");
-		builder.append(entrySet());
+		builder.append(entrySet);
 		builder.append(']');
 		return builder.toString();
 	}
