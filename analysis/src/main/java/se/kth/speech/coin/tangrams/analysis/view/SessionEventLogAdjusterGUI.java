@@ -18,7 +18,6 @@ package se.kth.speech.coin.tangrams.analysis.view;
 
 import java.awt.Dimension;
 import java.time.LocalDateTime;
-import java.time.temporal.TemporalAccessor;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -41,14 +40,14 @@ public final class SessionEventLogAdjusterGUI implements Runnable {
 
 	private static final String NULL_VALUE_REPR = "-";
 
-	private static final Function<TemporalAccessor, String> TIME_FORMATTER = time -> EventTimes.FORMATTER.format(time);
+	private static final Function<LocalDateTime, String> TIME_FORMATTER = time -> EventTimes.FORMATTER.format(time);
 
 	private static final Function<String, LocalDateTime> TIME_PARSER = EventTimes::parseEventTime;
 
 	private static Map<Class<?>, TableCellRenderer> createDefaultRendererMap() {
 		final Map<Class<?>, TableCellRenderer> result = Maps.newHashMapWithExpectedSize(3);
 		result.put(String.class, new DefaultValueStringRenderer(NULL_VALUE_REPR));
-		result.put(TemporalAccessor.class, new DefaultValueTimeRenderer(TIME_FORMATTER, NULL_VALUE_REPR));
+		result.put(LocalDateTime.class, new DefaultValueTimeRenderer(TIME_FORMATTER, NULL_VALUE_REPR));
 		result.put(Utterance.class, new UtteranceCellRenderer());
 		return result;
 	}

@@ -17,7 +17,6 @@
 package se.kth.speech.coin.tangrams.analysis.view;
 
 import java.time.LocalDateTime;
-import java.time.temporal.TemporalAccessor;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
@@ -46,14 +45,14 @@ final class EventDialogueTableModel extends AbstractTableModel {
 
 	private final List<Event> events;
 
-	private final Function<? super TemporalAccessor, String> timeFormatter;
+	private final Function<? super LocalDateTime, String> timeFormatter;
 
 	private final Function<? super String, LocalDateTime> timeParser;
 
 	private final List<Utterance> utts;
 
 	EventDialogueTableModel(final Function<? super String, LocalDateTime> timeParser,
-			final Function<? super TemporalAccessor, String> timeFormatter, final SessionGame game) {
+			final Function<? super LocalDateTime, String> timeFormatter, final SessionGame game) {
 		this.timeParser = timeParser;
 		this.timeFormatter = timeFormatter;
 		events = game.getEvents();
@@ -199,7 +198,7 @@ final class EventDialogueTableModel extends AbstractTableModel {
 				final Optional<Event> optEvent = diag.getFirstEvent();
 				if (optEvent.isPresent()) {
 					final Event event = optEvent.get();
-					final TemporalAccessor time = (TemporalAccessor) aValue;
+					final LocalDateTime time = (LocalDateTime) aValue;
 					event.setTime(timeFormatter.apply(time));
 				} else {
 					throw new IllegalArgumentException(String.format("No value at %d*%d.", rowIndex, columnIndex));
@@ -210,7 +209,7 @@ final class EventDialogueTableModel extends AbstractTableModel {
 				final Optional<Event> optEvent = diag.getLastEvent();
 				if (optEvent.isPresent()) {
 					final Event event = optEvent.get();
-					final TemporalAccessor time = (TemporalAccessor) aValue;
+					final LocalDateTime time = (LocalDateTime) aValue;
 					event.setTime(timeFormatter.apply(time));
 				} else {
 					throw new IllegalArgumentException(String.format("No value at %d*%d.", rowIndex, columnIndex));

@@ -16,7 +16,7 @@
 */
 package se.kth.speech.coin.tangrams.analysis.view;
 
-import java.time.temporal.TemporalAccessor;
+import java.time.LocalDateTime;
 import java.util.function.Function;
 
 import javax.swing.table.DefaultTableCellRenderer;
@@ -35,10 +35,9 @@ final class DefaultValueTimeRenderer extends DefaultTableCellRenderer {
 
 	private final String nullValueRepr;
 
-	private final Function<? super TemporalAccessor, String> timeFormatter;
+	private final Function<? super LocalDateTime, String> timeFormatter;
 
-	DefaultValueTimeRenderer(final Function<? super TemporalAccessor, String> timeFormatter,
-			final String nullValueRepr) {
+	DefaultValueTimeRenderer(final Function<? super LocalDateTime, String> timeFormatter, final String nullValueRepr) {
 		this.timeFormatter = timeFormatter;
 		this.nullValueRepr = nullValueRepr;
 	}
@@ -50,7 +49,7 @@ final class DefaultValueTimeRenderer extends DefaultTableCellRenderer {
 		if (value == null) {
 			repr = nullValueRepr;
 		} else {
-			final TemporalAccessor time = (TemporalAccessor) value;
+			final LocalDateTime time = (LocalDateTime) value;
 			repr = timeFormatter.apply(time);
 		}
 		setText(repr);
