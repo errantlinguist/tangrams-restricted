@@ -71,10 +71,7 @@ final class FollowingEventTimeMinimizer implements ActionListener {
 				.getAsInt();
 		final int[] selectedRows = diagTable.getSelectedRows();
 		for (final int rowIdx : selectedRows) {
-			final IntStream uttColIdxs = AttributeType.UTTERANCE.getMatchingTypeColumnIndices(model);
-			final Stream<Object> uttColVals = uttColIdxs.mapToObj(colIdx -> diagTable.getValueAt(rowIdx, colIdx));
-			final Stream<Utterance> nonNullUtts = uttColVals.filter(Objects::nonNull).map(Utterance.class::cast);
-			final Optional<Utterance> optLastUtt = nonNullUtts.reduce((first, second) -> second);
+			final Optional<Utterance> optLastUtt = findLastUtterance(rowIdx);
 			if (optLastUtt.isPresent()) {
 				final Utterance lastUtt = optLastUtt.get();
 				final LocalDateTime lastUttEndTime = TimestampArithmetic.createOffsetTimestamp(gameStartTime,
@@ -95,14 +92,17 @@ final class FollowingEventTimeMinimizer implements ActionListener {
 									newEventTimeStr);
 							diagTable.repaint();
 						} else if (timeCmp > 0) {
-							JOptionPane.showMessageDialog(dialogueMessageParentComponent, String.format(
-									"End time of preceding event's last utterance (\"%s\") is after the time of the following event (\"%s\", ID \"%s\"), i.e. the utterance overlaps the start of the next event.",
-									EventTimes.FORMATTER.format(lastUttEndTime), followingRowEventTimeStr,
-									followingRowFirstEvent.getId()), "Overlapping times", JOptionPane.WARNING_MESSAGE);
+							JOptionPane.showMessageDialog(dialogueMessageParentComponent,
+									String.format(
+											"End time of preceding event's last utterance (\"%s\") is after the time of the following event (\"%s\", ID \"%s\"), i.e. the utterance overlaps the start of the next event.",
+											EventTimes.FORMATTER.format(lastUttEndTime), followingRowEventTimeStr,
+											followingRowFirstEvent.getId()),
+									"Overlapping times", JOptionPane.WARNING_MESSAGE);
 						} else {
-							JOptionPane.showMessageDialog(dialogueMessageParentComponent, String.format(
-									"Time of event ID \"%s\" is already equal to the end time of the preceding event's last utterance (\"%s\").",
-									followingRowFirstEvent.getId(), followingRowEventTimeStr));
+							JOptionPane.showMessageDialog(dialogueMessageParentComponent,
+									String.format(
+											"Time of event ID \"%s\" is already equal to the end time of the preceding event's last utterance (\"%s\").",
+											followingRowFirstEvent.getId(), followingRowEventTimeStr));
 						}
 					} else {
 						JOptionPane.showMessageDialog(dialogueMessageParentComponent,
@@ -122,6 +122,14 @@ final class FollowingEventTimeMinimizer implements ActionListener {
 						"No utterances", JOptionPane.WARNING_MESSAGE);
 			}
 		}
+	}
+
+	private Optional<Utterance> findLastUtterance(final int rowIdx) {
+		final TableModel model = diagTable.getModel();
+		final IntStream uttColIdxs = AttributeType.UTTERANCE.getMatchingTypeColumnIndices(model);
+		final Stream<Object> uttColVals = uttColIdxs.mapToObj(colIdx -> diagTable.getValueAt(rowIdx, colIdx));
+		final Stream<Utterance> nonNullUtts = uttColVals.filter(Objects::nonNull).map(Utterance.class::cast);
+		return nonNullUtts.reduce((first, second) -> second);
 	}
 
 }
