@@ -88,8 +88,12 @@ public final class SessionEventDialogueManager {
 
 	private static SessionGame createGame(final Path eventLogPath, final List<Utterance> utts) throws IOException {
 		final Entry<String, GameHistory> gameIdHistory = loadGameHistory(eventLogPath);
-		final GameHistory history = gameIdHistory.getValue();
-		return new SessionGame(gameIdHistory.getKey(), history, Collections.unmodifiableList(
+		return createGame(gameIdHistory.getKey(), gameIdHistory.getValue(), utts);
+	}
+
+	private static SessionGame createGame(final String gameId, final GameHistory history, final List<Utterance> utts)
+			throws IOException {
+		return new SessionGame(gameId, history, Collections.unmodifiableList(
 				Arrays.asList(EVT_DIAG_FACTORY.apply(utts.listIterator(), history).toArray(EventDialogue[]::new))));
 	}
 
@@ -106,7 +110,7 @@ public final class SessionEventDialogueManager {
 	}
 
 	private static Entry<String, GameHistory> loadGameHistory(final Path eventLogPath) throws IOException {
-		Entry<String, GameHistory> result;
+		final Entry<String, GameHistory> result;
 		LOGGER.info("Reading game histories from \"{}\".", eventLogPath);
 		final Map<String, GameHistory> gameHistories = LoggedEvents.readGameHistories(eventLogPath);
 		final int gameCount = gameHistories.size();
