@@ -28,7 +28,7 @@ import org.slf4j.LoggerFactory;
 import it.unimi.dsi.fastutil.ints.IntList;
 import se.kth.speech.coin.tangrams.analysis.GameContext;
 import se.kth.speech.coin.tangrams.analysis.GameHistory;
-import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManager;
+import se.kth.speech.coin.tangrams.analysis.SessionGame;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
@@ -152,7 +152,7 @@ public final class OnePositiveOneNegativeInstanceFactory extends AbstractSizeEst
 	}
 
 	@Override
-	protected void addTrainingData(final SessionEventDialogueManager.SessionGame sessionGame,
+	protected void addTrainingData(final SessionGame sessionGame,
 			final WordClassificationData trainingData) {
 		final String gameId = sessionGame.getGameId();
 		LOGGER.debug("Processing game \"{}\".", gameId);

@@ -23,7 +23,7 @@ import java.util.List;
 import javax.swing.JTable;
 import javax.swing.WindowConstants;
 
-import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManager;
+import se.kth.speech.coin.tangrams.analysis.SessionGame;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 
 /**
@@ -50,9 +50,9 @@ public final class SessionEventLogAdjusterGUI implements Runnable {
 		table.setPreferredScrollableViewportSize(diagTablereferredScrollableViewportSize);
 	}
 
-	private final SessionEventDialogueManager.SessionGame game;
+	private final SessionGame game;
 
-	public SessionEventLogAdjusterGUI(final SessionEventDialogueManager.SessionGame game) {
+	public SessionEventLogAdjusterGUI(final SessionGame game) {
 		this.game = game;
 	}
 
@@ -66,7 +66,7 @@ public final class SessionEventLogAdjusterGUI implements Runnable {
 		vizualize(game);
 	}
 
-	private void vizualize(final SessionEventDialogueManager.SessionGame game) {
+	private void vizualize(final SessionGame game) {
 		final LocalDateTime gameStart = game.getHistory().getStartTime();
 		final String title = createHistoryTitleStr(game.getGameId(), gameStart);
 		final List<EventDialogue> diags = game.getEventDialogues();

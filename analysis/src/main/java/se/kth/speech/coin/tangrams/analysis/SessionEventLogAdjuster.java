@@ -108,7 +108,7 @@ final class SessionEventLogAdjuster {
 	private static void accept(final Path infile) throws JAXBException, IOException {
 		final SessionDataManager sessionData = SessionDataManager.create(infile);
 		final SessionEventDialogueManager sessionEvtDiagMgr = new SessionEventDialogueManager(sessionData);
-		final SessionEventDialogueManager.SessionGame canonicalGame = sessionEvtDiagMgr.getCanonicalGame();
+		final SessionGame canonicalGame = sessionEvtDiagMgr.getCanonicalGame();
 		EventQueue.invokeLater(new SessionEventLogAdjusterGUI(canonicalGame));
 	}
 

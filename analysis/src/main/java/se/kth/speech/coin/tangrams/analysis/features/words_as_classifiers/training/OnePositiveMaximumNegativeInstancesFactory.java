@@ -26,7 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import se.kth.speech.coin.tangrams.analysis.GameHistory;
-import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManager;
+import se.kth.speech.coin.tangrams.analysis.SessionGame;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
@@ -100,7 +100,7 @@ public final class OnePositiveMaximumNegativeInstancesFactory extends AbstractSi
 	}
 
 	@Override
-	protected void addTrainingData(final SessionEventDialogueManager.SessionGame sessionGame,
+	protected void addTrainingData(final SessionGame sessionGame,
 			final WordClassificationData trainingData) {
 		final String gameId = sessionGame.getGameId();
 		LOGGER.debug("Processing game \"{}\".", gameId);

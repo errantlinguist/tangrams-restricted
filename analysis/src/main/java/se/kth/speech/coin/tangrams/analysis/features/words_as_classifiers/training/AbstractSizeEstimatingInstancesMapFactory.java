@@ -28,6 +28,7 @@ import com.google.common.collect.Maps;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManager;
+import se.kth.speech.coin.tangrams.analysis.SessionGame;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
 import se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttributeContext;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordClasses;
@@ -96,7 +97,7 @@ abstract class AbstractSizeEstimatingInstancesMapFactory implements TrainingInst
 		return result;
 	}
 
-	protected abstract void addTrainingData(final SessionEventDialogueManager.SessionGame sessionGame,
+	protected abstract void addTrainingData(final SessionGame sessionGame,
 			WordClassificationData trainingData);
 
 	protected Instance createTokenInstance(final Instances classInsts,

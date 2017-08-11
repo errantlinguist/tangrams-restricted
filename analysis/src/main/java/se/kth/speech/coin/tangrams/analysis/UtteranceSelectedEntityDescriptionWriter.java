@@ -356,9 +356,9 @@ final class UtteranceSelectedEntityDescriptionWriter {
 				extractionContextFactory, uttDiagReprFactory, strict);
 
 		final Path extantOutdir = ensureExtantOutdir();
-		for (final Entry<String, SessionEventDialogueManager.SessionGame> playerPerspectiveGame : sessionEvtDiagMgr
+		for (final Entry<String, SessionGame> playerPerspectiveGame : sessionEvtDiagMgr
 				.createPlayerPerspectiveGameMap().entrySet()) {
-			final SessionEventDialogueManager.SessionGame sessionGame = playerPerspectiveGame.getValue();
+			final SessionGame sessionGame = playerPerspectiveGame.getValue();
 			final String playerId = playerPerspectiveGame.getKey();
 			final String gameId = sessionGame.getGameId();
 			final Path outfilePath = extantOutdir
@@ -370,7 +370,7 @@ final class UtteranceSelectedEntityDescriptionWriter {
 			}
 		}
 
-		final SessionEventDialogueManager.SessionGame canonicalSessionGame = sessionEvtDiagMgr.getCanonicalGame();
+		final SessionGame canonicalSessionGame = sessionEvtDiagMgr.getCanonicalGame();
 		final Path outfilePath = extantOutdir
 				.resolve(outfileNamePrefix + "_GAME-" + canonicalSessionGame.getGameId() + "_CANONICAL.tsv");
 		LOGGER.info("Writing utterances from canonical perspective to \"{}\".", outfilePath);

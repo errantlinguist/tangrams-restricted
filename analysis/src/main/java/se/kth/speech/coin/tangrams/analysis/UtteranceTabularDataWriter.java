@@ -242,7 +242,7 @@ final class UtteranceTabularDataWriter {
 		return sb.toString();
 	}
 
-	void write(final SessionEventDialogueManager.SessionGame sessionGame, final Writer writer) throws IOException {
+	void write(final SessionGame sessionGame, final Writer writer) throws IOException {
 		// The visualization info for the given game
 		final GameHistory history = sessionGame.getHistory();
 		final ImageVisualizationInfo imgVizInfo = IMG_VIZ_INFO_UNMARSHALLER
