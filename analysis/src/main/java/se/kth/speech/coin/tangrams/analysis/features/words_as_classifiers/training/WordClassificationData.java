@@ -73,7 +73,7 @@ public final class WordClassificationData {
 		return trainingInstanceCounts;
 	}
 
-	protected void addObservation(final String wordClass, final Stream<Entry<Instance, String>> instClassValues) {
+	void addObservation(final String wordClass, final Stream<Entry<Instance, String>> instClassValues) {
 		final Instances classInstances = classInstancesFetcher.apply(wordClass);
 		instClassValues.forEach(instClassValue -> {
 			final Instance inst = instClassValue.getKey();
