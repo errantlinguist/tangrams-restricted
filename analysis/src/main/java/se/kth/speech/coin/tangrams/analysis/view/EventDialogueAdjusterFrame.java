@@ -31,10 +31,6 @@ import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.ScrollPaneConstants;
-import javax.swing.filechooser.FileNameExtensionFilter;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 final class EventDialogueAdjusterFrame extends JFrame {
 
@@ -44,7 +40,8 @@ final class EventDialogueAdjusterFrame extends JFrame {
 	private static final long serialVersionUID = -5412327154602984470L;
 
 	EventDialogueAdjusterFrame(final String title, final LocalDateTime gameStartTime,
-			final EventDialogueAdjusterTable diagTable, JFileChooser eventLogFileChooser) throws HeadlessException {
+			final EventDialogueAdjusterTable diagTable, final JFileChooser eventLogFileChooser)
+			throws HeadlessException {
 		super(title);
 		final Container content = getContentPane();
 		content.setLayout(new BoxLayout(content, BoxLayout.PAGE_AXIS));
