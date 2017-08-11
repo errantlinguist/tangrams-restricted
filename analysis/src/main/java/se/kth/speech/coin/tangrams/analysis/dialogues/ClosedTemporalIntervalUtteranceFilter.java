@@ -115,7 +115,7 @@ public final class ClosedTemporalIntervalUtteranceFilter implements Predicate<Ut
 	 */
 	@Override
 	public String toString() {
-		final StringBuilder builder = new StringBuilder();
+		final StringBuilder builder = new StringBuilder(96);
 		builder.append("ClosedTemporalIntervalUtteranceFilter [start=");
 		builder.append(start);
 		builder.append(", end=");
