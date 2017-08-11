@@ -20,14 +20,10 @@ import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Stream;
 
 import javax.swing.JOptionPane;
 import javax.swing.JTable;
@@ -35,8 +31,6 @@ import javax.swing.JTable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import se.kth.speech.TimestampArithmetic;
-import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.coin.tangrams.iristk.EventTimes;
 
 final class FollowingEventTimeMinimizer implements ActionListener {
@@ -73,29 +67,6 @@ final class FollowingEventTimeMinimizer implements ActionListener {
 		}
 	}
 
-	private List<Utterance> createUtteranceList(final int rowIdx) {
-		final List<Utterance> result = new ArrayList<>(
-				AttributeType.UTTERANCE.getValueListSize(diagTable.getColumnModel()));
-		for (int colIdx = 0; colIdx < diagTable.getColumnCount(); ++colIdx) {
-			final Class<?> colClass = diagTable.getColumnClass(colIdx);
-			if (Utterance.class.isAssignableFrom(colClass)) {
-				final Object cellValue = diagTable.getValueAt(rowIdx, colIdx);
-				if (cellValue != null) {
-					final Utterance utt = (Utterance) cellValue;
-					result.add(utt);
-				}
-			}
-		}
-		return result;
-	}
-
-	private Optional<LocalDateTime> findLastUtteranceTime(final int rowIdx) {
-		final List<Utterance> utts = createUtteranceList(rowIdx);
-		final Stream<LocalDateTime> uttEndTimes = utts.stream()
-				.map(utt -> TimestampArithmetic.createOffsetTimestamp(gameStartTime, utt.getEndTime()));
-		return uttEndTimes.max(Comparator.naturalOrder());
-	}
-
 	private Optional<LocalDateTime> findLatestEventDialogueTime(final int rowIdx) {
 		final Optional<LocalDateTime> result;
 		// NOTE: Even though the last event of the selected row is used for
@@ -103,7 +74,8 @@ final class FollowingEventTimeMinimizer implements ActionListener {
 		// first and last event columns is the same
 		final LocalDateTime rowLastEventTime = (LocalDateTime) diagTable.getValueAt(rowIdx,
 				evtDiagAttrColIdxs.get(EventDialogueAttribute.LAST_EVENT_TIME));
-		final Optional<LocalDateTime> optLastUttTime = findLastUtteranceTime(rowIdx);
+		final Optional<LocalDateTime> optLastUttTime = TableUtterances.findLastUtteranceTime(diagTable, gameStartTime,
+				rowIdx);
 		if (rowLastEventTime == null) {
 			result = optLastUttTime;
 		} else if (optLastUttTime.isPresent()) {
