@@ -90,12 +90,12 @@ public final class CLIParameters {
 		return result;
 	}
 
-	public static String parseOutputType(String outExt) {
+	public static String parseOutputType(String outputFileExtension) {
 		final char extPrefix = '.';
-		if (outExt.charAt(0) != extPrefix) {
-			outExt = extPrefix + outExt;
+		if (outputFileExtension.charAt(0) != extPrefix) {
+			outputFileExtension = extPrefix + outputFileExtension;
 		}
-		return outExt;
+		return outputFileExtension;
 	}
 
 	private CLIParameters() {
