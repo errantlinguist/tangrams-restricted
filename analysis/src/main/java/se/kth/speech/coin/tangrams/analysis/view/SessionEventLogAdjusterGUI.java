@@ -27,6 +27,7 @@ import javax.swing.JFileChooser;
 import javax.swing.JTable;
 import javax.swing.WindowConstants;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.table.JTableHeader;
 import javax.swing.table.TableCellRenderer;
 
 import org.slf4j.Logger;
@@ -53,6 +54,26 @@ public final class SessionEventLogAdjusterGUI implements Runnable {
 
 	private static final Function<String, LocalDateTime> TIME_PARSER = EventTimes::parseEventTime;
 
+	private static int calculateOptimumPreferredHeight(final JTable table) {
+		final JTableHeader header = table.getTableHeader();
+		final int minHeight = table.getMinimumSize().height;
+		final int maxHeight = table.getMaximumSize().height;
+		int result = Math.max(header.getHeight(), minHeight);
+		if (result < maxHeight) {
+			for (int row = 0; row < table.getRowCount(); row++) {
+				final int rowHeight = table.getRowHeight(row);
+				result += rowHeight;
+				if (result >= maxHeight) {
+					// We've exceeded the maximum height, no need to check
+					// other rows
+					result = maxHeight;
+					break;
+				}
+			}
+		}
+		return result;
+	}
+
 	private static Map<Class<?>, TableCellRenderer> createDefaultRendererMap() {
 		final Map<Class<?>, TableCellRenderer> result = Maps.newHashMapWithExpectedSize(3);
 		result.put(String.class, new DefaultValueStringRenderer(NULL_VALUE_REPR));
@@ -74,6 +95,10 @@ public final class SessionEventLogAdjusterGUI implements Runnable {
 				Math.toIntExact(Math.round(screenSize.height * scaleFactor)));
 		if (diagTablereferredScrollableViewportSize.width < maxPreferredSize.width) {
 			diagTablereferredScrollableViewportSize.width = maxPreferredSize.width;
+		}
+		final int optimumHeight = calculateOptimumPreferredHeight(table);
+		if (optimumHeight <= maxPreferredSize.height) {
+			diagTablereferredScrollableViewportSize.height = optimumHeight;
 		}
 		table.setPreferredScrollableViewportSize(diagTablereferredScrollableViewportSize);
 	}
