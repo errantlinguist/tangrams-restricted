@@ -23,10 +23,18 @@ import java.util.Map;
 
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
+import javax.swing.JFileChooser;
 import javax.swing.JFrame;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.ScrollPaneConstants;
+import javax.swing.filechooser.FileNameExtensionFilter;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 final class EventDialogueAdjusterFrame extends JFrame {
 
@@ -36,7 +44,7 @@ final class EventDialogueAdjusterFrame extends JFrame {
 	private static final long serialVersionUID = -5412327154602984470L;
 
 	EventDialogueAdjusterFrame(final String title, final LocalDateTime gameStartTime,
-			final EventDialogueAdjusterTable diagTable) throws HeadlessException {
+			final EventDialogueAdjusterTable diagTable, JFileChooser eventLogFileChooser) throws HeadlessException {
 		super(title);
 		final Container content = getContentPane();
 		content.setLayout(new BoxLayout(content, BoxLayout.PAGE_AXIS));
@@ -61,6 +69,14 @@ final class EventDialogueAdjusterFrame extends JFrame {
 					new LastEventToNextDialogueMover(diagTable, evtDiagAttrColIdxs, this, gameStartTime));
 			actionPanel.add(newButton);
 		}
+
+		final JMenuBar menuBar = new JMenuBar();
+		setJMenuBar(menuBar);
+		final JMenu fileMenu = new JMenu("File");
+		menuBar.add(fileMenu);
+		final JMenuItem saveItem = new JMenuItem("Export event log...");
+		saveItem.addActionListener(new SaveAction(eventLogFileChooser, this));
+		fileMenu.add(saveItem);
 	}
 
 }

@@ -109,7 +109,11 @@ final class SessionEventLogAdjuster {
 		final SessionDataManager sessionData = SessionDataManager.create(infile);
 		final SessionGameManager sessionEvtDiagMgr = new SessionGameManager(sessionData);
 		final SessionGame canonicalGame = sessionEvtDiagMgr.getCanonicalGame();
-		EventQueue.invokeLater(new SessionEventLogAdjusterGUI(canonicalGame));
+
+		final Path infileParent = infile.getParent();
+		final Optional<File> eventLogExportDir = infileParent == null ? Optional.empty()
+				: Optional.of(infileParent.toFile());
+		EventQueue.invokeLater(new SessionEventLogAdjusterGUI(canonicalGame, eventLogExportDir));
 	}
 
 	private static Settings loadClassSettings() {

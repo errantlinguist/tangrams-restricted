@@ -17,13 +17,20 @@
 package se.kth.speech.coin.tangrams.analysis.view;
 
 import java.awt.Dimension;
+import java.io.File;
 import java.time.LocalDateTime;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 
+import javax.swing.JFileChooser;
 import javax.swing.JTable;
 import javax.swing.WindowConstants;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.TableCellRenderer;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Maps;
 
@@ -37,6 +44,8 @@ import se.kth.speech.coin.tangrams.iristk.EventTimes;
  *
  */
 public final class SessionEventLogAdjusterGUI implements Runnable {
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(SessionEventLogAdjusterGUI.class);
 
 	private static final String NULL_VALUE_REPR = "-";
 
@@ -69,10 +78,13 @@ public final class SessionEventLogAdjusterGUI implements Runnable {
 		table.setPreferredScrollableViewportSize(diagTablereferredScrollableViewportSize);
 	}
 
+	private final Optional<? extends File> eventLogExportDir;
+
 	private final SessionGame game;
 
-	public SessionEventLogAdjusterGUI(final SessionGame game) {
+	public SessionEventLogAdjusterGUI(final SessionGame game, final Optional<? extends File> eventLogExportDir) {
 		this.game = game;
+		this.eventLogExportDir = eventLogExportDir;
 	}
 
 	/*
@@ -82,10 +94,6 @@ public final class SessionEventLogAdjusterGUI implements Runnable {
 	 */
 	@Override
 	public void run() {
-		vizualize(game);
-	}
-
-	private void vizualize(final SessionGame game) {
 		final LocalDateTime gameStart = game.getHistory().getStartTime();
 		final String title = createHistoryTitleStr(game.getGameId(), gameStart);
 		final EventDialogueAdjusterTable diagTable = new EventDialogueAdjusterTable(
@@ -93,10 +101,25 @@ public final class SessionEventLogAdjusterGUI implements Runnable {
 				createDefaultRendererMap().entrySet().stream());
 		setMaxPreferredScrollableViewportSize(diagTable);
 
-		final EventDialogueAdjusterFrame frame = new EventDialogueAdjusterFrame(title, gameStart, diagTable);
+		final JFileChooser eventLogFileChooser = createEventLogExportFileChooser();
+
+		final EventDialogueAdjusterFrame frame = new EventDialogueAdjusterFrame(title, gameStart, diagTable,
+				eventLogFileChooser);
 		frame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 		frame.pack();
 		frame.setVisible(true);
+	}
+
+	private JFileChooser createEventLogExportFileChooser() {
+		final JFileChooser result = eventLogExportDir.map(dir -> {
+			final boolean exportDirWasNonexistent = dir.mkdirs();
+			if (exportDirWasNonexistent) {
+				LOGGER.debug("Created non-existent event log export directory \"{}\".", dir);
+			}
+			return new JFileChooser(dir);
+		}).orElseGet(JFileChooser::new);
+		result.setFileFilter(new FileNameExtensionFilter("Text files (*.txt)", "txt"));
+		return result;
 	}
 
 }
