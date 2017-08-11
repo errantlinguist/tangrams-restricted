@@ -17,7 +17,9 @@
 package se.kth.speech.coin.tangrams.analysis.view;
 
 import java.awt.Component;
+import java.util.Map.Entry;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import javax.swing.JTable;
 import javax.swing.table.JTableHeader;
@@ -29,65 +31,29 @@ import javax.swing.table.TableModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
-
 final class EventDialogueAdjusterTable extends JTable {
 
-	private static final TableCellRenderer EVENT_TIME_RENDERER;
-
 	private static final Logger LOGGER = LoggerFactory.getLogger(EventDialogueAdjusterTable.class);
-
-	private static final TableCellRenderer NULLABLE_STR_RENDERER;
 
 	/**
 	 *
 	 */
 	private static final long serialVersionUID = 5176564593731003375L;
 
-	static {
-		final String nullValueRepr = "-";
-		NULLABLE_STR_RENDERER = new DefaultValueStringRenderer(nullValueRepr);
-		EVENT_TIME_RENDERER = new DefaultValueLoggedEventTimeRenderer(nullValueRepr);
-	}
-
 	private static TableCellRenderer getColumnHeaderRenderer(final TableColumn tableColumn, final JTableHeader header) {
 		final TableCellRenderer colRenderer = tableColumn.getHeaderRenderer();
 		return colRenderer == null ? header.getDefaultRenderer() : colRenderer;
 	}
 
-	private static void setColumnEventDialogueAttributeRenderers(final TableColumnModel colModel) {
-		final EventDialogueAttribute[] attrs = EventDialogueAttribute.values();
-		for (int i = 0; i < attrs.length; ++i) {
-			final EventDialogueAttribute attr = attrs[i];
-			final TableColumn col = colModel.getColumn(i);
-			switch (attr) {
-			case FIRST_EVENT_SENDER: {
-				col.setCellRenderer(NULLABLE_STR_RENDERER);
-				break;
-			}
-			case FIRST_EVENT_TIME: {
-				col.setCellRenderer(EVENT_TIME_RENDERER);
-				break;
-			}
-			case LAST_EVENT_TIME: {
-				col.setCellRenderer(EVENT_TIME_RENDERER);
-				break;
-			}
-			default: {
-				throw new AssertionError("No logic for handing switch case.");
-			}
-			}
-		}
-	}
-
-	EventDialogueAdjusterTable(final TableModel dm, final UtteranceCellRenderer uttCellRenderer) {
+	EventDialogueAdjusterTable(final TableModel dm,
+			final Stream<Entry<Class<?>, TableCellRenderer>> defaultColumnClassRenderers) {
 		super(dm);
 
 		setCellSelectionEnabled(true);
 		setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 
-		setColumnEventDialogueAttributeRenderers(getColumnModel());
-		setDefaultRenderer(Utterance.class, uttCellRenderer);
+		defaultColumnClassRenderers.forEach(
+				colClassRenderer -> setDefaultRenderer(colClassRenderer.getKey(), colClassRenderer.getValue()));
 
 		// Set widths using the newly-set renderers
 		IntStream.range(0, getColumnCount()).forEach(this::setOptimumPreferredWidth);

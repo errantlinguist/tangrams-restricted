@@ -28,7 +28,6 @@ import iristk.system.Event;
 import se.kth.speech.coin.tangrams.analysis.SessionGame;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
-import se.kth.speech.coin.tangrams.iristk.EventTimes;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 
 final class EventDialogueTableModel extends AbstractTableModel {
@@ -37,10 +36,6 @@ final class EventDialogueTableModel extends AbstractTableModel {
 	 *
 	 */
 	private static final long serialVersionUID = -4475137472007680337L;
-
-	private static final Function<TemporalAccessor, String> TIME_FORMATTER = time -> EventTimes.FORMATTER.format(time);
-
-	private static final Function<String, LocalDateTime> TIME_PARSER = EventTimes::parseEventTime;
 
 	private static EventDialogueAttribute getColumnEventDialogueAttribute(final int colIdx) {
 		final EventDialogueAttribute[] atts = EventDialogueAttribute.values();
@@ -51,9 +46,16 @@ final class EventDialogueTableModel extends AbstractTableModel {
 
 	private final List<Event> events;
 
+	private final Function<? super TemporalAccessor, String> timeFormatter;
+
+	private final Function<? super String, LocalDateTime> timeParser;
+
 	private final List<Utterance> utts;
 
-	EventDialogueTableModel(final SessionGame game) {
+	EventDialogueTableModel(final Function<? super String, LocalDateTime> timeParser,
+			final Function<? super TemporalAccessor, String> timeFormatter, final SessionGame game) {
+		this.timeParser = timeParser;
+		this.timeFormatter = timeFormatter;
 		events = game.getEvents();
 		utts = game.getUtterances();
 		diags = game.getEventDialogues();
@@ -151,12 +153,12 @@ final class EventDialogueTableModel extends AbstractTableModel {
 			}
 			case FIRST_EVENT_TIME: {
 				final Optional<Event> optEvent = diag.getFirstEvent();
-				result = optEvent.map(Event::getTime).map(TIME_PARSER).orElse(null);
+				result = optEvent.map(Event::getTime).map(timeParser).orElse(null);
 				break;
 			}
 			case LAST_EVENT_TIME: {
 				final Optional<Event> optEvent = diag.getLastEvent();
-				result = optEvent.map(Event::getTime).map(TIME_PARSER).orElse(null);
+				result = optEvent.map(Event::getTime).map(timeParser).orElse(null);
 				break;
 			}
 			default:
@@ -198,7 +200,7 @@ final class EventDialogueTableModel extends AbstractTableModel {
 				if (optEvent.isPresent()) {
 					final Event event = optEvent.get();
 					final TemporalAccessor time = (TemporalAccessor) aValue;
-					event.setTime(TIME_FORMATTER.apply(time));
+					event.setTime(timeFormatter.apply(time));
 				} else {
 					throw new IllegalArgumentException(String.format("No value at %d*%d.", rowIndex, columnIndex));
 				}
@@ -209,7 +211,7 @@ final class EventDialogueTableModel extends AbstractTableModel {
 				if (optEvent.isPresent()) {
 					final Event event = optEvent.get();
 					final TemporalAccessor time = (TemporalAccessor) aValue;
-					event.setTime(TIME_FORMATTER.apply(time));
+					event.setTime(timeFormatter.apply(time));
 				} else {
 					throw new IllegalArgumentException(String.format("No value at %d*%d.", rowIndex, columnIndex));
 				}

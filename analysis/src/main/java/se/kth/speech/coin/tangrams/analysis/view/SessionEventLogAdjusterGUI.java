@@ -18,11 +18,19 @@ package se.kth.speech.coin.tangrams.analysis.view;
 
 import java.awt.Dimension;
 import java.time.LocalDateTime;
+import java.time.temporal.TemporalAccessor;
+import java.util.Map;
+import java.util.function.Function;
 
 import javax.swing.JTable;
 import javax.swing.WindowConstants;
+import javax.swing.table.TableCellRenderer;
+
+import com.google.common.collect.Maps;
 
 import se.kth.speech.coin.tangrams.analysis.SessionGame;
+import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
+import se.kth.speech.coin.tangrams.iristk.EventTimes;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -30,6 +38,20 @@ import se.kth.speech.coin.tangrams.analysis.SessionGame;
  *
  */
 public final class SessionEventLogAdjusterGUI implements Runnable {
+
+	private static final String NULL_VALUE_REPR = "-";
+
+	private static final Function<TemporalAccessor, String> TIME_FORMATTER = time -> EventTimes.FORMATTER.format(time);
+
+	private static final Function<String, LocalDateTime> TIME_PARSER = EventTimes::parseEventTime;
+
+	private static Map<Class<?>, TableCellRenderer> createDefaultRendererMap() {
+		final Map<Class<?>, TableCellRenderer> result = Maps.newHashMapWithExpectedSize(3);
+		result.put(String.class, new DefaultValueStringRenderer(NULL_VALUE_REPR));
+		result.put(TemporalAccessor.class, new DefaultValueTimeRenderer(TIME_FORMATTER, NULL_VALUE_REPR));
+		result.put(Utterance.class, new UtteranceCellRenderer());
+		return result;
+	}
 
 	private static String createHistoryTitleStr(final String gameId, final LocalDateTime startTime) {
 		return String.format("Game %s, started at %s", gameId, startTime);
@@ -67,8 +89,9 @@ public final class SessionEventLogAdjusterGUI implements Runnable {
 	private void vizualize(final SessionGame game) {
 		final LocalDateTime gameStart = game.getHistory().getStartTime();
 		final String title = createHistoryTitleStr(game.getGameId(), gameStart);
-		final EventDialogueAdjusterTable diagTable = new EventDialogueAdjusterTable(new EventDialogueTableModel(game),
-				new UtteranceCellRenderer());
+		final EventDialogueAdjusterTable diagTable = new EventDialogueAdjusterTable(
+				new EventDialogueTableModel(TIME_PARSER, TIME_FORMATTER, game),
+				createDefaultRendererMap().entrySet().stream());
 		setMaxPreferredScrollableViewportSize(diagTable);
 
 		final EventDialogueAdjusterFrame frame = new EventDialogueAdjusterFrame(title, gameStart, diagTable);

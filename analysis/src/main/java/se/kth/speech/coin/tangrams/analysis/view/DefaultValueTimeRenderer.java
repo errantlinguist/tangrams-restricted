@@ -17,17 +17,16 @@
 package se.kth.speech.coin.tangrams.analysis.view;
 
 import java.time.temporal.TemporalAccessor;
+import java.util.function.Function;
 
 import javax.swing.table.DefaultTableCellRenderer;
-
-import se.kth.speech.coin.tangrams.iristk.EventTimes;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
  * @since 11 Aug 2017
  *
  */
-final class DefaultValueLoggedEventTimeRenderer extends DefaultTableCellRenderer {
+final class DefaultValueTimeRenderer extends DefaultTableCellRenderer {
 
 	/**
 	 *
@@ -36,7 +35,11 @@ final class DefaultValueLoggedEventTimeRenderer extends DefaultTableCellRenderer
 
 	private final String nullValueRepr;
 
-	DefaultValueLoggedEventTimeRenderer(final String nullValueRepr) {
+	private final Function<? super TemporalAccessor, String> timeFormatter;
+
+	DefaultValueTimeRenderer(final Function<? super TemporalAccessor, String> timeFormatter,
+			final String nullValueRepr) {
+		this.timeFormatter = timeFormatter;
 		this.nullValueRepr = nullValueRepr;
 	}
 
@@ -48,7 +51,7 @@ final class DefaultValueLoggedEventTimeRenderer extends DefaultTableCellRenderer
 			repr = nullValueRepr;
 		} else {
 			final TemporalAccessor time = (TemporalAccessor) value;
-			repr = EventTimes.FORMATTER.format(time);
+			repr = timeFormatter.apply(time);
 		}
 		setText(repr);
 	}
