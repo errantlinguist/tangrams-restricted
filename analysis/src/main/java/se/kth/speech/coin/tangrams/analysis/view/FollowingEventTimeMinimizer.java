@@ -104,9 +104,9 @@ final class FollowingEventTimeMinimizer implements ActionListener {
 				} else {
 					final int timeCmp = lastestEvtDiagTime.compareTo(followingRowFirstEventTime);
 					if (timeCmp < 0) {
-						final String newEventTimeStr = EventTimes.FORMATTER.format(lastestEvtDiagTime);
 						diagTable.setValueAt(lastestEvtDiagTime, followingRowIdx, firstEventColIdx);
-						LOGGER.info("Set time of first event for row {} to \"{}\".", followingRowIdx, newEventTimeStr);
+						LOGGER.info("Set time of first event for row {} to \"{}\".", followingRowIdx,
+								EventTimes.FORMATTER.format(lastestEvtDiagTime));
 					} else if (timeCmp > 0) {
 						JOptionPane.showMessageDialog(dialogueMessageParentComponent,
 								String.format(
