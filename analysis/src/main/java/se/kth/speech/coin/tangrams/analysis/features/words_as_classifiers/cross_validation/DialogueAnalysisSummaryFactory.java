@@ -19,15 +19,16 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross
 import java.util.Collection;
 import java.util.EnumMap;
 import java.util.EnumSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
 import iristk.system.Event;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
-import se.kth.speech.coin.tangrams.analysis.dialogues.UtteranceDialogueRepresentationStringFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.EventDialogueTestResults;
 
 /**
@@ -39,13 +40,13 @@ final class DialogueAnalysisSummaryFactory implements
 
 	public static final class Input {
 
+		private final String desc;
+
 		private final Entry<EventDialogue, EventDialogueTestResults> diagTestResults;
 
 		private final Integer iterNo;
 
 		private final Object key;
-
-		private final String desc;
 
 		private final Integer sequenceOrder;
 
@@ -59,41 +60,74 @@ final class DialogueAnalysisSummaryFactory implements
 		}
 	}
 
-	public enum SummaryDatum implements Function<Input, Object> {
+	public enum SummaryDatum implements BiFunction<Input, Function<? super Iterator<Utterance>, String>, Object> {
+		DESCRIPTION {
+			/*
+			 * (non-Javadoc)
+			 *
+			 * @see java.util.function.BiFunction#apply(java.lang.Object,
+			 * java.lang.Object)
+			 */
+			@Override
+			public Object apply(final Input input,
+					final Function<? super Iterator<Utterance>, String> uttDiagReprFactory) {
+				return input.desc;
+			}
+		},
 		DIALOGUE {
 			/*
 			 * (non-Javadoc)
 			 *
-			 * @see java.util.function.Function#apply(java.lang.Object)
+			 * @see java.util.function.BiFunction#apply(java.lang.Object,
+			 * java.lang.Object)
 			 */
 			@Override
-			public Object apply(final Input input) {
+			public Object apply(final Input input,
+					final Function<? super Iterator<Utterance>, String> uttDiagReprFactory) {
 				final EventDialogue diag = input.diagTestResults.getKey();
-				return UTT_DIAG_REPR_FACTORY.apply(diag.getUtterances().iterator());
+				return uttDiagReprFactory.apply(diag.getUtterances().iterator());
 			}
 		},
 		DIALOGUE_AS_TESTED {
 			/*
 			 * (non-Javadoc)
 			 *
-			 * @see java.util.function.Function#apply(java.lang.Object)
+			 * @see java.util.function.BiFunction#apply(java.lang.Object,
+			 * java.lang.Object)
 			 */
 			@Override
-			public Object apply(final Input input) {
+			public Object apply(final Input input,
+					final Function<? super Iterator<Utterance>, String> uttDiagReprFactory) {
 				final EventDialogueTestResults testResults = input.diagTestResults.getValue();
 				final Stream<Utterance> uttsTested = testResults.testedUtterances();
-				return UTT_DIAG_REPR_FACTORY.apply(uttsTested.iterator());
+				return uttDiagReprFactory.apply(uttsTested.iterator());
 			}
 
 		},
+		DYAD {
+			/*
+			 * (non-Javadoc)
+			 *
+			 * @see java.util.function.BiFunction#apply(java.lang.Object,
+			 * java.lang.Object)
+			 */
+			@Override
+			public Object apply(final Input input,
+					final Function<? super Iterator<Utterance>, String> uttDiagReprFactory) {
+				return input.key;
+			}
+		},
+
 		EVENT_TIME {
 			/*
 			 * (non-Javadoc)
 			 *
-			 * @see java.util.function.Function#apply(java.lang.Object)
+			 * @see java.util.function.BiFunction#apply(java.lang.Object,
+			 * java.lang.Object)
 			 */
 			@Override
-			public Object apply(final Input input) {
+			public Object apply(final Input input,
+					final Function<? super Iterator<Utterance>, String> uttDiagReprFactory) {
 				final EventDialogue diag = input.diagTestResults.getKey();
 				return diag.getFirstEvent().map(Event::getTime).orElse("?");
 			}
@@ -102,33 +136,25 @@ final class DialogueAnalysisSummaryFactory implements
 			/*
 			 * (non-Javadoc)
 			 *
-			 * @see java.util.function.Function#apply(java.lang.Object)
+			 * @see java.util.function.BiFunction#apply(java.lang.Object,
+			 * java.lang.Object)
 			 */
 			@Override
-			public Object apply(final Input input) {
+			public Object apply(final Input input,
+					final Function<? super Iterator<Utterance>, String> uttDiagReprFactory) {
 				return input.diagTestResults.getValue().getGoldStandardReferentId();
-			}
-		},
-
-		DYAD {
-			/*
-			 * (non-Javadoc)
-			 *
-			 * @see java.util.function.Function#apply(java.lang.Object)
-			 */
-			@Override
-			public Object apply(final Input input) {
-				return input.key;
 			}
 		},
 		MEAN_DIAG_UTTS_TESTED {
 			/*
 			 * (non-Javadoc)
 			 *
-			 * @see java.util.function.Function#apply(java.lang.Object)
+			 * @see java.util.function.BiFunction#apply(java.lang.Object,
+			 * java.lang.Object)
 			 */
 			@Override
-			public Object apply(final Input input) {
+			public Object apply(final Input input,
+					final Function<? super Iterator<Utterance>, String> uttDiagReprFactory) {
 				final int tested = input.diagTestResults.getValue().testedUtteranceCount();
 				final int total = input.diagTestResults.getValue().totalUtteranceCount();
 				return tested / (double) total;
@@ -138,10 +164,12 @@ final class DialogueAnalysisSummaryFactory implements
 			/*
 			 * (non-Javadoc)
 			 *
-			 * @see java.util.function.Function#apply(java.lang.Object)
+			 * @see java.util.function.BiFunction#apply(java.lang.Object,
+			 * java.lang.Object)
 			 */
 			@Override
-			public Object apply(final Input input) {
+			public Object apply(final Input input,
+					final Function<? super Iterator<Utterance>, String> uttDiagReprFactory) {
 				return input.diagTestResults.getValue().meanTokensPerTestedUtterance();
 			}
 		},
@@ -149,10 +177,12 @@ final class DialogueAnalysisSummaryFactory implements
 			/*
 			 * (non-Javadoc)
 			 *
-			 * @see java.util.function.Function#apply(java.lang.Object)
+			 * @see java.util.function.BiFunction#apply(java.lang.Object,
+			 * java.lang.Object)
 			 */
 			@Override
-			public Object apply(final Input input) {
+			public Object apply(final Input input,
+					final Function<? super Iterator<Utterance>, String> uttDiagReprFactory) {
 				return input.diagTestResults.getValue().rank();
 			}
 		},
@@ -160,10 +190,12 @@ final class DialogueAnalysisSummaryFactory implements
 			/*
 			 * (non-Javadoc)
 			 *
-			 * @see java.util.function.Function#apply(java.lang.Object)
+			 * @see java.util.function.BiFunction#apply(java.lang.Object,
+			 * java.lang.Object)
 			 */
 			@Override
-			public Object apply(final Input input) {
+			public Object apply(final Input input,
+					final Function<? super Iterator<Utterance>, String> uttDiagReprFactory) {
 				return input.diagTestResults.getValue().reciprocalRank();
 			}
 		},
@@ -171,10 +203,12 @@ final class DialogueAnalysisSummaryFactory implements
 			/*
 			 * (non-Javadoc)
 			 *
-			 * @see java.util.function.Function#apply(java.lang.Object)
+			 * @see java.util.function.BiFunction#apply(java.lang.Object,
+			 * java.lang.Object)
 			 */
 			@Override
-			public Object apply(final Input input) {
+			public Object apply(final Input input,
+					final Function<? super Iterator<Utterance>, String> uttDiagReprFactory) {
 				return input.sequenceOrder;
 			}
 		},
@@ -182,10 +216,12 @@ final class DialogueAnalysisSummaryFactory implements
 			/*
 			 * (non-Javadoc)
 			 *
-			 * @see java.util.function.Function#apply(java.lang.Object)
+			 * @see java.util.function.BiFunction#apply(java.lang.Object,
+			 * java.lang.Object)
 			 */
 			@Override
-			public Object apply(final Input input) {
+			public Object apply(final Input input,
+					final Function<? super Iterator<Utterance>, String> uttDiagReprFactory) {
 				return input.iterNo;
 			}
 		},
@@ -193,10 +229,12 @@ final class DialogueAnalysisSummaryFactory implements
 			/*
 			 * (non-Javadoc)
 			 *
-			 * @see java.util.function.Function#apply(java.lang.Object)
+			 * @see java.util.function.BiFunction#apply(java.lang.Object,
+			 * java.lang.Object)
 			 */
 			@Override
-			public Object apply(final Input input) {
+			public Object apply(final Input input,
+					final Function<? super Iterator<Utterance>, String> uttDiagReprFactory) {
 				return input.diagTestResults.getValue().testedUtteranceCount();
 			}
 		},
@@ -204,10 +242,12 @@ final class DialogueAnalysisSummaryFactory implements
 			/*
 			 * (non-Javadoc)
 			 *
-			 * @see java.util.function.Function#apply(java.lang.Object)
+			 * @see java.util.function.BiFunction#apply(java.lang.Object,
+			 * java.lang.Object)
 			 */
 			@Override
-			public Object apply(final Input input) {
+			public Object apply(final Input input,
+					final Function<? super Iterator<Utterance>, String> uttDiagReprFactory) {
 				return input.diagTestResults.getValue().testedTokenCount();
 			}
 		},
@@ -215,35 +255,28 @@ final class DialogueAnalysisSummaryFactory implements
 			/*
 			 * (non-Javadoc)
 			 *
-			 * @see java.util.function.Function#apply(java.lang.Object)
+			 * @see java.util.function.BiFunction#apply(java.lang.Object,
+			 * java.lang.Object)
 			 */
 			@Override
-			public Object apply(final Input input) {
+			public Object apply(final Input input,
+					final Function<? super Iterator<Utterance>, String> uttDiagReprFactory) {
 				return input.diagTestResults.getValue().totalUtteranceCount();
-			}
-		},
-		DESCRIPTION {
-			/*
-			 * (non-Javadoc)
-			 *
-			 * @see java.util.function.Function#apply(java.lang.Object)
-			 */
-			@Override
-			public Object apply(final Input input) {
-				return input.desc;
 			}
 		};
 	}
 
-	private static final UtteranceDialogueRepresentationStringFactory UTT_DIAG_REPR_FACTORY = new UtteranceDialogueRepresentationStringFactory();
-
 	private final Collection<SummaryDatum> dataToCreate;
 
-	public DialogueAnalysisSummaryFactory() {
-		this(EnumSet.allOf(SummaryDatum.class));
+	private final Function<? super Iterator<Utterance>, String> uttDiagReprFactory;
+
+	public DialogueAnalysisSummaryFactory(final Function<? super Iterator<Utterance>, String> uttDiagReprFactory) {
+		this(uttDiagReprFactory, EnumSet.allOf(SummaryDatum.class));
 	}
 
-	public DialogueAnalysisSummaryFactory(final Collection<SummaryDatum> dataToCreate) {
+	public DialogueAnalysisSummaryFactory(final Function<? super Iterator<Utterance>, String> uttDiagReprFactory,
+			final Collection<SummaryDatum> dataToCreate) {
+		this.uttDiagReprFactory = uttDiagReprFactory;
 		this.dataToCreate = dataToCreate;
 	}
 
@@ -251,7 +284,7 @@ final class DialogueAnalysisSummaryFactory implements
 	public Map<SummaryDatum, Object> apply(final Input input) {
 		final Map<SummaryDatum, Object> result = new EnumMap<>(SummaryDatum.class);
 		for (final SummaryDatum datum : dataToCreate) {
-			final Object val = datum.apply(input);
+			final Object val = datum.apply(input, uttDiagReprFactory);
 			result.put(datum, val);
 		}
 		assert result.size() == dataToCreate.size();

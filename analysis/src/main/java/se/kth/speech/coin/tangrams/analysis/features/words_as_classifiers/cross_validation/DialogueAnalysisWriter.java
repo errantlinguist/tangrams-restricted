@@ -22,6 +22,7 @@ import java.io.PrintWriter;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -29,6 +30,7 @@ import java.util.Map.Entry;
 import java.util.OptionalInt;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
@@ -47,7 +49,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.support.FileSystemXmlApplicationContext;
 
 import se.kth.speech.coin.tangrams.CLIParameters;
+import se.kth.speech.coin.tangrams.analysis.DataLanguageDefaults;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
+import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
+import se.kth.speech.coin.tangrams.analysis.dialogues.UtteranceDialogueRepresentationStringFactory;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.EventDialogueTestResults;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.Tester.CrossValidationTestSummary;
@@ -167,7 +172,8 @@ final class DialogueAnalysisWriter implements Consumer<Tester.Result> {
 		if (cl.hasOption(Parameter.HELP.optName)) {
 			Parameter.printHelp();
 		} else {
-			final List<Path> inpaths = Arrays.asList(cl.getArgList().stream().map(String::trim).filter(path -> !path.isEmpty()).map(Paths::get).toArray(Path[]::new));
+			final List<Path> inpaths = Arrays.asList(cl.getArgList().stream().map(String::trim)
+					.filter(path -> !path.isEmpty()).map(Paths::get).toArray(Path[]::new));
 			if (inpaths.isEmpty()) {
 				throw new MissingOptionException("No input path(s) specified.");
 
@@ -200,16 +206,19 @@ final class DialogueAnalysisWriter implements Consumer<Tester.Result> {
 	private final DialogueAnalysisSummaryFactory rowDataFactory;
 
 	private DialogueAnalysisWriter(final PrintWriter out, final int maxIters,
+			final Function<? super Iterator<Utterance>, String> uttDiagReprFactory,
 			final List<DialogueAnalysisSummaryFactory.SummaryDatum> dataToWrite) {
 		this.out = out;
 		this.maxIters = maxIters;
 		this.dataToWrite = dataToWrite;
-		rowDataFactory = new DialogueAnalysisSummaryFactory(dataToWrite);
+		rowDataFactory = new DialogueAnalysisSummaryFactory(uttDiagReprFactory, dataToWrite);
 	}
 
 	DialogueAnalysisWriter(final PrintWriter out, final int maxIters) {
-		this(out, maxIters, DEFAULT_DATA_TO_WRITE);
+		this(out, maxIters, new UtteranceDialogueRepresentationStringFactory(DataLanguageDefaults.getLocale()),
+				DEFAULT_DATA_TO_WRITE);
 	}
+
 	@Override
 	public void accept(final Tester.Result cvtestResults) {
 		out.println(dataToWrite.stream().map(Enum::toString).collect(ROW_CELL_JOINER));
@@ -226,8 +235,8 @@ final class DialogueAnalysisWriter implements Consumer<Tester.Result> {
 				final int iterNo = sessionResultIter.nextIndex();
 				if (iterNo <= maxIters) {
 					int sessionDialogueOrder = 1;
-					for (final Entry<EventDialogue, EventDialogueTestResults> diagTestResults : cvTestSummary.getTestResults()
-							.getDialogueTestResults()) {
+					for (final Entry<EventDialogue, EventDialogueTestResults> diagTestResults : cvTestSummary
+							.getTestResults().getDialogueTestResults()) {
 						final Map<DialogueAnalysisSummaryFactory.SummaryDatum, Object> rowData = rowDataFactory
 								.apply(new DialogueAnalysisSummaryFactory.Input(inpath, "Success", iterNo,
 										sessionDialogueOrder++, diagTestResults));

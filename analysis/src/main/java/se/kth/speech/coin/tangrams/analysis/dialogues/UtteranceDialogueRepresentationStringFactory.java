@@ -19,6 +19,7 @@ package se.kth.speech.coin.tangrams.analysis.dialogues;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.function.Function;
@@ -47,28 +48,26 @@ public final class UtteranceDialogueRepresentationStringFactory implements Funct
 		sb.append(DIALOGUE_TURN_DELIMITER);
 	}
 
-	private static String capitalizeFirstChar(final String str) {
-		// http://stackoverflow.com/a/3904607/1391325
-		return str.substring(0, 1).toUpperCase() + str.substring(1);
-	}
-
 	private static String createSpeakerUttPrefix(final String speakerId) {
 		return "**" + speakerId + ":** ";
 	}
 
 	private final Collector<? super CharSequence, ?, String> sentenceJoiner;
 
+	private final Locale uttLocale;
+
 	private final Collector<? super CharSequence, ?, String> wordJoiner;
 
-	public UtteranceDialogueRepresentationStringFactory() {
-		this(DEFAULT_WORD_JOINER, DEFAULT_SENTENCE_JOINER);
+	public UtteranceDialogueRepresentationStringFactory(final Locale uttLocale) {
+		this(uttLocale, DEFAULT_WORD_JOINER, DEFAULT_SENTENCE_JOINER);
 	}
 
-	private UtteranceDialogueRepresentationStringFactory(final Collector<? super CharSequence, ?, String> wordJoiner,
+	private UtteranceDialogueRepresentationStringFactory(final Locale uttLocale,
+			final Collector<? super CharSequence, ?, String> wordJoiner,
 			final Collector<? super CharSequence, ?, String> sentenceJoiner) {
+		this.uttLocale = uttLocale;
 		this.wordJoiner = wordJoiner;
 		this.sentenceJoiner = sentenceJoiner;
-
 	}
 
 	@Override
@@ -99,6 +98,11 @@ public final class UtteranceDialogueRepresentationStringFactory implements Funct
 	 */
 	public Collector<? super CharSequence, ?, String> getWordJoiner() {
 		return wordJoiner;
+	}
+
+	private String capitalizeFirstChar(final String str) {
+		// http://stackoverflow.com/a/3904607/1391325
+		return str.substring(0, 1).toUpperCase(uttLocale) + str.substring(1);
 	}
 
 	private List<Entry<String, String>> createDialogTurnReprs(final Iterator<Utterance> uttIter) {

@@ -32,6 +32,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
@@ -43,7 +44,6 @@ import org.slf4j.LoggerFactory;
 import iristk.system.Event;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
-import se.kth.speech.coin.tangrams.analysis.dialogues.UtteranceDialogueRepresentationStringFactory;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionContextFactory;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
@@ -83,8 +83,6 @@ final class UtteranceTabularDataWriter {
 
 	private static final String TABLE_STRING_REPR_ROW_DELIMITER;
 
-	private static final UtteranceDialogueRepresentationStringFactory UTT_DIAG_REPR_FACTORY = new UtteranceDialogueRepresentationStringFactory();
-
 	static {
 		TABLE_STRING_REPR_ROW_DELIMITER = System.lineSeparator();
 		TABLE_ROW_JOINER = Collectors.joining(TABLE_STRING_REPR_ROW_DELIMITER);
@@ -122,11 +120,15 @@ final class UtteranceTabularDataWriter {
 
 	private final boolean strict;
 
+	private final Function<? super Iterator<Utterance>, String> uttDiagReprFactory;
+
 	UtteranceTabularDataWriter(final EntityFeature.Extractor extractor, final List<EntityFeature> featuresToDescribe,
-			final EntityFeatureExtractionContextFactory extractionContextFactory, final boolean strict) {
+			final EntityFeatureExtractionContextFactory extractionContextFactory,
+			final Function<? super Iterator<Utterance>, String> uttDiagReprFactory, final boolean strict) {
 		this.extractor = extractor;
 		this.featuresToDescribe = featuresToDescribe;
 		this.extractionContextFactory = extractionContextFactory;
+		this.uttDiagReprFactory = uttDiagReprFactory;
 		this.strict = strict;
 	}
 
@@ -341,7 +343,7 @@ final class UtteranceTabularDataWriter {
 			writer.write(evtImgVizInfoDesc);
 			writer.write(TABLE_STRING_REPR_COL_DELIMITER);
 
-			final String eventDialogStr = UTT_DIAG_REPR_FACTORY.apply(diagUtts.iterator());
+			final String eventDialogStr = uttDiagReprFactory.apply(diagUtts.iterator());
 			writer.write(eventDialogStr);
 		}
 	}

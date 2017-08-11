@@ -28,10 +28,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 import javax.swing.JFileChooser;
@@ -50,6 +52,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import se.kth.speech.awt.LookAndFeels;
+import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
+import se.kth.speech.coin.tangrams.analysis.dialogues.UtteranceDialogueRepresentationStringFactory;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionContextFactory;
 import se.kth.speech.coin.tangrams.analysis.features.ImageEdgeCounter;
@@ -212,8 +216,10 @@ final class UtteranceSelectedEntityDescriptionWriter {
 			final String outfileNamePrefix, final boolean strict) {
 		final List<EntityFeature> featuresToDescribe = Arrays.asList(EntityFeature.POSITION_X, EntityFeature.POSITION_Y,
 				EntityFeature.EDGE_COUNT);
-		return new UtteranceSelectedEntityDescriptionWriter(new EntityFeature.Extractor(), featuresToDescribe, outpath,
-				outfileNamePrefix, strict);
+		final UtteranceDialogueRepresentationStringFactory uttDiagReprFactory = new UtteranceDialogueRepresentationStringFactory(
+				DataLanguageDefaults.getLocale());
+		return new UtteranceSelectedEntityDescriptionWriter(new EntityFeature.Extractor(), featuresToDescribe,
+				uttDiagReprFactory, outpath, outfileNamePrefix, strict);
 	}
 
 	private static Settings loadClassSettings() {
@@ -316,11 +322,15 @@ final class UtteranceSelectedEntityDescriptionWriter {
 
 	private final boolean strict;
 
+	private final Function<? super Iterator<Utterance>, String> uttDiagReprFactory;
+
 	private UtteranceSelectedEntityDescriptionWriter(final EntityFeature.Extractor extractor,
-			final List<EntityFeature> featuresToDescribe, final Path outdir, final String outfileNamePrefix,
-			final boolean strict) {
+			final List<EntityFeature> featuresToDescribe,
+			final Function<? super Iterator<Utterance>, String> uttDiagReprFactory, final Path outdir,
+			final String outfileNamePrefix, final boolean strict) {
 		this.extractor = extractor;
 		this.featuresToDescribe = featuresToDescribe;
+		this.uttDiagReprFactory = uttDiagReprFactory;
 		this.outdir = outdir;
 		this.outfileNamePrefix = outfileNamePrefix;
 		this.strict = strict;
@@ -343,7 +353,7 @@ final class UtteranceSelectedEntityDescriptionWriter {
 		final EntityFeatureExtractionContextFactory extractionContextFactory = new EntityFeatureExtractionContextFactory(
 				new GameContextModelFactory(2), new ImageEdgeCounter());
 		final UtteranceTabularDataWriter gameWriter = new UtteranceTabularDataWriter(extractor, featuresToDescribe,
-				extractionContextFactory, strict);
+				extractionContextFactory, uttDiagReprFactory, strict);
 
 		final Path extantOutdir = ensureExtantOutdir();
 		for (final Entry<String, SessionEventDialogueManager.SessionGame> playerPerspectiveGame : sessionEvtDiagMgr

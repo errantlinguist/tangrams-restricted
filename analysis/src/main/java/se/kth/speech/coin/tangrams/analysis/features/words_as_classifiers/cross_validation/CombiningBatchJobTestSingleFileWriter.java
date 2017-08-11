@@ -26,6 +26,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.EnumMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -34,6 +35,7 @@ import java.util.OptionalInt;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -49,7 +51,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import se.kth.speech.coin.tangrams.CLIParameters;
+import se.kth.speech.coin.tangrams.analysis.DataLanguageDefaults;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
+import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
+import se.kth.speech.coin.tangrams.analysis.dialogues.UtteranceDialogueRepresentationStringFactory;
 import se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttributeContext;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.EventDialogueTestResults;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.CombiningBatchJobTester.IncompleteResults;
@@ -109,7 +114,7 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 		return result;
 	}
 
-	private static BufferedWriter createExtrLogFileWriter(File outFile) throws IOException {
+	private static BufferedWriter createExtrLogFileWriter(final File outFile) throws IOException {
 		Path extractionLogOutPath;
 		final String suffix = EXTRACTION_LOG_FILE_SUFFIX;
 		if (outFile == null) {
@@ -182,7 +187,8 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 									"combining-batch-tester.xml", CombiningBatchJobTestSingleFileWriter.class)) {
 								final CombiningBatchJobTester tester = new CombiningBatchJobTester(
 										backgroundJobExecutor, appCtx, writer::write, writer::writeError,
-										testerConfigurator, new ExtractionLogWriter(extrLogOut), new UtteranceRelationLogWriter(uttRelLogOut));
+										testerConfigurator, new ExtractionLogWriter(extrLogOut),
+										new UtteranceRelationLogWriter(uttRelLogOut));
 								tester.accept(input);
 							}
 							LOGGER.info("Shutting down executor service.");
@@ -219,15 +225,17 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 	private boolean writeHeader;
 
 	private CombiningBatchJobTestSingleFileWriter(final PrintWriter out, final boolean writeHeader) {
-		this(out, writeHeader, DEFAULT_DATA_TO_WRITE);
+		this(out, writeHeader, new UtteranceDialogueRepresentationStringFactory(DataLanguageDefaults.getLocale()),
+				DEFAULT_DATA_TO_WRITE);
 	}
 
 	private CombiningBatchJobTestSingleFileWriter(final PrintWriter out, final boolean writeHeader,
+			final Function<? super Iterator<Utterance>, String> uttDiagReprFactory,
 			final List<DialogueAnalysisSummaryFactory.SummaryDatum> dataToWrite) {
 		this.out = out;
 		this.writeHeader = writeHeader;
 		this.dataToWrite = dataToWrite;
-		rowDataFactory = new DialogueAnalysisSummaryFactory(dataToWrite);
+		rowDataFactory = new DialogueAnalysisSummaryFactory(uttDiagReprFactory, dataToWrite);
 	}
 
 	public void write(final BatchJobSummary summary) {

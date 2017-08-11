@@ -17,6 +17,7 @@
 package se.kth.speech.coin.tangrams.analysis.dialogues;
 
 import java.util.Arrays;
+import java.util.Locale;
 import java.util.stream.Stream;
 
 import org.junit.Assert;
@@ -29,7 +30,8 @@ import org.junit.Test;
  */
 public final class UtteranceDialogueRepresentationStringFactoryTest {
 
-	private static final UtteranceDialogueRepresentationStringFactory TEST_INST = new UtteranceDialogueRepresentationStringFactory();
+	private static final UtteranceDialogueRepresentationStringFactory TEST_INST = new UtteranceDialogueRepresentationStringFactory(
+			Locale.US);
 
 	@Test
 	public void testApply() {
