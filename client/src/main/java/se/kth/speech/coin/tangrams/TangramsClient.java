@@ -223,7 +223,7 @@ final class TangramsClient implements Runnable {
 									"Path \"{}\" was supplied for session log copy dir but it's not a valid directory (yet?); Will try copying after the session is over anyways.",
 									copyDirPath);
 						}
-						logArchiveCopier = new SessionLogArchiveCopier(copyDirPath);
+						logArchiveCopier = new SessionLogArchiveCopier(copyDirPath, System.out);
 					}
 
 					final TangramsClient client = new TangramsClient(PROPS.getProperty("broker.ticket"), brokerHost,
