@@ -49,8 +49,8 @@ import it.unimi.dsi.fastutil.ints.IntSet;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import se.kth.speech.coin.tangrams.analysis.GameContext;
 import se.kth.speech.coin.tangrams.analysis.GameHistory;
-import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManager;
-import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManagerCacheSupplier;
+import se.kth.speech.coin.tangrams.analysis.SessionGameManager;
+import se.kth.speech.coin.tangrams.analysis.SessionGameManagerCacheSupplier;
 import se.kth.speech.coin.tangrams.analysis.SessionGame;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
@@ -337,7 +337,7 @@ public final class Tester {
 	private int iterCount = 1;
 
 	@Inject
-	private SessionEventDialogueManagerCacheSupplier sessionDiagMgrCacheSupplier;
+	private SessionGameManagerCacheSupplier sessionDiagMgrCacheSupplier;
 
 	@Inject
 	private WordClassDiscountingSmoother smoother;
@@ -485,7 +485,7 @@ public final class Tester {
 		return result;
 	}
 
-	private SessionTestResults testSession(final SessionEventDialogueManager sessionEventDiagMgr,
+	private SessionTestResults testSession(final SessionGameManager sessionEventDiagMgr,
 			final EventDialogueClassifier diagClassifier) throws ClassificationException {
 		final SessionGame canonicalGame = sessionEventDiagMgr.getCanonicalGame();
 		final List<EventDialogue> uttDiags = canonicalGame.getEventDialogues();

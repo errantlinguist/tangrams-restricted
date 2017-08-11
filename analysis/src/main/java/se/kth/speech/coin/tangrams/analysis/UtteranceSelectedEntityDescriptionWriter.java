@@ -349,7 +349,7 @@ final class UtteranceSelectedEntityDescriptionWriter {
 
 	private void accept(final SessionDataManager sessionData, final String outfileNamePrefix)
 			throws JAXBException, IOException {
-		final SessionEventDialogueManager sessionEvtDiagMgr = new SessionEventDialogueManager(sessionData);
+		final SessionGameManager sessionEvtDiagMgr = new SessionGameManager(sessionData);
 		final EntityFeatureExtractionContextFactory extractionContextFactory = new EntityFeatureExtractionContextFactory(
 				new GameContextModelFactory(2), new ImageEdgeCounter());
 		final UtteranceTabularDataWriter gameWriter = new UtteranceTabularDataWriter(extractor, featuresToDescribe,

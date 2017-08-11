@@ -29,8 +29,8 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManager;
-import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManagerCacheSupplier;
+import se.kth.speech.coin.tangrams.analysis.SessionGameManager;
+import se.kth.speech.coin.tangrams.analysis.SessionGameManagerCacheSupplier;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.TrainingInstancesFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.WordClassificationData;
 import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
@@ -62,10 +62,10 @@ public final class TestSetFactory {
 
 	private final TrainingInstancesFactory instancesFactory;
 
-	private final SessionEventDialogueManagerCacheSupplier sessionDiagMgrCacheSupplier;
+	private final SessionGameManagerCacheSupplier sessionDiagMgrCacheSupplier;
 
 	public TestSetFactory(final TrainingInstancesFactory instancesFactory,
-			final SessionEventDialogueManagerCacheSupplier sessionDiagMgrCacheSupplier) {
+			final SessionGameManagerCacheSupplier sessionDiagMgrCacheSupplier) {
 		this.instancesFactory = instancesFactory;
 		this.sessionDiagMgrCacheSupplier = sessionDiagMgrCacheSupplier;
 	}
@@ -103,10 +103,10 @@ public final class TestSetFactory {
 		{
 			final SessionDataManager[] trainingSessionDataMgrs = allSessions.stream()
 					.filter(sessionData -> !sessionData.equals(testSessionDataMgr)).toArray(SessionDataManager[]::new);
-			final List<SessionEventDialogueManager> trainingSessionEvtDiagMgrs = new ArrayList<>(
+			final List<SessionGameManager> trainingSessionEvtDiagMgrs = new ArrayList<>(
 					trainingSessionDataMgrs.length);
 			for (final SessionDataManager trainingSessionDatum : trainingSessionDataMgrs) {
-				final SessionEventDialogueManager sessionEventDiagMgr = sessionDiagMgrCacheSupplier.get()
+				final SessionGameManager sessionEventDiagMgr = sessionDiagMgrCacheSupplier.get()
 						.get(trainingSessionDatum);
 				trainingSessionEvtDiagMgrs.add(sessionEventDiagMgr);
 			}

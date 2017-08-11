@@ -19,7 +19,7 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.train
 import java.util.Collection;
 import java.util.function.Function;
 
-import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManager;
+import se.kth.speech.coin.tangrams.analysis.SessionGameManager;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -27,6 +27,6 @@ import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManager;
  *
  */
 public interface TrainingInstancesFactory
-		extends Function<Collection<SessionEventDialogueManager>, WordClassificationData> {
+		extends Function<Collection<SessionGameManager>, WordClassificationData> {
 
 }

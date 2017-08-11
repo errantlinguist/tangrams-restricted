@@ -34,9 +34,9 @@ import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
  * @since 12 May 2017
  *
  */
-public final class SessionEventDialogueManager {
+public final class SessionGameManager {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(SessionEventDialogueManager.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(SessionGameManager.class);
 
 	private final SessionGame canonicalGame;
 
@@ -44,7 +44,7 @@ public final class SessionEventDialogueManager {
 
 	private final List<Utterance> utts;
 
-	SessionEventDialogueManager(final SessionDataManager sessionData) throws IOException, JAXBException {
+	SessionGameManager(final SessionDataManager sessionData) throws IOException, JAXBException {
 		utts = SessionUtterances.createUtteranceList(sessionData);
 		LOGGER.debug("Creating dialogues for {} annotated utterance(s).", utts.size());
 

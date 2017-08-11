@@ -27,7 +27,7 @@ import com.google.common.collect.Maps;
 
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
-import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManager;
+import se.kth.speech.coin.tangrams.analysis.SessionGameManager;
 import se.kth.speech.coin.tangrams.analysis.SessionGame;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
 import se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttributeContext;
@@ -77,7 +77,7 @@ abstract class AbstractSizeEstimatingInstancesMapFactory implements TrainingInst
 	}
 
 	@Override
-	public WordClassificationData apply(final Collection<SessionEventDialogueManager> sessionEventDiagMgrs) {
+	public WordClassificationData apply(final Collection<SessionGameManager> sessionEventDiagMgrs) {
 		final int estClassCount = estimateVocabTypeCount(sessionEventDiagMgrs);
 		final Map<String, Instances> classInstances = Maps.newHashMapWithExpectedSize(estClassCount);
 		final Function<String, Instances> classInstancesFetcher = className -> classInstances.computeIfAbsent(className,
@@ -91,7 +91,7 @@ abstract class AbstractSizeEstimatingInstancesMapFactory implements TrainingInst
 		classObservationCounts.defaultReturnValue(0);
 		final WordClassificationData result = new WordClassificationData(classInstances, classObservationCounts,
 				classInstancesFetcher);
-		for (final SessionEventDialogueManager sessionEventDiagMgr : sessionEventDiagMgrs) {
+		for (final SessionGameManager sessionEventDiagMgr : sessionEventDiagMgrs) {
 			addTrainingData(sessionEventDiagMgr.getCanonicalGame(), result);
 		}
 		return result;

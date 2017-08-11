@@ -34,7 +34,7 @@ import org.springframework.context.ApplicationContext;
 
 import edu.stanford.nlp.trees.Tree;
 import edu.stanford.nlp.util.CoreMap;
-import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManagerCacheSupplier;
+import se.kth.speech.coin.tangrams.analysis.SessionGameManagerCacheSupplier;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.CachingEventDialogueTransformer;
@@ -135,8 +135,8 @@ final class CombiningBatchJobTester {
 
 	void accept(final Input input) throws ClassificationException, ExecutionException, IOException {
 		LOGGER.debug("Bean names: {}", Arrays.toString(appCtx.getBeanDefinitionNames()));
-		final SessionEventDialogueManagerCacheSupplier sessionDiagMgrCacheSupplier = appCtx
-				.getBean(SessionEventDialogueManagerCacheSupplier.class);
+		final SessionGameManagerCacheSupplier sessionDiagMgrCacheSupplier = appCtx
+				.getBean(SessionGameManagerCacheSupplier.class);
 
 		for (final Set<Cleaning> cleaningMethodSet : input.cleaningMethods) {
 			for (final Training trainingMethod : input.trainingMethods) {

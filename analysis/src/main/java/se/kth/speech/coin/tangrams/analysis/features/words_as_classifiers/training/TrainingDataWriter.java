@@ -40,8 +40,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.support.FileSystemXmlApplicationContext;
 
 import se.kth.speech.coin.tangrams.CLIParameters;
-import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManager;
-import se.kth.speech.coin.tangrams.analysis.SessionEventDialogueManagerCacheSupplier;
+import se.kth.speech.coin.tangrams.analysis.SessionGameManager;
+import se.kth.speech.coin.tangrams.analysis.SessionGameManagerCacheSupplier;
 import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
 import weka.core.Instances;
 import weka.core.converters.AbstractFileSaver;
@@ -153,8 +153,8 @@ final class TrainingDataWriter {
 						.toArray(String[]::new);
 				try (final FileSystemXmlApplicationContext appCtx = new FileSystemXmlApplicationContext(appCtxLocs)) {
 					final TrainingInstancesFactory instsFactory = appCtx.getBean(TrainingInstancesFactory.class);
-					final SessionEventDialogueManagerCacheSupplier sessionDiagMgrCacheSupplier = appCtx
-							.getBean(SessionEventDialogueManagerCacheSupplier.class);
+					final SessionGameManagerCacheSupplier sessionDiagMgrCacheSupplier = appCtx
+							.getBean(SessionGameManagerCacheSupplier.class);
 					final TrainingDataWriter writer = new TrainingDataWriter(instsFactory, sessionDiagMgrCacheSupplier);
 					final WordClassificationData trainingData = writer.apply(inpaths);
 					if (outdir.mkdirs()) {
@@ -179,10 +179,10 @@ final class TrainingDataWriter {
 
 	private final TrainingInstancesFactory instancesFactory;
 
-	private final SessionEventDialogueManagerCacheSupplier sessionEvtDiagMgrSupplier;
+	private final SessionGameManagerCacheSupplier sessionEvtDiagMgrSupplier;
 
 	private TrainingDataWriter(final TrainingInstancesFactory instancesFactory,
-			final SessionEventDialogueManagerCacheSupplier sessionEvtDiagMgrSupplier) {
+			final SessionGameManagerCacheSupplier sessionEvtDiagMgrSupplier) {
 		this.instancesFactory = instancesFactory;
 		this.sessionEvtDiagMgrSupplier = sessionEvtDiagMgrSupplier;
 	}
@@ -190,9 +190,9 @@ final class TrainingDataWriter {
 	private WordClassificationData apply(final Iterable<Path> inpaths) throws IOException {
 		final Collection<SessionDataManager> infileSessionData = SessionDataManager.createFileSessionDataMap(inpaths)
 				.values();
-		final List<SessionEventDialogueManager> sessionEvtDiagMgrs = new ArrayList<>(infileSessionData.size());
+		final List<SessionGameManager> sessionEvtDiagMgrs = new ArrayList<>(infileSessionData.size());
 		for (final SessionDataManager sessionDatum : infileSessionData) {
-			final SessionEventDialogueManager sessionEventDiagMgr = sessionEvtDiagMgrSupplier.get()
+			final SessionGameManager sessionEventDiagMgr = sessionEvtDiagMgrSupplier.get()
 					.getUnchecked(sessionDatum);
 			sessionEvtDiagMgrs.add(sessionEventDiagMgr);
 		}

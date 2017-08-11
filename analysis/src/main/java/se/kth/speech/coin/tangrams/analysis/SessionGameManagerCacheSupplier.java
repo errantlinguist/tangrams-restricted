@@ -34,16 +34,15 @@ import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
  *
  */
 @Named
-public final class SessionEventDialogueManagerCacheSupplier
-		implements Supplier<LoadingCache<SessionDataManager, SessionEventDialogueManager>> {
+public final class SessionGameManagerCacheSupplier
+		implements Supplier<LoadingCache<SessionDataManager, SessionGameManager>> {
 
-	private final LoadingCache<SessionDataManager, SessionEventDialogueManager> instances = CacheBuilder.newBuilder()
-			.build(new CacheLoader<SessionDataManager, SessionEventDialogueManager>() {
+	private final LoadingCache<SessionDataManager, SessionGameManager> instances = CacheBuilder.newBuilder()
+			.build(new CacheLoader<SessionDataManager, SessionGameManager>() {
 
 				@Override
-				public SessionEventDialogueManager load(final SessionDataManager key)
-						throws IOException, JAXBException {
-					return new SessionEventDialogueManager(key);
+				public SessionGameManager load(final SessionDataManager key) throws IOException, JAXBException {
+					return new SessionGameManager(key);
 				}
 
 			});
@@ -54,7 +53,7 @@ public final class SessionEventDialogueManagerCacheSupplier
 	 * @see java.util.function.Supplier#get()
 	 */
 	@Override
-	public LoadingCache<SessionDataManager, SessionEventDialogueManager> get() {
+	public LoadingCache<SessionDataManager, SessionGameManager> get() {
 		return instances;
 	}
 
