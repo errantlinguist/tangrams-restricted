@@ -56,7 +56,7 @@ final class EventDialogueAdjusterTable extends JTable {
 			switch (attr) {
 			case FIRST_EVENT_SENDER: {
 				col.setCellRenderer(
-						new EventDialogueFirstEventSenderRenderer(EventDialogue::getFirstEvent, NULL_VALUE_REPR));
+						new EventDialogueEventSenderRenderer(EventDialogue::getFirstEvent, NULL_VALUE_REPR));
 				break;
 			}
 			case FIRST_EVENT_TIME: {

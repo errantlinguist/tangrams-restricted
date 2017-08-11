@@ -25,7 +25,7 @@ import iristk.system.Event;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 
-final class EventDialogueFirstEventSenderRenderer extends DefaultTableCellRenderer {
+final class EventDialogueEventSenderRenderer extends DefaultTableCellRenderer {
 
 	/**
 	 *
@@ -36,7 +36,7 @@ final class EventDialogueFirstEventSenderRenderer extends DefaultTableCellRender
 
 	private final String nullValueRepr;
 
-	EventDialogueFirstEventSenderRenderer(final Function<? super EventDialogue, Optional<Event>> eventGetter,
+	EventDialogueEventSenderRenderer(final Function<? super EventDialogue, Optional<Event>> eventGetter,
 			final String nullValueRepr) {
 		this.eventGetter = eventGetter;
 		this.nullValueRepr = nullValueRepr;
