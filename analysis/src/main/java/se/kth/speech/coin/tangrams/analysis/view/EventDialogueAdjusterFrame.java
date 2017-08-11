@@ -18,6 +18,8 @@ package se.kth.speech.coin.tangrams.analysis.view;
 
 import java.awt.Container;
 import java.awt.HeadlessException;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
 import java.time.LocalDateTime;
 import java.util.Map;
 
@@ -30,6 +32,7 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.KeyStroke;
 import javax.swing.ScrollPaneConstants;
 
 final class EventDialogueAdjusterFrame extends JFrame {
@@ -70,10 +73,16 @@ final class EventDialogueAdjusterFrame extends JFrame {
 		final JMenuBar menuBar = new JMenuBar();
 		setJMenuBar(menuBar);
 		final JMenu fileMenu = new JMenu("File");
+		fileMenu.setMnemonic(KeyEvent.VK_F);
 		menuBar.add(fileMenu);
-		final JMenuItem saveItem = new JMenuItem("Export event log...");
-		saveItem.addActionListener(new SaveAction(eventLogFileChooser, this));
-		fileMenu.add(saveItem);
+		{
+			final int mnemonic = KeyEvent.VK_E;
+			final JMenuItem exportItem = new JMenuItem("Export event log...");
+			exportItem.setMnemonic(mnemonic);
+			exportItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, InputEvent.CTRL_MASK));
+			exportItem.addActionListener(new SaveAction(eventLogFileChooser, this));
+			fileMenu.add(exportItem);
+		}
 	}
 
 }
