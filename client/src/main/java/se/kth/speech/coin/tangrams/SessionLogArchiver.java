@@ -21,6 +21,7 @@ import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.Locale;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -42,6 +43,10 @@ final class SessionLogArchiver implements Supplier<Path> {
 
 	private final DirectoryZipArchiver archiver;
 
+	private final Locale filenameLocale;
+
+	private final PrintStream msgOutput;
+
 	private final String playerId;
 
 	private final Path rootLogDirPath;
@@ -49,16 +54,16 @@ final class SessionLogArchiver implements Supplier<Path> {
 	private final Date systemLoggingStartTime;
 
 	private final Supplier<? extends Path> timestampedLogDirPathSupplier;
-	
-	private final PrintStream msgOutput;
 
 	SessionLogArchiver(final Path rootLogDirPath, final Date systemLoggingStartTime,
-			final Supplier<? extends Path> timestampedLogDirPathSupplier, final String playerId, final PrintStream msgOutput) {
+			final Supplier<? extends Path> timestampedLogDirPathSupplier, final String playerId,
+			final PrintStream msgOutput, final Locale filenameLocale) {
 		this.rootLogDirPath = rootLogDirPath;
 		this.systemLoggingStartTime = systemLoggingStartTime;
 		this.timestampedLogDirPathSupplier = timestampedLogDirPathSupplier;
 		this.playerId = playerId;
 		this.msgOutput = msgOutput;
+		this.filenameLocale = filenameLocale;
 		final Function<Path, String> playerIdAppender = relSourceFilePath -> {
 			final Path filenamePath = relSourceFilePath.getFileName();
 			final String[] filenameParts = FileNames.splitBase(filenamePath.toString());
@@ -84,8 +89,8 @@ final class SessionLogArchiver implements Supplier<Path> {
 	 */
 	@Override
 	public Path get() {
-		final String archiveFilename = new SimpleDateFormat("yyyyMMdd-HHmm").format(systemLoggingStartTime) + "-"
-				+ playerId + ".zip";
+		final String archiveFilename = new SimpleDateFormat("yyyyMMdd-HHmm", filenameLocale)
+				.format(systemLoggingStartTime) + "-" + playerId + ".zip";
 		final Path result = rootLogDirPath.resolve(archiveFilename);
 		msgOutput.println(String.format("Archiving session logs to \"%s\"...", result));
 		LOGGER.info("Archiving session logs to \"{}\"...", result);

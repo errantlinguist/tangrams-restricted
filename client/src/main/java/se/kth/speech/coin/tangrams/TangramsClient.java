@@ -30,6 +30,7 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.EnumMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -183,6 +184,8 @@ final class TangramsClient implements Runnable {
 	}
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(TangramsClient.class);
+
+	private static final Locale OUTPUT_FILENAME_LOCALE = Locale.US;
 
 	private static final Properties PROPS;
 
@@ -471,7 +474,8 @@ final class TangramsClient implements Runnable {
 														// executor be shut down
 														final Supplier<Path> sessionLogArchiver = new SessionLogArchiver(
 																rootLogDirPath, systemLoggingStartTime,
-																timestampedLogDirPathSupplier, playerId, msgOutput);
+																timestampedLogDirPathSupplier, playerId, msgOutput,
+																OUTPUT_FILENAME_LOCALE);
 														CompletableFuture
 																.supplyAsync(sessionLogArchiver, backgroundJobService)
 																.thenAccept(logArchivePostprocessingHook);
