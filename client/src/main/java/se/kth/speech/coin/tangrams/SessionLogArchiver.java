@@ -16,6 +16,7 @@
 */
 package se.kth.speech.coin.tangrams;
 
+import java.io.PrintStream;
 import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
@@ -48,13 +49,16 @@ final class SessionLogArchiver implements Supplier<Path> {
 	private final Date systemLoggingStartTime;
 
 	private final Supplier<? extends Path> timestampedLogDirPathSupplier;
+	
+	private final PrintStream msgOutput;
 
 	SessionLogArchiver(final Path rootLogDirPath, final Date systemLoggingStartTime,
-			final Supplier<? extends Path> timestampedLogDirPathSupplier, final String playerId) {
+			final Supplier<? extends Path> timestampedLogDirPathSupplier, final String playerId, final PrintStream msgOutput) {
 		this.rootLogDirPath = rootLogDirPath;
 		this.systemLoggingStartTime = systemLoggingStartTime;
 		this.timestampedLogDirPathSupplier = timestampedLogDirPathSupplier;
 		this.playerId = playerId;
+		this.msgOutput = msgOutput;
 		final Function<Path, String> playerIdAppender = relSourceFilePath -> {
 			final Path filenamePath = relSourceFilePath.getFileName();
 			final String[] filenameParts = FileNames.splitBase(filenamePath.toString());
@@ -83,11 +87,11 @@ final class SessionLogArchiver implements Supplier<Path> {
 		final String archiveFilename = new SimpleDateFormat("yyyyMMdd-HHmm").format(systemLoggingStartTime) + "-"
 				+ playerId + ".zip";
 		final Path result = rootLogDirPath.resolve(archiveFilename);
-		System.out.println(String.format("Archiving session logs to \"%s\"...", result));
+		msgOutput.println(String.format("Archiving session logs to \"%s\"...", result));
 		LOGGER.info("Archiving session logs to \"{}\"...", result);
 		archiver.accept(timestampedLogDirPathSupplier.get(), result);
 		LOGGER.info("Finished archiving session logs to \"{}\".", result);
-		System.out.println(String.format("Finished archiving session logs to \"%s\".", result));
+		msgOutput.println(String.format("Finished archiving session logs to \"%s\".", result));
 		return result;
 	}
 

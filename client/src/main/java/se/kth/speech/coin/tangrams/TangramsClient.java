@@ -21,6 +21,7 @@ import java.awt.EventQueue;
 import java.awt.Point;
 import java.io.File;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.io.UncheckedIOException;
 import java.lang.reflect.InvocationTargetException;
 import java.nio.file.Files;
@@ -195,6 +196,7 @@ final class TangramsClient implements Runnable {
 
 	public static void main(final String[] args) {
 		final CommandLineParser parser = new DefaultParser();
+		final PrintStream msgOutput = System.out;
 		try {
 			final CommandLine cl = parser.parse(Parameter.OPTIONS, args);
 			if (cl.hasOption(Parameter.HELP.optName)) {
@@ -223,20 +225,20 @@ final class TangramsClient implements Runnable {
 									"Path \"{}\" was supplied for session log copy dir but it's not a valid directory (yet?); Will try copying after the session is over anyways.",
 									copyDirPath);
 						}
-						logArchiveCopier = new SessionLogArchiveCopier(copyDirPath, System.out);
+						logArchiveCopier = new SessionLogArchiveCopier(copyDirPath, msgOutput);
 					}
 
 					final TangramsClient client = new TangramsClient(PROPS.getProperty("broker.ticket"), brokerHost,
-							brokerPort, analysisEnabled, recordingEnabled, logArchiveCopier);
+							brokerPort, analysisEnabled, recordingEnabled, logArchiveCopier, msgOutput);
 					client.run();
 
 				} catch (final ParseException e) {
-					System.out.println(String.format("Could not parse option: %s", e.getLocalizedMessage()));
+					msgOutput.println(String.format("Could not parse option: %s", e.getLocalizedMessage()));
 					Parameter.printHelp();
 				}
 			}
 		} catch (final ParseException e) {
-			System.out.println(String.format("An error occured while parsing the command-line arguments: %s", e));
+			msgOutput.println(String.format("An error occured while parsing the command-line arguments: %s", e));
 			Parameter.printHelp();
 		}
 	}
@@ -350,17 +352,20 @@ final class TangramsClient implements Runnable {
 
 	private final Consumer<? super Path> logArchivePostprocessingHook;
 
+	private final PrintStream msgOutput;
+
 	private final boolean recordingEnabled;
 
 	private TangramsClient(final String brokerTicket, final String brokerHost, final int brokerPort,
 			final boolean analysisEnabled, final boolean recordingEnabled,
-			final Consumer<? super Path> logArchivePostprocessingHook) {
+			final Consumer<? super Path> logArchivePostprocessingHook, final PrintStream msgOutput) {
 		this.brokerTicket = brokerTicket;
 		this.brokerHost = brokerHost;
 		this.brokerPort = brokerPort;
 		this.analysisEnabled = analysisEnabled;
 		this.recordingEnabled = recordingEnabled;
 		this.logArchivePostprocessingHook = logArchivePostprocessingHook;
+		this.msgOutput = msgOutput;
 	}
 
 	@Override
@@ -466,7 +471,7 @@ final class TangramsClient implements Runnable {
 														// executor be shut down
 														final Supplier<Path> sessionLogArchiver = new SessionLogArchiver(
 																rootLogDirPath, systemLoggingStartTime,
-																timestampedLogDirPathSupplier, playerId);
+																timestampedLogDirPathSupplier, playerId, msgOutput);
 														CompletableFuture
 																.supplyAsync(sessionLogArchiver, backgroundJobService)
 																.thenAccept(logArchivePostprocessingHook);
