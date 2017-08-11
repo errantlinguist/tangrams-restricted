@@ -46,7 +46,7 @@ final class EventDialogueAdjusterFrame extends JFrame {
 
 		final JPanel actionPanel = new JPanel();
 		content.add(actionPanel);
-		final JButton minimizeEventTimeButton = new JButton("Minimize event time");
+		final JButton minimizeEventTimeButton = new JButton("Minimize following event time");
 		minimizeEventTimeButton.addActionListener(new FollowingEventTimeMinimizer(diagTable, this, gameStartTime));
 		actionPanel.add(minimizeEventTimeButton);
 	}
