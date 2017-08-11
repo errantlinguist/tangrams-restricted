@@ -41,23 +41,18 @@ final class EventDialogueTableModel extends AbstractTableModel {
 		return atts.length <= colIdx ? null : atts[colIdx];
 	}
 
-	private final List<EventDialogue> diags;
-
-	private final List<Event> events;
+	private final SessionGame game;
 
 	private final Function<? super LocalDateTime, String> timeFormatter;
 
 	private final Function<? super String, LocalDateTime> timeParser;
 
-	private final List<Utterance> utts;
-
-	EventDialogueTableModel(final Function<? super String, LocalDateTime> timeParser,
-			final Function<? super LocalDateTime, String> timeFormatter, final SessionGame game) {
+	EventDialogueTableModel(final SessionGame game, final Function<? super String, LocalDateTime> timeParser,
+			final Function<? super LocalDateTime, String> timeFormatter) {
+		this.game = game;
 		this.timeParser = timeParser;
 		this.timeFormatter = timeFormatter;
-		events = game.getEvents();
-		utts = game.getUtterances();
-		diags = game.getEventDialogues();
+
 	}
 
 	/*
@@ -96,7 +91,8 @@ final class EventDialogueTableModel extends AbstractTableModel {
 	 */
 	@Override
 	public int getColumnCount() {
-		final int maxUttCount = diags.stream().map(EventDialogue::getUtterances).mapToInt(List::size).max().orElse(0);
+		final int maxUttCount = game.getEventDialogues().stream().map(EventDialogue::getUtterances).mapToInt(List::size)
+				.max().orElse(0);
 		return maxUttCount + 1;
 	}
 
@@ -125,7 +121,7 @@ final class EventDialogueTableModel extends AbstractTableModel {
 	 */
 	@Override
 	public int getRowCount() {
-		return diags.size();
+		return game.getEventDialogues().size();
 	}
 
 	/*
@@ -135,7 +131,7 @@ final class EventDialogueTableModel extends AbstractTableModel {
 	 */
 	@Override
 	public Object getValueAt(final int rowIndex, final int columnIndex) {
-		final EventDialogue diag = diags.get(rowIndex);
+		final EventDialogue diag = game.getEventDialogues().get(rowIndex);
 		final Object result;
 		final EventDialogueAttribute colEventDiagAttr = getColumnEventDialogueAttribute(columnIndex);
 		if (colEventDiagAttr == null) {
@@ -175,7 +171,7 @@ final class EventDialogueTableModel extends AbstractTableModel {
 	 */
 	@Override
 	public void setValueAt(final Object aValue, final int rowIndex, final int columnIndex) {
-		final EventDialogue diag = diags.get(rowIndex);
+		final EventDialogue diag = game.getEventDialogues().get(rowIndex);
 		final EventDialogueAttribute colEventDiagAttr = getColumnEventDialogueAttribute(columnIndex);
 		if (colEventDiagAttr == null) {
 			final List<Utterance> diagUtts = diag.getUtterances();

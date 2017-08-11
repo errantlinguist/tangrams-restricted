@@ -89,7 +89,7 @@ public final class SessionEventLogAdjusterGUI implements Runnable {
 		final LocalDateTime gameStart = game.getHistory().getStartTime();
 		final String title = createHistoryTitleStr(game.getGameId(), gameStart);
 		final EventDialogueAdjusterTable diagTable = new EventDialogueAdjusterTable(
-				new EventDialogueTableModel(TIME_PARSER, TIME_FORMATTER, game),
+				new EventDialogueTableModel(game, TIME_PARSER, TIME_FORMATTER),
 				createDefaultRendererMap().entrySet().stream());
 		setMaxPreferredScrollableViewportSize(diagTable);
 
