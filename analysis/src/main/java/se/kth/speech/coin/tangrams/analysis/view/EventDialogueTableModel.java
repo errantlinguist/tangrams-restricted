@@ -100,7 +100,8 @@ final class EventDialogueTableModel extends AbstractTableModel {
 	 */
 	@Override
 	public int getColumnCount() {
-		final int maxUttCount = Arrays.stream(diags).map(EventDialogue::getUtterances).mapToInt(List::size).max().orElse(0);
+		final int maxUttCount = Arrays.stream(diags).map(EventDialogue::getUtterances).mapToInt(List::size).max()
+				.orElse(0);
 		return maxUttCount + 1;
 	}
 
@@ -150,6 +151,18 @@ final class EventDialogueTableModel extends AbstractTableModel {
 			result = diag;
 		}
 		return result;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 *
+	 * @see javax.swing.table.AbstractTableModel#setValueAt(java.lang.Object,
+	 * int, int)
+	 */
+	@Override
+	public void setValueAt(final Object aValue, final int rowIndex, final int columnIndex) {
+		super.setValueAt(aValue, rowIndex, columnIndex);
+		fireTableDataChanged();
 	}
 
 }

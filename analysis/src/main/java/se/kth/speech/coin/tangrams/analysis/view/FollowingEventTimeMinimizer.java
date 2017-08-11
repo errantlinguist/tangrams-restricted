@@ -23,6 +23,7 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Optional;
+import java.util.stream.IntStream;
 
 import javax.swing.JOptionPane;
 import javax.swing.JTable;
@@ -43,9 +44,9 @@ final class FollowingEventTimeMinimizer implements ActionListener {
 
 	private final Component dialogueMessageParentComponent;
 
-	private final LocalDateTime gameStartTime;
+	private final int firstEvtTimeColIdx;
 
-	private final RowEventDialogueGetter rowEvtDiagGetter;
+	private final LocalDateTime gameStartTime;
 
 	FollowingEventTimeMinimizer(final JTable diagTable, final Component dialogueMessageParentComponent,
 			final LocalDateTime gameStartTime) {
@@ -53,7 +54,10 @@ final class FollowingEventTimeMinimizer implements ActionListener {
 		this.dialogueMessageParentComponent = dialogueMessageParentComponent;
 		this.gameStartTime = gameStartTime;
 
-		rowEvtDiagGetter = new RowEventDialogueGetter(diagTable);
+		firstEvtTimeColIdx = IntStream.range(0, diagTable.getColumnCount()).filter(colIdx -> {
+			final String colName = diagTable.getColumnName(colIdx);
+			return EventDialogueAttribute.FIRST_EVENT_TIME.toString().equals(colName);
+		}).findAny().getAsInt();
 	}
 
 	/*
@@ -66,12 +70,17 @@ final class FollowingEventTimeMinimizer implements ActionListener {
 	public void actionPerformed(final ActionEvent event) {
 		final int[] selectedRows = diagTable.getSelectedRows();
 		for (final int rowIdx : selectedRows) {
-			final EventDialogue rowEventDiag = rowEvtDiagGetter.apply(rowIdx);
+			// NOTE: Even though the last event of the selected row is used for
+			// comparison, the actual EventDialogue instannce backing both the
+			// first and last event columns is the same
+			final EventDialogue rowEventDiag = (EventDialogue) diagTable.getValueAt(rowIdx, firstEvtTimeColIdx);
 			final Optional<LocalDateTime> optLatestEvtDiagTime = findLatestEventDialogueTime(rowEventDiag);
 			if (optLatestEvtDiagTime.isPresent()) {
 				final LocalDateTime lastestEvtDiagTime = optLatestEvtDiagTime.get();
+				final int followingRowIdx = rowIdx + 1;
 				try {
-					final EventDialogue followingRowEventDiag = rowEvtDiagGetter.apply(rowIdx + 1);
+					final EventDialogue followingRowEventDiag = (EventDialogue) diagTable.getValueAt(followingRowIdx,
+							firstEvtTimeColIdx);
 					final Optional<Event> optFollowingRowFirstEvent = followingRowEventDiag.getFirstEvent();
 					if (optFollowingRowFirstEvent.isPresent()) {
 						final Event followingRowFirstEvent = optFollowingRowFirstEvent.get();
@@ -83,7 +92,7 @@ final class FollowingEventTimeMinimizer implements ActionListener {
 							followingRowFirstEvent.setTime(newEventTimeStr);
 							LOGGER.info("Set time of event ID \"{}\" to \"{}\".", followingRowFirstEvent.getId(),
 									newEventTimeStr);
-							diagTable.repaint();
+							diagTable.setValueAt(followingRowEventDiag, followingRowIdx, firstEvtTimeColIdx);
 						} else if (timeCmp > 0) {
 							JOptionPane.showMessageDialog(dialogueMessageParentComponent,
 									String.format(
