@@ -105,8 +105,6 @@ final class FollowingEventTimeMinimizer implements ActionListener {
 					final int timeCmp = lastestEvtDiagTime.compareTo(followingRowFirstEventTime);
 					if (timeCmp < 0) {
 						final String newEventTimeStr = EventTimes.FORMATTER.format(lastestEvtDiagTime);
-						// Explicitly call method to fire a model update
-						// event
 						diagTable.setValueAt(lastestEvtDiagTime, followingRowIdx, firstEventColIdx);
 						LOGGER.info("Set time of first event for row {} to \"{}\".", followingRowIdx, newEventTimeStr);
 					} else if (timeCmp > 0) {
