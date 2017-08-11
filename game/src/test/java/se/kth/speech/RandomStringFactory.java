@@ -29,6 +29,8 @@ public final class RandomStringFactory implements Supplier<String> {
 
 	private static final char[] DEFAULT_SYMBOLS = createDefaultSymbolArray();
 
+	private static final int MIN_LENGTH = 1;
+
 	private static char[] createDefaultSymbolArray() {
 		final StringBuilder tmp = new StringBuilder();
 		for (char ch = '0'; ch <= '9'; ++ch) {
@@ -50,8 +52,8 @@ public final class RandomStringFactory implements Supplier<String> {
 
 	public RandomStringFactory(final Random random, final int length) {
 		this.random = random;
-		if (length < 1) {
-			throw new IllegalArgumentException("length < 1: " + length);
+		if (length < MIN_LENGTH) {
+			throw new IllegalArgumentException(String.format("length < %s: %s", MIN_LENGTH, length));
 		}
 		buf = new char[length];
 	}
