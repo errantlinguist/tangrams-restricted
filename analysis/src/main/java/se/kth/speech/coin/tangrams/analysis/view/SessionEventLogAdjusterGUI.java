@@ -58,11 +58,12 @@ public final class SessionEventLogAdjusterGUI implements Runnable {
 		final JTableHeader header = table.getTableHeader();
 		final int minHeight = table.getMinimumSize().height;
 		final int maxHeight = table.getMaximumSize().height;
+		final int interRowSpacing = table.getIntercellSpacing().height;
 		int result = Math.max(header.getHeight(), minHeight);
 		if (result < maxHeight) {
 			for (int row = 0; row < table.getRowCount(); row++) {
 				final int rowHeight = table.getRowHeight(row);
-				result += rowHeight;
+				result += rowHeight + interRowSpacing;
 				if (result >= maxHeight) {
 					// We've exceeded the maximum height, no need to check
 					// other rows
