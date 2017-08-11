@@ -20,6 +20,7 @@ import java.util.List;
 import java.util.Optional;
 
 import iristk.system.Event;
+import se.kth.speech.Lists;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -39,7 +40,7 @@ public final class EventDialogue {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#equals(java.lang.Object)
 	 */
 	@Override
@@ -79,12 +80,19 @@ public final class EventDialogue {
 	}
 
 	public Optional<Event> getFirstEvent() {
-		return events.isEmpty() ? Optional.empty() : Optional.of(events.iterator().next());
+		return Lists.getFirstElement(events);
 	}
-	
-	public Optional<Event> getLastEvent(){
-		return events.isEmpty() ? Optional.empty()
-				: Optional.of(events.listIterator(events.size()).previous());		
+
+	public Optional<Utterance> getFirstUtterance() {
+		return Lists.getFirstElement(utts);
+	}
+
+	public Optional<Event> getLastEvent() {
+		return Lists.getLastElement(events);
+	}
+
+	public Optional<Utterance> getLastUtterance() {
+		return Lists.getLastElement(utts);
 	}
 
 	/**
@@ -96,7 +104,7 @@ public final class EventDialogue {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#hashCode()
 	 */
 	@Override
@@ -110,7 +118,7 @@ public final class EventDialogue {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#toString()
 	 */
 	@Override

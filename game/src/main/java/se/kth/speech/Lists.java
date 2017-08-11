@@ -21,6 +21,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -84,17 +85,25 @@ public final class Lists {
 
 	}
 
+	public static <T> Optional<T> getFirstElement(final List<? extends T> list) {
+		return list.isEmpty() ? Optional.empty() : Optional.of(list.iterator().next());
+	}
+
+	public static <T> Optional<T> getLastElement(final List<? extends T> list) {
+		return list.isEmpty() ? Optional.empty() : Optional.of(list.listIterator(list.size()).previous());
+	}
+
 	public static <T> Stream<T> unifySequenceElements(final List<T> first, final List<? extends T> second) {
 		final Stream.Builder<T> resultBuilder = Stream.builder();
 		int secondIdx = 0;
 		for (final T nextElem : first) {
 			resultBuilder.add(nextElem);
 			final ListIterator<? extends T> secondIter = second.listIterator(secondIdx);
-//			if (secondIter.hasNext()){
-//				
-//			} else {
-//				break;
-//			}
+			// if (secondIter.hasNext()){
+			//
+			// } else {
+			// break;
+			// }
 			while (secondIter.hasNext()) {
 				// Get all element in the second list which are between the
 				// position of the given element in the first list and the
