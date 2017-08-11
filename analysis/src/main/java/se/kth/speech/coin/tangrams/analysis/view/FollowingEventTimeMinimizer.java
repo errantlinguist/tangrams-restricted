@@ -93,8 +93,8 @@ final class FollowingEventTimeMinimizer implements ActionListener {
 		if (optLatestEvtDiagTime.isPresent()) {
 			final LocalDateTime lastestEvtDiagTime = optLatestEvtDiagTime.get();
 			final int followingRowIdx = rowIdx + 1;
+			final int firstEventColIdx = evtDiagAttrColIdxs.get(EventDialogueAttribute.FIRST_EVENT_TIME);
 			try {
-				final int firstEventColIdx = evtDiagAttrColIdxs.get(EventDialogueAttribute.FIRST_EVENT_TIME);
 				final LocalDateTime followingRowFirstEventTime = (LocalDateTime) diagTable.getValueAt(followingRowIdx,
 						firstEventColIdx);
 				if (followingRowFirstEventTime == null) {
