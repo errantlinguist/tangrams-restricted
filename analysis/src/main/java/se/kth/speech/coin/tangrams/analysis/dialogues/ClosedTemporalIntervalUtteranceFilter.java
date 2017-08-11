@@ -120,7 +120,7 @@ public final class ClosedTemporalIntervalUtteranceFilter implements Predicate<Ut
 		builder.append(start);
 		builder.append(", end=");
 		builder.append(end);
-		builder.append("]");
+		builder.append(']');
 		return builder.toString();
 	}
 

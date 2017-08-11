@@ -124,7 +124,7 @@ public final class EqualityMap<K, V> implements Map<K, V> {
 			builder.append(getKey());
 			builder.append(", getValue()=");
 			builder.append(getValue());
-			builder.append("]");
+			builder.append(']');
 			return builder.toString();
 		}
 
@@ -345,7 +345,7 @@ public final class EqualityMap<K, V> implements Map<K, V> {
 		final StringBuilder builder = new StringBuilder();
 		builder.append("EqualityMap [entrySet()=");
 		builder.append(entrySet());
-		builder.append("]");
+		builder.append(']');
 		return builder.toString();
 	}
 
