@@ -91,7 +91,7 @@ final class FollowingEventTimeMinimizer implements ActionListener {
 	private void minimizeFollowingEventTime(final int rowIdx) {
 		final Optional<LocalDateTime> optLatestEvtDiagTime = findLatestEventDialogueTime(rowIdx);
 		if (optLatestEvtDiagTime.isPresent()) {
-			final LocalDateTime lastestEvtDiagTime = optLatestEvtDiagTime.get();
+			final LocalDateTime latestEvtDiagTime = optLatestEvtDiagTime.get();
 			final int followingRowIdx = rowIdx + 1;
 			final int firstEventColIdx = evtDiagAttrColIdxs.get(EventDialogueAttribute.FIRST_EVENT_TIME);
 			try {
@@ -102,16 +102,16 @@ final class FollowingEventTimeMinimizer implements ActionListener {
 							"Cannot minimize event time of following row to last utterance end time because the following row has no event(s).",
 							"No events", JOptionPane.ERROR_MESSAGE);
 				} else {
-					final int timeCmp = lastestEvtDiagTime.compareTo(followingRowFirstEventTime);
+					final int timeCmp = latestEvtDiagTime.compareTo(followingRowFirstEventTime);
 					if (timeCmp < 0) {
-						diagTable.setValueAt(lastestEvtDiagTime, followingRowIdx, firstEventColIdx);
+						diagTable.setValueAt(latestEvtDiagTime, followingRowIdx, firstEventColIdx);
 						LOGGER.info("Set time of first event for row {} to \"{}\".", followingRowIdx,
-								EventTimes.FORMATTER.format(lastestEvtDiagTime));
+								EventTimes.FORMATTER.format(latestEvtDiagTime));
 					} else if (timeCmp > 0) {
 						JOptionPane.showMessageDialog(dialogueMessageParentComponent,
 								String.format(
 										"Latest time of preceding event (\"%s\") is after the time of the following event (\"%s\"), i.e. the utterance overlaps the start of the next event.",
-										EventTimes.FORMATTER.format(lastestEvtDiagTime),
+										EventTimes.FORMATTER.format(latestEvtDiagTime),
 										EventTimes.FORMATTER.format(followingRowFirstEventTime)),
 								"Overlapping times", JOptionPane.WARNING_MESSAGE);
 					} else {
