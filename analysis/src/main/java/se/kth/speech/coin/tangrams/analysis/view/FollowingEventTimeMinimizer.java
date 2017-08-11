@@ -48,11 +48,15 @@ final class FollowingEventTimeMinimizer implements ActionListener {
 
 	private final LocalDateTime gameStartTime;
 
+	private final RowEventDialogueGetter rowEvtDiagGetter;
+
 	FollowingEventTimeMinimizer(final JTable diagTable, final Component dialogueMessageParentComponent,
 			final LocalDateTime gameStartTime) {
 		this.diagTable = diagTable;
 		this.dialogueMessageParentComponent = dialogueMessageParentComponent;
 		this.gameStartTime = gameStartTime;
+
+		rowEvtDiagGetter = new RowEventDialogueGetter(diagTable);
 	}
 
 	/*
@@ -63,12 +67,6 @@ final class FollowingEventTimeMinimizer implements ActionListener {
 	 */
 	@Override
 	public void actionPerformed(final ActionEvent event) {
-		final TableModel model = diagTable.getModel();
-		// Find the index of any column with Event instances as cell
-		// values
-		final int eventAttrColIdx = IntStream.range(0, diagTable.getColumnCount())
-				.filter(colIdx -> AttributeType.EVENT_DIALOGUE.isMatchingTypeColumn(model, colIdx)).findAny()
-				.getAsInt();
 		final int[] selectedRows = diagTable.getSelectedRows();
 		for (final int rowIdx : selectedRows) {
 			final Optional<Utterance> optLastUtt = findLastUtterance(rowIdx);
@@ -77,8 +75,7 @@ final class FollowingEventTimeMinimizer implements ActionListener {
 				final LocalDateTime lastUttEndTime = TimestampArithmetic.createOffsetTimestamp(gameStartTime,
 						lastUtt.getEndTime());
 				try {
-					final EventDialogue followingRowEventDiag = (EventDialogue) diagTable.getValueAt(rowIdx + 1,
-							eventAttrColIdx);
+					final EventDialogue followingRowEventDiag = rowEvtDiagGetter.apply(rowIdx + 1);
 					final Optional<Event> optFollowingRowFirstEvent = followingRowEventDiag.getFirstEvent();
 					if (optFollowingRowFirstEvent.isPresent()) {
 						final Event followingRowFirstEvent = optFollowingRowFirstEvent.get();
