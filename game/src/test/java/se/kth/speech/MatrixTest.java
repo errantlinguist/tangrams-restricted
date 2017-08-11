@@ -37,6 +37,8 @@ import org.junit.experimental.theories.Theories;
 import org.junit.experimental.theories.Theory;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import se.kth.speech.junit.IteratorEqualityAsserter;
 
@@ -65,6 +67,8 @@ public final class MatrixTest {
 
 	private static final IteratorEqualityAsserter<Object> ITER_ASSERTER = new IteratorEqualityAsserter<>();
 
+	private static final Logger LOGGER = LoggerFactory.getLogger(MatrixTest.class);
+
 	private static final Map<Matrix<Object>, Object[]> MATRIX_VAL_ARRAYS;
 
 	static {
@@ -91,7 +95,7 @@ public final class MatrixTest {
 					final Matrix<V> m = new Matrix<>(valArray, colCount);
 					result.put(m, valArray);
 				} catch (final IllegalArgumentException e) {
-					// Skip ill-formed matrix
+					LOGGER.debug("Skipping ill-formed matrix with column count of {}.", colCount);
 				}
 			}
 		}
