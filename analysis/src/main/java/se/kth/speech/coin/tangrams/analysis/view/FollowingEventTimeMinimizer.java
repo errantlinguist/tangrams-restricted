@@ -20,14 +20,12 @@ import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.time.LocalDateTime;
-import java.util.Objects;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Optional;
-import java.util.stream.IntStream;
-import java.util.stream.Stream;
 
 import javax.swing.JOptionPane;
 import javax.swing.JTable;
-import javax.swing.table.TableModel;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,7 +33,6 @@ import org.slf4j.LoggerFactory;
 import iristk.system.Event;
 import se.kth.speech.TimestampArithmetic;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
-import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.coin.tangrams.iristk.EventTimes;
 
 final class FollowingEventTimeMinimizer implements ActionListener {
@@ -69,11 +66,10 @@ final class FollowingEventTimeMinimizer implements ActionListener {
 	public void actionPerformed(final ActionEvent event) {
 		final int[] selectedRows = diagTable.getSelectedRows();
 		for (final int rowIdx : selectedRows) {
-			final Optional<Utterance> optLastUtt = findLastUtterance(rowIdx);
-			if (optLastUtt.isPresent()) {
-				final Utterance lastUtt = optLastUtt.get();
-				final LocalDateTime lastUttEndTime = TimestampArithmetic.createOffsetTimestamp(gameStartTime,
-						lastUtt.getEndTime());
+			final EventDialogue rowEventDiag = rowEvtDiagGetter.apply(rowIdx);
+			final Optional<LocalDateTime> optLatestEvtDiagTime = findLatestEventDialogueTime(rowEventDiag);
+			if (optLatestEvtDiagTime.isPresent()) {
+				final LocalDateTime lastestEvtDiagTime = optLatestEvtDiagTime.get();
 				try {
 					final EventDialogue followingRowEventDiag = rowEvtDiagGetter.apply(rowIdx + 1);
 					final Optional<Event> optFollowingRowFirstEvent = followingRowEventDiag.getFirstEvent();
@@ -81,9 +77,9 @@ final class FollowingEventTimeMinimizer implements ActionListener {
 						final Event followingRowFirstEvent = optFollowingRowFirstEvent.get();
 						final String followingRowEventTimeStr = followingRowFirstEvent.getTime();
 						final LocalDateTime followingRowEventTime = EventTimes.parseEventTime(followingRowEventTimeStr);
-						final int timeCmp = lastUttEndTime.compareTo(followingRowEventTime);
+						final int timeCmp = lastestEvtDiagTime.compareTo(followingRowEventTime);
 						if (timeCmp < 0) {
-							final String newEventTimeStr = EventTimes.FORMATTER.format(lastUttEndTime);
+							final String newEventTimeStr = EventTimes.FORMATTER.format(lastestEvtDiagTime);
 							followingRowFirstEvent.setTime(newEventTimeStr);
 							LOGGER.info("Set time of event ID \"{}\" to \"{}\".", followingRowFirstEvent.getId(),
 									newEventTimeStr);
@@ -91,8 +87,8 @@ final class FollowingEventTimeMinimizer implements ActionListener {
 						} else if (timeCmp > 0) {
 							JOptionPane.showMessageDialog(dialogueMessageParentComponent,
 									String.format(
-											"End time of preceding event's last utterance (\"%s\") is after the time of the following event (\"%s\", ID \"%s\"), i.e. the utterance overlaps the start of the next event.",
-											EventTimes.FORMATTER.format(lastUttEndTime), followingRowEventTimeStr,
+											"Latest time of preceding event (\"%s\") is after the time of the following event (\"%s\", ID \"%s\"), i.e. the utterance overlaps the start of the next event.",
+											EventTimes.FORMATTER.format(lastestEvtDiagTime), followingRowEventTimeStr,
 											followingRowFirstEvent.getId()),
 									"Overlapping times", JOptionPane.WARNING_MESSAGE);
 						} else {
@@ -112,21 +108,34 @@ final class FollowingEventTimeMinimizer implements ActionListener {
 							String.format("No row for index %s.", ex.getLocalizedMessage()),
 							ex.getClass().getSimpleName(), JOptionPane.WARNING_MESSAGE);
 				}
-
 			} else {
 				JOptionPane.showMessageDialog(dialogueMessageParentComponent,
-						"Cannot minimize event time to last utterance end time because utterance list is empty.",
+						"Cannot minimize event time to last utterance end time because both the event and utterance lists are empty.",
 						"No utterances", JOptionPane.WARNING_MESSAGE);
 			}
 		}
 	}
 
-	private Optional<Utterance> findLastUtterance(final int rowIdx) {
-		final TableModel model = diagTable.getModel();
-		final IntStream uttColIdxs = AttributeType.UTTERANCE.getMatchingTypeColumnIndices(model);
-		final Stream<Object> uttColVals = uttColIdxs.mapToObj(colIdx -> diagTable.getValueAt(rowIdx, colIdx));
-		final Stream<Utterance> nonNullUtts = uttColVals.filter(Objects::nonNull).map(Utterance.class::cast);
-		return nonNullUtts.reduce((first, second) -> second);
+	private Optional<LocalDateTime> findLatestEventDialogueTime(final EventDialogue eventDiag) {
+		final Optional<LocalDateTime> result;
+
+		final Optional<LocalDateTime> optLastUttEndTime = eventDiag.getLastUtterance()
+				.map(utt -> TimestampArithmetic.createOffsetTimestamp(gameStartTime, utt.getEndTime()));
+		final Optional<LocalDateTime> optLastEventTime = eventDiag.getLastEvent().map(Event::getTime)
+				.map(EventTimes::parseEventTime);
+		if (optLastUttEndTime.isPresent()) {
+			final LocalDateTime lastUttEndTime = optLastUttEndTime.get();
+			if (optLastEventTime.isPresent()) {
+				final LocalDateTime lastEventTime = optLastEventTime.get();
+				result = Optional.of(Collections.max(Arrays.asList(lastUttEndTime, lastEventTime)));
+			} else {
+				result = optLastUttEndTime;
+			}
+		} else {
+			result = optLastEventTime;
+		}
+
+		return result;
 	}
 
 }
