@@ -69,54 +69,8 @@ final class FollowingEventTimeMinimizer implements ActionListener {
 	public void actionPerformed(final ActionEvent event) {
 		final int[] selectedRows = diagTable.getSelectedRows();
 		for (final int rowIdx : selectedRows) {
-			final Optional<LocalDateTime> optLatestEvtDiagTime = findLatestEventDialogueTime(rowIdx);
-			if (optLatestEvtDiagTime.isPresent()) {
-				final LocalDateTime lastestEvtDiagTime = optLatestEvtDiagTime.get();
-				final int followingRowIdx = rowIdx + 1;
-				try {
-					final int firstEventColIdx = evtDiagAttrColIdxs.get(EventDialogueAttribute.FIRST_EVENT_TIME);
-					final LocalDateTime followingRowFirstEventTime = (LocalDateTime) diagTable
-							.getValueAt(followingRowIdx, firstEventColIdx);
-					if (followingRowFirstEventTime == null) {
-						JOptionPane.showMessageDialog(dialogueMessageParentComponent,
-								"Cannot minimize event time of following row to last utterance end time because the following row has no event(s).",
-								"No events", JOptionPane.WARNING_MESSAGE);
-					} else {
-						final int timeCmp = lastestEvtDiagTime.compareTo(followingRowFirstEventTime);
-						if (timeCmp < 0) {
-							final String newEventTimeStr = EventTimes.FORMATTER.format(lastestEvtDiagTime);
-							// Explicitly call method to fire a model update
-							// event
-							diagTable.setValueAt(lastestEvtDiagTime, followingRowIdx, firstEventColIdx);
-							LOGGER.info("Set time of first event for row {} to \"{}\".", followingRowIdx,
-									newEventTimeStr);
-						} else if (timeCmp > 0) {
-							JOptionPane.showMessageDialog(dialogueMessageParentComponent,
-									String.format(
-											"Latest time of preceding event (\"%s\") is after the time of the following event (\"%s\"), i.e. the utterance overlaps the start of the next event.",
-											EventTimes.FORMATTER.format(lastestEvtDiagTime),
-											EventTimes.FORMATTER.format(followingRowFirstEventTime)),
-									"Overlapping times", JOptionPane.WARNING_MESSAGE);
-						} else {
-							JOptionPane.showMessageDialog(dialogueMessageParentComponent,
-									String.format(
-											"Time of following event is already equal to the end time of the preceding event's last utterance (\"%s\").",
-											EventTimes.FORMATTER.format(followingRowFirstEventTime)));
-						}
-					}
-
-				} catch (final ArrayIndexOutOfBoundsException ex) {
-					JOptionPane.showMessageDialog(dialogueMessageParentComponent,
-							String.format("No row for index %s.", ex.getLocalizedMessage()),
-							ex.getClass().getSimpleName(), JOptionPane.WARNING_MESSAGE);
-				}
-			} else {
-				JOptionPane.showMessageDialog(dialogueMessageParentComponent,
-						"Cannot minimize event time of the following row to last utterance end time because both the event and utterance lists are empty.",
-						"No utterances", JOptionPane.WARNING_MESSAGE);
-			}
+			minimizeFollowingEventTime(rowIdx);
 		}
-
 	}
 
 	private List<Utterance> createUtteranceList(final int rowIdx) {
@@ -160,6 +114,54 @@ final class FollowingEventTimeMinimizer implements ActionListener {
 		}
 
 		return result;
+	}
+
+	private void minimizeFollowingEventTime(final int rowIdx) {
+		final Optional<LocalDateTime> optLatestEvtDiagTime = findLatestEventDialogueTime(rowIdx);
+		if (optLatestEvtDiagTime.isPresent()) {
+			final LocalDateTime lastestEvtDiagTime = optLatestEvtDiagTime.get();
+			final int followingRowIdx = rowIdx + 1;
+			try {
+				final int firstEventColIdx = evtDiagAttrColIdxs.get(EventDialogueAttribute.FIRST_EVENT_TIME);
+				final LocalDateTime followingRowFirstEventTime = (LocalDateTime) diagTable.getValueAt(followingRowIdx,
+						firstEventColIdx);
+				if (followingRowFirstEventTime == null) {
+					JOptionPane.showMessageDialog(dialogueMessageParentComponent,
+							"Cannot minimize event time of following row to last utterance end time because the following row has no event(s).",
+							"No events", JOptionPane.WARNING_MESSAGE);
+				} else {
+					final int timeCmp = lastestEvtDiagTime.compareTo(followingRowFirstEventTime);
+					if (timeCmp < 0) {
+						final String newEventTimeStr = EventTimes.FORMATTER.format(lastestEvtDiagTime);
+						// Explicitly call method to fire a model update
+						// event
+						diagTable.setValueAt(lastestEvtDiagTime, followingRowIdx, firstEventColIdx);
+						LOGGER.info("Set time of first event for row {} to \"{}\".", followingRowIdx, newEventTimeStr);
+					} else if (timeCmp > 0) {
+						JOptionPane.showMessageDialog(dialogueMessageParentComponent,
+								String.format(
+										"Latest time of preceding event (\"%s\") is after the time of the following event (\"%s\"), i.e. the utterance overlaps the start of the next event.",
+										EventTimes.FORMATTER.format(lastestEvtDiagTime),
+										EventTimes.FORMATTER.format(followingRowFirstEventTime)),
+								"Overlapping times", JOptionPane.WARNING_MESSAGE);
+					} else {
+						JOptionPane.showMessageDialog(dialogueMessageParentComponent,
+								String.format(
+										"Time of following event is already equal to the end time of the preceding event's last utterance (\"%s\").",
+										EventTimes.FORMATTER.format(followingRowFirstEventTime)));
+					}
+				}
+
+			} catch (final ArrayIndexOutOfBoundsException ex) {
+				JOptionPane.showMessageDialog(dialogueMessageParentComponent,
+						String.format("No row for index %s.", ex.getLocalizedMessage()), ex.getClass().getSimpleName(),
+						JOptionPane.WARNING_MESSAGE);
+			}
+		} else {
+			JOptionPane.showMessageDialog(dialogueMessageParentComponent,
+					"Cannot minimize event time of the following row to last utterance end time because both the event and utterance lists are empty.",
+					"No utterances", JOptionPane.WARNING_MESSAGE);
+		}
 	}
 
 }
