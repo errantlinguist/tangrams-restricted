@@ -16,6 +16,7 @@
 */
 package se.kth.speech.coin.tangrams.analysis;
 
+import java.awt.EventQueue;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -108,8 +109,7 @@ final class SessionEventLogAdjuster {
 		final SessionDataManager sessionData = SessionDataManager.create(infile);
 		final SessionEventDialogueManager sessionEvtDiagMgr = new SessionEventDialogueManager(sessionData);
 		final SessionEventDialogueManager.SessionGame canonicalGame = sessionEvtDiagMgr.getCanonicalGame();
-		final SessionEventLogAdjusterGUI gui = new SessionEventLogAdjusterGUI(canonicalGame);
-		gui.run();
+		EventQueue.invokeLater(new SessionEventLogAdjusterGUI(canonicalGame));
 	}
 
 	private static Settings loadClassSettings() {
