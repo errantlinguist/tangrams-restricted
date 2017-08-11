@@ -29,19 +29,26 @@ import javax.swing.table.TableModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 
 final class EventDialogueAdjusterTable extends JTable {
 
-	private static final String NULL_VALUE_REPR = "-";
+	private static final TableCellRenderer EVENT_TIME_RENDERER;
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(EventDialogueAdjusterTable.class);
+
+	private static final TableCellRenderer NULLABLE_STR_RENDERER;
 
 	/**
 	 *
 	 */
 	private static final long serialVersionUID = 5176564593731003375L;
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(EventDialogueAdjusterTable.class);
+	static {
+		final String nullValueRepr = "-";
+		NULLABLE_STR_RENDERER = new DefaultValueStringRenderer(nullValueRepr);
+		EVENT_TIME_RENDERER = new DefaultValueLoggedEventTimeRenderer(nullValueRepr);
+	}
 
 	private static TableCellRenderer getColumnHeaderRenderer(final TableColumn tableColumn, final JTableHeader header) {
 		final TableCellRenderer colRenderer = tableColumn.getHeaderRenderer();
@@ -55,16 +62,15 @@ final class EventDialogueAdjusterTable extends JTable {
 			final TableColumn col = colModel.getColumn(i);
 			switch (attr) {
 			case FIRST_EVENT_SENDER: {
-				col.setCellRenderer(
-						new EventDialogueEventSenderRenderer(EventDialogue::getFirstEvent, NULL_VALUE_REPR));
+				col.setCellRenderer(NULLABLE_STR_RENDERER);
 				break;
 			}
 			case FIRST_EVENT_TIME: {
-				col.setCellRenderer(new EventDialogueEventTimeRenderer(EventDialogue::getFirstEvent, NULL_VALUE_REPR));
+				col.setCellRenderer(EVENT_TIME_RENDERER);
 				break;
 			}
 			case LAST_EVENT_TIME: {
-				col.setCellRenderer(new EventDialogueEventTimeRenderer(EventDialogue::getLastEvent, NULL_VALUE_REPR));
+				col.setCellRenderer(EVENT_TIME_RENDERER);
 				break;
 			}
 			default: {
@@ -76,6 +82,7 @@ final class EventDialogueAdjusterTable extends JTable {
 
 	EventDialogueAdjusterTable(final TableModel dm, final UtteranceCellRenderer uttCellRenderer) {
 		super(dm);
+
 		setCellSelectionEnabled(true);
 		setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 

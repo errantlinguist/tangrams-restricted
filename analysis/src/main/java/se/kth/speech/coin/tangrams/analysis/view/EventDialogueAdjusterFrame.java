@@ -19,6 +19,7 @@ package se.kth.speech.coin.tangrams.analysis.view;
 import java.awt.Container;
 import java.awt.HeadlessException;
 import java.time.LocalDateTime;
+import java.util.Map;
 
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
@@ -26,7 +27,6 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.ScrollPaneConstants;
-
 
 final class EventDialogueAdjusterFrame extends JFrame {
 
@@ -47,7 +47,10 @@ final class EventDialogueAdjusterFrame extends JFrame {
 		final JPanel actionPanel = new JPanel();
 		content.add(actionPanel);
 		final JButton minimizeEventTimeButton = new JButton("Minimize following event time");
-		minimizeEventTimeButton.addActionListener(new FollowingEventTimeMinimizer(diagTable, this, gameStartTime));
+		final Map<EventDialogueAttribute, Integer> evtDiagAttrColIdxs = EventDialogueAttributeTables
+				.createEventDialogueAttributeColumnIndexMap(diagTable);
+		minimizeEventTimeButton
+				.addActionListener(new FollowingEventTimeMinimizer(diagTable, evtDiagAttrColIdxs, this, gameStartTime));
 		actionPanel.add(minimizeEventTimeButton);
 	}
 

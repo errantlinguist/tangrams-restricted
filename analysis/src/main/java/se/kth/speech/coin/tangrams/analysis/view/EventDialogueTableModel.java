@@ -16,64 +16,47 @@
 */
 package se.kth.speech.coin.tangrams.analysis.view;
 
-import java.util.Arrays;
-import java.util.EnumMap;
+import java.time.LocalDateTime;
+import java.time.temporal.TemporalAccessor;
 import java.util.List;
-import java.util.Map;
+import java.util.Optional;
+import java.util.function.Function;
 
 import javax.swing.table.AbstractTableModel;
-import javax.swing.table.TableColumn;
-import javax.swing.table.TableColumnModel;
 
+import iristk.system.Event;
+import se.kth.speech.coin.tangrams.analysis.SessionGame;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
+import se.kth.speech.coin.tangrams.iristk.EventTimes;
+import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 
 final class EventDialogueTableModel extends AbstractTableModel {
-
-	private static final Map<EventDialogueAttribute, Integer> EVENT_DIALOGUE_ATTR_IDXS = createEventDialogueAttributeIndexMap();
 
 	/**
 	 *
 	 */
 	private static final long serialVersionUID = -4475137472007680337L;
 
-	private static Map<EventDialogueAttribute, TableColumn> createEventDialogueAttributeColumnMap(
-			final TableColumnModel colModel) {
-		final Map<EventDialogueAttribute, TableColumn> result = new EnumMap<>(EventDialogueAttribute.class);
-		final EventDialogueAttribute[] attrs = EventDialogueAttribute.values();
-		for (final EventDialogueAttribute attr : EventDialogueAttribute.values()) {
-			result.put(attr, getEventDialogueAttributeColumn(colModel, attr));
-		}
-		assert result.size() == attrs.length;
-		return result;
-	}
+	private static final Function<TemporalAccessor, String> TIME_FORMATTER = time -> EventTimes.FORMATTER.format(time);
 
-	private static Map<EventDialogueAttribute, Integer> createEventDialogueAttributeIndexMap() {
-		final Map<EventDialogueAttribute, Integer> result = new EnumMap<>(EventDialogueAttribute.class);
-		final EventDialogueAttribute[] attrs = EventDialogueAttribute.values();
-		for (int i = 0; i < attrs.length; ++i) {
-			final EventDialogueAttribute attr = attrs[i];
-			result.put(attr, i);
-		}
-		assert result.size() == attrs.length;
-		return result;
-	}
+	private static final Function<String, LocalDateTime> TIME_PARSER = EventTimes::parseEventTime;
 
 	private static EventDialogueAttribute getColumnEventDialogueAttribute(final int colIdx) {
 		final EventDialogueAttribute[] atts = EventDialogueAttribute.values();
 		return atts.length <= colIdx ? null : atts[colIdx];
 	}
 
-	private static TableColumn getEventDialogueAttributeColumn(final TableColumnModel colModel,
-			final EventDialogueAttribute attr) {
-		final int colIdx = EVENT_DIALOGUE_ATTR_IDXS.get(attr);
-		return colModel.getColumn(colIdx);
-	}
+	private final List<EventDialogue> diags;
 
-	private final EventDialogue[] diags;
+	private final List<Event> events;
 
-	EventDialogueTableModel(final EventDialogue[] diags) {
-		this.diags = diags;
+	private final List<Utterance> utts;
+
+	EventDialogueTableModel(final SessionGame game) {
+		events = game.getEvents();
+		utts = game.getUtterances();
+		diags = game.getEventDialogues();
 	}
 
 	/*
@@ -88,7 +71,19 @@ final class EventDialogueTableModel extends AbstractTableModel {
 		if (colEventDiagAttr == null) {
 			result = AttributeType.UTTERANCE.getValueClass();
 		} else {
-			result = AttributeType.EVENT_DIALOGUE.getValueClass();
+			switch (colEventDiagAttr) {
+			case FIRST_EVENT_SENDER:
+				result = String.class;
+				break;
+			case FIRST_EVENT_TIME:
+				result = LocalDateTime.class;
+				break;
+			case LAST_EVENT_TIME:
+				result = LocalDateTime.class;
+				break;
+			default:
+				throw new AssertionError("No logic for handing switch case.");
+			}
 		}
 		return result;
 	}
@@ -100,8 +95,7 @@ final class EventDialogueTableModel extends AbstractTableModel {
 	 */
 	@Override
 	public int getColumnCount() {
-		final int maxUttCount = Arrays.stream(diags).map(EventDialogue::getUtterances).mapToInt(List::size).max()
-				.orElse(0);
+		final int maxUttCount = diags.stream().map(EventDialogue::getUtterances).mapToInt(List::size).max().orElse(0);
 		return maxUttCount + 1;
 	}
 
@@ -130,7 +124,7 @@ final class EventDialogueTableModel extends AbstractTableModel {
 	 */
 	@Override
 	public int getRowCount() {
-		return diags.length;
+		return diags.size();
 	}
 
 	/*
@@ -140,7 +134,7 @@ final class EventDialogueTableModel extends AbstractTableModel {
 	 */
 	@Override
 	public Object getValueAt(final int rowIndex, final int columnIndex) {
-		final EventDialogue diag = diags[rowIndex];
+		final EventDialogue diag = diags.get(rowIndex);
 		final Object result;
 		final EventDialogueAttribute colEventDiagAttr = getColumnEventDialogueAttribute(columnIndex);
 		if (colEventDiagAttr == null) {
@@ -148,7 +142,26 @@ final class EventDialogueTableModel extends AbstractTableModel {
 			final int diagUttIdx = AttributeType.UTTERANCE.getValueListIdx(columnIndex);
 			result = diagUtts.size() <= diagUttIdx ? null : diagUtts.get(diagUttIdx);
 		} else {
-			result = diag;
+			switch (colEventDiagAttr) {
+			case FIRST_EVENT_SENDER: {
+				final Optional<Event> optEvent = diag.getFirstEvent();
+				result = optEvent.map(event -> event.get(GameManagementEvent.Attribute.PLAYER_ID.toString()))
+						.orElse(null);
+				break;
+			}
+			case FIRST_EVENT_TIME: {
+				final Optional<Event> optEvent = diag.getFirstEvent();
+				result = optEvent.map(Event::getTime).map(TIME_PARSER).orElse(null);
+				break;
+			}
+			case LAST_EVENT_TIME: {
+				final Optional<Event> optEvent = diag.getLastEvent();
+				result = optEvent.map(Event::getTime).map(TIME_PARSER).orElse(null);
+				break;
+			}
+			default:
+				throw new AssertionError("No logic for handing switch case.");
+			}
 		}
 		return result;
 	}
@@ -161,8 +174,53 @@ final class EventDialogueTableModel extends AbstractTableModel {
 	 */
 	@Override
 	public void setValueAt(final Object aValue, final int rowIndex, final int columnIndex) {
-		super.setValueAt(aValue, rowIndex, columnIndex);
-		fireTableDataChanged();
+		final EventDialogue diag = diags.get(rowIndex);
+		final EventDialogueAttribute colEventDiagAttr = getColumnEventDialogueAttribute(columnIndex);
+		if (colEventDiagAttr == null) {
+			final List<Utterance> diagUtts = diag.getUtterances();
+			final int diagUttIdx = AttributeType.UTTERANCE.getValueListIdx(columnIndex);
+			// result = diagUtts.size() <= diagUttIdx ? null :
+			// diagUtts.get(diagUttIdx);
+		} else {
+			switch (colEventDiagAttr) {
+			case FIRST_EVENT_SENDER: {
+				final Optional<Event> optEvent = diag.getFirstEvent();
+				if (optEvent.isPresent()) {
+					final Event event = optEvent.get();
+					event.put(GameManagementEvent.Attribute.PLAYER_ID.toString(), aValue);
+				} else {
+					throw new IllegalArgumentException(String.format("No value at %d*%d.", rowIndex, columnIndex));
+				}
+				break;
+			}
+			case FIRST_EVENT_TIME: {
+				final Optional<Event> optEvent = diag.getFirstEvent();
+				if (optEvent.isPresent()) {
+					final Event event = optEvent.get();
+					final TemporalAccessor time = (TemporalAccessor) aValue;
+					event.setTime(TIME_FORMATTER.apply(time));
+				} else {
+					throw new IllegalArgumentException(String.format("No value at %d*%d.", rowIndex, columnIndex));
+				}
+				break;
+			}
+			case LAST_EVENT_TIME: {
+				final Optional<Event> optEvent = diag.getLastEvent();
+				if (optEvent.isPresent()) {
+					final Event event = optEvent.get();
+					final TemporalAccessor time = (TemporalAccessor) aValue;
+					event.setTime(TIME_FORMATTER.apply(time));
+				} else {
+					throw new IllegalArgumentException(String.format("No value at %d*%d.", rowIndex, columnIndex));
+				}
+				break;
+			}
+			default:
+				throw new AssertionError("No logic for handing switch case.");
+			}
+		}
+
+		fireTableCellUpdated(rowIndex, columnIndex);
 	}
 
 }

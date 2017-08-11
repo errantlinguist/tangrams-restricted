@@ -50,17 +50,6 @@ public final class SessionGame {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SessionGame.class);
 
-	private static SessionGame createGame(final Stream<Event> eventStream, final List<Utterance> utts)
-			throws IOException {
-		final Map<String, GameHistory> gameHistories = LoggedEvents.createGameHistoryMap(eventStream);
-		final Entry<String, GameHistory> gameIdHistory = ensureSingleGame(gameHistories);
-		final String gameId = gameIdHistory.getKey();
-		LOGGER.debug("Creating {} instance for game ID \"{}\".", SessionGame.class.getSimpleName(), gameId);
-		final GameHistory history = gameIdHistory.getValue();
-		return new SessionGame(gameId, history, Collections.unmodifiableList(
-				Arrays.asList(EVT_DIAG_FACTORY.apply(utts.listIterator(), history).toArray(EventDialogue[]::new))));
-	}
-
 	/**
 	 * <strong>TODO:</strong> Support multiple games in one session
 	 *
@@ -91,10 +80,11 @@ public final class SessionGame {
 		return result;
 	}
 
-	static SessionGame createGame(final Path eventLogPath, final List<Utterance> utts) throws IOException {
+	static SessionGame create(final Path eventLogPath, final List<Utterance> utts) throws IOException {
 		LOGGER.info("Reading game histories from \"{}\".", eventLogPath);
 		try (Stream<Event> eventStream = LoggedEvents.readLoggedEvents(eventLogPath)) {
-			return createGame(eventStream, utts);
+			final List<Event> events = Arrays.asList(eventStream.toArray(Event[]::new));
+			return new SessionGame(events, utts);
 		}
 	}
 
@@ -104,7 +94,7 @@ public final class SessionGame {
 		for (final Entry<String, Path> playerEventLogPath : playerEventLogPaths) {
 			final String playerId = playerEventLogPath.getKey();
 			final Path eventLogPath = playerEventLogPath.getValue();
-			final SessionGame sessionGame = createGame(eventLogPath, utts);
+			final SessionGame sessionGame = create(eventLogPath, utts);
 			result.put(playerId, sessionGame);
 		}
 		return result;
@@ -112,18 +102,35 @@ public final class SessionGame {
 
 	private final List<EventDialogue> eventDialogues;
 
+	private final List<Event> events;
+
 	private final String gameId;
 
 	private final GameHistory history;
 
-	private SessionGame(final String gameId, final GameHistory history, final List<EventDialogue> eventDialogues) {
-		this.gameId = gameId;
-		this.history = history;
-		this.eventDialogues = eventDialogues;
+	private final List<Utterance> utts;
+
+	public SessionGame(final List<Event> events, final List<Utterance> utts) {
+		this.events = Collections.unmodifiableList(events);
+		this.utts = Collections.unmodifiableList(utts);
+		final Map<String, GameHistory> gameHistories = LoggedEvents.createGameHistoryMap(events.stream());
+		final Entry<String, GameHistory> gameIdHistory = ensureSingleGame(gameHistories);
+		gameId = gameIdHistory.getKey();
+		LOGGER.debug("Creating {} instance for game ID \"{}\".", SessionGame.class.getSimpleName(), gameId);
+		history = gameIdHistory.getValue();
+		eventDialogues = Collections.unmodifiableList(
+				Arrays.asList(EVT_DIAG_FACTORY.apply(utts.listIterator(), history).toArray(EventDialogue[]::new)));
 	}
 
 	public List<EventDialogue> getEventDialogues() {
 		return eventDialogues;
+	}
+
+	/**
+	 * @return the events
+	 */
+	public List<Event> getEvents() {
+		return events;
 	}
 
 	/**
@@ -135,5 +142,12 @@ public final class SessionGame {
 
 	public GameHistory getHistory() {
 		return history;
+	}
+
+	/**
+	 * @return the utts
+	 */
+	public List<Utterance> getUtterances() {
+		return utts;
 	}
 }

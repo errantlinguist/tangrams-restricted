@@ -18,4 +18,5 @@ package se.kth.speech.coin.tangrams.analysis.view;
 
 enum EventDialogueAttribute {
 	FIRST_EVENT_SENDER, FIRST_EVENT_TIME, LAST_EVENT_TIME;
+
 }

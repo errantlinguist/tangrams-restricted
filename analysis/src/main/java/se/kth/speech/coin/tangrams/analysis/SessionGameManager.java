@@ -48,7 +48,7 @@ public final class SessionGameManager {
 		utts = SessionUtterances.createUtteranceList(sessionData);
 		LOGGER.debug("Creating dialogues for {} annotated utterance(s).", utts.size());
 
-		canonicalGame = SessionGame.createGame(sessionData.getCanonicalEventLogPath(), utts);
+		canonicalGame = SessionGame.create(sessionData.getCanonicalEventLogPath(), utts);
 		playerEventLogs = sessionData.getPlayerData().getPlayerEventLogs();
 	}
 

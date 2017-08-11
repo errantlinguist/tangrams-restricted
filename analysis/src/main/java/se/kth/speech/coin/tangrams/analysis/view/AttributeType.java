@@ -25,21 +25,9 @@ import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 import javax.swing.table.TableModel;
 
-import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 
 enum AttributeType {
-	EVENT_DIALOGUE(EventDialogue.class) {
-		@Override
-		protected int getValueListIdx(final int columnIndex) {
-			return columnIndex;
-		}
-
-		@Override
-		protected int getValueListSize(final TableColumnModel colModel) {
-			return EVENT_DIALOGUE_ATTR_COUNT;
-		}
-	},
 	UTTERANCE(Utterance.class) {
 		@Override
 		protected int getValueListIdx(final int columnIndex) {
@@ -48,7 +36,7 @@ enum AttributeType {
 
 		@Override
 		protected int getValueListSize(final TableColumnModel colModel) {
-			return colModel.getColumnCount() - EVENT_DIALOGUE.getValueListSize(colModel);
+			return colModel.getColumnCount() - EVENT_DIALOGUE_ATTR_COUNT;
 		}
 	};
 

@@ -18,13 +18,11 @@ package se.kth.speech.coin.tangrams.analysis.view;
 
 import java.awt.Dimension;
 import java.time.LocalDateTime;
-import java.util.List;
 
 import javax.swing.JTable;
 import javax.swing.WindowConstants;
 
 import se.kth.speech.coin.tangrams.analysis.SessionGame;
-import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -69,9 +67,7 @@ public final class SessionEventLogAdjusterGUI implements Runnable {
 	private void vizualize(final SessionGame game) {
 		final LocalDateTime gameStart = game.getHistory().getStartTime();
 		final String title = createHistoryTitleStr(game.getGameId(), gameStart);
-		final List<EventDialogue> diags = game.getEventDialogues();
-		final EventDialogueAdjusterTable diagTable = new EventDialogueAdjusterTable(
-				new EventDialogueTableModel(diags.toArray(new EventDialogue[diags.size()])),
+		final EventDialogueAdjusterTable diagTable = new EventDialogueAdjusterTable(new EventDialogueTableModel(game),
 				new UtteranceCellRenderer());
 		setMaxPreferredScrollableViewportSize(diagTable);
 
