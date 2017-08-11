@@ -226,7 +226,7 @@ final class UtteranceTabularDataWriter {
 				final Event nextEvent = nextEventDiag.getFirstEvent().orElse(null);
 				final List<Utterance> nextUtts = nextEventDiag.getUtterances();
 				if (nextUtts.isEmpty()) {
-					// Do nothing
+					LOGGER.debug("No utterances for dialogue ID \"{}\".", nextEvent.getId());
 				} else {
 					final Utterance nextUtt = nextUtts.get(0);
 					final String speakingPlayerId = nextUtt.getSpeakerId();
