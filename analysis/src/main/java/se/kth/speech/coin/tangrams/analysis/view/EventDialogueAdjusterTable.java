@@ -68,12 +68,12 @@ final class EventDialogueAdjusterTable extends JTable {
 		LOGGER.debug("Calculating width for column header value \"{}\", for column {}.", colHeaderValue, columnIdx);
 		final Component colHeaderCellRendererComponent = colRenderer.getTableCellRendererComponent(this, colHeaderValue,
 				false, false, -1, columnIdx);
-		final int headerCellWdith = colHeaderCellRendererComponent.getPreferredSize().width;
+		final int headerCellWidth = colHeaderCellRendererComponent.getPreferredSize().width;
 
 		// https://tips4java.wordpress.com/2008/11/10/table-column-adjuster/
 		final int intercellSpacingWidth = getIntercellSpacing().width;
 		final int maxWidth = tableColumn.getMaxWidth();
-		int preferredWidth = Math.max(headerCellWdith, tableColumn.getMinWidth());
+		int preferredWidth = Math.max(headerCellWidth, tableColumn.getMinWidth());
 		if (preferredWidth < maxWidth) {
 			for (int row = 0; row < getRowCount(); row++) {
 				final TableCellRenderer cellRenderer = getCellRenderer(row, columnIdx);
