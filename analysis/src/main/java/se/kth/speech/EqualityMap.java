@@ -119,7 +119,7 @@ public final class EqualityMap<K, V> implements Map<K, V> {
 		 */
 		@Override
 		public String toString() {
-			final StringBuilder builder = new StringBuilder(64);
+			final StringBuilder builder = new StringBuilder(128);
 			builder.append("IndexedEntry [getKey()=");
 			builder.append(getKey());
 			builder.append(", getValue()=");
