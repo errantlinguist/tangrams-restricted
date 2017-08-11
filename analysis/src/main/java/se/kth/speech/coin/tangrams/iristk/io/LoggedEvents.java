@@ -65,6 +65,20 @@ public final class LoggedEvents {
 
 	/**
 	 *
+	 * @param loggedEvents
+	 *            The logged events to process.
+	 * @return A new {@link Map} of game IDs to their respective
+	 *         {@link GameHistory histories}.
+	 */
+	public static Map<String, GameHistory> createGameHistoryMap(final Stream<Event> loggedEvents) {
+		final Event[] loggedEventArray = loggedEvents.toArray(Event[]::new);
+		final Supplier<Map<String, GameHistory>> mapFactory = () -> Maps
+				.newHashMapWithExpectedSize(loggedEventArray.length);
+		return Arrays.stream(loggedEventArray).collect(new GameHistoryCollector(mapFactory));
+	}
+
+	/**
+	 *
 	 * @param sessionLogDir
 	 *            A {@link Path} denoting the session log directory to process.
 	 * @param expectedEventLogFileCount
@@ -213,10 +227,7 @@ public final class LoggedEvents {
 	public static Map<String, GameHistory> parseGameHistories(final Stream<String> lines,
 			final Predicate<? super Event> eventFilter) {
 		final Stream<Event> loggedEvents = parseLoggedEvents(lines).filter(eventFilter);
-		final Event[] loggedEventArray = loggedEvents.toArray(Event[]::new);
-		final Supplier<Map<String, GameHistory>> mapFactory = () -> Maps
-				.newHashMapWithExpectedSize(loggedEventArray.length);
-		return Arrays.stream(loggedEventArray).collect(new GameHistoryCollector(mapFactory));
+		return createGameHistoryMap(loggedEvents);
 	}
 
 	/**
