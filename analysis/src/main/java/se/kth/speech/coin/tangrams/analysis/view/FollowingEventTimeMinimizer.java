@@ -92,6 +92,7 @@ final class FollowingEventTimeMinimizer implements ActionListener {
 							followingRowFirstEvent.setTime(newEventTimeStr);
 							LOGGER.info("Set time of event ID \"{}\" to \"{}\".", followingRowFirstEvent.getId(),
 									newEventTimeStr);
+							// Explicitly call method to fire a model update event
 							diagTable.setValueAt(followingRowEventDiag, followingRowIdx, firstEvtTimeColIdx);
 						} else if (timeCmp > 0) {
 							JOptionPane.showMessageDialog(dialogueMessageParentComponent,
