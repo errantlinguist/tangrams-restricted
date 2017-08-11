@@ -207,7 +207,7 @@ final class SessionStatisticsWriter {
 
 	private static void writeAggregates(
 			final Collection<? extends Entry<Path, ? extends Map<String, GameSummary>>> sessionSummaries,
-			final PrintStream outStream) {
+			final PrintStream output) {
 		{
 			// Min vals
 			final BigDecimal minDuration = getGameSummaries(sessionSummaries).map(GameSummary::getDuration)
@@ -217,8 +217,8 @@ final class SessionStatisticsWriter {
 			final long minUttCount = getGameSummaries(sessionSummaries).mapToLong(GameSummary::getUttCount).min()
 					.getAsLong();
 			final List<Object> minVals = Arrays.asList("MIN", "", minDuration, minRoundCount, minUttCount);
-			outStream.print(minVals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
-			outStream.print(ROW_DELIMITER);
+			output.print(minVals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
+			output.print(ROW_DELIMITER);
 		}
 
 		{
@@ -230,8 +230,8 @@ final class SessionStatisticsWriter {
 			final long maxUttCount = getGameSummaries(sessionSummaries).mapToLong(GameSummary::getUttCount).max()
 					.getAsLong();
 			final List<Object> maxVals = Arrays.asList("MAX", "", maxDuration, maxRoundCount, maxUttCount);
-			outStream.print(maxVals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
-			outStream.print(ROW_DELIMITER);
+			output.print(maxVals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
+			output.print(ROW_DELIMITER);
 		}
 
 		{
@@ -246,8 +246,8 @@ final class SessionStatisticsWriter {
 			final long totalUttCount = getGameSummaries(sessionSummaries).mapToLong(GameSummary::getUttCount).sum();
 			final BigDecimal meanUttCount = new BigDecimal(totalUttCount).divide(gameSessionCount, MEAN_DIVISION_CTX);
 			final List<Object> meanVals = Arrays.asList("MEAN", "", meanDuration, meanRoundCount, meanUttCount);
-			outStream.print(meanVals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
-			outStream.print(ROW_DELIMITER);
+			output.print(meanVals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
+			output.print(ROW_DELIMITER);
 		}
 	}
 
