@@ -56,7 +56,7 @@ final class SessionUtterances {
 			try {
 				return HatIO.fetchContext().createUnmarshaller();
 			} catch (final JAXBException e) {
-				throw new RuntimeException(e);
+				throw new AssertionError(e);
 			}
 		}
 
