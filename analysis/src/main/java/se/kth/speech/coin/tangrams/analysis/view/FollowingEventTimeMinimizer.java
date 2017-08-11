@@ -100,7 +100,7 @@ final class FollowingEventTimeMinimizer implements ActionListener {
 				if (followingRowFirstEventTime == null) {
 					JOptionPane.showMessageDialog(dialogueMessageParentComponent,
 							"Cannot minimize event time of following row to last utterance end time because the following row has no event(s).",
-							"No events", JOptionPane.WARNING_MESSAGE);
+							"No events", JOptionPane.ERROR_MESSAGE);
 				} else {
 					final int timeCmp = lastestEvtDiagTime.compareTo(followingRowFirstEventTime);
 					if (timeCmp < 0) {
@@ -127,12 +127,12 @@ final class FollowingEventTimeMinimizer implements ActionListener {
 			} catch (final ArrayIndexOutOfBoundsException ex) {
 				JOptionPane.showMessageDialog(dialogueMessageParentComponent,
 						String.format("No row for index %s.", ex.getLocalizedMessage()), ex.getClass().getSimpleName(),
-						JOptionPane.WARNING_MESSAGE);
+						JOptionPane.ERROR_MESSAGE);
 			}
 		} else {
 			JOptionPane.showMessageDialog(dialogueMessageParentComponent,
 					"Cannot minimize event time of the following row to last utterance end time because both the event and utterance lists are empty.",
-					"No utterances", JOptionPane.WARNING_MESSAGE);
+					"No utterances", JOptionPane.ERROR_MESSAGE);
 		}
 	}
 
