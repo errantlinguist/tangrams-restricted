@@ -44,14 +44,23 @@ final class EventDialogueAdjusterFrame extends JFrame {
 		content.add(new JScrollPane(diagTable, ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED,
 				ScrollPaneConstants.HORIZONTAL_SCROLLBAR_AS_NEEDED));
 
-		final JPanel actionPanel = new JPanel();
-		content.add(actionPanel);
-		final JButton minimizeEventTimeButton = new JButton("Minimize following event time");
 		final Map<EventDialogueAttribute, Integer> evtDiagAttrColIdxs = EventDialogueAttributeTables
 				.createEventDialogueAttributeColumnIndexMap(diagTable);
-		minimizeEventTimeButton
-				.addActionListener(new FollowingEventTimeMinimizer(diagTable, evtDiagAttrColIdxs, this, gameStartTime));
-		actionPanel.add(minimizeEventTimeButton);
+
+		final JPanel actionPanel = new JPanel();
+		content.add(actionPanel);
+		{
+			final JButton newButton = new JButton("Minimize following event time");
+			newButton.addActionListener(
+					new FollowingEventTimeMinimizer(diagTable, evtDiagAttrColIdxs, this, gameStartTime));
+			actionPanel.add(newButton);
+		}
+		{
+			final JButton newButton = new JButton("Move last utterance to following dialogue");
+			newButton.addActionListener(
+					new LastEventToNextDialogueMover(diagTable, evtDiagAttrColIdxs, this, gameStartTime));
+			actionPanel.add(newButton);
+		}
 	}
 
 }

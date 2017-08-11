@@ -41,7 +41,7 @@ final class EventDialogueTableModel extends AbstractTableModel {
 		return atts.length <= colIdx ? null : atts[colIdx];
 	}
 
-	private final SessionGame game;
+	private SessionGame game;
 
 	private final Function<? super LocalDateTime, String> timeFormatter;
 
@@ -52,7 +52,6 @@ final class EventDialogueTableModel extends AbstractTableModel {
 		this.game = game;
 		this.timeParser = timeParser;
 		this.timeFormatter = timeFormatter;
-
 	}
 
 	/*
@@ -217,7 +216,12 @@ final class EventDialogueTableModel extends AbstractTableModel {
 			}
 		}
 
-		fireTableCellUpdated(rowIndex, columnIndex);
+		updateGame();
+	}
+
+	private void updateGame() {
+		game = new SessionGame(game.getEvents(), game.getUtterances());
+		fireTableDataChanged();
 	}
 
 }

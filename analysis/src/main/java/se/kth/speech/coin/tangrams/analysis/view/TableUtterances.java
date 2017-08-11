@@ -51,6 +51,22 @@ final class TableUtterances {
 		return result;
 	}
 
+	static Optional<Utterance> findFirstUtterance(final JTable diagTable, final LocalDateTime gameStartTime,
+			final int rowIdx) {
+		final List<Utterance> utts = createUtteranceList(diagTable, rowIdx);
+		final Comparator<Utterance> startTimeComparator = Comparator
+				.comparing(utt -> TimestampArithmetic.createOffsetTimestamp(gameStartTime, utt.getStartTime()));
+		return utts.stream().min(startTimeComparator);
+	}
+
+	static Optional<Utterance> findLastUtterance(final JTable diagTable, final LocalDateTime gameStartTime,
+			final int rowIdx) {
+		final List<Utterance> utts = TableUtterances.createUtteranceList(diagTable, rowIdx);
+		final Comparator<Utterance> startTimeComparator = Comparator
+				.comparing(utt -> TimestampArithmetic.createOffsetTimestamp(gameStartTime, utt.getStartTime()));
+		return utts.stream().max(startTimeComparator);
+	}
+
 	static Optional<LocalDateTime> findLastUtteranceTime(final JTable diagTable, final LocalDateTime gameStartTime,
 			final int rowIdx) {
 		final List<Utterance> utts = createUtteranceList(diagTable, rowIdx);
