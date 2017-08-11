@@ -81,6 +81,11 @@ public final class EventDialogue {
 	public Optional<Event> getFirstEvent() {
 		return events.isEmpty() ? Optional.empty() : Optional.of(events.iterator().next());
 	}
+	
+	public Optional<Event> getLastEvent(){
+		return events.isEmpty() ? Optional.empty()
+				: Optional.of(events.listIterator(events.size()).previous());		
+	}
 
 	/**
 	 * @return the utts

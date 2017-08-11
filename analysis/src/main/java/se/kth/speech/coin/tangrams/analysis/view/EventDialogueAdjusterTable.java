@@ -17,9 +17,6 @@
 package se.kth.speech.coin.tangrams.analysis.view;
 
 import java.awt.Component;
-import java.util.List;
-import java.util.Optional;
-import java.util.function.Function;
 import java.util.stream.IntStream;
 
 import javax.swing.JTable;
@@ -32,7 +29,6 @@ import javax.swing.table.TableModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import iristk.system.Event;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 
@@ -68,12 +64,7 @@ final class EventDialogueAdjusterTable extends JTable {
 				break;
 			}
 			case LAST_EVENT_TIME: {
-				final Function<EventDialogue, Optional<Event>> lastEventGetter = evtDiag -> {
-					final List<Event> events = evtDiag.getEvents();
-					return events.isEmpty() ? Optional.empty()
-							: Optional.of(events.listIterator(events.size()).previous());
-				};
-				col.setCellRenderer(new EventDialogueEventTimeRenderer(lastEventGetter, NULL_VALUE_REPR));
+				col.setCellRenderer(new EventDialogueEventTimeRenderer(EventDialogue::getLastEvent, NULL_VALUE_REPR));
 				break;
 			}
 			default: {
