@@ -19,6 +19,7 @@ package se.kth.speech.coin.tangrams.analysis.view;
 import java.awt.Dimension;
 import java.io.File;
 import java.time.LocalDateTime;
+import java.time.temporal.TemporalAmount;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -111,13 +112,17 @@ public final class SessionEventLogAdjusterGUI implements Runnable {
 
 	private final SessionGame game;
 
+	private final TemporalAmount minEventTimeDiff;
+
 	private final BiFunction<? super List<Event>, ? super List<Utterance>, SessionGame> sessionGameFactory;
 
 	public SessionEventLogAdjusterGUI(final SessionGame game, final Optional<? extends File> eventLogExportDir,
-			final BiFunction<? super List<Event>, ? super List<Utterance>, SessionGame> sessionGameFactory) {
+			final BiFunction<? super List<Event>, ? super List<Utterance>, SessionGame> sessionGameFactory,
+			final TemporalAmount minEventTimeDiff) {
 		this.game = game;
 		this.eventLogExportDir = eventLogExportDir;
 		this.sessionGameFactory = sessionGameFactory;
+		this.minEventTimeDiff = minEventTimeDiff;
 	}
 
 	/*
@@ -137,7 +142,7 @@ public final class SessionEventLogAdjusterGUI implements Runnable {
 		final JFileChooser eventLogFileChooser = createEventLogExportFileChooser();
 
 		final EventDialogueAdjusterFrame frame = new EventDialogueAdjusterFrame(title, gameStart, diagTable,
-				eventLogFileChooser);
+				eventLogFileChooser, minEventTimeDiff);
 		frame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 		frame.pack();
 		frame.setVisible(true);

@@ -25,6 +25,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
@@ -87,6 +88,8 @@ final class SessionEventLogAdjuster {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SessionEventLogAdjuster.class);
 
+	private static final Duration MIN_EVENT_TIME_DIFF = Duration.ofMillis(1);
+
 	private static final Path SETTINGS_DIR;
 
 	static {
@@ -122,7 +125,7 @@ final class SessionEventLogAdjuster {
 		final Optional<File> eventLogExportDir = infileParent == null ? Optional.empty()
 				: Optional.of(infileParent.toFile());
 		EventQueue.invokeLater(new SessionEventLogAdjusterGUI(canonicalGame, eventLogExportDir,
-				(e, u) -> new SessionGame(e, u, EVENT_DIAG_FACTORY)));
+				(e, u) -> new SessionGame(e, u, EVENT_DIAG_FACTORY), MIN_EVENT_TIME_DIFF));
 	}
 
 	private static Settings loadClassSettings() {

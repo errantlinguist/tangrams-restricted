@@ -20,6 +20,7 @@ import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.time.LocalDateTime;
+import java.time.temporal.TemporalAmount;
 import java.util.Map;
 import java.util.Optional;
 
@@ -45,12 +46,16 @@ final class LastEventToNextDialogueMover implements ActionListener {
 
 	private final LocalDateTime gameStartTime;
 
+	private final TemporalAmount minEventTimeDiff;
+
 	LastEventToNextDialogueMover(final JTable diagTable, final Map<EventDialogueAttribute, Integer> evtDiagAttrColIdxs,
-			final Component dialogueMessageParentComponent, final LocalDateTime gameStartTime) {
+			final Component dialogueMessageParentComponent, final LocalDateTime gameStartTime,
+			final TemporalAmount minEventTimeDiff) {
 		this.diagTable = diagTable;
 		this.evtDiagAttrColIdxs = evtDiagAttrColIdxs;
 		this.dialogueMessageParentComponent = dialogueMessageParentComponent;
 		this.gameStartTime = gameStartTime;
+		this.minEventTimeDiff = minEventTimeDiff;
 	}
 
 	/*
@@ -71,8 +76,12 @@ final class LastEventToNextDialogueMover implements ActionListener {
 		final Optional<Utterance> optLastUtt = TableUtterances.findLastUtterance(diagTable, gameStartTime, rowIdx);
 		if (optLastUtt.isPresent()) {
 			final Utterance lastUtt = optLastUtt.get();
-			final LocalDateTime lastUttStartTime = TimestampArithmetic.createOffsetTimestamp(gameStartTime,
-					lastUtt.getStartTime());
+			final LocalDateTime minFollowingEvtDiagTime;
+			{
+				final LocalDateTime lastUttStartTime = TimestampArithmetic.createOffsetTimestamp(gameStartTime,
+						lastUtt.getStartTime());
+				minFollowingEvtDiagTime = lastUttStartTime.minus(minEventTimeDiff);
+			}
 
 			final int followingRowIdx = rowIdx + 1;
 			final int firstEventColIdx = evtDiagAttrColIdxs.get(EventDialogueAttribute.FIRST_EVENT_TIME);
@@ -84,9 +93,9 @@ final class LastEventToNextDialogueMover implements ActionListener {
 							"Cannot minimize event time of following row to last utterance end time because the following row has no event(s).",
 							"No events", JOptionPane.ERROR_MESSAGE);
 				} else {
-					diagTable.setValueAt(lastUttStartTime, followingRowIdx, firstEventColIdx);
+					diagTable.setValueAt(minFollowingEvtDiagTime, followingRowIdx, firstEventColIdx);
 					LOGGER.info("Set time of first event for row {} to \"{}\".", followingRowIdx,
-							EventTimes.FORMATTER.format(lastUttStartTime));
+							EventTimes.FORMATTER.format(minFollowingEvtDiagTime));
 				}
 			} catch (final ArrayIndexOutOfBoundsException ex) {
 				JOptionPane.showMessageDialog(dialogueMessageParentComponent,

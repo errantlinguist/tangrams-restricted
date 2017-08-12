@@ -20,6 +20,7 @@ import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.time.LocalDateTime;
+import java.time.temporal.TemporalAmount;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
@@ -45,12 +46,16 @@ final class FollowingEventTimeMinimizer implements ActionListener {
 
 	private final LocalDateTime gameStartTime;
 
+	private final TemporalAmount minEventTimeDiff;
+
 	FollowingEventTimeMinimizer(final JTable diagTable, final Map<EventDialogueAttribute, Integer> evtDiagAttrColIdxs,
-			final Component dialogueMessageParentComponent, final LocalDateTime gameStartTime) {
+			final Component dialogueMessageParentComponent, final LocalDateTime gameStartTime,
+			final TemporalAmount minEventTimeDiff) {
 		this.diagTable = diagTable;
 		this.evtDiagAttrColIdxs = evtDiagAttrColIdxs;
 		this.dialogueMessageParentComponent = dialogueMessageParentComponent;
 		this.gameStartTime = gameStartTime;
+		this.minEventTimeDiff = minEventTimeDiff;
 	}
 
 	/*
@@ -67,7 +72,7 @@ final class FollowingEventTimeMinimizer implements ActionListener {
 		}
 	}
 
-	private Optional<LocalDateTime> findLatestEventDialogueTime(final int rowIdx) {
+	private Optional<LocalDateTime> findMinimumFollowingEventDialogueTime(final int rowIdx) {
 		final Optional<LocalDateTime> result;
 		// NOTE: Even though the last event of the selected row is used for
 		// comparison, the actual EventDialogue instance backing both the
@@ -78,18 +83,20 @@ final class FollowingEventTimeMinimizer implements ActionListener {
 				rowIdx);
 		if (rowLastEventTime == null) {
 			result = optLastUttTime;
-		} else if (optLastUttTime.isPresent()) {
-			final LocalDateTime lastUttTIme = optLastUttTime.get();
-			result = Optional.of(Collections.max(Arrays.asList(rowLastEventTime, lastUttTIme)));
 		} else {
-			result = Optional.of(rowLastEventTime);
+			if (optLastUttTime.isPresent()) {
+				final LocalDateTime lastUttTIme = optLastUttTime.get();
+				result = Optional.of(Collections.max(Arrays.asList(rowLastEventTime, lastUttTIme)));
+			} else {
+				result = Optional.of(rowLastEventTime);
+			}
 		}
 
-		return result;
+		return result.map(time -> time.plus(minEventTimeDiff));
 	}
 
 	private void minimizeFollowingEventTime(final int rowIdx) {
-		final Optional<LocalDateTime> optLatestEvtDiagTime = findLatestEventDialogueTime(rowIdx);
+		final Optional<LocalDateTime> optLatestEvtDiagTime = findMinimumFollowingEventDialogueTime(rowIdx);
 		if (optLatestEvtDiagTime.isPresent()) {
 			final LocalDateTime latestEvtDiagTime = optLatestEvtDiagTime.get();
 			final int followingRowIdx = rowIdx + 1;
@@ -108,17 +115,15 @@ final class FollowingEventTimeMinimizer implements ActionListener {
 						LOGGER.info("Set time of first event for row {} to \"{}\".", followingRowIdx,
 								EventTimes.FORMATTER.format(latestEvtDiagTime));
 					} else if (timeCmp > 0) {
-						JOptionPane.showMessageDialog(dialogueMessageParentComponent,
-								String.format(
-										"Latest time of preceding event (\"%s\") is after the time of the following event (\"%s\"), i.e. the utterance overlaps the start of the next event.",
-										EventTimes.FORMATTER.format(latestEvtDiagTime),
-										EventTimes.FORMATTER.format(followingRowFirstEventTime)),
-								"Overlapping times", JOptionPane.WARNING_MESSAGE);
+						JOptionPane.showMessageDialog(dialogueMessageParentComponent, String.format(
+								"Latest time of preceding event (\"%s\") is after the time of the following event (\"%s\"), i.e. the utterance overlaps the start of the next event.",
+								EventTimes.FORMATTER.format(latestEvtDiagTime),
+								EventTimes.FORMATTER.format(followingRowFirstEventTime)), "Overlapping times",
+								JOptionPane.WARNING_MESSAGE);
 					} else {
-						JOptionPane.showMessageDialog(dialogueMessageParentComponent,
-								String.format(
-										"Time of following event is already equal to the end time of the preceding event's last utterance (\"%s\").",
-										EventTimes.FORMATTER.format(followingRowFirstEventTime)));
+						JOptionPane.showMessageDialog(dialogueMessageParentComponent, String.format(
+								"Time of following event is already equal to the end time of the preceding event's last utterance (\"%s\").",
+								EventTimes.FORMATTER.format(followingRowFirstEventTime)));
 					}
 				}
 
