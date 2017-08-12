@@ -21,9 +21,13 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.EnumSet;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -40,13 +44,8 @@ import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
 
 public final class SessionGame {
 
-	/**
-	 * This is used to create a sequence of individual event dialogues from a
-	 * sequence of individual utterances combined with the history of the game
-	 * session in which these utterances were made.
-	 */
-	private static final EventDialogueFactory EVT_DIAG_FACTORY = new EventDialogueFactory(
-			new EventTypeMatcher(GameManagementEvent.NEXT_TURN_REQUEST));
+	private static final Set<GameManagementEvent> DEFAULT_EVENT_DIAG_DELIMITERS = EnumSet
+			.of(GameManagementEvent.NEXT_TURN_REQUEST);
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SessionGame.class);
 
@@ -80,12 +79,61 @@ public final class SessionGame {
 		return result;
 	}
 
+	/**
+	 *
+	 * @param eventLogPath
+	 *            The {@link Path} to read the event log from.
+	 * @param utts
+	 *            The {@link Utterance utterances} for the session.
+	 * @throws IOException
+	 *             If an I/O error occurs while reading the event log.
+	 */
 	static SessionGame create(final Path eventLogPath, final List<Utterance> utts) throws IOException {
+		return create(eventLogPath, utts, DEFAULT_EVENT_DIAG_DELIMITERS);
+	}
+
+	/**
+	 *
+	 * @param eventLogPath
+	 *            The {@link Path} to read the event log from.
+	 * @param utts
+	 *            The {@link Utterance utterances} for the session.
+	 * @param evtDiagFactory
+	 *            The {@link BiFunction} used to create a sequence of individual
+	 *            event dialogues from a sequence of individual utterances
+	 *            combined with the history of the game session in which these
+	 *            utterances were made.
+	 * @return A new {@link SessionGame} representing the session game.
+	 * @throws IOException
+	 *             If an I/O error occurs while reading the event log.
+	 */
+	static SessionGame create(final Path eventLogPath, final List<Utterance> utts,
+			final BiFunction<? super ListIterator<Utterance>, ? super GameHistory, Stream<EventDialogue>> evtDiagFactory)
+			throws IOException {
 		LOGGER.info("Reading game histories from \"{}\".", eventLogPath);
 		try (Stream<Event> eventStream = LoggedEvents.readLoggedEvents(eventLogPath)) {
 			final List<Event> events = Arrays.asList(eventStream.toArray(Event[]::new));
-			return new SessionGame(events, utts);
+			return new SessionGame(events, utts, evtDiagFactory);
 		}
+	}
+
+	/**
+	 *
+	 * @param eventLogPath
+	 *            The {@link Path} to read the event log from.
+	 * @param utts
+	 *            The {@link Utterance utterances
+	 * @param eventDiagDelimiters
+	 *            A {@link Collection} of the {@link GameManagementEvent}
+	 *            instances which delimit individual {@link EventDialogue event
+	 *            dialogues} during the session.
+	 * @return A new {@link SessionGame} representing the session game.
+	 * @throws IOException
+	 *             If an I/O error occurs while reading the event log.
+	 */
+	static SessionGame create(final Path eventLogPath, final List<Utterance> utts,
+			final Collection<GameManagementEvent> eventDiagDelimiters) throws IOException {
+		return create(eventLogPath, utts, new EventDialogueFactory(new EventTypeMatcher(eventDiagDelimiters)));
 	}
 
 	static Map<String, SessionGame> createPlayerPerspectiveGameMap(
@@ -110,7 +158,21 @@ public final class SessionGame {
 
 	private final List<Utterance> utts;
 
-	public SessionGame(final List<Event> events, final List<Utterance> utts) {
+	/**
+	 *
+	 * @param events
+	 *            The {@link Event events} which occurred during the game
+	 *            session.
+	 * @param utts
+	 *            The {@link Utterance utterances} for the session.
+	 * @param evtDiagFactory
+	 *            The {@link BiFunction} used to create a sequence of individual
+	 *            event dialogues from a sequence of individual utterances
+	 *            combined with the history of the game session in which these
+	 *            utterances were made.
+	 */
+	public SessionGame(final List<Event> events, final List<Utterance> utts,
+			final BiFunction<? super ListIterator<Utterance>, ? super GameHistory, Stream<EventDialogue>> evtDiagFactory) {
 		this.events = Collections.unmodifiableList(events);
 		this.utts = Collections.unmodifiableList(utts);
 		final Map<String, GameHistory> gameHistories = LoggedEvents.createGameHistoryMap(events.stream());
@@ -119,7 +181,7 @@ public final class SessionGame {
 		LOGGER.debug("Creating {} instance for game ID \"{}\".", SessionGame.class.getSimpleName(), gameId);
 		history = gameIdHistory.getValue();
 		eventDialogues = Collections.unmodifiableList(
-				Arrays.asList(EVT_DIAG_FACTORY.apply(utts.listIterator(), history).toArray(EventDialogue[]::new)));
+				Arrays.asList(evtDiagFactory.apply(utts.listIterator(), history).toArray(EventDialogue[]::new)));
 	}
 
 	public List<EventDialogue> getEventDialogues() {
