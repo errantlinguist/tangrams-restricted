@@ -19,6 +19,7 @@ package se.kth.speech.coin.tangrams.analysis.view;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import javax.swing.table.AbstractTableModel;
@@ -43,15 +44,19 @@ final class EventDialogueTableModel extends AbstractTableModel {
 
 	private SessionGame game;
 
+	private final BiFunction<? super List<Event>, ? super List<Utterance>, SessionGame> sessionGameFactory;
+
 	private final Function<? super LocalDateTime, String> timeFormatter;
 
 	private final Function<? super String, LocalDateTime> timeParser;
 
 	EventDialogueTableModel(final SessionGame game, final Function<? super String, LocalDateTime> timeParser,
-			final Function<? super LocalDateTime, String> timeFormatter) {
+			final Function<? super LocalDateTime, String> timeFormatter,
+			final BiFunction<? super List<Event>, ? super List<Utterance>, SessionGame> sessionGameFactory) {
 		this.game = game;
 		this.timeParser = timeParser;
 		this.timeFormatter = timeFormatter;
+		this.sessionGameFactory = sessionGameFactory;
 	}
 
 	/*
@@ -220,7 +225,7 @@ final class EventDialogueTableModel extends AbstractTableModel {
 	}
 
 	private void updateGame() {
-		game = new SessionGame(game.getEvents(), game.getUtterances());
+		game = sessionGameFactory.apply(game.getEvents(), game.getUtterances());
 		fireTableDataChanged();
 	}
 

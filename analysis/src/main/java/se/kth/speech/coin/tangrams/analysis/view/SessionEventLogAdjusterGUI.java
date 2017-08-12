@@ -19,8 +19,10 @@ package se.kth.speech.coin.tangrams.analysis.view;
 import java.awt.Dimension;
 import java.io.File;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import javax.swing.JFileChooser;
@@ -35,6 +37,7 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Maps;
 
+import iristk.system.Event;
 import se.kth.speech.coin.tangrams.analysis.SessionGame;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.coin.tangrams.iristk.EventTimes;
@@ -108,9 +111,13 @@ public final class SessionEventLogAdjusterGUI implements Runnable {
 
 	private final SessionGame game;
 
-	public SessionEventLogAdjusterGUI(final SessionGame game, final Optional<? extends File> eventLogExportDir) {
+	private final BiFunction<? super List<Event>, ? super List<Utterance>, SessionGame> sessionGameFactory;
+
+	public SessionEventLogAdjusterGUI(final SessionGame game, final Optional<? extends File> eventLogExportDir,
+			final BiFunction<? super List<Event>, ? super List<Utterance>, SessionGame> sessionGameFactory) {
 		this.game = game;
 		this.eventLogExportDir = eventLogExportDir;
+		this.sessionGameFactory = sessionGameFactory;
 	}
 
 	/*
@@ -123,7 +130,7 @@ public final class SessionEventLogAdjusterGUI implements Runnable {
 		final LocalDateTime gameStart = game.getHistory().getStartTime();
 		final String title = createHistoryTitleStr(game.getGameId(), gameStart);
 		final EventDialogueAdjusterTable diagTable = new EventDialogueAdjusterTable(
-				new EventDialogueTableModel(game, TIME_PARSER, TIME_FORMATTER),
+				new EventDialogueTableModel(game, TIME_PARSER, TIME_FORMATTER, sessionGameFactory),
 				createDefaultRendererMap().entrySet().stream());
 		setMaxPreferredScrollableViewportSize(diagTable);
 

@@ -26,6 +26,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
@@ -39,8 +40,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import se.kth.speech.awt.LookAndFeels;
+import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
 import se.kth.speech.coin.tangrams.analysis.view.SessionEventLogAdjusterGUI;
+import se.kth.speech.coin.tangrams.iristk.EventTypeMatcher;
+import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 import se.kth.speech.coin.tangrams.view.UserPrompts;
 
 /**
@@ -76,6 +80,9 @@ final class SessionEventLogAdjuster {
 
 	private static final FileNameExtensionFilter DEFAULT_FILE_FILTER;
 
+	private static final EventDialogueFactory EVENT_DIAG_FACTORY = new EventDialogueFactory(
+			new EventTypeMatcher(EnumSet.allOf(GameManagementEvent.class)));
+
 	private static final List<FileNameExtensionFilter> FILE_FILTERS;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SessionEventLogAdjuster.class);
@@ -107,13 +114,15 @@ final class SessionEventLogAdjuster {
 
 	private static void accept(final Path infile) throws JAXBException, IOException {
 		final SessionDataManager sessionData = SessionDataManager.create(infile);
-		final SessionGameManager sessionEvtDiagMgr = new SessionGameManager(sessionData);
-		final SessionGame canonicalGame = sessionEvtDiagMgr.getCanonicalGame();
+		final List<Utterance> utts = SessionUtterances.createUtteranceList(sessionData);
+		final SessionGame canonicalGame = SessionGame.create(sessionData.getCanonicalEventLogPath(), utts,
+				EVENT_DIAG_FACTORY);
 
 		final Path infileParent = infile.getParent();
 		final Optional<File> eventLogExportDir = infileParent == null ? Optional.empty()
 				: Optional.of(infileParent.toFile());
-		EventQueue.invokeLater(new SessionEventLogAdjusterGUI(canonicalGame, eventLogExportDir));
+		EventQueue.invokeLater(new SessionEventLogAdjusterGUI(canonicalGame, eventLogExportDir,
+				(e, u) -> new SessionGame(e, u, EVENT_DIAG_FACTORY)));
 	}
 
 	private static Settings loadClassSettings() {
