@@ -88,6 +88,9 @@ final class SessionEventLogAdjuster {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SessionEventLogAdjuster.class);
 
+	/**
+	 * TODO: Set this to the average human reaction time
+	 */
 	private static final Duration MIN_EVENT_TIME_DIFF = Duration.ofMillis(1);
 
 	private static final Path SETTINGS_DIR;
