@@ -72,6 +72,9 @@ final class EventDialogueTableModel extends AbstractTableModel {
 			result = AttributeType.UTTERANCE.getValueClass();
 		} else {
 			switch (colEventDiagAttr) {
+			case FIRST_EVENT_NAME:
+				result = String.class;
+				break;
 			case FIRST_EVENT_SENDER:
 				result = String.class;
 				break;
@@ -144,6 +147,11 @@ final class EventDialogueTableModel extends AbstractTableModel {
 			result = diagUtts.size() <= diagUttIdx ? null : diagUtts.get(diagUttIdx);
 		} else {
 			switch (colEventDiagAttr) {
+			case FIRST_EVENT_NAME: {
+				final Optional<Event> optEvent = diag.getFirstEvent();
+				result = optEvent.map(Event::getName).orElse(null);
+				break;
+			}
 			case FIRST_EVENT_SENDER: {
 				final Optional<Event> optEvent = diag.getFirstEvent();
 				result = optEvent.map(event -> event.get(GameManagementEvent.Attribute.PLAYER_ID.toString()))
@@ -184,6 +192,16 @@ final class EventDialogueTableModel extends AbstractTableModel {
 			// diagUtts.get(diagUttIdx);
 		} else {
 			switch (colEventDiagAttr) {
+			case FIRST_EVENT_NAME: {
+				final Optional<Event> optEvent = diag.getFirstEvent();
+				if (optEvent.isPresent()) {
+					final Event event = optEvent.get();
+					event.setName(aValue.toString());
+				} else {
+					throw new IllegalArgumentException(String.format("No value at %d*%d.", rowIndex, columnIndex));
+				}
+				break;
+			}
 			case FIRST_EVENT_SENDER: {
 				final Optional<Event> optEvent = diag.getFirstEvent();
 				if (optEvent.isPresent()) {
