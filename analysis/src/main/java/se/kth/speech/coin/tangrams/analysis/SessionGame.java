@@ -33,8 +33,6 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.Maps;
-
 import iristk.system.Event;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
@@ -134,18 +132,6 @@ public final class SessionGame {
 	static SessionGame create(final Path eventLogPath, final List<Utterance> utts,
 			final Collection<GameManagementEvent> eventDiagDelimiters) throws IOException {
 		return create(eventLogPath, utts, new EventDialogueFactory(new EventTypeMatcher(eventDiagDelimiters)));
-	}
-
-	static Map<String, SessionGame> createPlayerPerspectiveGameMap(
-			final Collection<Entry<String, Path>> playerEventLogPaths, final List<Utterance> utts) throws IOException {
-		final Map<String, SessionGame> result = Maps.newHashMapWithExpectedSize(playerEventLogPaths.size());
-		for (final Entry<String, Path> playerEventLogPath : playerEventLogPaths) {
-			final String playerId = playerEventLogPath.getKey();
-			final Path eventLogPath = playerEventLogPath.getValue();
-			final SessionGame sessionGame = create(eventLogPath, utts);
-			result.put(playerId, sessionGame);
-		}
-		return result;
 	}
 
 	private final List<EventDialogue> eventDialogues;

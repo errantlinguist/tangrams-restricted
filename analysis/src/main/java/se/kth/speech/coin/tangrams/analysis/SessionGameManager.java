@@ -18,13 +18,17 @@ package se.kth.speech.coin.tangrams.analysis;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import javax.xml.bind.JAXBException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.collect.Maps;
 
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
@@ -38,6 +42,18 @@ public final class SessionGameManager {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SessionGameManager.class);
 
+	private static Map<String, SessionGame> createPlayerPerspectiveGameMap(
+			final Collection<Entry<String, Path>> playerEventLogPaths, final List<Utterance> utts) throws IOException {
+		final Map<String, SessionGame> result = Maps.newHashMapWithExpectedSize(playerEventLogPaths.size());
+		for (final Entry<String, Path> playerEventLogPath : playerEventLogPaths) {
+			final String playerId = playerEventLogPath.getKey();
+			final Path eventLogPath = playerEventLogPath.getValue();
+			final SessionGame sessionGame = SessionGame.create(eventLogPath, utts);
+			result.put(playerId, sessionGame);
+		}
+		return result;
+	}
+
 	private final SessionGame canonicalGame;
 
 	private final Map<String, Path> playerEventLogs;
@@ -50,10 +66,11 @@ public final class SessionGameManager {
 
 		canonicalGame = SessionGame.create(sessionData.getCanonicalEventLogPath(), utts);
 		playerEventLogs = sessionData.getPlayerData().getPlayerEventLogs();
-	}
+	};
 
 	public Map<String, SessionGame> createPlayerPerspectiveGameMap() throws IOException {
-		return SessionGame.createPlayerPerspectiveGameMap(playerEventLogs.entrySet(), utts);
+		return createPlayerPerspectiveGameMap(playerEventLogs.entrySet(), utts);
+
 	}
 
 	public SessionGame getCanonicalGame() {
