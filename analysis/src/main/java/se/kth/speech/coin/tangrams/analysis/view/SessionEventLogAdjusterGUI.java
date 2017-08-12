@@ -87,7 +87,7 @@ public final class SessionEventLogAdjusterGUI implements Runnable {
 	}
 
 	private static String createHistoryTitleStr(final String gameId, final LocalDateTime startTime) {
-		return String.format("Game %s, started at %s", gameId, startTime);
+		return String.format("Game %s, started at %s", gameId, TIME_FORMATTER.apply(startTime));
 	}
 
 	private static void setMaxPreferredScrollableViewportSize(final JTable table) {
