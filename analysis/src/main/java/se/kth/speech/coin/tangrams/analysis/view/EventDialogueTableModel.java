@@ -100,7 +100,7 @@ final class EventDialogueTableModel extends AbstractTableModel {
 	public int getColumnCount() {
 		final int maxUttCount = game.getEventDialogues().stream().map(EventDialogue::getUtterances).mapToInt(List::size)
 				.max().orElse(0);
-		return maxUttCount + 1;
+		return maxUttCount + EventDialogueAttribute.values().length;
 	}
 
 	/*
