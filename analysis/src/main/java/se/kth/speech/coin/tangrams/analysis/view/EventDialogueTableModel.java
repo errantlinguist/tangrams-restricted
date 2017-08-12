@@ -18,6 +18,7 @@ package se.kth.speech.coin.tangrams.analysis.view;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
@@ -25,6 +26,7 @@ import java.util.function.Function;
 import javax.swing.table.AbstractTableModel;
 
 import iristk.system.Event;
+import se.kth.speech.TimestampArithmetic;
 import se.kth.speech.coin.tangrams.analysis.SessionGame;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
@@ -84,6 +86,10 @@ final class EventDialogueTableModel extends AbstractTableModel {
 			case LAST_EVENT_TIME:
 				result = LocalDateTime.class;
 				break;
+			case LAST_UTT_OVERLAPS_FOLLOWING_EVENT: {
+				result = Boolean.class;
+				break;
+			}
 			default:
 				throw new AssertionError("No logic for handing switch case.");
 			}
@@ -138,7 +144,8 @@ final class EventDialogueTableModel extends AbstractTableModel {
 	 */
 	@Override
 	public Object getValueAt(final int rowIndex, final int columnIndex) {
-		final EventDialogue diag = game.getEventDialogues().get(rowIndex);
+		final ListIterator<EventDialogue> diagIter = game.getEventDialogues().listIterator(rowIndex);
+		final EventDialogue diag = diagIter.next();
 		final Object result;
 		final EventDialogueAttribute colEventDiagAttr = getColumnEventDialogueAttribute(columnIndex);
 		if (colEventDiagAttr == null) {
@@ -166,6 +173,26 @@ final class EventDialogueTableModel extends AbstractTableModel {
 			case LAST_EVENT_TIME: {
 				final Optional<Event> optEvent = diag.getLastEvent();
 				result = optEvent.map(Event::getTime).map(timeParser).orElse(null);
+				break;
+			}
+			case LAST_UTT_OVERLAPS_FOLLOWING_EVENT: {
+				if (diagIter.hasNext()) {
+					final EventDialogue followingDiag = diagIter.next();
+					final Optional<LocalDateTime> optFollowingDiagFirstEventTime = followingDiag.getFirstEvent()
+							.map(Event::getTime).map(timeParser);
+					if (optFollowingDiagFirstEventTime.isPresent()) {
+						final LocalDateTime followingDiagFirstEventTime = optFollowingDiagFirstEventTime.get();
+						final Optional<LocalDateTime> optCurrentDiagLastUttEndTime = diag.getLastUtterance()
+								.map(utt -> TimestampArithmetic.createOffsetTimestamp(game.getHistory().getStartTime(),
+										utt.getEndTime()));
+						result = optCurrentDiagLastUttEndTime.map(currentDiagLastUttEndTime -> currentDiagLastUttEndTime
+								.isAfter(followingDiagFirstEventTime)).orElse(Boolean.FALSE);
+					} else {
+						result = Boolean.FALSE;
+					}
+				} else {
+					result = Boolean.FALSE;
+				}
 				break;
 			}
 			default:
@@ -233,6 +260,9 @@ final class EventDialogueTableModel extends AbstractTableModel {
 					throw new IllegalArgumentException(String.format("No value at %d*%d.", rowIndex, columnIndex));
 				}
 				break;
+			}
+			case LAST_UTT_OVERLAPS_FOLLOWING_EVENT: {
+				throw new IllegalArgumentException(String.format("Cannot edit column %d.", columnIndex));
 			}
 			default:
 				throw new AssertionError("No logic for handing switch case.");
