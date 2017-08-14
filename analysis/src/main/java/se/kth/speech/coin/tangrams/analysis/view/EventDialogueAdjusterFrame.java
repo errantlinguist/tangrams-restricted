@@ -45,7 +45,7 @@ final class EventDialogueAdjusterFrame extends JFrame {
 	private static final long serialVersionUID = -5412327154602984470L;
 
 	EventDialogueAdjusterFrame(final String title, final LocalDateTime gameStartTime,
-			final EventDialogueAdjusterTable diagTable, final JFileChooser eventLogFileChooser,
+			final EventDialogueAdjusterTable diagTable, final JFileChooser eventLogExportFileChooser,
 			final TemporalAmount minEventTimeDiff, final Function<? super LocalDateTime, String> evtTimeFormatter)
 			throws HeadlessException {
 		super(title);
@@ -83,7 +83,7 @@ final class EventDialogueAdjusterFrame extends JFrame {
 			final JMenuItem exportItem = new JMenuItem("Export event log...");
 			exportItem.setMnemonic(mnemonic);
 			exportItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, InputEvent.CTRL_MASK));
-			exportItem.addActionListener(new SaveAction(eventLogFileChooser, this));
+			exportItem.addActionListener(new SaveAction(eventLogExportFileChooser, this));
 			fileMenu.add(exportItem);
 		}
 	}
