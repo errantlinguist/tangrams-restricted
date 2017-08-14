@@ -16,16 +16,19 @@
 */
 package se.kth.speech.coin.tangrams.analysis.view;
 
-import java.awt.Frame;
+import java.awt.Component;
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.util.Optional;
+import java.util.function.Supplier;
 
 import javax.swing.AbstractAction;
 import javax.swing.JFileChooser;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import se.kth.speech.coin.tangrams.analysis.SessionGame;
 
 final class SaveAction extends AbstractAction {
 
@@ -38,11 +41,14 @@ final class SaveAction extends AbstractAction {
 
 	private final JFileChooser fileChooser;
 
-	private final Frame parent;
+	private final Component parent;
 
-	SaveAction(final JFileChooser fileChooser, final Frame parent) {
+	private final Supplier<SessionGame> currentGameGetter;
+
+	SaveAction(final JFileChooser fileChooser, final Component parent, final Supplier<SessionGame> currentGameGetter) {
 		this.parent = parent;
 		this.fileChooser = fileChooser;
+		this.currentGameGetter = currentGameGetter;
 	}
 
 	@Override

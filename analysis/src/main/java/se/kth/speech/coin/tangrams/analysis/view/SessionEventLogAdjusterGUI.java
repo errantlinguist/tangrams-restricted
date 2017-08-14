@@ -16,6 +16,7 @@
 */
 package se.kth.speech.coin.tangrams.analysis.view;
 
+import java.awt.Component;
 import java.awt.Dimension;
 import java.io.File;
 import java.time.LocalDateTime;
@@ -26,6 +27,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import javax.swing.JFileChooser;
 import javax.swing.JTable;
@@ -135,15 +137,18 @@ public final class SessionEventLogAdjusterGUI implements Runnable {
 	public void run() {
 		final LocalDateTime gameStart = game.getHistory().getStartTime();
 		final String title = createHistoryTitleStr(game.getGameId(), gameStart);
-		final EventDialogueAdjusterTable diagTable = new EventDialogueAdjusterTable(
-				new EventDialogueTableModel(game, TIME_PARSER, TIME_FORMATTER, sessionGameFactory),
+		final EventDialogueTableModel diagTableModel = new EventDialogueTableModel(game, TIME_PARSER, TIME_FORMATTER,
+				sessionGameFactory);
+		final EventDialogueAdjusterTable diagTable = new EventDialogueAdjusterTable(diagTableModel,
 				createDefaultRendererMap().entrySet().stream());
 		setMaxPreferredScrollableViewportSize(diagTable);
 
 		final JFileChooser eventLogExportFileChooser = createEventLogExportFileChooser();
-
+		final Function<Component, SaveAction> eventLogExportFunctionFactory = parent -> {
+			return new SaveAction(eventLogExportFileChooser, parent, diagTableModel::getGame);
+		};
 		final EventDialogueAdjusterFrame frame = new EventDialogueAdjusterFrame(title, gameStart, diagTable,
-				eventLogExportFileChooser, minEventTimeDiff, TIME_FORMATTER);
+				eventLogExportFunctionFactory, minEventTimeDiff, TIME_FORMATTER);
 		frame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 		frame.pack();
 		frame.setVisible(true);

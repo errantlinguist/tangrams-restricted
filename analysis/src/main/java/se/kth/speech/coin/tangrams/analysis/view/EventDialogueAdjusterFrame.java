@@ -16,8 +16,10 @@
 */
 package se.kth.speech.coin.tangrams.analysis.view;
 
+import java.awt.Component;
 import java.awt.Container;
 import java.awt.HeadlessException;
+import java.awt.event.ActionListener;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.time.LocalDateTime;
@@ -27,7 +29,6 @@ import java.util.function.Function;
 
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
-import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
@@ -45,7 +46,8 @@ final class EventDialogueAdjusterFrame extends JFrame {
 	private static final long serialVersionUID = -5412327154602984470L;
 
 	EventDialogueAdjusterFrame(final String title, final LocalDateTime gameStartTime,
-			final EventDialogueAdjusterTable diagTable, final JFileChooser eventLogExportFileChooser,
+			final EventDialogueAdjusterTable diagTable,
+			final Function<? super Component, ? extends ActionListener> eventLogExportFunctionFactory,
 			final TemporalAmount minEventTimeDiff, final Function<? super LocalDateTime, String> evtTimeFormatter)
 			throws HeadlessException {
 		super(title);
@@ -83,7 +85,8 @@ final class EventDialogueAdjusterFrame extends JFrame {
 			final JMenuItem exportItem = new JMenuItem("Export event log...");
 			exportItem.setMnemonic(mnemonic);
 			exportItem.setAccelerator(KeyStroke.getKeyStroke(mnemonic, InputEvent.CTRL_MASK));
-			exportItem.addActionListener(new SaveAction(eventLogExportFileChooser, this));
+			final ActionListener eventLogFileExportFunction = eventLogExportFunctionFactory.apply(this);
+			exportItem.addActionListener(eventLogFileExportFunction);
 			fileMenu.add(exportItem);
 		}
 	}

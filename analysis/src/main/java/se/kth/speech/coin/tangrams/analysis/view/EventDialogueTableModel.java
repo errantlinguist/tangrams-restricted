@@ -277,4 +277,11 @@ final class EventDialogueTableModel extends AbstractTableModel {
 		fireTableDataChanged();
 	}
 
+	/**
+	 * @return the game
+	 */
+	SessionGame getGame() {
+		return game;
+	}
+
 }
