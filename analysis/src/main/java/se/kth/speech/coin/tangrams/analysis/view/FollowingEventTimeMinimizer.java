@@ -25,14 +25,13 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 
 import javax.swing.JOptionPane;
 import javax.swing.JTable;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import se.kth.speech.coin.tangrams.iristk.EventTimes;
 
 final class FollowingEventTimeMinimizer implements ActionListener {
 
@@ -44,18 +43,21 @@ final class FollowingEventTimeMinimizer implements ActionListener {
 
 	private final Map<EventDialogueAttribute, Integer> evtDiagAttrColIdxs;
 
+	private final Function<? super LocalDateTime, String> evtTimeFormatter;
+
 	private final LocalDateTime gameStartTime;
 
 	private final TemporalAmount minEventTimeDiff;
 
 	FollowingEventTimeMinimizer(final JTable diagTable, final Map<EventDialogueAttribute, Integer> evtDiagAttrColIdxs,
 			final Component dialogueMessageParentComponent, final LocalDateTime gameStartTime,
-			final TemporalAmount minEventTimeDiff) {
+			final TemporalAmount minEventTimeDiff, final Function<? super LocalDateTime, String> evtTimeFormatter) {
 		this.diagTable = diagTable;
 		this.evtDiagAttrColIdxs = evtDiagAttrColIdxs;
 		this.dialogueMessageParentComponent = dialogueMessageParentComponent;
 		this.gameStartTime = gameStartTime;
 		this.minEventTimeDiff = minEventTimeDiff;
+		this.evtTimeFormatter = evtTimeFormatter;
 	}
 
 	/*
@@ -113,17 +115,17 @@ final class FollowingEventTimeMinimizer implements ActionListener {
 					if (timeCmp < 0) {
 						diagTable.setValueAt(latestEvtDiagTime, followingRowIdx, firstEventColIdx);
 						LOGGER.info("Set time of first event for row {} to \"{}\".", followingRowIdx,
-								EventTimes.FORMATTER.format(latestEvtDiagTime));
+								evtTimeFormatter.apply(latestEvtDiagTime));
 					} else if (timeCmp > 0) {
 						JOptionPane.showMessageDialog(dialogueMessageParentComponent, String.format(
 								"Latest time of preceding event (\"%s\") is after the time of the following event (\"%s\"), i.e. the utterance overlaps the start of the next event.",
-								EventTimes.FORMATTER.format(latestEvtDiagTime),
-								EventTimes.FORMATTER.format(followingRowFirstEventTime)), "Overlapping times",
+								evtTimeFormatter.apply(latestEvtDiagTime),
+								evtTimeFormatter.apply(followingRowFirstEventTime)), "Overlapping times",
 								JOptionPane.WARNING_MESSAGE);
 					} else {
 						JOptionPane.showMessageDialog(dialogueMessageParentComponent, String.format(
 								"Time of following event is already equal to the end time of the preceding event's last utterance (\"%s\").",
-								EventTimes.FORMATTER.format(followingRowFirstEventTime)));
+								evtTimeFormatter.apply(followingRowFirstEventTime)));
 					}
 				}
 

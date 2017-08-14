@@ -23,6 +23,7 @@ import java.time.LocalDateTime;
 import java.time.temporal.TemporalAmount;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 
 import javax.swing.JOptionPane;
 import javax.swing.JTable;
@@ -32,7 +33,6 @@ import org.slf4j.LoggerFactory;
 
 import se.kth.speech.TimestampArithmetic;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
-import se.kth.speech.coin.tangrams.iristk.EventTimes;
 
 final class LastEventToNextDialogueMover implements ActionListener {
 
@@ -48,14 +48,17 @@ final class LastEventToNextDialogueMover implements ActionListener {
 
 	private final TemporalAmount minEventTimeDiff;
 
+	private final Function<? super LocalDateTime, String> evtTimeFormatter;
+
 	LastEventToNextDialogueMover(final JTable diagTable, final Map<EventDialogueAttribute, Integer> evtDiagAttrColIdxs,
 			final Component dialogueMessageParentComponent, final LocalDateTime gameStartTime,
-			final TemporalAmount minEventTimeDiff) {
+			final TemporalAmount minEventTimeDiff, final Function<? super LocalDateTime, String> evtTimeFormatter) {
 		this.diagTable = diagTable;
 		this.evtDiagAttrColIdxs = evtDiagAttrColIdxs;
 		this.dialogueMessageParentComponent = dialogueMessageParentComponent;
 		this.gameStartTime = gameStartTime;
 		this.minEventTimeDiff = minEventTimeDiff;
+		this.evtTimeFormatter = evtTimeFormatter;
 	}
 
 	/*
@@ -95,7 +98,7 @@ final class LastEventToNextDialogueMover implements ActionListener {
 				} else {
 					diagTable.setValueAt(minFollowingEvtDiagTime, followingRowIdx, firstEventColIdx);
 					LOGGER.info("Set time of first event for row {} to \"{}\".", followingRowIdx,
-							EventTimes.FORMATTER.format(minFollowingEvtDiagTime));
+							evtTimeFormatter.apply(minFollowingEvtDiagTime));
 				}
 			} catch (final ArrayIndexOutOfBoundsException ex) {
 				JOptionPane.showMessageDialog(dialogueMessageParentComponent,

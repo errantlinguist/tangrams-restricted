@@ -142,7 +142,7 @@ public final class SessionEventLogAdjusterGUI implements Runnable {
 		final JFileChooser eventLogFileChooser = createEventLogExportFileChooser();
 
 		final EventDialogueAdjusterFrame frame = new EventDialogueAdjusterFrame(title, gameStart, diagTable,
-				eventLogFileChooser, minEventTimeDiff);
+				eventLogFileChooser, minEventTimeDiff, TIME_FORMATTER);
 		frame.setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
 		frame.pack();
 		frame.setVisible(true);

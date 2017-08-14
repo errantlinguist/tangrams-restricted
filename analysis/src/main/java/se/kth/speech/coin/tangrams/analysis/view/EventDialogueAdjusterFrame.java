@@ -23,6 +23,7 @@ import java.awt.event.KeyEvent;
 import java.time.LocalDateTime;
 import java.time.temporal.TemporalAmount;
 import java.util.Map;
+import java.util.function.Function;
 
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
@@ -44,7 +45,8 @@ final class EventDialogueAdjusterFrame extends JFrame {
 	private static final long serialVersionUID = -5412327154602984470L;
 
 	EventDialogueAdjusterFrame(final String title, final LocalDateTime gameStartTime,
-			final EventDialogueAdjusterTable diagTable, final JFileChooser eventLogFileChooser, final TemporalAmount minEventTimeDiff)
+			final EventDialogueAdjusterTable diagTable, final JFileChooser eventLogFileChooser,
+			final TemporalAmount minEventTimeDiff, final Function<? super LocalDateTime, String> evtTimeFormatter)
 			throws HeadlessException {
 		super(title);
 		final Container content = getContentPane();
@@ -60,14 +62,14 @@ final class EventDialogueAdjusterFrame extends JFrame {
 		content.add(actionPanel);
 		{
 			final JButton newButton = new JButton("Minimize following event time");
-			newButton.addActionListener(
-					new FollowingEventTimeMinimizer(diagTable, evtDiagAttrColIdxs, this, gameStartTime, minEventTimeDiff));
+			newButton.addActionListener(new FollowingEventTimeMinimizer(diagTable, evtDiagAttrColIdxs, this,
+					gameStartTime, minEventTimeDiff, evtTimeFormatter));
 			actionPanel.add(newButton);
 		}
 		{
 			final JButton newButton = new JButton("Move last utterance to following dialogue");
-			newButton.addActionListener(
-					new LastEventToNextDialogueMover(diagTable, evtDiagAttrColIdxs, this, gameStartTime, minEventTimeDiff));
+			newButton.addActionListener(new LastEventToNextDialogueMover(diagTable, evtDiagAttrColIdxs, this,
+					gameStartTime, minEventTimeDiff, evtTimeFormatter));
 			actionPanel.add(newButton);
 		}
 
