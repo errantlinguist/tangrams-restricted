@@ -144,8 +144,9 @@ public final class SessionEventLogAdjusterGUI implements Runnable {
 		setMaxPreferredScrollableViewportSize(diagTable);
 
 		final JFileChooser eventLogExportFileChooser = createEventLogExportFileChooser();
+		final Supplier<List<Event>> exporteeEventsGetter = () -> diagTableModel.getGame().getEvents();
 		final Function<Component, SaveAction> eventLogExportFunctionFactory = parent -> {
-			return new SaveAction(eventLogExportFileChooser, parent, diagTableModel::getGame);
+			return new SaveAction(eventLogExportFileChooser, parent, exporteeEventsGetter);
 		};
 		final EventDialogueAdjusterFrame frame = new EventDialogueAdjusterFrame(title, gameStart, diagTable,
 				eventLogExportFunctionFactory, minEventTimeDiff, TIME_FORMATTER);

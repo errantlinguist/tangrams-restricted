@@ -28,7 +28,7 @@ import javax.swing.JFileChooser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import se.kth.speech.coin.tangrams.analysis.SessionGame;
+import iristk.system.Event;
 
 final class SaveAction extends AbstractAction {
 
@@ -39,16 +39,17 @@ final class SaveAction extends AbstractAction {
 	 */
 	private static final long serialVersionUID = 3762393426054555238L;
 
+	private final Supplier<? extends Iterable<? extends Event>> exporteeEventsGetter;
+
 	private final JFileChooser fileChooser;
 
 	private final Component parent;
 
-	private final Supplier<SessionGame> currentGameGetter;
-
-	SaveAction(final JFileChooser fileChooser, final Component parent, final Supplier<SessionGame> currentGameGetter) {
+	SaveAction(final JFileChooser fileChooser, final Component parent,
+			final Supplier<? extends Iterable<? extends Event>> exporteeEventsGetter) {
 		this.parent = parent;
 		this.fileChooser = fileChooser;
-		this.currentGameGetter = currentGameGetter;
+		this.exporteeEventsGetter = exporteeEventsGetter;
 	}
 
 	@Override
