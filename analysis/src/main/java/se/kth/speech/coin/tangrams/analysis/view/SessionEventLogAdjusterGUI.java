@@ -145,8 +145,8 @@ public final class SessionEventLogAdjusterGUI implements Runnable {
 
 		final JFileChooser eventLogExportFileChooser = createEventLogExportFileChooser();
 		final Supplier<List<Event>> exporteeEventsGetter = () -> diagTableModel.getGame().getEvents();
-		final Function<Component, SaveAction> eventLogExportFunctionFactory = parent -> {
-			return new SaveAction(eventLogExportFileChooser, parent, exporteeEventsGetter);
+		final Function<Component, ExportEventsAction> eventLogExportFunctionFactory = parent -> {
+			return new ExportEventsAction(eventLogExportFileChooser, parent, exporteeEventsGetter);
 		};
 		final EventDialogueAdjusterFrame frame = new EventDialogueAdjusterFrame(title, gameStart, diagTable,
 				eventLogExportFunctionFactory, minEventTimeDiff, TIME_FORMATTER);

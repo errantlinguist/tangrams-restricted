@@ -30,9 +30,9 @@ import org.slf4j.LoggerFactory;
 
 import iristk.system.Event;
 
-final class SaveAction extends AbstractAction {
+final class ExportEventsAction extends AbstractAction {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(SaveAction.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(ExportEventsAction.class);
 
 	/**
 	 *
@@ -45,7 +45,7 @@ final class SaveAction extends AbstractAction {
 
 	private final Component parent;
 
-	SaveAction(final JFileChooser fileChooser, final Component parent,
+	ExportEventsAction(final JFileChooser fileChooser, final Component parent,
 			final Supplier<? extends Iterable<? extends Event>> exporteeEventsGetter) {
 		this.parent = parent;
 		this.fileChooser = fileChooser;
