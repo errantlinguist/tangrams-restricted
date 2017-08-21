@@ -140,7 +140,7 @@ final class UtteranceTabularDataWriter {
 				+ eventDataToAdd.length + featuresToDescribe.size() + langDataToAdd.length;
 
 		final Iterator<List<String>> imgDescHeaderIter = imgViewDescColHeaders.iterator();
-		List<List<String>> result;
+		final List<List<String>> result;
 		if (imgDescHeaderIter.hasNext()) {
 			result = new ArrayList<>(imgViewDescColHeaders.size());
 			final List<String> firstHeader = new ArrayList<>(resultColCount);
