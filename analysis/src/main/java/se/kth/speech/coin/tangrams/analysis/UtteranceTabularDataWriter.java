@@ -135,8 +135,9 @@ final class UtteranceTabularDataWriter {
 	private List<List<String>> createColHeaders() {
 		final List<List<String>> imgViewDescColHeaders = ImageVisualizationInfoTableRowWriter.createColumnHeaders();
 		final EventDatum[] eventDataToAdd = EventDatum.values();
+		final LanguageDatum[] langDataToAdd = LanguageDatum.values();
 		final int resultColCount = imgViewDescColHeaders.stream().mapToInt(List::size).max().getAsInt()
-				+ eventDataToAdd.length + featuresToDescribe.size() + LanguageDatum.values().length;
+				+ eventDataToAdd.length + featuresToDescribe.size() + langDataToAdd.length;
 
 		final Iterator<List<String>> imgDescHeaderIter = imgViewDescColHeaders.iterator();
 		List<List<String>> result;
@@ -149,7 +150,6 @@ final class UtteranceTabularDataWriter {
 			featuresToDescribe.stream().map(Object::toString).forEachOrdered(firstHeader::add);
 			final List<String> firstImgDescHeader = imgDescHeaderIter.next();
 			firstHeader.addAll(firstImgDescHeader);
-			final LanguageDatum[] langDataToAdd = LanguageDatum.values();
 			final int paddingCellsToAdd = resultColCount - langDataToAdd.length - firstHeader.size();
 			Stream.generate(COL_HEADER_PADDING_SUPPLIER).limit(paddingCellsToAdd).forEach(firstHeader::add);
 			Arrays.stream(langDataToAdd).map(LanguageDatum::toString).forEachOrdered(firstHeader::add);
@@ -167,8 +167,7 @@ final class UtteranceTabularDataWriter {
 				Stream.generate(COL_HEADER_PADDING_SUPPLIER).limit(featuresToDescribe.size()).forEach(nextHeader::add);
 				nextHeader.addAll(nextImgDescHeader);
 				// Add padding for language cols
-				Stream.generate(COL_HEADER_PADDING_SUPPLIER).limit(LanguageDatum.values().length)
-						.forEach(nextHeader::add);
+				Stream.generate(COL_HEADER_PADDING_SUPPLIER).limit(langDataToAdd.length).forEach(nextHeader::add);
 			}
 
 		} else {
