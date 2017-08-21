@@ -148,10 +148,10 @@ final class UtteranceTabularDataWriter {
 			featuresToDescribe.stream().map(Object::toString).forEachOrdered(firstHeader::add);
 			final List<String> firstImgDescHeader = imgDescHeaderIter.next();
 			firstHeader.addAll(firstImgDescHeader);
-			Arrays.stream(LanguageDatum.values()).map(LanguageDatum::toString).forEachOrdered(firstHeader::add);
-			while (firstHeader.size() < resultColCount) {
-				firstHeader.add(COL_HEADER_PADDING_SUPPLIER.get());
-			}
+			final LanguageDatum[] langDataToAdd = LanguageDatum.values();
+			final int paddingCellsToAdd = resultColCount - langDataToAdd.length - firstHeader.size();
+			Stream.generate(COL_HEADER_PADDING_SUPPLIER).limit(paddingCellsToAdd).forEach(firstHeader::add);
+			Arrays.stream(langDataToAdd).map(LanguageDatum::toString).forEachOrdered(firstHeader::add);
 
 			// Add subheader for image description-specific features,
 			// e.g. color features
