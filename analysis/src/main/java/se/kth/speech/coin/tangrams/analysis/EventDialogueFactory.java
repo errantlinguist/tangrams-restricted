@@ -150,8 +150,9 @@ final class EventDialogueFactory // NO_UCD (use default)
 				LOGGER.debug("Last event is named \"{}\".", currentEvent.getName());
 				lastDiagEvents = Collections.singletonList(currentEvent);
 			}
-			resultBuilder.accept(new EventDialogue(lastDiagEvents, lastEventUtts));
-
+			if (!(lastEventUtts.isEmpty() && lastDiagEvents.isEmpty())) {
+				resultBuilder.accept(new EventDialogue(lastDiagEvents, lastEventUtts));
+			}
 		} else {
 			LOGGER.warn("No delimiting events found; Creating a single {} instance.",
 					EventDialogue.class.getSimpleName());
