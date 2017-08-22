@@ -393,6 +393,7 @@ final class TangramsClient implements Runnable {
 		final Future<Clip> startSignalClipFuture = backgroundJobService.submit(() -> {
 			return openAudioClip(START_SIGNAL_AUDIO_RESOURCE_NAME);
 		});
+		final Runnable startSignalPlayer = () -> backgroundJobService.execute(() -> signalGameStart(startSignalClipFuture));
 
 		LookAndFeels.setLookAndFeel();
 		final String playerId = promptPlayerId(null, createDefaultPlayerId());
@@ -459,7 +460,7 @@ final class TangramsClient implements Runnable {
 											final SuccessfulConnectionHook connectionHook = new SuccessfulConnectionHook(
 													connectionStatusView,
 													recordingHooks.getKey().andThen(
-															recordedPlayerId -> backgroundJobService.execute(() -> signalGameStart(startSignalClipFuture))),
+															recordedPlayerId -> startSignalPlayer.run()),
 													playerId);
 											try {
 												EventQueue.invokeAndWait(connectionHook);
