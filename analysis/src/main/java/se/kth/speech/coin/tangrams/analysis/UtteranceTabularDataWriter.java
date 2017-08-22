@@ -328,6 +328,21 @@ final class UtteranceTabularDataWriter {
 		return sb.toString();
 	}
 
+	private Stream<String> getImgFeatureValueReprs(final GameContext context) {
+		final Optional<Integer> optSelectedEntityId = context.findLastSelectedEntityId();
+		final Stream<String> result;
+		if (optSelectedEntityId.isPresent()) {
+			final EntityFeature.Extractor.Context extractionContext = extractionContextFactory.apply(context,
+					optSelectedEntityId.get());
+			final Stream<Optional<Object>> featureVals = featuresToDescribe.stream()
+					.map(feature -> extractor.apply(feature, extractionContext));
+			result = featureVals.map(opt -> opt.map(Object::toString).orElse(NULL_VALUE_REPR));
+		} else {
+			result = featuresToDescribe.stream().map(feature -> NULL_VALUE_REPR);
+		}
+		return result;
+	}
+
 	void accept(final GameHistory history, final List<EventDialogue> eventDiags, final Writer writer)
 			throws IOException {
 		// Write header
@@ -382,21 +397,10 @@ final class UtteranceTabularDataWriter {
 				{
 					final GameContext context = TemporalGameContexts.create(history, contextStartTime, contextEndTime)
 							.findFirst().get();
-					final Optional<Integer> optSelectedEntityId = context.findLastSelectedEntityId();
-					final String featureVectorRepr;
-					if (optSelectedEntityId.isPresent()) {
-						final EntityFeature.Extractor.Context extractionContext = extractionContextFactory
-								.apply(context, optSelectedEntityId.get());
-						final Stream<Optional<Object>> featureVals = featuresToDescribe.stream()
-								.map(feature -> extractor.apply(feature, extractionContext));
-						featureVectorRepr = featureVals.map(opt -> opt.map(Object::toString).orElse(NULL_VALUE_REPR))
-								.collect(TABLE_ROW_CELL_JOINER);
-					} else {
-						featureVectorRepr = blankEvtImgDesc;
-					}
+					final String featureVectorRepr = getImgFeatureValueReprs(context).collect(TABLE_ROW_CELL_JOINER);
 					writer.write(featureVectorRepr);
+					writer.write(TABLE_STRING_REPR_COL_DELIMITER);
 				}
-				writer.write(TABLE_STRING_REPR_COL_DELIMITER);
 				evtImgVizInfoDesc = createImgVizInfoDesc(firstDiagEvent, gameStartTime, imgVizInfoData);
 				optLastRoundEvent = Optional.of(diagEvts.get(diagEvts.size() - 1));
 			}
