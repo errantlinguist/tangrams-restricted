@@ -47,6 +47,7 @@ import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
 import javax.sound.sampled.DataLine;
+import javax.sound.sampled.Line;
 import javax.sound.sampled.LineEvent;
 import javax.sound.sampled.LineListener;
 import javax.sound.sampled.LineUnavailableException;
@@ -274,13 +275,16 @@ final class TangramsClient implements Runnable {
 
 	private static void playSound(final AudioFormat format, final byte[] data)
 			throws LineUnavailableException, IOException, UnsupportedAudioFileException {
-		final DataLine.Info info = new DataLine.Info(Clip.class, format);
-		final Clip clip = (Clip) AudioSystem.getLine(info);
+		final Clip clip = (Clip) AudioSystem.getLine(new DataLine.Info(Clip.class, format));
 		clip.addLineListener(new LineListener() {
 			@Override
 			public void update(final LineEvent event) {
 				if (event.getType() == LineEvent.Type.STOP) {
-					clip.close();
+					LOGGER.debug("Finished playing audio.");
+					final Line line = event.getLine();
+					line.close();
+					// FIXME: The audio clip can't close!
+					System.out.println("Closed line.");
 				}
 			}
 		});

@@ -33,8 +33,7 @@ public final class BufferedAudio {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(BufferedAudio.class);
 
-	public static BufferedAudio read(final URL res)
-			throws IOException, UnsupportedAudioFileException {
+	public static BufferedAudio read(final URL res) throws IOException, UnsupportedAudioFileException {
 		final BufferedAudio result;
 		final AudioFileFormat format = AudioSystem.getAudioFileFormat(res);
 		LOGGER.debug("Loading audio from \"{}\".", res);
@@ -43,22 +42,19 @@ public final class BufferedAudio {
 				AudioSystem.write(instream, format.getType(), byteArrayOutputStream);
 				final byte[] data = byteArrayOutputStream.toByteArray();
 				LOGGER.debug("Finished loading audio from \"{}\".", res);
-				result = new BufferedAudio(format, data, data.length);
+				result = new BufferedAudio(format, data);
 			}
 		}
 		return result;
 	}
 
-	private final int bufferSize;
-
 	private final byte[] data;
 
 	private final AudioFileFormat format;
 
-	public BufferedAudio(final AudioFileFormat format, final byte[] data, final int bufferSize) {
+	public BufferedAudio(final AudioFileFormat format, final byte[] data) {
 		this.format = format;
 		this.data = data;
-		this.bufferSize = bufferSize;
 	}
 
 	/*
@@ -78,9 +74,6 @@ public final class BufferedAudio {
 			return false;
 		}
 		final BufferedAudio other = (BufferedAudio) obj;
-		if (bufferSize != other.bufferSize) {
-			return false;
-		}
 		if (!Arrays.equals(data, other.data)) {
 			return false;
 		}
@@ -92,13 +85,6 @@ public final class BufferedAudio {
 			return false;
 		}
 		return true;
-	}
-
-	/**
-	 * @return the bufferSize
-	 */
-	public int getBufferSize() {
-		return bufferSize;
 	}
 
 	/**
@@ -124,7 +110,6 @@ public final class BufferedAudio {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + bufferSize;
 		result = prime * result + (format == null ? 0 : format.hashCode());
 		result = prime * result + Arrays.hashCode(data);
 		return result;
@@ -138,9 +123,7 @@ public final class BufferedAudio {
 	@Override
 	public String toString() {
 		final StringBuilder builder = new StringBuilder(128);
-		builder.append("BufferedAudio [bufferSize=");
-		builder.append(bufferSize);
-		builder.append(", format=");
+		builder.append("BufferedAudio [format=");
 		builder.append(format);
 		builder.append("]");
 		return builder.toString();
