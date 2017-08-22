@@ -132,7 +132,7 @@ final class EventDialogueFactory // NO_UCD (use default)
 							gameStartTime);
 					currentEvent = nextDialogueDelimitingEvent;
 				} else {
-					// Get the utterances after the last event
+					// Get the remaining utterances
 					currentDialogueUttList = Iterators.createRemainingElementList(utts);
 					currentEvent = null;
 				}
