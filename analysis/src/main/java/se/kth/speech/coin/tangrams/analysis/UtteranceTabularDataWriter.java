@@ -56,11 +56,52 @@ import se.kth.speech.coin.tangrams.iristk.events.Move;
 final class UtteranceTabularDataWriter {
 
 	private enum EventDatum {
-		LAST_RND_TIME, LAST_RND_TIME_DIFF, MOVE_SUBMITTER, TIME;
+		LAST_RND_TIME {
+			@Override
+			String getValue(final Event firstDiagEvent, final Optional<Event> optLastRoundEvent) {
+				return optLastRoundEvent.map(Event::getTime).orElse(NULL_VALUE_REPR);
+			}
+		},
+		LAST_RND_TIME_DIFF {
+			@Override
+			String getValue(final Event firstDiagEvent, final Optional<Event> optLastRoundEvent) {
+				return optLastRoundEvent.map(lastRoundEvent -> calculateTimeDiffSecs(lastRoundEvent, firstDiagEvent))
+						.map(BigDecimal::toString).orElse(NULL_VALUE_REPR);
+			}
+		},
+		MOVE_SUBMITTER {
+			@Override
+			String getValue(final Event firstDiagEvent, final Optional<Event> lastRoundEvent) {
+				return firstDiagEvent.getString(GameManagementEvent.Attribute.PLAYER_ID.toString());
+			}
+		},
+		NAME {
+			@Override
+			String getValue(final Event firstDiagEvent, final Optional<Event> optLastRoundEvent) {
+				return firstDiagEvent.getName();
+			}
+		},
+		TIME {
+			@Override
+			String getValue(final Event firstDiagEvent, final Optional<Event> optLastRoundEvent) {
+				return firstDiagEvent.getTime();
+			}
+		};
+
+		abstract String getValue(Event firstDiagEvent, Optional<Event> optLastRoundEvent);
 	}
 
 	private enum LanguageDatum {
-		DIALOGUE;
+		DIALOGUE {
+			@Override
+			String getValue(final List<Utterance> diagUtts,
+					final Function<? super Iterator<Utterance>, String> uttDiagReprFactory) {
+				return uttDiagReprFactory.apply(diagUtts.iterator());
+			}
+		};
+
+		abstract String getValue(final List<Utterance> diagUtts,
+				Function<? super Iterator<Utterance>, String> uttDiagReprFactory);
 	}
 
 	private static final Supplier<String> COL_HEADER_PADDING_SUPPLIER = () -> "";
@@ -254,7 +295,7 @@ final class UtteranceTabularDataWriter {
 				.collect(TABLE_ROW_JOINER);
 		writer.write(colHeaderStr);
 
-		Event lastRoundEvent = null;
+		Optional<Event> optLastRoundEvent = Optional.empty();
 		for (final ListIterator<EventDialogue> eventDiagIter = eventDiags.listIterator(); eventDiagIter.hasNext();) {
 			final EventDialogue eventDiag = eventDiagIter.next();
 			writer.write(TABLE_STRING_REPR_ROW_DELIMITER);
@@ -289,22 +330,12 @@ final class UtteranceTabularDataWriter {
 					contextStartTime = firstUtt.getStartTime();
 					contextEndTime = firstUtt.getEndTime();
 				}
-
-				if (lastRoundEvent == null) {
-					writer.write(NULL_VALUE_REPR);
+				for (final EventDatum eventDatum : EventDatum.values()) {
+					final String datumValue = eventDatum.getValue(firstDiagEvent, optLastRoundEvent);
+					writer.write(datumValue);
 					writer.write(TABLE_STRING_REPR_COL_DELIMITER);
-					writer.write(NULL_VALUE_REPR);
-				} else {
-					writer.write(lastRoundEvent.getTime());
-					writer.write(TABLE_STRING_REPR_COL_DELIMITER);
-					final BigDecimal lastRndEvtTimeDiff = calculateTimeDiffSecs(lastRoundEvent, firstDiagEvent);
-					writer.write(lastRndEvtTimeDiff.toString());
 				}
-				writer.write(TABLE_STRING_REPR_COL_DELIMITER);
-				writer.write(firstDiagEvent.getString(GameManagementEvent.Attribute.PLAYER_ID.toString()));
-				writer.write(TABLE_STRING_REPR_COL_DELIMITER);
-				writer.write(firstDiagEvent.getTime());
-				writer.write(TABLE_STRING_REPR_COL_DELIMITER);
+
 				{
 					final GameContext context = TemporalGameContexts.create(history, contextStartTime, contextEndTime)
 							.findFirst().get();
@@ -326,25 +357,31 @@ final class UtteranceTabularDataWriter {
 				writer.write(TABLE_STRING_REPR_COL_DELIMITER);
 				final StringWriter strWriter = new StringWriter(256);
 				{
-					final ImageVisualizationInfoTableRowWriter imgInfoDescWriter = new ImageVisualizationInfoTableRowWriter(
-							strWriter);
 					final Move move = (Move) firstDiagEvent.get(GameManagementEvent.Attribute.MOVE.toString());
-					final Integer selectedPieceId = move.getPieceId();
-					final ImageVisualizationInfo.Datum selectedPieceImgVizInfo = imgVizInfo.getData()
-							.get(selectedPieceId);
-					LOGGER.debug("Writing selected piece (ID {}) viz info: {} ", selectedPieceId,
-							selectedPieceImgVizInfo);
-					imgInfoDescWriter.write(selectedPieceId, selectedPieceImgVizInfo);
+					if (move == null) {
+
+					} else {
+						final ImageVisualizationInfoTableRowWriter imgInfoDescWriter = new ImageVisualizationInfoTableRowWriter(
+								strWriter, NULL_VALUE_REPR);
+						final Integer selectedPieceId = move.getPieceId();
+						final ImageVisualizationInfo.Datum selectedPieceImgVizInfo = imgVizInfo.getData()
+								.get(selectedPieceId);
+						LOGGER.debug("Writing selected piece (ID {}) viz info: {} ", selectedPieceId,
+								selectedPieceImgVizInfo);
+						imgInfoDescWriter.write(selectedPieceId, selectedPieceImgVizInfo);
+					}
+
 				}
 				evtImgVizInfoDesc = strWriter.toString();
-				lastRoundEvent = diagEvts.get(diagEvts.size() - 1);
+				optLastRoundEvent = Optional.of(diagEvts.get(diagEvts.size() - 1));
 			}
-
 			writer.write(evtImgVizInfoDesc);
-			writer.write(TABLE_STRING_REPR_COL_DELIMITER);
 
-			final String eventDialogStr = uttDiagReprFactory.apply(diagUtts.iterator());
-			writer.write(eventDialogStr);
+			for (final LanguageDatum langDatum : LanguageDatum.values()) {
+				writer.write(TABLE_STRING_REPR_COL_DELIMITER);
+				final String datumValue = langDatum.getValue(diagUtts, uttDiagReprFactory);
+				writer.write(datumValue);
+			}
 		}
 	}
 
