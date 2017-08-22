@@ -8,7 +8,7 @@ import re
 import sys
 import xml.etree.ElementTree
 
-
+COL_DELIM = '\t'
 XML_CONTENT_TYPE_PATTERN = re.compile(".*?/xml")
 
 					
@@ -41,7 +41,9 @@ if __name__ == "__main__":
 		infiles = walk_xml_files(inpaths)
 		token_counts = count_tokens(infiles)
 		print("Found {} unique token(s).".format(len(token_counts)), file=sys.stderr)
+		col_headers = ("TOKEN", "COUNT")
+		print(COL_DELIM.join(col_headers))
 		alphabetic_token_counts = sorted(token_counts.items(), key=lambda item: item[0])
 		alphabetic_count_desc_token_counts = sorted(alphabetic_token_counts, key=lambda item: item[1], reverse=True)
 		for token_count in alphabetic_count_desc_token_counts:
-			print('\t'.join(str(cell) for cell in token_count))
+			print(COL_DELIM.join(str(cell) for cell in token_count))
