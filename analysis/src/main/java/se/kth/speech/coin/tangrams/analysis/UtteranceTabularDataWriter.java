@@ -153,32 +153,45 @@ final class UtteranceTabularDataWriter {
 		return cols.subList(0, imgFeatureEndIdx);
 	}
 
+	private final EventDatum[] eventDataToWrite;
+
 	private final EntityFeatureExtractionContextFactory extractionContextFactory;
 
 	private final EntityFeature.Extractor extractor;
 
 	private final List<EntityFeature> featuresToDescribe;
 
+	private final LanguageDatum[] langDataToWrite;
+
 	private final boolean strict;
 
 	private final Function<? super Iterator<Utterance>, String> uttDiagReprFactory;
 
-	UtteranceTabularDataWriter(final EntityFeature.Extractor extractor, final List<EntityFeature> featuresToDescribe,
+	private UtteranceTabularDataWriter(final EntityFeature.Extractor extractor,
+			final List<EntityFeature> featuresToDescribe,
 			final EntityFeatureExtractionContextFactory extractionContextFactory,
-			final Function<? super Iterator<Utterance>, String> uttDiagReprFactory, final boolean strict) {
+			final Function<? super Iterator<Utterance>, String> uttDiagReprFactory, final boolean strict,
+			final EventDatum[] eventDataToWrite, final LanguageDatum[] langDataToWrite) {
 		this.extractor = extractor;
 		this.featuresToDescribe = featuresToDescribe;
 		this.extractionContextFactory = extractionContextFactory;
 		this.uttDiagReprFactory = uttDiagReprFactory;
 		this.strict = strict;
+		this.eventDataToWrite = eventDataToWrite;
+		this.langDataToWrite = langDataToWrite;
+	}
+
+	UtteranceTabularDataWriter(final EntityFeature.Extractor extractor, final List<EntityFeature> featuresToDescribe,
+			final EntityFeatureExtractionContextFactory extractionContextFactory,
+			final Function<? super Iterator<Utterance>, String> uttDiagReprFactory, final boolean strict) {
+		this(extractor, featuresToDescribe, extractionContextFactory, uttDiagReprFactory, strict, EventDatum.values(),
+				LanguageDatum.values());
 	}
 
 	private List<List<String>> createColHeaders() {
 		final List<List<String>> imgViewDescColHeaders = ImageVisualizationInfoTableRowWriter.createColumnHeaders();
-		final EventDatum[] eventDataToAdd = EventDatum.values();
-		final LanguageDatum[] langDataToAdd = LanguageDatum.values();
 		final int resultColCount = imgViewDescColHeaders.stream().mapToInt(List::size).max().getAsInt()
-				+ eventDataToAdd.length + featuresToDescribe.size() + langDataToAdd.length;
+				+ eventDataToWrite.length + featuresToDescribe.size() + langDataToWrite.length;
 
 		final Iterator<List<String>> imgDescHeaderIter = imgViewDescColHeaders.iterator();
 		final List<List<String>> result;
@@ -187,13 +200,13 @@ final class UtteranceTabularDataWriter {
 			final List<String> firstHeader = new ArrayList<>(resultColCount);
 			result.add(firstHeader);
 
-			Arrays.stream(eventDataToAdd).map(EventDatum::toString).forEachOrdered(firstHeader::add);
+			Arrays.stream(eventDataToWrite).map(EventDatum::toString).forEachOrdered(firstHeader::add);
 			featuresToDescribe.stream().map(Object::toString).forEachOrdered(firstHeader::add);
 			final List<String> firstImgDescHeader = imgDescHeaderIter.next();
 			firstHeader.addAll(firstImgDescHeader);
-			final int paddingCellsToAdd = resultColCount - langDataToAdd.length - firstHeader.size();
+			final int paddingCellsToAdd = resultColCount - langDataToWrite.length - firstHeader.size();
 			Stream.generate(COL_HEADER_PADDING_SUPPLIER).limit(paddingCellsToAdd).forEach(firstHeader::add);
-			Arrays.stream(langDataToAdd).map(LanguageDatum::toString).forEachOrdered(firstHeader::add);
+			Arrays.stream(langDataToWrite).map(LanguageDatum::toString).forEachOrdered(firstHeader::add);
 
 			// Add subheader for image description-specific features,
 			// e.g. color features
@@ -203,12 +216,12 @@ final class UtteranceTabularDataWriter {
 				result.add(nextHeader);
 
 				// Add padding for evt cols
-				Stream.generate(COL_HEADER_PADDING_SUPPLIER).limit(eventDataToAdd.length).forEach(nextHeader::add);
+				Stream.generate(COL_HEADER_PADDING_SUPPLIER).limit(eventDataToWrite.length).forEach(nextHeader::add);
 				// Add padding for feature-derived descriptions
 				Stream.generate(COL_HEADER_PADDING_SUPPLIER).limit(featuresToDescribe.size()).forEach(nextHeader::add);
 				nextHeader.addAll(nextImgDescHeader);
 				// Add padding for language cols
-				Stream.generate(COL_HEADER_PADDING_SUPPLIER).limit(langDataToAdd.length).forEach(nextHeader::add);
+				Stream.generate(COL_HEADER_PADDING_SUPPLIER).limit(langDataToWrite.length).forEach(nextHeader::add);
 			}
 
 		} else {
@@ -330,7 +343,7 @@ final class UtteranceTabularDataWriter {
 					contextStartTime = firstUtt.getStartTime();
 					contextEndTime = firstUtt.getEndTime();
 				}
-				for (final EventDatum eventDatum : EventDatum.values()) {
+				for (final EventDatum eventDatum : eventDataToWrite) {
 					final String datumValue = eventDatum.getValue(firstDiagEvent, optLastRoundEvent);
 					writer.write(datumValue);
 					writer.write(TABLE_STRING_REPR_COL_DELIMITER);
@@ -377,7 +390,7 @@ final class UtteranceTabularDataWriter {
 			}
 			writer.write(evtImgVizInfoDesc);
 
-			for (final LanguageDatum langDatum : LanguageDatum.values()) {
+			for (final LanguageDatum langDatum : langDataToWrite) {
 				writer.write(TABLE_STRING_REPR_COL_DELIMITER);
 				final String datumValue = langDatum.getValue(diagUtts, uttDiagReprFactory);
 				writer.write(datumValue);
