@@ -148,6 +148,18 @@ final class UtteranceTabularDataWriter {
 		return Arrays.stream(blankCells).collect(TABLE_ROW_CELL_JOINER);
 	}
 
+	private static String createImgVizInfoDesc(final Move move, final LocalDateTime gameStartTime,
+			final List<ImageVisualizationInfo.Datum> imgVizInfoData) throws IOException {
+		final StringWriter strWriter = new StringWriter(256);
+		final ImageVisualizationInfoTableRowWriter imgInfoDescWriter = new ImageVisualizationInfoTableRowWriter(
+				strWriter, NULL_VALUE_REPR);
+		final Integer selectedPieceId = move.getPieceId();
+		final ImageVisualizationInfo.Datum selectedPieceImgVizInfo = imgVizInfoData.get(selectedPieceId);
+		LOGGER.debug("Writing selected piece (ID {}) viz info: {} ", selectedPieceId, selectedPieceImgVizInfo);
+		imgInfoDescWriter.write(selectedPieceId, selectedPieceImgVizInfo);
+		return strWriter.toString();
+	}
+
 	private static List<String> getEvtImgFeatureCols(final List<String> cols) {
 		final int imgFeatureEndIdx = cols.size() - LanguageDatum.values().length;
 		return cols.subList(0, imgFeatureEndIdx);
@@ -168,7 +180,7 @@ final class UtteranceTabularDataWriter {
 	private final LanguageDatum[] langDataToWrite;
 
 	private final boolean strict;
-	
+
 	private final Function<? super Iterator<Utterance>, String> uttDiagReprFactory;
 
 	private UtteranceTabularDataWriter(final EntityFeature.Extractor extractor,
@@ -236,6 +248,18 @@ final class UtteranceTabularDataWriter {
 			result = Collections.emptyList();
 		}
 		assert result.stream().mapToInt(List::size).boxed().collect(Collectors.toSet()).size() <= 1;
+		return result;
+	}
+
+	private String createImgVizInfoDesc(final Event firstDiagEvent, final LocalDateTime gameStartTime,
+			final List<ImageVisualizationInfo.Datum> imgVizInfoData) throws IOException {
+		final String result;
+		final Move move = (Move) firstDiagEvent.get(GameManagementEvent.Attribute.MOVE.toString());
+		if (move == null) {
+			result = blankEvtImgDesc;
+		} else {
+			result = createImgVizInfoDesc(move, gameStartTime, imgVizInfoData);
+		}
 		return result;
 	}
 
@@ -307,8 +331,9 @@ final class UtteranceTabularDataWriter {
 	void write(final SessionGame sessionGame, final Writer writer) throws IOException {
 		// The visualization info for the given game
 		final GameHistory history = sessionGame.getHistory();
-		final ImageVisualizationInfo imgVizInfo = IMG_VIZ_INFO_UNMARSHALLER
-				.apply(history.getInitialState().getImageVisualizationInfoDescription());
+		final LocalDateTime gameStartTime = history.getStartTime();
+		final List<ImageVisualizationInfo.Datum> imgVizInfoData = IMG_VIZ_INFO_UNMARSHALLER
+				.apply(history.getInitialState().getImageVisualizationInfoDescription()).getData();
 		final List<EventDialogue> eventDiags = sessionGame.getEventDialogues();
 
 		// Write header
@@ -338,7 +363,7 @@ final class UtteranceTabularDataWriter {
 								eventDiagIter.nextIndex() - 1);
 						LOGGER.warn(msg);
 						final LocalDateTime eventTime = EventTimes.parseEventTime(firstDiagEvent.getTime());
-						final Duration gameDuration = Duration.between(history.getStartTime(), eventTime);
+						final Duration gameDuration = Duration.between(gameStartTime, eventTime);
 						final float offset = gameDuration.toMillis() / 1000.0f;
 						contextStartTime = offset;
 						contextEndTime = offset;
@@ -373,24 +398,7 @@ final class UtteranceTabularDataWriter {
 					writer.write(featureVectorRepr);
 				}
 				writer.write(TABLE_STRING_REPR_COL_DELIMITER);
-				final StringWriter strWriter = new StringWriter(256);
-				{
-					final Move move = (Move) firstDiagEvent.get(GameManagementEvent.Attribute.MOVE.toString());
-					if (move == null) {
-
-					} else {
-						final ImageVisualizationInfoTableRowWriter imgInfoDescWriter = new ImageVisualizationInfoTableRowWriter(
-								strWriter, NULL_VALUE_REPR);
-						final Integer selectedPieceId = move.getPieceId();
-						final ImageVisualizationInfo.Datum selectedPieceImgVizInfo = imgVizInfo.getData()
-								.get(selectedPieceId);
-						LOGGER.debug("Writing selected piece (ID {}) viz info: {} ", selectedPieceId,
-								selectedPieceImgVizInfo);
-						imgInfoDescWriter.write(selectedPieceId, selectedPieceImgVizInfo);
-					}
-
-				}
-				evtImgVizInfoDesc = strWriter.toString();
+				evtImgVizInfoDesc = createImgVizInfoDesc(firstDiagEvent, gameStartTime, imgVizInfoData);
 				optLastRoundEvent = Optional.of(diagEvts.get(diagEvts.size() - 1));
 			}
 			writer.write(evtImgVizInfoDesc);
