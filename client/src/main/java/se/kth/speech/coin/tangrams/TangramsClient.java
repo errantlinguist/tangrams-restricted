@@ -459,7 +459,7 @@ final class TangramsClient implements Runnable {
 											final SuccessfulConnectionHook connectionHook = new SuccessfulConnectionHook(
 													connectionStatusView,
 													recordingHooks.getKey().andThen(
-															recordedPlayerId -> signalGameStart(startSignalClipFuture)),
+															recordedPlayerId -> backgroundJobService.execute(() -> signalGameStart(startSignalClipFuture))),
 													playerId);
 											try {
 												EventQueue.invokeAndWait(connectionHook);
