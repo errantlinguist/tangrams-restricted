@@ -57,23 +57,29 @@ final class EventDialogueFactory // NO_UCD (use default)
 
 	private static List<Utterance> createPreEventUtteranceList(final ListIterator<Utterance> utts,
 			final LocalDateTime nextEventTimestamp, final LocalDateTime gameStartTime) {
-		final List<Utterance> result = new ArrayList<>();
-		while (utts.hasNext()) {
-			// Find all utterances up to the first event
-			final Utterance nextUtt = utts.next();
-			final LocalDateTime uttStartTimestamp = TimestampArithmetic.createOffsetTimestamp(gameStartTime,
-					nextUtt.getStartTime());
-			// If the utterance was before the first event, add it
-			// to the
-			// list of before-event utterances
-			if (nextEventTimestamp.isAfter(uttStartTimestamp)) {
-				result.add(nextUtt);
-			} else {
-				// Put the cursor position back to where it was so the looked-at
-				// event can be put into the list for the next event
-				utts.previous();
-				break;
-			}
+		final List<Utterance> result;
+		if (utts.hasNext()) {
+			result = new ArrayList<>();
+			do {
+				// Find all utterances up to the first event
+				final Utterance nextUtt = utts.next();
+				final LocalDateTime uttStartTimestamp = TimestampArithmetic.createOffsetTimestamp(gameStartTime,
+						nextUtt.getStartTime());
+				// If the utterance was before the first event, add it
+				// to the
+				// list of before-event utterances
+				if (nextEventTimestamp.isAfter(uttStartTimestamp)) {
+					result.add(nextUtt);
+				} else {
+					// Put the cursor position back to where it was so the
+					// looked-at
+					// event can be put into the list for the next event
+					utts.previous();
+					break;
+				}
+			} while (utts.hasNext());
+		} else {
+			result = Collections.emptyList();
 		}
 		return result;
 	}
