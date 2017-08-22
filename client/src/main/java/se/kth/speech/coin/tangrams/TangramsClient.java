@@ -284,6 +284,8 @@ final class TangramsClient implements Runnable {
 					LOGGER.debug("Finished playing audio.");
 					final Line line = event.getLine();
 					line.close();
+					// FIXME: Cannot close the Clip/Line!
+					LOGGER.debug("Closed audio data line.");
 				}
 			}
 		});
