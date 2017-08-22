@@ -153,6 +153,8 @@ final class UtteranceTabularDataWriter {
 		return cols.subList(0, imgFeatureEndIdx);
 	}
 
+	private final String blankEvtImgDesc;
+
 	private final List<List<String>> colHeaders;
 
 	private final EventDatum[] eventDataToWrite;
@@ -166,7 +168,7 @@ final class UtteranceTabularDataWriter {
 	private final LanguageDatum[] langDataToWrite;
 
 	private final boolean strict;
-
+	
 	private final Function<? super Iterator<Utterance>, String> uttDiagReprFactory;
 
 	private UtteranceTabularDataWriter(final EntityFeature.Extractor extractor,
@@ -183,6 +185,8 @@ final class UtteranceTabularDataWriter {
 		this.langDataToWrite = langDataToWrite;
 
 		colHeaders = createColHeaders();
+		final List<String> evtImgFeatureCols = getEvtImgFeatureCols(colHeaders.get(0));
+		blankEvtImgDesc = createBlankEvtImgDesc(evtImgFeatureCols);
 	}
 
 	UtteranceTabularDataWriter(final EntityFeature.Extractor extractor, final List<EntityFeature> featuresToDescribe,
@@ -320,8 +324,7 @@ final class UtteranceTabularDataWriter {
 			final List<Event> diagEvts = eventDiag.getEvents();
 			final List<Utterance> diagUtts = eventDiag.getUtterances();
 			if (diagEvts.isEmpty()) {
-				final List<String> evtImgFeatureCols = getEvtImgFeatureCols(colHeaders.get(0));
-				evtImgVizInfoDesc = createBlankEvtImgDesc(evtImgFeatureCols);
+				evtImgVizInfoDesc = blankEvtImgDesc;
 			} else {
 				final Event firstDiagEvent = diagEvts.iterator().next();
 				final float contextStartTime;
@@ -365,8 +368,7 @@ final class UtteranceTabularDataWriter {
 						featureVectorRepr = featureVals.map(opt -> opt.map(Object::toString).orElse(NULL_VALUE_REPR))
 								.collect(TABLE_ROW_CELL_JOINER);
 					} else {
-						final List<String> evtImgFeatureCols = getEvtImgFeatureCols(colHeaders.get(0));
-						featureVectorRepr = createBlankEvtImgDesc(evtImgFeatureCols);
+						featureVectorRepr = blankEvtImgDesc;
 					}
 					writer.write(featureVectorRepr);
 				}
