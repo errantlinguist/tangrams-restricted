@@ -16,8 +16,6 @@
 */
 package se.kth.speech.nlp;
 
-import java.util.function.Predicate;
-
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
  * @since 29 May 2017
@@ -25,7 +23,20 @@ import java.util.function.Predicate;
  */
 public final class Disfluencies {
 
-	public static final Predicate<String> TOKEN_MATCHER = token -> token.endsWith("-");
+	public static boolean isDisfluency(final CharSequence token) {
+		final char disfluencyDelimiter = '-';
+		final boolean result;
+		if (token.length() < 1) {
+			result = false;
+		} else if (token.charAt(0) == disfluencyDelimiter) {
+			result = true;
+		} else if (token.charAt(token.length() - 1) == disfluencyDelimiter) {
+			result = true;
+		} else {
+			result = false;
+		}
+		return result;
+	}
 
 	private Disfluencies() {
 	}

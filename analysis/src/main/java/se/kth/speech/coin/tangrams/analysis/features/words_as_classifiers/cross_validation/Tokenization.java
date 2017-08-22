@@ -124,7 +124,7 @@ enum Tokenization implements Function<TokenizationContext, EventDialogueTransfor
 	private static Map<Cleaning, Supplier<EventDialogueTransformer>> createCleaningTransformerSupplierMap() {
 		final Map<Cleaning, Supplier<EventDialogueTransformer>> result = new EnumMap<>(Cleaning.class);
 		result.put(Cleaning.DISFLUENCIES,
-				() -> new TokenFilteringEventDialogueTransformer(token -> !Disfluencies.TOKEN_MATCHER.test(token)));
+				() -> new TokenFilteringEventDialogueTransformer(token -> !Disfluencies.isDisfluency(token)));
 		result.put(Cleaning.DUPLICATES, () -> new DuplicateTokenFilteringEventDialogueTransformer());
 		result.put(Cleaning.FILLERS, () -> {
 			final Set<String> fillerWords = SnowballPorter2EnglishStopwords.Variant.FILLERS.get();
