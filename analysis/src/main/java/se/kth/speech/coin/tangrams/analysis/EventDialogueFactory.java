@@ -120,13 +120,14 @@ final class EventDialogueFactory // NO_UCD (use default)
 				// reassigned
 				final List<Event> currentDialogueEvents = Arrays.asList(
 						Stream.concat(Stream.of(currentEvent), nextDialogueEvents.getKey()).toArray(Event[]::new));
-				
+
 				final List<Utterance> currentDialogueUttList;
 				final Optional<Event> optNextDialogueDelimitingEvent = nextDialogueEvents.getValue();
 				if (optNextDialogueDelimitingEvent.isPresent()) {
 					final Event nextDialogueDelimitingEvent = optNextDialogueDelimitingEvent.get();
 					LOGGER.debug("Next event is named \"{}\".", nextDialogueDelimitingEvent.getName());
-					// Find the set of utterances following the last event
+					// Find the set of utterances preceding the delimiter for
+					// this dialogue, i.e. the first event for the next dialogue
 					currentDialogueUttList = createPreEventUtteranceList(utts, nextDialogueDelimitingEvent,
 							gameStartTime);
 					currentEvent = nextDialogueDelimitingEvent;
