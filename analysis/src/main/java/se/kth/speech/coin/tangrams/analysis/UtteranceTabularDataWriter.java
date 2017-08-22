@@ -66,7 +66,7 @@ final class UtteranceTabularDataWriter {
 		LAST_RND_TIME_DIFF {
 			@Override
 			String getValue(final Event firstDiagEvent, final Optional<Event> optLastRoundEvent) {
-				return optLastRoundEvent.map(lastRoundEvent -> calculateTimeDiffSecs(firstDiagEvent, lastRoundEvent))
+				return optLastRoundEvent.map(lastRoundEvent -> calculateTimeDiffSecs(lastRoundEvent, firstDiagEvent))
 						.map(BigDecimal::toString).orElse(NULL_VALUE_REPR);
 			}
 		},
