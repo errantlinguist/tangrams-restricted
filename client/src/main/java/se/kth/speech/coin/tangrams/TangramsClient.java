@@ -194,8 +194,6 @@ final class TangramsClient implements Runnable {
 
 	private static final Properties PROPS;
 
-	private static final String START_SIGNAL_AUDIO_RESOURCE_NAME = "game-start.wav";
-
 	static {
 		try {
 			PROPS = ClassProperties.load(TangramsClient.class);
@@ -301,6 +299,14 @@ final class TangramsClient implements Runnable {
 		}
 	}
 
+	private static Clip openStartSignalAudioClip() {
+		try {
+			return openAudioClip("game-start.wav");
+		} catch (LineUnavailableException | IOException | UnsupportedAudioFileException e) {
+			throw new RuntimeException(e);
+		}
+	}
+
 	private static String promptGameId(final Component dialogParentComponent) {
 		String result = null;
 		boolean parsedInput = false;
@@ -390,10 +396,10 @@ final class TangramsClient implements Runnable {
 	@Override
 	public void run() {
 		final ExecutorService backgroundJobService = Executors.newCachedThreadPool();
-		final Future<Clip> startSignalClipFuture = backgroundJobService.submit(() -> {
-			return openAudioClip(START_SIGNAL_AUDIO_RESOURCE_NAME);
-		});
-		final Runnable startSignalPlayer = () -> backgroundJobService.execute(() -> signalGameStart(startSignalClipFuture));
+		final CompletableFuture<Clip> startSignalClipFuture = CompletableFuture
+				.supplyAsync(TangramsClient::openStartSignalAudioClip, backgroundJobService);
+		final Runnable startSignalPlayer = () -> backgroundJobService
+				.execute(() -> signalGameStart(startSignalClipFuture));
 
 		LookAndFeels.setLookAndFeel();
 		final String playerId = promptPlayerId(null, createDefaultPlayerId());
@@ -458,8 +464,7 @@ final class TangramsClient implements Runnable {
 													"Handling game state data received from server for game \"{}\".",
 													gameId);
 											final SuccessfulConnectionHook connectionHook = new SuccessfulConnectionHook(
-													connectionStatusView,
-													recordingHooks.getKey().andThen(
+													connectionStatusView, recordingHooks.getKey().andThen(
 															recordedPlayerId -> startSignalPlayer.run()),
 													playerId);
 											try {
