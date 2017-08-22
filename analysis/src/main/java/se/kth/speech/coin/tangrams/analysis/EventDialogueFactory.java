@@ -79,10 +79,12 @@ final class EventDialogueFactory // NO_UCD (use default)
 			final Entry<Stream<Event>, Event> nextDialogueEvents = Iterators.findElementsBeforeDelimiter(eventIter,
 					dialogueEventDelimiter);
 			final Event nextEvent = nextDialogueEvents.getValue();
+			LOGGER.debug("Next event is named \"{}\".", nextEvent.getName());
 			// Find the set of utterances following the last event
 			final List<Utterance> nextUttList = createPreEventUtteranceList(utts, nextEvent, gameStartTime);
-			final Stream<Event> nextDiagEvents = Stream.concat(Stream.of(currentEvent), nextDialogueEvents.getKey());
-			resultBuilder.accept(new EventDialogue(Arrays.asList(nextDiagEvents.toArray(Event[]::new)), nextUttList));
+			final List<Event> nextDiagEvents = Arrays.asList(Stream.concat(Stream.of(currentEvent), nextDialogueEvents.getKey()).toArray(Event[]::new));
+			LOGGER.info("New {} has {} event(s).", EventDialogue.class.getSimpleName(), nextDiagEvents.size());
+			resultBuilder.accept(new EventDialogue(nextDiagEvents, nextUttList));
 			currentEvent = nextEvent;
 		}
 
