@@ -118,6 +118,7 @@ final class EventDialogueFactory // NO_UCD (use default)
 						.findElementsBeforeDelimiter(eventIter, dialogueEventDelimiter);
 				// NOTE: This list must be created before "currentEvent" is
 				// reassigned
+				assert currentEvent != null;
 				final List<Event> currentDialogueEvents = Arrays.asList(
 						Stream.concat(Stream.of(currentEvent), nextDialogueEvents.getKey()).toArray(Event[]::new));
 
