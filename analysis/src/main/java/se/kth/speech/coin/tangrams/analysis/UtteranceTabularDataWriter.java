@@ -328,6 +328,87 @@ final class UtteranceTabularDataWriter {
 		return sb.toString();
 	}
 
+	void accept(final GameHistory history, final List<EventDialogue> eventDiags, final Writer writer)
+			throws IOException {
+		// Write header
+		writer.write(colHeaders.stream().map(header -> header.stream().collect(TABLE_ROW_CELL_JOINER))
+				.collect(TABLE_ROW_JOINER));
+
+		final LocalDateTime gameStartTime = history.getStartTime();
+		final List<ImageVisualizationInfo.Datum> imgVizInfoData = IMG_VIZ_INFO_UNMARSHALLER
+				.apply(history.getInitialState().getImageVisualizationInfoDescription()).getData();
+
+		Optional<Event> optLastRoundEvent = Optional.empty();
+		for (final ListIterator<EventDialogue> eventDiagIter = eventDiags.listIterator(); eventDiagIter.hasNext();) {
+			final EventDialogue eventDiag = eventDiagIter.next();
+			writer.write(TABLE_STRING_REPR_ROW_DELIMITER);
+
+			final String evtImgVizInfoDesc;
+			final List<Event> diagEvts = eventDiag.getEvents();
+			final List<Utterance> diagUtts = eventDiag.getUtterances();
+			if (diagEvts.isEmpty()) {
+				evtImgVizInfoDesc = blankEvtImgDesc;
+			} else {
+				final Event firstDiagEvent = diagEvts.iterator().next();
+				final float contextStartTime;
+				final float contextEndTime;
+				if (diagUtts.isEmpty()) {
+					if (strict) {
+						throw new IllegalArgumentException(
+								String.format("No utterances for event \"%s\".", firstDiagEvent));
+					} else {
+						final String msg = createNoEventUtterancesMsg(firstDiagEvent, eventDiags,
+								eventDiagIter.nextIndex() - 1);
+						LOGGER.warn(msg);
+						final LocalDateTime eventTime = EventTimes.parseEventTime(firstDiagEvent.getTime());
+						final Duration gameDuration = Duration.between(gameStartTime, eventTime);
+						final float offset = gameDuration.toMillis() / 1000.0f;
+						contextStartTime = offset;
+						contextEndTime = offset;
+					}
+				} else {
+					// Just use the context of the first utterance
+					final Utterance firstUtt = diagUtts.iterator().next();
+					contextStartTime = firstUtt.getStartTime();
+					contextEndTime = firstUtt.getEndTime();
+				}
+				for (final EventDatum eventDatum : eventDataToWrite) {
+					final String datumValue = eventDatum.getValue(firstDiagEvent, optLastRoundEvent);
+					writer.write(datumValue);
+					writer.write(TABLE_STRING_REPR_COL_DELIMITER);
+				}
+
+				{
+					final GameContext context = TemporalGameContexts.create(history, contextStartTime, contextEndTime)
+							.findFirst().get();
+					final Optional<Integer> optSelectedEntityId = context.findLastSelectedEntityId();
+					final String featureVectorRepr;
+					if (optSelectedEntityId.isPresent()) {
+						final EntityFeature.Extractor.Context extractionContext = extractionContextFactory
+								.apply(context, optSelectedEntityId.get());
+						final Stream<Optional<Object>> featureVals = featuresToDescribe.stream()
+								.map(feature -> extractor.apply(feature, extractionContext));
+						featureVectorRepr = featureVals.map(opt -> opt.map(Object::toString).orElse(NULL_VALUE_REPR))
+								.collect(TABLE_ROW_CELL_JOINER);
+					} else {
+						featureVectorRepr = blankEvtImgDesc;
+					}
+					writer.write(featureVectorRepr);
+				}
+				writer.write(TABLE_STRING_REPR_COL_DELIMITER);
+				evtImgVizInfoDesc = createImgVizInfoDesc(firstDiagEvent, gameStartTime, imgVizInfoData);
+				optLastRoundEvent = Optional.of(diagEvts.get(diagEvts.size() - 1));
+			}
+			writer.write(evtImgVizInfoDesc);
+
+			for (final LanguageDatum langDatum : langDataToWrite) {
+				writer.write(TABLE_STRING_REPR_COL_DELIMITER);
+				final String datumValue = langDatum.getValue(diagUtts, uttDiagReprFactory);
+				writer.write(datumValue);
+			}
+		}
+	}
+
 	void accept(final SessionGame sessionGame, final Writer writer) throws IOException {
 		// The visualization info for the given game
 		final GameHistory history = sessionGame.getHistory();
