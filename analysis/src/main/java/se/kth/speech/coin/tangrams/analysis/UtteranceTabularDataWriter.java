@@ -152,7 +152,7 @@ final class UtteranceTabularDataWriter {
 			final List<ImageVisualizationInfo.Datum> imgVizInfoData) throws IOException {
 		final StringWriter strWriter = new StringWriter(256);
 		final ImageVisualizationInfoTableRowWriter imgInfoDescWriter = new ImageVisualizationInfoTableRowWriter(
-				strWriter);
+				strWriter, NULL_VALUE_REPR);
 		final Integer selectedPieceId = move.getPieceId();
 		final ImageVisualizationInfo.Datum selectedPieceImgVizInfo = imgVizInfoData.get(selectedPieceId);
 		LOGGER.debug("Writing selected piece (ID {}) viz info: {} ", selectedPieceId, selectedPieceImgVizInfo);
