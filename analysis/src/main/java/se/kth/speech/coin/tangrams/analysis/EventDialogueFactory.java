@@ -48,6 +48,32 @@ final class EventDialogueFactory // NO_UCD (use default)
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(EventDialogueFactory.class);
 
+	private static List<Utterance> createPreEventUtteranceList(final ListIterator<Utterance> utts, final Event nextEvent,
+			final LocalDateTime gameStartTime) {
+		LOGGER.debug("Event: {}", nextEvent);
+		final LocalDateTime nextEventTimestamp = EventTimes.parseEventTime(nextEvent.getTime());
+
+		final List<Utterance> result = new ArrayList<>();
+		while (utts.hasNext()) {
+			// Find all utterances up to the first event
+			final Utterance nextUtt = utts.next();
+			final LocalDateTime uttStartTimestamp = TimestampArithmetic.createOffsetTimestamp(gameStartTime,
+					nextUtt.getStartTime());
+			// If the utterance was before the first event, add it
+			// to the
+			// list of before-event utterances
+			if (nextEventTimestamp.isAfter(uttStartTimestamp)) {
+				result.add(nextUtt);
+			} else {
+				// Put the cursor position back to where it was so the looked-at
+				// event can be put into the list for the next event
+				utts.previous();
+				break;
+			}
+		}
+		return result;
+	}
+
 	private final Predicate<? super Event> dialogueEventDelimiter;
 
 	EventDialogueFactory(final Predicate<? super Event> dialogueEventDelimiter) {
@@ -96,32 +122,6 @@ final class EventDialogueFactory // NO_UCD (use default)
 		LOGGER.debug("Last event is named \"{}\".", currentEvent.getName());
 		resultBuilder.accept(new EventDialogue(Collections.singletonList(currentEvent), lastEventUtts));
 		return resultBuilder.build();
-	}
-
-	private List<Utterance> createPreEventUtteranceList(final ListIterator<Utterance> utts, final Event nextEvent,
-			final LocalDateTime gameStartTime) {
-		LOGGER.debug("Event: {}", nextEvent);
-		final LocalDateTime nextEventTimestamp = EventTimes.parseEventTime(nextEvent.getTime());
-
-		final List<Utterance> result = new ArrayList<>();
-		while (utts.hasNext()) {
-			// Find all utterances up to the first event
-			final Utterance nextUtt = utts.next();
-			final LocalDateTime uttStartTimestamp = TimestampArithmetic.createOffsetTimestamp(gameStartTime,
-					nextUtt.getStartTime());
-			// If the utterance was before the first event, add it
-			// to the
-			// list of before-event utterances
-			if (nextEventTimestamp.isAfter(uttStartTimestamp)) {
-				result.add(nextUtt);
-			} else {
-				// Put the cursor position back to where it was so the looked-at
-				// event can be put into the list for the next event
-				utts.previous();
-				break;
-			}
-		}
-		return result;
 	}
 
 }
