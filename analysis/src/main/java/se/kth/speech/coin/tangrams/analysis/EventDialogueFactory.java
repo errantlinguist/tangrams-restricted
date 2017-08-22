@@ -137,6 +137,7 @@ final class EventDialogueFactory // NO_UCD (use default)
 				}
 				LOGGER.debug("New {} has {} event(s).", EventDialogue.class.getSimpleName(),
 						currentDialogueEvents.size());
+				assert !currentDialogueEvents.isEmpty();
 				resultBuilder.accept(new EventDialogue(currentDialogueEvents, currentDialogueUttList));
 			}
 			// Get the utterances after the last event
