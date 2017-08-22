@@ -153,6 +153,8 @@ final class UtteranceTabularDataWriter {
 		return cols.subList(0, imgFeatureEndIdx);
 	}
 
+	private final List<List<String>> colHeaders;
+
 	private final EventDatum[] eventDataToWrite;
 
 	private final EntityFeatureExtractionContextFactory extractionContextFactory;
@@ -179,6 +181,8 @@ final class UtteranceTabularDataWriter {
 		this.strict = strict;
 		this.eventDataToWrite = eventDataToWrite;
 		this.langDataToWrite = langDataToWrite;
+
+		colHeaders = createColHeaders();
 	}
 
 	UtteranceTabularDataWriter(final EntityFeature.Extractor extractor, final List<EntityFeature> featuresToDescribe,
@@ -303,7 +307,6 @@ final class UtteranceTabularDataWriter {
 				.apply(history.getInitialState().getImageVisualizationInfoDescription());
 		final List<EventDialogue> eventDiags = sessionGame.getEventDialogues();
 
-		final List<List<String>> colHeaders = createColHeaders();
 		final String colHeaderStr = colHeaders.stream().map(header -> header.stream().collect(TABLE_ROW_CELL_JOINER))
 				.collect(TABLE_ROW_JOINER);
 		writer.write(colHeaderStr);
