@@ -307,9 +307,9 @@ final class UtteranceTabularDataWriter {
 				.apply(history.getInitialState().getImageVisualizationInfoDescription());
 		final List<EventDialogue> eventDiags = sessionGame.getEventDialogues();
 
-		final String colHeaderStr = colHeaders.stream().map(header -> header.stream().collect(TABLE_ROW_CELL_JOINER))
-				.collect(TABLE_ROW_JOINER);
-		writer.write(colHeaderStr);
+		// Write header
+		writer.write(colHeaders.stream().map(header -> header.stream().collect(TABLE_ROW_CELL_JOINER))
+				.collect(TABLE_ROW_JOINER));
 
 		Optional<Event> optLastRoundEvent = Optional.empty();
 		for (final ListIterator<EventDialogue> eventDiagIter = eventDiags.listIterator(); eventDiagIter.hasNext();) {
