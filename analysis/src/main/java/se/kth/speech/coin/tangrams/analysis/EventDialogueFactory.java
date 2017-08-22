@@ -83,7 +83,7 @@ final class EventDialogueFactory // NO_UCD (use default)
 			// Find the set of utterances following the last event
 			final List<Utterance> nextUttList = createPreEventUtteranceList(utts, nextEvent, gameStartTime);
 			final List<Event> nextDiagEvents = Arrays.asList(Stream.concat(Stream.of(currentEvent), nextDialogueEvents.getKey()).toArray(Event[]::new));
-			LOGGER.info("New {} has {} event(s).", EventDialogue.class.getSimpleName(), nextDiagEvents.size());
+			LOGGER.debug("New {} has {} event(s).", EventDialogue.class.getSimpleName(), nextDiagEvents.size());
 			resultBuilder.accept(new EventDialogue(nextDiagEvents, nextUttList));
 			currentEvent = nextEvent;
 		}
