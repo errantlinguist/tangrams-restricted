@@ -93,7 +93,6 @@ final class EventDialogueFactory // NO_UCD (use default)
 		while (utts.hasNext()) {
 			lastEventUtts.add(utts.next());
 		}
-		assert currentEvent != null;
 		LOGGER.debug("Last event is named \"{}\".", currentEvent.getName());
 		resultBuilder.accept(new EventDialogue(Collections.singletonList(currentEvent), lastEventUtts));
 		return resultBuilder.build();
