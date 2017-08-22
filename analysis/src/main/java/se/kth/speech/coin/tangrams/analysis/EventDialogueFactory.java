@@ -117,9 +117,11 @@ final class EventDialogueFactory // NO_UCD (use default)
 				final Entry<Stream<Event>, Optional<Event>> nextDialogueEvents = Iterators
 						.findElementsBeforeDelimiter(eventIter, dialogueEventDelimiter);
 				final Optional<Event> optNextDialogueDelimitingEvent = nextDialogueEvents.getValue();
-				final Stream<Event> currentDialogueEvents = Stream.concat(Stream.of(currentEvent),
-						nextDialogueEvents.getKey());
 				final List<Utterance> currentDialogueUttList;
+				// Note: This list must be created before "currentEvent" is
+				// reassigned
+				final List<Event> currentDialogueEvents = Arrays.asList(
+						Stream.concat(Stream.of(currentEvent), nextDialogueEvents.getKey()).toArray(Event[]::new));
 				if (optNextDialogueDelimitingEvent.isPresent()) {
 					final Event nextDialogueDelimitingEvent = optNextDialogueDelimitingEvent.get();
 					LOGGER.debug("Next event is named \"{}\".", nextDialogueDelimitingEvent.getName());
@@ -132,13 +134,9 @@ final class EventDialogueFactory // NO_UCD (use default)
 					currentDialogueUttList = Iterators.createRemainingElementList(utts);
 					currentEvent = null;
 				}
-				{
-					final List<Event> currentDialogueEventList = Arrays
-							.asList(currentDialogueEvents.toArray(Event[]::new));
-					LOGGER.debug("New {} has {} event(s).", EventDialogue.class.getSimpleName(),
-							currentDialogueEventList.size());
-					resultBuilder.accept(new EventDialogue(currentDialogueEventList, currentDialogueUttList));
-				}
+				LOGGER.debug("New {} has {} event(s).", EventDialogue.class.getSimpleName(),
+						currentDialogueEvents.size());
+				resultBuilder.accept(new EventDialogue(currentDialogueEvents, currentDialogueUttList));
 			}
 			// Get the utterances after the last event
 			final List<Utterance> lastEventUtts = Iterators.createRemainingElementList(utts);
