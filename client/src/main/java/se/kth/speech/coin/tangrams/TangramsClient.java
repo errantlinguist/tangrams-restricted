@@ -19,6 +19,7 @@ package se.kth.speech.coin.tangrams;
 import java.awt.Component;
 import java.awt.EventQueue;
 import java.awt.Point;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -44,6 +45,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import javax.sound.sampled.AudioFormat;
+import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
 import javax.sound.sampled.DataLine;
@@ -289,6 +291,7 @@ final class TangramsClient implements Runnable {
 			}
 		});
 		// https://stackoverflow.com/a/5529906/1391325
+//		clip.open(new AudioInputStream(new ByteArrayInputStream(data), format, data.length));
 		clip.open(format, data, 0, data.length);
 		clip.start();
 	}
