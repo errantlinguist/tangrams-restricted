@@ -328,7 +328,7 @@ final class UtteranceTabularDataWriter {
 		return sb.toString();
 	}
 
-	void write(final SessionGame sessionGame, final Writer writer) throws IOException {
+	void accept(final SessionGame sessionGame, final Writer writer) throws IOException {
 		// The visualization info for the given game
 		final GameHistory history = sessionGame.getHistory();
 		final LocalDateTime gameStartTime = history.getStartTime();

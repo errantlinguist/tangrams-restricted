@@ -366,7 +366,7 @@ final class UtteranceSelectedEntityDescriptionWriter {
 			LOGGER.info("Writing utterances from perspective of \"{}\" to \"{}\".", playerId, outfilePath);
 			try (BufferedWriter writer = Files.newBufferedWriter(outfilePath, StandardOpenOption.CREATE,
 					StandardOpenOption.TRUNCATE_EXISTING)) {
-				gameWriter.write(sessionGame, writer);
+				gameWriter.accept(sessionGame, writer);
 			}
 		}
 
@@ -376,7 +376,7 @@ final class UtteranceSelectedEntityDescriptionWriter {
 		LOGGER.info("Writing utterances from canonical perspective to \"{}\".", outfilePath);
 		try (BufferedWriter writer = Files.newBufferedWriter(outfilePath, StandardOpenOption.CREATE,
 				StandardOpenOption.TRUNCATE_EXISTING)) {
-			gameWriter.write(canonicalSessionGame, writer);
+			gameWriter.accept(canonicalSessionGame, writer);
 		}
 	}
 
