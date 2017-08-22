@@ -33,18 +33,18 @@ public final class BufferedAudio {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(BufferedAudio.class);
 
-	public static BufferedAudio read(final URL res, final int bufferSize)
+	public static BufferedAudio read(final URL res)
 			throws IOException, UnsupportedAudioFileException {
 		final BufferedAudio result;
 		final AudioFileFormat format = AudioSystem.getAudioFileFormat(res);
 		LOGGER.debug("Loading audio from \"{}\".", res);
 		try (AudioInputStream instream = AudioSystem.getAudioInputStream(res)) {
 			// AudioFormat format = instream.getFormat();
-			try (final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream(bufferSize)) {
+			try (final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
 				AudioSystem.write(instream, format.getType(), byteArrayOutputStream);
 				final byte[] data = byteArrayOutputStream.toByteArray();
 				LOGGER.debug("Finished loading audio from \"{}\".", res);
-				result = new BufferedAudio(format, data, bufferSize);
+				result = new BufferedAudio(format, data, data.length);
 			}
 		}
 		return result;

@@ -39,15 +39,14 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.ForkJoinTask;
+import java.util.concurrent.Future;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
-import javax.sound.sampled.Line;
+import javax.sound.sampled.DataLine;
 import javax.sound.sampled.LineEvent;
 import javax.sound.sampled.LineListener;
 import javax.sound.sampled.LineUnavailableException;
@@ -275,7 +274,8 @@ final class TangramsClient implements Runnable {
 
 	private static void playSound(final AudioFormat format, final byte[] data)
 			throws LineUnavailableException, IOException, UnsupportedAudioFileException {
-		final Clip clip = (Clip) AudioSystem.getLine(new Line.Info(Clip.class));
+		final DataLine.Info info = new DataLine.Info(Clip.class, format);
+		final Clip clip = (Clip) AudioSystem.getLine(info);
 		clip.addLineListener(new LineListener() {
 			@Override
 			public void update(final LineEvent event) {
@@ -347,10 +347,10 @@ final class TangramsClient implements Runnable {
 
 	private static BufferedAudio readAudioIntoBuffer(final String resLoc)
 			throws IOException, UnsupportedAudioFileException {
-		return BufferedAudio.read(TangramsClient.class.getResource(resLoc), 4098);
+		return BufferedAudio.read(TangramsClient.class.getResource(resLoc));
 	}
 
-	private static void signalGameStart(final ForkJoinTask<BufferedAudio> startSignalBufferedAudioTask) {
+	private static void signalGameStart(final Future<BufferedAudio> startSignalBufferedAudioTask) {
 		try {
 			final BufferedAudio bufferedAudio = startSignalBufferedAudioTask.get();
 			playSound(bufferedAudio);
@@ -393,7 +393,8 @@ final class TangramsClient implements Runnable {
 
 	@Override
 	public void run() {
-		final ForkJoinTask<BufferedAudio> startSignalBufferedAudioTask = ForkJoinPool.commonPool().submit(() -> {
+		final ExecutorService backgroundJobService = Executors.newCachedThreadPool();
+		final Future<BufferedAudio> startSignalBufferedAudioTask = backgroundJobService.submit(() -> {
 			return readAudioIntoBuffer(START_SIGNAL_AUDIO_RESOURCE_NAME);
 		});
 
@@ -477,8 +478,6 @@ final class TangramsClient implements Runnable {
 														viewLocation.y + connectionStatusView.getHeight() / 2);
 
 												// Set up game GUI
-												final ExecutorService backgroundJobService = Executors
-														.newCachedThreadPool();
 												final Runnable closeHook = () -> {
 													LOGGER.info(
 															"Closing main window; Cleaning up background resources.");
@@ -504,6 +503,7 @@ final class TangramsClient implements Runnable {
 														CompletableFuture
 																.supplyAsync(sessionLogArchiver, backgroundJobService)
 																.thenAccept(logArchivePostprocessingHook);
+														LOGGER.info("Shuting down background job service.");
 														backgroundJobService.shutdown();
 													});
 												};
