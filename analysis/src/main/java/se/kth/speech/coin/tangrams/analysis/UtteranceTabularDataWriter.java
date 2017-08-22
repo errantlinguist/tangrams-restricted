@@ -328,17 +328,16 @@ final class UtteranceTabularDataWriter {
 		return sb.toString();
 	}
 
-	void accept(final SessionGame sessionGame, final Writer writer) throws IOException {
-		// The visualization info for the given game
-		final GameHistory history = sessionGame.getHistory();
-		final LocalDateTime gameStartTime = history.getStartTime();
-		final List<ImageVisualizationInfo.Datum> imgVizInfoData = IMG_VIZ_INFO_UNMARSHALLER
-				.apply(history.getInitialState().getImageVisualizationInfoDescription()).getData();
-		final List<EventDialogue> eventDiags = sessionGame.getEventDialogues();
-
+	void accept(final GameHistory history, final List<EventDialogue> eventDiags, final Writer writer)
+			throws IOException {
 		// Write header
 		writer.write(colHeaders.stream().map(header -> header.stream().collect(TABLE_ROW_CELL_JOINER))
 				.collect(TABLE_ROW_JOINER));
+
+		// The visualization info for the given game
+		final LocalDateTime gameStartTime = history.getStartTime();
+		final List<ImageVisualizationInfo.Datum> imgVizInfoData = IMG_VIZ_INFO_UNMARSHALLER
+				.apply(history.getInitialState().getImageVisualizationInfoDescription()).getData();
 
 		Optional<Event> optLastRoundEvent = Optional.empty();
 		for (final ListIterator<EventDialogue> eventDiagIter = eventDiags.listIterator(); eventDiagIter.hasNext();) {
@@ -409,6 +408,12 @@ final class UtteranceTabularDataWriter {
 				writer.write(datumValue);
 			}
 		}
+	}
+
+	void accept(final SessionGame sessionGame, final Writer writer) throws IOException {
+		final GameHistory history = sessionGame.getHistory();
+		final List<EventDialogue> eventDiags = sessionGame.getEventDialogues();
+		accept(history, eventDiags, writer);
 	}
 
 }
