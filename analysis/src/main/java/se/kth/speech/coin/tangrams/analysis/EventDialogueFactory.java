@@ -116,14 +116,13 @@ final class EventDialogueFactory // NO_UCD (use default)
 				// Find the next set of events which delimit one dialogue
 				final Entry<Stream<Event>, Optional<Event>> nextDialogueEvents = Iterators
 						.findElementsBeforeDelimiter(eventIter, dialogueEventDelimiter);
-				final Optional<Event> optNextDialogueDelimitingEvent = nextDialogueEvents.getValue();
-				
 				// NOTE: This list must be created before "currentEvent" is
 				// reassigned
 				final List<Event> currentDialogueEvents = Arrays.asList(
 						Stream.concat(Stream.of(currentEvent), nextDialogueEvents.getKey()).toArray(Event[]::new));
 				
 				final List<Utterance> currentDialogueUttList;
+				final Optional<Event> optNextDialogueDelimitingEvent = nextDialogueEvents.getValue();
 				if (optNextDialogueDelimitingEvent.isPresent()) {
 					final Event nextDialogueDelimitingEvent = optNextDialogueDelimitingEvent.get();
 					LOGGER.debug("Next event is named \"{}\".", nextDialogueDelimitingEvent.getName());
