@@ -16,8 +16,12 @@
 */
 package se.kth.speech;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
@@ -28,23 +32,37 @@ import java.util.stream.Stream;
  */
 public final class Iterators {
 
-	public static <T> Entry<Stream<T>, T> findElementsBeforeDelimiter(final Iterator<? extends T> iter,
+	public static <T> List<T> createRemainingElementList(final Iterator<? extends T> iter) {
+		final List<T> result;
+		if (iter.hasNext()) {
+			result = new ArrayList<>();
+			do {
+				result.add(iter.next());
+			} while (iter.hasNext());
+		} else {
+			result = Collections.emptyList();
+		}
+		return result;
+	}
+
+	public static <T> Entry<Stream<T>, Optional<T>> findElementsBeforeDelimiter(final Iterator<? extends T> iter,
 			final Predicate<? super T> delimiterMatcher) {
-		final Entry<Stream<T>, T> result;
+		final Entry<Stream<T>, Optional<T>> result;
+		Optional<T> nextDelimiting = Optional.empty();
 		if (iter.hasNext()) {
 			final Stream.Builder<T> elemsBefore = Stream.builder();
-			T next = null;
 			do {
-				next = iter.next();
+				final T next = iter.next();
 				if (delimiterMatcher.test(next)) {
+					nextDelimiting = Optional.of(next);
 					break;
 				} else {
 					elemsBefore.add(next);
 				}
 			} while (iter.hasNext());
-			result = new MutablePair<>(elemsBefore.build(), next);
+			result = new MutablePair<>(elemsBefore.build(), nextDelimiting);
 		} else {
-			result = new MutablePair<>(Stream.empty(), null);
+			result = new MutablePair<>(Stream.empty(), nextDelimiting);
 		}
 		return result;
 	}

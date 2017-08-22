@@ -127,22 +127,27 @@ final class LoggedEventTimeLatencySummaryWriter {
 			final Predicate<? super Event> evtFilter) {
 		final LongStream.Builder b = LongStream.builder();
 		while (evtIter.hasNext()) {
-			final Entry<Stream<Event>, Event> preSenderEvts = Iterators.findElementsBeforeDelimiter(evtIter, evtFilter);
-			final Event senderEvt = preSenderEvts.getValue();
-			LOGGER.debug("Sender event: {}", senderEvt);
-			if (evtFilter.test(senderEvt)) {
-				// https://stackoverflow.com/a/21441634/1391325
-				final Optional<Event> optLastForeignEvent = preSenderEvts.getKey().reduce((first, second) -> second);
-				optLastForeignEvent.ifPresent(lastForeignEvent -> {
-					LOGGER.debug("Last foreign event: {}", lastForeignEvent);
+			final Entry<Stream<Event>, Optional<Event>> preSenderEvts = Iterators.findElementsBeforeDelimiter(evtIter,
+					evtFilter);
+			final Optional<Event> optSenderEvt = preSenderEvts.getValue();
+			optSenderEvt.ifPresent(senderEvt -> {
+				LOGGER.debug("Sender event: {}", senderEvt);
+				if (evtFilter.test(senderEvt)) {
+					// https://stackoverflow.com/a/21441634/1391325
+					final Optional<Event> optLastForeignEvent = preSenderEvts.getKey()
+							.reduce((first, second) -> second);
+					optLastForeignEvent.ifPresent(lastForeignEvent -> {
+						LOGGER.debug("Last foreign event: {}", lastForeignEvent);
 
-					final LocalDateTime senderEvtTime = EventTimes.parseEventTime(senderEvt.getTime());
-					final LocalDateTime lastForeignEvtTime = EventTimes.parseEventTime(lastForeignEvent.getTime());
-					final long diffMills = ChronoUnit.MILLIS.between(lastForeignEvtTime, senderEvtTime);
-					LOGGER.debug("{} milliseconds' difference between sender event and last foreign event.", diffMills);
-					b.accept(diffMills);
-				});
-			}
+						final LocalDateTime senderEvtTime = EventTimes.parseEventTime(senderEvt.getTime());
+						final LocalDateTime lastForeignEvtTime = EventTimes.parseEventTime(lastForeignEvent.getTime());
+						final long diffMills = ChronoUnit.MILLIS.between(lastForeignEvtTime, senderEvtTime);
+						LOGGER.debug("{} milliseconds' difference between sender event and last foreign event.",
+								diffMills);
+						b.accept(diffMills);
+					});
+				}
+			});
 		}
 		return b.build();
 	}

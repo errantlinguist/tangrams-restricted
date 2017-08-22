@@ -24,6 +24,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -95,43 +96,69 @@ final class EventDialogueFactory // NO_UCD (use default)
 		final Stream<Event> events = history.getEventSequence();
 		final Iterator<Event> eventIter = events.iterator();
 		// Find the set of elements before the first one delimiting a dialogue
-		final Entry<Stream<Event>, Event> preDialogueEvents = Iterators.findElementsBeforeDelimiter(eventIter,
+		final Entry<Stream<Event>, Optional<Event>> preDialogueEvents = Iterators.findElementsBeforeDelimiter(eventIter,
 				dialogueEventDelimiter);
-		Event currentEvent = preDialogueEvents.getValue();
 
 		final Stream.Builder<EventDialogue> resultBuilder = Stream.builder();
+		final Optional<Event> optInitialEvent = preDialogueEvents.getValue();
+		if (optInitialEvent.isPresent()) {
+			Event currentEvent = optInitialEvent.get();
+			final LocalDateTime gameStartTime = history.getStartTime();
+			final List<Utterance> firstUtts = createPreEventUtteranceList(utts, currentEvent, gameStartTime);
+			if (firstUtts.isEmpty()) {
+				LOGGER.debug("No utterances before first event.");
+			} else {
+				resultBuilder.accept(
+						new EventDialogue(Arrays.asList(preDialogueEvents.getKey().toArray(Event[]::new)), firstUtts));
+			}
 
-		final LocalDateTime gameStartTime = history.getStartTime();
-		final List<Utterance> firstUtts = createPreEventUtteranceList(utts, currentEvent, gameStartTime);
-		if (firstUtts.isEmpty()) {
-			LOGGER.debug("No utterances before first event.");
+			while (eventIter.hasNext()) {
+				// Find the next set of events which delimit one dialogue
+				final Entry<Stream<Event>, Optional<Event>> nextDialogueEvents = Iterators
+						.findElementsBeforeDelimiter(eventIter, dialogueEventDelimiter);
+				final Optional<Event> optNextDialogueDelimitingEvent = nextDialogueEvents.getValue();
+				final Stream<Event> currentDialogueEvents = Stream.concat(Stream.of(currentEvent),
+						nextDialogueEvents.getKey());
+				final List<Utterance> currentDialogueUttList;
+				if (optNextDialogueDelimitingEvent.isPresent()) {
+					final Event nextDialogueDelimitingEvent = optNextDialogueDelimitingEvent.get();
+					LOGGER.debug("Next event is named \"{}\".", nextDialogueDelimitingEvent.getName());
+					// Find the set of utterances following the last event
+					currentDialogueUttList = createPreEventUtteranceList(utts, nextDialogueDelimitingEvent,
+							gameStartTime);
+					currentEvent = nextDialogueDelimitingEvent;
+				} else {
+					// Get the utterances after the last event
+					currentDialogueUttList = Iterators.createRemainingElementList(utts);
+					currentEvent = null;
+				}
+				{
+					final List<Event> currentDialogueEventList = Arrays
+							.asList(currentDialogueEvents.toArray(Event[]::new));
+					LOGGER.debug("New {} has {} event(s).", EventDialogue.class.getSimpleName(),
+							currentDialogueEventList.size());
+					resultBuilder.accept(new EventDialogue(currentDialogueEventList, currentDialogueUttList));
+				}
+			}
+			// Get the utterances after the last event
+			final List<Utterance> lastEventUtts = Iterators.createRemainingElementList(utts);
+			final List<Event> lastDiagEvents;
+			if (currentEvent == null) {
+				LOGGER.debug("No trailing event.");
+				lastDiagEvents = Collections.emptyList();
+			} else {
+				LOGGER.debug("Last event is named \"{}\".", currentEvent.getName());
+				lastDiagEvents = Collections.singletonList(currentEvent);
+			}
+			resultBuilder.accept(new EventDialogue(lastDiagEvents, lastEventUtts));
+
 		} else {
-			resultBuilder.accept(
-					new EventDialogue(Arrays.asList(preDialogueEvents.getKey().toArray(Event[]::new)), firstUtts));
+			LOGGER.warn("No delimiting events found; Creating a single {} instance.",
+					EventDialogue.class.getSimpleName());
+			final List<Utterance> allRemainingUtts = Iterators.createRemainingElementList(utts);
+			resultBuilder.accept(new EventDialogue(Collections.emptyList(), allRemainingUtts));
 		}
 
-		while (eventIter.hasNext()) {
-			// Find the next set of events which delimit one dialogue
-			final Entry<Stream<Event>, Event> nextDialogueEvents = Iterators.findElementsBeforeDelimiter(eventIter,
-					dialogueEventDelimiter);
-			final Event nextEvent = nextDialogueEvents.getValue();
-			LOGGER.debug("Next event is named \"{}\".", nextEvent.getName());
-			// Find the set of utterances following the last event
-			final List<Utterance> nextUttList = createPreEventUtteranceList(utts, nextEvent, gameStartTime);
-			final List<Event> nextDiagEvents = Arrays
-					.asList(Stream.concat(Stream.of(currentEvent), nextDialogueEvents.getKey()).toArray(Event[]::new));
-			LOGGER.debug("New {} has {} event(s).", EventDialogue.class.getSimpleName(), nextDiagEvents.size());
-			resultBuilder.accept(new EventDialogue(nextDiagEvents, nextUttList));
-			currentEvent = nextEvent;
-		}
-
-		// Get the utterances after the last event
-		final List<Utterance> lastEventUtts = new ArrayList<>();
-		while (utts.hasNext()) {
-			lastEventUtts.add(utts.next());
-		}
-		LOGGER.debug("Last event is named \"{}\".", currentEvent.getName());
-		resultBuilder.accept(new EventDialogue(Collections.singletonList(currentEvent), lastEventUtts));
 		return resultBuilder.build();
 	}
 

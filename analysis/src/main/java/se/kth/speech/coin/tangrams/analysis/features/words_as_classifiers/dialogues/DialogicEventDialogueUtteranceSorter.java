@@ -21,8 +21,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 import java.util.stream.Stream;
 
@@ -38,11 +40,14 @@ import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 public final class DialogicEventDialogueUtteranceSorter
 		implements BiFunction<List<Utterance>, Event, List<UtteranceRelation>> {
 
+	private final Supplier<Utterance> firstInstructorUttNullValueGetter;
+
 	private final ToDoubleFunction<? super Utterance> uttAcceptanceRanker;
 
-	public DialogicEventDialogueUtteranceSorter(
-			final ToDoubleFunction<? super Utterance> uttAcceptanceRanker) {
+	public DialogicEventDialogueUtteranceSorter(final ToDoubleFunction<? super Utterance> uttAcceptanceRanker,
+			final Supplier<Utterance> firstInstructorUttNullValueGetter) {
 		this.uttAcceptanceRanker = uttAcceptanceRanker;
+		this.firstInstructorUttNullValueGetter = firstInstructorUttNullValueGetter;
 	}
 
 	@Override
@@ -54,10 +59,10 @@ public final class DialogicEventDialogueUtteranceSorter
 		final List<UtteranceRelation> result = new ArrayList<>(utts.size() / 2 + 1);
 		final ListIterator<Utterance> uttIter = utts.listIterator();
 		while (uttIter.hasNext()) {
-			final Entry<Stream<Utterance>, Utterance> preInstructorUtts = Iterators.findElementsBeforeDelimiter(uttIter,
-					instructorUttMatcher);
-			final Utterance firstInstructorUtt = preInstructorUtts.getValue();
-
+			final Entry<Stream<Utterance>, Optional<Utterance>> preInstructorUtts = Iterators
+					.findElementsBeforeDelimiter(uttIter, instructorUttMatcher);
+			final Optional<Utterance> optFirstInstructorUtt = preInstructorUtts.getValue();
+			final Utterance firstInstructorUtt = optFirstInstructorUtt.orElseGet(firstInstructorUttNullValueGetter);
 			final double firstInstructorUttAcceptanceRank = uttAcceptanceRanker.applyAsDouble(firstInstructorUtt);
 			result.add(new UtteranceRelation(firstInstructorUtt, firstInstructorUttAcceptanceRank,
 					Arrays.asList(preInstructorUtts.getKey().toArray(Utterance[]::new))));

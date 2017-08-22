@@ -48,9 +48,14 @@ public final class DialogicEventDialogueUtteranceSorterTest {
 	private static final Logger LOGGER = LoggerFactory.getLogger(DialogicEventDialogueUtteranceSorterTest.class);
 
 	private static DialogicEventDialogueUtteranceSorter createTestInst() {
-//		final ToDoubleFunction<Utterance> uttAcceptanceRanker = new CachingUtteranceSentimentRanker(StanfordCoreNLPConfigurationVariant.TOKENIZING_PARSING_SENTIMENT.get(), 3);
-		final ToDoubleFunction<Utterance> uttAcceptanceRanker = new PatternMatchingUtteranceAcceptanceRanker();
-		return new DialogicEventDialogueUtteranceSorter(uttAcceptanceRanker);
+		// final ToDoubleFunction<Utterance> uttRanker = new
+		// CachingUtteranceSentimentRanker(StanfordCoreNLPConfigurationVariant.TOKENIZING_PARSING_SENTIMENT.get(),
+		// 3);
+		final ToDoubleFunction<Utterance> uttRanker = new PatternMatchingUtteranceAcceptanceRanker();
+		final Utterance uttNullValue = null;
+		final ToDoubleFunction<Utterance> nullableUttRanker = utt -> utt == uttNullValue ? 0.0
+				: uttRanker.applyAsDouble(utt);
+		return new DialogicEventDialogueUtteranceSorter(nullableUttRanker, () -> uttNullValue);
 	}
 
 	/**

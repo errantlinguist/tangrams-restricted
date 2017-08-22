@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 
 import org.springframework.context.ApplicationContext;
@@ -41,9 +42,9 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialog
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.EventDialogueClassifier;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.EventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.InstructorUtteranceFilteringEventDialogueTransformer;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.DialogicInstancesFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.OnePositiveMaximumNegativeInstancesFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.OnePositiveOneNegativeInstanceFactory;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.DialogicInstancesFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.TrainingInstancesFactory;
 import se.kth.speech.nlp.PatternMatchingUtteranceAcceptanceRanker;
 
@@ -76,13 +77,15 @@ enum Training {
 
 		private final DialogicWeightedWordClassFactory diagWordClassFactory = createDiagWordClassFactory();
 
+		private final Supplier<Utterance> firstInstructorUttNullValueGetter = () -> null;
+
 		@Override
 		public CachingEventDialogueTransformer createSymmetricalTrainingTestingEvgDiagTransformer(
 				final List<EventDialogueTransformer> diagTransformers) {
 			final ChainedEventDialogueTransformer chainedTransformer = new ChainedEventDialogueTransformer(
 					diagTransformers);
 			return new CachingEventDialogueTransformer(chainedTransformer);
-		}
+		};
 
 		@Override
 		public TrainingInstancesFactory createTrainingInstsFactory(final TrainingContext trainingCtx) {
@@ -91,20 +94,21 @@ enum Training {
 					.getBean(EntityInstanceAttributeContext.class);
 			final EntityFeatureExtractionContextFactory extCtxFactory = appCtx
 					.getBean(EntityFeatureExtractionContextFactory.class);
-			return new DialogicInstancesFactory(entityInstAttrCtx, trainingCtx.getDiagTransformer(),
-					extCtxFactory, createCachingUttAcceptanceRanker(), diagWordClassFactory,
+			return new DialogicInstancesFactory(entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory,
+					createCachingUttAcceptanceRanker(), firstInstructorUttNullValueGetter, diagWordClassFactory,
 					trainingCtx.getUttRelHandler());
-		};
+		}
 
 		@Override
 		public Function<ReferentConfidenceMapFactory, EventDialogueClassifier> getClassifierFactory() {
-			return (refConfMapFactory) -> new DialogicEventDialogueClassifier(
-					createCachingUttAcceptanceRanker(), diagWordClassFactory, refConfMapFactory);
+			return (refConfMapFactory) -> new DialogicEventDialogueClassifier(createCachingUttAcceptanceRanker(),
+					firstInstructorUttNullValueGetter, diagWordClassFactory, refConfMapFactory);
 		}
 
 		private ToDoubleFunction<Utterance> createCachingUttAcceptanceRanker() {
 			final Object2DoubleMap<Utterance> cache = new Object2DoubleOpenHashMap<>(
 					TrainingConstants.ESTIMATED_UNIQUE_UTT_COUNT);
+			cache.put(firstInstructorUttNullValueGetter.get(), 0.0);
 			cache.defaultReturnValue(Double.NaN);
 			final PatternMatchingUtteranceAcceptanceRanker ranker = new PatternMatchingUtteranceAcceptanceRanker();
 			return utt -> {
