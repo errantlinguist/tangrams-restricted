@@ -43,6 +43,7 @@ import java.util.concurrent.Future;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
@@ -274,7 +275,8 @@ final class TangramsClient implements Runnable {
 
 	private static Clip openAudioClip(final AudioInputStream instream)
 			throws LineUnavailableException, IOException, UnsupportedAudioFileException {
-		final Clip result = (Clip) AudioSystem.getLine(new Line.Info(Clip.class));
+		final AudioFormat format = instream.getFormat();
+		final Clip result = (Clip) AudioSystem.getLine(new DataLine.Info(Clip.class, format));
 		result.addLineListener(new LineListener() {
 			@Override
 			public void update(final LineEvent event) {
