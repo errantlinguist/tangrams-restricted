@@ -39,7 +39,6 @@ public final class BufferedAudio {
 		final AudioFileFormat format = AudioSystem.getAudioFileFormat(res);
 		LOGGER.debug("Loading audio from \"{}\".", res);
 		try (AudioInputStream instream = AudioSystem.getAudioInputStream(res)) {
-			// AudioFormat format = instream.getFormat();
 			try (final ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream()) {
 				AudioSystem.write(instream, format.getType(), byteArrayOutputStream);
 				final byte[] data = byteArrayOutputStream.toByteArray();
