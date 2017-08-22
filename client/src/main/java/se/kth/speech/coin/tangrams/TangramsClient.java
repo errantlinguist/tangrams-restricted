@@ -36,11 +36,15 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ForkJoinTask;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
 import javax.sound.sampled.Line;
@@ -74,6 +78,7 @@ import se.kth.speech.coin.tangrams.iristk.events.EventSystems;
 import se.kth.speech.coin.tangrams.iristk.io.LogDirectoryFactory;
 import se.kth.speech.coin.tangrams.view.ConnectionStatusFrame;
 import se.kth.speech.coin.tangrams.view.GameGUI;
+import se.kth.speech.io.BufferedAudio;
 
 /**
  *
@@ -189,6 +194,8 @@ final class TangramsClient implements Runnable {
 
 	private static final Properties PROPS;
 
+	private static final String START_SIGNAL_AUDIO_RESOURCE_NAME = "game-start.wav";
+
 	static {
 		try {
 			PROPS = ClassProperties.load(TangramsClient.class);
@@ -266,7 +273,7 @@ final class TangramsClient implements Runnable {
 		return username + "_" + System.currentTimeMillis();
 	}
 
-	private static void playSound(final String resLoc)
+	private static void playSound(final AudioFormat format, final byte[] data)
 			throws LineUnavailableException, IOException, UnsupportedAudioFileException {
 		final Clip clip = (Clip) AudioSystem.getLine(new Line.Info(Clip.class));
 		clip.addLineListener(new LineListener() {
@@ -278,8 +285,13 @@ final class TangramsClient implements Runnable {
 			}
 		});
 		// https://stackoverflow.com/a/5529906/1391325
-		clip.open(AudioSystem.getAudioInputStream(TangramsClient.class.getResource(resLoc)));
+		clip.open(format, data, 0, data.length);
 		clip.start();
+	}
+
+	private static void playSound(final BufferedAudio bufferedAudio)
+			throws LineUnavailableException, IOException, UnsupportedAudioFileException {
+		playSound(bufferedAudio.getFormat().getFormat(), bufferedAudio.getData());
 	}
 
 	private static String promptGameId(final Component dialogParentComponent) {
@@ -333,9 +345,17 @@ final class TangramsClient implements Runnable {
 		return result;
 	}
 
-	private static void signalGameStart() {
+	private static BufferedAudio readAudioIntoBuffer(final String resLoc)
+			throws IOException, UnsupportedAudioFileException {
+		return BufferedAudio.read(TangramsClient.class.getResource(resLoc), 4098);
+	}
+
+	private static void signalGameStart(final ForkJoinTask<BufferedAudio> startSignalBufferedAudioTask) {
 		try {
-			playSound("game-start.wav");
+			final BufferedAudio bufferedAudio = startSignalBufferedAudioTask.get();
+			playSound(bufferedAudio);
+		} catch (InterruptedException | ExecutionException e) {
+			throw new RuntimeException(e);
 		} catch (final LineUnavailableException e) {
 			throw new RuntimeException(e);
 		} catch (final IOException e) {
@@ -373,6 +393,10 @@ final class TangramsClient implements Runnable {
 
 	@Override
 	public void run() {
+		final ForkJoinTask<BufferedAudio> startSignalBufferedAudioTask = ForkJoinPool.commonPool().submit(() -> {
+			return readAudioIntoBuffer(START_SIGNAL_AUDIO_RESOURCE_NAME);
+		});
+
 		LookAndFeels.setLookAndFeel();
 		final String playerId = promptPlayerId(null, createDefaultPlayerId());
 		if (playerId == null) {
@@ -436,8 +460,9 @@ final class TangramsClient implements Runnable {
 													"Handling game state data received from server for game \"{}\".",
 													gameId);
 											final SuccessfulConnectionHook connectionHook = new SuccessfulConnectionHook(
-													connectionStatusView, recordingHooks.getKey()
-															.andThen(recordedPlayerId -> signalGameStart()),
+													connectionStatusView,
+													recordingHooks.getKey().andThen(recordedPlayerId -> signalGameStart(
+															startSignalBufferedAudioTask)),
 													playerId);
 											try {
 												EventQueue.invokeAndWait(connectionHook);
