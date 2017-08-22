@@ -30,6 +30,7 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.EnumMap;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -564,10 +565,11 @@ final class TangramsClient implements Runnable {
 						throw exAfterIrisTKConst;
 					}
 				} catch (final Exception runningException) {
+					final List<Runnable> cancelledTasks = backgroundJobService.shutdownNow();
 					final RuntimeException wrapper = new RuntimeException(runningException);
-					LOGGER.error(
-							String.format("An exception occurred while running the client; Re-throwing as a(n) %s.",
-									wrapper.getClass().getSimpleName()));
+					LOGGER.error(String.format(
+							"An exception occurred while running the client, stopping {} task(s) before completion; Re-throwing as a(n) %s.",
+							cancelledTasks.size(), wrapper.getClass().getSimpleName()));
 					throw wrapper;
 				}
 			}
