@@ -19,7 +19,6 @@ package se.kth.speech.coin.tangrams;
 import java.awt.Component;
 import java.awt.EventQueue;
 import java.awt.Point;
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -44,7 +43,6 @@ import java.util.concurrent.Future;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.Clip;
@@ -80,7 +78,6 @@ import se.kth.speech.coin.tangrams.iristk.events.EventSystems;
 import se.kth.speech.coin.tangrams.iristk.io.LogDirectoryFactory;
 import se.kth.speech.coin.tangrams.view.ConnectionStatusFrame;
 import se.kth.speech.coin.tangrams.view.GameGUI;
-import se.kth.speech.io.BufferedAudio;
 
 /**
  *
@@ -275,30 +272,29 @@ final class TangramsClient implements Runnable {
 		return username + "_" + System.currentTimeMillis();
 	}
 
-	private static void playSound(final AudioFormat format, final byte[] data)
+	private static Clip openAudioClip(final AudioInputStream instream)
 			throws LineUnavailableException, IOException, UnsupportedAudioFileException {
-		final Clip clip = (Clip) AudioSystem.getLine(new DataLine.Info(Clip.class, format));
-		clip.addLineListener(new LineListener() {
+		final Clip result = (Clip) AudioSystem.getLine(new Line.Info(Clip.class));
+		result.addLineListener(new LineListener() {
 			@Override
 			public void update(final LineEvent event) {
 				if (event.getType() == LineEvent.Type.STOP) {
 					LOGGER.debug("Finished playing audio.");
 					final Line line = event.getLine();
 					line.close();
-					// FIXME: The audio clip can't close!
-					System.out.println("Closed line.");
 				}
 			}
 		});
 		// https://stackoverflow.com/a/5529906/1391325
-//		clip.open(new AudioInputStream(new ByteArrayInputStream(data), format, data.length));
-		clip.open(format, data, 0, data.length);
-		clip.start();
+		result.open(instream);
+		return result;
 	}
 
-	private static void playSound(final BufferedAudio bufferedAudio)
+	private static Clip openAudioClip(final String resLoc)
 			throws LineUnavailableException, IOException, UnsupportedAudioFileException {
-		playSound(bufferedAudio.getFormat().getFormat(), bufferedAudio.getData());
+		try (AudioInputStream instream = AudioSystem.getAudioInputStream(TangramsClient.class.getResource(resLoc))) {
+			return openAudioClip(instream);
+		}
 	}
 
 	private static String promptGameId(final Component dialogParentComponent) {
@@ -352,22 +348,11 @@ final class TangramsClient implements Runnable {
 		return result;
 	}
 
-	private static BufferedAudio readAudioIntoBuffer(final String resLoc)
-			throws IOException, UnsupportedAudioFileException {
-		return BufferedAudio.read(TangramsClient.class.getResource(resLoc));
-	}
-
-	private static void signalGameStart(final Future<BufferedAudio> startSignalBufferedAudioTask) {
+	private static void signalGameStart(final Future<? extends DataLine> startSignalDataLineFuture) {
 		try {
-			final BufferedAudio bufferedAudio = startSignalBufferedAudioTask.get();
-			playSound(bufferedAudio);
+			final DataLine signalDataLine = startSignalDataLineFuture.get();
+			signalDataLine.start();
 		} catch (InterruptedException | ExecutionException e) {
-			throw new RuntimeException(e);
-		} catch (final LineUnavailableException e) {
-			throw new RuntimeException(e);
-		} catch (final IOException e) {
-			throw new UncheckedIOException(e);
-		} catch (final UnsupportedAudioFileException e) {
 			throw new RuntimeException(e);
 		}
 	}
@@ -401,8 +386,8 @@ final class TangramsClient implements Runnable {
 	@Override
 	public void run() {
 		final ExecutorService backgroundJobService = Executors.newCachedThreadPool();
-		final Future<BufferedAudio> startSignalBufferedAudioTask = backgroundJobService.submit(() -> {
-			return readAudioIntoBuffer(START_SIGNAL_AUDIO_RESOURCE_NAME);
+		final Future<Clip> startSignalClipFuture = backgroundJobService.submit(() -> {
+			return openAudioClip(START_SIGNAL_AUDIO_RESOURCE_NAME);
 		});
 
 		LookAndFeels.setLookAndFeel();
@@ -469,8 +454,8 @@ final class TangramsClient implements Runnable {
 													gameId);
 											final SuccessfulConnectionHook connectionHook = new SuccessfulConnectionHook(
 													connectionStatusView,
-													recordingHooks.getKey().andThen(recordedPlayerId -> signalGameStart(
-															startSignalBufferedAudioTask)),
+													recordingHooks.getKey().andThen(
+															recordedPlayerId -> signalGameStart(startSignalClipFuture)),
 													playerId);
 											try {
 												EventQueue.invokeAndWait(connectionHook);
