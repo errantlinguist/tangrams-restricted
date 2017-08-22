@@ -48,11 +48,15 @@ final class EventDialogueFactory // NO_UCD (use default)
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(EventDialogueFactory.class);
 
-	private static List<Utterance> createPreEventUtteranceList(final ListIterator<Utterance> utts, final Event nextEvent,
-			final LocalDateTime gameStartTime) {
+	private static List<Utterance> createPreEventUtteranceList(final ListIterator<Utterance> utts,
+			final Event nextEvent, final LocalDateTime gameStartTime) {
 		LOGGER.debug("Event: {}", nextEvent);
 		final LocalDateTime nextEventTimestamp = EventTimes.parseEventTime(nextEvent.getTime());
+		return createPreEventUtteranceList(utts, nextEventTimestamp, gameStartTime);
+	}
 
+	private static List<Utterance> createPreEventUtteranceList(final ListIterator<Utterance> utts,
+			final LocalDateTime nextEventTimestamp, final LocalDateTime gameStartTime) {
 		final List<Utterance> result = new ArrayList<>();
 		while (utts.hasNext()) {
 			// Find all utterances up to the first event
@@ -108,7 +112,8 @@ final class EventDialogueFactory // NO_UCD (use default)
 			LOGGER.debug("Next event is named \"{}\".", nextEvent.getName());
 			// Find the set of utterances following the last event
 			final List<Utterance> nextUttList = createPreEventUtteranceList(utts, nextEvent, gameStartTime);
-			final List<Event> nextDiagEvents = Arrays.asList(Stream.concat(Stream.of(currentEvent), nextDialogueEvents.getKey()).toArray(Event[]::new));
+			final List<Event> nextDiagEvents = Arrays
+					.asList(Stream.concat(Stream.of(currentEvent), nextDialogueEvents.getKey()).toArray(Event[]::new));
 			LOGGER.debug("New {} has {} event(s).", EventDialogue.class.getSimpleName(), nextDiagEvents.size());
 			resultBuilder.accept(new EventDialogue(nextDiagEvents, nextUttList));
 			currentEvent = nextEvent;
