@@ -44,10 +44,11 @@ import org.slf4j.LoggerFactory;
 import iristk.system.Event;
 import se.kth.speech.TimestampArithmetic;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
+import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionContextFactory;
+import se.kth.speech.coin.tangrams.analysis.features.ImageEdgeCounter;
 import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
 import se.kth.speech.coin.tangrams.iristk.EventTimes;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
-import se.kth.speech.coin.tangrams.iristk.events.Move;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
 
 /**
@@ -61,11 +62,11 @@ final class SessionGameHistoryTabularDataWriter {
 
 		private final Event event;
 
-		private final LocalDateTime gameStartTime;
+		private final GameHistory history;
 
-		private EventContext(final Event event, final LocalDateTime gameStartTime) {
+		private EventContext(final Event event, final GameHistory history) {
 			this.event = event;
-			this.gameStartTime = gameStartTime;
+			this.history = history;
 		}
 
 		/**
@@ -75,11 +76,8 @@ final class SessionGameHistoryTabularDataWriter {
 			return event;
 		}
 
-		/**
-		 * @return the gameStartTime
-		 */
-		private LocalDateTime getGameStartTime() {
-			return gameStartTime;
+		private GameHistory getHistory() {
+			return history;
 		}
 	}
 
@@ -118,7 +116,7 @@ final class SessionGameHistoryTabularDataWriter {
 					result = nullValueRepr;
 				} else {
 					final LocalDateTime eventTime = EventTimes.parseEventTime(eventTimestamp);
-					final LocalDateTime gameStartTime = eventCtx.getGameStartTime();
+					final LocalDateTime gameStartTime = eventCtx.getHistory().getStartTime();
 					final Duration offset = Duration.between(gameStartTime, eventTime);
 					final BigDecimal offsetSecs = TimestampArithmetic.toDecimalSeconds(offset);
 					result = offsetSecs.toPlainString();
@@ -151,18 +149,21 @@ final class SessionGameHistoryTabularDataWriter {
 			throw new IllegalArgumentException(
 					String.format("Usage: %s INPATHS...", SessionGameHistoryTabularDataWriter.class.getSimpleName()));
 		} else {
+			final EntityFeatureExtractionContextFactory extractionContextFactory = new EntityFeatureExtractionContextFactory(
+					new GameContextModelFactory(2), new ImageEdgeCounter());
+			final String nullValueRepr = "";
+			final EntityFeatureVectorDescriptionFactory entityFeatureVectorDescFactory = new EntityFeatureVectorDescriptionFactory(
+					new EntityFeature.Extractor(), EntityFeature.getDefaultOrdering(), extractionContextFactory,
+					nullValueRepr);
 			final SessionGameHistoryTabularDataWriter writer = new SessionGameHistoryTabularDataWriter(
-					Arrays.asList(EventDatum.values()), Arrays.asList(EntityFeature.values()),
-					new EntityFeature.Extractor(), "events", "");
+					entityFeatureVectorDescFactory, Arrays.asList(EventDatum.values()), "events", nullValueRepr);
 			writer.accept(inpaths);
 		}
 	}
 
 	private final List<String> dataColumnNames;
 
-	private final EntityFeature.Extractor entityFeatureExtractor;
-
-	private final List<EntityFeature> entityFeaturesToDescribe;
+	private final EntityFeatureVectorDescriptionFactory entityFeatureVectorDescFactory;
 
 	private final List<EventDatum> eventDataToDescribe;
 
@@ -170,16 +171,16 @@ final class SessionGameHistoryTabularDataWriter {
 
 	private final String outfileNamePrefix;
 
-	private SessionGameHistoryTabularDataWriter(final List<EventDatum> eventDataToDescribe,
-			final List<EntityFeature> entityFeaturesToDescribe, final EntityFeature.Extractor entityFeatureExtractor,
-			final String outfileNamePrefix, final String nullCellValueRepr) {
+	private SessionGameHistoryTabularDataWriter(
+			final EntityFeatureVectorDescriptionFactory entityFeatureVectorDescFactory,
+			final List<EventDatum> eventDataToDescribe, final String outfileNamePrefix,
+			final String nullCellValueRepr) {
+		this.entityFeatureVectorDescFactory = entityFeatureVectorDescFactory;
 		this.eventDataToDescribe = eventDataToDescribe;
-		this.entityFeaturesToDescribe = entityFeaturesToDescribe;
-		this.entityFeatureExtractor = entityFeatureExtractor;
 		this.outfileNamePrefix = outfileNamePrefix;
 		this.nullCellValueRepr = nullCellValueRepr;
 
-		dataColumnNames = Arrays.asList(createEventDataColumnNames().toArray(String[]::new));
+		dataColumnNames = Arrays.asList(createColumnNames().toArray(String[]::new));
 	}
 
 	private void accept(final Path[] inpaths) throws IOException, JAXBException {
@@ -200,12 +201,11 @@ final class SessionGameHistoryTabularDataWriter {
 
 				final Entry<String, GameHistory> gameIdHistory = GameHistory.ensureSingleGame(gameHistories);
 				final GameHistory history = gameIdHistory.getValue();
-				final LocalDateTime gameStartTime = history.getStartTime();
 
 				{
 					final Stream<Event> events = history.getEventSequence();
 					final Stream<Stream<String>> eventRows = events
-							.map(event -> createEventRowCellValues(new EventContext(event, gameStartTime)));
+							.map(event -> createRowCellValues(new EventContext(event, history)));
 					final Stream<String> fileRows = Stream.concat(Stream.of(dataColumnNames.stream()), eventRows)
 							.map(cells -> cells.collect(TABLE_ROW_CELL_JOINER));
 					{
@@ -222,7 +222,7 @@ final class SessionGameHistoryTabularDataWriter {
 					final Map<Metadatum, Object> metadataValues = new EnumMap<>(Metadatum.class);
 					final String gameId = gameIdHistory.getKey();
 					metadataValues.put(Metadatum.GAME_ID, gameId);
-					metadataValues.put(Metadatum.START_TIME, gameStartTime);
+					metadataValues.put(Metadatum.START_TIME, history.getStartTime());
 					assert metadataValues.size() == Metadatum.values().length;
 					{
 						final String outfileName = createEventsMetadataOutfileName();
@@ -241,9 +241,14 @@ final class SessionGameHistoryTabularDataWriter {
 		}
 	}
 
-	private Stream<String> createEventDataColumnNames() {
+	private Stream<String> createColumnNames() {
+		final Stream.Builder<String> resultBuilder = Stream.builder();
 		final Stream<String> eventDatumNames = eventDataToDescribe.stream().map(EventDatum::toString);
-		return eventDatumNames;
+		eventDatumNames.forEachOrdered(resultBuilder);
+		final Stream<String> featureVectorColumnNames = entityFeatureVectorDescFactory.getEntityFeaturesToDescribe()
+				.stream().map(EntityFeature::toString);
+		featureVectorColumnNames.forEachOrdered(resultBuilder);
+		return resultBuilder.build();
 	}
 
 	private Map<EventDatum, String> createEventDataMap(final EventContext eventCtx) {
@@ -256,59 +261,31 @@ final class SessionGameHistoryTabularDataWriter {
 		return result;
 	}
 
-	private Stream<String> createEventRowCellValues(final EventContext eventCtx) {
-		final Stream<String> result;
-
-		final Event event = eventCtx.getEvent();
-		final String eventName = event.getName();
-		LOGGER.debug("Processing event with name \"{}\".", eventName);
-		final GameManagementEvent eventType = GameManagementEvent.getEventType(eventName);
-		if (eventType == null) {
-			throw new IllegalArgumentException(String.format("\"%s\" is not a valid game event name.", eventName));
-		} else {
-			final Stream.Builder<String> resultBuilder = Stream.builder();
-			final Map<EventDatum, String> eventData = createEventDataMap(eventCtx);
-			eventData.values().forEach(resultBuilder);
-
-			switch (eventType) {
-			case COMPLETED_TURN_REQUEST:
-				break;
-			case GAME_READY_RESPONSE: {
-				LOGGER.debug("Ignoring event of type {}.", eventType);
-				break;
-			}
-			case NEXT_TURN_REQUEST: {
-				final Move move = (Move) event.get(GameManagementEvent.Attribute.MOVE.toString());
-				break;
-			}
-			case PLAYER_JOIN_REQUEST: {
-				LOGGER.debug("Ignoring event of type {}.", eventType);
-				break;
-			}
-			case PLAYER_JOIN_RESPONSE: {
-				LOGGER.debug("Ignoring event of type {}.", eventType);
-				break;
-			}
-			case SELECTION_REJECTION:
-				break;
-			case SELECTION_REQUEST:
-				break;
-			default: {
-				throw new AssertionError(String.format("No logic for handling event type %s.", eventType));
-			}
-			}
-
-			result = resultBuilder.build();
-		}
-
-		return result;
-	}
-
 	private String createEventsMetadataOutfileName() {
 		return outfileNamePrefix + "-metadata.tsv";
 	}
 
 	private String createEventsOutfileName() {
 		return outfileNamePrefix + ".tsv";
+	}
+
+	private Stream<String> createRowCellValues(final EventContext eventCtx) {
+		final Stream<String> result;
+
+		final Event event = eventCtx.getEvent();
+		LOGGER.debug("Processing event with name \"{}\".", event.getName());
+		final Stream.Builder<String> resultBuilder = Stream.builder();
+		final Map<EventDatum, String> eventData = createEventDataMap(eventCtx);
+		eventData.values().forEach(resultBuilder);
+
+		final LocalDateTime eventTime = EventTimes.parseEventTime(event.getTime());
+		final GameContext gameContext = new GameContext(eventCtx.getHistory(), eventTime);
+		final Stream<String> entityFeatureVectorReprs = entityFeatureVectorDescFactory
+				.createFeatureValueReprs(gameContext);
+		entityFeatureVectorReprs.forEachOrdered(resultBuilder);
+
+		result = resultBuilder.build();
+
+		return result;
 	}
 }
