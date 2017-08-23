@@ -34,20 +34,20 @@ import se.kth.speech.coin.tangrams.iristk.events.Move;
  * @since 23 Aug 2017
  *
  */
-final class EntityDescriptionFactory {
+final class ImageVizualizationInfoDescriptionFactory {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(EntityDescriptionFactory.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(ImageVizualizationInfoDescriptionFactory.class);
 
-	private final String blankImgVizInfoDesc;
+	private final String blankDescription;
 
 	private final String nullValueRepr;
 
-	EntityDescriptionFactory(final String nullValueRepr) {
+	ImageVizualizationInfoDescriptionFactory(final String nullValueRepr) {
 		this.nullValueRepr = nullValueRepr;
-		blankImgVizInfoDesc = createBlankImgVizInfoDesc();
+		blankDescription = createBlankDescription();
 	}
 
-	private String createBlankImgVizInfoDesc() {
+	private String createBlankDescription() {
 		final StringWriter strWriter = new StringWriter(16);
 		final ImageVisualizationInfoTableRowWriter imgInfoDescWriter = new ImageVisualizationInfoTableRowWriter(
 				strWriter, nullValueRepr);
@@ -60,7 +60,7 @@ final class EntityDescriptionFactory {
 		}
 	}
 
-	String createImgVizInfoDesc(final Move move, final LocalDateTime gameStartTime,
+	String createDescription(final Move move, final LocalDateTime gameStartTime,
 			final List<ImageVisualizationInfo.Datum> imgVizInfoData) {
 		final StringWriter strWriter = new StringWriter(256);
 		final ImageVisualizationInfoTableRowWriter imgInfoDescWriter = new ImageVisualizationInfoTableRowWriter(
@@ -78,10 +78,10 @@ final class EntityDescriptionFactory {
 	}
 
 	/**
-	 * @return the blankImgVizInfoDesc
+	 * @return the blankDescription
 	 */
-	String getBlankImgVizInfoDesc() {
-		return blankImgVizInfoDesc;
+	String getBlankDescription() {
+		return blankDescription;
 	}
 
 }

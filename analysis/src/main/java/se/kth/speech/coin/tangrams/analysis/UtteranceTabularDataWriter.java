@@ -104,7 +104,7 @@ final class UtteranceTabularDataWriter {
 
 	private static final Supplier<String> COL_HEADER_PADDING_SUPPLIER = () -> "";
 
-	private static final EntityDescriptionFactory ENTITY_DESC_FACTORY;
+	private static final ImageVizualizationInfoDescriptionFactory ENTITY_DESC_FACTORY;
 
 	private static final MathContext EVT_TIME_DIFF_CTX = new MathContext(16, RoundingMode.HALF_UP);
 
@@ -124,7 +124,7 @@ final class UtteranceTabularDataWriter {
 
 	static {
 		NULL_VALUE_REPR = "-";
-		ENTITY_DESC_FACTORY = new EntityDescriptionFactory(NULL_VALUE_REPR);
+		ENTITY_DESC_FACTORY = new ImageVizualizationInfoDescriptionFactory(NULL_VALUE_REPR);
 	}
 
 	static {
@@ -148,9 +148,9 @@ final class UtteranceTabularDataWriter {
 		final String result;
 		final Move move = (Move) firstDiagEvent.get(GameManagementEvent.Attribute.MOVE.toString());
 		if (move == null) {
-			result = ENTITY_DESC_FACTORY.getBlankImgVizInfoDesc();
+			result = ENTITY_DESC_FACTORY.getBlankDescription();
 		} else {
-			result = ENTITY_DESC_FACTORY.createImgVizInfoDesc(move, gameStartTime, imgVizInfoData);
+			result = ENTITY_DESC_FACTORY.createDescription(move, gameStartTime, imgVizInfoData);
 		}
 		return result;
 	}
@@ -347,7 +347,7 @@ final class UtteranceTabularDataWriter {
 			if (diagEvts.isEmpty()) {
 				eventDataReprs = Arrays.stream(eventDataToWrite).map(eventDatum -> NULL_VALUE_REPR);
 				imgFeatureVectorReprs = getBlankImgFeatureValueReprs();
-				imgVizInfoDesc = ENTITY_DESC_FACTORY.getBlankImgVizInfoDesc();
+				imgVizInfoDesc = ENTITY_DESC_FACTORY.getBlankDescription();
 			} else {
 				final Event firstDiagEvent = diagEvts.iterator().next();
 				{
