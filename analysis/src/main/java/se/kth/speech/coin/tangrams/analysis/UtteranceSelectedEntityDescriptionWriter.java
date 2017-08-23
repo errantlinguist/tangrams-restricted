@@ -66,7 +66,7 @@ import se.kth.speech.io.FileNames;
  * @since 4 May 2017
  *
  */
-final class UtteranceSelectedEntityDescriptionWriter {
+final class UtteranceSelectedEntityDescriptionWriter { // NO_UCD (use default)
 
 	private enum Parameter implements Supplier<Option> {
 		HELP("?") {
