@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 
 import org.apache.commons.lang3.tuple.Pair;
@@ -62,8 +61,6 @@ public final class DialogicInstancesFactory extends AbstractSizeEstimatingInstan
 
 	private final Function<? super Collection<UtteranceRelation>, EntityReferringLanguageWordClasses> entityRefLangExFactory;
 
-	private final Supplier<Utterance> firstInstructorUttNullValueGetter;
-
 	private final BooleanTrainingContextsFactory trainingCtxsFactory;
 
 	private final ToDoubleFunction<? super Utterance> uttAcceptanceRanker;
@@ -73,24 +70,21 @@ public final class DialogicInstancesFactory extends AbstractSizeEstimatingInstan
 	public DialogicInstancesFactory(final EntityInstanceAttributeContext entityInstAttrCtx,
 			final EventDialogueTransformer diagTransformer, final EntityFeatureExtractionContextFactory extCtxFactory,
 			final ToDoubleFunction<? super Utterance> uttAcceptanceRanker,
-			final Supplier<Utterance> firstInstructorUttNullValueGetter,
 			final Function<? super Collection<UtteranceRelation>, EntityReferringLanguageWordClasses> entityRefLangExFactory,
 			final BiConsumer<? super EventDialogue, ? super List<UtteranceRelation>> uttRelHandler) {
 		this(entityInstAttrCtx, diagTransformer, new BooleanTrainingContextsFactory(extCtxFactory), uttAcceptanceRanker,
-				firstInstructorUttNullValueGetter, entityRefLangExFactory, uttRelHandler);
+				entityRefLangExFactory, uttRelHandler);
 	}
 
 	private DialogicInstancesFactory(final EntityInstanceAttributeContext entityInstAttrCtx,
 			final EventDialogueTransformer diagTransformer, final BooleanTrainingContextsFactory trainingCtxsFactory,
 			final ToDoubleFunction<? super Utterance> uttAcceptanceRanker,
-			final Supplier<Utterance> firstInstructorUttNullValueGetter,
 			final Function<? super Collection<UtteranceRelation>, EntityReferringLanguageWordClasses> entityRefLangExFactory,
 			final BiConsumer<? super EventDialogue, ? super List<UtteranceRelation>> uttRelHandler) {
 		super(entityInstAttrCtx);
 		this.diagTransformer = diagTransformer;
 		this.trainingCtxsFactory = trainingCtxsFactory;
 		this.uttAcceptanceRanker = uttAcceptanceRanker;
-		this.firstInstructorUttNullValueGetter = firstInstructorUttNullValueGetter;
 		this.entityRefLangExFactory = entityRefLangExFactory;
 		this.uttRelHandler = uttRelHandler;
 	}
@@ -130,7 +124,7 @@ public final class DialogicInstancesFactory extends AbstractSizeEstimatingInstan
 							event.getString(GameManagementEvent.Attribute.PLAYER_ID.toString()));
 					final BooleanTrainingContexts trainingContexts = trainingCtxsFactory.apply(allUtts.get(0), history);
 					final DialogicEventDialogueUtteranceSorter uttSorter = new DialogicEventDialogueUtteranceSorter(
-							uttAcceptanceRanker, firstInstructorUttNullValueGetter);
+							uttAcceptanceRanker);
 					final List<UtteranceRelation> uttRels = uttSorter.apply(allUtts, event);
 					uttRelHandler.accept(uttDialogue, uttRels);
 

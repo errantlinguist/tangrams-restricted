@@ -24,13 +24,13 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 import java.util.stream.Stream;
 
 import iristk.system.Event;
 import se.kth.speech.Iterators;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
+import se.kth.speech.coin.tangrams.analysis.dialogues.WeightedUtterance;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -40,14 +40,10 @@ import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 public final class DialogicEventDialogueUtteranceSorter
 		implements BiFunction<List<Utterance>, Event, List<UtteranceRelation>> {
 
-	private final Supplier<Utterance> firstInstructorUttNullValueGetter;
-
 	private final ToDoubleFunction<? super Utterance> uttAcceptanceRanker;
 
-	public DialogicEventDialogueUtteranceSorter(final ToDoubleFunction<? super Utterance> uttAcceptanceRanker,
-			final Supplier<Utterance> firstInstructorUttNullValueGetter) {
+	public DialogicEventDialogueUtteranceSorter(final ToDoubleFunction<? super Utterance> uttAcceptanceRanker) {
 		this.uttAcceptanceRanker = uttAcceptanceRanker;
-		this.firstInstructorUttNullValueGetter = firstInstructorUttNullValueGetter;
 	}
 
 	@Override
@@ -62,9 +58,9 @@ public final class DialogicEventDialogueUtteranceSorter
 			final Entry<Stream<Utterance>, Optional<Utterance>> preInstructorUtts = Iterators
 					.findElementsBeforeDelimiter(uttIter, instructorUttMatcher);
 			final Optional<Utterance> optFirstInstructorUtt = preInstructorUtts.getValue();
-			final Utterance firstInstructorUtt = optFirstInstructorUtt.orElseGet(firstInstructorUttNullValueGetter);
-			final double firstInstructorUttAcceptanceRank = uttAcceptanceRanker.applyAsDouble(firstInstructorUtt);
-			result.add(new UtteranceRelation(firstInstructorUtt, firstInstructorUttAcceptanceRank,
+			final Optional<WeightedUtterance> optAcceptanceRankedUtt = optFirstInstructorUtt
+					.map(utt -> new WeightedUtterance(utt, uttAcceptanceRanker.applyAsDouble(utt)));
+			result.add(new UtteranceRelation(optAcceptanceRankedUtt,
 					Arrays.asList(preInstructorUtts.getKey().toArray(Utterance[]::new))));
 		}
 

@@ -188,7 +188,7 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 								final CombiningBatchJobTester tester = new CombiningBatchJobTester(
 										backgroundJobExecutor, appCtx, writer::write, writer::writeError,
 										testerConfigurator, new ExtractionLogWriter(extrLogOut),
-										new UtteranceRelationLogWriter(uttRelLogOut));
+										new UtteranceRelationLogWriter(uttRelLogOut, NULL_CELL_VALUE_REPR));
 								tester.accept(input);
 							}
 							LOGGER.info("Shutting down executor service.");

@@ -17,26 +17,25 @@
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues;
 
 import java.util.List;
+import java.util.Optional;
 
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
+import se.kth.speech.coin.tangrams.analysis.dialogues.WeightedUtterance;
 
 public final class UtteranceRelation {
 
-	private final Utterance acceptanceUtt;
-
-	private final double acceptanceValue;
+	private final Optional<WeightedUtterance> acceptanceUtt;
 
 	private final List<Utterance> prevUtts;
 
-	UtteranceRelation(final Utterance acceptanceUtt, final double acceptanceValue, final List<Utterance> prevUtts) {
+	UtteranceRelation(final Optional<WeightedUtterance> acceptanceUtt, final List<Utterance> prevUtts) {
 		this.acceptanceUtt = acceptanceUtt;
-		this.acceptanceValue = acceptanceValue;
 		this.prevUtts = prevUtts;
 	}
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#equals(java.lang.Object)
 	 */
 	@Override
@@ -65,24 +64,14 @@ public final class UtteranceRelation {
 		} else if (!acceptanceUtt.equals(other.acceptanceUtt)) {
 			return false;
 		}
-		if (Double.doubleToLongBits(acceptanceValue) != Double.doubleToLongBits(other.acceptanceValue)) {
-			return false;
-		}
 		return true;
 	}
 
 	/**
 	 * @return the acceptanceUtt
 	 */
-	public Utterance getAcceptanceUtt() {
+	public Optional<WeightedUtterance> getAcceptanceUtt() {
 		return acceptanceUtt;
-	}
-
-	/**
-	 * @return the acceptanceValue
-	 */
-	public double getAcceptanceValue() {
-		return acceptanceValue;
 	}
 
 	/**
@@ -94,7 +83,7 @@ public final class UtteranceRelation {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#hashCode()
 	 */
 	@Override
@@ -103,15 +92,12 @@ public final class UtteranceRelation {
 		int result = 1;
 		result = prime * result + (prevUtts == null ? 0 : prevUtts.hashCode());
 		result = prime * result + (acceptanceUtt == null ? 0 : acceptanceUtt.hashCode());
-		long temp;
-		temp = Double.doubleToLongBits(acceptanceValue);
-		result = prime * result + (int) (temp ^ temp >>> 32);
 		return result;
 	}
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#toString()
 	 */
 	@Override
@@ -119,8 +105,6 @@ public final class UtteranceRelation {
 		final StringBuilder builder = new StringBuilder(128);
 		builder.append("UtteranceRelation [acceptanceUtt=");
 		builder.append(acceptanceUtt);
-		builder.append(", acceptanceValue=");
-		builder.append(acceptanceValue);
 		builder.append(", prevUtts=");
 		builder.append(prevUtts);
 		builder.append(']');

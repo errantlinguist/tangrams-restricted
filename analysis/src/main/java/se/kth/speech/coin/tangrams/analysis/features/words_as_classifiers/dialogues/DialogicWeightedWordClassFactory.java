@@ -65,53 +65,73 @@ public final class DialogicWeightedWordClassFactory
 		final Object2DoubleMap<String> otherEntityNegativeExamples = new Object2DoubleOpenHashMap<>(
 				estimatedExampleSetCount);
 		for (final UtteranceRelation uttRel : uttRels) {
-			// Add all language from the instructor
-			getWordClasses(uttRel.getAcceptanceUtt()).forEach(wordClass -> {
+			uttRel.getAcceptanceUtt().ifPresent(acceptanceUtt -> {
+				// Add all language from the instructor
+				putInstructorUtterance(acceptanceUtt.getUtterance(), refPosExamples, otherEntityNegativeExamples);
+				// Process non-instructor language
+				final double acceptanceValue = acceptanceUtt.getWeight();
+				putNonInstructorUtterances(uttRel.getPrevUtts(), acceptanceValue, refPosExamples, refNegExamples,
+						otherEntityNegativeExamples);
+			});
+			// If there was no instructor utterance found which could be used to
+			// calculate
+			// an acceptance score, do nothing because the non-instructor
+			// language cannot be reasoned about and there is no instructor
+			// utterance to use
+		}
+
+		return new EntityReferringLanguageWordClasses(refPosExamples, refNegExamples, otherEntityNegativeExamples);
+	}
+
+	private void putInstructorUtterance(final Utterance acceptanceUtt, final Object2DoubleMap<String> refPosExamples,
+			final Object2DoubleMap<String> otherEntityNegativeExamples) {
+		getWordClasses(acceptanceUtt).forEach(wordClass -> {
+			// For each entity which is selected, process a
+			// positive example for this observation: The
+			// utterance being processed DOES correspond to
+			// the selected entity
+			refPosExamples.put(wordClass, refPosExamples.getDouble(wordClass) + instrUttObservationWeight);
+			// For each entity which is NOT selected, process a
+			// negative example for this observation: The
+			// utterance being processed explicitly DOES NOT correspond
+			// to the non-selected entity
+			otherEntityNegativeExamples.put(wordClass,
+					otherEntityNegativeExamples.getDouble(wordClass) + instrUttObservationWeight);
+		});
+	}
+
+	private void putNonInstructorUtterances(final List<Utterance> prevUtts, final double acceptanceValue,
+			final Object2DoubleMap<String> refPosExamples, final Object2DoubleMap<String> refNegExamples,
+			final Object2DoubleMap<String> otherEntityNegativeExamples) {
+		if (acceptanceValue < 0) {
+			// Use the other player's utterances which came
+			// before this instructor utterance as negative
+			// examples for the referent but not anything for the
+			// non-referent entities because it can't
+			// be determined what the language actually refers to
+			getWordClasses(prevUtts).forEach(wordClass -> refNegExamples.put(wordClass,
+					refNegExamples.getDouble(wordClass) + otherUttObsevationWeight));
+		} else if (acceptanceValue > 0) {
+			// Use the other player's utterances which came
+			// before this instructor utterance as positive
+			// examples
+			getWordClasses(prevUtts).forEach(wordClass -> {
 				// For each entity which is selected, process a
 				// positive example for this observation: The
 				// utterance being processed DOES correspond to
 				// the selected entity
-				refPosExamples.put(wordClass, refPosExamples.getDouble(wordClass) + instrUttObservationWeight);
+				refPosExamples.put(wordClass, refPosExamples.getDouble(wordClass) + otherUttObsevationWeight);
 				// For each entity which is NOT selected, process a
 				// negative example for this observation: The
-				// utterance being processed explicitly DOES NOT correspond to
+				// utterance being processed explicitly DOES NOT correspond
+				// to
 				// the non-selected entity
 				otherEntityNegativeExamples.put(wordClass,
-						otherEntityNegativeExamples.getDouble(wordClass) + instrUttObservationWeight);
+						otherEntityNegativeExamples.getDouble(wordClass) + otherUttObsevationWeight);
 			});
-
-			// Process non-instructor language
-			final double acceptanceValue = uttRel.getAcceptanceValue();
-			if (acceptanceValue < 0) {
-				// Use the other player's utterances which came
-				// before this instructor utterance as negative
-				// examples for the referent but not anything for the
-				// non-referent entities because it can't
-				// be determined what the language actually refers to
-				getWordClasses(uttRel.getPrevUtts()).forEach(wordClass -> refNegExamples.put(wordClass,
-						refNegExamples.getDouble(wordClass) + otherUttObsevationWeight));
-			} else if (acceptanceValue > 0) {
-				// Use the other player's utterances which came
-				// before this instructor utterance as positive
-				// examples
-				getWordClasses(uttRel.getPrevUtts()).forEach(wordClass -> {
-					// For each entity which is selected, process a
-					// positive example for this observation: The
-					// utterance being processed DOES correspond to
-					// the selected entity
-					refPosExamples.put(wordClass, refPosExamples.getDouble(wordClass) + otherUttObsevationWeight);
-					// For each entity which is NOT selected, process a
-					// negative example for this observation: The
-					// utterance being processed explicitly DOES NOT correspond
-					// to
-					// the non-selected entity
-					otherEntityNegativeExamples.put(wordClass,
-							otherEntityNegativeExamples.getDouble(wordClass) + otherUttObsevationWeight);
-				});
-			}
 		}
-
-		return new EntityReferringLanguageWordClasses(refPosExamples, refNegExamples, otherEntityNegativeExamples);
+		// If the acceptance value is 0, do nothing because the non-instructor
+		// language cannot be reasoned about
 	}
 
 }

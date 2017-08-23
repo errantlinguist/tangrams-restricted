@@ -21,9 +21,11 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.ToDoubleFunction;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.xml.bind.JAXBException;
 
@@ -34,6 +36,7 @@ import org.slf4j.LoggerFactory;
 
 import iristk.system.Event;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
+import se.kth.speech.coin.tangrams.analysis.dialogues.WeightedUtterance;
 import se.kth.speech.coin.tangrams.iristk.EventTimes;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 import se.kth.speech.nlp.PatternMatchingUtteranceAcceptanceRanker;
@@ -52,10 +55,7 @@ public final class DialogicEventDialogueUtteranceSorterTest {
 		// CachingUtteranceSentimentRanker(StanfordCoreNLPConfigurationVariant.TOKENIZING_PARSING_SENTIMENT.get(),
 		// 3);
 		final ToDoubleFunction<Utterance> uttRanker = new PatternMatchingUtteranceAcceptanceRanker();
-		final Utterance uttNullValue = null;
-		final ToDoubleFunction<Utterance> nullableUttRanker = utt -> utt == uttNullValue ? 0.0
-				: uttRanker.applyAsDouble(utt);
-		return new DialogicEventDialogueUtteranceSorter(nullableUttRanker, () -> uttNullValue);
+		return new DialogicEventDialogueUtteranceSorter(uttRanker);
 	}
 
 	/**
@@ -80,12 +80,20 @@ public final class DialogicEventDialogueUtteranceSorterTest {
 		final DialogicEventDialogueUtteranceSorter testInst = createTestInst();
 		final List<UtteranceRelation> result = testInst.apply(utts, event);
 		LOGGER.debug("{}", result);
-		final long nonZeroAcceptanceRankCount = result.stream().mapToDouble(UtteranceRelation::getAcceptanceValue)
+
+		final Stream<Optional<WeightedUtterance>> optAcceptanceUtts = result.stream()
+				.map(UtteranceRelation::getAcceptanceUtt);
+		final List<WeightedUtterance> acceptanceUtts = optAcceptanceUtts
+				.flatMap(opt -> opt.map(Stream::of).orElseGet(Stream::empty)).collect(Collectors.toList());
+
+		final long nonZeroAcceptanceRankCount = acceptanceUtts.stream().mapToDouble(WeightedUtterance::getWeight)
 				.filter(val -> val != 0.0).count();
 		Assert.assertEquals(1, nonZeroAcceptanceRankCount);
-		final Set<String> acceptanceUttSpeakerIds = result.stream().map(UtteranceRelation::getAcceptanceUtt)
+
+		final Set<String> acceptanceUttSpeakerIds = acceptanceUtts.stream().map(WeightedUtterance::getUtterance)
 				.map(Utterance::getSpeakerId).collect(Collectors.toSet());
 		Assert.assertEquals(Collections.singleton(instructorPlayerId), acceptanceUttSpeakerIds);
+
 		final Set<String> otherUttSpeakerIds = result.stream().map(UtteranceRelation::getPrevUtts).flatMap(List::stream)
 				.map(Utterance::getSpeakerId).collect(Collectors.toSet());
 		Assert.assertEquals(Collections.singleton(selectorPlayerId), otherUttSpeakerIds);

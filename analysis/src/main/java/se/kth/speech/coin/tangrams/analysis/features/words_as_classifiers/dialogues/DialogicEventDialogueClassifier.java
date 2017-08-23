@@ -20,7 +20,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 
 import org.slf4j.Logger;
@@ -47,18 +46,14 @@ public final class DialogicEventDialogueClassifier implements EventDialogueClass
 
 	private final Function<? super Collection<UtteranceRelation>, EntityReferringLanguageWordClasses> entityRefLangExFactory;
 
-	private final Supplier<Utterance> firstInstructorUttNullValueGetter;
-
 	private final ReferentConfidenceMapFactory referentConfidenceMapFactory;
 
 	private final ToDoubleFunction<? super Utterance> uttAcceptanceRanker;
 
 	public DialogicEventDialogueClassifier(final ToDoubleFunction<? super Utterance> uttAcceptanceRanker,
-			final Supplier<Utterance> firstInstructorUttNullValueGetter,
 			final Function<? super Collection<UtteranceRelation>, EntityReferringLanguageWordClasses> entityRefLangExFactory,
 			final ReferentConfidenceMapFactory referentConfidenceMapFactory) {
 		this.uttAcceptanceRanker = uttAcceptanceRanker;
-		this.firstInstructorUttNullValueGetter = firstInstructorUttNullValueGetter;
 		this.entityRefLangExFactory = entityRefLangExFactory;
 		this.referentConfidenceMapFactory = referentConfidenceMapFactory;
 	}
@@ -85,7 +80,7 @@ public final class DialogicEventDialogueClassifier implements EventDialogueClass
 				result = Optional.empty();
 			} else {
 				final DialogicEventDialogueUtteranceSorter uttSorter = new DialogicEventDialogueUtteranceSorter(
-						uttAcceptanceRanker, firstInstructorUttNullValueGetter);
+						uttAcceptanceRanker);
 				final List<UtteranceRelation> uttRels = uttSorter.apply(allUtts, event);
 				final EntityReferringLanguageWordClasses entityRefLangExs = entityRefLangExFactory.apply(uttRels);
 				final Object2DoubleMap<String> refPosExs = entityRefLangExs.getRefPosExamples();

@@ -21,6 +21,7 @@ import java.io.UncheckedIOException;
 import java.io.Writer;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
@@ -29,6 +30,7 @@ import java.util.stream.Stream;
 import iristk.system.Event;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
+import se.kth.speech.coin.tangrams.analysis.dialogues.WeightedUtterance;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.UtteranceRelation;
 
 /**
@@ -44,10 +46,13 @@ final class UtteranceRelationLogWriter implements BiConsumer<EventDialogue, Iter
 
 	private static final Collector<CharSequence, ?, String> UTT_REPR_JOINER = Collectors.joining("\", \"", "\"", "\"");
 
+	private final String nullCellValueRepr;
+
 	private final Writer writer;
 
-	UtteranceRelationLogWriter(final Writer writer) throws IOException {
+	UtteranceRelationLogWriter(final Writer writer, final String nullCellValueRepr) throws IOException {
 		this.writer = writer;
+		this.nullCellValueRepr = nullCellValueRepr;
 		writeHeader();
 	}
 
@@ -89,12 +94,14 @@ final class UtteranceRelationLogWriter implements BiConsumer<EventDialogue, Iter
 		writer.write(COL_DELIM);
 		writer.write(Integer.toString(relNo));
 		writer.write(COL_DELIM);
-		final Utterance instrUtt = uttRel.getAcceptanceUtt();
-		writer.write(instrUtt.getTokenStr());
+		final Optional<WeightedUtterance> optInstrUtt = uttRel.getAcceptanceUtt();
+		writer.write(
+				optInstrUtt.map(WeightedUtterance::getUtterance).map(Utterance::getTokenStr).orElse(nullCellValueRepr));
 		writer.write(COL_DELIM);
-		writer.write(Long.toString(instrUtt.getTokens().stream().count()));
+		writer.write(optInstrUtt.map(WeightedUtterance::getUtterance).map(Utterance::getTokens).map(List::size)
+				.map(Object::toString).orElse(nullCellValueRepr));
 		writer.write(COL_DELIM);
-		writer.write(Double.toString(uttRel.getAcceptanceValue()));
+		writer.write(optInstrUtt.map(WeightedUtterance::getWeight).map(Object::toString).orElse(nullCellValueRepr));
 		writer.write(COL_DELIM);
 		final List<Utterance> prevUtts = uttRel.getPrevUtts();
 		writer.write(Integer.toString(prevUtts.size()));

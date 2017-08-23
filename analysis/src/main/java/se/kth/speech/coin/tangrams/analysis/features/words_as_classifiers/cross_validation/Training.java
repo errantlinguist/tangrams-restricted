@@ -22,7 +22,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 
 import org.springframework.context.ApplicationContext;
@@ -77,8 +76,6 @@ enum Training {
 
 		private final DialogicWeightedWordClassFactory diagWordClassFactory = createDiagWordClassFactory();
 
-		private final Supplier<Utterance> firstInstructorUttNullValueGetter = () -> null;
-
 		@Override
 		public CachingEventDialogueTransformer createSymmetricalTrainingTestingEvgDiagTransformer(
 				final List<EventDialogueTransformer> diagTransformers) {
@@ -95,20 +92,18 @@ enum Training {
 			final EntityFeatureExtractionContextFactory extCtxFactory = appCtx
 					.getBean(EntityFeatureExtractionContextFactory.class);
 			return new DialogicInstancesFactory(entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory,
-					createCachingUttAcceptanceRanker(), firstInstructorUttNullValueGetter, diagWordClassFactory,
-					trainingCtx.getUttRelHandler());
+					createCachingUttAcceptanceRanker(), diagWordClassFactory, trainingCtx.getUttRelHandler());
 		}
 
 		@Override
 		public Function<ReferentConfidenceMapFactory, EventDialogueClassifier> getClassifierFactory() {
 			return (refConfMapFactory) -> new DialogicEventDialogueClassifier(createCachingUttAcceptanceRanker(),
-					firstInstructorUttNullValueGetter, diagWordClassFactory, refConfMapFactory);
+					diagWordClassFactory, refConfMapFactory);
 		}
 
 		private ToDoubleFunction<Utterance> createCachingUttAcceptanceRanker() {
 			final Object2DoubleMap<Utterance> cache = new Object2DoubleOpenHashMap<>(
 					TrainingConstants.ESTIMATED_UNIQUE_UTT_COUNT);
-			cache.put(firstInstructorUttNullValueGetter.get(), 0.0);
 			cache.defaultReturnValue(Double.NaN);
 			final PatternMatchingUtteranceAcceptanceRanker ranker = new PatternMatchingUtteranceAcceptanceRanker();
 			return utt -> {
