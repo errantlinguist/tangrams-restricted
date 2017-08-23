@@ -83,14 +83,14 @@ public final class DialogicEventDialogueUtteranceSorterTest {
 
 		final Stream<Optional<WeightedUtterance>> optAcceptanceUtts = result.stream()
 				.map(UtteranceRelation::getAcceptanceUtt);
-		final List<WeightedUtterance> acceptanceUtts = optAcceptanceUtts
-				.flatMap(opt -> opt.map(Stream::of).orElseGet(Stream::empty)).collect(Collectors.toList());
+		final WeightedUtterance[] acceptanceUtts = optAcceptanceUtts
+				.flatMap(opt -> opt.map(Stream::of).orElseGet(Stream::empty)).toArray(WeightedUtterance[]::new);
 
-		final long nonZeroAcceptanceRankCount = acceptanceUtts.stream().mapToDouble(WeightedUtterance::getWeight)
+		final long nonZeroAcceptanceRankCount = Arrays.stream(acceptanceUtts).mapToDouble(WeightedUtterance::getWeight)
 				.filter(val -> val != 0.0).count();
 		Assert.assertEquals(1, nonZeroAcceptanceRankCount);
 
-		final Set<String> acceptanceUttSpeakerIds = acceptanceUtts.stream().map(WeightedUtterance::getUtterance)
+		final Set<String> acceptanceUttSpeakerIds = Arrays.stream(acceptanceUtts).map(WeightedUtterance::getUtterance)
 				.map(Utterance::getSpeakerId).collect(Collectors.toSet());
 		Assert.assertEquals(Collections.singleton(instructorPlayerId), acceptanceUttSpeakerIds);
 
