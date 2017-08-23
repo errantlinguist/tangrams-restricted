@@ -283,7 +283,7 @@ final class TangramsClient implements Runnable {
 					LOGGER.debug("Finished playing audio.");
 					final Line line = event.getLine();
 					line.close();
-					// FIXME: Cannot close the Clip/Line!
+					// FIXME: Cannot close the Clip/Line on Linux with PulseAudio
 					LOGGER.debug("Closed audio data line.");
 				}
 			}
