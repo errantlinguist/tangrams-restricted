@@ -16,8 +16,12 @@
 */
 package se.kth.speech;
 
+import java.math.BigDecimal;
+import java.math.MathContext;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.Temporal;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -25,6 +29,14 @@ import java.time.LocalDateTime;
  *
  */
 public final class TimestampArithmetic {
+
+	private static final BigDecimal NANOS_TO_SECS_DIVISOR = new BigDecimal("1000000000");
+
+	public static BigDecimal calculateDecimalSecondDifference(final Temporal firstTime, final Temporal nextTime,
+			final MathContext mathCtx) {
+		final long diffNanos = ChronoUnit.NANOS.between(firstTime, nextTime);
+		return new BigDecimal(diffNanos).divide(NANOS_TO_SECS_DIVISOR, mathCtx);
+	}
 
 	public static LocalDateTime createOffsetTimestamp(final LocalDateTime augend, final double offsetSecs) {
 		final long wholePart = Math.round(Math.floor(offsetSecs));

@@ -23,7 +23,6 @@ import java.math.MathContext;
 import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -42,6 +41,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import iristk.system.Event;
+import se.kth.speech.TimestampArithmetic;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
@@ -112,8 +112,6 @@ final class UtteranceTabularDataWriter {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(UtteranceTabularDataWriter.class);
 
-	private static final BigDecimal NANOS_TO_SECS_DIVISOR = new BigDecimal("1000000000");
-
 	private static final String NULL_VALUE_REPR;
 
 	private static final Collector<CharSequence, ?, String> TABLE_ROW_CELL_JOINER;
@@ -142,8 +140,7 @@ final class UtteranceTabularDataWriter {
 	private static BigDecimal calculateTimeDiffSecs(final Event firstEvt, final Event nextEvt) {
 		final LocalDateTime firstTime = EventTimes.parseEventTime(firstEvt.getTime());
 		final LocalDateTime nextTime = EventTimes.parseEventTime(nextEvt.getTime());
-		final long diffNanos = ChronoUnit.NANOS.between(firstTime, nextTime);
-		return new BigDecimal(diffNanos).divide(NANOS_TO_SECS_DIVISOR, EVT_TIME_DIFF_CTX);
+		return TimestampArithmetic.calculateDecimalSecondDifference(firstTime, nextTime, EVT_TIME_DIFF_CTX);
 	}
 
 	private final List<List<String>> colHeaders;
