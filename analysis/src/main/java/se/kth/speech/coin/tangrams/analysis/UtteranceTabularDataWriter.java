@@ -155,13 +155,11 @@ final class UtteranceTabularDataWriter {
 
 	private final List<List<String>> colHeaders;
 
-	private final EntityFeature.Extractor entityFeatureExtractor;
-
 	private final List<EntityFeature> entityFeaturesToDescribe;
 
-	private final EventDatum[] eventDataToWrite;
+	private final EntityFeatureVectorDescriptionFactory entityFeatureVectorDescFactory;
 
-	private final EntityFeatureExtractionContextFactory extractionContextFactory;
+	private final EventDatum[] eventDataToWrite;
 
 	private final LanguageDatum[] langDataToWrite;
 
@@ -174,9 +172,9 @@ final class UtteranceTabularDataWriter {
 			final EntityFeatureExtractionContextFactory extractionContextFactory,
 			final Function<? super Iterator<Utterance>, String> uttDiagReprFactory, final boolean strict,
 			final EventDatum[] eventDataToWrite, final LanguageDatum[] langDataToWrite) {
-		this.entityFeatureExtractor = entityFeatureExtractor;
 		this.entityFeaturesToDescribe = entityFeaturesToDescribe;
-		this.extractionContextFactory = extractionContextFactory;
+		entityFeatureVectorDescFactory = new EntityFeatureVectorDescriptionFactory(entityFeatureExtractor,
+				entityFeaturesToDescribe, extractionContextFactory, NULL_VALUE_REPR);
 		this.uttDiagReprFactory = uttDiagReprFactory;
 		this.strict = strict;
 		this.eventDataToWrite = eventDataToWrite;
@@ -301,25 +299,6 @@ final class UtteranceTabularDataWriter {
 		return sb.toString();
 	}
 
-	private Stream<String> getBlankImgFeatureValueReprs() {
-		return entityFeaturesToDescribe.stream().map(feature -> NULL_VALUE_REPR);
-	}
-
-	private Stream<String> getImgFeatureValueReprs(final GameContext context) {
-		final Optional<Integer> optSelectedEntityId = context.findLastSelectedEntityId();
-		final Stream<String> result;
-		if (optSelectedEntityId.isPresent()) {
-			final EntityFeature.Extractor.Context extractionContext = extractionContextFactory.apply(context,
-					optSelectedEntityId.get());
-			final Stream<Optional<Object>> featureVals = entityFeaturesToDescribe.stream()
-					.map(feature -> entityFeatureExtractor.apply(feature, extractionContext));
-			result = featureVals.map(opt -> opt.map(Object::toString).orElse(NULL_VALUE_REPR));
-		} else {
-			result = getBlankImgFeatureValueReprs();
-		}
-		return result;
-	}
-
 	void accept(final GameHistory history, final List<EventDialogue> eventDiags, final Writer writer)
 			throws IOException {
 		// Write header
@@ -344,7 +323,7 @@ final class UtteranceTabularDataWriter {
 			final String imgVizInfoDesc;
 			if (diagEvts.isEmpty()) {
 				eventDataReprs = Arrays.stream(eventDataToWrite).map(eventDatum -> NULL_VALUE_REPR);
-				imgFeatureVectorReprs = getBlankImgFeatureValueReprs();
+				imgFeatureVectorReprs = entityFeatureVectorDescFactory.createBlankFeatureValueReprs();
 				imgVizInfoDesc = IMG_VIZ_INFO_DESC_FACTORY.getBlankDescription();
 			} else {
 				final Event firstDiagEvent = diagEvts.iterator().next();
@@ -379,7 +358,7 @@ final class UtteranceTabularDataWriter {
 
 				final GameContext context = TemporalGameContexts.create(history, contextStartTime, contextEndTime)
 						.findFirst().get();
-				imgFeatureVectorReprs = getImgFeatureValueReprs(context);
+				imgFeatureVectorReprs = entityFeatureVectorDescFactory.createFeatureValueReprs(context);
 
 				imgVizInfoDesc = createImgVizInfoDesc(firstDiagEvent, gameStartTime, imgVizInfoData);
 
