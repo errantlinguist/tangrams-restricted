@@ -108,10 +108,10 @@ final class TangramsClient implements Runnable {
 			if (line == null) {
 				LOGGER.debug("Audio data line future was not yet complete; No resources to clean up.");
 			} else {
-				LOGGER.debug("Closing audio data line.");
+				LOGGER.debug("Closing audio data line: {}", line);
 				// FIXME: Cannot close the Clip/Line on Linux with PulseAudio
 				line.close();
-				LOGGER.debug("Closed audio data line.");
+				LOGGER.debug("Closed audio data line: {}", line);
 			}
 
 		}
