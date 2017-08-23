@@ -33,6 +33,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
@@ -56,53 +57,51 @@ import se.kth.speech.coin.tangrams.iristk.events.Move;
 
 final class UtteranceTabularDataWriter {
 
-	private enum EventDatum {
+	private enum EventDatum implements BiFunction<Event, Optional<? extends Event>, String> {
 		LAST_RND_TIME {
 			@Override
-			String getValue(final Event firstDiagEvent, final Optional<Event> optLastRoundEvent) {
+			public String apply(final Event firstDiagEvent, final Optional<? extends Event> optLastRoundEvent) {
 				return optLastRoundEvent.map(Event::getTime).orElse(NULL_VALUE_REPR);
 			}
 		},
 		LAST_RND_TIME_DIFF {
 			@Override
-			String getValue(final Event firstDiagEvent, final Optional<Event> optLastRoundEvent) {
+			public String apply(final Event firstDiagEvent, final Optional<? extends Event> optLastRoundEvent) {
 				return optLastRoundEvent.map(lastRoundEvent -> calculateTimeDiffSecs(lastRoundEvent, firstDiagEvent))
 						.map(BigDecimal::toString).orElse(NULL_VALUE_REPR);
 			}
 		},
 		MOVE_SUBMITTER {
 			@Override
-			String getValue(final Event firstDiagEvent, final Optional<Event> lastRoundEvent) {
+			public String apply(final Event firstDiagEvent, final Optional<? extends Event> lastRoundEvent) {
 				return firstDiagEvent.getString(GameManagementEvent.Attribute.PLAYER_ID.toString());
 			}
 		},
 		NAME {
 			@Override
-			String getValue(final Event firstDiagEvent, final Optional<Event> optLastRoundEvent) {
+			public String apply(final Event firstDiagEvent, final Optional<? extends Event> optLastRoundEvent) {
 				return firstDiagEvent.getName();
 			}
 		},
 		TIME {
 			@Override
-			String getValue(final Event firstDiagEvent, final Optional<Event> optLastRoundEvent) {
+			public String apply(final Event firstDiagEvent, final Optional<? extends Event> optLastRoundEvent) {
 				return firstDiagEvent.getTime();
 			}
 		};
 
-		abstract String getValue(Event firstDiagEvent, Optional<Event> optLastRoundEvent);
 	}
 
-	private enum LanguageDatum {
+	private enum LanguageDatum
+			implements BiFunction<List<Utterance>, Function<? super Iterator<Utterance>, String>, String> {
 		DIALOGUE {
 			@Override
-			String getValue(final List<Utterance> diagUtts,
+			public String apply(final List<Utterance> diagUtts,
 					final Function<? super Iterator<Utterance>, String> uttDiagReprFactory) {
 				return uttDiagReprFactory.apply(diagUtts.iterator());
 			}
 		};
 
-		abstract String getValue(final List<Utterance> diagUtts,
-				Function<? super Iterator<Utterance>, String> uttDiagReprFactory);
 	}
 
 	private static final Supplier<String> COL_HEADER_PADDING_SUPPLIER = () -> "";
@@ -386,7 +385,7 @@ final class UtteranceTabularDataWriter {
 				{
 					final Optional<Event> streamOptLastRoundEvent = optLastRoundEvent;
 					eventDataReprs = Arrays.stream(eventDataToWrite)
-							.map(eventDatum -> eventDatum.getValue(firstDiagEvent, streamOptLastRoundEvent));
+							.map(eventDatum -> eventDatum.apply(firstDiagEvent, streamOptLastRoundEvent));
 				}
 
 				final float contextStartTime;
@@ -428,7 +427,7 @@ final class UtteranceTabularDataWriter {
 
 			for (final LanguageDatum langDatum : langDataToWrite) {
 				writer.write(TABLE_STRING_REPR_COL_DELIMITER);
-				final String datumValue = langDatum.getValue(diagUtts, uttDiagReprFactory);
+				final String datumValue = langDatum.apply(diagUtts, uttDiagReprFactory);
 				writer.write(datumValue);
 			}
 		}
