@@ -52,7 +52,7 @@ import weka.core.Attribute;
  *
  */
 public enum EntityFeature {
-	BLUE, BRIGHTNESS, EDGE_COUNT, GREEN, HUE, POSITION_X, POSITION_Y, RED, SATURATION, SHAPE, SIZE;
+	BLUE, EDGE_COUNT, GREEN, HUE, POSITION_X, POSITION_Y, RED, SHAPE, SIZE;
 
 	@Named
 	public static final class Extractor implements FeatureExtractor<EntityFeature, Extractor.Context> {
@@ -69,8 +69,8 @@ public enum EntityFeature {
 
 			private final SpatialRegion pieceRegion;
 
-			Context(final ImageVisualizationInfoDescription.Datum pieceImgVizInfoDatum,
-					final SpatialRegion pieceRegion, final int[] modelDims, final double modelArea,
+			Context(final ImageVisualizationInfoDescription.Datum pieceImgVizInfoDatum, final SpatialRegion pieceRegion,
+					final int[] modelDims, final double modelArea,
 					final ToIntFunction<? super String> namedResourceEdgeCountFactory) {
 				this.pieceImgVizInfoDatum = pieceImgVizInfoDatum;
 				this.pieceRegion = pieceRegion;
@@ -171,14 +171,6 @@ public enum EntityFeature {
 
 		private static final String DEFAULT_ATTR_NAME_PREFIX = "";
 
-		private static final List<EntityFeature> DEFAULT_ORDERING;
-
-		static {
-			DEFAULT_ORDERING = Arrays.asList(SHAPE, EDGE_COUNT, RED, GREEN, BLUE, HUE, SATURATION, BRIGHTNESS, SIZE,
-					POSITION_X, POSITION_Y);
-			assert DEFAULT_ORDERING.size() == EntityFeature.values().length;
-		}
-
 		public static Map<EntityFeature, Attribute> createFeatureAttrMap(final List<String> shapeVals) {
 			return createFeatureAttrMap(DEFAULT_ATTR_NAME_PREFIX, shapeVals);
 		}
@@ -205,14 +197,14 @@ public enum EntityFeature {
 			final Map<EntityFeature, Function<String, Attribute>> result = new EnumMap<>(EntityFeature.class);
 			final Function<String, Attribute> doubleVal = name -> new Attribute(name);
 			result.put(EntityFeature.BLUE, doubleVal);
-			result.put(EntityFeature.BRIGHTNESS, doubleVal);
+			// result.put(EntityFeature.BRIGHTNESS, doubleVal);
 			result.put(EntityFeature.EDGE_COUNT, doubleVal);
 			result.put(EntityFeature.GREEN, doubleVal);
 			result.put(EntityFeature.HUE, doubleVal);
 			result.put(EntityFeature.POSITION_X, doubleVal);
 			result.put(EntityFeature.POSITION_Y, doubleVal);
 			result.put(EntityFeature.RED, doubleVal);
-			result.put(EntityFeature.SATURATION, doubleVal);
+			// result.put(EntityFeature.SATURATION, doubleVal);
 			result.put(EntityFeature.SHAPE, name -> new Attribute(name, shapeVals));
 			result.put(EntityFeature.SIZE, doubleVal);
 			assert result.size() == EntityFeature.values().length;
@@ -237,12 +229,12 @@ public enum EntityFeature {
 			case HUE:
 				val = hsbVals[0];
 				break;
-			case SATURATION:
-				val = hsbVals[1];
-				break;
-			case BRIGHTNESS:
-				val = hsbVals[2];
-				break;
+			// case SATURATION:
+			// val = hsbVals[1];
+			// break;
+			// case BRIGHTNESS:
+			// val = hsbVals[2];
+			// break;
 			case POSITION_X: {
 				final SpatialRegion r = context.pieceRegion;
 				final double centerX = r.getXLowerBound() + r.getLengthX() / 2.0;
@@ -279,6 +271,20 @@ public enum EntityFeature {
 			return Optional.of(val);
 		}
 
+	}
+
+	private static final List<EntityFeature> DEFAULT_ORDERING;
+
+	static {
+		DEFAULT_ORDERING = Arrays.asList(SHAPE, EDGE_COUNT, SIZE, RED, GREEN, BLUE, HUE, POSITION_X, POSITION_Y);
+		assert DEFAULT_ORDERING.size() == EntityFeature.values().length;
+	}
+
+	/**
+	 * @return the defaultOrdering
+	 */
+	public static List<EntityFeature> getDefaultOrdering() {
+		return DEFAULT_ORDERING;
 	}
 
 }

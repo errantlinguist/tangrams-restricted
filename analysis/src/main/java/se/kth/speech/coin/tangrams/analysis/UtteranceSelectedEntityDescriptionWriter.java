@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -50,6 +51,8 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.collect.Sets;
 
 import se.kth.speech.awt.LookAndFeels;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
@@ -214,11 +217,13 @@ final class UtteranceSelectedEntityDescriptionWriter { // NO_UCD (use default)
 
 	private static UtteranceSelectedEntityDescriptionWriter createWriter(final Path outpath,
 			final String outfileNamePrefix, final boolean strict) {
-		final List<EntityFeature> featuresToDescribe = Arrays.asList(EntityFeature.POSITION_X, EntityFeature.POSITION_Y,
-				EntityFeature.EDGE_COUNT);
+		final Set<EntityFeature> featuresToDescribe = Sets.newHashSet(EntityFeature.EDGE_COUNT,
+				EntityFeature.POSITION_X, EntityFeature.POSITION_Y);
+		final List<EntityFeature> orderedFeaturesToDescribe = Arrays.asList(EntityFeature.getDefaultOrdering().stream()
+				.filter(featuresToDescribe::contains).toArray(EntityFeature[]::new));
 		final UtteranceDialogueRepresentationStringFactory uttDiagReprFactory = new UtteranceDialogueRepresentationStringFactory(
 				DataLanguageDefaults.getLocale());
-		return new UtteranceSelectedEntityDescriptionWriter(new EntityFeature.Extractor(), featuresToDescribe,
+		return new UtteranceSelectedEntityDescriptionWriter(new EntityFeature.Extractor(), orderedFeaturesToDescribe,
 				uttDiagReprFactory, outpath, outfileNamePrefix, strict);
 	}
 
@@ -356,8 +361,8 @@ final class UtteranceSelectedEntityDescriptionWriter { // NO_UCD (use default)
 				extractionContextFactory, uttDiagReprFactory, strict);
 
 		final Path extantOutdir = ensureExtantOutdir();
-		for (final Entry<String, SessionGame> playerPerspectiveGame : sessionEvtDiagMgr
-				.createPlayerPerspectiveGameMap().entrySet()) {
+		for (final Entry<String, SessionGame> playerPerspectiveGame : sessionEvtDiagMgr.createPlayerPerspectiveGameMap()
+				.entrySet()) {
 			final SessionGame sessionGame = playerPerspectiveGame.getValue();
 			final String playerId = playerPerspectiveGame.getKey();
 			final String gameId = sessionGame.getGameId();
