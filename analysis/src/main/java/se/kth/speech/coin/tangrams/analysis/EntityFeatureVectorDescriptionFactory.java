@@ -55,15 +55,18 @@ final class EntityFeatureVectorDescriptionFactory {
 		final Optional<Integer> optSelectedEntityId = context.findLastSelectedEntityId();
 		final Stream<String> result;
 		if (optSelectedEntityId.isPresent()) {
-			final EntityFeature.Extractor.Context extractionContext = extractionContextFactory.apply(context,
-					optSelectedEntityId.get());
-			final Stream<Optional<Object>> featureVals = entityFeaturesToDescribe.stream()
-					.map(feature -> entityFeatureExtractor.apply(feature, extractionContext));
-			result = featureVals.map(opt -> opt.map(Object::toString).orElse(nullValueRepr));
+			result = createFeatureValueReprs(context, optSelectedEntityId.get());
 		} else {
 			result = createBlankFeatureValueReprs();
 		}
 		return result;
+	}
+
+	Stream<String> createFeatureValueReprs(final GameContext context, final int entityId) {
+		final EntityFeature.Extractor.Context extractionContext = extractionContextFactory.apply(context, entityId);
+		final Stream<Optional<Object>> featureVals = entityFeaturesToDescribe.stream()
+				.map(feature -> entityFeatureExtractor.apply(feature, extractionContext));
+		return featureVals.map(opt -> opt.map(Object::toString).orElse(nullValueRepr));
 	}
 
 	/**
