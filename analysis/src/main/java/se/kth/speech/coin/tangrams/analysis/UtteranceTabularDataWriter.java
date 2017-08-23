@@ -176,13 +176,13 @@ final class UtteranceTabularDataWriter {
 
 	private final List<List<String>> colHeaders;
 
+	private final EntityFeature.Extractor entityFeatureExtractor;
+
+	private final List<EntityFeature> entityFeaturesToDescribe;
+
 	private final EventDatum[] eventDataToWrite;
 
 	private final EntityFeatureExtractionContextFactory extractionContextFactory;
-
-	private final EntityFeature.Extractor extractor;
-
-	private final List<EntityFeature> featuresToDescribe;
 
 	private final LanguageDatum[] langDataToWrite;
 
@@ -190,13 +190,13 @@ final class UtteranceTabularDataWriter {
 
 	private final Function<? super Iterator<Utterance>, String> uttDiagReprFactory;
 
-	private UtteranceTabularDataWriter(final EntityFeature.Extractor extractor,
-			final List<EntityFeature> featuresToDescribe,
+	private UtteranceTabularDataWriter(final EntityFeature.Extractor entityFeatureExtractor,
+			final List<EntityFeature> entityFeaturesToDescribe,
 			final EntityFeatureExtractionContextFactory extractionContextFactory,
 			final Function<? super Iterator<Utterance>, String> uttDiagReprFactory, final boolean strict,
 			final EventDatum[] eventDataToWrite, final LanguageDatum[] langDataToWrite) {
-		this.extractor = extractor;
-		this.featuresToDescribe = featuresToDescribe;
+		this.entityFeatureExtractor = entityFeatureExtractor;
+		this.entityFeaturesToDescribe = entityFeaturesToDescribe;
 		this.extractionContextFactory = extractionContextFactory;
 		this.uttDiagReprFactory = uttDiagReprFactory;
 		this.strict = strict;
@@ -218,7 +218,7 @@ final class UtteranceTabularDataWriter {
 	private List<List<String>> createColHeaders() {
 		final List<List<String>> imgViewDescColHeaders = ImageVisualizationInfoTableRowWriter.createColumnHeaders();
 		final int resultColCount = imgViewDescColHeaders.stream().mapToInt(List::size).max().getAsInt()
-				+ eventDataToWrite.length + featuresToDescribe.size() + langDataToWrite.length;
+				+ eventDataToWrite.length + entityFeaturesToDescribe.size() + langDataToWrite.length;
 
 		final Iterator<List<String>> imgDescHeaderIter = imgViewDescColHeaders.iterator();
 		final List<List<String>> result;
@@ -228,7 +228,7 @@ final class UtteranceTabularDataWriter {
 			result.add(firstHeader);
 
 			Arrays.stream(eventDataToWrite).map(EventDatum::toString).forEachOrdered(firstHeader::add);
-			featuresToDescribe.stream().map(Object::toString).forEachOrdered(firstHeader::add);
+			entityFeaturesToDescribe.stream().map(Object::toString).forEachOrdered(firstHeader::add);
 			final List<String> firstImgDescHeader = imgDescHeaderIter.next();
 			firstHeader.addAll(firstImgDescHeader);
 			final int paddingCellsToAdd = resultColCount - langDataToWrite.length - firstHeader.size();
@@ -245,7 +245,8 @@ final class UtteranceTabularDataWriter {
 				// Add padding for evt cols
 				Stream.generate(COL_HEADER_PADDING_SUPPLIER).limit(eventDataToWrite.length).forEach(nextHeader::add);
 				// Add padding for feature-derived descriptions
-				Stream.generate(COL_HEADER_PADDING_SUPPLIER).limit(featuresToDescribe.size()).forEach(nextHeader::add);
+				Stream.generate(COL_HEADER_PADDING_SUPPLIER).limit(entityFeaturesToDescribe.size())
+						.forEach(nextHeader::add);
 				nextHeader.addAll(nextImgDescHeader);
 				// Add padding for language cols
 				Stream.generate(COL_HEADER_PADDING_SUPPLIER).limit(langDataToWrite.length).forEach(nextHeader::add);
@@ -336,7 +337,7 @@ final class UtteranceTabularDataWriter {
 	}
 
 	private Stream<String> getBlankImgFeatureValueReprs() {
-		return featuresToDescribe.stream().map(feature -> NULL_VALUE_REPR);
+		return entityFeaturesToDescribe.stream().map(feature -> NULL_VALUE_REPR);
 	}
 
 	private Stream<String> getImgFeatureValueReprs(final GameContext context) {
@@ -345,8 +346,8 @@ final class UtteranceTabularDataWriter {
 		if (optSelectedEntityId.isPresent()) {
 			final EntityFeature.Extractor.Context extractionContext = extractionContextFactory.apply(context,
 					optSelectedEntityId.get());
-			final Stream<Optional<Object>> featureVals = featuresToDescribe.stream()
-					.map(feature -> extractor.apply(feature, extractionContext));
+			final Stream<Optional<Object>> featureVals = entityFeaturesToDescribe.stream()
+					.map(feature -> entityFeatureExtractor.apply(feature, extractionContext));
 			result = featureVals.map(opt -> opt.map(Object::toString).orElse(NULL_VALUE_REPR));
 		} else {
 			result = getBlankImgFeatureValueReprs();
