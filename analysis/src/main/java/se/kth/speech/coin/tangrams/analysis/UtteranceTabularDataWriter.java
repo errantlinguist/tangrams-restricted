@@ -104,9 +104,9 @@ final class UtteranceTabularDataWriter {
 
 	private static final Supplier<String> COL_HEADER_PADDING_SUPPLIER = () -> "";
 
-	private static final ImageVizualizationInfoDescriptionFactory ENTITY_DESC_FACTORY;
-
 	private static final MathContext EVT_TIME_DIFF_CTX = new MathContext(16, RoundingMode.HALF_UP);
+
+	private static final ImageVizualizationInfoDescriptionFactory IMG_VIZ_INFO_DESC_FACTORY;
 
 	private static final ImageVisualizationInfoUnmarshaller IMG_VIZ_INFO_UNMARSHALLER = new ImageVisualizationInfoUnmarshaller();
 
@@ -130,7 +130,7 @@ final class UtteranceTabularDataWriter {
 		TABLE_ROW_CELL_JOINER = Collectors.joining(TABLE_STRING_REPR_COL_DELIMITER);
 
 		NULL_VALUE_REPR = "-";
-		ENTITY_DESC_FACTORY = new ImageVizualizationInfoDescriptionFactory(
+		IMG_VIZ_INFO_DESC_FACTORY = new ImageVizualizationInfoDescriptionFactory(
 				strWriter -> new ImageVisualizationInfoTableRowWriter(strWriter, TABLE_STRING_REPR_ROW_DELIMITER,
 						TABLE_STRING_REPR_COL_DELIMITER, NULL_VALUE_REPR));
 	}
@@ -146,9 +146,9 @@ final class UtteranceTabularDataWriter {
 		final String result;
 		final Move move = (Move) firstDiagEvent.get(GameManagementEvent.Attribute.MOVE.toString());
 		if (move == null) {
-			result = ENTITY_DESC_FACTORY.getBlankDescription();
+			result = IMG_VIZ_INFO_DESC_FACTORY.getBlankDescription();
 		} else {
-			result = ENTITY_DESC_FACTORY.createDescription(move, gameStartTime, imgVizInfoData);
+			result = IMG_VIZ_INFO_DESC_FACTORY.createDescription(move, gameStartTime, imgVizInfoData);
 		}
 		return result;
 	}
@@ -345,7 +345,7 @@ final class UtteranceTabularDataWriter {
 			if (diagEvts.isEmpty()) {
 				eventDataReprs = Arrays.stream(eventDataToWrite).map(eventDatum -> NULL_VALUE_REPR);
 				imgFeatureVectorReprs = getBlankImgFeatureValueReprs();
-				imgVizInfoDesc = ENTITY_DESC_FACTORY.getBlankDescription();
+				imgVizInfoDesc = IMG_VIZ_INFO_DESC_FACTORY.getBlankDescription();
 			} else {
 				final Event firstDiagEvent = diagEvts.iterator().next();
 				{
