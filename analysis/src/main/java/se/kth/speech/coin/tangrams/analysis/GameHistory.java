@@ -19,10 +19,15 @@ package se.kth.speech.coin.tangrams.analysis;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.NavigableMap;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Stream;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Lists;
 
@@ -31,8 +36,40 @@ import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
 
 public final class GameHistory {
 
+	private static final Logger LOGGER = LoggerFactory.getLogger(GameHistory.class);
+
 	private static Stream<Event> getEventsDescendingOrder(final NavigableMap<?, ? extends List<Event>> map) {
 		return map.descendingMap().values().stream().map(Lists::reverse).flatMap(List::stream);
+	}
+
+	/**
+	 * <strong>TODO:</strong> Support multiple games in one session
+	 *
+	 * @param gameHistories
+	 *            The {@link Map} to check for exactly one {@link GameHistory}
+	 *            instance.
+	 * @return The single entry.
+	 * @throws IllegalArgumentException
+	 *             If there is not exactly one entry in the map.
+	 */
+	static Entry<String, GameHistory> ensureSingleGame(final Map<String, GameHistory> gameHistories) {
+		final Entry<String, GameHistory> result;
+		final int gameCount = gameHistories.size();
+		switch (gameCount) {
+		case 0: {
+			throw new IllegalArgumentException(String.format("Event log contains no games."));
+		}
+		case 1: {
+			result = gameHistories.entrySet().iterator().next();
+			LOGGER.debug("Created history for game \"{}\".", result.getKey());
+			break;
+		}
+		default: {
+			throw new IllegalArgumentException(
+					String.format("Event log contains multiple games; Not (currently) supported."));
+		}
+		}
+		return result;
 	}
 
 	private final NavigableMap<LocalDateTime, List<Event>> events = new TreeMap<>();

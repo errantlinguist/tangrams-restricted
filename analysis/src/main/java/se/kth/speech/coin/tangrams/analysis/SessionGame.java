@@ -48,36 +48,6 @@ public final class SessionGame {
 	private static final Logger LOGGER = LoggerFactory.getLogger(SessionGame.class);
 
 	/**
-	 * <strong>TODO:</strong> Support multiple games in one session
-	 *
-	 * @param gameHistories
-	 *            The {@link Map} to check for exactly one {@link GameHistory}
-	 *            instance.
-	 * @return The single entry.
-	 * @throws IllegalArgumentException
-	 *             If there is not exactly one entry in the map.
-	 */
-	private static Entry<String, GameHistory> ensureSingleGame(final Map<String, GameHistory> gameHistories) {
-		final Entry<String, GameHistory> result;
-		final int gameCount = gameHistories.size();
-		switch (gameCount) {
-		case 0: {
-			throw new IllegalArgumentException(String.format("Event log contains no games."));
-		}
-		case 1: {
-			result = gameHistories.entrySet().iterator().next();
-			LOGGER.debug("Created history for game \"{}\".", result.getKey());
-			break;
-		}
-		default: {
-			throw new IllegalArgumentException(
-					String.format("Event log contains multiple games; Not (currently) supported."));
-		}
-		}
-		return result;
-	}
-
-	/**
 	 *
 	 * @param eventLogPath
 	 *            The {@link Path} to read the event log from.
@@ -162,7 +132,7 @@ public final class SessionGame {
 		this.events = Collections.unmodifiableList(events);
 		this.utts = Collections.unmodifiableList(utts);
 		final Map<String, GameHistory> gameHistories = LoggedEvents.createGameHistoryMap(events.stream());
-		final Entry<String, GameHistory> gameIdHistory = ensureSingleGame(gameHistories);
+		final Entry<String, GameHistory> gameIdHistory = GameHistory.ensureSingleGame(gameHistories);
 		gameId = gameIdHistory.getKey();
 		LOGGER.debug("Creating {} instance for game ID \"{}\".", SessionGame.class.getSimpleName(), gameId);
 		history = gameIdHistory.getValue();
