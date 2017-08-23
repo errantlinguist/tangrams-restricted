@@ -66,4 +66,18 @@ final class EntityFeatureVectorDescriptionFactory {
 		return result;
 	}
 
+	/**
+	 * @return the entityFeaturesToDescribe
+	 */
+	List<EntityFeature> getEntityFeaturesToDescribe() {
+		return entityFeaturesToDescribe;
+	}
+
+	/**
+	 * @return the nullValueRepr
+	 */
+	String getNullValueRepr() {
+		return nullValueRepr;
+	}
+
 }
