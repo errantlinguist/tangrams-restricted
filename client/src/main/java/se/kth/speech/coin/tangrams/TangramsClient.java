@@ -428,12 +428,13 @@ final class TangramsClient implements Runnable {
 		final ExecutorService backgroundJobService = Executors.newCachedThreadPool();
 		final CompletableFuture<Clip> startSignalClipFuture = CompletableFuture
 				.supplyAsync(TangramsClient::openStartSignalAudioClip, backgroundJobService);
-		final Runnable startSignalPlayer = () -> backgroundJobService
-				.execute(() -> signalGameStart(startSignalClipFuture));
 		final Runtime runtime = Runtime.getRuntime();
 		runtime.addShutdownHook(new Thread(new LineFutureCloser(startSignalClipFuture)));
+		final Runnable startSignalPlayer = () -> backgroundJobService
+				.execute(() -> signalGameStart(startSignalClipFuture));
 
 		LookAndFeels.setLookAndFeel();
+		
 		final String playerId = promptPlayerId(null, createDefaultPlayerId());
 		if (playerId == null) {
 			LOGGER.info("Quitting application before creation of new game was completed.");
