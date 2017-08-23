@@ -46,6 +46,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import iristk.system.Event;
+import se.kth.speech.Durations;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
 import se.kth.speech.coin.tangrams.iristk.EventTimes;
@@ -99,8 +100,6 @@ final class SessionStatisticsWriter {
 	private static final Logger LOGGER = LoggerFactory.getLogger(SessionStatisticsWriter.class);
 
 	private static final MathContext MEAN_DIVISION_CTX = MathContext.DECIMAL64;
-
-	private static final BigDecimal NANOS_TO_SECS_DIVISOR = new BigDecimal("1000000000");
 
 	private static final Collector<CharSequence, ?, String> ROW_CELL_JOINER = Collectors.joining("\t");
 
@@ -175,11 +174,6 @@ final class SessionStatisticsWriter {
 		}
 	}
 
-	private static BigDecimal toSeconds(final Duration duration) {
-		final BigDecimal nanos = new BigDecimal(duration.toNanos());
-		return nanos.divide(NANOS_TO_SECS_DIVISOR, MathContext.UNLIMITED);
-	}
-
 	private static void write(
 			final Collection<? extends Entry<Path, ? extends Map<String, GameSummary>>> sessionSummaries,
 			final PrintStream out) {
@@ -193,7 +187,7 @@ final class SessionStatisticsWriter {
 			for (final Entry<String, GameSummary> gameSummary : gameSummaries.entrySet()) {
 				final String gameId = gameSummary.getKey();
 				final GameSummary summary = gameSummary.getValue();
-				final BigDecimal durationInSecs = toSeconds(summary.getDuration());
+				final BigDecimal durationInSecs = Durations.toDecimalSeconds(summary.getDuration());
 				final List<Object> rowCellVals = Arrays.asList(inpath, gameId, durationInSecs, summary.getRoundCount(),
 						summary.getUttCount());
 				out.print(rowCellVals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
@@ -211,7 +205,7 @@ final class SessionStatisticsWriter {
 		{
 			// Min vals
 			final BigDecimal minDuration = getGameSummaries(sessionSummaries).map(GameSummary::getDuration)
-					.min(Comparator.naturalOrder()).map(SessionStatisticsWriter::toSeconds).get();
+					.min(Comparator.naturalOrder()).map(Durations::toDecimalSeconds).get();
 			final long minRoundCount = getGameSummaries(sessionSummaries).mapToLong(GameSummary::getRoundCount).min()
 					.getAsLong();
 			final long minUttCount = getGameSummaries(sessionSummaries).mapToLong(GameSummary::getUttCount).min()
@@ -224,7 +218,7 @@ final class SessionStatisticsWriter {
 		{
 			// Max vals
 			final BigDecimal maxDuration = getGameSummaries(sessionSummaries).map(GameSummary::getDuration)
-					.max(Comparator.naturalOrder()).map(SessionStatisticsWriter::toSeconds).get();
+					.max(Comparator.naturalOrder()).map(Durations::toDecimalSeconds).get();
 			final long maxRoundCount = getGameSummaries(sessionSummaries).mapToLong(GameSummary::getRoundCount).max()
 					.getAsLong();
 			final long maxUttCount = getGameSummaries(sessionSummaries).mapToLong(GameSummary::getUttCount).max()
@@ -238,7 +232,7 @@ final class SessionStatisticsWriter {
 			// Mean vals
 			final BigDecimal gameSessionCount = new BigDecimal(getGameSummaries(sessionSummaries).count());
 			final BigDecimal totalDuration = getGameSummaries(sessionSummaries).map(GameSummary::getDuration)
-					.map(SessionStatisticsWriter::toSeconds).reduce((augend, addend) -> augend.add(addend)).get();
+					.map(Durations::toDecimalSeconds).reduce((augend, addend) -> augend.add(addend)).get();
 			final BigDecimal meanDuration = totalDuration.divide(gameSessionCount, MEAN_DIVISION_CTX);
 			final long totalRoundCount = getGameSummaries(sessionSummaries).mapToLong(GameSummary::getRoundCount).sum();
 			final BigDecimal meanRoundCount = new BigDecimal(totalRoundCount).divide(gameSessionCount,
