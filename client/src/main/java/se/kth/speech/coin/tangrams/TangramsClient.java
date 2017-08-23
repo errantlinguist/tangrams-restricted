@@ -89,6 +89,34 @@ import se.kth.speech.coin.tangrams.view.GameGUI;
  */
 final class TangramsClient implements Runnable {
 
+	private static class LineFutureCloser implements Runnable {
+
+		private final CompletableFuture<? extends Line> lineFuture;
+
+		private LineFutureCloser(final CompletableFuture<? extends Line> lineFuture) {
+			this.lineFuture = lineFuture;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see java.lang.Runnable#run()
+		 */
+		@Override
+		public void run() {
+			final Line line = lineFuture.getNow(null);
+			if (line == null) {
+				LOGGER.debug("Audio data line future was not yet complete; No resources to clean up.");
+			} else {
+				LOGGER.debug("Closing audio data line.");
+				// FIXME: Cannot close the Clip/Line on Linux with PulseAudio
+				line.close();
+				LOGGER.debug("Closed audio data line.");
+			}
+
+		}
+	}
+
 	private enum Parameter implements Supplier<Option> {
 		ANALYSIS("a") {
 			@Override
@@ -402,6 +430,8 @@ final class TangramsClient implements Runnable {
 				.supplyAsync(TangramsClient::openStartSignalAudioClip, backgroundJobService);
 		final Runnable startSignalPlayer = () -> backgroundJobService
 				.execute(() -> signalGameStart(startSignalClipFuture));
+		final Runtime runtime = Runtime.getRuntime();
+		runtime.addShutdownHook(new Thread(new LineFutureCloser(startSignalClipFuture)));
 
 		LookAndFeels.setLookAndFeel();
 		final String playerId = promptPlayerId(null, createDefaultPlayerId());
@@ -419,7 +449,7 @@ final class TangramsClient implements Runnable {
 					// Try clause for ensuring that the IrisTK system gets
 					// properly shut down in the case an exception occurs
 					try {
-						Runtime.getRuntime().addShutdownHook(new Thread(irisSystemStopper));
+						runtime.addShutdownHook(new Thread(irisSystemStopper));
 						final Path rootLogDirPath = Paths.get(PROPS.getProperty("log.outdir"));
 						final File rootLogDir = rootLogDirPath.toFile();
 						final Date systemLoggingStartTime = new Date();
