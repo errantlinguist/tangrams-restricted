@@ -21,6 +21,7 @@ import java.io.StringWriter;
 import java.io.UncheckedIOException;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.function.Function;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,17 +41,17 @@ final class ImageVizualizationInfoDescriptionFactory {
 
 	private final String blankDescription;
 
-	private final String nullValueRepr;
+	private final Function<? super StringWriter, ImageVisualizationInfoTableRowWriter> imgVizInfoTableRowWriterFactory;
 
-	ImageVizualizationInfoDescriptionFactory(final String nullValueRepr) {
-		this.nullValueRepr = nullValueRepr;
+	ImageVizualizationInfoDescriptionFactory(
+			final Function<? super StringWriter, ImageVisualizationInfoTableRowWriter> imgVizInfoTableRowWriterFactory) {
+		this.imgVizInfoTableRowWriterFactory = imgVizInfoTableRowWriterFactory;
 		blankDescription = createBlankDescription();
 	}
 
 	private String createBlankDescription() {
 		final StringWriter strWriter = new StringWriter(16);
-		final ImageVisualizationInfoTableRowWriter imgInfoDescWriter = new ImageVisualizationInfoTableRowWriter(
-				strWriter, nullValueRepr);
+		final ImageVisualizationInfoTableRowWriter imgInfoDescWriter = imgVizInfoTableRowWriterFactory.apply(strWriter);
 		try {
 			imgInfoDescWriter.write(null, null);
 			return strWriter.toString();
@@ -63,8 +64,7 @@ final class ImageVizualizationInfoDescriptionFactory {
 	String createDescription(final Move move, final LocalDateTime gameStartTime,
 			final List<ImageVisualizationInfo.Datum> imgVizInfoData) {
 		final StringWriter strWriter = new StringWriter(256);
-		final ImageVisualizationInfoTableRowWriter imgInfoDescWriter = new ImageVisualizationInfoTableRowWriter(
-				strWriter, nullValueRepr);
+		final ImageVisualizationInfoTableRowWriter imgInfoDescWriter = imgVizInfoTableRowWriterFactory.apply(strWriter);
 		final Integer selectedPieceId = move.getPieceId();
 		final ImageVisualizationInfo.Datum selectedPieceImgVizInfo = imgVizInfoData.get(selectedPieceId);
 		LOGGER.debug("Writing selected piece (ID {}) viz info: {} ", selectedPieceId, selectedPieceImgVizInfo);

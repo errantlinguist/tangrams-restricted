@@ -123,18 +123,16 @@ final class UtteranceTabularDataWriter {
 	private static final String TABLE_STRING_REPR_ROW_DELIMITER;
 
 	static {
-		NULL_VALUE_REPR = "-";
-		ENTITY_DESC_FACTORY = new ImageVizualizationInfoDescriptionFactory(NULL_VALUE_REPR);
-	}
-
-	static {
 		TABLE_STRING_REPR_ROW_DELIMITER = System.lineSeparator();
 		TABLE_ROW_JOINER = Collectors.joining(TABLE_STRING_REPR_ROW_DELIMITER);
-	}
 
-	static {
 		TABLE_STRING_REPR_COL_DELIMITER = "\t";
 		TABLE_ROW_CELL_JOINER = Collectors.joining(TABLE_STRING_REPR_COL_DELIMITER);
+
+		NULL_VALUE_REPR = "-";
+		ENTITY_DESC_FACTORY = new ImageVizualizationInfoDescriptionFactory(
+				strWriter -> new ImageVisualizationInfoTableRowWriter(strWriter, TABLE_STRING_REPR_ROW_DELIMITER,
+						TABLE_STRING_REPR_COL_DELIMITER, NULL_VALUE_REPR));
 	}
 
 	private static BigDecimal calculateTimeDiffSecs(final Event firstEvt, final Event nextEvt) {

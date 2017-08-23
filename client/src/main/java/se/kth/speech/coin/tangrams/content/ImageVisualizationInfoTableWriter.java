@@ -35,7 +35,7 @@ public final class ImageVisualizationInfoTableWriter {
 	private final Writer writer;
 
 	public ImageVisualizationInfoTableWriter(final Writer writer) {
-		this(writer, new ImageVisualizationInfoTableRowWriter(writer, "-"));
+		this(writer, new ImageVisualizationInfoTableRowWriter(writer, TABLE_STRING_REPR_ROW_DELIMITER, "\t", "-"));
 	}
 
 	private ImageVisualizationInfoTableWriter(final Writer writer,
