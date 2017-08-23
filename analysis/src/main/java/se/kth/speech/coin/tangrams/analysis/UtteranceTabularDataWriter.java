@@ -143,6 +143,18 @@ final class UtteranceTabularDataWriter {
 		return TimestampArithmetic.calculateDecimalSecondDifference(firstTime, nextTime, EVT_TIME_DIFF_CTX);
 	}
 
+	private static String createImgVizInfoDesc(final Event firstDiagEvent, final LocalDateTime gameStartTime,
+			final List<ImageVisualizationInfo.Datum> imgVizInfoData) throws IOException {
+		final String result;
+		final Move move = (Move) firstDiagEvent.get(GameManagementEvent.Attribute.MOVE.toString());
+		if (move == null) {
+			result = ENTITY_DESC_FACTORY.getBlankImgVizInfoDesc();
+		} else {
+			result = ENTITY_DESC_FACTORY.createImgVizInfoDesc(move, gameStartTime, imgVizInfoData);
+		}
+		return result;
+	}
+
 	private final List<List<String>> colHeaders;
 
 	private final EntityFeature.Extractor entityFeatureExtractor;
@@ -223,18 +235,6 @@ final class UtteranceTabularDataWriter {
 			result = Collections.emptyList();
 		}
 		assert result.stream().mapToInt(List::size).boxed().collect(Collectors.toSet()).size() <= 1;
-		return result;
-	}
-
-	private String createImgVizInfoDesc(final Event firstDiagEvent, final LocalDateTime gameStartTime,
-			final List<ImageVisualizationInfo.Datum> imgVizInfoData) throws IOException {
-		final String result;
-		final Move move = (Move) firstDiagEvent.get(GameManagementEvent.Attribute.MOVE.toString());
-		if (move == null) {
-			result = ENTITY_DESC_FACTORY.getBlankImgVizInfoDesc();
-		} else {
-			result = ENTITY_DESC_FACTORY.createImgVizInfoDesc(move, gameStartTime, imgVizInfoData);
-		}
 		return result;
 	}
 
