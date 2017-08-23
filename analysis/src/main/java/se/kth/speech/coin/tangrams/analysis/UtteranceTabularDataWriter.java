@@ -17,8 +17,6 @@
 package se.kth.speech.coin.tangrams.analysis;
 
 import java.io.IOException;
-import java.io.StringWriter;
-import java.io.UncheckedIOException;
 import java.io.Writer;
 import java.math.BigDecimal;
 import java.math.MathContext;
@@ -106,6 +104,8 @@ final class UtteranceTabularDataWriter {
 
 	private static final Supplier<String> COL_HEADER_PADDING_SUPPLIER = () -> "";
 
+	private static final EntityDescriptionFactory ENTITY_DESC_FACTORY;
+
 	private static final MathContext EVT_TIME_DIFF_CTX = new MathContext(16, RoundingMode.HALF_UP);
 
 	private static final ImageVisualizationInfoUnmarshaller IMG_VIZ_INFO_UNMARSHALLER = new ImageVisualizationInfoUnmarshaller();
@@ -114,7 +114,7 @@ final class UtteranceTabularDataWriter {
 
 	private static final BigDecimal NANOS_TO_SECS_DIVISOR = new BigDecimal("1000000000");
 
-	private static final String NULL_VALUE_REPR = "-";
+	private static final String NULL_VALUE_REPR;
 
 	private static final Collector<CharSequence, ?, String> TABLE_ROW_CELL_JOINER;
 
@@ -123,6 +123,11 @@ final class UtteranceTabularDataWriter {
 	private static final String TABLE_STRING_REPR_COL_DELIMITER;
 
 	private static final String TABLE_STRING_REPR_ROW_DELIMITER;
+
+	static {
+		NULL_VALUE_REPR = "-";
+		ENTITY_DESC_FACTORY = new EntityDescriptionFactory(NULL_VALUE_REPR);
+	}
 
 	static {
 		TABLE_STRING_REPR_ROW_DELIMITER = System.lineSeparator();
@@ -140,38 +145,6 @@ final class UtteranceTabularDataWriter {
 		final long diffNanos = ChronoUnit.NANOS.between(firstTime, nextTime);
 		return new BigDecimal(diffNanos).divide(NANOS_TO_SECS_DIVISOR, EVT_TIME_DIFF_CTX);
 	}
-
-	private static String createBlankImgVizInfoDesc() {
-		final StringWriter strWriter = new StringWriter(16);
-		final ImageVisualizationInfoTableRowWriter imgInfoDescWriter = new ImageVisualizationInfoTableRowWriter(
-				strWriter, NULL_VALUE_REPR);
-		try {
-			imgInfoDescWriter.write(null, null);
-			return strWriter.toString();
-		} catch (final IOException e) {
-			// Should not happen when writing to a StringBuffer
-			throw new UncheckedIOException(e);
-		}
-	}
-
-	private static String createImgVizInfoDesc(final Move move, final LocalDateTime gameStartTime,
-			final List<ImageVisualizationInfo.Datum> imgVizInfoData) {
-		final StringWriter strWriter = new StringWriter(256);
-		final ImageVisualizationInfoTableRowWriter imgInfoDescWriter = new ImageVisualizationInfoTableRowWriter(
-				strWriter, NULL_VALUE_REPR);
-		final Integer selectedPieceId = move.getPieceId();
-		final ImageVisualizationInfo.Datum selectedPieceImgVizInfo = imgVizInfoData.get(selectedPieceId);
-		LOGGER.debug("Writing selected piece (ID {}) viz info: {} ", selectedPieceId, selectedPieceImgVizInfo);
-		try {
-			imgInfoDescWriter.write(selectedPieceId, selectedPieceImgVizInfo);
-			return strWriter.toString();
-		} catch (final IOException e) {
-			// Should not happen when writing to a StringBuffer
-			throw new UncheckedIOException(e);
-		}
-	}
-
-	private final String blankImgVizInfoDesc;
 
 	private final List<List<String>> colHeaders;
 
@@ -203,8 +176,6 @@ final class UtteranceTabularDataWriter {
 		this.langDataToWrite = langDataToWrite;
 
 		colHeaders = createColHeaders();
-
-		blankImgVizInfoDesc = createBlankImgVizInfoDesc();
 	}
 
 	UtteranceTabularDataWriter(final EntityFeature.Extractor extractor, final List<EntityFeature> featuresToDescribe,
@@ -263,9 +234,9 @@ final class UtteranceTabularDataWriter {
 		final String result;
 		final Move move = (Move) firstDiagEvent.get(GameManagementEvent.Attribute.MOVE.toString());
 		if (move == null) {
-			result = blankImgVizInfoDesc;
+			result = ENTITY_DESC_FACTORY.getBlankImgVizInfoDesc();
 		} else {
-			result = createImgVizInfoDesc(move, gameStartTime, imgVizInfoData);
+			result = ENTITY_DESC_FACTORY.createImgVizInfoDesc(move, gameStartTime, imgVizInfoData);
 		}
 		return result;
 	}
@@ -379,7 +350,7 @@ final class UtteranceTabularDataWriter {
 			if (diagEvts.isEmpty()) {
 				eventDataReprs = Arrays.stream(eventDataToWrite).map(eventDatum -> NULL_VALUE_REPR);
 				imgFeatureVectorReprs = getBlankImgFeatureValueReprs();
-				imgVizInfoDesc = blankImgVizInfoDesc;
+				imgVizInfoDesc = ENTITY_DESC_FACTORY.getBlankImgVizInfoDesc();
 			} else {
 				final Event firstDiagEvent = diagEvts.iterator().next();
 				{
