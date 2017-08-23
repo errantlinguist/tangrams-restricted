@@ -42,11 +42,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import iristk.system.Event;
-import se.kth.speech.Durations;
+import se.kth.speech.TimestampArithmetic;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
 import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
 import se.kth.speech.coin.tangrams.iristk.EventTimes;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
+import se.kth.speech.coin.tangrams.iristk.events.Move;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
 
 /**
@@ -119,7 +120,7 @@ final class SessionGameHistoryTabularDataWriter {
 					final LocalDateTime eventTime = EventTimes.parseEventTime(eventTimestamp);
 					final LocalDateTime gameStartTime = eventCtx.getGameStartTime();
 					final Duration offset = Duration.between(gameStartTime, eventTime);
-					final BigDecimal offsetSecs = Durations.toDecimalSeconds(offset);
+					final BigDecimal offsetSecs = TimestampArithmetic.toDecimalSeconds(offset);
 					result = offsetSecs.toPlainString();
 				}
 				return result;
@@ -272,10 +273,14 @@ final class SessionGameHistoryTabularDataWriter {
 			switch (eventType) {
 			case COMPLETED_TURN_REQUEST:
 				break;
-			case GAME_READY_RESPONSE:
+			case GAME_READY_RESPONSE: {
+				LOGGER.debug("Ignoring event of type {}.", eventType);
 				break;
-			case NEXT_TURN_REQUEST:
+			}
+			case NEXT_TURN_REQUEST: {
+				final Move move = (Move) event.get(GameManagementEvent.Attribute.MOVE.toString());
 				break;
+			}
 			case PLAYER_JOIN_REQUEST: {
 				LOGGER.debug("Ignoring event of type {}.", eventType);
 				break;

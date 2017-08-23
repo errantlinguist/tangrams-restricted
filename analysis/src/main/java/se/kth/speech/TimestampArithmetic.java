@@ -46,6 +46,11 @@ public final class TimestampArithmetic {
 		return augend.plus(duration);
 	}
 
+	public static BigDecimal toDecimalSeconds(final Duration duration) {
+		final BigDecimal nanos = new BigDecimal(duration.toNanos());
+		return nanos.divide(NANOS_TO_SECS_DIVISOR, MathContext.UNLIMITED);
+	}
+
 	private TimestampArithmetic() {
 
 	}
