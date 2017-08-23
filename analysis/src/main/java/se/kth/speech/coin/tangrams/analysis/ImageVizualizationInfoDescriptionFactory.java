@@ -56,7 +56,7 @@ final class ImageVizualizationInfoDescriptionFactory {
 			imgInfoDescWriter.write(null, null);
 			return strWriter.toString();
 		} catch (final IOException e) {
-			// Should not happen when writing to a StringBuffer
+			// Should not happen when writing to a StringWriter
 			throw new UncheckedIOException(e);
 		}
 	}
@@ -72,7 +72,7 @@ final class ImageVizualizationInfoDescriptionFactory {
 			imgInfoDescWriter.write(selectedPieceId, selectedPieceImgVizInfo);
 			return strWriter.toString();
 		} catch (final IOException e) {
-			// Should not happen when writing to a StringBuffer
+			// Should not happen when writing to a StringWriter
 			throw new UncheckedIOException(e);
 		}
 	}
