@@ -47,12 +47,12 @@ import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
 public final class GameHistoryCollector
 		implements Collector<Event, Map<String, GameHistory>, Map<String, GameHistory>> {
 
-	private static class Accumulator implements BiConsumer<Map<String, GameHistory>, Event> {
+	private class Accumulator implements BiConsumer<Map<String, GameHistory>, Event> {
 
 		private static final String GAME_END_EVENT_NAME = "monitor.system.disconnected";
 
-		private static final Set<GameManagementEvent> IGNORED_EVENT_TYPES = EnumSet
-				.of(GameManagementEvent.PLAYER_JOIN_REQUEST, GameManagementEvent.PLAYER_JOIN_RESPONSE);
+		private final Set<GameManagementEvent> ignoredEventTypes = EnumSet.of(GameManagementEvent.PLAYER_JOIN_REQUEST,
+				GameManagementEvent.PLAYER_JOIN_RESPONSE);
 
 		/*
 		 * (non-Javadoc)
@@ -92,14 +92,14 @@ public final class GameHistoryCollector
 				final String time = event.getTime();
 				LOGGER.debug("Found {} sent at \"{}\".", event.getClass().getSimpleName(), time);
 				final String gameId = event.getString(GameManagementEvent.Attribute.GAME_ID.toString());
-				final LocalDateTime timestamp = EventTimes.parseEventTime(time);
+				final LocalDateTime timestamp = timeParser.apply(time);
 				accept(gameHistories, gameId, timestamp, gameEventType, event);
 			}
 		}
 
 		private void accept(final Map<String, GameHistory> gameHistories, final String gameId, final LocalDateTime time,
 				final GameManagementEvent gameEventType, final Event event) {
-			if (IGNORED_EVENT_TYPES.contains(gameEventType)) {
+			if (ignoredEventTypes.contains(gameEventType)) {
 				LOGGER.debug("Ignored event of type {} sent at \"{}\".", gameEventType, time);
 			} else {
 				switch (gameEventType) {
@@ -218,8 +218,16 @@ public final class GameHistoryCollector
 
 	private final Supplier<Map<String, GameHistory>> supplier;
 
+	private final Function<? super String, LocalDateTime> timeParser;
+
 	public GameHistoryCollector(final Supplier<Map<String, GameHistory>> supplier) {
+		this(supplier, EventTimes::parseEventTime);
+	}
+
+	public GameHistoryCollector(final Supplier<Map<String, GameHistory>> supplier,
+			final Function<? super String, LocalDateTime> timeParser) {
 		this.supplier = supplier;
+		this.timeParser = timeParser;
 		accumulator = new Accumulator();
 	}
 
