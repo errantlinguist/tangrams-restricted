@@ -38,12 +38,12 @@ import se.kth.speech.awt.ColorInfo;
 public final class ImageVisualizationInfoTableRowCellFactory {
 
 	public enum Attribute {
-		COLOR, ID, IMAGE, SIZE;
+		COLOR, ENTITY_ID, IMAGE, SIZE;
 
 		private static final List<Attribute> CANONICAL_ORDERING;
 
 		static {
-			CANONICAL_ORDERING = Arrays.asList(Attribute.ID, Attribute.IMAGE, Attribute.SIZE, Attribute.COLOR);
+			CANONICAL_ORDERING = Arrays.asList(Attribute.ENTITY_ID, Attribute.IMAGE, Attribute.SIZE, Attribute.COLOR);
 			assert CANONICAL_ORDERING.size() == Attribute.values().length;
 		}
 
@@ -138,7 +138,7 @@ public final class ImageVisualizationInfoTableRowCellFactory {
 			}
 			break;
 		}
-		case ID: {
+		case ENTITY_ID: {
 			final String attrVal = Objects.toString(rowId, nullValueRepr);
 			result = Stream.of(attrVal);
 			break;
