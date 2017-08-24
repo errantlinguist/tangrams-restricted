@@ -52,6 +52,7 @@ import se.kth.speech.coin.tangrams.content.ImageVisualizationInfoTableRowCellFac
 import se.kth.speech.coin.tangrams.iristk.EventTimes;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 import se.kth.speech.coin.tangrams.iristk.ImageVisualizationInfoUnmarshaller;
+import se.kth.speech.coin.tangrams.iristk.events.Move;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
 
 /**
@@ -101,6 +102,16 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 				}
 				return result;
 			}
+		},
+		REFERENT_ID {
+
+			@Override
+			public String apply(final EventContext eventCtx, final String nullValueRepr) {
+				final Event event = eventCtx.getEvent();
+				final Move move = (Move) event.get(GameManagementEvent.Attribute.MOVE.toString());
+				return move == null ? nullValueRepr : move.getPieceId().toString();
+			}
+
 		},
 		SUBMITTER {
 			@Override
