@@ -70,13 +70,9 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 
 		private final GameContext gameContext;
 
-		private final GameHistory history;
-
-		private EventContext(final Event event, final GameHistory history, final int entityId) {
+		private EventContext(final Event event, final GameContext gameContext, final int entityId) {
 			this.event = event;
-			this.history = history;
-			final LocalDateTime eventTime = EventTimes.parseEventTime(event.getTime());
-			gameContext = new GameContext(history, eventTime);
+			this.gameContext = gameContext;
 			this.entityId = entityId;
 		}
 
@@ -99,10 +95,6 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 		 */
 		private GameContext getGameContext() {
 			return gameContext;
-		}
-
-		private GameHistory getHistory() {
-			return history;
 		}
 
 	}
@@ -164,7 +156,7 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 					result = nullValueRepr;
 				} else {
 					final LocalDateTime eventTime = EventTimes.parseEventTime(eventTimestamp);
-					final LocalDateTime gameStartTime = eventCtx.getHistory().getStartTime();
+					final LocalDateTime gameStartTime = eventCtx.getGameContext().getHistory().getStartTime();
 					final Duration offset = Duration.between(gameStartTime, eventTime);
 					final BigDecimal offsetSecs = TimestampArithmetic.toDecimalSeconds(offset);
 					result = offsetSecs.toPlainString();
@@ -257,10 +249,13 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 					final int entityCount = history.getInitialState().getImageVisualizationInfoDescription().getData()
 							.size();
 					final Stream<Stream<String>> eventRows = events.flatMap(event -> {
+						final LocalDateTime eventTime = EventTimes.parseEventTime(event.getTime());
 						// Create one row for each entity
-						return IntStream.range(0, entityCount)
-								.mapToObj(entityId -> createRowCellValues(entityFeatureVectorDescFactory,
-										new EventContext(event, history, entityId)));
+						return IntStream.range(0, entityCount).mapToObj(entityId -> {
+							final GameContext gameCtx = new GameContext(history, eventTime);
+							return createRowCellValues(entityFeatureVectorDescFactory,
+									new EventContext(event, gameCtx, entityId));
+						});
 					});
 					final Stream<String> fileRows = Stream
 							.concat(Stream.of(createColumnNames(entityFeatureVectorDescFactory)), eventRows)
