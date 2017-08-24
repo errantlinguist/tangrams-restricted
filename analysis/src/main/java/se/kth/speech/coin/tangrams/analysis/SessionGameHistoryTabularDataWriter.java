@@ -23,7 +23,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collections;
@@ -70,9 +69,12 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 
 		private final GameContext gameContext;
 
+		private final BigDecimal offsetSecs;
+
 		private EventContext(final Event event, final GameContext gameContext, final int entityId) {
 			this.event = event;
 			this.gameContext = gameContext;
+			offsetSecs = TimestampArithmetic.toDecimalSeconds(gameContext.getOffset());
 			this.entityId = entityId;
 		}
 
@@ -95,6 +97,13 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 		 */
 		private GameContext getGameContext() {
 			return gameContext;
+		}
+
+		/**
+		 * @return the offsetSecs
+		 */
+		private BigDecimal getOffsetSecs() {
+			return offsetSecs;
 		}
 
 	}
@@ -149,11 +158,7 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 		TIME {
 			@Override
 			public String apply(final EventContext eventCtx, final String nullValueRepr) {
-				final LocalDateTime eventTime = eventCtx.getGameContext().getTime();
-				final LocalDateTime gameStartTime = eventCtx.getGameContext().getHistory().getStartTime();
-				final Duration offset = Duration.between(gameStartTime, eventTime);
-				final BigDecimal offsetSecs = TimestampArithmetic.toDecimalSeconds(offset);
-				return offsetSecs.toPlainString();
+				return eventCtx.getOffsetSecs().toPlainString();
 			}
 		};
 

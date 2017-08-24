@@ -16,6 +16,7 @@
 */
 package se.kth.speech.coin.tangrams.analysis;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collections;
@@ -219,6 +220,11 @@ public final class GameContext {
 	 */
 	public GameHistory getHistory() {
 		return history;
+	}
+
+	public Duration getOffset() {
+		final LocalDateTime gameStartTime = history.getStartTime();
+		return Duration.between(gameStartTime, time);
 	}
 
 	public NavigableMap<LocalDateTime, List<Event>> getPrecedingEvents() {
