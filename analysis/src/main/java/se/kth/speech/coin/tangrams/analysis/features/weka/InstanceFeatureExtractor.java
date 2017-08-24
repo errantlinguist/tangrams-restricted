@@ -34,7 +34,7 @@ import weka.core.Instance;
  * @since May 11, 2017
  *
  */
-public final class InstanceFeatureExtractor<F, C> implements BiConsumer<Instance, C> {
+public final class InstanceFeatureExtractor<F, C> implements BiConsumer<Instance, C> { // NO_UCD (use default)
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(InstanceFeatureExtractor.class);
 

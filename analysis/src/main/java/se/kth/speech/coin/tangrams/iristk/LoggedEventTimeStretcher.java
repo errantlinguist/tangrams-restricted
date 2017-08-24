@@ -53,7 +53,7 @@ import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
  * @since Apr 29, 2017
  *
  */
-final class LoggedEventTimeStretcher {
+final class LoggedEventTimeStretcher { // NO_UCD (use default)
 
 	private enum Parameter implements Supplier<Option> {
 		EVENT_SENDER_PATTERN("p") {

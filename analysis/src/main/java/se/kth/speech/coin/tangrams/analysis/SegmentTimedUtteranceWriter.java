@@ -59,7 +59,7 @@ import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
  * @since 5 May 2017
  *
  */
-final class SegmentTimedUtteranceWriter {
+final class SegmentTimedUtteranceWriter { // NO_UCD (use default)
 
 	private enum Parameter implements Supplier<Option> {
 		EVENT_LOG(EVENT_LOG_OPT_NAME) {

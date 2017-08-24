@@ -53,7 +53,7 @@ import se.kth.speech.coin.tangrams.view.UserPrompts;
  * @since 9 Aug 2017
  *
  */
-final class SessionEventLogAdjuster {
+final class SessionEventLogAdjuster { // NO_UCD (use default)
 
 	private static class Settings {
 

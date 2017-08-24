@@ -52,7 +52,7 @@ import se.kth.speech.coin.tangrams.iristk.IrisSystemStopper;
  * @since 10 Jan 2017
  *
  */
-final class TangramsServer implements Runnable {
+final class TangramsServer implements Runnable { // NO_UCD (use default)
 
 	// private static class FlagSettingUncaughtExceptionHandler implements
 	// UncaughtExceptionHandler {
