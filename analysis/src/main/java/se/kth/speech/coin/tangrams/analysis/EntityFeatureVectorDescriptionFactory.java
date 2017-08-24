@@ -16,7 +16,7 @@
 */
 package se.kth.speech.coin.tangrams.analysis;
 
-import java.util.List;
+import java.util.Collection;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -32,14 +32,14 @@ final class EntityFeatureVectorDescriptionFactory {
 
 	private final EntityFeature.Extractor entityFeatureExtractor;
 
-	private final List<EntityFeature> entityFeaturesToDescribe;
+	private final Collection<EntityFeature> entityFeaturesToDescribe;
 
 	private final EntityFeatureExtractionContextFactory extractionContextFactory;
 
 	private final String nullValueRepr;
 
 	EntityFeatureVectorDescriptionFactory(final EntityFeature.Extractor entityFeatureExtractor,
-			final List<EntityFeature> entityFeaturesToDescribe,
+			final Collection<EntityFeature> entityFeaturesToDescribe,
 			final EntityFeatureExtractionContextFactory extractionContextFactory, final String nullValueRepr) {
 		this.entityFeatureExtractor = entityFeatureExtractor;
 		this.entityFeaturesToDescribe = entityFeaturesToDescribe;
@@ -72,7 +72,7 @@ final class EntityFeatureVectorDescriptionFactory {
 	/**
 	 * @return the entityFeaturesToDescribe
 	 */
-	List<EntityFeature> getEntityFeaturesToDescribe() {
+	Collection<EntityFeature> getEntityFeaturesToDescribe() {
 		return entityFeaturesToDescribe;
 	}
 

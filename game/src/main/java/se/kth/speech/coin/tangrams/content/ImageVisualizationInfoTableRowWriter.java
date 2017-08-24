@@ -21,11 +21,18 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.StringJoiner;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import se.kth.speech.awt.ColorInfo;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -34,24 +41,58 @@ import java.util.stream.Collectors;
  */
 public final class ImageVisualizationInfoTableRowWriter {
 
-	private static final String COLOR_COL_NAME = "COLOR";
+	public enum Attribute {
+		COLOR, ID, IMAGE, SIZE;
 
-	public static List<List<String>> createColumnHeaders() {
-		final List<String> mainColNames = Collections
-				.unmodifiableList(Arrays.asList("ID", "IMAGE", "SIZE", COLOR_COL_NAME));
-		final int colorHeaderIdx = mainColNames.indexOf(COLOR_COL_NAME);
-		final List<String> subColNames = new ArrayList<>(mainColNames.size());
-		// Offset the color sub-header row
-		for (int i = 0; i < colorHeaderIdx; ++i) {
-			subColNames.add("");
+		private static final List<Attribute> CANONICAL_ORDERING;
+
+		static {
+			CANONICAL_ORDERING = Arrays.asList(Attribute.ID, Attribute.IMAGE, Attribute.SIZE, Attribute.COLOR);
+			assert CANONICAL_ORDERING.size() == Attribute.values().length;
 		}
-		ColorInfoWriter.getColumnNames().forEach(subColNames::add);
-		return Arrays.asList(mainColNames, subColNames);
+
+		/**
+		 * @return the canonicalOrdering
+		 */
+		public static List<Attribute> getCanonicalOrdering() {
+			return Collections.unmodifiableList(CANONICAL_ORDERING);
+		}
 	}
 
-	private final String colDelimiter;
+	private static final List<String> COLOR_ATTR_COL_NAMES;
 
-	private final ColorInfoWriter colorInfoWriter;
+	private static final List<ColorInfo> COLOR_INFO_TO_WRITE;
+
+	static {
+		COLOR_INFO_TO_WRITE = ColorInfo.getCanonicalOrdering();
+		COLOR_ATTR_COL_NAMES = Arrays
+				.asList(COLOR_INFO_TO_WRITE.stream().map(ColorInfo::toString).toArray(String[]::new));
+	}
+
+	public static List<List<String>> createColumnHeaders(final Collection<Attribute> vizInfoAttrsToWrite) {
+		final List<String> mainColNames = Arrays
+				.asList(vizInfoAttrsToWrite.stream().map(Attribute::toString).toArray(String[]::new));
+
+		final List<List<String>> result;
+		if (vizInfoAttrsToWrite.contains(Attribute.COLOR)) {
+			final int colorHeaderIdx = mainColNames.indexOf(Attribute.COLOR.toString());
+			final List<String> subColNames = new ArrayList<>(mainColNames.size());
+			final String padding = "";
+			// Offset the color sub-header row
+			for (int i = 0; i < colorHeaderIdx; ++i) {
+				subColNames.add(padding);
+			}
+			COLOR_ATTR_COL_NAMES.forEach(subColNames::add);
+			while (subColNames.size() < mainColNames.size()) {
+				subColNames.add(padding);
+			}
+			result = Arrays.asList(mainColNames, subColNames);
+		} else {
+			result = Arrays.asList(mainColNames);
+		}
+
+		return result;
+	}
 
 	private final String nullValueRepr;
 
@@ -59,43 +100,97 @@ public final class ImageVisualizationInfoTableRowWriter {
 
 	private final Collector<CharSequence, ?, String> rowJoiner;
 
+	private final Collection<Attribute> vizInfoAttrsToWrite;
+
 	private final Writer writer;
 
-	public ImageVisualizationInfoTableRowWriter(final Writer writer, final String rowDelimiter,
-			final String colDelimiter, final String nullValueRepr) {
+	public ImageVisualizationInfoTableRowWriter(final Writer writer, final Collection<Attribute> vizInfoAttrsToWrite,
+			final String rowDelimiter, final String colDelimiter, final String nullValueRepr) {
 		this.writer = writer;
+		this.vizInfoAttrsToWrite = vizInfoAttrsToWrite;
 		rowJoiner = Collectors.joining(rowDelimiter);
-		this.colDelimiter = colDelimiter;
 		rowCellJoiner = Collectors.joining(colDelimiter);
-		colorInfoWriter = new ColorInfoWriter(writer, colDelimiter, nullValueRepr);
 		this.nullValueRepr = nullValueRepr;
 	}
 
 	public void write(final Object rowId, final ImageVisualizationInfo.Datum datum) throws IOException {
-		writer.write(Objects.toString(rowId, nullValueRepr));
-		writer.write(colDelimiter);
+		final Stream<String> attrValues = vizInfoAttrsToWrite.stream()
+				.flatMap(vizInfo -> getAttributeValues(rowId, datum, vizInfo));
+		final String row = attrValues.collect(rowCellJoiner);
+		writer.write(row);
+	}
 
-		final String resourceName;
-		final String size;
-		final Color color;
-		if (datum == null) {
-			resourceName = nullValueRepr;
-			size = nullValueRepr;
-			color = null;
+	private String createColorNameRepr(final Set<String> colorNames) {
+		final String result;
+		if (colorNames.isEmpty()) {
+			result = nullValueRepr;
 		} else {
-			resourceName = datum.getResourceName();
-			size = datum.getSize().toString();
-			color = datum.getColor();
+			final StringJoiner colorNameJoiner = new StringJoiner(", ");
+			colorNameJoiner.setEmptyValue(nullValueRepr);
+			colorNames.forEach(colorNameJoiner::add);
+			result = colorNameJoiner.toString();
 		}
-		writer.write(resourceName);
-		writer.write(colDelimiter);
-		writer.write(size);
-		writer.write(colDelimiter);
-		colorInfoWriter.accept(color);
+		return result;
+	}
+
+	private Stream<String> getAttributeValues(final Object rowId, final ImageVisualizationInfo.Datum datum,
+			final Attribute attr) {
+		final Stream<String> result;
+		switch (attr) {
+		case COLOR: {
+			if (datum == null) {
+				result = COLOR_INFO_TO_WRITE.stream().map(colName -> nullValueRepr);
+			} else {
+				final Color color = datum.getColor();
+				final Map<ColorInfo, Object> colorInfo = ColorInfo.createInfoMap(color);
+				result = COLOR_INFO_TO_WRITE.stream().map(infoDatum -> {
+					final Object value = colorInfo.get(infoDatum);
+					return parseColorInfoValue(infoDatum, value);
+				});
+			}
+			break;
+		}
+		case ID: {
+			final String attrVal = Objects.toString(rowId, nullValueRepr);
+			result = Stream.of(attrVal);
+			break;
+		}
+		case IMAGE: {
+			final String attrVal = datum == null ? nullValueRepr : datum.getResourceName();
+			result = Stream.of(attrVal);
+			break;
+		}
+		case SIZE: {
+			final String attrVal = datum == null ? nullValueRepr : datum.getSize().toString();
+			result = Stream.of(attrVal);
+			break;
+		}
+		default: {
+			throw new AssertionError(String.format("No logic for handling attribute %s.", attr));
+		}
+		}
+		return result;
+	}
+
+	private String parseColorInfoValue(final ColorInfo infoDatum, final Object value) {
+		final String result;
+		switch (infoDatum) {
+		case JAVA_NAME: {
+			@SuppressWarnings("unchecked")
+			final Set<String> colorNames = (Set<String>) value;
+			result = createColorNameRepr(colorNames);
+			break;
+		}
+		default: {
+			result = value.toString();
+			break;
+		}
+		}
+		return result;
 	}
 
 	void writeHeader() throws IOException {
-		final List<List<String>> headers = createColumnHeaders();
+		final List<List<String>> headers = createColumnHeaders(vizInfoAttrsToWrite);
 		final String headerStr = headers.stream().map(header -> header.stream().collect(rowCellJoiner))
 				.collect(rowJoiner);
 		writer.write(headerStr);

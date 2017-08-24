@@ -35,15 +35,15 @@ import se.kth.speech.coin.tangrams.iristk.events.Move;
  * @since 23 Aug 2017
  *
  */
-final class ImageVizualizationInfoDescriptionFactory {
+final class ImageVisualizationInfoDescriptionFactory {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(ImageVizualizationInfoDescriptionFactory.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(ImageVisualizationInfoDescriptionFactory.class);
 
 	private final String blankDescription;
 
 	private final Function<? super StringWriter, ImageVisualizationInfoTableRowWriter> imgVizInfoTableRowWriterFactory;
 
-	ImageVizualizationInfoDescriptionFactory(
+	ImageVisualizationInfoDescriptionFactory(
 			final Function<? super StringWriter, ImageVisualizationInfoTableRowWriter> imgVizInfoTableRowWriterFactory) {
 		this.imgVizInfoTableRowWriterFactory = imgVizInfoTableRowWriterFactory;
 		blankDescription = createBlankDescription();

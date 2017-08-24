@@ -25,6 +25,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -106,7 +107,9 @@ final class UtteranceTabularDataWriter {
 
 	private static final MathContext EVT_TIME_DIFF_CTX = new MathContext(16, RoundingMode.HALF_UP);
 
-	private static final ImageVizualizationInfoDescriptionFactory IMG_VIZ_INFO_DESC_FACTORY;
+	private static final List<ImageVisualizationInfoTableRowWriter.Attribute> IMG_VIZ_INFO_ATTRS_TO_WRITE;
+
+	private static final ImageVisualizationInfoDescriptionFactory IMG_VIZ_INFO_DESC_FACTORY;
 
 	private static final ImageVisualizationInfoUnmarshaller IMG_VIZ_INFO_UNMARSHALLER = new ImageVisualizationInfoUnmarshaller();
 
@@ -130,9 +133,10 @@ final class UtteranceTabularDataWriter {
 		TABLE_ROW_CELL_JOINER = Collectors.joining(TABLE_STRING_REPR_COL_DELIMITER);
 
 		NULL_VALUE_REPR = "-";
-		IMG_VIZ_INFO_DESC_FACTORY = new ImageVizualizationInfoDescriptionFactory(
-				strWriter -> new ImageVisualizationInfoTableRowWriter(strWriter, TABLE_STRING_REPR_ROW_DELIMITER,
-						TABLE_STRING_REPR_COL_DELIMITER, NULL_VALUE_REPR));
+		IMG_VIZ_INFO_ATTRS_TO_WRITE = ImageVisualizationInfoTableRowWriter.Attribute.getCanonicalOrdering();
+		IMG_VIZ_INFO_DESC_FACTORY = new ImageVisualizationInfoDescriptionFactory(
+				strWriter -> new ImageVisualizationInfoTableRowWriter(strWriter, IMG_VIZ_INFO_ATTRS_TO_WRITE,
+						TABLE_STRING_REPR_ROW_DELIMITER, TABLE_STRING_REPR_COL_DELIMITER, NULL_VALUE_REPR));
 	}
 
 	private static BigDecimal calculateTimeDiffSecs(final Event firstEvt, final Event nextEvt) {
@@ -155,7 +159,7 @@ final class UtteranceTabularDataWriter {
 
 	private final List<List<String>> colHeaders;
 
-	private final List<EntityFeature> entityFeaturesToDescribe;
+	private final Collection<EntityFeature> entityFeaturesToDescribe;
 
 	private final EntityFeatureVectorDescriptionFactory entityFeatureVectorDescFactory;
 
@@ -168,7 +172,7 @@ final class UtteranceTabularDataWriter {
 	private final Function<? super Iterator<Utterance>, String> uttDiagReprFactory;
 
 	private UtteranceTabularDataWriter(final EntityFeature.Extractor entityFeatureExtractor,
-			final List<EntityFeature> entityFeaturesToDescribe,
+			final Collection<EntityFeature> entityFeaturesToDescribe,
 			final EntityFeatureExtractionContextFactory extractionContextFactory,
 			final Function<? super Iterator<Utterance>, String> uttDiagReprFactory, final boolean strict,
 			final EventDatum[] eventDataToWrite, final LanguageDatum[] langDataToWrite) {
@@ -190,8 +194,88 @@ final class UtteranceTabularDataWriter {
 				LanguageDatum.values());
 	}
 
+	private void accept(final GameHistory history, final List<EventDialogue> eventDiags, final Writer writer)
+			throws IOException {
+		// Write header
+		writer.write(colHeaders.stream().map(header -> header.stream().collect(TABLE_ROW_CELL_JOINER))
+				.collect(TABLE_ROW_JOINER));
+
+		// The visualization info for the given game
+		final LocalDateTime gameStartTime = history.getStartTime();
+		final List<ImageVisualizationInfo.Datum> imgVizInfoData = IMG_VIZ_INFO_UNMARSHALLER
+				.apply(history.getInitialState().getImageVisualizationInfoDescription()).getData();
+
+		Optional<Event> optLastRoundEvent = Optional.empty();
+		for (final ListIterator<EventDialogue> eventDiagIter = eventDiags.listIterator(); eventDiagIter.hasNext();) {
+			final EventDialogue eventDiag = eventDiagIter.next();
+			writer.write(TABLE_STRING_REPR_ROW_DELIMITER);
+
+			final List<Event> diagEvts = eventDiag.getEvents();
+			final List<Utterance> diagUtts = eventDiag.getUtterances();
+
+			final Stream<String> eventDataReprs;
+			final Stream<String> imgFeatureVectorReprs;
+			final String imgVizInfoDesc;
+			if (diagEvts.isEmpty()) {
+				eventDataReprs = Arrays.stream(eventDataToWrite).map(eventDatum -> NULL_VALUE_REPR);
+				imgFeatureVectorReprs = entityFeatureVectorDescFactory.createBlankFeatureValueReprs();
+				imgVizInfoDesc = IMG_VIZ_INFO_DESC_FACTORY.getBlankDescription();
+			} else {
+				final Event firstDiagEvent = diagEvts.iterator().next();
+				{
+					final Optional<Event> streamOptLastRoundEvent = optLastRoundEvent;
+					eventDataReprs = Arrays.stream(eventDataToWrite)
+							.map(eventDatum -> eventDatum.apply(firstDiagEvent, streamOptLastRoundEvent));
+				}
+
+				final float contextStartTime;
+				final float contextEndTime;
+				if (diagUtts.isEmpty()) {
+					if (strict) {
+						throw new IllegalArgumentException(
+								String.format("No utterances for event \"%s\".", firstDiagEvent));
+					} else {
+						final String msg = createNoEventUtterancesMsg(firstDiagEvent, eventDiags,
+								eventDiagIter.nextIndex() - 1);
+						LOGGER.warn(msg);
+						final LocalDateTime eventTime = EventTimes.parseEventTime(firstDiagEvent.getTime());
+						final Duration gameDuration = Duration.between(gameStartTime, eventTime);
+						final float offset = gameDuration.toMillis() / 1000.0f;
+						contextStartTime = offset;
+						contextEndTime = offset;
+					}
+				} else {
+					// Just use the context of the first utterance
+					final Utterance firstUtt = diagUtts.iterator().next();
+					contextStartTime = firstUtt.getStartTime();
+					contextEndTime = firstUtt.getEndTime();
+				}
+
+				final GameContext context = TemporalGameContexts.create(history, contextStartTime, contextEndTime)
+						.findFirst().get();
+				imgFeatureVectorReprs = entityFeatureVectorDescFactory.createFeatureValueReprs(context);
+
+				imgVizInfoDesc = createImgVizInfoDesc(firstDiagEvent, gameStartTime, imgVizInfoData);
+
+				optLastRoundEvent = Optional.of(diagEvts.get(diagEvts.size() - 1));
+			}
+			writer.write(eventDataReprs.collect(TABLE_ROW_CELL_JOINER));
+			writer.write(TABLE_STRING_REPR_COL_DELIMITER);
+			writer.write(imgFeatureVectorReprs.collect(TABLE_ROW_CELL_JOINER));
+			writer.write(TABLE_STRING_REPR_COL_DELIMITER);
+			writer.write(imgVizInfoDesc);
+
+			for (final LanguageDatum langDatum : langDataToWrite) {
+				writer.write(TABLE_STRING_REPR_COL_DELIMITER);
+				final String datumValue = langDatum.apply(diagUtts, uttDiagReprFactory);
+				writer.write(datumValue);
+			}
+		}
+	}
+
 	private List<List<String>> createColHeaders() {
-		final List<List<String>> imgViewDescColHeaders = ImageVisualizationInfoTableRowWriter.createColumnHeaders();
+		final List<List<String>> imgViewDescColHeaders = ImageVisualizationInfoTableRowWriter
+				.createColumnHeaders(IMG_VIZ_INFO_ATTRS_TO_WRITE);
 		final int resultColCount = imgViewDescColHeaders.stream().mapToInt(List::size).max().getAsInt()
 				+ eventDataToWrite.length + entityFeaturesToDescribe.size() + langDataToWrite.length;
 
@@ -297,85 +381,6 @@ final class UtteranceTabularDataWriter {
 			}
 		}
 		return sb.toString();
-	}
-
-	void accept(final GameHistory history, final List<EventDialogue> eventDiags, final Writer writer)
-			throws IOException {
-		// Write header
-		writer.write(colHeaders.stream().map(header -> header.stream().collect(TABLE_ROW_CELL_JOINER))
-				.collect(TABLE_ROW_JOINER));
-
-		// The visualization info for the given game
-		final LocalDateTime gameStartTime = history.getStartTime();
-		final List<ImageVisualizationInfo.Datum> imgVizInfoData = IMG_VIZ_INFO_UNMARSHALLER
-				.apply(history.getInitialState().getImageVisualizationInfoDescription()).getData();
-
-		Optional<Event> optLastRoundEvent = Optional.empty();
-		for (final ListIterator<EventDialogue> eventDiagIter = eventDiags.listIterator(); eventDiagIter.hasNext();) {
-			final EventDialogue eventDiag = eventDiagIter.next();
-			writer.write(TABLE_STRING_REPR_ROW_DELIMITER);
-
-			final List<Event> diagEvts = eventDiag.getEvents();
-			final List<Utterance> diagUtts = eventDiag.getUtterances();
-
-			final Stream<String> eventDataReprs;
-			final Stream<String> imgFeatureVectorReprs;
-			final String imgVizInfoDesc;
-			if (diagEvts.isEmpty()) {
-				eventDataReprs = Arrays.stream(eventDataToWrite).map(eventDatum -> NULL_VALUE_REPR);
-				imgFeatureVectorReprs = entityFeatureVectorDescFactory.createBlankFeatureValueReprs();
-				imgVizInfoDesc = IMG_VIZ_INFO_DESC_FACTORY.getBlankDescription();
-			} else {
-				final Event firstDiagEvent = diagEvts.iterator().next();
-				{
-					final Optional<Event> streamOptLastRoundEvent = optLastRoundEvent;
-					eventDataReprs = Arrays.stream(eventDataToWrite)
-							.map(eventDatum -> eventDatum.apply(firstDiagEvent, streamOptLastRoundEvent));
-				}
-
-				final float contextStartTime;
-				final float contextEndTime;
-				if (diagUtts.isEmpty()) {
-					if (strict) {
-						throw new IllegalArgumentException(
-								String.format("No utterances for event \"%s\".", firstDiagEvent));
-					} else {
-						final String msg = createNoEventUtterancesMsg(firstDiagEvent, eventDiags,
-								eventDiagIter.nextIndex() - 1);
-						LOGGER.warn(msg);
-						final LocalDateTime eventTime = EventTimes.parseEventTime(firstDiagEvent.getTime());
-						final Duration gameDuration = Duration.between(gameStartTime, eventTime);
-						final float offset = gameDuration.toMillis() / 1000.0f;
-						contextStartTime = offset;
-						contextEndTime = offset;
-					}
-				} else {
-					// Just use the context of the first utterance
-					final Utterance firstUtt = diagUtts.iterator().next();
-					contextStartTime = firstUtt.getStartTime();
-					contextEndTime = firstUtt.getEndTime();
-				}
-
-				final GameContext context = TemporalGameContexts.create(history, contextStartTime, contextEndTime)
-						.findFirst().get();
-				imgFeatureVectorReprs = entityFeatureVectorDescFactory.createFeatureValueReprs(context);
-
-				imgVizInfoDesc = createImgVizInfoDesc(firstDiagEvent, gameStartTime, imgVizInfoData);
-
-				optLastRoundEvent = Optional.of(diagEvts.get(diagEvts.size() - 1));
-			}
-			writer.write(eventDataReprs.collect(TABLE_ROW_CELL_JOINER));
-			writer.write(TABLE_STRING_REPR_COL_DELIMITER);
-			writer.write(imgFeatureVectorReprs.collect(TABLE_ROW_CELL_JOINER));
-			writer.write(TABLE_STRING_REPR_COL_DELIMITER);
-			writer.write(imgVizInfoDesc);
-
-			for (final LanguageDatum langDatum : langDataToWrite) {
-				writer.write(TABLE_STRING_REPR_COL_DELIMITER);
-				final String datumValue = langDatum.apply(diagUtts, uttDiagReprFactory);
-				writer.write(datumValue);
-			}
-		}
 	}
 
 	void accept(final SessionGame sessionGame, final Writer writer) throws IOException {
