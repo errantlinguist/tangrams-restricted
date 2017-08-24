@@ -118,6 +118,14 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 			}
 
 		},
+		SCORE {
+
+			@Override
+			public String apply(final EventContext eventCtx, final String nullValueRepr) {
+				return Integer.toString(eventCtx.getScore());
+			}
+
+		},
 		SELECTED {
 
 			private final EventTypeMatcher selectionEventMatcher = new EventTypeMatcher(
@@ -159,7 +167,7 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 
 		static {
 			CANONICAL_ORDERING = Collections.unmodifiableList(
-					Arrays.asList(EventDatum.EVENT, EventDatum.ROUND, EventDatum.TIME, EventDatum.NAME,
+					Arrays.asList(EventDatum.EVENT, EventDatum.ROUND, EventDatum.SCORE, EventDatum.TIME, EventDatum.NAME,
 							EventDatum.SUBMITTER, EventDatum.ENTITY, EventDatum.REFERENT, EventDatum.SELECTED));
 			assert CANONICAL_ORDERING.size() == EventDatum.values().length;
 		}
@@ -170,8 +178,7 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 		GAME_ID, START_TIME;
 	}
 
-	private static final EventTypeMatcher GAME_ROUND_DELIMITING_EVENT_MATCHER = new EventTypeMatcher(
-			GameManagementEvent.NEXT_TURN_REQUEST);
+	private static final GameManagementEvent GAME_ROUND_DELIMITING_EVENT_TYPE = GameManagementEvent.NEXT_TURN_REQUEST;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SessionGameHistoryTabularDataWriter.class);
 
@@ -199,6 +206,27 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 					EventDatum.CANONICAL_ORDERING, "events", NULL_VALUE_REPR);
 			writer.accept(inpaths);
 		}
+	}
+
+	private static int updateScore(final GameManagementEvent nextEventType, final int currentScore) {
+		final int result;
+
+		switch (nextEventType) {
+		case COMPLETED_TURN_REQUEST: {
+			result = currentScore + 1;
+			break;
+		}
+		case SELECTION_REJECTION: {
+			result = currentScore - 2;
+			break;
+		}
+		default: {
+			result = currentScore;
+			break;
+		}
+		}
+
+		return result;
 	}
 
 	private final LoadingCache<EventContext, String[]> eventDataRowCellValues;
@@ -251,18 +279,21 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 					final int entityCount = history.getEntityCount();
 					final List<Stream<String>> eventRows = new ArrayList<>(events.size() * entityCount);
 					int gameRoundId = 0;
+					int gameScore = 0;
 					for (final ListIterator<Event> eventIter = events.listIterator(); eventIter.hasNext();) {
 						final int eventId = eventIter.nextIndex();
 						final Event event = eventIter.next();
-						if (GAME_ROUND_DELIMITING_EVENT_MATCHER.test(event)) {
+						final GameManagementEvent eventType = GameManagementEvent.getEventType(event);
+						if (GAME_ROUND_DELIMITING_EVENT_TYPE.equals(eventType)) {
 							gameRoundId++;
 						}
+						gameScore = updateScore(eventType, gameScore);
 						final LocalDateTime eventTime = EventTimes.parseEventTime(event.getTime());
 						final GameContext gameCtx = new GameContext(history, eventTime);
 						// Create one row for each entity
 						for (int entityId = 0; entityId < entityCount; ++entityId) {
 							eventRows.add(createRowCellValues(entityFeatureVectorDescFactory,
-									new EventContext(eventId, event, gameRoundId, gameCtx, entityId)));
+									new EventContext(eventId, event, gameRoundId, gameCtx, entityId, gameScore)));
 						}
 					}
 					final Stream<String> fileRows = Stream

@@ -35,14 +35,17 @@ final class EventContext {
 
 	private final BigDecimal offsetSecs;
 
+	private final int score;
+
 	EventContext(final int eventId, final Event event, final int gameRoundId, final GameContext gameContext,
-			final int entityId) {
+			final int entityId, final int score) {
 		this.eventId = eventId;
 		this.event = event;
 		this.gameContext = gameContext;
 		this.gameRoundId = gameRoundId;
 		offsetSecs = TimestampArithmetic.toDecimalSeconds(gameContext.getOffset());
 		this.entityId = entityId;
+		this.score = score;
 	}
 
 	/*
@@ -85,6 +88,9 @@ final class EventContext {
 		if (gameRoundId != other.gameRoundId) {
 			return false;
 		}
+		if (score != other.score) {
+			return false;
+		}
 		return true;
 	}
 
@@ -102,6 +108,7 @@ final class EventContext {
 		result = prime * result + eventId;
 		result = prime * result + (gameContext == null ? 0 : gameContext.hashCode());
 		result = prime * result + gameRoundId;
+		result = prime * result + score;
 		return result;
 	}
 
@@ -145,6 +152,13 @@ final class EventContext {
 	 */
 	BigDecimal getOffsetSecs() {
 		return offsetSecs;
+	}
+
+	/**
+	 * @return the score
+	 */
+	int getScore() {
+		return score;
 	}
 
 }
