@@ -17,18 +17,18 @@
 package se.kth.speech.coin.tangrams.analysis;
 
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumMap;
-import java.util.EnumSet;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
@@ -37,7 +37,6 @@ import java.util.function.BiFunction;
 import java.util.regex.Pattern;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import javax.xml.bind.JAXBException;
@@ -50,16 +49,15 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 
 import iristk.system.Event;
-import se.kth.speech.TimestampArithmetic;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionContextFactory;
 import se.kth.speech.coin.tangrams.analysis.features.ImageEdgeCounter;
 import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
 import se.kth.speech.coin.tangrams.iristk.EventTimes;
+import se.kth.speech.coin.tangrams.iristk.EventTypeMatcher;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
-import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
-
 import se.kth.speech.coin.tangrams.iristk.events.Selection;
+import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -68,111 +66,22 @@ import se.kth.speech.coin.tangrams.iristk.events.Selection;
  */
 final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 
-	private static class EventContext {
-
-		private final int entityId;
-
-		private final Event event;
-
-		private final GameContext gameContext;
-
-		private final BigDecimal offsetSecs;
-
-		private EventContext(final Event event, final GameContext gameContext, final int entityId) {
-			this.event = event;
-			this.gameContext = gameContext;
-			offsetSecs = TimestampArithmetic.toDecimalSeconds(gameContext.getOffset());
-			this.entityId = entityId;
-		}
-
-		/*
-		 * (non-Javadoc)
-		 *
-		 * @see java.lang.Object#equals(java.lang.Object)
-		 */
-		@Override
-		public boolean equals(final Object obj) {
-			if (this == obj) {
-				return true;
-			}
-			if (obj == null) {
-				return false;
-			}
-			if (!(obj instanceof EventContext)) {
-				return false;
-			}
-			final EventContext other = (EventContext) obj;
-			if (entityId != other.entityId) {
-				return false;
-			}
-			if (event == null) {
-				if (other.event != null) {
-					return false;
-				}
-			} else if (!event.equals(other.event)) {
-				return false;
-			}
-			if (gameContext == null) {
-				if (other.gameContext != null) {
-					return false;
-				}
-			} else if (!gameContext.equals(other.gameContext)) {
-				return false;
-			}
-			return true;
-		}
-
-		/*
-		 * (non-Javadoc)
-		 *
-		 * @see java.lang.Object#hashCode()
-		 */
-		@Override
-		public int hashCode() {
-			final int prime = 31;
-			int result = 1;
-			result = prime * result + entityId;
-			result = prime * result + (event == null ? 0 : event.hashCode());
-			result = prime * result + (gameContext == null ? 0 : gameContext.hashCode());
-			return result;
-		}
-
-		/**
-		 * @return the entityId
-		 */
-		private int getEntityId() {
-			return entityId;
-		}
-
-		/**
-		 * @return the event
-		 */
-		private Event getEvent() {
-			return event;
-		}
-
-		/**
-		 * @return the gameContext
-		 */
-		private GameContext getGameContext() {
-			return gameContext;
-		}
-
-		/**
-		 * @return the offsetSecs
-		 */
-		private BigDecimal getOffsetSecs() {
-			return offsetSecs;
-		}
-
-	}
-
 	private enum EventDatum implements BiFunction<EventContext, String, String> {
 		ENTITY_ID {
 
 			@Override
 			public String apply(final EventContext eventCtx, final String nullValueRepr) {
-				return Integer.toString(eventCtx.getEntityId());
+				// 1-indexed
+				return Integer.toString(eventCtx.getEntityId() + 1);
+			}
+
+		},
+		EVENT {
+
+			@Override
+			public String apply(final EventContext eventCtx, final String nullValueRepr) {
+				// 1-indexed
+				return Integer.toString(eventCtx.getEventId() + 1);
 			}
 
 		},
@@ -191,18 +100,19 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 
 		},
 		IS_SELECTED {
-			
-			private final EnumSet<GameManagementEvent> selectionEventTypes = EnumSet.of(GameManagementEvent.SELECTION_REQUEST, GameManagementEvent.SELECTION_REJECTION);
+
+			private final EventTypeMatcher selectionEventMatcher = new EventTypeMatcher(
+					GameManagementEvent.SELECTION_REQUEST, GameManagementEvent.SELECTION_REJECTION);
 
 			@Override
 			public String apply(final EventContext eventCtx, final String nullValueRepr) {
-				Event event = eventCtx.getEvent();
-				GameManagementEvent eventType = GameManagementEvent.getEventType(event);
-				
+				final Event event = eventCtx.getEvent();
+
 				final boolean isSelected;
-				if (selectionEventTypes.contains(eventType)) {
-					Selection selection = (Selection) event.get(GameManagementEvent.Attribute.SELECTION.toString());
-					Integer selectedEntityId = selection.getPieceId();
+				if (selectionEventMatcher.test(event)) {
+					final Selection selection = (Selection) event
+							.get(GameManagementEvent.Attribute.SELECTION.toString());
+					final Integer selectedEntityId = selection.getPieceId();
 					final int entityId = eventCtx.getEntityId();
 					isSelected = selectedEntityId.equals(entityId);
 				} else {
@@ -223,6 +133,14 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 				return tangramsActionEventNamePrefixPattern.matcher(eventName).replaceFirst("");
 			}
 		},
+		ROUND {
+
+			@Override
+			public String apply(final EventContext eventCtx, final String nullValueRepr) {
+				return Integer.toString(eventCtx.getGameRoundId());
+			}
+
+		},
 		SUBMITTER {
 			@Override
 			public String apply(final EventContext eventCtx, final String nullValueRepr) {
@@ -240,8 +158,9 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 		private static final List<EventDatum> CANONICAL_ORDERING;
 
 		static {
-			CANONICAL_ORDERING = Collections.unmodifiableList(Arrays.asList(EventDatum.TIME, EventDatum.NAME,
-					EventDatum.SUBMITTER, EventDatum.ENTITY_ID, EventDatum.IS_REFERENT, EventDatum.IS_SELECTED));
+			CANONICAL_ORDERING = Collections.unmodifiableList(Arrays.asList(EventDatum.EVENT, EventDatum.ROUND,
+					EventDatum.TIME, EventDatum.NAME, EventDatum.SUBMITTER, EventDatum.ENTITY_ID,
+					EventDatum.IS_REFERENT, EventDatum.IS_SELECTED));
 			assert CANONICAL_ORDERING.size() == EventDatum.values().length;
 		}
 
@@ -250,6 +169,9 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 	private enum Metadatum {
 		GAME_ID, START_TIME;
 	}
+
+	private static final EventTypeMatcher GAME_ROUND_DELIMITING_EVENT_MATCHER = new EventTypeMatcher(
+			GameManagementEvent.NEXT_TURN_REQUEST);
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SessionGameHistoryTabularDataWriter.class);
 
@@ -279,11 +201,11 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 		}
 	}
 
+	private final LoadingCache<EventContext, String[]> eventDataRowCellValues;
+
 	private final List<EventDatum> eventDataToDescribe;
 
 	private final String outfileNamePrefix;
-
-	private final LoadingCache<EventContext, String[]> eventDataRowCellValues;
 
 	private SessionGameHistoryTabularDataWriter(final List<EventDatum> eventDataToDescribe,
 			final String outfileNamePrefix, final String nullCellValueRepr) {
@@ -325,19 +247,26 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 						"-");
 
 				{
-					final Stream<Event> events = history.getEventSequence();
+					final List<Event> events = Arrays.asList(history.getEventSequence().toArray(Event[]::new));
 					final int entityCount = history.getEntityCount();
-					final Stream<Stream<String>> eventRows = events.flatMap(event -> {
+					final List<Stream<String>> eventRows = new ArrayList<>(events.size() * entityCount);
+					int gameRoundId = 0;
+					for (final ListIterator<Event> eventIter = events.listIterator(); eventIter.hasNext();) {
+						final int eventId = eventIter.nextIndex();
+						final Event event = eventIter.next();
+						if (GAME_ROUND_DELIMITING_EVENT_MATCHER.test(event)) {
+							gameRoundId++;
+						}
 						final LocalDateTime eventTime = EventTimes.parseEventTime(event.getTime());
 						final GameContext gameCtx = new GameContext(history, eventTime);
 						// Create one row for each entity
-						return IntStream.range(0, entityCount).mapToObj(entityId -> {
-							return createRowCellValues(entityFeatureVectorDescFactory,
-									new EventContext(event, gameCtx, entityId));
-						});
-					});
+						for (int entityId = 0; entityId < entityCount; ++entityId) {
+							eventRows.add(createRowCellValues(entityFeatureVectorDescFactory,
+									new EventContext(eventId, event, gameRoundId, gameCtx, entityId)));
+						}
+					}
 					final Stream<String> fileRows = Stream
-							.concat(Stream.of(createColumnNames(entityFeatureVectorDescFactory)), eventRows)
+							.concat(Stream.of(createColumnNames(entityFeatureVectorDescFactory)), eventRows.stream())
 							.map(cells -> cells.collect(TABLE_ROW_CELL_JOINER));
 					{
 						final String outfileName = createEventsOutfileName();
