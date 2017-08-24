@@ -166,16 +166,16 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 		private static final List<EventDatum> CANONICAL_ORDERING;
 
 		static {
-			CANONICAL_ORDERING = Collections.unmodifiableList(
-					Arrays.asList(EventDatum.EVENT, EventDatum.ROUND, EventDatum.SCORE, EventDatum.TIME, EventDatum.NAME,
-							EventDatum.SUBMITTER, EventDatum.ENTITY, EventDatum.REFERENT, EventDatum.SELECTED));
+			CANONICAL_ORDERING = Collections.unmodifiableList(Arrays.asList(EventDatum.EVENT, EventDatum.ROUND,
+					EventDatum.SCORE, EventDatum.TIME, EventDatum.NAME, EventDatum.SUBMITTER, EventDatum.ENTITY,
+					EventDatum.REFERENT, EventDatum.SELECTED));
 			assert CANONICAL_ORDERING.size() == EventDatum.values().length;
 		}
 
 	}
 
 	private enum Metadatum {
-		GAME_ID, START_TIME;
+		GAME_ID, START_TIME, ROUND_COUNT, END_SCORE;
 	}
 
 	private static final GameManagementEvent GAME_ROUND_DELIMITING_EVENT_TYPE = GameManagementEvent.NEXT_TURN_REQUEST;
@@ -274,12 +274,12 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 						new EntityFeature.Extractor(), EntityFeature.getCanonicalOrdering(), extractionContextFactory,
 						"-");
 
+				int gameRoundId = 0;
+				int gameScore = 0;
 				{
 					final List<Event> events = Arrays.asList(history.getEventSequence().toArray(Event[]::new));
 					final int entityCount = history.getEntityCount();
 					final List<Stream<String>> eventRows = new ArrayList<>(events.size() * entityCount);
-					int gameRoundId = 0;
-					int gameScore = 0;
 					for (final ListIterator<Event> eventIter = events.listIterator(); eventIter.hasNext();) {
 						final int eventId = eventIter.nextIndex();
 						final Event event = eventIter.next();
@@ -312,8 +312,10 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 				{
 					final Map<Metadatum, Object> metadataValues = new EnumMap<>(Metadatum.class);
 					final String gameId = gameIdHistory.getKey();
+					metadataValues.put(Metadatum.END_SCORE, gameScore);
 					metadataValues.put(Metadatum.GAME_ID, gameId);
-					metadataValues.put(Metadatum.START_TIME, history.getStartTime());
+					metadataValues.put(Metadatum.ROUND_COUNT, gameRoundId);
+					metadataValues.put(Metadatum.START_TIME, EventTimes.FORMATTER.format(history.getStartTime()));
 					assert metadataValues.size() == Metadatum.values().length;
 					{
 						final String outfileName = createEventsMetadataOutfileName();
