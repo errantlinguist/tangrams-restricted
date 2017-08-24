@@ -124,6 +124,10 @@ public final class GameHistory {
 		return true;
 	}
 
+	public int getEntityCount() {
+		return initialState.getImageVisualizationInfoDescription().getData().size();
+	}
+
 	/**
 	 * @return the events
 	 */

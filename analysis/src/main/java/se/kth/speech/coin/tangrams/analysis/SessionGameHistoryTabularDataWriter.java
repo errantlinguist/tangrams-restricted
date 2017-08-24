@@ -246,8 +246,7 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 
 				{
 					final Stream<Event> events = history.getEventSequence();
-					final int entityCount = history.getInitialState().getImageVisualizationInfoDescription().getData()
-							.size();
+					final int entityCount = history.getEntityCount();
 					final Stream<Stream<String>> eventRows = events.flatMap(event -> {
 						final LocalDateTime eventTime = EventTimes.parseEventTime(event.getTime());
 						final GameContext gameCtx = new GameContext(history, eventTime);

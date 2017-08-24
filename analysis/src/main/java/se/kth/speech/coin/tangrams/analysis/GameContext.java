@@ -205,11 +205,6 @@ public final class GameContext {
 		});
 	}
 
-	public int getEntityCount() {
-		final GameStateDescription initialState = history.getInitialState();
-		return initialState.getImageVisualizationInfoDescription().getData().size();
-	}
-
 	public IntList getEntityIds() {
 		return entityIds;
 	}
@@ -272,7 +267,7 @@ public final class GameContext {
 	}
 
 	private IntList createEntityIdList() {
-		final int entityCount = getEntityCount();
+		final int entityCount = history.getEntityCount();
 		final IntList result = new IntArrayList(entityCount);
 		IntStream.range(0, entityCount).forEachOrdered(result::add);
 		return result;
