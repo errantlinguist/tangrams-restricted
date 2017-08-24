@@ -36,6 +36,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Properties;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
@@ -103,17 +104,23 @@ final class TangramsClient implements Runnable { // NO_UCD (use default)
 		 */
 		@Override
 		public void run() {
-			final Line line = lineFuture.getNow(null);
-			if (line == null) {
-				LOGGER.debug("Audio data line future was not yet complete; No resources to clean up.");
-			} else {
+			final boolean wasCancelled = lineFuture.cancel(true);
+			LOGGER.debug("Audio data line future was cancelled?: {}", wasCancelled);
+			try {
+				final Line line = lineFuture.get();
 				LOGGER.debug("Closing audio data line: {}", line);
 				LOGGER.debug("Line implementation class is \"{}\".", line.getClass().getName());
-				// FIXME: Cannot close the Clip/Line on Linux with PulseAudio
+				// FIXME: Cannot close the Clip/Line on Linux with
+				// PulseAudio
 				line.close();
 				LOGGER.debug("Closed audio data line: {}", line);
+			} catch (final CancellationException e) {
+				LOGGER.debug("Audio data line future was cencelled before completion; No resources to clean up.");
+			} catch (final InterruptedException e) {
+				LOGGER.debug("Audio data line future was interrupted before completion.");
+			} catch (final ExecutionException e) {
+				LOGGER.error("An error occured while trying to close the audio data line,", e);
 			}
-
 		}
 	}
 
