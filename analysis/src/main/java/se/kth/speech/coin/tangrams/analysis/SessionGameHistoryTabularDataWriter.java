@@ -153,7 +153,7 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 					new GameContextModelFactory(2), new ImageEdgeCounter());
 			final String nullValueRepr = "";
 			final EntityFeatureVectorDescriptionFactory entityFeatureVectorDescFactory = new EntityFeatureVectorDescriptionFactory(
-					new EntityFeature.Extractor(), EntityFeature.getDefaultOrdering(), extractionContextFactory,
+					new EntityFeature.Extractor(), EntityFeature.getCanonicalOrdering(), extractionContextFactory,
 					nullValueRepr);
 			final SessionGameHistoryTabularDataWriter writer = new SessionGameHistoryTabularDataWriter(
 					entityFeatureVectorDescFactory, Arrays.asList(EventDatum.values()), "events", nullValueRepr);

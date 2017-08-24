@@ -225,7 +225,7 @@ final class UtteranceSelectedEntityDescriptionWriter { // NO_UCD (use default)
 			final String outfileNamePrefix, final boolean strict) {
 		final Set<EntityFeature> featuresToDescribe = EnumSet.of(EntityFeature.EDGE_COUNT, EntityFeature.POSITION_X,
 				EntityFeature.POSITION_Y);
-		final List<EntityFeature> orderedFeaturesToDescribe = Arrays.asList(EntityFeature.getDefaultOrdering().stream()
+		final List<EntityFeature> orderedFeaturesToDescribe = Arrays.asList(EntityFeature.getCanonicalOrdering().stream()
 				.filter(featuresToDescribe::contains).toArray(EntityFeature[]::new));
 		final UtteranceDialogueRepresentationStringFactory uttDiagReprFactory = new UtteranceDialogueRepresentationStringFactory(
 				DataLanguageDefaults.getLocale());

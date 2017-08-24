@@ -273,18 +273,15 @@ public enum EntityFeature {
 
 	}
 
-	private static final List<EntityFeature> DEFAULT_ORDERING;
+	private static final List<EntityFeature> CANONICAL_ORDERING;
 
 	static {
-		DEFAULT_ORDERING = Arrays.asList(SHAPE, EDGE_COUNT, SIZE, RED, GREEN, BLUE, HUE, POSITION_X, POSITION_Y);
-		assert DEFAULT_ORDERING.size() == EntityFeature.values().length;
+		CANONICAL_ORDERING = Arrays.asList(SHAPE, EDGE_COUNT, SIZE, RED, GREEN, BLUE, HUE, POSITION_X, POSITION_Y);
+		assert CANONICAL_ORDERING.size() == EntityFeature.values().length;
 	}
 
-	/**
-	 * @return the defaultOrdering
-	 */
-	public static List<EntityFeature> getDefaultOrdering() {
-		return DEFAULT_ORDERING;
+	public static List<EntityFeature> getCanonicalOrdering() {
+		return CANONICAL_ORDERING;
 	}
 
 }
