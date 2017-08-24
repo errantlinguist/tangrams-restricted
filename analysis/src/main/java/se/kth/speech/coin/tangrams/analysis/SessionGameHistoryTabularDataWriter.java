@@ -312,7 +312,7 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 			final EntityFeatureVectorDescriptionFactory entityFeatureVectorDescFactory, final EventContext eventCtx) {
 		final Stream<String> result;
 
-		final Event event = eventCtx.getEvent();
+//		final Event event = eventCtx.getEvent();
 //		LOGGER.debug("Processing event with name \"{}\".", event.getName());
 		final Stream.Builder<String> resultBuilder = Stream.builder();
 		eventDataToDescribe.stream().map(datum -> datum.apply(eventCtx, nullCellValueRepr))
