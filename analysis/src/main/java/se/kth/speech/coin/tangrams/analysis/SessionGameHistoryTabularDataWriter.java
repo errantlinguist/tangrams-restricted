@@ -44,6 +44,10 @@ import javax.xml.bind.JAXBException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
+
 import iristk.system.Event;
 import se.kth.speech.TimestampArithmetic;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
@@ -80,7 +84,7 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 
 		/*
 		 * (non-Javadoc)
-		 * 
+		 *
 		 * @see java.lang.Object#equals(java.lang.Object)
 		 */
 		@Override
@@ -117,7 +121,7 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 
 		/*
 		 * (non-Javadoc)
-		 * 
+		 *
 		 * @see java.lang.Object#hashCode()
 		 */
 		@Override
@@ -258,15 +262,23 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 
 	private final List<EventDatum> eventDataToDescribe;
 
-	private final String nullCellValueRepr;
-
 	private final String outfileNamePrefix;
+
+	private final LoadingCache<EventContext, List<String>> eventDataRowCellValues;
 
 	private SessionGameHistoryTabularDataWriter(final List<EventDatum> eventDataToDescribe,
 			final String outfileNamePrefix, final String nullCellValueRepr) {
 		this.eventDataToDescribe = eventDataToDescribe;
 		this.outfileNamePrefix = outfileNamePrefix;
-		this.nullCellValueRepr = nullCellValueRepr;
+		eventDataRowCellValues = CacheBuilder.newBuilder().concurrencyLevel(1).initialCapacity(80).maximumSize(160)
+				.build(new CacheLoader<EventContext, List<String>>() {
+
+					@Override
+					public List<String> load(final EventContext eventCtx) {
+						return Arrays.asList(eventDataToDescribe.stream()
+								.map(datum -> datum.apply(eventCtx, nullCellValueRepr)).toArray(String[]::new));
+					}
+				});
 	}
 
 	private void accept(final Path[] inpaths) throws IOException, JAXBException {
@@ -365,8 +377,7 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 		// final Event event = eventCtx.getEvent();
 		// LOGGER.debug("Processing event with name \"{}\".", event.getName());
 		final Stream.Builder<String> resultBuilder = Stream.builder();
-		eventDataToDescribe.stream().map(datum -> datum.apply(eventCtx, nullCellValueRepr))
-				.forEachOrdered(resultBuilder);
+		eventDataRowCellValues.getUnchecked(eventCtx).stream().forEachOrdered(resultBuilder);
 
 		final Stream<String> entityFeatureVectorReprs = entityFeatureVectorDescFactory
 				.createFeatureValueReprs(eventCtx.getGameContext(), eventCtx.getEntityId());
