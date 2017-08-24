@@ -310,8 +310,6 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 
 	private Stream<String> createRowCellValues(
 			final EntityFeatureVectorDescriptionFactory entityFeatureVectorDescFactory, final EventContext eventCtx) {
-		final Stream<String> result;
-
 //		final Event event = eventCtx.getEvent();
 //		LOGGER.debug("Processing event with name \"{}\".", event.getName());
 		final Stream.Builder<String> resultBuilder = Stream.builder();
@@ -322,8 +320,6 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 				.createFeatureValueReprs(eventCtx.getGameContext(), eventCtx.getEntityId());
 		entityFeatureVectorReprs.forEachOrdered(resultBuilder);
 
-		result = resultBuilder.build();
-
-		return result;
+		return resultBuilder.build();
 	}
 }
