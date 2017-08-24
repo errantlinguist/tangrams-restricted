@@ -38,8 +38,7 @@ import java.util.Objects;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -99,7 +98,7 @@ final class TangramsClient implements Runnable { // NO_UCD (use default)
 
 		/*
 		 * (non-Javadoc)
-		 * 
+		 *
 		 * @see java.lang.Runnable#run()
 		 */
 		@Override
@@ -427,7 +426,7 @@ final class TangramsClient implements Runnable { // NO_UCD (use default)
 
 	@Override
 	public void run() {
-		final ExecutorService backgroundJobService = Executors.newCachedThreadPool();
+		final ForkJoinPool backgroundJobService = ForkJoinPool.commonPool();
 		final CompletableFuture<Clip> startSignalClipFuture = CompletableFuture
 				.supplyAsync(TangramsClient::openStartSignalAudioClip, backgroundJobService);
 		final Runtime runtime = Runtime.getRuntime();
@@ -436,7 +435,7 @@ final class TangramsClient implements Runnable { // NO_UCD (use default)
 				.execute(() -> signalGameStart(startSignalClipFuture));
 
 		LookAndFeels.setLookAndFeel();
-		
+
 		final String playerId = promptPlayerId(null, createDefaultPlayerId());
 		if (playerId == null) {
 			LOGGER.info("Quitting application before creation of new game was completed.");
