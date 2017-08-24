@@ -85,7 +85,18 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 			}
 
 		},
-		IS_REFERENT {
+		NAME {
+
+			private final Pattern tangramsActionEventNamePrefixPattern = Pattern.compile("tangrams\\.action\\.");
+
+			@Override
+			public String apply(final EventContext eventCtx, final String nullValueRepr) {
+				final Event event = eventCtx.getEvent();
+				final String eventName = event.getName();
+				return tangramsActionEventNamePrefixPattern.matcher(eventName).replaceFirst("");
+			}
+		},
+		REFERENT {
 
 			@Override
 			public String apply(final EventContext eventCtx, final String nullValueRepr) {
@@ -99,7 +110,15 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 			}
 
 		},
-		IS_SELECTED {
+		ROUND {
+
+			@Override
+			public String apply(final EventContext eventCtx, final String nullValueRepr) {
+				return Integer.toString(eventCtx.getGameRoundId());
+			}
+
+		},
+		SELECTED {
 
 			private final EventTypeMatcher selectionEventMatcher = new EventTypeMatcher(
 					GameManagementEvent.SELECTION_REQUEST, GameManagementEvent.SELECTION_REJECTION);
@@ -122,25 +141,6 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 			}
 
 		},
-		NAME {
-
-			private final Pattern tangramsActionEventNamePrefixPattern = Pattern.compile("tangrams\\.action\\.");
-
-			@Override
-			public String apply(final EventContext eventCtx, final String nullValueRepr) {
-				final Event event = eventCtx.getEvent();
-				final String eventName = event.getName();
-				return tangramsActionEventNamePrefixPattern.matcher(eventName).replaceFirst("");
-			}
-		},
-		ROUND {
-
-			@Override
-			public String apply(final EventContext eventCtx, final String nullValueRepr) {
-				return Integer.toString(eventCtx.getGameRoundId());
-			}
-
-		},
 		SUBMITTER {
 			@Override
 			public String apply(final EventContext eventCtx, final String nullValueRepr) {
@@ -158,9 +158,9 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 		private static final List<EventDatum> CANONICAL_ORDERING;
 
 		static {
-			CANONICAL_ORDERING = Collections.unmodifiableList(Arrays.asList(EventDatum.EVENT, EventDatum.ROUND,
-					EventDatum.TIME, EventDatum.NAME, EventDatum.SUBMITTER, EventDatum.ENTITY,
-					EventDatum.IS_REFERENT, EventDatum.IS_SELECTED));
+			CANONICAL_ORDERING = Collections.unmodifiableList(
+					Arrays.asList(EventDatum.EVENT, EventDatum.ROUND, EventDatum.TIME, EventDatum.NAME,
+							EventDatum.SUBMITTER, EventDatum.ENTITY, EventDatum.REFERENT, EventDatum.SELECTED));
 			assert CANONICAL_ORDERING.size() == EventDatum.values().length;
 		}
 
