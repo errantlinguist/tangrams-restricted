@@ -264,19 +264,19 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 
 	private final String outfileNamePrefix;
 
-	private final LoadingCache<EventContext, List<String>> eventDataRowCellValues;
+	private final LoadingCache<EventContext, String[]> eventDataRowCellValues;
 
 	private SessionGameHistoryTabularDataWriter(final List<EventDatum> eventDataToDescribe,
 			final String outfileNamePrefix, final String nullCellValueRepr) {
 		this.eventDataToDescribe = eventDataToDescribe;
 		this.outfileNamePrefix = outfileNamePrefix;
 		eventDataRowCellValues = CacheBuilder.newBuilder().concurrencyLevel(1).initialCapacity(96).maximumSize(144)
-				.build(new CacheLoader<EventContext, List<String>>() {
+				.build(new CacheLoader<EventContext, String[]>() {
 
 					@Override
-					public List<String> load(final EventContext eventCtx) {
-						return Arrays.asList(eventDataToDescribe.stream()
-								.map(datum -> datum.apply(eventCtx, nullCellValueRepr)).toArray(String[]::new));
+					public String[] load(final EventContext eventCtx) {
+						return eventDataToDescribe.stream().map(datum -> datum.apply(eventCtx, nullCellValueRepr))
+								.toArray(String[]::new);
 					}
 				});
 	}
@@ -377,7 +377,7 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 		// final Event event = eventCtx.getEvent();
 		// LOGGER.debug("Processing event with name \"{}\".", event.getName());
 		final Stream.Builder<String> resultBuilder = Stream.builder();
-		eventDataRowCellValues.getUnchecked(eventCtx).stream().forEachOrdered(resultBuilder);
+		Arrays.stream(eventDataRowCellValues.getUnchecked(eventCtx)).forEachOrdered(resultBuilder);
 
 		final Stream<String> entityFeatureVectorReprs = entityFeatureVectorDescFactory
 				.createFeatureValueReprs(eventCtx.getGameContext(), eventCtx.getEntityId());
