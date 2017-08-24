@@ -250,9 +250,9 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 							.size();
 					final Stream<Stream<String>> eventRows = events.flatMap(event -> {
 						final LocalDateTime eventTime = EventTimes.parseEventTime(event.getTime());
+						final GameContext gameCtx = new GameContext(history, eventTime);
 						// Create one row for each entity
 						return IntStream.range(0, entityCount).mapToObj(entityId -> {
-							final GameContext gameCtx = new GameContext(history, eventTime);
 							return createRowCellValues(entityFeatureVectorDescFactory,
 									new EventContext(event, gameCtx, entityId));
 						});
