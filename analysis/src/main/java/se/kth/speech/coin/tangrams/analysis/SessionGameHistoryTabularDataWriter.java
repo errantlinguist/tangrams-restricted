@@ -78,6 +78,58 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 			this.entityId = entityId;
 		}
 
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see java.lang.Object#equals(java.lang.Object)
+		 */
+		@Override
+		public boolean equals(final Object obj) {
+			if (this == obj) {
+				return true;
+			}
+			if (obj == null) {
+				return false;
+			}
+			if (!(obj instanceof EventContext)) {
+				return false;
+			}
+			final EventContext other = (EventContext) obj;
+			if (entityId != other.entityId) {
+				return false;
+			}
+			if (event == null) {
+				if (other.event != null) {
+					return false;
+				}
+			} else if (!event.equals(other.event)) {
+				return false;
+			}
+			if (gameContext == null) {
+				if (other.gameContext != null) {
+					return false;
+				}
+			} else if (!gameContext.equals(other.gameContext)) {
+				return false;
+			}
+			return true;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see java.lang.Object#hashCode()
+		 */
+		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + entityId;
+			result = prime * result + (event == null ? 0 : event.hashCode());
+			result = prime * result + (gameContext == null ? 0 : gameContext.hashCode());
+			return result;
+		}
+
 		/**
 		 * @return the entityId
 		 */
@@ -310,8 +362,8 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 
 	private Stream<String> createRowCellValues(
 			final EntityFeatureVectorDescriptionFactory entityFeatureVectorDescFactory, final EventContext eventCtx) {
-//		final Event event = eventCtx.getEvent();
-//		LOGGER.debug("Processing event with name \"{}\".", event.getName());
+		// final Event event = eventCtx.getEvent();
+		// LOGGER.debug("Processing event with name \"{}\".", event.getName());
 		final Stream.Builder<String> resultBuilder = Stream.builder();
 		eventDataToDescribe.stream().map(datum -> datum.apply(eventCtx, nullCellValueRepr))
 				.forEachOrdered(resultBuilder);
