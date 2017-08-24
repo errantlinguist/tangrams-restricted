@@ -36,7 +36,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Properties;
-import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
@@ -80,6 +79,7 @@ import se.kth.speech.coin.tangrams.iristk.events.EventSystems;
 import se.kth.speech.coin.tangrams.iristk.io.LogDirectoryFactory;
 import se.kth.speech.coin.tangrams.view.ConnectionStatusFrame;
 import se.kth.speech.coin.tangrams.view.GameGUI;
+import se.kth.speech.io.LineFutureCloser;
 
 /**
  *
@@ -88,42 +88,6 @@ import se.kth.speech.coin.tangrams.view.GameGUI;
  *
  */
 final class TangramsClient implements Runnable { // NO_UCD (use default)
-
-	private static class LineFutureCloser implements Runnable {
-
-		private final CompletableFuture<? extends Line> lineFuture;
-
-		private LineFutureCloser(final CompletableFuture<? extends Line> lineFuture) {
-			this.lineFuture = lineFuture;
-		}
-
-		/*
-		 * (non-Javadoc)
-		 *
-		 * @see java.lang.Runnable#run()
-		 */
-		@Override
-		public void run() {
-			LOGGER.info("Cleaning up audio resources.");
-			final boolean wasCancelled = lineFuture.cancel(true);
-			LOGGER.debug("Audio data line future was cancelled?: {}", wasCancelled);
-			try {
-				final Line line = lineFuture.get();
-				LOGGER.debug("Closing audio data line: {}", line);
-				LOGGER.debug("Line implementation class is \"{}\".", line.getClass().getName());
-				// FIXME: Cannot close the Clip/Line on Linux with
-				// PulseAudio
-				line.close();
-				LOGGER.debug("Closed audio data line: {}", line);
-			} catch (final CancellationException e) {
-				LOGGER.debug("Audio data line future was cencelled before completion; No resources to clean up.");
-			} catch (final InterruptedException e) {
-				LOGGER.debug("Audio data line future was interrupted before completion.");
-			} catch (final ExecutionException e) {
-				LOGGER.error("An error occured while trying to close the audio data line,", e);
-			}
-		}
-	}
 
 	private enum Parameter implements Supplier<Option> {
 		ANALYSIS("a") {
