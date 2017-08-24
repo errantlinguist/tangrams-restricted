@@ -43,7 +43,8 @@ public final class ImageVisualizationInfoTableRowCellFactory {
 		private static final List<Attribute> CANONICAL_ORDERING;
 
 		static {
-			CANONICAL_ORDERING = Arrays.asList(Attribute.ENTITY_ID, Attribute.IMAGE, Attribute.SIZE, Attribute.COLOR);
+			Collections.unmodifiableList(CANONICAL_ORDERING = Arrays.asList(Attribute.ENTITY_ID, Attribute.IMAGE,
+					Attribute.SIZE, Attribute.COLOR));
 			assert CANONICAL_ORDERING.size() == Attribute.values().length;
 		}
 
@@ -51,7 +52,7 @@ public final class ImageVisualizationInfoTableRowCellFactory {
 		 * @return the canonicalOrdering
 		 */
 		public static List<Attribute> getCanonicalOrdering() {
-			return Collections.unmodifiableList(CANONICAL_ORDERING);
+			return CANONICAL_ORDERING;
 		}
 	}
 

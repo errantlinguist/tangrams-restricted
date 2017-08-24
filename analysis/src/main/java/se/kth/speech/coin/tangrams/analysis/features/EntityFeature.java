@@ -277,12 +277,12 @@ public enum EntityFeature {
 	private static final List<EntityFeature> CANONICAL_ORDERING;
 
 	static {
-		CANONICAL_ORDERING = Arrays.asList(SHAPE, EDGE_COUNT, SIZE, RED, GREEN, BLUE, HUE, POSITION_X, POSITION_Y);
+		CANONICAL_ORDERING = Collections.unmodifiableList(Arrays.asList(SHAPE, EDGE_COUNT, SIZE, RED, GREEN, BLUE, HUE, POSITION_X, POSITION_Y));
 		assert CANONICAL_ORDERING.size() == EntityFeature.values().length;
 	}
 
 	public static List<EntityFeature> getCanonicalOrdering() {
-		return Collections.unmodifiableList(CANONICAL_ORDERING);
+		return CANONICAL_ORDERING;
 	}
 
 }

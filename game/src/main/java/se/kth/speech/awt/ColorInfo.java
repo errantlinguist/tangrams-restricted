@@ -39,8 +39,8 @@ public enum ColorInfo {
 			TreeSet::new);
 
 	static {
-		CANONICAL_ORDERING = Arrays.asList(ColorInfo.RED, ColorInfo.GREEN, ColorInfo.BLUE, ColorInfo.ALPHA,
-				ColorInfo.HUE, ColorInfo.SATURATION, ColorInfo.BRIGHTNESS, ColorInfo.JAVA_NAME);
+		Collections.unmodifiableList(CANONICAL_ORDERING = Arrays.asList(ColorInfo.RED, ColorInfo.GREEN, ColorInfo.BLUE,
+				ColorInfo.ALPHA, ColorInfo.HUE, ColorInfo.SATURATION, ColorInfo.BRIGHTNESS, ColorInfo.JAVA_NAME));
 		assert CANONICAL_ORDERING.size() == ColorInfo.values().length;
 	}
 
@@ -68,7 +68,7 @@ public enum ColorInfo {
 	}
 
 	public static List<ColorInfo> getCanonicalOrdering() {
-		return Collections.unmodifiableList(CANONICAL_ORDERING);
+		return CANONICAL_ORDERING;
 	}
 
 }
