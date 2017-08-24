@@ -104,6 +104,7 @@ final class TangramsClient implements Runnable { // NO_UCD (use default)
 		 */
 		@Override
 		public void run() {
+			LOGGER.info("Cleaning up audio resources.");
 			final boolean wasCancelled = lineFuture.cancel(true);
 			LOGGER.debug("Audio data line future was cancelled?: {}", wasCancelled);
 			try {
