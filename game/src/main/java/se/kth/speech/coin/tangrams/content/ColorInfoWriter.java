@@ -23,27 +23,16 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.StringJoiner;
-import java.util.TreeSet;
 
-import se.kth.speech.awt.Colors;
+import se.kth.speech.awt.ColorInfo;
 
 final class ColorInfoWriter {
 
-	private static final List<String> COL_NAMES = Arrays.asList("RED", "GREEN", "BLUE", "ALPHA", "HUE", "SATURATION",
-			"BRIGHTNESS", "JAVA_NAME");
-
-	private static final Map<Integer, Set<String>> RGB_COLOR_NAMES = Colors.createRGBColorNameMap(String::toUpperCase,
-			TreeSet::new);
-
-	private static void write(final Writer writer, final float val) throws IOException {
-		writer.write(Float.toString(val));
-	}
-
-	private static void write(final Writer writer, final int val) throws IOException {
-		writer.write(Integer.toString(val));
-	}
+	private static final List<String> COL_NAMES = Arrays
+			.asList(Arrays.stream(ColorInfo.values()).map(ColorInfo::toString).toArray(String[]::new));
 
 	/**
 	 * @return the colNames
@@ -65,31 +54,22 @@ final class ColorInfoWriter {
 	}
 
 	private void acceptNonNull(final Color color) throws IOException {
-		write(writer, color.getRed());
-		writer.write(colDelimiter);
-		write(writer, color.getGreen());
-		writer.write(colDelimiter);
-		write(writer, color.getBlue());
-		writer.write(colDelimiter);
-		write(writer, color.getAlpha());
-		writer.write(colDelimiter);
-		{
-			final float[] hsbVals = Color.RGBtoHSB(color.getRed(), color.getGreen(), color.getBlue(), null);
-			write(writer, hsbVals[0]);
-			writer.write(colDelimiter);
-			write(writer, hsbVals[1]);
-			writer.write(colDelimiter);
-			write(writer, hsbVals[2]);
-			writer.write(colDelimiter);
+		final Map<ColorInfo, Object> colorInfo = ColorInfo.createInfoMap(color);
+		final Iterator<Entry<ColorInfo, Object>> colorInfoDatumIter = colorInfo.entrySet().iterator();
+		if (colorInfoDatumIter.hasNext()) {
+			final Entry<ColorInfo, Object> first = colorInfoDatumIter.next();
+			write(first);
+			while (colorInfoDatumIter.hasNext()) {
+				final Entry<ColorInfo, Object> next = colorInfoDatumIter.next();
+				writer.write(colDelimiter);
+				write(next);
+			}
 		}
-		final String colorNameRepr = createColorNameRepr(color);
-		writer.write(colorNameRepr);
 	}
 
-	private String createColorNameRepr(final Color color) {
-		final Set<String> colorNames = RGB_COLOR_NAMES.get(color.getRGB());
+	private String createColorNameRepr(final Set<String> colorNames) {
 		final String result;
-		if (colorNames == null) {
+		if (colorNames.isEmpty()) {
 			result = nullValueRepr;
 		} else {
 			final StringJoiner colorNameJoiner = new StringJoiner(", ");
@@ -98,6 +78,22 @@ final class ColorInfoWriter {
 			result = colorNameJoiner.toString();
 		}
 		return result;
+	}
+
+	private void write(final Entry<ColorInfo, Object> colorInfoDatum) throws IOException {
+		switch (colorInfoDatum.getKey()) {
+		case JAVA_NAME: {
+			@SuppressWarnings("unchecked")
+			final Set<String> colorNames = (Set<String>) colorInfoDatum.getValue();
+			final String colorNameRepr = createColorNameRepr(colorNames);
+			writer.write(colorNameRepr);
+			break;
+		}
+		default: {
+			writer.write(colorInfoDatum.getValue().toString());
+			break;
+		}
+		}
 	}
 
 	void accept(final Color color) throws IOException {
