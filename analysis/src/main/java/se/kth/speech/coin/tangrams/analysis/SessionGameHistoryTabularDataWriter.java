@@ -47,8 +47,11 @@ import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionContextFactory;
 import se.kth.speech.coin.tangrams.analysis.features.ImageEdgeCounter;
 import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
+import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
+import se.kth.speech.coin.tangrams.content.ImageVisualizationInfoTableRowCellFactory;
 import se.kth.speech.coin.tangrams.iristk.EventTimes;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
+import se.kth.speech.coin.tangrams.iristk.events.Move;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
 
 /**
@@ -131,7 +134,13 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 		GAME_ID, START_TIME;
 	}
 
+	private static final List<ImageVisualizationInfoTableRowCellFactory.Attribute> IMG_VIZ_INFO_ATTRS_TO_WRITE;
+
+	private static final ImageVisualizationInfoDescriptionFactory IMG_VIZ_INFO_DESC_FACTORY;
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(SessionGameHistoryTabularDataWriter.class);
+
+	private static final String NULL_VALUE_REPR;
 
 	private static final Collector<CharSequence, ?, String> TABLE_ROW_CELL_JOINER;
 
@@ -140,6 +149,12 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 	static {
 		TABLE_STRING_REPR_COL_DELIMITER = "\t";
 		TABLE_ROW_CELL_JOINER = Collectors.joining(TABLE_STRING_REPR_COL_DELIMITER);
+
+		NULL_VALUE_REPR = "-";
+		IMG_VIZ_INFO_ATTRS_TO_WRITE = ImageVisualizationInfoTableRowCellFactory.Attribute.getCanonicalOrdering();
+		IMG_VIZ_INFO_DESC_FACTORY = new ImageVisualizationInfoDescriptionFactory(
+				new ImageVisualizationInfoTableRowCellFactory(NULL_VALUE_REPR, IMG_VIZ_INFO_ATTRS_TO_WRITE),
+				TABLE_ROW_CELL_JOINER);
 	}
 
 	public static void main(final String[] args) throws IOException, JAXBException {
@@ -151,14 +166,25 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 		} else {
 			final EntityFeatureExtractionContextFactory extractionContextFactory = new EntityFeatureExtractionContextFactory(
 					new GameContextModelFactory(2), new ImageEdgeCounter());
-			final String nullValueRepr = "";
 			final EntityFeatureVectorDescriptionFactory entityFeatureVectorDescFactory = new EntityFeatureVectorDescriptionFactory(
 					new EntityFeature.Extractor(), EntityFeature.getCanonicalOrdering(), extractionContextFactory,
-					nullValueRepr);
+					NULL_VALUE_REPR);
 			final SessionGameHistoryTabularDataWriter writer = new SessionGameHistoryTabularDataWriter(
-					entityFeatureVectorDescFactory, Arrays.asList(EventDatum.values()), "events", nullValueRepr);
+					entityFeatureVectorDescFactory, Arrays.asList(EventDatum.values()), "events", NULL_VALUE_REPR);
 			writer.accept(inpaths);
 		}
+	}
+
+	private static String createImgVizInfoDesc(final Event firstDiagEvent, final LocalDateTime gameStartTime,
+			final List<ImageVisualizationInfo.Datum> imgVizInfoData) throws IOException {
+		final String result;
+		final Move move = (Move) firstDiagEvent.get(GameManagementEvent.Attribute.MOVE.toString());
+		if (move == null) {
+			result = IMG_VIZ_INFO_DESC_FACTORY.getBlankDescription();
+		} else {
+			result = IMG_VIZ_INFO_DESC_FACTORY.createDescription(move, gameStartTime, imgVizInfoData);
+		}
+		return result;
 	}
 
 	private final List<String> dataColumnNames;

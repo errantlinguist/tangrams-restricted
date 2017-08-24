@@ -48,7 +48,7 @@ import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionContextFactory;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
-import se.kth.speech.coin.tangrams.content.ImageVisualizationInfoTableRowWriter;
+import se.kth.speech.coin.tangrams.content.ImageVisualizationInfoTableRowCellFactory;
 import se.kth.speech.coin.tangrams.iristk.EventTimes;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 import se.kth.speech.coin.tangrams.iristk.ImageVisualizationInfoUnmarshaller;
@@ -107,7 +107,7 @@ final class UtteranceTabularDataWriter {
 
 	private static final MathContext EVT_TIME_DIFF_CTX = new MathContext(16, RoundingMode.HALF_UP);
 
-	private static final List<ImageVisualizationInfoTableRowWriter.Attribute> IMG_VIZ_INFO_ATTRS_TO_WRITE;
+	private static final List<ImageVisualizationInfoTableRowCellFactory.Attribute> IMG_VIZ_INFO_ATTRS_TO_WRITE;
 
 	private static final ImageVisualizationInfoDescriptionFactory IMG_VIZ_INFO_DESC_FACTORY;
 
@@ -133,10 +133,10 @@ final class UtteranceTabularDataWriter {
 		TABLE_ROW_CELL_JOINER = Collectors.joining(TABLE_STRING_REPR_COL_DELIMITER);
 
 		NULL_VALUE_REPR = "-";
-		IMG_VIZ_INFO_ATTRS_TO_WRITE = ImageVisualizationInfoTableRowWriter.Attribute.getCanonicalOrdering();
+		IMG_VIZ_INFO_ATTRS_TO_WRITE = ImageVisualizationInfoTableRowCellFactory.Attribute.getCanonicalOrdering();
 		IMG_VIZ_INFO_DESC_FACTORY = new ImageVisualizationInfoDescriptionFactory(
-				strWriter -> new ImageVisualizationInfoTableRowWriter(strWriter, TABLE_STRING_REPR_ROW_DELIMITER,
-						TABLE_STRING_REPR_COL_DELIMITER, NULL_VALUE_REPR, IMG_VIZ_INFO_ATTRS_TO_WRITE));
+				new ImageVisualizationInfoTableRowCellFactory(NULL_VALUE_REPR, IMG_VIZ_INFO_ATTRS_TO_WRITE),
+				TABLE_ROW_CELL_JOINER);
 	}
 
 	private static BigDecimal calculateTimeDiffSecs(final Event firstEvt, final Event nextEvt) {
@@ -274,7 +274,7 @@ final class UtteranceTabularDataWriter {
 	}
 
 	private List<List<String>> createColHeaders() {
-		final List<List<String>> imgViewDescColHeaders = ImageVisualizationInfoTableRowWriter
+		final List<List<String>> imgViewDescColHeaders = ImageVisualizationInfoTableRowCellFactory
 				.createColumnHeaders(IMG_VIZ_INFO_ATTRS_TO_WRITE);
 		final int resultColCount = imgViewDescColHeaders.stream().mapToInt(List::size).max().getAsInt()
 				+ eventDataToWrite.length + entityFeaturesToDescribe.size() + langDataToWrite.length;

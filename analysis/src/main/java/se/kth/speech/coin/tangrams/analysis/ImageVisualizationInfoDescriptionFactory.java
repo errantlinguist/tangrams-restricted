@@ -16,18 +16,16 @@
 */
 package se.kth.speech.coin.tangrams.analysis;
 
-import java.io.IOException;
-import java.io.StringWriter;
-import java.io.UncheckedIOException;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.function.Function;
+import java.util.stream.Collector;
+import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
-import se.kth.speech.coin.tangrams.content.ImageVisualizationInfoTableRowWriter;
+import se.kth.speech.coin.tangrams.content.ImageVisualizationInfoTableRowCellFactory;
 import se.kth.speech.coin.tangrams.iristk.events.Move;
 
 /**
@@ -41,40 +39,29 @@ final class ImageVisualizationInfoDescriptionFactory {
 
 	private final String blankDescription;
 
-	private final Function<? super StringWriter, ImageVisualizationInfoTableRowWriter> imgVizInfoTableRowWriterFactory;
+	private final Collector<? super CharSequence, ?, String> rowCellJoiner;
 
-	ImageVisualizationInfoDescriptionFactory(
-			final Function<? super StringWriter, ImageVisualizationInfoTableRowWriter> imgVizInfoTableRowWriterFactory) {
-		this.imgVizInfoTableRowWriterFactory = imgVizInfoTableRowWriterFactory;
+	private final ImageVisualizationInfoTableRowCellFactory rowFactory;
+
+	ImageVisualizationInfoDescriptionFactory(final ImageVisualizationInfoTableRowCellFactory rowFactory,
+			final Collector<? super CharSequence, ?, String> rowCellJoiner) {
+		this.rowFactory = rowFactory;
+		this.rowCellJoiner = rowCellJoiner;
 		blankDescription = createBlankDescription();
 	}
 
 	private String createBlankDescription() {
-		final StringWriter strWriter = new StringWriter(16);
-		final ImageVisualizationInfoTableRowWriter imgInfoDescWriter = imgVizInfoTableRowWriterFactory.apply(strWriter);
-		try {
-			imgInfoDescWriter.write(null, null);
-			return strWriter.toString();
-		} catch (final IOException e) {
-			// Should not happen when writing to a StringWriter
-			throw new UncheckedIOException(e);
-		}
+		final Stream<String> cellVals = rowFactory.createRowCellValues(null, null);
+		return cellVals.collect(rowCellJoiner);
 	}
 
 	String createDescription(final Move move, final LocalDateTime gameStartTime,
 			final List<ImageVisualizationInfo.Datum> imgVizInfoData) {
-		final StringWriter strWriter = new StringWriter(256);
-		final ImageVisualizationInfoTableRowWriter imgInfoDescWriter = imgVizInfoTableRowWriterFactory.apply(strWriter);
 		final Integer selectedPieceId = move.getPieceId();
 		final ImageVisualizationInfo.Datum selectedPieceImgVizInfo = imgVizInfoData.get(selectedPieceId);
 		LOGGER.debug("Writing selected piece (ID {}) viz info: {} ", selectedPieceId, selectedPieceImgVizInfo);
-		try {
-			imgInfoDescWriter.write(selectedPieceId, selectedPieceImgVizInfo);
-			return strWriter.toString();
-		} catch (final IOException e) {
-			// Should not happen when writing to a StringWriter
-			throw new UncheckedIOException(e);
-		}
+		final Stream<String> cellVals = rowFactory.createRowCellValues(selectedPieceId, selectedPieceImgVizInfo);
+		return cellVals.collect(rowCellJoiner);
 	}
 
 	/**

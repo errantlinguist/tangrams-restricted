@@ -19,7 +19,11 @@ package se.kth.speech.coin.tangrams.content;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map.Entry;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -28,29 +32,52 @@ import java.util.Map.Entry;
  */
 public final class ImageVisualizationInfoTableWriter {
 
-	private static final String TABLE_STRING_REPR_ROW_DELIMITER = System.lineSeparator();
+	private static final Collector<CharSequence, ?, String> TABLE_ROW_CELL_JOINER;
 
-	private final ImageVisualizationInfoTableRowWriter rowWriter;
+	private static final Collector<CharSequence, ?, String> TABLE_ROW_JOINER;
+
+	private static final String TABLE_STRING_REPR_COL_DELIMITER;
+
+	private static final String TABLE_STRING_REPR_ROW_DELIMITER;
+
+	static {
+		TABLE_STRING_REPR_ROW_DELIMITER = System.lineSeparator();
+		TABLE_ROW_JOINER = Collectors.joining(TABLE_STRING_REPR_ROW_DELIMITER);
+
+		TABLE_STRING_REPR_COL_DELIMITER = "\t";
+		TABLE_ROW_CELL_JOINER = Collectors.joining(TABLE_STRING_REPR_COL_DELIMITER);
+	}
+
+	private final ImageVisualizationInfoTableRowCellFactory rowFactory;
 
 	private final Writer writer;
 
 	public ImageVisualizationInfoTableWriter(final Writer writer) {
-		this(writer, new ImageVisualizationInfoTableRowWriter(writer, TABLE_STRING_REPR_ROW_DELIMITER, "\t", "-"));
+		this(writer, new ImageVisualizationInfoTableRowCellFactory("-"));
 	}
 
 	private ImageVisualizationInfoTableWriter(final Writer writer,
-			final ImageVisualizationInfoTableRowWriter rowWriter) {
+			final ImageVisualizationInfoTableRowCellFactory rowFactory) {
 		this.writer = writer;
-		this.rowWriter = rowWriter;
+		this.rowFactory = rowFactory;
 	}
 
 	public void write(final Iterator<? extends Entry<?, ImageVisualizationInfo.Datum>> imgVisualizationInfoDataIter)
 			throws IOException {
-		rowWriter.writeHeader();
-		while (imgVisualizationInfoDataIter.hasNext()) {
-			writer.append(TABLE_STRING_REPR_ROW_DELIMITER);
-			final Entry<?, ImageVisualizationInfo.Datum> datumForId = imgVisualizationInfoDataIter.next();
-			rowWriter.write(datumForId.getKey(), datumForId.getValue());
+		final List<List<String>> headers = rowFactory.createColumnHeaders();
+		final Stream<String> headerStrs = headers.stream().map(List::stream)
+				.map(stream -> stream.collect(TABLE_ROW_CELL_JOINER));
+		writer.write(headerStrs.collect(TABLE_ROW_JOINER));
+
+		if (imgVisualizationInfoDataIter.hasNext()) {
+			final Entry<?, ImageVisualizationInfo.Datum> first = imgVisualizationInfoDataIter.next();
+			writer.write(rowFactory.createRowCellValues(first.getKey(), first.getValue()).collect(TABLE_ROW_CELL_JOINER));
+
+			while (imgVisualizationInfoDataIter.hasNext()) {
+				final Entry<?, ImageVisualizationInfo.Datum> next = imgVisualizationInfoDataIter.next();
+				writer.write(TABLE_STRING_REPR_ROW_DELIMITER);
+				writer.write(rowFactory.createRowCellValues(next.getKey(), next.getValue()).collect(TABLE_ROW_JOINER));
+			}
 		}
 	}
 

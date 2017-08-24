@@ -17,8 +17,6 @@
 package se.kth.speech.coin.tangrams.content;
 
 import java.awt.Color;
-import java.io.IOException;
-import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -28,8 +26,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.StringJoiner;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import se.kth.speech.awt.ColorInfo;
@@ -39,7 +35,7 @@ import se.kth.speech.awt.ColorInfo;
  * @since 17 Mar 2017
  *
  */
-public final class ImageVisualizationInfoTableRowWriter {
+public final class ImageVisualizationInfoTableRowCellFactory {
 
 	public enum Attribute {
 		COLOR, ID, IMAGE, SIZE;
@@ -96,33 +92,20 @@ public final class ImageVisualizationInfoTableRowWriter {
 
 	private final String nullValueRepr;
 
-	private final Collector<CharSequence, ?, String> rowCellJoiner;
-
-	private final Collector<CharSequence, ?, String> rowJoiner;
-
 	private final Collection<Attribute> vizInfoAttrsToWrite;
 
-	private final Writer writer;
-
-	public ImageVisualizationInfoTableRowWriter(final Writer writer, final String rowDelimiter,
-			final String colDelimiter, final String nullValueRepr) {
-		this(writer, rowDelimiter, colDelimiter, nullValueRepr, Attribute.getCanonicalOrdering());
+	public ImageVisualizationInfoTableRowCellFactory(final String nullValueRepr) {
+		this(nullValueRepr, Attribute.getCanonicalOrdering());
 	}
 
-	public ImageVisualizationInfoTableRowWriter(final Writer writer, final String rowDelimiter,
-			final String colDelimiter, final String nullValueRepr, final Collection<Attribute> vizInfoAttrsToWrite) {
-		this.writer = writer;
-		rowJoiner = Collectors.joining(rowDelimiter);
-		rowCellJoiner = Collectors.joining(colDelimiter);
+	public ImageVisualizationInfoTableRowCellFactory(final String nullValueRepr,
+			final Collection<Attribute> vizInfoAttrsToWrite) {
 		this.nullValueRepr = nullValueRepr;
 		this.vizInfoAttrsToWrite = vizInfoAttrsToWrite;
 	}
 
-	public void write(final Object rowId, final ImageVisualizationInfo.Datum datum) throws IOException {
-		final Stream<String> attrValues = vizInfoAttrsToWrite.stream()
-				.flatMap(vizInfo -> getAttributeValues(rowId, datum, vizInfo));
-		final String row = attrValues.collect(rowCellJoiner);
-		writer.write(row);
+	public Stream<String> createRowCellValues(final Object rowId, final ImageVisualizationInfo.Datum datum) {
+		return vizInfoAttrsToWrite.stream().flatMap(vizInfo -> getAttributeValues(rowId, datum, vizInfo));
 	}
 
 	private String createColorNameRepr(final Set<String> colorNames) {
@@ -194,11 +177,8 @@ public final class ImageVisualizationInfoTableRowWriter {
 		return result;
 	}
 
-	void writeHeader() throws IOException {
-		final List<List<String>> headers = createColumnHeaders(vizInfoAttrsToWrite);
-		final String headerStr = headers.stream().map(header -> header.stream().collect(rowCellJoiner))
-				.collect(rowJoiner);
-		writer.write(headerStr);
+	List<List<String>> createColumnHeaders() {
+		return createColumnHeaders(vizInfoAttrsToWrite);
 	}
 
 }
