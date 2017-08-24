@@ -68,7 +68,7 @@ public enum ColorInfo {
 	}
 
 	public static List<ColorInfo> getCanonicalOrdering() {
-		return CANONICAL_ORDERING;
+		return Collections.unmodifiableList(CANONICAL_ORDERING);
 	}
 
 }

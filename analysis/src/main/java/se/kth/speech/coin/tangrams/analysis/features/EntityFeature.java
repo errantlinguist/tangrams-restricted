@@ -18,6 +18,7 @@ package se.kth.speech.coin.tangrams.analysis.features;
 
 import java.awt.Color;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.List;
@@ -281,7 +282,7 @@ public enum EntityFeature {
 	}
 
 	public static List<EntityFeature> getCanonicalOrdering() {
-		return CANONICAL_ORDERING;
+		return Collections.unmodifiableList(CANONICAL_ORDERING);
 	}
 
 }
