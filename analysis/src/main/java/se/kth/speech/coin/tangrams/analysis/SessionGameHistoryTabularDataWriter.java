@@ -67,7 +67,7 @@ import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
 final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 
 	private enum EventDatum implements BiFunction<EventContext, String, String> {
-		ENTITY_ID {
+		ENTITY {
 
 			@Override
 			public String apply(final EventContext eventCtx, final String nullValueRepr) {
@@ -159,7 +159,7 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 
 		static {
 			CANONICAL_ORDERING = Collections.unmodifiableList(Arrays.asList(EventDatum.EVENT, EventDatum.ROUND,
-					EventDatum.TIME, EventDatum.NAME, EventDatum.SUBMITTER, EventDatum.ENTITY_ID,
+					EventDatum.TIME, EventDatum.NAME, EventDatum.SUBMITTER, EventDatum.ENTITY,
 					EventDatum.IS_REFERENT, EventDatum.IS_SELECTED));
 			assert CANONICAL_ORDERING.size() == EventDatum.values().length;
 		}
