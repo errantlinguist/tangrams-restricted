@@ -20,6 +20,9 @@ import java.util.Collection;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionContextFactory;
 
@@ -29,6 +32,8 @@ import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionCont
  *
  */
 final class EntityFeatureVectorDescriptionFactory {
+	
+	private static final Logger LOGGER = LoggerFactory.getLogger(EntityFeatureVectorDescriptionFactory.class);
 
 	private final EntityFeature.Extractor entityFeatureExtractor;
 
@@ -63,6 +68,7 @@ final class EntityFeatureVectorDescriptionFactory {
 	}
 
 	Stream<String> createFeatureValueReprs(final GameContext context, final int entityId) {
+		LOGGER.debug("Getting feature value representation for entity {}.", entityId);
 		final EntityFeature.Extractor.Context extractionContext = extractionContextFactory.apply(context, entityId);
 		final Stream<Optional<Object>> featureVals = entityFeaturesToDescribe.stream()
 				.map(feature -> entityFeatureExtractor.apply(feature, extractionContext));
