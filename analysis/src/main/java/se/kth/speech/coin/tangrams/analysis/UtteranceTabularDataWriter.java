@@ -135,8 +135,8 @@ final class UtteranceTabularDataWriter {
 		NULL_VALUE_REPR = "-";
 		IMG_VIZ_INFO_ATTRS_TO_WRITE = ImageVisualizationInfoTableRowWriter.Attribute.getCanonicalOrdering();
 		IMG_VIZ_INFO_DESC_FACTORY = new ImageVisualizationInfoDescriptionFactory(
-				strWriter -> new ImageVisualizationInfoTableRowWriter(strWriter, IMG_VIZ_INFO_ATTRS_TO_WRITE,
-						TABLE_STRING_REPR_ROW_DELIMITER, TABLE_STRING_REPR_COL_DELIMITER, NULL_VALUE_REPR));
+				strWriter -> new ImageVisualizationInfoTableRowWriter(strWriter, TABLE_STRING_REPR_ROW_DELIMITER,
+						TABLE_STRING_REPR_COL_DELIMITER, NULL_VALUE_REPR, IMG_VIZ_INFO_ATTRS_TO_WRITE));
 	}
 
 	private static BigDecimal calculateTimeDiffSecs(final Event firstEvt, final Event nextEvt) {

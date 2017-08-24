@@ -104,13 +104,18 @@ public final class ImageVisualizationInfoTableRowWriter {
 
 	private final Writer writer;
 
-	public ImageVisualizationInfoTableRowWriter(final Writer writer, final Collection<Attribute> vizInfoAttrsToWrite,
-			final String rowDelimiter, final String colDelimiter, final String nullValueRepr) {
+	public ImageVisualizationInfoTableRowWriter(final Writer writer, final String rowDelimiter,
+			final String colDelimiter, final String nullValueRepr) {
+		this(writer, rowDelimiter, colDelimiter, nullValueRepr, Attribute.getCanonicalOrdering());
+	}
+
+	public ImageVisualizationInfoTableRowWriter(final Writer writer, final String rowDelimiter,
+			final String colDelimiter, final String nullValueRepr, final Collection<Attribute> vizInfoAttrsToWrite) {
 		this.writer = writer;
-		this.vizInfoAttrsToWrite = vizInfoAttrsToWrite;
 		rowJoiner = Collectors.joining(rowDelimiter);
 		rowCellJoiner = Collectors.joining(colDelimiter);
 		this.nullValueRepr = nullValueRepr;
+		this.vizInfoAttrsToWrite = vizInfoAttrsToWrite;
 	}
 
 	public void write(final Object rowId, final ImageVisualizationInfo.Datum datum) throws IOException {
