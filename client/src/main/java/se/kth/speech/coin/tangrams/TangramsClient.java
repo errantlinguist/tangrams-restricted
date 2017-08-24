@@ -109,6 +109,7 @@ final class TangramsClient implements Runnable { // NO_UCD (use default)
 				LOGGER.debug("Audio data line future was not yet complete; No resources to clean up.");
 			} else {
 				LOGGER.debug("Closing audio data line: {}", line);
+				LOGGER.debug("Line implementation class is \"{}\".", line.getClass().getName());
 				// FIXME: Cannot close the Clip/Line on Linux with PulseAudio
 				line.close();
 				LOGGER.debug("Closed audio data line: {}", line);
@@ -310,6 +311,7 @@ final class TangramsClient implements Runnable { // NO_UCD (use default)
 				if (event.getType() == LineEvent.Type.STOP) {
 					LOGGER.debug("Finished playing audio.");
 					final Line line = event.getLine();
+					LOGGER.debug("Line implementation class is \"{}\".", line.getClass().getName());
 					line.close();
 					// FIXME: Cannot close the Clip/Line on Linux with
 					// PulseAudio
