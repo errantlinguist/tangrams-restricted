@@ -193,15 +193,9 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 
 			@Override
 			public String apply(final EventContext eventCtx, final String nullValueRepr) {
-				final String result;
 				final Event event = eventCtx.getEvent();
 				final String eventName = event.getName();
-				if (eventName == null) {
-					result = nullValueRepr;
-				} else {
-					result = tangramsActionEventNamePrefixPattern.matcher(eventName).replaceFirst("");
-				}
-				return result;
+				return tangramsActionEventNamePrefixPattern.matcher(eventName).replaceFirst("");
 			}
 		},
 		SUBMITTER {
