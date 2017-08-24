@@ -149,19 +149,11 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 		TIME {
 			@Override
 			public String apply(final EventContext eventCtx, final String nullValueRepr) {
-				final String result;
-				final Event event = eventCtx.getEvent();
-				final String eventTimestamp = event.getTime();
-				if (eventTimestamp == null) {
-					result = nullValueRepr;
-				} else {
-					final LocalDateTime eventTime = EventTimes.parseEventTime(eventTimestamp);
-					final LocalDateTime gameStartTime = eventCtx.getGameContext().getHistory().getStartTime();
-					final Duration offset = Duration.between(gameStartTime, eventTime);
-					final BigDecimal offsetSecs = TimestampArithmetic.toDecimalSeconds(offset);
-					result = offsetSecs.toPlainString();
-				}
-				return result;
+				final LocalDateTime eventTime = eventCtx.getGameContext().getTime();
+				final LocalDateTime gameStartTime = eventCtx.getGameContext().getHistory().getStartTime();
+				final Duration offset = Duration.between(gameStartTime, eventTime);
+				final BigDecimal offsetSecs = TimestampArithmetic.toDecimalSeconds(offset);
+				return offsetSecs.toPlainString();
 			}
 		};
 
