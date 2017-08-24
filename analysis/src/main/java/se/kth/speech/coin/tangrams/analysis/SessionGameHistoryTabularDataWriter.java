@@ -56,7 +56,7 @@ import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
  * @since 23 Aug 2017
  *
  */
-final class SessionGameHistoryTabularDataWriter {
+final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 
 	private static class EventContext {
 
