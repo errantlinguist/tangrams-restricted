@@ -210,14 +210,21 @@ final class UtteranceSelectedEntityDescriptionWriter { // NO_UCD (use default)
 				parentDirName = parentFileName.toString();
 			}
 		}
-		final String fileBaseName = FileNames.splitBase(inpath.getFileName().toString())[0];
+
+		final String fileBaseName;
+		final Path fileName = inpath.getFileName();
+		if (fileName == null) {
+			fileBaseName = "";
+		} else {
+			fileBaseName = FileNames.splitBase(fileName.toString())[0];
+		}
 		return parentDirName + "-" + fileBaseName;
 	}
 
 	private static UtteranceSelectedEntityDescriptionWriter createWriter(final Path outpath,
 			final String outfileNamePrefix, final boolean strict) {
-		final Set<EntityFeature> featuresToDescribe = EnumSet.of(EntityFeature.EDGE_COUNT,
-				EntityFeature.POSITION_X, EntityFeature.POSITION_Y);
+		final Set<EntityFeature> featuresToDescribe = EnumSet.of(EntityFeature.EDGE_COUNT, EntityFeature.POSITION_X,
+				EntityFeature.POSITION_Y);
 		final List<EntityFeature> orderedFeaturesToDescribe = Arrays.asList(EntityFeature.getDefaultOrdering().stream()
 				.filter(featuresToDescribe::contains).toArray(EntityFeature[]::new));
 		final UtteranceDialogueRepresentationStringFactory uttDiagReprFactory = new UtteranceDialogueRepresentationStringFactory(
