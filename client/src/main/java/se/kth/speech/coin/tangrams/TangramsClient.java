@@ -87,7 +87,7 @@ import se.kth.speech.coin.tangrams.view.GameGUI;
  * @since 16 Nov 2016
  *
  */
-final class TangramsClient implements Runnable {
+final class TangramsClient implements Runnable { // NO_UCD (use default)
 
 	private static class LineFutureCloser implements Runnable {
 
