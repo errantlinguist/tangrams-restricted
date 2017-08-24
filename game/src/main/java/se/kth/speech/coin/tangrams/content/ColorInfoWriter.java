@@ -32,7 +32,7 @@ import se.kth.speech.awt.ColorInfo;
 final class ColorInfoWriter {
 
 	private static final List<String> COL_NAMES = Arrays
-			.asList(Arrays.stream(ColorInfo.values()).map(ColorInfo::toString).toArray(String[]::new));
+			.asList(ColorInfo.getCanonicalOrdering().stream().map(ColorInfo::toString).toArray(String[]::new));
 
 	/**
 	 * @return the colNames

@@ -17,8 +17,10 @@
 package se.kth.speech.awt;
 
 import java.awt.Color;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
@@ -29,10 +31,18 @@ import java.util.TreeSet;
  *
  */
 public enum ColorInfo {
-	RED, GREEN, BLUE, ALPHA, HUE, SATURATION, BRIGHTNESS, JAVA_NAME;
+	ALPHA, BLUE, BRIGHTNESS, GREEN, HUE, JAVA_NAME, RED, SATURATION;
+
+	private static final List<ColorInfo> CANONICAL_ORDERING;
 
 	private static final Map<Integer, Set<String>> RGB_COLOR_NAMES = Colors.createRGBColorNameMap(String::toUpperCase,
 			TreeSet::new);
+
+	static {
+		CANONICAL_ORDERING = Arrays.asList(ColorInfo.RED, ColorInfo.GREEN, ColorInfo.BLUE, ColorInfo.ALPHA,
+				ColorInfo.HUE, ColorInfo.SATURATION, ColorInfo.BRIGHTNESS, ColorInfo.JAVA_NAME);
+		assert CANONICAL_ORDERING.size() == ColorInfo.values().length;
+	}
 
 	public static Map<ColorInfo, Object> createInfoMap(final Color color) {
 		final Map<ColorInfo, Object> result = new EnumMap<>(ColorInfo.class);
@@ -55,6 +65,10 @@ public enum ColorInfo {
 		result.put(ColorInfo.JAVA_NAME, colorNames);
 		assert result.size() == ColorInfo.values().length;
 		return result;
+	}
+
+	public static List<ColorInfo> getCanonicalOrdering() {
+		return CANONICAL_ORDERING;
 	}
 
 }
