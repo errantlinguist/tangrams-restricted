@@ -25,11 +25,16 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.regex.Pattern;
 import java.util.stream.Collector;
@@ -52,7 +57,6 @@ import se.kth.speech.coin.tangrams.content.ImageVisualizationInfoTableRowCellFac
 import se.kth.speech.coin.tangrams.iristk.EventTimes;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 import se.kth.speech.coin.tangrams.iristk.ImageVisualizationInfoUnmarshaller;
-import se.kth.speech.coin.tangrams.iristk.events.Move;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
 
 /**
@@ -64,13 +68,31 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 
 	private static class EventContext {
 
+		private final int entityId;
+
 		private final Event event;
+
+		private final GameContext gameContext;
 
 		private final GameHistory history;
 
-		private EventContext(final Event event, final GameHistory history) {
+		private final ImageVisualizationInfo.Datum imgVizInfoDatum;
+
+		private EventContext(final Event event, final GameHistory history, final int entityId,
+				final ImageVisualizationInfo.Datum imgVizInfoDatum) {
 			this.event = event;
 			this.history = history;
+			final LocalDateTime eventTime = EventTimes.parseEventTime(event.getTime());
+			gameContext = new GameContext(history, eventTime);
+			this.entityId = entityId;
+			this.imgVizInfoDatum = imgVizInfoDatum;
+		}
+
+		/**
+		 * @return the entityId
+		 */
+		private int getEntityId() {
+			return entityId;
 		}
 
 		/**
@@ -80,12 +102,48 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 			return event;
 		}
 
+		/**
+		 * @return the gameContext
+		 */
+		private GameContext getGameContext() {
+			return gameContext;
+		}
+
 		private GameHistory getHistory() {
 			return history;
+		}
+
+		/**
+		 * @return the imgVizInfoDatum
+		 */
+		private ImageVisualizationInfo.Datum getImgVizInfoDatum() {
+			return imgVizInfoDatum;
 		}
 	}
 
 	private enum EventDatum implements BiFunction<EventContext, String, String> {
+		ENTITY_ID {
+
+			@Override
+			public String apply(final EventContext eventCtx, final String nullValueRepr) {
+				return Integer.toString(eventCtx.getEntityId());
+			}
+
+		},
+		IS_REFERENT {
+
+			@Override
+			public String apply(final EventContext eventCtx, final String nullValueRepr) {
+				final GameContext gameCtx = eventCtx.getGameContext();
+				final Optional<Integer> optLastSelectedEntityId = gameCtx.findLastSelectedEntityId();
+				final Boolean isReferent = optLastSelectedEntityId.map(lastSelectedEntityId -> {
+					final int pieceId = eventCtx.getEntityId();
+					return Objects.equals(lastSelectedEntityId, pieceId);
+				}).orElse(Boolean.FALSE);
+				return isReferent.toString();
+			}
+
+		},
 		NAME {
 
 			private final Pattern tangramsActionEventNamePrefixPattern = Pattern.compile("tangrams\\.action\\.");
@@ -102,16 +160,6 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 				}
 				return result;
 			}
-		},
-		REFERENT_ID {
-
-			@Override
-			public String apply(final EventContext eventCtx, final String nullValueRepr) {
-				final Event event = eventCtx.getEvent();
-				final Move move = (Move) event.get(GameManagementEvent.Attribute.MOVE.toString());
-				return move == null ? nullValueRepr : move.getPieceId().toString();
-			}
-
 		},
 		SUBMITTER {
 			@Override
@@ -138,6 +186,14 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 				return result;
 			}
 		};
+
+		private static final List<EventDatum> CANONICAL_ORDERING;
+
+		static {
+			CANONICAL_ORDERING = Collections.unmodifiableList(Arrays.asList(EventDatum.TIME, EventDatum.NAME,
+					EventDatum.SUBMITTER, EventDatum.ENTITY_ID, EventDatum.IS_REFERENT));
+			assert CANONICAL_ORDERING.size() == EventDatum.values().length;
+		}
 
 	}
 
@@ -182,7 +238,7 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 					new EntityFeature.Extractor(), EntityFeature.getCanonicalOrdering(), extractionContextFactory,
 					NULL_VALUE_REPR);
 			final SessionGameHistoryTabularDataWriter writer = new SessionGameHistoryTabularDataWriter(
-					entityFeatureVectorDescFactory, Arrays.asList(EventDatum.values()), "events", NULL_VALUE_REPR);
+					entityFeatureVectorDescFactory, EventDatum.CANONICAL_ORDERING, "events", NULL_VALUE_REPR);
 			writer.accept(inpaths);
 		}
 	}
@@ -227,11 +283,25 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 
 				final Entry<String, GameHistory> gameIdHistory = GameHistory.ensureSingleGame(gameHistories);
 				final GameHistory history = gameIdHistory.getValue();
+				final List<ImageVisualizationInfo.Datum> imgVizInfoData = IMG_VIZ_INFO_UNMARSHALLER
+						.apply(history.getInitialState().getImageVisualizationInfoDescription()).getData();
 
 				{
 					final Stream<Event> events = history.getEventSequence();
-					final Stream<Stream<String>> eventRows = events
-							.map(event -> createRowCellValues(new EventContext(event, history)));
+					final Stream<Stream<String>> eventRows = events.flatMap(event -> {
+						final ListIterator<ImageVisualizationInfo.Datum> imgVizInfoDataIter = imgVizInfoData
+								.listIterator();
+						// Create one row for each entity
+						final List<Stream<String>> entityRows = new ArrayList<>(imgVizInfoData.size());
+						while (imgVizInfoDataIter.hasNext()) {
+							final int entityId = imgVizInfoDataIter.nextIndex();
+							final ImageVisualizationInfo.Datum imgVizInfoDatum = imgVizInfoDataIter.next();
+							final Stream<String> rowCells = createRowCellValues(
+									new EventContext(event, history, entityId, imgVizInfoDatum));
+							entityRows.add(rowCells);
+						}
+						return entityRows.stream();
+					});
 					final Stream<String> fileRows = Stream.concat(Stream.of(dataColumnNames.stream()), eventRows)
 							.map(cells -> cells.collect(TABLE_ROW_CELL_JOINER));
 					{
@@ -277,16 +347,6 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 		return resultBuilder.build();
 	}
 
-	private Map<EventDatum, String> createEventDataMap(final EventContext eventCtx) {
-		final Map<EventDatum, String> result = new EnumMap<>(EventDatum.class);
-		eventDataToDescribe.stream().forEach(datum -> {
-			final String datumValue = datum.apply(eventCtx, nullCellValueRepr);
-			result.put(datum, datumValue);
-		});
-		assert result.size() == eventDataToDescribe.size();
-		return result;
-	}
-
 	private String createEventsMetadataOutfileName() {
 		return outfileNamePrefix + "-metadata.tsv";
 	}
@@ -301,20 +361,11 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 		final Event event = eventCtx.getEvent();
 		LOGGER.debug("Processing event with name \"{}\".", event.getName());
 		final Stream.Builder<String> resultBuilder = Stream.builder();
-		final Map<EventDatum, String> eventData = createEventDataMap(eventCtx);
-		eventData.values().forEach(resultBuilder);
+		eventDataToDescribe.stream().map(datum -> datum.apply(eventCtx, nullCellValueRepr))
+				.forEachOrdered(resultBuilder);
 
-		final GameHistory history = eventCtx.getHistory();
-		final List<ImageVisualizationInfo.Datum> imgVizInfoData = IMG_VIZ_INFO_UNMARSHALLER
-				.apply(history.getInitialState().getImageVisualizationInfoDescription()).getData();
-		// Stream<String> imgVizInfoDesc = createImgVizInfoDesc(event,
-		// history.getStartTime(), imgVizInfoData);
-		// imgVizInfoDesc.forEachOrdered(resultBuilder);
-
-		final LocalDateTime eventTime = EventTimes.parseEventTime(event.getTime());
-		final GameContext gameContext = new GameContext(history, eventTime);
 		final Stream<String> entityFeatureVectorReprs = entityFeatureVectorDescFactory
-				.createFeatureValueReprs(gameContext);
+				.createFeatureValueReprs(eventCtx.getGameContext(), eventCtx.getEntityId());
 		entityFeatureVectorReprs.forEachOrdered(resultBuilder);
 
 		result = resultBuilder.build();

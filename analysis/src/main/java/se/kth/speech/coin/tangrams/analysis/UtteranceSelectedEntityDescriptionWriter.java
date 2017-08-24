@@ -225,8 +225,8 @@ final class UtteranceSelectedEntityDescriptionWriter { // NO_UCD (use default)
 			final String outfileNamePrefix, final boolean strict) {
 		final Set<EntityFeature> featuresToDescribe = EnumSet.of(EntityFeature.EDGE_COUNT, EntityFeature.POSITION_X,
 				EntityFeature.POSITION_Y);
-		final List<EntityFeature> orderedFeaturesToDescribe = Arrays.asList(EntityFeature.getCanonicalOrdering().stream()
-				.filter(featuresToDescribe::contains).toArray(EntityFeature[]::new));
+		final List<EntityFeature> orderedFeaturesToDescribe = Arrays.asList(EntityFeature.getCanonicalOrdering()
+				.stream().filter(featuresToDescribe::contains).toArray(EntityFeature[]::new));
 		final UtteranceDialogueRepresentationStringFactory uttDiagReprFactory = new UtteranceDialogueRepresentationStringFactory(
 				DataLanguageDefaults.getLocale());
 		return new UtteranceSelectedEntityDescriptionWriter(new EntityFeature.Extractor(), orderedFeaturesToDescribe,
@@ -363,8 +363,10 @@ final class UtteranceSelectedEntityDescriptionWriter { // NO_UCD (use default)
 		final SessionGameManager sessionEvtDiagMgr = new SessionGameManager(sessionData);
 		final EntityFeatureExtractionContextFactory extractionContextFactory = new EntityFeatureExtractionContextFactory(
 				new GameContextModelFactory(2), new ImageEdgeCounter());
-		final UtteranceTabularDataWriter gameWriter = new UtteranceTabularDataWriter(extractor, featuresToDescribe,
-				extractionContextFactory, uttDiagReprFactory, strict);
+		final EntityFeatureVectorDescriptionFactory entityFeatureVectorDescFactory = new EntityFeatureVectorDescriptionFactory(
+				extractor, featuresToDescribe, extractionContextFactory, "-");
+		final UtteranceTabularDataWriter gameWriter = new UtteranceTabularDataWriter(entityFeatureVectorDescFactory,
+				uttDiagReprFactory, strict);
 
 		final Path extantOutdir = ensureExtantOutdir();
 		for (final Entry<String, SessionGame> playerPerspectiveGame : sessionEvtDiagMgr.createPlayerPerspectiveGameMap()

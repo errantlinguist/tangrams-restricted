@@ -46,7 +46,6 @@ import se.kth.speech.TimestampArithmetic;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
-import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionContextFactory;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfoTableRowCellFactory;
 import se.kth.speech.coin.tangrams.iristk.EventTimes;
@@ -171,27 +170,22 @@ final class UtteranceTabularDataWriter {
 
 	private final Function<? super Iterator<Utterance>, String> uttDiagReprFactory;
 
-	private UtteranceTabularDataWriter(final EntityFeature.Extractor entityFeatureExtractor,
-			final Collection<EntityFeature> entityFeaturesToDescribe,
-			final EntityFeatureExtractionContextFactory extractionContextFactory,
+	UtteranceTabularDataWriter(final EntityFeatureVectorDescriptionFactory entityFeatureVectorDescFactory,
+			final Function<? super Iterator<Utterance>, String> uttDiagReprFactory, final boolean strict) {
+		this(entityFeatureVectorDescFactory, uttDiagReprFactory, strict, EventDatum.values(), LanguageDatum.values());
+	}
+
+	UtteranceTabularDataWriter(final EntityFeatureVectorDescriptionFactory entityFeatureVectorDescFactory,
 			final Function<? super Iterator<Utterance>, String> uttDiagReprFactory, final boolean strict,
 			final EventDatum[] eventDataToWrite, final LanguageDatum[] langDataToWrite) {
-		this.entityFeaturesToDescribe = entityFeaturesToDescribe;
-		entityFeatureVectorDescFactory = new EntityFeatureVectorDescriptionFactory(entityFeatureExtractor,
-				entityFeaturesToDescribe, extractionContextFactory, NULL_VALUE_REPR);
+		this.entityFeatureVectorDescFactory = entityFeatureVectorDescFactory;
+		entityFeaturesToDescribe = entityFeatureVectorDescFactory.getEntityFeaturesToDescribe();
 		this.uttDiagReprFactory = uttDiagReprFactory;
 		this.strict = strict;
 		this.eventDataToWrite = eventDataToWrite;
 		this.langDataToWrite = langDataToWrite;
 
 		colHeaders = createColHeaders();
-	}
-
-	UtteranceTabularDataWriter(final EntityFeature.Extractor extractor, final List<EntityFeature> featuresToDescribe,
-			final EntityFeatureExtractionContextFactory extractionContextFactory,
-			final Function<? super Iterator<Utterance>, String> uttDiagReprFactory, final boolean strict) {
-		this(extractor, featuresToDescribe, extractionContextFactory, uttDiagReprFactory, strict, EventDatum.values(),
-				LanguageDatum.values());
 	}
 
 	private void accept(final GameHistory history, final List<EventDialogue> eventDiags, final Writer writer)
