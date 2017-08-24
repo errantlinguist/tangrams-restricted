@@ -135,8 +135,7 @@ final class UtteranceTabularDataWriter {
 		NULL_VALUE_REPR = "-";
 		IMG_VIZ_INFO_ATTRS_TO_WRITE = ImageVisualizationInfoTableRowCellFactory.Attribute.getCanonicalOrdering();
 		IMG_VIZ_INFO_DESC_FACTORY = new ImageVisualizationInfoDescriptionFactory(
-				new ImageVisualizationInfoTableRowCellFactory(NULL_VALUE_REPR, IMG_VIZ_INFO_ATTRS_TO_WRITE),
-				TABLE_ROW_CELL_JOINER);
+				new ImageVisualizationInfoTableRowCellFactory(NULL_VALUE_REPR, IMG_VIZ_INFO_ATTRS_TO_WRITE));
 	}
 
 	private static BigDecimal calculateTimeDiffSecs(final Event firstEvt, final Event nextEvt) {
@@ -145,14 +144,15 @@ final class UtteranceTabularDataWriter {
 		return TimestampArithmetic.calculateDecimalSecondDifference(firstTime, nextTime, EVT_TIME_DIFF_CTX);
 	}
 
-	private static String createImgVizInfoDesc(final Event firstDiagEvent, final LocalDateTime gameStartTime,
-			final List<ImageVisualizationInfo.Datum> imgVizInfoData) throws IOException {
-		final String result;
+	private static Stream<String> createImgVizInfoDesc(final Event firstDiagEvent, final LocalDateTime gameStartTime,
+			final List<ImageVisualizationInfo.Datum> imgVizInfoData) {
+		final Stream<String> result;
 		final Move move = (Move) firstDiagEvent.get(GameManagementEvent.Attribute.MOVE.toString());
 		if (move == null) {
-			result = IMG_VIZ_INFO_DESC_FACTORY.getBlankDescription();
+			result = IMG_VIZ_INFO_DESC_FACTORY.getBlankDescription().stream();
 		} else {
-			result = IMG_VIZ_INFO_DESC_FACTORY.createDescription(move, gameStartTime, imgVizInfoData);
+			final Integer selectedPieceId = move.getPieceId();
+			result = IMG_VIZ_INFO_DESC_FACTORY.createDescription(selectedPieceId, gameStartTime, imgVizInfoData);
 		}
 		return result;
 	}
@@ -215,11 +215,11 @@ final class UtteranceTabularDataWriter {
 
 			final Stream<String> eventDataReprs;
 			final Stream<String> imgFeatureVectorReprs;
-			final String imgVizInfoDesc;
+			final Stream<String> imgVizInfoDesc;
 			if (diagEvts.isEmpty()) {
 				eventDataReprs = Arrays.stream(eventDataToWrite).map(eventDatum -> NULL_VALUE_REPR);
 				imgFeatureVectorReprs = entityFeatureVectorDescFactory.createBlankFeatureValueReprs();
-				imgVizInfoDesc = IMG_VIZ_INFO_DESC_FACTORY.getBlankDescription();
+				imgVizInfoDesc = IMG_VIZ_INFO_DESC_FACTORY.getBlankDescription().stream();
 			} else {
 				final Event firstDiagEvent = diagEvts.iterator().next();
 				{
@@ -263,7 +263,7 @@ final class UtteranceTabularDataWriter {
 			writer.write(TABLE_STRING_REPR_COL_DELIMITER);
 			writer.write(imgFeatureVectorReprs.collect(TABLE_ROW_CELL_JOINER));
 			writer.write(TABLE_STRING_REPR_COL_DELIMITER);
-			writer.write(imgVizInfoDesc);
+			writer.write(imgVizInfoDesc.collect(TABLE_ROW_CELL_JOINER));
 
 			for (final LanguageDatum langDatum : langDataToWrite) {
 				writer.write(TABLE_STRING_REPR_COL_DELIMITER);

@@ -17,8 +17,9 @@
 package se.kth.speech.coin.tangrams.analysis;
 
 import java.time.LocalDateTime;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collector;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -26,7 +27,6 @@ import org.slf4j.LoggerFactory;
 
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfoTableRowCellFactory;
-import se.kth.speech.coin.tangrams.iristk.events.Move;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -37,37 +37,30 @@ final class ImageVisualizationInfoDescriptionFactory {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(ImageVisualizationInfoDescriptionFactory.class);
 
-	private final String blankDescription;
-
-	private final Collector<? super CharSequence, ?, String> rowCellJoiner;
+	private final List<String> blankDescription;
 
 	private final ImageVisualizationInfoTableRowCellFactory rowFactory;
 
-	ImageVisualizationInfoDescriptionFactory(final ImageVisualizationInfoTableRowCellFactory rowFactory,
-			final Collector<? super CharSequence, ?, String> rowCellJoiner) {
+	ImageVisualizationInfoDescriptionFactory(final ImageVisualizationInfoTableRowCellFactory rowFactory) {
 		this.rowFactory = rowFactory;
-		this.rowCellJoiner = rowCellJoiner;
-		blankDescription = createBlankDescription();
+		blankDescription = Collections.unmodifiableList(Arrays.asList(createBlankDescription().toArray(String[]::new)));
 	}
 
-	private String createBlankDescription() {
-		final Stream<String> cellVals = rowFactory.createRowCellValues(null, null);
-		return cellVals.collect(rowCellJoiner);
+	private Stream<String> createBlankDescription() {
+		return rowFactory.createRowCellValues(null, null);
 	}
 
-	String createDescription(final Move move, final LocalDateTime gameStartTime,
+	Stream<String> createDescription(final Integer selectedPieceId, final LocalDateTime gameStartTime,
 			final List<ImageVisualizationInfo.Datum> imgVizInfoData) {
-		final Integer selectedPieceId = move.getPieceId();
 		final ImageVisualizationInfo.Datum selectedPieceImgVizInfo = imgVizInfoData.get(selectedPieceId);
 		LOGGER.debug("Writing selected piece (ID {}) viz info: {} ", selectedPieceId, selectedPieceImgVizInfo);
-		final Stream<String> cellVals = rowFactory.createRowCellValues(selectedPieceId, selectedPieceImgVizInfo);
-		return cellVals.collect(rowCellJoiner);
+		return rowFactory.createRowCellValues(selectedPieceId, selectedPieceImgVizInfo);
 	}
 
 	/**
 	 * @return the blankDescription
 	 */
-	String getBlankDescription() {
+	List<String> getBlankDescription() {
 		return blankDescription;
 	}
 

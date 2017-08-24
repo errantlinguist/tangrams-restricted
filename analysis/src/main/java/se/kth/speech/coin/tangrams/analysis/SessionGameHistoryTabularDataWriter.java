@@ -51,7 +51,7 @@ import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfoTableRowCellFactory;
 import se.kth.speech.coin.tangrams.iristk.EventTimes;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
-import se.kth.speech.coin.tangrams.iristk.events.Move;
+import se.kth.speech.coin.tangrams.iristk.ImageVisualizationInfoUnmarshaller;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
 
 /**
@@ -138,6 +138,8 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 
 	private static final ImageVisualizationInfoDescriptionFactory IMG_VIZ_INFO_DESC_FACTORY;
 
+	private static final ImageVisualizationInfoUnmarshaller IMG_VIZ_INFO_UNMARSHALLER = new ImageVisualizationInfoUnmarshaller();
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(SessionGameHistoryTabularDataWriter.class);
 
 	private static final String NULL_VALUE_REPR;
@@ -151,10 +153,9 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 		TABLE_ROW_CELL_JOINER = Collectors.joining(TABLE_STRING_REPR_COL_DELIMITER);
 
 		NULL_VALUE_REPR = "-";
-		IMG_VIZ_INFO_ATTRS_TO_WRITE = ImageVisualizationInfoTableRowCellFactory.Attribute.getCanonicalOrdering();
+		IMG_VIZ_INFO_ATTRS_TO_WRITE = Arrays.asList(ImageVisualizationInfoTableRowCellFactory.Attribute.ENTITY_ID);
 		IMG_VIZ_INFO_DESC_FACTORY = new ImageVisualizationInfoDescriptionFactory(
-				new ImageVisualizationInfoTableRowCellFactory(NULL_VALUE_REPR, IMG_VIZ_INFO_ATTRS_TO_WRITE),
-				TABLE_ROW_CELL_JOINER);
+				new ImageVisualizationInfoTableRowCellFactory(NULL_VALUE_REPR, IMG_VIZ_INFO_ATTRS_TO_WRITE));
 	}
 
 	public static void main(final String[] args) throws IOException, JAXBException {
@@ -173,18 +174,6 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 					entityFeatureVectorDescFactory, Arrays.asList(EventDatum.values()), "events", NULL_VALUE_REPR);
 			writer.accept(inpaths);
 		}
-	}
-
-	private static String createImgVizInfoDesc(final Event firstDiagEvent, final LocalDateTime gameStartTime,
-			final List<ImageVisualizationInfo.Datum> imgVizInfoData) throws IOException {
-		final String result;
-		final Move move = (Move) firstDiagEvent.get(GameManagementEvent.Attribute.MOVE.toString());
-		if (move == null) {
-			result = IMG_VIZ_INFO_DESC_FACTORY.getBlankDescription();
-		} else {
-			result = IMG_VIZ_INFO_DESC_FACTORY.createDescription(move, gameStartTime, imgVizInfoData);
-		}
-		return result;
 	}
 
 	private final List<String> dataColumnNames;
@@ -304,8 +293,15 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 		final Map<EventDatum, String> eventData = createEventDataMap(eventCtx);
 		eventData.values().forEach(resultBuilder);
 
+		final GameHistory history = eventCtx.getHistory();
+		final List<ImageVisualizationInfo.Datum> imgVizInfoData = IMG_VIZ_INFO_UNMARSHALLER
+				.apply(history.getInitialState().getImageVisualizationInfoDescription()).getData();
+		// Stream<String> imgVizInfoDesc = createImgVizInfoDesc(event,
+		// history.getStartTime(), imgVizInfoData);
+		// imgVizInfoDesc.forEachOrdered(resultBuilder);
+
 		final LocalDateTime eventTime = EventTimes.parseEventTime(event.getTime());
-		final GameContext gameContext = new GameContext(eventCtx.getHistory(), eventTime);
+		final GameContext gameContext = new GameContext(history, eventTime);
 		final Stream<String> entityFeatureVectorReprs = entityFeatureVectorDescFactory
 				.createFeatureValueReprs(gameContext);
 		entityFeatureVectorReprs.forEachOrdered(resultBuilder);
