@@ -601,7 +601,7 @@ final class TangramsClient implements Runnable { // NO_UCD (use default)
 					final List<Runnable> cancelledTasks = backgroundJobService.shutdownNow();
 					final RuntimeException wrapper = new RuntimeException(runningException);
 					LOGGER.error(String.format(
-							"An exception occurred while running the client, stopping {} task(s) before completion; Re-throwing as a(n) %s.",
+							"An exception occurred while running the client, stopping %d task(s) before completion; Re-throwing as a(n) %s.",
 							cancelledTasks.size(), wrapper.getClass().getSimpleName()));
 					throw wrapper;
 				}
