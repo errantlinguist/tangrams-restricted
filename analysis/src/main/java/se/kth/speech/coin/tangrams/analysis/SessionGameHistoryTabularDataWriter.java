@@ -27,6 +27,7 @@ import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumMap;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -57,6 +58,8 @@ import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
 import se.kth.speech.coin.tangrams.iristk.EventTimes;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
+
+import se.kth.speech.coin.tangrams.iristk.events.Selection;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -178,12 +181,34 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 			@Override
 			public String apply(final EventContext eventCtx, final String nullValueRepr) {
 				final GameContext gameCtx = eventCtx.getGameContext();
-				final Optional<Integer> optLastSelectedEntityId = gameCtx.findLastSelectedEntityId();
-				final Boolean isReferent = optLastSelectedEntityId.map(lastSelectedEntityId -> {
-					final int pieceId = eventCtx.getEntityId();
-					return Objects.equals(lastSelectedEntityId, pieceId);
+				final Optional<Integer> optReferentEntityId = gameCtx.findLastSelectedEntityId();
+				final Boolean isReferent = optReferentEntityId.map(referentEntityId -> {
+					final int entityId = eventCtx.getEntityId();
+					return Objects.equals(referentEntityId, entityId);
 				}).orElse(Boolean.FALSE);
 				return isReferent.toString();
+			}
+
+		},
+		IS_SELECTED {
+			
+			private final EnumSet<GameManagementEvent> selectionEventTypes = EnumSet.of(GameManagementEvent.SELECTION_REQUEST, GameManagementEvent.SELECTION_REJECTION);
+
+			@Override
+			public String apply(final EventContext eventCtx, final String nullValueRepr) {
+				Event event = eventCtx.getEvent();
+				GameManagementEvent eventType = GameManagementEvent.getEventType(event);
+				
+				final boolean isSelected;
+				if (selectionEventTypes.contains(eventType)) {
+					Selection selection = (Selection) event.get(GameManagementEvent.Attribute.SELECTION.toString());
+					Integer selectedEntityId = selection.getPieceId();
+					final int entityId = eventCtx.getEntityId();
+					isSelected = selectedEntityId.equals(entityId);
+				} else {
+					isSelected = false;
+				}
+				return Boolean.toString(isSelected);
 			}
 
 		},
@@ -216,7 +241,7 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 
 		static {
 			CANONICAL_ORDERING = Collections.unmodifiableList(Arrays.asList(EventDatum.TIME, EventDatum.NAME,
-					EventDatum.SUBMITTER, EventDatum.ENTITY_ID, EventDatum.IS_REFERENT));
+					EventDatum.SUBMITTER, EventDatum.ENTITY_ID, EventDatum.IS_REFERENT, EventDatum.IS_SELECTED));
 			assert CANONICAL_ORDERING.size() == EventDatum.values().length;
 		}
 
