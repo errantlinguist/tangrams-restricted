@@ -270,7 +270,7 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 			final String outfileNamePrefix, final String nullCellValueRepr) {
 		this.eventDataToDescribe = eventDataToDescribe;
 		this.outfileNamePrefix = outfileNamePrefix;
-		eventDataRowCellValues = CacheBuilder.newBuilder().concurrencyLevel(1).initialCapacity(80).maximumSize(144)
+		eventDataRowCellValues = CacheBuilder.newBuilder().concurrencyLevel(1).initialCapacity(96).maximumSize(144)
 				.build(new CacheLoader<EventContext, List<String>>() {
 
 					@Override
