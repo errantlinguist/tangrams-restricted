@@ -19,10 +19,12 @@ package se.kth.speech;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -137,6 +139,10 @@ public final class EqualityMap<K, V> implements Map<K, V> {
 	 */
 	private static final int DEFAULT_CAPACITY = 16;
 
+	private static <T> Collector<T, ?, ArrayList<T>> createArrayListCollector(final int initialCapacity) {
+		return Collectors.toCollection(() -> new ArrayList<>(initialCapacity));
+	}
+
 	private final Queue<Integer> freedIdxs;
 
 	private final ArrayList<Boolean> idxOccupations;
@@ -156,6 +162,10 @@ public final class EqualityMap<K, V> implements Map<K, V> {
 				new ArrayList<Boolean>(initialCapacity));
 	}
 
+	public EqualityMap(final Map<? extends K, ? extends V> copyee) {
+		this(new ArrayList<>(copyee.entrySet()));
+	}
+
 	private EqualityMap(final ArrayList<K> keys, final ArrayList<V> values, final ArrayList<Boolean> idxOccupations) {
 		this.keys = keys;
 		this.values = values;
@@ -164,6 +174,12 @@ public final class EqualityMap<K, V> implements Map<K, V> {
 		assert keys.size() == idxOccupations.size();
 
 		freedIdxs = new LinkedList<>();
+	}
+
+	private EqualityMap(final List<? extends Entry<? extends K, ? extends V>> entries) {
+		this(entries.stream().map(Entry::getKey).collect(createArrayListCollector(entries.size())),
+				entries.stream().map(Entry::getValue).collect(createArrayListCollector(entries.size())),
+				entries.stream().map(entry -> Boolean.TRUE).collect(createArrayListCollector(entries.size())));
 	}
 
 	/*
