@@ -53,7 +53,7 @@ import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
  */
 final class SessionStatisticsWriter {
 
-	private static final List<String> COLUMN_HEADERS = Arrays.asList("INPATH", "GAME_ID", "DURATION", "ROUND_COUNT",
+	private static final List<String> COLUMN_HEADERS = Arrays.asList("INPATH", "GAME_ID", "GAME_DURATION", "ROUND_COUNT",
 			"UTT_COUNT");
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SessionStatisticsWriter.class);
@@ -127,7 +127,7 @@ final class SessionStatisticsWriter {
 				final String gameId = gameSummary.getKey();
 				final GameSummary summary = gameSummary.getValue();
 				final BigDecimal durationInSecs = TimestampArithmetic.toDecimalSeconds(summary.getDuration());
-				final List<Object> rowCellVals = Arrays.asList(inpath, gameId, durationInSecs, summary.getRoundCount(),
+				final List<Object> rowCellVals = Arrays.asList(inpath, gameId, durationInSecs, summary.getCompletedRoundCount(),
 						summary.getUttCount());
 				out.print(rowCellVals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
 			}
@@ -145,7 +145,7 @@ final class SessionStatisticsWriter {
 			// Min vals
 			final BigDecimal minDuration = getGameSummaries(sessionSummaries).map(GameSummary::getDuration)
 					.min(Comparator.naturalOrder()).map(TimestampArithmetic::toDecimalSeconds).get();
-			final long minRoundCount = getGameSummaries(sessionSummaries).mapToLong(GameSummary::getRoundCount).min()
+			final long minRoundCount = getGameSummaries(sessionSummaries).mapToLong(GameSummary::getCompletedRoundCount).min()
 					.getAsLong();
 			final long minUttCount = getGameSummaries(sessionSummaries).mapToLong(GameSummary::getUttCount).min()
 					.getAsLong();
@@ -158,7 +158,7 @@ final class SessionStatisticsWriter {
 			// Max vals
 			final BigDecimal maxDuration = getGameSummaries(sessionSummaries).map(GameSummary::getDuration)
 					.max(Comparator.naturalOrder()).map(TimestampArithmetic::toDecimalSeconds).get();
-			final long maxRoundCount = getGameSummaries(sessionSummaries).mapToLong(GameSummary::getRoundCount).max()
+			final long maxRoundCount = getGameSummaries(sessionSummaries).mapToLong(GameSummary::getCompletedRoundCount).max()
 					.getAsLong();
 			final long maxUttCount = getGameSummaries(sessionSummaries).mapToLong(GameSummary::getUttCount).max()
 					.getAsLong();
@@ -173,7 +173,7 @@ final class SessionStatisticsWriter {
 			final BigDecimal totalDuration = getGameSummaries(sessionSummaries).map(GameSummary::getDuration)
 					.map(TimestampArithmetic::toDecimalSeconds).reduce((augend, addend) -> augend.add(addend)).get();
 			final BigDecimal meanDuration = totalDuration.divide(gameSessionCount, MEAN_DIVISION_CTX);
-			final long totalRoundCount = getGameSummaries(sessionSummaries).mapToLong(GameSummary::getRoundCount).sum();
+			final long totalRoundCount = getGameSummaries(sessionSummaries).mapToLong(GameSummary::getCompletedRoundCount).sum();
 			final BigDecimal meanRoundCount = new BigDecimal(totalRoundCount).divide(gameSessionCount,
 					MEAN_DIVISION_CTX);
 			final long totalUttCount = getGameSummaries(sessionSummaries).mapToLong(GameSummary::getUttCount).sum();

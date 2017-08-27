@@ -23,6 +23,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -30,9 +31,9 @@ import java.util.EnumMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalDouble;
 import java.util.function.BiFunction;
 import java.util.regex.Pattern;
 import java.util.stream.Collector;
@@ -49,6 +50,8 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 
 import iristk.system.Event;
+import se.kth.speech.TimestampArithmetic;
+import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionContextFactory;
 import se.kth.speech.coin.tangrams.analysis.features.ImageEdgeCounter;
@@ -175,7 +178,15 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 	}
 
 	private enum Metadatum {
-		GAME_ID, START_TIME, ROUND_COUNT, END_SCORE;
+		END_SCORE, GAME_DURATION, GAME_ID, LAST_UTT_END, ROUND_COUNT, START_TIME;
+
+		private static final List<Metadatum> CANONICAL_ORDERING;
+
+		static {
+			CANONICAL_ORDERING = Collections.unmodifiableList(Arrays.asList(Metadatum.GAME_ID, Metadatum.START_TIME,
+					Metadatum.GAME_DURATION, Metadatum.LAST_UTT_END, Metadatum.ROUND_COUNT, Metadatum.END_SCORE));
+			assert CANONICAL_ORDERING.size() == Metadatum.values().length;
+		}
 	}
 
 	private static final GameManagementEvent GAME_ROUND_DELIMITING_EVENT_TYPE = GameManagementEvent.NEXT_TURN_REQUEST;
@@ -183,6 +194,8 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 	private static final Logger LOGGER = LoggerFactory.getLogger(SessionGameHistoryTabularDataWriter.class);
 
 	private static final String NULL_VALUE_REPR;
+
+	private static final DateTimeFormatter OUTPUT_DATETIME_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
 
 	private static final Collector<CharSequence, ?, String> TABLE_ROW_CELL_JOINER;
 
@@ -257,17 +270,12 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 					.filter(filePath -> filePath.getFileName().toString().endsWith(".properties")).toArray(Path[]::new);
 			for (final Path infile : infiles) {
 				final SessionDataManager infileSessionData = SessionDataManager.create(infile);
-				final Path eventLogPath = infileSessionData.getCanonicalEventLogPath();
-				LOGGER.info("Reading events from \"{}\".", eventLogPath);
-				final Map<String, GameHistory> gameHistories;
-				try (Stream<Event> eventStream = LoggedEvents.readLoggedEvents(eventLogPath)) {
-					gameHistories = LoggedEvents.createGameHistoryMap(eventStream);
-				}
+				final SessionGameManager sessionDiagMgr = new SessionGameManager(infileSessionData);
+				final SessionGame canonicalGame = sessionDiagMgr.getCanonicalGame();
 
 				final Path infileParentDir = infile.getParent();
 
-				final Entry<String, GameHistory> gameIdHistory = GameHistory.ensureSingleGame(gameHistories);
-				final GameHistory history = gameIdHistory.getValue();
+				final GameHistory history = canonicalGame.getHistory();
 				final EntityFeatureExtractionContextFactory extractionContextFactory = new EntityFeatureExtractionContextFactory(
 						new GameContextModelFactory(2), new ImageEdgeCounter());
 				final EntityFeatureVectorDescriptionFactory entityFeatureVectorDescFactory = new EntityFeatureVectorDescriptionFactory(
@@ -310,20 +318,33 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 				}
 
 				{
+					final GameSummary summary = new GameSummary(history, canonicalGame.getEventDialogues());
 					final Map<Metadatum, Object> metadataValues = new EnumMap<>(Metadatum.class);
-					final String gameId = gameIdHistory.getKey();
+					final String gameId = canonicalGame.getGameId();
+					metadataValues.put(Metadatum.GAME_DURATION,
+							TimestampArithmetic.toDecimalSeconds(summary.getDuration()));
 					metadataValues.put(Metadatum.END_SCORE, gameScore);
 					metadataValues.put(Metadatum.GAME_ID, gameId);
+					assert summary.getCompletedRoundCount() <= gameRoundId : String.format(
+							"%d completed dialogue(s) but %d were processed.", summary.getCompletedRoundCount(),
+							gameRoundId);
+					final OptionalDouble optLastUttEndTime = canonicalGame.getUtterances().stream()
+							.mapToDouble(Utterance::getEndTime).max();
+					final String lastUttEndTimeRepr = optLastUttEndTime.isPresent()
+							? Double.toString(optLastUttEndTime.getAsDouble())
+							: NULL_VALUE_REPR;
+					metadataValues.put(Metadatum.LAST_UTT_END, lastUttEndTimeRepr);
 					metadataValues.put(Metadatum.ROUND_COUNT, gameRoundId);
-					metadataValues.put(Metadatum.START_TIME, EventTimes.FORMATTER.format(history.getStartTime()));
+					metadataValues.put(Metadatum.START_TIME, OUTPUT_DATETIME_FORMATTER.format(history.getStartTime()));
 					assert metadataValues.size() == Metadatum.values().length;
 					{
 						final String outfileName = createEventsMetadataOutfileName();
 						final Path outfilePath = infileParentDir == null ? Paths.get(outfileName)
 								: infileParentDir.resolve(outfileName);
 						LOGGER.info("Writing metadata to \"{}\".", outfilePath);
-						final Stream<Stream<Object>> metadataRows = metadataValues.entrySet().stream()
-								.map(entry -> new Object[] { entry.getKey(), entry.getValue() }).map(Arrays::stream);
+						final Stream<Stream<Object>> metadataRows = Metadatum.CANONICAL_ORDERING.stream()
+								.map(metadatum -> new Object[] { metadatum, metadataValues.get(metadatum) })
+								.map(Arrays::stream);
 						final Stream<String> metadataFileRows = metadataRows
 								.map(stream -> stream.map(Object::toString).collect(TABLE_ROW_CELL_JOINER));
 						Files.write(outfilePath, (Iterable<String>) metadataFileRows::iterator, LoggedEvents.CHARSET,

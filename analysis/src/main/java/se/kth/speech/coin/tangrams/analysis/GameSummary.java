@@ -26,9 +26,9 @@ import se.kth.speech.coin.tangrams.iristk.EventTimes;
 
 final class GameSummary {
 
-	private final Duration duration;
+	private final long completedRoundCount;
 
-	private final long roundCount;
+	private final Duration duration;
 
 	private final long uttCount;
 
@@ -40,7 +40,7 @@ final class GameSummary {
 		final int lastDiagIdx = diags.size() - 1;
 		final List<EventDialogue> completedDiags = diags.subList(0, lastDiagIdx);
 
-		roundCount = completedDiags.size();
+		completedRoundCount = completedDiags.size();
 		uttCount = completedDiags.stream().map(EventDialogue::getUtterances).flatMap(List::stream).count();
 		assert uttCount > 0;
 
@@ -51,9 +51,16 @@ final class GameSummary {
 	}
 
 	GameSummary(final long roundCount, final Duration duration, final long uttCount) {
-		this.roundCount = roundCount;
+		completedRoundCount = roundCount;
 		this.duration = duration;
 		this.uttCount = uttCount;
+	}
+
+	/**
+	 * @return the completedRoundCount
+	 */
+	public long getCompletedRoundCount() {
+		return completedRoundCount;
 	}
 
 	/**
@@ -61,13 +68,6 @@ final class GameSummary {
 	 */
 	public Duration getDuration() {
 		return duration;
-	}
-
-	/**
-	 * @return the roundCount
-	 */
-	public long getRoundCount() {
-		return roundCount;
 	}
 
 	/**
