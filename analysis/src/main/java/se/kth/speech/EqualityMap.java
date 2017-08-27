@@ -163,6 +163,7 @@ public final class EqualityMap<K, V> implements Map<K, V> {
 	}
 
 	public EqualityMap(final Map<? extends K, ? extends V> copyee) {
+		// Put the entries into an ArrayList in order to ensure that the iteration order is stable
 		this(new ArrayList<>(copyee.entrySet()));
 	}
 
