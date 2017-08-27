@@ -25,8 +25,6 @@ import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.Duration;
-import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
@@ -45,11 +43,8 @@ import javax.xml.bind.JAXBException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import iristk.system.Event;
 import se.kth.speech.TimestampArithmetic;
-import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
-import se.kth.speech.coin.tangrams.iristk.EventTimes;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -57,42 +52,6 @@ import se.kth.speech.coin.tangrams.iristk.EventTimes;
  *
  */
 final class SessionStatisticsWriter {
-
-	private static class GameSummary {
-
-		private final Duration duration;
-
-		private final long roundCount;
-
-		private final long uttCount;
-
-		private GameSummary(final long roundCount, final Duration duration, final long uttCount) {
-			this.roundCount = roundCount;
-			this.duration = duration;
-			this.uttCount = uttCount;
-		}
-
-		/**
-		 * @return the duration
-		 */
-		public Duration getDuration() {
-			return duration;
-		}
-
-		/**
-		 * @return the roundCount
-		 */
-		public long getRoundCount() {
-			return roundCount;
-		}
-
-		/**
-		 * @return the uttCount
-		 */
-		public long getUttCount() {
-			return uttCount;
-		}
-	}
 
 	private static final List<String> COLUMN_HEADERS = Arrays.asList("INPATH", "GAME_ID", "DURATION", "ROUND_COUNT",
 			"UTT_COUNT");
@@ -122,31 +81,11 @@ final class SessionStatisticsWriter {
 
 	}
 
-	private static GameSummary createGameSummary(final GameHistory history, final List<EventDialogue> diags) {
-		// Remove one from count because the last round of the game is never
-		// actually finished
-		// TODO: Remove this once one adding the remove-last-round functionality
-		// to the EventDialogue factory
-		final int lastDiagIdx = diags.size() - 1;
-		final List<EventDialogue> completedDiags = diags.subList(0, lastDiagIdx);
-
-		final long roundCount = completedDiags.size();
-		final long uttCount = completedDiags.stream().map(EventDialogue::getUtterances).flatMap(List::stream).count();
-		assert uttCount > 0;
-
-		final LocalDateTime gameStart = history.getStartTime();
-		final Event gameOverEvent = diags.get(lastDiagIdx).getFirstEvent().get();
-		final LocalDateTime lastTurnRequestTime = EventTimes.parseEventTime(gameOverEvent.getTime());
-		final Duration duration = Duration.between(gameStart, lastTurnRequestTime);
-
-		return new GameSummary(roundCount, duration, uttCount);
-	}
-
 	private static NavigableMap<String, GameSummary> createSessionGameSummaries(final SessionDataManager sessionData)
 			throws JAXBException, IOException {
 		final SessionGameManager sessionDiagMgr = new SessionGameManager(sessionData);
 		final SessionGame canonicalGame = sessionDiagMgr.getCanonicalGame();
-		final GameSummary summary = createGameSummary(canonicalGame.getHistory(), canonicalGame.getEventDialogues());
+		final GameSummary summary = new GameSummary(canonicalGame.getHistory(), canonicalGame.getEventDialogues());
 		final NavigableMap<String, GameSummary> result = new TreeMap<>();
 		result.put(canonicalGame.getGameId(), summary);
 		return result;
