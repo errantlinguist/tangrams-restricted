@@ -287,16 +287,7 @@ public final class EqualityMap<K, V> implements Map<K, V> {
 		V result;
 		final int occupiedIdx = keys.indexOf(key);
 		if (occupiedIdx < 0) {
-			final Integer freedIdx = freedIdxs.poll();
-			if (freedIdx == null) {
-				keys.add(key);
-				values.add(value);
-				idxOccupations.add(Boolean.TRUE);
-			} else {
-				final Boolean wasOccupied = set(freedIdx, key, value);
-				assert !wasOccupied;
-			}
-			occupiedIdxCount++;
+			addNewIndex(key, value);
 			result = null;
 		} else {
 			result = values.set(occupiedIdx, value);
@@ -328,12 +319,7 @@ public final class EqualityMap<K, V> implements Map<K, V> {
 		if (keyIdx < 0) {
 			result = null;
 		} else {
-			keys.set(keyIdx, null);
-			result = values.set(keyIdx, null);
-			final Boolean wasOccupied = idxOccupations.set(keyIdx, Boolean.FALSE);
-			assert wasOccupied;
-			freedIdxs.add(keyIdx);
-			occupiedIdxCount--;
+			result = clearIndex(keyIdx);
 		}
 		return result;
 	}
@@ -373,6 +359,29 @@ public final class EqualityMap<K, V> implements Map<K, V> {
 		final int currentSize = size();
 		return occupiedIdxs().mapToObj(values::get)
 				.collect(Collectors.toCollection(() -> new ArrayList<>(currentSize)));
+	}
+
+	private void addNewIndex(final K key, final V value) {
+		final Integer freedIdx = freedIdxs.poll();
+		if (freedIdx == null) {
+			keys.add(key);
+			values.add(value);
+			idxOccupations.add(Boolean.TRUE);
+		} else {
+			final Boolean wasOccupied = set(freedIdx, key, value);
+			assert !wasOccupied;
+		}
+		occupiedIdxCount++;
+	}
+
+	private V clearIndex(final int index) {
+		keys.set(index, null);
+		final V result = values.set(index, null);
+		final Boolean wasOccupied = idxOccupations.set(index, Boolean.FALSE);
+		assert wasOccupied;
+		freedIdxs.add(index);
+		occupiedIdxCount--;
+		return result;
 	}
 
 	private void ensureCapacity(final int capacity) {
