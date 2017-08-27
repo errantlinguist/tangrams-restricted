@@ -18,8 +18,10 @@ package se.kth.speech;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Queue;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -135,11 +137,13 @@ public final class EqualityMap<K, V> implements Map<K, V> {
 	 */
 	private static final int DEFAULT_CAPACITY = 16;
 
+	private final Queue<Integer> freedIdxs;
+
 	private final ArrayList<Boolean> idxOccupations;
 
 	private final ArrayList<K> keys;
 
-	private int size;
+	private int occupiedIdxCount;
 
 	private final ArrayList<V> values;
 
@@ -158,6 +162,8 @@ public final class EqualityMap<K, V> implements Map<K, V> {
 		assert keys.size() == values.size();
 		this.idxOccupations = idxOccupations;
 		assert keys.size() == idxOccupations.size();
+
+		freedIdxs = new LinkedList<>();
 	}
 
 	/*
@@ -279,16 +285,21 @@ public final class EqualityMap<K, V> implements Map<K, V> {
 	@Override
 	public V put(final K key, final V value) {
 		V result;
-		int keyIdx = keys.indexOf(key);
-		if (keyIdx < 0) {
-			keyIdx = keys.size();
-			keys.add(key);
-			values.add(value);
-			idxOccupations.add(true);
-			size++;
+		final int occupiedIdx = keys.indexOf(key);
+		if (occupiedIdx < 0) {
+			final Integer freedIdx = freedIdxs.poll();
+			if (freedIdx == null) {
+				keys.add(key);
+				values.add(value);
+				idxOccupations.add(Boolean.TRUE);
+			} else {
+				final Boolean wasOccupied = set(freedIdx, key, value);
+				assert !wasOccupied;
+			}
+			occupiedIdxCount++;
 			result = null;
 		} else {
-			result = values.set(keyIdx, value);
+			result = values.set(occupiedIdx, value);
 		}
 		return result;
 	}
@@ -318,9 +329,10 @@ public final class EqualityMap<K, V> implements Map<K, V> {
 			result = null;
 		} else {
 			result = values.set(keyIdx, null);
-			final boolean wasOccupied = idxOccupations.set(keyIdx, false);
+			final Boolean wasOccupied = idxOccupations.set(keyIdx, Boolean.FALSE);
 			assert wasOccupied;
-			size--;
+			freedIdxs.add(keyIdx);
+			occupiedIdxCount--;
 		}
 		return result;
 	}
@@ -332,7 +344,7 @@ public final class EqualityMap<K, V> implements Map<K, V> {
 	 */
 	@Override
 	public int size() {
-		return size;
+		return occupiedIdxCount;
 	}
 
 	/*
@@ -370,6 +382,12 @@ public final class EqualityMap<K, V> implements Map<K, V> {
 
 	private IntStream occupiedIdxs() {
 		return IntStream.range(0, idxOccupations.size()).filter(idxOccupations::get);
+	}
+
+	private Boolean set(final int index, final K key, final V value) {
+		keys.set(index, key);
+		values.set(index, value);
+		return idxOccupations.set(index, Boolean.TRUE);
 	}
 
 }
