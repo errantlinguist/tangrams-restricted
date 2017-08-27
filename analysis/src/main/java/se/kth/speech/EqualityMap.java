@@ -328,6 +328,7 @@ public final class EqualityMap<K, V> implements Map<K, V> {
 		if (keyIdx < 0) {
 			result = null;
 		} else {
+			keys.set(keyIdx, null);
 			result = values.set(keyIdx, null);
 			final Boolean wasOccupied = idxOccupations.set(keyIdx, Boolean.FALSE);
 			assert wasOccupied;
