@@ -91,8 +91,8 @@ public final class TimestampArithmetic {
 		final BigDecimal absDecimalSeconds = decimalSeconds.abs();
 		final BigInteger absSecondsWholePart = absDecimalSeconds.toBigInteger();
 
-		final String decimalSecondsRepr = DURATION_SECONDS_FORMAT.get().format(absDecimalSeconds);
 		final BigInteger[] hoursAndMinutes = absSecondsWholePart.divideAndRemainder(SECS_TO_HOURS_DIVISOR);
+		final String decimalSecondsRepr = DURATION_SECONDS_FORMAT.get().format(absDecimalSeconds);
 		final String positive = String.format("%s:%s:%s", hoursAndMinutes[0],
 				hoursAndMinutes[1].divide(MINS_TO_SECS_DIVISOR), decimalSecondsRepr);
 		return decimalSeconds.compareTo(BigDecimal.ZERO) < 0 ? "-" + positive : positive;
