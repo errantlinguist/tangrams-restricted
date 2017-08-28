@@ -59,7 +59,7 @@ final class UtteranceTabularDataWriter {
 		LAST_RND_TIME {
 			@Override
 			public String apply(final EventDatum.Context ctx) {
-				return ctx.optLastRoundEvent.map(Event::getTime).orElseGet(ctx.nullValueReprSupplier);
+				return TIME_OFFSET_FORMATTER.apply(calculateTimeDiffSecs(ctx.gameStartTime, ctx.firstDiagEvent));
 			}
 		},
 		LAST_RND_TIME_DIFF {
@@ -67,7 +67,7 @@ final class UtteranceTabularDataWriter {
 			public String apply(final EventDatum.Context ctx) {
 				return ctx.optLastRoundEvent
 						.map(lastRoundEvent -> calculateTimeDiffSecs(lastRoundEvent, ctx.firstDiagEvent))
-						.map(BigDecimal::toString).orElseGet(ctx.nullValueReprSupplier);
+						.map(TIME_OFFSET_FORMATTER).orElseGet(ctx.nullValueReprSupplier);
 			}
 		},
 		MOVE_SUBMITTER {
@@ -92,15 +92,18 @@ final class UtteranceTabularDataWriter {
 		private static class Context {
 
 			private final Event firstDiagEvent;
-			
+
+			private final LocalDateTime gameStartTime;
+
 			private final Supplier<String> nullValueReprSupplier;
-			
+
 			private final Optional<? extends Event> optLastRoundEvent;
 
 			private Context(final Event firstDiagEvent, final Optional<? extends Event> optLastRoundEvent,
-					final Supplier<String> nullValueReprSupplier) {
+					final LocalDateTime gameStartTime, final Supplier<String> nullValueReprSupplier) {
 				this.firstDiagEvent = firstDiagEvent;
 				this.optLastRoundEvent = optLastRoundEvent;
+				this.gameStartTime = gameStartTime;
 				this.nullValueReprSupplier = nullValueReprSupplier;
 			}
 		}
@@ -121,6 +124,8 @@ final class UtteranceTabularDataWriter {
 
 	private static final Supplier<String> COL_HEADER_PADDING_SUPPLIER = () -> "";
 
+	private static final Function<String, LocalDateTime> EVENT_TIME_PARSER = EventTimes::parseEventTime;
+
 	private static final MathContext EVT_TIME_DIFF_CTX = new MathContext(16, RoundingMode.HALF_UP);
 
 	private static final List<ImageVisualizationInfoTableRowCellFactory.Attribute> IMG_VIZ_INFO_ATTRS_TO_WRITE;
@@ -137,6 +142,8 @@ final class UtteranceTabularDataWriter {
 
 	private static final String TABLE_STRING_REPR_ROW_DELIMITER;
 
+	private static final Function<BigDecimal, String> TIME_OFFSET_FORMATTER = BigDecimal::toString;
+
 	static {
 		TABLE_STRING_REPR_ROW_DELIMITER = System.lineSeparator();
 		TABLE_ROW_JOINER = Collectors.joining(TABLE_STRING_REPR_ROW_DELIMITER);
@@ -148,8 +155,12 @@ final class UtteranceTabularDataWriter {
 	}
 
 	private static BigDecimal calculateTimeDiffSecs(final Event firstEvt, final Event nextEvt) {
-		final LocalDateTime firstTime = EventTimes.parseEventTime(firstEvt.getTime());
-		final LocalDateTime nextTime = EventTimes.parseEventTime(nextEvt.getTime());
+		final LocalDateTime firstTime = EVENT_TIME_PARSER.apply(firstEvt.getTime());
+		return calculateTimeDiffSecs(firstTime, nextEvt);
+	}
+
+	private static BigDecimal calculateTimeDiffSecs(final LocalDateTime firstTime, final Event nextEvt) {
+		final LocalDateTime nextTime = EVENT_TIME_PARSER.apply(nextEvt.getTime());
 		return TimestampArithmetic.calculateDecimalSecondDifference(firstTime, nextTime, EVT_TIME_DIFF_CTX);
 	}
 
@@ -224,8 +235,9 @@ final class UtteranceTabularDataWriter {
 				final Event firstDiagEvent = diagEvts.iterator().next();
 				{
 					final Optional<Event> streamOptLastRoundEvent = optLastRoundEvent;
-					eventDataReprs = Arrays.stream(eventDataToWrite).map(eventDatum -> eventDatum.apply(
-							new EventDatum.Context(firstDiagEvent, streamOptLastRoundEvent, nullValueReprSupplier)));
+					eventDataReprs = Arrays.stream(eventDataToWrite)
+							.map(eventDatum -> eventDatum.apply(new EventDatum.Context(firstDiagEvent,
+									streamOptLastRoundEvent, gameStartTime, nullValueReprSupplier)));
 				}
 
 				final float contextStartTime;
@@ -238,7 +250,7 @@ final class UtteranceTabularDataWriter {
 						final String msg = createNoEventUtterancesMsg(firstDiagEvent, eventDiags,
 								eventDiagIter.nextIndex() - 1);
 						LOGGER.warn(msg);
-						final LocalDateTime eventTime = EventTimes.parseEventTime(firstDiagEvent.getTime());
+						final LocalDateTime eventTime = EVENT_TIME_PARSER.apply(firstDiagEvent.getTime());
 						final Duration gameDuration = Duration.between(gameStartTime, eventTime);
 						final float offset = gameDuration.toMillis() / 1000.0f;
 						contextStartTime = offset;
