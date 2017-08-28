@@ -59,14 +59,15 @@ final class UtteranceTabularDataWriter {
 		LAST_RND_TIME {
 			@Override
 			public String apply(final EventDatum.Context ctx) {
-				return TIME_OFFSET_FORMATTER.apply(calculateTimeDiffSecs(ctx.gameStartTime, ctx.firstDiagEvent));
+				return TIME_OFFSET_FORMATTER
+						.apply(calculateDecimalSecondDifference(ctx.gameStartTime, ctx.firstDiagEvent));
 			}
 		},
 		LAST_RND_TIME_DIFF {
 			@Override
 			public String apply(final EventDatum.Context ctx) {
 				return ctx.optLastRoundEvent
-						.map(lastRoundEvent -> calculateTimeDiffSecs(lastRoundEvent, ctx.firstDiagEvent))
+						.map(lastRoundEvent -> calculateDecimalSecondDifference(lastRoundEvent, ctx.firstDiagEvent))
 						.map(TIME_OFFSET_FORMATTER).orElseGet(ctx.nullValueReprSupplier);
 			}
 		},
@@ -154,12 +155,12 @@ final class UtteranceTabularDataWriter {
 		IMG_VIZ_INFO_ATTRS_TO_WRITE = ImageVisualizationInfoTableRowCellFactory.Attribute.getCanonicalOrdering();
 	}
 
-	private static BigDecimal calculateTimeDiffSecs(final Event firstEvt, final Event nextEvt) {
+	private static BigDecimal calculateDecimalSecondDifference(final Event firstEvt, final Event nextEvt) {
 		final LocalDateTime firstTime = EVENT_TIME_PARSER.apply(firstEvt.getTime());
-		return calculateTimeDiffSecs(firstTime, nextEvt);
+		return calculateDecimalSecondDifference(firstTime, nextEvt);
 	}
 
-	private static BigDecimal calculateTimeDiffSecs(final LocalDateTime firstTime, final Event nextEvt) {
+	private static BigDecimal calculateDecimalSecondDifference(final LocalDateTime firstTime, final Event nextEvt) {
 		final LocalDateTime nextTime = EVENT_TIME_PARSER.apply(nextEvt.getTime());
 		return TimestampArithmetic.calculateDecimalSecondDifference(firstTime, nextTime, EVT_TIME_DIFF_CTX);
 	}
