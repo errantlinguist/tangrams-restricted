@@ -16,12 +16,8 @@
 */
 package se.kth.speech.coin.tangrams.analysis.view;
 
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.List;
 import java.util.stream.IntStream;
 
-import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 import javax.swing.table.TableModel;
 
@@ -48,21 +44,21 @@ enum AttributeType {
 		this.valueClass = valueClass;
 	}
 
-	private List<TableColumn> createColumnList(final TableModel model, final TableColumnModel colModel) {
-		final int resultSize = getValueListSize(colModel);
-		final List<TableColumn> result = new ArrayList<>(resultSize);
-		final Enumeration<TableColumn> cols = colModel.getColumns();
-
-		int colIdx = 0;
-		while (result.size() < resultSize && cols.hasMoreElements()) {
-			final TableColumn col = cols.nextElement();
-			if (isMatchingTypeColumn(model, colIdx)) {
-				result.add(col);
-			}
-			colIdx++;
-		}
-		return result;
-	}
+//	private List<TableColumn> createColumnList(final TableModel model, final TableColumnModel colModel) {
+//		final int resultSize = getValueListSize(colModel);
+//		final List<TableColumn> result = new ArrayList<>(resultSize);
+//		final Enumeration<TableColumn> cols = colModel.getColumns();
+//
+//		int colIdx = 0;
+//		while (result.size() < resultSize && cols.hasMoreElements()) {
+//			final TableColumn col = cols.nextElement();
+//			if (isMatchingTypeColumn(model, colIdx)) {
+//				result.add(col);
+//			}
+//			colIdx++;
+//		}
+//		return result;
+//	}
 
 	protected IntStream getMatchingTypeColumnIndices(final TableModel model) {
 		return IntStream.range(0, model.getColumnCount()).filter(colIdx -> isMatchingTypeColumn(model, colIdx));
