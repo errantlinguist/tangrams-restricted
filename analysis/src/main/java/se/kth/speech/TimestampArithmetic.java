@@ -58,11 +58,11 @@ public final class TimestampArithmetic {
 
 	};
 
-	private static final BigInteger MINS_TO_SECS_DIVISOR = new BigInteger("60");
-
 	private static final BigDecimal NANOS_TO_SECS_DIVISOR = new BigDecimal("1000000000");
 
 	private static final BigInteger SECS_TO_HOURS_DIVISOR = new BigInteger("3600");
+
+	private static final BigInteger SECS_TO_MINS_DIVISOR = new BigInteger("60");
 
 	public static BigDecimal calculateDecimalSecondDifference(final Temporal firstTime, final Temporal nextTime,
 			final MathContext mathCtx) {
@@ -94,7 +94,7 @@ public final class TimestampArithmetic {
 		final BigInteger[] hoursAndMinutes = absSecondsWholePart.divideAndRemainder(SECS_TO_HOURS_DIVISOR);
 		final String decimalSecondsRepr = DURATION_SECONDS_FORMAT.get().format(absDecimalSeconds);
 		final String positive = String.format("%s:%s:%s", hoursAndMinutes[0],
-				hoursAndMinutes[1].divide(MINS_TO_SECS_DIVISOR), decimalSecondsRepr);
+				hoursAndMinutes[1].divide(SECS_TO_MINS_DIVISOR), decimalSecondsRepr);
 		return decimalSeconds.compareTo(BigDecimal.ZERO) < 0 ? "-" + positive : positive;
 	}
 
