@@ -21,7 +21,6 @@ import java.io.Writer;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -251,9 +250,8 @@ final class UtteranceTabularDataWriter {
 						final String msg = createNoEventUtterancesMsg(firstDiagEvent, eventDiags,
 								eventDiagIter.nextIndex() - 1);
 						LOGGER.warn(msg);
-						final LocalDateTime eventTime = EVENT_TIME_PARSER.apply(firstDiagEvent.getTime());
-						final Duration gameDuration = Duration.between(gameStartTime, eventTime);
-						final float offset = gameDuration.toMillis() / 1000.0f;
+						final float offset = calculateDecimalSecondDifference(gameStartTime, firstDiagEvent)
+								.floatValue();
 						contextStartTime = offset;
 						contextEndTime = offset;
 					}
