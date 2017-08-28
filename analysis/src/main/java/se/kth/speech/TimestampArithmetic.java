@@ -91,10 +91,10 @@ public final class TimestampArithmetic {
 		final BigDecimal absDecimalSeconds = decimalSeconds.abs();
 		final BigInteger absSecondsWholePart = absDecimalSeconds.toBigInteger();
 
-		final BigInteger[] hoursAndMinutes = absSecondsWholePart.divideAndRemainder(SECS_TO_HOURS_DIVISOR);
+		final BigInteger[] hoursAndRemainingSecs = absSecondsWholePart.divideAndRemainder(SECS_TO_HOURS_DIVISOR);
 		final String decimalSecondsRepr = DURATION_SECONDS_FORMAT.get().format(absDecimalSeconds);
-		final String positive = String.format("%s:%s:%s", hoursAndMinutes[0],
-				hoursAndMinutes[1].divide(SECS_TO_MINS_DIVISOR), decimalSecondsRepr);
+		final String positive = String.format("%s:%s:%s", hoursAndRemainingSecs[0],
+				hoursAndRemainingSecs[1].divide(SECS_TO_MINS_DIVISOR), decimalSecondsRepr);
 		return decimalSeconds.compareTo(BigDecimal.ZERO) < 0 ? "-" + positive : positive;
 	}
 
