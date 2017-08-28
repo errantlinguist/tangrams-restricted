@@ -178,13 +178,13 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 	}
 
 	private enum Metadatum {
-		END_SCORE, GAME_DURATION, GAME_ID, ROUND_COUNT, START_TIME;
+		END_SCORE, ENTITY_COUNT, GAME_DURATION, GAME_ID, ROUND_COUNT, START_TIME;
 
 		private static final List<Metadatum> CANONICAL_ORDERING;
 
 		static {
 			CANONICAL_ORDERING = Collections.unmodifiableList(Arrays.asList(Metadatum.GAME_ID, Metadatum.START_TIME,
-					Metadatum.GAME_DURATION, Metadatum.ROUND_COUNT, Metadatum.END_SCORE));
+					Metadatum.GAME_DURATION, Metadatum.ENTITY_COUNT, Metadatum.ROUND_COUNT, Metadatum.END_SCORE));
 			assert CANONICAL_ORDERING.size() == Metadatum.values().length;
 		}
 	}
@@ -281,13 +281,13 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 				final EntityFeatureVectorDescriptionFactory entityFeatureVectorDescFactory = new EntityFeatureVectorDescriptionFactory(
 						new EntityFeature.Extractor(), EntityFeature.getCanonicalOrdering(), extractionContextFactory,
 						"-");
+				final int entityCount = history.getEntityCount();
 
 				int gameRoundId = 0;
 				int gameScore = 0;
 				LocalDateTime maxEventTime = LocalDateTime.MIN;
 				{
 					final List<Event> events = Arrays.asList(history.getEventSequence().toArray(Event[]::new));
-					final int entityCount = history.getEntityCount();
 					final List<Stream<String>> eventRows = new ArrayList<>(events.size() * entityCount);
 					for (final ListIterator<Event> eventIter = events.listIterator(); eventIter.hasNext();) {
 						final int eventId = eventIter.nextIndex();
@@ -328,6 +328,7 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 					// TimestampArithmetic.toDecimalSeconds(summary.getDuration());
 					final BigDecimal durationInSecs = TimestampArithmetic
 							.toDecimalSeconds(Duration.between(history.getStartTime(), maxEventTime));
+					metadataValues.put(Metadatum.ENTITY_COUNT, entityCount);
 					metadataValues.put(Metadatum.GAME_DURATION, durationInSecs);
 					metadataValues.put(Metadatum.END_SCORE, gameScore);
 					metadataValues.put(Metadatum.GAME_ID, gameId);
