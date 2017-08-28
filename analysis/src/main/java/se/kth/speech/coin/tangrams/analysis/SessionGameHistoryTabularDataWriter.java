@@ -25,6 +25,8 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -195,7 +197,9 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 
 	private static final String NULL_VALUE_REPR;
 
-	private static final DateTimeFormatter OUTPUT_DATETIME_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
+	private static final ZoneId ORIGINAL_EXPERIMENT_TIMEZONE = ZoneId.of("Europe/Stockholm");
+
+	private static final DateTimeFormatter OUTPUT_DATETIME_FORMATTER = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 
 	private static final Collector<CharSequence, ?, String> TABLE_ROW_CELL_JOINER;
 
@@ -347,7 +351,8 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 					// metadataValues.put(Metadatum.LAST_UTT_END,
 					// lastUttEndTimeRepr);
 					metadataValues.put(Metadatum.ROUND_COUNT, gameRoundId);
-					metadataValues.put(Metadatum.START_TIME, OUTPUT_DATETIME_FORMATTER.format(history.getStartTime()));
+					final ZonedDateTime zonedGameStart = history.getStartTime().atZone(ORIGINAL_EXPERIMENT_TIMEZONE);
+					metadataValues.put(Metadatum.START_TIME, OUTPUT_DATETIME_FORMATTER.format(zonedGameStart));
 					assert metadataValues.size() == Metadatum.values().length;
 					{
 						final String outfileName = createEventsMetadataOutfileName();
