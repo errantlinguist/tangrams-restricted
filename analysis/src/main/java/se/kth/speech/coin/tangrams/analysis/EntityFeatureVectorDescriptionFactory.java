@@ -82,11 +82,4 @@ final class EntityFeatureVectorDescriptionFactory {
 		return entityFeaturesToDescribe;
 	}
 
-	/**
-	 * @return the nullValueRepr
-	 */
-	String getNullValueRepr() {
-		return nullValueRepr;
-	}
-
 }
