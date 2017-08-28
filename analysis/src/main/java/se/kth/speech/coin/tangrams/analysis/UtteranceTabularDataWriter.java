@@ -70,12 +70,28 @@ final class UtteranceTabularDataWriter {
 						.orElseGet(ctx.nullValueReprSupplier);
 			}
 		},
+		LAST_RND_TIME_DIFF_SECS {
+			@Override
+			public String apply(final EventDatum.Context ctx) {
+				return ctx.optLastRoundEvent
+						.map(lastRoundEvent -> calculateDecimalSecondDifference(lastRoundEvent, ctx.firstDiagEvent))
+						.map(SECS_FORMATTER).orElseGet(ctx.nullValueReprSupplier);
+			}
+		},
 		LAST_RND_TIME_OFFSET {
 			@Override
 			public String apply(final EventDatum.Context ctx) {
 				return ctx.optLastRoundEvent
 						.map(lastRoundEvent -> createTimeDifferenceRepr(ctx.gameStartTime, lastRoundEvent))
 						.orElseGet(ctx.nullValueReprSupplier);
+			}
+		},
+		LAST_RND_TIME_OFFSET_SECS {
+			@Override
+			public String apply(final EventDatum.Context ctx) {
+				return ctx.optLastRoundEvent
+						.map(lastRoundEvent -> calculateDecimalSecondDifference(ctx.gameStartTime, lastRoundEvent))
+						.map(SECS_FORMATTER).orElseGet(ctx.nullValueReprSupplier);
 			}
 		},
 		MOVE_SUBMITTER {
@@ -101,6 +117,12 @@ final class UtteranceTabularDataWriter {
 			@Override
 			public String apply(final EventDatum.Context ctx) {
 				return createTimeDifferenceRepr(ctx.gameStartTime, ctx.firstDiagEvent);
+			}
+		},
+		TIME_OFFSET_SECS {
+			@Override
+			public String apply(final EventDatum.Context ctx) {
+				return SECS_FORMATTER.apply(calculateDecimalSecondDifference(ctx.gameStartTime, ctx.firstDiagEvent));
 			}
 		};
 
@@ -233,6 +255,8 @@ final class UtteranceTabularDataWriter {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(UtteranceTabularDataWriter.class);
 
+	private static final Function<BigDecimal, String> SECS_FORMATTER = BigDecimal::toString;
+
 	private static final Collector<CharSequence, ?, String> TABLE_ROW_CELL_JOINER;
 
 	private static final Collector<CharSequence, ?, String> TABLE_ROW_JOINER;
@@ -249,6 +273,11 @@ final class UtteranceTabularDataWriter {
 		TABLE_ROW_CELL_JOINER = Collectors.joining(TABLE_STRING_REPR_COL_DELIMITER);
 
 		IMG_VIZ_INFO_ATTRS_TO_WRITE = ImageVisualizationInfoTableRowCellFactory.Attribute.getCanonicalOrdering();
+	}
+
+	private static BigDecimal calculateDecimalSecondDifference(final Event firstEvt, final Event nextEvt) {
+		final LocalDateTime firstTime = EVENT_TIME_PARSER.apply(firstEvt.getTime());
+		return calculateDecimalSecondDifference(firstTime, nextEvt);
 	}
 
 	private static BigDecimal calculateDecimalSecondDifference(final LocalDateTime firstTime, final Event nextEvt) {
