@@ -17,7 +17,6 @@
 package se.kth.speech.coin.tangrams.analysis.view;
 
 import javax.swing.table.TableColumnModel;
-import javax.swing.table.TableModel;
 
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 
@@ -66,10 +65,10 @@ enum AttributeType {
 
 	protected abstract int getValueListSize(final TableColumnModel colModel);
 
-	protected boolean isMatchingTypeColumn(final TableModel model, final int colIdx) {
-		final Class<?> colClass = model.getColumnClass(colIdx);
-		return valueClass.isAssignableFrom(colClass);
-	}
+//	protected boolean isMatchingTypeColumn(final TableModel model, final int colIdx) {
+//		final Class<?> colClass = model.getColumnClass(colIdx);
+//		return valueClass.isAssignableFrom(colClass);
+//	}
 
 	/**
 	 * @return the valueClass
