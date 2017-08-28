@@ -106,6 +106,90 @@ final class UtteranceTabularDataWriter {
 				this.gameStartTime = gameStartTime;
 				this.nullValueReprSupplier = nullValueReprSupplier;
 			}
+
+			/*
+			 * (non-Javadoc)
+			 * 
+			 * @see java.lang.Object#equals(java.lang.Object)
+			 */
+			@Override
+			public boolean equals(final Object obj) {
+				if (this == obj) {
+					return true;
+				}
+				if (obj == null) {
+					return false;
+				}
+				if (!(obj instanceof Context)) {
+					return false;
+				}
+				final Context other = (Context) obj;
+				if (firstDiagEvent == null) {
+					if (other.firstDiagEvent != null) {
+						return false;
+					}
+				} else if (!firstDiagEvent.equals(other.firstDiagEvent)) {
+					return false;
+				}
+				if (gameStartTime == null) {
+					if (other.gameStartTime != null) {
+						return false;
+					}
+				} else if (!gameStartTime.equals(other.gameStartTime)) {
+					return false;
+				}
+				if (nullValueReprSupplier == null) {
+					if (other.nullValueReprSupplier != null) {
+						return false;
+					}
+				} else if (!nullValueReprSupplier.equals(other.nullValueReprSupplier)) {
+					return false;
+				}
+				if (optLastRoundEvent == null) {
+					if (other.optLastRoundEvent != null) {
+						return false;
+					}
+				} else if (!optLastRoundEvent.equals(other.optLastRoundEvent)) {
+					return false;
+				}
+				return true;
+			}
+
+			/*
+			 * (non-Javadoc)
+			 * 
+			 * @see java.lang.Object#hashCode()
+			 */
+			@Override
+			public int hashCode() {
+				final int prime = 31;
+				int result = 1;
+				result = prime * result + (firstDiagEvent == null ? 0 : firstDiagEvent.hashCode());
+				result = prime * result + (gameStartTime == null ? 0 : gameStartTime.hashCode());
+				result = prime * result + (nullValueReprSupplier == null ? 0 : nullValueReprSupplier.hashCode());
+				result = prime * result + (optLastRoundEvent == null ? 0 : optLastRoundEvent.hashCode());
+				return result;
+			}
+
+			/*
+			 * (non-Javadoc)
+			 * 
+			 * @see java.lang.Object#toString()
+			 */
+			@Override
+			public String toString() {
+				final StringBuilder builder = new StringBuilder();
+				builder.append("Context [firstDiagEvent=");
+				builder.append(firstDiagEvent);
+				builder.append(", gameStartTime=");
+				builder.append(gameStartTime);
+				builder.append(", nullValueReprSupplier=");
+				builder.append(nullValueReprSupplier);
+				builder.append(", optLastRoundEvent=");
+				builder.append(optLastRoundEvent);
+				builder.append("]");
+				return builder.toString();
+			}
 		}
 
 	}
