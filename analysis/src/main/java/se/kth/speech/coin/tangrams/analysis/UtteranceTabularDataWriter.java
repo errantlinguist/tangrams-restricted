@@ -58,8 +58,9 @@ final class UtteranceTabularDataWriter {
 		LAST_RND_TIME {
 			@Override
 			public String apply(final EventDatum.Context ctx) {
-				return TIME_OFFSET_FORMATTER
-						.apply(calculateDecimalSecondDifference(ctx.gameStartTime, ctx.firstDiagEvent));
+				return ctx.optLastRoundEvent
+						.map(lastRoundEvent -> calculateDecimalSecondDifference(ctx.gameStartTime, lastRoundEvent))
+						.map(TIME_OFFSET_FORMATTER).orElseGet(ctx.nullValueReprSupplier);
 			}
 		},
 		LAST_RND_TIME_DIFF {
@@ -85,7 +86,8 @@ final class UtteranceTabularDataWriter {
 		TIME {
 			@Override
 			public String apply(final EventDatum.Context ctx) {
-				return ctx.firstDiagEvent.getTime();
+				return TIME_OFFSET_FORMATTER
+						.apply(calculateDecimalSecondDifference(ctx.gameStartTime, ctx.firstDiagEvent));
 			}
 		};
 
@@ -109,7 +111,7 @@ final class UtteranceTabularDataWriter {
 
 			/*
 			 * (non-Javadoc)
-			 * 
+			 *
 			 * @see java.lang.Object#equals(java.lang.Object)
 			 */
 			@Override
@@ -157,7 +159,7 @@ final class UtteranceTabularDataWriter {
 
 			/*
 			 * (non-Javadoc)
-			 * 
+			 *
 			 * @see java.lang.Object#hashCode()
 			 */
 			@Override
@@ -173,7 +175,7 @@ final class UtteranceTabularDataWriter {
 
 			/*
 			 * (non-Javadoc)
-			 * 
+			 *
 			 * @see java.lang.Object#toString()
 			 */
 			@Override
