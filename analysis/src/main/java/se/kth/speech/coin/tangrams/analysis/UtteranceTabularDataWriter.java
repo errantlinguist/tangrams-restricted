@@ -297,8 +297,8 @@ final class UtteranceTabularDataWriter {
 		writer.write(colHeaders.stream().map(header -> header.stream().collect(TABLE_ROW_CELL_JOINER))
 				.collect(TABLE_ROW_JOINER));
 
-		// The visualization info for the given game
 		final LocalDateTime gameStartTime = history.getStartTime();
+		// The visualization info for the given game
 		final List<ImageVisualizationInfo.Datum> imgVizInfoData = IMG_VIZ_INFO_UNMARSHALLER
 				.apply(history.getInitialState().getImageVisualizationInfoDescription()).getData();
 
