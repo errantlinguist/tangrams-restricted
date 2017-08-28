@@ -351,9 +351,7 @@ final class UtteranceTabularDataWriter {
 				final GameContext context = TemporalGameContexts.create(history, contextStartTime, contextEndTime)
 						.findFirst().get();
 				imgFeatureVectorReprs = entityFeatureVectorDescFactory.createFeatureValueReprs(context);
-
 				imgVizInfoDesc = createImgVizInfoDesc(firstDiagEvent, gameStartTime, imgVizInfoData);
-
 				optLastRoundEvent = Optional.of(diagEvts.get(diagEvts.size() - 1));
 			}
 			writer.write(eventDataReprs.collect(TABLE_ROW_CELL_JOINER));
