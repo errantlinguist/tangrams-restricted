@@ -16,8 +16,6 @@
 */
 package se.kth.speech.coin.tangrams.analysis.view;
 
-import java.util.stream.IntStream;
-
 import javax.swing.table.TableColumnModel;
 import javax.swing.table.TableModel;
 
@@ -60,9 +58,9 @@ enum AttributeType {
 //		return result;
 //	}
 
-	protected IntStream getMatchingTypeColumnIndices(final TableModel model) {
-		return IntStream.range(0, model.getColumnCount()).filter(colIdx -> isMatchingTypeColumn(model, colIdx));
-	}
+//	protected IntStream getMatchingTypeColumnIndices(final TableModel model) {
+//		return IntStream.range(0, model.getColumnCount()).filter(colIdx -> isMatchingTypeColumn(model, colIdx));
+//	}
 
 	protected abstract int getValueListIdx(final int columnIndex);
 
