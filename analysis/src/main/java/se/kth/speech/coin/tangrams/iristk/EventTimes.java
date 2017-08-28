@@ -29,13 +29,13 @@ public final class EventTimes {
 
 	public static final DateTimeFormatter FORMATTER = createFormatterBuilder().toFormatter();
 
-	public static DateTimeFormatterBuilder createFormatterBuilder() {
-		return new DateTimeFormatterBuilder().parseCaseInsensitive().append(DateTimeFormatter.ISO_LOCAL_DATE)
-				.appendLiteral(' ').append(DateTimeFormatter.ISO_LOCAL_TIME);
-	}
-
 	public static LocalDateTime parseEventTime(final String timeStr) {
 		return LocalDateTime.parse(timeStr, FORMATTER);
+	}
+
+	private static DateTimeFormatterBuilder createFormatterBuilder() {
+		return new DateTimeFormatterBuilder().parseCaseInsensitive().append(DateTimeFormatter.ISO_LOCAL_DATE)
+				.appendLiteral(' ').append(DateTimeFormatter.ISO_LOCAL_TIME);
 	}
 
 	private EventTimes() {
