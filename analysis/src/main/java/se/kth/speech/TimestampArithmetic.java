@@ -17,7 +17,9 @@
 package se.kth.speech;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.math.MathContext;
+import java.text.DecimalFormat;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -30,7 +32,37 @@ import java.time.temporal.Temporal;
  */
 public final class TimestampArithmetic {
 
+	/**
+	 * Returns A {@link DecimalFormat} instance used for representing second
+	 * amounts,e.g.&nbsp;<code>03.255</code>. <strong>NOTE:</strong>
+	 * {@code DecimalFormat} is not guaranteed to be thread-safe; Always create
+	 * a new instance thereof before using!
+	 */
+	private static final ThreadLocal<DecimalFormat> DURATION_SECONDS_FORMAT = new ThreadLocal<DecimalFormat>() {
+
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see java.lang.ThreadLocal#initialValue()
+		 */
+		@Override
+		protected DecimalFormat initialValue() {
+			// NOTE: DecimalFormat is not guaranteed to be thread-safe; Always
+			// create a new instance thereof before using!
+			final DecimalFormat result = new DecimalFormat();
+			result.setMinimumIntegerDigits(2);
+			result.setMinimumFractionDigits(3);
+			result.setMaximumFractionDigits(3);
+			return result;
+		}
+
+	};
+
+	private static final BigInteger MINS_TO_SECS_DIVISOR = new BigInteger("60");
+
 	private static final BigDecimal NANOS_TO_SECS_DIVISOR = new BigDecimal("1000000000");
+
+	private static final BigInteger SECS_TO_HOURS_DIVISOR = new BigInteger("3600");
 
 	public static BigDecimal calculateDecimalSecondDifference(final Temporal firstTime, final Temporal nextTime,
 			final MathContext mathCtx) {
@@ -44,6 +76,25 @@ public final class TimestampArithmetic {
 		final long nanos = Math.round(fractionPart * 1000000000);
 		final Duration duration = Duration.ofSeconds(wholePart, nanos);
 		return augend.plus(duration);
+	}
+
+	/**
+	 *
+	 * @param duration
+	 *            The {@link Duration} to format.
+	 * @return A string representation of the given {@code Duration}.
+	 * @see <a href="https://stackoverflow.com/a/266846/1391325">Original
+	 *      StackOverflow answer</a>
+	 */
+	public static String formatDuration(final Duration duration) {
+		final BigDecimal decimalSeconds = toDecimalSeconds(duration);
+		final BigDecimal absDecimalSeconds = decimalSeconds.abs();
+		final BigInteger absSecondsWholePart = absDecimalSeconds.toBigInteger();
+
+		final String decimalSecondsRepr = DURATION_SECONDS_FORMAT.get().format(absDecimalSeconds);
+		final String positive = String.format("%s:%s:%s", absSecondsWholePart.divide(SECS_TO_HOURS_DIVISOR),
+				absSecondsWholePart.remainder(SECS_TO_HOURS_DIVISOR).divide(MINS_TO_SECS_DIVISOR), decimalSecondsRepr);
+		return decimalSeconds.compareTo(BigDecimal.ZERO) < 0 ? "-" + positive : positive;
 	}
 
 	public static BigDecimal toDecimalSeconds(final Duration duration) {
