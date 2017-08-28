@@ -58,7 +58,9 @@ public final class TimestampArithmetic {
 
 	};
 
-	private static final BigDecimal NANOS_PER_SEC = new BigDecimal("1000000000");
+	private static final BigDecimal NANOS_PER_SEC_BIGDECIMAL;
+
+	private static final long NANOS_PER_SEC_LONG;
 
 	private static final BigInteger SECS_PER_HOUR = new BigInteger("3600");
 
@@ -66,16 +68,21 @@ public final class TimestampArithmetic {
 
 	private static final int SECS_PRECISION = 3;
 
+	static {
+		NANOS_PER_SEC_BIGDECIMAL = new BigDecimal("1000000000");
+		NANOS_PER_SEC_LONG = NANOS_PER_SEC_BIGDECIMAL.longValueExact();
+	}
+
 	public static BigDecimal calculateDecimalSecondDifference(final Temporal firstTime, final Temporal nextTime,
 			final MathContext mathCtx) {
 		final long diffNanos = ChronoUnit.NANOS.between(firstTime, nextTime);
-		return new BigDecimal(diffNanos).divide(NANOS_PER_SEC, mathCtx);
+		return new BigDecimal(diffNanos).divide(NANOS_PER_SEC_BIGDECIMAL, mathCtx);
 	}
 
 	public static LocalDateTime createOffsetTimestamp(final LocalDateTime augend, final double offsetSecs) {
 		final long wholePart = Math.round(Math.floor(offsetSecs));
 		final double fractionPart = offsetSecs - wholePart;
-		final long nanos = Math.round(fractionPart * 1000000000);
+		final long nanos = Math.round(fractionPart * NANOS_PER_SEC_LONG);
 		final Duration duration = Duration.ofSeconds(wholePart, nanos);
 		return augend.plus(duration);
 	}
@@ -102,7 +109,7 @@ public final class TimestampArithmetic {
 
 	public static BigDecimal toDecimalSeconds(final Duration duration) {
 		final BigDecimal nanos = new BigDecimal(duration.toNanos());
-		return nanos.divide(NANOS_PER_SEC, MathContext.UNLIMITED);
+		return nanos.divide(NANOS_PER_SEC_BIGDECIMAL, MathContext.UNLIMITED);
 	}
 
 	private TimestampArithmetic() {
