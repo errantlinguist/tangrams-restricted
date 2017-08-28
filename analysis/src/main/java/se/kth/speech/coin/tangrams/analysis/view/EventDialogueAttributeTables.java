@@ -20,8 +20,6 @@ import java.util.EnumMap;
 import java.util.Map;
 
 import javax.swing.JTable;
-import javax.swing.table.TableColumn;
-import javax.swing.table.TableColumnModel;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,26 +31,26 @@ import org.slf4j.LoggerFactory;
  */
 final class EventDialogueAttributeTables {
 
-	private static final Map<EventDialogueAttribute, Integer> EVENT_DIALOGUE_ATTR_IDXS = createEventDialogueAttributeIndexMap();
+//	private static final Map<EventDialogueAttribute, Integer> EVENT_DIALOGUE_ATTR_IDXS = createEventDialogueAttributeIndexMap();
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(EventDialogueAttributeTables.class);
 
-	private static Map<EventDialogueAttribute, Integer> createEventDialogueAttributeIndexMap() {
-		final Map<EventDialogueAttribute, Integer> result = new EnumMap<>(EventDialogueAttribute.class);
-		final EventDialogueAttribute[] attrs = EventDialogueAttribute.values();
-		for (int i = 0; i < attrs.length; ++i) {
-			final EventDialogueAttribute attr = attrs[i];
-			result.put(attr, i);
-		}
-		assert result.size() == attrs.length;
-		return result;
-	}
+//	private static Map<EventDialogueAttribute, Integer> createEventDialogueAttributeIndexMap() {
+//		final Map<EventDialogueAttribute, Integer> result = new EnumMap<>(EventDialogueAttribute.class);
+//		final EventDialogueAttribute[] attrs = EventDialogueAttribute.values();
+//		for (int i = 0; i < attrs.length; ++i) {
+//			final EventDialogueAttribute attr = attrs[i];
+//			result.put(attr, i);
+//		}
+//		assert result.size() == attrs.length;
+//		return result;
+//	}
 
-	private static TableColumn getEventDialogueAttributeColumn(final TableColumnModel colModel,
-			final EventDialogueAttribute attr) {
-		final int colIdx = EVENT_DIALOGUE_ATTR_IDXS.get(attr);
-		return colModel.getColumn(colIdx);
-	}
+//	private static TableColumn getEventDialogueAttributeColumn(final TableColumnModel colModel,
+//			final EventDialogueAttribute attr) {
+//		final int colIdx = EVENT_DIALOGUE_ATTR_IDXS.get(attr);
+//		return colModel.getColumn(colIdx);
+//	}
 
 	static Map<EventDialogueAttribute, Integer> createEventDialogueAttributeColumnIndexMap(final JTable table) {
 		final Map<EventDialogueAttribute, Integer> result = new EnumMap<>(EventDialogueAttribute.class);
@@ -72,16 +70,16 @@ final class EventDialogueAttributeTables {
 		return result;
 	}
 
-	static Map<EventDialogueAttribute, TableColumn> createEventDialogueAttributeColumnMap(
-			final TableColumnModel colModel) {
-		final Map<EventDialogueAttribute, TableColumn> result = new EnumMap<>(EventDialogueAttribute.class);
-		final EventDialogueAttribute[] attrs = EventDialogueAttribute.values();
-		for (final EventDialogueAttribute attr : EventDialogueAttribute.values()) {
-			result.put(attr, getEventDialogueAttributeColumn(colModel, attr));
-		}
-		assert result.size() == attrs.length;
-		return result;
-	}
+//	static Map<EventDialogueAttribute, TableColumn> createEventDialogueAttributeColumnMap(
+//			final TableColumnModel colModel) {
+//		final Map<EventDialogueAttribute, TableColumn> result = new EnumMap<>(EventDialogueAttribute.class);
+//		final EventDialogueAttribute[] attrs = EventDialogueAttribute.values();
+//		for (final EventDialogueAttribute attr : EventDialogueAttribute.values()) {
+//			result.put(attr, getEventDialogueAttributeColumn(colModel, attr));
+//		}
+//		assert result.size() == attrs.length;
+//		return result;
+//	}
 
 	private EventDialogueAttributeTables() {
 	}
