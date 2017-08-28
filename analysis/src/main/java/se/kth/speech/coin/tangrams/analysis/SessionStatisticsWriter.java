@@ -51,7 +51,7 @@ import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
  * @since 2 Aug 2017
  *
  */
-final class SessionStatisticsWriter {
+final class SessionStatisticsWriter { // NO_UCD (unused code)
 
 	private static final List<String> COLUMN_HEADERS = Arrays.asList("INPATH", "GAME_ID", "GAME_DURATION", "ROUND_COUNT",
 			"UTT_COUNT");
