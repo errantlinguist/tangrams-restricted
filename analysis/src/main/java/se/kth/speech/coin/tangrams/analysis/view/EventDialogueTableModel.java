@@ -213,10 +213,11 @@ final class EventDialogueTableModel extends AbstractTableModel {
 		final EventDialogue diag = game.getEventDialogues().get(rowIndex);
 		final EventDialogueAttribute colEventDiagAttr = getColumnEventDialogueAttribute(columnIndex);
 		if (colEventDiagAttr == null) {
-			final List<Utterance> diagUtts = diag.getUtterances();
-			final int diagUttIdx = AttributeType.UTTERANCE.getValueListIdx(columnIndex);
+//			final List<Utterance> diagUtts = diag.getUtterances();
+//			final int diagUttIdx = AttributeType.UTTERANCE.getValueListIdx(columnIndex);
 			// result = diagUtts.size() <= diagUttIdx ? null :
 			// diagUtts.get(diagUttIdx);
+			// TODO: Finish
 		} else {
 			switch (colEventDiagAttr) {
 			case FIRST_EVENT_NAME: {
