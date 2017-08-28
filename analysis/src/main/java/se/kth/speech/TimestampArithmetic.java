@@ -51,14 +51,16 @@ public final class TimestampArithmetic {
 			// create a new instance thereof before using!
 			final DecimalFormat result = new DecimalFormat();
 			result.setMinimumIntegerDigits(2);
-			result.setMinimumFractionDigits(3);
-			result.setMaximumFractionDigits(3);
+			result.setMinimumFractionDigits(SECS_PRECISION);
+			result.setMaximumFractionDigits(SECS_PRECISION);
 			return result;
 		}
 
 	};
 
 	private static final BigDecimal NANOS_TO_SECS_DIVISOR = new BigDecimal("1000000000");
+
+	private static final int SECS_PRECISION = 3;
 
 	private static final BigInteger SECS_TO_HOURS_DIVISOR = new BigInteger("3600");
 
