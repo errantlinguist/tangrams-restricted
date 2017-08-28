@@ -17,11 +17,13 @@
 package se.kth.speech.coin.tangrams.analysis;
 
 import java.io.IOException;
+import java.math.BigDecimal;
 import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -33,7 +35,6 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.OptionalDouble;
 import java.util.function.BiFunction;
 import java.util.regex.Pattern;
 import java.util.stream.Collector;
@@ -51,7 +52,6 @@ import com.google.common.cache.LoadingCache;
 
 import iristk.system.Event;
 import se.kth.speech.TimestampArithmetic;
-import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionContextFactory;
 import se.kth.speech.coin.tangrams.analysis.features.ImageEdgeCounter;
@@ -178,13 +178,13 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 	}
 
 	private enum Metadatum {
-		END_SCORE, GAME_DURATION, GAME_ID, LAST_UTT_END, ROUND_COUNT, START_TIME;
+		END_SCORE, GAME_DURATION, GAME_ID, ROUND_COUNT, START_TIME;
 
 		private static final List<Metadatum> CANONICAL_ORDERING;
 
 		static {
 			CANONICAL_ORDERING = Collections.unmodifiableList(Arrays.asList(Metadatum.GAME_ID, Metadatum.START_TIME,
-					Metadatum.GAME_DURATION, Metadatum.LAST_UTT_END, Metadatum.ROUND_COUNT, Metadatum.END_SCORE));
+					Metadatum.GAME_DURATION, Metadatum.ROUND_COUNT, Metadatum.END_SCORE));
 			assert CANONICAL_ORDERING.size() == Metadatum.values().length;
 		}
 	}
@@ -284,6 +284,7 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 
 				int gameRoundId = 0;
 				int gameScore = 0;
+				LocalDateTime maxEventTime = LocalDateTime.MIN;
 				{
 					final List<Event> events = Arrays.asList(history.getEventSequence().toArray(Event[]::new));
 					final int entityCount = history.getEntityCount();
@@ -297,6 +298,7 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 						}
 						gameScore = updateScore(eventType, gameScore);
 						final LocalDateTime eventTime = EventTimes.parseEventTime(event.getTime());
+						maxEventTime = Collections.max(Arrays.asList(eventTime, maxEventTime));
 						final GameContext gameCtx = new GameContext(history, eventTime);
 						// Create one row for each entity
 						for (int entityId = 0; entityId < entityCount; ++entityId) {
@@ -318,22 +320,31 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 				}
 
 				{
-					final GameSummary summary = new GameSummary(history, canonicalGame.getEventDialogues());
+					// final GameSummary summary = new GameSummary(history,
+					// canonicalGame.getEventDialogues());
 					final Map<Metadatum, Object> metadataValues = new EnumMap<>(Metadatum.class);
 					final String gameId = canonicalGame.getGameId();
-					metadataValues.put(Metadatum.GAME_DURATION,
-							TimestampArithmetic.toDecimalSeconds(summary.getDuration()));
+					// final BigDecimal durationInSecs =
+					// TimestampArithmetic.toDecimalSeconds(summary.getDuration());
+					final BigDecimal durationInSecs = TimestampArithmetic
+							.toDecimalSeconds(Duration.between(history.getStartTime(), maxEventTime));
+					metadataValues.put(Metadatum.GAME_DURATION, durationInSecs);
 					metadataValues.put(Metadatum.END_SCORE, gameScore);
 					metadataValues.put(Metadatum.GAME_ID, gameId);
-					assert summary.getCompletedRoundCount() <= gameRoundId : String.format(
-							"%d completed dialogue(s) but %d were processed.", summary.getCompletedRoundCount(),
-							gameRoundId);
-					final OptionalDouble optLastUttEndTime = canonicalGame.getUtterances().stream()
-							.mapToDouble(Utterance::getEndTime).max();
-					final String lastUttEndTimeRepr = optLastUttEndTime.isPresent()
-							? Double.toString(optLastUttEndTime.getAsDouble())
-							: NULL_VALUE_REPR;
-					metadataValues.put(Metadatum.LAST_UTT_END, lastUttEndTimeRepr);
+					// assert summary.getCompletedRoundCount() <= gameRoundId :
+					// String.format(
+					// "%d completed dialogue(s) but %d were processed.",
+					// summary.getCompletedRoundCount(),
+					// gameRoundId);
+					// final OptionalDouble optLastUttEndTime =
+					// canonicalGame.getUtterances().stream()
+					// .mapToDouble(Utterance::getEndTime).max();
+					// final String lastUttEndTimeRepr =
+					// optLastUttEndTime.isPresent()
+					// ? Double.toString(optLastUttEndTime.getAsDouble())
+					// : NULL_VALUE_REPR;
+					// metadataValues.put(Metadatum.LAST_UTT_END,
+					// lastUttEndTimeRepr);
 					metadataValues.put(Metadatum.ROUND_COUNT, gameRoundId);
 					metadataValues.put(Metadatum.START_TIME, OUTPUT_DATETIME_FORMATTER.format(history.getStartTime()));
 					assert metadataValues.size() == Metadatum.values().length;
