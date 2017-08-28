@@ -18,7 +18,6 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross
 
 import java.util.Collection;
 import java.util.EnumMap;
-import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -269,10 +268,6 @@ final class DialogueAnalysisSummaryFactory implements
 	private final Collection<SummaryDatum> dataToCreate;
 
 	private final Function<? super Iterator<Utterance>, String> uttDiagReprFactory;
-
-	public DialogueAnalysisSummaryFactory(final Function<? super Iterator<Utterance>, String> uttDiagReprFactory) {
-		this(uttDiagReprFactory, EnumSet.allOf(SummaryDatum.class));
-	}
 
 	public DialogueAnalysisSummaryFactory(final Function<? super Iterator<Utterance>, String> uttDiagReprFactory,
 			final Collection<SummaryDatum> dataToCreate) {
