@@ -58,18 +58,18 @@ public final class TimestampArithmetic {
 
 	};
 
-	private static final BigDecimal NANOS_TO_SECS_DIVISOR = new BigDecimal("1000000000");
+	private static final BigDecimal NANOS_PER_SEC = new BigDecimal("1000000000");
+
+	private static final BigInteger SECS_PER_HOUR = new BigInteger("3600");
+
+	private static final BigInteger SECS_PER_MIN = new BigInteger("60");
 
 	private static final int SECS_PRECISION = 3;
-
-	private static final BigInteger SECS_TO_HOURS_DIVISOR = new BigInteger("3600");
-
-	private static final BigInteger SECS_TO_MINS_DIVISOR = new BigInteger("60");
 
 	public static BigDecimal calculateDecimalSecondDifference(final Temporal firstTime, final Temporal nextTime,
 			final MathContext mathCtx) {
 		final long diffNanos = ChronoUnit.NANOS.between(firstTime, nextTime);
-		return new BigDecimal(diffNanos).divide(NANOS_TO_SECS_DIVISOR, mathCtx);
+		return new BigDecimal(diffNanos).divide(NANOS_PER_SEC, mathCtx);
 	}
 
 	public static LocalDateTime createOffsetTimestamp(final LocalDateTime augend, final double offsetSecs) {
@@ -93,16 +93,16 @@ public final class TimestampArithmetic {
 		final BigDecimal absDecimalSeconds = decimalSeconds.abs();
 		final BigInteger absSecondsWholePart = absDecimalSeconds.toBigInteger();
 
-		final BigInteger[] hoursAndRemainingSecs = absSecondsWholePart.divideAndRemainder(SECS_TO_HOURS_DIVISOR);
+		final BigInteger[] hoursAndRemainingSecs = absSecondsWholePart.divideAndRemainder(SECS_PER_HOUR);
 		final String decimalSecondsRepr = DURATION_SECONDS_FORMAT.get().format(absDecimalSeconds);
 		final String positive = String.format("%s:%s:%s", hoursAndRemainingSecs[0],
-				hoursAndRemainingSecs[1].divide(SECS_TO_MINS_DIVISOR), decimalSecondsRepr);
+				hoursAndRemainingSecs[1].divide(SECS_PER_MIN), decimalSecondsRepr);
 		return decimalSeconds.compareTo(BigDecimal.ZERO) < 0 ? "-" + positive : positive;
 	}
 
 	public static BigDecimal toDecimalSeconds(final Duration duration) {
 		final BigDecimal nanos = new BigDecimal(duration.toNanos());
-		return nanos.divide(NANOS_TO_SECS_DIVISOR, MathContext.UNLIMITED);
+		return nanos.divide(NANOS_PER_SEC, MathContext.UNLIMITED);
 	}
 
 	private TimestampArithmetic() {
