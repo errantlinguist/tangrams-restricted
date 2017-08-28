@@ -59,33 +59,31 @@ final class UtteranceTabularDataWriter {
 		LAST_RND_TIME {
 			@Override
 			public String apply(final EventDatum.Context ctx) {
-				final LocalDateTime prevEventTime = ctx.optLastRoundEvent.map(Event::getTime).map(EVENT_TIME_PARSER)
-						.orElse(ctx.gameStartTime);
-				return EVENT_TIME_FORMATTER.apply(prevEventTime);
+				return ctx.optLastRoundEvent.map(Event::getTime).orElseGet(ctx.nullValueReprSupplier);
 			}
 		},
 		LAST_RND_TIME_DIFF_SECS {
 			@Override
 			public String apply(final EventDatum.Context ctx) {
-				final LocalDateTime prevEventTime = ctx.optLastRoundEvent.map(Event::getTime).map(EVENT_TIME_PARSER)
-						.orElse(ctx.gameStartTime);
-				return SECS_FORMATTER.apply(calculateDecimalSecondDifference(prevEventTime, ctx.firstDiagEvent));
+				return ctx.optLastRoundEvent
+						.map(lastRoundEvent -> calculateDecimalSecondDifference(lastRoundEvent, ctx.firstDiagEvent))
+						.map(SECS_FORMATTER).orElseGet(ctx.nullValueReprSupplier);
 			}
 		},
 		LAST_RND_TIME_OFFSET {
 			@Override
 			public String apply(final EventDatum.Context ctx) {
-				final LocalDateTime prevEventTime = ctx.optLastRoundEvent.map(Event::getTime).map(EVENT_TIME_PARSER)
-						.orElse(ctx.gameStartTime);
-				return createTimeDifferenceRepr(ctx.gameStartTime, prevEventTime);
+				return ctx.optLastRoundEvent
+						.map(lastRoundEvent -> createTimeDifferenceRepr(ctx.gameStartTime, lastRoundEvent))
+						.orElseGet(ctx.nullValueReprSupplier);
 			}
 		},
 		LAST_RND_TIME_OFFSET_SECS {
 			@Override
 			public String apply(final EventDatum.Context ctx) {
-				final LocalDateTime prevEventTime = ctx.optLastRoundEvent.map(Event::getTime).map(EVENT_TIME_PARSER)
-						.orElse(ctx.gameStartTime);
-				return SECS_FORMATTER.apply(calculateDecimalSecondDifference(ctx.gameStartTime, prevEventTime));
+				return ctx.optLastRoundEvent
+						.map(lastRoundEvent -> calculateDecimalSecondDifference(ctx.gameStartTime, lastRoundEvent))
+						.map(SECS_FORMATTER).orElseGet(ctx.nullValueReprSupplier);
 			}
 		},
 		MOVE_SUBMITTER {
@@ -239,8 +237,6 @@ final class UtteranceTabularDataWriter {
 
 	private static final Supplier<String> COL_HEADER_PADDING_SUPPLIER = () -> "";
 
-	private static final Function<LocalDateTime, String> EVENT_TIME_FORMATTER = EventTimes.FORMATTER::format;
-
 	private static final Function<String, LocalDateTime> EVENT_TIME_PARSER = EventTimes::parseEventTime;
 
 	private static final MathContext EVT_TIME_DIFF_CTX = new MathContext(16, RoundingMode.HALF_UP);
@@ -271,13 +267,13 @@ final class UtteranceTabularDataWriter {
 		IMG_VIZ_INFO_ATTRS_TO_WRITE = ImageVisualizationInfoTableRowCellFactory.Attribute.getCanonicalOrdering();
 	}
 
-	private static BigDecimal calculateDecimalSecondDifference(final LocalDateTime firstTime, final Event nextEvt) {
-		final LocalDateTime nextTime = EVENT_TIME_PARSER.apply(nextEvt.getTime());
-		return calculateDecimalSecondDifference(firstTime, nextTime);
+	private static BigDecimal calculateDecimalSecondDifference(final Event firstEvt, final Event nextEvt) {
+		final LocalDateTime firstTime = EVENT_TIME_PARSER.apply(firstEvt.getTime());
+		return calculateDecimalSecondDifference(firstTime, nextEvt);
 	}
 
-	private static BigDecimal calculateDecimalSecondDifference(final LocalDateTime firstTime,
-			final LocalDateTime nextTime) {
+	private static BigDecimal calculateDecimalSecondDifference(final LocalDateTime firstTime, final Event nextEvt) {
+		final LocalDateTime nextTime = EVENT_TIME_PARSER.apply(nextEvt.getTime());
 		return TimestampArithmetic.calculateDecimalSecondDifference(firstTime, nextTime, EVT_TIME_DIFF_CTX);
 	}
 
