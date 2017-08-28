@@ -55,7 +55,7 @@ public final class SessionEventLogAdjusterGUI implements Runnable {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SessionEventLogAdjusterGUI.class);
 
-	private static final String NULL_VALUE_REPR = "-";
+	private static final String NULL_VALUE_REPR = "?";
 
 	private static final Function<TemporalAccessor, String> TIME_FORMATTER = time -> EventTimes.FORMATTER.format(time);
 

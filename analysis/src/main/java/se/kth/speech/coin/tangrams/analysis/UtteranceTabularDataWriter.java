@@ -55,38 +55,55 @@ import se.kth.speech.coin.tangrams.iristk.events.Move;
 
 final class UtteranceTabularDataWriter {
 
-	private enum EventDatum implements BiFunction<Event, Optional<? extends Event>, String> {
+	private enum EventDatum implements Function<UtteranceTabularDataWriter.EventDatum.Context, String> {
 		LAST_RND_TIME {
 			@Override
-			public String apply(final Event firstDiagEvent, final Optional<? extends Event> optLastRoundEvent) {
-				return optLastRoundEvent.map(Event::getTime).orElse(NULL_VALUE_REPR);
+			public String apply(final EventDatum.Context ctx) {
+				return ctx.optLastRoundEvent.map(Event::getTime).orElseGet(ctx.nullValueReprSupplier);
 			}
 		},
 		LAST_RND_TIME_DIFF {
 			@Override
-			public String apply(final Event firstDiagEvent, final Optional<? extends Event> optLastRoundEvent) {
-				return optLastRoundEvent.map(lastRoundEvent -> calculateTimeDiffSecs(lastRoundEvent, firstDiagEvent))
-						.map(BigDecimal::toString).orElse(NULL_VALUE_REPR);
+			public String apply(final EventDatum.Context ctx) {
+				return ctx.optLastRoundEvent
+						.map(lastRoundEvent -> calculateTimeDiffSecs(lastRoundEvent, ctx.firstDiagEvent))
+						.map(BigDecimal::toString).orElseGet(ctx.nullValueReprSupplier);
 			}
 		},
 		MOVE_SUBMITTER {
 			@Override
-			public String apply(final Event firstDiagEvent, final Optional<? extends Event> lastRoundEvent) {
-				return firstDiagEvent.getString(GameManagementEvent.Attribute.PLAYER_ID.toString());
+			public String apply(final EventDatum.Context ctx) {
+				return ctx.firstDiagEvent.getString(GameManagementEvent.Attribute.PLAYER_ID.toString());
 			}
 		},
 		NAME {
 			@Override
-			public String apply(final Event firstDiagEvent, final Optional<? extends Event> optLastRoundEvent) {
-				return firstDiagEvent.getName();
+			public String apply(final EventDatum.Context ctx) {
+				return ctx.firstDiagEvent.getName();
 			}
 		},
 		TIME {
 			@Override
-			public String apply(final Event firstDiagEvent, final Optional<? extends Event> optLastRoundEvent) {
-				return firstDiagEvent.getTime();
+			public String apply(final EventDatum.Context ctx) {
+				return ctx.firstDiagEvent.getTime();
 			}
 		};
+
+		private static class Context {
+
+			private final Event firstDiagEvent;
+			
+			private final Supplier<String> nullValueReprSupplier;
+			
+			private final Optional<? extends Event> optLastRoundEvent;
+
+			private Context(final Event firstDiagEvent, final Optional<? extends Event> optLastRoundEvent,
+					final Supplier<String> nullValueReprSupplier) {
+				this.firstDiagEvent = firstDiagEvent;
+				this.optLastRoundEvent = optLastRoundEvent;
+				this.nullValueReprSupplier = nullValueReprSupplier;
+			}
+		}
 
 	}
 
@@ -108,13 +125,9 @@ final class UtteranceTabularDataWriter {
 
 	private static final List<ImageVisualizationInfoTableRowCellFactory.Attribute> IMG_VIZ_INFO_ATTRS_TO_WRITE;
 
-	private static final ImageVisualizationInfoDescriptionFactory IMG_VIZ_INFO_DESC_FACTORY;
-
 	private static final ImageVisualizationInfoUnmarshaller IMG_VIZ_INFO_UNMARSHALLER = new ImageVisualizationInfoUnmarshaller();
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(UtteranceTabularDataWriter.class);
-
-	private static final String NULL_VALUE_REPR;
 
 	private static final Collector<CharSequence, ?, String> TABLE_ROW_CELL_JOINER;
 
@@ -131,29 +144,13 @@ final class UtteranceTabularDataWriter {
 		TABLE_STRING_REPR_COL_DELIMITER = "\t";
 		TABLE_ROW_CELL_JOINER = Collectors.joining(TABLE_STRING_REPR_COL_DELIMITER);
 
-		NULL_VALUE_REPR = "-";
 		IMG_VIZ_INFO_ATTRS_TO_WRITE = ImageVisualizationInfoTableRowCellFactory.Attribute.getCanonicalOrdering();
-		IMG_VIZ_INFO_DESC_FACTORY = new ImageVisualizationInfoDescriptionFactory(
-				new ImageVisualizationInfoTableRowCellFactory(NULL_VALUE_REPR, IMG_VIZ_INFO_ATTRS_TO_WRITE));
 	}
 
 	private static BigDecimal calculateTimeDiffSecs(final Event firstEvt, final Event nextEvt) {
 		final LocalDateTime firstTime = EventTimes.parseEventTime(firstEvt.getTime());
 		final LocalDateTime nextTime = EventTimes.parseEventTime(nextEvt.getTime());
 		return TimestampArithmetic.calculateDecimalSecondDifference(firstTime, nextTime, EVT_TIME_DIFF_CTX);
-	}
-
-	private static Stream<String> createImgVizInfoDesc(final Event firstDiagEvent, final LocalDateTime gameStartTime,
-			final List<ImageVisualizationInfo.Datum> imgVizInfoData) {
-		final Stream<String> result;
-		final Move move = (Move) firstDiagEvent.get(GameManagementEvent.Attribute.MOVE.toString());
-		if (move == null) {
-			result = IMG_VIZ_INFO_DESC_FACTORY.getBlankDescription().stream();
-		} else {
-			final Integer selectedPieceId = move.getPieceId();
-			result = IMG_VIZ_INFO_DESC_FACTORY.createDescription(selectedPieceId, gameStartTime, imgVizInfoData);
-		}
-		return result;
 	}
 
 	private final List<List<String>> colHeaders;
@@ -164,26 +161,35 @@ final class UtteranceTabularDataWriter {
 
 	private final EventDatum[] eventDataToWrite;
 
+	private final ImageVisualizationInfoDescriptionFactory imgVizInfoDescFactory;
+
 	private final LanguageDatum[] langDataToWrite;
+
+	private final Supplier<String> nullValueReprSupplier;
 
 	private final boolean strict;
 
 	private final Function<? super Iterator<Utterance>, String> uttDiagReprFactory;
 
 	UtteranceTabularDataWriter(final EntityFeatureVectorDescriptionFactory entityFeatureVectorDescFactory,
-			final Function<? super Iterator<Utterance>, String> uttDiagReprFactory, final boolean strict) {
-		this(entityFeatureVectorDescFactory, uttDiagReprFactory, strict, EventDatum.values(), LanguageDatum.values());
+			final Function<? super Iterator<Utterance>, String> uttDiagReprFactory, final String nullValueRepr,
+			final boolean strict) {
+		this(entityFeatureVectorDescFactory, uttDiagReprFactory, nullValueRepr, strict, EventDatum.values(),
+				LanguageDatum.values());
 	}
 
 	UtteranceTabularDataWriter(final EntityFeatureVectorDescriptionFactory entityFeatureVectorDescFactory,
-			final Function<? super Iterator<Utterance>, String> uttDiagReprFactory, final boolean strict,
-			final EventDatum[] eventDataToWrite, final LanguageDatum[] langDataToWrite) {
+			final Function<? super Iterator<Utterance>, String> uttDiagReprFactory, final String nullValueRepr,
+			final boolean strict, final EventDatum[] eventDataToWrite, final LanguageDatum[] langDataToWrite) {
 		this.entityFeatureVectorDescFactory = entityFeatureVectorDescFactory;
 		entityFeaturesToDescribe = entityFeatureVectorDescFactory.getEntityFeaturesToDescribe();
 		this.uttDiagReprFactory = uttDiagReprFactory;
+		nullValueReprSupplier = () -> nullValueRepr;
 		this.strict = strict;
 		this.eventDataToWrite = eventDataToWrite;
 		this.langDataToWrite = langDataToWrite;
+		imgVizInfoDescFactory = new ImageVisualizationInfoDescriptionFactory(
+				new ImageVisualizationInfoTableRowCellFactory(nullValueRepr, IMG_VIZ_INFO_ATTRS_TO_WRITE));
 
 		colHeaders = createColHeaders();
 	}
@@ -211,15 +217,15 @@ final class UtteranceTabularDataWriter {
 			final Stream<String> imgFeatureVectorReprs;
 			final Stream<String> imgVizInfoDesc;
 			if (diagEvts.isEmpty()) {
-				eventDataReprs = Arrays.stream(eventDataToWrite).map(eventDatum -> NULL_VALUE_REPR);
+				eventDataReprs = Stream.generate(nullValueReprSupplier).limit(eventDataToWrite.length);
 				imgFeatureVectorReprs = entityFeatureVectorDescFactory.createBlankFeatureValueReprs();
-				imgVizInfoDesc = IMG_VIZ_INFO_DESC_FACTORY.getBlankDescription().stream();
+				imgVizInfoDesc = imgVizInfoDescFactory.getBlankDescription().stream();
 			} else {
 				final Event firstDiagEvent = diagEvts.iterator().next();
 				{
 					final Optional<Event> streamOptLastRoundEvent = optLastRoundEvent;
-					eventDataReprs = Arrays.stream(eventDataToWrite)
-							.map(eventDatum -> eventDatum.apply(firstDiagEvent, streamOptLastRoundEvent));
+					eventDataReprs = Arrays.stream(eventDataToWrite).map(eventDatum -> eventDatum.apply(
+							new EventDatum.Context(firstDiagEvent, streamOptLastRoundEvent, nullValueReprSupplier)));
 				}
 
 				final float contextStartTime;
@@ -309,6 +315,19 @@ final class UtteranceTabularDataWriter {
 			result = Collections.emptyList();
 		}
 		assert result.stream().mapToInt(List::size).boxed().collect(Collectors.toSet()).size() <= 1;
+		return result;
+	}
+
+	private Stream<String> createImgVizInfoDesc(final Event firstDiagEvent, final LocalDateTime gameStartTime,
+			final List<ImageVisualizationInfo.Datum> imgVizInfoData) {
+		final Stream<String> result;
+		final Move move = (Move) firstDiagEvent.get(GameManagementEvent.Attribute.MOVE.toString());
+		if (move == null) {
+			result = imgVizInfoDescFactory.getBlankDescription().stream();
+		} else {
+			final Integer selectedPieceId = move.getPieceId();
+			result = imgVizInfoDescFactory.createDescription(selectedPieceId, gameStartTime, imgVizInfoData);
+		}
 		return result;
 	}
 

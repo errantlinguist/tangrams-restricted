@@ -209,7 +209,7 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 		TABLE_STRING_REPR_COL_DELIMITER = "\t";
 		TABLE_ROW_CELL_JOINER = Collectors.joining(TABLE_STRING_REPR_COL_DELIMITER);
 
-		NULL_VALUE_REPR = "-";
+		NULL_VALUE_REPR = "?";
 	}
 
 	public static void main(final String[] args) throws IOException, JAXBException {
@@ -284,7 +284,7 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 						new GameContextModelFactory(2), new ImageEdgeCounter());
 				final EntityFeatureVectorDescriptionFactory entityFeatureVectorDescFactory = new EntityFeatureVectorDescriptionFactory(
 						new EntityFeature.Extractor(), EntityFeature.getCanonicalOrdering(), extractionContextFactory,
-						"-");
+						NULL_VALUE_REPR);
 				final int entityCount = history.getEntityCount();
 
 				int gameRoundId = 0;

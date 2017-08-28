@@ -167,6 +167,8 @@ final class UtteranceSelectedEntityDescriptionWriter { // NO_UCD (use default)
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(UtteranceSelectedEntityDescriptionWriter.class);
 
+	private static final String NULL_VALUE_REPR = "?";
+
 	private static final Path SETTINGS_DIR;
 
 	static {
@@ -364,9 +366,9 @@ final class UtteranceSelectedEntityDescriptionWriter { // NO_UCD (use default)
 		final EntityFeatureExtractionContextFactory extractionContextFactory = new EntityFeatureExtractionContextFactory(
 				new GameContextModelFactory(2), new ImageEdgeCounter());
 		final EntityFeatureVectorDescriptionFactory entityFeatureVectorDescFactory = new EntityFeatureVectorDescriptionFactory(
-				extractor, featuresToDescribe, extractionContextFactory, "-");
+				extractor, featuresToDescribe, extractionContextFactory, NULL_VALUE_REPR);
 		final UtteranceTabularDataWriter gameWriter = new UtteranceTabularDataWriter(entityFeatureVectorDescFactory,
-				uttDiagReprFactory, strict);
+				uttDiagReprFactory, NULL_VALUE_REPR, strict);
 
 		final Path extantOutdir = ensureExtantOutdir();
 		for (final Entry<String, SessionGame> playerPerspectiveGame : sessionEvtDiagMgr.createPlayerPerspectiveGameMap()
