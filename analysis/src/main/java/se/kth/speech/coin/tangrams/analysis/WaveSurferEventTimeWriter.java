@@ -1,0 +1,159 @@
+/*
+ *  This file is part of se.kth.speech.coin.tangrams-restricted.analysis.
+ *
+ *  se.kth.speech.coin.tangrams-restricted.analysis is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+package se.kth.speech.coin.tangrams.analysis;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.nio.file.FileVisitOption;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.time.LocalTime;
+import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import com.google.common.collect.Maps;
+
+import iristk.util.Record;
+import iristk.util.Record.JsonToRecordException;
+import se.kth.speech.coin.tangrams.iristk.EventTimes;
+
+/**
+ * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
+ * @since 29 Aug 2017
+ *
+ */
+final class WaveSurferEventTimeWriter { // NO_UCD (use default)
+
+	private static final int ENTITY_ID_COL_IDX = 0;
+
+	private static final long HEADER_ROW_COUNT = 2;
+
+	private static final Pattern IMG_INFO_COL_DELIMITER_PATTERN = Pattern.compile("\t");
+
+	private static final Pattern IMG_INFO_FILENAME_PATTERN = Pattern.compile(".*?img-info-(.+)\\.txt");
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(WaveSurferEventTimeWriter.class);
+
+	private static final int SHAPE_COL_IDX = 1;
+
+	public static void main(final String[] args) throws IOException {
+		final Path[] inpaths = Arrays.stream(args).map(String::trim).filter(path -> !path.isEmpty()).map(Paths::get)
+				.toArray(Path[]::new);
+		if (inpaths.length < 1) {
+			throw new IllegalArgumentException(
+					String.format("Usage: %s INPATHS...", WaveSurferEventTimeWriter.class.getSimpleName()));
+		} else {
+			for (final Path inpath : inpaths) {
+				final Path[] childDirs = Files.walk(inpath, FileVisitOption.FOLLOW_LINKS).filter(Files::isDirectory)
+						.toArray(Path[]::new);
+				for (final Path childDir : childDirs) {
+					accept(childDir);
+				}
+			}
+		}
+	}
+
+	private static void accept(final Path sessionDir) throws JsonToRecordException, IOException {
+		final List<Path> files = Arrays.asList(Files.list(sessionDir).toArray(Path[]::new));
+		final Map<String, Path> subjectImgInfoFiles = createSubjectImgInfoFileMap(files);
+		if (subjectImgInfoFiles.isEmpty()) {
+			LOGGER.debug("Input directory \"{}\" does not contain any image info files.", sessionDir);
+		} else {
+			for (final Entry<String, Path> subjectImgInfoFile : subjectImgInfoFiles.entrySet()) {
+				final String subj = subjectImgInfoFile.getKey();
+				final Path imgInfoFIle = subjectImgInfoFile.getValue();
+				final Map<Integer, String> pieceShapes = readImgShapes(imgInfoFIle);
+
+				final Path eventLogFilePath = sessionDir.resolve("events-" + subj + ".txt");
+				final File outfile = new File(sessionDir.toFile(), subj + "-ws.txt");
+				LOGGER.info("Writing to \"{}\".", outfile);
+				try (PrintWriter outputWriter = new PrintWriter(outfile)) {
+					try (Stream<String> lines = Files.lines(eventLogFilePath, Record.JSON_CHARSET)) {
+
+						LocalTime startTime = null;
+						String lastp = null;
+						Double lastt = null;
+
+						final Iterator<String> lineIter = lines.iterator();
+						while (lineIter.hasNext()) {
+							final String line = lineIter.next();
+							final Record event = Record.fromJSON(line);
+							if (event.has("GAME_STATE") && startTime == null) {
+								startTime = EventTimes.parseEventTime(event.getString("event_time")).toLocalTime();
+							}
+							if (event.getString("event_name").equals("tangrams.action.nextturn.request")) {
+								final LocalTime time = EventTimes.parseEventTime(event.getString("event_time"))
+										.toLocalTime();
+								final double t = ChronoUnit.MILLIS.between(startTime, time) / 1000d;
+								final String pid = event.getString("MOVE:pieceId");
+								if (lastp != null) {
+									outputWriter.println(lastt + " " + t + " " + lastp);
+								}
+								lastp = pieceShapes.get(pid);
+								lastt = t;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	private static Map<String, Path> createSubjectImgInfoFileMap(final Collection<Path> files) {
+		final Map<String, Path> result = Maps.newHashMapWithExpectedSize(Math.min(files.size(), 2));
+		for (final Path file : files) {
+			final String filenameStr = file.getFileName().toString();
+			LOGGER.debug("Testing filename \"{}\".", filenameStr);
+			final Matcher imgInfoFilenameMatcher = IMG_INFO_FILENAME_PATTERN.matcher(filenameStr);
+			if (imgInfoFilenameMatcher.matches()) {
+				final String subject = imgInfoFilenameMatcher.group(1);
+				result.put(subject, file);
+			}
+		}
+		return result;
+	}
+
+	private static Map<Integer, String> readImgShapes(final Path infile) throws IOException {
+		final Map<Integer, String> result;
+		try (Stream<String> lines = Files.lines(infile)) {
+			final String[][] rows = lines.map(String::trim).filter(str -> !str.isEmpty())
+					.map(IMG_INFO_COL_DELIMITER_PATTERN::split).skip(HEADER_ROW_COUNT).toArray(String[][]::new);
+			result = Arrays.stream(rows).collect(
+					Collectors.toMap(row -> Integer.parseInt(row[ENTITY_ID_COL_IDX]), row -> row[SHAPE_COL_IDX]));
+
+		}
+		return result;
+	}
+
+	private WaveSurferEventTimeWriter() {
+	}
+
+}
