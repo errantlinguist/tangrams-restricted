@@ -41,9 +41,11 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Maps;
 
-import iristk.util.Record;
+import iristk.system.Event;
 import iristk.util.Record.JsonToRecordException;
 import se.kth.speech.coin.tangrams.iristk.EventTimes;
+import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
+import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -90,28 +92,26 @@ final class WaveSurferEventTimeWriter { // NO_UCD (use default)
 			for (final Entry<String, Path> subjectImgInfoFile : subjectImgInfoFiles.entrySet()) {
 				final String subj = subjectImgInfoFile.getKey();
 				final Path imgInfoFIle = subjectImgInfoFile.getValue();
-				final Map<Integer, String> pieceShapes = readImgShapes(imgInfoFIle);
+				final Map<String, String> pieceShapes = readImgShapes(imgInfoFIle);
 
 				final Path eventLogFilePath = sessionDir.resolve("events-" + subj + ".txt");
 				final File outfile = new File(sessionDir.toFile(), subj + "-ws.txt");
 				LOGGER.info("Writing to \"{}\".", outfile);
 				try (PrintWriter outputWriter = new PrintWriter(outfile)) {
-					try (Stream<String> lines = Files.lines(eventLogFilePath, Record.JSON_CHARSET)) {
+					try (Stream<Event> events = LoggedEvents.readLoggedEvents(eventLogFilePath)) {
 
 						LocalTime startTime = null;
 						String lastp = null;
 						Double lastt = null;
 
-						final Iterator<String> lineIter = lines.iterator();
-						while (lineIter.hasNext()) {
-							final String line = lineIter.next();
-							final Record event = Record.fromJSON(line);
-							if (event.has("GAME_STATE") && startTime == null) {
-								startTime = EventTimes.parseEventTime(event.getString("event_time")).toLocalTime();
+						final Iterator<Event> eventIter = events.iterator();
+						while (eventIter.hasNext()) {
+							final Event event = eventIter.next();
+							final LocalTime time = EventTimes.parseEventTime(event.getTime()).toLocalTime();
+							if (event.has(GameManagementEvent.Attribute.GAME_STATE.toString()) && startTime == null) {
+								startTime = time;
 							}
-							if (event.getString("event_name").equals("tangrams.action.nextturn.request")) {
-								final LocalTime time = EventTimes.parseEventTime(event.getString("event_time"))
-										.toLocalTime();
+							if (event.getName().equals("tangrams.action.nextturn.request")) {
 								final double t = ChronoUnit.MILLIS.between(startTime, time) / 1000d;
 								final String pid = event.getString("MOVE:pieceId");
 								if (lastp != null) {
@@ -141,13 +141,13 @@ final class WaveSurferEventTimeWriter { // NO_UCD (use default)
 		return result;
 	}
 
-	private static Map<Integer, String> readImgShapes(final Path infile) throws IOException {
-		final Map<Integer, String> result;
+	private static Map<String, String> readImgShapes(final Path infile) throws IOException {
+		final Map<String, String> result;
 		try (Stream<String> lines = Files.lines(infile)) {
 			final String[][] rows = lines.map(String::trim).filter(str -> !str.isEmpty())
 					.map(IMG_INFO_COL_DELIMITER_PATTERN::split).skip(HEADER_ROW_COUNT).toArray(String[][]::new);
-			result = Arrays.stream(rows).collect(
-					Collectors.toMap(row -> Integer.parseInt(row[ENTITY_ID_COL_IDX]), row -> row[SHAPE_COL_IDX]));
+			result = Arrays.stream(rows)
+					.collect(Collectors.toMap(row -> row[ENTITY_ID_COL_IDX], row -> row[SHAPE_COL_IDX]));
 
 		}
 		return result;
