@@ -19,9 +19,13 @@ package se.kth.speech;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.ListIterator;
+import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.stream.IntStream;
+
+import com.google.common.collect.Maps;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -80,6 +84,17 @@ public final class Lists {
 
 		return result;
 
+	}
+
+	public static <T> Map<T, Integer> createIndexMap(final List<? extends T> list) {
+		final Map<T, Integer> result = Maps.newHashMapWithExpectedSize(list.size());
+		final ListIterator<? extends T> iter = list.listIterator();
+		while (iter.hasNext()) {
+			final int idx = iter.nextIndex();
+			final T next = iter.next();
+			result.put(next, idx);
+		}
+		return result;
 	}
 
 	public static <T> Optional<T> getFirstElement(final List<? extends T> list) {
