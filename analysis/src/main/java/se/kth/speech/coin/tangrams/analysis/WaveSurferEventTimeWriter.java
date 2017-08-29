@@ -66,6 +66,8 @@ final class WaveSurferEventTimeWriter { // NO_UCD (use default)
 
 	private static final int SHAPE_COL_IDX = 1;
 
+	private static final String TURN_DELIMITING_EVENT_NAME = GameManagementEvent.NEXT_TURN_REQUEST.getEventName();
+	
 	public static void main(final String[] args) throws IOException {
 		final Path[] inpaths = Arrays.stream(args).map(String::trim).filter(path -> !path.isEmpty()).map(Paths::get)
 				.toArray(Path[]::new);
@@ -111,7 +113,7 @@ final class WaveSurferEventTimeWriter { // NO_UCD (use default)
 							if (event.has(GameManagementEvent.Attribute.GAME_STATE.toString()) && startTime == null) {
 								startTime = time;
 							}
-							if (event.getName().equals("tangrams.action.nextturn.request")) {
+							if (TURN_DELIMITING_EVENT_NAME.equals(event.getName())) {
 								final double t = ChronoUnit.MILLIS.between(startTime, time) / 1000d;
 								final String pid = event.getString("MOVE:pieceId");
 								if (lastp != null) {
