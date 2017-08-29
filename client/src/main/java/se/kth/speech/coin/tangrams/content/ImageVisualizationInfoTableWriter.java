@@ -32,13 +32,13 @@ import java.util.stream.Stream;
  */
 public final class ImageVisualizationInfoTableWriter {
 
-	public static final String TABLE_STRING_REPR_COL_DELIMITER;
-
-	public static final String TABLE_STRING_REPR_ROW_DELIMITER;
-
 	private static final Collector<CharSequence, ?, String> TABLE_ROW_CELL_JOINER;
 
 	private static final Collector<CharSequence, ?, String> TABLE_ROW_JOINER;
+
+	private static final String TABLE_STRING_REPR_COL_DELIMITER;
+
+	private static final String TABLE_STRING_REPR_ROW_DELIMITER;
 
 	static {
 		TABLE_STRING_REPR_ROW_DELIMITER = System.lineSeparator();
