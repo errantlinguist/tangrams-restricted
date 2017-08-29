@@ -98,13 +98,13 @@ public enum GameManagementEvent {
 		this.eventName = EVENT_NAME_QUALIFIER + '.' + eventName;
 	}
 
+	public String getEventName() {
+		return eventName;
+	}
+
 	Event createEvent(final String gameId) {
 		final Event result = new Event(getEventName());
 		result.put(Attribute.GAME_ID.toString(), gameId);
 		return result;
-	}
-
-	String getEventName() {
-		return eventName;
 	}
 }
