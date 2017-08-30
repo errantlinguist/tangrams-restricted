@@ -61,6 +61,10 @@ public final class Utterance implements Comparable<Utterance> {
 		return NATURAL_COMPARATOR.compare(this, o);
 	}
 
+	public String createTokenString() {
+		return tokens.stream().collect(WORD_JOINER);
+	}
+
 	/*
 	 * (non-Javadoc)
 	 * 
@@ -141,13 +145,6 @@ public final class Utterance implements Comparable<Utterance> {
 	 */
 	public List<String> getTokens() {
 		return tokens;
-	}
-
-	/**
-	 * @return the tokenStr
-	 */
-	public String getTokenStr() {
-		return tokens.stream().collect(WORD_JOINER);
 	}
 
 	/*

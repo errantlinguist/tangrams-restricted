@@ -81,7 +81,7 @@ public final class CachingUtteranceSentimentRanker implements ToDoubleFunction<U
 	}
 
 	private double calculateUttSentimentRank(final Utterance utt) {
-		final Annotation annot = new Annotation(utt.getTokenStr());
+		final Annotation annot = new Annotation(utt.createTokenString());
 		annotator.annotate(annot);
 		final List<CoreMap> sents = annot.get(SentencesAnnotation.class);
 		final double result;

@@ -96,7 +96,7 @@ final class UtteranceRelationLogWriter implements BiConsumer<EventDialogue, Iter
 		writer.write(COL_DELIM);
 		final Optional<WeightedUtterance> optInstrUtt = uttRel.getAcceptanceUtt();
 		writer.write(
-				optInstrUtt.map(WeightedUtterance::getUtterance).map(Utterance::getTokenStr).orElse(nullCellValueRepr));
+				optInstrUtt.map(WeightedUtterance::getUtterance).map(Utterance::createTokenString).orElse(nullCellValueRepr));
 		writer.write(COL_DELIM);
 		writer.write(optInstrUtt.map(WeightedUtterance::getUtterance).map(Utterance::getTokens).map(List::size)
 				.map(Object::toString).orElse(nullCellValueRepr));
@@ -109,7 +109,7 @@ final class UtteranceRelationLogWriter implements BiConsumer<EventDialogue, Iter
 		final Stream<String> prevUttWordClasses = prevUtts.stream().map(Utterance::getTokens).flatMap(List::stream);
 		writer.write(Long.toString(prevUttWordClasses.count()));
 		writer.write(COL_DELIM);
-		final String[] prevUttReprs = prevUtts.stream().map(Utterance::getTokenStr).toArray(String[]::new);
+		final String[] prevUttReprs = prevUtts.stream().map(Utterance::createTokenString).toArray(String[]::new);
 		if (prevUttReprs.length > 0) {
 			writer.write(Arrays.stream(prevUttReprs).collect(UTT_REPR_JOINER));
 		}

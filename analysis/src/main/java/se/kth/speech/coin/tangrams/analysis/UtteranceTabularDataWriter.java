@@ -494,7 +494,7 @@ final class UtteranceTabularDataWriter {
 					final String speakingPlayerId = prevUtt.getSpeakerId();
 					sb.append(String.format(
 							"Last utt before event: \"%s\"; speaking player ID: \"%s\"; start: %f; end: %f; segment ID: \"%s\"; event ID: \"%s\"; event time: \"%s\"",
-							prevUtt.getTokenStr(), speakingPlayerId, prevUtt.getStartTime(), prevUtt.getEndTime(),
+							prevUtt.createTokenString(), speakingPlayerId, prevUtt.getStartTime(), prevUtt.getEndTime(),
 							prevUtt.getSegmentId(), prevEvent.getId(), prevEvent.getTime()));
 				}
 			}
@@ -520,7 +520,7 @@ final class UtteranceTabularDataWriter {
 					final String speakingPlayerId = nextUtt.getSpeakerId();
 					sb.append(String.format(
 							"Next utt after event: \"%s\"; speaking player ID: \"%s\"; start: %f; end: %f; segment ID: \"%s\"; event ID: \"%s\"; event time: \"%s\"",
-							nextUtt.getTokenStr(), speakingPlayerId, nextUtt.getStartTime(), nextUtt.getEndTime(),
+							nextUtt.createTokenString(), speakingPlayerId, nextUtt.getStartTime(), nextUtt.getEndTime(),
 							nextUtt.getSegmentId(), nextEvent.getId(), nextEvent.getTime()));
 				}
 			}

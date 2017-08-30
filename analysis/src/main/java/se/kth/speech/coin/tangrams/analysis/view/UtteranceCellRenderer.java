@@ -36,7 +36,7 @@ final class UtteranceCellRenderer extends DefaultTableCellRenderer {
 	private static final long serialVersionUID = -259987246089416410L;
 
 	private static final Function<Utterance, String> UTT_REPR_FACTORY = utt -> {
-		final String tokenSeqRepr = utt.getTokenStr();
+		final String tokenSeqRepr = utt.createTokenString();
 		return String.format("**%s:** %s", utt.getSpeakerId(), tokenSeqRepr);
 	};
 
