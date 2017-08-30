@@ -28,6 +28,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -38,17 +40,11 @@ import org.slf4j.LoggerFactory;
 import com.github.errantlinguist.ClassProperties;
 import com.google.common.collect.Sets;
 
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
 import se.kth.speech.hat.xsd.Transcription;
 import se.kth.speech.hat.xsd.Transcription.T;
 
-/**
- * <strong>NOTE:</strong> This class is not thread-safe!
- *
- */
 final class SegmentUtteranceFactory {
 
 	private static final int EXPECTED_UNIQUE_TOKEN_SEQUENCES = 2048;
@@ -61,25 +57,22 @@ final class SegmentUtteranceFactory {
 			.thenComparingDouble(Segment::getEnd).thenComparing(seg -> seg.getTranscription().getSegmentOrT().size())
 			.thenComparing(Segment::getSource).thenComparing(Segment::getTrack).thenComparing(Segment::getId);
 
-	/**
-	 * <strong>NOTE:</strong> This is not thread-safe!
-	 */
-	private static final Function<String[], List<String>> TOKEN_LIST_SINGLETON_FACTORY = new Function<String[], List<String>>() {
+	private static final Function<List<String>, List<String>> TOKEN_LIST_SINGLETON_FACTORY = new Function<List<String>, List<String>>() {
 
-		private final Int2ObjectMap<Reference<List<String>>> singletonInstances = new Int2ObjectOpenHashMap<>(
+		private final ConcurrentMap<List<String>, Reference<List<String>>> singletonInstances = new ConcurrentHashMap<>(
 				EXPECTED_UNIQUE_TOKEN_SEQUENCES);
 
 		@Override
-		public List<String> apply(final String[] tokens) {
-			final int hashCode = Arrays.hashCode(tokens);
-			final Reference<List<String>> newValue;
-			final Reference<List<String>> oldValue = singletonInstances.get(hashCode);
-			if (oldValue == null || oldValue.get() == null) {
-				newValue = new SoftReference<>(Collections.unmodifiableList(Arrays.asList(tokens)));
-			} else {
-				newValue = oldValue;
-			}
-			return newValue.get();
+		public List<String> apply(final List<String> tokens) {
+			return singletonInstances.compute(tokens, (key, oldValue) -> {
+				final Reference<List<String>> newValue;
+				if (oldValue == null || oldValue.get() == null) {
+					newValue = new SoftReference<>(key);
+				} else {
+					newValue = oldValue;
+				}
+				return newValue;
+			}).get();
 		}
 
 	};
@@ -179,10 +172,10 @@ final class SegmentUtteranceFactory {
 						tokens.add((T) child);
 					}
 				}
-				final String[] contentTokens = tokens.stream().map(T::getContent).map(String::trim)
-						.filter(token -> !token.isEmpty()).filter(token -> !META_LANGUAGE_TOKENS.contains(token))
-						.toArray(String[]::new);
-				if (contentTokens.length < 1) {
+				final List<String> contentTokens = Collections.unmodifiableList(Arrays
+						.asList(tokens.stream().map(T::getContent).map(String::trim).filter(token -> !token.isEmpty())
+								.filter(token -> !META_LANGUAGE_TOKENS.contains(token)).toArray(String[]::new)));
+				if (contentTokens.isEmpty()) {
 					LOGGER.debug("Segment ID \"{}\" does not have any content tokens; Ignoring.", segment.getId());
 				} else {
 					final Utterance utt = new Utterance(parentSegmentId, speakerId,
