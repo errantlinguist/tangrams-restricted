@@ -76,7 +76,6 @@ final class SegmentUtteranceFactory {
 			final Reference<List<String>> oldValue = singletonInstances.get(hashCode);
 			if (oldValue == null || oldValue.get() == null) {
 				newValue = new SoftReference<>(Collections.unmodifiableList(Arrays.asList(tokens)));
-				singletonInstances.put(hashCode, newValue);
 			} else {
 				newValue = oldValue;
 			}
