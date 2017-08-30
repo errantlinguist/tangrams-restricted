@@ -67,7 +67,7 @@ final class SegmentUtteranceFactory {
 			return singletonInstances.compute(tokens, (key, oldValue) -> {
 				final Reference<List<String>> newValue;
 				if (oldValue == null || oldValue.get() == null) {
-					newValue = new SoftReference<>(key);
+					newValue = new SoftReference<>(Collections.unmodifiableList(key));
 				} else {
 					newValue = oldValue;
 				}
@@ -172,9 +172,9 @@ final class SegmentUtteranceFactory {
 						tokens.add((T) child);
 					}
 				}
-				final List<String> contentTokens = Collections.unmodifiableList(Arrays
+				final List<String> contentTokens = Arrays
 						.asList(tokens.stream().map(T::getContent).map(String::trim).filter(token -> !token.isEmpty())
-								.filter(token -> !META_LANGUAGE_TOKENS.contains(token)).toArray(String[]::new)));
+								.filter(token -> !META_LANGUAGE_TOKENS.contains(token)).toArray(String[]::new));
 				if (contentTokens.isEmpty()) {
 					LOGGER.debug("Segment ID \"{}\" does not have any content tokens; Ignoring.", segment.getId());
 				} else {
