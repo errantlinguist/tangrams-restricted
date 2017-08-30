@@ -39,8 +39,6 @@ public final class Utterance implements Comparable<Utterance> {
 
 	private final List<String> tokens;
 
-	private final String tokenStr;
-
 	public Utterance(final String segmentId, final String speakerId, final List<String> tokens, final float startTime,
 			final float endTime) {
 		if (startTime > endTime) {
@@ -49,7 +47,6 @@ public final class Utterance implements Comparable<Utterance> {
 		this.segmentId = segmentId;
 		this.speakerId = speakerId;
 		this.tokens = tokens;
-		tokenStr = tokens.stream().collect(WORD_JOINER);
 		this.startTime = startTime;
 		this.endTime = endTime;
 	}
@@ -62,6 +59,10 @@ public final class Utterance implements Comparable<Utterance> {
 	@Override
 	public int compareTo(final Utterance o) {
 		return NATURAL_COMPARATOR.compare(this, o);
+	}
+
+	public String createTokenString() {
+		return tokens.stream().collect(WORD_JOINER);
 	}
 
 	/*
@@ -144,13 +145,6 @@ public final class Utterance implements Comparable<Utterance> {
 	 */
 	public List<String> getTokens() {
 		return tokens;
-	}
-
-	/**
-	 * @return the tokenStr
-	 */
-	public String getTokenStr() {
-		return tokenStr;
 	}
 
 	/*

@@ -50,7 +50,7 @@ public final class LuceneAnalyzingEventDialogueTransformer // NO_UCD (unused cod
 
 	@Override
 	protected Stream<Utterance> transformUtt(final Utterance utt) {
-		final Stream<String> newTokens = tokenTransformer.apply(utt.getTokenStr()).map(String::trim)
+		final Stream<String> newTokens = tokenTransformer.apply(utt.createTokenString()).map(String::trim)
 				.filter(str -> !str.isEmpty());
 		final String[] newTokenArr = newTokens.toArray(String[]::new);
 		return newTokenArr.length < 1 ? Stream.empty()

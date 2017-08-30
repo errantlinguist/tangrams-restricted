@@ -18,6 +18,8 @@ package se.kth.speech.coin.tangrams.analysis;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.lang.ref.Reference;
+import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -26,6 +28,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
@@ -36,12 +40,41 @@ import org.slf4j.LoggerFactory;
 import com.github.errantlinguist.ClassProperties;
 import com.google.common.collect.Sets;
 
-import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
+import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
 import se.kth.speech.hat.xsd.Transcription;
 import se.kth.speech.hat.xsd.Transcription.T;
 
 final class SegmentUtteranceFactory {
+
+	private static class TokenListSingletonFactory implements Function<String[], List<String>> {
+
+		private final ConcurrentMap<List<String>, Reference<List<String>>> singletonInstances;
+
+		private TokenListSingletonFactory(final int expectedUniqueTokenSequenceCount) {
+			singletonInstances = new ConcurrentHashMap<>(expectedUniqueTokenSequenceCount);
+		}
+
+		@Override
+		public List<String> apply(final String[] tokens) {
+			return apply(Arrays.asList(tokens));
+		}
+
+		private List<String> apply(final List<String> tokens) {
+			return singletonInstances.compute(tokens, (key, oldValue) -> {
+				final Reference<List<String>> newValue;
+				if (oldValue == null || oldValue.get() == null) {
+					newValue = new SoftReference<>(Collections.unmodifiableList(key));
+				} else {
+					newValue = oldValue;
+				}
+				return newValue;
+			}).get();
+		}
+
+	}
+
+	private static final int EXPECTED_UNIQUE_TOKEN_SEQUENCES = 2048;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SegmentUtteranceFactory.class);
 
@@ -114,8 +147,16 @@ final class SegmentUtteranceFactory {
 
 	private final Function<? super Segment, String> segmentSpeakerIdFactory;
 
-	SegmentUtteranceFactory(final Function<? super Segment, String> segmentSpeakerIdFactory) {
+	private final Function<? super String[], List<String>> tokenListSingletonFactory;
+
+	private SegmentUtteranceFactory(final Function<? super Segment, String> segmentSpeakerIdFactory,
+			final Function<? super String[], List<String>> tokenListSingletonFactory) {
 		this.segmentSpeakerIdFactory = segmentSpeakerIdFactory;
+		this.tokenListSingletonFactory = tokenListSingletonFactory;
+	}
+
+	SegmentUtteranceFactory(final Function<? super Segment, String> segmentSpeakerIdFactory) {
+		this(segmentSpeakerIdFactory, new TokenListSingletonFactory(EXPECTED_UNIQUE_TOKEN_SEQUENCES));
 	}
 
 	List<Utterance> create(final Segment segment) {
@@ -125,7 +166,8 @@ final class SegmentUtteranceFactory {
 			LOGGER.warn("Segment ID \"{}\" has no {} element.", segment.getId(), Transcription.class.getSimpleName());
 		} else {
 			final List<Object> children = transcription.getSegmentOrT();
-			// TODO: make this recursively create individual Utterances for each child Segment
+			// TODO: make this recursively create individual Utterances for each
+			// child Segment
 			final Float segStartTime = segment.getStart();
 			assert segStartTime != null;
 			final Float segEndTime = segment.getEnd();
@@ -151,8 +193,8 @@ final class SegmentUtteranceFactory {
 				if (contentTokens.length < 1) {
 					LOGGER.debug("Segment ID \"{}\" does not have any content tokens; Ignoring.", segment.getId());
 				} else {
-					final Utterance utt = new Utterance(parentSegmentId, speakerId, Arrays.asList(contentTokens),
-							segStartTime, segEndTime);
+					final Utterance utt = new Utterance(parentSegmentId, speakerId,
+							tokenListSingletonFactory.apply(contentTokens), segStartTime, segEndTime);
 					result.add(utt);
 				}
 			}

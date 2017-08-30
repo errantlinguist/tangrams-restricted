@@ -37,7 +37,7 @@ public final class TokenizingEventDialogueTransformer extends AbstractUtteranceT
 
 	@Override
 	protected Stream<Utterance> transformUtt(final Utterance utt) {
-		final String tokenStr = utt.getTokenStr();
+		final String tokenStr = utt.createTokenString();
 		final List<String> newTokens = tokenizer.apply(tokenStr);
 		return newTokens.isEmpty() ? Stream.empty()
 				: Stream.of(new Utterance(utt.getSegmentId(), utt.getSpeakerId(), newTokens, utt.getStartTime(),
