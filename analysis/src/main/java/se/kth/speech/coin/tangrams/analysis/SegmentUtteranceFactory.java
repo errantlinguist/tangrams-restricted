@@ -47,7 +47,7 @@ import se.kth.speech.hat.xsd.Transcription.T;
 
 final class SegmentUtteranceFactory {
 
-	private static class TokenListSingletonFactory implements Function<List<String>, List<String>> {
+	private static class TokenListSingletonFactory implements Function<String[], List<String>> {
 
 		private final ConcurrentMap<List<String>, Reference<List<String>>> singletonInstances;
 
@@ -56,7 +56,11 @@ final class SegmentUtteranceFactory {
 		}
 
 		@Override
-		public List<String> apply(final List<String> tokens) {
+		public List<String> apply(final String[] tokens) {
+			return apply(Arrays.asList(tokens));
+		}
+
+		private List<String> apply(final List<String> tokens) {
 			return singletonInstances.compute(tokens, (key, oldValue) -> {
 				final Reference<List<String>> newValue;
 				if (oldValue == null || oldValue.get() == null) {
@@ -143,10 +147,10 @@ final class SegmentUtteranceFactory {
 
 	private final Function<? super Segment, String> segmentSpeakerIdFactory;
 
-	private final Function<? super List<String>, List<String>> tokenListSingletonFactory;
+	private final Function<? super String[], List<String>> tokenListSingletonFactory;
 
 	private SegmentUtteranceFactory(final Function<? super Segment, String> segmentSpeakerIdFactory,
-			final Function<? super List<String>, List<String>> tokenListSingletonFactory) {
+			final Function<? super String[], List<String>> tokenListSingletonFactory) {
 		this.segmentSpeakerIdFactory = segmentSpeakerIdFactory;
 		this.tokenListSingletonFactory = tokenListSingletonFactory;
 	}
@@ -183,10 +187,10 @@ final class SegmentUtteranceFactory {
 						tokens.add((T) child);
 					}
 				}
-				final List<String> contentTokens = Arrays
-						.asList(tokens.stream().map(T::getContent).map(String::trim).filter(token -> !token.isEmpty())
-								.filter(token -> !META_LANGUAGE_TOKENS.contains(token)).toArray(String[]::new));
-				if (contentTokens.isEmpty()) {
+				final String[] contentTokens = tokens.stream().map(T::getContent).map(String::trim)
+						.filter(token -> !token.isEmpty()).filter(token -> !META_LANGUAGE_TOKENS.contains(token))
+						.toArray(String[]::new);
+				if (contentTokens.length < 1) {
 					LOGGER.debug("Segment ID \"{}\" does not have any content tokens; Ignoring.", segment.getId());
 				} else {
 					final Utterance utt = new Utterance(parentSegmentId, speakerId,
