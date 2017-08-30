@@ -51,16 +51,23 @@ import se.kth.speech.hat.xsd.Transcription.T;
  */
 final class SegmentUtteranceFactory {
 
+	private static final int EXPECTED_UNIQUE_TOKEN_SEQUENCES = 2048;
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(SegmentUtteranceFactory.class);
+
+	private static final Set<String> META_LANGUAGE_TOKENS;
+
+	private static final Comparator<Segment> TEMPORAL_SEGMENT_COMPARATOR = Comparator.comparingDouble(Segment::getStart)
+			.thenComparingDouble(Segment::getEnd).thenComparing(seg -> seg.getTranscription().getSegmentOrT().size())
+			.thenComparing(Segment::getSource).thenComparing(Segment::getTrack).thenComparing(Segment::getId);
+
 	/**
 	 * <strong>NOTE:</strong> This is not thread-safe!
 	 */
-	private static class TokenListSingletonFactory implements Function<String[], List<String>> {
+	private static final Function<String[], List<String>> TOKEN_LIST_SINGLETON_FACTORY = new Function<String[], List<String>>() {
 
-		private final Int2ObjectMap<Reference<List<String>>> singletonInstances;
-
-		private TokenListSingletonFactory(final int expectedUniqueTokenSequences) {
-			singletonInstances = new Int2ObjectOpenHashMap<>(expectedUniqueTokenSequences);
-		}
+		private final Int2ObjectMap<Reference<List<String>>> singletonInstances = new Int2ObjectOpenHashMap<>(
+				EXPECTED_UNIQUE_TOKEN_SEQUENCES);
 
 		@Override
 		public List<String> apply(final String[] tokens) {
@@ -76,17 +83,7 @@ final class SegmentUtteranceFactory {
 			return newValue.get();
 		}
 
-	}
-
-	private static final int EXPECTED_UNIQUE_TOKEN_SEQUENCES = 2048;
-
-	private static final Logger LOGGER = LoggerFactory.getLogger(SegmentUtteranceFactory.class);
-
-	private static final Set<String> META_LANGUAGE_TOKENS;
-
-	private static final Comparator<Segment> TEMPORAL_SEGMENT_COMPARATOR = Comparator.comparingDouble(Segment::getStart)
-			.thenComparingDouble(Segment::getEnd).thenComparing(seg -> seg.getTranscription().getSegmentOrT().size())
-			.thenComparing(Segment::getSource).thenComparing(Segment::getTrack).thenComparing(Segment::getId);
+	};
 
 	static {
 		try {
@@ -151,21 +148,8 @@ final class SegmentUtteranceFactory {
 
 	private final Function<? super Segment, String> segmentSpeakerIdFactory;
 
-	private final Function<? super String[], List<String>> tokenListSingletonFactory;
-
 	SegmentUtteranceFactory(final Function<? super Segment, String> segmentSpeakerIdFactory) {
-		this(segmentSpeakerIdFactory, EXPECTED_UNIQUE_TOKEN_SEQUENCES);
-	}
-
-	SegmentUtteranceFactory(final Function<? super Segment, String> segmentSpeakerIdFactory,
-			final Function<? super String[], List<String>> tokenListSingletonFactory) {
 		this.segmentSpeakerIdFactory = segmentSpeakerIdFactory;
-		this.tokenListSingletonFactory = tokenListSingletonFactory;
-	}
-
-	SegmentUtteranceFactory(final Function<? super Segment, String> segmentSpeakerIdFactory,
-			final int expectedUniqueTokenSequences) {
-		this(segmentSpeakerIdFactory, new TokenListSingletonFactory(expectedUniqueTokenSequences));
 	}
 
 	List<Utterance> create(final Segment segment) {
@@ -203,7 +187,7 @@ final class SegmentUtteranceFactory {
 					LOGGER.debug("Segment ID \"{}\" does not have any content tokens; Ignoring.", segment.getId());
 				} else {
 					final Utterance utt = new Utterance(parentSegmentId, speakerId,
-							tokenListSingletonFactory.apply(contentTokens), segStartTime, segEndTime);
+							TOKEN_LIST_SINGLETON_FACTORY.apply(contentTokens), segStartTime, segEndTime);
 					result.add(utt);
 				}
 			}
