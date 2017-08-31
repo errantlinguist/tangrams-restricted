@@ -189,7 +189,7 @@ final class SegmentUtteranceFactory {
 				}
 				final String[] contentTokens = tokens.stream().map(T::getContent).map(String::trim)
 						.filter(token -> !token.isEmpty()).filter(token -> !META_LANGUAGE_TOKENS.contains(token))
-						.toArray(String[]::new);
+						.map(String::intern).toArray(String[]::new);
 				if (contentTokens.length < 1) {
 					LOGGER.debug("Segment ID \"{}\" does not have any content tokens; Ignoring.", segment.getId());
 				} else {
