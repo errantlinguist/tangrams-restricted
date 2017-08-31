@@ -320,12 +320,12 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 					final Map<Metadatum, Object> metadataValues = new EnumMap<>(Metadatum.class);
 					metadataValues.put(Metadatum.END_SCORE, gameScore);
 					metadataValues.put(Metadatum.ENTITY_COUNT, entityCount);
+					metadataValues.put(Metadatum.EVENT_COUNT, eventId);
 					{
 						final BigDecimal durationInSecs = TimestampArithmetic
 								.toDecimalSeconds(Duration.between(history.getStartTime(), maxEventTime));
 						metadataValues.put(Metadatum.GAME_DURATION, durationInSecs);
 					}
-					metadataValues.put(Metadatum.EVENT_COUNT, eventId);
 					metadataValues.put(Metadatum.GAME_ID, canonicalGame.getGameId());
 					metadataValues.put(Metadatum.ROUND_COUNT, gameRoundId);
 					{
