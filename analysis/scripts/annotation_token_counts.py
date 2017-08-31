@@ -16,8 +16,8 @@ def count_tokens(infile_paths):
 	result = Counter()
 	for infile_path in infile_paths:
 		print("Reading XML file \"{}\".".format(infile_path), file=sys.stderr)
-		e = xml.etree.ElementTree.parse(infile_path)
-		token_annots = e.findall('.//{http://www.speech.kth.se/higgins/2005/annotation/}t')
+		doc_tree = xml.etree.ElementTree.parse(infile_path)
+		token_annots = doc_tree.findall('.//{http://www.speech.kth.se/higgins/2005/annotation/}t')
 		tokens = (annot.text for annot in token_annots)
 		result.update(tokens)
 				
