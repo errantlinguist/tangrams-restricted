@@ -180,15 +180,6 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 
 	private enum Metadatum {
 		END_SCORE, ENTITY_COUNT, EVENT_COUNT, GAME_DURATION, GAME_ID, ROUND_COUNT, START_TIME;
-
-		private static final List<Metadatum> CANONICAL_ORDERING;
-
-		static {
-			CANONICAL_ORDERING = Collections
-					.unmodifiableList(Arrays.asList(Metadatum.GAME_ID, Metadatum.START_TIME, Metadatum.GAME_DURATION,
-							Metadatum.ENTITY_COUNT, Metadatum.EVENT_COUNT, Metadatum.ROUND_COUNT, Metadatum.END_SCORE));
-			assert CANONICAL_ORDERING.size() == Metadatum.values().length;
-		}
 	}
 
 	private static final GameManagementEvent GAME_ROUND_DELIMITING_EVENT_TYPE = GameManagementEvent.NEXT_TURN_REQUEST;
@@ -326,43 +317,29 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 				}
 
 				{
-					// final GameSummary summary = new GameSummary(history,
-					// canonicalGame.getEventDialogues());
 					final Map<Metadatum, Object> metadataValues = new EnumMap<>(Metadatum.class);
-					final String gameId = canonicalGame.getGameId();
-					// final BigDecimal durationInSecs =
-					// TimestampArithmetic.toDecimalSeconds(summary.getDuration());
-					final BigDecimal durationInSecs = TimestampArithmetic
-							.toDecimalSeconds(Duration.between(history.getStartTime(), maxEventTime));
-					metadataValues.put(Metadatum.ENTITY_COUNT, entityCount);
-					metadataValues.put(Metadatum.GAME_DURATION, durationInSecs);
 					metadataValues.put(Metadatum.END_SCORE, gameScore);
-					metadataValues.put(Metadatum.GAME_ID, gameId);
+					metadataValues.put(Metadatum.ENTITY_COUNT, entityCount);
+					{
+						final BigDecimal durationInSecs = TimestampArithmetic
+								.toDecimalSeconds(Duration.between(history.getStartTime(), maxEventTime));
+						metadataValues.put(Metadatum.GAME_DURATION, durationInSecs);
+					}
 					metadataValues.put(Metadatum.EVENT_COUNT, eventId);
-					// assert summary.getCompletedRoundCount() <= gameRoundId :
-					// String.format(
-					// "%d completed dialogue(s) but %d were processed.",
-					// summary.getCompletedRoundCount(),
-					// gameRoundId);
-					// final OptionalDouble optLastUttEndTime =
-					// canonicalGame.getUtterances().stream()
-					// .mapToDouble(Utterance::getEndTime).max();
-					// final String lastUttEndTimeRepr =
-					// optLastUttEndTime.isPresent()
-					// ? Double.toString(optLastUttEndTime.getAsDouble())
-					// : NULL_VALUE_REPR;
-					// metadataValues.put(Metadatum.LAST_UTT_END,
-					// lastUttEndTimeRepr);
+					metadataValues.put(Metadatum.GAME_ID, canonicalGame.getGameId());
 					metadataValues.put(Metadatum.ROUND_COUNT, gameRoundId);
-					final ZonedDateTime zonedGameStart = history.getStartTime().atZone(ORIGINAL_EXPERIMENT_TIMEZONE);
-					metadataValues.put(Metadatum.START_TIME, OUTPUT_DATETIME_FORMATTER.format(zonedGameStart));
+					{
+						final ZonedDateTime zonedGameStart = history.getStartTime()
+								.atZone(ORIGINAL_EXPERIMENT_TIMEZONE);
+						metadataValues.put(Metadatum.START_TIME, OUTPUT_DATETIME_FORMATTER.format(zonedGameStart));
+					}
 					assert metadataValues.size() == Metadatum.values().length;
 					{
 						final String outfileName = createEventsMetadataOutfileName();
 						final Path outfilePath = infileParentDir == null ? Paths.get(outfileName)
 								: infileParentDir.resolve(outfileName);
 						LOGGER.info("Writing metadata to \"{}\".", outfilePath);
-						final Stream<Stream<Object>> metadataRows = Metadatum.CANONICAL_ORDERING.stream()
+						final Stream<Stream<Object>> metadataRows = Arrays.stream(Metadatum.values())
 								.map(metadatum -> new Object[] { metadatum, metadataValues.get(metadatum) })
 								.map(Arrays::stream);
 						final Stream<String> metadataFileRows = metadataRows
