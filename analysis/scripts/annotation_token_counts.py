@@ -25,7 +25,7 @@ def count_tokens(infile_paths):
 	
 def walk_xml_files(inpaths):
 	for inpath in inpaths:
-		for dirpath, dirnames, filenames in os.walk(inpath):
+		for dirpath, dirnames, filenames in os.walk(inpath, followlinks=True):
 			for filename in filenames:
 				resolved_path = os.path.join(dirpath, filename)
 				mimetype = mimetypes.guess_type(resolved_path)[0]
