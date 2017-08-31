@@ -85,8 +85,7 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 
 			@Override
 			public String apply(final EventContext eventCtx, final String nullValueRepr) {
-				// 1-indexed
-				return Integer.toString(eventCtx.getEventId() + 1);
+				return Integer.toString(eventCtx.getEventId());
 			}
 
 		},
@@ -180,13 +179,14 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 	}
 
 	private enum Metadatum {
-		END_SCORE, ENTITY_COUNT, GAME_DURATION, GAME_ID, ROUND_COUNT, START_TIME;
+		END_SCORE, ENTITY_COUNT, EVENT_COUNT, GAME_DURATION, GAME_ID, ROUND_COUNT, START_TIME;
 
 		private static final List<Metadatum> CANONICAL_ORDERING;
 
 		static {
-			CANONICAL_ORDERING = Collections.unmodifiableList(Arrays.asList(Metadatum.GAME_ID, Metadatum.START_TIME,
-					Metadatum.GAME_DURATION, Metadatum.ENTITY_COUNT, Metadatum.ROUND_COUNT, Metadatum.END_SCORE));
+			CANONICAL_ORDERING = Collections
+					.unmodifiableList(Arrays.asList(Metadatum.GAME_ID, Metadatum.START_TIME, Metadatum.GAME_DURATION,
+							Metadatum.ENTITY_COUNT, Metadatum.EVENT_COUNT, Metadatum.ROUND_COUNT, Metadatum.END_SCORE));
 			assert CANONICAL_ORDERING.size() == Metadatum.values().length;
 		}
 	}
@@ -287,6 +287,7 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 						NULL_VALUE_REPR);
 				final int entityCount = history.getEntityCount();
 
+				int eventId = 0;
 				int gameRoundId = 0;
 				int gameScore = 0;
 				LocalDateTime maxEventTime = LocalDateTime.MIN;
@@ -294,8 +295,9 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 					final List<Event> events = Arrays.asList(history.getEventSequence().toArray(Event[]::new));
 					final List<Stream<String>> eventRows = new ArrayList<>(events.size() * entityCount);
 					for (final ListIterator<Event> eventIter = events.listIterator(); eventIter.hasNext();) {
-						final int eventId = eventIter.nextIndex();
 						final Event event = eventIter.next();
+						// Event ID is 1-indexed
+						eventId = eventIter.nextIndex();
 						final GameManagementEvent eventType = GameManagementEvent.getEventType(event);
 						if (GAME_ROUND_DELIMITING_EVENT_TYPE.equals(eventType)) {
 							gameRoundId++;
@@ -336,6 +338,7 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 					metadataValues.put(Metadatum.GAME_DURATION, durationInSecs);
 					metadataValues.put(Metadatum.END_SCORE, gameScore);
 					metadataValues.put(Metadatum.GAME_ID, gameId);
+					metadataValues.put(Metadatum.EVENT_COUNT, eventId);
 					// assert summary.getCompletedRoundCount() <= gameRoundId :
 					// String.format(
 					// "%d completed dialogue(s) but %d were processed.",
