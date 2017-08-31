@@ -118,11 +118,6 @@ public final class GameHistoryCollector
 			}
 		}
 
-		/**
-		 * @param gameId
-		 * @param timestamp
-		 * @param event
-		 */
 		private void addEvent(final Map<String, GameHistory> gameHistories, final String gameId,
 				final LocalDateTime time, final Event event) {
 			gameHistories.compute(gameId, (gKey, oldVal) -> {
@@ -139,11 +134,6 @@ public final class GameHistoryCollector
 			});
 		}
 
-		/**
-		 * @param gameId
-		 * @param startTime
-		 * @param gameDesc
-		 */
 		private void putInitialState(final Map<String, GameHistory> gameHistories, final String gameId,
 				final LocalDateTime startTime, final GameStateDescription gameDesc) {
 			gameHistories.compute(gameId, (key, oldVal) -> {
