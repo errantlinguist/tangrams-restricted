@@ -30,7 +30,7 @@ class CachingNgramFactory(object):
         return result
 
     def __create_ngrams(self, tokens):
-        ngram_lens = range(0, len(tokens))
+        ngram_lens = range(1, len(tokens))
         return tuple(len_ngram for ngram_len in ngram_lens for len_ngram in ngrams(tokens, ngram_len))
 
 
