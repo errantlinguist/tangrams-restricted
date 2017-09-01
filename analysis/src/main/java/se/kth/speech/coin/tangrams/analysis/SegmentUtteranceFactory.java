@@ -83,8 +83,7 @@ final class SegmentUtteranceFactory {
 	private static final Set<String> META_LANGUAGE_TOKENS;
 
 	private static final Comparator<Segment> TEMPORAL_SEGMENT_COMPARATOR = Comparator.comparingDouble(Segment::getStart)
-			.thenComparingDouble(Segment::getEnd).thenComparing(seg -> seg.getTranscription().getSegmentOrT().size())
-			.thenComparing(Segment::getSource).thenComparing(Segment::getTrack).thenComparing(Segment::getId);
+			.thenComparingDouble(Segment::getEnd).thenComparing(Segment::getId);
 
 	static {
 		try {

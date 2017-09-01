@@ -24,8 +24,7 @@ import java.util.stream.Collectors;
 public final class Utterance implements Comparable<Utterance> {
 
 	private static final Comparator<Utterance> NATURAL_COMPARATOR = Comparator.comparingDouble(Utterance::getStartTime)
-			.thenComparingDouble(Utterance::getEndTime).thenComparingInt(utt -> utt.getTokens().size())
-			.thenComparing(Utterance::getSpeakerId).thenComparing(Utterance::getSegmentId);
+			.thenComparingDouble(Utterance::getEndTime).thenComparing(Utterance::getSegmentId);
 
 	private static final Collector<CharSequence, ?, String> WORD_JOINER = Collectors.joining(" ");
 
