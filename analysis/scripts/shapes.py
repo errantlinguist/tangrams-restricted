@@ -17,7 +17,8 @@ TRUTH_CELL_VALUE = "true"
 
 
 class CachingNgramFactory(object):
-    def __init__(self):
+    def __init__(self, max_ngram_length):
+        self.max_ngram_length_stop = max_ngram_length + 1
         self.cache = {}
 
     def __call__(self, tokens):
@@ -30,7 +31,7 @@ class CachingNgramFactory(object):
         return result
 
     def __create_ngrams(self, tokens):
-        ngram_lens = range(1, len(tokens))
+        ngram_lens = range(1, min(self.max_ngram_length_stop, len(tokens)))
         return tuple(len_ngram for ngram_len in ngram_lens for len_ngram in ngrams(tokens, ngram_len))
 
 
@@ -92,17 +93,30 @@ class SegmentUtteranceFactory(object):
     def __init__(self):
         self.token_seq_singletons = {}
 
-    def __call__(self, segment):
+    def __call__(self, segments):
+        for segment in segments:
+            utt = self.__create(segment)
+            if utt:
+                yield utt
+
+    def __create(self, segment):
         tokens = segment.iterfind(".//hat:t", ANNOTATION_NAMESPACES)
-        content = tuple(token.text.strip() for token in tokens)
-        try:
-            singleton_content = self.token_seq_singletons[content]
-        except KeyError:
-            singleton_content = tuple(sys.intern(token) for token in content)
-            self.token_seq_singletons[singleton_content] = singleton_content
-        return Utterance(segment.get("id"), sys.intern(segment.get("source")), float(segment.get("start")),
-                         float(segment.get("end")),
-                         singleton_content)
+        content = tuple(stripped_token for stripped_token in (token.text.strip() for token in tokens) if stripped_token)
+        if (content):
+            try:
+                singleton_content = self.token_seq_singletons[content]
+            except KeyError:
+                singleton_content = tuple(sys.intern(token) for token in content)
+                self.token_seq_singletons[singleton_content] = singleton_content
+            result = Utterance(segment.get("id"), sys.intern(segment.get("source")), float(segment.get("start")),
+                             float(segment.get("end")),
+                             singleton_content)
+        else:
+            result = None
+
+        return result
+
+
 
 
 class SessionFileName(object):
@@ -272,6 +286,42 @@ def is_session_dir(filenames):
     return result
 
 
+
+def print_tabular_data(feature_value_ngram_counts, file):
+    header_cells = []
+    subheader_cells = []
+    for feature_value in sorted(feature_value_ngram_counts.keys()):
+        header_cells.append(feature_value)
+        subheader_cells.append("NGRAM")
+        header_cells.append("")
+        subheader_cells.append("COUNT")
+    print('\t'.join(header_cells), file=file)
+    print('\t'.join(subheader_cells), file=file)
+
+    ngram_count_iters = []
+    for _, ngram_counts in sorted(feature_value_ngram_counts.items(), key= lambda item: item[0]):
+        alpha_ngram_counts = sorted(ngram_counts.items(), key=lambda item: ''.join(item[0]))
+        lensorted_desc_alpha_ngram_counts = sorted(alpha_ngram_counts, key=lambda item: len(item[0]), reverse=True)
+        desc_ngram_counts = sorted(lensorted_desc_alpha_ngram_counts, key=lambda item: item[1], reverse=True)
+        ngram_count_iter = iter(desc_ngram_counts)
+        ngram_count_iters.append(ngram_count_iter)
+
+    finished_iters = set()
+    while len(finished_iters) < len(ngram_count_iters):
+        row = []
+        for ngram_count_iter in ngram_count_iters:
+            try:
+                ngram_count = next(ngram_count_iter)
+                ngram = ' '.join(ngram_count[0])
+                count = str(ngram_count[1])
+            except StopIteration:
+                ngram = ""
+                count = ""
+                finished_iters.add(ngram_count_iter)
+            row.append(ngram)
+            row.append(count)
+        print('\t'.join(row))
+
 def read_events(infile_path, event_count, entity_count):
     result = tuple([None] * entity_count for _ in range(0, event_count))
 
@@ -314,7 +364,7 @@ if __name__ == "__main__":
 
         feature_value_ngram_counts = defaultdict(Counter)
         seg_utt_factory = SegmentUtteranceFactory()
-        ngram_factory = CachingNgramFactory()
+        ngram_factory = CachingNgramFactory(2)
 
         inpaths = sys.argv[1:]
         for session_dir in walk_session_dirs(inpaths):
@@ -333,7 +383,7 @@ if __name__ == "__main__":
             utts_filepath = os.path.join(session_dir, SessionFileName.UTTS)
             doc_tree = xml.etree.ElementTree.parse(utts_filepath)
             segments = doc_tree.iterfind('.//hat:segment', ANNOTATION_NAMESPACES)
-            utts = (seg_utt_factory(segment) for segment in segments)
+            utts = seg_utt_factory(segments)
             utts_by_time = UtteranceTimes(utts)
 
             idxed_game_rounds = iter(enumerate(create_game_rounds(events)))
@@ -350,11 +400,8 @@ if __name__ == "__main__":
                 next_round_start_time = next_round.start_time
                 current_round_utts = (utts_by_time.segments_between(current_round_start_time,
                                                                     next_round_start_time))
-                current_round_ngrams = (ngram for ngram in (ngram_factory(utt.content) for utt in current_round_utts))
+                current_round_ngrams = itertools.chain(*(ngram_factory(utt.content) for utt in current_round_utts))
                 shape_ngram_counts.update(current_round_ngrams)
-                #for ngram in current_round_ngrams:
-                 #   print(ngram)
-                    # for utt in current_round_utts:
-                    #    print(utt)
 
-        print(feature_value_ngram_counts)
+        print_tabular_data(feature_value_ngram_counts, sys.stdout)
+
