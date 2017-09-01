@@ -88,6 +88,22 @@ class GameRound(object):
     def __repr__(self, *args, **kwargs):
         return self.__class__.__name__ + str(self.__dict__)
 
+class SegmentUtteranceFactory(object):
+    def __init__(self):
+        self.token_seq_singletons = {}
+
+    def __call__(self, segment):
+        tokens = segment.iterfind(".//hat:t", ANNOTATION_NAMESPACES)
+        content = tuple(token.text.strip() for token in tokens)
+        try:
+            singleton_content = self.token_seq_singletons[content]
+        except KeyError:
+            singleton_content = tuple(sys.intern(token) for token in content)
+            self.token_seq_singletons[singleton_content] = singleton_content
+        return Utterance(segment.get("id"), segment.get("source"), float(segment.get("start")),
+                         float(segment.get("end")),
+                         singleton_content)
+
 
 class SessionFileName(object):
     EVENTS = "events.tsv"
@@ -243,13 +259,6 @@ def create_event(entity_descs):
     return Event(entity_descs, event_attrs)
 
 
-def create_segment_utterance(segment):
-    tokens = segment.iterfind(".//hat:t", ANNOTATION_NAMESPACES)
-    content = tuple(token.text for token in tokens)
-    return Utterance(segment.get("id"), segment.get("source"), float(segment.get("start")), float(segment.get("end")),
-                     content)
-
-
 def is_session_dir(filenames):
     result = False
 
@@ -304,6 +313,7 @@ if __name__ == "__main__":
     else:
 
         feature_value_ngram_counts = defaultdict(Counter)
+        seg_utt_factory = SegmentUtteranceFactory()
         ngram_factory = CachingNgramFactory()
 
         inpaths = sys.argv[1:]
@@ -323,7 +333,7 @@ if __name__ == "__main__":
             utts_filepath = os.path.join(session_dir, SessionFileName.UTTS)
             doc_tree = xml.etree.ElementTree.parse(utts_filepath)
             segments = doc_tree.iterfind('.//hat:segment', ANNOTATION_NAMESPACES)
-            utts = (create_segment_utterance(segment) for segment in segments)
+            utts = (seg_utt_factory(segment) for segment in segments)
             utts_by_time = UtteranceTimes(utts)
 
             idxed_game_rounds = iter(enumerate(create_game_rounds(events)))
