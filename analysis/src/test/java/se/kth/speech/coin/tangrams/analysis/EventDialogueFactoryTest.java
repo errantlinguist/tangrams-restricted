@@ -58,7 +58,7 @@ public final class EventDialogueFactoryTest {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(EventDialogueFactoryTest.class);
 
-	private static final SegmentUtteranceFactory SEG_UTT_FACTORY = new SegmentUtteranceFactory(Segment::getSource);
+	private static final SegmentUtteranceFactory SEG_UTT_FACTORY = new SegmentUtteranceFactory(seg -> seg.getSource().intern());
 
 	/**
 	 * Test method for

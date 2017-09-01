@@ -127,7 +127,7 @@ final class SegmentTimedUtteranceWriter { // NO_UCD (use default)
 	/**
 	 * Just use the source ID as the speaker ID
 	 */
-	private static final SegmentUtteranceFactory SEG_UTT_FACTORY = new SegmentUtteranceFactory(Segment::getSource);
+	private static final SegmentUtteranceFactory SEG_UTT_FACTORY = new SegmentUtteranceFactory(seg -> seg.getSource().intern());
 
 	public static void main(final String[] args) throws JAXBException, IOException {
 		final CommandLineParser parser = new DefaultParser();
