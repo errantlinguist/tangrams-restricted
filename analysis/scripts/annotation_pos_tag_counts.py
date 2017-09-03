@@ -60,9 +60,12 @@ if __name__ == "__main__":
 		infiles = walk_xml_files(inpaths)
 		token_pos_tag_counts = count_pos_tags(infiles, CachingPosTagger())
 		print("Found {} unique token(s).".format(len(token_pos_tag_counts)), file=sys.stderr)
-		col_headers = ("TOKEN", "COUNT")
+		col_headers = ("TOKEN", "POS_TAG", "COUNT")
 		print(COL_DELIM.join(col_headers))
 		alphabetic_token_counts = sorted(token_pos_tag_counts.items(), key=lambda item: item[0])
 		alphabetic_count_desc_token_counts = sorted(alphabetic_token_counts, key=lambda item: item[1], reverse=True)
-		for token_count in alphabetic_count_desc_token_counts:
-			print(COL_DELIM.join(str(cell) for cell in token_count))
+		for tagged_token, count in alphabetic_count_desc_token_counts:
+			row = []
+			row.extend(tagged_token)
+			row.append(count)
+			print(COL_DELIM.join(str(cell) for cell in row))
