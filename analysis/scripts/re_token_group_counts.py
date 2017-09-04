@@ -33,18 +33,6 @@ def count_token_groups(infile_path, token_groups):
 	return result
 
 
-def create_token_group_counts(token_counts, token_groups):
-	result = Counter()
-	for token, count in token_counts.items():
-		try:
-			group = token_groups[token]
-			result[group] += count
-		except KeyError:
-			# No group for given token; Ignore it
-			pass
-	return result
-
-
 def read_token_groups(infile_path):
 	with open(infile_path, 'r') as infile:
 		rows = csv.reader(infile, dialect="excel-tab")
