@@ -1,23 +1,22 @@
 #!/usr/bin/env python3
 
 from collections import Counter
-import mimetypes
-import os
-import os.path
 import re
 import sys
 import xml.etree.ElementTree
 
 import nltk
 
-ANNOTATION_NAMESPACES = {"hat": "http://www.speech.kth.se/higgins/2005/annotation/"}
+from annotations import ANNOTATION_NAMESPACES
+from xml_files import walk_xml_files
+
 COL_DELIM = '\t'
-XML_CONTENT_TYPE_PATTERN = re.compile(".*?/xml")
+
 
 class CachingPosTagger(object):
 	def __init__(self):
 		self.cache = {}
-		
+
 	def __call__(self, text):
 		try:
 			result = self.cache[text]
@@ -27,7 +26,7 @@ class CachingPosTagger(object):
 			self.cache[text] = result
 		return result
 
-					
+
 def count_pos_tags(infile_paths, pos_tagger):
 	result = Counter()
 	for infile_path in infile_paths:
@@ -39,18 +38,9 @@ def count_pos_tags(infile_paths, pos_tagger):
 			utt_str_repr = ' '.join((token_annot.text.strip() for token_annot in token_annots))
 			tokens = pos_tagger(utt_str_repr)
 			result.update(tokens)
-				
+
 	return result
-	
-def walk_xml_files(inpaths):
-	for inpath in inpaths:
-		for dirpath, dirnames, filenames in os.walk(inpath, followlinks=True):
-			for filename in filenames:
-				resolved_path = os.path.join(dirpath, filename)
-				mimetype = mimetypes.guess_type(resolved_path)[0]
-				if mimetype is not None and XML_CONTENT_TYPE_PATTERN.match(mimetype):
-					yield resolved_path
-					
+
 
 if __name__ == "__main__":
 	if len(sys.argv) < 2:

@@ -1,15 +1,13 @@
 #!/usr/bin/env python3
 
 from collections import Counter
-import mimetypes
-import os
-import os.path
-import re
 import sys
 import xml.etree.ElementTree
 
+from annotations import ANNOTATION_NAMESPACES
+from xml_files import walk_xml_files
+
 COL_DELIM = '\t'
-XML_CONTENT_TYPE_PATTERN = re.compile(".*?/xml")
 
 					
 def count_tokens(infile_paths):
@@ -17,21 +15,11 @@ def count_tokens(infile_paths):
 	for infile_path in infile_paths:
 		print("Reading XML file \"{}\".".format(infile_path), file=sys.stderr)
 		doc_tree = xml.etree.ElementTree.parse(infile_path)
-		token_annots = doc_tree.iterfind('.//{http://www.speech.kth.se/higgins/2005/annotation/}t')
+		token_annots = doc_tree.iterfind(".//hat:t", ANNOTATION_NAMESPACES)
 		tokens = (annot.text for annot in token_annots)
 		result.update(tokens)
 				
 	return result
-	
-def walk_xml_files(inpaths):
-	for inpath in inpaths:
-		for dirpath, dirnames, filenames in os.walk(inpath, followlinks=True):
-			for filename in filenames:
-				resolved_path = os.path.join(dirpath, filename)
-				mimetype = mimetypes.guess_type(resolved_path)[0]
-				if mimetype is not None and XML_CONTENT_TYPE_PATTERN.match(mimetype):
-					yield resolved_path
-					
 
 if __name__ == "__main__":
 	if len(sys.argv) < 2:

@@ -6,6 +6,7 @@ from lxml import etree
 from lxml.builder import ElementMaker
 
 HAT_DATA_NAMESPACE = "http://www.speech.kth.se/higgins/2005/annotation/"
+ANNOTATION_NAMESPACES = {"hat": HAT_DATA_NAMESPACE}
 
 __DIGITS_PATTERN = re.compile('(\d+)')
 __WHITESPACE_PATTERN = re.compile('\s+')
