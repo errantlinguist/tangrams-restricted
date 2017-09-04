@@ -26,7 +26,7 @@ if __name__ == "__main__":
 		raise ValueError("Usage: {} INPUT_PATHS... > OUTFILE".format(sys.argv[0]))
 	else:
 		inpaths = sys.argv[1:]
-		infiles = walk_xml_files(inpaths)
+		infiles = walk_xml_files(*inpaths)
 		token_counts = count_tokens(infiles)
 		print("Found {} unique token(s).".format(len(token_counts)), file=sys.stderr)
 		col_headers = ("TOKEN", "COUNT")

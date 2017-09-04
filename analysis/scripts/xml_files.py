@@ -5,7 +5,7 @@ import re
 XML_CONTENT_TYPE_PATTERN = re.compile(".*?/xml")
 
 
-def walk_xml_files(inpaths):
+def walk_xml_files(*inpaths):
 	for inpath in inpaths:
 		for dirpath, _, filenames in os.walk(inpath, followlinks=True):
 			for filename in filenames:

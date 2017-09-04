@@ -46,7 +46,7 @@ if __name__ == "__main__":
 		raise ValueError("Usage: {} INPUT_PATHS... > OUTFILE".format(sys.argv[0]))
 	else:
 		inpaths = sys.argv[1:]
-		infiles = walk_xml_files(inpaths)
+		infiles = walk_xml_files(*inpaths)
 		token_pos_tag_counts = count_pos_tags(infiles, CachingPosTagger())
 		print("Found {} unique token(s).".format(len(token_pos_tag_counts)), file=sys.stderr)
 		col_headers = ("TOKEN", "POS_TAG", "COUNT")
