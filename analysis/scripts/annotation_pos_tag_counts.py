@@ -43,7 +43,7 @@ def count_pos_tags(infile_paths, pos_tagger):
 
 if __name__ == "__main__":
 	if len(sys.argv) < 2:
-		raise ValueError("Usage: %s INPUT_PATHS... > OUTFILE" % sys.argv[0])
+		raise ValueError("Usage: {} INPUT_PATHS... > OUTFILE".format(sys.argv[0]))
 	else:
 		inpaths = sys.argv[1:]
 		infiles = walk_xml_files(inpaths)
