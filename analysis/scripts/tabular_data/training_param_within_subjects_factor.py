@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
 
-from collections import defaultdict
 import sys
+from collections import defaultdict
+from decimal import Decimal
 
 from common import COL_DELIM, RANK_COL_NAME, SUBCOL_NAME_DELIM, parse_row_cells
-from decimal import Decimal
-from test_param_combinations import create_col_name_idx_map, create_param_whitelisting_filter, parse_test_param_subtype_value
+from test_param_combinations import create_col_name_idx_map, create_param_whitelisting_filter, \
+	parse_test_param_subtype_value
 
 WITHIN_SUBJECTS_FACTOR_COL_NAMES = frozenset(("UtteranceFiltering", "Cleaning", "Tokenization", "TokenType", "TokenFiltering", "DYAD", "SESSION_ORDER"))
 

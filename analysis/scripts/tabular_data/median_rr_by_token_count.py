@@ -1,12 +1,9 @@
 #!/usr/bin/env python3
 
-from collections import defaultdict
-
 import numpy
-
-from common import COL_DELIM, parse_token_count_ranks
 from statsmodels import robust
 
+from common import COL_DELIM, parse_token_count_ranks
 
 if __name__ == "__main__":
 	import sys

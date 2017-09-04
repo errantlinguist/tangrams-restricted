@@ -1,5 +1,5 @@
-from collections import defaultdict
 import re
+from collections import defaultdict
 from xml.sax.saxutils import escape
 
 from lxml import etree

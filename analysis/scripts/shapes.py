@@ -7,7 +7,6 @@ import os
 import os.path
 import sys
 import xml.etree.ElementTree
-
 from collections import Counter, defaultdict
 
 from nltk import ngrams

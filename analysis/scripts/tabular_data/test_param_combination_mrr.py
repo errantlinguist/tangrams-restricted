@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 
-from collections import defaultdict
 import sys
+from collections import defaultdict
 
 import numpy
 
 from common import COL_DELIM
+from test_param_combination_ranks import TestParameterCombinationRankFileReader
 from test_param_combinations import create_param_whitelisting_filter
 
-from test_param_combination_ranks import TestParameterCombinationRankFileReader
 
 class TestParameterCombinationRankListFileReader(TestParameterCombinationRankFileReader):
 

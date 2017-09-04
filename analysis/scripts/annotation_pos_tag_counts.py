@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
-from collections import Counter
 import sys
 import xml.etree.ElementTree
+from collections import Counter
 
 import nltk
 

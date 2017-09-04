@@ -1,7 +1,7 @@
 import re
 import sys
-
 from decimal import Decimal, InvalidOperation
+
 from common import split_subcol_names, unify_regexes
 
 TEST_PARAM_COL_NAMES = frozenset(("UtteranceFiltering", "Cleaning", "Tokenization", "TokenType", "TokenFilter", "Training"))

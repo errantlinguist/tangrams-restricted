@@ -4,7 +4,6 @@ import numpy
 
 from common import COL_DELIM, parse_token_count_ranks
 
-
 if __name__ == "__main__":
 	import sys
 	with open(sys.argv[1], 'r') as infile:

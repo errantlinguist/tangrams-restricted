@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 
-from collections import defaultdict
 import re
 import sys
+from collections import defaultdict
 
 from common import COL_DELIM, RANK_COL_NAME, SUBCOL_NAME_DELIM, TOKEN_COUNT_COL_NAME
-from decimal import Decimal
 
 COVARIATE_COL_NAMES = frozenset(("DIALOGIC_INFO", "TESTED_UTT_COUNT", "TOTAL_UTT_COUNT", TOKEN_COUNT_COL_NAME))
 RANK_COL_NAME = "RANK"

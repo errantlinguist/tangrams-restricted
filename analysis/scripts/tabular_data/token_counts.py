@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from common import COL_DELIM, TOKEN_COUNT_COL_NAME, parse_row_cells
+from common import TOKEN_COUNT_COL_NAME, parse_row_cells
 
 
 def __token_count_idx(header):
