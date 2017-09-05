@@ -18,31 +18,6 @@ class TokenGroupDataColumn(object):
 	TOKEN = "TOKEN"
 
 
-def count_token_groups(infile_path, token_groups):
-	result = Counter()
-
-	print("Reading XML file \"{}\".".format(infile_path), file=sys.stderr)
-	doc_tree = xml.etree.ElementTree.parse(infile_path)
-	token_annots = doc_tree.iterfind(".//hat:t", ANNOTATION_NAMESPACES)
-	tokens = (annot.text for annot in token_annots)
-	group_sets = (token_groups.get(token) for token in tokens)
-	for group_set in group_sets:
-		if group_set:
-			result.update(group_set)
-
-	return result
-
-
-def read_token_groups(infile_path):
-	with open(infile_path, 'r') as infile:
-		rows = csv.reader(infile, dialect="excel-tab")
-		col_idxs = dict((col_name, idx) for (idx, col_name) in enumerate(next(rows)))
-		token_col_idx = col_idxs[TokenGroupDataColumn.TOKEN]
-		group_col_idx = col_idxs[TokenGroupDataColumn.GROUP]
-		token_groups = ((row[token_col_idx], row[group_col_idx]) for row in rows)
-		return dict((token, frozenset(group.split(GROUP_LIST_DELIM))) for (token, group) in token_groups if group)
-
-
 def print_tabular_counts(infile_token_group_counts, group_count_sums, file):
 	item_key_getter = lambda item: item[0]
 	ordered_group_counts = tuple(sorted(group_count_sums.items(), key=item_key_getter))
@@ -62,18 +37,43 @@ def print_tabular_counts(infile_token_group_counts, group_count_sums, file):
 	print(COL_DELIM.join(summary_row_cells))
 
 
+def read_annot_token_groups(infile_path, token_groups):
+	result = Counter()
+
+	print("Reading XML file \"{}\".".format(infile_path), file=sys.stderr)
+	doc_tree = xml.etree.ElementTree.parse(infile_path)
+	token_annots = doc_tree.iterfind(".//hat:t", ANNOTATION_NAMESPACES)
+	tokens = (annot.text for annot in token_annots)
+	group_sets = (token_groups.get(token) for token in tokens)
+	for group_set in group_sets:
+		if group_set:
+			result.update(group_set)
+
+	return result
+
+
+def read_token_group_mapping(infile_path):
+	with open(infile_path, 'r') as infile:
+		rows = csv.reader(infile, dialect="excel-tab")
+		col_idxs = dict((col_name, idx) for (idx, col_name) in enumerate(next(rows)))
+		token_col_idx = col_idxs[TokenGroupDataColumn.TOKEN]
+		group_col_idx = col_idxs[TokenGroupDataColumn.GROUP]
+		token_groups = ((row[token_col_idx], row[group_col_idx]) for row in rows)
+		return dict((token, frozenset(group.split(GROUP_LIST_DELIM))) for (token, group) in token_groups if group)
+
+
 if __name__ == "__main__":
 	if len(sys.argv) < 3:
 		raise ValueError("Usage: {} TOKEN_GROUP_FILE INPATHS... > OUTFILE".format(sys.argv[0]))
 	else:
 		token_group_file = sys.argv[1]
 		print("Reading token groups from \"{}\".".format(token_group_file), file=sys.stderr)
-		token_groups = read_token_groups(token_group_file)
+		token_groups = read_token_group_mapping(token_group_file)
 		print("Read group info for {} token type(s).".format(len(token_groups)), file=sys.stderr)
 
 		inpaths = sys.argv[2:]
 		infiles = walk_xml_files(*inpaths)
-		infile_token_group_counts = dict((infile, count_token_groups(infile, token_groups)) for infile in infiles)
+		infile_token_group_counts = dict((infile, read_annot_token_groups(infile, token_groups)) for infile in infiles)
 
 		group_count_sums = Counter()
 		for group_counts in infile_token_group_counts.values():
