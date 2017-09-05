@@ -23,6 +23,9 @@ class SessionData(object):
 		self.events_metadata = os.path.join(session_file_prefix, SessionDatum.EVENTS_METADATA.canonical_filename)
 		self.utts = os.path.join(session_file_prefix, SessionDatum.UTTS.canonical_filename)
 
+	def __repr__(self, *args, **kwargs):
+		return self.__class__.__name__ + str(self.__dict__)
+
 
 def is_session_dir(filenames):
 	result = False
