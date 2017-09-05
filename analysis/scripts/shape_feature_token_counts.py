@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import bisect
 import itertools
 import sys
 import xml.etree.ElementTree
@@ -11,6 +10,7 @@ from nltk import ngrams
 from annotations import ANNOTATION_NAMESPACES
 from game_events import EntityData, create_game_rounds, read_events
 from session_data import walk_session_data
+from utterances import SegmentUtteranceFactory, UtteranceTimes
 
 
 class CachingNgramFactory(object):
@@ -30,154 +30,6 @@ class CachingNgramFactory(object):
 	def __create_ngrams(self, tokens):
 		ngram_lens = range(1, min(self.max_ngram_length_stop, len(tokens)))
 		return tuple(len_ngram for ngram_len in ngram_lens for len_ngram in ngrams(tokens, ngram_len))
-
-
-class SegmentUtteranceFactory(object):
-	def __init__(self):
-		self.token_seq_singletons = {}
-
-	def __call__(self, segments):
-		for segment in segments:
-			utt = self.__create(segment)
-			if utt:
-				yield utt
-
-	def __create(self, segment):
-		tokens = segment.iterfind(".//hat:t", ANNOTATION_NAMESPACES)
-		content = tuple(stripped_token for stripped_token in (token.text.strip() for token in tokens) if stripped_token)
-		if content:
-			try:
-				singleton_content = self.token_seq_singletons[content]
-			except KeyError:
-				singleton_content = tuple(sys.intern(token) for token in content)
-				self.token_seq_singletons[singleton_content] = singleton_content
-			result = Utterance(segment.get("id"), sys.intern(segment.get("source")), float(segment.get("start")),
-							   float(segment.get("end")),
-							   singleton_content)
-		else:
-			result = None
-
-		return result
-
-
-class SortedList(list):
-	"""
-	see <https://docs.python.org/2/library/bisect.html#searching-sorted-lists>
-	"""
-
-	def __init__(self, *args) -> None:
-		super().__init__(*args)
-
-	@staticmethod
-	def __index_lt(sublist, elem):
-		result = bisect.bisect_left(sublist, elem)
-		if result:
-			return result
-		else:
-			raise ValueError
-
-	@staticmethod
-	def __slice_lt(sublist, elem):
-		"""Find values less than elem"""
-		idx = SortedList.__index_lt(sublist, elem)
-		return sublist[0:idx - 1]
-
-	def index(self, elem, start: int = 0, stop: int = ...) -> int:
-		result = bisect.bisect_left(self, elem, start, stop)
-		end_idx = min(stop, len(self))
-		if result < end_idx and self[result] == elem:
-			return result
-		else:
-			raise ValueError
-
-	def _index_ge(self, x):
-		"""Find the index of the first value greater than or equal to x"""
-		result = bisect.bisect_left(self, x)
-		if result >= len(self):
-			raise ValueError
-		else:
-			return result
-
-	def iter_between(self, start, end):
-		# Find the index of the first element equal to or greater than the start element
-		start_idx = self._index_ge(start)
-		end_idx = SortedList.__index_lt(self, end)
-		return itertools.islice(self, start_idx, end_idx)
-
-	def slice_between(self, start, end):
-		elems_after_start = self.slice_ge(start)
-		return SortedList.__slice_lt(elems_after_start, end)
-
-	def slice_le(self, x):
-		"""Find values less than or equal to x"""
-		idx = bisect.bisect_right(self, x)
-		if idx:
-			return self[0: idx - 1]
-		else:
-			raise ValueError
-
-	def slice_lt(self, x):
-		"""Find values less than x"""
-		return SortedList.__slice_lt(self, x)
-
-	def slice_ge(self, x):
-		"""Find values greater than or equal to x"""
-		idx = self._index_ge(x)
-		return self[idx:]
-
-	def slice_gt(self, x):
-		"""Find values greater than x"""
-		idx = bisect.bisect_right(self, x)
-		length = len(self)
-		if idx == length:
-			raise ValueError
-		else:
-			return self[idx: length]
-
-
-class Utterance(object):
-	def __init__(self, segment_id, speaker_id, start_time, end_time, content):
-		self.segment_id = segment_id
-		self.speaker_id = speaker_id
-		self.start_time = start_time
-		self.end_time = end_time
-		self.content = content
-
-	@property
-	def __key(self):
-		return self.segment_id, self.speaker_id, self.start_time, self.end_time, self.content
-
-	def __hash__(self):
-		return hash(self.__key)
-
-	def __eq__(self, other):
-		return self.__key == other.__key
-
-	def __ne__(self, other):
-		return not (self == other)
-
-	def __repr__(self, *args, **kwargs):
-		return self.__class__.__name__ + str(self.__dict__)
-
-
-class UtteranceTimes(object):
-	def __init__(self, utts):
-		self.utts_by_start_time = defaultdict(SortedList)
-		for utt in utts:
-			self.utts_by_start_time[utt.start_time].append(utt)
-		for utt_list in self.utts_by_start_time.values():
-			utt_list.sort(key=lambda utt: utt.end_time)
-
-		self.ascending_start_times = SortedList(self.utts_by_start_time.keys())
-		self.ascending_start_times.sort()
-		print("Processed utterances with {} unique start time(s).".format(len(self.ascending_start_times)),
-			  file=sys.stderr)
-
-	def segments_between(self, start_time, end_time):
-		seg_start_times = self.ascending_start_times.iter_between(start_time, end_time)
-		started_segs = itertools.chain.from_iterable(
-			self.utts_by_start_time[start_time] for start_time in seg_start_times)
-		return (seg for seg in started_segs if seg.end_time < end_time)
 
 
 def print_tabular_data(feature_value_ngram_counts, file):
