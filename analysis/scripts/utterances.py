@@ -51,9 +51,7 @@ class SegmentUtteranceFactory(object):
 			except KeyError:
 				singleton_content = tuple(sys.intern(token) for token in content)
 				self.token_seq_singletons[singleton_content] = singleton_content
-			result = Utterance(segment.get("id"), sys.intern(segment.get("source")), float(segment.get("start")),
-							   float(segment.get("end")),
-							   singleton_content)
+			result = Utterance(segment.get("id"), sys.intern(segment.get("source")), float(segment.get("start")), float(segment.get("end")), singleton_content)
 		else:
 			result = None
 
