@@ -241,7 +241,7 @@ class UtteranceTimes(object):
 
 	def segments_between(self, start_time, end_time):
 		seg_start_times = self.ascending_start_times.iter_between(start_time, end_time)
-		started_segs = itertools.chain(*(self.utts_by_start_time[start_time] for start_time in seg_start_times))
+		started_segs = itertools.chain.from_iterable(self.utts_by_start_time[start_time] for start_time in seg_start_times)
 		return (seg for seg in started_segs if seg.end_time < end_time)
 
 
@@ -399,7 +399,7 @@ if __name__ == "__main__":
 				next_round_start_time = next_round.start_time
 				current_round_utts = (utts_by_time.segments_between(current_round_start_time,
 																	next_round_start_time))
-				current_round_ngrams = itertools.chain(*(ngram_factory(utt.content) for utt in current_round_utts))
+				current_round_ngrams = itertools.chain.from_iterable((ngram_factory(utt.content) for utt in current_round_utts))
 				shape_ngram_counts.update(current_round_ngrams)
 
 		print_tabular_data(feature_value_ngram_counts, sys.stdout)
