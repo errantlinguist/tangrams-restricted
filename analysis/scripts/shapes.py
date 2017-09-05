@@ -103,7 +103,7 @@ class SegmentUtteranceFactory(object):
 	def __create(self, segment):
 		tokens = segment.iterfind(".//hat:t", ANNOTATION_NAMESPACES)
 		content = tuple(stripped_token for stripped_token in (token.text.strip() for token in tokens) if stripped_token)
-		if (content):
+		if content:
 			try:
 				singleton_content = self.token_seq_singletons[content]
 			except KeyError:
@@ -252,7 +252,7 @@ def create_game_rounds(events):
 	current_round_event_time = float(first_entity_desc.attr(DataColumn.EVENT_TIME))
 	current_round_event_list_start_idx = 0
 	for event_idx, entity_descs in enumerated_events:
-		first_entity_desc = next(iter(entity_descs))
+		first_entity_desc = entity_descs[0]
 
 		event_round_id = int(first_entity_desc.attr(DataColumn.ROUND))
 		if event_round_id != current_round_id:
