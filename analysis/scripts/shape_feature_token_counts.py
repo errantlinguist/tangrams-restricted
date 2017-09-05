@@ -11,9 +11,8 @@ from collections import Counter, defaultdict
 from nltk import ngrams
 
 from annotations import ANNOTATION_NAMESPACES
+from game_events import EntityData, create_game_rounds, read_events
 from session_data import read_events_metadata, walk_session_data
-
-TRUTH_CELL_VALUE = "true"
 
 
 class CachingNgramFactory(object):
@@ -33,61 +32,6 @@ class CachingNgramFactory(object):
 	def __create_ngrams(self, tokens):
 		ngram_lens = range(1, min(self.max_ngram_length_stop, len(tokens)))
 		return tuple(len_ngram for ngram_len in ngram_lens for len_ngram in ngrams(tokens, ngram_len))
-
-
-class DataColumn(object):
-	ENTITY_ID = "ENTITY"
-	EVENT_ID = "EVENT"
-	EVENT_TIME = "TIME"
-	ROUND = "ROUND"
-	SHAPE = "SHAPE"
-
-
-class EntityData(object):
-	def __init__(self, col_idxs, row):
-		self.col_idxs = col_idxs
-		self.row = row
-
-	def __repr__(self, *args, **kwargs):
-		return self.__class__.__name__ + str(self.__dict__)
-
-	def attr(self, attr_name):
-		attr_value_idx = self.col_idxs[attr_name]
-		return self.row[attr_value_idx]
-
-
-class Event(object):
-	def __init__(self, entities, attrs):
-		self.entities = entities
-		self.attrs = attrs
-
-	def __repr__(self, *args, **kwargs):
-		return self.__class__.__name__ + str(self.__dict__)
-
-	@property
-	def referent_entities(self):
-		return (entity for entity in self.entities if entity.attr("REFERENT") == TRUTH_CELL_VALUE)
-
-	@property
-	def selected_entities(self):
-		return (entity for entity in self.entities if entity.attr("SELECTED") == TRUTH_CELL_VALUE)
-
-
-class EventDataColumn(object):
-	ID = DataColumn.EVENT_ID
-	NAME = "NAME"
-	TIME = DataColumn.EVENT_TIME
-
-	ALL = frozenset((ID, NAME, TIME,))
-
-
-class GameRound(object):
-	def __init__(self, start_time, events):
-		self.start_time = start_time
-		self.events = events
-
-	def __repr__(self, *args, **kwargs):
-		return self.__class__.__name__ + str(self.__dict__)
 
 
 class SegmentUtteranceFactory(object):
@@ -238,33 +182,6 @@ class UtteranceTimes(object):
 		return (seg for seg in started_segs if seg.end_time < end_time)
 
 
-def create_game_rounds(events):
-	enumerated_events = enumerate(event_entity_descs)
-	current_round_id, first_event = next(enumerated_events)
-	first_entity_desc = next(iter(first_event))
-	current_round_event_time = float(first_entity_desc.attr(DataColumn.EVENT_TIME))
-	current_round_event_list_start_idx = 0
-	for event_idx, entity_descs in enumerated_events:
-		first_entity_desc = entity_descs[0]
-
-		event_round_id = int(first_entity_desc.attr(DataColumn.ROUND))
-		if event_round_id != current_round_id:
-			# print("Finishing round {}.".format(current_round_id), file=sys.stderr)
-			completed_round = GameRound(current_round_event_time,
-										events[current_round_event_list_start_idx:event_idx])
-
-			current_round_id = event_round_id
-			current_round_event_time = float(first_entity_desc.attr(DataColumn.EVENT_TIME))
-			current_round_event_list_start_idx = event_idx
-			yield completed_round
-
-
-def create_event(entity_descs):
-	first_entity_desc = next(iter(entity_descs))
-	event_attrs = dict((name, first_entity_desc.attr(name)) for name in EventDataColumn.ALL)
-	return Event(entity_descs, event_attrs)
-
-
 def print_tabular_data(feature_value_ngram_counts, file):
 	header_cells = []
 	subheader_cells = []
@@ -301,28 +218,6 @@ def print_tabular_data(feature_value_ngram_counts, file):
 		print('\t'.join(row))
 
 
-def read_events(infile_path, event_count, entity_count):
-	result = tuple([None] * entity_count for _ in range(0, event_count))
-
-	with open(infile_path, 'r') as infile:
-		rows = csv.reader(infile, dialect="excel-tab")
-		col_idxs = dict((col_name, idx) for (idx, col_name) in enumerate(next(rows)))
-		entity_id_col_idx = col_idxs[DataColumn.ENTITY_ID]
-		event_id_col_idx = col_idxs[DataColumn.EVENT_ID]
-
-		for row in rows:
-			event_id = int(row[event_id_col_idx])
-			entity_descs = result[event_id - 1]
-			entity_id = int(row[entity_id_col_idx])
-			entity_idx = entity_id - 1
-			if entity_descs[entity_idx]:
-				raise ValueError("Duplicate rows for event {}, entity {}.", event_id, entity_id)
-			else:
-				entity_descs[entity_idx] = EntityData(col_idxs, row)
-
-	return result
-
-
 if __name__ == "__main__":
 	if len(sys.argv) < 2:
 		sys.exit("Usage: {} INPATHS...".format(sys.argv[0]))
@@ -334,13 +229,7 @@ if __name__ == "__main__":
 
 		inpaths = sys.argv[1:]
 		for _, session in walk_session_data(inpaths):
-			events_metadata = read_events_metadata(session.events_metadata)
-
-			event_count = int(events_metadata["EVENT_COUNT"])
-			entity_count = int(events_metadata["ENTITY_COUNT"])
-
-			event_entity_descs = read_events(session.events, event_count, entity_count)
-			events = [create_event(entity_descs) for entity_descs in event_entity_descs]
+			events = tuple(read_events(session))
 			print("Read {} event(s).".format(len(events)), file=sys.stderr)
 
 			doc_tree = xml.etree.ElementTree.parse(session.utts)
@@ -356,7 +245,7 @@ if __name__ == "__main__":
 				initial_event = next(iter(next_round.events))
 				referent_entity = next(iter(initial_event.referent_entities))
 				# print(referent_entity)
-				shape = referent_entity.attr(DataColumn.SHAPE)
+				shape = referent_entity.attr(EntityData.Attribute.SHAPE.value)
 				shape_ngram_counts = feature_value_ngram_counts[shape]
 
 				next_round_start_time = next_round.start_time
