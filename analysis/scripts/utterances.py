@@ -85,7 +85,7 @@ def dialogue_utt_str_repr(utts: Iterator[Utterance]) -> str:
 	for utt_group in grouped_utts:
 		speaker_repr = __speaker_id_repr(utt_group[0].speaker_id)
 		repr_list.append(speaker_repr)
-		sentence_repr = ' '.join(__token_seq_repr(utt.content) for utt in utt_group)
+		sentence_repr = '"' + ' '.join(__token_seq_repr(utt.content) for utt in utt_group) + '"'
 		repr_list.append(sentence_repr)
 
 	return ' '.join(repr_list)
@@ -97,11 +97,13 @@ def group_utts_by_speaker_id(utts: Iterable[Utterance]) -> List[List[Utterance]]
 	current_speaker_id = None
 	current_speaker_utts = []
 	for utt in utts:
-		if utt.speaker_id == current_speaker_id:
+		utt_speaker_id = utt.speaker_id
+		if utt_speaker_id == current_speaker_id:
 			current_speaker_utts.append(utt)
 		else:
 			if current_speaker_utts:
 				result.append(current_speaker_utts)
+			current_speaker_id = utt_speaker_id
 			current_speaker_utts = [utt]
 
 	if current_speaker_utts:
