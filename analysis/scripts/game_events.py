@@ -85,7 +85,7 @@ class GameRound(object):
 		return self.__class__.__name__ + str(self.__dict__)
 
 
-def create_game_rounds(events: Iterable[Event]) -> Iterable[GameRound]:
+def create_game_rounds(events: Sequence[Event]) -> Iterable[GameRound]:
 	enumerated_events = enumerate(events)
 	enumerated_event_iter = iter(enumerated_events)
 	current_round_id, current_round_event_time = __round_id_and_time(next(enumerated_event_iter)[1])
