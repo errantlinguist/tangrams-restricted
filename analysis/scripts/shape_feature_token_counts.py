@@ -13,6 +13,9 @@ from session_data import walk_session_data
 from utterances import SegmentUtteranceFactory, UtteranceTimes
 
 
+COL_DELIM = "\t"
+
+
 class CachingNgramFactory(object):
 	def __init__(self, max_ngram_length):
 		self.max_ngram_length_stop = max_ngram_length + 1
@@ -40,8 +43,8 @@ def print_tabular_data(feature_value_ngram_counts, file):
 		subheader_cells.append("NGRAM")
 		header_cells.append("")
 		subheader_cells.append("COUNT")
-	print('\t'.join(header_cells), file=file)
-	print('\t'.join(subheader_cells), file=file)
+	print(COL_DELIM.join(header_cells), file=file)
+	print(COL_DELIM.join(subheader_cells), file=file)
 
 	ngram_count_iters = []
 	for _, ngram_counts in sorted(feature_value_ngram_counts.items(), key=lambda item: item[0]):
@@ -65,7 +68,7 @@ def print_tabular_data(feature_value_ngram_counts, file):
 				finished_iters.add(ngram_count_iter)
 			row.append(ngram)
 			row.append(count)
-		print('\t'.join(row))
+		print(COL_DELIM.join(row))
 
 
 if __name__ == "__main__":
