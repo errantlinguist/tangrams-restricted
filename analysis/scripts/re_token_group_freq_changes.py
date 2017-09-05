@@ -71,9 +71,8 @@ if __name__ == "__main__":
 			for round_idx, next_round in idxed_game_rounds:
 
 				next_round_start_time = next_round.start_time
-				current_round_utts = list(utts_by_time.segments_between(current_round_start_time,
+				current_round_utts = tuple(utts_by_time.segments_between(current_round_start_time,
 																	next_round_start_time))
-
 				diag_utt_repr = dialogue_utt_str_repr(iter(current_round_utts))
 				print(COL_DELIM.join((str(round_idx), diag_utt_repr)))
 
