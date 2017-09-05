@@ -25,7 +25,7 @@ def parse_properties(lines) -> dict:
 	return result
 
 
-def walk_properties_files(*inpaths) -> str:
+def walk_properties_files(*inpaths):
 	for inpath in inpaths:
 		for dirpath, _, filenames in os.walk(inpath, followlinks=True):
 			for filename in filenames:
