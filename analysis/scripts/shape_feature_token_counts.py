@@ -11,7 +11,7 @@ from collections import Counter, defaultdict
 from nltk import ngrams
 
 from annotations import ANNOTATION_NAMESPACES
-from session_dirs import SessionFileName, walk_session_dirs
+from session_data import walk_session_data
 
 TRUTH_CELL_VALUE = "true"
 
@@ -339,21 +339,17 @@ if __name__ == "__main__":
 		ngram_factory = CachingNgramFactory(2)
 
 		inpaths = sys.argv[1:]
-		for session_dir in walk_session_dirs(inpaths):
-			print("Processing session directory \"{}\".".format(session_dir), file=sys.stderr)
-			events_metadata_filepath = os.path.join(session_dir, SessionFileName.EVENTS_METADATA)
-			events_metadata = read_events_metadata(events_metadata_filepath)
+		for session in walk_session_data(inpaths):
+			events_metadata = read_events_metadata(session.events_metadata)
 
 			event_count = int(events_metadata["EVENT_COUNT"])
 			entity_count = int(events_metadata["ENTITY_COUNT"])
 
-			events_filepath = os.path.join(session_dir, SessionFileName.EVENTS)
-			event_entity_descs = read_events(events_filepath, event_count, entity_count)
+			event_entity_descs = read_events(session.events, event_count, entity_count)
 			events = [create_event(entity_descs) for entity_descs in event_entity_descs]
 			print("Read {} event(s).".format(len(events)), file=sys.stderr)
 
-			utts_filepath = os.path.join(session_dir, SessionFileName.UTTS)
-			doc_tree = xml.etree.ElementTree.parse(utts_filepath)
+			doc_tree = xml.etree.ElementTree.parse(session.utts)
 			segments = doc_tree.iterfind('.//hat:segment', ANNOTATION_NAMESPACES)
 			utts = seg_utt_factory(segments)
 			utts_by_time = UtteranceTimes(utts)
