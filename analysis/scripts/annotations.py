@@ -196,8 +196,8 @@ def natural_keys(text):
 	'''
 	return [__atoi(c) for c in __DIGITS_PATTERN.split(text)]
 	
-def sanitize_dom_id(str):
-	result = __WHITESPACE_PATTERN.sub('-', str)
+def sanitize_dom_id(string):
+	result = __WHITESPACE_PATTERN.sub('-', string)
 	return escape(result)
 	
 def __atoi(text):
