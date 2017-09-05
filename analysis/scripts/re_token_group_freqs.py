@@ -5,7 +5,7 @@ import sys
 from collections import Counter
 from decimal import Decimal, ROUND_HALF_UP, getcontext
 
-from re_token_group_counts import read_annot_token_groups, read_token_group_mapping
+from re_token_group_counts import read_annot_token_group_counts, read_token_group_dict
 from xml_files import walk_xml_files
 
 COL_DELIM = '\t'
@@ -39,12 +39,12 @@ if __name__ == "__main__":
 	else:
 		token_group_file = sys.argv[1]
 		print("Reading token groups from \"{}\".".format(token_group_file), file=sys.stderr)
-		token_groups = read_token_group_mapping(token_group_file)
+		token_groups = read_token_group_dict(token_group_file)
 		print("Read group info for {} token type(s).".format(len(token_groups)), file=sys.stderr)
 
 		inpaths = sys.argv[2:]
 		infiles = walk_xml_files(*inpaths)
-		infile_token_group_counts = dict((infile, read_annot_token_groups(infile, token_groups)) for infile in infiles)
+		infile_token_group_counts = dict((infile, read_annot_token_group_counts(infile, token_groups)) for infile in infiles)
 
 		group_count_sums = Counter()
 		for group_counts in infile_token_group_counts.values():

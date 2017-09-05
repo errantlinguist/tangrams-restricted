@@ -37,7 +37,7 @@ def print_tabular_counts(infile_token_group_counts, group_count_sums, file):
 	print(COL_DELIM.join(summary_row_cells))
 
 
-def read_annot_token_groups(infile_path, token_groups):
+def read_annot_token_group_counts(infile_path, token_groups):
 	result = Counter()
 
 	print("Reading XML file \"{}\".".format(infile_path), file=sys.stderr)
@@ -52,7 +52,7 @@ def read_annot_token_groups(infile_path, token_groups):
 	return result
 
 
-def read_token_group_mapping(infile_path):
+def read_token_group_dict(infile_path):
 	with open(infile_path, 'r') as infile:
 		rows = csv.reader(infile, dialect="excel-tab")
 		col_idxs = dict((col_name, idx) for (idx, col_name) in enumerate(next(rows)))
@@ -68,12 +68,13 @@ if __name__ == "__main__":
 	else:
 		token_group_file = sys.argv[1]
 		print("Reading token groups from \"{}\".".format(token_group_file), file=sys.stderr)
-		token_groups = read_token_group_mapping(token_group_file)
+		token_groups = read_token_group_dict(token_group_file)
 		print("Read group info for {} token type(s).".format(len(token_groups)), file=sys.stderr)
 
 		inpaths = sys.argv[2:]
 		infiles = walk_xml_files(*inpaths)
-		infile_token_group_counts = dict((infile, read_annot_token_groups(infile, token_groups)) for infile in infiles)
+		infile_token_group_counts = dict(
+			(infile, read_annot_token_group_counts(infile, token_groups)) for infile in infiles)
 
 		group_count_sums = Counter()
 		for group_counts in infile_token_group_counts.values():
