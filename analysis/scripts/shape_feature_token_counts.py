@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 
 import bisect
-import csv
 import itertools
-import os.path
 import sys
 import xml.etree.ElementTree
 from collections import Counter, defaultdict
@@ -12,7 +10,7 @@ from nltk import ngrams
 
 from annotations import ANNOTATION_NAMESPACES
 from game_events import EntityData, create_game_rounds, read_events
-from session_data import read_events_metadata, walk_session_data
+from session_data import walk_session_data
 
 
 class CachingNgramFactory(object):
