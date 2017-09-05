@@ -79,6 +79,7 @@ if __name__ == "__main__":
 		infiles = walk_xml_files(*inpaths)
 		infile_token_group_counts = dict(
 			(infile, read_annot_token_group_counts(infile, token_groups)) for infile in infiles)
+		print("Read token counts for {} file(s).".format(len(infile_token_group_counts)), file=sys.stderr)
 
 		group_count_sums = Counter()
 		for group_counts in infile_token_group_counts.values():
