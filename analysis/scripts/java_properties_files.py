@@ -1,7 +1,7 @@
 import os
 import re
 
-COMMENT_LINE_PREFIXES = tuple('#', '!')
+COMMENT_LINE_PREFIXES = ('#', '!')
 PROPERTIES_FILEPATH_PATTERN = re.compile(".+?\.properties$")
 
 
