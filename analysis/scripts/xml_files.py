@@ -2,10 +2,12 @@ import mimetypes
 import os
 import re
 
+from typing import Iterator
+
 XML_CONTENT_TYPE_PATTERN = re.compile(".*?/xml")
 
 
-def walk_xml_files(*inpaths):
+def walk_xml_files(*inpaths) -> Iterator[str]:
 	for inpath in inpaths:
 		for dirpath, _, filenames in os.walk(inpath, followlinks=True):
 			for filename in filenames:
