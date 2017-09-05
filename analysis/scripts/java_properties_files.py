@@ -1,7 +1,7 @@
 import os
 import re
 
-ATTRIBUTE_VALUE_PAIR_DELIM_PATTERN = re.compile("[=:]")
+ATTRIBUTE_VALUE_PAIR_DELIM_PATTERN = re.compile("(?<!\\\)[=:]")
 COMMENT_LINE_PREFIXES = ('#', '!')
 PROPERTIES_FILEPATH_PATTERN = re.compile(".+?\.properties$")
 
