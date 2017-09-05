@@ -6,6 +6,12 @@ from typing import Iterable, Iterator, List
 from annotations import ANNOTATION_NAMESPACES
 from sorted_lists import SortedList
 
+"""
+NOTE: See "../src/main/resources/se/kth/speech/coin/tangrams/analysis/SegmentUtteranceFactory.properties"
+"""
+METALANGUAGE_TOKENS = frozenset(("ARTIFACT", "BREATH", "CLICK", "COUGH", "GROAN", "GRUNT", "LAUGHTER", "META", "MOAN",
+								"NOISE", "SIGH", "SNIFF", "UNKNOWN",))
+
 
 class Utterance(object):
 	def __init__(self, segment_id, speaker_id, start_time, end_time, content):
@@ -33,8 +39,9 @@ class Utterance(object):
 
 
 class SegmentUtteranceFactory(object):
-	def __init__(self):
+	def __init__(self, metalanguage_tokens=METALANGUAGE_TOKENS):
 		self.token_seq_singletons = {}
+		self.metalanguage_tokens = metalanguage_tokens
 
 	def __call__(self, segments) -> Iterator[Utterance]:
 		for segment in segments:
@@ -44,14 +51,15 @@ class SegmentUtteranceFactory(object):
 
 	def __create(self, segment) -> Utterance:
 		tokens = segment.iterfind(".//hat:t", ANNOTATION_NAMESPACES)
-		content = tuple(stripped_token for stripped_token in (token.text.strip() for token in tokens) if stripped_token)
+		content = tuple(stripped_token for stripped_token in (token.text.strip() for token in tokens) if stripped_token and stripped_token not in self.metalanguage_tokens)
 		if content:
 			try:
 				singleton_content = self.token_seq_singletons[content]
 			except KeyError:
 				singleton_content = tuple(sys.intern(token) for token in content)
 				self.token_seq_singletons[singleton_content] = singleton_content
-			result = Utterance(segment.get("id"), sys.intern(segment.get("source")), float(segment.get("start")), float(segment.get("end")), singleton_content)
+			result = Utterance(segment.get("id"), sys.intern(segment.get("source")), float(segment.get("start")),
+							   float(segment.get("end")), singleton_content)
 		else:
 			result = None
 
