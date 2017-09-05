@@ -37,9 +37,9 @@ def is_session_dir(filenames):
 	return result
 
 
-def walk_session_data(inpaths) -> Iterator[SessionData]:
+def walk_session_data(inpaths) -> Iterator[tuple]:
 	session_dirs = walk_session_dirs(inpaths)
-	return (SessionData(session_dir) for session_dir in session_dirs)
+	return ((session_dir, SessionData(session_dir)) for session_dir in session_dirs)
 
 
 def walk_session_dirs(inpaths):

@@ -339,7 +339,7 @@ if __name__ == "__main__":
 		ngram_factory = CachingNgramFactory(2)
 
 		inpaths = sys.argv[1:]
-		for session in walk_session_data(inpaths):
+		for _, session in walk_session_data(inpaths):
 			events_metadata = read_events_metadata(session.events_metadata)
 
 			event_count = int(events_metadata["EVENT_COUNT"])
