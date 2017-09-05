@@ -6,7 +6,7 @@ COMMENT_LINE_PREFIXES = ('#', '!')
 PROPERTIES_FILEPATH_PATTERN = re.compile(".+?\.properties$")
 
 
-def parse_properties(lines):
+def parse_properties(lines) -> dict:
 	"""
 	NOTE: This method cannot handle logical lines spread over multiple natural lines using escaped newline characters.
 	See <https://docs.oracle.com/javase/8/docs/api/java/util/Properties.html#load-java.io.Reader->
