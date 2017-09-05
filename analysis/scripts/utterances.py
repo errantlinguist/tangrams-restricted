@@ -1,11 +1,10 @@
-from typing import Iterable, Iterator
-
 import itertools
 import sys
 from collections import defaultdict
-from sorted_lists import SortedList
+from typing import Iterable, Iterator, List
 
 from annotations import ANNOTATION_NAMESPACES
+from sorted_lists import SortedList
 
 
 class Utterance(object):
@@ -80,28 +79,35 @@ class UtteranceTimes(object):
 
 
 def dialogue_utt_str_repr(utts: Iterator[Utterance]) -> str:
-	initial_utt = next(utts)
-	current_speaker_id = initial_utt.speaker_id
-	current_sentences = [__token_seq_repr(initial_utt.content)]
-
 	repr_list = []
-	try:
-		next_utt = next(utts)
-		next_utt_speaker_id = next_utt.speaker_id
-		if next_utt_speaker_id == current_speaker_id:
-			current_sentences.append(__token_seq_repr(next_utt.content))
-		else:
-			repr_list.append(__speaker_id_repr(current_speaker_id))
-			repr_list.append('"' + ' '.join(current_sentences) + '"')
 
-			current_speaker_id = next_utt_speaker_id
-			current_sentences = [__token_seq_repr(next_utt.content)]
-	except StopIteration:
-		repr_list.append(__speaker_id_repr(current_speaker_id))
-		repr_list.append('"' + ' '.join(current_sentences) + '"')
-		pass
+	grouped_utts = group_utts_by_speaker_id(utts)
+	for utt_group in grouped_utts:
+		speaker_repr = __speaker_id_repr(utt_group[0].speaker_id)
+		repr_list.append(speaker_repr)
+		sentence_repr = ' '.join(__token_seq_repr(utt.content) for utt in utt_group)
+		repr_list.append(sentence_repr)
 
 	return ' '.join(repr_list)
+
+
+def group_utts_by_speaker_id(utts: Iterable[Utterance]) -> List[List[Utterance]]:
+	result = []
+
+	current_speaker_id = None
+	current_speaker_utts = []
+	for utt in utts:
+		if utt.speaker_id == current_speaker_id:
+			current_speaker_utts.append(utt)
+		else:
+			if current_speaker_utts:
+				result.append(current_speaker_utts)
+			current_speaker_utts = [utt]
+
+	if current_speaker_utts:
+		result.append(current_speaker_utts)
+
+	return result
 
 
 def __capitalize_first_char(string: str) -> str:
