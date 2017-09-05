@@ -53,7 +53,7 @@ def read_annot_token_group_counts(infile_path, token_groups):
 	print("Reading XML file \"{}\".".format(infile_path), file=sys.stderr)
 	doc_tree = xml.etree.ElementTree.parse(infile_path)
 	token_annots = doc_tree.iterfind(".//hat:t", ANNOTATION_NAMESPACES)
-	return create_annot_token_group_counts(token_annots)
+	return create_annot_token_group_counts(token_annots, token_groups)
 
 
 def read_token_group_dict(infile_path):
