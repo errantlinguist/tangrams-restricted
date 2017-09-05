@@ -1,6 +1,7 @@
 import os
 import re
 
+ATTRIBUTE_VALUE_PAIR_DELIM_PATTERN = re.compile("[=:]")
 COMMENT_LINE_PREFIXES = ('#', '!')
 PROPERTIES_FILEPATH_PATTERN = re.compile(".+?\.properties$")
 
@@ -9,7 +10,7 @@ def parse_properties(lines):
 	result = {}
 	stripped_lines = (line.strip() for line in lines)
 	semantic_lines = (line for line in stripped_lines if line and not line.startswith(COMMENT_LINE_PREFIXES))
-	props = (line.split('=', maxsplit=1) for line in semantic_lines)
+	props = (ATTRIBUTE_VALUE_PAIR_DELIM_PATTERN.split(line, maxsplit=1) for line in semantic_lines)
 	for prop in props:
 		prop_name = prop[0]
 		prop_value = prop[1]
