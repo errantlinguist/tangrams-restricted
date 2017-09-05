@@ -25,7 +25,7 @@ def parse_properties(lines) -> dict:
 	return result
 
 
-def walk_properties_files(*inpaths):
+def walk_properties_files(*inpaths) -> str:
 	for inpath in inpaths:
 		for dirpath, _, filenames in os.walk(inpath, followlinks=True):
 			for filename in filenames:
@@ -34,7 +34,7 @@ def walk_properties_files(*inpaths):
 					yield resolved_path
 
 
-def __fetch_prop_group(props, prop_name):
+def __fetch_prop_group(props, prop_name) -> dict:
 	try:
 		result = props[prop_name]
 	except KeyError:
