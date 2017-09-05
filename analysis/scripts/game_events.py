@@ -4,7 +4,7 @@ from typing import Dict, Iterable, List, Tuple, Sequence
 
 from session_data import read_events_metadata
 
-TRUTH_CELL_VALUE = "true"
+_TRUTH_CELL_VALUE = "true"
 
 
 @unique
@@ -39,11 +39,11 @@ class EntityData(object):
 
 	@property
 	def is_referent(self):
-		return self.attr(EntityData.Attribute.REFERENT.value) == TRUTH_CELL_VALUE
+		return self.attr(EntityData.Attribute.REFERENT.value) == _TRUTH_CELL_VALUE
 
 	@property
 	def is_selected(self):
-		return self.attr(EntityData.Attribute.SELECTED.value) == TRUTH_CELL_VALUE
+		return self.attr(EntityData.Attribute.SELECTED.value) == _TRUTH_CELL_VALUE
 
 
 class Event(object):
