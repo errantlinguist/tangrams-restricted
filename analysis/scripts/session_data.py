@@ -1,3 +1,4 @@
+import csv
 import os
 from enum import Enum, unique
 from typing import Iterator, Tuple
@@ -38,6 +39,12 @@ def is_session_dir(filenames):
 			break
 
 	return result
+
+
+def read_events_metadata(infile_path):
+	with open(infile_path, 'r') as infile:
+		rows = csv.reader(infile, dialect="excel-tab")
+		return dict(rows)
 
 
 def walk_session_data(inpaths) -> Iterator[Tuple[str, SessionData]]:

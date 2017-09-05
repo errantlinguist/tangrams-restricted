@@ -11,7 +11,7 @@ from collections import Counter, defaultdict
 from nltk import ngrams
 
 from annotations import ANNOTATION_NAMESPACES
-from session_data import walk_session_data
+from session_data import read_events_metadata, walk_session_data
 
 TRUTH_CELL_VALUE = "true"
 
@@ -321,12 +321,6 @@ def read_events(infile_path, event_count, entity_count):
 				entity_descs[entity_idx] = EntityData(col_idxs, row)
 
 	return result
-
-
-def read_events_metadata(infile_path):
-	with open(infile_path, 'r') as infile:
-		rows = csv.reader(infile, dialect="excel-tab")
-		return dict(rows)
 
 
 if __name__ == "__main__":
