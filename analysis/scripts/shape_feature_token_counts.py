@@ -91,10 +91,8 @@ if __name__ == "__main__":
 			round_idx, first_game_round = next(idxed_game_rounds)
 			current_round_start_time = first_game_round.start_time
 			for round_idx, next_round in idxed_game_rounds:
-				# print("Processing round index {}.".format(round_idx), file=sys.stderr)
 				initial_event = next(iter(next_round.events))
 				referent_entity = next(iter(initial_event.referent_entities))
-				# print(referent_entity)
 				shape = referent_entity.attr(EntityData.Attribute.SHAPE.value)
 				shape_ngram_counts = feature_value_ngram_counts[shape]
 
