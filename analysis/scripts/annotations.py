@@ -188,12 +188,12 @@ def is_blank_or_none(string):
 	return string is None or len(string) < 1 or string.isspace()
 
 def natural_keys(text):
-	'''
+	"""
 	alist.sort(key=natural_keys) sorts in human order
 	
 	:see: http://nedbatchelder.com/blog/200712/human_sorting.html
 	:see: http://stackoverflow.com/a/5967539/1391325
-	'''
+	"""
 	return [__atoi(c) for c in __DIGITS_PATTERN.split(text)]
 	
 def sanitize_dom_id(string):
@@ -201,7 +201,7 @@ def sanitize_dom_id(string):
 	return escape(result)
 	
 def __atoi(text):
-	'''
+	"""
 	:see: http://stackoverflow.com/a/5967539/1391325
-	'''
+	"""
 	return int(text) if text.isdigit() else text

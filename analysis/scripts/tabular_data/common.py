@@ -2,11 +2,11 @@ from collections import defaultdict
 
 
 COL_DELIM = "\t"
-'''
+"""
 NOTE: This is for SPSS compatibility, which does not allow e.g."-" as part of a variable name.
  
 @see https://www.ibm.com/support/knowledgecenter/en/SSLVMB_21.0.0/com.ibm.spss.statistics.help/syn_variables_variable_names.htm
-'''
+"""
 SUBCOL_NAME_DELIM = "."
 
 RANK_COL_NAME = "RANK"

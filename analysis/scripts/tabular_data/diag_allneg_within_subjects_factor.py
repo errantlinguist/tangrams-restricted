@@ -57,18 +57,18 @@ def create_training_method_rank_comparison(rows):
 	return result
 	
 def natural_keys(text):
-	'''
+	"""
 	alist.sort(key=natural_keys) sorts in human order
 	
 	:see: http://nedbatchelder.com/blog/200712/human_sorting.html
 	:see: http://stackoverflow.com/a/5967539/1391325
-	'''
+	"""
 	return [__atoi(c) for c in __DIGITS_PATTERN.split(text)]
 	
 def __atoi(text):
-	'''
+	"""
 	:see: http://stackoverflow.com/a/5967539/1391325
-	'''
+	"""
 	return int(text) if text.isdigit() else text
 	
 def print_training_method_rank_comparison(training_method_rank_comparison):
