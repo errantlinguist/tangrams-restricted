@@ -41,7 +41,7 @@ def is_session_dir(filenames):
 	return result
 
 
-def read_events_metadata(infile_path):
+def read_events_metadata(infile_path) -> dict:
 	with open(infile_path, 'r') as infile:
 		rows = csv.reader(infile, dialect="excel-tab")
 		return dict(rows)
@@ -52,7 +52,7 @@ def walk_session_data(inpaths) -> Iterator[Tuple[str, SessionData]]:
 	return ((session_dir, SessionData(session_dir)) for session_dir in session_dirs)
 
 
-def walk_session_dirs(inpaths):
+def walk_session_dirs(inpaths) -> Iterator[str]:
 	for inpath in inpaths:
 		for dirpath, _, filenames in os.walk(inpath, followlinks=True):
 			if is_session_dir(filenames):
