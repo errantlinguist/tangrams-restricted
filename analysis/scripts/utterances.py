@@ -71,7 +71,7 @@ class UtteranceTimes(object):
 		self.ascending_start_times = SortedList(self.utts_by_start_time.keys())
 		self.ascending_start_times.sort()
 
-	def segments_between(self, start_time, end_time):
+	def segments_between(self, start_time, end_time) -> Iterator[Utterance]:
 		seg_start_times = self.ascending_start_times.iter_between(start_time, end_time)
 		started_segs = itertools.chain.from_iterable(
 			self.utts_by_start_time[start_time] for start_time in seg_start_times)
