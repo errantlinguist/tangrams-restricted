@@ -1,13 +1,14 @@
 import os
 import re
 
+COMMENT_LINE_PREFIXES = tuple('#', '!')
 PROPERTIES_FILEPATH_PATTERN = re.compile(".+?\.properties$")
 
 
 def parse_properties(lines):
 	result = {}
 	stripped_lines = (line.strip() for line in lines)
-	semantic_lines = (line for line in stripped_lines if line and not line.startswith('#'))
+	semantic_lines = (line for line in stripped_lines if line and not line.startswith(COMMENT_LINE_PREFIXES))
 	props = (line.split('=', maxsplit=1) for line in semantic_lines)
 	for prop in props:
 		prop_name = prop[0]
