@@ -18,6 +18,18 @@ class TokenGroupDataColumn(object):
 	TOKEN = "TOKEN"
 
 
+def create_annot_token_group_counts(token_annots, token_groups):
+	result = Counter()
+
+	tokens = (annot.text for annot in token_annots)
+	group_sets = (token_groups.get(token) for token in tokens)
+	for group_set in group_sets:
+		if group_set:
+			result.update(group_set)
+
+	return result
+
+
 def print_tabular_counts(infile_token_group_counts, group_count_sums, file):
 	item_key_getter = lambda item: item[0]
 	ordered_group_counts = tuple(sorted(group_count_sums.items(), key=item_key_getter))
@@ -38,18 +50,10 @@ def print_tabular_counts(infile_token_group_counts, group_count_sums, file):
 
 
 def read_annot_token_group_counts(infile_path, token_groups):
-	result = Counter()
-
 	print("Reading XML file \"{}\".".format(infile_path), file=sys.stderr)
 	doc_tree = xml.etree.ElementTree.parse(infile_path)
 	token_annots = doc_tree.iterfind(".//hat:t", ANNOTATION_NAMESPACES)
-	tokens = (annot.text for annot in token_annots)
-	group_sets = (token_groups.get(token) for token in tokens)
-	for group_set in group_sets:
-		if group_set:
-			result.update(group_set)
-
-	return result
+	return create_annot_token_group_counts(token_annots)
 
 
 def read_token_group_dict(infile_path):
