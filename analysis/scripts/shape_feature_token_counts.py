@@ -3,7 +3,6 @@
 import bisect
 import csv
 import itertools
-import os
 import os.path
 import sys
 import xml.etree.ElementTree
@@ -12,6 +11,7 @@ from collections import Counter, defaultdict
 from nltk import ngrams
 
 from annotations import ANNOTATION_NAMESPACES
+from session_dirs import SessionFileName, walk_session_dirs
 
 TRUTH_CELL_VALUE = "true"
 
@@ -116,14 +116,6 @@ class SegmentUtteranceFactory(object):
 			result = None
 
 		return result
-
-
-class SessionFileName(object):
-	EVENTS = "events.tsv"
-	EVENTS_METADATA = "events-metadata.tsv"
-	UTTS = "utts.xml"
-
-	ALL = frozenset((EVENTS, EVENTS_METADATA, UTTS))
 
 
 class SortedList(list):
@@ -241,7 +233,8 @@ class UtteranceTimes(object):
 
 	def segments_between(self, start_time, end_time):
 		seg_start_times = self.ascending_start_times.iter_between(start_time, end_time)
-		started_segs = itertools.chain.from_iterable(self.utts_by_start_time[start_time] for start_time in seg_start_times)
+		started_segs = itertools.chain.from_iterable(
+			self.utts_by_start_time[start_time] for start_time in seg_start_times)
 		return (seg for seg in started_segs if seg.end_time < end_time)
 
 
@@ -270,19 +263,6 @@ def create_event(entity_descs):
 	first_entity_desc = next(iter(entity_descs))
 	event_attrs = dict((name, first_entity_desc.attr(name)) for name in EventDataColumn.ALL)
 	return Event(entity_descs, event_attrs)
-
-
-def is_session_dir(filenames):
-	result = False
-
-	filenames_to_find = set(SessionFileName.ALL)
-	for filename in filenames:
-		filenames_to_find.discard(filename)
-		if not filenames_to_find:
-			result = True
-			break
-
-	return result
 
 
 def print_tabular_data(feature_value_ngram_counts, file):
@@ -349,13 +329,6 @@ def read_events_metadata(infile_path):
 		return dict(rows)
 
 
-def walk_session_dirs(inpaths):
-	for inpath in inpaths:
-		for dirpath, _, filenames in os.walk(inpath, followlinks=True):
-			if is_session_dir(filenames):
-				yield dirpath
-
-
 if __name__ == "__main__":
 	if len(sys.argv) < 2:
 		sys.exit("Usage: {} INPATHS...".format(sys.argv[0]))
@@ -399,7 +372,8 @@ if __name__ == "__main__":
 				next_round_start_time = next_round.start_time
 				current_round_utts = (utts_by_time.segments_between(current_round_start_time,
 																	next_round_start_time))
-				current_round_ngrams = itertools.chain.from_iterable((ngram_factory(utt.content) for utt in current_round_utts))
+				current_round_ngrams = itertools.chain.from_iterable(
+					(ngram_factory(utt.content) for utt in current_round_utts))
 				shape_ngram_counts.update(current_round_ngrams)
 
 		print_tabular_data(feature_value_ngram_counts, sys.stdout)
