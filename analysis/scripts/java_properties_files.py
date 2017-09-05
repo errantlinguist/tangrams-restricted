@@ -7,6 +7,13 @@ PROPERTIES_FILEPATH_PATTERN = re.compile(".+?\.properties$")
 
 
 def parse_properties(lines):
+	"""
+	NOTE: This method cannot handle logical lines spread over multiple natural lines using escaped newline characters.
+	See <https://docs.oracle.com/javase/8/docs/api/java/util/Properties.html#load-java.io.Reader->
+	:param lines: The logical lines to parse as properties.
+	:return: A dictionary of key-value pairs representing the (possibly nested) properties.
+	:rtype: dict
+	"""
 	result = {}
 	stripped_lines = (line.strip() for line in lines)
 	semantic_lines = (line for line in stripped_lines if line and not line.startswith(COMMENT_LINE_PREFIXES))
