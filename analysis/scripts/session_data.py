@@ -1,7 +1,7 @@
 import csv
 import os
 from enum import Enum, unique
-from typing import Iterator, Tuple
+from typing import Iterator, Iterable, Tuple
 
 
 @unique
@@ -28,7 +28,7 @@ class SessionData(object):
 		return self.__class__.__name__ + str(self.__dict__)
 
 
-def is_session_dir(filenames) -> bool:
+def is_session_dir(filenames: Iterable[str]) -> bool:
 	result = False
 
 	filenames_to_find = set(__SESSION_DATA_FILENAMES)
@@ -41,7 +41,7 @@ def is_session_dir(filenames) -> bool:
 	return result
 
 
-def read_events_metadata(infile_path) -> dict:
+def read_events_metadata(infile_path: str) -> dict:
 	with open(infile_path, 'r') as infile:
 		rows = csv.reader(infile, dialect="excel-tab")
 		return dict(rows)
@@ -52,7 +52,7 @@ def walk_session_data(inpaths) -> Iterator[Tuple[str, SessionData]]:
 	return ((session_dir, SessionData(session_dir)) for session_dir in session_dirs)
 
 
-def walk_session_dirs(inpaths) -> Iterator[str]:
+def walk_session_dirs(inpaths: Iterable[str]) -> Iterator[str]:
 	for inpath in inpaths:
 		for dirpath, _, filenames in os.walk(inpath, followlinks=True):
 			if is_session_dir(filenames):
