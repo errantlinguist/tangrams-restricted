@@ -28,7 +28,7 @@ class SessionData(object):
 		return self.__class__.__name__ + str(self.__dict__)
 
 
-def is_session_dir(filenames):
+def is_session_dir(filenames) -> bool:
 	result = False
 
 	filenames_to_find = set(__SESSION_DATA_FILENAMES)
