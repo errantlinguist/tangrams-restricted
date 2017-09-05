@@ -1,4 +1,3 @@
-import sys
 from typing import Iterable, Iterator
 
 import itertools
@@ -71,8 +70,6 @@ class UtteranceTimes(object):
 
 		self.ascending_start_times = SortedList(self.utts_by_start_time.keys())
 		self.ascending_start_times.sort()
-		print("Processed utterances with {} unique start time(s).".format(len(self.ascending_start_times)),
-			  file=sys.stderr)
 
 	def segments_between(self, start_time, end_time):
 		seg_start_times = self.ascending_start_times.iter_between(start_time, end_time)
