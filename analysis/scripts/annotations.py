@@ -184,8 +184,8 @@ class TrackDatum(object):
 					# Attr not present; just continue
 					pass
 		
-def is_blank_or_none(str):
-	return str is None or len(str) < 1 or str.isspace()
+def is_blank_or_none(string):
+	return string is None or len(string) < 1 or string.isspace()
 
 def natural_keys(text):
 	'''
