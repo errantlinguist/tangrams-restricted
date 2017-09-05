@@ -1,6 +1,6 @@
 import os
 from enum import Enum, unique
-from typing import Iterator
+from typing import Iterator, Tuple
 
 
 @unique
@@ -37,7 +37,7 @@ def is_session_dir(filenames):
 	return result
 
 
-def walk_session_data(inpaths) -> Iterator[tuple]:
+def walk_session_data(inpaths) -> Iterator[Tuple[str, SessionData]]:
 	session_dirs = walk_session_dirs(inpaths)
 	return ((session_dir, SessionData(session_dir)) for session_dir in session_dirs)
 
