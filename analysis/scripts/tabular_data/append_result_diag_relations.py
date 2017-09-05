@@ -81,8 +81,8 @@ def print_utt_rel_data(inpath, utt_rels):
 		for row in rows:
 			evt_time = row[evt_time_idx]
 			evt_utt_rels = utt_rels[evt_time]
-			row.append(sum(len(utt_rel.prev_utts) for utt_rel in evt_utt_rels.values()))
-			row.append(sum(utt_rel.prev_utt_total_tokens for utt_rel in evt_utt_rels.values()))
+			row.append(str(sum(len(utt_rel.prev_utts) for utt_rel in evt_utt_rels.values())))
+			row.append(str(sum(utt_rel.prev_utt_total_tokens for utt_rel in evt_utt_rels.values())))
 			
 			mean_sent_val = 0.0
 			utt_count_used_dialogically = 0
@@ -96,11 +96,11 @@ def print_utt_rel_data(inpath, utt_rels):
 						token_count_used_dialogically += evt_utt_rel.prev_utt_total_tokens
 		
 			dialogic_info = 1 if token_count_used_dialogically > 0 else 0
-			row.append(mean_sent_val)
-			row.append(dialogic_info)
-			row.append(utt_count_used_dialogically)
-			row.append(token_count_used_dialogically)
-			print (COL_DELIM.join(str(cell) for cell in row))
+			row.append(str(mean_sent_val))
+			row.append(str(dialogic_info))
+			row.append(str(utt_count_used_dialogically))
+			row.append(str(token_count_used_dialogically))
+			print (COL_DELIM.join(cell for cell in row))
 
 if __name__ == "__main__":
 	import sys
