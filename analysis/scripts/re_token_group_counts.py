@@ -18,7 +18,7 @@ class TokenGroupDataColumn(object):
 	TOKEN = "TOKEN"
 
 
-def create_annot_token_group_counts(token_annots, token_groups):
+def create_annot_token_group_counts(token_annots, token_groups) -> Counter:
 	result = Counter()
 
 	tokens = (annot.text for annot in token_annots)
@@ -56,7 +56,7 @@ def read_annot_token_group_counts(infile_path, token_groups):
 	return create_annot_token_group_counts(token_annots, token_groups)
 
 
-def read_token_group_dict(infile_path):
+def read_token_group_dict(infile_path) -> dict:
 	with open(infile_path, 'r') as infile:
 		rows = csv.reader(infile, dialect="excel-tab")
 		col_idxs = dict((col_name, idx) for (idx, col_name) in enumerate(next(rows)))
