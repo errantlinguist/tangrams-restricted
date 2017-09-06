@@ -1,10 +1,9 @@
 import csv
+from collections import defaultdict
 from enum import Enum, unique
 from typing import Dict, Iterable, List, Tuple, Sequence
 
 from session_data import read_events_metadata
-
-_TRUTH_CELL_VALUE = "true"
 
 
 @unique
@@ -17,6 +16,10 @@ class _DataColumn(Enum):
 	ROUND_ID = "ROUND"
 	SELECTED_ENTITY = "SELECTED"
 	SHAPE = "SHAPE"
+
+
+def __is_truth_cell_value(val):
+	return val == "true"
 
 
 class EntityData(object):
@@ -39,11 +42,11 @@ class EntityData(object):
 
 	@property
 	def is_referent(self):
-		return self.attr(EntityData.Attribute.REFERENT.value) == _TRUTH_CELL_VALUE
+		return self.attr(EntityData.Attribute.REFERENT.value)
 
 	@property
 	def is_selected(self):
-		return self.attr(EntityData.Attribute.SELECTED.value) == _TRUTH_CELL_VALUE
+		return self.attr(EntityData.Attribute.SELECTED.value)
 
 
 class Event(object):
@@ -64,8 +67,21 @@ class Event(object):
 		return self.__class__.__name__ + str(self.__dict__)
 
 	@property
+	def event_id(self):
+		return self.attrs[Event.Attribute.ID]
+
+	@property
+	def event_time(self):
+		return self.attrs[Event.Attribute.TIME]
+
+	@property
 	def referent_entities(self):
 		return (entity for entity in self.entities if entity.is_referent)
+
+	@property
+	def round_id(self):
+		first_entity_desc = next(iter(self.entities))
+		return _entity_round_id(first_entity_desc)
 
 	@property
 	def selected_entities(self):
@@ -77,8 +93,9 @@ class GameRound(object):
 	class Attribute(Enum):
 		ID = _DataColumn.ROUND_ID.value
 
-	def __init__(self, start_time, events: Sequence[Event]):
+	def __init__(self, start_time : float, end_time : float, events: Sequence[Event]):
 		self.start_time = start_time
+		self.end_time = end_time
 		self.events = events
 
 	def __repr__(self, *args, **kwargs):
@@ -86,24 +103,26 @@ class GameRound(object):
 
 
 def create_game_rounds(events: Sequence[Event]) -> Iterable[GameRound]:
-	enumerated_events = enumerate(events)
-	enumerated_event_iter = iter(enumerated_events)
-	_, initial_event = next(enumerated_event_iter)
-	current_round_id, current_round_event_time = __round_id_and_time(initial_event)
-	current_round_event_list_start_idx = 0
+	round_events = defaultdict(list)
+	for event in events:
+		round_events[event.round_id].append(event)
 
-	for event_idx, event in enumerated_events:
-		first_entity_desc = next(iter(event.entities))
-		event_round_id = __entity_round_id(first_entity_desc)
-		if event_round_id != current_round_id:
-			# print("Finishing round {}.".format(current_round_id), file=sys.stderr)
-			completed_round = GameRound(current_round_event_time,
-										events[current_round_event_list_start_idx:event_idx])
+	for event_list in round_events.values():
+		event_list.sort(key=lambda event: event.event_id)
 
-			current_round_id = event_round_id
-			current_round_event_time = __entity_event_time(first_entity_desc)
-			current_round_event_list_start_idx = event_idx
-			yield completed_round
+	ordered_event_lists = iter(sorted(round_events.items(), key=lambda item: item[0]))
+	current_event_list = next(ordered_event_lists)
+	current_events = current_event_list[1]
+	current_round_start_time = current_events[0].event_time
+	for next_event_list in ordered_event_lists:
+		next_events = next_event_list[1]
+		next_round_start_time = next_events[0].event_time
+		yield GameRound(current_round_start_time, next_round_start_time, current_events)
+
+		current_events = next_events
+		current_round_start_time = next_round_start_time
+
+	yield GameRound(current_round_start_time, None, current_events)
 
 
 def read_events(session) -> Iterable[Event]:
@@ -126,9 +145,11 @@ def read_event_entity_desc_matrix(infile_path, event_count, entity_count) -> Tup
 		event_id_col_idx = col_idxs[_DataColumn.EVENT_ID.value]
 
 		for row in rows:
-			event_id = int(row[event_id_col_idx])
+			__transform_row_cell_values(row, col_idxs)
+			event_id = row[event_id_col_idx]
 			entity_descs = result[event_id - 1]
-			entity_id = int(row[entity_id_col_idx])
+			entity_id = row[entity_id_col_idx]
+			row[entity_id_col_idx] = entity_id
 			entity_idx = entity_id - 1
 			if entity_descs[entity_idx]:
 				raise ValueError("Duplicate rows for event {}, entity {}.", event_id, entity_id)
@@ -142,12 +163,27 @@ def __entity_event_time(entity_desc: EntityData) -> float:
 	return float(entity_desc.attr(Event.Attribute.TIME.value))
 
 
-def __entity_round_id(entity_desc: EntityData) -> str:
+def _entity_round_id(entity_desc: EntityData) -> str:
 	return entity_desc.attr(GameRound.Attribute.ID.value)
 
 
 def __round_id_and_time(event: Event):
 	initial_entity_desc = next(iter(event.entities))
-	round_id = __entity_round_id(initial_entity_desc)
+	round_id = _entity_round_id(initial_entity_desc)
 	round_event_time = __entity_event_time(initial_entity_desc)
 	return round_id, round_event_time
+
+
+def __transform_row_cell_value(row, col_idxs, data_col: _DataColumn, transformer):
+	idx = col_idxs[data_col.value]
+	transformed_val = transformer(row[idx])
+	row[idx] = transformed_val
+
+
+def __transform_row_cell_values(row, col_idxs):
+	__transform_row_cell_value(row, col_idxs, _DataColumn.ENTITY_ID, int)
+	__transform_row_cell_value(row, col_idxs, _DataColumn.EVENT_ID, int)
+	__transform_row_cell_value(row, col_idxs, _DataColumn.EVENT_TIME, float)
+	__transform_row_cell_value(row, col_idxs, _DataColumn.REFERENT_ENTITY, __is_truth_cell_value)
+	__transform_row_cell_value(row, col_idxs, _DataColumn.ROUND_ID, int)
+	__transform_row_cell_value(row, col_idxs, _DataColumn.SELECTED_ENTITY, __is_truth_cell_value)
