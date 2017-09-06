@@ -8,11 +8,15 @@ from annotations import ANNOTATION_NAMESPACES
 from sorted_lists import SortedList
 
 """
+NOTE: See "../src/main/resources/se/kth/speech/nlp/fillers.txt"
+"""
+FILLER_TOKENS = frozenset("eh", "ehm", "em", "er", "err", "eugh," "uff", "uh", "uhm", "um", "umm")
+"""
 NOTE: See "../src/main/resources/se/kth/speech/coin/tangrams/analysis/SegmentUtteranceFactory.properties"
 """
 METALANGUAGE_TOKENS = frozenset(("ARTIFACT", "BREATH", "CLICK", "COUGH", "GROAN", "GRUNT", "LAUGHTER", "META", "MOAN",
 								 "NOISE", "SIGH", "SNIFF", "UNKNOWN",))
-
+__TOKEN_TRUNCATION_MARKER = '-'
 
 class Utterance(object):
 	def __init__(self, segment_id, speaker_id, start_time, end_time, content):
@@ -86,7 +90,7 @@ class UtteranceTimes(object):
 		return (utt for utt in started_utts if utt.start_time < end_time)
 
 
-def dialogue_utt_str_repr(utts: Iterator[Utterance]) -> str:
+def dialogue_utt_str_repr(utts: Iterable[Utterance]) -> str:
 	repr_list = []
 
 	grouped_utts = group_utts_by_speaker_id(utts)
@@ -119,6 +123,8 @@ def group_utts_by_speaker_id(utts: Iterable[Utterance]) -> List[List[Utterance]]
 
 	return result
 
+def is_disfluency(token : str) -> bool:
+	return token.startswith(__TOKEN_TRUNCATION_MARKER) or token.endswith(__TOKEN_TRUNCATION_MARKER)
 
 def read_segments(infile_path):
 	print("Reading XML file \"{}\".".format(infile_path), file=sys.stderr)
