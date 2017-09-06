@@ -24,13 +24,13 @@ package se.kth.speech.nlp;
 public final class Disfluencies {
 
 	public static boolean isDisfluency(final CharSequence token) {
-		final char disfluencyDelimiter = '-';
+		final char tokenTruncationMarker = '-';
 		final boolean result;
 		if (token.length() < 1) {
 			result = false;
-		} else if (token.charAt(0) == disfluencyDelimiter) {
+		} else if (token.charAt(0) == tokenTruncationMarker) {
 			result = true;
-		} else if (token.charAt(token.length() - 1) == disfluencyDelimiter) {
+		} else if (token.charAt(token.length() - 1) == tokenTruncationMarker) {
 			result = true;
 		} else {
 			result = false;
