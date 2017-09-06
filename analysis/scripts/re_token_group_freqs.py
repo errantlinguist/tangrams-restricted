@@ -20,7 +20,7 @@ def create_utt_token_group_counts(utts: Iterable[utterances.Utterance], token_gr
 		Counter[str]:
 	result = Counter()
 
-	tokens = __semantically_relevant_tokens(utts)
+	tokens = semantically_relevant_tokens(utts)
 	group_sets = (token_groups.get(token) for token in tokens)
 	for group_set in group_sets:
 		if group_set:
@@ -59,6 +59,13 @@ def read_utt_token_group_counts(infile: str, token_groups: Dict[str, Iterable[st
 	segments = utterances.read_segments(infile)
 	utts = seg_utt_factory(segments)
 	return create_utt_token_group_counts(utts, token_groups)
+
+
+def semantically_relevant_tokens(utts: Iterable[utterances.Utterance]) -> Iterator[str]:
+	# https://stackoverflow.com/a/18551476/1391325
+	all_tokens = (token for utt in utts for token in utt.content)
+	non_fillers = (token for token in all_tokens if token not in utterances.FILLER_TOKENS)
+	return (token for token in non_fillers if not utterances.is_disfluency(token))
 
 
 def __count_token_group_freqs(idxed_game_rounds: Iterator[Tuple[int, game_events.GameRound]],
@@ -128,13 +135,6 @@ def __process_split_sessions(inpaths: Iterable[str], session_round_split_count: 
 			print("Second half of session \"{}\" has {} round(s).".format(indir, len(next_idxed_game_rounds)),
 				  file=sys.stderr)
 			__count_token_group_freqs(iter(next_idxed_game_rounds), utts_by_time)
-
-
-def __semantically_relevant_tokens(utts: Iterable[utterances.Utterance]) -> Iterator[str]:
-	# https://stackoverflow.com/a/18551476/1391325
-	all_tokens = (token for utt in utts for token in utt.content)
-	non_fillers = (token for token in all_tokens if token not in utterances.FILLER_TOKENS)
-	return (token for token in non_fillers if not utterances.is_disfluency(token))
 
 
 if __name__ == "__main__":
