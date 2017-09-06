@@ -10,7 +10,7 @@ from sorted_lists import SortedList
 NOTE: See "../src/main/resources/se/kth/speech/coin/tangrams/analysis/SegmentUtteranceFactory.properties"
 """
 METALANGUAGE_TOKENS = frozenset(("ARTIFACT", "BREATH", "CLICK", "COUGH", "GROAN", "GRUNT", "LAUGHTER", "META", "MOAN",
-								"NOISE", "SIGH", "SNIFF", "UNKNOWN",))
+								 "NOISE", "SIGH", "SNIFF", "UNKNOWN",))
 
 
 class Utterance(object):
@@ -51,7 +51,8 @@ class SegmentUtteranceFactory(object):
 
 	def __create(self, segment) -> Utterance:
 		tokens = segment.iterfind(".//hat:t", ANNOTATION_NAMESPACES)
-		content = tuple(stripped_token for stripped_token in (token.text.strip() for token in tokens) if stripped_token and self.token_filter(stripped_token))
+		content = tuple(stripped_token for stripped_token in (token.text.strip() for token in tokens) if
+						stripped_token and self.token_filter(stripped_token))
 		if content:
 			try:
 				singleton_content = self.token_seq_singletons[content]
