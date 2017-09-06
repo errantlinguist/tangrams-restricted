@@ -12,6 +12,7 @@ class SortedList(list):
 
 	@staticmethod
 	def __index_lt(sublist, elem):
+		"""Find the index of the first element less than elem"""
 		result = bisect.bisect_left(sublist, elem)
 		if result:
 			return result
