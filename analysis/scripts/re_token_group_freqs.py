@@ -61,6 +61,21 @@ def read_utt_token_group_counts(infile: str, token_groups: Dict[str, Iterable[st
 	return create_utt_token_group_counts(utts, token_groups)
 
 
+def __count_token_group_freqs(idxed_game_rounds: Iterator[Tuple[int, game_events.GameRound]],
+							  utts_by_time: utterances.UtteranceTimes):
+	round_idx, first_game_round = next(idxed_game_rounds)
+	current_round_start_time = first_game_round.start_time
+	for round_idx, next_round in idxed_game_rounds:
+		next_round_start_time = next_round.start_time
+		current_round_utts = utts_by_time.between(current_round_start_time,
+												  next_round_start_time)
+
+		diag_utt_repr = utterances.dialogue_utt_str_repr(current_round_utts)
+		print(COL_DELIM.join((str(round_idx), diag_utt_repr)), file=outfile)
+
+		current_round_start_time = next_round_start_time
+
+
 def __create_argparser():
 	result = argparse.ArgumentParser(description="Count frequencies of referring token groups.")
 	result.add_argument("token_group_file", metavar="path",
@@ -86,21 +101,6 @@ def __process_all_tokens(inpaths: Iterable[str], outfile: TextIO):
 
 	printing_ctx = Context(prec=3, rounding=ROUND_HALF_UP)
 	print_tabular_freqs(infile_token_group_counts, group_count_sums, printing_ctx, outfile)
-
-
-def __count_token_group_freqs(idxed_game_rounds: Iterator[Tuple[int, game_events.GameRound]],
-							  utts_by_time: utterances.UtteranceTimes):
-	round_idx, first_game_round = next(idxed_game_rounds)
-	current_round_start_time = first_game_round.start_time
-	for round_idx, next_round in idxed_game_rounds:
-		next_round_start_time = next_round.start_time
-		current_round_utts = utts_by_time.between(current_round_start_time,
-												  next_round_start_time)
-
-		diag_utt_repr = utterances.dialogue_utt_str_repr(current_round_utts)
-		print(COL_DELIM.join((str(round_idx), diag_utt_repr)), file=outfile)
-
-		current_round_start_time = next_round_start_time
 
 
 def __process_split_sessions(inpaths: Iterable[str], session_round_split_count: int, outfile: TextIO):
