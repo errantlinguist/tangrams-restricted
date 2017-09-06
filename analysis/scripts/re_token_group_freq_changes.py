@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import argparse
 import itertools
 import sys
 from decimal import Decimal, localcontext
@@ -36,35 +37,43 @@ def print_tabular_freqs(infile_token_group_counts, group_count_sums, decimal_pri
 		print(COL_DELIM.join(summary_row_cells))
 
 
+def __create_argparser():
+	result = argparse.ArgumentParser(description="Count frequencies of referring token groups.")
+	result.add_argument("token_group_file", metavar="path",
+						help="The path to the token group mapping file to use.")
+	result.add_argument("inpaths", metavar="path", nargs='+',
+						help="The paths to search for sessions to process.")
+	return result
+
+
 if __name__ == "__main__":
-	if len(sys.argv) < 3:
-		raise ValueError("Usage: {} TOKEN_GROUP_FILE INPATHS... > OUTFILE".format(sys.argv[0]))
-	else:
-		token_group_file = sys.argv[1]
-		print("Reading token groups from \"{}\".".format(token_group_file), file=sys.stderr)
-		token_groups = read_token_group_dict(token_group_file)
-		print("Read group info for {} token type(s).".format(len(token_groups)), file=sys.stderr)
+	args = __create_argparser().parse_args()
+	print(args)
+	token_group_file = args.token_group_file
+	print("Reading token groups from \"{}\".".format(token_group_file), file=sys.stderr)
+	token_groups = read_token_group_dict(token_group_file)
+	print("Read group info for {} token type(s).".format(len(token_groups)), file=sys.stderr)
 
-		seg_utt_factory = SegmentUtteranceFactory()
+	seg_utt_factory = SegmentUtteranceFactory()
 
-		inpaths = sys.argv[2:]
-		for indir, session in walk_session_data(inpaths):
-			print("Processing session directory \"{}\".".format(indir), file=sys.stderr)
-			events = tuple(read_events(session))
-			print("Read {} event(s).".format(len(events)), file=sys.stderr)
+	inpaths = args.inpaths
+	for indir, session in walk_session_data(inpaths):
+		print("Processing session directory \"{}\".".format(indir), file=sys.stderr)
+		events = tuple(read_events(session))
+		print("Read {} event(s).".format(len(events)), file=sys.stderr)
 
-			segments = read_segments(session.utts)
-			utts = seg_utt_factory(segments)
-			utts_by_time = UtteranceTimes(utts)
+		segments = read_segments(session.utts)
+		utts = seg_utt_factory(segments)
+		utts_by_time = UtteranceTimes(utts)
 
-			idxed_game_rounds = iter(enumerate(create_game_rounds(events)))
-			round_idx, first_game_round = next(idxed_game_rounds)
-			current_round_start_time = first_game_round.start_time
-			for round_idx, next_round in idxed_game_rounds:
-				next_round_start_time = next_round.start_time
-				current_round_utts = utts_by_time.segments_between(current_round_start_time,
-																		 next_round_start_time)
-				diag_utt_repr = dialogue_utt_str_repr(current_round_utts)
-				print(COL_DELIM.join((str(round_idx), diag_utt_repr)))
+		idxed_game_rounds = iter(enumerate(create_game_rounds(events)))
+		round_idx, first_game_round = next(idxed_game_rounds)
+		current_round_start_time = first_game_round.start_time
+		for round_idx, next_round in idxed_game_rounds:
+			next_round_start_time = next_round.start_time
+			current_round_utts = utts_by_time.segments_between(current_round_start_time,
+															   next_round_start_time)
+			diag_utt_repr = dialogue_utt_str_repr(current_round_utts)
+			print(COL_DELIM.join((str(round_idx), diag_utt_repr)))
 
-				current_round_start_time = next_round_start_time
+			current_round_start_time = next_round_start_time
