@@ -2,16 +2,13 @@
 
 import itertools
 import sys
-import xml.etree.ElementTree
 from collections import Counter, defaultdict
 
 from nltk import ngrams
 
-from annotations import ANNOTATION_NAMESPACES
 from game_events import EntityData, create_game_rounds, read_events
 from session_data import walk_session_data
-from utterances import SegmentUtteranceFactory, UtteranceTimes
-
+from utterances import SegmentUtteranceFactory, UtteranceTimes, read_segments
 
 COL_DELIM = "\t"
 
@@ -86,8 +83,7 @@ if __name__ == "__main__":
 			events = tuple(read_events(session))
 			print("Read {} event(s).".format(len(events)), file=sys.stderr)
 
-			doc_tree = xml.etree.ElementTree.parse(session.utts)
-			segments = doc_tree.iterfind('.//hat:segment', ANNOTATION_NAMESPACES)
+			segments = read_segments(session.utts)
 			utts = seg_utt_factory(segments)
 			utts_by_time = UtteranceTimes(utts)
 

@@ -2,6 +2,7 @@ import itertools
 import sys
 from collections import defaultdict
 from typing import Callable, Iterable, Iterator, List
+from xml.etree.ElementTree import parse as parse_etree
 
 from annotations import ANNOTATION_NAMESPACES
 from sorted_lists import SortedList
@@ -117,6 +118,12 @@ def group_utts_by_speaker_id(utts: Iterable[Utterance]) -> List[List[Utterance]]
 		result.append(current_speaker_utts)
 
 	return result
+
+
+def read_segments(infile_path):
+	print("Reading XML file \"{}\".".format(infile_path), file=sys.stderr)
+	doc_tree = parse_etree(infile_path)
+	return doc_tree.iterfind(".//hat:segment", ANNOTATION_NAMESPACES)
 
 
 def __capitalize_first_char(string: str) -> str:

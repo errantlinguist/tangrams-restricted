@@ -2,14 +2,12 @@
 
 import itertools
 import sys
-import xml.etree.ElementTree
 from decimal import Decimal, localcontext
 
-from annotations import ANNOTATION_NAMESPACES
 from game_events import create_game_rounds, read_events
 from re_token_group_counts import read_token_group_dict
 from session_data import walk_session_data
-from utterances import SegmentUtteranceFactory, UtteranceTimes, dialogue_utt_str_repr
+from utterances import SegmentUtteranceFactory, UtteranceTimes, dialogue_utt_str_repr, read_segments
 
 COL_DELIM = '\t'
 
@@ -38,12 +36,6 @@ def print_tabular_freqs(infile_token_group_counts, group_count_sums, decimal_pri
 		print(COL_DELIM.join(summary_row_cells))
 
 
-def read_segments(infile_path):
-	print("Reading XML file \"{}\".".format(infile_path), file=sys.stderr)
-	doc_tree = xml.etree.ElementTree.parse(infile_path)
-	return doc_tree.iterfind(".//hat:segment", ANNOTATION_NAMESPACES)
-
-
 if __name__ == "__main__":
 	if len(sys.argv) < 3:
 		raise ValueError("Usage: {} TOKEN_GROUP_FILE INPATHS... > OUTFILE".format(sys.argv[0]))
@@ -69,10 +61,9 @@ if __name__ == "__main__":
 			round_idx, first_game_round = next(idxed_game_rounds)
 			current_round_start_time = first_game_round.start_time
 			for round_idx, next_round in idxed_game_rounds:
-
 				next_round_start_time = next_round.start_time
 				current_round_utts = tuple(utts_by_time.segments_between(current_round_start_time,
-																	next_round_start_time))
+																		 next_round_start_time))
 				diag_utt_repr = dialogue_utt_str_repr(iter(current_round_utts))
 				print(COL_DELIM.join((str(round_idx), diag_utt_repr)))
 
