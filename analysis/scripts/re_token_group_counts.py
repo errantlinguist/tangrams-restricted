@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import argparse
 import csv
 import itertools
 import sys
@@ -83,6 +84,15 @@ def semantically_relevant_tokens(utts: Iterable[utterances.Utterance]) -> Iterat
 	return (token for token in non_fillers if not utterances.is_disfluency(token))
 
 
+def __create_argparser():
+	result = argparse.ArgumentParser(description="Count referring token groups.")
+	result.add_argument("token_group_file", metavar="path",
+						help="The path to the token group mapping file to use.")
+	result.add_argument("inpaths", metavar="path", nargs='+',
+						help="The paths to search for sessions to process.")
+	return result
+
+
 def __process_whole_sessions(inpaths: Iterable[str], _token_groups: __TOKEN_GROUP_DICT_TYPE, outfile: TextIO):
 	infiles = walk_xml_files(*inpaths)
 	seg_utt_factory = utterances.SegmentUtteranceFactory()
@@ -98,12 +108,10 @@ def __process_whole_sessions(inpaths: Iterable[str], _token_groups: __TOKEN_GROU
 
 
 if __name__ == "__main__":
-	if len(sys.argv) < 3:
-		raise ValueError("Usage: {} TOKEN_GROUP_FILE INPATHS... > OUTFILE".format(sys.argv[0]))
-	else:
-		token_group_file_path = sys.argv[1]
-		print("Reading token groups from \"{}\".".format(token_group_file_path), file=sys.stderr)
-		token_groups = read_token_group_dict(token_group_file_path)
-		print("Read group info for {} token type(s).".format(len(token_groups)), file=sys.stderr)
+	args = __create_argparser().parse_args()
+	token_group_file_path = args.token_group_file
+	print("Reading token groups from \"{}\".".format(token_group_file_path), file=sys.stderr)
+	token_groups = read_token_group_dict(token_group_file_path)
+	print("Read group info for {} token type(s).".format(len(token_groups)), file=sys.stderr)
 
-		__process_whole_sessions(sys.argv[2:], token_groups, sys.stdout)
+	__process_whole_sessions(args.inpaths, token_groups, sys.stdout)
