@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
-import itertools
 import sys
-from decimal import Decimal, localcontext
 
 from game_events import create_game_rounds, read_events
 from re_token_group_counts import read_token_group_dict
@@ -13,37 +11,14 @@ from utterances import SegmentUtteranceFactory, UtteranceTimes, dialogue_utt_str
 COL_DELIM = '\t'
 
 
-def print_tabular_freqs(infile_token_group_counts, group_count_sums, decimal_printing_ctx, file):
-	item_key_getter = lambda item: item[0]
-	ordered_group_counts = tuple(
-		(group, Decimal(count)) for group, count in sorted(group_count_sums.items(), key=item_key_getter))
-	ordered_groups = tuple(group for (group, _) in ordered_group_counts)
-	header_cells = itertools.chain(("DYAD",), (group for (group, _) in ordered_group_counts))
-	print(COL_DELIM.join(header_cells), file=file)
-
-	for infile, token_group_counts in sorted(infile_token_group_counts.items(), key=item_key_getter):
-		counts = tuple(Decimal(token_group_counts.get(group, 0)) for group in ordered_groups)
-		dyad_total_count = Decimal(sum(counts))
-		freqs = (count / dyad_total_count for count in counts)
-		with localcontext(decimal_printing_ctx) as _:
-			print(COL_DELIM.join(itertools.chain((infile,), (str(freq) for freq in freqs))),
-				  file=file)
-
-	summary_counts = tuple(count for (_, count) in ordered_group_counts)
-	summary_total_count = sum(summary_counts)
-	summary_freqs = (count / summary_total_count for count in summary_counts)
-	summary_row_cells = itertools.chain(("TOTAL",), (str(freq) for freq in summary_freqs))
-	with localcontext(decimal_printing_ctx) as _:
-		print(COL_DELIM.join(summary_row_cells))
-
-
 def __create_argparser():
 	result = argparse.ArgumentParser(description="Count frequencies of referring token groups.")
 	result.add_argument("token_group_file", metavar="path",
 						help="The path to the token group mapping file to use.")
 	result.add_argument("inpaths", metavar="path", nargs='+',
 						help="The paths to search for sessions to process.")
-	result.add_argument("-r", "--round-split", metavar="count", type=int, help="When this option is supplied, each session is split into half, with the first half comprising this many game rounds.")
+	result.add_argument("-r", "--round-split", metavar="count", type=int,
+						help="When this option is supplied, each session is split into half, with the first half comprising this many game rounds.")
 	return result
 
 
