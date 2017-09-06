@@ -63,7 +63,7 @@ if __name__ == "__main__":
 
 			doc_tree = xml.etree.ElementTree.parse(session.utts)
 			segments = doc_tree.iterfind('.//hat:segment', ANNOTATION_NAMESPACES)
-			utts = list(seg_utt_factory(segments))
+			utts = seg_utt_factory(segments)
 			utts_by_time = UtteranceTimes(utts)
 
 			idxed_game_rounds = iter(enumerate(create_game_rounds(events)))
