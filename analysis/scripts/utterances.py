@@ -10,7 +10,7 @@ from sorted_lists import SortedList
 """
 NOTE: See "../src/main/resources/se/kth/speech/nlp/fillers.txt"
 """
-FILLER_TOKENS = frozenset("eh", "ehm", "em", "er", "err", "eugh," "uff", "uh", "uhm", "um", "umm")
+FILLER_TOKENS = frozenset(("eh", "ehm", "em", "er", "err", "eugh," "uff", "uh", "uhm", "um", "umm",))
 """
 NOTE: See "../src/main/resources/se/kth/speech/coin/tangrams/analysis/SegmentUtteranceFactory.properties"
 """
