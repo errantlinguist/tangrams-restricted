@@ -6,7 +6,7 @@ import itertools
 import sys
 from collections import Counter
 from enum import Enum, unique
-from typing import Dict, FrozenSet, Iterable, Iterator, TextIO, Tuple
+from typing import Dict, FrozenSet, Iterable, Iterator, Tuple
 
 import utterances
 from xml_files import walk_xml_files
@@ -60,7 +60,7 @@ def read_token_group_dict(infile_path: str) -> Dict[str, FrozenSet[str]]:
 		return dict(token_groups)
 
 
-def readtoken_groups(infile: TextIO) -> Iterator[Tuple[str, FrozenSet[str]]]:
+def readtoken_groups(infile) -> Iterator[Tuple[str, FrozenSet[str]]]:
 	rows = csv.reader(infile, dialect="excel-tab")
 	col_idxs = dict((col_name, idx) for (idx, col_name) in enumerate(next(rows)))
 	token_col_idx = col_idxs[TokenGroupDataColumn.TOKEN.value]
@@ -105,7 +105,7 @@ def __main(args):
 	__process_whole_sessions(args.inpaths, token_groups, sys.stdout)
 
 
-def __process_whole_sessions(inpaths: Iterable[str], token_groups: __TOKEN_GROUP_DICT_TYPE, outfile: TextIO):
+def __process_whole_sessions(inpaths: Iterable[str], token_groups: __TOKEN_GROUP_DICT_TYPE, outfile):
 	infiles = walk_xml_files(*inpaths)
 	seg_utt_factory = utterances.SegmentUtteranceFactory()
 	infile_token_group_counts = dict(
