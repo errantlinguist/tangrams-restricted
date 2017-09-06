@@ -4,32 +4,12 @@ import itertools
 import sys
 from collections import Counter, defaultdict
 
-from nltk import ngrams
-
 from game_events import EntityData, create_game_rounds, read_events
+from ngrams import CachingNgramFactory
 from session_data import walk_session_data
 from utterances import SegmentUtteranceFactory, UtteranceTimes, read_segments
 
 COL_DELIM = "\t"
-
-
-class CachingNgramFactory(object):
-	def __init__(self, max_ngram_length):
-		self.max_ngram_length_stop = max_ngram_length + 1
-		self.cache = {}
-
-	def __call__(self, tokens):
-		try:
-			result = self.cache[tokens]
-		except KeyError:
-			result = self.__create_ngrams(tokens)
-			self.cache[tokens] = result
-
-		return result
-
-	def __create_ngrams(self, tokens):
-		ngram_lens = range(1, min(self.max_ngram_length_stop, len(tokens)))
-		return tuple(len_ngram for ngram_len in ngram_lens for len_ngram in ngrams(tokens, ngram_len))
 
 
 def print_tabular_data(feature_value_ngram_counts, file):
