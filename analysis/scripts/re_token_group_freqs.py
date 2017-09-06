@@ -10,7 +10,7 @@ from typing import Dict, Iterable, List, Sequence, Iterator, TextIO, Tuple
 
 import game_events
 import utterances
-from re_token_group_counts import read_token_group_dict
+from re_token_group_counts import read_token_group_dict, read_utt_token_group_counts
 from session_data import SessionData, walk_session_data
 from xml_files import walk_xml_files
 
@@ -48,19 +48,6 @@ def count_split_session_token_groups(session: SessionData, token_groups: __TOKEN
 		next_half_counts = __count_token_groups(next_round_start_end_times, token_groups, utts)
 
 		return first_half_counts, next_half_counts
-
-
-def create_utt_token_group_counts(utts: Iterable[utterances.Utterance], token_groups: __TOKEN_GROUP_DICT_TYPE) -> \
-		Dict[str, int]:
-	result = Counter()
-
-	tokens = semantically_relevant_tokens(utts)
-	group_sets = (token_groups.get(token) for token in tokens)
-	for group_set in group_sets:
-		if group_set:
-			result.update(group_set)
-
-	return result
 
 
 def game_round_start_end_times(round_start_times: Iterator[float]) -> Iterator[Tuple[float, float]]:
@@ -133,20 +120,6 @@ def read_round_start_times(session: SessionData) -> List[float]:
 			result[round_idx] = min(result[round_idx], event_time)
 
 	return result
-
-
-def read_utt_token_group_counts(infile: str, token_groups: __TOKEN_GROUP_DICT_TYPE,
-								seg_utt_factory: utterances.SegmentUtteranceFactory):
-	segments = utterances.read_segments(infile)
-	utts = seg_utt_factory(segments)
-	return create_utt_token_group_counts(utts, token_groups)
-
-
-def semantically_relevant_tokens(utts: Iterable[utterances.Utterance]) -> Iterator[str]:
-	# https://stackoverflow.com/a/18551476/1391325
-	all_tokens = (token for utt in utts for token in utt.content)
-	non_fillers = (token for token in all_tokens if token not in utterances.FILLER_TOKENS)
-	return (token for token in non_fillers if not utterances.is_disfluency(token))
 
 
 def __count_token_groups(start_end_times: Iterable[Tuple[int, int]],
