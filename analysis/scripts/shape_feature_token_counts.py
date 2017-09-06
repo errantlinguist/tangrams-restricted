@@ -12,7 +12,7 @@ from utterances import SegmentUtteranceFactory, UtteranceTimes, read_segments
 COL_DELIM = "\t"
 
 
-def print_tabular_data(feature_value_ngram_counts: Dict[Any, Dict[str, int]], file):
+def print_tabular_data(feature_value_ngram_counts: Dict[Any, Dict[str, int]], outfile):
 	header_cells = []
 	subheader_cells = []
 	for feature_value in sorted(feature_value_ngram_counts.keys()):
@@ -20,8 +20,8 @@ def print_tabular_data(feature_value_ngram_counts: Dict[Any, Dict[str, int]], fi
 		subheader_cells.append("NGRAM")
 		header_cells.append("")
 		subheader_cells.append("COUNT")
-	print(COL_DELIM.join(header_cells), file=file)
-	print(COL_DELIM.join(subheader_cells), file=file)
+	print(COL_DELIM.join(header_cells), file=outfile)
+	print(COL_DELIM.join(subheader_cells), file=outfile)
 
 	ngram_count_iters = []
 	for _, ngram_counts in sorted(feature_value_ngram_counts.items(), key=lambda item: item[0]):
