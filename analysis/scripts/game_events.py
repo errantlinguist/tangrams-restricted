@@ -93,7 +93,7 @@ class GameRound(object):
 	class Attribute(Enum):
 		ID = _DataColumn.ROUND_ID.value
 
-	def __init__(self, start_time : float, end_time : float, events: Sequence[Event]):
+	def __init__(self, start_time: float, end_time: float, events: Sequence[Event]):
 		self.start_time = start_time
 		self.end_time = end_time
 		self.events = events
