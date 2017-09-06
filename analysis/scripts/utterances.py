@@ -1,7 +1,7 @@
 import itertools
 import sys
 from collections import defaultdict
-from typing import Iterable, Iterator, List
+from typing import Callable, Iterable, Iterator, List
 
 from annotations import ANNOTATION_NAMESPACES
 from sorted_lists import SortedList
@@ -39,9 +39,9 @@ class Utterance(object):
 
 
 class SegmentUtteranceFactory(object):
-	def __init__(self, metalanguage_tokens=METALANGUAGE_TOKENS):
+	def __init__(self, token_filter: Callable[[str], bool] = None):
+		self.token_filter = token_filter if token_filter else lambda token: token not in METALANGUAGE_TOKENS
 		self.token_seq_singletons = {}
-		self.metalanguage_tokens = metalanguage_tokens
 
 	def __call__(self, segments) -> Iterator[Utterance]:
 		for segment in segments:
@@ -51,7 +51,7 @@ class SegmentUtteranceFactory(object):
 
 	def __create(self, segment) -> Utterance:
 		tokens = segment.iterfind(".//hat:t", ANNOTATION_NAMESPACES)
-		content = tuple(stripped_token for stripped_token in (token.text.strip() for token in tokens) if stripped_token and stripped_token not in self.metalanguage_tokens)
+		content = tuple(stripped_token for stripped_token in (token.text.strip() for token in tokens) if stripped_token and self.token_filter(stripped_token))
 		if content:
 			try:
 				singleton_content = self.token_seq_singletons[content]
