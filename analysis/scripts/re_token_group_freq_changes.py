@@ -43,15 +43,16 @@ def __create_argparser():
 						help="The path to the token group mapping file to use.")
 	result.add_argument("inpaths", metavar="path", nargs='+',
 						help="The paths to search for sessions to process.")
+	result.add_argument("-r", "--round-split", metavar="count", type=int, help="When this option is supplied, each session is split into half, with the first half comprising this many game rounds.")
 	return result
 
 
 if __name__ == "__main__":
 	args = __create_argparser().parse_args()
 	print(args)
-	token_group_file = args.token_group_file
-	print("Reading token groups from \"{}\".".format(token_group_file), file=sys.stderr)
-	token_groups = read_token_group_dict(token_group_file)
+	token_group_file_path = args.token_group_file
+	print("Reading token groups from \"{}\".".format(token_group_file_path), file=sys.stderr)
+	token_groups = read_token_group_dict(token_group_file_path)
 	print("Read group info for {} token type(s).".format(len(token_groups)), file=sys.stderr)
 
 	seg_utt_factory = SegmentUtteranceFactory()

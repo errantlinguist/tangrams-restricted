@@ -5,6 +5,7 @@ import itertools
 import sys
 import xml.etree.ElementTree
 from collections import Counter
+from typing import FrozenSet, Iterator, TextIO, Tuple
 
 from annotations import ANNOTATION_NAMESPACES
 from xml_files import walk_xml_files
@@ -56,23 +57,28 @@ def read_annot_token_group_counts(infile_path, token_groups):
 	return create_annot_token_group_counts(token_annots, token_groups)
 
 
-def read_token_group_dict(infile_path) -> dict:
-	with open(infile_path, 'r') as infile:
-		rows = csv.reader(infile, dialect="excel-tab")
-		col_idxs = dict((col_name, idx) for (idx, col_name) in enumerate(next(rows)))
-		token_col_idx = col_idxs[TokenGroupDataColumn.TOKEN]
-		group_col_idx = col_idxs[TokenGroupDataColumn.GROUP]
-		token_groups = ((row[token_col_idx], row[group_col_idx]) for row in rows)
-		return dict((token, frozenset(group.split(GROUP_LIST_DELIM))) for (token, group) in token_groups if group)
+def read_token_group_dict(infile_path: str) -> dict:
+	with open(infile_path, 'r') as inf:
+		token_groups = read_token_groups(inf)
+		return dict(token_groups)
+
+
+def read_token_groups(infile: TextIO) -> Iterator[Tuple[str, FrozenSet[str]]]:
+	rows = csv.reader(infile, dialect="excel-tab")
+	col_idxs = dict((col_name, idx) for (idx, col_name) in enumerate(next(rows)))
+	token_col_idx = col_idxs[TokenGroupDataColumn.TOKEN]
+	group_col_idx = col_idxs[TokenGroupDataColumn.GROUP]
+	token_groups = ((row[token_col_idx], row[group_col_idx]) for row in rows)
+	return ((token, frozenset(group.split(GROUP_LIST_DELIM))) for (token, group) in token_groups if group)
 
 
 if __name__ == "__main__":
 	if len(sys.argv) < 3:
 		raise ValueError("Usage: {} TOKEN_GROUP_FILE INPATHS... > OUTFILE".format(sys.argv[0]))
 	else:
-		token_group_file = sys.argv[1]
-		print("Reading token groups from \"{}\".".format(token_group_file), file=sys.stderr)
-		token_groups = read_token_group_dict(token_group_file)
+		token_group_file_path = sys.argv[1]
+		print("Reading token groups from \"{}\".".format(token_group_file_path), file=sys.stderr)
+		token_groups = read_token_group_dict(token_group_file_path)
 		print("Read group info for {} token type(s).".format(len(token_groups)), file=sys.stderr)
 
 		inpaths = sys.argv[2:]

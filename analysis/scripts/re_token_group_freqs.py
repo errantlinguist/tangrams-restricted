@@ -39,9 +39,9 @@ if __name__ == "__main__":
 	if len(sys.argv) < 3:
 		raise ValueError("Usage: {} TOKEN_GROUP_FILE INPATHS... > OUTFILE".format(sys.argv[0]))
 	else:
-		token_group_file = sys.argv[1]
-		print("Reading token groups from \"{}\".".format(token_group_file), file=sys.stderr)
-		token_groups = read_token_group_dict(token_group_file)
+		token_group_file_path = sys.argv[1]
+		print("Reading token groups from \"{}\".".format(token_group_file_path), file=sys.stderr)
+		token_groups = read_token_group_dict(token_group_file_path)
 		print("Read group info for {} token type(s).".format(len(token_groups)), file=sys.stderr)
 
 		inpaths = sys.argv[2:]
