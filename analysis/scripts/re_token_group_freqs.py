@@ -1,22 +1,56 @@
 #!/usr/bin/env python3
 
 import argparse
+import csv
 import itertools
 import sys
 from collections import Counter
 from decimal import Decimal, ROUND_HALF_UP, Context, localcontext
-from typing import Counter, Dict, Iterable, Iterator, TextIO, Tuple
+from typing import Counter, Dict, Iterable, List, Sequence, Iterator, TextIO, Tuple
 
 import game_events
 import utterances
 from re_token_group_counts import read_token_group_dict
-from session_data import walk_session_data
+from session_data import SessionData, walk_session_data
 from xml_files import walk_xml_files
 
 COL_DELIM = '\t'
+EVENT_TIME_COL_NAME = "TIME"
+ROUND_ID_COL_NAME = "ROUND"
+
+__TOKEN_GROUP_DICT_TYPE = Dict[str, Iterable[str]]
 
 
-def create_utt_token_group_counts(utts: Iterable[utterances.Utterance], token_groups: Dict[str, Iterable[str]]) -> \
+def count_split_session_token_groups(session: SessionData, token_groups: __TOKEN_GROUP_DICT_TYPE,
+									 session_round_split_count: int,
+									 seg_utt_factory: utterances.SegmentUtteranceFactory) -> Tuple[
+	Counter[str], Counter[str]]:
+	round_start_end_times = tuple(game_round_start_end_times(iter(read_round_start_times(session))))
+	round_count = len(round_start_end_times)
+	print("Read {} game round(s).".format(round_count), file=sys.stderr)
+
+	segments = utterances.read_segments(session.utts)
+	utts = tuple(seg_utt_factory(segments))
+
+	if round_count <= session_round_split_count:
+		raise ValueError(
+			"Cannot split at {} rounds because the session has only {} round(s).".format(
+				session_round_split_count, round_count))
+	else:
+		first_round_start_end_times = round_start_end_times[:session_round_split_count]
+		print("First half of session has {} round(s).".format(len(first_round_start_end_times)),
+			  file=sys.stderr)
+		first_half_counts = __count_token_groups(first_round_start_end_times, token_groups, utts)
+
+		next_round_start_end_times = round_start_end_times[session_round_split_count:]
+		print("Second half of session has {} round(s).".format(len(next_round_start_end_times)),
+			  file=sys.stderr)
+		next_half_counts = __count_token_groups(next_round_start_end_times, token_groups, utts)
+
+		return first_half_counts, next_half_counts
+
+
+def create_utt_token_group_counts(utts: Iterable[utterances.Utterance], token_groups: __TOKEN_GROUP_DICT_TYPE) -> \
 		Counter[str]:
 	result = Counter()
 
@@ -27,6 +61,35 @@ def create_utt_token_group_counts(utts: Iterable[utterances.Utterance], token_gr
 			result.update(group_set)
 
 	return result
+
+
+def game_round_start_end_times(round_start_times: Iterator[float]) -> Iterator[Tuple[float, float]]:
+	end_delimited_round_start_times = itertools.chain(round_start_times, (float('inf'),))
+	current_start_time = next(end_delimited_round_start_times)
+	for next_start_time in end_delimited_round_start_times:
+		yield current_start_time, next_start_time
+		current_start_time = next_start_time
+
+	end_reached = False
+	while not end_reached:
+		try:
+			next_start_time = next(round_start_times)
+		except StopIteration:
+			next_start_time = float('inf')
+			end_reached = True
+
+		yield current_start_time, next_start_time
+		current_start_time = next_start_time
+
+
+def group_freqs(group_counts: Dict[str, int]) -> Iterator[Tuple[str, Decimal]]:
+	decimal_counts = tuple((group, Decimal(count)) for group, count in group_counts.items())
+	total = sum(count for (_, count) in decimal_counts)
+	return ((group, count / total) for group, count in decimal_counts)
+
+
+def game_round_utterances(start_time: float, end_time: float, utts: Iterable[utterances.Utterance]):
+	return (utt for utt in utts if (utt.start_time >= start_time) and (utt.start_time < end_time))
 
 
 def print_tabular_freqs(infile_token_group_counts: Dict[str, Dict[str, int]], group_count_sums: Dict[str, int],
@@ -54,7 +117,25 @@ def print_tabular_freqs(infile_token_group_counts: Dict[str, Dict[str, int]], gr
 		print(COL_DELIM.join(summary_row_cells))
 
 
-def read_utt_token_group_counts(infile: str, token_groups: Dict[str, Iterable[str]],
+def read_round_start_times(session: SessionData) -> List[float]:
+	events_metadata = game_events.read_events_metadata(session.events_metadata)
+	round_count = int(events_metadata["ROUND_COUNT"])
+
+	result = [float('inf')] * round_count
+	with open(session.events, 'r') as infile:
+		rows = csv.reader(infile, dialect="excel-tab")
+		col_idxs = dict((col_name, idx) for (idx, col_name) in enumerate(next(rows)))
+		for row in rows:
+			event_time_col_idx = col_idxs[EVENT_TIME_COL_NAME]
+			event_time = float(row[event_time_col_idx])
+			round_id_col_idx = col_idxs[ROUND_ID_COL_NAME]
+			round_idx = int(row[round_id_col_idx]) - 1
+			result[round_idx] = min(result[round_idx], event_time)
+
+	return result
+
+
+def read_utt_token_group_counts(infile: str, token_groups: __TOKEN_GROUP_DICT_TYPE,
 								seg_utt_factory: utterances.SegmentUtteranceFactory):
 	segments = utterances.read_segments(infile)
 	utts = seg_utt_factory(segments)
@@ -68,19 +149,18 @@ def semantically_relevant_tokens(utts: Iterable[utterances.Utterance]) -> Iterat
 	return (token for token in non_fillers if not utterances.is_disfluency(token))
 
 
-def __count_token_group_freqs(idxed_game_rounds: Iterator[Tuple[int, game_events.GameRound]],
-							  utts_by_time: utterances.UtteranceTimes):
-	round_idx, first_game_round = next(idxed_game_rounds)
-	current_round_start_time = first_game_round.start_time
-	for round_idx, next_round in idxed_game_rounds:
-		next_round_start_time = next_round.start_time
-		current_round_utts = utts_by_time.between(current_round_start_time,
-												  next_round_start_time)
-
-		diag_utt_repr = utterances.dialogue_utt_str_repr(current_round_utts)
-		print(COL_DELIM.join((str(round_idx), diag_utt_repr)), file=outfile)
-
-		current_round_start_time = next_round_start_time
+def __count_token_groups(start_end_times: Iterable[Tuple[int, int]],
+						 token_groups: __TOKEN_GROUP_DICT_TYPE,
+						 utts: Sequence[utterances.Utterance]) -> Counter[str]:
+	result = Counter()
+	for start_time, end_time in start_end_times:
+		round_utts = game_round_utterances(start_time, end_time, utts)
+		for utt in round_utts:
+			group_sets = (token_groups.get(token) for token in utt.content)
+			for group_set in group_sets:
+				if group_set:
+					result.update(group_set)
+	return result
 
 
 def __create_argparser():
@@ -94,7 +174,7 @@ def __create_argparser():
 	return result
 
 
-def __process_all_tokens(inpaths: Iterable[str], outfile: TextIO):
+def __process_all_tokens(inpaths: Iterable[str], token_groups: __TOKEN_GROUP_DICT_TYPE, outfile: TextIO):
 	infiles = walk_xml_files(*inpaths)
 	seg_utt_factory = utterances.SegmentUtteranceFactory()
 	infile_token_group_counts = dict(
@@ -110,36 +190,42 @@ def __process_all_tokens(inpaths: Iterable[str], outfile: TextIO):
 	print_tabular_freqs(infile_token_group_counts, group_count_sums, printing_ctx, outfile)
 
 
-def __process_split_sessions(inpaths: Iterable[str], session_round_split_count: int, outfile: TextIO):
+class Distribution(object):
+	def __init__(self, counts):
+		self.counts = counts
+		self.freqs = group_freqs(counts)
+
+
+class GroupDistributions(object):
+	def __init__(self, first_counts, next_counts):
+		self.first = Distribution(first_counts)
+		self.next = Distribution(next_counts)
+
+		total_counts = Counter(first_counts)
+		total_counts.update(next_counts)
+		self.totaö = Distribution(total_counts)
+
+
+def __process_split_sessions(inpaths: Iterable[str], token_groups: __TOKEN_GROUP_DICT_TYPE,
+							 session_round_split_count: int, outfile: TextIO):
 	seg_utt_factory = utterances.SegmentUtteranceFactory()
+
 	for indir, session in walk_session_data(inpaths):
 		print("Processing session directory \"{}\".".format(indir), file=sys.stderr)
-		events = tuple(game_events.read_events(session))
-		print("Read {} event(s).".format(len(events)), file=sys.stderr)
+		first_half_counts, next_half_counts = count_split_session_token_groups(session, token_groups,
+																			   session_round_split_count,
+																			   seg_utt_factory)
+		first_half_freqs = group_freqs(first_half_counts)
+		next_half_freqs = group_freqs(next_half_counts)
 
-		segments = utterances.read_segments(session.utts)
-		utts = seg_utt_factory(segments)
-		utts_by_time = utterances.UtteranceTimes(utts)
-
-		idxed_game_rounds = tuple(enumerate(game_events.create_game_rounds(events)))
-		if len(idxed_game_rounds) <= session_round_split_count:
-			raise ValueError(
-				"Cannot split at {} rounds because the session read from \"{}\" has only {} round(s).".format(
-					session_round_split_count, indir, len(idxed_game_rounds)))
-		else:
-			first_idxed_game_rounds = idxed_game_rounds[:session_round_split_count]
-			print("First half of session \"{}\" has {} round(s).".format(indir, len(first_idxed_game_rounds)),
-				  file=sys.stderr)
-			__count_token_group_freqs(iter(first_idxed_game_rounds), utts_by_time)
-			next_idxed_game_rounds = idxed_game_rounds[session_round_split_count:]
-			print("Second half of session \"{}\" has {} round(s).".format(indir, len(next_idxed_game_rounds)),
-				  file=sys.stderr)
-			__count_token_group_freqs(iter(next_idxed_game_rounds), utts_by_time)
+		for group, count in first_half_freqs:
+			print(COL_DELIM.join((group, str(count),)))
+		for group, count in next_half_freqs:
+			print(COL_DELIM.join((group, str(count),)))
 
 
 if __name__ == "__main__":
 	args = __create_argparser().parse_args()
-	print(args)
 	token_group_file_path = args.token_group_file
 	print("Reading token groups from \"{}\".".format(token_group_file_path), file=sys.stderr)
 	token_groups = read_token_group_dict(token_group_file_path)
@@ -150,6 +236,6 @@ if __name__ == "__main__":
 	session_round_split_count = args.round_split
 	if session_round_split_count:
 		print("Splitting sessions after {} round(s).".format(session_round_split_count), file=sys.stderr)
-		__process_split_sessions(inpaths, session_round_split_count, outfile)
+		__process_split_sessions(inpaths, token_groups, session_round_split_count, outfile)
 	else:
-		__process_all_tokens(inpaths, outfile)
+		__process_all_tokens(inpaths, token_groups, outfile)
