@@ -147,7 +147,7 @@ def __create_argparser():
 	return result
 
 
-def __process_all_tokens(inpaths: Iterable[str], token_groups: __TOKEN_GROUP_DICT_TYPE, outfile: TextIO):
+def __process_whole_sessions(inpaths: Iterable[str], token_groups: __TOKEN_GROUP_DICT_TYPE, outfile: TextIO):
 	infiles = walk_xml_files(*inpaths)
 	seg_utt_factory = utterances.SegmentUtteranceFactory()
 	infile_token_group_counts = dict(
@@ -211,4 +211,4 @@ if __name__ == "__main__":
 		print("Splitting sessions after {} round(s).".format(session_round_split_count), file=sys.stderr)
 		__process_split_sessions(inpaths, token_groups, session_round_split_count, outfile)
 	else:
-		__process_all_tokens(inpaths, token_groups, outfile)
+		__process_whole_sessions(inpaths, token_groups, outfile)

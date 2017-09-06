@@ -83,7 +83,7 @@ def semantically_relevant_tokens(utts: Iterable[utterances.Utterance]) -> Iterat
 	return (token for token in non_fillers if not utterances.is_disfluency(token))
 
 
-def __process_all_tokens(inpaths: Iterable[str], token_groups: __TOKEN_GROUP_DICT_TYPE, outfile: TextIO):
+def __process_whole_sessions(inpaths: Iterable[str], token_groups: __TOKEN_GROUP_DICT_TYPE, outfile: TextIO):
 	infiles = walk_xml_files(*inpaths)
 	seg_utt_factory = utterances.SegmentUtteranceFactory()
 	infile_token_group_counts = dict(
@@ -106,4 +106,4 @@ if __name__ == "__main__":
 		token_groups = read_token_group_dict(token_group_file_path)
 		print("Read group info for {} token type(s).".format(len(token_groups)), file=sys.stderr)
 
-		__process_all_tokens(sys.argv[2:], token_groups, sys.stdout)
+		__process_whole_sessions(sys.argv[2:], token_groups, sys.stdout)
