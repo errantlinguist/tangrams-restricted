@@ -5,9 +5,12 @@ import itertools
 import sys
 from collections import Counter
 from decimal import Decimal, ROUND_HALF_UP, Context, localcontext
-from typing import Dict, TextIO
+from typing import Dict, Iterable, TextIO
 
+import game_events
+import utterances
 from re_token_group_counts import read_annot_token_group_counts, read_token_group_dict
+from session_data import walk_session_data
 from xml_files import walk_xml_files
 
 COL_DELIM = '\t'
@@ -49,7 +52,7 @@ def __create_argparser():
 	return result
 
 
-def __process_all_tokens(inpaths):
+def __process_all_tokens(inpaths: Iterable[str]):
 	infiles = walk_xml_files(*inpaths)
 	infile_token_group_counts = dict(
 		(infile, read_annot_token_group_counts(infile, token_groups)) for infile in infiles)
@@ -64,6 +67,30 @@ def __process_all_tokens(inpaths):
 	print_tabular_freqs(infile_token_group_counts, group_count_sums, printing_ctx, sys.stdout)
 
 
+def __process_split_sessions(inpaths: Iterable[str]):
+	seg_utt_factory = utterances.SegmentUtteranceFactory()
+	for indir, session in walk_session_data(args.inpaths):
+		print("Processing session directory \"{}\".".format(indir), file=sys.stderr)
+		events = tuple(game_events.read_events(session))
+		print("Read {} event(s).".format(len(events)), file=sys.stderr)
+
+		segments = utterances.read_segments(session.utts)
+		utts = seg_utt_factory(segments)
+		utts_by_time = utterances.UtteranceTimes(utts)
+
+		idxed_game_rounds = iter(enumerate(game_events.create_game_rounds(events)))
+		round_idx, first_game_round = next(idxed_game_rounds)
+		current_round_start_time = first_game_round.start_time
+		for round_idx, next_round in idxed_game_rounds:
+			next_round_start_time = next_round.start_time
+			current_round_utts = utts_by_time.segments_between(current_round_start_time,
+															   next_round_start_time)
+			diag_utt_repr = utterances.dialogue_utt_str_repr(current_round_utts)
+			print(COL_DELIM.join((str(round_idx), diag_utt_repr)))
+
+			current_round_start_time = next_round_start_time
+
+
 if __name__ == "__main__":
 	args = __create_argparser().parse_args()
 	print(args)
@@ -72,4 +99,10 @@ if __name__ == "__main__":
 	token_groups = read_token_group_dict(token_group_file_path)
 	print("Read group info for {} token type(s).".format(len(token_groups)), file=sys.stderr)
 
-	__process_all_tokens(args.inpaths)
+	inpaths = args.inpaths
+	session_round_split_count = args.round_split
+	if session_round_split_count:
+		print("Splitting sessions after {} round(s).".format(session_round_split_count), file=sys.stderr)
+		__process_split_sessions(inpaths)
+	else:
+		__process_all_tokens(inpaths)
