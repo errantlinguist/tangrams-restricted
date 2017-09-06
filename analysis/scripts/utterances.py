@@ -2,7 +2,7 @@ import itertools
 import sys
 from collections import defaultdict
 from typing import Callable, Iterable, Iterator, List
-from xml.etree.ElementTree import parse as parse_etree
+from xml.etree.ElementTree import Element, parse as parse_etree
 
 from annotations import ANNOTATION_NAMESPACES
 from sorted_lists import SortedList
@@ -48,13 +48,13 @@ class SegmentUtteranceFactory(object):
 		self.token_filter = token_filter
 		self.token_seq_singletons = {}
 
-	def __call__(self, segments) -> Iterator[Utterance]:
+	def __call__(self, segments : Iterable[Element]) -> Iterator[Utterance]:
 		for segment in segments:
 			utt = self.__create(segment)
 			if utt:
 				yield utt
 
-	def __create(self, segment) -> Utterance:
+	def __create(self, segment: Element) -> Utterance:
 		tokens = segment.iterfind(".//hat:t", ANNOTATION_NAMESPACES)
 		content = tuple(stripped_token for stripped_token in (token.text.strip() for token in tokens) if
 						stripped_token and self.token_filter(stripped_token))
