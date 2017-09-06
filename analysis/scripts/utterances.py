@@ -39,8 +39,8 @@ class Utterance(object):
 
 
 class SegmentUtteranceFactory(object):
-	def __init__(self, token_filter: Callable[[str], bool] = None):
-		self.token_filter = token_filter if token_filter else lambda token: token not in METALANGUAGE_TOKENS
+	def __init__(self, token_filter: Callable[[str], bool] = lambda token: token not in METALANGUAGE_TOKENS):
+		self.token_filter = token_filter
 		self.token_seq_singletons = {}
 
 	def __call__(self, segments) -> Iterator[Utterance]:
