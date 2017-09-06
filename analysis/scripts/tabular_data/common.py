@@ -17,10 +17,7 @@ def parse_row_cells(line):
 	return line.split(COL_DELIM)
 
 
-def parse_token_count_ranks(lines, rank_cell_val_transformer=None):
-	if not rank_cell_val_transformer:
-		rank_cell_val_transformer = lambda rank_cell_value: float(rank_cell_value)
-
+def parse_token_count_ranks(lines, rank_cell_val_transformer=float):
 	result = defaultdict(list)
 	token_count_idx, rank_idx = __token_count_rank_idxs(next(lines))
 	for line in lines:

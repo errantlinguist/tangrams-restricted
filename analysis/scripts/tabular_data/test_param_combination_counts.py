@@ -7,8 +7,6 @@ from common import COL_DELIM, parse_row_cells
 from test_param_combinations import create_param_whitelisting_filter, create_subcol_name_idx_map, \
 	parse_test_param_subtype_value
 
-_DICT_ENTRY_KEY_SORT_KEY = lambda item: item[0]
-
 
 class TestParameterCombinationCounts(object):
 	def __init__(self):
@@ -28,9 +26,9 @@ class TestParameterCombinationCounts(object):
 
 	@property
 	def param_combination_counts(self):
-		for param, subtypes in sorted(self.param_subtypes.items(), key=_DICT_ENTRY_KEY_SORT_KEY):
-			for subtype, vals in sorted(subtypes.items(), key=_DICT_ENTRY_KEY_SORT_KEY):
-				for val, count in sorted(vals.items(), key=_DICT_ENTRY_KEY_SORT_KEY):
+		for param, subtypes in sorted(self.param_subtypes.items(), key=_get_item_key):
+			for subtype, vals in sorted(subtypes.items(), key=_get_item_key):
+				for val, count in sorted(vals.items(), key=_get_item_key):
 					yield (param, subtype, val, count)
 
 
@@ -49,6 +47,10 @@ def read_test_param_combinations(infile_paths, test_param_whitelisting_filter, e
 					result.add(test_param_name, test_param_subtype, param_val)
 
 	return result
+
+
+def _get_item_key(item):
+	return item[0]
 
 
 def __main(infile_paths, input_param_name_regexes, outfile, err_outfile):

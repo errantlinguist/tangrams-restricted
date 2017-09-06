@@ -9,10 +9,8 @@ from test_param_combinations import create_param_whitelisting_filter, create_col
 
 
 class TestParameterCombinationRankFileReader(object):
-	def __init__(self, test_param_whitelisting_filter, rank_cell_val_transformer=None):
+	def __init__(self, test_param_whitelisting_filter, rank_cell_val_transformer=float):
 		self.test_param_whitelisting_filter = test_param_whitelisting_filter
-		if not rank_cell_val_transformer:
-			rank_cell_val_transformer = lambda rank_cell_value: float(rank_cell_value)
 		self.rank_cell_val_transformer = rank_cell_val_transformer
 
 	def __call__(self, infile_paths):

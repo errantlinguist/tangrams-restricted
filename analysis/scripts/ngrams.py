@@ -4,7 +4,7 @@ from nltk import ngrams
 
 
 class CachingNgramFactory(object):
-	def __init__(self, max_ngram_length : int):
+	def __init__(self, max_ngram_length: int):
 		self.max_ngram_length_stop = max_ngram_length + 1
 		self.cache = {}
 

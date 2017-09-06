@@ -6,6 +6,7 @@ from common import COL_DELIM, TOKEN_COUNT_COL_NAME
 
 MAX_TOKEN_COUNT = 200
 
+
 def print_filtered_results(rows, max_token_count):
 	header = next(rows)
 	print(COL_DELIM.join(header))
@@ -15,10 +16,11 @@ def print_filtered_results(rows, max_token_count):
 		token_count = int(row[token_count_idx])
 		if token_count <= max_token_count:
 			print(COL_DELIM.join(row))
-	
+
 
 if __name__ == "__main__":
 	import sys
+
 	if len(sys.argv) != 2:
 		raise ValueError("Usage: %s INFILE > OUTFILE" % sys.argv[0])
 	else:
