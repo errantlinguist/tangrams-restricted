@@ -57,7 +57,7 @@ class GroupDistributions(object):
 		return self.__class__.__name__ + str(self.__dict__)
 
 	def group_freq_differences(self):
-		for group, next_freq in self.next.freqs.items():
+		for group in self.total.freqs.keys():
 			first_freq = self.first.freqs.get(group, _ZERO_DECIMAL)
 			next_freq = self.next.freqs.get(group, _ZERO_DECIMAL)
 			yield group, next_freq - first_freq
