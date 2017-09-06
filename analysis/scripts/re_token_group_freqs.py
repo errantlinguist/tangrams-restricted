@@ -83,8 +83,8 @@ def __process_split_sessions(inpaths: Iterable[str], session_round_split_count :
 		current_round_start_time = first_game_round.start_time
 		for round_idx, next_round in idxed_game_rounds:
 			next_round_start_time = next_round.start_time
-			current_round_utts = utts_by_time.segments_between(current_round_start_time,
-															   next_round_start_time)
+			current_round_utts = utts_by_time.between(current_round_start_time,
+													  next_round_start_time)
 			diag_utt_repr = utterances.dialogue_utt_str_repr(current_round_utts)
 			print(COL_DELIM.join((str(round_idx), diag_utt_repr)), file=outfile)
 

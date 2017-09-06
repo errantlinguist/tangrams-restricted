@@ -78,8 +78,8 @@ if __name__ == "__main__":
 				shape_ngram_counts = feature_value_ngram_counts[shape]
 
 				next_round_start_time = next_round.start_time
-				current_round_utts = (utts_by_time.segments_between(current_round_start_time,
-																	next_round_start_time))
+				current_round_utts = (utts_by_time.between(current_round_start_time,
+														   next_round_start_time))
 				current_round_ngrams = itertools.chain.from_iterable(
 					(ngram_factory(utt.content) for utt in current_round_utts))
 				shape_ngram_counts.update(current_round_ngrams)
