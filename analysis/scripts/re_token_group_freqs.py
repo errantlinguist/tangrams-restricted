@@ -179,6 +179,22 @@ class GroupDistributions(object):
 		self.total = Distribution(total_counts)
 
 
+def __main(args):
+	token_group_file_path = args.token_group_file
+	print("Reading token groups from \"{}\".".format(token_group_file_path), file=sys.stderr)
+	token_groups = read_token_group_dict(token_group_file_path)
+	print("Read group info for {} token type(s).".format(len(token_groups)), file=sys.stderr)
+
+	inpaths = args.inpaths
+	outfile = sys.stdout
+	session_round_split_count = args.round_split
+	if session_round_split_count:
+		print("Splitting sessions after {} round(s).".format(session_round_split_count), file=sys.stderr)
+		__process_split_sessions(inpaths, token_groups, session_round_split_count, outfile)
+	else:
+		__process_whole_sessions(inpaths, token_groups, outfile)
+
+
 def __process_split_sessions(inpaths: Iterable[str], token_groups: __TOKEN_GROUP_DICT_TYPE,
 							 session_round_split_count: int, outfile: TextIO):
 	seg_utt_factory = utterances.SegmentUtteranceFactory()
@@ -198,17 +214,4 @@ def __process_split_sessions(inpaths: Iterable[str], token_groups: __TOKEN_GROUP
 
 
 if __name__ == "__main__":
-	args = __create_argparser().parse_args()
-	token_group_file_path = args.token_group_file
-	print("Reading token groups from \"{}\".".format(token_group_file_path), file=sys.stderr)
-	token_groups = read_token_group_dict(token_group_file_path)
-	print("Read group info for {} token type(s).".format(len(token_groups)), file=sys.stderr)
-
-	inpaths = args.inpaths
-	outfile = sys.stdout
-	session_round_split_count = args.round_split
-	if session_round_split_count:
-		print("Splitting sessions after {} round(s).".format(session_round_split_count), file=sys.stderr)
-		__process_split_sessions(inpaths, token_groups, session_round_split_count, outfile)
-	else:
-		__process_whole_sessions(inpaths, token_groups, outfile)
+	__main(__create_argparser().parse_args())
