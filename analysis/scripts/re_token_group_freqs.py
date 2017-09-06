@@ -203,7 +203,7 @@ class GroupDistributions(object):
 
 		total_counts = Counter(first_counts)
 		total_counts.update(next_counts)
-		self.totaö = Distribution(total_counts)
+		self.total = Distribution(total_counts)
 
 
 def __process_split_sessions(inpaths: Iterable[str], token_groups: __TOKEN_GROUP_DICT_TYPE,
