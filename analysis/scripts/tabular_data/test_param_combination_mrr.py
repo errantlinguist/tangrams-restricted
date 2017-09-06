@@ -21,8 +21,7 @@ class TestParameterCombinationRankListFileReader(TestParameterCombinationRankFil
 
 def __main(infile_paths, input_param_name_regexes, outfile):
 	param_whitelisting_filter = create_param_whitelisting_filter(input_param_name_regexes)
-	rank_cell_val_transformer = lambda rank_cell_value: 1.0 / numpy.float128(rank_cell_value)
-	reader = TestParameterCombinationRankListFileReader(param_whitelisting_filter, rank_cell_val_transformer)
+	reader = TestParameterCombinationRankListFileReader(param_whitelisting_filter, __rr)
 	param_combination_ranks, param_names = reader(infile_paths)
 	param_name_ordering = tuple(sorted(param_names))
 	col_names = []
@@ -42,6 +41,10 @@ def __main(infile_paths, input_param_name_regexes, outfile):
 		std = numpy.std(rank_arr)
 		row_vals.append(std)
 		print(COL_DELIM.join(str(row_val) for row_val in row_vals), file=outfile)
+
+
+def __rr(value):
+	return numpy.float_(1.0 / value)
 
 
 if __name__ == "__main__":
