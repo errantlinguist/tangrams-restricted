@@ -8,7 +8,7 @@ TEST_PARAM_COL_NAMES = frozenset(("UtteranceFiltering", "Cleaning", "Tokenizatio
 
 def create_col_name_idx_map(col_names, col_name_whitelisting_filter=None):
 	if not col_name_whitelisting_filter:
-		col_name_whitelisting_filter = lambda col_name : True
+		col_name_whitelisting_filter = lambda _ : True
 		
 	result = {}
 	for idx, col_name in enumerate(col_names):

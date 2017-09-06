@@ -18,6 +18,7 @@ METALANGUAGE_TOKENS = frozenset(("ARTIFACT", "BREATH", "CLICK", "COUGH", "GROAN"
 								 "NOISE", "SIGH", "SNIFF", "UNKNOWN",))
 __TOKEN_TRUNCATION_MARKER = '-'
 
+
 class Utterance(object):
 	def __init__(self, segment_id, speaker_id, start_time, end_time, content):
 		self.segment_id = segment_id
@@ -48,7 +49,7 @@ class SegmentUtteranceFactory(object):
 		self.token_filter = token_filter
 		self.token_seq_singletons = {}
 
-	def __call__(self, segments : Iterable[Element]) -> Iterator[Utterance]:
+	def __call__(self, segments: Iterable[Element]) -> Iterator[Utterance]:
 		for segment in segments:
 			utt = self.__create(segment)
 			if utt:
@@ -73,12 +74,12 @@ class SegmentUtteranceFactory(object):
 
 
 class UtteranceTimes(object):
-	def __init__(self, utts : Iterable[Utterance]):
+	def __init__(self, utts: Iterable[Utterance]):
 		self.utts_by_start_time = defaultdict(SortedList)
 		for utt in utts:
 			self.utts_by_start_time[utt.start_time].append(utt)
 		for utt_list in self.utts_by_start_time.values():
-			utt_list.sort(key=lambda utt: utt.end_time)
+			utt_list.sort(key=lambda u: u.end_time)
 
 		self.ascending_start_times = SortedList(self.utts_by_start_time.keys())
 		self.ascending_start_times.sort()
@@ -86,12 +87,12 @@ class UtteranceTimes(object):
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
 
-	def after(self, start_time : float):
+	def after(self, start_time: float):
 		utt_start_times = self.ascending_start_times.slice_ge(start_time)
 		return itertools.chain.from_iterable(
 			self.utts_by_start_time[start_time] for start_time in utt_start_times)
 
-	def between(self, start_time : float, end_time : float) -> Iterator[Utterance]:
+	def between(self, start_time: float, end_time: float) -> Iterator[Utterance]:
 		utt_start_times = self.ascending_start_times.iter_between(start_time, end_time)
 		return itertools.chain.from_iterable(
 			self.utts_by_start_time[start_time] for start_time in utt_start_times)
@@ -130,8 +131,10 @@ def group_utts_by_speaker_id(utts: Iterable[Utterance]) -> List[List[Utterance]]
 
 	return result
 
-def is_disfluency(token : str) -> bool:
+
+def is_disfluency(token: str) -> bool:
 	return token.startswith(__TOKEN_TRUNCATION_MARKER) or token.endswith(__TOKEN_TRUNCATION_MARKER)
+
 
 def read_segments(infile_path):
 	print("Reading XML file \"{}\".".format(infile_path), file=sys.stderr)

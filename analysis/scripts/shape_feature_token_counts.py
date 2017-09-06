@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import itertools
-import sys
 from collections import Counter, defaultdict
 from typing import Any, Dict, TextIO
 
@@ -49,39 +48,43 @@ def print_tabular_data(feature_value_ngram_counts: Dict[Any, Dict[str, int]], fi
 		print(COL_DELIM.join(row))
 
 
+def __main(inpaths, outfile):
+	feature_value_ngram_counts = defaultdict(Counter)
+	seg_utt_factory = SegmentUtteranceFactory()
+	ngram_factory = CachingNgramFactory(2)
+
+	for indir, session in walk_session_data(inpaths):
+		print("Processing session directory \"{}\".".format(indir), file=sys.stderr)
+		events = tuple(read_events(session))
+		print("Read {} event(s).".format(len(events)), file=sys.stderr)
+
+		segments = read_segments(session.utts)
+		utts = seg_utt_factory(segments)
+		utts_by_time = UtteranceTimes(utts)
+
+		idxed_game_rounds = iter(enumerate(create_game_rounds(events)))
+		round_idx, first_game_round = next(idxed_game_rounds)
+		current_round_start_time = first_game_round.start_time
+		for round_idx, next_round in idxed_game_rounds:
+			initial_event = next(iter(next_round.events))
+			referent_entity = next(iter(initial_event.referent_entities))
+			shape = referent_entity.attr(EntityData.Attribute.SHAPE.value)
+			shape_ngram_counts = feature_value_ngram_counts[shape]
+
+			next_round_start_time = next_round.start_time
+			current_round_utts = (utts_by_time.between(current_round_start_time,
+													   next_round_start_time))
+			current_round_ngrams = itertools.chain.from_iterable(
+				(ngram_factory(utt.content) for utt in current_round_utts))
+			shape_ngram_counts.update(current_round_ngrams)
+
+	print_tabular_data(feature_value_ngram_counts, outfile)
+
+
 if __name__ == "__main__":
+	import sys
+
 	if len(sys.argv) < 2:
 		sys.exit("Usage: {} INPATHS...".format(sys.argv[0]))
 	else:
-
-		feature_value_ngram_counts = defaultdict(Counter)
-		seg_utt_factory = SegmentUtteranceFactory()
-		ngram_factory = CachingNgramFactory(2)
-
-		inpaths = sys.argv[1:]
-		for indir, session in walk_session_data(inpaths):
-			print("Processing session directory \"{}\".".format(indir), file=sys.stderr)
-			events = tuple(read_events(session))
-			print("Read {} event(s).".format(len(events)), file=sys.stderr)
-
-			segments = read_segments(session.utts)
-			utts = seg_utt_factory(segments)
-			utts_by_time = UtteranceTimes(utts)
-
-			idxed_game_rounds = iter(enumerate(create_game_rounds(events)))
-			round_idx, first_game_round = next(idxed_game_rounds)
-			current_round_start_time = first_game_round.start_time
-			for round_idx, next_round in idxed_game_rounds:
-				initial_event = next(iter(next_round.events))
-				referent_entity = next(iter(initial_event.referent_entities))
-				shape = referent_entity.attr(EntityData.Attribute.SHAPE.value)
-				shape_ngram_counts = feature_value_ngram_counts[shape]
-
-				next_round_start_time = next_round.start_time
-				current_round_utts = (utts_by_time.between(current_round_start_time,
-														   next_round_start_time))
-				current_round_ngrams = itertools.chain.from_iterable(
-					(ngram_factory(utt.content) for utt in current_round_utts))
-				shape_ngram_counts.update(current_round_ngrams)
-
-		print_tabular_data(feature_value_ngram_counts, sys.stdout)
+		__main(sys.argv[1:], sys.stdout)

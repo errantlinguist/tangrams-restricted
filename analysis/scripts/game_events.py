@@ -108,7 +108,7 @@ def create_game_rounds(events: Sequence[Event]) -> Iterable[GameRound]:
 		round_events[event.round_id].append(event)
 
 	for event_list in round_events.values():
-		event_list.sort(key=lambda event: event.event_id)
+		event_list.sort(key=lambda e: e.event_id)
 
 	ordered_event_lists = iter(sorted(round_events.items(), key=lambda item: item[0]))
 	current_event_list = next(ordered_event_lists)

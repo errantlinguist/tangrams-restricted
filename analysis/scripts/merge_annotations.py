@@ -24,7 +24,7 @@ def merge_annotations(inpaths, namespace):
 		doc_tree = etree.parse(inpath)
 		infile_datum = parser(doc_tree)
 		annot_data.append(infile_datum)
-			
+
 	result = annot_data[0]
 	if len(annot_data) > 1:
 		next_data = annot_data[1:]
@@ -32,19 +32,21 @@ def merge_annotations(inpaths, namespace):
 			result.add(next_datum)
 	return result
 
+
+def __main(inpaths, outfile):
+	default_namespace = HAT_DATA_NAMESPACE
+	# http://stackoverflow.com/a/18340978/1391325
+	etree.register_namespace("hat", default_namespace)
+
+	result = merge_annotations(inpaths, default_namespace)
+	annot_elem = result.create_xml_element()
+	annot_tree = etree.ElementTree(annot_elem)
+	print_etree_to_file(annot_tree, result.encoding, outfile)
+
+
 if __name__ == '__main__':
 	import sys
 	if len(sys.argv) < 2:
 		raise ValueError("Usage: %s INPUT_PATHS... > OUTFILE" % sys.argv[0])
 	else:
-
-		default_namespace = HAT_DATA_NAMESPACE
-		# http://stackoverflow.com/a/18340978/1391325
-		etree.register_namespace("hat", default_namespace)
-		
-		inpaths = sys.argv[1:]
-		result = merge_annotations(inpaths, default_namespace)
-		annot_elem = result.create_xml_element()
-		annot_tree = etree.ElementTree(annot_elem)
-		print_etree_to_file(annot_tree, result.encoding, sys.stdout)			
-		
+		__main(sys.argv[1:], sys.stdout)

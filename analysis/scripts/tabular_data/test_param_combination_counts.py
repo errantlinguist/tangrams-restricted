@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-import sys
+
 from collections import Counter, defaultdict
 
 from common import COL_DELIM, parse_row_cells
@@ -9,14 +9,14 @@ from test_param_combinations import create_param_whitelisting_filter, create_sub
 
 _DICT_ENTRY_KEY_SORT_KEY = lambda item: item[0]
 
-class TestParameterCombinationCounts(object):
 
+class TestParameterCombinationCounts(object):
 	def __init__(self):
 		self.param_subtypes = {}
-		
+
 	def __repr__(self):
 		return self.__class__.__name__ + str(self.__dict__)
-			
+
 	def add(self, param, param_subtype, param_value):
 		try:
 			subtypes = self.param_subtypes[param]
@@ -25,18 +25,19 @@ class TestParameterCombinationCounts(object):
 			self.param_subtypes[param] = subtypes
 		subtype_vals = subtypes[param_subtype]
 		subtype_vals[param_value] += 1
-		
+
 	@property
 	def param_combination_counts(self):
 		for param, subtypes in sorted(self.param_subtypes.items(), key=_DICT_ENTRY_KEY_SORT_KEY):
 			for subtype, vals in sorted(subtypes.items(), key=_DICT_ENTRY_KEY_SORT_KEY):
 				for val, count in sorted(vals.items(), key=_DICT_ENTRY_KEY_SORT_KEY):
 					yield (param, subtype, val, count)
-		
-def read_test_param_combinations(infile_paths, test_param_whitelisting_filter):
+
+
+def read_test_param_combinations(infile_paths, test_param_whitelisting_filter, err_outfile):
 	result = TestParameterCombinationCounts()
 	for infile_path in infile_paths:
-		print("Reading test parameters from \"%s\"." % infile_path, file=sys.stderr)
+		print("Reading test parameters from \"%s\"." % infile_path, file=err_outfile)
 		with open(infile_path, 'r') as infile:
 			rows = (parse_row_cells(line) for line in infile)
 			subcol_name_idxs = create_subcol_name_idx_map(next(rows), test_param_whitelisting_filter)
@@ -46,23 +47,24 @@ def read_test_param_combinations(infile_paths, test_param_whitelisting_filter):
 					test_param_subtype = subcol_names[1]
 					param_val = parse_test_param_subtype_value(row[idx])
 					result.add(test_param_name, test_param_subtype, param_val)
-					
-	return result
-	
 
-	
+	return result
+
+
+def __main(infile_paths, input_param_name_regexes, outfile, err_outfile):
+	param_whitelisting_filter = create_param_whitelisting_filter(input_param_name_regexes)
+	param_combinations = read_test_param_combinations(infile_paths, param_whitelisting_filter, err_outfile)
+
+	print(COL_DELIM.join(("Parameter", "Subtype", "Value", "Count")), file=outfile)
+	for param_combination_count in param_combinations.param_combination_counts:
+		row = COL_DELIM.join(str(cell) for cell in param_combination_count)
+		print(row, file=outfile)
+
+
 if __name__ == "__main__":
+	import sys
+
 	if len(sys.argv) < 2:
 		raise ValueError("Usage: %s INFILE [PARAM_NAME_REGEXES...] > OUTFILE" % sys.argv[0])
 	else:
-		infile_paths = sys.argv[1:2]
-		input_param_name_regexes = sys.argv[2:]
-		param_whitelisting_filter = create_param_whitelisting_filter(input_param_name_regexes)
-		param_combinations = read_test_param_combinations(infile_paths, param_whitelisting_filter)
-		
-		print(COL_DELIM.join(("Parameter", "Subtype", "Value", "Count")))
-		for param_combination_count in param_combinations.param_combination_counts:
-			row = COL_DELIM.join(str(cell) for cell in param_combination_count)	
-			print(row)		
-	
-	
+		__main(sys.argv[1:2], sys.argv[2:], sys.stdout, sys.stderr)
