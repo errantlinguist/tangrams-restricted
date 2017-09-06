@@ -83,6 +83,9 @@ class UtteranceTimes(object):
 		self.ascending_start_times = SortedList(self.utts_by_start_time.keys())
 		self.ascending_start_times.sort()
 
+	def __repr__(self, *args, **kwargs):
+		return self.__class__.__name__ + str(self.__dict__)
+
 	def after(self, start_time : float):
 		utt_start_times = self.ascending_start_times.slice_ge(start_time)
 		return itertools.chain.from_iterable(
