@@ -22,12 +22,12 @@ class TokenGroupDataColumn(Enum):
 	TOKEN = "TOKEN"
 
 
-def create_utt_token_group_counts(utts: Iterable[utterances.Utterance], token_groups: __TOKEN_GROUP_DICT_TYPE) -> \
+def create_utt_token_group_counts(utts: Iterable[utterances.Utterance], _token_groups: __TOKEN_GROUP_DICT_TYPE) -> \
 		Dict[str, int]:
 	result = Counter()
 
 	tokens = semantically_relevant_tokens(utts)
-	group_sets = (token_groups.get(token) for token in tokens)
+	group_sets = (_token_groups.get(token) for token in tokens)
 	for group_set in group_sets:
 		if group_set:
 			result.update(group_set)
@@ -56,8 +56,8 @@ def print_tabular_counts(infile_token_group_counts, group_count_sums, outfile):
 
 def read_token_group_dict(infile_path: str) -> Dict[str, FrozenSet[str]]:
 	with open(infile_path, 'r') as inf:
-		token_groups = read_token_groups(inf)
-		return dict(token_groups)
+		_token_groups = read_token_groups(inf)
+		return dict(_token_groups)
 
 
 def read_token_groups(infile: TextIO) -> Iterator[Tuple[str, FrozenSet[str]]]:
@@ -65,15 +65,15 @@ def read_token_groups(infile: TextIO) -> Iterator[Tuple[str, FrozenSet[str]]]:
 	col_idxs = dict((col_name, idx) for (idx, col_name) in enumerate(next(rows)))
 	token_col_idx = col_idxs[TokenGroupDataColumn.TOKEN.value]
 	group_col_idx = col_idxs[TokenGroupDataColumn.GROUP.value]
-	token_groups = ((row[token_col_idx], row[group_col_idx]) for row in rows)
-	return ((token, frozenset(group.split(GROUP_LIST_DELIM))) for (token, group) in token_groups if group)
+	_token_groups = ((row[token_col_idx], row[group_col_idx]) for row in rows)
+	return ((token, frozenset(group.split(GROUP_LIST_DELIM))) for (token, group) in _token_groups if group)
 
 
-def read_utt_token_group_counts(infile: str, token_groups: __TOKEN_GROUP_DICT_TYPE,
+def read_utt_token_group_counts(infile: str, _token_groups: __TOKEN_GROUP_DICT_TYPE,
 								seg_utt_factory: utterances.SegmentUtteranceFactory):
 	segments = utterances.read_segments(infile)
 	utts = seg_utt_factory(segments)
-	return create_utt_token_group_counts(utts, token_groups)
+	return create_utt_token_group_counts(utts, _token_groups)
 
 
 def semantically_relevant_tokens(utts: Iterable[utterances.Utterance]) -> Iterator[str]:
@@ -83,11 +83,11 @@ def semantically_relevant_tokens(utts: Iterable[utterances.Utterance]) -> Iterat
 	return (token for token in non_fillers if not utterances.is_disfluency(token))
 
 
-def __process_whole_sessions(inpaths: Iterable[str], token_groups: __TOKEN_GROUP_DICT_TYPE, outfile: TextIO):
+def __process_whole_sessions(inpaths: Iterable[str], _token_groups: __TOKEN_GROUP_DICT_TYPE, outfile: TextIO):
 	infiles = walk_xml_files(*inpaths)
 	seg_utt_factory = utterances.SegmentUtteranceFactory()
 	infile_token_group_counts = dict(
-		(infile, read_utt_token_group_counts(infile, token_groups, seg_utt_factory)) for infile in infiles)
+		(infile, read_utt_token_group_counts(infile, _token_groups, seg_utt_factory)) for infile in infiles)
 	print("Read token counts for {} file(s).".format(len(infile_token_group_counts)), file=sys.stderr)
 
 	group_count_sums = Counter()
