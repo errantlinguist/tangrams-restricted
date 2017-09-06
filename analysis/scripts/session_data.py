@@ -41,7 +41,7 @@ def is_session_dir(filenames: Iterable[str]) -> bool:
 	return result
 
 
-def read_events_metadata(infile_path: str) -> dict:
+def read_events_metadata(infile_path: str):
 	with open(infile_path, 'r') as infile:
 		rows = csv.reader(infile, dialect="excel-tab")
 		return dict(rows)
