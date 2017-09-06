@@ -69,7 +69,7 @@ class SegmentUtteranceFactory(object):
 
 
 class UtteranceTimes(object):
-	def __init__(self, utts):
+	def __init__(self, utts : Iterable[Utterance]):
 		self.utts_by_start_time = defaultdict(SortedList)
 		for utt in utts:
 			self.utts_by_start_time[utt.start_time].append(utt)
@@ -79,7 +79,7 @@ class UtteranceTimes(object):
 		self.ascending_start_times = SortedList(self.utts_by_start_time.keys())
 		self.ascending_start_times.sort()
 
-	def between(self, start_time, end_time) -> Iterator[Utterance]:
+	def between(self, start_time : float, end_time : float) -> Iterator[Utterance]:
 		utt_start_times = self.ascending_start_times.iter_between(start_time, end_time)
 		started_utts = itertools.chain.from_iterable(
 			self.utts_by_start_time[start_time] for start_time in utt_start_times)
