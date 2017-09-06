@@ -4,6 +4,7 @@ import itertools
 import sys
 from collections import Counter
 from decimal import Decimal, ROUND_HALF_UP, Context, localcontext
+from typing import Dict, TextIO
 
 from re_token_group_counts import read_annot_token_group_counts, read_token_group_dict
 from xml_files import walk_xml_files
@@ -11,7 +12,8 @@ from xml_files import walk_xml_files
 COL_DELIM = '\t'
 
 
-def print_tabular_freqs(infile_token_group_counts, group_count_sums, decimal_printing_ctx, file):
+def print_tabular_freqs(infile_token_group_counts: Dict[str, Dict[str, int]], group_count_sums: Dict[str, int],
+						decimal_printing_ctx: Context, file: TextIO):
 	item_key_getter = lambda item: item[0]
 	ordered_group_counts = tuple(
 		(group, Decimal(count)) for group, count in sorted(group_count_sums.items(), key=item_key_getter))
