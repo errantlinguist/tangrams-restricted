@@ -67,7 +67,7 @@ def __process_all_tokens(inpaths: Iterable[str], outfile: TextIO):
 	print_tabular_freqs(infile_token_group_counts, group_count_sums, printing_ctx, outfile)
 
 
-def __process_split_sessions(inpaths: Iterable[str], outfile: TextIO):
+def __process_split_sessions(inpaths: Iterable[str], session_round_split_count : int, outfile: TextIO):
 	seg_utt_factory = utterances.SegmentUtteranceFactory()
 	for indir, session in walk_session_data(inpaths):
 		print("Processing session directory \"{}\".".format(indir), file=sys.stderr)
@@ -104,6 +104,6 @@ if __name__ == "__main__":
 	session_round_split_count = args.round_split
 	if session_round_split_count:
 		print("Splitting sessions after {} round(s).".format(session_round_split_count), file=sys.stderr)
-		__process_split_sessions(inpaths, outfile)
+		__process_split_sessions(inpaths, session_round_split_count, outfile)
 	else:
 		__process_all_tokens(inpaths, outfile)
