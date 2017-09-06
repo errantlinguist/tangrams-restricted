@@ -5,8 +5,9 @@ import csv
 import itertools
 import sys
 from collections import Counter
-from decimal import Decimal, ROUND_HALF_UP, Context, localcontext
-from typing import Dict, Iterable, List, Sequence, Iterator, TextIO, Tuple
+from decimal import Decimal, ROUND_HALF_UP
+from enum import Enum, unique
+from typing import Dict, Iterable, List, Sequence, Iterator, Tuple
 
 import game_events
 import utterances
@@ -15,10 +16,36 @@ from session_data import SessionData, walk_session_data
 from xml_files import walk_xml_files
 
 COL_DELIM = '\t'
-EVENT_TIME_COL_NAME = "TIME"
-ROUND_ID_COL_NAME = "ROUND"
+DYAD_ID_COL_NAME = "DYAD"
+TOTAL_RESULTS_ROW_NAME = "TOTAL"
 
+__DECIMAL_REPR_ROUNDING_EXP = Decimal('1.000')
 __TOKEN_GROUP_DICT_TYPE = Dict[str, Iterable[str]]
+
+
+class Distribution(object):
+	def __init__(self, counts):
+		self.counts = counts
+		self.freqs = dict(group_freqs(counts))
+
+	def keys(self):
+		return self.counts.keys()
+
+
+@unique
+class EventDataColumn(Enum):
+	EVENT_TIME = "TIME"
+	ROUND_ID = "ROUND"
+
+
+class GroupDistributions(object):
+	def __init__(self, first_counts, next_counts):
+		self.first = Distribution(first_counts)
+		self.next = Distribution(next_counts)
+
+		total_counts = Counter(first_counts)
+		total_counts.update(next_counts)
+		self.total = Distribution(total_counts)
 
 
 def count_split_session_token_groups(session: SessionData, token_groups: __TOKEN_GROUP_DICT_TYPE,
@@ -93,28 +120,61 @@ def game_round_utterances(start_time: float, end_time: float, utts: Iterable[utt
 	return (utt for utt in utts if (utt.start_time >= start_time) and (utt.start_time < end_time))
 
 
-def print_tabular_freqs(infile_token_group_counts: Dict[str, Dict[str, int]], group_count_sums: Dict[str, int],
-						decimal_printing_ctx: Context, outfile: TextIO):
+def print_split_session_group_dists(session_group_dists: Dict[str, GroupDistributions], session_round_split_count,
+									outfile):
+	referring_groups = tuple(
+		sorted(frozenset(group for dists in session_group_dists.values() for group in dists.total.keys())))
+	firstn_col_name = "FIRST_{}".format(session_round_split_count)
+	header_cells = [DYAD_ID_COL_NAME]
+	subheader_cells = [""]
+	for referring_group in referring_groups:
+		header_cells.append(referring_group)
+		subheader_cells.append(firstn_col_name)
+		header_cells.append("")
+		subheader_cells.append("REST")
+		header_cells.append("")
+		subheader_cells.append("TOTAL")
+	print(COL_DELIM.join(header_cells), file=outfile)
+	print(COL_DELIM.join(subheader_cells), file=outfile)
+
+	total_firstn_group_counts = Counter()
+	total_rest_group_counts = Counter()
+	for session, group_dists in sorted(session_group_dists.items(), key=__get_item_key):
+		row = [session]
+		total_firstn_group_counts.update(group_dists.first.counts)
+		total_rest_group_counts.update(group_dists.next.counts)
+
+		__append_group_freqs(row, group_dists, referring_groups)
+		print(COL_DELIM.join(row), file=outfile)
+
+	total_group_dists = GroupDistributions(total_firstn_group_counts, total_rest_group_counts)
+	summary_row = [TOTAL_RESULTS_ROW_NAME]
+	__append_group_freqs(summary_row, total_group_dists, referring_groups)
+	print(COL_DELIM.join(summary_row), file=outfile)
+
+
+def print_whole_session_group_freqs(infile_token_group_counts: Dict[str, Dict[str, int]],
+									group_count_sums: Dict[str, int],
+									outfile):
 	ordered_group_counts = tuple(
 		(group, Decimal(count)) for group, count in sorted(group_count_sums.items(), key=__get_item_key))
 	ordered_groups = tuple(group for (group, _) in ordered_group_counts)
-	header_cells = itertools.chain(("DYAD",), (group for (group, _) in ordered_group_counts))
+	header_cells = itertools.chain((DYAD_ID_COL_NAME,), (group for (group, _) in ordered_group_counts))
 	print(COL_DELIM.join(header_cells), file=outfile)
 
 	for infile, token_group_counts in sorted(infile_token_group_counts.items(), key=__get_item_key):
 		counts = tuple(Decimal(token_group_counts.get(group, 0)) for group in ordered_groups)
 		dyad_total_count = Decimal(sum(counts))
 		freqs = (count / dyad_total_count for count in counts)
-		with localcontext(decimal_printing_ctx) as _:
-			print(COL_DELIM.join(itertools.chain((infile,), (str(freq) for freq in freqs))),
-				  file=outfile)
+		print(COL_DELIM.join(itertools.chain((infile,), (_create_rounded_decimal_repr(freq) for freq in freqs))),
+			  file=outfile)
 
 	summary_counts = tuple(count for (_, count) in ordered_group_counts)
 	summary_total_count = sum(summary_counts)
 	summary_freqs = (count / summary_total_count for count in summary_counts)
-	summary_row_cells = itertools.chain(("TOTAL",), (str(freq) for freq in summary_freqs))
-	with localcontext(decimal_printing_ctx) as _:
-		print(COL_DELIM.join(summary_row_cells))
+	summary_row_cells = itertools.chain((TOTAL_RESULTS_ROW_NAME,),
+										(_create_rounded_decimal_repr(freq) for freq in summary_freqs))
+	print(COL_DELIM.join(summary_row_cells))
 
 
 def read_round_start_times(session: SessionData) -> List[float]:
@@ -126,13 +186,24 @@ def read_round_start_times(session: SessionData) -> List[float]:
 		rows = csv.reader(infile, dialect="excel-tab")
 		col_idxs = dict((col_name, idx) for (idx, col_name) in enumerate(next(rows)))
 		for row in rows:
-			event_time_col_idx = col_idxs[EVENT_TIME_COL_NAME]
+			event_time_col_idx = col_idxs[EventDataColumn.EVENT_TIME.value]
 			event_time = float(row[event_time_col_idx])
-			round_id_col_idx = col_idxs[ROUND_ID_COL_NAME]
+			round_id_col_idx = col_idxs[EventDataColumn.ROUND_ID.value]
 			round_idx = int(row[round_id_col_idx]) - 1
 			result[round_idx] = min(result[round_idx], event_time)
 
 	return result
+
+
+def _create_rounded_decimal_repr(value: Decimal):
+	return str(value.quantize(__DECIMAL_REPR_ROUNDING_EXP, ROUND_HALF_UP))
+
+
+def __append_group_freqs(row, group_dists: GroupDistributions, referring_groups: Iterable[str]):
+	for referring_group in referring_groups:
+		row.append(_create_rounded_decimal_repr(group_dists.first.freqs[referring_group]))
+		row.append(_create_rounded_decimal_repr(group_dists.next.freqs[referring_group]))
+		row.append(_create_rounded_decimal_repr(group_dists.total.freqs[referring_group]))
 
 
 def __create_argparser():
@@ -150,38 +221,6 @@ def __get_item_key(item):
 	return item[0]
 
 
-def __process_whole_sessions(inpaths: Iterable[str], token_groups: __TOKEN_GROUP_DICT_TYPE, outfile: TextIO):
-	infiles = walk_xml_files(*inpaths)
-	seg_utt_factory = utterances.SegmentUtteranceFactory()
-	infile_token_group_counts = dict(
-		(infile, read_utt_token_group_counts(infile, token_groups, seg_utt_factory)) for infile in infiles)
-	print("Read token counts for {} file(s).".format(len(infile_token_group_counts)), file=sys.stderr)
-
-	group_count_sums = Counter()
-	for group_counts in infile_token_group_counts.values():
-		for group, count in group_counts.items():
-			group_count_sums[group] += count
-
-	printing_ctx = Context(prec=3, rounding=ROUND_HALF_UP)
-	print_tabular_freqs(infile_token_group_counts, group_count_sums, printing_ctx, outfile)
-
-
-class Distribution(object):
-	def __init__(self, counts):
-		self.counts = counts
-		self.freqs = group_freqs(counts)
-
-
-class GroupDistributions(object):
-	def __init__(self, first_counts, next_counts):
-		self.first = Distribution(first_counts)
-		self.next = Distribution(next_counts)
-
-		total_counts = Counter(first_counts)
-		total_counts.update(next_counts)
-		self.total = Distribution(total_counts)
-
-
 def __main(args):
 	token_group_file_path = args.token_group_file
 	print("Reading token groups from \"{}\".".format(token_group_file_path), file=sys.stderr)
@@ -193,27 +232,42 @@ def __main(args):
 	session_round_split_count = args.round_split
 	if session_round_split_count:
 		print("Splitting sessions after {} round(s).".format(session_round_split_count), file=sys.stderr)
-		__process_split_sessions(inpaths, token_groups, session_round_split_count, outfile)
+		__process_split_sessions(inpaths, token_groups, session_round_split_count,
+								 outfile)
 	else:
 		__process_whole_sessions(inpaths, token_groups, outfile)
 
 
+def __process_whole_sessions(inpaths: Iterable[str], token_groups: __TOKEN_GROUP_DICT_TYPE,
+							 outfile):
+	infiles = walk_xml_files(*inpaths)
+	seg_utt_factory = utterances.SegmentUtteranceFactory()
+	infile_token_group_counts = dict(
+		(infile, read_utt_token_group_counts(infile, token_groups, seg_utt_factory)) for infile in infiles)
+	print("Read token counts for {} file(s).".format(len(infile_token_group_counts)), file=sys.stderr)
+
+	group_count_sums = Counter()
+	for group_counts in infile_token_group_counts.values():
+		for group, count in group_counts.items():
+			group_count_sums[group] += count
+
+	print_whole_session_group_freqs(infile_token_group_counts, group_count_sums, outfile)
+
+
 def __process_split_sessions(inpaths: Iterable[str], token_groups: __TOKEN_GROUP_DICT_TYPE,
-							 session_round_split_count: int, outfile: TextIO):
+							 session_round_split_count: int, outfile):
 	seg_utt_factory = utterances.SegmentUtteranceFactory()
 
+	session_group_dists = {}
 	for indir, session in walk_session_data(inpaths):
 		print("Processing session directory \"{}\".".format(indir), file=sys.stderr)
 		first_half_counts, next_half_counts = count_split_session_token_groups(session, token_groups,
 																			   session_round_split_count,
 																			   seg_utt_factory)
-		first_half_freqs = group_freqs(first_half_counts)
-		next_half_freqs = group_freqs(next_half_counts)
+		group_dist = GroupDistributions(first_half_counts, next_half_counts)
+		session_group_dists[indir] = group_dist
 
-		for group, count in first_half_freqs:
-			print(COL_DELIM.join((group, str(count),)))
-		for group, count in next_half_freqs:
-			print(COL_DELIM.join((group, str(count),)))
+	print_split_session_group_dists(session_group_dists, session_round_split_count, outfile)
 
 
 if __name__ == "__main__":
