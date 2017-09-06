@@ -57,7 +57,7 @@ def read_annot_token_group_counts(infile_path: str, token_groups: Dict[str, Iter
 	return create_annot_token_group_counts(token_annots, token_groups)
 
 
-def read_token_group_dict(infile_path: str):
+def read_token_group_dict(infile_path: str) -> Dict[str, FrozenSet[str]]:
 	with open(infile_path, 'r') as inf:
 		token_groups = read_token_groups(inf)
 		return dict(token_groups)
