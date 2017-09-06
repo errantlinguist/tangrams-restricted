@@ -88,7 +88,8 @@ class GameRound(object):
 def create_game_rounds(events: Sequence[Event]) -> Iterable[GameRound]:
 	enumerated_events = enumerate(events)
 	enumerated_event_iter = iter(enumerated_events)
-	current_round_id, current_round_event_time = __round_id_and_time(next(enumerated_event_iter)[1])
+	_, initial_event = next(enumerated_event_iter)
+	current_round_id, current_round_event_time = __round_id_and_time(initial_event)
 	current_round_event_list_start_idx = 0
 
 	for event_idx, event in enumerated_events:
