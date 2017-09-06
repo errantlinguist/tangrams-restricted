@@ -61,8 +61,7 @@ if __name__ == "__main__":
 			events = tuple(read_events(session))
 			print("Read {} event(s).".format(len(events)), file=sys.stderr)
 
-			doc_tree = xml.etree.ElementTree.parse(session.utts)
-			segments = doc_tree.iterfind('.//hat:segment', ANNOTATION_NAMESPACES)
+			segments = read_segments(session.utts)
 			utts = seg_utt_factory(segments)
 			utts_by_time = UtteranceTimes(utts)
 
