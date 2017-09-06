@@ -35,18 +35,18 @@ def create_utt_token_group_counts(utts: Iterable[utterances.Utterance], token_gr
 	return result
 
 
-def print_tabular_counts(infile_token_group_counts, group_count_sums, file):
+def print_tabular_counts(infile_token_group_counts, group_count_sums, outfile):
 	item_key_getter = lambda item: item[0]
 	ordered_group_counts = tuple(sorted(group_count_sums.items(), key=item_key_getter))
 	ordered_groups = tuple(group for (group, _) in ordered_group_counts)
 	header_cells = itertools.chain(("DYAD",), (group for (group, _) in ordered_group_counts), ("SUM",))
-	print(COL_DELIM.join(header_cells), file=file)
+	print(COL_DELIM.join(header_cells), file=outfile)
 
 	for infile, token_group_counts in sorted(infile_token_group_counts.items(), key=item_key_getter):
 		counts = tuple(token_group_counts.get(group, 0) for group in ordered_groups)
 		dyad_total_count = sum(counts)
 		print(COL_DELIM.join(itertools.chain((infile,), (str(count) for count in counts), (str(dyad_total_count),))),
-			  file=file)
+			  file=outfile)
 
 	summary_counts = tuple(count for (_, count) in ordered_group_counts)
 	summary_total_count = sum(summary_counts)
