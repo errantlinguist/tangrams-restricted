@@ -17,13 +17,13 @@ COL_DELIM = '\t'
 
 
 def print_tabular_freqs(infile_token_group_counts: Dict[str, Dict[str, int]], group_count_sums: Dict[str, int],
-						decimal_printing_ctx: Context, file: TextIO):
+						decimal_printing_ctx: Context, outfile: TextIO):
 	item_key_getter = lambda item: item[0]
 	ordered_group_counts = tuple(
 		(group, Decimal(count)) for group, count in sorted(group_count_sums.items(), key=item_key_getter))
 	ordered_groups = tuple(group for (group, _) in ordered_group_counts)
 	header_cells = itertools.chain(("DYAD",), (group for (group, _) in ordered_group_counts))
-	print(COL_DELIM.join(header_cells), file=file)
+	print(COL_DELIM.join(header_cells), file=outfile)
 
 	for infile, token_group_counts in sorted(infile_token_group_counts.items(), key=item_key_getter):
 		counts = tuple(Decimal(token_group_counts.get(group, 0)) for group in ordered_groups)
@@ -31,7 +31,7 @@ def print_tabular_freqs(infile_token_group_counts: Dict[str, Dict[str, int]], gr
 		freqs = (count / dyad_total_count for count in counts)
 		with localcontext(decimal_printing_ctx) as _:
 			print(COL_DELIM.join(itertools.chain((infile,), (str(freq) for freq in freqs))),
-				  file=file)
+				  file=outfile)
 
 	summary_counts = tuple(count for (_, count) in ordered_group_counts)
 	summary_total_count = sum(summary_counts)
@@ -52,7 +52,7 @@ def __create_argparser():
 	return result
 
 
-def __process_all_tokens(inpaths: Iterable[str]):
+def __process_all_tokens(inpaths: Iterable[str], outfile: TextIO):
 	infiles = walk_xml_files(*inpaths)
 	infile_token_group_counts = dict(
 		(infile, read_annot_token_group_counts(infile, token_groups)) for infile in infiles)
@@ -64,10 +64,10 @@ def __process_all_tokens(inpaths: Iterable[str]):
 			group_count_sums[group] += count
 
 	printing_ctx = Context(prec=3, rounding=ROUND_HALF_UP)
-	print_tabular_freqs(infile_token_group_counts, group_count_sums, printing_ctx, sys.stdout)
+	print_tabular_freqs(infile_token_group_counts, group_count_sums, printing_ctx, outfile)
 
 
-def __process_split_sessions(inpaths: Iterable[str]):
+def __process_split_sessions(inpaths: Iterable[str], outfile: TextIO):
 	seg_utt_factory = utterances.SegmentUtteranceFactory()
 	for indir, session in walk_session_data(args.inpaths):
 		print("Processing session directory \"{}\".".format(indir), file=sys.stderr)
@@ -86,7 +86,7 @@ def __process_split_sessions(inpaths: Iterable[str]):
 			current_round_utts = utts_by_time.segments_between(current_round_start_time,
 															   next_round_start_time)
 			diag_utt_repr = utterances.dialogue_utt_str_repr(current_round_utts)
-			print(COL_DELIM.join((str(round_idx), diag_utt_repr)))
+			print(COL_DELIM.join((str(round_idx), diag_utt_repr)), file=outfile)
 
 			current_round_start_time = next_round_start_time
 
@@ -100,9 +100,10 @@ if __name__ == "__main__":
 	print("Read group info for {} token type(s).".format(len(token_groups)), file=sys.stderr)
 
 	inpaths = args.inpaths
+	outfile = sys.stdout
 	session_round_split_count = args.round_split
 	if session_round_split_count:
 		print("Splitting sessions after {} round(s).".format(session_round_split_count), file=sys.stderr)
-		__process_split_sessions(inpaths)
+		__process_split_sessions(inpaths, outfile)
 	else:
-		__process_all_tokens(inpaths)
+		__process_all_tokens(inpaths, outfile)
