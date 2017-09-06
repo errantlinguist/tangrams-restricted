@@ -40,14 +40,28 @@ def count_split_session_token_groups(session: SessionData, token_groups: __TOKEN
 		first_round_start_end_times = round_start_end_times[:session_round_split_count]
 		print("First half of session has {} round(s).".format(len(first_round_start_end_times)),
 			  file=sys.stderr)
-		first_half_counts = __count_token_groups(first_round_start_end_times, token_groups, utts)
+		first_half_counts = count_token_groups(first_round_start_end_times, token_groups, utts)
 
 		next_round_start_end_times = round_start_end_times[session_round_split_count:]
 		print("Second half of session has {} round(s).".format(len(next_round_start_end_times)),
 			  file=sys.stderr)
-		next_half_counts = __count_token_groups(next_round_start_end_times, token_groups, utts)
+		next_half_counts = count_token_groups(next_round_start_end_times, token_groups, utts)
 
 		return first_half_counts, next_half_counts
+
+
+def count_token_groups(start_end_times: Iterable[Tuple[int, int]],
+					   token_groups: __TOKEN_GROUP_DICT_TYPE,
+					   utts: Sequence[utterances.Utterance]) -> Dict[str, int]:
+	result = Counter()
+	for start_time, end_time in start_end_times:
+		round_utts = game_round_utterances(start_time, end_time, utts)
+		for utt in round_utts:
+			group_sets = (token_groups.get(token) for token in utt.content)
+			for group_set in group_sets:
+				if group_set:
+					result.update(group_set)
+	return result
 
 
 def game_round_start_end_times(round_start_times: Iterator[float]) -> Iterator[Tuple[float, float]]:
@@ -119,20 +133,6 @@ def read_round_start_times(session: SessionData) -> List[float]:
 			round_idx = int(row[round_id_col_idx]) - 1
 			result[round_idx] = min(result[round_idx], event_time)
 
-	return result
-
-
-def __count_token_groups(start_end_times: Iterable[Tuple[int, int]],
-						 token_groups: __TOKEN_GROUP_DICT_TYPE,
-						 utts: Sequence[utterances.Utterance]) -> Dict[str, int]:
-	result = Counter()
-	for start_time, end_time in start_end_times:
-		round_utts = game_round_utterances(start_time, end_time, utts)
-		for utt in round_utts:
-			group_sets = (token_groups.get(token) for token in utt.content)
-			for group_set in group_sets:
-				if group_set:
-					result.update(group_set)
 	return result
 
 
