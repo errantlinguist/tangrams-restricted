@@ -19,7 +19,7 @@ class TokenGroupDataColumn(object):
 	TOKEN = "TOKEN"
 
 
-def create_annot_token_group_counts(token_annots, token_groups: Dict[str, Iterable[str]]) -> Counter[str]:
+def create_annot_token_group_counts(token_annots : xml.etree.ElementTree.Element, token_groups: Dict[str, Iterable[str]]) -> Counter[str]:
 	result = Counter()
 
 	tokens = (annot.text for annot in token_annots)
