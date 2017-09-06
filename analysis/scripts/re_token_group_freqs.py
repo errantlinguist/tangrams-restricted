@@ -4,6 +4,7 @@ import argparse
 import csv
 import itertools
 import sys
+import statistics
 from collections import Counter
 from decimal import Decimal, ROUND_HALF_UP
 from enum import Enum, unique
@@ -19,6 +20,8 @@ COL_DELIM = '\t'
 DYAD_ID_COL_NAME = "DYAD"
 TOTAL_RESULTS_ROW_NAME = "TOTAL"
 
+_ZERO_DECIMAL = Decimal('0.000')
+
 __DECIMAL_REPR_ROUNDING_EXP = Decimal('1.000')
 __TOKEN_GROUP_DICT_TYPE = Dict[str, Iterable[str]]
 
@@ -27,6 +30,9 @@ class Distribution(object):
 	def __init__(self, counts):
 		self.counts = counts
 		self.freqs = dict(group_freqs(counts))
+
+	def __repr__(self, *args, **kwargs):
+		return self.__class__.__name__ + str(self.__dict__)
 
 	def keys(self):
 		return self.counts.keys()
@@ -47,10 +53,19 @@ class GroupDistributions(object):
 		total_counts.update(next_counts)
 		self.total = Distribution(total_counts)
 
+	def __repr__(self, *args, **kwargs):
+		return self.__class__.__name__ + str(self.__dict__)
 
-def count_split_session_token_groups(session: SessionData, token_groups: __TOKEN_GROUP_DICT_TYPE,
-									 session_round_split_count: int,
-									 seg_utt_factory: utterances.SegmentUtteranceFactory) -> Tuple[
+	def group_freq_differences(self):
+		for group, next_freq in self.next.freqs.items():
+			first_freq = self.first.freqs.get(group, _ZERO_DECIMAL)
+			next_freq = self.next.freqs.get(group, _ZERO_DECIMAL)
+			yield group, next_freq - first_freq
+
+
+def count_partitioned_session_token_groups(session: SessionData, token_groups: __TOKEN_GROUP_DICT_TYPE,
+										   first_partition_round_count: int,
+										   seg_utt_factory: utterances.SegmentUtteranceFactory) -> Tuple[
 	Dict[str, int], Dict[str, int]]:
 	round_start_end_times = tuple(game_round_start_end_times(iter(read_round_start_times(session))))
 	round_count = len(round_start_end_times)
@@ -59,17 +74,17 @@ def count_split_session_token_groups(session: SessionData, token_groups: __TOKEN
 	segments = utterances.read_segments(session.utts)
 	utts = tuple(seg_utt_factory(segments))
 
-	if round_count <= session_round_split_count:
+	if round_count <= first_partition_round_count:
 		raise ValueError(
 			"Cannot split at {} rounds because the session has only {} round(s).".format(
-				session_round_split_count, round_count))
+				first_partition_round_count, round_count))
 	else:
-		first_round_start_end_times = round_start_end_times[:session_round_split_count]
+		first_round_start_end_times = round_start_end_times[:first_partition_round_count]
 		print("First half of session has {} round(s).".format(len(first_round_start_end_times)),
 			  file=sys.stderr)
 		first_half_counts = count_token_groups(first_round_start_end_times, token_groups, utts)
 
-		next_round_start_end_times = round_start_end_times[session_round_split_count:]
+		next_round_start_end_times = round_start_end_times[first_partition_round_count:]
 		print("Second half of session has {} round(s).".format(len(next_round_start_end_times)),
 			  file=sys.stderr)
 		next_half_counts = count_token_groups(next_round_start_end_times, token_groups, utts)
@@ -120,11 +135,12 @@ def game_round_utterances(start_time: float, end_time: float, utts: Iterable[utt
 	return (utt for utt in utts if (utt.start_time >= start_time) and (utt.start_time < end_time))
 
 
-def print_split_session_group_dists(session_group_dists: Dict[str, GroupDistributions], session_round_split_count,
-									outfile):
+def print_partitioned_session_group_dists(session_group_dists: Dict[str, GroupDistributions], total_group_dists,
+										  first_partition_round_count,
+										  outfile):
 	referring_groups = tuple(
 		sorted(frozenset(group for dists in session_group_dists.values() for group in dists.total.keys())))
-	firstn_col_name = "FIRST_{}".format(session_round_split_count)
+	firstn_col_name = "FIRST_{}".format(first_partition_round_count)
 	header_cells = [DYAD_ID_COL_NAME]
 	subheader_cells = [""]
 	for referring_group in referring_groups:
@@ -137,17 +153,11 @@ def print_split_session_group_dists(session_group_dists: Dict[str, GroupDistribu
 	print(COL_DELIM.join(header_cells), file=outfile)
 	print(COL_DELIM.join(subheader_cells), file=outfile)
 
-	total_firstn_group_counts = Counter()
-	total_rest_group_counts = Counter()
 	for session, group_dists in sorted(session_group_dists.items(), key=__get_item_key):
 		row = [session]
-		total_firstn_group_counts.update(group_dists.first.counts)
-		total_rest_group_counts.update(group_dists.next.counts)
-
 		__append_group_freqs(row, group_dists, referring_groups)
 		print(COL_DELIM.join(row), file=outfile)
 
-	total_group_dists = GroupDistributions(total_firstn_group_counts, total_rest_group_counts)
 	summary_row = [TOTAL_RESULTS_ROW_NAME]
 	__append_group_freqs(summary_row, total_group_dists, referring_groups)
 	print(COL_DELIM.join(summary_row), file=outfile)
@@ -177,9 +187,13 @@ def print_whole_session_group_freqs(infile_token_group_counts: Dict[str, Dict[st
 	print(COL_DELIM.join(summary_row_cells))
 
 
-def read_round_start_times(session: SessionData) -> List[float]:
+def read_metadata_round_count(session: SessionData) -> int:
 	events_metadata = game_events.read_events_metadata(session.events_metadata)
-	round_count = int(events_metadata["ROUND_COUNT"])
+	return int(events_metadata["ROUND_COUNT"])
+
+
+def read_round_start_times(session: SessionData) -> List[float]:
+	round_count = read_metadata_round_count(session)
 
 	result = [float('inf')] * round_count
 	with open(session.events, 'r') as infile:
@@ -201,19 +215,41 @@ def _create_rounded_decimal_repr(value: Decimal):
 
 def __append_group_freqs(row, group_dists: GroupDistributions, referring_groups: Iterable[str]):
 	for referring_group in referring_groups:
-		row.append(_create_rounded_decimal_repr(group_dists.first.freqs[referring_group]))
-		row.append(_create_rounded_decimal_repr(group_dists.next.freqs[referring_group]))
-		row.append(_create_rounded_decimal_repr(group_dists.total.freqs[referring_group]))
+		row.append(_create_rounded_decimal_repr(group_dists.first.freqs.get(referring_group, _ZERO_DECIMAL)))
+		row.append(_create_rounded_decimal_repr(group_dists.next.freqs.get(referring_group, _ZERO_DECIMAL)))
+		row.append(_create_rounded_decimal_repr(group_dists.total.freqs.get(referring_group, _ZERO_DECIMAL)))
+
+
+def __count_session_group_dists(named_sessions: Iterable[Tuple[str, SessionData]],
+								token_groups: __TOKEN_GROUP_DICT_TYPE, first_partition_round_count,
+								seg_utt_factory: utterances.SegmentUtteranceFactory):
+	session_group_dists = {}
+	total_first_half_group_counts = Counter()
+	total_next_half_group_counts = Counter()
+	for dyad_id, session in named_sessions:
+		print("Processing session \"{}\".".format(dyad_id), file=sys.stderr)
+		first_half_counts, next_half_counts = count_partitioned_session_token_groups(session, token_groups,
+																					 first_partition_round_count,
+																					 seg_utt_factory)
+		total_first_half_group_counts.update(first_half_counts)
+		total_next_half_group_counts.update(next_half_counts)
+		group_dist = GroupDistributions(first_half_counts, next_half_counts)
+		session_group_dists[dyad_id] = group_dist
+
+	return session_group_dists, GroupDistributions(total_first_half_group_counts, total_next_half_group_counts)
 
 
 def __create_argparser():
 	result = argparse.ArgumentParser(description="Count frequencies of referring token groups.")
-	result.add_argument("token_group_file", metavar="path",
+	result.add_argument("token_group_file", metavar="TOKEN_GROUP_FILEPATH",
 						help="The path to the token group mapping file to use.")
-	result.add_argument("inpaths", metavar="path", nargs='+',
+	result.add_argument("inpaths", metavar="INPATH", nargs='+',
 						help="The paths to search for sessions to process.")
-	result.add_argument("-r", "--round-split", metavar="count", type=int,
-						help="When this option is supplied, each session is split into half, with the first half comprising this many game rounds.")
+	group = result.add_mutually_exclusive_group(required=False)
+	group.add_argument("-r", "--round-split", metavar="count", type=int,
+					   help="When this option is supplied, each session is split into half, with the first partition comprising this many game rounds.")
+	group.add_argument("-o", "--optimize-partition-diff", action="store_true",
+					   help="When this option is supplied, the sessions are partitioned at the point which maximizes the mean difference between the partitions over all sessions.")
 	return result
 
 
@@ -229,13 +265,45 @@ def __main(args):
 
 	inpaths = args.inpaths
 	outfile = sys.stdout
-	session_round_split_count = args.round_split
-	if session_round_split_count:
-		print("Splitting sessions after {} round(s).".format(session_round_split_count), file=sys.stderr)
-		__process_split_sessions(inpaths, token_groups, session_round_split_count,
-								 outfile)
+	first_partition_round_count = args.round_split
+	if first_partition_round_count:
+		print("Splitting sessions after {} round(s).".format(first_partition_round_count), file=sys.stderr)
+		__process_partitioned_sessions(inpaths, token_groups, first_partition_round_count,
+									   outfile)
+	elif args.optimize_partition_diff:
+		__process_optimally_partitioned_sessions(inpaths, token_groups, outfile)
 	else:
 		__process_whole_sessions(inpaths, token_groups, outfile)
+
+
+def __process_optimally_partitioned_sessions(inpaths: Iterable[str], token_groups: __TOKEN_GROUP_DICT_TYPE,
+											 outfile):
+	seg_utt_factory = utterances.SegmentUtteranceFactory()
+
+	named_sessions = tuple(walk_session_data(inpaths))
+	partition_size_limit = min(read_metadata_round_count(session) for dyad_id, session in named_sessions)
+	print("The maximum possible partition size is {}.".format(partition_size_limit), file=sys.stderr)
+
+	optimal_freq_diff = Decimal('-Infinity')
+	optimal_session_group_dists = None
+	optimal_total_group_dists = None
+	optimal_partition_round_count = None
+	for first_partition_round_count in range(1, partition_size_limit):
+		# print("Testing partition size {}.".format(first_partition_round_count), file=sys.stderr)
+		session_group_dists, total_group_dists = __count_session_group_dists(named_sessions, token_groups,
+																			 first_partition_round_count,
+																			 seg_utt_factory)
+		mean_freq_diff = statistics.mean(freq for (group, freq) in total_group_dists.group_freq_differences())
+		if optimal_freq_diff < mean_freq_diff:
+			optimal_freq_diff = mean_freq_diff
+			optimal_session_group_dists = session_group_dists
+			optimal_total_group_dists = total_group_dists
+			optimal_partition_round_count = first_partition_round_count
+
+	print("Printing maximally-different partitioning, at {} rounds with a difference of {}.".format(
+		optimal_partition_round_count, optimal_freq_diff), file=sys.stderr)
+	print_partitioned_session_group_dists(optimal_session_group_dists, optimal_total_group_dists,
+										  optimal_partition_round_count, outfile)
 
 
 def __process_whole_sessions(inpaths: Iterable[str], token_groups: __TOKEN_GROUP_DICT_TYPE,
@@ -254,20 +322,14 @@ def __process_whole_sessions(inpaths: Iterable[str], token_groups: __TOKEN_GROUP
 	print_whole_session_group_freqs(infile_token_group_counts, group_count_sums, outfile)
 
 
-def __process_split_sessions(inpaths: Iterable[str], token_groups: __TOKEN_GROUP_DICT_TYPE,
-							 session_round_split_count: int, outfile):
+def __process_partitioned_sessions(inpaths: Iterable[str], token_groups: __TOKEN_GROUP_DICT_TYPE,
+								   first_partition_round_count: int, outfile):
 	seg_utt_factory = utterances.SegmentUtteranceFactory()
 
-	session_group_dists = {}
-	for indir, session in walk_session_data(inpaths):
-		print("Processing session directory \"{}\".".format(indir), file=sys.stderr)
-		first_half_counts, next_half_counts = count_split_session_token_groups(session, token_groups,
-																			   session_round_split_count,
-																			   seg_utt_factory)
-		group_dist = GroupDistributions(first_half_counts, next_half_counts)
-		session_group_dists[indir] = group_dist
-
-	print_split_session_group_dists(session_group_dists, session_round_split_count, outfile)
+	named_sessions = walk_session_data(inpaths)
+	session_group_dists, total_group_dists = __count_session_group_dists(named_sessions, token_groups,
+																		 first_partition_round_count, seg_utt_factory)
+	print_partitioned_session_group_dists(session_group_dists, total_group_dists, first_partition_round_count, outfile)
 
 
 if __name__ == "__main__":
