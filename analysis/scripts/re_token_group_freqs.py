@@ -282,7 +282,7 @@ def __process_optimally_partitioned_sessions(inpaths: Iterable[str], token_group
 
 	named_sessions = tuple(walk_session_data(inpaths))
 	partition_size_limit = min(read_metadata_round_count(session) for dyad_id, session in named_sessions)
-	print("The maximum possible partition size is {}.".format(partition_size_limit), file=sys.stderr)
+	print("The partition size limit is {}.".format(partition_size_limit), file=sys.stderr)
 
 	optimal_freq_diff = Decimal('-Infinity')
 	optimal_session_group_dists = None
