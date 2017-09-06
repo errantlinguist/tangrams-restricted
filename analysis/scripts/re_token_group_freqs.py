@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import argparse
 import itertools
 import sys
 from collections import Counter
@@ -37,25 +38,38 @@ def print_tabular_freqs(infile_token_group_counts: Dict[str, Dict[str, int]], gr
 		print(COL_DELIM.join(summary_row_cells))
 
 
+def __create_argparser():
+	result = argparse.ArgumentParser(description="Count frequencies of referring token groups.")
+	result.add_argument("token_group_file", metavar="path",
+						help="The path to the token group mapping file to use.")
+	result.add_argument("inpaths", metavar="path", nargs='+',
+						help="The paths to search for sessions to process.")
+	result.add_argument("-r", "--round-split", metavar="count", type=int,
+						help="When this option is supplied, each session is split into half, with the first half comprising this many game rounds.")
+	return result
+
+
+def __process_all_tokens(inpaths):
+	infiles = walk_xml_files(*inpaths)
+	infile_token_group_counts = dict(
+		(infile, read_annot_token_group_counts(infile, token_groups)) for infile in infiles)
+	print("Read token counts for {} file(s).".format(len(infile_token_group_counts)), file=sys.stderr)
+
+	group_count_sums = Counter()
+	for group_counts in infile_token_group_counts.values():
+		for group, count in group_counts.items():
+			group_count_sums[group] += count
+
+	printing_ctx = Context(prec=3, rounding=ROUND_HALF_UP)
+	print_tabular_freqs(infile_token_group_counts, group_count_sums, printing_ctx, sys.stdout)
+
+
 if __name__ == "__main__":
-	if len(sys.argv) < 3:
-		raise ValueError("Usage: {} TOKEN_GROUP_FILE INPATHS... > OUTFILE".format(sys.argv[0]))
-	else:
-		token_group_file_path = sys.argv[1]
-		print("Reading token groups from \"{}\".".format(token_group_file_path), file=sys.stderr)
-		token_groups = read_token_group_dict(token_group_file_path)
-		print("Read group info for {} token type(s).".format(len(token_groups)), file=sys.stderr)
+	args = __create_argparser().parse_args()
+	print(args)
+	token_group_file_path = args.token_group_file
+	print("Reading token groups from \"{}\".".format(token_group_file_path), file=sys.stderr)
+	token_groups = read_token_group_dict(token_group_file_path)
+	print("Read group info for {} token type(s).".format(len(token_groups)), file=sys.stderr)
 
-		inpaths = sys.argv[2:]
-		infiles = walk_xml_files(*inpaths)
-		infile_token_group_counts = dict(
-			(infile, read_annot_token_group_counts(infile, token_groups)) for infile in infiles)
-		print("Read token counts for {} file(s).".format(len(infile_token_group_counts)), file=sys.stderr)
-
-		group_count_sums = Counter()
-		for group_counts in infile_token_group_counts.values():
-			for group, count in group_counts.items():
-				group_count_sums[group] += count
-
-		printing_ctx = Context(prec=3, rounding=ROUND_HALF_UP)
-		print_tabular_freqs(infile_token_group_counts, group_count_sums, printing_ctx, sys.stdout)
+	__process_all_tokens(args.inpaths)
