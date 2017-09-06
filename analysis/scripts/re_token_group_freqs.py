@@ -95,14 +95,13 @@ def game_round_utterances(start_time: float, end_time: float, utts: Iterable[utt
 
 def print_tabular_freqs(infile_token_group_counts: Dict[str, Dict[str, int]], group_count_sums: Dict[str, int],
 						decimal_printing_ctx: Context, outfile: TextIO):
-	item_key_getter = lambda item: item[0]
 	ordered_group_counts = tuple(
-		(group, Decimal(count)) for group, count in sorted(group_count_sums.items(), key=item_key_getter))
+		(group, Decimal(count)) for group, count in sorted(group_count_sums.items(), key=__get_item_key))
 	ordered_groups = tuple(group for (group, _) in ordered_group_counts)
 	header_cells = itertools.chain(("DYAD",), (group for (group, _) in ordered_group_counts))
 	print(COL_DELIM.join(header_cells), file=outfile)
 
-	for infile, token_group_counts in sorted(infile_token_group_counts.items(), key=item_key_getter):
+	for infile, token_group_counts in sorted(infile_token_group_counts.items(), key=__get_item_key):
 		counts = tuple(Decimal(token_group_counts.get(group, 0)) for group in ordered_groups)
 		dyad_total_count = Decimal(sum(counts))
 		freqs = (count / dyad_total_count for count in counts)
@@ -145,6 +144,10 @@ def __create_argparser():
 	result.add_argument("-r", "--round-split", metavar="count", type=int,
 						help="When this option is supplied, each session is split into half, with the first half comprising this many game rounds.")
 	return result
+
+
+def __get_item_key(item):
+	return item[0]
 
 
 def __process_whole_sessions(inpaths: Iterable[str], token_groups: __TOKEN_GROUP_DICT_TYPE, outfile: TextIO):
