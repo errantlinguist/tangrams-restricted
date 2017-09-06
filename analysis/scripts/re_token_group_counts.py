@@ -85,9 +85,9 @@ def semantically_relevant_tokens(utts: Iterable[utterances.Utterance]) -> Iterat
 
 def __create_argparser():
 	result = argparse.ArgumentParser(description="Count referring token groups.")
-	result.add_argument("token_group_file", metavar="path",
+	result.add_argument("token_group_file", metavar="TOKEN_GROUP_FILEPATH",
 						help="The path to the token group mapping file to use.")
-	result.add_argument("inpaths", metavar="path", nargs='+',
+	result.add_argument("inpaths", metavar="INPATH", nargs='+',
 						help="The paths to search for sessions to process.")
 	return result
 
