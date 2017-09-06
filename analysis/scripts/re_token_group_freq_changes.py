@@ -57,6 +57,7 @@ if __name__ == "__main__":
 
 		inpaths = sys.argv[2:]
 		for indir, session in walk_session_data(inpaths):
+			print("Processing session directory \"{}\".".format(indir), file=sys.stderr)
 			events = tuple(read_events(session))
 			print("Read {} event(s).".format(len(events)), file=sys.stderr)
 
