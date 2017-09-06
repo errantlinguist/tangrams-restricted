@@ -6,7 +6,7 @@ import itertools
 import sys
 from collections import Counter
 from decimal import Decimal, ROUND_HALF_UP, Context, localcontext
-from typing import Counter, Dict, Iterable, List, Sequence, Iterator, TextIO, Tuple
+from typing import Dict, Iterable, List, Sequence, Iterator, TextIO, Tuple
 
 import game_events
 import utterances
@@ -24,7 +24,7 @@ __TOKEN_GROUP_DICT_TYPE = Dict[str, Iterable[str]]
 def count_split_session_token_groups(session: SessionData, token_groups: __TOKEN_GROUP_DICT_TYPE,
 									 session_round_split_count: int,
 									 seg_utt_factory: utterances.SegmentUtteranceFactory) -> Tuple[
-	Counter[str], Counter[str]]:
+	Dict[str, int], Dict[str, int]]:
 	round_start_end_times = tuple(game_round_start_end_times(iter(read_round_start_times(session))))
 	round_count = len(round_start_end_times)
 	print("Read {} game round(s).".format(round_count), file=sys.stderr)
@@ -51,7 +51,7 @@ def count_split_session_token_groups(session: SessionData, token_groups: __TOKEN
 
 
 def create_utt_token_group_counts(utts: Iterable[utterances.Utterance], token_groups: __TOKEN_GROUP_DICT_TYPE) -> \
-		Counter[str]:
+		Dict[str, int]:
 	result = Counter()
 
 	tokens = semantically_relevant_tokens(utts)
@@ -151,7 +151,7 @@ def semantically_relevant_tokens(utts: Iterable[utterances.Utterance]) -> Iterat
 
 def __count_token_groups(start_end_times: Iterable[Tuple[int, int]],
 						 token_groups: __TOKEN_GROUP_DICT_TYPE,
-						 utts: Sequence[utterances.Utterance]) -> Counter[str]:
+						 utts: Sequence[utterances.Utterance]) -> Dict[str, int]:
 	result = Counter()
 	for start_time, end_time in start_end_times:
 		round_utts = game_round_utterances(start_time, end_time, utts)

@@ -5,7 +5,7 @@ import itertools
 import sys
 import xml.etree.ElementTree
 from collections import Counter
-from typing import Counter, Dict, FrozenSet, Iterable, Iterator, TextIO, Tuple
+from typing import Dict, FrozenSet, Iterable, Iterator, TextIO, Tuple
 
 from annotations import ANNOTATION_NAMESPACES
 from xml_files import walk_xml_files
@@ -19,7 +19,7 @@ class TokenGroupDataColumn(object):
 	TOKEN = "TOKEN"
 
 
-def create_annot_token_group_counts(token_annots : xml.etree.ElementTree.Element, token_groups: Dict[str, Iterable[str]]) -> Counter[str]:
+def create_annot_token_group_counts(token_annots : xml.etree.ElementTree.Element, token_groups: Dict[str, Iterable[str]]) -> Dict[str, int]:
 	result = Counter()
 
 	tokens = (annot.text for annot in token_annots)
