@@ -80,10 +80,10 @@ class UtteranceTimes(object):
 		self.ascending_start_times.sort()
 
 	def between(self, start_time, end_time) -> Iterator[Utterance]:
-		seg_start_times = self.ascending_start_times.iter_between(start_time, end_time)
-		started_segs = itertools.chain.from_iterable(
-			self.utts_by_start_time[start_time] for start_time in seg_start_times)
-		return (seg for seg in started_segs if seg.start_time < end_time)
+		utt_start_times = self.ascending_start_times.iter_between(start_time, end_time)
+		started_utts = itertools.chain.from_iterable(
+			self.utts_by_start_time[start_time] for start_time in utt_start_times)
+		return (utt for utt in started_utts if utt.start_time < end_time)
 
 
 def dialogue_utt_str_repr(utts: Iterator[Utterance]) -> str:
