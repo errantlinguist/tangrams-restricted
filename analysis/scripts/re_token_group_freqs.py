@@ -306,6 +306,16 @@ def __process_optimally_partitioned_sessions(inpaths: Iterable[str], token_group
 										  optimal_partition_round_count, outfile)
 
 
+def __process_partitioned_sessions(inpaths: Iterable[str], token_groups: __TOKEN_GROUP_DICT_TYPE,
+								   first_partition_round_count: int, outfile):
+	seg_utt_factory = utterances.SegmentUtteranceFactory()
+
+	named_sessions = walk_session_data(inpaths)
+	session_group_dists, total_group_dists = __count_session_group_dists(named_sessions, token_groups,
+																		 first_partition_round_count, seg_utt_factory)
+	print_partitioned_session_group_dists(session_group_dists, total_group_dists, first_partition_round_count, outfile)
+
+
 def __process_whole_sessions(inpaths: Iterable[str], token_groups: __TOKEN_GROUP_DICT_TYPE,
 							 outfile):
 	infiles = walk_xml_files(*inpaths)
@@ -320,16 +330,6 @@ def __process_whole_sessions(inpaths: Iterable[str], token_groups: __TOKEN_GROUP
 			group_count_sums[group] += count
 
 	print_whole_session_group_freqs(infile_token_group_counts, group_count_sums, outfile)
-
-
-def __process_partitioned_sessions(inpaths: Iterable[str], token_groups: __TOKEN_GROUP_DICT_TYPE,
-								   first_partition_round_count: int, outfile):
-	seg_utt_factory = utterances.SegmentUtteranceFactory()
-
-	named_sessions = walk_session_data(inpaths)
-	session_group_dists, total_group_dists = __count_session_group_dists(named_sessions, token_groups,
-																		 first_partition_round_count, seg_utt_factory)
-	print_partitioned_session_group_dists(session_group_dists, total_group_dists, first_partition_round_count, outfile)
 
 
 if __name__ == "__main__":
