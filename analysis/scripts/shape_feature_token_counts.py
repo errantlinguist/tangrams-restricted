@@ -3,6 +3,7 @@
 import itertools
 import sys
 from collections import Counter, defaultdict
+from typing import Any, Dict, TextIO
 
 from game_events import EntityData, create_game_rounds, read_events
 from ngrams import CachingNgramFactory
@@ -12,7 +13,7 @@ from utterances import SegmentUtteranceFactory, UtteranceTimes, read_segments
 COL_DELIM = "\t"
 
 
-def print_tabular_data(feature_value_ngram_counts, file):
+def print_tabular_data(feature_value_ngram_counts: Dict[Any, Dict[str, int]], file: TextIO):
 	header_cells = []
 	subheader_cells = []
 	for feature_value in sorted(feature_value_ngram_counts.keys()):
