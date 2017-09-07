@@ -150,7 +150,7 @@ class RoundTokenGroupCounter(object):
 		self.token_groups = token_groups
 		self.utts = utts
 
-	def __call__(self, *start_end_times: Iterable[Tuple[float, float]]) -> Dict[str, int]:
+	def __call__(self, *start_end_times: Tuple[float, float]) -> Dict[str, int]:
 		result = Counter()
 		for start_end_time in start_end_times:
 			round_utts = game_round_utterances(start_end_time[0], start_end_time[1], self.utts)
