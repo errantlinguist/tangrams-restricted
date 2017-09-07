@@ -69,10 +69,10 @@ class TokenTypeCount(object):
 		return self.__class__.__name__ + str(self.__dict__)
 
 
-def find_falsey_tail_start_idx(elems: Sequence[T]):
+def find_last_truthy_elem_idx(elems: Sequence[T]):
 	reversed_elems = reversed(elems)
 	max_valid_idx = len(elems) - 1
-	return next((max_valid_idx - i for i, elem in enumerate(reversed_elems) if elem), None)
+	return next((max_valid_idx - i for i, elem in enumerate(reversed_elems) if elem), -1)
 
 
 def game_round_token_type_counts(round_token_counts: Iterable[Dict[str, int]]) -> RoundTokenTypeData:
@@ -92,10 +92,11 @@ def session_round_token_type_data(named_sessions, relevant_tokens: Container[str
 	token_counter = SessionRoundTokenCounter(seg_utt_factory)
 	session_round_token_counts = token_counter(named_sessions)
 	for dyad_id, round_token_counts in session_round_token_counts.items():
-		falsey_tail_start_idx = find_falsey_tail_start_idx(round_token_counts)
-		if falsey_tail_start_idx:
+		last_truthy_elem_idx = find_last_truthy_elem_idx(round_token_counts)
+		max_valid_idx = len(round_token_counts) - 1
+		if last_truthy_elem_idx > -1 and last_truthy_elem_idx < max_valid_idx:
 			old_len = len(round_token_counts)
-			round_token_counts = round_token_counts[:falsey_tail_start_idx + 1]
+			round_token_counts = round_token_counts[:last_truthy_elem_idx + 1]
 			print("Trimmed {} empty round(s) from session \"{}\".".format(old_len - len(round_token_counts), dyad_id), file=sys.stderr)
 
 		round_token_type_data = game_round_token_type_counts(round_token_counts)
