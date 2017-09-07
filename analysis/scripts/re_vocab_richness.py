@@ -4,7 +4,7 @@ import argparse
 import itertools
 import sys
 from collections import Counter
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import Decimal
 from typing import Dict, Iterable, Sequence, Container, TypeVar
 
 import utterances
@@ -20,7 +20,6 @@ TOTAL_RESULTS_ROW_NAME = "TOTAL"
 T = TypeVar('T')
 
 __COLS_BEFORE_ROUND_COLS = ("DYAD",)
-__DECIMAL_REPR_ROUNDING_EXP = Decimal('1.0000')
 
 
 class RoundTokenTypeData(object):
@@ -108,7 +107,7 @@ def __create_argparser():
 
 
 def __create_rounded_decimal_repr(value: Decimal):
-	return str(value.quantize(__DECIMAL_REPR_ROUNDING_EXP, ROUND_HALF_UP))
+	return str(value)
 
 
 def __main(args):
