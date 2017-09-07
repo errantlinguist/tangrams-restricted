@@ -18,7 +18,7 @@ from xml_files import walk_xml_files
 COL_DELIM = '\t'
 GROUP_LIST_DELIM = ","
 
-_TokenGroupDict = Dict[str, Iterable[str]]
+TokenGroupDict = Dict[str, Iterable[str]]
 
 
 @unique
@@ -27,7 +27,7 @@ class TokenGroupDataColumn(Enum):
 	TOKEN = "TOKEN"
 
 
-def create_utt_token_group_counts(utts: Iterable[utterances.Utterance], token_groups: _TokenGroupDict) -> \
+def create_utt_token_group_counts(utts: Iterable[utterances.Utterance], token_groups: TokenGroupDict) -> \
 		Dict[str, int]:
 	result = Counter()
 
@@ -73,7 +73,7 @@ def readtoken_groups(infile) -> Iterator[Tuple[str, FrozenSet[str]]]:
 	return ((token, frozenset(group.split(GROUP_LIST_DELIM))) for (token, group) in token_groups if group)
 
 
-def read_utt_token_group_counts(infile: str, token_groups: _TokenGroupDict,
+def read_utt_token_group_counts(infile: str, token_groups: TokenGroupDict,
 								seg_utt_factory: utterances.SegmentUtteranceFactory):
 	"""
 	NOTE: This function counts all tokens which occur in a session RECORDING, not just the utterances made during a valid game state; For example, utterances before the game start are counted.
@@ -116,7 +116,7 @@ def __main(args):
 	__process_whole_sessions(args.inpaths, token_groups, sys.stdout)
 
 
-def __process_whole_sessions(inpaths: Iterable[str], token_groups: _TokenGroupDict, outfile):
+def __process_whole_sessions(inpaths: Iterable[str], token_groups: TokenGroupDict, outfile):
 	"""
 	NOTE: This function counts all tokens which occur in a session RECORDING, not just the utterances made during a valid game state; For example, utterances before the game start are counted.
 	:param inpaths: The path(s) to search for session directories to process.

@@ -12,14 +12,13 @@ from typing import Dict, Iterable, List, Sequence, Iterator, Tuple
 
 import game_events
 import utterances
-from re_token_group_counts import read_token_group_dict
+from re_token_group_counts import TokenGroupDict, read_token_group_dict
 from session_data import SessionData, walk_session_data
 
 COL_DELIM = '\t'
 DYAD_ID_COL_NAME = "DYAD"
 TOTAL_RESULTS_ROW_NAME = "TOTAL"
 
-_TokenGroupDict = Dict[str, Iterable[str]]
 _ZERO_DECIMAL = Decimal('0.000')
 
 __DECIMAL_REPR_ROUNDING_EXP = Decimal('1.000')
@@ -98,7 +97,7 @@ class PartitionDistributions(object):
 
 
 class PartitionedSessionGroupDistributionCollector(object):
-	def __init__(self, token_groups: _TokenGroupDict, seg_utt_factory: utterances.SegmentUtteranceFactory):
+	def __init__(self, token_groups: TokenGroupDict, seg_utt_factory: utterances.SegmentUtteranceFactory):
 		self.token_groups = token_groups
 		self.seg_utt_factory = seg_utt_factory
 
@@ -145,7 +144,7 @@ class PartitionedSessionGroupDistributionCollector(object):
 
 
 class RoundTokenGroupCounter(object):
-	def __init__(self, token_groups: _TokenGroupDict,
+	def __init__(self, token_groups: TokenGroupDict,
 				 utts: Sequence[utterances.Utterance]):
 		self.token_groups = token_groups
 		self.utts = utts
@@ -163,7 +162,7 @@ class RoundTokenGroupCounter(object):
 
 
 class WholeSessionGroupDistributionCollector(object):
-	def __init__(self, token_groups: _TokenGroupDict, seg_utt_factory: utterances.SegmentUtteranceFactory):
+	def __init__(self, token_groups: TokenGroupDict, seg_utt_factory: utterances.SegmentUtteranceFactory):
 		self.token_groups = token_groups
 		self.seg_utt_factory = seg_utt_factory
 
