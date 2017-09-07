@@ -110,6 +110,12 @@ def __main(args):
 
 
 def __process_whole_sessions(inpaths: Iterable[str], token_groups: _TokenGroupDict, outfile):
+	"""
+	NOTE: This function counts all tokens which occur in a session RECORDING, not just the utterances made during a valid game state; For example, utterances before the game start are counted.
+	:param inpaths: The path(s) to search for session directories to process.
+	:param token_groups: A dictionary mapping of tokens to their respective semantic/pragmatic groups.
+	:param outfile: The file to print the results to.
+	"""
 	infiles = walk_xml_files(*inpaths)
 	seg_utt_factory = utterances.SegmentUtteranceFactory()
 	infile_token_group_counts = dict(
