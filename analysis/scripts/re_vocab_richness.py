@@ -119,9 +119,11 @@ def __main(args):
 
 	named_sessions = walk_session_data(args.inpaths)
 	outfile = sys.stdout
+	__print_ratios(session_round_token_type_data(named_sessions, token_groups.keys()), outfile)
 
-	ordered_session_round_token_type_data = tuple(
-		sorted(session_round_token_type_data(named_sessions, token_groups.keys()), key=lambda item: item[0]))
+
+def __print_ratios(token_type_data, outfile):
+	ordered_session_round_token_type_data = tuple(sorted(token_type_data, key=lambda item: item[0]))
 	max_round_count = max(
 		round_token_type_data.round_count for _, round_token_type_data in ordered_session_round_token_type_data)
 	round_col_idx_offset = len(__COLS_BEFORE_ROUND_COLS)
