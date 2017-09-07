@@ -188,9 +188,8 @@ class WholeSessionGroupDistributionCollector(object):
 
 
 def game_round_start_end_times(round_start_times: Iterator[float]) -> Iterator[Tuple[float, float]]:
-	end_delimited_round_start_times = itertools.chain(round_start_times, (float('inf'),))
-	current_start_time = next(end_delimited_round_start_times)
-	for next_start_time in end_delimited_round_start_times:
+	current_start_time = next(round_start_times)
+	for next_start_time in round_start_times:
 		yield current_start_time, next_start_time
 		current_start_time = next_start_time
 
