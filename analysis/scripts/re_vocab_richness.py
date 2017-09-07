@@ -14,6 +14,7 @@ from re_token_group_freqs import game_round_start_end_times, read_round_start_ti
 from session_data import walk_session_data
 
 COL_DELIM = '\t'
+NULL_VALUE_REPR = '?'
 
 TOTAL_RESULTS_ROW_NAME = "TOTAL"
 
@@ -127,7 +128,7 @@ def __main(args):
 	round_colnames = ("R{}".format(i) for i in range(1, max_round_count + 1))
 	print(COL_DELIM.join(itertools.chain(__COLS_BEFORE_ROUND_COLS, round_colnames)), file=outfile)
 	for dyad_id, round_token_type_data in ordered_session_round_token_type_data:
-		row = [""] * (max_round_count + round_col_idx_offset)
+		row = [NULL_VALUE_REPR] * (max_round_count + round_col_idx_offset)
 		row[0] = dyad_id
 		for col_idx, token_type_counts in enumerate(round_token_type_data.round_token_type_counts,
 													start=round_col_idx_offset):
