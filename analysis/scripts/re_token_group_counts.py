@@ -14,7 +14,7 @@ from xml_files import walk_xml_files
 COL_DELIM = '\t'
 GROUP_LIST_DELIM = ","
 
-__TOKEN_GROUP_DICT_TYPE = Dict[str, Iterable[str]]
+_TokenGroupDict = Dict[str, Iterable[str]]
 
 
 @unique
@@ -23,7 +23,7 @@ class TokenGroupDataColumn(Enum):
 	TOKEN = "TOKEN"
 
 
-def create_utt_token_group_counts(utts: Iterable[utterances.Utterance], token_groups: __TOKEN_GROUP_DICT_TYPE) -> \
+def create_utt_token_group_counts(utts: Iterable[utterances.Utterance], token_groups: _TokenGroupDict) -> \
 		Dict[str, int]:
 	result = Counter()
 
@@ -69,7 +69,7 @@ def readtoken_groups(infile) -> Iterator[Tuple[str, FrozenSet[str]]]:
 	return ((token, frozenset(group.split(GROUP_LIST_DELIM))) for (token, group) in token_groups if group)
 
 
-def read_utt_token_group_counts(infile: str, token_groups: __TOKEN_GROUP_DICT_TYPE,
+def read_utt_token_group_counts(infile: str, token_groups: _TokenGroupDict,
 								seg_utt_factory: utterances.SegmentUtteranceFactory):
 	segments = utterances.read_segments(infile)
 	utts = seg_utt_factory(segments)
@@ -105,7 +105,7 @@ def __main(args):
 	__process_whole_sessions(args.inpaths, token_groups, sys.stdout)
 
 
-def __process_whole_sessions(inpaths: Iterable[str], token_groups: __TOKEN_GROUP_DICT_TYPE, outfile):
+def __process_whole_sessions(inpaths: Iterable[str], token_groups: _TokenGroupDict, outfile):
 	infiles = walk_xml_files(*inpaths)
 	seg_utt_factory = utterances.SegmentUtteranceFactory()
 	infile_token_group_counts = dict(
