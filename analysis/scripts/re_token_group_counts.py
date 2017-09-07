@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 
+"""
+NOTE: This script counts all tokens which occur in a session RECORDING, not just the utterances made during a valid game state; For example, utterances before the game start are counted.
+"""
+
 import argparse
 import csv
 import itertools
