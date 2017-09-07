@@ -75,6 +75,13 @@ def readtoken_groups(infile) -> Iterator[Tuple[str, FrozenSet[str]]]:
 
 def read_utt_token_group_counts(infile: str, token_groups: _TokenGroupDict,
 								seg_utt_factory: utterances.SegmentUtteranceFactory):
+	"""
+	NOTE: This function counts all tokens which occur in a session RECORDING, not just the utterances made during a valid game state; For example, utterances before the game start are counted.
+	:param infile: The path to the annotations file to read.
+	:param token_groups: A dictionary mapping of tokens to their respective semantic/pragmatic groups.
+	:param seg_utt_factory: The factory used for creating Utterance instances from XML elements.
+	:return: A counter mapping tokens to the number of times each occurred in the given file.
+	"""
 	segments = utterances.read_segments(infile)
 	utts = seg_utt_factory(segments)
 	return create_utt_token_group_counts(utts, token_groups)
