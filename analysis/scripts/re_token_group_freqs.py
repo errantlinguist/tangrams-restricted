@@ -19,10 +19,10 @@ COL_DELIM = '\t'
 DYAD_ID_COL_NAME = "DYAD"
 TOTAL_RESULTS_ROW_NAME = "TOTAL"
 
+_TokenGroupDict = Dict[str, Iterable[str]]
 _ZERO_DECIMAL = Decimal('0.000')
 
 __DECIMAL_REPR_ROUNDING_EXP = Decimal('1.000')
-_TOKEN_GROUP_DICT_TYPE = Dict[str, Iterable[str]]
 
 
 class Distribution(object):
@@ -98,7 +98,7 @@ class PartitionDistributions(object):
 
 
 class PartitionedSessionGroupDistributionCollector(object):
-	def __init__(self, token_groups: _TOKEN_GROUP_DICT_TYPE, seg_utt_factory: utterances.SegmentUtteranceFactory):
+	def __init__(self, token_groups: _TokenGroupDict, seg_utt_factory: utterances.SegmentUtteranceFactory):
 		self.token_groups = token_groups
 		self.seg_utt_factory = seg_utt_factory
 
@@ -146,7 +146,7 @@ class PartitionedSessionGroupDistributionCollector(object):
 
 
 class WholeSessionGroupDistributionCollector(object):
-	def __init__(self, token_groups: _TOKEN_GROUP_DICT_TYPE, seg_utt_factory: utterances.SegmentUtteranceFactory):
+	def __init__(self, token_groups: _TokenGroupDict, seg_utt_factory: utterances.SegmentUtteranceFactory):
 		self.token_groups = token_groups
 		self.seg_utt_factory = seg_utt_factory
 
@@ -172,7 +172,7 @@ class WholeSessionGroupDistributionCollector(object):
 
 
 def count_token_groups(start_end_times: Iterable[Tuple[float, float]],
-					   token_groups: _TOKEN_GROUP_DICT_TYPE,
+					   token_groups: _TokenGroupDict,
 					   utts: Sequence[utterances.Utterance]) -> Dict[str, int]:
 	result = Counter()
 	for start_time, end_time in start_end_times:
