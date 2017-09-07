@@ -123,26 +123,43 @@ class PartitionedSessionGroupDistributionCollector(object):
 		round_start_end_times = tuple(game_round_start_end_times(iter(read_round_start_times(session))))
 		round_count = len(round_start_end_times)
 		print("Read {} game round(s).".format(round_count), file=sys.stderr)
-
-		segments = utterances.read_segments(session.utts)
-		utts = tuple(self.seg_utt_factory(segments))
-
 		if round_count <= partition_round_count:
 			raise ValueError(
 				"Cannot split at {} rounds because the session has only {} round(s).".format(
 					partition_round_count, round_count))
 		else:
+			segments = utterances.read_segments(session.utts)
+			token_group_counter = RoundTokenGroupCounter(self.token_groups, tuple(self.seg_utt_factory(segments)))
+
 			first_round_start_end_times = round_start_end_times[:partition_round_count]
 			print("First half of session has {} round(s).".format(len(first_round_start_end_times)),
 				  file=sys.stderr)
-			first_half_counts = count_token_groups(first_round_start_end_times, self.token_groups, utts)
+			first_half_counts = token_group_counter(*first_round_start_end_times)
 
 			next_round_start_end_times = round_start_end_times[partition_round_count:]
 			print("Second half of session has {} round(s).".format(len(next_round_start_end_times)),
 				  file=sys.stderr)
-			next_half_counts = count_token_groups(next_round_start_end_times, self.token_groups, utts)
+			next_half_counts = token_group_counter(*next_round_start_end_times)
 
 			return first_half_counts, next_half_counts
+
+
+class RoundTokenGroupCounter(object):
+	def __init__(self, token_groups: _TokenGroupDict,
+				 utts: Sequence[utterances.Utterance]):
+		self.token_groups = token_groups
+		self.utts = utts
+
+	def __call__(self, *start_end_times: Iterable[Tuple[float, float]]) -> Dict[str, int]:
+		result = Counter()
+		for start_end_time in start_end_times:
+			round_utts = game_round_utterances(start_end_time[0], start_end_time[1], self.utts)
+			for utt in round_utts:
+				group_sets = (self.token_groups.get(token) for token in utt.content)
+				for group_set in group_sets:
+					if group_set:
+						result.update(group_set)
+		return result
 
 
 class WholeSessionGroupDistributionCollector(object):
@@ -167,22 +184,8 @@ class WholeSessionGroupDistributionCollector(object):
 		print("Read {} game round(s).".format(round_count), file=sys.stderr)
 
 		segments = utterances.read_segments(session.utts)
-		utts = tuple(self.seg_utt_factory(segments))
-		return count_token_groups(round_start_end_times, self.token_groups, utts)
-
-
-def count_token_groups(start_end_times: Iterable[Tuple[float, float]],
-					   token_groups: _TokenGroupDict,
-					   utts: Sequence[utterances.Utterance]) -> Dict[str, int]:
-	result = Counter()
-	for start_time, end_time in start_end_times:
-		round_utts = game_round_utterances(start_time, end_time, utts)
-		for utt in round_utts:
-			group_sets = (token_groups.get(token) for token in utt.content)
-			for group_set in group_sets:
-				if group_set:
-					result.update(group_set)
-	return result
+		token_group_counter = RoundTokenGroupCounter(self.token_groups, tuple(self.seg_utt_factory(segments)))
+		return token_group_counter(*round_start_end_times)
 
 
 def game_round_start_end_times(round_start_times: Iterator[float]) -> Iterator[Tuple[float, float]]:
