@@ -149,8 +149,8 @@ def __print_token_type_data(token_type_data: Iterable[Tuple[str, SessionTokenTyp
 		for round_id, round_token_type_datum in enumerate(session_token_type_datum.round_token_type_data, start=1):
 			round_data = round_token_type_datum.round_data
 			cumulative_data = round_token_type_datum.cumulative_data
-			row = [dyad_id, str(round_id), str(sum(round_data.token_counts.values())), str(len(round_data.token_types)),
-				   str(sum(cumulative_data.token_counts.values())), str(len(cumulative_data.token_types))]
+			row = (dyad_id, str(round_id), str(sum(round_data.token_counts.values())), str(len(round_data.token_types)),
+				   str(sum(cumulative_data.token_counts.values())), str(len(cumulative_data.token_types)))
 			print(COL_DELIM.join(row), file=outfile)
 
 
