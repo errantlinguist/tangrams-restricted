@@ -92,7 +92,7 @@ def session_round_token_type_data(named_sessions, relevant_tokens: Container[str
 	for dyad_id, round_token_counts in session_round_token_counts.items():
 		last_truthy_elem_idx = find_last_truthy_elem_idx(round_token_counts)
 		max_valid_idx = len(round_token_counts) - 1
-		if last_truthy_elem_idx > -1 and last_truthy_elem_idx < max_valid_idx:
+		if -1 < last_truthy_elem_idx < max_valid_idx:
 			old_len = len(round_token_counts)
 			round_token_counts = round_token_counts[:last_truthy_elem_idx + 1]
 			print("Trimmed {} empty round(s) from session \"{}\".".format(old_len - len(round_token_counts), dyad_id),
