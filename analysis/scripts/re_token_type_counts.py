@@ -22,7 +22,7 @@ __COLS_BEFORE_ROUND_COLS = ("DYAD",)
 
 
 class RoundTokenTypeData(object):
-	def __init__(self, round_token_type_counts, total_token_counts):
+	def __init__(self, round_token_type_counts : Sequence[TokenTypeCount], total_token_counts : Dict[str,int]):
 		self.round_token_type_counts = round_token_type_counts
 		self.total_token_counts = total_token_counts
 
