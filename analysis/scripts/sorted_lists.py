@@ -10,8 +10,8 @@ class SortedList(list):
 	def __init__(self, *args) -> None:
 		super().__init__(*args)
 
-	@staticmethod
-	def __index_lt(sublist, elem):
+	@classmethod
+	def __index_lt(cls, sublist, elem):
 		"""Find the index of the first element less than elem"""
 		result = bisect.bisect_left(sublist, elem)
 		if result:
@@ -19,10 +19,10 @@ class SortedList(list):
 		else:
 			raise ValueError
 
-	@staticmethod
-	def __slice_lt(sublist, elem):
+	@classmethod
+	def __slice_lt(cls, sublist, elem):
 		"""Find values less than elem"""
-		idx = SortedList.__index_lt(sublist, elem)
+		idx = cls.__index_lt(sublist, elem)
 		return sublist[0:idx - 1]
 
 	def index(self, elem, start: int = 0, stop: int = ...) -> int:
