@@ -46,6 +46,13 @@ class RoundTokenTypeData(object):
 
 
 class SessionRoundTokenCounter(object):
+	@staticmethod
+	def __count_utt_tokens(utts: Iterable[utterances.Utterance]):
+		result = Counter()
+		for utt in utts:
+			result.update(utt.content)
+		return result
+
 	def __init__(self, seg_utt_factory: utterances.SegmentUtteranceFactory):
 		self.seg_utt_factory = seg_utt_factory
 
@@ -67,7 +74,8 @@ class SessionRoundTokenCounter(object):
 		utts = tuple(self.seg_utt_factory(segments))
 		round_utts = (game_round_utterances(start_time, end_time, utts) for start_time, end_time in
 					  round_start_end_times)
-		return (_count_utt_tokens(utts) for utts in round_utts)
+		return (self.__count_utt_tokens(utts) for utts in round_utts)
+
 
 def find_last_truthy_elem_idx(elems: Sequence[T]):
 	reversed_elems = reversed(elems)
@@ -102,13 +110,6 @@ def session_round_token_type_data(named_sessions, relevant_tokens: Container[str
 
 		round_token_type_data = game_round_token_type_counts(round_token_counts)
 		yield dyad_id, round_token_type_data
-
-
-def _count_utt_tokens(utts: Iterable[utterances.Utterance]):
-	result = Counter()
-	for utt in utts:
-		result.update(utt.content)
-	return result
 
 
 def __create_argparser():
