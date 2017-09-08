@@ -13,7 +13,7 @@ from re_token_group_freqs import game_round_start_end_times, read_round_start_ti
 	game_round_utterances
 from session_data import walk_session_data
 
-from re_token_type_counts import session_round_token_type_data
+from re_token_type_counts import session_token_type_data
 
 COL_DELIM = '\t'
 NULL_VALUE_REPR = '?'
@@ -42,7 +42,7 @@ def __main(args):
 
 	named_sessions = walk_session_data(args.inpaths)
 	outfile = sys.stdout
-	token_type_data = session_round_token_type_data(named_sessions, token_groups.keys())
+	token_type_data = session_token_type_data(named_sessions, token_groups.keys())
 	for dyad_id, round_token_type_data in token_type_data:
 		round_token_type_counts = round_token_type_data.round_token_type_counts
 		total_token_counts = round_token_type_data.total_token_counts
