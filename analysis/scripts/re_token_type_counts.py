@@ -100,6 +100,43 @@ class SessionRoundTokenCounter(object):
 		return (self.__count_utt_tokens(utts) for utts in round_utts)
 
 
+class TokenTypeDataPrinter(object):
+	@staticmethod
+	def __ratio(tokens, types):
+		return tokens / types
+
+	def __init__(self, strict: bool):
+		self.strict = strict
+
+	def __call__(self, token_type_data: Iterable[Tuple[str, SessionTokenTypeDatum]], outfile):
+		print(COL_DELIM.join(("DYAD", "ROUND", "ROUND_TOKENS", "ROUND_TYPES", "ROUND_TYPE_RATIO", "TOTAL_TOKENS",
+							  "TOTAL_TYPES", "TOTAL_TYPE_RATIO")), file=outfile)
+
+		ordered_session_token_type_data = sorted(token_type_data, key=lambda item: item[0])
+		for dyad_id, session_token_type_datum in ordered_session_token_type_data:
+			for round_id, round_token_type_datum in enumerate(session_token_type_datum.round_data, start=1):
+				round_data = round_token_type_datum.round_data.relevant_tokens
+				round_token_count = sum(round_data.token_counts.values())
+				round_type_count = len(round_data.token_types)
+				try:
+					round_ratio = self.__ratio(round_type_count, round_token_count)
+				except ZeroDivisionError as e:
+					if self.strict:
+						raise e
+					else:
+						print("WARNING: Round {} of session \"{}\" did not have any relevant tokens!".format(round_id,
+																											 dyad_id),
+							  file=sys.stderr)
+						round_ratio = float('nan')
+				cumulative_data = round_token_type_datum.cumulative_data.relevant_tokens
+				cumulative_token_count = sum(cumulative_data.token_counts.values())
+				cumulative_type_count = len(cumulative_data.token_types)
+				cumulative_ratio = self.__ratio(cumulative_type_count, cumulative_token_count)
+				row = (dyad_id, str(round_id), str(round_token_count), str(round_type_count), str(round_ratio),
+					   str(cumulative_token_count), str(cumulative_type_count), str(cumulative_ratio))
+				print(COL_DELIM.join(row), file=outfile)
+
+
 class TokenTypeDatum(object):
 	def __init__(self, token_counts: Dict[str, int] = None):
 		self.token_counts = Counter() if token_counts is None else token_counts
@@ -148,6 +185,8 @@ def __create_argparser():
 						help="The path to the token group mapping file to use.")
 	result.add_argument("inpaths", metavar="INPATH", nargs='+',
 						help="The paths to search for sessions to process.")
+	result.add_argument("-s", "--strict", action="store_true",
+						help="When this option is supplied, the script will throw an exception upon encountering a round with no relevant tokens.")
 	return result
 
 
@@ -168,31 +207,8 @@ def __main(args):
 	named_sessions = walk_session_data(args.inpaths)
 	outfile = sys.stdout
 	token_type_data = session_token_type_data(named_sessions, token_groups.keys())
-	__print_token_type_data(token_type_data, outfile)
-
-
-def __print_token_type_data(token_type_data: Iterable[Tuple[str, SessionTokenTypeDatum]], outfile):
-	print(COL_DELIM.join(("DYAD", "ROUND", "ROUND_TOKENS", "ROUND_TYPES", "ROUND_TYPE_RATIO", "TOTAL_TOKENS",
-						  "TOTAL_TYPES", "TOTAL_TYPE_RATIO")), file=outfile)
-
-	ordered_session_token_type_data = sorted(token_type_data, key=lambda item: item[0])
-	for dyad_id, session_token_type_datum in ordered_session_token_type_data:
-		for round_id, round_token_type_datum in enumerate(session_token_type_datum.round_data, start=1):
-			round_data = round_token_type_datum.round_data.relevant_tokens
-			round_token_count = sum(round_data.token_counts.values())
-			round_type_count = len(round_data.token_types)
-			round_ratio = __ratio(round_type_count, round_token_count)
-			cumulative_data = round_token_type_datum.cumulative_data.relevant_tokens
-			cumulative_token_count = sum(cumulative_data.token_counts.values())
-			cumulative_type_count = len(cumulative_data.token_types)
-			cumulative_ratio = __ratio(cumulative_type_count, cumulative_token_count)
-			row = (dyad_id, str(round_id), str(round_token_count), str(round_type_count), str(round_ratio),
-				   str(cumulative_token_count), str(cumulative_type_count), str(cumulative_ratio))
-			print(COL_DELIM.join(row), file=outfile)
-
-
-def __ratio(tokens, types):
-	return tokens / types
+	printer = TokenTypeDataPrinter(args.strict)
+	printer(token_type_data, outfile)
 
 
 if __name__ == "__main__":
