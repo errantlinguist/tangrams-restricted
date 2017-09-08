@@ -16,8 +16,6 @@ from session_data import walk_session_data
 COL_DELIM = '\t'
 NULL_VALUE_REPR = '?'
 
-TOTAL_RESULTS_ROW_NAME = "TOTAL"
-
 T = TypeVar('T')
 
 __COLS_BEFORE_ROUND_COLS = ("DYAD",)
