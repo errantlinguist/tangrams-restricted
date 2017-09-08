@@ -44,12 +44,12 @@ class SortedList(list):
 	def iter_between(self, start, end):
 		# Find the index of the first element equal to or greater than the start element
 		start_idx = self._index_ge(start)
-		end_idx = SortedList.__index_lt(self, end)
+		end_idx = self.__index_lt(self, end)
 		return itertools.islice(self, start_idx, end_idx)
 
 	def slice_between(self, start, end):
 		elems_after_start = self.slice_ge(start)
-		return SortedList.__slice_lt(elems_after_start, end)
+		return self.__slice_lt(elems_after_start, end)
 
 	def slice_le(self, x):
 		"""Find values less than or equal to x"""
@@ -61,7 +61,7 @@ class SortedList(list):
 
 	def slice_lt(self, x):
 		"""Find values less than x"""
-		return SortedList.__slice_lt(self, x)
+		return self.__slice_lt(self, x)
 
 	def slice_ge(self, x):
 		"""Find values greater than or equal to x"""
