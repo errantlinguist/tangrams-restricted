@@ -5,22 +5,23 @@ import sys
 from collections import Counter
 from decimal import Decimal
 from typing import Dict, Iterable, Iterator, Sequence, Container, Tuple, TypeVar
+from enum import Enum, auto, unique
 
 import utterances
 from re_token_group_counts import read_token_group_dict
 from re_token_group_freqs import game_round_start_end_times, read_round_start_times, \
 	game_round_utterances
 from session_data import walk_session_data
+import copy
 
 COL_DELIM = '\t'
 NULL_VALUE_REPR = '?'
 
 T = TypeVar('T')
 
-
 class TokenTypeDatum(object):
-	def __init__(self, token_counts: Dict[str, int]):
-		self.token_counts = token_counts
+	def __init__(self, token_counts: Dict[str, int] = None):
+		self.token_counts = Counter() if token_counts is None else token_counts
 
 	@property
 	def token_types(self):
@@ -28,6 +29,12 @@ class TokenTypeDatum(object):
 
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
+
+	def copy(self):
+		return TokenTypeDatum(Counter(self.token_counts))
+
+	def update(self, other):
+		self.token_counts.update(other.token_types)
 
 
 class RoundTokenTypeDatum(object):
@@ -38,38 +45,39 @@ class RoundTokenTypeDatum(object):
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
 
+@unique
+class TokenMetatype(Enum):
+	ALL = auto()
+	RELEVANT = auto()
+
 
 class SessionTokenTypeDatum(object):
 	@staticmethod
-	def __add_round(token_counts: TokenTypeDatum, total_token_counts: Dict[str, int]) -> RoundTokenTypeDatum:
-		cumulative_token_counts = TokenTypeDatum(Counter(total_token_counts))
-		result = RoundTokenTypeDatum(token_counts, cumulative_token_counts)
-		total_token_counts.update(token_counts.token_counts)
+	def __add_round(round_datum: Dict[TokenMetatype, TokenTypeDatum], total_token_counts: Dict[TokenMetatype, TokenTypeDatum]) -> RoundTokenTypeDatum:
+		for metadata_type, data in round_datum.items():
+			total_token_counts[metadata_type].update(data)
+		cumulative_data = copy.deepcopy(total_token_counts)
+		result = RoundTokenTypeDatum(round_datum, cumulative_data)
 		return result
 
-	def __init__(self, round_token_counts: Iterable[TokenTypeDatum]):
-		self.total_token_counts = TokenTypeDatum(Counter())
-		self.round_token_type_data = tuple(
-			self.__add_round(token_counts, self.total_token_counts.token_counts) for token_counts in round_token_counts)
+	def __init__(self, round_token_counts: Iterable[Dict[TokenMetatype, TokenTypeDatum]]):
+		self.total_data = dict((metadata_type, TokenTypeDatum()) for metadata_type in TokenMetatype)
+		self.round_data = tuple(
+			self.__add_round(token_counts, self.total_data) for token_counts in round_token_counts)
 
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
 
 	@property
 	def round_count(self):
-		return len(self.round_token_type_data)
+		return len(self.round_data)
 
 
 class SessionRoundTokenCounter(object):
-	@staticmethod
-	def __count_utt_tokens(utts: Iterable[utterances.Utterance]) -> TokenTypeDatum:
-		counts = Counter()
-		for utt in utts:
-			counts.update(utt.content)
-		return TokenTypeDatum(counts)
 
-	def __init__(self, seg_utt_factory: utterances.SegmentUtteranceFactory):
+	def __init__(self, seg_utt_factory: utterances.SegmentUtteranceFactory, token_filter=lambda _ : True):
 		self.seg_utt_factory = seg_utt_factory
+		self.token_filter = token_filter
 
 	def __call__(self, named_sessions):
 		result = {}
@@ -80,7 +88,16 @@ class SessionRoundTokenCounter(object):
 
 		return result
 
-	def __session_token_type_counts(self, session) -> Iterator[TokenTypeDatum]:
+	def __count_utt_tokens(self, utts: Iterable[utterances.Utterance]) -> Dict[TokenMetatype, TokenTypeDatum]:
+		all_token_counts = Counter()
+		relevant_token_counts = Counter()
+		for utt in utts:
+			all_token_counts.update(utt.content)
+			relevant_token_counts.update(token for token in utt.content if self.token_filter(token))
+		return {TokenMetatype.ALL : TokenTypeDatum(all_token_counts), TokenMetatype.RELEVANT : TokenTypeDatum(relevant_token_counts)}
+
+
+	def __session_token_type_counts(self, session) -> Iterator[Dict[TokenMetatype, TokenTypeDatum]]:
 		round_start_end_times = tuple(game_round_start_end_times(iter(read_round_start_times(session))))
 		round_count = len(round_start_end_times)
 		print("Read {} game round(s).".format(round_count), file=sys.stderr)
@@ -92,6 +109,7 @@ class SessionRoundTokenCounter(object):
 		return (self.__count_utt_tokens(utts) for utts in round_utts)
 
 
+
 def find_last_truthy_elem_idx(elems: Sequence[T]):
 	reversed_elems = reversed(elems)
 	max_valid_idx = len(elems) - 1
@@ -100,8 +118,8 @@ def find_last_truthy_elem_idx(elems: Sequence[T]):
 
 def session_token_type_data(named_sessions, relevant_tokens: Container[str]) -> Iterator[
 	Tuple[str, SessionTokenTypeDatum]]:
-	seg_utt_factory = utterances.SegmentUtteranceFactory(lambda token: token in relevant_tokens)
-	token_counter = SessionRoundTokenCounter(seg_utt_factory)
+	seg_utt_factory = utterances.SegmentUtteranceFactory()
+	token_counter = SessionRoundTokenCounter(seg_utt_factory, lambda token: token in relevant_tokens)
 	session_round_token_counts = token_counter(named_sessions)
 	for dyad_id, round_token_counts in session_round_token_counts.items():
 		last_truthy_elem_idx = find_last_truthy_elem_idx(round_token_counts)
@@ -142,17 +160,26 @@ def __main(args):
 
 
 def __print_token_type_data(token_type_data: Iterable[Tuple[str, SessionTokenTypeDatum]], outfile):
-	print(COL_DELIM.join(("DYAD", "ROUND", "ROUND_TOKENS", "ROUND_TYPES", "TOTAL_TOKENS", "TOTAL_TYPES")), file=outfile)
+	print(COL_DELIM.join(("DYAD", "ROUND", "ROUND_TOKENS", "ROUND_TYPES", "ROUND_TYPE_RATIO", "TOTAL_TOKENS", "TOTAL_TYPES", "TOTAL_TYPE_RATIO")), file=outfile)
 
 	ordered_session_token_type_data = sorted(token_type_data, key=lambda item: item[0])
 	for dyad_id, session_token_type_datum in ordered_session_token_type_data:
-		for round_id, round_token_type_datum in enumerate(session_token_type_datum.round_token_type_data, start=1):
-			round_data = round_token_type_datum.round_data
-			cumulative_data = round_token_type_datum.cumulative_data
-			row = (dyad_id, str(round_id), str(sum(round_data.token_counts.values())), str(len(round_data.token_types)),
-				   str(sum(cumulative_data.token_counts.values())), str(len(cumulative_data.token_types)))
+		for round_id, round_token_type_datum in enumerate(session_token_type_datum.round_data, start=1):
+			round_data = round_token_type_datum.round_data[TokenMetatype.RELEVANT]
+			round_token_count = sum(round_data.token_counts.values())
+			round_type_count = len(round_data.token_types)
+			round_ratio = __ratio(round_type_count, round_token_count)
+			cumulative_data = round_token_type_datum.cumulative_data[TokenMetatype.RELEVANT]
+			cumulative_token_count = sum(cumulative_data.token_counts.values())
+			cumulative_type_count = len(cumulative_data.token_types)
+			cumulative_ratio = __ratio(cumulative_type_count, cumulative_token_count)
+			row = (dyad_id, str(round_id), str(round_token_count), str(round_type_count), str(round_ratio),
+				   str(cumulative_token_count), str(cumulative_type_count), str(cumulative_ratio))
 			print(COL_DELIM.join(row), file=outfile)
 
+
+def __ratio(tokens, types):
+	return tokens / types
 
 if __name__ == "__main__":
 	__main(__create_argparser().parse_args())

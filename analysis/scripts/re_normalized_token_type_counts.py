@@ -45,7 +45,7 @@ def __main(args):
 	token_type_data = session_token_type_data(named_sessions, token_groups.keys())
 	for dyad_id, round_token_type_data in token_type_data:
 		round_token_type_counts = round_token_type_data.round_token_type_counts
-		total_token_counts = round_token_type_data.total_token_counts
+		total_token_counts = round_token_type_data.total_data
 		token_total = sum(total_token_counts.values())
 		type_total = len(total_token_counts.keys())
 
