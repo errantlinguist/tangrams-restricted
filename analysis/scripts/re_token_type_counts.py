@@ -53,19 +53,21 @@ class SessionRoundTokenCounter(object):
 		result = {}
 		for dyad_id, session in named_sessions:
 			print("Processing session \"{}\".".format(dyad_id), file=sys.stderr)
-			round_start_end_times = tuple(game_round_start_end_times(iter(read_round_start_times(session))))
-			round_count = len(round_start_end_times)
-			print("Read {} game round(s).".format(round_count), file=sys.stderr)
-
-			segments = utterances.read_segments(session.utts)
-			utts = tuple(self.seg_utt_factory(segments))
-			round_utts = (game_round_utterances(start_time, end_time, utts) for start_time, end_time in
-						  round_start_end_times)
-			round_token_counts = tuple(_count_utt_tokens(utts) for utts in round_utts)
+			round_token_counts = tuple(self.__session_token_type_counts(session))
 			result[dyad_id] = round_token_counts
 
 		return result
 
+	def __session_token_type_counts(self, session):
+		round_start_end_times = tuple(game_round_start_end_times(iter(read_round_start_times(session))))
+		round_count = len(round_start_end_times)
+		print("Read {} game round(s).".format(round_count), file=sys.stderr)
+
+		segments = utterances.read_segments(session.utts)
+		utts = tuple(self.seg_utt_factory(segments))
+		round_utts = (game_round_utterances(start_time, end_time, utts) for start_time, end_time in
+					  round_start_end_times)
+		return (_count_utt_tokens(utts) for utts in round_utts)
 
 def find_last_truthy_elem_idx(elems: Sequence[T]):
 	reversed_elems = reversed(elems)
