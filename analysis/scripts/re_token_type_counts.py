@@ -21,8 +21,19 @@ T = TypeVar('T')
 __COLS_BEFORE_ROUND_COLS = ("DYAD",)
 
 
+class TokenTypeCount(object):
+	def __init__(self, tokens, types):
+		if tokens < types:
+			raise ValueError("Token count ({}) is less than type count ({}).".format(tokens, types))
+		self.tokens = tokens
+		self.types = types
+
+	def __repr__(self, *args, **kwargs):
+		return self.__class__.__name__ + str(self.__dict__)
+
+
 class RoundTokenTypeData(object):
-	def __init__(self, round_token_type_counts : Sequence[TokenTypeCount], total_token_counts : Dict[str,int]):
+	def __init__(self, round_token_type_counts: Sequence[TokenTypeCount], total_token_counts: Dict[str, int]):
 		self.round_token_type_counts = round_token_type_counts
 		self.total_token_counts = total_token_counts
 
@@ -56,17 +67,6 @@ class SessionRoundTokenCounter(object):
 		return result
 
 
-class TokenTypeCount(object):
-	def __init__(self, tokens, types):
-		if tokens < types:
-			raise ValueError("Token count ({}) is less than type count ({}).".format(tokens, types))
-		self.tokens = tokens
-		self.types = types
-
-	def __repr__(self, *args, **kwargs):
-		return self.__class__.__name__ + str(self.__dict__)
-
-
 def find_last_truthy_elem_idx(elems: Sequence[T]):
 	reversed_elems = reversed(elems)
 	max_valid_idx = len(elems) - 1
@@ -95,7 +95,8 @@ def session_round_token_type_data(named_sessions, relevant_tokens: Container[str
 		if last_truthy_elem_idx > -1 and last_truthy_elem_idx < max_valid_idx:
 			old_len = len(round_token_counts)
 			round_token_counts = round_token_counts[:last_truthy_elem_idx + 1]
-			print("Trimmed {} empty round(s) from session \"{}\".".format(old_len - len(round_token_counts), dyad_id), file=sys.stderr)
+			print("Trimmed {} empty round(s) from session \"{}\".".format(old_len - len(round_token_counts), dyad_id),
+				  file=sys.stderr)
 
 		round_token_type_data = game_round_token_type_counts(round_token_counts)
 		yield dyad_id, round_token_type_data
