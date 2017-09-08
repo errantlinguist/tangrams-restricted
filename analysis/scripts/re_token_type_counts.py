@@ -109,7 +109,7 @@ def _count_utt_tokens(utts: Iterable[utterances.Utterance]):
 
 
 def __create_argparser():
-	result = argparse.ArgumentParser(description="Count token/type counts of new token types occurring.")
+	result = argparse.ArgumentParser(description="Count token/type counts per round in each game session.")
 	result.add_argument("token_group_file", metavar="TOKEN_GROUP_FILEPATH",
 						help="The path to the token group mapping file to use.")
 	result.add_argument("inpaths", metavar="INPATH", nargs='+',
