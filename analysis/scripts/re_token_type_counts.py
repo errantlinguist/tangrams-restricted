@@ -4,6 +4,7 @@ import argparse
 import sys
 from collections import Counter
 from decimal import Decimal
+import re
 from typing import Callable, Dict, Iterable, Iterator, Sequence, Container, Tuple, TypeVar
 
 import utterances
@@ -118,8 +119,12 @@ class TokenTypeDataPrinter(object):
 				round_data = round_token_type_datum.round_data.relevant_tokens
 				round_token_count = sum(round_data.token_counts.values())
 				round_type_count = len(round_data.token_types)
+				cumulative_data = round_token_type_datum.cumulative_data.relevant_tokens
+				cumulative_token_count = sum(cumulative_data.token_counts.values())
+				cumulative_type_count = len(cumulative_data.token_types)
 				try:
 					round_ratio = self.__ratio(round_type_count, round_token_count)
+					cumulative_ratio = self.__ratio(cumulative_type_count, cumulative_token_count)
 				except ZeroDivisionError as e:
 					if self.strict:
 						raise e
@@ -128,10 +133,8 @@ class TokenTypeDataPrinter(object):
 																											 dyad_id),
 							  file=sys.stderr)
 						round_ratio = float('nan')
-				cumulative_data = round_token_type_datum.cumulative_data.relevant_tokens
-				cumulative_token_count = sum(cumulative_data.token_counts.values())
-				cumulative_type_count = len(cumulative_data.token_types)
-				cumulative_ratio = self.__ratio(cumulative_type_count, cumulative_token_count)
+						cumulative_ratio = round_ratio
+
 				row = (dyad_id, str(round_id), str(round_token_count), str(round_type_count), str(round_ratio),
 					   str(cumulative_token_count), str(cumulative_type_count), str(cumulative_ratio))
 				print(COL_DELIM.join(row), file=outfile)
@@ -185,6 +188,8 @@ def __create_argparser():
 						help="The path to the token group mapping file to use.")
 	result.add_argument("inpaths", metavar="INPATH", nargs='+',
 						help="The paths to search for sessions to process.")
+	result.add_argument("-g", "--group", metavar="REGEX",
+						help="A regular expression matching the token group(s) to calculate counts for.")
 	result.add_argument("-s", "--strict", action="store_true",
 						help="When this option is supplied, the script will throw an exception upon encountering a round with no relevant tokens.")
 	return result
@@ -201,7 +206,13 @@ def __is_relevant_round(datum: FilteredTokenTypeDatum):
 def __main(args):
 	token_group_file_path = args.token_group_file
 	print("Reading token groups from \"{}\".".format(token_group_file_path), file=sys.stderr)
-	token_groups = read_token_group_dict(token_group_file_path)
+	group_regex = args.group
+	if group_regex:
+		group_pattern = re.compile(group_regex)
+		print("Calculating counts for token groups matching pattern \"{}\".".format(group_pattern), file=sys.stderr)
+		token_groups = read_token_group_dict(token_group_file_path, lambda group: group_pattern.match(group))
+	else:
+		token_groups = read_token_group_dict(token_group_file_path)
 	print("Read group info for {} token type(s).".format(len(token_groups)), file=sys.stderr)
 
 	named_sessions = walk_session_data(args.inpaths)

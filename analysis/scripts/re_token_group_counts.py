@@ -10,7 +10,7 @@ import itertools
 import sys
 from collections import Counter
 from enum import Enum, unique
-from typing import Dict, FrozenSet, Iterable, Iterator, Tuple
+from typing import Callable, Dict, FrozenSet, Iterable, Iterator, Tuple
 
 import utterances
 from xml_files import walk_xml_files
@@ -58,19 +58,30 @@ def print_tabular_counts(infile_token_group_counts, group_count_sums, outfile):
 	print(COL_DELIM.join(summary_row_cells))
 
 
-def read_token_group_dict(infile_path: str) -> Dict[str, FrozenSet[str]]:
+def __default_group_filter(group) -> bool:
+	return True
+
+
+def read_token_group_dict(infile_path: str, group_filter: Callable[[str], bool] = __default_group_filter) -> Dict[
+	str, FrozenSet[str]]:
 	with open(infile_path, 'r') as inf:
-		token_groups = read_token_groups(inf)
+		token_groups = read_token_groups(inf, group_filter)
 		return dict(token_groups)
 
 
-def read_token_groups(infile) -> Iterator[Tuple[str, FrozenSet[str]]]:
+def read_token_groups(infile, group_filter: Callable[[str], bool] = __default_group_filter) -> Iterator[
+	Tuple[str, FrozenSet[str]]]:
 	rows = csv.reader(infile, dialect="excel-tab")
 	col_idxs = dict((col_name, idx) for (idx, col_name) in enumerate(next(rows)))
 	token_col_idx = col_idxs[TokenGroupDataColumn.TOKEN.value]
 	group_col_idx = col_idxs[TokenGroupDataColumn.GROUP.value]
 	token_group_strs = ((row[token_col_idx], row[group_col_idx]) for row in rows)
-	return ((token, frozenset(group_str.split(GROUP_LIST_DELIM))) for (token, group_str) in token_group_strs if group_str)
+	for token, group_str in token_group_strs:
+		groups = group_str.split(GROUP_LIST_DELIM)
+		filtered_groups = (group for group in groups if group and group_filter(group))
+		group_set = frozenset(filtered_groups)
+		if group_set:
+			yield token, group_set
 
 
 def read_utt_token_group_counts(infile: str, token_groups: TokenGroupDict,
