@@ -78,7 +78,7 @@ def read_token_groups(infile, group_filter: Callable[[str], bool] = __default_gr
 	token_group_strs = ((row[token_col_idx], row[group_col_idx]) for row in rows)
 	for token, group_str in token_group_strs:
 		groups = group_str.split(GROUP_LIST_DELIM)
-		filtered_groups = (group for group in groups if group and group_filter(group))
+		filtered_groups = (group for group in groups if group_filter(group))
 		group_set = frozenset(filtered_groups)
 		if group_set:
 			yield token, group_set
