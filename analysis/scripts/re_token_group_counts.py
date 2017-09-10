@@ -58,7 +58,7 @@ def print_tabular_counts(infile_token_group_counts, group_count_sums, outfile):
 	print(COL_DELIM.join(summary_row_cells))
 
 
-def __default_group_filter(group) -> bool:
+def __default_group_filter(_) -> bool:
 	return True
 
 
