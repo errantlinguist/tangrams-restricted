@@ -69,8 +69,8 @@ def read_token_groups(infile) -> Iterator[Tuple[str, FrozenSet[str]]]:
 	col_idxs = dict((col_name, idx) for (idx, col_name) in enumerate(next(rows)))
 	token_col_idx = col_idxs[TokenGroupDataColumn.TOKEN.value]
 	group_col_idx = col_idxs[TokenGroupDataColumn.GROUP.value]
-	token_groups = ((row[token_col_idx], row[group_col_idx]) for row in rows)
-	return ((token, frozenset(group.split(GROUP_LIST_DELIM))) for (token, group) in token_groups if group)
+	token_group_strs = ((row[token_col_idx], row[group_col_idx]) for row in rows)
+	return ((token, frozenset(group_str.split(GROUP_LIST_DELIM))) for (token, group_str) in token_group_strs if group_str)
 
 
 def read_utt_token_group_counts(infile: str, token_groups: TokenGroupDict,
