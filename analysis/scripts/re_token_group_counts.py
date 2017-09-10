@@ -60,11 +60,11 @@ def print_tabular_counts(infile_token_group_counts, group_count_sums, outfile):
 
 def read_token_group_dict(infile_path: str) -> Dict[str, FrozenSet[str]]:
 	with open(infile_path, 'r') as inf:
-		token_groups = readtoken_groups(inf)
+		token_groups = read_token_groups(inf)
 		return dict(token_groups)
 
 
-def readtoken_groups(infile) -> Iterator[Tuple[str, FrozenSet[str]]]:
+def read_token_groups(infile) -> Iterator[Tuple[str, FrozenSet[str]]]:
 	rows = csv.reader(infile, dialect="excel-tab")
 	col_idxs = dict((col_name, idx) for (idx, col_name) in enumerate(next(rows)))
 	token_col_idx = col_idxs[TokenGroupDataColumn.TOKEN.value]
