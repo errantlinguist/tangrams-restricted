@@ -66,7 +66,7 @@ class SessionTokenTypeDatum(object):
 		return RoundTokenTypeDatum(round_datum, cumulative_data)
 
 	@staticmethod
-	def __entity_id_to_idx(entity_id: int):
+	def __round_id_to_idx(entity_id: int):
 		return entity_id - 1
 
 	def __init__(self, round_token_counts: Iterable[FilteredTokenTypeDatum]):
@@ -74,8 +74,8 @@ class SessionTokenTypeDatum(object):
 		self.round_data = tuple(
 			self.__add_round(token_counts, self.total_data) for token_counts in round_token_counts)
 
-	def __getitem__(self, entity_id: int):
-		return self.round_data[self.__entity_id_to_idx(entity_id)]
+	def __getitem__(self, round_id: int):
+		return self.round_data[self.__round_id_to_idx(round_id)]
 
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
