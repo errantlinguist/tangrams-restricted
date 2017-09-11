@@ -98,6 +98,12 @@ final class UtteranceTabularDataWriter {
 				return ctx.firstDiagEvent.getName();
 			}
 		},
+		ROUND {
+			@Override
+			public String apply(final EventDatum.Context ctx) {
+				return Integer.toString(ctx.roundId);
+			}
+		},
 		TIME {
 
 			@Override
@@ -128,8 +134,12 @@ final class UtteranceTabularDataWriter {
 
 			private final Optional<? extends Event> optLastRoundEvent;
 
-			private Context(final Event firstDiagEvent, final Optional<? extends Event> optLastRoundEvent,
-					final LocalDateTime gameStartTime, final Supplier<String> nullValueReprSupplier) {
+			private final int roundId;
+
+			private Context(final int roundId, final Event firstDiagEvent,
+					final Optional<? extends Event> optLastRoundEvent, final LocalDateTime gameStartTime,
+					final Supplier<String> nullValueReprSupplier) {
+				this.roundId = roundId;
 				this.firstDiagEvent = firstDiagEvent;
 				this.optLastRoundEvent = optLastRoundEvent;
 				this.gameStartTime = gameStartTime;
@@ -181,6 +191,9 @@ final class UtteranceTabularDataWriter {
 				} else if (!optLastRoundEvent.equals(other.optLastRoundEvent)) {
 					return false;
 				}
+				if (roundId != other.roundId) {
+					return false;
+				}
 				return true;
 			}
 
@@ -197,6 +210,7 @@ final class UtteranceTabularDataWriter {
 				result = prime * result + (gameStartTime == null ? 0 : gameStartTime.hashCode());
 				result = prime * result + (nullValueReprSupplier == null ? 0 : nullValueReprSupplier.hashCode());
 				result = prime * result + (optLastRoundEvent == null ? 0 : optLastRoundEvent.hashCode());
+				result = prime * result + roundId;
 				return result;
 			}
 
@@ -207,7 +221,7 @@ final class UtteranceTabularDataWriter {
 			 */
 			@Override
 			public String toString() {
-				final StringBuilder builder = new StringBuilder();
+				final StringBuilder builder = new StringBuilder(128);
 				builder.append("Context [firstDiagEvent=");
 				builder.append(firstDiagEvent);
 				builder.append(", gameStartTime=");
@@ -216,6 +230,8 @@ final class UtteranceTabularDataWriter {
 				builder.append(nullValueReprSupplier);
 				builder.append(", optLastRoundEvent=");
 				builder.append(optLastRoundEvent);
+				builder.append(", roundId=");
+				builder.append(roundId);
 				builder.append("]");
 				return builder.toString();
 			}
@@ -340,6 +356,7 @@ final class UtteranceTabularDataWriter {
 				.apply(history.getInitialState().getImageVisualizationInfoDescription()).getData();
 
 		Optional<Event> optLastRoundEvent = Optional.empty();
+		int roundId = 1;
 		for (final ListIterator<EventDialogue> eventDiagIter = eventDiags.listIterator(); eventDiagIter.hasNext();) {
 			final EventDialogue eventDiag = eventDiagIter.next();
 			writer.write(TABLE_STRING_REPR_ROW_DELIMITER);
@@ -357,9 +374,10 @@ final class UtteranceTabularDataWriter {
 			} else {
 				final Event firstDiagEvent = diagEvts.iterator().next();
 				{
+					final int streamRoundId = roundId;
 					final Optional<Event> streamOptLastRoundEvent = optLastRoundEvent;
 					eventDataReprs = Arrays.stream(eventDataToWrite)
-							.map(eventDatum -> eventDatum.apply(new EventDatum.Context(firstDiagEvent,
+							.map(eventDatum -> eventDatum.apply(new EventDatum.Context(streamRoundId, firstDiagEvent,
 									streamOptLastRoundEvent, gameStartTime, nullValueReprSupplier)));
 				}
 
@@ -390,6 +408,7 @@ final class UtteranceTabularDataWriter {
 				imgFeatureVectorReprs = entityFeatureVectorDescFactory.createFeatureValueReprs(context);
 				imgVizInfoDesc = createImgVizInfoDesc(firstDiagEvent, gameStartTime, imgVizInfoData);
 				optLastRoundEvent = Optional.of(diagEvts.get(diagEvts.size() - 1));
+				roundId++;
 			}
 			writer.write(eventDataReprs.collect(TABLE_ROW_CELL_JOINER));
 			writer.write(TABLE_STRING_REPR_COL_DELIMITER);
