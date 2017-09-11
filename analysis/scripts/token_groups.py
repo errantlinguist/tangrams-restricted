@@ -38,4 +38,4 @@ def read_token_groups(infile, group_filter: Callable[[str], bool] = __default_gr
 		filtered_groups = (sys.intern(group) for group in groups if group_filter(group))
 		group_set = frozenset(filtered_groups)
 		if group_set:
-			yield token, group_set
+			yield sys.intern(token), group_set
