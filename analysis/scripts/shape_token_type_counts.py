@@ -32,13 +32,13 @@ class ShapeTokenCounter(object):
 			print("Processing session \"{}\".".format(dyad_id), file=sys.stderr)
 			referent_token_counts = dict(
 				(entity_id, ReferentTokenTypeDatum(referent_counts)) for (entity_id, referent_counts) in
-				self.__referent_token_counts(session).items())
+				self.__shape_token_counts(session).items())
 			trim_empty_tail_rounds(dyad_id, referent_token_counts)
 			result[dyad_id] = referent_token_counts
 
 		return result
 
-	def __referent_token_counts(self, session: SessionData) -> Dict[
+	def __shape_token_counts(self, session: SessionData) -> Dict[
 		str, List[Tuple[int, re_token_type_counts.FilteredTokenTypeDatum]]]:
 		result = defaultdict(list)
 		events = game_events.read_events(session)
