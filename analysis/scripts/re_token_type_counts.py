@@ -15,7 +15,6 @@ from session_data import SessionData
 from session_data import walk_session_data
 
 COL_DELIM = '\t'
-NULL_VALUE_REPR = '?'
 
 T = TypeVar('T')
 
