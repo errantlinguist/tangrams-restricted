@@ -27,6 +27,7 @@ class EntityData(object):
 	def is_selected(self):
 		return self.attr(session_data.DataColumn.SELECTED_ENTITY.value)
 
+	@property
 	def shape(self):
 		return self.attr(session_data.DataColumn.SHAPE.value)
 
