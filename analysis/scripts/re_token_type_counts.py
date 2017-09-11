@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
 
 import argparse
+import re
 import sys
 from collections import Counter
 from decimal import Decimal
-import re
 from typing import Callable, Dict, Iterable, Iterator, Sequence, Container, Tuple, TypeVar
 
 import utterances
 from re_token_group_counts import read_token_group_dict
 from re_token_group_freqs import game_round_start_end_times, read_round_start_times, \
 	game_round_utterances
-from session_data import walk_session_data
 from session_data import SessionData
+from session_data import walk_session_data
 
 COL_DELIM = '\t'
 NULL_VALUE_REPR = '?'
@@ -34,6 +34,19 @@ class FilteredTokenTypeDatum(object):
 	def update(self, other: "FilteredTokenTypeDatum"):
 		self.all_tokens.update(other.all_tokens)
 		self.relevant_tokens.update(other.relevant_tokens)
+
+
+class FilteringTokenTypeCounter(object):
+	def __init__(self, token_filter: Callable[[str], bool] = lambda _: True):
+		self.token_filter = token_filter
+
+	def __call__(self, utts: Iterable[utterances.Utterance]) -> FilteredTokenTypeDatum:
+		all_token_counts = Counter()
+		relevant_token_counts = Counter()
+		for utt in utts:
+			all_token_counts.update(utt.content)
+			relevant_token_counts.update(token for token in utt.content if self.token_filter(token))
+		return FilteredTokenTypeDatum(TokenTypeDatum(all_token_counts), TokenTypeDatum(relevant_token_counts))
 
 
 class RoundTokenTypeDatum(object):
@@ -68,9 +81,9 @@ class SessionTokenTypeDatum(object):
 
 class SessionRoundTokenCounter(object):
 	def __init__(self, seg_utt_factory: utterances.SegmentUtteranceFactory,
-				 token_filter: Callable[[str], bool] = lambda _: True):
+				 filtering_token_counter: Callable[[Iterable[utterances.Utterance]], FilteredTokenTypeDatum]):
 		self.seg_utt_factory = seg_utt_factory
-		self.token_filter = token_filter
+		self.filtering_token_counter = filtering_token_counter
 
 	def __call__(self, named_sessions: Dict[T, SessionData]) -> Dict[T, Tuple[FilteredTokenTypeDatum]]:
 		result = {}
@@ -81,14 +94,6 @@ class SessionRoundTokenCounter(object):
 
 		return result
 
-	def __count_utt_tokens(self, utts: Iterable[utterances.Utterance]) -> FilteredTokenTypeDatum:
-		all_token_counts = Counter()
-		relevant_token_counts = Counter()
-		for utt in utts:
-			all_token_counts.update(utt.content)
-			relevant_token_counts.update(token for token in utt.content if self.token_filter(token))
-		return FilteredTokenTypeDatum(TokenTypeDatum(all_token_counts), TokenTypeDatum(relevant_token_counts))
-
 	def __session_token_type_counts(self, session) -> Iterator[FilteredTokenTypeDatum]:
 		round_start_end_times = tuple(game_round_start_end_times(iter(read_round_start_times(session))))
 		round_count = len(round_start_end_times)
@@ -98,7 +103,7 @@ class SessionRoundTokenCounter(object):
 		utts = tuple(self.seg_utt_factory(segments))
 		round_utts = (game_round_utterances(start_time, end_time, utts) for start_time, end_time in
 					  round_start_end_times)
-		return (self.__count_utt_tokens(utts) for utts in round_utts)
+		return (self.filtering_token_counter(utts) for utts in round_utts)
 
 
 class TokenTypeDataPrinter(object):
@@ -167,8 +172,9 @@ def find_last_matching_elem_idx(elems: Sequence[T], predicate: Callable[[T], boo
 def session_token_type_data(named_sessions, relevant_tokens: Container[str]) -> Iterator[
 	Tuple[str, SessionTokenTypeDatum]]:
 	seg_utt_factory = utterances.SegmentUtteranceFactory()
-	token_counter = SessionRoundTokenCounter(seg_utt_factory, lambda token: token in relevant_tokens)
-	session_round_token_counts = token_counter(named_sessions)
+	session_token_counter = SessionRoundTokenCounter(seg_utt_factory,
+													 FilteringTokenTypeCounter(lambda token: token in relevant_tokens))
+	session_round_token_counts = session_token_counter(named_sessions)
 	for dyad_id, round_token_counts in session_round_token_counts.items():
 		last_relevant_elem_idx = find_last_matching_elem_idx(round_token_counts, __is_relevant_round)
 		max_valid_idx = len(round_token_counts) - 1
@@ -210,7 +216,8 @@ def __main(args):
 	if group_regex:
 		group_pattern = re.compile(group_regex)
 		print("Calculating counts for token groups matching pattern \"{}\".".format(group_pattern), file=sys.stderr)
-		token_groups = read_token_group_dict(token_group_file_path, lambda group: group_pattern.match(group) is not None)
+		token_groups = read_token_group_dict(token_group_file_path,
+											 lambda group: group_pattern.match(group) is not None)
 	else:
 		token_groups = read_token_group_dict(token_group_file_path)
 	print("Read group info for {} token type(s).".format(len(token_groups)), file=sys.stderr)
