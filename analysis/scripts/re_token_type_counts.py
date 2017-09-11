@@ -201,7 +201,7 @@ def trim_empty_tail_rounds(dyad_id: Any, round_token_counts: Sequence[FilteredTo
 	if -1 < last_relevant_elem_idx < max_valid_idx:
 		old_len = len(round_token_counts)
 		result = round_token_counts[:last_relevant_elem_idx + 1]
-		print("Trimmed {} empty round(s) from session \"{}\".".format(old_len - len(round_token_counts), dyad_id),
+		print("Trimmed {} empty round(s) from session \"{}\".".format(old_len - len(result), dyad_id),
 			  file=sys.stderr)
 	else:
 		result = round_token_counts
