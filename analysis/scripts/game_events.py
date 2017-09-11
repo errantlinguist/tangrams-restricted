@@ -3,7 +3,7 @@ from collections import defaultdict
 from enum import Enum, unique
 from typing import Dict, Iterable, List, Sequence, Tuple, Union
 
-from session_data import read_events_metadata
+from session_data import SessionData, read_events_metadata
 
 
 @unique
@@ -121,7 +121,7 @@ def create_game_rounds(events: Iterable[Event]) -> Iterable[GameRound]:
 	yield GameRound(current_round_start_time, None, current_events)
 
 
-def read_events(session) -> Iterable[Event]:
+def read_events(session: SessionData) -> Iterable[Event]:
 	events_metadata = read_events_metadata(session.events_metadata)
 
 	event_count = int(events_metadata["EVENT_COUNT"])
@@ -131,8 +131,9 @@ def read_events(session) -> Iterable[Event]:
 	return (Event(entity_descs) for entity_descs in event_entity_descs)
 
 
-def read_event_entity_desc_matrix(infile_path, event_count, entity_count) -> Tuple[List[EntityData], ...]:
-	result = tuple([None] * entity_count for _ in range(0, event_count))
+def read_event_entity_desc_matrix(infile_path: str, event_count: int, entity_count: int) -> Tuple[
+	List[EntityData], ...]:
+	result = tuple([None] * entity_count for _ in range(event_count))
 
 	with open(infile_path, 'r') as infile:
 		rows = csv.reader(infile, dialect="excel-tab")
