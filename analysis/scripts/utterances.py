@@ -136,7 +136,7 @@ def is_disfluency(token: str) -> bool:
 	return token.startswith(__TOKEN_TRUNCATION_MARKER) or token.endswith(__TOKEN_TRUNCATION_MARKER)
 
 
-def read_segments(infile_path):
+def read_segments(infile_path : str) -> Iterator[Element]:
 	print("Reading XML file \"{}\".".format(infile_path), file=sys.stderr)
 	doc_tree = parse_etree(infile_path)
 	return doc_tree.iterfind(".//hat:segment", ANNOTATION_NAMESPACES)
