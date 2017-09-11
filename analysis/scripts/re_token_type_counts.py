@@ -8,7 +8,7 @@ from decimal import Decimal
 from typing import Any, Callable, Dict, Iterable, Iterator, Sequence, Container, Tuple, TypeVar
 
 import utterances
-from re_token_group_counts import read_token_group_dict
+from token_groups import read_token_group_dict
 from re_token_group_freqs import \
 	game_round_utterances
 from session_data import SessionData

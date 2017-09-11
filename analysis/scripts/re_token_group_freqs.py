@@ -10,7 +10,7 @@ from typing import Dict, Iterable, Sequence, Iterator, Tuple
 
 import session_data
 import utterances
-from re_token_group_counts import TokenGroupDict, read_token_group_dict
+from token_groups import TokenGroupDict, read_token_group_dict
 
 COL_DELIM = '\t'
 DYAD_ID_COL_NAME = "DYAD"
