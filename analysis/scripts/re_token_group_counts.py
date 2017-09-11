@@ -58,8 +58,8 @@ def print_tabular_counts(infile_token_group_counts, group_count_sums, outfile):
 	print(COL_DELIM.join(summary_row_cells))
 
 
-def __default_group_filter(_) -> bool:
-	return True
+def __default_group_filter(group) -> bool:
+	return group
 
 
 def read_token_group_dict(infile_path: str, group_filter: Callable[[str], bool] = __default_group_filter) -> Dict[
