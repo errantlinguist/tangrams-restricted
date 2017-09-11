@@ -186,16 +186,22 @@ def session_token_type_data(named_sessions, relevant_tokens: Container[str]) -> 
 													 FilteringTokenTypeCounter(lambda token: token in relevant_tokens))
 	session_round_token_counts = session_token_counter(named_sessions)
 	for dyad_id, round_token_counts in session_round_token_counts.items():
-		last_relevant_elem_idx = find_last_matching_elem_idx(round_token_counts, __is_relevant_round)
-		max_valid_idx = len(round_token_counts) - 1
-		if -1 < last_relevant_elem_idx < max_valid_idx:
-			old_len = len(round_token_counts)
-			round_token_counts = round_token_counts[:last_relevant_elem_idx + 1]
-			print("Trimmed {} empty round(s) from session \"{}\".".format(old_len - len(round_token_counts), dyad_id),
-				  file=sys.stderr)
-
-		session_token_type_datum = SessionTokenTypeDatum(round_token_counts)
+		trimmed_round_token_counts = trim_empty_tail_rounds(dyad_id, round_token_counts)
+		session_token_type_datum = SessionTokenTypeDatum(trimmed_round_token_counts)
 		yield dyad_id, session_token_type_datum
+
+
+def trim_empty_tail_rounds(dyad_id: Any, round_token_counts: Sequence[FilteredTokenTypeDatum]):
+	last_relevant_elem_idx = find_last_matching_elem_idx(round_token_counts, __is_relevant_round)
+	max_valid_idx = len(round_token_counts) - 1
+	if -1 < last_relevant_elem_idx < max_valid_idx:
+		old_len = len(round_token_counts)
+		result = round_token_counts[:last_relevant_elem_idx + 1]
+		print("Trimmed {} empty round(s) from session \"{}\".".format(old_len - len(round_token_counts), dyad_id),
+			  file=sys.stderr)
+	else:
+		result = round_token_counts
+	return result
 
 
 def __create_argparser():
