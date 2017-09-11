@@ -62,10 +62,10 @@ def __main(inpaths, outfile):
 		utts = seg_utt_factory(segments)
 		utts_by_time = UtteranceTimes(utts)
 
-		idxed_game_rounds = iter(enumerate(create_game_rounds(events)))
-		round_idx, first_game_round = next(idxed_game_rounds)
+		game_rounds = iter(create_game_rounds(events))
+		first_game_round = next(game_rounds)
 		current_round_start_time = first_game_round.start_time
-		for round_idx, next_round in idxed_game_rounds:
+		for next_round in game_rounds:
 			initial_event = next(iter(next_round.events))
 			referent_entity = next(iter(initial_event.referent_entities))
 			shape = referent_entity.attr(EntityData.Attribute.SHAPE.value)
