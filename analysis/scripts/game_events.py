@@ -18,10 +18,6 @@ class _DataColumn(Enum):
 	SHAPE = "SHAPE"
 
 
-def __is_truth_cell_value(val):
-	return val == "true"
-
-
 class EntityData(object):
 	@unique
 	class Attribute(Enum):
@@ -159,12 +155,16 @@ def read_event_entity_desc_matrix(infile_path, event_count, entity_count) -> Tup
 	return result
 
 
+def _entity_round_id(entity_desc: EntityData) -> str:
+	return entity_desc.attr(GameRound.Attribute.ID.value)
+
+
 def __entity_event_time(entity_desc: EntityData) -> float:
 	return float(entity_desc.attr(Event.Attribute.TIME.value))
 
 
-def _entity_round_id(entity_desc: EntityData) -> str:
-	return entity_desc.attr(GameRound.Attribute.ID.value)
+def __is_truth_cell_value(val):
+	return val == "true"
 
 
 def __round_id_and_time(event: Event):
