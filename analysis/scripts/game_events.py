@@ -122,8 +122,8 @@ def create_game_rounds(events: Iterable[Event]) -> Iterable[GameRound]:
 def read_events(session: session_data.SessionData) -> Iterable[Event]:
 	events_metadata = session.read_events_metadata()
 
-	event_count = int(events_metadata["EVENT_COUNT"])
-	entity_count = int(events_metadata["ENTITY_COUNT"])
+	event_count = int(events_metadata[session_data.MetadataColumn.EVENT_COUNT.value])
+	entity_count = int(events_metadata[session_data.MetadataColumn.ENTITY_COUNT.value])
 
 	event_entity_descs = read_event_entity_desc_matrix(session.events, event_count, entity_count)
 	return (Event(entity_descs) for entity_descs in event_entity_descs)

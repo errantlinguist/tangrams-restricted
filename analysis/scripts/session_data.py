@@ -17,6 +17,13 @@ class DataColumn(Enum):
 
 
 @unique
+class MetadataColumn(Enum):
+	ENTITY_COUNT = "ENTITY_COUNT"
+	EVENT_COUNT = "EVENT_COUNT"
+	ROUND_COUNT = "ROUND_COUNT"
+
+
+@unique
 class SessionDatum(Enum):
 	EVENTS = "events.tsv"
 	EVENTS_METADATA = "events-metadata.tsv"
@@ -44,9 +51,18 @@ class SessionData(object):
 			rows = csv.reader(infile, dialect="excel-tab")
 			return dict(rows)
 
+	def read_metadata_entity_count(self) -> int:
+		return int(self.read_metadatum_value(MetadataColumn.ENTITY_COUNT))
+
+	def read_metadata_event_count(self) -> int:
+		return int(self.read_metadatum_value(MetadataColumn.EVENT_COUNT))
+
 	def read_metadata_round_count(self) -> int:
+		return int(self.read_metadatum_value(MetadataColumn.ROUND_COUNT))
+
+	def read_metadatum_value(self, metadatum: MetadataColumn):
 		events_metadata = self.read_events_metadata()
-		return int(events_metadata["ROUND_COUNT"])
+		return events_metadata[metadatum.value]
 
 	def read_round_start_end_times(self) -> Iterator[Tuple[float, float]]:
 		return session_round_start_end_times(iter(self.read_round_start_times()))
