@@ -210,7 +210,7 @@ def __main(args):
 	if group_regex:
 		group_pattern = re.compile(group_regex)
 		print("Calculating counts for token groups matching pattern \"{}\".".format(group_pattern), file=sys.stderr)
-		token_groups = read_token_group_dict(token_group_file_path, lambda group: group_pattern.match(group))
+		token_groups = read_token_group_dict(token_group_file_path, lambda group: group_pattern.match(group) is not None)
 	else:
 		token_groups = read_token_group_dict(token_group_file_path)
 	print("Read group info for {} token type(s).".format(len(token_groups)), file=sys.stderr)
