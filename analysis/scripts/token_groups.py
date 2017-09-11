@@ -3,6 +3,7 @@ import sys
 from enum import Enum, unique
 from typing import Callable, Dict, FrozenSet, Iterator, Tuple
 
+ENCODING = "utf-8"
 GROUP_LIST_DELIM = ","
 
 TokenGroupDict = Dict[str, FrozenSet[str]]
@@ -20,7 +21,7 @@ def __default_group_filter(group) -> bool:
 
 def read_token_group_dict(infile_path: str,
 						  group_filter: Callable[[str], bool] = __default_group_filter) -> TokenGroupDict:
-	with open(infile_path, 'r') as inf:
+	with open(infile_path, 'r', encoding=ENCODING) as inf:
 		token_groups = read_token_groups(inf, group_filter)
 		return dict(token_groups)
 
