@@ -163,11 +163,11 @@ def __entity_event_time(entity_desc: EntityData) -> float:
 	return float(entity_desc.attr(Event.Attribute.TIME.value))
 
 
-def __is_truth_cell_value(val):
+def __is_truth_cell_value(val: str) -> bool:
 	return val == "true"
 
 
-def __round_id_and_time(event: Event):
+def __round_id_and_time(event: Event) -> Tuple[str, float]:
 	initial_entity_desc = next(iter(event.entities))
 	round_id = _entity_round_id(initial_entity_desc)
 	round_event_time = __entity_event_time(initial_entity_desc)
