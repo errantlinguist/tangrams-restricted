@@ -12,7 +12,7 @@ from typing import Dict, Iterable, List, Sequence, Iterator, Tuple
 
 import utterances
 from re_token_group_counts import TokenGroupDict, read_token_group_dict
-from session_data import SessionData, walk_session_data
+from session_data import SessionData, walk_session_data, read_events_metadata
 
 COL_DELIM = '\t'
 DYAD_ID_COL_NAME = "DYAD"
@@ -263,7 +263,7 @@ def print_whole_session_group_freqs(session_group_dists: Dict[str, Distribution]
 
 
 def read_metadata_round_count(session: SessionData) -> int:
-	events_metadata = sess.read_events_metadata(session.events_metadata)
+	events_metadata = read_events_metadata(session.events_metadata)
 	return int(events_metadata["ROUND_COUNT"])
 
 
