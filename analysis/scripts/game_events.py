@@ -8,7 +8,7 @@ import session_data
 
 class EntityData(object):
 	@unique
-	class Attribute(Enum):
+	class __Attribute(Enum):
 		REFERENT = session_data.DataColumn.REFERENT_ENTITY.value
 		SELECTED = session_data.DataColumn.SELECTED_ENTITY.value
 		SHAPE = session_data.DataColumn.SHAPE.value
@@ -26,11 +26,14 @@ class EntityData(object):
 
 	@property
 	def is_referent(self):
-		return self.attr(EntityData.Attribute.REFERENT.value)
+		return self.attr(EntityData.__Attribute.REFERENT.value)
 
 	@property
 	def is_selected(self):
-		return self.attr(EntityData.Attribute.SELECTED.value)
+		return self.attr(EntityData.__Attribute.SELECTED.value)
+
+	def shape(self):
+		return self.attr(EntityData.__Attribute.SHAPE.value)
 
 
 class Event(object):
