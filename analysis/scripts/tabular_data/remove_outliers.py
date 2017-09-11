@@ -24,6 +24,6 @@ if __name__ == "__main__":
 	if len(sys.argv) != 2:
 		raise ValueError("Usage: %s INFILE > OUTFILE" % sys.argv[0])
 	else:
-		with open(sys.argv[1]) as inf:
+		with open(sys.argv[1], encoding='utf-8') as inf:
 			reader = csv.reader(inf, delimiter=COL_DELIM, skipinitialspace=True)
 			print_filtered_results(reader, MAX_TOKEN_COUNT)

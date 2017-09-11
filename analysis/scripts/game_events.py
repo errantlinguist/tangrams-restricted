@@ -133,7 +133,7 @@ def read_event_entity_desc_matrix(infile_path: str, event_count: int, entity_cou
 	List[EntityData], ...]:
 	result = tuple([None] * entity_count for _ in range(event_count))
 
-	with open(infile_path, 'r') as infile:
+	with open(infile_path, 'r', encoding=session_data.ENCODING) as infile:
 		rows = csv.reader(infile, dialect="excel-tab")
 		col_idxs = dict((col_name, idx) for (idx, col_name) in enumerate(next(rows)))
 		entity_id_col_idx = col_idxs[session_data.DataColumn.ENTITY_ID.value]

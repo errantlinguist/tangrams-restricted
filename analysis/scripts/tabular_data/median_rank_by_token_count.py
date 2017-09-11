@@ -7,7 +7,7 @@ from common import COL_DELIM, parse_token_count_ranks
 
 if __name__ == "__main__":
 	import sys
-	with open(sys.argv[1], 'r') as infile:
+	with open(sys.argv[1], 'r', encoding='utf-8') as infile:
 		common = parse_token_count_ranks(infile)
 	
 	print(COL_DELIM.join(("tokencount", "medianrank", "rankmad")))	

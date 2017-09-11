@@ -23,7 +23,7 @@ def parse_rank_counts(lines):
 
 
 def __main(inpath, outfile):
-	with open(inpath, 'r') as infile:
+	with open(inpath, 'r', encoding='utf-8') as infile:
 		rank_counts = parse_rank_counts(infile)
 
 	sorted_rank_counts = sorted(rank_counts.items(), key=lambda item: item[0])

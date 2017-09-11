@@ -18,7 +18,7 @@ class TestParameterCombinationRankFileReader(object):
 		param_names = set()
 		for infile_path in infile_paths:
 			print("Reading test parameters from \"%s\"." % infile_path, file=sys.stderr)
-			with open(infile_path, 'r') as infile:
+			with open(infile_path, 'r', encoding='utf-8') as infile:
 				rows = (parse_row_cells(line) for line in infile)
 				col_names = next(rows)
 				param_col_name_idxs = create_col_name_idx_map(col_names, self.test_param_whitelisting_filter)

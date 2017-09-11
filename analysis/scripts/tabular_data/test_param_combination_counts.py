@@ -36,7 +36,7 @@ def read_test_param_combinations(infile_paths, test_param_whitelisting_filter, e
 	result = TestParameterCombinationCounts()
 	for infile_path in infile_paths:
 		print("Reading test parameters from \"%s\"." % infile_path, file=err_outfile)
-		with open(infile_path, 'r') as infile:
+		with open(infile_path, 'r', encoding='utf-8') as infile:
 			rows = (parse_row_cells(line) for line in infile)
 			subcol_name_idxs = create_subcol_name_idx_map(next(rows), test_param_whitelisting_filter)
 			for row in rows:

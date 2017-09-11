@@ -12,7 +12,7 @@ def __rr(value):
 if __name__ == "__main__":
 	import sys
 
-	with open(sys.argv[1], 'r') as infile:
+	with open(sys.argv[1], 'r', encoding='utf-8') as infile:
 		common = parse_token_count_ranks(infile, __rr)
 
 	print(COL_DELIM.join(("tokencount", "meanrr", "rrsd")))

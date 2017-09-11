@@ -25,7 +25,7 @@ class UtteranceRelation(object):
 
 def create_event_time_utt_rel_dict(inpath):
 	result = defaultdict(dict)
-	with open(inpath, 'r') as lines:
+	with open(inpath, 'r', encoding='utf-8') as lines:
 		rows = (line.strip().split(COL_DELIM) for line in lines)
 		col_name_idxs = dict((col_name, idx) for (idx, col_name) in enumerate(next(rows)))
 		evt_time_idx = col_name_idxs["EVENT_TIME"]
@@ -62,7 +62,7 @@ def create_event_time_utt_rel_dict(inpath):
 
 
 def print_utt_rel_data(inpath, utt_rels, outfile):
-	with open(inpath, 'r') as lines:
+	with open(inpath, 'r', encoding='utf-8') as lines:
 		rows = (line.strip().split(COL_DELIM) for line in lines)
 		header = next(rows)
 		col_name_idxs = dict((col_name, idx) for (idx, col_name) in enumerate(header))

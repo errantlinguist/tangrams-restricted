@@ -13,7 +13,7 @@ if __name__ == "__main__":
 		raise ValueError("Usage: %s INFILE > OUTFILE" % sys.argv[0])
 	else:
 		print("tokencount")
-		with open(sys.argv[1], 'r') as infile:
+		with open(sys.argv[1], 'r', encoding='utf-8') as infile:
 			token_count_idx = __token_count_idx(next(infile))
 			for line in infile:
 				row_vals = parse_row_cells(line)

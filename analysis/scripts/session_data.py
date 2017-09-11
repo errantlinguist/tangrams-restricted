@@ -3,6 +3,7 @@ import os
 from enum import Enum, unique
 from typing import Dict, Iterator, List, Iterable, Tuple
 
+ENCODING = 'utf-8'
 
 @unique
 class DataColumn(Enum):
@@ -47,7 +48,7 @@ class SessionData(object):
 		return self.__class__.__name__ + str(self.__dict__)
 
 	def read_events_metadata(self, ) -> Dict[str, str]:
-		with open(self.events_metadata, 'r') as infile:
+		with open(self.events_metadata, 'r', encoding=ENCODING) as infile:
 			rows = csv.reader(infile, dialect="excel-tab")
 			return dict(rows)
 
@@ -71,7 +72,7 @@ class SessionData(object):
 		round_count = self.read_metadata_round_count()
 
 		result = [float('inf')] * round_count
-		with open(self.events, 'r') as infile:
+		with open(self.events, 'r', encoding=ENCODING) as infile:
 			rows = csv.reader(infile, dialect="excel-tab")
 			col_idxs = dict((col_name, idx) for (idx, col_name) in enumerate(next(rows)))
 			for row in rows:
