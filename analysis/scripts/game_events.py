@@ -102,7 +102,7 @@ class GameRound(object):
 		return self.__class__.__name__ + str(self.__dict__)
 
 
-def create_game_rounds(events: Sequence[Event]) -> Iterable[GameRound]:
+def create_game_rounds(events: Iterable[Event]) -> Iterable[GameRound]:
 	round_events = defaultdict(list)
 	for event in events:
 		round_events[event.round_id].append(event)
