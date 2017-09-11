@@ -10,7 +10,6 @@ from decimal import Decimal, ROUND_HALF_UP
 from enum import Enum, unique
 from typing import Dict, Iterable, List, Sequence, Iterator, Tuple
 
-import game_events
 import utterances
 from re_token_group_counts import TokenGroupDict, read_token_group_dict
 from session_data import SessionData, walk_session_data
@@ -264,7 +263,7 @@ def print_whole_session_group_freqs(session_group_dists: Dict[str, Distribution]
 
 
 def read_metadata_round_count(session: SessionData) -> int:
-	events_metadata = game_events.read_events_metadata(session.events_metadata)
+	events_metadata = sess.read_events_metadata(session.events_metadata)
 	return int(events_metadata["ROUND_COUNT"])
 
 
