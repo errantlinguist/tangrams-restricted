@@ -18,6 +18,8 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.OpenOption;
 import java.nio.file.Path;
@@ -38,6 +40,8 @@ final class BatchTestResultWriter {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(BatchTestResultWriter.class);
 
+	private static final Charset OUTPUT_ENCODING = StandardCharsets.UTF_8;
+
 	private final OpenOption[] fileOpenOpts;
 
 	private final Path outdir;
@@ -53,14 +57,16 @@ final class BatchTestResultWriter {
 
 	void accept(final Tester.Result result) throws IOException {
 		final Path statsFilePath = outdir.resolve("stats.tsv");
-		try (final PrintWriter out = new PrintWriter(Files.newBufferedWriter(statsFilePath, fileOpenOpts))) {
+		try (final PrintWriter out = new PrintWriter(
+				Files.newBufferedWriter(statsFilePath, OUTPUT_ENCODING, fileOpenOpts))) {
 			final StatisticsWriter writer = new StatisticsWriter(out);
 			writer.accept(result);
 		}
 		LOGGER.info("Wrote cross-validation statistics to \"{}\".", statsFilePath);
 
 		final Path diagAnalysisPath = outdir.resolve("diag-analysis-firstiter.tsv");
-		try (final PrintWriter out = new PrintWriter(Files.newBufferedWriter(diagAnalysisPath, fileOpenOpts))) {
+		try (final PrintWriter out = new PrintWriter(
+				Files.newBufferedWriter(diagAnalysisPath, OUTPUT_ENCODING, fileOpenOpts))) {
 			final DialogueAnalysisWriter writer = new DialogueAnalysisWriter(out, 1);
 			writer.accept(result);
 		}

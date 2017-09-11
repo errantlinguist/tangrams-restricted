@@ -17,8 +17,12 @@
 package se.kth.speech.coin.tangrams.analysis;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -64,10 +68,12 @@ final class WaveSurferEventTimeWriter { // NO_UCD (use default)
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(WaveSurferEventTimeWriter.class);
 
+	private static final Charset OUTPUT_ENCODING = StandardCharsets.UTF_8;
+
 	private static final int SHAPE_COL_IDX = 1;
 
 	private static final String TURN_DELIMITING_EVENT_NAME = GameManagementEvent.NEXT_TURN_REQUEST.getEventName();
-	
+
 	public static void main(final String[] args) throws IOException {
 		final Path[] inpaths = Arrays.stream(args).map(String::trim).filter(path -> !path.isEmpty()).map(Paths::get)
 				.toArray(Path[]::new);
@@ -99,7 +105,8 @@ final class WaveSurferEventTimeWriter { // NO_UCD (use default)
 				final Path eventLogFilePath = sessionDir.resolve("events-" + subj + ".txt");
 				final File outfile = new File(sessionDir.toFile(), subj + "-ws.txt");
 				LOGGER.info("Writing to \"{}\".", outfile);
-				try (PrintWriter outputWriter = new PrintWriter(outfile)) {
+				try (PrintWriter outputWriter = new PrintWriter(
+						new OutputStreamWriter(new FileOutputStream(outfile), OUTPUT_ENCODING))) {
 					try (Stream<Event> events = LoggedEvents.readLoggedEvents(eventLogFilePath)) {
 
 						LocalTime startTime = null;

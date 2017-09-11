@@ -20,6 +20,8 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -77,6 +79,8 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 
 	private static final Options OPTIONS = createOptions();
 
+	private static final Charset OUTPUT_ENCODING = StandardCharsets.UTF_8;
+
 	private static final Collector<CharSequence, ?, String> ROW_CELL_JOINER = Collectors.joining("\t");
 
 	private static final String UTT_REL_LOG_FILE_SUFFIX = ".uttrels.tsv";
@@ -125,7 +129,7 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 			extractionLogOutPath = Paths.get(outFile.getPath() + suffix);
 		}
 		LOGGER.info("Will write phrase-extraction log to \"{}\".", extractionLogOutPath);
-		return Files.newBufferedWriter(extractionLogOutPath, StandardOpenOption.CREATE,
+		return Files.newBufferedWriter(extractionLogOutPath, OUTPUT_ENCODING, StandardOpenOption.CREATE,
 				StandardOpenOption.TRUNCATE_EXISTING);
 	}
 
@@ -146,7 +150,7 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 			uttRelLogOutPath = Paths.get(outFile.getPath() + suffix);
 		}
 		LOGGER.info("Will write dialogue utterance relation log to \"{}\".", uttRelLogOutPath);
-		return Files.newBufferedWriter(uttRelLogOutPath, StandardOpenOption.CREATE,
+		return Files.newBufferedWriter(uttRelLogOutPath, OUTPUT_ENCODING, StandardOpenOption.CREATE,
 				StandardOpenOption.TRUNCATE_EXISTING);
 	}
 

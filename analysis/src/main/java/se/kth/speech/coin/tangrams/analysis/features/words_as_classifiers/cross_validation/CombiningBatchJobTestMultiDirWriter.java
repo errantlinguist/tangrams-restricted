@@ -20,6 +20,8 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -66,8 +68,8 @@ final class CombiningBatchJobTestMultiDirWriter { // NO_UCD (use default)
 		APPEND_SUMMARY("a") {
 			@Override
 			public Option get() {
-				return Option.builder(optName).longOpt("append").desc(
-						"If this flag is present, the summary file is appended to rather than being truncated and written anew.")
+				return Option.builder(optName).longOpt("append")
+						.desc("If this flag is present, the summary file is appended to rather than being truncated and written anew.")
 						.build();
 			}
 		},
@@ -109,6 +111,8 @@ final class CombiningBatchJobTestMultiDirWriter { // NO_UCD (use default)
 	private static final Logger LOGGER = LoggerFactory.getLogger(CombiningBatchJobTestMultiDirWriter.class);
 
 	private static final String NULL_CELL_VALUE_REPR = "?";
+
+	private static final Charset OUTPUT_ENCODING = StandardCharsets.UTF_8;
 
 	private static final Collector<CharSequence, ?, String> ROW_CELL_JOINER = Collectors.joining("\t");
 
@@ -270,7 +274,7 @@ final class CombiningBatchJobTestMultiDirWriter { // NO_UCD (use default)
 	}
 
 	private BufferedWriter createAppendingSummaryWriter() throws IOException {
-		return Files.newBufferedWriter(summaryFile, StandardOpenOption.APPEND);
+		return Files.newBufferedWriter(summaryFile, OUTPUT_ENCODING, StandardOpenOption.APPEND);
 	}
 
 	private Path createBatchOutdir(final TestParameters testParams) {
@@ -317,10 +321,10 @@ final class CombiningBatchJobTestMultiDirWriter { // NO_UCD (use default)
 	private void writeInitialSummaryFile() throws IOException {
 		final Path parent = summaryFile.getParent();
 		if (parent != null) {
-			Files.createDirectories(parent);	
+			Files.createDirectories(parent);
 		}
-		try (final BufferedWriter summaryWriter = Files.newBufferedWriter(summaryFile, StandardOpenOption.CREATE,
-				StandardOpenOption.TRUNCATE_EXISTING)) {
+		try (final BufferedWriter summaryWriter = Files.newBufferedWriter(summaryFile, OUTPUT_ENCODING,
+				StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
 			summaryWriter.write(COL_HEADERS.stream().collect(ROW_CELL_JOINER));
 		}
 	}

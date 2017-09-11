@@ -22,6 +22,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -168,6 +170,8 @@ final class UtteranceSelectedEntityDescriptionWriter { // NO_UCD (use default)
 	private static final Logger LOGGER = LoggerFactory.getLogger(UtteranceSelectedEntityDescriptionWriter.class);
 
 	private static final String NULL_VALUE_REPR = "?";
+
+	private static final Charset OUTPUT_ENCODING = StandardCharsets.UTF_8;
 
 	private static final Path SETTINGS_DIR;
 
@@ -379,8 +383,8 @@ final class UtteranceSelectedEntityDescriptionWriter { // NO_UCD (use default)
 			final Path outfilePath = extantOutdir
 					.resolve(outfileNamePrefix + "_GAME-" + gameId + "_LOG-" + playerId + ".tsv");
 			LOGGER.info("Writing utterances from perspective of \"{}\" to \"{}\".", playerId, outfilePath);
-			try (BufferedWriter writer = Files.newBufferedWriter(outfilePath, StandardOpenOption.CREATE,
-					StandardOpenOption.TRUNCATE_EXISTING)) {
+			try (BufferedWriter writer = Files.newBufferedWriter(outfilePath, OUTPUT_ENCODING,
+					StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
 				gameWriter.accept(sessionGame, writer);
 			}
 		}
@@ -389,7 +393,7 @@ final class UtteranceSelectedEntityDescriptionWriter { // NO_UCD (use default)
 		final Path outfilePath = extantOutdir
 				.resolve(outfileNamePrefix + "_GAME-" + canonicalSessionGame.getGameId() + "_CANONICAL.tsv");
 		LOGGER.info("Writing utterances from canonical perspective to \"{}\".", outfilePath);
-		try (BufferedWriter writer = Files.newBufferedWriter(outfilePath, StandardOpenOption.CREATE,
+		try (BufferedWriter writer = Files.newBufferedWriter(outfilePath, OUTPUT_ENCODING, StandardOpenOption.CREATE,
 				StandardOpenOption.TRUNCATE_EXISTING)) {
 			gameWriter.accept(canonicalSessionGame, writer);
 		}
