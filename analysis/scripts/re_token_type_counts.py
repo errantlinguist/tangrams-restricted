@@ -77,6 +77,9 @@ class SessionTokenTypeDatum(object):
 	def round_count(self):
 		return len(self.round_data)
 
+	def round_counts_by_round_id(self):
+		return enumerate(self.round_data, start=1)
+
 
 class SessionRoundTokenCounter(object):
 	def __init__(self, seg_utt_factory: utterances.SegmentUtteranceFactory,
@@ -93,7 +96,7 @@ class SessionRoundTokenCounter(object):
 
 		return result
 
-	def __session_token_type_counts(self, session : SessionData) -> Iterator[FilteredTokenTypeDatum]:
+	def __session_token_type_counts(self, session: SessionData) -> Iterator[FilteredTokenTypeDatum]:
 		round_start_end_times = tuple(session.read_round_start_end_times())
 		round_count = len(round_start_end_times)
 		print("Read {} game round(s).".format(round_count), file=sys.stderr)
@@ -119,7 +122,7 @@ class TokenTypeDataPrinter(object):
 
 		ordered_session_token_type_data = sorted(token_type_data, key=lambda item: item[0])
 		for dyad_id, session_token_type_datum in ordered_session_token_type_data:
-			for round_id, round_token_type_datum in enumerate(session_token_type_datum.round_data, start=1):
+			for round_id, round_token_type_datum in session_token_type_datum.round_counts_by_round_id():
 				round_data = round_token_type_datum.round_data.relevant_tokens
 				round_token_count = sum(round_data.token_counts.values())
 				round_type_count = len(round_data.token_types)
