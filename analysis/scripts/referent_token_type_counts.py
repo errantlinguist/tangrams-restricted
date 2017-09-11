@@ -93,13 +93,13 @@ class TokenTypeDataPrinter(object):
 
 	def __call__(self, session_referent_token_counts: Iterable[Tuple[Any, Dict[int, ReferentTokenTypeDatum]]], outfile):
 		print(COL_DELIM.join(
-			("DYAD", "ENTITY", "ROUND", "ROUND_TOKENS", "ROUND_TYPES", "ROUND_TYPE_RATIO", "TOTAL_TOKENS",
+		("DYAD", "ENTITY", "SEQUENCE_ORDER", "ROUND", "ROUND_TOKENS", "ROUND_TYPES", "ROUND_TYPE_RATIO", "TOTAL_TOKENS",
 			 "TOTAL_TYPES", "TOTAL_TYPE_RATIO")), file=outfile)
 
 		ordered_session_referent_token_counts = sorted(session_referent_token_counts, key=lambda item: item[0])
 		for dyad_id, referent_token_counts in ordered_session_referent_token_counts:
 			for entity_id, entity_token_counts in sorted(referent_token_counts.items(), key=lambda item: item[0]):
-				for round_id, round_token_counts in entity_token_counts.round_counts_by_round_id():
+				for (sequence_order, (round_id, round_token_counts)) in enumerate(entity_token_counts.round_counts_by_round_id(), start=1):
 					round_data = round_token_counts.round_data.relevant_tokens
 					round_token_count = sum(round_data.token_counts.values())
 					round_type_count = len(round_data.token_types)
@@ -122,7 +122,7 @@ class TokenTypeDataPrinter(object):
 							round_ratio = float('nan')
 							cumulative_ratio = round_ratio
 
-					row = (dyad_id, str(entity_id), str(round_id), str(round_token_count), str(round_type_count),
+					row = (dyad_id, str(entity_id), str(sequence_order), str(round_id), str(round_token_count), str(round_type_count),
 						   str(round_ratio),
 						   str(cumulative_token_count), str(cumulative_type_count), str(cumulative_ratio))
 					print(COL_DELIM.join(row), file=outfile)
