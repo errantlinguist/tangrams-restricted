@@ -1,7 +1,7 @@
 import itertools
 import sys
 from collections import defaultdict
-from typing import Callable, Iterable, Iterator, List
+from typing import Any, Callable, Iterable, Iterator, List
 from xml.etree.ElementTree import Element, parse as parse_etree
 
 from annotations import ANNOTATION_NAMESPACES
@@ -150,7 +150,7 @@ def __capitalize_first_char(string: str) -> str:
 		return first_char.upper() + string[1:]
 
 
-def __speaker_id_repr(speaker_id) -> str:
+def __speaker_id_repr(speaker_id : Any) -> str:
 	return "**{}:**".format(speaker_id)
 
 
