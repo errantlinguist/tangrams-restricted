@@ -18,7 +18,10 @@ package se.kth.speech.coin.tangrams;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -41,6 +44,8 @@ import org.slf4j.LoggerFactory;
 public final class CLIParameters {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(CLIParameters.class);
+
+	private static final Charset OUTPUT_ENCODING = StandardCharsets.UTF_8;
 
 	public static Set<String> parseAppCtxDefPaths(final String[] appCtxLocs) throws IOException {
 		final Set<String> result = new HashSet<>();
@@ -81,11 +86,11 @@ public final class CLIParameters {
 		final PrintWriter result;
 		if (outfile == null) {
 			LOGGER.info("No output file path specified; Writing to standard output.");
-			result = new PrintWriter(System.out);
+			result = new PrintWriter(new OutputStreamWriter(System.out, OUTPUT_ENCODING));
 		} else {
 			LOGGER.info("Output file path is \"{}\".", outfile);
-			result = new PrintWriter(Files.newBufferedWriter(outfile.toPath(), StandardOpenOption.CREATE,
-					StandardOpenOption.TRUNCATE_EXISTING));
+			result = new PrintWriter(Files.newBufferedWriter(outfile.toPath(), OUTPUT_ENCODING,
+					StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING));
 		}
 		return result;
 	}

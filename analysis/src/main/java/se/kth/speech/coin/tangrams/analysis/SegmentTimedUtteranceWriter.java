@@ -18,6 +18,10 @@ package se.kth.speech.coin.tangrams.analysis;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.EnumSet;
@@ -124,10 +128,13 @@ final class SegmentTimedUtteranceWriter { // NO_UCD (use default)
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SegmentTimedUtteranceWriter.class);
 
+	private static final Charset OUTPUT_ENCODING = StandardCharsets.UTF_8;
+
 	/**
 	 * Just use the source ID as the speaker ID
 	 */
-	private static final SegmentUtteranceFactory SEG_UTT_FACTORY = new SegmentUtteranceFactory(seg -> seg.getSource().intern());
+	private static final SegmentUtteranceFactory SEG_UTT_FACTORY = new SegmentUtteranceFactory(
+			seg -> seg.getSource().intern());
 
 	public static void main(final String[] args) throws JAXBException, IOException {
 		final CommandLineParser parser = new DefaultParser();
@@ -162,23 +169,28 @@ final class SegmentTimedUtteranceWriter { // NO_UCD (use default)
 					LOGGER.info("Initial timestamp is \"{}\".", EventTimes.FORMATTER.format(initialTime));
 
 					final Unmarshaller unmarshaller = HatIO.fetchContext().createUnmarshaller();
-					for (final File infile : infiles) {
-						LOGGER.info("Reading annotations from \"{}\".", infile);
-						final Annotation uttAnnots = (Annotation) unmarshaller.unmarshal(infile);
-						final List<Segment> segments = uttAnnots.getSegments().getSegment();
-						final Stream<Utterance> utts = SEG_UTT_FACTORY.create(segments.stream()).flatMap(List::stream);
-						final Stream<Entry<String, String>> uttReprTimestamps = utts.map(utt -> {
-							final float startTime = utt.getStartTime();
-							final String uttRepr = utt.createTokenString();
-							LOGGER.debug("Start time for \"{}\" is{}.", uttRepr, startTime);
-							final LocalDateTime uttTime = TimestampArithmetic.createOffsetTimestamp(initialTime,
-									startTime);
-							final String uttTimestamp = uttTime.format(EventTimes.FORMATTER);
-							return Pair.of(uttRepr, uttTimestamp);
-						});
-						System.out.println("UTTERANCE\tTIME");
-						uttReprTimestamps.map(uttRepr -> String.format("%s\t%s", uttRepr.getKey(), uttRepr.getValue()))
-								.forEachOrdered(System.out::println);
+					try (PrintWriter outputWriter = new PrintWriter(
+							new OutputStreamWriter(System.out, OUTPUT_ENCODING))) {
+						for (final File infile : infiles) {
+							LOGGER.info("Reading annotations from \"{}\".", infile);
+							final Annotation uttAnnots = (Annotation) unmarshaller.unmarshal(infile);
+							final List<Segment> segments = uttAnnots.getSegments().getSegment();
+							final Stream<Utterance> utts = SEG_UTT_FACTORY.create(segments.stream())
+									.flatMap(List::stream);
+							final Stream<Entry<String, String>> uttReprTimestamps = utts.map(utt -> {
+								final float startTime = utt.getStartTime();
+								final String uttRepr = utt.createTokenString();
+								LOGGER.debug("Start time for \"{}\" is{}.", uttRepr, startTime);
+								final LocalDateTime uttTime = TimestampArithmetic.createOffsetTimestamp(initialTime,
+										startTime);
+								final String uttTimestamp = uttTime.format(EventTimes.FORMATTER);
+								return Pair.of(uttRepr, uttTimestamp);
+							});
+							outputWriter.println("UTTERANCE\tTIME");
+							uttReprTimestamps
+									.map(uttRepr -> String.format("%s\t%s", uttRepr.getKey(), uttRepr.getValue()))
+									.forEachOrdered(outputWriter::println);
+						}
 					}
 				}
 			}
