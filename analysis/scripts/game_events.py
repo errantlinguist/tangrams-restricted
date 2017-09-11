@@ -7,7 +7,6 @@ import session_data
 
 
 class EntityData(object):
-
 	def __init__(self, col_idxs, row):
 		self.__col_idxs = col_idxs
 		self.__row = row
@@ -49,6 +48,12 @@ class Event(object):
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
 
+	def entity(self, entity_id: int):
+		return self.entities[entity_id - 1]
+
+	def entities_by_id(self):
+		return enumerate(self.entities, start=1)
+
 	@property
 	def event_id(self):
 		return self.attrs[Event.Attribute.ID]
@@ -59,7 +64,7 @@ class Event(object):
 
 	@property
 	def referent_entities(self):
-		return (entity for entity in self.entities if entity.is_referent)
+		return ((entity_id, entity) for (entity_id, entity) in self.entities_by_id() if entity.is_referent)
 
 	@property
 	def round_id(self):
@@ -68,7 +73,7 @@ class Event(object):
 
 	@property
 	def selected_entities(self):
-		return (entity for entity in self.entities if entity.is_selected)
+		return ((entity_id, entity) for (entity_id, entity) in self.entities_by_id() if entity.is_selected)
 
 
 class GameRound(object):
@@ -83,6 +88,12 @@ class GameRound(object):
 
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
+
+	def event(self, event_id: int):
+		return self.events[event_id - 1]
+
+	def events_by_id(self):
+		return enumerate(self.events, start=1)
 
 
 def create_game_rounds(events: Iterable[Event]) -> Iterable[GameRound]:
