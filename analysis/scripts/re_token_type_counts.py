@@ -66,8 +66,8 @@ class SessionTokenTypeDatum(object):
 		return RoundTokenTypeDatum(round_datum, cumulative_data)
 
 	@staticmethod
-	def __round_id_to_idx(entity_id: int):
-		return entity_id - 1
+	def __round_id_to_idx(round_id: int):
+		return round_id - 1
 
 	def __init__(self, round_token_counts: Iterable[FilteredTokenTypeDatum]):
 		self.total_data = FilteredTokenTypeDatum()
