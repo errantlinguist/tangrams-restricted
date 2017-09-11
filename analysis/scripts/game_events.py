@@ -3,27 +3,15 @@ from collections import defaultdict
 from enum import Enum, unique
 from typing import Dict, Iterable, List, Sequence, Tuple, Union
 
-from session_data import SessionData
-
-
-@unique
-class _DataColumn(Enum):
-	ENTITY_ID = "ENTITY"
-	EVENT_ID = "EVENT"
-	EVENT_NAME = "NAME"
-	EVENT_TIME = "TIME"
-	REFERENT_ENTITY = "REFERENT"
-	ROUND_ID = "ROUND"
-	SELECTED_ENTITY = "SELECTED"
-	SHAPE = "SHAPE"
+import session_data
 
 
 class EntityData(object):
 	@unique
 	class Attribute(Enum):
-		REFERENT = _DataColumn.REFERENT_ENTITY.value
-		SELECTED = _DataColumn.SELECTED_ENTITY.value
-		SHAPE = _DataColumn.SHAPE.value
+		REFERENT = session_data.DataColumn.REFERENT_ENTITY.value
+		SELECTED = session_data.DataColumn.SELECTED_ENTITY.value
+		SHAPE = session_data.DataColumn.SHAPE.value
 
 	def __init__(self, col_idxs, row):
 		self.__col_idxs = col_idxs
@@ -48,9 +36,9 @@ class EntityData(object):
 class Event(object):
 	@unique
 	class Attribute(Enum):
-		ID = _DataColumn.EVENT_ID.value
-		NAME = _DataColumn.EVENT_NAME.value
-		TIME = _DataColumn.EVENT_TIME.value
+		ID = session_data.DataColumn.EVENT_ID.value
+		NAME = session_data.DataColumn.EVENT_NAME.value
+		TIME = session_data.DataColumn.EVENT_TIME.value
 
 	def __init__(self, entities: Sequence[EntityData], attrs: Dict[Attribute, str] = None):
 		if attrs is None:
@@ -87,7 +75,7 @@ class Event(object):
 class GameRound(object):
 	@unique
 	class Attribute(Enum):
-		ID = _DataColumn.ROUND_ID.value
+		ID = session_data.DataColumn.ROUND_ID.value
 
 	def __init__(self, start_time: float, end_time: Union[float, None], events: Sequence[Event]):
 		self.start_time = start_time
@@ -121,7 +109,7 @@ def create_game_rounds(events: Iterable[Event]) -> Iterable[GameRound]:
 	yield GameRound(current_round_start_time, None, current_events)
 
 
-def read_events(session: SessionData) -> Iterable[Event]:
+def read_events(session: session_data.SessionData) -> Iterable[Event]:
 	events_metadata = session.read_events_metadata()
 
 	event_count = int(events_metadata["EVENT_COUNT"])
@@ -138,8 +126,8 @@ def read_event_entity_desc_matrix(infile_path: str, event_count: int, entity_cou
 	with open(infile_path, 'r') as infile:
 		rows = csv.reader(infile, dialect="excel-tab")
 		col_idxs = dict((col_name, idx) for (idx, col_name) in enumerate(next(rows)))
-		entity_id_col_idx = col_idxs[_DataColumn.ENTITY_ID.value]
-		event_id_col_idx = col_idxs[_DataColumn.EVENT_ID.value]
+		entity_id_col_idx = col_idxs[session_data.DataColumn.ENTITY_ID.value]
+		event_id_col_idx = col_idxs[session_data.DataColumn.EVENT_ID.value]
 
 		for row in rows:
 			__transform_row_cell_values(row, col_idxs)
@@ -175,16 +163,16 @@ def __round_id_and_time(event: Event) -> Tuple[str, float]:
 	return round_id, round_event_time
 
 
-def __transform_row_cell_value(row, col_idxs, data_col: _DataColumn, transformer):
+def __transform_row_cell_value(row, col_idxs, data_col: session_data.DataColumn, transformer):
 	idx = col_idxs[data_col.value]
 	transformed_val = transformer(row[idx])
 	row[idx] = transformed_val
 
 
 def __transform_row_cell_values(row, col_idxs):
-	__transform_row_cell_value(row, col_idxs, _DataColumn.ENTITY_ID, int)
-	__transform_row_cell_value(row, col_idxs, _DataColumn.EVENT_ID, int)
-	__transform_row_cell_value(row, col_idxs, _DataColumn.EVENT_TIME, float)
-	__transform_row_cell_value(row, col_idxs, _DataColumn.REFERENT_ENTITY, __is_truth_cell_value)
-	__transform_row_cell_value(row, col_idxs, _DataColumn.ROUND_ID, int)
-	__transform_row_cell_value(row, col_idxs, _DataColumn.SELECTED_ENTITY, __is_truth_cell_value)
+	__transform_row_cell_value(row, col_idxs, session_data.DataColumn.ENTITY_ID, int)
+	__transform_row_cell_value(row, col_idxs, session_data.DataColumn.EVENT_ID, int)
+	__transform_row_cell_value(row, col_idxs, session_data.DataColumn.EVENT_TIME, float)
+	__transform_row_cell_value(row, col_idxs, session_data.DataColumn.REFERENT_ENTITY, __is_truth_cell_value)
+	__transform_row_cell_value(row, col_idxs, session_data.DataColumn.ROUND_ID, int)
+	__transform_row_cell_value(row, col_idxs, session_data.DataColumn.SELECTED_ENTITY, __is_truth_cell_value)

@@ -5,9 +5,15 @@ from typing import Dict, Iterator, List, Iterable, Tuple
 
 
 @unique
-class EventDataColumn(Enum):
+class DataColumn(Enum):
+	ENTITY_ID = "ENTITY"
+	EVENT_ID = "EVENT"
+	EVENT_NAME = "NAME"
 	EVENT_TIME = "TIME"
+	REFERENT_ENTITY = "REFERENT"
 	ROUND_ID = "ROUND"
+	SELECTED_ENTITY = "SELECTED"
+	SHAPE = "SHAPE"
 
 
 @unique
@@ -53,9 +59,9 @@ class SessionData(object):
 			rows = csv.reader(infile, dialect="excel-tab")
 			col_idxs = dict((col_name, idx) for (idx, col_name) in enumerate(next(rows)))
 			for row in rows:
-				event_time_col_idx = col_idxs[EventDataColumn.EVENT_TIME.value]
+				event_time_col_idx = col_idxs[DataColumn.EVENT_TIME.value]
 				event_time = float(row[event_time_col_idx])
-				round_id_col_idx = col_idxs[EventDataColumn.ROUND_ID.value]
+				round_id_col_idx = col_idxs[DataColumn.ROUND_ID.value]
 				round_idx = int(row[round_id_col_idx]) - 1
 				result[round_idx] = min(result[round_idx], event_time)
 
