@@ -25,7 +25,7 @@ class ReferentTokenCounter(object):
 		self.seg_utt_factory = seg_utt_factory
 		self.filtering_token_counter = filtering_token_counter
 
-	def __call__(self, named_sessions: Dict[T, SessionData]) -> Dict[T, Dict[int, "ReferentTokenTypeDatum"]]:
+	def __call__(self, named_sessions: Dict[T, SessionData]) -> Dict[T, Dict[str, "ReferentTokenTypeDatum"]]:
 		result = {}
 		for dyad_id, session in named_sessions:
 			print("Processing session \"{}\".".format(dyad_id), file=sys.stderr)
@@ -38,7 +38,7 @@ class ReferentTokenCounter(object):
 		return result
 
 	def __referent_token_counts(self, session: SessionData) -> Dict[
-		int, List[Tuple[int, re_token_type_counts.FilteredTokenTypeDatum]]]:
+		str, List[Tuple[int, re_token_type_counts.FilteredTokenTypeDatum]]]:
 		result = defaultdict(list)
 		events = game_events.read_events(session)
 		game_rounds = iter(game_events.create_game_rounds(events))
@@ -47,9 +47,9 @@ class ReferentTokenCounter(object):
 		game_round_utts = zip_game_round_utterances(game_rounds, utts)
 		for (round_id, game_round_utts) in enumerate(game_round_utts, start=1):
 			initial_event = next(iter(game_round_utts[0].events))
-			for entity_id, referent_entity in initial_event.referent_entities:
+			for _, referent_entity in initial_event.referent_entities:
 				round_referent_token_counts = self.filtering_token_counter(game_round_utts[1])
-				referent_token_counts = result[entity_id]
+				referent_token_counts = result[referent_entity.shape]
 				referent_token_counts.append((round_id, round_referent_token_counts))
 
 		return result
