@@ -5,7 +5,7 @@ import re
 import sys
 from collections import Counter
 from decimal import Decimal
-from typing import Callable, Dict, Iterable, Iterator, Sequence, Container, Tuple, TypeVar
+from typing import Any, Callable, Dict, Iterable, Iterator, Sequence, Container, Tuple, TypeVar
 
 import utterances
 from re_token_group_counts import read_token_group_dict
@@ -113,7 +113,7 @@ class TokenTypeDataPrinter(object):
 	def __init__(self, strict: bool):
 		self.strict = strict
 
-	def __call__(self, token_type_data: Iterable[Tuple[str, SessionTokenTypeDatum]], outfile):
+	def __call__(self, token_type_data: Iterable[Tuple[Any, SessionTokenTypeDatum]], outfile):
 		print(COL_DELIM.join(("DYAD", "ROUND", "ROUND_TOKENS", "ROUND_TYPES", "ROUND_TYPE_RATIO", "TOTAL_TOKENS",
 							  "TOTAL_TYPES", "TOTAL_TYPE_RATIO")), file=outfile)
 
