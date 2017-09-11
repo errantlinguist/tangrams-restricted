@@ -1,18 +1,16 @@
 #!/usr/bin/env python3
 
 import argparse
-import csv
 import itertools
 import statistics
 import sys
 from collections import Counter
 from decimal import Decimal, ROUND_HALF_UP
-from enum import Enum, unique
-from typing import Dict, Iterable, List, Sequence, Iterator, Tuple
+from typing import Dict, Iterable, Sequence, Iterator, Tuple
 
+import session_data
 import utterances
 from re_token_group_counts import TokenGroupDict, read_token_group_dict
-from session_data import SessionData, walk_session_data, read_events_metadata
 
 COL_DELIM = '\t'
 DYAD_ID_COL_NAME = "DYAD"
@@ -42,18 +40,12 @@ class Distribution(object):
 		return self.counts.keys()
 
 
-@unique
-class EventDataColumn(Enum):
-	EVENT_TIME = "TIME"
-	ROUND_ID = "ROUND"
-
-
 class OptimalSessionPartitioner(object):
 	def __init__(self, session_dist_collector):
 		self.session_dist_collector = session_dist_collector
 
-	def __call__(self, named_sessions: Sequence[Tuple[str, SessionData]]):
-		partition_size_limit = min(read_metadata_round_count(session) for dyad_id, session in named_sessions)
+	def __call__(self, named_sessions: Sequence[Tuple[str, session_data.SessionData]]):
+		partition_size_limit = min(session.read_metadata_round_count() for dyad_id, session in named_sessions)
 		print("The partition size limit is {}.".format(partition_size_limit), file=sys.stderr)
 
 		optimal_freq_diff = Decimal('-Infinity')
@@ -100,7 +92,7 @@ class PartitionedSessionGroupDistributionCollector(object):
 		self.token_groups = token_groups
 		self.seg_utt_factory = seg_utt_factory
 
-	def __call__(self, named_sessions: Iterable[Tuple[str, SessionData]], partition_round_count: int):
+	def __call__(self, named_sessions: Iterable[Tuple[str, session_data.SessionData]], partition_round_count: int):
 		session_group_dists = {}
 		total_first_half_group_counts = Counter()
 		total_next_half_group_counts = Counter()
@@ -115,10 +107,10 @@ class PartitionedSessionGroupDistributionCollector(object):
 
 		return session_group_dists, PartitionDistributions(total_first_half_group_counts, total_next_half_group_counts)
 
-	def __count_partitioned_session_token_groups(self, session: SessionData,
+	def __count_partitioned_session_token_groups(self, session: session_data.SessionData,
 												 partition_round_count: int) -> Tuple[
 		Dict[str, int], Dict[str, int]]:
-		round_start_end_times = tuple(game_round_start_end_times(iter(read_round_start_times(session))))
+		round_start_end_times = tuple(session.read_round_start_end_times())
 		round_count = len(round_start_end_times)
 		print("Read {} game round(s).".format(round_count), file=sys.stderr)
 		if round_count <= partition_round_count:
@@ -165,7 +157,7 @@ class WholeSessionGroupDistributionCollector(object):
 		self.token_groups = token_groups
 		self.seg_utt_factory = seg_utt_factory
 
-	def __call__(self, named_sessions: Iterable[Tuple[str, SessionData]]):
+	def __call__(self, named_sessions: Iterable[Tuple[str, session_data.SessionData]]):
 		session_group_dists = {}
 		total_group_counts = Counter()
 		for dyad_id, session in named_sessions:
@@ -176,32 +168,14 @@ class WholeSessionGroupDistributionCollector(object):
 
 		return session_group_dists, Distribution(total_group_counts)
 
-	def __count_session_token_groups(self, session: SessionData) -> Dict[str, int]:
-		round_start_end_times = tuple(game_round_start_end_times(iter(read_round_start_times(session))))
+	def __count_session_token_groups(self, session: session_data.SessionData) -> Dict[str, int]:
+		round_start_end_times = tuple(session.read_round_start_end_times())
 		round_count = len(round_start_end_times)
 		print("Read {} game round(s).".format(round_count), file=sys.stderr)
 
 		segments = utterances.read_segments(session.utts)
 		token_group_counter = RoundTokenGroupCounter(self.token_groups, tuple(self.seg_utt_factory(segments)))
 		return token_group_counter(*round_start_end_times)
-
-
-def game_round_start_end_times(round_start_times: Iterator[float]) -> Iterator[Tuple[float, float]]:
-	current_start_time = next(round_start_times)
-	for next_start_time in round_start_times:
-		yield current_start_time, next_start_time
-		current_start_time = next_start_time
-
-	end_reached = False
-	while not end_reached:
-		try:
-			next_start_time = next(round_start_times)
-		except StopIteration:
-			next_start_time = float('inf')
-			end_reached = True
-
-		yield current_start_time, next_start_time
-		current_start_time = next_start_time
 
 
 def group_freqs(group_counts: Dict[str, int]) -> Iterator[Tuple[str, Decimal]]:
@@ -262,28 +236,6 @@ def print_whole_session_group_freqs(session_group_dists: Dict[str, Distribution]
 	print(COL_DELIM.join(summary_row_cells))
 
 
-def read_metadata_round_count(session: SessionData) -> int:
-	events_metadata = read_events_metadata(session.events_metadata)
-	return int(events_metadata["ROUND_COUNT"])
-
-
-def read_round_start_times(session: SessionData) -> List[float]:
-	round_count = read_metadata_round_count(session)
-
-	result = [float('inf')] * round_count
-	with open(session.events, 'r') as infile:
-		rows = csv.reader(infile, dialect="excel-tab")
-		col_idxs = dict((col_name, idx) for (idx, col_name) in enumerate(next(rows)))
-		for row in rows:
-			event_time_col_idx = col_idxs[EventDataColumn.EVENT_TIME.value]
-			event_time = float(row[event_time_col_idx])
-			round_id_col_idx = col_idxs[EventDataColumn.ROUND_ID.value]
-			round_idx = int(row[round_id_col_idx]) - 1
-			result[round_idx] = min(result[round_idx], event_time)
-
-	return result
-
-
 def __append_group_freqs(group_dists: PartitionDistributions, row, referring_groups: Iterable[str]):
 	for referring_group in referring_groups:
 		row.append(_create_rounded_decimal_repr(group_dists.first.freq(referring_group)))
@@ -319,7 +271,7 @@ def __main(args):
 	token_groups = read_token_group_dict(token_group_file_path)
 	print("Read group info for {} token type(s).".format(len(token_groups)), file=sys.stderr)
 
-	named_sessions = walk_session_data(args.inpaths)
+	named_sessions = session_data.walk_session_data(args.inpaths)
 	outfile = sys.stdout
 	seg_utt_factory = utterances.SegmentUtteranceFactory()
 	partition_round_count = args.round_split

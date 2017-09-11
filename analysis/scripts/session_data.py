@@ -1,7 +1,13 @@
 import csv
 import os
 from enum import Enum, unique
-from typing import Dict, Iterator, Iterable, Tuple
+from typing import Dict, Iterator, List, Iterable, Tuple
+
+
+@unique
+class EventDataColumn(Enum):
+	EVENT_TIME = "TIME"
+	ROUND_ID = "ROUND"
 
 
 @unique
@@ -27,6 +33,34 @@ class SessionData(object):
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
 
+	def read_events_metadata(self, ) -> Dict[str, str]:
+		with open(self.events_metadata, 'r') as infile:
+			rows = csv.reader(infile, dialect="excel-tab")
+			return dict(rows)
+
+	def read_metadata_round_count(self) -> int:
+		events_metadata = self.read_events_metadata()
+		return int(events_metadata["ROUND_COUNT"])
+
+	def read_round_start_end_times(self) -> Iterator[Tuple[float, float]]:
+		return session_round_start_end_times(iter(self.read_round_start_times()))
+
+	def read_round_start_times(self) -> List[float]:
+		round_count = self.read_metadata_round_count()
+
+		result = [float('inf')] * round_count
+		with open(self.events, 'r') as infile:
+			rows = csv.reader(infile, dialect="excel-tab")
+			col_idxs = dict((col_name, idx) for (idx, col_name) in enumerate(next(rows)))
+			for row in rows:
+				event_time_col_idx = col_idxs[EventDataColumn.EVENT_TIME.value]
+				event_time = float(row[event_time_col_idx])
+				round_id_col_idx = col_idxs[EventDataColumn.ROUND_ID.value]
+				round_idx = int(row[round_id_col_idx]) - 1
+				result[round_idx] = min(result[round_idx], event_time)
+
+		return result
+
 
 def is_session_dir(filenames: Iterable[str]) -> bool:
 	result = False
@@ -41,12 +75,6 @@ def is_session_dir(filenames: Iterable[str]) -> bool:
 	return result
 
 
-def read_events_metadata(infile_path: str) -> Dict[str, str]:
-	with open(infile_path, 'r') as infile:
-		rows = csv.reader(infile, dialect="excel-tab")
-		return dict(rows)
-
-
 def walk_session_data(inpaths: Iterable[str]) -> Iterator[Tuple[str, SessionData]]:
 	session_dirs = walk_session_dirs(inpaths)
 	return ((session_dir, SessionData(session_dir)) for session_dir in session_dirs)
@@ -57,3 +85,21 @@ def walk_session_dirs(inpaths: Iterable[str]) -> Iterator[str]:
 		for dirpath, _, filenames in os.walk(inpath, followlinks=True):
 			if is_session_dir(filenames):
 				yield dirpath
+
+
+def session_round_start_end_times(round_start_times: Iterator[float]) -> Iterator[Tuple[float, float]]:
+	current_start_time = next(round_start_times)
+	for next_start_time in round_start_times:
+		yield current_start_time, next_start_time
+		current_start_time = next_start_time
+
+	end_reached = False
+	while not end_reached:
+		try:
+			next_start_time = next(round_start_times)
+		except StopIteration:
+			next_start_time = float('inf')
+			end_reached = True
+
+		yield current_start_time, next_start_time
+		current_start_time = next_start_time

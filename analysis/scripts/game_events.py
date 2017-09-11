@@ -3,7 +3,7 @@ from collections import defaultdict
 from enum import Enum, unique
 from typing import Dict, Iterable, List, Sequence, Tuple, Union
 
-from session_data import SessionData, read_events_metadata
+from session_data import SessionData
 
 
 @unique
@@ -122,7 +122,7 @@ def create_game_rounds(events: Iterable[Event]) -> Iterable[GameRound]:
 
 
 def read_events(session: SessionData) -> Iterable[Event]:
-	events_metadata = read_events_metadata(session.events_metadata)
+	events_metadata = session.read_events_metadata()
 
 	event_count = int(events_metadata["EVENT_COUNT"])
 	entity_count = int(events_metadata["ENTITY_COUNT"])

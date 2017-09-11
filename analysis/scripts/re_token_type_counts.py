@@ -9,7 +9,7 @@ from typing import Callable, Dict, Iterable, Iterator, Sequence, Container, Tupl
 
 import utterances
 from re_token_group_counts import read_token_group_dict
-from re_token_group_freqs import game_round_start_end_times, read_round_start_times, \
+from re_token_group_freqs import \
 	game_round_utterances
 from session_data import SessionData
 from session_data import walk_session_data
@@ -94,8 +94,8 @@ class SessionRoundTokenCounter(object):
 
 		return result
 
-	def __session_token_type_counts(self, session) -> Iterator[FilteredTokenTypeDatum]:
-		round_start_end_times = tuple(game_round_start_end_times(iter(read_round_start_times(session))))
+	def __session_token_type_counts(self, session : SessionData) -> Iterator[FilteredTokenTypeDatum]:
+		round_start_end_times = tuple(session.read_round_start_end_times())
 		round_count = len(round_start_end_times)
 		print("Read {} game round(s).".format(round_count), file=sys.stderr)
 
