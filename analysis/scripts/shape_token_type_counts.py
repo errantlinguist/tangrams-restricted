@@ -9,6 +9,7 @@ from typing import Any, Callable, Dict, Iterable, Iterator, List, Sequence, Tupl
 import game_events
 import re_token_type_counts
 import utterances
+from referent_token_type_counts import ReferentTokenTypeDatum, TokenTypeDataPrinter
 from session_data import SessionData, walk_session_data
 from token_groups import read_token_group_dict
 
@@ -53,83 +54,6 @@ class ReferentTokenCounter(object):
 				referent_token_counts.append((round_id, round_referent_token_counts))
 
 		return result
-
-
-class ReferentTokenTypeDatum(object):
-	@staticmethod
-	def __add_round(round_datum: re_token_type_counts.FilteredTokenTypeDatum,
-					total_token_counts: re_token_type_counts.FilteredTokenTypeDatum) -> re_token_type_counts.RoundTokenTypeDatum:
-		total_token_counts.update(round_datum)
-		cumulative_data = total_token_counts.copy()
-		return re_token_type_counts.RoundTokenTypeDatum(round_datum, cumulative_data)
-
-	def __init__(self, round_token_counts: Iterable[Tuple[Any, re_token_type_counts.FilteredTokenTypeDatum]]):
-		self.total_data = re_token_type_counts.FilteredTokenTypeDatum()
-		self.round_data = tuple(
-			(round_id, self.__add_round(token_counts, self.total_data)) for round_id, token_counts in
-			round_token_counts)
-
-	def __getitem__(self, round_id: Any):
-		return next(
-			game_round for (game_round_id, game_round) in self.round_counts_by_round_id() if game_round_id == round_id)
-
-	def __repr__(self, *args, **kwargs):
-		return self.__class__.__name__ + str(self.__dict__)
-
-	@property
-	def round_count(self):
-		return len(self.round_data)
-
-	def round_counts_by_round_id(self):
-		return self.round_data
-
-
-class TokenTypeDataPrinter(object):
-	@staticmethod
-	def __ratio(tokens, types):
-		return tokens / types
-
-	def __init__(self, strict: bool):
-		self.strict = strict
-
-	def __call__(self, session_referent_token_counts: Iterable[Tuple[Any, Dict[int, ReferentTokenTypeDatum]]], outfile):
-		print(COL_DELIM.join(
-			("DYAD", "ENTITY", "SEQUENCE_ORDER", "ROUND", "ROUND_TOKENS", "ROUND_TYPES", "ROUND_TYPE_RATIO",
-			 "TOTAL_TOKENS",
-			 "TOTAL_TYPES", "TOTAL_TYPE_RATIO")), file=outfile)
-
-		ordered_session_referent_token_counts = sorted(session_referent_token_counts, key=lambda item: item[0])
-		for dyad_id, referent_token_counts in ordered_session_referent_token_counts:
-			for entity_id, entity_token_counts in sorted(referent_token_counts.items(), key=lambda item: item[0]):
-				for (sequence_order, (round_id, round_token_counts)) in enumerate(
-						entity_token_counts.round_counts_by_round_id(), start=1):
-					round_data = round_token_counts.round_data.relevant_tokens
-					round_token_count = sum(round_data.token_counts.values())
-					round_type_count = len(round_data.token_types)
-					cumulative_data = round_token_counts.cumulative_data.relevant_tokens
-					cumulative_token_count = sum(cumulative_data.token_counts.values())
-					cumulative_type_count = len(cumulative_data.token_types)
-					try:
-						round_ratio = self.__ratio(round_type_count, round_token_count)
-						cumulative_ratio = self.__ratio(cumulative_type_count, cumulative_token_count)
-					except ZeroDivisionError as e:
-						if self.strict:
-							raise ValueError(
-								"Round {} of session \"{}\" did not have any relevant tokens!".format(round_id,
-																									  dyad_id)) from e
-						else:
-							print(
-								"WARNING: Round {} of session \"{}\" did not have any relevant tokens!".format(round_id,
-																											   dyad_id),
-								file=sys.stderr)
-							round_ratio = float('nan')
-							cumulative_ratio = round_ratio
-
-					row = (dyad_id, str(entity_id), str(sequence_order), str(round_id), str(round_token_count),
-						   str(round_type_count),
-						   str(round_ratio),
-						   str(cumulative_token_count), str(cumulative_type_count), str(cumulative_ratio))
-					print(COL_DELIM.join(row), file=outfile)
 
 
 def find_last_round_id(referent_token_counts: Dict[T, ReferentTokenTypeDatum]) -> Tuple[T, int]:
