@@ -141,7 +141,8 @@ class TokenTypeDataPrinter(object):
 					cumulative_ratio = self.__ratio(cumulative_type_count, cumulative_token_count)
 				except ZeroDivisionError as e:
 					if self.strict:
-						raise e
+						raise ValueError("Round {} of session \"{}\" did not have any relevant tokens!".format(round_id,
+																											   dyad_id)) from e
 					else:
 						print("WARNING: Round {} of session \"{}\" did not have any relevant tokens!".format(round_id,
 																											 dyad_id),
