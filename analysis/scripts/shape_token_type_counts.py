@@ -19,7 +19,7 @@ NULL_VALUE_REPR = '?'
 T = TypeVar('T')
 
 
-class ReferentTokenCounter(object):
+class ShapeTokenCounter(object):
 	def __init__(self, seg_utt_factory: utterances.SegmentUtteranceFactory,
 				 filtering_token_counter: Callable[
 					 [Iterable[utterances.Utterance]], re_token_type_counts.FilteredTokenTypeDatum]):
@@ -128,8 +128,8 @@ def __main(args):
 
 	named_sessions = walk_session_data(args.inpaths)
 	outfile = sys.stdout
-	referent_token_counter = ReferentTokenCounter(utterances.SegmentUtteranceFactory(),
-												  re_token_type_counts.FilteringTokenTypeCounter(
+	referent_token_counter = ShapeTokenCounter(utterances.SegmentUtteranceFactory(),
+											   re_token_type_counts.FilteringTokenTypeCounter(
 													  lambda token: token in token_groups.keys()))
 	referent_token_counts = referent_token_counter(named_sessions)
 	printer = TokenTypeDataPrinter(args.strict)
