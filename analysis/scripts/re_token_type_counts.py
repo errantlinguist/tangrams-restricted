@@ -179,6 +179,10 @@ def find_last_matching_elem_idx(elems: Sequence[T], predicate: Callable[[T], boo
 	return next((max_valid_idx - i for i, elem in enumerate(reversed_elems) if predicate(elem)), -1)
 
 
+def is_relevant_round(datum: FilteredTokenTypeDatum):
+	return len(datum.relevant_tokens.token_types) > 0
+
+
 def session_token_type_data(named_sessions, relevant_tokens: Container[str]) -> Iterator[
 	Tuple[str, SessionTokenTypeDatum]]:
 	seg_utt_factory = utterances.SegmentUtteranceFactory()
@@ -192,7 +196,7 @@ def session_token_type_data(named_sessions, relevant_tokens: Container[str]) -> 
 
 
 def trim_empty_tail_rounds(dyad_id: Any, round_token_counts: Sequence[FilteredTokenTypeDatum]):
-	last_relevant_elem_idx = find_last_matching_elem_idx(round_token_counts, __is_relevant_round)
+	last_relevant_elem_idx = find_last_matching_elem_idx(round_token_counts, is_relevant_round)
 	max_valid_idx = len(round_token_counts) - 1
 	if -1 < last_relevant_elem_idx < max_valid_idx:
 		old_len = len(round_token_counts)
@@ -219,10 +223,6 @@ def __create_argparser():
 
 def __create_rounded_decimal_repr(value: Decimal):
 	return str(value)
-
-
-def __is_relevant_round(datum: FilteredTokenTypeDatum):
-	return len(datum.relevant_tokens.token_types) > 0
 
 
 def __main(args):
