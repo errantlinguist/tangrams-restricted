@@ -119,7 +119,8 @@ class PartitionedSessionGroupDistributionCollector(object):
 					partition_round_count, round_count))
 		else:
 			segments = utterances.read_segments(session.utts)
-			token_group_counter = RoundTokenGroupCounter(self.token_groups, tuple(self.seg_utt_factory(segments)))
+			token_group_counter = RoundTokenGroupCounter(self.token_groups,
+														 utterances.UtteranceTimes(self.seg_utt_factory(segments)))
 
 			first_round_start_end_times = round_start_end_times[:partition_round_count]
 			print("First half of session has {} round(s).".format(len(first_round_start_end_times)),
@@ -136,14 +137,14 @@ class PartitionedSessionGroupDistributionCollector(object):
 
 class RoundTokenGroupCounter(object):
 	def __init__(self, token_groups: TokenGroupDict,
-				 utts: Sequence[utterances.Utterance]):
+				 utt_times: utterances.UtteranceTimes):
 		self.token_groups = token_groups
-		self.utts = utts
+		self.utt_times = utt_times
 
 	def __call__(self, *start_end_times: Tuple[float, float]) -> Dict[str, int]:
 		result = Counter()
 		for start_end_time in start_end_times:
-			round_utts = game_round_utterances(start_end_time[0], start_end_time[1], self.utts)
+			round_utts = self.utt_times.get(start_end_time[0], start_end_time[1])
 			for utt in round_utts:
 				group_sets = (self.token_groups.get(token) for token in utt.content)
 				for group_set in group_sets:
@@ -174,7 +175,8 @@ class WholeSessionGroupDistributionCollector(object):
 		print("Read {} game round(s).".format(round_count), file=sys.stderr)
 
 		segments = utterances.read_segments(session.utts)
-		token_group_counter = RoundTokenGroupCounter(self.token_groups, tuple(self.seg_utt_factory(segments)))
+		token_group_counter = RoundTokenGroupCounter(self.token_groups,
+													 utterances.UtteranceTimes(self.seg_utt_factory(segments)))
 		return token_group_counter(*round_start_end_times)
 
 
@@ -182,10 +184,6 @@ def group_freqs(group_counts: Dict[str, int]) -> Iterator[Tuple[str, Decimal]]:
 	decimal_counts = tuple((group, Decimal(count)) for group, count in group_counts.items())
 	total = sum(count for (_, count) in decimal_counts)
 	return ((group, count / total) for group, count in decimal_counts)
-
-
-def game_round_utterances(start_time: float, end_time: float, utts: Iterable[utterances.Utterance]):
-	return (utt for utt in utts if (utt.start_time >= start_time) and (utt.start_time < end_time))
 
 
 def print_partitioned_session_group_dists(session_group_dists: Dict[str, PartitionDistributions],

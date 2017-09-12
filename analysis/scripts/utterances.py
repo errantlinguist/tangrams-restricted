@@ -20,6 +20,10 @@ __TOKEN_TRUNCATION_MARKER = '-'
 
 
 class Utterance(object):
+	@staticmethod
+	def between(utts: Iterable["Utterance"], start_time: float, end_time: float):
+		return (utt for utt in utts if (utt.start_time >= start_time) and (utt.start_time < end_time))
+
 	def __init__(self, segment_id, speaker_id, start_time, end_time, content):
 		self.segment_id = segment_id
 		self.speaker_id = speaker_id
