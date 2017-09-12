@@ -101,7 +101,7 @@ def zip_game_round_utterances(game_rounds: Iterator[game_events.GameRound], utts
 
 
 def __create_argparser():
-	result = argparse.ArgumentParser(description="Count token/type counts per round in each game session.")
+	result = argparse.ArgumentParser(description="Count shape token/type counts per round in each game session.")
 	result.add_argument("token_group_file", metavar="TOKEN_GROUP_FILEPATH",
 						help="The path to the token group mapping file to use.")
 	result.add_argument("inpaths", metavar="INPATH", nargs='+',
