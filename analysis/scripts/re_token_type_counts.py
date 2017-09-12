@@ -8,11 +8,9 @@ from decimal import Decimal
 from typing import Any, Callable, Dict, Iterable, Iterator, Sequence, Container, Tuple, TypeVar
 
 import utterances
-from token_groups import read_token_group_dict
-from re_token_group_freqs import \
-	game_round_utterances
 from session_data import SessionData
 from session_data import walk_session_data
+from token_groups import read_token_group_dict
 
 COL_DELIM = '\t'
 
@@ -109,9 +107,11 @@ class SessionRoundTokenCounter(object):
 		print("Read {} game round(s).".format(round_count), file=sys.stderr)
 
 		segments = utterances.read_segments(session.utts)
-		utts = tuple(self.seg_utt_factory(segments))
-		round_utts = (game_round_utterances(start_time, end_time, utts) for start_time, end_time in
+		utt_times = utterances.UtteranceTimes(tuple(self.seg_utt_factory(segments)))
+		round_utts = (utt_times.get(start_time, end_time) for start_time, end_time in
 					  round_start_end_times)
+		# round_utts = (game_round_utterances(start_time, end_time, utts) for start_time, end_time in
+		#			  round_start_end_times)
 		return (self.filtering_token_counter(utts) for utts in round_utts)
 
 
