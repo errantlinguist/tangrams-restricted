@@ -1,7 +1,7 @@
 import itertools
 import sys
 from collections import defaultdict
-from typing import Any, Callable, Iterable, Iterator, List, Union
+from typing import Any, Callable, Dict, Iterable, Iterator, List, Union
 from xml.etree.ElementTree import Element, parse as parse_etree
 
 from annotations import ANNOTATION_NAMESPACES
@@ -131,6 +131,11 @@ class UtteranceTimes(object):
 		next_start_time = self.ascending_start_times.find_ge(start_time)
 		return self.utts_by_start_time[next_start_time]
 
+def create_speaker_dict(utts: Iterable[Utterance]) -> Dict[str, List[Utterance]]:
+	result = defaultdict(list)
+	for utt in utts:
+		result[utt.speaker_id].append(utt)
+	return result
 
 def dialogue_utt_str_repr(utts: Iterable[Utterance]) -> str:
 	repr_list = []
