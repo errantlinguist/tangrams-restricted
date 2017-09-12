@@ -48,7 +48,7 @@ class Utterance(object):
 		return self.__class__.__name__ + str(self.__dict__)
 
 
-def is_semantically_relevant_token(token: str):
+def is_semantically_relevant_token(token: str) -> bool:
 	return token not in METALANGUAGE_TOKENS and token not in FILLER_TOKENS and not is_disfluency(token)
 
 
