@@ -164,7 +164,7 @@ class TokenTypeDatum(object):
 		return self.token_counts.keys()
 
 	def total_token_count(self) -> int:
-		return sum(self.round_data.token_counts.values())
+		return sum(self.token_counts.values())
 
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
