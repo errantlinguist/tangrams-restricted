@@ -68,7 +68,7 @@ class ReferentTokenTypeDatum(object):
 
 	def __init__(self, round_token_counts: Iterable[Tuple[Any, re_token_type_counts.FilteredTokenTypeDatum]]):
 		"""
-		:param round_token_counts: An iterable object returning :class:`re_token_type_counts.FilteredTokenTypeDatum` instances representing token counts for each round in the game, appearing in their respective order.
+		:param round_token_counts: An iterable object returning pairs of round IDs and their corresonding :class:`re_token_type_counts.FilteredTokenTypeDatum` instances representing token counts for each round in the game.
 		:type round_token_counts: Iterable[Tuple[Any, re_token_type_counts.FilteredTokenTypeDatum]]
 		"""
 		self.total_data = re_token_type_counts.FilteredTokenTypeDatum()
