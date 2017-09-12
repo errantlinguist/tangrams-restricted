@@ -47,9 +47,22 @@ class FilteringTokenTypeCounter(object):
 
 
 class RoundTokenTypeDatum(object):
+	"""
+	This class represents token counts for a single round in a game.
+	"""
+
 	def __init__(self, round_data: FilteredTokenTypeDatum, cumulative_data: FilteredTokenTypeDatum):
+		"""
+
+		:param round_data: Token counts for the individual round this object represents.
+		:type round_data: FilteredTokenTypeDatum
+		:param cumulative_data: Cumulative counts for the entire game up to and including the individual round this object represents.
+		:type: cumulative_data: FilteredTokenTypeDatum
+		"""
 		self.round_data = round_data
+		"""Token counts for the individual round this object represents."""
 		self.cumulative_data = cumulative_data
+		"""Cumulative counts for the entire game up to and including the individual round this object represents."""
 
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
