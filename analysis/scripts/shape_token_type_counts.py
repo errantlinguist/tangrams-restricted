@@ -26,12 +26,12 @@ class ShapeTokenCounter(object):
 		self.seg_utt_factory = seg_utt_factory
 		self.filtering_token_counter = filtering_token_counter
 
-	def __call__(self, named_sessions: Dict[T, SessionData]) -> Dict[T, Dict[str, "referent_token_type_counts.ReferentTokenTypeDatum"]]:
+	def __call__(self, named_sessions: Dict[T, SessionData]) -> Dict[T, Dict[str, "referent_token_type_counts.CoreferenceChainTokenTypeDatum"]]:
 		result = {}
 		for dyad_id, session in named_sessions:
 			print("Processing session \"{}\".".format(dyad_id), file=sys.stderr)
 			referent_token_counts = dict(
-				(entity_id, referent_token_type_counts.ReferentTokenTypeDatum(referent_counts)) for (entity_id, referent_counts) in
+				(entity_id, referent_token_type_counts.CoreferenceChainTokenTypeDatum(referent_counts)) for (entity_id, referent_counts) in
 				self.__shape_token_counts(session).items())
 			trim_empty_tail_rounds(dyad_id, referent_token_counts)
 			result[dyad_id] = referent_token_counts
@@ -56,13 +56,13 @@ class ShapeTokenCounter(object):
 		return result
 
 
-def find_last_round_id(referent_token_counts: Dict[T, referent_token_type_counts.ReferentTokenTypeDatum]) -> Tuple[T, int]:
+def find_last_round_id(referent_token_counts: Dict[T, referent_token_type_counts.CoreferenceChainTokenTypeDatum]) -> Tuple[T, int]:
 	return max(
 		((entity_id, round_id) for (entity_id, counts) in referent_token_counts.items() for (round_id, round_counts) in
 		 counts.round_counts_by_round_id()), key=lambda result: result[1])
 
 
-def trim_empty_tail_rounds(dyad_id: Any, referent_token_counts: Dict[int, referent_token_type_counts.ReferentTokenTypeDatum]):
+def trim_empty_tail_rounds(dyad_id: Any, referent_token_counts: Dict[int, referent_token_type_counts.CoreferenceChainTokenTypeDatum]):
 	is_last_round_relevant = False
 	old_round_count = find_last_round_id(referent_token_counts)[1]
 	while not is_last_round_relevant:
@@ -74,7 +74,7 @@ def trim_empty_tail_rounds(dyad_id: Any, referent_token_counts: Dict[int, refere
 		else:
 			trimmed_round_counts = tuple((round_id, round_counts.round_data) for (round_id, round_counts) in
 										 last_referent_counts.round_counts_by_round_id() if round_id != last_round_id)
-			trimmed_referent_token_counts = referent_token_type_counts.ReferentTokenTypeDatum(trimmed_round_counts)
+			trimmed_referent_token_counts = referent_token_type_counts.CoreferenceChainTokenTypeDatum(trimmed_round_counts)
 			referent_token_counts[last_referent_id] = trimmed_referent_token_counts
 
 	new_round_count = find_last_round_id(referent_token_counts)[1]
