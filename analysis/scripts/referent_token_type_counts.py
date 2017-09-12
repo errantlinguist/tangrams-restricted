@@ -13,7 +13,6 @@ from session_data import SessionData, walk_session_data
 from token_groups import read_token_group_dict
 
 COL_DELIM = '\t'
-NULL_VALUE_REPR = '?'
 
 T = TypeVar('T')
 
