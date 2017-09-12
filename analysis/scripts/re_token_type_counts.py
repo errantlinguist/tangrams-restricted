@@ -17,47 +17,47 @@ COL_DELIM = '\t'
 T = TypeVar('T')
 
 
-class FilteredTokenTypeDatum(object):
-	def __init__(self, all_tokens: "TokenTypeDatum" = None, relevant_tokens: "TokenTypeDatum" = None):
-		self.all_tokens = TokenTypeDatum() if all_tokens is None else all_tokens
-		self.relevant_tokens = TokenTypeDatum() if relevant_tokens is None else relevant_tokens
+class FilteredTokenCountDatum(object):
+	def __init__(self, all_tokens: "TokenCountDatum" = None, relevant_tokens: "TokenCountDatum" = None):
+		self.all_tokens = TokenCountDatum() if all_tokens is None else all_tokens
+		self.relevant_tokens = TokenCountDatum() if relevant_tokens is None else relevant_tokens
 
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
 
 	def copy(self):
-		return FilteredTokenTypeDatum(self.all_tokens.copy(), self.relevant_tokens.copy())
+		return FilteredTokenCountDatum(self.all_tokens.copy(), self.relevant_tokens.copy())
 
-	def update(self, other: "FilteredTokenTypeDatum"):
+	def update(self, other: "FilteredTokenCountDatum"):
 		self.all_tokens.update(other.all_tokens)
 		self.relevant_tokens.update(other.relevant_tokens)
 
 
-class FilteringTokenTypeCounter(object):
+class FilteringTokenCounter(object):
 	def __init__(self, token_filter: Callable[[str], bool] = lambda _: True):
 		self.token_filter = token_filter
 
-	def __call__(self, utts: Iterable[utterances.Utterance]) -> FilteredTokenTypeDatum:
+	def __call__(self, utts: Iterable[utterances.Utterance]) -> FilteredTokenCountDatum:
 		all_token_counts = Counter()
 		relevant_token_counts = Counter()
 		for utt in utts:
 			all_token_counts.update(utt.content)
 			relevant_token_counts.update(token for token in utt.content if self.token_filter(token))
-		return FilteredTokenTypeDatum(TokenTypeDatum(all_token_counts), TokenTypeDatum(relevant_token_counts))
+		return FilteredTokenCountDatum(TokenCountDatum(all_token_counts), TokenCountDatum(relevant_token_counts))
 
 
-class RoundTokenTypeDatum(object):
+class RoundTokenCountDatum(object):
 	"""
 	This class represents token counts for a single round in a game.
 	"""
 
-	def __init__(self, round_data: FilteredTokenTypeDatum, cumulative_data: FilteredTokenTypeDatum):
+	def __init__(self, round_data: FilteredTokenCountDatum, cumulative_data: FilteredTokenCountDatum):
 		"""
 
 		:param round_data: Token counts for the individual round this object represents.
-		:type round_data: FilteredTokenTypeDatum
+		:type round_data: FilteredTokenCountDatum
 		:param cumulative_data: Cumulative counts for the entire game up to and including the individual round this object represents.
-		:type cumulative_data: FilteredTokenTypeDatum
+		:type cumulative_data: FilteredTokenCountDatum
 		"""
 		self.round_data = round_data
 		"""Token counts for the individual round this object represents."""
@@ -68,20 +68,20 @@ class RoundTokenTypeDatum(object):
 		return self.__class__.__name__ + str(self.__dict__)
 
 
-class SessionTokenTypeDatum(object):
+class SessionTokenCountDatum(object):
 	@staticmethod
-	def __add_round(round_datum: FilteredTokenTypeDatum,
-					total_token_counts: FilteredTokenTypeDatum) -> RoundTokenTypeDatum:
+	def __add_round(round_datum: FilteredTokenCountDatum,
+					total_token_counts: FilteredTokenCountDatum) -> RoundTokenCountDatum:
 		total_token_counts.update(round_datum)
 		cumulative_data = total_token_counts.copy()
-		return RoundTokenTypeDatum(round_datum, cumulative_data)
+		return RoundTokenCountDatum(round_datum, cumulative_data)
 
 	@staticmethod
 	def __round_id_to_idx(round_id: int):
 		return round_id - 1
 
-	def __init__(self, round_token_counts: Iterable[FilteredTokenTypeDatum]):
-		self.total_data = FilteredTokenTypeDatum()
+	def __init__(self, round_token_counts: Iterable[FilteredTokenCountDatum]):
+		self.total_data = FilteredTokenCountDatum()
 		self.round_data = tuple(
 			self.__add_round(token_counts, self.total_data) for token_counts in round_token_counts)
 
@@ -101,11 +101,11 @@ class SessionTokenTypeDatum(object):
 
 class SessionRoundTokenCounter(object):
 	def __init__(self, seg_utt_factory: utterances.SegmentUtteranceFactory,
-				 filtering_token_counter: Callable[[Iterable[utterances.Utterance]], FilteredTokenTypeDatum]):
+				 filtering_token_counter: Callable[[Iterable[utterances.Utterance]], FilteredTokenCountDatum]):
 		self.seg_utt_factory = seg_utt_factory
 		self.filtering_token_counter = filtering_token_counter
 
-	def __call__(self, named_sessions: Dict[T, SessionData]) -> Dict[T, Tuple[FilteredTokenTypeDatum, ...]]:
+	def __call__(self, named_sessions: Dict[T, SessionData]) -> Dict[T, Tuple[FilteredTokenCountDatum, ...]]:
 		result = {}
 		for dyad_id, session in named_sessions:
 			print("Processing session \"{}\".".format(dyad_id), file=sys.stderr)
@@ -114,7 +114,7 @@ class SessionRoundTokenCounter(object):
 
 		return result
 
-	def __session_token_type_counts(self, session: SessionData) -> Iterator[FilteredTokenTypeDatum]:
+	def __session_token_type_counts(self, session: SessionData) -> Iterator[FilteredTokenCountDatum]:
 		round_start_end_times = tuple(session.read_round_start_end_times())
 		round_count = len(round_start_end_times)
 		print("Read {} game round(s).".format(round_count), file=sys.stderr)
@@ -136,7 +136,7 @@ class TokenTypeDataPrinter(object):
 	def __init__(self, strict: bool):
 		self.strict = strict
 
-	def __call__(self, token_type_data: Iterable[Tuple[Any, SessionTokenTypeDatum]], outfile):
+	def __call__(self, token_type_data: Iterable[Tuple[Any, SessionTokenCountDatum]], outfile):
 		print(COL_DELIM.join(("DYAD", "ROUND", "ROUND_TOKENS", "ROUND_TYPES", "ROUND_TYPE_RATIO", "TOTAL_TOKENS",
 							  "TOTAL_TYPES", "TOTAL_TYPE_RATIO")), file=outfile)
 
@@ -168,7 +168,7 @@ class TokenTypeDataPrinter(object):
 				print(COL_DELIM.join(row), file=outfile)
 
 
-class TokenTypeDatum(object):
+class TokenCountDatum(object):
 	def __init__(self, token_counts: Dict[str, int] = None):
 		self.token_counts = Counter() if token_counts is None else token_counts
 
@@ -182,10 +182,10 @@ class TokenTypeDatum(object):
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
 
-	def copy(self) -> "TokenTypeDatum":
-		return TokenTypeDatum(Counter(self.token_counts))
+	def copy(self) -> "TokenCountDatum":
+		return TokenCountDatum(Counter(self.token_counts))
 
-	def update(self, other: "TokenTypeDatum"):
+	def update(self, other: "TokenCountDatum"):
 		self.token_counts.update(other.token_counts)
 
 
@@ -195,23 +195,23 @@ def find_last_matching_elem_idx(elems: Sequence[T], predicate: Callable[[T], boo
 	return next((max_valid_idx - i for i, elem in enumerate(reversed_elems) if predicate(elem)), -1)
 
 
-def is_relevant_round(datum: FilteredTokenTypeDatum):
+def is_relevant_round(datum: FilteredTokenCountDatum):
 	return len(datum.relevant_tokens.token_types) > 0
 
 
 def session_token_type_data(named_sessions, relevant_tokens: Container[str]) -> Iterator[
-	Tuple[str, SessionTokenTypeDatum]]:
+	Tuple[str, SessionTokenCountDatum]]:
 	seg_utt_factory = utterances.SegmentUtteranceFactory()
 	session_token_counter = SessionRoundTokenCounter(seg_utt_factory,
-													 FilteringTokenTypeCounter(lambda token: token in relevant_tokens))
+													 FilteringTokenCounter(lambda token: token in relevant_tokens))
 	session_round_token_counts = session_token_counter(named_sessions)
 	for dyad_id, round_token_counts in session_round_token_counts.items():
 		trimmed_round_token_counts = trim_empty_tail_rounds(dyad_id, round_token_counts)
-		session_token_type_datum = SessionTokenTypeDatum(trimmed_round_token_counts)
+		session_token_type_datum = SessionTokenCountDatum(trimmed_round_token_counts)
 		yield dyad_id, session_token_type_datum
 
 
-def trim_empty_tail_rounds(dyad_id: Any, round_token_counts: Sequence[FilteredTokenTypeDatum]):
+def trim_empty_tail_rounds(dyad_id: Any, round_token_counts: Sequence[FilteredTokenCountDatum]):
 	last_relevant_elem_idx = find_last_matching_elem_idx(round_token_counts, is_relevant_round)
 	max_valid_idx = len(round_token_counts) - 1
 	if -1 < last_relevant_elem_idx < max_valid_idx:

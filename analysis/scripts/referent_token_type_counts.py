@@ -20,16 +20,16 @@ T = TypeVar('T')
 class CoreferenceChainTokenCounter(object):
 	def __init__(self, seg_utt_factory: utterances.SegmentUtteranceFactory,
 				 filtering_token_counter: Callable[
-					 [Iterable[utterances.Utterance]], re_token_type_counts.FilteredTokenTypeDatum]):
+					 [Iterable[utterances.Utterance]], re_token_type_counts.FilteredTokenCountDatum]):
 		self.seg_utt_factory = seg_utt_factory
 		self.filtering_token_counter = filtering_token_counter
 
-	def __call__(self, named_sessions: Dict[T, SessionData]) -> Dict[T, Dict[int, "CoreferenceChainTokenTypeDatum"]]:
+	def __call__(self, named_sessions: Dict[T, SessionData]) -> Dict[T, Dict[int, "CoreferenceChainTokenCountDatum"]]:
 		result = {}
 		for dyad_id, session in named_sessions:
 			print("Processing session \"{}\".".format(dyad_id), file=sys.stderr)
 			referent_token_counts = dict(
-				(entity_id, CoreferenceChainTokenTypeDatum(referent_counts)) for (entity_id, referent_counts) in
+				(entity_id, CoreferenceChainTokenCountDatum(referent_counts)) for (entity_id, referent_counts) in
 				self.__referent_token_counts(session).items())
 			trim_empty_tail_rounds(dyad_id, referent_token_counts)
 			result[dyad_id] = referent_token_counts
@@ -37,7 +37,7 @@ class CoreferenceChainTokenCounter(object):
 		return result
 
 	def __referent_token_counts(self, session: SessionData) -> Dict[
-		int, List[Tuple[int, re_token_type_counts.FilteredTokenTypeDatum]]]:
+		int, List[Tuple[int, re_token_type_counts.FilteredTokenCountDatum]]]:
 		"""
 
 		:param session: The SessionData instance representing the game session to process.
@@ -60,24 +60,24 @@ class CoreferenceChainTokenCounter(object):
 		return result
 
 
-class CoreferenceChainTokenTypeDatum(object):
+class CoreferenceChainTokenCountDatum(object):
 	"""
 	This class represents token counts for a single referent entity throughout an entire game.
 	"""
 
 	@staticmethod
-	def __add_round(round_datum: re_token_type_counts.FilteredTokenTypeDatum,
-					total_token_counts: re_token_type_counts.FilteredTokenTypeDatum) -> re_token_type_counts.RoundTokenTypeDatum:
+	def __add_round(round_datum: re_token_type_counts.FilteredTokenCountDatum,
+					total_token_counts: re_token_type_counts.FilteredTokenCountDatum) -> re_token_type_counts.RoundTokenCountDatum:
 		total_token_counts.update(round_datum)
 		cumulative_data = total_token_counts.copy()
-		return re_token_type_counts.RoundTokenTypeDatum(round_datum, cumulative_data)
+		return re_token_type_counts.RoundTokenCountDatum(round_datum, cumulative_data)
 
-	def __init__(self, round_token_counts: Iterable[Tuple[Any, re_token_type_counts.FilteredTokenTypeDatum]]):
+	def __init__(self, round_token_counts: Iterable[Tuple[Any, re_token_type_counts.FilteredTokenCountDatum]]):
 		"""
 		:param round_token_counts: An iterable object returning pairs of round IDs and their corresonding :class:`re_token_type_counts.FilteredTokenTypeDatum` instances representing token counts for each round in the game.
 		:type round_token_counts: Iterable[Tuple[Any, re_token_type_counts.FilteredTokenTypeDatum]]
 		"""
-		self.total_data = re_token_type_counts.FilteredTokenTypeDatum()
+		self.total_data = re_token_type_counts.FilteredTokenCountDatum()
 		"""The cumulative token counts for the entire game for the referent entity this object represents."""
 		self.round_data = tuple(
 			(round_id, self.__add_round(token_counts, self.total_data)) for round_id, token_counts in
@@ -108,7 +108,7 @@ class TokenTypeDataPrinter(object):
 	def __init__(self, strict: bool):
 		self.strict = strict
 
-	def __call__(self, session_referent_token_counts: Iterable[Tuple[Any, Dict[int, CoreferenceChainTokenTypeDatum]]],
+	def __call__(self, session_referent_token_counts: Iterable[Tuple[Any, Dict[int, CoreferenceChainTokenCountDatum]]],
 				 outfile):
 		print(COL_DELIM.join(
 			("DYAD", "ENTITY", "SEQUENCE_ORDER", "ROUND", "ROUND_TOKENS", "ROUND_TYPES", "ROUND_TYPE_RATIO",
@@ -149,13 +149,13 @@ class TokenTypeDataPrinter(object):
 					print(COL_DELIM.join(row), file=outfile)
 
 
-def find_last_round_id(referent_token_counts: Dict[T, CoreferenceChainTokenTypeDatum]) -> Tuple[T, int]:
+def find_last_round_id(referent_token_counts: Dict[T, CoreferenceChainTokenCountDatum]) -> Tuple[T, int]:
 	return max(
 		((entity_id, round_id) for (entity_id, counts) in referent_token_counts.items() for (round_id, round_counts) in
 		 counts.round_counts_by_round_id()), key=lambda result: result[1])
 
 
-def trim_empty_tail_rounds(dyad_id: Any, referent_token_counts: Dict[int, CoreferenceChainTokenTypeDatum]):
+def trim_empty_tail_rounds(dyad_id: Any, referent_token_counts: Dict[int, CoreferenceChainTokenCountDatum]):
 	is_last_round_relevant = False
 	old_round_count = find_last_round_id(referent_token_counts)[1]
 	while not is_last_round_relevant:
@@ -167,7 +167,7 @@ def trim_empty_tail_rounds(dyad_id: Any, referent_token_counts: Dict[int, Corefe
 		else:
 			trimmed_round_counts = tuple((round_id, round_counts.round_data) for (round_id, round_counts) in
 										 last_referent_counts.round_counts_by_round_id() if round_id != last_round_id)
-			trimmed_referent_token_counts = CoreferenceChainTokenTypeDatum(trimmed_round_counts)
+			trimmed_referent_token_counts = CoreferenceChainTokenCountDatum(trimmed_round_counts)
 			referent_token_counts[last_referent_id] = trimmed_referent_token_counts
 
 	new_round_count = find_last_round_id(referent_token_counts)[1]
@@ -220,7 +220,7 @@ def __main(args):
 	named_sessions = walk_session_data(args.inpaths)
 	outfile = sys.stdout
 	referent_token_counter = CoreferenceChainTokenCounter(utterances.SegmentUtteranceFactory(),
-														  re_token_type_counts.FilteringTokenTypeCounter(
+														  re_token_type_counts.FilteringTokenCounter(
 															  lambda token: token in token_groups.keys()))
 	referent_token_counts = referent_token_counter(named_sessions)
 	printer = TokenTypeDataPrinter(args.strict)
