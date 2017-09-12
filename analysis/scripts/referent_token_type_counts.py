@@ -38,6 +38,12 @@ class ReferentTokenCounter(object):
 
 	def __referent_token_counts(self, session: SessionData) -> Dict[
 		int, List[Tuple[int, re_token_type_counts.FilteredTokenTypeDatum]]]:
+		"""
+
+		:param session: The SessionData instance representing the game session to process.
+		:return: A dictionary mapping entity IDs to a respective list of pairs of round IDs and their corresponding token count instances.
+		:rtype: Dict[int, List[Tuple[int, re_token_type_counts.FilteredTokenTypeDatum]]]
+		"""
 		result = defaultdict(list)
 		events = game_events.read_events(session)
 		game_rounds = iter(game_events.create_game_rounds(events))
