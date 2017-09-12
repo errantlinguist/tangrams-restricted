@@ -46,8 +46,8 @@ class ReferentTokenCounter(object):
 		game_round_utts = zip_game_round_utterances(game_rounds, utt_times)
 		for (round_id, (game_round, utts)) in enumerate(game_round_utts, start=1):
 			initial_event = next(iter(game_round.events))
+			round_referent_token_counts = self.filtering_token_counter(utts)
 			for entity_id, referent_entity in initial_event.referent_entities:
-				round_referent_token_counts = self.filtering_token_counter(utts)
 				referent_token_counts = result[entity_id]
 				referent_token_counts.append((round_id, round_referent_token_counts))
 
