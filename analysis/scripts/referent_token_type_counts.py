@@ -42,8 +42,8 @@ class ReferentTokenCounter(object):
 		events = game_events.read_events(session)
 		game_rounds = iter(game_events.create_game_rounds(events))
 		segments = utterances.read_segments(session.utts)
-		utts = tuple(self.seg_utt_factory(segments))
-		game_round_utts = zip_game_round_utterances(game_rounds, utts)
+		utt_times = utterances.UtteranceTimes(self.seg_utt_factory(segments))
+		game_round_utts = zip_game_round_utterances(game_rounds, utt_times)
 		for (round_id, game_round_utts) in enumerate(game_round_utts, start=1):
 			initial_event = next(iter(game_round_utts[0].events))
 			for entity_id, referent_entity in initial_event.referent_entities:
@@ -158,20 +158,18 @@ def trim_empty_tail_rounds(dyad_id: Any, referent_token_counts: Dict[int, Refere
 			  file=sys.stderr)
 
 
-def zip_game_round_utterances(game_rounds: Iterator[game_events.GameRound], utts: Sequence[utterances.Utterance]) -> \
+def zip_game_round_utterances(game_rounds: Iterator[game_events.GameRound], utt_times: utterances.UtteranceTimes) -> \
 		Iterator[Tuple[game_events.GameRound, Iterator[utterances.Utterance]]]:
 	current_round = next(game_rounds)
 	for next_round in game_rounds:
 		current_round_start_time = current_round.start_time
 		next_round_start_time = next_round.start_time
-		current_round_utts = re_token_type_counts.game_round_utterances(current_round_start_time, next_round_start_time,
-																		utts)
+		current_round_utts = utt_times.get(current_round_start_time, next_round_start_time)
 		yield current_round, current_round_utts
 		current_round = next_round
 
 	current_round_start_time = current_round.start_time
-	current_round_utts = re_token_type_counts.game_round_utterances(current_round_start_time, float('inf'),
-																	utts)
+	current_round_utts = utt_times.get(current_round_start_time)
 	yield current_round, current_round_utts
 
 
