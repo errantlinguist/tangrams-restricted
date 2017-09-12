@@ -87,15 +87,41 @@ class UtteranceTimes(object):
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
 
-	def after(self, start_time: float):
+	def __getitem__(self, item):
+		if isinstance(item, slice):
+			start = item.start
+			stop = item.stop
+			if stop is None:
+				result = self.__after(start)
+			else:
+				result = self.__between(start, stop)
+		else:
+			result = self.__next_after(item)
+		return result
+
+	def get(self, start: float, stop: float = None, d=()) -> Iterator[Utterance]:
+		try:
+			if stop is None:
+				result = self.__after(start)
+			else:
+				result = self.__between(start, stop)
+		except ValueError:
+			result = d
+		return result
+
+	def __after(self, start_time: float) -> Iterator[Utterance]:
 		utt_start_times = self.ascending_start_times.slice_ge(start_time)
 		return itertools.chain.from_iterable(
 			self.utts_by_start_time[start_time] for start_time in utt_start_times)
 
-	def between(self, start_time: float, end_time: float) -> Iterator[Utterance]:
+	def __between(self, start_time: float, end_time: float) -> Iterator[Utterance]:
 		utt_start_times = self.ascending_start_times.iter_between(start_time, end_time)
 		return itertools.chain.from_iterable(
 			self.utts_by_start_time[start_time] for start_time in utt_start_times)
+
+	def __next_after(self, start_time: float) -> Iterator[Utterance]:
+		next_start_time = self.ascending_start_times.find_ge(start_time)
+		return iter(self.utts_by_start_time[next_start_time])
 
 
 def dialogue_utt_str_repr(utts: Iterable[Utterance]) -> str:
@@ -136,7 +162,7 @@ def is_disfluency(token: str) -> bool:
 	return token.startswith(__TOKEN_TRUNCATION_MARKER) or token.endswith(__TOKEN_TRUNCATION_MARKER)
 
 
-def read_segments(infile_path : str) -> Iterator[Element]:
+def read_segments(infile_path: str) -> Iterator[Element]:
 	print("Reading XML file \"{}\".".format(infile_path), file=sys.stderr)
 	doc_tree = parse_etree(infile_path)
 	return doc_tree.iterfind(".//hat:segment", ANNOTATION_NAMESPACES)
@@ -150,7 +176,7 @@ def __capitalize_first_char(string: str) -> str:
 		return first_char.upper() + string[1:]
 
 
-def __speaker_id_repr(speaker_id : Any) -> str:
+def __speaker_id_repr(speaker_id: Any) -> str:
 	return "**{}:**".format(speaker_id)
 
 
