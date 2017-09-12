@@ -46,10 +46,10 @@ class ShapeTokenCounter(object):
 		segments = utterances.read_segments(session.utts)
 		utt_times = utterances.UtteranceTimes(self.seg_utt_factory(segments))
 		game_round_utts = referent_token_type_counts.zip_game_round_utterances(game_rounds, utt_times)
-		for (round_id, game_round_utts) in enumerate(game_round_utts, start=1):
-			initial_event = next(iter(game_round_utts[0].events))
+		for (round_id, (game_round, utts)) in enumerate(game_round_utts, start=1):
+			initial_event = next(iter(game_round.events))
 			for _, referent_entity in initial_event.referent_entities:
-				round_referent_token_counts = self.filtering_token_counter(game_round_utts[1])
+				round_referent_token_counts = self.filtering_token_counter(utts)
 				referent_token_counts = result[referent_entity.shape]
 				referent_token_counts.append((round_id, round_referent_token_counts))
 
