@@ -8,7 +8,7 @@ import argparse
 import itertools
 import sys
 from collections import Counter
-from typing import Dict, Iterable, Iterator
+from typing import Dict, Iterable
 
 import utterances
 from token_groups import TokenGroupDict, read_token_group_dict
@@ -21,7 +21,7 @@ def create_utt_token_group_counts(utts: Iterable[utterances.Utterance], token_gr
 		Dict[str, int]:
 	result = Counter()
 
-	tokens = semantically_relevant_tokens(utts)
+	tokens = (token for utt in utts for token in utt.content)
 	group_sets = (token_groups.get(token) for token in tokens)
 	for group_set in group_sets:
 		if group_set:
@@ -60,13 +60,6 @@ def read_utt_token_group_counts(infile: str, token_groups: TokenGroupDict,
 	segments = utterances.read_segments(infile)
 	utts = seg_utt_factory(segments)
 	return create_utt_token_group_counts(utts, token_groups)
-
-
-def semantically_relevant_tokens(utts: Iterable[utterances.Utterance]) -> Iterator[str]:
-	# https://stackoverflow.com/a/18551476/1391325
-	all_tokens = (token for utt in utts for token in utt.content)
-	non_fillers = (token for token in all_tokens if token not in utterances.FILLER_TOKENS)
-	return (token for token in non_fillers if not utterances.is_disfluency(token))
 
 
 def __create_argparser():
