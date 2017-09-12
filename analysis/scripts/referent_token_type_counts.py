@@ -4,7 +4,7 @@ import argparse
 import re
 import sys
 from collections import defaultdict
-from typing import Any, Callable, Dict, Iterable, Iterator, List, Sequence, Tuple, TypeVar
+from typing import Any, Callable, Dict, Iterable, Iterator, List, Tuple, TypeVar
 
 import game_events
 import re_token_type_counts
