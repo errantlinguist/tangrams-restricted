@@ -86,7 +86,7 @@ class ReferentTokenTypeDatum(object):
 class TokenTypeDataPrinter(object):
 	@staticmethod
 	def __ratio(tokens, types):
-		return tokens / types
+		return types / tokens
 
 	def __init__(self, strict: bool):
 		self.strict = strict
@@ -107,8 +107,8 @@ class TokenTypeDataPrinter(object):
 					cumulative_token_count = sum(cumulative_data.token_counts.values())
 					cumulative_type_count = len(cumulative_data.token_types)
 					try:
-						round_ratio = self.__ratio(round_type_count, round_token_count)
-						cumulative_ratio = self.__ratio(cumulative_type_count, cumulative_token_count)
+						round_ratio = self.__ratio(round_token_count, round_type_count)
+						cumulative_ratio = self.__ratio(cumulative_token_count, cumulative_type_count)
 					except ZeroDivisionError as e:
 						if self.strict:
 							raise ValueError(
