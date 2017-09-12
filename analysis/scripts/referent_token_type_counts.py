@@ -63,6 +63,9 @@ class ReferentTokenTypeDatum(object):
 		return re_token_type_counts.RoundTokenTypeDatum(round_datum, cumulative_data)
 
 	def __init__(self, round_token_counts: Iterable[Tuple[Any, re_token_type_counts.FilteredTokenTypeDatum]]):
+		"""
+		:param round_token_counts: An iterable object returning re_token_type_counts.FilteredTokenTypeDatum instances representing token counts for each round in the game, appearing in their respective order.
+		"""
 		self.total_data = re_token_type_counts.FilteredTokenTypeDatum()
 		"""The cumulative token counts for the entire game for the referent entity this object represents."""
 		self.round_data = tuple(
