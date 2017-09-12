@@ -107,7 +107,7 @@ class SessionRoundTokenCounter(object):
 		print("Read {} game round(s).".format(round_count), file=sys.stderr)
 
 		segments = utterances.read_segments(session.utts)
-		utt_times = utterances.UtteranceTimes(tuple(self.seg_utt_factory(segments)))
+		utt_times = utterances.UtteranceTimes(self.seg_utt_factory(segments))
 		round_utts = (utt_times.get(start_time, end_time) for start_time, end_time in
 					  round_start_end_times)
 		# round_utts = (game_round_utterances(start_time, end_time, utts) for start_time, end_time in
