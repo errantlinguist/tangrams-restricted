@@ -36,6 +36,7 @@ class Event(object):
 	class Attribute(Enum):
 		ID = session_data.DataColumn.EVENT_ID.value
 		NAME = session_data.DataColumn.EVENT_NAME.value
+		SUBMITTER = session_data.DataColumn.SUBMITTER.value
 		TIME = session_data.DataColumn.EVENT_TIME.value
 
 	def __init__(self, entities: Sequence[EntityData], attrs: Dict[Attribute, str] = None):
@@ -74,6 +75,10 @@ class Event(object):
 	@property
 	def selected_entities(self):
 		return ((entity_id, entity) for (entity_id, entity) in self.entities_by_id() if entity.is_selected)
+
+	@property
+	def submitter(self):
+		return self.attrs[Event.Attribute.SUBMITTER]
 
 
 class GameRound(object):
