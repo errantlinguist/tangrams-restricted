@@ -131,10 +131,10 @@ class TokenTypeDataPrinter(object):
 		for dyad_id, session_token_type_datum in ordered_session_token_type_data:
 			for round_id, round_token_type_datum in session_token_type_datum.round_counts_by_round_id():
 				round_data = round_token_type_datum.round_data.relevant_tokens
-				round_token_count = sum(round_data.token_counts.values())
+				round_token_count = round_data.total_token_count()
 				round_type_count = len(round_data.token_types)
 				cumulative_data = round_token_type_datum.cumulative_data.relevant_tokens
-				cumulative_token_count = sum(cumulative_data.token_counts.values())
+				cumulative_token_count = cumulative_data.total_token_count()
 				cumulative_type_count = len(cumulative_data.token_types)
 				try:
 					round_ratio = self.__ratio(round_token_count, round_type_count)
@@ -162,6 +162,9 @@ class TokenTypeDatum(object):
 	@property
 	def token_types(self):
 		return self.token_counts.keys()
+
+	def total_token_count(self):
+		return sum(self.round_data.token_counts.values())
 
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
