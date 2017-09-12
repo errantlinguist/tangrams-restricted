@@ -58,6 +58,7 @@ class ReferentTokenTypeDatum(object):
 	"""
 	This class represents token counts for a single referent entity throughout an entire game.
 	"""
+
 	@staticmethod
 	def __add_round(round_datum: re_token_type_counts.FilteredTokenTypeDatum,
 					total_token_counts: re_token_type_counts.FilteredTokenTypeDatum) -> re_token_type_counts.RoundTokenTypeDatum:
