@@ -1,7 +1,7 @@
 import itertools
 import sys
 from collections import defaultdict
-from typing import Any, Callable, Iterable, Iterator, List
+from typing import Any, Callable, Iterable, Iterator, List, Union
 from xml.etree.ElementTree import Element, parse as parse_etree
 
 from annotations import ANNOTATION_NAMESPACES
@@ -91,7 +91,7 @@ class UtteranceTimes(object):
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
 
-	def __getitem__(self, item):
+	def __getitem__(self, item) -> Union[Utterance, Iterator[Utterance]]:
 		if isinstance(item, slice):
 			start = item.start
 			stop = item.stop
