@@ -99,7 +99,7 @@ class UtteranceTimes(object):
 			result = self.__next_after(item)
 		return result
 
-	def get(self, start: float, stop: float = None, d=()) -> Iterator[Utterance]:
+	def get(self, start: float, stop: float = None, d=iter(())) -> Iterator[Utterance]:
 		try:
 			if stop is None:
 				result = self.__after(start)
