@@ -25,6 +25,11 @@ class SortedList(list):
 		idx = cls.__index_lt(sublist, elem)
 		return sublist[0:idx - 1]
 
+	def find_ge(self, elem):
+		"""Find leftmost item greater than or equal to elem"""
+		i = self.index_ge(elem)
+		return self[i]
+
 	def index(self, elem, start: int = 0, stop: int = ...) -> int:
 		result = bisect.bisect_left(self, elem, start, stop)
 		end_idx = min(stop, len(self))
@@ -33,7 +38,7 @@ class SortedList(list):
 		else:
 			raise ValueError
 
-	def _index_ge(self, x):
+	def index_ge(self, x):
 		"""Find the index of the first value greater than or equal to x"""
 		result = bisect.bisect_left(self, x)
 		if result >= len(self):
@@ -43,7 +48,7 @@ class SortedList(list):
 
 	def iter_between(self, start, end):
 		# Find the index of the first element equal to or greater than the start element
-		start_idx = self._index_ge(start)
+		start_idx = self.index_ge(start)
 		end_idx = self.__index_lt(self, end)
 		return itertools.islice(self, start_idx, end_idx)
 
@@ -65,7 +70,7 @@ class SortedList(list):
 
 	def slice_ge(self, x):
 		"""Find values greater than or equal to x"""
-		idx = self._index_ge(x)
+		idx = self.index_ge(x)
 		return self[idx:]
 
 	def slice_gt(self, x):
