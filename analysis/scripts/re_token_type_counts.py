@@ -57,7 +57,7 @@ class RoundTokenTypeDatum(object):
 		:param round_data: Token counts for the individual round this object represents.
 		:type round_data: FilteredTokenTypeDatum
 		:param cumulative_data: Cumulative counts for the entire game up to and including the individual round this object represents.
-		:type: cumulative_data: FilteredTokenTypeDatum
+		:type cumulative_data: FilteredTokenTypeDatum
 		"""
 		self.round_data = round_data
 		"""Token counts for the individual round this object represents."""
