@@ -77,7 +77,7 @@ class ReferentTokenTypeDatum(object):
 			(round_id, self.__add_round(token_counts, self.total_data)) for round_id, token_counts in
 			round_token_counts)
 		"""A tuple of pairs of round IDs with their corresponding :class:`re_token_type_counts.RoundTokenTypeDatum` instances, each of which representing token counts for 
-		a given round. They are in the same order as the rounds occur in the game."""
+		a given round."""
 
 	def __getitem__(self, round_id: Any):
 		return next(
