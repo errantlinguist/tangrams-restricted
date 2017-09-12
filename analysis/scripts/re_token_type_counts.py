@@ -163,13 +163,13 @@ class TokenTypeDatum(object):
 	def token_types(self):
 		return self.token_counts.keys()
 
-	def total_token_count(self):
+	def total_token_count(self) -> int:
 		return sum(self.round_data.token_counts.values())
 
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
 
-	def copy(self):
+	def copy(self) ->  "TokenTypeDatum":
 		return TokenTypeDatum(Counter(self.token_counts))
 
 	def update(self, other: "TokenTypeDatum"):
