@@ -117,7 +117,7 @@ class SessionRoundTokenCounter(object):
 
 class TokenTypeDataPrinter(object):
 	@staticmethod
-	def __ratio(tokens, types):
+	def __ratio(tokens: int, types: int) -> float:
 		return types / tokens
 
 	def __init__(self, strict: bool):
@@ -169,7 +169,7 @@ class TokenTypeDatum(object):
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
 
-	def copy(self) ->  "TokenTypeDatum":
+	def copy(self) -> "TokenTypeDatum":
 		return TokenTypeDatum(Counter(self.token_counts))
 
 	def update(self, other: "TokenTypeDatum"):
