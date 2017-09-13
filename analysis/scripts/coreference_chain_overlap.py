@@ -69,7 +69,7 @@ class ParticipantCoreferenceChainTokenCounter(object):
 		for dyad_id, session in named_sessions:
 			print("Processing session \"{}\".".format(dyad_id), file=sys.stderr)
 
-			events = game_events.read_events(session)
+			events, participant_source_ids = game_events.read_events(session)
 			game_rounds = iter(game_events.create_game_rounds(events))
 			segments = utterances.read_segments(session.utts)
 			utt_times = utterances.UtteranceTimes(self.seg_utt_factory(segments))
@@ -79,8 +79,6 @@ class ParticipantCoreferenceChainTokenCounter(object):
 			entity_referent_counts = defaultdict(ReferentCounts)
 			for (round_id, (game_round, utts)) in enumerate(game_round_utts, start=1):
 				initial_event = next(iter(game_round.events))
-				# Get the participant ID for the first event's submitter without using it so that the first instructor of a game is always assigned the first participant ID (e.g. "A")
-				participant_id_factory(initial_event.submitter)
 				speaker_utts = utterances.create_speaker_dict(utts)
 				participant_token_counts = {}
 				for speaker_id, speaker_utts in speaker_utts.items():

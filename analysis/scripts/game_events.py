@@ -1,4 +1,5 @@
 import csv
+import json
 from collections import defaultdict
 from enum import Enum, unique
 from typing import Dict, Iterable, List, Sequence, Tuple, Union
@@ -124,14 +125,17 @@ def create_game_rounds(events: Iterable[Event]) -> Iterable[GameRound]:
 	yield GameRound(current_round_start_time, None, current_events)
 
 
-def read_events(session: session_data.SessionData) -> Iterable[Event]:
+def read_events(session: session_data.SessionData) -> Tuple[Iterable[Event], Dict[str, str]]:
 	events_metadata = session.read_events_metadata()
 
 	event_count = int(events_metadata[session_data.MetadataColumn.EVENT_COUNT.value])
 	entity_count = int(events_metadata[session_data.MetadataColumn.ENTITY_COUNT.value])
-
 	event_entity_descs = read_event_entity_desc_matrix(session.events, event_count, entity_count)
-	return (Event(entity_descs) for entity_descs in event_entity_descs)
+	events = (Event(entity_descs) for entity_descs in event_entity_descs)
+
+	participant_source_id_json_str = events_metadata[session_data.MetadataColumn.PARTICIPANT_SOURCE_IDS.value]
+	participant_source_ids = json.loads(participant_source_id_json_str, encoding=session_data.ENCODING)
+	return events, participant_source_ids
 
 
 def read_event_entity_desc_matrix(infile_path: str, event_count: int, entity_count: int) -> Tuple[

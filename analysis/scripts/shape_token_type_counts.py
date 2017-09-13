@@ -41,7 +41,7 @@ class ShapeTokenCounter(object):
 	def __shape_token_counts(self, session: SessionData) -> Dict[
 		str, List[Tuple[int, re_token_type_counts.FilteredTokenCountDatum]]]:
 		result = defaultdict(list)
-		events = game_events.read_events(session)
+		events = game_events.read_events(session)[0]
 		game_rounds = iter(game_events.create_game_rounds(events))
 		segments = utterances.read_segments(session.utts)
 		utt_times = utterances.UtteranceTimes(self.seg_utt_factory(segments))

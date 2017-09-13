@@ -5,6 +5,7 @@ from typing import Dict, Iterator, List, Iterable, Tuple
 
 ENCODING = 'utf-8'
 
+
 @unique
 class DataColumn(Enum):
 	ENTITY_ID = "ENTITY"
@@ -22,6 +23,7 @@ class DataColumn(Enum):
 class MetadataColumn(Enum):
 	ENTITY_COUNT = "ENTITY_COUNT"
 	EVENT_COUNT = "EVENT_COUNT"
+	PARTICIPANT_SOURCE_IDS = "PARTICIPANT_SOURCE_IDS"
 	ROUND_COUNT = "ROUND_COUNT"
 
 
