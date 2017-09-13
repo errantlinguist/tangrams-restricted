@@ -16,6 +16,7 @@ import token_groups as tg
 import utterances
 
 COL_DELIM = '\t'
+NULL_VALUE_REPR = '?'
 
 T = TypeVar('T')
 
@@ -102,15 +103,15 @@ class TokenTypeDataPrinter(object):
 	@staticmethod
 	def __create_first_row(dyad_id, entity_id, sequence_order, round_id, current_round_total_tokens,
 						   current_round_token_types, game_round: game_events.GameRound):
-		mean_previous_token_count = _DECIMAL_NAN
+		mean_previous_token_count = NULL_VALUE_REPR
 		token_type_overlap = 0
-		overlap_ratio = _DECIMAL_NAN
-		current_round_length_drop = _DECIMAL_NAN
+		overlap_ratio = NULL_VALUE_REPR
+		current_round_length_drop = NULL_VALUE_REPR
 		initial_event = game_round.initial_event
 		return (dyad_id, str(entity_id), str(sequence_order), str(round_id), str(current_round_total_tokens),
-				str(current_round_total_tokens), str(mean_previous_token_count),
-				str(current_round_length_drop), str(len(current_round_token_types)), str(len(current_round_token_types)),
-				str(token_type_overlap), str(overlap_ratio), str(initial_event.score), str(initial_event.event_time),
+				str(current_round_total_tokens), mean_previous_token_count,
+				current_round_length_drop, str(len(current_round_token_types)), str(len(current_round_token_types)),
+				str(token_type_overlap), overlap_ratio, str(initial_event.score), str(initial_event.event_time),
 				str(time_score_ratio(initial_event)), str(round_score_ratio(initial_event)))
 
 	def __init__(self, strict: bool):
