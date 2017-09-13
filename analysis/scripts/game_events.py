@@ -182,17 +182,6 @@ def _entity_round_id(entity_desc: EntityData) -> str:
 	return entity_desc.attr(GameRound.Attribute.ID.value.name)
 
 
-def __entity_event_time(entity_desc: EntityData) -> float:
-	return float(entity_desc.attr(Event.Attribute.TIME.value.name))
-
-
-def __round_id_and_time(event: Event) -> Tuple[str, float]:
-	initial_entity_desc = next(iter(event.entities))
-	round_id = _entity_round_id(initial_entity_desc)
-	round_event_time = __entity_event_time(initial_entity_desc)
-	return round_id, round_event_time
-
-
 def __transform_row_cell_value(row, col_idxs, data_col: session_data.DataColumn):
 	col_props = data_col.value
 	idx = col_idxs[col_props.name]
