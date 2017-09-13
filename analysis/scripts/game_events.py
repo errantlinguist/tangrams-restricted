@@ -33,7 +33,7 @@ class EntityData(object):
 		return self.__data_col_attr(session_data.DataColumn.SHAPE)
 
 	def __data_col_attr(self, col: session_data.DataColumn):
-		return self.attr(col.value)
+		return self.attr(col.value.name)
 
 
 class Event(object):
@@ -48,7 +48,7 @@ class Event(object):
 	def __init__(self, entities: Sequence[EntityData], attrs: Dict[Attribute, str] = None):
 		if attrs is None:
 			first_entity_desc = next(iter(entities))
-			attrs = dict((attr, first_entity_desc.attr(attr.value)) for attr in Event.Attribute)
+			attrs = dict((attr, first_entity_desc.attr(attr.value.name)) for attr in Event.Attribute)
 		self.entities = entities
 		self.attrs = attrs
 
@@ -119,6 +119,7 @@ class GameRound(object):
 		initial_event = self.initial_event
 		return initial_event.attrs[Event.Attribute.SCORE]
 
+
 def create_game_rounds(events: Iterable[Event]) -> Iterable[GameRound]:
 	round_events = defaultdict(list)
 	for event in events:
@@ -164,8 +165,8 @@ def read_event_entity_desc_matrix(infile_path: str, event_count: int, entity_cou
 	with open(infile_path, 'r', encoding=session_data.ENCODING) as infile:
 		rows = csv.reader(infile, dialect="excel-tab")
 		col_idxs = dict((col_name, idx) for (idx, col_name) in enumerate(next(rows)))
-		entity_id_col_idx = col_idxs[session_data.DataColumn.ENTITY_ID.value]
-		event_id_col_idx = col_idxs[session_data.DataColumn.EVENT_ID.value]
+		entity_id_col_idx = col_idxs[session_data.DataColumn.ENTITY_ID.value.name]
+		event_id_col_idx = col_idxs[session_data.DataColumn.EVENT_ID.value.name]
 
 		for row in rows:
 			__transform_row_cell_values(row, col_idxs)
@@ -183,15 +184,11 @@ def read_event_entity_desc_matrix(infile_path: str, event_count: int, entity_cou
 
 
 def _entity_round_id(entity_desc: EntityData) -> str:
-	return entity_desc.attr(GameRound.Attribute.ID.value)
+	return entity_desc.attr(GameRound.Attribute.ID.value.name)
 
 
 def __entity_event_time(entity_desc: EntityData) -> float:
-	return float(entity_desc.attr(Event.Attribute.TIME.value))
-
-
-def __is_truth_cell_value(val: str) -> bool:
-	return val == "true"
+	return float(entity_desc.attr(Event.Attribute.TIME.value.name))
 
 
 def __round_id_and_time(event: Event) -> Tuple[str, float]:
@@ -201,16 +198,13 @@ def __round_id_and_time(event: Event) -> Tuple[str, float]:
 	return round_id, round_event_time
 
 
-def __transform_row_cell_value(row, col_idxs, data_col: session_data.DataColumn, transformer):
-	idx = col_idxs[data_col.value]
-	transformed_val = transformer(row[idx])
+def __transform_row_cell_value(row, col_idxs, data_col: session_data.DataColumn):
+	col_props = data_col.value
+	idx = col_idxs[col_props.name]
+	transformed_val = col_props.value_transformer(row[idx])
 	row[idx] = transformed_val
 
 
 def __transform_row_cell_values(row, col_idxs):
-	__transform_row_cell_value(row, col_idxs, session_data.DataColumn.ENTITY_ID, int)
-	__transform_row_cell_value(row, col_idxs, session_data.DataColumn.EVENT_ID, int)
-	__transform_row_cell_value(row, col_idxs, session_data.DataColumn.EVENT_TIME, float)
-	__transform_row_cell_value(row, col_idxs, session_data.DataColumn.REFERENT_ENTITY, __is_truth_cell_value)
-	__transform_row_cell_value(row, col_idxs, session_data.DataColumn.ROUND_ID, int)
-	__transform_row_cell_value(row, col_idxs, session_data.DataColumn.SELECTED_ENTITY, __is_truth_cell_value)
+	for data_col in session_data.DataColumn:
+		__transform_row_cell_value(row, col_idxs, data_col)

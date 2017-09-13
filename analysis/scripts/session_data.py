@@ -1,23 +1,36 @@
 import csv
 import os
 from enum import Enum, unique
-from typing import Dict, Iterator, List, Iterable, Tuple
+from typing import Any, Callable, Dict, Iterator, List, Iterable, Tuple
 
 ENCODING = 'utf-8'
 
 
+class DataColumnProperties(object):
+	def __init__(self, name: str, value_transformer: Callable[[str], Any]):
+		self.name = name
+		self.value_transformer = value_transformer
+
+	def __repr__(self, *args, **kwargs):
+		return self.__class__.__name__ + str(self.__dict__)
+
+
+def _is_truth_cell_value(val: str) -> bool:
+	return val == "true"
+
+
 @unique
 class DataColumn(Enum):
-	ENTITY_ID = "ENTITY"
-	EVENT_ID = "EVENT"
-	EVENT_NAME = "NAME"
-	EVENT_TIME = "TIME"
-	REFERENT_ENTITY = "REFERENT"
-	ROUND_ID = "ROUND"
-	SCORE = "SCORE"
-	SELECTED_ENTITY = "SELECTED"
-	SHAPE = "SHAPE"
-	SUBMITTER = "SUBMITTER"
+	ENTITY_ID = DataColumnProperties("ENTITY", int)
+	EVENT_ID = DataColumnProperties("EVENT", int)
+	EVENT_NAME = DataColumnProperties("NAME", str)
+	EVENT_TIME = DataColumnProperties("TIME", float)
+	REFERENT_ENTITY = DataColumnProperties("REFERENT", _is_truth_cell_value)
+	ROUND_ID = DataColumnProperties("ROUND", int)
+	SCORE = DataColumnProperties("SCORE", int)
+	SELECTED_ENTITY = DataColumnProperties("SELECTED", _is_truth_cell_value)
+	SHAPE = DataColumnProperties("SHAPE", str)
+	SUBMITTER = DataColumnProperties("SUBMITTER", str)
 
 
 @unique
