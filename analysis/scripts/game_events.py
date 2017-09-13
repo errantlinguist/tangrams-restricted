@@ -79,6 +79,10 @@ class Event(object):
 		return _entity_round_id(first_entity_desc)
 
 	@property
+	def score(self):
+		return self.attrs[Event.Attribute.SCORE]
+
+	@property
 	def selected_entities(self):
 		return ((entity_id, entity) for (entity_id, entity) in self.entities_by_id() if entity.is_selected)
 
