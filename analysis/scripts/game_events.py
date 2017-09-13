@@ -133,9 +133,9 @@ def read_events(session: session_data.SessionData) -> Tuple[Iterable[Event], Dic
 	event_entity_descs = read_event_entity_desc_matrix(session.events, event_count, entity_count)
 	events = (Event(entity_descs) for entity_descs in event_entity_descs)
 
-	participant_source_id_json_str = events_metadata[session_data.MetadataColumn.PARTICIPANT_SOURCE_IDS.value]
-	participant_source_ids = json.loads(participant_source_id_json_str, encoding=session_data.ENCODING)
-	return events, participant_source_ids
+	source_participant_id_json_str = events_metadata[session_data.MetadataColumn.SOURCE_PARTICIPANT_IDS.value]
+	source_participant_ids = json.loads(source_participant_id_json_str, encoding=session_data.ENCODING)
+	return events, source_participant_ids
 
 
 def read_event_entity_desc_matrix(infile_path: str, event_count: int, entity_count: int) -> Tuple[
