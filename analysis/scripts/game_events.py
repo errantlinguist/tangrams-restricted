@@ -1,4 +1,5 @@
 import csv
+import sys
 import json
 from collections import defaultdict
 from enum import Enum, unique
@@ -135,7 +136,8 @@ def read_events(session: session_data.SessionData) -> Tuple[Iterable[Event], Dic
 
 	source_participant_id_json_str = events_metadata[session_data.MetadataColumn.SOURCE_PARTICIPANT_IDS.value]
 	source_participant_ids = json.loads(source_participant_id_json_str, encoding=session_data.ENCODING)
-	return events, source_participant_ids
+	interned_source_participant_ids = dict((sys.intern(key), sys.intern(value)) for (key, value) in source_participant_ids.items())
+	return events, interned_source_participant_ids
 
 
 def read_event_entity_desc_matrix(infile_path: str, event_count: int, entity_count: int) -> Tuple[
