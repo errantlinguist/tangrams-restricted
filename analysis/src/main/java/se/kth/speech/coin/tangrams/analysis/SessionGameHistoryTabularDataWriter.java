@@ -32,9 +32,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.BiFunction;
@@ -48,9 +51,11 @@ import javax.xml.bind.JAXBException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.eclipsesource.json.JsonObject;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import com.google.common.collect.Maps;
 
 import iristk.system.Event;
 import se.kth.speech.TimestampArithmetic;
@@ -58,6 +63,7 @@ import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionContextFactory;
 import se.kth.speech.coin.tangrams.analysis.features.ImageEdgeCounter;
 import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
+import se.kth.speech.coin.tangrams.game.PlayerRole;
 import se.kth.speech.coin.tangrams.iristk.EventTimes;
 import se.kth.speech.coin.tangrams.iristk.EventTypeMatcher;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
@@ -179,7 +185,7 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 	}
 
 	private enum Metadatum {
-		END_SCORE, ENTITY_COUNT, EVENT_COUNT, GAME_DURATION, GAME_ID, ROUND_COUNT, START_TIME;
+		END_SCORE, ENTITY_COUNT, EVENT_COUNT, GAME_DURATION, GAME_ID, PARTICIPANT_SOURCE_IDS, ROUND_COUNT, START_TIME;
 	}
 
 	private static final GameManagementEvent GAME_ROUND_DELIMITING_EVENT_TYPE = GameManagementEvent.NEXT_TURN_REQUEST;
@@ -192,9 +198,14 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 
 	private static final DateTimeFormatter OUTPUT_DATETIME_FORMATTER = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 
+	private static final List<PlayerRole> PLAYER_ROLE_ORDERING = createPlayerRoleOrderingList();
+
 	private static final Collector<CharSequence, ?, String> TABLE_ROW_CELL_JOINER;
 
 	private static final String TABLE_STRING_REPR_COL_DELIMITER;
+
+	private static final List<String> VALID_PARTICIPANT_IDS = Arrays.asList("A", "B", "C", "D", "E", "F", "G", "H", "I",
+			"J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z");
 
 	static {
 		TABLE_STRING_REPR_COL_DELIMITER = "\t";
@@ -214,6 +225,55 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 					EventDatum.CANONICAL_ORDERING, "events", NULL_VALUE_REPR);
 			writer.accept(inpaths);
 		}
+	}
+
+	private static JsonObject createJsonMapObject(final Iterable<Entry<String, String>> entries) {
+		final JsonObject result = new JsonObject();
+		for (final Entry<String, String> entry : entries) {
+			result.add(entry.getKey(), entry.getValue());
+		}
+		return result;
+	}
+
+	private static Map<String, String> createParticipantSourceIdMap(final SessionDataManager sessionData,
+			final SessionGameManager sessionGameMgr) {
+		final Map<PlayerRole, String> playerRoles = sessionGameMgr.getCanonicalGame().getHistory().getInitialState()
+				.getPlayerRoles();
+		final Map<String, String> playerSourceIds = sessionData.getPlayerData().getPlayerSourceIds();
+		final Iterator<String> newParticipantIdIter = VALID_PARTICIPANT_IDS.iterator();
+
+		final Map<String, String> result = Maps.newHashMapWithExpectedSize(playerRoles.size());
+		for (final PlayerRole role : PLAYER_ROLE_ORDERING) {
+			final String rolePlayerId = playerRoles.get(role);
+			if (rolePlayerId != null) {
+				final String sourceId = playerSourceIds.get(rolePlayerId);
+				try {
+					final String nextParticipantId = newParticipantIdIter.next();
+					result.put(nextParticipantId, sourceId);
+				} catch (final NoSuchElementException e) {
+					final String msg = String.format(
+							"There are more player roles to assign participant IDs for (%d) than possible participant IDs (%d).",
+							playerRoles.size(), VALID_PARTICIPANT_IDS.size());
+					throw new IllegalArgumentException(msg, e);
+				}
+
+			}
+		}
+		return result;
+	}
+
+	private static List<PlayerRole> createPlayerRoleOrderingList() {
+		final PlayerRole[] rolesToAdd = PlayerRole.values();
+		final List<PlayerRole> result = new ArrayList<>(rolesToAdd.length);
+		final PlayerRole initialRole = PlayerRole.MOVE_SUBMISSION;
+		result.add(initialRole);
+		for (final PlayerRole role : rolesToAdd) {
+			if (!initialRole.equals(role)) {
+				result.add(role);
+			}
+		}
+		assert result.size() == rolesToAdd.length;
+		return result;
 	}
 
 	private static int updateScore(final GameManagementEvent nextEventType, final int currentScore) {
@@ -327,6 +387,12 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 						metadataValues.put(Metadatum.GAME_DURATION, durationInSecs);
 					}
 					metadataValues.put(Metadatum.GAME_ID, canonicalGame.getGameId());
+					{
+						final Map<String, String> participantSourceIds = createParticipantSourceIdMap(infileSessionData,
+								sessionDiagMgr);
+						metadataValues.put(Metadatum.PARTICIPANT_SOURCE_IDS,
+								createJsonMapObject(participantSourceIds.entrySet()));
+					}
 					metadataValues.put(Metadatum.ROUND_COUNT, gameRoundId);
 					{
 						final ZonedDateTime zonedGameStart = history.getStartTime()
