@@ -22,10 +22,14 @@ NULL_VALUE_REPR = "?"
 T = TypeVar('T')
 
 _DECIMAL_INFINITY = Decimal("Infinity")
-_DECIMAL_NAN = Decimal("NaN")
+#_DECIMAL_NAN = Decimal("NaN")
 _DECIMAL_ZERO = Decimal("0")
 
 _EMPTY_SET = frozenset()
+
+NULL_PREVIOUS_MEAN_COUNT_VALUE = None
+NULL_TOKEN_TYPE_OVERLAP_VALUE = _DECIMAL_ZERO
+NULL_TOKEN_LENGTH_DROP_VALUE = _DECIMAL_INFINITY
 
 
 class RoundReferentCounts(object):
@@ -115,8 +119,8 @@ class LanguageMetrics(object):
 
 	def __set_initial_metrics(self, dyad_id: Any, round_id: Any, desc: Any, strict: bool):
 		self.cumulative_token_count = self.current_round_total_tokens
-		self.mean_previous_token_count = None
-		self.current_round_length_drop = _DECIMAL_INFINITY
+		self.mean_previous_token_count = NULL_PREVIOUS_MEAN_COUNT_VALUE
+		self.current_round_length_drop = NULL_TOKEN_LENGTH_DROP_VALUE
 		try:
 			self.overlap_ratio = token_type_overlap_ratio(self.overlapping_token_type_count,
 														  self.unified_token_type_count)
@@ -131,7 +135,7 @@ class LanguageMetrics(object):
 																											  round_id,
 																											  dyad_id),
 					file=sys.stderr)
-				self.overlap_ratio = _DECIMAL_ZERO
+				self.overlap_ratio = NULL_TOKEN_TYPE_OVERLAP_VALUE
 
 	def __set_history_sensitive_metrics(self, dyad_id: Any, round_id: Any, desc: Any,
 										previous_round_total_tokens: Iterable[Decimal], strict: bool):
@@ -145,15 +149,15 @@ class LanguageMetrics(object):
 		except (InvalidOperation, ZeroDivisionError) as e:
 			if strict:
 				raise ValueError(
-					"Round {} of session \"{}\" did not have any relevant tokens!".format(round_id,
+					"Round {} of session \"{}\" did not have any relevant tokens!".format(desc, round_id,
 																						  dyad_id)) from e
 			else:
 				print(
-					"WARNING: Round {} of session \"{}\" did not have any relevant tokens!".format(round_id,
+					"WARNING: Round {} of session \"{}\" did not have any relevant tokens!".format(desc, round_id,
 																								   dyad_id),
 					file=sys.stderr)
-				self.current_round_length_drop = _DECIMAL_INFINITY
-				self.overlap_ratio = _DECIMAL_ZERO
+				self.current_round_length_drop = NULL_TOKEN_LENGTH_DROP_VALUE
+				self.overlap_ratio = NULL_TOKEN_TYPE_OVERLAP_VALUE
 
 	def __init__(self, dyad_id: Any, round_id: Any, desc: Any, token_counts: re_token_type_counts.TokenCountDatum,
 				 previous_round_total_tokens: Iterable[Decimal] = None,

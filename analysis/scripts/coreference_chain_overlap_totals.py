@@ -5,33 +5,29 @@ import re
 import statistics
 import sys
 from typing import Any, Dict, Iterable, Tuple
-from decimal import Decimal
 
+import coreference_chain_overlap
 import re_token_type_counts
 import referent_token_type_counts
 import utterances
 from session_data import walk_session_data
 from token_groups import read_token_group_dict
-import coreference_chain_overlap
 
 COL_DELIM = '\t'
-NULL_VALUE_REPR = '?'
 
-_DECIMAL_INFINITY = Decimal("Infinity")
-_DECIMAL_NAN = Decimal("NaN")
-_DECIMAL_ZERO = Decimal("0")
 
 class TokenTypeDataPrinter(object):
 	@staticmethod
 	def __create_first_row(dyad_id, entity_id, sequence_order, round_id, current_round_total_tokens,
 						   current_round_token_types):
-		mean_previous_token_count = None
-		token_type_overlap = 0
-		overlap_ratio = _DECIMAL_ZERO
-		current_round_length_drop = _DECIMAL_INFINITY
+		mean_previous_token_count = coreference_chain_overlap.NULL_PREVIOUS_MEAN_COUNT_VALUE
+		token_type_overlap = coreference_chain_overlap.NULL_TOKEN_TYPE_OVERLAP_VALUE
+		overlap_ratio = coreference_chain_overlap.NULL_TOKEN_TYPE_OVERLAP_VALUE
+		current_round_length_drop = coreference_chain_overlap.NULL_TOKEN_LENGTH_DROP_VALUE
 		return (dyad_id, str(entity_id), str(sequence_order), str(round_id), str(current_round_total_tokens),
 				str(current_round_total_tokens), str(mean_previous_token_count),
-				str(current_round_length_drop), str(len(current_round_token_types)), str(len(current_round_token_types)),
+				str(current_round_length_drop), str(len(current_round_token_types)),
+				str(len(current_round_token_types)),
 				str(token_type_overlap), str(overlap_ratio))
 
 	def __init__(self, strict: bool):
@@ -82,8 +78,10 @@ class TokenTypeDataPrinter(object):
 		mean_previous_token_count = statistics.mean(previous_round_total_tokens)
 		token_type_overlap = len(overlapping_token_types)
 		try:
-			overlap_ratio =  coreference_chain_overlap.token_type_overlap_ratio(token_type_overlap, len(unified_token_types))
-			current_round_length_drop = coreference_chain_overlap.length_drop(current_round_total_tokens, mean_previous_token_count)
+			overlap_ratio = coreference_chain_overlap.token_type_overlap_ratio(token_type_overlap,
+																			   len(unified_token_types))
+			current_round_length_drop = coreference_chain_overlap.length_drop(current_round_total_tokens,
+																			  mean_previous_token_count)
 		except ZeroDivisionError as e:
 			if self.strict:
 				raise ValueError(
@@ -94,8 +92,8 @@ class TokenTypeDataPrinter(object):
 					"WARNING: Round {} of session \"{}\" did not have any relevant tokens!".format(round_id,
 																								   dyad_id),
 					file=sys.stderr)
-				overlap_ratio = _DECIMAL_ZERO
-				current_round_length_drop = _DECIMAL_ZERO
+				overlap_ratio = coreference_chain_overlap.NULL_TOKEN_TYPE_OVERLAP_VALUE
+				current_round_length_drop = coreference_chain_overlap.NULL_TOKEN_LENGTH_DROP_VALUE
 
 		return (dyad_id, str(entity_id), str(sequence_order), str(round_id), str(current_round_total_tokens),
 				str(cumulative_token_count), str(mean_previous_token_count),
@@ -132,10 +130,11 @@ def __main(args):
 
 	named_sessions = walk_session_data(args.inpaths)
 	outfile = sys.stdout
-	referent_token_counter = referent_token_type_counts.CoreferenceChainTokenCounter(utterances.SegmentUtteranceFactory(),
-																			 re_token_type_counts.FilteringTokenCounter(
-																				 lambda
-																					 token: token in token_groups.keys()))
+	referent_token_counter = referent_token_type_counts.CoreferenceChainTokenCounter(
+		utterances.SegmentUtteranceFactory(),
+		re_token_type_counts.FilteringTokenCounter(
+			lambda
+				token: token in token_groups.keys()))
 	referent_token_counts = referent_token_counter(named_sessions)
 	printer = TokenTypeDataPrinter(args.strict)
 	printer(referent_token_counts.items(), outfile)
