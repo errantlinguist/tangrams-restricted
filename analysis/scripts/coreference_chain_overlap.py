@@ -5,7 +5,7 @@ import re
 import statistics
 import sys
 from collections import defaultdict
-from decimal import Decimal
+from decimal import Decimal, DivisionByZero
 from typing import Any, Callable, Dict, ItemsView, Iterable, Tuple, TypeVar
 
 import game_events
@@ -21,6 +21,7 @@ NULL_VALUE_REPR = '?'
 T = TypeVar('T')
 
 _DECIMAL_INFINITY = Decimal("Infinity")
+_DECIMAL_NAN = Decimal("NaN")
 
 
 class RoundReferentCounts(object):
@@ -110,7 +111,8 @@ class TokenTypeDataPrinter(object):
 		return (dyad_id, str(entity_id), str(sequence_order), str(round_id), str(current_round_total_tokens),
 				str(current_round_total_tokens), mean_previous_token_count,
 				current_round_length_drop, str(len(current_round_token_types)), str(len(current_round_token_types)),
-				str(token_type_overlap), overlap_ratio, str(initial_event.score), str(initial_event.event_time))
+				str(token_type_overlap), overlap_ratio, str(initial_event.score), str(initial_event.event_time),
+				str(time_score_ratio(initial_event)))
 
 	def __init__(self, strict: bool):
 		self.strict = strict
@@ -120,7 +122,7 @@ class TokenTypeDataPrinter(object):
 			("DYAD", "ENTITY", "SEQUENCE_ORDER", "ROUND", "ROUND_TOKENS", "CUMULATIVE_TOKENS", "PREVIOUS_MEAN_TOKENS",
 			 "LENGTH_DROP",
 			 "ROUND_TYPES", "CUMULATIVE_TYPES", "OVERLAPPING_TYPES",
-			 "OVERLAPPING_TYPE_RATIO", "GAME_SCORE" "ROUND_START_TIME")), file=outfile)
+			 "OVERLAPPING_TYPE_RATIO", "GAME_SCORE", "ROUND_START_TIME", "TIME_SCORE_RATIO")), file=outfile)
 
 		ordered_session_referent_token_counts = sorted(session_referent_token_counts, key=lambda item: item[0])
 		for dyad_id, referent_token_counts in ordered_session_referent_token_counts:
@@ -183,7 +185,8 @@ class TokenTypeDataPrinter(object):
 				str(cumulative_token_count), str(mean_previous_token_count),
 				str(current_round_length_drop), str(len(current_round_token_types)), str(unified_token_type_count),
 				str(overlapping_token_type_count),
-				str(overlap_ratio), str(initial_event.score), str(initial_event.event_time))
+				str(overlap_ratio), str(initial_event.score), str(initial_event.event_time),
+				str(time_score_ratio(initial_event)))
 
 
 def length_drop(current_total_tokens: Decimal, mean_previous_token_count: Decimal) -> Decimal:
@@ -198,6 +201,14 @@ def length_drop(current_total_tokens: Decimal, mean_previous_token_count: Decima
 	:rtype Decimal
 	"""
 	return (mean_previous_token_count - current_total_tokens) / (mean_previous_token_count + current_total_tokens)
+
+
+def time_score_ratio(event: game_events.Event) -> Decimal:
+	try:
+		result = Decimal(event.event_time) / Decimal(event.score)
+	except DivisionByZero:
+		result = _DECIMAL_NAN
+	return result
 
 
 def token_type_overlap_ratio(overlapping_token_type_count: int, unified_token_type_count: int) -> Decimal:
