@@ -18,6 +18,7 @@ package se.kth.speech.coin.tangrams.analysis;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -37,10 +38,12 @@ import se.kth.speech.coin.tangrams.game.PlayerRole;
 final class ParticipantSourceIdMapFactory
 		implements BiFunction<SessionDataManager, SessionGameManager, Map<String, String>> {
 
-	private static final List<PlayerRole> DEFAULT_PLAYER_ROLE_ORDERING = createDefaultPlayerRoleOrderingList();
+	public static final List<PlayerRole> DEFAULT_PLAYER_ROLE_ORDERING = Collections
+			.unmodifiableList(createDefaultPlayerRoleOrderingList());
 
-	private static final List<String> DEFAULT_VALID_PARTICIPANT_IDS = Arrays.asList("A", "B", "C", "D", "E", "F", "G",
-			"H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z");
+	public static final List<String> DEFAULT_VALID_PARTICIPANT_IDS = Collections
+			.unmodifiableList(Arrays.asList("A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O",
+					"P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"));
 
 	private static List<PlayerRole> createDefaultPlayerRoleOrderingList() {
 		final PlayerRole[] rolesToAdd = PlayerRole.values();
