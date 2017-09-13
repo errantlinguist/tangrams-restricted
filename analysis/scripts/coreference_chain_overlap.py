@@ -206,14 +206,14 @@ def round_score_ratio(event: game_events.Event) -> Decimal:
 	try:
 		result = Decimal(event.round_id) / Decimal(event.score)
 	except DivisionByZero:
-		result = _DECIMAL_NAN
+		result = _DECIMAL_INFINITY
 	return result
 
 def time_score_ratio(event: game_events.Event) -> Decimal:
 	try:
 		result = Decimal(event.event_time) / Decimal(event.score)
 	except DivisionByZero:
-		result = _DECIMAL_NAN
+		result = _DECIMAL_INFINITY
 	return result
 
 
