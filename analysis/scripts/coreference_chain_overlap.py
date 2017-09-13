@@ -6,7 +6,7 @@ import statistics
 import string
 import sys
 from collections import defaultdict
-from typing import Any, Callable, Dict, Iterable, Tuple, TypeVar
+from typing import Any, Callable, Dict, ItemsView, Iterable, Tuple, TypeVar
 
 import game_events
 import re_token_type_counts
@@ -21,20 +21,40 @@ NULL_VALUE_REPR = '?'
 T = TypeVar('T')
 
 
+class RoundReferentCounts(object):
+	def __init__(self, participant_counts: Dict[Any, re_token_type_counts.FilteredTokenCountDatum]):
+		self.participant_counts = participant_counts
+		"""Token counts for utterances produced by a given participant in the round represented by this instance."""
+		self.total_counts = re_token_type_counts.FilteredTokenCountDatum()
+		for counts in participant_counts.values():
+			self.total_counts.update(counts)
+		"""Token counts for all utterances produced by all participants in the round represented by this instance."""
+
+	def __repr__(self, *args, **kwargs):
+		return self.__class__.__name__ + str(self.__dict__)
+
 
 class ReferentCounts(object):
 	def __init__(self):
-		self.participant_round_counts = defaultdict(list)
-		"""participant_id -> counts for entity for each round in which the entity is referenced for utterances by a particular participant"""
+		self.round_counts = []
+		"""Counts for each round in which the entity is referenced for utterances by a particular participant"""
 		self.participant_total_counts = defaultdict(re_token_type_counts.FilteredTokenCountDatum)
 		"""participant_id -> total counts for entity for the entire coreference chain for utterances by a particular participant"""
-		self.round_total_counts = []
-		"""Counts for entity for each round in which the entity is referenced, for all utterances by all speakers"""
 		self.total_counts = re_token_type_counts.FilteredTokenCountDatum()
 		"""Total counts for entity for the entire coreference chain, for all utterances by all speakers"""
 
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
+
+	def add_round_counts(self, round_id: Any, round_counts: RoundReferentCounts):
+		self.round_counts.append((round_id, round_counts))
+		for participant_id, participant_counts in round_counts.participant_counts.items():
+			self.participant_total_counts[participant_id].update(participant_counts)
+		self.total_counts.update(round_counts.total_counts)
+
+	@property
+	def coreference_chain_length(self):
+		return len(self.round_counts)
 
 
 class ParticipantCoreferenceChainTokenCounter(object):
@@ -57,31 +77,23 @@ class ParticipantCoreferenceChainTokenCounter(object):
 			participant_id_factory = ParticipantIdFactory()
 
 			entity_referent_counts = defaultdict(ReferentCounts)
-			for (round_id, (game_round, game_round_utts)) in enumerate(game_round_utts, start=1):
+			for (round_id, (game_round, utts)) in enumerate(game_round_utts, start=1):
 				initial_event = next(iter(game_round.events))
 				# Get the participant ID for the first event's submitter without using it so that the first instructor of a game is always assigned the first participant ID (e.g. "A")
 				participant_id_factory(initial_event.submitter)
-				speaker_utts = utterances.create_speaker_dict(game_round_utts)
-
-				total_token_counts = self.filtering_token_counter(game_round_utts)
+				# Create a tuple from the generator so that the utterances can be processed more than once
+				# utt_tuple = tuple(utts)
+				# total_token_counts = self.filtering_token_counter(utt_tuple)
+				speaker_utts = utterances.create_speaker_dict(utts)
 				participant_token_counts = {}
-				for speaker_id, utts in speaker_utts.items():
+				for speaker_id, speaker_utts in speaker_utts.items():
 					speaker_participant_id = participant_id_factory(speaker_id)
-					participant_token_counts[speaker_participant_id] = self.filtering_token_counter(utts)
+					participant_token_counts[speaker_participant_id] = self.filtering_token_counter(speaker_utts)
 
+				round_counts = RoundReferentCounts(participant_token_counts)
 				for entity_id, _ in initial_event.referent_entities:
-					referent_counts = entity_referent_counts[entity_id]
-					referent_counts.round_total_counts.append((round_id, total_token_counts))
-					# Update total counts for the entire coreference chain, for all utterances by all speakers
-					referent_counts.total_counts.update(total_token_counts)
-
-
-					for participant_id, participant_counts in participant_token_counts.items():
-						participant_round_counts = referent_counts.participant_round_counts[participant_id]
-						participant_round_counts.append((round_id, participant_counts))
-
-						participant_total_counts = referent_counts.participant_total_counts[participant_id]
-						participant_total_counts.update(participant_counts)
+					entity_counts = entity_referent_counts[entity_id]
+					entity_counts.add_round_counts(round_id, round_counts)
 
 			result[dyad_id] = entity_referent_counts
 
@@ -121,7 +133,7 @@ class TokenTypeDataPrinter(object):
 	def __init__(self, strict: bool):
 		self.strict = strict
 
-	def __call__(self, session_referent_token_counts: Iterable[Tuple[str, Dict[int, ReferentCounts]]], outfile):
+	def __call__(self, session_referent_token_counts: ItemsView[str, Dict[int, ReferentCounts]], outfile):
 		print(COL_DELIM.join(
 			("DYAD", "ENTITY", "SEQUENCE_ORDER", "ROUND", "ROUND_TOKENS", "CUMULATIVE_TOKENS", "PREVIOUS_MEAN_TOKENS",
 			 "LENGTH_DROP",
@@ -131,9 +143,12 @@ class TokenTypeDataPrinter(object):
 		ordered_session_referent_token_counts = sorted(session_referent_token_counts, key=lambda item: item[0])
 		for dyad_id, referent_token_counts in ordered_session_referent_token_counts:
 			for entity_id, entity_token_counts in sorted(referent_token_counts.items(), key=lambda item: item[0]):
-				#entity_token_counts.
-				sequence_order, (round_id, round_token_counts) = next(enumerated_round_counts)
-				current_round_token_counts = round_token_counts.round_data.relevant_tokens
+				# Counts for each round, ordered by their respective round IDs
+				ordered_round_counts = sorted(entity_token_counts.round_counts, key=lambda item: item[0])
+				# Round IDs and their corresponding counts, enumerated by their coreference chain sequence number
+				enumerated_ordered_round_counts = enumerate(ordered_round_counts, start=1)
+				sequence_order, (round_id, round_token_counts) = next(enumerated_ordered_round_counts)
+				current_round_token_counts = round_token_counts.total_counts.relevant_tokens
 				current_round_total_tokens = current_round_token_counts.total_token_count()
 				current_round_token_types = frozenset(current_round_token_counts.token_types)
 				print(COL_DELIM.join(
@@ -143,8 +158,8 @@ class TokenTypeDataPrinter(object):
 				previous_round_token_types = current_round_token_types
 				previous_round_total_tokens = [current_round_total_tokens]
 
-				for (sequence_order, (round_id, round_token_counts)) in enumerated_round_counts:
-					current_round_token_counts = round_token_counts.round_data.relevant_tokens
+				for (sequence_order, (round_id, round_token_counts)) in enumerated_ordered_round_counts:
+					current_round_token_counts = round_token_counts.total_counts.relevant_tokens
 					current_round_total_tokens = current_round_token_counts.total_token_count()
 					current_round_token_types = frozenset(current_round_token_counts.token_types)
 					row = self.__create_row(dyad_id, entity_id, sequence_order, round_id, current_round_total_tokens,
