@@ -5,6 +5,7 @@ import re
 import statistics
 import sys
 from collections import defaultdict
+from decimal import Decimal
 from typing import Any, Callable, Dict, ItemsView, Iterable, Tuple, TypeVar
 
 import game_events
@@ -18,6 +19,8 @@ COL_DELIM = '\t'
 NULL_VALUE_REPR = '?'
 
 T = TypeVar('T')
+
+_DECIMAL_INFINITY = Decimal("Infinity")
 
 
 class RoundReferentCounts(object):
@@ -128,7 +131,7 @@ class TokenTypeDataPrinter(object):
 				enumerated_ordered_round_counts = enumerate(ordered_round_counts, start=1)
 				sequence_order, (round_id, round_token_counts) = next(enumerated_ordered_round_counts)
 				current_round_token_counts = round_token_counts.total_counts.relevant_tokens
-				current_round_total_tokens = current_round_token_counts.total_token_count()
+				current_round_total_tokens = Decimal(current_round_token_counts.total_token_count())
 				current_round_token_types = frozenset(current_round_token_counts.token_types)
 				print(COL_DELIM.join(
 					self.__create_first_row(dyad_id, entity_id, sequence_order, round_id, current_round_total_tokens,
@@ -139,7 +142,7 @@ class TokenTypeDataPrinter(object):
 
 				for (sequence_order, (round_id, round_token_counts)) in enumerated_ordered_round_counts:
 					current_round_token_counts = round_token_counts.total_counts.relevant_tokens
-					current_round_total_tokens = current_round_token_counts.total_token_count()
+					current_round_total_tokens = Decimal(current_round_token_counts.total_token_count())
 					current_round_token_types = frozenset(current_round_token_counts.token_types)
 					row = self.__create_row(dyad_id, entity_id, sequence_order, round_id, current_round_total_tokens,
 											current_round_token_types, previous_round_token_types,
@@ -150,17 +153,17 @@ class TokenTypeDataPrinter(object):
 					previous_round_total_tokens.append(current_round_total_tokens)
 
 	def __create_row(self, dyad_id, entity_id, sequence_order, round_id, current_round_total_tokens,
-					 current_round_token_types, previous_round_token_types, previous_round_total_tokens: Iterable[int],
+					 current_round_token_types, previous_round_token_types,
+					 previous_round_total_tokens: Iterable[Decimal],
 					 game_round: game_events.GameRound):
-		unified_token_types = current_round_token_types.union(
-			previous_round_token_types)
-		overlapping_token_types = current_round_token_types.intersection(
-			previous_round_token_types)
+		unified_token_type_count = len(current_round_token_types.union(
+			previous_round_token_types))
+		overlapping_token_type_count = len(current_round_token_types.intersection(
+			previous_round_token_types))
 		cumulative_token_count = sum(previous_round_total_tokens) + current_round_total_tokens
 		mean_previous_token_count = statistics.mean(previous_round_total_tokens)
-		token_type_overlap = len(overlapping_token_types)
 		try:
-			overlap_ratio = token_type_overlap / len(unified_token_types)
+			overlap_ratio = token_type_overlap_ratio(overlapping_token_type_count, unified_token_type_count)
 			current_round_length_drop = length_drop(current_round_total_tokens, mean_previous_token_count)
 		except ZeroDivisionError as e:
 			if self.strict:
@@ -172,29 +175,33 @@ class TokenTypeDataPrinter(object):
 					"WARNING: Round {} of session \"{}\" did not have any relevant tokens!".format(round_id,
 																								   dyad_id),
 					file=sys.stderr)
-				overlap_ratio = float('nan')
+				overlap_ratio = _DECIMAL_INFINITY
 				current_round_length_drop = overlap_ratio
 
 		initial_event = game_round.initial_event
 		return (dyad_id, str(entity_id), str(sequence_order), str(round_id), str(current_round_total_tokens),
 				str(cumulative_token_count), str(mean_previous_token_count),
-				str(current_round_length_drop), str(len(current_round_token_types)), str(len(unified_token_types)),
-				str(token_type_overlap),
+				str(current_round_length_drop), str(len(current_round_token_types)), str(unified_token_type_count),
+				str(overlapping_token_type_count),
 				str(overlap_ratio), str(initial_event.score), str(initial_event.event_time))
 
 
-def length_drop(current_total_tokens: int, mean_previous_token_count: float) -> float:
+def length_drop(current_total_tokens: Decimal, mean_previous_token_count: Decimal) -> Decimal:
 	"""
 	See Aina, L. et al (2017) "Referring Expressions and Communicative Success in Task-oriented Dialogues", p. 9.
 
 	:param current_total_tokens: The total tokens uttered in the current unit under examination (e.g. either a single utterance or an entire sub-dialogue).
-	:type current_total_tokens: int
+	:type current_total_tokens: Decimal
 	:param mean_previous_token_count:  The mean tokens uttered of the previous units under examination (e.g. either a single utterance or an entire sub-dialogue).
-	:type mean_previous_token_count: float
+	:type mean_previous_token_count: Decimal
 	:return: A metric between -1 and 1.
-	:rtype float
+	:rtype Decimal
 	"""
 	return (mean_previous_token_count - current_total_tokens) / (mean_previous_token_count + current_total_tokens)
+
+
+def token_type_overlap_ratio(overlapping_token_type_count: int, unified_token_type_count: int) -> Decimal:
+	return Decimal(overlapping_token_type_count) / Decimal(unified_token_type_count)
 
 
 def __create_argparser():

@@ -130,8 +130,8 @@ class SessionRoundTokenCounter(object):
 
 class TokenTypeDataPrinter(object):
 	@staticmethod
-	def __ratio(tokens: int, types: int) -> float:
-		return types / tokens
+	def __ratio(tokens: int, types: int) -> Decimal:
+		return Decimal(types) / Decimal(tokens)
 
 	def __init__(self, strict: bool):
 		self.strict = strict
@@ -160,7 +160,7 @@ class TokenTypeDataPrinter(object):
 						print("WARNING: Round {} of session \"{}\" did not have any relevant tokens!".format(round_id,
 																											 dyad_id),
 							  file=sys.stderr)
-						round_ratio = float('nan')
+						round_ratio = Decimal('NaN')
 						cumulative_ratio = round_ratio
 
 				row = (dyad_id, str(round_id), str(round_token_count), str(round_type_count), str(round_ratio),
