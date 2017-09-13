@@ -69,7 +69,7 @@ class ParticipantCoreferenceChainTokenCounter(object):
 		for dyad_id, session in named_sessions:
 			print("Processing session \"{}\".".format(dyad_id), file=sys.stderr)
 
-			events, participant_source_ids = game_events.read_events(session)
+			events, source_participant_ids = game_events.read_events(session)
 			game_rounds = iter(game_events.create_game_rounds(events))
 			segments = utterances.read_segments(session.utts)
 			utt_times = utterances.UtteranceTimes(self.seg_utt_factory(segments))
