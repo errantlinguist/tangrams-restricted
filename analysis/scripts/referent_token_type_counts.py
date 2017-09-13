@@ -51,7 +51,7 @@ class CoreferenceChainTokenCounter(object):
 		utt_times = utterances.UtteranceTimes(self.seg_utt_factory(segments))
 		game_round_utts = zip_game_round_utterances(game_rounds, utt_times)
 		for (round_id, (game_round, utts)) in enumerate(game_round_utts, start=1):
-			initial_event = next(iter(game_round.events))
+			initial_event = game_round.initial_event
 			round_referent_token_counts = self.filtering_token_counter(utts)
 			for entity_id, _ in initial_event.referent_entities:
 				referent_token_counts = result[entity_id]

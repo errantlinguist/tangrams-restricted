@@ -1,6 +1,6 @@
 import csv
-import sys
 import json
+import sys
 from collections import defaultdict
 from enum import Enum, unique
 from typing import Dict, Iterable, List, Sequence, Tuple, Union
@@ -22,15 +22,18 @@ class EntityData(object):
 
 	@property
 	def is_referent(self):
-		return self.attr(session_data.DataColumn.REFERENT_ENTITY.value)
+		return self.__data_col_attr(session_data.DataColumn.REFERENT_ENTITY)
 
 	@property
 	def is_selected(self):
-		return self.attr(session_data.DataColumn.SELECTED_ENTITY.value)
+		return self.__data_col_attr(session_data.DataColumn.SELECTED_ENTITY)
 
 	@property
 	def shape(self):
-		return self.attr(session_data.DataColumn.SHAPE.value)
+		return self.__data_col_attr(session_data.DataColumn.SHAPE)
+
+	def __data_col_attr(self, col: session_data.DataColumn):
+		return self.attr(col.value)
 
 
 class Event(object):
@@ -40,6 +43,7 @@ class Event(object):
 		NAME = session_data.DataColumn.EVENT_NAME.value
 		SUBMITTER = session_data.DataColumn.SUBMITTER.value
 		TIME = session_data.DataColumn.EVENT_TIME.value
+		SCORE = session_data.DataColumn.SCORE.value
 
 	def __init__(self, entities: Sequence[EntityData], attrs: Dict[Attribute, str] = None):
 		if attrs is None:
@@ -102,6 +106,14 @@ class GameRound(object):
 	def events_by_id(self):
 		return enumerate(self.events, start=1)
 
+	@property
+	def initial_event(self):
+		return next(iter(self.events))
+
+	@property
+	def initial_score(self):
+		initial_event = self.initial_event
+		return initial_event.attrs[Event.Attribute.SCORE]
 
 def create_game_rounds(events: Iterable[Event]) -> Iterable[GameRound]:
 	round_events = defaultdict(list)
@@ -136,7 +148,8 @@ def read_events(session: session_data.SessionData) -> Tuple[Iterable[Event], Dic
 
 	source_participant_id_json_str = events_metadata[session_data.MetadataColumn.SOURCE_PARTICIPANT_IDS.value]
 	source_participant_ids = json.loads(source_participant_id_json_str, encoding=session_data.ENCODING)
-	interned_source_participant_ids = dict((sys.intern(key), sys.intern(value)) for (key, value) in source_participant_ids.items())
+	interned_source_participant_ids = dict(
+		(sys.intern(key), sys.intern(value)) for (key, value) in source_participant_ids.items())
 	return events, interned_source_participant_ids
 
 

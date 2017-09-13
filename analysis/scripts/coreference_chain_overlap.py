@@ -21,7 +21,9 @@ T = TypeVar('T')
 
 
 class RoundReferentCounts(object):
-	def __init__(self, participant_counts: Dict[Any, re_token_type_counts.FilteredTokenCountDatum]):
+	def __init__(self, game_round: game_events.GameRound,
+				 participant_counts: Dict[Any, re_token_type_counts.FilteredTokenCountDatum]):
+		self.game_round = game_round
 		self.participant_counts = participant_counts
 		"""Token counts for utterances produced by a given participant in the round represented by this instance."""
 		self.total_counts = re_token_type_counts.FilteredTokenCountDatum()
@@ -76,14 +78,14 @@ class ParticipantCoreferenceChainTokenCounter(object):
 
 			entity_referent_counts = defaultdict(ReferentCounts)
 			for (round_id, (game_round, utts)) in enumerate(game_round_utts, start=1):
-				initial_event = next(iter(game_round.events))
+				initial_event = game_round.initial_event
 				speaker_utts = utterances.create_speaker_dict(utts)
 				participant_token_counts = {}
 				for speaker_id, speaker_utts in speaker_utts.items():
 					speaker_participant_id = source_participant_ids[speaker_id]
 					participant_token_counts[speaker_participant_id] = self.filtering_token_counter(speaker_utts)
 
-				round_counts = RoundReferentCounts(participant_token_counts)
+				round_counts = RoundReferentCounts(game_round, participant_token_counts)
 				for entity_id, _ in initial_event.referent_entities:
 					entity_counts = entity_referent_counts[entity_id]
 					entity_counts.add_round_counts(round_id, round_counts)
@@ -96,7 +98,7 @@ class ParticipantCoreferenceChainTokenCounter(object):
 class TokenTypeDataPrinter(object):
 	@staticmethod
 	def __create_first_row(dyad_id, entity_id, sequence_order, round_id, current_round_total_tokens,
-						   current_round_token_types):
+						   current_round_token_types, game_round: game_events.GameRound):
 		mean_previous_token_count = NULL_VALUE_REPR
 		token_type_overlap = 0
 		overlap_ratio = NULL_VALUE_REPR
@@ -104,7 +106,7 @@ class TokenTypeDataPrinter(object):
 		return (dyad_id, str(entity_id), str(sequence_order), str(round_id), str(current_round_total_tokens),
 				str(current_round_total_tokens), mean_previous_token_count,
 				current_round_length_drop, str(len(current_round_token_types)), str(len(current_round_token_types)),
-				str(token_type_overlap), overlap_ratio)
+				str(token_type_overlap), overlap_ratio, str(game_round.initial_score))
 
 	def __init__(self, strict: bool):
 		self.strict = strict
@@ -114,7 +116,7 @@ class TokenTypeDataPrinter(object):
 			("DYAD", "ENTITY", "SEQUENCE_ORDER", "ROUND", "ROUND_TOKENS", "CUMULATIVE_TOKENS", "PREVIOUS_MEAN_TOKENS",
 			 "LENGTH_DROP",
 			 "ROUND_TYPES", "CUMULATIVE_TYPES", "OVERLAPPING_TYPES",
-			 "OVERLAPPING_TYPE_RATIO")), file=outfile)
+			 "OVERLAPPING_TYPE_RATIO", "GAME_SCORE")), file=outfile)
 
 		ordered_session_referent_token_counts = sorted(session_referent_token_counts, key=lambda item: item[0])
 		for dyad_id, referent_token_counts in ordered_session_referent_token_counts:
@@ -129,7 +131,7 @@ class TokenTypeDataPrinter(object):
 				current_round_token_types = frozenset(current_round_token_counts.token_types)
 				print(COL_DELIM.join(
 					self.__create_first_row(dyad_id, entity_id, sequence_order, round_id, current_round_total_tokens,
-											current_round_token_types)),
+											current_round_token_types, round_token_counts.game_round)),
 					file=outfile)
 				previous_round_token_types = current_round_token_types
 				previous_round_total_tokens = [current_round_total_tokens]
@@ -140,14 +142,15 @@ class TokenTypeDataPrinter(object):
 					current_round_token_types = frozenset(current_round_token_counts.token_types)
 					row = self.__create_row(dyad_id, entity_id, sequence_order, round_id, current_round_total_tokens,
 											current_round_token_types, previous_round_token_types,
-											previous_round_total_tokens)
+											previous_round_total_tokens, round_token_counts.game_round)
 					print(COL_DELIM.join(row), file=outfile)
 
 					previous_round_token_types = current_round_token_types
 					previous_round_total_tokens.append(current_round_total_tokens)
 
 	def __create_row(self, dyad_id, entity_id, sequence_order, round_id, current_round_total_tokens,
-					 current_round_token_types, previous_round_token_types, previous_round_total_tokens: Iterable[int]):
+					 current_round_token_types, previous_round_token_types, previous_round_total_tokens: Iterable[int],
+					 game_round: game_events.GameRound):
 		unified_token_types = current_round_token_types.union(
 			previous_round_token_types)
 		overlapping_token_types = current_round_token_types.intersection(
@@ -175,7 +178,7 @@ class TokenTypeDataPrinter(object):
 				str(cumulative_token_count), str(mean_previous_token_count),
 				str(current_round_length_drop), str(len(current_round_token_types)), str(len(unified_token_types)),
 				str(token_type_overlap),
-				str(overlap_ratio))
+				str(overlap_ratio), str(game_round.initial_score))
 
 
 def length_drop(current_total_tokens: int, mean_previous_token_count: float) -> float:
