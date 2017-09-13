@@ -198,9 +198,6 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 
 	private static final String TABLE_STRING_REPR_COL_DELIMITER;
 
-	private static final List<String> VALID_PARTICIPANT_IDS = Arrays.asList("A", "B", "C", "D", "E", "F", "G", "H", "I",
-			"J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z");
-
 	static {
 		TABLE_STRING_REPR_COL_DELIMITER = "\t";
 		TABLE_ROW_CELL_JOINER = Collectors.joining(TABLE_STRING_REPR_COL_DELIMITER);
