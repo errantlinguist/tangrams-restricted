@@ -114,11 +114,6 @@ class GameRound(object):
 	def initial_event(self):
 		return next(iter(self.events))
 
-	@property
-	def initial_score(self):
-		initial_event = self.initial_event
-		return initial_event.attrs[Event.Attribute.SCORE]
-
 
 def create_game_rounds(events: Iterable[Event]) -> Iterable[GameRound]:
 	round_events = defaultdict(list)

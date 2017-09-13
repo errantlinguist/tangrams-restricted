@@ -103,10 +103,11 @@ class TokenTypeDataPrinter(object):
 		token_type_overlap = 0
 		overlap_ratio = NULL_VALUE_REPR
 		current_round_length_drop = NULL_VALUE_REPR
+		initial_event = game_round.initial_event
 		return (dyad_id, str(entity_id), str(sequence_order), str(round_id), str(current_round_total_tokens),
 				str(current_round_total_tokens), mean_previous_token_count,
 				current_round_length_drop, str(len(current_round_token_types)), str(len(current_round_token_types)),
-				str(token_type_overlap), overlap_ratio, str(game_round.initial_score))
+				str(token_type_overlap), overlap_ratio, str(initial_event.score), str(initial_event.event_time))
 
 	def __init__(self, strict: bool):
 		self.strict = strict
@@ -116,7 +117,7 @@ class TokenTypeDataPrinter(object):
 			("DYAD", "ENTITY", "SEQUENCE_ORDER", "ROUND", "ROUND_TOKENS", "CUMULATIVE_TOKENS", "PREVIOUS_MEAN_TOKENS",
 			 "LENGTH_DROP",
 			 "ROUND_TYPES", "CUMULATIVE_TYPES", "OVERLAPPING_TYPES",
-			 "OVERLAPPING_TYPE_RATIO", "GAME_SCORE")), file=outfile)
+			 "OVERLAPPING_TYPE_RATIO", "GAME_SCORE" "ROUND_START_TIME")), file=outfile)
 
 		ordered_session_referent_token_counts = sorted(session_referent_token_counts, key=lambda item: item[0])
 		for dyad_id, referent_token_counts in ordered_session_referent_token_counts:
@@ -174,11 +175,12 @@ class TokenTypeDataPrinter(object):
 				overlap_ratio = float('nan')
 				current_round_length_drop = overlap_ratio
 
+		initial_event = game_round.initial_event
 		return (dyad_id, str(entity_id), str(sequence_order), str(round_id), str(current_round_total_tokens),
 				str(cumulative_token_count), str(mean_previous_token_count),
 				str(current_round_length_drop), str(len(current_round_token_types)), str(len(unified_token_types)),
 				str(token_type_overlap),
-				str(overlap_ratio), str(game_round.initial_score))
+				str(overlap_ratio), str(initial_event.score), str(initial_event.event_time))
 
 
 def length_drop(current_total_tokens: int, mean_previous_token_count: float) -> float:
