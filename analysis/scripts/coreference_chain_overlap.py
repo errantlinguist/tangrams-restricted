@@ -81,9 +81,6 @@ class ParticipantCoreferenceChainTokenCounter(object):
 				initial_event = next(iter(game_round.events))
 				# Get the participant ID for the first event's submitter without using it so that the first instructor of a game is always assigned the first participant ID (e.g. "A")
 				participant_id_factory(initial_event.submitter)
-				# Create a tuple from the generator so that the utterances can be processed more than once
-				# utt_tuple = tuple(utts)
-				# total_token_counts = self.filtering_token_counter(utt_tuple)
 				speaker_utts = utterances.create_speaker_dict(utts)
 				participant_token_counts = {}
 				for speaker_id, speaker_utts in speaker_utts.items():
