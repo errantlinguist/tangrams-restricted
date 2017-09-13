@@ -22,7 +22,7 @@ NULL_VALUE_REPR = "?"
 T = TypeVar('T')
 
 _DECIMAL_INFINITY = Decimal("Infinity")
-#_DECIMAL_NAN = Decimal("NaN")
+# _DECIMAL_NAN = Decimal("NaN")
 _DECIMAL_ZERO = Decimal("0")
 
 _EMPTY_SET = frozenset()
@@ -32,83 +32,28 @@ NULL_TOKEN_TYPE_OVERLAP_VALUE = _DECIMAL_ZERO
 NULL_TOKEN_LENGTH_DROP_VALUE = _DECIMAL_INFINITY
 
 
-class RoundReferentCounts(object):
-	def __init__(self, game_round: game_events.GameRound,
-				 participant_counts: Dict[Any, re_token_type_counts.FilteredTokenCountDatum]):
-		self.game_round = game_round
-		self.participant_counts = participant_counts
-		"""Token counts for utterances produced by a given participant in the round represented by this instance."""
-		self.total_counts = re_token_type_counts.FilteredTokenCountDatum()
-		for counts in participant_counts.values():
-			self.total_counts.update(counts)
-		"""Token counts for all utterances produced by all participants in the round represented by this instance."""
+class GameRoundMetrics(object):
+	COL_NAMES = ("DYAD", "ENTITY", "SEQUENCE_ORDER", "ROUND", "GAME_SCORE", "ROUND_START_TIME", "TIME_SCORE_RATIO",
+				 "ROUND_SCORE_RATIO")
+
+	def __init__(self, dyad_id: str, entity_id: int, sequence_order: int, round_id: int,
+				 initial_event: game_events.Event):
+		self.dyad_id = dyad_id
+		self.entity_id = entity_id
+		self.sequence_order = sequence_order
+		self.round_id = round_id
+		self.score = initial_event.score
+		self.time = initial_event.event_time
+		self.time_score_ratio = time_score_ratio(initial_event)
+		self.round_score_ratio = round_score_ratio(initial_event)
 
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
 
-
-class ReferentCounts(object):
-	def __init__(self):
-		self.round_counts = []
-		"""Counts for each round in which the entity is referenced for utterances by a particular participant"""
-		self.participant_total_counts = defaultdict(re_token_type_counts.FilteredTokenCountDatum)
-		"""participant_id -> total counts for entity for the entire coreference chain for utterances by a particular participant"""
-		self.total_counts = re_token_type_counts.FilteredTokenCountDatum()
-		"""Total counts for entity for the entire coreference chain, for all utterances by all speakers"""
-
-	def __repr__(self, *args, **kwargs):
-		return self.__class__.__name__ + str(self.__dict__)
-
-	def add_round_counts(self, round_id: Any, round_counts: RoundReferentCounts):
-		self.round_counts.append((round_id, round_counts))
-		for participant_id, participant_counts in round_counts.participant_counts.items():
-			self.participant_total_counts[participant_id].update(participant_counts)
-		self.total_counts.update(round_counts.total_counts)
-
-	@property
-	def coreference_chain_length(self):
-		return len(self.round_counts)
-
-	def participant_ids(self):
-		return self.participant_total_counts.keys()
-
-
-class ParticipantCoreferenceChainTokenCounter(object):
-	def __init__(self, seg_utt_factory: utterances.SegmentUtteranceFactory,
-				 filtering_token_counter: Callable[
-					 [Iterable[utterances.Utterance]], re_token_type_counts.FilteredTokenCountDatum]):
-		self.seg_utt_factory = seg_utt_factory
-		self.filtering_token_counter = filtering_token_counter
-
-	def __call__(self, named_sessions: Iterable[Tuple[str, sd.SessionData]]) -> Dict[str, Dict[int, ReferentCounts]]:
-		result = {}
-		for dyad_id, session in named_sessions:
-			print("Processing session \"{}\".".format(dyad_id), file=sys.stderr)
-
-			events, source_participant_ids = game_events.read_events(session)
-			game_rounds = iter(game_events.create_game_rounds(events))
-			segments = utterances.read_segments(session.utts)
-			utt_times = utterances.UtteranceTimes(self.seg_utt_factory(segments))
-			game_round_utts = referent_token_type_counts.zip_game_round_utterances(game_rounds, utt_times)
-
-			entity_referent_counts = defaultdict(ReferentCounts)
-			for (round_id, (game_round, utts)) in enumerate(game_round_utts, start=1):
-				initial_event = game_round.initial_event
-				speaker_utts = utterances.create_speaker_dict(utts)
-				participant_token_counts = {}
-				for speaker_id in source_participant_ids.keys():
-					participant_utts = speaker_utts.get(speaker_id, _EMPTY_SET)
-					speaker_participant_id = source_participant_ids[speaker_id]
-					participant_token_counts[speaker_participant_id] = self.filtering_token_counter(participant_utts)
-
-				round_counts = RoundReferentCounts(game_round, participant_token_counts)
-				for entity_id, _ in initial_event.referent_entities:
-					entity_counts = entity_referent_counts[entity_id]
-					entity_counts.add_round_counts(round_id, round_counts)
-
-			result[dyad_id] = entity_referent_counts
-
-		return result
+	def row_cells(self):
+		return (self.dyad_id, self.entity_id, self.sequence_order, self.round_id, self.score,
+				self.time,
+				self.time_score_ratio, self.round_score_ratio)
 
 
 class LanguageMetrics(object):
@@ -182,28 +127,83 @@ class LanguageMetrics(object):
 				self.overlapping_token_type_count, self.overlap_ratio)
 
 
-class GameRoundMetrics(object):
-	COL_NAMES = ("DYAD", "ENTITY", "SEQUENCE_ORDER", "ROUND", "GAME_SCORE", "ROUND_START_TIME", "TIME_SCORE_RATIO",
-				 "ROUND_SCORE_RATIO")
+class ParticipantCoreferenceChainTokenCounter(object):
+	def __init__(self, seg_utt_factory: utterances.SegmentUtteranceFactory,
+				 filtering_token_counter: Callable[
+					 [Iterable[utterances.Utterance]], re_token_type_counts.FilteredTokenCountDatum]):
+		self.seg_utt_factory = seg_utt_factory
+		self.filtering_token_counter = filtering_token_counter
 
-	def __init__(self, dyad_id: str, entity_id: int, sequence_order: int, round_id: int,
-				 initial_event: game_events.Event):
-		self.dyad_id = dyad_id
-		self.entity_id = entity_id
-		self.sequence_order = sequence_order
-		self.round_id = round_id
-		self.score = initial_event.score
-		self.time = initial_event.event_time
-		self.time_score_ratio = time_score_ratio(initial_event)
-		self.round_score_ratio = round_score_ratio(initial_event)
+	def __call__(self, named_sessions: Iterable[Tuple[str, sd.SessionData]]) -> Dict[str, Dict[int, "ReferentCounts"]]:
+		result = {}
+		for dyad_id, session in named_sessions:
+			print("Processing session \"{}\".".format(dyad_id), file=sys.stderr)
+
+			events, source_participant_ids = game_events.read_events(session)
+			game_rounds = iter(game_events.create_game_rounds(events))
+			segments = utterances.read_segments(session.utts)
+			utt_times = utterances.UtteranceTimes(self.seg_utt_factory(segments))
+			game_round_utts = referent_token_type_counts.zip_game_round_utterances(game_rounds, utt_times)
+
+			entity_referent_counts = defaultdict(ReferentCounts)
+			for (round_id, (game_round, utts)) in enumerate(game_round_utts, start=1):
+				initial_event = game_round.initial_event
+				speaker_utts = utterances.create_speaker_dict(utts)
+				participant_token_counts = {}
+				for speaker_id in source_participant_ids.keys():
+					participant_utts = speaker_utts.get(speaker_id, _EMPTY_SET)
+					speaker_participant_id = source_participant_ids[speaker_id]
+					participant_token_counts[speaker_participant_id] = self.filtering_token_counter(participant_utts)
+
+				round_counts = RoundReferentCounts(game_round, participant_token_counts)
+				for entity_id, _ in initial_event.referent_entities:
+					entity_counts = entity_referent_counts[entity_id]
+					entity_counts.add_round_counts(round_id, round_counts)
+
+			result[dyad_id] = entity_referent_counts
+
+		return result
+
+
+class ReferentCounts(object):
+	def __init__(self):
+		self.round_counts = []
+		"""Counts for each round in which the entity is referenced for utterances by a particular participant"""
+		self.participant_total_counts = defaultdict(re_token_type_counts.FilteredTokenCountDatum)
+		"""participant_id -> total counts for entity for the entire coreference chain for utterances by a particular participant"""
+		self.total_counts = re_token_type_counts.FilteredTokenCountDatum()
+		"""Total counts for entity for the entire coreference chain, for all utterances by all speakers"""
 
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
 
-	def row_cells(self):
-		return (self.dyad_id, self.entity_id, self.sequence_order, self.round_id, self.score,
-				self.time,
-				self.time_score_ratio, self.round_score_ratio)
+	def add_round_counts(self, round_id: Any, round_counts: "RoundReferentCounts"):
+		self.round_counts.append((round_id, round_counts))
+		for participant_id, participant_counts in round_counts.participant_counts.items():
+			self.participant_total_counts[participant_id].update(participant_counts)
+		self.total_counts.update(round_counts.total_counts)
+
+	@property
+	def coreference_chain_length(self):
+		return len(self.round_counts)
+
+	def participant_ids(self):
+		return self.participant_total_counts.keys()
+
+
+class RoundReferentCounts(object):
+	def __init__(self, game_round: game_events.GameRound,
+				 participant_counts: Dict[Any, re_token_type_counts.FilteredTokenCountDatum]):
+		self.game_round = game_round
+		self.participant_counts = participant_counts
+		"""Token counts for utterances produced by a given participant in the round represented by this instance."""
+		self.total_counts = re_token_type_counts.FilteredTokenCountDatum()
+		for counts in participant_counts.values():
+			self.total_counts.update(counts)
+		"""Token counts for all utterances produced by all participants in the round represented by this instance."""
+
+	def __repr__(self, *args, **kwargs):
+		return self.__class__.__name__ + str(self.__dict__)
 
 
 _RowMetrics = namedtuple("_RowMetrics", ("round", "participant_lang", "total_lang"))
