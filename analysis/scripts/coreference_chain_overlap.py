@@ -112,7 +112,7 @@ class TokenTypeDataPrinter(object):
 				str(current_round_total_tokens), mean_previous_token_count,
 				current_round_length_drop, str(len(current_round_token_types)), str(len(current_round_token_types)),
 				str(token_type_overlap), overlap_ratio, str(initial_event.score), str(initial_event.event_time),
-				str(time_score_ratio(initial_event)))
+				str(time_score_ratio(initial_event)), str(round_score_ratio(initial_event)))
 
 	def __init__(self, strict: bool):
 		self.strict = strict
@@ -122,7 +122,7 @@ class TokenTypeDataPrinter(object):
 			("DYAD", "ENTITY", "SEQUENCE_ORDER", "ROUND", "ROUND_TOKENS", "CUMULATIVE_TOKENS", "PREVIOUS_MEAN_TOKENS",
 			 "LENGTH_DROP",
 			 "ROUND_TYPES", "CUMULATIVE_TYPES", "OVERLAPPING_TYPES",
-			 "OVERLAPPING_TYPE_RATIO", "GAME_SCORE", "ROUND_START_TIME", "TIME_SCORE_RATIO")), file=outfile)
+			 "OVERLAPPING_TYPE_RATIO", "GAME_SCORE", "ROUND_START_TIME", "TIME_SCORE_RATIO", "ROUND_SCORE_RATIO")), file=outfile)
 
 		ordered_session_referent_token_counts = sorted(session_referent_token_counts, key=lambda item: item[0])
 		for dyad_id, referent_token_counts in ordered_session_referent_token_counts:
@@ -186,7 +186,7 @@ class TokenTypeDataPrinter(object):
 				str(current_round_length_drop), str(len(current_round_token_types)), str(unified_token_type_count),
 				str(overlapping_token_type_count),
 				str(overlap_ratio), str(initial_event.score), str(initial_event.event_time),
-				str(time_score_ratio(initial_event)))
+				str(time_score_ratio(initial_event)), str(round_score_ratio(initial_event)))
 
 
 def length_drop(current_total_tokens: Decimal, mean_previous_token_count: Decimal) -> Decimal:
@@ -202,6 +202,12 @@ def length_drop(current_total_tokens: Decimal, mean_previous_token_count: Decima
 	"""
 	return (mean_previous_token_count - current_total_tokens) / (mean_previous_token_count + current_total_tokens)
 
+def round_score_ratio(event: game_events.Event) -> Decimal:
+	try:
+		result = Decimal(event.round_id) / Decimal(event.score)
+	except DivisionByZero:
+		result = _DECIMAL_NAN
+	return result
 
 def time_score_ratio(event: game_events.Event) -> Decimal:
 	try:
