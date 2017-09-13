@@ -3,7 +3,6 @@
 import argparse
 import re
 import statistics
-import string
 import sys
 from collections import defaultdict
 from typing import Any, Callable, Dict, ItemsView, Iterable, Tuple, TypeVar
@@ -74,7 +73,6 @@ class ParticipantCoreferenceChainTokenCounter(object):
 			segments = utterances.read_segments(session.utts)
 			utt_times = utterances.UtteranceTimes(self.seg_utt_factory(segments))
 			game_round_utts = referent_token_type_counts.zip_game_round_utterances(game_rounds, utt_times)
-			participant_id_factory = ParticipantIdFactory()
 
 			entity_referent_counts = defaultdict(ReferentCounts)
 			for (round_id, (game_round, utts)) in enumerate(game_round_utts, start=1):
@@ -82,7 +80,7 @@ class ParticipantCoreferenceChainTokenCounter(object):
 				speaker_utts = utterances.create_speaker_dict(utts)
 				participant_token_counts = {}
 				for speaker_id, speaker_utts in speaker_utts.items():
-					speaker_participant_id = participant_id_factory(speaker_id)
+					speaker_participant_id = source_participant_ids[speaker_id]
 					participant_token_counts[speaker_participant_id] = self.filtering_token_counter(speaker_utts)
 
 				round_counts = RoundReferentCounts(participant_token_counts)
@@ -93,23 +91,6 @@ class ParticipantCoreferenceChainTokenCounter(object):
 			result[dyad_id] = entity_referent_counts
 
 		return result
-
-
-class ParticipantIdFactory(object):
-	def __init__(self, participant_id_symbols: Iterable[T] = string.ascii_uppercase):
-		self.participant_ids = {}
-		self.participant_id_symbol_iter = iter(participant_id_symbols)
-
-	def __call__(self, key: Any) -> T:
-		try:
-			result = self.participant_ids[key]
-		except KeyError:
-			result = self.__next_participant_id_symbol()
-			self.participant_ids[key] = result
-		return result
-
-	def __next_participant_id_symbol(self):
-		return next(self.participant_id_symbol_iter)
 
 
 class TokenTypeDataPrinter(object):
