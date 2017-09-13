@@ -37,12 +37,12 @@ import se.kth.speech.coin.tangrams.game.PlayerRole;
 final class ParticipantSourceIdMapFactory
 		implements BiFunction<SessionDataManager, SessionGameManager, Map<String, String>> {
 
-	private static final List<PlayerRole> DEFAULT_PLAYER_ROLE_ORDERING = createPlayerRoleOrderingList();
+	private static final List<PlayerRole> DEFAULT_PLAYER_ROLE_ORDERING = createDefaultPlayerRoleOrderingList();
 
 	private static final List<String> DEFAULT_VALID_PARTICIPANT_IDS = Arrays.asList("A", "B", "C", "D", "E", "F", "G",
 			"H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z");
 
-	private static List<PlayerRole> createPlayerRoleOrderingList() {
+	private static List<PlayerRole> createDefaultPlayerRoleOrderingList() {
 		final PlayerRole[] rolesToAdd = PlayerRole.values();
 		final List<PlayerRole> result = new ArrayList<>(rolesToAdd.length);
 		final PlayerRole initialRole = PlayerRole.MOVE_SUBMISSION;
