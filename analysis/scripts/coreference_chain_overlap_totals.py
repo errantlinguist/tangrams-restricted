@@ -4,7 +4,8 @@ import argparse
 import re
 import statistics
 import sys
-from typing import Any, Dict, Iterable, Tuple
+from decimal import Decimal
+from typing import Any, Dict, FrozenSet, Iterable, Tuple
 
 import coreference_chain_overlap
 import re_token_type_counts
@@ -47,7 +48,7 @@ class TokenTypeDataPrinter(object):
 				enumerated_round_counts = enumerate(entity_token_counts.round_counts_by_round_id(), start=1)
 				sequence_order, (round_id, round_token_counts) = next(enumerated_round_counts)
 				current_round_token_counts = round_token_counts.round_data.relevant_tokens
-				current_round_total_tokens = current_round_token_counts.total_token_count()
+				current_round_total_tokens = Decimal(current_round_token_counts.total_token_count())
 				current_round_token_types = frozenset(current_round_token_counts.token_types)
 				print(COL_DELIM.join(
 					self.__create_first_row(dyad_id, entity_id, sequence_order, round_id, current_round_total_tokens,
@@ -68,8 +69,10 @@ class TokenTypeDataPrinter(object):
 					previous_round_token_types = current_round_token_types
 					previous_round_total_tokens.append(current_round_total_tokens)
 
-	def __create_row(self, dyad_id, entity_id, sequence_order, round_id, current_round_total_tokens,
-					 current_round_token_types, previous_round_token_types, previous_round_total_tokens: Iterable[int]):
+	def __create_row(self, dyad_id: str, entity_id: int, sequence_order: int, round_id,
+					 current_round_total_tokens: Decimal,
+					 current_round_token_types: FrozenSet[str], previous_round_token_types: FrozenSet[str],
+					 previous_round_total_tokens: Iterable[Decimal]) -> Tuple[str, ...]:
 		unified_token_types = current_round_token_types.union(
 			previous_round_token_types)
 		overlapping_token_types = current_round_token_types.intersection(
