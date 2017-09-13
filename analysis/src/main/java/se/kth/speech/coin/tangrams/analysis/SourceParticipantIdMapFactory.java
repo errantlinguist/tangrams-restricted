@@ -35,7 +35,7 @@ import se.kth.speech.coin.tangrams.game.PlayerRole;
  * @since 13 Sep 2017
  *
  */
-final class ParticipantSourceIdMapFactory
+final class SourceParticipantIdMapFactory
 		implements BiFunction<SessionDataManager, SessionGameManager, Map<String, String>> {
 
 	public static final List<PlayerRole> DEFAULT_PLAYER_ROLE_ORDERING = Collections
@@ -63,11 +63,11 @@ final class ParticipantSourceIdMapFactory
 
 	private final List<String> validParticipantIds;
 
-	public ParticipantSourceIdMapFactory() {
+	public SourceParticipantIdMapFactory() {
 		this(DEFAULT_PLAYER_ROLE_ORDERING, DEFAULT_VALID_PARTICIPANT_IDS);
 	}
 
-	public ParticipantSourceIdMapFactory(final List<PlayerRole> playerRoleOrdering,
+	public SourceParticipantIdMapFactory(final List<PlayerRole> playerRoleOrdering,
 			final List<String> validParticipantIds) {
 		this.playerRoleOrdering = playerRoleOrdering;
 		this.validParticipantIds = validParticipantIds;
@@ -87,7 +87,7 @@ final class ParticipantSourceIdMapFactory
 				final String sourceId = playerSourceIds.get(rolePlayerId);
 				try {
 					final String nextParticipantId = newParticipantIdIter.next();
-					result.put(nextParticipantId, sourceId);
+					result.put(sourceId, nextParticipantId);
 				} catch (final NoSuchElementException e) {
 					final String msg = String.format(
 							"There are more player roles to assign participant IDs for (%d) than possible participant IDs (%d).",
