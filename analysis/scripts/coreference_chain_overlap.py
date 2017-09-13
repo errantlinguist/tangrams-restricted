@@ -131,7 +131,7 @@ class LanguageMetrics(object):
 																											  round_id,
 																											  dyad_id),
 					file=sys.stderr)
-				self.overlap_ratio = _DECIMAL_INFINITY
+				self.overlap_ratio = _DECIMAL_ZERO
 
 	def __set_history_sensitive_metrics(self, dyad_id: Any, round_id: Any, desc: Any,
 										previous_round_total_tokens: Iterable[Decimal], strict: bool):
@@ -153,7 +153,7 @@ class LanguageMetrics(object):
 																								   dyad_id),
 					file=sys.stderr)
 				self.current_round_length_drop = _DECIMAL_INFINITY
-				self.overlap_ratio = _DECIMAL_INFINITY
+				self.overlap_ratio = _DECIMAL_ZERO
 
 	def __init__(self, dyad_id: Any, round_id: Any, desc: Any, token_counts: re_token_type_counts.TokenCountDatum,
 				 previous_round_total_tokens: Iterable[Decimal] = None,
