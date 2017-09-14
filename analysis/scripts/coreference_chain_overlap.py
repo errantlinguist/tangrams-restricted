@@ -22,6 +22,7 @@ T = TypeVar('T')
 
 _DECIMAL_INFINITY = Decimal("Infinity")
 # _DECIMAL_NAN = Decimal("NaN")
+_DECIMAL_ONE = Decimal("1")
 _DECIMAL_ZERO = Decimal("0")
 
 _EMPTY_SET = frozenset()
@@ -51,7 +52,7 @@ class EventParticipantIdFactory(object):
 class GameRoundMetrics(object):
 	COL_NAMES = (
 		"DYAD", "ENTITY", "SEQUENCE_ORDER", "ROUND", "INSTRUCTOR", "GAME_SCORE", "ROUND_START_TIME", "TIME_SCORE_RATIO",
-		"ROUND_SCORE_RATIO")
+		"SCORE_ROUND_RATIO")
 
 	def __init__(self, dyad_id: str, entity_id: int, sequence_order: int, round_id: int,
 				 initial_event: game_events.Event, instructor: str):
@@ -63,7 +64,7 @@ class GameRoundMetrics(object):
 		self.score = initial_event.score
 		self.time = initial_event.event_time
 		self.time_score_ratio = time_score_ratio(initial_event)
-		self.round_score_ratio = round_score_ratio(initial_event)
+		self.score_round_ratio = score_round_ratio(initial_event)
 
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
@@ -71,7 +72,7 @@ class GameRoundMetrics(object):
 	def row_cells(self):
 		return (self.dyad_id, self.entity_id, self.sequence_order, self.round_id, self.instructor, self.score,
 				self.time,
-				self.time_score_ratio, self.round_score_ratio)
+				self.time_score_ratio, self.score_round_ratio)
 
 
 class LanguageMetrics(object):
@@ -358,11 +359,12 @@ def length_drop(current_total_tokens: Decimal, mean_previous_token_count: Decima
 	return (mean_previous_token_count - current_total_tokens) / (mean_previous_token_count + current_total_tokens)
 
 
-def round_score_ratio(event: game_events.Event) -> Decimal:
+def score_round_ratio(event: game_events.Event) -> Decimal:
 	try:
-		result = Decimal(event.round_id) / Decimal(event.score)
-	except ZeroDivisionError:
-		result = _DECIMAL_INFINITY
+		round_count = event.round_id - 1
+		result = Decimal(round_count) / Decimal(event.score)
+	except (InvalidOperation, ZeroDivisionError):
+		result = _DECIMAL_ONE
 	return result
 
 
