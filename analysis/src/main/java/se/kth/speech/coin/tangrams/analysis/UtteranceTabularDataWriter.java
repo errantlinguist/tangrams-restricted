@@ -300,7 +300,7 @@ final class UtteranceTabularDataWriter {
 
 	private static String createTimeDifferenceRepr(final LocalDateTime firstTime, final LocalDateTime nextTime) {
 		final Duration duration = Duration.between(firstTime, nextTime);
-		return TimestampArithmetic.formatDuration(duration);
+		return TimestampArithmetic.formatDurationHours(duration);
 	}
 
 	private final List<List<String>> colHeaders;

@@ -95,7 +95,7 @@ public final class TimestampArithmetic {
 	 * @see <a href="https://stackoverflow.com/a/266846/1391325">Original
 	 *      StackOverflow answer</a>
 	 */
-	public static String formatDuration(final Duration duration) {
+	public static String formatDurationHours(final Duration duration) {
 		final BigDecimal decimalSeconds = toDecimalSeconds(duration);
 		final BigDecimal absDecimalSeconds = decimalSeconds.abs();
 		final BigInteger absSecondsWholePart = absDecimalSeconds.toBigInteger();
