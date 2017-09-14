@@ -30,7 +30,7 @@ class FilteredTokenCountDatum(object):
 		for utt in utts:
 			self.all_tokens.token_counts.update(utt.content)
 			self.relevant_tokens.token_counts.update(token for token in utt.content if token_filter(token))
-		self.utts.extend(utts)
+			self.utts.append(utt)
 
 	def copy(self):
 		return FilteredTokenCountDatum(self.all_tokens.copy(), self.relevant_tokens.copy())
