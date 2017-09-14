@@ -84,7 +84,7 @@ final class SessionStatisticsWriter
 			@Override
 			public Option get() {
 				return Option.builder(optName).longOpt("hours").desc(
-						"Prints statistics in \"hours:minutes:seconds\" notation rather than in seconds as decimal fractions.")
+						"Prints statistics in \"HH:mm:ss.SSS\" notation rather than in seconds as decimal fractions.")
 						.build();
 			};
 		},
@@ -92,7 +92,7 @@ final class SessionStatisticsWriter
 			@Override
 			public Option get() {
 				return Option.builder(optName).longOpt("mintes").desc(
-						"Prints statistics in \"minutes:seconds\" notation rather than in seconds as decimal fractions.")
+						"Prints statistics in \"mm:ss.SSS\" notation rather than in seconds as decimal fractions.")
 						.build();
 			};
 		};
