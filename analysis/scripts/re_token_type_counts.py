@@ -18,10 +18,10 @@ T = TypeVar('T')
 
 
 class FilteredTokenCountDatum(object):
-	def __init__(self, all_tokens: "TokenCountDatum" = None, relevant_tokens: "TokenCountDatum" = None):
+	def __init__(self, all_tokens: "TokenCountDatum" = None, relevant_tokens: "TokenCountDatum" = None, utts = None):
 		self.all_tokens = TokenCountDatum() if all_tokens is None else all_tokens
 		self.relevant_tokens = TokenCountDatum() if relevant_tokens is None else relevant_tokens
-		self.utts = []
+		self.utts = [] if utts is None else utts
 
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
@@ -33,11 +33,12 @@ class FilteredTokenCountDatum(object):
 			self.utts.append(utt)
 
 	def copy(self):
-		return FilteredTokenCountDatum(self.all_tokens.copy(), self.relevant_tokens.copy())
+		return FilteredTokenCountDatum(self.all_tokens.copy(), self.relevant_tokens.copy(), self.utts)
 
 	def update(self, other: "FilteredTokenCountDatum"):
 		self.all_tokens.update(other.all_tokens)
 		self.relevant_tokens.update(other.relevant_tokens)
+		self.utts.extend(other.utts)
 
 
 class FilteringTokenCounter(object):
