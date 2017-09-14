@@ -59,7 +59,7 @@ class LanguageMetrics(object):
 	COL_NAMES = ("ROUND_TOKENS", "CUMULATIVE_TOKENS", "PREVIOUS_MEAN_TOKENS",
 				 "LENGTH_DROP",
 				 "ROUND_TYPES", "CUMULATIVE_TYPES", "OVERLAPPING_TYPES",
-				 "OVERLAPPING_TYPE_RATIO", "DIALOGUE")
+				 "OVERLAPPING_TYPE_RATIO", "UTTERANCES")
 
 	def __set_initial_metrics(self):
 		self.cumulative_token_count = self.current_round_total_tokens
