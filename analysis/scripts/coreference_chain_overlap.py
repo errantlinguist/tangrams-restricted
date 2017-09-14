@@ -6,7 +6,7 @@ import re
 import statistics
 import sys
 from collections import defaultdict, namedtuple
-from decimal import Decimal, InvalidOperation, DivisionByZero
+from decimal import Decimal, InvalidOperation
 from typing import Any, Callable, Dict, ItemsView, Iterable, List, Sequence, Set, Tuple, TypeVar
 
 import game_events
@@ -59,53 +59,28 @@ class LanguageMetrics(object):
 	COL_NAMES = ("ROUND_TOKENS", "CUMULATIVE_TOKENS", "PREVIOUS_MEAN_TOKENS",
 				 "LENGTH_DROP",
 				 "ROUND_TYPES", "CUMULATIVE_TYPES", "OVERLAPPING_TYPES",
-				 "OVERLAPPING_TYPE_RATIO")
+				 "OVERLAPPING_TYPE_RATIO", "DIALOGUE")
 
-	def __set_initial_metrics(self, dyad_id: Any, round_id: Any, desc: Any, strict: bool):
+	def __set_initial_metrics(self):
 		self.cumulative_token_count = self.current_round_total_tokens
 		self.mean_previous_token_count = NULL_PREVIOUS_MEAN_COUNT_VALUE
 		self.current_round_length_drop = NULL_TOKEN_LENGTH_DROP_VALUE
-		try:
-			self.overlap_ratio = token_type_overlap_ratio(self.overlapping_token_type_count,
-														  self.unified_token_type_count)
-		except (InvalidOperation, ZeroDivisionError) as e:
-			if strict:
-				raise ValueError(
-					"\"{}\" for round {} of session \"{}\" did not have any relevant tokens!".format(desc, round_id,
-																									 dyad_id)) from e
-			else:
-				print(
-					"WARNING: \"{}\" for round {} of session \"{}\" did not have any relevant tokens!".format(desc,
-																											  round_id,
-																											  dyad_id),
-					file=sys.stderr)
-				self.overlap_ratio = NULL_TOKEN_TYPE_OVERLAP_VALUE
+		self.overlap_ratio = NULL_TOKEN_TYPE_OVERLAP_VALUE
 
 	def __set_history_sensitive_metrics(self, dyad_id: Any, round_id: Any, desc: Any,
 										previous_round_total_tokens: Iterable[Decimal], strict: bool):
 		self.cumulative_token_count = sum(previous_round_total_tokens) + self.current_round_total_tokens
 		self.mean_previous_token_count = statistics.mean(previous_round_total_tokens)
-		try:
-			self.current_round_length_drop = length_drop(self.current_round_total_tokens,
-														 self.mean_previous_token_count)
-			self.overlap_ratio = token_type_overlap_ratio(self.overlapping_token_type_count,
-														  self.unified_token_type_count)
-		except (InvalidOperation, ZeroDivisionError) as e:
-			if strict:
-				raise ValueError(
-					"Round {} of session \"{}\" did not have any relevant tokens!".format(desc, round_id,
-																						  dyad_id)) from e
-			else:
-				print(
-					"WARNING: Round {} of session \"{}\" did not have any relevant tokens!".format(desc, round_id,
-																								   dyad_id),
-					file=sys.stderr)
-				self.current_round_length_drop = NULL_TOKEN_LENGTH_DROP_VALUE
-				self.overlap_ratio = NULL_TOKEN_TYPE_OVERLAP_VALUE
+		self.current_round_length_drop = try_length_drop(dyad_id, round_id, desc, self.current_round_total_tokens,
+														 self.mean_previous_token_count, strict)
+		self.overlap_ratio = try_token_type_overlap_ratio(dyad_id, round_id, desc, self.overlapping_token_type_count,
+														  self.unified_token_type_count, strict)
 
-	def __init__(self, dyad_id: Any, round_id: Any, desc: Any, token_counts: re_token_type_counts.TokenCountDatum,
+	def __init__(self, dyad_id: Any, round_id: Any, desc: Any, utts: Sequence[utterances.Utterance],
+				 token_counts: re_token_type_counts.TokenCountDatum,
 				 previous_round_total_tokens: Iterable[Decimal] = None,
 				 previous_round_token_types: Set[str] = _EMPTY_SET, strict: bool = False):
+		self.utts = utts
 		self.current_round_total_tokens = Decimal(token_counts.total_token_count())
 		self.current_round_token_types = frozenset(token_counts.token_types)
 		self.unified_token_type_count = len(self.current_round_token_types.union(
@@ -113,7 +88,7 @@ class LanguageMetrics(object):
 		self.overlapping_token_type_count = len(self.current_round_token_types.intersection(
 			previous_round_token_types))
 		if previous_round_total_tokens is None:
-			self.__set_initial_metrics(dyad_id, round_id, desc, strict)
+			self.__set_initial_metrics()
 		else:
 			self.__set_history_sensitive_metrics(dyad_id, round_id, desc, previous_round_total_tokens, strict)
 
@@ -123,7 +98,7 @@ class LanguageMetrics(object):
 	def row_cells(self):
 		return (self.current_round_total_tokens, self.cumulative_token_count, self.mean_previous_token_count,
 				self.current_round_length_drop, len(self.current_round_token_types), self.unified_token_type_count,
-				self.overlapping_token_type_count, self.overlap_ratio)
+				self.overlapping_token_type_count, self.overlap_ratio, utterances.dialogue_utt_str_repr(self.utts))
 
 
 class ParticipantCoreferenceChainTokenCounter(object):
@@ -138,7 +113,8 @@ class ParticipantCoreferenceChainTokenCounter(object):
 			print("Processing session \"{}\".".format(dyad_id), file=sys.stderr)
 
 			events, source_participant_ids = game_events.read_events(session)
-			seg_utt_factory = utterances.SegmentUtteranceFactory(self.token_seq_factory)
+			seg_utt_factory = utterances.SegmentUtteranceFactory(self.token_seq_factory,
+																 lambda source_id: source_participant_ids[source_id])
 			game_rounds = iter(game_events.create_game_rounds(events))
 			segments = utterances.read_segments(session.utts)
 			utt_times = utterances.UtteranceTimes(seg_utt_factory(segments))
@@ -150,8 +126,8 @@ class ParticipantCoreferenceChainTokenCounter(object):
 				speaker_utts = utterances.create_speaker_dict(utts)
 				participant_token_counts = {}
 				for speaker_id in source_participant_ids.keys():
-					participant_utts = speaker_utts.get(speaker_id, _EMPTY_SET)
 					speaker_participant_id = source_participant_ids[speaker_id]
+					participant_utts = speaker_utts.get(speaker_participant_id, _EMPTY_SET)
 					participant_token_counts[speaker_participant_id] = self.filtering_token_counter(participant_utts)
 
 				round_counts = RoundReferentCounts(game_round, participant_token_counts)
@@ -215,11 +191,11 @@ class TokenTypeDataPrinter(object):
 		round_metrics = GameRoundMetrics(dyad_id, entity_id, sequence_order, round_id,
 										 round_token_counts.game_round.initial_event)
 		participant_lang_metrics = dict(
-			(participant_id, LanguageMetrics(dyad_id, round_id, participant_id, counts.relevant_tokens)) for
+			(participant_id, LanguageMetrics(dyad_id, round_id, participant_id, counts.utts, counts.relevant_tokens))
+			for
 			participant_id, counts in
 			round_token_counts.participant_counts.items())
-		total_lang_metrics = LanguageMetrics(dyad_id, round_id, "TOTAL",
-											 round_token_counts.total_counts.relevant_tokens)
+		total_lang_metrics = create_total_lang_metrics(dyad_id, round_id, round_token_counts)
 		return _RowMetrics(round=round_metrics, participant_lang=participant_lang_metrics,
 						   total_lang=total_lang_metrics)
 
@@ -244,9 +220,8 @@ class TokenTypeDataPrinter(object):
 			for participant_id in
 			counts.participant_ids())))
 		participant_metric_col_names = (
-			"{col_name}_PARTICIPANT_{participant_id}".format(col_name=col_name, participant_id=participant_id) for
-			col_name
-			in LanguageMetrics.COL_NAMES for participant_id in all_participant_ids)
+			"{col_name}_PARTICIPANT_{participant_id}".format(col_name=col_name, participant_id=participant_id) for participant_id in all_participant_ids for
+			col_name in LanguageMetrics.COL_NAMES )
 		total_metric_col_names = ("{col_name}_TOTAL".format(col_name=col_name) for col_name in
 								  LanguageMetrics.COL_NAMES)
 		print(COL_DELIM.join(
@@ -286,22 +261,32 @@ class TokenTypeDataPrinter(object):
 						previous_round_total_tokens = previous_round_participant_total_tokens[participant_id]
 						previous_round_token_types = previous_round_participant_token_types[participant_id]
 						current_participant_metrics = LanguageMetrics(dyad_id, round_id, participant_id,
-																	  round_token_counts.total_counts.relevant_tokens,
+																	  counts.utts,
+																	  counts.relevant_tokens,
 																	  previous_round_total_tokens,
 																	  previous_round_token_types)
 						participant_lang_metrics[participant_id] = current_participant_metrics
 						previous_round_total_tokens.append(current_participant_metrics.current_round_total_tokens)
 						previous_round_token_types.update(current_participant_metrics.current_round_token_types)
 
-					total_lang_metrics = LanguageMetrics(dyad_id, round_id, "TOTAL",
-														 round_token_counts.total_counts.relevant_tokens,
-														 previous_round_total_total_tokens,
-														 previous_round_total_token_types)
+					total_lang_metrics = create_total_lang_metrics(dyad_id, round_id,
+																   round_token_counts,
+																   previous_round_total_total_tokens,
+																   previous_round_total_token_types)
 					current_metrics = _RowMetrics(round_metrics, participant_lang_metrics, total_lang_metrics)
 					print(COL_DELIM.join(
 						self.__create_metrics_row(current_metrics.round, current_metrics.participant_lang,
 												  current_metrics.total_lang, all_participant_ids)),
 						file=outfile)
+
+
+def create_total_lang_metrics(dyad_id: str, round_id: int, round_token_counts: ReferentCounts,
+							  previous_round_total_tokens: Iterable[Decimal] = None,
+							  previous_round_token_types: Set[str] = _EMPTY_SET):
+	total_counts = round_token_counts.total_counts
+	return LanguageMetrics(dyad_id, round_id, "TOTAL",
+						   total_counts.utts,
+						   total_counts.relevant_tokens, previous_round_total_tokens, previous_round_token_types)
 
 
 def length_drop(current_total_tokens: Decimal, mean_previous_token_count: Decimal) -> Decimal:
@@ -321,7 +306,7 @@ def length_drop(current_total_tokens: Decimal, mean_previous_token_count: Decima
 def round_score_ratio(event: game_events.Event) -> Decimal:
 	try:
 		result = Decimal(event.round_id) / Decimal(event.score)
-	except DivisionByZero:
+	except ZeroDivisionError:
 		result = _DECIMAL_INFINITY
 	return result
 
@@ -329,13 +314,46 @@ def round_score_ratio(event: game_events.Event) -> Decimal:
 def time_score_ratio(event: game_events.Event) -> Decimal:
 	try:
 		result = Decimal(event.event_time) / Decimal(event.score)
-	except DivisionByZero:
+	except ZeroDivisionError:
 		result = _DECIMAL_INFINITY
 	return result
 
 
 def token_type_overlap_ratio(overlapping_token_type_count: int, unified_token_type_count: int) -> Decimal:
 	return Decimal(overlapping_token_type_count) / Decimal(unified_token_type_count)
+
+
+def try_length_drop(dyad_id: Any, round_id: Any, desc: Any, current_round_total_tokens: Decimal,
+					mean_previous_token_count: Decimal, strict: bool) -> Decimal:
+	try:
+		result = length_drop(current_round_total_tokens, mean_previous_token_count)
+	except (InvalidOperation, ZeroDivisionError) as e:
+		msg = f"A(n) {type(e).__name__} occurred while calculating the length drop for \"{desc}\" of round {round_id} of session \"{dyad_id}\" (current_round_total_tokens={current_round_total_tokens}; mean_previous_token_count={mean_previous_token_count})"
+		if strict:
+			raise ValueError(msg + '.') from e
+		else:
+			print(
+				f"WARNING: {msg}: {repr(e)}",
+				file=sys.stderr)
+			result = NULL_TOKEN_LENGTH_DROP_VALUE
+	return result
+
+
+def try_token_type_overlap_ratio(dyad_id: Any, round_id: Any, desc: Any, overlapping_token_type_count: int,
+								 unified_token_type_count: int, strict: bool) -> Decimal:
+	try:
+		result = token_type_overlap_ratio(overlapping_token_type_count, unified_token_type_count)
+	except (InvalidOperation, ZeroDivisionError) as e:
+		msg = f"A(n) {type(e).__name__} occurred while calculating the token overlap ratio for \"{desc}\" of round {round_id} of session \"{dyad_id}\" (overlapping_token_type_count={overlapping_token_type_count}; unified_token_type_count={unified_token_type_count})"
+		if strict:
+			raise ValueError(msg + '.') from e
+		else:
+			print(
+				f"WARNING: {msg}: {repr(e)}",
+				file=sys.stderr)
+			result = NULL_TOKEN_TYPE_OVERLAP_VALUE
+
+	return result
 
 
 def __create_argparser():

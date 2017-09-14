@@ -49,8 +49,9 @@ class Utterance(object):
 
 
 class SegmentUtteranceFactory(object):
-	def __init__(self, token_seq_factory: Callable[[Iterable[str]], Sequence[str]]):
+	def __init__(self, token_seq_factory: Callable[[Iterable[str]], Sequence[str]], source_speaker_id_factory : Callable[[str], str] = lambda source_id : source_id):
 		self.token_seq_factory = token_seq_factory
+		self.source_speaker_id_factory = source_speaker_id_factory
 
 	def __call__(self, segments: Iterable[Element]) -> Iterator[Utterance]:
 		for segment in segments:
@@ -63,7 +64,8 @@ class SegmentUtteranceFactory(object):
 		token_text = (elem.text for elem in token_elems)
 		content = self.token_seq_factory(token_text)
 		if content:
-			result = Utterance(segment.get("id"), sys.intern(segment.get("source")), float(segment.get("start")),
+			speaker_id = self.source_speaker_id_factory(segment.get("source"))
+			result = Utterance(segment.get("id"), speaker_id, float(segment.get("start")),
 							   float(segment.get("end")), content)
 		else:
 			result = None
