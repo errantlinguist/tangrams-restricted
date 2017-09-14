@@ -28,8 +28,8 @@ class FilteredTokenCountDatum(object):
 
 	def add(self, utts: Sequence[utterances.Utterance], token_filter: Callable[[str], bool] = lambda _: True):
 		for utt in utts:
-			self.all_token_counts.update(utt.content)
-			self.relevant_token_counts.update(token for token in utt.content if token_filter(token))
+			self.all_tokens.update(utt.content)
+			self.relevant_tokens.update(token for token in utt.content if token_filter(token))
 		self.utt_seqs.append(utts)
 
 	def copy(self):
