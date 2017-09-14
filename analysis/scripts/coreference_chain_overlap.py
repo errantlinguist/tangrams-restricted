@@ -32,8 +32,9 @@ NULL_TOKEN_LENGTH_DROP_VALUE = _DECIMAL_INFINITY
 
 
 class GameRoundMetrics(object):
-	COL_NAMES = ("DYAD", "ENTITY", "SEQUENCE_ORDER", "ROUND", "GAME_SCORE", "ROUND_START_TIME", "TIME_SCORE_RATIO",
-				 "ROUND_SCORE_RATIO")
+	COL_NAMES = (
+		"DYAD", "ENTITY", "SEQUENCE_ORDER", "ROUND", "INSTRUCTOR", "GAME_SCORE", "ROUND_START_TIME", "TIME_SCORE_RATIO",
+		"ROUND_SCORE_RATIO")
 
 	def __init__(self, dyad_id: str, entity_id: int, sequence_order: int, round_id: int,
 				 initial_event: game_events.Event):
@@ -41,6 +42,7 @@ class GameRoundMetrics(object):
 		self.entity_id = entity_id
 		self.sequence_order = sequence_order
 		self.round_id = round_id
+		self.instructor = initial_event.submitter
 		self.score = initial_event.score
 		self.time = initial_event.event_time
 		self.time_score_ratio = time_score_ratio(initial_event)
@@ -50,7 +52,7 @@ class GameRoundMetrics(object):
 		return self.__class__.__name__ + str(self.__dict__)
 
 	def row_cells(self):
-		return (self.dyad_id, self.entity_id, self.sequence_order, self.round_id, self.score,
+		return (self.dyad_id, self.entity_id, self.sequence_order, self.round_id, self.instructor, self.score,
 				self.time,
 				self.time_score_ratio, self.round_score_ratio)
 
@@ -107,7 +109,8 @@ class ParticipantCoreferenceChainTokenCounter(object):
 		self.token_seq_factory = token_seq_factory
 		self.filtering_token_counter = filtering_token_counter
 
-	def __call__(self, named_sessions: Iterable[Tuple[str, sd.SessionData]]) -> Dict[str, Dict[int, "ReferentCounts"]]:
+	def __call__(self, named_sessions: Iterable[Tuple[str, sd.SessionData]]) -> Dict[
+		str, Tuple[Dict[int, "ReferentCounts"], Dict[str, str]]]:
 		result = {}
 		for dyad_id, session in named_sessions:
 			print("Processing session \"{}\".".format(dyad_id), file=sys.stderr)
@@ -135,7 +138,7 @@ class ParticipantCoreferenceChainTokenCounter(object):
 					entity_counts = entity_referent_counts[entity_id]
 					entity_counts.add_round_counts(round_id, round_counts)
 
-			result[dyad_id] = entity_referent_counts
+			result[dyad_id] = (entity_referent_counts, source_participant_ids)
 
 		return result
 
@@ -211,17 +214,26 @@ class TokenTypeDataPrinter(object):
 		result.extend(str(cell) for cell in total_lang_metrics.row_cells())
 		return result
 
+	@staticmethod
+	def __participant_ids(
+			session_referent_token_counts: ItemsView[str, Tuple[Dict[int, ReferentCounts], Dict[str, str]]]):
+		result = set()
+		for dyad_id, (referent_token_counts, source_participant_ids) in session_referent_token_counts:
+			for counts in referent_token_counts.values():
+				for participant_id in counts.participant_ids():
+					result.add(participant_id)
+		return result
+
 	def __init__(self, strict: bool):
 		self.strict = strict
 
-	def __call__(self, session_referent_token_counts: ItemsView[str, Dict[int, ReferentCounts]], outfile):
-		all_participant_ids = tuple(sorted(frozenset(
-			participant_id for (_, entity_counts) in session_referent_token_counts for counts in entity_counts.values()
-			for participant_id in
-			counts.participant_ids())))
+	def __call__(self, session_referent_token_counts: ItemsView[str, Tuple[Dict[int, ReferentCounts], Dict[str, str]]],
+				 outfile):
+		all_participant_ids = tuple(self.__participant_ids(session_referent_token_counts))
 		participant_metric_col_names = (
-			"{col_name}_PARTICIPANT_{participant_id}".format(col_name=col_name, participant_id=participant_id) for participant_id in all_participant_ids for
-			col_name in LanguageMetrics.COL_NAMES )
+			"{col_name}_PARTICIPANT_{participant_id}".format(col_name=col_name, participant_id=participant_id) for
+			participant_id in all_participant_ids for
+			col_name in LanguageMetrics.COL_NAMES)
 		total_metric_col_names = ("{col_name}_TOTAL".format(col_name=col_name) for col_name in
 								  LanguageMetrics.COL_NAMES)
 		print(COL_DELIM.join(
@@ -229,7 +241,7 @@ class TokenTypeDataPrinter(object):
 			file=outfile)
 
 		ordered_session_referent_token_counts = sorted(session_referent_token_counts, key=lambda item: item[0])
-		for dyad_id, referent_token_counts in ordered_session_referent_token_counts:
+		for dyad_id, (referent_token_counts, source_participant_ids) in ordered_session_referent_token_counts:
 			for entity_id, entity_token_counts in sorted(referent_token_counts.items(), key=lambda item: item[0]):
 				# Counts for each round, ordered by their respective round IDs
 				ordered_round_counts = sorted(entity_token_counts.round_counts, key=lambda item: item[0])
