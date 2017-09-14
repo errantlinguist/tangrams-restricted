@@ -17,9 +17,7 @@
 package se.kth.speech;
 
 import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.math.MathContext;
-import java.text.DecimalFormat;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -32,43 +30,13 @@ import java.time.temporal.Temporal;
  */
 public final class TimestampArithmetic {
 
-	/**
-	 * Returns A {@link DecimalFormat} instance used for representing second
-	 * amounts,e.g.&nbsp;<code>03.255</code>. <strong>NOTE:</strong>
-	 * {@code DecimalFormat} is not guaranteed to be thread-safe; Always create
-	 * a new instance thereof before using!
-	 */
-	private static final ThreadLocal<DecimalFormat> DURATION_SECONDS_FORMAT = new ThreadLocal<DecimalFormat>() {
-
-		/*
-		 * (non-Javadoc)
-		 *
-		 * @see java.lang.ThreadLocal#initialValue()
-		 */
-		@Override
-		protected DecimalFormat initialValue() {
-			// NOTE: DecimalFormat is not guaranteed to be thread-safe; Always
-			// create a new instance thereof before using!
-			final DecimalFormat result = new DecimalFormat();
-			result.setMinimumIntegerDigits(2);
-			result.setMinimumFractionDigits(SECS_PRECISION);
-			result.setMaximumFractionDigits(SECS_PRECISION);
-			return result;
-		}
-
-	};
-
 	private static final BigDecimal NANOS_PER_SEC_BIGDECIMAL;
 
 	private static final long NANOS_PER_SEC_LONG;
 
-	private static final BigInteger SECS_PER_HOUR = new BigInteger("3600");
+	private static final BigDecimal SECS_PER_HOUR = new BigDecimal("3600");
 
-	private static final BigInteger SECS_PER_MIN_INTEGER = new BigInteger("60");
-	
-	private static final BigDecimal SECS_PER_MIN_DECIMAL = new BigDecimal("60");
-
-	private static final int SECS_PRECISION = 3;
+	private static final BigDecimal SECS_PER_MIN = new BigDecimal("60");
 
 	static {
 		NANOS_PER_SEC_BIGDECIMAL = new BigDecimal("1000000000");
@@ -100,12 +68,10 @@ public final class TimestampArithmetic {
 	public static String formatDurationHours(final Duration duration) {
 		final BigDecimal decimalSeconds = toDecimalSeconds(duration);
 		final BigDecimal absDecimalSeconds = decimalSeconds.abs();
-		final BigInteger absSecondsWholePart = absDecimalSeconds.toBigInteger();
-
-		final BigInteger[] hoursAndRemainingSecs = absSecondsWholePart.divideAndRemainder(SECS_PER_HOUR);
-		final String decimalSecondsRepr = DURATION_SECONDS_FORMAT.get().format(absDecimalSeconds);
-		final String positive = String.format("%s:%s:%s", hoursAndRemainingSecs[0],
-				hoursAndRemainingSecs[1].divide(SECS_PER_MIN_INTEGER), decimalSecondsRepr);
+		final BigDecimal[] absHoursAndRemainingSecs = absDecimalSeconds.divideAndRemainder(SECS_PER_HOUR);
+		final BigDecimal[] absMinutesAndRemainingSecs = absHoursAndRemainingSecs[1].divideAndRemainder(SECS_PER_MIN);
+		final String positive = String.format("%02d:%02d:%02.03f", absHoursAndRemainingSecs[0].toBigIntegerExact(),
+				absMinutesAndRemainingSecs[0].toBigIntegerExact(), absMinutesAndRemainingSecs[1]);
 		return decimalSeconds.compareTo(BigDecimal.ZERO) < 0 ? "-" + positive : positive;
 	}
 
@@ -120,9 +86,9 @@ public final class TimestampArithmetic {
 	public static String formatDurationMinutes(final Duration duration) {
 		final BigDecimal decimalSeconds = toDecimalSeconds(duration);
 		final BigDecimal absDecimalSeconds = decimalSeconds.abs();
-		final BigDecimal[] absMinutesAndRemainingSecs = absDecimalSeconds.divideAndRemainder(SECS_PER_MIN_DECIMAL);
-		final String decimalSecondsRepr = DURATION_SECONDS_FORMAT.get().format(absMinutesAndRemainingSecs[1]);
-		final String positive = String.format("%s:%s", absMinutesAndRemainingSecs[0].toBigInteger(), decimalSecondsRepr);
+		final BigDecimal[] absMinutesAndRemainingSecs = absDecimalSeconds.divideAndRemainder(SECS_PER_MIN);
+		final String positive = String.format("%02d:%02.03f", absMinutesAndRemainingSecs[0].toBigIntegerExact(),
+				absMinutesAndRemainingSecs[1]);
 		return decimalSeconds.compareTo(BigDecimal.ZERO) < 0 ? "-" + positive : positive;
 	}
 
