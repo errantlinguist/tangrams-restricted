@@ -159,7 +159,7 @@ final class SessionStatisticsWriter
 		return result;
 	}
 
-	private static String formatDurationAsSeconds(final Duration duration) {
+	private static String formatDurationSeconds(final Duration duration) {
 		final BigDecimal durationInSecs = TimestampArithmetic.toDecimalSeconds(duration);
 		return durationInSecs.toString();
 	}
@@ -198,7 +198,7 @@ final class SessionStatisticsWriter
 		final Function<Duration, String> result;
 		final String selectedDurationOpt = Parameter.DURATION_OPTS.getSelected();
 		if (selectedDurationOpt == null) {
-			result = SessionStatisticsWriter::formatDurationAsSeconds;
+			result = SessionStatisticsWriter::formatDurationSeconds;
 		} else {
 			switch (selectedDurationOpt) {
 			case MINUTES_OPT_NAME: {
