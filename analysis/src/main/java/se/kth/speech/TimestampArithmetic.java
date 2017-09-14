@@ -64,7 +64,9 @@ public final class TimestampArithmetic {
 
 	private static final BigInteger SECS_PER_HOUR = new BigInteger("3600");
 
-	private static final BigInteger SECS_PER_MIN = new BigInteger("60");
+	private static final BigInteger SECS_PER_MIN_INTEGER = new BigInteger("60");
+	
+	private static final BigDecimal SECS_PER_MIN_DECIMAL = new BigDecimal("60");
 
 	private static final int SECS_PRECISION = 3;
 
@@ -103,7 +105,7 @@ public final class TimestampArithmetic {
 		final BigInteger[] hoursAndRemainingSecs = absSecondsWholePart.divideAndRemainder(SECS_PER_HOUR);
 		final String decimalSecondsRepr = DURATION_SECONDS_FORMAT.get().format(absDecimalSeconds);
 		final String positive = String.format("%s:%s:%s", hoursAndRemainingSecs[0],
-				hoursAndRemainingSecs[1].divide(SECS_PER_MIN), decimalSecondsRepr);
+				hoursAndRemainingSecs[1].divide(SECS_PER_MIN_INTEGER), decimalSecondsRepr);
 		return decimalSeconds.compareTo(BigDecimal.ZERO) < 0 ? "-" + positive : positive;
 	}
 
@@ -118,11 +120,9 @@ public final class TimestampArithmetic {
 	public static String formatDurationMinutes(final Duration duration) {
 		final BigDecimal decimalSeconds = toDecimalSeconds(duration);
 		final BigDecimal absDecimalSeconds = decimalSeconds.abs();
-		final BigInteger absSecondsWholePart = absDecimalSeconds.toBigInteger();
-
-		final BigInteger mins = absSecondsWholePart.divide(SECS_PER_MIN);
-		final String decimalSecondsRepr = DURATION_SECONDS_FORMAT.get().format(absDecimalSeconds);
-		final String positive = String.format("%s:%s", mins, decimalSecondsRepr);
+		final BigDecimal[] absMinutesAndRemainingSecs = absDecimalSeconds.divideAndRemainder(SECS_PER_MIN_DECIMAL);
+		final String decimalSecondsRepr = DURATION_SECONDS_FORMAT.get().format(absMinutesAndRemainingSecs[1]);
+		final String positive = String.format("%s:%s", absMinutesAndRemainingSecs[0].toBigInteger(), decimalSecondsRepr);
 		return decimalSeconds.compareTo(BigDecimal.ZERO) < 0 ? "-" + positive : positive;
 	}
 
