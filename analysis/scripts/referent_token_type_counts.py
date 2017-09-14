@@ -5,7 +5,7 @@ import re
 import sys
 from collections import defaultdict
 from decimal import Decimal
-from typing import Any, Callable, Dict, Iterable, Iterator, List, Tuple, TypeVar
+from typing import Any, Callable, Dict, Iterable, Iterator, List, Sequence, Tuple, TypeVar
 
 import game_events
 import re_token_type_counts
@@ -21,7 +21,7 @@ T = TypeVar('T')
 class CoreferenceChainTokenCounter(object):
 	def __init__(self, seg_utt_factory: utterances.SegmentUtteranceFactory,
 				 filtering_token_counter: Callable[
-					 [Iterable[utterances.Utterance]], re_token_type_counts.FilteredTokenCountDatum]):
+					 [Sequence[utterances.Utterance]], re_token_type_counts.FilteredTokenCountDatum]):
 		self.seg_utt_factory = seg_utt_factory
 		self.filtering_token_counter = filtering_token_counter
 
@@ -53,7 +53,8 @@ class CoreferenceChainTokenCounter(object):
 		game_round_utts = zip_game_round_utterances(game_rounds, utt_times)
 		for (round_id, (game_round, utts)) in enumerate(game_round_utts, start=1):
 			initial_event = game_round.initial_event
-			round_referent_token_counts = self.filtering_token_counter(utts)
+			utts_tuple = tuple(utts)
+			round_referent_token_counts = self.filtering_token_counter(utts_tuple)
 			for entity_id, _ in initial_event.referent_entities:
 				referent_token_counts = result[entity_id]
 				referent_token_counts.append((round_id, round_referent_token_counts))

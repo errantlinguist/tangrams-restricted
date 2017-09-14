@@ -7,7 +7,7 @@ import statistics
 import sys
 from collections import defaultdict, namedtuple
 from decimal import Decimal, InvalidOperation, DivisionByZero
-from typing import Any, Callable, Dict, ItemsView, Iterable, List, Set, Tuple, TypeVar
+from typing import Any, Callable, Dict, ItemsView, Iterable, List, Sequence, Set, Tuple, TypeVar
 
 import game_events
 import re_token_type_counts
@@ -129,7 +129,7 @@ class LanguageMetrics(object):
 class ParticipantCoreferenceChainTokenCounter(object):
 	def __init__(self, seg_utt_factory: utterances.SegmentUtteranceFactory,
 				 filtering_token_counter: Callable[
-					 [Iterable[utterances.Utterance]], re_token_type_counts.FilteredTokenCountDatum]):
+					 [Sequence[utterances.Utterance]], re_token_type_counts.FilteredTokenCountDatum]):
 		self.seg_utt_factory = seg_utt_factory
 		self.filtering_token_counter = filtering_token_counter
 

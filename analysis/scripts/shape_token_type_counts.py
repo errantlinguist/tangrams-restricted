@@ -4,7 +4,7 @@ import argparse
 import re
 import sys
 from collections import defaultdict
-from typing import Any, Callable, Dict, Iterable, List, Tuple, TypeVar
+from typing import Any, Callable, Dict, List, Sequence, Tuple, TypeVar
 
 import game_events
 import re_token_type_counts
@@ -22,7 +22,7 @@ SHAPE_GROUP_NAME = "shape"
 class ShapeTokenCounter(object):
 	def __init__(self, seg_utt_factory: utterances.SegmentUtteranceFactory,
 				 filtering_token_counter: Callable[
-					 [Iterable[utterances.Utterance]], re_token_type_counts.FilteredTokenCountDatum]):
+					 [Sequence[utterances.Utterance]], re_token_type_counts.FilteredTokenCountDatum]):
 		self.seg_utt_factory = seg_utt_factory
 		self.filtering_token_counter = filtering_token_counter
 
@@ -50,8 +50,9 @@ class ShapeTokenCounter(object):
 		game_round_utts = referent_token_type_counts.zip_game_round_utterances(game_rounds, utt_times)
 		for (round_id, (game_round, utts)) in enumerate(game_round_utts, start=1):
 			initial_event = game_round.initial_event
+			utts_tuple = tuple(utts)
 			for _, referent_entity in initial_event.referent_entities:
-				round_referent_token_counts = self.filtering_token_counter(utts)
+				round_referent_token_counts = self.filtering_token_counter(utts_tuple)
 				referent_token_counts = result[referent_entity.shape]
 				referent_token_counts.append((round_id, round_referent_token_counts))
 
@@ -59,7 +60,7 @@ class ShapeTokenCounter(object):
 
 
 def find_last_round_id(referent_token_counts: Dict[T, referent_token_type_counts.CoreferenceChainTokenCountDatum]) -> \
-Tuple[T, int]:
+		Tuple[T, int]:
 	return max(
 		((entity_id, round_id) for (entity_id, counts) in referent_token_counts.items() for (round_id, round_counts) in
 		 counts.round_counts_by_round_id()), key=lambda result: result[1])

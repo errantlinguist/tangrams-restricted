@@ -21,9 +21,16 @@ class FilteredTokenCountDatum(object):
 	def __init__(self, all_tokens: "TokenCountDatum" = None, relevant_tokens: "TokenCountDatum" = None):
 		self.all_tokens = TokenCountDatum() if all_tokens is None else all_tokens
 		self.relevant_tokens = TokenCountDatum() if relevant_tokens is None else relevant_tokens
+		self.utt_seqs = []
 
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
+
+	def add(self, utts: Sequence[utterances.Utterance], token_filter: Callable[[str], bool] = lambda _: True):
+		for utt in utts:
+			self.all_token_counts.update(utt.content)
+			self.relevant_token_counts.update(token for token in utt.content if token_filter(token))
+		self.utt_seqs.append(utts)
 
 	def copy(self):
 		return FilteredTokenCountDatum(self.all_tokens.copy(), self.relevant_tokens.copy())
@@ -37,13 +44,10 @@ class FilteringTokenCounter(object):
 	def __init__(self, token_filter: Callable[[str], bool] = lambda _: True):
 		self.token_filter = token_filter
 
-	def __call__(self, utts: Iterable[utterances.Utterance]) -> FilteredTokenCountDatum:
-		all_token_counts = Counter()
-		relevant_token_counts = Counter()
-		for utt in utts:
-			all_token_counts.update(utt.content)
-			relevant_token_counts.update(token for token in utt.content if self.token_filter(token))
-		return FilteredTokenCountDatum(TokenCountDatum(all_token_counts), TokenCountDatum(relevant_token_counts))
+	def __call__(self, utts: Sequence[utterances.Utterance]) -> FilteredTokenCountDatum:
+		result = FilteredTokenCountDatum()
+		result.add(utts)
+		return result
 
 
 class RoundTokenCountDatum(object):
@@ -101,7 +105,7 @@ class SessionTokenCountDatum(object):
 
 class SessionRoundTokenCounter(object):
 	def __init__(self, seg_utt_factory: utterances.SegmentUtteranceFactory,
-				 filtering_token_counter: Callable[[Iterable[utterances.Utterance]], FilteredTokenCountDatum]):
+				 filtering_token_counter: Callable[[Sequence[utterances.Utterance]], FilteredTokenCountDatum]):
 		self.seg_utt_factory = seg_utt_factory
 		self.filtering_token_counter = filtering_token_counter
 
@@ -121,7 +125,7 @@ class SessionRoundTokenCounter(object):
 
 		segments = utterances.read_segments(session.utts)
 		utt_times = utterances.UtteranceTimes(self.seg_utt_factory(segments))
-		round_utts = (utt_times.get(start_time, end_time) for start_time, end_time in
+		round_utts = (tuple(utt_times.get(start_time, end_time)) for start_time, end_time in
 					  round_start_end_times)
 		# round_utts = (game_round_utterances(start_time, end_time, utts) for start_time, end_time in
 		#			  round_start_end_times)
