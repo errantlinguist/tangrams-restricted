@@ -21,7 +21,7 @@ class FilteredTokenCountDatum(object):
 	def __init__(self, all_tokens: "TokenCountDatum" = None, relevant_tokens: "TokenCountDatum" = None):
 		self.all_tokens = TokenCountDatum() if all_tokens is None else all_tokens
 		self.relevant_tokens = TokenCountDatum() if relevant_tokens is None else relevant_tokens
-		self.utt_seqs = []
+		self.utts = []
 
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
@@ -30,7 +30,7 @@ class FilteredTokenCountDatum(object):
 		for utt in utts:
 			self.all_tokens.token_counts.update(utt.content)
 			self.relevant_tokens.token_counts.update(token for token in utt.content if token_filter(token))
-		self.utt_seqs.append(utts)
+		self.utts.extend(utts)
 
 	def copy(self):
 		return FilteredTokenCountDatum(self.all_tokens.copy(), self.relevant_tokens.copy())
