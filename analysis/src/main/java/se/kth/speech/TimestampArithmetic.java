@@ -106,6 +106,26 @@ public final class TimestampArithmetic {
 				hoursAndRemainingSecs[1].divide(SECS_PER_MIN), decimalSecondsRepr);
 		return decimalSeconds.compareTo(BigDecimal.ZERO) < 0 ? "-" + positive : positive;
 	}
+	
+	/**
+	 *
+	 * @param duration
+	 *            The {@link Duration} to format.
+	 * @return A string representation of the given {@code Duration}.
+	 * @see <a href="https://stackoverflow.com/a/266846/1391325">Original
+	 *      StackOverflow answer</a>
+	 */
+	public static String formatDurationMinutes(final Duration duration) {
+		final BigDecimal decimalSeconds = toDecimalSeconds(duration);
+		final BigDecimal absDecimalSeconds = decimalSeconds.abs();
+		final BigInteger absSecondsWholePart = absDecimalSeconds.toBigInteger();
+
+		final BigInteger[] hoursAndRemainingSecs = absSecondsWholePart.divideAndRemainder(SECS_PER_HOUR);
+		final String decimalSecondsRepr = DURATION_SECONDS_FORMAT.get().format(absDecimalSeconds);
+		final String positive = String.format("%s:%s:%s", hoursAndRemainingSecs[0],
+				hoursAndRemainingSecs[1].divide(SECS_PER_MIN), decimalSecondsRepr);
+		return decimalSeconds.compareTo(BigDecimal.ZERO) < 0 ? "-" + positive : positive;
+	}
 
 	public static BigDecimal toDecimalSeconds(final Duration duration) {
 		final BigDecimal nanos = new BigDecimal(duration.toNanos());

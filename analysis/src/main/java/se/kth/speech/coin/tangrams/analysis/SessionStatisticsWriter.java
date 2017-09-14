@@ -28,6 +28,7 @@ import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
@@ -37,12 +38,23 @@ import java.util.Map.Entry;
 import java.util.NavigableMap;
 import java.util.Properties;
 import java.util.TreeMap;
+import java.util.function.BinaryOperator;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.xml.bind.JAXBException;
 
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -54,10 +66,54 @@ import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
  * @since 2 Aug 2017
  *
  */
-final class SessionStatisticsWriter { // NO_UCD (unused code)
+final class SessionStatisticsWriter
+		implements Consumer<Collection<? extends Entry<Path, ? extends Map<String, GameSummary>>>> { // NO_UCD
+																										// (unused
+																										// code)
+
+	private enum Parameter implements Supplier<Option> {
+		HELP("?") {
+			@Override
+			public Option get() {
+				return Option.builder(optName).longOpt("help").desc("Prints this message.").build();
+			}
+		},
+		MINUTES("m") {
+			@Override
+			public Option get() {
+				return Option.builder(optName).longOpt("mintes")
+						.desc("Prints statistics in \"minutes:seconds\" notation rather than in seconds as decimal fractions.")
+						.build();
+			};
+		};
+
+		private static final Options OPTIONS = createOptions();
+
+		private static Options createOptions() {
+			final Options result = new Options();
+			Arrays.stream(Parameter.values()).map(Parameter::get).forEach(result::addOption);
+			return result;
+		}
+
+		private static void printHelp() {
+			final HelpFormatter formatter = new HelpFormatter();
+			formatter.printHelp(SegmentTimedUtteranceWriter.class.getSimpleName() + " INPATHS...", OPTIONS);
+		}
+
+		protected final String optName;
+
+		private Parameter(final String optName) {
+			this.optName = optName;
+		}
+
+	}
+
+	private static final BinaryOperator<BigDecimal> BIG_DECIMAL_SUMMER = (augend, addend) -> augend.add(addend);
 
 	private static final List<String> COLUMN_HEADERS = Arrays.asList("INPATH", "GAME_ID", "GAME_DURATION",
 			"ROUND_COUNT", "UTT_COUNT");
+
+	private static final BinaryOperator<Duration> DURATION_SUMMER = (augend, addend) -> augend.plus(addend);
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SessionStatisticsWriter.class);
 
@@ -69,24 +125,10 @@ final class SessionStatisticsWriter { // NO_UCD (unused code)
 
 	private static final String ROW_DELIMITER = System.lineSeparator();
 
-	public static void main(final String[] args) throws JAXBException, IOException {
-		final Path[] inpaths = Arrays.stream(args).map(String::trim).filter(path -> !path.isEmpty()).map(Paths::get)
-				.toArray(Path[]::new);
-		if (inpaths.length < 1) {
-			throw new IllegalArgumentException(
-					String.format("Usage: %s INPATHS...", SessionStatisticsWriter.class.getSimpleName()));
-		} else {
-			final NavigableMap<Path, NavigableMap<String, GameSummary>> sessionSummaries = new TreeMap<>();
-			for (final Path inpath : inpaths) {
-				LOGGER.info("Will read batch job data from \"{}\".", inpath);
-				putSessionSummaries(inpath, sessionSummaries);
-			}
-			try (PrintWriter outputWriter = new PrintWriter(new OutputStreamWriter(System.out, OUTPUT_ENCODING))) {
-				write(sessionSummaries.entrySet(), outputWriter);
-			}
-
-		}
-
+	public static void main(final String[] args) throws JAXBException, IOException, ParseException {
+		final CommandLineParser parser = new DefaultParser();
+		final CommandLine cl = parser.parse(Parameter.OPTIONS, args);
+		main(cl);
 	}
 
 	private static NavigableMap<String, GameSummary> createSessionGameSummaries(final SessionDataManager sessionData)
@@ -99,9 +141,40 @@ final class SessionStatisticsWriter { // NO_UCD (unused code)
 		return result;
 	}
 
+	private static String formatDurationAsSeconds(final Duration duration) {
+		final BigDecimal durationInSecs = TimestampArithmetic.toDecimalSeconds(duration);
+		return durationInSecs.toString();
+	}
+
 	private static Stream<GameSummary> getGameSummaries(
 			final Collection<? extends Entry<Path, ? extends Map<String, GameSummary>>> sessionSummaries) {
 		return sessionSummaries.stream().map(Entry::getValue).map(Map::values).flatMap(Collection::stream);
+	}
+
+	private static void main(final CommandLine cl) throws JAXBException, IOException {
+		if (cl.hasOption(Parameter.HELP.optName)) {
+			Parameter.printHelp();
+		} else {
+			final Path[] inpaths = cl.getArgList().stream().map(String::trim).filter(path -> !path.isEmpty())
+					.map(Paths::get).toArray(Path[]::new);
+			if (inpaths.length < 1) {
+				throw new IllegalArgumentException(
+						String.format("Usage: %s INPATHS...", SessionStatisticsWriter.class.getSimpleName()));
+			} else {
+				final NavigableMap<Path, NavigableMap<String, GameSummary>> sessionSummaries = new TreeMap<>();
+				for (final Path inpath : inpaths) {
+					LOGGER.info("Will read batch job data from \"{}\".", inpath);
+					putSessionSummaries(inpath, sessionSummaries);
+				}
+
+				final Function<Duration, String> durationFormatter = cl.hasOption(Parameter.MINUTES.optName)
+						? TimestampArithmetic::formatDurationHours : SessionStatisticsWriter::formatDurationAsSeconds;
+				try (PrintWriter outputWriter = new PrintWriter(new OutputStreamWriter(System.out, OUTPUT_ENCODING))) {
+					final SessionStatisticsWriter writer = new SessionStatisticsWriter(outputWriter, durationFormatter);
+					writer.accept(sessionSummaries.entrySet());
+				}
+			}
+		}
 	}
 
 	private static void putSessionSummaries(final Path inpath,
@@ -121,79 +194,98 @@ final class SessionStatisticsWriter { // NO_UCD (unused code)
 		}
 	}
 
-	private static void write(
-			final Collection<? extends Entry<Path, ? extends Map<String, GameSummary>>> sessionSummaries,
-			final PrintWriter out) {
-		out.print(COLUMN_HEADERS.stream().collect(ROW_CELL_JOINER));
+	private final Function<? super Duration, String> durationFormatter;
+
+	private final PrintWriter outputWriter;
+
+	public SessionStatisticsWriter(final PrintWriter outputWriter,
+			final Function<? super Duration, String> durationFormatter) {
+		this.outputWriter = outputWriter;
+		this.durationFormatter = durationFormatter;
+	}
+
+	@Override
+	public void accept(final Collection<? extends Entry<Path, ? extends Map<String, GameSummary>>> sessionSummaries) {
+		outputWriter.print(COLUMN_HEADERS.stream().collect(ROW_CELL_JOINER));
 
 		for (final Entry<Path, ? extends Map<String, GameSummary>> sessionSummary : sessionSummaries) {
-			out.print(ROW_DELIMITER);
+			outputWriter.print(ROW_DELIMITER);
 
 			final Path inpath = sessionSummary.getKey();
 			final Map<String, GameSummary> gameSummaries = sessionSummary.getValue();
 			for (final Entry<String, GameSummary> gameSummary : gameSummaries.entrySet()) {
 				final String gameId = gameSummary.getKey();
 				final GameSummary summary = gameSummary.getValue();
-				final BigDecimal durationInSecs = TimestampArithmetic.toDecimalSeconds(summary.getDuration());
-				final List<Object> rowCellVals = Arrays.asList(inpath, gameId, durationInSecs,
+				final Duration duration = summary.getDuration();
+				final String durationRepr = durationFormatter.apply(duration);
+				final List<Object> rowCellVals = Arrays.asList(inpath, gameId, durationRepr,
 						summary.getCompletedRoundCount(), summary.getUttCount());
-				out.print(rowCellVals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
+				outputWriter.print(rowCellVals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
 			}
 
 		}
 
-		out.print(ROW_DELIMITER);
-		writeAggregates(sessionSummaries, out);
+		outputWriter.print(ROW_DELIMITER);
+		writeAggregates(sessionSummaries);
 	}
 
-	private static void writeAggregates(
-			final Collection<? extends Entry<Path, ? extends Map<String, GameSummary>>> sessionSummaries,
-			final PrintWriter output) {
+	private void writeAggregates(
+			final Collection<? extends Entry<Path, ? extends Map<String, GameSummary>>> sessionSummaries) {
 		{
 			// Min vals
-			final BigDecimal minDuration = getGameSummaries(sessionSummaries).map(GameSummary::getDuration)
-					.min(Comparator.naturalOrder()).map(TimestampArithmetic::toDecimalSeconds).get();
+			final String minDurationRepr = getGameSummaries(sessionSummaries).map(GameSummary::getDuration)
+					.min(Comparator.naturalOrder()).map(durationFormatter).get();
 			final long minRoundCount = getGameSummaries(sessionSummaries).mapToLong(GameSummary::getCompletedRoundCount)
 					.min().getAsLong();
 			final long minUttCount = getGameSummaries(sessionSummaries).mapToLong(GameSummary::getUttCount).min()
 					.getAsLong();
-			final List<Object> minVals = Arrays.asList("MIN", "", minDuration, minRoundCount, minUttCount);
-			output.print(minVals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
-			output.print(ROW_DELIMITER);
+			final List<Object> minVals = Arrays.asList("MIN", "", minDurationRepr, minRoundCount, minUttCount);
+			outputWriter.print(minVals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
+			outputWriter.print(ROW_DELIMITER);
 		}
 
 		{
 			// Max vals
-			final BigDecimal maxDuration = getGameSummaries(sessionSummaries).map(GameSummary::getDuration)
-					.max(Comparator.naturalOrder()).map(TimestampArithmetic::toDecimalSeconds).get();
+			final String maxDurationRepr = getGameSummaries(sessionSummaries).map(GameSummary::getDuration)
+					.max(Comparator.naturalOrder()).map(durationFormatter).get();
 			final long maxRoundCount = getGameSummaries(sessionSummaries).mapToLong(GameSummary::getCompletedRoundCount)
 					.max().getAsLong();
 			final long maxUttCount = getGameSummaries(sessionSummaries).mapToLong(GameSummary::getUttCount).max()
 					.getAsLong();
-			final List<Object> maxVals = Arrays.asList("MAX", "", maxDuration, maxRoundCount, maxUttCount);
-			output.print(maxVals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
-			output.print(ROW_DELIMITER);
+			final List<Object> maxVals = Arrays.asList("MAX", "", maxDurationRepr, maxRoundCount, maxUttCount);
+			outputWriter.print(maxVals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
+			outputWriter.print(ROW_DELIMITER);
 		}
 
 		{
 			// Mean vals
 			final BigDecimal gameSessionCount = new BigDecimal(getGameSummaries(sessionSummaries).count());
-			final BigDecimal totalDuration = getGameSummaries(sessionSummaries).map(GameSummary::getDuration)
-					.map(TimestampArithmetic::toDecimalSeconds).reduce((augend, addend) -> augend.add(addend)).get();
-			final BigDecimal meanDuration = totalDuration.divide(gameSessionCount, MEAN_DIVISION_CTX);
+			final Duration totalDuration = getGameSummaries(sessionSummaries).map(GameSummary::getDuration)
+					.reduce(DURATION_SUMMER).get();
+			final String meanDurationRepr = durationFormatter
+					.apply(totalDuration.dividedBy(gameSessionCount.longValueExact()));
 			final long totalRoundCount = getGameSummaries(sessionSummaries)
 					.mapToLong(GameSummary::getCompletedRoundCount).sum();
 			final BigDecimal meanRoundCount = new BigDecimal(totalRoundCount).divide(gameSessionCount,
 					MEAN_DIVISION_CTX);
 			final long totalUttCount = getGameSummaries(sessionSummaries).mapToLong(GameSummary::getUttCount).sum();
 			final BigDecimal meanUttCount = new BigDecimal(totalUttCount).divide(gameSessionCount, MEAN_DIVISION_CTX);
-			final List<Object> meanVals = Arrays.asList("MEAN", "", meanDuration, meanRoundCount, meanUttCount);
-			output.print(meanVals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
-			output.print(ROW_DELIMITER);
+			final List<Object> meanVals = Arrays.asList("MEAN", "", meanDurationRepr, meanRoundCount, meanUttCount);
+			outputWriter.print(meanVals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
+			outputWriter.print(ROW_DELIMITER);
 		}
-	}
 
-	private SessionStatisticsWriter() {
+		{
+			// Summed vals
+			final String totalDurationRepr = getGameSummaries(sessionSummaries).map(GameSummary::getDuration)
+					.reduce(DURATION_SUMMER).map(durationFormatter).get();
+			final long totalRoundCount = getGameSummaries(sessionSummaries)
+					.mapToLong(GameSummary::getCompletedRoundCount).sum();
+			final long totalUttCount = getGameSummaries(sessionSummaries).mapToLong(GameSummary::getUttCount).sum();
+			final List<Object> maxVals = Arrays.asList("SUM", "", totalDurationRepr, totalRoundCount, totalUttCount);
+			outputWriter.print(maxVals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
+			outputWriter.print(ROW_DELIMITER);
+		}
 	}
 
 }
