@@ -385,12 +385,14 @@ def try_length_drop(dyad_id: Any, round_id: Any, desc: Any, current_round_total_
 	try:
 		result = length_drop(current_round_total_tokens, mean_previous_token_count)
 	except (InvalidOperation, ZeroDivisionError) as e:
-		msg = f"A(n) {type(e).__name__} occurred while calculating the length drop for \"{desc}\" of round {round_id} of session \"{dyad_id}\" (current_round_total_tokens={current_round_total_tokens}; mean_previous_token_count={mean_previous_token_count})"
+		msg = "A(n) {etype} occurred while calculating the length drop for \"{desc}\" of round {round_id} of session \"{dyad_id}\" (current_round_total_tokens={current_round_total_tokens}; mean_previous_token_count={mean_previous_token_count})".format(
+			etype=type(e).__name__, desc=desc, round_id=round_id, dyad_id=dyad_id,
+			current_round_total_tokens=current_round_total_tokens, mean_previous_token_count=mean_previous_token_count)
 		if strict:
 			raise ValueError(msg + '.') from e
 		else:
 			print(
-				f"WARNING: {msg}: {repr(e)}",
+				"WARNING: {msg}: {erepr}".format(msg=msg, erepr=repr(e)),
 				file=sys.stderr)
 			result = NULL_TOKEN_LENGTH_DROP_VALUE
 	return result
@@ -401,12 +403,15 @@ def try_token_type_overlap_ratio(dyad_id: Any, round_id: Any, desc: Any, overlap
 	try:
 		result = token_type_overlap_ratio(overlapping_token_type_count, unified_token_type_count)
 	except (InvalidOperation, ZeroDivisionError) as e:
-		msg = f"A(n) {type(e).__name__} occurred while calculating the token overlap ratio for \"{desc}\" of round {round_id} of session \"{dyad_id}\" (overlapping_token_type_count={overlapping_token_type_count}; unified_token_type_count={unified_token_type_count})"
+		msg = "A(n) {etype} occurred while calculating the token overlap ratio for \"{desc}\" of round {round_id} of session \"{dyad_id}\" (overlapping_token_type_count={overlapping_token_type_count}; unified_token_type_count={unified_token_type_count})".format(
+			etype=type(e).__name__, desc=desc, round_id=round_id, dyad_id=dyad_id,
+			overlapping_token_type_count=overlapping_token_type_count,
+			unified_token_type_count=unified_token_type_count)
 		if strict:
 			raise ValueError(msg + '.') from e
 		else:
 			print(
-				f"WARNING: {msg}: {repr(e)}",
+				"WARNING: {msg}: {erepr}".format(msg=msg, erepr=repr(e)),
 				file=sys.stderr)
 			result = NULL_TOKEN_TYPE_OVERLAP_VALUE
 
