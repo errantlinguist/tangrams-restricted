@@ -32,6 +32,7 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -53,6 +54,7 @@ import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
+import org.apache.commons.cli.OptionGroup;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
@@ -78,7 +80,15 @@ final class SessionStatisticsWriter
 				return Option.builder(optName).longOpt("help").desc("Prints this message.").build();
 			}
 		},
-		MINUTES("m") {
+		HOURS(HOURS_OPT_NAME) {
+			@Override
+			public Option get() {
+				return Option.builder(optName).longOpt("hours").desc(
+						"Prints statistics in \"hours:minutes:seconds\" notation rather than in seconds as decimal fractions.")
+						.build();
+			};
+		},
+		MINUTES(MINUTES_OPT_NAME) {
 			@Override
 			public Option get() {
 				return Option.builder(optName).longOpt("mintes").desc(
@@ -87,12 +97,18 @@ final class SessionStatisticsWriter
 			};
 		};
 
-		private static final Options OPTIONS = createOptions();
+		private static final OptionGroup DURATION_OPTS;
 
-		private static Options createOptions() {
-			final Options result = new Options();
-			Arrays.stream(Parameter.values()).map(Parameter::get).forEach(result::addOption);
-			return result;
+		private static final EnumSet<Parameter> DURATION_PARAMS = EnumSet.of(MINUTES, HOURS);
+
+		private static final Options OPTIONS;
+
+		static {
+			OPTIONS = new Options();
+			EnumSet.complementOf(Parameter.DURATION_PARAMS).stream().map(Parameter::get).forEach(OPTIONS::addOption);
+			DURATION_OPTS = new OptionGroup();
+			Parameter.DURATION_PARAMS.stream().map(Parameter::get).forEach(DURATION_OPTS::addOption);
+			OPTIONS.addOptionGroup(DURATION_OPTS);
 		}
 
 		private static void printHelp() {
@@ -113,9 +129,13 @@ final class SessionStatisticsWriter
 
 	private static final BinaryOperator<Duration> DURATION_SUMMER = (augend, addend) -> augend.plus(addend);
 
+	private static final String HOURS_OPT_NAME = "h";
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(SessionStatisticsWriter.class);
 
 	private static final MathContext MEAN_DIVISION_CTX = MathContext.DECIMAL64;
+
+	private static final String MINUTES_OPT_NAME = "m";
 
 	private static final Charset OUTPUT_ENCODING = StandardCharsets.UTF_8;
 
@@ -165,9 +185,25 @@ final class SessionStatisticsWriter
 					putSessionSummaries(inpath, sessionSummaries);
 				}
 
-				final Function<Duration, String> durationFormatter = cl.hasOption(Parameter.MINUTES.optName)
-						? TimestampArithmetic::formatDurationMinutes
-						: SessionStatisticsWriter::formatDurationAsSeconds;
+				final Function<Duration, String> durationFormatter;
+				final String selectedDurationOpt = Parameter.DURATION_OPTS.getSelected();
+				if (selectedDurationOpt == null) {
+					durationFormatter = SessionStatisticsWriter::formatDurationAsSeconds;
+				} else {
+					switch (selectedDurationOpt) {
+					case MINUTES_OPT_NAME: {
+						durationFormatter = TimestampArithmetic::formatDurationMinutes;
+						break;
+					}
+					case HOURS_OPT_NAME: {
+						durationFormatter = TimestampArithmetic::formatDurationHours;
+						break;
+					}
+					default: {
+						throw new AssertionError("No logic for case statement val \"" + selectedDurationOpt + "\".");
+					}
+					}
+				}
 				try (PrintWriter outputWriter = new PrintWriter(new OutputStreamWriter(System.out, OUTPUT_ENCODING))) {
 					final SessionStatisticsWriter writer = new SessionStatisticsWriter(outputWriter, durationFormatter);
 					writer.accept(sessionSummaries.entrySet());
