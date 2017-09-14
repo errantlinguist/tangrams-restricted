@@ -22,9 +22,14 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.function.BiFunction;
 
+import org.apache.commons.lang3.tuple.Pair;
+
+import com.google.common.collect.BiMap;
 import com.google.common.collect.Maps;
 
 import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
@@ -36,7 +41,7 @@ import se.kth.speech.coin.tangrams.game.PlayerRole;
  *
  */
 final class SourceParticipantIdMapFactory
-		implements BiFunction<SessionDataManager, SessionGameManager, Map<String, String>> {
+		implements BiFunction<SessionDataManager, SessionGameManager, Entry<Map<String, String>, String>> {
 
 	public static final List<PlayerRole> DEFAULT_PLAYER_ROLE_ORDERING = Collections
 			.unmodifiableList(createDefaultPlayerRoleOrderingList());
@@ -74,13 +79,22 @@ final class SourceParticipantIdMapFactory
 	}
 
 	@Override
-	public Map<String, String> apply(final SessionDataManager sessionData, final SessionGameManager sessionGameMgr) {
-		final Map<PlayerRole, String> playerRoles = sessionGameMgr.getCanonicalGame().getHistory().getInitialState()
+	public Entry<Map<String, String>, String> apply(final SessionDataManager sessionData,
+			final SessionGameManager sessionGameMgr) {
+		final BiMap<PlayerRole, String> playerRoles = sessionGameMgr.getCanonicalGame().getHistory().getInitialState()
 				.getPlayerRoles();
 		final Map<String, String> playerSourceIds = sessionData.getPlayerData().getPlayerSourceIds();
+		final Map<String, String> sourceParticipantIds = createSourceParticipantIdMap(playerSourceIds, playerRoles);
+		return Pair.of(sourceParticipantIds,
+				playerRoleOrdering.stream().map(playerRoles::get).filter(Objects::nonNull).findFirst().get());
+	}
+
+	private Map<String, String> createSourceParticipantIdMap(final Map<String, String> playerSourceIds,
+			final Map<PlayerRole, String> playerRoles) {
 		final Iterator<String> newParticipantIdIter = validParticipantIds.iterator();
 
-		final Map<String, String> result = Maps.newHashMapWithExpectedSize(playerRoles.size());
+		final Map<String, String> result = Maps.newHashMapWithExpectedSize(
+				Math.min(playerSourceIds.size(), Math.min(playerRoles.size(), playerRoleOrdering.size())));
 		for (final PlayerRole role : playerRoleOrdering) {
 			final String rolePlayerId = playerRoles.get(role);
 			if (rolePlayerId != null) {

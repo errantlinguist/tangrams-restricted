@@ -181,7 +181,7 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 	}
 
 	private enum Metadatum {
-		END_SCORE, ENTITY_COUNT, EVENT_COUNT, GAME_DURATION, GAME_ID, SOURCE_PARTICIPANT_IDS, ROUND_COUNT, START_TIME;
+		END_SCORE, ENTITY_COUNT, EVENT_COUNT, GAME_DURATION, GAME_ID, INITIAL_INSTRUCTOR_ID, ROUND_COUNT, SOURCE_PARTICIPANT_IDS, START_TIME;
 	}
 
 	private static final GameManagementEvent GAME_ROUND_DELIMITING_EVENT_TYPE = GameManagementEvent.NEXT_TURN_REQUEST;
@@ -338,10 +338,12 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 					}
 					metadataValues.put(Metadatum.GAME_ID, canonicalGame.getGameId());
 					{
-						final Map<String, String> sourceParticipantIds = new SourceParticipantIdMapFactory()
+						final Entry<Map<String, String>, String> sourceParticipantIds = new SourceParticipantIdMapFactory()
 								.apply(infileSessionData, sessionDiagMgr);
 						metadataValues.put(Metadatum.SOURCE_PARTICIPANT_IDS,
-								createJsonMapObject(sourceParticipantIds.entrySet()));
+								createJsonMapObject(sourceParticipantIds.getKey().entrySet()));
+						metadataValues.put(Metadatum.INITIAL_INSTRUCTOR_ID, sourceParticipantIds.getValue());
+
 					}
 					metadataValues.put(Metadatum.ROUND_COUNT, gameRoundId);
 					{
