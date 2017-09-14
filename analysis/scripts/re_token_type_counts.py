@@ -33,7 +33,7 @@ class FilteredTokenCountDatum(object):
 			self.utts.append(utt)
 
 	def copy(self):
-		return FilteredTokenCountDatum(self.all_tokens.copy(), self.relevant_tokens.copy(), self.utts)
+		return FilteredTokenCountDatum(self.all_tokens.copy(), self.relevant_tokens.copy(), self.utts.copy())
 
 	def update(self, other: "FilteredTokenCountDatum"):
 		self.all_tokens.update(other.all_tokens)
