@@ -81,8 +81,8 @@ final class SessionStatisticsWriter
 		MINUTES("m") {
 			@Override
 			public Option get() {
-				return Option.builder(optName).longOpt("mintes")
-						.desc("Prints statistics in \"minutes:seconds\" notation rather than in seconds as decimal fractions.")
+				return Option.builder(optName).longOpt("mintes").desc(
+						"Prints statistics in \"minutes:seconds\" notation rather than in seconds as decimal fractions.")
 						.build();
 			};
 		};
@@ -107,8 +107,6 @@ final class SessionStatisticsWriter
 		}
 
 	}
-
-	private static final BinaryOperator<BigDecimal> BIG_DECIMAL_SUMMER = (augend, addend) -> augend.add(addend);
 
 	private static final List<String> COLUMN_HEADERS = Arrays.asList("INPATH", "GAME_ID", "GAME_DURATION",
 			"ROUND_COUNT", "UTT_COUNT");
@@ -168,7 +166,8 @@ final class SessionStatisticsWriter
 				}
 
 				final Function<Duration, String> durationFormatter = cl.hasOption(Parameter.MINUTES.optName)
-						? TimestampArithmetic::formatDurationHours : SessionStatisticsWriter::formatDurationAsSeconds;
+						? TimestampArithmetic::formatDurationMinutes
+						: SessionStatisticsWriter::formatDurationAsSeconds;
 				try (PrintWriter outputWriter = new PrintWriter(new OutputStreamWriter(System.out, OUTPUT_ENCODING))) {
 					final SessionStatisticsWriter writer = new SessionStatisticsWriter(outputWriter, durationFormatter);
 					writer.accept(sessionSummaries.entrySet());
@@ -264,12 +263,12 @@ final class SessionStatisticsWriter
 					.reduce(DURATION_SUMMER).get();
 			final String meanDurationRepr = durationFormatter
 					.apply(totalDuration.dividedBy(gameSessionCount.longValueExact()));
-			final long totalRoundCount = getGameSummaries(sessionSummaries)
-					.mapToLong(GameSummary::getCompletedRoundCount).sum();
-			final BigDecimal meanRoundCount = new BigDecimal(totalRoundCount).divide(gameSessionCount,
-					MEAN_DIVISION_CTX);
-			final long totalUttCount = getGameSummaries(sessionSummaries).mapToLong(GameSummary::getUttCount).sum();
-			final BigDecimal meanUttCount = new BigDecimal(totalUttCount).divide(gameSessionCount, MEAN_DIVISION_CTX);
+			final BigDecimal totalRoundCount = new BigDecimal(
+					getGameSummaries(sessionSummaries).mapToLong(GameSummary::getCompletedRoundCount).sum());
+			final BigDecimal meanRoundCount = totalRoundCount.divide(gameSessionCount, MEAN_DIVISION_CTX);
+			final BigDecimal totalUttCount = new BigDecimal(
+					getGameSummaries(sessionSummaries).mapToLong(GameSummary::getUttCount).sum());
+			final BigDecimal meanUttCount = totalUttCount.divide(gameSessionCount, MEAN_DIVISION_CTX);
 			final List<Object> meanVals = Arrays.asList("MEAN", "", meanDurationRepr, meanRoundCount, meanUttCount);
 			outputWriter.print(meanVals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
 			outputWriter.print(ROW_DELIMITER);
