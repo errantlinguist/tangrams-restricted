@@ -47,7 +47,7 @@ class FilteringTokenCounter(object):
 
 	def __call__(self, utts: Sequence[utterances.Utterance]) -> FilteredTokenCountDatum:
 		result = FilteredTokenCountDatum()
-		result.add(utts)
+		result.add(utts, self.token_filter)
 		return result
 
 
