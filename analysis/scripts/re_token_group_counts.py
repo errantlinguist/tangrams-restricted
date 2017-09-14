@@ -92,7 +92,7 @@ def __process_whole_sessions(inpaths: Iterable[str], token_groups: TokenGroupDic
 	:param outfile: The file to print the results to.
 	"""
 	infiles = walk_xml_files(*inpaths)
-	seg_utt_factory = utterances.SegmentUtteranceFactory()
+	seg_utt_factory = utterances.SegmentUtteranceFactory(utterances.TokenSequenceFactory())
 	infile_token_group_counts = dict(
 		(infile, read_utt_token_group_counts(infile, token_groups, seg_utt_factory)) for infile in infiles)
 	print("Read token counts for {} file(s).".format(len(infile_token_group_counts)), file=sys.stderr)

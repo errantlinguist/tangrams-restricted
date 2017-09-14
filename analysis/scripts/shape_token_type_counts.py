@@ -4,7 +4,7 @@ import argparse
 import re
 import sys
 from collections import defaultdict
-from typing import Any, Callable, Dict, List, Sequence, Tuple, TypeVar
+from typing import Any, Callable, Dict, Iterable, List, Sequence, Tuple, TypeVar
 
 import game_events
 import re_token_type_counts
@@ -20,10 +20,10 @@ SHAPE_GROUP_NAME = "shape"
 
 
 class ShapeTokenCounter(object):
-	def __init__(self, seg_utt_factory: utterances.SegmentUtteranceFactory,
+	def __init__(self,  token_seq_factory: Callable[[Iterable[str]], Sequence[str]],
 				 filtering_token_counter: Callable[
 					 [Sequence[utterances.Utterance]], re_token_type_counts.FilteredTokenCountDatum]):
-		self.seg_utt_factory = seg_utt_factory
+		self.token_seq_factory = token_seq_factory
 		self.filtering_token_counter = filtering_token_counter
 
 	def __call__(self, named_sessions: Dict[T, SessionData]) -> Dict[
@@ -46,7 +46,8 @@ class ShapeTokenCounter(object):
 		events = game_events.read_events(session)[0]
 		game_rounds = iter(game_events.create_game_rounds(events))
 		segments = utterances.read_segments(session.utts)
-		utt_times = utterances.UtteranceTimes(self.seg_utt_factory(segments))
+		seg_utt_factory = utterances.SegmentUtteranceFactory(self.token_seq_factory)
+		utt_times = utterances.UtteranceTimes(seg_utt_factory(segments))
 		game_round_utts = referent_token_type_counts.zip_game_round_utterances(game_rounds, utt_times)
 		for (round_id, (game_round, utts)) in enumerate(game_round_utts, start=1):
 			initial_event = game_round.initial_event
@@ -121,7 +122,7 @@ def __main(args):
 
 	named_sessions = walk_session_data(args.inpaths)
 	outfile = sys.stdout
-	referent_token_counter = ShapeTokenCounter(utterances.SegmentUtteranceFactory(),
+	referent_token_counter = ShapeTokenCounter(utterances.TokenSequenceFactory(),
 											   re_token_type_counts.FilteringTokenCounter(
 												   lambda token: token in token_groups.keys()))
 	referent_token_counts = referent_token_counter(named_sessions)

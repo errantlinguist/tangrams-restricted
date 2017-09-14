@@ -134,7 +134,7 @@ def __main(args):
 	named_sessions = walk_session_data(args.inpaths)
 	outfile = sys.stdout
 	referent_token_counter = referent_token_type_counts.CoreferenceChainTokenCounter(
-		utterances.SegmentUtteranceFactory(),
+		utterances.TokenSequenceFactory(),
 		re_token_type_counts.FilteringTokenCounter(
 			lambda
 				token: token in token_groups.keys()))

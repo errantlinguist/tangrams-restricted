@@ -127,10 +127,9 @@ class LanguageMetrics(object):
 
 
 class ParticipantCoreferenceChainTokenCounter(object):
-	def __init__(self, seg_utt_factory: utterances.SegmentUtteranceFactory,
-				 filtering_token_counter: Callable[
-					 [Sequence[utterances.Utterance]], re_token_type_counts.FilteredTokenCountDatum]):
-		self.seg_utt_factory = seg_utt_factory
+	def __init__(self, token_seq_factory: Callable[[Iterable[str]], Sequence[str]], filtering_token_counter: Callable[
+		[Sequence[utterances.Utterance]], re_token_type_counts.FilteredTokenCountDatum]):
+		self.token_seq_factory = token_seq_factory
 		self.filtering_token_counter = filtering_token_counter
 
 	def __call__(self, named_sessions: Iterable[Tuple[str, sd.SessionData]]) -> Dict[str, Dict[int, "ReferentCounts"]]:
@@ -139,9 +138,10 @@ class ParticipantCoreferenceChainTokenCounter(object):
 			print("Processing session \"{}\".".format(dyad_id), file=sys.stderr)
 
 			events, source_participant_ids = game_events.read_events(session)
+			seg_utt_factory = utterances.SegmentUtteranceFactory(self.token_seq_factory)
 			game_rounds = iter(game_events.create_game_rounds(events))
 			segments = utterances.read_segments(session.utts)
-			utt_times = utterances.UtteranceTimes(self.seg_utt_factory(segments))
+			utt_times = utterances.UtteranceTimes(seg_utt_factory(segments))
 			game_round_utts = referent_token_type_counts.zip_game_round_utterances(game_rounds, utt_times)
 
 			entity_referent_counts = defaultdict(ReferentCounts)
@@ -366,11 +366,10 @@ def __main(args):
 
 	named_sessions = sd.walk_session_data(args.inpaths)
 	outfile = sys.stdout
-	referent_token_counter = ParticipantCoreferenceChainTokenCounter(
-		utterances.SegmentUtteranceFactory(),
-		re_token_type_counts.FilteringTokenCounter(
-			lambda
-				token: token in token_groups.keys()))
+	referent_token_counter = ParticipantCoreferenceChainTokenCounter(utterances.TokenSequenceFactory(),
+																	 re_token_type_counts.FilteringTokenCounter(
+																		 lambda
+																			 token: token in token_groups.keys()))
 	session_entity_counts = referent_token_counter(named_sessions)
 	printer = TokenTypeDataPrinter(args.strict)
 	printer(session_entity_counts.items(), outfile)

@@ -1,7 +1,7 @@
 import itertools
 import sys
 from collections import defaultdict
-from typing import Any, Callable, Dict, Iterable, Iterator, List, Union
+from typing import Any, Callable, Dict, Iterable, Iterator, List, Sequence, Tuple, Union
 from xml.etree.ElementTree import Element, parse as parse_etree
 
 from annotations import ANNOTATION_NAMESPACES
@@ -48,14 +48,9 @@ class Utterance(object):
 		return self.__class__.__name__ + str(self.__dict__)
 
 
-def is_semantically_relevant_token(token: str) -> bool:
-	return token not in METALANGUAGE_TOKENS and token not in FILLER_TOKENS and not is_disfluency(token)
-
-
 class SegmentUtteranceFactory(object):
-	def __init__(self, token_filter: Callable[[str], bool] = is_semantically_relevant_token):
-		self.token_filter = token_filter
-		self.token_seq_singletons = {}
+	def __init__(self, token_seq_factory: Callable[[Iterable[str]], Sequence[str]]):
+		self.token_seq_factory = token_seq_factory
 
 	def __call__(self, segments: Iterable[Element]) -> Iterator[Utterance]:
 		for segment in segments:
@@ -64,17 +59,12 @@ class SegmentUtteranceFactory(object):
 				yield utt
 
 	def __create(self, segment: Element) -> Utterance:
-		tokens = segment.iterfind(".//hat:t", ANNOTATION_NAMESPACES)
-		content = tuple(stripped_token for stripped_token in (token.text.strip() for token in tokens) if
-						stripped_token and self.token_filter(stripped_token))
+		token_elems = segment.iterfind(".//hat:t", ANNOTATION_NAMESPACES)
+		token_text = (elem.text for elem in token_elems)
+		content = self.token_seq_factory(token_text)
 		if content:
-			try:
-				singleton_content = self.token_seq_singletons[content]
-			except KeyError:
-				singleton_content = tuple(sys.intern(token) for token in content)
-				self.token_seq_singletons[singleton_content] = singleton_content
 			result = Utterance(segment.get("id"), sys.intern(segment.get("source")), float(segment.get("start")),
-							   float(segment.get("end")), singleton_content)
+							   float(segment.get("end")), content)
 		else:
 			result = None
 
@@ -131,11 +121,37 @@ class UtteranceTimes(object):
 		next_start_time = self.ascending_start_times.find_ge(start_time)
 		return self.utts_by_start_time[next_start_time]
 
+
+def is_semantically_relevant_token(token: str) -> bool:
+	return token not in METALANGUAGE_TOKENS and token not in FILLER_TOKENS and not is_disfluency(token)
+
+
+class TokenSequenceFactory(object):
+	def __init__(self, token_filter: Callable[[str], bool] = is_semantically_relevant_token):
+		self.token_filter = token_filter
+		self.token_seq_singletons = {}
+
+	def __call__(self, tokens: Iterable[str]) -> Tuple[str]:
+		content = tuple(stripped_token for stripped_token in (token.strip() for token in tokens) if
+						stripped_token and self.token_filter(stripped_token))
+		if content:
+			try:
+				result = self.token_seq_singletons[content]
+			except KeyError:
+				result = tuple(sys.intern(token) for token in content)
+				self.token_seq_singletons[result] = result
+		else:
+			result = None
+
+		return result
+
+
 def create_speaker_dict(utts: Iterable[Utterance]) -> Dict[str, List[Utterance]]:
 	result = defaultdict(list)
 	for utt in utts:
 		result[utt.speaker_id].append(utt)
 	return result
+
 
 def dialogue_utt_str_repr(utts: Iterable[Utterance]) -> str:
 	repr_list = []

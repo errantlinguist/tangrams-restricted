@@ -205,7 +205,7 @@ def is_relevant_round(datum: FilteredTokenCountDatum):
 
 def session_token_type_data(named_sessions, relevant_tokens: Container[str]) -> Iterator[
 	Tuple[str, SessionTokenCountDatum]]:
-	seg_utt_factory = utterances.SegmentUtteranceFactory()
+	seg_utt_factory = utterances.SegmentUtteranceFactory(utterances.TokenSequenceFactory())
 	session_token_counter = SessionRoundTokenCounter(seg_utt_factory,
 													 FilteringTokenCounter(lambda token: token in relevant_tokens))
 	session_round_token_counts = session_token_counter(named_sessions)

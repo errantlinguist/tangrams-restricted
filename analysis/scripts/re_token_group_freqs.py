@@ -271,7 +271,7 @@ def __main(args):
 
 	named_sessions = session_data.walk_session_data(args.inpaths)
 	outfile = sys.stdout
-	seg_utt_factory = utterances.SegmentUtteranceFactory()
+	seg_utt_factory = utterances.SegmentUtteranceFactory(utterances.TokenSequenceFactory())
 	partition_round_count = args.round_split
 	if partition_round_count:
 		dist_collector = PartitionedSessionGroupDistributionCollector(token_groups, seg_utt_factory)
