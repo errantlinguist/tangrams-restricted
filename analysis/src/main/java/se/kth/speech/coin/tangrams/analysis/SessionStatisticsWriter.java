@@ -185,31 +185,36 @@ final class SessionStatisticsWriter
 					putSessionSummaries(inpath, sessionSummaries);
 				}
 
-				final Function<Duration, String> durationFormatter;
-				final String selectedDurationOpt = Parameter.DURATION_OPTS.getSelected();
-				if (selectedDurationOpt == null) {
-					durationFormatter = SessionStatisticsWriter::formatDurationAsSeconds;
-				} else {
-					switch (selectedDurationOpt) {
-					case MINUTES_OPT_NAME: {
-						durationFormatter = TimestampArithmetic::formatDurationMinutes;
-						break;
-					}
-					case HOURS_OPT_NAME: {
-						durationFormatter = TimestampArithmetic::formatDurationHours;
-						break;
-					}
-					default: {
-						throw new AssertionError("No logic for case statement val \"" + selectedDurationOpt + "\".");
-					}
-					}
-				}
+				final Function<Duration, String> durationFormatter = parseDurationFormatter();
 				try (PrintWriter outputWriter = new PrintWriter(new OutputStreamWriter(System.out, OUTPUT_ENCODING))) {
 					final SessionStatisticsWriter writer = new SessionStatisticsWriter(outputWriter, durationFormatter);
 					writer.accept(sessionSummaries.entrySet());
 				}
 			}
 		}
+	}
+
+	private static Function<Duration, String> parseDurationFormatter() {
+		final Function<Duration, String> result;
+		final String selectedDurationOpt = Parameter.DURATION_OPTS.getSelected();
+		if (selectedDurationOpt == null) {
+			result = SessionStatisticsWriter::formatDurationAsSeconds;
+		} else {
+			switch (selectedDurationOpt) {
+			case MINUTES_OPT_NAME: {
+				result = TimestampArithmetic::formatDurationMinutes;
+				break;
+			}
+			case HOURS_OPT_NAME: {
+				result = TimestampArithmetic::formatDurationHours;
+				break;
+			}
+			default: {
+				throw new AssertionError("No logic for case statement val \"" + selectedDurationOpt + "\".");
+			}
+			}
+		}
+		return result;
 	}
 
 	private static void putSessionSummaries(final Path inpath,
