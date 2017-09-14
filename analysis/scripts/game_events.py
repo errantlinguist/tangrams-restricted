@@ -1,9 +1,9 @@
 import csv
 import json
 import sys
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 from enum import Enum, unique
-from typing import Dict, Iterable, List, Sequence, Tuple, Union
+from typing import Dict, Iterable, Iterator, List, Sequence, Tuple, Union
 
 import session_data
 
@@ -90,6 +90,14 @@ class Event(object):
 	def submitter(self):
 		return self.attrs[Event.Attribute.SUBMITTER]
 
+class EventData(object):
+	def __init__(self, events : Iterable[Event], source_participant_ids : Dict[str, str], initial_instructor_id : str):
+		self.events = events
+		self.source_participant_ids = source_participant_ids
+		self.initial_instructor_id = initial_instructor_id
+
+	def __repr__(self, *args, **kwargs):
+		return self.__class__.__name__ + str(self.__dict__)
 
 class GameRound(object):
 	@unique
@@ -115,7 +123,7 @@ class GameRound(object):
 		return next(iter(self.events))
 
 
-def create_game_rounds(events: Iterable[Event]) -> Iterable[GameRound]:
+def create_game_rounds(events: Iterable[Event]) -> Iterator[GameRound]:
 	round_events = defaultdict(list)
 	for event in events:
 		round_events[event.round_id].append(event)
@@ -137,8 +145,7 @@ def create_game_rounds(events: Iterable[Event]) -> Iterable[GameRound]:
 
 	yield GameRound(current_round_start_time, None, current_events)
 
-
-def read_events(session: session_data.SessionData) -> Tuple[Iterable[Event], Dict[str, str]]:
+def read_events(session: session_data.SessionData) -> EventData:
 	events_metadata = session.read_events_metadata()
 
 	event_count = int(events_metadata[session_data.MetadataColumn.EVENT_COUNT.value])
@@ -150,7 +157,8 @@ def read_events(session: session_data.SessionData) -> Tuple[Iterable[Event], Dic
 	source_participant_ids = json.loads(source_participant_id_json_str, encoding=session_data.ENCODING)
 	interned_source_participant_ids = dict(
 		(sys.intern(key), sys.intern(value)) for (key, value) in source_participant_ids.items())
-	return events, interned_source_participant_ids
+	initial_instructor_id = sys.intern(events_metadata[session_data.MetadataColumn.INITIAL_INSTRUCTOR_ID.value])
+	return EventData(events, interned_source_participant_ids, initial_instructor_id)
 
 
 def read_event_entity_desc_matrix(infile_path: str, event_count: int, entity_count: int) -> Tuple[

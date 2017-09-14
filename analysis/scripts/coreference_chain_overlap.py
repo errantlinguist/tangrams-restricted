@@ -31,18 +31,35 @@ NULL_TOKEN_TYPE_OVERLAP_VALUE = _DECIMAL_ZERO
 NULL_TOKEN_LENGTH_DROP_VALUE = _DECIMAL_INFINITY
 
 
+class EventParticipantIdFactory(object):
+	"""
+		This is a hack to map the non-anonymized usernames in the event logs to anonymized utterance speaker IDs.
+		TODO: Remove this after anonymizing all data
+	"""
+
+	def __init__(self, initial_instructor_id: str):
+		self.initial_instructor_id = initial_instructor_id
+
+	def __call__(self, event: game_events.Event):
+		"""
+		:param event: The event to get the participant ID for
+		:return: Either "A" or "B"
+		"""
+		return "A" if event.submitter == self.initial_instructor_id else "B"
+
+
 class GameRoundMetrics(object):
 	COL_NAMES = (
 		"DYAD", "ENTITY", "SEQUENCE_ORDER", "ROUND", "INSTRUCTOR", "GAME_SCORE", "ROUND_START_TIME", "TIME_SCORE_RATIO",
 		"ROUND_SCORE_RATIO")
 
 	def __init__(self, dyad_id: str, entity_id: int, sequence_order: int, round_id: int,
-				 initial_event: game_events.Event):
+				 initial_event: game_events.Event, instructor: str):
 		self.dyad_id = dyad_id
 		self.entity_id = entity_id
 		self.sequence_order = sequence_order
 		self.round_id = round_id
-		self.instructor = initial_event.submitter
+		self.instructor = instructor
 		self.score = initial_event.score
 		self.time = initial_event.event_time
 		self.time_score_ratio = time_score_ratio(initial_event)
@@ -115,32 +132,50 @@ class ParticipantCoreferenceChainTokenCounter(object):
 		for dyad_id, session in named_sessions:
 			print("Processing session \"{}\".".format(dyad_id), file=sys.stderr)
 
-			events, source_participant_ids = game_events.read_events(session)
+			event_data = game_events.read_events(session)
+			source_participant_ids = event_data.source_participant_ids
 			seg_utt_factory = utterances.SegmentUtteranceFactory(self.token_seq_factory,
 																 lambda source_id: source_participant_ids[source_id])
-			game_rounds = iter(game_events.create_game_rounds(events))
+			game_rounds = iter(game_events.create_game_rounds(event_data.events))
 			segments = utterances.read_segments(session.utts)
 			utt_times = utterances.UtteranceTimes(seg_utt_factory(segments))
 			game_round_utts = referent_token_type_counts.zip_game_round_utterances(game_rounds, utt_times)
 
-			entity_referent_counts = defaultdict(ReferentCounts)
-			for (round_id, (game_round, utts)) in enumerate(game_round_utts, start=1):
-				initial_event = game_round.initial_event
-				speaker_utts = utterances.create_speaker_dict(utts)
-				participant_token_counts = {}
-				for speaker_id in source_participant_ids.keys():
-					speaker_participant_id = source_participant_ids[speaker_id]
-					participant_utts = speaker_utts.get(speaker_participant_id, _EMPTY_SET)
-					participant_token_counts[speaker_participant_id] = self.filtering_token_counter(participant_utts)
-
-				round_counts = RoundReferentCounts(game_round, participant_token_counts)
-				for entity_id, _ in initial_event.referent_entities:
-					entity_counts = entity_referent_counts[entity_id]
-					entity_counts.add_round_counts(round_id, round_counts)
-
+			entity_referent_counts = {}
+			enumerated_game_round_utts = enumerate(game_round_utts, start=1)
+			game_round_utts = next(enumerated_game_round_utts)
+			event_participant_id_factory = EventParticipantIdFactory(event_data.initial_instructor_id)
+			self.__put_entity_counts(game_round_utts, source_participant_ids, entity_referent_counts,
+									 event_participant_id_factory)
+			for game_round_utts in enumerated_game_round_utts:
+				self.__put_entity_counts(game_round_utts, source_participant_ids, entity_referent_counts,
+										 event_participant_id_factory)
 			result[dyad_id] = (entity_referent_counts, source_participant_ids)
 
 		return result
+
+	def __put_entity_counts(self, enumerated_game_round_utts, source_participant_ids: Dict[str, str],
+							entity_referent_counts: Dict[int, "ReferentCounts"],
+							event_participant_id_factory: Callable[[game_events.Event], str]):
+		round_id, game_round_utts = enumerated_game_round_utts
+		game_round, utts = game_round_utts
+		initial_event = game_round.initial_event
+		speaker_utts = utterances.create_speaker_dict(utts)
+		participant_token_counts = {}
+		for speaker_id in source_participant_ids.keys():
+			speaker_participant_id = source_participant_ids[speaker_id]
+			participant_utts = speaker_utts.get(speaker_participant_id, _EMPTY_SET)
+			participant_token_counts[speaker_participant_id] = self.filtering_token_counter(participant_utts)
+
+		round_instructor_id = event_participant_id_factory(initial_event)
+		round_counts = RoundCounts(game_round, participant_token_counts, round_instructor_id)
+		for entity_id, _ in initial_event.referent_entities:
+			try:
+				entity_counts = entity_referent_counts[entity_id]
+			except KeyError:
+				entity_counts = ReferentCounts()
+				entity_referent_counts[entity_id] = entity_counts
+			entity_counts.add_round_counts(round_id, round_counts)
 
 
 class ReferentCounts(object):
@@ -155,7 +190,7 @@ class ReferentCounts(object):
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
 
-	def add_round_counts(self, round_id: Any, round_counts: "RoundReferentCounts"):
+	def add_round_counts(self, round_id: Any, round_counts: "RoundCounts"):
 		self.round_counts.append((round_id, round_counts))
 		for participant_id, participant_counts in round_counts.participant_counts.items():
 			self.participant_total_counts[participant_id].update(participant_counts)
@@ -169,9 +204,9 @@ class ReferentCounts(object):
 		return self.participant_total_counts.keys()
 
 
-class RoundReferentCounts(object):
+class RoundCounts(object):
 	def __init__(self, game_round: game_events.GameRound,
-				 participant_counts: Dict[Any, re_token_type_counts.FilteredTokenCountDatum]):
+				 participant_counts: Dict[Any, re_token_type_counts.FilteredTokenCountDatum], instructor: str):
 		self.game_round = game_round
 		self.participant_counts = participant_counts
 		"""Token counts for utterances produced by a given participant in the round represented by this instance."""
@@ -179,6 +214,7 @@ class RoundReferentCounts(object):
 		for counts in participant_counts.values():
 			self.total_counts.update(counts)
 		"""Token counts for all utterances produced by all participants in the round represented by this instance."""
+		self.instructor = instructor
 
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
@@ -189,10 +225,10 @@ _RowMetrics = namedtuple("_RowMetrics", ("round", "participant_lang", "total_lan
 
 class TokenTypeDataPrinter(object):
 	@staticmethod
-	def __create_initial_metrics(dyad_id: str, entity_id: int, enumerated_ordered_round_counts) -> _RowMetrics:
-		sequence_order, (round_id, round_token_counts) = next(enumerated_ordered_round_counts)
+	def __create_initial_metrics(dyad_id: str, entity_id: int, sequence_order: int, round_id: int,
+								 round_token_counts: RoundCounts) -> _RowMetrics:
 		round_metrics = GameRoundMetrics(dyad_id, entity_id, sequence_order, round_id,
-										 round_token_counts.game_round.initial_event)
+										 round_token_counts.game_round.initial_event, round_token_counts.instructor)
 		participant_lang_metrics = dict(
 			(participant_id, LanguageMetrics(dyad_id, round_id, participant_id, counts.utts, counts.relevant_tokens))
 			for
@@ -218,7 +254,7 @@ class TokenTypeDataPrinter(object):
 	def __participant_ids(
 			session_referent_token_counts: ItemsView[str, Tuple[Dict[int, ReferentCounts], Dict[str, str]]]):
 		result = set()
-		for dyad_id, (referent_token_counts, source_participant_ids) in session_referent_token_counts:
+		for _, (referent_token_counts, _) in session_referent_token_counts:
 			for counts in referent_token_counts.values():
 				for participant_id in counts.participant_ids():
 					result.add(participant_id)
@@ -242,57 +278,64 @@ class TokenTypeDataPrinter(object):
 
 		ordered_session_referent_token_counts = sorted(session_referent_token_counts, key=lambda item: item[0])
 		for dyad_id, (referent_token_counts, source_participant_ids) in ordered_session_referent_token_counts:
-			for entity_id, entity_token_counts in sorted(referent_token_counts.items(), key=lambda item: item[0]):
-				# Counts for each round, ordered by their respective round IDs
-				ordered_round_counts = sorted(entity_token_counts.round_counts, key=lambda item: item[0])
-				# Round IDs and their corresponding counts, enumerated by their coreference chain sequence number
-				enumerated_ordered_round_counts = enumerate(ordered_round_counts, start=1)
-				initial_metrics = self.__create_initial_metrics(dyad_id, entity_id, enumerated_ordered_round_counts)
+			self.__print_session(dyad_id, referent_token_counts, all_participant_ids, outfile)
+
+	def __print_session(self, dyad_id: Any, referent_token_counts: Dict[int, ReferentCounts],
+						ordered_participant_ids: Iterable[str], outfile):
+		for entity_id, entity_token_counts in sorted(referent_token_counts.items(), key=lambda item: item[0]):
+			# Counts for each round, ordered by their respective round IDs
+			ordered_round_counts = sorted(entity_token_counts.round_counts, key=lambda item: item[0])
+			# Round IDs and their corresponding counts, enumerated by their coreference chain sequence number
+			enumerated_ordered_round_counts = enumerate(ordered_round_counts, start=1)
+			sequence_order, (round_id, round_token_counts) = next(enumerated_ordered_round_counts)
+			initial_metrics = self.__create_initial_metrics(dyad_id, entity_id, sequence_order, round_id,
+															round_token_counts)
+			print(COL_DELIM.join(
+				self.__create_metrics_row(initial_metrics.round, initial_metrics.participant_lang,
+										  initial_metrics.total_lang, ordered_participant_ids)),
+				file=outfile)
+
+			previous_round_participant_total_tokens = {}
+			previous_round_participant_token_types = {}
+			for participant_id in ordered_participant_ids:
+				metrics = initial_metrics.participant_lang.get(participant_id)
+				initial_token_count = metrics.current_round_total_tokens if metrics else _DECIMAL_ZERO
+				previous_round_participant_total_tokens[participant_id] = [initial_token_count]
+				initial_token_types = set(metrics.current_round_token_types) if metrics else set()
+				previous_round_participant_token_types[participant_id] = initial_token_types
+
+			previous_round_total_total_tokens = [initial_metrics.total_lang.current_round_total_tokens]
+			previous_round_total_token_types = set(initial_metrics.total_lang.current_round_token_types)
+
+			for (sequence_order, (round_id, round_token_counts)) in enumerated_ordered_round_counts:
+				round_metrics = GameRoundMetrics(dyad_id, entity_id, sequence_order, round_id,
+												 round_token_counts.game_round.initial_event,
+												 round_token_counts.instructor)
+				participant_lang_metrics = {}
+				for participant_id, counts in round_token_counts.participant_counts.items():
+					previous_round_total_tokens = previous_round_participant_total_tokens[participant_id]
+					previous_round_token_types = previous_round_participant_token_types[participant_id]
+					current_participant_metrics = LanguageMetrics(dyad_id, round_id, participant_id,
+																  counts.utts,
+																  counts.relevant_tokens,
+																  previous_round_total_tokens,
+																  previous_round_token_types)
+					participant_lang_metrics[participant_id] = current_participant_metrics
+					previous_round_total_tokens.append(current_participant_metrics.current_round_total_tokens)
+					previous_round_token_types.update(current_participant_metrics.current_round_token_types)
+
+				total_lang_metrics = create_total_lang_metrics(dyad_id, round_id,
+															   round_token_counts,
+															   previous_round_total_total_tokens,
+															   previous_round_total_token_types)
+				current_metrics = _RowMetrics(round_metrics, participant_lang_metrics, total_lang_metrics)
 				print(COL_DELIM.join(
-					self.__create_metrics_row(initial_metrics.round, initial_metrics.participant_lang,
-											  initial_metrics.total_lang, all_participant_ids)),
+					self.__create_metrics_row(current_metrics.round, current_metrics.participant_lang,
+											  current_metrics.total_lang, ordered_participant_ids)),
 					file=outfile)
 
-				previous_round_participant_total_tokens = {}
-				previous_round_participant_token_types = {}
-				for participant_id in all_participant_ids:
-					metrics = initial_metrics.participant_lang.get(participant_id)
-					initial_token_count = metrics.current_round_total_tokens if metrics else _DECIMAL_ZERO
-					previous_round_participant_total_tokens[participant_id] = [initial_token_count]
-					initial_token_types = set(metrics.current_round_token_types) if metrics else set()
-					previous_round_participant_token_types[participant_id] = initial_token_types
 
-				previous_round_total_total_tokens = [initial_metrics.total_lang.current_round_total_tokens]
-				previous_round_total_token_types = set(initial_metrics.total_lang.current_round_token_types)
-
-				for (sequence_order, (round_id, round_token_counts)) in enumerated_ordered_round_counts:
-					round_metrics = GameRoundMetrics(dyad_id, entity_id, sequence_order, round_id,
-													 round_token_counts.game_round.initial_event)
-					participant_lang_metrics = {}
-					for participant_id, counts in round_token_counts.participant_counts.items():
-						previous_round_total_tokens = previous_round_participant_total_tokens[participant_id]
-						previous_round_token_types = previous_round_participant_token_types[participant_id]
-						current_participant_metrics = LanguageMetrics(dyad_id, round_id, participant_id,
-																	  counts.utts,
-																	  counts.relevant_tokens,
-																	  previous_round_total_tokens,
-																	  previous_round_token_types)
-						participant_lang_metrics[participant_id] = current_participant_metrics
-						previous_round_total_tokens.append(current_participant_metrics.current_round_total_tokens)
-						previous_round_token_types.update(current_participant_metrics.current_round_token_types)
-
-					total_lang_metrics = create_total_lang_metrics(dyad_id, round_id,
-																   round_token_counts,
-																   previous_round_total_total_tokens,
-																   previous_round_total_token_types)
-					current_metrics = _RowMetrics(round_metrics, participant_lang_metrics, total_lang_metrics)
-					print(COL_DELIM.join(
-						self.__create_metrics_row(current_metrics.round, current_metrics.participant_lang,
-												  current_metrics.total_lang, all_participant_ids)),
-						file=outfile)
-
-
-def create_total_lang_metrics(dyad_id: str, round_id: int, round_token_counts: ReferentCounts,
+def create_total_lang_metrics(dyad_id: str, round_id: int, round_token_counts: RoundCounts,
 							  previous_round_total_tokens: Iterable[Decimal] = None,
 							  previous_round_token_types: Set[str] = _EMPTY_SET):
 	total_counts = round_token_counts.total_counts
