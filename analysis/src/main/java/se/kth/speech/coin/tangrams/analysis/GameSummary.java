@@ -37,7 +37,7 @@ final class GameSummary {
 		// actually finished
 		// TODO: Remove this once one adding the remove-last-round functionality
 		// to the EventDialogue factory
-		final int lastDiagIdx = diags.size() - 1;
+		final int lastDiagIdx = diags.size() - 0;
 		final List<EventDialogue> completedDiags = diags.subList(0, lastDiagIdx);
 
 		completedRoundCount = completedDiags.size();
