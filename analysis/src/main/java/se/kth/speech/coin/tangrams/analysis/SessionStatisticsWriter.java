@@ -96,6 +96,13 @@ final class SessionStatisticsWriter
 						.build();
 			};
 		},
+		LATEX("l") {
+			@Override
+			public Option get() {
+				return Option.builder(optName).longOpt("latex").desc("Prints results using tabular LaTeX syntax.")
+						.build();
+			};
+		},
 		MINUTES(MINUTES_OPT_NAME) {
 			@Override
 			public Option get() {
@@ -140,6 +147,9 @@ final class SessionStatisticsWriter
 
 	private static final String HOURS_OPT_NAME = "h";
 
+	private static final Collector<CharSequence, ?, String> LATEX_ROW_CELL_JOINER = Collectors.joining("\t&\t", "",
+			" \\\\");
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(SessionStatisticsWriter.class);
 
 	private static final MathContext MEAN_DIVISION_CTX = MathContext.DECIMAL64;
@@ -148,9 +158,9 @@ final class SessionStatisticsWriter
 
 	private static final Charset OUTPUT_ENCODING = StandardCharsets.UTF_8;
 
-	private static final Collector<CharSequence, ?, String> ROW_CELL_JOINER = Collectors.joining("\t");
-
 	private static final String ROW_DELIMITER = System.lineSeparator();
+
+	private static final Collector<CharSequence, ?, String> TAB_ROW_CELL_JOINER = Collectors.joining("\t");
 
 	public static void main(final String[] args) throws JAXBException, IOException, ParseException {
 		final CommandLineParser parser = new DefaultParser();
@@ -195,9 +205,11 @@ final class SessionStatisticsWriter
 				}
 
 				final Function<Duration, String> durationFormatter = parseDurationFormatter();
+				final Collector<CharSequence, ?, String> rowCellJoiner = cl.hasOption(Parameter.LATEX.optName)
+						? LATEX_ROW_CELL_JOINER : TAB_ROW_CELL_JOINER;
 				try (PrintWriter outputWriter = new PrintWriter(new OutputStreamWriter(System.out, OUTPUT_ENCODING))) {
 					final SessionStatisticsWriter writer = new SessionStatisticsWriter(outputWriter, durationFormatter,
-							sessionSummaries.size());
+							rowCellJoiner, sessionSummaries.size());
 					writer.accept(sessionSummaries.entrySet());
 				}
 			}
@@ -248,14 +260,18 @@ final class SessionStatisticsWriter
 
 	private final PrintWriter outputWriter;
 
+	private final Collector<? super CharSequence, ?, String> rowCellJoiner;
+
 	private final LoadingCache<GameSummary, DoubleSummaryStatistics> sessionUtteranceDurationStats;
 
 	private final LoadingCache<GameSummary, IntSummaryStatistics> sessionUtteranceTokenCountStats;
 
 	public SessionStatisticsWriter(final PrintWriter outputWriter,
-			final Function<? super Duration, String> durationFormatter, final int expectedUniqueSessionCount) {
+			final Function<? super Duration, String> durationFormatter,
+			final Collector<? super CharSequence, ?, String> rowCellJoiner, final int expectedUniqueSessionCount) {
 		this.outputWriter = outputWriter;
 		this.durationFormatter = durationFormatter;
+		this.rowCellJoiner = rowCellJoiner;
 
 		sessionUtteranceTokenCountStats = CacheBuilder.newBuilder().initialCapacity(expectedUniqueSessionCount)
 				.build(CacheLoader.from(summary -> {
@@ -273,7 +289,7 @@ final class SessionStatisticsWriter
 
 	@Override
 	public void accept(final Collection<? extends Entry<Path, ? extends Map<String, GameSummary>>> sessionSummaries) {
-		outputWriter.print(COLUMN_HEADERS.stream().collect(ROW_CELL_JOINER));
+		outputWriter.print(COLUMN_HEADERS.stream().collect(rowCellJoiner));
 
 		for (final Entry<Path, ? extends Map<String, GameSummary>> sessionSummary : sessionSummaries) {
 			outputWriter.print(ROW_DELIMITER);
@@ -290,7 +306,7 @@ final class SessionStatisticsWriter
 						summary.getCompletedRoundCount(), tokenCountStats.getCount(), tokenCountStats.getMin(),
 						tokenCountStats.getMax(), tokenCountStats.getAverage(), uttDurationStats.getMin(),
 						uttDurationStats.getMax(), uttDurationStats.getAverage());
-				outputWriter.print(rowCellVals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
+				outputWriter.print(rowCellVals.stream().map(Object::toString).collect(rowCellJoiner));
 			}
 
 		}
@@ -331,7 +347,7 @@ final class SessionStatisticsWriter
 
 		final List<Object> vals = Arrays.asList("MAX", "", durationRepr, roundCount, uttCount, minUttTokenCount,
 				maxUttTokenCount, meanUttTokenCount, minUttDuration, maxUttDuration, meanUttDuration);
-		outputWriter.print(vals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
+		outputWriter.print(vals.stream().map(Object::toString).collect(rowCellJoiner));
 		outputWriter.print(ROW_DELIMITER);
 	}
 
@@ -371,7 +387,7 @@ final class SessionStatisticsWriter
 
 		final List<Object> vals = Arrays.asList("MEAN", "", meanDurationRepr, meanRoundCount, meanUttCount,
 				minUttTokenCount, maxUttTokenCount, meanUttTokenCount, minUttDuration, maxUttDuration, meanUttDuration);
-		outputWriter.print(vals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
+		outputWriter.print(vals.stream().map(Object::toString).collect(rowCellJoiner));
 		outputWriter.print(ROW_DELIMITER);
 	}
 
@@ -399,7 +415,7 @@ final class SessionStatisticsWriter
 
 		final List<Object> vals = Arrays.asList("MIN", "", durationRepr, roundCount, uttCount, minUttTokenCount,
 				maxUttTokenCount, meanUttTokenCount, minUttDuration, maxUttDuration, meanUttDuration);
-		outputWriter.print(vals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
+		outputWriter.print(vals.stream().map(Object::toString).collect(rowCellJoiner));
 		outputWriter.print(ROW_DELIMITER);
 	}
 
@@ -437,7 +453,7 @@ final class SessionStatisticsWriter
 
 		final List<Object> vals = Arrays.asList("SUM", "", durationRepr, roundCount, uttCount, minUttTokenCount,
 				maxUttTokenCount, meanUttTokenCount, minUttDuration, maxUttDuration, meanUttDuration);
-		outputWriter.print(vals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
+		outputWriter.print(vals.stream().map(Object::toString).collect(rowCellJoiner));
 		outputWriter.print(ROW_DELIMITER);
 	}
 
