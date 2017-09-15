@@ -1,7 +1,7 @@
 import csv
 import json
 import sys
-from collections import defaultdict, namedtuple
+from collections import defaultdict
 from enum import Enum, unique
 from typing import Dict, Iterable, Iterator, List, Sequence, Tuple, Union
 
