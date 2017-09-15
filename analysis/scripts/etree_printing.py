@@ -1,8 +1,10 @@
 import os
 import tempfile
 
+import lxml.etree
 
-def print_etree_to_file(etree, encoding, outfile):
+
+def print_etree_to_file(etree: lxml.etree.ElementTree, encoding: str, outfile):
 	tmpfile = tempfile.mkstemp(text=True)
 	tmpfile_path = tmpfile[1]
 	try:
