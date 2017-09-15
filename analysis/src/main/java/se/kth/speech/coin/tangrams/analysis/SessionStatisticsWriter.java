@@ -260,7 +260,7 @@ final class SessionStatisticsWriter
 
 	private final PrintWriter outputWriter;
 
-	private final Collector<? super CharSequence, ?, String> rowCellJoiner;
+	private final Collector<? super String, ?, String> rowCellJoiner;
 
 	private final LoadingCache<GameSummary, DoubleSummaryStatistics> sessionUtteranceDurationStats;
 
@@ -268,7 +268,7 @@ final class SessionStatisticsWriter
 
 	public SessionStatisticsWriter(final PrintWriter outputWriter,
 			final Function<? super Duration, String> durationFormatter,
-			final Collector<? super CharSequence, ?, String> rowCellJoiner, final int expectedUniqueSessionCount) {
+			final Collector<? super String, ?, String> rowCellJoiner, final int expectedUniqueSessionCount) {
 		this.outputWriter = outputWriter;
 		this.durationFormatter = durationFormatter;
 		this.rowCellJoiner = rowCellJoiner;
