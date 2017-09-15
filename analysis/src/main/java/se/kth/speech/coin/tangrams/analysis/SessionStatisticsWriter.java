@@ -165,10 +165,6 @@ final class SessionStatisticsWriter
 		return result;
 	}
 
-	private static int[] createUtteranceTokenCountArray(final GameSummary summary) {
-		return summary.getUtterances().map(Utterance::getTokens).mapToInt(Collection::size).toArray();
-	}
-
 	private static String formatDurationSeconds(final Duration duration) {
 		final BigDecimal durationInSecs = TimestampArithmetic.toDecimalSeconds(duration);
 		return durationInSecs.toString();
@@ -258,8 +254,8 @@ final class SessionStatisticsWriter
 
 		sessionTokenCountStats = CacheBuilder.newBuilder().initialCapacity(expectedUniqueSessionCount)
 				.build(CacheLoader.from(summary -> {
-					final int[] uttTokenCounts = createUtteranceTokenCountArray(summary);
-					return Arrays.stream(uttTokenCounts).summaryStatistics();
+					return summary.getUtterances().map(Utterance::getTokens).mapToInt(Collection::size)
+							.summaryStatistics();
 				}));
 	}
 
