@@ -293,94 +293,96 @@ final class SessionStatisticsWriter
 		return sessionTokenCountStats.getUnchecked(summary);
 	}
 
+	private void writeAggregateMaxima(
+			final Collection<? extends Entry<Path, ? extends Map<String, GameSummary>>> sessionSummaries,
+			final Collection<IntSummaryStatistics> tokenCountStats) {
+		final String durationRepr = getGameSummaries(sessionSummaries).map(GameSummary::getDuration)
+				.max(Comparator.naturalOrder()).map(durationFormatter).get();
+		final long roundCount = getGameSummaries(sessionSummaries).mapToLong(GameSummary::getCompletedRoundCount).max()
+				.getAsLong();
+		final long uttCount = tokenCountStats.stream().mapToLong(IntSummaryStatistics::getCount).max().getAsLong();
+		final int minUttTokenCount = tokenCountStats.stream().mapToInt(IntSummaryStatistics::getMin).max().getAsInt();
+		final int maxUttTokenCount = tokenCountStats.stream().mapToInt(IntSummaryStatistics::getMax).max().getAsInt();
+		final double meanUttTokenCount = tokenCountStats.stream().mapToDouble(IntSummaryStatistics::getAverage).max()
+				.getAsDouble();
+		final List<Object> vals = Arrays.asList("MAX", "", durationRepr, roundCount, uttCount, minUttTokenCount,
+				maxUttTokenCount, meanUttTokenCount);
+		outputWriter.print(vals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
+		outputWriter.print(ROW_DELIMITER);
+	}
+
+	private void writeAggregateMeans(
+			final Collection<? extends Entry<Path, ? extends Map<String, GameSummary>>> sessionSummaries,
+			final Collection<IntSummaryStatistics> tokenCountStats) {
+		final BigDecimal gameSessionCount = new BigDecimal(getGameSummaries(sessionSummaries).count());
+		final Duration totalDuration = getGameSummaries(sessionSummaries).map(GameSummary::getDuration)
+				.reduce(DURATION_SUMMER).get();
+		final String meanDurationRepr = durationFormatter
+				.apply(totalDuration.dividedBy(gameSessionCount.longValueExact()));
+		final BigDecimal totalRoundCount = new BigDecimal(
+				getGameSummaries(sessionSummaries).mapToLong(GameSummary::getCompletedRoundCount).sum());
+		final BigDecimal meanRoundCount = totalRoundCount.divide(gameSessionCount, MEAN_DIVISION_CTX);
+		final long[] uttCounts = tokenCountStats.stream().mapToLong(IntSummaryStatistics::getCount).toArray();
+		final BigDecimal uttCountArrayLength = new BigDecimal(uttCounts.length);
+		final BigDecimal totalUttCount = new BigDecimal(Arrays.stream(uttCounts).sum());
+		final BigDecimal meanUttCount = totalUttCount.divide(uttCountArrayLength, MEAN_DIVISION_CTX);
+		final BigDecimal minUttTokenCount = new BigDecimal(
+				tokenCountStats.stream().mapToInt(IntSummaryStatistics::getMin).sum()).divide(uttCountArrayLength,
+						MEAN_DIVISION_CTX);
+		final BigDecimal maxUttTokenCount = new BigDecimal(
+				tokenCountStats.stream().mapToInt(IntSummaryStatistics::getMax).sum()).divide(uttCountArrayLength,
+						MEAN_DIVISION_CTX);
+		final BigDecimal meanUttTokenCount = new BigDecimal(
+				tokenCountStats.stream().mapToDouble(IntSummaryStatistics::getAverage).sum())
+						.divide(uttCountArrayLength, MEAN_DIVISION_CTX);
+		final List<Object> vals = Arrays.asList("MEAN", "", meanDurationRepr, meanRoundCount, meanUttCount,
+				minUttTokenCount, maxUttTokenCount, meanUttTokenCount);
+		outputWriter.print(vals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
+		outputWriter.print(ROW_DELIMITER);
+	}
+
+	private void writeAggregateMinima(
+			final Collection<? extends Entry<Path, ? extends Map<String, GameSummary>>> sessionSummaries,
+			final Collection<IntSummaryStatistics> tokenCountStats) {
+		final String durationRepr = getGameSummaries(sessionSummaries).map(GameSummary::getDuration)
+				.min(Comparator.naturalOrder()).map(durationFormatter).get();
+		final long roundCount = getGameSummaries(sessionSummaries).mapToLong(GameSummary::getCompletedRoundCount).min()
+				.getAsLong();
+		final long uttCount = tokenCountStats.stream().mapToLong(IntSummaryStatistics::getCount).min().getAsLong();
+		final int minUttTokenCount = tokenCountStats.stream().mapToInt(IntSummaryStatistics::getMin).min().getAsInt();
+		final int maxUttTokenCount = tokenCountStats.stream().mapToInt(IntSummaryStatistics::getMax).min().getAsInt();
+		final double meanUttTokenCount = tokenCountStats.stream().mapToDouble(IntSummaryStatistics::getAverage).min()
+				.getAsDouble();
+		final List<Object> vals = Arrays.asList("MIN", "", durationRepr, roundCount, uttCount, minUttTokenCount,
+				maxUttTokenCount, meanUttTokenCount);
+		outputWriter.print(vals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
+		outputWriter.print(ROW_DELIMITER);
+	}
+
 	private void writeAggregates(
 			final Collection<? extends Entry<Path, ? extends Map<String, GameSummary>>> sessionSummaries) {
 		final List<IntSummaryStatistics> tokenCountStats = Arrays.asList(getGameSummaries(sessionSummaries)
 				.map(this::fetchTokenCountStats).toArray(IntSummaryStatistics[]::new));
+		writeAggregateMinima(sessionSummaries, tokenCountStats);
+		writeAggregateMaxima(sessionSummaries, tokenCountStats);
+		writeAggregateMeans(sessionSummaries, tokenCountStats);
+		writeAggregateSums(sessionSummaries, tokenCountStats);
+	}
 
-		{
-			// Min vals
-			final String durationRepr = getGameSummaries(sessionSummaries).map(GameSummary::getDuration)
-					.min(Comparator.naturalOrder()).map(durationFormatter).get();
-			final long roundCount = getGameSummaries(sessionSummaries).mapToLong(GameSummary::getCompletedRoundCount)
-					.min().getAsLong();
-			final long uttCount = tokenCountStats.stream().mapToLong(IntSummaryStatistics::getCount).min().getAsLong();
-			final int minUttTokenCount = tokenCountStats.stream().mapToInt(IntSummaryStatistics::getMin).min()
-					.getAsInt();
-			final int maxUttTokenCount = tokenCountStats.stream().mapToInt(IntSummaryStatistics::getMax).min()
-					.getAsInt();
-			final double meanUttTokenCount = tokenCountStats.stream().mapToDouble(IntSummaryStatistics::getAverage)
-					.min().getAsDouble();
-			final List<Object> vals = Arrays.asList("MIN", "", durationRepr, roundCount, uttCount, minUttTokenCount,
-					maxUttTokenCount, meanUttTokenCount);
-			outputWriter.print(vals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
-			outputWriter.print(ROW_DELIMITER);
-		}
-
-		{
-			// Max vals
-			final String durationRepr = getGameSummaries(sessionSummaries).map(GameSummary::getDuration)
-					.max(Comparator.naturalOrder()).map(durationFormatter).get();
-			final long roundCount = getGameSummaries(sessionSummaries).mapToLong(GameSummary::getCompletedRoundCount)
-					.max().getAsLong();
-			final long uttCount = tokenCountStats.stream().mapToLong(IntSummaryStatistics::getCount).max().getAsLong();
-			final int minUttTokenCount = tokenCountStats.stream().mapToInt(IntSummaryStatistics::getMin).max()
-					.getAsInt();
-			final int maxUttTokenCount = tokenCountStats.stream().mapToInt(IntSummaryStatistics::getMax).max()
-					.getAsInt();
-			final double meanUttTokenCount = tokenCountStats.stream().mapToDouble(IntSummaryStatistics::getAverage)
-					.max().getAsDouble();
-			final List<Object> vals = Arrays.asList("MAX", "", durationRepr, roundCount, uttCount, minUttTokenCount,
-					maxUttTokenCount, meanUttTokenCount);
-			outputWriter.print(vals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
-			outputWriter.print(ROW_DELIMITER);
-		}
-
-		{
-			// Mean vals
-			final BigDecimal gameSessionCount = new BigDecimal(getGameSummaries(sessionSummaries).count());
-			final Duration totalDuration = getGameSummaries(sessionSummaries).map(GameSummary::getDuration)
-					.reduce(DURATION_SUMMER).get();
-			final String meanDurationRepr = durationFormatter
-					.apply(totalDuration.dividedBy(gameSessionCount.longValueExact()));
-			final BigDecimal totalRoundCount = new BigDecimal(
-					getGameSummaries(sessionSummaries).mapToLong(GameSummary::getCompletedRoundCount).sum());
-			final BigDecimal meanRoundCount = totalRoundCount.divide(gameSessionCount, MEAN_DIVISION_CTX);
-			final long[] uttCounts = tokenCountStats.stream().mapToLong(IntSummaryStatistics::getCount).toArray();
-			final BigDecimal uttCountArrayLength = new BigDecimal(uttCounts.length);
-			final BigDecimal totalUttCount = new BigDecimal(Arrays.stream(uttCounts).sum());
-			final BigDecimal meanUttCount = totalUttCount.divide(uttCountArrayLength, MEAN_DIVISION_CTX);
-			final BigDecimal minUttTokenCount = new BigDecimal(
-					tokenCountStats.stream().mapToInt(IntSummaryStatistics::getMin).sum()).divide(uttCountArrayLength,
-							MEAN_DIVISION_CTX);
-			final BigDecimal maxUttTokenCount = new BigDecimal(
-					tokenCountStats.stream().mapToInt(IntSummaryStatistics::getMax).sum()).divide(uttCountArrayLength,
-							MEAN_DIVISION_CTX);
-			final BigDecimal meanUttTokenCount = new BigDecimal(
-					tokenCountStats.stream().mapToDouble(IntSummaryStatistics::getAverage).sum())
-							.divide(uttCountArrayLength, MEAN_DIVISION_CTX);
-			final List<Object> vals = Arrays.asList("MEAN", "", meanDurationRepr, meanRoundCount, meanUttCount,
-					minUttTokenCount, maxUttTokenCount, meanUttTokenCount);
-			outputWriter.print(vals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
-			outputWriter.print(ROW_DELIMITER);
-		}
-
-		{
-			// Summed vals
-			final String durationRepr = getGameSummaries(sessionSummaries).map(GameSummary::getDuration)
-					.reduce(DURATION_SUMMER).map(durationFormatter).get();
-			final long roundCount = getGameSummaries(sessionSummaries).mapToLong(GameSummary::getCompletedRoundCount)
-					.sum();
-			final long uttCount = tokenCountStats.stream().mapToLong(IntSummaryStatistics::getCount).max().getAsLong();
-			final int minUttTokenCount = tokenCountStats.stream().mapToInt(IntSummaryStatistics::getMin).sum();
-			final int maxUttTokenCount = tokenCountStats.stream().mapToInt(IntSummaryStatistics::getMax).sum();
-			final double meanUttTokenCount = tokenCountStats.stream().mapToDouble(IntSummaryStatistics::getAverage)
-					.sum();
-			final List<Object> vals = Arrays.asList("SUM", "", durationRepr, roundCount, uttCount, minUttTokenCount,
-					maxUttTokenCount, meanUttTokenCount);
-			outputWriter.print(vals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
-			outputWriter.print(ROW_DELIMITER);
-		}
+	private void writeAggregateSums(
+			final Collection<? extends Entry<Path, ? extends Map<String, GameSummary>>> sessionSummaries,
+			final Collection<IntSummaryStatistics> tokenCountStats) {
+		final String durationRepr = getGameSummaries(sessionSummaries).map(GameSummary::getDuration)
+				.reduce(DURATION_SUMMER).map(durationFormatter).get();
+		final long roundCount = getGameSummaries(sessionSummaries).mapToLong(GameSummary::getCompletedRoundCount).sum();
+		final long uttCount = tokenCountStats.stream().mapToLong(IntSummaryStatistics::getCount).max().getAsLong();
+		final int minUttTokenCount = tokenCountStats.stream().mapToInt(IntSummaryStatistics::getMin).sum();
+		final int maxUttTokenCount = tokenCountStats.stream().mapToInt(IntSummaryStatistics::getMax).sum();
+		final double meanUttTokenCount = tokenCountStats.stream().mapToDouble(IntSummaryStatistics::getAverage).sum();
+		final List<Object> vals = Arrays.asList("SUM", "", durationRepr, roundCount, uttCount, minUttTokenCount,
+				maxUttTokenCount, meanUttTokenCount);
+		outputWriter.print(vals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
+		outputWriter.print(ROW_DELIMITER);
 	}
 
 }
