@@ -116,18 +116,6 @@ def is_session_dir(filenames: Iterable[str]) -> bool:
 	return result
 
 
-def walk_session_data(inpaths: Iterable[str]) -> Iterator[Tuple[str, SessionData]]:
-	session_dirs = walk_session_dirs(inpaths)
-	return ((session_dir, SessionData(session_dir)) for session_dir in session_dirs)
-
-
-def walk_session_dirs(inpaths: Iterable[str]) -> Iterator[str]:
-	for inpath in inpaths:
-		for dirpath, _, filenames in os.walk(inpath, followlinks=True):
-			if is_session_dir(filenames):
-				yield dirpath
-
-
 def session_round_start_end_times(round_start_times: Iterator[float]) -> Iterator[Tuple[float, float]]:
 	current_start_time = next(round_start_times)
 	for next_start_time in round_start_times:
@@ -144,3 +132,15 @@ def session_round_start_end_times(round_start_times: Iterator[float]) -> Iterato
 
 		yield current_start_time, next_start_time
 		current_start_time = next_start_time
+
+
+def walk_session_data(inpaths: Iterable[str]) -> Iterator[Tuple[str, SessionData]]:
+	session_dirs = walk_session_dirs(inpaths)
+	return ((session_dir, SessionData(session_dir)) for session_dir in session_dirs)
+
+
+def walk_session_dirs(inpaths: Iterable[str]) -> Iterator[str]:
+	for inpath in inpaths:
+		for dirpath, _, filenames in os.walk(inpath, followlinks=True):
+			if is_session_dir(filenames):
+				yield dirpath
