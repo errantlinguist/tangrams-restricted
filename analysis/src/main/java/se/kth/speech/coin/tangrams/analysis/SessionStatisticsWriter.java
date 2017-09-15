@@ -48,6 +48,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
+import java.util.stream.LongStream;
 import java.util.stream.Stream;
 
 import javax.xml.bind.JAXBException;
@@ -140,8 +141,8 @@ final class SessionStatisticsWriter
 	}
 
 	private static final List<String> COLUMN_HEADERS = Arrays.asList("INPATH", "GAME_ID", "GAME_DURATION",
-			"ROUND_COUNT", "UTT_COUNT", "UTT_TOKENS_MIN", "UTT_TOKENS_MAX", "UTT_TOKENS_MEAN", "UTT_DURATION_MIN",
-			"UTT_DURATION_MAX", "UTT_DURATION_MEAN");
+			"ROUND_COUNT", "UTT_COUNT", "TOKEN_COUNT", "UTT_TOKENS_MIN", "UTT_TOKENS_MAX", "UTT_TOKENS_MEAN",
+			"UTT_DURATION_MIN", "UTT_DURATION_MAX", "UTT_DURATION_MEAN");
 
 	private static final BinaryOperator<Duration> DURATION_SUMMER = (augend, addend) -> augend.plus(addend);
 
@@ -303,9 +304,9 @@ final class SessionStatisticsWriter
 				final IntSummaryStatistics tokenCountStats = fetchUtteranceTokenCountStats(summary);
 				final DoubleSummaryStatistics uttDurationStats = fetchUtteranceDurationStats(summary);
 				final List<Object> rowCellVals = Arrays.asList(inpath, gameId, durationRepr,
-						summary.getCompletedRoundCount(), tokenCountStats.getCount(), tokenCountStats.getMin(),
-						tokenCountStats.getMax(), tokenCountStats.getAverage(), uttDurationStats.getMin(),
-						uttDurationStats.getMax(), uttDurationStats.getAverage());
+						summary.getCompletedRoundCount(), tokenCountStats.getCount(), tokenCountStats.getSum(),
+						tokenCountStats.getMin(), tokenCountStats.getMax(), tokenCountStats.getAverage(),
+						uttDurationStats.getMin(), uttDurationStats.getMax(), uttDurationStats.getAverage());
 				outputWriter.print(rowCellVals.stream().map(Object::toString).collect(rowCellJoiner));
 			}
 
@@ -333,6 +334,7 @@ final class SessionStatisticsWriter
 				.getAsLong();
 
 		final long uttCount = tokenCountStats.stream().mapToLong(IntSummaryStatistics::getCount).max().getAsLong();
+		final long tokenCount = tokenCountStats.stream().mapToLong(IntSummaryStatistics::getSum).max().getAsLong();
 		final int minUttTokenCount = tokenCountStats.stream().mapToInt(IntSummaryStatistics::getMin).max().getAsInt();
 		final int maxUttTokenCount = tokenCountStats.stream().mapToInt(IntSummaryStatistics::getMax).max().getAsInt();
 		final double meanUttTokenCount = tokenCountStats.stream().mapToDouble(IntSummaryStatistics::getAverage).max()
@@ -345,8 +347,8 @@ final class SessionStatisticsWriter
 		final double meanUttDuration = utteranceDurationStats.stream().mapToDouble(DoubleSummaryStatistics::getAverage)
 				.max().getAsDouble();
 
-		final List<Object> vals = Arrays.asList("MAX", "", durationRepr, roundCount, uttCount, minUttTokenCount,
-				maxUttTokenCount, meanUttTokenCount, minUttDuration, maxUttDuration, meanUttDuration);
+		final List<Object> vals = Arrays.asList("MAX", "", durationRepr, roundCount, uttCount, tokenCount,
+				minUttTokenCount, maxUttTokenCount, meanUttTokenCount, minUttDuration, maxUttDuration, meanUttDuration);
 		outputWriter.print(vals.stream().map(Object::toString).collect(rowCellJoiner));
 		outputWriter.print(ROW_DELIMITER);
 	}
@@ -368,6 +370,11 @@ final class SessionStatisticsWriter
 		final BigDecimal uttCountArrayLength = new BigDecimal(uttCounts.length);
 		final BigDecimal totalUttCount = new BigDecimal(Arrays.stream(uttCounts).sum());
 		final BigDecimal meanUttCount = totalUttCount.divide(uttCountArrayLength, MEAN_DIVISION_CTX);
+
+		final LongStream tokenCounts = tokenCountStats.stream().mapToLong(IntSummaryStatistics::getSum);
+		final BigDecimal totalTokenCount = new BigDecimal(tokenCounts.sum());
+		final BigDecimal meanTokenCount = totalTokenCount.divide(uttCountArrayLength, MEAN_DIVISION_CTX);
+
 		final BigDecimal minUttTokenCount = new BigDecimal(
 				tokenCountStats.stream().mapToInt(IntSummaryStatistics::getMin).sum()).divide(uttCountArrayLength,
 						MEAN_DIVISION_CTX);
@@ -386,7 +393,8 @@ final class SessionStatisticsWriter
 				.average().getAsDouble();
 
 		final List<Object> vals = Arrays.asList("MEAN", "", meanDurationRepr, meanRoundCount, meanUttCount,
-				minUttTokenCount, maxUttTokenCount, meanUttTokenCount, minUttDuration, maxUttDuration, meanUttDuration);
+				meanTokenCount, minUttTokenCount, maxUttTokenCount, meanUttTokenCount, minUttDuration, maxUttDuration,
+				meanUttDuration);
 		outputWriter.print(vals.stream().map(Object::toString).collect(rowCellJoiner));
 		outputWriter.print(ROW_DELIMITER);
 	}
@@ -401,6 +409,7 @@ final class SessionStatisticsWriter
 				.getAsLong();
 
 		final long uttCount = tokenCountStats.stream().mapToLong(IntSummaryStatistics::getCount).min().getAsLong();
+		final long tokenCount = tokenCountStats.stream().mapToLong(IntSummaryStatistics::getSum).min().getAsLong();
 		final int minUttTokenCount = tokenCountStats.stream().mapToInt(IntSummaryStatistics::getMin).min().getAsInt();
 		final int maxUttTokenCount = tokenCountStats.stream().mapToInt(IntSummaryStatistics::getMax).min().getAsInt();
 		final double meanUttTokenCount = tokenCountStats.stream().mapToDouble(IntSummaryStatistics::getAverage).min()
@@ -413,8 +422,8 @@ final class SessionStatisticsWriter
 		final double meanUttDuration = utteranceDurationStats.stream().mapToDouble(DoubleSummaryStatistics::getAverage)
 				.min().getAsDouble();
 
-		final List<Object> vals = Arrays.asList("MIN", "", durationRepr, roundCount, uttCount, minUttTokenCount,
-				maxUttTokenCount, meanUttTokenCount, minUttDuration, maxUttDuration, meanUttDuration);
+		final List<Object> vals = Arrays.asList("MIN", "", durationRepr, roundCount, uttCount, tokenCount,
+				minUttTokenCount, maxUttTokenCount, meanUttTokenCount, minUttDuration, maxUttDuration, meanUttDuration);
 		outputWriter.print(vals.stream().map(Object::toString).collect(rowCellJoiner));
 		outputWriter.print(ROW_DELIMITER);
 	}
@@ -439,7 +448,8 @@ final class SessionStatisticsWriter
 				.reduce(DURATION_SUMMER).map(durationFormatter).get();
 		final long roundCount = getGameSummaries(sessionSummaries).mapToLong(GameSummary::getCompletedRoundCount).sum();
 
-		final long uttCount = tokenCountStats.stream().mapToLong(IntSummaryStatistics::getCount).max().getAsLong();
+		final long uttCount = tokenCountStats.stream().mapToLong(IntSummaryStatistics::getCount).sum();
+		final long tokenCount = tokenCountStats.stream().mapToLong(IntSummaryStatistics::getSum).sum();
 		final int minUttTokenCount = tokenCountStats.stream().mapToInt(IntSummaryStatistics::getMin).sum();
 		final int maxUttTokenCount = tokenCountStats.stream().mapToInt(IntSummaryStatistics::getMax).sum();
 		final double meanUttTokenCount = tokenCountStats.stream().mapToDouble(IntSummaryStatistics::getAverage).sum();
@@ -451,8 +461,8 @@ final class SessionStatisticsWriter
 		final double meanUttDuration = utteranceDurationStats.stream().mapToDouble(DoubleSummaryStatistics::getAverage)
 				.sum();
 
-		final List<Object> vals = Arrays.asList("SUM", "", durationRepr, roundCount, uttCount, minUttTokenCount,
-				maxUttTokenCount, meanUttTokenCount, minUttDuration, maxUttDuration, meanUttDuration);
+		final List<Object> vals = Arrays.asList("SUM", "", durationRepr, roundCount, uttCount, tokenCount,
+				minUttTokenCount, maxUttTokenCount, meanUttTokenCount, minUttDuration, maxUttDuration, meanUttDuration);
 		outputWriter.print(vals.stream().map(Object::toString).collect(rowCellJoiner));
 		outputWriter.print(ROW_DELIMITER);
 	}
