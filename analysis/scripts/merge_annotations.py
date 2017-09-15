@@ -9,7 +9,8 @@ import os.path
 
 from lxml import etree
 
-from annotations import AnnotationParser, HAT_DATA_NAMESPACE, QNameStringFactory, sanitize_dom_id
+from annotations import AnnotationParser, HAT_DATA_NAMESPACE, HAT_DATA_NAMESPACE_NAME, QNameStringFactory, \
+	sanitize_dom_id
 from etree_printing import print_etree_to_file
 
 
@@ -36,7 +37,7 @@ def merge_annotations(inpaths, namespace):
 def __main(inpaths, outfile):
 	default_namespace = HAT_DATA_NAMESPACE
 	# http://stackoverflow.com/a/18340978/1391325
-	etree.register_namespace("hat", default_namespace)
+	etree.register_namespace(HAT_DATA_NAMESPACE_NAME, default_namespace)
 
 	result = merge_annotations(inpaths, default_namespace)
 	annot_elem = result.create_xml_element()
@@ -46,6 +47,7 @@ def __main(inpaths, outfile):
 
 if __name__ == '__main__':
 	import sys
+
 	if len(sys.argv) < 2:
 		raise ValueError("Usage: %s INPUT_PATHS... > OUTFILE" % sys.argv[0])
 	else:

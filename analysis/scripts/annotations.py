@@ -2,20 +2,27 @@ import re
 from collections import defaultdict
 from xml.sax.saxutils import escape
 
-from lxml import etree
-from lxml.builder import ElementMaker
+import lxml.builder
+import lxml.etree as etree
+
+import xml_files
 
 HAT_DATA_NAMESPACE = "http://www.speech.kth.se/higgins/2005/annotation/"
-ANNOTATION_NAMESPACES = {"hat": HAT_DATA_NAMESPACE}
+HAT_DATA_NAMESPACE_NAME = "hat"
+HAT_DATA_SCHEMA_LOCATION = "http://www.speech.kth.se/higgins/2005/annotation/annotation.xsd"
+ANNOTATION_NAMESPACES = {HAT_DATA_NAMESPACE_NAME: HAT_DATA_NAMESPACE, "xsi": xml_files.XSI}
+
+ELEMENT_MAKER = lxml.builder.ElementMaker(
+	nsmap=ANNOTATION_NAMESPACES)
 
 __DIGITS_PATTERN = re.compile('(\d+)')
 __WHITESPACE_PATTERN = re.compile('\s+')
 
 
 class AnnotationData(object):
-	def __init__(self, qname_factory, nsmap, encoding):
+	def __init__(self, qname_factory, element_maker: lxml.builder.ElementMaker, encoding: str):
 		self.__qname_factory = qname_factory
-		self.nsmap = nsmap
+		self.element_maker = element_maker
 		self.encoding = encoding
 		self.track_data = {}
 		self.segment_data = SegmentData(qname_factory)
@@ -39,8 +46,7 @@ class AnnotationData(object):
 
 	def create_xml_element(self):
 		# http://stackoverflow.com/a/22902367/1391325
-		em = ElementMaker(nsmap=self.nsmap)
-		result = em("annotation")
+		result = self.element_maker("annotation")
 		tracks_elem = etree.SubElement(result, self.__qname_factory("tracks"))
 		for track_id, track_datum in sorted(self.track_data.items(), key=lambda k: natural_keys(k[0])):
 			track_elem = etree.SubElement(tracks_elem, self.__qname_factory("track"), attrib={"id": track_id})
@@ -56,15 +62,15 @@ class AnnotationData(object):
 
 
 class AnnotationParser(object):
-	def __init__(self, qname_factory, nsmap, id_prefix=""):
+	def __init__(self, qname_factory, nsmap=None, id_prefix: str = ""):
 		self.__qname_factory = qname_factory
-		self.nsmap = nsmap
+		self.element_maker = ELEMENT_MAKER if nsmap is None else lxml.builder.ElementMaker(nsmap)
 		self.id_prefix = id_prefix
 		self.__tag_parsers = {self.__qname_factory("tracks"): self.__parse_tracks,
 							  self.__qname_factory("segments"): self.__parse_segments}
 
 	def __call__(self, doc_tree):
-		result = AnnotationData(self.__qname_factory, self.nsmap, doc_tree.docinfo.encoding)
+		result = AnnotationData(self.__qname_factory, self.element_maker, doc_tree.docinfo.encoding)
 		tag_name = self.__qname_factory("annotation")
 		for child in doc_tree.iter(tag_name):
 			self.__parse_annotation(child, result)
@@ -188,6 +194,21 @@ class TrackDatum(object):
 					pass
 
 
+def create_skeleton_annnotation_elem(audio_file_path: str):
+	"""
+	FIXME: Buggy!!!
+	:param audio_file_path: The audio file to create an empty annotation file for.
+	:return: A new XML element.
+	"""
+	root = ELEMENT_MAKER.Element("hat:annotation", ANNOTATION_NAMESPACES)
+	xml_files.add_xml_schema_location(root, HAT_DATA_SCHEMA_LOCATION)
+	tracks = ELEMENT_MAKER.SubElement(root, "hat:tracks")
+	__create_track_source_elem(tracks, "source1", "0", audio_file_path)
+	__create_track_source_elem(tracks, "source2", "1", audio_file_path)
+	ELEMENT_MAKER.SubElement(root, "hat:segments")
+	return root
+
+
 def is_blank_or_none(string):
 	return string is None or len(string) < 1 or string.isspace()
 
@@ -212,3 +233,12 @@ def __atoi(text):
 	:see: http://stackoverflow.com/a/5967539/1391325
 	"""
 	return int(text) if text.isdigit() else text
+
+
+def __create_track_source_elem(tracks_elem, source_id: str, channel: str, audio_file_path: str):
+	track_sources = ELEMENT_MAKER.SubElement(tracks_elem, "hat:sources")
+	result = ELEMENT_MAKER.SubElement(track_sources, "hat:source")
+	result.set("id", source_id)
+	result.set("channel", channel)
+	result.set("href", audio_file_path)
+	return result
