@@ -83,16 +83,16 @@ final class SessionStatisticsWriter
 		HOURS(HOURS_OPT_NAME) {
 			@Override
 			public Option get() {
-				return Option.builder(optName).longOpt("hours").desc(
-						"Prints statistics in \"HH:mm:ss.SSS\" notation rather than in seconds as decimal fractions.")
+				return Option.builder(optName).longOpt("hours")
+						.desc("Prints statistics in \"HH:mm:ss.SSS\" notation rather than in seconds as decimal fractions.")
 						.build();
 			};
 		},
 		MINUTES(MINUTES_OPT_NAME) {
 			@Override
 			public Option get() {
-				return Option.builder(optName).longOpt("mintes").desc(
-						"Prints statistics in \"mm:ss.SSS\" notation rather than in seconds as decimal fractions.")
+				return Option.builder(optName).longOpt("mintes")
+						.desc("Prints statistics in \"mm:ss.SSS\" notation rather than in seconds as decimal fractions.")
 						.build();
 			};
 		};
@@ -259,7 +259,7 @@ final class SessionStatisticsWriter
 				final Duration duration = summary.getDuration();
 				final String durationRepr = durationFormatter.apply(duration);
 				final List<Object> rowCellVals = Arrays.asList(inpath, gameId, durationRepr,
-						summary.getCompletedRoundCount(), summary.getUttCount());
+						summary.getCompletedRoundCount(), summary.getUtterances().count());
 				outputWriter.print(rowCellVals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
 			}
 
@@ -277,8 +277,8 @@ final class SessionStatisticsWriter
 					.min(Comparator.naturalOrder()).map(durationFormatter).get();
 			final long minRoundCount = getGameSummaries(sessionSummaries).mapToLong(GameSummary::getCompletedRoundCount)
 					.min().getAsLong();
-			final long minUttCount = getGameSummaries(sessionSummaries).mapToLong(GameSummary::getUttCount).min()
-					.getAsLong();
+			final long minUttCount = getGameSummaries(sessionSummaries).map(GameSummary::getUtterances)
+					.mapToLong(Stream::count).min().getAsLong();
 			final List<Object> minVals = Arrays.asList("MIN", "", minDurationRepr, minRoundCount, minUttCount);
 			outputWriter.print(minVals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
 			outputWriter.print(ROW_DELIMITER);
@@ -290,8 +290,8 @@ final class SessionStatisticsWriter
 					.max(Comparator.naturalOrder()).map(durationFormatter).get();
 			final long maxRoundCount = getGameSummaries(sessionSummaries).mapToLong(GameSummary::getCompletedRoundCount)
 					.max().getAsLong();
-			final long maxUttCount = getGameSummaries(sessionSummaries).mapToLong(GameSummary::getUttCount).max()
-					.getAsLong();
+			final long maxUttCount = getGameSummaries(sessionSummaries).map(GameSummary::getUtterances)
+					.mapToLong(Stream::count).max().getAsLong();
 			final List<Object> maxVals = Arrays.asList("MAX", "", maxDurationRepr, maxRoundCount, maxUttCount);
 			outputWriter.print(maxVals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
 			outputWriter.print(ROW_DELIMITER);
@@ -308,7 +308,7 @@ final class SessionStatisticsWriter
 					getGameSummaries(sessionSummaries).mapToLong(GameSummary::getCompletedRoundCount).sum());
 			final BigDecimal meanRoundCount = totalRoundCount.divide(gameSessionCount, MEAN_DIVISION_CTX);
 			final BigDecimal totalUttCount = new BigDecimal(
-					getGameSummaries(sessionSummaries).mapToLong(GameSummary::getUttCount).sum());
+					getGameSummaries(sessionSummaries).map(GameSummary::getUtterances).mapToLong(Stream::count).sum());
 			final BigDecimal meanUttCount = totalUttCount.divide(gameSessionCount, MEAN_DIVISION_CTX);
 			final List<Object> meanVals = Arrays.asList("MEAN", "", meanDurationRepr, meanRoundCount, meanUttCount);
 			outputWriter.print(meanVals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
@@ -321,7 +321,8 @@ final class SessionStatisticsWriter
 					.reduce(DURATION_SUMMER).map(durationFormatter).get();
 			final long totalRoundCount = getGameSummaries(sessionSummaries)
 					.mapToLong(GameSummary::getCompletedRoundCount).sum();
-			final long totalUttCount = getGameSummaries(sessionSummaries).mapToLong(GameSummary::getUttCount).sum();
+			final long totalUttCount = getGameSummaries(sessionSummaries).map(GameSummary::getUtterances)
+					.mapToLong(Stream::count).sum();
 			final List<Object> maxVals = Arrays.asList("SUM", "", totalDurationRepr, totalRoundCount, totalUttCount);
 			outputWriter.print(maxVals.stream().map(Object::toString).collect(ROW_CELL_JOINER));
 			outputWriter.print(ROW_DELIMITER);

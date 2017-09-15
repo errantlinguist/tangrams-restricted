@@ -18,42 +18,62 @@ package se.kth.speech.coin.tangrams.analysis;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
+import java.util.ListIterator;
+import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import iristk.system.Event;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
+import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.coin.tangrams.iristk.EventTimes;
 
 final class GameSummary {
+
+	private static int findIncompleteDialogueTailStartIndex(final List<EventDialogue> diags) {
+		final int prevIdx = diags.size();
+		int result = prevIdx;
+		final ListIterator<EventDialogue> diagIter = diags.listIterator(diags.size());
+		while (diagIter.hasPrevious()) {
+			final EventDialogue prevDiag = diagIter.previous();
+			if (prevDiag.getUtterances().isEmpty()) {
+				result = prevIdx;
+				break;
+			}
+		}
+		return result;
+	}
+
+	private static Stream<Utterance> getUtterances(final Collection<EventDialogue> diags) {
+		return diags.stream().map(EventDialogue::getUtterances).flatMap(List::stream);
+	}
 
 	private final long completedRoundCount;
 
 	private final Duration duration;
 
-	private final long uttCount;
+	private final Supplier<Stream<Utterance>> uttsGetter;
 
 	GameSummary(final GameHistory history, final List<EventDialogue> diags) {
-		// Remove one from count because the last round of the game is never
-		// actually finished
-		// TODO: Remove this once one adding the remove-last-round functionality
-		// to the EventDialogue factory
-		final int lastDiagIdx = diags.size() - 0;
-		final List<EventDialogue> completedDiags = diags.subList(0, lastDiagIdx);
-
+		final int lastDiagEndIdx = findIncompleteDialogueTailStartIndex(diags);
+		final List<EventDialogue> completedDiags;
+		final Event gameOverEvent;
+		if (lastDiagEndIdx < diags.size()) {
+			completedDiags = diags.subList(0, lastDiagEndIdx);
+			final EventDialogue firstIncompleteDiag = diags.get(lastDiagEndIdx);
+			gameOverEvent = firstIncompleteDiag.getFirstEvent().get();
+		} else {
+			completedDiags = diags;
+			final EventDialogue lastCompletedDiag = completedDiags.listIterator(completedDiags.size()).previous();
+			gameOverEvent = lastCompletedDiag.getLastEvent().get();
+		}
 		completedRoundCount = completedDiags.size();
-		uttCount = completedDiags.stream().map(EventDialogue::getUtterances).flatMap(List::stream).count();
-		assert uttCount > 0;
+		uttsGetter = () -> getUtterances(completedDiags);
 
 		final LocalDateTime gameStart = history.getStartTime();
-		final Event gameOverEvent = diags.get(lastDiagIdx).getFirstEvent().get();
 		final LocalDateTime lastTurnRequestTime = EventTimes.parseEventTime(gameOverEvent.getTime());
 		duration = Duration.between(gameStart, lastTurnRequestTime);
-	}
-
-	GameSummary(final long roundCount, final Duration duration, final long uttCount) {
-		completedRoundCount = roundCount;
-		this.duration = duration;
-		this.uttCount = uttCount;
 	}
 
 	/**
@@ -70,10 +90,7 @@ final class GameSummary {
 		return duration;
 	}
 
-	/**
-	 * @return the uttCount
-	 */
-	public long getUttCount() {
-		return uttCount;
+	public Stream<Utterance> getUtterances() {
+		return uttsGetter.get();
 	}
 }
