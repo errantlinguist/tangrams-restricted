@@ -21,17 +21,17 @@ class DataColumnProperties(object):
 		return self.__class__.__name__ + str(self.__dict__)
 
 
-def _is_truth_cell_value(val: str) -> bool:
-	return val == "true"
-
-
-def _fetch_decimal_value(cell_value: str) -> DECIMAL_VALUE_TYPE:
+def fetch_decimal_value(cell_value: str) -> DECIMAL_VALUE_TYPE:
 	try:
 		result = __DECIMAL_VALUE_POOL[cell_value]
 	except KeyError:
 		result = DECIMAL_VALUE_TYPE(cell_value)
 		__DECIMAL_VALUE_POOL[cell_value] = result
 	return result
+
+
+def _is_truth_cell_value(val: str) -> bool:
+	return val == "true"
 
 
 @unique
@@ -41,17 +41,17 @@ class DataColumn(Enum):
 	ENTITY_ID = DataColumnProperties("ENTITY", int)
 	EVENT_ID = DataColumnProperties("EVENT", int)
 	EVENT_NAME = DataColumnProperties("NAME", str)
-	EVENT_TIME = DataColumnProperties("TIME", _fetch_decimal_value)
+	EVENT_TIME = DataColumnProperties("TIME", fetch_decimal_value)
 	GREEN = DataColumnProperties("BLUE", int)
-	HUE = DataColumnProperties("HUE", _fetch_decimal_value)
-	POSITION_X = DataColumnProperties("POSITION_X", _fetch_decimal_value)
-	POSITION_Y = DataColumnProperties("POSITION_Y", _fetch_decimal_value)
+	HUE = DataColumnProperties("HUE", fetch_decimal_value)
+	POSITION_X = DataColumnProperties("POSITION_X", fetch_decimal_value)
+	POSITION_Y = DataColumnProperties("POSITION_Y", fetch_decimal_value)
 	REFERENT_ENTITY = DataColumnProperties("REFERENT", _is_truth_cell_value)
 	RED = DataColumnProperties("RED", int)
 	ROUND_ID = DataColumnProperties("ROUND", int)
 	SCORE = DataColumnProperties("SCORE", int)
 	SELECTED_ENTITY = DataColumnProperties("SELECTED", _is_truth_cell_value)
-	SIZE = DataColumnProperties("SIZE", _fetch_decimal_value)
+	SIZE = DataColumnProperties("SIZE", fetch_decimal_value)
 	SHAPE = DataColumnProperties("SHAPE", str)
 	SUBMITTER = DataColumnProperties("SUBMITTER", str)
 
@@ -118,7 +118,7 @@ class SessionData(object):
 			col_idxs = dict((col_name, idx) for (idx, col_name) in enumerate(next(rows)))
 			for row in rows:
 				event_time_col_idx = col_idxs[DataColumn.EVENT_TIME.value]
-				event_time = _fetch_decimal_value(row[event_time_col_idx])
+				event_time = fetch_decimal_value(row[event_time_col_idx])
 				round_id_col_idx = col_idxs[DataColumn.ROUND_ID.value]
 				round_idx = int(row[round_id_col_idx]) - 1
 				result[round_idx] = min(result[round_idx], event_time)
