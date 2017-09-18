@@ -32,6 +32,8 @@ class FeatureSpacePartitioner(Generic[T]):
 			raise ValueError("Minimum value is {} but must be less than maximum value {}.".format(min_value, max_value))
 		self.min_value = min_value
 		self.max_value = max_value
+		self.domain_size = self.max_value - self.min_value
+		self.partition_size = self.domain_size / partitions
 
 	def __call__(self,
 				 referent_counts: Sequence[coreference_chain_overlap.ReferentCounts]):
