@@ -3,7 +3,6 @@
 import argparse
 import re
 import sys
-from decimal import Decimal
 from typing import Callable, Iterable, Iterator, Sequence, TypeVar
 
 import coreference_chain_overlap
@@ -82,7 +81,7 @@ def __main(args):
 	partitioner(all_referent_counts)
 
 
-def __referent_hues(game_round: game_events.GameRound) -> Iterator[Decimal]:
+def __referent_hues(game_round: game_events.GameRound) -> Iterator[session_data.DECIMAL_VALUE_TYPE]:
 	return (entity.attr(session_data.DataColumn.HUE.name) for _, entity in game_round.initial_event.referent_entities)
 
 
