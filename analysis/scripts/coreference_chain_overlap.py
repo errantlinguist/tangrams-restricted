@@ -52,7 +52,8 @@ class EventParticipantIdFactory(object):
 
 class GameRoundMetrics(object):
 	COL_NAMES = (
-		"DYAD", "ENTITY", "SHAPE", "SEQUENCE_ORDER", "ROUND", "INSTRUCTOR", "GAME_SCORE", "ROUND_START_TIME", "TIME_SCORE_RATIO",
+		"DYAD", "ENTITY", "SHAPE", "SEQUENCE_ORDER", "ROUND", "INSTRUCTOR", "GAME_SCORE", "ROUND_START_TIME",
+		"TIME_SCORE_RATIO",
 		"SCORE_ROUND_RATIO")
 
 	@staticmethod
@@ -77,7 +78,8 @@ class GameRoundMetrics(object):
 		return self.__class__.__name__ + str(self.__dict__)
 
 	def row_cells(self):
-		return (self.dyad_id, self.entity_id, self.referent_shape, self.sequence_order, self.round_id, self.instructor, self.score,
+		return (self.dyad_id, self.entity_id, self.referent_shape, self.sequence_order, self.round_id, self.instructor,
+				self.score,
 				self.time,
 				self.time_score_ratio, self.score_round_ratio)
 
@@ -129,7 +131,6 @@ class LanguageMetrics(object):
 
 
 class ParticipantCoreferenceChainTokenCounter(object):
-
 	def __init__(self, token_seq_factory: Callable[[Iterable[str]], Sequence[str]], filtering_token_counter: Callable[
 		[Sequence[utterances.Utterance]], re_token_type_counts.FilteredTokenCountDatum]):
 		self.token_seq_factory = token_seq_factory
@@ -186,8 +187,9 @@ class ParticipantCoreferenceChainTokenCounter(object):
 				entity_referent_counts[entity_id] = entity_counts
 			entity_counts.add_round_counts(round_id, round_counts)
 
+
 class ParticipantCoreferenceChainTokenCounts(object):
-	def __init__(self, entity_referent_counts, source_participant_ids):
+	def __init__(self, entity_referent_counts: Dict[int, ReferentCounts], source_participant_ids: Dict[str, str]):
 		self.entity_referent_counts = entity_referent_counts
 		self.source_participant_ids = source_participant_ids
 
