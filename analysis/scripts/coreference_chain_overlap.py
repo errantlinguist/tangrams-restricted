@@ -7,7 +7,7 @@ import statistics
 import sys
 from collections import defaultdict, namedtuple
 from decimal import Decimal, InvalidOperation
-from typing import Any, Callable, Dict, ItemsView, Iterable, List, Sequence, Set, Tuple, TypeVar
+from typing import Any, Callable, Dict, ItemsView, Iterable, Iterator, List, Sequence, Set, Tuple, TypeVar
 
 import game_events
 import re_token_type_counts
@@ -397,6 +397,42 @@ def time_score_ratio(event: game_events.Event) -> Decimal:
 
 def token_type_overlap_ratio(overlapping_token_type_count: int, unified_token_type_count: int) -> Decimal:
 	return Decimal(overlapping_token_type_count) / Decimal(unified_token_type_count)
+
+
+def total_token_type_overlap_ratios(dyad_id: Any, desc: Any, referent_counts: ReferentCounts,
+									token_count_getter: Callable[[RoundCounts], re_token_type_counts.TokenCountDatum],
+									strict: bool) -> Iterator[Decimal]:
+	"""
+	:param dyad_id: The dyad the counts are being calculated for.
+	:type dyad_id: Any
+	:param desc: A fine-grained description of which types are being calculated.
+	:type desc: Any
+	:param referent_counts: The coreference chain counts to process.
+	:param token_count_getter: A function for retrieving the `re_token_type_counts.TokenCountDatum` to use for calculation from a given `RoundCounts` instance.
+	:param strict: If the calculation should fail for when ratios cannot be calculated.
+	:type strict: bool
+	:return: A generator of token type ratios for each round the entity is referred to as represented by this object, using all tokens by all participants.
+	"""
+	# previous_round_total_tokens = []
+	# cumulative_token_count = 0
+	previous_round_token_types = frozenset()
+	for round_id, counts in referent_counts.round_counts:
+		# token_counts = counts.total_counts.relevant_tokens
+		token_counts = token_count_getter(counts)
+		# current_round_total_tokens = Decimal(token_counts.total_token_count())
+		current_round_token_types = frozenset(token_counts.token_types)
+		unified_token_type_count = len(current_round_token_types.union(
+			previous_round_token_types))
+		overlapping_token_type_count = len(current_round_token_types.intersection(
+			previous_round_token_types))
+		# cumulative_token_count = sum(previous_round_total_tokens) + current_round_total_tokens
+		# mean_previous_token_count = statistics.mean(previous_round_total_tokens)
+		# current_round_length_drop = try_length_drop(dyad_id, round_id, desc, current_round_total_tokens,
+		#												 mean_previous_token_count, strict)
+
+		yield try_token_type_overlap_ratio(dyad_id, round_id, desc, overlapping_token_type_count,
+										   unified_token_type_count, strict)
+		previous_round_token_types = current_round_token_types
 
 
 def try_length_drop(dyad_id: Any, round_id: Any, desc: Any, current_round_total_tokens: Decimal,
