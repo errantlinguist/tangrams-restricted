@@ -189,7 +189,7 @@ class ParticipantCoreferenceChainTokenCounter(object):
 
 
 class ParticipantCoreferenceChainTokenCounts(object):
-	def __init__(self, entity_referent_counts: Dict[int, ReferentCounts], source_participant_ids: Dict[str, str]):
+	def __init__(self, entity_referent_counts: Dict[int, "ReferentCounts"], source_participant_ids: Dict[str, str]):
 		self.entity_referent_counts = entity_referent_counts
 		self.source_participant_ids = source_participant_ids
 
