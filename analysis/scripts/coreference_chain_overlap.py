@@ -401,7 +401,7 @@ def token_type_overlap_ratio(overlapping_token_type_count: int, unified_token_ty
 
 def total_token_type_overlap_ratios(dyad_id: Any, desc: Any, referent_counts: ReferentCounts,
 									token_count_getter: Callable[[RoundCounts], re_token_type_counts.TokenCountDatum],
-									strict: bool) -> Iterator[Tuple[int, Decimal]]:
+									strict: bool) -> Iterator[Tuple[int, game_events.GameRound, Decimal]]:
 	"""
 	:param dyad_id: The dyad the counts are being calculated for.
 	:type dyad_id: Any
@@ -430,8 +430,9 @@ def total_token_type_overlap_ratios(dyad_id: Any, desc: Any, referent_counts: Re
 		# current_round_length_drop = try_length_drop(dyad_id, round_id, desc, current_round_total_tokens,
 		#												 mean_previous_token_count, strict)
 
-		yield round_id, try_token_type_overlap_ratio(dyad_id, round_id, desc, overlapping_token_type_count,
-													 unified_token_type_count, strict)
+		yield round_id, counts.game_round, try_token_type_overlap_ratio(dyad_id, round_id, desc,
+																		overlapping_token_type_count,
+																		unified_token_type_count, strict)
 		previous_round_token_types = current_round_token_types
 
 
