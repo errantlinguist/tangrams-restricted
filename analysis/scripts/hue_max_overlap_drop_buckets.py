@@ -23,8 +23,9 @@ class FeatureSpacePartitioner(object):
 	def __call__(self,
 				 referent_counts: Sequence[coreference_chain_overlap.ReferentCounts]):
 		for referent_counts in referent_counts:
-			relevant_token_type_overlap_ratios = coreference_chain_overlap.total_token_type_overlap_ratios("AGGREGATED_SESSIONS", "RELEVANT_TOKENS", referent_counts, lambda counts : counts.total_counts.relevant_tokens, False)
-			for relevant_token_type_overlap_ratio in relevant_token_type_overlap_ratios:
+			round_relevant_token_type_overlap_ratios = coreference_chain_overlap.total_token_type_overlap_ratios("AGGREGATED_SESSIONS", "RELEVANT_TOKENS", referent_counts, lambda round_counts : round_counts.total_counts.relevant_tokens, False)
+			initial_round = next(iter(referent_counts.round_counts))
+			for round_id, relevant_token_type_overlap_ratio in round_relevant_token_type_overlap_ratios:
 				print(relevant_token_type_overlap_ratio)
 
 
