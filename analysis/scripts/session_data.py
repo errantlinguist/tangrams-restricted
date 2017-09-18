@@ -5,8 +5,11 @@ from enum import Enum, unique
 from typing import Any, Callable, Dict, Iterator, List, Iterable, Tuple
 
 DECIMAL_VALUE_TYPE = Decimal
-DECIMAL_INFINITY = DECIMAL_VALUE_TYPE('Infinity')
 ENCODING = 'utf-8'
+
+_DECIMAL_INFINITY = DECIMAL_VALUE_TYPE('Infinity')
+
+__DECIMAL_VALUE_POOL = {}
 
 
 class DataColumnProperties(object):
@@ -22,6 +25,15 @@ def _is_truth_cell_value(val: str) -> bool:
 	return val == "true"
 
 
+def _fetch_decimal_value(cell_value: str) -> DECIMAL_VALUE_TYPE:
+	try:
+		result = __DECIMAL_VALUE_POOL[cell_value]
+	except KeyError:
+		result = DECIMAL_VALUE_TYPE(cell_value)
+		__DECIMAL_VALUE_POOL[cell_value] = result
+	return result
+
+
 @unique
 class DataColumn(Enum):
 	BLUE = DataColumnProperties("BLUE", int)
@@ -29,17 +41,17 @@ class DataColumn(Enum):
 	ENTITY_ID = DataColumnProperties("ENTITY", int)
 	EVENT_ID = DataColumnProperties("EVENT", int)
 	EVENT_NAME = DataColumnProperties("NAME", str)
-	EVENT_TIME = DataColumnProperties("TIME", DECIMAL_VALUE_TYPE)
+	EVENT_TIME = DataColumnProperties("TIME", _fetch_decimal_value)
 	GREEN = DataColumnProperties("BLUE", int)
-	HUE = DataColumnProperties("HUE", DECIMAL_VALUE_TYPE)
-	POSITION_X = DataColumnProperties("POSITION_X", DECIMAL_VALUE_TYPE)
-	POSITION_Y = DataColumnProperties("POSITION_Y", DECIMAL_VALUE_TYPE)
+	HUE = DataColumnProperties("HUE", _fetch_decimal_value)
+	POSITION_X = DataColumnProperties("POSITION_X", _fetch_decimal_value)
+	POSITION_Y = DataColumnProperties("POSITION_Y", _fetch_decimal_value)
 	REFERENT_ENTITY = DataColumnProperties("REFERENT", _is_truth_cell_value)
 	RED = DataColumnProperties("RED", int)
 	ROUND_ID = DataColumnProperties("ROUND", int)
 	SCORE = DataColumnProperties("SCORE", int)
 	SELECTED_ENTITY = DataColumnProperties("SELECTED", _is_truth_cell_value)
-	SIZE = DataColumnProperties("SIZE", DECIMAL_VALUE_TYPE)
+	SIZE = DataColumnProperties("SIZE", _fetch_decimal_value)
 	SHAPE = DataColumnProperties("SHAPE", str)
 	SUBMITTER = DataColumnProperties("SUBMITTER", str)
 
@@ -100,13 +112,13 @@ class SessionData(object):
 	def read_round_start_times(self) -> List[DECIMAL_VALUE_TYPE]:
 		round_count = self.read_metadata_round_count()
 
-		result = [DECIMAL_VALUE_TYPE('inf')] * round_count
+		result = [_DECIMAL_INFINITY] * round_count
 		with open(self.events, 'r', encoding=ENCODING) as infile:
 			rows = csv.reader(infile, dialect="excel-tab")
 			col_idxs = dict((col_name, idx) for (idx, col_name) in enumerate(next(rows)))
 			for row in rows:
 				event_time_col_idx = col_idxs[DataColumn.EVENT_TIME.value]
-				event_time = DECIMAL_VALUE_TYPE(row[event_time_col_idx])
+				event_time = _fetch_decimal_value(row[event_time_col_idx])
 				round_id_col_idx = col_idxs[DataColumn.ROUND_ID.value]
 				round_idx = int(row[round_id_col_idx]) - 1
 				result[round_idx] = min(result[round_idx], event_time)
@@ -139,7 +151,7 @@ def session_round_start_end_times(round_start_times: Iterator[DECIMAL_VALUE_TYPE
 		try:
 			next_start_time = next(round_start_times)
 		except StopIteration:
-			next_start_time = DECIMAL_INFINITY
+			next_start_time = _DECIMAL_INFINITY
 			end_reached = True
 
 		yield current_start_time, next_start_time
