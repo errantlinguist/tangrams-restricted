@@ -129,13 +129,14 @@ class LanguageMetrics(object):
 
 
 class ParticipantCoreferenceChainTokenCounter(object):
+
 	def __init__(self, token_seq_factory: Callable[[Iterable[str]], Sequence[str]], filtering_token_counter: Callable[
 		[Sequence[utterances.Utterance]], re_token_type_counts.FilteredTokenCountDatum]):
 		self.token_seq_factory = token_seq_factory
 		self.filtering_token_counter = filtering_token_counter
 
 	def __call__(self, named_sessions: Iterable[Tuple[str, sd.SessionData]]) -> Dict[
-		str, Tuple[Dict[int, "ReferentCounts"], Dict[str, str]]]:
+		str, "ParticipantCoreferenceChainTokenCounts"]:
 		result = {}
 		for dyad_id, session in named_sessions:
 			print("Processing session \"{}\".".format(dyad_id), file=sys.stderr)
@@ -158,7 +159,7 @@ class ParticipantCoreferenceChainTokenCounter(object):
 			for game_round_utts in enumerated_game_round_utts:
 				self.__put_entity_counts(game_round_utts, source_participant_ids, entity_referent_counts,
 										 event_participant_id_factory)
-			result[dyad_id] = (entity_referent_counts, source_participant_ids)
+			result[dyad_id] = ParticipantCoreferenceChainTokenCounts(entity_referent_counts, source_participant_ids)
 
 		return result
 
@@ -184,6 +185,14 @@ class ParticipantCoreferenceChainTokenCounter(object):
 				entity_counts = ReferentCounts()
 				entity_referent_counts[entity_id] = entity_counts
 			entity_counts.add_round_counts(round_id, round_counts)
+
+class ParticipantCoreferenceChainTokenCounts(object):
+	def __init__(self, entity_referent_counts, source_participant_ids):
+		self.entity_referent_counts = entity_referent_counts
+		self.source_participant_ids = source_participant_ids
+
+	def __repr__(self, *args, **kwargs):
+		return self.__class__.__name__ + str(self.__dict__)
 
 
 class ReferentCounts(object):
@@ -260,10 +269,10 @@ class TokenTypeDataPrinter(object):
 
 	@staticmethod
 	def __participant_ids(
-			session_referent_token_counts: ItemsView[str, Tuple[Dict[int, ReferentCounts], Dict[str, str]]]):
+			session_referent_token_counts: ItemsView[str, ParticipantCoreferenceChainTokenCounts]):
 		result = set()
-		for _, (referent_token_counts, _) in session_referent_token_counts:
-			for counts in referent_token_counts.values():
+		for _, referent_token_counts in session_referent_token_counts:
+			for counts in referent_token_counts.entity_referent_counts.values():
 				for participant_id in counts.participant_ids():
 					result.add(participant_id)
 		return result
@@ -271,7 +280,7 @@ class TokenTypeDataPrinter(object):
 	def __init__(self, strict: bool):
 		self.strict = strict
 
-	def __call__(self, session_referent_token_counts: ItemsView[str, Tuple[Dict[int, ReferentCounts], Dict[str, str]]],
+	def __call__(self, session_referent_token_counts: ItemsView[str, ParticipantCoreferenceChainTokenCounts],
 				 outfile):
 		all_participant_ids = tuple(self.__participant_ids(session_referent_token_counts))
 		participant_metric_col_names = (
@@ -286,8 +295,8 @@ class TokenTypeDataPrinter(object):
 			file=outfile)
 
 		ordered_session_referent_token_counts = sorted(session_referent_token_counts, key=lambda item: item[0])
-		for dyad_id, (referent_token_counts, source_participant_ids) in ordered_session_referent_token_counts:
-			self.__print_session(dyad_id, referent_token_counts, all_participant_ids, outfile)
+		for dyad_id, referent_token_counts in ordered_session_referent_token_counts:
+			self.__print_session(dyad_id, referent_token_counts.entity_referent_counts, all_participant_ids, outfile)
 
 	def __print_session(self, dyad_id: Any, referent_token_counts: Dict[int, ReferentCounts],
 						ordered_participant_ids: Iterable[str], outfile):
