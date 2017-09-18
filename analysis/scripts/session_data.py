@@ -5,6 +5,7 @@ from enum import Enum, unique
 from typing import Any, Callable, Dict, Iterator, List, Iterable, Tuple
 
 DECIMAL_VALUE_TYPE = Decimal
+DECIMAL_INFINITY = DECIMAL_VALUE_TYPE('Infinity')
 ENCODING = 'utf-8'
 
 
@@ -138,7 +139,7 @@ def session_round_start_end_times(round_start_times: Iterator[DECIMAL_VALUE_TYPE
 		try:
 			next_start_time = next(round_start_times)
 		except StopIteration:
-			next_start_time = DECIMAL_VALUE_TYPE('Infinity')
+			next_start_time = DECIMAL_INFINITY
 			end_reached = True
 
 		yield current_start_time, next_start_time
