@@ -3,13 +3,15 @@
 import argparse
 import re
 import sys
-from typing import Sequence
+from typing import Any, Sequence
 
 import coreference_chain_overlap
 import re_token_type_counts
 import session_data as sd
 import token_groups as tg
 import utterances
+import statistics
+from decimal import Decimal
 
 COL_DELIM = '\t'
 
@@ -19,9 +21,12 @@ class FeatureSpacePartitioner(object):
 		self.partitions = partitions
 
 	def __call__(self,
-				 round_token_counts: Sequence[coreference_chain_overlap.RoundCounts]):
-		for counts in round_token_counts:
-			pass
+				 referent_counts: Sequence[coreference_chain_overlap.ReferentCounts]):
+		for referent_counts in referent_counts:
+			relevant_token_type_overlap_ratios = coreference_chain_overlap.total_token_type_overlap_ratios("AGGREGATED_SESSIONS", "RELEVANT_TOKENS", referent_counts, lambda counts : counts.total_counts.relevant_tokens, False)
+			for relevant_token_type_overlap_ratio in relevant_token_type_overlap_ratios:
+				print(relevant_token_type_overlap_ratio)
+
 
 
 def __create_argparser():
@@ -61,11 +66,11 @@ def __main(args):
 	session_entity_counts = referent_token_counter(named_sessions)
 
 	partitioner = FeatureSpacePartitioner(4)
-	all_round_counts = tuple(round_counts for counts in session_entity_counts.values() for round_counts in
+	all_referent_counts = tuple(round_counts for counts in session_entity_counts.values() for round_counts in
 							 counts.entity_referent_counts.values())
-	print("Partitioning all {} round(s) from {} session(s).".format(len(all_round_counts), len(session_entity_counts)),
+	print("Partitioning all {} coreference chain(s) from {} session(s).".format(len(all_referent_counts), len(session_entity_counts)),
 		  file=sys.stderr)
-	partitioner(all_round_counts)
+	partitioner(all_referent_counts)
 
 
 if __name__ == "__main__":
