@@ -28,6 +28,8 @@ class FeatureSpacePartitioner(Generic[T]):
 				 max_value: T):
 		self.partitions = partitions
 		self.game_round_feature_value_extractor = game_round_feature_value_extractor
+		if min_value >= max_value:
+			raise ValueError("Minimum value is {} but must be less than maximum value {}.".format(min_value, max_value))
 		self.min_value = min_value
 		self.max_value = max_value
 
