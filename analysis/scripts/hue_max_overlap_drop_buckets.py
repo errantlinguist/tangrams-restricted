@@ -24,8 +24,8 @@ class FeatureSpacePartitioner(object):
 		self.partitions = partitions
 
 	def __call__(self,
-				 feature_derived_values: Sequence[Tuple[T, Decimal]]):
-		for feature_value, derived_value in feature_derived_values:
+				 ordered_feature_derived_values: Sequence[Tuple[T, Decimal]]):
+		for feature_value, derived_value in ordered_feature_derived_values:
 			print(COL_DELIM.join((str(feature_value), str(derived_value))))
 
 
@@ -85,7 +85,8 @@ def __main(args):
 	all_referent_counts = (round_counts for counts in session_entity_counts.values() for round_counts in
 						   counts.entity_referent_counts.values())
 	feature_token_overlap_ratio_calculator = FeatureTokenTypeOverlapRatioCalculator(__referent_hues)
-	feature_token_overlap_ratios = tuple(feature_token_overlap_ratio_calculator(all_referent_counts))
+	feature_token_overlap_ratios = tuple(
+		sorted(feature_token_overlap_ratio_calculator(all_referent_counts), key=lambda item: item[0]))
 	print("Partitioning values for all {} feature token-type overlap ratio(s) from {} session(s).".format(
 		len(feature_token_overlap_ratios),
 		len(session_entity_counts)), file=sys.stderr)
