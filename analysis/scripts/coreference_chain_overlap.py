@@ -17,6 +17,7 @@ import token_groups as tg
 import utterances
 
 COL_DELIM = '\t'
+COMBINED_PARTICIPANT_IDENTIFIER = "BOTH"
 
 T = TypeVar('T')
 
@@ -277,7 +278,8 @@ class TokenTypeDataPrinter(object):
 			"{col_name}_PARTICIPANT_{participant_id}".format(col_name=col_name, participant_id=participant_id) for
 			participant_id in all_participant_ids for
 			col_name in LanguageMetrics.COL_NAMES)
-		total_metric_col_names = ("{col_name}_BOTH".format(col_name=col_name) for col_name in
+		combined_metric_col_name_format = "{col_name}_" + COMBINED_PARTICIPANT_IDENTIFIER
+		total_metric_col_names = (combined_metric_col_name_format.format(col_name=col_name) for col_name in
 								  LanguageMetrics.COL_NAMES)
 		print(COL_DELIM.join(
 			itertools.chain(GameRoundMetrics.COL_NAMES, participant_metric_col_names, total_metric_col_names)),
@@ -346,7 +348,7 @@ def create_total_lang_metrics(dyad_id: str, round_id: int, round_token_counts: R
 							  previous_round_total_tokens: Iterable[Decimal] = None,
 							  previous_round_token_types: Set[str] = _EMPTY_SET):
 	total_counts = round_token_counts.total_counts
-	return LanguageMetrics(dyad_id, round_id, "TOTAL",
+	return LanguageMetrics(dyad_id, round_id, COMBINED_PARTICIPANT_IDENTIFIER,
 						   total_counts.utts,
 						   total_counts.relevant_tokens, previous_round_total_tokens, previous_round_token_types)
 
