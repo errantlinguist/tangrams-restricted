@@ -3,20 +3,27 @@
 import argparse
 import re
 import sys
-from typing import Sequence
+from decimal import Decimal
+from typing import Callable, Iterable, Iterator, Sequence, TypeVar
 
 import coreference_chain_overlap
+import game_events
 import re_token_type_counts
+import session_data
 import session_data as sd
 import token_groups as tg
 import utterances
 
 COL_DELIM = '\t'
 
+T = TypeVar('T')
+
 
 class FeatureSpacePartitioner(object):
-	def __init__(self, partitions: int):
+	def __init__(self, partitions: int,
+				 game_round_feature_value_extractor: Callable[[game_events.GameRound], Iterable[T]]):
 		self.partitions = partitions
+		self.game_round_feature_value_extractor = game_round_feature_value_extractor
 
 	def __call__(self,
 				 referent_counts: Sequence[coreference_chain_overlap.ReferentCounts]):
@@ -24,9 +31,10 @@ class FeatureSpacePartitioner(object):
 			round_relevant_token_type_overlap_ratios = coreference_chain_overlap.total_token_type_overlap_ratios(
 				"AGGREGATED_SESSIONS", "RELEVANT_TOKENS", referent_counts,
 				lambda round_counts: round_counts.total_counts.relevant_tokens, False)
-			initial_round = next(iter(referent_counts.round_counts))
 			for round_id, game_round, relevant_token_type_overlap_ratio in round_relevant_token_type_overlap_ratios:
-				print(relevant_token_type_overlap_ratio)
+				game_round_key_feature_values = self.game_round_feature_value_extractor(game_round)
+				feature_value_repr = ",".join(str(value) for value in game_round_key_feature_values)
+				print(COL_DELIM.join((feature_value_repr, str(relevant_token_type_overlap_ratio))))
 
 
 def __create_argparser():
@@ -65,13 +73,17 @@ def __main(args):
 				token: token in token_groups.keys()))
 	session_entity_counts = referent_token_counter(named_sessions)
 
-	partitioner = FeatureSpacePartitioner(4)
+	partitioner = FeatureSpacePartitioner(4, __referent_hues)
 	all_referent_counts = tuple(round_counts for counts in session_entity_counts.values() for round_counts in
 								counts.entity_referent_counts.values())
 	print("Partitioning all {} coreference chain(s) from {} session(s).".format(len(all_referent_counts),
 																				len(session_entity_counts)),
 		  file=sys.stderr)
 	partitioner(all_referent_counts)
+
+
+def __referent_hues(game_round: game_events.GameRound) -> Iterator[Decimal]:
+	return (entity.attr(session_data.DataColumn.HUE.name) for _, entity in game_round.initial_event.referent_entities)
 
 
 if __name__ == "__main__":
