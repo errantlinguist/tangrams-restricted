@@ -277,7 +277,7 @@ class TokenTypeDataPrinter(object):
 			"{col_name}_PARTICIPANT_{participant_id}".format(col_name=col_name, participant_id=participant_id) for
 			participant_id in all_participant_ids for
 			col_name in LanguageMetrics.COL_NAMES)
-		total_metric_col_names = ("{col_name}_TOTAL".format(col_name=col_name) for col_name in
+		total_metric_col_names = ("{col_name}_BOTH".format(col_name=col_name) for col_name in
 								  LanguageMetrics.COL_NAMES)
 		print(COL_DELIM.join(
 			itertools.chain(GameRoundMetrics.COL_NAMES, participant_metric_col_names, total_metric_col_names)),
