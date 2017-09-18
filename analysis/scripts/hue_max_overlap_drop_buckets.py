@@ -3,8 +3,9 @@
 import argparse
 import re
 import sys
+from collections import defaultdict
 from decimal import Decimal
-from typing import Callable, Iterable, Iterator, Sequence, Tuple, TypeVar
+from typing import Callable, Generic, Iterable, Iterator, Sequence, Tuple, TypeVar
 
 import coreference_chain_overlap
 import game_events
@@ -15,24 +16,36 @@ import token_groups as tg
 import utterances
 
 COL_DELIM = '\t'
+DECIMAL_ONE = session_data.fetch_decimal_value("1")
+DECIMAL_ZERO = session_data.fetch_decimal_value("0")
 
 T = TypeVar('T')
 
 
-class FeatureSpacePartitioner(object):
+class FeatureSpacePartitioner(Generic[T]):
 	def __init__(self, partitions: int,
-				 game_round_feature_value_extractor: Callable[[game_events.GameRound], Iterable[T]]):
+				 game_round_feature_value_extractor: Callable[[game_events.GameRound], Iterable[T]], min_value: T,
+				 max_value: T):
 		self.partitions = partitions
 		self.game_round_feature_value_extractor = game_round_feature_value_extractor
+		self.min_value = min_value
+		self.max_value = max_value
 
 	def __call__(self,
 				 referent_counts: Sequence[coreference_chain_overlap.ReferentCounts]):
-		derived_features = tuple(sorted(self.__create_derived_features(referent_counts), key=lambda item: item[0]))
+		feature_derived_values = defaultdict(list)
+		derived_features = self.__create_derived_features(referent_counts)
+		for feature_value, derived_value in derived_features:
+			feature_derived_values[feature_value].append(derived_value)
+
+		ordered_feature_values = tuple(sorted(feature_derived_values.keys()))
+		self.__ensure_in_ordered_domain(ordered_feature_values)
+
 		for feature_value, derived_value in derived_features:
 			print(COL_DELIM.join((str(feature_value), str(derived_value))))
 
 	def __create_derived_features(self, referent_counts: Sequence[coreference_chain_overlap.ReferentCounts]) -> \
-	Iterator[Tuple[T, Decimal]]:
+			Iterator[Tuple[T, Decimal]]:
 		for referent_counts in referent_counts:
 			round_relevant_token_type_overlap_ratios = coreference_chain_overlap.total_token_type_overlap_ratios(
 				"AGGREGATED_SESSIONS", "RELEVANT_TOKENS", referent_counts,
@@ -41,6 +54,14 @@ class FeatureSpacePartitioner(object):
 				game_round_key_feature_values = self.game_round_feature_value_extractor(game_round)
 				for value in game_round_key_feature_values:
 					yield value, relevant_token_type_overlap_ratio
+
+	def __ensure_in_ordered_domain(self, ordered_feature_values: Sequence[T]):
+		first_value = ordered_feature_values[0]
+		if first_value < self.min_value:
+			raise ValueError("First value is {} but minimum allowed is {}.".format(first_value, self.min_value))
+		last_value = ordered_feature_values[len(ordered_feature_values) - 1]
+		if last_value > self.max_value:
+			raise ValueError("Last value is {} but maximum allowed is {}.".format(last_value, self.max_value))
 
 
 def __create_argparser():
@@ -84,7 +105,7 @@ def __main(args):
 	print("Partitioning values for all {} coreference-chain count(s) from {} session(s).".format(
 		len(all_referent_counts),
 		len(session_entity_counts)), file=sys.stderr)
-	partitioner = FeatureSpacePartitioner(4, __referent_hues)
+	partitioner = FeatureSpacePartitioner(4, __referent_hues, DECIMAL_ZERO, DECIMAL_ONE)
 	partitioner(all_referent_counts)
 
 
