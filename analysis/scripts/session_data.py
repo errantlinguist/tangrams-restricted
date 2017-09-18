@@ -21,14 +21,22 @@ def _is_truth_cell_value(val: str) -> bool:
 
 @unique
 class DataColumn(Enum):
+	BLUE = DataColumnProperties("BLUE", int)
+	EDGE_COUNT = DataColumnProperties("EDGE_COUNT", int)
 	ENTITY_ID = DataColumnProperties("ENTITY", int)
 	EVENT_ID = DataColumnProperties("EVENT", int)
 	EVENT_NAME = DataColumnProperties("NAME", str)
 	EVENT_TIME = DataColumnProperties("TIME", float)
+	GREEN = DataColumnProperties("BLUE", int)
+	HUE = DataColumnProperties("HUE", float)
+	POSITION_X = DataColumnProperties("POSITION_X", float)
+	POSITION_Y = DataColumnProperties("POSITION_Y", float)
 	REFERENT_ENTITY = DataColumnProperties("REFERENT", _is_truth_cell_value)
+	RED = DataColumnProperties("RED", int)
 	ROUND_ID = DataColumnProperties("ROUND", int)
 	SCORE = DataColumnProperties("SCORE", int)
 	SELECTED_ENTITY = DataColumnProperties("SELECTED", _is_truth_cell_value)
+	SIZE = DataColumnProperties("SIZE", float)
 	SHAPE = DataColumnProperties("SHAPE", str)
 	SUBMITTER = DataColumnProperties("SUBMITTER", str)
 
