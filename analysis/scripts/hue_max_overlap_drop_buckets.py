@@ -20,22 +20,19 @@ T = TypeVar('T')
 
 
 class FeatureSpacePartitioner(object):
-	def __init__(self, partitions: int):
-		self.partitions = partitions
-
-	def __call__(self,
-				 ordered_feature_derived_values: Sequence[Tuple[T, Decimal]]):
-		for feature_value, derived_value in ordered_feature_derived_values:
-			print(COL_DELIM.join((str(feature_value), str(derived_value))))
-
-
-class FeatureTokenTypeOverlapRatioCalculator(object):
-	def __init__(self,
+	def __init__(self, partitions: int,
 				 game_round_feature_value_extractor: Callable[[game_events.GameRound], Iterable[T]]):
+		self.partitions = partitions
 		self.game_round_feature_value_extractor = game_round_feature_value_extractor
 
 	def __call__(self,
-				 referent_counts: Sequence[coreference_chain_overlap.ReferentCounts]) -> Iterator[Tuple[T, Decimal]]:
+				 referent_counts: Sequence[coreference_chain_overlap.ReferentCounts]):
+		derived_features = tuple(sorted(self.__create_derived_features(referent_counts), key=lambda item: item[0]))
+		for feature_value, derived_value in derived_features:
+			print(COL_DELIM.join((str(feature_value), str(derived_value))))
+
+	def __create_derived_features(self, referent_counts: Sequence[coreference_chain_overlap.ReferentCounts]) -> \
+	Iterator[Tuple[T, Decimal]]:
 		for referent_counts in referent_counts:
 			round_relevant_token_type_overlap_ratios = coreference_chain_overlap.total_token_type_overlap_ratios(
 				"AGGREGATED_SESSIONS", "RELEVANT_TOKENS", referent_counts,
@@ -82,16 +79,13 @@ def __main(args):
 				token: token in token_groups.keys()))
 	session_entity_counts = referent_token_counter(named_sessions)
 
-	all_referent_counts = (round_counts for counts in session_entity_counts.values() for round_counts in
-						   counts.entity_referent_counts.values())
-	feature_token_overlap_ratio_calculator = FeatureTokenTypeOverlapRatioCalculator(__referent_hues)
-	feature_token_overlap_ratios = tuple(
-		sorted(feature_token_overlap_ratio_calculator(all_referent_counts), key=lambda item: item[0]))
-	print("Partitioning values for all {} feature token-type overlap ratio(s) from {} session(s).".format(
-		len(feature_token_overlap_ratios),
+	all_referent_counts = tuple(round_counts for counts in session_entity_counts.values() for round_counts in
+								counts.entity_referent_counts.values())
+	print("Partitioning values for all {} coreference-chain count(s) from {} session(s).".format(
+		len(all_referent_counts),
 		len(session_entity_counts)), file=sys.stderr)
-	partitioner = FeatureSpacePartitioner(4)
-	partitioner(feature_token_overlap_ratios)
+	partitioner = FeatureSpacePartitioner(4, __referent_hues)
+	partitioner(all_referent_counts)
 
 
 def __referent_hues(game_round: game_events.GameRound) -> Iterator[session_data.DECIMAL_VALUE_TYPE]:
