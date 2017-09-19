@@ -52,9 +52,14 @@ class EventParticipantIdFactory(object):
 
 class GameRoundMetrics(object):
 	COL_NAMES = (
-		"DYAD", "ENTITY", "SHAPE", "SEQUENCE_ORDER", "ROUND", "INSTRUCTOR", "GAME_SCORE", "ROUND_START_TIME",
+		"DYAD", "ENTITY", "SHAPE", "HUE", "SEQUENCE_ORDER", "ROUND", "INSTRUCTOR", "GAME_SCORE", "ROUND_START_TIME",
 		"TIME_SCORE_RATIO",
 		"SCORE_ROUND_RATIO")
+
+	@staticmethod
+	def __create_referent_entity_hue_set_repr(event: game_events.Event) -> str:
+		shapes = frozenset(referent_entity.hue for _, referent_entity in event.referent_entities)
+		return ','.join(str(value) for value in sorted(shapes))
 
 	@staticmethod
 	def __create_referent_entity_shape_set_repr(event: game_events.Event) -> str:
@@ -69,6 +74,7 @@ class GameRoundMetrics(object):
 		self.round_id = round_id
 		self.instructor = instructor
 		self.referent_shape = self.__create_referent_entity_shape_set_repr(initial_event)
+		self.referent_hue = self.__create_referent_entity_hue_set_repr(initial_event)
 		self.score = initial_event.score
 		self.time = initial_event.event_time
 		self.time_score_ratio = time_score_ratio(initial_event)
@@ -78,10 +84,12 @@ class GameRoundMetrics(object):
 		return self.__class__.__name__ + str(self.__dict__)
 
 	def row_cells(self):
-		return (self.dyad_id, self.entity_id, self.referent_shape, self.sequence_order, self.round_id, self.instructor,
-				self.score,
-				self.time,
-				self.time_score_ratio, self.score_round_ratio)
+		return (
+		self.dyad_id, self.entity_id, self.referent_shape, self.referent_hue, self.sequence_order, self.round_id,
+		self.instructor,
+		self.score,
+		self.time,
+		self.time_score_ratio, self.score_round_ratio)
 
 
 class LanguageMetrics(object):
