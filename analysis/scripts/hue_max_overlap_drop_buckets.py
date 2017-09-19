@@ -23,17 +23,36 @@ T = TypeVar('T')
 
 
 class FeatureSpacePartitioner(Generic[T]):
-	def __init__(self, partitions: int,
-				 game_round_feature_value_extractor: Callable[[game_events.GameRound], Iterable[T]], min_value: T,
-				 max_value: T):
-		self.partitions = partitions
-		self.game_round_feature_value_extractor = game_round_feature_value_extractor
+	def __init__(self,  partition_count: int,
+				 min_value: T,
+				 max_value: T, default_offset: T,
+				 game_round_feature_value_extractor: Callable[[game_events.GameRound], Iterable[T]]):
+		self.partition_count = partition_count
 		if min_value >= max_value:
 			raise ValueError("Minimum value is {} but must be less than maximum value {}.".format(min_value, max_value))
 		self.min_value = min_value
 		self.max_value = max_value
-		self.domain_size = self.max_value - self.min_value
-		self.partition_size = self.domain_size / partitions
+		self.default_offset = default_offset
+
+		self.range_size = self.max_value - self.min_value
+		self.partition_size = self.range_size / self.partition_count
+
+		self.game_round_feature_value_extractor = game_round_feature_value_extractor
+
+	def partition(self, offset: T = None) -> Iterator[Tuple[T, T]]:
+		if offset is None:
+			offset = self.default_offset
+		partition_min = self.min_value + offset
+		for _ in range(self.partition_count):
+			partition_max = partition_min + self.partition_size
+			partition_max_overflow = partition_max - self.max_value
+			if partition_max_overflow > 0:
+				next_partition_min = partition_max_overflow
+			else:
+				next_partition_min = partition_max
+
+			yield partition_min, next_partition_min
+			partition_min = next_partition_min
 
 	def __call__(self,
 				 referent_counts: Sequence[coreference_chain_overlap.ReferentCounts]):
@@ -42,12 +61,19 @@ class FeatureSpacePartitioner(Generic[T]):
 		for feature_value, derived_value in derived_features:
 			feature_derived_values[feature_value].append(derived_value)
 
-		ordered_feature_values = deque(feature_derived_values.keys())
-		ordered_feature_values.sort()
-		self.__ensure_in_ordered_domain(ordered_feature_values)
+		ordered_feature_values = tuple(sorted(feature_derived_values.keys()))
+		self.__ensure_in_ordered_range(ordered_feature_values)
 
-		for feature_value, derived_value in derived_features:
-			print(COL_DELIM.join((str(feature_value), str(derived_value))))
+		partitions = self.partition(Decimal("0"))
+		for partition_min, partition_max in partitions:
+			for feature_value in ordered_feature_values:
+				if partition_min <= feature_value < partition_max:
+					derived_values = feature_derived_values[feature_value]
+			print("Start: {}, Stop: {}".format(partition_min, partition_max), file=sys.stderr)
+
+
+		# for feature_value, derived_value in derived_features:
+		#	print(COL_DELIM.join((str(feature_value), str(derived_value))))
 
 	def __create_derived_features(self, referent_counts: Sequence[coreference_chain_overlap.ReferentCounts]) -> \
 			Iterator[Tuple[T, Decimal]]:
@@ -60,13 +86,52 @@ class FeatureSpacePartitioner(Generic[T]):
 				for value in game_round_key_feature_values:
 					yield value, relevant_token_type_overlap_ratio
 
-	def __ensure_in_ordered_domain(self, ordered_feature_values: Sequence[T]):
+	def __ensure_in_ordered_range(self, ordered_feature_values: Sequence[T]):
 		first_value = ordered_feature_values[0]
-		if first_value < self.min_value:
-			raise ValueError("First value is {} but minimum allowed is {}.".format(first_value, self.min_value))
+		min_value = self.min_value
+		if first_value < min_value:
+			raise ValueError("First value is {} but minimum allowed is {}.".format(first_value, min_value))
 		last_value = ordered_feature_values[len(ordered_feature_values) - 1]
-		if last_value > self.max_value:
-			raise ValueError("Last value is {} but maximum allowed is {}.".format(last_value, self.max_value))
+		max_value = self.max_value
+		if last_value > max_value:
+			raise ValueError("Last value is {} but maximum allowed is {}.".format(last_value, max_value))
+
+class ValuePartition(object):
+	def __init__(self, partition_min, partition_max):
+		self.partition_min = partition_min
+		self.partition_max = partition_max
+
+	def __repr__(self, *args, **kwargs):
+		return self.__class__.__name__ + str(self.__dict__)
+
+class ValuePartitioner(Generic[T]):
+	def __init__(self, partition_count: int,
+				 min_value: T,
+				 max_value: T, default_offset: T):
+		self.partition_count = partition_count
+		if min_value >= max_value:
+			raise ValueError("Minimum value is {} but must be less than maximum value {}.".format(min_value, max_value))
+		self.min_value = min_value
+		self.max_value = max_value
+		self.default_offset = default_offset
+
+		self.range_size = self.max_value - self.min_value
+		self.partition_size = self.range_size / self.partition_count
+
+	def __call__(self, offset: T = None) -> Iterator[Tuple[T, T]]:
+		if offset is None:
+			offset = self.default_offset
+		partition_min = self.min_value + offset
+		for _ in range(self.partition_count):
+			partition_max = partition_min + self.partition_size
+			partition_max_overflow = partition_max - self.max_value
+			if partition_max_overflow > 0:
+				next_partition_min = partition_max_overflow
+			else:
+				next_partition_min = partition_max
+
+			yield partition_min, next_partition_min
+			partition_min = next_partition_min
 
 
 def __create_argparser():
@@ -110,7 +175,7 @@ def __main(args):
 	print("Partitioning values for all {} coreference-chain count(s) from {} session(s).".format(
 		len(all_referent_counts),
 		len(session_entity_counts)), file=sys.stderr)
-	partitioner = FeatureSpacePartitioner(4, __referent_hues, DECIMAL_ZERO, DECIMAL_ONE)
+	partitioner = FeatureSpacePartitioner(4, DECIMAL_ZERO, DECIMAL_ONE, DECIMAL_ZERO, __referent_hues)
 	partitioner(all_referent_counts)
 
 
