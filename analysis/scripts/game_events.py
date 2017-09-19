@@ -21,6 +21,10 @@ class EntityData(object):
 		return self.__row[attr_value_idx]
 
 	@property
+	def hue(self):
+		return self.__data_col_attr(session_data.DataColumn.HUE)
+
+	@property
 	def is_referent(self):
 		return self.__data_col_attr(session_data.DataColumn.REFERENT_ENTITY)
 
@@ -90,14 +94,16 @@ class Event(object):
 	def submitter(self):
 		return self.attrs[Event.Attribute.SUBMITTER]
 
+
 class EventData(object):
-	def __init__(self, events : Iterable[Event], source_participant_ids : Dict[str, str], initial_instructor_id : str):
+	def __init__(self, events: Iterable[Event], source_participant_ids: Dict[str, str], initial_instructor_id: str):
 		self.events = events
 		self.source_participant_ids = source_participant_ids
 		self.initial_instructor_id = initial_instructor_id
 
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
+
 
 class GameRound(object):
 	@unique
@@ -144,6 +150,7 @@ def create_game_rounds(events: Iterable[Event]) -> Iterator[GameRound]:
 		current_round_start_time = next_round_start_time
 
 	yield GameRound(current_round_start_time, None, current_events)
+
 
 def read_events(session: session_data.SessionData) -> EventData:
 	events_metadata = session.read_events_metadata()
