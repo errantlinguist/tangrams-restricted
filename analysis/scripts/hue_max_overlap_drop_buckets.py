@@ -3,7 +3,7 @@
 import argparse
 import re
 import sys
-from collections import defaultdict
+from collections import defaultdict, deque
 from decimal import Decimal
 from typing import Callable, Generic, Iterable, Iterator, Sequence, Tuple, TypeVar
 
@@ -42,7 +42,8 @@ class FeatureSpacePartitioner(Generic[T]):
 		for feature_value, derived_value in derived_features:
 			feature_derived_values[feature_value].append(derived_value)
 
-		ordered_feature_values = tuple(sorted(feature_derived_values.keys()))
+		ordered_feature_values = deque(feature_derived_values.keys())
+		ordered_feature_values.sort()
 		self.__ensure_in_ordered_domain(ordered_feature_values)
 
 		for feature_value, derived_value in derived_features:
