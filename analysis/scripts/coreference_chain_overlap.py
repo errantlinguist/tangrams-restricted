@@ -137,25 +137,28 @@ class ParticipantCoreferenceChainTokenCounter(object):
 		result = {}
 		for dyad_id, session in named_sessions:
 			print("Processing session \"{}\".".format(dyad_id), file=sys.stderr)
-
-			event_data = game_events.read_events(session)
-			source_participant_ids = event_data.source_participant_ids
-			seg_utt_factory = utterances.SegmentUtteranceFactory(self.token_seq_factory,
-																 lambda source_id: source_participant_ids[source_id])
-			game_rounds = iter(game_events.create_game_rounds(event_data.events))
-			segments = utterances.read_segments(session.utts)
-			utt_times = utterances.UtteranceTimes(seg_utt_factory(segments))
-			game_round_utts = referent_token_type_counts.zip_game_round_utterances(game_rounds, utt_times)
-
-			entity_referent_counts = {}
-			enumerated_game_round_utts = enumerate(game_round_utts, start=self.ROUND_ID_OFFSET)
-			event_participant_id_factory = game_events.EventParticipantIdFactory(event_data.initial_instructor_id)
-			for game_round_utts in enumerated_game_round_utts:
-				self.__put_entity_counts(game_round_utts, source_participant_ids, entity_referent_counts,
-										 event_participant_id_factory)
-			result[dyad_id] = ParticipantCoreferenceChainTokenCounts(entity_referent_counts, source_participant_ids)
+			session_counts = self.__create_session_counts(session)
+			result[dyad_id] = session_counts
 
 		return result
+
+	def __create_session_counts(self, session: sd.SessionData):
+		event_data = game_events.read_events(session)
+		source_participant_ids = event_data.source_participant_ids
+		seg_utt_factory = utterances.SegmentUtteranceFactory(self.token_seq_factory,
+															 lambda source_id: source_participant_ids[source_id])
+		game_rounds = iter(game_events.create_game_rounds(event_data.events))
+		segments = utterances.read_segments(session.utts)
+		utt_times = utterances.UtteranceTimes(seg_utt_factory(segments))
+		game_round_utts = referent_token_type_counts.zip_game_round_utterances(game_rounds, utt_times)
+
+		entity_referent_counts = {}
+		enumerated_game_round_utts = enumerate(game_round_utts, start=self.ROUND_ID_OFFSET)
+		event_participant_id_factory = game_events.EventParticipantIdFactory(event_data.initial_instructor_id)
+		for game_round_utts in enumerated_game_round_utts:
+			self.__put_entity_counts(game_round_utts, source_participant_ids, entity_referent_counts,
+									 event_participant_id_factory)
+		return ParticipantCoreferenceChainTokenCounts(entity_referent_counts, source_participant_ids)
 
 	def __put_entity_counts(self, enumerated_game_round_utts, source_participant_ids: Mapping[str, str],
 							entity_referent_counts: MutableMapping[int, "ReferentCounts"],
