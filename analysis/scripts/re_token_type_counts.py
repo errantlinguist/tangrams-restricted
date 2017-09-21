@@ -5,7 +5,7 @@ import re
 import sys
 from collections import Counter
 from decimal import Decimal
-from typing import Any, Callable, Dict, Iterable, Iterator, Sequence, Container, Tuple, TypeVar
+from typing import Any, Callable, Dict, Iterable, Iterator, MutableSequence, Sequence, Container, Tuple, TypeVar
 
 import utterances
 from session_data import SessionData
@@ -22,10 +22,23 @@ class FilteredTokenCountDatum(object):
 	This class keeps counts of all tokens in a set of utterances in addition to counts for "relevant" tokens out of the set of all tokens.
 	"""
 
-	def __init__(self, all_tokens: "TokenCountDatum" = None, relevant_tokens: "TokenCountDatum" = None, utts=None):
+	def __init__(self, all_tokens: "TokenCountDatum" = None, relevant_tokens: "TokenCountDatum" = None,
+				 utts: MutableSequence[utterances.Utterance] = None):
+		"""
+
+		:param all_tokens: Counts for all tokens observed.
+		:type all_tokens: TokenCountDatum
+		:param relevant_tokens: Counts only for the relevant tokens which were observed.
+		:type relevant_tokens: TokenCountDatum
+		:param utts: The utterances used for deriving counts.
+		:type utts: MutableSequence[utterances.Utterance]
+		"""
 		self.all_tokens = TokenCountDatum() if all_tokens is None else all_tokens
+		"""Counts for all tokens observed."""
 		self.relevant_tokens = TokenCountDatum() if relevant_tokens is None else relevant_tokens
+		"""Counts only for the relevant tokens which were observed."""
 		self.utts = [] if utts is None else utts
+		"""The utterances used for deriving counts."""
 
 	@property
 	def __key(self):
@@ -120,6 +133,7 @@ class SessionTokenCountDatum(object):
 		"""
 
 		:param round_token_counts: Token counts for each individual round.
+		:type round_token_counts: Iterable[FilteredTokenCountDatum]
 		"""
 		self.total_data = FilteredTokenCountDatum()
 		"""Metrics for all rounds in the game."""
@@ -230,6 +244,7 @@ class TokenCountDatum(object):
 		"""
 
 		:param token_counts: Counts for each token type (i.e. unique word) observed.
+		:type token_counts: Dict[str, int]
 		"""
 		self.token_counts = Counter() if token_counts is None else token_counts
 		"""Counts for each token type (i.e. unique word) observed."""
