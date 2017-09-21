@@ -10,6 +10,8 @@ import session_data
 
 _DECIMAL_INFINITY = decimal.Decimal("Infinity")
 _DECIMAL_ONE = decimal.Decimal("1")
+_ENTITY_ID_OFFSET = 1
+_EVENT_ID_OFFSET = 1
 
 
 class EntityData(object):
@@ -45,8 +47,6 @@ class EntityData(object):
 
 
 class Event(object):
-	__ENTITY_ID_OFFSET = 1
-
 	@unique
 	class Attribute(Enum):
 		ID = session_data.DataColumn.EVENT_ID.value
@@ -66,10 +66,10 @@ class Event(object):
 		return self.__class__.__name__ + str(self.__dict__)
 
 	def entity(self, entity_id: int) -> EntityData:
-		return self.entities[entity_id - self.__ENTITY_ID_OFFSET]
+		return self.entities[entity_id - _ENTITY_ID_OFFSET]
 
 	def entities_by_id(self):
-		return enumerate(self.entities, start=self.__ENTITY_ID_OFFSET)
+		return enumerate(self.entities, start=_ENTITY_ID_OFFSET)
 
 	@property
 	def event_id(self) -> int:
@@ -144,8 +144,6 @@ class EventParticipantIdFactory(object):
 
 
 class GameRound(object):
-	_EVENT_ID_OFFSET = 1
-
 	@unique
 	class Attribute(Enum):
 		ID = session_data.DataColumn.ROUND_ID.value
@@ -160,10 +158,10 @@ class GameRound(object):
 		return self.__class__.__name__ + str(self.__dict__)
 
 	def event(self, event_id: int) -> Event:
-		return self.events[event_id - self._EVENT_ID_OFFSET]
+		return self.events[event_id - _EVENT_ID_OFFSET]
 
 	def events_by_id(self):
-		return enumerate(self.events, start=self._EVENT_ID_OFFSET)
+		return enumerate(self.events, start=_EVENT_ID_OFFSET)
 
 	@property
 	def initial_event(self) -> Event:
@@ -222,10 +220,10 @@ def read_event_entity_desc_matrix(infile_path: str, event_count: int, entity_cou
 		for row in rows:
 			__transform_row_cell_values(row, col_idxs)
 			event_id = row[event_id_col_idx]
-			entity_descs = result[event_id - 1]
+			entity_descs = result[event_id - _EVENT_ID_OFFSET]
 			entity_id = row[entity_id_col_idx]
 			row[entity_id_col_idx] = entity_id
-			entity_idx = entity_id - 1
+			entity_idx = entity_id - _ENTITY_ID_OFFSET
 			if entity_descs[entity_idx]:
 				raise ValueError("Duplicate rows for event {}, entity {}.", event_id, entity_id)
 			else:
