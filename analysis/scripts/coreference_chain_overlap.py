@@ -182,18 +182,28 @@ class ParticipantCoreferenceChainTokenCounter(object):
 
 
 class ParticipantCoreferenceChainTokenCounts(object):
+	"""
+	This class represents metrics for referring to each entity over the course of a given session.
+	"""
+
 	def __init__(self, entity_referent_counts: Dict[int, "ReferentCounts"], source_participant_ids: Dict[str, str]):
 		self.entity_referent_counts = entity_referent_counts
+		"""A dictionary mapping entity ID to an object representing metrics for the reference of the respective entity throughout the session."""
 		self.source_participant_ids = source_participant_ids
+		"""A mapping of utterance source ID to the ID to use for that dialogue participant."""
 
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
 
 
 class ReferentCounts(object):
+	"""
+	This class represents metrics for referring to a particular unique entity throughout an entire session, e.g. the entity with the ID "1".
+	"""
+
 	def __init__(self):
 		self.round_counts = []
-		"""Counts for each round in which the entity is referenced for utterances by a particular participant"""
+		"""Counts for each round in which the entity is referenced"""
 		self.participant_total_counts = defaultdict(re_token_type_counts.FilteredTokenCountDatum)
 		"""participant_id -> total counts for entity for the entire coreference chain for utterances by a particular participant"""
 		self.total_counts = re_token_type_counts.FilteredTokenCountDatum()
@@ -217,16 +227,21 @@ class ReferentCounts(object):
 
 
 class RoundCounts(object):
+	"""
+	This class represents metrics for a particular round in which an entity is referenced, e.g. the round with the ID "1".
+	"""
+
 	def __init__(self, game_round: game_events.GameRound,
 				 participant_counts: Dict[Any, re_token_type_counts.FilteredTokenCountDatum], instructor: str):
 		self.game_round = game_round
 		self.participant_counts = participant_counts
 		"""Token counts for utterances produced by a given participant in the round represented by this instance."""
 		self.total_counts = re_token_type_counts.FilteredTokenCountDatum()
+		"""Token counts for all utterances produced by all participants in the round represented by this instance."""
 		for counts in participant_counts.values():
 			self.total_counts.update(counts)
-		"""Token counts for all utterances produced by all participants in the round represented by this instance."""
 		self.instructor = instructor
+		"""The ID of the instructor for the given round."""
 
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
