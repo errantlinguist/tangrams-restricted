@@ -63,39 +63,39 @@ class Event(object):
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
 
-	def entity(self, entity_id: int):
+	def entity(self, entity_id: int) -> EntityData:
 		return self.entities[entity_id - 1]
 
 	def entities_by_id(self):
 		return enumerate(self.entities, start=1)
 
 	@property
-	def event_id(self):
+	def event_id(self) -> int:
 		return self.attrs[Event.Attribute.ID]
 
 	@property
-	def event_time(self):
+	def event_time(self) -> session_data.DECIMAL_VALUE_TYPE:
 		return self.attrs[Event.Attribute.TIME]
 
 	@property
-	def referent_entities(self):
+	def referent_entities(self) -> Iterator[Tuple[int, EntityData]]:
 		return ((entity_id, entity) for (entity_id, entity) in self.entities_by_id() if entity.is_referent)
 
 	@property
-	def round_id(self):
+	def round_id(self) -> int:
 		first_entity_desc = next(iter(self.entities))
 		return first_entity_desc.attr(GameRound.Attribute.ID.value.name)
 
 	@property
-	def score(self):
+	def score(self) -> int:
 		return self.attrs[Event.Attribute.SCORE]
 
 	@property
-	def selected_entities(self):
+	def selected_entities(self) -> Iterator[Tuple[int, EntityData]]:
 		return ((entity_id, entity) for (entity_id, entity) in self.entities_by_id() if entity.is_selected)
 
 	@property
-	def submitter(self):
+	def submitter(self) -> str:
 		return self.attrs[Event.Attribute.SUBMITTER]
 
 	def score_round_ratio(self) -> decimal.Decimal:
