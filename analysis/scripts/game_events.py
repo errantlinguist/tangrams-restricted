@@ -4,43 +4,45 @@ import json
 import sys
 from collections import defaultdict
 from enum import Enum, unique
-from typing import Any, Dict, Iterable, Iterator, List, MutableSequence, Sequence, Tuple, Union
+from typing import Any, Dict, Iterable, Iterator, List, MutableSequence, Sequence, Tuple, Union, TypeVar
 
 import session_data
+
+T = TypeVar('T')
 
 _DECIMAL_INFINITY = decimal.Decimal("Infinity")
 _DECIMAL_ONE = decimal.Decimal("1")
 
 
 class EntityData(object):
-	def __init__(self, col_idxs, row):
+	def __init__(self, col_idxs: Dict[T, int], row: Sequence[Any]):
 		self.__col_idxs = col_idxs
 		self.__row = row
 
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
 
-	def attr(self, attr_name):
+	def attr(self, attr_name: T) -> Any:
 		attr_value_idx = self.__col_idxs[attr_name]
 		return self.__row[attr_value_idx]
 
 	@property
-	def hue(self):
+	def hue(self) -> session_data.DECIMAL_VALUE_TYPE:
 		return self.__data_col_attr(session_data.DataColumn.HUE)
 
 	@property
-	def is_referent(self):
+	def is_referent(self) -> bool:
 		return self.__data_col_attr(session_data.DataColumn.REFERENT_ENTITY)
 
 	@property
-	def is_selected(self):
+	def is_selected(self) -> bool:
 		return self.__data_col_attr(session_data.DataColumn.SELECTED_ENTITY)
 
 	@property
-	def shape(self):
+	def shape(self) -> str:
 		return self.__data_col_attr(session_data.DataColumn.SHAPE)
 
-	def __data_col_attr(self, col: session_data.DataColumn):
+	def __data_col_attr(self, col: session_data.DataColumn) -> Any:
 		return self.attr(col.value.name)
 
 
