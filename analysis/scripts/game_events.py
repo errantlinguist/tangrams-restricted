@@ -4,25 +4,23 @@ import json
 import sys
 from collections import defaultdict
 from enum import Enum, unique
-from typing import Any, Dict, Iterable, Iterator, List, MutableSequence, Sequence, Tuple, Union, TypeVar
+from typing import Any, Dict, Iterable, Iterator, List, MutableSequence, Sequence, Tuple, Union
 
 import session_data
-
-T = TypeVar('T')
 
 _DECIMAL_INFINITY = decimal.Decimal("Infinity")
 _DECIMAL_ONE = decimal.Decimal("1")
 
 
 class EntityData(object):
-	def __init__(self, col_idxs: Dict[T, int], row: Sequence[Any]):
+	def __init__(self, col_idxs: Dict[str, int], row: Sequence[Any]):
 		self.__col_idxs = col_idxs
 		self.__row = row
 
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
 
-	def attr(self, attr_name: T) -> Any:
+	def attr(self, attr_name: str) -> Any:
 		attr_value_idx = self.__col_idxs[attr_name]
 		return self.__row[attr_value_idx]
 
