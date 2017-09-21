@@ -19,6 +19,32 @@ METALANGUAGE_TOKENS = frozenset(("ARTIFACT", "BREATH", "CLICK", "COUGH", "GROAN"
 __TOKEN_TRUNCATION_MARKER = '-'
 
 
+class SegmentUtteranceFactory(object):
+	def __init__(self, token_seq_factory: Callable[[Iterable[str]], Sequence[str]],
+				 source_speaker_id_factory: Callable[[str], str] = lambda source_id: source_id):
+		self.token_seq_factory = token_seq_factory
+		self.source_speaker_id_factory = source_speaker_id_factory
+
+	def __call__(self, segments: Iterable[Element]) -> Iterator["Utterance"]:
+		for segment in segments:
+			utt = self.__create(segment)
+			if utt:
+				yield utt
+
+	def __create(self, segment: Element) -> "Utterance":
+		token_elems = segment.iterfind(".//hat:t", ANNOTATION_NAMESPACES)
+		token_text = (elem.text for elem in token_elems)
+		content = self.token_seq_factory(token_text)
+		if content:
+			speaker_id = self.source_speaker_id_factory(segment.get("source"))
+			result = Utterance(segment.get("id"), speaker_id, float(segment.get("start")),
+							   float(segment.get("end")), content)
+		else:
+			result = None
+
+		return result
+
+
 class Utterance(object):
 	@staticmethod
 	def between(utts: Iterable["Utterance"], start_time: float, end_time: float):
@@ -51,32 +77,6 @@ class Utterance(object):
 	@property
 	def __key(self):
 		return self.segment_id, self.speaker_id, self.start_time, self.end_time, self.content
-
-
-class SegmentUtteranceFactory(object):
-	def __init__(self, token_seq_factory: Callable[[Iterable[str]], Sequence[str]],
-				 source_speaker_id_factory: Callable[[str], str] = lambda source_id: source_id):
-		self.token_seq_factory = token_seq_factory
-		self.source_speaker_id_factory = source_speaker_id_factory
-
-	def __call__(self, segments: Iterable[Element]) -> Iterator[Utterance]:
-		for segment in segments:
-			utt = self.__create(segment)
-			if utt:
-				yield utt
-
-	def __create(self, segment: Element) -> Utterance:
-		token_elems = segment.iterfind(".//hat:t", ANNOTATION_NAMESPACES)
-		token_text = (elem.text for elem in token_elems)
-		content = self.token_seq_factory(token_text)
-		if content:
-			speaker_id = self.source_speaker_id_factory(segment.get("source"))
-			result = Utterance(segment.get("id"), speaker_id, float(segment.get("start")),
-							   float(segment.get("end")), content)
-		else:
-			result = None
-
-		return result
 
 
 class UtteranceTimes(object):
