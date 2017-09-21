@@ -149,10 +149,7 @@ class ParticipantCoreferenceChainTokenCounter(object):
 
 			entity_referent_counts = {}
 			enumerated_game_round_utts = enumerate(game_round_utts, start=self.ROUND_ID_OFFSET)
-			game_round_utts = next(enumerated_game_round_utts)
 			event_participant_id_factory = game_events.EventParticipantIdFactory(event_data.initial_instructor_id)
-			self.__put_entity_counts(game_round_utts, source_participant_ids, entity_referent_counts,
-									 event_participant_id_factory)
 			for game_round_utts in enumerated_game_round_utts:
 				self.__put_entity_counts(game_round_utts, source_participant_ids, entity_referent_counts,
 										 event_participant_id_factory)
