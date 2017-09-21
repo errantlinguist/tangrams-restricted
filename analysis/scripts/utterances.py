@@ -185,7 +185,7 @@ def dialogue_utt_str_repr(utts: Iterable[Utterance]) -> str:
 	for speaker_id, utt_group in grouped_utts:
 		speaker_repr = __speaker_id_repr(speaker_id)
 		repr_list.append(speaker_repr)
-		sentence_repr = '"' + ' '.join(token_seq_repr(utt.content) for utt in utt_group) + '"'
+		sentence_repr = '"' + join_utt_sentence_reprs(utt_group) + '"'
 		repr_list.append(sentence_repr)
 
 	return ' '.join(repr_list)
@@ -214,6 +214,10 @@ def group_utts_by_speaker_id(utts: Iterable[Utterance]) -> List[Tuple[List[Utter
 
 def is_disfluency(token: str) -> bool:
 	return token.startswith(__TOKEN_TRUNCATION_MARKER) or token.endswith(__TOKEN_TRUNCATION_MARKER)
+
+
+def join_utt_sentence_reprs(utts: Iterable[Utterance]) -> str:
+	return ' '.join(token_seq_repr(utt.content) for utt in utts)
 
 
 def read_segments(infile_path: str) -> Iterator[Element]:
