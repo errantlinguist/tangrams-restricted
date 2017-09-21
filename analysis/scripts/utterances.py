@@ -23,7 +23,9 @@ class SegmentUtteranceFactory(object):
 	def __init__(self, token_seq_factory: Callable[[Iterable[str]], Sequence[str]],
 				 source_speaker_id_factory: Callable[[str], str] = lambda source_id: source_id):
 		self.token_seq_factory = token_seq_factory
+		"""A function for converting a sequence of bare token strings into normalized forms for use as utterance content."""
 		self.source_speaker_id_factory = source_speaker_id_factory
+		"""A function for converting segment source IDs (e.g. "source234") to utterances speaker IDs (e.g. "superplayer" or "A" or "B")."""
 
 	def __call__(self, segments: Iterable[Element]) -> Iterator["Utterance"]:
 		for segment in segments:
