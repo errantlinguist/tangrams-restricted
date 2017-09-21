@@ -109,7 +109,6 @@ class CoreferenceChainDataPrinter(object):
 
 	def __call__(self, session_data: ItemsView[str, "EntityCoreferenceChainDatum"], outfile):
 		print(COL_DELIM.join(itertools.chain(GameRoundMetrics.COL_NAMES, self.LANG_COL_NAMES)), file=outfile)
-
 		ordered_session_data = sorted(session_data, key=lambda item: item[0])
 		for dyad_id, session_data in ordered_session_data:
 			self.__print_session(dyad_id, session_data, outfile)
