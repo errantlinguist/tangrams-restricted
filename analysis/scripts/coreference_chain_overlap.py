@@ -66,7 +66,7 @@ class GameRoundMetrics(object):
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
 
-	def row_cells(self):
+	def row_cells(self) -> Tuple[Any, ...]:
 		return (
 			self.dyad_id, self.entity_id, self.referent_shape, self.referent_hue, self.sequence_order, self.round_id,
 			self.instructor,
@@ -115,7 +115,7 @@ class LanguageMetrics(object):
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
 
-	def row_cells(self):
+	def row_cells(self) -> Tuple[Any, ...]:
 		return (self.current_round_total_tokens, self.cumulative_token_count, self.mean_previous_token_count,
 				self.current_round_length_drop, len(self.current_round_token_types), self.unified_token_type_count,
 				self.overlapping_token_type_count, self.overlap_ratio, utterances.dialogue_utt_str_repr(self.utts))
@@ -367,9 +367,6 @@ def length_drop(current_total_tokens: Decimal, mean_previous_token_count: Decima
 	:rtype Decimal
 	"""
 	return (mean_previous_token_count - current_total_tokens) / (mean_previous_token_count + current_total_tokens)
-
-
-
 
 
 def token_type_overlap_ratio(overlapping_token_type_count: int, unified_token_type_count: int) -> Decimal:
