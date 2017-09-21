@@ -26,6 +26,9 @@ class EntityData(object):
 		return (isinstance(other, type(self))
 				and self.__key == other.__key)
 
+	def __ne__(self, other):
+		return not (self == other)
+
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
 
@@ -76,6 +79,9 @@ class Event(object):
 	def __eq__(self, other):
 		return (isinstance(other, type(self))
 				and self.__key == other.__key)
+
+	def __ne__(self, other):
+		return not (self == other)
 
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
@@ -145,6 +151,9 @@ class EventData(object):
 		return (isinstance(other, type(self))
 				and self.__key == other.__key)
 
+	def __ne__(self, other):
+		return not (self == other)
+
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
 
@@ -187,6 +196,9 @@ class GameRound(object):
 	def __eq__(self, other):
 		return (isinstance(other, type(self))
 				and self.__key == other.__key)
+
+	def __ne__(self, other):
+		return not (self == other)
 
 	def event(self, event_id: int) -> Event:
 		return self.events[event_id - _EVENT_ID_OFFSET]
