@@ -28,6 +28,8 @@ _DECIMAL_ZERO = Decimal("0")
 
 _EMPTY_SET = frozenset()
 
+_RowMetrics = namedtuple("_RowMetrics", ("round", "participant_lang", "total_lang"))
+
 NULL_PREVIOUS_MEAN_COUNT_VALUE = None
 NULL_TOKEN_TYPE_OVERLAP_VALUE = _DECIMAL_ZERO
 NULL_TOKEN_LENGTH_DROP_VALUE = _DECIMAL_INFINITY
@@ -228,9 +230,6 @@ class RoundCounts(object):
 
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
-
-
-_RowMetrics = namedtuple("_RowMetrics", ("round", "participant_lang", "total_lang"))
 
 
 class TokenTypeDataPrinter(object):
