@@ -144,11 +144,14 @@ class EventParticipantIdFactory(object):
 
 
 class GameRound(object):
+	_EVENT_ID_OFFSET = 1
+
 	@unique
 	class Attribute(Enum):
 		ID = session_data.DataColumn.ROUND_ID.value
 
-	def __init__(self, start_time: float, end_time: Union[float, None], events: Sequence[Event]):
+	def __init__(self, start_time: session_data.DECIMAL_VALUE_TYPE,
+				 end_time: Union[session_data.DECIMAL_VALUE_TYPE, None], events: Sequence[Event]):
 		self.start_time = start_time
 		self.end_time = end_time
 		self.events = events
@@ -156,14 +159,14 @@ class GameRound(object):
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
 
-	def event(self, event_id: int):
-		return self.events[event_id - 1]
+	def event(self, event_id: int) -> Event:
+		return self.events[event_id - self._EVENT_ID_OFFSET]
 
 	def events_by_id(self):
-		return enumerate(self.events, start=1)
+		return enumerate(self.events, start=self._EVENT_ID_OFFSET)
 
 	@property
-	def initial_event(self):
+	def initial_event(self) -> Event:
 		return next(iter(self.events))
 
 
