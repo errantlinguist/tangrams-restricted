@@ -202,7 +202,7 @@ def group_utts_by_speaker_id(utts: Iterable[Utterance]) -> List[Tuple[List[Utter
 			current_speaker_utts.append(utt)
 		else:
 			if current_speaker_utts:
-				result.append(current_speaker_utts)
+				result.append((current_speaker_id, current_speaker_utts))
 			current_speaker_id = utt_speaker_id
 			current_speaker_utts = [utt]
 
