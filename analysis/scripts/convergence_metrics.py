@@ -58,26 +58,26 @@ class Coreference(object):
 		coref_chain.append(result)
 		return result
 
-	def __init__(self, tokens: FrozenSet[str], round_id: int, preceding_coref: "Coreference" = None):
+	def __init__(self, tokens: FrozenSet[str], round_id: int, antecedent: "Coreference" = None):
 		self.tokens = tokens
 		self.round_id = round_id
-		self.preceding_coref = preceding_coref
+		self.antecedent = antecedent
 
 	def __repr__(self):
 		return self.__class__.__name__ + str(self.__dict__)
 
 	@property
 	def antecedents(self) -> Iterator["Coreference"]:
-		last_antecedent = self.preceding_coref
+		last_antecedent = self.antecedent
 		while last_antecedent is not None:
-			last_antecedent = last_antecedent.preceding_coref
+			last_antecedent = last_antecedent.antecedent
 			yield last_antecedent
 
 	@property
 	def chain_head(self) -> Optional["Coreference"]:
-		result = self.preceding_coref
+		result = self.antecedent
 		while result is not None:
-			result = result.preceding_coref
+			result = result.antecedent
 		yield result
 
 	@property
@@ -89,11 +89,11 @@ class Coreference(object):
 		return frozenset(self.tokens)
 
 	def token_type_overlap_with_self(self) -> Optional[Decimal]:
-		if self.preceding_coref is None:
+		if self.antecedent is None:
 			result = None
 		else:
 			token_types = self.token_types
-			preceding_token_types = self.preceding_coref.token_types
+			preceding_token_types = self.antecedent.token_types
 			result = token_type_overlap_ratio(token_types.union(
 				preceding_token_types), token_types.intersection(
 				preceding_token_types))
