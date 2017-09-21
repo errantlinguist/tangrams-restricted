@@ -73,6 +73,10 @@ class Event(object):
 		self.entities = entities
 		self.attrs = attrs
 
+	def __eq__(self, other):
+		return (isinstance(other, type(self))
+				and self.__key == other.__key)
+
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
 
@@ -125,6 +129,10 @@ class Event(object):
 		except ZeroDivisionError:
 			result = _DECIMAL_INFINITY
 		return result
+
+	@property
+	def __key(self):
+		return self.entities, self.attrs
 
 
 class EventData(object):
