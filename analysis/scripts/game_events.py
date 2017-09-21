@@ -22,6 +22,10 @@ class EntityData(object):
 	def __bool__(self):
 		return bool(self.col_idxs or self.row)
 
+	def __eq__(self, other):
+		return (isinstance(other, type(self))
+				and self.__key == other.__key)
+
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
 
@@ -47,6 +51,10 @@ class EntityData(object):
 
 	def __data_col_attr(self, col: session_data.DataColumn) -> Any:
 		return self.attr(col.value.name)
+
+	@property
+	def __key(self):
+		return self.col_idxs, self.row
 
 
 class Event(object):
