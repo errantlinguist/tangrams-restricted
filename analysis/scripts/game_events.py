@@ -171,7 +171,7 @@ class EventParticipantIdFactory(object):
 	def __init__(self, initial_instructor_id: str):
 		self.initial_instructor_id = initial_instructor_id
 
-	def __call__(self, event: Event):
+	def __call__(self, event: Event) -> str:
 		"""
 		:param event: The event to get the participant ID for
 		:return: Either "A" or "B"
