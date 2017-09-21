@@ -1,7 +1,8 @@
 import csv
 import sys
+from collections import defaultdict
 from enum import Enum, unique
-from typing import Callable, Dict, FrozenSet, Iterator, Tuple
+from typing import Callable, Dict, FrozenSet, Iterable, Iterator, List, Mapping, Tuple
 
 ENCODING = "utf-8"
 GROUP_LIST_DELIM = ","
@@ -17,6 +18,20 @@ class TokenGroupDataColumn(Enum):
 
 def __default_group_filter(group) -> bool:
 	return group
+
+
+def create_group_token_dict(tokens: Iterable[str], token_groups: Mapping[str, FrozenSet[str]]) -> Dict[str, List[str]]:
+	result = defaultdict(list)
+	for token in tokens:
+		try:
+			groups = token_groups[token]
+			for group in groups:
+				result[group].append(token)
+		except KeyError:
+			# Do nothing with tokens which don't have a semantic group
+			pass
+
+	return result
 
 
 def read_token_group_dict(infile_path: str,
