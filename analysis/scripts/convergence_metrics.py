@@ -119,18 +119,18 @@ class CoreferenceChainDataPrinter(object):
 	def __init__(self, token_groups: Mapping[str, str]):
 		self.token_groups = token_groups
 
-	def __call__(self, session_data: ItemsView[str, "EntityCoreferenceChainDatum"], outfile):
+	def __call__(self, session_data: ItemsView[str, "GameRoundUtterances"], outfile):
 		print(COL_DELIM.join(itertools.chain(GameRoundMetrics.COL_NAMES, self.LANG_COL_NAMES)), file=outfile)
 		ordered_session_data = sorted(session_data, key=lambda item: item[0])
 		for dyad_id, session_data in ordered_session_data:
 			self.__print_session(dyad_id, session_data, outfile)
 
-	def __print_session(self, dyad_id: str, session_data: "EntityCoreferenceChainDatum", outfile):
+	def __print_session(self, dyad_id: str, session_data: "GameRoundUtterances", outfile):
 		entity_corefs = SessionCoreferenceChainDatum()
 		shape_corefs = SessionCoreferenceChainDatum()
 
 		for round_id, game_round_utts in enumerate(session_data.game_round_utts,
-												   start=ParticipantCoreferenceChainTokenCounter.ROUND_ID_OFFSET):
+												   start=SessionGameRoundUtteranceFactory.ROUND_ID_OFFSET):
 			game_round, round_utts = game_round_utts
 			round_instructor_id = session_data.round_instructor_ids[round_id]
 			round_metrics = GameRoundMetrics(dyad_id, game_round, round_instructor_id)
@@ -177,21 +177,6 @@ class CoreferenceChainDataPrinter(object):
 					  file=outfile)
 
 
-class EntityCoreferenceChainDatum(object):
-	"""
-	A class coreference information for all entities in a particular game.
-	"""
-
-	def __init__(self, game_round_utts: Sequence[Tuple[game_events.GameRound, Sequence[utterances.Utterance]]],
-				 entity_coreference_chains: Dict[int, CoreferenceChainDatum], round_instructor_ids: Mapping[int, str]):
-		self.game_round_utts = game_round_utts
-		self.entity_coreference_chains = entity_coreference_chains
-		self.round_instructor_ids = round_instructor_ids
-
-	def __repr__(self):
-		return self.__class__.__name__ + str(self.__dict__)
-
-
 class GameRoundMetrics(object):
 	COL_NAMES = (
 		"DYAD", "ROUND", "INSTRUCTOR", "ROUND_START_TIME", "SCORE",
@@ -225,57 +210,18 @@ class GameRoundMetrics(object):
 			self.referent_hue)
 
 
-class ParticipantCoreferenceChainTokenCounter(object):
-	ROUND_ID_OFFSET = 1
+class GameRoundUtterances(object):
+	"""
+	A class associating game rounds with the dialogues for each.
+	"""
 
-	def __init__(self, token_seq_factory: Callable[[Iterable[str]], Sequence[str]]):
-		self.token_seq_factory = token_seq_factory
+	def __init__(self, game_round_utts: Sequence[Tuple[game_events.GameRound, Sequence[utterances.Utterance]]],
+				 round_instructor_ids: Mapping[int, str]):
+		self.game_round_utts = game_round_utts
+		self.round_instructor_ids = round_instructor_ids
 
-	def __call__(self, named_sessions: Iterable[Tuple[str, sd.SessionData]]) -> Dict[
-		str, EntityCoreferenceChainDatum]:
-		result = {}
-		for dyad_id, session in named_sessions:
-			print("Processing session \"{}\".".format(dyad_id), file=sys.stderr)
-			entity_coreference_chains = self.__create_session_counts(session)
-			result[dyad_id] = entity_coreference_chains
-
-		return result
-
-	def __create_session_counts(self, session: sd.SessionData) -> EntityCoreferenceChainDatum:
-		event_data = game_events.read_events(session)
-		source_participant_ids = event_data.source_participant_ids
-		seg_utt_factory = utterances.SegmentUtteranceFactory(self.token_seq_factory,
-															 lambda source_id: source_participant_ids[source_id])
-		game_rounds = game_events.create_game_rounds(event_data.events)
-		segments = utterances.read_segments(session.utts)
-		utt_times = utterances.UtteranceTimes(seg_utt_factory(segments))
-		game_round_utts = tuple((game_round, tuple(utt_iter)) for (game_round, utt_iter) in
-								referent_token_type_counts.zip_game_round_utterances(game_rounds, utt_times))
-		event_participant_id_factory = game_events.EventParticipantIdFactory(event_data.initial_instructor_id)
-
-		entity_coreference_chains = {}
-		round_instructor_ids = {}
-		enumerated_game_round_utts = enumerate(game_round_utts, start=self.ROUND_ID_OFFSET)
-		for round_id, round_utts in enumerated_game_round_utts:
-			game_round, round_utts = round_utts
-			initial_event = game_round.initial_event
-			round_instructor_id = event_participant_id_factory(initial_event)
-			existing_instructor_id = round_instructor_ids.get(round_id, None)
-			if existing_instructor_id and existing_instructor_id != round_instructor_id:
-				raise ValueError("Differing instructor ID for round {}.".format(round_id))
-			else:
-				round_instructor_ids[round_id] = round_instructor_id
-				referent_entities = initial_event.referent_entities
-				for referent_id, referent_entity in referent_entities:
-					try:
-						coreference_chains = entity_coreference_chains[referent_id]
-					except KeyError:
-						# print("No coreference chains have yet been built for entity {}.".format(referent_id),
-						#	  file=sys.stderr)
-						coreference_chains = CoreferenceChainDatum()
-						entity_coreference_chains[referent_id] = coreference_chains
-					coreference_chains.add(round_id, round_utts)
-		return EntityCoreferenceChainDatum(game_round_utts, entity_coreference_chains, round_instructor_ids)
+	def __repr__(self):
+		return self.__class__.__name__ + str(self.__dict__)
 
 
 class SessionCoreferenceChainDatum(Generic[R]):
@@ -315,6 +261,48 @@ class SessionCoreferenceChainDatum(Generic[R]):
 		return result
 
 
+class SessionGameRoundUtteranceFactory(object):
+	ROUND_ID_OFFSET = 1
+
+	def __init__(self, token_seq_factory: Callable[[Iterable[str]], Sequence[str]]):
+		self.token_seq_factory = token_seq_factory
+
+	def __call__(self, named_sessions: Iterable[Tuple[str, sd.SessionData]]) -> Dict[
+		str, GameRoundUtterances]:
+		result = {}
+		for dyad_id, session in named_sessions:
+			print("Processing session \"{}\".".format(dyad_id), file=sys.stderr)
+			entity_coreference_chains = self.__create_game_round_utterances(session)
+			result[dyad_id] = entity_coreference_chains
+
+		return result
+
+	def __create_game_round_utterances(self, session: sd.SessionData) -> GameRoundUtterances:
+		event_data = game_events.read_events(session)
+		source_participant_ids = event_data.source_participant_ids
+		seg_utt_factory = utterances.SegmentUtteranceFactory(self.token_seq_factory,
+															 lambda source_id: source_participant_ids[source_id])
+		game_rounds = game_events.create_game_rounds(event_data.events)
+		segments = utterances.read_segments(session.utts)
+		utt_times = utterances.UtteranceTimes(seg_utt_factory(segments))
+		game_round_utts = tuple((game_round, tuple(utt_iter)) for (game_round, utt_iter) in
+								referent_token_type_counts.zip_game_round_utterances(game_rounds, utt_times))
+		event_participant_id_factory = game_events.EventParticipantIdFactory(event_data.initial_instructor_id)
+
+		round_instructor_ids = {}
+		enumerated_game_round_utts = enumerate(game_round_utts, start=self.ROUND_ID_OFFSET)
+		for round_id, round_utts in enumerated_game_round_utts:
+			game_round, round_utts = round_utts
+			initial_event = game_round.initial_event
+			round_instructor_id = event_participant_id_factory(initial_event)
+			existing_instructor_id = round_instructor_ids.get(round_id, None)
+			if existing_instructor_id and existing_instructor_id != round_instructor_id:
+				raise ValueError("Differing instructor ID for round {}.".format(round_id))
+			else:
+				round_instructor_ids[round_id] = round_instructor_id
+		return GameRoundUtterances(game_round_utts, round_instructor_ids)
+
+
 def token_type_overlap_ratio(token_types: FrozenSet[str], preceding_token_types: FrozenSet[str]) -> Decimal:
 	unified_token_type_count = len(token_types.union(
 		preceding_token_types))
@@ -351,9 +339,9 @@ def __main(args):
 
 	named_sessions = sd.walk_session_data(args.inpaths)
 	outfile = sys.stdout
-	referent_token_counter = ParticipantCoreferenceChainTokenCounter(
+	session_game_round_utt_factory = SessionGameRoundUtteranceFactory(
 		utterances.TokenSequenceFactory())
-	session_entity_counts = referent_token_counter(named_sessions)
+	session_entity_counts = session_game_round_utt_factory(named_sessions)
 	printer = CoreferenceChainDataPrinter(token_groups)
 	printer(session_entity_counts.items(), outfile)
 
