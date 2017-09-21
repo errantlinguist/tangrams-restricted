@@ -176,6 +176,10 @@ class GameRound(object):
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
 
+	def __eq__(self, other):
+		return (isinstance(other, type(self))
+				and self.__key == other.__key)
+
 	def event(self, event_id: int) -> Event:
 		return self.events[event_id - _EVENT_ID_OFFSET]
 
@@ -185,6 +189,10 @@ class GameRound(object):
 	@property
 	def initial_event(self) -> Event:
 		return next(iter(self.events))
+
+	@property
+	def __key(self):
+		return self.start_time, self.end_time, self.events
 
 
 def create_game_rounds(events: Iterable[Event]) -> Iterator[GameRound]:
