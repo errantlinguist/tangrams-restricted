@@ -196,7 +196,7 @@ def read_events(session: session_data.SessionData) -> EventData:
 
 	event_count = int(events_metadata[session_data.MetadataColumn.EVENT_COUNT.value])
 	entity_count = int(events_metadata[session_data.MetadataColumn.ENTITY_COUNT.value])
-	event_entity_descs = read_event_entity_desc_matrix(session.events, event_count, entity_count)
+	event_entity_descs = __read_event_entity_desc_matrix(session.events, event_count, entity_count)
 	events = (Event(entity_descs) for entity_descs in event_entity_descs)
 
 	source_participant_id_json_str = events_metadata[session_data.MetadataColumn.SOURCE_PARTICIPANT_IDS.value]
@@ -207,7 +207,7 @@ def read_events(session: session_data.SessionData) -> EventData:
 	return EventData(events, interned_source_participant_ids, initial_instructor_id)
 
 
-def read_event_entity_desc_matrix(infile_path: str, event_count: int, entity_count: int) -> Tuple[
+def __read_event_entity_desc_matrix(infile_path: str, event_count: int, entity_count: int) -> Tuple[
 	List[EntityData], ...]:
 	result = tuple([None] * entity_count for _ in range(event_count))
 
