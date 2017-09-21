@@ -124,6 +124,8 @@ class LanguageMetrics(object):
 
 
 class ParticipantCoreferenceChainTokenCounter(object):
+	ROUND_ID_OFFSET = 1
+
 	def __init__(self, token_seq_factory: Callable[[Iterable[str]], Sequence[str]], filtering_token_counter: Callable[
 		[Sequence[utterances.Utterance]], re_token_type_counts.FilteredTokenCountDatum]):
 		self.token_seq_factory = token_seq_factory
@@ -145,7 +147,7 @@ class ParticipantCoreferenceChainTokenCounter(object):
 			game_round_utts = referent_token_type_counts.zip_game_round_utterances(game_rounds, utt_times)
 
 			entity_referent_counts = {}
-			enumerated_game_round_utts = enumerate(game_round_utts, start=1)
+			enumerated_game_round_utts = enumerate(game_round_utts, start=self.ROUND_ID_OFFSET)
 			game_round_utts = next(enumerated_game_round_utts)
 			event_participant_id_factory = game_events.EventParticipantIdFactory(event_data.initial_instructor_id)
 			self.__put_entity_counts(game_round_utts, source_participant_ids, entity_referent_counts,
@@ -311,7 +313,8 @@ class TokenTypeDataPrinter(object):
 			# Counts for each round, ordered by their respective round IDs
 			ordered_round_counts = sorted(entity_token_counts.round_counts, key=lambda item: item[0])
 			# Round IDs and their corresponding counts, enumerated by their coreference chain sequence number
-			enumerated_ordered_round_counts = enumerate(ordered_round_counts, start=1)
+			enumerated_ordered_round_counts = enumerate(ordered_round_counts,
+														start=ParticipantCoreferenceChainTokenCounter.ROUND_ID_OFFSET)
 			sequence_order, (round_id, round_token_counts) = next(enumerated_ordered_round_counts)
 			initial_metrics = self.__create_initial_metrics(dyad_id, entity_id, sequence_order, round_id,
 															round_token_counts)
