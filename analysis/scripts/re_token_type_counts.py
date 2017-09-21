@@ -18,6 +18,10 @@ T = TypeVar('T')
 
 
 class FilteredTokenCountDatum(object):
+	"""
+	This class keeps counts of all tokens in a set of utterances in addition to counts for "relevant" tokens out of the set of all tokens.
+	"""
+
 	def __init__(self, all_tokens: "TokenCountDatum" = None, relevant_tokens: "TokenCountDatum" = None, utts=None):
 		self.all_tokens = TokenCountDatum() if all_tokens is None else all_tokens
 		self.relevant_tokens = TokenCountDatum() if relevant_tokens is None else relevant_tokens
@@ -96,6 +100,11 @@ class RoundTokenCountDatum(object):
 
 
 class SessionTokenCountDatum(object):
+	"""
+	This class represents metrics for an entire game session, including all of the rounds thereof.
+	"""
+	___ROUND_ID_OFFSET = 1
+
 	@staticmethod
 	def __add_round(round_datum: FilteredTokenCountDatum,
 					total_token_counts: FilteredTokenCountDatum) -> RoundTokenCountDatum:
@@ -105,12 +114,14 @@ class SessionTokenCountDatum(object):
 
 	@staticmethod
 	def __round_id_to_idx(round_id: int):
-		return round_id - 1
+		return round_id - SessionTokenCountDatum.___ROUND_ID_OFFSET
 
 	def __init__(self, round_token_counts: Iterable[FilteredTokenCountDatum]):
 		self.total_data = FilteredTokenCountDatum()
+		"""Metrics for all rounds in the game."""
 		self.round_data = tuple(
 			self.__add_round(token_counts, self.total_data) for token_counts in round_token_counts)
+		"""Metrics for each individual round."""
 
 	@property
 	def __key(self):
@@ -134,7 +145,7 @@ class SessionTokenCountDatum(object):
 		return len(self.round_data)
 
 	def round_counts_by_round_id(self):
-		return enumerate(self.round_data, start=1)
+		return enumerate(self.round_data, start=self.___ROUND_ID_OFFSET)
 
 
 class SessionRoundTokenCounter(object):
@@ -207,8 +218,13 @@ class TokenTypeDataPrinter(object):
 
 
 class TokenCountDatum(object):
+	"""
+	This class represents counts of individual tokens observed.
+	"""
+
 	def __init__(self, token_counts: Dict[str, int] = None):
 		self.token_counts = Counter() if token_counts is None else token_counts
+		"""Counts for each token type (i.e. unique word) observed."""
 
 	@property
 	def __key(self):
