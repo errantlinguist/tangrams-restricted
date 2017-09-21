@@ -3,7 +3,7 @@
 import argparse
 import re
 import sys
-from collections import defaultdict, deque
+from collections import defaultdict
 from decimal import Decimal
 from typing import Callable, Generic, Iterable, Iterator, Sequence, Tuple, TypeVar
 
@@ -23,7 +23,7 @@ T = TypeVar('T')
 
 
 class FeatureSpacePartitioner(Generic[T]):
-	def __init__(self,  partition_count: int,
+	def __init__(self, partition_count: int,
 				 min_value: T,
 				 max_value: T, default_offset: T,
 				 game_round_feature_value_extractor: Callable[[game_events.GameRound], Iterable[T]]):
@@ -96,6 +96,7 @@ class FeatureSpacePartitioner(Generic[T]):
 		if last_value > max_value:
 			raise ValueError("Last value is {} but maximum allowed is {}.".format(last_value, max_value))
 
+
 class ValuePartition(object):
 	def __init__(self, partition_min, partition_max):
 		self.partition_min = partition_min
@@ -103,6 +104,7 @@ class ValuePartition(object):
 
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
+
 
 class ValuePartitioner(Generic[T]):
 	def __init__(self, partition_count: int,
