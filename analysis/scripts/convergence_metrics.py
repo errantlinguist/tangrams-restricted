@@ -51,8 +51,8 @@ class Coreference(object):
 	def add_to_chain(tokens: FrozenSet[str], round_id: int,
 					 coref_chain: MutableSequence["Coreference"]) -> "Coreference":
 		if coref_chain:
-			preceding_entity_coref = coref_chain[len(coref_chain) - 1]
-			result = Coreference(tokens, round_id, preceding_entity_coref)
+			antecedent = coref_chain[len(coref_chain) - 1]
+			result = Coreference(tokens, round_id, antecedent)
 		else:
 			result = Coreference(tokens, round_id)
 		coref_chain.append(result)
