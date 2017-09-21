@@ -183,7 +183,7 @@ class ParticipantCoreferenceChainTokenCounter(object):
 
 class ParticipantCoreferenceChainTokenCounts(object):
 	"""
-	This class represents metrics for referring to each entity over the course of a given session.
+	This class represents metrics for referring to each entity over the course of a given game.
 	"""
 
 	def __init__(self, entity_referent_counts: Dict[int, "ReferentCounts"], source_participant_ids: Dict[str, str]):
@@ -198,7 +198,7 @@ class ParticipantCoreferenceChainTokenCounts(object):
 
 class ReferentCounts(object):
 	"""
-	This class represents metrics for referring to a particular unique entity throughout an entire session, e.g. the entity with the ID "1".
+	This class represents metrics for referring to a particular unique entity throughout an entire game, e.g. the entity with the ID "1".
 	"""
 
 	def __init__(self):
