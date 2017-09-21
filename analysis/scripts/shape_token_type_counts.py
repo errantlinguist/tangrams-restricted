@@ -45,7 +45,7 @@ class ShapeTokenCounter(object):
 		result = defaultdict(list)
 		event_data = game_events.read_events(session)
 		source_participant_ids = event_data.source_participant_ids
-		game_rounds = iter(game_events.create_game_rounds(event_data.events))
+		game_rounds = game_events.create_game_rounds(event_data.events)
 		segments = utterances.read_segments(session.utts)
 		seg_utt_factory = utterances.SegmentUtteranceFactory(self.token_seq_factory,
 															 lambda source_id: source_participant_ids[source_id])

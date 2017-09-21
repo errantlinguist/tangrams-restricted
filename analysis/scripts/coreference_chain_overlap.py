@@ -147,7 +147,7 @@ class ParticipantCoreferenceChainTokenCounter(object):
 		source_participant_ids = event_data.source_participant_ids
 		seg_utt_factory = utterances.SegmentUtteranceFactory(self.token_seq_factory,
 															 lambda source_id: source_participant_ids[source_id])
-		game_rounds = iter(game_events.create_game_rounds(event_data.events))
+		game_rounds = game_events.create_game_rounds(event_data.events)
 		segments = utterances.read_segments(session.utts)
 		utt_times = utterances.UtteranceTimes(seg_utt_factory(segments))
 		game_round_utts = referent_token_type_counts.zip_game_round_utterances(game_rounds, utt_times)
