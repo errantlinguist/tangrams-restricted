@@ -346,9 +346,5 @@ def __main(args):
 	printer(session_entity_counts.items(), outfile)
 
 
-# printer = coreference_chain_overlap.TokenTypeDataPrinter(args.strict)
-# printer(session_entity_counts.items(), outfile)
-
-
 if __name__ == "__main__":
 	__main(__create_argparser().parse_args())
