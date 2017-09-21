@@ -50,7 +50,8 @@ class CoreferenceChainTokenCounter(object):
 		source_participant_ids = event_data.source_participant_ids
 		game_rounds = iter(game_events.create_game_rounds(event_data.events))
 		segments = utterances.read_segments(session.utts)
-		seg_utt_factory = utterances.SegmentUtteranceFactory(self.token_seq_factory, lambda source_id : source_participant_ids[source_id])
+		seg_utt_factory = utterances.SegmentUtteranceFactory(self.token_seq_factory,
+															 lambda source_id: source_participant_ids[source_id])
 		utt_times = utterances.UtteranceTimes(seg_utt_factory(segments))
 		game_round_utts = zip_game_round_utterances(game_rounds, utt_times)
 		for (round_id, (game_round, utts)) in enumerate(game_round_utts, start=1):
@@ -78,7 +79,7 @@ class CoreferenceChainTokenCountDatum(object):
 
 	def __init__(self, round_token_counts: Iterable[Tuple[Any, re_token_type_counts.FilteredTokenCountDatum]]):
 		"""
-		:param round_token_counts: An iterable object returning pairs of round IDs and their corresonding :class:`re_token_type_counts.FilteredTokenTypeDatum` instances representing token counts for each round in the game.
+		:param round_token_counts: An iterable object returning pairs of round IDs and their corresponding :class:`re_token_type_counts.FilteredTokenTypeDatum` instances representing token counts for each round in the game.
 		:type round_token_counts: Iterable[Tuple[Any, re_token_type_counts.FilteredTokenTypeDatum]]
 		"""
 		self.total_data = re_token_type_counts.FilteredTokenCountDatum()
@@ -89,9 +90,20 @@ class CoreferenceChainTokenCountDatum(object):
 		"""A tuple of pairs of round IDs with their corresponding :class:`re_token_type_counts.RoundTokenTypeDatum` instances, each of which representing token counts for 
 		a given round."""
 
+	@property
+	def __key(self):
+		return self.total_data, self.round_data
+
+	def __eq__(self, other):
+		return (self is other or (isinstance(other, type(self))
+								  and self.__key == other.__key))
+
 	def __getitem__(self, round_id: Any):
 		return next(
 			game_round for (game_round_id, game_round) in self.round_counts_by_round_id() if game_round_id == round_id)
+
+	def __ne__(self, other):
+		return not (self == other)
 
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
