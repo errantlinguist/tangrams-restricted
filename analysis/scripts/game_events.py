@@ -224,7 +224,8 @@ def __read_event_entity_desc_matrix(infile_path: str, event_count: int, entity_c
 			entity_id = row[entity_id_col_idx]
 			row[entity_id_col_idx] = entity_id
 			entity_idx = entity_id - _ENTITY_ID_OFFSET
-			if entity_descs[entity_idx]:
+			existing_entity_desc = entity_descs[entity_idx]
+			if existing_entity_desc:
 				raise ValueError("Duplicate rows for event {}, entity {}.", event_id, entity_id)
 			else:
 				entity_descs[entity_idx] = EntityData(col_idxs, row)
