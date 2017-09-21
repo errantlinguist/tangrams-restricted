@@ -102,7 +102,7 @@ class Coreference(object):
 
 class CoreferenceChainDataPrinter(object):
 	LANG_COL_NAMES = (
-		"SPEAKER", "COREF_CHAIN_SEQ_NO_SELF", "UTTERANCE", "ALL_TOKENS", "OVERLAP_REF_SELF", "SHAPE_TOKENS")
+		"SPEAKER", "UTTERANCE", "ALL_TOKENS", "COREF_CHAIN_SEQ_SELF_ENTITY", "OVERLAP_ENTITY_SELF", "SHAPE_TOKENS")
 
 	def __init__(self, token_groups: Mapping[str, str]):
 		self.token_groups = token_groups
@@ -151,11 +151,14 @@ class CoreferenceChainDataPrinter(object):
 			for utt in round_utts:
 				participant_id = utt.speaker_id
 				utt_repr = utterances.token_seq_repr(utt.content)
-				shape_tokens = _EMPTY_SET
+
 				group_tokens = tg.create_group_token_dict(utt.content, self.token_groups)
 				all_grouped_tokens = frozenset(token for tokens in group_tokens.values() for token in tokens)
-				coref_seq_no_repr = NULL_VALUE_REPR
+				entity_coref_seq_no_repr = NULL_VALUE_REPR
 				entity_token_type_overlap_self_repr = NULL_VALUE_REPR
+
+				shape_tokens = _EMPTY_SET
+				shape_token_type_overlap_self_repr = NULL_VALUE_REPR
 				# If there are any semantically-relevant tokens at all, add a link in the entity coreference chain
 				if all_grouped_tokens:
 					participant_entity_coref, session_entity_coref = self.__add_entity_corefs(participant_entity_corefs,
@@ -176,13 +179,13 @@ class CoreferenceChainDataPrinter(object):
 					else:
 						print("No tokens for group \"{}\"; Skipping.".format(shape_token_group_name), file=sys.stderr)
 
-					coref_seq_no_repr = participant_entity_coref.seq_number
+					entity_coref_seq_no_repr = participant_entity_coref.seq_number
 					entity_token_type_overlap_self = participant_entity_coref.token_type_overlap_with_self()
 					entity_token_type_overlap_self_repr = NULL_VALUE_REPR if entity_token_type_overlap_self is None else str(
 						entity_token_type_overlap_self)
 				lang_row_cells = (
-					participant_id, coref_seq_no_repr, utt_repr,
-					','.join(sorted(all_grouped_tokens)), entity_token_type_overlap_self_repr,
+					participant_id, utt_repr,
+					','.join(sorted(all_grouped_tokens)), entity_coref_seq_no_repr, entity_token_type_overlap_self_repr,
 					','.join(sorted(shape_tokens)))
 				print(COL_DELIM.join(str(cell) for cell in itertools.chain(round_metrics.row_cells(), lang_row_cells)),
 					  file=outfile)
@@ -205,7 +208,7 @@ class EntityCoreferenceChainDatum(object):
 
 class GameRoundMetrics(object):
 	COL_NAMES = (
-		"DYAD", "ENTITY", "SHAPE", "HUE", "ROUND", "INSTRUCTOR", "GAME_SCORE",
+		"DYAD", "ROUND", "ENTITY", "SHAPE", "HUE", "INSTRUCTOR", "GAME_SCORE",
 		"ROUND_START_TIME",
 		"TIME_SCORE_RATIO",
 		"SCORE_ROUND_RATIO")
@@ -230,8 +233,8 @@ class GameRoundMetrics(object):
 
 	def row_cells(self) -> Tuple[Any, ...]:
 		return (
-			self.dyad_id, self.entity_id, self.referent_shape,
-			self.referent_hue, self.round_id,
+			self.dyad_id, self.round_id, self.entity_id, self.referent_shape,
+			self.referent_hue,
 			self.instructor,
 			self.score,
 			self.time,
