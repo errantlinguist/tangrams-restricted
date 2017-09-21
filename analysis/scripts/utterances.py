@@ -35,12 +35,12 @@ class Utterance(object):
 	def __key(self):
 		return self.segment_id, self.speaker_id, self.start_time, self.end_time, self.content
 
-	def __hash__(self):
-		return hash(self.__key)
-
 	def __eq__(self, other):
 		return (isinstance(other, type(self))
 				and self.__key == other.__key)
+
+	def __hash__(self):
+		return hash(self.__key)
 
 	def __ne__(self, other):
 		return not (self == other)
