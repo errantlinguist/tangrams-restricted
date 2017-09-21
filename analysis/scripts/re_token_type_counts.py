@@ -18,10 +18,21 @@ T = TypeVar('T')
 
 
 class FilteredTokenCountDatum(object):
-	def __init__(self, all_tokens: "TokenCountDatum" = None, relevant_tokens: "TokenCountDatum" = None, utts = None):
+	def __init__(self, all_tokens: "TokenCountDatum" = None, relevant_tokens: "TokenCountDatum" = None, utts=None):
 		self.all_tokens = TokenCountDatum() if all_tokens is None else all_tokens
 		self.relevant_tokens = TokenCountDatum() if relevant_tokens is None else relevant_tokens
 		self.utts = [] if utts is None else utts
+
+	@property
+	def __key(self):
+		return self.all_tokens, self.relevant_tokens, self.utts
+
+	def __eq__(self, other):
+		return (self is other or (isinstance(other, type(self))
+								  and self.__key == other.__key))
+
+	def __ne__(self, other):
+		return not (self == other)
 
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
@@ -69,6 +80,17 @@ class RoundTokenCountDatum(object):
 		self.cumulative_data = cumulative_data
 		"""Cumulative counts for the entire game up to and including the individual round this object represents."""
 
+	@property
+	def __key(self):
+		return self.round_data, self.cumulative_data
+
+	def __eq__(self, other):
+		return (self is other or (isinstance(other, type(self))
+								  and self.__key == other.__key))
+
+	def __ne__(self, other):
+		return not (self == other)
+
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
 
@@ -90,8 +112,19 @@ class SessionTokenCountDatum(object):
 		self.round_data = tuple(
 			self.__add_round(token_counts, self.total_data) for token_counts in round_token_counts)
 
+	@property
+	def __key(self):
+		return self.total_data, self.round_data
+
+	def __eq__(self, other):
+		return (self is other or (isinstance(other, type(self))
+								  and self.__key == other.__key))
+
 	def __getitem__(self, round_id: int):
 		return self.round_data[self.__round_id_to_idx(round_id)]
+
+	def __ne__(self, other):
+		return not (self == other)
 
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
@@ -176,6 +209,17 @@ class TokenTypeDataPrinter(object):
 class TokenCountDatum(object):
 	def __init__(self, token_counts: Dict[str, int] = None):
 		self.token_counts = Counter() if token_counts is None else token_counts
+
+	@property
+	def __key(self):
+		return self.token_counts
+
+	def __eq__(self, other):
+		return (self is other or (isinstance(other, type(self))
+								  and self.__key == other.__key))
+
+	def __ne__(self, other):
+		return not (self == other)
 
 	@property
 	def token_types(self):
