@@ -4,7 +4,7 @@ import json
 import sys
 from collections import defaultdict
 from enum import Enum, unique
-from typing import Any, Dict, Iterable, Iterator, List, MutableSequence, Sequence, Tuple, Union
+from typing import Any, Dict, Iterable, Iterator, MutableSequence, Sequence, Tuple, Union
 
 import session_data
 
@@ -15,16 +15,19 @@ _EVENT_ID_OFFSET = 1
 
 
 class EntityData(object):
-	def __init__(self, col_idxs: Dict[str, int], row: Sequence[Any]):
-		self.__col_idxs = col_idxs
-		self.__row = row
+	def __init__(self, col_idxs: Dict[str, int] = None, row: Sequence[Any] = None):
+		self.col_idxs = col_idxs
+		self.row = row
+
+	def __bool__(self):
+		return bool(self.col_idxs or self.row)
 
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
 
 	def attr(self, attr_name: str) -> Any:
-		attr_value_idx = self.__col_idxs[attr_name]
-		return self.__row[attr_value_idx]
+		attr_value_idx = self.col_idxs[attr_name]
+		return self.row[attr_value_idx]
 
 	@property
 	def hue(self) -> session_data.DECIMAL_VALUE_TYPE:
@@ -208,8 +211,8 @@ def read_events(session: session_data.SessionData) -> EventData:
 
 
 def __read_event_entity_desc_matrix(infile_path: str, event_count: int, entity_count: int) -> Tuple[
-	List[EntityData], ...]:
-	result = tuple([None] * entity_count for _ in range(event_count))
+	Tuple[EntityData, ...], ...]:
+	result = tuple(tuple(EntityData() for _ in range(entity_count)) for _ in range(event_count))
 
 	with open(infile_path, 'r', encoding=session_data.ENCODING) as infile:
 		rows = csv.reader(infile, dialect="excel-tab")
@@ -222,13 +225,12 @@ def __read_event_entity_desc_matrix(infile_path: str, event_count: int, entity_c
 			event_id = row[event_id_col_idx]
 			entity_descs = result[event_id - _EVENT_ID_OFFSET]
 			entity_id = row[entity_id_col_idx]
-			row[entity_id_col_idx] = entity_id
-			entity_idx = entity_id - _ENTITY_ID_OFFSET
-			existing_entity_desc = entity_descs[entity_idx]
+			existing_entity_desc = entity_descs[entity_id - _ENTITY_ID_OFFSET]
 			if existing_entity_desc:
-				raise ValueError("Duplicate rows for event {}, entity {}.", event_id, entity_id)
+				raise ValueError("Duplicate rows for event {}, entity {}.".format(event_id, entity_id))
 			else:
-				entity_descs[entity_idx] = EntityData(col_idxs, row)
+				existing_entity_desc.col_idxs = col_idxs
+				existing_entity_desc.row = row
 
 	return result
 
