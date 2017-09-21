@@ -33,23 +33,6 @@ NULL_TOKEN_TYPE_OVERLAP_VALUE = _DECIMAL_ZERO
 NULL_TOKEN_LENGTH_DROP_VALUE = _DECIMAL_INFINITY
 
 
-class EventParticipantIdFactory(object):
-	"""
-		This is a hack to map the non-anonymized usernames in the event logs to anonymized utterance speaker IDs.
-		TODO: Remove this after anonymizing all data
-	"""
-
-	def __init__(self, initial_instructor_id: str):
-		self.initial_instructor_id = initial_instructor_id
-
-	def __call__(self, event: game_events.Event):
-		"""
-		:param event: The event to get the participant ID for
-		:return: Either "A" or "B"
-		"""
-		return "A" if event.submitter == self.initial_instructor_id else "B"
-
-
 class GameRoundMetrics(object):
 	COL_NAMES = (
 		"DYAD", "ENTITY", "SHAPE", "HUE", "SEQUENCE_ORDER", "ROUND", "INSTRUCTOR", "GAME_SCORE", "ROUND_START_TIME",
@@ -85,11 +68,11 @@ class GameRoundMetrics(object):
 
 	def row_cells(self):
 		return (
-		self.dyad_id, self.entity_id, self.referent_shape, self.referent_hue, self.sequence_order, self.round_id,
-		self.instructor,
-		self.score,
-		self.time,
-		self.time_score_ratio, self.score_round_ratio)
+			self.dyad_id, self.entity_id, self.referent_shape, self.referent_hue, self.sequence_order, self.round_id,
+			self.instructor,
+			self.score,
+			self.time,
+			self.time_score_ratio, self.score_round_ratio)
 
 
 class LanguageMetrics(object):
@@ -162,7 +145,7 @@ class ParticipantCoreferenceChainTokenCounter(object):
 			entity_referent_counts = {}
 			enumerated_game_round_utts = enumerate(game_round_utts, start=1)
 			game_round_utts = next(enumerated_game_round_utts)
-			event_participant_id_factory = EventParticipantIdFactory(event_data.initial_instructor_id)
+			event_participant_id_factory = game_events.EventParticipantIdFactory(event_data.initial_instructor_id)
 			self.__put_entity_counts(game_round_utts, source_participant_ids, entity_referent_counts,
 									 event_participant_id_factory)
 			for game_round_utts in enumerated_game_round_utts:
