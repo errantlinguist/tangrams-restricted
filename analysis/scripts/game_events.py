@@ -211,6 +211,10 @@ class GameRound(object):
 		return next(iter(self.events))
 
 	@property
+	def round_id(self):
+	    return self.initial_event.round_id
+
+	@property
 	def __key(self):
 		return self.start_time, self.end_time, self.events
 
