@@ -90,6 +90,17 @@ class UtteranceTimes(object):
 		self.__ascending_start_times = SortedList(self.utts_by_start_time.keys())
 		self.__ascending_start_times.sort()
 
+	@property
+	def __key(self):
+		return self.utts_by_start_time
+
+	def __eq__(self, other):
+		return (isinstance(other, type(self))
+				and self.__key == other.__key)
+
+	def __ne__(self, other):
+		return not (self == other)
+
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
 
