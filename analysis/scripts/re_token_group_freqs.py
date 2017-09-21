@@ -16,15 +16,28 @@ COL_DELIM = '\t'
 DYAD_ID_COL_NAME = "DYAD"
 TOTAL_RESULTS_ROW_NAME = "TOTAL"
 
+TokenCountDict = Dict[str, int]
+
 _ZERO_DECIMAL = Decimal('0.000')
 
 __DECIMAL_REPR_ROUNDING_EXP = Decimal('1.000')
 
 
 class Distribution(object):
-	def __init__(self, counts):
+	def __init__(self, counts: TokenCountDict):
 		self.counts = counts
 		self.__freqs = dict(group_freqs(counts))
+
+	@property
+	def __key(self):
+		return self.counts
+
+	def __eq__(self, other):
+		return (self is other or (isinstance(other, type(self))
+								  and self.__key == other.__key))
+
+	def __ne__(self, other):
+		return not (self == other)
 
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
@@ -69,7 +82,7 @@ class OptimalSessionPartitioner(object):
 
 
 class PartitionDistributions(object):
-	def __init__(self, first_counts, next_counts):
+	def __init__(self, first_counts: TokenCountDict, next_counts: TokenCountDict):
 		self.first = Distribution(first_counts)
 		self.next = Distribution(next_counts)
 
@@ -80,7 +93,7 @@ class PartitionDistributions(object):
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
 
-	def group_freq_differences(self):
+	def group_freq_differences(self) -> Iterator[str, int]:
 		for group in self.total.keys():
 			first_freq = self.first.freq(group)
 			next_freq = self.next.freq(group)
@@ -109,7 +122,7 @@ class PartitionedSessionGroupDistributionCollector(object):
 
 	def __count_partitioned_session_token_groups(self, session: session_data.SessionData,
 												 partition_round_count: int) -> Tuple[
-		Dict[str, int], Dict[str, int]]:
+		TokenCountDict, TokenCountDict]:
 		round_start_end_times = tuple(session.read_round_start_end_times())
 		round_count = len(round_start_end_times)
 		print("Read {} game round(s).".format(round_count), file=sys.stderr)
@@ -141,7 +154,7 @@ class RoundTokenGroupCounter(object):
 		self.token_groups = token_groups
 		self.utt_times = utt_times
 
-	def __call__(self, *start_end_times: Tuple[float, float]) -> Dict[str, int]:
+	def __call__(self, *start_end_times: Tuple[float, float]) -> TokenCountDict:
 		result = Counter()
 		for start_end_time in start_end_times:
 			round_utts = self.utt_times.get(start_end_time[0], start_end_time[1])
@@ -169,7 +182,7 @@ class WholeSessionGroupDistributionCollector(object):
 
 		return session_group_dists, Distribution(total_group_counts)
 
-	def __count_session_token_groups(self, session: session_data.SessionData) -> Dict[str, int]:
+	def __count_session_token_groups(self, session: session_data.SessionData) -> TokenCountDict:
 		round_start_end_times = tuple(session.read_round_start_end_times())
 		round_count = len(round_start_end_times)
 		print("Read {} game round(s).".format(round_count), file=sys.stderr)
@@ -180,7 +193,7 @@ class WholeSessionGroupDistributionCollector(object):
 		return token_group_counter(*round_start_end_times)
 
 
-def group_freqs(group_counts: Dict[str, int]) -> Iterator[Tuple[str, Decimal]]:
+def group_freqs(group_counts: TokenCountDict) -> Iterator[Tuple[str, Decimal]]:
 	decimal_counts = tuple((group, Decimal(count)) for group, count in group_counts.items())
 	total = sum(count for (_, count) in decimal_counts)
 	return ((group, count / total) for group, count in decimal_counts)
