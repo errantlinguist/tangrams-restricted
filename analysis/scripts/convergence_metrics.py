@@ -209,16 +209,6 @@ class GameRoundMetrics(object):
 		"TIME_SCORE_RATIO",
 		"SCORE_ROUND_RATIO")
 
-	@staticmethod
-	def __create_referent_entity_hue_set_repr(event: game_events.Event) -> str:
-		hues = frozenset(referent_entity.hue for _, referent_entity in event.referent_entities)
-		return ','.join(str(value) for value in sorted(hues))
-
-	@staticmethod
-	def __create_referent_entity_shape_set_repr(event: game_events.Event) -> str:
-		shapes = frozenset(referent_entity.shape for _, referent_entity in event.referent_entities)
-		return ','.join(sorted(shapes))
-
 	def __init__(self, dyad_id: str, game_round: game_events.GameRound, instructor: str):
 		self.dyad_id = dyad_id
 		initial_event = game_round.initial_event
