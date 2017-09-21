@@ -23,8 +23,8 @@ class EntityData(object):
 		return bool(self.col_idxs or self.row)
 
 	def __eq__(self, other):
-		return (isinstance(other, type(self))
-				and self.__key == other.__key)
+		return (self is other or (isinstance(other, type(self))
+								  and self.__key == other.__key))
 
 	def __ne__(self, other):
 		return not (self == other)
@@ -77,8 +77,8 @@ class Event(object):
 		self.attrs = attrs
 
 	def __eq__(self, other):
-		return (isinstance(other, type(self))
-				and self.__key == other.__key)
+		return (self is other or (isinstance(other, type(self))
+								  and self.__key == other.__key))
 
 	def __ne__(self, other):
 		return not (self == other)
@@ -148,8 +148,8 @@ class EventData(object):
 		self.initial_instructor_id = initial_instructor_id
 
 	def __eq__(self, other):
-		return (isinstance(other, type(self))
-				and self.__key == other.__key)
+		return (self is other or (isinstance(other, type(self))
+								  and self.__key == other.__key))
 
 	def __ne__(self, other):
 		return not (self == other)
@@ -194,8 +194,8 @@ class GameRound(object):
 		return self.__class__.__name__ + str(self.__dict__)
 
 	def __eq__(self, other):
-		return (isinstance(other, type(self))
-				and self.__key == other.__key)
+		return (self is other or (isinstance(other, type(self))
+								  and self.__key == other.__key))
 
 	def __ne__(self, other):
 		return not (self == other)

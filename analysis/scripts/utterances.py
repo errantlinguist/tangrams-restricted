@@ -36,8 +36,8 @@ class Utterance(object):
 		return self.segment_id, self.speaker_id, self.start_time, self.end_time, self.content
 
 	def __eq__(self, other):
-		return (isinstance(other, type(self))
-				and self.__key == other.__key)
+		return (self is other or (isinstance(other, type(self))
+								  and self.__key == other.__key))
 
 	def __hash__(self):
 		return hash(self.__key)
@@ -95,8 +95,8 @@ class UtteranceTimes(object):
 		return self.utts_by_start_time
 
 	def __eq__(self, other):
-		return (isinstance(other, type(self))
-				and self.__key == other.__key)
+		return (self is other or (isinstance(other, type(self))
+								  and self.__key == other.__key))
 
 	def __ne__(self, other):
 		return not (self == other)

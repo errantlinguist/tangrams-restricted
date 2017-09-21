@@ -86,8 +86,8 @@ class SessionData(object):
 		self.utts = os.path.join(session_file_prefix, SessionDatum.UTTS.canonical_filename)
 
 	def __eq__(self, other):
-		return (isinstance(other, type(self))
-				and self.__key == other.__key)
+		return (self is other or (isinstance(other, type(self))
+								  and self.__key == other.__key))
 
 	def __hash__(self):
 		return hash(self.__key)
