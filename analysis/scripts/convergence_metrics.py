@@ -145,6 +145,7 @@ class CoreferenceChainDataPrinter(object):
 			game_round, round_utts = game_round_utts
 			round_instructor_id = session_data.round_instructor_ids[round_id]
 			round_metrics = GameRoundMetrics(dyad_id, game_round, round_instructor_id)
+			# NOTE: Only gets first referent entity (i.e. doesn't work if multiple entities are referents
 			referent_id, referent_entity = next(game_round.initial_event.referent_entities)
 
 			for utt in round_utts:
