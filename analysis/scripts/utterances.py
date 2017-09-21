@@ -163,7 +163,6 @@ def create_speaker_dict(utts: Iterable[Utterance]) -> Dict[str, List[Utterance]]
 
 def dialogue_utt_str_repr(utts: Iterable[Utterance]) -> str:
 	repr_list = []
-
 	grouped_utts = group_utts_by_speaker_id(utts)
 	for utt_group in grouped_utts:
 		speaker_repr = __speaker_id_repr(utt_group[0].speaker_id)
