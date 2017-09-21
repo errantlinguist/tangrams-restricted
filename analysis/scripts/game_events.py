@@ -1,11 +1,15 @@
 import csv
+import decimal
 import json
 import sys
 from collections import defaultdict
 from enum import Enum, unique
-from typing import Dict, Iterable, Iterator, List, Sequence, Tuple, Union
+from typing import Any, Dict, Iterable, Iterator, List, MutableSequence, Sequence, Tuple, Union
 
 import session_data
+
+_DECIMAL_INFINITY = decimal.Decimal("Infinity")
+_DECIMAL_ONE = decimal.Decimal("1")
 
 
 class EntityData(object):
@@ -49,7 +53,7 @@ class Event(object):
 		TIME = session_data.DataColumn.EVENT_TIME.value
 		SCORE = session_data.DataColumn.SCORE.value
 
-	def __init__(self, entities: Sequence[EntityData], attrs: Dict[Attribute, str] = None):
+	def __init__(self, entities: Sequence[EntityData], attrs: Dict[Attribute, Any] = None):
 		if attrs is None:
 			first_entity_desc = next(iter(entities))
 			attrs = dict((attr, first_entity_desc.attr(attr.value.name)) for attr in Event.Attribute)
@@ -80,7 +84,7 @@ class Event(object):
 	@property
 	def round_id(self):
 		first_entity_desc = next(iter(self.entities))
-		return _entity_round_id(first_entity_desc)
+		return first_entity_desc.attr(GameRound.Attribute.ID.value.name)
 
 	@property
 	def score(self):
@@ -93,6 +97,21 @@ class Event(object):
 	@property
 	def submitter(self):
 		return self.attrs[Event.Attribute.SUBMITTER]
+
+	def score_round_ratio(self) -> decimal.Decimal:
+		try:
+			round_count = self.round_id - 1
+			result = decimal.Decimal(self.score) / decimal.Decimal(round_count)
+		except (decimal.InvalidOperation, ZeroDivisionError):
+			result = _DECIMAL_ONE
+		return result
+
+	def time_score_ratio(self) -> decimal.Decimal:
+		try:
+			result = decimal.Decimal(self.event_time) / decimal.Decimal(self.score)
+		except ZeroDivisionError:
+			result = _DECIMAL_INFINITY
+		return result
 
 
 class EventData(object):
@@ -210,17 +229,13 @@ def read_event_entity_desc_matrix(infile_path: str, event_count: int, entity_cou
 	return result
 
 
-def _entity_round_id(entity_desc: EntityData) -> str:
-	return entity_desc.attr(GameRound.Attribute.ID.value.name)
-
-
-def __transform_row_cell_value(row, col_idxs, data_col: session_data.DataColumn):
+def __transform_row_cell_value(row: MutableSequence[Any], col_idxs: Dict[str, int], data_col: session_data.DataColumn):
 	col_props = data_col.value
 	idx = col_idxs[col_props.name]
 	transformed_val = col_props.value_transformer(row[idx])
 	row[idx] = transformed_val
 
 
-def __transform_row_cell_values(row, col_idxs):
+def __transform_row_cell_values(row: MutableSequence[Any], col_idxs: Dict[str, int]):
 	for data_col in session_data.DataColumn:
 		__transform_row_cell_value(row, col_idxs, data_col)

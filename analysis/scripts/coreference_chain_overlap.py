@@ -60,8 +60,8 @@ class GameRoundMetrics(object):
 		self.referent_hue = self.__create_referent_entity_hue_set_repr(initial_event)
 		self.score = initial_event.score
 		self.time = initial_event.event_time
-		self.time_score_ratio = time_score_ratio(initial_event)
-		self.score_round_ratio = score_round_ratio(initial_event)
+		self.time_score_ratio = initial_event.time_score_ratio()
+		self.score_round_ratio = initial_event.score_round_ratio()
 
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
@@ -369,21 +369,7 @@ def length_drop(current_total_tokens: Decimal, mean_previous_token_count: Decima
 	return (mean_previous_token_count - current_total_tokens) / (mean_previous_token_count + current_total_tokens)
 
 
-def score_round_ratio(event: game_events.Event) -> Decimal:
-	try:
-		round_count = event.round_id - 1
-		result = Decimal(event.score) / Decimal(round_count)
-	except (InvalidOperation, ZeroDivisionError):
-		result = _DECIMAL_ONE
-	return result
 
-
-def time_score_ratio(event: game_events.Event) -> Decimal:
-	try:
-		result = Decimal(event.event_time) / Decimal(event.score)
-	except ZeroDivisionError:
-		result = _DECIMAL_INFINITY
-	return result
 
 
 def token_type_overlap_ratio(overlapping_token_type_count: int, unified_token_type_count: int) -> Decimal:
