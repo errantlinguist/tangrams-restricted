@@ -102,7 +102,7 @@ class Coreference(object):
 
 class CoreferenceChainDataPrinter(object):
 	LANG_COL_NAMES = (
-	"SPEAKER", "COREF_CHAIN_SEQ_NO_SELF", "OVERLAP_REF_SELF", "UTTERANCE", "ALL_TOKENS", "SHAPE_TOKENS")
+		"SPEAKER", "COREF_CHAIN_SEQ_NO_SELF", "UTTERANCE", "ALL_TOKENS", "OVERLAP_REF_SELF", "SHAPE_TOKENS")
 
 	def __init__(self, token_groups: Mapping[str, str]):
 		self.token_groups = token_groups
@@ -181,8 +181,8 @@ class CoreferenceChainDataPrinter(object):
 					entity_token_type_overlap_self_repr = NULL_VALUE_REPR if entity_token_type_overlap_self is None else str(
 						entity_token_type_overlap_self)
 				lang_row_cells = (
-					participant_id, coref_seq_no_repr, entity_token_type_overlap_self_repr, utt_repr,
-					','.join(sorted(all_grouped_tokens)),
+					participant_id, coref_seq_no_repr, utt_repr,
+					','.join(sorted(all_grouped_tokens)), entity_token_type_overlap_self_repr,
 					','.join(sorted(shape_tokens)))
 				print(COL_DELIM.join(str(cell) for cell in itertools.chain(round_metrics.row_cells(), lang_row_cells)),
 					  file=outfile)
