@@ -87,8 +87,8 @@ class UtteranceTimes(object):
 		for utt_list in self.utts_by_start_time.values():
 			utt_list.sort(key=lambda u: u.end_time)
 
-		self.ascending_start_times = SortedList(self.utts_by_start_time.keys())
-		self.ascending_start_times.sort()
+		self.__ascending_start_times = SortedList(self.utts_by_start_time.keys())
+		self.__ascending_start_times.sort()
 
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
@@ -116,17 +116,17 @@ class UtteranceTimes(object):
 		return result
 
 	def __after(self, start_time: float) -> Iterator[Utterance]:
-		utt_start_times = self.ascending_start_times.slice_ge(start_time)
+		utt_start_times = self.__ascending_start_times.slice_ge(start_time)
 		return itertools.chain.from_iterable(
 			self.utts_by_start_time[start_time] for start_time in utt_start_times)
 
 	def __between(self, start_time: float, end_time: float) -> Iterator[Utterance]:
-		utt_start_times = self.ascending_start_times.iter_between(start_time, end_time)
+		utt_start_times = self.__ascending_start_times.iter_between(start_time, end_time)
 		return itertools.chain.from_iterable(
 			self.utts_by_start_time[start_time] for start_time in utt_start_times)
 
 	def __next_after(self, start_time: float) -> Utterance:
-		next_start_time = self.ascending_start_times.find_ge(start_time)
+		next_start_time = self.__ascending_start_times.find_ge(start_time)
 		return self.utts_by_start_time[next_start_time]
 
 
