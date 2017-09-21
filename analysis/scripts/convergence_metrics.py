@@ -48,7 +48,7 @@ class CoreferenceChainDatum(object):
 
 class Coreference(object):
 	@staticmethod
-	def add_to_chain(tokens: Sequence[str], round_id: int,
+	def add_to_chain(tokens: FrozenSet[str], round_id: int,
 					 coref_chain: MutableSequence["Coreference"]) -> "Coreference":
 		if coref_chain:
 			preceding_entity_coref = coref_chain[len(coref_chain) - 1]
@@ -58,7 +58,7 @@ class Coreference(object):
 		coref_chain.append(result)
 		return result
 
-	def __init__(self, tokens: Sequence[str], round_id: int, preceding_coref: "Coreference" = None):
+	def __init__(self, tokens: FrozenSet[str], round_id: int, preceding_coref: "Coreference" = None):
 		self.tokens = tokens
 		self.round_id = round_id
 		self.preceding_coref = preceding_coref
@@ -117,7 +117,7 @@ class CoreferenceChainDataPrinter(object):
 	@staticmethod
 	def __add_entity_corefs(participant_entity_corefs: Mapping[str, Mapping[int, MutableSequence[Coreference]]],
 							session_entity_corefs: Mapping[int, MutableSequence[Coreference]], participant_id: str,
-							referent_id: int, round_id: int, tokens: Sequence[str]) -> Tuple[Coreference, Coreference]:
+							referent_id: int, round_id: int, tokens: FrozenSet[str]) -> Tuple[Coreference, Coreference]:
 		participant_corefs = participant_entity_corefs[participant_id][referent_id]
 		participant_coref = Coreference.add_to_chain(tokens, round_id, participant_corefs)
 		session_corefs = session_entity_corefs[referent_id]
@@ -128,7 +128,7 @@ class CoreferenceChainDataPrinter(object):
 	def __add_shape_corefs(participant_shape_corefs: Mapping[str, Mapping[str, MutableSequence[Coreference]]],
 						   session_shape_corefs: Mapping[str, MutableSequence[Coreference]], participant_id: str,
 						   shape: str,
-						   round_id: int, tokens: Sequence[str]) -> Tuple[Coreference, Coreference]:
+						   round_id: int, tokens: FrozenSet[str]) -> Tuple[Coreference, Coreference]:
 		participant_corefs = participant_shape_corefs[participant_id][shape]
 		participant_coref = Coreference.add_to_chain(tokens, round_id, participant_corefs)
 		session_corefs = session_shape_corefs[shape]
@@ -153,7 +153,7 @@ class CoreferenceChainDataPrinter(object):
 				utt_repr = utterances.token_seq_repr(utt.content)
 				shape_tokens = _EMPTY_SET
 				group_tokens = tg.create_group_token_dict(utt.content, self.token_groups)
-				all_grouped_tokens = tuple(token for tokens in group_tokens.values() for token in tokens)
+				all_grouped_tokens = frozenset(token for tokens in group_tokens.values() for token in tokens)
 				coref_seq_no_repr = NULL_VALUE_REPR
 				entity_token_type_overlap_self_repr = NULL_VALUE_REPR
 				# If there are any semantically-relevant tokens at all, add a link in the entity coreference chain
@@ -182,8 +182,8 @@ class CoreferenceChainDataPrinter(object):
 						entity_token_type_overlap_self)
 				lang_row_cells = (
 					participant_id, coref_seq_no_repr, entity_token_type_overlap_self_repr, utt_repr,
-					','.join(all_grouped_tokens),
-					','.join(shape_tokens))
+					','.join(sorted(all_grouped_tokens)),
+					','.join(sorted(shape_tokens)))
 				print(COL_DELIM.join(str(cell) for cell in itertools.chain(round_metrics.row_cells(), lang_row_cells)),
 					  file=outfile)
 
