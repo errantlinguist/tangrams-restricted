@@ -185,7 +185,7 @@ def dialogue_utt_str_repr(utts: Iterable[Utterance]) -> str:
 	for utt_group in grouped_utts:
 		speaker_repr = __speaker_id_repr(utt_group[0].speaker_id)
 		repr_list.append(speaker_repr)
-		sentence_repr = '"' + ' '.join(__token_seq_repr(utt.content) for utt in utt_group) + '"'
+		sentence_repr = '"' + ' '.join(token_seq_repr(utt.content) for utt in utt_group) + '"'
 		repr_list.append(sentence_repr)
 
 	return ' '.join(repr_list)
@@ -222,19 +222,7 @@ def read_segments(infile_path: str) -> Iterator[Element]:
 	return doc_tree.iterfind(".//hat:segment", ANNOTATION_NAMESPACES)
 
 
-def __capitalize_first_char(string: str) -> str:
-	if len(string) < 2:
-		return string.upper()
-	else:
-		first_char = string[0]
-		return first_char.upper() + string[1:]
-
-
-def __speaker_id_repr(speaker_id: Any) -> str:
-	return "**{}:**".format(speaker_id)
-
-
-def __token_seq_repr(tokens: Iterable[str]) -> str:
+def token_seq_repr(tokens: Iterable[str]) -> str:
 	token_iter = iter(tokens)
 	formatted_tokens = []
 
@@ -250,3 +238,15 @@ def __token_seq_repr(tokens: Iterable[str]) -> str:
 		formatted_tokens.append(current_token)
 
 	return ' '.join(formatted_tokens)
+
+
+def __capitalize_first_char(string: str) -> str:
+	if len(string) < 2:
+		return string.upper()
+	else:
+		first_char = string[0]
+		return first_char.upper() + string[1:]
+
+
+def __speaker_id_repr(speaker_id: Any) -> str:
+	return "**{}:**".format(speaker_id)
