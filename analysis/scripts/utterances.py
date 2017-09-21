@@ -182,8 +182,8 @@ def create_speaker_dict(utts: Iterable[Utterance]) -> Dict[str, List[Utterance]]
 def dialogue_utt_str_repr(utts: Iterable[Utterance]) -> str:
 	repr_list = []
 	grouped_utts = group_utts_by_speaker_id(utts)
-	for utt_group in grouped_utts:
-		speaker_repr = __speaker_id_repr(utt_group[0].speaker_id)
+	for speaker_id, utt_group in grouped_utts:
+		speaker_repr = __speaker_id_repr(speaker_id)
 		repr_list.append(speaker_repr)
 		sentence_repr = '"' + ' '.join(token_seq_repr(utt.content) for utt in utt_group) + '"'
 		repr_list.append(sentence_repr)
@@ -191,7 +191,7 @@ def dialogue_utt_str_repr(utts: Iterable[Utterance]) -> str:
 	return ' '.join(repr_list)
 
 
-def group_utts_by_speaker_id(utts: Iterable[Utterance]) -> List[List[Utterance]]:
+def group_utts_by_speaker_id(utts: Iterable[Utterance]) -> List[Tuple[List[Utterance]]]:
 	result = []
 
 	current_speaker_id = None
@@ -207,7 +207,7 @@ def group_utts_by_speaker_id(utts: Iterable[Utterance]) -> List[List[Utterance]]
 			current_speaker_utts = [utt]
 
 	if current_speaker_utts:
-		result.append(current_speaker_utts)
+		result.append((current_speaker_id, current_speaker_utts))
 
 	return result
 
