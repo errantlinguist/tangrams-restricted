@@ -85,6 +85,16 @@ class SessionData(object):
 		self.events_metadata = os.path.join(session_file_prefix, SessionDatum.EVENTS_METADATA.canonical_filename)
 		self.utts = os.path.join(session_file_prefix, SessionDatum.UTTS.canonical_filename)
 
+	def __eq__(self, other):
+		return (isinstance(other, type(self))
+				and self.__key == other.__key)
+
+	def __hash__(self):
+		return hash(self.__key)
+
+	def __ne__(self, other):
+		return not (self == other)
+
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
 
@@ -124,6 +134,10 @@ class SessionData(object):
 				result[round_idx] = min(result[round_idx], event_time)
 
 		return result
+
+	@property
+	def __key(self):
+		return self.events, self.events_metadata, self.utts
 
 
 def is_session_dir(filenames: Iterable[str]) -> bool:
