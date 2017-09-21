@@ -142,7 +142,7 @@ class Event(object):
 
 
 class EventData(object):
-	def __init__(self, events: Iterable[Event], source_participant_ids: Dict[str, str], initial_instructor_id: str):
+	def __init__(self, events: Iterator[Event], source_participant_ids: Dict[str, str], initial_instructor_id: str):
 		self.events = events
 		self.source_participant_ids = source_participant_ids
 		self.initial_instructor_id = initial_instructor_id
