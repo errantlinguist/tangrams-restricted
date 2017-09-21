@@ -117,6 +117,10 @@ class SessionTokenCountDatum(object):
 		return round_id - SessionTokenCountDatum.___ROUND_ID_OFFSET
 
 	def __init__(self, round_token_counts: Iterable[FilteredTokenCountDatum]):
+		"""
+
+		:param round_token_counts: Token counts for each individual round.
+		"""
 		self.total_data = FilteredTokenCountDatum()
 		"""Metrics for all rounds in the game."""
 		self.round_data = tuple(
@@ -223,6 +227,10 @@ class TokenCountDatum(object):
 	"""
 
 	def __init__(self, token_counts: Dict[str, int] = None):
+		"""
+
+		:param token_counts: Counts for each token type (i.e. unique word) observed.
+		"""
 		self.token_counts = Counter() if token_counts is None else token_counts
 		"""Counts for each token type (i.e. unique word) observed."""
 
