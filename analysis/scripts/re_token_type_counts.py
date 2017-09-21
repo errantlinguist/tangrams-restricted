@@ -51,7 +51,7 @@ class FilteredTokenCountDatum(object):
 	def __ne__(self, other):
 		return not (self == other)
 
-	def __repr__(self, *args, **kwargs):
+	def __repr__(self):
 		return self.__class__.__name__ + str(self.__dict__)
 
 	def add(self, utts: Sequence[utterances.Utterance], token_filter: Callable[[str], bool] = lambda _: True):
@@ -108,7 +108,7 @@ class RoundTokenCountDatum(object):
 	def __ne__(self, other):
 		return not (self == other)
 
-	def __repr__(self, *args, **kwargs):
+	def __repr__(self):
 		return self.__class__.__name__ + str(self.__dict__)
 
 
@@ -155,7 +155,7 @@ class SessionTokenCountDatum(object):
 	def __ne__(self, other):
 		return not (self == other)
 
-	def __repr__(self, *args, **kwargs):
+	def __repr__(self):
 		return self.__class__.__name__ + str(self.__dict__)
 
 	@property
@@ -267,7 +267,7 @@ class TokenCountDatum(object):
 	def total_token_count(self) -> int:
 		return sum(self.token_counts.values())
 
-	def __repr__(self, *args, **kwargs):
+	def __repr__(self):
 		return self.__class__.__name__ + str(self.__dict__)
 
 	def copy(self) -> "TokenCountDatum":

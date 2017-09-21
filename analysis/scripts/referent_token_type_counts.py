@@ -105,7 +105,7 @@ class CoreferenceChainTokenCountDatum(object):
 	def __ne__(self, other):
 		return not (self == other)
 
-	def __repr__(self, *args, **kwargs):
+	def __repr__(self):
 		return self.__class__.__name__ + str(self.__dict__)
 
 	@property

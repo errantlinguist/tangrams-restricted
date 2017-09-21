@@ -17,7 +17,7 @@ class DataColumnProperties(object):
 		self.name = name
 		self.value_transformer = value_transformer
 
-	def __repr__(self, *args, **kwargs):
+	def __repr__(self):
 		return self.__class__.__name__ + str(self.__dict__)
 
 
@@ -95,7 +95,7 @@ class SessionData(object):
 	def __ne__(self, other):
 		return not (self == other)
 
-	def __repr__(self, *args, **kwargs):
+	def __repr__(self):
 		return self.__class__.__name__ + str(self.__dict__)
 
 	def read_events_metadata(self, ) -> Dict[str, str]:

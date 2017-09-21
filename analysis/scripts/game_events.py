@@ -29,7 +29,7 @@ class EntityData(object):
 	def __ne__(self, other):
 		return not (self == other)
 
-	def __repr__(self, *args, **kwargs):
+	def __repr__(self):
 		return self.__class__.__name__ + str(self.__dict__)
 
 	def attr(self, attr_name: str) -> Any:
@@ -83,7 +83,7 @@ class Event(object):
 	def __ne__(self, other):
 		return not (self == other)
 
-	def __repr__(self, *args, **kwargs):
+	def __repr__(self):
 		return self.__class__.__name__ + str(self.__dict__)
 
 	def entity(self, entity_id: int) -> EntityData:
@@ -154,7 +154,7 @@ class EventData(object):
 	def __ne__(self, other):
 		return not (self == other)
 
-	def __repr__(self, *args, **kwargs):
+	def __repr__(self):
 		return self.__class__.__name__ + str(self.__dict__)
 
 	@property
@@ -190,7 +190,7 @@ class GameRound(object):
 		self.end_time = end_time
 		self.events = events
 
-	def __repr__(self, *args, **kwargs):
+	def __repr__(self):
 		return self.__class__.__name__ + str(self.__dict__)
 
 	def __eq__(self, other):

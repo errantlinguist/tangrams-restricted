@@ -102,7 +102,7 @@ class ValuePartition(object):
 		self.partition_min = partition_min
 		self.partition_max = partition_max
 
-	def __repr__(self, *args, **kwargs):
+	def __repr__(self):
 		return self.__class__.__name__ + str(self.__dict__)
 
 

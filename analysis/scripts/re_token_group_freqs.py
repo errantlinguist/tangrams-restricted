@@ -39,7 +39,7 @@ class Distribution(object):
 	def __ne__(self, other):
 		return not (self == other)
 
-	def __repr__(self, *args, **kwargs):
+	def __repr__(self):
 		return self.__class__.__name__ + str(self.__dict__)
 
 	def freq(self, group):
@@ -90,7 +90,7 @@ class PartitionDistributions(object):
 		total_counts.update(next_counts)
 		self.total = Distribution(total_counts)
 
-	def __repr__(self, *args, **kwargs):
+	def __repr__(self):
 		return self.__class__.__name__ + str(self.__dict__)
 
 	def group_freq_differences(self) -> Iterator[str, int]:

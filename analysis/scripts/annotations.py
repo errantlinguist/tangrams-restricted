@@ -27,7 +27,7 @@ class AnnotationData(object):
 		self.track_data = {}
 		self.segment_data = SegmentData(qname_factory)
 
-	def __repr__(self, *args, **kwargs):
+	def __repr__(self):
 		return self.__class__.__name__ + str(self.__dict__)
 
 	def add(self, other):
@@ -132,7 +132,7 @@ class SegmentData(object):
 		self.track_segments = defaultdict(list)
 		self.source_segments = defaultdict(list)
 
-	def __repr__(self, *args, **kwargs):
+	def __repr__(self):
 		return self.__class__.__name__ + str(self.__dict__)
 
 	def add(self, other):
@@ -158,7 +158,7 @@ class TrackDatum(object):
 		self.sources_by_channel = {}
 		self.sources_by_href = {}
 
-	def __repr__(self, *args, **kwargs):
+	def __repr__(self):
 		return self.__class__.__name__ + str(self.__dict__)
 
 	def add(self, source):

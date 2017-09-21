@@ -66,7 +66,7 @@ class GameRoundMetrics(object):
 		self.time_score_ratio = initial_event.time_score_ratio()
 		self.score_round_ratio = initial_event.score_round_ratio()
 
-	def __repr__(self, *args, **kwargs):
+	def __repr__(self):
 		return self.__class__.__name__ + str(self.__dict__)
 
 	def row_cells(self) -> Tuple[Any, ...]:
@@ -115,7 +115,7 @@ class LanguageMetrics(object):
 		else:
 			self.__set_history_sensitive_metrics(dyad_id, round_id, desc, previous_round_total_tokens, strict)
 
-	def __repr__(self, *args, **kwargs):
+	def __repr__(self):
 		return self.__class__.__name__ + str(self.__dict__)
 
 	def row_cells(self) -> Tuple[Any, ...]:
@@ -196,7 +196,7 @@ class ParticipantCoreferenceChainTokenCounts(object):
 		self.source_participant_ids = source_participant_ids
 		"""A mapping of utterance source ID to the ID to use for that dialogue participant."""
 
-	def __repr__(self, *args, **kwargs):
+	def __repr__(self):
 		return self.__class__.__name__ + str(self.__dict__)
 
 
@@ -213,7 +213,7 @@ class ReferentCounts(object):
 		self.total_counts = re_token_type_counts.FilteredTokenCountDatum()
 		"""Total counts for entity for the entire coreference chain, for all utterances by all speakers"""
 
-	def __repr__(self, *args, **kwargs):
+	def __repr__(self):
 		return self.__class__.__name__ + str(self.__dict__)
 
 	def add_round_counts(self, round_id: Any, round_counts: "RoundCounts"):
@@ -247,7 +247,7 @@ class RoundCounts(object):
 		self.instructor = instructor
 		"""The ID of the instructor for the given round."""
 
-	def __repr__(self, *args, **kwargs):
+	def __repr__(self):
 		return self.__class__.__name__ + str(self.__dict__)
 
 
