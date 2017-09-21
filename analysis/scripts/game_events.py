@@ -229,13 +229,13 @@ def read_event_entity_desc_matrix(infile_path: str, event_count: int, entity_cou
 	return result
 
 
-def __transform_row_cell_value(row: MutableSequence[Any], col_idxs: Dict[str, int], data_col: session_data.DataColumn):
+def __transform_row_cell_value(row: MutableSequence[str], col_idxs: Dict[str, int], data_col: session_data.DataColumn):
 	col_props = data_col.value
 	idx = col_idxs[col_props.name]
 	transformed_val = col_props.value_transformer(row[idx])
 	row[idx] = transformed_val
 
 
-def __transform_row_cell_values(row: MutableSequence[Any], col_idxs: Dict[str, int]):
+def __transform_row_cell_values(row: MutableSequence[str], col_idxs: Dict[str, int]):
 	for data_col in session_data.DataColumn:
 		__transform_row_cell_value(row, col_idxs, data_col)
