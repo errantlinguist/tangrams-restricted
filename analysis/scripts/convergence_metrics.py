@@ -185,15 +185,14 @@ class LanguageMetrics(object):
 				 participant_entity_coref: Optional[Coreference]):
 		self.speaker_id = speaker_id
 		self.utt_repr = utt_repr
-		self.relevant_tokens_repr = ','.join(sorted(relevant_tokens))
-		self.entity_token_metrics = TokenMetrics(participant_entity_coref)
+		self.entity_token_metrics = TokenMetrics(relevant_tokens, participant_entity_coref)
 
 	def __repr__(self):
 		return self.__class__.__name__ + str(self.__dict__)
 
 	def row_cells(self) -> Tuple[str, ...]:
 		return (self.speaker_id, self.utt_repr,
-				self.relevant_tokens_repr, self.entity_token_metrics.coref_seq_no_repr,
+				self.entity_token_metrics.relevant_tokens_repr, self.entity_token_metrics.coref_seq_no_repr,
 				self.entity_token_metrics.token_type_overlap_self_repr)
 
 
@@ -304,7 +303,8 @@ class SessionGameRoundUtteranceFactory(object):
 
 
 class TokenMetrics(object):
-	def __init__(self, coref: Coreference = None):
+	def __init__(self, relevant_tokens: Iterable[str], coref: Coreference = None):
+		self.relevant_tokens_repr = ','.join(sorted(relevant_tokens))
 		if coref is None:
 			self.coref_seq_no_repr = NULL_VALUE_REPR
 			self.token_type_overlap_self_repr = NULL_VALUE_REPR
