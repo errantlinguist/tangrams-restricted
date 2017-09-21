@@ -17,7 +17,7 @@ import token_groups as tg
 import utterances
 
 COL_DELIM = '\t'
-NULL_VALUE_REPR = "?"
+NULL_VALUE_REPR = "N/A"
 
 _EMPTY_SET = frozenset()
 
