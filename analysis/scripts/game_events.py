@@ -4,7 +4,7 @@ import json
 import sys
 from collections import defaultdict
 from enum import Enum, unique
-from typing import Any, Dict, Iterable, Iterator, MutableSequence, Sequence, Tuple, Union
+from typing import Any, Dict, Iterable, Iterator, Mapping, MutableSequence, Sequence, Tuple, Union
 
 import session_data
 
@@ -15,7 +15,7 @@ _EVENT_ID_OFFSET = 1
 
 
 class EntityData(object):
-	def __init__(self, col_idxs: Dict[str, int] = None, row: Sequence[Any] = None):
+	def __init__(self, col_idxs: Mapping[str, int] = None, row: Sequence[Any] = None):
 		self.col_idxs = col_idxs
 		self.row = row
 
@@ -69,7 +69,7 @@ class Event(object):
 		TIME = session_data.DataColumn.EVENT_TIME.value
 		SCORE = session_data.DataColumn.SCORE.value
 
-	def __init__(self, entities: Sequence[EntityData], attrs: Dict[Attribute, Any] = None):
+	def __init__(self, entities: Sequence[EntityData], attrs: Mapping[Attribute, Any] = None):
 		if attrs is None:
 			first_entity_desc = next(iter(entities))
 			attrs = dict((attr, first_entity_desc.attr(attr.value.name)) for attr in Event.Attribute)
@@ -142,7 +142,7 @@ class Event(object):
 
 
 class EventData(object):
-	def __init__(self, events: Iterator[Event], source_participant_ids: Dict[str, str], initial_instructor_id: str):
+	def __init__(self, events: Iterator[Event], source_participant_ids: Mapping[str, str], initial_instructor_id: str):
 		self.events = events
 		self.source_participant_ids = source_participant_ids
 		self.initial_instructor_id = initial_instructor_id
@@ -279,13 +279,13 @@ def __read_event_entity_desc_matrix(infile_path: str, event_count: int, entity_c
 	return result
 
 
-def __transform_row_cell_value(row: MutableSequence[str], col_idxs: Dict[str, int], data_col: session_data.DataColumn):
+def __transform_row_cell_value(row: MutableSequence[str], col_idxs: Mapping[str, int], data_col: session_data.DataColumn):
 	col_props = data_col.value
 	idx = col_idxs[col_props.name]
 	transformed_val = col_props.value_transformer(row[idx])
 	row[idx] = transformed_val
 
 
-def __transform_row_cell_values(row: MutableSequence[str], col_idxs: Dict[str, int]):
+def __transform_row_cell_values(row: MutableSequence[str], col_idxs: Mapping[str, int]):
 	for data_col in session_data.DataColumn:
 		__transform_row_cell_value(row, col_idxs, data_col)

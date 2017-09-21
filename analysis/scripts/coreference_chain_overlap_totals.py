@@ -5,7 +5,7 @@ import re
 import statistics
 import sys
 from decimal import Decimal
-from typing import Any, Dict, FrozenSet, Iterable, Tuple
+from typing import Any, FrozenSet, Mapping, Iterable, Tuple
 
 import coreference_chain_overlap
 import re_token_type_counts
@@ -35,7 +35,7 @@ class TokenTypeDataPrinter(object):
 		self.strict = strict
 
 	def __call__(self, session_referent_token_counts: Iterable[
-		Tuple[Any, Dict[int, referent_token_type_counts.CoreferenceChainTokenCountDatum]]], outfile):
+		Tuple[Any, Mapping[int, referent_token_type_counts.CoreferenceChainTokenCountDatum]]], outfile):
 		print(COL_DELIM.join(
 			("DYAD", "ENTITY", "SEQUENCE_ORDER", "ROUND", "ROUND_TOKENS", "CUMULATIVE_TOKENS", "PREVIOUS_MEAN_TOKENS",
 			 "LENGTH_DROP",

@@ -5,7 +5,7 @@ import re
 import sys
 from collections import Counter
 from decimal import Decimal
-from typing import Any, Callable, Dict, Iterable, Iterator, MutableSequence, Sequence, Container, Tuple, TypeVar
+from typing import Any, Callable, Dict, Iterable, Iterator, Mapping, MutableSequence, Sequence, Container, Tuple, TypeVar
 
 import utterances
 from session_data import SessionData
@@ -172,7 +172,7 @@ class SessionRoundTokenCounter(object):
 		self.seg_utt_factory = seg_utt_factory
 		self.filtering_token_counter = filtering_token_counter
 
-	def __call__(self, named_sessions: Dict[T, SessionData]) -> Dict[T, Tuple[FilteredTokenCountDatum, ...]]:
+	def __call__(self, named_sessions: Mapping[T, SessionData]) -> Dict[T, Tuple[FilteredTokenCountDatum, ...]]:
 		result = {}
 		for dyad_id, session in named_sessions:
 			print("Processing session \"{}\".".format(dyad_id), file=sys.stderr)

@@ -4,7 +4,7 @@ import argparse
 import re
 import sys
 from collections import defaultdict
-from typing import Any, Callable, Dict, Iterable, List, Sequence, Tuple, TypeVar
+from typing import Any, Callable, Dict, Iterable, List, Mapping, MutableMapping, Sequence, Tuple, TypeVar
 
 import game_events
 import re_token_type_counts
@@ -20,13 +20,13 @@ SHAPE_GROUP_NAME = "shape"
 
 
 class ShapeTokenCounter(object):
-	def __init__(self,  token_seq_factory: Callable[[Iterable[str]], Sequence[str]],
+	def __init__(self, token_seq_factory: Callable[[Iterable[str]], Sequence[str]],
 				 filtering_token_counter: Callable[
 					 [Sequence[utterances.Utterance]], re_token_type_counts.FilteredTokenCountDatum]):
 		self.token_seq_factory = token_seq_factory
 		self.filtering_token_counter = filtering_token_counter
 
-	def __call__(self, named_sessions: Dict[T, SessionData]) -> Dict[
+	def __call__(self, named_sessions: Mapping[T, SessionData]) -> Dict[
 		T, Dict[str, "referent_token_type_counts.CoreferenceChainTokenCountDatum"]]:
 		result = {}
 		for dyad_id, session in named_sessions:
@@ -47,7 +47,8 @@ class ShapeTokenCounter(object):
 		source_participant_ids = event_data.source_participant_ids
 		game_rounds = iter(game_events.create_game_rounds(event_data.events))
 		segments = utterances.read_segments(session.utts)
-		seg_utt_factory = utterances.SegmentUtteranceFactory(self.token_seq_factory, lambda source_id : source_participant_ids[source_id])
+		seg_utt_factory = utterances.SegmentUtteranceFactory(self.token_seq_factory,
+															 lambda source_id: source_participant_ids[source_id])
 		utt_times = utterances.UtteranceTimes(seg_utt_factory(segments))
 		game_round_utts = referent_token_type_counts.zip_game_round_utterances(game_rounds, utt_times)
 		for (round_id, (game_round, utts)) in enumerate(game_round_utts, start=1):
@@ -61,14 +62,14 @@ class ShapeTokenCounter(object):
 		return result
 
 
-def find_last_round_id(referent_token_counts: Dict[T, referent_token_type_counts.CoreferenceChainTokenCountDatum]) -> \
+def find_last_round_id(referent_token_counts: Mapping[T, referent_token_type_counts.CoreferenceChainTokenCountDatum]) -> \
 		Tuple[T, int]:
 	return max(
 		((entity_id, round_id) for (entity_id, counts) in referent_token_counts.items() for (round_id, round_counts) in
 		 counts.round_counts_by_round_id()), key=lambda result: result[1])
 
 
-def trim_empty_tail_rounds(dyad_id: Any, referent_token_counts: Dict[
+def trim_empty_tail_rounds(dyad_id: Any, referent_token_counts: MutableMapping[
 	int, referent_token_type_counts.CoreferenceChainTokenCountDatum]):
 	is_last_round_relevant = False
 	old_round_count = find_last_round_id(referent_token_counts)[1]

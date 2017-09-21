@@ -5,7 +5,7 @@ import re
 import sys
 from collections import defaultdict
 from decimal import Decimal
-from typing import Any, Callable, Dict, Iterable, Iterator, List, Sequence, Tuple, TypeVar
+from typing import Any, Callable, Dict, Iterable, Iterator, List, Mapping, MutableMapping, Sequence, Tuple, TypeVar
 
 import game_events
 import re_token_type_counts
@@ -25,7 +25,7 @@ class CoreferenceChainTokenCounter(object):
 		self.token_seq_factory = token_seq_factory
 		self.filtering_token_counter = filtering_token_counter
 
-	def __call__(self, named_sessions: Dict[T, SessionData]) -> Dict[T, Dict[int, "CoreferenceChainTokenCountDatum"]]:
+	def __call__(self, named_sessions: Mapping[T, SessionData]) -> Dict[T, Dict[int, "CoreferenceChainTokenCountDatum"]]:
 		result = {}
 		for dyad_id, session in named_sessions:
 			print("Processing session \"{}\".".format(dyad_id), file=sys.stderr)
@@ -124,7 +124,7 @@ class TokenTypeDataPrinter(object):
 	def __init__(self, strict: bool):
 		self.strict = strict
 
-	def __call__(self, session_referent_token_counts: Iterable[Tuple[Any, Dict[int, CoreferenceChainTokenCountDatum]]],
+	def __call__(self, session_referent_token_counts: Iterable[Tuple[Any, Mapping[int, CoreferenceChainTokenCountDatum]]],
 				 outfile):
 		print(COL_DELIM.join(
 			("DYAD", "ENTITY", "SEQUENCE_ORDER", "ROUND", "ROUND_TOKENS", "ROUND_TYPES", "ROUND_TYPE_RATIO",
@@ -165,13 +165,13 @@ class TokenTypeDataPrinter(object):
 					print(COL_DELIM.join(row), file=outfile)
 
 
-def find_last_round_id(referent_token_counts: Dict[T, CoreferenceChainTokenCountDatum]) -> Tuple[T, int]:
+def find_last_round_id(referent_token_counts: Mapping[T, CoreferenceChainTokenCountDatum]) -> Tuple[T, int]:
 	return max(
 		((entity_id, round_id) for (entity_id, counts) in referent_token_counts.items() for (round_id, round_counts) in
 		 counts.round_counts_by_round_id()), key=lambda result: result[1])
 
 
-def trim_empty_tail_rounds(dyad_id: Any, referent_token_counts: Dict[int, CoreferenceChainTokenCountDatum]):
+def trim_empty_tail_rounds(dyad_id: Any, referent_token_counts: MutableMapping[int, CoreferenceChainTokenCountDatum]):
 	is_last_round_relevant = False
 	old_round_count = find_last_round_id(referent_token_counts)[1]
 	while not is_last_round_relevant:

@@ -7,7 +7,8 @@ import statistics
 import sys
 from collections import defaultdict, namedtuple
 from decimal import Decimal, InvalidOperation
-from typing import Any, Callable, Dict, ItemsView, Iterable, Iterator, List, Sequence, Set, Tuple, TypeVar
+from typing import Any, Callable, Dict, ItemsView, Iterable, Iterator, List, Mapping, MutableMapping, Sequence, Set, \
+	Tuple, TypeVar
 
 import game_events
 import re_token_type_counts
@@ -159,8 +160,8 @@ class ParticipantCoreferenceChainTokenCounter(object):
 
 		return result
 
-	def __put_entity_counts(self, enumerated_game_round_utts, source_participant_ids: Dict[str, str],
-							entity_referent_counts: Dict[int, "ReferentCounts"],
+	def __put_entity_counts(self, enumerated_game_round_utts, source_participant_ids: Mapping[str, str],
+							entity_referent_counts: MutableMapping[int, "ReferentCounts"],
 							event_participant_id_factory: Callable[[game_events.Event], str]):
 		round_id, game_round_utts = enumerated_game_round_utts
 		game_round, utts = game_round_utts
@@ -188,7 +189,8 @@ class ParticipantCoreferenceChainTokenCounts(object):
 	This class represents metrics for referring to each entity over the course of a given game.
 	"""
 
-	def __init__(self, entity_referent_counts: Dict[int, "ReferentCounts"], source_participant_ids: Dict[str, str]):
+	def __init__(self, entity_referent_counts: Mapping[int, "ReferentCounts"],
+				 source_participant_ids: Mapping[str, str]):
 		self.entity_referent_counts = entity_referent_counts
 		"""A dictionary mapping entity ID to an object representing metrics for the reference of the respective entity throughout the session."""
 		self.source_participant_ids = source_participant_ids
@@ -234,7 +236,7 @@ class RoundCounts(object):
 	"""
 
 	def __init__(self, game_round: game_events.GameRound,
-				 participant_counts: Dict[Any, re_token_type_counts.FilteredTokenCountDatum], instructor: str):
+				 participant_counts: Mapping[Any, re_token_type_counts.FilteredTokenCountDatum], instructor: str):
 		self.game_round = game_round
 		self.participant_counts = participant_counts
 		"""Token counts for utterances produced by a given participant in the round represented by this instance."""
@@ -265,7 +267,7 @@ class TokenTypeDataPrinter(object):
 						   total_lang=total_lang_metrics)
 
 	@staticmethod
-	def __create_metrics_row(round_metrics: GameRoundMetrics, participant_lang_metrics: Dict[str, LanguageMetrics],
+	def __create_metrics_row(round_metrics: GameRoundMetrics, participant_lang_metrics: Mapping[str, LanguageMetrics],
 							 total_lang_metrics: LanguageMetrics,
 							 ordered_participant_ids: Iterable[str]) -> List[str]:
 		result = []
@@ -307,7 +309,7 @@ class TokenTypeDataPrinter(object):
 		for dyad_id, referent_token_counts in ordered_session_referent_token_counts:
 			self.__print_session(dyad_id, referent_token_counts.entity_referent_counts, all_participant_ids, outfile)
 
-	def __print_session(self, dyad_id: Any, referent_token_counts: Dict[int, ReferentCounts],
+	def __print_session(self, dyad_id: Any, referent_token_counts: Mapping[int, ReferentCounts],
 						ordered_participant_ids: Iterable[str], outfile):
 		for entity_id, entity_token_counts in sorted(referent_token_counts.items(), key=lambda item: item[0]):
 			# Counts for each round, ordered by their respective round IDs

@@ -6,7 +6,7 @@ import statistics
 import sys
 from collections import Counter
 from decimal import Decimal, ROUND_HALF_UP
-from typing import Dict, Iterable, Sequence, Iterator, Tuple
+from typing import Dict, Iterable, Sequence, Iterator, Mapping, Tuple
 
 import session_data
 import utterances
@@ -199,7 +199,7 @@ def group_freqs(group_counts: TokenCountDict) -> Iterator[Tuple[str, Decimal]]:
 	return ((group, count / total) for group, count in decimal_counts)
 
 
-def print_partitioned_session_group_dists(session_group_dists: Dict[str, PartitionDistributions],
+def print_partitioned_session_group_dists(session_group_dists: Mapping[str, PartitionDistributions],
 										  total_group_dists: PartitionDistributions,
 										  partition_round_count,
 										  outfile):
@@ -228,7 +228,7 @@ def print_partitioned_session_group_dists(session_group_dists: Dict[str, Partiti
 	print(COL_DELIM.join(summary_row), file=outfile)
 
 
-def print_whole_session_group_freqs(session_group_dists: Dict[str, Distribution], total_group_dists: Distribution,
+def print_whole_session_group_freqs(session_group_dists: Mapping[str, Distribution], total_group_dists: Distribution,
 									outfile):
 	ordered_total_group_freqs = tuple(
 		(group, freq) for group, freq in sorted(total_group_dists.freqs.items(), key=__get_item_key))
