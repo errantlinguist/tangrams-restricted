@@ -58,8 +58,8 @@ class GameRoundMetrics(object):
 
 	@staticmethod
 	def __create_referent_entity_hue_set_repr(event: game_events.Event) -> str:
-		shapes = frozenset(referent_entity.hue for _, referent_entity in event.referent_entities)
-		return ','.join(str(value) for value in sorted(shapes))
+		hues = frozenset(referent_entity.hue for _, referent_entity in event.referent_entities)
+		return ','.join(str(value) for value in sorted(hues))
 
 	@staticmethod
 	def __create_referent_entity_shape_set_repr(event: game_events.Event) -> str:
