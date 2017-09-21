@@ -115,7 +115,7 @@ class CoreferenceChainDataPrinter(object):
 						participant_shape_coref, session_shape_coref = shape_corefs.add_entity_corefs(participant_id,
 																									  referent_entity.shape,
 																									  round_id,
-																									  all_grouped_tokens)
+																									  shape_tokens)
 					else:
 						print("No tokens for group \"{}\"; Skipping.".format(shape_token_group_name), file=sys.stderr)
 
