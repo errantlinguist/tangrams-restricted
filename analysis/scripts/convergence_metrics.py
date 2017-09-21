@@ -194,37 +194,35 @@ class EntityCoreferenceChainDatum(object):
 
 class GameRoundMetrics(object):
 	COL_NAMES = (
-		"DYAD", "ROUND", "ENTITY", "SHAPE", "HUE", "INSTRUCTOR", "GAME_SCORE",
-		"ROUND_START_TIME",
+		"DYAD", "ROUND", "INSTRUCTOR", "ROUND_START_TIME", "SCORE",
 		"TIME_SCORE_RATIO",
-		"SCORE_ROUND_RATIO")
+		"SCORE_ROUND_RATIO", "REFERENT", "SHAPE", "HUE",)
 
 	def __init__(self, dyad_id: str, game_round: game_events.GameRound, instructor: str):
 		self.dyad_id = dyad_id
-		initial_event = game_round.initial_event
-		# NOTE: Only gets first referent entity (i.e. doesn't work if multiple entities are referents
-		referent_id, referent_entity = next(initial_event.referent_entities)
-		self.entity_id = referent_id
 		self.round_id = game_round.round_id
 		self.instructor = instructor
-		self.referent_shape = referent_entity.shape
-		self.referent_hue = referent_entity.hue
-		self.score = initial_event.score
+
+		initial_event = game_round.initial_event
 		self.time = initial_event.event_time
+		self.score = initial_event.score
 		self.time_score_ratio = initial_event.time_score_ratio()
 		self.score_round_ratio = initial_event.score_round_ratio()
+
+		# NOTE: Only gets first referent entity (i.e. doesn't work if multiple entities are referents
+		referent_id, referent_entity = next(initial_event.referent_entities)
+		self.referent_id = referent_id
+		self.referent_shape = referent_entity.shape
+		self.referent_hue = referent_entity.hue
 
 	def __repr__(self):
 		return self.__class__.__name__ + str(self.__dict__)
 
 	def row_cells(self) -> Tuple[Any, ...]:
 		return (
-			self.dyad_id, self.round_id, self.entity_id, self.referent_shape,
-			self.referent_hue,
-			self.instructor,
-			self.score,
-			self.time,
-			self.time_score_ratio, self.score_round_ratio)
+			self.dyad_id, self.round_id, self.instructor, self.time, self.score,
+			self.time_score_ratio, self.score_round_ratio, self.referent_id, self.referent_shape,
+			self.referent_hue)
 
 
 class ParticipantCoreferenceChainTokenCounter(object):
