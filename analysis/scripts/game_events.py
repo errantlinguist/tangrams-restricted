@@ -45,6 +45,8 @@ class EntityData(object):
 
 
 class Event(object):
+	__ENTITY_ID_OFFSET = 1
+
 	@unique
 	class Attribute(Enum):
 		ID = session_data.DataColumn.EVENT_ID.value
@@ -64,10 +66,10 @@ class Event(object):
 		return self.__class__.__name__ + str(self.__dict__)
 
 	def entity(self, entity_id: int) -> EntityData:
-		return self.entities[entity_id - 1]
+		return self.entities[entity_id - self.__ENTITY_ID_OFFSET]
 
 	def entities_by_id(self):
-		return enumerate(self.entities, start=1)
+		return enumerate(self.entities, start=self.__ENTITY_ID_OFFSET)
 
 	@property
 	def event_id(self) -> int:
