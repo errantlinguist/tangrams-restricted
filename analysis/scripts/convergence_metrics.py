@@ -112,43 +112,6 @@ class Coreference(object):
 		return result
 
 
-class SessionCoreferenceChainDatum(Generic[R]):
-	@staticmethod
-	def __add_to_chain(coref_id: int, tokens: FrozenSet[str], round_id: int,
-					   coref_chain: MutableSequence["Coreference"]) -> "Coreference":
-		if coref_chain:
-			antecedent = coref_chain[len(coref_chain) - 1]
-			result = Coreference(coref_id, tokens, round_id, antecedent)
-		else:
-			result = Coreference(coref_id, tokens, round_id)
-		coref_chain.append(result)
-		return result
-
-	def __init__(self):
-		self.participant_entity_corefs = defaultdict(lambda: defaultdict(list))
-		self.session_entity_corefs = defaultdict(list)
-		self.__last_coref_id = 0
-
-	def __repr__(self):
-		return self.__class__.__name__ + str(self.__dict__)
-
-	def add_entity_corefs(self, participant_id: str,
-						  referent_id: R, round_id: int, tokens: FrozenSet[str]) -> Tuple[Coreference, Coreference]:
-		participant_corefs = self.participant_entity_corefs[participant_id][referent_id]
-		participant_coref = self.__add_to_chain(self.__next_coref_id, tokens, round_id, participant_corefs)
-
-		session_corefs = self.session_entity_corefs[referent_id]
-		session_coref = self.__add_to_chain(self.__next_coref_id, tokens, round_id, session_corefs)
-
-		return participant_coref, session_coref
-
-	@property
-	def __next_coref_id(self) -> int:
-		result = self.__last_coref_id + 1
-		self.__last_coref_id = result
-		return result
-
-
 class CoreferenceChainDataPrinter(object):
 	LANG_COL_NAMES = (
 		"SPEAKER", "UTTERANCE", "ALL_TOKENS", "COREF_CHAIN_SEQ_SELF_ENTITY", "OVERLAP_ENTITY_SELF", "SHAPE_TOKENS")
@@ -315,6 +278,43 @@ class ParticipantCoreferenceChainTokenCounter(object):
 						entity_coreference_chains[referent_id] = coreference_chains
 					coreference_chains.add(round_id, round_utts)
 		return EntityCoreferenceChainDatum(game_round_utts, entity_coreference_chains, round_instructor_ids)
+
+
+class SessionCoreferenceChainDatum(Generic[R]):
+	@staticmethod
+	def __add_to_chain(coref_id: int, tokens: FrozenSet[str], round_id: int,
+					   coref_chain: MutableSequence["Coreference"]) -> "Coreference":
+		if coref_chain:
+			antecedent = coref_chain[len(coref_chain) - 1]
+			result = Coreference(coref_id, tokens, round_id, antecedent)
+		else:
+			result = Coreference(coref_id, tokens, round_id)
+		coref_chain.append(result)
+		return result
+
+	def __init__(self):
+		self.participant_entity_corefs = defaultdict(lambda: defaultdict(list))
+		self.session_entity_corefs = defaultdict(list)
+		self.__last_coref_id = 0
+
+	def __repr__(self):
+		return self.__class__.__name__ + str(self.__dict__)
+
+	def add_entity_corefs(self, participant_id: str,
+						  referent_id: R, round_id: int, tokens: FrozenSet[str]) -> Tuple[Coreference, Coreference]:
+		participant_corefs = self.participant_entity_corefs[participant_id][referent_id]
+		participant_coref = self.__add_to_chain(self.__next_coref_id, tokens, round_id, participant_corefs)
+
+		session_corefs = self.session_entity_corefs[referent_id]
+		session_coref = self.__add_to_chain(self.__next_coref_id, tokens, round_id, session_corefs)
+
+		return participant_coref, session_coref
+
+	@property
+	def __next_coref_id(self) -> int:
+		result = self.__last_coref_id + 1
+		self.__last_coref_id = result
+		return result
 
 
 def token_type_overlap_ratio(token_types: FrozenSet[str], preceding_token_types: FrozenSet[str]) -> Decimal:
