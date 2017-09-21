@@ -141,8 +141,16 @@ class EventData(object):
 		self.source_participant_ids = source_participant_ids
 		self.initial_instructor_id = initial_instructor_id
 
+	def __eq__(self, other):
+		return (isinstance(other, type(self))
+				and self.__key == other.__key)
+
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
+
+	@property
+	def __key(self):
+		return self.initial_instructor_id, self.source_participant_ids, self.events
 
 
 class EventParticipantIdFactory(object):
