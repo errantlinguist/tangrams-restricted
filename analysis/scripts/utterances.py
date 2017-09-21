@@ -39,7 +39,8 @@ class Utterance(object):
 		return hash(self.__key)
 
 	def __eq__(self, other):
-		return self.__key == other.__key
+		return (isinstance(other, type(self))
+				and self.__key == other.__key)
 
 	def __ne__(self, other):
 		return not (self == other)
@@ -47,9 +48,14 @@ class Utterance(object):
 	def __repr__(self, *args, **kwargs):
 		return self.__class__.__name__ + str(self.__dict__)
 
+	@property
+	def __key(self):
+		return self.segment_id, self.speaker_id, self.start_time, self.end_time, self.content
+
 
 class SegmentUtteranceFactory(object):
-	def __init__(self, token_seq_factory: Callable[[Iterable[str]], Sequence[str]], source_speaker_id_factory : Callable[[str], str] = lambda source_id : source_id):
+	def __init__(self, token_seq_factory: Callable[[Iterable[str]], Sequence[str]],
+				 source_speaker_id_factory: Callable[[str], str] = lambda source_id: source_id):
 		self.token_seq_factory = token_seq_factory
 		self.source_speaker_id_factory = source_speaker_id_factory
 
