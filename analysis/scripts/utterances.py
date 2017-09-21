@@ -24,7 +24,7 @@ class Utterance(object):
 	def between(utts: Iterable["Utterance"], start_time: float, end_time: float):
 		return (utt for utt in utts if (utt.start_time >= start_time) and (utt.start_time < end_time))
 
-	def __init__(self, segment_id, speaker_id, start_time, end_time, content):
+	def __init__(self, segment_id: str, speaker_id: str, start_time: float, end_time: float, content: Sequence[str]):
 		self.segment_id = segment_id
 		self.speaker_id = speaker_id
 		self.start_time = start_time
