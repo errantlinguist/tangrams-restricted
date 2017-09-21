@@ -6,9 +6,10 @@ import re
 import sys
 from collections import defaultdict
 from decimal import Decimal
-from typing import Any, Callable, Dict, FrozenSet, Iterable, Iterator, ItemsView, Mapping, MutableSequence, Optional, \
+from typing import Any, Callable, Dict, FrozenSet, Generic, Iterable, Iterator, ItemsView, Mapping, MutableSequence, \
+	Optional, \
 	Sequence, \
-	Tuple
+	Tuple, TypeVar
 
 import game_events
 import referent_token_type_counts
@@ -18,6 +19,9 @@ import utterances
 
 COL_DELIM = '\t'
 NULL_VALUE_REPR = "N/A"
+
+C = TypeVar('C')
+R = TypeVar('R')
 
 _EMPTY_SET = frozenset()
 
@@ -48,17 +52,25 @@ class CoreferenceChainDatum(object):
 
 class Coreference(object):
 	@staticmethod
-	def add_to_chain(tokens: FrozenSet[str], round_id: int,
-					 coref_chain: MutableSequence["Coreference"]) -> "Coreference":
-		if coref_chain:
-			antecedent = coref_chain[len(coref_chain) - 1]
-			result = Coreference(tokens, round_id, antecedent)
-		else:
-			result = Coreference(tokens, round_id)
-		coref_chain.append(result)
-		return result
+	def token_type_overlap_with_other(participant_corefs: Mapping[str, Mapping[C, Sequence["Coreference"]]],
+									  participant_id: str, coref_chain_id: C) -> Optional[Decimal]:
+		own_participant_corefs = participant_corefs[participant_id][coref_chain_id]
+		last_own_coref = own_participant_corefs[len(own_participant_corefs) - 1]
+		last_own_coref_round_id = last_own_coref.round_id
+		last_own_coref_token_types = last_own_coref.token_types
 
-	def __init__(self, tokens: FrozenSet[str], round_id: int, antecedent: "Coreference" = None):
+		# Get all coreference chains for all participants with an ID not equal to the given one
+		other_participant_corefs = ((other_participant_id, corefs) for (other_participant_id, corefs) in
+									participant_corefs.items() if other_participant_id != participant_id)
+		# Get all coreference chains with the same referent regardless of the participant ID
+		other_corefs = (coref for (_, corefs) in other_participant_corefs for (other_coref_chain_id, coref) in corefs if
+						other_coref_chain_id == coref_chain_id)
+
+	# other_preceding_corefs = (coref for coref in other_corefs if coref.round_id < )
+	# TODO: Finish
+
+	def __init__(self, coref_id: int, tokens: FrozenSet[str], round_id: int, antecedent: "Coreference" = None):
+		self.coref_id = coref_id
 		self.tokens = tokens
 		self.round_id = round_id
 		self.antecedent = antecedent
@@ -100,6 +112,43 @@ class Coreference(object):
 		return result
 
 
+class SessionCoreferenceChainDatum(Generic[R]):
+	@staticmethod
+	def __add_to_chain(coref_id: int, tokens: FrozenSet[str], round_id: int,
+					   coref_chain: MutableSequence["Coreference"]) -> "Coreference":
+		if coref_chain:
+			antecedent = coref_chain[len(coref_chain) - 1]
+			result = Coreference(coref_id, tokens, round_id, antecedent)
+		else:
+			result = Coreference(coref_id, tokens, round_id)
+		coref_chain.append(result)
+		return result
+
+	def __init__(self):
+		self.participant_entity_corefs = defaultdict(lambda: defaultdict(list))
+		self.session_entity_corefs = defaultdict(list)
+		self.__last_coref_id = 0
+
+	def __repr__(self):
+		return self.__class__.__name__ + str(self.__dict__)
+
+	def add_entity_corefs(self, participant_id: str,
+						  referent_id: R, round_id: int, tokens: FrozenSet[str]) -> Tuple[Coreference, Coreference]:
+		participant_corefs = self.participant_entity_corefs[participant_id][referent_id]
+		participant_coref = self.__add_to_chain(self.__next_coref_id, tokens, round_id, participant_corefs)
+
+		session_corefs = self.session_entity_corefs[referent_id]
+		session_coref = self.__add_to_chain(self.__next_coref_id, tokens, round_id, session_corefs)
+
+		return participant_coref, session_coref
+
+	@property
+	def __next_coref_id(self) -> int:
+		result = self.__last_coref_id + 1
+		self.__last_coref_id = result
+		return result
+
+
 class CoreferenceChainDataPrinter(object):
 	LANG_COL_NAMES = (
 		"SPEAKER", "UTTERANCE", "ALL_TOKENS", "COREF_CHAIN_SEQ_SELF_ENTITY", "OVERLAP_ENTITY_SELF", "SHAPE_TOKENS")
@@ -113,32 +162,9 @@ class CoreferenceChainDataPrinter(object):
 		for dyad_id, session_data in ordered_session_data:
 			self.__print_session(dyad_id, session_data, outfile)
 
-	@staticmethod
-	def __add_entity_corefs(participant_entity_corefs: Mapping[str, Mapping[int, MutableSequence[Coreference]]],
-							session_entity_corefs: Mapping[int, MutableSequence[Coreference]], participant_id: str,
-							referent_id: int, round_id: int, tokens: FrozenSet[str]) -> Tuple[Coreference, Coreference]:
-		participant_corefs = participant_entity_corefs[participant_id][referent_id]
-		participant_coref = Coreference.add_to_chain(tokens, round_id, participant_corefs)
-		session_corefs = session_entity_corefs[referent_id]
-		session_coref = Coreference.add_to_chain(tokens, round_id, session_corefs)
-		return participant_coref, session_coref
-
-	@staticmethod
-	def __add_shape_corefs(participant_shape_corefs: Mapping[str, Mapping[str, MutableSequence[Coreference]]],
-						   session_shape_corefs: Mapping[str, MutableSequence[Coreference]], participant_id: str,
-						   shape: str,
-						   round_id: int, tokens: FrozenSet[str]) -> Tuple[Coreference, Coreference]:
-		participant_corefs = participant_shape_corefs[participant_id][shape]
-		participant_coref = Coreference.add_to_chain(tokens, round_id, participant_corefs)
-		session_corefs = session_shape_corefs[shape]
-		session_coref = Coreference.add_to_chain(tokens, round_id, session_corefs)
-		return participant_coref, session_coref
-
 	def __print_session(self, dyad_id: str, session_data: "EntityCoreferenceChainDatum", outfile):
-		participant_entity_corefs = defaultdict(lambda: defaultdict(list))
-		session_entity_corefs = defaultdict(list)
-		participant_shape_corefs = defaultdict(lambda: defaultdict(list))
-		session_shape_corefs = defaultdict(list)
+		entity_corefs = SessionCoreferenceChainDatum()
+		shape_corefs = SessionCoreferenceChainDatum()
 
 		for round_id, game_round_utts in enumerate(session_data.game_round_utts,
 												   start=ParticipantCoreferenceChainTokenCounter.ROUND_ID_OFFSET):
@@ -161,21 +187,18 @@ class CoreferenceChainDataPrinter(object):
 				shape_token_type_overlap_self_repr = NULL_VALUE_REPR
 				# If there are any semantically-relevant tokens at all, add a link in the entity coreference chain
 				if all_grouped_tokens:
-					participant_entity_coref, session_entity_coref = self.__add_entity_corefs(participant_entity_corefs,
-																							  session_entity_corefs,
-																							  participant_id,
-																							  referent_id, round_id,
-																							  all_grouped_tokens)
+					participant_entity_coref, session_entity_coref = entity_corefs.add_entity_corefs(participant_id,
+																									 referent_id,
+																									 round_id,
+																									 all_grouped_tokens)
 
 					shape_token_group_name = "shape"
 					shape_tokens = group_tokens.get(shape_token_group_name, _EMPTY_SET)
 					if shape_tokens:
-						participant_shape_coref, session_shape_coref = self.__add_shape_corefs(participant_shape_corefs,
-																							   session_shape_corefs,
-																							   participant_id,
-																							   referent_entity.shape,
-																							   round_id,
-																							   all_grouped_tokens)
+						participant_shape_coref, session_shape_coref = shape_corefs.add_entity_corefs(participant_id,
+																									  referent_entity.shape,
+																									  round_id,
+																									  all_grouped_tokens)
 					else:
 						print("No tokens for group \"{}\"; Skipping.".format(shape_token_group_name), file=sys.stderr)
 
