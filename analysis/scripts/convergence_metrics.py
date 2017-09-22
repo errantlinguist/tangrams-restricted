@@ -242,7 +242,6 @@ class SessionCoreferenceChainDatum(Generic[R]):
 		:param participant_id: The ID of the participant to calculate overlap for.
 		:param coref_chain_id: An identifier for the referent to search for coreference chains featuring it as a referent.
 		:return: The ratio of overlap between the last coreference for the given participant and coreference chain ID and the preceding coreference with a different participant but the same coreference chain ID.
-		:rtype Decimal
 		"""
 		own_participant_corefs = self.participant_corefs[participant_id][coref_chain_id]
 		if own_participant_corefs:
