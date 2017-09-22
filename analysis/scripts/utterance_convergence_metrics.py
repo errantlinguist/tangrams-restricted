@@ -50,7 +50,7 @@ class CoreferenceChainDataPrinter(object):
 
 			for (participant_id, participant_turn_utts) in utterances.group_utts_by_speaker_id(round_utts):
 				diag_metrics = DialogueMetrics(participant_id,
-											   utterances.join_utt_sentence_reprs(participant_turn_utts))
+											   participant_turn_utts)
 				content = (token for utt in participant_turn_utts for token in utt.content)
 				group_tokens = tg.create_group_token_list_dict(content, self.token_groups)
 				grouped_referring_tokens = dict((grouping, (grouping.value.coref_chain_id_extractor(game_round),
@@ -83,9 +83,9 @@ class DialogueMetrics(object):
 	COL_NAMES = (
 		"SPEAKER", "UTTERANCE")
 
-	def __init__(self, speaker_id: str, utt_repr: str):
+	def __init__(self, speaker_id: str, utts: Iterable[utterances.Utterance]):
 		self.speaker_id = speaker_id
-		self.utt_repr = utt_repr
+		self.utt_repr = utterances.join_utt_sentence_reprs(utts)
 
 	def __repr__(self):
 		return self.__class__.__name__ + str(self.__dict__)
