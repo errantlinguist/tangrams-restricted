@@ -7,8 +7,8 @@ from typing import Callable, Dict, FrozenSet, Iterable, Iterator, List, Mapping,
 ENCODING = "utf-8"
 GROUP_LIST_DELIM = ","
 
-TokenGroupDict = Dict[str, FrozenSet[str]]
-
+TokenGroupMapping = Mapping[str, FrozenSet[str]]
+_TokenGroupMappingImpl = Dict[str, FrozenSet[str]]
 
 @unique
 class TokenGroupDataColumn(Enum):
@@ -20,7 +20,7 @@ def __default_group_filter(group) -> bool:
 	return group
 
 
-def create_group_token_list_dict(tokens: Iterable[str], token_groups: Mapping[str, FrozenSet[str]]) -> Dict[
+def create_group_token_list_dict(tokens: Iterable[str], token_groups: TokenGroupMapping) -> Dict[
 	str, List[str]]:
 	result = defaultdict(list)
 	for token in tokens:
@@ -35,7 +35,7 @@ def create_group_token_list_dict(tokens: Iterable[str], token_groups: Mapping[st
 	return result
 
 
-def create_group_token_set_dict(tokens: Iterable[str], token_groups: Mapping[str, FrozenSet[str]]) -> Dict[
+def create_group_token_set_dict(tokens: Iterable[str], token_groups: TokenGroupMapping) -> Dict[
 	str, Set[str]]:
 	result = defaultdict(set)
 	for token in tokens:
@@ -51,7 +51,7 @@ def create_group_token_set_dict(tokens: Iterable[str], token_groups: Mapping[str
 
 
 def read_token_group_dict(infile_path: str,
-						  group_filter: Callable[[str], bool] = __default_group_filter) -> TokenGroupDict:
+						  group_filter: Callable[[str], bool] = __default_group_filter) -> _TokenGroupMappingImpl:
 	with open(infile_path, 'r', encoding=ENCODING) as inf:
 		token_groups = read_token_groups(inf, group_filter)
 		return dict(token_groups)

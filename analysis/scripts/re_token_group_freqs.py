@@ -10,7 +10,7 @@ from typing import Dict, Iterable, Sequence, Iterator, Mapping, Tuple
 
 import session_data
 import utterances
-from token_groups import TokenGroupDict, read_token_group_dict
+from token_groups import TokenGroupMapping, read_token_group_dict
 
 COL_DELIM = '\t'
 DYAD_ID_COL_NAME = "DYAD"
@@ -101,7 +101,7 @@ class PartitionDistributions(object):
 
 
 class PartitionedSessionGroupDistributionCollector(object):
-	def __init__(self, token_groups: TokenGroupDict, seg_utt_factory: utterances.SegmentUtteranceFactory):
+	def __init__(self, token_groups: TokenGroupMapping, seg_utt_factory: utterances.SegmentUtteranceFactory):
 		self.token_groups = token_groups
 		self.seg_utt_factory = seg_utt_factory
 
@@ -149,7 +149,7 @@ class PartitionedSessionGroupDistributionCollector(object):
 
 
 class RoundTokenGroupCounter(object):
-	def __init__(self, token_groups: TokenGroupDict,
+	def __init__(self, token_groups: TokenGroupMapping,
 				 utt_times: utterances.UtteranceTimes):
 		self.token_groups = token_groups
 		self.utt_times = utt_times
@@ -167,7 +167,7 @@ class RoundTokenGroupCounter(object):
 
 
 class WholeSessionGroupDistributionCollector(object):
-	def __init__(self, token_groups: TokenGroupDict, seg_utt_factory: utterances.SegmentUtteranceFactory):
+	def __init__(self, token_groups: TokenGroupMapping, seg_utt_factory: utterances.SegmentUtteranceFactory):
 		self.token_groups = token_groups
 		self.seg_utt_factory = seg_utt_factory
 
