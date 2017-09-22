@@ -329,6 +329,31 @@ class TokenGrouping(Enum):
 class TokenMetrics(Generic[R]):
 	COL_NAMES = ("RELEVANT_TOKENS", "COREF_SEQ_SELF", "OVERLAP_SELF", "COREF_SEQ_OTHER", "OVERLAP_OTHER")
 
+	@staticmethod
+	def __create_other_metrics(preceding_other_coref_overlap: Optional[Tuple[Coreference, Decimal]]) -> Tuple[
+		str, str]:
+		if preceding_other_coref_overlap is None:
+			coref_seq_no_repr = NULL_VALUE_REPR
+			token_type_overlap_repr = NULL_VALUE_REPR
+		else:
+			prev_other_coref, entity_token_type_overlap = preceding_other_coref_overlap
+			coref_seq_no_repr = str(prev_other_coref.seq_number)
+			token_type_overlap_repr = str(
+				entity_token_type_overlap)
+		return coref_seq_no_repr, token_type_overlap_repr
+
+	@staticmethod
+	def __create_self_metrics(last_own_coref: Coreference) -> Tuple[str, str]:
+		if last_own_coref is None:
+			coref_seq_no_repr = NULL_VALUE_REPR
+			token_type_overlap_repr = NULL_VALUE_REPR
+		else:
+			coref_seq_no_repr = str(last_own_coref.seq_number)
+			entity_token_type_overlap = last_own_coref.token_type_overlap_with_self()
+			token_type_overlap_repr = NULL_VALUE_REPR if entity_token_type_overlap is None else str(
+				entity_token_type_overlap)
+		return coref_seq_no_repr, token_type_overlap_repr
+
 	def __init__(self, relevant_tokens: Iterable[str], participant_id: str, coref_chain_id: R,
 				 session_corefs: SessionCoreferenceChainDatum):
 		self.relevant_tokens_repr = ','.join(sorted(relevant_tokens))
@@ -344,29 +369,6 @@ class TokenMetrics(Generic[R]):
 	def row_cells(self) -> Tuple[str, ...]:
 		return (self.relevant_tokens_repr, self.coref_seq_no_self_repr,
 				self.token_type_overlap_self_repr, self.coref_seq_no_other_repr, self.token_type_overlap_other_repr)
-
-	def __create_other_metrics(self, preceding_other_coref_overlap: Optional[Tuple[Coreference, Decimal]]) -> Tuple[
-		str, str]:
-		if preceding_other_coref_overlap is None:
-			coref_seq_no_repr = NULL_VALUE_REPR
-			token_type_overlap_repr = NULL_VALUE_REPR
-		else:
-			prev_other_coref, entity_token_type_overlap = preceding_other_coref_overlap
-			coref_seq_no_repr = str(prev_other_coref.seq_number)
-			token_type_overlap_repr = str(
-				entity_token_type_overlap)
-		return coref_seq_no_repr, token_type_overlap_repr
-
-	def __create_self_metrics(self, last_own_coref: Coreference) -> Tuple[str, str]:
-		if last_own_coref is None:
-			coref_seq_no_repr = NULL_VALUE_REPR
-			token_type_overlap_repr = NULL_VALUE_REPR
-		else:
-			coref_seq_no_repr = str(last_own_coref.seq_number)
-			entity_token_type_overlap = last_own_coref.token_type_overlap_with_self()
-			token_type_overlap_repr = NULL_VALUE_REPR if entity_token_type_overlap is None else str(
-				entity_token_type_overlap)
-		return coref_seq_no_repr, token_type_overlap_repr
 
 
 def token_type_overlap_ratio(token_types: FrozenSet[str], preceding_token_types: FrozenSet[str]) -> Decimal:
