@@ -40,7 +40,7 @@ class CoreferenceChainDataPrinter(object):
 			self.__print_session(dyad_id, session_data, outfile)
 
 	def __print_session(self, dyad_id: str, session_data: GameRoundUtterances, outfile):
-		grouped_corefs = defaultdict(DialogueCoreferenceChainDatum)
+		grouped_coref_chains = defaultdict(DialogueCoreferenceChainDatum)
 
 		for round_id, (game_round, round_utts) in enumerate(session_data.game_round_utts,
 															start=SessionGameRoundUtteranceFactory.ROUND_ID_OFFSET):
@@ -65,18 +65,18 @@ class CoreferenceChainDataPrinter(object):
 				for grouping, (coref_chain_id, tokens) in grouped_referring_tokens.items():
 					# If there are any semantically-relevant tokens at all, add a link in the coreference chain
 					if tokens:
-						entity_corefs = grouped_corefs[grouping]
-						entity_corefs.add_entity_corefs(participant_id,
-														coref_chain_id,
-														round_id,
-														tokens)
+						entity_coref_chains = grouped_coref_chains[grouping]
+						entity_coref_chains.add_entity_corefs(participant_id,
+															  coref_chain_id,
+															  round_id,
+															  tokens)
 
 				# Calculate metric after adding all coreference chains so that the "baseline" metrics can be correctly calculated
 				token_metric_row_cells = []
 				for group in TokenGrouping:
 					coref_chain_id, tokens = grouped_referring_tokens[group]
-					corefs = grouped_corefs[group]
-					token_metrics = TokenMetrics(tokens, participant_id, coref_chain_id, corefs)
+					coref_chains = grouped_coref_chains[group]
+					token_metrics = TokenMetrics(tokens, participant_id, coref_chain_id, coref_chains)
 					token_metric_row_cells.extend(token_metrics.row_cells())
 				print(COL_DELIM.join(
 					str(cell) for cell in
