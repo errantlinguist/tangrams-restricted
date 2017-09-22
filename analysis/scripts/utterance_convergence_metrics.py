@@ -47,8 +47,6 @@ class CoreferenceChainDataPrinter(object):
 															start=SessionGameRoundUtteranceFactory.ROUND_ID_OFFSET):
 			round_instructor_id = session_data.round_instructor_ids[round_id]
 			round_metrics = GameRoundMetrics(dyad_id, game_round, round_instructor_id)
-			# NOTE: Only gets first referent entity (i.e. doesn't work if multiple entities are referents
-			referent_id, referent_entity = next(game_round.initial_event.referent_entities)
 
 			for (participant_id, participant_turn_utts) in utterances.group_utts_by_speaker_id(round_utts):
 				diag_metrics = DialogueMetrics(participant_id,
@@ -146,7 +144,7 @@ def _game_round_referent_id(game_round: game_events.GameRound) -> int:
 	return referent_id
 
 
-def _game_round_referent_shape(game_round: game_events.GameRound) -> int:
+def _game_round_referent_shape(game_round: game_events.GameRound) -> str:
 	# NOTE: Only gets first referent entity (i.e. doesn't work if multiple entities are referents
 	referent_id, referent_entity = next(game_round.initial_event.referent_entities)
 	return referent_entity.shape
