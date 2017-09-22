@@ -49,13 +49,6 @@ class Coreference(object):
 			yield last_antecedent
 
 	@property
-	def chain_head(self) -> Optional["Coreference"]:
-		result = self.antecedent
-		while result is not None:
-			result = result.antecedent
-		yield result
-
-	@property
 	def seq_number(self):
 		return sum(1 for _ in self.antecedents) + 1
 
