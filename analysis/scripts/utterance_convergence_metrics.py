@@ -55,8 +55,8 @@ class CoreferenceChainDataPrinter(object):
 				grouped_referring_tokens = {}
 
 				content = (token for utt in participant_turn_utts for token in utt.content)
-				group_tokens = tg.create_group_token_set_dict(content, self.token_groups)
-				all_grouped_tokens = frozenset(token for tokens in group_tokens.values() for token in tokens)
+				group_tokens = tg.create_group_token_list_dict(content, self.token_groups)
+				all_grouped_tokens = tuple(token for tokens in group_tokens.values() for token in tokens)
 				grouped_referring_tokens[TokenGrouping.REFERENT] = (referent_id, all_grouped_tokens)
 
 				shape_tokens = group_tokens.get("shape", _EMPTY_SET)
@@ -139,7 +139,7 @@ class TokenGrouping(Enum):
 
 
 class TokenMetrics(Generic[R]):
-	COL_NAMES = ("RELEVANT_TOKENS", "COREF_SEQ_SELF", "OVERLAP_SELF", "COREF_SEQ_OTHER", "OVERLAP_OTHER")
+	COL_NAMES = ("RELEVANT_TOKEN_TYPES", "COREF_SEQ_SELF", "OVERLAP_SELF", "COREF_SEQ_OTHER", "OVERLAP_OTHER")
 
 	@staticmethod
 	def __create_other_metrics(preceding_other_coref_overlap: Optional[Tuple[Coreference, Decimal]]) -> Tuple[
@@ -168,7 +168,7 @@ class TokenMetrics(Generic[R]):
 
 	def __init__(self, relevant_tokens: Iterable[str], participant_id: str, coref_chain_id: R,
 				 session_corefs: DialogueCoreferenceChainDatum):
-		self.relevant_tokens_repr = ','.join(sorted(relevant_tokens))
+		self.relevant_token_types_repr = ','.join(sorted(frozenset(relevant_tokens)))
 		last_own_coref, preceding_other_coref_overlap = session_corefs.token_type_overlap_with_other(participant_id,
 																									 coref_chain_id)
 		self.coref_seq_no_self_repr, self.token_type_overlap_self_repr = self.__create_self_metrics(last_own_coref)
@@ -179,7 +179,7 @@ class TokenMetrics(Generic[R]):
 		return self.__class__.__name__ + str(self.__dict__)
 
 	def row_cells(self) -> Tuple[str, ...]:
-		return (self.relevant_tokens_repr, self.coref_seq_no_self_repr,
+		return (self.relevant_token_types_repr, self.coref_seq_no_self_repr,
 				self.token_type_overlap_self_repr, self.coref_seq_no_other_repr, self.token_type_overlap_other_repr)
 
 
