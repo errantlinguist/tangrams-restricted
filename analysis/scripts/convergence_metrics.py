@@ -6,6 +6,7 @@ import re
 import sys
 from collections import defaultdict
 from decimal import Decimal
+from enum import Enum, unique
 from typing import Any, Callable, Dict, FrozenSet, Generic, Iterable, Iterator, ItemsView, Mapping, MutableSequence, \
 	Optional, \
 	Sequence, \
@@ -30,7 +31,8 @@ class Coreference(object):
 	This class represents a single reference in a coreference chain.
 	"""
 
-	def __init__(self, coref_id: int, tokens: FrozenSet[str], round_id: int, antecedent: "Coreference" = None):
+	def __init__(self, coref_id: int, tokens: FrozenSet[str], round_id: int,
+				 antecedent: Optional["Coreference"]):
 		self.coref_id = coref_id
 		self.tokens = tokens
 		self.round_id = round_id
@@ -78,14 +80,17 @@ class CoreferenceChainDataPrinter(object):
 		self.token_groups = token_groups
 
 	def __call__(self, session_data: ItemsView[str, "GameRoundUtterances"], outfile):
-		print(COL_DELIM.join(itertools.chain(GameRoundMetrics.COL_NAMES, LanguageMetrics.COL_NAMES)), file=outfile)
+		token_grouping_col_names = ("{}_{}".format(col_name, grouping.value) for grouping in TokenGrouping for col_name
+									in TokenMetrics.COL_NAMES)
+		print(COL_DELIM.join(
+			itertools.chain(GameRoundMetrics.COL_NAMES, DialogueMetrics.COL_NAMES, token_grouping_col_names)),
+			file=outfile)
 		ordered_session_data = sorted(session_data, key=lambda item: item[0])
 		for dyad_id, session_data in ordered_session_data:
 			self.__print_session(dyad_id, session_data, outfile)
 
 	def __print_session(self, dyad_id: str, session_data: "GameRoundUtterances", outfile):
-		entity_corefs = SessionCoreferenceChainDatum()
-		shape_corefs = SessionCoreferenceChainDatum()
+		grouped_corefs = defaultdict(SessionCoreferenceChainDatum)
 
 		for round_id, game_round_utts in enumerate(session_data.game_round_utts,
 												   start=SessionGameRoundUtteranceFactory.ROUND_ID_OFFSET):
@@ -97,37 +102,61 @@ class CoreferenceChainDataPrinter(object):
 
 			for (participant_id, participant_turn_utts) in utterances.group_utts_by_speaker_id(round_utts):
 				utt_repr = utterances.join_utt_sentence_reprs(participant_turn_utts)
+				lang_metrics = DialogueMetrics(participant_id, utt_repr)
+				token_group_metrics = {}
+
 				content = (token for utt in participant_turn_utts for token in utt.content)
 				group_tokens = tg.create_group_token_set_dict(content, self.token_groups)
 				all_grouped_tokens = frozenset(token for tokens in group_tokens.values() for token in tokens)
 
-				participant_entity_coref = None
 				# If there are any semantically-relevant tokens at all, add a link in the entity coreference chain
 				if all_grouped_tokens:
+					entity_corefs = grouped_corefs[TokenGrouping.REFERENT]
 					participant_entity_coref, session_entity_coref = entity_corefs.add_entity_corefs(participant_id,
 																									 referent_id,
 																									 round_id,
 																									 all_grouped_tokens)
+					entity_token_metrics = TokenMetrics(all_grouped_tokens,
+														participant_entity_coref)
+				else:
+					entity_token_metrics = TokenMetrics(all_grouped_tokens, None)
+				token_group_metrics[TokenGrouping.REFERENT] = entity_token_metrics
 
-					shape_token_group_name = "shape"
-					shape_tokens = group_tokens.get(shape_token_group_name, _EMPTY_SET)
-					if shape_tokens:
-						participant_shape_coref, session_shape_coref = shape_corefs.add_entity_corefs(participant_id,
-																									  referent_entity.shape,
-																									  round_id,
-																									  shape_tokens)
-					else:
-						print("No tokens for group \"{}\"; Skipping.".format(shape_token_group_name), file=sys.stderr)
+				shape_token_group_name = "shape"
+				shape_tokens = group_tokens.get(shape_token_group_name, _EMPTY_SET)
+				if shape_tokens:
+					shape_corefs = grouped_corefs[TokenGrouping.SHAPE]
+					participant_shape_coref, session_shape_coref = shape_corefs.add_entity_corefs(participant_id,
+																								  referent_entity.shape,
+																								  round_id,
+																								  shape_tokens)
+					shape_token_metrics = TokenMetrics(shape_tokens, participant_shape_coref)
+				else:
+					#print("No tokens for group \"{}\"; Skipping.".format(shape_token_group_name), file=sys.stderr)
+					shape_token_metrics = TokenMetrics(shape_tokens, None)
+				token_group_metrics[TokenGrouping.SHAPE] = shape_token_metrics
 
-				lang_metrics = LanguageMetrics(participant_id, utt_repr, all_grouped_tokens, participant_entity_coref)
-
-				# shape_coref_seq_no_repr = participant_shape_coref.seq_number
-				# shape_token_type_overlap_self = participant_shape_coref.token_type_overlap_with_self()
-				# shape_token_type_overlap_self_repr = NULL_VALUE_REPR if shape_token_type_overlap_self is None else str(
-				#	shape_token_type_overlap_self)
+				ordered_token_metrics = (token_group_metrics[group] for group in TokenGrouping)
+				token_metric_row_cells = (cell for metric in ordered_token_metrics for cell in metric.row_cells())
 				print(COL_DELIM.join(
-					str(cell) for cell in itertools.chain(round_metrics.row_cells(), lang_metrics.row_cells())),
+					str(cell) for cell in
+					itertools.chain(round_metrics.row_cells(), lang_metrics.row_cells(), token_metric_row_cells)),
 					file=outfile)
+
+
+class DialogueMetrics(object):
+	COL_NAMES = (
+		"SPEAKER", "UTTERANCE")
+
+	def __init__(self, speaker_id: str, utt_repr: str):
+		self.speaker_id = speaker_id
+		self.utt_repr = utt_repr
+
+	def __repr__(self):
+		return self.__class__.__name__ + str(self.__dict__)
+
+	def row_cells(self) -> Tuple[str, ...]:
+		return self.speaker_id, self.utt_repr
 
 
 class GameRoundMetrics(object):
@@ -177,25 +206,6 @@ class GameRoundUtterances(object):
 		return self.__class__.__name__ + str(self.__dict__)
 
 
-class LanguageMetrics(object):
-	COL_NAMES = (
-		"SPEAKER", "UTTERANCE", "RELEVANT_TOKENS", "COREF_CHAIN_SEQ_SELF_ENTITY", "OVERLAP_ENTITY_SELF", "SHAPE_TOKENS")
-
-	def __init__(self, speaker_id: str, utt_repr: str, relevant_tokens: Iterable[str],
-				 participant_entity_coref: Optional[Coreference]):
-		self.speaker_id = speaker_id
-		self.utt_repr = utt_repr
-		self.entity_token_metrics = TokenMetrics(relevant_tokens, participant_entity_coref)
-
-	def __repr__(self):
-		return self.__class__.__name__ + str(self.__dict__)
-
-	def row_cells(self) -> Tuple[str, ...]:
-		return (self.speaker_id, self.utt_repr,
-				self.entity_token_metrics.relevant_tokens_repr, self.entity_token_metrics.coref_seq_no_repr,
-				self.entity_token_metrics.token_type_overlap_self_repr)
-
-
 class SessionCoreferenceChainDatum(Generic[R]):
 	@staticmethod
 	def __add_to_chain(coref_id: int, tokens: FrozenSet[str], round_id: int,
@@ -204,7 +214,7 @@ class SessionCoreferenceChainDatum(Generic[R]):
 			antecedent = coref_chain[len(coref_chain) - 1]
 			result = Coreference(coref_id, tokens, round_id, antecedent)
 		else:
-			result = Coreference(coref_id, tokens, round_id)
+			result = Coreference(coref_id, tokens, round_id, None)
 		coref_chain.append(result)
 		return result
 
@@ -302,8 +312,16 @@ class SessionGameRoundUtteranceFactory(object):
 		return GameRoundUtterances(game_round_utts, round_instructor_ids)
 
 
+@unique
+class TokenGrouping(Enum):
+	REFERENT = "REF"
+	SHAPE = "SHAPE"
+
+
 class TokenMetrics(object):
-	def __init__(self, relevant_tokens: Iterable[str], coref: Coreference = None):
+	COL_NAMES = ("RELEVANT_TOKENS", "COREF_SEQ_SELF", "OVERLAP_SELF")
+
+	def __init__(self, relevant_tokens: Iterable[str], coref: Optional[Coreference]):
 		self.relevant_tokens_repr = ','.join(sorted(relevant_tokens))
 		if coref is None:
 			self.coref_seq_no_repr = NULL_VALUE_REPR
@@ -316,6 +334,10 @@ class TokenMetrics(object):
 
 	def __repr__(self):
 		return self.__class__.__name__ + str(self.__dict__)
+
+	def row_cells(self) -> Tuple[str, ...]:
+		return (self.relevant_tokens_repr, self.coref_seq_no_repr,
+				self.token_type_overlap_self_repr)
 
 
 def token_type_overlap_ratio(token_types: FrozenSet[str], preceding_token_types: FrozenSet[str]) -> Decimal:
