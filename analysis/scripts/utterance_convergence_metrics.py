@@ -213,9 +213,9 @@ def __main(args):
 	outfile = sys.stdout
 	session_game_round_utt_factory = SessionGameRoundUtteranceFactory(
 		utterances.TokenSequenceFactory())
-	session_entity_counts = session_game_round_utt_factory(named_sessions)
+	session_game_round_utts = session_game_round_utt_factory(named_sessions)
 	printer = CoreferenceChainDataPrinter(token_groups)
-	printer(session_entity_counts.items(), outfile)
+	printer(session_game_round_utts.items(), outfile)
 
 
 if __name__ == "__main__":
