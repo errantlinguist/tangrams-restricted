@@ -107,8 +107,7 @@ class CoreferenceChainDataPrinter(object):
 				all_grouped_tokens = frozenset(token for tokens in group_tokens.values() for token in tokens)
 				grouped_referring_tokens[TokenGrouping.REFERENT] = (referent_id, all_grouped_tokens)
 
-				shape_token_group_name = "shape"
-				shape_tokens = group_tokens.get(shape_token_group_name, _EMPTY_SET)
+				shape_tokens = group_tokens.get("shape", _EMPTY_SET)
 				grouped_referring_tokens[TokenGrouping.SHAPE] = (referent_entity.shape, shape_tokens)
 
 				for grouping, (coref_chain_id, tokens) in grouped_referring_tokens.items():
