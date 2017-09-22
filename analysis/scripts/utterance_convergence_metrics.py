@@ -97,17 +97,16 @@ class CoreferenceChainDataPrinter(object):
 	def __print_session(self, dyad_id: str, session_data: "GameRoundUtterances", outfile):
 		grouped_corefs = defaultdict(SessionCoreferenceChainDatum)
 
-		for round_id, game_round_utts in enumerate(session_data.game_round_utts,
-												   start=SessionGameRoundUtteranceFactory.ROUND_ID_OFFSET):
-			game_round, round_utts = game_round_utts
+		for round_id, (game_round, round_utts) in enumerate(session_data.game_round_utts,
+															start=SessionGameRoundUtteranceFactory.ROUND_ID_OFFSET):
 			round_instructor_id = session_data.round_instructor_ids[round_id]
 			round_metrics = GameRoundMetrics(dyad_id, game_round, round_instructor_id)
 			# NOTE: Only gets first referent entity (i.e. doesn't work if multiple entities are referents
 			referent_id, referent_entity = next(game_round.initial_event.referent_entities)
 
 			for (participant_id, participant_turn_utts) in utterances.group_utts_by_speaker_id(round_utts):
-				utt_repr = utterances.join_utt_sentence_reprs(participant_turn_utts)
-				lang_metrics = DialogueMetrics(participant_id, utt_repr)
+				lang_metrics = DialogueMetrics(participant_id,
+											   utterances.join_utt_sentence_reprs(participant_turn_utts))
 				grouped_referring_tokens = {}
 
 				content = (token for utt in participant_turn_utts for token in utt.content)
