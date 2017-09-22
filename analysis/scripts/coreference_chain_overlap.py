@@ -142,7 +142,7 @@ class ParticipantCoreferenceChainTokenCounter(object):
 
 		return result
 
-	def __create_session_counts(self, session: sd.SessionData):
+	def __create_session_counts(self, session: sd.SessionData) -> "ParticipantCoreferenceChainTokenCounts":
 		event_data = game_events.read_events(session)
 		source_participant_ids = event_data.source_participant_ids
 		seg_utt_factory = utterances.SegmentUtteranceFactory(self.token_seq_factory,
