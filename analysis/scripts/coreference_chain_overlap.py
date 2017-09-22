@@ -38,7 +38,7 @@ NULL_TOKEN_LENGTH_DROP_VALUE = _DECIMAL_INFINITY
 
 class GameRoundMetrics(object):
 	COL_NAMES = (
-		"DYAD", "ENTITY", "SHAPE", "HUE", "SEQUENCE_ORDER", "ROUND", "INSTRUCTOR", "GAME_SCORE", "ROUND_START_TIME",
+		"DYAD", "ENTITY", "SHAPE", "HUE", "SEQUENCE_ORDER", "ROUND", "INSTRUCTOR", "ROUND_START_TIME", "SCORE",
 		"TIME_SCORE_RATIO",
 		"SCORE_ROUND_RATIO")
 
@@ -56,13 +56,13 @@ class GameRoundMetrics(object):
 				 initial_event: game_events.Event, instructor: str):
 		self.dyad_id = dyad_id
 		self.entity_id = entity_id
+		self.referent_shape = self.__create_referent_entity_shape_set_repr(initial_event)
+		self.referent_hue = self.__create_referent_entity_hue_set_repr(initial_event)
 		self.sequence_order = sequence_order
 		self.round_id = round_id
 		self.instructor = instructor
-		self.referent_shape = self.__create_referent_entity_shape_set_repr(initial_event)
-		self.referent_hue = self.__create_referent_entity_hue_set_repr(initial_event)
-		self.score = initial_event.score
 		self.time = initial_event.event_time
+		self.score = initial_event.score
 		self.time_score_ratio = initial_event.time_score_ratio()
 		self.score_round_ratio = initial_event.score_round_ratio()
 
@@ -73,8 +73,8 @@ class GameRoundMetrics(object):
 		return (
 			self.dyad_id, self.entity_id, self.referent_shape, self.referent_hue, self.sequence_order, self.round_id,
 			self.instructor,
-			self.score,
 			self.time,
+			self.score,
 			self.time_score_ratio, self.score_round_ratio)
 
 
