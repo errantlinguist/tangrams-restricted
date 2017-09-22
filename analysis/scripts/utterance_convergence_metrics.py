@@ -50,7 +50,7 @@ class CoreferenceChainDataPrinter(object):
 			referent_id, referent_entity = next(game_round.initial_event.referent_entities)
 
 			for (participant_id, participant_turn_utts) in utterances.group_utts_by_speaker_id(round_utts):
-				lang_metrics = DialogueMetrics(participant_id,
+				diag_metrics = DialogueMetrics(participant_id,
 											   utterances.join_utt_sentence_reprs(participant_turn_utts))
 				grouped_referring_tokens = {}
 
@@ -80,7 +80,7 @@ class CoreferenceChainDataPrinter(object):
 					token_metric_row_cells.extend(token_metrics.row_cells())
 				print(COL_DELIM.join(
 					str(cell) for cell in
-					itertools.chain(round_metrics.row_cells(), lang_metrics.row_cells(), token_metric_row_cells)),
+					itertools.chain(round_metrics.row_cells(), diag_metrics.row_cells(), token_metric_row_cells)),
 					file=outfile)
 
 
