@@ -7,8 +7,8 @@ import sys
 from collections import defaultdict
 from decimal import Decimal
 from enum import Enum, unique
-from typing import Any, Generic, Iterable, ItemsView, Mapping, Optional, \
-	Tuple, TypeVar
+from typing import Any, Callable, Generic, Iterable, ItemsView, Mapping, Optional, \
+	Sequence, Tuple, TypeVar
 
 import game_events
 import session_data as sd
@@ -30,7 +30,8 @@ class CoreferenceChainDataPrinter(object):
 		self.token_groups = token_groups
 
 	def __call__(self, session_data: ItemsView[str, GameRoundUtterances], outfile):
-		token_grouping_col_names = ("{}_{}".format(col_name, grouping.value) for grouping in TokenGrouping for col_name
+		token_grouping_col_names = ("{}_{}".format(col_name, grouping.value.col_name) for grouping in TokenGrouping for
+									col_name
 									in TokenMetrics.COL_NAMES)
 		print(COL_DELIM.join(
 			itertools.chain(GameRoundMetrics.COL_NAMES, DialogueMetrics.COL_NAMES, token_grouping_col_names)),
@@ -52,15 +53,11 @@ class CoreferenceChainDataPrinter(object):
 			for (participant_id, participant_turn_utts) in utterances.group_utts_by_speaker_id(round_utts):
 				diag_metrics = DialogueMetrics(participant_id,
 											   utterances.join_utt_sentence_reprs(participant_turn_utts))
-				grouped_referring_tokens = {}
-
 				content = (token for utt in participant_turn_utts for token in utt.content)
 				group_tokens = tg.create_group_token_list_dict(content, self.token_groups)
-				all_grouped_tokens = tuple(token for tokens in group_tokens.values() for token in tokens)
-				grouped_referring_tokens[TokenGrouping.REFERENT] = (referent_id, all_grouped_tokens)
-
-				shape_tokens = group_tokens.get("shape", _EMPTY_SET)
-				grouped_referring_tokens[TokenGrouping.SHAPE] = (referent_entity.shape, shape_tokens)
+				grouped_referring_tokens = dict((grouping, (grouping.value.coref_chain_id_extractor(game_round),
+															grouping.value.relevant_token_extractor(group_tokens))) for
+												grouping in TokenGrouping)
 
 				for grouping, (coref_chain_id, tokens) in grouped_referring_tokens.items():
 					# If there are any semantically-relevant tokens at all, add a link in the coreference chain
@@ -132,10 +129,35 @@ class GameRoundMetrics(object):
 			self.referent_hue)
 
 
+class TokenGroupingDataMappings(object):
+	def __init__(self, col_name: str, coref_chain_id_extractor: Callable[[game_events.GameRound], Any],
+				 relevant_token_extractor: Callable[[Mapping[str, Sequence[str]]], Sequence[str]]):
+		self.col_name = col_name
+		self.coref_chain_id_extractor = coref_chain_id_extractor
+		self.relevant_token_extractor = relevant_token_extractor
+
+	def __repr__(self):
+		return self.__class__.__name__ + str(self.__dict__)
+
+
+def _game_round_referent_id(game_round: game_events.GameRound) -> int:
+	# NOTE: Only gets first referent entity (i.e. doesn't work if multiple entities are referents
+	referent_id, referent_entity = next(game_round.initial_event.referent_entities)
+	return referent_id
+
+
+def _game_round_referent_shape(game_round: game_events.GameRound) -> int:
+	# NOTE: Only gets first referent entity (i.e. doesn't work if multiple entities are referents
+	referent_id, referent_entity = next(game_round.initial_event.referent_entities)
+	return referent_entity.shape
+
+
 @unique
 class TokenGrouping(Enum):
-	REFERENT = "REFERENT"
-	SHAPE = "SHAPE"
+	REFERENT = TokenGroupingDataMappings("REFERENT", _game_round_referent_id, lambda group_tokens: tuple(
+		token for tokens in group_tokens.values() for token in tokens))
+	SHAPE = TokenGroupingDataMappings("SHAPE", _game_round_referent_shape,
+									  lambda group_tokens: group_tokens.get("shape", _EMPTY_SET))
 
 
 class TokenMetrics(Generic[R]):
