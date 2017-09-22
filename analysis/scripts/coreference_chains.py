@@ -69,10 +69,14 @@ class DialogueCoreferenceChainDatum(Generic[R]):
 		return result
 
 	def __init__(self):
-		self.participant_corefs = defaultdict(lambda: defaultdict(list))
+		self.participant_coref_chains = defaultdict(lambda: defaultdict(list))
 		"""A dictionary of entity coreference chains for each dialogue participant."""
-		self.session_corefs = defaultdict(list)
+		self.participant_round_corefs = defaultdict(lambda: defaultdict(set))
+		"""A dictionary mapping participant IDs to a respective dictionary of round IDs mapped to all coreferences by that participant which occurred in that round."""
+		self.session_coref_chains = defaultdict(list)
 		"""A dictionary for coreference chains for each entity, mapped by the respective entity's ID."""
+		self.session_round_corefs = defaultdict(set)
+		"""A dictionary of round IDs mapped to all coreferences occurring in that round."""
 		self.__last_coref_id = 0
 
 	def __repr__(self):
@@ -80,11 +84,13 @@ class DialogueCoreferenceChainDatum(Generic[R]):
 
 	def add_entity_corefs(self, participant_id: str,
 						  referent_id: R, round_id: int, tokens: FrozenSet[str]) -> Tuple[Coreference, Coreference]:
-		participant_corefs = self.participant_corefs[participant_id][referent_id]
-		participant_coref = self.__add_to_chain(self.__next_coref_id, tokens, round_id, participant_corefs)
+		participant_coref_chain = self.participant_coref_chains[participant_id][referent_id]
+		participant_coref = self.__add_to_chain(self.__next_coref_id, tokens, round_id, participant_coref_chain)
+		self.participant_round_corefs[participant_id][round_id].add(participant_coref)
 
-		session_corefs = self.session_corefs[referent_id]
-		session_coref = self.__add_to_chain(self.__next_coref_id, tokens, round_id, session_corefs)
+		session_coref_chain = self.session_coref_chains[referent_id]
+		session_coref = self.__add_to_chain(self.__next_coref_id, tokens, round_id, session_coref_chain)
+		self.session_round_corefs[round_id].add(session_coref)
 
 		return participant_coref, session_coref
 
@@ -98,7 +104,7 @@ class DialogueCoreferenceChainDatum(Generic[R]):
 		:param coref_chain_id: An identifier for the referent to search for coreference chains featuring it as a referent.
 		:return: The ratio of overlap between the last coreference for the given participant and coreference chain ID and the preceding coreference with a different participant but the same coreference chain ID.
 		"""
-		own_participant_corefs = self.participant_corefs[participant_id][coref_chain_id]
+		own_participant_corefs = self.participant_coref_chains[participant_id][coref_chain_id]
 		if own_participant_corefs:
 			last_own_coref = own_participant_corefs[len(own_participant_corefs) - 1]
 			last_own_coref_id = last_own_coref.coref_id
@@ -106,7 +112,7 @@ class DialogueCoreferenceChainDatum(Generic[R]):
 
 			# Get all coreference chains for all participants with an ID not equal to the given one
 			other_participant_corefs = ((other_participant_id, corefs) for (other_participant_id, corefs) in
-										self.participant_corefs.items() if other_participant_id != participant_id)
+										self.participant_coref_chains.items() if other_participant_id != participant_id)
 			# Get all coreference chains with the same referent regardless of the participant ID
 			other_corefs = (coref_chain[len(coref_chain) - 1] for (_, corefs) in other_participant_corefs for
 							(other_coref_chain_id, coref_chain) in
