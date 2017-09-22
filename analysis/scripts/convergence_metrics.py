@@ -103,41 +103,33 @@ class CoreferenceChainDataPrinter(object):
 			for (participant_id, participant_turn_utts) in utterances.group_utts_by_speaker_id(round_utts):
 				utt_repr = utterances.join_utt_sentence_reprs(participant_turn_utts)
 				lang_metrics = DialogueMetrics(participant_id, utt_repr)
-				token_group_metrics = {}
+				grouped_referring_tokens = {}
 
 				content = (token for utt in participant_turn_utts for token in utt.content)
 				group_tokens = tg.create_group_token_set_dict(content, self.token_groups)
 				all_grouped_tokens = frozenset(token for tokens in group_tokens.values() for token in tokens)
-
-				# If there are any semantically-relevant tokens at all, add a link in the entity coreference chain
-				if all_grouped_tokens:
-					entity_corefs = grouped_corefs[TokenGrouping.REFERENT]
-					participant_entity_coref, session_entity_coref = entity_corefs.add_entity_corefs(participant_id,
-																									 referent_id,
-																									 round_id,
-																									 all_grouped_tokens)
-					entity_token_metrics = TokenMetrics(all_grouped_tokens,
-														participant_entity_coref)
-				else:
-					entity_token_metrics = TokenMetrics(all_grouped_tokens, None)
-				token_group_metrics[TokenGrouping.REFERENT] = entity_token_metrics
+				grouped_referring_tokens[TokenGrouping.REFERENT] = (referent_id, all_grouped_tokens)
 
 				shape_token_group_name = "shape"
 				shape_tokens = group_tokens.get(shape_token_group_name, _EMPTY_SET)
-				if shape_tokens:
-					shape_corefs = grouped_corefs[TokenGrouping.SHAPE]
-					participant_shape_coref, session_shape_coref = shape_corefs.add_entity_corefs(participant_id,
-																								  referent_entity.shape,
-																								  round_id,
-																								  shape_tokens)
-					shape_token_metrics = TokenMetrics(shape_tokens, participant_shape_coref)
-				else:
-					#print("No tokens for group \"{}\"; Skipping.".format(shape_token_group_name), file=sys.stderr)
-					shape_token_metrics = TokenMetrics(shape_tokens, None)
-				token_group_metrics[TokenGrouping.SHAPE] = shape_token_metrics
+				grouped_referring_tokens[TokenGrouping.SHAPE] = (referent_entity.shape, shape_tokens)
 
-				ordered_token_metrics = (token_group_metrics[group] for group in TokenGrouping)
-				token_metric_row_cells = (cell for metric in ordered_token_metrics for cell in metric.row_cells())
+				for grouping, (coref_chain_id, tokens) in grouped_referring_tokens.items():
+					# If there are any semantically-relevant tokens at all, add a link in the coreference chain
+					if tokens:
+						entity_corefs = grouped_corefs[grouping]
+						entity_corefs.add_entity_corefs(participant_id,
+														coref_chain_id,
+														round_id,
+														tokens)
+
+				# Calculate metric after adding all coreference chains so that the "baseline" metrics can be correctly calculated
+				token_metric_row_cells = []
+				for group in TokenGrouping:
+					coref_chain_id, tokens = grouped_referring_tokens[group]
+					corefs = grouped_corefs[group]
+					token_metrics = TokenMetrics(tokens, participant_id, coref_chain_id, corefs)
+					token_metric_row_cells.extend(token_metrics.row_cells())
 				print(COL_DELIM.join(
 					str(cell) for cell in
 					itertools.chain(round_metrics.row_cells(), lang_metrics.row_cells(), token_metric_row_cells)),
@@ -218,32 +210,9 @@ class SessionCoreferenceChainDatum(Generic[R]):
 		coref_chain.append(result)
 		return result
 
-	@staticmethod
-	def __token_type_overlap_with_other(participant_corefs: Mapping[str, Mapping[R, Sequence[Coreference]]],
-										participant_id: str, coref_chain_id: R) -> Optional[Decimal]:
-		own_participant_corefs = participant_corefs[participant_id][coref_chain_id]
-		last_own_coref = own_participant_corefs[len(own_participant_corefs) - 1]
-		last_own_coref_id = last_own_coref.coref_id
-		last_own_coref_token_types = last_own_coref.token_types
-
-		# Get all coreference chains for all participants with an ID not equal to the given one
-		other_participant_corefs = ((other_participant_id, corefs) for (other_participant_id, corefs) in
-									participant_corefs.items() if other_participant_id != participant_id)
-		# Get all coreference chains with the same referent regardless of the participant ID
-		other_corefs = (coref for (_, corefs) in other_participant_corefs for (other_coref_chain_id, coref) in corefs if
-						other_coref_chain_id == coref_chain_id)
-		other_previous_corefs = (coref for coref in other_corefs if coref.coref_id < last_own_coref_id)
-		preceding_coref = max(other_previous_corefs, key=lambda coref: coref.coref_id)
-		if preceding_coref is None:
-			result = None
-		else:
-			preceding_token_types = preceding_coref.token_types
-			result = token_type_overlap_ratio(last_own_coref_token_types, preceding_token_types)
-		return result
-
 	def __init__(self):
-		self.participant_entity_corefs = defaultdict(lambda: defaultdict(list))
-		self.session_entity_corefs = defaultdict(list)
+		self.participant_corefs = defaultdict(lambda: defaultdict(list))
+		self.session_corefs = defaultdict(list)
 		self.__last_coref_id = 0
 
 	def __repr__(self):
@@ -251,17 +220,43 @@ class SessionCoreferenceChainDatum(Generic[R]):
 
 	def add_entity_corefs(self, participant_id: str,
 						  referent_id: R, round_id: int, tokens: FrozenSet[str]) -> Tuple[Coreference, Coreference]:
-		participant_corefs = self.participant_entity_corefs[participant_id][referent_id]
+		participant_corefs = self.participant_corefs[participant_id][referent_id]
 		participant_coref = self.__add_to_chain(self.__next_coref_id, tokens, round_id, participant_corefs)
 
-		session_corefs = self.session_entity_corefs[referent_id]
+		session_corefs = self.session_corefs[referent_id]
 		session_coref = self.__add_to_chain(self.__next_coref_id, tokens, round_id, session_corefs)
 
 		return participant_coref, session_coref
 
 	def token_type_overlap_with_other(self,
-									  participant_id: str, coref_chain_id: R) -> Optional[Decimal]:
-		return self.__token_type_overlap_with_other(self.participant_entity_corefs, participant_id, coref_chain_id)
+									  participant_id: str, coref_chain_id: R) -> Tuple[
+		Optional[Coreference], Optional[Tuple[Coreference, Decimal]]]:
+		own_participant_corefs = self.participant_corefs[participant_id][coref_chain_id]
+		if own_participant_corefs:
+			last_own_coref = own_participant_corefs[len(own_participant_corefs) - 1]
+			last_own_coref_id = last_own_coref.coref_id
+			last_own_coref_token_types = last_own_coref.token_types
+
+			# Get all coreference chains for all participants with an ID not equal to the given one
+			other_participant_corefs = ((other_participant_id, corefs) for (other_participant_id, corefs) in
+										self.participant_corefs.items() if other_participant_id != participant_id)
+			# Get all coreference chains with the same referent regardless of the participant ID
+			other_corefs = (coref_chain[len(coref_chain) - 1] for (_, corefs) in other_participant_corefs for
+							(other_coref_chain_id, coref_chain) in
+							corefs.items() if
+							other_coref_chain_id == coref_chain_id and len(coref_chain) > 0)
+			other_previous_corefs = tuple(coref for coref in other_corefs if coref.coref_id < last_own_coref_id)
+			if other_previous_corefs:
+				preceding_coref = max(other_previous_corefs, key=lambda coref: coref.coref_id)
+				preceding_token_types = preceding_coref.token_types
+				overlap = token_type_overlap_ratio(last_own_coref_token_types, preceding_token_types)
+				preceding_coref_overlap = preceding_coref, overlap
+			else:
+				preceding_coref_overlap = None
+		else:
+			last_own_coref = None
+			preceding_coref_overlap = None
+		return last_own_coref, preceding_coref_overlap
 
 	@property
 	def __next_coref_id(self) -> int:
@@ -314,30 +309,51 @@ class SessionGameRoundUtteranceFactory(object):
 
 @unique
 class TokenGrouping(Enum):
-	REFERENT = "REF"
+	REFERENT = "REFERENT"
 	SHAPE = "SHAPE"
 
 
-class TokenMetrics(object):
-	COL_NAMES = ("RELEVANT_TOKENS", "COREF_SEQ_SELF", "OVERLAP_SELF")
+class TokenMetrics(Generic[R]):
+	COL_NAMES = ("RELEVANT_TOKENS", "COREF_SEQ_SELF", "OVERLAP_SELF", "COREF_SEQ_OTHER", "OVERLAP_OTHER")
 
-	def __init__(self, relevant_tokens: Iterable[str], coref: Optional[Coreference]):
+	def __init__(self, relevant_tokens: Iterable[str], participant_id: str, coref_chain_id: R,
+				 session_corefs: SessionCoreferenceChainDatum):
 		self.relevant_tokens_repr = ','.join(sorted(relevant_tokens))
-		if coref is None:
-			self.coref_seq_no_repr = NULL_VALUE_REPR
-			self.token_type_overlap_self_repr = NULL_VALUE_REPR
-		else:
-			self.coref_seq_no_repr = str(coref.seq_number)
-			entity_token_type_overlap_self = coref.token_type_overlap_with_self()
-			self.token_type_overlap_self_repr = NULL_VALUE_REPR if entity_token_type_overlap_self is None else str(
-				entity_token_type_overlap_self)
+		last_own_coref, preceding_other_coref_overlap = session_corefs.token_type_overlap_with_other(participant_id,
+																									 coref_chain_id)
+		self.coref_seq_no_self_repr, self.token_type_overlap_self_repr = self.__create_self_metrics(last_own_coref)
+		self.coref_seq_no_other_repr, self.token_type_overlap_other_repr = self.__create_other_metrics(
+			preceding_other_coref_overlap)
 
 	def __repr__(self):
 		return self.__class__.__name__ + str(self.__dict__)
 
 	def row_cells(self) -> Tuple[str, ...]:
-		return (self.relevant_tokens_repr, self.coref_seq_no_repr,
-				self.token_type_overlap_self_repr)
+		return (self.relevant_tokens_repr, self.coref_seq_no_self_repr,
+				self.token_type_overlap_self_repr, self.coref_seq_no_other_repr, self.token_type_overlap_other_repr)
+
+	def __create_other_metrics(self, preceding_other_coref_overlap: Optional[Tuple[Coreference, Decimal]]) -> Tuple[
+		str, str]:
+		if preceding_other_coref_overlap is None:
+			coref_seq_no_repr = NULL_VALUE_REPR
+			token_type_overlap_repr = NULL_VALUE_REPR
+		else:
+			prev_other_coref, entity_token_type_overlap = preceding_other_coref_overlap
+			coref_seq_no_repr = str(prev_other_coref.seq_number)
+			token_type_overlap_repr = str(
+				entity_token_type_overlap)
+		return coref_seq_no_repr, token_type_overlap_repr
+
+	def __create_self_metrics(self, last_own_coref: Coreference) -> Tuple[str, str]:
+		if last_own_coref is None:
+			coref_seq_no_repr = NULL_VALUE_REPR
+			token_type_overlap_repr = NULL_VALUE_REPR
+		else:
+			coref_seq_no_repr = str(last_own_coref.seq_number)
+			entity_token_type_overlap = last_own_coref.token_type_overlap_with_self()
+			token_type_overlap_repr = NULL_VALUE_REPR if entity_token_type_overlap is None else str(
+				entity_token_type_overlap)
+		return coref_seq_no_repr, token_type_overlap_repr
 
 
 def token_type_overlap_ratio(token_types: FrozenSet[str], preceding_token_types: FrozenSet[str]) -> Decimal:
