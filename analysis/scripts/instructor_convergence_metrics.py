@@ -98,7 +98,7 @@ class CoreferenceChainDataPrinter(object):
 		grouped_corefs = defaultdict(SessionCoreferenceChainDatum)
 
 		for round_id, (game_round, round_utts) in enumerate(session_data.game_round_utts,
-												   start=SessionGameRoundUtteranceFactory.ROUND_ID_OFFSET):
+															start=SessionGameRoundUtteranceFactory.ROUND_ID_OFFSET):
 			round_instructor_id = session_data.round_instructor_ids[round_id]
 			round_metrics = GameRoundMetrics(dyad_id, game_round, round_instructor_id)
 			# NOTE: Only gets first referent entity (i.e. doesn't work if multiple entities are referents
@@ -139,7 +139,7 @@ class CoreferenceChainDataPrinter(object):
 
 
 class DialogueMetrics(object):
-	COL_NAMES = ("DIALOGUE", )
+	COL_NAMES = ("DIALOGUE",)
 
 	def __init__(self, diag_repr: str):
 		self.diag_repr = diag_repr
