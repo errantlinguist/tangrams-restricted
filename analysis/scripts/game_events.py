@@ -4,7 +4,7 @@ import json
 import sys
 from collections import defaultdict
 from enum import Enum, unique
-from typing import Any, Dict, Iterable, Iterator, Mapping, MutableSequence, Sequence, Tuple, Union
+from typing import Any, Iterable, Iterator, Mapping, MutableSequence, Sequence, Tuple, Union
 
 import session_data
 
@@ -212,7 +212,7 @@ class GameRound(object):
 
 	@property
 	def round_id(self):
-	    return self.initial_event.round_id
+		return self.initial_event.round_id
 
 	@property
 	def __key(self):
@@ -283,7 +283,8 @@ def __read_event_entity_desc_matrix(infile_path: str, event_count: int, entity_c
 	return result
 
 
-def __transform_row_cell_value(row: MutableSequence[str], col_idxs: Mapping[str, int], data_col: session_data.DataColumn):
+def __transform_row_cell_value(row: MutableSequence[str], col_idxs: Mapping[str, int],
+							   data_col: session_data.DataColumn):
 	col_props = data_col.value
 	idx = col_idxs[col_props.name]
 	transformed_val = col_props.value_transformer(row[idx])
