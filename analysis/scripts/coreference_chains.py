@@ -70,7 +70,9 @@ class DialogueCoreferenceChainDatum(Generic[R]):
 
 	def __init__(self):
 		self.participant_corefs = defaultdict(lambda: defaultdict(list))
+		"""A dictionary of entity coreference chains for each dialogue participant."""
 		self.session_corefs = defaultdict(list)
+		"""A dictionary for coreference chains for each entity, mapped by the respective entity's ID."""
 		self.__last_coref_id = 0
 
 	def __repr__(self):
