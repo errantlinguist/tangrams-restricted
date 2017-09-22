@@ -64,6 +64,11 @@ class Coreference(object):
 		return frozenset(self.tokens)
 
 	def token_type_overlap_with_self(self) -> Optional[Decimal]:
+		"""
+		Calculates the number of token types (i.e. unique words) of this coreference which overlap with the types of the coreference preceding this one within the same coreference chain.
+		:return: A ratio of the number of overlapping token types.
+		:rtype: Decimal
+		"""
 		if self.antecedent is None:
 			result = None
 		else:
@@ -231,6 +236,14 @@ class SessionCoreferenceChainDatum(Generic[R]):
 	def token_type_overlap_with_other(self,
 									  participant_id: str, coref_chain_id: R) -> Tuple[
 		Optional[Coreference], Optional[Tuple[Coreference, Decimal]]]:
+		"""
+		Calculates the number of token types (i.e. unique words) of the coreference from a given participant with that of the coreference preceding it which is not from the same participant but refers to the same referent, indicated by sharing the same coreference chain ID.
+
+		:param participant_id: The ID of the participant to calculate overlap for.
+		:param coref_chain_id: An identifier for the referent to search for coreference chains featuring it as a referent.
+		:return: The ratio of overlap between the last coreference for the given participant and coreference chain ID and the preceding coreference with a different participant but the same coreference chain ID.
+		:rtype Decimal
+		"""
 		own_participant_corefs = self.participant_corefs[participant_id][coref_chain_id]
 		if own_participant_corefs:
 			last_own_coref = own_participant_corefs[len(own_participant_corefs) - 1]
