@@ -10,14 +10,21 @@ GROUP_LIST_DELIM = ","
 TokenGroupMapping = Mapping[str, FrozenSet[str]]
 _TokenGroupMappingImpl = Dict[str, FrozenSet[str]]
 
+
 @unique
 class TokenGroupDataColumn(Enum):
 	GROUP = "GROUP"
 	TOKEN = "TOKEN"
 
 
-def __default_group_filter(group : str) -> bool:
-	# Returns true if the group is non-empty, non-whitespace
+def __default_group_filter(group: str) -> bool:
+	"""
+
+	:param group: The token group string
+	:type group: str
+	:return: True iff the group is neither empty nor composed only of whitespaces
+	:rtype: bool
+	"""
 	return bool(group)
 
 
