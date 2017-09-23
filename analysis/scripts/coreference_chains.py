@@ -149,7 +149,6 @@ class DialogueCoreferenceChainDatum(Generic[C]):
 		own_participant_coref_chain = self.participant_coref_chains[participant_id][coref_chain_id]
 		if own_participant_coref_chain:
 			last_own_coref = own_participant_coref_chain[len(own_participant_coref_chain) - 1]
-			last_own_coref_id = last_own_coref.coref_id
 			last_own_coref_round_id = last_own_coref.round_id
 			last_own_coref_token_types = last_own_coref.token_types
 
@@ -163,8 +162,7 @@ class DialogueCoreferenceChainDatum(Generic[C]):
 							(other_coref_chain_id, coref_chain) in
 							corefs.items() if
 							other_coref_chain_id == coref_chain_id and len(coref_chain) > 0)
-			other_previous_corefs = tuple(coref for coref in other_corefs if
-										  coref.coref_id < last_own_coref_id and coref.round_id <= last_own_coref_round_id)
+			other_previous_corefs = tuple(coref for coref in other_corefs if coref.round_id <= last_own_coref_round_id)
 			if other_previous_corefs:
 				preceding_coref = max(other_previous_corefs, key=lambda coref: coref.coref_id)
 				preceding_token_types = preceding_coref.token_types
