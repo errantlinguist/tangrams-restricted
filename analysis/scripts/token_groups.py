@@ -16,8 +16,9 @@ class TokenGroupDataColumn(Enum):
 	TOKEN = "TOKEN"
 
 
-def __default_group_filter(group) -> bool:
-	return group
+def __default_group_filter(group : str) -> bool:
+	# Returns true if the group is non-empty, non-whitespace
+	return bool(group)
 
 
 def create_group_token_list_dict(tokens: Iterable[str], token_groups: TokenGroupMapping) -> Dict[
