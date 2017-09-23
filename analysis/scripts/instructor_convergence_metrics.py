@@ -8,7 +8,7 @@ import sys
 from collections import defaultdict
 from decimal import Decimal
 from enum import Enum, unique
-from typing import Any, Callable, Generic, Iterable, Mapping, Optional, Sequence, \
+from typing import Any, Callable, Generic, Iterable, List, Mapping, Optional, Sequence, \
 	Tuple, TypeVar
 
 import game_events
@@ -23,6 +23,7 @@ COL_DELIM = '\t'
 NULL_VALUE_REPR = "N/A"
 
 _EMPTY_SET = frozenset()
+__DECIMAL_ZERO = Decimal("0")
 
 
 class GroupCoreferenceChainDatum(object):
@@ -209,7 +210,8 @@ class TokenGrouping(Enum):
 
 class TokenMetrics(Generic[C]):
 	COL_NAMES = (
-		"RELEVANT_TOKENS", "COREF_SEQ_SELF", "OVERLAP_SELF", "OVERLAP_SELF_BASELINE", "COREF_SEQ_OTHER",
+		"RELEVANT_TOKENS", "COREF_SEQ_SELF", "OVERLAP_SELF", "OVERLAP_SELF_BASELINE_MIN_NONZERO",
+		"OVERLAP_SELF_BASELINE_MAX", "OVERLAP_SELF_BASELINE_MEAN", "COREF_SEQ_OTHER",
 		"OVERLAP_OTHER")
 
 	@staticmethod
@@ -228,26 +230,31 @@ class TokenMetrics(Generic[C]):
 	@staticmethod
 	def __create_self_metrics(last_own_coref: Coreference,
 							  coref_chain_corpus: Iterable[DialogueCoreferenceChainDatum],
-							  baseline_coref_chain_id_filter: Callable[[C], bool]) -> Tuple[str, str, str]:
+							  baseline_coref_chain_id_filter: Callable[[C], bool]) -> Tuple[
+		str, str, List[str]]:
 		if last_own_coref is None:
 			coref_seq_no_repr = NULL_VALUE_REPR
 			token_type_overlap_repr = NULL_VALUE_REPR
-			token_type_overlap_baseline_repr = NULL_VALUE_REPR
+			token_type_overlap_baseline_reprs = [NULL_VALUE_REPR, NULL_VALUE_REPR, NULL_VALUE_REPR]
 		else:
 			coref_seq_no_repr = str(last_own_coref.seq_number)
 			entity_token_type_overlap = last_own_coref.token_type_overlap_with_antecedent()
 			if entity_token_type_overlap is None:
 				token_type_overlap_repr = NULL_VALUE_REPR
-				token_type_overlap_baseline_repr = NULL_VALUE_REPR
+				token_type_overlap_baseline_reprs = [NULL_VALUE_REPR, NULL_VALUE_REPR, NULL_VALUE_REPR]
 			else:
 				token_type_overlap_repr = str(entity_token_type_overlap)
-				token_type_overlap_baseline = token_type_overlap_with_antecedent_baseline(last_own_coref,
-																						  coref_chain_corpus,
-																						  baseline_coref_chain_id_filter)
-				token_type_overlap_baseline_repr = NULL_VALUE_REPR if token_type_overlap_baseline is None else str(
-					token_type_overlap_baseline)
+				token_type_overlap_baselines = token_type_overlap_with_antecedent_baselines(last_own_coref,
+																							coref_chain_corpus,
+																							baseline_coref_chain_id_filter)
+				token_type_overlap_baseline_reprs = []
+				for value in token_type_overlap_baselines:
+					if value is None:
+						token_type_overlap_baseline_reprs.append(NULL_VALUE_REPR)
+					else:
+						token_type_overlap_baseline_reprs.append(str(value))
 
-		return coref_seq_no_repr, token_type_overlap_repr, token_type_overlap_baseline_repr
+		return coref_seq_no_repr, token_type_overlap_repr, token_type_overlap_baseline_reprs
 
 	def __init__(self, relevant_tokens: Iterable[str], participant_id: str, coref_chain_id: C,
 				 session_coref_chains: DialogueCoreferenceChainDatum,
@@ -257,7 +264,7 @@ class TokenMetrics(Generic[C]):
 		last_own_coref, preceding_other_coref_overlap = session_coref_chains.token_type_overlap_with_other(
 			participant_id,
 			coref_chain_id)
-		self.coref_seq_no_self_repr, self.token_type_overlap_self_repr, self.token_type_overlap_baseline_repr = self.__create_self_metrics(
+		self.coref_seq_no_self_repr, self.token_type_overlap_self_repr, self.token_type_overlap_baseline_reprs = self.__create_self_metrics(
 			last_own_coref, coref_chain_corpus, baseline_coref_chain_id_filter)
 		self.coref_seq_no_other_repr, self.token_type_overlap_other_repr = self.__create_other_metrics(
 			preceding_other_coref_overlap)
@@ -265,15 +272,20 @@ class TokenMetrics(Generic[C]):
 	def __repr__(self):
 		return self.__class__.__name__ + str(self.__dict__)
 
-	def row_cells(self) -> Tuple[str, ...]:
-		return (self.relevant_tokens_repr, self.coref_seq_no_self_repr,
-				self.token_type_overlap_self_repr, self.token_type_overlap_baseline_repr, self.coref_seq_no_other_repr,
-				self.token_type_overlap_other_repr)
+	def row_cells(self) -> List[str]:
+		result = []
+		result.extend((self.relevant_tokens_repr, self.coref_seq_no_self_repr,
+					   self.token_type_overlap_self_repr))
+		result.extend(self.token_type_overlap_baseline_reprs)
+		result.append(self.coref_seq_no_other_repr)
+		result.append(self.token_type_overlap_other_repr)
+		return result
 
 
-def token_type_overlap_with_antecedent_baseline(coref: Coreference,
-												coref_chain_corpus: Iterable["DialogueCoreferenceChainDatum"],
-												coref_chain_id_filter: Callable[[C], bool]) -> Optional[Decimal]:
+def token_type_overlap_with_antecedent_baselines(coref: Coreference,
+												 coref_chain_corpus: Iterable["DialogueCoreferenceChainDatum"],
+												 coref_chain_id_filter: Callable[[C], bool]) -> Tuple[
+	Optional[Decimal], Optional[Decimal], Optional[Decimal]]:
 	"""
 
 	:param coref: The coreference to compute the overlap for.
@@ -281,14 +293,25 @@ def token_type_overlap_with_antecedent_baseline(coref: Coreference,
 	:param coref_chain_corpus: All DialogueCoreferenceChainDatum instances to use for calculation, each of which representing a single dyad in the entire corpus thereof.
 	:param coref_chain_id_filter: A filter matching the identifier(s) for analogous coreference chains to compare against.
 	:return: A ratio of the number of overlapping token types.
-	:rtype: Optional[Decimal]
+	:rtype: Optional[Tuple[Decimal, Decimal, Decimal, Decimal]]
 	"""
 	antecedent_corefs = coref.analogous_antecedent_corefs(coref_chain_corpus, coref_chain_id_filter)
 	if antecedent_corefs:
-		result = statistics.mean(coref.token_type_overlap(coref) for coref in antecedent_corefs)
+		overlaps = list(coref.token_type_overlap(antecedent_coref) for antecedent_coref in antecedent_corefs)
+		overlaps.sort()
+		min_value = next((value for value in overlaps if value > __DECIMAL_ZERO), __DECIMAL_ZERO)
+		# The highest value is usually that of the coref's own antecedent but not necessarily
+		max_value_1 = overlaps[len(overlaps) - 1]
+		# The second-highest value
+		# max_value_2 = overlaps[len(overlaps) - 2]
+		mean_value = statistics.mean(overlaps)
 	else:
-		result = None
-	return result
+		min_value = None
+		max_value_1 = None
+		# The second-highest value
+		# max_value_2 = None
+		mean_value = None
+	return min_value, max_value_1, mean_value
 
 
 def __create_argparser():
