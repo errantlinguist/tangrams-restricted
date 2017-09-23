@@ -35,7 +35,7 @@ class GroupCoreferenceChainDatum(object):
 
 
 class CoreferenceChainDataGrouper(object):
-	def __init__(self, token_groups: Mapping[str, str]):
+	def __init__(self, token_groups: tg.TokenGroupMapping):
 		self.token_groups = token_groups
 
 	def __call__(self, session_round_utts: GameRoundUtterances) -> GroupCoreferenceChainDatum:
