@@ -17,10 +17,10 @@ import utterances
 from coreference_chains import Coreference, DialogueCoreferenceChainDatum
 from game_utterances import GameRoundUtterances, SessionGameRoundUtteranceFactory
 
+C = TypeVar('C')
 COL_DELIM = '\t'
 NULL_VALUE_REPR = "N/A"
 
-R = TypeVar('R')
 
 _EMPTY_SET = frozenset()
 
@@ -191,7 +191,7 @@ class TokenGrouping(Enum):
 									  lambda group_tokens: group_tokens.get("shape", _EMPTY_SET))
 
 
-class TokenMetrics(Generic[R]):
+class TokenMetrics(Generic[C]):
 	COL_NAMES = ("RELEVANT_TOKENS", "COREF_SEQ_SELF", "OVERLAP_SELF", "COREF_SEQ_OTHER", "OVERLAP_OTHER")
 
 	@staticmethod
@@ -219,7 +219,7 @@ class TokenMetrics(Generic[R]):
 				entity_token_type_overlap)
 		return coref_seq_no_repr, token_type_overlap_repr
 
-	def __init__(self, relevant_tokens: Iterable[str], participant_id: str, coref_chain_id: R,
+	def __init__(self, relevant_tokens: Iterable[str], participant_id: str, coref_chain_id: C,
 				 session_corefs: DialogueCoreferenceChainDatum):
 		self.relevant_tokens_repr = ','.join(sorted(relevant_tokens))
 		last_own_coref, preceding_other_coref_overlap = session_corefs.token_type_overlap_with_other(participant_id,
