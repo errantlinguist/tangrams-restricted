@@ -137,43 +137,46 @@ class DialogueCoreferenceChainDatum(Generic[C]):
 		return participant_coref, session_coref
 
 	def token_type_overlap_with_other(self,
-									  participant_id: str, coref_chain_id: C) -> Tuple[
+									  participant_id: str, round_id: int, coref_chain_id: C) -> Tuple[
 		Optional[Coreference], Optional[Tuple[Coreference, Decimal]]]:
 		"""
 		Calculates the number of token types (i.e. unique words) of the coreference from a given participant with that of the coreference preceding it which is not from the same participant but refers to the same referent, indicated by sharing the same coreference chain ID.
 
 		:param participant_id: The ID of the participant to calculate overlap for.
+		:param round_id: The round to get the coreference for.
 		:param coref_chain_id: An identifier for the referent to search for coreference chains featuring it as a referent.
 		:return: The ratio of overlap between the last coreference for the given participant and coreference chain ID and the preceding coreference with a different participant but the same coreference chain ID.
 		"""
 		own_participant_coref_chain = self.participant_coref_chains[participant_id][coref_chain_id]
 		if own_participant_coref_chain:
-			last_own_coref = own_participant_coref_chain[len(own_participant_coref_chain) - 1]
-			last_own_coref_round_id = last_own_coref.round_id
-			last_own_coref_token_types = last_own_coref.token_types
+			round_own_coref = next((coref for coref in own_participant_coref_chain if coref.round_id == round_id), None)
+			if round_own_coref:
+				all_other_preceding_corefs = []
+				for other_participant_id, coref_chains in self.participant_coref_chains.items():
+					# Get all coreference chains for all participants with an ID not equal to the given one
+					if other_participant_id != participant_id:
+						for other_coref_chain_id, coref_chain in coref_chains.items():
+							# Get all coreference chains with the same referent regardless of the participant ID
+							if other_coref_chain_id == coref_chain_id:
+								# Get all coreferences in all coref chains which occurred during or before the given round
+								all_other_preceding_corefs.extend(
+									coref for coref in coref_chain if coref.round_id <= round_id)
 
-			# Get all coreference chains for all participants with an ID not equal to the given one
-			other_participant_coref_chains = ((other_participant_id, coref_chains) for
-											  (other_participant_id, coref_chains) in
-											  self.participant_coref_chains.items() if
-											  other_participant_id != participant_id)
-			# Get all coreference chains with the same referent regardless of the participant ID
-			other_corefs = (coref_chain[len(coref_chain) - 1] for (_, corefs) in other_participant_coref_chains for
-							(other_coref_chain_id, coref_chain) in
-							corefs.items() if
-							other_coref_chain_id == coref_chain_id and len(coref_chain) > 0)
-			other_previous_corefs = tuple(coref for coref in other_corefs if coref.round_id <= last_own_coref_round_id)
-			if other_previous_corefs:
-				preceding_coref = max(other_previous_corefs, key=lambda coref: coref.coref_id)
-				preceding_token_types = preceding_coref.token_types
-				overlap = alignment_metrics.token_type_overlap_ratio(last_own_coref_token_types, preceding_token_types)
-				preceding_coref_overlap = preceding_coref, overlap
+				directly_preceding_other_coref = max(all_other_preceding_corefs, default=None,
+													 key=lambda coref: coref.round_id)
+				if directly_preceding_other_coref:
+					preceding_token_types = directly_preceding_other_coref.token_types
+					overlap = alignment_metrics.token_type_overlap_ratio(round_own_coref.token_types,
+																		 preceding_token_types)
+					preceding_coref_overlap = directly_preceding_other_coref, overlap
+				else:
+					preceding_coref_overlap = None
 			else:
 				preceding_coref_overlap = None
 		else:
-			last_own_coref = None
+			round_own_coref = None
 			preceding_coref_overlap = None
-		return last_own_coref, preceding_coref_overlap
+		return round_own_coref, preceding_coref_overlap
 
 	@property
 	def __next_coref_id(self) -> int:

@@ -74,7 +74,8 @@ class CoreferenceChainDataPrinter(object):
 	@staticmethod
 	def __print_session(dyad_id: str, coref_groups: GroupCoreferenceChainDatum,
 						group_coref_chain_corpora: Mapping[str, Sequence[DialogueCoreferenceChainDatum]], outfile):
-		for game_round, round_instructor_id, round_utts, group_round_corefs in coref_groups.round_group_corefs:
+		for round_id, (game_round, round_instructor_id, round_utts, group_round_corefs) in enumerate(
+				coref_groups.round_group_corefs, start=SessionGameRoundUtteranceFactory.ROUND_ID_OFFSET):
 			round_metrics = GameRoundMetrics(dyad_id, game_round, round_instructor_id)
 			diag_metrics = DialogueMetrics(round_utts)
 
@@ -87,7 +88,7 @@ class CoreferenceChainDataPrinter(object):
 				baseline_coref_chain_id_filter = group.value.baseline_coref_chain_id_filter_factory(coref_chain_id)
 
 				token_metrics = TokenMetrics(relevant_tokens, round_instructor_id, coref_chain_id,
-											 group_session_coref_chains,
+											 group_session_coref_chains, round_id,
 											 coref_chain_corpus, baseline_coref_chain_id_filter)
 				token_metric_row_cells.extend(token_metrics.row_cells())
 			print(COL_DELIM.join(
@@ -257,12 +258,12 @@ class TokenMetrics(Generic[C]):
 		return coref_seq_no_repr, token_type_overlap_repr, token_type_overlap_baseline_reprs
 
 	def __init__(self, relevant_tokens: Iterable[str], participant_id: str, coref_chain_id: C,
-				 session_coref_chains: DialogueCoreferenceChainDatum,
+				 session_coref_chains: DialogueCoreferenceChainDatum, round_id: int,
 				 coref_chain_corpus: Iterable[DialogueCoreferenceChainDatum],
 				 baseline_coref_chain_id_filter: Callable[[C], bool]):
 		self.relevant_tokens_repr = ','.join(sorted(relevant_tokens))
 		last_own_coref, preceding_other_coref_overlap = session_coref_chains.token_type_overlap_with_other(
-			participant_id,
+			participant_id, round_id,
 			coref_chain_id)
 		self.coref_seq_no_self_repr, self.token_type_overlap_self_repr, self.token_type_overlap_baseline_reprs = self.__create_self_metrics(
 			last_own_coref, coref_chain_corpus, baseline_coref_chain_id_filter)
