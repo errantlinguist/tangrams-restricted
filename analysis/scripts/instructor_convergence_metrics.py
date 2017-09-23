@@ -74,7 +74,7 @@ class CoreferenceChainDataPrinter(object):
 		self.token_groups = token_groups
 
 	def __call__(self, session_coref_groups: ItemsView[str, GroupCoreferenceChainDatum], outfile):
-		token_grouping_col_names = ("{}_{}".format(col_name, grouping.value) for grouping in TokenGrouping for col_name
+		token_grouping_col_names = ("{}_{}".format(col_name, grouping.value.col_name) for grouping in TokenGrouping for col_name
 									in TokenMetrics.COL_NAMES)
 		print(COL_DELIM.join(
 			itertools.chain(GameRoundMetrics.COL_NAMES, DialogueMetrics.COL_NAMES, token_grouping_col_names)),
@@ -104,10 +104,10 @@ class CoreferenceChainDataPrinter(object):
 
 
 class DialogueMetrics(object):
-	COL_NAMES = ("UTTERANCE",)
+	COL_NAMES = ("DIALOGUE",)
 
 	def __init__(self, utts: Iterable[utterances.Utterance]):
-		self.utt_repr = utterances.join_utt_sentence_reprs(utts)
+		self.utt_repr = utterances.dialogue_utt_str_repr(utts)
 
 	def __repr__(self):
 		return self.__class__.__name__ + str(self.__dict__)
