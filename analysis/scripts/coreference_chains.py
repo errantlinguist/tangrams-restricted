@@ -33,6 +33,9 @@ class Coreference(object):
 	def __ne__(self, other):
 		return not (self == other)
 
+	def __hash__(self):
+		return hash(self.__key)
+
 	def __repr__(self):
 		return self.__class__.__name__ + str(self.__dict__)
 
