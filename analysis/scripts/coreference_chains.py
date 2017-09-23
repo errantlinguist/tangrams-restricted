@@ -1,4 +1,3 @@
-import statistics
 from collections import defaultdict
 from decimal import Decimal
 from typing import Callable, FrozenSet, Generic, Iterable, Iterator, MutableSequence, \
@@ -97,22 +96,6 @@ class Coreference(object):
 		:rtype: Optional[Decimal]
 		"""
 		return None if self.antecedent is None else self.token_type_overlap(self.antecedent)
-
-	def token_type_overlap_with_antecedent_baseline(self, coref_chain_corpus: Iterable["DialogueCoreferenceChainDatum"],
-													coref_chain_id_filter: Callable[[C], bool]) -> Optional[Decimal]:
-		"""
-
-		:param coref_chain_corpus: All DialogueCoreferenceChainDatum instances to use for calculation, each of which representing a single dyad in the entire corpus thereof.
-		:param coref_chain_id_filter: A filter matching the identifier(s) for analogous coreference chains to compare against.
-		:return: A ratio of the number of overlapping token types.
-		:rtype: Optional[Decimal]
-		"""
-		antecedent_corefs = self.analogous_antecedent_corefs(coref_chain_corpus, coref_chain_id_filter)
-		if antecedent_corefs:
-			result = statistics.mean(self.token_type_overlap(coref) for coref in antecedent_corefs)
-		else:
-			result = None
-		return result
 
 
 class DialogueCoreferenceChainDatum(Generic[C]):

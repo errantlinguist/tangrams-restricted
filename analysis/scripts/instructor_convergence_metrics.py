@@ -3,6 +3,7 @@
 import argparse
 import itertools
 import re
+import statistics
 import sys
 from collections import defaultdict
 from decimal import Decimal
@@ -240,8 +241,9 @@ class TokenMetrics(Generic[C]):
 				token_type_overlap_baseline_repr = NULL_VALUE_REPR
 			else:
 				token_type_overlap_repr = str(entity_token_type_overlap)
-				token_type_overlap_baseline = last_own_coref.token_type_overlap_with_antecedent_baseline(
-					coref_chain_corpus, baseline_coref_chain_id_filter)
+				token_type_overlap_baseline = token_type_overlap_with_antecedent_baseline(last_own_coref,
+																						  coref_chain_corpus,
+																						  baseline_coref_chain_id_filter)
 				token_type_overlap_baseline_repr = NULL_VALUE_REPR if token_type_overlap_baseline is None else str(
 					token_type_overlap_baseline)
 
@@ -267,6 +269,26 @@ class TokenMetrics(Generic[C]):
 		return (self.relevant_tokens_repr, self.coref_seq_no_self_repr,
 				self.token_type_overlap_self_repr, self.token_type_overlap_baseline_repr, self.coref_seq_no_other_repr,
 				self.token_type_overlap_other_repr)
+
+
+def token_type_overlap_with_antecedent_baseline(coref: Coreference,
+												coref_chain_corpus: Iterable["DialogueCoreferenceChainDatum"],
+												coref_chain_id_filter: Callable[[C], bool]) -> Optional[Decimal]:
+	"""
+
+	:param coref: The coreference to compute the overlap for.
+	:type coref: Coreference
+	:param coref_chain_corpus: All DialogueCoreferenceChainDatum instances to use for calculation, each of which representing a single dyad in the entire corpus thereof.
+	:param coref_chain_id_filter: A filter matching the identifier(s) for analogous coreference chains to compare against.
+	:return: A ratio of the number of overlapping token types.
+	:rtype: Optional[Decimal]
+	"""
+	antecedent_corefs = coref.analogous_antecedent_corefs(coref_chain_corpus, coref_chain_id_filter)
+	if antecedent_corefs:
+		result = statistics.mean(coref.token_type_overlap(coref) for coref in antecedent_corefs)
+	else:
+		result = None
+	return result
 
 
 def __create_argparser():
