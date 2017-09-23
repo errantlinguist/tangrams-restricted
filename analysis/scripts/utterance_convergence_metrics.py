@@ -61,10 +61,10 @@ class CoreferenceChainDataPrinter(object):
 					# If there are any semantically-relevant tokens at all, add a link in the coreference chain
 					if tokens:
 						entity_coref_chains = grouped_coref_chains[grouping]
-						entity_coref_chains.add_entity_corefs(participant_id,
-															  coref_chain_id,
-															  round_id,
-															  tokens)
+						entity_coref_chains.add_coref(participant_id,
+													  coref_chain_id,
+													  round_id,
+													  tokens)
 
 				# Calculate metric after adding all coreference chains so that the "baseline" metrics can be correctly calculated
 				token_metric_row_cells = []
@@ -181,16 +181,17 @@ class TokenMetrics(Generic[R]):
 			token_type_overlap_repr = NULL_VALUE_REPR
 		else:
 			coref_seq_no_repr = str(last_own_coref.seq_number)
-			entity_token_type_overlap = last_own_coref.token_type_overlap_with_self()
+			entity_token_type_overlap = last_own_coref.token_type_overlap_with_antecedent()
 			token_type_overlap_repr = NULL_VALUE_REPR if entity_token_type_overlap is None else str(
 				entity_token_type_overlap)
 		return coref_seq_no_repr, token_type_overlap_repr
 
 	def __init__(self, relevant_tokens: Iterable[str], participant_id: str, coref_chain_id: R,
-				 session_corefs: DialogueCoreferenceChainDatum):
+				 session_coref_chains: DialogueCoreferenceChainDatum):
 		self.relevant_token_types_repr = ','.join(sorted(frozenset(relevant_tokens)))
-		last_own_coref, preceding_other_coref_overlap = session_corefs.token_type_overlap_with_other(participant_id,
-																									 coref_chain_id)
+		last_own_coref, preceding_other_coref_overlap = session_coref_chains.token_type_overlap_with_other(
+			participant_id,
+			coref_chain_id)
 		self.coref_seq_no_self_repr, self.token_type_overlap_self_repr = self.__create_self_metrics(last_own_coref)
 		self.coref_seq_no_other_repr, self.token_type_overlap_other_repr = self.__create_other_metrics(
 			preceding_other_coref_overlap)

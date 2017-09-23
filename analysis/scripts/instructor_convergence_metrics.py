@@ -7,7 +7,7 @@ import sys
 from collections import defaultdict
 from decimal import Decimal
 from enum import Enum, unique
-from typing import Any, Callable, FrozenSet, Generic, Iterable, ItemsView, Mapping, Optional, Sequence, \
+from typing import Any, Callable, Generic, Iterable, Mapping, Optional, Sequence, \
 	Tuple, TypeVar
 
 import game_events
@@ -21,13 +21,12 @@ C = TypeVar('C')
 COL_DELIM = '\t'
 NULL_VALUE_REPR = "N/A"
 
-
 _EMPTY_SET = frozenset()
 
 
 class GroupCoreferenceChainDatum(object):
 	def __init__(self):
-		self.group_corefs = defaultdict(DialogueCoreferenceChainDatum)
+		self.group_coref_chains = defaultdict(DialogueCoreferenceChainDatum)
 		self.round_group_corefs = []
 
 	def __repr__(self):
@@ -54,11 +53,11 @@ class CoreferenceChainDataGrouper(object):
 			for grouping, (coref_chain_id, tokens) in grouped_referring_tokens.items():
 				# If there are any semantically-relevant tokens at all, add a link in the coreference chain
 				if tokens:
-					entity_coref_chains = result.group_corefs[grouping]
-					round_instructor_coref, session_coref = entity_coref_chains.add_entity_corefs(round_instructor_id,
-																								  coref_chain_id,
-																								  round_id,
-																								  tokens)
+					entity_coref_chains = result.group_coref_chains[grouping]
+					round_instructor_coref, session_coref = entity_coref_chains.add_coref(round_instructor_id,
+																						  coref_chain_id,
+																						  round_id,
+																						  tokens)
 				else:
 					round_instructor_coref = None
 					session_coref = None
@@ -70,20 +69,9 @@ class CoreferenceChainDataGrouper(object):
 
 
 class CoreferenceChainDataPrinter(object):
-	def __init__(self, token_groups: Mapping[str, str]):
-		self.token_groups = token_groups
-
-	def __call__(self, session_coref_groups: ItemsView[str, GroupCoreferenceChainDatum], outfile):
-		token_grouping_col_names = ("{}_{}".format(col_name, grouping.value.col_name) for grouping in TokenGrouping for col_name
-									in TokenMetrics.COL_NAMES)
-		print(COL_DELIM.join(
-			itertools.chain(GameRoundMetrics.COL_NAMES, DialogueMetrics.COL_NAMES, token_grouping_col_names)),
-			file=outfile)
-		ordered_session_coref_groups = sorted(session_coref_groups, key=lambda item: item[0])
-		for dyad_id, coref_groups in ordered_session_coref_groups:
-			self.__print_session(dyad_id, coref_groups, outfile)
-
-	def __print_session(self, dyad_id: str, coref_groups: GroupCoreferenceChainDatum, outfile):
+	@staticmethod
+	def __print_session(dyad_id: str, coref_groups: GroupCoreferenceChainDatum,
+						group_coref_chain_corpora: Mapping[str, Sequence[DialogueCoreferenceChainDatum]], outfile):
 		for game_round, round_instructor_id, round_utts, group_round_corefs in coref_groups.round_group_corefs:
 			round_metrics = GameRoundMetrics(dyad_id, game_round, round_instructor_id)
 			diag_metrics = DialogueMetrics(round_utts)
@@ -92,15 +80,38 @@ class CoreferenceChainDataPrinter(object):
 			for group in TokenGrouping:
 				round_corefs = group_round_corefs[group]
 				coref_chain_id, relevant_tokens = round_corefs.referring_tokens[group]
-				group_session_coref_chains = coref_groups.group_corefs[group]
+				group_session_coref_chains = coref_groups.group_coref_chains[group]
+				coref_chain_corpus = group_coref_chain_corpora[group]
+				baseline_coref_chain_id_filter = group.value.baseline_coref_chain_id_filter_factory(coref_chain_id)
 
 				token_metrics = TokenMetrics(relevant_tokens, round_instructor_id, coref_chain_id,
-											 group_session_coref_chains)
+											 group_session_coref_chains,
+											 coref_chain_corpus, baseline_coref_chain_id_filter)
 				token_metric_row_cells.extend(token_metrics.row_cells())
 			print(COL_DELIM.join(
 				str(cell) for cell in
 				itertools.chain(round_metrics.row_cells(), diag_metrics.row_cells(), token_metric_row_cells)),
 				file=outfile)
+
+	def __init__(self, token_groups: Mapping[str, str]):
+		self.token_groups = token_groups
+
+	def __call__(self, session_coref_groups: Mapping[str, GroupCoreferenceChainDatum], outfile):
+		token_grouping_col_names = ("{}_{}".format(col_name, grouping.value.col_name) for grouping in TokenGrouping for
+									col_name
+									in TokenMetrics.COL_NAMES)
+		print(COL_DELIM.join(
+			itertools.chain(GameRoundMetrics.COL_NAMES, DialogueMetrics.COL_NAMES, token_grouping_col_names)),
+			file=outfile)
+
+		group_coref_chain_corpora = defaultdict(list)
+		for group_coref_chains in session_coref_groups.values():
+			for group, coref_chains in group_coref_chains.group_coref_chains.items():
+				group_coref_chain_corpora[group].append(coref_chains)
+
+		ordered_session_coref_groups = sorted(session_coref_groups.items(), key=lambda item: item[0])
+		for dyad_id, coref_groups in ordered_session_coref_groups:
+			self.__print_session(dyad_id, coref_groups, group_coref_chain_corpora, outfile)
 
 
 class DialogueMetrics(object):
@@ -161,11 +172,13 @@ class GameRoundMetrics(object):
 
 
 class TokenGroupingDataMappings(object):
-	def __init__(self, col_name: str, coref_chain_id_extractor: Callable[[game_events.GameRound], Any],
-				 relevant_token_extractor: Callable[[Mapping[str, Sequence[str]]], Sequence[str]]):
+	def __init__(self, col_name: str, coref_chain_id_extractor: Callable[[game_events.GameRound], C],
+				 relevant_token_extractor: Callable[[Mapping[str, Sequence[str]]], Sequence[str]],
+				 baseline_coref_chain_id_filter_factory: Callable[[C], Callable[[C], bool]]):
 		self.col_name = col_name
 		self.coref_chain_id_extractor = coref_chain_id_extractor
 		self.relevant_token_extractor = relevant_token_extractor
+		self.baseline_coref_chain_id_filter_factory = baseline_coref_chain_id_filter_factory
 
 	def __repr__(self):
 		return self.__class__.__name__ + str(self.__dict__)
@@ -186,13 +199,17 @@ def _game_round_referent_shape(game_round: game_events.GameRound) -> str:
 @unique
 class TokenGrouping(Enum):
 	REFERENT = TokenGroupingDataMappings("REFERENT", _game_round_referent_id, lambda group_tokens: tuple(
-		token for tokens in group_tokens.values() for token in tokens))
+		token for tokens in group_tokens.values() for token in tokens),
+										 lambda referent_id: lambda other_referend_id: True)
 	SHAPE = TokenGroupingDataMappings("SHAPE", _game_round_referent_shape,
-									  lambda group_tokens: group_tokens.get("shape", _EMPTY_SET))
+									  lambda group_tokens: group_tokens.get("shape", _EMPTY_SET),
+									  lambda shape: lambda other_shape: other_shape == shape)
 
 
 class TokenMetrics(Generic[C]):
-	COL_NAMES = ("RELEVANT_TOKENS", "COREF_SEQ_SELF", "OVERLAP_SELF", "COREF_SEQ_OTHER", "OVERLAP_OTHER")
+	COL_NAMES = (
+		"RELEVANT_TOKENS", "COREF_SEQ_SELF", "OVERLAP_SELF", "OVERLAP_SELF_BASELINE", "COREF_SEQ_OTHER",
+		"OVERLAP_OTHER")
 
 	@staticmethod
 	def __create_other_metrics(preceding_other_coref_overlap: Optional[Tuple[Coreference, Decimal]]) -> Tuple[
@@ -208,23 +225,38 @@ class TokenMetrics(Generic[C]):
 		return coref_seq_no_repr, token_type_overlap_repr
 
 	@staticmethod
-	def __create_self_metrics(last_own_coref: Coreference) -> Tuple[str, str]:
+	def __create_self_metrics(last_own_coref: Coreference,
+							  coref_chain_corpus: Iterable[DialogueCoreferenceChainDatum],
+							  baseline_coref_chain_id_filter: Callable[[C], bool]) -> Tuple[str, str, str]:
 		if last_own_coref is None:
 			coref_seq_no_repr = NULL_VALUE_REPR
 			token_type_overlap_repr = NULL_VALUE_REPR
+			token_type_overlap_baseline_repr = NULL_VALUE_REPR
 		else:
 			coref_seq_no_repr = str(last_own_coref.seq_number)
-			entity_token_type_overlap = last_own_coref.token_type_overlap_with_self()
-			token_type_overlap_repr = NULL_VALUE_REPR if entity_token_type_overlap is None else str(
-				entity_token_type_overlap)
-		return coref_seq_no_repr, token_type_overlap_repr
+			entity_token_type_overlap = last_own_coref.token_type_overlap_with_antecedent()
+			if entity_token_type_overlap is None:
+				token_type_overlap_repr = NULL_VALUE_REPR
+				token_type_overlap_baseline_repr = NULL_VALUE_REPR
+			else:
+				token_type_overlap_repr = str(entity_token_type_overlap)
+				token_type_overlap_baseline = last_own_coref.token_type_overlap_with_antecedent_baseline(
+					coref_chain_corpus, baseline_coref_chain_id_filter)
+				token_type_overlap_baseline_repr = NULL_VALUE_REPR if token_type_overlap_baseline is None else str(
+					token_type_overlap_baseline)
+
+		return coref_seq_no_repr, token_type_overlap_repr, token_type_overlap_baseline_repr
 
 	def __init__(self, relevant_tokens: Iterable[str], participant_id: str, coref_chain_id: C,
-				 session_corefs: DialogueCoreferenceChainDatum):
+				 session_coref_chains: DialogueCoreferenceChainDatum,
+				 coref_chain_corpus: Iterable[DialogueCoreferenceChainDatum],
+				 baseline_coref_chain_id_filter: Callable[[C], bool]):
 		self.relevant_tokens_repr = ','.join(sorted(relevant_tokens))
-		last_own_coref, preceding_other_coref_overlap = session_corefs.token_type_overlap_with_other(participant_id,
-																									 coref_chain_id)
-		self.coref_seq_no_self_repr, self.token_type_overlap_self_repr = self.__create_self_metrics(last_own_coref)
+		last_own_coref, preceding_other_coref_overlap = session_coref_chains.token_type_overlap_with_other(
+			participant_id,
+			coref_chain_id)
+		self.coref_seq_no_self_repr, self.token_type_overlap_self_repr, self.token_type_overlap_baseline_repr = self.__create_self_metrics(
+			last_own_coref, coref_chain_corpus, baseline_coref_chain_id_filter)
 		self.coref_seq_no_other_repr, self.token_type_overlap_other_repr = self.__create_other_metrics(
 			preceding_other_coref_overlap)
 
@@ -233,15 +265,8 @@ class TokenMetrics(Generic[C]):
 
 	def row_cells(self) -> Tuple[str, ...]:
 		return (self.relevant_tokens_repr, self.coref_seq_no_self_repr,
-				self.token_type_overlap_self_repr, self.coref_seq_no_other_repr, self.token_type_overlap_other_repr)
-
-
-def token_type_overlap_ratio(token_types: FrozenSet[str], preceding_token_types: FrozenSet[str]) -> Decimal:
-	unified_token_type_count = len(token_types.union(
-		preceding_token_types))
-	overlapping_token_type_count = len(token_types.intersection(
-		preceding_token_types))
-	return Decimal(overlapping_token_type_count) / Decimal(unified_token_type_count)
+				self.token_type_overlap_self_repr, self.token_type_overlap_baseline_repr, self.coref_seq_no_other_repr,
+				self.token_type_overlap_other_repr)
 
 
 def __create_argparser():
@@ -281,7 +306,7 @@ def __main(args):
 		(dyad_id, grouper(game_round_utts)) for (dyad_id, game_round_utts) in session_game_round_utts.items())
 
 	printer = CoreferenceChainDataPrinter(token_groups)
-	printer(session_coref_groups.items(), outfile)
+	printer(session_coref_groups, outfile)
 
 
 if __name__ == "__main__":
