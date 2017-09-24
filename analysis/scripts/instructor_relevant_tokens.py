@@ -3,12 +3,10 @@
 import argparse
 import itertools
 import re
-import statistics
 import sys
 from collections import defaultdict
-from decimal import Decimal
 from enum import Enum, unique
-from typing import Any, Callable, Generic, Iterable, List, Mapping, Optional, Sequence, \
+from typing import Any, Callable, Generic, Iterable, Mapping, Sequence, \
 	Tuple, TypeVar
 
 import game_events
@@ -20,10 +18,8 @@ from game_utterances import GameRoundUtterances, SessionGameRoundUtteranceFactor
 
 C = TypeVar('C')
 COL_DELIM = '\t'
-NULL_VALUE_REPR = "N/A"
 
 _EMPTY_SET = frozenset()
-__DECIMAL_ZERO = Decimal("0")
 
 
 class GroupCoreferenceChainDatum(object):
@@ -208,44 +204,13 @@ class TokenMetrics(Generic[C]):
 	def __repr__(self):
 		return self.__class__.__name__ + str(self.__dict__)
 
-	def row_cells(self) -> Tuple[str,...]:
+	def row_cells(self) -> Tuple[str, ...]:
 		return self.relevant_tokens_repr,
 
 
-def token_type_overlap_with_antecedent_baselines(coref: Coreference,
-												 coref_chain_corpus: Iterable["DialogueCoreferenceChainDatum"],
-												 coref_chain_id_filter: Callable[[C], bool]) -> Tuple[
-	Optional[Decimal], Optional[Decimal], Optional[Decimal]]:
-	"""
-
-	:param coref: The coreference to compute the overlap for.
-	:type coref: Coreference
-	:param coref_chain_corpus: All DialogueCoreferenceChainDatum instances to use for calculation, each of which representing a single dyad in the entire corpus thereof.
-	:param coref_chain_id_filter: A filter matching the identifier(s) for analogous coreference chains to compare against.
-	:return: A ratio of the number of overlapping token types.
-	:rtype: Optional[Tuple[Decimal, Decimal, Decimal, Decimal]]
-	"""
-	antecedent_corefs = coref.analogous_antecedent_corefs(coref_chain_corpus, coref_chain_id_filter)
-	if antecedent_corefs:
-		overlaps = list(coref.token_type_overlap(antecedent_coref) for antecedent_coref in antecedent_corefs)
-		overlaps.sort()
-		min_value = next((value for value in overlaps if value > __DECIMAL_ZERO), __DECIMAL_ZERO)
-		# The highest value is usually that of the coref's own antecedent but not necessarily
-		max_value_1 = overlaps[len(overlaps) - 1]
-		# The second-highest value
-		# max_value_2 = overlaps[len(overlaps) - 2]
-		mean_value = statistics.mean(overlaps)
-	else:
-		min_value = None
-		max_value_1 = None
-		# The second-highest value
-		# max_value_2 = None
-		mean_value = None
-	return min_value, max_value_1, mean_value
-
-
 def __create_argparser():
-	result = argparse.ArgumentParser(description="Print out relevant tokens for each instructor utterance for each round in each session.")
+	result = argparse.ArgumentParser(
+		description="Print out relevant tokens for each instructor utterance for each round in each session.")
 	result.add_argument("token_group_file", metavar="TOKEN_GROUP_FILEPATH",
 						help="The path to the token group mapping file to use.")
 	result.add_argument("inpaths", metavar="INPATH", nargs='+',
