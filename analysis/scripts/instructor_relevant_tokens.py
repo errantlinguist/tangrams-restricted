@@ -90,8 +90,8 @@ class CoreferenceChainDataPrinter(object):
 				itertools.chain(round_metrics.row_cells(), diag_metrics.row_cells(), token_metric_row_cells)),
 				file=outfile)
 
-	def __init__(self, token_groups: Mapping[str, str]):
-		self.token_groups = token_groups
+	def __init__(self):
+		pass
 
 	def __call__(self, session_coref_groups: Mapping[str, GroupCoreferenceChainDatum], outfile):
 		token_grouping_col_names = ("{}_{}".format(col_name, grouping.value.col_name) for grouping in TokenGrouping for
@@ -278,7 +278,7 @@ def __main(args):
 	session_coref_groups = dict(
 		(dyad_id, grouper(game_round_utts)) for (dyad_id, game_round_utts) in session_game_round_utts.items())
 
-	printer = CoreferenceChainDataPrinter(token_groups)
+	printer = CoreferenceChainDataPrinter()
 	printer(session_coref_groups, outfile)
 
 
