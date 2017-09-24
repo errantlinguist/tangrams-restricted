@@ -26,7 +26,7 @@ _EMPTY_SET = frozenset()
 
 
 class CoreferenceChainDataPrinter(object):
-	def __init__(self, token_groups: Mapping[str, str]):
+	def __init__(self, token_groups: tg.TokenGroupMapping):
 		self.token_groups = token_groups
 
 	def __call__(self, session_data: ItemsView[str, GameRoundUtterances], outfile):
@@ -71,7 +71,7 @@ class CoreferenceChainDataPrinter(object):
 				for group in TokenGrouping:
 					coref_chain_id, tokens = grouped_referring_tokens[group]
 					coref_chains = grouped_coref_chains[group]
-					token_metrics = TokenMetrics(tokens, participant_id, coref_chain_id, coref_chains)
+					token_metrics = TokenMetrics(tokens, participant_id, round_id, coref_chain_id, coref_chains)
 					token_metric_row_cells.extend(token_metrics.row_cells())
 				print(COL_DELIM.join(
 					str(cell) for cell in
@@ -186,11 +186,11 @@ class TokenMetrics(Generic[R]):
 				entity_token_type_overlap)
 		return coref_seq_no_repr, token_type_overlap_repr
 
-	def __init__(self, relevant_tokens: Iterable[str], participant_id: str, coref_chain_id: R,
+	def __init__(self, relevant_tokens: Iterable[str], participant_id: str, round_id: int, coref_chain_id: R,
 				 session_coref_chains: DialogueCoreferenceChainDatum):
 		self.relevant_token_types_repr = ','.join(sorted(frozenset(relevant_tokens)))
 		last_own_coref, preceding_other_coref_overlap = session_coref_chains.token_type_overlap_with_other(
-			participant_id,
+			participant_id, round_id,
 			coref_chain_id)
 		self.coref_seq_no_self_repr, self.token_type_overlap_self_repr = self.__create_self_metrics(last_own_coref)
 		self.coref_seq_no_other_repr, self.token_type_overlap_other_repr = self.__create_other_metrics(
@@ -205,7 +205,8 @@ class TokenMetrics(Generic[R]):
 
 
 def __create_argparser():
-	result = argparse.ArgumentParser(description="Count referent token/type overlap ratios for each round in each game session.")
+	result = argparse.ArgumentParser(
+		description="Count referent token/type overlap ratios for each round in each game session.")
 	result.add_argument("token_group_file", metavar="TOKEN_GROUP_FILEPATH",
 						help="The path to the token group mapping file to use.")
 	result.add_argument("inpaths", metavar="INPATH", nargs='+',
