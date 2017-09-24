@@ -203,7 +203,7 @@ class TokenMetrics(Generic[C]):
 		"RELEVANT_TOKENS",)
 
 	def __init__(self, relevant_tokens: Iterable[str]):
-		self.relevant_tokens_repr = ','.join(sorted(relevant_tokens))
+		self.relevant_tokens_repr = ','.join(sorted(frozenset(relevant_tokens)))
 
 	def __repr__(self):
 		return self.__class__.__name__ + str(self.__dict__)

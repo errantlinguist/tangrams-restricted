@@ -261,7 +261,7 @@ class TokenMetrics(Generic[C]):
 				 session_coref_chains: DialogueCoreferenceChainDatum, round_id: int,
 				 coref_chain_corpus: Iterable[DialogueCoreferenceChainDatum],
 				 baseline_coref_chain_id_filter: Callable[[C], bool]):
-		self.relevant_tokens_repr = ','.join(sorted(relevant_tokens))
+		self.relevant_tokens_repr = ','.join(sorted(frozenset(relevant_tokens)))
 		last_own_coref, preceding_other_coref_overlap = session_coref_chains.token_type_overlap_with_other(
 			participant_id, round_id,
 			coref_chain_id)
