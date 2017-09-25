@@ -39,15 +39,16 @@ def __main(args):
 							   converters={"RELEVANT_TOKENS_REFERENT": parse_set, "RELEVANT_TOKENS_SHAPE": parse_set})
 	#round_tokens = pd.read_csv(inpath, sep="\t", dialect=csv.excel_tab, dtype={"RELEVANT_TOKENS_REFERENT" : str, "RELEVANT_TOKENS_SHAPE" : str })
 	#tokens = round_tokens["RELEVANT_TOKENS_REFERENT"].str.split(',', expand=False).apply(frozenset)
+	tokens = round_tokens.RELEVANT_TOKENS_REFERENT
 	# https://stackoverflow.com/a/46402641/1391325
-	round_tokens.sort_values(["DYAD", "ROUND"])
-	df =  round_tokens.groupby(['DYAD', 'INSTRUCTOR']).apply(\
-				   lambda x: (x["RELEVANT_TOKENS_REFERENT"].str.len() -
-						  x["RELEVANT_TOKENS_REFERENT"].diff().str.len()) \
+	#round_tokens.sort_values(["DYAD", "ROUND"])
+	round_tokens =  round_tokens.assign(RELEVANT_TOKENS_REFERENT=tokens).groupby(['DYAD', 'INSTRUCTOR']).apply(\
+				   lambda x: (x.RELEVANT_TOKENS_REFERENT.str.len() -
+						  x.RELEVANT_TOKENS_REFERENT.diff().str.len()) \
 						/ pd.Series([len(k[0].union(k[1]))
-	   for k in zip(x["RELEVANT_TOKENS_REFERENT"], x["RELEVANT_TOKENS_REFERENT"].shift(1).fillna(''))], index=x.index))\
+	   for k in zip(x.RELEVANT_TOKENS_REFERENT, x.RELEVANT_TOKENS_REFERENT.shift(1).fillna(''))], index=x.index))\
 			.reset_index(level=[0, 1], name='TokenOverlap')\
-			.assign(ROUND=round_tokens.ROUND, Tokens=round_tokens["RELEVANT_TOKENS_REFERENT"])\
+			.assign(ROUND=round_tokens.ROUND, Tokens=round_tokens.RELEVANT_TOKENS_REFERENT)\
 			.sort_values(['DYAD', 'ROUND', 'INSTRUCTOR'])\
 			.fillna('(no value)')\
 			 [['DYAD', 'INSTRUCTOR', 'ROUND', 'RELEVANT_TOKENS_REFERENT', 'TokenOverlap']]
@@ -60,7 +61,7 @@ def __main(args):
 	#	group = dyad_referent[0]
 	#	data = dyad_referent[1]
 	#	for row in data.iterrows():
-	#		print(type(row["RELEVANT_TOKENS_REFERENT"]))
+	#		print(type(row.RELEVANT_TOKENS_REFERENT))
 	#round_tokens["TOKEN_OVERLAP_REFERENT"] =  round_tokens.groupby(["DYAD", "REFERENT"]).apply(lambda x: token_type_overlap(round_tokens))
 
 
