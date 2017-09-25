@@ -64,7 +64,7 @@ def __token_type_overlap(df: pd.DataFrame) -> pd.DataFrame:
 	return result
 
 
-def __create_argparser():
+def __create_argparser() -> argparse.ArgumentParser:
 	result = argparse.ArgumentParser(
 		description="Print out relevant tokens for each instructor utterance for each round in each session.")
 	result.add_argument("inpath", metavar="INPATH",

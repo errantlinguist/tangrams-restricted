@@ -136,7 +136,7 @@ class ValuePartitioner(Generic[T]):
 			partition_min = next_partition_min
 
 
-def __create_argparser():
+def __create_argparser() -> argparse.ArgumentParser:
 	result = argparse.ArgumentParser(
 		description="Partition hue feature space into buckets which have the maximal average token overlap for each coreference chain involving entities with a hue inside the given feature space partition.")
 	result.add_argument("token_group_file", metavar="TOKEN_GROUP_FILEPATH",

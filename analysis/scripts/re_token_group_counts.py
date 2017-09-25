@@ -62,7 +62,7 @@ def read_utt_token_group_counts(infile: str, token_groups: TokenGroupMapping,
 	return create_utt_token_group_counts(utts, token_groups)
 
 
-def __create_argparser():
+def __create_argparser() -> argparse.ArgumentParser:
 	result = argparse.ArgumentParser(description="Count referring token groups.")
 	result.add_argument("token_group_file", metavar="TOKEN_GROUP_FILEPATH",
 						help="The path to the token group mapping file to use.")

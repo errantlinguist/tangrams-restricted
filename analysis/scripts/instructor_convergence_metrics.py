@@ -315,7 +315,7 @@ def token_type_overlap_with_antecedent_baselines(coref: Coreference,
 	return min_value, max_value_1, mean_value
 
 
-def __create_argparser():
+def __create_argparser() -> argparse.ArgumentParser:
 	result = argparse.ArgumentParser(description="Count referent token/type overlap ratios for each round in each game session.")
 	result.add_argument("token_group_file", metavar="TOKEN_GROUP_FILEPATH",
 						help="The path to the token group mapping file to use.")

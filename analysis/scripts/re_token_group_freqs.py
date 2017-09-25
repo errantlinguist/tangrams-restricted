@@ -258,7 +258,7 @@ def _create_rounded_decimal_repr(value: Decimal):
 	return str(value.quantize(__DECIMAL_REPR_ROUNDING_EXP, ROUND_HALF_UP))
 
 
-def __create_argparser():
+def __create_argparser() -> argparse.ArgumentParser:
 	result = argparse.ArgumentParser(description="Count frequencies of referring token groups.")
 	result.add_argument("token_group_file", metavar="TOKEN_GROUP_FILEPATH",
 						help="The path to the token group mapping file to use.")

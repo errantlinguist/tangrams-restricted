@@ -208,7 +208,7 @@ class TokenMetrics(Generic[C]):
 		return self.relevant_tokens_repr,
 
 
-def __create_argparser():
+def __create_argparser() -> argparse.ArgumentParser:
 	result = argparse.ArgumentParser(
 		description="Print out relevant tokens for each instructor utterance for each round in each session.")
 	result.add_argument("token_group_file", metavar="TOKEN_GROUP_FILEPATH",

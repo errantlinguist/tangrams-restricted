@@ -204,7 +204,7 @@ class TokenMetrics(Generic[R]):
 				self.token_type_overlap_self_repr, self.coref_seq_no_other_repr, self.token_type_overlap_other_repr)
 
 
-def __create_argparser():
+def __create_argparser() -> argparse.ArgumentParser:
 	result = argparse.ArgumentParser(
 		description="Count referent token/type overlap ratios for each round in each game session.")
 	result.add_argument("token_group_file", metavar="TOKEN_GROUP_FILEPATH",

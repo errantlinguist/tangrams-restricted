@@ -105,7 +105,7 @@ class TokenTypeDataPrinter(object):
 				str(overlap_ratio))
 
 
-def __create_argparser():
+def __create_argparser() -> argparse.ArgumentParser:
 	result = argparse.ArgumentParser(description="Count referent token/type counts per round in each game session.")
 	result.add_argument("token_group_file", metavar="TOKEN_GROUP_FILEPATH",
 						help="The path to the token group mapping file to use.")
