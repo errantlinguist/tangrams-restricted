@@ -26,20 +26,20 @@ def parse_set(cell_value: str) -> FrozenSet[str]:
 #	return len(overlap) / len(union)
 
 
-def token_type_overlap(x: pd.DataFrame) -> pd.Series:
+def token_type_overlap(df: pd.DataFrame, col_name: str) -> pd.Series:
 	intersected_token_sets = (previous_tokens.intersection(own_tokens) if pd.notnull(previous_tokens) else None for
 							  own_tokens, previous_tokens in
-							  zip(x["RELEVANT_TOKENS_REFERENT"], x["RELEVANT_TOKENS_REFERENT"].shift(1)))
+							  zip(df[col_name], df[col_name].shift(1)))
 	intersected_token_set_sizes = (np.NaN if unified_token_set is None else len(unified_token_set) for unified_token_set
 								   in
 								   intersected_token_sets)
-	intersected_token_set_size_series = pd.Series(intersected_token_set_sizes, index=x.index)
+	intersected_token_set_size_series = pd.Series(intersected_token_set_sizes, index=df.index)
 	unified_token_sets = (previous_tokens.union(own_tokens) if pd.notnull(previous_tokens) else None for
 						  own_tokens, previous_tokens in
-						  zip(x["RELEVANT_TOKENS_REFERENT"], x["RELEVANT_TOKENS_REFERENT"].shift(1)))
+						  zip(df[col_name], df[col_name].shift(1)))
 	unified_token_set_sizes = (np.NaN if unified_token_set is None else len(unified_token_set) for unified_token_set in
 							   unified_token_sets)
-	unified_token_set_size_series = pd.Series(unified_token_set_sizes, index=x.index)
+	unified_token_set_size_series = pd.Series(unified_token_set_sizes, index=df.index)
 	return intersected_token_set_size_series / unified_token_set_size_series
 
 
@@ -63,7 +63,7 @@ def __token_type_overlap(df: pd.DataFrame) -> pd.DataFrame:
 	#						   for k in
 	#						   zip(x.RELEVANT_TOKENS_REFERENT, x.RELEVANT_TOKENS_REFERENT.shift(1).fillna(''))],
 	#						  index=x.index))  # the for loop is part of this huge line
-	group_overlap_series = dyad_instructor_groups.apply(token_type_overlap)
+	group_overlap_series = dyad_instructor_groups.apply(lambda df: token_type_overlap(df, "RELEVANT_TOKENS_REFERENT"))
 
 	result = group_overlap_series.reset_index(level=[0, 1], name="TokenOverlap")
 	result = result.assign(ROUND=df.ROUND, RELEVANT_TOKENS_REFERENT=df.RELEVANT_TOKENS_REFERENT)
