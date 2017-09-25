@@ -24,14 +24,43 @@ def parse_set(cell_value: str) -> FrozenSet[str]:
 
 
 def token_type_overlap(x: pd.DataFrame) -> pd.Series:
-	overlaps = (len(preceding_tokens.intersection(own_tokens)) / len(preceding_tokens.union(own_tokens))
-				for (preceding_tokens, own_tokens) in
-				zip(x.RELEVANT_TOKENS_REFERENT, x.RELEVANT_TOKENS_REFERENT.shift(1).fillna('')))
-	return pd.Series(overlaps,
-					 index=x.index)
+	unions = pd.Series([len(k[0].union(k[1]))
+						for k in
+						zip(x.RELEVANT_TOKENS_REFERENT, x.RELEVANT_TOKENS_REFERENT.shift(1).fillna(''))],
+					   index=x.index)
+	return (x.RELEVANT_TOKENS_REFERENT.str.len() -
+			x.RELEVANT_TOKENS_REFERENT.diff().str.len()) \
+		   / unions
+
+
+def token_type_overlap_backup(x: pd.DataFrame) -> pd.Series:
+	unions = pd.Series([len(k[0].union(k[1]))
+						for k in
+						zip(x.RELEVANT_TOKENS_REFERENT, x.RELEVANT_TOKENS_REFERENT.shift(1).fillna(''))],
+					   index=x.index)
+	return (x.RELEVANT_TOKENS_REFERENT.str.len() -
+			x.RELEVANT_TOKENS_REFERENT.diff().str.len()) \
+		   / unions
 
 
 def __token_type_overlap(df: pd.DataFrame) -> pd.DataFrame:
+	"""
+	See <https://stackoverflow.com/a/46402641/1391325>
+	:param df: The DataFrame instance to process.
+	:return: A new DataFrame with token overlap ratios.
+	"""
+	tokens = df.RELEVANT_TOKENS_REFERENT
+	result = df.assign(RELEVANT_TOKENS_REFERENT=tokens)
+	result = result.groupby(['DYAD', 'INSTRUCTOR']).apply(token_type_overlap)
+
+	result = result.reset_index(level=[0, 1], name='TokenOverlap')
+	result = result.assign(ROUND=df.ROUND, RELEVANT_TOKENS_REFERENT=df.RELEVANT_TOKENS_REFERENT)
+	result = result.sort_values(['DYAD', 'ROUND', 'INSTRUCTOR']).fillna('(no value)')
+	result = result[['DYAD', 'ROUND', 'INSTRUCTOR', 'RELEVANT_TOKENS_REFERENT', 'TokenOverlap']]
+	return result
+
+
+def __token_type_overlap_backup(df: pd.DataFrame) -> pd.DataFrame:
 	"""
 	See <https://stackoverflow.com/a/46402641/1391325>
 	:param df: The DataFrame instance to process.
