@@ -41,15 +41,25 @@ def __token_type_overlap(df: pd.DataFrame) -> pd.DataFrame:
 	"""
 	referent_levels = ("DYAD", "INSTRUCTOR", "REFERENT")
 	dyad_instructor_referent_groups = df.groupby(referent_levels)
-	referent_token_set_col_name = "RELEVANT_TOKENS_REFERENT"
 	group_referent_token_self_overlap_series = dyad_instructor_referent_groups.apply(
-		lambda group_df: create_token_type_self_overlap_series(group_df, referent_token_set_col_name))
+		lambda group_df: create_token_type_self_overlap_series(group_df, "RELEVANT_TOKENS_REFERENT"))
 
 	referent_token_self_overlap_col_name = "RELEVANT_TOKENS_REFERENT_OVERLAP_SELF"
 	referent_token_self_overlap_df = group_referent_token_self_overlap_series.reset_index(level=referent_levels,
 																						  name=referent_token_self_overlap_col_name)
+
+	shape_levels = ("DYAD", "INSTRUCTOR", "SHAPE")
+	dyad_instructor_referent_groups = df.groupby(shape_levels)
+	group_referent_token_self_overlap_series = dyad_instructor_referent_groups.apply(
+		lambda group_df: create_token_type_self_overlap_series(group_df, "RELEVANT_TOKENS_SHAPE"))
+
+	shape_token_self_overlap_col_name = "RELEVANT_TOKENS_SHAPE_OVERLAP_SELF"
+	shape_token_self_overlap_df = group_referent_token_self_overlap_series.reset_index(level=shape_levels,
+																					   name=shape_token_self_overlap_col_name)
+
 	result = df.assign(**{
-		referent_token_self_overlap_col_name: referent_token_self_overlap_df[referent_token_self_overlap_col_name]})
+		referent_token_self_overlap_col_name: referent_token_self_overlap_df[referent_token_self_overlap_col_name],
+		shape_token_self_overlap_col_name: shape_token_self_overlap_df[shape_token_self_overlap_col_name]})
 
 	result = result.sort_values(["DYAD", "REFERENT", "INSTRUCTOR", "ROUND"])
 	# result = result[["DYAD", "ROUND", "INSTRUCTOR", "RELEVANT_TOKENS_REFERENT", "TokenOverlap"]]
