@@ -1,14 +1,17 @@
 import os
 import re
 
-from typing import Iterable, Iterator
+from typing import Dict, Iterable, Iterator, Union
 
 ATTRIBUTE_VALUE_PAIR_DELIM_PATTERN = re.compile("(?<!\\\)[=:]")
 COMMENT_LINE_PREFIXES = ('#', '!')
 PROPERTIES_FILEPATH_PATTERN = re.compile(".+?\.properties$")
 
+PropertyGroup = Union[str, "PropertyDict"]
+PropertyDict = Dict[str, PropertyGroup]
 
-def parse_properties(lines: Iterable[str]):
+
+def parse_properties(lines: Iterable[str]) -> PropertyDict:
 	"""
 	NOTE: This method cannot handle logical lines spread over multiple natural lines using escaped newline characters.
 	See <https://docs.oracle.com/javase/8/docs/api/java/util/Properties.html#load-java.io.Reader->
@@ -36,7 +39,7 @@ def walk_properties_files(*inpaths: str) -> Iterator[str]:
 					yield resolved_path
 
 
-def __fetch_prop_group(props, prop_name: str):
+def __fetch_prop_group(props: PropertyDict, prop_name: str) -> PropertyGroup:
 	try:
 		result = props[prop_name]
 	except KeyError:
@@ -45,7 +48,7 @@ def __fetch_prop_group(props, prop_name: str):
 	return result
 
 
-def __set_nested_prop_value(props, prop_name_components: Iterable[str], prop_value: str):
+def __set_nested_prop_value(props: PropertyDict, prop_name_components: Iterable[str], prop_value: str):
 	terminal_prop_group = props
 	name_component_iter = iter(prop_name_components)
 	next_name_component = next(name_component_iter)
@@ -62,7 +65,7 @@ def __set_nested_prop_value(props, prop_name_components: Iterable[str], prop_val
 			reached_terminal_group = True
 
 
-def __set_prop_value(props, prop_name: str, prop_value: str):
+def __set_prop_value(props: PropertyDict, prop_name: str, prop_value: str):
 	prop_name_components = prop_name.split('.')
 	if len(prop_name_components) < 2:
 		props[prop_name] = prop_value
