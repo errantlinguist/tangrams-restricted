@@ -51,20 +51,22 @@ def __token_type_overlap(df: pd.DataFrame) -> pd.DataFrame:
 	"""
 	tokens = df.RELEVANT_TOKENS_REFERENT
 	result = df.assign(RELEVANT_TOKENS_REFERENT=tokens)
-	dyad_instructor_groups = result.groupby(["DYAD", "INSTRUCTOR"])
-	# group_overlap_series = dyad_instructor_groups.apply(
+	dyad_instructor_referent_groups = result.groupby(["DYAD", "INSTRUCTOR", "REFERENT"])
+	# group_overlap_series = dyad_instructor_referent_groups.apply(
 	#	lambda x: (x.RELEVANT_TOKENS_REFERENT.str.len() -
 	#			   x.RELEVANT_TOKENS_REFERENT.diff().str.len()) \
 	#			  / pd.Series([len(k[0].union(k[1]))
 	#						   for k in
 	#						   zip(x.RELEVANT_TOKENS_REFERENT, x.RELEVANT_TOKENS_REFERENT.shift(1).fillna(''))],
 	#						  index=x.index))  # the for loop is part of this huge line
-	group_overlap_series = dyad_instructor_groups.apply(lambda group_df: token_type_overlap(group_df, "RELEVANT_TOKENS_REFERENT"))
+	group_overlap_series = dyad_instructor_referent_groups.apply(lambda group_df: token_type_overlap(group_df, "RELEVANT_TOKENS_REFERENT"))
 
-	result = group_overlap_series.reset_index(level=[0, 1], name="TokenOverlap")
+	#result = group_overlap_series.reset_index(level=[0, 1], name="TokenOverlap")
+	#result = group_overlap_series.reset_index(name="TokenOverlap")
+	result = group_overlap_series.reset_index(level=[0, 1, 2], name="TokenOverlap")
 	result = result.assign(ROUND=df.ROUND, RELEVANT_TOKENS_REFERENT=df.RELEVANT_TOKENS_REFERENT)
-	result = result.sort_values(["DYAD", "ROUND", "INSTRUCTOR"])
-	result = result[["DYAD", "ROUND", "INSTRUCTOR", "RELEVANT_TOKENS_REFERENT", "TokenOverlap"]]
+	#result = result.sort_values(["DYAD", "ROUND", "REFERENT", "INSTRUCTOR"])
+	#result = result[["DYAD", "ROUND", "INSTRUCTOR", "RELEVANT_TOKENS_REFERENT", "TokenOverlap"]]
 	return result
 
 
