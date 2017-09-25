@@ -43,10 +43,6 @@ def token_type_overlap(df: pd.DataFrame, col_name: str) -> pd.Series:
 	return intersected_token_set_size_series / unified_token_set_size_series
 
 
-def previous_token_sets(x: pd.DataFrame) -> pd.Series:
-	return x.RELEVANT_TOKENS_REFERENT.shift(1).fillna(None)
-
-
 def __token_type_overlap(df: pd.DataFrame) -> pd.DataFrame:
 	"""
 	See <https://stackoverflow.com/a/46402641/1391325>
