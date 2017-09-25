@@ -41,7 +41,8 @@ def __token_type_overlap(df: pd.DataFrame) -> pd.DataFrame:
 	"""
 	tokens = df.RELEVANT_TOKENS_REFERENT
 	result = df.assign(RELEVANT_TOKENS_REFERENT=tokens)
-	dyad_instructor_referent_groups = result.groupby(["DYAD", "INSTRUCTOR", "REFERENT"])
+	levels = ("DYAD", "INSTRUCTOR", "REFERENT")
+	dyad_instructor_referent_groups = result.groupby(levels)
 	group_overlap_series = dyad_instructor_referent_groups.apply(
 		lambda group_df: token_type_overlap(group_df, "RELEVANT_TOKENS_REFERENT"))
 
