@@ -48,8 +48,8 @@ def __token_type_overlap(df: pd.DataFrame):
 	df[referent_token_self_overlap_col_name] = referent_token_self_overlap_df[referent_token_self_overlap_col_name]
 
 	shape_levels = ("DYAD", "INSTRUCTOR", "SHAPE")
-	dyad_instructor_referent_groups = df.groupby(shape_levels)
-	group_referent_token_self_overlap_series = dyad_instructor_referent_groups.apply(
+	dyad_instructor_shape_groups = df.groupby(shape_levels)
+	group_referent_token_self_overlap_series = dyad_instructor_shape_groups.apply(
 		lambda group_df: create_token_type_self_overlap_series(group_df, "RELEVANT_TOKENS_SHAPE"))
 	shape_token_self_overlap_col_name = "RELEVANT_TOKENS_SHAPE_OVERLAP_SELF"
 	shape_token_self_overlap_df = group_referent_token_self_overlap_series.reset_index(level=shape_levels,
