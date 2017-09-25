@@ -46,6 +46,7 @@ def __token_type_overlap(df: pd.DataFrame):
 	referent_token_self_overlap_df = group_referent_token_self_overlap_series.reset_index(level=referent_levels,
 																						  name=referent_token_self_overlap_col_name)
 	df[referent_token_self_overlap_col_name] = referent_token_self_overlap_df[referent_token_self_overlap_col_name]
+	df["COREF_SEQ_REFERENT"] = dyad_instructor_referent_groups.cumcount()
 
 	shape_levels = ("DYAD", "INSTRUCTOR", "SHAPE")
 	dyad_instructor_shape_groups = df.groupby(shape_levels)
@@ -55,6 +56,7 @@ def __token_type_overlap(df: pd.DataFrame):
 	shape_token_self_overlap_df = group_referent_token_self_overlap_series.reset_index(level=shape_levels,
 																					   name=shape_token_self_overlap_col_name)
 	df[shape_token_self_overlap_col_name] = shape_token_self_overlap_df[shape_token_self_overlap_col_name]
+	df["COREF_SEQ_SHAPE"] = dyad_instructor_shape_groups.cumcount()
 
 
 def __create_argparser() -> argparse.ArgumentParser:
