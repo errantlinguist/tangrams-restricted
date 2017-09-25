@@ -46,12 +46,12 @@ def __main(args):
 				   lambda x: (x.RELEVANT_TOKENS_REFERENT.str.len() -
 						  x.RELEVANT_TOKENS_REFERENT.diff().str.len()) \
 						/ pd.Series([len(k[0].union(k[1]))
-	   for k in zip(x.RELEVANT_TOKENS_REFERENT, x.RELEVANT_TOKENS_REFERENT.shift(1).fillna(''))], index=x.index))\
-			.reset_index(level=[0, 1], name='TokenOverlap')\
-			.assign(ROUND=round_tokens.ROUND, Tokens=round_tokens.RELEVANT_TOKENS_REFERENT)\
-			.sort_values(['DYAD', 'ROUND', 'INSTRUCTOR'])\
-			.fillna('(no value)')\
-			 [['DYAD', 'INSTRUCTOR', 'ROUND', 'RELEVANT_TOKENS_REFERENT', 'TokenOverlap']]
+   for k in zip(x.RELEVANT_TOKENS_REFERENT, x.RELEVANT_TOKENS_REFERENT.shift(1).fillna(''))], index=x.index))\
+		.reset_index(level=[0, 1], name='TokenOverlap')\
+		.assign(ROUND=round_tokens.ROUND, Tokens=round_tokens.RELEVANT_TOKENS_REFERENT)\
+		.sort_values(['DYAD', 'ROUND', 'INSTRUCTOR'])\
+		.fillna('(no value)')\
+		 [['DYAD', 'INSTRUCTOR', 'ROUND', 'RELEVANT_TOKENS_REFERENT', 'TokenOverlap']]
 	# dyad_names = round_tokens["DYAD"].unique()
 	# for dyad_name in dyad_names:
 	#	dyad_rows = round_tokens[round_tokens["DYAD"] == dyad_name]
