@@ -24,10 +24,10 @@ def parse_set(cell_value: str) -> FrozenSet[str]:
 
 
 def token_type_overlap(x: pd.DataFrame) -> pd.Series:
-	return (x.Tokens.str.len() -
-			x.Tokens.diff().str.len()) \
+	return (x.RELEVANT_TOKENS_REFERENT.str.len() -
+			x.RELEVANT_TOKENS_REFERENT.diff().str.len()) \
 		   / pd.Series([len(k[0].union(k[1]))
-						for k in zip(x.Tokens, x.Tokens.shift(1).fillna(''))],
+						for k in zip(x.RELEVANT_TOKENS_REFERENT, x.RELEVANT_TOKENS_REFERENT.shift(1).fillna(''))],
 					   index=x.index)  # the for loop is part of this huge line
 
 
