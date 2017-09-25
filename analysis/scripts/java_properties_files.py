@@ -24,6 +24,7 @@ def parse_properties(lines: Iterable[str]) -> PropertyDict:
 	semantic_lines = (line for line in stripped_lines if line and not line.startswith(COMMENT_LINE_PREFIXES))
 	props = (ATTRIBUTE_VALUE_PAIR_DELIM_PATTERN.split(line, maxsplit=1) for line in semantic_lines)
 	for prop in props:
+		assert len(prop) == 2
 		prop_name = prop[0]
 		prop_value = prop[1]
 		__set_prop_value(result, prop_name, prop_value)
