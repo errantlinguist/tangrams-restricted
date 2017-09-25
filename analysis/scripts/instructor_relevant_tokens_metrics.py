@@ -4,7 +4,7 @@ import argparse
 import csv
 import re
 import sys
-from typing import FrozenSet
+from typing import FrozenSet, Iterable
 
 import numpy as np
 import pandas as pd
@@ -59,17 +59,18 @@ def __token_type_overlap(df: pd.DataFrame) -> pd.DataFrame:
 	#						   for k in
 	#						   zip(x.RELEVANT_TOKENS_REFERENT, x.RELEVANT_TOKENS_REFERENT.shift(1).fillna(''))],
 	#						  index=x.index))  # the for loop is part of this huge line
-	group_overlap_series = dyad_instructor_referent_groups.apply(lambda group_df: token_type_overlap(group_df, "RELEVANT_TOKENS_REFERENT"))
+	group_overlap_series = dyad_instructor_referent_groups.apply(
+		lambda group_df: token_type_overlap(group_df, "RELEVANT_TOKENS_REFERENT"))
 
-	#result = group_overlap_series.reset_index(level=[0, 1], name="TokenOverlap")
-	#result = group_overlap_series.reset_index(name="TokenOverlap")
+	# result = group_overlap_series.reset_index(level=[0, 1], name="TokenOverlap")
+	# result = group_overlap_series.reset_index(name="TokenOverlap")
 
-	#result = group_overlap_series.reset_index(level=[0, 1, 2], name="TokenOverlap")
-	#result = group_overlap_series.reset_index(level=[0])
+	# result = group_overlap_series.reset_index(level=[0, 1, 2], name="TokenOverlap")
+	# result = group_overlap_series.reset_index(level=[0])
 	result = result.assign(ROUND=df.ROUND, RELEVANT_TOKENS_REFERENT=df.RELEVANT_TOKENS_REFERENT)
 
 	result = result.sort_values(["DYAD", "REFERENT", "INSTRUCTOR", "ROUND"])
-	#result = result[["DYAD", "ROUND", "INSTRUCTOR", "RELEVANT_TOKENS_REFERENT", "TokenOverlap"]]
+	# result = result[["DYAD", "ROUND", "INSTRUCTOR", "RELEVANT_TOKENS_REFERENT", "TokenOverlap"]]
 	return result
 
 
@@ -88,11 +89,14 @@ def __main(args):
 							   converters={"RELEVANT_TOKENS_REFERENT": parse_set, "RELEVANT_TOKENS_SHAPE": parse_set})
 	round_token_overlaps = __token_type_overlap(round_tokens)
 	round_token_overlaps["RELEVANT_TOKENS_REFERENT"] = round_token_overlaps["RELEVANT_TOKENS_REFERENT"].map(
-		lambda tokens: ','.join(sorted(tokens)))
+		__token_set_repr)
+	round_token_overlaps["RELEVANT_TOKENS_SHAPE"] = round_token_overlaps["RELEVANT_TOKENS_SHAPE"].map(
+		__token_set_repr)
 	round_token_overlaps.to_csv(sys.stdout, index_label="INDEX", sep="\t", na_rep="N/A")
 
 
-# print(round_token_overlaps)
+def __token_set_repr(tokens: Iterable[str]) -> str:
+	return ','.join(sorted(tokens))
 
 
 if __name__ == "__main__":
