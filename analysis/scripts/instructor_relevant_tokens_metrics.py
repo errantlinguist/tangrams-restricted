@@ -55,11 +55,10 @@ def __token_type_overlap(df: pd.DataFrame) -> pd.DataFrame:
 	shape_token_self_overlap_df = group_referent_token_self_overlap_series.reset_index(level=shape_levels,
 																					   name=shape_token_self_overlap_col_name)
 
-	result = df.assign(**{
-		referent_token_self_overlap_col_name: referent_token_self_overlap_df[referent_token_self_overlap_col_name],
-		shape_token_self_overlap_col_name: shape_token_self_overlap_df[shape_token_self_overlap_col_name]})
+	df[referent_token_self_overlap_col_name] = referent_token_self_overlap_df[referent_token_self_overlap_col_name]
+	df[shape_token_self_overlap_col_name] = shape_token_self_overlap_df[shape_token_self_overlap_col_name]
 
-	result = result.sort_values(["DYAD", "REFERENT", "INSTRUCTOR", "ROUND"])
+	result = df.sort_values(["DYAD", "REFERENT", "INSTRUCTOR", "ROUND"])
 	# result = result[["DYAD", "ROUND", "INSTRUCTOR", "RELEVANT_TOKENS_REFERENT", "TokenOverlap"]]
 	return result
 
