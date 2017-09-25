@@ -6,6 +6,7 @@ Created on Apr 3, 2017
 """
 
 import os.path
+from typing import Iterable
 
 from lxml import etree
 
@@ -14,7 +15,7 @@ from annotations import AnnotationParser, HAT_DATA_NAMESPACE, HAT_DATA_NAMESPACE
 from etree_printing import print_etree_to_file
 
 
-def merge_annotations(inpaths, namespace):
+def merge_annotations(inpaths: Iterable[str], namespace: str):
 	annot_data = []
 	qname_factory = QNameStringFactory(namespace)
 	nsmap = {None: namespace}
@@ -34,7 +35,7 @@ def merge_annotations(inpaths, namespace):
 	return result
 
 
-def __main(inpaths, outfile):
+def __main(inpaths: Iterable[str], outfile):
 	default_namespace = HAT_DATA_NAMESPACE
 	# http://stackoverflow.com/a/18340978/1391325
 	etree.register_namespace(HAT_DATA_NAMESPACE_NAME, default_namespace)

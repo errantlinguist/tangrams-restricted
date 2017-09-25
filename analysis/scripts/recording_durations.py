@@ -58,7 +58,7 @@ def walk_audio_files(inpaths: Iterable[str]) -> Set[str]:
 	return result
 
 
-def __main(inpaths):
+def __main(inpaths: Iterable[str]):
 	audio_infiles = walk_audio_files(inpaths)
 	print("Found {} audio file(s).".format(len(audio_infiles)), file=sys.stderr)
 	file_durations = ((audio_infile, read_audio_file_duration(audio_infile)) for audio_infile in audio_infiles)

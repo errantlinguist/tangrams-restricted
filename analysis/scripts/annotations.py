@@ -117,7 +117,7 @@ class QNameStringFactory(object):
 		self.tag_qnames = {}
 		self.__tag_prefix = "{" + namespace + "}"
 
-	def __call__(self, tag_name):
+	def __call__(self, tag_name: str):
 		result = self.tag_qnames.get(tag_name)
 		if not result:
 			result = self.__tag_prefix + tag_name
@@ -209,7 +209,7 @@ def create_skeleton_annnotation_elem(audio_file_path: str):
 	return root
 
 
-def is_blank_or_none(string):
+def is_blank_or_none(string: str):
 	return string is None or len(string) < 1 or string.isspace()
 
 
@@ -223,12 +223,12 @@ def natural_keys(text):
 	return [__atoi(c) for c in __DIGITS_PATTERN.split(text)]
 
 
-def sanitize_dom_id(string):
+def sanitize_dom_id(string: str):
 	result = __WHITESPACE_PATTERN.sub('-', string)
 	return escape(result)
 
 
-def __atoi(text):
+def __atoi(text: str):
 	"""
 	:see: http://stackoverflow.com/a/5967539/1391325
 	"""

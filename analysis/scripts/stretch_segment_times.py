@@ -29,7 +29,7 @@ def stretch_segment_times(segments, factor):
 		segment.set("end", str(new_end))
 
 
-def __create_argparser(name):
+def __create_argparser(name: str) -> argparse.ArgumentParser:
 	result = argparse.ArgumentParser(description=name)
 	result.add_argument("infile", metavar='PATH', help='The file to read.')
 	result.add_argument("-p", '--source-id-pattern', metavar='REGEX', type=re.compile, required=True,

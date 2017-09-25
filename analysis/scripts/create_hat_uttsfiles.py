@@ -16,7 +16,7 @@ WAV_CONTENT_TYPE_PATTERN = re.compile(".*?/wav")
 UTTERANCE_FILE_NAME = session_data.SessionDatum.UTTS.value
 
 
-def create_session_dir_uttfiles(*inpaths):
+def create_session_dir_uttfiles(*inpaths: str):
 	for inpath in inpaths:
 		for dirpath, _, filenames in os.walk(inpath, followlinks=True):
 			longest_wav_filename = find_longest_wav_filename(dirpath, filenames)
@@ -33,7 +33,7 @@ def create_session_dir_uttfiles(*inpaths):
 										   pretty_print=True)
 
 
-def find_longest_wav_filename(dirpath, filenames):
+def find_longest_wav_filename(dirpath: str, filenames: Iterable[str]):
 	null_filename_value = ""
 	longest_filename = null_filename_value
 	for filename in filenames:
@@ -45,7 +45,7 @@ def find_longest_wav_filename(dirpath, filenames):
 	return None if longest_filename == null_filename_value else longest_filename
 
 
-def is_untranscribed_session_dir(dirpath, filenames: Iterable[str]) -> bool:
+def is_untranscribed_session_dir(dirpath: str, filenames: Iterable[str]) -> bool:
 	found_uttsfile = False
 	found_wavfile = True
 	for filename in filenames:

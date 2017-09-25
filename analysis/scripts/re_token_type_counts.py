@@ -278,13 +278,13 @@ class TokenCountDatum(object):
 		self.token_counts.update(other.token_counts)
 
 
-def find_last_matching_elem_idx(elems: Sequence[T], predicate: Callable[[T], bool]):
+def find_last_matching_elem_idx(elems: Sequence[T], predicate: Callable[[T], bool]) -> int:
 	reversed_elems = reversed(elems)
 	max_valid_idx = len(elems) - 1
 	return next((max_valid_idx - i for i, elem in enumerate(reversed_elems) if predicate(elem)), -1)
 
 
-def is_relevant_round(datum: FilteredTokenCountDatum):
+def is_relevant_round(datum: FilteredTokenCountDatum) -> bool:
 	return len(datum.relevant_tokens.token_types) > 0
 
 
@@ -300,7 +300,8 @@ def session_token_type_data(named_sessions, relevant_tokens: Container[str]) -> 
 		yield dyad_id, session_token_type_datum
 
 
-def trim_empty_tail_rounds(dyad_id: Any, round_token_counts: Sequence[FilteredTokenCountDatum]):
+def trim_empty_tail_rounds(dyad_id: Any, round_token_counts: Sequence[FilteredTokenCountDatum]) -> Sequence[
+	FilteredTokenCountDatum]:
 	last_relevant_elem_idx = find_last_matching_elem_idx(round_token_counts, is_relevant_round)
 	max_valid_idx = len(round_token_counts) - 1
 	if -1 < last_relevant_elem_idx < max_valid_idx:
@@ -327,7 +328,7 @@ def __create_argparser() -> argparse.ArgumentParser:
 	return result
 
 
-def __create_rounded_decimal_repr(value: Decimal):
+def __create_rounded_decimal_repr(value: Decimal) -> str:
 	return str(value)
 
 
