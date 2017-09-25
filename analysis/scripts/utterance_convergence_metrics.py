@@ -206,7 +206,7 @@ class TokenMetrics(Generic[R]):
 
 def __create_argparser() -> argparse.ArgumentParser:
 	result = argparse.ArgumentParser(
-		description="Count referent token/type overlap ratios for each round in each game session.")
+		description="Measure referent token type overlap in coreference chains in each game session, considering each individual utterance in each round as a node in a coreference chain.")
 	result.add_argument("token_group_file", metavar="TOKEN_GROUP_FILEPATH",
 						help="The path to the token group mapping file to use.")
 	result.add_argument("inpaths", metavar="INPATH", nargs='+',
