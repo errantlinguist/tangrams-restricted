@@ -6,9 +6,12 @@ import re
 import sys
 from typing import FrozenSet
 
+import numpy as np
 import pandas as pd
 
 CELL_MULTIVALUE_DELIM_PATTERN = re.compile("\\s*,\\s*")
+
+_EMPTY_SET = frozenset()
 
 
 def parse_set(cell_value: str) -> FrozenSet[str]:
@@ -34,13 +37,19 @@ def token_type_overlap(x: pd.DataFrame) -> pd.Series:
 
 
 def token_type_overlap_backup(x: pd.DataFrame) -> pd.Series:
-	unions = pd.Series((len(previous_tokens.union(own_tokens))
-						for previous_tokens, own_tokens in
-						zip(x.RELEVANT_TOKENS_REFERENT, x.RELEVANT_TOKENS_REFERENT.shift(1).fillna(''))),
-					   index=x.index)
+	unified_token_sets = (previous_tokens.union(own_tokens) if pd.notnull(previous_tokens) else None for
+						  own_tokens, previous_tokens in
+						  zip(x.RELEVANT_TOKENS_REFERENT, x.RELEVANT_TOKENS_REFERENT.shift(1)))
+	unified_token_set_sizes = (np.NaN if unified_token_set is None else len(unified_token_set) for unified_token_set in
+							   unified_token_sets)
+	unified_token_set_size_series = pd.Series(unified_token_set_sizes, index=x.index)
 	return (x.RELEVANT_TOKENS_REFERENT.str.len() -
 			x.RELEVANT_TOKENS_REFERENT.diff().str.len()) \
-		   / unions
+		   / unified_token_set_size_series
+
+
+def previous_token_sets(x: pd.DataFrame) -> pd.Series:
+	return x.RELEVANT_TOKENS_REFERENT.shift(1).fillna(None)
 
 
 def __token_type_overlap(df: pd.DataFrame) -> pd.DataFrame:
