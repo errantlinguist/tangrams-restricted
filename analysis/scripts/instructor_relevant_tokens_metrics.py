@@ -67,7 +67,7 @@ def __token_type_overlap(df: pd.DataFrame) -> pd.DataFrame:
 
 	result = group_overlap_series.reset_index(level=[0, 1], name="TokenOverlap")
 	result = result.assign(ROUND=df.ROUND, RELEVANT_TOKENS_REFERENT=df.RELEVANT_TOKENS_REFERENT)
-	result = result.sort_values(["DYAD", "ROUND", "INSTRUCTOR"]).fillna("(no value)")
+	result = result.sort_values(["DYAD", "ROUND", "INSTRUCTOR"])
 	result = result[["DYAD", "ROUND", "INSTRUCTOR", "RELEVANT_TOKENS_REFERENT", "TokenOverlap"]]
 	return result
 
