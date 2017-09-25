@@ -12,10 +12,6 @@ import pandas as pd
 CELL_MULTIVALUE_DELIM_PATTERN = re.compile("\\s*,\\s*")
 
 
-def parse_set(cell_value: str) -> FrozenSet[str]:
-	return frozenset(CELL_MULTIVALUE_DELIM_PATTERN.split(cell_value))
-
-
 def create_token_type_overlap_series(df: pd.DataFrame, col_name: str) -> pd.Series:
 	intersected_token_sets = (previous_tokens.intersection(own_tokens) if pd.notnull(previous_tokens) else None for
 							  own_tokens, previous_tokens in
@@ -31,6 +27,10 @@ def create_token_type_overlap_series(df: pd.DataFrame, col_name: str) -> pd.Seri
 							   unified_token_sets)
 	unified_token_set_size_series = pd.Series(unified_token_set_sizes, index=df.index)
 	return intersected_token_set_size_series / unified_token_set_size_series
+
+
+def parse_set(cell_value: str) -> FrozenSet[str]:
+	return frozenset(CELL_MULTIVALUE_DELIM_PATTERN.split(cell_value))
 
 
 def __token_type_overlap(df: pd.DataFrame) -> pd.DataFrame:
