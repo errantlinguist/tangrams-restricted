@@ -6,7 +6,7 @@ import pandas as pd
 import seaborn as sns
 
 
-def __main(infile_path, outfile_path):
+def __main(infile_path: str, outfile_path: str):
 	sns.set()
 
 	hue_token_overlap = pd.read_csv(infile_path, sep='\t', float_precision="high", encoding="utf-8", memory_map=True)
