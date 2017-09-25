@@ -37,13 +37,10 @@ def __main(args):
 	print("Reading \"{}\".".format(inpath), file=sys.stderr)
 	round_tokens = pd.read_csv(inpath, sep="\t", dialect=csv.excel_tab, float_precision="high", memory_map=True,
 							   converters={"RELEVANT_TOKENS_REFERENT": parse_set, "RELEVANT_TOKENS_SHAPE": parse_set})
-	#round_tokens = pd.read_csv(inpath, sep="\t", dialect=csv.excel_tab, dtype={"RELEVANT_TOKENS_REFERENT" : str, "RELEVANT_TOKENS_SHAPE" : str })
-	#tokens = round_tokens["RELEVANT_TOKENS_REFERENT"].str.split(',', expand=False).apply(frozenset)
-	tokens = round_tokens.RELEVANT_TOKENS_REFERENT
-
 	round_tokens.sort_values(["DYAD", "ROUND"])
 
 	# https://stackoverflow.com/a/46402641/1391325
+	tokens = round_tokens.RELEVANT_TOKENS_REFERENT
 	round_token_overlaps = round_tokens.assign(RELEVANT_TOKENS_REFERENT=tokens)
 	round_token_overlaps = round_token_overlaps.groupby(['DYAD', 'INSTRUCTOR']).apply( \
 		lambda x: (x.RELEVANT_TOKENS_REFERENT.str.len() -
