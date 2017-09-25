@@ -69,7 +69,7 @@ def __main(args):
 	round_token_overlaps = __token_type_overlap(round_tokens)
 	round_token_overlaps["RELEVANT_TOKENS_REFERENT"] = round_token_overlaps["RELEVANT_TOKENS_REFERENT"].map(
 		__token_set_repr)
-	#round_token_overlaps["RELEVANT_TOKENS_SHAPE"] = round_token_overlaps["RELEVANT_TOKENS_SHAPE"].map(
+	# round_token_overlaps["RELEVANT_TOKENS_SHAPE"] = round_token_overlaps["RELEVANT_TOKENS_SHAPE"].map(
 	#	__token_set_repr)
 	round_token_overlaps.to_csv(sys.stdout, index_label="INDEX", sep="\t", na_rep="N/A")
 
