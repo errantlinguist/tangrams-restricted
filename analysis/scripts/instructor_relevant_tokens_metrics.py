@@ -24,8 +24,8 @@ def parse_set(cell_value: str) -> FrozenSet[str]:
 
 
 def token_type_overlap(x: pd.DataFrame) -> pd.Series:
-	unions = pd.Series((len(k[0].union(k[1]))
-						for k in
+	unions = pd.Series((len(previous_tokens.union(own_tokens))
+						for previous_tokens, own_tokens in
 						zip(x.RELEVANT_TOKENS_REFERENT, x.RELEVANT_TOKENS_REFERENT.shift(1).fillna(''))),
 					   index=x.index)
 	return (x.RELEVANT_TOKENS_REFERENT.str.len() -
@@ -34,8 +34,8 @@ def token_type_overlap(x: pd.DataFrame) -> pd.Series:
 
 
 def token_type_overlap_backup(x: pd.DataFrame) -> pd.Series:
-	unions = pd.Series((len(k[0].union(k[1]))
-						for k in
+	unions = pd.Series((len(previous_tokens.union(own_tokens))
+						for previous_tokens, own_tokens in
 						zip(x.RELEVANT_TOKENS_REFERENT, x.RELEVANT_TOKENS_REFERENT.shift(1).fillna(''))),
 					   index=x.index)
 	return (x.RELEVANT_TOKENS_REFERENT.str.len() -
