@@ -75,7 +75,8 @@ def __create_argparser() -> argparse.ArgumentParser:
 def __main(args):
 	inpath = args.inpath
 	print("Reading \"{}\".".format(inpath), file=sys.stderr)
-	round_tokens = pd.read_csv(inpath, sep="\t", dialect=csv.excel_tab, float_precision="high", memory_map=True,
+	round_tokens = pd.read_csv(inpath, sep="\t", dialect=csv.excel_tab, encoding="utf-8", float_precision="high",
+							   memory_map=True,
 							   converters={"RELEVANT_TOKENS_REFERENT": parse_set, "RELEVANT_TOKENS_SHAPE": parse_set})
 	round_token_overlaps = __token_type_overlap(round_tokens)
 	round_token_overlaps["RELEVANT_TOKENS_REFERENT"] = round_token_overlaps["RELEVANT_TOKENS_REFERENT"].map(
