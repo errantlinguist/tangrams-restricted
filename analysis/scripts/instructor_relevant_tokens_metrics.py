@@ -11,8 +11,6 @@ import pandas as pd
 
 CELL_MULTIVALUE_DELIM_PATTERN = re.compile("\\s*,\\s*")
 
-_EMPTY_SET = frozenset()
-
 
 def parse_set(cell_value: str) -> FrozenSet[str]:
 	return frozenset(CELL_MULTIVALUE_DELIM_PATTERN.split(cell_value))
