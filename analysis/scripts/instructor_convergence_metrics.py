@@ -316,7 +316,8 @@ def token_type_overlap_with_antecedent_baselines(coref: Coreference,
 
 
 def __create_argparser() -> argparse.ArgumentParser:
-	result = argparse.ArgumentParser(description="Measure referent token type overlap in coreference chains in each game session, using only instructor language to build coreference chains.")
+	result = argparse.ArgumentParser(
+		description="Measure referent token type overlap in coreference chains in each game session, using only instructor language to build coreference chains.")
 	result.add_argument("token_group_file", metavar="TOKEN_GROUP_FILEPATH",
 						help="The path to the token group mapping file to use.")
 	result.add_argument("inpaths", metavar="INPATH", nargs='+',

@@ -25,7 +25,8 @@ class CoreferenceChainTokenCounter(object):
 		self.token_seq_factory = token_seq_factory
 		self.filtering_token_counter = filtering_token_counter
 
-	def __call__(self, named_sessions: Mapping[T, SessionData]) -> Dict[T, Dict[int, "CoreferenceChainTokenCountDatum"]]:
+	def __call__(self, named_sessions: Mapping[T, SessionData]) -> Dict[
+		T, Dict[int, "CoreferenceChainTokenCountDatum"]]:
 		result = {}
 		for dyad_id, session in named_sessions:
 			print("Processing session \"{}\".".format(dyad_id), file=sys.stderr)
@@ -124,7 +125,8 @@ class TokenTypeDataPrinter(object):
 	def __init__(self, strict: bool):
 		self.strict = strict
 
-	def __call__(self, session_referent_token_counts: Iterable[Tuple[Any, Mapping[int, CoreferenceChainTokenCountDatum]]],
+	def __call__(self,
+				 session_referent_token_counts: Iterable[Tuple[Any, Mapping[int, CoreferenceChainTokenCountDatum]]],
 				 outfile):
 		print(COL_DELIM.join(
 			("DYAD", "ENTITY", "SEQUENCE_ORDER", "ROUND", "ROUND_TOKENS", "ROUND_TYPES", "ROUND_TYPE_RATIO",
@@ -208,7 +210,8 @@ def zip_game_round_utterances(game_rounds: Iterator[game_events.GameRound], utt_
 
 
 def __create_argparser() -> argparse.ArgumentParser:
-	result = argparse.ArgumentParser(description="Count referent tokens and token types per round in each game session as well as the entity ID of the round's referent.")
+	result = argparse.ArgumentParser(
+		description="Count referent tokens and token types per round in each game session as well as the entity ID of the round's referent.")
 	result.add_argument("token_group_file", metavar="TOKEN_GROUP_FILEPATH",
 						help="The path to the token group mapping file to use.")
 	result.add_argument("inpaths", metavar="INPATH", nargs='+',

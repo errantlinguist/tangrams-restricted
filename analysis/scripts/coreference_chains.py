@@ -162,9 +162,9 @@ class DialogueCoreferenceChainDatum(Generic[C]):
 								all_other_preceding_corefs.extend(
 									coref for coref in coref_chain if coref.round_id <= round_id)
 
-
 				if all_other_preceding_corefs:
-					directly_preceding_other_coref = max(all_other_preceding_corefs, default=None, key=lambda coref: (coref.round_id, coref.coref_id))
+					directly_preceding_other_coref = max(all_other_preceding_corefs, default=None,
+														 key=lambda coref: (coref.round_id, coref.coref_id))
 					preceding_token_types = directly_preceding_other_coref.token_types
 					overlap = alignment_metrics.token_type_overlap_ratio(round_own_coref.token_types,
 																		 preceding_token_types)

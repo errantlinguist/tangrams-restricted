@@ -16,13 +16,13 @@ def __main(infile_path, outfile_path):
 
 	# Create scatterplot of dataframe
 	hue_plot = sns.lmplot(xaxis_name,  # Horizontal axis
-			   yaxis_name,  # Vertical axis
-			   data=hue_token_overlap,  # Data source
-			   fit_reg=False,  # Don't fix a regression line
-			   # hue="z",  # Set color
-			   scatter_kws={"marker": "D",  # Set marker style
-							"s": 10})  # S marker size
-	#fig = hue_plot.get_figure()
+						  yaxis_name,  # Vertical axis
+						  data=hue_token_overlap,  # Data source
+						  fit_reg=False,  # Don't fix a regression line
+						  # hue="z",  # Set color
+						  scatter_kws={"marker": "D",  # Set marker style
+									   "s": 10})  # S marker size
+	# fig = hue_plot.get_figure()
 	hue_plot.savefig(outfile_path)
 
 

@@ -26,7 +26,9 @@ def create_session_dir_uttfiles(*inpaths):
 					utt_annots_elem = create_skeleton_annnotation_elem(longest_wav_filename)
 					utt_annots_etree = etree.ElementTree(utt_annots_elem)
 					outpath = os.path.join(dirpath, UTTERANCE_FILE_NAME)
-					print("Writing new XML file to \"{}\" for audio file \"{}\".".format(outpath, os.path.join(outpath, longest_wav_filename)), file=sys.stderr)
+					print("Writing new XML file to \"{}\" for audio file \"{}\".".format(outpath, os.path.join(outpath,
+																											   longest_wav_filename)),
+						  file=sys.stderr)
 					utt_annots_etree.write(outpath, encoding=session_data.ENCODING, xml_declaration=True,
 										   pretty_print=True)
 

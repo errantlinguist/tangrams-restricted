@@ -5,7 +5,8 @@ import re
 import sys
 from collections import Counter
 from decimal import Decimal
-from typing import Any, Callable, Dict, Iterable, Iterator, Mapping, MutableSequence, Sequence, Container, Tuple, TypeVar
+from typing import Any, Callable, Dict, Iterable, Iterator, Mapping, MutableSequence, Sequence, Container, Tuple, \
+	TypeVar
 
 import utterances
 from session_data import SessionData
@@ -313,7 +314,8 @@ def trim_empty_tail_rounds(dyad_id: Any, round_token_counts: Sequence[FilteredTo
 
 
 def __create_argparser() -> argparse.ArgumentParser:
-	result = argparse.ArgumentParser(description="Count referent tokens and token types per round in each game session.")
+	result = argparse.ArgumentParser(
+		description="Count referent tokens and token types per round in each game session.")
 	result.add_argument("token_group_file", metavar="TOKEN_GROUP_FILEPATH",
 						help="The path to the token group mapping file to use.")
 	result.add_argument("inpaths", metavar="INPATH", nargs='+',

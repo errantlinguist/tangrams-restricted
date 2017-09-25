@@ -9,7 +9,7 @@ from xml_files import walk_xml_files
 
 COL_DELIM = '\t'
 
-					
+
 def count_tokens(infile_paths):
 	result = Counter()
 	for infile_path in infile_paths:
@@ -18,8 +18,9 @@ def count_tokens(infile_paths):
 		token_annots = doc_tree.iterfind(".//hat:t", ANNOTATION_NAMESPACES)
 		tokens = (annot.text for annot in token_annots)
 		result.update(tokens)
-				
+
 	return result
+
 
 if __name__ == "__main__":
 	if len(sys.argv) < 2:

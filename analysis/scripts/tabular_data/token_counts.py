@@ -7,8 +7,10 @@ def __token_count_idx(header):
 	col_names = parse_row_cells(header)
 	return col_names.index(TOKEN_COUNT_COL_NAME)
 
+
 if __name__ == "__main__":
 	import sys
+
 	if len(sys.argv) != 2:
 		raise ValueError("Usage: %s INFILE > OUTFILE" % sys.argv[0])
 	else:
