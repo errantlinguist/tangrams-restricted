@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import csv
 import sys
 
 import pandas as pd
@@ -9,7 +10,8 @@ import seaborn as sns
 def __main(infile_path: str, outfile_path: str):
 	sns.set()
 
-	hue_token_overlap = pd.read_csv(infile_path, sep='\t', float_precision="high", encoding="utf-8", memory_map=True)
+	hue_token_overlap = pd.read_csv(infile_path, sep='\t', dialect=csv.excel_tab, float_precision="high",
+									encoding="utf-8", memory_map=True)
 	xaxis_name = hue_token_overlap.columns[1]
 	yaxis_name = hue_token_overlap.columns[0]
 	print("X axis: {}; Y axis: {}".format(xaxis_name, yaxis_name))

@@ -1,12 +1,15 @@
 #!/usr/bin/env python3
 
+import csv
+
 import pandas as pd
 import seaborn as sns
 
 
 def __main(infile_path: str, outfile_path: str):
 	sns.set()
-	hue_token_overlap = pd.read_csv(infile_path, sep='\t', float_precision="high", encoding="utf-8", memory_map=True)
+	hue_token_overlap = pd.read_csv(infile_path, sep='\t', dialect=csv.excel_tab,
+									float_precision="high", encoding="utf-8", memory_map=True)
 
 	# Select a subset of the networks
 	# used_networks = [1, 5, 6, 7, 8, 12, 13, 17]
