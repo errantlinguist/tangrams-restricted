@@ -53,22 +53,6 @@ def __token_type_overlap(df: pd.DataFrame) -> pd.DataFrame:
 	:param df: The DataFrame instance to process.
 	:return: A new DataFrame with token overlap ratios.
 	"""
-	dyad_instructor_groups = df.groupby(["DYAD", "INSTRUCTOR", "REFERENT"])
-	group_overlap_series = dyad_instructor_groups.apply(token_type_overlap)
-
-	result = group_overlap_series.reset_index(level=[0, 1], name="TokenOverlap")
-	result = result.assign(ROUND=df.ROUND, RELEVANT_TOKENS_REFERENT=df.RELEVANT_TOKENS_REFERENT)
-	# result = result.sort_values(["DYAD", "ROUND", "INSTRUCTOR"])
-	# result = result[["DYAD", "ROUND", "INSTRUCTOR", "RELEVANT_TOKENS_REFERENT", "TokenOverlap"]]
-	return result
-
-
-def __token_type_overlap_backup(df: pd.DataFrame) -> pd.DataFrame:
-	"""
-	See <https://stackoverflow.com/a/46402641/1391325>
-	:param df: The DataFrame instance to process.
-	:return: A new DataFrame with token overlap ratios.
-	"""
 	tokens = df.RELEVANT_TOKENS_REFERENT
 	result = df.assign(RELEVANT_TOKENS_REFERENT=tokens)
 	dyad_instructor_groups = result.groupby(["DYAD", "INSTRUCTOR"])
@@ -101,7 +85,7 @@ def __main(args):
 	print("Reading \"{}\".".format(inpath), file=sys.stderr)
 	round_tokens = pd.read_csv(inpath, sep="\t", dialect=csv.excel_tab, float_precision="high", memory_map=True,
 							   converters={"RELEVANT_TOKENS_REFERENT": parse_set, "RELEVANT_TOKENS_SHAPE": parse_set})
-	round_token_overlaps = __token_type_overlap_backup(round_tokens)
+	round_token_overlaps = __token_type_overlap(round_tokens)
 	round_token_overlaps["RELEVANT_TOKENS_REFERENT"] = round_token_overlaps["RELEVANT_TOKENS_REFERENT"].map(
 		lambda tokens: ','.join(sorted(tokens)))
 	round_token_overlaps.to_csv(sys.stdout, sep="\t", na_rep="N/A")
