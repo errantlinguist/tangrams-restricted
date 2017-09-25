@@ -56,8 +56,6 @@ def __token_type_overlap(df: pd.DataFrame):
 																					   name=shape_token_self_overlap_col_name)
 	df[shape_token_self_overlap_col_name] = shape_token_self_overlap_df[shape_token_self_overlap_col_name]
 
-	df.sort_values(["DYAD", "REFERENT", "INSTRUCTOR", "ROUND"], inplace=True)
-
 
 def __create_argparser() -> argparse.ArgumentParser:
 	result = argparse.ArgumentParser(
@@ -73,7 +71,10 @@ def __main(args):
 	round_tokens = pd.read_csv(inpath, sep="\t", dialect=csv.excel_tab, encoding="utf-8", float_precision="high",
 							   memory_map=True,
 							   converters={"RELEVANT_TOKENS_REFERENT": parse_set, "RELEVANT_TOKENS_SHAPE": parse_set})
+
 	__token_type_overlap(round_tokens)
+
+	round_tokens.sort_values(["DYAD", "REFERENT", "INSTRUCTOR", "ROUND"], inplace=True)
 	round_tokens["RELEVANT_TOKENS_REFERENT"] = round_tokens["RELEVANT_TOKENS_REFERENT"].map(
 		__token_set_repr)
 	round_tokens["RELEVANT_TOKENS_SHAPE"] = round_tokens["RELEVANT_TOKENS_SHAPE"].map(
