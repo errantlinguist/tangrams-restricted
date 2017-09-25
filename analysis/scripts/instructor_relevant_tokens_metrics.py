@@ -38,8 +38,8 @@ def __token_type_overlap(df: pd.DataFrame) -> pd.DataFrame:
 	:return: A new DataFrame with token overlap ratios.
 	"""
 	tokens = df.RELEVANT_TOKENS_REFERENT
-	df2 = df.assign(RELEVANT_TOKENS_REFERENT=tokens)
-	df2 = df2.groupby(['DYAD', 'INSTRUCTOR']).apply(
+	result = df.assign(RELEVANT_TOKENS_REFERENT=tokens)
+	result = result.groupby(['DYAD', 'INSTRUCTOR']).apply(
 		lambda x: (x.RELEVANT_TOKENS_REFERENT.str.len() -
 				   x.RELEVANT_TOKENS_REFERENT.diff().str.len()) \
 				  / pd.Series([len(k[0].union(k[1]))
@@ -47,11 +47,11 @@ def __token_type_overlap(df: pd.DataFrame) -> pd.DataFrame:
 							   zip(x.RELEVANT_TOKENS_REFERENT, x.RELEVANT_TOKENS_REFERENT.shift(1).fillna(''))],
 							  index=x.index))  # the for loop is part of this huge line
 
-	df2 = df2.reset_index(level=[0, 1], name='TokenOverlap')
-	df2 = df2.assign(ROUND=df.ROUND, RELEVANT_TOKENS_REFERENT=df.RELEVANT_TOKENS_REFERENT)
-	df2 = df2.sort_values(['DYAD', 'ROUND', 'INSTRUCTOR']).fillna('(no value)')
-	df2 = df2[['DYAD', 'ROUND', 'INSTRUCTOR', 'RELEVANT_TOKENS_REFERENT', 'TokenOverlap']]
-	return df2
+	result = result.reset_index(level=[0, 1], name='TokenOverlap')
+	result = result.assign(ROUND=df.ROUND, RELEVANT_TOKENS_REFERENT=df.RELEVANT_TOKENS_REFERENT)
+	result = result.sort_values(['DYAD', 'ROUND', 'INSTRUCTOR']).fillna('(no value)')
+	result = result[['DYAD', 'ROUND', 'INSTRUCTOR', 'RELEVANT_TOKENS_REFERENT', 'TokenOverlap']]
+	return result
 
 
 def __create_argparser():
