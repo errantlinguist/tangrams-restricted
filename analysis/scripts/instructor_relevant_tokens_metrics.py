@@ -66,7 +66,7 @@ def __token_type_overlap(df: pd.DataFrame) -> pd.DataFrame:
 
 def __create_argparser() -> argparse.ArgumentParser:
 	result = argparse.ArgumentParser(
-		description="Print out relevant tokens for each instructor utterance for each round in each session.")
+		description="Measure referent token type overlap in coreference chains in each game session, using only instructor language to build coreference chains.")
 	result.add_argument("inpath", metavar="INPATH",
 						help="The file to process.")
 	return result
