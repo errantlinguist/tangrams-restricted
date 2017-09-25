@@ -34,9 +34,9 @@ def token_type_overlap(x: pd.DataFrame) -> pd.Series:
 
 
 def token_type_overlap_backup(x: pd.DataFrame) -> pd.Series:
-	unions = pd.Series([len(k[0].union(k[1]))
+	unions = pd.Series((len(k[0].union(k[1]))
 						for k in
-						zip(x.RELEVANT_TOKENS_REFERENT, x.RELEVANT_TOKENS_REFERENT.shift(1).fillna(''))],
+						zip(x.RELEVANT_TOKENS_REFERENT, x.RELEVANT_TOKENS_REFERENT.shift(1).fillna(''))),
 					   index=x.index)
 	return (x.RELEVANT_TOKENS_REFERENT.str.len() -
 			x.RELEVANT_TOKENS_REFERENT.diff().str.len()) \
