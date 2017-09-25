@@ -12,7 +12,7 @@ import pandas as pd
 CELL_MULTIVALUE_DELIM_PATTERN = re.compile("\\s*,\\s*")
 
 
-def create_token_type_overlap_series(df: pd.DataFrame, col_name: str) -> pd.Series:
+def create_token_type_self_overlap_series(df: pd.DataFrame, col_name: str) -> pd.Series:
 	intersected_token_sets = (previous_tokens.intersection(own_tokens) if pd.notnull(previous_tokens) else None for
 							  own_tokens, previous_tokens in
 							  zip(df[col_name], df[col_name].shift(1)))
@@ -41,11 +41,13 @@ def __token_type_overlap(df: pd.DataFrame) -> pd.DataFrame:
 	"""
 	levels = ("DYAD", "INSTRUCTOR", "REFERENT")
 	dyad_instructor_referent_groups = df.groupby(levels)
-	group_overlap_series = dyad_instructor_referent_groups.apply(
-		lambda group_df: create_token_type_overlap_series(group_df, "RELEVANT_TOKENS_REFERENT"))
+	group_referent_token_self_overlap_series = dyad_instructor_referent_groups.apply(
+		lambda group_df: create_token_type_self_overlap_series(group_df, "RELEVANT_TOKENS_REFERENT"))
 
-	overlap_df = group_overlap_series.reset_index(level=levels, name="TOKEN_OVERLAP")
-	result = df.assign(TOKEN_OVERLAP=overlap_df["TOKEN_OVERLAP"])
+	referent_token_self_overlap_df = group_referent_token_self_overlap_series.reset_index(level=levels,
+																						  name="RELEVANT_TOKENS_REFERENT_OVERLAP_SELF")
+	result = df.assign(
+		RELEVANT_TOKENS_REFERENT_OVERLAP_SELF=referent_token_self_overlap_df["RELEVANT_TOKENS_REFERENT_OVERLAP_SELF"])
 
 	result = result.sort_values(["DYAD", "REFERENT", "INSTRUCTOR", "ROUND"])
 	# result = result[["DYAD", "ROUND", "INSTRUCTOR", "RELEVANT_TOKENS_REFERENT", "TokenOverlap"]]
