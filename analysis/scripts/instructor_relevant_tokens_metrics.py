@@ -44,7 +44,8 @@ def __token_type_overlap(df: pd.DataFrame) -> pd.DataFrame:
 	referent_token_set_col_name = "RELEVANT_TOKENS_REFERENT"
 	group_referent_token_self_overlap_series = dyad_instructor_referent_groups.apply(
 		lambda group_df: create_token_type_self_overlap_series(group_df, referent_token_set_col_name))
-	referent_token_self_overlap_col_name = referent_token_set_col_name + "_OVERLAP_SELF"
+
+	referent_token_self_overlap_col_name = "RELEVANT_TOKENS_REFERENT_OVERLAP_SELF"
 	referent_token_self_overlap_df = group_referent_token_self_overlap_series.reset_index(level=referent_levels,
 																						  name=referent_token_self_overlap_col_name)
 	result = df.assign(**{
