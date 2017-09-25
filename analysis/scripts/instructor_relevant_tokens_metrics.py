@@ -18,14 +18,6 @@ def parse_set(cell_value: str) -> FrozenSet[str]:
 	return frozenset(CELL_MULTIVALUE_DELIM_PATTERN.split(cell_value))
 
 
-# def token_type_overlap(dyad):
-#	own_relevant_tokens = dyad["RELEVANT_TOKENS_REFERENT"]
-#	prev_tokens = dyad.shift(-1)["RELEVANT_TOKENS_REFERENT"]
-#	union = own_relevant_tokens.union(prev_tokens)
-#	overlap = own_relevant_tokens.intersection(prev_tokens)
-#	return len(overlap) / len(union)
-
-
 def token_type_overlap(df: pd.DataFrame, col_name: str) -> pd.Series:
 	intersected_token_sets = (previous_tokens.intersection(own_tokens) if pd.notnull(previous_tokens) else None for
 							  own_tokens, previous_tokens in
