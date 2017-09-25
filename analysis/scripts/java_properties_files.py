@@ -1,7 +1,7 @@
 import os
 import re
 
-from typing import Iterable
+from typing import Iterable, Iterator
 
 ATTRIBUTE_VALUE_PAIR_DELIM_PATTERN = re.compile("(?<!\\\)[=:]")
 COMMENT_LINE_PREFIXES = ('#', '!')
@@ -27,7 +27,7 @@ def parse_properties(lines: Iterable[str]):
 	return result
 
 
-def walk_properties_files(*inpaths: str):
+def walk_properties_files(*inpaths: str) -> Iterator[str]:
 	for inpath in inpaths:
 		for dirpath, _, filenames in os.walk(inpath, followlinks=True):
 			for filename in filenames:
