@@ -29,14 +29,14 @@ def parse_set(cell_value: str) -> FrozenSet[str]:
 def token_type_overlap(x: pd.DataFrame) -> pd.Series:
 	intersected_token_sets = (previous_tokens.intersection(own_tokens) if pd.notnull(previous_tokens) else None for
 							  own_tokens, previous_tokens in
-							  zip(x.RELEVANT_TOKENS_REFERENT, x.RELEVANT_TOKENS_REFERENT.shift(1)))
+							  zip(x["RELEVANT_TOKENS_REFERENT"], x["RELEVANT_TOKENS_REFERENT"].shift(1)))
 	intersected_token_set_sizes = (np.NaN if unified_token_set is None else len(unified_token_set) for unified_token_set
 								   in
 								   intersected_token_sets)
 	intersected_token_set_size_series = pd.Series(intersected_token_set_sizes, index=x.index)
 	unified_token_sets = (previous_tokens.union(own_tokens) if pd.notnull(previous_tokens) else None for
 						  own_tokens, previous_tokens in
-						  zip(x.RELEVANT_TOKENS_REFERENT, x.RELEVANT_TOKENS_REFERENT.shift(1)))
+						  zip(x["RELEVANT_TOKENS_REFERENT"], x["RELEVANT_TOKENS_REFERENT"].shift(1)))
 	unified_token_set_sizes = (np.NaN if unified_token_set is None else len(unified_token_set) for unified_token_set in
 							   unified_token_sets)
 	unified_token_set_size_series = pd.Series(unified_token_set_sizes, index=x.index)
