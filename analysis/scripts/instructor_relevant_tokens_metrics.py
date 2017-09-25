@@ -63,7 +63,7 @@ def __token_type_overlap(df: pd.DataFrame) -> pd.DataFrame:
 	#						   for k in
 	#						   zip(x.RELEVANT_TOKENS_REFERENT, x.RELEVANT_TOKENS_REFERENT.shift(1).fillna(''))],
 	#						  index=x.index))  # the for loop is part of this huge line
-	group_overlap_series = dyad_instructor_groups.apply(lambda df: token_type_overlap(df, "RELEVANT_TOKENS_REFERENT"))
+	group_overlap_series = dyad_instructor_groups.apply(lambda group_df: token_type_overlap(group_df, "RELEVANT_TOKENS_REFERENT"))
 
 	result = group_overlap_series.reset_index(level=[0, 1], name="TokenOverlap")
 	result = result.assign(ROUND=df.ROUND, RELEVANT_TOKENS_REFERENT=df.RELEVANT_TOKENS_REFERENT)
