@@ -102,6 +102,8 @@ def __main(args):
 	round_tokens = pd.read_csv(inpath, sep="\t", dialect=csv.excel_tab, float_precision="high", memory_map=True,
 							   converters={"RELEVANT_TOKENS_REFERENT": parse_set, "RELEVANT_TOKENS_SHAPE": parse_set})
 	round_token_overlaps = __token_type_overlap_backup(round_tokens)
+	round_token_overlaps["RELEVANT_TOKENS_REFERENT"] = round_token_overlaps["RELEVANT_TOKENS_REFERENT"].map(
+		lambda tokens: ','.join(sorted(tokens)))
 	round_token_overlaps.to_csv(sys.stdout, sep="\t", na_rep="N/A")
 
 
