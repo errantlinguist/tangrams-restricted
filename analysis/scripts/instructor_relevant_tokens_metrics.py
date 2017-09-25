@@ -89,7 +89,7 @@ def __main(args):
 	round_token_overlaps = __token_type_overlap(round_tokens)
 	round_token_overlaps["RELEVANT_TOKENS_REFERENT"] = round_token_overlaps["RELEVANT_TOKENS_REFERENT"].map(
 		lambda tokens: ','.join(sorted(tokens)))
-	round_token_overlaps.to_csv(sys.stdout, sep="\t", na_rep="N/A")
+	round_token_overlaps.to_csv(sys.stdout, index_label="INDEX", sep="\t", na_rep="N/A")
 
 
 # print(round_token_overlaps)
