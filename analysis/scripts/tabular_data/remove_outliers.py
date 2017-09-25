@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 
 import csv
+from typing import Iterator
 
 from common import COL_DELIM, TOKEN_COUNT_COL_NAME
 
 MAX_TOKEN_COUNT = 200
 
 
-def print_filtered_results(rows, max_token_count):
+def print_filtered_results(rows: Iterator[str], max_token_count: int):
 	header = next(rows)
 	print(COL_DELIM.join(header))
 	col_name_idxs = dict((col_name, idx) for (idx, col_name) in enumerate(header))

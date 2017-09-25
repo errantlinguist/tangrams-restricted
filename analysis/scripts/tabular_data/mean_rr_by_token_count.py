@@ -5,8 +5,8 @@ import numpy
 from common import COL_DELIM, parse_token_count_ranks
 
 
-def __rr(value):
-	return numpy.float_(1.0 / value)
+def __rr(value: str) -> numpy.float:
+	return numpy.float(1.0) / numpy.float(value)
 
 
 if __name__ == "__main__":

@@ -10,6 +10,7 @@ from common import COL_DELIM
 from test_param_combination_ranks import TestParameterCombinationRankFileReader
 from test_param_combinations import create_param_whitelisting_filter
 
+from typing import Iterable
 
 class TestParameterCombinationRankListFileReader(TestParameterCombinationRankFileReader):
 	def _create_param_combination_rank_coll(self):
@@ -20,7 +21,7 @@ class TestParameterCombinationRankListFileReader(TestParameterCombinationRankFil
 		param_combination_rank_counts.append(rank)
 
 
-def __main(infile_paths, input_param_name_regexes, outfile):
+def __main(infile_paths, input_param_name_regexes: Iterable[str], outfile):
 	param_whitelisting_filter = create_param_whitelisting_filter(input_param_name_regexes)
 	reader = TestParameterCombinationRankListFileReader(param_whitelisting_filter)
 	param_combination_ranks, param_names = reader(infile_paths)

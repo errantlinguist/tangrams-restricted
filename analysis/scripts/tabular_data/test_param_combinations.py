@@ -1,6 +1,7 @@
 import re
 import sys
 from decimal import Decimal, InvalidOperation
+from typing import Callable, Dict, Iterable, Union
 
 from common import split_subcol_names, unify_regexes
 
@@ -8,7 +9,9 @@ TEST_PARAM_COL_NAMES = frozenset(
 	("UtteranceFiltering", "Cleaning", "Tokenization", "TokenType", "TokenFilter", "Training"))
 
 
-def create_col_name_idx_map(col_names, col_name_whitelisting_filter=lambda _: True):
+def create_col_name_idx_map(col_names: Iterable[str],
+							col_name_whitelisting_filter: Callable[[str], bool] = lambda _: True) -> Dict[
+	str, int]:
 	result = {}
 	for idx, col_name in enumerate(col_names):
 		subcol_names = split_subcol_names(col_name)
@@ -17,7 +20,7 @@ def create_col_name_idx_map(col_names, col_name_whitelisting_filter=lambda _: Tr
 	return result
 
 
-def create_param_whitelisting_filter(input_param_name_regexes):
+def create_param_whitelisting_filter(input_param_name_regexes: Iterable[str]) -> Callable[[str], bool]:
 	if input_param_name_regexes:
 		param_name_regexes = frozenset(input_param_name_regexes)
 	else:
@@ -29,7 +32,8 @@ def create_param_whitelisting_filter(input_param_name_regexes):
 	return lambda param_name: whitelisted_param_pattern.match(param_name) is not None
 
 
-def create_subcol_name_idx_map(col_names, col_name_whitelisting_filter):
+def create_subcol_name_idx_map(col_names: Iterable[str], col_name_whitelisting_filter: Callable[[str], bool]) -> Dict[
+	str, int]:
 	result = {}
 	for idx, col_name in enumerate(col_names):
 		subcol_names = split_subcol_names(col_name)
@@ -38,7 +42,7 @@ def create_subcol_name_idx_map(col_names, col_name_whitelisting_filter):
 	return result
 
 
-def parse_test_param_subtype_value(row_cell_val):
+def parse_test_param_subtype_value(row_cell_val: str) -> Union[int, Decimal, str]:
 	result = row_cell_val
 	try:
 		result = int(result)

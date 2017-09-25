@@ -4,7 +4,7 @@ import argparse
 import re
 import sys
 from collections import defaultdict
-from typing import Any, Callable, Dict, Iterable, List, Mapping, MutableMapping, Sequence, Tuple, TypeVar
+from typing import Any, Callable, DefaultDict, Dict, Iterable, List, Mapping, MutableMapping, Sequence, Tuple, TypeVar
 
 import game_events
 import re_token_type_counts
@@ -40,7 +40,7 @@ class ShapeTokenCounter(object):
 
 		return result
 
-	def __shape_token_counts(self, session: SessionData) -> Dict[
+	def __shape_token_counts(self, session: SessionData) -> DefaultDict[
 		str, List[Tuple[int, re_token_type_counts.FilteredTokenCountDatum]]]:
 		result = defaultdict(list)
 		event_data = game_events.read_events(session)

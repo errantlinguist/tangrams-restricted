@@ -2,18 +2,23 @@
 
 import sys
 from collections import Counter, defaultdict
+from typing import Callable, Counter, DefaultDict, Generic, IO, Iterable, TypeVar
 
 from common import COL_DELIM, RANK_COL_NAME, parse_row_cells
 from test_param_combinations import create_param_whitelisting_filter, create_col_name_idx_map, \
 	parse_test_param_subtype_value
 
+P = TypeVar('P')
+R = TypeVar('T')
 
-class TestParameterCombinationRankFileReader(object):
-	def __init__(self, test_param_whitelisting_filter, rank_cell_val_transformer=float):
+
+class TestParameterCombinationRankFileReader(Generic[P, R]):
+	def __init__(self, test_param_whitelisting_filter: Callable[[str], bool],
+				 rank_cell_val_transformer: Callable[[str], P] = float):
 		self.test_param_whitelisting_filter = test_param_whitelisting_filter
 		self.rank_cell_val_transformer = rank_cell_val_transformer
 
-	def __call__(self, infile_paths):
+	def __call__(self, infile_paths: Iterable[str]):
 		param_combination_ranks = self._create_param_combination_rank_coll()
 		param_names = set()
 		for infile_path in infile_paths:
@@ -33,15 +38,16 @@ class TestParameterCombinationRankFileReader(object):
 
 		return param_combination_ranks, param_names
 
-	def _create_param_combination_rank_coll(self):
+	def _create_param_combination_rank_coll(self) -> DefaultDict[P, Counter[R]]:
 		return defaultdict(Counter)
 
-	def _process_param_combination_rank(self, param_combination_ranks, param_vals, rank):
+	def _process_param_combination_rank(self, param_combination_ranks: DefaultDict[P, Counter[R]], param_vals: P,
+										rank: R):
 		param_combination_rank_counts = param_combination_ranks[param_vals]
 		param_combination_rank_counts[rank] += 1
 
 
-def __main(infile_paths, input_param_name_regexes, outfile):
+def __main(infile_paths: Iterable[str], input_param_name_regexes: Iterable[str], outfile: IO[str]):
 	param_whitelisting_filter = create_param_whitelisting_filter(input_param_name_regexes)
 	reader = TestParameterCombinationRankFileReader(param_whitelisting_filter)
 	param_combination_ranks, param_names = reader(infile_paths)

@@ -2,7 +2,7 @@ import csv
 import sys
 from collections import defaultdict
 from enum import Enum, unique
-from typing import Callable, Dict, FrozenSet, Iterable, Iterator, List, Mapping, Set, Tuple
+from typing import Callable, DefaultDict, Dict, FrozenSet, Iterable, Iterator, List, Mapping, Set, Tuple
 
 ENCODING = "utf-8"
 GROUP_LIST_DELIM = ","
@@ -28,7 +28,7 @@ def __default_group_filter(group: str) -> bool:
 	return bool(group)
 
 
-def create_group_token_list_dict(tokens: Iterable[str], token_groups: TokenGroupMapping) -> Dict[
+def create_group_token_list_dict(tokens: Iterable[str], token_groups: TokenGroupMapping) -> DefaultDict[
 	str, List[str]]:
 	result = defaultdict(list)
 	for token in tokens:
@@ -43,7 +43,7 @@ def create_group_token_list_dict(tokens: Iterable[str], token_groups: TokenGroup
 	return result
 
 
-def create_group_token_set_dict(tokens: Iterable[str], token_groups: TokenGroupMapping) -> Dict[
+def create_group_token_set_dict(tokens: Iterable[str], token_groups: TokenGroupMapping) -> DefaultDict[
 	str, Set[str]]:
 	result = defaultdict(set)
 	for token in tokens:

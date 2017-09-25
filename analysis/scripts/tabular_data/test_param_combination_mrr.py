@@ -2,24 +2,25 @@
 
 
 from collections import defaultdict
+from typing import DefaultDict, IO, Iterable, List
 
 import numpy
 
 from common import COL_DELIM
-from test_param_combination_ranks import TestParameterCombinationRankFileReader
+from test_param_combination_ranks import TestParameterCombinationRankFileReader, P, R
 from test_param_combinations import create_param_whitelisting_filter
 
 
 class TestParameterCombinationRankListFileReader(TestParameterCombinationRankFileReader):
-	def _create_param_combination_rank_coll(self):
+	def _create_param_combination_rank_coll(self) -> DefaultDict[P, List[R]]:
 		return defaultdict(list)
 
-	def _process_param_combination_rank(self, param_combination_ranks, param_vals, rank):
+	def _process_param_combination_rank(self, param_combination_ranks:  DefaultDict[P, List[R]], param_vals: P, rank: R):
 		param_combination_rank_counts = param_combination_ranks[param_vals]
 		param_combination_rank_counts.append(rank)
 
 
-def __main(infile_paths, input_param_name_regexes, outfile):
+def __main(infile_paths, input_param_name_regexes: Iterable[str], outfile: IO[str]):
 	param_whitelisting_filter = create_param_whitelisting_filter(input_param_name_regexes)
 	reader = TestParameterCombinationRankListFileReader(param_whitelisting_filter, __rr)
 	param_combination_ranks, param_names = reader(infile_paths)

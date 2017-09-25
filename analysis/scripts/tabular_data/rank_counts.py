@@ -2,16 +2,17 @@
 
 from collections import Counter
 from decimal import Decimal
+from typing import Counter, IO, Iterator
 
 from common import COL_DELIM, RANK_COL_NAME, parse_row_cells
 
 
-def __rank_idx(header):
+def __rank_idx(header: str) -> int:
 	col_names = parse_row_cells(header)
 	return col_names.index(RANK_COL_NAME)
 
 
-def parse_rank_counts(lines):
+def parse_rank_counts(lines: Iterator[str]) -> Counter[Decimal]:
 	result = Counter()
 	rank_idx = __rank_idx(next(lines))
 	for line in lines:
@@ -22,7 +23,7 @@ def parse_rank_counts(lines):
 	return result
 
 
-def __main(inpath, outfile):
+def __main(inpath: str, outfile: IO[str]):
 	with open(inpath, 'r', encoding='utf-8') as infile:
 		rank_counts = parse_rank_counts(infile)
 

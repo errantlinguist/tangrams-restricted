@@ -3,7 +3,7 @@
 from common import TOKEN_COUNT_COL_NAME, parse_row_cells
 
 
-def __token_count_idx(header):
+def __token_count_idx(header: str) -> int:
 	col_names = parse_row_cells(header)
 	return col_names.index(TOKEN_COUNT_COL_NAME)
 

@@ -1,7 +1,7 @@
 import itertools
 import sys
 from collections import defaultdict
-from typing import Any, Callable, Dict, Iterable, Iterator, List, Sequence, Tuple, Union
+from typing import Any, Callable, DefaultDict, Iterable, Iterator, List, Sequence, Tuple, Union
 from xml.etree.ElementTree import Element, parse as parse_etree
 
 from annotations import ANNOTATION_NAMESPACES
@@ -172,7 +172,7 @@ class TokenSequenceFactory(object):
 		return result
 
 
-def create_speaker_dict(utts: Iterable[Utterance]) -> Dict[str, List[Utterance]]:
+def create_speaker_dict(utts: Iterable[Utterance]) -> DefaultDict[str, List[Utterance]]:
 	result = defaultdict(list)
 	for utt in utts:
 		result[utt.speaker_id].append(utt)

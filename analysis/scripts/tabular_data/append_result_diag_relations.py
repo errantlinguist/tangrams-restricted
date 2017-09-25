@@ -3,6 +3,8 @@
 import statistics
 from collections import defaultdict
 
+from typing import IO
+
 COL_DELIM = "\t"
 DIALOGIC_TRAINING_METHOD_PARAM_NAME = "DIALOGIC"
 UTT_REL_LOG_FILE_SUFFIX = ".uttrels.tsv"
@@ -19,11 +21,11 @@ class UtteranceRelation(object):
 		return self.__class__.__name__ + str(self.__dict__)
 
 	@property
-	def prev_utt_count(self):
+	def prev_utt_count(self) -> int:
 		return len(self.prev_utts)
 
 
-def create_event_time_utt_rel_dict(inpath):
+def create_event_time_utt_rel_dict(inpath: str):
 	result = defaultdict(dict)
 	with open(inpath, 'r', encoding='utf-8') as lines:
 		rows = (line.strip().split(COL_DELIM) for line in lines)
@@ -61,7 +63,7 @@ def create_event_time_utt_rel_dict(inpath):
 	return result
 
 
-def print_utt_rel_data(inpath, utt_rels, outfile):
+def print_utt_rel_data(inpath: str, utt_rels, outfile: IO[str]):
 	with open(inpath, 'r', encoding='utf-8') as lines:
 		rows = (line.strip().split(COL_DELIM) for line in lines)
 		header = next(rows)
@@ -101,7 +103,7 @@ def print_utt_rel_data(inpath, utt_rels, outfile):
 			print(COL_DELIM.join(cell for cell in row), file=outfile)
 
 
-def __main(inpath, outfile, err_outfile):
+def __main(inpath: str, outfile: IO[str], err_outfile: IO[str]):
 	uttrel_inpath = inpath + UTT_REL_LOG_FILE_SUFFIX
 	print("Reading utterance relations from \"%s\"." % uttrel_inpath, file=err_outfile)
 	utt_rels = create_event_time_utt_rel_dict(uttrel_inpath)

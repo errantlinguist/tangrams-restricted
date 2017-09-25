@@ -63,8 +63,8 @@ class Coreference(object):
 		:rtype: Optional[Iterator[Coreference]]
 		"""
 		seq_no = self.seq_number
-		if seq_no < 2:
-			result = None
+		if seq_no > 2:
+			return None
 		else:
 			for dyad_coref_chains in coref_chain_corpus:
 				for coref_chain_id, coref_chain in dyad_coref_chains.session_coref_chains.items():

@@ -8,8 +8,7 @@ import sys
 from collections import defaultdict
 from decimal import Decimal
 from enum import Enum, unique
-from typing import Any, Callable, Generic, Iterable, List, Mapping, Optional, Sequence, \
-	Tuple, TypeVar
+from typing import Any, Callable, Generic, IO, Iterable, List, Mapping, Optional, Sequence, Tuple, TypeVar
 
 import game_events
 import session_data as sd
@@ -73,7 +72,8 @@ class CoreferenceChainDataGrouper(object):
 class CoreferenceChainDataPrinter(object):
 	@staticmethod
 	def __print_session(dyad_id: str, coref_groups: GroupCoreferenceChainDatum,
-						group_coref_chain_corpora: Mapping[str, Sequence[DialogueCoreferenceChainDatum]], outfile):
+						group_coref_chain_corpora: Mapping[str, Sequence[DialogueCoreferenceChainDatum]],
+						outfile: IO[str]):
 		for round_id, (game_round, round_instructor_id, round_utts, group_round_corefs) in enumerate(
 				coref_groups.round_group_corefs, start=SessionGameRoundUtteranceFactory.ROUND_ID_OFFSET):
 			round_metrics = GameRoundMetrics(dyad_id, game_round, round_instructor_id)
@@ -99,7 +99,7 @@ class CoreferenceChainDataPrinter(object):
 	def __init__(self):
 		pass
 
-	def __call__(self, session_coref_groups: Mapping[str, GroupCoreferenceChainDatum], outfile):
+	def __call__(self, session_coref_groups: Mapping[str, GroupCoreferenceChainDatum], outfile: IO[str]):
 		token_grouping_col_names = ("{}_{}".format(col_name, grouping.value.col_name) for grouping in TokenGrouping for
 									col_name
 									in TokenMetrics.COL_NAMES)

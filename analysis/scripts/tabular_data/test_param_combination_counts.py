@@ -2,20 +2,25 @@
 
 
 from collections import Counter, defaultdict
+from typing import Any, Callable, Generic, IO, Iterable, Iterator, Tuple, TypeVar
 
 from common import COL_DELIM, parse_row_cells
 from test_param_combinations import create_param_whitelisting_filter, create_subcol_name_idx_map, \
 	parse_test_param_subtype_value
 
+T = TypeVar('T')
+ST = TypeVar('ST')
+V = TypeVar('C')
 
-class TestParameterCombinationCounts(object):
+
+class TestParameterCombinationCounts(Generic[T, ST, V]):
 	def __init__(self):
 		self.param_subtypes = {}
 
 	def __repr__(self):
 		return self.__class__.__name__ + str(self.__dict__)
 
-	def add(self, param, param_subtype, param_value):
+	def add(self, param: T, param_subtype: ST, param_value: V):
 		try:
 			subtypes = self.param_subtypes[param]
 		except KeyError:
@@ -25,14 +30,15 @@ class TestParameterCombinationCounts(object):
 		subtype_vals[param_value] += 1
 
 	@property
-	def param_combination_counts(self):
+	def param_combination_counts(self) -> Iterator[Tuple[T, ST, V, int]]:
 		for param, subtypes in sorted(self.param_subtypes.items(), key=_get_item_key):
 			for subtype, vals in sorted(subtypes.items(), key=_get_item_key):
 				for val, count in sorted(vals.items(), key=_get_item_key):
 					yield (param, subtype, val, count)
 
 
-def read_test_param_combinations(infile_paths, test_param_whitelisting_filter, err_outfile):
+def read_test_param_combinations(infile_paths: Iterator[str], test_param_whitelisting_filter: Callable[[str], bool],
+								 err_outfile: IO[str]) -> TestParameterCombinationCounts:
 	result = TestParameterCombinationCounts()
 	for infile_path in infile_paths:
 		print("Reading test parameters from \"%s\"." % infile_path, file=err_outfile)
@@ -49,11 +55,12 @@ def read_test_param_combinations(infile_paths, test_param_whitelisting_filter, e
 	return result
 
 
-def _get_item_key(item):
+def _get_item_key(item: Tuple[T, Any]) -> T:
 	return item[0]
 
 
-def __main(infile_paths, input_param_name_regexes, outfile, err_outfile):
+def __main(infile_paths: Iterator[str], input_param_name_regexes: Iterable[str], outfile: IO[str],
+		   err_outfile: IO[str]):
 	param_whitelisting_filter = create_param_whitelisting_filter(input_param_name_regexes)
 	param_combinations = read_test_param_combinations(infile_paths, param_whitelisting_filter, err_outfile)
 

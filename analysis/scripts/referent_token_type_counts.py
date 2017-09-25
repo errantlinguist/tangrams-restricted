@@ -5,7 +5,7 @@ import re
 import sys
 from collections import defaultdict
 from decimal import Decimal
-from typing import Any, Callable, Dict, Iterable, Iterator, List, Mapping, MutableMapping, Sequence, Tuple, TypeVar
+from typing import Any, Callable, DefaultDict, Dict, IO, Iterable, Iterator, List, Mapping, MutableMapping, Sequence, Tuple, TypeVar
 
 import game_events
 import re_token_type_counts
@@ -38,7 +38,7 @@ class CoreferenceChainTokenCounter(object):
 
 		return result
 
-	def __referent_token_counts(self, session: SessionData) -> Dict[
+	def __referent_token_counts(self, session: SessionData) -> DefaultDict[
 		int, List[Tuple[int, re_token_type_counts.FilteredTokenCountDatum]]]:
 		"""
 
@@ -127,7 +127,7 @@ class TokenTypeDataPrinter(object):
 
 	def __call__(self,
 				 session_referent_token_counts: Iterable[Tuple[Any, Mapping[int, CoreferenceChainTokenCountDatum]]],
-				 outfile):
+				 outfile: IO[str]):
 		print(COL_DELIM.join(
 			("DYAD", "ENTITY", "SEQUENCE_ORDER", "ROUND", "ROUND_TOKENS", "ROUND_TYPES", "ROUND_TYPE_RATIO",
 			 "TOTAL_TOKENS",
