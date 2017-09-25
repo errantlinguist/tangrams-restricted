@@ -40,14 +40,15 @@ def __token_type_overlap(df: pd.DataFrame) -> pd.DataFrame:
 	:return: A new DataFrame with token overlap ratios.
 	"""
 	tokens = df.RELEVANT_TOKENS_REFERENT
-	result = df.assign(RELEVANT_TOKENS_REFERENT=tokens)
+	#result = df.assign(RELEVANT_TOKENS_REFERENT=tokens)
+	#result = df.copy()
 	levels = ("DYAD", "INSTRUCTOR", "REFERENT")
-	dyad_instructor_referent_groups = result.groupby(levels)
+	dyad_instructor_referent_groups = df.groupby(levels)
 	group_overlap_series = dyad_instructor_referent_groups.apply(
 		lambda group_df: token_type_overlap(group_df, "RELEVANT_TOKENS_REFERENT"))
 
-	result = group_overlap_series.reset_index(level=levels, name="TokenOverlap")
-	result = result.assign(ROUND=df.ROUND, RELEVANT_TOKENS_REFERENT=df.RELEVANT_TOKENS_REFERENT)
+	overlap_df = group_overlap_series.reset_index(level=levels, name="TOKEN_OVERLAP")
+	result = df.assign(TOKEN_OVERLAP=overlap_df["TOKEN_OVERLAP"])
 
 	result = result.sort_values(["DYAD", "REFERENT", "INSTRUCTOR", "ROUND"])
 	# result = result[["DYAD", "ROUND", "INSTRUCTOR", "RELEVANT_TOKENS_REFERENT", "TokenOverlap"]]
