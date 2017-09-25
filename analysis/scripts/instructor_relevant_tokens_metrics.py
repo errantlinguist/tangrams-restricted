@@ -33,11 +33,10 @@ def parse_set(cell_value: str) -> FrozenSet[str]:
 	return frozenset(CELL_MULTIVALUE_DELIM_PATTERN.split(cell_value))
 
 
-def __token_type_overlap(df: pd.DataFrame) -> pd.DataFrame:
+def __token_type_overlap(df: pd.DataFrame):
 	"""
 	See <https://stackoverflow.com/a/46402641/1391325>
 	:param df: The DataFrame instance to process.
-	:return: A new DataFrame with token overlap ratios.
 	"""
 	referent_levels = ("DYAD", "INSTRUCTOR", "REFERENT")
 	dyad_instructor_referent_groups = df.groupby(referent_levels)
@@ -57,9 +56,7 @@ def __token_type_overlap(df: pd.DataFrame) -> pd.DataFrame:
 																					   name=shape_token_self_overlap_col_name)
 	df[shape_token_self_overlap_col_name] = shape_token_self_overlap_df[shape_token_self_overlap_col_name]
 
-	result = df.sort_values(["DYAD", "REFERENT", "INSTRUCTOR", "ROUND"])
-	# result = result[["DYAD", "ROUND", "INSTRUCTOR", "RELEVANT_TOKENS_REFERENT", "TokenOverlap"]]
-	return result
+	df.sort_values(["DYAD", "REFERENT", "INSTRUCTOR", "ROUND"], inplace=True)
 
 
 def __create_argparser() -> argparse.ArgumentParser:
@@ -76,12 +73,12 @@ def __main(args):
 	round_tokens = pd.read_csv(inpath, sep="\t", dialect=csv.excel_tab, encoding="utf-8", float_precision="high",
 							   memory_map=True,
 							   converters={"RELEVANT_TOKENS_REFERENT": parse_set, "RELEVANT_TOKENS_SHAPE": parse_set})
-	round_token_overlaps = __token_type_overlap(round_tokens)
-	round_token_overlaps["RELEVANT_TOKENS_REFERENT"] = round_token_overlaps["RELEVANT_TOKENS_REFERENT"].map(
+	__token_type_overlap(round_tokens)
+	round_tokens["RELEVANT_TOKENS_REFERENT"] = round_tokens["RELEVANT_TOKENS_REFERENT"].map(
 		__token_set_repr)
 	# round_token_overlaps["RELEVANT_TOKENS_SHAPE"] = round_token_overlaps["RELEVANT_TOKENS_SHAPE"].map(
 	#	__token_set_repr)
-	round_token_overlaps.to_csv(sys.stdout, index_label="INDEX", sep="\t", na_rep="N/A")
+	round_tokens.to_csv(sys.stdout, index_label="INDEX", sep="\t", na_rep="N/A")
 
 
 def __token_set_repr(tokens: Iterable[str]) -> str:
