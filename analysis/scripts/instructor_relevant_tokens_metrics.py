@@ -5,7 +5,6 @@ import csv
 import re
 import sys
 from collections import defaultdict
-from enum import Enum, unique
 from typing import FrozenSet, Iterable, Iterator, Optional, Tuple, TypeVar
 
 import numpy as np
@@ -68,7 +67,6 @@ def create_token_type_other_overlap_series(df: pd.DataFrame, referent_id_col_nam
 										   token_set_col_name: str):
 	coref_seq_col_name = token_set_col_name + COREF_SEQ_COL_NAME_SUFFIX + "_OTHER"
 	overlap_col_name = token_set_col_name + OVERLAP_COL_NAME_SUFFIX + "_OTHER"
-	df.sort_values("ROUND", inplace=True)
 
 	dyad_last_corefs = defaultdict(dict)
 	for idx, cols in df.iterrows():
@@ -147,7 +145,7 @@ def zip_previous_row_values(df: pd.DataFrame, col_name: str) -> Iterator[Tuple[T
 	return zip(df[col_name], df[col_name].shift())
 
 
-def __token_type_overlap(df: pd.DataFrame):
+def __token_type_overlap(df: pd.DataFrame, token_col_name: str, referent_col_name: str):
 	"""
 	See <https://stackoverflow.com/a/46402641/1391325>
 	:param df: The DataFrame instance to process.
@@ -157,41 +155,24 @@ def __token_type_overlap(df: pd.DataFrame):
 	# dyad_referent_groups = df.groupby("DYAD")
 	# df["COREF_SEQ_REFERENT_COMBINED"] = dyad_referent_groups.cumcount().transform(lambda seq_no : seq_no + 1)
 
-	referent_tokens_col_name = "RELEVANT_TOKENS_REFERENT"
-	print("Calculating self overlap for \"{}\".".format(referent_tokens_col_name), file=sys.stderr)
-	instructor_referent_levels = ("DYAD", "INSTRUCTOR", "REFERENT")
+	print("Calculating self overlap for \"{}\".".format(token_col_name), file=sys.stderr)
+	instructor_referent_levels = ("DYAD", "INSTRUCTOR", referent_col_name)
 	dyad_instructor_referent_groups = df.groupby(instructor_referent_levels)
 	group_referent_token_self_overlap_series = dyad_instructor_referent_groups.apply(
-		lambda group_df: create_token_type_self_overlap_series(group_df, referent_tokens_col_name))
-	referent_token_self_overlap_col_name = referent_tokens_col_name + OVERLAP_COL_NAME_SUFFIX + "_SELF"
+		lambda group_df: create_token_type_self_overlap_series(group_df, token_col_name))
+	referent_token_self_overlap_col_name = token_col_name + OVERLAP_COL_NAME_SUFFIX + "_SELF"
 	referent_token_self_overlap_df = group_referent_token_self_overlap_series.reset_index(
 		level=instructor_referent_levels,
 		name=referent_token_self_overlap_col_name)
 	df[
-		referent_tokens_col_name + COREF_SEQ_COL_NAME_SUFFIX + "_SELF"] = dyad_instructor_referent_groups.cumcount().transform(
+		token_col_name + COREF_SEQ_COL_NAME_SUFFIX + "_SELF"] = dyad_instructor_referent_groups.cumcount().transform(
 		lambda seq_no: seq_no + 1)
 	df[referent_token_self_overlap_col_name] = referent_token_self_overlap_df[referent_token_self_overlap_col_name]
 
 	df.sort_values("ROUND", inplace=True)
 
-	print("Calculating other overlap for \"{}\".".format(referent_tokens_col_name), file=sys.stderr)
-	create_token_type_other_overlap_series(df, "REFERENT", referent_tokens_col_name)
-
-	shape_tokens_col_name = "RELEVANT_TOKENS_SHAPE"
-	print("Calculating self overlap for \"{}\".".format(shape_tokens_col_name), file=sys.stderr)
-	instructor_shape_levels = ("DYAD", "INSTRUCTOR", "SHAPE")
-	dyad_instructor_shape_groups = df.groupby(instructor_shape_levels)
-	group_shape_token_self_overlap_series = dyad_instructor_shape_groups.apply(
-		lambda group_df: create_token_type_self_overlap_series(group_df, shape_tokens_col_name))
-	shape_token_self_overlap_col_name = shape_tokens_col_name + OVERLAP_COL_NAME_SUFFIX + "_SELF"
-	shape_token_self_overlap_df = group_shape_token_self_overlap_series.reset_index(level=instructor_shape_levels,
-																					name=shape_token_self_overlap_col_name)
-	df[shape_tokens_col_name + COREF_SEQ_COL_NAME_SUFFIX + "_SELF"] = dyad_instructor_shape_groups.cumcount().transform(
-		lambda seq_no: seq_no + 1)
-	df[shape_token_self_overlap_col_name] = shape_token_self_overlap_df[shape_token_self_overlap_col_name]
-
-	print("Calculating other overlap for \"{}\".".format(shape_tokens_col_name), file=sys.stderr)
-	create_token_type_other_overlap_series(df, "SHAPE", shape_tokens_col_name)
+	print("Calculating other overlap for \"{}\".".format(token_col_name), file=sys.stderr)
+	create_token_type_other_overlap_series(df, referent_col_name, token_col_name)
 
 
 def __create_argparser() -> argparse.ArgumentParser:
@@ -199,17 +180,26 @@ def __create_argparser() -> argparse.ArgumentParser:
 		description="Measure referent token type overlap in coreference chains in each game session, using only instructor language to build coreference chains.")
 	result.add_argument("inpath", metavar="INPATH",
 						help="The file to process.")
+	result.add_argument("-r", "--referent", metavar="COL_NAME", required=True,
+						help="The column to use as a referent ID.")
+	result.add_argument("-t", "--tokens", metavar="COL_NAME", required=True,
+						help="The column to use as relevant tokens.")
 	return result
 
 
 def __main(args):
 	inpath = args.inpath
-	print("Reading \"{}\".".format(inpath), file=sys.stderr)
+	token_col_name = args.tokens
+	referent_col_name = args.referent
+	print("Reading \"{}\" using tokens from column \"{}\" and values from column \"{}\" as referent IDs.".format(inpath,
+																												 token_col_name,
+																												 referent_col_name),
+		  file=sys.stderr)
 	round_tokens = pd.read_csv(inpath, sep="\t", dialect=csv.excel_tab, encoding="utf-8", float_precision="high",
 							   memory_map=True,
 							   converters={"RELEVANT_TOKENS_REFERENT": parse_set, "RELEVANT_TOKENS_SHAPE": parse_set})
 
-	__token_type_overlap(round_tokens)
+	__token_type_overlap(round_tokens, token_col_name, referent_col_name)
 
 	round_tokens.sort_values(["DYAD", "REFERENT", "INSTRUCTOR", "ROUND"], inplace=True)
 	round_tokens["RELEVANT_TOKENS_REFERENT"] = round_tokens["RELEVANT_TOKENS_REFERENT"].map(
