@@ -12,8 +12,10 @@ import pandas as pd
 
 CELL_MULTIVALUE_DELIM_PATTERN = re.compile("\\s*,\\s*")
 COREF_SEQ_COL_NAME_SUFFIX = "_COREF_SEQ"
+OTHER_METRIC_COL_NAME_SUFFIX = "_OTHER"
 OVERLAP_COL_NAME_SUFFIX = "_OVERLAP"
 OVERLAP_NULL_VALUE = np.NaN
+SELF_METRIC_COL_NAME_SUFFIX = "_SELF"
 
 T = TypeVar('T')
 
@@ -65,8 +67,8 @@ def next_complement_coref(instructor: str, first_coref: Coreference) -> Optional
 
 def create_token_type_other_overlap_series(df: pd.DataFrame, referent_id_col_name: str,
 										   token_set_col_name: str):
-	coref_seq_col_name = token_set_col_name + COREF_SEQ_COL_NAME_SUFFIX + "_OTHER"
-	overlap_col_name = token_set_col_name + OVERLAP_COL_NAME_SUFFIX + "_OTHER"
+	coref_seq_col_name = token_set_col_name + COREF_SEQ_COL_NAME_SUFFIX + OTHER_METRIC_COL_NAME_SUFFIX
+	overlap_col_name = token_set_col_name + OVERLAP_COL_NAME_SUFFIX + OTHER_METRIC_COL_NAME_SUFFIX
 
 	dyad_last_corefs = defaultdict(dict)
 	for idx, cols in df.iterrows():
@@ -141,13 +143,13 @@ def __token_type_overlap(df: pd.DataFrame, token_col_name: str, referent_col_nam
 	dyad_instructor_referent_groups = df.groupby(dyad_instructor_referent_levels)
 	group_token_self_overlap_series = dyad_instructor_referent_groups.apply(
 		lambda group_df: create_token_type_self_overlap_series(group_df, token_col_name))
-	token_self_overlap_col_name = token_col_name + OVERLAP_COL_NAME_SUFFIX + "_SELF"
+	token_self_overlap_col_name = token_col_name + OVERLAP_COL_NAME_SUFFIX + SELF_METRIC_COL_NAME_SUFFIX
 	token_self_overlap_df = group_token_self_overlap_series.reset_index(
 		level=dyad_instructor_referent_levels,
 		name=token_self_overlap_col_name)
 
 	df[
-		token_col_name + COREF_SEQ_COL_NAME_SUFFIX + "_SELF"] = dyad_instructor_referent_groups.cumcount().transform(
+		token_col_name + COREF_SEQ_COL_NAME_SUFFIX + SELF_METRIC_COL_NAME_SUFFIX] = dyad_instructor_referent_groups.cumcount().transform(
 		lambda seq_no: seq_no + 1)
 	df[token_self_overlap_col_name] = token_self_overlap_df[token_self_overlap_col_name]
 
