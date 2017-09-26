@@ -4,7 +4,6 @@ import argparse
 import csv
 import re
 import sys
-from collections import defaultdict
 from typing import FrozenSet, Iterable, Iterator, Optional, Tuple, TypeVar
 
 import numpy as np
@@ -57,66 +56,7 @@ def next_complement_coref(instructor: str, first_coref: Coreference) -> Optional
 	return result
 
 
-def create_token_type_other_overlap_series_OLD(df: pd.DataFrame, referent_id_col_name: str,
-											   token_set_col_name: str):
-	coref_seq_col_name = token_set_col_name + COREF_SEQ_COL_NAME_SUFFIX + OTHER_METRIC_COL_NAME_SUFFIX
-	overlap_col_name = token_set_col_name + OVERLAP_COL_NAME_SUFFIX + OTHER_METRIC_COL_NAME_SUFFIX
-	df.sort_values("ROUND", inplace=True)
-
-	dyad_coref_chains = defaultdict(lambda: defaultdict(list))
-	for idx, cols in df.iterrows():
-		dyad = cols["DYAD"]
-		coref_chains = dyad_coref_chains[dyad]
-		current_instructor = cols["INSTRUCTOR"]
-		current_round = cols["ROUND"]
-		current_tokens = cols[token_set_col_name]
-
-		referent_id = cols[referent_id_col_name]
-		coref_chain = coref_chains[referent_id]
-		prev_complement_corefs = tuple(coref for coref in coref_chain if coref.instructor != current_instructor)
-		next_coref_seq_no = len(prev_complement_corefs) + 1
-		current_coref = Coreference(next_coref_seq_no, current_instructor, current_round,
-									current_tokens)
-		if next_coref_seq_no > 1:
-			last_prev_complement_coref = prev_complement_corefs[len(prev_complement_corefs) - 1]
-			assert last_prev_complement_coref.round_id < current_round
-			overlap = set_overlap(current_coref.tokens, last_prev_complement_coref.tokens)
-		else:
-			overlap = OVERLAP_NULL_VALUE
-
-		df.loc[idx, coref_seq_col_name] = current_coref.chain_seq_no
-		df.loc[idx, overlap_col_name] = overlap
-		coref_chain.append(current_coref)
-
-	for dyad, coref_chains in dyad_coref_chains.items():
-		for referent, coref_chain in coref_chains.items():
-			prev_coref_seq_no = 0
-			prev_round = 0
-			for coref in coref_chain:
-				assert prev_coref_seq_no < coref.chain_seq_no
-				assert prev_round < coref.round_id
-				prev_coref_seq_no = coref.chain_seq_no
-				prev_round = coref.round_id
-
-
-def iterate_prev_complement_rows(df: pd.DataFrame, cols: pd.Series) -> Iterator[pd.Series]:
-	current_row = cols
-	while True:
-		current_round = current_row["ROUND"]
-		print("Current round: {}".format(current_round), file=sys.stderr)
-		current_instructor = current_row["INSTRUCTOR"]
-		print("Current instructor to find complement of: {}".format(current_instructor), file=sys.stderr)
-		prev_complement_rows = df.loc[(df["ROUND"] < current_round) & (df["INSTRUCTOR"] != current_instructor)]
-		# print("prev_complement_rows" + prev_complement_rows)
-		try:
-			last_prev_complement_row = prev_complement_rows.loc[prev_complement_rows["ROUND"].argmax()]
-			yield last_prev_complement_row
-			current_row = last_prev_complement_row
-		except ValueError:
-			break
-
-
-def iterate_prev_complement_rows_DYAD(df: pd.DataFrame, cols: pd.Series, referent_id_col_name: str) -> Iterator[
+def iterate_prev_complement_rows(df: pd.DataFrame, cols: pd.Series, referent_id_col_name: str) -> Iterator[
 	pd.Series]:
 	current_row = cols
 	while True:
@@ -128,7 +68,7 @@ def iterate_prev_complement_rows_DYAD(df: pd.DataFrame, cols: pd.Series, referen
 		# print("Current instructor to find complement of: {}".format(current_instructor), file=sys.stderr)
 		prev_complement_rows = df.loc[
 			(df["DYAD"] == dyad) & (df[referent_id_col_name] == referent_id) & (df["ROUND"] < current_round) & (
-			df["INSTRUCTOR"] != current_instructor)]
+				df["INSTRUCTOR"] != current_instructor)]
 		# print("prev_complement_rows" + prev_complement_rows)
 		try:
 			last_prev_complement_row = prev_complement_rows.loc[prev_complement_rows["ROUND"].argmax()]
@@ -144,7 +84,7 @@ def create_token_type_other_overlap_series_DYAD(df: pd.DataFrame, referent_id_co
 	overlap_col_name = token_set_col_name + OVERLAP_COL_NAME_SUFFIX + OTHER_METRIC_COL_NAME_SUFFIX
 
 	for idx, cols in df.iterrows():
-		prev_complement_rows = tuple(iterate_prev_complement_rows_DYAD(df, cols, referent_id_col_name))
+		prev_complement_rows = tuple(iterate_prev_complement_rows(df, cols, referent_id_col_name))
 		coref_seq_no = len(prev_complement_rows) + 1
 		if coref_seq_no > 1:
 			last_prev_complement_row = prev_complement_rows[len(prev_complement_rows) - 1]
@@ -154,36 +94,6 @@ def create_token_type_other_overlap_series_DYAD(df: pd.DataFrame, referent_id_co
 
 		df.loc[idx, coref_seq_col_name] = coref_seq_no
 		df.loc[idx, overlap_col_name] = overlap
-
-
-def create_coref_seq_other_overlap_series(df: pd.DataFrame,
-										  token_set_col_name: str) -> pd.Series:
-	series_vals = []
-	for idx, cols in df.iterrows():
-		prev_complement_rows = tuple(iterate_prev_complement_rows(df, cols))
-		coref_seq_no = len(prev_complement_rows) + 1
-		if coref_seq_no > 1:
-			last_prev_complement_row = prev_complement_rows[len(prev_complement_rows) - 1]
-			overlap = set_overlap(cols[token_set_col_name], last_prev_complement_row[token_set_col_name])
-		else:
-			overlap = OVERLAP_NULL_VALUE
-		series_vals.append(overlap)
-	return pd.Series(series_vals, index=df.index)
-
-
-def create_token_type_other_overlap_series(df: pd.DataFrame,
-										   token_set_col_name: str) -> pd.Series:
-	series_vals = []
-	for idx, cols in df.iterrows():
-		prev_complement_rows = tuple(iterate_prev_complement_rows(df, cols))
-		coref_seq_no = len(prev_complement_rows) + 1
-		if coref_seq_no > 1:
-			last_prev_complement_row = prev_complement_rows[len(prev_complement_rows) - 1]
-			overlap = set_overlap(cols[token_set_col_name], last_prev_complement_row[token_set_col_name])
-		else:
-			overlap = OVERLAP_NULL_VALUE
-		series_vals.append(overlap)
-	return pd.Series(series_vals, index=df.index)
 
 
 def create_token_type_self_overlap_series(df: pd.DataFrame, col_name: str) -> pd.Series:
