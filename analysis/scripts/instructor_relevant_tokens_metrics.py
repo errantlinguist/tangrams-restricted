@@ -91,7 +91,7 @@ def create_token_type_other_overlap_series(df: pd.DataFrame, referent_id_col_nam
 			else:
 				overlap = OVERLAP_NULL_VALUE
 		except KeyError:
-			current_coref = Coreference(0, current_instructor, current_round, current_tokens, None)
+			current_coref = Coreference(1, current_instructor, current_round, current_tokens, None)
 			overlap = OVERLAP_NULL_VALUE
 
 		df.loc[idx, coref_seq_col_name] = current_coref.chain_seq_no
@@ -168,7 +168,7 @@ def __token_type_overlap(df: pd.DataFrame):
 	#previous_rounds = df["ROUND"].transform(lambda game_round: game_round - 1)
 	#df["PREVIOUS_ROUND"] = previous_rounds
 	#dyad_referent_groups = df.groupby("DYAD")
-	#df["COREF_SEQ_REFERENT_COMBINED"] = dyad_referent_groups.cumcount()
+	#df["COREF_SEQ_REFERENT_COMBINED"] = dyad_referent_groups.cumcount().transform(lambda seq_no : seq_no + 1)
 
 	referent_tokens_col_name = "RELEVANT_TOKENS_REFERENT"
 	print("Calculating self overlap for \"{}\".".format(referent_tokens_col_name), file=sys.stderr)
@@ -181,7 +181,7 @@ def __token_type_overlap(df: pd.DataFrame):
 		level=instructor_referent_levels,
 		name=referent_token_self_overlap_col_name)
 	df[referent_token_self_overlap_col_name] = referent_token_self_overlap_df[referent_token_self_overlap_col_name]
-	df[referent_tokens_col_name + COREF_SEQ_COL_NAME_SUFFIX + "_SELF"] = dyad_instructor_referent_groups.cumcount()
+	df[referent_tokens_col_name + COREF_SEQ_COL_NAME_SUFFIX + "_SELF"] = dyad_instructor_referent_groups.cumcount().transform(lambda seq_no : seq_no + 1)
 
 	df.sort_values("ROUND", inplace=True)
 
@@ -198,7 +198,7 @@ def __token_type_overlap(df: pd.DataFrame):
 	shape_token_self_overlap_df = group_shape_token_self_overlap_series.reset_index(level=instructor_shape_levels,
 																					name=shape_token_self_overlap_col_name)
 	df[shape_token_self_overlap_col_name] = shape_token_self_overlap_df[shape_token_self_overlap_col_name]
-	df[shape_tokens_col_name + COREF_SEQ_COL_NAME_SUFFIX + "_SELF"] = dyad_instructor_shape_groups.cumcount()
+	df[shape_tokens_col_name + COREF_SEQ_COL_NAME_SUFFIX + "_SELF"] = dyad_instructor_shape_groups.cumcount().transform(lambda seq_no : seq_no + 1)
 
 	create_token_type_other_overlap_series(df, "REFERENT", referent_tokens_col_name)
 
