@@ -4,7 +4,7 @@ import argparse
 import csv
 import re
 import sys
-from typing import FrozenSet, Iterable, Iterator, Optional, Tuple, TypeVar
+from typing import FrozenSet, Iterable, Iterator, Tuple, TypeVar
 
 import numpy as np
 import pandas as pd
@@ -18,42 +18,6 @@ OVERLAP_NULL_VALUE = np.NaN
 SELF_METRIC_COL_NAME_SUFFIX = "_SELF"
 
 T = TypeVar('T')
-
-
-class Coreference(object):
-	"""
-	This class represents a single reference in a coreference chain.
-	"""
-
-	def __init__(self, chain_seq_no: int, instructor: str, round_id: int, tokens: FrozenSet[str]):
-		self.chain_seq_no = chain_seq_no
-		self.instructor = instructor
-		self.round_id = round_id
-		self.tokens = tokens
-
-	@property
-	def __key(self):
-		return self.chain_seq_no, self.instructor, self.round_id, self.tokens
-
-	def __eq__(self, other):
-		return (self is other or (isinstance(other, type(self))
-								  and self.__key == other.__key))
-
-	def __ne__(self, other):
-		return not (self == other)
-
-	def __hash__(self):
-		return hash(self.__key)
-
-	def __repr__(self):
-		return self.__class__.__name__ + str(self.__dict__)
-
-
-def next_complement_coref(instructor: str, first_coref: Coreference) -> Optional[Coreference]:
-	result = first_coref
-	while result is not None and result.instructor == instructor:
-		result = result.antecedent
-	return result
 
 
 def iterate_prev_complement_rows(df: pd.DataFrame, cols: pd.Series, referent_id_col_name: str) -> Iterator[
@@ -78,8 +42,8 @@ def iterate_prev_complement_rows(df: pd.DataFrame, cols: pd.Series, referent_id_
 			break
 
 
-def create_token_type_other_overlap_series_DYAD(df: pd.DataFrame, referent_id_col_name: str,
-												token_set_col_name: str):
+def create_token_type_other_overlap_series(df: pd.DataFrame, referent_id_col_name: str,
+										   token_set_col_name: str):
 	coref_seq_col_name = token_set_col_name + COREF_SEQ_COL_NAME_SUFFIX + OTHER_METRIC_COL_NAME_SUFFIX
 	overlap_col_name = token_set_col_name + OVERLAP_COL_NAME_SUFFIX + OTHER_METRIC_COL_NAME_SUFFIX
 
@@ -172,7 +136,7 @@ def __token_type_overlap(df: pd.DataFrame, token_col_name: str, referent_col_nam
 	# other_overlap_series = dyad_referent_groups.apply(
 	#	lambda group_df: create_coref_seq_other_overlap_series(group_df, token_col_name))
 	# other_overlap_series.app
-	create_token_type_other_overlap_series_DYAD(df, referent_col_name, token_col_name)
+	create_token_type_other_overlap_series(df, referent_col_name, token_col_name)
 
 
 def __create_argparser() -> argparse.ArgumentParser:
