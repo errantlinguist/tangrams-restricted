@@ -5,8 +5,8 @@ import csv
 import re
 import sys
 from collections import defaultdict
-from typing import FrozenSet, Iterable, Iterator, Optional, Tuple, TypeVar
 from enum import Enum, unique
+from typing import FrozenSet, Iterable, Iterator, Optional, Tuple, TypeVar
 
 import numpy as np
 import pandas as pd
@@ -146,8 +146,9 @@ def token_type_other_overlap(row_col_values: pd.Series, df: pd.DataFrame,
 def zip_previous_row_values(df: pd.DataFrame, col_name: str) -> Iterator[Tuple[T, T]]:
 	return zip(df[col_name], df[col_name].shift())
 
+
 class TokenGroupingDataMappings(object):
-	def __init__(self, group_levels: Iterable[str], referent_id_col_name : str, token_set_col_name : str):
+	def __init__(self, group_levels: Iterable[str], referent_id_col_name: str, token_set_col_name: str):
 		self.group_levels = group_levels
 		self.token_set_col_name = token_set_col_name
 		self.referent_id_col_name = referent_id_col_name
@@ -155,20 +156,22 @@ class TokenGroupingDataMappings(object):
 	def __repr__(self):
 		return self.__class__.__name__ + str(self.__dict__)
 
+
 @unique
 class TokenGrouping(Enum):
-	REFERENT = TokenGroupingDataMappings(("DYAD", "INSTRUCTOR", "REFERENT"),  "RELEVANT_TOKENS_REFERENT", "REFERENT")
-	SHAPE = TokenGroupingDataMappings( ("DYAD", "INSTRUCTOR", "SHAPE"),  "RELEVANT_TOKENS_SHAPE", "SHAPE")
+	REFERENT = TokenGroupingDataMappings(("DYAD", "INSTRUCTOR", "REFERENT"), "RELEVANT_TOKENS_REFERENT", "REFERENT")
+	SHAPE = TokenGroupingDataMappings(("DYAD", "INSTRUCTOR", "SHAPE"), "RELEVANT_TOKENS_SHAPE", "SHAPE")
+
 
 def __token_type_overlap(df: pd.DataFrame):
 	"""
 	See <https://stackoverflow.com/a/46402641/1391325>
 	:param df: The DataFrame instance to process.
 	"""
-	#previous_rounds = df["ROUND"].transform(lambda game_round: game_round - 1)
-	#df["PREVIOUS_ROUND"] = previous_rounds
-	#dyad_referent_groups = df.groupby("DYAD")
-	#df["COREF_SEQ_REFERENT_COMBINED"] = dyad_referent_groups.cumcount().transform(lambda seq_no : seq_no + 1)
+	# previous_rounds = df["ROUND"].transform(lambda game_round: game_round - 1)
+	# df["PREVIOUS_ROUND"] = previous_rounds
+	# dyad_referent_groups = df.groupby("DYAD")
+	# df["COREF_SEQ_REFERENT_COMBINED"] = dyad_referent_groups.cumcount().transform(lambda seq_no : seq_no + 1)
 
 	referent_tokens_col_name = "RELEVANT_TOKENS_REFERENT"
 	print("Calculating self overlap for \"{}\".".format(referent_tokens_col_name), file=sys.stderr)
@@ -180,8 +183,10 @@ def __token_type_overlap(df: pd.DataFrame):
 	referent_token_self_overlap_df = group_referent_token_self_overlap_series.reset_index(
 		level=instructor_referent_levels,
 		name=referent_token_self_overlap_col_name)
+	df[
+		referent_tokens_col_name + COREF_SEQ_COL_NAME_SUFFIX + "_SELF"] = dyad_instructor_referent_groups.cumcount().transform(
+		lambda seq_no: seq_no + 1)
 	df[referent_token_self_overlap_col_name] = referent_token_self_overlap_df[referent_token_self_overlap_col_name]
-	df[referent_tokens_col_name + COREF_SEQ_COL_NAME_SUFFIX + "_SELF"] = dyad_instructor_referent_groups.cumcount().transform(lambda seq_no : seq_no + 1)
 
 	df.sort_values("ROUND", inplace=True)
 
@@ -197,8 +202,9 @@ def __token_type_overlap(df: pd.DataFrame):
 	shape_token_self_overlap_col_name = shape_tokens_col_name + OVERLAP_COL_NAME_SUFFIX + "_SELF"
 	shape_token_self_overlap_df = group_shape_token_self_overlap_series.reset_index(level=instructor_shape_levels,
 																					name=shape_token_self_overlap_col_name)
+	df[shape_tokens_col_name + COREF_SEQ_COL_NAME_SUFFIX + "_SELF"] = dyad_instructor_shape_groups.cumcount().transform(
+		lambda seq_no: seq_no + 1)
 	df[shape_token_self_overlap_col_name] = shape_token_self_overlap_df[shape_token_self_overlap_col_name]
-	df[shape_tokens_col_name + COREF_SEQ_COL_NAME_SUFFIX + "_SELF"] = dyad_instructor_shape_groups.cumcount().transform(lambda seq_no : seq_no + 1)
 
 	create_token_type_other_overlap_series(df, "SHAPE", shape_tokens_col_name)
 
