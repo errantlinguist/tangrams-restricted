@@ -137,18 +137,21 @@ def __token_type_overlap(df: pd.DataFrame, token_col_name: str, referent_col_nam
 	# df["COREF_SEQ_REFERENT_COMBINED"] = dyad_referent_groups.cumcount().transform(lambda seq_no : seq_no + 1)
 
 	print("Calculating self overlap for \"{}\".".format(token_col_name), file=sys.stderr)
-	instructor_referent_levels = ("DYAD", "INSTRUCTOR", referent_col_name)
-	dyad_instructor_referent_groups = df.groupby(instructor_referent_levels)
-	group_referent_token_self_overlap_series = dyad_instructor_referent_groups.apply(
+	dyad_instructor_referent_levels = ("DYAD", "INSTRUCTOR", referent_col_name)
+	dyad_instructor_referent_groups = df.groupby(dyad_instructor_referent_levels)
+	group_token_self_overlap_series = dyad_instructor_referent_groups.apply(
 		lambda group_df: create_token_type_self_overlap_series(group_df, token_col_name))
-	referent_token_self_overlap_col_name = token_col_name + OVERLAP_COL_NAME_SUFFIX + "_SELF"
-	referent_token_self_overlap_df = group_referent_token_self_overlap_series.reset_index(
-		level=instructor_referent_levels,
-		name=referent_token_self_overlap_col_name)
+	token_self_overlap_col_name = token_col_name + OVERLAP_COL_NAME_SUFFIX + "_SELF"
+	token_self_overlap_df = group_token_self_overlap_series.reset_index(
+		level=dyad_instructor_referent_levels,
+		name=token_self_overlap_col_name)
+
 	df[
 		token_col_name + COREF_SEQ_COL_NAME_SUFFIX + "_SELF"] = dyad_instructor_referent_groups.cumcount().transform(
 		lambda seq_no: seq_no + 1)
-	df[referent_token_self_overlap_col_name] = referent_token_self_overlap_df[referent_token_self_overlap_col_name]
+	df[token_self_overlap_col_name] = token_self_overlap_df[token_self_overlap_col_name]
+
+	print("Calculating self overlap baseline for \"{}\".".format(token_col_name), file=sys.stderr)
 
 	df.sort_values("ROUND", inplace=True)
 
