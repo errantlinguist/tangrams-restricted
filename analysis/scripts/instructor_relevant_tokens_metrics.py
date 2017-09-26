@@ -131,8 +131,8 @@ def read_round_tokens(inpath: str, **kwargs) -> pd.DataFrame:
 
 
 def set_overlap(first: FrozenSet[T], complement: FrozenSet[T]) -> float:
-	print("First: " + ",".join(sorted(first)), file=sys.stderr)
-	print("Complement: " + ",".join(sorted(complement)), file=sys.stderr)
+	#print("First: " + ",".join(sorted(first)), file=sys.stderr)
+	#print("Complement: " + ",".join(sorted(complement)), file=sys.stderr)
 	if first and complement:
 		intersection = first.intersection(complement)
 		union = first.union(complement)
