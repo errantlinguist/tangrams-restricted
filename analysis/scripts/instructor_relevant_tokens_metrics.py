@@ -4,6 +4,7 @@ import argparse
 import csv
 import re
 import sys
+from enum import Enum, unique
 from typing import FrozenSet, Iterable, Iterator, Tuple, TypeVar
 
 import numpy as np
@@ -12,12 +13,16 @@ import pandas as pd
 CELL_MULTIVALUE_DELIM_PATTERN = re.compile("\\s*,\\s*")
 COREF_SEQ_COL_NAME_SUFFIX = "_COREF_SEQ"
 OUTPUT_NA_REPR = "N/A"
-OTHER_METRIC_COL_NAME_SUFFIX = "_OTHER"
 OVERLAP_COL_NAME_SUFFIX = "_OVERLAP"
 OVERLAP_NULL_VALUE = np.NaN
-SELF_METRIC_COL_NAME_SUFFIX = "_SELF"
 
 T = TypeVar('T')
+
+
+@unique
+class Metric(Enum):
+	SELF = "_SELF"
+	OTHER = "_OTHER"
 
 
 def iterate_prev_complement_rows(df: pd.DataFrame, cols: pd.Series, referent_id_col_name: str) -> Iterator[
@@ -44,8 +49,8 @@ def iterate_prev_complement_rows(df: pd.DataFrame, cols: pd.Series, referent_id_
 
 def create_token_type_other_overlap_series(df: pd.DataFrame, referent_id_col_name: str,
 										   token_set_col_name: str):
-	coref_seq_col_name = token_set_col_name + COREF_SEQ_COL_NAME_SUFFIX + OTHER_METRIC_COL_NAME_SUFFIX
-	overlap_col_name = token_set_col_name + OVERLAP_COL_NAME_SUFFIX + OTHER_METRIC_COL_NAME_SUFFIX
+	coref_seq_col_name = token_set_col_name + COREF_SEQ_COL_NAME_SUFFIX + Metric.OTHER.value
+	overlap_col_name = token_set_col_name + OVERLAP_COL_NAME_SUFFIX + Metric.OTHER.value
 
 	for idx, cols in df.iterrows():
 		prev_complement_rows = tuple(iterate_prev_complement_rows(df, cols, referent_id_col_name))
@@ -117,12 +122,12 @@ def __token_type_overlap(df: pd.DataFrame, token_col_name: str, referent_col_nam
 	dyad_instructor_referent_groups = df.groupby(dyad_instructor_referent_levels)
 	group_token_self_overlap_series = dyad_instructor_referent_groups.apply(
 		lambda group_df: create_token_type_self_overlap_series(group_df, token_col_name))
-	token_self_overlap_col_name = token_col_name + OVERLAP_COL_NAME_SUFFIX + SELF_METRIC_COL_NAME_SUFFIX
+	token_self_overlap_col_name = token_col_name + OVERLAP_COL_NAME_SUFFIX + Metric.SELF.value
 	token_self_overlap_df = group_token_self_overlap_series.reset_index(
 		level=dyad_instructor_referent_levels,
 		name=token_self_overlap_col_name)
 	df[
-		token_col_name + COREF_SEQ_COL_NAME_SUFFIX + SELF_METRIC_COL_NAME_SUFFIX] = dyad_instructor_referent_groups.cumcount().transform(
+		token_col_name + COREF_SEQ_COL_NAME_SUFFIX + Metric.SELF.value] = dyad_instructor_referent_groups.cumcount().transform(
 		lambda seq_no: seq_no + 1)
 	df[token_self_overlap_col_name] = token_self_overlap_df[token_self_overlap_col_name]
 

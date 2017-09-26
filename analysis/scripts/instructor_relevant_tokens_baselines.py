@@ -1,18 +1,16 @@
 #!/usr/bin/env python3
 
 import argparse
-import csv
 import re
 import sys
 from typing import Iterable
 
 import numpy as np
-import pandas as pd
 
 import instructor_relevant_tokens_metrics
 
 COL_NAME_PATTERN = re.compile(
-	".*?((?:" + instructor_relevant_tokens_metrics.COREF_SEQ_COL_NAME_SUFFIX + ")|(?:" + instructor_relevant_tokens_metrics.OVERLAP_COL_NAME_SUFFIX + "))((?:" + instructor_relevant_tokens_metrics.SELF_METRIC_COL_NAME_SUFFIX + ")|(?:" + instructor_relevant_tokens_metrics.OTHER_METRIC_COL_NAME_SUFFIX + "))")
+	".*?((?:" + instructor_relevant_tokens_metrics.COREF_SEQ_COL_NAME_SUFFIX + ")|(?:" + instructor_relevant_tokens_metrics.OVERLAP_COL_NAME_SUFFIX + "))((?:" + instructor_relevant_tokens_metrics.Metric.SELF.value + ")|(?:" + instructor_relevant_tokens_metrics.Metric.OTHER.value + "))")
 
 
 def __create_metric_data_colname_dict(col_names: Iterable[str]):
@@ -45,7 +43,8 @@ def __main(args):
 	inpath = args.inpath
 	print("Reading \"{}\".".format(inpath),
 		  file=sys.stderr)
-	round_tokens = instructor_relevant_tokens_metrics.read_round_tokens(inpath, na_values=(instructor_relevant_tokens_metrics.OUTPUT_NA_REPR, np.NaN, None))
+	round_tokens = instructor_relevant_tokens_metrics.read_round_tokens(inpath, na_values=(
+	instructor_relevant_tokens_metrics.OUTPUT_NA_REPR, np.NaN, None))
 
 	metric_data_col_names = __create_metric_data_colname_dict(round_tokens.columns.values)
 	for metric, data in metric_data_col_names.items():
