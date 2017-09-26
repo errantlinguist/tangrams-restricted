@@ -30,7 +30,8 @@ class Metric(Enum):
 	EITHER = "_EITHER"
 
 
-def iterate_prev_rows(df: pd.DataFrame, cols: pd.Series, referent_id_col_name: str) -> Iterator[
+def iterate_prev_rows(df: pd.DataFrame, cols: pd.Series, referent_id_col_name: str, token_set_col_name: str) -> \
+Iterator[
 	pd.Series]:
 	current_row = cols
 	while True:
@@ -38,8 +39,10 @@ def iterate_prev_rows(df: pd.DataFrame, cols: pd.Series, referent_id_col_name: s
 		referent_id = current_row[referent_id_col_name]
 		current_round = current_row["ROUND"]
 		# print("Current round: {}".format(current_round), file=sys.stderr)
+		# https://stackoverflow.com/a/37335656/1391325
 		prev_complement_rows = df.loc[
-			(df["DYAD"] == dyad) & (df[referent_id_col_name] == referent_id) & (df["ROUND"] < current_round)]
+			(df["DYAD"] == dyad) & (df[referent_id_col_name] == referent_id) & (df["ROUND"] < current_round) & (
+			df[token_set_col_name].str.len() > 0)]
 		# print("prev_complement_rows" + prev_complement_rows)
 		try:
 			last_prev_complement_row = prev_complement_rows.loc[prev_complement_rows["ROUND"].argmax()]
@@ -49,7 +52,8 @@ def iterate_prev_rows(df: pd.DataFrame, cols: pd.Series, referent_id_col_name: s
 			break
 
 
-def iterate_prev_complement_rows(df: pd.DataFrame, cols: pd.Series, referent_id_col_name: str) -> Iterator[
+def iterate_prev_complement_rows(df: pd.DataFrame, cols: pd.Series, referent_id_col_name: str,
+								 token_set_col_name: str) -> Iterator[
 	pd.Series]:
 	current_row = cols
 	while True:
@@ -59,9 +63,10 @@ def iterate_prev_complement_rows(df: pd.DataFrame, cols: pd.Series, referent_id_
 		# print("Current round: {}".format(current_round), file=sys.stderr)
 		current_instructor = current_row["INSTRUCTOR"]
 		# print("Current instructor to find complement of: {}".format(current_instructor), file=sys.stderr)
+		# https://stackoverflow.com/a/37335656/1391325
 		prev_complement_rows = df.loc[
 			(df["DYAD"] == dyad) & (df[referent_id_col_name] == referent_id) & (df["ROUND"] < current_round) & (
-				df["INSTRUCTOR"] != current_instructor)]
+				df["INSTRUCTOR"] != current_instructor) & (df[token_set_col_name].str.len() > 0)]
 		# print("prev_complement_rows" + prev_complement_rows)
 		try:
 			last_prev_complement_row = prev_complement_rows.loc[prev_complement_rows["ROUND"].argmax()]
@@ -70,7 +75,9 @@ def iterate_prev_complement_rows(df: pd.DataFrame, cols: pd.Series, referent_id_
 		except ValueError:
 			break
 
-def iterate_prev_self_rows(df: pd.DataFrame, cols: pd.Series, referent_id_col_name: str) -> Iterator[
+
+def iterate_prev_self_rows(df: pd.DataFrame, cols: pd.Series, referent_id_col_name: str, token_set_col_name: str) -> \
+Iterator[
 	pd.Series]:
 	current_row = cols
 	while True:
@@ -80,9 +87,10 @@ def iterate_prev_self_rows(df: pd.DataFrame, cols: pd.Series, referent_id_col_na
 		# print("Current round: {}".format(current_round), file=sys.stderr)
 		current_instructor = current_row["INSTRUCTOR"]
 		# print("Current instructor to find complement of: {}".format(current_instructor), file=sys.stderr)
+		# https://stackoverflow.com/a/37335656/1391325
 		prev_complement_rows = df.loc[
 			(df["DYAD"] == dyad) & (df[referent_id_col_name] == referent_id) & (df["ROUND"] < current_round) & (
-				df["INSTRUCTOR"] == current_instructor)]
+				df["INSTRUCTOR"] == current_instructor) & (df[token_set_col_name].str.len() > 0)]
 		# print("prev_complement_rows" + prev_complement_rows)
 		try:
 			last_prev_complement_row = prev_complement_rows.loc[prev_complement_rows["ROUND"].argmax()]
@@ -98,7 +106,7 @@ def create_token_type_other_overlap_series(df: pd.DataFrame, referent_id_col_nam
 	overlap_col_name = token_set_col_name + DataColumn.OVERLAP.value + Metric.OTHER.value
 
 	for idx, cols in df.iterrows():
-		prev_complement_rows = tuple(iterate_prev_complement_rows(df, cols, referent_id_col_name))
+		prev_complement_rows = tuple(iterate_prev_complement_rows(df, cols, referent_id_col_name, token_set_col_name))
 		coref_seq_no = len(prev_complement_rows) + 1
 		if coref_seq_no > 1:
 			last_prev_complement_row = prev_complement_rows[len(prev_complement_rows) - 1]
@@ -116,7 +124,7 @@ def create_token_type_either_overlap_series(df: pd.DataFrame, referent_id_col_na
 	overlap_col_name = token_set_col_name + DataColumn.OVERLAP.value + Metric.EITHER.value
 
 	for idx, cols in df.iterrows():
-		prev_complement_rows = tuple(iterate_prev_rows(df, cols, referent_id_col_name))
+		prev_complement_rows = tuple(iterate_prev_rows(df, cols, referent_id_col_name, token_set_col_name))
 		coref_seq_no = len(prev_complement_rows) + 1
 		if coref_seq_no > 1:
 			last_prev_complement_row = prev_complement_rows[len(prev_complement_rows) - 1]
@@ -129,12 +137,12 @@ def create_token_type_either_overlap_series(df: pd.DataFrame, referent_id_col_na
 
 
 def create_token_type_self_overlap_series(df: pd.DataFrame, referent_id_col_name: str,
-											token_set_col_name: str):
+										  token_set_col_name: str):
 	coref_seq_col_name = token_set_col_name + DataColumn.COREF_SEQ.value + Metric.SELF.value
 	overlap_col_name = token_set_col_name + DataColumn.OVERLAP.value + Metric.SELF.value
 
 	for idx, cols in df.iterrows():
-		prev_complement_rows = tuple(iterate_prev_self_rows(df, cols, referent_id_col_name))
+		prev_complement_rows = tuple(iterate_prev_self_rows(df, cols, referent_id_col_name, token_set_col_name))
 		coref_seq_no = len(prev_complement_rows) + 1
 		if coref_seq_no > 1:
 			last_prev_complement_row = prev_complement_rows[len(prev_complement_rows) - 1]
@@ -146,7 +154,7 @@ def create_token_type_self_overlap_series(df: pd.DataFrame, referent_id_col_name
 		df.loc[idx, overlap_col_name] = overlap
 
 
-#def create_token_type_self_overlap_series(df: pd.DataFrame, token_set_col_name: str) -> pd.Series:
+# def create_token_type_self_overlap_series(df: pd.DataFrame, token_set_col_name: str) -> pd.Series:
 #	return pd.Series(
 #		((OVERLAP_NULL_VALUE if pd.isnull(preceding_tokens) else set_overlap(own_tokens, preceding_tokens)) for
 #		 (own_tokens, preceding_tokens) in zip_previous_row_values(df, token_set_col_name)), index=df.index)
@@ -170,8 +178,8 @@ def read_round_tokens(inpath: str, **kwargs) -> pd.DataFrame:
 
 
 def set_overlap(first: FrozenSet[T], complement: FrozenSet[T]) -> float:
-	#print("First: " + ",".join(sorted(first)), file=sys.stderr)
-	#print("Complement: " + ",".join(sorted(complement)), file=sys.stderr)
+	# print("First: " + ",".join(sorted(first)), file=sys.stderr)
+	# print("Complement: " + ",".join(sorted(complement)), file=sys.stderr)
 	if first and complement:
 		intersection = first.intersection(complement)
 		union = first.union(complement)
@@ -198,20 +206,20 @@ def __token_type_overlap(df: pd.DataFrame, token_col_name: str, referent_col_nam
 
 	print("Calculating self overlap for \"{}\".".format(token_col_name), file=sys.stderr)
 	create_token_type_self_overlap_series(df, referent_col_name, token_col_name)
-	#dyad_instructor_referent_levels = ("DYAD", "INSTRUCTOR", referent_col_name)
-	#dyad_instructor_referent_groups = df.groupby(dyad_instructor_referent_levels)
-	#group_token_self_overlap_series = dyad_instructor_referent_groups.apply(
+	# dyad_instructor_referent_levels = ("DYAD", "INSTRUCTOR", referent_col_name)
+	# dyad_instructor_referent_groups = df.groupby(dyad_instructor_referent_levels)
+	# group_token_self_overlap_series = dyad_instructor_referent_groups.apply(
 	#	lambda group_df: create_token_type_self_overlap_series(group_df, token_col_name))
-	#token_self_overlap_col_name = token_col_name + DataColumn.OVERLAP.value + Metric.SELF.value
-	#token_self_overlap_df = group_token_self_overlap_series.reset_index(
+	# token_self_overlap_col_name = token_col_name + DataColumn.OVERLAP.value + Metric.SELF.value
+	# token_self_overlap_df = group_token_self_overlap_series.reset_index(
 	#	level=dyad_instructor_referent_levels,
 	#	name=token_self_overlap_col_name)
-	#df[
+	# df[
 	#	token_col_name + DataColumn.COREF_SEQ.value + Metric.SELF.value] = dyad_instructor_referent_groups.cumcount().transform(
 	#	lambda seq_no: seq_no + 1)
-	#df[token_self_overlap_col_name] = token_self_overlap_df[token_self_overlap_col_name]
+	# df[token_self_overlap_col_name] = token_self_overlap_df[token_self_overlap_col_name]
 
-	#df.sort_values("ROUND", inplace=True)
+	# df.sort_values("ROUND", inplace=True)
 
 	# df.reset_index()
 	print("Calculating other overlap for \"{}\".".format(token_col_name), file=sys.stderr)
