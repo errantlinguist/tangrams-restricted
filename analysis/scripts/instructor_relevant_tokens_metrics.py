@@ -126,10 +126,10 @@ def prettify_token_set_series(df: pd.DataFrame):
 		__token_set_repr)
 
 
-def read_round_tokens(inpath: str) -> pd.DataFrame:
+def read_round_tokens(inpath: str, **kwargs) -> pd.DataFrame:
 	return pd.read_csv(inpath, sep="\t", dialect=csv.excel_tab, encoding="utf-8", float_precision="high",
 					   memory_map=True,
-					   converters={"RELEVANT_TOKENS_REFERENT": parse_set, "RELEVANT_TOKENS_SHAPE": parse_set})
+					   converters={"RELEVANT_TOKENS_REFERENT": parse_set, "RELEVANT_TOKENS_SHAPE": parse_set}, **kwargs)
 
 
 def set_overlap(first: FrozenSet[T], complement: FrozenSet[T]) -> float:

@@ -15,14 +15,6 @@ COL_NAME_PATTERN = re.compile(
 	".*?((?:" + instructor_relevant_tokens_metrics.COREF_SEQ_COL_NAME_SUFFIX + ")|(?:" + instructor_relevant_tokens_metrics.OVERLAP_COL_NAME_SUFFIX + "))((?:" + instructor_relevant_tokens_metrics.SELF_METRIC_COL_NAME_SUFFIX + ")|(?:" + instructor_relevant_tokens_metrics.OTHER_METRIC_COL_NAME_SUFFIX + "))")
 
 
-def read_round_tokens(inpath: str) -> pd.DataFrame:
-	return pd.read_csv(inpath, sep="\t", dialect=csv.excel_tab, encoding="utf-8", float_precision="high",
-					   na_values=(instructor_relevant_tokens_metrics.OUTPUT_NA_REPR, np.NaN, None),
-					   memory_map=True,
-					   converters={"RELEVANT_TOKENS_REFERENT": instructor_relevant_tokens_metrics.parse_set,
-								   "RELEVANT_TOKENS_SHAPE": instructor_relevant_tokens_metrics.parse_set})
-
-
 def __create_metric_data_colname_dict(col_names: Iterable[str]):
 	result = {}
 	for col_name in col_names:
@@ -53,7 +45,7 @@ def __main(args):
 	inpath = args.inpath
 	print("Reading \"{}\".".format(inpath),
 		  file=sys.stderr)
-	round_tokens = read_round_tokens(inpath)
+	round_tokens = instructor_relevant_tokens_metrics.read_round_tokens(inpath, na_values=(instructor_relevant_tokens_metrics.OUTPUT_NA_REPR, np.NaN, None))
 
 	metric_data_col_names = __create_metric_data_colname_dict(round_tokens.columns.values)
 	for metric, data in metric_data_col_names.items():
