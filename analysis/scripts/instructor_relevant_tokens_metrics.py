@@ -61,7 +61,7 @@ class Coreference(object):
 
 def next_complement_coref(instructor: str, first_coref: Coreference) -> Optional[Coreference]:
 	result = first_coref
-	while result is not None and result.instructor != instructor:
+	while result is not None and result.instructor == instructor:
 		result = result.antecedent
 	return result
 
