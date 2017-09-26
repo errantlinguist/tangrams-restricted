@@ -14,23 +14,21 @@ CELL_MULTIVALUE_DELIM_PATTERN = re.compile("\\s*,\\s*")
 
 def create_token_type_other_overlap_series(df: pd.DataFrame, col_name: str) -> pd.Series:
 	own_token_sets = df[col_name]
-	# TODO: Finish
-	# df[df['B']==3]['A']
+
+
+# TODO: Finish
+# df[df['B']==3]['A']
 
 
 def create_token_type_self_overlap_series(df: pd.DataFrame, col_name: str) -> pd.Series:
-	intersected_token_sets = (previous_tokens.intersection(own_tokens) if pd.notnull(previous_tokens) else None for
-							  own_tokens, previous_tokens in
-							  zip(df[col_name], df[col_name].shift(1)))
-	intersected_token_set_sizes = (np.NaN if unified_token_set is None else len(unified_token_set) for unified_token_set
-								   in
-								   intersected_token_sets)
+	intersected_token_set_sizes = (
+	np.NaN if pd.isnull(previous_tokens) else len(previous_tokens.intersection(own_tokens)) for
+	own_tokens, previous_tokens in
+	zip(df[col_name], df[col_name].shift(1)))
 	intersected_token_set_size_series = pd.Series(intersected_token_set_sizes, index=df.index)
-	unified_token_sets = (previous_tokens.union(own_tokens) if pd.notnull(previous_tokens) else None for
-						  own_tokens, previous_tokens in
-						  zip(df[col_name], df[col_name].shift(1)))
-	unified_token_set_sizes = (np.NaN if unified_token_set is None else len(unified_token_set) for unified_token_set in
-							   unified_token_sets)
+	unified_token_set_sizes = (np.NaN if pd.isnull(previous_tokens) else len(previous_tokens.union(own_tokens)) for
+							   own_tokens, previous_tokens in
+							   zip(df[col_name], df[col_name].shift(1)))
 	unified_token_set_size_series = pd.Series(unified_token_set_sizes, index=df.index)
 	return intersected_token_set_size_series / unified_token_set_size_series
 
