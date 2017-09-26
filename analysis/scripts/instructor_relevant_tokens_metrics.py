@@ -16,8 +16,8 @@ T = TypeVar('T')
 
 
 def create_token_type_other_overlap_series(df: pd.DataFrame, col_name: str) -> pd.Series:
-	own_token_sets = df[col_name]
-
+	#own_token_sets = df[col_name].
+	df[""]
 
 # TODO: Finish
 # df[df['B']==3]['A']
@@ -42,7 +42,7 @@ def parse_set(cell_value: str) -> FrozenSet[str]:
 
 
 def zip_previous_row_values(df: pd.DataFrame, col_name: str) -> Iterator[Tuple[T, T]]:
-	return zip(df[col_name], df[col_name].shift(1))
+	return zip(df[col_name], df[col_name].shift())
 
 
 def __token_type_overlap(df: pd.DataFrame):
