@@ -151,8 +151,6 @@ def __token_type_overlap(df: pd.DataFrame, token_col_name: str, referent_col_nam
 		lambda seq_no: seq_no + 1)
 	df[token_self_overlap_col_name] = token_self_overlap_df[token_self_overlap_col_name]
 
-	print("Calculating self overlap baseline for \"{}\".".format(token_col_name), file=sys.stderr)
-
 	df.sort_values("ROUND", inplace=True)
 
 	print("Calculating other overlap for \"{}\".".format(token_col_name), file=sys.stderr)
