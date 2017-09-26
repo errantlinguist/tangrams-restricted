@@ -130,8 +130,8 @@ def create_token_type_either_overlap_series(df: pd.DataFrame, referent_id_col_na
 
 def create_token_type_self_overlap_series(df: pd.DataFrame, referent_id_col_name: str,
 											token_set_col_name: str):
-	coref_seq_col_name = token_set_col_name + DataColumn.COREF_SEQ.value + Metric.EITHER.value
-	overlap_col_name = token_set_col_name + DataColumn.OVERLAP.value + Metric.EITHER.value
+	coref_seq_col_name = token_set_col_name + DataColumn.COREF_SEQ.value + Metric.SELF.value
+	overlap_col_name = token_set_col_name + DataColumn.OVERLAP.value + Metric.SELF.value
 
 	for idx, cols in df.iterrows():
 		prev_complement_rows = tuple(iterate_prev_rows(df, cols, referent_id_col_name))
