@@ -122,25 +122,6 @@ def set_overlap(first: FrozenSet[T], complement: FrozenSet[T]) -> float:
 	return len(intersection) / len(union)
 
 
-def token_type_other_overlap(row_col_values: pd.Series, df: pd.DataFrame,
-							 token_set_col_name: str) -> float:
-	current_instructor = row_col_values["INSTRUCTOR"]
-	current_round = row_col_values["ROUND"]
-	preceding_complement_referent_rows = df.loc[
-		(df["ROUND"] < current_round) & (
-			df["INSTRUCTOR"] != current_instructor)]
-	try:
-		last_preceding_complement_referent_row = preceding_complement_referent_rows.loc[
-			preceding_complement_referent_rows["ROUND"].idxmax()]
-		own_tokens = row_col_values[token_set_col_name]
-		preceding_tokens = last_preceding_complement_referent_row[token_set_col_name]
-		result = set_overlap(own_tokens, preceding_tokens)
-	except ValueError:
-		# No preceding rows found
-		result = OVERLAP_NULL_VALUE
-	return result
-
-
 def zip_previous_row_values(df: pd.DataFrame, col_name: str) -> Iterator[Tuple[T, T]]:
 	return zip(df[col_name], df[col_name].shift())
 
