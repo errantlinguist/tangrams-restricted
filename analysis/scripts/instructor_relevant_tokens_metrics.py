@@ -27,6 +27,7 @@ class DataColumn(Enum):
 class Metric(Enum):
 	SELF = "_SELF"
 	OTHER = "_OTHER"
+	EITHER = "_EITHER"
 
 
 def iterate_prev_complement_rows(df: pd.DataFrame, cols: pd.Series, referent_id_col_name: str) -> Iterator[
@@ -69,16 +70,16 @@ def create_token_type_other_overlap_series(df: pd.DataFrame, referent_id_col_nam
 		df.loc[idx, overlap_col_name] = overlap
 
 
-def create_token_type_self_overlap_series(df: pd.DataFrame, col_name: str) -> pd.Series:
+def create_token_type_self_overlap_series(df: pd.DataFrame, token_set_col_name: str) -> pd.Series:
 	intersected_token_set_sizes = (
 		OVERLAP_NULL_VALUE if pd.isnull(previous_tokens) else len(previous_tokens.intersection(own_tokens)) for
 		own_tokens, previous_tokens in
-		zip_previous_row_values(df, col_name))
+		zip_previous_row_values(df, token_set_col_name))
 	intersected_token_set_size_series = pd.Series(intersected_token_set_sizes, index=df.index)
 	unified_token_set_sizes = (
 		OVERLAP_NULL_VALUE if pd.isnull(previous_tokens) else len(previous_tokens.union(own_tokens)) for
 		own_tokens, previous_tokens in
-		zip_previous_row_values(df, col_name))
+		zip_previous_row_values(df, token_set_col_name))
 	unified_token_set_size_series = pd.Series(unified_token_set_sizes, index=df.index)
 	# Perform vectorized division rather than division on each individual scalar value
 	return intersected_token_set_size_series / unified_token_set_size_series
