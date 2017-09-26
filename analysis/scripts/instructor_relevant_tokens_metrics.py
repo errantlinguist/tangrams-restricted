@@ -118,6 +118,12 @@ def parse_set(cell_value: str) -> FrozenSet[str]:
 	return frozenset(CELL_MULTIVALUE_DELIM_PATTERN.split(cell_value))
 
 
+def read_round_tokens(inpath: str) -> pd.DataFrame:
+	return pd.read_csv(inpath, sep="\t", dialect=csv.excel_tab, encoding="utf-8", float_precision="high",
+					   memory_map=True,
+					   converters={"RELEVANT_TOKENS_REFERENT": parse_set, "RELEVANT_TOKENS_SHAPE": parse_set})
+
+
 def set_overlap(first: FrozenSet[T], complement: FrozenSet[T]) -> float:
 	intersection = first.intersection(complement)
 	union = first.union(complement)
@@ -179,9 +185,7 @@ def __main(args):
 																												 token_col_name,
 																												 referent_col_name),
 		  file=sys.stderr)
-	round_tokens = pd.read_csv(inpath, sep="\t", dialect=csv.excel_tab, encoding="utf-8", float_precision="high",
-							   memory_map=True,
-							   converters={"RELEVANT_TOKENS_REFERENT": parse_set, "RELEVANT_TOKENS_SHAPE": parse_set})
+	round_tokens = read_round_tokens(inpath)
 
 	__token_type_overlap(round_tokens, token_col_name, referent_col_name)
 
