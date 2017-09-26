@@ -134,7 +134,7 @@ def create_token_type_self_overlap_series(df: pd.DataFrame, referent_id_col_name
 	overlap_col_name = token_set_col_name + DataColumn.OVERLAP.value + Metric.SELF.value
 
 	for idx, cols in df.iterrows():
-		prev_complement_rows = tuple(iterate_prev_rows(df, cols, referent_id_col_name))
+		prev_complement_rows = tuple(iterate_prev_self_rows(df, cols, referent_id_col_name))
 		coref_seq_no = len(prev_complement_rows) + 1
 		if coref_seq_no > 1:
 			last_prev_complement_row = prev_complement_rows[len(prev_complement_rows) - 1]
