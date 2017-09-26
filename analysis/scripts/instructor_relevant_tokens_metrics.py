@@ -31,6 +31,7 @@ def create_token_type_self_overlap_series(df: pd.DataFrame, col_name: str) -> pd
 							   own_tokens, previous_tokens in
 							   zip_previous_row_values(df, col_name))
 	unified_token_set_size_series = pd.Series(unified_token_set_sizes, index=df.index)
+	# Perform vectorized division rather than division on each individual scalar value
 	return intersected_token_set_size_series / unified_token_set_size_series
 
 
