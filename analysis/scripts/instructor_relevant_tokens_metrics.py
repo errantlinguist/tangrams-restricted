@@ -206,6 +206,7 @@ def __token_type_overlap(df: pd.DataFrame):
 		lambda seq_no: seq_no + 1)
 	df[shape_token_self_overlap_col_name] = shape_token_self_overlap_df[shape_token_self_overlap_col_name]
 
+	print("Calculating other overlap for \"{}\".".format(shape_tokens_col_name), file=sys.stderr)
 	create_token_type_other_overlap_series(df, "SHAPE", shape_tokens_col_name)
 
 
