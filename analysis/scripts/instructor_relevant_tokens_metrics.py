@@ -117,11 +117,13 @@ def create_token_type_self_overlap_series(df: pd.DataFrame, col_name: str) -> pd
 def parse_set(cell_value: str) -> FrozenSet[str]:
 	return frozenset(CELL_MULTIVALUE_DELIM_PATTERN.split(cell_value))
 
-def prettify_token_set_series(df : pd.DataFrame):
+
+def prettify_token_set_series(df: pd.DataFrame):
 	df["RELEVANT_TOKENS_REFERENT"] = df["RELEVANT_TOKENS_REFERENT"].map(
 		__token_set_repr)
 	df["RELEVANT_TOKENS_SHAPE"] = df["RELEVANT_TOKENS_SHAPE"].map(
 		__token_set_repr)
+
 
 def read_round_tokens(inpath: str) -> pd.DataFrame:
 	return pd.read_csv(inpath, sep="\t", dialect=csv.excel_tab, encoding="utf-8", float_precision="high",
