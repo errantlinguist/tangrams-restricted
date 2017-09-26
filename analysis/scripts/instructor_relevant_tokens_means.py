@@ -9,8 +9,15 @@ import numpy as np
 
 import instructor_relevant_tokens_metrics
 
-COL_NAME_PATTERN = re.compile(
-	".*?((?:" + instructor_relevant_tokens_metrics.DataColumn.COREF_SEQ.value + ")|(?:" + instructor_relevant_tokens_metrics.DataColumn.OVERLAP.value + "))((?:" + instructor_relevant_tokens_metrics.Metric.SELF.value + ")|(?:" + instructor_relevant_tokens_metrics.Metric.OTHER.value + "))")
+
+def __create_col_name_regex() -> str:
+	col_disjunction = "((?:" + ")|(?:".join(col.value for col in instructor_relevant_tokens_metrics.DataColumn) + "))"
+	metric_disjunction = "((?:" + ")|(?:".join(
+		metric.value for metric in instructor_relevant_tokens_metrics.Metric) + "))"
+	return ".*?" + col_disjunction + metric_disjunction
+
+
+COL_NAME_PATTERN = re.compile(__create_col_name_regex())
 
 
 def __create_metric_data_colname_dict(col_names: Iterable[str]):
@@ -44,7 +51,7 @@ def __main(args):
 	print("Reading \"{}\".".format(inpath),
 		  file=sys.stderr)
 	round_tokens = instructor_relevant_tokens_metrics.read_round_tokens(inpath, na_values=(
-	instructor_relevant_tokens_metrics.OUTPUT_NA_REPR, np.NaN, None))
+		instructor_relevant_tokens_metrics.OUTPUT_NA_REPR, np.NaN, None))
 
 	metric_data_col_names = __create_metric_data_colname_dict(round_tokens.columns.values)
 	for metric, data in metric_data_col_names.items():
