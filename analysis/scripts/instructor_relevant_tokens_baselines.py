@@ -10,7 +10,7 @@ import numpy as np
 import instructor_relevant_tokens_metrics
 
 COL_NAME_PATTERN = re.compile(
-	".*?((?:" + instructor_relevant_tokens_metrics.COREF_SEQ_COL_NAME_SUFFIX + ")|(?:" + instructor_relevant_tokens_metrics.OVERLAP_COL_NAME_SUFFIX + "))((?:" + instructor_relevant_tokens_metrics.Metric.SELF.value + ")|(?:" + instructor_relevant_tokens_metrics.Metric.OTHER.value + "))")
+	".*?((?:" + instructor_relevant_tokens_metrics.DataColumn.COREF_SEQ.value + ")|(?:" + instructor_relevant_tokens_metrics.OVERLAP_COL_NAME_SUFFIX + "))((?:" + instructor_relevant_tokens_metrics.Metric.SELF.value + ")|(?:" + instructor_relevant_tokens_metrics.Metric.OTHER.value + "))")
 
 
 def __create_metric_data_colname_dict(col_names: Iterable[str]):
@@ -48,9 +48,9 @@ def __main(args):
 
 	metric_data_col_names = __create_metric_data_colname_dict(round_tokens.columns.values)
 	for metric, data in metric_data_col_names.items():
-		coref_seq_col_name = data[instructor_relevant_tokens_metrics.COREF_SEQ_COL_NAME_SUFFIX]
+		coref_seq_col_name = data[instructor_relevant_tokens_metrics.DataColumn.COREF_SEQ.value]
 		coref_seq_groups = round_tokens.groupby(coref_seq_col_name, as_index=False)
-		overlap_col_name = data[instructor_relevant_tokens_metrics.OVERLAP_COL_NAME_SUFFIX]
+		overlap_col_name = data[instructor_relevant_tokens_metrics.DataColumn.OVERLAP.value]
 		agg_df = coref_seq_groups[overlap_col_name].aggregate(("mean", "std", "sem"))
 		agg_df.fillna(instructor_relevant_tokens_metrics.OUTPUT_NA_REPR)
 		print(agg_df, file=sys.stdout)
