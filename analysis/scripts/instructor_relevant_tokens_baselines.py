@@ -10,7 +10,7 @@ import numpy as np
 import instructor_relevant_tokens_metrics
 
 COL_NAME_PATTERN = re.compile(
-	".*?((?:" + instructor_relevant_tokens_metrics.DataColumn.COREF_SEQ.value + ")|(?:" + instructor_relevant_tokens_metrics.OVERLAP_COL_NAME_SUFFIX + "))((?:" + instructor_relevant_tokens_metrics.Metric.SELF.value + ")|(?:" + instructor_relevant_tokens_metrics.Metric.OTHER.value + "))")
+	".*?((?:" + instructor_relevant_tokens_metrics.DataColumn.COREF_SEQ.value + ")|(?:" + instructor_relevant_tokens_metrics.DataColumn.OVERLAP + "))((?:" + instructor_relevant_tokens_metrics.Metric.SELF.value + ")|(?:" + instructor_relevant_tokens_metrics.Metric.OTHER.value + "))")
 
 
 def __create_metric_data_colname_dict(col_names: Iterable[str]):
