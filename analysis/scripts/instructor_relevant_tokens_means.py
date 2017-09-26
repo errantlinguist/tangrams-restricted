@@ -33,7 +33,7 @@ def __create_metric_data_colname_dict(col_names: Iterable[str]):
 
 def __create_argparser() -> argparse.ArgumentParser:
 	result = argparse.ArgumentParser(
-		description="Measure referent token type overlap baselines in coreference chains in each game session, using only instructor language to build coreference chains.")
+		description="Measure referent token type overlap means in coreference chains in each game session, using only instructor language to build coreference chains.")
 	result.add_argument("inpath", metavar="INPATH",
 						help="The file to process.")
 	return result
