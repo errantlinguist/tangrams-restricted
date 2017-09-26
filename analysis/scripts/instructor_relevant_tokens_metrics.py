@@ -200,7 +200,7 @@ def __token_type_overlap(df: pd.DataFrame):
 	df[shape_token_self_overlap_col_name] = shape_token_self_overlap_df[shape_token_self_overlap_col_name]
 	df[shape_tokens_col_name + COREF_SEQ_COL_NAME_SUFFIX + "_SELF"] = dyad_instructor_shape_groups.cumcount().transform(lambda seq_no : seq_no + 1)
 
-	create_token_type_other_overlap_series(df, "REFERENT", referent_tokens_col_name)
+	create_token_type_other_overlap_series(df, "SHAPE", shape_tokens_col_name)
 
 
 def __create_argparser() -> argparse.ArgumentParser:
