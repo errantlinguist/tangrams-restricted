@@ -147,22 +147,6 @@ def zip_previous_row_values(df: pd.DataFrame, col_name: str) -> Iterator[Tuple[T
 	return zip(df[col_name], df[col_name].shift())
 
 
-class TokenGroupingDataMappings(object):
-	def __init__(self, group_levels: Iterable[str], referent_id_col_name: str, token_set_col_name: str):
-		self.group_levels = group_levels
-		self.token_set_col_name = token_set_col_name
-		self.referent_id_col_name = referent_id_col_name
-
-	def __repr__(self):
-		return self.__class__.__name__ + str(self.__dict__)
-
-
-@unique
-class TokenGrouping(Enum):
-	REFERENT = TokenGroupingDataMappings(("DYAD", "INSTRUCTOR", "REFERENT"), "RELEVANT_TOKENS_REFERENT", "REFERENT")
-	SHAPE = TokenGroupingDataMappings(("DYAD", "INSTRUCTOR", "SHAPE"), "RELEVANT_TOKENS_SHAPE", "SHAPE")
-
-
 def __token_type_overlap(df: pd.DataFrame):
 	"""
 	See <https://stackoverflow.com/a/46402641/1391325>
