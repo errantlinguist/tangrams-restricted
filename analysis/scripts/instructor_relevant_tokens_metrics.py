@@ -4,12 +4,13 @@ import argparse
 import csv
 import re
 import sys
-from typing import FrozenSet, Iterable
+from typing import FrozenSet, Iterable, Iterator, Tuple, TypeVar
 
 import numpy as np
 import pandas as pd
 
 CELL_MULTIVALUE_DELIM_PATTERN = re.compile("\\s*,\\s*")
+T = TypeVar('T')
 
 
 def create_token_type_other_overlap_series(df: pd.DataFrame, col_name: str) -> pd.Series:
@@ -22,19 +23,23 @@ def create_token_type_other_overlap_series(df: pd.DataFrame, col_name: str) -> p
 
 def create_token_type_self_overlap_series(df: pd.DataFrame, col_name: str) -> pd.Series:
 	intersected_token_set_sizes = (
-	np.NaN if pd.isnull(previous_tokens) else len(previous_tokens.intersection(own_tokens)) for
-	own_tokens, previous_tokens in
-	zip(df[col_name], df[col_name].shift(1)))
+		np.NaN if pd.isnull(previous_tokens) else len(previous_tokens.intersection(own_tokens)) for
+		own_tokens, previous_tokens in
+		zip_previous_row_values(df, col_name))
 	intersected_token_set_size_series = pd.Series(intersected_token_set_sizes, index=df.index)
 	unified_token_set_sizes = (np.NaN if pd.isnull(previous_tokens) else len(previous_tokens.union(own_tokens)) for
 							   own_tokens, previous_tokens in
-							   zip(df[col_name], df[col_name].shift(1)))
+							   zip_previous_row_values(df, col_name))
 	unified_token_set_size_series = pd.Series(unified_token_set_sizes, index=df.index)
 	return intersected_token_set_size_series / unified_token_set_size_series
 
 
 def parse_set(cell_value: str) -> FrozenSet[str]:
 	return frozenset(CELL_MULTIVALUE_DELIM_PATTERN.split(cell_value))
+
+
+def zip_previous_row_values(df: pd.DataFrame, col_name: str) -> Iterator[Tuple[T, T]]:
+	return zip(df[col_name], df[col_name].shift(1))
 
 
 def __token_type_overlap(df: pd.DataFrame):
