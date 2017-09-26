@@ -108,7 +108,9 @@ def create_token_type_either_overlap_series(df: pd.DataFrame, referent_id_col_na
 
 
 def create_token_type_self_overlap_series(df: pd.DataFrame, token_set_col_name: str) -> pd.Series:
-	return pd.Series(((OVERLAP_NULL_VALUE if pd.isnull(preceding_tokens) else set_overlap(own_tokens, preceding_tokens)) for	(own_tokens, preceding_tokens) in zip_previous_row_values(df, token_set_col_name)), index=df.index)
+	return pd.Series(
+		((OVERLAP_NULL_VALUE if pd.isnull(preceding_tokens) else set_overlap(own_tokens, preceding_tokens)) for
+		 (own_tokens, preceding_tokens) in zip_previous_row_values(df, token_set_col_name)), index=df.index)
 
 
 def parse_set(cell_value: str) -> FrozenSet[str]:
@@ -129,7 +131,9 @@ def read_round_tokens(inpath: str, **kwargs) -> pd.DataFrame:
 
 
 def set_overlap(first: FrozenSet[T], complement: FrozenSet[T]) -> float:
-	if first:
+	print("First: " + ",".join(sorted(first)), file=sys.stderr)
+	print("Complement: " + ",".join(sorted(complement)), file=sys.stderr)
+	if first and complement:
 		intersection = first.intersection(complement)
 		union = first.union(complement)
 		result = len(intersection) / len(union)
@@ -138,8 +142,9 @@ def set_overlap(first: FrozenSet[T], complement: FrozenSet[T]) -> float:
 		result = OVERLAP_NULL_VALUE
 	return result
 
+
 def zip_previous_row_values(df: pd.DataFrame, col_name: str) -> Iterator[Tuple[T, T]]:
-	return zip(df[col_name], df[col_name].shift())
+	return zip(df[col_name], df[col_name].shift(1))
 
 
 def __token_type_overlap(df: pd.DataFrame, token_col_name: str, referent_col_name: str):
