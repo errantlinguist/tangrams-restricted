@@ -108,18 +108,7 @@ def create_token_type_either_overlap_series(df: pd.DataFrame, referent_id_col_na
 
 
 def create_token_type_self_overlap_series(df: pd.DataFrame, token_set_col_name: str) -> pd.Series:
-	intersected_token_set_sizes = (
-		OVERLAP_NULL_VALUE if pd.isnull(previous_tokens) else len(previous_tokens.intersection(own_tokens)) for
-		own_tokens, previous_tokens in
-		zip_previous_row_values(df, token_set_col_name))
-	intersected_token_set_size_series = pd.Series(intersected_token_set_sizes, index=df.index)
-	unified_token_set_sizes = (
-		OVERLAP_NULL_VALUE if pd.isnull(previous_tokens) else len(previous_tokens.union(own_tokens)) for
-		own_tokens, previous_tokens in
-		zip_previous_row_values(df, token_set_col_name))
-	unified_token_set_size_series = pd.Series(unified_token_set_sizes, index=df.index)
-	# Perform vectorized division rather than division on each individual scalar value
-	return intersected_token_set_size_series / unified_token_set_size_series
+	return pd.Series(((OVERLAP_NULL_VALUE if pd.isnull(preceding_tokens) else set_overlap(own_tokens, preceding_tokens)) for	(own_tokens, preceding_tokens) in zip_previous_row_values(df, token_set_col_name)), index=df.index)
 
 
 def parse_set(cell_value: str) -> FrozenSet[str]:
@@ -140,10 +129,14 @@ def read_round_tokens(inpath: str, **kwargs) -> pd.DataFrame:
 
 
 def set_overlap(first: FrozenSet[T], complement: FrozenSet[T]) -> float:
-	intersection = first.intersection(complement)
-	union = first.union(complement)
-	return len(intersection) / len(union)
-
+	if first:
+		intersection = first.intersection(complement)
+		union = first.union(complement)
+		result = len(intersection) / len(union)
+	else:
+		# Don't compute overlap for utterances which don't have any relevant tokens
+		result = OVERLAP_NULL_VALUE
+	return result
 
 def zip_previous_row_values(df: pd.DataFrame, col_name: str) -> Iterator[Tuple[T, T]]:
 	return zip(df[col_name], df[col_name].shift())
