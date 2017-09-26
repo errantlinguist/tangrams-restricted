@@ -12,6 +12,7 @@ import pandas as pd
 
 CELL_MULTIVALUE_DELIM_PATTERN = re.compile("\\s*,\\s*")
 COREF_SEQ_COL_NAME_SUFFIX = "_COREF_SEQ"
+OUTPUT_NA_REPR = "N/A"
 OTHER_METRIC_COL_NAME_SUFFIX = "_OTHER"
 OVERLAP_COL_NAME_SUFFIX = "_OVERLAP"
 OVERLAP_NULL_VALUE = np.NaN
@@ -198,7 +199,7 @@ def __main(args):
 
 	round_tokens.sort_values(["DYAD", "REFERENT", "INSTRUCTOR", "ROUND"], inplace=True)
 	prettify_token_set_series(round_tokens)
-	round_tokens.to_csv(sys.stdout, index_label="INDEX", sep="\t", na_rep="N/A")
+	round_tokens.to_csv(sys.stdout, index_label="INDEX", sep="\t", na_rep=OUTPUT_NA_REPR)
 
 
 def __token_set_repr(tokens: Iterable[str]) -> str:
