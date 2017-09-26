@@ -30,6 +30,25 @@ class Metric(Enum):
 	EITHER = "_EITHER"
 
 
+def iterate_prev_rows(df: pd.DataFrame, cols: pd.Series, referent_id_col_name: str) -> Iterator[
+	pd.Series]:
+	current_row = cols
+	while True:
+		dyad = current_row["DYAD"]
+		referent_id = current_row[referent_id_col_name]
+		current_round = current_row["ROUND"]
+		# print("Current round: {}".format(current_round), file=sys.stderr)
+		prev_complement_rows = df.loc[
+			(df["DYAD"] == dyad) & (df[referent_id_col_name] == referent_id) & (df["ROUND"] < current_round)]
+		# print("prev_complement_rows" + prev_complement_rows)
+		try:
+			last_prev_complement_row = prev_complement_rows.loc[prev_complement_rows["ROUND"].argmax()]
+			yield last_prev_complement_row
+			current_row = last_prev_complement_row
+		except ValueError:
+			break
+
+
 def iterate_prev_complement_rows(df: pd.DataFrame, cols: pd.Series, referent_id_col_name: str) -> Iterator[
 	pd.Series]:
 	current_row = cols
@@ -59,6 +78,24 @@ def create_token_type_other_overlap_series(df: pd.DataFrame, referent_id_col_nam
 
 	for idx, cols in df.iterrows():
 		prev_complement_rows = tuple(iterate_prev_complement_rows(df, cols, referent_id_col_name))
+		coref_seq_no = len(prev_complement_rows) + 1
+		if coref_seq_no > 1:
+			last_prev_complement_row = prev_complement_rows[len(prev_complement_rows) - 1]
+			overlap = set_overlap(cols[token_set_col_name], last_prev_complement_row[token_set_col_name])
+		else:
+			overlap = OVERLAP_NULL_VALUE
+
+		df.loc[idx, coref_seq_col_name] = coref_seq_no
+		df.loc[idx, overlap_col_name] = overlap
+
+
+def create_token_type_either_overlap_series(df: pd.DataFrame, referent_id_col_name: str,
+											token_set_col_name: str):
+	coref_seq_col_name = token_set_col_name + DataColumn.COREF_SEQ.value + Metric.EITHER.value
+	overlap_col_name = token_set_col_name + DataColumn.OVERLAP.value + Metric.EITHER.value
+
+	for idx, cols in df.iterrows():
+		prev_complement_rows = tuple(iterate_prev_rows(df, cols, referent_id_col_name))
 		coref_seq_no = len(prev_complement_rows) + 1
 		if coref_seq_no > 1:
 			last_prev_complement_row = prev_complement_rows[len(prev_complement_rows) - 1]
@@ -147,6 +184,8 @@ def __token_type_overlap(df: pd.DataFrame, token_col_name: str, referent_col_nam
 	#	lambda group_df: create_coref_seq_other_overlap_series(group_df, token_col_name))
 	# other_overlap_series.app
 	create_token_type_other_overlap_series(df, referent_col_name, token_col_name)
+	print("Calculating either overlap for \"{}\".".format(token_col_name), file=sys.stderr)
+	create_token_type_either_overlap_series(df, referent_col_name, token_col_name)
 
 
 def __create_argparser() -> argparse.ArgumentParser:
