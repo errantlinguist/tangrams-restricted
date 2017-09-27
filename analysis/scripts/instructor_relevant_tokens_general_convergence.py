@@ -7,6 +7,9 @@ from collections import defaultdict
 from decimal import Decimal
 from typing import Callable, Dict, FrozenSet, Iterable, List, TypeVar
 
+import numpy as np
+from statsmodels import robust
+
 import instructor_relevant_tokens_metrics
 
 COL_DELIM = "\t"
@@ -41,7 +44,7 @@ def read_nonempty_coref_seq_token_sets(inpath: str, self_coref_seq_no_col_name: 
 
 
 def set_overlap_high_precision(first: FrozenSet[T], second: FrozenSet[T],
-							   decimal_factory: Callable[[int], Decimal] = Decimal) -> Decimal:
+							   decimal_factory: Callable[[int], T]) -> T:
 	intersection = first.intersection(second)
 	union = first.union(second)
 	return decimal_factory(len(intersection)) / decimal_factory(len(union))
@@ -64,18 +67,18 @@ def __main(args):
 
 	outfile = sys.stdout
 
-	print(COL_DELIM.join(("seq", "overlap")), file=outfile)
-
 	decimal_cache = {}
-	def fetch_decimal(value: int) -> Decimal:
+
+	def fetch_decimal(value: int) -> np.dtype:
 		try:
 			result = decimal_cache[value]
 		except KeyError:
-			result = Decimal(value)
+			result = np.longfloat(value)
 			decimal_cache[value] = result
 		return result
 
 	overlap_cache = {}
+
 	def fetch_overlap(first: FrozenSet[T], second: FrozenSet[T]) -> Decimal:
 		key = (first, second)
 		try:
@@ -85,11 +88,18 @@ def __main(args):
 			overlap_cache[key] = result
 		return result
 
+	print("Calculating aggregates.", file=sys.stderr)
+	print(COL_DELIM.join(("seq", "mean", "stdev", "sem", "median", "mad")), file=outfile)
 	for coref_seq_no, token_sets in sorted(coref_seq_token_sets.items()):
-		overlaps = (fetch_overlap(first, other) for first in token_sets for other in
-					token_sets)
-		for overlap in overlaps:
-			print(COL_DELIM.join((str(coref_seq_no), str(overlap))), file=outfile)
+		overlaps = tuple(fetch_overlap(first, other) for first in token_sets for other in
+						 token_sets)
+		mean = np.mean(overlaps)
+		stdev = np.std(overlaps)
+		sem = np.std(overlaps)
+		median = np.median(overlaps)
+		mad = robust.mad(overlaps)
+		row = (coref_seq_no, mean, stdev, sem, median, mad)
+		print(COL_DELIM.join(str(cell) for cell in row), file=outfile)
 
 
 def __token_set_repr(tokens: Iterable[str]) -> str:
