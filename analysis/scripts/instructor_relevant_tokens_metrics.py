@@ -5,7 +5,7 @@ import csv
 import re
 import sys
 from enum import Enum, unique
-from typing import FrozenSet, Iterable, Iterator, Tuple, TypeVar
+from typing import FrozenSet, Iterable, Iterator, TypeVar
 
 import numpy as np
 import pandas as pd
@@ -119,10 +119,6 @@ def set_overlap(first: FrozenSet[T], second: FrozenSet[T]) -> float:
 	#	# Don't compute overlap for utterances which don't have any relevant tokens
 	#	result = OVERLAP_NULL_VALUE
 	return result
-
-
-def zip_previous_row_values(df: pd.DataFrame, col_name: str) -> Iterator[Tuple[T, T]]:
-	return zip(df[col_name], df[col_name].shift(-1))
 
 
 def __create_argparser() -> argparse.ArgumentParser:
