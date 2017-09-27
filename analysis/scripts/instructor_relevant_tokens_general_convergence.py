@@ -91,15 +91,21 @@ def __main(args):
 	print("Calculating aggregates.", file=sys.stderr)
 	print(COL_DELIM.join(("seq", "count", "comparisons", "mean", "stdev", "sem", "median", "mad")), file=outfile)
 	for coref_seq_no, token_sets in sorted(coref_seq_token_sets.items()):
-		overlaps = np.array(tuple(fetch_overlap(first, other) for first in token_sets for other in
-						 token_sets))
-		mean = np.mean(overlaps)
-		stdev = np.std(overlaps)
-		sem = np.std(overlaps)
-		median = np.median(overlaps)
-		mad = robust.mad(overlaps)
-		row = (coref_seq_no, len(token_sets), len(overlaps), mean, stdev, sem, median, mad)
-		print(COL_DELIM.join(str(cell) for cell in row), file=outfile)
+		try:
+			prev_token_sets = coref_seq_token_sets[coref_seq_no - 1]
+			overlaps = np.array(
+				tuple(fetch_overlap(token_set, prev_token_set) for token_set in token_sets for prev_token_set in
+					  prev_token_sets))
+			mean = np.mean(overlaps)
+			stdev = np.std(overlaps)
+			sem = np.std(overlaps)
+			median = np.median(overlaps)
+			mad = robust.mad(overlaps)
+			row = (coref_seq_no, len(token_sets), len(overlaps), mean, stdev, sem, median, mad)
+			print(COL_DELIM.join(str(cell) for cell in row), file=outfile)
+		except KeyError:
+			# Skip sequence numbers without a preceding one, i.e. skip the first one
+			pass
 
 
 def __token_set_repr(tokens: Iterable[str]) -> str:
