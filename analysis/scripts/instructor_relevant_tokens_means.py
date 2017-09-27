@@ -2,13 +2,16 @@
 
 import argparse
 import sys
-from typing import Dict, Iterable
+from typing import Dict, IO, Iterable, Mapping
 
-import instructor_relevant_tokens_metrics
 import pandas as pd
 
+import instructor_relevant_tokens_metrics
 
-def __create_qualified_col_name_dict(input_col_names: Iterable[str]) -> Dict[str, Dict[str, Dict[str, str]]]:
+
+def __create_qualified_col_name_dict(input_col_names: Iterable[str]) -> Dict[
+	instructor_relevant_tokens_metrics.Metric, Dict[
+		instructor_relevant_tokens_metrics.Aggregation, Dict[instructor_relevant_tokens_metrics.Measurement, str]]]:
 	result = {}
 	for input_col_name in input_col_names:
 		try:
@@ -40,7 +43,22 @@ def __create_argparser() -> argparse.ArgumentParser:
 						help="The file to process.")
 	return result
 
-#def __baseline_overlap(df: pd.DataFrame):
+
+def __print_non_aggregate_overlap_summary(df: pd.DataFrame, measurement_col_names: Mapping[
+	instructor_relevant_tokens_metrics.Measurement, str], outfile: IO[str]):
+	coref_seq_col_name = measurement_col_names[instructor_relevant_tokens_metrics.Measurement.COREF_SEQ]
+	print("Coreference chain sequence column \"{}\"; Is present? {}".format(coref_seq_col_name,
+																			coref_seq_col_name in df.columns.values),
+		  file=sys.stderr)
+	coref_seq_groups = df.groupby(coref_seq_col_name, as_index=False)
+	overlap_col_name = measurement_col_names[instructor_relevant_tokens_metrics.Measurement.OVERLAP]
+	print("Token overlap column \"{}\"; Is present? {}".format(overlap_col_name,
+															   overlap_col_name in df.columns.values),
+		  file=sys.stderr)
+	agg_df = coref_seq_groups[overlap_col_name].aggregate(("mean", "std", "sem"))
+	agg_df.fillna(instructor_relevant_tokens_metrics.OUTPUT_NA_VALUE)
+	print(agg_df, file=outfile)
+
 
 def __main(args):
 	inpath = args.inpath
@@ -51,25 +69,13 @@ def __main(args):
 																			instructor_relevant_tokens_metrics.OUTPUT_NA_VALUE,
 																			None))
 
+	outfile = sys.stdout
 	col_names = __create_qualified_col_name_dict(round_tokens.columns.values)
 	for metric_name, metric_aggs in sorted(col_names.items(), key=lambda item: item[0].value):
 		print("Processing metric \"{}\".".format(metric_name), file=sys.stderr)
 
 		non_agg_measurement_col_names = metric_aggs[instructor_relevant_tokens_metrics.Aggregation.NONE]
-		coref_seq_col_name = non_agg_measurement_col_names[instructor_relevant_tokens_metrics.Measurement.COREF_SEQ]
-		print("Coreference chain sequence column \"{}\"; Is present? {}".format(coref_seq_col_name,
-																				coref_seq_col_name in round_tokens.columns.values),
-			  file=sys.stderr)
-		coref_seq_groups = round_tokens.groupby(coref_seq_col_name, as_index=False)
-		overlap_col_name = non_agg_measurement_col_names[instructor_relevant_tokens_metrics.Measurement.OVERLAP]
-		print("Token overlap column \"{}\"; Is present? {}".format(overlap_col_name,
-																   overlap_col_name in round_tokens.columns.values),
-			  file=sys.stderr)
-		agg_df = coref_seq_groups[overlap_col_name].aggregate(("mean", "std", "sem"))
-		agg_df.fillna(instructor_relevant_tokens_metrics.OUTPUT_NA_VALUE)
-		print(agg_df, file=sys.stdout)
-
-
+		__print_non_aggregate_overlap_summary(round_tokens, non_agg_measurement_col_names, outfile)
 
 
 if __name__ == "__main__":
