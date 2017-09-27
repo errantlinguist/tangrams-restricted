@@ -5,8 +5,6 @@ import re
 import sys
 from typing import Iterable
 
-import numpy as np
-
 import instructor_relevant_tokens_metrics
 
 
@@ -50,17 +48,21 @@ def __main(args):
 	inpath = args.inpath
 	print("Reading \"{}\".".format(inpath),
 		  file=sys.stderr)
-	round_tokens = instructor_relevant_tokens_metrics.read_round_tokens(inpath, keep_default_na=True, na_values=(
-		instructor_relevant_tokens_metrics.OUTPUT_NA_VALUE, None), na_filter=True)
+	round_tokens = instructor_relevant_tokens_metrics.read_round_tokens(inpath, keep_default_na=True, na_filter=True,
+																		na_values=(
+																			instructor_relevant_tokens_metrics.OUTPUT_NA_VALUE,
+																			None))
 
 	metric_data_col_names = __create_metric_data_colname_dict(round_tokens.columns.values)
 	for metric, data in metric_data_col_names.items():
 		coref_seq_col_name = data[instructor_relevant_tokens_metrics.DataColumn.COREF_SEQ.value]
-		print("Coreference chain sequence column \"{}\"; Is present? {}".format(coref_seq_col_name, coref_seq_col_name in round_tokens.columns.values), file=sys.stderr)
+		print("Coreference chain sequence column \"{}\"; Is present? {}".format(coref_seq_col_name,
+																				coref_seq_col_name in round_tokens.columns.values),
+			  file=sys.stderr)
 		coref_seq_groups = round_tokens.groupby(coref_seq_col_name, as_index=False)
 		overlap_col_name = data[instructor_relevant_tokens_metrics.DataColumn.OVERLAP.value]
 		print("Token overlap column \"{}\"; Is present? {}".format(overlap_col_name,
-																overlap_col_name in round_tokens.columns.values),
+																   overlap_col_name in round_tokens.columns.values),
 			  file=sys.stderr)
 		agg_df = coref_seq_groups[overlap_col_name].aggregate(("mean", "std", "sem"))
 		agg_df.fillna(instructor_relevant_tokens_metrics.OUTPUT_NA_VALUE)
