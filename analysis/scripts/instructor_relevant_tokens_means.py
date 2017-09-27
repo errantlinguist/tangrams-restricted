@@ -53,7 +53,7 @@ def __print_non_aggregate_overlap_summary(df: pd.DataFrame, measurement_col_name
 	#														   overlap_col_name in df.columns.values),
 	#	  file=sys.stderr)
 	group_aggregates = coref_seq_groups[overlap_col_name].aggregate(("mean", "std", "sem", "median", "mad"))
-
+	group_aggregates.dropna(inplace=True)
 	print("Writing means calculated using coref seq. col. \"{}\" and token col. \"{}\" to \"{}\".".format(
 		coref_seq_col_name, overlap_col_name, outfile_path), file=sys.stderr)
 	with open(outfile_path, 'w', encoding="utf-8") as outfile:
