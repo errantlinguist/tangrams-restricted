@@ -95,7 +95,6 @@ def __main(args):
 																		instructor_relevant_tokens_metrics.OUTPUT_NA_VALUE,
 																		None))
 
-	outfile = sys.stdout
 	col_names = __create_qualified_col_name_dict(overlaps.columns.values)
 	for metric, metric_aggs in sorted(col_names.items(), key=lambda item: item[0].value):
 		print("Processing metric \"{}\".".format(metric), file=sys.stderr)
