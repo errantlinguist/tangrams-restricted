@@ -42,16 +42,9 @@ def read_nonempty_coref_seq_token_sets(inpath: str, self_coref_seq_no_col_name: 
 
 def set_overlap_high_precision(first: FrozenSet[T], second: FrozenSet[T],
 							   decimal_factory: Callable[[int], Decimal] = Decimal) -> Decimal:
-	# print("First: " + ",".join(sorted(first)), file=sys.stderr)
-	# print("Complement: " + ",".join(sorted(complement)), file=sys.stderr)
-	# if first and second:
 	intersection = first.intersection(second)
 	union = first.union(second)
-	result = decimal_factory(len(intersection)) / decimal_factory(len(union))
-	# else:
-	#	# Don't compute overlap for utterances which don't have any relevant tokens
-	#	result = OVERLAP_NULL_VALUE
-	return result
+	return decimal_factory(len(intersection)) / decimal_factory(len(union))
 
 
 def __main(args):
