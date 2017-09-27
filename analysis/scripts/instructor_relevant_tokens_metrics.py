@@ -80,9 +80,13 @@ def prettify_token_set_series(df: pd.DataFrame):
 
 
 def read_round_tokens(inpath: str, **kwargs) -> pd.DataFrame:
-	return pd.read_csv(inpath, sep="\t", dialect=csv.excel_tab, encoding="utf-8", float_precision="high",
-					   memory_map=True, na_filter=False,
-					   converters={"RELEVANT_TOKENS_REFERENT": parse_set, "RELEVANT_TOKENS_SHAPE": parse_set}, **kwargs)
+	unified_kwargs = {"sep": "\t", "dialect": csv.excel_tab, "encoding": "utf-8", "float_precision": "high",
+					  "memory_map": True, "na_filter": False,
+					  "converters": {"RELEVANT_TOKENS_REFERENT": parse_set, "RELEVANT_TOKENS_SHAPE": parse_set}}
+	# Override any defaults with those from explicitly-supplied kwargs
+	for param_name, param_value in kwargs.items():
+		unified_kwargs[param_name] = param_value
+	return pd.read_csv(inpath, **unified_kwargs)
 
 
 def self_coref_chain_seq_no(row: pd.Series, df: pd.DataFrame, referent_id_col_name: str,

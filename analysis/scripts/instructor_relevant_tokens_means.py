@@ -50,8 +50,8 @@ def __main(args):
 	inpath = args.inpath
 	print("Reading \"{}\".".format(inpath),
 		  file=sys.stderr)
-	round_tokens = instructor_relevant_tokens_metrics.read_round_tokens(inpath, na_values=(
-		instructor_relevant_tokens_metrics.OUTPUT_NA_VALUE, np.NaN, None))
+	round_tokens = instructor_relevant_tokens_metrics.read_round_tokens(inpath, keep_default_na=True, na_values=(
+		instructor_relevant_tokens_metrics.OUTPUT_NA_VALUE, None), na_filter=True)
 
 	metric_data_col_names = __create_metric_data_colname_dict(round_tokens.columns.values)
 	for metric, data in metric_data_col_names.items():
