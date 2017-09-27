@@ -64,18 +64,18 @@ def __main(args):
 	inpath = args.inpath
 	print("Reading \"{}\".".format(inpath),
 		  file=sys.stderr)
-	round_tokens = instructor_relevant_tokens_metrics.read_round_tokens(inpath, keep_default_na=True, na_filter=True,
+	overlaps = instructor_relevant_tokens_metrics.read_round_tokens(inpath, keep_default_na=True, na_filter=True,
 																		na_values=(
 																			instructor_relevant_tokens_metrics.OUTPUT_NA_VALUE,
 																			None))
 
 	outfile = sys.stdout
-	col_names = __create_qualified_col_name_dict(round_tokens.columns.values)
+	col_names = __create_qualified_col_name_dict(overlaps.columns.values)
 	for metric_name, metric_aggs in sorted(col_names.items(), key=lambda item: item[0].value):
 		print("Processing metric \"{}\".".format(metric_name), file=sys.stderr)
 
 		non_agg_measurement_col_names = metric_aggs[instructor_relevant_tokens_metrics.Aggregation.NONE]
-		__print_non_aggregate_overlap_summary(round_tokens, non_agg_measurement_col_names, outfile)
+		__print_non_aggregate_overlap_summary(overlaps, non_agg_measurement_col_names, outfile)
 
 
 if __name__ == "__main__":
