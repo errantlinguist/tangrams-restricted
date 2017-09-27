@@ -262,7 +262,7 @@ def __create_argparser() -> argparse.ArgumentParser:
 	result = argparse.ArgumentParser(description="Count frequencies of referring token groups.")
 	result.add_argument("token_group_file", metavar="TOKEN_GROUP_FILEPATH",
 						help="The path to the token group mapping file to use.")
-	result.add_argument("inpaths", metavar="PATH", nargs='+',
+	result.add_argument("inpaths", metavar="INPATH", nargs='+',
 						help="The paths to search for sessions to process.")
 	group = result.add_mutually_exclusive_group(required=False)
 	group.add_argument("-r", "--round-split", metavar="count", type=int,

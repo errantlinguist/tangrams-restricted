@@ -19,7 +19,7 @@ T = TypeVar('T')
 def __create_argparser() -> argparse.ArgumentParser:
 	result = argparse.ArgumentParser(
 		description="Measure referent token type overlap in coreference chains in each game session, using only instructor language to build coreference chains.")
-	result.add_argument("inpath", metavar="PATH",
+	result.add_argument("inpath", metavar="INPATH",
 						help="The file to process.")
 	result.add_argument("-t", "--tokens", metavar="COL_NAME", required=True,
 						help="The column to use as relevant tokens.")
