@@ -67,7 +67,6 @@ def __main(args):
 	print(COL_DELIM.join(("seq", "overlap")), file=outfile)
 
 	decimal_cache = {}
-
 	def fetch_decimal(value: int) -> Decimal:
 		try:
 			result = decimal_cache[value]
@@ -77,7 +76,6 @@ def __main(args):
 		return result
 
 	overlap_cache = {}
-
 	def fetch_overlap(first: FrozenSet[T], second: FrozenSet[T]) -> Decimal:
 		key = (first, second)
 		try:
