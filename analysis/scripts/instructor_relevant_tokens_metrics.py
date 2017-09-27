@@ -304,7 +304,7 @@ def __analogous_coref_rows(row: pd.Series, df: pd.DataFrame, coref_chain_seq_no_
 	dyad = row["DYAD"]
 	coref_chain_seq_no = row[coref_chain_seq_no_col_name]
 	return df.loc[
-		(df["DYAD"] == dyad) & (df[coref_chain_seq_no_col_name] == coref_chain_seq_no) & (
+		(df["DYAD"] == dyad) & (df[coref_chain_seq_no_col_name] == coref_chain_seq_no - 1) & (
 			df[token_set_col_name].str.len() > 0)]
 
 
@@ -316,7 +316,7 @@ def __analogous_referent_coref_rows(row: pd.Series, df: pd.DataFrame, coref_chai
 	coref_chain_seq_no = row[coref_chain_seq_no_col_name]
 	return df.loc[
 		(df["DYAD"] == dyad) & (df[referent_id_col_name] == referent_id) & (
-			df[coref_chain_seq_no_col_name] == coref_chain_seq_no) & (
+			df[coref_chain_seq_no_col_name] == coref_chain_seq_no - 1) & (
 			df[token_set_col_name].str.len() > 0)]
 
 
