@@ -8,6 +8,8 @@ import pandas as pd
 
 import instructor_relevant_tokens_metrics
 
+COL_DELIM = "\t"
+
 
 def __create_qualified_col_name_dict(input_col_names: Iterable[str]) -> Dict[
 	instructor_relevant_tokens_metrics.Metric, Dict[
@@ -46,12 +48,10 @@ def __print_non_aggregate_overlap_summary(df: pd.DataFrame, measurement_col_name
 	print("Token overlap column \"{}\"; Is present? {}".format(overlap_col_name,
 															   overlap_col_name in df.columns.values),
 		  file=sys.stderr)
-	group_aggregates = coref_seq_groups[overlap_col_name].aggregate(("mean", "std", "sem"))
-	group_aggregates.fillna(instructor_relevant_tokens_metrics.OUTPUT_NA_VALUE)
-	sep = "\t"
+	group_aggregates = coref_seq_groups[overlap_col_name].aggregate(("mean", "std", "sem", "median", "mad"))
 	print("\n\n", file=outfile)
-	print(sep.join((coref_seq_col_name, overlap_col_name)), file=outfile)
-	group_aggregates.to_csv(outfile, index_label="seq", sep=sep)
+	print(COL_DELIM.join((coref_seq_col_name, overlap_col_name)), file=outfile)
+	group_aggregates.to_csv(outfile, index_label="seq", sep=COL_DELIM)
 
 
 def __create_argparser() -> argparse.ArgumentParser:
