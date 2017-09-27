@@ -6,7 +6,7 @@ import re
 import sys
 from collections import defaultdict
 from enum import Enum, unique
-from typing import Any, Callable, Generic, Iterable, Mapping, Sequence, \
+from typing import Any, Callable, Generic, IO, Iterable, Mapping, Sequence, \
 	Tuple, TypeVar
 
 import game_events
@@ -31,7 +31,7 @@ class GroupCoreferenceChainDatum(object):
 		return self.__class__.__name__ + str(self.__dict__)
 
 
-class CoreferenceChainDataGrouper(object):
+class CoreferenceChainDataGrouper(Callable[[GameRoundUtterances], GroupCoreferenceChainDatum]):
 	def __init__(self, token_groups: tg.TokenGroupMapping):
 		self.token_groups = token_groups
 
@@ -66,9 +66,9 @@ class CoreferenceChainDataGrouper(object):
 		return result
 
 
-class CoreferenceChainDataPrinter(object):
+class CoreferenceChainDataPrinter(Callable[[Mapping[str, GroupCoreferenceChainDatum], IO[str]]]):
 	@staticmethod
-	def __print_session(dyad_id: str, coref_groups: GroupCoreferenceChainDatum, outfile):
+	def __print_session(dyad_id: str, coref_groups: GroupCoreferenceChainDatum, outfile: IO[str]):
 		for round_id, (game_round, round_instructor_id, round_utts, group_round_corefs) in enumerate(
 				coref_groups.round_group_corefs, start=SessionGameRoundUtteranceFactory.ROUND_ID_OFFSET):
 			round_metrics = GameRoundMetrics(dyad_id, game_round, round_instructor_id)
@@ -89,7 +89,7 @@ class CoreferenceChainDataPrinter(object):
 	def __init__(self):
 		pass
 
-	def __call__(self, session_coref_groups: Mapping[str, GroupCoreferenceChainDatum], outfile):
+	def __call__(self, session_coref_groups: Mapping[str, GroupCoreferenceChainDatum], outfile: IO[str]):
 		token_grouping_col_names = ("{}_{}".format(col_name, grouping.value.col_name) for grouping in TokenGrouping for
 									col_name
 									in TokenMetrics.COL_NAMES)

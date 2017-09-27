@@ -6,7 +6,7 @@ import re
 import sys
 from collections import defaultdict
 from enum import Enum, unique
-from typing import Any, Callable, Generic, Iterable, Iterator, List, Mapping, Sequence, \
+from typing import Any, Callable, Generic, IO, Iterable, Iterator, List, Mapping, Sequence, \
 	Tuple, TypeVar
 
 import game_events
@@ -31,7 +31,7 @@ class GroupCoreferenceChainDatum(object):
 		return self.__class__.__name__ + str(self.__dict__)
 
 
-class CoreferenceChainDataGrouper(object):
+class CoreferenceChainDataGrouper(Callable[[GameRoundUtterances], GroupCoreferenceChainDatum]):
 	def __init__(self, token_groups: tg.TokenGroupMapping):
 		self.token_groups = token_groups
 
@@ -66,13 +66,13 @@ class CoreferenceChainDataGrouper(object):
 		return result
 
 
-class CoreferenceChainDataPrinter(object):
+class CoreferenceChainDataPrinter(Callable[[Mapping[str, GroupCoreferenceChainDatum], IO[str]]]):
 	def __init__(self, token_groups: tg.TokenGroupMapping):
 		self.group_relevant_vocab = dict(
 			(grouping, tuple(sorted(grouping.value.relevant_vocab_extractor(token_groups)))) for grouping in
 			TokenGrouping)
 
-	def __call__(self, session_coref_groups: Mapping[str, GroupCoreferenceChainDatum], outfile):
+	def __call__(self, session_coref_groups: Mapping[str, GroupCoreferenceChainDatum], outfile: IO[str]):
 		print(COL_DELIM.join(
 			itertools.chain(GameRoundMetrics.COL_NAMES, DialogueMetrics.COL_NAMES,
 							TokenMetrics.col_names(self.group_relevant_vocab))),
