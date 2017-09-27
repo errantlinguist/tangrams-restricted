@@ -338,7 +338,7 @@ def __token_type_overlap(df: pd.DataFrame, referent_id_col_name: str, token_set_
 def __create_argparser() -> argparse.ArgumentParser:
 	result = argparse.ArgumentParser(
 		description="Measure referent token type overlap in coreference chains in each game session, using only instructor language to build coreference chains.")
-	result.add_argument("inpath", metavar="INPATH",
+	result.add_argument("inpath", metavar="PATH",
 						help="The file to process.")
 	result.add_argument("-r", "--referent", metavar="COL_NAME", required=True,
 						help="The column to use as a referent ID.")

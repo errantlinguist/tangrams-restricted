@@ -66,7 +66,7 @@ def __create_argparser() -> argparse.ArgumentParser:
 	result = argparse.ArgumentParser(description="Count referring token groups.")
 	result.add_argument("token_group_file", metavar="TOKEN_GROUP_FILEPATH",
 						help="The path to the token group mapping file to use.")
-	result.add_argument("inpaths", metavar="INPATH", nargs='+',
+	result.add_argument("inpaths", metavar="PATH", nargs='+',
 						help="The paths to search for sessions to process.")
 	return result
 

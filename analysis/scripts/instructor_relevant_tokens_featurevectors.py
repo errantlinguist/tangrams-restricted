@@ -235,7 +235,7 @@ def __create_argparser() -> argparse.ArgumentParser:
 		description="Print out relevant tokens for each instructor utterance for each round in each session as a feature vector representing the presence of each individual vocabulary item (i.e. possible token type).")
 	result.add_argument("token_group_file", metavar="TOKEN_GROUP_FILEPATH",
 						help="The path to the token group mapping file to use.")
-	result.add_argument("inpaths", metavar="INPATH", nargs='+',
+	result.add_argument("inpaths", metavar="PATH", nargs='+',
 						help="The paths to search for sessions to process.")
 	result.add_argument("-g", "--group", metavar="REGEX",
 						help="A regular expression matching the token group(s) to calculate counts for.")
