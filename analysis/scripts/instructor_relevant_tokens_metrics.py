@@ -5,7 +5,7 @@ import csv
 import re
 import sys
 from enum import Enum, unique
-from typing import Callable, Optional, FrozenSet, Iterable, Iterator, Tuple, TypeVar
+from typing import Optional, FrozenSet, Iterable, Iterator, Tuple, TypeVar
 
 import numpy as np
 import pandas as pd
@@ -42,7 +42,7 @@ class Metric(Enum):
 	BASELINE = "BASELINE"
 
 
-class EitherTokenTypeOverlapCalculator(Callable[[pd.DataFrame]]):
+class EitherTokenTypeOverlapCalculator(object):
 	def __init__(self, referent_id_col_name: str, token_set_col_name: str):
 		self.referent_id_col_name = referent_id_col_name
 		self.token_set_col_name = token_set_col_name
@@ -99,7 +99,7 @@ class EitherTokenTypeOverlapCalculator(Callable[[pd.DataFrame]]):
 				df[self.token_set_col_name].str.len() > 0)]
 
 
-class OtherTokenTypeOverlapCalculator(Callable[[pd.DataFrame]]):
+class OtherTokenTypeOverlapCalculator(object):
 	def __init__(self, referent_id_col_name: str, token_set_col_name: str):
 		self.referent_id_col_name = referent_id_col_name
 		self.token_set_col_name = token_set_col_name
@@ -170,7 +170,7 @@ class OtherTokenTypeOverlapCalculator(Callable[[pd.DataFrame]]):
 				break
 
 
-class SelfTokenTypeOverlapCalculator(Callable[[pd.DataFrame]]):
+class SelfTokenTypeOverlapCalculator(object):
 	def __init__(self, referent_id_col_name: str, token_set_col_name: str):
 		self.referent_id_col_name = referent_id_col_name
 		self.token_set_col_name = token_set_col_name

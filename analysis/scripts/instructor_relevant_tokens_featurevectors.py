@@ -31,7 +31,7 @@ class GroupCoreferenceChainDatum(object):
 		return self.__class__.__name__ + str(self.__dict__)
 
 
-class CoreferenceChainDataGrouper(Callable[[GameRoundUtterances], GroupCoreferenceChainDatum]):
+class CoreferenceChainDataGrouper(object):
 	def __init__(self, token_groups: tg.TokenGroupMapping):
 		self.token_groups = token_groups
 
@@ -66,7 +66,7 @@ class CoreferenceChainDataGrouper(Callable[[GameRoundUtterances], GroupCoreferen
 		return result
 
 
-class CoreferenceChainDataPrinter(Callable[[Mapping[str, GroupCoreferenceChainDatum], IO[str]]]):
+class CoreferenceChainDataPrinter(object):
 	def __init__(self, token_groups: tg.TokenGroupMapping):
 		self.group_relevant_vocab = dict(
 			(grouping, tuple(sorted(grouping.value.relevant_vocab_extractor(token_groups)))) for grouping in
