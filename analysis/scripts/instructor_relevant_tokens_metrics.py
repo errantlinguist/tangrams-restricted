@@ -267,7 +267,7 @@ def __token_type_overlaps_either(df: pd.DataFrame, referent_id_col_name: str, to
 
 def __token_type_overlaps_other(df: pd.DataFrame, referent_id_col_name: str, token_set_col_name: str):
 	print("Calculating other overlap for \"{}\".".format(token_set_col_name), file=sys.stderr)
-	metric = Metric.SELF
+	metric = Metric.OTHER
 
 	coref_chain_seq_no_col_name = qualified_col_name(token_set_col_name, Measurement.COREF_SEQ, metric,
 													 Aggregation.NONE)
