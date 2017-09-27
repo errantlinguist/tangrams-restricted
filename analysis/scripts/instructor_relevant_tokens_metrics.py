@@ -58,12 +58,12 @@ def either_coref_chain_seq_no(row: pd.Series, df: pd.DataFrame, referent_id_col_
 def either_token_overlap(row: pd.Series, df: pd.DataFrame, referent_id_col_name: str,
 						 token_set_col_name: str) -> int:
 	prev_coref_chain_rows = __prev_either_coref_chain_rows(row, df, referent_id_col_name, token_set_col_name)
-	if prev_coref_chain_rows.shape[0] > 0:
+	try:
 		prev_coref_chain_row = prev_coref_chain_rows.loc[prev_coref_chain_rows["ROUND"].argmax()]
 		current_tokens = row[token_set_col_name]
 		prev_tokens = prev_coref_chain_row[token_set_col_name]
 		result = set_overlap(current_tokens, prev_tokens)
-	else:
+	except ValueError:
 		result = OVERLAP_NULL_VALUE
 	return result
 
@@ -98,12 +98,12 @@ def self_coref_chain_seq_no(row: pd.Series, df: pd.DataFrame, referent_id_col_na
 def self_token_overlap(row: pd.Series, df: pd.DataFrame, referent_id_col_name: str,
 					   token_set_col_name: str) -> int:
 	prev_coref_chain_rows = __prev_self_coref_chain_rows(row, df, referent_id_col_name, token_set_col_name)
-	if prev_coref_chain_rows.shape[0] > 0:
+	try:
 		prev_coref_chain_row = prev_coref_chain_rows.loc[prev_coref_chain_rows["ROUND"].argmax()]
 		current_tokens = row[token_set_col_name]
 		prev_tokens = prev_coref_chain_row[token_set_col_name]
 		result = set_overlap(current_tokens, prev_tokens)
-	else:
+	except ValueError:
 		result = OVERLAP_NULL_VALUE
 	return result
 
