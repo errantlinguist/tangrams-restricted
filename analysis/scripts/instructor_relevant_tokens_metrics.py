@@ -125,6 +125,18 @@ def zip_previous_row_values(df: pd.DataFrame, col_name: str) -> Iterator[Tuple[T
 	return zip(df[col_name], df[col_name].shift(-1))
 
 
+def __create_argparser() -> argparse.ArgumentParser:
+	result = argparse.ArgumentParser(
+		description="Measure referent token type overlap in coreference chains in each game session, using only instructor language to build coreference chains.")
+	result.add_argument("inpath", metavar="INPATH",
+						help="The file to process.")
+	result.add_argument("-r", "--referent", metavar="COL_NAME", required=True,
+						help="The column to use as a referent ID.")
+	result.add_argument("-t", "--tokens", metavar="COL_NAME", required=True,
+						help="The column to use as relevant tokens.")
+	return result
+
+
 def __prev_complement_rows(current_row: pd.Series, df: pd.DataFrame, referent_id_col_name: str,
 						   token_set_col_name: str) -> Iterator[
 	pd.Series]:
@@ -199,18 +211,6 @@ def __token_type_overlap(df: pd.DataFrame, referent_id_col_name: str, token_set_
 	either_overlap_col_name = token_set_col_name + DataColumn.OVERLAP.value + Metric.EITHER.value
 	df[either_overlap_col_name] = df.apply(
 		lambda row: either_token_overlap(row, df, referent_id_col_name, token_set_col_name), axis=1)
-
-
-def __create_argparser() -> argparse.ArgumentParser:
-	result = argparse.ArgumentParser(
-		description="Measure referent token type overlap in coreference chains in each game session, using only instructor language to build coreference chains.")
-	result.add_argument("inpath", metavar="INPATH",
-						help="The file to process.")
-	result.add_argument("-r", "--referent", metavar="COL_NAME", required=True,
-						help="The column to use as a referent ID.")
-	result.add_argument("-t", "--tokens", metavar="COL_NAME", required=True,
-						help="The column to use as relevant tokens.")
-	return result
 
 
 def __main(args):
