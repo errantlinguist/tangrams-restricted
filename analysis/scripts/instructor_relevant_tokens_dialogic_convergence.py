@@ -89,7 +89,7 @@ def __main(args):
 		return result
 
 	print("Calculating aggregates.", file=sys.stderr)
-	print(COL_DELIM.join(("seq", "count", "comparisons", "mean", "stdev", "sem", "median", "mad")), file=outfile)
+	print(COL_DELIM.join(("seq", "count", "comparisons", "mean", "std", "sem", "median", "mad")), file=outfile)
 	sorted_coref_seq_token_sets = tuple(sorted(coref_seq_token_sets.items()))
 	for coref_token_sets_to_calculate, prev_coref_token_sets in zip(sorted_coref_seq_token_sets[1:],
 																	sorted_coref_seq_token_sets):
