@@ -90,22 +90,26 @@ def __main(args):
 
 	print("Calculating aggregates.", file=sys.stderr)
 	print(COL_DELIM.join(("seq", "count", "comparisons", "mean", "stdev", "sem", "median", "mad")), file=outfile)
-	for coref_seq_no, token_sets in sorted(coref_seq_token_sets.items()):
-		try:
-			prev_token_sets = coref_seq_token_sets[coref_seq_no - 1]
-			overlaps = np.array(
-				tuple(fetch_overlap(token_set, prev_token_set) for token_set in token_sets for prev_token_set in
-					  prev_token_sets))
-			mean = np.mean(overlaps)
-			stdev = np.std(overlaps)
-			sem = np.std(overlaps)
-			median = np.median(overlaps)
-			mad = robust.mad(overlaps)
-			row = (coref_seq_no, len(token_sets), len(overlaps), mean, stdev, sem, median, mad)
-			print(COL_DELIM.join(str(cell) for cell in row), file=outfile)
-		except KeyError:
-			# Skip sequence numbers without a preceding one, i.e. skip the first one
-			pass
+	sorted_coref_seq_token_sets = tuple(sorted(coref_seq_token_sets.items()))
+	for coref_token_sets_to_calculate, prev_coref_token_sets in zip(sorted_coref_seq_token_sets[1:],
+																	sorted_coref_seq_token_sets):
+		current_coref_seq_no, current_token_sets = coref_token_sets_to_calculate
+		prev_coref_seq_no, prev_token_sets = prev_coref_token_sets
+		assert prev_coref_seq_no < current_coref_seq_no
+		print("Calculating overlaps of coref seq. no {} with coref seq. no {}.".format(current_coref_seq_no,
+																					  prev_coref_seq_no),
+			  file=sys.stderr)
+
+		overlaps = np.array(
+			tuple(fetch_overlap(token_set, prev_token_set) for token_set in current_token_sets for prev_token_set in
+				  prev_token_sets))
+		mean = np.mean(overlaps)
+		stdev = np.std(overlaps)
+		sem = np.std(overlaps)
+		median = np.median(overlaps)
+		mad = robust.mad(overlaps)
+		row = (current_coref_seq_no, len(current_token_sets), len(overlaps), mean, stdev, sem, median, mad)
+		print(COL_DELIM.join(str(cell) for cell in row), file=outfile)
 
 
 def __token_set_repr(tokens: Iterable[str]) -> str:
