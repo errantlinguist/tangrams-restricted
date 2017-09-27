@@ -37,8 +37,7 @@ def __create_qualified_col_name_dict(input_col_names: Iterable[str]) -> Dict[
 
 
 def __print_non_aggregate_overlap_summary(df: pd.DataFrame, measurement_col_names: Mapping[
-	instructor_relevant_tokens_metrics.Measurement, str], outfile: IO[str]):
-	coref_seq_col_name = measurement_col_names[instructor_relevant_tokens_metrics.Measurement.COREF_SEQ]
+	instructor_relevant_tokens_metrics.Measurement, str], outfile: IO[str], coref_seq_col_name):
 	print("Coreference chain sequence column \"{}\"; Is present? {}".format(coref_seq_col_name,
 																			coref_seq_col_name in df.columns.values),
 		  file=sys.stderr)
@@ -47,9 +46,12 @@ def __print_non_aggregate_overlap_summary(df: pd.DataFrame, measurement_col_name
 	print("Token overlap column \"{}\"; Is present? {}".format(overlap_col_name,
 															   overlap_col_name in df.columns.values),
 		  file=sys.stderr)
-	agg_df = coref_seq_groups[overlap_col_name].aggregate(("mean", "std", "sem"))
-	agg_df.fillna(instructor_relevant_tokens_metrics.OUTPUT_NA_VALUE)
-	print(agg_df, file=outfile)
+	group_aggregates = coref_seq_groups[overlap_col_name].aggregate(("mean", "std", "sem"))
+	group_aggregates.fillna(instructor_relevant_tokens_metrics.OUTPUT_NA_VALUE)
+	sep = "\t"
+	print("\n\n", file=outfile)
+	print(sep.join((coref_seq_col_name, overlap_col_name)), file=outfile)
+	group_aggregates.to_csv(outfile, index_label="seq", sep=sep)
 
 
 def __create_argparser() -> argparse.ArgumentParser:
@@ -57,12 +59,16 @@ def __create_argparser() -> argparse.ArgumentParser:
 		description="Measure referent token type overlap means in coreference chains in each game session, using only instructor language to build coreference chains.")
 	result.add_argument("inpath", metavar="INPATH",
 						help="The file to process.")
+	result.add_argument("-t", "--tokens", metavar="COL_NAME", required=True,
+						help="The column to use as relevant tokens.")
 	return result
 
 
 def __main(args):
 	inpath = args.inpath
-	print("Reading \"{}\".".format(inpath),
+	token_set_col_name = args.tokens
+	print("Reading \"{}\" using tokens from column \"{}\".".format(inpath,
+																   token_set_col_name),
 		  file=sys.stderr)
 	overlaps = instructor_relevant_tokens_metrics.read_round_tokens(inpath, keep_default_na=True, na_filter=True,
 																	na_values=(
@@ -71,11 +77,15 @@ def __main(args):
 
 	outfile = sys.stdout
 	col_names = __create_qualified_col_name_dict(overlaps.columns.values)
-	for metric_name, metric_aggs in sorted(col_names.items(), key=lambda item: item[0].value):
-		print("Processing metric \"{}\".".format(metric_name), file=sys.stderr)
+	for metric, metric_aggs in sorted(col_names.items(), key=lambda item: item[0].value):
+		print("Processing metric \"{}\".".format(metric), file=sys.stderr)
+		coref_seq_no_col_name = instructor_relevant_tokens_metrics.qualified_col_name(token_set_col_name,
+																					  instructor_relevant_tokens_metrics.Measurement.COREF_SEQ,
+																					  metric,
+																					  instructor_relevant_tokens_metrics.Aggregation.NONE)
 
-		non_agg_measurement_col_names = metric_aggs[instructor_relevant_tokens_metrics.Aggregation.NONE]
-		__print_non_aggregate_overlap_summary(overlaps, non_agg_measurement_col_names, outfile)
+		for agg, measurement_col_names in sorted(metric_aggs.items(), key=lambda item: item[0].value):
+			__print_non_aggregate_overlap_summary(overlaps, measurement_col_names, outfile, coref_seq_no_col_name)
 
 
 if __name__ == "__main__":
