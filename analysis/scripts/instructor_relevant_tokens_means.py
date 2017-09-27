@@ -51,7 +51,7 @@ def __main(args):
 	print("Reading \"{}\".".format(inpath),
 		  file=sys.stderr)
 	round_tokens = instructor_relevant_tokens_metrics.read_round_tokens(inpath, na_values=(
-		instructor_relevant_tokens_metrics.OUTPUT_NA_REPR, np.NaN, None))
+		instructor_relevant_tokens_metrics.OUTPUT_NA_VALUE, np.NaN, None))
 
 	metric_data_col_names = __create_metric_data_colname_dict(round_tokens.columns.values)
 	for metric, data in metric_data_col_names.items():
@@ -59,7 +59,7 @@ def __main(args):
 		coref_seq_groups = round_tokens.groupby(coref_seq_col_name, as_index=False)
 		overlap_col_name = data[instructor_relevant_tokens_metrics.DataColumn.OVERLAP.value]
 		agg_df = coref_seq_groups[overlap_col_name].aggregate(("mean", "std", "sem"))
-		agg_df.fillna(instructor_relevant_tokens_metrics.OUTPUT_NA_REPR)
+		agg_df.fillna(instructor_relevant_tokens_metrics.OUTPUT_NA_VALUE)
 		print(agg_df, file=sys.stdout)
 
 
