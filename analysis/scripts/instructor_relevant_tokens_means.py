@@ -36,14 +36,6 @@ def __create_qualified_col_name_dict(input_col_names: Iterable[str]) -> Dict[
 	return result
 
 
-def __create_argparser() -> argparse.ArgumentParser:
-	result = argparse.ArgumentParser(
-		description="Measure referent token type overlap means in coreference chains in each game session, using only instructor language to build coreference chains.")
-	result.add_argument("inpath", metavar="INPATH",
-						help="The file to process.")
-	return result
-
-
 def __print_non_aggregate_overlap_summary(df: pd.DataFrame, measurement_col_names: Mapping[
 	instructor_relevant_tokens_metrics.Measurement, str], outfile: IO[str]):
 	coref_seq_col_name = measurement_col_names[instructor_relevant_tokens_metrics.Measurement.COREF_SEQ]
@@ -60,14 +52,22 @@ def __print_non_aggregate_overlap_summary(df: pd.DataFrame, measurement_col_name
 	print(agg_df, file=outfile)
 
 
+def __create_argparser() -> argparse.ArgumentParser:
+	result = argparse.ArgumentParser(
+		description="Measure referent token type overlap means in coreference chains in each game session, using only instructor language to build coreference chains.")
+	result.add_argument("inpath", metavar="INPATH",
+						help="The file to process.")
+	return result
+
+
 def __main(args):
 	inpath = args.inpath
 	print("Reading \"{}\".".format(inpath),
 		  file=sys.stderr)
 	overlaps = instructor_relevant_tokens_metrics.read_round_tokens(inpath, keep_default_na=True, na_filter=True,
-																		na_values=(
-																			instructor_relevant_tokens_metrics.OUTPUT_NA_VALUE,
-																			None))
+																	na_values=(
+																		instructor_relevant_tokens_metrics.OUTPUT_NA_VALUE,
+																		None))
 
 	outfile = sys.stdout
 	col_names = __create_qualified_col_name_dict(overlaps.columns.values)
