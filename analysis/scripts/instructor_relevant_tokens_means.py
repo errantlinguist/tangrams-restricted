@@ -9,29 +9,39 @@ import instructor_relevant_tokens_metrics
 
 
 def __create_col_name_regex() -> str:
-	col_disjunction = "((?:" + ")|(?:".join(col.value for col in instructor_relevant_tokens_metrics.DataColumn) + "))"
-	metric_disjunction = "((?:" + ")|(?:".join(
-		metric.value for metric in instructor_relevant_tokens_metrics.Metric) + "))"
-	return ".*?" + col_disjunction + metric_disjunction
+	col_disjunction = "(?P<col_name>(?:" + ")|(?:".join(
+		re.escape(col.value) for col in instructor_relevant_tokens_metrics.DataColumn) + "))"
+	metric_disjunction = "(?P<metric>(?:" + ")|(?:".join(
+		re.escape(metric.value) for metric in instructor_relevant_tokens_metrics.Metric) + "))"
+	agg_disjunction = "(?P<agg>(?:" + ")|(?:".join(
+		re.escape(agg.value) for agg in instructor_relevant_tokens_metrics.Aggregation) + "))"
+	return ".*?" + col_disjunction + metric_disjunction + agg_disjunction
 
 
 COL_NAME_PATTERN = re.compile(__create_col_name_regex())
 
 
-def __create_metric_data_colname_dict(col_names: Iterable[str]):
+def __create_col_name_dict(col_names: Iterable[str]):
 	result = {}
 	for col_name in col_names:
 		match = COL_NAME_PATTERN.match(col_name)
 		if match:
-			datum = match.group(1)
-			metric = match.group(2)
+			datum = match.group("col_name")
 			try:
-				data_col_names = result[metric]
+				metric_aggs = result[datum]
 			except KeyError:
-				data_col_names = {}
-				result[metric] = data_col_names
+				metric_aggs = {}
+				result[datum] = metric_aggs
 
-			data_col_names[datum] = col_name
+			metric = match.group("metric")
+			try:
+				agg_col_names = metric_aggs[metric]
+			except KeyError:
+				agg_col_names = {}
+				metric_aggs[metric] = agg_col_names
+
+			agg = match.group("agg")
+			agg_col_names[agg] = col_name
 
 	return result
 
@@ -53,7 +63,7 @@ def __main(args):
 																			instructor_relevant_tokens_metrics.OUTPUT_NA_VALUE,
 																			None))
 
-	metric_data_col_names = __create_metric_data_colname_dict(round_tokens.columns.values)
+	metric_data_col_names = __create_col_name_dict(round_tokens.columns.values)
 	for metric, data in metric_data_col_names.items():
 		coref_seq_col_name = data[instructor_relevant_tokens_metrics.DataColumn.COREF_SEQ.value]
 		print("Coreference chain sequence column \"{}\"; Is present? {}".format(coref_seq_col_name,

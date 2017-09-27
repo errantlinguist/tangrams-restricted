@@ -18,6 +18,13 @@ T = TypeVar('T')
 
 
 @unique
+class Aggregation(Enum):
+	NONE = "$"
+	BASELINE = "$BASELINE"
+	REFERENT_BASELINE = "$REFERENT_BASELINE"
+
+
+@unique
 class DataColumn(Enum):
 	COREF_SEQ = "_COREF_SEQ"
 	OVERLAP = "_OVERLAP"
@@ -25,9 +32,10 @@ class DataColumn(Enum):
 
 @unique
 class Metric(Enum):
-	SELF = "_SELF"
-	OTHER = "_OTHER"
-	EITHER = "_EITHER"
+	SELF = "#SELF"
+	OTHER = "#OTHER"
+	EITHER = "#EITHER"
+	BASELINE = "#BASELINE"
 
 
 def complement_coref_chain_seq_no(row: pd.Series, df: pd.DataFrame, referent_id_col_name: str,
@@ -121,6 +129,49 @@ def set_overlap(first: FrozenSet[T], second: FrozenSet[T]) -> float:
 	return result
 
 
+def baseline_token_overlap(row: pd.Series, df: pd.DataFrame, coref_chain_seq_no_col_name: str,
+						   token_set_col_name: str) -> int:
+	prev_coref_rows = __analogous_coref_rows(row, df, coref_chain_seq_no_col_name, token_set_col_name)
+	prev_token_sets = prev_coref_rows[token_set_col_name]
+
+	current_tokens = row[token_set_col_name]
+	overlaps = prev_token_sets.transform(lambda prev_tokens: set_overlap(current_tokens, prev_tokens))
+	return overlaps.mean()
+
+
+def baseline_referent_token_overlap(row: pd.Series, df: pd.DataFrame, coref_chain_seq_no_col_name: str,
+									referent_id_col_name: str,
+									token_set_col_name: str) -> int:
+	prev_coref_rows = __analogous_referent_coref_rows(row, df, coref_chain_seq_no_col_name, referent_id_col_name,
+													  token_set_col_name)
+	prev_token_sets = prev_coref_rows[token_set_col_name]
+
+	current_tokens = row[token_set_col_name]
+	overlaps = prev_token_sets.transform(lambda prev_tokens: set_overlap(current_tokens, prev_tokens))
+	return overlaps.mean()
+
+
+def __analogous_coref_rows(row: pd.Series, df: pd.DataFrame, coref_chain_seq_no_col_name: str,
+						   token_set_col_name: str) -> pd.DataFrame:
+	dyad = row["DYAD"]
+	coref_chain_seq_no = row[coref_chain_seq_no_col_name]
+	return df.loc[
+		(df["DYAD"] == dyad) & (df[coref_chain_seq_no_col_name] == coref_chain_seq_no) & (
+			df[token_set_col_name].str.len() > 0)]
+
+
+def __analogous_referent_coref_rows(row: pd.Series, df: pd.DataFrame, coref_chain_seq_no_col_name: str,
+									referent_id_col_name: str,
+									token_set_col_name: str) -> pd.DataFrame:
+	dyad = row["DYAD"]
+	referent_id = row[referent_id_col_name]
+	coref_chain_seq_no = row[coref_chain_seq_no_col_name]
+	return df.loc[
+		(df["DYAD"] == dyad) & (df[referent_id_col_name] == referent_id) & (
+			df[coref_chain_seq_no_col_name] == coref_chain_seq_no) & (
+			df[token_set_col_name].str.len() > 0)]
+
+
 def __create_argparser() -> argparse.ArgumentParser:
 	result = argparse.ArgumentParser(
 		description="Measure referent token type overlap in coreference chains in each game session, using only instructor language to build coreference chains.")
@@ -177,6 +228,78 @@ def __prev_self_coref_rows(row: pd.Series, df: pd.DataFrame, referent_id_col_nam
 			df["INSTRUCTOR"] == current_instructor) & (df[token_set_col_name].str.len() > 0)]
 
 
+def __token_type_overlaps_either(df: pd.DataFrame, referent_id_col_name: str, token_set_col_name: str):
+	print("Calculating either overlap for \"{}\".".format(token_set_col_name), file=sys.stderr)
+	metric = Metric.EITHER.value
+
+	coref_chain_seq_no_col_name = token_set_col_name + DataColumn.COREF_SEQ.value + metric + Aggregation.NONE.value
+	df[coref_chain_seq_no_col_name] = df.apply(
+		lambda row: either_coref_chain_seq_no(row, df, referent_id_col_name, token_set_col_name), axis=1)
+
+	overlap_col_prefix = token_set_col_name + DataColumn.OVERLAP.value
+	overlap_col_name = overlap_col_prefix + metric + Aggregation.NONE.value
+	df[overlap_col_name] = df.apply(
+		lambda row: either_token_overlap(row, df, referent_id_col_name, token_set_col_name), axis=1)
+	# NOTE: This logic is dependent on the previous ones already setting coreference chain sequence numbers
+	print("Calculating either baseline overlap for \"{}\".".format(token_set_col_name), file=sys.stderr)
+	baseline_overlap_col_name = overlap_col_prefix + metric + Aggregation.BASELINE.value
+	df[baseline_overlap_col_name] = df.apply(
+		lambda row: baseline_token_overlap(row, df, coref_chain_seq_no_col_name, token_set_col_name), axis=1)
+	print("Calculating either referent baseline overlap for \"{}\".".format(token_set_col_name), file=sys.stderr)
+	referent_baseline_overlap_col_name = overlap_col_prefix + metric + Aggregation.REFERENT_BASELINE.value
+	df[referent_baseline_overlap_col_name] = df.apply(
+		lambda row: baseline_referent_token_overlap(row, df, coref_chain_seq_no_col_name, referent_id_col_name,
+													token_set_col_name), axis=1)
+
+
+def __token_type_overlaps_other(df: pd.DataFrame, referent_id_col_name: str, token_set_col_name: str):
+	print("Calculating other overlap for \"{}\".".format(token_set_col_name), file=sys.stderr)
+	metric = Metric.SELF.value
+
+	coref_chain_seq_no_col_name = token_set_col_name + DataColumn.COREF_SEQ.value + metric + Aggregation.NONE.value
+	df[coref_chain_seq_no_col_name] = df.apply(
+		lambda row: complement_coref_chain_seq_no(row, df, referent_id_col_name, token_set_col_name), axis=1)
+
+	overlap_col_prefix = token_set_col_name + DataColumn.OVERLAP.value
+	overlap_col_name = overlap_col_prefix + metric + Aggregation.NONE.value
+	df[overlap_col_name] = df.apply(
+		lambda row: complement_token_overlap(row, df, referent_id_col_name, token_set_col_name), axis=1)
+	# NOTE: This logic is dependent on the previous ones already setting coreference chain sequence numbers
+	print("Calculating other baseline overlap for \"{}\".".format(token_set_col_name), file=sys.stderr)
+	baseline_overlap_col_name = overlap_col_prefix + metric + Aggregation.BASELINE.value
+	df[baseline_overlap_col_name] = df.apply(
+		lambda row: baseline_token_overlap(row, df, coref_chain_seq_no_col_name, token_set_col_name), axis=1)
+	print("Calculating other referent baseline overlap for \"{}\".".format(token_set_col_name), file=sys.stderr)
+	referent_baseline_overlap_col_name = overlap_col_prefix + metric + Aggregation.REFERENT_BASELINE.value
+	df[referent_baseline_overlap_col_name] = df.apply(
+		lambda row: baseline_referent_token_overlap(row, df, coref_chain_seq_no_col_name, referent_id_col_name,
+													token_set_col_name), axis=1)
+
+
+def __token_type_overlaps_self(df: pd.DataFrame, referent_id_col_name: str, token_set_col_name: str):
+	print("Calculating self overlap for \"{}\".".format(token_set_col_name), file=sys.stderr)
+	metric = Metric.SELF.value
+
+	coref_chain_seq_no_col_name = token_set_col_name + DataColumn.COREF_SEQ.value + metric + Aggregation.NONE.value
+	df[coref_chain_seq_no_col_name] = df.apply(
+		lambda row: self_coref_chain_seq_no(row, df, referent_id_col_name, token_set_col_name), axis=1)
+
+	overlap_col_prefix = token_set_col_name + DataColumn.OVERLAP.value
+	overlap_col_name = overlap_col_prefix + metric + Aggregation.NONE.value
+	df[overlap_col_name] = df.apply(
+		lambda row: self_token_overlap(row, df, referent_id_col_name, token_set_col_name), axis=1)
+	# NOTE: This logic is dependent on the previous ones already setting coreference chain sequence numbers
+	print("Calculating self baseline overlap for \"{}\".".format(token_set_col_name), file=sys.stderr)
+	baseline_overlap_col_name = overlap_col_prefix + metric + Aggregation.BASELINE.value
+	df[baseline_overlap_col_name] = df.apply(
+		lambda row: baseline_token_overlap(row, df, coref_chain_seq_no_col_name, token_set_col_name), axis=1)
+	print("Calculating self referent baseline overlap for \"{}\".".format(token_set_col_name), file=sys.stderr)
+	referent_baseline_overlap_col_name = overlap_col_prefix + metric + Aggregation.REFERENT_BASELINE.value
+	df[referent_baseline_overlap_col_name] = df.apply(
+		lambda row: baseline_referent_token_overlap(row, df, coref_chain_seq_no_col_name, referent_id_col_name,
+													token_set_col_name), axis=1)
+
+
 def __token_type_overlap(df: pd.DataFrame, referent_id_col_name: str, token_set_col_name: str):
 	"""
 	See <https://stackoverflow.com/a/46402641/1391325>
@@ -184,29 +307,9 @@ def __token_type_overlap(df: pd.DataFrame, referent_id_col_name: str, token_set_
 	:param referent_id_col_name: The name of the column to use as an identifier for each referent entity.
 	:param token_set_col_name: The name of the column to use as the relevant tokens to process.
 	"""
-	print("Calculating self overlap for \"{}\".".format(token_set_col_name), file=sys.stderr)
-	self_coref_chain_seq_no_col_name = token_set_col_name + DataColumn.COREF_SEQ.value + Metric.SELF.value
-	df[self_coref_chain_seq_no_col_name] = df.apply(
-		lambda row: self_coref_chain_seq_no(row, df, referent_id_col_name, token_set_col_name), axis=1)
-	self_overlap_col_name = token_set_col_name + DataColumn.OVERLAP.value + Metric.SELF.value
-	df[self_overlap_col_name] = df.apply(
-		lambda row: self_token_overlap(row, df, referent_id_col_name, token_set_col_name), axis=1)
-
-	print("Calculating other overlap for \"{}\".".format(token_set_col_name), file=sys.stderr)
-	other_coref_chain_seq_no_col_name = token_set_col_name + DataColumn.COREF_SEQ.value + Metric.OTHER.value
-	df[other_coref_chain_seq_no_col_name] = df.apply(
-		lambda row: complement_coref_chain_seq_no(row, df, referent_id_col_name, token_set_col_name), axis=1)
-	other_overlap_col_name = token_set_col_name + DataColumn.OVERLAP.value + Metric.OTHER.value
-	df[other_overlap_col_name] = df.apply(
-		lambda row: complement_token_overlap(row, df, referent_id_col_name, token_set_col_name), axis=1)
-
-	print("Calculating either overlap for \"{}\".".format(token_set_col_name), file=sys.stderr)
-	either_coref_chain_seq_no_col_name = token_set_col_name + DataColumn.COREF_SEQ.value + Metric.EITHER.value
-	df[either_coref_chain_seq_no_col_name] = df.apply(
-		lambda row: either_coref_chain_seq_no(row, df, referent_id_col_name, token_set_col_name), axis=1)
-	either_overlap_col_name = token_set_col_name + DataColumn.OVERLAP.value + Metric.EITHER.value
-	df[either_overlap_col_name] = df.apply(
-		lambda row: either_token_overlap(row, df, referent_id_col_name, token_set_col_name), axis=1)
+	__token_type_overlaps_self(df, referent_id_col_name, token_set_col_name)
+	__token_type_overlaps_other(df, referent_id_col_name, token_set_col_name)
+	__token_type_overlaps_either(df, referent_id_col_name, token_set_col_name)
 
 
 def __main(args):
