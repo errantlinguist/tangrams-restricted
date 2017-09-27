@@ -227,6 +227,7 @@ def __main(args):
 
 	round_tokens.sort_values(["DYAD", "REFERENT", "ROUND", "INSTRUCTOR"], inplace=True)
 	prettify_token_set_series(round_tokens)
+	round_tokens.reset_index(drop=True, inplace=True, )
 	round_tokens.to_csv(sys.stdout, index_label="INDEX", sep="\t", na_rep=OUTPUT_NA_VALUE)
 
 
