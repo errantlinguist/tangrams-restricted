@@ -55,7 +55,7 @@ def __main(args):
 
 	outfile = sys.stdout
 
-	print(COL_DELIM.join((self_coref_seq_no_col_name, token_set_col_name + "_DIAG_OVERLAP")), file=outfile)
+	print(COL_DELIM.join(("seq", "overlap")), file=outfile)
 	for coref_seq_no, token_sets in sorted(coref_seq_token_sets.items()):
 		overlaps = (instructor_relevant_tokens_metrics.set_overlap(first, other) for first in token_sets for other in
 					token_sets)
