@@ -1,47 +1,34 @@
 #!/usr/bin/env python3
 
 import argparse
-import re
 import sys
-from typing import Iterable
+from typing import Dict, Iterable
 
 import instructor_relevant_tokens_metrics
+import pandas as pd
 
 
-def __create_col_name_regex() -> str:
-	col_disjunction = "(?P<col_name>(?:" + ")|(?:".join(
-		re.escape(col.value) for col in instructor_relevant_tokens_metrics.DataColumn) + "))"
-	metric_disjunction = "(?P<metric>(?:" + ")|(?:".join(
-		re.escape(metric.value) for metric in instructor_relevant_tokens_metrics.Metric) + "))"
-	agg_disjunction = "(?P<agg>(?:" + ")|(?:".join(
-		re.escape(agg.value) for agg in instructor_relevant_tokens_metrics.Aggregation) + "))"
-	return ".*?" + col_disjunction + metric_disjunction + agg_disjunction
-
-
-COL_NAME_PATTERN = re.compile(__create_col_name_regex())
-
-
-def __create_col_name_dict(col_names: Iterable[str]):
+def __create_qualified_col_name_dict(input_col_names: Iterable[str]) -> Dict[str, Dict[str, Dict[str, str]]]:
 	result = {}
-	for col_name in col_names:
-		match = COL_NAME_PATTERN.match(col_name)
-		if match:
-			datum = match.group("col_name")
+	for input_col_name in input_col_names:
+		try:
+			prefix, measurement, metric, agg = instructor_relevant_tokens_metrics.col_data(input_col_name)
 			try:
-				metric_aggs = result[datum]
-			except KeyError:
-				metric_aggs = {}
-				result[datum] = metric_aggs
-
-			metric = match.group("metric")
-			try:
-				agg_col_names = metric_aggs[metric]
+				agg_col_names = result[metric]
 			except KeyError:
 				agg_col_names = {}
-				metric_aggs[metric] = agg_col_names
+				result[metric] = agg_col_names
 
-			agg = match.group("agg")
-			agg_col_names[agg] = col_name
+			try:
+				measurement_col_names = agg_col_names[agg]
+			except KeyError:
+				measurement_col_names = {}
+				agg_col_names[agg] = measurement_col_names
+
+			measurement_col_names[measurement] = input_col_name
+
+		except ValueError:
+			print("Skipping column \"{}\".".format(input_col_name), file=sys.stderr)
 
 	return result
 
@@ -53,6 +40,7 @@ def __create_argparser() -> argparse.ArgumentParser:
 						help="The file to process.")
 	return result
 
+#def __baseline_overlap(df: pd.DataFrame):
 
 def __main(args):
 	inpath = args.inpath
@@ -63,20 +51,25 @@ def __main(args):
 																			instructor_relevant_tokens_metrics.OUTPUT_NA_VALUE,
 																			None))
 
-	metric_data_col_names = __create_col_name_dict(round_tokens.columns.values)
-	for metric, data in metric_data_col_names.items():
-		coref_seq_col_name = data[instructor_relevant_tokens_metrics.DataColumn.COREF_SEQ.value]
+	col_names = __create_qualified_col_name_dict(round_tokens.columns.values)
+	for metric_name, metric_aggs in sorted(col_names.items(), key=lambda item: item[0].value):
+		print("Processing metric \"{}\".".format(metric_name), file=sys.stderr)
+
+		non_agg_measurement_col_names = metric_aggs[instructor_relevant_tokens_metrics.Aggregation.NONE]
+		coref_seq_col_name = non_agg_measurement_col_names[instructor_relevant_tokens_metrics.Measurement.COREF_SEQ]
 		print("Coreference chain sequence column \"{}\"; Is present? {}".format(coref_seq_col_name,
 																				coref_seq_col_name in round_tokens.columns.values),
 			  file=sys.stderr)
 		coref_seq_groups = round_tokens.groupby(coref_seq_col_name, as_index=False)
-		overlap_col_name = data[instructor_relevant_tokens_metrics.DataColumn.OVERLAP.value]
+		overlap_col_name = non_agg_measurement_col_names[instructor_relevant_tokens_metrics.Measurement.OVERLAP]
 		print("Token overlap column \"{}\"; Is present? {}".format(overlap_col_name,
 																   overlap_col_name in round_tokens.columns.values),
 			  file=sys.stderr)
 		agg_df = coref_seq_groups[overlap_col_name].aggregate(("mean", "std", "sem"))
 		agg_df.fillna(instructor_relevant_tokens_metrics.OUTPUT_NA_VALUE)
 		print(agg_df, file=sys.stdout)
+
+
 
 
 if __name__ == "__main__":

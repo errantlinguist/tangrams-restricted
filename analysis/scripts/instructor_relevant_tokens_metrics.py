@@ -5,7 +5,7 @@ import csv
 import re
 import sys
 from enum import Enum, unique
-from typing import FrozenSet, Iterable, Iterator, TypeVar
+from typing import Optional, FrozenSet, Iterable, Iterator, Tuple, TypeVar
 
 import numpy as np
 import pandas as pd
@@ -16,30 +16,49 @@ OVERLAP_NULL_VALUE = np.NaN
 
 T = TypeVar('T')
 
+_AGGREGATION_PREFIX = '@'
+
 
 @unique
 class Aggregation(Enum):
-	NONE = "$"
-	BASELINE = "$BASELINE"
-	REFERENT_BASELINE = "$REFERENT_BASELINE"
+	NONE = "NONE"
+	BASELINE = "BASELINE"
+	REFERENT_BASELINE = "REFERENT_BASELINE"
+
+
+_MEASUREMENT_PREFIX = '$'
 
 
 @unique
 class Measurement(Enum):
-	COREF_SEQ = "_COREF_SEQ"
-	OVERLAP = "_OVERLAP"
+	COREF_SEQ = "COREF_SEQ"
+	OVERLAP = "OVERLAP"
+
+
+_METRIC_PREFIX = '#'
 
 
 @unique
 class Metric(Enum):
-	SELF = "#SELF"
-	OTHER = "#OTHER"
-	EITHER = "#EITHER"
-	BASELINE = "#BASELINE"
+	SELF = "SELF"
+	OTHER = "OTHER"
+	EITHER = "EITHER"
+	BASELINE = "BASELINE"
 
 
 def qualified_col_name(prefix: str, measurement: Measurement, metric: Metric, agg: Aggregation) -> str:
-	return prefix + measurement.value + metric.value + agg.value
+	return prefix + _MEASUREMENT_PREFIX + measurement.value + _METRIC_PREFIX + metric.value + _AGGREGATION_PREFIX + agg.value
+
+
+def col_data(qualified_col_name: str) -> Optional[Tuple[str, Measurement, Metric, Aggregation]]:
+	rest, agg_str = qualified_col_name.rsplit(_AGGREGATION_PREFIX, 1)
+	agg = Aggregation[agg_str]
+	rest, metric_str = rest.rsplit(_METRIC_PREFIX, 1)
+	metric = Metric[metric_str]
+
+	prefix, measurement_str = rest.split(_MEASUREMENT_PREFIX, 1)
+	measurement = Measurement[measurement_str]
+	return prefix, measurement, metric, agg
 
 
 def complement_coref_chain_seq_no(row: pd.Series, df: pd.DataFrame, referent_id_col_name: str,
