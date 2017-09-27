@@ -4,11 +4,13 @@ import argparse
 import csv
 import sys
 from collections import defaultdict
-from typing import Dict, FrozenSet, Iterable, List
+from decimal import Decimal
+from typing import Callable, Dict, FrozenSet, Iterable, List, TypeVar
 
 import instructor_relevant_tokens_metrics
 
 COL_DELIM = "\t"
+T = TypeVar('T')
 
 
 def __create_argparser() -> argparse.ArgumentParser:
@@ -38,6 +40,20 @@ def read_nonempty_coref_seq_token_sets(inpath: str, self_coref_seq_no_col_name: 
 	return result
 
 
+def set_overlap_high_precision(first: FrozenSet[T], second: FrozenSet[T],
+							   decimal_factory: Callable[[int], Decimal]) -> Decimal:
+	# print("First: " + ",".join(sorted(first)), file=sys.stderr)
+	# print("Complement: " + ",".join(sorted(complement)), file=sys.stderr)
+	# if first and second:
+	intersection = first.intersection(second)
+	union = first.union(second)
+	result = decimal_factory(len(intersection)) / decimal_factory(len(union))
+	# else:
+	#	# Don't compute overlap for utterances which don't have any relevant tokens
+	#	result = OVERLAP_NULL_VALUE
+	return result
+
+
 def __main(args):
 	inpath = args.inpath
 	token_set_col_name = args.tokens
@@ -56,8 +72,30 @@ def __main(args):
 	outfile = sys.stdout
 
 	print(COL_DELIM.join(("seq", "overlap")), file=outfile)
+
+	decimal_cache = {}
+
+	def fetch_decimal(value: int) -> Decimal:
+		try:
+			result = decimal_cache[value]
+		except KeyError:
+			result = Decimal(value)
+			decimal_cache[value] = result
+		return result
+
+	overlap_cache = {}
+
+	def fetch_overlap(first: FrozenSet[T], second: FrozenSet[T]) -> Decimal:
+		key = (first, second)
+		try:
+			result = overlap_cache[key]
+		except KeyError:
+			result = set_overlap_high_precision(first, second, fetch_decimal)
+			overlap_cache[key] = result
+		return result
+
 	for coref_seq_no, token_sets in sorted(coref_seq_token_sets.items()):
-		overlaps = (instructor_relevant_tokens_metrics.set_overlap(first, other) for first in token_sets for other in
+		overlaps = (fetch_overlap(first, other) for first in token_sets for other in
 					token_sets)
 		for overlap in overlaps:
 			print(COL_DELIM.join((str(coref_seq_no), str(overlap))), file=outfile)
