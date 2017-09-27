@@ -89,7 +89,7 @@ def __main(args):
 		return result
 
 	print("Calculating aggregates.", file=sys.stderr)
-	print(COL_DELIM.join(("seq", "count", "mean", "stdev", "sem", "median", "mad")), file=outfile)
+	print(COL_DELIM.join(("seq", "count", "comparisons", "mean", "stdev", "sem", "median", "mad")), file=outfile)
 	for coref_seq_no, token_sets in sorted(coref_seq_token_sets.items()):
 		overlaps = tuple(fetch_overlap(first, other) for first in token_sets for other in
 						 token_sets)
@@ -98,7 +98,7 @@ def __main(args):
 		sem = np.std(overlaps)
 		median = np.median(overlaps)
 		mad = robust.mad(overlaps)
-		row = (coref_seq_no, len(overlaps), mean, stdev, sem, median, mad)
+		row = (coref_seq_no, len(token_sets), len(overlaps), mean, stdev, sem, median, mad)
 		print(COL_DELIM.join(str(cell) for cell in row), file=outfile)
 
 
