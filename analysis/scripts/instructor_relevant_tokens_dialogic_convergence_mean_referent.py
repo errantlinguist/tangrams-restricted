@@ -50,7 +50,7 @@ Callable[[FrozenSet[str], FrozenSet[str]], Iterable[V]]) -> Dict[int, Tuple[V]]:
 				print("Calculating overlaps of coref seq. no {} with coref seq. no {} for referent ID \"{}\"".format(
 					current_coref_seq_no,
 					prev_coref_seq_no, referent_id),
-					  file=sys.stderr)
+					file=sys.stderr)
 				prev_referent_token_sets = prev_token_sets[referent_id]
 				overlaps.extend(overlap_factory(current_referent_token_sets, prev_referent_token_sets))
 			except KeyError:
@@ -167,15 +167,25 @@ def __main(args):
 	max_coref_seq_no = max(overlaps.keys())
 	print(COL_DELIM.join(("max_seq_len", str(max_coref_seq_no))), file=outfile)
 	seq_overlaps = tuple(((seq_no, arithmetic.create_array(seq_overlaps)) for seq_no, seq_overlaps in overlaps.items()))
-	seq_means = ((seq_no, arithmetic.mean(overlaps)) for seq_no, overlaps in seq_overlaps)
-	for seq_no, mean in sorted(seq_means, key=lambda item: item[0]):
-		print(COL_DELIM.join(("mean_seq_{}".format(seq_no), str(mean))), file=outfile)
 
 	coref_seq_stdevs = tuple((seq_no, arithmetic.stdev(seq_overlaps)) for seq_no, seq_overlaps in seq_overlaps)
-	for seq_no, stdev in sorted(coref_seq_stdevs):
-		print(COL_DELIM.join(("mean_stdev_{}".format(seq_no), str(mean))), file=outfile)
+
 	mean_coref_seq_stdev = arithmetic.mean(arithmetic.create_array(stdev for seq_no, stdev in coref_seq_stdevs))
 	print(COL_DELIM.join(("mean_coref_seq_std", str(mean_coref_seq_stdev))), file=outfile)
+
+	seq_means = ((seq_no, arithmetic.mean(overlaps)) for seq_no, overlaps in seq_overlaps)
+
+	for seq_no, stdev in sorted(coref_seq_stdevs):
+		print(COL_DELIM.join(("mean_stdev_{}".format(seq_no), str(mean))), file=outfile)
+
+	print("\n\n", file=outfile)
+	print(COL_DELIM.join(("seq", "mean", "std", "sem")), file=outfile)
+	for seq_no, mean in sorted(seq_means, key=lambda item: item[0]):
+		stdev = next(stdev for stdev_seq_no, stdev in coref_seq_stdevs if stdev_seq_no == seq_no)
+		seq_overlaps = overlaps[seq_no]
+		sem = stdev / arithmetic.sqrt(decimal_constructor(len(seq_overlaps)))
+		row = (seq_no, mean, stdev, sem)
+		print(COL_DELIM.join(str(col) for col in row), file=outfile)
 
 
 def __token_set_repr(tokens: Iterable[str]) -> str:
