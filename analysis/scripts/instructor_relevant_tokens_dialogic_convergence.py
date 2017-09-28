@@ -146,7 +146,8 @@ def __main(args):
 	overlap_factory = CachingSetOverlapFactory(CachingFactory(decimal_constructor))
 
 	print("Calculating aggregates.", file=sys.stderr)
-	print(COL_DELIM.join(("seq", "count", "comparisons", "mean", "std", "sem", "median", "mad")), file=outfile)
+	print(COL_DELIM.join(("seq", "count", "comparisons", "mean", "std", "sem")), file=outfile)
+	# print(COL_DELIM.join(("seq", "count", "comparisons", "mean", "std", "sem", "median", "mad")), file=outfile)
 	sorted_coref_seq_token_sets = tuple(sorted(coref_seq_token_sets.items()))
 	for coref_token_sets_to_calculate, prev_coref_token_sets in zip(sorted_coref_seq_token_sets[1:],
 																	sorted_coref_seq_token_sets):
