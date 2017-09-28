@@ -8,7 +8,7 @@ import statistics
 import sys
 from collections import defaultdict
 from decimal import Decimal
-from typing import Callable, Dict, FrozenSet, Generic, Iterable, List, Sequence, Tuple, TypeVar
+from typing import Callable, Dict, FrozenSet, Generic, Iterable, Iterator, List, Mapping, Sequence, Tuple, TypeVar
 
 import numpy as np
 
@@ -57,9 +57,7 @@ class SetOverlapAggregatorDecimal(Generic[K, V]):
 
 	def __call__(self, current_token_sets: Sequence[FrozenSet[str]],
 				 prev_token_sets: Sequence[FrozenSet[str]]):
-		overlaps = tuple(
-			self.overlap_factory(token_set, prev_token_set) for token_set in current_token_sets for prev_token_set in
-			prev_token_sets)
+		overlaps = tuple(self.overlaps(current_token_sets, prev_token_sets))
 		mean = statistics.mean(overlaps)
 		stdev = statistics.stdev(overlaps)
 		sample_size = self.decimal_factory(len(overlaps))
@@ -67,6 +65,12 @@ class SetOverlapAggregatorDecimal(Generic[K, V]):
 		# median = np.median(overlaps)
 		# mad = robust.mad(overlaps)
 		return len(current_token_sets), len(overlaps), mean, stdev, sem
+
+	def overlaps(self, current_token_sets: Sequence[FrozenSet[str]],
+				 prev_token_sets: Sequence[FrozenSet[str]]) -> Iterator[V]:
+		return (self.overlap_factory(token_set, prev_token_set) for token_set in current_token_sets for prev_token_set
+				in
+				prev_token_sets)
 
 
 class SetOverlapAggregatorNumpy(Generic[K, V]):
@@ -76,9 +80,7 @@ class SetOverlapAggregatorNumpy(Generic[K, V]):
 
 	def __call__(self, current_token_sets: Sequence[FrozenSet[K]], prev_token_sets: Sequence[FrozenSet[K]]):
 		overlaps = np.array(
-			tuple(self.overlap_factory(token_set, prev_token_set) for token_set in current_token_sets for prev_token_set
-				  in
-				  prev_token_sets))
+			tuple(self.overlaps(current_token_sets, prev_token_sets)))
 		mean = np.mean(overlaps)
 		stdev = np.std(overlaps)
 		sample_size = self.decimal_factory(len(overlaps))
@@ -87,9 +89,16 @@ class SetOverlapAggregatorNumpy(Generic[K, V]):
 		# mad = robust.mad(overlaps)
 		return len(current_token_sets), len(overlaps), mean, stdev, sem
 
+	def overlaps(self, current_token_sets: Sequence[FrozenSet[str]],
+				 prev_token_sets: Sequence[FrozenSet[str]]) -> Iterator[V]:
+		return (self.overlap_factory(token_set, prev_token_set) for token_set in current_token_sets for prev_token_set
+				in
+				prev_token_sets)
 
-def coref_seq_no_overlaps(sorted_coref_seq_token_sets: Sequence[Tuple[FrozenSet[K], FrozenSet[K]]],
+
+def coref_seq_no_overlaps(coref_seq_token_sets: Mapping[int, Sequence[FrozenSet[str]]],
 						  aggregator: Callable[[FrozenSet[K], FrozenSet[K]], V]) -> Tuple[int, Tuple[V, ...]]:
+	sorted_coref_seq_token_sets = tuple(sorted(coref_seq_token_sets.items()))
 	for coref_token_sets_to_calculate, prev_coref_token_sets in zip(sorted_coref_seq_token_sets[1:],
 																	sorted_coref_seq_token_sets):
 		current_coref_seq_no, current_token_sets = coref_token_sets_to_calculate
@@ -164,8 +173,7 @@ def __main(args):
 	print("Calculating aggregates.", file=sys.stderr)
 	print(COL_DELIM.join(("seq", "count", "comparisons", "mean", "std", "sem")), file=outfile)
 	# print(COL_DELIM.join(("seq", "count", "comparisons", "mean", "std", "sem", "median", "mad")), file=outfile)
-	sorted_coref_seq_token_sets = tuple(sorted(coref_seq_token_sets.items()))
-	for current_coref_seq_no, aggs in coref_seq_no_overlaps(sorted_coref_seq_token_sets, aggregator):
+	for current_coref_seq_no, aggs in coref_seq_no_overlaps(coref_seq_token_sets, aggregator):
 		row = itertools.chain((current_coref_seq_no,), aggs)
 		print(COL_DELIM.join(str(cell) for cell in row), file=outfile)
 
