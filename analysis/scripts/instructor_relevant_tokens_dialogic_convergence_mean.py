@@ -129,6 +129,8 @@ def __main(args):
 	sem = stdev / arithmetic.sqrt(total_sample_size)
 	print(COL_DELIM.join(("sem", str(sem))), file=outfile)
 
+	max_coref_seq_no = max(overlaps.keys())
+	print(COL_DELIM.join(("max_seq_len", str(max_coref_seq_no))), file=outfile)
 	sorted_seq_overlaps = tuple(
 		sorted((arithmetic.create_array(seq_overlaps) for seq_no, seq_overlaps in overlaps.items()),
 			   key=lambda item: item[0]))
