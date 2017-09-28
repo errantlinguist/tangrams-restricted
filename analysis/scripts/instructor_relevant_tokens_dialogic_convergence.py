@@ -8,7 +8,7 @@ import statistics
 import sys
 from collections import defaultdict
 from decimal import Decimal
-from typing import Callable, Dict, FrozenSet, Generic, Iterable, List, Sequence, TypeVar
+from typing import Callable, Dict, FrozenSet, Generic, Iterable, List, Sequence, Tuple, TypeVar
 
 import numpy as np
 
@@ -88,6 +88,20 @@ class SetOverlapAggregatorNumpy(Generic[K, V]):
 		return len(current_token_sets), len(overlaps), mean, stdev, sem
 
 
+def coref_seq_no_overlaps(sorted_coref_seq_token_sets: Sequence[Tuple[FrozenSet[K], FrozenSet[K]]],
+						  aggregator: Callable[[FrozenSet[K], FrozenSet[K]], V]) -> Tuple[int, Tuple[V, ...]]:
+	for coref_token_sets_to_calculate, prev_coref_token_sets in zip(sorted_coref_seq_token_sets[1:],
+																	sorted_coref_seq_token_sets):
+		current_coref_seq_no, current_token_sets = coref_token_sets_to_calculate
+		prev_coref_seq_no, prev_token_sets = prev_coref_token_sets
+		assert prev_coref_seq_no < current_coref_seq_no
+		print("Calculating overlaps of coref seq. no {} with coref seq. no {}.".format(current_coref_seq_no,
+																					   prev_coref_seq_no),
+			  file=sys.stderr)
+
+		yield current_coref_seq_no, aggregator(current_token_sets, prev_token_sets)
+
+
 def read_nonempty_coref_seq_token_sets(inpath: str, self_coref_seq_no_col_name: str, token_set_col_name: str) -> Dict[
 	int, List[FrozenSet[str]]]:
 	result = defaultdict(list)
@@ -151,16 +165,7 @@ def __main(args):
 	print(COL_DELIM.join(("seq", "count", "comparisons", "mean", "std", "sem")), file=outfile)
 	# print(COL_DELIM.join(("seq", "count", "comparisons", "mean", "std", "sem", "median", "mad")), file=outfile)
 	sorted_coref_seq_token_sets = tuple(sorted(coref_seq_token_sets.items()))
-	for coref_token_sets_to_calculate, prev_coref_token_sets in zip(sorted_coref_seq_token_sets[1:],
-																	sorted_coref_seq_token_sets):
-		current_coref_seq_no, current_token_sets = coref_token_sets_to_calculate
-		prev_coref_seq_no, prev_token_sets = prev_coref_token_sets
-		assert prev_coref_seq_no < current_coref_seq_no
-		print("Calculating overlaps of coref seq. no {} with coref seq. no {}.".format(current_coref_seq_no,
-																					   prev_coref_seq_no),
-			  file=sys.stderr)
-
-		aggs = aggregator(current_token_sets, prev_token_sets)
+	for current_coref_seq_no, aggs in coref_seq_no_overlaps(sorted_coref_seq_token_sets, aggregator):
 		row = itertools.chain((current_coref_seq_no,), aggs)
 		print(COL_DELIM.join(str(cell) for cell in row), file=outfile)
 
