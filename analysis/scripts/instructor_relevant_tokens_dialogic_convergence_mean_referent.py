@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 
 import argparse
+import csv
 import statistics
 import sys
+from collections import defaultdict
 from decimal import Decimal
 from typing import Callable, Dict, FrozenSet, Iterable, List, Mapping, Sequence, Tuple, TypeVar
-from collections import defaultdict
-import csv
 
 import numpy as np
 
@@ -47,15 +47,16 @@ Callable[[FrozenSet[str], FrozenSet[str]], Iterable[V]]) -> Dict[int, Tuple[V]]:
 		for referent_id, current_referent_token_sets in current_token_sets.items():
 			overlaps = []
 			try:
-				print("Calculating overlaps of coref seq. no {} with coref seq. no {} for referent ID \"{}\"".format(current_coref_seq_no,
-																							   prev_coref_seq_no, referent_id),
+				print("Calculating overlaps of coref seq. no {} with coref seq. no {} for referent ID \"{}\"".format(
+					current_coref_seq_no,
+					prev_coref_seq_no, referent_id),
 					  file=sys.stderr)
 				prev_referent_token_sets = prev_token_sets[referent_id]
 				overlaps.extend(overlap_factory(current_referent_token_sets, prev_referent_token_sets))
 			except KeyError:
 				print("No token sets found for for referent ID \"{}\" and coref seq. no {}".format(referent_id,
-				current_coref_seq_no),
-				  file=sys.stderr)
+																								   current_coref_seq_no),
+					  file=sys.stderr)
 			result[current_coref_seq_no] = overlaps
 	return result
 
@@ -95,9 +96,11 @@ class _ArithmeticNumpy(object):
 	def sqrt(value: _NUMPY_DECIMAL_VALUE_TYPE) -> Decimal:
 		return np.sqrt(value)
 
-def read_nonempty_coref_seq_referent_token_sets(inpath: str, self_coref_seq_no_col_name: str, token_set_col_name: str, referent_id_col_name : str) -> Dict[
+
+def read_nonempty_coref_seq_referent_token_sets(inpath: str, self_coref_seq_no_col_name: str, token_set_col_name: str,
+												referent_id_col_name: str) -> Dict[
 	int, Dict[str, List[FrozenSet[str]]]]:
-	result = defaultdict(lambda : defaultdict(list))
+	result = defaultdict(lambda: defaultdict(list))
 	with open(inpath, 'r') as infile:
 		rows = csv.reader(infile, dialect="excel-tab")
 		col_idxs = dict((col_name, idx) for (idx, col_name) in enumerate(next(rows)))
@@ -119,7 +122,8 @@ def __main(args):
 	token_set_col_name = args.tokens
 	referent_id_col_name = args.referent
 	print("Reading \"{}\" using tokens from column \"{}\" and values from \"{}\" as referent IDs.".format(inpath,
-																   token_set_col_name, referent_id_col_name),
+																										  token_set_col_name,
+																										  referent_id_col_name),
 		  file=sys.stderr)
 
 	self_coref_seq_no_col_name = instructor_relevant_tokens_metrics.qualified_col_name(token_set_col_name,
@@ -128,8 +132,8 @@ def __main(args):
 																					   instructor_relevant_tokens_metrics.Aggregation.NONE)
 
 	coref_seq_token_sets = read_nonempty_coref_seq_referent_token_sets(inpath,
-																											  self_coref_seq_no_col_name,
-																											  token_set_col_name, referent_id_col_name)
+																	   self_coref_seq_no_col_name,
+																	   token_set_col_name, referent_id_col_name)
 	print("Read token sets for {} coreference sequence step(s).".format(len(coref_seq_token_sets)), file=sys.stderr)
 
 	outfile = sys.stdout
@@ -162,11 +166,15 @@ def __main(args):
 
 	max_coref_seq_no = max(overlaps.keys())
 	print(COL_DELIM.join(("max_seq_len", str(max_coref_seq_no))), file=outfile)
-	sorted_seq_overlaps = tuple(
-		sorted((arithmetic.create_array(seq_overlaps) for seq_no, seq_overlaps in overlaps.items()),
-			   key=lambda item: item[0]))
-	coref_seq_stdevs = arithmetic.create_array(arithmetic.stdev(seq_overlaps) for seq_overlaps in sorted_seq_overlaps)
-	mean_coref_seq_stdev = arithmetic.mean(coref_seq_stdevs)
+	seq_overlaps = tuple(((seq_no, arithmetic.create_array(seq_overlaps)) for seq_no, seq_overlaps in overlaps.items()))
+	seq_means = ((seq_no, arithmetic.mean(overlaps)) for seq_no, overlaps in seq_overlaps)
+	for seq_no, mean in sorted(seq_means, key=lambda item: item[0]):
+		print(COL_DELIM.join(("mean_seq_{}".format(seq_no), str(mean))), file=outfile)
+
+	coref_seq_stdevs = tuple((seq_no, arithmetic.stdev(seq_overlaps)) for seq_no, seq_overlaps in seq_overlaps)
+	for seq_no, stdev in sorted(coref_seq_stdevs):
+		print(COL_DELIM.join(("mean_stdev_{}".format(seq_no), str(mean))), file=outfile)
+	mean_coref_seq_stdev = arithmetic.mean(arithmetic.create_array(stdev for seq_no, stdev in coref_seq_stdevs))
 	print(COL_DELIM.join(("mean_coref_seq_std", str(mean_coref_seq_stdev))), file=outfile)
 
 
