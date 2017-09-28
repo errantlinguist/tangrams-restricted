@@ -10,7 +10,6 @@ from decimal import Decimal
 from typing import Callable, Dict, FrozenSet, Generic, Iterable, List, Sequence, TypeVar
 
 import numpy as np
-from scipy import stats
 
 import instructor_relevant_tokens_metrics
 
@@ -74,34 +73,32 @@ def set_overlap_high_precision(first: FrozenSet[K], second: FrozenSet[K],
 	return decimal_factory(len(intersection)) / decimal_factory(len(union))
 
 
-def standard_error_mean(values: Sequence[Decimal], stdev: Decimal) -> Decimal:
-	# https://en.wikipedia.org/wiki/Standard_error
-	sample_size = Decimal(len(values))
-	return stdev / sample_size.sqrt()
-
-
 def __create_overlap_aggs_decimal(current_token_sets: Sequence[FrozenSet[str]],
 								  prev_token_sets: Sequence[FrozenSet[str]],
-								  overlap_factory: Callable[[FrozenSet[str], FrozenSet[str]], V]):
+								  overlap_factory: Callable[[FrozenSet[str], FrozenSet[str]], Decimal],
+								  decimal_factory: Callable[[int], Decimal]):
 	overlaps = tuple(
 		overlap_factory(token_set, prev_token_set) for token_set in current_token_sets for prev_token_set in
 		prev_token_sets)
 	mean = statistics.mean(overlaps)
 	stdev = statistics.stdev(overlaps)
-	sem = standard_error_mean(overlaps, stdev)
+	sample_size = decimal_factory(len(overlaps))
+	sem = stdev / sample_size.sqrt()
 	# median = np.median(overlaps)
 	# mad = robust.mad(overlaps)
 	return len(current_token_sets), len(overlaps), mean, stdev, sem
 
 
 def __create_overlap_aggs_numpy(current_token_sets: Sequence[FrozenSet[str]], prev_token_sets: Sequence[FrozenSet[str]],
-								overlap_factory: Callable[[FrozenSet[str], FrozenSet[str]], V]):
+								overlap_factory: Callable[[FrozenSet[str], FrozenSet[str]], V],
+								decimal_factory: Callable[[int], V]):
 	overlaps = np.array(
 		tuple(overlap_factory(token_set, prev_token_set) for token_set in current_token_sets for prev_token_set in
 			  prev_token_sets))
 	mean = np.mean(overlaps)
 	stdev = np.std(overlaps)
-	sem = stats.sem(overlaps)
+	sample_size = decimal_factory(len(overlaps))
+	sem = stdev / sample_size.sqrt()
 	# median = np.median(overlaps)
 	# mad = robust.mad(overlaps)
 	return len(current_token_sets), len(overlaps), mean, stdev, sem
@@ -143,7 +140,8 @@ def __main(args):
 		print("Using numpy for hardware floating-point arithmetic.", file=sys.stderr)
 		decimal_constructor = np.longfloat
 		aggregator = __create_overlap_aggs_numpy
-	overlap_factory = CachingSetOverlapFactory(CachingFactory(decimal_constructor))
+	decimal_factory = CachingFactory(decimal_constructor)
+	overlap_factory = CachingSetOverlapFactory(decimal_factory)
 
 	print("Calculating aggregates.", file=sys.stderr)
 	print(COL_DELIM.join(("seq", "count", "comparisons", "mean", "std", "sem")), file=outfile)
@@ -158,7 +156,7 @@ def __main(args):
 																					   prev_coref_seq_no),
 			  file=sys.stderr)
 
-		aggs = aggregator(current_token_sets, prev_token_sets, overlap_factory)
+		aggs = aggregator(current_token_sets, prev_token_sets, overlap_factory, decimal_factory)
 		row = itertools.chain((current_coref_seq_no,), aggs)
 		print(COL_DELIM.join(str(cell) for cell in row), file=outfile)
 
