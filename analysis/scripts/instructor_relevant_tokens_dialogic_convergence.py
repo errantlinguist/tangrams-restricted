@@ -2,28 +2,52 @@
 
 import argparse
 import csv
+import itertools
+import statistics
 import sys
 from collections import defaultdict
 from decimal import Decimal
-from typing import Callable, Dict, FrozenSet, Iterable, List, TypeVar
+from typing import Callable, Dict, FrozenSet, Generic, Iterable, List, Sequence, TypeVar
 
 import numpy as np
-from statsmodels import robust
+from scipy import stats
 
 import instructor_relevant_tokens_metrics
 
+# from statsmodels import robust
+
 COL_DELIM = "\t"
-T = TypeVar('T')
+K = TypeVar('K')
+V = TypeVar('V')
 
 
-def __create_argparser() -> argparse.ArgumentParser:
-	result = argparse.ArgumentParser(
-		description="Measure referent token type overlap in coreference chains in each game session, using only instructor language to build coreference chains.")
-	result.add_argument("inpath", metavar="INPATH",
-						help="The file to process.")
-	result.add_argument("-t", "--tokens", metavar="COL_NAME", required=True,
-						help="The column to use as relevant tokens.")
-	return result
+class CachingFactory(Generic[K, V]):
+	def __init__(self, factory: Callable[[K], V]):
+		self.factory = factory
+		self.cache = {}
+
+	def __call__(self, key: K) -> V:
+		try:
+			result = self.cache[key]
+		except KeyError:
+			result = self.factory(key)
+			self.cache[key] = result
+		return result
+
+
+class CachingSetOverlapFactory(Generic[K, V]):
+	def __init__(self, decimal_factory: Callable[[int], V]):
+		self.decimal_factory = decimal_factory
+		self.overlap_cache = {}
+
+	def __call__(self, first: FrozenSet[K], second: FrozenSet[K]):
+		key = (first, second)
+		try:
+			result = self.overlap_cache[key]
+		except KeyError:
+			result = set_overlap_high_precision(first, second, self.decimal_factory)
+			self.overlap_cache[key] = result
+		return result
 
 
 def read_nonempty_coref_seq_token_sets(inpath: str, self_coref_seq_no_col_name: str, token_set_col_name: str) -> Dict[
@@ -43,11 +67,56 @@ def read_nonempty_coref_seq_token_sets(inpath: str, self_coref_seq_no_col_name: 
 	return result
 
 
-def set_overlap_high_precision(first: FrozenSet[T], second: FrozenSet[T],
-							   decimal_factory: Callable[[int], T]) -> T:
+def set_overlap_high_precision(first: FrozenSet[K], second: FrozenSet[K],
+							   decimal_factory: Callable[[int], V]) -> V:
 	intersection = first.intersection(second)
 	union = first.union(second)
 	return decimal_factory(len(intersection)) / decimal_factory(len(union))
+
+
+def standard_error_mean(values: Sequence[Decimal], stdev: Decimal) -> Decimal:
+	# https://en.wikipedia.org/wiki/Standard_error
+	sample_size = Decimal(len(values))
+	return stdev / sample_size.sqrt()
+
+
+def __create_overlap_aggs_decimal(current_token_sets: Sequence[FrozenSet[str]],
+								  prev_token_sets: Sequence[FrozenSet[str]],
+								  overlap_factory: Callable[[FrozenSet[str], FrozenSet[str]], V]):
+	overlaps = tuple(
+		overlap_factory(token_set, prev_token_set) for token_set in current_token_sets for prev_token_set in
+		prev_token_sets)
+	mean = statistics.mean(overlaps)
+	stdev = statistics.stdev(overlaps)
+	sem = standard_error_mean(overlaps, stdev)
+	# median = np.median(overlaps)
+	# mad = robust.mad(overlaps)
+	return len(current_token_sets), len(overlaps), mean, stdev, sem
+
+
+def __create_overlap_aggs_numpy(current_token_sets: Sequence[FrozenSet[str]], prev_token_sets: Sequence[FrozenSet[str]],
+								overlap_factory: Callable[[FrozenSet[str], FrozenSet[str]], V]):
+	overlaps = np.array(
+		tuple(overlap_factory(token_set, prev_token_set) for token_set in current_token_sets for prev_token_set in
+			  prev_token_sets))
+	mean = np.mean(overlaps)
+	stdev = np.std(overlaps)
+	sem = stats.sem(overlaps)
+	# median = np.median(overlaps)
+	# mad = robust.mad(overlaps)
+	return len(current_token_sets), len(overlaps), mean, stdev, sem
+
+
+def __create_argparser() -> argparse.ArgumentParser:
+	result = argparse.ArgumentParser(
+		description="Measure referent token type overlap in coreference chains in each game session, using only instructor language to build coreference chains.")
+	result.add_argument("inpath", metavar="INPATH",
+						help="The file to process.")
+	result.add_argument("-p", "--high-precision", action="store_true",
+						help="If this flag is set, values are calculated using arbitrary precision, which is much slower than using hardware floating-point arithmetic.")
+	result.add_argument("-t", "--tokens", metavar="COL_NAME", required=True,
+						help="The column to use as relevant tokens.")
+	return result
 
 
 def __main(args):
@@ -66,27 +135,15 @@ def __main(args):
 	print("Read token sets for {} coreference sequence step(s).".format(len(coref_seq_token_sets)), file=sys.stderr)
 
 	outfile = sys.stdout
-
-	decimal_cache = {}
-
-	def fetch_decimal(value: int) -> np.dtype:
-		try:
-			result = decimal_cache[value]
-		except KeyError:
-			result = np.longfloat(value)
-			decimal_cache[value] = result
-		return result
-
-	overlap_cache = {}
-
-	def fetch_overlap(first: FrozenSet[T], second: FrozenSet[T]) -> Decimal:
-		key = (first, second)
-		try:
-			result = overlap_cache[key]
-		except KeyError:
-			result = set_overlap_high_precision(first, second, fetch_decimal)
-			overlap_cache[key] = result
-		return result
+	if args.high_precision:
+		print("Using arbitrary-precision decimal arithmetic.", file=sys.stderr)
+		decimal_constructor = Decimal
+		aggregator = __create_overlap_aggs_decimal
+	else:
+		print("Using numpy for hardware floating-point arithmetic.", file=sys.stderr)
+		decimal_constructor = np.longfloat
+		aggregator = __create_overlap_aggs_numpy
+	overlap_factory = CachingSetOverlapFactory(CachingFactory(decimal_constructor))
 
 	print("Calculating aggregates.", file=sys.stderr)
 	print(COL_DELIM.join(("seq", "count", "comparisons", "mean", "std", "sem", "median", "mad")), file=outfile)
@@ -97,18 +154,11 @@ def __main(args):
 		prev_coref_seq_no, prev_token_sets = prev_coref_token_sets
 		assert prev_coref_seq_no < current_coref_seq_no
 		print("Calculating overlaps of coref seq. no {} with coref seq. no {}.".format(current_coref_seq_no,
-																					  prev_coref_seq_no),
+																					   prev_coref_seq_no),
 			  file=sys.stderr)
 
-		overlaps = np.array(
-			tuple(fetch_overlap(token_set, prev_token_set) for token_set in current_token_sets for prev_token_set in
-				  prev_token_sets))
-		mean = np.mean(overlaps)
-		stdev = np.std(overlaps)
-		sem = np.std(overlaps)
-		median = np.median(overlaps)
-		mad = robust.mad(overlaps)
-		row = (current_coref_seq_no, len(current_token_sets), len(overlaps), mean, stdev, sem, median, mad)
+		aggs = aggregator(current_token_sets, prev_token_sets, overlap_factory)
+		row = itertools.chain((current_coref_seq_no,), aggs)
 		print(COL_DELIM.join(str(cell) for cell in row), file=outfile)
 
 
