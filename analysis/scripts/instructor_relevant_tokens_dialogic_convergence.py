@@ -3,7 +3,6 @@
 import argparse
 import csv
 import itertools
-import math
 import statistics
 import sys
 from collections import defaultdict
@@ -84,7 +83,7 @@ class SetOverlapAggregatorNumpy(Generic[K, V]):
 		mean = np.mean(overlaps)
 		stdev = np.std(overlaps)
 		sample_size = self.decimal_factory(len(overlaps))
-		sem = stdev / math.sqrt(sample_size)
+		sem = stdev / np.sqrt(sample_size)
 		# median = np.median(overlaps)
 		# mad = robust.mad(overlaps)
 		return len(current_token_sets), len(overlaps), mean, stdev, sem
