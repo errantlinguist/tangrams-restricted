@@ -3,6 +3,7 @@
 import argparse
 import csv
 import itertools
+import math
 import statistics
 import sys
 from collections import defaultdict
@@ -98,7 +99,7 @@ def __create_overlap_aggs_numpy(current_token_sets: Sequence[FrozenSet[str]], pr
 	mean = np.mean(overlaps)
 	stdev = np.std(overlaps)
 	sample_size = decimal_factory(len(overlaps))
-	sem = stdev / sample_size.sqrt()
+	sem = stdev / math.sqrt(sample_size)
 	# median = np.median(overlaps)
 	# mad = robust.mad(overlaps)
 	return len(current_token_sets), len(overlaps), mean, stdev, sem
