@@ -50,6 +50,44 @@ class CachingSetOverlapFactory(Generic[K, V]):
 		return result
 
 
+class SetOverlapAggregatorDecimal(Generic[K, V]):
+	def __init__(self, decimal_constructor: Callable[[int], V]):
+		self.decimal_factory = CachingFactory(decimal_constructor)
+		self.overlap_factory = CachingSetOverlapFactory(self.decimal_factory)
+
+	def __call__(self, current_token_sets: Sequence[FrozenSet[str]],
+				 prev_token_sets: Sequence[FrozenSet[str]]):
+		overlaps = tuple(
+			self.overlap_factory(token_set, prev_token_set) for token_set in current_token_sets for prev_token_set in
+			prev_token_sets)
+		mean = statistics.mean(overlaps)
+		stdev = statistics.stdev(overlaps)
+		sample_size = self.decimal_factory(len(overlaps))
+		sem = stdev / sample_size.sqrt()
+		# median = np.median(overlaps)
+		# mad = robust.mad(overlaps)
+		return len(current_token_sets), len(overlaps), mean, stdev, sem
+
+
+class SetOverlapAggregatorNumpy(Generic[K, V]):
+	def __init__(self, decimal_constructor: Callable[[int], V]):
+		self.decimal_factory = CachingFactory(decimal_constructor)
+		self.overlap_factory = CachingSetOverlapFactory(self.decimal_factory)
+
+	def __call__(self, current_token_sets: Sequence[FrozenSet[K]], prev_token_sets: Sequence[FrozenSet[K]]):
+		overlaps = np.array(
+			tuple(self.overlap_factory(token_set, prev_token_set) for token_set in current_token_sets for prev_token_set
+				  in
+				  prev_token_sets))
+		mean = np.mean(overlaps)
+		stdev = np.std(overlaps)
+		sample_size = self.decimal_factory(len(overlaps))
+		sem = stdev / math.sqrt(sample_size)
+		# median = np.median(overlaps)
+		# mad = robust.mad(overlaps)
+		return len(current_token_sets), len(overlaps), mean, stdev, sem
+
+
 def read_nonempty_coref_seq_token_sets(inpath: str, self_coref_seq_no_col_name: str, token_set_col_name: str) -> Dict[
 	int, List[FrozenSet[str]]]:
 	result = defaultdict(list)
@@ -72,37 +110,6 @@ def set_overlap_high_precision(first: FrozenSet[K], second: FrozenSet[K],
 	intersection = first.intersection(second)
 	union = first.union(second)
 	return decimal_factory(len(intersection)) / decimal_factory(len(union))
-
-
-def __create_overlap_aggs_decimal(current_token_sets: Sequence[FrozenSet[str]],
-								  prev_token_sets: Sequence[FrozenSet[str]],
-								  overlap_factory: Callable[[FrozenSet[str], FrozenSet[str]], Decimal],
-								  decimal_factory: Callable[[int], Decimal]):
-	overlaps = tuple(
-		overlap_factory(token_set, prev_token_set) for token_set in current_token_sets for prev_token_set in
-		prev_token_sets)
-	mean = statistics.mean(overlaps)
-	stdev = statistics.stdev(overlaps)
-	sample_size = decimal_factory(len(overlaps))
-	sem = stdev / sample_size.sqrt()
-	# median = np.median(overlaps)
-	# mad = robust.mad(overlaps)
-	return len(current_token_sets), len(overlaps), mean, stdev, sem
-
-
-def __create_overlap_aggs_numpy(current_token_sets: Sequence[FrozenSet[str]], prev_token_sets: Sequence[FrozenSet[str]],
-								overlap_factory: Callable[[FrozenSet[str], FrozenSet[str]], V],
-								decimal_factory: Callable[[int], V]):
-	overlaps = np.array(
-		tuple(overlap_factory(token_set, prev_token_set) for token_set in current_token_sets for prev_token_set in
-			  prev_token_sets))
-	mean = np.mean(overlaps)
-	stdev = np.std(overlaps)
-	sample_size = decimal_factory(len(overlaps))
-	sem = stdev / math.sqrt(sample_size)
-	# median = np.median(overlaps)
-	# mad = robust.mad(overlaps)
-	return len(current_token_sets), len(overlaps), mean, stdev, sem
 
 
 def __create_argparser() -> argparse.ArgumentParser:
@@ -135,14 +142,10 @@ def __main(args):
 	outfile = sys.stdout
 	if args.high_precision:
 		print("Using arbitrary-precision decimal arithmetic.", file=sys.stderr)
-		decimal_constructor = Decimal
-		aggregator = __create_overlap_aggs_decimal
+		aggregator = SetOverlapAggregatorDecimal(Decimal)
 	else:
 		print("Using numpy for hardware floating-point arithmetic.", file=sys.stderr)
-		decimal_constructor = np.longfloat
-		aggregator = __create_overlap_aggs_numpy
-	decimal_factory = CachingFactory(decimal_constructor)
-	overlap_factory = CachingSetOverlapFactory(decimal_factory)
+		aggregator = SetOverlapAggregatorNumpy(np.longfloat)
 
 	print("Calculating aggregates.", file=sys.stderr)
 	print(COL_DELIM.join(("seq", "count", "comparisons", "mean", "std", "sem")), file=outfile)
@@ -157,7 +160,7 @@ def __main(args):
 																					   prev_coref_seq_no),
 			  file=sys.stderr)
 
-		aggs = aggregator(current_token_sets, prev_token_sets, overlap_factory, decimal_factory)
+		aggs = aggregator(current_token_sets, prev_token_sets)
 		row = itertools.chain((current_coref_seq_no,), aggs)
 		print(COL_DELIM.join(str(cell) for cell in row), file=outfile)
 
