@@ -6,8 +6,8 @@ from statsmodels import robust
 from common import COL_DELIM, parse_token_count_ranks
 
 
-def __rr(value: str) -> numpy.float:
-	return numpy.float(1.0) / numpy.float(value)
+def __rr(value: str) -> numpy.longfloat:
+	return numpy.longfloat(1.0) / numpy.longfloat(value)
 
 
 if __name__ == "__main__":

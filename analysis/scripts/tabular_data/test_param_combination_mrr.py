@@ -45,7 +45,7 @@ def __main(infile_paths, input_param_name_regexes: Iterable[str], outfile: IO[st
 
 
 def __rr(value):
-	return numpy.float_(1.0 / value)
+	return numpy.longfloat_(1.0 / value)
 
 
 if __name__ == "__main__":
