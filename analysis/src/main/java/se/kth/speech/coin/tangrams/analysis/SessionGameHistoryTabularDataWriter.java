@@ -16,8 +16,11 @@
 */
 package se.kth.speech.coin.tangrams.analysis;
 
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.nio.charset.Charset;
 import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -36,8 +39,10 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.NavigableMap;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.TreeMap;
 import java.util.function.BiFunction;
 import java.util.regex.Pattern;
 import java.util.stream.Collector;
@@ -49,7 +54,9 @@ import javax.xml.bind.JAXBException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.eclipsesource.json.Json;
 import com.eclipsesource.json.JsonObject;
+import com.eclipsesource.json.JsonValue;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -181,7 +188,63 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 	}
 
 	private enum Metadatum {
-		END_SCORE, ENTITY_COUNT, EVENT_COUNT, GAME_DURATION, GAME_ID, INITIAL_INSTRUCTOR_ID, ROUND_COUNT, SOURCE_PARTICIPANT_IDS, START_TIME;
+		END_SCORE {
+			@Override
+			protected Integer parseValue(final String value) {
+				return Integer.valueOf(value);
+			}
+		},
+		ENTITY_COUNT {
+			@Override
+			protected Integer parseValue(final String value) {
+				return Integer.valueOf(value);
+			}
+		},
+		EVENT_COUNT {
+			@Override
+			protected Integer parseValue(final String value) {
+				return Integer.valueOf(value);
+			}
+		},
+		GAME_DURATION {
+			@Override
+			protected BigDecimal parseValue(final String value) {
+				return new BigDecimal(value);
+			}
+		},
+		GAME_ID {
+			@Override
+			protected String parseValue(final String value) {
+				return value;
+			}
+		},
+		INITIAL_INSTRUCTOR_ID {
+			@Override
+			protected String parseValue(final String value) {
+				return value;
+			}
+		},
+		ROUND_COUNT {
+			@Override
+			protected Integer parseValue(final String value) {
+				return Integer.valueOf(value);
+			}
+		},
+		SOURCE_PARTICIPANT_IDS {
+			@Override
+			protected JsonObject parseValue(final String value) {
+				final JsonValue parsedVal = Json.parse(value);
+				return (JsonObject) parsedVal;
+			}
+		},
+		START_TIME {
+			@Override
+			protected ZonedDateTime parseValue(final String value) {
+				return OUTPUT_DATETIME_FORMATTER.parse(value, ZonedDateTime::from);
+			}
+		};
+
+		protected abstract Object parseValue(String value);
 	}
 
 	private static final GameManagementEvent GAME_ROUND_DELIMITING_EVENT_TYPE = GameManagementEvent.NEXT_TURN_REQUEST;
@@ -192,15 +255,18 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 
 	private static final ZoneId ORIGINAL_EXPERIMENT_TIMEZONE = ZoneId.of("Europe/Stockholm");
 
+	private static final Charset OUTPUT_CHARSET = LoggedEvents.CHARSET;
+
 	private static final DateTimeFormatter OUTPUT_DATETIME_FORMATTER = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 
 	private static final Collector<CharSequence, ?, String> TABLE_ROW_CELL_JOINER;
 
-	private static final String TABLE_STRING_REPR_COL_DELIMITER;
+	private static final Pattern TABLE_STRING_REPR_COL_DELIMITER_PATTERN;
 
 	static {
-		TABLE_STRING_REPR_COL_DELIMITER = "\t";
-		TABLE_ROW_CELL_JOINER = Collectors.joining(TABLE_STRING_REPR_COL_DELIMITER);
+		final String tableStrReprColDelim = "\t";
+		TABLE_STRING_REPR_COL_DELIMITER_PATTERN = Pattern.compile(tableStrReprColDelim);
+		TABLE_ROW_CELL_JOINER = Collectors.joining(tableStrReprColDelim);
 
 		NULL_VALUE_REPR = "?";
 	}
@@ -222,6 +288,74 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 		final JsonObject result = new JsonObject();
 		for (final Entry<String, String> entry : entries) {
 			result.add(entry.getKey(), entry.getValue());
+		}
+		return result;
+	}
+
+	// private static Optional<Entry<Metadatum, Object>> parseMetadatumRow(final
+	// String[] rowCells) {
+	// Optional<Entry<Metadatum, Object>> result;
+	// if (rowCells.length != 2) {
+	// throw new IllegalArgumentException(
+	// String.format("Row %s is not a valid metadatum-value pair.",
+	// Arrays.toString(rowCells)));
+	// } else {
+	// result = Optional.empty();
+	// final String metadatumCell = rowCells[0];
+	// try {
+	// final Metadatum metadatum = Metadatum.valueOf(metadatumCell);
+	// final Object value = metadatum.parseValue(rowCells[1]);
+	// result = Optional.of(Pair.of(metadatum, value));
+	// } catch (final IllegalArgumentException e) {
+	// LOGGER.info("Row key \"{}\" is not a known constant metadatum;
+	// Ignoring.", metadatumCell);
+	// }
+	// }
+	// return result;
+	// }
+
+	private static void persistMetadata(final Map<Metadatum, String> metadataValues, final Path outfilePath)
+			throws IOException {
+		// NOTE: This is not atomic; The OS could write to the file between its
+		// reading and rewriting
+		final NavigableMap<String, String> unifiedMetadata = readMetadata(outfilePath);
+		metadataValues.forEach((metadatum, value) -> {
+			unifiedMetadata.put(metadatum.toString(), value);
+		});
+
+		{
+			final Stream<Stream<String>> metadataRows = unifiedMetadata.entrySet().stream()
+					.map(entry -> new String[] { entry.getKey(), entry.getValue() }).map(Arrays::stream);
+			final Stream<String> metadataFileRows = metadataRows.map(stream -> stream.collect(TABLE_ROW_CELL_JOINER));
+			Files.write(outfilePath, (Iterable<String>) metadataFileRows::iterator, OUTPUT_CHARSET,
+					StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+		}
+	}
+
+	private static NavigableMap<String, String> readMetadata(final Path infilePath) throws IOException {
+		// final Map<String, String> result =
+		// Maps.newHashMapWithExpectedSize(Math.max(Metadatum.values().length,
+		// 16));
+		final NavigableMap<String, String> result = new TreeMap<>();
+		try (BufferedReader metadataRowReader = Files.newBufferedReader(infilePath, OUTPUT_CHARSET)) {
+			for (String row = metadataRowReader.readLine(); row != null; row = metadataRowReader.readLine()) {
+				final String[] rowCells = TABLE_STRING_REPR_COL_DELIMITER_PATTERN.split(row);
+				if (rowCells.length != 2) {
+					throw new IllegalArgumentException(
+							String.format("Row is not a valid metadatum-value pair: %s", Arrays.toString(rowCells)));
+				} else {
+					final String metadatumCell = rowCells[0];
+					final String value = rowCells[1];
+					final String extantValue = result.put(metadatumCell, value);
+					if (extantValue != null) {
+						throw new IllegalArgumentException(
+								String.format("More than one row found for metadatum \"%s\".", metadatumCell));
+					}
+				}
+
+			}
+		} catch (final FileNotFoundException e) {
+			LOGGER.debug("No already-persisted metadata found at \"{}\".", infilePath);
 		}
 		return result;
 	}
@@ -321,49 +455,44 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 						final Path outfilePath = infileParentDir == null ? Paths.get(outfileName)
 								: infileParentDir.resolve(outfileName);
 						LOGGER.info("Writing tabular event data to \"{}\".", outfilePath);
-						Files.write(outfilePath, (Iterable<String>) fileRows::iterator, LoggedEvents.CHARSET,
+						Files.write(outfilePath, (Iterable<String>) fileRows::iterator, OUTPUT_CHARSET,
 								StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
 					}
 				}
 
 				{
-					final Map<Metadatum, Object> metadataValues = new EnumMap<>(Metadatum.class);
-					metadataValues.put(Metadatum.END_SCORE, gameScore);
-					metadataValues.put(Metadatum.ENTITY_COUNT, entityCount);
-					metadataValues.put(Metadatum.EVENT_COUNT, eventId);
+					final Map<Metadatum, String> metadataValues = new EnumMap<>(Metadatum.class);
+					metadataValues.put(Metadatum.END_SCORE, Integer.toString(gameScore));
+					metadataValues.put(Metadatum.ENTITY_COUNT, Integer.toString(entityCount));
+					metadataValues.put(Metadatum.EVENT_COUNT, Integer.toString(eventId));
 					{
 						final BigDecimal durationInSecs = TimestampArithmetic
 								.toDecimalSeconds(Duration.between(history.getStartTime(), maxEventTime));
-						metadataValues.put(Metadatum.GAME_DURATION, durationInSecs);
+						metadataValues.put(Metadatum.GAME_DURATION, durationInSecs.toString());
 					}
 					metadataValues.put(Metadatum.GAME_ID, canonicalGame.getGameId());
 					{
 						final Entry<Map<String, String>, String> sourceParticipantIds = new SourceParticipantIdMapFactory()
 								.apply(infileSessionData, sessionDiagMgr);
 						metadataValues.put(Metadatum.SOURCE_PARTICIPANT_IDS,
-								createJsonMapObject(sourceParticipantIds.getKey().entrySet()));
+								createJsonMapObject(sourceParticipantIds.getKey().entrySet()).toString());
 						metadataValues.put(Metadatum.INITIAL_INSTRUCTOR_ID, sourceParticipantIds.getValue());
 
 					}
-					metadataValues.put(Metadatum.ROUND_COUNT, gameRoundId);
+					metadataValues.put(Metadatum.ROUND_COUNT, Integer.toString(gameRoundId));
 					{
 						final ZonedDateTime zonedGameStart = history.getStartTime()
 								.atZone(ORIGINAL_EXPERIMENT_TIMEZONE);
 						metadataValues.put(Metadatum.START_TIME, OUTPUT_DATETIME_FORMATTER.format(zonedGameStart));
 					}
 					assert metadataValues.size() == Metadatum.values().length;
+
 					{
 						final String outfileName = createEventsMetadataOutfileName();
 						final Path outfilePath = infileParentDir == null ? Paths.get(outfileName)
 								: infileParentDir.resolve(outfileName);
 						LOGGER.info("Writing metadata to \"{}\".", outfilePath);
-						final Stream<Stream<Object>> metadataRows = Arrays.stream(Metadatum.values())
-								.map(metadatum -> new Object[] { metadatum, metadataValues.get(metadatum) })
-								.map(Arrays::stream);
-						final Stream<String> metadataFileRows = metadataRows
-								.map(stream -> stream.map(Object::toString).collect(TABLE_ROW_CELL_JOINER));
-						Files.write(outfilePath, (Iterable<String>) metadataFileRows::iterator, LoggedEvents.CHARSET,
-								StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+						persistMetadata(metadataValues, outfilePath);
 					}
 				}
 			}
