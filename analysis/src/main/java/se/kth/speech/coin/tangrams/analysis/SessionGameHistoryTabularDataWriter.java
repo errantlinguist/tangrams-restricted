@@ -188,7 +188,7 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 
 	}
 
-	private enum Metadatum {
+	private enum EventMetadatum {
 		END_SCORE {
 			@Override
 			protected Integer parseValue(final String value) {
@@ -258,8 +258,8 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 		public int compare(final String o1, final String o2) {
 			int result;
 
-			final Metadatum m1 = parseNullableMetadatum(o1);
-			final Metadatum m2 = parseNullableMetadatum(o2);
+			final EventMetadatum m1 = parseNullableMetadatum(o1);
+			final EventMetadatum m2 = parseNullableMetadatum(o2);
 			if (m1 == null) {
 				if (m2 == null) {
 					result = o1.compareTo(o2);
@@ -275,13 +275,13 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 			return result;
 		}
 
-		private Metadatum parseNullableMetadatum(final String name) {
-			Metadatum result = null;
+		private EventMetadatum parseNullableMetadatum(final String name) {
+			EventMetadatum result = null;
 			try {
-				result = Metadatum.valueOf(name);
+				result = EventMetadatum.valueOf(name);
 			} catch (final IllegalArgumentException e) {
 				LOGGER.debug(String.format("Unable to parse \"%s\" as an instance of %s; Returning null.", name,
-						Metadatum.class), e);
+						EventMetadatum.class), e);
 			}
 			return result;
 		}
@@ -321,27 +321,39 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 		}
 	}
 
-	// private static Optional<Entry<Metadatum, Object>> parseMetadatumRow(final
-	// String[] rowCells) {
-	// Optional<Entry<Metadatum, Object>> result;
-	// if (rowCells.length != 2) {
-	// throw new IllegalArgumentException(
-	// String.format("Row %s is not a valid metadatum-value pair.",
-	// Arrays.toString(rowCells)));
-	// } else {
-	// result = Optional.empty();
-	// final String metadatumCell = rowCells[0];
-	// try {
-	// final Metadatum metadatum = Metadatum.valueOf(metadatumCell);
-	// final Object value = metadatum.parseValue(rowCells[1]);
-	// result = Optional.of(Pair.of(metadatum, value));
-	// } catch (final IllegalArgumentException e) {
-	// LOGGER.info("Row key \"{}\" is not a known constant metadatum;
-	// Ignoring.", metadatumCell);
-	// }
-	// }
-	// return result;
-	// }
+	private static Map<EventMetadatum, String> createEventMetadataReprMap(final Map<String, String> playerSourceIds,
+			final SessionGame canonicalGame, final int gameScore, final int entityCount, final int eventCount,
+			final int roundCount, final LocalDateTime startTime, final LocalDateTime maxEventTime) {
+		assert roundCount <= eventCount;
+		assert startTime.isBefore(maxEventTime);
+
+		final Map<EventMetadatum, String> result = new EnumMap<>(EventMetadatum.class);
+
+		result.put(EventMetadatum.END_SCORE, Integer.toString(gameScore));
+		result.put(EventMetadatum.ENTITY_COUNT, Integer.toString(entityCount));
+		result.put(EventMetadatum.EVENT_COUNT, Integer.toString(eventCount));
+		{
+			final BigDecimal durationInSecs = TimestampArithmetic
+					.toDecimalSeconds(Duration.between(startTime, maxEventTime));
+			result.put(EventMetadatum.GAME_DURATION, durationInSecs.toString());
+		}
+		result.put(EventMetadatum.GAME_ID, canonicalGame.getGameId());
+		{
+			final Entry<Map<String, String>, String> sourceParticipantIds = new SourceParticipantIdMapFactory()
+					.apply(playerSourceIds, canonicalGame);
+			result.put(EventMetadatum.SOURCE_PARTICIPANT_IDS,
+					createJsonMapObject(sourceParticipantIds.getKey().entrySet()).toString());
+			result.put(EventMetadatum.INITIAL_INSTRUCTOR_ID, sourceParticipantIds.getValue());
+
+		}
+		result.put(EventMetadatum.ROUND_COUNT, Integer.toString(roundCount));
+		{
+			final ZonedDateTime zonedGameStart = startTime.atZone(ORIGINAL_EXPERIMENT_TIMEZONE);
+			result.put(EventMetadatum.START_TIME, OUTPUT_DATETIME_FORMATTER.format(zonedGameStart));
+		}
+		assert result.size() == EventMetadatum.values().length;
+		return result;
+	}
 
 	private static JsonObject createJsonMapObject(final Iterable<Entry<String, String>> entries) {
 		final JsonObject result = new JsonObject();
@@ -351,11 +363,11 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 		return result;
 	}
 
-	private static void persistMetadata(final Map<Metadatum, String> metadataValues, final Path outfilePath)
+	private static void persistEventMetadata(final Map<EventMetadatum, String> metadataValues, final Path outfilePath)
 			throws IOException {
 		// NOTE: This is not atomic; The OS could write to the file between its
 		// reading and rewriting
-		final NavigableMap<String, String> unifiedMetadata = readMetadata(outfilePath);
+		final NavigableMap<String, String> unifiedMetadata = readEventMetadata(outfilePath);
 		metadataValues.forEach((metadatum, value) -> {
 			unifiedMetadata.put(metadatum.toString(), value);
 		});
@@ -369,7 +381,7 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 		}
 	}
 
-	private static NavigableMap<String, String> readMetadata(final Path infilePath) throws IOException {
+	private static NavigableMap<String, String> readEventMetadata(final Path infilePath) throws IOException {
 		// final Map<String, String> result =
 		// Maps.newHashMapWithExpectedSize(Math.max(Metadatum.values().length,
 		// 16));
@@ -498,38 +510,15 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 				}
 
 				{
-					final Map<Metadatum, String> metadataValues = new EnumMap<>(Metadatum.class);
-					metadataValues.put(Metadatum.END_SCORE, Integer.toString(gameScore));
-					metadataValues.put(Metadatum.ENTITY_COUNT, Integer.toString(entityCount));
-					metadataValues.put(Metadatum.EVENT_COUNT, Integer.toString(eventId));
-					{
-						final BigDecimal durationInSecs = TimestampArithmetic
-								.toDecimalSeconds(Duration.between(history.getStartTime(), maxEventTime));
-						metadataValues.put(Metadatum.GAME_DURATION, durationInSecs.toString());
-					}
-					metadataValues.put(Metadatum.GAME_ID, canonicalGame.getGameId());
-					{
-						final Entry<Map<String, String>, String> sourceParticipantIds = new SourceParticipantIdMapFactory()
-								.apply(infileSessionData, sessionDiagMgr);
-						metadataValues.put(Metadatum.SOURCE_PARTICIPANT_IDS,
-								createJsonMapObject(sourceParticipantIds.getKey().entrySet()).toString());
-						metadataValues.put(Metadatum.INITIAL_INSTRUCTOR_ID, sourceParticipantIds.getValue());
-
-					}
-					metadataValues.put(Metadatum.ROUND_COUNT, Integer.toString(gameRoundId));
-					{
-						final ZonedDateTime zonedGameStart = history.getStartTime()
-								.atZone(ORIGINAL_EXPERIMENT_TIMEZONE);
-						metadataValues.put(Metadatum.START_TIME, OUTPUT_DATETIME_FORMATTER.format(zonedGameStart));
-					}
-					assert metadataValues.size() == Metadatum.values().length;
-
+					final Map<EventMetadatum, String> metadataValues = createEventMetadataReprMap(
+							infileSessionData.getPlayerData().getPlayerSourceIds(), canonicalGame, gameScore,
+							entityCount, eventId, gameRoundId, history.getStartTime(), maxEventTime);
 					{
 						final String outfileName = createEventsMetadataOutfileName();
 						final Path outfilePath = infileParentDir == null ? Paths.get(outfileName)
 								: infileParentDir.resolve(outfileName);
 						LOGGER.info("Writing metadata to \"{}\".", outfilePath);
-						persistMetadata(metadataValues, outfilePath);
+						persistEventMetadata(metadataValues, outfilePath);
 					}
 				}
 			}

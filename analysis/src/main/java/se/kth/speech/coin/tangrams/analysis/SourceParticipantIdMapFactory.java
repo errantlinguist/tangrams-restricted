@@ -32,7 +32,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.Maps;
 
-import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
 import se.kth.speech.coin.tangrams.game.PlayerRole;
 
 /**
@@ -41,7 +40,7 @@ import se.kth.speech.coin.tangrams.game.PlayerRole;
  *
  */
 final class SourceParticipantIdMapFactory
-		implements BiFunction<SessionDataManager, SessionGameManager, Entry<Map<String, String>, String>> {
+		implements BiFunction<Map<String, String>, SessionGame, Entry<Map<String, String>, String>> {
 
 	public static final List<PlayerRole> DEFAULT_PLAYER_ROLE_ORDERING = Collections
 			.unmodifiableList(createDefaultPlayerRoleOrderingList());
@@ -79,11 +78,9 @@ final class SourceParticipantIdMapFactory
 	}
 
 	@Override
-	public Entry<Map<String, String>, String> apply(final SessionDataManager sessionData,
-			final SessionGameManager sessionGameMgr) {
-		final BiMap<PlayerRole, String> playerRoles = sessionGameMgr.getCanonicalGame().getHistory().getInitialState()
-				.getPlayerRoles();
-		final Map<String, String> playerSourceIds = sessionData.getPlayerData().getPlayerSourceIds();
+	public Entry<Map<String, String>, String> apply(final Map<String, String> playerSourceIds,
+			final SessionGame canonicalGame) {
+		final BiMap<PlayerRole, String> playerRoles = canonicalGame.getHistory().getInitialState().getPlayerRoles();
 		final Map<String, String> sourceParticipantIds = createSourceParticipantIdMap(playerSourceIds, playerRoles);
 		return Pair.of(sourceParticipantIds,
 				playerRoleOrdering.stream().map(playerRoles::get).filter(Objects::nonNull).findFirst().get());
