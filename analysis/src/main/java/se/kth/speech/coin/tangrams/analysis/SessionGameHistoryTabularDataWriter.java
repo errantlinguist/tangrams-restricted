@@ -74,6 +74,7 @@ import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionContextFactory;
 import se.kth.speech.coin.tangrams.analysis.features.ImageEdgeCounter;
 import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
+import se.kth.speech.coin.tangrams.game.PlayerRole;
 import se.kth.speech.coin.tangrams.iristk.EventTimes;
 import se.kth.speech.coin.tangrams.iristk.EventTypeMatcher;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
@@ -248,7 +249,7 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 	}
 
 	private enum ParticipantMetadatum {
-		SOURCE_ID
+		INITIAL_ROLE, SOURCE_ID
 	}
 
 	private static final int ESTIMATED_PARTICIPANT_METADATUM_COUNT = 16;
@@ -399,11 +400,24 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 	}
 
 	private static Table<ParticipantMetadatum, String, String> createParticipantMetadataReprTable(
-			final Map<String, String> participantSourceIds) {
+			final SessionGame canonicalGame, final BiMap<String, String> playerSourceIds,
+			final BiMap<String, String> participantSourceIds) {
 		final List<String> sortedParticipantIds = new ArrayList<>(participantSourceIds.keySet());
 		sortedParticipantIds.sort(PARTICIPANT_ID_ORDERING_COMPARATOR);
 		final Table<ParticipantMetadatum, String, String> result = ArrayTable
 				.create(Arrays.asList(ParticipantMetadatum.values()), sortedParticipantIds);
+
+		{
+			final BiMap<String, PlayerRole> playerRoles = canonicalGame.getHistory().getInitialState().getPlayerRoles()
+					.inverse();
+			final BiMap<String, String> sourceParticipantIds = participantSourceIds.inverse();
+			playerRoles.forEach((playerId, role) -> {
+				final String sourceId = playerSourceIds.get(playerId);
+				final String participantId = sourceParticipantIds.get(sourceId);
+				result.put(ParticipantMetadatum.INITIAL_ROLE, participantId, role.toString());
+			});
+		}
+
 		for (final Entry<String, String> participantSourceId : participantSourceIds.entrySet()) {
 			result.put(ParticipantMetadatum.SOURCE_ID, participantSourceId.getKey(), participantSourceId.getValue());
 		}
@@ -656,8 +670,9 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 					}
 				}
 
+				final BiMap<String, String> playerSourceIds = infileSessionData.getPlayerData().getPlayerSourceIds();
 				final Entry<BiMap<String, String>, String> sourceParticipantIds = new SourceParticipantIdMapFactory()
-						.apply(infileSessionData.getPlayerData().getPlayerSourceIds(), canonicalGame);
+						.apply(playerSourceIds, canonicalGame);
 				{
 					final Map<EventMetadatum, String> metadataValues = createEventMetadataReprMap(canonicalGame,
 							sourceParticipantIds.getValue(), gameScore, entityCount, eventId, gameRoundId,
@@ -673,7 +688,7 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 
 				{
 					final Table<ParticipantMetadatum, String, String> metadataValues = createParticipantMetadataReprTable(
-							sourceParticipantIds.getKey().inverse());
+							canonicalGame, playerSourceIds, sourceParticipantIds.getKey().inverse());
 					{
 						final String outfileName = createParticipantMetadataOutfileName();
 						final Path outfilePath = infileParentDir == null ? Paths.get(outfileName)
