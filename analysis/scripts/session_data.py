@@ -8,6 +8,7 @@ DECIMAL_VALUE_TYPE = Decimal
 ENCODING = 'utf-8'
 
 _DECIMAL_INFINITY = DECIMAL_VALUE_TYPE('Infinity')
+_PARTICIPANT_METADATA_HEADER_ROW_NAME = "PARTICIPANT_ID"
 
 __DECIMAL_VALUE_POOL = {}
 
@@ -57,18 +58,23 @@ class DataColumn(Enum):
 
 
 @unique
-class MetadataColumn(Enum):
+class EventMetadataRow(Enum):
 	ENTITY_COUNT = "ENTITY_COUNT"
 	EVENT_COUNT = "EVENT_COUNT"
 	INITIAL_INSTRUCTOR_ID = "INITIAL_INSTRUCTOR_ID"
-	SOURCE_PARTICIPANT_IDS = "SOURCE_PARTICIPANT_IDS"
 	ROUND_COUNT = "ROUND_COUNT"
+
+
+@unique
+class ParticipantMetadataRow(Enum):
+	SOURCE_ID = "SOURCE_ID"
 
 
 @unique
 class SessionDatum(Enum):
 	EVENTS = "events.tsv"
 	EVENTS_METADATA = "events-metadata.tsv"
+	PARTICIPANT_METADATA = "participant-metadata.tsv"
 	UTTS = "utts.xml"
 
 	@property
@@ -83,6 +89,8 @@ class SessionData(object):
 	def __init__(self, session_file_prefix: str):
 		self.events = os.path.join(session_file_prefix, SessionDatum.EVENTS.canonical_filename)
 		self.events_metadata = os.path.join(session_file_prefix, SessionDatum.EVENTS_METADATA.canonical_filename)
+		self.participant_metadata = os.path.join(session_file_prefix,
+												 SessionDatum.PARTICIPANT_METADATA.canonical_filename)
 		self.utts = os.path.join(session_file_prefix, SessionDatum.UTTS.canonical_filename)
 
 	def __eq__(self, other):
@@ -98,23 +106,39 @@ class SessionData(object):
 	def __repr__(self):
 		return self.__class__.__name__ + str(self.__dict__)
 
-	def read_events_metadata(self, ) -> Dict[str, str]:
+	def read_events_metadata(self) -> Dict[str, str]:
 		with open(self.events_metadata, 'r', encoding=ENCODING) as infile:
 			rows = csv.reader(infile, dialect="excel-tab")
 			return dict(rows)
 
 	def read_metadata_entity_count(self) -> int:
-		return int(self.read_metadatum_value(MetadataColumn.ENTITY_COUNT))
+		return int(self.read_metadatum_value(EventMetadataRow.ENTITY_COUNT))
 
 	def read_metadata_event_count(self) -> int:
-		return int(self.read_metadatum_value(MetadataColumn.EVENT_COUNT))
+		return int(self.read_metadatum_value(EventMetadataRow.EVENT_COUNT))
 
 	def read_metadata_round_count(self) -> int:
-		return int(self.read_metadatum_value(MetadataColumn.ROUND_COUNT))
+		return int(self.read_metadatum_value(EventMetadataRow.ROUND_COUNT))
 
-	def read_metadatum_value(self, metadatum: MetadataColumn):
+	def read_metadatum_value(self, metadatum: EventMetadataRow):
 		events_metadata = self.read_events_metadata()
 		return events_metadata[metadatum.value]
+
+	def read_participant_metadata(self) -> Dict[str, Dict[str, str]]:
+		result = {}
+		with open(self.participant_metadata, 'r', encoding=ENCODING) as infile:
+			rows = csv.reader(infile, dialect="excel-tab")
+			headed_rows = dict((row[0], row[1:]) for row in rows)
+		participant_ids = headed_rows[_PARTICIPANT_METADATA_HEADER_ROW_NAME]
+		participant_id_idxs = tuple((participant_id, idx) for (idx, participant_id) in enumerate(participant_ids))
+		non_header_rows = ((metadatum_name, participant_values) for (metadatum_name, participant_values) in
+						   headed_rows.items() if metadatum_name != _PARTICIPANT_METADATA_HEADER_ROW_NAME)
+		for metadatum_name, participant_values in non_header_rows:
+			participant_value_dict = dict(
+				(participant_id, participant_values[idx]) for (participant_id, idx) in participant_id_idxs)
+			result[metadatum_name] = participant_value_dict
+
+		return result
 
 	def read_round_start_end_times(self) -> Iterator[Tuple[DECIMAL_VALUE_TYPE, DECIMAL_VALUE_TYPE]]:
 		return session_round_start_end_times(iter(self.read_round_start_times()))

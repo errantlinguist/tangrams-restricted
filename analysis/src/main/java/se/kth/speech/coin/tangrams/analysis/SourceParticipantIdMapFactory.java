@@ -30,7 +30,7 @@ import java.util.function.BiFunction;
 import org.apache.commons.lang3.tuple.Pair;
 
 import com.google.common.collect.BiMap;
-import com.google.common.collect.Maps;
+import com.google.common.collect.HashBiMap;
 
 import se.kth.speech.coin.tangrams.game.PlayerRole;
 
@@ -40,7 +40,7 @@ import se.kth.speech.coin.tangrams.game.PlayerRole;
  *
  */
 final class SourceParticipantIdMapFactory
-		implements BiFunction<Map<String, String>, SessionGame, Entry<Map<String, String>, String>> {
+		implements BiFunction<BiMap<String, String>, SessionGame, Entry<BiMap<String, String>, String>> {
 
 	public static final List<PlayerRole> DEFAULT_PLAYER_ROLE_ORDERING = Collections
 			.unmodifiableList(createDefaultPlayerRoleOrderingList());
@@ -78,20 +78,20 @@ final class SourceParticipantIdMapFactory
 	}
 
 	@Override
-	public Entry<Map<String, String>, String> apply(final Map<String, String> playerSourceIds,
+	public Entry<BiMap<String, String>, String> apply(final BiMap<String, String> playerSourceIds,
 			final SessionGame canonicalGame) {
 		final BiMap<PlayerRole, String> playerRoles = canonicalGame.getHistory().getInitialState().getPlayerRoles();
-		final Map<String, String> sourceParticipantIds = createSourceParticipantIdMap(playerSourceIds, playerRoles);
+		final BiMap<String, String> sourceParticipantIds = createSourceParticipantIdMap(playerSourceIds, playerRoles);
 		return Pair.of(sourceParticipantIds,
 				playerRoleOrdering.stream().map(playerRoles::get).filter(Objects::nonNull).findFirst().get());
 	}
 
-	private Map<String, String> createSourceParticipantIdMap(final Map<String, String> playerSourceIds,
+	private BiMap<String, String> createSourceParticipantIdMap(final Map<String, String> playerSourceIds,
 			final Map<PlayerRole, String> playerRoles) {
 		final Iterator<String> newParticipantIdIter = validParticipantIds.iterator();
 
-		final Map<String, String> result = Maps.newHashMapWithExpectedSize(
-				Math.min(playerSourceIds.size(), Math.min(playerRoles.size(), playerRoleOrdering.size())));
+		final BiMap<String, String> result = HashBiMap
+				.create(Math.min(playerSourceIds.size(), Math.min(playerRoles.size(), playerRoleOrdering.size())));
 		for (final PlayerRole role : playerRoleOrdering) {
 			final String rolePlayerId = playerRoles.get(role);
 			if (rolePlayerId != null) {

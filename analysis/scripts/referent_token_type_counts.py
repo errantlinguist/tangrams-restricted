@@ -4,7 +4,7 @@ import argparse
 import re
 import sys
 from collections import defaultdict
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from typing import Any, Callable, DefaultDict, Dict, IO, Iterable, Iterator, List, Mapping, MutableMapping, Sequence, Tuple, TypeVar
 
 import game_events
@@ -147,7 +147,7 @@ class TokenTypeDataPrinter(object):
 					try:
 						round_ratio = self.__ratio(round_token_count, round_type_count)
 						cumulative_ratio = self.__ratio(cumulative_token_count, cumulative_type_count)
-					except ZeroDivisionError as e:
+					except InvalidOperation as e:
 						if self.strict:
 							raise ValueError(
 								"Round {} of session \"{}\" did not have any relevant tokens!".format(round_id,

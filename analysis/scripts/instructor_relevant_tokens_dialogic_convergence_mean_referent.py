@@ -126,10 +126,10 @@ def __main(args):
 																										  referent_id_col_name),
 		  file=sys.stderr)
 
-	self_coref_seq_no_col_name = instructor_relevant_tokens_metrics.qualified_col_name(token_set_col_name,
-																					   instructor_relevant_tokens_metrics.Measurement.COREF_SEQ,
-																					   instructor_relevant_tokens_metrics.Metric.SELF,
-																					   instructor_relevant_tokens_metrics.Aggregation.NONE)
+	self_coref_seq_no_col_name = instructor_relevant_tokens_metrics.create_qualified_col_name(token_set_col_name,
+																							  instructor_relevant_tokens_metrics.Measurement.COREF_SEQ,
+																							  instructor_relevant_tokens_metrics.Metric.SELF,
+																							  instructor_relevant_tokens_metrics.Aggregation.NONE)
 
 	coref_seq_token_sets = read_nonempty_coref_seq_referent_token_sets(inpath,
 																	   self_coref_seq_no_col_name,

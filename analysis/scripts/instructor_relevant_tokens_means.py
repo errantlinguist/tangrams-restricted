@@ -98,10 +98,10 @@ def __main(args):
 	col_names = __create_qualified_col_name_dict(overlaps.columns.values)
 	for metric, metric_aggs in sorted(col_names.items(), key=lambda item: item[0].value):
 		print("Processing metric \"{}\".".format(metric), file=sys.stderr)
-		coref_seq_no_col_name = instructor_relevant_tokens_metrics.qualified_col_name(token_set_col_name,
-																					  instructor_relevant_tokens_metrics.Measurement.COREF_SEQ,
-																					  metric,
-																					  instructor_relevant_tokens_metrics.Aggregation.NONE)
+		coref_seq_no_col_name = instructor_relevant_tokens_metrics.create_qualified_col_name(token_set_col_name,
+																							 instructor_relevant_tokens_metrics.Measurement.COREF_SEQ,
+																							 metric,
+																							 instructor_relevant_tokens_metrics.Aggregation.NONE)
 
 		for agg, measurement_col_names in sorted(metric_aggs.items(), key=lambda item: item[0].value):
 			outfile_name = __create_outfile_name(token_set_col_name, metric, agg)

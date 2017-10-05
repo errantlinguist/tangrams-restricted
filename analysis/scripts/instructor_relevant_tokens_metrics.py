@@ -52,25 +52,25 @@ class EitherTokenTypeOverlapCalculator(object):
 		print("Calculating either overlap for \"{}\".".format(token_set_col_name), file=sys.stderr)
 		metric = Metric.EITHER
 
-		coref_chain_seq_no_col_name = qualified_col_name(token_set_col_name, Measurement.COREF_SEQ, metric,
-														 Aggregation.NONE)
+		coref_chain_seq_no_col_name = create_qualified_col_name(token_set_col_name, Measurement.COREF_SEQ, metric,
+																Aggregation.NONE)
 
 		referent_id_col_name = self.referent_id_col_name
 		df[coref_chain_seq_no_col_name] = df.apply(
 			lambda row: self.coref_chain_seq_no(row, df), axis=1)
 
-		overlap_col_name = qualified_col_name(token_set_col_name, Measurement.OVERLAP, metric, Aggregation.NONE)
+		overlap_col_name = create_qualified_col_name(token_set_col_name, Measurement.OVERLAP, metric, Aggregation.NONE)
 		df[overlap_col_name] = df.apply(
 			lambda row: self.token_overlap(row, df), axis=1)
 		# NOTE: This logic is dependent on the previous ones already setting coreference chain sequence numbers
 		print("Calculating either baseline overlap for \"{}\".".format(token_set_col_name), file=sys.stderr)
-		baseline_overlap_col_name = qualified_col_name(token_set_col_name, Measurement.OVERLAP, metric,
-													   Aggregation.BASELINE)
+		baseline_overlap_col_name = create_qualified_col_name(token_set_col_name, Measurement.OVERLAP, metric,
+															  Aggregation.BASELINE)
 		df[baseline_overlap_col_name] = df.apply(
 			lambda row: baseline_token_overlap(row, df, coref_chain_seq_no_col_name, token_set_col_name), axis=1)
 		print("Calculating either referent baseline overlap for \"{}\".".format(token_set_col_name), file=sys.stderr)
-		referent_baseline_overlap_col_name = qualified_col_name(token_set_col_name, Measurement.OVERLAP, metric,
-																Aggregation.REFERENT_BASELINE)
+		referent_baseline_overlap_col_name = create_qualified_col_name(token_set_col_name, Measurement.OVERLAP, metric,
+																	   Aggregation.REFERENT_BASELINE)
 		df[referent_baseline_overlap_col_name] = df.apply(
 			lambda row: baseline_referent_token_overlap(row, df, coref_chain_seq_no_col_name, referent_id_col_name,
 														token_set_col_name), axis=1)
@@ -109,25 +109,25 @@ class OtherTokenTypeOverlapCalculator(object):
 		print("Calculating other overlap for \"{}\".".format(token_set_col_name), file=sys.stderr)
 		metric = Metric.OTHER
 
-		coref_chain_seq_no_col_name = qualified_col_name(token_set_col_name, Measurement.COREF_SEQ, metric,
-														 Aggregation.NONE)
+		coref_chain_seq_no_col_name = create_qualified_col_name(token_set_col_name, Measurement.COREF_SEQ, metric,
+																Aggregation.NONE)
 
 		referent_id_col_name = self.referent_id_col_name
 		df[coref_chain_seq_no_col_name] = df.apply(
 			lambda row: self.coref_chain_seq_no(row, df), axis=1)
 
-		overlap_col_name = qualified_col_name(token_set_col_name, Measurement.OVERLAP, metric, Aggregation.NONE)
+		overlap_col_name = create_qualified_col_name(token_set_col_name, Measurement.OVERLAP, metric, Aggregation.NONE)
 		df[overlap_col_name] = df.apply(
 			lambda row: self.token_overlap(row, df), axis=1)
 		# NOTE: This logic is dependent on the previous ones already setting coreference chain sequence numbers
 		print("Calculating other baseline overlap for \"{}\".".format(token_set_col_name), file=sys.stderr)
-		baseline_overlap_col_name = qualified_col_name(token_set_col_name, Measurement.OVERLAP, metric,
-													   Aggregation.BASELINE)
+		baseline_overlap_col_name = create_qualified_col_name(token_set_col_name, Measurement.OVERLAP, metric,
+															  Aggregation.BASELINE)
 		df[baseline_overlap_col_name] = df.apply(
 			lambda row: baseline_token_overlap(row, df, coref_chain_seq_no_col_name, token_set_col_name), axis=1)
 		print("Calculating other referent baseline overlap for \"{}\".".format(token_set_col_name), file=sys.stderr)
-		referent_baseline_overlap_col_name = qualified_col_name(token_set_col_name, Measurement.OVERLAP, metric,
-																Aggregation.REFERENT_BASELINE)
+		referent_baseline_overlap_col_name = create_qualified_col_name(token_set_col_name, Measurement.OVERLAP, metric,
+																	   Aggregation.REFERENT_BASELINE)
 		df[referent_baseline_overlap_col_name] = df.apply(
 			lambda row: baseline_referent_token_overlap(row, df, coref_chain_seq_no_col_name, referent_id_col_name,
 														token_set_col_name), axis=1)
@@ -180,25 +180,25 @@ class SelfTokenTypeOverlapCalculator(object):
 		print("Calculating self overlap for \"{}\".".format(token_set_col_name), file=sys.stderr)
 		metric = Metric.SELF
 
-		coref_chain_seq_no_col_name = qualified_col_name(token_set_col_name, Measurement.COREF_SEQ, metric,
-														 Aggregation.NONE)
+		coref_chain_seq_no_col_name = create_qualified_col_name(token_set_col_name, Measurement.COREF_SEQ, metric,
+																Aggregation.NONE)
 
 		referent_id_col_name = self.referent_id_col_name
 		df[coref_chain_seq_no_col_name] = df.apply(
 			lambda row: self.coref_chain_seq_no(row, df), axis=1)
 
-		overlap_col_name = qualified_col_name(token_set_col_name, Measurement.OVERLAP, metric, Aggregation.NONE)
+		overlap_col_name = create_qualified_col_name(token_set_col_name, Measurement.OVERLAP, metric, Aggregation.NONE)
 		df[overlap_col_name] = df.apply(
 			lambda row: self.token_overlap(row, df), axis=1)
 		# NOTE: This logic is dependent on the previous ones already setting coreference chain sequence numbers
 		print("Calculating self baseline overlap for \"{}\".".format(token_set_col_name), file=sys.stderr)
-		baseline_overlap_col_name = qualified_col_name(token_set_col_name, Measurement.OVERLAP, metric,
-													   Aggregation.BASELINE)
+		baseline_overlap_col_name = create_qualified_col_name(token_set_col_name, Measurement.OVERLAP, metric,
+															  Aggregation.BASELINE)
 		df[baseline_overlap_col_name] = df.apply(
 			lambda row: baseline_token_overlap(row, df, coref_chain_seq_no_col_name, token_set_col_name), axis=1)
 		print("Calculating self referent baseline overlap for \"{}\".".format(token_set_col_name), file=sys.stderr)
-		referent_baseline_overlap_col_name = qualified_col_name(token_set_col_name, Measurement.OVERLAP, metric,
-																Aggregation.REFERENT_BASELINE)
+		referent_baseline_overlap_col_name = create_qualified_col_name(token_set_col_name, Measurement.OVERLAP, metric,
+																	   Aggregation.REFERENT_BASELINE)
 		df[referent_baseline_overlap_col_name] = df.apply(
 			lambda row: baseline_referent_token_overlap(row, df, coref_chain_seq_no_col_name, referent_id_col_name,
 														token_set_col_name), axis=1)
@@ -228,7 +228,7 @@ class SelfTokenTypeOverlapCalculator(object):
 				df["INSTRUCTOR"] == current_instructor) & (df[self.token_set_col_name].str.len() > 0)]
 
 
-def qualified_col_name(prefix: str, measurement: Measurement, metric: Metric, agg: Aggregation) -> str:
+def create_qualified_col_name(prefix: str, measurement: Measurement, metric: Metric, agg: Aggregation) -> str:
 	return prefix + _MEASUREMENT_PREFIX + measurement.value + _METRIC_PREFIX + metric.value + _AGGREGATION_PREFIX + agg.value
 
 

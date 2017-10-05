@@ -107,10 +107,10 @@ def __main(args):
 		minuend_measurement_col_names = metric_aggs[instructor_relevant_tokens_metrics.Aggregation.NONE]
 		subtrahend_measurement_col_names = metric_aggs[agg]
 
-		coref_seq_no_col_name = instructor_relevant_tokens_metrics.qualified_col_name(token_set_col_name,
-																					  instructor_relevant_tokens_metrics.Measurement.COREF_SEQ,
-																					  metric,
-																					  instructor_relevant_tokens_metrics.Aggregation.NONE)
+		coref_seq_no_col_name = instructor_relevant_tokens_metrics.create_qualified_col_name(token_set_col_name,
+																							 instructor_relevant_tokens_metrics.Measurement.COREF_SEQ,
+																							 metric,
+																							 instructor_relevant_tokens_metrics.Aggregation.NONE)
 		outfile_name = __create_outfile_name(token_set_col_name, metric, agg)
 		outfile_path = os.path.join(outdir, outfile_name)
 		__print_non_aggregate_overlap_summary(overlaps, minuend_measurement_col_names, subtrahend_measurement_col_names,

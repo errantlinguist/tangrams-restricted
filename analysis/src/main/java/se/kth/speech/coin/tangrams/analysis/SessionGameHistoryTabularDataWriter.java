@@ -17,12 +17,12 @@
 package se.kth.speech.coin.tangrams.analysis;
 
 import java.io.BufferedReader;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.nio.charset.Charset;
 import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
@@ -36,6 +36,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -55,14 +56,19 @@ import javax.xml.bind.JAXBException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.eclipsesource.json.Json;
-import com.eclipsesource.json.JsonObject;
-import com.eclipsesource.json.JsonValue;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import com.google.common.collect.ArrayTable;
+import com.google.common.collect.BiMap;
+import com.google.common.collect.Maps;
+import com.google.common.collect.RowSortedTable;
+import com.google.common.collect.Table;
+import com.google.common.collect.TreeBasedTable;
 
 import iristk.system.Event;
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+import it.unimi.dsi.fastutil.ints.IntSet;
 import se.kth.speech.TimestampArithmetic;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionContextFactory;
@@ -231,13 +237,6 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 				return Integer.valueOf(value);
 			}
 		},
-		SOURCE_PARTICIPANT_IDS {
-			@Override
-			protected JsonObject parseValue(final String value) {
-				final JsonValue parsedVal = Json.parse(value);
-				return (JsonObject) parsedVal;
-			}
-		},
 		START_TIME {
 			@Override
 			protected ZonedDateTime parseValue(final String value) {
@@ -248,11 +247,13 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 		protected abstract Object parseValue(String value);
 	}
 
-	private static final GameManagementEvent GAME_ROUND_DELIMITING_EVENT_TYPE = GameManagementEvent.NEXT_TURN_REQUEST;
+	private enum ParticipantMetadatum {
+		SOURCE_ID
+	}
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(SessionGameHistoryTabularDataWriter.class);
+	private static final int ESTIMATED_PARTICIPANT_METADATUM_COUNT = 16;
 
-	private static final Comparator<String> METADATUM_NAME_COMPARATOR = new Comparator<String>() {
+	private static final Comparator<String> EVENT_METADATUM_NAME_COMPARATOR = new Comparator<String>() {
 
 		@Override
 		public int compare(final String o1, final String o2) {
@@ -288,6 +289,10 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 
 	};
 
+	private static final GameManagementEvent GAME_ROUND_DELIMITING_EVENT_TYPE = GameManagementEvent.NEXT_TURN_REQUEST;
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(SessionGameHistoryTabularDataWriter.class);
+
 	private static final String NULL_VALUE_REPR;
 
 	private static final ZoneId ORIGINAL_EXPERIMENT_TIMEZONE = ZoneId.of("Europe/Stockholm");
@@ -295,6 +300,51 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 	private static final Charset OUTPUT_CHARSET = LoggedEvents.CHARSET;
 
 	private static final DateTimeFormatter OUTPUT_DATETIME_FORMATTER = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
+
+	private static final Comparator<String> PARTICIPANT_ID_ORDERING_COMPARATOR = Comparator.naturalOrder();
+
+	private static final String PARTICIPANT_METADATA_HEADER_ROW_NAME = "PARTICIPANT_ID";
+
+	private static final Comparator<String> PARTICIPANT_METADATUM_NAME_COMPARATOR = new Comparator<String>() {
+
+		private final Comparator<String> headerRowNameComparator = Comparator
+				.comparing(name -> !PARTICIPANT_METADATA_HEADER_ROW_NAME.equals(name));
+
+		@Override
+		public int compare(final String o1, final String o2) {
+			int result = headerRowNameComparator.compare(o1, o2);
+			if (result == 0) {
+				final ParticipantMetadatum m1 = parseNullableMetadatum(o1);
+				final ParticipantMetadatum m2 = parseNullableMetadatum(o2);
+				if (m1 == null) {
+					if (m2 == null) {
+						result = o1.compareTo(o2);
+					} else {
+						result = 1;
+					}
+				} else if (m2 == null) {
+					result = -1;
+				} else {
+					result = m1.compareTo(m2);
+				}
+
+			}
+
+			return result;
+		}
+
+		private ParticipantMetadatum parseNullableMetadatum(final String name) {
+			ParticipantMetadatum result = null;
+			try {
+				result = ParticipantMetadatum.valueOf(name);
+			} catch (final IllegalArgumentException e) {
+				LOGGER.debug(String.format("Unable to parse \"%s\" as an instance of %s; Returning null.", name,
+						ParticipantMetadatum.class), e);
+			}
+			return result;
+		}
+
+	};
 
 	private static final Collector<CharSequence, ?, String> TABLE_ROW_CELL_JOINER;
 
@@ -316,13 +366,13 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 					String.format("Usage: %s INPATHS...", SessionGameHistoryTabularDataWriter.class.getSimpleName()));
 		} else {
 			final SessionGameHistoryTabularDataWriter writer = new SessionGameHistoryTabularDataWriter(
-					EventDatum.CANONICAL_ORDERING, "events", NULL_VALUE_REPR);
+					EventDatum.CANONICAL_ORDERING, NULL_VALUE_REPR);
 			writer.accept(inpaths);
 		}
 	}
 
-	private static Map<EventMetadatum, String> createEventMetadataReprMap(final Map<String, String> playerSourceIds,
-			final SessionGame canonicalGame, final int gameScore, final int entityCount, final int eventCount,
+	private static Map<EventMetadatum, String> createEventMetadataReprMap(final SessionGame canonicalGame,
+			final String initialInstructorId, final int gameScore, final int entityCount, final int eventCount,
 			final int roundCount, final LocalDateTime startTime, final LocalDateTime maxEventTime) {
 		assert roundCount <= eventCount;
 		assert startTime.isBefore(maxEventTime);
@@ -338,14 +388,7 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 			result.put(EventMetadatum.GAME_DURATION, durationInSecs.toString());
 		}
 		result.put(EventMetadatum.GAME_ID, canonicalGame.getGameId());
-		{
-			final Entry<Map<String, String>, String> sourceParticipantIds = new SourceParticipantIdMapFactory()
-					.apply(playerSourceIds, canonicalGame);
-			result.put(EventMetadatum.SOURCE_PARTICIPANT_IDS,
-					createJsonMapObject(sourceParticipantIds.getKey().entrySet()).toString());
-			result.put(EventMetadatum.INITIAL_INSTRUCTOR_ID, sourceParticipantIds.getValue());
-
-		}
+		result.put(EventMetadatum.INITIAL_INSTRUCTOR_ID, initialInstructorId);
 		result.put(EventMetadatum.ROUND_COUNT, Integer.toString(roundCount));
 		{
 			final ZonedDateTime zonedGameStart = startTime.atZone(ORIGINAL_EXPERIMENT_TIMEZONE);
@@ -355,19 +398,25 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 		return result;
 	}
 
-	private static JsonObject createJsonMapObject(final Iterable<Entry<String, String>> entries) {
-		final JsonObject result = new JsonObject();
-		for (final Entry<String, String> entry : entries) {
-			result.add(entry.getKey(), entry.getValue());
+	private static Table<ParticipantMetadatum, String, String> createParticipantMetadataReprTable(
+			final Map<String, String> participantSourceIds) {
+		final List<String> sortedParticipantIds = new ArrayList<>(participantSourceIds.keySet());
+		sortedParticipantIds.sort(PARTICIPANT_ID_ORDERING_COMPARATOR);
+		final Table<ParticipantMetadatum, String, String> result = ArrayTable
+				.create(Arrays.asList(ParticipantMetadatum.values()), sortedParticipantIds);
+		for (final Entry<String, String> participantSourceId : participantSourceIds.entrySet()) {
+			result.put(ParticipantMetadatum.SOURCE_ID, participantSourceId.getKey(), participantSourceId.getValue());
 		}
+		assert result.rowKeySet().size() == ParticipantMetadatum.values().length;
+		assert result.columnKeySet().size() == sortedParticipantIds.size();
 		return result;
 	}
 
-	private static void persistEventMetadata(final Map<EventMetadatum, String> metadataValues, final Path outfilePath)
-			throws IOException {
-		// NOTE: This is not atomic; The OS could write to the file between its
+	private static void persistEventMetadata(final Map<EventMetadatum, String> metadataValues,
+			final Comparator<? super String> metadatumNameComparator, final Path outfilePath) throws IOException {
+		// NOTE: This is not atomic: The OS could write to the file between its
 		// reading and rewriting
-		final NavigableMap<String, String> unifiedMetadata = readEventMetadata(outfilePath);
+		final NavigableMap<String, String> unifiedMetadata = readMetadata(outfilePath, metadatumNameComparator);
 		metadataValues.forEach((metadatum, value) -> {
 			unifiedMetadata.put(metadatum.toString(), value);
 		});
@@ -381,11 +430,84 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 		}
 	}
 
-	private static NavigableMap<String, String> readEventMetadata(final Path infilePath) throws IOException {
-		// final Map<String, String> result =
-		// Maps.newHashMapWithExpectedSize(Math.max(Metadatum.values().length,
-		// 16));
-		final NavigableMap<String, String> result = new TreeMap<>(METADATUM_NAME_COMPARATOR);
+	private static void persistParticipantMetadata(
+			final Table<ParticipantMetadatum, String, String> metadataParticipantValues, final Path outfilePath)
+			throws IOException {
+		// NOTE: This is not atomic: The OS could write to the file between its
+		// reading and rewriting
+		final RowSortedTable<String, String, String> unifiedMetadata = readParticipantMetadata(outfilePath);
+		for (final Entry<ParticipantMetadatum, Map<String, String>> metadatumParticipantValues : metadataParticipantValues
+				.rowMap().entrySet()) {
+			final String metadatumName = metadatumParticipantValues.getKey().toString();
+			for (final Entry<String, String> participantValue : metadatumParticipantValues.getValue().entrySet()) {
+				unifiedMetadata.put(metadatumName, participantValue.getKey(), participantValue.getValue());
+			}
+		}
+
+		for (final String participantId : unifiedMetadata.columnKeySet()) {
+			// Put the participant ID as a cell value into the table so that it
+			// gets printed on its own row
+			unifiedMetadata.put(PARTICIPANT_METADATA_HEADER_ROW_NAME, participantId, participantId);
+		}
+
+		{
+			final Stream<List<String>> metadataRows = unifiedMetadata.rowMap().entrySet().stream().map(entry -> {
+				final String metadatumName = entry.getKey();
+				final Map<String, String> participantValues = entry.getValue();
+				final List<String> metadataRow = new ArrayList<>(participantValues.size() + 1);
+				metadataRow.add(metadatumName);
+				final Stream<Entry<String, String>> sortedParticipantValues = participantValues.entrySet().stream()
+						.sorted(Comparator.comparing(Entry::getKey, PARTICIPANT_ID_ORDERING_COMPARATOR));
+				sortedParticipantValues.forEach(participantValue -> {
+					final String value = participantValue.getValue();
+					metadataRow.add(value);
+				});
+				return metadataRow;
+			});
+			final Stream<String> metadataFileRows = metadataRows.map(List::stream)
+					.map(stream -> stream.collect(TABLE_ROW_CELL_JOINER));
+			Files.write(outfilePath, (Iterable<String>) metadataFileRows::iterator, OUTPUT_CHARSET,
+					StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+		}
+	}
+
+	private static Map<String, List<String>> readHeadedRowMap(final Path infilePath, final int expectedMetadatumCount)
+			throws IOException {
+		final Map<String, List<String>> result = Maps.newHashMapWithExpectedSize(expectedMetadatumCount);
+		final IntSet rowLengths = new IntOpenHashSet(1);
+		try (BufferedReader metadataRowReader = Files.newBufferedReader(infilePath, OUTPUT_CHARSET)) {
+			for (String row = metadataRowReader.readLine(); row != null; row = metadataRowReader.readLine()) {
+				final List<String> rowCells = Arrays.asList(TABLE_STRING_REPR_COL_DELIMITER_PATTERN.split(row));
+				final int currentRowLength = rowCells.size();
+				if (currentRowLength < 2) {
+					throw new IllegalArgumentException(String.format("Could not parse row values: %s", rowCells));
+				} else {
+					rowLengths.add(currentRowLength);
+					if (rowLengths.size() == 1) {
+						final String metadatumCell = rowCells.get(0);
+						final List<String> values = rowCells.subList(1, currentRowLength);
+						final List<String> extantValues = result.put(metadatumCell, values);
+						if (extantValues != null) {
+							throw new IllegalArgumentException(
+									String.format("More than one row found for metadatum \"%s\".", metadatumCell));
+						}
+					} else {
+						throw new IllegalArgumentException(
+								String.format("Row has a non-uniform length (%d): %s", currentRowLength, rowCells));
+					}
+
+				}
+
+			}
+		} catch (final NoSuchFileException e) {
+			LOGGER.debug("No already-persisted metadata found at \"{}\".", infilePath);
+		}
+		return result;
+	}
+
+	private static NavigableMap<String, String> readMetadata(final Path infilePath,
+			final Comparator<? super String> metadatumNameComparator) throws IOException {
+		final NavigableMap<String, String> result = new TreeMap<>(metadatumNameComparator);
 		try (BufferedReader metadataRowReader = Files.newBufferedReader(infilePath, OUTPUT_CHARSET)) {
 			for (String row = metadataRowReader.readLine(); row != null; row = metadataRowReader.readLine()) {
 				final String[] rowCells = TABLE_STRING_REPR_COL_DELIMITER_PATTERN.split(row);
@@ -403,9 +525,34 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 				}
 
 			}
-		} catch (final FileNotFoundException e) {
+		} catch (final NoSuchFileException e) {
 			LOGGER.debug("No already-persisted metadata found at \"{}\".", infilePath);
 		}
+		return result;
+	}
+
+	private static RowSortedTable<String, String, String> readParticipantMetadata(final Path infilePath)
+			throws IOException {
+		final Map<String, List<String>> metadatumRows = readHeadedRowMap(infilePath,
+				ESTIMATED_PARTICIPANT_METADATUM_COUNT);
+		final List<String> extantParticipantIds = metadatumRows.getOrDefault(PARTICIPANT_METADATA_HEADER_ROW_NAME,
+				Collections.emptyList());
+		final RowSortedTable<String, String, String> result = TreeBasedTable
+				.create(PARTICIPANT_METADATUM_NAME_COMPARATOR, PARTICIPANT_ID_ORDERING_COMPARATOR);
+		final Stream<Entry<String, List<String>>> nonHeaderRows = metadatumRows.entrySet().stream()
+				.filter(metadatumRow -> !metadatumRow.getKey().equals(PARTICIPANT_METADATA_HEADER_ROW_NAME));
+		nonHeaderRows.forEach(metadatumRow -> {
+			final String metadatumName = metadatumRow.getKey();
+			final List<String> participantValues = metadatumRow.getValue();
+			assert participantValues.size() == extantParticipantIds.size();
+			final Iterator<String> extantParticipantIdIter = extantParticipantIds.iterator();
+			final Iterator<String> participantValueIter = participantValues.iterator();
+			while (extantParticipantIdIter.hasNext()) {
+				final String extantParticipantId = extantParticipantIdIter.next();
+				final String participantValue = participantValueIter.next();
+				result.put(metadatumName, extantParticipantId, participantValue);
+			}
+		});
 		return result;
 	}
 
@@ -434,12 +581,12 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 
 	private final List<EventDatum> eventDataToDescribe;
 
-	private final String outfileNamePrefix;
+	private final String eventOutfileNamePrefix;
 
 	private SessionGameHistoryTabularDataWriter(final List<EventDatum> eventDataToDescribe,
-			final String outfileNamePrefix, final String nullCellValueRepr) {
+			final String nullCellValueRepr) {
 		this.eventDataToDescribe = eventDataToDescribe;
-		this.outfileNamePrefix = outfileNamePrefix;
+		eventOutfileNamePrefix = "events";
 		eventDataRowCellValues = CacheBuilder.newBuilder().concurrencyLevel(1).initialCapacity(96).maximumSize(144)
 				.build(new CacheLoader<EventContext, String[]>() {
 
@@ -500,7 +647,7 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 							.concat(Stream.of(createColumnNames(entityFeatureVectorDescFactory)), eventRows.stream())
 							.map(cells -> cells.collect(TABLE_ROW_CELL_JOINER));
 					{
-						final String outfileName = createEventsOutfileName();
+						final String outfileName = createEventOutfileName();
 						final Path outfilePath = infileParentDir == null ? Paths.get(outfileName)
 								: infileParentDir.resolve(outfileName);
 						LOGGER.info("Writing tabular event data to \"{}\".", outfilePath);
@@ -509,16 +656,30 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 					}
 				}
 
+				final Entry<BiMap<String, String>, String> sourceParticipantIds = new SourceParticipantIdMapFactory()
+						.apply(infileSessionData.getPlayerData().getPlayerSourceIds(), canonicalGame);
 				{
-					final Map<EventMetadatum, String> metadataValues = createEventMetadataReprMap(
-							infileSessionData.getPlayerData().getPlayerSourceIds(), canonicalGame, gameScore,
-							entityCount, eventId, gameRoundId, history.getStartTime(), maxEventTime);
+					final Map<EventMetadatum, String> metadataValues = createEventMetadataReprMap(canonicalGame,
+							sourceParticipantIds.getValue(), gameScore, entityCount, eventId, gameRoundId,
+							history.getStartTime(), maxEventTime);
 					{
-						final String outfileName = createEventsMetadataOutfileName();
+						final String outfileName = createEventMetadataOutfileName();
 						final Path outfilePath = infileParentDir == null ? Paths.get(outfileName)
 								: infileParentDir.resolve(outfileName);
-						LOGGER.info("Writing metadata to \"{}\".", outfilePath);
-						persistEventMetadata(metadataValues, outfilePath);
+						LOGGER.info("Writing event metadata to \"{}\".", outfilePath);
+						persistEventMetadata(metadataValues, EVENT_METADATUM_NAME_COMPARATOR, outfilePath);
+					}
+				}
+
+				{
+					final Table<ParticipantMetadatum, String, String> metadataValues = createParticipantMetadataReprTable(
+							sourceParticipantIds.getKey().inverse());
+					{
+						final String outfileName = createParticipantMetadataOutfileName();
+						final Path outfilePath = infileParentDir == null ? Paths.get(outfileName)
+								: infileParentDir.resolve(outfileName);
+						LOGGER.info("Writing participant metadata to \"{}\".", outfilePath);
+						persistParticipantMetadata(metadataValues, outfilePath);
 					}
 				}
 			}
@@ -536,12 +697,16 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 		return resultBuilder.build();
 	}
 
-	private String createEventsMetadataOutfileName() {
-		return outfileNamePrefix + "-metadata.tsv";
+	private String createEventMetadataOutfileName() {
+		return eventOutfileNamePrefix + "-metadata.tsv";
 	}
 
-	private String createEventsOutfileName() {
-		return outfileNamePrefix + ".tsv";
+	private String createEventOutfileName() {
+		return eventOutfileNamePrefix + ".tsv";
+	}
+
+	private String createParticipantMetadataOutfileName() {
+		return "participant-metadata.tsv";
 	}
 
 	private Stream<String> createRowCellValues(
