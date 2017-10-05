@@ -34,6 +34,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.ListIterator;
@@ -251,6 +252,42 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SessionGameHistoryTabularDataWriter.class);
 
+	private static final Comparator<String> METADATUM_NAME_COMPARATOR = new Comparator<String>() {
+
+		@Override
+		public int compare(final String o1, final String o2) {
+			int result;
+
+			final Metadatum m1 = parseNullableMetadatum(o1);
+			final Metadatum m2 = parseNullableMetadatum(o2);
+			if (m1 == null) {
+				if (m2 == null) {
+					result = o1.compareTo(o2);
+				} else {
+					result = 1;
+				}
+			} else if (m2 == null) {
+				result = -1;
+			} else {
+				result = m1.compareTo(m2);
+			}
+
+			return result;
+		}
+
+		private Metadatum parseNullableMetadatum(final String name) {
+			Metadatum result = null;
+			try {
+				result = Metadatum.valueOf(name);
+			} catch (final IllegalArgumentException e) {
+				LOGGER.debug(String.format("Unable to parse \"%s\" as an instance of %s; Returning null.", name,
+						Metadatum.class), e);
+			}
+			return result;
+		}
+
+	};
+
 	private static final String NULL_VALUE_REPR;
 
 	private static final ZoneId ORIGINAL_EXPERIMENT_TIMEZONE = ZoneId.of("Europe/Stockholm");
@@ -284,14 +321,6 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 		}
 	}
 
-	private static JsonObject createJsonMapObject(final Iterable<Entry<String, String>> entries) {
-		final JsonObject result = new JsonObject();
-		for (final Entry<String, String> entry : entries) {
-			result.add(entry.getKey(), entry.getValue());
-		}
-		return result;
-	}
-
 	// private static Optional<Entry<Metadatum, Object>> parseMetadatumRow(final
 	// String[] rowCells) {
 	// Optional<Entry<Metadatum, Object>> result;
@@ -313,6 +342,14 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 	// }
 	// return result;
 	// }
+
+	private static JsonObject createJsonMapObject(final Iterable<Entry<String, String>> entries) {
+		final JsonObject result = new JsonObject();
+		for (final Entry<String, String> entry : entries) {
+			result.add(entry.getKey(), entry.getValue());
+		}
+		return result;
+	}
 
 	private static void persistMetadata(final Map<Metadatum, String> metadataValues, final Path outfilePath)
 			throws IOException {
@@ -336,7 +373,7 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 		// final Map<String, String> result =
 		// Maps.newHashMapWithExpectedSize(Math.max(Metadatum.values().length,
 		// 16));
-		final NavigableMap<String, String> result = new TreeMap<>();
+		final NavigableMap<String, String> result = new TreeMap<>(METADATUM_NAME_COMPARATOR);
 		try (BufferedReader metadataRowReader = Files.newBufferedReader(infilePath, OUTPUT_CHARSET)) {
 			for (String row = metadataRowReader.readLine(); row != null; row = metadataRowReader.readLine()) {
 				final String[] rowCells = TABLE_STRING_REPR_COL_DELIMITER_PATTERN.split(row);
