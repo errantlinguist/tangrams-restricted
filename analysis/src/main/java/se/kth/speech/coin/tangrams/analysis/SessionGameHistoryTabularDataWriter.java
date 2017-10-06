@@ -37,6 +37,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -67,6 +68,9 @@ import com.google.common.collect.Table;
 import com.google.common.collect.TreeBasedTable;
 
 import iristk.system.Event;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
+import se.kth.speech.ObservationOrderComparator;
 import se.kth.speech.TimestampArithmetic;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionContextFactory;
@@ -254,8 +258,13 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 
 		private final Comparator<String> headerRowNameComparator;
 
-		private ParticipantMetadatumNameComparator(final String headerRowName) {
+		private final Comparator<String> rowObservationOrderComparator;
+
+		private ParticipantMetadatumNameComparator(final String headerRowName, final int expectedRowCount) {
 			headerRowNameComparator = Comparator.comparing(name -> !headerRowName.equals(name));
+			final Object2IntMap<String> rowObservationOrderMap = new Object2IntOpenHashMap<>(expectedRowCount);
+			rowObservationOrderMap.defaultReturnValue(-1);
+			rowObservationOrderComparator = new ObservationOrderComparator<>(rowObservationOrderMap);
 		}
 
 		@Override
@@ -266,7 +275,7 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 				final ParticipantMetadatum m2 = parseNullableMetadatum(o2);
 				if (m1 == null) {
 					if (m2 == null) {
-						result = o1.compareTo(o2);
+						result = rowObservationOrderComparator.compare(o1, o2);
 					} else {
 						result = 1;
 					}
@@ -346,19 +355,11 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 
 	private static final Comparator<String> PARTICIPANT_ID_ORDERING_COMPARATOR = Comparator.naturalOrder();
 
-	private static final String PARTICIPANT_METADATA_HEADER_ROW_NAME;
-
-	private static final Comparator<String> PARTICIPANT_METADATUM_NAME_COMPARATOR;
+	private static final String PARTICIPANT_METADATA_HEADER_ROW_NAME = "PARTICIPANT_ID";
 
 	private static final Collector<CharSequence, ?, String> TABLE_ROW_CELL_JOINER;
 
 	private static final Pattern TABLE_STRING_REPR_COL_DELIMITER_PATTERN;
-
-	static {
-		PARTICIPANT_METADATA_HEADER_ROW_NAME = "PARTICIPANT_ID";
-		PARTICIPANT_METADATUM_NAME_COMPARATOR = new ParticipantMetadatumNameComparator(
-				PARTICIPANT_METADATA_HEADER_ROW_NAME);
-	}
 
 	static {
 		final String tableStrReprColDelim = "\t";
@@ -467,7 +468,11 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 			}
 		}
 
-		for (final Entry<String, Map<String, String>> participantRowValues : unifiedMetadata.columnMap().entrySet()) {
+		// Pre-fetch all row-value map entries in order to avoid a
+		// ConcurrentModificationException being thrown
+		final List<Entry<String, Map<String, String>>> participantRowValueMaps = new ArrayList<>(
+				unifiedMetadata.columnMap().entrySet());
+		for (final Entry<String, Map<String, String>> participantRowValues : participantRowValueMaps) {
 			final String participantId = participantRowValues.getKey();
 			final Map<String, String> rowValues = participantRowValues.getValue();
 			// Put the participant ID as a cell value into the table so that it
@@ -496,9 +501,10 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 		}
 	}
 
-	private static Map<String, List<String>> readHeadedRowMap(final Path infilePath, final int expectedMetadatumCount)
-			throws IOException {
-		final Map<String, List<String>> result = Maps.newHashMapWithExpectedSize(expectedMetadatumCount);
+	private static LinkedHashMap<String, List<String>> readHeadedRowMap(final Path infilePath,
+			final int expectedMetadatumCount) throws IOException {
+		final LinkedHashMap<String, List<String>> result = Maps
+				.newLinkedHashMapWithExpectedSize(expectedMetadatumCount);
 		try (BufferedReader metadataRowReader = Files.newBufferedReader(infilePath, OUTPUT_CHARSET)) {
 			for (String row = metadataRowReader.readLine(); row != null; row = metadataRowReader.readLine()) {
 				final List<String> rowCells = Arrays.asList(TABLE_STRING_REPR_COL_DELIMITER_PATTERN.split(row));
@@ -549,12 +555,13 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 
 	private static RowSortedTable<String, String, String> readParticipantMetadata(final Path infilePath)
 			throws IOException {
-		final Map<String, List<String>> metadatumRows = readHeadedRowMap(infilePath,
+		final LinkedHashMap<String, List<String>> metadatumRows = readHeadedRowMap(infilePath,
 				ESTIMATED_PARTICIPANT_METADATUM_COUNT);
 		final List<String> extantParticipantIds = metadatumRows.getOrDefault(PARTICIPANT_METADATA_HEADER_ROW_NAME,
 				Collections.emptyList());
-		final RowSortedTable<String, String, String> result = TreeBasedTable.create(PARTICIPANT_METADATUM_NAME_COMPARATOR,
-				PARTICIPANT_ID_ORDERING_COMPARATOR);
+		final RowSortedTable<String, String, String> result = TreeBasedTable
+				.create(new ParticipantMetadatumNameComparator(PARTICIPANT_METADATA_HEADER_ROW_NAME,
+						ESTIMATED_PARTICIPANT_METADATUM_COUNT), PARTICIPANT_ID_ORDERING_COMPARATOR);
 		final Stream<Entry<String, List<String>>> nonHeaderRows = metadatumRows.entrySet().stream()
 				.filter(metadatumRow -> !metadatumRow.getKey().equals(PARTICIPANT_METADATA_HEADER_ROW_NAME));
 		nonHeaderRows.forEach(metadatumRow -> {
