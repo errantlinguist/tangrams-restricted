@@ -68,8 +68,6 @@ import com.google.common.collect.Table;
 import com.google.common.collect.TreeBasedTable;
 
 import iristk.system.Event;
-import it.unimi.dsi.fastutil.objects.Object2IntMap;
-import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import se.kth.speech.ObservationOrderComparator;
 import se.kth.speech.TimestampArithmetic;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
@@ -250,6 +248,48 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 		protected abstract Object parseValue(String value);
 	}
 
+	private static class EventMetadatumNameComparator implements Comparator<String> {
+
+		private final Comparator<String> rowObservationOrderComparator;
+
+		private EventMetadatumNameComparator(final int expectedRowCount) {
+			rowObservationOrderComparator = new ObservationOrderComparator<>(expectedRowCount);
+		}
+
+		@Override
+		public int compare(final String o1, final String o2) {
+			int result;
+
+			final EventMetadatum m1 = parseNullableMetadatum(o1);
+			final EventMetadatum m2 = parseNullableMetadatum(o2);
+			if (m1 == null) {
+				if (m2 == null) {
+					result = rowObservationOrderComparator.compare(o1, o2);
+				} else {
+					result = 1;
+				}
+			} else if (m2 == null) {
+				result = -1;
+			} else {
+				result = m1.compareTo(m2);
+			}
+
+			return result;
+		}
+
+		private EventMetadatum parseNullableMetadatum(final String name) {
+			EventMetadatum result = null;
+			try {
+				result = EventMetadatum.valueOf(name);
+			} catch (final IllegalArgumentException e) {
+				LOGGER.debug(String.format("Unable to parse \"%s\" as an instance of %s; Returning null.", name,
+						EventMetadatum.class), e);
+			}
+			return result;
+		}
+
+	}
+
 	private enum ParticipantMetadatum {
 		INITIAL_ROLE, SOURCE_ID
 	}
@@ -262,9 +302,7 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 
 		private ParticipantMetadatumNameComparator(final String headerRowName, final int expectedRowCount) {
 			headerRowNameComparator = Comparator.comparing(name -> !headerRowName.equals(name));
-			final Object2IntMap<String> rowObservationOrderMap = new Object2IntOpenHashMap<>(expectedRowCount);
-			rowObservationOrderMap.defaultReturnValue(-1);
-			rowObservationOrderComparator = new ObservationOrderComparator<>(rowObservationOrderMap);
+			rowObservationOrderComparator = new ObservationOrderComparator<>(expectedRowCount);
 		}
 
 		@Override
@@ -303,43 +341,9 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 
 	}
 
-	private static final int ESTIMATED_PARTICIPANT_METADATUM_COUNT = 16;
+	private static final int ESTIMATED_EVENT_METADATUM_COUNT = EventMetadatum.values().length + 1;
 
-	private static final Comparator<String> EVENT_METADATUM_NAME_COMPARATOR = new Comparator<String>() {
-
-		@Override
-		public int compare(final String o1, final String o2) {
-			int result;
-
-			final EventMetadatum m1 = parseNullableMetadatum(o1);
-			final EventMetadatum m2 = parseNullableMetadatum(o2);
-			if (m1 == null) {
-				if (m2 == null) {
-					result = o1.compareTo(o2);
-				} else {
-					result = 1;
-				}
-			} else if (m2 == null) {
-				result = -1;
-			} else {
-				result = m1.compareTo(m2);
-			}
-
-			return result;
-		}
-
-		private EventMetadatum parseNullableMetadatum(final String name) {
-			EventMetadatum result = null;
-			try {
-				result = EventMetadatum.valueOf(name);
-			} catch (final IllegalArgumentException e) {
-				LOGGER.debug(String.format("Unable to parse \"%s\" as an instance of %s; Returning null.", name,
-						EventMetadatum.class), e);
-			}
-			return result;
-		}
-
-	};
+	private static final int ESTIMATED_PARTICIPANT_METADATUM_COUNT = 21;
 
 	private static final GameManagementEvent GAME_ROUND_DELIMITING_EVENT_TYPE = GameManagementEvent.NEXT_TURN_REQUEST;
 
@@ -697,7 +701,8 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 						final Path outfilePath = infileParentDir == null ? Paths.get(outfileName)
 								: infileParentDir.resolve(outfileName);
 						LOGGER.info("Writing event metadata to \"{}\".", outfilePath);
-						persistEventMetadata(metadataValues, EVENT_METADATUM_NAME_COMPARATOR, outfilePath);
+						persistEventMetadata(metadataValues,
+								new EventMetadatumNameComparator(ESTIMATED_EVENT_METADATUM_COUNT), outfilePath);
 					}
 				}
 

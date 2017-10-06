@@ -19,6 +19,7 @@ package se.kth.speech;
 import java.util.Comparator;
 
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -27,13 +28,20 @@ import it.unimi.dsi.fastutil.objects.Object2IntMap;
  */
 public final class ObservationOrderComparator<T> implements Comparator<T> {
 
-	private final Object2IntMap<? super T> observationOrders;
+	private static <T> Object2IntMap<T> createDefaultObservationOrderMap(final int expectedObservationCount) {
+		final Object2IntMap<T> result = new Object2IntOpenHashMap<>(expectedObservationCount);
+		result.defaultReturnValue(-1);
+		return result;
+	}
 
 	private final int defaultReturnValue;
 
-	/**
-	 *
-	 */
+	private final Object2IntMap<? super T> observationOrders;
+
+	public ObservationOrderComparator(final int expectedObservationCount) {
+		this(createDefaultObservationOrderMap(expectedObservationCount));
+	}
+
 	public ObservationOrderComparator(final Object2IntMap<? super T> observationOrders) {
 		this.defaultReturnValue = observationOrders.defaultReturnValue();
 		if (this.defaultReturnValue >= 0) {
