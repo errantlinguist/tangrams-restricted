@@ -250,6 +250,17 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 
 	private static class EventMetadatumNameComparator implements Comparator<String> {
 
+		private static EventMetadatum parseNullableMetadatum(final String name) {
+			EventMetadatum result = null;
+			try {
+				result = EventMetadatum.valueOf(name);
+			} catch (final IllegalArgumentException e) {
+				LOGGER.debug(String.format("Unable to parse \"%s\" as an instance of %s; Returning null.", name,
+						EventMetadatum.class), e);
+			}
+			return result;
+		}
+
 		private final Comparator<String> rowObservationOrderComparator;
 
 		private EventMetadatumNameComparator(final int expectedRowCount) {
@@ -277,17 +288,6 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 			return result;
 		}
 
-		private EventMetadatum parseNullableMetadatum(final String name) {
-			EventMetadatum result = null;
-			try {
-				result = EventMetadatum.valueOf(name);
-			} catch (final IllegalArgumentException e) {
-				LOGGER.debug(String.format("Unable to parse \"%s\" as an instance of %s; Returning null.", name,
-						EventMetadatum.class), e);
-			}
-			return result;
-		}
-
 	}
 
 	private enum ParticipantMetadatum {
@@ -295,6 +295,17 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 	}
 
 	private static class ParticipantMetadatumNameComparator implements Comparator<String> {
+
+		private static ParticipantMetadatum parseNullableMetadatum(final String name) {
+			ParticipantMetadatum result = null;
+			try {
+				result = ParticipantMetadatum.valueOf(name);
+			} catch (final IllegalArgumentException e) {
+				LOGGER.debug(String.format("Unable to parse \"%s\" as an instance of %s; Returning null.", name,
+						ParticipantMetadatum.class), e);
+			}
+			return result;
+		}
 
 		private final Comparator<String> headerRowNameComparator;
 
@@ -325,17 +336,6 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 
 			}
 
-			return result;
-		}
-
-		private ParticipantMetadatum parseNullableMetadatum(final String name) {
-			ParticipantMetadatum result = null;
-			try {
-				result = ParticipantMetadatum.valueOf(name);
-			} catch (final IllegalArgumentException e) {
-				LOGGER.debug(String.format("Unable to parse \"%s\" as an instance of %s; Returning null.", name,
-						ParticipantMetadatum.class), e);
-			}
 			return result;
 		}
 
