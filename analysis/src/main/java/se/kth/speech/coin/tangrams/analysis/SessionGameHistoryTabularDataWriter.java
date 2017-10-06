@@ -456,10 +456,12 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 			}
 		}
 
-		for (final String participantId : unifiedMetadata.columnKeySet()) {
+		for (final Entry<String, Map<String, String>> participantRowValues : unifiedMetadata.columnMap().entrySet()) {
+			final String participantId = participantRowValues.getKey();
+			final Map<String, String> rowValues = participantRowValues.getValue();
 			// Put the participant ID as a cell value into the table so that it
 			// gets printed on its own row
-			unifiedMetadata.put(PARTICIPANT_METADATA_HEADER_ROW_NAME, participantId, participantId);
+			rowValues.put(PARTICIPANT_METADATA_HEADER_ROW_NAME, participantId);
 		}
 
 		{
