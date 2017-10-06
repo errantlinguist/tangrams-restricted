@@ -250,6 +250,50 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 		INITIAL_ROLE, SOURCE_ID
 	}
 
+	private static class ParticipantMetadatumNameComparator implements Comparator<String> {
+
+		private final Comparator<String> headerRowNameComparator;
+
+		private ParticipantMetadatumNameComparator(final String headerRowName) {
+			headerRowNameComparator = Comparator.comparing(name -> !headerRowName.equals(name));
+		}
+
+		@Override
+		public int compare(final String o1, final String o2) {
+			int result = headerRowNameComparator.compare(o1, o2);
+			if (result == 0) {
+				final ParticipantMetadatum m1 = parseNullableMetadatum(o1);
+				final ParticipantMetadatum m2 = parseNullableMetadatum(o2);
+				if (m1 == null) {
+					if (m2 == null) {
+						result = o1.compareTo(o2);
+					} else {
+						result = 1;
+					}
+				} else if (m2 == null) {
+					result = -1;
+				} else {
+					result = m1.compareTo(m2);
+				}
+
+			}
+
+			return result;
+		}
+
+		private ParticipantMetadatum parseNullableMetadatum(final String name) {
+			ParticipantMetadatum result = null;
+			try {
+				result = ParticipantMetadatum.valueOf(name);
+			} catch (final IllegalArgumentException e) {
+				LOGGER.debug(String.format("Unable to parse \"%s\" as an instance of %s; Returning null.", name,
+						ParticipantMetadatum.class), e);
+			}
+			return result;
+		}
+
+	}
+
 	private static final int ESTIMATED_PARTICIPANT_METADATUM_COUNT = 16;
 
 	private static final Comparator<String> EVENT_METADATUM_NAME_COMPARATOR = new Comparator<String>() {
@@ -302,48 +346,7 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 
 	private static final Comparator<String> PARTICIPANT_ID_ORDERING_COMPARATOR = Comparator.naturalOrder();
 
-	private static final String PARTICIPANT_METADATA_HEADER_ROW_NAME = "PARTICIPANT_ID";
-
-	private static final Comparator<String> PARTICIPANT_METADATUM_NAME_COMPARATOR = new Comparator<String>() {
-
-		private final Comparator<String> headerRowNameComparator = Comparator
-				.comparing(name -> !PARTICIPANT_METADATA_HEADER_ROW_NAME.equals(name));
-
-		@Override
-		public int compare(final String o1, final String o2) {
-			int result = headerRowNameComparator.compare(o1, o2);
-			if (result == 0) {
-				final ParticipantMetadatum m1 = parseNullableMetadatum(o1);
-				final ParticipantMetadatum m2 = parseNullableMetadatum(o2);
-				if (m1 == null) {
-					if (m2 == null) {
-						result = o1.compareTo(o2);
-					} else {
-						result = 1;
-					}
-				} else if (m2 == null) {
-					result = -1;
-				} else {
-					result = m1.compareTo(m2);
-				}
-
-			}
-
-			return result;
-		}
-
-		private ParticipantMetadatum parseNullableMetadatum(final String name) {
-			ParticipantMetadatum result = null;
-			try {
-				result = ParticipantMetadatum.valueOf(name);
-			} catch (final IllegalArgumentException e) {
-				LOGGER.debug(String.format("Unable to parse \"%s\" as an instance of %s; Returning null.", name,
-						ParticipantMetadatum.class), e);
-			}
-			return result;
-		}
-
-	};
+	private static final String PARTICIPANT_METADATA_HEADER_ROW_NAME = "PARTICIPANT_ID";;
 
 	private static final Collector<CharSequence, ?, String> TABLE_ROW_CELL_JOINER;
 
@@ -542,8 +545,10 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 				ESTIMATED_PARTICIPANT_METADATUM_COUNT);
 		final List<String> extantParticipantIds = metadatumRows.getOrDefault(PARTICIPANT_METADATA_HEADER_ROW_NAME,
 				Collections.emptyList());
-		final RowSortedTable<String, String, String> result = TreeBasedTable
-				.create(PARTICIPANT_METADATUM_NAME_COMPARATOR, PARTICIPANT_ID_ORDERING_COMPARATOR);
+		final Comparator<String> participantMetadatumNameComparator = new ParticipantMetadatumNameComparator(
+				PARTICIPANT_METADATA_HEADER_ROW_NAME);
+		final RowSortedTable<String, String, String> result = TreeBasedTable.create(participantMetadatumNameComparator,
+				PARTICIPANT_ID_ORDERING_COMPARATOR);
 		final Stream<Entry<String, List<String>>> nonHeaderRows = metadatumRows.entrySet().stream()
 				.filter(metadatumRow -> !metadatumRow.getKey().equals(PARTICIPANT_METADATA_HEADER_ROW_NAME));
 		nonHeaderRows.forEach(metadatumRow -> {
