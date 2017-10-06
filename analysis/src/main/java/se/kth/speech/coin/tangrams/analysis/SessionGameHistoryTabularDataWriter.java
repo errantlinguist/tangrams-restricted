@@ -349,7 +349,7 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SessionGameHistoryTabularDataWriter.class);
 
-	private static final String NULL_VALUE_REPR;
+	private static final String NULL_VALUE_REPR = "?";
 
 	private static final ZoneId ORIGINAL_EXPERIMENT_TIMEZONE = ZoneId.of("Europe/Stockholm");
 
@@ -369,8 +369,6 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 		final String tableStrReprColDelim = "\t";
 		TABLE_STRING_REPR_COL_DELIMITER_PATTERN = Pattern.compile(tableStrReprColDelim);
 		TABLE_ROW_CELL_JOINER = Collectors.joining(tableStrReprColDelim);
-
-		NULL_VALUE_REPR = "?";
 	}
 
 	public static void main(final String[] args) throws IOException, JAXBException {
