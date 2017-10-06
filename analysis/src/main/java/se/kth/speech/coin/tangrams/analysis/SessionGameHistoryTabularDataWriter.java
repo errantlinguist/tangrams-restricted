@@ -67,8 +67,6 @@ import com.google.common.collect.Table;
 import com.google.common.collect.TreeBasedTable;
 
 import iristk.system.Event;
-import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
-import it.unimi.dsi.fastutil.ints.IntSet;
 import se.kth.speech.TimestampArithmetic;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionContextFactory;
@@ -488,28 +486,19 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 	private static Map<String, List<String>> readHeadedRowMap(final Path infilePath, final int expectedMetadatumCount)
 			throws IOException {
 		final Map<String, List<String>> result = Maps.newHashMapWithExpectedSize(expectedMetadatumCount);
-		final IntSet rowLengths = new IntOpenHashSet(1);
 		try (BufferedReader metadataRowReader = Files.newBufferedReader(infilePath, OUTPUT_CHARSET)) {
 			for (String row = metadataRowReader.readLine(); row != null; row = metadataRowReader.readLine()) {
 				final List<String> rowCells = Arrays.asList(TABLE_STRING_REPR_COL_DELIMITER_PATTERN.split(row));
 				final int currentRowLength = rowCells.size();
 				if (currentRowLength < 2) {
-					throw new IllegalArgumentException(String.format("Could not parse row values: %s", rowCells));
-				} else {
-					rowLengths.add(currentRowLength);
-					if (rowLengths.size() == 1) {
-						final String metadatumCell = rowCells.get(0);
-						final List<String> values = rowCells.subList(1, currentRowLength);
-						final List<String> extantValues = result.put(metadatumCell, values);
-						if (extantValues != null) {
-							throw new IllegalArgumentException(
-									String.format("More than one row found for metadatum \"%s\".", metadatumCell));
-						}
-					} else {
-						throw new IllegalArgumentException(
-								String.format("Row has a non-uniform length (%d): %s", currentRowLength, rowCells));
-					}
-
+					LOGGER.warn("Row has only {} value(s): {}", currentRowLength, rowCells);
+				}
+				final String metadatumCell = rowCells.get(0);
+				final List<String> values = rowCells.subList(1, currentRowLength);
+				final List<String> extantValues = result.put(metadatumCell, values);
+				if (extantValues != null) {
+					throw new IllegalArgumentException(
+							String.format("More than one row found for metadatum \"%s\".", metadatumCell));
 				}
 
 			}
@@ -557,10 +546,16 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 				.filter(metadatumRow -> !metadatumRow.getKey().equals(PARTICIPANT_METADATA_HEADER_ROW_NAME));
 		nonHeaderRows.forEach(metadatumRow -> {
 			final String metadatumName = metadatumRow.getKey();
-			final List<String> participantValues = metadatumRow.getValue();
-			assert participantValues.size() == extantParticipantIds.size();
+			final int participantCount = extantParticipantIds.size();
+			final List<String> paddedParticipantValues = new ArrayList<>(participantCount);
+			paddedParticipantValues.addAll(metadatumRow.getValue());
+			assert paddedParticipantValues.size() <= participantCount;
+			while (paddedParticipantValues.size() < participantCount) {
+				paddedParticipantValues.add("");
+			}
+
 			final Iterator<String> extantParticipantIdIter = extantParticipantIds.iterator();
-			final Iterator<String> participantValueIter = participantValues.iterator();
+			final Iterator<String> participantValueIter = paddedParticipantValues.iterator();
 			while (extantParticipantIdIter.hasNext()) {
 				final String extantParticipantId = extantParticipantIdIter.next();
 				final String participantValue = participantValueIter.next();
