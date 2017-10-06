@@ -346,11 +346,19 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 
 	private static final Comparator<String> PARTICIPANT_ID_ORDERING_COMPARATOR = Comparator.naturalOrder();
 
-	private static final String PARTICIPANT_METADATA_HEADER_ROW_NAME = "PARTICIPANT_ID";;
+	private static final String PARTICIPANT_METADATA_HEADER_ROW_NAME;
+
+	private static final Comparator<String> PARTICIPANT_METADATUM_NAME_COMPARATOR;
 
 	private static final Collector<CharSequence, ?, String> TABLE_ROW_CELL_JOINER;
 
 	private static final Pattern TABLE_STRING_REPR_COL_DELIMITER_PATTERN;
+
+	static {
+		PARTICIPANT_METADATA_HEADER_ROW_NAME = "PARTICIPANT_ID";
+		PARTICIPANT_METADATUM_NAME_COMPARATOR = new ParticipantMetadatumNameComparator(
+				PARTICIPANT_METADATA_HEADER_ROW_NAME);
+	}
 
 	static {
 		final String tableStrReprColDelim = "\t";
@@ -545,9 +553,7 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 				ESTIMATED_PARTICIPANT_METADATUM_COUNT);
 		final List<String> extantParticipantIds = metadatumRows.getOrDefault(PARTICIPANT_METADATA_HEADER_ROW_NAME,
 				Collections.emptyList());
-		final Comparator<String> participantMetadatumNameComparator = new ParticipantMetadatumNameComparator(
-				PARTICIPANT_METADATA_HEADER_ROW_NAME);
-		final RowSortedTable<String, String, String> result = TreeBasedTable.create(participantMetadatumNameComparator,
+		final RowSortedTable<String, String, String> result = TreeBasedTable.create(PARTICIPANT_METADATUM_NAME_COMPARATOR,
 				PARTICIPANT_ID_ORDERING_COMPARATOR);
 		final Stream<Entry<String, List<String>>> nonHeaderRows = metadatumRows.entrySet().stream()
 				.filter(metadatumRow -> !metadatumRow.getKey().equals(PARTICIPANT_METADATA_HEADER_ROW_NAME));
