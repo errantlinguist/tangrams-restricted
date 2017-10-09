@@ -9,6 +9,7 @@ from decimal import Decimal
 from typing import Iterable, Iterator, Tuple
 
 COL_DELIM = "\t"
+WAV_CONTENT_TYPE_PATTERN = re.compile(".*?/(?:x-)?wav")
 
 
 def parent_dir(infile_path: str) -> str:
@@ -39,9 +40,6 @@ def read_audio_file_duration(infile_path: str) -> Decimal:
 		frames = f.getnframes()
 		rate = f.getframerate()
 		return Decimal(frames) / Decimal(rate)
-
-
-WAV_CONTENT_TYPE_PATTERN = re.compile(".*?/(?:x-)?wav")
 
 
 def walk_wav_files(*inpaths: str) -> Iterator[str]:
