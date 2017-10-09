@@ -14,8 +14,8 @@ FILLER_TOKENS = frozenset(("eh", "ehm", "em", "er", "err", "eugh," "uff", "uh", 
 """
 NOTE: See "../src/main/resources/se/kth/speech/coin/tangrams/analysis/SegmentUtteranceFactory.properties"
 """
-METALANGUAGE_TOKENS = frozenset(("ARTIFACT", "BREATH", "CLICK", "COUGH", "GROAN", "GRUNT", "LAUGHTER", "META", "MOAN",
-								 "NOISE", "SIGH", "SNIFF", "UNKNOWN",))
+METALANGUAGE_TOKENS = frozenset(("ARTIFACT", "BREATH", "CLICK", "COUGH", "GASP", "GROAN", "GRUNT", "LAUGHTER", "META", "MOAN",
+								 "NOISE", "PUFF", "SIGH", "SNIFF", "UNKNOWN",))
 __TOKEN_TRUNCATION_MARKER = '-'
 
 
