@@ -189,56 +189,15 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 	}
 
 	private enum EventMetadatum {
-		END_SCORE {
-			@Override
-			protected Integer parseValue(final String value) {
-				return Integer.valueOf(value);
-			}
-		},
-		ENTITY_COUNT {
-			@Override
-			protected Integer parseValue(final String value) {
-				return Integer.valueOf(value);
-			}
-		},
-		EVENT_COUNT {
-			@Override
-			protected Integer parseValue(final String value) {
-				return Integer.valueOf(value);
-			}
-		},
-		GAME_DURATION {
-			@Override
-			protected BigDecimal parseValue(final String value) {
-				return new BigDecimal(value);
-			}
-		},
-		GAME_ID {
-			@Override
-			protected String parseValue(final String value) {
-				return value;
-			}
-		},
-		INITIAL_INSTRUCTOR_ID {
-			@Override
-			protected String parseValue(final String value) {
-				return value;
-			}
-		},
-		ROUND_COUNT {
-			@Override
-			protected Integer parseValue(final String value) {
-				return Integer.valueOf(value);
-			}
-		},
-		START_TIME {
-			@Override
-			protected ZonedDateTime parseValue(final String value) {
-				return OUTPUT_DATETIME_FORMATTER.parse(value, ZonedDateTime::from);
-			}
-		};
+		END_SCORE,
+		ENTITY_COUNT,
+		EVENT_COUNT,
+		GAME_DURATION,
+		GAME_ID,
+		INITIAL_INSTRUCTOR_ID,
+		ROUND_COUNT,
+		START_TIME;
 
-		protected abstract Object parseValue(String value);
 	}
 
 	private static class EventMetadatumNameComparator implements Comparator<String> {
