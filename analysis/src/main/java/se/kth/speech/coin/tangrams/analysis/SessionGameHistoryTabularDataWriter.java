@@ -59,6 +59,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.BiMap;
+import com.google.common.collect.Table;
 
 import iristk.system.Event;
 import se.kth.speech.ObservationOrderComparator;
@@ -298,12 +299,14 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 
 	private static final Collector<CharSequence, ?, String> TABLE_ROW_CELL_JOINER;
 
+	private static final String TABLE_STR_REPR_COL_DELIM;
+
 	private static final Pattern TABLE_STRING_REPR_COL_DELIMITER_PATTERN;
 
 	static {
-		final String tableStrReprColDelim = "\t";
-		TABLE_STRING_REPR_COL_DELIMITER_PATTERN = Pattern.compile(tableStrReprColDelim);
-		TABLE_ROW_CELL_JOINER = Collectors.joining(tableStrReprColDelim);
+		TABLE_STR_REPR_COL_DELIM = "\t";
+		TABLE_STRING_REPR_COL_DELIMITER_PATTERN = Pattern.compile(TABLE_STR_REPR_COL_DELIM);
+		TABLE_ROW_CELL_JOINER = Collectors.joining(TABLE_STR_REPR_COL_DELIM);
 	}
 
 	public static void main(final String[] args) throws IOException, JAXBException {
@@ -508,12 +511,19 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 				}
 
 				{
-					final ParticipantMetadataTabularDataWriter participantMetadataWriter = new ParticipantMetadataTabularDataWriter(
-							canonicalGame, playerSourceIds, sourceParticipantIds.getKey().inverse());
-					final String outfileName = createParticipantMetadataOutfileName();
-					final Path outfilePath = infileParentDir == null ? Paths.get(outfileName)
-							: infileParentDir.resolve(outfileName);
-					participantMetadataWriter.accept(outfilePath);
+
+					final Table<ParticipantMetadatum, String, String> metadataValues = ParticipantMetadataTabularDataWriter
+							.createParticipantMetadataReprTable(canonicalGame, playerSourceIds,
+									sourceParticipantIds.getKey().inverse());
+					{
+						final String outfileName = createParticipantMetadataOutfileName();
+						final Path outfilePath = infileParentDir == null ? Paths.get(outfileName)
+								: infileParentDir.resolve(outfileName);
+						LOGGER.info("Writing participant metadata to \"{}\".", outfilePath);
+						final ParticipantMetadataTabularDataWriter participantMetadataWriter = new ParticipantMetadataTabularDataWriter(
+								TABLE_STR_REPR_COL_DELIM, OUTPUT_CHARSET);
+						participantMetadataWriter.persistParticipantMetadata(metadataValues, outfilePath);
+					}
 				}
 			}
 		}

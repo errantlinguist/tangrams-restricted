@@ -49,14 +49,13 @@ import com.google.common.collect.TreeBasedTable;
 
 import se.kth.speech.ObservationOrderComparator;
 import se.kth.speech.coin.tangrams.game.PlayerRole;
-import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
  * @since 23 Aug 2017
  *
  */
-final class ParticipantMetadataTabularDataWriter {
+final class ParticipantMetadataTabularDataWriter { // NO_UCD (unused code)
 
 	private static class ParticipantMetadatumNameComparator implements Comparator<String> {
 
@@ -109,29 +108,56 @@ final class ParticipantMetadataTabularDataWriter {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(ParticipantMetadataTabularDataWriter.class);
 
-	private static final Charset OUTPUT_CHARSET = LoggedEvents.CHARSET;
-
 	private static final Comparator<String> PARTICIPANT_ID_ORDERING_COMPARATOR = Comparator.naturalOrder();
 
 	private static final String PARTICIPANT_METADATA_HEADER_ROW_NAME = "PARTICIPANT_ID";
 
-	private static final Collector<CharSequence, ?, String> TABLE_ROW_CELL_JOINER;
+	static Table<ParticipantMetadatum, String, String> createParticipantMetadataReprTable(
+			final SessionGame canonicalGame, final BiMap<String, String> playerSourceIds,
+			final BiMap<String, String> participantSourceIds) {
+		final List<String> sortedParticipantIds = new ArrayList<>(participantSourceIds.keySet());
+		sortedParticipantIds.sort(PARTICIPANT_ID_ORDERING_COMPARATOR);
+		final Table<ParticipantMetadatum, String, String> result = ArrayTable
+				.create(Arrays.asList(ParticipantMetadatum.values()), sortedParticipantIds);
 
-	private static final Pattern TABLE_STRING_REPR_COL_DELIMITER_PATTERN;
+		{
+			final BiMap<String, PlayerRole> playerRoles = canonicalGame.getHistory().getInitialState().getPlayerRoles()
+					.inverse();
+			final BiMap<String, String> sourceParticipantIds = participantSourceIds.inverse();
+			playerRoles.forEach((playerId, role) -> {
+				final String sourceId = playerSourceIds.get(playerId);
+				final String participantId = sourceParticipantIds.get(sourceId);
+				result.put(ParticipantMetadatum.INITIAL_ROLE, participantId, role.toString());
+			});
+		}
 
-	static {
-		final String tableStrReprColDelim = "\t";
-		TABLE_STRING_REPR_COL_DELIMITER_PATTERN = Pattern.compile(tableStrReprColDelim);
-		TABLE_ROW_CELL_JOINER = Collectors.joining(tableStrReprColDelim);
+		for (final Entry<String, String> participantSourceId : participantSourceIds.entrySet()) {
+			result.put(ParticipantMetadatum.SOURCE_ID, participantSourceId.getKey(), participantSourceId.getValue());
+		}
+		assert result.rowKeySet().size() == ParticipantMetadatum.values().length;
+		assert result.columnKeySet().size() == sortedParticipantIds.size();
+		return result;
 	}
 
-	private static LinkedHashMap<String, List<String>> readHeadedRowMap(final Path infilePath,
+	private final Charset outputCharset;
+
+	private final Collector<CharSequence, ?, String> tableRowCellJoiner;
+
+	private final Pattern tableStrReprColDelimPattern;
+
+	ParticipantMetadataTabularDataWriter(final String tableStrReprColDelim, final Charset outputCharset) {
+		tableStrReprColDelimPattern = Pattern.compile(tableStrReprColDelim);
+		tableRowCellJoiner = Collectors.joining(tableStrReprColDelim);
+		this.outputCharset = outputCharset;
+	}
+
+	private LinkedHashMap<String, List<String>> readHeadedRowMap(final Path infilePath,
 			final int expectedMetadatumCount) throws IOException {
 		final LinkedHashMap<String, List<String>> result = Maps
 				.newLinkedHashMapWithExpectedSize(expectedMetadatumCount);
-		try (BufferedReader metadataRowReader = Files.newBufferedReader(infilePath, OUTPUT_CHARSET)) {
+		try (BufferedReader metadataRowReader = Files.newBufferedReader(infilePath, outputCharset)) {
 			for (String row = metadataRowReader.readLine(); row != null; row = metadataRowReader.readLine()) {
-				final List<String> rowCells = Arrays.asList(TABLE_STRING_REPR_COL_DELIMITER_PATTERN.split(row));
+				final List<String> rowCells = Arrays.asList(tableStrReprColDelimPattern.split(row));
 				final int currentRowLength = rowCells.size();
 				if (currentRowLength < 2) {
 					LOGGER.warn("Row has only {} value(s): {}", currentRowLength, rowCells);
@@ -151,8 +177,7 @@ final class ParticipantMetadataTabularDataWriter {
 		return result;
 	}
 
-	private static RowSortedTable<String, String, String> readParticipantMetadata(final Path infilePath)
-			throws IOException {
+	private RowSortedTable<String, String, String> readParticipantMetadata(final Path infilePath) throws IOException {
 		final LinkedHashMap<String, List<String>> metadatumRows = readHeadedRowMap(infilePath,
 				ESTIMATED_PARTICIPANT_METADATUM_COUNT);
 		final List<String> extantParticipantIds = metadatumRows.getOrDefault(PARTICIPANT_METADATA_HEADER_ROW_NAME,
@@ -183,34 +208,7 @@ final class ParticipantMetadataTabularDataWriter {
 		return result;
 	}
 
-	static Table<ParticipantMetadatum, String, String> createParticipantMetadataReprTable(
-			final SessionGame canonicalGame, final BiMap<String, String> playerSourceIds,
-			final BiMap<String, String> participantSourceIds) {
-		final List<String> sortedParticipantIds = new ArrayList<>(participantSourceIds.keySet());
-		sortedParticipantIds.sort(PARTICIPANT_ID_ORDERING_COMPARATOR);
-		final Table<ParticipantMetadatum, String, String> result = ArrayTable
-				.create(Arrays.asList(ParticipantMetadatum.values()), sortedParticipantIds);
-
-		{
-			final BiMap<String, PlayerRole> playerRoles = canonicalGame.getHistory().getInitialState().getPlayerRoles()
-					.inverse();
-			final BiMap<String, String> sourceParticipantIds = participantSourceIds.inverse();
-			playerRoles.forEach((playerId, role) -> {
-				final String sourceId = playerSourceIds.get(playerId);
-				final String participantId = sourceParticipantIds.get(sourceId);
-				result.put(ParticipantMetadatum.INITIAL_ROLE, participantId, role.toString());
-			});
-		}
-
-		for (final Entry<String, String> participantSourceId : participantSourceIds.entrySet()) {
-			result.put(ParticipantMetadatum.SOURCE_ID, participantSourceId.getKey(), participantSourceId.getValue());
-		}
-		assert result.rowKeySet().size() == ParticipantMetadatum.values().length;
-		assert result.columnKeySet().size() == sortedParticipantIds.size();
-		return result;
-	}
-
-	static void persistParticipantMetadata(final Table<ParticipantMetadatum, String, String> metadataParticipantValues,
+	void persistParticipantMetadata(final Table<ParticipantMetadatum, String, String> metadataParticipantValues,
 			final Path outfilePath) throws IOException {
 		// NOTE: This is not atomic: The OS could write to the file between its
 		// reading and rewriting
@@ -250,30 +248,10 @@ final class ParticipantMetadataTabularDataWriter {
 				return metadataRow;
 			});
 			final Stream<String> metadataFileRows = metadataRows.map(List::stream)
-					.map(stream -> stream.collect(TABLE_ROW_CELL_JOINER));
-			Files.write(outfilePath, (Iterable<String>) metadataFileRows::iterator, OUTPUT_CHARSET,
+					.map(stream -> stream.collect(tableRowCellJoiner));
+			Files.write(outfilePath, (Iterable<String>) metadataFileRows::iterator, outputCharset,
 					StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
 		}
-	}
-
-	private final SessionGame canonicalGame;
-
-	private final BiMap<String, String> participantSourceIds;
-
-	private final BiMap<String, String> playerSourceIds;
-
-	ParticipantMetadataTabularDataWriter(final SessionGame canonicalGame, final BiMap<String, String> playerSourceIds,
-			final BiMap<String, String> participantSourceIds) {
-		this.canonicalGame = canonicalGame;
-		this.playerSourceIds = playerSourceIds;
-		this.participantSourceIds = participantSourceIds;
-	}
-
-	public void accept(final Path outfilePath) throws IOException {
-		final Table<ParticipantMetadatum, String, String> metadataValues = createParticipantMetadataReprTable(
-				canonicalGame, playerSourceIds, participantSourceIds);
-		LOGGER.info("Writing participant metadata to \"{}\".", outfilePath);
-		persistParticipantMetadata(metadataValues, outfilePath);
 	}
 
 }
