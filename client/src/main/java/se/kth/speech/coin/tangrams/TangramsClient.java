@@ -87,7 +87,7 @@ import se.kth.speech.io.LineFutureCloser;
  * @since 16 Nov 2016
  *
  */
-final class TangramsClient implements Runnable { // NO_UCD (use default)
+public final class TangramsClient implements Runnable {
 
 	private enum Parameter implements Supplier<Option> {
 		ANALYSIS("a") {

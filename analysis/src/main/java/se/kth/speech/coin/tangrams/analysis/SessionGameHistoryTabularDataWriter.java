@@ -17,8 +17,11 @@
 package se.kth.speech.coin.tangrams.analysis;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.charset.Charset;
 import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
@@ -35,6 +38,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.ListIterator;
@@ -43,8 +47,10 @@ import java.util.Map.Entry;
 import java.util.NavigableMap;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.TimeZone;
 import java.util.TreeMap;
 import java.util.function.BiFunction;
+import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
@@ -52,6 +58,31 @@ import java.util.stream.Stream;
 
 import javax.xml.bind.JAXBException;
 
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.MissingOptionException;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
+import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.LogCommand;
+import org.eclipse.jgit.api.errors.GitAPIException;
+import org.eclipse.jgit.api.errors.NoHeadException;
+import org.eclipse.jgit.errors.AmbiguousObjectException;
+import org.eclipse.jgit.errors.IncorrectObjectTypeException;
+import org.eclipse.jgit.errors.RevisionSyntaxException;
+import org.eclipse.jgit.lib.AbbreviatedObjectId;
+import org.eclipse.jgit.lib.Constants;
+import org.eclipse.jgit.lib.ObjectId;
+import org.eclipse.jgit.lib.ObjectReader;
+import org.eclipse.jgit.lib.PersonIdent;
+import org.eclipse.jgit.lib.Repository;
+import org.eclipse.jgit.revwalk.RevCommit;
+import org.eclipse.jgit.revwalk.filter.CommitTimeRevFilter;
+import org.eclipse.jgit.revwalk.filter.RevFilter;
+import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -59,11 +90,13 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.BiMap;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Table;
 
 import iristk.system.Event;
 import se.kth.speech.ObservationOrderComparator;
 import se.kth.speech.TimestampArithmetic;
+import se.kth.speech.coin.tangrams.TangramsClient;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionContextFactory;
 import se.kth.speech.coin.tangrams.analysis.features.ImageEdgeCounter;
@@ -189,14 +222,7 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 	}
 
 	private enum EventMetadatum {
-		END_SCORE,
-		ENTITY_COUNT,
-		EVENT_COUNT,
-		GAME_DURATION,
-		GAME_ID,
-		INITIAL_INSTRUCTOR_ID,
-		ROUND_COUNT,
-		START_TIME;
+		END_SCORE, ENTITY_COUNT, EVENT_COUNT, EXPERIMENT_VERSION, GAME_DURATION, GAME_ID, INITIAL_INSTRUCTOR_ID, ROUND_COUNT, START_TIME;
 
 	}
 
@@ -242,6 +268,56 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 
 	}
 
+	private enum Parameter implements Supplier<Option> {
+		GIT_REPO_PATH("g") {
+			@Override
+			public Option get() {
+				return Option.builder(optName).longOpt("git-repository").hasArg().argName("path").type(File.class)
+						.desc("Specifies the git repository to use for automatically determining metadata.").build();
+			}
+		},
+		HELP("?") {
+			@Override
+			public Option get() {
+				return Option.builder(optName).longOpt("help").desc("Prints this message.").build();
+			}
+		};
+
+		private static final Options OPTIONS = createOptions();
+
+		private static Options createOptions() {
+			final Options result = new Options();
+			Arrays.stream(Parameter.values()).map(Parameter::get).forEach(result::addOption);
+			return result;
+		}
+
+		private static File parseGitRepoPath(final CommandLine cl) throws ParseException, URISyntaxException {
+			final File result;
+
+			final File suppliedGitRepo = (File) cl.getParsedOptionValue(Parameter.GIT_REPO_PATH.optName);
+			if (suppliedGitRepo == null) {
+				final URL clientSourceLoc = TangramsClient.class.getProtectionDomain().getCodeSource().getLocation();
+				result = new File(clientSourceLoc.toURI());
+			} else {
+				result = suppliedGitRepo;
+			}
+
+			return result;
+		}
+
+		private static void printHelp() {
+			final HelpFormatter formatter = new HelpFormatter();
+			formatter.printHelp(SessionGameHistoryTabularDataWriter.class.getSimpleName() + " INPATHS...", OPTIONS);
+		}
+
+		protected final String optName;
+
+		private Parameter(final String optName) {
+			this.optName = optName;
+		}
+
+	}
+
 	private static final int ESTIMATED_EVENT_METADATUM_COUNT = EventMetadatum.values().length + 8;
 
 	private static final GameManagementEvent GAME_ROUND_DELIMITING_EVENT_TYPE = GameManagementEvent.NEXT_TURN_REQUEST;
@@ -256,6 +332,9 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 
 	private static final DateTimeFormatter OUTPUT_DATETIME_FORMATTER = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 
+	private static final Comparator<RevCommit> REV_TIME_COMPARATOR = Comparator
+			.comparing(commit -> commit.getAuthorIdent().getWhen());
+
 	private static final Collector<CharSequence, ?, String> TABLE_ROW_CELL_JOINER;
 
 	private static final String TABLE_STR_REPR_COL_DELIM;
@@ -268,44 +347,71 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 		TABLE_ROW_CELL_JOINER = Collectors.joining(TABLE_STR_REPR_COL_DELIM);
 	}
 
-	public static void main(final String[] args) throws IOException, JAXBException {
-		final Path[] inpaths = Arrays.stream(args).map(String::trim).filter(path -> !path.isEmpty()).map(Paths::get)
-				.toArray(Path[]::new);
-		if (inpaths.length < 1) {
-			throw new IllegalArgumentException(
-					String.format("Usage: %s INPATHS...", SessionGameHistoryTabularDataWriter.class.getSimpleName()));
-		} else {
-			final SessionGameHistoryTabularDataWriter writer = new SessionGameHistoryTabularDataWriter(
-					EventDatum.CANONICAL_ORDERING, NULL_VALUE_REPR);
-			writer.accept(inpaths);
+	public static void main(final String[] args) throws Exception {
+		final CommandLineParser parser = new DefaultParser();
+		try {
+			final CommandLine cl = parser.parse(Parameter.OPTIONS, args);
+			main(cl);
+		} catch (final ParseException e) {
+			System.out.println(String.format("An error occured while parsing the command-line arguments: %s", e));
+			Parameter.printHelp();
 		}
 	}
 
-	private static Map<EventMetadatum, String> createEventMetadataReprMap(final SessionGame canonicalGame,
-			final String initialInstructorId, final int gameScore, final int entityCount, final int eventCount,
-			final int roundCount, final LocalDateTime startTime, final LocalDateTime maxEventTime) {
-		assert roundCount <= eventCount;
-		assert startTime.isBefore(maxEventTime);
+	private static String createCommitDesc(final RevCommit commit, final Git gitRepository) throws IOException {
+		final PersonIdent authIdent = commit.getAuthorIdent();
+		final Date date = authIdent.getWhen();
+		final TimeZone timeZone = authIdent.getTimeZone();
+		final ZonedDateTime zonedDateTime = ZonedDateTime.ofInstant(date.toInstant(), timeZone.toZoneId());
+		final ObjectId commitId = commit.getId();
+		final ObjectReader objReader = gitRepository.getRepository().newObjectReader();
+		final AbbreviatedObjectId abbvCommitId = objReader.abbreviate(commitId);
+		return String.format("%s, commit %s", OUTPUT_DATETIME_FORMATTER.format(zonedDateTime), abbvCommitId.name());
+	}
 
-		final Map<EventMetadatum, String> result = new EnumMap<>(EventMetadatum.class);
+	private static Git createGit(final File inpath) throws IOException {
+		final FileRepositoryBuilder builder = new FileRepositoryBuilder();
+		builder.findGitDir(inpath);
+		final File gitDir = builder.getGitDir();
+		LOGGER.info("Using \"{}\" as git repository.", gitDir);
+		final Repository repository = builder.build();
+		// Get the central git object from the repository
+		return new Git(repository);
+	}
 
-		result.put(EventMetadatum.END_SCORE, Integer.toString(gameScore));
-		result.put(EventMetadatum.ENTITY_COUNT, Integer.toString(entityCount));
-		result.put(EventMetadatum.EVENT_COUNT, Integer.toString(eventCount));
-		{
-			final BigDecimal durationInSecs = TimestampArithmetic
-					.toDecimalSeconds(Duration.between(startTime, maxEventTime));
-			result.put(EventMetadatum.GAME_DURATION, durationInSecs.toString());
+	private static RevCommit findLastCommit(final ZonedDateTime zonedGameStart, final Git gitRepository)
+			throws NoHeadException, GitAPIException, RevisionSyntaxException, AmbiguousObjectException,
+			IncorrectObjectTypeException, IOException {
+		final LogCommand logCommand = gitRepository.log();
+		final ObjectId head = gitRepository.getRepository().resolve(Constants.HEAD);
+		logCommand.add(head);
+		// https://stackoverflow.com/a/45588376/1391325
+		// https://stackoverflow.com/a/23885950/1391325
+		final RevFilter beforeExpTime = CommitTimeRevFilter.before(Date.from(zonedGameStart.toInstant()));
+		logCommand.setRevFilter(beforeExpTime);
+		logCommand.setMaxCount(1);
+		final List<RevCommit> commits = Lists.newArrayList(logCommand.call());
+		return Collections.max(commits, REV_TIME_COMPARATOR);
+	}
+
+	private static void main(final CommandLine cl) throws Exception {
+		if (cl.hasOption(Parameter.HELP.optName)) {
+			Parameter.printHelp();
+		} else {
+			final Path[] inpaths = cl.getArgList().stream().map(String::trim).filter(path -> !path.isEmpty())
+					.map(Paths::get).toArray(Path[]::new);
+			if (inpaths.length < 1) {
+				throw new MissingOptionException("No input file(s) specified.");
+
+			} else {
+				final File gitRepoPath = Parameter.parseGitRepoPath(cl);
+				LOGGER.info("Finding git repository for path \"{}\".", gitRepoPath);
+				final Git gitRepo = createGit(gitRepoPath);
+				final SessionGameHistoryTabularDataWriter writer = new SessionGameHistoryTabularDataWriter(
+						EventDatum.CANONICAL_ORDERING, NULL_VALUE_REPR, gitRepo);
+				writer.accept(inpaths);
+			}
 		}
-		result.put(EventMetadatum.GAME_ID, canonicalGame.getGameId());
-		result.put(EventMetadatum.INITIAL_INSTRUCTOR_ID, initialInstructorId);
-		result.put(EventMetadatum.ROUND_COUNT, Integer.toString(roundCount));
-		{
-			final ZonedDateTime zonedGameStart = startTime.atZone(ORIGINAL_EXPERIMENT_TIMEZONE);
-			result.put(EventMetadatum.START_TIME, OUTPUT_DATETIME_FORMATTER.format(zonedGameStart));
-		}
-		assert result.size() == EventMetadatum.values().length;
-		return result;
 	}
 
 	private static void persistEventMetadata(final Map<EventMetadatum, String> metadataValues,
@@ -373,6 +479,10 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 		return result;
 	}
 
+	private final LoadingCache<RevCommit, String> commitDescs;
+
+	private final LoadingCache<ZonedDateTime, RevCommit> dateLatestCommits;
+
 	private final LoadingCache<EventContext, String[]> eventDataRowCellValues;
 
 	private final List<EventDatum> eventDataToDescribe;
@@ -380,11 +490,12 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 	private final String eventOutfileNamePrefix;
 
 	private SessionGameHistoryTabularDataWriter(final List<EventDatum> eventDataToDescribe,
-			final String nullCellValueRepr) {
+			final String nullCellValueRepr, final Git gitRepository) {
 		this.eventDataToDescribe = eventDataToDescribe;
 		eventOutfileNamePrefix = "events";
-		eventDataRowCellValues = CacheBuilder.newBuilder().concurrencyLevel(1).initialCapacity(96).maximumSize(144)
-				.build(new CacheLoader<EventContext, String[]>() {
+		final int concurrencyLevel = 1;
+		eventDataRowCellValues = CacheBuilder.newBuilder().concurrencyLevel(concurrencyLevel).initialCapacity(96)
+				.maximumSize(144).build(new CacheLoader<EventContext, String[]>() {
 
 					@Override
 					public String[] load(final EventContext eventCtx) {
@@ -392,9 +503,30 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 								.toArray(String[]::new);
 					}
 				});
+
+		final int expectedMaxUniqueExperimentVersions = 48;
+		dateLatestCommits = CacheBuilder.newBuilder().concurrencyLevel(concurrencyLevel)
+				.maximumSize(expectedMaxUniqueExperimentVersions).build(new CacheLoader<ZonedDateTime, RevCommit>() {
+
+					@Override
+					public RevCommit load(final ZonedDateTime zonedGameStart) throws Exception {
+						return findLastCommit(zonedGameStart, gitRepository);
+					}
+
+				});
+		commitDescs = CacheBuilder.newBuilder().concurrencyLevel(concurrencyLevel)
+				.maximumSize(expectedMaxUniqueExperimentVersions).build(new CacheLoader<RevCommit, String>() {
+
+					@Override
+					public String load(final RevCommit commit) throws Exception {
+						return createCommitDesc(commit, gitRepository);
+					}
+
+				});
 	}
 
-	private void accept(final Path[] inpaths) throws IOException, JAXBException {
+	private void accept(final Path[] inpaths)
+			throws IOException, JAXBException, RevisionSyntaxException, NoHeadException, GitAPIException {
 		for (final Path inpath : inpaths) {
 			LOGGER.info("Looking for session data underneath \"{}\".", inpath);
 			final Path[] infiles = Files.walk(inpath, FileVisitOption.FOLLOW_LINKS).filter(Files::isRegularFile)
@@ -501,6 +633,38 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 
 	private String createEventMetadataOutfileName() {
 		return eventOutfileNamePrefix + "-metadata.tsv";
+	}
+
+	private Map<EventMetadatum, String> createEventMetadataReprMap(final SessionGame canonicalGame,
+			final String initialInstructorId, final int gameScore, final int entityCount, final int eventCount,
+			final int roundCount, final LocalDateTime startTime, final LocalDateTime maxEventTime)
+			throws RevisionSyntaxException, AmbiguousObjectException, IncorrectObjectTypeException, IOException,
+			NoHeadException, GitAPIException {
+		assert roundCount <= eventCount;
+		assert startTime.isBefore(maxEventTime);
+
+		final Map<EventMetadatum, String> result = new EnumMap<>(EventMetadatum.class);
+
+		result.put(EventMetadatum.END_SCORE, Integer.toString(gameScore));
+		result.put(EventMetadatum.ENTITY_COUNT, Integer.toString(entityCount));
+		result.put(EventMetadatum.EVENT_COUNT, Integer.toString(eventCount));
+		{
+			final BigDecimal durationInSecs = TimestampArithmetic
+					.toDecimalSeconds(Duration.between(startTime, maxEventTime));
+			result.put(EventMetadatum.GAME_DURATION, durationInSecs.toString());
+		}
+		result.put(EventMetadatum.GAME_ID, canonicalGame.getGameId());
+		result.put(EventMetadatum.INITIAL_INSTRUCTOR_ID, initialInstructorId);
+		result.put(EventMetadatum.ROUND_COUNT, Integer.toString(roundCount));
+		final ZonedDateTime zonedGameStart = startTime.atZone(ORIGINAL_EXPERIMENT_TIMEZONE);
+		result.put(EventMetadatum.START_TIME, OUTPUT_DATETIME_FORMATTER.format(zonedGameStart));
+
+		final RevCommit lastCommit = dateLatestCommits.getUnchecked(zonedGameStart);
+		final String commitDesc = commitDescs.getUnchecked(lastCommit);
+		result.put(EventMetadatum.EXPERIMENT_VERSION, commitDesc);
+
+		assert result.size() == EventMetadatum.values().length;
+		return result;
 	}
 
 	private String createEventOutfileName() {
