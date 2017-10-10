@@ -65,7 +65,22 @@ import se.kth.speech.coin.tangrams.iristk.events.Move;
  * @since 2 Mar 2017
  *
  */
-final class InteractiveGameBoardPanel extends AbstractGameBoardPanel implements Controller.Listener {
+public final class InteractiveGameBoardPanel extends AbstractGameBoardPanel implements Controller.Listener {
+
+	public enum Property {
+		MOVE_SUBMISSION_WAIT_TIME("moveSubmissionWaitTime");
+
+		private final String propName;
+
+		private Property(final String propName) {
+			this.propName = propName;
+		}
+
+		public String getPropName() {
+			return propName;
+		}
+
+	}
 
 	private static class DelegatingSwingWorker extends SwingWorker<Void, Void> {
 
@@ -146,7 +161,8 @@ final class InteractiveGameBoardPanel extends AbstractGameBoardPanel implements 
 	static {
 		try {
 			final Properties props = ClassProperties.load(InteractiveGameBoardPanel.class);
-			MOVE_SUBMISSION_WAIT_TIME_MILLS = Integer.parseInt(props.getProperty("moveSubmissionWaitTime"));
+			MOVE_SUBMISSION_WAIT_TIME_MILLS = Integer
+					.parseInt(props.getProperty(Property.MOVE_SUBMISSION_WAIT_TIME.getPropName()));
 		} catch (final IOException e) {
 			throw new UncheckedIOException(e);
 		}

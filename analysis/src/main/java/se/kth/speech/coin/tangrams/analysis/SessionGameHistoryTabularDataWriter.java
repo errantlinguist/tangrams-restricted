@@ -19,6 +19,7 @@ package se.kth.speech.coin.tangrams.analysis;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigDecimal;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -47,6 +48,8 @@ import java.util.Map.Entry;
 import java.util.NavigableMap;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.OptionalInt;
+import java.util.Properties;
 import java.util.TreeMap;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
@@ -54,6 +57,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import javax.xml.bind.JAXBException;
 
@@ -75,6 +79,7 @@ import org.eclipse.jgit.errors.RevisionSyntaxException;
 import org.eclipse.jgit.lib.AbbreviatedObjectId;
 import org.eclipse.jgit.lib.Constants;
 import org.eclipse.jgit.lib.ObjectId;
+import org.eclipse.jgit.lib.ObjectLoader;
 import org.eclipse.jgit.lib.ObjectReader;
 import org.eclipse.jgit.lib.PersonIdent;
 import org.eclipse.jgit.lib.Repository;
@@ -82,6 +87,8 @@ import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.filter.CommitTimeRevFilter;
 import org.eclipse.jgit.revwalk.filter.RevFilter;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
+import org.eclipse.jgit.treewalk.TreeWalk;
+import org.eclipse.jgit.treewalk.filter.PathFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -89,10 +96,11 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.BiMap;
-import com.google.common.collect.Lists;
 import com.google.common.collect.Table;
 
 import iristk.system.Event;
+import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
+import it.unimi.dsi.fastutil.ints.IntSet;
 import se.kth.speech.ObservationOrderComparator;
 import se.kth.speech.TimestampArithmetic;
 import se.kth.speech.coin.tangrams.TangramsClient;
@@ -105,6 +113,7 @@ import se.kth.speech.coin.tangrams.iristk.EventTypeMatcher;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 import se.kth.speech.coin.tangrams.iristk.events.Selection;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
+import se.kth.speech.coin.tangrams.view.InteractiveGameBoardPanel;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -221,7 +230,7 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 	}
 
 	private enum EventMetadatum {
-		END_SCORE, ENTITY_COUNT, EVENT_COUNT, EXPERIMENT_VERSION, GAME_DURATION, GAME_ID, INITIAL_INSTRUCTOR_ID, ROUND_COUNT, START_TIME;
+		END_SCORE, ENTITY_COUNT, EVENT_COUNT, EXPERIMENT_VERSION, GAME_DURATION, GAME_ID, INITIAL_INSTRUCTOR_ID, MOVE_DELAY, ROUND_COUNT, START_TIME;
 
 	}
 
@@ -336,6 +345,14 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 	private static final Comparator<RevCommit> REV_TIME_COMPARATOR = Comparator
 			.comparing(commit -> commit.getAuthorIdent().getWhen());
 
+	/**
+	 * <strong>NOTE:</strong> This string is fragile and must be automatically
+	 * updated in cases of e.g.&nbsp;refactoring.
+	 */
+	private static final String SOURCE_FILE_LOCATOR_PATH = "client/src/main/resources/"
+			+ InteractiveGameBoardPanel.class.getPackage().getName().replace('.', '/') + '/'
+			+ InteractiveGameBoardPanel.class.getSimpleName() + ".properties";
+
 	private static final Collector<CharSequence, ?, String> TABLE_ROW_CELL_JOINER;
 
 	private static final String TABLE_STR_REPR_COL_DELIM;
@@ -380,19 +397,65 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 		return new Git(repository);
 	}
 
-	private static RevCommit findLastCommit(final ZonedDateTime zonedGameStart, final Git gitRepository)
-			throws NoHeadException, GitAPIException, RevisionSyntaxException, AmbiguousObjectException,
-			IncorrectObjectTypeException, IOException {
-		final LogCommand logCommand = gitRepository.log();
+	private static LogCommand createLatestCommitLogCommand(final ZonedDateTime zonedGameStart, final Git gitRepository)
+			throws RevisionSyntaxException, AmbiguousObjectException, IncorrectObjectTypeException, IOException {
+		final LogCommand result = gitRepository.log();
 		final ObjectId head = gitRepository.getRepository().resolve(Constants.HEAD);
-		logCommand.add(head);
+		result.add(head);
 		// https://stackoverflow.com/a/45588376/1391325
 		// https://stackoverflow.com/a/23885950/1391325
 		final RevFilter beforeExpTime = CommitTimeRevFilter.before(Date.from(zonedGameStart.toInstant()));
-		logCommand.setRevFilter(beforeExpTime);
-		logCommand.setMaxCount(1);
-		final List<RevCommit> commits = Lists.newArrayList(logCommand.call());
-		return Collections.max(commits, REV_TIME_COMPARATOR);
+		result.setRevFilter(beforeExpTime);
+		result.setMaxCount(1);
+		return result;
+	}
+
+	private static Optional<RevCommit> findLatestCommit(final ZonedDateTime zonedGameStart, final Git gitRepository)
+			throws NoHeadException, GitAPIException, RevisionSyntaxException, AmbiguousObjectException,
+			IncorrectObjectTypeException, IOException {
+		final LogCommand logCommand = createLatestCommitLogCommand(zonedGameStart, gitRepository);
+		return StreamSupport.stream(logCommand.call().spliterator(), false).max(REV_TIME_COMPARATOR);
+	}
+
+	private static OptionalInt findMoveSubmissionWaitTime(final RevCommit commit, final Git gitRepository)
+			throws IncorrectObjectTypeException, IOException {
+		final IntSet waitTimesMills = new IntOpenHashSet(1);
+
+		try (TreeWalk walk = new TreeWalk(gitRepository.getRepository())) {
+			walk.addTree(commit.getTree());
+			walk.setFilter(PathFilter.create(SOURCE_FILE_LOCATOR_PATH));
+			walk.setRecursive(true);
+			final ObjectReader objReader = walk.getObjectReader();
+
+			while (walk.next()) {
+				final ObjectId objId = walk.getObjectId(0);
+				final ObjectLoader objLoader = objReader.open(objId);
+				final Properties props = new Properties();
+				try (InputStream inStream = objLoader.openStream()) {
+					props.load(inStream);
+				}
+				final int waitTimeMills = Integer.parseInt(
+						props.getProperty(InteractiveGameBoardPanel.Property.MOVE_SUBMISSION_WAIT_TIME.getPropName()));
+				waitTimesMills.add(waitTimeMills);
+			}
+		}
+
+		final OptionalInt result;
+		switch (waitTimesMills.size()) {
+		case 0: {
+			result = OptionalInt.empty();
+			break;
+		}
+		case 1: {
+			result = OptionalInt.of(waitTimesMills.iterator().nextInt());
+			break;
+		}
+		default: {
+			throw new AssertionError(String
+					.format("Found more than one move submission wait time while walking commit: %s", waitTimesMills));
+		}
+		}
+		return result;
 	}
 
 	private static void main(final CommandLine cl) throws Exception {
@@ -480,7 +543,7 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 		return result;
 	}
 
-	private final LoadingCache<RevCommit, String> commitDescs;
+	private final LoadingCache<RevCommit, Map<EventMetadatum, String>> commitMetadata;
 
 	private final LoadingCache<ZonedDateTime, RevCommit> dateLatestCommits;
 
@@ -510,17 +573,28 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 				.maximumSize(expectedMaxUniqueExperimentVersions).build(new CacheLoader<ZonedDateTime, RevCommit>() {
 
 					@Override
-					public RevCommit load(final ZonedDateTime zonedGameStart) throws Exception {
-						return findLastCommit(zonedGameStart, gitRepository);
+					public RevCommit load(final ZonedDateTime zonedGameStart)
+							throws RevisionSyntaxException, NoHeadException, AmbiguousObjectException,
+							IncorrectObjectTypeException, GitAPIException, IOException {
+						return findLatestCommit(zonedGameStart, gitRepository).get();
 					}
 
 				});
-		commitDescs = CacheBuilder.newBuilder().concurrencyLevel(concurrencyLevel)
-				.maximumSize(expectedMaxUniqueExperimentVersions).build(new CacheLoader<RevCommit, String>() {
+		commitMetadata = CacheBuilder.newBuilder().concurrencyLevel(concurrencyLevel)
+				.maximumSize(expectedMaxUniqueExperimentVersions)
+				.build(new CacheLoader<RevCommit, Map<EventMetadatum, String>>() {
 
 					@Override
-					public String load(final RevCommit commit) throws Exception {
-						return createCommitDesc(commit, gitRepository);
+					public Map<EventMetadatum, String> load(final RevCommit commit) throws IOException {
+						final Map<EventMetadatum, String> result = new EnumMap<>(EventMetadatum.class);
+						final String commitDesc = createCommitDesc(commit, gitRepository);
+						result.put(EventMetadatum.EXPERIMENT_VERSION, commitDesc);
+
+						final Integer moveWaitTime = findMoveSubmissionWaitTime(commit, gitRepository).orElse(0);
+						LOGGER.debug("Found a wait time of {}ms for experiment version \"{}\".", moveWaitTime,
+								commitDesc);
+						result.put(EventMetadatum.MOVE_DELAY, moveWaitTime.toString());
+						return result;
 					}
 
 				});
@@ -661,8 +735,8 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 		result.put(EventMetadatum.START_TIME, OUTPUT_DATETIME_FORMATTER.format(zonedGameStart));
 
 		final RevCommit lastCommit = dateLatestCommits.getUnchecked(zonedGameStart);
-		final String commitDesc = commitDescs.getUnchecked(lastCommit);
-		result.put(EventMetadatum.EXPERIMENT_VERSION, commitDesc);
+		final Map<EventMetadatum, String> commitMetadatumMap = commitMetadata.getUnchecked(lastCommit);
+		result.putAll(commitMetadatumMap);
 
 		assert result.size() == EventMetadatum.values().length;
 		return result;
