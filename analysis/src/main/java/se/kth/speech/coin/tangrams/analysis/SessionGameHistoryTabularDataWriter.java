@@ -504,7 +504,7 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 					}
 				});
 
-		final int expectedMaxUniqueExperimentVersions = 48;
+		final int expectedMaxUniqueExperimentVersions = 24;
 		dateLatestCommits = CacheBuilder.newBuilder().concurrencyLevel(concurrencyLevel)
 				.maximumSize(expectedMaxUniqueExperimentVersions).build(new CacheLoader<ZonedDateTime, RevCommit>() {
 
