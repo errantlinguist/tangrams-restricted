@@ -366,7 +366,7 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 		final ObjectId commitId = commit.getId();
 		final ObjectReader objReader = gitRepository.getRepository().newObjectReader();
 		final AbbreviatedObjectId abbvCommitId = objReader.abbreviate(commitId);
-		return String.format("%s, commit %s", OUTPUT_DATETIME_FORMATTER.format(zonedDateTime), abbvCommitId.name());
+		return String.format("%s, git commit %s", OUTPUT_DATETIME_FORMATTER.format(zonedDateTime), abbvCommitId.name());
 	}
 
 	private static Git createGit(final File inpath) throws IOException {
