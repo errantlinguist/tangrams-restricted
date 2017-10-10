@@ -242,7 +242,7 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 
 	}
 
-	private static final int ESTIMATED_EVENT_METADATUM_COUNT = EventMetadatum.values().length + 1;
+	private static final int ESTIMATED_EVENT_METADATUM_COUNT = EventMetadatum.values().length + 8;
 
 	private static final GameManagementEvent GAME_ROUND_DELIMITING_EVENT_TYPE = GameManagementEvent.NEXT_TURN_REQUEST;
 
