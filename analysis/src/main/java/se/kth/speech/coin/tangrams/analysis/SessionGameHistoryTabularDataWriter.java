@@ -47,7 +47,6 @@ import java.util.Map.Entry;
 import java.util.NavigableMap;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.TimeZone;
 import java.util.TreeMap;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
@@ -320,6 +319,8 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 
 	private static final int ESTIMATED_EVENT_METADATUM_COUNT = EventMetadatum.values().length + 8;
 
+	private static final ZoneId EXPERIMENT_VERSION_TIMEZONE = ZoneId.of("UTC");
+
 	private static final GameManagementEvent GAME_ROUND_DELIMITING_EVENT_TYPE = GameManagementEvent.NEXT_TURN_REQUEST;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SessionGameHistoryTabularDataWriter.class);
@@ -361,8 +362,8 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 	private static String createCommitDesc(final RevCommit commit, final Git gitRepository) throws IOException {
 		final PersonIdent authIdent = commit.getAuthorIdent();
 		final Date date = authIdent.getWhen();
-		final TimeZone timeZone = authIdent.getTimeZone();
-		final ZonedDateTime zonedDateTime = ZonedDateTime.ofInstant(date.toInstant(), timeZone.toZoneId());
+		// final TimeZone timeZone = authIdent.getTimeZone();
+		final ZonedDateTime zonedDateTime = ZonedDateTime.ofInstant(date.toInstant(), EXPERIMENT_VERSION_TIMEZONE);
 		final ObjectId commitId = commit.getId();
 		final ObjectReader objReader = gitRepository.getRepository().newObjectReader();
 		final AbbreviatedObjectId abbvCommitId = objReader.abbreviate(commitId);
