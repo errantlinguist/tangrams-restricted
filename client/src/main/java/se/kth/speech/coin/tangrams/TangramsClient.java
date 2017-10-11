@@ -89,6 +89,22 @@ import se.kth.speech.io.LineFutureCloser;
  */
 public final class TangramsClient implements Runnable {
 
+	private static class ConnectionException extends RuntimeException {
+
+		/**
+		 *
+		 */
+		private static final long serialVersionUID = 5041589637093636841L;
+
+		/**
+		 * @param cause
+		 */
+		public ConnectionException(final Throwable cause) {
+			super(cause);
+		}
+
+	}
+
 	private enum Parameter implements Supplier<Option> {
 		ANALYSIS("a") {
 			@Override
@@ -185,6 +201,22 @@ public final class TangramsClient implements Runnable {
 
 		private Parameter(final String optName) {
 			this.optName = optName;
+		}
+
+	}
+
+	static final class Exception extends RuntimeException {
+
+		/**
+		 *
+		 */
+		private static final long serialVersionUID = -3850730452105933272L;
+
+		/**
+		 * @param cause
+		 */
+		public Exception(final Throwable cause) {
+			super(cause);
 		}
 
 	}
@@ -523,7 +555,7 @@ public final class TangramsClient implements Runnable {
 														analysisEnabled));
 
 											} catch (final InvocationTargetException e) {
-												final RuntimeException wrapper = new RuntimeException(e);
+												final ConnectionException wrapper = new ConnectionException(e);
 												LOGGER.error(String.format(
 														"A(n) %s occurred while running the successful connection hook; Re-throwing as a(n) %s.",
 														e.getClass().getSimpleName(),
@@ -539,13 +571,13 @@ public final class TangramsClient implements Runnable {
 
 								gameClientModule.requestJoinGame();
 
-							} catch (final Exception exAfterConnectionViewConst) {
+							} catch (final java.lang.Exception exAfterConnectionViewConst) {
 								LOGGER.error(
 										"An exception occurred sometime after creating the connection status view; Disposing of the view and re-throwing exception.");
 								connectionStatusView.dispose();
 								throw exAfterConnectionViewConst;
 							}
-						} catch (final Exception exAfterRecorderConst) {
+						} catch (final java.lang.Exception exAfterRecorderConst) {
 							// NOTE: Finally block doesn't work here because of
 							// the threads
 							// running in the background: A "finally" block will
@@ -558,7 +590,7 @@ public final class TangramsClient implements Runnable {
 							throw exAfterRecorderConst;
 						}
 
-					} catch (final Exception exAfterIrisTKConst) {
+					} catch (final java.lang.Exception exAfterIrisTKConst) {
 						// NOTE: Finally block doesn't work here because of the
 						// threads
 						// running in the background: A "finally" block will
@@ -571,9 +603,9 @@ public final class TangramsClient implements Runnable {
 						irisSystemStopper.run();
 						throw exAfterIrisTKConst;
 					}
-				} catch (final Exception runningException) {
+				} catch (final java.lang.Exception runningException) {
 					final List<Runnable> cancelledTasks = backgroundJobService.shutdownNow();
-					final RuntimeException wrapper = new RuntimeException(runningException);
+					final Exception wrapper = new Exception(runningException);
 					LOGGER.error(String.format(
 							"An exception occurred while running the client, stopping %d task(s) before completion; Re-throwing as a(n) %s.",
 							cancelledTasks.size(), wrapper.getClass().getSimpleName()));
