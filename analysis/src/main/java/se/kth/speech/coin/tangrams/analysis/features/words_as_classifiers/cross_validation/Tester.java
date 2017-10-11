@@ -49,9 +49,9 @@ import it.unimi.dsi.fastutil.ints.IntSet;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import se.kth.speech.coin.tangrams.analysis.GameContext;
 import se.kth.speech.coin.tangrams.analysis.GameHistory;
+import se.kth.speech.coin.tangrams.analysis.SessionGame;
 import se.kth.speech.coin.tangrams.analysis.SessionGameManager;
 import se.kth.speech.coin.tangrams.analysis.SessionGameManagerCacheSupplier;
-import se.kth.speech.coin.tangrams.analysis.SessionGame;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
@@ -302,6 +302,32 @@ public final class Tester {
 
 	}
 
+	static final class TrainingException extends RuntimeException {
+
+		/**
+		 *
+		 */
+		private static final long serialVersionUID = -4685752527646143156L;
+
+		private final String classificationName;
+
+		/**
+		 * @param cause
+		 */
+		public TrainingException(final String classificationName, final Throwable cause) {
+			super(cause);
+			this.classificationName = classificationName;
+		}
+
+		/**
+		 * @return the classificationName
+		 */
+		String getClassificationName() {
+			return classificationName;
+		}
+
+	}
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(Tester.class);
 
 	private static final String TEST_INSTS_REL_NAME = "tested_entites";
@@ -415,7 +441,7 @@ public final class Tester {
 				try {
 					classifier.buildClassifier(trainingInsts);
 				} catch (final Exception e) {
-					throw new RuntimeException(e);
+					throw new TrainingException(className, e);
 				}
 				final Logistic oldClassifier = result.put(className, classifier);
 				if (oldClassifier != null) {

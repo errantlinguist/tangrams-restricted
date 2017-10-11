@@ -69,6 +69,22 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_
  */
 final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 
+	static final class ErrorWritingException extends RuntimeException {
+
+		/**
+		 *
+		 */
+		private static final long serialVersionUID = -2393007769462670325L;
+
+		/**
+		 * @param cause
+		 */
+		public ErrorWritingException(final Throwable cause) {
+			super(cause);
+		}
+
+	}
+
 	private static final List<DialogueAnalysisSummaryFactory.SummaryDatum> DEFAULT_DATA_TO_WRITE = createDefaultDatumOrderingList();
 
 	private static final String EXTRACTION_LOG_FILE_SUFFIX = ".extraction.tsv";
@@ -302,7 +318,7 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 		diagAnalysisRowCellVals.forEachOrdered(rowCellValBuilder);
 		final String row = rowCellValBuilder.build().collect(ROW_CELL_JOINER);
 		out.println(row);
-		throw new RuntimeException(thrown);
+		throw new ErrorWritingException(thrown);
 	}
 
 }
