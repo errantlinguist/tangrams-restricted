@@ -387,7 +387,7 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 		return String.format("%s, git commit %s", OUTPUT_DATETIME_FORMATTER.format(zonedDateTime), abbvCommitId.name());
 	}
 
-	private static Git createGit(final File inpath) throws IOException {
+	private static Git createGitCommandFactory(final File inpath) throws IOException {
 		final FileRepositoryBuilder builder = new FileRepositoryBuilder();
 		builder.findGitDir(inpath);
 		final File gitDir = builder.getGitDir();
@@ -470,9 +470,9 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 			} else {
 				final File gitRepoPath = Parameter.parseGitRepoPath(cl);
 				LOGGER.info("Finding git repository for path \"{}\".", gitRepoPath);
-				final Git gitRepo = createGit(gitRepoPath);
+				final Git gitCommandFactory = createGitCommandFactory(gitRepoPath);
 				final SessionGameHistoryTabularDataWriter writer = new SessionGameHistoryTabularDataWriter(
-						EventDatum.CANONICAL_ORDERING, NULL_VALUE_REPR, gitRepo);
+						EventDatum.CANONICAL_ORDERING, NULL_VALUE_REPR, gitCommandFactory);
 				writer.accept(inpaths);
 			}
 		}
