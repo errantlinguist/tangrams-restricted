@@ -85,7 +85,7 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 
 	private static final String UTT_REL_LOG_FILE_SUFFIX = ".uttrels.tsv";
 
-	public static void main(final String[] args) throws Exception {
+	public static void main(final String[] args) throws BatchJobTestException {
 		final CommandLineParser parser = new DefaultParser();
 		try {
 			final CommandLine cl = parser.parse(OPTIONS, args);
@@ -154,7 +154,7 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 				StandardOpenOption.TRUNCATE_EXISTING);
 	}
 
-	private static void main(final CommandLine cl) throws Exception {
+	private static void main(final CommandLine cl) throws BatchJobTestException {
 		if (cl.hasOption(CLITestParameter.HELP.optName)) {
 			printHelp();
 		} else {
@@ -204,7 +204,7 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 				}
 			} catch (final Exception e) {
 				shutdownExceptionally(backgroundJobExecutor);
-				throw e;
+				throw new BatchJobTestException(e);
 			}
 		}
 	}

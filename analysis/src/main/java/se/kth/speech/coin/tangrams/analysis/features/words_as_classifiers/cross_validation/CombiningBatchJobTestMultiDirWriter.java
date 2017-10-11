@@ -126,7 +126,7 @@ final class CombiningBatchJobTestMultiDirWriter { // NO_UCD (use default)
 		COL_HEADERS = createColHeaderList(SUMMARY_DATA_TO_WRITE);
 	}
 
-	public static void main(final String[] args) throws Exception {
+	public static void main(final String[] args) throws BatchJobTestException {
 		final CommandLineParser parser = new DefaultParser();
 		try {
 			final CommandLine cl = parser.parse(Parameter.OPTIONS, args);
@@ -199,7 +199,7 @@ final class CombiningBatchJobTestMultiDirWriter { // NO_UCD (use default)
 		return resultBuilder.build();
 	}
 
-	private static void main(final CommandLine cl) throws Exception {
+	private static void main(final CommandLine cl) throws BatchJobTestException {
 		if (cl.hasOption(CLITestParameter.HELP.optName)) {
 			Parameter.printHelp();
 		} else {
@@ -249,7 +249,7 @@ final class CombiningBatchJobTestMultiDirWriter { // NO_UCD (use default)
 
 			} catch (final Exception e) {
 				shutdownExceptionally(backgroundJobExecutor);
-				throw e;
+				throw new BatchJobTestException(e);
 			}
 		}
 	}
