@@ -365,7 +365,7 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 		TABLE_ROW_CELL_JOINER = Collectors.joining(TABLE_STR_REPR_COL_DELIM);
 	}
 
-	public static void main(final String[] args) throws Exception {
+	public static void main(final String[] args) throws URISyntaxException, IOException, JAXBException {
 		final CommandLineParser parser = new DefaultParser();
 		try {
 			final CommandLine cl = parser.parse(Parameter.OPTIONS, args);
