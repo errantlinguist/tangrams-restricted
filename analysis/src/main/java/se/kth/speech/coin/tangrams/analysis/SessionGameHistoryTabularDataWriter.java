@@ -397,7 +397,8 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 		return new Git(repository);
 	}
 
-	private static LogCommand createLatestCommitLogCommand(final ZonedDateTime zonedGameStart, final Git gitCommandFactory)
+	private static LogCommand createLatestCommitLogCommand(final ZonedDateTime zonedGameStart,
+			final Git gitCommandFactory)
 			throws RevisionSyntaxException, AmbiguousObjectException, IncorrectObjectTypeException, IOException {
 		final LogCommand result = gitCommandFactory.log();
 		final ObjectId head = gitCommandFactory.getRepository().resolve(Constants.HEAD);
@@ -458,7 +459,8 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 		return result;
 	}
 
-	private static void main(final CommandLine cl) throws Exception {
+	private static void main(final CommandLine cl)
+			throws ParseException, URISyntaxException, IOException, JAXBException {
 		if (cl.hasOption(Parameter.HELP.optName)) {
 			Parameter.printHelp();
 		} else {
@@ -600,8 +602,7 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 				});
 	}
 
-	private void accept(final Path[] inpaths)
-			throws IOException, JAXBException, RevisionSyntaxException, NoHeadException, GitAPIException {
+	private void accept(final Path[] inpaths) throws IOException, JAXBException {
 		for (final Path inpath : inpaths) {
 			LOGGER.info("Looking for session data underneath \"{}\".", inpath);
 			final Path[] infiles = Files.walk(inpath, FileVisitOption.FOLLOW_LINKS).filter(Files::isRegularFile)
@@ -712,9 +713,7 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 
 	private Map<EventMetadatum, String> createEventMetadataReprMap(final SessionGame canonicalGame,
 			final String initialInstructorId, final int gameScore, final int entityCount, final int eventCount,
-			final int roundCount, final LocalDateTime startTime, final LocalDateTime maxEventTime)
-			throws RevisionSyntaxException, AmbiguousObjectException, IncorrectObjectTypeException, IOException,
-			NoHeadException, GitAPIException {
+			final int roundCount, final LocalDateTime startTime, final LocalDateTime maxEventTime) {
 		assert roundCount <= eventCount;
 		assert startTime.isBefore(maxEventTime);
 
