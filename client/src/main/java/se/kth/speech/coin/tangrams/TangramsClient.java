@@ -366,7 +366,7 @@ public final class TangramsClient implements Runnable {
 			final DataLine signalDataLine = startSignalDataLineFuture.get();
 			signalDataLine.start();
 		} catch (final InterruptedException e) {
-			LOGGER.debug("The thread used to play the start signal was interrupted before completing.", e);
+			throw new IllegalStateException(e);
 		} catch (final ExecutionException e) {
 			throw new AssertionError(e);
 		}
