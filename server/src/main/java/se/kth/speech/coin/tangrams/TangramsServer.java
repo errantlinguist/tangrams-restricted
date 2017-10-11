@@ -54,27 +54,6 @@ import se.kth.speech.coin.tangrams.iristk.IrisSystemStopper;
  */
 final class TangramsServer implements Runnable { // NO_UCD (use default)
 
-	// private static class FlagSettingUncaughtExceptionHandler implements
-	// UncaughtExceptionHandler {
-	//
-	// private final AtomicBoolean wasExceptionHandled = new
-	// AtomicBoolean(false);
-	//
-	// /*
-	// * (non-Javadoc)
-	// *
-	// * @see
-	// * java.lang.Thread.UncaughtExceptionHandler#uncaughtException(java.lang
-	// * .Thread, java.lang.Throwable)
-	// */
-	// @Override
-	// public void uncaughtException(final Thread t, final Throwable e) {
-	// wasExceptionHandled.set(true);
-	// Thread.getDefaultUncaughtExceptionHandler().uncaughtException(t, e);
-	// }
-	//
-	// }
-
 	private enum Parameter implements Supplier<Option> {
 		BROKER_HOST("h") {
 
@@ -136,6 +115,43 @@ final class TangramsServer implements Runnable { // NO_UCD (use default)
 
 		private Parameter(final String optName) {
 			this.optName = optName;
+		}
+
+	}
+
+	// private static class FlagSettingUncaughtExceptionHandler implements
+	// UncaughtExceptionHandler {
+	//
+	// private final AtomicBoolean wasExceptionHandled = new
+	// AtomicBoolean(false);
+	//
+	// /*
+	// * (non-Javadoc)
+	// *
+	// * @see
+	// * java.lang.Thread.UncaughtExceptionHandler#uncaughtException(java.lang
+	// * .Thread, java.lang.Throwable)
+	// */
+	// @Override
+	// public void uncaughtException(final Thread t, final Throwable e) {
+	// wasExceptionHandled.set(true);
+	// Thread.getDefaultUncaughtExceptionHandler().uncaughtException(t, e);
+	// }
+	//
+	// }
+
+	static final class Exception extends RuntimeException {
+
+		/**
+		 *
+		 */
+		private static final long serialVersionUID = 4642677256770391448L;
+
+		/**
+		 * @param cause
+		 */
+		public Exception(final Throwable cause) {
+			super(cause);
 		}
 
 	}
@@ -219,7 +235,7 @@ final class TangramsServer implements Runnable { // NO_UCD (use default)
 				system.addModule(new LoggingModule(new File("log", "server"), NameFilter.ALL, true));
 				system.sendStartSignal();
 
-			} catch (final Exception exAfterIrisTKConst) {
+			} catch (final java.lang.Exception exAfterIrisTKConst) {
 				// NOTE: Finally doesn't work because of the threads
 				// running in the background: A "finally" block will
 				// kill the IrisTK system right after exiting this
@@ -231,11 +247,11 @@ final class TangramsServer implements Runnable { // NO_UCD (use default)
 				irisSystemStopper.run();
 				throw exAfterIrisTKConst;
 			}
-		} catch (final Exception runningException) {
-			final RuntimeException wrapper = new RuntimeException(runningException);
+		} catch (final java.lang.Exception runningException) {
+			final Exception wrapper = new Exception(runningException);
 			LOGGER.error(String.format("An exception occurred while running the server; Re-throwing as a(n) %s.",
 					wrapper.getClass().getSimpleName()));
-			throw new RuntimeException(runningException);
+			throw wrapper;
 		}
 
 	}
