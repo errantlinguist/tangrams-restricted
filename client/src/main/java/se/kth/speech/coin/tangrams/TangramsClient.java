@@ -306,7 +306,7 @@ public final class TangramsClient implements Runnable {
 		try {
 			return openAudioClip("game-start.wav");
 		} catch (LineUnavailableException | IOException | UnsupportedAudioFileException e) {
-			throw new RuntimeException(e);
+			throw new AssertionError(e);
 		}
 	}
 
@@ -365,8 +365,10 @@ public final class TangramsClient implements Runnable {
 		try {
 			final DataLine signalDataLine = startSignalDataLineFuture.get();
 			signalDataLine.start();
-		} catch (InterruptedException | ExecutionException e) {
-			throw new RuntimeException(e);
+		} catch (final InterruptedException e) {
+			LOGGER.debug("The thread used to play the start signal was interrupted before completing.", e);
+		} catch (final ExecutionException e) {
+			throw new AssertionError(e);
 		}
 	}
 
