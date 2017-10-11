@@ -376,13 +376,13 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 		}
 	}
 
-	private static String createCommitDesc(final RevCommit commit, final Git gitRepository) throws IOException {
+	private static String createCommitDesc(final RevCommit commit, final Git gitCommandFactory) throws IOException {
 		final PersonIdent authIdent = commit.getAuthorIdent();
 		final Date date = authIdent.getWhen();
 		// final TimeZone timeZone = authIdent.getTimeZone();
 		final ZonedDateTime zonedDateTime = ZonedDateTime.ofInstant(date.toInstant(), EXPERIMENT_VERSION_TIMEZONE);
 		final ObjectId commitId = commit.getId();
-		final ObjectReader objReader = gitRepository.getRepository().newObjectReader();
+		final ObjectReader objReader = gitCommandFactory.getRepository().newObjectReader();
 		final AbbreviatedObjectId abbvCommitId = objReader.abbreviate(commitId);
 		return String.format("%s, git commit %s", OUTPUT_DATETIME_FORMATTER.format(zonedDateTime), abbvCommitId.name());
 	}
@@ -397,10 +397,10 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 		return new Git(repository);
 	}
 
-	private static LogCommand createLatestCommitLogCommand(final ZonedDateTime zonedGameStart, final Git gitRepository)
+	private static LogCommand createLatestCommitLogCommand(final ZonedDateTime zonedGameStart, final Git gitCommandFactory)
 			throws RevisionSyntaxException, AmbiguousObjectException, IncorrectObjectTypeException, IOException {
-		final LogCommand result = gitRepository.log();
-		final ObjectId head = gitRepository.getRepository().resolve(Constants.HEAD);
+		final LogCommand result = gitCommandFactory.log();
+		final ObjectId head = gitCommandFactory.getRepository().resolve(Constants.HEAD);
 		result.add(head);
 		// https://stackoverflow.com/a/45588376/1391325
 		// https://stackoverflow.com/a/23885950/1391325
@@ -410,18 +410,18 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 		return result;
 	}
 
-	private static Optional<RevCommit> findLatestCommit(final ZonedDateTime zonedGameStart, final Git gitRepository)
+	private static Optional<RevCommit> findLatestCommit(final ZonedDateTime zonedGameStart, final Git gitCommandFactory)
 			throws NoHeadException, GitAPIException, RevisionSyntaxException, AmbiguousObjectException,
 			IncorrectObjectTypeException, IOException {
-		final LogCommand logCommand = createLatestCommitLogCommand(zonedGameStart, gitRepository);
+		final LogCommand logCommand = createLatestCommitLogCommand(zonedGameStart, gitCommandFactory);
 		return StreamSupport.stream(logCommand.call().spliterator(), false).max(REV_TIME_COMPARATOR);
 	}
 
-	private static OptionalInt findMoveSubmissionWaitTime(final RevCommit commit, final Git gitRepository)
+	private static OptionalInt findMoveSubmissionWaitTime(final RevCommit commit, final Git gitCommandFactory)
 			throws IncorrectObjectTypeException, IOException {
 		final IntSet waitTimesMills = new IntOpenHashSet(1);
 
-		try (TreeWalk walk = new TreeWalk(gitRepository.getRepository())) {
+		try (TreeWalk walk = new TreeWalk(gitCommandFactory.getRepository())) {
 			walk.addTree(commit.getTree());
 			walk.setFilter(PathFilter.create(SOURCE_FILE_LOCATOR_PATH));
 			walk.setRecursive(true);
@@ -554,7 +554,7 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 	private final String eventOutfileNamePrefix;
 
 	private SessionGameHistoryTabularDataWriter(final List<EventDatum> eventDataToDescribe,
-			final String nullCellValueRepr, final Git gitRepository) {
+			final String nullCellValueRepr, final Git gitCommandFactory) {
 		this.eventDataToDescribe = eventDataToDescribe;
 		eventOutfileNamePrefix = "events";
 		final int concurrencyLevel = 1;
@@ -576,7 +576,7 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 					public RevCommit load(final ZonedDateTime zonedGameStart)
 							throws RevisionSyntaxException, NoHeadException, AmbiguousObjectException,
 							IncorrectObjectTypeException, GitAPIException, IOException {
-						return findLatestCommit(zonedGameStart, gitRepository).get();
+						return findLatestCommit(zonedGameStart, gitCommandFactory).get();
 					}
 
 				});
@@ -587,10 +587,10 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 					@Override
 					public Map<EventMetadatum, String> load(final RevCommit commit) throws IOException {
 						final Map<EventMetadatum, String> result = new EnumMap<>(EventMetadatum.class);
-						final String commitDesc = createCommitDesc(commit, gitRepository);
+						final String commitDesc = createCommitDesc(commit, gitCommandFactory);
 						result.put(EventMetadatum.EXPERIMENT_VERSION, commitDesc);
 
-						final Integer moveWaitTime = findMoveSubmissionWaitTime(commit, gitRepository).orElse(0);
+						final Integer moveWaitTime = findMoveSubmissionWaitTime(commit, gitCommandFactory).orElse(0);
 						LOGGER.debug("Found a wait time of {}ms for experiment version \"{}\".", moveWaitTime,
 								commitDesc);
 						result.put(EventMetadatum.MOVE_DELAY, moveWaitTime.toString());
