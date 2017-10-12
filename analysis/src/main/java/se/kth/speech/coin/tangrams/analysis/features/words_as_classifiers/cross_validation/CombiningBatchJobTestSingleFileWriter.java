@@ -69,7 +69,7 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_
  */
 final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 
-	static final class ErrorWritingException extends RuntimeException {
+	static final class TestException extends RuntimeException {
 
 		/**
 		 *
@@ -79,7 +79,7 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 		/**
 		 * @param cause
 		 */
-		public ErrorWritingException(final Throwable cause) {
+		public TestException(final Throwable cause) {
 			super(cause);
 		}
 
@@ -318,7 +318,7 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 		diagAnalysisRowCellVals.forEachOrdered(rowCellValBuilder);
 		final String row = rowCellValBuilder.build().collect(ROW_CELL_JOINER);
 		out.println(row);
-		throw new ErrorWritingException(thrown);
+		throw new TestException(thrown);
 	}
 
 }
