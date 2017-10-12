@@ -44,8 +44,8 @@ def __main(infile_paths, input_param_name_regexes: Iterable[str], outfile: IO[st
 		print(COL_DELIM.join(str(row_val) for row_val in row_vals), file=outfile)
 
 
-def __rr(value):
-	return numpy.longfloat_(1.0 / value)
+def __rr(value) -> numpy.longfloat:
+	return numpy.longfloat(1.0) / numpy.longfloat(value)
 
 
 if __name__ == "__main__":
