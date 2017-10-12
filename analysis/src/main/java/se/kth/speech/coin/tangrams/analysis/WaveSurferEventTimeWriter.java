@@ -82,8 +82,7 @@ final class WaveSurferEventTimeWriter { // NO_UCD (use default)
 					String.format("Usage: %s INPATHS...", WaveSurferEventTimeWriter.class.getSimpleName()));
 		} else {
 			for (final Path inpath : inpaths) {
-				final Path[] childDirs = Files.walk(inpath, FileVisitOption.FOLLOW_LINKS).filter(Files::isDirectory)
-						.toArray(Path[]::new);
+				final Iterable<Path> childDirs = Files.walk(inpath, FileVisitOption.FOLLOW_LINKS).filter(Files::isDirectory)::iterator;
 				for (final Path childDir : childDirs) {
 					accept(childDir);
 				}

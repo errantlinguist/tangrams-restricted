@@ -54,8 +54,8 @@ public final class SessionDataManager {
 		final Map<Path, SessionDataManager> result = new HashMap<>();
 		for (final Path inpath : inpaths) {
 			LOGGER.info("Looking for session data underneath \"{}\".", inpath);
-			final Path[] infiles = Files.walk(inpath, FileVisitOption.FOLLOW_LINKS).filter(Files::isRegularFile)
-					.filter(filePath -> filePath.getFileName().toString().endsWith(".properties")).toArray(Path[]::new);
+			final Iterable<Path> infiles = Files.walk(inpath, FileVisitOption.FOLLOW_LINKS).filter(Files::isRegularFile)
+					.filter(filePath -> filePath.getFileName().toString().endsWith(".properties"))::iterator;
 			for (final Path infile : infiles) {
 				final SessionDataManager infileSessionData = create(infile);
 				result.put(infile, infileSessionData);
