@@ -477,7 +477,7 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 						EventDatum.CANONICAL_ORDERING, NULL_VALUE_REPR, gitCommandFactory);
 				for (final Path inpath : inpaths) {
 					LOGGER.info("Looking for session data underneath \"{}\".", inpath);
-					final Iterable<Path> infiles = (Iterable<Path>) Files.walk(inpath, FileVisitOption.FOLLOW_LINKS)
+					final Iterable<Path> infiles = Files.walk(inpath, FileVisitOption.FOLLOW_LINKS)
 							.filter(Files::isRegularFile)
 							.filter(filePath -> filePath.getFileName().toString().endsWith(".properties"))::iterator;
 					for (final Path infile : infiles) {
