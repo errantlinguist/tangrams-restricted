@@ -46,15 +46,14 @@ class SessionGameRoundUtteranceFactory(object):
 		segments = utterances.read_segments(session.utts)
 		utts = seg_utt_factory(segments)
 
-		game_round_utts = tuple(zip_game_round_utterances(game_rounds, iter(utts)))
+		game_round_utts = tuple((game_round, game_round_utts) for (game_round, game_round_utts) in
+								zip_game_round_utterances(game_rounds, iter(utts)) if game_round)
 		event_participant_id_factory = game_events.EventParticipantIdFactory(event_data.initial_instructor_id)
 
 		round_instructor_ids = {}
 		enumerated_game_round_utts = enumerate(game_round_utts, start=self.ROUND_ID_OFFSET)
 		for round_id, round_utts in enumerated_game_round_utts:
 			game_round, round_utts = round_utts
-			print("game_round = {}".format(game_round), file=sys.stderr)
-			print("round_utts = {}".format(round_utts), file=sys.stderr)
 			initial_event = game_round.initial_event
 			round_instructor_id = event_participant_id_factory(initial_event)
 			existing_instructor_id = round_instructor_ids.get(round_id, None)
