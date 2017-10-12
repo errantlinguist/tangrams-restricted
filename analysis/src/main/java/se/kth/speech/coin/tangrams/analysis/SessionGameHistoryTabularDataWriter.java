@@ -475,7 +475,15 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 				final Git gitCommandFactory = createGitCommandFactory(gitRepoPath);
 				final SessionGameHistoryTabularDataWriter writer = new SessionGameHistoryTabularDataWriter(
 						EventDatum.CANONICAL_ORDERING, NULL_VALUE_REPR, gitCommandFactory);
-				writer.accept(inpaths);
+				for (final Path inpath : inpaths) {
+					LOGGER.info("Looking for session data underneath \"{}\".", inpath);
+					final Iterable<Path> infiles = (Iterable<Path>) Files.walk(inpath, FileVisitOption.FOLLOW_LINKS)
+							.filter(Files::isRegularFile)
+							.filter(filePath -> filePath.getFileName().toString().endsWith(".properties"))::iterator;
+					for (final Path infile : infiles) {
+						writer.accept(infile);
+					}
+				}
 			}
 		}
 	}
@@ -602,96 +610,89 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 				});
 	}
 
-	private void accept(final Path[] inpaths) throws IOException, JAXBException {
-		for (final Path inpath : inpaths) {
-			LOGGER.info("Looking for session data underneath \"{}\".", inpath);
-			final Path[] infiles = Files.walk(inpath, FileVisitOption.FOLLOW_LINKS).filter(Files::isRegularFile)
-					.filter(filePath -> filePath.getFileName().toString().endsWith(".properties")).toArray(Path[]::new);
-			for (final Path infile : infiles) {
-				final SessionDataManager infileSessionData = SessionDataManager.create(infile);
-				final SessionGameManager sessionDiagMgr = new SessionGameManager(infileSessionData);
-				final SessionGame canonicalGame = sessionDiagMgr.getCanonicalGame();
+	private void accept(final Path infile) throws IOException, JAXBException {
+		final SessionDataManager infileSessionData = SessionDataManager.create(infile);
+		final SessionGameManager sessionDiagMgr = new SessionGameManager(infileSessionData);
+		final SessionGame canonicalGame = sessionDiagMgr.getCanonicalGame();
 
-				final Path infileParentDir = infile.getParent();
+		final Path infileParentDir = infile.getParent();
 
-				final GameHistory history = canonicalGame.getHistory();
-				final EntityFeatureExtractionContextFactory extractionContextFactory = new EntityFeatureExtractionContextFactory(
-						new GameContextModelFactory(2), new ImageEdgeCounter());
-				final EntityFeatureVectorDescriptionFactory entityFeatureVectorDescFactory = new EntityFeatureVectorDescriptionFactory(
-						new EntityFeature.Extractor(), EntityFeature.getCanonicalOrdering(), extractionContextFactory,
-						NULL_VALUE_REPR);
-				final int entityCount = history.getEntityCount();
+		final GameHistory history = canonicalGame.getHistory();
+		final EntityFeatureExtractionContextFactory extractionContextFactory = new EntityFeatureExtractionContextFactory(
+				new GameContextModelFactory(2), new ImageEdgeCounter());
+		final EntityFeatureVectorDescriptionFactory entityFeatureVectorDescFactory = new EntityFeatureVectorDescriptionFactory(
+				new EntityFeature.Extractor(), EntityFeature.getCanonicalOrdering(), extractionContextFactory,
+				NULL_VALUE_REPR);
+		final int entityCount = history.getEntityCount();
 
-				int eventId = 0;
-				int gameRoundId = 0;
-				int gameScore = 0;
-				LocalDateTime maxEventTime = LocalDateTime.MIN;
-				{
-					final List<Event> events = Arrays.asList(history.getEventSequence().toArray(Event[]::new));
-					final List<Stream<String>> eventRows = new ArrayList<>(events.size() * entityCount);
-					for (final ListIterator<Event> eventIter = events.listIterator(); eventIter.hasNext();) {
-						final Event event = eventIter.next();
-						// Event ID is 1-indexed
-						eventId = eventIter.nextIndex();
-						final GameManagementEvent eventType = GameManagementEvent.getEventType(event);
-						if (GAME_ROUND_DELIMITING_EVENT_TYPE.equals(eventType)) {
-							gameRoundId++;
-						}
-						gameScore = updateScore(eventType, gameScore);
-						final LocalDateTime eventTime = EventTimes.parseEventTime(event.getTime());
-						maxEventTime = Collections.max(Arrays.asList(eventTime, maxEventTime));
-						final GameContext gameCtx = new GameContext(history, eventTime);
-						// Create one row for each entity
-						for (int entityId = 0; entityId < entityCount; ++entityId) {
-							eventRows.add(createRowCellValues(entityFeatureVectorDescFactory,
-									new EventContext(eventId, event, gameRoundId, gameCtx, entityId, gameScore)));
-						}
-					}
-					final Stream<String> fileRows = Stream
-							.concat(Stream.of(createColumnNames(entityFeatureVectorDescFactory)), eventRows.stream())
-							.map(cells -> cells.collect(TABLE_ROW_CELL_JOINER));
-					{
-						final String outfileName = createEventOutfileName();
-						final Path outfilePath = infileParentDir == null ? Paths.get(outfileName)
-								: infileParentDir.resolve(outfileName);
-						LOGGER.info("Writing tabular event data to \"{}\".", outfilePath);
-						Files.write(outfilePath, (Iterable<String>) fileRows::iterator, OUTPUT_CHARSET,
-								StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
-					}
+		int eventId = 0;
+		int gameRoundId = 0;
+		int gameScore = 0;
+		LocalDateTime maxEventTime = LocalDateTime.MIN;
+		{
+			final List<Event> events = Arrays.asList(history.getEventSequence().toArray(Event[]::new));
+			final List<Stream<String>> eventRows = new ArrayList<>(events.size() * entityCount);
+			for (final ListIterator<Event> eventIter = events.listIterator(); eventIter.hasNext();) {
+				final Event event = eventIter.next();
+				// Event ID is 1-indexed
+				eventId = eventIter.nextIndex();
+				final GameManagementEvent eventType = GameManagementEvent.getEventType(event);
+				if (GAME_ROUND_DELIMITING_EVENT_TYPE.equals(eventType)) {
+					gameRoundId++;
 				}
-
-				final BiMap<String, String> playerSourceIds = infileSessionData.getPlayerData().getPlayerSourceIds();
-				final Entry<BiMap<String, String>, String> sourceParticipantIds = new SourceParticipantIdMapFactory()
-						.apply(playerSourceIds, canonicalGame);
-				{
-					final Map<EventMetadatum, String> metadataValues = createEventMetadataReprMap(canonicalGame,
-							sourceParticipantIds.getValue(), gameScore, entityCount, eventId, gameRoundId,
-							history.getStartTime(), maxEventTime);
-					{
-						final String outfileName = createEventMetadataOutfileName();
-						final Path outfilePath = infileParentDir == null ? Paths.get(outfileName)
-								: infileParentDir.resolve(outfileName);
-						LOGGER.info("Writing event metadata to \"{}\".", outfilePath);
-						persistEventMetadata(metadataValues,
-								new EventMetadatumNameComparator(ESTIMATED_EVENT_METADATUM_COUNT), outfilePath);
-					}
+				gameScore = updateScore(eventType, gameScore);
+				final LocalDateTime eventTime = EventTimes.parseEventTime(event.getTime());
+				maxEventTime = Collections.max(Arrays.asList(eventTime, maxEventTime));
+				final GameContext gameCtx = new GameContext(history, eventTime);
+				// Create one row for each entity
+				for (int entityId = 0; entityId < entityCount; ++entityId) {
+					eventRows.add(createRowCellValues(entityFeatureVectorDescFactory,
+							new EventContext(eventId, event, gameRoundId, gameCtx, entityId, gameScore)));
 				}
+			}
+			final Stream<String> fileRows = Stream
+					.concat(Stream.of(createColumnNames(entityFeatureVectorDescFactory)), eventRows.stream())
+					.map(cells -> cells.collect(TABLE_ROW_CELL_JOINER));
+			{
+				final String outfileName = createEventOutfileName();
+				final Path outfilePath = infileParentDir == null ? Paths.get(outfileName)
+						: infileParentDir.resolve(outfileName);
+				LOGGER.info("Writing tabular event data to \"{}\".", outfilePath);
+				Files.write(outfilePath, (Iterable<String>) fileRows::iterator, OUTPUT_CHARSET,
+						StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
+			}
+		}
 
-				{
+		final BiMap<String, String> playerSourceIds = infileSessionData.getPlayerData().getPlayerSourceIds();
+		final Entry<BiMap<String, String>, String> sourceParticipantIds = new SourceParticipantIdMapFactory()
+				.apply(playerSourceIds, canonicalGame);
+		{
+			final Map<EventMetadatum, String> metadataValues = createEventMetadataReprMap(canonicalGame,
+					sourceParticipantIds.getValue(), gameScore, entityCount, eventId, gameRoundId,
+					history.getStartTime(), maxEventTime);
+			{
+				final String outfileName = createEventMetadataOutfileName();
+				final Path outfilePath = infileParentDir == null ? Paths.get(outfileName)
+						: infileParentDir.resolve(outfileName);
+				LOGGER.info("Writing event metadata to \"{}\".", outfilePath);
+				persistEventMetadata(metadataValues, new EventMetadatumNameComparator(ESTIMATED_EVENT_METADATUM_COUNT),
+						outfilePath);
+			}
+		}
 
-					final Table<ParticipantMetadatum, String, String> metadataValues = ParticipantMetadataTabularDataWriter
-							.createParticipantMetadataReprTable(canonicalGame, playerSourceIds,
-									sourceParticipantIds.getKey().inverse());
-					{
-						final String outfileName = createParticipantMetadataOutfileName();
-						final Path outfilePath = infileParentDir == null ? Paths.get(outfileName)
-								: infileParentDir.resolve(outfileName);
-						LOGGER.info("Writing participant metadata to \"{}\".", outfilePath);
-						final ParticipantMetadataTabularDataWriter participantMetadataWriter = new ParticipantMetadataTabularDataWriter(
-								TABLE_STR_REPR_COL_DELIM, OUTPUT_CHARSET);
-						participantMetadataWriter.persistParticipantMetadata(metadataValues, outfilePath);
-					}
-				}
+		{
+
+			final Table<ParticipantMetadatum, String, String> metadataValues = ParticipantMetadataTabularDataWriter
+					.createParticipantMetadataReprTable(canonicalGame, playerSourceIds,
+							sourceParticipantIds.getKey().inverse());
+			{
+				final String outfileName = createParticipantMetadataOutfileName();
+				final Path outfilePath = infileParentDir == null ? Paths.get(outfileName)
+						: infileParentDir.resolve(outfileName);
+				LOGGER.info("Writing participant metadata to \"{}\".", outfilePath);
+				final ParticipantMetadataTabularDataWriter participantMetadataWriter = new ParticipantMetadataTabularDataWriter(
+						TABLE_STR_REPR_COL_DELIM, OUTPUT_CHARSET);
+				participantMetadataWriter.persistParticipantMetadata(metadataValues, outfilePath);
 			}
 		}
 	}
