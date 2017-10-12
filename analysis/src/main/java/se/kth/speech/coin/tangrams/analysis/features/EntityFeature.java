@@ -53,7 +53,7 @@ import weka.core.Attribute;
  *
  */
 public enum EntityFeature {
-	BLUE, EDGE_COUNT, GREEN, HUE, POSITION_X, POSITION_Y, RED, SHAPE, SIZE;
+	ALPHA, BLUE, BRIGHTNESS, EDGE_COUNT, GREEN, HUE, POSITION_X, POSITION_Y, RED, SATURATION, SHAPE, SIZE;
 
 	@Named
 	public static final class Extractor implements FeatureExtractor<EntityFeature, Extractor.Context> {
@@ -197,15 +197,16 @@ public enum EntityFeature {
 				final List<String> shapeVals) {
 			final Map<EntityFeature, Function<String, Attribute>> result = new EnumMap<>(EntityFeature.class);
 			final Function<String, Attribute> doubleVal = name -> new Attribute(name);
+			result.put(EntityFeature.ALPHA, doubleVal);
 			result.put(EntityFeature.BLUE, doubleVal);
-			// result.put(EntityFeature.BRIGHTNESS, doubleVal);
+			result.put(EntityFeature.BRIGHTNESS, doubleVal);
 			result.put(EntityFeature.EDGE_COUNT, doubleVal);
 			result.put(EntityFeature.GREEN, doubleVal);
 			result.put(EntityFeature.HUE, doubleVal);
 			result.put(EntityFeature.POSITION_X, doubleVal);
 			result.put(EntityFeature.POSITION_Y, doubleVal);
 			result.put(EntityFeature.RED, doubleVal);
-			// result.put(EntityFeature.SATURATION, doubleVal);
+			result.put(EntityFeature.SATURATION, doubleVal);
 			result.put(EntityFeature.SHAPE, name -> new Attribute(name, shapeVals));
 			result.put(EntityFeature.SIZE, doubleVal);
 			assert result.size() == EntityFeature.values().length;
@@ -227,15 +228,18 @@ public enum EntityFeature {
 			case BLUE:
 				val = color.getBlue();
 				break;
+			case ALPHA:
+				val = color.getAlpha();
+				break;
 			case HUE:
 				val = hsbVals[0];
 				break;
-			// case SATURATION:
-			// val = hsbVals[1];
-			// break;
-			// case BRIGHTNESS:
-			// val = hsbVals[2];
-			// break;
+			case SATURATION:
+				val = hsbVals[1];
+				break;
+			case BRIGHTNESS:
+				val = hsbVals[2];
+				break;
 			case POSITION_X: {
 				final SpatialRegion r = context.pieceRegion;
 				final double centerX = r.getXLowerBound() + r.getLengthX() / 2.0;
@@ -277,7 +281,8 @@ public enum EntityFeature {
 	private static final List<EntityFeature> CANONICAL_ORDERING;
 
 	static {
-		CANONICAL_ORDERING = Collections.unmodifiableList(Arrays.asList(SHAPE, EDGE_COUNT, SIZE, RED, GREEN, BLUE, HUE, POSITION_X, POSITION_Y));
+		CANONICAL_ORDERING = Collections.unmodifiableList(Arrays.asList(SHAPE, EDGE_COUNT, SIZE, RED, GREEN, BLUE,
+				ALPHA, HUE, SATURATION, BRIGHTNESS, POSITION_X, POSITION_Y));
 		assert CANONICAL_ORDERING.size() == EntityFeature.values().length;
 	}
 
