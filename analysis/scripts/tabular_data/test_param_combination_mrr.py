@@ -2,6 +2,7 @@
 
 
 from collections import defaultdict
+from decimal import Decimal
 from typing import DefaultDict, IO, Iterable, List
 
 import numpy
@@ -10,12 +11,14 @@ from common import COL_DELIM
 from test_param_combination_ranks import TestParameterCombinationRankFileReader, P, R
 from test_param_combinations import create_param_whitelisting_filter
 
+__RECIPROCAL = Decimal("1.0")
+
 
 class TestParameterCombinationRankListFileReader(TestParameterCombinationRankFileReader):
 	def _create_param_combination_rank_coll(self) -> DefaultDict[P, List[R]]:
 		return defaultdict(list)
 
-	def _process_param_combination_rank(self, param_combination_ranks:  DefaultDict[P, List[R]], param_vals: P, rank: R):
+	def _process_param_combination_rank(self, param_combination_ranks: DefaultDict[P, List[R]], param_vals: P, rank: R):
 		param_combination_rank_counts = param_combination_ranks[param_vals]
 		param_combination_rank_counts.append(rank)
 
@@ -44,8 +47,10 @@ def __main(infile_paths, input_param_name_regexes: Iterable[str], outfile: IO[st
 		print(COL_DELIM.join(str(row_val) for row_val in row_vals), file=outfile)
 
 
-def __rr(value) -> numpy.longfloat:
-	return numpy.longfloat(1.0) / numpy.longfloat(value)
+def __rr(value: str) -> numpy.longfloat:
+	decimal_value = Decimal(value)
+	decimal_result = __RECIPROCAL / decimal_value
+	return numpy.longfloat(decimal_result)
 
 
 if __name__ == "__main__":

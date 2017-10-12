@@ -7,6 +7,7 @@ from collections import defaultdict
 from typing import Any, Callable, DefaultDict, Dict, Iterable, List, Mapping, MutableMapping, Sequence, Tuple, TypeVar
 
 import game_events
+import game_utterances
 import re_token_type_counts
 import referent_token_type_counts
 import utterances
@@ -49,8 +50,9 @@ class ShapeTokenCounter(object):
 		segments = utterances.read_segments(session.utts)
 		seg_utt_factory = utterances.SegmentUtteranceFactory(self.token_seq_factory,
 															 lambda source_id: source_participant_ids[source_id])
-		utt_times = utterances.UtteranceTimes(seg_utt_factory(segments))
-		game_round_utts = referent_token_type_counts.zip_game_round_utterances(game_rounds, utt_times)
+		utts = seg_utt_factory(segments)
+		game_round_utts = ((game_round, utts) for (game_round, utts) in
+						   game_utterances.zip_game_round_utterances(game_rounds, iter(utts)) if game_round)
 		for (round_id, (game_round, utts)) in enumerate(game_round_utts, start=1):
 			initial_event = game_round.initial_event
 			utts_tuple = tuple(utts)

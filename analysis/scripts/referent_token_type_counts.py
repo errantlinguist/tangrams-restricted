@@ -5,9 +5,11 @@ import re
 import sys
 from collections import defaultdict
 from decimal import Decimal, InvalidOperation
-from typing import Any, Callable, DefaultDict, Dict, IO, Iterable, Iterator, List, Mapping, MutableMapping, Sequence, Tuple, TypeVar
+from typing import Any, Callable, DefaultDict, Dict, IO, Iterable, List, Mapping, MutableMapping, Sequence, Tuple, \
+	TypeVar
 
 import game_events
+import game_utterances
 import re_token_type_counts
 import utterances
 from session_data import SessionData, walk_session_data
@@ -53,8 +55,9 @@ class CoreferenceChainTokenCounter(object):
 		segments = utterances.read_segments(session.utts)
 		seg_utt_factory = utterances.SegmentUtteranceFactory(self.token_seq_factory,
 															 lambda source_id: source_participant_ids[source_id])
-		utt_times = utterances.UtteranceTimes(seg_utt_factory(segments))
-		game_round_utts = zip_game_round_utterances(game_rounds, utt_times)
+		utts = seg_utt_factory(segments)
+		game_round_utts = ((game_round, utts) for (game_round, utts) in
+						   game_utterances.zip_game_round_utterances(game_rounds, iter(utts)) if game_round)
 		for (round_id, (game_round, utts)) in enumerate(game_round_utts, start=1):
 			initial_event = game_round.initial_event
 			utts_tuple = tuple(utts)
@@ -192,21 +195,6 @@ def trim_empty_tail_rounds(dyad_id: Any, referent_token_counts: MutableMapping[i
 	if old_round_count > new_round_count:
 		print("Trimmed {} empty round(s) from session \"{}\".".format(old_round_count - new_round_count, dyad_id),
 			  file=sys.stderr)
-
-
-def zip_game_round_utterances(game_rounds: Iterator[game_events.GameRound], utt_times: utterances.UtteranceTimes) -> \
-		Iterator[Tuple[game_events.GameRound, Iterator[utterances.Utterance]]]:
-	current_round = next(game_rounds)
-	for next_round in game_rounds:
-		current_round_start_time = current_round.start_time
-		next_round_start_time = next_round.start_time
-		current_round_utts = utt_times.get(current_round_start_time, next_round_start_time)
-		yield current_round, current_round_utts
-		current_round = next_round
-
-	current_round_start_time = current_round.start_time
-	current_round_utts = utt_times.get(current_round_start_time)
-	yield current_round, current_round_utts
 
 
 def __create_argparser() -> argparse.ArgumentParser:

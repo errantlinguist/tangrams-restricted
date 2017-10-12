@@ -1,13 +1,19 @@
 #!/usr/bin/env python3
 
+from decimal import Decimal
+
 import numpy
 from statsmodels import robust
 
 from common import COL_DELIM, parse_token_count_ranks
 
+__RECIPROCAL = Decimal("1.0")
+
 
 def __rr(value: str) -> numpy.longfloat:
-	return numpy.longfloat(1.0) / numpy.longfloat(value)
+	decimal_value = Decimal(value)
+	decimal_result = __RECIPROCAL / decimal_value
+	return numpy.longfloat(decimal_result)
 
 
 if __name__ == "__main__":

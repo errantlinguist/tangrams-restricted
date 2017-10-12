@@ -1,9 +1,8 @@
 import sys
-from typing import Callable, Dict, Iterable, Mapping, Sequence, \
+from typing import Callable, Dict, Iterable, Iterator, List, Mapping, Optional, Sequence, \
 	Tuple
 
 import game_events
-import referent_token_type_counts
 import session_data as sd
 import utterances
 
@@ -45,15 +44,17 @@ class SessionGameRoundUtteranceFactory(object):
 															 lambda source_id: source_participant_ids[source_id])
 		game_rounds = game_events.create_game_rounds(event_data.events)
 		segments = utterances.read_segments(session.utts)
-		utt_times = utterances.UtteranceTimes(seg_utt_factory(segments))
-		game_round_utts = tuple((game_round, tuple(utt_iter)) for (game_round, utt_iter) in
-								referent_token_type_counts.zip_game_round_utterances(game_rounds, utt_times))
+		utts = seg_utt_factory(segments)
+
+		game_round_utts = tuple(zip_game_round_utterances(game_rounds, iter(utts)))
 		event_participant_id_factory = game_events.EventParticipantIdFactory(event_data.initial_instructor_id)
 
 		round_instructor_ids = {}
 		enumerated_game_round_utts = enumerate(game_round_utts, start=self.ROUND_ID_OFFSET)
 		for round_id, round_utts in enumerated_game_round_utts:
 			game_round, round_utts = round_utts
+			print("game_round = {}".format(game_round), file=sys.stderr)
+			print("round_utts = {}".format(round_utts), file=sys.stderr)
 			initial_event = game_round.initial_event
 			round_instructor_id = event_participant_id_factory(initial_event)
 			existing_instructor_id = round_instructor_ids.get(round_id, None)
@@ -62,3 +63,34 @@ class SessionGameRoundUtteranceFactory(object):
 			else:
 				round_instructor_ids[round_id] = round_instructor_id
 		return GameRoundUtterances(game_round_utts, round_instructor_ids)
+
+
+def zip_game_round_utterances(game_rounds: Iterator[game_events.GameRound], utt_iter: Iterator[utterances.Utterance]) -> \
+		Iterator[Tuple[Optional[game_events.GameRound], List[utterances.Utterance]]]:
+	current_round = None
+	current_round_utts = []
+	next_round = next(game_rounds)
+	next_round_start_time = next_round.start_time
+
+	try:
+		for utt in utt_iter:
+			if utt.start_time < next_round_start_time:
+				current_round_utts.append(utt)
+			else:
+				result = current_round, current_round_utts
+				if current_round is None:
+					if current_round_utts:
+						yield result
+				else:
+					yield result
+
+				current_round = next_round
+				current_round_utts = [utt]
+				next_round = next(game_rounds)
+				next_round_start_time = next_round.start_time
+
+	except StopIteration:
+		# There are no more following events; The rest of the utterances must belong to the event directly following this one
+		current_round_utts.extend(utt_iter)
+
+	yield current_round, current_round_utts
