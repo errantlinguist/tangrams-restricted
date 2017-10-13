@@ -44,9 +44,8 @@ class SessionGameRoundUtteranceFactory(object):
 															 lambda source_id: source_participant_ids[source_id])
 		game_rounds = game_events.create_game_rounds(event_data.events)
 		segments = utterances.read_segments(session.utts)
-		utts = seg_utt_factory(segments)
-
-		game_round_utts = zip_game_round_utterances(game_rounds, tuple(utts))[1]
+		utts = tuple(seg_utt_factory(segments))
+		game_round_utts = zip_game_round_utterances(game_rounds, utts)[1]
 		event_participant_id_factory = game_events.EventParticipantIdFactory(event_data.initial_instructor_id)
 
 		round_instructor_ids = {}
