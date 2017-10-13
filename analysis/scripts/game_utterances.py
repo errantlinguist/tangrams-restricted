@@ -1,6 +1,6 @@
 import sys
 from typing import Callable, Dict, Iterable, Iterator, List, Mapping, Optional, Sequence, \
-	Tuple
+	Tuple, TypeVar
 
 import game_events
 import session_data as sd
@@ -24,10 +24,13 @@ class GameRoundUtterances(object):
 class SessionGameRoundUtteranceFactory(object):
 	ROUND_ID_OFFSET = 1
 
+	__GameRoundUtteranceSequence = TypeVar("__GameRoundUtteranceSequence", bound=Sequence[
+		Tuple[Optional[game_events.GameRound], Sequence[utterances.Utterance]]])
+
 	@staticmethod
 	def __trim_game_round_utterances(
-			game_round_utts: Sequence[Tuple[Optional[game_events.GameRound], Sequence[utterances.Utterance]]]) -> \
-	Sequence[Tuple[Optional[game_events.GameRound], Sequence[utterances.Utterance]]]:
+			game_round_utts: __GameRoundUtteranceSequence) -> \
+			__GameRoundUtteranceSequence:
 		"""
 		Trims the first set of utterances if it represents language before the game started.
 		:param game_round_utts: The game round utterances to trim.
