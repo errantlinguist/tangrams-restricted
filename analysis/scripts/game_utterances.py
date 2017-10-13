@@ -26,7 +26,8 @@ class SessionGameRoundUtteranceFactory(object):
 
 	@staticmethod
 	def __trim_game_round_utterances(
-			game_round_utts: Sequence[Tuple[Optional[game_events.GameRound], Sequence[utterances.Utterance]]]):
+			game_round_utts: Sequence[Tuple[Optional[game_events.GameRound], Sequence[utterances.Utterance]]]) -> \
+	Sequence[Tuple[Optional[game_events.GameRound], Sequence[utterances.Utterance]]]:
 		"""
 		Trims the first set of utterances if it represents language before the game started.
 		:param game_round_utts: The game round utterances to trim.
