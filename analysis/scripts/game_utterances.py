@@ -46,12 +46,16 @@ class SessionGameRoundUtteranceFactory(object):
 		segments = utterances.read_segments(session.utts)
 		utts = seg_utt_factory(segments)
 
-		game_round_utts = tuple((game_round, game_round_utts) for (game_round, game_round_utts) in
-								zip_game_round_utterances(game_rounds, iter(utts)) if game_round)
+		game_round_utts = tuple(zip_game_round_utterances(game_rounds, iter(utts)))
+		# Trim the first set of utterances if it represents language before the game started
+		if game_round_utts[0][0] is None:
+			valid_round_utts = game_round_utts[1:]
+		else:
+			valid_round_utts = game_round_utts
 		event_participant_id_factory = game_events.EventParticipantIdFactory(event_data.initial_instructor_id)
 
 		round_instructor_ids = {}
-		enumerated_game_round_utts = enumerate(game_round_utts, start=self.ROUND_ID_OFFSET)
+		enumerated_game_round_utts = enumerate(valid_round_utts, start=self.ROUND_ID_OFFSET)
 		for round_id, round_utts in enumerated_game_round_utts:
 			game_round, round_utts = round_utts
 			initial_event = game_round.initial_event
@@ -61,7 +65,7 @@ class SessionGameRoundUtteranceFactory(object):
 				raise ValueError("Differing instructor ID for round {}.".format(round_id))
 			else:
 				round_instructor_ids[round_id] = round_instructor_id
-		return GameRoundUtterances(game_round_utts, round_instructor_ids)
+		return GameRoundUtterances(valid_round_utts, round_instructor_ids)
 
 
 def zip_game_round_utterances(game_round_iter: Iterator[game_events.GameRound],
