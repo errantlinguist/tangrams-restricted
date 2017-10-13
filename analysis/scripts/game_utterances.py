@@ -64,11 +64,12 @@ class SessionGameRoundUtteranceFactory(object):
 		return GameRoundUtterances(game_round_utts, round_instructor_ids)
 
 
-def zip_game_round_utterances(game_rounds: Iterator[game_events.GameRound], utt_iter: Iterator[utterances.Utterance]) -> \
+def zip_game_round_utterances(game_round_iter: Iterator[game_events.GameRound],
+							  utt_iter: Iterator[utterances.Utterance]) -> \
 		Iterator[Tuple[Optional[game_events.GameRound], List[utterances.Utterance]]]:
 	current_round = None
 	current_round_utts = []
-	next_round = next(game_rounds)
+	next_round = next(game_round_iter)
 	next_round_start_time = next_round.start_time
 
 	try:
@@ -85,8 +86,12 @@ def zip_game_round_utterances(game_rounds: Iterator[game_events.GameRound], utt_
 
 				current_round = next_round
 				current_round_utts = [utt]
-				next_round = next(game_rounds)
+				next_round = next(game_round_iter)
 				next_round_start_time = next_round.start_time
+
+		# Return the rest of the rounds with empty utterance lists
+		for remaining_round in game_round_iter:
+			yield remaining_round, []
 
 	except StopIteration:
 		# There are no more following events; The rest of the utterances must belong to the event directly following this one
