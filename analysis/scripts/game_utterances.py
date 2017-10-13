@@ -1,6 +1,6 @@
 import sys
-from typing import Callable, Dict, Iterable, Iterator, List, Mapping, Optional, Sequence, \
-	Tuple, TypeVar
+from typing import Callable, Dict, Iterable, Iterator, List, Mapping, Sequence, \
+	Tuple
 
 import game_events
 import session_data as sd
@@ -24,24 +24,6 @@ class GameRoundUtterances(object):
 class SessionGameRoundUtteranceFactory(object):
 	ROUND_ID_OFFSET = 1
 
-	__GameRoundUtteranceSequence = TypeVar("__GameRoundUtteranceSequence", bound=Sequence[
-		Tuple[Optional[game_events.GameRound], Sequence[utterances.Utterance]]])
-
-	@staticmethod
-	def __trim_game_round_utterances(
-			game_round_utts: __GameRoundUtteranceSequence) -> \
-			__GameRoundUtteranceSequence:
-		"""
-		Trims the first set of utterances if it represents language before the game started.
-		:param game_round_utts: The game round utterances to trim.
-		:return: The utterance sequence minus the first entry if it represents language before the first game round.
-		"""
-		if game_round_utts[0][0] is None:
-			result = game_round_utts[1:]
-		else:
-			result = game_round_utts
-		return result
-
 	def __init__(self, token_seq_factory: Callable[[Iterable[str]], Sequence[str]]):
 		self.token_seq_factory = token_seq_factory
 
@@ -64,7 +46,7 @@ class SessionGameRoundUtteranceFactory(object):
 		segments = utterances.read_segments(session.utts)
 		utts = seg_utt_factory(segments)
 
-		game_round_utts = self.__trim_game_round_utterances(tuple(zip_game_round_utterances(game_rounds, iter(utts))))
+		game_round_utts = zip_game_round_utterances(game_rounds, tuple(utts))[1]
 		event_participant_id_factory = game_events.EventParticipantIdFactory(event_data.initial_instructor_id)
 
 		round_instructor_ids = {}
@@ -82,36 +64,25 @@ class SessionGameRoundUtteranceFactory(object):
 
 
 def zip_game_round_utterances(game_round_iter: Iterator[game_events.GameRound],
-							  utt_iter: Iterator[utterances.Utterance]) -> \
-		Iterator[Tuple[Optional[game_events.GameRound], List[utterances.Utterance]]]:
-	current_round = None
-	current_round_utts = []
-	next_round = next(game_round_iter)
-	next_round_start_time = next_round.start_time
+							  utts: Iterable[utterances.Utterance]) -> \
+		Tuple[Tuple[utterances.Utterance, ...], List[Tuple[game_events.GameRound, Tuple[utterances.Utterance, ...]]]]:
+	first_round = next(game_round_iter)
+	first_round_start_time = first_round.start_time
+	# Get utterances preceding the first round
+	pre_game_utts = tuple(utt for utt in utts if utt.start_time < first_round_start_time)
 
-	try:
-		for utt in utt_iter:
-			if utt.start_time < next_round_start_time:
-				current_round_utts.append(utt)
-			else:
-				result = current_round, current_round_utts
-				if current_round is None:
-					if current_round_utts:
-						yield result
-				else:
-					yield result
+	current_round = first_round
+	game_round_utts = []
+	for next_round in game_round_iter:
+		next_round_start_time = next_round.start_time
+		# TODO: optimize
+		next_round_utts = tuple(utt for utt in utts if utt.start_time < next_round_start_time)
+		game_round_utts.append((current_round, next_round_utts))
+		current_round = next_round
 
-				current_round = next_round
-				current_round_utts = [utt]
-				next_round = next(game_round_iter)
-				next_round_start_time = next_round.start_time
+	# Get utterances for last round
+	last_round_start_time = current_round.start_time
+	last_round_utts = tuple(utt for utt in utts if utt.start_time >= last_round_start_time)
+	game_round_utts.append((current_round, last_round_utts))
 
-		# Return the rest of the rounds with empty utterance lists
-		for remaining_round in game_round_iter:
-			yield remaining_round, []
-
-	except StopIteration:
-		# There are no more following events; The rest of the utterances must belong to the event directly following this one
-		current_round_utts.extend(utt_iter)
-
-	yield current_round, current_round_utts
+	return pre_game_utts, game_round_utts
