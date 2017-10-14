@@ -13,7 +13,7 @@ import session_data
 from annotations import HAT_DATA_NAMESPACE, HAT_DATA_NAMESPACE_NAME, create_skeleton_annnotation_elem
 
 WAV_CONTENT_TYPE_PATTERN = re.compile(".*?/wav")
-UTTERANCE_FILE_NAME = session_data.SessionDatum.UTTS.value
+UTTERANCE_FILE_NAME = session_data.SessionDatum.UTTERANCES.value
 
 
 def create_session_dir_uttfiles(*inpaths: str):
