@@ -12,7 +12,7 @@ def __main(infile_path: str, outfile_path: str):
 	sns.set()
 	#sns.set_style("white")
 
-	coref_seq_no_overlaps = pd.read_csv(infile_path, sep='\t', dialect=csv.excel_tab, float_precision="high",
+	coref_seq_no_overlaps = pd.read_csv(infile_path, sep='\t', dialect=csv.excel_tab, float_precision="round_trip",
 									encoding="utf-8", memory_map=True)
 
 	fig, ax = plt.subplots()
