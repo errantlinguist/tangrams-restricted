@@ -259,8 +259,7 @@ def read_round_tokens(inpath: str, **kwargs) -> pd.DataFrame:
 					  "dialect": csv.excel_tab, "encoding": "utf-8", "float_precision": "round_trip",
 					  "memory_map": True, "na_filter": False, "sep": "\t"}
 	# Override any defaults with those from explicitly-supplied kwargs
-	for param_name, param_value in kwargs.items():
-		unified_kwargs[param_name] = param_value
+	unified_kwargs.update(kwargs)
 	return pd.read_csv(inpath, **unified_kwargs)
 
 
