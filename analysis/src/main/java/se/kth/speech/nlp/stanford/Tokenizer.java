@@ -63,6 +63,7 @@ public final class Tokenizer extends AbstractTokenizer {
 		for (final CoreMap sent : sents) {
 			addTokens(sent, result);
 		}
+		result.trimToSize();
 		return result;
 	}
 
