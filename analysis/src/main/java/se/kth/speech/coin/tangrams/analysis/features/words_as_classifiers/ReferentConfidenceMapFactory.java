@@ -16,6 +16,7 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers;
 
+import java.util.Arrays;
 import java.util.function.Function;
 
 import javax.inject.Inject;
@@ -56,7 +57,9 @@ public final class ReferentConfidenceMapFactory {
 
 	private final Function<? super String, ? extends Classifier> wordClassifiers;
 
-	public ReferentConfidenceMapFactory(final Function<? super String, ? extends Classifier> wordClassifiers, // NO_UCD (unused code)
+	public ReferentConfidenceMapFactory(final Function<? super String, ? extends Classifier> wordClassifiers, // NO_UCD
+																												// (unused
+																												// code)
 			final Function<? super EntityFeature.Extractor.Context, ? extends Instance> testInstFactory) {
 		this.wordClassifiers = wordClassifiers;
 		this.testInstFactory = testInstFactory;
@@ -71,6 +74,7 @@ public final class ReferentConfidenceMapFactory {
 				.toArray(WeightedClassifier[]::new);
 		final IntList entityIds = uttCtx.getEntityIds();
 		final Int2DoubleMap result = new Int2DoubleOpenHashMap(entityIds.size());
+		final double totalWeight = Arrays.stream(weightedClassifiers).mapToDouble(WeightedClassifier::getWeight).sum();
 		for (final int entityId : entityIds) {
 			// Create a game context for classifying the entity with the
 			// given ID
@@ -88,7 +92,7 @@ public final class ReferentConfidenceMapFactory {
 					throw new ClassificationException(e);
 				}
 			}
-			final double normalizedConfidence = confidenceSum / weightedClassifiers.length;
+			final double normalizedConfidence = confidenceSum / totalWeight;
 			result.put(entityId, normalizedConfidence);
 		}
 		return result;
