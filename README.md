@@ -1,16 +1,14 @@
 # tangrams-restricted
 A game for organizing tangrams in the fewest number of moves using two players. More restricted than the now-defunct original version.
 
-This code was used to generate data for the following publications:
-
-* Todd Shore and Gabriel Skantze. 2017. ["Enhancing Reference Resolution in Dialogue Using Participant Feedback"](http://www.isca-speech.org/archive/GLU_2017/abstracts/GLU2017_paper_18.html) in Giampiero Salvi and St&eacute;phane Dupont (eds.) *Proceedings of the GLU2017 International Workshop on Grounding Language Understanding*, pp. 78&ndash;82, DOI: [10.21437/GLU.2017-16](http://dx.doi.org/10.21437/GLU.2017-16).
-
-
-
 * **Since:** 2017-03-02
 * **Author:** Todd Shore
 * **Website:**  https://github.com/errantlinguist/tangrams-restricted
 * **Licensing:** Copyright 2016 Todd Shore. Licensed for distribution under the GNU General Public License 3.0: See the file `LICENSE`. Selected audio content, by Mike Koenig, is licensed under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/).
+
+This code was used to generate data for the following publications:
+
+* Todd Shore and Gabriel Skantze. 2017. ["Enhancing Reference Resolution in Dialogue Using Participant Feedback"](http://www.isca-speech.org/archive/GLU_2017/abstracts/GLU2017_paper_18.html) in Giampiero Salvi and St&eacute;phane Dupont (eds.) *Proceedings of the GLU2017 International Workshop on Grounding Language Understanding*, pp. 78&ndash;82, DOI: [10.21437/GLU.2017-16](http://dx.doi.org/10.21437/GLU.2017-16).
 
 ## Requirements
 
