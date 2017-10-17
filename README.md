@@ -14,8 +14,9 @@ This code was used to generate data for the following publications:
 
 * For the `client` and `server` modules, [IrisTK](http://iristk.net/) version 2017.01.27+. Currently the only way to include this is to import both this project and that of IrisTK into Eclipse and then to add the IrisTK project as a "required project on the build path" to the Eclipse projects representing both modules. [A fork of IrisTK](https://github.com/errantlinguist/IrisTK) contains the exact same classes which had to be included in this Maven project in order to get the whole thing to work together, so it's best to use that fork for the Eclipse IrisTK project to use as a dependency so that there's no possibility of getting two different versions of the same class on the classpath.
 
-## To do
+## Open issues
 
+* Overhaul code to not use IrisTK for anything so that the entire game can be run like a normal Java program, outside of Eclipse
 * The logged event times are broken and cannot be relied on to mean anything; Create a new `Event` attribute called e.g. `sendTime` and use that for time-syncing instead 
 * Add feature for measuring the similarity of two game models, i.e. the similarity of the initial state of two different games (e.g. one seeded for "1" vs. one seeded for "2")
 * Add timer which stops the game (and recording) after e.g. 15 minutes
