@@ -29,7 +29,6 @@ import org.slf4j.LoggerFactory;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-import com.google.common.cache.Weigher;
 
 import edu.stanford.nlp.pipeline.Annotation;
 import edu.stanford.nlp.pipeline.Annotator;
@@ -40,16 +39,6 @@ import edu.stanford.nlp.pipeline.Annotator;
  *
  */
 abstract class AbstractTokenizer implements Function<String, List<String>> {
-
-	private static final Weigher<String, Annotation> ANNOTATION_WEIGHER = new Weigher<String, Annotation>() {
-
-		@Override
-		public int weigh(final String key, final Annotation value) {
-			final int complexityHeuristic = value.size();
-			return complexityHeuristic;
-		}
-
-	};
 
 	private static final ConcurrentMap<StanfordCoreNLPConfigurationVariant, Reference<LoadingCache<String, Annotation>>> CONFIG_CACHES = new ConcurrentHashMap<>(
 			StanfordCoreNLPConfigurationVariant.values().length);
@@ -68,7 +57,7 @@ abstract class AbstractTokenizer implements Function<String, List<String>> {
 
 	private static LoadingCache<String, Annotation> createCache(final StanfordCoreNLPConfigurationVariant annotConfig) {
 		return CacheBuilder.newBuilder().softValues().initialCapacity(ESTIMATED_MAX_UNIQUE_INPUT_COUNT)
-				.maximumSize(ESTIMATED_MAX_UNIQUE_INPUT_COUNT).weigher(ANNOTATION_WEIGHER)
+				.maximumSize(ESTIMATED_MAX_UNIQUE_INPUT_COUNT)
 				.build(CacheLoader.from(str -> annotate(str, annotConfig)));
 	}
 
