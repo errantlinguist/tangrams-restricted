@@ -49,6 +49,7 @@ abstract class AbstractTokenizer implements Function<String, List<String>> {
 		final Annotator annotator = config.get();
 		final Annotation result = new Annotation(input);
 		annotator.annotate(result);
+		result.compact();
 		return result;
 	}
 
