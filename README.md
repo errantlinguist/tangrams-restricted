@@ -8,7 +8,7 @@ A game for organizing tangrams in the fewest number of moves using two players. 
 
 This code was used to generate data for the following publications:
 
-* Todd Shore and Gabriel Skantze. 2017. ["Enhancing Reference Resolution in Dialogue Using Participant Feedback"](http://www.isca-speech.org/archive/GLU_2017/abstracts/GLU2017_paper_18.html) in Giampiero Salvi and St&eacute;phane Dupont (eds.) *Proceedings of the GLU2017 International Workshop on Grounding Language Understanding*, pp. 78&ndash;82, DOI: [10.21437/GLU.2017-16](http://dx.doi.org/10.21437/GLU.2017-16).
+* Todd Shore and Gabriel Skantze. 2017. ["Enhancing Reference Resolution in Dialogue Using Participant Feedback"](http://dx.doi.org/10.21437/GLU.2017-16) in Giampiero Salvi and St&eacute;phane Dupont (eds.) [*Proceedings of the GLU2017 International Workshop on Grounding Language Understanding*](http://dx.doi.org/10.21437/GLU.2017), pp. 78&ndash;82, DOI: [10.21437/GLU.2017-16](http://dx.doi.org/10.21437/GLU.2017-16).
 
 ## Requirements
 
