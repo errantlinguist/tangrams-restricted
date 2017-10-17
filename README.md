@@ -5,16 +5,6 @@ This code was used to generate data for the following publications:
 
 * Todd Shore and Gabriel Skantze. 2017. ["Enhancing Reference Resolution in Dialogue Using Participant Feedback"](http://www.isca-speech.org/archive/GLU_2017/abstracts/GLU2017_paper_18.html) in Giampiero Salvi and St&eacute;phane Dupont (eds.) *Proceedings of the GLU2017 International Workshop on Grounding Language Understanding*, pp. 78&mdash;82, DOI: [10.21437/GLU.2017-16](http://dx.doi.org/10.21437/GLU.2017-16).
 
-@proceedings{GLU2017,
-	title = {Proceedings of the First International Workshop on Grounding Language Understanding ({GLU})},
-	booktitle = {Proceedings of the First International Workshop on Grounding Language Understanding ({GLU})},
-	year = {2017},
-	editor = {Giampiero Salvi and St\'ephane Dupont},
-	url = {http://www.isca-speech.org/archive/GLU_2017/},
-	doi = {10.21437/GLU.2017},
-	venue = {Stockholm, Sweden},
-	eventdate = {2017-08-25},
-
 * **Since:** 2017-03-02
 * **Author:** Todd Shore
 * **Website:**  https://github.com/errantlinguist/tangrams-restricted
