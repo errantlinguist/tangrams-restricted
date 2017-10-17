@@ -58,6 +58,7 @@ public final class Lemmatizer extends AbstractTokenizer {
 				result.add(lemma);
 			}
 		}
+		result.trimToSize();
 		return result;
 	}
 

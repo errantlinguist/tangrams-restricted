@@ -43,18 +43,21 @@ abstract class AbstractTokenizer implements Function<String, List<String>> {
 	private static final ConcurrentMap<StanfordCoreNLPConfigurationVariant, Reference<LoadingCache<String, Annotation>>> CONFIG_CACHES = new ConcurrentHashMap<>(
 			StanfordCoreNLPConfigurationVariant.values().length);
 
+	private static final int ESTIMATED_MAX_UNIQUE_INPUT_COUNT = 2000;
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(AbstractTokenizer.class);
 
 	private static Annotation annotate(final String input, final StanfordCoreNLPConfigurationVariant config) {
 		final Annotator annotator = config.get();
 		final Annotation result = new Annotation(input);
 		annotator.annotate(result);
+		result.compact();
 		return result;
 	}
 
-	private static LoadingCache<String, Annotation> createCache(
-			final StanfordCoreNLPConfigurationVariant annotConfig) {
-		return CacheBuilder.newBuilder().softValues().initialCapacity(2000)
+	private static LoadingCache<String, Annotation> createCache(final StanfordCoreNLPConfigurationVariant annotConfig) {
+		return CacheBuilder.newBuilder().softValues().initialCapacity(ESTIMATED_MAX_UNIQUE_INPUT_COUNT)
+				.maximumSize(ESTIMATED_MAX_UNIQUE_INPUT_COUNT)
 				.build(CacheLoader.from(str -> annotate(str, annotConfig)));
 	}
 
@@ -82,6 +85,7 @@ abstract class AbstractTokenizer implements Function<String, List<String>> {
 
 	AbstractTokenizer(final StanfordCoreNLPConfigurationVariant annotConfig) {
 		cache = fetchCache(annotConfig);
+
 	}
 
 	@Override

@@ -71,6 +71,7 @@ public final class ParsingTokenizer extends AbstractTokenizer {
 				}
 			}
 		}
+		result.trimToSize();
 		return result;
 	}
 

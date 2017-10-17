@@ -25,7 +25,7 @@ import java.util.Locale;
  */
 public final class DataLanguageDefaults {
 
-	public static final Locale getLocale() {
+	public static Locale getLocale() {
 		return Locale.US;
 	}
 
