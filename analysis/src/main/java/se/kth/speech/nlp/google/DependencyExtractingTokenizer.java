@@ -50,6 +50,77 @@ import com.google.common.collect.Sets;
  */
 public final class DependencyExtractingTokenizer implements Function<String, List<String>> {
 
+	private static class TransitiveHeadSearchResults {
+
+		private final ArrayList<Token> chain;
+		private final boolean foundHead;
+
+		private TransitiveHeadSearchResults(final ArrayList<Token> chain, final boolean foundHead) {
+			this.chain = chain;
+			this.foundHead = foundHead;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see java.lang.Object#equals(java.lang.Object)
+		 */
+		@Override
+		public boolean equals(final Object obj) {
+			if (this == obj) {
+				return true;
+			}
+			if (obj == null) {
+				return false;
+			}
+			if (!(obj instanceof TransitiveHeadSearchResults)) {
+				return false;
+			}
+			final TransitiveHeadSearchResults other = (TransitiveHeadSearchResults) obj;
+			if (chain == null) {
+				if (other.chain != null) {
+					return false;
+				}
+			} else if (!chain.equals(other.chain)) {
+				return false;
+			}
+			if (foundHead != other.foundHead) {
+				return false;
+			}
+			return true;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see java.lang.Object#hashCode()
+		 */
+		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + (chain == null ? 0 : chain.hashCode());
+			result = prime * result + (foundHead ? 1231 : 1237);
+			return result;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see java.lang.Object#toString()
+		 */
+		@Override
+		public String toString() {
+			final StringBuilder builder = new StringBuilder((chain.size() + 1) * 16);
+			builder.append("TransitiveHeadSearchResults [chain=");
+			builder.append(chain);
+			builder.append(", foundHead=");
+			builder.append(foundHead);
+			builder.append("]");
+			return builder.toString();
+		}
+	}
+
 	private static final Set<PartOfSpeech.Tag> DEFAULT_BLACKLISTED_DEPENDENT_TAGS = EnumSet.of(PartOfSpeech.Tag.ADP,
 			PartOfSpeech.Tag.VERB);
 
@@ -154,21 +225,21 @@ public final class DependencyExtractingTokenizer implements Function<String, Lis
 				.asList(resultTokens.stream().map(Token::getText).map(TextSpan::getContent).toArray(String[]::new));
 	}
 
-	private List<Token> findTransitiveHead(final Token token, final AnalyzeSyntaxResponse response) {
+	private TransitiveHeadSearchResults findTransitiveHead(final Token token, final AnalyzeSyntaxResponse response) {
 		Token currentToken = token;
-		final List<Token> result = new ArrayList<>();
-		result.add(currentToken);
+		final ArrayList<Token> chain = new ArrayList<>();
+		chain.add(currentToken);
 
 		boolean foundHead = false;
 		while (!foundHead && currentToken.hasDependencyEdge()) {
 			final DependencyEdge dependencyEdge = currentToken.getDependencyEdge();
 			final int headTokenIdx = dependencyEdge.getHeadTokenIndex();
 			final Token headToken = response.getTokens(headTokenIdx);
-			result.add(headToken);
+			chain.add(headToken);
 			foundHead = headTokenFilter.test(headToken);
 			currentToken = headToken;
 		}
-		return result;
+		return new TransitiveHeadSearchResults(chain, foundHead);
 	}
 
 }
