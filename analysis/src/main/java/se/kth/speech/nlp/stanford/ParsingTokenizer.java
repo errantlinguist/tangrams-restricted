@@ -21,6 +21,8 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import com.google.common.cache.LoadingCache;
+
 import edu.stanford.nlp.ling.CoreAnnotations.SentencesAnnotation;
 import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.pipeline.Annotation;
@@ -39,9 +41,9 @@ public final class ParsingTokenizer extends AbstractTokenizer {
 
 	private final Predicate<Tree> treePruningPositiveFilter;
 
-	public ParsingTokenizer(final StanfordCoreNLPConfigurationVariant annotConfig, final Predicate<Tree> treePruningPositiveFilter,
+	public ParsingTokenizer(final LoadingCache<String, Annotation> cache, final Predicate<Tree> treePruningPositiveFilter,
 			final Function<? super CoreLabel, String> labelTokenExtractor) {
-		super(annotConfig);
+		super(cache);
 		this.treePruningPositiveFilter = treePruningPositiveFilter;
 		this.labelTokenExtractor = labelTokenExtractor;
 	}

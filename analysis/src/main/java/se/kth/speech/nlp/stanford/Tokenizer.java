@@ -19,6 +19,8 @@ package se.kth.speech.nlp.stanford;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.google.common.cache.LoadingCache;
+
 import edu.stanford.nlp.ling.CoreAnnotations.SentencesAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.TextAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.TokensAnnotation;
@@ -44,8 +46,8 @@ public final class Tokenizer extends AbstractTokenizer {
 		}
 	}
 
-	public Tokenizer(final StanfordCoreNLPConfigurationVariant annotConfig) {
-		super(annotConfig);
+	public Tokenizer(final LoadingCache<String, Annotation> cache) {
+		super(cache);
 	}
 
 	/*

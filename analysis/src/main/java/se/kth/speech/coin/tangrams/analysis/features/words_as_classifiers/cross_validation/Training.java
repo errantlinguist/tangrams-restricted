@@ -27,9 +27,13 @@ import java.util.function.ToDoubleFunction;
 import org.springframework.context.ApplicationContext;
 
 import com.github.errantlinguist.ClassProperties;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 
 import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
+import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionContextFactory;
 import se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttributeContext;
@@ -81,7 +85,7 @@ enum Training {
 				final List<EventDialogueTransformer> diagTransformers) {
 			final ChainedEventDialogueTransformer chainedTransformer = new ChainedEventDialogueTransformer(
 					diagTransformers);
-			return new CachingEventDialogueTransformer(chainedTransformer);
+			return new CachingEventDialogueTransformer(createTransformedDialogueCache(chainedTransformer));
 		};
 
 		@Override
@@ -147,7 +151,13 @@ enum Training {
 		}
 	};
 
+	private static final int ESTIMATED_MIN_SESSION_DIALOGUE_COUNT = 50;
+
+	private static final int EVENT_DIALOGUE_PROCESSING_CONCURRENCY = 1;
+
 	private static final InstructorUtteranceFilteringEventDialogueTransformer INSTR_UTT_FILTER = new InstructorUtteranceFilteringEventDialogueTransformer();
+
+	private static final long MAXIMUM_TRANSFORMED_DIAG_CACHE_SIZE = 1000;
 
 	private static DialogicWeightedWordClassFactory createDiagWordClassFactory() {
 		try {
@@ -167,7 +177,14 @@ enum Training {
 		chain.add(INSTR_UTT_FILTER);
 		chain.addAll(diagTransformers);
 		final ChainedEventDialogueTransformer chainedTransformer = new ChainedEventDialogueTransformer(chain);
-		return new CachingEventDialogueTransformer(chainedTransformer);
+		return new CachingEventDialogueTransformer(createTransformedDialogueCache(chainedTransformer));
+	}
+
+	private static LoadingCache<EventDialogue, EventDialogue> createTransformedDialogueCache(
+			final EventDialogueTransformer transformer) {
+		return CacheBuilder.newBuilder().softValues().initialCapacity(ESTIMATED_MIN_SESSION_DIALOGUE_COUNT)
+				.maximumSize(MAXIMUM_TRANSFORMED_DIAG_CACHE_SIZE)
+				.concurrencyLevel(EVENT_DIALOGUE_PROCESSING_CONCURRENCY).build(CacheLoader.from(transformer::apply));
 	}
 
 	private int iterCount;

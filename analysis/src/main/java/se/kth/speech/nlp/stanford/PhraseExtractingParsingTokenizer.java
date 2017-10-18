@@ -29,6 +29,8 @@ import java.util.function.Predicate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.cache.LoadingCache;
+
 import edu.stanford.nlp.ling.CoreAnnotations.SentencesAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.TokensAnnotation;
 import edu.stanford.nlp.ling.CoreLabel;
@@ -66,17 +68,17 @@ public final class PhraseExtractingParsingTokenizer extends AbstractTokenizer {
 
 	private final BiConsumer<? super CoreMap, ? super List<Tree>> extractionResultsHook;
 
-	public PhraseExtractingParsingTokenizer(final StanfordCoreNLPConfigurationVariant annotConfig,
+	public PhraseExtractingParsingTokenizer(final LoadingCache<String, Annotation> cache,
 			final Function<? super CoreLabel, String> labelTokenExtractor, final Predicate<? super Tree> subTreeMatcher,
 			final BiConsumer<? super CoreMap, ? super List<Tree>> extractionResultsHook) {
-		this(annotConfig, labelTokenExtractor, subTreeMatcher, subTreeBranch -> true, extractionResultsHook);
+		this(cache, labelTokenExtractor, subTreeMatcher, subTreeBranch -> true, extractionResultsHook);
 	}
 
-	public PhraseExtractingParsingTokenizer(final StanfordCoreNLPConfigurationVariant annotConfig,
+	public PhraseExtractingParsingTokenizer(final LoadingCache<String, Annotation> cache,
 			final Function<? super CoreLabel, String> labelTokenExtractor, final Predicate<? super Tree> subTreeMatcher,
 			final Predicate<Tree> subTreeBranchPruningPositiveFilter,
 			final BiConsumer<? super CoreMap, ? super List<Tree>> extractionResultsHook) {
-		super(annotConfig);
+		super(cache);
 		this.labelTokenExtractor = labelTokenExtractor;
 		this.subTreeMatcher = subTreeMatcher;
 		this.subTreeBranchPruningPositiveFilter = subTreeBranchPruningPositiveFilter;

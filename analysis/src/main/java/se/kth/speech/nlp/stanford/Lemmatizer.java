@@ -19,6 +19,8 @@ package se.kth.speech.nlp.stanford;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.google.common.cache.LoadingCache;
+
 import edu.stanford.nlp.ling.CoreAnnotations.LemmaAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.SentencesAnnotation;
 import edu.stanford.nlp.ling.CoreAnnotations.TokensAnnotation;
@@ -33,8 +35,8 @@ import edu.stanford.nlp.util.CoreMap;
  */
 public final class Lemmatizer extends AbstractTokenizer {
 
-	public Lemmatizer(final StanfordCoreNLPConfigurationVariant annotConfig) {
-		super(annotConfig);
+	public Lemmatizer(final LoadingCache<String, Annotation> cache) {
+		super(cache);
 	}
 
 	/*

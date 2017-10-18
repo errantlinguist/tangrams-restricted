@@ -29,8 +29,11 @@ import org.junit.experimental.theories.Theories;
 import org.junit.experimental.theories.Theory;
 import org.junit.runner.RunWith;
 
+import com.google.common.cache.LoadingCache;
+
 import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.ling.Label;
+import edu.stanford.nlp.pipeline.Annotation;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -47,13 +50,14 @@ public final class PhraseExtractingParsingTokenizerTest {
 	private static final PhraseExtractingParsingTokenizer TEST_INST;
 
 	static {
-		TEST_INST = new PhraseExtractingParsingTokenizer(StanfordCoreNLPConfigurationVariant.TOKENIZING_PARSING,
-				CoreLabel::word, subTree -> {
-					final Label label = subTree.label();
-					return label == null ? false : "NP".equals(label.value());
-				}, (sent, extractedPhrases) -> {
-					// Do nothing
-				});
+		final LoadingCache<String, Annotation> cache = new AnnotationCacheFactory(1)
+				.apply(StanfordCoreNLPConfigurationVariant.TOKENIZING_PARSING);
+		TEST_INST = new PhraseExtractingParsingTokenizer(cache, CoreLabel::word, subTree -> {
+			final Label label = subTree.label();
+			return label == null ? false : "NP".equals(label.value());
+		}, (sent, extractedPhrases) -> {
+			// Do nothing
+		});
 	}
 
 	private static Map<String, List<String>> createInputExpectedOutputMap() {
