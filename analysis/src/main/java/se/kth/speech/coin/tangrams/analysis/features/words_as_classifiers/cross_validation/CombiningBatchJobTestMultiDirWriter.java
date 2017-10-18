@@ -34,7 +34,6 @@ import java.util.Map;
 import java.util.OptionalInt;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ForkJoinPool;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
@@ -53,6 +52,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import se.kth.speech.coin.tangrams.CLIParameters;
+import se.kth.speech.coin.tangrams.analysis.BackgroundJobs;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.CombiningBatchJobTester.IncompleteResults;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.StatisticsWriter.SummaryDatum;
 import se.kth.speech.coin.tangrams.iristk.EventTimes;
@@ -137,10 +137,6 @@ final class CombiningBatchJobTestMultiDirWriter { // NO_UCD (use default)
 		}
 	}
 
-	private static ExecutorService createBackgroundJobExecutor() {
-		return ForkJoinPool.commonPool();
-	}
-
 	private static String createBatchOutdirName(final TestParameters testParams) {
 		final Stream<String> rowCellVals = TestParameterReporting.createTestMethodRowCellValues(testParams,
 				CombiningBatchJobTestMultiDirWriter::createCleaningMethodSetValues);
@@ -203,7 +199,7 @@ final class CombiningBatchJobTestMultiDirWriter { // NO_UCD (use default)
 		if (cl.hasOption(CLITestParameter.HELP.optName)) {
 			Parameter.printHelp();
 		} else {
-			final ExecutorService backgroundJobExecutor = createBackgroundJobExecutor();
+			final ExecutorService backgroundJobExecutor = BackgroundJobs.getBackgroundJobExecutor();
 			final CombiningBatchJobTesterCLIInputFactory inputFactory = new CombiningBatchJobTesterCLIInputFactory(
 					backgroundJobExecutor);
 			try {

@@ -53,6 +53,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import se.kth.speech.coin.tangrams.CLIParameters;
+import se.kth.speech.coin.tangrams.analysis.BackgroundJobs;
 import se.kth.speech.coin.tangrams.analysis.DataLanguageDefaults;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
@@ -110,10 +111,6 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 			System.out.println(String.format("An error occured while parsing the command-line arguments: %s", e));
 			printHelp();
 		}
-	}
-
-	private static ExecutorService createBackgroundJobExecutor() {
-		return ForkJoinPool.commonPool();
 	}
 
 	private static List<DialogueAnalysisSummaryFactory.SummaryDatum> createDefaultDatumOrderingList() {
@@ -174,7 +171,7 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 		if (cl.hasOption(CLITestParameter.HELP.optName)) {
 			printHelp();
 		} else {
-			final ExecutorService backgroundJobExecutor = createBackgroundJobExecutor();
+			final ForkJoinPool backgroundJobExecutor = BackgroundJobs.getBackgroundJobExecutor();
 			final CombiningBatchJobTesterCLIInputFactory inputFactory = new CombiningBatchJobTesterCLIInputFactory(
 					backgroundJobExecutor);
 			try {
