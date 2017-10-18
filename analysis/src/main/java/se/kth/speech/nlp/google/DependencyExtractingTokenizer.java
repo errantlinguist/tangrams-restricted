@@ -128,6 +128,10 @@ public final class DependencyExtractingTokenizer implements Function<String, Lis
 					dependents.add(token);
 				}
 			}
+
+			// System.out.println("Dependent chain: " +
+			// dependencies.stream().map(Token::getText).map(TextSpan::getContent).collect(Collectors.joining("
+			// ")));
 			tokenIdx++;
 		}
 
