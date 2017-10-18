@@ -328,6 +328,8 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 
 	private static final int ESTIMATED_EVENT_METADATUM_COUNT = EventMetadatum.values().length + 8;
 
+	private static final long EXPECTED_MAXIMUM_UNIQUE_EXPERIMENT_VERSIONS = 24;
+
 	private static final ZoneId EXPERIMENT_VERSION_TIMEZONE = ZoneId.of("UTC");
 
 	private static final GameManagementEvent GAME_ROUND_DELIMITING_EVENT_TYPE = GameManagementEvent.NEXT_TURN_REQUEST;
@@ -560,7 +562,7 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 	private final LoadingCache<EventContext, String[]> eventDataRowCellValues;
 
 	private final List<EventDatum> eventDataToDescribe;
-
+	
 	private final String eventOutfileNamePrefix;
 
 	private SessionGameHistoryTabularDataWriter(final List<EventDatum> eventDataToDescribe,
@@ -578,9 +580,8 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 					}
 				});
 
-		final int expectedMaxUniqueExperimentVersions = 24;
 		dateLatestCommits = CacheBuilder.newBuilder().concurrencyLevel(concurrencyLevel)
-				.maximumSize(expectedMaxUniqueExperimentVersions).build(new CacheLoader<ZonedDateTime, RevCommit>() {
+				.maximumSize(EXPECTED_MAXIMUM_UNIQUE_EXPERIMENT_VERSIONS).build(new CacheLoader<ZonedDateTime, RevCommit>() {
 
 					@Override
 					public RevCommit load(final ZonedDateTime zonedGameStart)
@@ -591,7 +592,7 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 
 				});
 		commitMetadata = CacheBuilder.newBuilder().concurrencyLevel(concurrencyLevel)
-				.maximumSize(expectedMaxUniqueExperimentVersions)
+				.maximumSize(EXPECTED_MAXIMUM_UNIQUE_EXPERIMENT_VERSIONS)
 				.build(new CacheLoader<RevCommit, Map<EventMetadatum, String>>() {
 
 					@Override
