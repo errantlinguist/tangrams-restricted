@@ -37,7 +37,10 @@ import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
 public final class SessionGameManagerCacheSupplier
 		implements Supplier<LoadingCache<SessionDataManager, SessionGameManager>> {
 
+	private static final long MAXIMUM_CACHE_SIZE = 100;
+
 	private final LoadingCache<SessionDataManager, SessionGameManager> instances = CacheBuilder.newBuilder()
+			.softValues().maximumSize(MAXIMUM_CACHE_SIZE)
 			.build(new CacheLoader<SessionDataManager, SessionGameManager>() {
 
 				@Override
