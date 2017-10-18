@@ -42,7 +42,6 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialog
 import se.kth.speech.nlp.Disfluencies;
 import se.kth.speech.nlp.EnglishLocationalPrepositions;
 import se.kth.speech.nlp.SnowballPorter2EnglishStopwords;
-import se.kth.speech.nlp.stanford.AnnotationCacheFactory;
 import se.kth.speech.nlp.stanford.Lemmatizer;
 import se.kth.speech.nlp.stanford.ParsingTokenizer;
 import se.kth.speech.nlp.stanford.PhrasalHeadFilteringPredicate;
@@ -59,11 +58,11 @@ enum Tokenization implements Function<TokenizationContext, EventDialogueTransfor
 			switch (context.getTokenType()) {
 			case INFLECTED:
 				tokenizer = new Tokenizer(
-						ANNOTATION_CACHE_FACTORY.apply(StanfordCoreNLPConfigurationVariant.TOKENIZING));
+						context.getAnnotationCacheFactory().apply(StanfordCoreNLPConfigurationVariant.TOKENIZING));
 				break;
 			case LEMMA:
-				tokenizer = new Lemmatizer(
-						ANNOTATION_CACHE_FACTORY.apply(StanfordCoreNLPConfigurationVariant.TOKENIZING_LEMMATIZING));
+				tokenizer = new Lemmatizer(context.getAnnotationCacheFactory()
+						.apply(StanfordCoreNLPConfigurationVariant.TOKENIZING_LEMMATIZING));
 				break;
 			default:
 				throw new AssertionError("No logic for handling enum.");
@@ -78,7 +77,7 @@ enum Tokenization implements Function<TokenizationContext, EventDialogueTransfor
 			final Entry<Function<CoreLabel, String>, StanfordCoreNLPConfigurationVariant> tokenExtractor = TOKEN_TYPE_EXTRACTORS
 					.get(context.getTokenType());
 			return new TokenizingEventDialogueTransformer(new PhraseExtractingParsingTokenizer(
-					ANNOTATION_CACHE_FACTORY.apply(tokenExtractor.getValue()), tokenExtractor.getKey(),
+					context.getAnnotationCacheFactory().apply(tokenExtractor.getValue()), tokenExtractor.getKey(),
 					NP_WHITELISTING_PHRASE_MATCHER, context.getExtractionResultsHook()));
 		}
 	},
@@ -89,7 +88,7 @@ enum Tokenization implements Function<TokenizationContext, EventDialogueTransfor
 			final Entry<Function<CoreLabel, String>, StanfordCoreNLPConfigurationVariant> tokenExtractor = TOKEN_TYPE_EXTRACTORS
 					.get(context.getTokenType());
 			return new TokenizingEventDialogueTransformer(new PhraseExtractingParsingTokenizer(
-					ANNOTATION_CACHE_FACTORY.apply(tokenExtractor.getValue()), tokenExtractor.getKey(),
+					context.getAnnotationCacheFactory().apply(tokenExtractor.getValue()), tokenExtractor.getKey(),
 					NP_WHITELISTING_PHRASE_MATCHER, LOCATIONAL_PP_PRUNING_MATCHER, context.getExtractionResultsHook()));
 		}
 	},
@@ -100,16 +99,10 @@ enum Tokenization implements Function<TokenizationContext, EventDialogueTransfor
 			final Entry<Function<CoreLabel, String>, StanfordCoreNLPConfigurationVariant> tokenExtractor = TOKEN_TYPE_EXTRACTORS
 					.get(context.getTokenType());
 			return new TokenizingEventDialogueTransformer(
-					new ParsingTokenizer(ANNOTATION_CACHE_FACTORY.apply(tokenExtractor.getValue()),
+					new ParsingTokenizer(context.getAnnotationCacheFactory().apply(tokenExtractor.getValue()),
 							LOCATIONAL_PP_PRUNING_MATCHER, tokenExtractor.getKey()));
 		}
 	};
-
-	/**
-	 * Parsing can take up huge amounts of memory, so it's single-threaded and
-	 * thus the caches are created designed for single-threaded operation.
-	 */
-	private static final AnnotationCacheFactory ANNOTATION_CACHE_FACTORY = new AnnotationCacheFactory(1);
 
 	private static final List<Cleaning> CLEANING_ORDERING = createCleaningOrderingList();
 

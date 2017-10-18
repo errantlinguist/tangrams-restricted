@@ -42,6 +42,7 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialog
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.UtteranceRelation;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.TrainingInstancesFactory;
 import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
+import se.kth.speech.nlp.stanford.AnnotationCacheFactory;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -102,6 +103,12 @@ final class CombiningBatchJobTester {
 		}
 	}
 
+	/**
+	 * Parsing can take up huge amounts of memory, so it's single-threaded and
+	 * thus the caches are created designed for single-threaded operation.
+	 */
+	private static final AnnotationCacheFactory ANNOTATION_CACHE_FACTORY = new AnnotationCacheFactory(1);
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(CombiningBatchJobTester.class);
 
 	private final ApplicationContext appCtx;
@@ -143,7 +150,7 @@ final class CombiningBatchJobTester {
 				for (final Tokenization tokenizationMethod : input.tokenizationMethods) {
 					for (final TokenType tokenType : input.tokenTypes) {
 						final TokenizationContext tokenizationContext = new TokenizationContext(cleaningMethodSet,
-								tokenType, extractionResultsHook);
+								tokenType, extractionResultsHook, ANNOTATION_CACHE_FACTORY);
 						final EventDialogueTransformer tokenizer = tokenizationMethod.apply(tokenizationContext);
 
 						for (final TokenFiltering tokenFilteringMethod : input.tokenFilteringMethods) {

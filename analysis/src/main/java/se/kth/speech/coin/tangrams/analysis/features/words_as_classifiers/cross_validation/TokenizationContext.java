@@ -19,11 +19,18 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross
 import java.util.List;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.Function;
 
+import com.google.common.cache.LoadingCache;
+
+import edu.stanford.nlp.pipeline.Annotation;
 import edu.stanford.nlp.trees.Tree;
 import edu.stanford.nlp.util.CoreMap;
+import se.kth.speech.nlp.stanford.StanfordCoreNLPConfigurationVariant;
 
 final class TokenizationContext {
+
+	private final Function<? super StanfordCoreNLPConfigurationVariant, LoadingCache<String, Annotation>> annotationCacheFactory;
 
 	private final Set<Cleaning> cleaning;
 
@@ -32,10 +39,19 @@ final class TokenizationContext {
 	private final TokenType tokenType;
 
 	TokenizationContext(final Set<Cleaning> cleaning, final TokenType tokenType,
-			final BiConsumer<? super CoreMap, ? super List<Tree>> extractionResultsHook) {
+			final BiConsumer<? super CoreMap, ? super List<Tree>> extractionResultsHook,
+			final Function<? super StanfordCoreNLPConfigurationVariant, LoadingCache<String, Annotation>> annotationCacheFactory) {
 		this.cleaning = cleaning;
 		this.tokenType = tokenType;
 		this.extractionResultsHook = extractionResultsHook;
+		this.annotationCacheFactory = annotationCacheFactory;
+	}
+
+	/**
+	 * @return the annotationCacheFactory
+	 */
+	Function<? super StanfordCoreNLPConfigurationVariant, LoadingCache<String, Annotation>> getAnnotationCacheFactory() {
+		return annotationCacheFactory;
 	}
 
 	/**
