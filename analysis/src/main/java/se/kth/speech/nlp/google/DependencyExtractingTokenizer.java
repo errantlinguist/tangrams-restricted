@@ -53,6 +53,7 @@ public final class DependencyExtractingTokenizer implements Function<String, Lis
 	private static class TransitiveHeadSearchResults {
 
 		private final ArrayList<Token> chain;
+		
 		private final boolean foundHead;
 
 		private TransitiveHeadSearchResults(final ArrayList<Token> chain, final boolean foundHead) {
