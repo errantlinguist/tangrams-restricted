@@ -24,10 +24,10 @@ if exist "%CLASSPATH_JARFILE%" (
 		set "outdir=%~2"
 		echo Output directory is "!outdir!".
 		
-		java -server -Xmx%HEAP_SIZE% -cp %CLASSPATH_JARFILE% %MAIN_CLASS% "!inpath!" -o "!outdir!\trainingtest-cleaning-NPsWithoutPPs-stopwordfilter.tsv" -c "FILLERS DISFLUENCIES DUPLICATES" -tok "NPS_WITHOUT_PPS" -tt "INFLECTED" -tf "STOPWORDS" -tr "ONE_NEG ALL_NEG DIALOGIC" > !outdir!\trainingtest-cleaning-NPsWithoutPPs-stopwordfilter.out 2> !outdir!\trainingtest-cleaning-NPsWithoutPPs-stopwordfilter.err
-		java -server -Xmx%HEAP_SIZE% -cp %CLASSPATH_JARFILE% %MAIN_CLASS% "!inpath!" -o "!outdir!\trainingtest-cleaning-NPsWithoutPPs.tsv" -c "FILLERS DISFLUENCIES DUPLICATES" -tok "NPS_WITHOUT_PPS" -tt "INFLECTED" -tf "NO_FILTER" -tr "ONE_NEG ALL_NEG DIALOGIC" > "!outdir!\trainingtest-cleaning-NPsWithoutPPs.out" 2> "!outdir!\trainingtest-cleaning-NPsWithoutPPs.err"
-		java -server -Xmx%HEAP_SIZE% -cp %CLASSPATH_JARFILE% %MAIN_CLASS% "!inpath!" -o "!outdir!\trainingtest-basic.tsv" -c "" -tok "BASIC" -tt "INFLECTED" -tf "NO_FILTER" -tr "ONE_NEG ALL_NEG DIALOGIC" > "!outdir!\trainingtest-basic.out" 2> "!outdir!\trainingtest-basic.err"
-		java -server -Xmx%HEAP_SIZE% -cp %CLASSPATH_JARFILE% %MAIN_CLASS% "!inpath!" -o "!outdir!\trainingtest-basic-stopwordfillers.tsv" -c "FILLERS" -tok "BASIC" -tt "INFLECTED" -tf "STOPWORDS" -tr "ONE_NEG ALL_NEG DIALOGIC" > "!outdir!\trainingtest-basic-stopwordfillers.out" 2> "!outdir!\trainingtest-basic-stopwordfillers.err"
+		java -server -Xmx%HEAP_SIZE% -cp %CLASSPATH_JARFILE% %MAIN_CLASS% "!inpath!" -o "!outdir!\trainingtest-cleaning-NPsWithoutPPs-stopwordfilter.tsv" -c "FILLERS DISFLUENCIES DUPLICATES" -tok "STANFORD_NPS_WITHOUT_PPS" -tt "INFLECTED" -tf "STOPWORDS" -tr "ONE_NEG ALL_NEG DIALOGIC" > !outdir!\trainingtest-cleaning-NPsWithoutPPs-stopwordfilter.out 2> !outdir!\trainingtest-cleaning-NPsWithoutPPs-stopwordfilter.err
+		java -server -Xmx%HEAP_SIZE% -cp %CLASSPATH_JARFILE% %MAIN_CLASS% "!inpath!" -o "!outdir!\trainingtest-cleaning-NPsWithoutPPs.tsv" -c "FILLERS DISFLUENCIES DUPLICATES" -tok "STANFORD_NPS_WITHOUT_PPS" -tt "INFLECTED" -tf "NO_FILTER" -tr "ONE_NEG ALL_NEG DIALOGIC" > "!outdir!\trainingtest-cleaning-NPsWithoutPPs.out" 2> "!outdir!\trainingtest-cleaning-NPsWithoutPPs.err"
+		java -server -Xmx%HEAP_SIZE% -cp %CLASSPATH_JARFILE% %MAIN_CLASS% "!inpath!" -o "!outdir!\trainingtest-basic.tsv" -c "" -tok "STANFORD_BASIC" -tt "INFLECTED" -tf "NO_FILTER" -tr "ONE_NEG ALL_NEG DIALOGIC" > "!outdir!\trainingtest-basic.out" 2> "!outdir!\trainingtest-basic.err"
+		java -server -Xmx%HEAP_SIZE% -cp %CLASSPATH_JARFILE% %MAIN_CLASS% "!inpath!" -o "!outdir!\trainingtest-basic-stopwordfillers.tsv" -c "FILLERS" -tok "STANFORD_BASIC" -tt "INFLECTED" -tf "STOPWORDS" -tr "ONE_NEG ALL_NEG DIALOGIC" > "!outdir!\trainingtest-basic-stopwordfillers.out" 2> "!outdir!\trainingtest-basic-stopwordfillers.err"
 		set /A exit_status=!ERRORLEVEL!
 	) else (
 		echo %usage_msg%

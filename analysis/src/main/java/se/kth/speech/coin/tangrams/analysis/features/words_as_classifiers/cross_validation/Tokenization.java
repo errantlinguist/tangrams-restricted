@@ -50,7 +50,7 @@ import se.kth.speech.nlp.stanford.StanfordCoreNLPConfigurationVariant;
 import se.kth.speech.nlp.stanford.Tokenizer;
 
 enum Tokenization implements Function<TokenizationContext, EventDialogueTransformer> {
-	BASIC {
+	STANFORD_BASIC {
 
 		@Override
 		protected TokenizingEventDialogueTransformer createMainTransformer(final TokenizationContext context) {
@@ -70,7 +70,7 @@ enum Tokenization implements Function<TokenizationContext, EventDialogueTransfor
 			return new TokenizingEventDialogueTransformer(tokenizer);
 		}
 	},
-	NPS_ONLY {
+	STANFORD_NPS_ONLY {
 
 		@Override
 		protected TokenizingEventDialogueTransformer createMainTransformer(final TokenizationContext context) {
@@ -81,7 +81,7 @@ enum Tokenization implements Function<TokenizationContext, EventDialogueTransfor
 					NP_WHITELISTING_PHRASE_MATCHER, context.getExtractionResultsHook()));
 		}
 	},
-	NPS_WITHOUT_PPS {
+	STANFORD_NPS_WITHOUT_PPS {
 
 		@Override
 		protected TokenizingEventDialogueTransformer createMainTransformer(final TokenizationContext context) {
@@ -92,7 +92,7 @@ enum Tokenization implements Function<TokenizationContext, EventDialogueTransfor
 					NP_WHITELISTING_PHRASE_MATCHER, LOCATIONAL_PP_PRUNING_MATCHER, context.getExtractionResultsHook()));
 		}
 	},
-	PP_REMOVER {
+	STANFORD_PP_REMOVER {
 
 		@Override
 		protected TokenizingEventDialogueTransformer createMainTransformer(final TokenizationContext context) {

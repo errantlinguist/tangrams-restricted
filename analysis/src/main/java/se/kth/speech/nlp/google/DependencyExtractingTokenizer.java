@@ -1,0 +1,178 @@
+/*
+ *  This file is part of se.kth.speech.coin.tangrams-restricted.analysis.
+ *
+ *  se.kth.speech.coin.tangrams-restricted.analysis is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+*/
+package se.kth.speech.nlp.google;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.EnumSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.function.Predicate;
+
+import com.google.cloud.language.v1.AnalyzeSyntaxRequest;
+import com.google.cloud.language.v1.AnalyzeSyntaxResponse;
+import com.google.cloud.language.v1.DependencyEdge;
+import com.google.cloud.language.v1.Document;
+import com.google.cloud.language.v1.Document.Type;
+import com.google.cloud.language.v1.EncodingType;
+import com.google.cloud.language.v1.LanguageServiceClient;
+import com.google.cloud.language.v1.PartOfSpeech;
+import com.google.cloud.language.v1.TextSpan;
+import com.google.cloud.language.v1.Token;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+
+/**
+ * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
+ * @since 18 Oct 2017
+ *
+ */
+public final class DependencyExtractingTokenizer implements Function<String, List<String>> {
+
+	private static final Set<PartOfSpeech.Tag> DEFAULT_BLACKLISTED_DEPENDENT_TAGS = EnumSet.of(PartOfSpeech.Tag.ADP,
+			PartOfSpeech.Tag.VERB);
+
+	private static final Set<PartOfSpeech.Tag> DEFAULT_HEAD_TAGS_TO_EXTRACT = EnumSet.of(PartOfSpeech.Tag.NOUN,
+			PartOfSpeech.Tag.PRON);
+
+	private static final EncodingType ENCODING_TYPE = EncodingType.UTF8;
+
+	private static final String PARSING_LANGUAGE = "en";
+
+	private static final Comparator<Token> TOKEN_BEGIN_OFFSET_COMPARATOR = Comparator
+			.comparingInt(token -> token.getText().getBeginOffset());
+
+	private final LanguageServiceClient client;
+
+	private final Predicate<? super Token> dependentTokenFilter;
+
+	private final Predicate<? super Token> headTokenFilter;
+
+	public DependencyExtractingTokenizer(final LanguageServiceClient client) {
+		this(client, DEFAULT_HEAD_TAGS_TO_EXTRACT, DEFAULT_BLACKLISTED_DEPENDENT_TAGS);
+	}
+
+	public DependencyExtractingTokenizer(final LanguageServiceClient client,
+			final Collection<? super PartOfSpeech.Tag> headTagsToExtract,
+			final Collection<? super PartOfSpeech.Tag> blacklistedDependentTags) {
+		this(client, token -> headTagsToExtract.contains(token.getPartOfSpeech().getTag()),
+				tag -> !blacklistedDependentTags.contains(tag.getPartOfSpeech().getTag()));
+	}
+
+	public DependencyExtractingTokenizer(final LanguageServiceClient client,
+			final Predicate<? super Token> headTokenFilter, final Predicate<? super Token> dependentTokenFilter) {
+		this.client = client;
+		this.headTokenFilter = headTokenFilter;
+		this.dependentTokenFilter = dependentTokenFilter;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 *
+	 * @see java.util.function.Function#apply(java.lang.Object)
+	 */
+	@Override
+	public List<String> apply(final String input) {
+		final Document doc = Document.newBuilder().setContent(input).setType(Type.PLAIN_TEXT)
+				.setLanguage(PARSING_LANGUAGE).build();
+
+		final AnalyzeSyntaxRequest request = AnalyzeSyntaxRequest.newBuilder().setDocument(doc)
+				.setEncodingType(ENCODING_TYPE).build();
+		final AnalyzeSyntaxResponse response = client.analyzeSyntax(request);
+
+		final List<Token> tokens = response.getTokensList();
+		final Map<Token, Set<Token>> headDependentSets = Maps.newHashMapWithExpectedSize(Math.min(tokens.size(), 4));
+		// Pre-allocate sets for each head so they are included in the map even
+		// if they don't have any dependents
+		final int estimatedDependencyCountUpperBound = Math.min(tokens.size() - 1, 1);
+		tokens.stream().filter(headTokenFilter).forEach(headToken -> headDependentSets.put(headToken,
+				Sets.newHashSetWithExpectedSize(Math.min(estimatedDependencyCountUpperBound, 4))));
+
+		int dependentTokenCount = 0;
+
+		int tokenIdx = 0;
+		for (final Token token : tokens) {
+			System.out.println(String.format("Token content \"%s\"; POS tag: \"%s\"; offset idx: \"%d\"",
+					token.getText().getContent(), token.getPartOfSpeech().getTag(), tokenIdx));
+
+			// List<Token> dependencies = findTransitiveHead(token, response);
+			// System.out.println("Dependent chain: " +
+			// dependencies.stream().map(Token::getText).map(TextSpan::getContent).collect(Collectors.joining("
+			// ")));
+			if (dependentTokenFilter.test(token)) {
+				final DependencyEdge dependencyRel = token.getDependencyEdge();
+				final int headTokenIdx = dependencyRel.getHeadTokenIndex();
+				final Token headToken = response.getTokens(headTokenIdx);
+				// Dependencies returned by the Google API can in fact be
+				// cyclic; Avoid dependencies on oneself
+				if (!token.equals(headToken) && headTokenFilter.test(headToken)) {
+					System.out.println(String.format("Idx %d is dependent on idx %d.", tokenIdx, headTokenIdx));
+					final Set<Token> dependents = headDependentSets.get(headToken);
+					if (dependents != null) {
+						if (dependents.add(token)) {
+							dependentTokenCount++;
+						}
+					}
+				}
+			}
+
+			tokenIdx++;
+		}
+
+		final List<Token> resultTokens = new ArrayList<>(headDependentSets.size() + dependentTokenCount);
+		for (final Entry<Token, Set<Token>> headDependents : headDependentSets.entrySet()) {
+			final Token headToken = headDependents.getKey();
+			final String headContent = headToken.getText().getContent();
+			System.out.println(String.format("Dependents of \"%s\":", headContent));
+			resultTokens.add(headToken);
+
+			final Set<Token> dependents = headDependents.getValue();
+			for (final Token dependent : dependents) {
+				final String dependentContent = dependent.getText().getContent();
+				System.out.println(String.format("Content: \"%s\"; POS tag: \"%s\"", dependentContent,
+						dependent.getPartOfSpeech().getTag()));
+				resultTokens.add(dependent);
+			}
+		}
+		resultTokens.sort(TOKEN_BEGIN_OFFSET_COMPARATOR);
+		return Arrays
+				.asList(resultTokens.stream().map(Token::getText).map(TextSpan::getContent).toArray(String[]::new));
+	}
+
+	private List<Token> findTransitiveHead(final Token token, final AnalyzeSyntaxResponse response) {
+		Token currentToken = token;
+		final List<Token> result = new ArrayList<>();
+		result.add(currentToken);
+
+		boolean foundHead = false;
+		while (!foundHead && currentToken.hasDependencyEdge()) {
+			final DependencyEdge dependencyEdge = currentToken.getDependencyEdge();
+			final int headTokenIdx = dependencyEdge.getHeadTokenIndex();
+			final Token headToken = response.getTokens(headTokenIdx);
+			result.add(headToken);
+			foundHead = headTokenFilter.test(headToken);
+			currentToken = headToken;
+		}
+		return result;
+	}
+
+}
