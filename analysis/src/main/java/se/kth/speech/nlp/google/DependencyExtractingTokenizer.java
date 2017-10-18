@@ -106,33 +106,40 @@ public final class DependencyExtractingTokenizer implements Function<String, Lis
 		// Pre-allocate sets for each head so they are included in the map even
 		// if they don't have any dependents
 		final int estimatedDependencyCountUpperBound = Math.max(tokens.size() - 1, 1);
-		tokens.stream().filter(headTokenFilter).forEach(headToken -> headDependentSets.put(headToken,
-				Sets.newHashSetWithExpectedSize(Math.min(estimatedDependencyCountUpperBound, 4))));
+		final Function<Token, Set<Token>> headDependentSetFactory = headToken -> Sets
+				.newHashSetWithExpectedSize(Math.min(estimatedDependencyCountUpperBound, 4));
+		// tokens.stream().filter(headTokenFilter).forEach(headToken ->
+		// headDependentSets.put(headToken,
+		// Sets.newHashSetWithExpectedSize(Math.min(estimatedDependencyCountUpperBound,
+		// 4))));
 
+		// TODO: remove the token index counter once debugging messages are no
+		// longer necessary
 		int tokenIdx = 0;
 		for (final Token token : tokens) {
 			System.out.println(String.format("Token content \"%s\"; POS tag: \"%s\"; offset idx: \"%d\"",
 					token.getText().getContent(), token.getPartOfSpeech().getTag(), tokenIdx));
+			if (headTokenFilter.test(token)) {
+				// The terminal token itself should be extracted
+				headDependentSets.computeIfAbsent(token, headDependentSetFactory);
+			} else if (token.hasDependencyEdge() && dependentTokenFilter.test(token)) {
+				// Check if the head token the current token is dependent on
+				// should be extracted, and thus by extension the current token
+				// as well
+				final DependencyEdge dependencyRel = token.getDependencyEdge();
+				final int headTokenIdx = dependencyRel.getHeadTokenIndex();
+				final Token headToken = response.getTokens(headTokenIdx);
+				if (headTokenFilter.test(headToken)) {
+					final Set<Token> dependents = headDependentSets.computeIfAbsent(headToken, headDependentSetFactory);
+					System.out.println(String.format("Idx %d is dependent on idx %d.", tokenIdx, headTokenIdx));
+					dependents.add(token);
+				}
+			}
 
 			// List<Token> dependencies = findTransitiveHead(token, response);
 			// System.out.println("Dependent chain: " +
 			// dependencies.stream().map(Token::getText).map(TextSpan::getContent).collect(Collectors.joining("
 			// ")));
-			if (dependentTokenFilter.test(token)) {
-				final DependencyEdge dependencyRel = token.getDependencyEdge();
-				final int headTokenIdx = dependencyRel.getHeadTokenIndex();
-				final Token headToken = response.getTokens(headTokenIdx);
-				// Dependencies returned by the Google API can in fact be
-				// cyclic; Avoid dependencies on oneself
-				if (!token.equals(headToken) && headTokenFilter.test(headToken)) {
-					System.out.println(String.format("Idx %d is dependent on idx %d.", tokenIdx, headTokenIdx));
-					final Set<Token> dependents = headDependentSets.get(headToken);
-					if (dependents != null) {
-						dependents.add(token);
-					}
-				}
-			}
-
 			tokenIdx++;
 		}
 
