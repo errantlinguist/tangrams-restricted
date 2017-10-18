@@ -108,7 +108,6 @@ public final class DependencyExtractingTokenizer implements Function<String, Lis
 				Sets.newHashSetWithExpectedSize(Math.min(estimatedDependencyCountUpperBound, 4))));
 
 		int dependentTokenCount = 0;
-
 		int tokenIdx = 0;
 		for (final Token token : tokens) {
 			System.out.println(String.format("Token content \"%s\"; POS tag: \"%s\"; offset idx: \"%d\"",
