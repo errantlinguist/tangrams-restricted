@@ -53,7 +53,7 @@ public final class DependencyExtractingTokenizer implements Function<String, Lis
 	private static class TransitiveHeadSearchResults {
 
 		private final ArrayList<Token> chain;
-		
+
 		private final boolean foundHead;
 
 		private TransitiveHeadSearchResults(final ArrayList<Token> chain, final boolean foundHead) {
@@ -63,7 +63,7 @@ public final class DependencyExtractingTokenizer implements Function<String, Lis
 
 		/*
 		 * (non-Javadoc)
-		 * 
+		 *
 		 * @see java.lang.Object#equals(java.lang.Object)
 		 */
 		@Override
@@ -93,7 +93,7 @@ public final class DependencyExtractingTokenizer implements Function<String, Lis
 
 		/*
 		 * (non-Javadoc)
-		 * 
+		 *
 		 * @see java.lang.Object#hashCode()
 		 */
 		@Override
@@ -107,7 +107,7 @@ public final class DependencyExtractingTokenizer implements Function<String, Lis
 
 		/*
 		 * (non-Javadoc)
-		 * 
+		 *
 		 * @see java.lang.Object#toString()
 		 */
 		@Override
@@ -232,13 +232,16 @@ public final class DependencyExtractingTokenizer implements Function<String, Lis
 		chain.add(currentToken);
 
 		boolean foundHead = false;
-		while (!foundHead && currentToken.hasDependencyEdge()) {
+		while (currentToken.hasDependencyEdge()) {
 			final DependencyEdge dependencyEdge = currentToken.getDependencyEdge();
 			final int headTokenIdx = dependencyEdge.getHeadTokenIndex();
 			final Token headToken = response.getTokens(headTokenIdx);
 			chain.add(headToken);
-			foundHead = headTokenFilter.test(headToken);
-			currentToken = headToken;
+			if (foundHead = headTokenFilter.test(headToken)) {
+				break;
+			} else {
+				currentToken = headToken;
+			}
 		}
 		return new TransitiveHeadSearchResults(chain, foundHead);
 	}
