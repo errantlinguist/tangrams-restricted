@@ -274,14 +274,15 @@ final class SessionStatisticsWriter
 		this.durationFormatter = durationFormatter;
 		this.rowCellJoiner = rowCellJoiner;
 
+		final int concurrencyLevel = 1;
 		sessionUtteranceTokenCountStats = CacheBuilder.newBuilder().initialCapacity(expectedUniqueSessionCount)
-				.build(CacheLoader.from(summary -> {
+				.concurrencyLevel(concurrencyLevel).build(CacheLoader.from(summary -> {
 					return summary.getUtterances().map(Utterance::getTokens).mapToInt(Collection::size)
 							.summaryStatistics();
 				}));
 
 		sessionUtteranceDurationStats = CacheBuilder.newBuilder().initialCapacity(expectedUniqueSessionCount)
-				.build(CacheLoader.from(summary -> {
+				.concurrencyLevel(concurrencyLevel).build(CacheLoader.from(summary -> {
 					final DoubleStream uttDurations = summary.getUtterances()
 							.mapToDouble(utt -> utt.getEndTime() - utt.getStartTime());
 					return uttDurations.summaryStatistics();
