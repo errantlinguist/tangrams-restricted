@@ -39,7 +39,6 @@ abstract class AbstractTokenizer implements Function<String, List<String>> {
 
 	AbstractTokenizer(final LoadingCache<String, Annotation> cache) {
 		this.cache = cache;
-
 	}
 
 	@Override
