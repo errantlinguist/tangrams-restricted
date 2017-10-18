@@ -24,7 +24,9 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.NavigableSet;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -107,7 +109,6 @@ public final class DependencyExtractingTokenizer implements Function<String, Lis
 		tokens.stream().filter(headTokenFilter).forEach(headToken -> headDependentSets.put(headToken,
 				Sets.newHashSetWithExpectedSize(Math.min(estimatedDependencyCountUpperBound, 4))));
 
-		int dependentTokenCount = 0;
 		int tokenIdx = 0;
 		for (final Token token : tokens) {
 			System.out.println(String.format("Token content \"%s\"; POS tag: \"%s\"; offset idx: \"%d\"",
@@ -127,9 +128,7 @@ public final class DependencyExtractingTokenizer implements Function<String, Lis
 					System.out.println(String.format("Idx %d is dependent on idx %d.", tokenIdx, headTokenIdx));
 					final Set<Token> dependents = headDependentSets.get(headToken);
 					if (dependents != null) {
-						if (dependents.add(token)) {
-							dependentTokenCount++;
-						}
+						dependents.add(token);
 					}
 				}
 			}
@@ -137,7 +136,7 @@ public final class DependencyExtractingTokenizer implements Function<String, Lis
 			tokenIdx++;
 		}
 
-		final List<Token> resultTokens = new ArrayList<>(headDependentSets.size() + dependentTokenCount);
+		final NavigableSet<Token> resultTokens = new TreeSet<>(TOKEN_BEGIN_OFFSET_COMPARATOR);
 		for (final Entry<Token, Set<Token>> headDependents : headDependentSets.entrySet()) {
 			final Token headToken = headDependents.getKey();
 			final String headContent = headToken.getText().getContent();
@@ -152,7 +151,6 @@ public final class DependencyExtractingTokenizer implements Function<String, Lis
 				resultTokens.add(dependent);
 			}
 		}
-		resultTokens.sort(TOKEN_BEGIN_OFFSET_COMPARATOR);
 		return Arrays
 				.asList(resultTokens.stream().map(Token::getText).map(TextSpan::getContent).toArray(String[]::new));
 	}
