@@ -33,9 +33,9 @@ final class TransitiveHeadSearcher implements Function<Token, TransitiveHeadSear
 
 		private final boolean wasHeadFound;
 
-		private Result(final Token[] chain, final boolean foundHead) {
+		private Result(final Token[] chain, final boolean wasHeadFound) {
 			this.chain = chain;
-			wasHeadFound = foundHead;
+			this.wasHeadFound = wasHeadFound;
 		}
 
 		/*
