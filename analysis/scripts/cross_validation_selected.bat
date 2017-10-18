@@ -5,6 +5,7 @@ setlocal enabledelayedexpansion
 set "TARGET_DIR=target"
 set "CLASSPATH_JARFILE=%TARGET_DIR%\analysis-0.0.1-SNAPSHOT-jar-with-dependencies.jar"
 set "HEAP_SIZE=5120m"
+rem set "HEAP_SIZE=20480m"
 echo Will use heap space size of %HEAP_SIZE%.
 set "MAIN_CLASS=se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.CombiningBatchJobTestSingleFileWriter"
 
