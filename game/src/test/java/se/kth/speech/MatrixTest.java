@@ -22,7 +22,6 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.ToIntFunction;
@@ -39,6 +38,8 @@ import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.collect.Maps;
 
 import se.kth.speech.junit.IteratorEqualityAsserter;
 
@@ -88,7 +89,7 @@ public final class MatrixTest {
 	private static <V> Map<Matrix<V>, V[]> createMatrixValueArrayMap(final Collection<? extends V[]> valArrays) {
 		final int collSize = valArrays.size();
 		final int initialResultCapacity = collSize * (collSize / 2) + 1;
-		final Map<Matrix<V>, V[]> result = new HashMap<>(initialResultCapacity);
+		final Map<Matrix<V>, V[]> result = Maps.newHashMapWithExpectedSize(initialResultCapacity);
 		for (final V[] valArray : valArrays) {
 			for (int colCount = 0; colCount < valArray.length; ++colCount) {
 				try {
