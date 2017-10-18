@@ -96,7 +96,6 @@ public final class DependencyExtractingTokenizer implements Function<String, Lis
 	public List<String> apply(final String input) {
 		final Document doc = Document.newBuilder().setContent(input).setType(Type.PLAIN_TEXT)
 				.setLanguage(PARSING_LANGUAGE).build();
-
 		final AnalyzeSyntaxRequest request = AnalyzeSyntaxRequest.newBuilder().setDocument(doc)
 				.setEncodingType(ENCODING_TYPE).build();
 		final AnalyzeSyntaxResponse response = client.analyzeSyntax(request);
