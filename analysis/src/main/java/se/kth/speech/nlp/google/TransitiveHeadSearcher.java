@@ -119,7 +119,7 @@ final class TransitiveHeadSearcher implements Function<Token, TransitiveHeadSear
 
 	private final IntFunction<Token> tokenByIdxGetter;
 
-	private TransitiveHeadSearcher(final IntFunction<Token> tokenByIdxGetter,
+	TransitiveHeadSearcher(final IntFunction<Token> tokenByIdxGetter,
 			final Predicate<? super Token> headTokenFilter, final Map<Token, Result> lookupTable) {
 		this.tokenByIdxGetter = tokenByIdxGetter;
 		this.headTokenFilter = headTokenFilter;
