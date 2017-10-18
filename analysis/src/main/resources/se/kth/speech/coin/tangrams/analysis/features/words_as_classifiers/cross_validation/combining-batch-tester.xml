@@ -20,7 +20,7 @@
 		scope="prototype">
 	</bean>
 	
-	<bean id="cross-validation-tester" class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.Tester" scope="prototype">
+	<bean id="cross-validation-tester" class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.CrossValidator" scope="prototype">
 	</bean>
 
 </beans>

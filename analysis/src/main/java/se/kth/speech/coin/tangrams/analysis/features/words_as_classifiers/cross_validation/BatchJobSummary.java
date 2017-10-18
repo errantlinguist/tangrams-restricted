@@ -22,12 +22,12 @@ final class BatchJobSummary {
 
 	private final TestParameters testParams;
 
-	private final Tester.Result testResults;
+	private final CrossValidator.Result testResults;
 
 	private final LocalDateTime testTimestamp;
 
 	BatchJobSummary(final LocalDateTime testTimestamp, final TestParameters testParams,
-			final Tester.Result testResults) {
+			final CrossValidator.Result testResults) {
 		this.testTimestamp = testTimestamp;
 		this.testParams = testParams;
 		this.testResults = testResults;
@@ -61,7 +61,7 @@ final class BatchJobSummary {
 	/**
 	 * @return the testResults
 	 */
-	Tester.Result getTestResults() {
+	CrossValidator.Result getTestResults() {
 		return testResults;
 	}
 

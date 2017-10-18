@@ -48,7 +48,7 @@ import org.springframework.context.support.FileSystemXmlApplicationContext;
 import se.kth.speech.coin.tangrams.CLIParameters;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.SessionTestResults;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.Tester.CrossValidationTestSummary;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.CrossValidator.CrossValidationTestSummary;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -69,7 +69,7 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_
  *      </ul>
  *
  */
-final class StatisticsWriter implements Consumer<Tester.Result> {
+final class StatisticsWriter implements Consumer<CrossValidator.Result> {
 
 	private enum Parameter implements Supplier<Option> {
 		APP_CONTEXT_DEFINITIONS("c") {
@@ -181,9 +181,9 @@ final class StatisticsWriter implements Consumer<Tester.Result> {
 				final OptionalInt iterCount = CLIParameters
 						.parseIterCount((Number) cl.getParsedOptionValue(Parameter.ITER_COUNT.optName));
 				try (final FileSystemXmlApplicationContext appCtx = new FileSystemXmlApplicationContext(appCtxLocs)) {
-					final Tester tester = appCtx.getBean(Tester.class);
-					iterCount.ifPresent(tester::setIterCount);
-					final Tester.Result testResults = tester.apply(TestSessionData.readTestSessionData(inpaths));
+					final CrossValidator crossValidator = appCtx.getBean(CrossValidator.class);
+					iterCount.ifPresent(crossValidator::setIterCount);
+					final CrossValidator.Result testResults = crossValidator.apply(TestSessionData.readTestSessionData(inpaths));
 					try (PrintWriter out = CLIParameters
 							.parseOutpath((File) cl.getParsedOptionValue(Parameter.OUTPATH.optName))) {
 						final StatisticsWriter writer = new StatisticsWriter(out);
@@ -194,7 +194,7 @@ final class StatisticsWriter implements Consumer<Tester.Result> {
 		}
 	}
 
-	static Map<SummaryDatum, Object> createSummaryDataMap(final Object key, final Tester.Result testResults) {
+	static Map<SummaryDatum, Object> createSummaryDataMap(final Object key, final CrossValidator.Result testResults) {
 		return createSessionSummaryDataMap(key, testResults.iterCount(), testResults.totalResults());
 	}
 
@@ -205,7 +205,7 @@ final class StatisticsWriter implements Consumer<Tester.Result> {
 	}
 
 	@Override
-	public void accept(final Tester.Result testResults) {
+	public void accept(final CrossValidator.Result testResults) {
 		out.println(SUMMARY_DATUM_COLUMN_ORDERING.stream().map(SummaryDatum::toString).collect(ROW_CELL_JOINER));
 
 		for (final Entry<Path, List<CrossValidationTestSummary>> infileSessionTestResults : testResults

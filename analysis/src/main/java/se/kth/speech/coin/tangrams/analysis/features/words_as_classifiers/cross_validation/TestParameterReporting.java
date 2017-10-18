@@ -27,7 +27,7 @@ import java.util.stream.Stream;
 
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttributeContext;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.Tester.CrossValidationTestSummary;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.CrossValidator.CrossValidationTestSummary;
 import se.kth.speech.coin.tangrams.iristk.EventTimes;
 
 /**

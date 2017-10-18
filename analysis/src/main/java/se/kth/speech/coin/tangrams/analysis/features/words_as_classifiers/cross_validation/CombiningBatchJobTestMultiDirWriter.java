@@ -204,7 +204,7 @@ final class CombiningBatchJobTestMultiDirWriter { // NO_UCD (use default)
 					backgroundJobExecutor);
 			try {
 				final CombiningBatchJobTester.Input input = inputFactory.apply(cl);
-				final Consumer<Tester> testerConfigurator;
+				final Consumer<CrossValidator> testerConfigurator;
 				{
 					final OptionalInt optIterCount = CLIParameters
 							.parseIterCount((Number) cl.getParsedOptionValue(CLITestParameter.ITER_COUNT.optName));
@@ -284,7 +284,7 @@ final class CombiningBatchJobTestMultiDirWriter { // NO_UCD (use default)
 			final Path batchOutdir = Files.createDirectories(createBatchOutdir(testParams));
 			LOGGER.info("Will write results of testing {} to \"{}\".", testParams, batchOutdir);
 			final BatchTestResultWriter testWriter = new BatchTestResultWriter(batchOutdir);
-			final Tester.Result testResults = summary.getTestResults();
+			final CrossValidator.Result testResults = summary.getTestResults();
 			testWriter.accept(testResults);
 			writeSummary(summary, batchOutdir);
 		} catch (final IOException e) {

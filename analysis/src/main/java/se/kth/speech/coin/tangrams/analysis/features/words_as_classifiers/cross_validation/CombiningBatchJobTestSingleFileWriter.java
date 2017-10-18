@@ -61,7 +61,7 @@ import se.kth.speech.coin.tangrams.analysis.dialogues.UtteranceDialogueRepresent
 import se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttributeContext;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.EventDialogueTestResults;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.CombiningBatchJobTester.IncompleteResults;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.Tester.CrossValidationTestSummary;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.CrossValidator.CrossValidationTestSummary;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -176,7 +176,7 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 					backgroundJobExecutor);
 			try {
 				final CombiningBatchJobTester.Input input = inputFactory.apply(cl);
-				final Consumer<Tester> testerConfigurator;
+				final Consumer<CrossValidator> testerConfigurator;
 				{
 					final OptionalInt optIterCount = CLIParameters
 							.parseIterCount((Number) cl.getParsedOptionValue(CLITestParameter.ITER_COUNT.optName));
@@ -262,7 +262,7 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 		}
 		final String[] testParamRowCellValues = TestParameterReporting.createTestParamRowCellValues(summary)
 				.toArray(String[]::new);
-		final Tester.Result testResults = summary.getTestResults();
+		final CrossValidator.Result testResults = summary.getTestResults();
 		for (final Entry<Path, List<CrossValidationTestSummary>> infileSessionResults : testResults.getSessionResults()
 				.entrySet()) {
 			final Path inpath = infileSessionResults.getKey();

@@ -11,7 +11,7 @@
 	<import resource="smoothing.xml" />
 		
 	<bean id="cross-validation-tester"
-			class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.Tester" scope="prototype" />
+			class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.CrossValidator" scope="prototype" />
 	
 	<bean id="test-set-factory" class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.TestSetFactory" scope="prototype"></bean>
 

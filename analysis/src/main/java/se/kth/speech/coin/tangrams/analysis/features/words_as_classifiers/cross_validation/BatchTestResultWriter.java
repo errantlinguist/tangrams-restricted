@@ -55,7 +55,7 @@ final class BatchTestResultWriter {
 		this(outdir, DEFAULT_FILE_OPEN_OPTS);
 	}
 
-	void accept(final Tester.Result result) throws IOException {
+	void accept(final CrossValidator.Result result) throws IOException {
 		final Path statsFilePath = outdir.resolve("stats.tsv");
 		try (final PrintWriter out = new PrintWriter(
 				Files.newBufferedWriter(statsFilePath, OUTPUT_ENCODING, fileOpenOpts))) {

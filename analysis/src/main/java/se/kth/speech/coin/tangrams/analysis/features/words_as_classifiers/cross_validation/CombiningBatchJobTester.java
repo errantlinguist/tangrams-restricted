@@ -121,14 +121,14 @@ final class CombiningBatchJobTester {
 
 	private final BiConsumer<? super CoreMap, ? super List<Tree>> extractionResultsHook;
 
-	private final Consumer<? super Tester> testerConfigurator;
+	private final Consumer<? super CrossValidator> testerConfigurator;
 
 	private final BiConsumer<? super EventDialogue, ? super List<UtteranceRelation>> uttRelHandler;
 
 	CombiningBatchJobTester(final ExecutorService backgroundJobExecutor, final ApplicationContext appCtx,
 			final Consumer<? super BatchJobSummary> batchJobResultHandler,
 			final BiConsumer<? super IncompleteResults, ? super Throwable> errorHandler,
-			final Consumer<? super Tester> testerConfigurator,
+			final Consumer<? super CrossValidator> testerConfigurator,
 			final BiConsumer<? super CoreMap, ? super List<Tree>> extractionResultsHook,
 			final BiConsumer<? super EventDialogue, ? super List<UtteranceRelation>> uttRelHandler) {
 		this.backgroundJobExecutor = backgroundJobExecutor;
@@ -165,18 +165,18 @@ final class CombiningBatchJobTester {
 									.createTrainingInstsFactory(trainingCtx);
 							final TestSetFactory testSetFactory = new TestSetFactory(trainingInstsFactory,
 									sessionDiagMgrCacheSupplier);
-							final Tester tester = appCtx.getBean(Tester.class, testSetFactory,
+							final CrossValidator crossValidator = appCtx.getBean(CrossValidator.class, testSetFactory,
 									symmetricalDiagTransformer, trainingMethod.getClassifierFactory(),
 									backgroundJobExecutor);
-							tester.setIterCount(trainingMethod.getIterCount());
-							testerConfigurator.accept(tester);
+							crossValidator.setIterCount(trainingMethod.getIterCount());
+							testerConfigurator.accept(crossValidator);
 							final TestParameters testParams = new TestParameters(cleaningMethodSet, tokenizationMethod,
 									tokenType, tokenFilteringMethod, trainingMethod);
 							LOGGER.info("Testing {}.", testParams);
 
 							final LocalDateTime testTimestamp = LocalDateTime.now();
 							try {
-								final Tester.Result testResults = tester.apply(input.allSessions);
+								final CrossValidator.Result testResults = crossValidator.apply(input.allSessions);
 								final BatchJobSummary batchSummary = new BatchJobSummary(testTimestamp, testParams,
 										testResults);
 								batchJobResultHandler.accept(batchSummary);
