@@ -29,10 +29,13 @@ import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
  */
 public final class CachingEventDialogueTransformer implements EventDialogueTransformer {
 
+	private static final long MAXIMUM_CACHE_SIZE = 1000;
+
 	private final LoadingCache<EventDialogue, EventDialogue> transformedDiags;
 
 	public CachingEventDialogueTransformer(final EventDialogueTransformer decorated) {
-		this(CacheBuilder.newBuilder().softValues().build(CacheLoader.from(decorated::apply)));
+		this(CacheBuilder.newBuilder().softValues().maximumSize(MAXIMUM_CACHE_SIZE)
+				.build(CacheLoader.from(decorated::apply)));
 	}
 
 	private CachingEventDialogueTransformer(final LoadingCache<EventDialogue, EventDialogue> transformedDiags) {
