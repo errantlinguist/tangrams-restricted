@@ -36,11 +36,14 @@ import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
 @Named
 public final class SessionGameManagerCacheSupplier
 		implements Supplier<LoadingCache<SessionDataManager, SessionGameManager>> {
-	
+
+	private static final int CROSS_VALIDATIONS_IN_PARALLEL = 1;
+
 	private static final int ESTIMATED_UNIQUE_SESSION_COUNT = 50;
 
 	private final LoadingCache<SessionDataManager, SessionGameManager> instances = CacheBuilder.newBuilder()
 			.softValues().initialCapacity(ESTIMATED_UNIQUE_SESSION_COUNT).maximumSize(ESTIMATED_UNIQUE_SESSION_COUNT)
+			.concurrencyLevel(CROSS_VALIDATIONS_IN_PARALLEL)
 			.build(new CacheLoader<SessionDataManager, SessionGameManager>() {
 
 				@Override
