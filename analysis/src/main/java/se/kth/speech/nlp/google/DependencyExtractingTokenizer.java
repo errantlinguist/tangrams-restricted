@@ -56,7 +56,7 @@ public final class DependencyExtractingTokenizer implements Function<String, Lis
 	private static final Set<PartOfSpeech.Tag> DEFAULT_HEAD_TAGS_TO_EXTRACT = EnumSet.of(PartOfSpeech.Tag.NOUN,
 			PartOfSpeech.Tag.PRON);
 
-	private static final EncodingType ENCODING_TYPE = EncodingType.UTF8;
+	private static final EncodingType ENCODING_TYPE = EncodingType.UTF16;
 
 	private static final String PARSING_LANGUAGE = "en";
 
