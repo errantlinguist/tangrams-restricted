@@ -103,15 +103,9 @@ public final class DependencyExtractingTokenizer implements Function<String, Lis
 
 		final List<Token> tokens = response.getTokensList();
 		final Map<Token, Set<Token>> headDependentSets = Maps.newHashMapWithExpectedSize(Math.min(tokens.size(), 4));
-		// Pre-allocate sets for each head so they are included in the map even
-		// if they don't have any dependents
 		final int estimatedDependencyCountUpperBound = Math.max(tokens.size() - 1, 1);
 		final Function<Token, Set<Token>> headDependentSetFactory = headToken -> Sets
 				.newHashSetWithExpectedSize(Math.min(estimatedDependencyCountUpperBound, 4));
-		// tokens.stream().filter(headTokenFilter).forEach(headToken ->
-		// headDependentSets.put(headToken,
-		// Sets.newHashSetWithExpectedSize(Math.min(estimatedDependencyCountUpperBound,
-		// 4))));
 
 		// TODO: remove the token index counter once debugging messages are no
 		// longer necessary
