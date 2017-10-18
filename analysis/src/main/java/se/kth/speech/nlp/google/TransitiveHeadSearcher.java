@@ -17,6 +17,8 @@
 package se.kth.speech.nlp.google;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.function.IntFunction;
@@ -29,11 +31,11 @@ final class TransitiveHeadSearcher implements Function<Token, TransitiveHeadSear
 
 	static final class Result {
 
-		private final ArrayList<Token> chain;
+		private final List<Token> chain;
 
 		private final boolean wasHeadFound;
 
-		private Result(final ArrayList<Token> chain, final boolean foundHead) {
+		private Result(final List<Token> chain, final boolean foundHead) {
 			this.chain = chain;
 			wasHeadFound = foundHead;
 		}
@@ -101,7 +103,7 @@ final class TransitiveHeadSearcher implements Function<Token, TransitiveHeadSear
 		/**
 		 * @return the chain
 		 */
-		ArrayList<Token> getChain() {
+		List<Token> getChain() {
 			return chain;
 		}
 
@@ -113,14 +115,16 @@ final class TransitiveHeadSearcher implements Function<Token, TransitiveHeadSear
 		}
 	}
 
+	private static final List<Token> EMPTY_LIST = Collections.emptyList();
+
 	private final Predicate<? super Token> headTokenFilter;
 
 	private final Map<Token, Result> lookupTable;
 
 	private final IntFunction<Token> tokenByIdxGetter;
 
-	TransitiveHeadSearcher(final IntFunction<Token> tokenByIdxGetter,
-			final Predicate<? super Token> headTokenFilter, final Map<Token, Result> lookupTable) {
+	TransitiveHeadSearcher(final IntFunction<Token> tokenByIdxGetter, final Predicate<? super Token> headTokenFilter,
+			final Map<Token, Result> lookupTable) {
 		this.tokenByIdxGetter = tokenByIdxGetter;
 		this.headTokenFilter = headTokenFilter;
 		this.lookupTable = lookupTable;
@@ -137,23 +141,27 @@ final class TransitiveHeadSearcher implements Function<Token, TransitiveHeadSear
 	}
 
 	private Result search(final Token token) {
-		Token currentToken = token;
-		final ArrayList<Token> chain = new ArrayList<>();
-		chain.add(currentToken);
-
-		boolean foundHead = false;
-		while (currentToken.hasDependencyEdge()) {
-			final DependencyEdge dependencyEdge = currentToken.getDependencyEdge();
+		final List<Token> chain;
+		boolean wasHeadFound;
+		if (headTokenFilter.test(token)) {
+			chain = Collections.singletonList(token);
+			wasHeadFound = true;
+		} else if (token.hasDependencyEdge()) {
+			final DependencyEdge dependencyEdge = token.getDependencyEdge();
 			final int headTokenIdx = dependencyEdge.getHeadTokenIndex();
 			final Token headToken = tokenByIdxGetter.apply(headTokenIdx);
-			chain.add(headToken);
-			if (foundHead = headTokenFilter.test(headToken)) {
-				break;
-			} else {
-				currentToken = headToken;
-			}
+			final Result intermediateResult = apply(headToken);
+			final List<Token> intermediateChain = intermediateResult.getChain();
+			chain = new ArrayList<>(intermediateChain.size() + 1);
+			chain.add(token);
+			chain.addAll(intermediateChain);
+			wasHeadFound = intermediateResult.wasHeadFound();
+		} else {
+			chain = EMPTY_LIST;
+			wasHeadFound = false;
 		}
-		return new Result(chain, foundHead);
+
+		return new Result(chain, wasHeadFound);
 	}
 
 }
