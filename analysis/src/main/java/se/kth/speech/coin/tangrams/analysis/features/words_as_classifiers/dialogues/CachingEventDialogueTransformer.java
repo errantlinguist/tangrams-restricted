@@ -32,7 +32,7 @@ public final class CachingEventDialogueTransformer implements EventDialogueTrans
 	private final LoadingCache<EventDialogue, EventDialogue> transformedDiags;
 
 	public CachingEventDialogueTransformer(final EventDialogueTransformer decorated) {
-		this(CacheBuilder.newBuilder().weakKeys().softValues().build(CacheLoader.from(decorated::apply)));
+		this(CacheBuilder.newBuilder().softValues().build(CacheLoader.from(decorated::apply)));
 	}
 
 	private CachingEventDialogueTransformer(final LoadingCache<EventDialogue, EventDialogue> transformedDiags) {
