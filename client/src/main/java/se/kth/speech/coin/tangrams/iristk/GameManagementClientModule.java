@@ -35,14 +35,17 @@ import se.kth.speech.coin.tangrams.game.Controller;
 import se.kth.speech.coin.tangrams.game.GameplayController;
 import se.kth.speech.coin.tangrams.game.PlayerRole;
 import se.kth.speech.coin.tangrams.iristk.events.Area2D;
+import se.kth.speech.coin.tangrams.iristk.events.GameModelMatrixUnmarshaller;
 import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
-import se.kth.speech.coin.tangrams.iristk.events.GameStateUnmarshalling;
 import se.kth.speech.coin.tangrams.iristk.events.ImageVisualizationInfoDescription;
 import se.kth.speech.coin.tangrams.iristk.events.ModelDescription;
 import se.kth.speech.coin.tangrams.iristk.events.Move;
 import se.kth.speech.coin.tangrams.iristk.events.Selection;
 
 public final class GameManagementClientModule extends IrisModule implements GameManagementClient {
+
+	private static final GameModelMatrixUnmarshaller GAME_MODEL_MATRIX_UNMARSHALLER = new GameModelMatrixUnmarshaller(
+			SpatialMatrix.Factory.STABLE_ITER_ORDER);
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(GameManagementClientModule.class);
 
@@ -243,7 +246,7 @@ public final class GameManagementClientModule extends IrisModule implements Game
 
 	private void setupGame(final GameStateDescription gameDesc) {
 		final ModelDescription modelDesc = gameDesc.getModelDescription();
-		final SpatialMatrix<Integer> model = GameStateUnmarshalling.createModel(modelDesc);
+		final SpatialMatrix<Integer> model = GAME_MODEL_MATRIX_UNMARSHALLER.apply(modelDesc);
 
 		final PlayerRole role = gameDesc.getPlayerRoles().inverse().get(playerId);
 

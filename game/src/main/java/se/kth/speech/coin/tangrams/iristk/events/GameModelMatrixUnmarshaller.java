@@ -32,28 +32,27 @@ import se.kth.speech.SpatialMatrix;
  * @since 25 Jan 2017
  *
  */
-public final class GameStateUnmarshalling {
+public final class GameModelMatrixUnmarshaller implements Function<ModelDescription, SpatialMatrix<Integer>> {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(GameStateUnmarshalling.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(GameModelMatrixUnmarshaller.class);
 
 	private static final Function<String, Integer> NULLABLE_INTEGER_GETTER = Integers::valueOfNullable;
 
-	public static SpatialMatrix<Integer> createModel(final ModelDescription modelDesc) {
-		return createModel(modelDesc, SpatialMatrix.Factory.STABLE_ITER_ORDER);
+	private final SpatialMatrix.Factory matrixFactory;
+
+	public GameModelMatrixUnmarshaller(final SpatialMatrix.Factory matrixFactory) {
+		this.matrixFactory = matrixFactory;
 	}
 
-	public static SpatialMatrix<Integer> createModel(final ModelDescription modelDesc,
-			final SpatialMatrix.Factory factory) {
+	@Override
+	public SpatialMatrix<Integer> apply(final ModelDescription modelDesc) {
 		final List<String> nullableCoordOccupants = modelDesc.getCoordOccupants();
 		final List<Integer> coordOccupants = Arrays
 				.asList(nullableCoordOccupants.stream().map(NULLABLE_INTEGER_GETTER).toArray(Integer[]::new));
 		LOGGER.debug("Creating model with coord occupant vector: {}", coordOccupants);
 		final int colCount = modelDesc.getColCount();
 		final Matrix<Integer> backingMatrix = new Matrix<>(coordOccupants, colCount);
-		return factory.create(backingMatrix);
-	}
-
-	private GameStateUnmarshalling() {
+		return matrixFactory.create(backingMatrix);
 	}
 
 }

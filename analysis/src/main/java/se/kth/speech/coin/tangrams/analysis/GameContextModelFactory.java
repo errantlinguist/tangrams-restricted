@@ -36,8 +36,8 @@ import se.kth.speech.SpatialMatrixRegionElementMover;
 import se.kth.speech.SpatialRegion;
 import se.kth.speech.coin.tangrams.AreaSpatialRegionFactory;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
+import se.kth.speech.coin.tangrams.iristk.events.GameModelMatrixUnmarshaller;
 import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
-import se.kth.speech.coin.tangrams.iristk.events.GameStateUnmarshalling;
 import se.kth.speech.coin.tangrams.iristk.events.ModelDescription;
 import se.kth.speech.coin.tangrams.iristk.events.Move;
 
@@ -46,11 +46,20 @@ import se.kth.speech.coin.tangrams.iristk.events.Move;
  * @since 27 Apr 2017
  *
  */
-public final class GameContextModelFactory implements Function<GameContext, SpatialMatrix<Integer>> { // NO_UCD (use default)
+public final class GameContextModelFactory implements Function<GameContext, SpatialMatrix<Integer>> { // NO_UCD
+																										// (use
+																										// default)
+
+	private static final GameModelMatrixUnmarshaller GAME_MODEL_MATRIX_UNMARSHALLER;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(GameContextModelFactory.class);
 
-	private static final SpatialMatrix.Factory MODEL_FACTORY = SpatialMatrix.Factory.UNSTABLE_ITER_ORDER;
+	private static final SpatialMatrix.Factory MODEL_FACTORY;
+
+	static {
+		MODEL_FACTORY = SpatialMatrix.Factory.UNSTABLE_ITER_ORDER;
+		GAME_MODEL_MATRIX_UNMARSHALLER = new GameModelMatrixUnmarshaller(SpatialMatrix.Factory.STABLE_ITER_ORDER);
+	}
 
 	private static void applyEvent(final SpatialMatrix<Integer> model, final Event event) {
 		final Move move = (Move) event.get(GameManagementEvent.Attribute.MOVE.toString());
@@ -83,8 +92,7 @@ public final class GameContextModelFactory implements Function<GameContext, Spat
 			final int expectedniqueModelCount) {
 		final Map<ModelDescription, SpatialMatrix<Integer>> gameModels = Maps
 				.newHashMapWithExpectedSize(expectedniqueModelCount);
-		return modelDesc -> gameModels.computeIfAbsent(modelDesc,
-				k -> GameStateUnmarshalling.createModel(k, MODEL_FACTORY));
+		return modelDesc -> gameModels.computeIfAbsent(modelDesc, GAME_MODEL_MATRIX_UNMARSHALLER);
 	}
 
 	private static void updateToTime(final SpatialMatrix<Integer> model,
@@ -96,7 +104,9 @@ public final class GameContextModelFactory implements Function<GameContext, Spat
 
 	private final Function<? super ModelDescription, SpatialMatrix<Integer>> initialGameModelFactory;
 
-	public GameContextModelFactory(final int expectedUniqueModelCount) { // NO_UCD (use default)
+	public GameContextModelFactory(final int expectedUniqueModelCount) { // NO_UCD
+																			// (use
+																			// default)
 		this(createCachingInitialGameModelFactory(expectedUniqueModelCount));
 	}
 
