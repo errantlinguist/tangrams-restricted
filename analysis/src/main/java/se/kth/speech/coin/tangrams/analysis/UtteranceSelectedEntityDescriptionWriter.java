@@ -64,6 +64,7 @@ import se.kth.speech.coin.tangrams.analysis.features.ImageEdgeCounter;
 import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
 import se.kth.speech.coin.tangrams.view.UserPrompts;
 import se.kth.speech.io.FileNames;
+import se.kth.speech.io.RuntimeJAXBException;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -157,19 +158,6 @@ final class UtteranceSelectedEntityDescriptionWriter { // NO_UCD (use default)
 		private Properties getProperties() {
 			return props;
 		}
-	}
-
-	static final class RuntimeJAXBException extends RuntimeException {
-
-		/**
-		 *
-		 */
-		private static final long serialVersionUID = 8911045968943261899L;
-
-		public RuntimeJAXBException(final Throwable cause) {
-			super(cause);
-		}
-
 	}
 
 	private static final Path CLASS_SETTINGS_INFILE_PATH;
