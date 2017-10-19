@@ -31,8 +31,8 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import iristk.system.Event;
 import se.kth.speech.coin.tangrams.TestDataResources;
-import se.kth.speech.coin.tangrams.iristk.GameEvent;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -67,12 +67,11 @@ public final class LoggedEventReaderTest {
 	 */
 	@Test
 	public void testParseLoggedEvents() {
-		final GameEvent[] parsedEvents = LoggedEventReader.parseLoggedEvents(eventLines.stream())
-				.toArray(GameEvent[]::new);
+		final Event[] parsedEvents = LoggedEventReader.parseLoggedEvents(eventLines.stream()).toArray(Event[]::new);
 		Assert.assertTrue(parsedEvents.length > 0);
 		Assert.assertTrue(Arrays.stream(parsedEvents).allMatch(event -> {
-			final Class<? extends GameEvent> instClass = event.getClass();
-			return GameEvent.class.equals(instClass);
+			final Class<? extends Event> instClass = event.getClass();
+			return Event.class.equals(instClass);
 		}));
 	}
 
