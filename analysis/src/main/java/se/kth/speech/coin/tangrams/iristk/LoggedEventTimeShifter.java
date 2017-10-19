@@ -46,7 +46,7 @@ import com.eclipsesource.json.JsonObject;
 
 import iristk.system.Event;
 import se.kth.speech.coin.tangrams.CLIParameters;
-import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
+import se.kth.speech.coin.tangrams.iristk.io.LoggedEventReader;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -158,7 +158,7 @@ final class LoggedEventTimeShifter { // NO_UCD (use default)
 			final PrintWriter out) throws IOException {
 		LOGGER.info("Reading event log data from \"{}\".", inpath);
 
-		try (final Stream<Event> events = LoggedEvents.readLoggedEvents(inpath)) {
+		try (final Stream<Event> events = LoggedEventReader.readLoggedEvents(inpath)) {
 			LOGGER.info("Shifting logged events by {} second(s).", addendInSecs);
 			final BigDecimal addendInMills = addendInSecs.multiply(SECS_TO_MILLS_FACTOR);
 			final Stream<Event> shiftedEvents = events.map(event -> {

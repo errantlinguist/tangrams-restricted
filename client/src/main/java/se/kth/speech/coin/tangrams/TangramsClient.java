@@ -73,7 +73,6 @@ import iristk.util.NameFilter;
 import se.kth.speech.MutablePair;
 import se.kth.speech.awt.LookAndFeels;
 import se.kth.speech.coin.tangrams.iristk.GameManagementClientModule;
-import se.kth.speech.coin.tangrams.iristk.ImageVisualizationInfoUnmarshaller;
 import se.kth.speech.coin.tangrams.iristk.IrisSystemStopper;
 import se.kth.speech.coin.tangrams.iristk.events.EventSystems;
 import se.kth.speech.coin.tangrams.iristk.io.LogDirectoryFactory;
@@ -499,7 +498,7 @@ public final class TangramsClient implements Runnable {
 									loggingModule.startLogging(systemLoggingStartTime.getTime());
 								}
 								final GameManagementClientModule gameClientModule = new GameManagementClientModule(
-										gameId, playerId, new ImageVisualizationInfoUnmarshaller(), gameState -> {
+										gameId, playerId, gameState -> {
 											LOGGER.info(
 													"Handling game state data received from server for game \"{}\".",
 													gameId);

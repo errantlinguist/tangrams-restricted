@@ -49,7 +49,7 @@ import iristk.system.Event;
 import iristk.util.Record.JsonToRecordException;
 import se.kth.speech.coin.tangrams.iristk.EventTimes;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
-import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
+import se.kth.speech.coin.tangrams.iristk.io.LoggedEventReader;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -106,7 +106,7 @@ final class WaveSurferEventTimeWriter { // NO_UCD (use default)
 				LOGGER.info("Writing to \"{}\".", outfile);
 				try (PrintWriter outputWriter = new PrintWriter(
 						new OutputStreamWriter(new FileOutputStream(outfile), OUTPUT_ENCODING))) {
-					try (Stream<Event> events = LoggedEvents.readLoggedEvents(eventLogFilePath)) {
+					try (Stream<Event> events = LoggedEventReader.readLoggedEvents(eventLogFilePath)) {
 
 						LocalTime startTime = null;
 						String lastp = null;

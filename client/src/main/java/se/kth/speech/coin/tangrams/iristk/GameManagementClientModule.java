@@ -20,7 +20,6 @@ import java.sql.Timestamp;
 import java.util.Objects;
 import java.util.Random;
 import java.util.function.Consumer;
-import java.util.function.Function;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -53,8 +52,6 @@ public final class GameManagementClientModule extends IrisModule implements Game
 
 	private final String gameId;
 
-	private final Function<? super ImageVisualizationInfoDescription, ImageVisualizationInfo> imgVizInfoUnmarshaller;
-
 	/**
 	 * <strong>NOTE:</strong> It is better to pass the new game-handling logic
 	 * as a separate object so that this class needn't be abstract, which means
@@ -67,11 +64,9 @@ public final class GameManagementClientModule extends IrisModule implements Game
 	private final String playerId;
 
 	public GameManagementClientModule(final String gameId, final String playerId,
-			final Function<? super ImageVisualizationInfoDescription, ImageVisualizationInfo> imgVizInfoUnmarshaller,
 			final Consumer<? super GameState> newGameHandler) {
 		this.gameId = gameId;
 		this.playerId = playerId;
-		this.imgVizInfoUnmarshaller = imgVizInfoUnmarshaller;
 		this.newGameHandler = newGameHandler;
 	}
 
@@ -254,7 +249,7 @@ public final class GameManagementClientModule extends IrisModule implements Game
 		setController(controller);
 
 		final ImageVisualizationInfoDescription imgVizDesc = gameDesc.getImageVisualizationInfoDescription();
-		final ImageVisualizationInfo imgVizInfo = imgVizInfoUnmarshaller.apply(imgVizDesc);
+		final ImageVisualizationInfo imgVizInfo = imgVizDesc.toHashable();
 
 		final BiMap<PlayerRole, String> playerRoles = gameDesc.getPlayerRoles();
 		newGameHandler.accept(new GameState(controller, imgVizInfo, playerRoles, new Random(gameDesc.getSeed()),

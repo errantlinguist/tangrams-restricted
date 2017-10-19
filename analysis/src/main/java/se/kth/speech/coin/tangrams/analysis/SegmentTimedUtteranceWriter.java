@@ -54,7 +54,7 @@ import se.kth.speech.coin.tangrams.iristk.EventTimes;
 import se.kth.speech.coin.tangrams.iristk.EventTypeMatcher;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 import se.kth.speech.coin.tangrams.iristk.io.HatIO;
-import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
+import se.kth.speech.coin.tangrams.iristk.io.LoggedEventReader;
 import se.kth.speech.hat.xsd.Annotation;
 import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
 
@@ -203,7 +203,7 @@ final class SegmentTimedUtteranceWriter { // NO_UCD (use default)
 
 	private static LocalDateTime parseInitialTime(final Path eventLogFilePath) throws IOException {
 		LOGGER.info("Reading log at \"{}\" to find timestamp.", eventLogFilePath);
-		try (Stream<Event> initialEvents = LoggedEvents.readLoggedEvents(eventLogFilePath)
+		try (Stream<Event> initialEvents = LoggedEventReader.readLoggedEvents(eventLogFilePath)
 				.filter(INITIAL_EVENT_PREDICATE)) {
 			return EventTimes.parseEventTime(initialEvents.findFirst().get().getTime());
 		}

@@ -18,7 +18,7 @@ package se.kth.speech.coin.tangrams.iristk;
 
 import java.util.Iterator;
 
-import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
+import se.kth.speech.coin.tangrams.iristk.events.HashableGameStateDescription;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -27,13 +27,14 @@ import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
  */
 public final class GameStateDescriptions {
 
-	public static GameStateDescription findAnyEquivalentGameState(final Iterator<GameStateDescription> gameDescs) {
-		final GameStateDescription result = gameDescs.next();
+	public static HashableGameStateDescription findAnyEquivalentGameState(
+			final Iterator<HashableGameStateDescription> gameDescs) {
+		final HashableGameStateDescription result = gameDescs.next();
 		while (gameDescs.hasNext()) {
 			// Sanity check to make sure that all players have
 			// started with the same game setup
-			final GameStateDescription next = gameDescs.next();
-			if (!result.isEquivalent(next)) {
+			final HashableGameStateDescription next = gameDescs.next();
+			if (!result.equals(next)) {
 				throw new IllegalArgumentException("Found non-equivalent initial states between players.");
 			}
 		}

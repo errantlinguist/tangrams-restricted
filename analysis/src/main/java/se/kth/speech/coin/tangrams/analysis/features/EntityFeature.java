@@ -31,7 +31,7 @@ import javax.inject.Named;
 
 import se.kth.speech.IntArrays;
 import se.kth.speech.SpatialRegion;
-import se.kth.speech.coin.tangrams.iristk.events.ImageVisualizationInfoDescription;
+import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 import weka.core.Attribute;
 
 /**
@@ -66,11 +66,11 @@ public enum EntityFeature {
 
 			private final ToIntFunction<? super String> namedResourceEdgeCountFactory;
 
-			private final ImageVisualizationInfoDescription.Datum pieceImgVizInfoDatum;
+			private final ImageVisualizationInfo.Datum pieceImgVizInfoDatum;
 
 			private final SpatialRegion pieceRegion;
 
-			Context(final ImageVisualizationInfoDescription.Datum pieceImgVizInfoDatum, final SpatialRegion pieceRegion,
+			Context(final ImageVisualizationInfo.Datum pieceImgVizInfoDatum, final SpatialRegion pieceRegion,
 					final int[] modelDims, final double modelArea,
 					final ToIntFunction<? super String> namedResourceEdgeCountFactory) {
 				this.pieceImgVizInfoDatum = pieceImgVizInfoDatum;

@@ -112,7 +112,7 @@ import se.kth.speech.coin.tangrams.iristk.EventTimes;
 import se.kth.speech.coin.tangrams.iristk.EventTypeMatcher;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 import se.kth.speech.coin.tangrams.iristk.events.Selection;
-import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
+import se.kth.speech.coin.tangrams.iristk.io.LoggedEventReader;
 import se.kth.speech.coin.tangrams.view.InteractiveGameBoardPanel;
 
 /**
@@ -340,7 +340,7 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 
 	private static final ZoneId ORIGINAL_EXPERIMENT_TIMEZONE = ZoneId.of("Europe/Stockholm");
 
-	private static final Charset OUTPUT_CHARSET = LoggedEvents.CHARSET;
+	private static final Charset OUTPUT_CHARSET = LoggedEventReader.CHARSET;
 
 	private static final DateTimeFormatter OUTPUT_DATETIME_FORMATTER = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 

@@ -46,7 +46,7 @@ import com.eclipsesource.json.JsonObject;
 
 import iristk.system.Event;
 import se.kth.speech.coin.tangrams.CLIParameters;
-import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
+import se.kth.speech.coin.tangrams.iristk.io.LoggedEventReader;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -155,7 +155,7 @@ final class LoggedEventTimeStretcher { // NO_UCD (use default)
 	private static void run(final Path inpath, final Predicate<? super Event> evtFilter, final BigDecimal stretchFactor,
 			final PrintWriter out) throws IOException {
 		LOGGER.info("Reading event log data from \"{}\".", inpath);
-		try (final Stream<Event> events = LoggedEvents.readLoggedEvents(inpath)) {
+		try (final Stream<Event> events = LoggedEventReader.readLoggedEvents(inpath)) {
 			LOGGER.info("Stretching logged events by a factor of {}.", stretchFactor);
 			final Stream<Event> shiftedEvents = events.map(event -> {
 				if (evtFilter.test(event)) {

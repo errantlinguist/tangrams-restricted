@@ -32,7 +32,7 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.Lists;
 
 import iristk.system.Event;
-import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
+import se.kth.speech.coin.tangrams.iristk.events.HashableGameStateDescription;
 
 public final class GameHistory {
 
@@ -74,11 +74,11 @@ public final class GameHistory {
 
 	private final NavigableMap<LocalDateTime, List<Event>> events = new TreeMap<>();
 
-	private final GameStateDescription initialState;
+	private final HashableGameStateDescription initialState;
 
 	private final LocalDateTime startTime;
 
-	GameHistory(final GameStateDescription initialState, final LocalDateTime startTime) {
+	GameHistory(final HashableGameStateDescription initialState, final LocalDateTime startTime) {
 		this.initialState = initialState;
 		this.startTime = startTime;
 	}
@@ -125,7 +125,7 @@ public final class GameHistory {
 	}
 
 	public int getEntityCount() {
-		return initialState.getImageVisualizationInfoDescription().getData().size();
+		return initialState.getImageVisualizationInfo().getData().size();
 	}
 
 	/**
@@ -157,7 +157,7 @@ public final class GameHistory {
 	/**
 	 * @return the initialState
 	 */
-	public GameStateDescription getInitialState() {
+	public HashableGameStateDescription getInitialState() {
 		return initialState;
 	}
 

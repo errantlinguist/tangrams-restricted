@@ -43,9 +43,8 @@ import se.kth.speech.coin.tangrams.TestDataResources;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.coin.tangrams.iristk.io.HatIO;
-import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
+import se.kth.speech.coin.tangrams.iristk.io.LoggedEventReader;
 import se.kth.speech.hat.xsd.Annotation;
-import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -58,7 +57,8 @@ public final class EventDialogueFactoryTest {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(EventDialogueFactoryTest.class);
 
-	private static final SegmentUtteranceFactory SEG_UTT_FACTORY = new SegmentUtteranceFactory(seg -> seg.getSource().intern());
+	private static final SegmentUtteranceFactory SEG_UTT_FACTORY = new SegmentUtteranceFactory(
+			seg -> seg.getSource().intern());
 
 	/**
 	 * Test method for
@@ -85,7 +85,7 @@ public final class EventDialogueFactoryTest {
 		Map<String, GameHistory> gameHistories = Collections.emptyMap();
 		try (BufferedReader eventLogReader = new BufferedReader(new InputStreamReader(eventLogUrl.openStream()))) {
 			final Stream<String> eventLines = eventLogReader.lines();
-			gameHistories = LoggedEvents.parseGameHistories(eventLines, eventFilter);
+			gameHistories = new LoggedEventReader(1, 20).parseGameHistories(eventLines, eventFilter);
 		}
 		Assert.assertEquals(gameHistories.size(), 1);
 		final GameHistory history = gameHistories.values().iterator().next();
@@ -106,7 +106,8 @@ public final class EventDialogueFactoryTest {
 		final List<Event> events = Arrays.asList(history.getEventSequence().toArray(Event[]::new));
 		{
 			final List<Event> expectedEvents = events;
-//			final List<Event> expectedEvents = events.subList(0, events.size() - 1);
+			// final List<Event> expectedEvents = events.subList(0,
+			// events.size() - 1);
 			Assert.assertEquals(expectedEvents.size(), actualDiagList.size());
 
 			final Iterator<Event> expectedEventIter = expectedEvents.iterator();

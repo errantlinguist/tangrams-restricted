@@ -23,7 +23,7 @@ import se.kth.speech.IntArrays;
 import se.kth.speech.SpatialMatrix;
 import se.kth.speech.SpatialRegion;
 import se.kth.speech.coin.tangrams.analysis.GameContext;
-import se.kth.speech.coin.tangrams.iristk.events.ImageVisualizationInfoDescription;
+import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 
 public final class EntityFeatureExtractionContextFactory {
 
@@ -40,8 +40,7 @@ public final class EntityFeatureExtractionContextFactory {
 
 	public EntityFeature.Extractor.Context apply(final GameContext context, final int entityId) {
 		final SpatialMatrix<Integer> model = gameModelFactory.apply(context);
-		final ImageVisualizationInfoDescription.Datum imgVizInfoDatum = context.getEntityVisualizationInfo()
-				.get(entityId);
+		final ImageVisualizationInfo.Datum imgVizInfoDatum = context.getEntityVisualizationInfo().get(entityId);
 		final SpatialRegion region = model.getElementPlacements().getElementMinimalRegions().get(entityId);
 		final int[] modelDims = model.getDimensions();
 		final double modelArea = IntArrays.product(modelDims);

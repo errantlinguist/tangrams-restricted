@@ -34,10 +34,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import iristk.system.Event;
+import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 import se.kth.speech.coin.tangrams.iristk.EventTimes;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 import se.kth.speech.coin.tangrams.iristk.events.EventSystems;
 import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
+import se.kth.speech.coin.tangrams.iristk.events.HashableGameStateDescription;
+import se.kth.speech.coin.tangrams.iristk.events.HashableModelDescription;
+import se.kth.speech.coin.tangrams.iristk.events.ImageVisualizationInfoDescription;
+import se.kth.speech.coin.tangrams.iristk.events.ModelDescription;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -107,7 +112,7 @@ public final class GameHistoryCollector
 					final GameStateDescription gameDesc = (GameStateDescription) event
 							.get(GameManagementEvent.Attribute.GAME_STATE.toString());
 					LOGGER.debug("Found {} sent at \"{}\".", gameDesc.getClass().getSimpleName(), time);
-					putInitialState(gameHistories, gameId, time, gameDesc);
+					putInitialState(gameHistories, gameId, time, createGameStateDesc(gameDesc));
 					break;
 				}
 				default: {
@@ -135,7 +140,7 @@ public final class GameHistoryCollector
 		}
 
 		private void putInitialState(final Map<String, GameHistory> gameHistories, final String gameId,
-				final LocalDateTime startTime, final GameStateDescription gameDesc) {
+				final LocalDateTime startTime, final HashableGameStateDescription gameDesc) {
 			gameHistories.compute(gameId, (key, oldVal) -> {
 				final GameHistory result;
 				if (oldVal == null) {
@@ -206,18 +211,29 @@ public final class GameHistoryCollector
 
 	private final Accumulator accumulator;
 
+	private final Function<? super ImageVisualizationInfoDescription, ImageVisualizationInfo> imgVizInfoFactory;
+
+	private final Function<? super ModelDescription, HashableModelDescription> modelDescFactory;
+
 	private final Supplier<Map<String, GameHistory>> supplier;
 
 	private final Function<? super String, LocalDateTime> timeParser;
 
-	public GameHistoryCollector(final Supplier<Map<String, GameHistory>> supplier) {
-		this(supplier, EventTimes::parseEventTime);
+	public GameHistoryCollector(final Supplier<Map<String, GameHistory>> supplier,
+			final Function<? super ModelDescription, HashableModelDescription> modelDescFactory,
+			final Function<? super ImageVisualizationInfoDescription, ImageVisualizationInfo> imgVizInfoFactory) {
+		this(supplier, modelDescFactory, imgVizInfoFactory, EventTimes::parseEventTime);
 	}
 
 	public GameHistoryCollector(final Supplier<Map<String, GameHistory>> supplier,
+			final Function<? super ModelDescription, HashableModelDescription> modelDescFactory,
+			final Function<? super ImageVisualizationInfoDescription, ImageVisualizationInfo> imgVizInfoFactory,
 			final Function<? super String, LocalDateTime> timeParser) {
 		this.supplier = supplier;
 		this.timeParser = timeParser;
+		this.modelDescFactory = modelDescFactory;
+		this.imgVizInfoFactory = imgVizInfoFactory;
+
 		accumulator = new Accumulator();
 	}
 
@@ -269,6 +285,14 @@ public final class GameHistoryCollector
 	@Override
 	public Supplier<Map<String, GameHistory>> supplier() {
 		return supplier;
+	}
+
+	private HashableGameStateDescription createGameStateDesc(final GameStateDescription gameDesc) {
+		final ImageVisualizationInfo imgVizInfo = imgVizInfoFactory
+				.apply(gameDesc.getImageVisualizationInfoDescription());
+		final HashableModelDescription modelDescription = modelDescFactory.apply(gameDesc.getModelDescription());
+		return new HashableGameStateDescription(modelDescription, imgVizInfo, gameDesc.getPlayerRoles(),
+				gameDesc.getOccupiedGridArea(), gameDesc.getSeed(), gameDesc.allowFailedPlacements());
 	}
 
 }

@@ -38,10 +38,9 @@ import se.kth.speech.SpatialMatrixRegionElementMover;
 import se.kth.speech.SpatialRegion;
 import se.kth.speech.coin.tangrams.AreaSpatialRegionFactory;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
-import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
 import se.kth.speech.coin.tangrams.iristk.events.HashableGameModelMatrixUnmarshaller;
+import se.kth.speech.coin.tangrams.iristk.events.HashableGameStateDescription;
 import se.kth.speech.coin.tangrams.iristk.events.HashableModelDescription;
-import se.kth.speech.coin.tangrams.iristk.events.ModelDescription;
 import se.kth.speech.coin.tangrams.iristk.events.Move;
 
 /**
@@ -53,7 +52,8 @@ public final class GameContextModelFactory implements Function<GameContext, Spat
 																										// (use
 																										// default)
 
-	private static class CachingInitialGameModelFactory implements Function<ModelDescription, SpatialMatrix<Integer>> {
+	private static class CachingInitialGameModelFactory
+			implements Function<HashableModelDescription, SpatialMatrix<Integer>> {
 
 		private final Map<HashableModelDescription, Reference<SpatialMatrix<Integer>>> gameModels;
 
@@ -67,9 +67,8 @@ public final class GameContextModelFactory implements Function<GameContext, Spat
 		 * @see java.util.function.Function#apply(java.lang.Object)
 		 */
 		@Override
-		public SpatialMatrix<Integer> apply(final ModelDescription modelDesc) {
-			final HashableModelDescription hashableDesc = new HashableModelDescription(modelDesc);
-			final Reference<SpatialMatrix<Integer>> ref = gameModels.compute(hashableDesc, (key, oldValue) -> {
+		public SpatialMatrix<Integer> apply(final HashableModelDescription modelDesc) {
+			final Reference<SpatialMatrix<Integer>> ref = gameModels.compute(modelDesc, (key, oldValue) -> {
 				final Reference<SpatialMatrix<Integer>> newValue;
 				if (oldValue == null) {
 					// No instance has yet been created; Create one
@@ -135,7 +134,7 @@ public final class GameContextModelFactory implements Function<GameContext, Spat
 		eventsToApply.forEachOrdered(event -> applyEvent(model, event));
 	}
 
-	private final Function<? super ModelDescription, SpatialMatrix<Integer>> initialGameModelFactory;
+	private final Function<? super HashableModelDescription, SpatialMatrix<Integer>> initialGameModelFactory;
 
 	public GameContextModelFactory(final int expectedUniqueModelCount) { // NO_UCD
 																			// (use
@@ -144,7 +143,7 @@ public final class GameContextModelFactory implements Function<GameContext, Spat
 	}
 
 	private GameContextModelFactory(
-			final Function<? super ModelDescription, SpatialMatrix<Integer>> initialGameModelFactory) {
+			final Function<? super HashableModelDescription, SpatialMatrix<Integer>> initialGameModelFactory) {
 		this.initialGameModelFactory = initialGameModelFactory;
 	}
 
@@ -156,7 +155,7 @@ public final class GameContextModelFactory implements Function<GameContext, Spat
 	@Override
 	public SpatialMatrix<Integer> apply(final GameContext context) {
 		final GameHistory history = context.getHistory();
-		final GameStateDescription initialState = history.getInitialState();
+		final HashableGameStateDescription initialState = history.getInitialState();
 		final SpatialMatrix<Integer> result = copyInitialModel(
 				initialGameModelFactory.apply(initialState.getModelDescription()));
 		final NavigableMap<LocalDateTime, List<Event>> events = history.getEvents();

@@ -40,10 +40,10 @@ import iristk.system.Event;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.ints.IntLists;
+import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 import se.kth.speech.coin.tangrams.iristk.EventTypeMatcher;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
-import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
-import se.kth.speech.coin.tangrams.iristk.events.ImageVisualizationInfoDescription;
+import se.kth.speech.coin.tangrams.iristk.events.HashableGameStateDescription;
 import se.kth.speech.coin.tangrams.iristk.events.Move;
 
 public final class GameContext {
@@ -210,9 +210,9 @@ public final class GameContext {
 		return entityIds;
 	}
 
-	public List<ImageVisualizationInfoDescription.Datum> getEntityVisualizationInfo() {
-		final GameStateDescription initialState = history.getInitialState();
-		return Collections.unmodifiableList(initialState.getImageVisualizationInfoDescription().getData());
+	public List<ImageVisualizationInfo.Datum> getEntityVisualizationInfo() {
+		final HashableGameStateDescription initialState = history.getInitialState();
+		return Collections.unmodifiableList(initialState.getImageVisualizationInfo().getData());
 	}
 
 	/**

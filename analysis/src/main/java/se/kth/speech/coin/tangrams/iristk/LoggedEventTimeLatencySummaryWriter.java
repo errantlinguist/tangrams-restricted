@@ -51,7 +51,7 @@ import org.slf4j.LoggerFactory;
 import iristk.system.Event;
 import se.kth.speech.Iterators;
 import se.kth.speech.coin.tangrams.CLIParameters;
-import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
+import se.kth.speech.coin.tangrams.iristk.io.LoggedEventReader;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -189,7 +189,7 @@ final class LoggedEventTimeLatencySummaryWriter { // NO_UCD (use default)
 		LOGGER.info("Reading event log data from \"{}\".", inpath);
 
 		List<Event> events = Collections.emptyList();
-		try (Stream<Event> eventStream = LoggedEvents.readLoggedEvents(inpath)) {
+		try (Stream<Event> eventStream = LoggedEventReader.readLoggedEvents(inpath)) {
 			events = Arrays.asList(eventStream.toArray(Event[]::new));
 		}
 		LOGGER.info("Read {} event(s) from file.", events.size());

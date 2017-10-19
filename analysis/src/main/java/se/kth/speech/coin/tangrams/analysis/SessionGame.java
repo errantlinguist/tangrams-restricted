@@ -38,14 +38,26 @@ import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.coin.tangrams.iristk.EventTypeMatcher;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
-import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
+import se.kth.speech.coin.tangrams.iristk.io.LoggedEventReader;
 
 public final class SessionGame {
 
 	private static final Set<GameManagementEvent> DEFAULT_EVENT_DIAG_DELIMITERS = EnumSet
 			.of(GameManagementEvent.NEXT_TURN_REQUEST);
 
+	private static final int ESTIMATED_UNIQUE_GAME_COUNT;
+
+	private static final int ESTIMATED_UNIQUE_IMAGE_COUNT;
+
+	private static final LoggedEventReader EVENT_READER;
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(SessionGame.class);
+
+	static {
+		ESTIMATED_UNIQUE_GAME_COUNT = 50;
+		ESTIMATED_UNIQUE_IMAGE_COUNT = 100;
+		EVENT_READER = new LoggedEventReader(ESTIMATED_UNIQUE_GAME_COUNT, ESTIMATED_UNIQUE_IMAGE_COUNT);
+	}
 
 	/**
 	 *
@@ -79,7 +91,7 @@ public final class SessionGame {
 			final BiFunction<? super ListIterator<Utterance>, ? super GameHistory, Stream<EventDialogue>> evtDiagFactory)
 			throws IOException {
 		LOGGER.info("Reading game histories from \"{}\".", eventLogPath);
-		try (Stream<Event> eventStream = LoggedEvents.readLoggedEvents(eventLogPath)) {
+		try (Stream<Event> eventStream = LoggedEventReader.readLoggedEvents(eventLogPath)) {
 			final List<Event> events = Arrays.asList(eventStream.toArray(Event[]::new));
 			return new SessionGame(events, utts, evtDiagFactory);
 		}
@@ -131,7 +143,7 @@ public final class SessionGame {
 			final BiFunction<? super ListIterator<Utterance>, ? super GameHistory, Stream<EventDialogue>> evtDiagFactory) {
 		this.events = Collections.unmodifiableList(events);
 		this.utts = Collections.unmodifiableList(utts);
-		final Map<String, GameHistory> gameHistories = LoggedEvents.createGameHistoryMap(events.stream());
+		final Map<String, GameHistory> gameHistories = EVENT_READER.createGameHistoryMap(events.stream());
 		final Entry<String, GameHistory> gameIdHistory = GameHistory.ensureSingleGame(gameHistories);
 		gameId = gameIdHistory.getKey();
 		LOGGER.debug("Creating {} instance for game ID \"{}\".", SessionGame.class.getSimpleName(), gameId);

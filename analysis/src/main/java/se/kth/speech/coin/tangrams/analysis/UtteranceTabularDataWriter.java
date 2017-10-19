@@ -50,7 +50,6 @@ import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfoTableRowCellFactory;
 import se.kth.speech.coin.tangrams.iristk.EventTimes;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
-import se.kth.speech.coin.tangrams.iristk.ImageVisualizationInfoUnmarshaller;
 import se.kth.speech.coin.tangrams.iristk.events.Move;
 
 final class UtteranceTabularDataWriter {
@@ -259,8 +258,6 @@ final class UtteranceTabularDataWriter {
 
 	private static final List<ImageVisualizationInfoTableRowCellFactory.Attribute> IMG_VIZ_INFO_ATTRS_TO_WRITE;
 
-	private static final ImageVisualizationInfoUnmarshaller IMG_VIZ_INFO_UNMARSHALLER = new ImageVisualizationInfoUnmarshaller();
-
 	private static final Logger LOGGER = LoggerFactory.getLogger(UtteranceTabularDataWriter.class);
 
 	private static final Function<BigDecimal, String> SECS_FORMATTER = BigDecimal::toString;
@@ -352,8 +349,8 @@ final class UtteranceTabularDataWriter {
 
 		final LocalDateTime gameStartTime = history.getStartTime();
 		// The visualization info for the given game
-		final List<ImageVisualizationInfo.Datum> imgVizInfoData = IMG_VIZ_INFO_UNMARSHALLER
-				.apply(history.getInitialState().getImageVisualizationInfoDescription()).getData();
+		final List<ImageVisualizationInfo.Datum> imgVizInfoData = history.getInitialState().getImageVisualizationInfo()
+				.getData();
 
 		Optional<Event> optLastRoundEvent = Optional.empty();
 		int roundId = 1;

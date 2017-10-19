@@ -26,6 +26,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
@@ -44,14 +45,18 @@ import iristk.util.Record;
 import iristk.util.Record.JsonToRecordException;
 import se.kth.speech.coin.tangrams.analysis.GameHistory;
 import se.kth.speech.coin.tangrams.analysis.GameHistoryCollector;
+import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 import se.kth.speech.coin.tangrams.iristk.GameStateDescriptions;
+import se.kth.speech.coin.tangrams.iristk.events.HashableModelDescription;
+import se.kth.speech.coin.tangrams.iristk.events.ImageVisualizationInfoDescription;
+import se.kth.speech.coin.tangrams.iristk.events.ModelDescription;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
  * @since Apr 5, 2017
  *
  */
-public final class LoggedEvents {
+public final class LoggedEventReader {
 
 	public static final Charset CHARSET = Record.JSON_CHARSET;
 
@@ -61,7 +66,59 @@ public final class LoggedEvents {
 
 	private static final Pattern LOGGED_EVENT_FILE_NAME_PATTERN = Pattern.compile("events-(.+?)\\.txt");
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(LoggedEvents.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(LoggedEventReader.class);
+
+	/**
+	 *
+	 * @param lines
+	 *            The logged events to parse, one on each line.
+	 * @return The successfully-parsed {@link Event} instances.
+	 */
+	public static Stream<Event> parseLoggedEvents(final Stream<String> lines) {
+		return lines.filter(line -> !EMPTY_OR_WHITESPACE_PATTERN.matcher(line).matches()).flatMap(line -> {
+			Stream<Event> result = Stream.empty();
+			try {
+				final Record record = Record.fromJSON(line);
+				if (record instanceof Event) {
+					result = Stream.of((Event) record);
+				}
+			} catch (final JsonToRecordException e) {
+				throw new UncheckedIOException(e);
+			}
+			return result;
+		});
+	}
+
+	/**
+	 *
+	 * @param eventLogPath
+	 *            A {@link Path} to the logged events to parse, one on each
+	 *            line.
+	 * @return The successfully-parsed {@link Event} instances.
+	 * @throws IOException
+	 *             If an I/O error occurs while opening the file.
+	 */
+	public static Stream<Event> readLoggedEvents(final Path eventLogPath) throws IOException {
+		final Stream<String> lines = readLines(eventLogPath);
+		return parseLoggedEvents(lines);
+	}
+
+	private static Stream<String> readLines(final Path eventLogPath) throws IOException {
+		return Files.lines(eventLogPath, CHARSET);
+	}
+
+	private final Function<ImageVisualizationInfoDescription, ImageVisualizationInfo> imgVizInfoFactory;
+
+	private final Function<ModelDescription, HashableModelDescription> modelDescFactory;
+
+	public LoggedEventReader(final int expectedUniqueGameModels, final int expectedUniqueImgVizInfoData) {
+//		final Map<ModelDescription, HashableModelDescription> modelDescs = Maps
+//				.newHashMapWithExpectedSize(expectedUniqueGameModels);
+		modelDescFactory = HashableModelDescription::new;
+//		final Map<ImageVisualizationInfoDescription, ImageVisualizationInfo> imgVizInfo = Maps
+//				.newHashMapWithExpectedSize(expectedUniqueImgVizInfoData);
+		imgVizInfoFactory = ImageVisualizationInfoDescription::toHashable;
+	}
 
 	/**
 	 *
@@ -70,11 +127,12 @@ public final class LoggedEvents {
 	 * @return A new {@link Map} of game IDs to their respective
 	 *         {@link GameHistory histories}.
 	 */
-	public static Map<String, GameHistory> createGameHistoryMap(final Stream<Event> loggedEvents) {
+	public Map<String, GameHistory> createGameHistoryMap(final Stream<Event> loggedEvents) {
 		final Event[] loggedEventArray = loggedEvents.toArray(Event[]::new);
 		final Supplier<Map<String, GameHistory>> mapFactory = () -> Maps
 				.newHashMapWithExpectedSize(loggedEventArray.length);
-		return Arrays.stream(loggedEventArray).collect(new GameHistoryCollector(mapFactory));
+		return Arrays.stream(loggedEventArray)
+				.collect(new GameHistoryCollector(mapFactory, modelDescFactory, imgVizInfoFactory));
 	}
 
 	/**
@@ -90,8 +148,8 @@ public final class LoggedEvents {
 	 *             {@link Files#walk(Path, FileVisitOption...) walking} through
 	 *             the given directory.
 	 */
-	public static Map<String, Path> createPlayerEventLogFileMap(final Path sessionLogDir,
-			final int expectedEventLogFileCount) throws IOException {
+	public Map<String, Path> createPlayerEventLogFileMap(final Path sessionLogDir, final int expectedEventLogFileCount)
+			throws IOException {
 		final Map<String, Path> result = Maps.newHashMapWithExpectedSize(expectedEventLogFileCount);
 		try (Stream<Path> filePaths = Files.walk(sessionLogDir, FileVisitOption.FOLLOW_LINKS)) {
 			filePaths.forEach(filePath -> {
@@ -124,7 +182,7 @@ public final class LoggedEvents {
 	 *             If an error occurs while reading one of the provided event
 	 *             log file paths.
 	 */
-	public static Table<String, String, GameHistory> createPlayerGameHistoryTable(
+	public Table<String, String, GameHistory> createPlayerGameHistoryTable(
 			final Collection<Entry<String, Path>> playerEventLogFilePaths) throws IOException {
 		return createPlayerGameHistoryTable(playerEventLogFilePaths, DEFAULT_EVENT_FILTER);
 	}
@@ -145,7 +203,7 @@ public final class LoggedEvents {
 	 *             If an error occurs while reading one of the provided event
 	 *             log file paths.
 	 */
-	public static Table<String, String, GameHistory> createPlayerGameHistoryTable(
+	public Table<String, String, GameHistory> createPlayerGameHistoryTable(
 			final Collection<Entry<String, Path>> playerEventLogFilePaths, final int expectedUniqueGameCount)
 			throws IOException {
 		return createPlayerGameHistoryTable(playerEventLogFilePaths, expectedUniqueGameCount, DEFAULT_EVENT_FILTER);
@@ -170,7 +228,7 @@ public final class LoggedEvents {
 	 *             If an error occurs while reading one of the provided event
 	 *             log file paths.
 	 */
-	public static Table<String, String, GameHistory> createPlayerGameHistoryTable(
+	public Table<String, String, GameHistory> createPlayerGameHistoryTable(
 			final Collection<Entry<String, Path>> playerEventLogFilePaths, final int expectedUniqueGameCount,
 			final Predicate<? super Event> eventFilter) throws IOException {
 		final Table<String, String, GameHistory> result = HashBasedTable.create(playerEventLogFilePaths.size(),
@@ -195,7 +253,7 @@ public final class LoggedEvents {
 	 *             If an error occurs while reading one of the provided event
 	 *             log file paths.
 	 */
-	public static Table<String, String, GameHistory> createPlayerGameHistoryTable(
+	public Table<String, String, GameHistory> createPlayerGameHistoryTable(
 			final Collection<Entry<String, Path>> playerEventLogFilePaths, final Predicate<? super Event> eventFilter)
 			throws IOException {
 		final Table<String, String, GameHistory> result = HashBasedTable.create();
@@ -210,7 +268,7 @@ public final class LoggedEvents {
 	 * @return A new {@link Map} of game IDs to their respective
 	 *         {@link GameHistory histories}.
 	 */
-	public static Map<String, GameHistory> parseGameHistories(final Stream<String> lines) {
+	public Map<String, GameHistory> parseGameHistories(final Stream<String> lines) {
 		return parseGameHistories(lines, DEFAULT_EVENT_FILTER);
 	}
 
@@ -224,31 +282,10 @@ public final class LoggedEvents {
 	 * @return A new {@link Map} of game IDs to their respective
 	 *         {@link GameHistory histories}.
 	 */
-	public static Map<String, GameHistory> parseGameHistories(final Stream<String> lines,
+	public Map<String, GameHistory> parseGameHistories(final Stream<String> lines,
 			final Predicate<? super Event> eventFilter) {
 		final Stream<Event> loggedEvents = parseLoggedEvents(lines).filter(eventFilter);
 		return createGameHistoryMap(loggedEvents);
-	}
-
-	/**
-	 *
-	 * @param lines
-	 *            The logged events to parse, one on each line.
-	 * @return The successfully-parsed {@link Event} instances.
-	 */
-	public static Stream<Event> parseLoggedEvents(final Stream<String> lines) {
-		return lines.filter(line -> !EMPTY_OR_WHITESPACE_PATTERN.matcher(line).matches()).flatMap(line -> {
-			Stream<Event> result = Stream.empty();
-			try {
-				final Record record = Record.fromJSON(line);
-				if (record instanceof Event) {
-					result = Stream.of((Event) record);
-				}
-			} catch (final JsonToRecordException e) {
-				throw new UncheckedIOException(e);
-			}
-			return result;
-		});
 	}
 
 	/**
@@ -261,7 +298,7 @@ public final class LoggedEvents {
 	 * @throws IOException
 	 *             If an I/O error occurs while opening the file.
 	 */
-	public static Map<String, GameHistory> readGameHistories(final Path eventLogPath) throws IOException {
+	public Map<String, GameHistory> readGameHistories(final Path eventLogPath) throws IOException {
 		return readGameHistories(eventLogPath, DEFAULT_EVENT_FILTER);
 	}
 
@@ -278,25 +315,11 @@ public final class LoggedEvents {
 	 * @throws IOException
 	 *             IOException If an I/O error occurs while opening the file.
 	 */
-	public static Map<String, GameHistory> readGameHistories(final Path eventLogPath,
+	public Map<String, GameHistory> readGameHistories(final Path eventLogPath,
 			final Predicate<? super Event> eventFilter) throws IOException {
 		try (final Stream<String> lines = readLines(eventLogPath)) {
 			return parseGameHistories(lines, eventFilter);
 		}
-	}
-
-	/**
-	 *
-	 * @param eventLogPath
-	 *            A {@link Path} to the logged events to parse, one on each
-	 *            line.
-	 * @return The successfully-parsed {@link Event} instances.
-	 * @throws IOException
-	 *             If an I/O error occurs while opening the file.
-	 */
-	public static Stream<Event> readLoggedEvents(final Path eventLogPath) throws IOException {
-		final Stream<String> lines = readLines(eventLogPath);
-		return parseLoggedEvents(lines);
 	}
 
 	/**
@@ -316,7 +339,7 @@ public final class LoggedEvents {
 	 *             If an error occurs while reading one of the provided event
 	 *             log file paths.
 	 */
-	private static void putPlayerGameHistories(final Table<String, String, GameHistory> playerGameHistories,
+	private void putPlayerGameHistories(final Table<String, String, GameHistory> playerGameHistories,
 			final Collection<Entry<String, Path>> playerEventLogFilePaths, final Predicate<? super Event> eventFilter)
 			throws IOException {
 		for (final Entry<String, Path> playerEventLogFilePath : playerEventLogFilePaths) {
@@ -338,14 +361,6 @@ public final class LoggedEvents {
 			GameStateDescriptions
 					.findAnyEquivalentGameState(gameHistories.map(GameHistory::getInitialState).iterator());
 		});
-	}
-
-	private static Stream<String> readLines(final Path eventLogPath) throws IOException {
-		return Files.lines(eventLogPath, CHARSET);
-	}
-
-	private LoggedEvents() {
-
 	}
 
 }

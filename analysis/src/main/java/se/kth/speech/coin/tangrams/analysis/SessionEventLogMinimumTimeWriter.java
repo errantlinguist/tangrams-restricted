@@ -43,7 +43,7 @@ import iristk.system.Event;
 import se.kth.speech.EqualityMap;
 import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
 import se.kth.speech.coin.tangrams.iristk.EventTimes;
-import se.kth.speech.coin.tangrams.iristk.io.LoggedEvents;
+import se.kth.speech.coin.tangrams.iristk.io.LoggedEventReader;
 
 /**
  * A class used for re-writing log times based on the earliest time when the
@@ -129,7 +129,7 @@ final class SessionEventLogMinimumTimeWriter { // NO_UCD (unused code)
 		final Map<Path, NavigableSet<Event>> eventLogEvents = Maps.newHashMapWithExpectedSize(eventLogPaths.size());
 		for (final Path eventLogPath : eventLogPaths) {
 			LOGGER.debug("Reading event log at \"{}\".", eventLogPath);
-			try (final Stream<Event> events = LoggedEvents.readLoggedEvents(eventLogPath)) {
+			try (final Stream<Event> events = LoggedEventReader.readLoggedEvents(eventLogPath)) {
 				final NavigableSet<Event> eventsByTime = events.collect(
 						Collectors.toCollection(() -> new TreeSet<>(Comparator.comparing(this::fetchEventTime))));
 				eventLogEvents.put(eventLogPath, eventsByTime);
@@ -158,7 +158,7 @@ final class SessionEventLogMinimumTimeWriter { // NO_UCD (unused code)
 		}).map(Event::toJSON).map(JsonObject::toString);
 		LOGGER.info("Writing to \"{}\".", outfilePath);
 		// https://stackoverflow.com/a/20130475/1391325
-		Files.write(outfilePath, (Iterable<String>) jsonLines::iterator, LoggedEvents.CHARSET,
+		Files.write(outfilePath, (Iterable<String>) jsonLines::iterator, LoggedEventReader.CHARSET,
 				StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
 	}
 }
