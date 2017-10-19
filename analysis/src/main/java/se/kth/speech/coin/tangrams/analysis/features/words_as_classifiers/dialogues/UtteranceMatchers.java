@@ -18,8 +18,8 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialo
 
 import java.util.function.Predicate;
 
-import iristk.system.Event;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
+import se.kth.speech.coin.tangrams.iristk.GameEvent;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 
 /**
@@ -29,8 +29,8 @@ import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
  */
 final class UtteranceMatchers {
 
-	static Predicate<Utterance> createEventSubmitterUtteranceMatcher(final Event event) {
-		final String submittingPlayerId = event.getString(GameManagementEvent.Attribute.PLAYER_ID.toString());
+	static Predicate<Utterance> createEventSubmitterUtteranceMatcher(final GameEvent event) {
+		final Object submittingPlayerId = event.getGameAttrs().get(GameManagementEvent.Attribute.PLAYER_ID);
 		return utt -> submittingPlayerId.equals(utt.getSpeakerId());
 	}
 

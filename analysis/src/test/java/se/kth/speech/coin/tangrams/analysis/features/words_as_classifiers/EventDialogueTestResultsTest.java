@@ -16,7 +16,9 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers;
 
+import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.stream.IntStream;
 
 import org.junit.Assert;
@@ -25,11 +27,11 @@ import org.junit.experimental.theories.Theories;
 import org.junit.experimental.theories.Theory;
 import org.junit.runner.RunWith;
 
-import iristk.system.Event;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import it.unimi.dsi.fastutil.ints.Int2DoubleOpenHashMap;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
+import se.kth.speech.coin.tangrams.iristk.GameEvent;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -64,7 +66,9 @@ public final class EventDialogueTestResultsTest {
 		final int goldStandardReferentId = EXPECTED_ENTITY_ID_RANKING[rank - 1];
 		final Utterance testUtt = new Utterance("segment1", "testSpeaker", Arrays.asList("test", "utterance"), 2.3f,
 				3.3f);
-		final EventDialogue transformedDiag = new EventDialogue(Arrays.asList(new Event()), Arrays.asList(testUtt));
+		final EventDialogue transformedDiag = new EventDialogue(
+				Arrays.asList(new GameEvent("", "", "", "", LocalDateTime.now(), Collections.emptyMap())),
+				Arrays.asList(testUtt));
 		final int totalDiagUttCount = 1;
 		return new EventDialogueTestResults(REF_CONF_VALS, goldStandardReferentId, transformedDiag, totalDiagUttCount);
 	}

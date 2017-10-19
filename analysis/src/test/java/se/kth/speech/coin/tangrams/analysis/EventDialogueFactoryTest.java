@@ -27,7 +27,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import javax.xml.bind.JAXBContext;
@@ -38,10 +37,10 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import iristk.system.Event;
 import se.kth.speech.coin.tangrams.TestDataResources;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
+import se.kth.speech.coin.tangrams.iristk.GameEvent;
 import se.kth.speech.coin.tangrams.iristk.io.HatIO;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEventReader;
 import se.kth.speech.hat.xsd.Annotation;
@@ -70,11 +69,6 @@ public final class EventDialogueFactoryTest {
 	 */
 	@Test
 	public void testApply() throws URISyntaxException, IOException, JAXBException {
-		testApply(event -> true);
-	}
-
-	private void testApply(final Predicate<? super Event> eventFilter)
-			throws URISyntaxException, IOException, JAXBException {
 		final String singleMoveSessionDataResLocStr = TestDataResources.SESSION_DATA_DIR
 				+ "/karey-tangram_Jutta-ONEMOVE";
 
@@ -85,7 +79,7 @@ public final class EventDialogueFactoryTest {
 		Map<String, GameHistory> gameHistories = Collections.emptyMap();
 		try (BufferedReader eventLogReader = new BufferedReader(new InputStreamReader(eventLogUrl.openStream()))) {
 			final Stream<String> eventLines = eventLogReader.lines();
-			gameHistories = new LoggedEventReader(1, 20).parseGameHistories(eventLines, eventFilter);
+			gameHistories = new LoggedEventReader(1, 20).parseGameHistories(eventLines, event -> true);
 		}
 		Assert.assertEquals(gameHistories.size(), 1);
 		final GameHistory history = gameHistories.values().iterator().next();
@@ -97,26 +91,26 @@ public final class EventDialogueFactoryTest {
 		final List<Utterance> utts = Arrays.asList(SEG_UTT_FACTORY.create(uttAnnots.getSegments().getSegment().stream())
 				.flatMap(List::stream).toArray(Utterance[]::new));
 
-		final EventDialogueFactory testInst = new EventDialogueFactory(eventFilter);
+		final EventDialogueFactory testInst = new EventDialogueFactory(event -> true);
 		final List<EventDialogue> actualDiagList = Arrays
 				.asList(testInst.apply(utts.listIterator(), history).toArray(EventDialogue[]::new));
 		// NOTE: If there are utterances in the test data before the timestamp
 		// of the first event, then this should be the history event count plus
 		// one
-		final List<Event> events = Arrays.asList(history.getEventSequence().toArray(Event[]::new));
+		final List<GameEvent> events = Arrays.asList(history.getEventSequence().toArray(GameEvent[]::new));
 		{
-			final List<Event> expectedEvents = events;
-			// final List<Event> expectedEvents = events.subList(0,
+			final List<GameEvent> expectedEvents = events;
+			// final List<HashableEvent> expectedEvents = events.subList(0,
 			// events.size() - 1);
 			Assert.assertEquals(expectedEvents.size(), actualDiagList.size());
 
-			final Iterator<Event> expectedEventIter = expectedEvents.iterator();
+			final Iterator<GameEvent> expectedEventIter = expectedEvents.iterator();
 			final Iterator<EventDialogue> actualDiagIter = actualDiagList.iterator();
 			while (expectedEventIter.hasNext()) {
-				final Event expectedEvent = expectedEventIter.next();
+				final GameEvent expectedEvent = expectedEventIter.next();
 				Assert.assertTrue(actualDiagIter.hasNext());
 				final EventDialogue actualDiag = actualDiagIter.next();
-				final Optional<Event> actualOptLastEvent = actualDiag.getFirstEvent();
+				final Optional<GameEvent> actualOptLastEvent = actualDiag.getFirstEvent();
 				Assert.assertTrue(actualOptLastEvent.isPresent());
 				Assert.assertEquals(expectedEvent, actualOptLastEvent.get());
 			}

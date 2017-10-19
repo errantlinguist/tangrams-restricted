@@ -19,8 +19,8 @@ package se.kth.speech.coin.tangrams.analysis.dialogues;
 import java.util.List;
 import java.util.Optional;
 
-import iristk.system.Event;
 import se.kth.speech.Lists;
+import se.kth.speech.coin.tangrams.iristk.GameEvent;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -29,11 +29,11 @@ import se.kth.speech.Lists;
  */
 public final class EventDialogue {
 
-	private final List<Event> events;
+	private final List<GameEvent> events;
 
 	private final List<Utterance> utts;
 
-	public EventDialogue(final List<Event> events, final List<Utterance> utts) {
+	public EventDialogue(final List<GameEvent> events, final List<Utterance> utts) {
 		this.events = events;
 		this.utts = utts;
 	}
@@ -75,11 +75,11 @@ public final class EventDialogue {
 	/**
 	 * @return the events
 	 */
-	public List<Event> getEvents() {
+	public List<GameEvent> getEvents() {
 		return events;
 	}
 
-	public Optional<Event> getFirstEvent() {
+	public Optional<GameEvent> getFirstEvent() {
 		return Lists.getFirstElement(events);
 	}
 
@@ -87,7 +87,7 @@ public final class EventDialogue {
 		return Lists.getFirstElement(utts);
 	}
 
-	public Optional<Event> getLastEvent() {
+	public Optional<GameEvent> getLastEvent() {
 		return Lists.getLastElement(events);
 	}
 

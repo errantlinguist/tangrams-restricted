@@ -23,8 +23,6 @@ import java.net.URL;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
-import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import org.junit.Assert;
@@ -33,9 +31,8 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import iristk.system.Event;
 import se.kth.speech.coin.tangrams.TestDataResources;
-import se.kth.speech.coin.tangrams.analysis.GameHistory;
+import se.kth.speech.coin.tangrams.iristk.GameEvent;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -65,36 +62,18 @@ public final class LoggedEventReaderTest {
 
 	/**
 	 * Test method for
-	 * {@link se.kth.speech.coin.tangrams.iristk.io.LoggedEventReader#parseGameHistories(java.util.stream.Stream, java.util.function.Predicate)}.
-	 */
-	@Test
-	public void testParseGameHistoriesStreamOfStringPredicateOfQsuperEvent() {
-		testParseGameHistoriesStreamOfStringPredicateOfQsuperEvent(event -> true);
-	}
-
-	/**
-	 * Test method for
 	 * {@link se.kth.speech.coin.tangrams.iristk.io.LoggedEventReader#parseLoggedEvents(Stream)}.
 	 *
 	 */
 	@Test
 	public void testParseLoggedEvents() {
-		final Event[] parsedEvents = LoggedEventReader.parseLoggedEvents(eventLines.stream()).toArray(Event[]::new);
+		final GameEvent[] parsedEvents = LoggedEventReader.parseLoggedEvents(eventLines.stream())
+				.toArray(GameEvent[]::new);
 		Assert.assertTrue(parsedEvents.length > 0);
 		Assert.assertTrue(Arrays.stream(parsedEvents).allMatch(event -> {
-			final Class<? extends Event> instClass = event.getClass();
-			return Event.class.equals(instClass);
+			final Class<? extends GameEvent> instClass = event.getClass();
+			return GameEvent.class.equals(instClass);
 		}));
-	}
-
-	private void testParseGameHistoriesStreamOfStringPredicateOfQsuperEvent(
-			final Predicate<? super Event> eventFilter) {
-		final Map<String, GameHistory> gameHistories = new LoggedEventReader(1, 20).parseGameHistories(eventLines.stream(),
-				eventFilter);
-		Assert.assertEquals(gameHistories.size(), 1);
-		final GameHistory history = gameHistories.values().iterator().next();
-		final Stream<Event> historyEvents = history.getEventSequence();
-		Assert.assertTrue(historyEvents.allMatch(eventFilter));
 	}
 
 }

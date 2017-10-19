@@ -25,7 +25,6 @@ import java.util.function.ToDoubleFunction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import iristk.system.Event;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
@@ -34,6 +33,7 @@ import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.ReferentConfidenceMapFactory;
+import se.kth.speech.coin.tangrams.iristk.GameEvent;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -70,9 +70,9 @@ public final class DialogicEventDialogueClassifier implements EventDialogueClass
 	public Optional<Int2DoubleMap> apply(final EventDialogue transformedDiag, final GameContext ctx)
 			throws ClassificationException {
 		final Optional<Int2DoubleMap> result;
-		final Optional<Event> optFirstEvent = transformedDiag.getFirstEvent();
+		final Optional<GameEvent> optFirstEvent = transformedDiag.getFirstEvent();
 		if (optFirstEvent.isPresent()) {
-			final Event event = optFirstEvent.get();
+			final GameEvent event = optFirstEvent.get();
 			LOGGER.debug("Classifying utterances for event: {}", event);
 			final List<Utterance> allUtts = transformedDiag.getUtterances();
 			if (allUtts.isEmpty()) {

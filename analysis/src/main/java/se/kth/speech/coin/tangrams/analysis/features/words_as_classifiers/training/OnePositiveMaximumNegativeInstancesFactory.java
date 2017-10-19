@@ -119,7 +119,7 @@ public final class OnePositiveMaximumNegativeInstancesFactory extends AbstractSi
 					// utterances processed for the given dialogue
 					final Utterance firstUtt = utts.get(0);
 					LOGGER.debug("Creating positive and negative examples for entity selected by player \"{}\".",
-							event.getString(GameManagementEvent.Attribute.PLAYER_ID.toString()));
+							event.getGameAttrs().get(GameManagementEvent.Attribute.PLAYER_ID));
 					final BooleanTrainingContexts trainingContexts = trainingCtxsFactory.apply(firstUtt, history);
 					final double observationWeight = 1.0;
 					// Instances for referent entity

@@ -33,9 +33,8 @@ import java.util.stream.Collector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import iristk.system.Event;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
-import se.kth.speech.coin.tangrams.iristk.EventTimes;
+import se.kth.speech.coin.tangrams.iristk.GameEvent;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 import se.kth.speech.coin.tangrams.iristk.events.EventSystems;
 import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
@@ -50,9 +49,9 @@ import se.kth.speech.coin.tangrams.iristk.events.ModelDescription;
  *
  */
 public final class GameHistoryCollector
-		implements Collector<Event, Map<String, GameHistory>, Map<String, GameHistory>> {
+		implements Collector<GameEvent, Map<String, GameHistory>, Map<String, GameHistory>> {
 
-	private class Accumulator implements BiConsumer<Map<String, GameHistory>, Event> {
+	private class Accumulator implements BiConsumer<Map<String, GameHistory>, GameEvent> {
 
 		private static final String GAME_END_EVENT_NAME = "monitor.system.disconnected";
 
@@ -66,16 +65,16 @@ public final class GameHistoryCollector
 		 * java.lang.Object)
 		 */
 		@Override
-		public void accept(final Map<String, GameHistory> gameHistories, final Event event) {
+		public void accept(final Map<String, GameHistory> gameHistories, final GameEvent event) {
 			final String eventName = event.getName();
 			final GameManagementEvent gameEventType = GameManagementEvent.getEventType(eventName);
 			if (gameEventType == null) {
 				if (GAME_END_EVENT_NAME.equals(eventName)) {
 					// Ensure that the disconnection event is for the
 					// tangrams game
-					final String eventSystem = event.getString("system");
+					final String eventSystem = event.getSystem();
 					if (EventSystems.NAME.equals(eventSystem)) {
-						final String time = event.getTime();
+						final LocalDateTime time = event.getTime();
 						LOGGER.debug("Found end-game event sent at {}.", time);
 						// TODO: Add a "gameEnd" attribute to GameHistory class
 						// final LocalDateTime timestamp =
@@ -94,23 +93,22 @@ public final class GameHistoryCollector
 					LOGGER.debug("Ignoring broker event named \"{}\".", eventName);
 				}
 			} else {
-				final String time = event.getTime();
+				final LocalDateTime time = event.getTime();
 				LOGGER.debug("Found {} sent at \"{}\".", event.getClass().getSimpleName(), time);
-				final String gameId = event.getString(GameManagementEvent.Attribute.GAME_ID.toString());
-				final LocalDateTime timestamp = timeParser.apply(time);
-				accept(gameHistories, gameId, timestamp, gameEventType, event);
+				final String gameId = (String) event.getGameAttrs().get(GameManagementEvent.Attribute.GAME_ID);
+				accept(gameHistories, gameId, time, gameEventType, event);
 			}
 		}
 
 		private void accept(final Map<String, GameHistory> gameHistories, final String gameId, final LocalDateTime time,
-				final GameManagementEvent gameEventType, final Event event) {
+				final GameManagementEvent gameEventType, final GameEvent event) {
 			if (ignoredEventTypes.contains(gameEventType)) {
 				LOGGER.debug("Ignored event of type {} sent at \"{}\".", gameEventType, time);
 			} else {
 				switch (gameEventType) {
 				case GAME_READY_RESPONSE: {
-					final GameStateDescription gameDesc = (GameStateDescription) event
-							.get(GameManagementEvent.Attribute.GAME_STATE.toString());
+					final GameStateDescription gameDesc = (GameStateDescription) event.getGameAttrs()
+							.get(GameManagementEvent.Attribute.GAME_STATE);
 					LOGGER.debug("Found {} sent at \"{}\".", gameDesc.getClass().getSimpleName(), time);
 					putInitialState(gameHistories, gameId, time, createGameStateDesc(gameDesc));
 					break;
@@ -124,14 +122,14 @@ public final class GameHistoryCollector
 		}
 
 		private void addEvent(final Map<String, GameHistory> gameHistories, final String gameId,
-				final LocalDateTime time, final Event event) {
+				final LocalDateTime time, final GameEvent event) {
 			gameHistories.compute(gameId, (gKey, oldVal) -> {
 				if (oldVal == null) {
 					throw new IllegalArgumentException(String.format(
 							"Non-game state event found before the initial game state was parsed for game \"%s\": %s",
 							gameId, event));
 				} else {
-					final List<Event> timeEvents = oldVal.getEventsMutable().computeIfAbsent(time,
+					final List<GameEvent> timeEvents = oldVal.getEventsMutable().computeIfAbsent(time,
 							tKey -> new ArrayList<>(EXPECTED_EVENTS_FOR_TIMESTAMP));
 					timeEvents.add(event);
 				}
@@ -175,10 +173,11 @@ public final class GameHistoryCollector
 						// Sanity check
 						if (Objects.equals(sourceGameData.getStartTime(), oldVal.getStartTime())) {
 							if (Objects.equals(sourceGameData.getInitialState(), oldVal.getInitialState())) {
-								final Map<LocalDateTime, List<Event>> targetLoggedEventMap = oldVal.getEventsMutable();
+								final Map<LocalDateTime, List<GameEvent>> targetLoggedEventMap = oldVal
+										.getEventsMutable();
 								sourceGameData.getEvents().forEach((time, sourceLoggedEventList) -> {
-									final List<Event> targetEventList = targetLoggedEventMap.computeIfAbsent(time,
-											tKey -> new ArrayList<>(EXPECTED_EVENTS_FOR_TIMESTAMP));
+									final List<GameEvent> targetEventList = targetLoggedEventMap.computeIfAbsent(
+											time, tKey -> new ArrayList<>(EXPECTED_EVENTS_FOR_TIMESTAMP));
 									targetEventList.addAll(sourceLoggedEventList);
 								});
 							} else {
@@ -217,20 +216,10 @@ public final class GameHistoryCollector
 
 	private final Supplier<Map<String, GameHistory>> supplier;
 
-	private final Function<? super String, LocalDateTime> timeParser;
-
 	public GameHistoryCollector(final Supplier<Map<String, GameHistory>> supplier,
 			final Function<? super ModelDescription, HashableModelDescription> modelDescFactory,
 			final Function<? super ImageVisualizationInfoDescription, ImageVisualizationInfo> imgVizInfoFactory) {
-		this(supplier, modelDescFactory, imgVizInfoFactory, EventTimes::parseEventTime);
-	}
-
-	public GameHistoryCollector(final Supplier<Map<String, GameHistory>> supplier,
-			final Function<? super ModelDescription, HashableModelDescription> modelDescFactory,
-			final Function<? super ImageVisualizationInfoDescription, ImageVisualizationInfo> imgVizInfoFactory,
-			final Function<? super String, LocalDateTime> timeParser) {
 		this.supplier = supplier;
-		this.timeParser = timeParser;
 		this.modelDescFactory = modelDescFactory;
 		this.imgVizInfoFactory = imgVizInfoFactory;
 
@@ -243,7 +232,7 @@ public final class GameHistoryCollector
 	 * @see java.util.stream.Collector#accumulator()
 	 */
 	@Override
-	public BiConsumer<Map<String, GameHistory>, Event> accumulator() {
+	public BiConsumer<Map<String, GameHistory>, GameEvent> accumulator() {
 		return accumulator;
 	}
 

@@ -24,6 +24,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.EnumMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Function;
@@ -46,6 +47,9 @@ import iristk.util.Record.JsonToRecordException;
 import se.kth.speech.coin.tangrams.analysis.GameHistory;
 import se.kth.speech.coin.tangrams.analysis.GameHistoryCollector;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
+import se.kth.speech.coin.tangrams.iristk.EventTimes;
+import se.kth.speech.coin.tangrams.iristk.GameEvent;
+import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 import se.kth.speech.coin.tangrams.iristk.GameStateDescriptions;
 import se.kth.speech.coin.tangrams.iristk.events.HashableModelDescription;
 import se.kth.speech.coin.tangrams.iristk.events.ImageVisualizationInfoDescription;
@@ -103,6 +107,22 @@ public final class LoggedEventReader {
 		return parseLoggedEvents(lines);
 	}
 
+	private static Map<GameManagementEvent.Attribute, Object> createGameAttrMap(final Event event) {
+		final Map<GameManagementEvent.Attribute, Object> result = new EnumMap<>(GameManagementEvent.Attribute.class);
+		for (final GameManagementEvent.Attribute gameAttr : GameManagementEvent.Attribute.values()) {
+			final Object attrValue = event.get(gameAttr.toString());
+			if (attrValue != null) {
+				result.put(gameAttr, attrValue);
+			}
+		}
+		return result;
+	}
+
+	private static GameEvent createGameEvent(final Event event) {
+		return new GameEvent(event.getName(), event.getSender(), event.getId(), event.getString("system"),
+				EventTimes.parseEventTime(event.getTime()), createGameAttrMap(event));
+	}
+
 	private static Stream<String> readLines(final Path eventLogPath) throws IOException {
 		return Files.lines(eventLogPath, CHARSET);
 	}
@@ -112,11 +132,13 @@ public final class LoggedEventReader {
 	private final Function<ModelDescription, HashableModelDescription> modelDescFactory;
 
 	public LoggedEventReader(final int expectedUniqueGameModels, final int expectedUniqueImgVizInfoData) {
-//		final Map<ModelDescription, HashableModelDescription> modelDescs = Maps
-//				.newHashMapWithExpectedSize(expectedUniqueGameModels);
+		// final Map<ModelDescription, HashableModelDescription> modelDescs =
+		// Maps
+		// .newHashMapWithExpectedSize(expectedUniqueGameModels);
 		modelDescFactory = HashableModelDescription::new;
-//		final Map<ImageVisualizationInfoDescription, ImageVisualizationInfo> imgVizInfo = Maps
-//				.newHashMapWithExpectedSize(expectedUniqueImgVizInfoData);
+		// final Map<ImageVisualizationInfoDescription, ImageVisualizationInfo>
+		// imgVizInfo = Maps
+		// .newHashMapWithExpectedSize(expectedUniqueImgVizInfoData);
 		imgVizInfoFactory = ImageVisualizationInfoDescription::toHashable;
 	}
 
@@ -131,7 +153,7 @@ public final class LoggedEventReader {
 		final Event[] loggedEventArray = loggedEvents.toArray(Event[]::new);
 		final Supplier<Map<String, GameHistory>> mapFactory = () -> Maps
 				.newHashMapWithExpectedSize(loggedEventArray.length);
-		return Arrays.stream(loggedEventArray)
+		return Arrays.stream(loggedEventArray).map(LoggedEventReader::createGameEvent)
 				.collect(new GameHistoryCollector(mapFactory, modelDescFactory, imgVizInfoFactory));
 	}
 

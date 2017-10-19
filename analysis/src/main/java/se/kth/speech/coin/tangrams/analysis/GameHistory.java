@@ -31,14 +31,15 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Lists;
 
-import iristk.system.Event;
+import se.kth.speech.coin.tangrams.iristk.GameEvent;
 import se.kth.speech.coin.tangrams.iristk.events.HashableGameStateDescription;
 
 public final class GameHistory {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(GameHistory.class);
 
-	private static Stream<Event> getEventsDescendingOrder(final NavigableMap<?, ? extends List<Event>> map) {
+	private static Stream<GameEvent> getEventsDescendingOrder(
+			final NavigableMap<?, ? extends List<GameEvent>> map) {
 		return map.descendingMap().values().stream().map(Lists::reverse).flatMap(List::stream);
 	}
 
@@ -72,7 +73,7 @@ public final class GameHistory {
 		return result;
 	}
 
-	private final NavigableMap<LocalDateTime, List<Event>> events = new TreeMap<>();
+	private final NavigableMap<LocalDateTime, List<GameEvent>> events = new TreeMap<>();
 
 	private final HashableGameStateDescription initialState;
 
@@ -131,26 +132,26 @@ public final class GameHistory {
 	/**
 	 * @return the events
 	 */
-	public NavigableMap<LocalDateTime, List<Event>> getEvents() {
+	public NavigableMap<LocalDateTime, List<GameEvent>> getEvents() {
 		return Collections.unmodifiableNavigableMap(events);
 	}
 
 	/**
 	 *
-	 * @return A {@link Stream} of all {@link Event events}, in the sequence
-	 *         they occurred in the game.
+	 * @return A {@link Stream} of all {@link GameEvent events}, in the
+	 *         sequence they occurred in the game.
 	 */
-	public Stream<Event> getEventSequence() {
+	public Stream<GameEvent> getEventSequence() {
 		return getEvents().values().stream().flatMap(List::stream);
 	}
 
 	/**
 	 *
-	 * @return A {@link Stream} of all {@link Event events}, in descending order
-	 *         according to the time they occurred, i.e.&nbsp; The last event
-	 *         appears first in the returned {@code Stream}.
+	 * @return A {@link Stream} of all {@link GameEvent events}, in
+	 *         descending order according to the time they occurred, i.e.&nbsp;
+	 *         The last event appears first in the returned {@code Stream}.
 	 */
-	public Stream<Event> getEventSequenceDescendingOrder() {
+	public Stream<GameEvent> getEventSequenceDescendingOrder() {
 		return getEventsDescendingOrder(getEvents());
 	}
 
@@ -208,7 +209,7 @@ public final class GameHistory {
 	/**
 	 * @return the events
 	 */
-	NavigableMap<LocalDateTime, List<Event>> getEventsMutable() {
+	NavigableMap<LocalDateTime, List<GameEvent>> getEventsMutable() {
 		return events;
 	}
 }

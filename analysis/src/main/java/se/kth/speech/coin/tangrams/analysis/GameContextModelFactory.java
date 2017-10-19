@@ -31,12 +31,12 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Maps;
 
-import iristk.system.Event;
 import se.kth.speech.Matrix;
 import se.kth.speech.SpatialMatrix;
 import se.kth.speech.SpatialMatrixRegionElementMover;
 import se.kth.speech.SpatialRegion;
 import se.kth.speech.coin.tangrams.AreaSpatialRegionFactory;
+import se.kth.speech.coin.tangrams.iristk.GameEvent;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 import se.kth.speech.coin.tangrams.iristk.events.HashableGameModelMatrixUnmarshaller;
 import se.kth.speech.coin.tangrams.iristk.events.HashableGameStateDescription;
@@ -100,8 +100,8 @@ public final class GameContextModelFactory implements Function<GameContext, Spat
 				SpatialMatrix.Factory.STABLE_ITER_ORDER);
 	}
 
-	private static void applyEvent(final SpatialMatrix<Integer> model, final Event event) {
-		final Move move = (Move) event.get(GameManagementEvent.Attribute.MOVE.toString());
+	private static void applyEvent(final SpatialMatrix<Integer> model, final GameEvent event) {
+		final Move move = (Move) event.getGameAttrs().get(GameManagementEvent.Attribute.MOVE);
 		if (move == null) {
 			LOGGER.debug("Event has no move attribute; Ignoring.");
 		} else {
@@ -128,9 +128,10 @@ public final class GameContextModelFactory implements Function<GameContext, Spat
 	}
 
 	private static void updateToTime(final SpatialMatrix<Integer> model,
-			final NavigableMap<LocalDateTime, List<Event>> timestampedEvents, final LocalDateTime time) {
-		final NavigableMap<LocalDateTime, List<Event>> timestampedEventsToApply = timestampedEvents.headMap(time, true);
-		final Stream<Event> eventsToApply = timestampedEventsToApply.values().stream().flatMap(List::stream);
+			final NavigableMap<LocalDateTime, List<GameEvent>> timestampedEvents, final LocalDateTime time) {
+		final NavigableMap<LocalDateTime, List<GameEvent>> timestampedEventsToApply = timestampedEvents
+				.headMap(time, true);
+		final Stream<GameEvent> eventsToApply = timestampedEventsToApply.values().stream().flatMap(List::stream);
 		eventsToApply.forEachOrdered(event -> applyEvent(model, event));
 	}
 
@@ -158,7 +159,7 @@ public final class GameContextModelFactory implements Function<GameContext, Spat
 		final HashableGameStateDescription initialState = history.getInitialState();
 		final SpatialMatrix<Integer> result = copyInitialModel(
 				initialGameModelFactory.apply(initialState.getModelDescription()));
-		final NavigableMap<LocalDateTime, List<Event>> events = history.getEvents();
+		final NavigableMap<LocalDateTime, List<GameEvent>> events = history.getEvents();
 		updateToTime(result, events, context.getTime());
 		return result;
 	}

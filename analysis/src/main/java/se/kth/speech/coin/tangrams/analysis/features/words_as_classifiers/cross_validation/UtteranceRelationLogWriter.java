@@ -19,19 +19,22 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.io.Writer;
+import java.time.temporal.TemporalAccessor;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.BiConsumer;
+import java.util.function.Function;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import iristk.system.Event;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.coin.tangrams.analysis.dialogues.WeightedUtterance;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.UtteranceRelation;
+import se.kth.speech.coin.tangrams.iristk.EventTimes;
+import se.kth.speech.coin.tangrams.iristk.GameEvent;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -43,6 +46,8 @@ final class UtteranceRelationLogWriter implements BiConsumer<EventDialogue, Iter
 	private static final String COL_DELIM = "\t";
 
 	private static final String ROW_DELIM = System.lineSeparator();
+
+	private static final Function<TemporalAccessor, String> TIMESTAMP_FORMATTER = EventTimes.FORMATTER::format;
 
 	private static final Collector<CharSequence, ?, String> UTT_REPR_JOINER = Collectors.joining("\", \"", "\"", "\"");
 
@@ -59,10 +64,10 @@ final class UtteranceRelationLogWriter implements BiConsumer<EventDialogue, Iter
 	@Override
 	public void accept(final EventDialogue evtDiag, final Iterable<UtteranceRelation> uttRels) {
 		try {
-			final Event firstEvent = evtDiag.getFirstEvent().get();
+			final GameEvent firstEvent = evtDiag.getFirstEvent().get();
 			int relNo = 1;
 			for (final UtteranceRelation uttRel : uttRels) {
-				writeRow(firstEvent.getTime(), relNo++, uttRel);
+				writeRow(TIMESTAMP_FORMATTER.apply(firstEvent.getTime()), relNo++, uttRel);
 			}
 		} catch (final IOException e) {
 			throw new UncheckedIOException(e);
@@ -95,8 +100,8 @@ final class UtteranceRelationLogWriter implements BiConsumer<EventDialogue, Iter
 		writer.write(Integer.toString(relNo));
 		writer.write(COL_DELIM);
 		final Optional<WeightedUtterance> optInstrUtt = uttRel.getAcceptanceUtt();
-		writer.write(
-				optInstrUtt.map(WeightedUtterance::getUtterance).map(Utterance::createTokenString).orElse(nullCellValueRepr));
+		writer.write(optInstrUtt.map(WeightedUtterance::getUtterance).map(Utterance::createTokenString)
+				.orElse(nullCellValueRepr));
 		writer.write(COL_DELIM);
 		writer.write(optInstrUtt.map(WeightedUtterance::getUtterance).map(Utterance::getTokens).map(List::size)
 				.map(Object::toString).orElse(nullCellValueRepr));

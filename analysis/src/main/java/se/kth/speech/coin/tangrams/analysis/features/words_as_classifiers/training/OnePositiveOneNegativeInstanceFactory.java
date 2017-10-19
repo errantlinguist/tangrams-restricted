@@ -152,8 +152,7 @@ public final class OnePositiveOneNegativeInstanceFactory extends AbstractSizeEst
 	}
 
 	@Override
-	protected void addTrainingData(final SessionGame sessionGame,
-			final WordClassificationData trainingData) {
+	protected void addTrainingData(final SessionGame sessionGame, final WordClassificationData trainingData) {
 		final String gameId = sessionGame.getGameId();
 		LOGGER.debug("Processing game \"{}\".", gameId);
 		final GameHistory history = sessionGame.getHistory();
@@ -174,7 +173,7 @@ public final class OnePositiveOneNegativeInstanceFactory extends AbstractSizeEst
 					final int selectedEntityId = uttCtx.findLastSelectedEntityId().get();
 					LOGGER.debug(
 							"Creating positive and negative examples for entity ID \"{}\", which is selected by player \"{}\".",
-							selectedEntityId, event.getString(GameManagementEvent.Attribute.PLAYER_ID.toString()));
+							selectedEntityId, event.getGameAttrs().get(GameManagementEvent.Attribute.PLAYER_ID));
 					final BooleanTrainingContexts trainingContexts = trainingCtxsFactory.apply(firstUtt, history);
 					final double observationWeight = 1.0;
 					// Instances for referent entity

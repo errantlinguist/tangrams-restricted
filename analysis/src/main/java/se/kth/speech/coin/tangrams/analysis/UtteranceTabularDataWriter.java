@@ -23,6 +23,7 @@ import java.math.MathContext;
 import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.LocalDateTime;
+import java.time.temporal.TemporalAccessor;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -41,7 +42,6 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import iristk.system.Event;
 import se.kth.speech.TimestampArithmetic;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
@@ -49,6 +49,7 @@ import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfoTableRowCellFactory;
 import se.kth.speech.coin.tangrams.iristk.EventTimes;
+import se.kth.speech.coin.tangrams.iristk.GameEvent;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 import se.kth.speech.coin.tangrams.iristk.events.Move;
 
@@ -58,7 +59,8 @@ final class UtteranceTabularDataWriter {
 		LAST_RND_TIME {
 			@Override
 			public String apply(final EventDatum.Context ctx) {
-				return ctx.optLastRoundEvent.map(Event::getTime).orElseGet(ctx.nullValueReprSupplier);
+				return ctx.optLastRoundEvent.map(GameEvent::getTime).map(TIMESTAMP_FORMATTER)
+						.orElseGet(ctx.nullValueReprSupplier);
 			}
 		},
 		LAST_RND_TIME_DIFF_SECS {
@@ -88,7 +90,7 @@ final class UtteranceTabularDataWriter {
 		MOVE_SUBMITTER {
 			@Override
 			public String apply(final EventDatum.Context ctx) {
-				return ctx.firstDiagEvent.getString(GameManagementEvent.Attribute.PLAYER_ID.toString());
+				return (String) ctx.firstDiagEvent.getGameAttrs().get(GameManagementEvent.Attribute.PLAYER_ID);
 			}
 		},
 		NAME {
@@ -107,7 +109,7 @@ final class UtteranceTabularDataWriter {
 
 			@Override
 			public String apply(final EventDatum.Context ctx) {
-				return ctx.firstDiagEvent.getTime();
+				return TIMESTAMP_FORMATTER.apply(ctx.firstDiagEvent.getTime());
 			}
 		},
 		TIME_OFFSET {
@@ -125,18 +127,18 @@ final class UtteranceTabularDataWriter {
 
 		private static class Context {
 
-			private final Event firstDiagEvent;
+			private final GameEvent firstDiagEvent;
 
 			private final LocalDateTime gameStartTime;
 
 			private final Supplier<String> nullValueReprSupplier;
 
-			private final Optional<? extends Event> optLastRoundEvent;
+			private final Optional<? extends GameEvent> optLastRoundEvent;
 
 			private final int roundId;
 
-			private Context(final int roundId, final Event firstDiagEvent,
-					final Optional<? extends Event> optLastRoundEvent, final LocalDateTime gameStartTime,
+			private Context(final int roundId, final GameEvent firstDiagEvent,
+					final Optional<? extends GameEvent> optLastRoundEvent, final LocalDateTime gameStartTime,
 					final Supplier<String> nullValueReprSupplier) {
 				this.roundId = roundId;
 				this.firstDiagEvent = firstDiagEvent;
@@ -252,8 +254,6 @@ final class UtteranceTabularDataWriter {
 
 	private static final Supplier<String> COL_HEADER_PADDING_SUPPLIER = () -> "";
 
-	private static final Function<String, LocalDateTime> EVENT_TIME_PARSER = EventTimes::parseEventTime;
-
 	private static final MathContext EVT_TIME_DIFF_CTX = new MathContext(16, RoundingMode.HALF_UP);
 
 	private static final List<ImageVisualizationInfoTableRowCellFactory.Attribute> IMG_VIZ_INFO_ATTRS_TO_WRITE;
@@ -270,6 +270,8 @@ final class UtteranceTabularDataWriter {
 
 	private static final String TABLE_STRING_REPR_ROW_DELIMITER;
 
+	private static final Function<TemporalAccessor, String> TIMESTAMP_FORMATTER = EventTimes.FORMATTER::format;
+
 	static {
 		TABLE_STRING_REPR_ROW_DELIMITER = System.lineSeparator();
 		TABLE_ROW_JOINER = Collectors.joining(TABLE_STRING_REPR_ROW_DELIMITER);
@@ -280,18 +282,20 @@ final class UtteranceTabularDataWriter {
 		IMG_VIZ_INFO_ATTRS_TO_WRITE = ImageVisualizationInfoTableRowCellFactory.Attribute.getCanonicalOrdering();
 	}
 
-	private static BigDecimal calculateDecimalSecondDifference(final Event firstEvt, final Event nextEvt) {
-		final LocalDateTime firstTime = EVENT_TIME_PARSER.apply(firstEvt.getTime());
+	private static BigDecimal calculateDecimalSecondDifference(final GameEvent firstEvt,
+			final GameEvent nextEvt) {
+		final LocalDateTime firstTime = firstEvt.getTime();
 		return calculateDecimalSecondDifference(firstTime, nextEvt);
 	}
 
-	private static BigDecimal calculateDecimalSecondDifference(final LocalDateTime firstTime, final Event nextEvt) {
-		final LocalDateTime nextTime = EVENT_TIME_PARSER.apply(nextEvt.getTime());
+	private static BigDecimal calculateDecimalSecondDifference(final LocalDateTime firstTime,
+			final GameEvent nextEvt) {
+		final LocalDateTime nextTime = nextEvt.getTime();
 		return TimestampArithmetic.calculateDecimalSecondDifference(firstTime, nextTime, EVT_TIME_DIFF_CTX);
 	}
 
-	private static String createTimeDifferenceRepr(final LocalDateTime firstTime, final Event nextEvt) {
-		final LocalDateTime nextTime = EVENT_TIME_PARSER.apply(nextEvt.getTime());
+	private static String createTimeDifferenceRepr(final LocalDateTime firstTime, final GameEvent nextEvt) {
+		final LocalDateTime nextTime = nextEvt.getTime();
 		return createTimeDifferenceRepr(firstTime, nextTime);
 	}
 
@@ -352,13 +356,13 @@ final class UtteranceTabularDataWriter {
 		final List<ImageVisualizationInfo.Datum> imgVizInfoData = history.getInitialState().getImageVisualizationInfo()
 				.getData();
 
-		Optional<Event> optLastRoundEvent = Optional.empty();
+		Optional<GameEvent> optLastRoundEvent = Optional.empty();
 		int roundId = 1;
 		for (final ListIterator<EventDialogue> eventDiagIter = eventDiags.listIterator(); eventDiagIter.hasNext();) {
 			final EventDialogue eventDiag = eventDiagIter.next();
 			writer.write(TABLE_STRING_REPR_ROW_DELIMITER);
 
-			final List<Event> diagEvts = eventDiag.getEvents();
+			final List<GameEvent> diagEvts = eventDiag.getEvents();
 			final List<Utterance> diagUtts = eventDiag.getUtterances();
 
 			final Stream<String> eventDataReprs;
@@ -369,10 +373,10 @@ final class UtteranceTabularDataWriter {
 				imgFeatureVectorReprs = entityFeatureVectorDescFactory.createBlankFeatureValueReprs();
 				imgVizInfoDesc = imgVizInfoDescFactory.getBlankDescription().stream();
 			} else {
-				final Event firstDiagEvent = diagEvts.iterator().next();
+				final GameEvent firstDiagEvent = diagEvts.iterator().next();
 				{
 					final int streamRoundId = roundId;
-					final Optional<Event> streamOptLastRoundEvent = optLastRoundEvent;
+					final Optional<GameEvent> streamOptLastRoundEvent = optLastRoundEvent;
 					eventDataReprs = Arrays.stream(eventDataToWrite)
 							.map(eventDatum -> eventDatum.apply(new EventDatum.Context(streamRoundId, firstDiagEvent,
 									streamOptLastRoundEvent, gameStartTime, nullValueReprSupplier)));
@@ -466,10 +470,10 @@ final class UtteranceTabularDataWriter {
 		return result;
 	}
 
-	private Stream<String> createImgVizInfoDesc(final Event firstDiagEvent, final LocalDateTime gameStartTime,
+	private Stream<String> createImgVizInfoDesc(final GameEvent firstDiagEvent, final LocalDateTime gameStartTime,
 			final List<ImageVisualizationInfo.Datum> imgVizInfoData) {
 		final Stream<String> result;
-		final Move move = (Move) firstDiagEvent.get(GameManagementEvent.Attribute.MOVE.toString());
+		final Move move = (Move) firstDiagEvent.getGameAttrs().get(GameManagementEvent.Attribute.MOVE);
 		if (move == null) {
 			result = imgVizInfoDescFactory.getBlankDescription().stream();
 		} else {
@@ -479,7 +483,7 @@ final class UtteranceTabularDataWriter {
 		return result;
 	}
 
-	private String createNoEventUtterancesMsg(final Event event, final List<EventDialogue> eventDiags,
+	private String createNoEventUtterancesMsg(final GameEvent event, final List<EventDialogue> eventDiags,
 			final int eventIdx) {
 		final StringBuilder sb = new StringBuilder(256);
 		sb.append("No utterances for event index ");
@@ -499,7 +503,7 @@ final class UtteranceTabularDataWriter {
 			}
 			if (prevEventDiag != null) {
 				sb.append(System.lineSeparator());
-				final Event prevEvent = prevEventDiag.getFirstEvent().orElse(null);
+				final GameEvent prevEvent = prevEventDiag.getFirstEvent().orElse(null);
 				final List<Utterance> prevUtts = prevEventDiag.getUtterances();
 
 				if (prevUtts.isEmpty()) {
@@ -527,7 +531,7 @@ final class UtteranceTabularDataWriter {
 			}
 			if (nextEventDiag != null) {
 				sb.append(System.lineSeparator());
-				final Event nextEvent = nextEventDiag.getFirstEvent().orElse(null);
+				final GameEvent nextEvent = nextEventDiag.getFirstEvent().orElse(null);
 				final List<Utterance> nextUtts = nextEventDiag.getUtterances();
 				if (nextUtts.isEmpty()) {
 					LOGGER.debug("No utterances for dialogue ID \"{}\".", nextEvent.getId());

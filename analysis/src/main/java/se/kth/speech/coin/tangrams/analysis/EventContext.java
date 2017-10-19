@@ -18,14 +18,14 @@ package se.kth.speech.coin.tangrams.analysis;
 
 import java.math.BigDecimal;
 
-import iristk.system.Event;
 import se.kth.speech.TimestampArithmetic;
+import se.kth.speech.coin.tangrams.iristk.GameEvent;
 
 final class EventContext {
 
 	private final int entityId;
 
-	private final Event event;
+	private final GameEvent event;
 
 	private final int eventId;
 
@@ -37,7 +37,7 @@ final class EventContext {
 
 	private final int score;
 
-	EventContext(final int eventId, final Event event, final int gameRoundId, final GameContext gameContext,
+	EventContext(final int eventId, final GameEvent event, final int gameRoundId, final GameContext gameContext,
 			final int entityId, final int score) {
 		this.eventId = eventId;
 		this.event = event;
@@ -122,7 +122,7 @@ final class EventContext {
 	/**
 	 * @return the event
 	 */
-	Event getEvent() {
+	GameEvent getEvent() {
 		return event;
 	}
 

@@ -98,7 +98,6 @@ import com.google.common.cache.LoadingCache;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.Table;
 
-import iristk.system.Event;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import se.kth.speech.ObservationOrderComparator;
@@ -108,8 +107,8 @@ import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionContextFactory;
 import se.kth.speech.coin.tangrams.analysis.features.ImageEdgeCounter;
 import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
-import se.kth.speech.coin.tangrams.iristk.EventTimes;
 import se.kth.speech.coin.tangrams.iristk.EventTypeMatcher;
+import se.kth.speech.coin.tangrams.iristk.GameEvent;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 import se.kth.speech.coin.tangrams.iristk.events.Selection;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEventReader;
@@ -146,7 +145,7 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 
 			@Override
 			public String apply(final EventContext eventCtx, final String nullValueRepr) {
-				final Event event = eventCtx.getEvent();
+				final GameEvent event = eventCtx.getEvent();
 				final String eventName = event.getName();
 				return tangramsActionEventNamePrefixPattern.matcher(eventName).replaceFirst("");
 			}
@@ -188,12 +187,12 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 
 			@Override
 			public String apply(final EventContext eventCtx, final String nullValueRepr) {
-				final Event event = eventCtx.getEvent();
+				final GameEvent event = eventCtx.getEvent();
 
 				final boolean isSelected;
 				if (selectionEventMatcher.test(event)) {
-					final Selection selection = (Selection) event
-							.get(GameManagementEvent.Attribute.SELECTION.toString());
+					final Selection selection = (Selection) event.getGameAttrs()
+							.get(GameManagementEvent.Attribute.SELECTION);
 					final Integer selectedEntityId = selection.getPieceId();
 					final int entityId = eventCtx.getEntityId();
 					isSelected = selectedEntityId.equals(entityId);
@@ -207,8 +206,9 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 		SUBMITTER {
 			@Override
 			public String apply(final EventContext eventCtx, final String nullValueRepr) {
-				final Event event = eventCtx.getEvent();
-				return event.getString(GameManagementEvent.Attribute.PLAYER_ID.toString(), nullValueRepr);
+				final GameEvent event = eventCtx.getEvent();
+				final Object attrVal = event.getGameAttrs().get(GameManagementEvent.Attribute.PLAYER_ID);
+				return Objects.toString(attrVal, nullValueRepr);
 			}
 		},
 		TIME {
@@ -562,7 +562,7 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 	private final LoadingCache<EventContext, String[]> eventDataRowCellValues;
 
 	private final List<EventDatum> eventDataToDescribe;
-	
+
 	private final String eventOutfileNamePrefix;
 
 	private SessionGameHistoryTabularDataWriter(final List<EventDatum> eventDataToDescribe,
@@ -581,7 +581,8 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 				});
 
 		dateLatestCommits = CacheBuilder.newBuilder().concurrencyLevel(concurrencyLevel)
-				.maximumSize(EXPECTED_MAXIMUM_UNIQUE_EXPERIMENT_VERSIONS).build(new CacheLoader<ZonedDateTime, RevCommit>() {
+				.maximumSize(EXPECTED_MAXIMUM_UNIQUE_EXPERIMENT_VERSIONS)
+				.build(new CacheLoader<ZonedDateTime, RevCommit>() {
 
 					@Override
 					public RevCommit load(final ZonedDateTime zonedGameStart)
@@ -631,18 +632,18 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 		int gameScore = 0;
 		LocalDateTime maxEventTime = LocalDateTime.MIN;
 		{
-			final List<Event> events = Arrays.asList(history.getEventSequence().toArray(Event[]::new));
+			final List<GameEvent> events = Arrays.asList(history.getEventSequence().toArray(GameEvent[]::new));
 			final List<Stream<String>> eventRows = new ArrayList<>(events.size() * entityCount);
-			for (final ListIterator<Event> eventIter = events.listIterator(); eventIter.hasNext();) {
-				final Event event = eventIter.next();
-				// Event ID is 1-indexed
+			for (final ListIterator<GameEvent> eventIter = events.listIterator(); eventIter.hasNext();) {
+				final GameEvent event = eventIter.next();
+				// HashableEvent ID is 1-indexed
 				eventId = eventIter.nextIndex();
-				final GameManagementEvent eventType = GameManagementEvent.getEventType(event);
+				final GameManagementEvent eventType = GameManagementEvent.getEventType(event.getName());
 				if (GAME_ROUND_DELIMITING_EVENT_TYPE.equals(eventType)) {
 					gameRoundId++;
 				}
 				gameScore = updateScore(eventType, gameScore);
-				final LocalDateTime eventTime = EventTimes.parseEventTime(event.getTime());
+				final LocalDateTime eventTime = event.getTime();
 				maxEventTime = Collections.max(Arrays.asList(eventTime, maxEventTime));
 				final GameContext gameCtx = new GameContext(history, eventTime);
 				// Create one row for each entity
@@ -753,7 +754,7 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 
 	private Stream<String> createRowCellValues(
 			final EntityFeatureVectorDescriptionFactory entityFeatureVectorDescFactory, final EventContext eventCtx) {
-		// final Event event = eventCtx.getEvent();
+		// final HashableEvent event = eventCtx.getEvent();
 		// LOGGER.debug("Processing event with name \"{}\".", event.getName());
 		final Stream.Builder<String> resultBuilder = Stream.builder();
 		Arrays.stream(eventDataRowCellValues.getUnchecked(eventCtx)).forEachOrdered(resultBuilder);

@@ -16,6 +16,7 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation;
 
+import java.time.temporal.TemporalAccessor;
 import java.util.Collection;
 import java.util.EnumMap;
 import java.util.Iterator;
@@ -25,10 +26,11 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import iristk.system.Event;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.EventDialogueTestResults;
+import se.kth.speech.coin.tangrams.iristk.EventTimes;
+import se.kth.speech.coin.tangrams.iristk.GameEvent;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -128,7 +130,7 @@ final class DialogueAnalysisSummaryFactory implements
 			public Object apply(final Input input,
 					final Function<? super Iterator<Utterance>, String> uttDiagReprFactory) {
 				final EventDialogue diag = input.diagTestResults.getKey();
-				return diag.getFirstEvent().map(Event::getTime).orElse("?");
+				return diag.getFirstEvent().map(GameEvent::getTime).map(TIMESTAMP_FORMATTER).orElse("?");
 			}
 		},
 		GOLD_STD_ID {
@@ -264,6 +266,8 @@ final class DialogueAnalysisSummaryFactory implements
 			}
 		};
 	}
+
+	private static final Function<TemporalAccessor, String> TIMESTAMP_FORMATTER = EventTimes.FORMATTER::format;
 
 	private final Collection<SummaryDatum> dataToCreate;
 

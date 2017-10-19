@@ -27,10 +27,10 @@ import java.util.function.Predicate;
 import java.util.function.ToDoubleFunction;
 import java.util.stream.Stream;
 
-import iristk.system.Event;
 import se.kth.speech.Iterators;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.coin.tangrams.analysis.dialogues.WeightedUtterance;
+import se.kth.speech.coin.tangrams.iristk.GameEvent;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -38,7 +38,7 @@ import se.kth.speech.coin.tangrams.analysis.dialogues.WeightedUtterance;
  *
  */
 public final class DialogicEventDialogueUtteranceSorter
-		implements BiFunction<List<Utterance>, Event, List<UtteranceRelation>> {
+		implements BiFunction<List<Utterance>, GameEvent, List<UtteranceRelation>> {
 
 	private final ToDoubleFunction<? super Utterance> uttAcceptanceRanker;
 
@@ -47,7 +47,7 @@ public final class DialogicEventDialogueUtteranceSorter
 	}
 
 	@Override
-	public List<UtteranceRelation> apply(final List<Utterance> utts, final Event event) {
+	public List<UtteranceRelation> apply(final List<Utterance> utts, final GameEvent event) {
 		return apply(utts, UtteranceMatchers.createEventSubmitterUtteranceMatcher(event));
 	}
 

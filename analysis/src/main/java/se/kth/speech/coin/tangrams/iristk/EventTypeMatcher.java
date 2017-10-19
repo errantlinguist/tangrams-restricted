@@ -20,9 +20,7 @@ import java.util.Collection;
 import java.util.EnumSet;
 import java.util.function.Predicate;
 
-import iristk.system.Event;
-
-public final class EventTypeMatcher implements Predicate<Event> {
+public final class EventTypeMatcher implements Predicate<GameEvent> {
 
 	private final Collection<GameManagementEvent> acceptedTypes;
 
@@ -81,8 +79,8 @@ public final class EventTypeMatcher implements Predicate<Event> {
 	 * @see java.util.function.Predicate#test(java.lang.Object)
 	 */
 	@Override
-	public boolean test(final Event event) {
-		final GameManagementEvent eventType = GameManagementEvent.getEventType(event);
+	public boolean test(final GameEvent event) {
+		final GameManagementEvent eventType = GameManagementEvent.getEventType(event.getName());
 		return acceptedTypes.contains(eventType);
 	}
 

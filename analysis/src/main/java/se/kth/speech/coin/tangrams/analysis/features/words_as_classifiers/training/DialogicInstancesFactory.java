@@ -121,7 +121,7 @@ public final class DialogicInstancesFactory extends AbstractSizeEstimatingInstan
 					// Just use the game context for the first utterance for all
 					// utterances processed for the given dialogue
 					LOGGER.debug("Creating positive and negative examples for entity selected by player \"{}\".",
-							event.getString(GameManagementEvent.Attribute.PLAYER_ID.toString()));
+							event.getGameAttrs().get(GameManagementEvent.Attribute.PLAYER_ID));
 					final BooleanTrainingContexts trainingContexts = trainingCtxsFactory.apply(allUtts.get(0), history);
 					final DialogicEventDialogueUtteranceSorter uttSorter = new DialogicEventDialogueUtteranceSorter(
 							uttAcceptanceRanker);

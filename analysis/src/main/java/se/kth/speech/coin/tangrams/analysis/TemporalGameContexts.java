@@ -22,9 +22,8 @@ import java.util.List;
 import java.util.NavigableMap;
 import java.util.stream.Stream;
 
-import iristk.system.Event;
 import se.kth.speech.TimestampArithmetic;
-import se.kth.speech.coin.tangrams.iristk.EventTimes;
+import se.kth.speech.coin.tangrams.iristk.GameEvent;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -34,13 +33,13 @@ import se.kth.speech.coin.tangrams.iristk.EventTimes;
 public final class TemporalGameContexts {
 
 	public static Stream<GameContext> create(final GameHistory history, final float startTime, final float endTime) {
-		final NavigableMap<LocalDateTime, List<Event>> events = history.getEvents();
+		final NavigableMap<LocalDateTime, List<GameEvent>> events = history.getEvents();
 		final LocalDateTime gameStartTime = history.getStartTime();
 		final LocalDateTime uttStartTimestamp = TimestampArithmetic.createOffsetTimestamp(gameStartTime, startTime);
 
 		final LocalDateTime uttEndTimestamp = TimestampArithmetic.createOffsetTimestamp(gameStartTime, endTime);
 		assert uttStartTimestamp.isBefore(uttEndTimestamp) || uttStartTimestamp.isEqual(uttEndTimestamp);
-		final NavigableMap<LocalDateTime, List<Event>> eventsDuringUtt = events.subMap(uttStartTimestamp, true,
+		final NavigableMap<LocalDateTime, List<GameEvent>> eventsDuringUtt = events.subMap(uttStartTimestamp, true,
 				uttEndTimestamp, true);
 
 		final Stream.Builder<GameContext> resultBuilder = Stream.builder();
@@ -49,10 +48,9 @@ public final class TemporalGameContexts {
 		} else {
 			// Create one data point for each event found during the utterance
 			// TODO: estimate partitions for utterance: By phones?
-			final Collection<List<Event>> timedEvents = eventsDuringUtt.values();
-			final Stream<Event> allEventsDuringUtt = timedEvents.stream().flatMap(Collection::stream);
-			final Stream<LocalDateTime> allTimestampsDuringUtt = allEventsDuringUtt.map(Event::getTime)
-					.map(EventTimes::parseEventTime);
+			final Collection<List<GameEvent>> timedEvents = eventsDuringUtt.values();
+			final Stream<GameEvent> allEventsDuringUtt = timedEvents.stream().flatMap(Collection::stream);
+			final Stream<LocalDateTime> allTimestampsDuringUtt = allEventsDuringUtt.map(GameEvent::getTime);
 			allTimestampsDuringUtt.map(timestampDuringUtt -> new GameContext(history, timestampDuringUtt))
 					.forEachOrdered(resultBuilder);
 		}

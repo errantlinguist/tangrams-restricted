@@ -77,10 +77,6 @@ public enum GameManagementEvent {
 	private static final Map<String, GameManagementEvent> NAMED_EVENTS = Arrays.stream(GameManagementEvent.values())
 			.collect(Collectors.toMap(GameManagementEvent::getEventName, Function.identity()));
 
-	public static GameManagementEvent getEventType(final Event event) {
-		return getEventType(event.getName());
-	}
-
 	public static GameManagementEvent getEventType(final String eventName) {
 		return NAMED_EVENTS.get(eventName);
 	}

@@ -34,10 +34,9 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import iristk.system.Event;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.coin.tangrams.analysis.dialogues.WeightedUtterance;
-import se.kth.speech.coin.tangrams.iristk.EventTimes;
+import se.kth.speech.coin.tangrams.iristk.GameEvent;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 import se.kth.speech.nlp.PatternMatchingUtteranceAcceptanceRanker;
 
@@ -69,9 +68,8 @@ public final class DialogicEventDialogueUtteranceSorterTest {
 	public void testApply() throws JAXBException, IOException {
 		final String instructorPlayerId = "jack";
 		final String selectorPlayerId = "jill";
-		final Event event = new Event();
-		event.setTime(EventTimes.FORMATTER.format(LocalDateTime.now()));
-		event.put(GameManagementEvent.Attribute.PLAYER_ID.toString(), instructorPlayerId);
+		final GameEvent event = new GameEvent("", "", "", "", LocalDateTime.now(),
+				Collections.singletonMap(GameManagementEvent.Attribute.PLAYER_ID, instructorPlayerId));
 		final List<Utterance> utts = Arrays.asList(
 				new Utterance("1", instructorPlayerId, Arrays.asList("it's", "the", "red", "one"), 0.02f, 1.0f),
 				new Utterance("2", selectorPlayerId, Arrays.asList("the", "big", "one", "right"), 1.2f, 2.0f),

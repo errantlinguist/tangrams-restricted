@@ -36,12 +36,12 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Lists;
 
-import iristk.system.Event;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.ints.IntLists;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 import se.kth.speech.coin.tangrams.iristk.EventTypeMatcher;
+import se.kth.speech.coin.tangrams.iristk.GameEvent;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 import se.kth.speech.coin.tangrams.iristk.events.HashableGameStateDescription;
 import se.kth.speech.coin.tangrams.iristk.events.Move;
@@ -75,7 +75,8 @@ public final class GameContext {
 		return result;
 	}
 
-	private static Stream<Event> getEventsDescendingOrder(final NavigableMap<?, ? extends List<Event>> map) {
+	private static Stream<GameEvent> getEventsDescendingOrder(
+			final NavigableMap<?, ? extends List<GameEvent>> map) {
 		return map.descendingMap().values().stream().map(Lists::reverse).flatMap(List::stream);
 	}
 
@@ -126,7 +127,7 @@ public final class GameContext {
 	}
 
 	/**
-	 * Finds the last {@link Event} representing a given
+	 * Finds the last {@link GameEvent} representing a given
 	 * {@link GameManagementEvent} in chronological order, i.e.&nbsp;the
 	 * &ldquo;last&rdquo; matching event preceding the time in the game
 	 * represented by this {@link GameContext} instance.
@@ -135,14 +136,14 @@ public final class GameContext {
 	 *            The {@link GameManagementEvent} to match.
 	 * @return An {@link Optional} containing the last matching event, if any.
 	 */
-	public Optional<Event> findLastEvent(final GameManagementEvent eventType) {
+	public Optional<GameEvent> findLastEvent(final GameManagementEvent eventType) {
 		final EventTypeMatcher matcher = EVENT_TYPE_MATCHERS.get(eventType);
 		return findLastEvent(matcher);
 	}
 
 	/**
-	 * Finds the last {@link Event} matching a given {@link Predicate} in
-	 * chronological order, i.e.&nbsp;the &ldquo;last&rdquo; matching event
+	 * Finds the last {@link GameEvent} matching a given {@link Predicate}
+	 * in chronological order, i.e.&nbsp;the &ldquo;last&rdquo; matching event
 	 * preceding the time in the game represented by this {@link GameContext}
 	 * instance.
 	 *
@@ -150,16 +151,16 @@ public final class GameContext {
 	 *            A {@link Predicate} matching the event to find.
 	 * @return An {@link Optional} containing the last matching event, if any.
 	 */
-	public Optional<Event> findLastEvent(final Predicate<? super Event> matcher) {
-		final NavigableMap<LocalDateTime, List<Event>> timedEvents = getPrecedingEvents();
+	public Optional<GameEvent> findLastEvent(final Predicate<? super GameEvent> matcher) {
+		final NavigableMap<LocalDateTime, List<GameEvent>> timedEvents = getPrecedingEvents();
 		// Look for the last matching event (iterating
 		// backwards)
-		final Stream<Event> eventsDescTime = getEventsDescendingOrder(timedEvents);
+		final Stream<GameEvent> eventsDescTime = getEventsDescendingOrder(timedEvents);
 		return eventsDescTime.filter(matcher).findFirst();
 	}
 
 	/**
-	 * Finds the last {@link Event} representing a given
+	 * Finds the last {@link GameEvent} representing a given
 	 * {@link GameManagementEvent} in chronological order, i.e.&nbsp;the
 	 * &ldquo;last&rdquo; matching event preceding the time in the game
 	 * represented by this {@link GameContext} instance.
@@ -174,7 +175,7 @@ public final class GameContext {
 	}
 
 	/**
-	 * Finds the distance to the last {@link Event} matching a given
+	 * Finds the distance to the last {@link GameEvent} matching a given
 	 * {@link Predicate} in chronological order, i.e.&nbsp;the
 	 * &ldquo;last&rdquo; matching event preceding the time in the game
 	 * represented by this {@link GameContext} instance; The distance is
@@ -187,21 +188,22 @@ public final class GameContext {
 	 * @return An {@link OptionalInt} containing the distance to the last
 	 *         matching event, if any.
 	 */
-	public OptionalInt findLastEventDistance(final Predicate<? super Event> matcher) {
-		final NavigableMap<LocalDateTime, List<Event>> timedEvents = getPrecedingEvents();
+	public OptionalInt findLastEventDistance(final Predicate<? super GameEvent> matcher) {
+		final NavigableMap<LocalDateTime, List<GameEvent>> timedEvents = getPrecedingEvents();
 		// Look for the last time the event was seen (iterating
 		// backwards)
-		final Stream<Event> eventsDescTime = getEventsDescendingOrder(timedEvents);
+		final Stream<GameEvent> eventsDescTime = getEventsDescendingOrder(timedEvents);
 		return findFirstMatchingDistance(eventsDescTime, matcher);
 	}
 
 	public Optional<Integer> findLastSelectedEntityId() {
-		final String moveAttrName = GameManagementEvent.Attribute.MOVE.toString();
+		final GameManagementEvent.Attribute moveAttr = GameManagementEvent.Attribute.MOVE;
 		// NOTE: This finds turn completion as well as next-turn submission
 		// events
-		final Optional<Event> lastSelectionEvent = findLastEvent(event -> event.has(moveAttrName));
+		final Optional<GameEvent> lastSelectionEvent = findLastEvent(
+				event -> event.getGameAttrs().containsKey(moveAttr));
 		return lastSelectionEvent.map(event -> {
-			final Move move = (Move) event.get(moveAttrName);
+			final Move move = (Move) event.getGameAttrs().get(moveAttr);
 			return move.getPieceId();
 		});
 	}
@@ -227,11 +229,11 @@ public final class GameContext {
 		return Duration.between(gameStartTime, time);
 	}
 
-	public NavigableMap<LocalDateTime, List<Event>> getPrecedingEvents() {
+	public NavigableMap<LocalDateTime, List<GameEvent>> getPrecedingEvents() {
 		return history.getEvents().headMap(time, true);
 	}
 
-	public Stream<Event> getPrecedingEventsDescendingOrder() {
+	public Stream<GameEvent> getPrecedingEventsDescendingOrder() {
 		return getEventsDescendingOrder(getPrecedingEvents());
 	}
 

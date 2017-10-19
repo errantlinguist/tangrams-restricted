@@ -51,7 +51,6 @@ import iristk.system.Event;
 import se.kth.speech.TimestampArithmetic;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.coin.tangrams.iristk.EventTimes;
-import se.kth.speech.coin.tangrams.iristk.EventTypeMatcher;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 import se.kth.speech.coin.tangrams.iristk.io.HatIO;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEventReader;
@@ -121,8 +120,8 @@ final class SegmentTimedUtteranceWriter { // NO_UCD (use default)
 
 	private static final String EVENT_LOG_OPT_NAME = "l";
 
-	private static final Predicate<Event> INITIAL_EVENT_PREDICATE = new EventTypeMatcher(
-			GameManagementEvent.GAME_READY_RESPONSE);
+	private static final Predicate<Event> INITIAL_EVENT_PREDICATE = event -> GameManagementEvent.GAME_READY_RESPONSE
+			.equals(GameManagementEvent.getEventType(event.getName()));
 
 	private static final String INITIAL_TIMESTAMP_OPT_NAME = "t";
 

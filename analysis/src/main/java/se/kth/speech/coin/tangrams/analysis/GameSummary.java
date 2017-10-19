@@ -24,10 +24,9 @@ import java.util.ListIterator;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import iristk.system.Event;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
-import se.kth.speech.coin.tangrams.iristk.EventTimes;
+import se.kth.speech.coin.tangrams.iristk.GameEvent;
 
 final class GameSummary {
 
@@ -58,7 +57,7 @@ final class GameSummary {
 	GameSummary(final GameHistory history, final List<EventDialogue> diags) {
 		final int lastDiagEndIdx = findIncompleteDialogueTailStartIndex(diags);
 		final List<EventDialogue> completedDiags;
-		final Event gameOverEvent;
+		final GameEvent gameOverEvent;
 		if (lastDiagEndIdx < diags.size()) {
 			completedDiags = diags.subList(0, lastDiagEndIdx);
 			final EventDialogue firstIncompleteDiag = diags.get(lastDiagEndIdx);
@@ -72,7 +71,7 @@ final class GameSummary {
 		uttsGetter = () -> getUtterances(completedDiags);
 
 		final LocalDateTime gameStart = history.getStartTime();
-		final LocalDateTime lastTurnRequestTime = EventTimes.parseEventTime(gameOverEvent.getTime());
+		final LocalDateTime lastTurnRequestTime = gameOverEvent.getTime();
 		duration = Duration.between(gameStart, lastTurnRequestTime);
 	}
 
