@@ -16,6 +16,8 @@
 */
 package se.kth.speech.io;
 
+import javax.xml.bind.JAXBException;
+
 public class RuntimeJAXBException extends RuntimeException {
 
 	/**
@@ -27,21 +29,21 @@ public class RuntimeJAXBException extends RuntimeException {
 		super();
 	}
 
+	public RuntimeJAXBException(final JAXBException cause) {
+		super(cause);
+	}
+
 	public RuntimeJAXBException(final String message) {
 		super(message);
 	}
 
-	public RuntimeJAXBException(final String message, final Throwable cause) {
+	public RuntimeJAXBException(final String message, final JAXBException cause) {
 		super(message, cause);
 	}
 
-	public RuntimeJAXBException(final String message, final Throwable cause, final boolean enableSuppression,
+	public RuntimeJAXBException(final String message, final JAXBException cause, final boolean enableSuppression,
 			final boolean writableStackTrace) {
 		super(message, cause, enableSuppression, writableStackTrace);
-	}
-
-	public RuntimeJAXBException(final Throwable cause) {
-		super(cause);
 	}
 
 }
