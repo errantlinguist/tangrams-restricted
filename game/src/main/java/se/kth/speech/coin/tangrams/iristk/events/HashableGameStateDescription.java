@@ -23,7 +23,7 @@ import se.kth.speech.coin.tangrams.game.PlayerRole;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
- * @since 17 Oct 2017
+ * @since 19 Oct 2017
  *
  */
 public final class HashableGameStateDescription {
