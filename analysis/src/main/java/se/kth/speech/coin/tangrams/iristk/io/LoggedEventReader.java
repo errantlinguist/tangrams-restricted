@@ -139,7 +139,7 @@ public final class LoggedEventReader {
 			@Override
 			public SpatialMatrix<Integer> apply(final ModelDescription modelDescRecord) {
 				final SpatialMatrix<Integer> newInst = create(modelDescRecord);
-				return pool.compute(newInst, (key, oldInst) -> oldInst == null ? key : oldInst);
+				return pool.computeIfAbsent(newInst, Function.identity());
 			}
 
 			private SpatialMatrix<Integer> create(
@@ -161,7 +161,7 @@ public final class LoggedEventReader {
 			@Override
 			public ImageVisualizationInfo apply(final ImageVisualizationInfoDescription imgVizInfoDesc) {
 				final ImageVisualizationInfo newInst = imgVizInfoDesc.toHashable();
-				return pool.compute(newInst, (key, oldInst) -> oldInst == null ? key : oldInst);
+				return pool.computeIfAbsent(newInst, Function.identity());
 			}
 
 		};
@@ -174,7 +174,7 @@ public final class LoggedEventReader {
 			@Override
 			public SpatialRegion apply(final Area2D area) {
 				final SpatialRegion newInst = create(area);
-				return pool.compute(newInst, (key, oldInst) -> oldInst == null ? key : oldInst);
+				return pool.computeIfAbsent(newInst, Function.identity());
 			}
 
 			private SpatialRegion create(final Area2D area) {
@@ -192,7 +192,7 @@ public final class LoggedEventReader {
 			@Override
 			public Selection apply(final se.kth.speech.coin.tangrams.iristk.events.Selection selection) {
 				final Selection newInst = create(selection);
-				return pool.compute(newInst, (key, oldInst) -> oldInst == null ? key : oldInst);
+				return pool.computeIfAbsent(newInst, Function.identity());
 			}
 
 			private Selection create(final se.kth.speech.coin.tangrams.iristk.events.Selection selection) {
@@ -209,7 +209,7 @@ public final class LoggedEventReader {
 			@Override
 			public Move apply(final se.kth.speech.coin.tangrams.iristk.events.Move moveRecord) {
 				final Move newInst = create(moveRecord);
-				return pool.compute(newInst, (key, oldInst) -> oldInst == null ? key : oldInst);
+				return pool.computeIfAbsent(newInst, Function.identity());
 			}
 
 			private Move create(final se.kth.speech.coin.tangrams.iristk.events.Move moveRecord) {
