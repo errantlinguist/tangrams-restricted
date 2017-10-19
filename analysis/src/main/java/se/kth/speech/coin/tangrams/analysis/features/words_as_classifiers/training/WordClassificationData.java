@@ -77,7 +77,7 @@ public final class WordClassificationData {
 		final Instances classInstances = classInstancesFetcher.apply(wordClass);
 		instClassValues.forEach(instClassValue -> {
 			final Instance inst = instClassValue.getKey();
-			// NOTE: caching individual Instance instances could only reduce
+			// NOTE: Caching individual Instance instances could only reduce
 			// computation time and not memory footprint because
 			// "Instances.add(..)" actually performs a shallow copy of each
 			// Instance before adding it
