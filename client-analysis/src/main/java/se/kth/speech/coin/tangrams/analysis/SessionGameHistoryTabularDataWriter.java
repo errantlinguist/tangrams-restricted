@@ -46,11 +46,13 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NavigableMap;
+import java.util.NavigableSet;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.Properties;
 import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
@@ -105,7 +107,6 @@ import se.kth.speech.TimestampArithmetic;
 import se.kth.speech.coin.tangrams.TangramsClient;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionContextFactory;
-import se.kth.speech.coin.tangrams.analysis.features.ImageEdgeCounter;
 import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
 import se.kth.speech.coin.tangrams.game.Selection;
 import se.kth.speech.coin.tangrams.iristk.EventTypeMatcher;
@@ -481,14 +482,18 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 				final Git gitCommandFactory = createGitCommandFactory(gitRepoPath);
 				final SessionGameHistoryTabularDataWriter writer = new SessionGameHistoryTabularDataWriter(
 						EventDatum.CANONICAL_ORDERING, NULL_VALUE_REPR, gitCommandFactory);
+
+				final NavigableSet<Path> infiles = new TreeSet<>();
 				for (final Path inpath : inpaths) {
 					LOGGER.info("Looking for session data underneath \"{}\".", inpath);
-					final Iterable<Path> infiles = Files.walk(inpath, FileVisitOption.FOLLOW_LINKS)
-							.filter(Files::isRegularFile)
-							.filter(filePath -> filePath.getFileName().toString().endsWith(".properties"))::iterator;
-					for (final Path infile : infiles) {
-						writer.accept(infile);
-					}
+					Files.walk(inpath, FileVisitOption.FOLLOW_LINKS).filter(Files::isRegularFile)
+							.filter(filePath -> filePath.getFileName().toString().endsWith(".properties"))
+							.forEach(infiles::add);
+				}
+
+				final LoggedEventReader eventReader = new LoggedEventReader(infiles.size(), infiles.size() * 0);
+				for (final Path infile : infiles) {
+					writer.accept(infile, eventReader);
 				}
 			}
 		}
@@ -616,16 +621,15 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 				});
 	}
 
-	private void accept(final Path infile) throws IOException, JAXBException {
+	private void accept(final Path infile, final LoggedEventReader eventReader) throws IOException, JAXBException {
 		final SessionDataManager infileSessionData = SessionDataManager.create(infile);
-		final SessionGameManager sessionDiagMgr = new SessionGameManager(infileSessionData);
+		final SessionGameManager sessionDiagMgr = new SessionGameManager(infileSessionData, eventReader);
 		final SessionGame canonicalGame = sessionDiagMgr.getCanonicalGame();
 
 		final Path infileParentDir = infile.getParent();
 
 		final GameHistory history = canonicalGame.getHistory();
-		final EntityFeatureExtractionContextFactory extractionContextFactory = new EntityFeatureExtractionContextFactory(
-				new GameContextModelFactory(), new ImageEdgeCounter());
+		final EntityFeatureExtractionContextFactory extractionContextFactory = new EntityFeatureExtractionContextFactory();
 		final EntityFeatureVectorDescriptionFactory entityFeatureVectorDescFactory = new EntityFeatureVectorDescriptionFactory(
 				new EntityFeature.Extractor(), EntityFeature.getCanonicalOrdering(), extractionContextFactory,
 				NULL_VALUE_REPR);

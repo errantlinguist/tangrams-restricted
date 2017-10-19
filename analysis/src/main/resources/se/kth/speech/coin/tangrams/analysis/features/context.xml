@@ -30,11 +30,6 @@
 
 	<bean id="entity-extraction-ctx-factory"
 		class="se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionContextFactory">
-		<constructor-arg>
-			<bean class="se.kth.speech.coin.tangrams.analysis.GameContextModelFactory">
-				<constructor-arg value="1" />
-			</bean>
-		</constructor-arg>
 	</bean>
 
 </beans>

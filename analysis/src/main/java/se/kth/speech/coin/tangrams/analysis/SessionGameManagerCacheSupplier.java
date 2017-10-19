@@ -17,6 +17,7 @@
 package se.kth.speech.coin.tangrams.analysis;
 
 import java.io.IOException;
+import java.lang.ref.SoftReference;
 import java.util.function.Supplier;
 
 import javax.inject.Named;
@@ -27,6 +28,7 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 
 import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
+import se.kth.speech.coin.tangrams.iristk.io.LoggedEventReader;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -48,10 +50,13 @@ public final class SessionGameManagerCacheSupplier
 
 				@Override
 				public SessionGameManager load(final SessionDataManager key) throws IOException, JAXBException {
-					return new SessionGameManager(key);
+					final LoggedEventReader eventReader = getEventReader();
+					return new SessionGameManager(key, eventReader);
 				}
 
 			});
+
+	private volatile SoftReference<LoggedEventReader> readerRef = new SoftReference<>(null);
 
 	/*
 	 * (non-Javadoc)
@@ -61,6 +66,20 @@ public final class SessionGameManagerCacheSupplier
 	@Override
 	public LoadingCache<SessionDataManager, SessionGameManager> get() {
 		return instances;
+	}
+
+	private LoggedEventReader getEventReader() {
+		LoggedEventReader result = readerRef.get();
+		if (result == null) {
+			synchronized (this) {
+				result = readerRef.get();
+				if (result == null) {
+					result = new LoggedEventReader(ESTIMATED_UNIQUE_SESSION_COUNT, ESTIMATED_UNIQUE_SESSION_COUNT * 10);
+					readerRef = new SoftReference<>(result);
+				}
+			}
+		}
+		return result;
 	}
 
 }

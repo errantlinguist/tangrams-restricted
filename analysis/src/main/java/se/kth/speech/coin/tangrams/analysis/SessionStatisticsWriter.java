@@ -71,6 +71,7 @@ import com.google.common.cache.LoadingCache;
 import se.kth.speech.TimestampArithmetic;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
+import se.kth.speech.coin.tangrams.iristk.io.LoggedEventReader;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -169,9 +170,9 @@ final class SessionStatisticsWriter
 		main(cl);
 	}
 
-	private static NavigableMap<String, GameSummary> createSessionGameSummaries(final SessionDataManager sessionData)
-			throws JAXBException, IOException {
-		final SessionGameManager sessionDiagMgr = new SessionGameManager(sessionData);
+	private static NavigableMap<String, GameSummary> createSessionGameSummaries(final SessionDataManager sessionData,
+			final LoggedEventReader eventReader) throws JAXBException, IOException {
+		final SessionGameManager sessionDiagMgr = new SessionGameManager(sessionData, eventReader);
 		final SessionGame canonicalGame = sessionDiagMgr.getCanonicalGame();
 		final GameSummary summary = new GameSummary(canonicalGame.getHistory(), canonicalGame.getEventDialogues());
 		final NavigableMap<String, GameSummary> result = new TreeMap<>();
@@ -200,9 +201,10 @@ final class SessionStatisticsWriter
 						String.format("Usage: %s INPATHS...", SessionStatisticsWriter.class.getSimpleName()));
 			} else {
 				final NavigableMap<Path, NavigableMap<String, GameSummary>> sessionSummaries = new TreeMap<>();
+				final LoggedEventReader eventReader = new LoggedEventReader(inpaths.length, inpaths.length * 10);
 				for (final Path inpath : inpaths) {
 					LOGGER.info("Will read batch job data from \"{}\".", inpath);
-					putSessionSummaries(inpath, sessionSummaries);
+					putSessionSummaries(inpath, sessionSummaries, eventReader);
 				}
 
 				final Function<Duration, String> durationFormatter = parseDurationFormatter();
@@ -241,8 +243,8 @@ final class SessionStatisticsWriter
 	}
 
 	private static void putSessionSummaries(final Path inpath,
-			final Map<? super Path, ? super NavigableMap<String, GameSummary>> sessionSummaries)
-			throws JAXBException, IOException {
+			final Map<? super Path, ? super NavigableMap<String, GameSummary>> sessionSummaries,
+			final LoggedEventReader eventReader) throws JAXBException, IOException {
 		final Iterable<Path> infilePaths = Files.walk(inpath, FileVisitOption.FOLLOW_LINKS).filter(Files::isRegularFile)
 				.filter(filePath -> filePath.getFileName().toString().endsWith(".properties"))::iterator;
 		for (final Path infilePath : infilePaths) {
@@ -252,7 +254,8 @@ final class SessionStatisticsWriter
 				props.load(propsInstream);
 			}
 			final SessionDataManager sessionData = SessionDataManager.create(infilePath);
-			final NavigableMap<String, GameSummary> sessionSummary = createSessionGameSummaries(sessionData);
+			final NavigableMap<String, GameSummary> sessionSummary = createSessionGameSummaries(sessionData,
+					eventReader);
 			sessionSummaries.put(infilePath, sessionSummary);
 		}
 	}

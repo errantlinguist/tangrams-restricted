@@ -45,32 +45,7 @@ public final class SessionGame {
 	private static final Set<GameManagementEvent> DEFAULT_EVENT_DIAG_DELIMITERS = EnumSet
 			.of(GameManagementEvent.NEXT_TURN_REQUEST);
 
-	private static final int ESTIMATED_UNIQUE_GAME_COUNT;
-
-	private static final int ESTIMATED_UNIQUE_IMAGE_COUNT;
-
-	private static final LoggedEventReader EVENT_READER;
-
 	private static final Logger LOGGER = LoggerFactory.getLogger(SessionGame.class);
-
-	static {
-		ESTIMATED_UNIQUE_GAME_COUNT = 50;
-		ESTIMATED_UNIQUE_IMAGE_COUNT = 100;
-		EVENT_READER = new LoggedEventReader(ESTIMATED_UNIQUE_GAME_COUNT, ESTIMATED_UNIQUE_IMAGE_COUNT);
-	}
-
-	/**
-	 *
-	 * @param eventLogPath
-	 *            The {@link Path} to read the event log from.
-	 * @param utts
-	 *            The {@link Utterance utterances} for the session.
-	 * @throws IOException
-	 *             If an I/O error occurs while reading the event log.
-	 */
-	static SessionGame create(final Path eventLogPath, final List<Utterance> utts) throws IOException {
-		return create(eventLogPath, utts, DEFAULT_EVENT_DIAG_DELIMITERS);
-	}
 
 	/**
 	 *
@@ -88,12 +63,12 @@ public final class SessionGame {
 	 *             If an I/O error occurs while reading the event log.
 	 */
 	static SessionGame create(final Path eventLogPath, final List<Utterance> utts,
-			final BiFunction<? super ListIterator<Utterance>, ? super GameHistory, Stream<EventDialogue>> evtDiagFactory)
-			throws IOException {
+			final BiFunction<? super ListIterator<Utterance>, ? super GameHistory, Stream<EventDialogue>> evtDiagFactory,
+			final LoggedEventReader eventReader) throws IOException {
 		LOGGER.info("Reading game histories from \"{}\".", eventLogPath);
 		try (Stream<Event> eventStream = LoggedEventReader.readLoggedEvents(eventLogPath)) {
 			final List<Event> events = Arrays.asList(eventStream.toArray(Event[]::new));
-			return new SessionGame(events, utts, evtDiagFactory);
+			return new SessionGame(events, utts, evtDiagFactory, eventReader);
 		}
 	}
 
@@ -112,19 +87,31 @@ public final class SessionGame {
 	 *             If an I/O error occurs while reading the event log.
 	 */
 	static SessionGame create(final Path eventLogPath, final List<Utterance> utts,
-			final Collection<GameManagementEvent> eventDiagDelimiters) throws IOException {
-		return create(eventLogPath, utts, new EventDialogueFactory(new EventTypeMatcher(eventDiagDelimiters)));
+			final Collection<GameManagementEvent> eventDiagDelimiters, final LoggedEventReader eventReader)
+			throws IOException {
+		return create(eventLogPath, utts, new EventDialogueFactory(new EventTypeMatcher(eventDiagDelimiters)),
+				eventReader);
+	}
+
+	/**
+	 *
+	 * @param eventLogPath
+	 *            The {@link Path} to read the event log from.
+	 * @param utts
+	 *            The {@link Utterance utterances} for the session.
+	 * @throws IOException
+	 *             If an I/O error occurs while reading the event log.
+	 */
+	static SessionGame create(final Path eventLogPath, final List<Utterance> utts, final LoggedEventReader eventReader)
+			throws IOException {
+		return create(eventLogPath, utts, DEFAULT_EVENT_DIAG_DELIMITERS, eventReader);
 	}
 
 	private final List<EventDialogue> eventDialogues;
 
-	private final List<Event> events;
-
 	private final String gameId;
 
 	private final GameHistory history;
-
-	private final List<Utterance> utts;
 
 	/**
 	 *
@@ -140,10 +127,9 @@ public final class SessionGame {
 	 *            utterances were made.
 	 */
 	public SessionGame(final List<Event> events, final List<Utterance> utts,
-			final BiFunction<? super ListIterator<Utterance>, ? super GameHistory, Stream<EventDialogue>> evtDiagFactory) {
-		this.events = Collections.unmodifiableList(events);
-		this.utts = Collections.unmodifiableList(utts);
-		final Map<String, GameHistory> gameHistories = EVENT_READER.createGameHistoryMap(events.stream());
+			final BiFunction<? super ListIterator<Utterance>, ? super GameHistory, Stream<EventDialogue>> evtDiagFactory,
+			final LoggedEventReader eventReader) {
+		final Map<String, GameHistory> gameHistories = eventReader.createGameHistoryMap(events.stream());
 		final Entry<String, GameHistory> gameIdHistory = GameHistory.ensureSingleGame(gameHistories);
 		gameId = gameIdHistory.getKey();
 		LOGGER.debug("Creating {} instance for game ID \"{}\".", SessionGame.class.getSimpleName(), gameId);
@@ -152,15 +138,49 @@ public final class SessionGame {
 				Arrays.asList(evtDiagFactory.apply(utts.listIterator(), history).toArray(EventDialogue[]::new)));
 	}
 
-	public List<EventDialogue> getEventDialogues() {
-		return eventDialogues;
+	/*
+	 * (non-Javadoc)
+	 *
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(final Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (!(obj instanceof SessionGame)) {
+			return false;
+		}
+		final SessionGame other = (SessionGame) obj;
+		if (eventDialogues == null) {
+			if (other.eventDialogues != null) {
+				return false;
+			}
+		} else if (!eventDialogues.equals(other.eventDialogues)) {
+			return false;
+		}
+		if (gameId == null) {
+			if (other.gameId != null) {
+				return false;
+			}
+		} else if (!gameId.equals(other.gameId)) {
+			return false;
+		}
+		if (history == null) {
+			if (other.history != null) {
+				return false;
+			}
+		} else if (!history.equals(other.history)) {
+			return false;
+		}
+		return true;
 	}
 
-	/**
-	 * @return the events
-	 */
-	public List<Event> getEvents() {
-		return events;
+	public List<EventDialogue> getEventDialogues() {
+		return eventDialogues;
 	}
 
 	/**
@@ -174,10 +194,18 @@ public final class SessionGame {
 		return history;
 	}
 
-	/**
-	 * @return the utts
+	/*
+	 * (non-Javadoc)
+	 *
+	 * @see java.lang.Object#hashCode()
 	 */
-	public List<Utterance> getUtterances() {
-		return utts;
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + (eventDialogues == null ? 0 : eventDialogues.hashCode());
+		result = prime * result + (gameId == null ? 0 : gameId.hashCode());
+		result = prime * result + (history == null ? 0 : history.hashCode());
+		return result;
 	}
 }

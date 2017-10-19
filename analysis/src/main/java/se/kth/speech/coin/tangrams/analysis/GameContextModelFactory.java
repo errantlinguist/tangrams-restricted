@@ -80,6 +80,10 @@ public final class GameContextModelFactory implements Function<GameContext, Spat
 		eventsToApply.forEachOrdered(event -> applyEvent(model, event));
 	}
 
+	public GameContextModelFactory() {
+
+	}
+
 	/*
 	 * (non-Javadoc)
 	 *

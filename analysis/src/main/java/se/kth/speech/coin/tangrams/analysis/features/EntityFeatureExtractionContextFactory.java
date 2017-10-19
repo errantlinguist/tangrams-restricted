@@ -23,6 +23,7 @@ import se.kth.speech.IntArrays;
 import se.kth.speech.SpatialMatrix;
 import se.kth.speech.SpatialRegion;
 import se.kth.speech.coin.tangrams.analysis.GameContext;
+import se.kth.speech.coin.tangrams.analysis.GameContextModelFactory;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 
 public final class EntityFeatureExtractionContextFactory {
@@ -30,6 +31,10 @@ public final class EntityFeatureExtractionContextFactory {
 	private final Function<? super GameContext, SpatialMatrix<Integer>> gameModelFactory;
 
 	private final ToIntFunction<? super String> namedResourceEdgeCountFactory;
+
+	public EntityFeatureExtractionContextFactory() {
+		this(new GameContextModelFactory(), new ImageEdgeCounter());
+	}
 
 	public EntityFeatureExtractionContextFactory(
 			final Function<? super GameContext, SpatialMatrix<Integer>> gameModelFactory,

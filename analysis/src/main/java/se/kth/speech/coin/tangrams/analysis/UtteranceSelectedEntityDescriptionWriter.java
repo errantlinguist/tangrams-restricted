@@ -60,8 +60,8 @@ import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.coin.tangrams.analysis.dialogues.UtteranceDialogueRepresentationStringFactory;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionContextFactory;
-import se.kth.speech.coin.tangrams.analysis.features.ImageEdgeCounter;
 import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
+import se.kth.speech.coin.tangrams.iristk.io.LoggedEventReader;
 import se.kth.speech.coin.tangrams.view.UserPrompts;
 import se.kth.speech.io.FileNames;
 import se.kth.speech.io.RuntimeJAXBException;
@@ -355,29 +355,29 @@ final class UtteranceSelectedEntityDescriptionWriter { // NO_UCD (use default)
 	}
 
 	public void accept(final Path inpath) throws JAXBException, IOException {
-		final Iterable<Path> infilePaths = Files.walk(inpath, FileVisitOption.FOLLOW_LINKS).filter(Files::isRegularFile)
-				.filter(filePath -> filePath.getFileName().toString().endsWith(".properties"))::iterator;
+		final Path[] infilePaths = Files.walk(inpath, FileVisitOption.FOLLOW_LINKS).filter(Files::isRegularFile)
+				.filter(filePath -> filePath.getFileName().toString().endsWith(".properties")).toArray(Path[]::new);
+		final LoggedEventReader eventReader = new LoggedEventReader(infilePaths.length, infilePaths.length * 10);
 		for (final Path infilePath : infilePaths) {
 			LOGGER.info("Reading batch job properties from \"{}\".", infilePath);
 			final String outfileInfix = createOutfileInfix(infilePath);
 			final SessionDataManager sessionData = SessionDataManager.create(infilePath);
-			accept(sessionData, outfileNamePrefix + outfileInfix);
+			accept(sessionData, outfileNamePrefix + outfileInfix, eventReader);
 		}
 	}
 
-	private void accept(final SessionDataManager sessionData, final String outfileNamePrefix)
-			throws JAXBException, IOException {
-		final SessionGameManager sessionEvtDiagMgr = new SessionGameManager(sessionData);
-		final EntityFeatureExtractionContextFactory extractionContextFactory = new EntityFeatureExtractionContextFactory(
-				new GameContextModelFactory(), new ImageEdgeCounter());
+	private void accept(final SessionDataManager sessionData, final String outfileNamePrefix,
+			final LoggedEventReader eventReader) throws JAXBException, IOException {
+		final SessionGameManager sessionEvtDiagMgr = new SessionGameManager(sessionData, eventReader);
+		final EntityFeatureExtractionContextFactory extractionContextFactory = new EntityFeatureExtractionContextFactory();
 		final EntityFeatureVectorDescriptionFactory entityFeatureVectorDescFactory = new EntityFeatureVectorDescriptionFactory(
 				extractor, featuresToDescribe, extractionContextFactory, NULL_VALUE_REPR);
 		final UtteranceTabularDataWriter gameWriter = new UtteranceTabularDataWriter(entityFeatureVectorDescFactory,
 				uttDiagReprFactory, NULL_VALUE_REPR, strict);
 
 		final Path extantOutdir = ensureExtantOutdir();
-		for (final Entry<String, SessionGame> playerPerspectiveGame : sessionEvtDiagMgr.createPlayerPerspectiveGameMap()
-				.entrySet()) {
+		for (final Entry<String, SessionGame> playerPerspectiveGame : sessionEvtDiagMgr
+				.createPlayerPerspectiveGameMap(eventReader).entrySet()) {
 			final SessionGame sessionGame = playerPerspectiveGame.getValue();
 			final String playerId = playerPerspectiveGame.getKey();
 			final String gameId = sessionGame.getGameId();
