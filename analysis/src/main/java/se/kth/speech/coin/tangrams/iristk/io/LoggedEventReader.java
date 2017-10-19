@@ -429,12 +429,18 @@ public final class LoggedEventReader {
 			if (attrValue != null) {
 				final Object transformedValue;
 				switch (gameAttr) {
+				case GAME_ID:
+					transformedValue = ((String) attrValue).intern();
+					break;
 				case GAME_STATE:
 					transformedValue = createGameStateDesc(
 							(se.kth.speech.coin.tangrams.iristk.events.GameStateDescription) attrValue);
 					break;
 				case MOVE:
 					transformedValue = moveFactory.apply((se.kth.speech.coin.tangrams.iristk.events.Move) attrValue);
+					break;
+				case PLAYER_ID:
+					transformedValue = ((String) attrValue).intern();
 					break;
 				case SELECTION:
 					transformedValue = selectionFactory
@@ -444,9 +450,7 @@ public final class LoggedEventReader {
 					transformedValue = EventTimes.parseEventTime((String) attrValue);
 					break;
 				default:
-					// By default, don't transform the value
-					transformedValue = attrValue;
-					break;
+					throw new AssertionError(String.format("No logic for handling case %s.", gameAttr));
 				}
 				result.put(gameAttr, transformedValue);
 			}
@@ -455,8 +459,10 @@ public final class LoggedEventReader {
 	}
 
 	private GameEvent createGameEvent(final Event event) {
-		return new GameEvent(event.getName(), event.getSender(), event.getId(), event.getString("system"),
-				EventTimes.parseEventTime(event.getTime()), createGameAttrMap(event));
+		final String system = event.getString("system");
+		return new GameEvent(event.getName().intern(), event.getSender().intern(), event.getId(),
+				system == null ? system : system.intern(), EventTimes.parseEventTime(event.getTime()),
+				createGameAttrMap(event));
 	}
 
 	private GameStateDescription createGameStateDesc(
