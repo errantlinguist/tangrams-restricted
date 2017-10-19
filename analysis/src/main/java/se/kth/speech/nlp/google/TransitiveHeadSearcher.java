@@ -194,7 +194,6 @@ final class TransitiveHeadSearcher implements Function<Token, TransitiveHeadSear
 			} while (currentToken.hasDependencyEdge());
 			wasHeadFound = wasIntermediateHeadFound;
 
-			mutableChain.trimToSize();
 			final int totalChainLength = mutableChain.size();
 			// Start at index 1 because the start of the chain will be added to
 			// the lookup table outside of this method
