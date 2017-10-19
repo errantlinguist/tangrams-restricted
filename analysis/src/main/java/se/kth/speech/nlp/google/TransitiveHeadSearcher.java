@@ -16,24 +16,29 @@
 */
 package se.kth.speech.nlp.google;
 
-import java.util.Arrays;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.function.Predicate;
 
 import com.google.cloud.language.v1.DependencyEdge;
 import com.google.cloud.language.v1.Token;
+import com.google.common.collect.Sets;
 
 final class TransitiveHeadSearcher implements Function<Token, TransitiveHeadSearcher.Result> {
 
 	static final class Result {
 
-		private final Token[] chain;
+		private final List<Token> chain;
 
 		private final boolean wasHeadFound;
 
-		private Result(final Token[] chain, final boolean wasHeadFound) {
+		private Result(final List<Token> chain, final boolean wasHeadFound) {
 			this.chain = chain;
 			this.wasHeadFound = wasHeadFound;
 		}
@@ -55,7 +60,11 @@ final class TransitiveHeadSearcher implements Function<Token, TransitiveHeadSear
 				return false;
 			}
 			final Result other = (Result) obj;
-			if (!Arrays.equals(chain, other.chain)) {
+			if (chain == null) {
+				if (other.chain != null) {
+					return false;
+				}
+			} else if (!chain.equals(other.chain)) {
 				return false;
 			}
 			if (wasHeadFound != other.wasHeadFound) {
@@ -73,7 +82,7 @@ final class TransitiveHeadSearcher implements Function<Token, TransitiveHeadSear
 		public int hashCode() {
 			final int prime = 31;
 			int result = 1;
-			result = prime * result + Arrays.hashCode(chain);
+			result = prime * result + (chain == null ? 0 : chain.hashCode());
 			result = prime * result + (wasHeadFound ? 1231 : 1237);
 			return result;
 		}
@@ -85,9 +94,9 @@ final class TransitiveHeadSearcher implements Function<Token, TransitiveHeadSear
 		 */
 		@Override
 		public String toString() {
-			final StringBuilder builder = new StringBuilder((chain.length + 1) * 16);
+			final StringBuilder builder = new StringBuilder((chain.size() + 1) * 16);
 			builder.append("Result [chain=");
-			builder.append(Arrays.toString(chain));
+			builder.append(chain);
 			builder.append(", wasHeadFound=");
 			builder.append(wasHeadFound);
 			builder.append("]");
@@ -97,7 +106,7 @@ final class TransitiveHeadSearcher implements Function<Token, TransitiveHeadSear
 		/**
 		 * @return the chain
 		 */
-		Token[] getChain() {
+		List<Token> getChain() {
 			return chain;
 		}
 
@@ -109,7 +118,7 @@ final class TransitiveHeadSearcher implements Function<Token, TransitiveHeadSear
 		}
 	}
 
-	private static final Token[] EMPTY_ARRAY = new Token[0];
+	private static final List<Token> EMPTY_LIST = Collections.emptyList();
 
 	private final Predicate<? super Token> headTokenFilter;
 
@@ -117,11 +126,14 @@ final class TransitiveHeadSearcher implements Function<Token, TransitiveHeadSear
 
 	private final IntFunction<Token> tokenByIdxGetter;
 
+	private final int expectedMaxChainLength;
+
 	TransitiveHeadSearcher(final IntFunction<Token> tokenByIdxGetter, final Predicate<? super Token> headTokenFilter,
-			final Map<Token, Result> lookupTable) {
+			final Map<Token, Result> lookupTable, final int expectedMaxChainLength) {
 		this.tokenByIdxGetter = tokenByIdxGetter;
 		this.headTokenFilter = headTokenFilter;
 		this.lookupTable = lookupTable;
+		this.expectedMaxChainLength = expectedMaxChainLength;
 	}
 
 	/*
@@ -135,24 +147,70 @@ final class TransitiveHeadSearcher implements Function<Token, TransitiveHeadSear
 	}
 
 	private Result search(final Token token) {
-		final Token[] chain;
-		boolean wasHeadFound;
+		final List<Token> chain;
+		final boolean wasHeadFound;
 		if (headTokenFilter.test(token)) {
-			chain = new Token[] { token };
+			chain = Collections.singletonList(token);
 			wasHeadFound = true;
 		} else if (token.hasDependencyEdge()) {
-			final DependencyEdge dependencyEdge = token.getDependencyEdge();
-			final int headTokenIdx = dependencyEdge.getHeadTokenIndex();
-			final Token headToken = tokenByIdxGetter.apply(headTokenIdx);
-			final Result intermediateResult = apply(headToken);
-			final Token[] intermediateChain = intermediateResult.getChain();
-			final int intermediateChainLength = intermediateChain.length;
-			chain = new Token[intermediateChainLength + 1];
-			chain[0] = token;
-			System.arraycopy(intermediateChain, 0, chain, 1, intermediateChainLength);
-			wasHeadFound = intermediateResult.wasHeadFound();
+			final List<Token> mutableChain = new ArrayList<>(expectedMaxChainLength);
+			mutableChain.add(token);
+			final Set<Token> visitedTokens = Sets.newHashSetWithExpectedSize(expectedMaxChainLength);
+			visitedTokens.add(token);
+
+			Token currentToken = token;
+			boolean wasIntermediateHeadFound = false;
+			int newChainNodesTraversed = 0;
+			do {
+				final DependencyEdge dependencyEdge = currentToken.getDependencyEdge();
+				final int intermediateTokenIdx = dependencyEdge.getHeadTokenIndex();
+				final Token intermediateToken = tokenByIdxGetter.apply(intermediateTokenIdx);
+				final Result intermediateResult = lookupTable.get(intermediateToken);
+				if (intermediateResult == null) {
+					// No memoized intermediate results were found; Compute the
+					// path
+					if (visitedTokens.add(intermediateToken)) {
+						mutableChain.add(intermediateToken);
+						newChainNodesTraversed++;
+						if (wasIntermediateHeadFound = headTokenFilter.test(intermediateToken)) {
+							// The head was found; stop searching
+							break;
+						} else {
+							currentToken = intermediateToken;
+						}
+					} else {
+						// A cycle was found; No head can ever be reached
+						wasIntermediateHeadFound = false;
+						break;
+					}
+
+				} else {
+					// The rest of the chain has already been traversed
+					mutableChain.addAll(intermediateResult.getChain());
+					wasIntermediateHeadFound = intermediateResult.wasHeadFound();
+					break;
+				}
+
+			} while (currentToken.hasDependencyEdge());
+
+			wasHeadFound = wasIntermediateHeadFound;
+
+			final int totalChainLength = mutableChain.size();
+			// Start at index 1 because the start of the chain will be added to
+			// the lookup table outside of this method
+			final ListIterator<Token> intermediateTokenIter = mutableChain.listIterator(1);
+			for (int newChainNodeIterNo = 0; newChainNodeIterNo < newChainNodesTraversed; ++newChainNodeIterNo) {
+				final int intermediateTokenIdx = intermediateTokenIter.nextIndex();
+				final Token intermediateToken = intermediateTokenIter.next();
+				final List<Token> intermediateChain = mutableChain.subList(intermediateTokenIdx, totalChainLength);
+				final Result oldIntermediateResult = lookupTable.put(intermediateToken,
+						new Result(Collections.unmodifiableList(intermediateChain), wasHeadFound));
+				assert oldIntermediateResult == null;
+			}
+
+			chain = Collections.unmodifiableList(mutableChain);
 		} else {
-			chain = EMPTY_ARRAY;
+			chain = EMPTY_LIST;
 			wasHeadFound = false;
 		}
 
