@@ -26,6 +26,8 @@ import java.util.Properties;
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 
+import se.kth.speech.io.RuntimeJAXBException;
+
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
  * @since Jul 3, 2017
@@ -57,7 +59,7 @@ public final class HatIO {
 						result = JAXBContext.newInstance(ANNOT_CONTEXT);
 						jc = new SoftReference<>(result);
 					} catch (final JAXBException e) {
-						throw new AssertionError(e);
+						throw new RuntimeJAXBException(e);
 					}
 				}
 			}

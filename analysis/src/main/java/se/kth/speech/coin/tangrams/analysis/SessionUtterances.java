@@ -36,6 +36,7 @@ import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
 import se.kth.speech.coin.tangrams.iristk.io.HatIO;
 import se.kth.speech.hat.xsd.Annotation;
 import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
+import se.kth.speech.io.RuntimeJAXBException;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -56,7 +57,7 @@ final class SessionUtterances {
 			try {
 				return HatIO.fetchContext().createUnmarshaller();
 			} catch (final JAXBException e) {
-				throw new AssertionError(e);
+				throw new RuntimeJAXBException(e);
 			}
 		}
 
