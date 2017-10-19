@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
@@ -496,13 +497,18 @@ public final class CrossValidator {
 			// utterances processed for the given dialogue
 			final Utterance firstUtt = allUtts.get(0);
 			final GameContext uttCtx = UtteranceGameContexts.createSingleContext(firstUtt, history);
-			final Optional<Int2DoubleMap> optReferentConfidenceVals = diagClassifier.apply(transformedDiag, uttCtx);
-			if (optReferentConfidenceVals.isPresent()) {
-				final Int2DoubleMap referentConfidenceVals = optReferentConfidenceVals.get();
-				result = uttCtx.findLastSelectedEntityId().map(goldStandardEntityId -> {
-					return new EventDialogueTestResults(referentConfidenceVals, goldStandardEntityId, transformedDiag,
-							uttDiag.getUtterances().size());
-				});
+			final OptionalInt optLastSelectedEntityId = uttCtx.findLastSelectedEntityId();
+			if (optLastSelectedEntityId.isPresent()) {
+				final Optional<Int2DoubleMap> optReferentConfidenceVals = diagClassifier.apply(transformedDiag, uttCtx);
+				if (optReferentConfidenceVals.isPresent()) {
+					final Int2DoubleMap referentConfidenceVals = optReferentConfidenceVals.get();
+					final int goldStandardEntityId = optLastSelectedEntityId.getAsInt();
+					result = Optional.of(new EventDialogueTestResults(referentConfidenceVals, goldStandardEntityId,
+							transformedDiag, uttDiag.getUtterances().size()));
+
+				} else {
+					result = Optional.empty();
+				}
 			} else {
 				result = Optional.empty();
 			}

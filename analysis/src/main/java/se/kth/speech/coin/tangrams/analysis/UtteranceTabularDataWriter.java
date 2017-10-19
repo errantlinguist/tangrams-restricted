@@ -48,10 +48,10 @@ import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfoTableRowCellFactory;
+import se.kth.speech.coin.tangrams.game.Move;
 import se.kth.speech.coin.tangrams.iristk.EventTimes;
 import se.kth.speech.coin.tangrams.iristk.GameEvent;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
-import se.kth.speech.coin.tangrams.iristk.events.Move;
 
 final class UtteranceTabularDataWriter {
 
@@ -282,14 +282,12 @@ final class UtteranceTabularDataWriter {
 		IMG_VIZ_INFO_ATTRS_TO_WRITE = ImageVisualizationInfoTableRowCellFactory.Attribute.getCanonicalOrdering();
 	}
 
-	private static BigDecimal calculateDecimalSecondDifference(final GameEvent firstEvt,
-			final GameEvent nextEvt) {
+	private static BigDecimal calculateDecimalSecondDifference(final GameEvent firstEvt, final GameEvent nextEvt) {
 		final LocalDateTime firstTime = firstEvt.getTime();
 		return calculateDecimalSecondDifference(firstTime, nextEvt);
 	}
 
-	private static BigDecimal calculateDecimalSecondDifference(final LocalDateTime firstTime,
-			final GameEvent nextEvt) {
+	private static BigDecimal calculateDecimalSecondDifference(final LocalDateTime firstTime, final GameEvent nextEvt) {
 		final LocalDateTime nextTime = nextEvt.getTime();
 		return TimestampArithmetic.calculateDecimalSecondDifference(firstTime, nextTime, EVT_TIME_DIFF_CTX);
 	}
@@ -477,7 +475,7 @@ final class UtteranceTabularDataWriter {
 		if (move == null) {
 			result = imgVizInfoDescFactory.getBlankDescription().stream();
 		} else {
-			final Integer selectedPieceId = move.getPieceId();
+			final int selectedPieceId = move.getPieceId();
 			result = imgVizInfoDescFactory.createDescription(selectedPieceId, gameStartTime, imgVizInfoData);
 		}
 		return result;

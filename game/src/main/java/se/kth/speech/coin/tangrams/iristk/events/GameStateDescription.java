@@ -20,7 +20,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.HashBiMap;
@@ -106,14 +105,6 @@ public final class GameStateDescription extends Record {
 	 */
 	public long getSeed() {
 		return Long.parseLong(seed);
-	}
-
-	public boolean isEquivalent(final GameStateDescription other) {
-		return allowFailedPlacements() == other.allowFailedPlacements()
-				&& Objects.equals(getImageVisualizationInfoDescription(), other.getImageVisualizationInfoDescription())
-				&& Objects.equals(getModelDescription(), other.getModelDescription())
-				&& getOccupiedGridArea() == other.getOccupiedGridArea()
-				&& Objects.equals(getPlayerRoles(), other.getPlayerRoles()) && getSeed() == other.getSeed();
 	}
 
 	/**

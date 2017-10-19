@@ -141,7 +141,7 @@ public final class SpatialRegion {
 
 	private final int yUpperBound;
 
-	SpatialRegion(final int xLowerBound, final int xUpperBound, final int yLowerBound, final int yUpperBound) {
+	public SpatialRegion(final int xLowerBound, final int xUpperBound, final int yLowerBound, final int yUpperBound) {
 		this.xLowerBound = xLowerBound;
 		this.xUpperBound = xUpperBound;
 		this.yLowerBound = yLowerBound;

@@ -50,7 +50,7 @@ final class ImageVisualizationInfoDescriptionFactory {
 		return rowFactory.createRowCellValues(null, null);
 	}
 
-	Stream<String> createDescription(final Integer selectedPieceId, final LocalDateTime gameStartTime,
+	Stream<String> createDescription(final int selectedPieceId, final LocalDateTime gameStartTime,
 			final List<ImageVisualizationInfo.Datum> imgVizInfoData) {
 		final ImageVisualizationInfo.Datum selectedPieceImgVizInfo = imgVizInfoData.get(selectedPieceId);
 		LOGGER.debug("Writing selected piece (ID {}) viz info: {} ", selectedPieceId, selectedPieceImgVizInfo);

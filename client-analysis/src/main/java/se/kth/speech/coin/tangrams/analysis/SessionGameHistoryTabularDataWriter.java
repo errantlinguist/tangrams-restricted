@@ -107,10 +107,10 @@ import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionContextFactory;
 import se.kth.speech.coin.tangrams.analysis.features.ImageEdgeCounter;
 import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
+import se.kth.speech.coin.tangrams.game.Selection;
 import se.kth.speech.coin.tangrams.iristk.EventTypeMatcher;
 import se.kth.speech.coin.tangrams.iristk.GameEvent;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
-import se.kth.speech.coin.tangrams.iristk.events.Selection;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEventReader;
 import se.kth.speech.coin.tangrams.view.InteractiveGameBoardPanel;
 
@@ -155,11 +155,15 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 			@Override
 			public String apply(final EventContext eventCtx, final String nullValueRepr) {
 				final GameContext gameCtx = eventCtx.getGameContext();
-				final Optional<Integer> optReferentEntityId = gameCtx.findLastSelectedEntityId();
-				final Boolean isReferent = optReferentEntityId.map(referentEntityId -> {
+				final OptionalInt optReferentEntityId = gameCtx.findLastSelectedEntityId();
+				final Boolean isReferent;
+				if (optReferentEntityId.isPresent()) {
+					final int referentEntityId = optReferentEntityId.getAsInt();
 					final int entityId = eventCtx.getEntityId();
-					return Objects.equals(referentEntityId, entityId);
-				}).orElse(Boolean.FALSE);
+					isReferent = Objects.equals(referentEntityId, entityId);
+				} else {
+					isReferent = Boolean.FALSE;
+				}
 				return isReferent.toString();
 			}
 
@@ -193,9 +197,9 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 				if (selectionEventMatcher.test(event)) {
 					final Selection selection = (Selection) event.getGameAttrs()
 							.get(GameManagementEvent.Attribute.SELECTION);
-					final Integer selectedEntityId = selection.getPieceId();
+					final int selectedEntityId = selection.getPieceId();
 					final int entityId = eventCtx.getEntityId();
-					isSelected = selectedEntityId.equals(entityId);
+					isSelected = selectedEntityId == entityId;
 				} else {
 					isSelected = false;
 				}
@@ -621,7 +625,7 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 
 		final GameHistory history = canonicalGame.getHistory();
 		final EntityFeatureExtractionContextFactory extractionContextFactory = new EntityFeatureExtractionContextFactory(
-				new GameContextModelFactory(2), new ImageEdgeCounter());
+				new GameContextModelFactory(), new ImageEdgeCounter());
 		final EntityFeatureVectorDescriptionFactory entityFeatureVectorDescFactory = new EntityFeatureVectorDescriptionFactory(
 				new EntityFeature.Extractor(), EntityFeature.getCanonicalOrdering(), extractionContextFactory,
 				NULL_VALUE_REPR);

@@ -34,7 +34,7 @@ import se.kth.speech.coin.tangrams.game.Controller;
 import se.kth.speech.coin.tangrams.game.GameplayController;
 import se.kth.speech.coin.tangrams.game.PlayerRole;
 import se.kth.speech.coin.tangrams.iristk.events.Area2D;
-import se.kth.speech.coin.tangrams.iristk.events.GameModelMatrixUnmarshaller;
+import se.kth.speech.coin.tangrams.iristk.events.ModelDescriptionSpatialMatrixFactory;
 import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
 import se.kth.speech.coin.tangrams.iristk.events.ImageVisualizationInfoDescription;
 import se.kth.speech.coin.tangrams.iristk.events.ModelDescription;
@@ -43,7 +43,7 @@ import se.kth.speech.coin.tangrams.iristk.events.Selection;
 
 public final class GameManagementClientModule extends IrisModule implements GameManagementClient {
 
-	private static final GameModelMatrixUnmarshaller GAME_MODEL_MATRIX_UNMARSHALLER = new GameModelMatrixUnmarshaller(
+	private static final ModelDescriptionSpatialMatrixFactory GAME_MODEL_MATRIX_UNMARSHALLER = new ModelDescriptionSpatialMatrixFactory(
 			SpatialMatrix.Factory.STABLE_ITER_ORDER);
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(GameManagementClientModule.class);

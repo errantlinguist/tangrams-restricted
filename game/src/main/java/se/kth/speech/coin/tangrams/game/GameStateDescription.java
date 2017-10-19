@@ -14,53 +14,36 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech.coin.tangrams.iristk.events;
+package se.kth.speech.coin.tangrams.game;
 
 import com.google.common.collect.BiMap;
 
+import se.kth.speech.SpatialMatrix;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
-import se.kth.speech.coin.tangrams.game.PlayerRole;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
  * @since 19 Oct 2017
  *
  */
-public final class HashableGameStateDescription {
-
-	private final boolean allowFailedPlacements;
+public final class GameStateDescription {
 
 	private final ImageVisualizationInfo imgVizInfo;
 
-	private final HashableModelDescription modelDescription;
-
-	private final double occupiedGridArea;
+	private final SpatialMatrix<Integer> model;
 
 	private final BiMap<PlayerRole, String> playerRoles;
 
-	private final long seed;
-
-	public HashableGameStateDescription(final HashableModelDescription modelDescription,
-			final ImageVisualizationInfo imgVizInfo, final BiMap<PlayerRole, String> playerRoles,
-			final double occupiedGridArea, final long seed, final boolean allowFailedPlacements) {
-		this.modelDescription = modelDescription;
+	public GameStateDescription(final SpatialMatrix<Integer> model, final ImageVisualizationInfo imgVizInfo,
+			final BiMap<PlayerRole, String> playerRoles) {
+		this.model = model;
 		this.imgVizInfo = imgVizInfo;
 		this.playerRoles = playerRoles;
-		this.occupiedGridArea = occupiedGridArea;
-		this.seed = seed;
-		this.allowFailedPlacements = allowFailedPlacements;
-	}
-
-	/**
-	 * @return the allowFailedPlacements
-	 */
-	public boolean allowFailedPlacements() {
-		return allowFailedPlacements;
 	}
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#equals(java.lang.Object)
 	 */
 	@Override
@@ -71,13 +54,10 @@ public final class HashableGameStateDescription {
 		if (obj == null) {
 			return false;
 		}
-		if (!(obj instanceof HashableGameStateDescription)) {
+		if (!(obj instanceof GameStateDescription)) {
 			return false;
 		}
-		final HashableGameStateDescription other = (HashableGameStateDescription) obj;
-		if (allowFailedPlacements != other.allowFailedPlacements) {
-			return false;
-		}
+		final GameStateDescription other = (GameStateDescription) obj;
 		if (imgVizInfo == null) {
 			if (other.imgVizInfo != null) {
 				return false;
@@ -85,14 +65,11 @@ public final class HashableGameStateDescription {
 		} else if (!imgVizInfo.equals(other.imgVizInfo)) {
 			return false;
 		}
-		if (modelDescription == null) {
-			if (other.modelDescription != null) {
+		if (model == null) {
+			if (other.model != null) {
 				return false;
 			}
-		} else if (!modelDescription.equals(other.modelDescription)) {
-			return false;
-		}
-		if (Double.doubleToLongBits(occupiedGridArea) != Double.doubleToLongBits(other.occupiedGridArea)) {
+		} else if (!model.equals(other.model)) {
 			return false;
 		}
 		if (playerRoles == null) {
@@ -100,9 +77,6 @@ public final class HashableGameStateDescription {
 				return false;
 			}
 		} else if (!playerRoles.equals(other.playerRoles)) {
-			return false;
-		}
-		if (seed != other.seed) {
 			return false;
 		}
 		return true;
@@ -116,17 +90,10 @@ public final class HashableGameStateDescription {
 	}
 
 	/**
-	 * @return the modelDescription
+	 * @return the model
 	 */
-	public HashableModelDescription getModelDescription() {
-		return modelDescription;
-	}
-
-	/**
-	 * @return the occupiedGridArea
-	 */
-	public double getOccupiedGridArea() {
-		return occupiedGridArea;
+	public SpatialMatrix<Integer> getModel() {
+		return model;
 	}
 
 	/**
@@ -136,53 +103,35 @@ public final class HashableGameStateDescription {
 		return playerRoles;
 	}
 
-	/**
-	 * @return the seed
-	 */
-	public long getSeed() {
-		return seed;
-	}
-
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#hashCode()
 	 */
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + (allowFailedPlacements ? 1231 : 1237);
 		result = prime * result + (imgVizInfo == null ? 0 : imgVizInfo.hashCode());
-		result = prime * result + (modelDescription == null ? 0 : modelDescription.hashCode());
-		long temp;
-		temp = Double.doubleToLongBits(occupiedGridArea);
-		result = prime * result + (int) (temp ^ temp >>> 32);
+		result = prime * result + (model == null ? 0 : model.hashCode());
 		result = prime * result + (playerRoles == null ? 0 : playerRoles.hashCode());
-		result = prime * result + (int) (seed ^ seed >>> 32);
 		return result;
 	}
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#toString()
 	 */
 	@Override
 	public String toString() {
 		final StringBuilder builder = new StringBuilder(512);
-		builder.append("HashableGameStateDescription [allowFailedPlacements=");
-		builder.append(allowFailedPlacements);
-		builder.append(", imgVizInfo=");
+		builder.append("GameStateDescription [imgVizInfo=");
 		builder.append(imgVizInfo);
-		builder.append(", modelDescription=");
-		builder.append(modelDescription);
-		builder.append(", occupiedGridArea=");
-		builder.append(occupiedGridArea);
+		builder.append(", model=");
+		builder.append(model);
 		builder.append(", playerRoles=");
 		builder.append(playerRoles);
-		builder.append(", seed=");
-		builder.append(seed);
 		builder.append("]");
 		return builder.toString();
 	}

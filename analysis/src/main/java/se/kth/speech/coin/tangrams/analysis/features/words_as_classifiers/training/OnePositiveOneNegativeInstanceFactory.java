@@ -97,7 +97,7 @@ public final class OnePositiveOneNegativeInstanceFactory extends AbstractSizeEst
 		@Override
 		public BooleanTrainingContexts apply(final Utterance utt, final GameHistory history) {
 			final GameContext uttCtx = UtteranceGameContexts.createSingleContext(utt, history);
-			final int selectedEntityId = uttCtx.findLastSelectedEntityId().get();
+			final int selectedEntityId = uttCtx.findLastSelectedEntityId().getAsInt();
 			LOGGER.debug("Creating positive and negative examples for entity ID \"{}\".", selectedEntityId);
 			return new BooleanTrainingContexts(extCtxFactory.apply(uttCtx, selectedEntityId),
 					extCtxFactory.apply(uttCtx, findRandomEntityId(uttCtx, selectedEntityId)));
@@ -170,7 +170,7 @@ public final class OnePositiveOneNegativeInstanceFactory extends AbstractSizeEst
 					// utterances processed for the given dialogue
 					final Utterance firstUtt = utts.get(0);
 					final GameContext uttCtx = UtteranceGameContexts.createSingleContext(firstUtt, history);
-					final int selectedEntityId = uttCtx.findLastSelectedEntityId().get();
+					final int selectedEntityId = uttCtx.findLastSelectedEntityId().getAsInt();
 					LOGGER.debug(
 							"Creating positive and negative examples for entity ID \"{}\", which is selected by player \"{}\".",
 							selectedEntityId, event.getGameAttrs().get(GameManagementEvent.Attribute.PLAYER_ID));

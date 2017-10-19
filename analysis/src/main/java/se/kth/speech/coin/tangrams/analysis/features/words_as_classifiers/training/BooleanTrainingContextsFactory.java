@@ -50,7 +50,7 @@ final class BooleanTrainingContextsFactory
 	@Override
 	public BooleanTrainingContexts apply(final Utterance utt, final GameHistory history) {
 		final GameContext uttCtx = UtteranceGameContexts.createSingleContext(utt, history);
-		final int selectedEntityId = uttCtx.findLastSelectedEntityId().get();
+		final int selectedEntityId = uttCtx.findLastSelectedEntityId().getAsInt();
 		LOGGER.debug("Creating positive and negative examples for entity ID \"{}\".", selectedEntityId);
 		return createTrainingContexts(uttCtx, selectedEntityId);
 	}

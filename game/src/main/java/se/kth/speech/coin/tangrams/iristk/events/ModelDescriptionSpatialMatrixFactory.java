@@ -16,38 +16,43 @@
 */
 package se.kth.speech.coin.tangrams.iristk.events;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import se.kth.speech.Integers;
 import se.kth.speech.Matrix;
 import se.kth.speech.SpatialMatrix;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
- * @since 19 Oct 2017
+ * @since 25 Jan 2017
  *
  */
-public final class HashableGameModelMatrixUnmarshaller
-		implements Function<HashableModelDescription, SpatialMatrix<Integer>> {
+public final class ModelDescriptionSpatialMatrixFactory implements Function<ModelDescription, SpatialMatrix<Integer>> {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(HashableGameModelMatrixUnmarshaller.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(ModelDescriptionSpatialMatrixFactory.class);
 
-	private final SpatialMatrix.Factory matrixFactory;
+	private static final Function<String, Integer> NULLABLE_INTEGER_GETTER = Integers::valueOfNullable;
 
-	public HashableGameModelMatrixUnmarshaller(final SpatialMatrix.Factory matrixFactory) {
-		this.matrixFactory = matrixFactory;
+	private final SpatialMatrix.Factory spatialMatrixFactory;
+
+	public ModelDescriptionSpatialMatrixFactory(final SpatialMatrix.Factory spatialMatrixFactory) {
+		this.spatialMatrixFactory = spatialMatrixFactory;
 	}
 
 	@Override
-	public SpatialMatrix<Integer> apply(final HashableModelDescription modelDesc) {
-		final List<Integer> coordOccupants = modelDesc.getCoordOccupants();
+	public SpatialMatrix<Integer> apply(final ModelDescription modelDesc) {
+		final List<String> nullableCoordOccupants = modelDesc.getCoordOccupants();
+		final List<Integer> coordOccupants = Arrays
+				.asList(nullableCoordOccupants.stream().map(NULLABLE_INTEGER_GETTER).toArray(Integer[]::new));
 		LOGGER.debug("Creating model with coord occupant vector: {}", coordOccupants);
 		final int colCount = modelDesc.getColCount();
 		final Matrix<Integer> backingMatrix = new Matrix<>(coordOccupants, colCount);
-		return matrixFactory.create(backingMatrix);
+		return spatialMatrixFactory.create(backingMatrix);
 	}
 
 }

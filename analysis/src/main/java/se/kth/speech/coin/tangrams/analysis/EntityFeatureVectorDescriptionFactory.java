@@ -18,6 +18,7 @@ package se.kth.speech.coin.tangrams.analysis;
 
 import java.util.Collection;
 import java.util.Optional;
+import java.util.OptionalInt;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -32,7 +33,7 @@ import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionCont
  *
  */
 final class EntityFeatureVectorDescriptionFactory {
-	
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(EntityFeatureVectorDescriptionFactory.class);
 
 	private final EntityFeature.Extractor entityFeatureExtractor;
@@ -57,10 +58,10 @@ final class EntityFeatureVectorDescriptionFactory {
 	}
 
 	Stream<String> createFeatureValueReprs(final GameContext context) {
-		final Optional<Integer> optSelectedEntityId = context.findLastSelectedEntityId();
+		final OptionalInt optSelectedEntityId = context.findLastSelectedEntityId();
 		final Stream<String> result;
 		if (optSelectedEntityId.isPresent()) {
-			result = createFeatureValueReprs(context, optSelectedEntityId.get());
+			result = createFeatureValueReprs(context, optSelectedEntityId.getAsInt());
 		} else {
 			result = createBlankFeatureValueReprs();
 		}

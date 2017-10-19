@@ -369,7 +369,7 @@ final class UtteranceSelectedEntityDescriptionWriter { // NO_UCD (use default)
 			throws JAXBException, IOException {
 		final SessionGameManager sessionEvtDiagMgr = new SessionGameManager(sessionData);
 		final EntityFeatureExtractionContextFactory extractionContextFactory = new EntityFeatureExtractionContextFactory(
-				new GameContextModelFactory(2), new ImageEdgeCounter());
+				new GameContextModelFactory(), new ImageEdgeCounter());
 		final EntityFeatureVectorDescriptionFactory entityFeatureVectorDescFactory = new EntityFeatureVectorDescriptionFactory(
 				extractor, featuresToDescribe, extractionContextFactory, NULL_VALUE_REPR);
 		final UtteranceTabularDataWriter gameWriter = new UtteranceTabularDataWriter(entityFeatureVectorDescFactory,

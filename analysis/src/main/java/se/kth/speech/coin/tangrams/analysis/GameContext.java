@@ -40,11 +40,11 @@ import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.ints.IntLists;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
+import se.kth.speech.coin.tangrams.game.GameStateDescription;
+import se.kth.speech.coin.tangrams.game.Move;
 import se.kth.speech.coin.tangrams.iristk.EventTypeMatcher;
 import se.kth.speech.coin.tangrams.iristk.GameEvent;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
-import se.kth.speech.coin.tangrams.iristk.events.HashableGameStateDescription;
-import se.kth.speech.coin.tangrams.iristk.events.Move;
 
 public final class GameContext {
 
@@ -75,8 +75,7 @@ public final class GameContext {
 		return result;
 	}
 
-	private static Stream<GameEvent> getEventsDescendingOrder(
-			final NavigableMap<?, ? extends List<GameEvent>> map) {
+	private static Stream<GameEvent> getEventsDescendingOrder(final NavigableMap<?, ? extends List<GameEvent>> map) {
 		return map.descendingMap().values().stream().map(Lists::reverse).flatMap(List::stream);
 	}
 
@@ -142,8 +141,8 @@ public final class GameContext {
 	}
 
 	/**
-	 * Finds the last {@link GameEvent} matching a given {@link Predicate}
-	 * in chronological order, i.e.&nbsp;the &ldquo;last&rdquo; matching event
+	 * Finds the last {@link GameEvent} matching a given {@link Predicate} in
+	 * chronological order, i.e.&nbsp;the &ldquo;last&rdquo; matching event
 	 * preceding the time in the game represented by this {@link GameContext}
 	 * instance.
 	 *
@@ -196,16 +195,16 @@ public final class GameContext {
 		return findFirstMatchingDistance(eventsDescTime, matcher);
 	}
 
-	public Optional<Integer> findLastSelectedEntityId() {
+	public OptionalInt findLastSelectedEntityId() {
 		final GameManagementEvent.Attribute moveAttr = GameManagementEvent.Attribute.MOVE;
 		// NOTE: This finds turn completion as well as next-turn submission
 		// events
 		final Optional<GameEvent> lastSelectionEvent = findLastEvent(
 				event -> event.getGameAttrs().containsKey(moveAttr));
-		return lastSelectionEvent.map(event -> {
-			final Move move = (Move) event.getGameAttrs().get(moveAttr);
-			return move.getPieceId();
-		});
+		final Optional<Move> lastSelectionEventMove = lastSelectionEvent
+				.map(event -> (Move) event.getGameAttrs().get(moveAttr));
+		return lastSelectionEventMove.isPresent() ? OptionalInt.of(lastSelectionEventMove.get().getPieceId())
+				: OptionalInt.empty();
 	}
 
 	public IntList getEntityIds() {
@@ -213,7 +212,7 @@ public final class GameContext {
 	}
 
 	public List<ImageVisualizationInfo.Datum> getEntityVisualizationInfo() {
-		final HashableGameStateDescription initialState = history.getInitialState();
+		final GameStateDescription initialState = history.getInitialState();
 		return Collections.unmodifiableList(initialState.getImageVisualizationInfo().getData());
 	}
 

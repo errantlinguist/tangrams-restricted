@@ -25,6 +25,7 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.EnumMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Function;
@@ -44,14 +45,22 @@ import com.google.common.collect.Table;
 import iristk.system.Event;
 import iristk.util.Record;
 import iristk.util.Record.JsonToRecordException;
+import se.kth.speech.Integers;
+import se.kth.speech.Matrix;
+import se.kth.speech.SpatialMatrix;
+import se.kth.speech.SpatialRegion;
 import se.kth.speech.coin.tangrams.analysis.GameHistory;
 import se.kth.speech.coin.tangrams.analysis.GameHistoryCollector;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
+import se.kth.speech.coin.tangrams.game.GameStateDescription;
+import se.kth.speech.coin.tangrams.game.Move;
+import se.kth.speech.coin.tangrams.game.Selection;
 import se.kth.speech.coin.tangrams.iristk.EventTimes;
 import se.kth.speech.coin.tangrams.iristk.GameEvent;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 import se.kth.speech.coin.tangrams.iristk.GameStateDescriptions;
-import se.kth.speech.coin.tangrams.iristk.events.HashableModelDescription;
+import se.kth.speech.coin.tangrams.iristk.events.Area2D;
+import se.kth.speech.coin.tangrams.iristk.events.CoordinatePoint2D;
 import se.kth.speech.coin.tangrams.iristk.events.ImageVisualizationInfoDescription;
 import se.kth.speech.coin.tangrams.iristk.events.ModelDescription;
 
@@ -107,39 +116,109 @@ public final class LoggedEventReader {
 		return parseLoggedEvents(lines);
 	}
 
-	private static Map<GameManagementEvent.Attribute, Object> createGameAttrMap(final Event event) {
-		final Map<GameManagementEvent.Attribute, Object> result = new EnumMap<>(GameManagementEvent.Attribute.class);
-		for (final GameManagementEvent.Attribute gameAttr : GameManagementEvent.Attribute.values()) {
-			final Object attrValue = event.get(gameAttr.toString());
-			if (attrValue != null) {
-				result.put(gameAttr, attrValue);
-			}
-		}
-		return result;
-	}
-
-	private static GameEvent createGameEvent(final Event event) {
-		return new GameEvent(event.getName(), event.getSender(), event.getId(), event.getString("system"),
-				EventTimes.parseEventTime(event.getTime()), createGameAttrMap(event));
-	}
-
 	private static Stream<String> readLines(final Path eventLogPath) throws IOException {
 		return Files.lines(eventLogPath, CHARSET);
 	}
 
 	private final Function<ImageVisualizationInfoDescription, ImageVisualizationInfo> imgVizInfoFactory;
 
-	private final Function<ModelDescription, HashableModelDescription> modelDescFactory;
+	private final Function<se.kth.speech.coin.tangrams.iristk.events.ModelDescription, SpatialMatrix<Integer>> modelDescFactory;
+
+	private final Function<se.kth.speech.coin.tangrams.iristk.events.Move, Move> moveFactory;
+
+	private final Function<se.kth.speech.coin.tangrams.iristk.events.Selection, Selection> selectionFactory;
+
+	private final Function<Area2D, SpatialRegion> spatialRegionFactory;
 
 	public LoggedEventReader(final int expectedUniqueGameModels, final int expectedUniqueImgVizInfoData) {
-		// final Map<ModelDescription, HashableModelDescription> modelDescs =
-		// Maps
-		// .newHashMapWithExpectedSize(expectedUniqueGameModels);
-		modelDescFactory = HashableModelDescription::new;
-		// final Map<ImageVisualizationInfoDescription, ImageVisualizationInfo>
-		// imgVizInfo = Maps
-		// .newHashMapWithExpectedSize(expectedUniqueImgVizInfoData);
-		imgVizInfoFactory = ImageVisualizationInfoDescription::toHashable;
+		modelDescFactory = new Function<ModelDescription, SpatialMatrix<Integer>>() {
+
+			private final Map<SpatialMatrix<Integer>, SpatialMatrix<Integer>> pool = Maps
+					.newHashMapWithExpectedSize(expectedUniqueGameModels);
+
+			@Override
+			public SpatialMatrix<Integer> apply(final ModelDescription modelDescRecord) {
+				final SpatialMatrix<Integer> newInst = create(modelDescRecord);
+				return pool.compute(newInst, (key, oldInst) -> oldInst == null ? key : oldInst);
+			}
+
+			private SpatialMatrix<Integer> create(
+					final se.kth.speech.coin.tangrams.iristk.events.ModelDescription modelDesc) {
+				final List<Integer> coordOccupants = Arrays.asList(
+						modelDesc.getCoordOccupants().stream().map(Integers::valueOfNullable).toArray(Integer[]::new));
+				LOGGER.debug("Creating model with coord occupant vector: {}", coordOccupants);
+				final int colCount = modelDesc.getColCount();
+				final Matrix<Integer> backingMatrix = new Matrix<>(coordOccupants, colCount);
+				return SpatialMatrix.Factory.STABLE_ITER_ORDER.create(backingMatrix);
+			}
+
+		};
+		imgVizInfoFactory = new Function<ImageVisualizationInfoDescription, ImageVisualizationInfo>() {
+
+			private final Map<ImageVisualizationInfo, ImageVisualizationInfo> pool = Maps
+					.newHashMapWithExpectedSize(expectedUniqueImgVizInfoData);
+
+			@Override
+			public ImageVisualizationInfo apply(final ImageVisualizationInfoDescription imgVizInfoDesc) {
+				final ImageVisualizationInfo newInst = imgVizInfoDesc.toHashable();
+				return pool.compute(newInst, (key, oldInst) -> oldInst == null ? key : oldInst);
+			}
+
+		};
+
+		final int boardSubRegionCount = 20 * 19;
+		spatialRegionFactory = new Function<Area2D, SpatialRegion>() {
+
+			private final Map<SpatialRegion, SpatialRegion> pool = Maps.newHashMapWithExpectedSize(boardSubRegionCount);
+
+			@Override
+			public SpatialRegion apply(final Area2D area) {
+				final SpatialRegion newInst = create(area);
+				return pool.compute(newInst, (key, oldInst) -> oldInst == null ? key : oldInst);
+			}
+
+			private SpatialRegion create(final Area2D area) {
+				final CoordinatePoint2D start = area.getStart();
+				final CoordinatePoint2D end = area.getEnd();
+				return new SpatialRegion(start.getX(), end.getX(), start.getY(), end.getY());
+			}
+
+		};
+		final int pieceLocationCount = boardSubRegionCount * 20;
+		selectionFactory = new Function<se.kth.speech.coin.tangrams.iristk.events.Selection, Selection>() {
+
+			private final Map<Selection, Selection> pool = Maps.newHashMapWithExpectedSize(pieceLocationCount);
+
+			@Override
+			public Selection apply(final se.kth.speech.coin.tangrams.iristk.events.Selection selection) {
+				final Selection newInst = create(selection);
+				return pool.compute(newInst, (key, oldInst) -> oldInst == null ? key : oldInst);
+			}
+
+			private Selection create(final se.kth.speech.coin.tangrams.iristk.events.Selection selection) {
+				final Area2D area = selection.getArea();
+				final SpatialRegion spatialRegion = spatialRegionFactory.apply(area);
+				return new Selection(selection.getPieceId(), spatialRegion);
+			}
+
+		};
+		moveFactory = new Function<se.kth.speech.coin.tangrams.iristk.events.Move, Move>() {
+
+			private final Map<Move, Move> pool = Maps.newHashMapWithExpectedSize(pieceLocationCount);
+
+			@Override
+			public Move apply(final se.kth.speech.coin.tangrams.iristk.events.Move moveRecord) {
+				final Move newInst = create(moveRecord);
+				return pool.compute(newInst, (key, oldInst) -> oldInst == null ? key : oldInst);
+			}
+
+			private Move create(final se.kth.speech.coin.tangrams.iristk.events.Move moveRecord) {
+				final SpatialRegion sourceRegion = spatialRegionFactory.apply(moveRecord.getSource());
+				final SpatialRegion targetRegion = spatialRegionFactory.apply(moveRecord.getTarget());
+				return new Move(sourceRegion, targetRegion, moveRecord.getPieceId());
+			}
+
+		};
 	}
 
 	/**
@@ -153,8 +232,7 @@ public final class LoggedEventReader {
 		final Event[] loggedEventArray = loggedEvents.toArray(Event[]::new);
 		final Supplier<Map<String, GameHistory>> mapFactory = () -> Maps
 				.newHashMapWithExpectedSize(loggedEventArray.length);
-		return Arrays.stream(loggedEventArray).map(LoggedEventReader::createGameEvent)
-				.collect(new GameHistoryCollector(mapFactory, modelDescFactory, imgVizInfoFactory));
+		return Arrays.stream(loggedEventArray).map(this::createGameEvent).collect(new GameHistoryCollector(mapFactory));
 	}
 
 	/**
@@ -342,6 +420,51 @@ public final class LoggedEventReader {
 		try (final Stream<String> lines = readLines(eventLogPath)) {
 			return parseGameHistories(lines, eventFilter);
 		}
+	}
+
+	private Map<GameManagementEvent.Attribute, Object> createGameAttrMap(final Event event) {
+		final Map<GameManagementEvent.Attribute, Object> result = new EnumMap<>(GameManagementEvent.Attribute.class);
+		for (final GameManagementEvent.Attribute gameAttr : GameManagementEvent.Attribute.values()) {
+			final Object attrValue = event.get(gameAttr.toString());
+			if (attrValue != null) {
+				final Object transformedValue;
+				switch (gameAttr) {
+				case GAME_STATE:
+					transformedValue = createGameStateDesc(
+							(se.kth.speech.coin.tangrams.iristk.events.GameStateDescription) attrValue);
+					break;
+				case MOVE:
+					transformedValue = moveFactory.apply((se.kth.speech.coin.tangrams.iristk.events.Move) attrValue);
+					break;
+				case SELECTION:
+					transformedValue = selectionFactory
+							.apply((se.kth.speech.coin.tangrams.iristk.events.Selection) attrValue);
+					break;
+				case TIMESTAMP:
+					transformedValue = EventTimes.parseEventTime((String) attrValue);
+					break;
+				default:
+					// By default, don't transform the value
+					transformedValue = attrValue;
+					break;
+				}
+				result.put(gameAttr, transformedValue);
+			}
+		}
+		return result;
+	}
+
+	private GameEvent createGameEvent(final Event event) {
+		return new GameEvent(event.getName(), event.getSender(), event.getId(), event.getString("system"),
+				EventTimes.parseEventTime(event.getTime()), createGameAttrMap(event));
+	}
+
+	private GameStateDescription createGameStateDesc(
+			final se.kth.speech.coin.tangrams.iristk.events.GameStateDescription gameDesc) {
+		final ImageVisualizationInfo imgVizInfo = imgVizInfoFactory
+				.apply(gameDesc.getImageVisualizationInfoDescription());
+		final SpatialMatrix<Integer> modelDescription = modelDescFactory.apply(gameDesc.getModelDescription());
+		return new GameStateDescription(modelDescription, imgVizInfo, gameDesc.getPlayerRoles());
 	}
 
 	/**

@@ -14,29 +14,31 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech.coin.tangrams.iristk.events;
+package se.kth.speech.coin.tangrams.game;
 
-import java.util.Arrays;
-import java.util.List;
-
-import se.kth.speech.Integers;
+import se.kth.speech.SpatialRegion;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
  * @since 19 Oct 2017
  *
  */
-public final class HashableModelDescription {
+public final class Move {
 
-	private final int colCount;
+	private final int pieceId;
 
-	private final List<Integer> coordOccupants;
+	private final SpatialRegion source;
 
-	public HashableModelDescription(final ModelDescription modelDesc) {
-		final List<String> coordOccupantDescs = modelDesc.getCoordOccupants();
-		coordOccupants = Arrays.asList(coordOccupantDescs.stream()
-				.map(Integers::valueOfNullable).toArray(Integer[]::new));
-		colCount = modelDesc.getColCount();
+	private final SpatialRegion target;
+
+	public Move(final Move copyee) {
+		this(copyee.getSource(), copyee.getTarget(), copyee.getPieceId());
+	}
+
+	public Move(final SpatialRegion source, final SpatialRegion target, final int pieceId) {
+		this.source = source;
+		this.target = target;
+		this.pieceId = pieceId;
 	}
 
 	/*
@@ -52,35 +54,49 @@ public final class HashableModelDescription {
 		if (obj == null) {
 			return false;
 		}
-		if (!(obj instanceof HashableModelDescription)) {
+		if (!(obj instanceof Move)) {
 			return false;
 		}
-		final HashableModelDescription other = (HashableModelDescription) obj;
-		if (colCount != other.colCount) {
+		final Move other = (Move) obj;
+		if (pieceId != other.pieceId) {
 			return false;
 		}
-		if (coordOccupants == null) {
-			if (other.coordOccupants != null) {
+		if (source == null) {
+			if (other.source != null) {
 				return false;
 			}
-		} else if (!coordOccupants.equals(other.coordOccupants)) {
+		} else if (!source.equals(other.source)) {
+			return false;
+		}
+		if (target == null) {
+			if (other.target != null) {
+				return false;
+			}
+		} else if (!target.equals(other.target)) {
 			return false;
 		}
 		return true;
 	}
 
 	/**
-	 * @return the colCount
+	 * @return the pieceId
 	 */
-	public int getColCount() {
-		return colCount;
+	public int getPieceId() {
+		return pieceId;
 	}
 
 	/**
-	 * @return the coordOccupants
+	 * @return the source
 	 */
-	public List<Integer> getCoordOccupants() {
-		return coordOccupants;
+	public SpatialRegion getSource() {
+		return source;
+	}
+
+	/**
+	 * @return the target
+	 */
+	public SpatialRegion getTarget() {
+		return target;
 	}
 
 	/*
@@ -92,8 +108,9 @@ public final class HashableModelDescription {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + colCount;
-		result = prime * result + (coordOccupants == null ? 0 : coordOccupants.hashCode());
+		result = prime * result + pieceId;
+		result = prime * result + (source == null ? 0 : source.hashCode());
+		result = prime * result + (target == null ? 0 : target.hashCode());
 		return result;
 	}
 
@@ -104,11 +121,13 @@ public final class HashableModelDescription {
 	 */
 	@Override
 	public String toString() {
-		final StringBuilder builder = new StringBuilder((coordOccupants.size() + 1) * 8);
-		builder.append("HashableModelDescription [colCount=");
-		builder.append(colCount);
-		builder.append(", coordOccupants=");
-		builder.append(coordOccupants);
+		final StringBuilder builder = new StringBuilder(64);
+		builder.append("Move [pieceId=");
+		builder.append(pieceId);
+		builder.append(", source=");
+		builder.append(source);
+		builder.append(", target=");
+		builder.append(target);
 		builder.append("]");
 		return builder.toString();
 	}
