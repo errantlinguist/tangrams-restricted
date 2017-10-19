@@ -611,10 +611,10 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 						final String commitDesc = createCommitDesc(commit, gitCommandFactory);
 						result.put(EventMetadatum.EXPERIMENT_VERSION, commitDesc);
 
-						final Integer moveWaitTime = findMoveSubmissionWaitTime(commit, gitCommandFactory).orElse(0);
+						final int moveWaitTime = findMoveSubmissionWaitTime(commit, gitCommandFactory).orElse(0);
 						LOGGER.debug("Found a wait time of {}ms for experiment version \"{}\".", moveWaitTime,
 								commitDesc);
-						result.put(EventMetadatum.MOVE_DELAY, moveWaitTime.toString());
+						result.put(EventMetadatum.MOVE_DELAY, Integer.toString(moveWaitTime));
 						return result;
 					}
 
