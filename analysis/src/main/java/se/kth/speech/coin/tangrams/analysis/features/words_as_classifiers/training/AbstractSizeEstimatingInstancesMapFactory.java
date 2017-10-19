@@ -94,6 +94,7 @@ abstract class AbstractSizeEstimatingInstancesMapFactory implements TrainingInst
 		for (final SessionGameManager sessionEventDiagMgr : sessionEventDiagMgrs) {
 			addTrainingData(sessionEventDiagMgr.getCanonicalGame(), result);
 		}
+		classInstances.values().forEach(Instances::compactify);
 		return result;
 	}
 
