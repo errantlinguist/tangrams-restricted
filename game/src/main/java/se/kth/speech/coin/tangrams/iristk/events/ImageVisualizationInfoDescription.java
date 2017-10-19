@@ -94,6 +94,10 @@ public final class ImageVisualizationInfoDescription extends Record {
 			this.size = size.toString();
 		}
 
+		public ImageVisualizationInfo.Datum toHashable() {
+			return new ImageVisualizationInfo.Datum(getResourceName(), getColor(), getSize());
+		}
+
 	}
 
 	private static final Function<URL, String> RESOURCE_NAME_FACTORY = new URLFilenameFactory()
@@ -151,6 +155,12 @@ public final class ImageVisualizationInfoDescription extends Record {
 	@RecordField(name = "uniqueImgResourceCount")
 	public void setUniqueImgResourceCount(final int uniqueImgResourceCount) {
 		this.uniqueImgResourceCount = uniqueImgResourceCount;
+	}
+
+	public ImageVisualizationInfo toHashable() {
+		return new ImageVisualizationInfo(
+				Arrays.asList(data.stream().map(Datum::toHashable).toArray(ImageVisualizationInfo.Datum[]::new)),
+				uniqueImgResourceCount);
 	}
 
 }
