@@ -50,12 +50,12 @@ public final class DependencyExtractingTokenizerTest {
 
 	@Parameters
 	public static List<Object[]> data() {
-		return Arrays
-				.asList(new Object[][] { { "the blue piece that I saw before", Arrays.asList("the", "blue", "piece", "I") },
-						{ "so the piece that you picked last time same but it's bigger and blue",
-								Arrays.asList("the", "piece", "you", "last", "time", "bigger", "blue") },
-						{ "it's in the upper right hand corner",
-								Arrays.asList("it", "the", "upper", "right", "hand", "corner") },
+		return Arrays.asList(new Object[][] {
+				{ "the blue piece that I saw before", Arrays.asList("the", "blue", "piece", "that", "I", "before") },
+				{ "so the piece that you picked last time same but it's bigger and blue",
+						Arrays.asList("the", "piece", "you", "last", "time", "bigger", "blue") },
+				{ "it's in the upper right hand corner",
+						Arrays.asList("it", "the", "upper", "right", "hand", "corner") },
 
 		});
 	}
