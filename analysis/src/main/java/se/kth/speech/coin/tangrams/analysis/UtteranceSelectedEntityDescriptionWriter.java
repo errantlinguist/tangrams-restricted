@@ -159,6 +159,19 @@ final class UtteranceSelectedEntityDescriptionWriter { // NO_UCD (use default)
 		}
 	}
 
+	static final class RuntimeJAXBException extends RuntimeException {
+
+		/**
+		 *
+		 */
+		private static final long serialVersionUID = 8911045968943261899L;
+
+		public RuntimeJAXBException(final Throwable cause) {
+			super(cause);
+		}
+
+	}
+
 	private static final Path CLASS_SETTINGS_INFILE_PATH;
 
 	private static final FileNameExtensionFilter DEFAULT_FILE_FILTER;
@@ -312,7 +325,7 @@ final class UtteranceSelectedEntityDescriptionWriter { // NO_UCD (use default)
 							try {
 								writer.accept(inpath);
 							} catch (final JAXBException e) {
-								throw new RuntimeException(e);
+								throw new RuntimeJAXBException(e);
 							} catch (final IOException e) {
 								throw new UncheckedIOException(e);
 							}
