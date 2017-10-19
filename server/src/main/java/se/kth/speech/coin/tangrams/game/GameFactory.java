@@ -262,4 +262,9 @@ public final class GameFactory implements Function<String, Game<Integer>> {
 		return gameParamMapFactory;
 	}
 
+	public Object getParameterValue(final Parameter param) {
+		final Properties props = loadClassProps();
+		return param.parseValue(props);
+	}
+
 }

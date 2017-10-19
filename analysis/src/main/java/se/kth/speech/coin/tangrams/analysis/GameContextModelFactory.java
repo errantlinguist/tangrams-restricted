@@ -16,6 +16,8 @@
 */
 package se.kth.speech.coin.tangrams.analysis;
 
+import java.lang.ref.Reference;
+import java.lang.ref.SoftReference;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -36,8 +38,9 @@ import se.kth.speech.SpatialMatrixRegionElementMover;
 import se.kth.speech.SpatialRegion;
 import se.kth.speech.coin.tangrams.AreaSpatialRegionFactory;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
-import se.kth.speech.coin.tangrams.iristk.events.GameModelMatrixUnmarshaller;
 import se.kth.speech.coin.tangrams.iristk.events.GameStateDescription;
+import se.kth.speech.coin.tangrams.iristk.events.HashableGameModelMatrixUnmarshaller;
+import se.kth.speech.coin.tangrams.iristk.events.HashableModelDescription;
 import se.kth.speech.coin.tangrams.iristk.events.ModelDescription;
 import se.kth.speech.coin.tangrams.iristk.events.Move;
 
@@ -50,7 +53,43 @@ public final class GameContextModelFactory implements Function<GameContext, Spat
 																										// (use
 																										// default)
 
-	private static final GameModelMatrixUnmarshaller GAME_MODEL_MATRIX_UNMARSHALLER;
+	private static class CachingInitialGameModelFactory implements Function<ModelDescription, SpatialMatrix<Integer>> {
+
+		private final Map<HashableModelDescription, Reference<SpatialMatrix<Integer>>> gameModels;
+
+		private CachingInitialGameModelFactory(final int expectedniqueModelCount) {
+			gameModels = Maps.newHashMapWithExpectedSize(expectedniqueModelCount);
+		}
+
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see java.util.function.Function#apply(java.lang.Object)
+		 */
+		@Override
+		public SpatialMatrix<Integer> apply(final ModelDescription modelDesc) {
+			final HashableModelDescription hashableDesc = new HashableModelDescription(modelDesc);
+			final Reference<SpatialMatrix<Integer>> ref = gameModels.compute(hashableDesc, (key, oldValue) -> {
+				final Reference<SpatialMatrix<Integer>> newValue;
+				if (oldValue == null) {
+					// No instance has yet been created; Create one
+					newValue = new SoftReference<>(GAME_MODEL_MATRIX_UNMARSHALLER.apply(key));
+				} else if (oldValue.get() == null) {
+					// The old instance has already been deleted; Replace it
+					// with a
+					// new reference to a new instance
+					newValue = new SoftReference<>(GAME_MODEL_MATRIX_UNMARSHALLER.apply(key));
+				} else {
+					// The existing instance has not yet been deleted; Re-use it
+					newValue = oldValue;
+				}
+				return newValue;
+			});
+			return ref.get();
+		}
+	}
+
+	private static final HashableGameModelMatrixUnmarshaller GAME_MODEL_MATRIX_UNMARSHALLER;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(GameContextModelFactory.class);
 
@@ -58,7 +97,8 @@ public final class GameContextModelFactory implements Function<GameContext, Spat
 
 	static {
 		MODEL_FACTORY = SpatialMatrix.Factory.UNSTABLE_ITER_ORDER;
-		GAME_MODEL_MATRIX_UNMARSHALLER = new GameModelMatrixUnmarshaller(SpatialMatrix.Factory.STABLE_ITER_ORDER);
+		GAME_MODEL_MATRIX_UNMARSHALLER = new HashableGameModelMatrixUnmarshaller(
+				SpatialMatrix.Factory.STABLE_ITER_ORDER);
 	}
 
 	private static void applyEvent(final SpatialMatrix<Integer> model, final Event event) {
@@ -88,13 +128,6 @@ public final class GameContextModelFactory implements Function<GameContext, Spat
 		return copyInitialModel(copyee.getPositionMatrix());
 	}
 
-	private static Function<ModelDescription, SpatialMatrix<Integer>> createCachingInitialGameModelFactory(
-			final int expectedniqueModelCount) {
-		final Map<ModelDescription, SpatialMatrix<Integer>> gameModels = Maps
-				.newHashMapWithExpectedSize(expectedniqueModelCount);
-		return modelDesc -> gameModels.computeIfAbsent(modelDesc, GAME_MODEL_MATRIX_UNMARSHALLER);
-	}
-
 	private static void updateToTime(final SpatialMatrix<Integer> model,
 			final NavigableMap<LocalDateTime, List<Event>> timestampedEvents, final LocalDateTime time) {
 		final NavigableMap<LocalDateTime, List<Event>> timestampedEventsToApply = timestampedEvents.headMap(time, true);
@@ -107,7 +140,7 @@ public final class GameContextModelFactory implements Function<GameContext, Spat
 	public GameContextModelFactory(final int expectedUniqueModelCount) { // NO_UCD
 																			// (use
 																			// default)
-		this(createCachingInitialGameModelFactory(expectedUniqueModelCount));
+		this(new CachingInitialGameModelFactory(expectedUniqueModelCount));
 	}
 
 	private GameContextModelFactory(
