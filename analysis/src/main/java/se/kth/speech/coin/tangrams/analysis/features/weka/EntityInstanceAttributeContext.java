@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
+import se.kth.speech.coin.tangrams.analysis.features.EntityFeature.Extractor.Context;
 import weka.core.Attribute;
 import weka.core.DenseInstance;
 import weka.core.Instance;
@@ -34,6 +35,28 @@ import weka.core.Instances;
  *
  */
 public final class EntityInstanceAttributeContext {
+
+	private class ContextInstanceFactory implements Function<EntityFeature.Extractor.Context, Instance> {
+
+		private final Instances insts;
+
+		private ContextInstanceFactory(final Instances insts) {
+			this.insts = insts;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see java.util.function.Function#apply(java.lang.Object)
+		 */
+		@Override
+		public Instance apply(final Context ctx) {
+			final Instance result = createInstance(ctx, insts);
+			result.setClassMissing();
+			return result;
+		}
+
+	}
 
 	private static final List<String> CLASS_VALUES = Arrays.asList(Boolean.TRUE.toString(), Boolean.FALSE.toString());
 
@@ -69,11 +92,7 @@ public final class EntityInstanceAttributeContext {
 	}
 
 	public Function<EntityFeature.Extractor.Context, Instance> createInstFactory(final Instances insts) {
-		return ctx -> {
-			final Instance result = createInstance(ctx, insts);
-			result.setClassMissing();
-			return result;
-		};
+		return new ContextInstanceFactory(insts);
 	}
 
 	/**
