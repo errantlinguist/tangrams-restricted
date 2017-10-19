@@ -16,10 +16,6 @@
 */
 package se.kth.speech.nlp.stanford;
 
-import java.lang.ref.Reference;
-import java.lang.ref.SoftReference;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
 
 import com.google.common.cache.CacheBuilder;
@@ -36,9 +32,6 @@ import edu.stanford.nlp.pipeline.Annotator;
  */
 public final class AnnotationCacheFactory
 		implements Function<StanfordCoreNLPConfigurationVariant, LoadingCache<String, Annotation>> {
-
-	private static final ConcurrentMap<StanfordCoreNLPConfigurationVariant, Reference<LoadingCache<String, Annotation>>> CONFIG_CACHES = new ConcurrentHashMap<>(
-			StanfordCoreNLPConfigurationVariant.values().length);
 
 	private static final int ESTIMATED_MAX_UNIQUE_INPUT_COUNT = 2000;
 
@@ -58,23 +51,7 @@ public final class AnnotationCacheFactory
 
 	@Override
 	public LoadingCache<String, Annotation> apply(final StanfordCoreNLPConfigurationVariant annotConfig) {
-		final Reference<LoadingCache<String, Annotation>> ref = CONFIG_CACHES.compute(annotConfig, (key, oldValue) -> {
-			final Reference<LoadingCache<String, Annotation>> newValue;
-			if (oldValue == null) {
-				// No instance has yet been created; Create one
-				newValue = new SoftReference<>(createCache(key));
-			} else if (oldValue.get() == null) {
-				// The old instance has already been deleted; Replace it
-				// with a new reference to a new instance
-				newValue = new SoftReference<>(createCache(key));
-			} else {
-				// The existing instance has not yet been deleted;
-				// Re-use it
-				newValue = oldValue;
-			}
-			return newValue;
-		});
-		return ref.get();
+		return createCache(annotConfig);
 	}
 
 	private LoadingCache<String, Annotation> createCache(final StanfordCoreNLPConfigurationVariant annotConfig) {
