@@ -27,8 +27,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.OptionalInt;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
@@ -417,8 +415,9 @@ public final class CrossValidator {
 
 	private EventDialogueClassifier createDialogueClassifier(final WordClassificationData trainingData,
 			final SessionDataManager testSessionData) throws IOException {
-		final Function<String, Logistic> wordClassifierGetter = createWordClassifierMap(
-				trainingData.getClassInstances().entrySet())::get;
+		final StaticWordClassifierFactory wordClassifierFactory = new StaticWordClassifierFactory(
+				trainingData.getClassInstances().entrySet(), backgroundJobExecutor);
+		final Function<String, Logistic> wordClassifierGetter = wordClassifierFactory.get()::get;
 		final Instances testInsts = testInstsFactory.apply(TEST_INSTS_REL_NAME,
 				estimateTestInstanceCount(testSessionData));
 		final Function<EntityFeature.Extractor.Context, Instance> testInstFactory = entInstAttrCtx
@@ -426,35 +425,6 @@ public final class CrossValidator {
 		final ReferentConfidenceMapFactory referentConfidenceMapFactory = beanFactory
 				.getBean(ReferentConfidenceMapFactory.class, wordClassifierGetter, testInstFactory);
 		return classifierFactory.apply(referentConfidenceMapFactory);
-	}
-
-	private ConcurrentMap<String, Logistic> createWordClassifierMap(
-			final Set<Entry<String, Instances>> classInstances) {
-		final ConcurrentMap<String, Logistic> result = new ConcurrentHashMap<>(classInstances.size());
-		final Stream.Builder<CompletableFuture<Void>> trainingJobs = Stream.builder();
-		for (final Entry<String, Instances> classInstancesEntry : classInstances) {
-			final String className = classInstancesEntry.getKey();
-			LOGGER.debug("Training classifier for class \"{}\".", className);
-			final Instances trainingInsts = classInstancesEntry.getValue();
-			LOGGER.debug("{} instance(s) for class \"{}\".", trainingInsts.size(), className);
-			final CompletableFuture<Void> trainingJob = CompletableFuture.runAsync(() -> {
-				final Logistic classifier = new Logistic();
-				try {
-					classifier.buildClassifier(trainingInsts);
-				} catch (final Exception e) {
-					throw new TrainingException(className, e);
-				}
-				final Logistic oldClassifier = result.put(className, classifier);
-				if (oldClassifier != null) {
-					throw new IllegalArgumentException(
-							String.format("More than one file for word class \"%s\".", className));
-				}
-
-			}, backgroundJobExecutor);
-			trainingJobs.add(trainingJob);
-		}
-		CompletableFuture.allOf(trainingJobs.build().toArray(CompletableFuture[]::new)).join();
-		return result;
 	}
 
 	private Map<Path, CrossValidationTestSummary> crossValidate(final Map<SessionDataManager, Path> allSessions)
