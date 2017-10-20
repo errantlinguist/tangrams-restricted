@@ -19,7 +19,6 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialo
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.Executor;
 import java.util.function.Function;
 import java.util.function.ToDoubleFunction;
 
@@ -34,18 +33,19 @@ import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.ReferentConfidenceMapFactory;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.WordClassificationData;
 import se.kth.speech.coin.tangrams.iristk.GameEvent;
-import weka.classifiers.functions.Logistic;
+import weka.classifiers.Classifier;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
  * @since Jul 9, 2017
  *
  */
-public final class DialogicEventDialogueClassifier extends AbstractParallelizedEventDialogueClassifier {
+public final class DialogicEventDialogueClassifier implements EventDialogueClassifier {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(DialogicEventDialogueClassifier.class);
+
+	private final Function<? super EventDialogue, Function<? super String, ? extends Classifier>> diagWordClassifierFactory;
 
 	private final Function<? super Collection<UtteranceRelation>, EntityReferringLanguageWordClasses> entityRefLangExFactory;
 
@@ -53,11 +53,12 @@ public final class DialogicEventDialogueClassifier extends AbstractParallelizedE
 
 	private final ToDoubleFunction<? super Utterance> uttAcceptanceRanker;
 
-	public DialogicEventDialogueClassifier(final WordClassificationData trainingData,
-			final Executor backgroundJobExecutor, final ToDoubleFunction<? super Utterance> uttAcceptanceRanker,
+	public DialogicEventDialogueClassifier(
+			final Function<? super EventDialogue, Function<? super String, ? extends Classifier>> diagWordClassifierFactory,
+			final ToDoubleFunction<? super Utterance> uttAcceptanceRanker,
 			final Function<? super Collection<UtteranceRelation>, EntityReferringLanguageWordClasses> entityRefLangExFactory,
 			final ReferentConfidenceMapFactory referentConfidenceMapFactory) {
-		super(trainingData, backgroundJobExecutor);
+		this.diagWordClassifierFactory = diagWordClassifierFactory;
 		this.uttAcceptanceRanker = uttAcceptanceRanker;
 		this.entityRefLangExFactory = entityRefLangExFactory;
 		this.referentConfidenceMapFactory = referentConfidenceMapFactory;
@@ -84,7 +85,8 @@ public final class DialogicEventDialogueClassifier extends AbstractParallelizedE
 				LOGGER.debug("No utterances to classify for {}.", transformedDiag);
 				result = Optional.empty();
 			} else {
-				final Function<String, Logistic> wordClassifierGetter = getWordClassifierGetter(transformedDiag);
+				final Function<? super String, ? extends Classifier> wordClassifierGetter = diagWordClassifierFactory
+						.apply(transformedDiag);
 				final DialogicEventDialogueUtteranceSorter uttSorter = new DialogicEventDialogueUtteranceSorter(
 						uttAcceptanceRanker);
 				final List<UtteranceRelation> uttRels = uttSorter.apply(allUtts, event);

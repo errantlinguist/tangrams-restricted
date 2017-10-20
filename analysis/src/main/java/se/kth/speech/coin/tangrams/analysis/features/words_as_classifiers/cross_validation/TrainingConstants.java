@@ -22,6 +22,8 @@ import java.util.function.Function;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.ClassificationContext;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.EventDialogueClassifier;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.IsolatedUtteranceEventDialogueClassifier;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.ParallelizedWordLogisticClassifierTrainer;
+import weka.classifiers.functions.Logistic;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -34,9 +36,16 @@ final class TrainingConstants {
 
 	static final Random RND = new Random(1);
 
-	static final Function<ClassificationContext, EventDialogueClassifier> SIMPLE_CLASSIFIER_FACTORY = classificationContext -> new IsolatedUtteranceEventDialogueClassifier(
-			classificationContext.getTrainingData(), classificationContext.getBackgroundJobExecutor(),
-			classificationContext.getReferentConfidenceMapFactory());
+	static final Function<ClassificationContext, EventDialogueClassifier> SIMPLE_CLASSIFIER_FACTORY = classificationContext -> {
+		final ParallelizedWordLogisticClassifierTrainer trainer = new ParallelizedWordLogisticClassifierTrainer(
+				classificationContext.getTrainingData(), classificationContext.getBackgroundJobExecutor());
+		final Function<String, Logistic> wordClassifiers = trainer.get()::get;
+		// This classifier is statically-trained, i.e. the word models
+		// used for classification are the same no matter what dialogue
+		// is being classified
+		return new IsolatedUtteranceEventDialogueClassifier(diagToClassify -> wordClassifiers,
+				classificationContext.getReferentConfidenceMapFactory());
+	};
 
 	private TrainingConstants() {
 	}

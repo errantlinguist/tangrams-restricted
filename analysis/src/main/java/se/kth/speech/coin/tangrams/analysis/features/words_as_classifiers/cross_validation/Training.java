@@ -48,8 +48,10 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialog
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.DialogicInstancesFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.OnePositiveMaximumNegativeInstancesFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.OnePositiveOneNegativeInstanceFactory;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.ParallelizedWordLogisticClassifierTrainer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.TrainingInstancesFactory;
 import se.kth.speech.nlp.PatternMatchingUtteranceAcceptanceRanker;
+import weka.classifiers.functions.Logistic;
 
 enum Training {
 	ALL_NEG(1) {
@@ -101,9 +103,17 @@ enum Training {
 
 		@Override
 		public Function<ClassificationContext, EventDialogueClassifier> getClassifierFactory() {
-			return classificationContext -> new DialogicEventDialogueClassifier(classificationContext.getTrainingData(),
-					classificationContext.getBackgroundJobExecutor(), createCachingUttAcceptanceRanker(),
-					diagWordClassFactory, classificationContext.getReferentConfidenceMapFactory());
+			return classificationContext -> {
+				final ParallelizedWordLogisticClassifierTrainer trainer = new ParallelizedWordLogisticClassifierTrainer(
+						classificationContext.getTrainingData(), classificationContext.getBackgroundJobExecutor());
+				final Function<String, Logistic> wordClassifiers = trainer.get()::get;
+				// This classifier is statically-trained, i.e. the word models
+				// used for classification are the same no matter what dialogue
+				// is being classified
+				return new DialogicEventDialogueClassifier(diagToClassify -> wordClassifiers,
+						createCachingUttAcceptanceRanker(), diagWordClassFactory,
+						classificationContext.getReferentConfidenceMapFactory());
+			};
 		}
 
 		private ToDoubleFunction<Utterance> createCachingUttAcceptanceRanker() {

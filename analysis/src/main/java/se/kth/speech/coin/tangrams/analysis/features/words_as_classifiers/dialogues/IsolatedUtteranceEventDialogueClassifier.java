@@ -18,7 +18,6 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialo
 
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.Executor;
 import java.util.function.Function;
 
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
@@ -29,22 +28,23 @@ import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.ReferentConfidenceMapFactory;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.WordClassificationData;
 import weka.classifiers.Classifier;
-import weka.classifiers.functions.Logistic;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
  * @since 23 May 2017
  *
  */
-public final class IsolatedUtteranceEventDialogueClassifier extends AbstractParallelizedEventDialogueClassifier {
+public final class IsolatedUtteranceEventDialogueClassifier implements EventDialogueClassifier {
+
+	private final Function<? super EventDialogue, Function<? super String, ? extends Classifier>> diagWordClassifierFactory;
 
 	private final ReferentConfidenceMapFactory referentConfidenceMapFactory;
 
-	public IsolatedUtteranceEventDialogueClassifier(final WordClassificationData trainingData,
-			final Executor backgroundJobExecutor, final ReferentConfidenceMapFactory referentConfidenceMapFactory) {
-		super(trainingData, backgroundJobExecutor);
+	public IsolatedUtteranceEventDialogueClassifier(
+			final Function<? super EventDialogue, Function<? super String, ? extends Classifier>> diagWordClassifierFactory,
+			final ReferentConfidenceMapFactory referentConfidenceMapFactory) {
+		this.diagWordClassifierFactory = diagWordClassifierFactory;
 		this.referentConfidenceMapFactory = referentConfidenceMapFactory;
 	}
 
@@ -56,7 +56,8 @@ public final class IsolatedUtteranceEventDialogueClassifier extends AbstractPara
 		if (uttsToClassify.isEmpty()) {
 			result = Optional.empty();
 		} else {
-			final Function<String, Logistic> wordClassifierGetter = getWordClassifierGetter(diag);
+			final Function<? super String, ? extends Classifier> wordClassifierGetter = diagWordClassifierFactory
+					.apply(diag);
 			final Int2DoubleMap referentConfidenceVals = createReferentConfidenceMap(uttsToClassify, ctx,
 					wordClassifierGetter);
 			result = Optional.of(referentConfidenceVals);

@@ -14,7 +14,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues;
+package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training;
 
 import java.util.Map.Entry;
 import java.util.Set;
@@ -23,14 +23,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.TrainingException;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.WordClassificationData;
 import weka.classifiers.functions.Logistic;
 import weka.core.Instances;
 
@@ -39,18 +38,30 @@ import weka.core.Instances;
  * @since 20 Oct 2017
  *
  */
-public abstract class AbstractParallelizedEventDialogueClassifier implements EventDialogueClassifier {
+public final class ParallelizedWordLogisticClassifierTrainer implements Supplier<ConcurrentMap<String, Logistic>> {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(AbstractParallelizedEventDialogueClassifier.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(ParallelizedWordLogisticClassifierTrainer.class);
 
 	private final Executor backgroundJobExecutor;
 
+	private final WordClassificationData trainingData;
+
 	private Function<String, Logistic> wordClassifierGetter;
 
-	public AbstractParallelizedEventDialogueClassifier(final WordClassificationData trainingData,
+	public ParallelizedWordLogisticClassifierTrainer(final WordClassificationData trainingData,
 			final Executor backgroundJobExecutor) {
+		this.trainingData = trainingData;
 		this.backgroundJobExecutor = backgroundJobExecutor;
-		wordClassifierGetter = trainWordClassifiers(trainingData.getClassInstances().entrySet())::get;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 *
+	 * @see java.util.function.Supplier#get()
+	 */
+	@Override
+	public ConcurrentMap<String, Logistic> get() {
+		return trainWordClassifiers(trainingData.getClassInstances().entrySet());
 	}
 
 	private ConcurrentMap<String, Logistic> trainWordClassifiers(final Set<Entry<String, Instances>> classInstances) {
