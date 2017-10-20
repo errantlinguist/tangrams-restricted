@@ -45,9 +45,10 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialog
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.EventDialogueClassifier;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.EventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.InstructorUtteranceFilteringEventDialogueTransformer;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.DialogicInstancesFactory;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.OnePositiveMaximumNegativeInstancesFactory;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.OnePositiveOneNegativeInstanceFactory;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.SizeEstimatingInstancesMapFactory;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.DialogicInstanceExtractor;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.OnePositiveMaximumNegativeInstanceExtractor;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.OnePositiveOneNegativeInstanceExtractor;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.ParallelizedWordLogisticClassifierTrainer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.TrainingInstancesFactory;
 import se.kth.speech.nlp.PatternMatchingUtteranceAcceptanceRanker;
@@ -69,8 +70,8 @@ enum Training {
 					.getBean(EntityInstanceAttributeContext.class);
 			final EntityFeatureExtractionContextFactory extCtxFactory = appCtx
 					.getBean(EntityFeatureExtractionContextFactory.class);
-			return new OnePositiveMaximumNegativeInstancesFactory(entityInstAttrCtx, trainingCtx.getDiagTransformer(),
-					extCtxFactory);
+			return new SizeEstimatingInstancesMapFactory(new OnePositiveMaximumNegativeInstanceExtractor(
+					entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory), entityInstAttrCtx);
 		}
 
 		@Override
@@ -93,8 +94,8 @@ enum Training {
 					.getBean(EntityInstanceAttributeContext.class);
 			final EntityFeatureExtractionContextFactory extCtxFactory = appCtx
 					.getBean(EntityFeatureExtractionContextFactory.class);
-			return new OnePositiveMaximumNegativeInstancesFactory(entityInstAttrCtx, trainingCtx.getDiagTransformer(),
-					extCtxFactory);
+			return new SizeEstimatingInstancesMapFactory(new OnePositiveMaximumNegativeInstanceExtractor(
+					entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory), entityInstAttrCtx);
 		}
 
 		@Override
@@ -121,8 +122,10 @@ enum Training {
 					.getBean(EntityInstanceAttributeContext.class);
 			final EntityFeatureExtractionContextFactory extCtxFactory = appCtx
 					.getBean(EntityFeatureExtractionContextFactory.class);
-			return new DialogicInstancesFactory(entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory,
-					createCachingUttAcceptanceRanker(), diagWordClassFactory, trainingCtx.getUttRelHandler());
+			return new SizeEstimatingInstancesMapFactory(
+					new DialogicInstanceExtractor(entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory,
+							createCachingUttAcceptanceRanker(), diagWordClassFactory, trainingCtx.getUttRelHandler()),
+					entityInstAttrCtx);
 		}
 
 		@Override
@@ -177,8 +180,10 @@ enum Training {
 					.getBean(EntityInstanceAttributeContext.class);
 			final EntityFeatureExtractionContextFactory extCtxFactory = appCtx
 					.getBean(EntityFeatureExtractionContextFactory.class);
-			return new OnePositiveOneNegativeInstanceFactory(entityInstAttrCtx, trainingCtx.getDiagTransformer(),
-					extCtxFactory, TrainingConstants.RND);
+			return new SizeEstimatingInstancesMapFactory(
+					new OnePositiveOneNegativeInstanceExtractor(entityInstAttrCtx, trainingCtx.getDiagTransformer(),
+							extCtxFactory, TrainingConstants.RND),
+					entityInstAttrCtx);
 		}
 
 		@Override

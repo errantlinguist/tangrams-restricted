@@ -48,9 +48,9 @@ import weka.core.Instances;
  * @since May 30, 2017
  *
  */
-public final class DialogicInstancesFactory extends AbstractSizeEstimatingInstancesMapFactory {
+public final class DialogicInstanceExtractor extends AbstractInstanceExtractor {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(DialogicInstancesFactory.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(DialogicInstanceExtractor.class);
 
 	private static final String NEGATIVE_EXAMPLE_LABEL = Boolean.FALSE.toString();
 
@@ -66,7 +66,7 @@ public final class DialogicInstancesFactory extends AbstractSizeEstimatingInstan
 
 	private final BiConsumer<? super EventDialogue, ? super List<UtteranceRelation>> uttRelHandler;
 
-	public DialogicInstancesFactory(final EntityInstanceAttributeContext entityInstAttrCtx,
+	public DialogicInstanceExtractor(final EntityInstanceAttributeContext entityInstAttrCtx,
 			final EventDialogueTransformer diagTransformer, final EntityFeatureExtractionContextFactory extCtxFactory,
 			final ToDoubleFunction<? super Utterance> uttAcceptanceRanker,
 			final Function<? super Collection<UtteranceRelation>, EntityReferringLanguageWordClasses> entityRefLangExFactory,
@@ -75,7 +75,7 @@ public final class DialogicInstancesFactory extends AbstractSizeEstimatingInstan
 				entityRefLangExFactory, uttRelHandler);
 	}
 
-	private DialogicInstancesFactory(final EntityInstanceAttributeContext entityInstAttrCtx,
+	private DialogicInstanceExtractor(final EntityInstanceAttributeContext entityInstAttrCtx,
 			final EventDialogueTransformer diagTransformer, final BooleanTrainingContextsFactory trainingCtxsFactory,
 			final ToDoubleFunction<? super Utterance> uttAcceptanceRanker,
 			final Function<? super Collection<UtteranceRelation>, EntityReferringLanguageWordClasses> entityRefLangExFactory,

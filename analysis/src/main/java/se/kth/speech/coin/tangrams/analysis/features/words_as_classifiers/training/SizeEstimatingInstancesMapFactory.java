@@ -44,9 +44,9 @@ import weka.core.Instances;
  * @since May 26, 2017
  *
  */
-abstract class AbstractSizeEstimatingInstancesMapFactory implements TrainingInstancesFactory {
+public final class SizeEstimatingInstancesMapFactory implements TrainingInstancesFactory {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(AbstractSizeEstimatingInstancesMapFactory.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(SizeEstimatingInstancesMapFactory.class);
 
 	private static int estimateVocabTypeCount(final Collection<?> sessionData) {
 		final double estimate = Math.log(sessionData.size() + 1) * 850;
@@ -75,7 +75,11 @@ abstract class AbstractSizeEstimatingInstancesMapFactory implements TrainingInst
 
 	private final EntityInstanceAttributeContext entityInstAttrCtx;
 
-	protected AbstractSizeEstimatingInstancesMapFactory(final EntityInstanceAttributeContext entityInstAttrCtx) {
+	private final AbstractInstanceExtractor instExtractor;
+
+	public SizeEstimatingInstancesMapFactory(final AbstractInstanceExtractor instExtractor,
+			final EntityInstanceAttributeContext entityInstAttrCtx) {
+		this.instExtractor = instExtractor;
 		this.entityInstAttrCtx = entityInstAttrCtx;
 	}
 
@@ -101,16 +105,13 @@ abstract class AbstractSizeEstimatingInstancesMapFactory implements TrainingInst
 		return result;
 	}
 
-	protected abstract void addTrainingData(final EventDialogue eventDialogue, GameHistory history,
-			WordClassificationData trainingData);
-
 	protected final void addTrainingData(final SessionGame sessionGame, final WordClassificationData trainingData) {
 		final String gameId = sessionGame.getGameId();
 		LOGGER.debug("Processing game \"{}\".", gameId);
 		final GameHistory history = sessionGame.getHistory();
 
 		final List<EventDialogue> uttDialogues = sessionGame.getEventDialogues();
-		uttDialogues.forEach(uttDialogue -> this.addTrainingData(uttDialogue, history, trainingData));
+		uttDialogues.forEach(uttDialogue -> instExtractor.addTrainingData(uttDialogue, history, trainingData));
 	}
 
 	protected final Instance createTokenInstance(final Instances classInsts,
