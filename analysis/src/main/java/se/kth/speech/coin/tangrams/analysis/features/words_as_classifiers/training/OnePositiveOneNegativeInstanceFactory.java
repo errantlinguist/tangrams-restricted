@@ -28,7 +28,6 @@ import org.slf4j.LoggerFactory;
 import it.unimi.dsi.fastutil.ints.IntList;
 import se.kth.speech.coin.tangrams.analysis.GameContext;
 import se.kth.speech.coin.tangrams.analysis.GameHistory;
-import se.kth.speech.coin.tangrams.analysis.SessionGame;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
@@ -152,38 +151,32 @@ public final class OnePositiveOneNegativeInstanceFactory extends AbstractSizeEst
 	}
 
 	@Override
-	protected void addTrainingData(final SessionGame sessionGame, final WordClassificationData trainingData) {
-		final String gameId = sessionGame.getGameId();
-		LOGGER.debug("Processing game \"{}\".", gameId);
-		final GameHistory history = sessionGame.getHistory();
-
-		final List<EventDialogue> uttDialogues = sessionGame.getEventDialogues();
-		uttDialogues.forEach(uttDialogue -> {
-			uttDialogue.getFirstEvent().ifPresent(event -> {
-				LOGGER.debug("Extracting features for utterances for event: {}", event);
-				final EventDialogue transformedDiag = diagTransformer.apply(uttDialogue);
-				final List<Utterance> utts = transformedDiag.getUtterances();
-				if (utts.isEmpty()) {
-					LOGGER.debug("No utterances to train with for {}.", transformedDiag);
-				} else {
-					// Just use the game context for the first utterance for all
-					// utterances processed for the given dialogue
-					final Utterance firstUtt = utts.get(0);
-					final GameContext uttCtx = UtteranceGameContexts.createSingleContext(firstUtt, history);
-					final int selectedEntityId = uttCtx.findLastSelectedEntityId().getAsInt();
-					LOGGER.debug(
-							"Creating positive and negative examples for entity ID \"{}\", which is selected by player \"{}\".",
-							selectedEntityId, event.getGameAttrs().get(GameManagementEvent.Attribute.PLAYER_ID));
-					final BooleanTrainingContexts trainingContexts = trainingCtxsFactory.apply(firstUtt, history);
-					final double observationWeight = 1.0;
-					// Instances for referent entity
-					getWordClasses(utts).forEach(token -> addWeightedExamples(token, trainingData, trainingContexts.pos,
-							observationWeight, POSITIVE_EXAMPLE_LABEL));
-					// Instances for non-referent entities
-					getWordClasses(utts).forEach(token -> addWeightedExamples(token, trainingData, trainingContexts.neg,
-							observationWeight, NEGATIVE_EXAMPLE_LABEL));
-				}
-			});
+	protected void addTrainingData(final EventDialogue eventDialogue, final GameHistory history,
+			final WordClassificationData trainingData) {
+		eventDialogue.getFirstEvent().ifPresent(event -> {
+			LOGGER.debug("Extracting features for utterances for event: {}", event);
+			final EventDialogue transformedDiag = diagTransformer.apply(eventDialogue);
+			final List<Utterance> utts = transformedDiag.getUtterances();
+			if (utts.isEmpty()) {
+				LOGGER.debug("No utterances to train with for {}.", transformedDiag);
+			} else {
+				// Just use the game context for the first utterance for all
+				// utterances processed for the given dialogue
+				final Utterance firstUtt = utts.get(0);
+				final GameContext uttCtx = UtteranceGameContexts.createSingleContext(firstUtt, history);
+				final int selectedEntityId = uttCtx.findLastSelectedEntityId().getAsInt();
+				LOGGER.debug(
+						"Creating positive and negative examples for entity ID \"{}\", which is selected by player \"{}\".",
+						selectedEntityId, event.getGameAttrs().get(GameManagementEvent.Attribute.PLAYER_ID));
+				final BooleanTrainingContexts trainingContexts = trainingCtxsFactory.apply(firstUtt, history);
+				final double observationWeight = 1.0;
+				// Instances for referent entity
+				getWordClasses(utts).forEach(token -> addWeightedExamples(token, trainingData, trainingContexts.pos,
+						observationWeight, POSITIVE_EXAMPLE_LABEL));
+				// Instances for non-referent entities
+				getWordClasses(utts).forEach(token -> addWeightedExamples(token, trainingData, trainingContexts.neg,
+						observationWeight, NEGATIVE_EXAMPLE_LABEL));
+			}
 		});
 	}
 }

@@ -29,7 +29,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import se.kth.speech.coin.tangrams.analysis.GameHistory;
-import se.kth.speech.coin.tangrams.analysis.SessionGame;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
@@ -104,50 +103,44 @@ public final class DialogicInstancesFactory extends AbstractSizeEstimatingInstan
 	}
 
 	@Override
-	protected void addTrainingData(final SessionGame sessionGame, final WordClassificationData trainingData) {
-		final String gameId = sessionGame.getGameId();
-		LOGGER.debug("Processing game \"{}\".", gameId);
-		final GameHistory history = sessionGame.getHistory();
+	protected void addTrainingData(final EventDialogue eventDialogue, final GameHistory history,
+			final WordClassificationData trainingData) {
+		eventDialogue.getFirstEvent().ifPresent(event -> {
+			LOGGER.debug("Extracting features for utterances for event: {}", event);
+			final EventDialogue transformedDiag = diagTransformer.apply(eventDialogue);
+			final List<Utterance> allUtts = transformedDiag.getUtterances();
+			if (allUtts.isEmpty()) {
+				LOGGER.debug("No utterances to train with for {}.", transformedDiag);
+			} else {
+				// Just use the game context for the first utterance for all
+				// utterances processed for the given dialogue
+				LOGGER.debug("Creating positive and negative examples for entity selected by player \"{}\".",
+						event.getGameAttrs().get(GameManagementEvent.Attribute.PLAYER_ID));
+				final BooleanTrainingContexts trainingContexts = trainingCtxsFactory.apply(allUtts.get(0), history);
+				final DialogicEventDialogueUtteranceSorter uttSorter = new DialogicEventDialogueUtteranceSorter(
+						uttAcceptanceRanker);
+				final List<UtteranceRelation> uttRels = uttSorter.apply(allUtts, event);
+				uttRelHandler.accept(eventDialogue, uttRels);
 
-		final List<EventDialogue> uttDialogues = sessionGame.getEventDialogues();
-		uttDialogues.forEach(uttDialogue -> {
-			uttDialogue.getFirstEvent().ifPresent(event -> {
-				LOGGER.debug("Extracting features for utterances for event: {}", event);
-				final EventDialogue transformedDiag = diagTransformer.apply(uttDialogue);
-				final List<Utterance> allUtts = transformedDiag.getUtterances();
-				if (allUtts.isEmpty()) {
-					LOGGER.debug("No utterances to train with for {}.", transformedDiag);
-				} else {
-					// Just use the game context for the first utterance for all
-					// utterances processed for the given dialogue
-					LOGGER.debug("Creating positive and negative examples for entity selected by player \"{}\".",
-							event.getGameAttrs().get(GameManagementEvent.Attribute.PLAYER_ID));
-					final BooleanTrainingContexts trainingContexts = trainingCtxsFactory.apply(allUtts.get(0), history);
-					final DialogicEventDialogueUtteranceSorter uttSorter = new DialogicEventDialogueUtteranceSorter(
-							uttAcceptanceRanker);
-					final List<UtteranceRelation> uttRels = uttSorter.apply(allUtts, event);
-					uttRelHandler.accept(uttDialogue, uttRels);
-
-					final EntityReferringLanguageWordClasses entityRefLangExs = entityRefLangExFactory.apply(uttRels);
-					{
-						// Instances for referent entity
-						final List<EntityFeature.Extractor.Context> positiveCtxs = trainingContexts.getPositive();
-						entityRefLangExs.getRefPosExamples().object2DoubleEntrySet().stream()
-								.forEach(langEx -> addWeightedExamples(langEx.getKey(), trainingData, positiveCtxs,
-										langEx.getDoubleValue(), POSITIVE_EXAMPLE_LABEL));
-						entityRefLangExs.getRefNegExamples().object2DoubleEntrySet().stream()
-								.forEach(langEx -> addWeightedExamples(langEx.getKey(), trainingData, positiveCtxs,
-										langEx.getDoubleValue(), NEGATIVE_EXAMPLE_LABEL));
-					}
-					{
-						// Instances for non-referent entities
-						final List<EntityFeature.Extractor.Context> negativeCtxs = trainingContexts.getNegative();
-						entityRefLangExs.getOtherEntityNegativeExamples().object2DoubleEntrySet().stream()
-								.forEach(langEx -> addWeightedExamples(langEx.getKey(), trainingData, negativeCtxs,
-										langEx.getDoubleValue(), NEGATIVE_EXAMPLE_LABEL));
-					}
+				final EntityReferringLanguageWordClasses entityRefLangExs = entityRefLangExFactory.apply(uttRels);
+				{
+					// Instances for referent entity
+					final List<EntityFeature.Extractor.Context> positiveCtxs = trainingContexts.getPositive();
+					entityRefLangExs.getRefPosExamples().object2DoubleEntrySet().stream()
+							.forEach(langEx -> addWeightedExamples(langEx.getKey(), trainingData, positiveCtxs,
+									langEx.getDoubleValue(), POSITIVE_EXAMPLE_LABEL));
+					entityRefLangExs.getRefNegExamples().object2DoubleEntrySet().stream()
+							.forEach(langEx -> addWeightedExamples(langEx.getKey(), trainingData, positiveCtxs,
+									langEx.getDoubleValue(), NEGATIVE_EXAMPLE_LABEL));
 				}
-			});
+				{
+					// Instances for non-referent entities
+					final List<EntityFeature.Extractor.Context> negativeCtxs = trainingContexts.getNegative();
+					entityRefLangExs.getOtherEntityNegativeExamples().object2DoubleEntrySet().stream()
+							.forEach(langEx -> addWeightedExamples(langEx.getKey(), trainingData, negativeCtxs,
+									langEx.getDoubleValue(), NEGATIVE_EXAMPLE_LABEL));
+				}
+			}
 		});
 	}
 }

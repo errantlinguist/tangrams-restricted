@@ -17,6 +17,7 @@
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -27,8 +28,10 @@ import com.google.common.collect.Maps;
 
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
-import se.kth.speech.coin.tangrams.analysis.SessionGameManager;
+import se.kth.speech.coin.tangrams.analysis.GameHistory;
 import se.kth.speech.coin.tangrams.analysis.SessionGame;
+import se.kth.speech.coin.tangrams.analysis.SessionGameManager;
+import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
 import se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttributeContext;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordClasses;
@@ -98,10 +101,19 @@ abstract class AbstractSizeEstimatingInstancesMapFactory implements TrainingInst
 		return result;
 	}
 
-	protected abstract void addTrainingData(final SessionGame sessionGame,
+	protected abstract void addTrainingData(final EventDialogue eventDialogue, GameHistory history,
 			WordClassificationData trainingData);
 
-	protected Instance createTokenInstance(final Instances classInsts,
+	protected final void addTrainingData(final SessionGame sessionGame, final WordClassificationData trainingData) {
+		final String gameId = sessionGame.getGameId();
+		LOGGER.debug("Processing game \"{}\".", gameId);
+		final GameHistory history = sessionGame.getHistory();
+
+		final List<EventDialogue> uttDialogues = sessionGame.getEventDialogues();
+		uttDialogues.forEach(uttDialogue -> this.addTrainingData(uttDialogue, history, trainingData));
+	}
+
+	protected final Instance createTokenInstance(final Instances classInsts,
 			final EntityFeature.Extractor.Context extractionContext, final String classValue) {
 		final Instance result = new DenseInstance(entityInstAttrCtx.getAttrs().size());
 		result.setDataset(classInsts);
