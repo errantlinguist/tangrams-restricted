@@ -18,6 +18,7 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialo
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
@@ -37,12 +38,12 @@ import weka.classifiers.Classifier;
  */
 public final class IsolatedUtteranceEventDialogueClassifier implements EventDialogueClassifier {
 
-	private final Function<? super EventDialogue, Function<? super String, ? extends Classifier>> diagWordClassifierFactory;
+	private final BiFunction<? super EventDialogue, ? super GameContext, Function<? super String, ? extends Classifier>> diagWordClassifierFactory;
 
 	private final ReferentConfidenceMapFactory referentConfidenceMapFactory;
 
 	public IsolatedUtteranceEventDialogueClassifier(
-			final Function<? super EventDialogue, Function<? super String, ? extends Classifier>> diagWordClassifierFactory,
+			final BiFunction<? super EventDialogue, ? super GameContext, Function<? super String, ? extends Classifier>> diagWordClassifierFactory,
 			final ReferentConfidenceMapFactory referentConfidenceMapFactory) {
 		this.diagWordClassifierFactory = diagWordClassifierFactory;
 		this.referentConfidenceMapFactory = referentConfidenceMapFactory;
@@ -57,7 +58,7 @@ public final class IsolatedUtteranceEventDialogueClassifier implements EventDial
 			result = Optional.empty();
 		} else {
 			final Function<? super String, ? extends Classifier> wordClassifierGetter = diagWordClassifierFactory
-					.apply(diag);
+					.apply(diag, ctx);
 			final Int2DoubleMap referentConfidenceVals = createReferentConfidenceMap(uttsToClassify, ctx,
 					wordClassifierGetter);
 			result = Optional.of(referentConfidenceVals);

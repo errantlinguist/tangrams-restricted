@@ -135,7 +135,7 @@ enum Training {
 				// This classifier is statically-trained, i.e. the word models
 				// used for classification are the same no matter what dialogue
 				// is being classified
-				return new DialogicEventDialogueClassifier(diagToClassify -> wordClassifiers,
+				return new DialogicEventDialogueClassifier((diagToClassify, ctx) -> wordClassifiers,
 						createCachingUttAcceptanceRanker(), diagWordClassFactory,
 						classificationContext.getReferentConfidenceMapFactory());
 			};

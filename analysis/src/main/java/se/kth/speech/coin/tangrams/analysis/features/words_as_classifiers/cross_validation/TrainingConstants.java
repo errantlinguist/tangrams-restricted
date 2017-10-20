@@ -44,7 +44,7 @@ final class TrainingConstants {
 		// This classifier is statically-trained, i.e. the word models
 		// used for classification are the same no matter what dialogue
 		// is being classified
-		return new IsolatedUtteranceEventDialogueClassifier(diagToClassify -> wordClassifiers,
+		return new IsolatedUtteranceEventDialogueClassifier((diagToClassify, ctx) -> wordClassifiers,
 				classificationContext.getReferentConfidenceMapFactory());
 	};
 
