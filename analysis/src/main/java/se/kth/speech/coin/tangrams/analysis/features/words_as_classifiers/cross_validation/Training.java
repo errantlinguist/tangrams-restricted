@@ -37,9 +37,9 @@ import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionContextFactory;
 import se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttributeContext;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.ReferentConfidenceMapFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.CachingEventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.ChainedEventDialogueTransformer;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.ClassificationContext;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.DialogicEventDialogueClassifier;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.DialogicWeightedWordClassFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.EventDialogueClassifier;
@@ -72,7 +72,7 @@ enum Training {
 		}
 
 		@Override
-		public Function<ReferentConfidenceMapFactory, EventDialogueClassifier> getClassifierFactory() {
+		public Function<ClassificationContext, EventDialogueClassifier> getClassifierFactory() {
 			return TrainingConstants.SIMPLE_CLASSIFIER_FACTORY;
 		}
 	},
@@ -100,9 +100,10 @@ enum Training {
 		}
 
 		@Override
-		public Function<ReferentConfidenceMapFactory, EventDialogueClassifier> getClassifierFactory() {
-			return (refConfMapFactory) -> new DialogicEventDialogueClassifier(createCachingUttAcceptanceRanker(),
-					diagWordClassFactory, refConfMapFactory);
+		public Function<ClassificationContext, EventDialogueClassifier> getClassifierFactory() {
+			return classificationContext -> new DialogicEventDialogueClassifier(classificationContext.getTrainingData(),
+					classificationContext.getBackgroundJobExecutor(), createCachingUttAcceptanceRanker(),
+					diagWordClassFactory, classificationContext.getReferentConfidenceMapFactory());
 		}
 
 		private ToDoubleFunction<Utterance> createCachingUttAcceptanceRanker() {
@@ -146,7 +147,7 @@ enum Training {
 		}
 
 		@Override
-		public Function<ReferentConfidenceMapFactory, EventDialogueClassifier> getClassifierFactory() {
+		public Function<ClassificationContext, EventDialogueClassifier> getClassifierFactory() {
 			return TrainingConstants.SIMPLE_CLASSIFIER_FACTORY;
 		}
 	};
@@ -201,7 +202,7 @@ enum Training {
 	/**
 	 * @return the classifierFactory
 	 */
-	public abstract Function<ReferentConfidenceMapFactory, EventDialogueClassifier> getClassifierFactory();
+	public abstract Function<ClassificationContext, EventDialogueClassifier> getClassifierFactory();
 
 	public int getIterCount() {
 		return iterCount;

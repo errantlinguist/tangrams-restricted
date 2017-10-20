@@ -19,7 +19,7 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross
 import java.util.Random;
 import java.util.function.Function;
 
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.ReferentConfidenceMapFactory;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.ClassificationContext;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.EventDialogueClassifier;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.IsolatedUtteranceEventDialogueClassifier;
 
@@ -34,7 +34,9 @@ final class TrainingConstants {
 
 	static final Random RND = new Random(1);
 
-	static final Function<ReferentConfidenceMapFactory, EventDialogueClassifier> SIMPLE_CLASSIFIER_FACTORY = IsolatedUtteranceEventDialogueClassifier::new;
+	static final Function<ClassificationContext, EventDialogueClassifier> SIMPLE_CLASSIFIER_FACTORY = classificationContext -> new IsolatedUtteranceEventDialogueClassifier(
+			classificationContext.getTrainingData(), classificationContext.getBackgroundJobExecutor(),
+			classificationContext.getReferentConfidenceMapFactory());
 
 	private TrainingConstants() {
 	}

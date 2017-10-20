@@ -55,18 +55,13 @@ public final class ReferentConfidenceMapFactory {
 
 	private final Function<? super EntityFeature.Extractor.Context, ? extends Instance> testInstFactory;
 
-	private final Function<? super String, ? extends Classifier> wordClassifiers;
-
-	public ReferentConfidenceMapFactory(final Function<? super String, ? extends Classifier> wordClassifiers, // NO_UCD
-																												// (unused
-																												// code)
+	public ReferentConfidenceMapFactory(
 			final Function<? super EntityFeature.Extractor.Context, ? extends Instance> testInstFactory) {
-		this.wordClassifiers = wordClassifiers;
 		this.testInstFactory = testInstFactory;
 	}
 
-	public Int2DoubleMap apply(final Object2DoubleMap<String> tokens, final GameContext uttCtx)
-			throws ClassificationException {
+	public Int2DoubleMap apply(final Object2DoubleMap<String> tokens, final GameContext uttCtx,
+			final Function<? super String, ? extends Classifier> wordClassifiers) throws ClassificationException {
 		LOGGER.debug("Getting entity reference confidence measures for linguistic tokens: {}.", tokens);
 		// TODO: Cache mapping of word classes -> classifiers?
 		final WeightedClassifier[] weightedClassifiers = smoother

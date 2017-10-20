@@ -63,11 +63,11 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.Sessio
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.SessionTestStatistics;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.UtteranceGameContexts;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordClassDiscountingSmoother;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.ClassificationContext;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.EventDialogueClassifier;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.EventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.WordClassificationData;
 import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
-import weka.classifiers.functions.Logistic;
 import weka.core.Instance;
 import weka.core.Instances;
 
@@ -301,32 +301,6 @@ public final class CrossValidator {
 
 	}
 
-	static final class TrainingException extends RuntimeException {
-
-		/**
-		 *
-		 */
-		private static final long serialVersionUID = -4685752527646143156L;
-
-		private final String classificationName;
-
-		/**
-		 * @param cause
-		 */
-		public TrainingException(final String classificationName, final Throwable cause) {
-			super(cause);
-			this.classificationName = classificationName;
-		}
-
-		/**
-		 * @return the classificationName
-		 */
-		String getClassificationName() {
-			return classificationName;
-		}
-
-	}
-
 	private static final Logger LOGGER = LoggerFactory.getLogger(CrossValidator.class);
 
 	private static final String TEST_INSTS_REL_NAME = "tested_entites";
@@ -352,7 +326,7 @@ public final class CrossValidator {
 	@Inject
 	private BeanFactory beanFactory;
 
-	private final Function<? super ReferentConfidenceMapFactory, ? extends EventDialogueClassifier> classifierFactory;
+	private final Function<? super ClassificationContext, ? extends EventDialogueClassifier> classifierFactory;
 
 	private final EventDialogueTransformer diagTransformer;
 
@@ -373,7 +347,7 @@ public final class CrossValidator {
 	private final TestSetFactory testSetFactory;
 
 	public CrossValidator(final TestSetFactory testSetFactory, final EventDialogueTransformer diagTransformer,
-			final Function<? super ReferentConfidenceMapFactory, ? extends EventDialogueClassifier> classifierFactory,
+			final Function<? super ClassificationContext, ? extends EventDialogueClassifier> classifierFactory,
 			final Executor backgroundJobExecutor) {
 		this.testSetFactory = testSetFactory;
 		this.diagTransformer = diagTransformer;
@@ -415,16 +389,14 @@ public final class CrossValidator {
 
 	private EventDialogueClassifier createDialogueClassifier(final WordClassificationData trainingData,
 			final SessionDataManager testSessionData) throws IOException {
-		final StaticWordClassifierFactory wordClassifierFactory = new StaticWordClassifierFactory(
-				trainingData.getClassInstances().entrySet(), backgroundJobExecutor);
-		final Function<String, Logistic> wordClassifierGetter = wordClassifierFactory.get()::get;
 		final Instances testInsts = testInstsFactory.apply(TEST_INSTS_REL_NAME,
 				estimateTestInstanceCount(testSessionData));
 		final Function<EntityFeature.Extractor.Context, Instance> testInstFactory = entInstAttrCtx
 				.createInstFactory(testInsts);
 		final ReferentConfidenceMapFactory referentConfidenceMapFactory = beanFactory
-				.getBean(ReferentConfidenceMapFactory.class, wordClassifierGetter, testInstFactory);
-		return classifierFactory.apply(referentConfidenceMapFactory);
+				.getBean(ReferentConfidenceMapFactory.class, testInstFactory);
+		return classifierFactory
+				.apply(new ClassificationContext(trainingData, backgroundJobExecutor, referentConfidenceMapFactory));
 	}
 
 	private Map<Path, CrossValidationTestSummary> crossValidate(final Map<SessionDataManager, Path> allSessions)

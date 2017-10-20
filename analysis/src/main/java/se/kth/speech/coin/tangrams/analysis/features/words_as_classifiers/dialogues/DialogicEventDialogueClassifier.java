@@ -19,6 +19,7 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialo
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.Executor;
 import java.util.function.Function;
 import java.util.function.ToDoubleFunction;
 
@@ -33,14 +34,16 @@ import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.ReferentConfidenceMapFactory;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.WordClassificationData;
 import se.kth.speech.coin.tangrams.iristk.GameEvent;
+import weka.classifiers.functions.Logistic;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
  * @since Jul 9, 2017
  *
  */
-public final class DialogicEventDialogueClassifier implements EventDialogueClassifier {
+public final class DialogicEventDialogueClassifier extends AbstractParallelizedEventDialogueClassifier {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(DialogicEventDialogueClassifier.class);
 
@@ -50,9 +53,11 @@ public final class DialogicEventDialogueClassifier implements EventDialogueClass
 
 	private final ToDoubleFunction<? super Utterance> uttAcceptanceRanker;
 
-	public DialogicEventDialogueClassifier(final ToDoubleFunction<? super Utterance> uttAcceptanceRanker,
+	public DialogicEventDialogueClassifier(final WordClassificationData trainingData,
+			final Executor backgroundJobExecutor, final ToDoubleFunction<? super Utterance> uttAcceptanceRanker,
 			final Function<? super Collection<UtteranceRelation>, EntityReferringLanguageWordClasses> entityRefLangExFactory,
 			final ReferentConfidenceMapFactory referentConfidenceMapFactory) {
+		super(trainingData, backgroundJobExecutor);
 		this.uttAcceptanceRanker = uttAcceptanceRanker;
 		this.entityRefLangExFactory = entityRefLangExFactory;
 		this.referentConfidenceMapFactory = referentConfidenceMapFactory;
@@ -79,6 +84,7 @@ public final class DialogicEventDialogueClassifier implements EventDialogueClass
 				LOGGER.debug("No utterances to classify for {}.", transformedDiag);
 				result = Optional.empty();
 			} else {
+				final Function<String, Logistic> wordClassifierGetter = getWordClassifierGetter(transformedDiag);
 				final DialogicEventDialogueUtteranceSorter uttSorter = new DialogicEventDialogueUtteranceSorter(
 						uttAcceptanceRanker);
 				final List<UtteranceRelation> uttRels = uttSorter.apply(allUtts, event);
@@ -91,11 +97,9 @@ public final class DialogicEventDialogueClassifier implements EventDialogueClass
 						.forEach(entry -> refExs.put(entry.getKey(), entry.getDoubleValue()));
 				refNegExs.object2DoubleEntrySet().stream()
 						.forEach(entry -> refExs.put(entry.getKey(), -entry.getDoubleValue()));
-				result = Optional.of(referentConfidenceMapFactory.apply(refExs, ctx));
+				result = Optional.of(referentConfidenceMapFactory.apply(refExs, ctx, wordClassifierGetter));
 			}
-		} else
-
-		{
+		} else {
 			result = Optional.empty();
 		}
 		return result;

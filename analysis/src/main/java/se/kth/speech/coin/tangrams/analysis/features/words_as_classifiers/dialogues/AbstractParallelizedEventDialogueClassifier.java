@@ -14,7 +14,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation;
+package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues;
 
 import java.util.Map.Entry;
 import java.util.Set;
@@ -22,13 +22,15 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
-import java.util.function.Supplier;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.CrossValidator.TrainingException;
+import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.TrainingException;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.WordClassificationData;
 import weka.classifiers.functions.Logistic;
 import weka.core.Instances;
 
@@ -37,22 +39,21 @@ import weka.core.Instances;
  * @since 20 Oct 2017
  *
  */
-final class StaticWordClassifierFactory implements Supplier<ConcurrentMap<String, Logistic>> {
+public abstract class AbstractParallelizedEventDialogueClassifier implements EventDialogueClassifier {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(StaticWordClassifierFactory.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(AbstractParallelizedEventDialogueClassifier.class);
 
 	private final Executor backgroundJobExecutor;
 
-	private final Set<Entry<String, Instances>> classInstances;
+	private Function<String, Logistic> wordClassifierGetter;
 
-	public StaticWordClassifierFactory(final Set<Entry<String, Instances>> classInstances,
+	public AbstractParallelizedEventDialogueClassifier(final WordClassificationData trainingData,
 			final Executor backgroundJobExecutor) {
-		this.classInstances = classInstances;
 		this.backgroundJobExecutor = backgroundJobExecutor;
+		wordClassifierGetter = trainWordClassifiers(trainingData.getClassInstances().entrySet())::get;
 	}
 
-	@Override
-	public ConcurrentMap<String, Logistic> get() {
+	private ConcurrentMap<String, Logistic> trainWordClassifiers(final Set<Entry<String, Instances>> classInstances) {
 		final ConcurrentMap<String, Logistic> result = new ConcurrentHashMap<>(classInstances.size());
 		final Stream.Builder<CompletableFuture<Void>> trainingJobs = Stream.builder();
 		for (final Entry<String, Instances> classInstancesEntry : classInstances) {
@@ -78,6 +79,18 @@ final class StaticWordClassifierFactory implements Supplier<ConcurrentMap<String
 		}
 		CompletableFuture.allOf(trainingJobs.build().toArray(CompletableFuture[]::new)).join();
 		return result;
+	}
+
+	protected Function<String, Logistic> getWordClassifierGetter(final EventDialogue diagToClassify) {
+		return wordClassifierGetter;
+	}
+
+	/**
+	 * @param wordClassifierGetter
+	 *            the wordClassifierGetter to set
+	 */
+	protected void setWordClassifierGetter(final Function<String, Logistic> wordClassifierGetter) {
+		this.wordClassifierGetter = wordClassifierGetter;
 	}
 
 }
