@@ -131,7 +131,7 @@ enum Training {
 				final ParallelizedWordLogisticClassifierTrainer trainer = new ParallelizedWordLogisticClassifierTrainer(
 						classificationContext.getBackgroundJobExecutor());
 				final Function<String, Logistic> wordClassifiers = trainer
-						.apply(classificationContext.getTrainingData().getClassInstances().entrySet())::get;
+						.apply(classificationContext.getTrainingData())::get;
 				// This classifier is statically-trained, i.e. the word models
 				// used for classification are the same no matter what dialogue
 				// is being classified

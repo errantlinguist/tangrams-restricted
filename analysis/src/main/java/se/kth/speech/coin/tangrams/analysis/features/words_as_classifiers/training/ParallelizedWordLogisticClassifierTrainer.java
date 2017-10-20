@@ -37,7 +37,7 @@ import weka.core.Instances;
  *
  */
 public final class ParallelizedWordLogisticClassifierTrainer
-		implements Function<Set<Entry<String, Instances>>, ConcurrentMap<String, Logistic>> {
+		implements Function<WordClassificationData, ConcurrentMap<String, Logistic>> {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(ParallelizedWordLogisticClassifierTrainer.class);
 
@@ -48,7 +48,11 @@ public final class ParallelizedWordLogisticClassifierTrainer
 	}
 
 	@Override
-	public ConcurrentMap<String, Logistic> apply(final Set<Entry<String, Instances>> classInstances) {
+	public ConcurrentMap<String, Logistic> apply(final WordClassificationData trainingData) {
+		return apply(trainingData.getClassInstances().entrySet());
+	}
+
+	private ConcurrentMap<String, Logistic> apply(final Set<Entry<String, Instances>> classInstances) {
 		final ConcurrentMap<String, Logistic> result = new ConcurrentHashMap<>(classInstances.size());
 		final Stream.Builder<CompletableFuture<Void>> trainingJobs = Stream.builder();
 		for (final Entry<String, Instances> classInstancesEntry : classInstances) {
