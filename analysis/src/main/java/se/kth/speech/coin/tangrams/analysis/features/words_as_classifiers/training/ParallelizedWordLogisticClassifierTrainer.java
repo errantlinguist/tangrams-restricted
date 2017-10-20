@@ -22,14 +22,12 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
-import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import weka.classifiers.functions.Logistic;
 import weka.core.Instances;
 
@@ -45,8 +43,6 @@ public final class ParallelizedWordLogisticClassifierTrainer implements Supplier
 	private final Executor backgroundJobExecutor;
 
 	private final WordClassificationData trainingData;
-
-	private Function<String, Logistic> wordClassifierGetter;
 
 	public ParallelizedWordLogisticClassifierTrainer(final WordClassificationData trainingData,
 			final Executor backgroundJobExecutor) {
@@ -90,18 +86,6 @@ public final class ParallelizedWordLogisticClassifierTrainer implements Supplier
 		}
 		CompletableFuture.allOf(trainingJobs.build().toArray(CompletableFuture[]::new)).join();
 		return result;
-	}
-
-	protected Function<String, Logistic> getWordClassifierGetter(final EventDialogue diagToClassify) {
-		return wordClassifierGetter;
-	}
-
-	/**
-	 * @param wordClassifierGetter
-	 *            the wordClassifierGetter to set
-	 */
-	protected void setWordClassifierGetter(final Function<String, Logistic> wordClassifierGetter) {
-		this.wordClassifierGetter = wordClassifierGetter;
 	}
 
 }
