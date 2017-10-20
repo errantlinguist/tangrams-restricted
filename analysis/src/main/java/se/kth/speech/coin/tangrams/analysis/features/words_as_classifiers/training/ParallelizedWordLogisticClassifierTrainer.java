@@ -42,11 +42,11 @@ public final class ParallelizedWordLogisticClassifierTrainer implements Supplier
 
 	private final Executor backgroundJobExecutor;
 
-	private final WordClassificationData trainingData;
+	private final Set<Entry<String, Instances>> classInstances;
 
-	public ParallelizedWordLogisticClassifierTrainer(final WordClassificationData trainingData,
+	public ParallelizedWordLogisticClassifierTrainer(final Set<Entry<String, Instances>> classInstances,
 			final Executor backgroundJobExecutor) {
-		this.trainingData = trainingData;
+		this.classInstances = classInstances;
 		this.backgroundJobExecutor = backgroundJobExecutor;
 	}
 
@@ -57,10 +57,6 @@ public final class ParallelizedWordLogisticClassifierTrainer implements Supplier
 	 */
 	@Override
 	public ConcurrentMap<String, Logistic> get() {
-		return trainWordClassifiers(trainingData.getClassInstances().entrySet());
-	}
-
-	private ConcurrentMap<String, Logistic> trainWordClassifiers(final Set<Entry<String, Instances>> classInstances) {
 		final ConcurrentMap<String, Logistic> result = new ConcurrentHashMap<>(classInstances.size());
 		final Stream.Builder<CompletableFuture<Void>> trainingJobs = Stream.builder();
 		for (final Entry<String, Instances> classInstancesEntry : classInstances) {

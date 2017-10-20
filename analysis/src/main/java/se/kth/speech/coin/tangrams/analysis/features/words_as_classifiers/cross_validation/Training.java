@@ -78,6 +78,30 @@ enum Training {
 			return TrainingConstants.SIMPLE_CLASSIFIER_FACTORY;
 		}
 	},
+	ALL_NEG_ITERATIVE(1) {
+
+		@Override
+		public CachingEventDialogueTransformer createSymmetricalTrainingTestingEvgDiagTransformer(
+				final List<EventDialogueTransformer> diagTransformers) {
+			return createInstrUttFilteringTransformer(diagTransformers);
+		}
+
+		@Override
+		public TrainingInstancesFactory createTrainingInstsFactory(final TrainingContext trainingCtx) {
+			final ApplicationContext appCtx = trainingCtx.getAppCtx();
+			final EntityInstanceAttributeContext entityInstAttrCtx = appCtx
+					.getBean(EntityInstanceAttributeContext.class);
+			final EntityFeatureExtractionContextFactory extCtxFactory = appCtx
+					.getBean(EntityFeatureExtractionContextFactory.class);
+			return new OnePositiveMaximumNegativeInstancesFactory(entityInstAttrCtx, trainingCtx.getDiagTransformer(),
+					extCtxFactory);
+		}
+
+		@Override
+		public Function<ClassificationContext, EventDialogueClassifier> getClassifierFactory() {
+			return TrainingConstants.SIMPLE_CLASSIFIER_FACTORY;
+		}
+	},
 	DIALOGIC(1) {
 
 		private final DialogicWeightedWordClassFactory diagWordClassFactory = createDiagWordClassFactory();
@@ -105,7 +129,7 @@ enum Training {
 		public Function<ClassificationContext, EventDialogueClassifier> getClassifierFactory() {
 			return classificationContext -> {
 				final ParallelizedWordLogisticClassifierTrainer trainer = new ParallelizedWordLogisticClassifierTrainer(
-						classificationContext.getTrainingData(), classificationContext.getBackgroundJobExecutor());
+						classificationContext.getTrainingData().getClassInstances().entrySet(), classificationContext.getBackgroundJobExecutor());
 				final Function<String, Logistic> wordClassifiers = trainer.get()::get;
 				// This classifier is statically-trained, i.e. the word models
 				// used for classification are the same no matter what dialogue
