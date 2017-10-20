@@ -45,7 +45,6 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialog
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.EventDialogueClassifier;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.EventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.InstructorUtteranceFilteringEventDialogueTransformer;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.IsolatedUtteranceEventDialogueClassifier;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.AbstractInstanceExtractor;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.DialogicInstanceExtractor;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.IterativeWordLogisticClassifierTrainer;
@@ -106,22 +105,7 @@ enum Training {
 		@Override
 		public Function<ClassificationContext, EventDialogueClassifier> getClassifierFactory(
 				final TrainingContext trainingCtx) {
-			return classificationContext -> {
-				final ParallelizedWordLogisticClassifierTrainer trainer = new ParallelizedWordLogisticClassifierTrainer(
-						classificationContext.getBackgroundJobExecutor());
-
-				final ApplicationContext appCtx = trainingCtx.getAppCtx();
-				final EntityInstanceAttributeContext entityInstAttrCtx = appCtx
-						.getBean(EntityInstanceAttributeContext.class);
-				final EntityFeatureExtractionContextFactory extCtxFactory = appCtx
-						.getBean(EntityFeatureExtractionContextFactory.class);
-				final AbstractInstanceExtractor instExtractor = new OnePositiveMaximumNegativeInstanceExtractor(
-						entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory);
-				final IterativeWordLogisticClassifierTrainer<Logistic> iterativeTrainer = new IterativeWordLogisticClassifierTrainer<>(
-						trainer, classificationContext.getTrainingData(), instExtractor);
-				return new IsolatedUtteranceEventDialogueClassifier(iterativeTrainer,
-						classificationContext.getReferentConfidenceMapFactory());
-			};
+			return TrainingConstants.createSimpleIterativeClassifierFactory(trainingCtx);
 		}
 	},
 	DIALOGIC(1) {
@@ -187,6 +171,73 @@ enum Training {
 		}
 
 	},
+	DIALOGIC_ITERATIVE(1) {
+
+		private final DialogicWeightedWordClassFactory diagWordClassFactory = createDiagWordClassFactory();
+
+		@Override
+		public CachingEventDialogueTransformer createSymmetricalTrainingTestingEvgDiagTransformer(
+				final List<EventDialogueTransformer> diagTransformers) {
+			final ChainedEventDialogueTransformer chainedTransformer = new ChainedEventDialogueTransformer(
+					diagTransformers);
+			return new CachingEventDialogueTransformer(createTransformedDialogueCache(chainedTransformer));
+		};
+
+		@Override
+		public TrainingInstancesFactory createTrainingInstsFactory(final TrainingContext trainingCtx) {
+			final ApplicationContext appCtx = trainingCtx.getAppCtx();
+			final EntityInstanceAttributeContext entityInstAttrCtx = appCtx
+					.getBean(EntityInstanceAttributeContext.class);
+			final EntityFeatureExtractionContextFactory extCtxFactory = appCtx
+					.getBean(EntityFeatureExtractionContextFactory.class);
+			return new SizeEstimatingInstancesMapFactory(
+					new DialogicInstanceExtractor(entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory,
+							createCachingUttAcceptanceRanker(), diagWordClassFactory, trainingCtx.getUttRelHandler()),
+					entityInstAttrCtx);
+		}
+
+		@Override
+		public Function<ClassificationContext, EventDialogueClassifier> getClassifierFactory(
+				final TrainingContext trainingCtx) {
+			return classificationContext -> {
+				final ParallelizedWordLogisticClassifierTrainer trainer = new ParallelizedWordLogisticClassifierTrainer(
+						classificationContext.getBackgroundJobExecutor());
+
+				final ApplicationContext appCtx = trainingCtx.getAppCtx();
+				final EntityInstanceAttributeContext entityInstAttrCtx = appCtx
+						.getBean(EntityInstanceAttributeContext.class);
+				final EntityFeatureExtractionContextFactory extCtxFactory = appCtx
+						.getBean(EntityFeatureExtractionContextFactory.class);
+				final AbstractInstanceExtractor instExtractor = new OnePositiveMaximumNegativeInstanceExtractor(
+						entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory);
+				final IterativeWordLogisticClassifierTrainer<Logistic> iterativeTrainer = new IterativeWordLogisticClassifierTrainer<>(
+						trainer, classificationContext.getTrainingData(), instExtractor);
+				return new DialogicEventDialogueClassifier(iterativeTrainer, createCachingUttAcceptanceRanker(),
+						diagWordClassFactory, classificationContext.getReferentConfidenceMapFactory());
+			};
+		}
+
+		private ToDoubleFunction<Utterance> createCachingUttAcceptanceRanker() {
+			final Object2DoubleMap<Utterance> cache = new Object2DoubleOpenHashMap<>(
+					TrainingConstants.ESTIMATED_UNIQUE_UTT_COUNT);
+			cache.defaultReturnValue(Double.NaN);
+			final PatternMatchingUtteranceAcceptanceRanker ranker = new PatternMatchingUtteranceAcceptanceRanker();
+			return utt -> {
+				double result = cache.getDouble(utt);
+				if (Double.isNaN(result)) {
+					synchronized (cache) {
+						result = cache.getDouble(utt);
+						if (Double.isNaN(result)) {
+							result = ranker.applyAsDouble(utt);
+							cache.put(utt, result);
+						}
+					}
+				}
+				return result;
+			};
+		}
+
+	},
 	ONE_NEG(5) {
 
 		@Override
@@ -211,6 +262,32 @@ enum Training {
 				final TrainingContext trainingCtx) {
 			return TrainingConstants.SIMPLE_CLASSIFIER_FACTORY;
 		}
+	},
+	ONE_NEG_ITERATIVE(5) {
+
+		@Override
+		public CachingEventDialogueTransformer createSymmetricalTrainingTestingEvgDiagTransformer(
+				final List<EventDialogueTransformer> diagTransformers) {
+			return createInstrUttFilteringTransformer(diagTransformers);
+		}
+
+		@Override
+		public TrainingInstancesFactory createTrainingInstsFactory(final TrainingContext trainingCtx) {
+			final ApplicationContext appCtx = trainingCtx.getAppCtx();
+			final EntityInstanceAttributeContext entityInstAttrCtx = appCtx
+					.getBean(EntityInstanceAttributeContext.class);
+			final EntityFeatureExtractionContextFactory extCtxFactory = appCtx
+					.getBean(EntityFeatureExtractionContextFactory.class);
+			return new SizeEstimatingInstancesMapFactory(new OnePositiveOneNegativeInstanceExtractor(entityInstAttrCtx,
+					trainingCtx.getDiagTransformer(), extCtxFactory, TrainingConstants.RND), entityInstAttrCtx);
+		}
+
+		@Override
+		public Function<ClassificationContext, EventDialogueClassifier> getClassifierFactory(
+				final TrainingContext trainingCtx) {
+			return TrainingConstants.createSimpleIterativeClassifierFactory(trainingCtx);
+		}
+
 	};
 
 	private static final int ESTIMATED_MIN_SESSION_DIALOGUE_COUNT = 50;

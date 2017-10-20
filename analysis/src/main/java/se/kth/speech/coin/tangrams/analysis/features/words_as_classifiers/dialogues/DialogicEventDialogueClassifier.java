@@ -46,7 +46,7 @@ public final class DialogicEventDialogueClassifier implements EventDialogueClass
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(DialogicEventDialogueClassifier.class);
 
-	private final BiFunction<? super EventDialogue, ? super GameContext, Function<? super String, ? extends Classifier>> diagWordClassifierFactory;
+	private final BiFunction<? super EventDialogue, ? super GameContext, ? extends Function<? super String, ? extends Classifier>> diagWordClassifierFactory;
 
 	private final Function<? super Collection<UtteranceRelation>, EntityReferringLanguageWordClasses> entityRefLangExFactory;
 
@@ -55,7 +55,7 @@ public final class DialogicEventDialogueClassifier implements EventDialogueClass
 	private final ToDoubleFunction<? super Utterance> uttAcceptanceRanker;
 
 	public DialogicEventDialogueClassifier(
-			final BiFunction<? super EventDialogue, ? super GameContext, Function<? super String, ? extends Classifier>> diagWordClassifierFactory,
+			final BiFunction<? super EventDialogue, ? super GameContext, ? extends Function<? super String, ? extends Classifier>> diagWordClassifierFactory,
 			final ToDoubleFunction<? super Utterance> uttAcceptanceRanker,
 			final Function<? super Collection<UtteranceRelation>, EntityReferringLanguageWordClasses> entityRefLangExFactory,
 			final ReferentConfidenceMapFactory referentConfidenceMapFactory) {
