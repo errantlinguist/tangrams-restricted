@@ -21,6 +21,7 @@ import java.util.Optional;
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import se.kth.speech.coin.tangrams.analysis.GameContext;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
+import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
 
 /**
@@ -30,6 +31,24 @@ import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
  */
 public interface EventDialogueClassifier {
 
+	/**
+	 * Calculates the confidence of a given sequence of {@link Utterance
+	 * utterances} referring to each referenceable entity given a particular
+	 * {@link GameContext}.
+	 *
+	 * @param dialogueUtts
+	 *            The sequence of utterances to classify.
+	 * @param uttCtx
+	 *            The {@link GameContext} instance representing the state of the
+	 *            game at the time the given utterances were made.
+	 * @return An {@link Optional} referring to a new {@link Int2DoubleMap}
+	 *         mapping entity IDs to the confidence measure of the entity with
+	 *         the given ID being referred to by the given utterances, or an
+	 *         {@link Optional#empty() empty} one if no language in the given
+	 *         dialogue was suitable for classification.
+	 * @throws ClassificationException
+	 *             If an error occurs while classifying any individual entity.
+	 */
 	Optional<Int2DoubleMap> apply(EventDialogue diag, final GameContext ctx) throws ClassificationException;
 
 }
