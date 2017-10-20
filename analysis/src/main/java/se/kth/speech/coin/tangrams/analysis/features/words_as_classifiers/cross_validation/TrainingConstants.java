@@ -38,8 +38,9 @@ final class TrainingConstants {
 
 	static final Function<ClassificationContext, EventDialogueClassifier> SIMPLE_CLASSIFIER_FACTORY = classificationContext -> {
 		final ParallelizedWordLogisticClassifierTrainer trainer = new ParallelizedWordLogisticClassifierTrainer(
-				classificationContext.getTrainingData().getClassInstances().entrySet(), classificationContext.getBackgroundJobExecutor());
-		final Function<String, Logistic> wordClassifiers = trainer.get()::get;
+				classificationContext.getBackgroundJobExecutor());
+		final Function<String, Logistic> wordClassifiers = trainer
+				.apply(classificationContext.getTrainingData().getClassInstances().entrySet())::get;
 		// This classifier is statically-trained, i.e. the word models
 		// used for classification are the same no matter what dialogue
 		// is being classified

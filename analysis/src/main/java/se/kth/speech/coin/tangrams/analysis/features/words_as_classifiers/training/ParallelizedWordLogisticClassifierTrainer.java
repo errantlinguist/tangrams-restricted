@@ -22,7 +22,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
-import java.util.function.Supplier;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -36,27 +36,19 @@ import weka.core.Instances;
  * @since 20 Oct 2017
  *
  */
-public final class ParallelizedWordLogisticClassifierTrainer implements Supplier<ConcurrentMap<String, Logistic>> {
+public final class ParallelizedWordLogisticClassifierTrainer
+		implements Function<Set<Entry<String, Instances>>, ConcurrentMap<String, Logistic>> {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(ParallelizedWordLogisticClassifierTrainer.class);
 
 	private final Executor backgroundJobExecutor;
 
-	private final Set<Entry<String, Instances>> classInstances;
-
-	public ParallelizedWordLogisticClassifierTrainer(final Set<Entry<String, Instances>> classInstances,
-			final Executor backgroundJobExecutor) {
-		this.classInstances = classInstances;
+	public ParallelizedWordLogisticClassifierTrainer(final Executor backgroundJobExecutor) {
 		this.backgroundJobExecutor = backgroundJobExecutor;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see java.util.function.Supplier#get()
-	 */
 	@Override
-	public ConcurrentMap<String, Logistic> get() {
+	public ConcurrentMap<String, Logistic> apply(final Set<Entry<String, Instances>> classInstances) {
 		final ConcurrentMap<String, Logistic> result = new ConcurrentHashMap<>(classInstances.size());
 		final Stream.Builder<CompletableFuture<Void>> trainingJobs = Stream.builder();
 		for (final Entry<String, Instances> classInstancesEntry : classInstances) {
