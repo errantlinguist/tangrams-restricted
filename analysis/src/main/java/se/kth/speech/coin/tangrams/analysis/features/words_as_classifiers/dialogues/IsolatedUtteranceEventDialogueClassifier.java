@@ -38,12 +38,12 @@ import weka.classifiers.Classifier;
  */
 public final class IsolatedUtteranceEventDialogueClassifier implements EventDialogueClassifier {
 
-	private final BiFunction<? super EventDialogue, ? super GameContext, Function<? super String, ? extends Classifier>> diagWordClassifierFactory;
+	private final BiFunction<? super EventDialogue, ? super GameContext, ? extends Function<? super String, ? extends Classifier>> diagWordClassifierFactory;
 
 	private final ReferentConfidenceMapFactory referentConfidenceMapFactory;
 
 	public IsolatedUtteranceEventDialogueClassifier(
-			final BiFunction<? super EventDialogue, ? super GameContext, Function<? super String, ? extends Classifier>> diagWordClassifierFactory,
+			final BiFunction<? super EventDialogue, ? super GameContext, ? extends Function<? super String, ? extends Classifier>> diagWordClassifierFactory,
 			final ReferentConfidenceMapFactory referentConfidenceMapFactory) {
 		this.diagWordClassifierFactory = diagWordClassifierFactory;
 		this.referentConfidenceMapFactory = referentConfidenceMapFactory;

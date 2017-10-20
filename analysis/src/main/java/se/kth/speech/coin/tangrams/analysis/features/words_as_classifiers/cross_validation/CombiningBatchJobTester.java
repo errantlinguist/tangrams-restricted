@@ -166,7 +166,7 @@ final class CombiningBatchJobTester {
 							final TestSetFactory testSetFactory = new TestSetFactory(trainingInstsFactory,
 									sessionDiagMgrCacheSupplier);
 							final CrossValidator crossValidator = appCtx.getBean(CrossValidator.class, testSetFactory,
-									symmetricalDiagTransformer, trainingMethod.getClassifierFactory(),
+									symmetricalDiagTransformer, trainingMethod.getClassifierFactory(trainingCtx),
 									backgroundJobExecutor);
 							crossValidator.setIterCount(trainingMethod.getIterCount());
 							testerConfigurator.accept(crossValidator);
