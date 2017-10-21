@@ -18,6 +18,7 @@ package se.kth.speech.nlp.stanford;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import org.junit.Assert;
@@ -44,28 +45,18 @@ import edu.stanford.nlp.util.PropertiesUtils;
 
 @RunWith(Parameterized.class)
 public final class RNNParserTest {
-	
-	private final String input;
-	
-	private final List<String> expected;
-	
-	public RNNParserTest(final String input, final List<String> expected) {
-		this.input = input;
-		this.expected = expected;
-	}
-	
+
+	private static StanfordCoreNLP pipeline;
+
 	@Parameters
 	public static List<Object[]> data() {
 		return Arrays.asList(new Object[][] {
 				{ "I think that's a good idea", Arrays.asList("I", "think", "that", "'s", "a", "good", "idea") },
-//				{ "it's in the upper right hand corner",
-//						Arrays.asList("it", "the", "upper", "right", "hand", "corner") },
+				{ "", Collections.emptyList() },
 
 		});
 	}
-	
-	private static StanfordCoreNLP pipeline;
-	
+
 	@BeforeClass
 	public static void initPipeline() {
 		pipeline = new StanfordCoreNLP(
@@ -73,6 +64,15 @@ public final class RNNParserTest {
 						"parse.model", "edu/stanford/nlp/models/lexparser/englishRNN.ser.gz", "pos.model",
 						"edu/stanford/nlp/models/pos-tagger/english-bidirectional/english-bidirectional-distsim.tagger",
 						"tokenize.language", "en"));
+	}
+
+	private final String input;
+
+	private final List<String> expected;
+
+	public RNNParserTest(final String input, final List<String> expected) {
+		this.input = input;
+		this.expected = expected;
 	}
 
 	/**
