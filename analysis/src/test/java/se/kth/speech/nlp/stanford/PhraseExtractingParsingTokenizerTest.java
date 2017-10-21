@@ -64,7 +64,7 @@ public final class PhraseExtractingParsingTokenizerTest {
 		final Map<String, List<String>> result = new HashMap<>();
 		result.put("the man bites the dog", Arrays.asList("the", "man", "the", "dog"));
 		result.put("I think that's a good idea", Arrays.asList("I", "that", "a", "good", "idea"));
-		result.put("it's looks like a bird shape", Arrays.asList("it", "a", "bird", "shape"));
+		result.put("it looks like a bird shape", Arrays.asList("it", "a", "bird", "shape"));
 		result.put("a small chicken bird", Arrays.asList("a", "small", "chicken", "bird"));
 		return result;
 	}
