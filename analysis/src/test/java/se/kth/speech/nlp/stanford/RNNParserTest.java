@@ -31,6 +31,7 @@ import org.junit.runners.Parameterized.Parameters;
 import edu.stanford.nlp.ling.CoreAnnotations.SentencesAnnotation;
 import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.pipeline.Annotation;
+import edu.stanford.nlp.pipeline.Annotator;
 import edu.stanford.nlp.pipeline.StanfordCoreNLP;
 import edu.stanford.nlp.trees.Tree;
 import edu.stanford.nlp.trees.TreeCoreAnnotations.TreeAnnotation;
@@ -74,6 +75,22 @@ public final class RNNParserTest {
 		this.input = input;
 		this.expected = expected;
 	}
+	
+	private static List<String> createParseTreeLeafNodeList(String input, Annotator annotator){
+		final edu.stanford.nlp.pipeline.Annotation annot = new edu.stanford.nlp.pipeline.Annotation(input);
+		annotator.annotate(annot);
+		final List<CoreMap> sents = annot.get(SentencesAnnotation.class);
+		final List<String> result = new ArrayList<>(sents.size() * 16);
+		for (final CoreMap sent : sents) {
+			// this is the parse tree of the current sentence
+			final Tree tree = sent.get(TreeAnnotation.class);
+			final List<CoreLabel> phaseLabels = tree.taggedLabeledYield();
+			for (final CoreLabel phraseLabel : phaseLabels) {
+				result.add(phraseLabel.word());
+			}
+		}
+		return result;
+	}
 
 	/**
 	 * Test method for
@@ -84,15 +101,7 @@ public final class RNNParserTest {
 		final Annotation annot = new Annotation(input);
 		pipeline.annotate(annot);
 		final List<CoreMap> sents = annot.get(SentencesAnnotation.class);
-		final List<String> actual = new ArrayList<>(sents.size() * 16);
-		for (final CoreMap sent : sents) {
-			// this is the parse tree of the current sentence
-			final Tree tree = sent.get(TreeAnnotation.class);
-			final List<CoreLabel> phaseLabels = tree.taggedLabeledYield();
-			for (final CoreLabel phraseLabel : phaseLabels) {
-				actual.add(phraseLabel.word());
-			}
-		}
+		final List<String> actual = createParseTreeLeafNodeList(input, pipeline);
 		Assert.assertEquals(expected, actual);
 	}
 
