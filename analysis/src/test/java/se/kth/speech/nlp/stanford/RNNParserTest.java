@@ -30,7 +30,6 @@ import org.junit.runners.Parameterized.Parameters;
 
 import edu.stanford.nlp.ling.CoreAnnotations.SentencesAnnotation;
 import edu.stanford.nlp.ling.CoreLabel;
-import edu.stanford.nlp.pipeline.Annotation;
 import edu.stanford.nlp.pipeline.Annotator;
 import edu.stanford.nlp.pipeline.StanfordCoreNLP;
 import edu.stanford.nlp.trees.Tree;
@@ -67,16 +66,7 @@ public final class RNNParserTest {
 						"tokenize.language", "en"));
 	}
 
-	private final String input;
-
-	private final List<String> expected;
-
-	public RNNParserTest(final String input, final List<String> expected) {
-		this.input = input;
-		this.expected = expected;
-	}
-	
-	private static List<String> createParseTreeLeafNodeList(String input, Annotator annotator){
+	private static List<String> createParseTreeLeafNodeList(final String input, final Annotator annotator) {
 		final edu.stanford.nlp.pipeline.Annotation annot = new edu.stanford.nlp.pipeline.Annotation(input);
 		annotator.annotate(annot);
 		final List<CoreMap> sents = annot.get(SentencesAnnotation.class);
@@ -92,15 +82,21 @@ public final class RNNParserTest {
 		return result;
 	}
 
+	private final String input;
+
+	private final List<String> expected;
+
+	public RNNParserTest(final String input, final List<String> expected) {
+		this.input = input;
+		this.expected = expected;
+	}
+
 	/**
 	 * Test method for
 	 * {@link se.kth.speech.nlp.stanford.AbstractTokenizer#apply(java.lang.String)}.
 	 */
 	@Test
 	public void testAnnotate() {
-		final Annotation annot = new Annotation(input);
-		pipeline.annotate(annot);
-		final List<CoreMap> sents = annot.get(SentencesAnnotation.class);
 		final List<String> actual = createParseTreeLeafNodeList(input, pipeline);
 		Assert.assertEquals(expected, actual);
 	}
