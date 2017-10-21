@@ -84,7 +84,7 @@ public final class RNNParserTest {
 		final Annotation annot = new Annotation(input);
 		pipeline.annotate(annot);
 		final List<CoreMap> sents = annot.get(SentencesAnnotation.class);
-		final List<String> actual = new ArrayList<>();
+		final List<String> actual = new ArrayList<>(sents.size() * 16);
 		for (final CoreMap sent : sents) {
 			// this is the parse tree of the current sentence
 			final Tree tree = sent.get(TreeAnnotation.class);
