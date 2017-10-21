@@ -21,7 +21,11 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameters;
 
 import edu.stanford.nlp.ling.CoreAnnotations.SentencesAnnotation;
 import edu.stanford.nlp.ling.CoreLabel;
@@ -38,7 +42,38 @@ import edu.stanford.nlp.util.PropertiesUtils;
  *
  */
 
+@RunWith(Parameterized.class)
 public final class RNNParserTest {
+	
+	private final String input;
+	
+	private final List<String> expected;
+	
+	public RNNParserTest(final String input, final List<String> expected) {
+		this.input = input;
+		this.expected = expected;
+	}
+	
+	@Parameters
+	public static List<Object[]> data() {
+		return Arrays.asList(new Object[][] {
+				{ "I think that's a good idea", Arrays.asList("I", "think", "that", "'s", "a", "good", "idea") },
+//				{ "it's in the upper right hand corner",
+//						Arrays.asList("it", "the", "upper", "right", "hand", "corner") },
+
+		});
+	}
+	
+	private static StanfordCoreNLP pipeline;
+	
+	@BeforeClass
+	public static void initPipeline() {
+		pipeline = new StanfordCoreNLP(
+				PropertiesUtils.asProperties("annotators", "tokenize,ssplit,pos,parse", "parse.binaryTrees", "true",
+						"parse.model", "edu/stanford/nlp/models/lexparser/englishRNN.ser.gz", "pos.model",
+						"edu/stanford/nlp/models/pos-tagger/english-bidirectional/english-bidirectional-distsim.tagger",
+						"tokenize.language", "en"));
+	}
 
 	/**
 	 * Test method for
@@ -46,14 +81,7 @@ public final class RNNParserTest {
 	 */
 	@Test
 	public void testAnnotate() {
-
-		final StanfordCoreNLP pipeline = new StanfordCoreNLP(
-				PropertiesUtils.asProperties("annotators", "tokenize,ssplit,pos,parse", "parse.binaryTrees", "true",
-						"parse.model", "edu/stanford/nlp/models/lexparser/englishRNN.ser.gz", "pos.model",
-						"edu/stanford/nlp/models/pos-tagger/english-bidirectional/english-bidirectional-distsim.tagger",
-						"tokenize.language", "en"));
-
-		final Annotation annot = new Annotation("I think that's a good idea");
+		final Annotation annot = new Annotation(input);
 		pipeline.annotate(annot);
 		final List<CoreMap> sents = annot.get(SentencesAnnotation.class);
 		final List<String> actual = new ArrayList<>();
@@ -65,7 +93,6 @@ public final class RNNParserTest {
 				actual.add(phraseLabel.word());
 			}
 		}
-		final List<String> expected = Arrays.asList("I", "think", "that", "'s", "a", "good", "idea");
 		Assert.assertEquals(expected, actual);
 	}
 
