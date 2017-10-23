@@ -57,7 +57,7 @@ public final class ParallelizedWordLogisticClassifierTrainer
 		final WordClassificationData smoothedTrainingData = new WordClassificationData(trainingData);
 		final Instances oovInstances = smoother.redistributeMass(smoothedTrainingData);
 		LOGGER.info("{} instance(s) for out-of-vocabulary class.", oovInstances.size());
-		return apply(trainingData.getClassInstances().entrySet());
+		return apply(smoothedTrainingData.getClassInstances().entrySet());
 	}
 
 	private ConcurrentMap<String, Logistic> apply(final Set<Entry<String, Instances>> classInstances) {
