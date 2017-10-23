@@ -19,7 +19,6 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.train
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,7 +33,6 @@ import se.kth.speech.coin.tangrams.analysis.SessionGameManager;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
 import se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttributeContext;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordClasses;
 import weka.core.DenseInstance;
 import weka.core.Instance;
 import weka.core.Instances;
@@ -87,17 +85,12 @@ public final class SizeEstimatingInstancesMapFactory implements TrainingInstance
 	public WordClassificationData apply(final Collection<SessionGameManager> sessionEventDiagMgrs) {
 		final int estClassCount = estimateVocabTypeCount(sessionEventDiagMgrs);
 		final Map<String, Instances> classInstances = Maps.newHashMapWithExpectedSize(estClassCount);
-		final Function<String, Instances> classInstancesFetcher = className -> classInstances.computeIfAbsent(className,
-				key -> {
-					final Instances instances = new Instances(WordClasses.createRelationName(key),
-							entityInstAttrCtx.getAttrs(), estimateVocabTypeTokenCount(sessionEventDiagMgrs));
-					instances.setClass(entityInstAttrCtx.getClassAttr());
-					return instances;
-				});
+		final WordClassInstancesFetcher wordClassFetcher = new WordClassInstancesFetcher(classInstances,
+				entityInstAttrCtx, estimateVocabTypeTokenCount(sessionEventDiagMgrs));
 		final Object2IntMap<String> classObservationCounts = new Object2IntOpenHashMap<>(estClassCount);
 		classObservationCounts.defaultReturnValue(0);
 		final WordClassificationData result = new WordClassificationData(classInstances, classObservationCounts,
-				classInstancesFetcher);
+				wordClassFetcher);
 		for (final SessionGameManager sessionEventDiagMgr : sessionEventDiagMgrs) {
 			addTrainingData(sessionEventDiagMgr.getCanonicalGame(), result);
 		}

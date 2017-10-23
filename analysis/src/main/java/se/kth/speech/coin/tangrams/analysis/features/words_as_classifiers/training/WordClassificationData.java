@@ -18,7 +18,7 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.train
 
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
@@ -33,7 +33,7 @@ import weka.core.Instances;
  */
 public final class WordClassificationData {
 
-	private final Function<String, Instances> classInstancesFetcher;
+	private final WordClassInstancesFetcher classInstancesFetcher;
 
 	private final Map<String, Instances> classInsts;
 
@@ -41,9 +41,25 @@ public final class WordClassificationData {
 
 	private final Object2IntMap<String> trainingInstanceCounts;
 
-	protected WordClassificationData(final Map<String, Instances> classInsts,
-			final Object2IntMap<String> classObservationCounts,
-			final Function<String, Instances> classInstancesFetcher) {
+	public WordClassificationData(final WordClassificationData copyee) {
+		classInsts = copyee.getClassInstances().entrySet().stream()
+				.collect(Collectors.toMap(Entry::getKey, entry -> new Instances(entry.getValue())));
+
+		final Object2IntMap<String> copyeeClassObservationCounts = copyee.getClassObservationCounts();
+		classObservationCounts = new Object2IntOpenHashMap<>(copyeeClassObservationCounts);
+		classObservationCounts.defaultReturnValue(copyeeClassObservationCounts.defaultReturnValue());
+
+		final WordClassInstancesFetcher copyeeFetcher = copyee.getClassInstancesFetcher();
+		classInstancesFetcher = new WordClassInstancesFetcher(classInsts, copyeeFetcher.getEntityInstAttrCtx(),
+				copyeeFetcher.getEstimatedVocabTypeTokenCount());
+
+		final Object2IntMap<String> copyeeTrainingInstanceCounts = copyee.getTrainingInstanceCounts();
+		trainingInstanceCounts = new Object2IntOpenHashMap<>(copyeeTrainingInstanceCounts);
+		trainingInstanceCounts.defaultReturnValue(copyeeTrainingInstanceCounts.defaultReturnValue());
+	}
+
+	WordClassificationData(final Map<String, Instances> classInsts, final Object2IntMap<String> classObservationCounts,
+			final WordClassInstancesFetcher classInstancesFetcher) {
 		this.classInsts = classInsts;
 		this.classObservationCounts = classObservationCounts;
 		this.classInstancesFetcher = classInstancesFetcher;
@@ -90,6 +106,13 @@ public final class WordClassificationData {
 
 	Instances fetchWordInstances(final String wordClass) {
 		return classInstancesFetcher.apply(wordClass);
+	}
+
+	/**
+	 * @return the classInstancesFetcher
+	 */
+	WordClassInstancesFetcher getClassInstancesFetcher() {
+		return classInstancesFetcher;
 	}
 
 }
