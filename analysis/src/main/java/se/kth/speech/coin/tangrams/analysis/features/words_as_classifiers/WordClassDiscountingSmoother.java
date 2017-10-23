@@ -87,7 +87,7 @@ public final class WordClassDiscountingSmoother {
 		// if (freqToDiscount != minCount) {
 		// LOGGER.warn(
 		// "Could not find word classes with fewer than {} instance(s); Using
-		// those with fewer than {} instad.",
+		// those with fewer than {} instead.",
 		// minCount, freqToDiscount);
 		// }
 		// assert !addendClassInsts.isEmpty();

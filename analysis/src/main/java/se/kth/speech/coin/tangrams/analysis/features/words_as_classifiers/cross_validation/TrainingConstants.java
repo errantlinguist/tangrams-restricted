@@ -17,20 +17,6 @@
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation;
 
 import java.util.Random;
-import java.util.function.Function;
-
-import org.springframework.context.ApplicationContext;
-
-import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionContextFactory;
-import se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttributeContext;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.ClassificationContext;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.EventDialogueClassifier;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.IsolatedUtteranceEventDialogueClassifier;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.AbstractInstanceExtractor;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.IterativeWordLogisticClassifierTrainer;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.OnePositiveMaximumNegativeInstanceExtractor;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.ParallelizedWordLogisticClassifierTrainer;
-import weka.classifiers.functions.Logistic;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -42,37 +28,6 @@ final class TrainingConstants {
 	static final int ESTIMATED_UNIQUE_UTT_COUNT = 2000;
 
 	static final Random RND = new Random(1);
-
-	static final Function<ClassificationContext, EventDialogueClassifier> SIMPLE_CLASSIFIER_FACTORY = classificationContext -> {
-		final ParallelizedWordLogisticClassifierTrainer trainer = new ParallelizedWordLogisticClassifierTrainer(
-				classificationContext.getBackgroundJobExecutor());
-		final Function<String, Logistic> wordClassifiers = trainer.apply(classificationContext.getTrainingData())::get;
-		// This classifier is statically-trained, i.e. the word models
-		// used for classification are the same no matter what dialogue
-		// is being classified
-		return new IsolatedUtteranceEventDialogueClassifier((diagToClassify, ctx) -> wordClassifiers,
-				classificationContext.getReferentConfidenceMapFactory());
-	};
-
-	static Function<ClassificationContext, EventDialogueClassifier> createSimpleIterativeClassifierFactory(
-			final TrainingContext trainingCtx) {
-		return classificationContext -> {
-			final ParallelizedWordLogisticClassifierTrainer trainer = new ParallelizedWordLogisticClassifierTrainer(
-					classificationContext.getBackgroundJobExecutor());
-
-			final ApplicationContext appCtx = trainingCtx.getAppCtx();
-			final EntityInstanceAttributeContext entityInstAttrCtx = appCtx
-					.getBean(EntityInstanceAttributeContext.class);
-			final EntityFeatureExtractionContextFactory extCtxFactory = appCtx
-					.getBean(EntityFeatureExtractionContextFactory.class);
-			final AbstractInstanceExtractor instExtractor = new OnePositiveMaximumNegativeInstanceExtractor(
-					entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory);
-			final IterativeWordLogisticClassifierTrainer<Logistic> iterativeTrainer = new IterativeWordLogisticClassifierTrainer<>(
-					trainer, classificationContext.getTrainingData(), instExtractor);
-			return new IsolatedUtteranceEventDialogueClassifier(iterativeTrainer,
-					classificationContext.getReferentConfidenceMapFactory());
-		};
-	}
 
 	private TrainingConstants() {
 	}

@@ -37,6 +37,7 @@ import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionContextFactory;
 import se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttributeContext;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordClassDiscountingSmoother;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.CachingEventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.ChainedEventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.ClassificationContext;
@@ -45,6 +46,7 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialog
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.EventDialogueClassifier;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.EventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.InstructorUtteranceFilteringEventDialogueTransformer;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.IsolatedUtteranceEventDialogueClassifier;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.AbstractInstanceExtractor;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.DialogicInstanceExtractor;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.IterativeWordLogisticClassifierTrainer;
@@ -80,7 +82,7 @@ enum Training {
 		@Override
 		public Function<ClassificationContext, EventDialogueClassifier> getClassifierFactory(
 				final TrainingContext trainingCtx) {
-			return TrainingConstants.SIMPLE_CLASSIFIER_FACTORY;
+			return createSimpleClassifierFactory(trainingCtx);
 		}
 	},
 	ALL_NEG_ITERATIVE(1) {
@@ -105,7 +107,7 @@ enum Training {
 		@Override
 		public Function<ClassificationContext, EventDialogueClassifier> getClassifierFactory(
 				final TrainingContext trainingCtx) {
-			return TrainingConstants.createSimpleIterativeClassifierFactory(trainingCtx);
+			return createSimpleIterativeClassifierFactory(trainingCtx);
 		}
 	},
 	DIALOGIC(1) {
@@ -136,9 +138,11 @@ enum Training {
 		@Override
 		public Function<ClassificationContext, EventDialogueClassifier> getClassifierFactory(
 				final TrainingContext trainingCtx) {
+			final ApplicationContext appCtx = trainingCtx.getAppCtx();
+			final WordClassDiscountingSmoother smoother = appCtx.getBean(WordClassDiscountingSmoother.class);
 			return classificationContext -> {
 				final ParallelizedWordLogisticClassifierTrainer trainer = new ParallelizedWordLogisticClassifierTrainer(
-						classificationContext.getBackgroundJobExecutor());
+						classificationContext.getBackgroundJobExecutor(), smoother);
 				final Function<String, Logistic> wordClassifiers = trainer
 						.apply(classificationContext.getTrainingData())::get;
 				// This classifier is statically-trained, i.e. the word models
@@ -199,15 +203,15 @@ enum Training {
 		@Override
 		public Function<ClassificationContext, EventDialogueClassifier> getClassifierFactory(
 				final TrainingContext trainingCtx) {
+			final ApplicationContext appCtx = trainingCtx.getAppCtx();
+			final WordClassDiscountingSmoother smoother = appCtx.getBean(WordClassDiscountingSmoother.class);
+			final EntityInstanceAttributeContext entityInstAttrCtx = appCtx
+					.getBean(EntityInstanceAttributeContext.class);
+			final EntityFeatureExtractionContextFactory extCtxFactory = appCtx
+					.getBean(EntityFeatureExtractionContextFactory.class);
 			return classificationContext -> {
 				final ParallelizedWordLogisticClassifierTrainer trainer = new ParallelizedWordLogisticClassifierTrainer(
-						classificationContext.getBackgroundJobExecutor());
-
-				final ApplicationContext appCtx = trainingCtx.getAppCtx();
-				final EntityInstanceAttributeContext entityInstAttrCtx = appCtx
-						.getBean(EntityInstanceAttributeContext.class);
-				final EntityFeatureExtractionContextFactory extCtxFactory = appCtx
-						.getBean(EntityFeatureExtractionContextFactory.class);
+						classificationContext.getBackgroundJobExecutor(), smoother);
 				final AbstractInstanceExtractor instExtractor = new OnePositiveMaximumNegativeInstanceExtractor(
 						entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory);
 				final IterativeWordLogisticClassifierTrainer<Logistic> iterativeTrainer = new IterativeWordLogisticClassifierTrainer<>(
@@ -260,7 +264,7 @@ enum Training {
 		@Override
 		public Function<ClassificationContext, EventDialogueClassifier> getClassifierFactory(
 				final TrainingContext trainingCtx) {
-			return TrainingConstants.SIMPLE_CLASSIFIER_FACTORY;
+			return createSimpleClassifierFactory(trainingCtx);
 		}
 	},
 	ONE_NEG_ITERATIVE(5) {
@@ -285,7 +289,7 @@ enum Training {
 		@Override
 		public Function<ClassificationContext, EventDialogueClassifier> getClassifierFactory(
 				final TrainingContext trainingCtx) {
-			return TrainingConstants.createSimpleIterativeClassifierFactory(trainingCtx);
+			return createSimpleIterativeClassifierFactory(trainingCtx);
 		}
 
 	};
@@ -319,6 +323,43 @@ enum Training {
 		return new CachingEventDialogueTransformer(createTransformedDialogueCache(chainedTransformer));
 	}
 
+	private static final Function<ClassificationContext, EventDialogueClassifier> createSimpleClassifierFactory(
+			final TrainingContext trainingCtx) {
+		final ApplicationContext appCtx = trainingCtx.getAppCtx();
+		final WordClassDiscountingSmoother smoother = appCtx.getBean(WordClassDiscountingSmoother.class);
+		return classificationContext -> {
+			final ParallelizedWordLogisticClassifierTrainer trainer = new ParallelizedWordLogisticClassifierTrainer(
+					classificationContext.getBackgroundJobExecutor(), smoother);
+			final Function<String, Logistic> wordClassifiers = trainer
+					.apply(classificationContext.getTrainingData())::get;
+			// This classifier is statically-trained, i.e. the word models
+			// used for classification are the same no matter what dialogue
+			// is being classified
+			return new IsolatedUtteranceEventDialogueClassifier((diagToClassify, ctx) -> wordClassifiers,
+					classificationContext.getReferentConfidenceMapFactory());
+		};
+	}
+
+	private static Function<ClassificationContext, EventDialogueClassifier> createSimpleIterativeClassifierFactory(
+			final TrainingContext trainingCtx) {
+		final ApplicationContext appCtx = trainingCtx.getAppCtx();
+		final WordClassDiscountingSmoother smoother = appCtx.getBean(WordClassDiscountingSmoother.class);
+		final EntityInstanceAttributeContext entityInstAttrCtx = appCtx.getBean(EntityInstanceAttributeContext.class);
+		final EntityFeatureExtractionContextFactory extCtxFactory = appCtx
+				.getBean(EntityFeatureExtractionContextFactory.class);
+		return classificationContext -> {
+			final ParallelizedWordLogisticClassifierTrainer trainer = new ParallelizedWordLogisticClassifierTrainer(
+					classificationContext.getBackgroundJobExecutor(), smoother);
+
+			final AbstractInstanceExtractor instExtractor = new OnePositiveMaximumNegativeInstanceExtractor(
+					entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory);
+			final IterativeWordLogisticClassifierTrainer<Logistic> iterativeTrainer = new IterativeWordLogisticClassifierTrainer<>(
+					trainer, classificationContext.getTrainingData(), instExtractor);
+			return new IsolatedUtteranceEventDialogueClassifier(iterativeTrainer,
+					classificationContext.getReferentConfidenceMapFactory());
+		};
+	}
+
 	private static LoadingCache<EventDialogue, EventDialogue> createTransformedDialogueCache(
 			final EventDialogueTransformer transformer) {
 		return CacheBuilder.newBuilder().softValues().initialCapacity(ESTIMATED_MIN_SESSION_DIALOGUE_COUNT)
@@ -326,7 +367,7 @@ enum Training {
 				.concurrencyLevel(EVENT_DIALOGUE_PROCESSING_CONCURRENCY).build(CacheLoader.from(transformer::apply));
 	}
 
-	private int iterCount;
+	private final int iterCount;
 
 	private Training(final int iterCount) {
 		this.iterCount = iterCount;

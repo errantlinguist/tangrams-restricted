@@ -62,7 +62,6 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.Refere
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.SessionTestResults;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.SessionTestStatistics;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.UtteranceGameContexts;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordClassDiscountingSmoother;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.ClassificationContext;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.EventDialogueClassifier;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.EventDialogueTransformer;
@@ -339,9 +338,6 @@ public final class CrossValidator {
 	private SessionGameManagerCacheSupplier sessionDiagMgrCacheSupplier;
 
 	@Inject
-	private WordClassDiscountingSmoother smoother;
-
-	@Inject
 	private WordClassInstancesFactory testInstsFactory;
 
 	private final TestSetFactory testSetFactory;
@@ -411,10 +407,7 @@ public final class CrossValidator {
 			LOGGER.info("Running cross-validation test on data from \"{}\".", infilePath);
 
 			final WordClassificationData trainingData = testSet.getValue();
-			final Instances oovInstances = smoother.redistributeMass(trainingData);
-			LOGGER.info("{} instance(s) for out-of-vocabulary class.", oovInstances.size());
 			final EventDialogueClassifier diagClassifier = createDialogueClassifier(trainingData, testSessionData);
-
 			final SessionTestResults testResults = testSession(sessionDiagMgrCacheSupplier.get().get(testSessionData),
 					diagClassifier);
 			final CrossValidationTestSummary cvTestSummary = new CrossValidationTestSummary(testResults,
