@@ -23,6 +23,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import javax.annotation.concurrent.NotThreadSafe;
+
 import org.junit.Assert;
 import org.junit.experimental.theories.DataPoints;
 import org.junit.experimental.theories.Theories;
@@ -41,6 +43,7 @@ import edu.stanford.nlp.pipeline.Annotation;
  *
  */
 @RunWith(Theories.class)
+@NotThreadSafe
 public final class PhraseExtractingParsingTokenizerTest {
 
 	@DataPoints

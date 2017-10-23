@@ -21,6 +21,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import javax.annotation.concurrent.NotThreadSafe;
+
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -44,6 +46,7 @@ import edu.stanford.nlp.util.PropertiesUtils;
  */
 
 @RunWith(Parameterized.class)
+@NotThreadSafe
 public final class RNNParserTest {
 
 	private static StanfordCoreNLP pipeline;
