@@ -125,6 +125,8 @@
 			<plugin>
 				<artifactId>maven-surefire-plugin</artifactId>
 				<configuration>
+					<!-- Increase heap size to accommodate models loaded during parsing with Stanford CoreNLP -->
+					<argLine>-Xmx3072m</argLine>
 					<!-- <useSystemClassLoader>false</useSystemClassLoader> -->
 					<!-- <reuseForks>false</reuseForks> -->
 					<!-- <forkCount>1</forkCount> -->
