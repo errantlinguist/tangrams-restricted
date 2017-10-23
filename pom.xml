@@ -154,6 +154,10 @@
 				<plugin>
 					<artifactId>maven-surefire-plugin</artifactId>
 					<version>2.20</version>
+					<configuration>
+						<parallel>all</parallel>
+						<useUnlimitedThreads>true</useUnlimitedThreads>
+					</configuration>
 				</plugin>
 			</plugins>
 		</pluginManagement>
