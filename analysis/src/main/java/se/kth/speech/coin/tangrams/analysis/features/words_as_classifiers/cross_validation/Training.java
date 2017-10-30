@@ -361,7 +361,7 @@ enum Training {
 		return new CachingEventDialogueTransformer(createTransformedDialogueCache(chainedTransformer));
 	}
 
-	private static final Function<ClassificationContext, EventDialogueClassifier> createSimpleClassifierFactory(
+	private static Function<ClassificationContext, EventDialogueClassifier> createSimpleClassifierFactory(
 			final TrainingContext trainingCtx) {
 		final ApplicationContext appCtx = trainingCtx.getAppCtx();
 		final WordClassDiscountingSmoother smoother = appCtx.getBean(WordClassDiscountingSmoother.class);
