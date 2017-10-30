@@ -90,15 +90,6 @@ public final class TestSetFactory {
 		return resultBuilder.build();
 	}
 
-	public Stream<Entry<SessionDataManager, WordClassificationData>> apply(final Set<SessionDataManager> allSessions)
-			throws ExecutionException {
-		final Stream.Builder<Entry<SessionDataManager, WordClassificationData>> resultBuilder = Stream.builder();
-		for (final SessionDataManager testSessionDataMgr : allSessions) {
-			resultBuilder.accept(createTestSet(testSessionDataMgr, allSessions));
-		}
-		return resultBuilder.build();
-	}
-
 	private Entry<SessionDataManager, WordClassificationData> createTestSet(final SessionDataManager testSessionDataMgr,
 			final Set<SessionDataManager> allSessions) throws ExecutionException {
 		final WordClassificationData trainingData;
