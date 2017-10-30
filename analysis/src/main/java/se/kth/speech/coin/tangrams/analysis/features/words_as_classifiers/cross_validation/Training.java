@@ -143,7 +143,7 @@ enum Training {
 			final Map<WordClassifierTrainingParameter, Object> trainingParams = trainingCtx.getTrainingParams();
 			return new SizeEstimatingInstancesMapFactory(
 					new DialogicInstanceExtractor(entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory,
-							fetchCachingUttAcceptanceRanker(trainingCtx), fetchWordClassFactory(trainingCtx),
+							fetchCachingUttAcceptanceRanker(trainingCtx), fetchDialogicWordClassFactory(trainingCtx),
 							trainingCtx.getUttRelHandler()),
 					entityInstAttrCtx,
 					(Double) trainingParams
@@ -166,7 +166,7 @@ enum Training {
 				// used for classification are the same no matter what dialogue
 				// is being classified
 				return new DialogicEventDialogueClassifier((diagToClassify, ctx) -> wordClassifiers,
-						fetchCachingUttAcceptanceRanker(trainingCtx), fetchWordClassFactory(trainingCtx),
+						fetchCachingUttAcceptanceRanker(trainingCtx), fetchDialogicWordClassFactory(trainingCtx),
 						classificationContext.getReferentConfidenceMapFactory());
 			};
 		};
@@ -192,7 +192,7 @@ enum Training {
 			final Map<WordClassifierTrainingParameter, Object> trainingParams = trainingCtx.getTrainingParams();
 			return new SizeEstimatingInstancesMapFactory(
 					new DialogicInstanceExtractor(entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory,
-							fetchCachingUttAcceptanceRanker(trainingCtx), fetchWordClassFactory(trainingCtx),
+							fetchCachingUttAcceptanceRanker(trainingCtx), fetchDialogicWordClassFactory(trainingCtx),
 							trainingCtx.getUttRelHandler()),
 					entityInstAttrCtx,
 					(Double) trainingParams
@@ -223,7 +223,7 @@ enum Training {
 						(Double) trainingParams
 								.get(WordClassifierTrainingParameter.INTERACTION_DATA_NEGATIVE_EXAMPLE_WEIGHT_FACTOR));
 				return new DialogicEventDialogueClassifier(iterativeTrainer,
-						fetchCachingUttAcceptanceRanker(trainingCtx), fetchWordClassFactory(trainingCtx),
+						fetchCachingUttAcceptanceRanker(trainingCtx), fetchDialogicWordClassFactory(trainingCtx),
 						classificationContext.getReferentConfidenceMapFactory());
 			};
 		};
@@ -400,7 +400,7 @@ enum Training {
 		}).get();
 	}
 
-	private static DialogicWeightedWordClassFactory fetchWordClassFactory(final TrainingContext trainingCtx) {
+	private static DialogicWeightedWordClassFactory fetchDialogicWordClassFactory(final TrainingContext trainingCtx) {
 		return CTX_DIALOGIC_WORD_CLASS_FACTORIES.compute(trainingCtx, (key, oldRef) -> {
 			final Reference<DialogicWeightedWordClassFactory> newRef;
 			if (oldRef == null || oldRef.get() == null) {
