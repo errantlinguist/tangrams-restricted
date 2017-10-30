@@ -36,16 +36,16 @@ public final class IterativeWordLogisticClassifierTrainer<C extends Classifier>
 
 	private final AbstractInstanceExtractor instExtractor;
 
-	private final int negativeExampleWeightFactor;
+	private final double negativeExampleWeightFactor;
 
-	private final int positiveExampleWeightFactor;
+	private final double positiveExampleWeightFactor;
 
 	private final WordClassificationData trainingData;
 
 	public IterativeWordLogisticClassifierTrainer(
 			final Function<WordClassificationData, ? extends Map<String, C>> decorated,
 			final WordClassificationData trainingData, final AbstractInstanceExtractor instExtractor,
-			final int positiveExampleWeightFactor, final int negativeExampleWeightFactor) {
+			final double positiveExampleWeightFactor, final double negativeExampleWeightFactor) {
 		this.decorated = decorated;
 		this.trainingData = trainingData;
 		this.instExtractor = instExtractor;

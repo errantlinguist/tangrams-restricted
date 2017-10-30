@@ -152,8 +152,8 @@ public final class OnePositiveOneNegativeInstanceExtractor extends AbstractInsta
 
 	@Override
 	protected void addTrainingData(final EventDialogue eventDialogue, final GameHistory history,
-			final WordClassificationData trainingData, final int positiveExampleWeightFactor,
-			final int negativeExampleWeightFactor) {
+			final WordClassificationData trainingData, final double positiveExampleWeightFactor,
+			final double negativeExampleWeightFactor) {
 		eventDialogue.getFirstEvent().ifPresent(event -> {
 			LOGGER.debug("Extracting features for utterances for event: {}", event);
 			final EventDialogue transformedDiag = diagTransformer.apply(eventDialogue);

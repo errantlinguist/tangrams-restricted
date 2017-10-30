@@ -100,8 +100,8 @@ public final class OnePositiveMaximumNegativeInstanceExtractor extends AbstractI
 
 	@Override
 	protected void addTrainingData(final EventDialogue uttDialogue, final GameHistory history,
-			final WordClassificationData trainingData, final int positiveExampleWeightFactor,
-			final int negativeExampleWeightFactor) {
+			final WordClassificationData trainingData, final double positiveExampleWeightFactor,
+			final double negativeExampleWeightFactor) {
 		uttDialogue.getFirstEvent().ifPresent(event -> {
 			LOGGER.debug("Extracting features for utterances for event: {}", event);
 			final EventDialogue transformedDiag = diagTransformer.apply(uttDialogue);

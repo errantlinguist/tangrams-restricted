@@ -79,9 +79,9 @@ enum Training {
 					entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory);
 			final Map<WordClassifierTrainingParameter, Object> trainingParams = trainingCtx.getTrainingParams();
 			return new SizeEstimatingInstancesMapFactory(instExtractor, entityInstAttrCtx,
-					(Integer) trainingParams
+					(Double) trainingParams
 							.get(WordClassifierTrainingParameter.BACKGROUND_DATA_POSITIVE_EXAMPLE_WEIGHT_FACTOR),
-					(Integer) trainingParams
+					(Double) trainingParams
 							.get(WordClassifierTrainingParameter.BACKGROUND_DATA_NEGATIVE_EXAMPLE_WEIGHT_FACTOR));
 		}
 
@@ -111,9 +111,9 @@ enum Training {
 					new OnePositiveMaximumNegativeInstanceExtractor(entityInstAttrCtx, trainingCtx.getDiagTransformer(),
 							extCtxFactory),
 					entityInstAttrCtx,
-					(Integer) trainingParams
+					(Double) trainingParams
 							.get(WordClassifierTrainingParameter.BACKGROUND_DATA_POSITIVE_EXAMPLE_WEIGHT_FACTOR),
-					(Integer) trainingParams
+					(Double) trainingParams
 							.get(WordClassifierTrainingParameter.BACKGROUND_DATA_NEGATIVE_EXAMPLE_WEIGHT_FACTOR));
 		}
 
@@ -147,9 +147,9 @@ enum Training {
 					new DialogicInstanceExtractor(entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory,
 							createCachingUttAcceptanceRanker(), diagWordClassFactory, trainingCtx.getUttRelHandler()),
 					entityInstAttrCtx,
-					(Integer) trainingParams
+					(Double) trainingParams
 							.get(WordClassifierTrainingParameter.BACKGROUND_DATA_POSITIVE_EXAMPLE_WEIGHT_FACTOR),
-					(Integer) trainingParams
+					(Double) trainingParams
 							.get(WordClassifierTrainingParameter.BACKGROUND_DATA_NEGATIVE_EXAMPLE_WEIGHT_FACTOR));
 		}
 
@@ -217,9 +217,9 @@ enum Training {
 					new DialogicInstanceExtractor(entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory,
 							createCachingUttAcceptanceRanker(), diagWordClassFactory, trainingCtx.getUttRelHandler()),
 					entityInstAttrCtx,
-					(Integer) trainingParams
+					(Double) trainingParams
 							.get(WordClassifierTrainingParameter.BACKGROUND_DATA_POSITIVE_EXAMPLE_WEIGHT_FACTOR),
-					(Integer) trainingParams
+					(Double) trainingParams
 							.get(WordClassifierTrainingParameter.BACKGROUND_DATA_NEGATIVE_EXAMPLE_WEIGHT_FACTOR));
 		}
 
@@ -240,9 +240,9 @@ enum Training {
 				final Map<WordClassifierTrainingParameter, Object> trainingParams = trainingCtx.getTrainingParams();
 				final IterativeWordLogisticClassifierTrainer<Logistic> iterativeTrainer = new IterativeWordLogisticClassifierTrainer<>(
 						trainer, classificationContext.getTrainingData(), instExtractor,
-						(Integer) trainingParams
+						(Double) trainingParams
 								.get(WordClassifierTrainingParameter.INTERACTION_DATA_POSITIVE_EXAMPLE_WEIGHT_FACTOR),
-						(Integer) trainingParams
+						(Double) trainingParams
 								.get(WordClassifierTrainingParameter.INTERACTION_DATA_NEGATIVE_EXAMPLE_WEIGHT_FACTOR));
 				return new DialogicEventDialogueClassifier(iterativeTrainer, createCachingUttAcceptanceRanker(),
 						diagWordClassFactory, classificationContext.getReferentConfidenceMapFactory());
@@ -290,9 +290,9 @@ enum Training {
 					new OnePositiveOneNegativeInstanceExtractor(entityInstAttrCtx, trainingCtx.getDiagTransformer(),
 							extCtxFactory, TrainingConstants.RND),
 					entityInstAttrCtx,
-					(Integer) trainingParams
+					(Double) trainingParams
 							.get(WordClassifierTrainingParameter.BACKGROUND_DATA_POSITIVE_EXAMPLE_WEIGHT_FACTOR),
-					(Integer) trainingParams
+					(Double) trainingParams
 							.get(WordClassifierTrainingParameter.BACKGROUND_DATA_NEGATIVE_EXAMPLE_WEIGHT_FACTOR));
 		}
 
@@ -322,9 +322,9 @@ enum Training {
 					new OnePositiveOneNegativeInstanceExtractor(entityInstAttrCtx, trainingCtx.getDiagTransformer(),
 							extCtxFactory, TrainingConstants.RND),
 					entityInstAttrCtx,
-					(Integer) trainingParams
+					(Double) trainingParams
 							.get(WordClassifierTrainingParameter.BACKGROUND_DATA_POSITIVE_EXAMPLE_WEIGHT_FACTOR),
-					(Integer) trainingParams
+					(Double) trainingParams
 							.get(WordClassifierTrainingParameter.BACKGROUND_DATA_NEGATIVE_EXAMPLE_WEIGHT_FACTOR));
 		}
 
@@ -398,9 +398,9 @@ enum Training {
 			final Map<WordClassifierTrainingParameter, Object> trainingParams = trainingCtx.getTrainingParams();
 			final IterativeWordLogisticClassifierTrainer<Logistic> iterativeTrainer = new IterativeWordLogisticClassifierTrainer<>(
 					trainer, classificationContext.getTrainingData(), instExtractor,
-					(Integer) trainingParams
+					(Double) trainingParams
 							.get(WordClassifierTrainingParameter.INTERACTION_DATA_POSITIVE_EXAMPLE_WEIGHT_FACTOR),
-					(Integer) trainingParams
+					(Double) trainingParams
 							.get(WordClassifierTrainingParameter.INTERACTION_DATA_NEGATIVE_EXAMPLE_WEIGHT_FACTOR));
 			return new IsolatedUtteranceEventDialogueClassifier(iterativeTrainer,
 					classificationContext.getReferentConfidenceMapFactory());

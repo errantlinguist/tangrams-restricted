@@ -75,13 +75,13 @@ public final class SizeEstimatingInstancesMapFactory implements TrainingInstance
 
 	private final AbstractInstanceExtractor instExtractor;
 
-	private final int negativeExampleWeightFactor;
+	private final double negativeExampleWeightFactor;
 
-	private final int positiveExampleWeightFactor;
+	private final double positiveExampleWeightFactor;
 
 	public SizeEstimatingInstancesMapFactory(final AbstractInstanceExtractor instExtractor,
-			final EntityInstanceAttributeContext entityInstAttrCtx, final int positiveExampleWeightFactor,
-			final int negativeExampleWeightFactor) {
+			final EntityInstanceAttributeContext entityInstAttrCtx, final double positiveExampleWeightFactor,
+			final double negativeExampleWeightFactor) {
 		this.instExtractor = instExtractor;
 		this.entityInstAttrCtx = entityInstAttrCtx;
 		this.positiveExampleWeightFactor = positiveExampleWeightFactor;

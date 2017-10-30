@@ -29,13 +29,13 @@
 	<util:map id="training-params"
 		key-type="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.WordClassifierTrainingParameter">
 		<entry key="BACKGROUND_DATA_POSITIVE_EXAMPLE_WEIGHT_FACTOR"
-			value="1" value-type="java.lang.Integer" />
+			value="1.0" value-type="java.lang.Double" />
 		<entry key="BACKGROUND_DATA_NEGATIVE_EXAMPLE_WEIGHT_FACTOR"
-			value="1" value-type="java.lang.Integer" />
+			value="1.0" value-type="java.lang.Double" />
 		<entry key="INTERACTION_DATA_POSITIVE_EXAMPLE_WEIGHT_FACTOR"
-			value="1" value-type="java.lang.Integer" />
+			value="1.0" value-type="java.lang.Double" />
 		<entry key="INTERACTION_DATA_NEGATIVE_EXAMPLE_WEIGHT_FACTOR"
-			value="1" value-type="java.lang.Integer" />
+			value="1.0" value-type="java.lang.Double" />
 	</util:map>
 
 </beans>
