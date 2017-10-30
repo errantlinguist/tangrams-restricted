@@ -142,9 +142,11 @@ enum Training {
 					.getBean(EntityFeatureExtractionContextFactory.class);
 			final Map<WordClassifierTrainingParameter, Object> trainingParams = trainingCtx.getTrainingParams();
 			return new SizeEstimatingInstancesMapFactory(
-					new DialogicInstanceExtractor(entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory,
-							fetchCachingUttAcceptanceRanker(trainingCtx), fetchDialogicWordClassFactory(trainingCtx),
-							trainingCtx.getUttRelHandler()),
+					new DialogicInstanceExtractor(
+							entityInstAttrCtx, trainingCtx
+									.getDiagTransformer(),
+							extCtxFactory, fetchCachingUttAcceptanceRanker(trainingCtx),
+							fetchDialogicWordClassFactory(trainingCtx), trainingCtx.getUttRelHandler()),
 					entityInstAttrCtx,
 					(Double) trainingParams
 							.get(WordClassifierTrainingParameter.BACKGROUND_DATA_POSITIVE_EXAMPLE_WEIGHT_FACTOR),
@@ -191,9 +193,11 @@ enum Training {
 					.getBean(EntityFeatureExtractionContextFactory.class);
 			final Map<WordClassifierTrainingParameter, Object> trainingParams = trainingCtx.getTrainingParams();
 			return new SizeEstimatingInstancesMapFactory(
-					new DialogicInstanceExtractor(entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory,
-							fetchCachingUttAcceptanceRanker(trainingCtx), fetchDialogicWordClassFactory(trainingCtx),
-							trainingCtx.getUttRelHandler()),
+					new DialogicInstanceExtractor(
+							entityInstAttrCtx, trainingCtx
+									.getDiagTransformer(),
+							extCtxFactory, fetchCachingUttAcceptanceRanker(trainingCtx),
+							fetchDialogicWordClassFactory(trainingCtx), trainingCtx.getUttRelHandler()),
 					entityInstAttrCtx,
 					(Double) trainingParams
 							.get(WordClassifierTrainingParameter.BACKGROUND_DATA_POSITIVE_EXAMPLE_WEIGHT_FACTOR),
@@ -246,8 +250,8 @@ enum Training {
 					.getBean(EntityFeatureExtractionContextFactory.class);
 			final Map<WordClassifierTrainingParameter, Object> trainingParams = trainingCtx.getTrainingParams();
 			return new SizeEstimatingInstancesMapFactory(
-					new OnePositiveOneNegativeInstanceExtractor(entityInstAttrCtx, trainingCtx.getDiagTransformer(),
-							extCtxFactory, TrainingConstants.RND),
+					new OnePositiveOneNegativeInstanceExtractor(
+							entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory, TrainingConstants.RND),
 					entityInstAttrCtx,
 					(Double) trainingParams
 							.get(WordClassifierTrainingParameter.BACKGROUND_DATA_POSITIVE_EXAMPLE_WEIGHT_FACTOR),
@@ -278,8 +282,8 @@ enum Training {
 					.getBean(EntityFeatureExtractionContextFactory.class);
 			final Map<WordClassifierTrainingParameter, Object> trainingParams = trainingCtx.getTrainingParams();
 			return new SizeEstimatingInstancesMapFactory(
-					new OnePositiveOneNegativeInstanceExtractor(entityInstAttrCtx, trainingCtx.getDiagTransformer(),
-							extCtxFactory, TrainingConstants.RND),
+					new OnePositiveOneNegativeInstanceExtractor(
+							entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory, TrainingConstants.RND),
 					entityInstAttrCtx,
 					(Double) trainingParams
 							.get(WordClassifierTrainingParameter.BACKGROUND_DATA_POSITIVE_EXAMPLE_WEIGHT_FACTOR),
@@ -295,9 +299,19 @@ enum Training {
 
 	};
 
+	/**
+	 * <strong>NOTE:</strong> This uses {@link TrainingContext} as keys because
+	 * individual contexts also determine how {@link Utterance} instances are
+	 * created.
+	 */
 	private static final Map<TrainingContext, Reference<ToDoubleFunction<Utterance>>> CTX_ACCEPTANCE_RANKERS = new ConcurrentHashMap<>(
 			3);
 
+	/**
+	 * <strong>NOTE:</strong> This uses {@link TrainingContext} as keys because
+	 * individual contexts also determine how {@link Utterance} instances are
+	 * created.
+	 */
 	private static final ConcurrentMap<TrainingContext, Reference<DialogicWeightedWordClassFactory>> CTX_DIALOGIC_WORD_CLASS_FACTORIES = new ConcurrentHashMap<>(
 			3);
 
