@@ -125,12 +125,6 @@ enum Training {
 	},
 	DIALOGIC(1) {
 
-		private final Map<TrainingContext, Reference<ToDoubleFunction<Utterance>>> ctxAcceptanceRankers = new ConcurrentHashMap<>(
-				2);
-
-		private final ConcurrentMap<TrainingContext, Reference<DialogicWeightedWordClassFactory>> ctxWordClassFactories = new ConcurrentHashMap<>(
-				2);
-
 		@Override
 		public CachingEventDialogueTransformer createSymmetricalTrainingTestingEvgDiagTransformer(
 				final List<EventDialogueTransformer> diagTransformers) {
@@ -177,22 +171,8 @@ enum Training {
 			};
 		};
 
-		private ToDoubleFunction<Utterance> fetchCachingUttAcceptanceRanker(final TrainingContext trainingCtx) {
-			return fetchCachingUttAcceptanceRanker(ctxAcceptanceRankers, trainingCtx);
-		}
-
-		private DialogicWeightedWordClassFactory fetchWordClassFactory(final TrainingContext trainingCtx) {
-			return fetchWordClassFactory(ctxWordClassFactories, trainingCtx);
-		}
-
 	},
 	DIALOGIC_ITERATIVE(1) {
-
-		private final Map<TrainingContext, Reference<ToDoubleFunction<Utterance>>> ctxAcceptanceRankers = new ConcurrentHashMap<>(
-				2);
-
-		private final ConcurrentMap<TrainingContext, Reference<DialogicWeightedWordClassFactory>> ctxWordClassFactories = new ConcurrentHashMap<>(
-				2);
 
 		@Override
 		public CachingEventDialogueTransformer createSymmetricalTrainingTestingEvgDiagTransformer(
@@ -247,14 +227,6 @@ enum Training {
 						classificationContext.getReferentConfidenceMapFactory());
 			};
 		};
-
-		private ToDoubleFunction<Utterance> fetchCachingUttAcceptanceRanker(final TrainingContext trainingCtx) {
-			return fetchCachingUttAcceptanceRanker(ctxAcceptanceRankers, trainingCtx);
-		}
-
-		private DialogicWeightedWordClassFactory fetchWordClassFactory(final TrainingContext trainingCtx) {
-			return fetchWordClassFactory(ctxWordClassFactories, trainingCtx);
-		}
 
 	},
 	ONE_NEG(5) {
@@ -322,6 +294,12 @@ enum Training {
 		}
 
 	};
+
+	private static final Map<TrainingContext, Reference<ToDoubleFunction<Utterance>>> CTX_ACCEPTANCE_RANKERS = new ConcurrentHashMap<>(
+			3);
+
+	private static final ConcurrentMap<TrainingContext, Reference<DialogicWeightedWordClassFactory>> CTX_DIALOGIC_WORD_CLASS_FACTORIES = new ConcurrentHashMap<>(
+			3);
 
 	private static final int ESTIMATED_MIN_SESSION_DIALOGUE_COUNT = 50;
 
@@ -424,6 +402,10 @@ enum Training {
 		}).get();
 	}
 
+	private static ToDoubleFunction<Utterance> fetchCachingUttAcceptanceRanker(final TrainingContext trainingCtx) {
+		return fetchCachingUttAcceptanceRanker(CTX_ACCEPTANCE_RANKERS, trainingCtx);
+	}
+
 	private static DialogicWeightedWordClassFactory fetchWordClassFactory(
 			final Map<TrainingContext, Reference<DialogicWeightedWordClassFactory>> ctxWordClassFactories,
 			final TrainingContext trainingCtx) {
@@ -442,6 +424,10 @@ enum Training {
 			}
 			return newRef;
 		}).get();
+	}
+
+	private static DialogicWeightedWordClassFactory fetchWordClassFactory(final TrainingContext trainingCtx) {
+		return fetchWordClassFactory(CTX_DIALOGIC_WORD_CLASS_FACTORIES, trainingCtx);
 	}
 
 	private final int iterCount;
