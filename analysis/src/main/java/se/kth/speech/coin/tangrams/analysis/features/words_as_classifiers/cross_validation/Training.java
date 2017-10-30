@@ -388,10 +388,8 @@ enum Training {
 				.concurrencyLevel(EVENT_DIALOGUE_PROCESSING_CONCURRENCY).build(CacheLoader.from(transformer::apply));
 	}
 
-	private static ToDoubleFunction<Utterance> fetchCachingUttAcceptanceRanker(
-			final Map<TrainingContext, Reference<ToDoubleFunction<Utterance>>> ctxAcceptanceRankers,
-			final TrainingContext trainingCtx) {
-		return ctxAcceptanceRankers.compute(trainingCtx, (key, oldRef) -> {
+	private static ToDoubleFunction<Utterance> fetchCachingUttAcceptanceRanker(final TrainingContext trainingCtx) {
+		return CTX_ACCEPTANCE_RANKERS.compute(trainingCtx, (key, oldRef) -> {
 			final Reference<ToDoubleFunction<Utterance>> newRef;
 			if (oldRef == null || oldRef.get() == null) {
 				newRef = new SoftReference<>(createCachingUttAcceptanceRanker(trainingCtx.getTrainingParams()));
@@ -402,14 +400,8 @@ enum Training {
 		}).get();
 	}
 
-	private static ToDoubleFunction<Utterance> fetchCachingUttAcceptanceRanker(final TrainingContext trainingCtx) {
-		return fetchCachingUttAcceptanceRanker(CTX_ACCEPTANCE_RANKERS, trainingCtx);
-	}
-
-	private static DialogicWeightedWordClassFactory fetchWordClassFactory(
-			final Map<TrainingContext, Reference<DialogicWeightedWordClassFactory>> ctxWordClassFactories,
-			final TrainingContext trainingCtx) {
-		return ctxWordClassFactories.compute(trainingCtx, (key, oldRef) -> {
+	private static DialogicWeightedWordClassFactory fetchWordClassFactory(final TrainingContext trainingCtx) {
+		return CTX_DIALOGIC_WORD_CLASS_FACTORIES.compute(trainingCtx, (key, oldRef) -> {
 			final Reference<DialogicWeightedWordClassFactory> newRef;
 			if (oldRef == null || oldRef.get() == null) {
 				final Map<WordClassifierTrainingParameter, Object> trainingParams = key.getTrainingParams();
@@ -424,10 +416,6 @@ enum Training {
 			}
 			return newRef;
 		}).get();
-	}
-
-	private static DialogicWeightedWordClassFactory fetchWordClassFactory(final TrainingContext trainingCtx) {
-		return fetchWordClassFactory(CTX_DIALOGIC_WORD_CLASS_FACTORIES, trainingCtx);
 	}
 
 	private final int iterCount;
