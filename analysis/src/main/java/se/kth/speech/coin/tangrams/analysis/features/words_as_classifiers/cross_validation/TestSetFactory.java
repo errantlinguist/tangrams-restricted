@@ -36,6 +36,8 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.traini
 import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
 
 /**
+ * Creates cross-validation test/training dataset pairs.
+ *
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
  * @since Apr 17, 2017
  * @see
@@ -103,8 +105,7 @@ public final class TestSetFactory {
 		{
 			final SessionDataManager[] trainingSessionDataMgrs = allSessions.stream()
 					.filter(sessionData -> !sessionData.equals(testSessionDataMgr)).toArray(SessionDataManager[]::new);
-			final List<SessionGameManager> trainingSessionEvtDiagMgrs = new ArrayList<>(
-					trainingSessionDataMgrs.length);
+			final List<SessionGameManager> trainingSessionEvtDiagMgrs = new ArrayList<>(trainingSessionDataMgrs.length);
 			for (final SessionDataManager trainingSessionDatum : trainingSessionDataMgrs) {
 				final SessionGameManager sessionEventDiagMgr = sessionDiagMgrCacheSupplier.get()
 						.get(trainingSessionDatum);
