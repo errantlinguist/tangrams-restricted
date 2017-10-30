@@ -125,7 +125,7 @@ enum Training {
 	},
 	DIALOGIC(1) {
 
-		private final ConcurrentMap<TrainingContext, Reference<DialogicWeightedWordClassFactory>> ctxWordClassFactories = new ConcurrentHashMap<>();
+		private final ConcurrentMap<TrainingContext, Reference<DialogicWeightedWordClassFactory>> ctxWordClassFactories = new ConcurrentHashMap<>(2);
 
 		@Override
 		public CachingEventDialogueTransformer createSymmetricalTrainingTestingEvgDiagTransformer(
@@ -200,7 +200,7 @@ enum Training {
 	},
 	DIALOGIC_ITERATIVE(1) {
 
-		private final ConcurrentMap<TrainingContext, Reference<DialogicWeightedWordClassFactory>> ctxWordClassFactories = new ConcurrentHashMap<>();
+		private final ConcurrentMap<TrainingContext, Reference<DialogicWeightedWordClassFactory>> ctxWordClassFactories = new ConcurrentHashMap<>(2);
 
 		@Override
 		public CachingEventDialogueTransformer createSymmetricalTrainingTestingEvgDiagTransformer(
