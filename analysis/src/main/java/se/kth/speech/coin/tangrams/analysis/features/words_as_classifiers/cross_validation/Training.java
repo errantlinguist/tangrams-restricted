@@ -304,7 +304,7 @@ enum Training {
 	 * individual contexts also determine how {@link Utterance} instances are
 	 * created.
 	 */
-	private static final Map<TrainingContext, Reference<ToDoubleFunction<Utterance>>> CTX_ACCEPTANCE_RANKERS = new ConcurrentHashMap<>(
+	private static final ConcurrentMap<TrainingContext, Reference<ToDoubleFunction<Utterance>>> CTX_ACCEPTANCE_RANKERS = new ConcurrentHashMap<>(
 			3);
 
 	/**
