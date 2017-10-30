@@ -38,6 +38,10 @@
 					value="1.0" value-type="java.lang.Double" />
 				<entry key="INTERACTION_DATA_NEGATIVE_EXAMPLE_WEIGHT_FACTOR"
 					value="1.0" value-type="java.lang.Double" />
+				<entry key="INSTRUCTOR_UTTERANCE_OBSERVATION_WEIGHT" value="1.0"
+					value-type="java.lang.Double" />
+				<entry key="OTHER_UTTERANCE_OBSERVATION_WEIGHT" value="1.0"
+					value-type="java.lang.Double" />
 			</util:map>
 		</constructor-arg>
 	</bean>
