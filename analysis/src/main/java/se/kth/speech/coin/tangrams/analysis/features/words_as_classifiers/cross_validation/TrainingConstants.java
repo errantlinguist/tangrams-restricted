@@ -25,8 +25,6 @@ import java.util.Random;
  */
 final class TrainingConstants {
 
-	static final int ESTIMATED_UNIQUE_UTT_COUNT = 2000;
-
 	static final Random RND = new Random(1);
 
 	private TrainingConstants() {

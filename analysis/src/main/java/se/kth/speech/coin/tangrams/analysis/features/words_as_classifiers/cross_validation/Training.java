@@ -125,7 +125,11 @@ enum Training {
 	},
 	DIALOGIC(1) {
 
-		private final ConcurrentMap<TrainingContext, Reference<DialogicWeightedWordClassFactory>> ctxWordClassFactories = new ConcurrentHashMap<>(2);
+		private final Map<TrainingContext, Reference<ToDoubleFunction<Utterance>>> ctxAcceptanceRankers = new ConcurrentHashMap<>(
+				2);
+
+		private final ConcurrentMap<TrainingContext, Reference<DialogicWeightedWordClassFactory>> ctxWordClassFactories = new ConcurrentHashMap<>(
+				2);
 
 		@Override
 		public CachingEventDialogueTransformer createSymmetricalTrainingTestingEvgDiagTransformer(
@@ -145,14 +149,14 @@ enum Training {
 			final Map<WordClassifierTrainingParameter, Object> trainingParams = trainingCtx.getTrainingParams();
 			return new SizeEstimatingInstancesMapFactory(
 					new DialogicInstanceExtractor(entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory,
-							createCachingUttAcceptanceRanker(), fetchWordClassFactory(trainingCtx),
+							fetchCachingUttAcceptanceRanker(trainingCtx), fetchWordClassFactory(trainingCtx),
 							trainingCtx.getUttRelHandler()),
 					entityInstAttrCtx,
 					(Double) trainingParams
 							.get(WordClassifierTrainingParameter.BACKGROUND_DATA_POSITIVE_EXAMPLE_WEIGHT_FACTOR),
 					(Double) trainingParams
 							.get(WordClassifierTrainingParameter.BACKGROUND_DATA_NEGATIVE_EXAMPLE_WEIGHT_FACTOR));
-		};
+		}
 
 		@Override
 		public Function<ClassificationContext, EventDialogueClassifier> getClassifierFactory(
@@ -168,29 +172,13 @@ enum Training {
 				// used for classification are the same no matter what dialogue
 				// is being classified
 				return new DialogicEventDialogueClassifier((diagToClassify, ctx) -> wordClassifiers,
-						createCachingUttAcceptanceRanker(), fetchWordClassFactory(trainingCtx),
+						fetchCachingUttAcceptanceRanker(trainingCtx), fetchWordClassFactory(trainingCtx),
 						classificationContext.getReferentConfidenceMapFactory());
 			};
-		}
+		};
 
-		private ToDoubleFunction<Utterance> createCachingUttAcceptanceRanker() {
-			final Object2DoubleMap<Utterance> cache = new Object2DoubleOpenHashMap<>(
-					TrainingConstants.ESTIMATED_UNIQUE_UTT_COUNT);
-			cache.defaultReturnValue(Double.NaN);
-			final PatternMatchingUtteranceAcceptanceRanker ranker = new PatternMatchingUtteranceAcceptanceRanker();
-			return utt -> {
-				double result = cache.getDouble(utt);
-				if (Double.isNaN(result)) {
-					synchronized (cache) {
-						result = cache.getDouble(utt);
-						if (Double.isNaN(result)) {
-							result = ranker.applyAsDouble(utt);
-							cache.put(utt, result);
-						}
-					}
-				}
-				return result;
-			};
+		private ToDoubleFunction<Utterance> fetchCachingUttAcceptanceRanker(final TrainingContext trainingCtx) {
+			return fetchCachingUttAcceptanceRanker(ctxAcceptanceRankers, trainingCtx);
 		}
 
 		private DialogicWeightedWordClassFactory fetchWordClassFactory(final TrainingContext trainingCtx) {
@@ -200,7 +188,11 @@ enum Training {
 	},
 	DIALOGIC_ITERATIVE(1) {
 
-		private final ConcurrentMap<TrainingContext, Reference<DialogicWeightedWordClassFactory>> ctxWordClassFactories = new ConcurrentHashMap<>(2);
+		private final Map<TrainingContext, Reference<ToDoubleFunction<Utterance>>> ctxAcceptanceRankers = new ConcurrentHashMap<>(
+				2);
+
+		private final ConcurrentMap<TrainingContext, Reference<DialogicWeightedWordClassFactory>> ctxWordClassFactories = new ConcurrentHashMap<>(
+				2);
 
 		@Override
 		public CachingEventDialogueTransformer createSymmetricalTrainingTestingEvgDiagTransformer(
@@ -220,14 +212,14 @@ enum Training {
 			final Map<WordClassifierTrainingParameter, Object> trainingParams = trainingCtx.getTrainingParams();
 			return new SizeEstimatingInstancesMapFactory(
 					new DialogicInstanceExtractor(entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory,
-							createCachingUttAcceptanceRanker(), fetchWordClassFactory(trainingCtx),
+							fetchCachingUttAcceptanceRanker(trainingCtx), fetchWordClassFactory(trainingCtx),
 							trainingCtx.getUttRelHandler()),
 					entityInstAttrCtx,
 					(Double) trainingParams
 							.get(WordClassifierTrainingParameter.BACKGROUND_DATA_POSITIVE_EXAMPLE_WEIGHT_FACTOR),
 					(Double) trainingParams
 							.get(WordClassifierTrainingParameter.BACKGROUND_DATA_NEGATIVE_EXAMPLE_WEIGHT_FACTOR));
-		};
+		}
 
 		@Override
 		public Function<ClassificationContext, EventDialogueClassifier> getClassifierFactory(
@@ -250,29 +242,14 @@ enum Training {
 								.get(WordClassifierTrainingParameter.INTERACTION_DATA_POSITIVE_EXAMPLE_WEIGHT_FACTOR),
 						(Double) trainingParams
 								.get(WordClassifierTrainingParameter.INTERACTION_DATA_NEGATIVE_EXAMPLE_WEIGHT_FACTOR));
-				return new DialogicEventDialogueClassifier(iterativeTrainer, createCachingUttAcceptanceRanker(),
-						fetchWordClassFactory(trainingCtx), classificationContext.getReferentConfidenceMapFactory());
+				return new DialogicEventDialogueClassifier(iterativeTrainer,
+						fetchCachingUttAcceptanceRanker(trainingCtx), fetchWordClassFactory(trainingCtx),
+						classificationContext.getReferentConfidenceMapFactory());
 			};
-		}
+		};
 
-		private ToDoubleFunction<Utterance> createCachingUttAcceptanceRanker() {
-			final Object2DoubleMap<Utterance> cache = new Object2DoubleOpenHashMap<>(
-					TrainingConstants.ESTIMATED_UNIQUE_UTT_COUNT);
-			cache.defaultReturnValue(Double.NaN);
-			final PatternMatchingUtteranceAcceptanceRanker ranker = new PatternMatchingUtteranceAcceptanceRanker();
-			return utt -> {
-				double result = cache.getDouble(utt);
-				if (Double.isNaN(result)) {
-					synchronized (cache) {
-						result = cache.getDouble(utt);
-						if (Double.isNaN(result)) {
-							result = ranker.applyAsDouble(utt);
-							cache.put(utt, result);
-						}
-					}
-				}
-				return result;
-			};
+		private ToDoubleFunction<Utterance> fetchCachingUttAcceptanceRanker(final TrainingContext trainingCtx) {
+			return fetchCachingUttAcceptanceRanker(ctxAcceptanceRankers, trainingCtx);
 		}
 
 		private DialogicWeightedWordClassFactory fetchWordClassFactory(final TrainingContext trainingCtx) {
@@ -354,6 +331,27 @@ enum Training {
 
 	private static final long MAXIMUM_TRANSFORMED_DIAG_CACHE_SIZE = 1000;
 
+	private static ToDoubleFunction<Utterance> createCachingUttAcceptanceRanker(
+			final Map<WordClassifierTrainingParameter, Object> trainingParams) {
+		final Object2DoubleMap<Utterance> cache = new Object2DoubleOpenHashMap<>(
+				(Integer) trainingParams.get(WordClassifierTrainingParameter.EXPECTED_UNIQUE_UTTERANCE_COUNT));
+		cache.defaultReturnValue(Double.NaN);
+		final PatternMatchingUtteranceAcceptanceRanker ranker = new PatternMatchingUtteranceAcceptanceRanker();
+		return utt -> {
+			double result = cache.getDouble(utt);
+			if (Double.isNaN(result)) {
+				synchronized (cache) {
+					result = cache.getDouble(utt);
+					if (Double.isNaN(result)) {
+						result = ranker.applyAsDouble(utt);
+						cache.put(utt, result);
+					}
+				}
+			}
+			return result;
+		};
+	}
+
 	private static CachingEventDialogueTransformer createInstrUttFilteringTransformer(
 			final List<EventDialogueTransformer> diagTransformers) {
 		final List<EventDialogueTransformer> chain = new ArrayList<>(diagTransformers.size() + 1);
@@ -410,6 +408,20 @@ enum Training {
 		return CacheBuilder.newBuilder().softValues().initialCapacity(ESTIMATED_MIN_SESSION_DIALOGUE_COUNT)
 				.maximumSize(MAXIMUM_TRANSFORMED_DIAG_CACHE_SIZE)
 				.concurrencyLevel(EVENT_DIALOGUE_PROCESSING_CONCURRENCY).build(CacheLoader.from(transformer::apply));
+	}
+
+	private static ToDoubleFunction<Utterance> fetchCachingUttAcceptanceRanker(
+			final Map<TrainingContext, Reference<ToDoubleFunction<Utterance>>> ctxAcceptanceRankers,
+			final TrainingContext trainingCtx) {
+		return ctxAcceptanceRankers.compute(trainingCtx, (key, oldRef) -> {
+			final Reference<ToDoubleFunction<Utterance>> newRef;
+			if (oldRef == null || oldRef.get() == null) {
+				newRef = new SoftReference<>(createCachingUttAcceptanceRanker(trainingCtx.getTrainingParams()));
+			} else {
+				newRef = oldRef;
+			}
+			return newRef;
+		}).get();
 	}
 
 	private static DialogicWeightedWordClassFactory fetchWordClassFactory(
