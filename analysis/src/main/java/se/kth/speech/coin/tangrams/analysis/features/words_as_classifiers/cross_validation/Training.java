@@ -143,8 +143,8 @@ enum Training {
 			final Map<WordClassifierTrainingParameter, Object> trainingParams = trainingCtx.getTrainingParams();
 			return new SizeEstimatingInstancesMapFactory(
 					new DialogicInstanceExtractor(entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory,
-							fetchCachingUttAcceptanceRanker(trainingParams),
-							fetchDialogicWordClassFactory(trainingParams), trainingCtx.getUttRelHandler()),
+							fetchCachingUttAcceptanceRanker(trainingCtx), fetchDialogicWordClassFactory(trainingCtx),
+							trainingCtx.getUttRelHandler()),
 					entityInstAttrCtx,
 					(Double) trainingParams
 							.get(WordClassifierTrainingParameter.BACKGROUND_DATA_POSITIVE_EXAMPLE_WEIGHT_FACTOR),
@@ -162,12 +162,11 @@ enum Training {
 						classificationContext.getBackgroundJobExecutor(), smoother);
 				final Function<String, Logistic> wordClassifiers = trainer
 						.apply(classificationContext.getTrainingData())::get;
-				final Map<WordClassifierTrainingParameter, Object> trainingParams = trainingCtx.getTrainingParams();
 				// This classifier is statically-trained, i.e. the word models
 				// used for classification are the same no matter what dialogue
 				// is being classified
 				return new DialogicEventDialogueClassifier((diagToClassify, ctx) -> wordClassifiers,
-						fetchCachingUttAcceptanceRanker(trainingParams), fetchDialogicWordClassFactory(trainingParams),
+						fetchCachingUttAcceptanceRanker(trainingCtx), fetchDialogicWordClassFactory(trainingCtx),
 						classificationContext.getReferentConfidenceMapFactory());
 			};
 		};
@@ -193,8 +192,8 @@ enum Training {
 			final Map<WordClassifierTrainingParameter, Object> trainingParams = trainingCtx.getTrainingParams();
 			return new SizeEstimatingInstancesMapFactory(
 					new DialogicInstanceExtractor(entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory,
-							fetchCachingUttAcceptanceRanker(trainingParams),
-							fetchDialogicWordClassFactory(trainingParams), trainingCtx.getUttRelHandler()),
+							fetchCachingUttAcceptanceRanker(trainingCtx), fetchDialogicWordClassFactory(trainingCtx),
+							trainingCtx.getUttRelHandler()),
 					entityInstAttrCtx,
 					(Double) trainingParams
 							.get(WordClassifierTrainingParameter.BACKGROUND_DATA_POSITIVE_EXAMPLE_WEIGHT_FACTOR),
@@ -224,7 +223,7 @@ enum Training {
 						(Double) trainingParams
 								.get(WordClassifierTrainingParameter.INTERACTION_DATA_NEGATIVE_EXAMPLE_WEIGHT_FACTOR));
 				return new DialogicEventDialogueClassifier(iterativeTrainer,
-						fetchCachingUttAcceptanceRanker(trainingParams), fetchDialogicWordClassFactory(trainingParams),
+						fetchCachingUttAcceptanceRanker(trainingCtx), fetchDialogicWordClassFactory(trainingCtx),
 						classificationContext.getReferentConfidenceMapFactory());
 			};
 		};
@@ -296,6 +295,12 @@ enum Training {
 
 	};
 
+	private static final Map<TrainingContext, Reference<ToDoubleFunction<Utterance>>> CTX_ACCEPTANCE_RANKERS = new ConcurrentHashMap<>(
+			3);
+
+	private static final ConcurrentMap<TrainingContext, Reference<DialogicWeightedWordClassFactory>> CTX_DIALOGIC_WORD_CLASS_FACTORIES = new ConcurrentHashMap<>(
+			3);
+
 	private static final int ESTIMATED_MIN_SESSION_DIALOGUE_COUNT = 50;
 
 	private static final int EVENT_DIALOGUE_PROCESSING_CONCURRENCY = 1;
@@ -303,12 +308,6 @@ enum Training {
 	private static final InstructorUtteranceFilteringEventDialogueTransformer INSTR_UTT_FILTER = new InstructorUtteranceFilteringEventDialogueTransformer();
 
 	private static final long MAXIMUM_TRANSFORMED_DIAG_CACHE_SIZE = 1000;
-
-	private static final Map<Map<WordClassifierTrainingParameter, Object>, Reference<ToDoubleFunction<Utterance>>> TRAINING_PARAMS_ACCEPTANCE_RANKERS = new ConcurrentHashMap<>(
-			3);
-
-	private static final ConcurrentMap<Map<WordClassifierTrainingParameter, Object>, Reference<DialogicWeightedWordClassFactory>> TRAINING_PARAMS_DIALOGIC_WORD_CLASS_FACTORIES = new ConcurrentHashMap<>(
-			3);
 
 	private static ToDoubleFunction<Utterance> createCachingUttAcceptanceRanker(
 			final Map<WordClassifierTrainingParameter, Object> trainingParams) {
@@ -389,12 +388,11 @@ enum Training {
 				.concurrencyLevel(EVENT_DIALOGUE_PROCESSING_CONCURRENCY).build(CacheLoader.from(transformer::apply));
 	}
 
-	private static ToDoubleFunction<Utterance> fetchCachingUttAcceptanceRanker(
-			final Map<WordClassifierTrainingParameter, Object> trainingParams) {
-		return TRAINING_PARAMS_ACCEPTANCE_RANKERS.compute(trainingParams, (key, oldRef) -> {
+	private static ToDoubleFunction<Utterance> fetchCachingUttAcceptanceRanker(final TrainingContext trainingCtx) {
+		return CTX_ACCEPTANCE_RANKERS.compute(trainingCtx, (key, oldRef) -> {
 			final Reference<ToDoubleFunction<Utterance>> newRef;
 			if (oldRef == null || oldRef.get() == null) {
-				newRef = new SoftReference<>(createCachingUttAcceptanceRanker(trainingParams));
+				newRef = new SoftReference<>(createCachingUttAcceptanceRanker(trainingCtx.getTrainingParams()));
 			} else {
 				newRef = oldRef;
 			}
@@ -402,11 +400,11 @@ enum Training {
 		}).get();
 	}
 
-	private static DialogicWeightedWordClassFactory fetchDialogicWordClassFactory(
-			final Map<WordClassifierTrainingParameter, Object> trainingParams) {
-		return TRAINING_PARAMS_DIALOGIC_WORD_CLASS_FACTORIES.compute(trainingParams, (key, oldRef) -> {
+	private static DialogicWeightedWordClassFactory fetchDialogicWordClassFactory(final TrainingContext trainingCtx) {
+		return CTX_DIALOGIC_WORD_CLASS_FACTORIES.compute(trainingCtx, (key, oldRef) -> {
 			final Reference<DialogicWeightedWordClassFactory> newRef;
 			if (oldRef == null || oldRef.get() == null) {
+				final Map<WordClassifierTrainingParameter, Object> trainingParams = key.getTrainingParams();
 				final DialogicWeightedWordClassFactory newInst = new DialogicWeightedWordClassFactory(
 						(Double) trainingParams
 								.get(WordClassifierTrainingParameter.INSTRUCTOR_UTTERANCE_OBSERVATION_WEIGHT),
