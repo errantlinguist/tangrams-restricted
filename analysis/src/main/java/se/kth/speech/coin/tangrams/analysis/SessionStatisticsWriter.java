@@ -78,10 +78,8 @@ import se.kth.speech.coin.tangrams.iristk.io.LoggedEventReader;
  * @since 2 Aug 2017
  *
  */
-final class SessionStatisticsWriter
-		implements Consumer<Collection<? extends Entry<Path, ? extends Map<String, GameSummary>>>> { // NO_UCD
-																										// (unused
-																										// code)
+final class SessionStatisticsWriter // NO_UCD (unused code)
+		implements Consumer<Collection<? extends Entry<Path, ? extends Map<String, GameSummary>>>> { 
 
 	private enum Parameter implements Supplier<Option> {
 		HELP("?") {

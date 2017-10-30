@@ -55,7 +55,7 @@ import se.kth.speech.io.RuntimeJAXBException;
  * @since Oct 21, 2017
  *
  */
-public final class RNNParseAnnotationSegmentWriter {
+public final class RNNParseAnnotationSegmentWriter { // NO_UCD (unused code)
 
 	private static final Unmarshaller HAT_UNMARSHALLER;
 
