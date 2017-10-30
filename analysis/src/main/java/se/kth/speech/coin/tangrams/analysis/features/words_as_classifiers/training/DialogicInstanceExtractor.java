@@ -104,7 +104,8 @@ public final class DialogicInstanceExtractor extends AbstractInstanceExtractor {
 
 	@Override
 	protected void addTrainingData(final EventDialogue eventDialogue, final GameHistory history,
-			final WordClassificationData trainingData) {
+			final WordClassificationData trainingData, final int positiveExampleWeightFactor,
+			final int negativeExampleWeightFactor) {
 		eventDialogue.getFirstEvent().ifPresent(event -> {
 			LOGGER.debug("Extracting features for utterances for event: {}", event);
 			final EventDialogue transformedDiag = diagTransformer.apply(eventDialogue);
@@ -128,17 +129,17 @@ public final class DialogicInstanceExtractor extends AbstractInstanceExtractor {
 					final List<EntityFeature.Extractor.Context> positiveCtxs = trainingContexts.getPositive();
 					entityRefLangExs.getRefPosExamples().object2DoubleEntrySet().stream()
 							.forEach(langEx -> addWeightedExamples(langEx.getKey(), trainingData, positiveCtxs,
-									langEx.getDoubleValue(), POSITIVE_EXAMPLE_LABEL));
+									langEx.getDoubleValue() * positiveExampleWeightFactor, POSITIVE_EXAMPLE_LABEL));
 					entityRefLangExs.getRefNegExamples().object2DoubleEntrySet().stream()
 							.forEach(langEx -> addWeightedExamples(langEx.getKey(), trainingData, positiveCtxs,
-									langEx.getDoubleValue(), NEGATIVE_EXAMPLE_LABEL));
+									langEx.getDoubleValue() * negativeExampleWeightFactor, NEGATIVE_EXAMPLE_LABEL));
 				}
 				{
 					// Instances for non-referent entities
 					final List<EntityFeature.Extractor.Context> negativeCtxs = trainingContexts.getNegative();
 					entityRefLangExs.getOtherEntityNegativeExamples().object2DoubleEntrySet().stream()
 							.forEach(langEx -> addWeightedExamples(langEx.getKey(), trainingData, negativeCtxs,
-									langEx.getDoubleValue(), NEGATIVE_EXAMPLE_LABEL));
+									langEx.getDoubleValue() * negativeExampleWeightFactor, NEGATIVE_EXAMPLE_LABEL));
 				}
 			}
 		});

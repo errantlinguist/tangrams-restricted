@@ -98,8 +98,10 @@ public final class OnePositiveMaximumNegativeInstanceExtractor extends AbstractI
 		trainingData.addObservation(wordClass, trainingInsts.stream());
 	}
 
+	@Override
 	protected void addTrainingData(final EventDialogue uttDialogue, final GameHistory history,
-			final WordClassificationData trainingData) {
+			final WordClassificationData trainingData, final int positiveExampleWeightFactor,
+			final int negativeExampleWeightFactor) {
 		uttDialogue.getFirstEvent().ifPresent(event -> {
 			LOGGER.debug("Extracting features for utterances for event: {}", event);
 			final EventDialogue transformedDiag = diagTransformer.apply(uttDialogue);
@@ -117,10 +119,11 @@ public final class OnePositiveMaximumNegativeInstanceExtractor extends AbstractI
 				// Instances for referent entity
 				final List<EntityFeature.Extractor.Context> positiveCtxs = trainingContexts.getPositive();
 				getWordClasses(utts).forEach(token -> addWeightedExamples(token, trainingData, positiveCtxs,
-						observationWeight, POSITIVE_EXAMPLE_LABEL));
+						observationWeight * positiveExampleWeightFactor, POSITIVE_EXAMPLE_LABEL));
 				// Instances for non-referent entities
-				getWordClasses(utts).forEach(token -> addWeightedExamples(token, trainingData,
-						trainingContexts.getNegative(), observationWeight, NEGATIVE_EXAMPLE_LABEL));
+				getWordClasses(utts)
+						.forEach(token -> addWeightedExamples(token, trainingData, trainingContexts.getNegative(),
+								observationWeight * negativeExampleWeightFactor, NEGATIVE_EXAMPLE_LABEL));
 			}
 		});
 	}

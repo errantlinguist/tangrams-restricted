@@ -38,7 +38,7 @@ public abstract class AbstractInstanceExtractor {
 	}
 
 	protected abstract void addTrainingData(final EventDialogue uttDialogue, final GameHistory history,
-			final WordClassificationData trainingData);
+			final WordClassificationData trainingData, int positiveExampleWeightFactor, int negativeExampleWeightFactor);
 
 	protected final Instance createTokenInstance(final Instances classInsts,
 			final EntityFeature.Extractor.Context extractionContext, final String classValue) {

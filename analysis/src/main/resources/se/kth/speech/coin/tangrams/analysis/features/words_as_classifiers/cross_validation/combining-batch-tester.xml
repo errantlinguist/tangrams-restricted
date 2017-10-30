@@ -7,20 +7,35 @@
          http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
         http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd">
 
-	<import resource="classpath:/se/kth/speech/coin/tangrams/analysis/features/words_as_classifiers/context.xml"/>
-	
+	<import
+		resource="classpath:/se/kth/speech/coin/tangrams/analysis/features/words_as_classifiers/context.xml" />
+
 	<bean id="smoother"
 		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordClassDiscountingSmoother">
 		<constructor-arg value="3" />
 		<constructor-arg value="__OUT_OF_VOCAB__" />
 	</bean>
-	
+
 	<bean id="dialogue-classifier"
 		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.IsolatedUtteranceEventDialogueClassifier"
-		scope="prototype">
-	</bean>
-	
-	<bean id="cross-validation-tester" class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.CrossValidator" scope="prototype">
-	</bean>
+		scope="prototype" />
+
+
+	<bean id="cross-validation-tester"
+		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.CrossValidator"
+		scope="prototype" />
+
+
+	<util:map id="training-params"
+		key-type="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.WordClassifierTrainingParameter">
+		<entry key="BACKGROUND_DATA_POSITIVE_EXAMPLE_WEIGHT_FACTOR"
+			value="1" value-type="java.lang.Integer" />
+		<entry key="BACKGROUND_DATA_NEGATIVE_EXAMPLE_WEIGHT_FACTOR"
+			value="1" value-type="java.lang.Integer" />
+		<entry key="INTERACTION_DATA_POSITIVE_EXAMPLE_WEIGHT_FACTOR"
+			value="1" value-type="java.lang.Integer" />
+		<entry key="INTERACTION_DATA_NEGATIVE_EXAMPLE_WEIGHT_FACTOR"
+			value="1" value-type="java.lang.Integer" />
+	</util:map>
 
 </beans>

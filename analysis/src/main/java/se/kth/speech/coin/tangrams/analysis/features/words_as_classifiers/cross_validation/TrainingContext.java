@@ -17,6 +17,7 @@
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation;
 
 import java.util.List;
+import java.util.Map;
 import java.util.function.BiConsumer;
 
 import org.springframework.context.ApplicationContext;
@@ -31,18 +32,22 @@ final class TrainingContext {
 
 	private final EventDialogueTransformer diagTransformer;
 
+	private final Map<WordClassifierTrainingParameter, Object> trainingParams;
+
 	private final BiConsumer<? super EventDialogue, ? super List<UtteranceRelation>> uttRelHandler;
 
 	TrainingContext(final EventDialogueTransformer diagTransformer, final ApplicationContext appCtx,
-			final BiConsumer<? super EventDialogue, ? super List<UtteranceRelation>> uttRelHandler) {
+			final BiConsumer<? super EventDialogue, ? super List<UtteranceRelation>> uttRelHandler,
+			final Map<WordClassifierTrainingParameter, Object> trainingParams) {
 		this.diagTransformer = diagTransformer;
 		this.appCtx = appCtx;
 		this.uttRelHandler = uttRelHandler;
+		this.trainingParams = trainingParams;
 	}
 
 	/*
 	 * (non-Javadoc)
-	 *
+	 * 
 	 * @see java.lang.Object#equals(java.lang.Object)
 	 */
 	@Override
@@ -71,6 +76,13 @@ final class TrainingContext {
 		} else if (!diagTransformer.equals(other.diagTransformer)) {
 			return false;
 		}
+		if (trainingParams == null) {
+			if (other.trainingParams != null) {
+				return false;
+			}
+		} else if (!trainingParams.equals(other.trainingParams)) {
+			return false;
+		}
 		if (uttRelHandler == null) {
 			if (other.uttRelHandler != null) {
 				return false;
@@ -83,7 +95,7 @@ final class TrainingContext {
 
 	/*
 	 * (non-Javadoc)
-	 *
+	 * 
 	 * @see java.lang.Object#hashCode()
 	 */
 	@Override
@@ -92,25 +104,28 @@ final class TrainingContext {
 		int result = 1;
 		result = prime * result + (appCtx == null ? 0 : appCtx.hashCode());
 		result = prime * result + (diagTransformer == null ? 0 : diagTransformer.hashCode());
+		result = prime * result + (trainingParams == null ? 0 : trainingParams.hashCode());
 		result = prime * result + (uttRelHandler == null ? 0 : uttRelHandler.hashCode());
 		return result;
 	}
 
 	/*
 	 * (non-Javadoc)
-	 *
+	 * 
 	 * @see java.lang.Object#toString()
 	 */
 	@Override
 	public String toString() {
-		final StringBuilder builder = new StringBuilder(160);
+		final StringBuilder builder = new StringBuilder(512);
 		builder.append("TrainingContext [appCtx=");
 		builder.append(appCtx);
 		builder.append(", diagTransformer=");
 		builder.append(diagTransformer);
+		builder.append(", trainingParams=");
+		builder.append(trainingParams);
 		builder.append(", uttRelHandler=");
 		builder.append(uttRelHandler);
-		builder.append(']');
+		builder.append("]");
 		return builder.toString();
 	}
 
@@ -126,6 +141,13 @@ final class TrainingContext {
 	 */
 	EventDialogueTransformer getDiagTransformer() {
 		return diagTransformer;
+	}
+
+	/**
+	 * @return the trainingParams
+	 */
+	Map<WordClassifierTrainingParameter, Object> getTrainingParams() {
+		return trainingParams;
 	}
 
 	/**

@@ -123,6 +123,8 @@ final class CombiningBatchJobTester {
 
 	private final Consumer<? super CrossValidator> testerConfigurator;
 
+	private final Map<WordClassifierTrainingParameter, Object> trainingParams;
+
 	private final BiConsumer<? super EventDialogue, ? super List<UtteranceRelation>> uttRelHandler;
 
 	CombiningBatchJobTester(final ExecutorService backgroundJobExecutor, final ApplicationContext appCtx,
@@ -130,7 +132,8 @@ final class CombiningBatchJobTester {
 			final BiConsumer<? super IncompleteResults, ? super Throwable> errorHandler,
 			final Consumer<? super CrossValidator> testerConfigurator,
 			final BiConsumer<? super CoreMap, ? super List<Tree>> extractionResultsHook,
-			final BiConsumer<? super EventDialogue, ? super List<UtteranceRelation>> uttRelHandler) {
+			final BiConsumer<? super EventDialogue, ? super List<UtteranceRelation>> uttRelHandler,
+			final Map<WordClassifierTrainingParameter, Object> trainingParams) {
 		this.backgroundJobExecutor = backgroundJobExecutor;
 		this.appCtx = appCtx;
 		this.batchJobResultHandler = batchJobResultHandler;
@@ -138,6 +141,7 @@ final class CombiningBatchJobTester {
 		this.testerConfigurator = testerConfigurator;
 		this.extractionResultsHook = extractionResultsHook;
 		this.uttRelHandler = uttRelHandler;
+		this.trainingParams = trainingParams;
 	}
 
 	void accept(final Input input) throws ClassificationException, ExecutionException, IOException {
@@ -160,7 +164,7 @@ final class CombiningBatchJobTester {
 									.createSymmetricalTrainingTestingEvgDiagTransformer(
 											Arrays.asList(tokenizer, tokenFilter));
 							final TrainingContext trainingCtx = new TrainingContext(symmetricalDiagTransformer, appCtx,
-									uttRelHandler);
+									uttRelHandler, trainingParams);
 							final TrainingInstancesFactory trainingInstsFactory = trainingMethod
 									.createTrainingInstsFactory(trainingCtx);
 							final TestSetFactory testSetFactory = new TestSetFactory(trainingInstsFactory,

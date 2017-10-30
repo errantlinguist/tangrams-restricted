@@ -75,10 +75,17 @@ public final class SizeEstimatingInstancesMapFactory implements TrainingInstance
 
 	private final AbstractInstanceExtractor instExtractor;
 
+	private final int negativeExampleWeightFactor;
+
+	private final int positiveExampleWeightFactor;
+
 	public SizeEstimatingInstancesMapFactory(final AbstractInstanceExtractor instExtractor,
-			final EntityInstanceAttributeContext entityInstAttrCtx) {
+			final EntityInstanceAttributeContext entityInstAttrCtx, final int positiveExampleWeightFactor,
+			final int negativeExampleWeightFactor) {
 		this.instExtractor = instExtractor;
 		this.entityInstAttrCtx = entityInstAttrCtx;
+		this.positiveExampleWeightFactor = positiveExampleWeightFactor;
+		this.negativeExampleWeightFactor = negativeExampleWeightFactor;
 	}
 
 	@Override
@@ -104,7 +111,8 @@ public final class SizeEstimatingInstancesMapFactory implements TrainingInstance
 		final GameHistory history = sessionGame.getHistory();
 
 		final List<EventDialogue> uttDialogues = sessionGame.getEventDialogues();
-		uttDialogues.forEach(uttDialogue -> instExtractor.addTrainingData(uttDialogue, history, trainingData));
+		uttDialogues.forEach(uttDialogue -> instExtractor.addTrainingData(uttDialogue, history, trainingData,
+				positiveExampleWeightFactor, negativeExampleWeightFactor));
 	}
 
 	protected final Instance createTokenInstance(final Instances classInsts,

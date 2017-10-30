@@ -120,6 +120,8 @@ final class CombiningBatchJobTestMultiDirWriter { // NO_UCD (use default)
 
 	private static final DateTimeFormatter TIMESTAMP_FORMATTER = EventTimes.FORMATTER;
 
+	private static final String TRAINING_PARAM_MAP_BEAN_NAME = "training-params";
+
 	static {
 		SUMMARY_DATA_TO_WRITE = Arrays.asList(SummaryDatum.MEAN_RANK, SummaryDatum.MRR, SummaryDatum.DIALOGUE_COUNT,
 				SummaryDatum.UTTERANCES_TESTED, SummaryDatum.MEAN_UTTERANCES_PER_DIALOGUE);
@@ -231,12 +233,15 @@ final class CombiningBatchJobTestMultiDirWriter { // NO_UCD (use default)
 						!appendSummary);
 				try (final ClassPathXmlApplicationContext appCtx = new ClassPathXmlApplicationContext(
 						"combining-batch-tester.xml", CombiningBatchJobTestMultiDirWriter.class)) {
+					@SuppressWarnings("unchecked")
+					final Map<WordClassifierTrainingParameter, Object> trainingParams = (Map<WordClassifierTrainingParameter, Object>) appCtx
+							.getBean(TRAINING_PARAM_MAP_BEAN_NAME);
 					final CombiningBatchJobTester tester = new CombiningBatchJobTester(backgroundJobExecutor, appCtx,
 							writer::write, writer::writeError, testerConfigurator, (sent, extractedPhrases) -> {
 								// Do nothing
 							}, (evtDiag, uttRels) -> {
 								// Do nothing
-							});
+							}, trainingParams);
 					tester.accept(input);
 				}
 				LOGGER.info("Shutting down executor service.");

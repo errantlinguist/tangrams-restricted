@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.function.Function;
 import java.util.function.ToDoubleFunction;
@@ -76,7 +77,12 @@ enum Training {
 					.getBean(EntityFeatureExtractionContextFactory.class);
 			final AbstractInstanceExtractor instExtractor = new OnePositiveMaximumNegativeInstanceExtractor(
 					entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory);
-			return new SizeEstimatingInstancesMapFactory(instExtractor, entityInstAttrCtx);
+			final Map<WordClassifierTrainingParameter, Object> trainingParams = trainingCtx.getTrainingParams();
+			return new SizeEstimatingInstancesMapFactory(instExtractor, entityInstAttrCtx,
+					(Integer) trainingParams
+							.get(WordClassifierTrainingParameter.BACKGROUND_DATA_POSITIVE_EXAMPLE_WEIGHT_FACTOR),
+					(Integer) trainingParams
+							.get(WordClassifierTrainingParameter.BACKGROUND_DATA_NEGATIVE_EXAMPLE_WEIGHT_FACTOR));
 		}
 
 		@Override
@@ -100,8 +106,15 @@ enum Training {
 					.getBean(EntityInstanceAttributeContext.class);
 			final EntityFeatureExtractionContextFactory extCtxFactory = appCtx
 					.getBean(EntityFeatureExtractionContextFactory.class);
-			return new SizeEstimatingInstancesMapFactory(new OnePositiveMaximumNegativeInstanceExtractor(
-					entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory), entityInstAttrCtx);
+			final Map<WordClassifierTrainingParameter, Object> trainingParams = trainingCtx.getTrainingParams();
+			return new SizeEstimatingInstancesMapFactory(
+					new OnePositiveMaximumNegativeInstanceExtractor(entityInstAttrCtx, trainingCtx.getDiagTransformer(),
+							extCtxFactory),
+					entityInstAttrCtx,
+					(Integer) trainingParams
+							.get(WordClassifierTrainingParameter.BACKGROUND_DATA_POSITIVE_EXAMPLE_WEIGHT_FACTOR),
+					(Integer) trainingParams
+							.get(WordClassifierTrainingParameter.BACKGROUND_DATA_NEGATIVE_EXAMPLE_WEIGHT_FACTOR));
 		}
 
 		@Override
@@ -129,10 +142,15 @@ enum Training {
 					.getBean(EntityInstanceAttributeContext.class);
 			final EntityFeatureExtractionContextFactory extCtxFactory = appCtx
 					.getBean(EntityFeatureExtractionContextFactory.class);
+			final Map<WordClassifierTrainingParameter, Object> trainingParams = trainingCtx.getTrainingParams();
 			return new SizeEstimatingInstancesMapFactory(
 					new DialogicInstanceExtractor(entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory,
 							createCachingUttAcceptanceRanker(), diagWordClassFactory, trainingCtx.getUttRelHandler()),
-					entityInstAttrCtx);
+					entityInstAttrCtx,
+					(Integer) trainingParams
+							.get(WordClassifierTrainingParameter.BACKGROUND_DATA_POSITIVE_EXAMPLE_WEIGHT_FACTOR),
+					(Integer) trainingParams
+							.get(WordClassifierTrainingParameter.BACKGROUND_DATA_NEGATIVE_EXAMPLE_WEIGHT_FACTOR));
 		}
 
 		@Override
@@ -194,10 +212,15 @@ enum Training {
 					.getBean(EntityInstanceAttributeContext.class);
 			final EntityFeatureExtractionContextFactory extCtxFactory = appCtx
 					.getBean(EntityFeatureExtractionContextFactory.class);
+			final Map<WordClassifierTrainingParameter, Object> trainingParams = trainingCtx.getTrainingParams();
 			return new SizeEstimatingInstancesMapFactory(
 					new DialogicInstanceExtractor(entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory,
 							createCachingUttAcceptanceRanker(), diagWordClassFactory, trainingCtx.getUttRelHandler()),
-					entityInstAttrCtx);
+					entityInstAttrCtx,
+					(Integer) trainingParams
+							.get(WordClassifierTrainingParameter.BACKGROUND_DATA_POSITIVE_EXAMPLE_WEIGHT_FACTOR),
+					(Integer) trainingParams
+							.get(WordClassifierTrainingParameter.BACKGROUND_DATA_NEGATIVE_EXAMPLE_WEIGHT_FACTOR));
 		}
 
 		@Override
@@ -214,8 +237,13 @@ enum Training {
 						classificationContext.getBackgroundJobExecutor(), smoother);
 				final AbstractInstanceExtractor instExtractor = new OnePositiveMaximumNegativeInstanceExtractor(
 						entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory);
+				final Map<WordClassifierTrainingParameter, Object> trainingParams = trainingCtx.getTrainingParams();
 				final IterativeWordLogisticClassifierTrainer<Logistic> iterativeTrainer = new IterativeWordLogisticClassifierTrainer<>(
-						trainer, classificationContext.getTrainingData(), instExtractor);
+						trainer, classificationContext.getTrainingData(), instExtractor,
+						(Integer) trainingParams
+								.get(WordClassifierTrainingParameter.INTERACTION_DATA_POSITIVE_EXAMPLE_WEIGHT_FACTOR),
+						(Integer) trainingParams
+								.get(WordClassifierTrainingParameter.INTERACTION_DATA_NEGATIVE_EXAMPLE_WEIGHT_FACTOR));
 				return new DialogicEventDialogueClassifier(iterativeTrainer, createCachingUttAcceptanceRanker(),
 						diagWordClassFactory, classificationContext.getReferentConfidenceMapFactory());
 			};
@@ -257,8 +285,15 @@ enum Training {
 					.getBean(EntityInstanceAttributeContext.class);
 			final EntityFeatureExtractionContextFactory extCtxFactory = appCtx
 					.getBean(EntityFeatureExtractionContextFactory.class);
-			return new SizeEstimatingInstancesMapFactory(new OnePositiveOneNegativeInstanceExtractor(entityInstAttrCtx,
-					trainingCtx.getDiagTransformer(), extCtxFactory, TrainingConstants.RND), entityInstAttrCtx);
+			final Map<WordClassifierTrainingParameter, Object> trainingParams = trainingCtx.getTrainingParams();
+			return new SizeEstimatingInstancesMapFactory(
+					new OnePositiveOneNegativeInstanceExtractor(entityInstAttrCtx, trainingCtx.getDiagTransformer(),
+							extCtxFactory, TrainingConstants.RND),
+					entityInstAttrCtx,
+					(Integer) trainingParams
+							.get(WordClassifierTrainingParameter.BACKGROUND_DATA_POSITIVE_EXAMPLE_WEIGHT_FACTOR),
+					(Integer) trainingParams
+							.get(WordClassifierTrainingParameter.BACKGROUND_DATA_NEGATIVE_EXAMPLE_WEIGHT_FACTOR));
 		}
 
 		@Override
@@ -282,8 +317,15 @@ enum Training {
 					.getBean(EntityInstanceAttributeContext.class);
 			final EntityFeatureExtractionContextFactory extCtxFactory = appCtx
 					.getBean(EntityFeatureExtractionContextFactory.class);
-			return new SizeEstimatingInstancesMapFactory(new OnePositiveOneNegativeInstanceExtractor(entityInstAttrCtx,
-					trainingCtx.getDiagTransformer(), extCtxFactory, TrainingConstants.RND), entityInstAttrCtx);
+			final Map<WordClassifierTrainingParameter, Object> trainingParams = trainingCtx.getTrainingParams();
+			return new SizeEstimatingInstancesMapFactory(
+					new OnePositiveOneNegativeInstanceExtractor(entityInstAttrCtx, trainingCtx.getDiagTransformer(),
+							extCtxFactory, TrainingConstants.RND),
+					entityInstAttrCtx,
+					(Integer) trainingParams
+							.get(WordClassifierTrainingParameter.BACKGROUND_DATA_POSITIVE_EXAMPLE_WEIGHT_FACTOR),
+					(Integer) trainingParams
+							.get(WordClassifierTrainingParameter.BACKGROUND_DATA_NEGATIVE_EXAMPLE_WEIGHT_FACTOR));
 		}
 
 		@Override
@@ -353,8 +395,13 @@ enum Training {
 
 			final AbstractInstanceExtractor instExtractor = new OnePositiveMaximumNegativeInstanceExtractor(
 					entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory);
+			final Map<WordClassifierTrainingParameter, Object> trainingParams = trainingCtx.getTrainingParams();
 			final IterativeWordLogisticClassifierTrainer<Logistic> iterativeTrainer = new IterativeWordLogisticClassifierTrainer<>(
-					trainer, classificationContext.getTrainingData(), instExtractor);
+					trainer, classificationContext.getTrainingData(), instExtractor,
+					(Integer) trainingParams
+							.get(WordClassifierTrainingParameter.INTERACTION_DATA_POSITIVE_EXAMPLE_WEIGHT_FACTOR),
+					(Integer) trainingParams
+							.get(WordClassifierTrainingParameter.INTERACTION_DATA_NEGATIVE_EXAMPLE_WEIGHT_FACTOR));
 			return new IsolatedUtteranceEventDialogueClassifier(iterativeTrainer,
 					classificationContext.getReferentConfidenceMapFactory());
 		};

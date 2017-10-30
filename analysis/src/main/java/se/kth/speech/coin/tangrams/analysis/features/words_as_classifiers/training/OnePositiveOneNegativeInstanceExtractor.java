@@ -152,7 +152,8 @@ public final class OnePositiveOneNegativeInstanceExtractor extends AbstractInsta
 
 	@Override
 	protected void addTrainingData(final EventDialogue eventDialogue, final GameHistory history,
-			final WordClassificationData trainingData) {
+			final WordClassificationData trainingData, final int positiveExampleWeightFactor,
+			final int negativeExampleWeightFactor) {
 		eventDialogue.getFirstEvent().ifPresent(event -> {
 			LOGGER.debug("Extracting features for utterances for event: {}", event);
 			final EventDialogue transformedDiag = diagTransformer.apply(eventDialogue);
@@ -172,10 +173,10 @@ public final class OnePositiveOneNegativeInstanceExtractor extends AbstractInsta
 				final double observationWeight = 1.0;
 				// Instances for referent entity
 				getWordClasses(utts).forEach(token -> addWeightedExamples(token, trainingData, trainingContexts.pos,
-						observationWeight, POSITIVE_EXAMPLE_LABEL));
+						observationWeight * positiveExampleWeightFactor, POSITIVE_EXAMPLE_LABEL));
 				// Instances for non-referent entities
 				getWordClasses(utts).forEach(token -> addWeightedExamples(token, trainingData, trainingContexts.neg,
-						observationWeight, NEGATIVE_EXAMPLE_LABEL));
+						observationWeight * negativeExampleWeightFactor, NEGATIVE_EXAMPLE_LABEL));
 			}
 		});
 	}

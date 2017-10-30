@@ -36,21 +36,29 @@ public final class IterativeWordLogisticClassifierTrainer<C extends Classifier>
 
 	private final AbstractInstanceExtractor instExtractor;
 
+	private final int negativeExampleWeightFactor;
+
+	private final int positiveExampleWeightFactor;
+
 	private final WordClassificationData trainingData;
 
 	public IterativeWordLogisticClassifierTrainer(
 			final Function<WordClassificationData, ? extends Map<String, C>> decorated,
-			final WordClassificationData trainingData, final AbstractInstanceExtractor instExtractor) {
+			final WordClassificationData trainingData, final AbstractInstanceExtractor instExtractor,
+			final int positiveExampleWeightFactor, final int negativeExampleWeightFactor) {
 		this.decorated = decorated;
 		this.trainingData = trainingData;
 		this.instExtractor = instExtractor;
+		this.positiveExampleWeightFactor = positiveExampleWeightFactor;
+		this.negativeExampleWeightFactor = negativeExampleWeightFactor;
 
 	}
 
 	@Override
 	public Function<String, C> apply(final EventDialogue diagToClassify, final GameContext ctx) {
 		final Map<String, C> wordClassifier = decorated.apply(trainingData);
-		instExtractor.addTrainingData(diagToClassify, ctx.getHistory(), trainingData);
+		instExtractor.addTrainingData(diagToClassify, ctx.getHistory(), trainingData, positiveExampleWeightFactor,
+				negativeExampleWeightFactor);
 		return wordClassifier::get;
 	}
 

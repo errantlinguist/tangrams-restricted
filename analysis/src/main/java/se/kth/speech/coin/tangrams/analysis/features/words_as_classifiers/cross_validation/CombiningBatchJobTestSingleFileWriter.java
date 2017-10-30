@@ -100,6 +100,8 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 
 	private static final Collector<CharSequence, ?, String> ROW_CELL_JOINER = Collectors.joining("\t");
 
+	private static final String TRAINING_PARAM_MAP_BEAN_NAME = "training-params";
+
 	private static final String UTT_REL_LOG_FILE_SUFFIX = ".uttrels.tsv";
 
 	public static void main(final String[] args) throws BatchJobTestException {
@@ -202,10 +204,14 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 
 							try (final ClassPathXmlApplicationContext appCtx = new ClassPathXmlApplicationContext(
 									"combining-batch-tester.xml", CombiningBatchJobTestSingleFileWriter.class)) {
+								@SuppressWarnings("unchecked")
+								final Map<WordClassifierTrainingParameter, Object> trainingParams = (Map<WordClassifierTrainingParameter, Object>) appCtx
+										.getBean(TRAINING_PARAM_MAP_BEAN_NAME);
 								final CombiningBatchJobTester tester = new CombiningBatchJobTester(
 										backgroundJobExecutor, appCtx, writer::write, writer::writeError,
 										testerConfigurator, new ExtractionLogWriter(extrLogOut),
-										new UtteranceRelationLogWriter(uttRelLogOut, NULL_CELL_VALUE_REPR));
+										new UtteranceRelationLogWriter(uttRelLogOut, NULL_CELL_VALUE_REPR),
+										trainingParams);
 								tester.accept(input);
 							}
 							LOGGER.info("Shutting down executor service.");
