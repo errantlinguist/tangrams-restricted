@@ -365,6 +365,7 @@ final class DialogueAnalysisSummaryFactory implements
 				DialogueAnalysisSummaryFactory.SummaryDatum.INSTRUCTOR_UTTERANCE_OBSERVATION_WEIGHT,
 				DialogueAnalysisSummaryFactory.SummaryDatum.OTHER_UTTERANCE_OBSERVATION_WEIGHT);
 		assert result.size() == DialogueAnalysisSummaryFactory.SummaryDatum.values().length;
+		assert result.stream().distinct().count() == result.size();
 		return result;
 	}
 
