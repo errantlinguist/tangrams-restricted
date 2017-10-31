@@ -19,6 +19,7 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross
 import java.time.temporal.TemporalAccessor;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.Iterator;
 import java.util.List;
@@ -332,15 +333,16 @@ final class DialogueAnalysisSummaryFactory implements
 		};
 	}
 
-	private static final List<SummaryDatum> DEFAULT_DATA_TO_CREATE = createDefaultDatumOrderingList();
+	public static final List<SummaryDatum> DEFAULT_SUMMARY_DATUM_ORDERING = Collections
+			.unmodifiableList(createDefaultSummaryDatumOrderingList());
 
 	private static final Function<TemporalAccessor, String> TIMESTAMP_FORMATTER = EventTimes.FORMATTER::format;
 
 	public static Stream<DialogueAnalysisSummaryFactory.SummaryDatum> getDefaultDatumOrdering() {
-		return DEFAULT_DATA_TO_CREATE.stream();
+		return DEFAULT_SUMMARY_DATUM_ORDERING.stream();
 	}
 
-	private static List<DialogueAnalysisSummaryFactory.SummaryDatum> createDefaultDatumOrderingList() {
+	private static List<DialogueAnalysisSummaryFactory.SummaryDatum> createDefaultSummaryDatumOrderingList() {
 		final List<DialogueAnalysisSummaryFactory.SummaryDatum> result = Arrays.asList(
 				DialogueAnalysisSummaryFactory.SummaryDatum.DYAD,
 				DialogueAnalysisSummaryFactory.SummaryDatum.DESCRIPTION,
@@ -371,7 +373,7 @@ final class DialogueAnalysisSummaryFactory implements
 	private final Function<? super Iterator<Utterance>, String> uttDiagReprFactory;
 
 	public DialogueAnalysisSummaryFactory(final Function<? super Iterator<Utterance>, String> uttDiagReprFactory) {
-		this(uttDiagReprFactory, DEFAULT_DATA_TO_CREATE);
+		this(uttDiagReprFactory, DEFAULT_SUMMARY_DATUM_ORDERING);
 	}
 
 	public DialogueAnalysisSummaryFactory(final Function<? super Iterator<Utterance>, String> uttDiagReprFactory,

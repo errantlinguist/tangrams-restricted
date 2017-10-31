@@ -28,12 +28,14 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.EnumMap;
+import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.OptionalInt;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
 import java.util.function.Consumer;
@@ -100,8 +102,6 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 
 	private static final Collector<CharSequence, ?, String> ROW_CELL_JOINER = Collectors.joining("\t");
 
-	private static final String TRAINING_PARAM_MAP_BEAN_NAME = "training-params";
-
 	private static final String UTT_REL_LOG_FILE_SUFFIX = ".uttrels.tsv";
 
 	public static void main(final String[] args) throws BatchJobTestException {
@@ -116,21 +116,13 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 	}
 
 	private static List<DialogueAnalysisSummaryFactory.SummaryDatum> createDefaultDatumOrderingList() {
-		final List<DialogueAnalysisSummaryFactory.SummaryDatum> result = Arrays.asList(
-				DialogueAnalysisSummaryFactory.SummaryDatum.DYAD,
-				DialogueAnalysisSummaryFactory.SummaryDatum.DESCRIPTION,
-				DialogueAnalysisSummaryFactory.SummaryDatum.SESSION_ORDER,
-				DialogueAnalysisSummaryFactory.SummaryDatum.EVENT_TIME,
-				DialogueAnalysisSummaryFactory.SummaryDatum.TEST_ITER,
-				// DialogueAnalysisSummaryFactory.SummaryDatum.DIALOGUE,
-				// DialogueAnalysisSummaryFactory.SummaryDatum.DIALOGUE_AS_TESTED,
-				// DialogueAnalysisSummaryFactory.SummaryDatum.GOLD_STD_ID,
-				DialogueAnalysisSummaryFactory.SummaryDatum.RANK,
-				DialogueAnalysisSummaryFactory.SummaryDatum.TESTED_UTT_COUNT,
-				DialogueAnalysisSummaryFactory.SummaryDatum.TOTAL_UTT_COUNT,
-				DialogueAnalysisSummaryFactory.SummaryDatum.TOKEN_COUNT);
-		assert result.size() <= DialogueAnalysisSummaryFactory.SummaryDatum.values().length;
-		return result;
+		final Set<DialogueAnalysisSummaryFactory.SummaryDatum> excludedData = EnumSet.of(
+				DialogueAnalysisSummaryFactory.SummaryDatum.DIALOGUE,
+				DialogueAnalysisSummaryFactory.SummaryDatum.DIALOGUE_AS_TESTED,
+				DialogueAnalysisSummaryFactory.SummaryDatum.GOLD_STD_ID);
+		return Arrays.asList(
+				DialogueAnalysisSummaryFactory.getDefaultDatumOrdering().filter(datum -> !excludedData.contains(datum))
+						.toArray(DialogueAnalysisSummaryFactory.SummaryDatum[]::new));
 	}
 
 	private static BufferedWriter createExtrLogFileWriter(final File outFile) throws IOException {
@@ -204,9 +196,8 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 
 							try (final ClassPathXmlApplicationContext appCtx = new ClassPathXmlApplicationContext(
 									"combining-batch-tester.xml", CombiningBatchJobTestSingleFileWriter.class)) {
-								@SuppressWarnings("unchecked")
-								final Map<WordClassifierTrainingParameter, Object> trainingParams = (Map<WordClassifierTrainingParameter, Object>) appCtx
-										.getBean(TRAINING_PARAM_MAP_BEAN_NAME);
+								final Map<WordClassifierTrainingParameter, Object> trainingParams = WordClassifierTrainingParameter
+										.getDefault(appCtx);
 								final CombiningBatchJobTester tester = new CombiningBatchJobTester(
 										backgroundJobExecutor, appCtx, writer::write, writer::writeError,
 										testerConfigurator, new ExtractionLogWriter(extrLogOut),
@@ -284,9 +275,9 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 				int sessionDialogueOrder = 1;
 				for (final Entry<EventDialogue, EventDialogueTestResults> diagTestResults : cvTestSummary
 						.getTestResults().getDialogueTestResults()) {
-					final Map<DialogueAnalysisSummaryFactory.SummaryDatum, Object> rowData = rowDataFactory
-							.apply(new DialogueAnalysisSummaryFactory.Input(inpath, "Success", iterNo,
-									sessionDialogueOrder++, diagTestResults));
+					final Map<DialogueAnalysisSummaryFactory.SummaryDatum, Object> rowData = rowDataFactory.apply(
+							new DialogueAnalysisSummaryFactory.Input(inpath, "Success", iterNo, sessionDialogueOrder++,
+									diagTestResults, summary.getTestParams().getTrainingParams()));
 					final Stream<String> diagAnalysisRowCellVals = dataToWrite.stream().map(rowData::get)
 							.map(Object::toString);
 					final Stream.Builder<String> rowCellValBuilder = Stream.builder();

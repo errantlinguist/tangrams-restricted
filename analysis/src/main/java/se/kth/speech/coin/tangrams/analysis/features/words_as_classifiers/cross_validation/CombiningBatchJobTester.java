@@ -175,7 +175,7 @@ final class CombiningBatchJobTester {
 							crossValidator.setIterCount(trainingMethod.getIterCount());
 							testerConfigurator.accept(crossValidator);
 							final TestParameters testParams = new TestParameters(cleaningMethodSet, tokenizationMethod,
-									tokenType, tokenFilteringMethod, trainingMethod);
+									tokenType, tokenFilteringMethod, trainingMethod, trainingParams);
 							LOGGER.info("Testing {}.", testParams);
 
 							final LocalDateTime testTimestamp = LocalDateTime.now();

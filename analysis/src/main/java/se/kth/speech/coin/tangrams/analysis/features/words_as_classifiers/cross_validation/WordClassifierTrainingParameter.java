@@ -16,6 +16,10 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation;
 
+import java.util.Map;
+
+import org.springframework.beans.factory.BeanFactory;
+
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
  * @since 30 Oct 2017
@@ -23,4 +27,11 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross
  */
 public enum WordClassifierTrainingParameter {
 	BACKGROUND_DATA_NEGATIVE_EXAMPLE_WEIGHT_FACTOR, BACKGROUND_DATA_POSITIVE_EXAMPLE_WEIGHT_FACTOR, EXPECTED_UNIQUE_UTTERANCE_COUNT, INSTRUCTOR_UTTERANCE_OBSERVATION_WEIGHT, INTERACTION_DATA_NEGATIVE_EXAMPLE_WEIGHT_FACTOR, INTERACTION_DATA_POSITIVE_EXAMPLE_WEIGHT_FACTOR, OTHER_UTTERANCE_OBSERVATION_WEIGHT;
+
+	static Map<WordClassifierTrainingParameter, Object> getDefault(final BeanFactory beanFactory) {
+		@SuppressWarnings("unchecked")
+		final Map<WordClassifierTrainingParameter, Object> result = (Map<WordClassifierTrainingParameter, Object>) beanFactory
+				.getBean("training-params");
+		return result;
+	}
 }

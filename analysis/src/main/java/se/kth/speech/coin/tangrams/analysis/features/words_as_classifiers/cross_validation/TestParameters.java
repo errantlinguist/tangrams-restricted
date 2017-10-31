@@ -16,6 +16,7 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation;
 
+import java.util.Map;
 import java.util.Set;
 
 final class TestParameters {
@@ -30,18 +31,22 @@ final class TestParameters {
 
 	private final Training trainingMethod;
 
+	private final Map<WordClassifierTrainingParameter, Object> trainingParams;
+
 	TestParameters(final Set<Cleaning> cleaning, final Tokenization tokenization, final TokenType tokenType,
-			final TokenFiltering tokenFiltering, final Training trainingMethod) {
+			final TokenFiltering tokenFiltering, final Training trainingMethod,
+			final Map<WordClassifierTrainingParameter, Object> trainingParams) {
 		this.cleaning = cleaning;
 		this.tokenization = tokenization;
 		this.tokenType = tokenType;
 		this.tokenFiltering = tokenFiltering;
 		this.trainingMethod = trainingMethod;
+		this.trainingParams = trainingParams;
 	}
 
 	/*
 	 * (non-Javadoc)
-	 *
+	 * 
 	 * @see java.lang.Object#equals(java.lang.Object)
 	 */
 	@Override
@@ -73,6 +78,13 @@ final class TestParameters {
 			return false;
 		}
 		if (trainingMethod != other.trainingMethod) {
+			return false;
+		}
+		if (trainingParams == null) {
+			if (other.trainingParams != null) {
+				return false;
+			}
+		} else if (!trainingParams.equals(other.trainingParams)) {
 			return false;
 		}
 		return true;
@@ -113,9 +125,16 @@ final class TestParameters {
 		return trainingMethod;
 	}
 
+	/**
+	 * @return the trainingParams
+	 */
+	public Map<WordClassifierTrainingParameter, Object> getTrainingParams() {
+		return trainingParams;
+	}
+
 	/*
 	 * (non-Javadoc)
-	 *
+	 * 
 	 * @see java.lang.Object#hashCode()
 	 */
 	@Override
@@ -127,17 +146,18 @@ final class TestParameters {
 		result = prime * result + (tokenType == null ? 0 : tokenType.hashCode());
 		result = prime * result + (tokenization == null ? 0 : tokenization.hashCode());
 		result = prime * result + (trainingMethod == null ? 0 : trainingMethod.hashCode());
+		result = prime * result + (trainingParams == null ? 0 : trainingParams.hashCode());
 		return result;
 	}
 
 	/*
 	 * (non-Javadoc)
-	 *
+	 * 
 	 * @see java.lang.Object#toString()
 	 */
 	@Override
 	public String toString() {
-		final StringBuilder builder = new StringBuilder(128);
+		final StringBuilder builder = new StringBuilder(512);
 		builder.append("TestParameters [cleaning=");
 		builder.append(cleaning);
 		builder.append(", tokenFiltering=");
@@ -148,7 +168,9 @@ final class TestParameters {
 		builder.append(tokenType);
 		builder.append(", trainingMethod=");
 		builder.append(trainingMethod);
-		builder.append(']');
+		builder.append(", trainingParams=");
+		builder.append(trainingParams);
+		builder.append("]");
 		return builder.toString();
 	}
 

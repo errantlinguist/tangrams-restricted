@@ -29,6 +29,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.OptionalInt;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ForkJoinPool;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -49,13 +51,19 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.support.FileSystemXmlApplicationContext;
 
 import se.kth.speech.coin.tangrams.CLIParameters;
+import se.kth.speech.coin.tangrams.analysis.BackgroundJobs;
 import se.kth.speech.coin.tangrams.analysis.DataLanguageDefaults;
+import se.kth.speech.coin.tangrams.analysis.SessionGameManagerCacheSupplier;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.coin.tangrams.analysis.dialogues.UtteranceDialogueRepresentationStringFactory;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.EventDialogueTestResults;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.CrossValidator.CrossValidationTestSummary;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.DummyEventDialogueTransformer;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.EventDialogueTransformer;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.UtteranceRelation;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.TrainingInstancesFactory;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -76,7 +84,7 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_
  *      </ul>
  *
  */
-final class DialogueAnalysisWriter implements Consumer<CrossValidator.Result> {
+final class DialogueAnalysisWriter implements Consumer<CrossValidator.Result> { // NO_UCD (use default)
 
 	private enum Parameter implements Supplier<Option> {
 		APP_CONTEXT_DEFINITIONS("c") {
@@ -130,11 +138,20 @@ final class DialogueAnalysisWriter implements Consumer<CrossValidator.Result> {
 
 	}
 
-	private static final List<DialogueAnalysisSummaryFactory.SummaryDatum> DEFAULT_DATA_TO_WRITE = createDefaultDatumOrderingList();
+	private static final List<DialogueAnalysisSummaryFactory.SummaryDatum> DEFAULT_DATA_TO_WRITE = DialogueAnalysisSummaryFactory.DEFAULT_SUMMARY_DATUM_ORDERING;
+
+	private static final EventDialogueTransformer EVT_DIAG_TRANSFORMER = new DummyEventDialogueTransformer();
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(DialogueAnalysisWriter.class);
 
 	private static final Collector<CharSequence, ?, String> ROW_CELL_JOINER = Collectors.joining("\t");
+
+	private static final Training TRAINING_METHOD = Training.ALL_NEG;
+
+	private static final BiConsumer<EventDialogue, Iterable<UtteranceRelation>> UTT_REL_HANDLER = (evtDiag,
+			uttRels) -> {
+		// Do nothing
+	};
 
 	public static void main(final String[] args) throws IOException, ClassificationException, ExecutionException {
 		final CommandLineParser parser = new DefaultParser();
@@ -145,26 +162,6 @@ final class DialogueAnalysisWriter implements Consumer<CrossValidator.Result> {
 			System.out.println(String.format("An error occured while parsing the command-line arguments: %s", e));
 			Parameter.printHelp();
 		}
-	}
-
-	private static List<DialogueAnalysisSummaryFactory.SummaryDatum> createDefaultDatumOrderingList() {
-		final List<DialogueAnalysisSummaryFactory.SummaryDatum> result = Arrays.asList(
-				DialogueAnalysisSummaryFactory.SummaryDatum.DYAD,
-				DialogueAnalysisSummaryFactory.SummaryDatum.DESCRIPTION,
-				DialogueAnalysisSummaryFactory.SummaryDatum.SESSION_ORDER,
-				DialogueAnalysisSummaryFactory.SummaryDatum.EVENT_TIME,
-				DialogueAnalysisSummaryFactory.SummaryDatum.TEST_ITER,
-				DialogueAnalysisSummaryFactory.SummaryDatum.DIALOGUE,
-				DialogueAnalysisSummaryFactory.SummaryDatum.DIALOGUE_AS_TESTED,
-				DialogueAnalysisSummaryFactory.SummaryDatum.GOLD_STD_ID,
-				DialogueAnalysisSummaryFactory.SummaryDatum.RANK, DialogueAnalysisSummaryFactory.SummaryDatum.RR,
-				DialogueAnalysisSummaryFactory.SummaryDatum.TESTED_UTT_COUNT,
-				DialogueAnalysisSummaryFactory.SummaryDatum.TOTAL_UTT_COUNT,
-				DialogueAnalysisSummaryFactory.SummaryDatum.MEAN_DIAG_UTTS_TESTED,
-				DialogueAnalysisSummaryFactory.SummaryDatum.TOKEN_COUNT,
-				DialogueAnalysisSummaryFactory.SummaryDatum.MEAN_TOKENS_PER_UTT);
-		assert result.size() == DialogueAnalysisSummaryFactory.SummaryDatum.values().length;
-		return result;
 	}
 
 	private static void main(final CommandLine cl)
@@ -183,13 +180,29 @@ final class DialogueAnalysisWriter implements Consumer<CrossValidator.Result> {
 						.toArray(String[]::new);
 				final OptionalInt iterCount = CLIParameters
 						.parseIterCount((Number) cl.getParsedOptionValue(Parameter.ITER_COUNT.optName));
+				final ForkJoinPool backgroundJobExecutor = BackgroundJobs.getBackgroundJobExecutor();
+
 				try (final FileSystemXmlApplicationContext appCtx = new FileSystemXmlApplicationContext(appCtxLocs)) {
-					final CrossValidator crossValidator = appCtx.getBean(CrossValidator.class);
+					final Map<WordClassifierTrainingParameter, Object> trainingParams = WordClassifierTrainingParameter
+							.getDefault(appCtx);
+					final TrainingContext trainingCtx = new TrainingContext(EVT_DIAG_TRANSFORMER, appCtx,
+							UTT_REL_HANDLER, trainingParams);
+					final TrainingInstancesFactory trainingInstsFactory = TRAINING_METHOD
+							.createTrainingInstsFactory(trainingCtx);
+					final SessionGameManagerCacheSupplier sessionDiagMgrCacheSupplier = appCtx
+							.getBean(SessionGameManagerCacheSupplier.class);
+					final TestSetFactory testSetFactory = new TestSetFactory(trainingInstsFactory,
+							sessionDiagMgrCacheSupplier);
+					final CrossValidator crossValidator = appCtx.getBean(CrossValidator.class, testSetFactory,
+							EVT_DIAG_TRANSFORMER, TRAINING_METHOD.getClassifierFactory(trainingCtx),
+							backgroundJobExecutor);
 					iterCount.ifPresent(crossValidator::setIterCount);
-					final CrossValidator.Result testResults = crossValidator.apply(TestSessionData.readTestSessionData(inpaths));
+					final CrossValidator.Result testResults = crossValidator
+							.apply(TestSessionData.readTestSessionData(inpaths));
 					try (PrintWriter out = CLIParameters
 							.parseOutpath((File) cl.getParsedOptionValue(Parameter.OUTPATH.optName))) {
-						final DialogueAnalysisWriter writer = new DialogueAnalysisWriter(out, crossValidator.getIterCount());
+						final DialogueAnalysisWriter writer = new DialogueAnalysisWriter(out,
+								crossValidator.getIterCount(), trainingParams);
 						writer.accept(testResults);
 					}
 				}
@@ -205,18 +218,23 @@ final class DialogueAnalysisWriter implements Consumer<CrossValidator.Result> {
 
 	private final DialogueAnalysisSummaryFactory rowDataFactory;
 
+	private final Map<WordClassifierTrainingParameter, Object> trainingParams;
+
 	private DialogueAnalysisWriter(final PrintWriter out, final int maxIters,
 			final Function<? super Iterator<Utterance>, String> uttDiagReprFactory,
+			final Map<WordClassifierTrainingParameter, Object> trainingParams,
 			final List<DialogueAnalysisSummaryFactory.SummaryDatum> dataToWrite) {
 		this.out = out;
 		this.maxIters = maxIters;
 		this.dataToWrite = dataToWrite;
+		this.trainingParams = trainingParams;
 		rowDataFactory = new DialogueAnalysisSummaryFactory(uttDiagReprFactory, dataToWrite);
 	}
 
-	DialogueAnalysisWriter(final PrintWriter out, final int maxIters) {
+	DialogueAnalysisWriter(final PrintWriter out, final int maxIters,
+			final Map<WordClassifierTrainingParameter, Object> trainingParams) {
 		this(out, maxIters, new UtteranceDialogueRepresentationStringFactory(DataLanguageDefaults.getLocale()),
-				DEFAULT_DATA_TO_WRITE);
+				trainingParams, DEFAULT_DATA_TO_WRITE);
 	}
 
 	@Override
@@ -239,7 +257,7 @@ final class DialogueAnalysisWriter implements Consumer<CrossValidator.Result> {
 							.getTestResults().getDialogueTestResults()) {
 						final Map<DialogueAnalysisSummaryFactory.SummaryDatum, Object> rowData = rowDataFactory
 								.apply(new DialogueAnalysisSummaryFactory.Input(inpath, "Success", iterNo,
-										sessionDialogueOrder++, diagTestResults));
+										sessionDialogueOrder++, diagTestResults, trainingParams));
 						final Stream<String> rowCellVals = dataToWrite.stream().map(rowData::get).map(Object::toString);
 						out.print(rowCellVals.collect(ROW_CELL_JOINER));
 					}
