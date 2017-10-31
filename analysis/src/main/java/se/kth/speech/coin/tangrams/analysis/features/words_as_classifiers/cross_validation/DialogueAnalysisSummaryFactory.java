@@ -333,13 +333,16 @@ final class DialogueAnalysisSummaryFactory implements
 		};
 	}
 
-	public static final List<SummaryDatum> DEFAULT_SUMMARY_DATUM_ORDERING = Collections
+	private static final List<SummaryDatum> DEFAULT_SUMMARY_DATUM_ORDERING = Collections
 			.unmodifiableList(createDefaultSummaryDatumOrderingList());
 
 	private static final Function<TemporalAccessor, String> TIMESTAMP_FORMATTER = EventTimes.FORMATTER::format;
 
-	public static Stream<DialogueAnalysisSummaryFactory.SummaryDatum> getDefaultDatumOrdering() {
-		return DEFAULT_SUMMARY_DATUM_ORDERING.stream();
+	/**
+	 * @return the defaultSummaryDatumOrdering
+	 */
+	public static List<SummaryDatum> getDefaultSummaryDatumOrdering() {
+		return DEFAULT_SUMMARY_DATUM_ORDERING;
 	}
 
 	private static List<DialogueAnalysisSummaryFactory.SummaryDatum> createDefaultSummaryDatumOrderingList() {

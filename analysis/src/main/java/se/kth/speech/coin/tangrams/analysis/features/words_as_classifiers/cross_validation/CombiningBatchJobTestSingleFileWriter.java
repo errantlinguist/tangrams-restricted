@@ -120,9 +120,9 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 				DialogueAnalysisSummaryFactory.SummaryDatum.DIALOGUE,
 				DialogueAnalysisSummaryFactory.SummaryDatum.DIALOGUE_AS_TESTED,
 				DialogueAnalysisSummaryFactory.SummaryDatum.GOLD_STD_ID);
-		return Arrays.asList(
-				DialogueAnalysisSummaryFactory.getDefaultDatumOrdering().filter(datum -> !excludedData.contains(datum))
-						.toArray(DialogueAnalysisSummaryFactory.SummaryDatum[]::new));
+		return Arrays.asList(DialogueAnalysisSummaryFactory.getDefaultSummaryDatumOrdering().stream()
+				.filter(datum -> !excludedData.contains(datum))
+				.toArray(DialogueAnalysisSummaryFactory.SummaryDatum[]::new));
 	}
 
 	private static BufferedWriter createExtrLogFileWriter(final File outFile) throws IOException {
