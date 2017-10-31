@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -98,7 +99,49 @@ final class CombiningBatchJobTester {
 			this.tokenTypes = tokenTypes;
 			this.tokenFilteringMethods = tokenFilteringMethods;
 			this.trainingMethods = trainingMethods;
-			this.allSessions = allSessions;
+			this.allSessions = Collections.unmodifiableMap(allSessions);
+		}
+
+		/**
+		 * @return the allSessions
+		 */
+		Map<SessionDataManager, Path> getAllSessions() {
+			return allSessions;
+		}
+
+		/**
+		 * @return the cleaningMethods
+		 */
+		Iterable<Set<Cleaning>> getCleaningMethods() {
+			return cleaningMethods;
+		}
+
+		/**
+		 * @return the tokenFilteringMethods
+		 */
+		Iterable<TokenFiltering> getTokenFilteringMethods() {
+			return tokenFilteringMethods;
+		}
+
+		/**
+		 * @return the tokenizationMethods
+		 */
+		Iterable<Tokenization> getTokenizationMethods() {
+			return tokenizationMethods;
+		}
+
+		/**
+		 * @return the tokenTypes
+		 */
+		Iterable<TokenType> getTokenTypes() {
+			return tokenTypes;
+		}
+
+		/**
+		 * @return the trainingMethods
+		 */
+		Iterable<Training> getTrainingMethods() {
+			return trainingMethods;
 		}
 	}
 
