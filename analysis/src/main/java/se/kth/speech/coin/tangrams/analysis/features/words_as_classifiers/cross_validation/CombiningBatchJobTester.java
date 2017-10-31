@@ -211,7 +211,7 @@ final class CombiningBatchJobTester {
 									.createTrainingInstsFactory(trainingCtx);
 							final TestSetFactory testSetFactory = new TestSetFactory(trainingInstsFactory,
 									sessionDiagMgrCacheSupplier, (Integer) trainingParams
-											.get(WordClassifierTrainingParameter.TRAINING_SET_SIZE_DISCOUNTING_FACTOR));
+											.get(WordClassifierTrainingParameter.TRAINING_SET_SIZE_DISCOUNTING_CONSTANT));
 							final CrossValidator crossValidator = appCtx.getBean(CrossValidator.class, testSetFactory,
 									symmetricalDiagTransformer, trainingMethod.getClassifierFactory(trainingCtx),
 									backgroundJobExecutor);

@@ -70,17 +70,17 @@ public final class TestSetFactory
 
 	private final SessionGameManagerCacheSupplier sessionDiagMgrCacheSupplier;
 
-	private final int trainingSetSizeDiscountingFactor;
+	private final int trainingSetSizeDiscountingConstant;
 
 	public TestSetFactory(final TrainingInstancesFactory instancesFactory,
 			final SessionGameManagerCacheSupplier sessionDiagMgrCacheSupplier,
-			final int trainingSetSizeDiscountingFactor) {
-		if (trainingSetSizeDiscountingFactor < 0) {
+			final int trainingSetSizeDiscountingConstant) {
+		if (trainingSetSizeDiscountingConstant < 0) {
 			throw new IllegalArgumentException("Training set size discounting factor must be non-negative.");
 		}
 		this.instancesFactory = instancesFactory;
 		this.sessionDiagMgrCacheSupplier = sessionDiagMgrCacheSupplier;
-		this.trainingSetSizeDiscountingFactor = trainingSetSizeDiscountingFactor;
+		this.trainingSetSizeDiscountingConstant = trainingSetSizeDiscountingConstant;
 	}
 
 	@Override
@@ -101,7 +101,7 @@ public final class TestSetFactory
 			final boolean wasTestSessionDataRemoved = allPossibleTrainingSessionDataMgrSet.remove(testSessionDataMgr);
 			assert wasTestSessionDataRemoved;
 			assert allPossibleTrainingSessionDataMgrSet.size() == allSessions.keySet().size() - 1;
-			final int trainingSetSize = allPossibleTrainingSessionDataMgrSet.size() - trainingSetSizeDiscountingFactor;
+			final int trainingSetSize = allPossibleTrainingSessionDataMgrSet.size() - trainingSetSizeDiscountingConstant;
 			// NOTE: Guava lazily creates the sets, so memory usage isn't 2^O as
 			// naively expected
 			final Stream<Set<SessionDataManager>> trainingSessionDataMgrSets = Sets
