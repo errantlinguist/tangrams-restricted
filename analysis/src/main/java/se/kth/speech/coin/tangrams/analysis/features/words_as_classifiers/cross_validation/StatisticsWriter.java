@@ -28,7 +28,6 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.OptionalInt;
-import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
@@ -138,7 +137,7 @@ final class StatisticsWriter implements Consumer<CrossValidator.Result> {
 		assert SUMMARY_DATUM_COLUMN_ORDERING.size() == SummaryDatum.values().length;
 	}
 
-	public static void main(final String[] args) throws IOException, ClassificationException, ExecutionException {
+	public static void main(final String[] args) throws IOException, ClassificationException {
 		final CommandLineParser parser = new DefaultParser();
 		try {
 			final CommandLine cl = parser.parse(Parameter.OPTIONS, args);
@@ -165,12 +164,12 @@ final class StatisticsWriter implements Consumer<CrossValidator.Result> {
 		return result;
 	}
 
-	private static void main(final CommandLine cl)
-			throws ParseException, IOException, ClassificationException, ExecutionException {
+	private static void main(final CommandLine cl) throws ParseException, IOException, ClassificationException {
 		if (cl.hasOption(Parameter.HELP.optName)) {
 			Parameter.printHelp();
 		} else {
-			final List<Path> inpaths = Arrays.asList(cl.getArgList().stream().map(String::trim).filter(path -> !path.isEmpty()).map(Paths::get).toArray(Path[]::new));
+			final List<Path> inpaths = Arrays.asList(cl.getArgList().stream().map(String::trim)
+					.filter(path -> !path.isEmpty()).map(Paths::get).toArray(Path[]::new));
 			if (inpaths.isEmpty()) {
 				throw new MissingOptionException("No input path(s) specified.");
 
@@ -183,7 +182,8 @@ final class StatisticsWriter implements Consumer<CrossValidator.Result> {
 				try (final FileSystemXmlApplicationContext appCtx = new FileSystemXmlApplicationContext(appCtxLocs)) {
 					final CrossValidator crossValidator = appCtx.getBean(CrossValidator.class);
 					iterCount.ifPresent(crossValidator::setIterCount);
-					final CrossValidator.Result testResults = crossValidator.apply(TestSessionData.readTestSessionData(inpaths));
+					final CrossValidator.Result testResults = crossValidator
+							.apply(TestSessionData.readTestSessionData(inpaths));
 					try (PrintWriter out = CLIParameters
 							.parseOutpath((File) cl.getParsedOptionValue(Parameter.OUTPATH.optName))) {
 						final StatisticsWriter writer = new StatisticsWriter(out);

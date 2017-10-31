@@ -28,7 +28,6 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.OptionalInt;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -84,7 +83,9 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.traini
  *      </ul>
  *
  */
-final class DialogueAnalysisWriter implements Consumer<CrossValidator.Result> { // NO_UCD (use default)
+final class DialogueAnalysisWriter implements Consumer<CrossValidator.Result> { // NO_UCD
+																				// (use
+																				// default)
 
 	private enum Parameter implements Supplier<Option> {
 		APP_CONTEXT_DEFINITIONS("c") {
@@ -138,7 +139,8 @@ final class DialogueAnalysisWriter implements Consumer<CrossValidator.Result> { 
 
 	}
 
-	private static final List<DialogueAnalysisSummaryFactory.SummaryDatum> DEFAULT_DATA_TO_WRITE = DialogueAnalysisSummaryFactory.getDefaultSummaryDatumOrdering();
+	private static final List<DialogueAnalysisSummaryFactory.SummaryDatum> DEFAULT_DATA_TO_WRITE = DialogueAnalysisSummaryFactory
+			.getDefaultSummaryDatumOrdering();
 
 	private static final EventDialogueTransformer EVT_DIAG_TRANSFORMER = new DummyEventDialogueTransformer();
 
@@ -153,7 +155,7 @@ final class DialogueAnalysisWriter implements Consumer<CrossValidator.Result> { 
 		// Do nothing
 	};
 
-	public static void main(final String[] args) throws IOException, ClassificationException, ExecutionException {
+	public static void main(final String[] args) throws IOException, ClassificationException {
 		final CommandLineParser parser = new DefaultParser();
 		try {
 			final CommandLine cl = parser.parse(Parameter.OPTIONS, args);
@@ -164,8 +166,7 @@ final class DialogueAnalysisWriter implements Consumer<CrossValidator.Result> { 
 		}
 	}
 
-	private static void main(final CommandLine cl)
-			throws ParseException, IOException, ClassificationException, ExecutionException {
+	private static void main(final CommandLine cl) throws ParseException, IOException, ClassificationException {
 		if (cl.hasOption(Parameter.HELP.optName)) {
 			Parameter.printHelp();
 		} else {

@@ -352,7 +352,7 @@ public final class CrossValidator {
 	}
 
 	public Result apply(final Map<SessionDataManager, Path> allSessions)
-			throws ClassificationException, ExecutionException, IOException {
+			throws ClassificationException, IOException {
 		final Result result = new Result(allSessions.size(), iterCount);
 		LOGGER.info(
 				"Starting cross-validation test using data from {} session(s), doing {} iteration(s) on each dataset.",
@@ -396,7 +396,7 @@ public final class CrossValidator {
 	}
 
 	private Map<Path, CrossValidationTestSummary> crossValidate(final Map<SessionDataManager, Path> allSessions)
-			throws ExecutionException, IOException, ClassificationException {
+			throws IOException, ClassificationException {
 		final Map<Path, CrossValidationTestSummary> result = Maps.newHashMapWithExpectedSize(allSessions.size());
 		final Stream<Entry<SessionDataManager, WordClassificationData>> testSets = testSetFactory.apply(allSessions);
 		for (final Iterator<Entry<SessionDataManager, WordClassificationData>> testSetIter = testSets
@@ -408,8 +408,8 @@ public final class CrossValidator {
 
 			final WordClassificationData trainingData = testSet.getValue();
 			final EventDialogueClassifier diagClassifier = createDialogueClassifier(trainingData, testSessionData);
-			final SessionTestResults testResults = testSession(sessionDiagMgrCacheSupplier.get().get(testSessionData),
-					diagClassifier);
+			final SessionTestResults testResults = testSession(
+					sessionDiagMgrCacheSupplier.get().getUnchecked(testSessionData), diagClassifier);
 			final CrossValidationTestSummary cvTestSummary = new CrossValidationTestSummary(testResults,
 					trainingData.getTrainingInstanceCounts());
 			result.put(infilePath, cvTestSummary);

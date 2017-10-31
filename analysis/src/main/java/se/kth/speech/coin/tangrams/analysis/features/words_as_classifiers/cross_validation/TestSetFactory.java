@@ -18,16 +18,19 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross
 
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.collect.Sets;
 
 import se.kth.speech.coin.tangrams.analysis.SessionGameManager;
 import se.kth.speech.coin.tangrams.analysis.SessionGameManagerCacheSupplier;
@@ -56,7 +59,8 @@ import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
  *      </ul>
  *
  */
-public final class TestSetFactory {
+public final class TestSetFactory
+		implements Function<Map<SessionDataManager, Path>, Stream<Entry<SessionDataManager, WordClassificationData>>> {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(TestSetFactory.class);
 
@@ -66,14 +70,24 @@ public final class TestSetFactory {
 
 	private final SessionGameManagerCacheSupplier sessionDiagMgrCacheSupplier;
 
+	private final int trainingSetSizeDiscountingFactor;
+
 	public TestSetFactory(final TrainingInstancesFactory instancesFactory,
 			final SessionGameManagerCacheSupplier sessionDiagMgrCacheSupplier) {
-		this.instancesFactory = instancesFactory;
-		this.sessionDiagMgrCacheSupplier = sessionDiagMgrCacheSupplier;
+		this(instancesFactory, sessionDiagMgrCacheSupplier, 0);
 	}
 
+	public TestSetFactory(final TrainingInstancesFactory instancesFactory,
+			final SessionGameManagerCacheSupplier sessionDiagMgrCacheSupplier,
+			final int trainingSetSizeDiscountingFactor) {
+		this.instancesFactory = instancesFactory;
+		this.sessionDiagMgrCacheSupplier = sessionDiagMgrCacheSupplier;
+		this.trainingSetSizeDiscountingFactor = trainingSetSizeDiscountingFactor;
+	}
+
+	@Override
 	public Stream<Entry<SessionDataManager, WordClassificationData>> apply(
-			final Map<SessionDataManager, Path> allSessions) throws ExecutionException {
+			final Map<SessionDataManager, Path> allSessions) {
 		if (allSessions.size() < MIN_INPUT_SIZE) {
 			throw new IllegalArgumentException(
 					String.format("Session count is %d but at least %d is required for cross-validation.",
@@ -85,27 +99,41 @@ public final class TestSetFactory {
 			LOGGER.info("Creating {}-fold cross-validation set for testing on session data from \"{}\".",
 					allSessions.size(), testSessionDataFilePath);
 			final SessionDataManager testSessionDataMgr = testSessionDataEntry.getKey();
-			resultBuilder.accept(createTestSet(testSessionDataMgr, allSessions.keySet()));
+			final Set<SessionDataManager> allPossibleTrainingSessionDataMgrSet = new HashSet<>(allSessions.keySet());
+			final boolean wasTestSessionDataRemoved = allPossibleTrainingSessionDataMgrSet.remove(testSessionDataMgr);
+			assert wasTestSessionDataRemoved;
+			assert allPossibleTrainingSessionDataMgrSet.size() == allSessions.keySet().size() - 1;
+			final int trainingSetSize = allPossibleTrainingSessionDataMgrSet.size() - trainingSetSizeDiscountingFactor;
+			// NOTE: Guava lazily creates the sets, so memory usage isn't 2^O as
+			// naively expected
+			final Stream<Set<SessionDataManager>> trainingSessionDataMgrSets = Sets
+					.powerSet(allPossibleTrainingSessionDataMgrSet).stream()
+					.filter(trainingSessionDataMgrSet -> trainingSessionDataMgrSet.size() == trainingSetSize);
+			trainingSessionDataMgrSets
+					.map(trainingSessionDataMgrSet -> createTestSet(testSessionDataMgr, allSessions.keySet()))
+					.forEach(resultBuilder);
 		}
 		return resultBuilder.build();
 	}
 
 	private Entry<SessionDataManager, WordClassificationData> createTestSet(final SessionDataManager testSessionDataMgr,
-			final Set<SessionDataManager> allSessions) throws ExecutionException {
-		final WordClassificationData trainingData;
-		{
-			final SessionDataManager[] trainingSessionDataMgrs = allSessions.stream()
-					.filter(sessionData -> !sessionData.equals(testSessionDataMgr)).toArray(SessionDataManager[]::new);
-			final List<SessionGameManager> trainingSessionEvtDiagMgrs = new ArrayList<>(trainingSessionDataMgrs.length);
-			for (final SessionDataManager trainingSessionDatum : trainingSessionDataMgrs) {
-				final SessionGameManager sessionEventDiagMgr = sessionDiagMgrCacheSupplier.get()
-						.get(trainingSessionDatum);
-				trainingSessionEvtDiagMgrs.add(sessionEventDiagMgr);
-			}
-			trainingData = instancesFactory.apply(trainingSessionEvtDiagMgrs);
-		}
+			final Set<SessionDataManager> allSessions) {
+		final WordClassificationData trainingData = createTrainingData(testSessionDataMgr, allSessions);
 		LOGGER.info("Created training data for {} class(es).", trainingData.getClassInstances().size());
 		return Pair.of(testSessionDataMgr, trainingData);
+	}
+
+	private WordClassificationData createTrainingData(final SessionDataManager testSessionDataMgr,
+			final Set<SessionDataManager> allSessions) {
+		final SessionDataManager[] trainingSessionDataMgrs = allSessions.stream()
+				.filter(sessionData -> !sessionData.equals(testSessionDataMgr)).toArray(SessionDataManager[]::new);
+		final List<SessionGameManager> trainingSessionEvtDiagMgrs = new ArrayList<>(trainingSessionDataMgrs.length);
+		for (final SessionDataManager trainingSessionDatum : trainingSessionDataMgrs) {
+			final SessionGameManager sessionEventDiagMgr = sessionDiagMgrCacheSupplier.get()
+					.getUnchecked(trainingSessionDatum);
+			trainingSessionEvtDiagMgrs.add(sessionEventDiagMgr);
+		}
+		return instancesFactory.apply(trainingSessionEvtDiagMgrs);
 	}
 
 }

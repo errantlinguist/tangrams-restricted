@@ -26,7 +26,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.ExecutionException;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -128,7 +127,7 @@ final class TrainingDataWriter { // NO_UCD (use default)
 
 	private static final String TRAINING_FILE_NAME_PREFIX = "train-";
 
-	public static void main(final String[] args) throws ExecutionException, IOException {
+	public static void main(final String[] args) throws IOException {
 		final CommandLineParser parser = new DefaultParser();
 		try {
 			final CommandLine cl = parser.parse(Parameter.OPTIONS, args);
@@ -139,11 +138,12 @@ final class TrainingDataWriter { // NO_UCD (use default)
 		}
 	}
 
-	private static void main(final CommandLine cl) throws ParseException, ExecutionException, IOException {
+	private static void main(final CommandLine cl) throws ParseException, IOException {
 		if (cl.hasOption(Parameter.HELP.optName)) {
 			Parameter.printHelp();
 		} else {
-			final List<Path> inpaths = Arrays.asList(cl.getArgList().stream().map(String::trim).filter(path -> !path.isEmpty()).map(Paths::get).toArray(Path[]::new));
+			final List<Path> inpaths = Arrays.asList(cl.getArgList().stream().map(String::trim)
+					.filter(path -> !path.isEmpty()).map(Paths::get).toArray(Path[]::new));
 			if (inpaths.isEmpty()) {
 				throw new MissingOptionException("No input path(s) specified.");
 
@@ -177,7 +177,7 @@ final class TrainingDataWriter { // NO_UCD (use default)
 		this.outfileExt = outfileExt;
 	}
 
-	private void accept(final Iterable<Path> inpaths) throws ExecutionException, IOException {
+	private void accept(final Iterable<Path> inpaths) throws IOException {
 		final Map<Path, SessionDataManager> infileSessionData = SessionDataManager.createFileSessionDataMap(inpaths);
 		final Map<SessionDataManager, Path> allSessions = infileSessionData.entrySet().stream()
 				.collect(Collectors.toMap(Entry::getValue, Entry::getKey));

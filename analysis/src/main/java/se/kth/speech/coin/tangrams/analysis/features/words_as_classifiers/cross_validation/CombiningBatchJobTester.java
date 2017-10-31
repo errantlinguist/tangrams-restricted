@@ -144,7 +144,7 @@ final class CombiningBatchJobTester {
 		this.trainingParams = trainingParams;
 	}
 
-	void accept(final Input input) throws ClassificationException, ExecutionException, IOException {
+	void accept(final Input input) throws ClassificationException, IOException {
 		LOGGER.debug("Bean names: {}", Arrays.toString(appCtx.getBeanDefinitionNames()));
 		final SessionGameManagerCacheSupplier sessionDiagMgrCacheSupplier = appCtx
 				.getBean(SessionGameManagerCacheSupplier.class);
