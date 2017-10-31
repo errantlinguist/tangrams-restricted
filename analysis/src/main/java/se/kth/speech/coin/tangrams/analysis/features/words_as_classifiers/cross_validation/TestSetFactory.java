@@ -73,11 +73,6 @@ public final class TestSetFactory
 	private final int trainingSetSizeDiscountingFactor;
 
 	public TestSetFactory(final TrainingInstancesFactory instancesFactory,
-			final SessionGameManagerCacheSupplier sessionDiagMgrCacheSupplier) {
-		this(instancesFactory, sessionDiagMgrCacheSupplier, 0);
-	}
-
-	public TestSetFactory(final TrainingInstancesFactory instancesFactory,
 			final SessionGameManagerCacheSupplier sessionDiagMgrCacheSupplier,
 			final int trainingSetSizeDiscountingFactor) {
 		this.instancesFactory = instancesFactory;

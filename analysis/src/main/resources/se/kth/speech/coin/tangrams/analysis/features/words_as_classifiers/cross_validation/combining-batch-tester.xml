@@ -44,6 +44,8 @@
 					value-type="java.lang.Double" />
 				<entry key="EXPECTED_UNIQUE_UTTERANCE_COUNT" value="2000"
 					value-type="java.lang.Integer" />
+				<entry key="TRAINING_SET_SIZE_DISCOUNTING_FACTOR" value="0"
+					value-type="java.lang.Integer" />
 			</util:map>
 		</constructor-arg>
 	</bean>

@@ -23,7 +23,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -168,7 +167,8 @@ final class CombiningBatchJobTester {
 							final TrainingInstancesFactory trainingInstsFactory = trainingMethod
 									.createTrainingInstsFactory(trainingCtx);
 							final TestSetFactory testSetFactory = new TestSetFactory(trainingInstsFactory,
-									sessionDiagMgrCacheSupplier);
+									sessionDiagMgrCacheSupplier, (Integer) trainingParams
+											.get(WordClassifierTrainingParameter.TRAINING_SET_SIZE_DISCOUNTING_FACTOR));
 							final CrossValidator crossValidator = appCtx.getBean(CrossValidator.class, testSetFactory,
 									symmetricalDiagTransformer, trainingMethod.getClassifierFactory(trainingCtx),
 									backgroundJobExecutor);
