@@ -75,6 +75,9 @@ public final class TestSetFactory
 	public TestSetFactory(final TrainingInstancesFactory instancesFactory,
 			final SessionGameManagerCacheSupplier sessionDiagMgrCacheSupplier,
 			final int trainingSetSizeDiscountingFactor) {
+		if (trainingSetSizeDiscountingFactor < 0) {
+			throw new IllegalArgumentException("Training set size discounting factor must be non-negative.");
+		}
 		this.instancesFactory = instancesFactory;
 		this.sessionDiagMgrCacheSupplier = sessionDiagMgrCacheSupplier;
 		this.trainingSetSizeDiscountingFactor = trainingSetSizeDiscountingFactor;
