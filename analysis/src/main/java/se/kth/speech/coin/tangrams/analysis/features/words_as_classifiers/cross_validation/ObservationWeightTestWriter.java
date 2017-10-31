@@ -164,7 +164,7 @@ final class ObservationWeightTestWriter { // NO_UCD (unused code)
 					try (final ClassPathXmlApplicationContext appCtx = new ClassPathXmlApplicationContext(
 							"combining-batch-tester.xml", ObservationWeightTestWriter.class)) {
 						final Map<WordClassifierTrainingParameter, Object> defaultTrainingParams = WordClassifierTrainingParameter
-								.getDefault(appCtx);
+								.createDefaultMap();
 
 						// One session for testing, one for training
 						final int maxTrainingSetSizeDiscountingFactor = input.getAllSessions().size() - 2;

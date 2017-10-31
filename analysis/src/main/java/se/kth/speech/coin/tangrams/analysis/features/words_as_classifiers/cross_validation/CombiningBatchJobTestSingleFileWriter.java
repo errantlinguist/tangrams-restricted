@@ -197,7 +197,7 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 							try (final ClassPathXmlApplicationContext appCtx = new ClassPathXmlApplicationContext(
 									"combining-batch-tester.xml", CombiningBatchJobTestSingleFileWriter.class)) {
 								final Map<WordClassifierTrainingParameter, Object> trainingParams = WordClassifierTrainingParameter
-										.getDefault(appCtx);
+										.createDefaultMap();
 								final CombiningBatchJobTester tester = new CombiningBatchJobTester(
 										backgroundJobExecutor, appCtx, writer::write, writer::writeError,
 										testerConfigurator, new ExtractionLogWriter(extrLogOut),

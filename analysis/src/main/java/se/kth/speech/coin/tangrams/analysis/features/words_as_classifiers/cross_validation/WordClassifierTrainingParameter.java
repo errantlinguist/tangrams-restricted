@@ -16,9 +16,8 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation;
 
+import java.util.EnumMap;
 import java.util.Map;
-
-import org.springframework.beans.factory.BeanFactory;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -28,10 +27,18 @@ import org.springframework.beans.factory.BeanFactory;
 public enum WordClassifierTrainingParameter {
 	BACKGROUND_DATA_NEGATIVE_EXAMPLE_WEIGHT_FACTOR, BACKGROUND_DATA_POSITIVE_EXAMPLE_WEIGHT_FACTOR, EXPECTED_UNIQUE_UTTERANCE_COUNT, INSTRUCTOR_UTTERANCE_OBSERVATION_WEIGHT, INTERACTION_DATA_NEGATIVE_EXAMPLE_WEIGHT_FACTOR, INTERACTION_DATA_POSITIVE_EXAMPLE_WEIGHT_FACTOR, OTHER_UTTERANCE_OBSERVATION_WEIGHT, TRAINING_SET_SIZE_DISCOUNTING_CONSTANT;
 
-	static Map<WordClassifierTrainingParameter, Object> getDefault(final BeanFactory beanFactory) {
-		@SuppressWarnings("unchecked")
-		final Map<WordClassifierTrainingParameter, Object> result = (Map<WordClassifierTrainingParameter, Object>) beanFactory
-				.getBean("training-params");
+	public static Map<WordClassifierTrainingParameter, Object> createDefaultMap() {
+		final Map<WordClassifierTrainingParameter, Object> result = new EnumMap<>(
+				WordClassifierTrainingParameter.class);
+		result.put(BACKGROUND_DATA_POSITIVE_EXAMPLE_WEIGHT_FACTOR, 1.0);
+		result.put(BACKGROUND_DATA_NEGATIVE_EXAMPLE_WEIGHT_FACTOR, 1.0);
+		result.put(INTERACTION_DATA_POSITIVE_EXAMPLE_WEIGHT_FACTOR, 1.0);
+		result.put(INTERACTION_DATA_NEGATIVE_EXAMPLE_WEIGHT_FACTOR, 1.0);
+		result.put(INSTRUCTOR_UTTERANCE_OBSERVATION_WEIGHT, 1.0);
+		result.put(OTHER_UTTERANCE_OBSERVATION_WEIGHT, 1.0);
+		result.put(EXPECTED_UNIQUE_UTTERANCE_COUNT, 2000);
+		result.put(TRAINING_SET_SIZE_DISCOUNTING_CONSTANT, 0);
+		assert result.size() == WordClassifierTrainingParameter.values().length;
 		return result;
 	}
 }

@@ -185,7 +185,7 @@ final class DialogueAnalysisWriter implements Consumer<CrossValidator.Result> { 
 
 				try (final FileSystemXmlApplicationContext appCtx = new FileSystemXmlApplicationContext(appCtxLocs)) {
 					final Map<WordClassifierTrainingParameter, Object> trainingParams = WordClassifierTrainingParameter
-							.getDefault(appCtx);
+							.createDefaultMap();
 					final TrainingContext trainingCtx = new TrainingContext(EVT_DIAG_TRANSFORMER, appCtx,
 							UTT_REL_HANDLER, trainingParams);
 					final TrainingInstancesFactory trainingInstsFactory = TRAINING_METHOD

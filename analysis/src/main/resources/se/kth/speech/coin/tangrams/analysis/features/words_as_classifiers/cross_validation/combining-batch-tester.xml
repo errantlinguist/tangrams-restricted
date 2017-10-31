@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns="http://www.springframework.org/schema/beans"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:util="http://www.springframework.org/schema/util"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xmlns:context="http://www.springframework.org/schema/context"
 	xsi:schemaLocation="
         http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
-         http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
-        http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd">
+         http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
 
 	<import
 		resource="classpath:/se/kth/speech/coin/tangrams/analysis/features/words_as_classifiers/context.xml" />
@@ -24,31 +23,6 @@
 	<bean id="cross-validation-tester"
 		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.CrossValidator"
 		scope="prototype" />
-
-
-	<bean id="training-params" class="java.util.EnumMap">
-		<constructor-arg>
-			<util:map
-				key-type="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.WordClassifierTrainingParameter">
-				<entry key="BACKGROUND_DATA_POSITIVE_EXAMPLE_WEIGHT_FACTOR"
-					value="1.0" value-type="java.lang.Double" />
-				<entry key="BACKGROUND_DATA_NEGATIVE_EXAMPLE_WEIGHT_FACTOR"
-					value="1.0" value-type="java.lang.Double" />
-				<entry key="INTERACTION_DATA_POSITIVE_EXAMPLE_WEIGHT_FACTOR"
-					value="1.0" value-type="java.lang.Double" />
-				<entry key="INTERACTION_DATA_NEGATIVE_EXAMPLE_WEIGHT_FACTOR"
-					value="1.0" value-type="java.lang.Double" />
-				<entry key="INSTRUCTOR_UTTERANCE_OBSERVATION_WEIGHT" value="1.0"
-					value-type="java.lang.Double" />
-				<entry key="OTHER_UTTERANCE_OBSERVATION_WEIGHT" value="1.0"
-					value-type="java.lang.Double" />
-				<entry key="EXPECTED_UNIQUE_UTTERANCE_COUNT" value="2000"
-					value-type="java.lang.Integer" />
-				<entry key="TRAINING_SET_SIZE_DISCOUNTING_CONSTANT" value="0"
-					value-type="java.lang.Integer" />
-			</util:map>
-		</constructor-arg>
-	</bean>
 
 
 </beans>

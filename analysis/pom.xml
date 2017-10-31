@@ -13,6 +13,7 @@
 
 	<properties>
 		<stanford-corenlp.version>3.7.0</stanford-corenlp.version>
+		<spring.version>5.0.1.RELEASE</spring.version>
 	</properties>
 
 	<dependencies>
@@ -74,7 +75,7 @@
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-context</artifactId>
-			<version>4.3.8.RELEASE</version>
+			<version>${spring.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.slf4j</groupId>
@@ -125,7 +126,8 @@
 			<plugin>
 				<artifactId>maven-surefire-plugin</artifactId>
 				<configuration>
-					<!-- Increase heap size to accommodate models loaded during parsing with Stanford CoreNLP -->
+					<!-- Increase heap size to accommodate models loaded during parsing 
+						with Stanford CoreNLP -->
 					<argLine>-Xmx3072m</argLine>
 					<!-- <useSystemClassLoader>false</useSystemClassLoader> -->
 					<!-- <reuseForks>false</reuseForks> -->
