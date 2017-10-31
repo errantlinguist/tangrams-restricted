@@ -138,7 +138,7 @@ final class DialogueAnalysisWriter implements Consumer<CrossValidator.Result> { 
 
 	}
 
-	private static final List<DialogueAnalysisSummaryFactory.SummaryDatum> DEFAULT_DATA_TO_WRITE = DialogueAnalysisSummaryFactory.DEFAULT_SUMMARY_DATUM_ORDERING;
+	private static final List<DialogueAnalysisSummaryFactory.SummaryDatum> DEFAULT_DATA_TO_WRITE = DialogueAnalysisSummaryFactory.getDefaultSummaryDatumOrdering();
 
 	private static final EventDialogueTransformer EVT_DIAG_TRANSFORMER = new DummyEventDialogueTransformer();
 
