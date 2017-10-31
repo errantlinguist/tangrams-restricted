@@ -44,7 +44,7 @@ public final class Lists {
 	 *      answer</a>
 	 */
 	public static <T> Comparator<T> comparingByIndex(final List<? extends T> ordering) {
-		return (t1, t2) -> Integer.compareUnsigned(ordering.indexOf(t1), ordering.indexOf(t2));
+		return (elem1, elem2) -> Integer.compareUnsigned(ordering.indexOf(elem1), ordering.indexOf(elem2));
 	}
 
 	public static <T> List<T> createGreatestDivisorList(final List<T> orig, final int resultSize) {
