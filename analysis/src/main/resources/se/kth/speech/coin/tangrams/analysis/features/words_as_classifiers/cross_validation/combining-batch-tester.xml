@@ -26,7 +26,7 @@
 		scope="prototype" />
 
 
-	<bean id="training-params" class="java.util.EnumMap">
+	<bean name="training-params" class="java.util.EnumMap">
 		<constructor-arg>
 			<util:map
 				key-type="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.WordClassifierTrainingParameter">
