@@ -188,10 +188,9 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 
 				final File outFile = (File) cl.getParsedOptionValue(CLITestParameter.OUTPATH.optName);
 
-				try (PrintWriter out = CLIParameters.parseOutpath(outFile)) {
+				try (PrintWriter out = CLIParameters.parseOutpath(outFile, OUTPUT_ENCODING)) {
 					final CombiningBatchJobTestSingleFileWriter writer = new CombiningBatchJobTestSingleFileWriter(out,
 							true);
-
 					try (BufferedWriter extrLogOut = createExtrLogFileWriter(outFile)) {
 						try (BufferedWriter uttRelLogOut = createUttRelFileWriter(outFile)) {
 

@@ -43,9 +43,9 @@ import org.slf4j.LoggerFactory;
  */
 public final class CLIParameters {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(CLIParameters.class);
+	private static final Charset DEFAULT_OUTPUT_ENCODING = StandardCharsets.UTF_8;
 
-	private static final Charset OUTPUT_ENCODING = StandardCharsets.UTF_8;
+	private static final Logger LOGGER = LoggerFactory.getLogger(CLIParameters.class);
 
 	public static Set<String> parseAppCtxDefPaths(final String[] appCtxLocs) throws IOException {
 		final Set<String> result = new HashSet<>();
@@ -83,13 +83,17 @@ public final class CLIParameters {
 	}
 
 	public static PrintWriter parseOutpath(final File outfile) throws IOException {
+		return parseOutpath(outfile, DEFAULT_OUTPUT_ENCODING);
+	}
+
+	public static PrintWriter parseOutpath(final File outfile, final Charset outputEncoding) throws IOException {
 		final PrintWriter result;
 		if (outfile == null) {
 			LOGGER.info("No output file path specified; Writing to standard output.");
-			result = new PrintWriter(new OutputStreamWriter(System.out, OUTPUT_ENCODING));
+			result = new PrintWriter(new OutputStreamWriter(System.out, outputEncoding));
 		} else {
 			LOGGER.info("Output file path is \"{}\".", outfile);
-			result = new PrintWriter(Files.newBufferedWriter(outfile.toPath(), OUTPUT_ENCODING,
+			result = new PrintWriter(Files.newBufferedWriter(outfile.toPath(), outputEncoding,
 					StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING));
 		}
 		return result;
