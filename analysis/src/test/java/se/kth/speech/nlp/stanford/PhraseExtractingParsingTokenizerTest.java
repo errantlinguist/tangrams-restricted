@@ -81,7 +81,8 @@ public final class PhraseExtractingParsingTokenizerTest {
 		final String input = inputExpectedOutput.getKey();
 		final List<String> expectedResults = inputExpectedOutput.getValue();
 		final List<String> actualResults = TEST_INST.apply(input);
-		Assert.assertEquals(expectedResults, actualResults);
+		Assert.assertEquals(String.format("For input \"%s\" expected output %s but got %s instead.", input,
+				expectedResults, actualResults), expectedResults, actualResults);
 	}
 
 }
