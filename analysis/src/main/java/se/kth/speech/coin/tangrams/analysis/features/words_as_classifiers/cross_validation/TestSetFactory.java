@@ -30,8 +30,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.Sets;
-
+import se.kth.speech.SetCombinations;
 import se.kth.speech.coin.tangrams.analysis.SessionGameManager;
 import se.kth.speech.coin.tangrams.analysis.SessionGameManagerCacheSupplier;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.TrainingInstancesFactory;
@@ -101,10 +100,10 @@ public final class TestSetFactory
 			final boolean wasTestSessionDataRemoved = allPossibleTrainingSessionDataMgrSet.remove(testSessionDataMgr);
 			assert wasTestSessionDataRemoved;
 			assert allPossibleTrainingSessionDataMgrSet.size() == allSessions.keySet().size() - 1;
-			final int trainingSetSize = allPossibleTrainingSessionDataMgrSet.size() - trainingSetSizeDiscountingConstant;
-			// NOTE: Guava lazily creates the sets, so memory usage isn't 2^O as
-			// naively expected
-			final Stream<Set<SessionDataManager>> trainingSessionDataMgrSets = Sets
+			final int trainingSetSize = allPossibleTrainingSessionDataMgrSet.size()
+					- trainingSetSizeDiscountingConstant;
+			// FIXME: Create an Iterator which lazily generates powersets
+			final Stream<Set<SessionDataManager>> trainingSessionDataMgrSets = SetCombinations
 					.powerSet(allPossibleTrainingSessionDataMgrSet).stream()
 					.filter(trainingSessionDataMgrSet -> trainingSessionDataMgrSet.size() == trainingSetSize);
 			trainingSessionDataMgrSets
