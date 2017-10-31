@@ -28,7 +28,7 @@
 
 	<bean id="training-params" class="java.util.EnumMap">
 		<constructor-arg>
-			<util:map id="training-params"
+			<util:map
 				key-type="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.WordClassifierTrainingParameter">
 				<entry key="BACKGROUND_DATA_POSITIVE_EXAMPLE_WEIGHT_FACTOR"
 					value="1.0" value-type="java.lang.Double" />
