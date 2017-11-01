@@ -256,8 +256,8 @@ def prettify_token_set_series(df: pd.DataFrame):
 
 def read_round_tokens(inpath: str, **kwargs) -> pd.DataFrame:
 	unified_kwargs = {"converters": {"RELEVANT_TOKENS_REFERENT": parse_set, "RELEVANT_TOKENS_SHAPE": parse_set},
-					  "dialect": csv.excel_tab, "encoding": "utf-8", "float_precision": "round_trip",
-					  "memory_map": True, "na_filter": False, "sep": "\t"}
+					  "sep": csv.excel_tab.delimiter, "dialect": csv.excel_tab, "encoding": "utf-8", "float_precision": "round_trip",
+					  "memory_map": True, "na_filter": False}
 	# Override any defaults with those from explicitly-supplied kwargs
 	unified_kwargs.update(kwargs)
 	return pd.read_csv(inpath, **unified_kwargs)
@@ -361,7 +361,7 @@ def __main(args):
 	round_tokens.sort_values(["DYAD", "REFERENT", "ROUND", "INSTRUCTOR"], inplace=True)
 	prettify_token_set_series(round_tokens)
 	round_tokens.reset_index(drop=True, inplace=True)
-	round_tokens.to_csv(sys.stdout, index_label="INDEX", sep="\t", na_rep=OUTPUT_NA_VALUE)
+	round_tokens.to_csv(sys.stdout, index_label="INDEX", sep=csv.excel_tab.delimiter, na_rep=OUTPUT_NA_VALUE)
 
 
 def __token_set_repr(tokens: Iterable[str]) -> str:
