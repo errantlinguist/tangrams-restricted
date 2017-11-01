@@ -83,6 +83,8 @@ public final class PhraseExtractingParsingTokenizerTest {
 	 */
 	@Theory
 	public void testApply(final Entry<String, List<String>> inputExpectedOutput) {
+		Runtime runtime = Runtime.getRuntime();
+		LOGGER.info("Free memory: {}; Total memory: {}; Max memory: {}", runtime.freeMemory(), runtime.totalMemory(), runtime.maxMemory()); 
 		final String input = inputExpectedOutput.getKey();
 		final List<String> expectedResults = inputExpectedOutput.getValue();
 		final List<String> actualResults = TEST_INST.apply(input);
