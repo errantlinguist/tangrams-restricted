@@ -108,7 +108,7 @@ class SessionData(object):
 
 	def read_events_metadata(self) -> Dict[str, str]:
 		with open(self.events_metadata, 'r', encoding=ENCODING) as infile:
-			rows = csv.reader(infile, dialect="excel-tab")
+			rows = csv.reader(infile, dialect=csv.excel_tab)
 			return dict(rows)
 
 	def read_metadata_entity_count(self) -> int:
@@ -127,7 +127,7 @@ class SessionData(object):
 	def read_participant_metadata(self) -> Dict[str, Dict[str, str]]:
 		result = {}
 		with open(self.participant_metadata, 'r', encoding=ENCODING) as infile:
-			rows = csv.reader(infile, dialect="excel-tab")
+			rows = csv.reader(infile, dialect=csv.excel_tab)
 			headed_rows = dict((row[0], row[1:]) for row in rows)
 		participant_ids = headed_rows[_PARTICIPANT_METADATA_HEADER_ROW_NAME]
 		participant_id_idxs = tuple((participant_id, idx) for (idx, participant_id) in enumerate(participant_ids))
@@ -148,7 +148,7 @@ class SessionData(object):
 
 		result = [_DECIMAL_INFINITY] * round_count
 		with open(self.events, 'r', encoding=ENCODING) as infile:
-			rows = csv.reader(infile, dialect="excel-tab")
+			rows = csv.reader(infile, dialect=csv.excel_tab)
 			col_idxs = dict((col_name, idx) for (idx, col_name) in enumerate(next(rows)))
 			for row in rows:
 				event_time_col_idx = col_idxs[DataColumn.EVENT_TIME.value]

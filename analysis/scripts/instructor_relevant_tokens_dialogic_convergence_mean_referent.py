@@ -102,7 +102,7 @@ def read_nonempty_coref_seq_referent_token_sets(inpath: str, self_coref_seq_no_c
 	int, Dict[str, List[FrozenSet[str]]]]:
 	result = defaultdict(lambda: defaultdict(list))
 	with open(inpath, 'r') as infile:
-		rows = csv.reader(infile, dialect="excel-tab")
+		rows = csv.reader(infile, dialect=csv.excel_tab)
 		col_idxs = dict((col_name, idx) for (idx, col_name) in enumerate(next(rows)))
 		token_set_col_idx = col_idxs[token_set_col_name]
 		self_coref_seq_no_col_idx = col_idxs[self_coref_seq_no_col_name]

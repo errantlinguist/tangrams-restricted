@@ -67,7 +67,7 @@ def read_token_group_dict(infile_path: str,
 
 def read_token_groups(infile, group_filter: Callable[[str], bool] = __default_group_filter) -> Iterator[
 	Tuple[str, FrozenSet[str]]]:
-	rows = csv.reader(infile, dialect="excel-tab")
+	rows = csv.reader(infile, dialect=csv.excel_tab)
 	col_idxs = dict((col_name, idx) for (idx, col_name) in enumerate(next(rows)))
 	token_col_idx = col_idxs[TokenGroupDataColumn.TOKEN.value]
 	group_col_idx = col_idxs[TokenGroupDataColumn.GROUP.value]
