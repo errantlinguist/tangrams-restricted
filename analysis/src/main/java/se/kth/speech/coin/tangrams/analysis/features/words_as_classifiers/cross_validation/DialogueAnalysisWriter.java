@@ -259,7 +259,8 @@ final class DialogueAnalysisWriter implements Consumer<CrossValidator.Result> { 
 							.getTestResults().getDialogueTestResults()) {
 						final Map<DialogueAnalysisSummaryFactory.SummaryDatum, Object> rowData = rowDataFactory
 								.apply(new DialogueAnalysisSummaryFactory.Input(inpath, "Success", iterNo,
-										sessionDialogueOrder++, diagTestResults, trainingParams));
+										sessionDialogueOrder++, diagTestResults, trainingParams,
+										cvTestSummary.getSessionStartTime()));
 						final Stream<String> rowCellVals = dataToWrite.stream().map(rowData::get).map(Object::toString);
 						out.print(rowCellVals.collect(ROW_CELL_JOINER));
 					}

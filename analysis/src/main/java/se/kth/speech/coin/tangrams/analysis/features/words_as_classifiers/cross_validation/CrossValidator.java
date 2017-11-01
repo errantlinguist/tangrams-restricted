@@ -19,6 +19,7 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
@@ -29,7 +30,6 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -93,14 +93,24 @@ public final class CrossValidator {
 
 	public static final class CrossValidationTestSummary {
 
+		private final LocalDateTime sessionStartTime;
+
 		private final SessionTestResults testResults;
 
 		private final Object2IntMap<String> trainingInstanceCounts;
 
 		private CrossValidationTestSummary(final SessionTestResults testResults,
-				final Object2IntMap<String> trainingInstanceCounts) {
+				final Object2IntMap<String> trainingInstanceCounts, final LocalDateTime sessionStartTime) {
+			this.sessionStartTime = sessionStartTime;
 			this.testResults = testResults;
 			this.trainingInstanceCounts = trainingInstanceCounts;
+		}
+
+		/**
+		 * @return the sessionStartTime
+		 */
+		public LocalDateTime getSessionStartTime() {
+			return sessionStartTime;
 		}
 
 		/**
@@ -351,8 +361,7 @@ public final class CrossValidator {
 		this.backgroundJobExecutor = backgroundJobExecutor;
 	}
 
-	public Result apply(final Map<SessionDataManager, Path> allSessions)
-			throws ClassificationException, IOException {
+	public Result apply(final Map<SessionDataManager, Path> allSessions) throws ClassificationException, IOException {
 		final Result result = new Result(allSessions.size(), iterCount);
 		LOGGER.info(
 				"Starting cross-validation test using data from {} session(s), doing {} iteration(s) on each dataset.",
@@ -408,10 +417,11 @@ public final class CrossValidator {
 
 			final WordClassificationData trainingData = testSet.getValue();
 			final EventDialogueClassifier diagClassifier = createDialogueClassifier(trainingData, testSessionData);
-			final SessionTestResults testResults = testSession(
-					sessionDiagMgrCacheSupplier.get().getUnchecked(testSessionData), diagClassifier);
+			final SessionGameManager sessionGameMgr = sessionDiagMgrCacheSupplier.get().getUnchecked(testSessionData);
+			final SessionGame sessionGame = sessionGameMgr.getCanonicalGame();
+			final SessionTestResults testResults = testSession(sessionGame, diagClassifier);
 			final CrossValidationTestSummary cvTestSummary = new CrossValidationTestSummary(testResults,
-					trainingData.getTrainingInstanceCounts());
+					trainingData.getTrainingInstanceCounts(), sessionGame.getHistory().getStartTime());
 			result.put(infilePath, cvTestSummary);
 		}
 		return result;
@@ -452,9 +462,8 @@ public final class CrossValidator {
 		return result;
 	}
 
-	private SessionTestResults testSession(final SessionGameManager sessionEventDiagMgr,
+	private SessionTestResults testSession(final SessionGame canonicalGame,
 			final EventDialogueClassifier diagClassifier) throws ClassificationException {
-		final SessionGame canonicalGame = sessionEventDiagMgr.getCanonicalGame();
 		final List<EventDialogue> uttDiags = canonicalGame.getEventDialogues();
 		final SessionTestResults result = new SessionTestResults(uttDiags.size());
 

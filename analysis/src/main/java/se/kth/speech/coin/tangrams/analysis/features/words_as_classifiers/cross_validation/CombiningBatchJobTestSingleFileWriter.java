@@ -275,9 +275,10 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 				int sessionDialogueOrder = 1;
 				for (final Entry<EventDialogue, EventDialogueTestResults> diagTestResults : cvTestSummary
 						.getTestResults().getDialogueTestResults()) {
-					final Map<DialogueAnalysisSummaryFactory.SummaryDatum, Object> rowData = rowDataFactory.apply(
-							new DialogueAnalysisSummaryFactory.Input(inpath, "Success", iterNo, sessionDialogueOrder++,
-									diagTestResults, summary.getTestParams().getTrainingParams()));
+					final Map<DialogueAnalysisSummaryFactory.SummaryDatum, Object> rowData = rowDataFactory
+							.apply(new DialogueAnalysisSummaryFactory.Input(inpath, "Success", iterNo,
+									sessionDialogueOrder++, diagTestResults,
+									summary.getTestParams().getTrainingParams(), cvTestSummary.getSessionStartTime()));
 					final Stream<String> diagAnalysisRowCellVals = dataToWrite.stream().map(rowData::get)
 							.map(Object::toString);
 					final Stream.Builder<String> rowCellValBuilder = Stream.builder();

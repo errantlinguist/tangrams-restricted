@@ -16,6 +16,9 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation;
 
+import java.math.BigDecimal;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.time.temporal.TemporalAccessor;
 import java.util.Arrays;
 import java.util.Collection;
@@ -25,10 +28,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import se.kth.speech.TimestampArithmetic;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.EventDialogueTestResults;
@@ -54,17 +59,21 @@ final class DialogueAnalysisSummaryFactory implements
 
 		private final Integer sequenceOrder;
 
+		private final LocalDateTime sessionStartTime;
+
 		private final Map<WordClassifierTrainingParameter, Object> trainingParams;
 
 		public Input(final Object key, final String desc, final Integer iterNo, final Integer sequenceOrder,
 				final Entry<EventDialogue, EventDialogueTestResults> diagTestResults,
-				final Map<WordClassifierTrainingParameter, Object> trainingParams) {
+				final Map<WordClassifierTrainingParameter, Object> trainingParams,
+				final LocalDateTime sessionStartTime) {
 			this.key = key;
 			this.desc = desc;
 			this.iterNo = iterNo;
 			this.sequenceOrder = sequenceOrder;
 			this.diagTestResults = diagTestResults;
 			this.trainingParams = trainingParams;
+			this.sessionStartTime = sessionStartTime;
 		}
 	}
 
@@ -146,6 +155,24 @@ final class DialogueAnalysisSummaryFactory implements
 				return input.key;
 			}
 		},
+		EVENT_RELATIVE_TIME {
+			/*
+			 * (non-Javadoc)
+			 *
+			 * @see java.util.function.BiFunction#apply(java.lang.Object,
+			 * java.lang.Object)
+			 */
+			@Override
+			public Object apply(final Input input,
+					final Function<? super Iterator<Utterance>, String> uttDiagReprFactory) {
+				final Optional<LocalDateTime> optFirstEventTime = getFirstEventTime(input);
+				final Optional<BigDecimal> optFirstEventRelTime = optFirstEventTime.map(time -> {
+					final Duration durationBetweenStartAndEvent = Duration.between(input.sessionStartTime, time);
+					return TimestampArithmetic.toDecimalSeconds(durationBetweenStartAndEvent);
+				});
+				return optFirstEventRelTime.map(DECIMAL_SECONDS_FORMATTER).orElse("?");
+			}
+		},
 		EVENT_TIME {
 			/*
 			 * (non-Javadoc)
@@ -156,8 +183,7 @@ final class DialogueAnalysisSummaryFactory implements
 			@Override
 			public Object apply(final Input input,
 					final Function<? super Iterator<Utterance>, String> uttDiagReprFactory) {
-				final EventDialogue diag = input.diagTestResults.getKey();
-				return diag.getFirstEvent().map(GameEvent::getTime).map(TIMESTAMP_FORMATTER).orElse("?");
+				return getFirstEventTime(input).map(TIMESTAMP_FORMATTER).orElse("?");
 			}
 		},
 		GOLD_STD_ID {
@@ -331,7 +357,14 @@ final class DialogueAnalysisSummaryFactory implements
 				return input.diagTestResults.getValue().totalUtteranceCount();
 			}
 		};
+
+		private static Optional<LocalDateTime> getFirstEventTime(final Input input) {
+			final EventDialogue diag = input.diagTestResults.getKey();
+			return diag.getFirstEvent().map(GameEvent::getTime);
+		}
 	}
+
+	private static final Function<BigDecimal, String> DECIMAL_SECONDS_FORMATTER = BigDecimal::toString;
 
 	private static final List<SummaryDatum> DEFAULT_SUMMARY_DATUM_ORDERING = Collections
 			.unmodifiableList(createDefaultSummaryDatumOrderingList());
@@ -351,6 +384,7 @@ final class DialogueAnalysisSummaryFactory implements
 				DialogueAnalysisSummaryFactory.SummaryDatum.DESCRIPTION,
 				DialogueAnalysisSummaryFactory.SummaryDatum.SESSION_ORDER,
 				DialogueAnalysisSummaryFactory.SummaryDatum.EVENT_TIME,
+				DialogueAnalysisSummaryFactory.SummaryDatum.EVENT_RELATIVE_TIME,
 				DialogueAnalysisSummaryFactory.SummaryDatum.TEST_ITER,
 				DialogueAnalysisSummaryFactory.SummaryDatum.DIALOGUE,
 				DialogueAnalysisSummaryFactory.SummaryDatum.DIALOGUE_AS_TESTED,

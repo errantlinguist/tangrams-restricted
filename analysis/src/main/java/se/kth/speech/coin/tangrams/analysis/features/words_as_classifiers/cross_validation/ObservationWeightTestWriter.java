@@ -21,6 +21,7 @@ import java.io.PrintWriter;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.EnumSet;
@@ -251,11 +252,12 @@ final class ObservationWeightTestWriter { // NO_UCD (unused code)
 				// that the printed first iteration is "1" rather than "0"
 				final int iterNo = sessionResultIter.nextIndex();
 				int sessionDialogueOrder = 1;
+				final LocalDateTime sessionStartTime = cvTestSummary.getSessionStartTime();
 				for (final Entry<EventDialogue, EventDialogueTestResults> diagTestResults : cvTestSummary
 						.getTestResults().getDialogueTestResults()) {
 					final Map<DialogueAnalysisSummaryFactory.SummaryDatum, Object> rowData = rowDataFactory.apply(
 							new DialogueAnalysisSummaryFactory.Input(inpath, "Success", iterNo, sessionDialogueOrder++,
-									diagTestResults, summary.getTestParams().getTrainingParams()));
+									diagTestResults, summary.getTestParams().getTrainingParams(), sessionStartTime));
 					final Stream<String> diagAnalysisRowCellVals = dataToWrite.stream().map(rowData::get)
 							.map(Object::toString);
 					final Stream.Builder<String> rowCellValBuilder = Stream.builder();

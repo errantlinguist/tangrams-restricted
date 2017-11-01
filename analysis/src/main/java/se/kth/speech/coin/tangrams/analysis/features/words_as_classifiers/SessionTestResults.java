@@ -174,8 +174,9 @@ public final class SessionTestResults implements SessionTestStatistics {
 
 	private double sumReciprocalRank() {
 		// TODO: Find a better way to calculate MRR, which avoids cumulative
-				// floating-point precision errors
-		return diagTestResults.parallelStream().map(Entry::getValue).mapToDouble(EventDialogueTestResults::reciprocalRank).sum();
+		// floating-point precision errors
+		return diagTestResults.parallelStream().map(Entry::getValue)
+				.mapToDouble(EventDialogueTestResults::reciprocalRank).sum();
 	}
 
 }
