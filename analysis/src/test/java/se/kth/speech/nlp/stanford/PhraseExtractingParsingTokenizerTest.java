@@ -30,6 +30,8 @@ import org.junit.experimental.theories.DataPoints;
 import org.junit.experimental.theories.Theories;
 import org.junit.experimental.theories.Theory;
 import org.junit.runner.RunWith;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.google.common.cache.LoadingCache;
 
@@ -45,6 +47,9 @@ import edu.stanford.nlp.pipeline.Annotation;
 @RunWith(Theories.class)
 @NotThreadSafe
 public final class PhraseExtractingParsingTokenizerTest {
+	
+	private static final Logger LOGGER = LoggerFactory.getLogger(PhraseExtractingParsingTokenizerTest.class);
+
 
 	@DataPoints
 	public static final Collection<Entry<String, List<String>>> INPUT_EXPECTED_OUTPUTS = createInputExpectedOutputMap()
@@ -81,6 +86,7 @@ public final class PhraseExtractingParsingTokenizerTest {
 		final String input = inputExpectedOutput.getKey();
 		final List<String> expectedResults = inputExpectedOutput.getValue();
 		final List<String> actualResults = TEST_INST.apply(input);
+		LOGGER.info("Parsed \"{}\" to get {}, expecting {}.", input, actualResults, expectedResults);
 		Assert.assertEquals(String.format("For input \"%s\" expected output %s but got %s instead.", input,
 				expectedResults, actualResults), expectedResults, actualResults);
 	}
