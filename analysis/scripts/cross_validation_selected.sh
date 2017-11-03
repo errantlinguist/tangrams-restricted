@@ -3,7 +3,7 @@
 TARGET_DIR="target"
 CLASSPATH_JARFILE="${TARGET_DIR}/analysis-0.0.1-SNAPSHOT-jar-with-dependencies.jar"
 HEAP_SIZE="5120m"
-# HEAP_SIZE="12288m"
+# HEAP_SIZE="10240m"
 echo "Will use heap space size of ${HEAP_SIZE}."
 MAIN_CLASS="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.CombiningBatchJobTestSingleFileWriter"
 
