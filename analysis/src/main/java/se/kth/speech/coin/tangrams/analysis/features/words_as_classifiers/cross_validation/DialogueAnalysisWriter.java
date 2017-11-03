@@ -193,8 +193,7 @@ final class DialogueAnalysisWriter implements Consumer<CrossValidator.Result> { 
 					final SessionGameManagerCacheSupplier sessionDiagMgrCacheSupplier = appCtx
 							.getBean(SessionGameManagerCacheSupplier.class);
 					final TestSetFactory testSetFactory = new TestSetFactory(trainingInstsFactory,
-							sessionDiagMgrCacheSupplier, (Integer) trainingParams
-									.get(WordClassifierTrainingParameter.TRAINING_SET_SIZE_DISCOUNTING_CONSTANT));
+							sessionDiagMgrCacheSupplier);
 					final CrossValidator crossValidator = appCtx.getBean(CrossValidator.class, testSetFactory,
 							EVT_DIAG_TRANSFORMER, TRAINING_METHOD.getClassifierFactory(trainingCtx),
 							backgroundJobExecutor);

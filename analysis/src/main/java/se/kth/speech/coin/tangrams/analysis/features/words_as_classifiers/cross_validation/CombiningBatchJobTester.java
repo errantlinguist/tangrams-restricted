@@ -23,10 +23,13 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,6 +44,7 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialog
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.EventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.UtteranceRelation;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.TrainingInstancesFactory;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.WordClassificationData;
 import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
 import se.kth.speech.nlp.stanford.AnnotationCacheFactory;
 
@@ -153,6 +157,22 @@ final class CombiningBatchJobTester {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(CombiningBatchJobTester.class);
 
+	private static Function<Map<SessionDataManager, Path>, Stream<Entry<SessionDataManager, WordClassificationData>>> createTestSetFactory(
+			final TrainingInstancesFactory trainingInstsFactory,
+			final SessionGameManagerCacheSupplier sessionDiagMgrCacheSupplier,
+			final Map<WordClassifierTrainingParameter, Object> trainingParams) {
+		final Function<Map<SessionDataManager, Path>, Stream<Entry<SessionDataManager, WordClassificationData>>> result;
+		final int trainingSetSizeDiscountingConstant = (Integer) trainingParams
+				.get(WordClassifierTrainingParameter.TRAINING_SET_SIZE_DISCOUNTING_CONSTANT);
+		if (trainingSetSizeDiscountingConstant == 0) {
+			result = new TestSetFactory(trainingInstsFactory, sessionDiagMgrCacheSupplier);
+		} else {
+			throw new IllegalArgumentException("Training set size discounting not yet supported.");
+			// TODO: Finish
+		}
+		return result;
+	}
+
 	private final ApplicationContext appCtx;
 
 	private final ExecutorService backgroundJobExecutor;
@@ -209,9 +229,8 @@ final class CombiningBatchJobTester {
 									uttRelHandler, trainingParams);
 							final TrainingInstancesFactory trainingInstsFactory = trainingMethod
 									.createTrainingInstsFactory(trainingCtx);
-							final TestSetFactory testSetFactory = new TestSetFactory(trainingInstsFactory,
-									sessionDiagMgrCacheSupplier, (Integer) trainingParams
-											.get(WordClassifierTrainingParameter.TRAINING_SET_SIZE_DISCOUNTING_CONSTANT));
+							final Function<Map<SessionDataManager, Path>, Stream<Entry<SessionDataManager, WordClassificationData>>> testSetFactory = createTestSetFactory(
+									trainingInstsFactory, sessionDiagMgrCacheSupplier, trainingParams);
 							final CrossValidator crossValidator = appCtx.getBean(CrossValidator.class, testSetFactory,
 									symmetricalDiagTransformer, trainingMethod.getClassifierFactory(trainingCtx),
 									backgroundJobExecutor);
