@@ -78,18 +78,18 @@ public final class RandomTrainingComplementSetFactoryTest {
 		return Paths.get(homeDir, sessionDirSuffix);
 	}
 
-	private static void testApply(final int trainingSetSizeDiscountingConstant, final int randomIters)
+	private static void testApply(final int trainingSetSizeDiscountingConstant)
 			throws IOException {
 		Assume.assumeTrue(String.format(
 				"Number of sessions found is not greater than the training set size discounting constant (%d).",
 				trainingSetSizeDiscountingConstant), allSessions.size() > trainingSetSizeDiscountingConstant);
-		Assume.assumeTrue(String.format(
-				"Number of sessions found is not greater than or equal to the required number of random iterations (%d).",
-				randomIters), allSessions.size() >= randomIters);
+//		Assume.assumeTrue(String.format(
+//				"Number of sessions found is not greater than or equal to the required number of random iterations (%d).",
+//				randomIters), allSessions.size() >= randomIters);
 		final RandomTrainingComplementSetFactory testInst = new RandomTrainingComplementSetFactory(RANDOM,
-				trainingSetSizeDiscountingConstant, randomIters);
+				trainingSetSizeDiscountingConstant);
 		final Collection<? extends Collection<SessionDataManager>> complementSets = testInst.apply(allSessions);
-		Assert.assertEquals(randomIters, complementSets.size());
+//		Assert.assertEquals(randomIters, complementSets.size());
 		for (final Collection<SessionDataManager> complementSet : complementSets) {
 			Assert.assertEquals(trainingSetSizeDiscountingConstant, complementSet.size());
 		}
@@ -97,18 +97,18 @@ public final class RandomTrainingComplementSetFactoryTest {
 		// Every.everyItem(IsCollectionWithSize.hasSize(trainingSetSizeDiscountingConstant)));
 	}
 
-	/**
-	 * Test method for
-	 * {@link se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.RandomTrainingComplementSetFactory#apply(se.kth.speech.coin.tangrams.analysis.io.SessionDataManager[])}.
-	 *
-	 * @throws IOException
-	 */
-	@Test(expected = IllegalArgumentException.class)
-	public void testApplyMaxComplementSetSizeMaxIters() throws IOException {
-		final int trainingSetSizeDiscountingConstant = allSessions.size() - 1;
-		final int randomIters = allSessions.size();
-		testApply(trainingSetSizeDiscountingConstant, randomIters);
-	}
+//	/**
+//	 * Test method for
+//	 * {@link se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.RandomTrainingComplementSetFactory#apply(se.kth.speech.coin.tangrams.analysis.io.SessionDataManager[])}.
+//	 *
+//	 * @throws IOException
+//	 */
+//	@Test(expected = IllegalArgumentException.class)
+//	public void testApplyMaxComplementSetSizeMaxIters() throws IOException {
+//		final int trainingSetSizeDiscountingConstant = allSessions.size() - 1;
+////		final int randomIters = allSessions.size();
+//		testApply(trainingSetSizeDiscountingConstant);
+//	}
 
 	/**
 	 * Test method for
@@ -119,8 +119,8 @@ public final class RandomTrainingComplementSetFactoryTest {
 	@Test
 	public void testApplyMaxComplementSetSizeMinIters() throws IOException {
 		final int trainingSetSizeDiscountingConstant = allSessions.size() - 1;
-		final int randomIters = 1;
-		testApply(trainingSetSizeDiscountingConstant, randomIters);
+//		final int randomIters = 1;
+		testApply(trainingSetSizeDiscountingConstant);
 	}
 
 	/**
@@ -133,13 +133,13 @@ public final class RandomTrainingComplementSetFactoryTest {
 	public void testApplyMaxIterWithUniqueComplementSets() throws IOException {
 		// NOTE: Hard-coded for session count of 39
 		final int trainingSetSizeDiscountingConstant = 3;
-		final int randomIters = allSessions.size() / trainingSetSizeDiscountingConstant;
+//		final int randomIters = allSessions.size() / trainingSetSizeDiscountingConstant;
 		Assume.assumeTrue(
 				String.format(
 						"Cannot divide number of total sessions (%d) by hard-coded training set size discounting constant %d.",
 						allSessions.size(), trainingSetSizeDiscountingConstant),
 				allSessions.size() % trainingSetSizeDiscountingConstant == 0);
-		testApply(trainingSetSizeDiscountingConstant, randomIters);
+		testApply(trainingSetSizeDiscountingConstant);
 	}
 
 	/**
@@ -151,8 +151,8 @@ public final class RandomTrainingComplementSetFactoryTest {
 	@Test
 	public void testApplyMinComplementSetSizeMaxIters() throws IOException {
 		final int trainingSetSizeDiscountingConstant = 1;
-		final int randomIters = allSessions.size();
-		testApply(trainingSetSizeDiscountingConstant, randomIters);
+//		final int randomIters = allSessions.size();
+		testApply(trainingSetSizeDiscountingConstant);
 	}
 
 	/**
@@ -164,8 +164,8 @@ public final class RandomTrainingComplementSetFactoryTest {
 	@Test
 	public void testApplyMinComplementSetSizeMinIters() throws IOException {
 		final int trainingSetSizeDiscountingConstant = 1;
-		final int randomIters = 1;
-		testApply(trainingSetSizeDiscountingConstant, randomIters);
+//		final int randomIters = 1;
+		testApply(trainingSetSizeDiscountingConstant);
 	}
 
 	/**
@@ -188,30 +188,30 @@ public final class RandomTrainingComplementSetFactoryTest {
 				randomIters), allSessions.size() >= randomIters);
 
 		final RandomTrainingComplementSetFactory testInst = new RandomTrainingComplementSetFactory(RANDOM,
-				trainingSetSizeDiscountingConstant, randomIters);
+				trainingSetSizeDiscountingConstant);
 		testInst.apply(allSessions);
 	}
 
-	/**
-	 * Test method for
-	 * {@link se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.RandomTrainingComplementSetFactory#apply(se.kth.speech.coin.tangrams.analysis.io.SessionDataManager[])}.
-	 *
-	 * @throws IOException
-	 */
-	@Test(expected = IllegalArgumentException.class)
-	public void testApplyTooManyRandomIters() throws IOException {
-		final int trainingSetSizeDiscountingConstant = 1;
-		Assume.assumeTrue(String.format(
-				"Number of sessions found is not greater than the training set size discounting constant (%d).",
-				trainingSetSizeDiscountingConstant), allSessions.size() > trainingSetSizeDiscountingConstant);
-		final int randomIters = allSessions.size() + 1;
-		Assume.assumeTrue(String.format(
-				"Number of sessions found is not lesser than the required number of random iterations (%d).",
-				randomIters), allSessions.size() < randomIters);
-
-		final RandomTrainingComplementSetFactory testInst = new RandomTrainingComplementSetFactory(RANDOM,
-				trainingSetSizeDiscountingConstant, randomIters);
-		testInst.apply(allSessions);
-	}
+//	/**
+//	 * Test method for
+//	 * {@link se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.RandomTrainingComplementSetFactory#apply(se.kth.speech.coin.tangrams.analysis.io.SessionDataManager[])}.
+//	 *
+//	 * @throws IOException
+//	 */
+//	@Test(expected = IllegalArgumentException.class)
+//	public void testApplyTooManyRandomIters() throws IOException {
+//		final int trainingSetSizeDiscountingConstant = 1;
+//		Assume.assumeTrue(String.format(
+//				"Number of sessions found is not greater than the training set size discounting constant (%d).",
+//				trainingSetSizeDiscountingConstant), allSessions.size() > trainingSetSizeDiscountingConstant);
+//		final int randomIters = allSessions.size() + 1;
+//		Assume.assumeTrue(String.format(
+//				"Number of sessions found is not lesser than the required number of random iterations (%d).",
+//				randomIters), allSessions.size() < randomIters);
+//
+//		final RandomTrainingComplementSetFactory testInst = new RandomTrainingComplementSetFactory(RANDOM,
+//				trainingSetSizeDiscountingConstant);
+//		testInst.apply(allSessions);
+//	}
 
 }

@@ -31,6 +31,7 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.OptionalInt;
+import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
@@ -75,11 +76,11 @@ import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
  */
 final class ObservationWeightTestWriter { // NO_UCD (unused code)
 
-	private static class NonDiscountingTestSetFactoryFactory implements TestSetFactoryFactory {
+	private static class DiscountingTestSetFactoryFactory implements TestSetFactoryFactory {
 
 		private final Map<WordClassifierTrainingParameter, Object> trainingParams;
 
-		private NonDiscountingTestSetFactoryFactory(final Map<WordClassifierTrainingParameter, Object> trainingParams) {
+		private DiscountingTestSetFactoryFactory(final Map<WordClassifierTrainingParameter, Object> trainingParams) {
 			this.trainingParams = trainingParams;
 		}
 
@@ -99,7 +100,9 @@ final class ObservationWeightTestWriter { // NO_UCD (unused code)
 			if (trainingSetSizeDiscountingConstant == 0) {
 				result = new TestSetFactory(trainingInstsFactory, sessionGameMgrs);
 			} else {
-				throw new IllegalArgumentException("Training set size discounting not supported.");
+				final Random rnd = new Random((Long) trainingParams.get(WordClassifierTrainingParameter.RANDOM_SEED));
+				result = new RandomDiscountingTestSetFactory(trainingInstsFactory, sessionGameMgrs, rnd,
+						trainingSetSizeDiscountingConstant);
 			}
 			return result;
 		}
@@ -135,6 +138,8 @@ final class ObservationWeightTestWriter { // NO_UCD (unused code)
 	private static final Options OPTIONS = createOptions();
 
 	private static final Charset OUTPUT_ENCODING = StandardCharsets.UTF_8;
+
+	private static final int RANDOM_SESSION_DISCOUNTING_ITERS = 10;
 
 	private static final Collector<CharSequence, ?, String> ROW_CELL_JOINER = Collectors.joining("\t");
 
@@ -196,7 +201,7 @@ final class ObservationWeightTestWriter { // NO_UCD (unused code)
 
 				final File outFile = (File) cl.getParsedOptionValue(CLITestParameter.OUTPATH.optName);
 				try (PrintWriter out = CLIParameters.parseOutpath(outFile, OUTPUT_ENCODING)) {
-					final ObservationWeightTestWriter writer = new ObservationWeightTestWriter(out, true);
+					final ObservationWeightTestWriter writer = new ObservationWeightTestWriter(out, true, 1);
 
 					try (final ClassPathXmlApplicationContext appCtx = new ClassPathXmlApplicationContext(
 							"combining-batch-tester.xml", ObservationWeightTestWriter.class)) {
@@ -205,18 +210,21 @@ final class ObservationWeightTestWriter { // NO_UCD (unused code)
 
 						// One session for testing, one for training
 						final int maxTrainingSetSizeDiscountingFactor = input.getAllSessions().size() - 2;
-						for (int trainingSetSizeDiscountingConstant = 0; trainingSetSizeDiscountingConstant < maxTrainingSetSizeDiscountingFactor; ++trainingSetSizeDiscountingConstant) {
+						for (int trainingSetSizeDiscountingConstant = 1; trainingSetSizeDiscountingConstant < maxTrainingSetSizeDiscountingFactor; ++trainingSetSizeDiscountingConstant) {
 							LOGGER.info("Performing cross-validation while discounting training set size by {}.",
 									trainingSetSizeDiscountingConstant);
 							final Map<WordClassifierTrainingParameter, Object> trainingParams = new EnumMap<>(
 									defaultTrainingParams);
 							trainingParams.put(WordClassifierTrainingParameter.TRAINING_SET_SIZE_DISCOUNTING_CONSTANT,
 									trainingSetSizeDiscountingConstant);
-							final CombiningBatchJobTester tester = new CombiningBatchJobTester(backgroundJobExecutor,
-									appCtx, writer::write, writer::writeError, testerConfigurator,
-									EXTRACTION_RESULTS_HOOK, UTT_REL_HANDLER, trainingParams,
-									new NonDiscountingTestSetFactoryFactory(trainingParams));
-							tester.accept(input);
+							for (int randomDiscountingIter = 1; randomDiscountingIter <= RANDOM_SESSION_DISCOUNTING_ITERS; ++randomDiscountingIter) {
+								final CombiningBatchJobTester tester = new CombiningBatchJobTester(
+										backgroundJobExecutor, appCtx, writer::write, writer::writeError,
+										testerConfigurator, EXTRACTION_RESULTS_HOOK, UTT_REL_HANDLER, trainingParams,
+										new DiscountingTestSetFactoryFactory(trainingParams));
+								tester.accept(input);
+								writer.setSessionTestIterFactor(randomDiscountingIter);
+							}
 							LOGGER.info(
 									"Finished performing cross-validation for training set size discounting constant {}.",
 									trainingSetSizeDiscountingConstant);
@@ -252,20 +260,26 @@ final class ObservationWeightTestWriter { // NO_UCD (unused code)
 
 	private final DialogueAnalysisSummaryFactory rowDataFactory;
 
+	private int sessionTestIterFactor;
+
 	private boolean writeHeader;
 
-	private ObservationWeightTestWriter(final PrintWriter out, final boolean writeHeader) {
-		this(out, writeHeader, new UtteranceDialogueRepresentationStringFactory(DataLanguageDefaults.getLocale()),
+	private ObservationWeightTestWriter(final PrintWriter out, final boolean writeHeader,
+			final int sessionTestIterFactor) {
+		this(out, writeHeader, sessionTestIterFactor,
+				new UtteranceDialogueRepresentationStringFactory(DataLanguageDefaults.getLocale()),
 				DEFAULT_DATA_TO_WRITE);
 	}
 
 	private ObservationWeightTestWriter(final PrintWriter out, final boolean writeHeader,
-			final Function<? super Iterator<Utterance>, String> uttDiagReprFactory,
+			final int sessionTestIterFactor, final Function<? super Iterator<Utterance>, String> uttDiagReprFactory,
 			final List<DialogueAnalysisSummaryFactory.SummaryDatum> dataToWrite) {
 		this.out = out;
 		this.writeHeader = writeHeader;
+		this.sessionTestIterFactor = sessionTestIterFactor;
 		this.dataToWrite = dataToWrite;
 		rowDataFactory = new DialogueAnalysisSummaryFactory(uttDiagReprFactory, dataToWrite);
+
 	}
 
 	public void write(final BatchJobSummary summary) {
@@ -287,7 +301,7 @@ final class ObservationWeightTestWriter { // NO_UCD (unused code)
 						.createTrainingDataRowCellValues(cvTestSummary).map(Object::toString).toArray(String[]::new);
 				// NOTE: This should remain here, after "Iterator.next()", so
 				// that the printed first iteration is "1" rather than "0"
-				final int iterNo = sessionResultIter.nextIndex();
+				final int iterNo = sessionResultIter.nextIndex() * sessionTestIterFactor;
 				int sessionDialogueOrder = 1;
 				final LocalDateTime sessionStartTime = cvTestSummary.getSessionStartTime();
 				for (final Entry<EventDialogue, EventDialogueTestResults> diagTestResults : cvTestSummary
@@ -330,6 +344,14 @@ final class ObservationWeightTestWriter { // NO_UCD (unused code)
 		final String row = rowCellValBuilder.build().collect(ROW_CELL_JOINER);
 		out.println(row);
 		throw new TestException(thrown);
+	}
+
+	/**
+	 * @param sessionTestIterFactor
+	 *            the sessionTestIterFactor to set
+	 */
+	void setSessionTestIterFactor(final int sessionTestIterFactor) {
+		this.sessionTestIterFactor = sessionTestIterFactor;
 	}
 
 }

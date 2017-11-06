@@ -73,11 +73,10 @@ public final class RandomDiscountingTestSetFactory
 
 	public RandomDiscountingTestSetFactory(final TrainingInstancesFactory instancesFactory,
 			final LoadingCache<? super SessionDataManager, SessionGameManager> sessionGameMgrs, final Random random,
-			final int trainingSetSizeDiscountingConstant, final int randomIters) {
+			final int trainingSetSizeDiscountingConstant) {
 		this.instancesFactory = instancesFactory;
 		this.sessionGameMgrs = sessionGameMgrs;
-		trainingSetFactory = new RandomTrainingComplementSetFactory(random, trainingSetSizeDiscountingConstant,
-				randomIters);
+		trainingSetFactory = new RandomTrainingComplementSetFactory(random, trainingSetSizeDiscountingConstant);
 	}
 
 	@Override

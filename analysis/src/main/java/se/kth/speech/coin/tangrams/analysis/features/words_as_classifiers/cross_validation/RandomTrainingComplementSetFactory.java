@@ -42,26 +42,22 @@ final class RandomTrainingComplementSetFactory
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(RandomTrainingComplementSetFactory.class);
 
-	private final int maxUniqueLeftOutSessionCount;
+//	private final int maxUniqueLeftOutSessionCount;
 
 	private final int minValidTrainingSetSize;
 
 	private final Random random;
 
-	private final int randomIters;
-
 	private final int trainingSetSizeDiscountingConstant;
 
-	public RandomTrainingComplementSetFactory(final Random random, final int trainingSetSizeDiscountingConstant,
-			final int randomIters) {
+	public RandomTrainingComplementSetFactory(final Random random, final int trainingSetSizeDiscountingConstant) {
 		if (trainingSetSizeDiscountingConstant < 1) {
 			throw new IllegalArgumentException("Discounting constant must be positive.");
 		}
 		this.random = random;
 		this.trainingSetSizeDiscountingConstant = trainingSetSizeDiscountingConstant;
 		minValidTrainingSetSize = Math.addExact(trainingSetSizeDiscountingConstant, 1);
-		maxUniqueLeftOutSessionCount = randomIters * trainingSetSizeDiscountingConstant;
-		this.randomIters = randomIters;
+//		maxUniqueLeftOutSessionCount = randomIters * trainingSetSizeDiscountingConstant;
 	}
 
 	@Override
@@ -72,7 +68,7 @@ final class RandomTrainingComplementSetFactory
 			throw new IllegalArgumentException(String.format("Expected at least %d session(s) but was passed only %d.",
 					minValidTrainingSetSize, allTrainingSessionDataMgrs.size()));
 
-		} else if (allTrainingSessionDataMgrs.size() >= maxUniqueLeftOutSessionCount) {
+		} else if (allTrainingSessionDataMgrs.size() >= trainingSetSizeDiscountingConstant) {
 			// Each random iteration can have entirely-unique sessions left out
 			result = createUniqueTrainingComplementSets(allTrainingSessionDataMgrs);
 			LOGGER.debug("Created {} entirely-unique complement set(s).", result.size());
@@ -129,23 +125,21 @@ final class RandomTrainingComplementSetFactory
 
 	private Set<Set<SessionDataManager>> createUniqueTrainingComplementSets(
 			final Collection<SessionDataManager> allTrainingSessionDataMgrs) {
-		assert allTrainingSessionDataMgrs.size() >= maxUniqueLeftOutSessionCount;
+		assert allTrainingSessionDataMgrs.size() >= trainingSetSizeDiscountingConstant;
 		final Set<Set<SessionDataManager>> result = Sets.newHashSetWithExpectedSize(allTrainingSessionDataMgrs.size());
 		final Queue<SessionDataManager> sessionsToDiscount = createShuffledQueue(allTrainingSessionDataMgrs);
 
-		while (result.size() < randomIters) {
-			final Set<SessionDataManager> currentComplementSet = Sets
-					.newHashSetWithExpectedSize(trainingSetSizeDiscountingConstant);
-			do {
-				final SessionDataManager leftOutTrainingSessionDataMgr = sessionsToDiscount.remove();
-				final boolean wasAddedToCurrentComplementSet = currentComplementSet.add(leftOutTrainingSessionDataMgr);
-				// Since the given session has never been left out before, it
-				// should also have not been used for the current set being
-				// built
-				assert wasAddedToCurrentComplementSet;
-			} while (currentComplementSet.size() < trainingSetSizeDiscountingConstant);
-			result.add(currentComplementSet);
-		}
+		final Set<SessionDataManager> currentComplementSet = Sets
+				.newHashSetWithExpectedSize(trainingSetSizeDiscountingConstant);
+		do {
+			final SessionDataManager leftOutTrainingSessionDataMgr = sessionsToDiscount.remove();
+			final boolean wasAddedToCurrentComplementSet = currentComplementSet.add(leftOutTrainingSessionDataMgr);
+			// Since the given session has never been left out before, it
+			// should also have not been used for the current set being
+			// built
+			assert wasAddedToCurrentComplementSet;
+		} while (currentComplementSet.size() < trainingSetSizeDiscountingConstant);
+		result.add(currentComplementSet);
 		LOGGER.debug(
 				"{} sessions which could have still been left out were not because enough complement sets had already been made.",
 				sessionsToDiscount.size());
