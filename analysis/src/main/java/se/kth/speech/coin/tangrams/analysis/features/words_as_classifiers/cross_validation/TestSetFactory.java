@@ -17,7 +17,7 @@
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation;
 
 import java.nio.file.Path;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -28,6 +28,8 @@ import java.util.stream.Stream;
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.cache.LoadingCache;
 
 import se.kth.speech.coin.tangrams.analysis.SessionGameManager;
 import se.kth.speech.coin.tangrams.analysis.SessionGameManagerCacheSupplier;
@@ -96,14 +98,11 @@ public final class TestSetFactory
 			final Set<SessionDataManager> allSessions) {
 		final WordClassificationData trainingData;
 		{
-			final SessionDataManager[] trainingSessionDataMgrs = allSessions.stream()
-					.filter(sessionData -> !sessionData.equals(testSessionDataMgr)).toArray(SessionDataManager[]::new);
-			final List<SessionGameManager> trainingSessionEvtDiagMgrs = new ArrayList<>(trainingSessionDataMgrs.length);
-			for (final SessionDataManager trainingSessionDatum : trainingSessionDataMgrs) {
-				final SessionGameManager sessionEventDiagMgr = sessionDiagMgrCacheSupplier.get()
-						.getUnchecked(trainingSessionDatum);
-				trainingSessionEvtDiagMgrs.add(sessionEventDiagMgr);
-			}
+			final LoadingCache<SessionDataManager, SessionGameManager> sessionGameMgrs = sessionDiagMgrCacheSupplier
+					.get();
+			final List<SessionGameManager> trainingSessionEvtDiagMgrs = Arrays
+					.asList(allSessions.stream().filter(sessionData -> !sessionData.equals(testSessionDataMgr))
+							.map(sessionGameMgrs::getUnchecked).toArray(SessionGameManager[]::new));
 			trainingData = instancesFactory.apply(trainingSessionEvtDiagMgrs);
 		}
 		LOGGER.info("Created training data for {} class(es).", trainingData.getClassInstances().size());
