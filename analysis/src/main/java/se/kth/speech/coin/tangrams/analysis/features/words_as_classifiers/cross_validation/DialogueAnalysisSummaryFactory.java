@@ -369,6 +369,19 @@ final class DialogueAnalysisSummaryFactory implements
 					final Function<? super Iterator<Utterance>, String> uttDiagReprFactory) {
 				return input.diagTestResults.getValue().totalUtteranceCount();
 			}
+		},
+		TRAINING_SET_SIZE_DISCOUNTING_CONSTANT {
+			/*
+			 * (non-Javadoc)
+			 *
+			 * @see java.util.function.BiFunction#apply(java.lang.Object,
+			 * java.lang.Object)
+			 */
+			@Override
+			public Object apply(final Input input,
+					final Function<? super Iterator<Utterance>, String> uttDiagReprFactory) {
+				return input.trainingParams.get(WordClassifierTrainingParameter.TRAINING_SET_SIZE_DISCOUNTING_CONSTANT);
+			}
 		};
 
 		private static Optional<LocalDateTime> getFirstEventTime(final Input input) {
@@ -414,7 +427,8 @@ final class DialogueAnalysisSummaryFactory implements
 				DialogueAnalysisSummaryFactory.SummaryDatum.INTERACTION_DATA_NEGATIVE_EXAMPLE_WEIGHT_FACTOR,
 				DialogueAnalysisSummaryFactory.SummaryDatum.INSTRUCTOR_UTTERANCE_OBSERVATION_WEIGHT,
 				DialogueAnalysisSummaryFactory.SummaryDatum.OTHER_UTTERANCE_OBSERVATION_WEIGHT,
-				DialogueAnalysisSummaryFactory.SummaryDatum.RANDOM_SEED);
+				DialogueAnalysisSummaryFactory.SummaryDatum.RANDOM_SEED,
+				DialogueAnalysisSummaryFactory.SummaryDatum.TRAINING_SET_SIZE_DISCOUNTING_CONSTANT);
 		assert result.size() == DialogueAnalysisSummaryFactory.SummaryDatum.values().length;
 		assert result.stream().distinct().count() == result.size();
 		return result;
