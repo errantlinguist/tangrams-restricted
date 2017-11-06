@@ -35,8 +35,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
 
+import com.google.common.cache.LoadingCache;
+
 import edu.stanford.nlp.trees.Tree;
 import edu.stanford.nlp.util.CoreMap;
+import se.kth.speech.coin.tangrams.analysis.SessionGameManager;
 import se.kth.speech.coin.tangrams.analysis.SessionGameManagerCacheSupplier;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
@@ -156,7 +159,7 @@ final class CombiningBatchJobTester {
 	private static final AnnotationCacheFactory ANNOTATION_CACHE_FACTORY = new AnnotationCacheFactory(1);
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(CombiningBatchJobTester.class);
-	
+
 	private final ApplicationContext appCtx;
 
 	private final ExecutorService backgroundJobExecutor;
@@ -198,6 +201,7 @@ final class CombiningBatchJobTester {
 		LOGGER.debug("Bean names: {}", Arrays.toString(appCtx.getBeanDefinitionNames()));
 		final SessionGameManagerCacheSupplier sessionDiagMgrCacheSupplier = appCtx
 				.getBean(SessionGameManagerCacheSupplier.class);
+		final LoadingCache<SessionDataManager, SessionGameManager> sessionGameMgrs = sessionDiagMgrCacheSupplier.get();
 
 		for (final Set<Cleaning> cleaningMethodSet : input.cleaningMethods) {
 			for (final Training trainingMethod : input.trainingMethods) {
@@ -218,7 +222,7 @@ final class CombiningBatchJobTester {
 							final TrainingInstancesFactory trainingInstsFactory = trainingMethod
 									.createTrainingInstsFactory(trainingCtx);
 							final Function<Map<SessionDataManager, Path>, Stream<Entry<SessionDataManager, WordClassificationData>>> testSetFactory = testSetFactoryFactory
-									.apply(trainingInstsFactory, sessionDiagMgrCacheSupplier);
+									.apply(trainingInstsFactory, sessionGameMgrs);
 							final CrossValidator crossValidator = appCtx.getBean(CrossValidator.class, testSetFactory,
 									symmetricalDiagTransformer, trainingMethod.getClassifierFactory(trainingCtx),
 									backgroundJobExecutor);

@@ -51,10 +51,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
+import com.google.common.cache.LoadingCache;
+
 import se.kth.speech.coin.tangrams.CLIParameters;
 import se.kth.speech.coin.tangrams.analysis.BackgroundJobs;
 import se.kth.speech.coin.tangrams.analysis.DataLanguageDefaults;
-import se.kth.speech.coin.tangrams.analysis.SessionGameManagerCacheSupplier;
+import se.kth.speech.coin.tangrams.analysis.SessionGameManager;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.coin.tangrams.analysis.dialogues.UtteranceDialogueRepresentationStringFactory;
@@ -90,12 +92,12 @@ final class ObservationWeightTestWriter { // NO_UCD (unused code)
 		@Override
 		public Function<Map<SessionDataManager, Path>, Stream<Entry<SessionDataManager, WordClassificationData>>> apply(
 				final TrainingInstancesFactory trainingInstsFactory,
-				final SessionGameManagerCacheSupplier sessionDiagMgrCacheSupplier) {
+				final LoadingCache<SessionDataManager, SessionGameManager> sessionGameMgrs) {
 			final Function<Map<SessionDataManager, Path>, Stream<Entry<SessionDataManager, WordClassificationData>>> result;
 			final int trainingSetSizeDiscountingConstant = (Integer) trainingParams
 					.get(WordClassifierTrainingParameter.TRAINING_SET_SIZE_DISCOUNTING_CONSTANT);
 			if (trainingSetSizeDiscountingConstant == 0) {
-				result = new TestSetFactory(trainingInstsFactory, sessionDiagMgrCacheSupplier);
+				result = new TestSetFactory(trainingInstsFactory, sessionGameMgrs);
 			} else {
 				throw new IllegalArgumentException("Training set size discounting not supported.");
 			}

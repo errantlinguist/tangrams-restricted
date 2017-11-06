@@ -32,7 +32,6 @@ import org.slf4j.LoggerFactory;
 import com.google.common.cache.LoadingCache;
 
 import se.kth.speech.coin.tangrams.analysis.SessionGameManager;
-import se.kth.speech.coin.tangrams.analysis.SessionGameManagerCacheSupplier;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.TrainingInstancesFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.WordClassificationData;
 import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
@@ -67,12 +66,12 @@ public final class TestSetFactory
 
 	private final TrainingInstancesFactory instancesFactory;
 
-	private final SessionGameManagerCacheSupplier sessionDiagMgrCacheSupplier;
+	private final LoadingCache<SessionDataManager, SessionGameManager> sessionGameMgrs;
 
 	public TestSetFactory(final TrainingInstancesFactory instancesFactory,
-			final SessionGameManagerCacheSupplier sessionDiagMgrCacheSupplier) {
+			final LoadingCache<SessionDataManager, SessionGameManager> sessionGameMgrs) {
 		this.instancesFactory = instancesFactory;
-		this.sessionDiagMgrCacheSupplier = sessionDiagMgrCacheSupplier;
+		this.sessionGameMgrs = sessionGameMgrs;
 	}
 
 	@Override
@@ -98,8 +97,6 @@ public final class TestSetFactory
 			final Set<SessionDataManager> allSessions) {
 		final WordClassificationData trainingData;
 		{
-			final LoadingCache<SessionDataManager, SessionGameManager> sessionGameMgrs = sessionDiagMgrCacheSupplier
-					.get();
 			final List<SessionGameManager> trainingSessionEvtDiagMgrs = Arrays
 					.asList(allSessions.stream().filter(sessionData -> !sessionData.equals(testSessionDataMgr))
 							.map(sessionGameMgrs::getUnchecked).toArray(SessionGameManager[]::new));

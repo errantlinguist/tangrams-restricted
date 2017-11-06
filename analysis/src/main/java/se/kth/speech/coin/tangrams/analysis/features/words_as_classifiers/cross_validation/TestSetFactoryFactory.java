@@ -23,7 +23,9 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import se.kth.speech.coin.tangrams.analysis.SessionGameManagerCacheSupplier;
+import com.google.common.cache.LoadingCache;
+
+import se.kth.speech.coin.tangrams.analysis.SessionGameManager;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.TrainingInstancesFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.WordClassificationData;
 import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
@@ -33,6 +35,7 @@ import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
  * @since 6 Nov 2017
  *
  */
-interface TestSetFactoryFactory extends BiFunction<TrainingInstancesFactory, SessionGameManagerCacheSupplier, Function<Map<SessionDataManager, Path>, Stream<Entry<SessionDataManager, WordClassificationData>>>> {
+interface TestSetFactoryFactory extends
+		BiFunction<TrainingInstancesFactory, LoadingCache<SessionDataManager, SessionGameManager>, Function<Map<SessionDataManager, Path>, Stream<Entry<SessionDataManager, WordClassificationData>>>> {
 
 }
