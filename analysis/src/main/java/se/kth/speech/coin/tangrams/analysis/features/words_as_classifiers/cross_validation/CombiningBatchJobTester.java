@@ -156,23 +156,7 @@ final class CombiningBatchJobTester {
 	private static final AnnotationCacheFactory ANNOTATION_CACHE_FACTORY = new AnnotationCacheFactory(1);
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(CombiningBatchJobTester.class);
-
-	private static Function<Map<SessionDataManager, Path>, Stream<Entry<SessionDataManager, WordClassificationData>>> createTestSetFactory(
-			final TrainingInstancesFactory trainingInstsFactory,
-			final SessionGameManagerCacheSupplier sessionDiagMgrCacheSupplier,
-			final Map<WordClassifierTrainingParameter, Object> trainingParams) {
-		final Function<Map<SessionDataManager, Path>, Stream<Entry<SessionDataManager, WordClassificationData>>> result;
-		final int trainingSetSizeDiscountingConstant = (Integer) trainingParams
-				.get(WordClassifierTrainingParameter.TRAINING_SET_SIZE_DISCOUNTING_CONSTANT);
-		if (trainingSetSizeDiscountingConstant == 0) {
-			result = new TestSetFactory(trainingInstsFactory, sessionDiagMgrCacheSupplier);
-		} else {
-			throw new IllegalArgumentException("Training set size discounting not yet supported.");
-			// TODO: Finish
-		}
-		return result;
-	}
-
+	
 	private final ApplicationContext appCtx;
 
 	private final ExecutorService backgroundJobExecutor;
@@ -185,6 +169,8 @@ final class CombiningBatchJobTester {
 
 	private final Consumer<? super CrossValidator> testerConfigurator;
 
+	private final TestSetFactoryFactory testSetFactoryFactory;
+
 	private final Map<WordClassifierTrainingParameter, Object> trainingParams;
 
 	private final BiConsumer<? super EventDialogue, ? super List<UtteranceRelation>> uttRelHandler;
@@ -195,7 +181,8 @@ final class CombiningBatchJobTester {
 			final Consumer<? super CrossValidator> testerConfigurator,
 			final BiConsumer<? super CoreMap, ? super List<Tree>> extractionResultsHook,
 			final BiConsumer<? super EventDialogue, ? super List<UtteranceRelation>> uttRelHandler,
-			final Map<WordClassifierTrainingParameter, Object> trainingParams) {
+			final Map<WordClassifierTrainingParameter, Object> trainingParams,
+			final TestSetFactoryFactory testSetFactoryFactory) {
 		this.backgroundJobExecutor = backgroundJobExecutor;
 		this.appCtx = appCtx;
 		this.batchJobResultHandler = batchJobResultHandler;
@@ -204,6 +191,7 @@ final class CombiningBatchJobTester {
 		this.extractionResultsHook = extractionResultsHook;
 		this.uttRelHandler = uttRelHandler;
 		this.trainingParams = trainingParams;
+		this.testSetFactoryFactory = testSetFactoryFactory;
 	}
 
 	void accept(final Input input) throws ClassificationException, IOException {
@@ -229,8 +217,8 @@ final class CombiningBatchJobTester {
 									uttRelHandler, trainingParams);
 							final TrainingInstancesFactory trainingInstsFactory = trainingMethod
 									.createTrainingInstsFactory(trainingCtx);
-							final Function<Map<SessionDataManager, Path>, Stream<Entry<SessionDataManager, WordClassificationData>>> testSetFactory = createTestSetFactory(
-									trainingInstsFactory, sessionDiagMgrCacheSupplier, trainingParams);
+							final Function<Map<SessionDataManager, Path>, Stream<Entry<SessionDataManager, WordClassificationData>>> testSetFactory = testSetFactoryFactory
+									.apply(trainingInstsFactory, sessionDiagMgrCacheSupplier);
 							final CrossValidator crossValidator = appCtx.getBean(CrossValidator.class, testSetFactory,
 									symmetricalDiagTransformer, trainingMethod.getClassifierFactory(trainingCtx),
 									backgroundJobExecutor);

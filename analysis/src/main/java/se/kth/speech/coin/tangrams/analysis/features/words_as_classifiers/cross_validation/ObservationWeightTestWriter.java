@@ -54,6 +54,7 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 import se.kth.speech.coin.tangrams.CLIParameters;
 import se.kth.speech.coin.tangrams.analysis.BackgroundJobs;
 import se.kth.speech.coin.tangrams.analysis.DataLanguageDefaults;
+import se.kth.speech.coin.tangrams.analysis.SessionGameManagerCacheSupplier;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.coin.tangrams.analysis.dialogues.UtteranceDialogueRepresentationStringFactory;
@@ -61,6 +62,9 @@ import se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttribut
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.EventDialogueTestResults;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.CombiningBatchJobTester.IncompleteResults;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.CrossValidator.CrossValidationTestSummary;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.TrainingInstancesFactory;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.WordClassificationData;
+import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -68,6 +72,37 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_
  *
  */
 final class ObservationWeightTestWriter { // NO_UCD (unused code)
+
+	private static class NonDiscountingTestSetFactoryFactory implements TestSetFactoryFactory {
+
+		private final Map<WordClassifierTrainingParameter, Object> trainingParams;
+
+		private NonDiscountingTestSetFactoryFactory(final Map<WordClassifierTrainingParameter, Object> trainingParams) {
+			this.trainingParams = trainingParams;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see java.util.function.BiFunction#apply(java.lang.Object,
+		 * java.lang.Object)
+		 */
+		@Override
+		public Function<Map<SessionDataManager, Path>, Stream<Entry<SessionDataManager, WordClassificationData>>> apply(
+				final TrainingInstancesFactory trainingInstsFactory,
+				final SessionGameManagerCacheSupplier sessionDiagMgrCacheSupplier) {
+			final Function<Map<SessionDataManager, Path>, Stream<Entry<SessionDataManager, WordClassificationData>>> result;
+			final int trainingSetSizeDiscountingConstant = (Integer) trainingParams
+					.get(WordClassifierTrainingParameter.TRAINING_SET_SIZE_DISCOUNTING_CONSTANT);
+			if (trainingSetSizeDiscountingConstant == 0) {
+				result = new TestSetFactory(trainingInstsFactory, sessionDiagMgrCacheSupplier);
+			} else {
+				throw new IllegalArgumentException("Training set size discounting not supported.");
+			}
+			return result;
+		}
+
+	}
 
 	static final class TestException extends RuntimeException {
 
@@ -178,7 +213,8 @@ final class ObservationWeightTestWriter { // NO_UCD (unused code)
 									trainingSetSizeDiscountingConstant);
 							final CombiningBatchJobTester tester = new CombiningBatchJobTester(backgroundJobExecutor,
 									appCtx, writer::write, writer::writeError, testerConfigurator,
-									EXTRACTION_RESULTS_HOOK, UTT_REL_HANDLER, trainingParams);
+									EXTRACTION_RESULTS_HOOK, UTT_REL_HANDLER, trainingParams,
+									new NonDiscountingTestSetFactoryFactory(trainingParams));
 							tester.accept(input);
 							LOGGER.info(
 									"Finished performing cross-validation for training set size discounting constant {}.",
