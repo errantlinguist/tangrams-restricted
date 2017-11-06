@@ -413,7 +413,8 @@ final class DialogueAnalysisSummaryFactory implements
 				DialogueAnalysisSummaryFactory.SummaryDatum.INTERACTION_DATA_POSITIVE_EXAMPLE_WEIGHT_FACTOR,
 				DialogueAnalysisSummaryFactory.SummaryDatum.INTERACTION_DATA_NEGATIVE_EXAMPLE_WEIGHT_FACTOR,
 				DialogueAnalysisSummaryFactory.SummaryDatum.INSTRUCTOR_UTTERANCE_OBSERVATION_WEIGHT,
-				DialogueAnalysisSummaryFactory.SummaryDatum.OTHER_UTTERANCE_OBSERVATION_WEIGHT);
+				DialogueAnalysisSummaryFactory.SummaryDatum.OTHER_UTTERANCE_OBSERVATION_WEIGHT,
+				DialogueAnalysisSummaryFactory.SummaryDatum.RANDOM_SEED);
 		assert result.size() == DialogueAnalysisSummaryFactory.SummaryDatum.values().length;
 		assert result.stream().distinct().count() == result.size();
 		return result;
