@@ -75,7 +75,7 @@ final class RandomTrainingComplementSetFactory
 		} else if (allTrainingSessionDataMgrs.size() >= maxUniqueLeftOutSessionCount) {
 			// Each random iteration can have entirely-unique sessions left out
 			result = createUniqueTrainingComplementSets(allTrainingSessionDataMgrs);
-			LOGGER.info("Created {} entirely-unique complement set(s).", result.size());
+			LOGGER.debug("Created {} entirely-unique complement set(s).", result.size());
 		} else {
 			// result =
 			// createInitialUniqueTrainingComplementSets(allTrainingSessionDataMgrs);
@@ -146,7 +146,7 @@ final class RandomTrainingComplementSetFactory
 			} while (currentComplementSet.size() < trainingSetSizeDiscountingConstant);
 			result.add(currentComplementSet);
 		}
-		LOGGER.info(
+		LOGGER.debug(
 				"{} sessions which could have still been left out were not because enough complement sets had already been made.",
 				sessionsToDiscount.size());
 		return result;
