@@ -87,8 +87,7 @@ final class ObservationWeightTestWriter { // NO_UCD (unused code)
 		/*
 		 * (non-Javadoc)
 		 *
-		 * @see java.util.function.BiFunction#apply(java.lang.Object,
-		 * java.lang.Object)
+		 * @see java.util.function.BiFunction#apply(java.lang.Object, java.lang.Object)
 		 */
 		@Override
 		public Function<Map<SessionDataManager, Path>, Stream<Entry<SessionDataManager, WordClassificationData>>> apply(
@@ -100,6 +99,7 @@ final class ObservationWeightTestWriter { // NO_UCD (unused code)
 			if (trainingSetSizeDiscountingConstant == 0) {
 				result = new TestSetFactory(trainingInstsFactory, sessionGameMgrs);
 			} else {
+				// FIXME: Don't create a new Random instance here for each cross-validation test
 				final Random rnd = new Random((Long) trainingParams.get(WordClassifierTrainingParameter.RANDOM_SEED));
 				result = new RandomDiscountingTestSetFactory(trainingInstsFactory, sessionGameMgrs, rnd,
 						trainingSetSizeDiscountingConstant);
@@ -209,6 +209,9 @@ final class ObservationWeightTestWriter { // NO_UCD (unused code)
 								.createDefaultMap();
 
 						// One session for testing, one for training
+						// FIXME: Use same Random instance for all random test iterations so that each
+						// set of cross-validation training sets with discounted size are different for
+						// each iteration
 						final int maxTrainingSetSizeDiscountingFactor = input.getAllSessions().size() - 2;
 						for (int trainingSetSizeDiscountingConstant = 1; trainingSetSizeDiscountingConstant < maxTrainingSetSizeDiscountingFactor; ++trainingSetSizeDiscountingConstant) {
 							LOGGER.info("Performing cross-validation while discounting training set size by {}.",
