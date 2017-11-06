@@ -66,10 +66,10 @@ public final class TestSetFactory
 
 	private final TrainingInstancesFactory instancesFactory;
 
-	private final LoadingCache<SessionDataManager, SessionGameManager> sessionGameMgrs;
+	private final LoadingCache<? super SessionDataManager, SessionGameManager> sessionGameMgrs;
 
 	public TestSetFactory(final TrainingInstancesFactory instancesFactory,
-			final LoadingCache<SessionDataManager, SessionGameManager> sessionGameMgrs) {
+			final LoadingCache<? super SessionDataManager, SessionGameManager> sessionGameMgrs) {
 		this.instancesFactory = instancesFactory;
 		this.sessionGameMgrs = sessionGameMgrs;
 	}
