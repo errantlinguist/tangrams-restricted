@@ -266,6 +266,19 @@ final class DialogueAnalysisSummaryFactory implements
 			}
 
 		},
+		RANDOM_SEED {
+			/*
+			 * (non-Javadoc)
+			 *
+			 * @see java.util.function.BiFunction#apply(java.lang.Object,
+			 * java.lang.Object)
+			 */
+			@Override
+			public Object apply(final Input input,
+					final Function<? super Iterator<Utterance>, String> uttDiagReprFactory) {
+				return input.trainingParams.get(WordClassifierTrainingParameter.RANDOM_SEED);
+			}
+		},
 		RANK {
 			/*
 			 * (non-Javadoc)
