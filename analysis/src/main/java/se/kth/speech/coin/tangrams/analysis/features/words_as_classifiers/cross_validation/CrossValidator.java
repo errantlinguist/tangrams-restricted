@@ -350,9 +350,11 @@ public final class CrossValidator {
 	@Inject
 	private WordClassInstancesFactory testInstsFactory;
 
-	private final TestSetFactory testSetFactory;
+	private final Function<Map<SessionDataManager, Path>, Stream<Entry<SessionDataManager, WordClassificationData>>> testSetFactory;
 
-	public CrossValidator(final TestSetFactory testSetFactory, final EventDialogueTransformer diagTransformer,
+	public CrossValidator(
+			final Function<Map<SessionDataManager, Path>, Stream<Entry<SessionDataManager, WordClassificationData>>> testSetFactory,
+			final EventDialogueTransformer diagTransformer,
 			final Function<? super ClassificationContext, ? extends EventDialogueClassifier> classifierFactory,
 			final Executor backgroundJobExecutor) {
 		this.testSetFactory = testSetFactory;
