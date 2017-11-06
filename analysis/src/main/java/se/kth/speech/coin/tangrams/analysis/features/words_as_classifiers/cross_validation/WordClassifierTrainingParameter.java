@@ -37,8 +37,8 @@ public enum WordClassifierTrainingParameter {
 		result.put(INSTRUCTOR_UTTERANCE_OBSERVATION_WEIGHT, 1.0);
 		result.put(OTHER_UTTERANCE_OBSERVATION_WEIGHT, 1.0);
 		result.put(EXPECTED_UNIQUE_UTTERANCE_COUNT, 2000);
-		result.put(TRAINING_SET_SIZE_DISCOUNTING_CONSTANT, 0);
 		result.put(RANDOM_SEED, 1L);
+		result.put(TRAINING_SET_SIZE_DISCOUNTING_CONSTANT, 0);
 		assert result.size() == WordClassifierTrainingParameter.values().length;
 		return result;
 	}
