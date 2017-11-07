@@ -17,22 +17,36 @@
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training;
 
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Executor;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.stream.Stream;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import se.kth.speech.coin.tangrams.analysis.GameContext;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
-import weka.classifiers.Classifier;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordClassDiscountingSmoother;
+import weka.classifiers.functions.Logistic;
+import weka.core.Instances;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
  * @since 20 Oct 2017
  *
  */
-public final class IterativeWordLogisticClassifierTrainer<C extends Classifier>
-		implements BiFunction<EventDialogue, GameContext, Function<String, C>> {
+public final class IterativeWordLogisticClassifierTrainer
+		implements BiFunction<EventDialogue, GameContext, Function<String, Logistic>> {
 
-	private final Function<WordClassificationData, ? extends Map<String, C>> decorated;
+	private static final Logger LOGGER = LoggerFactory.getLogger(IterativeWordLogisticClassifierTrainer.class);
+
+	private final Executor backgroundJobExecutor;
 
 	private final AbstractInstanceExtractor instExtractor;
 
@@ -40,13 +54,16 @@ public final class IterativeWordLogisticClassifierTrainer<C extends Classifier>
 
 	private final double positiveExampleWeightFactor;
 
+	private final WordClassDiscountingSmoother smoother;
+
 	private final WordClassificationData trainingData;
 
-	public IterativeWordLogisticClassifierTrainer(
-			final Function<WordClassificationData, ? extends Map<String, C>> decorated,
-			final WordClassificationData trainingData, final AbstractInstanceExtractor instExtractor,
-			final double positiveExampleWeightFactor, final double negativeExampleWeightFactor) {
-		this.decorated = decorated;
+	public IterativeWordLogisticClassifierTrainer(final Executor backgroundJobExecutor,
+			final WordClassDiscountingSmoother smoother, final WordClassificationData trainingData,
+			final AbstractInstanceExtractor instExtractor, final double positiveExampleWeightFactor,
+			final double negativeExampleWeightFactor) {
+		this.backgroundJobExecutor = backgroundJobExecutor;
+		this.smoother = smoother;
 		this.trainingData = trainingData;
 		this.instExtractor = instExtractor;
 		this.positiveExampleWeightFactor = positiveExampleWeightFactor;
@@ -55,11 +72,46 @@ public final class IterativeWordLogisticClassifierTrainer<C extends Classifier>
 	}
 
 	@Override
-	public Function<String, C> apply(final EventDialogue diagToClassify, final GameContext ctx) {
-		final Map<String, C> wordClassifier = decorated.apply(trainingData);
+	public Function<String, Logistic> apply(final EventDialogue diagToClassify, final GameContext ctx) {
+		final Map<String, Logistic> wordClassifier = trainWordClassifiers(trainingData);
 		instExtractor.addTrainingData(diagToClassify, ctx.getHistory(), trainingData, positiveExampleWeightFactor,
 				negativeExampleWeightFactor);
 		return wordClassifier::get;
+	}
+
+	private ConcurrentMap<String, Logistic> apply(final Set<Entry<String, Instances>> classInstances) {
+		final ConcurrentMap<String, Logistic> result = new ConcurrentHashMap<>(classInstances.size());
+		final Stream.Builder<CompletableFuture<Void>> trainingJobs = Stream.builder();
+		for (final Entry<String, Instances> classInstancesEntry : classInstances) {
+			final String className = classInstancesEntry.getKey();
+			LOGGER.debug("Training classifier for class \"{}\".", className);
+			final Instances trainingInsts = classInstancesEntry.getValue();
+			LOGGER.debug("{} instance(s) for class \"{}\".", trainingInsts.size(), className);
+			final CompletableFuture<Void> trainingJob = CompletableFuture.runAsync(() -> {
+				final Logistic classifier = new Logistic();
+				try {
+					classifier.buildClassifier(trainingInsts);
+				} catch (final Exception e) {
+					throw new TrainingException(className, e);
+				}
+				final Logistic oldClassifier = result.put(className, classifier);
+				if (oldClassifier != null) {
+					throw new IllegalArgumentException(
+							String.format("More than one file for word class \"%s\".", className));
+				}
+
+			}, backgroundJobExecutor);
+			trainingJobs.add(trainingJob);
+		}
+		CompletableFuture.allOf(trainingJobs.build().toArray(CompletableFuture[]::new)).join();
+		return result;
+	}
+
+	private ConcurrentMap<String, Logistic> trainWordClassifiers(final WordClassificationData trainingData) {
+		final WordClassificationData smoothedTrainingData = new WordClassificationData(trainingData);
+		final Instances oovInstances = smoother.redistributeMass(smoothedTrainingData);
+		LOGGER.info("{} instance(s) for out-of-vocabulary class.", oovInstances.size());
+		return apply(smoothedTrainingData.getClassInstances().entrySet());
 	}
 
 }

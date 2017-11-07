@@ -212,13 +212,12 @@ enum Training {
 			final EntityFeatureExtractionContextFactory extCtxFactory = appCtx
 					.getBean(EntityFeatureExtractionContextFactory.class);
 			return classificationContext -> {
-				final ParallelizedWordLogisticClassifierTrainer trainer = new ParallelizedWordLogisticClassifierTrainer(
-						classificationContext.getBackgroundJobExecutor(), smoother);
 				final AbstractInstanceExtractor instExtractor = new OnePositiveMaximumNegativeInstanceExtractor(
 						entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory);
 				final Map<WordClassifierTrainingParameter, Object> trainingParams = trainingCtx.getTrainingParams();
-				final IterativeWordLogisticClassifierTrainer<Logistic> iterativeTrainer = new IterativeWordLogisticClassifierTrainer<>(
-						trainer, classificationContext.getTrainingData(), instExtractor,
+				final IterativeWordLogisticClassifierTrainer iterativeTrainer = new IterativeWordLogisticClassifierTrainer(
+						classificationContext.getBackgroundJobExecutor(), smoother,
+						classificationContext.getTrainingData(), instExtractor,
 						(Double) trainingParams
 								.get(WordClassifierTrainingParameter.INTERACTION_DATA_POSITIVE_EXAMPLE_WEIGHT_FACTOR),
 						(Double) trainingParams
@@ -352,14 +351,13 @@ enum Training {
 					.getBean(EntityInstanceAttributeContext.class);
 			final EntityFeatureExtractionContextFactory extCtxFactory = appCtx
 					.getBean(EntityFeatureExtractionContextFactory.class);
-			final ParallelizedWordLogisticClassifierTrainer trainer = new ParallelizedWordLogisticClassifierTrainer(
-					classificationContext.getBackgroundJobExecutor(), smoother);
 
 			final AbstractInstanceExtractor instExtractor = new OnePositiveMaximumNegativeInstanceExtractor(
 					entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory);
 			final Map<WordClassifierTrainingParameter, Object> trainingParams = trainingCtx.getTrainingParams();
-			final IterativeWordLogisticClassifierTrainer<Logistic> iterativeTrainer = new IterativeWordLogisticClassifierTrainer<>(
-					trainer, classificationContext.getTrainingData(), instExtractor,
+			final IterativeWordLogisticClassifierTrainer iterativeTrainer = new IterativeWordLogisticClassifierTrainer(
+					classificationContext.getBackgroundJobExecutor(), smoother, classificationContext.getTrainingData(),
+					instExtractor,
 					(Double) trainingParams
 							.get(WordClassifierTrainingParameter.INTERACTION_DATA_POSITIVE_EXAMPLE_WEIGHT_FACTOR),
 					(Double) trainingParams
