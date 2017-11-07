@@ -50,21 +50,21 @@ import weka.core.Instances;
  */
 public final class WordClassDiscountingSmoother {
 
-	public static final class SmoothedWordClasses {
+	public static final class DiscountedWordClasses {
+
+		private final List<Entry<String, Instances>> discountedClassInsts;
 
 		private final Instances oovInstances;
 
-		private final List<Entry<String, Instances>> smoothedClassInsts;
-
-		private SmoothedWordClasses(final List<Entry<String, Instances>> smoothedClassInsts,
+		private DiscountedWordClasses(final List<Entry<String, Instances>> discountedClassInsts,
 				final Instances oovInstances) {
-			this.smoothedClassInsts = smoothedClassInsts;
+			this.discountedClassInsts = discountedClassInsts;
 			this.oovInstances = oovInstances;
 		}
 
 		/*
 		 * (non-Javadoc)
-		 * 
+		 *
 		 * @see java.lang.Object#equals(java.lang.Object)
 		 */
 		@Override
@@ -75,10 +75,10 @@ public final class WordClassDiscountingSmoother {
 			if (obj == null) {
 				return false;
 			}
-			if (!(obj instanceof SmoothedWordClasses)) {
+			if (!(obj instanceof DiscountedWordClasses)) {
 				return false;
 			}
-			final SmoothedWordClasses other = (SmoothedWordClasses) obj;
+			final DiscountedWordClasses other = (DiscountedWordClasses) obj;
 			if (oovInstances == null) {
 				if (other.oovInstances != null) {
 					return false;
@@ -86,14 +86,21 @@ public final class WordClassDiscountingSmoother {
 			} else if (!oovInstances.equals(other.oovInstances)) {
 				return false;
 			}
-			if (smoothedClassInsts == null) {
-				if (other.smoothedClassInsts != null) {
+			if (discountedClassInsts == null) {
+				if (other.discountedClassInsts != null) {
 					return false;
 				}
-			} else if (!smoothedClassInsts.equals(other.smoothedClassInsts)) {
+			} else if (!discountedClassInsts.equals(other.discountedClassInsts)) {
 				return false;
 			}
 			return true;
+		}
+
+		/**
+		 * @return the smoothedClassInsts
+		 */
+		public List<Entry<String, Instances>> getDiscountedClassInsts() {
+			return discountedClassInsts;
 		}
 
 		/**
@@ -103,16 +110,9 @@ public final class WordClassDiscountingSmoother {
 			return oovInstances;
 		}
 
-		/**
-		 * @return the smoothedClassInsts
-		 */
-		public List<Entry<String, Instances>> getSmoothedClassInsts() {
-			return smoothedClassInsts;
-		}
-
 		/*
 		 * (non-Javadoc)
-		 * 
+		 *
 		 * @see java.lang.Object#hashCode()
 		 */
 		@Override
@@ -120,7 +120,7 @@ public final class WordClassDiscountingSmoother {
 			final int prime = 31;
 			int result = 1;
 			result = prime * result + (oovInstances == null ? 0 : oovInstances.hashCode());
-			result = prime * result + (smoothedClassInsts == null ? 0 : smoothedClassInsts.hashCode());
+			result = prime * result + (discountedClassInsts == null ? 0 : discountedClassInsts.hashCode());
 			return result;
 		}
 
@@ -142,7 +142,7 @@ public final class WordClassDiscountingSmoother {
 		this.minCount = minCount;
 	}
 
-	public SmoothedWordClasses redistributeMass(final WordClassificationData trainingData) {
+	public DiscountedWordClasses redistributeMass(final WordClassificationData trainingData) {
 		final List<Entry<String, Instances>> addendClassInsts = createdAddendClassInstList(trainingData);
 		if (addendClassInsts.isEmpty()) {
 			throw new IllegalArgumentException(
@@ -162,7 +162,7 @@ public final class WordClassDiscountingSmoother {
 		// }
 		// assert !addendClassInsts.isEmpty();
 		final Instances oovInstances = redistributeMass(trainingData, oovClassName, addendClassInsts);
-		return new SmoothedWordClasses(addendClassInsts, oovInstances);
+		return new DiscountedWordClasses(addendClassInsts, oovInstances);
 	}
 
 	private List<Entry<String, Instances>> createdAddendClassInstList(final WordClassificationData trainingData) {

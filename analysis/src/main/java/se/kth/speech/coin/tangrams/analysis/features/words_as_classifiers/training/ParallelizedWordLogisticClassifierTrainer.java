@@ -29,7 +29,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordClassDiscountingSmoother;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordClassDiscountingSmoother.SmoothedWordClasses;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordClassDiscountingSmoother.DiscountedWordClasses;
 import weka.classifiers.functions.Logistic;
 import weka.core.Instances;
 
@@ -56,8 +56,8 @@ public final class ParallelizedWordLogisticClassifierTrainer
 	@Override
 	public ConcurrentMap<String, Logistic> apply(final WordClassificationData trainingData) {
 		final WordClassificationData smoothedTrainingData = new WordClassificationData(trainingData);
-		final SmoothedWordClasses smoothedWordClasses = smoother.redistributeMass(smoothedTrainingData);
-		LOGGER.info("{} instance(s) for out-of-vocabulary class.", smoothedWordClasses.getOovInstances().size());
+		final DiscountedWordClasses discountedWordClasses = smoother.redistributeMass(smoothedTrainingData);
+		LOGGER.info("{} instance(s) for out-of-vocabulary class.", discountedWordClasses.getOovInstances().size());
 		return createWordClassifierMap(smoothedTrainingData.getClassInstances().entrySet());
 	}
 
