@@ -84,6 +84,7 @@ public final class IterativeWordLogisticClassifierTrainer
 				}, backgroundJobExecutor);
 				trainingJobs.add(trainingJob);
 			}
+			// TODO: This blocks until the training is done; Instead, return a future to the caller somehow
 			CompletableFuture.allOf(trainingJobs.build().toArray(CompletableFuture[]::new)).join();
 			return result;
 		}
