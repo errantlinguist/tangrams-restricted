@@ -56,15 +56,15 @@ public final class IterativeWordLogisticClassifierTrainer
 
 	private final WordClassDiscountingSmoother smoother;
 
-	private final WordClassificationData trainingData;
+	private final WordClassificationData totalTrainingData;
 
 	public IterativeWordLogisticClassifierTrainer(final Executor backgroundJobExecutor,
-			final WordClassDiscountingSmoother smoother, final WordClassificationData trainingData,
+			final WordClassDiscountingSmoother smoother, final WordClassificationData initialTrainingData,
 			final AbstractInstanceExtractor instExtractor, final double positiveExampleWeightFactor,
 			final double negativeExampleWeightFactor) {
 		this.backgroundJobExecutor = backgroundJobExecutor;
 		this.smoother = smoother;
-		this.trainingData = trainingData;
+		this.totalTrainingData = initialTrainingData;
 		this.instExtractor = instExtractor;
 		this.positiveExampleWeightFactor = positiveExampleWeightFactor;
 		this.negativeExampleWeightFactor = negativeExampleWeightFactor;
@@ -73,8 +73,8 @@ public final class IterativeWordLogisticClassifierTrainer
 
 	@Override
 	public Function<String, Logistic> apply(final EventDialogue diagToClassify, final GameContext ctx) {
-		final Map<String, Logistic> wordClassifier = trainWordClassifiers(trainingData);
-		instExtractor.addTrainingData(diagToClassify, ctx.getHistory(), trainingData, positiveExampleWeightFactor,
+		final Map<String, Logistic> wordClassifier = trainWordClassifiers(totalTrainingData);
+		instExtractor.addTrainingData(diagToClassify, ctx.getHistory(), totalTrainingData, positiveExampleWeightFactor,
 				negativeExampleWeightFactor);
 		return wordClassifier::get;
 	}
