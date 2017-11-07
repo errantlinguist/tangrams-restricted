@@ -16,23 +16,28 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training;
 
-/**
- * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
- * @since 7 Nov 2017
- *
- */
-public final class TrainingException extends RuntimeException {
+public final class WordClassifierTrainingException extends RuntimeException {
 
 	/**
 	 *
 	 */
-	private static final long serialVersionUID = -5356983052164738826L;
+	private static final long serialVersionUID = -4685752527646143156L;
+
+	private final String classificationName;
 
 	/**
 	 * @param cause
 	 */
-	public TrainingException(final Throwable cause) {
+	public WordClassifierTrainingException(final String classificationName, final Throwable cause) {
 		super(cause);
+		this.classificationName = classificationName;
+	}
+
+	/**
+	 * @return the classificationName
+	 */
+	String getClassificationName() {
+		return classificationName;
 	}
 
 }

@@ -58,6 +58,7 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.traini
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.SizeEstimatingInstancesMapFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.TrainingInstancesFactory;
 import se.kth.speech.nlp.PatternMatchingUtteranceAcceptanceRanker;
+import weka.classifiers.Classifier;
 import weka.classifiers.functions.Logistic;
 
 enum Training {
@@ -161,12 +162,13 @@ enum Training {
 			return classificationContext -> {
 				final ParallelizedWordLogisticClassifierTrainer trainer = new ParallelizedWordLogisticClassifierTrainer(
 						classificationContext.getBackgroundJobExecutor(), smoother);
-				final Function<String, Logistic> wordClassifiers = trainer
-						.apply(classificationContext.getTrainingData())::get;
 				// This classifier is statically-trained, i.e. the word models
 				// used for classification are the same no matter what dialogue
 				// is being classified
-				return new DialogicEventDialogueClassifier((diagToClassify, ctx) -> wordClassifiers,
+				final ConcurrentMap<String, Logistic> wordClassifiers = trainer
+						.apply(classificationContext.getTrainingData());
+				final Function<String, Classifier> wordClassifierGetter = wordClassifiers::get;
+				return new DialogicEventDialogueClassifier((diagToClassify, ctx) -> wordClassifierGetter,
 						fetchCachingUttAcceptanceRanker(trainingCtx), fetchDialogicWordClassFactory(trainingCtx),
 						classificationContext.getReferentConfidenceMapFactory());
 			};
@@ -315,15 +317,15 @@ enum Training {
 		public IsolatedUtteranceEventDialogueClassifier apply(final ClassificationContext classificationContext) {
 			final ApplicationContext appCtx = trainingCtx.getAppCtx();
 			final WordClassDiscountingSmoother smoother = appCtx.getBean(WordClassDiscountingSmoother.class);
-
 			final ParallelizedWordLogisticClassifierTrainer trainer = new ParallelizedWordLogisticClassifierTrainer(
 					classificationContext.getBackgroundJobExecutor(), smoother);
-			final Function<String, Logistic> wordClassifiers = trainer
-					.apply(classificationContext.getTrainingData())::get;
 			// This classifier is statically-trained, i.e. the word models
 			// used for classification are the same no matter what dialogue
 			// is being classified
-			return new IsolatedUtteranceEventDialogueClassifier((diagToClassify, ctx) -> wordClassifiers,
+			final ConcurrentMap<String, Logistic> wordClassifiers = trainer
+					.apply(classificationContext.getTrainingData());
+			final Function<String, Classifier> wordClassifierGetter = wordClassifiers::get;
+			return new IsolatedUtteranceEventDialogueClassifier((diagToClassify, ctx) -> wordClassifierGetter,
 					classificationContext.getReferentConfidenceMapFactory());
 		}
 

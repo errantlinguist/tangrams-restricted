@@ -19,7 +19,6 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialo
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.ToDoubleFunction;
 
@@ -34,6 +33,7 @@ import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.ReferentConfidenceMapFactory;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.EventDialogueContextWordClassifierTrainer;
 import se.kth.speech.coin.tangrams.iristk.GameEvent;
 import weka.classifiers.Classifier;
 
@@ -46,7 +46,7 @@ public final class DialogicEventDialogueClassifier implements EventDialogueClass
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(DialogicEventDialogueClassifier.class);
 
-	private final BiFunction<? super EventDialogue, ? super GameContext, ? extends Function<? super String, ? extends Classifier>> diagWordClassifierFactory;
+	private final EventDialogueContextWordClassifierTrainer<?> diagWordClassifierFactory;
 
 	private final Function<? super Collection<UtteranceRelation>, EntityReferringLanguageWordClasses> entityRefLangExFactory;
 
@@ -54,8 +54,7 @@ public final class DialogicEventDialogueClassifier implements EventDialogueClass
 
 	private final ToDoubleFunction<? super Utterance> uttAcceptanceRanker;
 
-	public DialogicEventDialogueClassifier(
-			final BiFunction<? super EventDialogue, ? super GameContext, ? extends Function<? super String, ? extends Classifier>> diagWordClassifierFactory,
+	public DialogicEventDialogueClassifier(final EventDialogueContextWordClassifierTrainer<?> diagWordClassifierFactory,
 			final ToDoubleFunction<? super Utterance> uttAcceptanceRanker,
 			final Function<? super Collection<UtteranceRelation>, EntityReferringLanguageWordClasses> entityRefLangExFactory,
 			final ReferentConfidenceMapFactory referentConfidenceMapFactory) {

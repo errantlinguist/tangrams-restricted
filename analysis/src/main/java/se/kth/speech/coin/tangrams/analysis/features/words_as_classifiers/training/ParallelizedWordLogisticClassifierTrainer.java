@@ -73,13 +73,14 @@ public final class ParallelizedWordLogisticClassifierTrainer
 				try {
 					classifier.buildClassifier(trainingInsts);
 				} catch (final Exception e) {
-					throw new TrainingException(className, e);
+					throw new WordClassifierTrainingException(className, e);
 				}
 				final Logistic oldClassifier = result.put(className, classifier);
-				if (oldClassifier != null) {
-					throw new IllegalArgumentException(
-							String.format("More than one file for word class \"%s\".", className));
-				}
+				assert oldClassifier == null;
+//				if (oldClassifier != null) {
+//					throw new IllegalArgumentException(
+//							String.format("More than one file for word class \"%s\".", className));
+//				}
 
 			}, backgroundJobExecutor);
 			trainingJobs.add(trainingJob);

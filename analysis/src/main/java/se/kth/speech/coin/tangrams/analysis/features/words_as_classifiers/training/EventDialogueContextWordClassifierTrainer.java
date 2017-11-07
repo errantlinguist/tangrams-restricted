@@ -16,23 +16,21 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training;
 
+import java.util.function.BiFunction;
+import java.util.function.Function;
+
+import se.kth.speech.coin.tangrams.analysis.GameContext;
+import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
+import weka.classifiers.Classifier;
+
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
  * @since 7 Nov 2017
  *
  */
-public final class TrainingException extends RuntimeException {
+public interface EventDialogueContextWordClassifierTrainer<C extends Classifier>
+		extends BiFunction<EventDialogue, GameContext, Function<String, C>> {
 
-	/**
-	 *
-	 */
-	private static final long serialVersionUID = -5356983052164738826L;
-
-	/**
-	 * @param cause
-	 */
-	public TrainingException(final Throwable cause) {
-		super(cause);
-	}
-
+	@Override
+	Function<String, C> apply(final EventDialogue diagToClassify, final GameContext ctx);
 }

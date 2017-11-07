@@ -18,7 +18,6 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialo
 
 import java.util.List;
 import java.util.Optional;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
@@ -29,6 +28,7 @@ import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.ReferentConfidenceMapFactory;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.EventDialogueContextWordClassifierTrainer;
 import weka.classifiers.Classifier;
 
 /**
@@ -38,12 +38,11 @@ import weka.classifiers.Classifier;
  */
 public final class IsolatedUtteranceEventDialogueClassifier implements EventDialogueClassifier {
 
-	private final BiFunction<? super EventDialogue, ? super GameContext, ? extends Function<? super String, ? extends Classifier>> diagWordClassifierFactory;
+	private final EventDialogueContextWordClassifierTrainer<?> diagWordClassifierFactory;
 
 	private final ReferentConfidenceMapFactory referentConfidenceMapFactory;
 
-	public IsolatedUtteranceEventDialogueClassifier(
-			final BiFunction<? super EventDialogue, ? super GameContext, ? extends Function<? super String, ? extends Classifier>> diagWordClassifierFactory,
+	public IsolatedUtteranceEventDialogueClassifier(final EventDialogueContextWordClassifierTrainer<?> diagWordClassifierFactory,
 			final ReferentConfidenceMapFactory referentConfidenceMapFactory) {
 		this.diagWordClassifierFactory = diagWordClassifierFactory;
 		this.referentConfidenceMapFactory = referentConfidenceMapFactory;
