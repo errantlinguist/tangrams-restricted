@@ -101,7 +101,7 @@ public final class OnePositiveMaximumNegativeInstanceExtractor extends AbstractI
 			trainingInsts.add(Pair.of(trainingInst, classValue));
 		}
 		// Add examples
-		trainingData.addObservation(wordClass, trainingInsts.stream());
+		trainingData.addWordClassExamples(wordClass, trainingInsts.stream());
 	}
 
 	@Override
@@ -138,6 +138,7 @@ public final class OnePositiveMaximumNegativeInstanceExtractor extends AbstractI
 
 				wordClassObservations.forEach(
 						token -> wordClassObservationCounts.put(token, wordClassObservationCounts.getInt(token) + 1));
+				trainingData.incrementWordClassObservationCounts(wordClassObservationCounts);
 			}
 			return wordClassObservationCounts;
 		}).orElse(EMPTY_WORD_CLASS_OBSERVATION_MAP);

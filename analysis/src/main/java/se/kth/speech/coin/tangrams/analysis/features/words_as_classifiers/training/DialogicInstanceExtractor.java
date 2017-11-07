@@ -103,7 +103,7 @@ public final class DialogicInstanceExtractor extends AbstractInstanceExtractor {
 			trainingInsts.add(Pair.of(trainingInst, classValue));
 		}
 		// Add examples
-		trainingData.addObservation(wordClass, trainingInsts.stream());
+		trainingData.addWordClassExamples(wordClass, trainingInsts.stream());
 	}
 
 	@Override
@@ -148,7 +148,9 @@ public final class DialogicInstanceExtractor extends AbstractInstanceExtractor {
 							.forEach(langEx -> addWeightedExamples(langEx.getKey(), trainingData, negativeCtxs,
 									langEx.getDoubleValue() * negativeExampleWeightFactor, NEGATIVE_EXAMPLE_LABEL));
 				}
+
 				wordClassObservationCounts = entityRefLangExs.getWordClassObservationCounts();
+				trainingData.incrementWordClassObservationCounts(wordClassObservationCounts);
 			}
 			return wordClassObservationCounts;
 		}).orElse(EMPTY_WORD_CLASS_OBSERVATION_MAP);

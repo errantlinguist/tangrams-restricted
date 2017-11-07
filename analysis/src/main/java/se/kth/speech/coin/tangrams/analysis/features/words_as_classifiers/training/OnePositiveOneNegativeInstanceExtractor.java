@@ -153,7 +153,7 @@ public final class OnePositiveOneNegativeInstanceExtractor extends AbstractInsta
 		final Instance trainingInst = createTokenInstance(classInsts, trainingContext, classValue);
 		trainingInst.setWeight(weight);
 		// Add example
-		trainingData.addObservation(wordClass, Stream.of(Pair.of(trainingInst, classValue)));
+		trainingData.addWordClassExamples(wordClass, Stream.of(Pair.of(trainingInst, classValue)));
 	}
 
 	@Override
@@ -191,6 +191,7 @@ public final class OnePositiveOneNegativeInstanceExtractor extends AbstractInsta
 
 				wordClassObservations.forEach(
 						token -> wordClassObservationCounts.put(token, wordClassObservationCounts.getInt(token) + 1));
+				trainingData.incrementWordClassObservationCounts(wordClassObservationCounts);
 			}
 			return wordClassObservationCounts;
 		}).orElse(EMPTY_WORD_CLASS_OBSERVATION_MAP);

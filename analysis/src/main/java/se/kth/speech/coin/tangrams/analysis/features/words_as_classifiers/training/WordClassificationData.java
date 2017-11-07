@@ -96,7 +96,7 @@ public final class WordClassificationData {
 		return classInstancesFetcher;
 	}
 
-	void addObservation(final String wordClass, final Stream<Entry<Instance, String>> instClassValues) {
+	void addWordClassExamples(final String wordClass, final Stream<Entry<Instance, String>> instClassValues) {
 		final Instances classInstances = classInstancesFetcher.apply(wordClass);
 		instClassValues.forEach(instClassValue -> {
 			final Instance inst = instClassValue.getKey();
@@ -108,11 +108,19 @@ public final class WordClassificationData {
 			final String classValue = instClassValue.getValue();
 			trainingInstanceCounts.put(classValue, trainingInstanceCounts.getInt(classValue) + 1);
 		});
-		classObservationCounts.put(wordClass, classObservationCounts.getInt(wordClass) + 1);
 	}
 
 	Instances fetchWordInstances(final String wordClass) {
 		return classInstancesFetcher.apply(wordClass);
+	}
+
+	void incrementWordClassObservationCounts(final Object2IntMap<String> wordClassObservationCounts) {
+		final Object2IntMap<String> totalWordClassObservationCounts = getClassObservationCounts();
+		wordClassObservationCounts.object2IntEntrySet().forEach(wordClassObservationCount -> {
+			final String wordClass = wordClassObservationCount.getKey();
+			totalWordClassObservationCounts.put(wordClass,
+					totalWordClassObservationCounts.getInt(wordClass) + wordClassObservationCount.getIntValue());
+		});
 	}
 
 }
