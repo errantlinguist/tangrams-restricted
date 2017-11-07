@@ -111,11 +111,10 @@ public final class WordClassificationData {
 	}
 
 	void addWordClassObservationCounts(final Object2IntMap<String> wordClassObservationCounts) {
-		final Object2IntMap<String> totalWordClassObservationCounts = getClassObservationCounts();
 		wordClassObservationCounts.object2IntEntrySet().forEach(wordClassObservationCount -> {
 			final String wordClass = wordClassObservationCount.getKey();
-			totalWordClassObservationCounts.put(wordClass,
-					totalWordClassObservationCounts.getInt(wordClass) + wordClassObservationCount.getIntValue());
+			this.classObservationCounts.put(wordClass,
+					classObservationCounts.getInt(wordClass) + wordClassObservationCount.getIntValue());
 		});
 	}
 
