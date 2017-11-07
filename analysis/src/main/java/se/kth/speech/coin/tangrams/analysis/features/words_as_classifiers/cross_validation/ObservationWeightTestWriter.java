@@ -78,16 +78,21 @@ final class ObservationWeightTestWriter { // NO_UCD (unused code)
 
 	private static class DiscountingTestSetFactoryFactory implements TestSetFactoryFactory {
 
+		private final Random random;
+
 		private final Map<WordClassifierTrainingParameter, Object> trainingParams;
 
-		private DiscountingTestSetFactoryFactory(final Map<WordClassifierTrainingParameter, Object> trainingParams) {
+		private DiscountingTestSetFactoryFactory(final Map<WordClassifierTrainingParameter, Object> trainingParams,
+				final Random random) {
 			this.trainingParams = trainingParams;
+			this.random = random;
 		}
 
 		/*
 		 * (non-Javadoc)
 		 *
-		 * @see java.util.function.BiFunction#apply(java.lang.Object, java.lang.Object)
+		 * @see java.util.function.BiFunction#apply(java.lang.Object,
+		 * java.lang.Object)
 		 */
 		@Override
 		public Function<Map<SessionDataManager, Path>, Stream<Entry<SessionDataManager, WordClassificationData>>> apply(
@@ -99,9 +104,7 @@ final class ObservationWeightTestWriter { // NO_UCD (unused code)
 			if (trainingSetSizeDiscountingConstant == 0) {
 				result = new TestSetFactory(trainingInstsFactory, sessionGameMgrs);
 			} else {
-				// FIXME: Don't create a new Random instance here for each cross-validation test
-				final Random rnd = new Random((Long) trainingParams.get(WordClassifierTrainingParameter.RANDOM_SEED));
-				result = new RandomDiscountingTestSetFactory(trainingInstsFactory, sessionGameMgrs, rnd,
+				result = new RandomDiscountingTestSetFactory(trainingInstsFactory, sessionGameMgrs, random,
 						trainingSetSizeDiscountingConstant);
 			}
 			return result;
@@ -209,9 +212,6 @@ final class ObservationWeightTestWriter { // NO_UCD (unused code)
 								.createDefaultMap();
 
 						// One session for testing, one for training
-						// FIXME: Use same Random instance for all random test iterations so that each
-						// set of cross-validation training sets with discounted size are different for
-						// each iteration
 						final int maxTrainingSetSizeDiscountingFactor = input.getAllSessions().size() - 2;
 						for (int trainingSetSizeDiscountingConstant = 1; trainingSetSizeDiscountingConstant < maxTrainingSetSizeDiscountingFactor; ++trainingSetSizeDiscountingConstant) {
 							LOGGER.info("Performing cross-validation while discounting training set size by {}.",
@@ -220,11 +220,16 @@ final class ObservationWeightTestWriter { // NO_UCD (unused code)
 									defaultTrainingParams);
 							trainingParams.put(WordClassifierTrainingParameter.TRAINING_SET_SIZE_DISCOUNTING_CONSTANT,
 									trainingSetSizeDiscountingConstant);
+							// Use the same Random instance for each random
+							// iteration so that each iteration is at least
+							// somewhat different from the others
+							final Random random = new Random(
+									(Long) trainingParams.get(WordClassifierTrainingParameter.RANDOM_SEED));
 							for (int randomDiscountingIter = 1; randomDiscountingIter <= RANDOM_SESSION_DISCOUNTING_ITERS; ++randomDiscountingIter) {
 								final CombiningBatchJobTester tester = new CombiningBatchJobTester(
 										backgroundJobExecutor, appCtx, writer::write, writer::writeError,
 										testerConfigurator, EXTRACTION_RESULTS_HOOK, UTT_REL_HANDLER, trainingParams,
-										new DiscountingTestSetFactoryFactory(trainingParams));
+										new DiscountingTestSetFactoryFactory(trainingParams, random));
 								tester.accept(input);
 								writer.setSessionTestIterFactor(randomDiscountingIter);
 							}
