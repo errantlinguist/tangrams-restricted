@@ -110,17 +110,17 @@ public final class WordClassificationData {
 		});
 	}
 
-	Instances fetchWordInstances(final String wordClass) {
-		return classInstancesFetcher.apply(wordClass);
-	}
-
-	void incrementWordClassObservationCounts(final Object2IntMap<String> wordClassObservationCounts) {
+	void addWordClassObservationCounts(final Object2IntMap<String> wordClassObservationCounts) {
 		final Object2IntMap<String> totalWordClassObservationCounts = getClassObservationCounts();
 		wordClassObservationCounts.object2IntEntrySet().forEach(wordClassObservationCount -> {
 			final String wordClass = wordClassObservationCount.getKey();
 			totalWordClassObservationCounts.put(wordClass,
 					totalWordClassObservationCounts.getInt(wordClass) + wordClassObservationCount.getIntValue());
 		});
+	}
+
+	Instances fetchWordInstances(final String wordClass) {
+		return classInstancesFetcher.apply(wordClass);
 	}
 
 }

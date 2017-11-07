@@ -150,7 +150,7 @@ public final class DialogicInstanceExtractor extends AbstractInstanceExtractor {
 				}
 
 				wordClassObservationCounts = entityRefLangExs.getWordClassObservationCounts();
-				trainingData.incrementWordClassObservationCounts(wordClassObservationCounts);
+				trainingData.addWordClassObservationCounts(wordClassObservationCounts);
 			}
 			return wordClassObservationCounts;
 		}).orElse(EMPTY_WORD_CLASS_OBSERVATION_MAP);

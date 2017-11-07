@@ -138,7 +138,7 @@ public final class OnePositiveMaximumNegativeInstanceExtractor extends AbstractI
 
 				wordClassObservations.forEach(
 						token -> wordClassObservationCounts.put(token, wordClassObservationCounts.getInt(token) + 1));
-				trainingData.incrementWordClassObservationCounts(wordClassObservationCounts);
+				trainingData.addWordClassObservationCounts(wordClassObservationCounts);
 			}
 			return wordClassObservationCounts;
 		}).orElse(EMPTY_WORD_CLASS_OBSERVATION_MAP);

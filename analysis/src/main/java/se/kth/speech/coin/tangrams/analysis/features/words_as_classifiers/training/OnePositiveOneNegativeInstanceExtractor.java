@@ -191,7 +191,7 @@ public final class OnePositiveOneNegativeInstanceExtractor extends AbstractInsta
 
 				wordClassObservations.forEach(
 						token -> wordClassObservationCounts.put(token, wordClassObservationCounts.getInt(token) + 1));
-				trainingData.incrementWordClassObservationCounts(wordClassObservationCounts);
+				trainingData.addWordClassObservationCounts(wordClassObservationCounts);
 			}
 			return wordClassObservationCounts;
 		}).orElse(EMPTY_WORD_CLASS_OBSERVATION_MAP);
