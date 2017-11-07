@@ -89,7 +89,7 @@ enum Training {
 		@Override
 		public Function<ClassificationContext, EventDialogueClassifier> getClassifierFactory(
 				final TrainingContext trainingCtx) {
-			return createSimpleClassifierFactory(trainingCtx);
+			return new SimpleClassifierFactory(trainingCtx);
 		}
 	},
 	ALL_NEG_ITERATIVE(1) {
@@ -121,7 +121,7 @@ enum Training {
 		@Override
 		public Function<ClassificationContext, EventDialogueClassifier> getClassifierFactory(
 				final TrainingContext trainingCtx) {
-			return createSimpleIterativeClassifierFactory(trainingCtx);
+			return new SimpleIterativeClassifierFactory(trainingCtx);
 		}
 	},
 	DIALOGIC(1) {
@@ -260,7 +260,7 @@ enum Training {
 		@Override
 		public Function<ClassificationContext, EventDialogueClassifier> getClassifierFactory(
 				final TrainingContext trainingCtx) {
-			return createSimpleClassifierFactory(trainingCtx);
+			return new SimpleClassifierFactory(trainingCtx);
 		}
 	},
 	ONE_NEG_ITERATIVE(5) {
@@ -293,10 +293,81 @@ enum Training {
 		@Override
 		public Function<ClassificationContext, EventDialogueClassifier> getClassifierFactory(
 				final TrainingContext trainingCtx) {
-			return createSimpleIterativeClassifierFactory(trainingCtx);
+			return new SimpleIterativeClassifierFactory(trainingCtx);
 		}
 
 	};
+
+	private static class SimpleClassifierFactory implements Function<ClassificationContext, EventDialogueClassifier> {
+
+		private final TrainingContext trainingCtx;
+
+		private SimpleClassifierFactory(final TrainingContext trainingCtx) {
+			this.trainingCtx = trainingCtx;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see java.util.function.Function#apply(java.lang.Object)
+		 */
+		@Override
+		public EventDialogueClassifier apply(final ClassificationContext classificationContext) {
+			final ApplicationContext appCtx = trainingCtx.getAppCtx();
+			final WordClassDiscountingSmoother smoother = appCtx.getBean(WordClassDiscountingSmoother.class);
+
+			final ParallelizedWordLogisticClassifierTrainer trainer = new ParallelizedWordLogisticClassifierTrainer(
+					classificationContext.getBackgroundJobExecutor(), smoother);
+			final Function<String, Logistic> wordClassifiers = trainer
+					.apply(classificationContext.getTrainingData())::get;
+			// This classifier is statically-trained, i.e. the word models
+			// used for classification are the same no matter what dialogue
+			// is being classified
+			return new IsolatedUtteranceEventDialogueClassifier((diagToClassify, ctx) -> wordClassifiers,
+					classificationContext.getReferentConfidenceMapFactory());
+		}
+
+	}
+
+	private static class SimpleIterativeClassifierFactory
+			implements Function<ClassificationContext, EventDialogueClassifier> {
+
+		private final TrainingContext trainingCtx;
+
+		private SimpleIterativeClassifierFactory(final TrainingContext trainingCtx) {
+			this.trainingCtx = trainingCtx;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see java.util.function.Function#apply(java.lang.Object)
+		 */
+		@Override
+		public EventDialogueClassifier apply(final ClassificationContext classificationContext) {
+			final ApplicationContext appCtx = trainingCtx.getAppCtx();
+			final WordClassDiscountingSmoother smoother = appCtx.getBean(WordClassDiscountingSmoother.class);
+			final EntityInstanceAttributeContext entityInstAttrCtx = appCtx
+					.getBean(EntityInstanceAttributeContext.class);
+			final EntityFeatureExtractionContextFactory extCtxFactory = appCtx
+					.getBean(EntityFeatureExtractionContextFactory.class);
+			final ParallelizedWordLogisticClassifierTrainer trainer = new ParallelizedWordLogisticClassifierTrainer(
+					classificationContext.getBackgroundJobExecutor(), smoother);
+
+			final AbstractInstanceExtractor instExtractor = new OnePositiveMaximumNegativeInstanceExtractor(
+					entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory);
+			final Map<WordClassifierTrainingParameter, Object> trainingParams = trainingCtx.getTrainingParams();
+			final IterativeWordLogisticClassifierTrainer<Logistic> iterativeTrainer = new IterativeWordLogisticClassifierTrainer<>(
+					trainer, classificationContext.getTrainingData(), instExtractor,
+					(Double) trainingParams
+							.get(WordClassifierTrainingParameter.INTERACTION_DATA_POSITIVE_EXAMPLE_WEIGHT_FACTOR),
+					(Double) trainingParams
+							.get(WordClassifierTrainingParameter.INTERACTION_DATA_NEGATIVE_EXAMPLE_WEIGHT_FACTOR));
+			return new IsolatedUtteranceEventDialogueClassifier(iterativeTrainer,
+					classificationContext.getReferentConfidenceMapFactory());
+		}
+
+	}
 
 	/**
 	 * <strong>NOTE:</strong> This uses {@link TrainingContext} as keys because
@@ -350,48 +421,6 @@ enum Training {
 		chain.addAll(diagTransformers);
 		final ChainedEventDialogueTransformer chainedTransformer = new ChainedEventDialogueTransformer(chain);
 		return new CachingEventDialogueTransformer(createTransformedDialogueCache(chainedTransformer));
-	}
-
-	private static Function<ClassificationContext, EventDialogueClassifier> createSimpleClassifierFactory(
-			final TrainingContext trainingCtx) {
-		final ApplicationContext appCtx = trainingCtx.getAppCtx();
-		final WordClassDiscountingSmoother smoother = appCtx.getBean(WordClassDiscountingSmoother.class);
-		return classificationContext -> {
-			final ParallelizedWordLogisticClassifierTrainer trainer = new ParallelizedWordLogisticClassifierTrainer(
-					classificationContext.getBackgroundJobExecutor(), smoother);
-			final Function<String, Logistic> wordClassifiers = trainer
-					.apply(classificationContext.getTrainingData())::get;
-			// This classifier is statically-trained, i.e. the word models
-			// used for classification are the same no matter what dialogue
-			// is being classified
-			return new IsolatedUtteranceEventDialogueClassifier((diagToClassify, ctx) -> wordClassifiers,
-					classificationContext.getReferentConfidenceMapFactory());
-		};
-	}
-
-	private static Function<ClassificationContext, EventDialogueClassifier> createSimpleIterativeClassifierFactory(
-			final TrainingContext trainingCtx) {
-		final ApplicationContext appCtx = trainingCtx.getAppCtx();
-		final WordClassDiscountingSmoother smoother = appCtx.getBean(WordClassDiscountingSmoother.class);
-		final EntityInstanceAttributeContext entityInstAttrCtx = appCtx.getBean(EntityInstanceAttributeContext.class);
-		final EntityFeatureExtractionContextFactory extCtxFactory = appCtx
-				.getBean(EntityFeatureExtractionContextFactory.class);
-		return classificationContext -> {
-			final ParallelizedWordLogisticClassifierTrainer trainer = new ParallelizedWordLogisticClassifierTrainer(
-					classificationContext.getBackgroundJobExecutor(), smoother);
-
-			final AbstractInstanceExtractor instExtractor = new OnePositiveMaximumNegativeInstanceExtractor(
-					entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory);
-			final Map<WordClassifierTrainingParameter, Object> trainingParams = trainingCtx.getTrainingParams();
-			final IterativeWordLogisticClassifierTrainer<Logistic> iterativeTrainer = new IterativeWordLogisticClassifierTrainer<>(
-					trainer, classificationContext.getTrainingData(), instExtractor,
-					(Double) trainingParams
-							.get(WordClassifierTrainingParameter.INTERACTION_DATA_POSITIVE_EXAMPLE_WEIGHT_FACTOR),
-					(Double) trainingParams
-							.get(WordClassifierTrainingParameter.INTERACTION_DATA_NEGATIVE_EXAMPLE_WEIGHT_FACTOR));
-			return new IsolatedUtteranceEventDialogueClassifier(iterativeTrainer,
-					classificationContext.getReferentConfidenceMapFactory());
-		};
 	}
 
 	private static LoadingCache<EventDialogue, EventDialogue> createTransformedDialogueCache(
