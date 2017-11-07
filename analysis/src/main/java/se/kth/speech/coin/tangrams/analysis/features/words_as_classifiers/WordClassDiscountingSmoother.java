@@ -67,8 +67,7 @@ public final class WordClassDiscountingSmoother {
 	}
 
 	public Instances redistributeMass(final WordClassificationData trainingData) {
-		final List<Entry<String, Instances>> addendClassInsts = createdAddendClassInstList(trainingData,
-				oovClassName);
+		final List<Entry<String, Instances>> addendClassInsts = createdAddendClassInstList(trainingData);
 		if (addendClassInsts.isEmpty()) {
 			throw new IllegalArgumentException(
 					String.format("Could not find any word classes with fewer than %s instance(s).", minCount));
@@ -89,7 +88,7 @@ public final class WordClassDiscountingSmoother {
 		return redistributeMass(trainingData, oovClassName, addendClassInsts);
 	}
 
-	private List<Entry<String, Instances>> createdAddendClassInstList(final WordClassificationData trainingData, final String augendClassName) {
+	private List<Entry<String, Instances>> createdAddendClassInstList(final WordClassificationData trainingData) {
 		final List<Entry<String, Instances>> result = new ArrayList<>();
 
 		final Map<String, Instances> classInsts = trainingData.getClassInstances();
@@ -100,7 +99,7 @@ public final class WordClassDiscountingSmoother {
 			if (count < minCount) {
 				final String className = observationCount.getKey();
 				LOGGER.debug("Class \"{}\" has fewer than {} instances; Will redistribute to \"{}\".", className,
-						minCount, augendClassName);
+						minCount, oovClassName);
 				result.add(Pair.of(className, classInsts.remove(className)));
 				observationCountIter.remove();
 			}
