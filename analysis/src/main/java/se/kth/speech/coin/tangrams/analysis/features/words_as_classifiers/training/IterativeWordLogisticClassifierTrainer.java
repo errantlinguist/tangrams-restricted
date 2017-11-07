@@ -44,6 +44,51 @@ import weka.core.Instances;
 public final class IterativeWordLogisticClassifierTrainer
 		implements BiFunction<EventDialogue, GameContext, Function<String, Logistic>> {
 
+	private static class AsynchronousTrainer
+			implements Function<Set<Entry<String, Instances>>, ConcurrentMap<String, Logistic>> {
+
+		private final Executor backgroundJobExecutor;
+
+		private AsynchronousTrainer(final Executor backgroundJobExecutor) {
+			this.backgroundJobExecutor = backgroundJobExecutor;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see java.util.function.Function#apply(java.lang.Object,
+		 * java.lang.Object)
+		 */
+		@Override
+		public ConcurrentMap<String, Logistic> apply(final Set<Entry<String, Instances>> classInstances) {
+			final ConcurrentMap<String, Logistic> result = new ConcurrentHashMap<>(classInstances.size());
+			final Stream.Builder<CompletableFuture<Void>> trainingJobs = Stream.builder();
+			for (final Entry<String, Instances> classInstancesEntry : classInstances) {
+				final String className = classInstancesEntry.getKey();
+				LOGGER.debug("Training classifier for class \"{}\".", className);
+				final Instances trainingInsts = classInstancesEntry.getValue();
+				LOGGER.debug("{} instance(s) for class \"{}\".", trainingInsts.size(), className);
+				final CompletableFuture<Void> trainingJob = CompletableFuture.runAsync(() -> {
+					final Logistic classifier = new Logistic();
+					try {
+						classifier.buildClassifier(trainingInsts);
+					} catch (final Exception e) {
+						throw new TrainingException(className, e);
+					}
+					final Logistic oldClassifier = result.put(className, classifier);
+					if (oldClassifier != null) {
+						throw new IllegalArgumentException(
+								String.format("More than one file for word class \"%s\".", className));
+					}
+
+				}, backgroundJobExecutor);
+				trainingJobs.add(trainingJob);
+			}
+			CompletableFuture.allOf(trainingJobs.build().toArray(CompletableFuture[]::new)).join();
+			return result;
+		}
+	}
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(IterativeWordLogisticClassifierTrainer.class);
 
 	private final Executor backgroundJobExecutor;
@@ -79,39 +124,12 @@ public final class IterativeWordLogisticClassifierTrainer
 		return wordClassifier::get;
 	}
 
-	private ConcurrentMap<String, Logistic> trainWordClassifiers(final Set<Entry<String, Instances>> classInstances) {
-		final ConcurrentMap<String, Logistic> result = new ConcurrentHashMap<>(classInstances.size());
-		final Stream.Builder<CompletableFuture<Void>> trainingJobs = Stream.builder();
-		for (final Entry<String, Instances> classInstancesEntry : classInstances) {
-			final String className = classInstancesEntry.getKey();
-			LOGGER.debug("Training classifier for class \"{}\".", className);
-			final Instances trainingInsts = classInstancesEntry.getValue();
-			LOGGER.debug("{} instance(s) for class \"{}\".", trainingInsts.size(), className);
-			final CompletableFuture<Void> trainingJob = CompletableFuture.runAsync(() -> {
-				final Logistic classifier = new Logistic();
-				try {
-					classifier.buildClassifier(trainingInsts);
-				} catch (final Exception e) {
-					throw new TrainingException(className, e);
-				}
-				final Logistic oldClassifier = result.put(className, classifier);
-				if (oldClassifier != null) {
-					throw new IllegalArgumentException(
-							String.format("More than one file for word class \"%s\".", className));
-				}
-
-			}, backgroundJobExecutor);
-			trainingJobs.add(trainingJob);
-		}
-		CompletableFuture.allOf(trainingJobs.build().toArray(CompletableFuture[]::new)).join();
-		return result;
-	}
-
 	private ConcurrentMap<String, Logistic> trainWordClassifiers(final WordClassificationData trainingData) {
 		final WordClassificationData smoothedTrainingData = new WordClassificationData(trainingData);
 		final Instances oovInstances = smoother.redistributeMass(smoothedTrainingData);
 		LOGGER.debug("{} instance(s) for out-of-vocabulary class.", oovInstances.size());
-		return trainWordClassifiers(smoothedTrainingData.getClassInstances().entrySet());
+		return new AsynchronousTrainer(backgroundJobExecutor)
+				.apply(smoothedTrainingData.getClassInstances().entrySet());
 	}
 
 }
