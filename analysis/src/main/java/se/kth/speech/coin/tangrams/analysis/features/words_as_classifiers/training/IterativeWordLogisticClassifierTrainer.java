@@ -27,13 +27,17 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.collect.Sets;
+
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import se.kth.speech.coin.tangrams.analysis.GameContext;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordClassDiscountingSmoother;
@@ -51,15 +55,28 @@ public final class IterativeWordLogisticClassifierTrainer
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(IterativeWordLogisticClassifierTrainer.class);
 
+	private static Set<String> createSmoothedWordClassSet(final SmoothedWordClasses smoothedWordClasses) {
+		final List<Entry<String, Instances>> smoothedWordClassInsts = smoothedWordClasses.getSmoothedClassInsts();
+		return smoothedWordClassInsts.stream().map(Entry::getKey)
+				.collect(Collectors.toCollection(() -> Sets.newHashSetWithExpectedSize(smoothedWordClassInsts.size())));
+	}
+
 	private final Executor backgroundJobExecutor;
+
+	private final AbstractInstanceExtractor instExtractor;
 
 	/**
 	 * The {@link CompletableFuture future} of the {@link Map} of word
 	 * classifiers to use for the next dialogue being classified.
 	 */
-	private CompletableFuture<ConcurrentMap<String, Logistic>> futureWordClassifiers;
+	private final CompletableFuture<ConcurrentMap<String, Logistic>> lastFutureWordClassifiers;
 
-	private final AbstractInstanceExtractor instExtractor;
+	/**
+	 * The obsevation counts for the word classes which were left out for
+	 * smoothing in the current word classifiers for the next dialogue to
+	 * classify.
+	 */
+	private final Object2IntMap<String> lastSmoothedWordClassObservationCounts;
 
 	private final double negativeExampleWeightFactor;
 
@@ -76,7 +93,11 @@ public final class IterativeWordLogisticClassifierTrainer
 		this.backgroundJobExecutor = backgroundJobExecutor;
 		this.smoother = smoother;
 		totalTrainingData = initialTrainingData;
-		futureWordClassifiers = trainWordClassifiers(totalTrainingData);
+
+		final Entry<CompletableFuture<ConcurrentMap<String, Logistic>>, Object2IntMap<String>> wordClassifierTrainingResults = trainWordClassifiers(
+				totalTrainingData);
+		lastFutureWordClassifiers = wordClassifierTrainingResults.getKey();
+		lastSmoothedWordClassObservationCounts = wordClassifierTrainingResults.getValue();
 
 		this.instExtractor = instExtractor;
 		this.positiveExampleWeightFactor = positiveExampleWeightFactor;
@@ -85,20 +106,31 @@ public final class IterativeWordLogisticClassifierTrainer
 
 	@Override
 	public Function<String, Logistic> apply(final EventDialogue diagToClassify, final GameContext ctx) {
-		Function<String, Logistic> result = null;
-		synchronized (futureWordClassifiers) {
+		ConcurrentMap<String, Logistic> wordClassifiers = null;
+		synchronized (lastFutureWordClassifiers) {
 			try {
-				final ConcurrentMap<String, Logistic> wordClassifiers = futureWordClassifiers.get();
-				// Return the completed map of all classifiers to the caller of
-				// this
-				// method so that the given dialogue can be classified
-				result = wordClassifiers::get;
+				wordClassifiers = lastFutureWordClassifiers.get();
 			} catch (InterruptedException | ExecutionException e) {
 				throw new TrainingException(e);
 			}
-			final Object2IntMap<String> dialogueWordObservationCounts = instExtractor.addTrainingData(diagToClassify,
-					ctx.getHistory(), totalTrainingData, positiveExampleWeightFactor, negativeExampleWeightFactor);
-			futureWordClassifiers = trainWordClassifiers(totalTrainingData);
+		}
+		// Return the completed map of all classifiers to the caller of
+		// this
+		// method so that the given dialogue can be classified
+		final Function<String, Logistic> result = wordClassifiers::get;
+		updateWordClassifierMap(wordClassifiers, diagToClassify, ctx);
+		return result;
+	}
+
+	private Object2IntMap<String> createSmoothedWordClassObservationCountMap(
+			final SmoothedWordClasses smoothedWordClasses) {
+		final Object2IntMap<String> wordClassObservationCounts = totalTrainingData.getClassObservationCounts();
+		final List<Entry<String, Instances>> smoothedWordClassInsts = smoothedWordClasses.getSmoothedClassInsts();
+		final Object2IntMap<String> result = new Object2IntOpenHashMap<>(smoothedWordClassInsts.size());
+		for (final Entry<String, Instances> entry : smoothedWordClassInsts) {
+			final String wordClass = entry.getKey();
+			final int observationCount = wordClassObservationCounts.getInt(wordClass);
+			result.put(wordClass, observationCount);
 		}
 		return result;
 	}
@@ -156,12 +188,65 @@ public final class IterativeWordLogisticClassifierTrainer
 		return result;
 	}
 
-	private CompletableFuture<ConcurrentMap<String, Logistic>> trainWordClassifiers(
+	private Entry<CompletableFuture<ConcurrentMap<String, Logistic>>, Object2IntMap<String>> trainWordClassifiers(
 			final WordClassificationData unsmoothedTrainingData) {
 		final WordClassificationData smoothedTrainingData = new WordClassificationData(unsmoothedTrainingData);
 		final SmoothedWordClasses smoothedWordClasses = smoother.redistributeMass(smoothedTrainingData);
+		final Object2IntMap<String> smoothedWordClassObservationCounts = createSmoothedWordClassObservationCountMap(
+				smoothedWordClasses);
 		LOGGER.debug("{} instance(s) for out-of-vocabulary class.", smoothedWordClasses.getOovInstances().size());
-		return createWordClassifierMap(smoothedTrainingData.getClassInstances().entrySet());
+		return Pair.of(createWordClassifierMap(smoothedTrainingData.getClassInstances().entrySet()),
+				smoothedWordClassObservationCounts);
+	}
+
+	private Stream<CompletableFuture<Void>> updateWordClassifierMap(
+			final ConcurrentMap<String, Logistic> currentWordClassifiers, final EventDialogue diagToClassify,
+			final GameContext ctx) {
+		// Object2IntMap<String> oldObservationCounts = new
+		// Object2IntOpenHashMap<>(totalTrainingData.getClassObservationCounts());
+
+		final Object2IntMap<String> dialogueWordObservationCounts = instExtractor.addTrainingData(diagToClassify,
+				ctx.getHistory(), totalTrainingData, positiveExampleWeightFactor, negativeExampleWeightFactor);
+		final WordClassificationData smoothedTrainingData = new WordClassificationData(totalTrainingData);
+		final SmoothedWordClasses smoothingResults = smoother.redistributeMass(smoothedTrainingData);
+		LOGGER.debug("{} instance(s) for out-of-vocabulary class.", smoothingResults.getOovInstances().size());
+		final Set<String> smoothedWordClasses = createSmoothedWordClassSet(smoothingResults);
+		// The new counts can never be less than the old ones or have fewer word
+		// classes because word classes are added as they are observed
+		final Object2IntMap<String> newObservationCounts = smoothedTrainingData.getClassObservationCounts();
+
+		final Map<String, Instances> smoothedClassInstances = smoothedTrainingData.getClassInstances();
+		final Stream.Builder<CompletableFuture<Void>> trainingJobs = Stream.builder();
+		for (final Object2IntMap.Entry<String> dialogueWordObservationCount : dialogueWordObservationCounts
+				.object2IntEntrySet()) {
+			final String wordClass = dialogueWordObservationCount.getKey();
+			final boolean wasUsedForSmoothing = smoothedWordClasses.contains(wordClass);
+			if (!wasUsedForSmoothing) {
+				LOGGER.debug("Training classifier for class \"{}\".", wordClass);
+				final Instances trainingInsts = smoothedClassInstances.get(wordClass);
+				LOGGER.debug("{} instance(s) for class \"{}\".", trainingInsts.size(), wordClass);
+				final CompletableFuture<Void> trainingJob = CompletableFuture.runAsync(() -> {
+					final Logistic classifier = new Logistic();
+					try {
+						classifier.buildClassifier(trainingInsts);
+					} catch (final Exception e) {
+						throw new WordClassifierTrainingException(wordClass, e);
+					}
+					final Logistic oldClassifier = currentWordClassifiers.put(wordClass, classifier);
+					assert oldClassifier != null;
+					// if (oldClassifier != null) {
+					// throw new IllegalArgumentException(
+					// String.format("More than one file for word class
+					// \"%s\".",
+					// className));
+					// }
+
+				}, backgroundJobExecutor);
+				trainingJobs.add(trainingJob);
+			}
+		}
+
+		return trainingJobs.build();
 	}
 
 }
