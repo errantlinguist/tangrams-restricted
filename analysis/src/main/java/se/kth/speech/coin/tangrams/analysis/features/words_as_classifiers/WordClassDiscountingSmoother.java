@@ -67,7 +67,7 @@ public final class WordClassDiscountingSmoother {
 	}
 
 	public Instances redistributeMass(final WordClassificationData trainingData) {
-		final List<Entry<String, Instances>> addendClassInsts = createdAddendClassInstList(trainingData, minCount,
+		final List<Entry<String, Instances>> addendClassInsts = createdAddendClassInstList(trainingData,
 				oovClassName);
 		if (addendClassInsts.isEmpty()) {
 			throw new IllegalArgumentException(
@@ -89,8 +89,7 @@ public final class WordClassDiscountingSmoother {
 		return redistributeMass(trainingData, oovClassName, addendClassInsts);
 	}
 
-	private List<Entry<String, Instances>> createdAddendClassInstList(final WordClassificationData trainingData,
-			final int minCount, final String augendClassName) {
+	private List<Entry<String, Instances>> createdAddendClassInstList(final WordClassificationData trainingData, final String augendClassName) {
 		final List<Entry<String, Instances>> result = new ArrayList<>();
 
 		final Map<String, Instances> classInsts = trainingData.getClassInstances();
