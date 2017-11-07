@@ -64,7 +64,7 @@ public final class IterativeWordLogisticClassifierTrainer
 			final double negativeExampleWeightFactor) {
 		this.backgroundJobExecutor = backgroundJobExecutor;
 		this.smoother = smoother;
-		this.totalTrainingData = initialTrainingData;
+		totalTrainingData = initialTrainingData;
 		this.instExtractor = instExtractor;
 		this.positiveExampleWeightFactor = positiveExampleWeightFactor;
 		this.negativeExampleWeightFactor = negativeExampleWeightFactor;
@@ -79,7 +79,7 @@ public final class IterativeWordLogisticClassifierTrainer
 		return wordClassifier::get;
 	}
 
-	private ConcurrentMap<String, Logistic> apply(final Set<Entry<String, Instances>> classInstances) {
+	private ConcurrentMap<String, Logistic> trainWordClassifiers(final Set<Entry<String, Instances>> classInstances) {
 		final ConcurrentMap<String, Logistic> result = new ConcurrentHashMap<>(classInstances.size());
 		final Stream.Builder<CompletableFuture<Void>> trainingJobs = Stream.builder();
 		for (final Entry<String, Instances> classInstancesEntry : classInstances) {
@@ -111,7 +111,7 @@ public final class IterativeWordLogisticClassifierTrainer
 		final WordClassificationData smoothedTrainingData = new WordClassificationData(trainingData);
 		final Instances oovInstances = smoother.redistributeMass(smoothedTrainingData);
 		LOGGER.debug("{} instance(s) for out-of-vocabulary class.", oovInstances.size());
-		return apply(smoothedTrainingData.getClassInstances().entrySet());
+		return trainWordClassifiers(smoothedTrainingData.getClassInstances().entrySet());
 	}
 
 }
