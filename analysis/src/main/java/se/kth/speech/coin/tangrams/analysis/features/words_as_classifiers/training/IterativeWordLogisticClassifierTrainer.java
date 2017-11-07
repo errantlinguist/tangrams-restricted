@@ -110,7 +110,7 @@ public final class IterativeWordLogisticClassifierTrainer
 	private ConcurrentMap<String, Logistic> trainWordClassifiers(final WordClassificationData trainingData) {
 		final WordClassificationData smoothedTrainingData = new WordClassificationData(trainingData);
 		final Instances oovInstances = smoother.redistributeMass(smoothedTrainingData);
-		LOGGER.info("{} instance(s) for out-of-vocabulary class.", oovInstances.size());
+		LOGGER.debug("{} instance(s) for out-of-vocabulary class.", oovInstances.size());
 		return apply(smoothedTrainingData.getClassInstances().entrySet());
 	}
 
