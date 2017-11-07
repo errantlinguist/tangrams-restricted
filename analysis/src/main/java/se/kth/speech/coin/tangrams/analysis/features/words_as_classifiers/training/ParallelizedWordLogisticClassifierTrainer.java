@@ -29,6 +29,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordClassDiscountingSmoother;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordClassDiscountingSmoother.SmoothedWordClasses;
 import weka.classifiers.functions.Logistic;
 import weka.core.Instances;
 
@@ -55,8 +56,8 @@ public final class ParallelizedWordLogisticClassifierTrainer
 	@Override
 	public ConcurrentMap<String, Logistic> apply(final WordClassificationData trainingData) {
 		final WordClassificationData smoothedTrainingData = new WordClassificationData(trainingData);
-		final Instances oovInstances = smoother.redistributeMass(smoothedTrainingData);
-		LOGGER.info("{} instance(s) for out-of-vocabulary class.", oovInstances.size());
+		final SmoothedWordClasses smoothedWordClasses = smoother.redistributeMass(smoothedTrainingData);
+		LOGGER.info("{} instance(s) for out-of-vocabulary class.", smoothedWordClasses.getOovInstances().size());
 		return apply(smoothedTrainingData.getClassInstances().entrySet());
 	}
 
@@ -77,10 +78,11 @@ public final class ParallelizedWordLogisticClassifierTrainer
 				}
 				final Logistic oldClassifier = result.put(className, classifier);
 				assert oldClassifier == null;
-//				if (oldClassifier != null) {
-//					throw new IllegalArgumentException(
-//							String.format("More than one file for word class \"%s\".", className));
-//				}
+				// if (oldClassifier != null) {
+				// throw new IllegalArgumentException(
+				// String.format("More than one file for word class \"%s\".",
+				// className));
+				// }
 
 			}, backgroundJobExecutor);
 			trainingJobs.add(trainingJob);

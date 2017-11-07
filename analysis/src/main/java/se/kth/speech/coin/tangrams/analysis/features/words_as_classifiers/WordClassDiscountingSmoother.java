@@ -50,6 +50,34 @@ import weka.core.Instances;
  */
 public final class WordClassDiscountingSmoother {
 
+	public static final class SmoothedWordClasses {
+
+		private final Instances oovInstances;
+
+		private final List<Entry<String, Instances>> smoothedClassInsts;
+
+		private SmoothedWordClasses(final List<Entry<String, Instances>> smoothedClassInsts,
+				final Instances oovInstances) {
+			this.smoothedClassInsts = smoothedClassInsts;
+			this.oovInstances = oovInstances;
+		}
+
+		/**
+		 * @return the oovInstances
+		 */
+		public Instances getOovInstances() {
+			return oovInstances;
+		}
+
+		/**
+		 * @return the smoothedClassInsts
+		 */
+		public List<Entry<String, Instances>> getSmoothedClassInsts() {
+			return smoothedClassInsts;
+		}
+
+	}
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(WordClassDiscountingSmoother.class);
 
 	@Inject
@@ -66,7 +94,7 @@ public final class WordClassDiscountingSmoother {
 		this.minCount = minCount;
 	}
 
-	public Instances redistributeMass(final WordClassificationData trainingData) {
+	public SmoothedWordClasses redistributeMass(final WordClassificationData trainingData) {
 		final List<Entry<String, Instances>> addendClassInsts = createdAddendClassInstList(trainingData);
 		if (addendClassInsts.isEmpty()) {
 			throw new IllegalArgumentException(
@@ -85,7 +113,8 @@ public final class WordClassDiscountingSmoother {
 		// minCount, freqToDiscount);
 		// }
 		// assert !addendClassInsts.isEmpty();
-		return redistributeMass(trainingData, oovClassName, addendClassInsts);
+		final Instances oovInstances = redistributeMass(trainingData, oovClassName, addendClassInsts);
+		return new SmoothedWordClasses(addendClassInsts, oovInstances);
 	}
 
 	private List<Entry<String, Instances>> createdAddendClassInstList(final WordClassificationData trainingData) {
