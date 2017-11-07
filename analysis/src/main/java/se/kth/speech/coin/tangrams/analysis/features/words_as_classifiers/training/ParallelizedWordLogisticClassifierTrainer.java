@@ -58,10 +58,11 @@ public final class ParallelizedWordLogisticClassifierTrainer
 		final WordClassificationData smoothedTrainingData = new WordClassificationData(trainingData);
 		final SmoothedWordClasses smoothedWordClasses = smoother.redistributeMass(smoothedTrainingData);
 		LOGGER.info("{} instance(s) for out-of-vocabulary class.", smoothedWordClasses.getOovInstances().size());
-		return apply(smoothedTrainingData.getClassInstances().entrySet());
+		return createWordClassifierMap(smoothedTrainingData.getClassInstances().entrySet());
 	}
 
-	private ConcurrentMap<String, Logistic> apply(final Set<Entry<String, Instances>> classInstances) {
+	private ConcurrentMap<String, Logistic> createWordClassifierMap(
+			final Set<Entry<String, Instances>> classInstances) {
 		final ConcurrentMap<String, Logistic> result = new ConcurrentHashMap<>(classInstances.size());
 		final Stream.Builder<CompletableFuture<Void>> trainingJobs = Stream.builder();
 		for (final Entry<String, Instances> classInstancesEntry : classInstances) {
