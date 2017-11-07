@@ -87,7 +87,7 @@ enum Training {
 		}
 
 		@Override
-		public Function<ClassificationContext, EventDialogueClassifier> getClassifierFactory(
+		public Function<ClassificationContext, IsolatedUtteranceEventDialogueClassifier> getClassifierFactory(
 				final TrainingContext trainingCtx) {
 			return new SimpleClassifierFactory(trainingCtx);
 		}
@@ -119,7 +119,7 @@ enum Training {
 		}
 
 		@Override
-		public Function<ClassificationContext, EventDialogueClassifier> getClassifierFactory(
+		public Function<ClassificationContext, IsolatedUtteranceEventDialogueClassifier> getClassifierFactory(
 				final TrainingContext trainingCtx) {
 			return new SimpleIterativeClassifierFactory(trainingCtx);
 		}
@@ -154,7 +154,7 @@ enum Training {
 		}
 
 		@Override
-		public Function<ClassificationContext, EventDialogueClassifier> getClassifierFactory(
+		public Function<ClassificationContext, DialogicEventDialogueClassifier> getClassifierFactory(
 				final TrainingContext trainingCtx) {
 			final ApplicationContext appCtx = trainingCtx.getAppCtx();
 			final WordClassDiscountingSmoother smoother = appCtx.getBean(WordClassDiscountingSmoother.class);
@@ -203,7 +203,7 @@ enum Training {
 		}
 
 		@Override
-		public Function<ClassificationContext, EventDialogueClassifier> getClassifierFactory(
+		public Function<ClassificationContext, DialogicEventDialogueClassifier> getClassifierFactory(
 				final TrainingContext trainingCtx) {
 			final ApplicationContext appCtx = trainingCtx.getAppCtx();
 			final WordClassDiscountingSmoother smoother = appCtx.getBean(WordClassDiscountingSmoother.class);
@@ -258,7 +258,7 @@ enum Training {
 		}
 
 		@Override
-		public Function<ClassificationContext, EventDialogueClassifier> getClassifierFactory(
+		public Function<ClassificationContext, IsolatedUtteranceEventDialogueClassifier> getClassifierFactory(
 				final TrainingContext trainingCtx) {
 			return new SimpleClassifierFactory(trainingCtx);
 		}
@@ -291,14 +291,15 @@ enum Training {
 		}
 
 		@Override
-		public Function<ClassificationContext, EventDialogueClassifier> getClassifierFactory(
+		public Function<ClassificationContext, IsolatedUtteranceEventDialogueClassifier> getClassifierFactory(
 				final TrainingContext trainingCtx) {
 			return new SimpleIterativeClassifierFactory(trainingCtx);
 		}
 
 	};
 
-	private static class SimpleClassifierFactory implements Function<ClassificationContext, EventDialogueClassifier> {
+	private static class SimpleClassifierFactory
+			implements Function<ClassificationContext, IsolatedUtteranceEventDialogueClassifier> {
 
 		private final TrainingContext trainingCtx;
 
@@ -308,11 +309,11 @@ enum Training {
 
 		/*
 		 * (non-Javadoc)
-		 * 
+		 *
 		 * @see java.util.function.Function#apply(java.lang.Object)
 		 */
 		@Override
-		public EventDialogueClassifier apply(final ClassificationContext classificationContext) {
+		public IsolatedUtteranceEventDialogueClassifier apply(final ClassificationContext classificationContext) {
 			final ApplicationContext appCtx = trainingCtx.getAppCtx();
 			final WordClassDiscountingSmoother smoother = appCtx.getBean(WordClassDiscountingSmoother.class);
 
@@ -330,7 +331,7 @@ enum Training {
 	}
 
 	private static class SimpleIterativeClassifierFactory
-			implements Function<ClassificationContext, EventDialogueClassifier> {
+			implements Function<ClassificationContext, IsolatedUtteranceEventDialogueClassifier> {
 
 		private final TrainingContext trainingCtx;
 
@@ -344,7 +345,7 @@ enum Training {
 		 * @see java.util.function.Function#apply(java.lang.Object)
 		 */
 		@Override
-		public EventDialogueClassifier apply(final ClassificationContext classificationContext) {
+		public IsolatedUtteranceEventDialogueClassifier apply(final ClassificationContext classificationContext) {
 			final ApplicationContext appCtx = trainingCtx.getAppCtx();
 			final WordClassDiscountingSmoother smoother = appCtx.getBean(WordClassDiscountingSmoother.class);
 			final EntityInstanceAttributeContext entityInstAttrCtx = appCtx
@@ -474,7 +475,7 @@ enum Training {
 	/**
 	 * @return the classifierFactory
 	 */
-	public abstract Function<ClassificationContext, EventDialogueClassifier> getClassifierFactory(
+	public abstract Function<ClassificationContext, ? extends EventDialogueClassifier> getClassifierFactory(
 			TrainingContext trainingCtx);
 
 	public int getIterCount() {
