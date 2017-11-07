@@ -62,6 +62,40 @@ public final class WordClassDiscountingSmoother {
 			this.oovInstances = oovInstances;
 		}
 
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see java.lang.Object#equals(java.lang.Object)
+		 */
+		@Override
+		public boolean equals(final Object obj) {
+			if (this == obj) {
+				return true;
+			}
+			if (obj == null) {
+				return false;
+			}
+			if (!(obj instanceof SmoothedWordClasses)) {
+				return false;
+			}
+			final SmoothedWordClasses other = (SmoothedWordClasses) obj;
+			if (oovInstances == null) {
+				if (other.oovInstances != null) {
+					return false;
+				}
+			} else if (!oovInstances.equals(other.oovInstances)) {
+				return false;
+			}
+			if (smoothedClassInsts == null) {
+				if (other.smoothedClassInsts != null) {
+					return false;
+				}
+			} else if (!smoothedClassInsts.equals(other.smoothedClassInsts)) {
+				return false;
+			}
+			return true;
+		}
+
 		/**
 		 * @return the oovInstances
 		 */
@@ -74,6 +108,20 @@ public final class WordClassDiscountingSmoother {
 		 */
 		public List<Entry<String, Instances>> getSmoothedClassInsts() {
 			return smoothedClassInsts;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see java.lang.Object#hashCode()
+		 */
+		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + (oovInstances == null ? 0 : oovInstances.hashCode());
+			result = prime * result + (smoothedClassInsts == null ? 0 : smoothedClassInsts.hashCode());
+			return result;
 		}
 
 	}
