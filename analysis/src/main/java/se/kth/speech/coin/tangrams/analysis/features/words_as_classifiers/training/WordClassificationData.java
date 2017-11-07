@@ -41,7 +41,17 @@ public final class WordClassificationData {
 
 	private final Object2IntMap<String> trainingInstanceCounts;
 
-	public WordClassificationData(final WordClassificationData copyee) {
+	WordClassificationData(final Map<String, Instances> classInsts, final Object2IntMap<String> classObservationCounts,
+			final WordClassInstancesFetcher classInstancesFetcher) {
+		this.classInsts = classInsts;
+		this.classObservationCounts = classObservationCounts;
+		this.classInstancesFetcher = classInstancesFetcher;
+
+		trainingInstanceCounts = new Object2IntOpenHashMap<>(2);
+		trainingInstanceCounts.defaultReturnValue(0);
+	}
+
+	WordClassificationData(final WordClassificationData copyee) {
 		classInsts = copyee.getClassInstances().entrySet().stream()
 				.collect(Collectors.toMap(Entry::getKey, entry -> new Instances(entry.getValue())));
 
@@ -56,16 +66,6 @@ public final class WordClassificationData {
 		final Object2IntMap<String> copyeeTrainingInstanceCounts = copyee.getTrainingInstanceCounts();
 		trainingInstanceCounts = new Object2IntOpenHashMap<>(copyeeTrainingInstanceCounts);
 		trainingInstanceCounts.defaultReturnValue(copyeeTrainingInstanceCounts.defaultReturnValue());
-	}
-
-	WordClassificationData(final Map<String, Instances> classInsts, final Object2IntMap<String> classObservationCounts,
-			final WordClassInstancesFetcher classInstancesFetcher) {
-		this.classInsts = classInsts;
-		this.classObservationCounts = classObservationCounts;
-		this.classInstancesFetcher = classInstancesFetcher;
-
-		trainingInstanceCounts = new Object2IntOpenHashMap<>(2);
-		trainingInstanceCounts.defaultReturnValue(0);
 	}
 
 	/**
