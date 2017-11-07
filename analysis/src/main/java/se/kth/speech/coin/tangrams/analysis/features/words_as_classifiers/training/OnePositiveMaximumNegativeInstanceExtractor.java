@@ -17,6 +17,7 @@
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.stream.Stream;
@@ -25,6 +26,9 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.Object2IntMaps;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import se.kth.speech.coin.tangrams.analysis.GameHistory;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
@@ -57,6 +61,8 @@ import weka.core.Instances;
  *
  */
 public final class OnePositiveMaximumNegativeInstanceExtractor extends AbstractInstanceExtractor {
+
+	private static final Object2IntMap<String> EMPTY_WORD_CLASS_OBSERVATION_MAP = Object2IntMaps.emptyMap();
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(OnePositiveMaximumNegativeInstanceExtractor.class);
 
@@ -99,15 +105,18 @@ public final class OnePositiveMaximumNegativeInstanceExtractor extends AbstractI
 	}
 
 	@Override
-	protected void addTrainingData(final EventDialogue uttDialogue, final GameHistory history,
+	protected Object2IntMap<String> addTrainingData(final EventDialogue uttDialogue, final GameHistory history,
 			final WordClassificationData trainingData, final double positiveExampleWeightFactor,
 			final double negativeExampleWeightFactor) {
-		uttDialogue.getFirstEvent().ifPresent(event -> {
+		return uttDialogue.getFirstEvent().map(event -> {
 			LOGGER.debug("Extracting features for utterances for event: {}", event);
 			final EventDialogue transformedDiag = diagTransformer.apply(uttDialogue);
 			final List<Utterance> utts = transformedDiag.getUtterances();
+
+			final Object2IntMap<String> wordClassObservationCounts;
 			if (utts.isEmpty()) {
 				LOGGER.debug("No utterances to train with for {}.", transformedDiag);
+				wordClassObservationCounts = EMPTY_WORD_CLASS_OBSERVATION_MAP;
 			} else {
 				// Just use the game context for the first utterance for all
 				// utterances processed for the given dialogue
@@ -116,15 +125,21 @@ public final class OnePositiveMaximumNegativeInstanceExtractor extends AbstractI
 						event.getGameAttrs().get(GameManagementEvent.Attribute.PLAYER_ID));
 				final BooleanTrainingContexts trainingContexts = trainingCtxsFactory.apply(firstUtt, history);
 				final double observationWeight = 1.0;
+				final List<String> wordClassObservations = Arrays.asList(getWordClasses(utts).toArray(String[]::new));
 				// Instances for referent entity
 				final List<EntityFeature.Extractor.Context> positiveCtxs = trainingContexts.getPositive();
-				getWordClasses(utts).forEach(token -> addWeightedExamples(token, trainingData, positiveCtxs,
+				wordClassObservationCounts = new Object2IntOpenHashMap<>(wordClassObservations.size() / 2);
+				wordClassObservations.forEach(token -> addWeightedExamples(token, trainingData, positiveCtxs,
 						observationWeight * positiveExampleWeightFactor, POSITIVE_EXAMPLE_LABEL));
 				// Instances for non-referent entities
-				getWordClasses(utts)
+				wordClassObservations
 						.forEach(token -> addWeightedExamples(token, trainingData, trainingContexts.getNegative(),
 								observationWeight * negativeExampleWeightFactor, NEGATIVE_EXAMPLE_LABEL));
+
+				wordClassObservations.forEach(
+						token -> wordClassObservationCounts.put(token, wordClassObservationCounts.getInt(token) + 1));
 			}
-		});
+			return wordClassObservationCounts;
+		}).orElse(EMPTY_WORD_CLASS_OBSERVATION_MAP);
 	}
 }

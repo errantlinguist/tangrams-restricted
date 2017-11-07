@@ -16,6 +16,7 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training;
 
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import se.kth.speech.coin.tangrams.analysis.GameHistory;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
@@ -37,8 +38,9 @@ public abstract class AbstractInstanceExtractor {
 		this.entityInstAttrCtx = entityInstAttrCtx;
 	}
 
-	protected abstract void addTrainingData(final EventDialogue uttDialogue, final GameHistory history,
-			final WordClassificationData trainingData, double positiveExampleWeightFactor, double negativeExampleWeightFactor);
+	protected abstract Object2IntMap<String> addTrainingData(final EventDialogue uttDialogue, final GameHistory history,
+			final WordClassificationData trainingData, double positiveExampleWeightFactor,
+			double negativeExampleWeightFactor);
 
 	protected final Instance createTokenInstance(final Instances classInsts,
 			final EntityFeature.Extractor.Context extractionContext, final String classValue) {

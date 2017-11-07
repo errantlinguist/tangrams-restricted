@@ -23,6 +23,8 @@ import java.util.stream.Stream;
 
 import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 
 /**
@@ -64,14 +66,16 @@ public final class DialogicWeightedWordClassFactory
 		final Object2DoubleMap<String> refNegExamples = new Object2DoubleOpenHashMap<>(estimatedExampleSetCount);
 		final Object2DoubleMap<String> otherEntityNegativeExamples = new Object2DoubleOpenHashMap<>(
 				estimatedExampleSetCount);
+		final Object2IntMap<String> wordClassObsevationCounts = new Object2IntOpenHashMap<>(estimatedExampleSetCount);
 		for (final UtteranceRelation uttRel : uttRels) {
 			uttRel.getAcceptanceUtt().ifPresent(acceptanceUtt -> {
 				// Add all language from the instructor
-				putInstructorUtterance(acceptanceUtt.getUtterance(), refPosExamples, otherEntityNegativeExamples);
+				putInstructorUtterance(acceptanceUtt.getUtterance(), refPosExamples, otherEntityNegativeExamples,
+						wordClassObsevationCounts);
 				// Process non-instructor language
 				final double acceptanceValue = acceptanceUtt.getWeight();
 				putNonInstructorUtterances(uttRel.getPrevUtts(), acceptanceValue, refPosExamples, refNegExamples,
-						otherEntityNegativeExamples);
+						otherEntityNegativeExamples, wordClassObsevationCounts);
 			});
 			// If there was no instructor utterance found which could be used to
 			// calculate
@@ -80,11 +84,13 @@ public final class DialogicWeightedWordClassFactory
 			// utterance to use
 		}
 
-		return new EntityReferringLanguageWordClasses(refPosExamples, refNegExamples, otherEntityNegativeExamples);
+		return new EntityReferringLanguageWordClasses(refPosExamples, refNegExamples, otherEntityNegativeExamples,
+				wordClassObsevationCounts);
 	}
 
 	private void putInstructorUtterance(final Utterance acceptanceUtt, final Object2DoubleMap<String> refPosExamples,
-			final Object2DoubleMap<String> otherEntityNegativeExamples) {
+			final Object2DoubleMap<String> otherEntityNegativeExamples,
+			final Object2IntMap<String> wordClassObsevationCounts) {
 		getWordClasses(acceptanceUtt).forEach(wordClass -> {
 			// For each entity which is selected, process a
 			// positive example for this observation: The
@@ -97,20 +103,24 @@ public final class DialogicWeightedWordClassFactory
 			// to the non-selected entity
 			otherEntityNegativeExamples.put(wordClass,
 					otherEntityNegativeExamples.getDouble(wordClass) + instrUttObservationWeight);
+			wordClassObsevationCounts.put(wordClass, wordClassObsevationCounts.getInt(wordClass) + 1);
 		});
 	}
 
 	private void putNonInstructorUtterances(final List<Utterance> prevUtts, final double acceptanceValue,
 			final Object2DoubleMap<String> refPosExamples, final Object2DoubleMap<String> refNegExamples,
-			final Object2DoubleMap<String> otherEntityNegativeExamples) {
+			final Object2DoubleMap<String> otherEntityNegativeExamples,
+			final Object2IntMap<String> wordClassObsevationCounts) {
 		if (acceptanceValue < 0) {
 			// Use the other player's utterances which came
 			// before this instructor utterance as negative
 			// examples for the referent but not anything for the
 			// non-referent entities because it can't
 			// be determined what the language actually refers to
-			getWordClasses(prevUtts).forEach(wordClass -> refNegExamples.put(wordClass,
-					refNegExamples.getDouble(wordClass) + otherUttObsevationWeight));
+			getWordClasses(prevUtts).forEach(wordClass -> {
+				refNegExamples.put(wordClass, refNegExamples.getDouble(wordClass) + otherUttObsevationWeight);
+				wordClassObsevationCounts.put(wordClass, wordClassObsevationCounts.getInt(wordClass) + 1);
+			});
 		} else if (acceptanceValue > 0) {
 			// Use the other player's utterances which came
 			// before this instructor utterance as positive
@@ -128,6 +138,7 @@ public final class DialogicWeightedWordClassFactory
 				// the non-selected entity
 				otherEntityNegativeExamples.put(wordClass,
 						otherEntityNegativeExamples.getDouble(wordClass) + otherUttObsevationWeight);
+				wordClassObsevationCounts.put(wordClass, wordClassObsevationCounts.getInt(wordClass) + 1);
 			});
 		}
 		// If the acceptance value is 0, do nothing because the non-instructor

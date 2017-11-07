@@ -17,6 +17,7 @@
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues;
 
 import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
 
 public final class EntityReferringLanguageWordClasses {
 
@@ -26,11 +27,15 @@ public final class EntityReferringLanguageWordClasses {
 
 	private final Object2DoubleMap<String> refPosExamples;
 
+	private final Object2IntMap<String> wordClassObservationCounts;
+
 	EntityReferringLanguageWordClasses(final Object2DoubleMap<String> refPosExamples,
-			final Object2DoubleMap<String> refNegExamples, final Object2DoubleMap<String> otherEntityNegativeExamples) {
+			final Object2DoubleMap<String> refNegExamples, final Object2DoubleMap<String> otherEntityNegativeExamples,
+			final Object2IntMap<String> wordClassObservationCounts) {
 		this.refPosExamples = refPosExamples;
 		this.refNegExamples = refNegExamples;
 		this.otherEntityNegativeExamples = otherEntityNegativeExamples;
+		this.wordClassObservationCounts = wordClassObservationCounts;
 	}
 
 	/*
@@ -71,6 +76,13 @@ public final class EntityReferringLanguageWordClasses {
 		} else if (!refPosExamples.equals(other.refPosExamples)) {
 			return false;
 		}
+		if (wordClassObservationCounts == null) {
+			if (other.wordClassObservationCounts != null) {
+				return false;
+			}
+		} else if (!wordClassObservationCounts.equals(other.wordClassObservationCounts)) {
+			return false;
+		}
 		return true;
 	}
 
@@ -95,6 +107,13 @@ public final class EntityReferringLanguageWordClasses {
 		return refPosExamples;
 	}
 
+	/**
+	 * @return the wordClassObservationCounts
+	 */
+	public Object2IntMap<String> getWordClassObservationCounts() {
+		return wordClassObservationCounts;
+	}
+
 	/*
 	 * (non-Javadoc)
 	 *
@@ -107,6 +126,7 @@ public final class EntityReferringLanguageWordClasses {
 		result = prime * result + (otherEntityNegativeExamples == null ? 0 : otherEntityNegativeExamples.hashCode());
 		result = prime * result + (refNegExamples == null ? 0 : refNegExamples.hashCode());
 		result = prime * result + (refPosExamples == null ? 0 : refPosExamples.hashCode());
+		result = prime * result + (wordClassObservationCounts == null ? 0 : wordClassObservationCounts.hashCode());
 		return result;
 	}
 
@@ -117,14 +137,17 @@ public final class EntityReferringLanguageWordClasses {
 	 */
 	@Override
 	public String toString() {
-		final StringBuilder builder = new StringBuilder(16 * refPosExamples.size() + refNegExamples.size() + otherEntityNegativeExamples.size());
-		builder.append("EntityReferringLanguageWordClasses [refPosExamples=");
-		builder.append(refPosExamples);
+		final StringBuilder builder = new StringBuilder(16 * refPosExamples.size() + refNegExamples.size()
+				+ otherEntityNegativeExamples.size() + wordClassObservationCounts.size());
+		builder.append("EntityReferringLanguageWordClasses [otherEntityNegativeExamples=");
+		builder.append(otherEntityNegativeExamples);
 		builder.append(", refNegExamples=");
 		builder.append(refNegExamples);
-		builder.append(", otherEntityNegativeExamples=");
-		builder.append(otherEntityNegativeExamples);
-		builder.append(']');
+		builder.append(", refPosExamples=");
+		builder.append(refPosExamples);
+		builder.append(", wordClassObservationCounts=");
+		builder.append(wordClassObservationCounts);
+		builder.append("]");
 		return builder.toString();
 	}
 

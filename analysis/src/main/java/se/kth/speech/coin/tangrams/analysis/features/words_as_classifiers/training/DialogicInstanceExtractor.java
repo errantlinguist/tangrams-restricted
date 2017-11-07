@@ -28,6 +28,8 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.Object2IntMaps;
 import se.kth.speech.coin.tangrams.analysis.GameHistory;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
@@ -49,6 +51,8 @@ import weka.core.Instances;
  *
  */
 public final class DialogicInstanceExtractor extends AbstractInstanceExtractor {
+
+	private static final Object2IntMap<String> EMPTY_WORD_CLASS_OBSERVATION_MAP = Object2IntMaps.emptyMap();
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(DialogicInstanceExtractor.class);
 
@@ -103,15 +107,18 @@ public final class DialogicInstanceExtractor extends AbstractInstanceExtractor {
 	}
 
 	@Override
-	protected void addTrainingData(final EventDialogue eventDialogue, final GameHistory history,
+	protected Object2IntMap<String> addTrainingData(final EventDialogue eventDialogue, final GameHistory history,
 			final WordClassificationData trainingData, final double positiveExampleWeightFactor,
 			final double negativeExampleWeightFactor) {
-		eventDialogue.getFirstEvent().ifPresent(event -> {
+		return eventDialogue.getFirstEvent().map(event -> {
 			LOGGER.debug("Extracting features for utterances for event: {}", event);
 			final EventDialogue transformedDiag = diagTransformer.apply(eventDialogue);
 			final List<Utterance> allUtts = transformedDiag.getUtterances();
+
+			final Object2IntMap<String> wordClassObservationCounts;
 			if (allUtts.isEmpty()) {
 				LOGGER.debug("No utterances to train with for {}.", transformedDiag);
+				wordClassObservationCounts = EMPTY_WORD_CLASS_OBSERVATION_MAP;
 			} else {
 				// Just use the game context for the first utterance for all
 				// utterances processed for the given dialogue
@@ -141,7 +148,9 @@ public final class DialogicInstanceExtractor extends AbstractInstanceExtractor {
 							.forEach(langEx -> addWeightedExamples(langEx.getKey(), trainingData, negativeCtxs,
 									langEx.getDoubleValue() * negativeExampleWeightFactor, NEGATIVE_EXAMPLE_LABEL));
 				}
+				wordClassObservationCounts = entityRefLangExs.getWordClassObservationCounts();
 			}
-		});
+			return wordClassObservationCounts;
+		}).orElse(EMPTY_WORD_CLASS_OBSERVATION_MAP);
 	}
 }

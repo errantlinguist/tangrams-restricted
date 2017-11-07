@@ -89,6 +89,13 @@ public final class WordClassificationData {
 		return trainingInstanceCounts;
 	}
 
+	/**
+	 * @return the classInstancesFetcher
+	 */
+	private WordClassInstancesFetcher getClassInstancesFetcher() {
+		return classInstancesFetcher;
+	}
+
 	void addObservation(final String wordClass, final Stream<Entry<Instance, String>> instClassValues) {
 		final Instances classInstances = classInstancesFetcher.apply(wordClass);
 		instClassValues.forEach(instClassValue -> {
@@ -106,13 +113,6 @@ public final class WordClassificationData {
 
 	Instances fetchWordInstances(final String wordClass) {
 		return classInstancesFetcher.apply(wordClass);
-	}
-
-	/**
-	 * @return the classInstancesFetcher
-	 */
-	WordClassInstancesFetcher getClassInstancesFetcher() {
-		return classInstancesFetcher;
 	}
 
 }
