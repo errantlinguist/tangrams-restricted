@@ -55,10 +55,10 @@ public final class IterativeWordLogisticClassifierTrainer
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(IterativeWordLogisticClassifierTrainer.class);
 
-	private static Set<String> createSmoothedWordClassSet(final DiscountedWordClasses discountedWordClasses) {
-		final List<Entry<String, Instances>> smoothedWordClassInsts = discountedWordClasses.getDiscountedClassInsts();
-		return smoothedWordClassInsts.stream().map(Entry::getKey)
-				.collect(Collectors.toCollection(() -> Sets.newHashSetWithExpectedSize(smoothedWordClassInsts.size())));
+	private static Set<String> createDiscountedWordClassSet(final DiscountedWordClasses discountedWordClasses) {
+		final List<Entry<String, Instances>> discountedWordClassInsts = discountedWordClasses.getDiscountedClassInsts();
+		return discountedWordClassInsts.stream().map(Entry::getKey)
+				.collect(Collectors.toCollection(() -> Sets.newHashSetWithExpectedSize(discountedWordClassInsts.size())));
 	}
 
 	private final Executor backgroundJobExecutor;
@@ -210,7 +210,7 @@ public final class IterativeWordLogisticClassifierTrainer
 		final WordClassificationData smoothedTrainingData = new WordClassificationData(totalTrainingData);
 		final DiscountedWordClasses smoothingResults = smoother.redistributeMass(smoothedTrainingData);
 		LOGGER.debug("{} instance(s) for out-of-vocabulary class.", smoothingResults.getOovInstances().size());
-		final Set<String> discountedWordClasses = createSmoothedWordClassSet(smoothingResults);
+		final Set<String> discountedWordClasses = createDiscountedWordClassSet(smoothingResults);
 		// The new counts can never be less than the old ones or have fewer word
 		// classes because word classes are added as they are observed
 		final Object2IntMap<String> newObservationCounts = smoothedTrainingData.getClassObservationCounts();
