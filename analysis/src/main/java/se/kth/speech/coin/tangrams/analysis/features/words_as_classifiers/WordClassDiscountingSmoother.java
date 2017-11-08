@@ -17,6 +17,7 @@
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -198,7 +199,7 @@ public final class WordClassDiscountingSmoother {
 	}
 
 	private Instances redistributeMass(final WordClassificationData trainingData, final String augendClassName,
-			final List<Entry<String, Instances>> addendClassInsts) {
+			final Collection<Entry<String, Instances>> addendClassInsts) {
 		final Instances augendInsts = trainingData.getClassInstances().computeIfAbsent(augendClassName, k -> {
 			final int totalInstCount = addendClassInsts.stream().map(Entry::getValue).mapToInt(Instances::numAttributes)
 					.sum();
