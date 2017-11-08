@@ -183,7 +183,7 @@ public final class IterativeWordLogisticClassifierTrainer
 
 	private boolean hasOovTrainingDataChanged(
 			final Map<String, WordClassificationData.Datum> updatedDiscountedWordClassData) {
-		Map<String, WordClassificationData.Datum> lastDiscountedWordClassData = lastWordClassifierTrainingResults
+		final Map<String, WordClassificationData.Datum> lastDiscountedWordClassData = lastWordClassifierTrainingResults
 				.getValue();
 		boolean result = !updatedDiscountedWordClassData.keySet().equals(lastDiscountedWordClassData.keySet());
 		// If the set of discounted word classes did not change, inspect the data for
