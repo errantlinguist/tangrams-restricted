@@ -66,7 +66,7 @@ public final class IterativeWordLogisticClassifierTrainer
 	private final AbstractInstanceExtractor instExtractor;
 
 	/**
-	 * The obsevation counts for the word classes which were discounted for
+	 * The observation counts for the word classes which were discounted for
 	 * smoothing in the current word classifiers for the next dialogue to
 	 * classify.
 	 */
