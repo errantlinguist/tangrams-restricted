@@ -142,6 +142,18 @@ public final class WordClassDiscountingSmoother {
 		this.minCount = minCount;
 	}
 
+	/**
+	 * Calculates which {@link Instances} objects for each unique word class
+	 * (i.e.&nbsp;token type) should be discounted, removes them from the given
+	 * {@link WordClassificationData} object and puts it into the
+	 * {@link #oovClassName out-of-vocabulary label} {@code Instances} object.
+	 *
+	 * @param trainingData
+	 *            The unsmoothed training data.
+	 * @return A new {@link DiscountedWordClasses} instance representing
+	 *         information about the word classes used for discounting and the
+	 *         {@link Instances} objects for each.
+	 */
 	public DiscountedWordClasses redistributeMass(final WordClassificationData trainingData) {
 		final List<Entry<String, Instances>> addendClassInsts = createdAddendClassInstList(trainingData);
 		if (addendClassInsts.isEmpty()) {
