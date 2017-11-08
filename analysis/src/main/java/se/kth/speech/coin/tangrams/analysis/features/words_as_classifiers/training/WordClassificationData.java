@@ -33,18 +33,109 @@ import weka.core.Instances;
  */
 public final class WordClassificationData {
 
+	public static final class Datum {
+
+		private int observationCount;
+
+		private final Instances trainingInsts;
+
+		public Datum(final Instances trainingInsts) {
+			this(trainingInsts, 0);
+		}
+
+		private Datum(final Datum copyee) {
+			this(new Instances(copyee.getTrainingInsts()), copyee.getObservationCount());
+		}
+
+		private Datum(final Instances trainingInsts, final int observationCount) {
+			this.trainingInsts = trainingInsts;
+			this.observationCount = observationCount;
+		}
+
+		public void add(final Datum other) {
+			setObservationCount(getObservationCount() + other.getObservationCount());
+			getTrainingInsts().addAll(other.getTrainingInsts());
+		}
+
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see java.lang.Object#equals(java.lang.Object)
+		 */
+		@Override
+		public boolean equals(final Object obj) {
+			if (this == obj) {
+				return true;
+			}
+			if (obj == null) {
+				return false;
+			}
+			if (!(obj instanceof Datum)) {
+				return false;
+			}
+			final Datum other = (Datum) obj;
+			if (observationCount != other.observationCount) {
+				return false;
+			}
+			if (trainingInsts == null) {
+				if (other.trainingInsts != null) {
+					return false;
+				}
+			} else if (!trainingInsts.equals(other.trainingInsts)) {
+				return false;
+			}
+			return true;
+		}
+
+		/**
+		 * @return the observationCount
+		 */
+		public int getObservationCount() {
+			return observationCount;
+		}
+
+		/**
+		 * @return the trainingInsts
+		 */
+		public Instances getTrainingInsts() {
+			return trainingInsts;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see java.lang.Object#hashCode()
+		 */
+		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + observationCount;
+			result = prime * result + (trainingInsts == null ? 0 : trainingInsts.hashCode());
+			return result;
+		}
+
+		/**
+		 * @param observationCount
+		 *            the observationCount to set
+		 */
+		private void setObservationCount(final int observationCount) {
+			this.observationCount = observationCount;
+		}
+	}
+
+	private final Map<String, Datum> classData;
+
 	private final WordClassInstancesFetcher classInstancesFetcher;
 
-	private final Map<String, Instances> classInsts;
-
-	private final Object2IntMap<String> classObservationCounts;
-
+	/**
+	 * The counts of training {@link Instance instances} for each classification
+	 * type, i.e.&nbsp; {@code "true"} or {@code "false"}.
+	 */
 	private final Object2IntMap<String> trainingInstanceCounts;
 
-	WordClassificationData(final Map<String, Instances> classInsts, final Object2IntMap<String> classObservationCounts,
-			final WordClassInstancesFetcher classInstancesFetcher) {
-		this.classInsts = classInsts;
-		this.classObservationCounts = classObservationCounts;
+	WordClassificationData(final Map<String, Datum> classData, final WordClassInstancesFetcher classInstancesFetcher) {
+		this.classData = classData;
 		this.classInstancesFetcher = classInstancesFetcher;
 
 		trainingInstanceCounts = new Object2IntOpenHashMap<>(2);
@@ -52,15 +143,11 @@ public final class WordClassificationData {
 	}
 
 	WordClassificationData(final WordClassificationData copyee) {
-		classInsts = copyee.getClassInstances().entrySet().stream()
-				.collect(Collectors.toMap(Entry::getKey, entry -> new Instances(entry.getValue())));
-
-		final Object2IntMap<String> copyeeClassObservationCounts = copyee.getClassObservationCounts();
-		classObservationCounts = new Object2IntOpenHashMap<>(copyeeClassObservationCounts);
-		classObservationCounts.defaultReturnValue(copyeeClassObservationCounts.defaultReturnValue());
+		classData = copyee.getClassData().entrySet().stream()
+				.collect(Collectors.toMap(Entry::getKey, entry -> new Datum(entry.getValue())));
 
 		final WordClassInstancesFetcher copyeeFetcher = copyee.getClassInstancesFetcher();
-		classInstancesFetcher = new WordClassInstancesFetcher(classInsts, copyeeFetcher.getEntityInstAttrCtx(),
+		classInstancesFetcher = new WordClassInstancesFetcher(classData, copyeeFetcher.getEntityInstAttrCtx(),
 				copyeeFetcher.getEstimatedVocabTypeTokenCount());
 
 		final Object2IntMap<String> copyeeTrainingInstanceCounts = copyee.getTrainingInstanceCounts();
@@ -68,18 +155,52 @@ public final class WordClassificationData {
 		trainingInstanceCounts.defaultReturnValue(copyeeTrainingInstanceCounts.defaultReturnValue());
 	}
 
-	/**
-	 * @return the classInsts
+	/*
+	 * (non-Javadoc)
+	 *
+	 * @see java.lang.Object#equals(java.lang.Object)
 	 */
-	public Map<String, Instances> getClassInstances() {
-		return classInsts;
+	@Override
+	public boolean equals(final Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (!(obj instanceof WordClassificationData)) {
+			return false;
+		}
+		final WordClassificationData other = (WordClassificationData) obj;
+		if (classInstancesFetcher == null) {
+			if (other.classInstancesFetcher != null) {
+				return false;
+			}
+		} else if (!classInstancesFetcher.equals(other.classInstancesFetcher)) {
+			return false;
+		}
+		if (classData == null) {
+			if (other.classData != null) {
+				return false;
+			}
+		} else if (!classData.equals(other.classData)) {
+			return false;
+		}
+		if (trainingInstanceCounts == null) {
+			if (other.trainingInstanceCounts != null) {
+				return false;
+			}
+		} else if (!trainingInstanceCounts.equals(other.trainingInstanceCounts)) {
+			return false;
+		}
+		return true;
 	}
 
 	/**
-	 * @return the classObservationCounts
+	 * @return the classData
 	 */
-	public Object2IntMap<String> getClassObservationCounts() {
-		return classObservationCounts;
+	public Map<String, Datum> getClassData() {
+		return classData;
 	}
 
 	/**
@@ -87,6 +208,21 @@ public final class WordClassificationData {
 	 */
 	public Object2IntMap<String> getTrainingInstanceCounts() {
 		return trainingInstanceCounts;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 *
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + (classInstancesFetcher == null ? 0 : classInstancesFetcher.hashCode());
+		result = prime * result + (classData == null ? 0 : classData.hashCode());
+		result = prime * result + (trainingInstanceCounts == null ? 0 : trainingInstanceCounts.hashCode());
+		return result;
 	}
 
 	/**
@@ -97,7 +233,7 @@ public final class WordClassificationData {
 	}
 
 	void addWordClassExamples(final String wordClass, final Stream<Entry<Instance, String>> instClassValues) {
-		final Instances classInstances = classInstancesFetcher.apply(wordClass);
+		final Instances classInstances = fetchWordInstances(wordClass);
 		instClassValues.forEach(instClassValue -> {
 			final Instance inst = instClassValue.getKey();
 			// NOTE: Caching individual Instance instances could only reduce
@@ -113,8 +249,9 @@ public final class WordClassificationData {
 	void addWordClassObservationCounts(final Object2IntMap<String> wordClassObservationCounts) {
 		wordClassObservationCounts.object2IntEntrySet().forEach(wordClassObservationCount -> {
 			final String wordClass = wordClassObservationCount.getKey();
-			this.classObservationCounts.put(wordClass,
-					classObservationCounts.getInt(wordClass) + wordClassObservationCount.getIntValue());
+			final Datum wordClassDatum = classData.get(wordClass);
+			wordClassDatum.setObservationCount(
+					wordClassDatum.getObservationCount() + wordClassObservationCount.getIntValue());
 		});
 	}
 

@@ -108,7 +108,7 @@ public final class RandomDiscountingTestSetFactory
 			final List<SessionGameManager> trainingSessionEvtDiagMgrs = Arrays.asList(discountedTrainingSet.stream()
 					.map(sessionGameMgrs::getUnchecked).toArray(SessionGameManager[]::new));
 			final WordClassificationData trainingData = instancesFactory.apply(trainingSessionEvtDiagMgrs);
-			LOGGER.info("Created training data for {} class(es).", trainingData.getClassInstances().size());
+			LOGGER.info("Created training data for {} class(es).", trainingData.getClassData().size());
 			return Pair.of(testSessionDataMgr, trainingData);
 		});
 	}

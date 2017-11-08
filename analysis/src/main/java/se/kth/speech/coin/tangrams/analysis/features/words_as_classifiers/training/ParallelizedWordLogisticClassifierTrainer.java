@@ -57,18 +57,20 @@ public final class ParallelizedWordLogisticClassifierTrainer
 	public ConcurrentMap<String, Logistic> apply(final WordClassificationData trainingData) {
 		final WordClassificationData smoothedTrainingData = new WordClassificationData(trainingData);
 		final DiscountedWordClasses discountedWordClasses = smoother.redistributeMass(smoothedTrainingData);
-		LOGGER.info("{} instance(s) for out-of-vocabulary class.", discountedWordClasses.getOovInstances().size());
-		return createWordClassifierMap(smoothedTrainingData.getClassInstances().entrySet());
+		LOGGER.info("{} instance(s) for out-of-vocabulary class.",
+				discountedWordClasses.getOovClassDatum().getTrainingInsts().size());
+		return createWordClassifierMap(smoothedTrainingData.getClassData().entrySet());
 	}
 
 	private ConcurrentMap<String, Logistic> createWordClassifierMap(
-			final Set<Entry<String, Instances>> classInstances) {
-		final ConcurrentMap<String, Logistic> result = new ConcurrentHashMap<>(classInstances.size());
+			final Set<Entry<String, WordClassificationData.Datum>> classData) {
+		final ConcurrentMap<String, Logistic> result = new ConcurrentHashMap<>(classData.size());
 		final Stream.Builder<CompletableFuture<Void>> trainingJobs = Stream.builder();
-		for (final Entry<String, Instances> classInstancesEntry : classInstances) {
-			final String className = classInstancesEntry.getKey();
+		for (final Entry<String, WordClassificationData.Datum> classDatum : classData) {
+			final String className = classDatum.getKey();
 			LOGGER.debug("Training classifier for class \"{}\".", className);
-			final Instances trainingInsts = classInstancesEntry.getValue();
+			final WordClassificationData.Datum datum = classDatum.getValue();
+			final Instances trainingInsts = datum.getTrainingInsts();
 			LOGGER.debug("{} instance(s) for class \"{}\".", trainingInsts.size(), className);
 			final CompletableFuture<Void> trainingJob = CompletableFuture.runAsync(() -> {
 				final Logistic classifier = new Logistic();

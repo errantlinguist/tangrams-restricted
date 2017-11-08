@@ -25,16 +25,11 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Maps;
 
-import it.unimi.dsi.fastutil.objects.Object2IntMap;
-import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import se.kth.speech.coin.tangrams.analysis.GameHistory;
 import se.kth.speech.coin.tangrams.analysis.SessionGame;
 import se.kth.speech.coin.tangrams.analysis.SessionGameManager;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
-import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
 import se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttributeContext;
-import weka.core.DenseInstance;
-import weka.core.Instance;
 import weka.core.Instances;
 
 /**
@@ -91,21 +86,19 @@ public final class SizeEstimatingInstancesMapFactory implements TrainingInstance
 	@Override
 	public WordClassificationData apply(final Collection<SessionGameManager> sessionEventDiagMgrs) {
 		final int estClassCount = estimateVocabTypeCount(sessionEventDiagMgrs);
-		final Map<String, Instances> classInstances = Maps.newHashMapWithExpectedSize(estClassCount);
+		final Map<String, WordClassificationData.Datum> classInstances = Maps.newHashMapWithExpectedSize(estClassCount);
 		final WordClassInstancesFetcher wordClassFetcher = new WordClassInstancesFetcher(classInstances,
 				entityInstAttrCtx, estimateVocabTypeTokenCount(sessionEventDiagMgrs));
-		final Object2IntMap<String> classObservationCounts = new Object2IntOpenHashMap<>(estClassCount);
-		classObservationCounts.defaultReturnValue(0);
-		final WordClassificationData result = new WordClassificationData(classInstances, classObservationCounts,
-				wordClassFetcher);
+		final WordClassificationData result = new WordClassificationData(classInstances, wordClassFetcher);
 		for (final SessionGameManager sessionEventDiagMgr : sessionEventDiagMgrs) {
 			addTrainingData(sessionEventDiagMgr.getCanonicalGame(), result);
 		}
-		classInstances.values().forEach(Instances::compactify);
+		classInstances.values().stream().map(WordClassificationData.Datum::getTrainingInsts)
+				.forEach(Instances::compactify);
 		return result;
 	}
 
-	protected final void addTrainingData(final SessionGame sessionGame, final WordClassificationData trainingData) {
+	private void addTrainingData(final SessionGame sessionGame, final WordClassificationData trainingData) {
 		final String gameId = sessionGame.getGameId();
 		LOGGER.debug("Processing game \"{}\".", gameId);
 		final GameHistory history = sessionGame.getHistory();
@@ -113,15 +106,6 @@ public final class SizeEstimatingInstancesMapFactory implements TrainingInstance
 		final List<EventDialogue> uttDialogues = sessionGame.getEventDialogues();
 		uttDialogues.forEach(uttDialogue -> instExtractor.addTrainingData(uttDialogue, history, trainingData,
 				positiveExampleWeightFactor, negativeExampleWeightFactor));
-	}
-
-	protected final Instance createTokenInstance(final Instances classInsts,
-			final EntityFeature.Extractor.Context extractionContext, final String classValue) {
-		final Instance result = new DenseInstance(entityInstAttrCtx.getAttrs().size());
-		result.setDataset(classInsts);
-		entityInstAttrCtx.getExtractor().accept(result, extractionContext);
-		result.setClassValue(classValue);
-		return result;
 	}
 
 }

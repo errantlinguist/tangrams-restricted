@@ -43,7 +43,6 @@ import se.kth.speech.coin.tangrams.CLIParameters;
 import se.kth.speech.coin.tangrams.analysis.SessionGameManager;
 import se.kth.speech.coin.tangrams.analysis.SessionGameManagerCacheSupplier;
 import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
-import weka.core.Instances;
 import weka.core.converters.AbstractFileSaver;
 import weka.core.converters.ConverterUtils;
 
@@ -162,13 +161,13 @@ final class TrainingDataWriter { // NO_UCD (use default)
 					}
 
 					final AbstractFileSaver saver = ConverterUtils.getSaverForExtension(outfileExt);
-					for (final Entry<String, Instances> classInstanceEntry : trainingData.getClassInstances()
-							.entrySet()) {
+					for (final Entry<String, WordClassificationData.Datum> classInstanceEntry : trainingData
+							.getClassData().entrySet()) {
 						final String className = classInstanceEntry.getKey();
 						final File outfile = new File(outdir, className + outfileExt);
 						LOGGER.info("Writing data for classifier \"{}\" to \"{}\".", className, outfile);
-						final Instances insts = classInstanceEntry.getValue();
-						saver.setInstances(insts);
+						final WordClassificationData.Datum datum = classInstanceEntry.getValue();
+						saver.setInstances(datum.getTrainingInsts());
 						saver.setFile(outfile);
 						saver.writeBatch();
 					}
@@ -192,8 +191,7 @@ final class TrainingDataWriter { // NO_UCD (use default)
 				.values();
 		final List<SessionGameManager> sessionEvtDiagMgrs = new ArrayList<>(infileSessionData.size());
 		for (final SessionDataManager sessionDatum : infileSessionData) {
-			final SessionGameManager sessionEventDiagMgr = sessionEvtDiagMgrSupplier.get()
-					.getUnchecked(sessionDatum);
+			final SessionGameManager sessionEventDiagMgr = sessionEvtDiagMgrSupplier.get().getUnchecked(sessionDatum);
 			sessionEvtDiagMgrs.add(sessionEventDiagMgr);
 		}
 		return instancesFactory.apply(sessionEvtDiagMgrs);

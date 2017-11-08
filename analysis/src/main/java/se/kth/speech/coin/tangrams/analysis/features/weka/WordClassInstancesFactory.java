@@ -16,8 +16,6 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.weka;
 
-import java.util.function.BiFunction;
-
 import javax.inject.Inject;
 import javax.inject.Named;
 
@@ -29,18 +27,12 @@ import weka.core.Instances;
  *
  */
 @Named
-public final class WordClassInstancesFactory implements BiFunction<String, Integer, Instances> {
+public final class WordClassInstancesFactory {
 
 	@Inject
 	private EntityInstanceAttributeContext entInstAttrCtx;
 
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see java.util.function.IntFunction#apply(int)
-	 */
-	@Override
-	public Instances apply(final String relName, final Integer initialCapacity) {
+	public Instances apply(final String relName, final int initialCapacity) {
 		final Instances result = new Instances(relName, entInstAttrCtx.getAttrs(), initialCapacity);
 		result.setClass(entInstAttrCtx.getClassAttr());
 		return result;

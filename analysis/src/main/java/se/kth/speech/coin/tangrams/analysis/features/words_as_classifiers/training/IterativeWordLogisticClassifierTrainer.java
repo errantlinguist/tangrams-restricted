@@ -27,14 +27,11 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.common.collect.Sets;
 
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
@@ -54,12 +51,6 @@ public final class IterativeWordLogisticClassifierTrainer
 		implements EventDialogueContextWordClassifierTrainer<Logistic> {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(IterativeWordLogisticClassifierTrainer.class);
-
-	private static Set<String> createDiscountedWordClassSet(final DiscountedWordClasses discountedWordClasses) {
-		final List<Entry<String, Instances>> discountedWordClassInsts = discountedWordClasses.getDiscountedClassInsts();
-		return discountedWordClassInsts.stream().map(Entry::getKey)
-				.collect(Collectors.toCollection(() -> Sets.newHashSetWithExpectedSize(discountedWordClassInsts.size())));
-	}
 
 	private final Executor backgroundJobExecutor;
 
@@ -122,27 +113,29 @@ public final class IterativeWordLogisticClassifierTrainer
 		return result;
 	}
 
-	private Object2IntMap<String> createSmoothedWordClassObservationCountMap(
+	private Object2IntMap<String> createDiscountedWordClassObservationCountMap(
 			final DiscountedWordClasses discountedWordClasses) {
-		final Object2IntMap<String> wordClassObservationCounts = totalTrainingData.getClassObservationCounts();
-		final List<Entry<String, Instances>> smoothedWordClassInsts = discountedWordClasses.getDiscountedClassInsts();
-		final Object2IntMap<String> result = new Object2IntOpenHashMap<>(smoothedWordClassInsts.size());
-		for (final Entry<String, Instances> entry : smoothedWordClassInsts) {
+		final Map<String, WordClassificationData.Datum> wordClassData = totalTrainingData.getClassData();
+		final Map<String, WordClassificationData.Datum> discountedWordClassData = discountedWordClasses
+				.getDiscountedClassData();
+		final Object2IntMap<String> result = new Object2IntOpenHashMap<>(discountedWordClassData.size());
+		for (final Entry<String, WordClassificationData.Datum> entry : discountedWordClassData.entrySet()) {
 			final String wordClass = entry.getKey();
-			final int observationCount = wordClassObservationCounts.getInt(wordClass);
+			final int observationCount = wordClassData.get(wordClass).getObservationCount();
 			result.put(wordClass, observationCount);
 		}
 		return result;
 	}
 
 	private CompletableFuture<ConcurrentMap<String, Logistic>> createWordClassifierMap(
-			final Set<Entry<String, Instances>> classInstances) {
+			final Set<Entry<String, WordClassificationData.Datum>> classInstances) {
 		final ConcurrentMap<String, Logistic> wordClassifiers = new ConcurrentHashMap<>(classInstances.size());
 		final Stream.Builder<CompletableFuture<Void>> trainingJobs = Stream.builder();
-		for (final Entry<String, Instances> classInstancesEntry : classInstances) {
+		for (final Entry<String, WordClassificationData.Datum> classInstancesEntry : classInstances) {
 			final String className = classInstancesEntry.getKey();
 			LOGGER.debug("Training classifier for class \"{}\".", className);
-			final Instances trainingInsts = classInstancesEntry.getValue();
+			final WordClassificationData.Datum datum = classInstancesEntry.getValue();
+			final Instances trainingInsts = datum.getTrainingInsts();
 			LOGGER.debug("{} instance(s) for class \"{}\".", trainingInsts.size(), className);
 			final CompletableFuture<Void> trainingJob = CompletableFuture.runAsync(() -> {
 				final Logistic classifier = new Logistic();
@@ -192,10 +185,11 @@ public final class IterativeWordLogisticClassifierTrainer
 			final WordClassificationData unsmoothedTrainingData) {
 		final WordClassificationData smoothedTrainingData = new WordClassificationData(unsmoothedTrainingData);
 		final DiscountedWordClasses discountedWordClasses = smoother.redistributeMass(smoothedTrainingData);
-		final Object2IntMap<String> discountedWordClassObservationCounts = createSmoothedWordClassObservationCountMap(
+		final Object2IntMap<String> discountedWordClassObservationCounts = createDiscountedWordClassObservationCountMap(
 				discountedWordClasses);
-		LOGGER.debug("{} instance(s) for out-of-vocabulary class.", discountedWordClasses.getOovInstances().size());
-		return Pair.of(createWordClassifierMap(smoothedTrainingData.getClassInstances().entrySet()),
+		LOGGER.debug("{} instance(s) for out-of-vocabulary class.",
+				discountedWordClasses.getOovClassDatum().getTrainingInsts().size());
+		return Pair.of(createWordClassifierMap(smoothedTrainingData.getClassData().entrySet()),
 				discountedWordClassObservationCounts);
 	}
 
@@ -208,22 +202,30 @@ public final class IterativeWordLogisticClassifierTrainer
 		final Object2IntMap<String> dialogueWordObservationCounts = instExtractor.addTrainingData(diagToClassify,
 				ctx.getHistory(), totalTrainingData, positiveExampleWeightFactor, negativeExampleWeightFactor);
 		final WordClassificationData smoothedTrainingData = new WordClassificationData(totalTrainingData);
+		// Smoother calculates which word class Instances objects should be
+		// discounted, removes them from the classification data object and puts
+		// it into the OOV label Instances object
 		final DiscountedWordClasses smoothingResults = smoother.redistributeMass(smoothedTrainingData);
-		LOGGER.debug("{} instance(s) for out-of-vocabulary class.", smoothingResults.getOovInstances().size());
-		final Set<String> discountedWordClasses = createDiscountedWordClassSet(smoothingResults);
+		LOGGER.debug("{} instance(s) for out-of-vocabulary class.",
+				smoothingResults.getOovClassDatum().getTrainingInsts().size());
+		final Set<String> discountedWordClasses = smoothingResults.getDiscountedClassData().keySet();
 		// The new counts can never be less than the old ones or have fewer word
 		// classes because word classes are added as they are observed
-		final Object2IntMap<String> newObservationCounts = smoothedTrainingData.getClassObservationCounts();
+		// final Object2IntMap<String> newObservationCounts =
+		// smoothedTrainingData.getClassObservationCounts();
 
-		final Map<String, Instances> smoothedClassInstances = smoothedTrainingData.getClassInstances();
+		final Map<String, WordClassificationData.Datum> smoothedClassData = smoothedTrainingData.getClassData();
 		final Stream.Builder<CompletableFuture<Void>> trainingJobs = Stream.builder();
 		for (final Object2IntMap.Entry<String> dialogueWordObservationCount : dialogueWordObservationCounts
 				.object2IntEntrySet()) {
 			final String wordClass = dialogueWordObservationCount.getKey();
 			final boolean wasDiscountedDuringSmoothing = discountedWordClasses.contains(wordClass);
-			if (!wasDiscountedDuringSmoothing) {
+			if (wasDiscountedDuringSmoothing) {
+
+			} else {
 				LOGGER.debug("Training classifier for class \"{}\".", wordClass);
-				final Instances trainingInsts = smoothedClassInstances.get(wordClass);
+				final WordClassificationData.Datum datum = smoothedClassData.get(wordClass);
+				final Instances trainingInsts = datum.getTrainingInsts();
 				LOGGER.debug("{} instance(s) for class \"{}\".", trainingInsts.size(), wordClass);
 				final CompletableFuture<Void> trainingJob = CompletableFuture.runAsync(() -> {
 					final Logistic classifier = new Logistic();

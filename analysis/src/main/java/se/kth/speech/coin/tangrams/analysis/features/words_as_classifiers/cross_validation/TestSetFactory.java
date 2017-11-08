@@ -102,7 +102,7 @@ public final class TestSetFactory
 							.map(sessionGameMgrs::getUnchecked).toArray(SessionGameManager[]::new));
 			trainingData = instancesFactory.apply(trainingSessionEvtDiagMgrs);
 		}
-		LOGGER.info("Created training data for {} class(es).", trainingData.getClassInstances().size());
+		LOGGER.info("Created training data for {} class(es).", trainingData.getClassData().size());
 		return Pair.of(testSessionDataMgr, trainingData);
 	}
 

@@ -44,9 +44,9 @@ import org.springframework.context.support.FileSystemXmlApplicationContext;
 
 import se.kth.speech.coin.tangrams.CLIParameters;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.WordClassificationData;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.WordClassificationData.Datum;
 import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
 import se.kth.speech.io.FileNames;
-import weka.core.Instances;
 import weka.core.converters.AbstractFileSaver;
 import weka.core.converters.ConverterUtils;
 
@@ -198,7 +198,7 @@ final class TrainingDataWriter { // NO_UCD (use default)
 			final Path sessionInpath = allSessions.get(testSessionData);
 			final String subsampleDirname = infilePathOutdirNames.get(sessionInpath);
 			final File subsampleDir = createSubsampleDir(subsampleDirname);
-			final Map<String, Instances> classInsts = trainingData.getClassInstances();
+			final Map<String, WordClassificationData.Datum> classInsts = trainingData.getClassData();
 			LOGGER.debug("Writing data for {} classes to \"{}\".", classInsts.size(), subsampleDir);
 			persist(classInsts.entrySet(), subsampleDir);
 		}
@@ -214,18 +214,18 @@ final class TrainingDataWriter { // NO_UCD (use default)
 		return result;
 	}
 
-	private void persist(final Collection<Entry<String, Instances>> classInstances, final File subsampleDir)
-			throws IOException {
+	private void persist(final Collection<Entry<String, WordClassificationData.Datum>> classData,
+			final File subsampleDir) throws IOException {
 		final AbstractFileSaver saver = ConverterUtils.getSaverForExtension(outfileExt);
-		for (final Entry<String, Instances> classInstanceEntry : classInstances) {
-			final String className = classInstanceEntry.getKey();
+		for (final Entry<String, WordClassificationData.Datum> classDatum : classData) {
+			final String className = classDatum.getKey();
 			final File outfile = new File(subsampleDir, TRAINING_FILE_NAME_PREFIX + className + outfileExt);
 			LOGGER.debug("Writing training data for classifier \"{}\" to \"{}\".", className, outfile);
-			final Instances insts = classInstanceEntry.getValue();
-			saver.setInstances(insts);
+			final Datum datum = classDatum.getValue();
+			saver.setInstances(datum.getTrainingInsts());
 			saver.setFile(outfile);
 			saver.writeBatch();
 		}
-		LOGGER.info("Wrote training data for {} class(es).", classInstances.size());
+		LOGGER.info("Wrote training data for {} class(es).", classData.size());
 	}
 }

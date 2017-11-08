@@ -30,13 +30,13 @@ import weka.core.Instances;
  */
 final class WordClassInstancesFetcher implements Function<String, Instances> {
 
-	private final Map<String, Instances> classInstances;
+	private final Map<String, WordClassificationData.Datum> classInstances;
 
 	private final EntityInstanceAttributeContext entityInstAttrCtx;
 
 	private final int estimatedVocabTypeTokenCount;
 
-	WordClassInstancesFetcher(final Map<String, Instances> classInstances,
+	WordClassInstancesFetcher(final Map<String, WordClassificationData.Datum> classInstances,
 			final EntityInstanceAttributeContext entityInstAttrCtx, final int estimatedVocabTypeTokenCount) {
 		this.classInstances = classInstances;
 		this.entityInstAttrCtx = entityInstAttrCtx;
@@ -50,12 +50,65 @@ final class WordClassInstancesFetcher implements Function<String, Instances> {
 	 */
 	@Override
 	public Instances apply(final String className) {
-		return classInstances.computeIfAbsent(className, key -> {
+		final WordClassificationData.Datum wordClassDatum = classInstances.computeIfAbsent(className, key -> {
 			final Instances instances = new Instances(WordClasses.createRelationName(key), entityInstAttrCtx.getAttrs(),
 					estimatedVocabTypeTokenCount);
 			instances.setClass(entityInstAttrCtx.getClassAttr());
-			return instances;
+			return new WordClassificationData.Datum(instances);
 		});
+		return wordClassDatum.getTrainingInsts();
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(final Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (!(obj instanceof WordClassInstancesFetcher)) {
+			return false;
+		}
+		final WordClassInstancesFetcher other = (WordClassInstancesFetcher) obj;
+		if (classInstances == null) {
+			if (other.classInstances != null) {
+				return false;
+			}
+		} else if (!classInstances.equals(other.classInstances)) {
+			return false;
+		}
+		if (entityInstAttrCtx == null) {
+			if (other.entityInstAttrCtx != null) {
+				return false;
+			}
+		} else if (!entityInstAttrCtx.equals(other.entityInstAttrCtx)) {
+			return false;
+		}
+		if (estimatedVocabTypeTokenCount != other.estimatedVocabTypeTokenCount) {
+			return false;
+		}
+		return true;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + (classInstances == null ? 0 : classInstances.hashCode());
+		result = prime * result + (entityInstAttrCtx == null ? 0 : entityInstAttrCtx.hashCode());
+		result = prime * result + estimatedVocabTypeTokenCount;
+		return result;
 	}
 
 	/**
