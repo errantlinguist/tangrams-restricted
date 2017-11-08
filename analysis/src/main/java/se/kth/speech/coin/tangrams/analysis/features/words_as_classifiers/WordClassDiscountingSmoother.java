@@ -144,6 +144,20 @@ public final class WordClassDiscountingSmoother {
 	}
 
 	/**
+	 * @return the minCount
+	 */
+	public int getMinCount() {
+		return minCount;
+	}
+
+	/**
+	 * @return the oovClassName
+	 */
+	public String getOovClassName() {
+		return oovClassName;
+	}
+
+	/**
 	 * Calculates which {@link Instances} objects for each unique word class
 	 * (i.e.&nbsp;token type) should be discounted, removes them from the given
 	 * {@link WordClassificationData} object and puts it into the
