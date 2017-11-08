@@ -16,11 +16,8 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training;
 
-import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -37,58 +34,25 @@ import weka.core.Instances;
 public final class WordClassificationData {
 
 	public static final class Datum {
-
-		/**
-		 * An optimized equivalence method for the {@link #trainingInsts
-		 * training instances}, because they can only be added to.
-		 *
-		 * @param <T>
-		 *            The element type.
-		 * @param list1
-		 *            The first to check.
-		 * @param list2
-		 *            The other to check.
-		 * @return <code>true</code> iff both are the same size and their tail
-		 *         elements are equivalent.
-		 */
-		private static <T> boolean areTailsEquivalent(final List<T> list1, final List<? extends T> list2) {
-			final boolean result;
-
-			final int s1 = list1.size();
-			final int s2 = list2.size();
-			if (s1 == s2) {
-				final ListIterator<T> iter1 = list1.listIterator(s1 - 1);
-				final ListIterator<? extends T> iter2 = list2.listIterator(s2 - 1);
-				if (iter1.hasPrevious()) {
-					final T elem1 = iter1.previous();
-					final T elem2 = iter2.previous();
-					result = Objects.equals(elem1, elem2);
-				} else {
-					// Both lists are empty; They should be considered
-					// equivalent
-					result = true;
-				}
-			} else {
-				result = false;
-			}
-			return result;
-		}
-
+		
 		private int observationCount;
+		
+		private int trainingInstancesChangeCount;
 
 		private final Instances trainingInsts;
 
-		public Datum(final Instances trainingInsts) {
-			this(trainingInsts, 0);
-		}
-
 		private Datum(final Datum copyee) {
-			this(new Instances(copyee.getTrainingInsts()), copyee.getObservationCount());
+			this(new Instances(copyee.getTrainingInsts()), copyee.getObservationCount(), copyee.getTrainingInstancesChangeCount());
 		}
 
-		private Datum(final Instances trainingInsts, final int observationCount) {
+		public Datum(final Instances trainingInsts) {
+			this(trainingInsts, 0, 0);
+		}
+
+		private Datum(final Instances trainingInsts, final int observationCount, int trainingInstancesChangeCount) {
 			this.trainingInsts = trainingInsts;
 			this.observationCount = observationCount;
+			this.trainingInstancesChangeCount = trainingInstancesChangeCount;
 		}
 
 		public void add(final Datum other) {
@@ -96,33 +60,24 @@ public final class WordClassificationData {
 			getTrainingInsts().addAll(other.getTrainingInsts());
 		}
 
-		/*
-		 * (non-Javadoc)
-		 *
-		 * @see java.lang.Object#equals(java.lang.Object)
-		 */
 		@Override
-		public boolean equals(final Object obj) {
-			if (this == obj) {
+		public boolean equals(Object obj) {
+			if (this == obj)
 				return true;
-			}
-			if (obj == null) {
+			if (obj == null)
 				return false;
-			}
-			if (!(obj instanceof Datum)) {
+			if (getClass() != obj.getClass())
 				return false;
-			}
-			final Datum other = (Datum) obj;
-			if (observationCount != other.observationCount) {
+			Datum other = (Datum) obj;
+			if (observationCount != other.observationCount)
 				return false;
-			}
+			if (trainingInstancesChangeCount != other.trainingInstancesChangeCount)
+				return false;
 			if (trainingInsts == null) {
-				if (other.trainingInsts != null) {
+				if (other.trainingInsts != null)
 					return false;
-				}
-			} else if (!areTailsEquivalent(trainingInsts, other.trainingInsts)) {
+			} else if (!trainingInsts.equals(other.trainingInsts))
 				return false;
-			}
 			return true;
 		}
 
@@ -133,6 +88,10 @@ public final class WordClassificationData {
 			return observationCount;
 		}
 
+		public int getTrainingInstancesChangeCount() {
+			return trainingInstancesChangeCount;
+		}
+
 		/**
 		 * @return the trainingInsts
 		 */
@@ -140,18 +99,18 @@ public final class WordClassificationData {
 			return trainingInsts;
 		}
 
-		/*
-		 * (non-Javadoc)
-		 *
-		 * @see java.lang.Object#hashCode()
-		 */
 		@Override
 		public int hashCode() {
 			final int prime = 31;
 			int result = 1;
 			result = prime * result + observationCount;
-			result = prime * result + (trainingInsts == null ? 0 : trainingInsts.hashCode());
+			result = prime * result + trainingInstancesChangeCount;
+			result = prime * result + ((trainingInsts == null) ? 0 : trainingInsts.hashCode());
 			return result;
+		}
+
+		private void incrementTrainingInstancesChangeCount() {
+			this.trainingInstancesChangeCount += 1;
 		}
 
 		/**
@@ -192,6 +151,29 @@ public final class WordClassificationData {
 		final Object2IntMap<String> copyeeTrainingInstanceCounts = copyee.getTrainingInstanceCounts();
 		trainingInstanceCounts = new Object2IntOpenHashMap<>(copyeeTrainingInstanceCounts);
 		trainingInstanceCounts.defaultReturnValue(copyeeTrainingInstanceCounts.defaultReturnValue());
+	}
+
+	void addWordClassExamples(final String wordClass, final Stream<Entry<Instance, String>> instClassValues) {
+		final Instances classInstances = fetchWordInstances(wordClass);
+		instClassValues.forEach(instClassValue -> {
+			final Instance inst = instClassValue.getKey();
+			// NOTE: Caching individual Instance instances could only reduce
+			// computation time and not memory footprint because
+			// "Instances.add(..)" actually performs a shallow copy of each
+			// Instance before adding it
+			classInstances.add(inst);
+			final String classValue = instClassValue.getValue();
+			trainingInstanceCounts.put(classValue, trainingInstanceCounts.getInt(classValue) + 1);
+		});
+	}
+
+	void addWordClassObservationCounts(final Object2IntMap<String> wordClassObservationCounts) {
+		wordClassObservationCounts.object2IntEntrySet().forEach(wordClassObservationCount -> {
+			final String wordClass = wordClassObservationCount.getKey();
+			final Datum wordClassDatum = classData.get(wordClass);
+			wordClassDatum.setObservationCount(
+					wordClassDatum.getObservationCount() + wordClassObservationCount.getIntValue());
+		});
 	}
 
 	/*
@@ -235,6 +217,10 @@ public final class WordClassificationData {
 		return true;
 	}
 
+	Instances fetchWordInstances(final String wordClass) {
+		return classInstancesFetcher.apply(wordClass);
+	}
+
 	/**
 	 * @return the classData
 	 */
@@ -243,12 +229,19 @@ public final class WordClassificationData {
 	}
 
 	/**
+	 * @return the classInstancesFetcher
+	 */
+	private WordClassInstancesFetcher getClassInstancesFetcher() {
+		return classInstancesFetcher;
+	}
+
+	/**
 	 * @return the trainingInstanceCounts
 	 */
 	public Object2IntMap<String> getTrainingInstanceCounts() {
 		return trainingInstanceCounts;
 	}
-
+	
 	/*
 	 * (non-Javadoc)
 	 *
@@ -264,38 +257,11 @@ public final class WordClassificationData {
 		return result;
 	}
 
-	/**
-	 * @return the classInstancesFetcher
-	 */
-	private WordClassInstancesFetcher getClassInstancesFetcher() {
-		return classInstancesFetcher;
-	}
-
-	void addWordClassExamples(final String wordClass, final Stream<Entry<Instance, String>> instClassValues) {
-		final Instances classInstances = fetchWordInstances(wordClass);
-		instClassValues.forEach(instClassValue -> {
-			final Instance inst = instClassValue.getKey();
-			// NOTE: Caching individual Instance instances could only reduce
-			// computation time and not memory footprint because
-			// "Instances.add(..)" actually performs a shallow copy of each
-			// Instance before adding it
-			classInstances.add(inst);
-			final String classValue = instClassValue.getValue();
-			trainingInstanceCounts.put(classValue, trainingInstanceCounts.getInt(classValue) + 1);
+	void incrementTrainingInstancesChangeCounts(Iterable<String> changedWordClasses) {
+		changedWordClasses.forEach(wordClass -> {
+			Datum datum = classData.get(wordClass);
+			datum.incrementTrainingInstancesChangeCount();
 		});
-	}
-
-	void addWordClassObservationCounts(final Object2IntMap<String> wordClassObservationCounts) {
-		wordClassObservationCounts.object2IntEntrySet().forEach(wordClassObservationCount -> {
-			final String wordClass = wordClassObservationCount.getKey();
-			final Datum wordClassDatum = classData.get(wordClass);
-			wordClassDatum.setObservationCount(
-					wordClassDatum.getObservationCount() + wordClassObservationCount.getIntValue());
-		});
-	}
-
-	Instances fetchWordInstances(final String wordClass) {
-		return classInstancesFetcher.apply(wordClass);
 	}
 
 }
