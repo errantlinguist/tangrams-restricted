@@ -16,8 +16,11 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training;
 
+import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -34,6 +37,42 @@ import weka.core.Instances;
 public final class WordClassificationData {
 
 	public static final class Datum {
+
+		/**
+		 * An optimized equivalence method for the {@link #trainingInsts
+		 * training instances}, because they can only be added to.
+		 *
+		 * @param <T>
+		 *            The element type.
+		 * @param list1
+		 *            The first to check.
+		 * @param list2
+		 *            The other to check.
+		 * @return <code>true</code> iff both are the same size and their tail
+		 *         elements are equivalent.
+		 */
+		private static <T> boolean areTailsEquivalent(final List<T> list1, final List<? extends T> list2) {
+			final boolean result;
+
+			final int s1 = list1.size();
+			final int s2 = list2.size();
+			if (s1 == s2) {
+				final ListIterator<T> iter1 = list1.listIterator(s1 - 1);
+				final ListIterator<? extends T> iter2 = list2.listIterator(s2 - 1);
+				if (iter1.hasPrevious()) {
+					final T elem1 = iter1.previous();
+					final T elem2 = iter2.previous();
+					result = Objects.equals(elem1, elem2);
+				} else {
+					// Both lists are empty; They should be considered
+					// equivalent
+					result = true;
+				}
+			} else {
+				result = false;
+			}
+			return result;
+		}
 
 		private int observationCount;
 
@@ -81,7 +120,7 @@ public final class WordClassificationData {
 				if (other.trainingInsts != null) {
 					return false;
 				}
-			} else if (!trainingInsts.equals(other.trainingInsts)) {
+			} else if (!areTailsEquivalent(trainingInsts, other.trainingInsts)) {
 				return false;
 			}
 			return true;
