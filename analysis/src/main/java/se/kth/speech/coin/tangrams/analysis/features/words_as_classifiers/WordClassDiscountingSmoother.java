@@ -161,19 +161,6 @@ public final class WordClassDiscountingSmoother {
 			throw new IllegalArgumentException(
 					String.format("Could not find any word classes with fewer than %s instance(s).", minCount));
 		}
-		// int freqToDiscount = minCount - 1;
-		// do {
-		// freqToDiscount++;
-		// addendClassInsts = createdAddendClassInstList(trainingData,
-		// freqToDiscount, oovClassName);
-		// } while (addendClassInsts.isEmpty());
-		// if (freqToDiscount != minCount) {
-		// LOGGER.warn(
-		// "Could not find word classes with fewer than {} instance(s); Using
-		// those with fewer than {} instead.",
-		// minCount, freqToDiscount);
-		// }
-		// assert !addendClassInsts.isEmpty();
 		final Instances oovInstances = redistributeMass(trainingData, oovClassName, addendClassInsts);
 		return new DiscountedWordClasses(addendClassInsts, oovInstances);
 	}
