@@ -54,7 +54,7 @@ public abstract class AbstractInstanceExtractor {
 	 * @param negativeExampleWeightFactor
 	 *            A factor multiplying the weight of each negative training
 	 *            instance.
-	 * @return A {@link Object2IntMap} of word classes (i.e.&nbsp;token types)
+	 * @return An {@link Object2IntMap} of word classes (i.e.&nbsp;token types)
 	 *         added to the training data mapped to the number of times each
 	 *         class was observed in the added training data.
 	 */
