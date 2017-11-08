@@ -34,7 +34,9 @@ import weka.core.Instance;
  * @since May 11, 2017
  *
  */
-public final class InstanceFeatureExtractor<F, C> implements BiConsumer<Instance, C> { // NO_UCD (use default)
+public final class InstanceFeatureExtractor<F, C> implements BiConsumer<Instance, C> { // NO_UCD
+																						// (use
+																						// default)
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(InstanceFeatureExtractor.class);
 
@@ -66,8 +68,56 @@ public final class InstanceFeatureExtractor<F, C> implements BiConsumer<Instance
 		}
 	}
 
+	/*
+	 * (non-Javadoc)
+	 *
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(final Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (!(obj instanceof InstanceFeatureExtractor)) {
+			return false;
+		}
+		final InstanceFeatureExtractor<?, ?> other = (InstanceFeatureExtractor<?, ?>) obj;
+		if (extractor == null) {
+			if (other.extractor != null) {
+				return false;
+			}
+		} else if (!extractor.equals(other.extractor)) {
+			return false;
+		}
+		if (featureAttrs == null) {
+			if (other.featureAttrs != null) {
+				return false;
+			}
+		} else if (!featureAttrs.equals(other.featureAttrs)) {
+			return false;
+		}
+		return true;
+	}
+
 	public Map<F, Attribute> getFeatureAttrs() {
 		return featureAttrs;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 *
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + (extractor == null ? 0 : extractor.hashCode());
+		result = prime * result + (featureAttrs == null ? 0 : featureAttrs.hashCode());
+		return result;
 	}
 
 }

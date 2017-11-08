@@ -46,7 +46,7 @@ public final class EntityInstanceAttributeContext {
 
 		/*
 		 * (non-Javadoc)
-		 * 
+		 *
 		 * @see java.util.function.Function#apply(java.lang.Object)
 		 */
 		@Override
@@ -95,6 +95,54 @@ public final class EntityInstanceAttributeContext {
 		return new ContextInstanceFactory(insts);
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(final Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (!(obj instanceof EntityInstanceAttributeContext)) {
+			return false;
+		}
+		final EntityInstanceAttributeContext other = (EntityInstanceAttributeContext) obj;
+		if (attrs == null) {
+			if (other.attrs != null) {
+				return false;
+			}
+		} else if (!attrs.equals(other.attrs)) {
+			return false;
+		}
+		if (classAttr == null) {
+			if (other.classAttr != null) {
+				return false;
+			}
+		} else if (!classAttr.equals(other.classAttr)) {
+			return false;
+		}
+		if (classAttrName == null) {
+			if (other.classAttrName != null) {
+				return false;
+			}
+		} else if (!classAttrName.equals(other.classAttrName)) {
+			return false;
+		}
+		if (extractor == null) {
+			if (other.extractor != null) {
+				return false;
+			}
+		} else if (!extractor.equals(other.extractor)) {
+			return false;
+		}
+		return true;
+	}
+
 	/**
 	 * @return the attrs
 	 */
@@ -121,6 +169,22 @@ public final class EntityInstanceAttributeContext {
 	 */
 	public InstanceFeatureExtractor<EntityFeature, EntityFeature.Extractor.Context> getExtractor() {
 		return extractor;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + (attrs == null ? 0 : attrs.hashCode());
+		result = prime * result + (classAttr == null ? 0 : classAttr.hashCode());
+		result = prime * result + (classAttrName == null ? 0 : classAttrName.hashCode());
+		result = prime * result + (extractor == null ? 0 : extractor.hashCode());
+		return result;
 	}
 
 	private Instance createInstance(final EntityFeature.Extractor.Context extractionContext, final Instances insts) {
