@@ -38,6 +38,26 @@ public abstract class AbstractInstanceExtractor {
 		this.entityInstAttrCtx = entityInstAttrCtx;
 	}
 
+	/**
+	 *
+	 * @param uttDialogue
+	 *            The {@link EventDialogue} to use for training data.
+	 * @param history
+	 *            The {@link GameHistory} providing context for the given
+	 *            {@code EventDialogue}.
+	 * @param trainingData
+	 *            The {@link WordClassificationData} to add the training data
+	 *            to.
+	 * @param positiveExampleWeightFactor
+	 *            A factor multiplying the weight of each positive training
+	 *            instance.
+	 * @param negativeExampleWeightFactor
+	 *            A factor multiplying the weight of each negative training
+	 *            instance.
+	 * @return A {@link Object2IntMap} of word classes (i.e.&nbsp;token types)
+	 *         added to the training data mapped to the number of times each
+	 *         class was observed in the added training data.
+	 */
 	protected abstract Object2IntMap<String> addTrainingData(final EventDialogue uttDialogue, final GameHistory history,
 			final WordClassificationData trainingData, double positiveExampleWeightFactor,
 			double negativeExampleWeightFactor);
