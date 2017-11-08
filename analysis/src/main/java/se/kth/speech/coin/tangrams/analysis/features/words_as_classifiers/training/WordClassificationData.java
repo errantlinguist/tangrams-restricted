@@ -257,9 +257,9 @@ public final class WordClassificationData {
 		return result;
 	}
 
-	void incrementTrainingInstancesChangeCounts(Iterable<String> changedWordClasses) {
+	void incrementTrainingInstancesChangeCounts(final Iterable<String> changedWordClasses) {
 		changedWordClasses.forEach(wordClass -> {
-			Datum datum = classData.get(wordClass);
+			final Datum datum = classData.get(wordClass);
 			datum.incrementTrainingInstancesChangeCount();
 		});
 	}
