@@ -21,6 +21,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.stream.IntStream;
@@ -33,6 +34,31 @@ import com.google.common.collect.Maps;
  *
  */
 public final class Lists {
+
+	public static <T> boolean areEquivalentFromTail(final List<T> list1, final List<? extends T> list2) {
+		final boolean result;
+
+		final int s1 = list1.size();
+		final int s2 = list2.size();
+		if (s1 == s2) {
+			final ListIterator<T> iter1 = list1.listIterator(s1 - 1);
+			final ListIterator<? extends T> iter2 = list2.listIterator(s2 - 1);
+			boolean areElemsEquivalent = true;
+			while (iter1.hasPrevious()) {
+				final T elem1 = iter1.previous();
+				final T elem2 = iter2.previous();
+				if (!Objects.equals(elem1, elem2)) {
+					areElemsEquivalent = false;
+					break;
+				}
+			}
+			result = areElemsEquivalent;
+		} else {
+			result = false;
+		}
+
+		return result;
+	}
 
 	/**
 	 *
