@@ -86,18 +86,6 @@ public final class SessionTestResults implements SessionTestStatistics {
 	 * (non-Javadoc)
 	 *
 	 * @see se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.
-	 * SessionTestStatistics#meanReciprocalRank()
-	 */
-	@Override
-	public double meanReciprocalRank() {
-		final double rrSum = sumReciprocalRank();
-		return rrSum / totalDialoguesTested();
-	}
-
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.
 	 * SessionTestStatistics#modeReferentIds()
 	 */
 	@Override
@@ -170,13 +158,6 @@ public final class SessionTestResults implements SessionTestStatistics {
 
 	private double sumRank() {
 		return diagTestResults.parallelStream().map(Entry::getValue).mapToDouble(EventDialogueTestResults::rank).sum();
-	}
-
-	private double sumReciprocalRank() {
-		// TODO: Find a better way to calculate MRR, which avoids cumulative
-		// floating-point precision errors
-		return diagTestResults.parallelStream().map(Entry::getValue)
-				.mapToDouble(EventDialogueTestResults::reciprocalRank).sum();
 	}
 
 }

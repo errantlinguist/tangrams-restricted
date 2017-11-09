@@ -17,8 +17,6 @@
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers;
 
 import it.unimi.dsi.fastutil.ints.IntSet;
-import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
-import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -28,31 +26,6 @@ import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 public interface SessionTestStatistics extends EventDialogueTestStatistics {
 
 	double meanRank();
-
-	double meanReciprocalRank();
-
-	/**
-	 *
-	 * @return The mean number of {@link Utterance utterances} for all
-	 *         {@link EventDialogue dialogues} which were tested for the given
-	 *         session under test.
-	 */
-	default double meanUtterancesTestedPerDialogue() {
-		final int totalUtts = testedUtteranceCount();
-		return totalUtts / (double) totalDialoguesTested();
-	}
-
-	/**
-	 *
-	 * @return The mean number of {@link Utterance utterances} for all
-	 *         {@link EventDialogue dialogues} which were tested for the given
-	 *         session under test &mdash; including the individual
-	 *         {@code Utterance} instances which were <em>not</em> tested.
-	 */
-	default double meanUtteranceTotalPerDialogue() {
-		final int totalUtts = totalUtteranceCount();
-		return totalUtts / (double) totalDialoguesTested();
-	}
 
 	/**
 	 *

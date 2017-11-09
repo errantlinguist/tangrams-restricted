@@ -156,8 +156,7 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 		final Set<DialogueAnalysisSummaryFactory.SummaryDatum> excludedData = EnumSet.of(
 				DialogueAnalysisSummaryFactory.SummaryDatum.DIALOGUE,
 				DialogueAnalysisSummaryFactory.SummaryDatum.DIALOGUE_AS_TESTED,
-				DialogueAnalysisSummaryFactory.SummaryDatum.GOLD_STD_ID,
-				DialogueAnalysisSummaryFactory.SummaryDatum.RR);
+				DialogueAnalysisSummaryFactory.SummaryDatum.GOLD_STD_ID);
 		return Arrays.asList(DialogueAnalysisSummaryFactory.getDefaultSummaryDatumOrdering().stream()
 				.filter(datum -> !excludedData.contains(datum))
 				.toArray(DialogueAnalysisSummaryFactory.SummaryDatum[]::new));

@@ -25,13 +25,13 @@ import java.util.function.ToDoubleFunction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
 import se.kth.speech.coin.tangrams.analysis.GameContext;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.ReferentConfidenceData;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.ReferentConfidenceMapFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.EventDialogueContextWordClassifierTrainer;
 import se.kth.speech.coin.tangrams.iristk.GameEvent;
@@ -73,9 +73,9 @@ public final class DialogicEventDialogueClassifier implements EventDialogueClass
 	 * EventDialogue, se.kth.speech.coin.tangrams.analysis.GameContext)
 	 */
 	@Override
-	public Optional<Int2DoubleMap> apply(final EventDialogue transformedDiag, final GameContext ctx)
+	public Optional<ReferentConfidenceData> apply(final EventDialogue transformedDiag, final GameContext ctx)
 			throws ClassificationException {
-		final Optional<Int2DoubleMap> result;
+		final Optional<ReferentConfidenceData> result;
 		final Optional<GameEvent> optFirstEvent = transformedDiag.getFirstEvent();
 		if (optFirstEvent.isPresent()) {
 			final GameEvent event = optFirstEvent.get();

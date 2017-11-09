@@ -33,10 +33,12 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import se.kth.speech.TimestampArithmetic;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.EventDialogueTestResults;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.ReferentConfidenceData;
 import se.kth.speech.coin.tangrams.iristk.EventTimes;
 import se.kth.speech.coin.tangrams.iristk.GameEvent;
 
@@ -125,7 +127,6 @@ final class DialogueAnalysisSummaryFactory implements
 				return uttDiagReprFactory.apply(diag.getUtterances().iterator());
 			}
 		},
-
 		DIALOGUE_AS_TESTED {
 			/*
 			 * (non-Javadoc)
@@ -257,6 +258,28 @@ final class DialogueAnalysisSummaryFactory implements
 				return input.diagTestResults.getValue().meanTokensPerTestedUtterance();
 			}
 		},
+		OBERVED_VOCAB_SIZE {
+
+			@Override
+			public Object apply(final Input input,
+					final Function<? super Iterator<Utterance>, String> uttDiagReprFactory) {
+				final ReferentConfidenceData refConfData = input.diagTestResults.getValue().getReferentConfidenceData();
+				final double oovObservationCount = refConfData.getOovClassWeight();
+				final double totalObsevationCount = refConfData.getReferentConfidenceVals().int2DoubleEntrySet()
+						.stream().mapToDouble(Int2DoubleMap.Entry::getDoubleValue).sum();
+				return totalObsevationCount - oovObservationCount;
+			}
+
+		},
+		OOV_OBSERVATION_COUNT {
+
+			@Override
+			public Object apply(final Input input,
+					final Function<? super Iterator<Utterance>, String> uttDiagReprFactory) {
+				return input.diagTestResults.getValue().getReferentConfidenceData().getOovClassWeight();
+			}
+
+		},
 		OTHER_UTTERANCE_OBSERVATION_WEIGHT {
 
 			@Override
@@ -290,19 +313,6 @@ final class DialogueAnalysisSummaryFactory implements
 			public Object apply(final Input input,
 					final Function<? super Iterator<Utterance>, String> uttDiagReprFactory) {
 				return input.diagTestResults.getValue().rank();
-			}
-		},
-		RR {
-			/*
-			 * (non-Javadoc)
-			 *
-			 * @see java.util.function.BiFunction#apply(java.lang.Object,
-			 * java.lang.Object)
-			 */
-			@Override
-			public Object apply(final Input input,
-					final Function<? super Iterator<Utterance>, String> uttDiagReprFactory) {
-				return input.diagTestResults.getValue().reciprocalRank();
 			}
 		},
 		SESSION_ORDER {
@@ -415,7 +425,7 @@ final class DialogueAnalysisSummaryFactory implements
 				DialogueAnalysisSummaryFactory.SummaryDatum.DIALOGUE,
 				DialogueAnalysisSummaryFactory.SummaryDatum.DIALOGUE_AS_TESTED,
 				DialogueAnalysisSummaryFactory.SummaryDatum.GOLD_STD_ID,
-				DialogueAnalysisSummaryFactory.SummaryDatum.RANK, DialogueAnalysisSummaryFactory.SummaryDatum.RR,
+				DialogueAnalysisSummaryFactory.SummaryDatum.RANK,
 				DialogueAnalysisSummaryFactory.SummaryDatum.TESTED_UTT_COUNT,
 				DialogueAnalysisSummaryFactory.SummaryDatum.TOTAL_UTT_COUNT,
 				DialogueAnalysisSummaryFactory.SummaryDatum.MEAN_DIAG_UTTS_TESTED,

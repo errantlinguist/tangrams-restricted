@@ -28,20 +28,7 @@ interface EventDialogueTestStatistics {
 		return totalTokens / (double) testedUtteranceCount();
 	}
 
-	default double meanUtterancesTested() {
-		return testedUtteranceCount() / (double) totalUtteranceCount();
-	}
-
 	int testedTokenCount();
-
-	/**
-	 *
-	 * @return The number of {@link Utterance utterances} for the given
-	 *         {@link EventDialogue dialogue} under test &mdash; including the
-	 *         individual {@code Utterance} instances which were <em>not</em>
-	 *         tested.
-	 */
-	int totalUtteranceCount();
 
 	/**
 	 *
@@ -51,9 +38,18 @@ interface EventDialogueTestStatistics {
 	int testedUtteranceCount();
 
 	/**
-	 * 
+	 *
 	 * @return All {@link Utterance} instances which were used for
 	 *         classification, in the order in which they appeared.
 	 */
 	Stream<Utterance> testedUtterances();
+
+	/**
+	 *
+	 * @return The number of {@link Utterance utterances} for the given
+	 *         {@link EventDialogue dialogue} under test &mdash; including the
+	 *         individual {@code Utterance} instances which were <em>not</em>
+	 *         tested.
+	 */
+	int totalUtteranceCount();
 }

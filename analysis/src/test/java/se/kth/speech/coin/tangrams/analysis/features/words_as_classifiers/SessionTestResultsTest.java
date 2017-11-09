@@ -19,11 +19,11 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Assert;
-import org.junit.Test;
 import org.junit.experimental.theories.DataPoint;
 import org.junit.experimental.theories.DataPoints;
 import org.junit.experimental.theories.Theories;
@@ -32,6 +32,7 @@ import org.junit.runner.RunWith;
 
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import it.unimi.dsi.fastutil.ints.Int2DoubleOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Object2DoubleMaps;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.coin.tangrams.iristk.GameEvent;
@@ -69,24 +70,16 @@ public final class SessionTestResultsTest {
 		TESTED_RANKS = IntStream.rangeClosed(1, EXPECTED_ENTITY_ID_RANKING.length).toArray();
 	}
 
-	private static double canonicalMrr(final int[] ranks) {
-		// https://en.wikipedia.org/wiki/Mean_reciprocal_rank
-		final double normalization = 1.0 / ranks.length;
-		double rrSum = 0.0;
-		for (final int rank : ranks) {
-			final double rr = 1.0 / rank;
-			rrSum += rr;
-		}
-		return normalization * rrSum;
-	}
-
 	private static EventDialogueTestResults createMockDiagTestResult(final int rank) {
 		final int goldStandardReferentId = EXPECTED_ENTITY_ID_RANKING[rank - 1];
 		final Utterance testUtt = new Utterance("segment1", "testSpeaker", Arrays.asList("test", "utterance"), 2.3f,
 				3.3f);
 		final EventDialogue transformedDiag = new EventDialogue(Arrays.asList(DUMMY_EVENT), Arrays.asList(testUtt));
 		final int totalDiagUttCount = 1;
-		return new EventDialogueTestResults(REF_CONF_VALS, goldStandardReferentId, transformedDiag, totalDiagUttCount);
+		final Supplier<String> oovClassNameGetter = () -> "__OUT_OF_VOCABULARY__";
+		return new EventDialogueTestResults(
+				new ReferentConfidenceData(REF_CONF_VALS, Object2DoubleMaps.emptyMap(), oovClassNameGetter),
+				goldStandardReferentId, transformedDiag, totalDiagUttCount);
 	}
 
 	private static SessionTestResults createTestInst(final int[] ranks) {
@@ -108,27 +101,6 @@ public final class SessionTestResultsTest {
 		final SessionTestResults testInst = createTestInst(ranks);
 		final double expected = Arrays.stream(ranks).average().getAsDouble();
 		Assert.assertEquals(expected, testInst.meanRank(), 0.00001);
-	}
-
-	@Theory
-	public void testMeanReciprocalRank(final int[] ranks) {
-		final SessionTestResults testInst = createTestInst(ranks);
-		final double expected = canonicalMrr(ranks);
-		Assert.assertEquals(expected, testInst.meanReciprocalRank(), 0.00001);
-	}
-
-	@Test
-	public void testMeanReciprocalRankTwo() {
-		final SessionTestResults testInst = new SessionTestResults(1);
-		final Utterance testUtt = new Utterance("segment1", "testSpeaker", Arrays.asList("test", "utterance"), 2.3f,
-				3.3f);
-		final EventDialogue diag = new EventDialogue(Arrays.asList(DUMMY_EVENT), Arrays.asList(testUtt));
-
-		final EventDialogueTestResults diagTestResult1 = createMockDiagTestResult(1);
-		testInst.add(Pair.of(diag, diagTestResult1));
-		final EventDialogueTestResults diagTestResult2 = createMockDiagTestResult(2);
-		testInst.add(Pair.of(diag, diagTestResult2));
-		Assert.assertEquals(0.75, testInst.meanReciprocalRank(), 0.00001);
 	}
 
 }

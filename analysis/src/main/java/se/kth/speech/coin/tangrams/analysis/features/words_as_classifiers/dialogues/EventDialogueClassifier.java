@@ -18,10 +18,10 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialo
 
 import java.util.Optional;
 
-import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import se.kth.speech.coin.tangrams.analysis.GameContext;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.ReferentConfidenceData;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -39,14 +39,15 @@ public interface EventDialogueClassifier {
 	 * @param uttCtx
 	 *            The {@link GameContext} instance representing the state of the
 	 *            game at the time the given utterances were made.
-	 * @return An {@link Optional} referring to a new {@link Int2DoubleMap}
-	 *         mapping entity IDs to the confidence measure of the entity with
-	 *         the given ID being referred to by the given utterances, or an
-	 *         {@link Optional#empty() empty} one if no language in the given
-	 *         dialogue was suitable for classification.
+	 * @return An {@link Optional} referring to a new
+	 *         {@link ReferentConfidenceData} mapping entity IDs to the
+	 *         confidence measure of the entity with the given ID being referred
+	 *         to by the given utterances, or an {@link Optional#empty() empty}
+	 *         one if no language in the given dialogue was suitable for
+	 *         classification.
 	 * @throws ClassificationException
 	 *             If an error occurs while classifying any individual entity.
 	 */
-	Optional<Int2DoubleMap> apply(EventDialogue diag, final GameContext ctx) throws ClassificationException;
+	Optional<ReferentConfidenceData> apply(EventDialogue diag, final GameContext ctx) throws ClassificationException;
 
 }

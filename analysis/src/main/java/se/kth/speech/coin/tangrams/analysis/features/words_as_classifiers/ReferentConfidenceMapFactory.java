@@ -18,7 +18,9 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers;
 
 import java.util.Arrays;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
+import javax.annotation.concurrent.NotThreadSafe;
 import javax.inject.Inject;
 
 import org.slf4j.Logger;
@@ -28,6 +30,7 @@ import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import it.unimi.dsi.fastutil.ints.Int2DoubleOpenHashMap;
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
+import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
 import se.kth.speech.coin.tangrams.analysis.GameContext;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
@@ -41,6 +44,7 @@ import weka.core.Instance;
  * @since 18 May 2017
  *
  */
+@NotThreadSafe
 public final class ReferentConfidenceMapFactory {
 
 	private static final String INST_CLASS_VAL = Boolean.TRUE.toString();
@@ -55,12 +59,12 @@ public final class ReferentConfidenceMapFactory {
 
 	private final Function<? super EntityFeature.Extractor.Context, ? extends Instance> testInstFactory;
 
-	public ReferentConfidenceMapFactory(
+	public ReferentConfidenceMapFactory( // NO_UCD (unused code)
 			final Function<? super EntityFeature.Extractor.Context, ? extends Instance> testInstFactory) {
 		this.testInstFactory = testInstFactory;
 	}
 
-	public Int2DoubleMap apply(final Object2DoubleMap<String> tokens, final GameContext uttCtx,
+	public ReferentConfidenceData apply(final Object2DoubleMap<String> tokens, final GameContext uttCtx,
 			final Function<? super String, ? extends Classifier> wordClassifiers) throws ClassificationException {
 		LOGGER.debug("Getting entity reference confidence measures for linguistic tokens: {}.", tokens);
 		// TODO: Cache mapping of word classes -> classifiers?
@@ -68,7 +72,7 @@ public final class ReferentConfidenceMapFactory {
 				.createClassifierWeighting(tokens.object2DoubleEntrySet().stream(), wordClassifiers)
 				.toArray(WeightedClassifier[]::new);
 		final IntList entityIds = uttCtx.getEntityIds();
-		final Int2DoubleMap result = new Int2DoubleOpenHashMap(entityIds.size());
+		final Int2DoubleMap referentConfidenceVals = new Int2DoubleOpenHashMap(entityIds.size());
 		final double totalWeight = Arrays.stream(weightedClassifiers).mapToDouble(WeightedClassifier::getWeight).sum();
 		for (final int entityId : entityIds) {
 			// Create a game context for classifying the entity with the
@@ -88,9 +92,20 @@ public final class ReferentConfidenceMapFactory {
 				}
 			}
 			final double normalizedConfidence = confidenceSum / totalWeight;
-			result.put(entityId, normalizedConfidence);
+			referentConfidenceVals.put(entityId, normalizedConfidence);
 		}
-		return result;
+
+		final Object2DoubleMap<String> wordClassWeights = new Object2DoubleOpenHashMap<>(weightedClassifiers.length);
+		wordClassWeights.defaultReturnValue(Double.NaN);
+		Arrays.stream(weightedClassifiers).forEach(weightedClassifier -> wordClassWeights
+				.put(weightedClassifier.getName(), weightedClassifier.getWeight()));
+		assert wordClassWeights.size() == weightedClassifiers.length;
+
+		// Bind to the object currently referred to by the non-final field
+		// "smoother", i.e. the object definitely used for smoothing during the
+		// execution of this method (in a single-threaded environment, at least)
+		final Supplier<String> oovClassNameGetter = smoother::getOovClassName;
+		return new ReferentConfidenceData(referentConfidenceVals, wordClassWeights, oovClassNameGetter);
 	}
 
 }

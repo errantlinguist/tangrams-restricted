@@ -58,6 +58,7 @@ import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
 import se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttributeContext;
 import se.kth.speech.coin.tangrams.analysis.features.weka.WordClassInstancesFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.EventDialogueTestResults;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.ReferentConfidenceData;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.ReferentConfidenceMapFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.SessionTestResults;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.SessionTestStatistics;
@@ -178,18 +179,6 @@ public final class CrossValidator {
 		@Override
 		public double meanRank() {
 			return totalResults.meanRank();
-		}
-
-		/*
-		 * (non-Javadoc)
-		 *
-		 * @see
-		 * se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.
-		 * SessionTestStatistics#meanReciprocalRank()
-		 */
-		@Override
-		public double meanReciprocalRank() {
-			return totalResults.meanReciprocalRank();
 		}
 
 		public double meanTokensTestedPerSession() {
@@ -446,11 +435,11 @@ public final class CrossValidator {
 			final GameContext uttCtx = UtteranceGameContexts.createSingleContext(firstUtt, history);
 			final OptionalInt optLastSelectedEntityId = uttCtx.findLastSelectedEntityId();
 			if (optLastSelectedEntityId.isPresent()) {
-				final Optional<Int2DoubleMap> optReferentConfidenceVals = diagClassifier.apply(transformedDiag, uttCtx);
-				if (optReferentConfidenceVals.isPresent()) {
-					final Int2DoubleMap referentConfidenceVals = optReferentConfidenceVals.get();
+				final Optional<ReferentConfidenceData> optReferentConfidenceData = diagClassifier.apply(transformedDiag, uttCtx);
+				if (optReferentConfidenceData.isPresent()) {
+					final ReferentConfidenceData referentConfidenceData = optReferentConfidenceData.get();
 					final int goldStandardEntityId = optLastSelectedEntityId.getAsInt();
-					result = Optional.of(new EventDialogueTestResults(referentConfidenceVals, goldStandardEntityId,
+					result = Optional.of(new EventDialogueTestResults(referentConfidenceData, goldStandardEntityId,
 							transformedDiag, uttDiag.getUtterances().size()));
 
 				} else {

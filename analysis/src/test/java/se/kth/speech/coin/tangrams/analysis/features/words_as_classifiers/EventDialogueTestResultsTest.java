@@ -19,6 +19,7 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
 import org.junit.Assert;
@@ -29,6 +30,7 @@ import org.junit.runner.RunWith;
 
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import it.unimi.dsi.fastutil.ints.Int2DoubleOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Object2DoubleMaps;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.coin.tangrams.iristk.GameEvent;
@@ -70,20 +72,16 @@ public final class EventDialogueTestResultsTest {
 				Arrays.asList(new GameEvent("", "", "", "", LocalDateTime.now(), Collections.emptyMap())),
 				Arrays.asList(testUtt));
 		final int totalDiagUttCount = 1;
-		return new EventDialogueTestResults(REF_CONF_VALS, goldStandardReferentId, transformedDiag, totalDiagUttCount);
+		final Supplier<String> oovClassNameGetter = () -> "__OUT_OF_VOCABULARY__";
+		return new EventDialogueTestResults(
+				new ReferentConfidenceData(REF_CONF_VALS, Object2DoubleMaps.emptyMap(), oovClassNameGetter),
+				goldStandardReferentId, transformedDiag, totalDiagUttCount);
 	}
 
 	@Theory
 	public void testRank(final int testedRank) {
 		final EventDialogueTestResults testInst = createMockDiagTestResult(testedRank);
 		Assert.assertEquals(testedRank, testInst.rank(), 0.00001);
-	}
-
-	@Theory
-	public void testReciprocalRank(final int testedRank) {
-		final EventDialogueTestResults testInst = createMockDiagTestResult(testedRank);
-		final double expected = 1.0 / testedRank;
-		Assert.assertEquals(expected, testInst.reciprocalRank(), 0.0);
 	}
 
 }

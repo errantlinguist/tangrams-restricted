@@ -20,13 +20,13 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 
-import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
 import se.kth.speech.coin.tangrams.analysis.GameContext;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.ReferentConfidenceData;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.ReferentConfidenceMapFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.EventDialogueContextWordClassifierTrainer;
 import weka.classifiers.Classifier;
@@ -42,25 +42,26 @@ public final class IsolatedUtteranceEventDialogueClassifier implements EventDial
 
 	private final ReferentConfidenceMapFactory referentConfidenceMapFactory;
 
-	public IsolatedUtteranceEventDialogueClassifier(final EventDialogueContextWordClassifierTrainer<?> diagWordClassifierFactory,
+	public IsolatedUtteranceEventDialogueClassifier(
+			final EventDialogueContextWordClassifierTrainer<?> diagWordClassifierFactory,
 			final ReferentConfidenceMapFactory referentConfidenceMapFactory) {
 		this.diagWordClassifierFactory = diagWordClassifierFactory;
 		this.referentConfidenceMapFactory = referentConfidenceMapFactory;
 	}
 
 	@Override
-	public Optional<Int2DoubleMap> apply(final EventDialogue diag, final GameContext ctx)
+	public Optional<ReferentConfidenceData> apply(final EventDialogue diag, final GameContext ctx)
 			throws ClassificationException {
-		final Optional<Int2DoubleMap> result;
+		final Optional<ReferentConfidenceData> result;
 		final List<Utterance> uttsToClassify = diag.getUtterances();
 		if (uttsToClassify.isEmpty()) {
 			result = Optional.empty();
 		} else {
 			final Function<? super String, ? extends Classifier> wordClassifierGetter = diagWordClassifierFactory
 					.apply(diag, ctx);
-			final Int2DoubleMap referentConfidenceVals = createReferentConfidenceMap(uttsToClassify, ctx,
+			final ReferentConfidenceData referentConfidenceData = createReferentConfidenceMap(uttsToClassify, ctx,
 					wordClassifierGetter);
-			result = Optional.of(referentConfidenceVals);
+			result = Optional.of(referentConfidenceData);
 		}
 		return result;
 	}
@@ -78,14 +79,15 @@ public final class IsolatedUtteranceEventDialogueClassifier implements EventDial
 	 * @param wordClassifierGetter
 	 *            A {@link Function} returning the {@link Classifier} instance
 	 *            to use for a particular token type encountered.
-	 * @return A new {@link Int2DoubleMap} mapping entity IDs to the confidence
-	 *         measure of the entity with the given ID being referred to by the
-	 *         given utterances.
+	 * @return A new {@link ReferentConfidenceData} mapping entity IDs to the
+	 *         confidence measure of the entity with the given ID being referred
+	 *         to by the given utterances.
 	 * @throws ClassificationException
 	 *             If an error occurs while classifying any individual entity.
 	 */
-	private Int2DoubleMap createReferentConfidenceMap(final List<Utterance> dialogueUtts, final GameContext uttCtx,
-			final Function<? super String, ? extends Classifier> wordClassifierGetter) throws ClassificationException {
+	private ReferentConfidenceData createReferentConfidenceMap(final List<Utterance> dialogueUtts,
+			final GameContext uttCtx, final Function<? super String, ? extends Classifier> wordClassifierGetter)
+			throws ClassificationException {
 		final Object2DoubleMap<String> diagTokens = new Object2DoubleOpenHashMap<>(dialogueUtts.size() * 4);
 		for (final Utterance dialogUtt : dialogueUtts) {
 			for (final String token : dialogUtt.getTokens()) {

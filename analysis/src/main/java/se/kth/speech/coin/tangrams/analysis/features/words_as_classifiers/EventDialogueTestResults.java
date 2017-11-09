@@ -23,7 +23,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import it.unimi.dsi.fastutil.doubles.Double2ObjectSortedMap;
-import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
@@ -41,15 +40,15 @@ public final class EventDialogueTestResults implements EventDialogueTestStatisti
 
 	private final int goldStandardReferentId;
 
-	private final Int2DoubleMap referentConfidenceVals;
+	private final ReferentConfidenceData referentConfidenceData;
 
 	private final int totalUttCount;
 
 	private final EventDialogue transformedDiag;
 
-	public EventDialogueTestResults(final Int2DoubleMap referentConfidenceVals, final int goldStandardReferentId,
-			final EventDialogue transformedDiag, final int totalDiagUttCount) {
-		this.referentConfidenceVals = referentConfidenceVals;
+	public EventDialogueTestResults(final ReferentConfidenceData referentConfidenceData,
+			final int goldStandardReferentId, final EventDialogue transformedDiag, final int totalDiagUttCount) {
+		this.referentConfidenceData = referentConfidenceData;
 		this.goldStandardReferentId = goldStandardReferentId;
 		this.transformedDiag = transformedDiag;
 		totalUttCount = totalDiagUttCount;
@@ -63,10 +62,10 @@ public final class EventDialogueTestResults implements EventDialogueTestStatisti
 	}
 
 	/**
-	 * @return the referentConfidenceVals
+	 * @return the referentConfidenceData
 	 */
-	public Int2DoubleMap getReferentConfidenceVals() {
-		return referentConfidenceVals;
+	public ReferentConfidenceData getReferentConfidenceData() {
+		return referentConfidenceData;
 	}
 
 	/**
@@ -75,27 +74,19 @@ public final class EventDialogueTestResults implements EventDialogueTestStatisti
 	public EventDialogue getTransformedDiag() {
 		return transformedDiag;
 	}
-
+	
 	public double rank() {
 		final Double2ObjectSortedMap<IntList> nbestGroups = NBestRankings.createNbestGroupMap(
-				getReferentConfidenceVals().int2DoubleEntrySet(), confidenceVal -> new IntArrayList(1));
+				getReferentConfidenceData().getReferentConfidenceVals().int2DoubleEntrySet(),
+				confidenceVal -> new IntArrayList(1));
 		final double result = NBestRankings.findAveragedRank(nbestGroups.values(), getGoldStandardReferentId());
 		LOGGER.debug("Rank of correct entity: {}", result);
 		return result;
 	}
 
-	public double reciprocalRank() {
-		return 1.0 / rank();
-	}
-
 	@Override
 	public int testedTokenCount() {
 		return testedUtterances().map(Utterance::getTokens).mapToInt(List::size).sum();
-	}
-
-	@Override
-	public int totalUtteranceCount() {
-		return totalUttCount;
 	}
 
 	@Override
@@ -109,6 +100,11 @@ public final class EventDialogueTestResults implements EventDialogueTestStatisti
 	@Override
 	public Stream<Utterance> testedUtterances() {
 		return transformedDiag.getUtterances().stream();
+	}
+
+	@Override
+	public int totalUtteranceCount() {
+		return totalUttCount;
 	}
 
 }

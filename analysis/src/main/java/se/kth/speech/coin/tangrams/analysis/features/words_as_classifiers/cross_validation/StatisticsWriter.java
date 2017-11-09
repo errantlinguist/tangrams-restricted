@@ -68,7 +68,7 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_
  *      </ul>
  *
  */
-final class StatisticsWriter implements Consumer<CrossValidator.Result> {
+final class StatisticsWriter implements Consumer<CrossValidator.Result> { // NO_UCD (use default)
 
 	private enum Parameter implements Supplier<Option> {
 		APP_CONTEXT_DEFINITIONS("c") {
@@ -156,7 +156,6 @@ final class StatisticsWriter implements Consumer<CrossValidator.Result> {
 		result.put(SummaryDatum.KEY, dyadId);
 		result.put(SummaryDatum.TEST_ITERATION, iterNo);
 		result.put(SummaryDatum.MEAN_RANK, sessionTestResults.meanRank());
-		result.put(SummaryDatum.MRR, sessionTestResults.meanReciprocalRank());
 		result.put(SummaryDatum.DIALOGUE_COUNT, totalDiagsTested);
 		result.put(SummaryDatum.UTTERANCES_TESTED, totalUttsTested);
 		result.put(SummaryDatum.MEAN_UTTERANCES_PER_DIALOGUE, totalUttsTested / (double) totalDiagsTested);
