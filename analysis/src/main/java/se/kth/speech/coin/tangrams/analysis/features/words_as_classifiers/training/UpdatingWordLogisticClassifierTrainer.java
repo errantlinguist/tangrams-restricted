@@ -292,7 +292,7 @@ public final class UpdatingWordLogisticClassifierTrainer
 			final String oovClassName = smoother.getOovClassName();
 			final WordClassificationData.Datum oovClassDatum = smoothedUpdatedClassData.get(oovClassName);
 			final Instances trainingInsts = oovClassDatum.getTrainingInsts();
-			LOGGER.info("Re-training OOV class, with {} instance(s)", trainingInsts.size());
+			LOGGER.debug("Re-training OOV class, with {} instance(s).", trainingInsts.size());
 			final CompletableFuture<Void> wordClassTrainingJob = CompletableFuture.runAsync(
 					new TrainedClassifierPutter(oovClassName, trainingInsts, currentWordClassifiers),
 					backgroundJobExecutor);
