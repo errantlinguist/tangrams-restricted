@@ -264,16 +264,17 @@ public final class WordClassDiscountingSmoother {
 		return result;
 	}
 
-	Stream<WeightedClassifier> createClassifierWeighting(final Stream<Object2DoubleMap.Entry<String>> wordClasses,
+	Stream<WeightedClassifier> createClassifierWeighting(final Stream<Object2DoubleMap.Entry<String>> wordClassWeights,
 			final Function<? super String, ? extends Classifier> wordClassifiers) {
-		return wordClasses.map(wordClass -> {
+		return wordClassWeights.map(wordClassWeight -> {
+			final String wordClass = wordClassWeight.getKey();
 			LOGGER.debug("Getting classifier for class \"{}\".", wordClass);
-			Classifier classifier = wordClassifiers.apply(wordClass.getKey());
+			Classifier classifier = wordClassifiers.apply(wordClass);
 			if (classifier == null) {
 				LOGGER.debug("Getting distribution for OOV classes (\"{}\").", oovClassName);
 				classifier = wordClassifiers.apply(oovClassName);
 			}
-			return new WeightedClassifier(classifier, wordClass.getDoubleValue());
+			return new WeightedClassifier(classifier, wordClassWeight.getDoubleValue());
 		});
 	}
 
