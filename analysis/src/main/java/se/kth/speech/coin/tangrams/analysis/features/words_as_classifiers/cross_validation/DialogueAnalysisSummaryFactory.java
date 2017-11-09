@@ -431,6 +431,8 @@ final class DialogueAnalysisSummaryFactory implements
 				DialogueAnalysisSummaryFactory.SummaryDatum.MEAN_DIAG_UTTS_TESTED,
 				DialogueAnalysisSummaryFactory.SummaryDatum.TOKEN_COUNT,
 				DialogueAnalysisSummaryFactory.SummaryDatum.MEAN_TOKENS_PER_UTT,
+				DialogueAnalysisSummaryFactory.SummaryDatum.OBERVED_VOCAB_SIZE,
+				DialogueAnalysisSummaryFactory.SummaryDatum.OOV_OBSERVATION_COUNT,
 				DialogueAnalysisSummaryFactory.SummaryDatum.BACKGROUND_DATA_POSITIVE_EXAMPLE_WEIGHT_FACTOR,
 				DialogueAnalysisSummaryFactory.SummaryDatum.BACKGROUND_DATA_NEGATIVE_EXAMPLE_WEIGHT_FACTOR,
 				DialogueAnalysisSummaryFactory.SummaryDatum.INTERACTION_DATA_POSITIVE_EXAMPLE_WEIGHT_FACTOR,
