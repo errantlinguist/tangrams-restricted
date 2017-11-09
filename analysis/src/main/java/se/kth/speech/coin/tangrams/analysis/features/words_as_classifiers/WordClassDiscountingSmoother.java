@@ -274,7 +274,7 @@ public final class WordClassDiscountingSmoother {
 				LOGGER.debug("Getting distribution for OOV classes (\"{}\").", oovClassName);
 				classifier = wordClassifiers.apply(oovClassName);
 			}
-			return new WeightedClassifier(classifier, wordClassWeight.getDoubleValue());
+			return new WeightedClassifier(wordClass, classifier, wordClassWeight.getDoubleValue());
 		});
 	}
 
