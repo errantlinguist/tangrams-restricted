@@ -270,11 +270,15 @@ public final class WordClassDiscountingSmoother {
 			final String wordClass = wordClassWeight.getKey();
 			LOGGER.debug("Getting classifier for class \"{}\".", wordClass);
 			Classifier classifier = wordClassifiers.apply(wordClass);
+			final String classifierName;
 			if (classifier == null) {
 				LOGGER.debug("Getting distribution for OOV classes (\"{}\").", oovClassName);
 				classifier = wordClassifiers.apply(oovClassName);
+				classifierName = oovClassName;
+			} else {
+				classifierName = wordClass;
 			}
-			return new WeightedClassifier(wordClass, classifier, wordClassWeight.getDoubleValue());
+			return new WeightedClassifier(classifierName, classifier, wordClassWeight.getDoubleValue());
 		});
 	}
 
