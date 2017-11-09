@@ -44,7 +44,7 @@ import weka.core.Instances;
  * @since 20 Oct 2017
  *
  */
-public final class IterativeWordLogisticClassifierTrainer
+public final class UpdatingWordLogisticClassifierTrainer
 		implements EventDialogueContextWordClassifierTrainer<Logistic> {
 
 	private static class TrainedClassifierPutter implements Runnable {
@@ -70,7 +70,7 @@ public final class IterativeWordLogisticClassifierTrainer
 
 	}
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(IterativeWordLogisticClassifierTrainer.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(UpdatingWordLogisticClassifierTrainer.class);
 
 	/**
 	 * <strong>NOTE:</strong> This equivalence function only holds for
@@ -124,7 +124,7 @@ public final class IterativeWordLogisticClassifierTrainer
 
 	private final WordClassificationData totalTrainingData;
 
-	public IterativeWordLogisticClassifierTrainer(final Executor backgroundJobExecutor,
+	public UpdatingWordLogisticClassifierTrainer(final Executor backgroundJobExecutor,
 			final WordClassDiscountingSmoother smoother, final WordClassificationData initialTrainingData,
 			final AbstractInstanceExtractor instExtractor, final double positiveExampleWeightFactor,
 			final double negativeExampleWeightFactor) {

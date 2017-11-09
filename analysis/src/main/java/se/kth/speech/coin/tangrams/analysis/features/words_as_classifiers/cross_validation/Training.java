@@ -51,7 +51,7 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialog
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.IsolatedUtteranceEventDialogueClassifier;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.AbstractInstanceExtractor;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.DialogicInstanceExtractor;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.IterativeWordLogisticClassifierTrainer;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.UpdatingWordLogisticClassifierTrainer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.OnePositiveMaximumNegativeInstanceExtractor;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.OnePositiveOneNegativeInstanceExtractor;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.ParallelizedWordLogisticClassifierTrainer;
@@ -217,7 +217,7 @@ enum Training {
 				final AbstractInstanceExtractor instExtractor = new OnePositiveMaximumNegativeInstanceExtractor(
 						entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory);
 				final Map<WordClassifierTrainingParameter, Object> trainingParams = trainingCtx.getTrainingParams();
-				final IterativeWordLogisticClassifierTrainer iterativeTrainer = new IterativeWordLogisticClassifierTrainer(
+				final UpdatingWordLogisticClassifierTrainer iterativeTrainer = new UpdatingWordLogisticClassifierTrainer(
 						classificationContext.getBackgroundJobExecutor(), smoother,
 						classificationContext.getTrainingData(), instExtractor,
 						(Double) trainingParams
@@ -357,7 +357,7 @@ enum Training {
 			final AbstractInstanceExtractor instExtractor = new OnePositiveMaximumNegativeInstanceExtractor(
 					entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory);
 			final Map<WordClassifierTrainingParameter, Object> trainingParams = trainingCtx.getTrainingParams();
-			final IterativeWordLogisticClassifierTrainer iterativeTrainer = new IterativeWordLogisticClassifierTrainer(
+			final UpdatingWordLogisticClassifierTrainer iterativeTrainer = new UpdatingWordLogisticClassifierTrainer(
 					classificationContext.getBackgroundJobExecutor(), smoother, classificationContext.getTrainingData(),
 					instExtractor,
 					(Double) trainingParams
