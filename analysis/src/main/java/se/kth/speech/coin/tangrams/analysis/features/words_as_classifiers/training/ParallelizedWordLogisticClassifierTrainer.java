@@ -58,7 +58,7 @@ public final class ParallelizedWordLogisticClassifierTrainer
 		final WordClassificationData smoothedTrainingData = new WordClassificationData(trainingData);
 		final DiscountedWordClasses discountedWordClasses = smoother.redistributeMass(smoothedTrainingData);
 		LOGGER.info("{} instance(s) for out-of-vocabulary class.",
-				discountedWordClasses.getOovClassDatum().getTrainingInsts().size());
+				discountedWordClasses.getOovClassDatum().getTrainingInstCount());
 		return createWordClassifierMap(smoothedTrainingData.getClassData().entrySet());
 	}
 
