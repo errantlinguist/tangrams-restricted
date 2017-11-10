@@ -159,6 +159,19 @@ public final class UpdatingWordLogisticClassifierTrainer
 				.thenApply(voidArg -> wordClassifiers);
 	}
 
+	private CompletableFuture<Void> retrainOovClass(
+			final Map<String, WordClassificationData.Datum> smoothedUpdatedClassData,
+			final ConcurrentMap<String, Logistic> currentWordClassifiers) {
+		final String oovClassName = smoother.getOovClassName();
+		final WordClassificationData.Datum oovClassDatum = smoothedUpdatedClassData.get(oovClassName);
+		final Instances trainingInsts = oovClassDatum.getTrainingInsts();
+		LOGGER.debug("Re-training OOV class, with {} instance(s).", trainingInsts.size());
+		final CompletableFuture<Void> result = CompletableFuture.runAsync(
+				new TrainedClassifierPutter(oovClassName, trainingInsts, currentWordClassifiers),
+				backgroundJobExecutor);
+		return result;
+	}
+
 	private Entry<CompletableFuture<ConcurrentMap<String, Logistic>>, Map<String, DiscountedWordClasses.Datum>> trainWordClassifiers(
 			final WordClassificationData unsmoothedTrainingData) {
 		final WordClassificationData smoothedTrainingData = new WordClassificationData(unsmoothedTrainingData);
@@ -186,6 +199,16 @@ public final class UpdatingWordLogisticClassifierTrainer
 		final Map<String, WordClassificationData.Datum> smoothedUpdatedClassData = smoothedUpdatedTrainingData
 				.getClassData();
 		final Stream.Builder<CompletableFuture<Void>> wordClassTrainingJobs = Stream.builder();
+
+		// Always re-train the OOV class because it's easier and likely not much
+		// more than trying to determine if it needs to be, and it saves saving
+		// e.g. Instances objects from the previous training iteration
+		{
+			final CompletableFuture<Void> oovClassTrainingJob = retrainOovClass(smoothedUpdatedClassData,
+					currentWordClassifiers);
+			wordClassTrainingJobs.add(oovClassTrainingJob);
+		}
+
 		// For each word class observed in the newly-added training data, check
 		// if the corresponding classifier needs to be retrained
 		for (final Object2IntMap.Entry<String> updatedDialogueWordObservationCount : updatedDialogueWordObservationCounts
@@ -240,18 +263,6 @@ public final class UpdatingWordLogisticClassifierTrainer
 			}
 
 		}
-
-		// Always re-train the OOV class because it's easier and likely not much
-		// more than trying to determine if it needs to be, and it saves saving
-		// e.g. Instances objects from the previous training iteration
-		final String oovClassName = smoother.getOovClassName();
-		final WordClassificationData.Datum oovClassDatum = smoothedUpdatedClassData.get(oovClassName);
-		final Instances trainingInsts = oovClassDatum.getTrainingInsts();
-		LOGGER.debug("Re-training OOV class, with {} instance(s).", trainingInsts.size());
-		final CompletableFuture<Void> wordClassTrainingJob = CompletableFuture.runAsync(
-				new TrainedClassifierPutter(oovClassName, trainingInsts, currentWordClassifiers),
-				backgroundJobExecutor);
-		wordClassTrainingJobs.add(wordClassTrainingJob);
 
 		final CompletableFuture<ConcurrentMap<String, Logistic>> updatedMapFuture = CompletableFuture
 				.allOf(wordClassTrainingJobs.build().toArray(CompletableFuture[]::new))
