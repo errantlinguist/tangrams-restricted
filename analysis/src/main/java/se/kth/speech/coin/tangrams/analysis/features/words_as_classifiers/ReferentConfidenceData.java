@@ -16,24 +16,22 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers;
 
-import java.util.function.Supplier;
-
 import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 
 public final class ReferentConfidenceData {
 
-	private final Supplier<String> oovClassNameGetter;
+	private final String oovClassName;
 
 	private final Int2DoubleMap referentConfidenceVals;
 
 	private final Object2DoubleMap<String> wordClassWeights;
 
 	ReferentConfidenceData(final Int2DoubleMap referentConfidenceVals, final Object2DoubleMap<String> wordClassWeights,
-			final Supplier<String> oovClassNameGetter) {
+			final String oovClassName) {
 		this.referentConfidenceVals = referentConfidenceVals;
 		this.wordClassWeights = wordClassWeights;
-		this.oovClassNameGetter = oovClassNameGetter;
+		this.oovClassName = oovClassName;
 	}
 
 	/*
@@ -53,11 +51,11 @@ public final class ReferentConfidenceData {
 			return false;
 		}
 		final ReferentConfidenceData other = (ReferentConfidenceData) obj;
-		if (oovClassNameGetter == null) {
-			if (other.oovClassNameGetter != null) {
+		if (oovClassName == null) {
+			if (other.oovClassName != null) {
 				return false;
 			}
-		} else if (!oovClassNameGetter.equals(other.oovClassNameGetter)) {
+		} else if (!oovClassName.equals(other.oovClassName)) {
 			return false;
 		}
 		if (referentConfidenceVals == null) {
@@ -78,8 +76,6 @@ public final class ReferentConfidenceData {
 	}
 
 	public double getOovClassWeight() {
-		final String oovClassName = oovClassNameGetter.get();
-		assert oovClassName != null;
 		return wordClassWeights.getDouble(oovClassName);
 	}
 
@@ -106,7 +102,7 @@ public final class ReferentConfidenceData {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + (oovClassNameGetter == null ? 0 : oovClassNameGetter.hashCode());
+		result = prime * result + (oovClassName == null ? 0 : oovClassName.hashCode());
 		result = prime * result + (referentConfidenceVals == null ? 0 : referentConfidenceVals.hashCode());
 		result = prime * result + (wordClassWeights == null ? 0 : wordClassWeights.hashCode());
 		return result;
@@ -124,8 +120,8 @@ public final class ReferentConfidenceData {
 		builder.append(referentConfidenceVals);
 		builder.append(", wordClassWeights=");
 		builder.append(wordClassWeights);
-		builder.append(", oovClassNameGetter=");
-		builder.append(oovClassNameGetter);
+		builder.append(", oovClassName=");
+		builder.append(oovClassName);
 		builder.append("]");
 		return builder.toString();
 	}

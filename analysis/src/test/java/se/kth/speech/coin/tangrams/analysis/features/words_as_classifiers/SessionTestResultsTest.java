@@ -19,7 +19,6 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.function.Supplier;
 import java.util.stream.IntStream;
 
 import org.apache.commons.lang3.tuple.Pair;
@@ -76,9 +75,8 @@ public final class SessionTestResultsTest {
 				3.3f);
 		final EventDialogue transformedDiag = new EventDialogue(Arrays.asList(DUMMY_EVENT), Arrays.asList(testUtt));
 		final int totalDiagUttCount = 1;
-		final Supplier<String> oovClassNameGetter = () -> "__OUT_OF_VOCABULARY__";
 		return new EventDialogueTestResults(
-				new ReferentConfidenceData(REF_CONF_VALS, Object2DoubleMaps.emptyMap(), oovClassNameGetter),
+				new ReferentConfidenceData(REF_CONF_VALS, Object2DoubleMaps.emptyMap(), "__OUT_OF_VOCABULARY__"),
 				goldStandardReferentId, transformedDiag, totalDiagUttCount);
 	}
 

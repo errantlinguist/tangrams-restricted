@@ -18,7 +18,6 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers;
 
 import java.util.Arrays;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 import javax.annotation.concurrent.NotThreadSafe;
 import javax.inject.Inject;
@@ -104,8 +103,8 @@ public final class ReferentConfidenceMapFactory {
 		// Bind to the object currently referred to by the non-final field
 		// "smoother", i.e. the object definitely used for smoothing during the
 		// execution of this method (in a single-threaded environment, at least)
-		final Supplier<String> oovClassNameGetter = smoother::getOovClassName;
-		return new ReferentConfidenceData(referentConfidenceVals, wordClassWeights, oovClassNameGetter);
+		final String oovClassName = smoother.getOovClassName();
+		return new ReferentConfidenceData(referentConfidenceVals, wordClassWeights, oovClassName);
 	}
 
 }
