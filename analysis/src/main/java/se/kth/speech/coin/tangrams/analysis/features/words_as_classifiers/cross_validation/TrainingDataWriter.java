@@ -22,6 +22,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -42,6 +43,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.support.FileSystemXmlApplicationContext;
 
+import se.kth.speech.MapCollectors;
 import se.kth.speech.coin.tangrams.CLIParameters;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.WordClassificationData;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.WordClassificationData.Datum;
@@ -180,7 +182,8 @@ final class TrainingDataWriter { // NO_UCD (use default)
 	private void accept(final Iterable<Path> inpaths) throws IOException {
 		final Map<Path, SessionDataManager> infileSessionData = SessionDataManager.createFileSessionDataMap(inpaths);
 		final Map<SessionDataManager, Path> allSessions = infileSessionData.entrySet().stream()
-				.collect(Collectors.toMap(Entry::getValue, Entry::getKey));
+				.collect(Collectors.toMap(Entry::getValue, Entry::getKey, MapCollectors.throwingMerger(),
+						() -> new HashMap<>(infileSessionData.size() + 1, 1.0f)));
 		infileSessionData.forEach((infile, sessionData) -> allSessions.put(sessionData, infile));
 		final Map<Path, String> infilePathOutdirNames = FileNames
 				.createMinimalPathLeafNameMap(infileSessionData.keySet(), fileName -> {
