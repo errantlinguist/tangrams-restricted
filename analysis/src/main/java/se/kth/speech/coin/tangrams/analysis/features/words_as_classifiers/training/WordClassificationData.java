@@ -18,8 +18,13 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.train
 
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.BiFunction;
+import java.util.function.BinaryOperator;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import com.google.common.collect.Maps;
 
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
@@ -34,22 +39,24 @@ import weka.core.Instances;
 public final class WordClassificationData {
 
 	public static final class Datum {
-		
+
 		private int observationCount;
-		
+
 		private int trainingInstancesChangeCount;
 
 		private final Instances trainingInsts;
-
-		private Datum(final Datum copyee) {
-			this(new Instances(copyee.getTrainingInsts()), copyee.getObservationCount(), copyee.getTrainingInstancesChangeCount());
-		}
 
 		public Datum(final Instances trainingInsts) {
 			this(trainingInsts, 0, 0);
 		}
 
-		private Datum(final Instances trainingInsts, final int observationCount, int trainingInstancesChangeCount) {
+		private Datum(final Datum copyee) {
+			this(new Instances(copyee.getTrainingInsts()), copyee.getObservationCount(),
+					copyee.getTrainingInstancesChangeCount());
+		}
+
+		private Datum(final Instances trainingInsts, final int observationCount,
+				final int trainingInstancesChangeCount) {
 			this.trainingInsts = trainingInsts;
 			this.observationCount = observationCount;
 			this.trainingInstancesChangeCount = trainingInstancesChangeCount;
@@ -61,23 +68,30 @@ public final class WordClassificationData {
 		}
 
 		@Override
-		public boolean equals(Object obj) {
-			if (this == obj)
+		public boolean equals(final Object obj) {
+			if (this == obj) {
 				return true;
-			if (obj == null)
+			}
+			if (obj == null) {
 				return false;
-			if (getClass() != obj.getClass())
+			}
+			if (getClass() != obj.getClass()) {
 				return false;
-			Datum other = (Datum) obj;
-			if (observationCount != other.observationCount)
+			}
+			final Datum other = (Datum) obj;
+			if (observationCount != other.observationCount) {
 				return false;
-			if (trainingInstancesChangeCount != other.trainingInstancesChangeCount)
+			}
+			if (trainingInstancesChangeCount != other.trainingInstancesChangeCount) {
 				return false;
+			}
 			if (trainingInsts == null) {
-				if (other.trainingInsts != null)
+				if (other.trainingInsts != null) {
 					return false;
-			} else if (!trainingInsts.equals(other.trainingInsts))
+				}
+			} else if (!trainingInsts.equals(other.trainingInsts)) {
 				return false;
+			}
 			return true;
 		}
 
@@ -105,12 +119,12 @@ public final class WordClassificationData {
 			int result = 1;
 			result = prime * result + observationCount;
 			result = prime * result + trainingInstancesChangeCount;
-			result = prime * result + ((trainingInsts == null) ? 0 : trainingInsts.hashCode());
+			result = prime * result + (trainingInsts == null ? 0 : trainingInsts.hashCode());
 			return result;
 		}
 
 		private void incrementTrainingInstancesChangeCount() {
-			this.trainingInstancesChangeCount += 1;
+			trainingInstancesChangeCount += 1;
 		}
 
 		/**
@@ -120,6 +134,23 @@ public final class WordClassificationData {
 		private void setObservationCount(final int observationCount) {
 			this.observationCount = observationCount;
 		}
+	}
+
+	/**
+	 * Returns a merge function, suitable for use in
+	 * {@link Map#merge(Object, Object, BiFunction) Map.merge()} or
+	 * {@link #toMap(Function, Function, BinaryOperator) toMap()}, which always
+	 * throws {@code IllegalStateException}. This can be used to enforce the
+	 * assumption that the elements being collected are distinct.
+	 *
+	 * @param <T>
+	 *            the type of input arguments to the merge function
+	 * @return a merge function which always throw {@code IllegalStateException}
+	 */
+	private static <T> BinaryOperator<T> throwingMerger() {
+		return (u, v) -> {
+			throw new IllegalStateException(String.format("Duplicate key %s", u));
+		};
 	}
 
 	private final Map<String, Datum> classData;
@@ -141,8 +172,10 @@ public final class WordClassificationData {
 	}
 
 	WordClassificationData(final WordClassificationData copyee) {
-		classData = copyee.getClassData().entrySet().stream()
-				.collect(Collectors.toMap(Entry::getKey, entry -> new Datum(entry.getValue())));
+		final Map<String, Datum> copyeeClassData = copyee.getClassData();
+		classData = copyeeClassData.entrySet().stream()
+				.collect(Collectors.toMap(Entry::getKey, entry -> new Datum(entry.getValue()), throwingMerger(),
+						() -> Maps.newHashMapWithExpectedSize(copyeeClassData.size())));
 
 		final WordClassInstancesFetcher copyeeFetcher = copyee.getClassInstancesFetcher();
 		classInstancesFetcher = new WordClassInstancesFetcher(classData, copyeeFetcher.getEntityInstAttrCtx(),
@@ -151,29 +184,6 @@ public final class WordClassificationData {
 		final Object2IntMap<String> copyeeTrainingInstanceCounts = copyee.getTrainingInstanceCounts();
 		trainingInstanceCounts = new Object2IntOpenHashMap<>(copyeeTrainingInstanceCounts);
 		trainingInstanceCounts.defaultReturnValue(copyeeTrainingInstanceCounts.defaultReturnValue());
-	}
-
-	void addWordClassExamples(final String wordClass, final Stream<Entry<Instance, String>> instClassValues) {
-		final Instances classInstances = fetchWordInstances(wordClass);
-		instClassValues.forEach(instClassValue -> {
-			final Instance inst = instClassValue.getKey();
-			// NOTE: Caching individual Instance instances could only reduce
-			// computation time and not memory footprint because
-			// "Instances.add(..)" actually performs a shallow copy of each
-			// Instance before adding it
-			classInstances.add(inst);
-			final String classValue = instClassValue.getValue();
-			trainingInstanceCounts.put(classValue, trainingInstanceCounts.getInt(classValue) + 1);
-		});
-	}
-
-	void addWordClassObservationCounts(final Object2IntMap<String> wordClassObservationCounts) {
-		wordClassObservationCounts.object2IntEntrySet().forEach(wordClassObservationCount -> {
-			final String wordClass = wordClassObservationCount.getKey();
-			final Datum wordClassDatum = classData.get(wordClass);
-			wordClassDatum.setObservationCount(
-					wordClassDatum.getObservationCount() + wordClassObservationCount.getIntValue());
-		});
 	}
 
 	/*
@@ -217,10 +227,6 @@ public final class WordClassificationData {
 		return true;
 	}
 
-	Instances fetchWordInstances(final String wordClass) {
-		return classInstancesFetcher.apply(wordClass);
-	}
-
 	/**
 	 * @return the classData
 	 */
@@ -229,19 +235,12 @@ public final class WordClassificationData {
 	}
 
 	/**
-	 * @return the classInstancesFetcher
-	 */
-	private WordClassInstancesFetcher getClassInstancesFetcher() {
-		return classInstancesFetcher;
-	}
-
-	/**
 	 * @return the trainingInstanceCounts
 	 */
 	public Object2IntMap<String> getTrainingInstanceCounts() {
 		return trainingInstanceCounts;
 	}
-	
+
 	/*
 	 * (non-Javadoc)
 	 *
@@ -255,6 +254,40 @@ public final class WordClassificationData {
 		result = prime * result + (classData == null ? 0 : classData.hashCode());
 		result = prime * result + (trainingInstanceCounts == null ? 0 : trainingInstanceCounts.hashCode());
 		return result;
+	}
+
+	/**
+	 * @return the classInstancesFetcher
+	 */
+	private WordClassInstancesFetcher getClassInstancesFetcher() {
+		return classInstancesFetcher;
+	}
+
+	void addWordClassExamples(final String wordClass, final Stream<Entry<Instance, String>> instClassValues) {
+		final Instances classInstances = fetchWordInstances(wordClass);
+		instClassValues.forEach(instClassValue -> {
+			final Instance inst = instClassValue.getKey();
+			// NOTE: Caching individual Instance instances could only reduce
+			// computation time and not memory footprint because
+			// "Instances.add(..)" actually performs a shallow copy of each
+			// Instance before adding it
+			classInstances.add(inst);
+			final String classValue = instClassValue.getValue();
+			trainingInstanceCounts.put(classValue, trainingInstanceCounts.getInt(classValue) + 1);
+		});
+	}
+
+	void addWordClassObservationCounts(final Object2IntMap<String> wordClassObservationCounts) {
+		wordClassObservationCounts.object2IntEntrySet().forEach(wordClassObservationCount -> {
+			final String wordClass = wordClassObservationCount.getKey();
+			final Datum wordClassDatum = classData.get(wordClass);
+			wordClassDatum.setObservationCount(
+					wordClassDatum.getObservationCount() + wordClassObservationCount.getIntValue());
+		});
+	}
+
+	Instances fetchWordInstances(final String wordClass) {
+		return classInstancesFetcher.apply(wordClass);
 	}
 
 	void incrementTrainingInstancesChangeCounts(final Iterable<String> changedWordClasses) {
