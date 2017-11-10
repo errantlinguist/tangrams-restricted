@@ -18,6 +18,7 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -33,6 +34,7 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.Maps;
 
 import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
+import se.kth.speech.MapCollectors;
 import se.kth.speech.coin.tangrams.analysis.features.weka.WordClassInstancesFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.WordClassificationData;
 import weka.classifiers.Classifier;
@@ -53,12 +55,101 @@ public final class WordClassDiscountingSmoother {
 
 	public static final class DiscountedWordClasses {
 
-		private final Map<String, WordClassificationData.Datum> discountedClassData;
+		public static final class Datum {
 
-		private final WordClassificationData.Datum oovClassDatum;
+			private final int observationCount;
 
-		private DiscountedWordClasses(final Map<String, WordClassificationData.Datum> discountedClassData,
-				final WordClassificationData.Datum oovClassDatum) {
+			private final int trainingInstancesChangeCount;
+
+			private final int trainingInstCount;
+
+			private Datum() {
+				this(0, 0, 0);
+			}
+
+			private Datum(final Datum copyee) {
+				this(copyee.getObservationCount(), copyee.getTrainingInstCount(),
+						copyee.getTrainingInstancesChangeCount());
+			}
+
+			private Datum(final int observationCount, final int trainingInstCount,
+					final int trainingInstancesChangeCount) {
+				this.observationCount = observationCount;
+				this.trainingInstCount = trainingInstCount;
+				this.trainingInstancesChangeCount = trainingInstancesChangeCount;
+			}
+
+			private Datum(final WordClassificationData.Datum copyee) {
+				this(copyee.getObservationCount(), copyee.getTrainingInsts().size(),
+						copyee.getTrainingInstancesChangeCount());
+			}
+
+			/*
+			 * (non-Javadoc)
+			 *
+			 * @see java.lang.Object#equals(java.lang.Object)
+			 */
+			@Override
+			public boolean equals(final Object obj) {
+				if (this == obj) {
+					return true;
+				}
+				if (obj == null) {
+					return false;
+				}
+				if (!(obj instanceof Datum)) {
+					return false;
+				}
+				final Datum other = (Datum) obj;
+				if (observationCount != other.observationCount) {
+					return false;
+				}
+				if (trainingInstancesChangeCount != other.trainingInstancesChangeCount) {
+					return false;
+				}
+				return true;
+			}
+
+			/**
+			 * @return the observationCount
+			 */
+			public int getObservationCount() {
+				return observationCount;
+			}
+
+			public int getTrainingInstancesChangeCount() {
+				return trainingInstancesChangeCount;
+			}
+
+			/**
+			 * @return the trainingInstCount
+			 */
+			public int getTrainingInstCount() {
+				return trainingInstCount;
+			}
+
+			/*
+			 * (non-Javadoc)
+			 *
+			 * @see java.lang.Object#hashCode()
+			 */
+			@Override
+			public int hashCode() {
+				final int prime = 31;
+				int result = 1;
+				result = prime * result + observationCount;
+				result = prime * result + trainingInstancesChangeCount;
+				return result;
+			}
+
+		}
+
+		private final Map<String, DiscountedWordClasses.Datum> discountedClassData;
+
+		private final DiscountedWordClasses.Datum oovClassDatum;
+
+		private DiscountedWordClasses(final Map<String, DiscountedWordClasses.Datum> discountedClassData,
+				final DiscountedWordClasses.Datum oovClassDatum) {
 			this.discountedClassData = discountedClassData;
 			this.oovClassDatum = oovClassDatum;
 		}
@@ -100,14 +191,14 @@ public final class WordClassDiscountingSmoother {
 		/**
 		 * @return the discountedClassData
 		 */
-		public Map<String, WordClassificationData.Datum> getDiscountedClassData() {
+		public Map<String, DiscountedWordClasses.Datum> getDiscountedClassData() {
 			return discountedClassData;
 		}
 
 		/**
 		 * @return the oovClassDatum
 		 */
-		public WordClassificationData.Datum getOovClassDatum() {
+		public DiscountedWordClasses.Datum getOovClassDatum() {
 			return oovClassDatum;
 		}
 
@@ -181,48 +272,12 @@ public final class WordClassDiscountingSmoother {
 		// Re-redistribute instances to the OOV class
 		final WordClassificationData.Datum oovClassDatum = redistributeMassToOovClass(trainingData,
 				wordClassesToDiscount.entrySet());
-		return new DiscountedWordClasses(wordClassesToDiscount, oovClassDatum);
-	}
-
-	/**
-	 * Calculates which {@link Instances} objects for each unique word class
-	 * (i.e.&nbsp;token type) should be discounted, removes them from the given
-	 * {@link WordClassificationData} object and puts it into the
-	 * {@link #oovClassName out-of-vocabulary label} {@code Instances} object.
-	 *
-	 * @param trainingData
-	 *            The unsmoothed training data.
-	 * @return A new {@link DiscountedWordClasses} instance representing
-	 *         information about the word classes used for discounting and the
-	 *         {@link Instances} objects for each.
-	 */
-	public DiscountedWordClasses redistributeMass(final WordClassificationData trainingData,
-			final Map<String, WordClassificationData.Datum> previouslyDiscountedWordClassInsts) {
-		final Map<String, WordClassificationData.Datum> wordClassesToDiscount = createdAddendClassInstsMap(
-				trainingData);
-		if (wordClassesToDiscount.isEmpty()) {
-			throw new IllegalArgumentException(
-					String.format("Could not find any word classes with fewer than %s instance(s).", minCount));
-		}
-
-		final DiscountedWordClasses result;
-		if (wordClassesToDiscount.equals(previouslyDiscountedWordClassInsts)) {
-			LOGGER.debug(
-					"Set of discounted classes is identical to those already used for smoothing; Skipping redistribution of {} class(es).",
-					wordClassesToDiscount.size());
-			final WordClassificationData.Datum oovClassDatum = getOovClassDatum(trainingData);
-			assert oovClassDatum != null;
-			// Re-use the old discounted class set to avoid causing havoc with
-			// code which relies on object identity rather than equivalence
-			result = new DiscountedWordClasses(previouslyDiscountedWordClassInsts, oovClassDatum);
-		} else {
-			// The new set of word classes is different from the previous one;
-			// Re-redistribute instances to the OOV class
-			final WordClassificationData.Datum oovClassDatum = redistributeMassToOovClass(trainingData,
-					wordClassesToDiscount.entrySet());
-			result = new DiscountedWordClasses(wordClassesToDiscount, oovClassDatum);
-		}
-		return result;
+		final Map<String, DiscountedWordClasses.Datum> discountedWordClassData = wordClassesToDiscount.entrySet()
+				.stream()
+				.collect(Collectors.toMap(Entry::getKey,
+						discountedWordClass -> new DiscountedWordClasses.Datum(discountedWordClass.getValue()),
+						MapCollectors.throwingMerger(), () -> new HashMap<>(wordClassesToDiscount.size() + 1, 1.0f)));
+		return new DiscountedWordClasses(discountedWordClassData, new DiscountedWordClasses.Datum(oovClassDatum));
 	}
 
 	private Map<String, WordClassificationData.Datum> createdAddendClassInstsMap(
@@ -246,10 +301,6 @@ public final class WordClassDiscountingSmoother {
 			final Collection<Entry<String, WordClassificationData.Datum>> wordClassData) {
 		return wordClassData.stream()
 				.filter(observationCount -> observationCount.getValue().getObservationCount() < minCount);
-	}
-
-	private WordClassificationData.Datum getOovClassDatum(final WordClassificationData trainingData) {
-		return trainingData.getClassData().get(oovClassName);
 	}
 
 	private WordClassificationData.Datum redistributeMassToOovClass(final WordClassificationData trainingData,
