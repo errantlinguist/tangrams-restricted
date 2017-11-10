@@ -18,9 +18,6 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.train
 
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.function.BiFunction;
-import java.util.function.BinaryOperator;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -28,6 +25,7 @@ import com.google.common.collect.Maps;
 
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
+import se.kth.speech.MapCollectors;
 import weka.core.Instance;
 import weka.core.Instances;
 
@@ -136,23 +134,6 @@ public final class WordClassificationData {
 		}
 	}
 
-	/**
-	 * Returns a merge function, suitable for use in
-	 * {@link Map#merge(Object, Object, BiFunction) Map.merge()} or
-	 * {@link #toMap(Function, Function, BinaryOperator) toMap()}, which always
-	 * throws {@code IllegalStateException}. This can be used to enforce the
-	 * assumption that the elements being collected are distinct.
-	 *
-	 * @param <T>
-	 *            the type of input arguments to the merge function
-	 * @return a merge function which always throw {@code IllegalStateException}
-	 */
-	private static <T> BinaryOperator<T> throwingMerger() {
-		return (u, v) -> {
-			throw new IllegalStateException(String.format("Duplicate key %s", u));
-		};
-	}
-
 	private final Map<String, Datum> classData;
 
 	private final WordClassInstancesFetcher classInstancesFetcher;
@@ -174,8 +155,8 @@ public final class WordClassificationData {
 	WordClassificationData(final WordClassificationData copyee) {
 		final Map<String, Datum> copyeeClassData = copyee.getClassData();
 		classData = copyeeClassData.entrySet().stream()
-				.collect(Collectors.toMap(Entry::getKey, entry -> new Datum(entry.getValue()), throwingMerger(),
-						() -> Maps.newHashMapWithExpectedSize(copyeeClassData.size())));
+				.collect(Collectors.toMap(Entry::getKey, entry -> new Datum(entry.getValue()),
+						MapCollectors.throwingMerger(), () -> Maps.newHashMapWithExpectedSize(copyeeClassData.size())));
 
 		final WordClassInstancesFetcher copyeeFetcher = copyee.getClassInstancesFetcher();
 		classInstancesFetcher = new WordClassInstancesFetcher(classData, copyeeFetcher.getEntityInstAttrCtx(),
