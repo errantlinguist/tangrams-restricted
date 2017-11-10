@@ -18,10 +18,12 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 
+import se.kth.speech.MapCollectors;
 import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
 
 /**
@@ -34,7 +36,7 @@ final class TestSessionData {
 	public static Map<SessionDataManager, Path> readTestSessionData(final Iterable<Path> inpaths) throws IOException {
 		final Map<Path, SessionDataManager> infileSessionData = SessionDataManager.createFileSessionDataMap(inpaths);
 		final Map<SessionDataManager, Path> result = infileSessionData.entrySet().stream()
-				.collect(Collectors.toMap(Entry::getValue, Entry::getKey));
+				.collect(Collectors.toMap(Entry::getValue, Entry::getKey, MapCollectors.throwingMerger(), () -> new HashMap<>(infileSessionData.size() + 1, 1.0f)));
 		infileSessionData.forEach((infile, sessionData) -> result.put(sessionData, infile));
 		return result;
 	}
