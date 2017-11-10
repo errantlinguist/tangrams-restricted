@@ -16,12 +16,11 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
-import com.google.common.collect.Maps;
 
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
@@ -156,7 +155,7 @@ public final class WordClassificationData {
 		final Map<String, Datum> copyeeClassData = copyee.getClassData();
 		classData = copyeeClassData.entrySet().stream()
 				.collect(Collectors.toMap(Entry::getKey, entry -> new Datum(entry.getValue()),
-						MapCollectors.throwingMerger(), () -> Maps.newHashMapWithExpectedSize(copyeeClassData.size())));
+						MapCollectors.throwingMerger(), () -> new HashMap<>(copyeeClassData.size() + 1, 1.0f)));
 
 		final WordClassInstancesFetcher copyeeFetcher = copyee.getClassInstancesFetcher();
 		classInstancesFetcher = new WordClassInstancesFetcher(classData, copyeeFetcher.getEntityInstAttrCtx(),
