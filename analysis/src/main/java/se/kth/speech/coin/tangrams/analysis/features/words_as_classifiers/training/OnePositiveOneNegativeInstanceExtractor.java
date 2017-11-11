@@ -26,7 +26,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntMaps;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
@@ -41,7 +40,6 @@ import se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttribut
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.UtteranceGameContexts;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.EventDialogueTransformer;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
-import se.kth.speech.fastutil.RandomIntLists;
 import weka.core.Instance;
 import weka.core.Instances;
 
@@ -107,10 +105,10 @@ public final class OnePositiveOneNegativeInstanceExtractor extends AbstractInsta
 		}
 
 		private int findRandomEntityId(final GameContext ctx, final int complementId) {
-			final IntList entityIds = ctx.getEntityIds();
-			int result = RandomIntLists.getRandomValue(entityIds, rnd);
+			final int entityCount = ctx.getEntityCount();
+			int result = rnd.nextInt(entityCount);
 			while (result == complementId) {
-				result = RandomIntLists.getRandomValue(entityIds, rnd);
+				result = rnd.nextInt(entityCount);
 			}
 			return result;
 		}

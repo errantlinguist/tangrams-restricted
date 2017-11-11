@@ -33,7 +33,6 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import se.kth.speech.TimestampArithmetic;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
@@ -265,8 +264,7 @@ final class DialogueAnalysisSummaryFactory implements
 					final Function<? super Iterator<Utterance>, String> uttDiagReprFactory) {
 				final ReferentConfidenceData refConfData = input.diagTestResults.getValue().getReferentConfidenceData();
 				final double oovObservationCount = refConfData.getOovClassWeight();
-				final double totalObsevationCount = refConfData.getReferentConfidenceVals().int2DoubleEntrySet()
-						.stream().mapToDouble(Int2DoubleMap.Entry::getDoubleValue).sum();
+				final double totalObsevationCount = Arrays.stream(refConfData.getReferentConfidenceVals()).sum();
 				return totalObsevationCount - oovObservationCount;
 			}
 

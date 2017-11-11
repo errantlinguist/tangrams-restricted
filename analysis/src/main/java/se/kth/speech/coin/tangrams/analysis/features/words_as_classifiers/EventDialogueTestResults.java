@@ -77,7 +77,7 @@ public final class EventDialogueTestResults implements EventDialogueTestStatisti
 	
 	public double rank() {
 		final Double2ObjectSortedMap<IntList> nbestGroups = NBestRankings.createNbestGroupMap(
-				getReferentConfidenceData().getReferentConfidenceVals().int2DoubleEntrySet(),
+				getReferentConfidenceData().getReferentConfidenceVals(),
 				confidenceVal -> new IntArrayList(1));
 		final double result = NBestRankings.findAveragedRank(nbestGroups.values(), getGoldStandardReferentId());
 		LOGGER.debug("Rank of correct entity: {}", result);

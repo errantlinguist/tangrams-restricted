@@ -16,7 +16,8 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers;
 
-import java.util.Arrays;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.function.Function;
 
 import javax.annotation.concurrent.NotThreadSafe;
@@ -25,9 +26,6 @@ import javax.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
-import it.unimi.dsi.fastutil.ints.Int2DoubleOpenHashMap;
-import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
 import se.kth.speech.coin.tangrams.analysis.GameContext;
@@ -66,43 +64,40 @@ public final class ReferentConfidenceMapFactory {
 	public ReferentConfidenceData apply(final Object2DoubleMap<String> tokens, final GameContext uttCtx,
 			final Function<? super String, ? extends Classifier> wordClassifiers) throws ClassificationException {
 		LOGGER.debug("Getting entity reference confidence measures for linguistic tokens: {}.", tokens);
-		// TODO: Cache mapping of word classes -> classifiers?
-		final WeightedClassifier[] weightedClassifiers = smoother
-				.createClassifierWeighting(tokens.object2DoubleEntrySet().stream(), wordClassifiers)
-				.toArray(WeightedClassifier[]::new);
-		final IntList entityIds = uttCtx.getEntityIds();
-		final Int2DoubleMap referentConfidenceVals = new Int2DoubleOpenHashMap(entityIds.size());
-		final double totalWeight = Arrays.stream(weightedClassifiers).mapToDouble(WeightedClassifier::getWeight).sum();
-		for (final int entityId : entityIds) {
+		final Map<String,WeightedClassifier> weightedClassifiers = smoother
+				.createWeightedClassifierMap(tokens.object2DoubleEntrySet(), wordClassifiers);
+		final int entityCount = uttCtx.getEntityCount();
+		final double[] referentConfidenceVals = new double[entityCount];
+		final Object2DoubleMap<String> wordClassWeights = new Object2DoubleOpenHashMap<>(weightedClassifiers.size() + 1, 1.0f);
+		wordClassWeights.defaultReturnValue(Double.NaN);
+		
+		final double totalWeight = weightedClassifiers.values().stream().mapToDouble(WeightedClassifier::getWeight).sum();
+		for (int entityId = 0; entityId < entityCount; ++entityId) {
 			// Create a game context for classifying the entity with the
 			// given ID
 			final EntityFeature.Extractor.Context extContext = extCtxFactory.apply(uttCtx, entityId);
 			final Instance testInst = testInstFactory.apply(extContext);
 			double confidenceSum = 0.0;
-			for (final WeightedClassifier weightedClassifier : weightedClassifiers) {
+			for (final Entry<String, WeightedClassifier> entry : weightedClassifiers.entrySet()) {
+				final String wordClass = entry.getKey();
+				final WeightedClassifier weightedClassifier =entry.getValue();
 				final Classifier classifier = weightedClassifier.getClassifier();
+				final double weight =  weightedClassifier.getWeight();
+				wordClassWeights.put(wordClass, weight);
 				try {
 					final double[] classValProbs = classifier.distributionForInstance(testInst);
 					final double classValProb = AttributeValues.findNominalClassValueProbability(testInst,
 							classValProbs, INST_CLASS_VAL);
-					confidenceSum += classValProb * weightedClassifier.getWeight();
+					confidenceSum += classValProb * weight;
 				} catch (final Exception e) {
 					throw new ClassificationException(e);
 				}
 			}
 			final double normalizedConfidence = confidenceSum / totalWeight;
-			referentConfidenceVals.put(entityId, normalizedConfidence);
+			referentConfidenceVals[entityId] = normalizedConfidence;
 		}
+		assert wordClassWeights.size() == weightedClassifiers.size();
 
-		final Object2DoubleMap<String> wordClassWeights = new Object2DoubleOpenHashMap<>(weightedClassifiers.length);
-		wordClassWeights.defaultReturnValue(Double.NaN);
-		Arrays.stream(weightedClassifiers).forEach(weightedClassifier -> wordClassWeights
-				.put(weightedClassifier.getName(), weightedClassifier.getWeight()));
-		assert wordClassWeights.size() == weightedClassifiers.length;
-
-		// Bind to the object currently referred to by the non-final field
-		// "smoother", i.e. the object definitely used for smoothing during the
-		// execution of this method (in a single-threaded environment, at least)
 		final String oovClassName = smoother.getOovClassName();
 		return new ReferentConfidenceData(referentConfidenceVals, wordClassWeights, oovClassName);
 	}

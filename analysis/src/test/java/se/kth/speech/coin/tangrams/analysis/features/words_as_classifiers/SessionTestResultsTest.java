@@ -29,8 +29,6 @@ import org.junit.experimental.theories.Theories;
 import org.junit.experimental.theories.Theory;
 import org.junit.runner.RunWith;
 
-import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
-import it.unimi.dsi.fastutil.ints.Int2DoubleOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2DoubleMaps;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
@@ -43,7 +41,7 @@ import se.kth.speech.coin.tangrams.iristk.GameEvent;
  */
 @RunWith(Theories.class)
 public final class SessionTestResultsTest {
-
+	
 	@DataPoints
 	@DataPoint
 	public static final int[] TESTED_RANKS;
@@ -53,19 +51,11 @@ public final class SessionTestResultsTest {
 
 	private static final int[] EXPECTED_ENTITY_ID_RANKING;
 
-	private static final Int2DoubleMap REF_CONF_VALS;
+	private static final double[] REF_CONF_VALS;
 
 	static {
-		REF_CONF_VALS = new Int2DoubleOpenHashMap();
-		EXPECTED_ENTITY_ID_RANKING = new int[4];
-		REF_CONF_VALS.put(3, 0.23245);
-		EXPECTED_ENTITY_ID_RANKING[1] = 3;
-		REF_CONF_VALS.put(1, 0.5343);
-		EXPECTED_ENTITY_ID_RANKING[0] = 1;
-		REF_CONF_VALS.put(2, 0.211234);
-		EXPECTED_ENTITY_ID_RANKING[2] = 2;
-		REF_CONF_VALS.put(0, 0.04352434);
-		EXPECTED_ENTITY_ID_RANKING[3] = 0;
+		REF_CONF_VALS = new double[]{0.04352434, 0.5343,  0.211234,0.23245};
+		EXPECTED_ENTITY_ID_RANKING = new int[] {1, 3, 2, 0};
 		TESTED_RANKS = IntStream.rangeClosed(1, EXPECTED_ENTITY_ID_RANKING.length).toArray();
 	}
 

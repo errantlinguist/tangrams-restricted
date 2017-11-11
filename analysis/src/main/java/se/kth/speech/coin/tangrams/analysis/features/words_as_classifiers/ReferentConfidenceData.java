@@ -16,62 +16,46 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers;
 
-import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
+import java.util.Arrays;
+
 import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 
 public final class ReferentConfidenceData {
 
 	private final String oovClassName;
 
-	private final Int2DoubleMap referentConfidenceVals;
+	private final double[] referentConfidenceVals;
 
 	private final Object2DoubleMap<String> wordClassWeights;
 
-	ReferentConfidenceData(final Int2DoubleMap referentConfidenceVals, final Object2DoubleMap<String> wordClassWeights,
+	ReferentConfidenceData(final double[] referentConfidenceVals, final Object2DoubleMap<String> wordClassWeights,
 			final String oovClassName) {
 		this.referentConfidenceVals = referentConfidenceVals;
 		this.wordClassWeights = wordClassWeights;
 		this.oovClassName = oovClassName;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see java.lang.Object#equals(java.lang.Object)
-	 */
 	@Override
-	public boolean equals(final Object obj) {
-		if (this == obj) {
+	public boolean equals(Object obj) {
+		if (this == obj)
 			return true;
-		}
-		if (obj == null) {
+		if (obj == null)
 			return false;
-		}
-		if (!(obj instanceof ReferentConfidenceData)) {
+		if (getClass() != obj.getClass())
 			return false;
-		}
-		final ReferentConfidenceData other = (ReferentConfidenceData) obj;
+		ReferentConfidenceData other = (ReferentConfidenceData) obj;
 		if (oovClassName == null) {
-			if (other.oovClassName != null) {
+			if (other.oovClassName != null)
 				return false;
-			}
-		} else if (!oovClassName.equals(other.oovClassName)) {
+		} else if (!oovClassName.equals(other.oovClassName))
 			return false;
-		}
-		if (referentConfidenceVals == null) {
-			if (other.referentConfidenceVals != null) {
-				return false;
-			}
-		} else if (!referentConfidenceVals.equals(other.referentConfidenceVals)) {
+		if (!Arrays.equals(referentConfidenceVals, other.referentConfidenceVals))
 			return false;
-		}
 		if (wordClassWeights == null) {
-			if (other.wordClassWeights != null) {
+			if (other.wordClassWeights != null)
 				return false;
-			}
-		} else if (!wordClassWeights.equals(other.wordClassWeights)) {
+		} else if (!wordClassWeights.equals(other.wordClassWeights))
 			return false;
-		}
 		return true;
 	}
 
@@ -82,7 +66,7 @@ public final class ReferentConfidenceData {
 	/**
 	 * @return the referentConfidenceVals
 	 */
-	public Int2DoubleMap getReferentConfidenceVals() {
+	public double[] getReferentConfidenceVals() {
 		return referentConfidenceVals;
 	}
 
@@ -93,36 +77,19 @@ public final class ReferentConfidenceData {
 		return wordClassWeights;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see java.lang.Object#hashCode()
-	 */
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + (oovClassName == null ? 0 : oovClassName.hashCode());
-		result = prime * result + (referentConfidenceVals == null ? 0 : referentConfidenceVals.hashCode());
-		result = prime * result + (wordClassWeights == null ? 0 : wordClassWeights.hashCode());
+		result = prime * result + ((oovClassName == null) ? 0 : oovClassName.hashCode());
+		result = prime * result + Arrays.hashCode(referentConfidenceVals);
+		result = prime * result + ((wordClassWeights == null) ? 0 : wordClassWeights.hashCode());
 		return result;
 	}
 
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see java.lang.Object#toString()
-	 */
 	@Override
 	public String toString() {
-		final StringBuilder builder = new StringBuilder(128);
-		builder.append("ReferentConfidenceData [referentConfidenceVals=");
-		builder.append(referentConfidenceVals);
-		builder.append(", wordClassWeights=");
-		builder.append(wordClassWeights);
-		builder.append(", oovClassName=");
-		builder.append(oovClassName);
-		builder.append("]");
-		return builder.toString();
+		return "ReferentConfidenceData [referentConfidenceVals=" + Arrays.toString(referentConfidenceVals)
+				+ ", wordClassWeights=" + wordClassWeights + ", oovClassName=" + oovClassName + "]";
 	}
 }

@@ -19,11 +19,11 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.train
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiFunction;
+import java.util.stream.IntStream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import it.unimi.dsi.fastutil.ints.IntList;
 import se.kth.speech.coin.tangrams.analysis.GameContext;
 import se.kth.speech.coin.tangrams.analysis.GameHistory;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
@@ -56,18 +56,18 @@ final class BooleanTrainingContextsFactory
 	}
 
 	private BooleanTrainingContexts createTrainingContexts(final GameContext uttCtx, final int selectedEntityId) {
-		final IntList entityIds = uttCtx.getEntityIds();
+		final int entityCount = uttCtx.getEntityCount();
 		final List<EntityFeature.Extractor.Context> positive = new ArrayList<>(1);
-		final List<EntityFeature.Extractor.Context> negative = new ArrayList<>(entityIds.size() - 1);
-		for (final int entityId : uttCtx.getEntityIds()) {
+		final List<EntityFeature.Extractor.Context> negative = new ArrayList<>(entityCount - 1);
+		IntStream.range(0, entityCount).forEach(entityId -> {
 			final EntityFeature.Extractor.Context context = extCtxFactory.apply(uttCtx, entityId);
 			final boolean examplePolarity = entityId == selectedEntityId;
 			if (examplePolarity) {
 				positive.add(context);
 			} else {
 				negative.add(context);
-			}
-		}
+			}		
+		});
 		return new BooleanTrainingContexts(positive, negative);
 	}
 

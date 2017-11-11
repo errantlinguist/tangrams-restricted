@@ -22,12 +22,9 @@ final class WeightedClassifier {
 
 	private final Classifier classifier;
 
-	private final String name;
+	private double weight;
 
-	private final double weight;
-
-	WeightedClassifier(final String name, final Classifier classifier, final double weight) {
-		this.name = name;
+	WeightedClassifier(final Classifier classifier, final double weight) {
 		this.classifier = classifier;
 		this.weight = weight;
 	}
@@ -56,59 +53,10 @@ final class WeightedClassifier {
 		} else if (!classifier.equals(other.classifier)) {
 			return false;
 		}
-		if (name == null) {
-			if (other.name != null) {
-				return false;
-			}
-		} else if (!name.equals(other.name)) {
-			return false;
-		}
 		if (Double.doubleToLongBits(weight) != Double.doubleToLongBits(other.weight)) {
 			return false;
 		}
 		return true;
-	}
-
-	/**
-	 * @return the name
-	 */
-	public String getName() {
-		return name;
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see java.lang.Object#hashCode()
-	 */
-	@Override
-	public int hashCode() {
-		final int prime = 31;
-		int result = 1;
-		result = prime * result + (classifier == null ? 0 : classifier.hashCode());
-		result = prime * result + (name == null ? 0 : name.hashCode());
-		long temp;
-		temp = Double.doubleToLongBits(weight);
-		result = prime * result + (int) (temp ^ temp >>> 32);
-		return result;
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * 
-	 * @see java.lang.Object#toString()
-	 */
-	@Override
-	public String toString() {
-		final StringBuilder builder = new StringBuilder(128);
-		builder.append("WeightedClassifier [name=");
-		builder.append(name);
-		builder.append(", weight=");
-		builder.append(weight);
-		builder.append(", classifier=");
-		builder.append(classifier);
-		builder.append("]");
-		return builder.toString();
 	}
 
 	/**
@@ -123,5 +71,41 @@ final class WeightedClassifier {
 	 */
 	double getWeight() {
 		return weight;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + (classifier == null ? 0 : classifier.hashCode());
+		long temp;
+		temp = Double.doubleToLongBits(weight);
+		result = prime * result + (int) (temp ^ temp >>> 32);
+		return result;
+	}
+
+	void setWeight(double weight) {
+		this.weight = weight;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		final StringBuilder builder = new StringBuilder(128);
+		builder.append("WeightedClassifier [weight=");
+		builder.append(weight);
+		builder.append(", classifier=");
+		builder.append(classifier);
+		builder.append("]");
+		return builder.toString();
 	}
 }

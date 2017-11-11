@@ -28,7 +28,6 @@ import java.util.NavigableMap;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.function.Predicate;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -36,9 +35,6 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Lists;
 
-import it.unimi.dsi.fastutil.ints.IntArrayList;
-import it.unimi.dsi.fastutil.ints.IntList;
-import it.unimi.dsi.fastutil.ints.IntLists;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 import se.kth.speech.coin.tangrams.game.GameStateDescription;
 import se.kth.speech.coin.tangrams.game.Move;
@@ -79,8 +75,6 @@ public final class GameContext {
 		return map.descendingMap().values().stream().map(Lists::reverse).flatMap(List::stream);
 	}
 
-	private final IntList entityIds;
-
 	private final GameHistory history;
 
 	private final LocalDateTime time;
@@ -88,7 +82,6 @@ public final class GameContext {
 	GameContext(final GameHistory history, final LocalDateTime time) {
 		this.history = history;
 		this.time = time;
-		entityIds = IntLists.unmodifiable(createEntityIdList());
 	}
 
 	/*
@@ -207,10 +200,6 @@ public final class GameContext {
 				: OptionalInt.empty();
 	}
 
-	public IntList getEntityIds() {
-		return entityIds;
-	}
-
 	public List<ImageVisualizationInfo.Datum> getEntityVisualizationInfo() {
 		final GameStateDescription initialState = history.getInitialState();
 		return Collections.unmodifiableList(initialState.getImageVisualizationInfo().getData());
@@ -272,11 +261,9 @@ public final class GameContext {
 		builder.append(']');
 		return builder.toString();
 	}
-
-	private IntList createEntityIdList() {
-		final int entityCount = history.getEntityCount();
-		final IntList result = new IntArrayList(entityCount);
-		IntStream.range(0, entityCount).forEachOrdered(result::add);
-		return result;
+	
+	public int getEntityCount() {
+		return history.getEntityCount();
 	}
+
 }

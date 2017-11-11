@@ -16,13 +16,11 @@
 */
 package se.kth.speech.math;
 
-import java.util.Collection;
 import java.util.function.DoubleFunction;
 
 import it.unimi.dsi.fastutil.doubles.Double2ObjectRBTreeMap;
 import it.unimi.dsi.fastutil.doubles.Double2ObjectSortedMap;
 import it.unimi.dsi.fastutil.doubles.DoubleComparators;
-import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import it.unimi.dsi.fastutil.ints.IntCollection;
 import it.unimi.dsi.fastutil.objects.ObjectIterable;
 
@@ -34,17 +32,17 @@ import it.unimi.dsi.fastutil.objects.ObjectIterable;
 public final class NBestRankings {
 
 	public static <G extends IntCollection> Double2ObjectSortedMap<G> createNbestGroupMap(
-			final Collection<Int2DoubleMap.Entry> observationReferenceConfidenceVals,
+			final double[] observationReferenceConfidenceVals,
 			final DoubleFunction<G> tieGroupContainerFactory) {
 		final Double2ObjectSortedMap<G> result = new Double2ObjectRBTreeMap<>(DoubleComparators.OPPOSITE_COMPARATOR);
-		for (final Int2DoubleMap.Entry observationReferenceConfidenceVal : observationReferenceConfidenceVals) {
-			final double confidenceVal = observationReferenceConfidenceVal.getDoubleValue();
+		for (int entityId = 0; entityId < observationReferenceConfidenceVals.length; ++entityId) {
+			final double confidenceVal = observationReferenceConfidenceVals[entityId];
 			G observationIds = result.get(confidenceVal);
 			if (observationIds == null) {
 				observationIds = tieGroupContainerFactory.apply(confidenceVal);
 				result.put(confidenceVal, observationIds);
 			}
-			observationIds.add(observationReferenceConfidenceVal.getIntKey());
+			observationIds.add(entityId);
 		}
 		return result;
 	}
