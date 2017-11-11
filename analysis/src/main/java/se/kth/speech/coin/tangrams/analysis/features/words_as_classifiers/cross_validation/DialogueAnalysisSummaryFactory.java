@@ -264,7 +264,7 @@ final class DialogueAnalysisSummaryFactory implements
 					final Function<? super Iterator<Utterance>, String> uttDiagReprFactory) {
 				final ReferentConfidenceData refConfData = input.diagTestResults.getValue().getReferentConfidenceData();
 				final double oovObservationCount = refConfData.getOovClassWeight();
-				final double totalObsevationCount = Arrays.stream(refConfData.getReferentConfidenceVals()).sum();
+				final double totalObsevationCount = refConfData.getReferentConfidenceVals().length;
 				return totalObsevationCount - oovObservationCount;
 			}
 
