@@ -43,7 +43,6 @@ import org.springframework.beans.factory.BeanFactory;
 
 import com.google.common.collect.Maps;
 
-import it.unimi.dsi.fastutil.ints.Int2DoubleMap;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import se.kth.speech.coin.tangrams.analysis.GameContext;
