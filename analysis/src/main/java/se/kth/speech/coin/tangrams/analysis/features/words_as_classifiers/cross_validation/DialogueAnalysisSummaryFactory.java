@@ -31,8 +31,11 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 import se.kth.speech.TimestampArithmetic;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
@@ -257,6 +260,17 @@ final class DialogueAnalysisSummaryFactory implements
 				return input.diagTestResults.getValue().meanTokensPerTestedUtterance();
 			}
 		},
+		OBSERVED_VOCAB {
+
+			@Override
+			public Object apply(final Input input,
+					final Function<? super Iterator<Utterance>, String> uttDiagReprFactory) {
+				final ReferentConfidenceData refConfData = input.diagTestResults.getValue().getReferentConfidenceData();
+				final Object2DoubleMap<String> wordClassWeights = refConfData.getWordClassWeights();
+				return wordClassWeights.keySet().stream().sorted().collect(WORD_CLASS_NAME_JOINER);
+			}
+
+		},
 		OBSERVED_VOCAB_SIZE {
 
 			@Override
@@ -264,7 +278,7 @@ final class DialogueAnalysisSummaryFactory implements
 					final Function<? super Iterator<Utterance>, String> uttDiagReprFactory) {
 				final ReferentConfidenceData refConfData = input.diagTestResults.getValue().getReferentConfidenceData();
 				final double oovObservationCount = refConfData.getOovClassWeight();
-				final double totalObsevationCount = refConfData.getReferentConfidenceVals().length;
+				final double totalObsevationCount = refConfData.getWordClassWeights().object2DoubleEntrySet().stream().mapToDouble(Object2DoubleMap.Entry::getDoubleValue).sum();
 				return totalObsevationCount - oovObservationCount;
 			}
 
@@ -404,6 +418,8 @@ final class DialogueAnalysisSummaryFactory implements
 			.unmodifiableList(createDefaultSummaryDatumOrderingList());
 
 	private static final Function<TemporalAccessor, String> TIMESTAMP_FORMATTER = EventTimes.FORMATTER::format;
+	
+	private static final Collector<CharSequence,?,String> WORD_CLASS_NAME_JOINER = Collectors.joining(", ");
 
 	/**
 	 * @return the defaultSummaryDatumOrdering
@@ -429,6 +445,7 @@ final class DialogueAnalysisSummaryFactory implements
 				DialogueAnalysisSummaryFactory.SummaryDatum.MEAN_DIAG_UTTS_TESTED,
 				DialogueAnalysisSummaryFactory.SummaryDatum.TOKEN_COUNT,
 				DialogueAnalysisSummaryFactory.SummaryDatum.MEAN_TOKENS_PER_UTT,
+				DialogueAnalysisSummaryFactory.SummaryDatum.OBSERVED_VOCAB,
 				DialogueAnalysisSummaryFactory.SummaryDatum.OBSERVED_VOCAB_SIZE,
 				DialogueAnalysisSummaryFactory.SummaryDatum.OOV_OBSERVATION_COUNT,
 				DialogueAnalysisSummaryFactory.SummaryDatum.BACKGROUND_DATA_POSITIVE_EXAMPLE_WEIGHT_FACTOR,
