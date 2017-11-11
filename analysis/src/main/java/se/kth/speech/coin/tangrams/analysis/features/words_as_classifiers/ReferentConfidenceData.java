@@ -60,7 +60,8 @@ public final class ReferentConfidenceData {
 	}
 
 	public double getOovClassWeight() {
-		return wordClassWeights.getDouble(oovClassName);
+		final double storedValue = wordClassWeights.getDouble(oovClassName);
+		return Double.isNaN(storedValue) ? 0 : storedValue;
 	}
 
 	/**
