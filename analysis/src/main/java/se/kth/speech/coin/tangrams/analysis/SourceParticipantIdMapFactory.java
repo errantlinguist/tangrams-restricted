@@ -40,7 +40,7 @@ import se.kth.speech.coin.tangrams.game.PlayerRole;
  *
  */
 final class SourceParticipantIdMapFactory
-		implements BiFunction<BiMap<String, String>, SessionGame, Entry<BiMap<String, String>, String>> {
+		implements BiFunction<Map<String, String>, SessionGame, Entry<BiMap<String, String>, String>> {
 
 	public static final List<PlayerRole> DEFAULT_PLAYER_ROLE_ORDERING = Collections
 			.unmodifiableList(createDefaultPlayerRoleOrderingList());
@@ -79,7 +79,7 @@ final class SourceParticipantIdMapFactory
 
 	/**
 	 * @param playerSourceIds
-	 *            A {@link BiMap} mapping the username of each player in the given
+	 *            A {@link Map} mapping the username of each player in the given
 	 *            game to the annotation audio source ID representing language
 	 *            produced by that player.
 	 * @param canonicalGame
@@ -91,7 +91,7 @@ final class SourceParticipantIdMapFactory
 	 *         role according to the {@link #playerRoleOrdering supplied ordering}.
 	 */
 	@Override
-	public Entry<BiMap<String, String>, String> apply(final BiMap<String, String> playerSourceIds,
+	public Entry<BiMap<String, String>, String> apply(final Map<String, String> playerSourceIds,
 			final SessionGame canonicalGame) {
 		final BiMap<PlayerRole, String> playerRoles = canonicalGame.getHistory().getInitialState().getPlayerRoles();
 		final BiMap<String, String> sourceParticipantIds = createSourceParticipantIdMap(playerSourceIds, playerRoles);
