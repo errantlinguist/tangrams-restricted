@@ -62,7 +62,7 @@ public final class SessionGameManager {
 
 	private final List<Utterance> utts;
 
-	SessionGameManager(final SessionDataManager sessionData, final LoggedEventReader eventReader)
+	public SessionGameManager(final SessionDataManager sessionData, final LoggedEventReader eventReader)
 			throws IOException, JAXBException {
 		utts = SessionUtterances.createUtteranceList(sessionData);
 		LOGGER.debug("Creating dialogues for {} annotated utterance(s).", utts.size());
