@@ -644,7 +644,7 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 			final List<Stream<String>> eventRows = new ArrayList<>(events.size() * entityCount);
 			for (final ListIterator<GameEvent> eventIter = events.listIterator(); eventIter.hasNext();) {
 				final GameEvent event = eventIter.next();
-				// HashableEvent ID is 1-indexed
+				// Event ID is 1-indexed
 				eventId = eventIter.nextIndex();
 				final GameManagementEvent eventType = GameManagementEvent.getEventType(event.getName());
 				if (GAME_ROUND_DELIMITING_EVENT_TYPE.equals(eventType)) {
