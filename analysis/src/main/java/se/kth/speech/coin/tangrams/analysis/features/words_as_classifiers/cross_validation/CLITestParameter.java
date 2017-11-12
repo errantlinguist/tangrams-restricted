@@ -43,7 +43,7 @@ enum CLITestParameter implements Supplier<Option> {
 		public Option get() {
 			final Cleaning[] possibleVals = Cleaning.values();
 			return Option.builder(optName).longOpt("cleaning")
-					.desc("A list of cleaning method(s) to use Possible values: " + Arrays.toString(possibleVals))
+					.desc("A list of cleaning method(s) to use. Possible values: " + Arrays.toString(possibleVals))
 					.hasArg().argName("name").build();
 		}
 	},
@@ -90,7 +90,7 @@ enum CLITestParameter implements Supplier<Option> {
 		public Option get() {
 			final TokenType[] possibleVals = TokenType.values();
 			return Option.builder(optName).longOpt("token-types")
-					.desc("A list of token type(s) to use Possible values: " + Arrays.toString(possibleVals)).hasArg()
+					.desc("A list of token type(s) to use. Possible values: " + Arrays.toString(possibleVals)).hasArg()
 					.argName("name").build();
 		}
 	},
@@ -99,7 +99,7 @@ enum CLITestParameter implements Supplier<Option> {
 		public Option get() {
 			final Tokenization[] possibleVals = Tokenization.values();
 			return Option.builder(optName).longOpt("tokenizers")
-					.desc("A list of tokenization method(s) to use Possible values: " + Arrays.toString(possibleVals))
+					.desc("A list of tokenization method(s) to use. Possible values: " + Arrays.toString(possibleVals))
 					.hasArg().argName("name").build();
 		}
 	},
@@ -108,7 +108,7 @@ enum CLITestParameter implements Supplier<Option> {
 		public Option get() {
 			final Training[] possibleVals = Training.values();
 			return Option.builder(optName).longOpt("training")
-					.desc("A list of training method(s) to use Possible values: " + Arrays.toString(possibleVals))
+					.desc("A list of training method(s) to use. Possible values: " + Arrays.toString(possibleVals))
 					.hasArg().argName("name").build();
 		}
 	};
