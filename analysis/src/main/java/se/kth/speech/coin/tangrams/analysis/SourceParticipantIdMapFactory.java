@@ -77,6 +77,17 @@ final class SourceParticipantIdMapFactory
 		this.validParticipantIds = validParticipantIds;
 	}
 
+	/**
+	 * @param playerSourceIds
+	 *            A {@link BiMap} mapping the username of each player in the given
+	 *            game to the annotation audio source ID representing language
+	 *            produced by that player.
+	 * @param canonicalGame
+	 *            The {@link SessionGame} representing the session to create
+	 *            participant ID mappings for.
+	 * @return A pair of a {@link BiMap} mapping audio source IDs to anonymized
+	 *         participant IDs representing the respective player.
+	 */
 	@Override
 	public Entry<BiMap<String, String>, String> apply(final BiMap<String, String> playerSourceIds,
 			final SessionGame canonicalGame) {
