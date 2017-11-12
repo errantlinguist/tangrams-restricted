@@ -215,7 +215,7 @@ final class CombiningBatchJobTester {
 							final EventDialogueTransformer tokenFilter = tokenFilteringMethod.get();
 
 							final CachingEventDialogueTransformer symmetricalDiagTransformer = trainingMethod
-									.createSymmetricalTrainingTestingEvgDiagTransformer(
+									.createSymmetricalTrainingTestingEventDiagTransformer(
 											Arrays.asList(tokenizer, tokenFilter));
 							final TrainingContext trainingCtx = new TrainingContext(symmetricalDiagTransformer, appCtx,
 									uttRelHandler, trainingParams);

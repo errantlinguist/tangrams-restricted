@@ -65,7 +65,7 @@ enum Training {
 	ALL_NEG(1) {
 
 		@Override
-		public CachingEventDialogueTransformer createSymmetricalTrainingTestingEvgDiagTransformer(
+		public CachingEventDialogueTransformer createSymmetricalTrainingTestingEventDiagTransformer(
 				final List<EventDialogueTransformer> diagTransformers) {
 			return createInstrUttFilteringTransformer(diagTransformers);
 		}
@@ -96,7 +96,7 @@ enum Training {
 	ALL_NEG_ITERATIVE(1) {
 
 		@Override
-		public CachingEventDialogueTransformer createSymmetricalTrainingTestingEvgDiagTransformer(
+		public CachingEventDialogueTransformer createSymmetricalTrainingTestingEventDiagTransformer(
 				final List<EventDialogueTransformer> diagTransformers) {
 			return createInstrUttFilteringTransformer(diagTransformers);
 		}
@@ -128,7 +128,7 @@ enum Training {
 	DIALOGIC(1) {
 
 		@Override
-		public CachingEventDialogueTransformer createSymmetricalTrainingTestingEvgDiagTransformer(
+		public CachingEventDialogueTransformer createSymmetricalTrainingTestingEventDiagTransformer(
 				final List<EventDialogueTransformer> diagTransformers) {
 			final ChainedEventDialogueTransformer chainedTransformer = new ChainedEventDialogueTransformer(
 					diagTransformers);
@@ -178,7 +178,7 @@ enum Training {
 	DIALOGIC_ITERATIVE(1) {
 
 		@Override
-		public CachingEventDialogueTransformer createSymmetricalTrainingTestingEvgDiagTransformer(
+		public CachingEventDialogueTransformer createSymmetricalTrainingTestingEventDiagTransformer(
 				final List<EventDialogueTransformer> diagTransformers) {
 			final ChainedEventDialogueTransformer chainedTransformer = new ChainedEventDialogueTransformer(
 					diagTransformers);
@@ -234,7 +234,7 @@ enum Training {
 	ONE_NEG(5) {
 
 		@Override
-		public CachingEventDialogueTransformer createSymmetricalTrainingTestingEvgDiagTransformer(
+		public CachingEventDialogueTransformer createSymmetricalTrainingTestingEventDiagTransformer(
 				final List<EventDialogueTransformer> diagTransformers) {
 			return createInstrUttFilteringTransformer(diagTransformers);
 		}
@@ -267,7 +267,7 @@ enum Training {
 	ONE_NEG_ITERATIVE(5) {
 
 		@Override
-		public CachingEventDialogueTransformer createSymmetricalTrainingTestingEvgDiagTransformer(
+		public CachingEventDialogueTransformer createSymmetricalTrainingTestingEventDiagTransformer(
 				final List<EventDialogueTransformer> diagTransformers) {
 			return createInstrUttFilteringTransformer(diagTransformers);
 		}
@@ -467,7 +467,7 @@ enum Training {
 		this.iterCount = iterCount;
 	}
 
-	public abstract CachingEventDialogueTransformer createSymmetricalTrainingTestingEvgDiagTransformer(
+	public abstract CachingEventDialogueTransformer createSymmetricalTrainingTestingEventDiagTransformer(
 			final List<EventDialogueTransformer> diagTransformers);
 
 	public abstract TrainingInstancesFactory createTrainingInstsFactory(TrainingContext trainingCtx);
