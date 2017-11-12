@@ -18,12 +18,15 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross
 
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.ListIterator;
@@ -31,6 +34,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.BiConsumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collector;
@@ -50,17 +54,22 @@ import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import edu.stanford.nlp.ling.CoreAnnotations.TextAnnotation;
-import edu.stanford.nlp.ling.CoreLabel;
+import com.google.common.collect.BiMap;
+import com.google.common.collect.Maps;
+
 import edu.stanford.nlp.trees.Tree;
 import edu.stanford.nlp.util.CoreMap;
-import se.kth.speech.coin.tangrams.CLIParameters;
+import se.kth.speech.CommonPaths;
+import se.kth.speech.MapCollectors;
 import se.kth.speech.coin.tangrams.analysis.SessionGame;
 import se.kth.speech.coin.tangrams.analysis.SessionGameManager;
+import se.kth.speech.coin.tangrams.analysis.UtteranceSpeakerParticipantIdMapFactory;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
+import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.ChainedEventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.EventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
+import se.kth.speech.coin.tangrams.game.PlayerRole;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEventReader;
 import se.kth.speech.nlp.stanford.AnnotationCacheFactory;
 
@@ -92,6 +101,14 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 			public Option get() {
 				return Option.builder(optName).longOpt("outpath").desc("The directory to write the extracted data to.")
 						.hasArg().argName("path").type(File.class).required().build();
+			}
+		},
+		OUTFILE_NAME("n") {
+			@Override
+			public Option get() {
+				return Option.builder(optName).longOpt("outfile-name")
+						.desc("The filename to write the extracted data to for each input session.").hasArg()
+						.argName("name").build();
 			}
 		},
 		TOKEN_FILTER("tf") {
@@ -146,27 +163,8 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 		}
 	}
 
-	private static class UtteranceReferringExpressionWriter implements BiConsumer<CoreMap, List<Tree>> {
-
-		@Override
-		public void accept(final CoreMap sent, final List<Tree> extractedPhrases) {
-			final String sentText = sent.get(TextAnnotation.class);
-
-			for (final Tree extractedPhrase : extractedPhrases) {
-				final List<CoreLabel> phraseLabels = extractedPhrase.taggedLabeledYield();
-				for (final CoreLabel phraseLabel : phraseLabels) {
-					final int beginPos = phraseLabel.beginPosition();
-					final int endPos = phraseLabel.endPosition();
-					final String word = phraseLabel.word();
-					final int idx = phraseLabel.index();
-					LOGGER.info("Word: {}; start: {}, end: {}; idx: {}", word, beginPos, endPos, idx);
-					assert sentText.substring(beginPos, endPos).equals(word);
-				}
-			}
-
-		}
-
-	}
+	public static final List<PlayerRole> DEFAULT_PLAYER_ROLE_ORDERING = Collections
+			.unmodifiableList(createDefaultPlayerRoleOrderingList());
 
 	/**
 	 * Parsing can take up huge amounts of memory, so it's single-threaded and thus
@@ -174,13 +172,32 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 	 */
 	private static final AnnotationCacheFactory ANNOTATION_CACHE_FACTORY = new AnnotationCacheFactory(1);
 
+	private static final String OUTFILE_HEADER;
+
+	private static final BiConsumer<CoreMap, List<Tree>> EXTRACTED_PHRASE_HANDLER = (sent, extractedPhrases) -> {
+		// Do nothing
+	};
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(TokenizedReferringExpressionWriter.class);
 
 	private static final Options OPTIONS = createOptions();
 
 	private static final Charset OUTPUT_ENCODING = StandardCharsets.UTF_8;
 
-	private static final Collector<CharSequence, ?, String> ROW_CELL_JOINER = Collectors.joining("\t");
+	private static final UtteranceSpeakerParticipantIdMapFactory PLAYER_PARTICIPANT_ID_MAPPER = new UtteranceSpeakerParticipantIdMapFactory();
+
+	private static final Collector<CharSequence, ?, String> ROW_CELL_JOINER;
+
+	static {
+		ROW_CELL_JOINER = Collectors.joining("\t");
+		final List<String> colHeaders = Arrays.asList("ROUND", "SPEAKER", "START_TIME", "END_TIME", "UTTERANCE",
+				"REFERRING_TOKENS");
+		OUTFILE_HEADER = colHeaders.stream().collect(ROW_CELL_JOINER);
+	}
+
+	private static final Collector<CharSequence, ?, String> TOKEN_JOINER = Collectors.joining(" ");
+
+	private static final String DEFAULT_OUTFILE_NAME = "extracted-referring-tokens.tsv";
 
 	public static void main(final String[] args) throws BatchJobTestException, IOException, JAXBException {
 		final CommandLineParser parser = new DefaultParser();
@@ -191,6 +208,20 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 			System.out.println(String.format("An error occured while parsing the command-line arguments: %s", e));
 			printHelp();
 		}
+	}
+
+	private static List<PlayerRole> createDefaultPlayerRoleOrderingList() {
+		final PlayerRole[] rolesToAdd = PlayerRole.values();
+		final List<PlayerRole> result = new ArrayList<>(rolesToAdd.length);
+		final PlayerRole initialRole = PlayerRole.MOVE_SUBMISSION;
+		result.add(initialRole);
+		for (final PlayerRole role : rolesToAdd) {
+			if (!initialRole.equals(role)) {
+				result.add(role);
+			}
+		}
+		assert result.size() == rolesToAdd.length;
+		return result;
 	}
 
 	private static Options createOptions() {
@@ -212,6 +243,9 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 				throw new MissingOptionException("No input path(s) specified.");
 			} else {
 				final Map<SessionDataManager, Path> allSessionData = TestSessionData.readTestSessionData(inpaths);
+				final LoggedEventReader eventReader = new LoggedEventReader(allSessionData.size(),
+						allSessionData.size() * 10);
+
 				final Set<Cleaning> cleaningMethodSet = Parameter.parseCleaningMethods(cl);
 				if (cleaningMethodSet.isEmpty()) {
 					throw new IllegalArgumentException("No cleaning method set(s) specified.");
@@ -222,31 +256,69 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 				final Tokenization tokenizationMethod = Parameter.parseTokenizationMethod(cl);
 				LOGGER.info("Tokenization method: {}", tokenizationMethod);
 				final EventDialogueTransformer tokenFilter = tokenFilteringMethod.get();
-				final LoggedEventReader eventReader = new LoggedEventReader(allSessionData.size(),
-						allSessionData.size() * 10);
+
+				final Path outDir = ((File) cl.getParsedOptionValue(Parameter.OUTPATH.optName)).toPath()
+						.toAbsolutePath();
+				LOGGER.info("Will write output underneath directory \"{}\".", outDir);
+				final String outfileName = cl.getOptionValue(Parameter.OUTFILE_NAME.optName, DEFAULT_OUTFILE_NAME);
+				LOGGER.info("Will name output files \"{}\".", outfileName);
+
+				final Path sessionPrefixPath = CommonPaths.findCommonPrefixPath(allSessionData.values());
+				LOGGER.info("Found a common path of \"{}\" for all input sessions.", sessionPrefixPath);
+
 				for (final Entry<SessionDataManager, Path> sessionDataPath : allSessionData.entrySet()) {
 					final SessionDataManager sessionDataMgr = sessionDataPath.getKey();
-					final Path sessionDir = sessionDataPath.getValue();
+					final Path sessionPropsFilePath = sessionDataPath.getValue().toAbsolutePath();
+					final Path sessionDir = sessionPropsFilePath.getParent();
+					assert sessionDir != null;
+					final Path relativeSessionDir = sessionPrefixPath.relativize(sessionDir);
+					final Path sessionOutputDir = Files.createDirectories(outDir.resolve(relativeSessionDir));
 
 					final TokenizationContext tokenizationContext = new TokenizationContext(cleaningMethodSet,
-							TokenType.INFLECTED, new UtteranceReferringExpressionWriter(), ANNOTATION_CACHE_FACTORY);
+							TokenType.INFLECTED, EXTRACTED_PHRASE_HANDLER, ANNOTATION_CACHE_FACTORY);
 					final ChainedEventDialogueTransformer diagTransformer = new ChainedEventDialogueTransformer(
 							Arrays.asList(tokenizationMethod.apply(tokenizationContext), tokenFilter));
 
 					final SessionGameManager sessionGameMgr = new SessionGameManager(sessionDataMgr, eventReader);
 					final SessionGame sessionGame = sessionGameMgr.getCanonicalGame();
-					for (final ListIterator<EventDialogue> evtDiagIter = sessionGame.getEventDialogues()
-							.listIterator(); evtDiagIter.hasNext();) {
+					final BiMap<PlayerRole, String> playerRoles = sessionGame.getHistory().getInitialState()
+							.getPlayerRoles();
+					final BiMap<String, String> playerParticipantIds = PLAYER_PARTICIPANT_ID_MAPPER.apply(playerRoles);
+					final List<EventDialogue> evtDiags = sessionGame.getEventDialogues();
+
+					final List<String> rows = new ArrayList<>(evtDiags.size() * 4 + 1);
+					rows.add(OUTFILE_HEADER);
+					for (final ListIterator<EventDialogue> evtDiagIter = evtDiags.listIterator(); evtDiagIter
+							.hasNext();) {
 						final EventDialogue evtDiag = evtDiagIter.next();
+						final List<Utterance> origUtts = evtDiag.getUtterances();
+						final Map<String, Utterance> origUttsById = origUtts.stream()
+								.collect(Collectors.toMap(Utterance::getSegmentId, Function.identity(),
+										MapCollectors.throwingMerger(),
+										() -> Maps.newHashMapWithExpectedSize(origUtts.size())));
 						// Round ID is 1-indexed
 						final int roundId = evtDiagIter.nextIndex();
 						final EventDialogue transformedDiag = diagTransformer.apply(evtDiag);
+						for (final Utterance utterance : transformedDiag.getUtterances()) {
+							final String segId = utterance.getSegmentId();
+							final Utterance origUtt = origUttsById.get(segId);
+							final String speakerId = utterance.getSpeakerId();
+							assert origUtt.getSpeakerId().equals(speakerId);
+							final String participantId = playerParticipantIds.get(speakerId);
+							assert origUtt.getStartTime() == utterance.getStartTime();
+							assert origUtt.getEndTime() == utterance.getEndTime();
+							final List<Object> rowCells = Arrays.asList(roundId, participantId,
+									utterance.getStartTime(), utterance.getEndTime(),
+									origUtt.getTokens().stream().collect(TOKEN_JOINER),
+									utterance.getTokens().stream().collect(TOKEN_JOINER));
+							rows.add(rowCells.stream().map(Object::toString).collect(ROW_CELL_JOINER));
+						}
 					}
-				}
 
-				final File outFile = (File) cl.getParsedOptionValue(Parameter.OUTPATH.optName);
-				try (PrintWriter out = CLIParameters.parseOutpath(outFile, OUTPUT_ENCODING)) {
-
+					final Path outfile = sessionOutputDir.resolve(outfileName);
+					LOGGER.info("Writing data extracted from \"{}\" to \"{}\".", sessionPropsFilePath, outfile);
+					Files.write(outfile, rows, OUTPUT_ENCODING, StandardOpenOption.CREATE,
+							StandardOpenOption.TRUNCATE_EXISTING);
 				}
 			}
 
@@ -258,13 +330,7 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 		formatter.printHelp(TokenizedReferringExpressionWriter.class.getSimpleName() + " INPATHS...", OPTIONS);
 	}
 
-	private final PrintWriter out;
-
-	private final boolean writeHeader;
-
-	private TokenizedReferringExpressionWriter(final PrintWriter out, final boolean writeHeader) {
-		this.out = out;
-		this.writeHeader = writeHeader;
+	private TokenizedReferringExpressionWriter() {
 	}
 
 }
