@@ -95,8 +95,8 @@ public final class PhraseExtractingParsingTokenizer extends AbstractTokenizer {
 			addTokens(sent, resultWords);
 		} else {
 			for (final Tree extractedPhrase : extractedPhrases) {
-				final List<CoreLabel> phaseLabels = extractedPhrase.taggedLabeledYield();
-				resultWords.addAll(phaseLabels);
+				final List<CoreLabel> phraseLabels = extractedPhrase.taggedLabeledYield();
+				resultWords.addAll(phraseLabels);
 			}
 		}
 	}
