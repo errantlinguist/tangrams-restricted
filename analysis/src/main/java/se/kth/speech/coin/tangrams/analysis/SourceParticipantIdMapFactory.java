@@ -86,7 +86,9 @@ final class SourceParticipantIdMapFactory
 	 *            The {@link SessionGame} representing the session to create
 	 *            participant ID mappings for.
 	 * @return A pair of a {@link BiMap} mapping audio source IDs to anonymized
-	 *         participant IDs representing the respective player.
+	 *         participant IDs representing the respective player and a
+	 *         {@link String} denoting the username of the player with the first
+	 *         role according to the {@link #playerRoleOrdering supplied ordering}.
 	 */
 	@Override
 	public Entry<BiMap<String, String>, String> apply(final BiMap<String, String> playerSourceIds,
