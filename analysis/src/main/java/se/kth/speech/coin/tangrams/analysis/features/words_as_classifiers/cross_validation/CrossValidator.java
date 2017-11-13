@@ -43,7 +43,6 @@ import org.springframework.beans.factory.BeanFactory;
 
 import com.google.common.collect.Maps;
 
-import it.unimi.dsi.fastutil.ints.IntSet;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import se.kth.speech.coin.tangrams.analysis.GameContext;
 import se.kth.speech.coin.tangrams.analysis.GameHistory;
@@ -60,7 +59,6 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.EventD
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.ReferentConfidenceData;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.ReferentConfidenceMapFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.SessionTestResults;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.SessionTestStatistics;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.UtteranceGameContexts;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordClassDiscountingSmoother;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.ClassificationContext;
@@ -129,24 +127,15 @@ public final class CrossValidator {
 		}
 	}
 
-	public static final class Result implements SessionTestStatistics {
+	public static final class Result {
 
 		private final int iterCount;
 
 		private final ConcurrentMap<Path, List<CrossValidationTestSummary>> sessionResults;
 
-		private final SessionTestResults totalResults;
-
 		private Result(final int expectedSessionCount, final int iterCount) {
 			sessionResults = new ConcurrentHashMap<>(expectedSessionCount);
-			totalResults = new SessionTestResults(expectedSessionCount * 50);
 			this.iterCount = iterCount;
-		}
-
-		public Stream<Entry<EventDialogue, EventDialogueTestResults>> getAllDialogueTestResults() {
-			return sessionResults.values().stream().flatMap(List::stream)
-					.map(CrossValidationTestSummary::getTestResults).map(SessionTestResults::getDialogueTestResults)
-					.flatMap(List::stream);
 		}
 
 		/**
@@ -154,49 +143,6 @@ public final class CrossValidator {
 		 */
 		public Map<Path, List<CrossValidationTestSummary>> getSessionResults() {
 			return Collections.unmodifiableMap(sessionResults);
-		}
-
-		/**
-		 * @return the iterCount
-		 */
-		public int iterCount() {
-			return iterCount;
-		}
-
-		public double meanGoldStandardUniqueReferentIdCount() {
-			return sessionResults.values().stream().flatMap(List::stream)
-					.map(CrossValidationTestSummary::getTestResults)
-					.mapToInt(SessionTestStatistics::uniqueGoldStandardReferentIdCount).average().getAsDouble();
-		}
-
-		/*
-		 * (non-Javadoc)
-		 *
-		 * @see
-		 * se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.
-		 * SessionTestStatistics#meanRank()
-		 */
-		@Override
-		public double meanRank() {
-			return totalResults.meanRank();
-		}
-
-		public double meanTokensTestedPerSession() {
-			return sessionResults.values().stream().flatMap(List::stream)
-					.map(CrossValidationTestSummary::getTestResults).mapToInt(SessionTestStatistics::testedTokenCount)
-					.average().getAsDouble();
-		}
-
-		/*
-		 * (non-Javadoc)
-		 *
-		 * @see
-		 * se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.
-		 * SessionTestStatistics#modeReferentIds()
-		 */
-		@Override
-		public IntSet modeReferentIds() {
-			return totalResults.modeReferentIds();
 		}
 
 		public void put(final Path infilePath, final int iterNo, final CrossValidationTestSummary cvTestSummary) {
@@ -211,90 +157,6 @@ public final class CrossValidator {
 				assert oldResults == null;
 				return newVal;
 			});
-			cvTestSummary.getTestResults().getDialogueTestResults().forEach(totalResults::add);
-		}
-
-		/*
-		 * (non-Javadoc)
-		 *
-		 * @see
-		 * se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.
-		 * EventDialogueTestStatistics#totalTokensTested()
-		 */
-		@Override
-		public int testedTokenCount() {
-			return totalResults.testedTokenCount();
-		}
-
-		/*
-		 * (non-Javadoc)
-		 *
-		 * @see
-		 * se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.
-		 * EventDialogueTestStatistics#totalUtterancesTested()
-		 */
-		@Override
-		public int testedUtteranceCount() {
-			return totalResults.testedUtteranceCount();
-		}
-
-		/*
-		 * (non-Javadoc)
-		 *
-		 * @see
-		 * se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.
-		 * EventDialogueTestStatistics#utterancesTested()
-		 */
-		@Override
-		public Stream<Utterance> testedUtterances() {
-			return sessionResults.values().stream().flatMap(List::stream)
-					.map(CrossValidationTestSummary::getTestResults).map(SessionTestStatistics::testedUtterances)
-					.flatMap(Function.identity());
-		}
-
-		/*
-		 * (non-Javadoc)
-		 *
-		 * @see
-		 * se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.
-		 * CrossValidationTestStatistics#totalDialoguesTested()
-		 */
-		@Override
-		public int totalDialoguesTested() {
-			return sessionResults.values().stream().flatMap(List::stream)
-					.map(CrossValidationTestSummary::getTestResults).mapToInt(SessionTestResults::totalDialoguesTested)
-					.sum();
-		}
-
-		/**
-		 * @return the totalResults
-		 */
-		public SessionTestResults totalResults() {
-			return totalResults;
-		}
-
-		/*
-		 * (non-Javadoc)
-		 *
-		 * @see
-		 * se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.
-		 * EventDialogueTestStatistics#totalUtteranceCount()
-		 */
-		@Override
-		public int totalUtteranceCount() {
-			return totalResults.totalUtteranceCount();
-		}
-
-		/*
-		 * (non-Javadoc)
-		 *
-		 * @see
-		 * se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.
-		 * SessionTestStatistics#uniqueGoldStandardReferentIdCount()
-		 */
-		@Override
-		public int uniqueGoldStandardReferentIdCount() {
-			throw new UnsupportedOperationException("Cannot compare reference IDs across sessions.");
 		}
 
 	}
@@ -343,7 +205,7 @@ public final class CrossValidator {
 
 	private final Function<Map<SessionDataManager, Path>, Stream<Entry<SessionDataManager, WordClassificationData>>> testSetFactory;
 
-	public CrossValidator(
+	public CrossValidator( // NO_UCD (unused code)
 			final Function<Map<SessionDataManager, Path>, Stream<Entry<SessionDataManager, WordClassificationData>>> testSetFactory,
 			final EventDialogueTransformer diagTransformer,
 			final Function<? super ClassificationContext, ? extends EventDialogueClassifier> classifierFactory,
