@@ -26,7 +26,6 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
@@ -178,9 +177,6 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 		}
 	}
 
-	public static final List<PlayerRole> DEFAULT_PLAYER_ROLE_ORDERING = Collections
-			.unmodifiableList(createDefaultPlayerRoleOrderingList());
-
 	/**
 	 * Parsing can take up huge amounts of memory, so it's single-threaded and
 	 * thus the caches are created designed for single-threaded operation.
@@ -223,20 +219,6 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 			System.out.println(String.format("An error occured while parsing the command-line arguments: %s", e));
 			printHelp();
 		}
-	}
-
-	private static List<PlayerRole> createDefaultPlayerRoleOrderingList() {
-		final PlayerRole[] rolesToAdd = PlayerRole.values();
-		final List<PlayerRole> result = new ArrayList<>(rolesToAdd.length);
-		final PlayerRole initialRole = PlayerRole.MOVE_SUBMISSION;
-		result.add(initialRole);
-		for (final PlayerRole role : rolesToAdd) {
-			if (!initialRole.equals(role)) {
-				result.add(role);
-			}
-		}
-		assert result.size() == rolesToAdd.length;
-		return result;
 	}
 
 	private static Options createOptions() {
