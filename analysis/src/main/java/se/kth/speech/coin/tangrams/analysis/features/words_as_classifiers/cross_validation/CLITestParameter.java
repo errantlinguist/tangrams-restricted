@@ -48,7 +48,7 @@ enum CLITestParameter implements Supplier<Option> {
 			final Cleaning[] possibleVals = Cleaning.values();
 			return Option.builder(optName).longOpt("cleaning")
 					.desc("A list of cleaning method(s) to use. Possible values: " + Arrays.toString(possibleVals))
-					.hasArg().argName("name").build();
+					.hasArg().argName("names").required().build();
 		}
 	},
 	HELP("?") {
@@ -86,7 +86,7 @@ enum CLITestParameter implements Supplier<Option> {
 			final TokenFiltering[] possibleVals = TokenFiltering.values();
 			return Option.builder(optName).longOpt("token-filters").desc(
 					"A list of token filtering method(s) to use. Possible values: " + Arrays.toString(possibleVals))
-					.hasArg().argName("name").build();
+					.hasArg().argName("names").required().build();
 		}
 	},
 	TOKEN_TYPES("tt") {
@@ -95,7 +95,7 @@ enum CLITestParameter implements Supplier<Option> {
 			final TokenType[] possibleVals = TokenType.values();
 			return Option.builder(optName).longOpt("token-types")
 					.desc("A list of token type(s) to use. Possible values: " + Arrays.toString(possibleVals)).hasArg()
-					.argName("name").build();
+					.argName("names").required().build();
 		}
 	},
 	TOKENIZERS("tok") {
@@ -104,7 +104,7 @@ enum CLITestParameter implements Supplier<Option> {
 			final Tokenization[] possibleVals = Tokenization.values();
 			return Option.builder(optName).longOpt("tokenizers")
 					.desc("A list of tokenization method(s) to use. Possible values: " + Arrays.toString(possibleVals))
-					.hasArg().argName("name").build();
+					.hasArg().argName("names").required().build();
 		}
 	},
 	TRAINING("tr") {
@@ -113,7 +113,7 @@ enum CLITestParameter implements Supplier<Option> {
 			final Training[] possibleVals = Training.values();
 			return Option.builder(optName).longOpt("training")
 					.desc("A list of training method(s) to use. Possible values: " + Arrays.toString(possibleVals))
-					.hasArg().argName("name").build();
+					.hasArg().argName("names").required().build();
 		}
 	};
 
