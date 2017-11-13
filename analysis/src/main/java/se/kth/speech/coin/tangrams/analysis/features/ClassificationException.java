@@ -21,7 +21,7 @@ package se.kth.speech.coin.tangrams.analysis.features;
  * @since May 14, 2017
  *
  */
-public class ClassificationException extends Exception {
+public class ClassificationException extends RuntimeException {
 
 	/**
 	 *

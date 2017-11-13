@@ -35,7 +35,6 @@ import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.OptionalInt;
@@ -110,12 +109,12 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 
 		private final TestParameters testParams;
 
-		private final CrossValidator.Result testResults;
+		private final List<CrossValidator.IterationResult> testResults;
 
 		private final LocalDateTime testTimestamp;
 
 		BatchJobSummary(final LocalDateTime testTimestamp, final TestParameters testParams,
-				final CrossValidator.Result testResults) {
+				final List<CrossValidator.IterationResult> testResults) {
 			this.testTimestamp = testTimestamp;
 			this.testParams = testParams;
 			this.testResults = testResults;
@@ -149,7 +148,7 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 		/**
 		 * @return the testResults
 		 */
-		CrossValidator.Result getTestResults() {
+		List<CrossValidator.IterationResult> getTestResults() {
 			return testResults;
 		}
 
@@ -367,7 +366,8 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 
 								final LocalDateTime testTimestamp = LocalDateTime.now();
 								try {
-									final CrossValidator.Result testResults = crossValidator.apply(input.allSessions);
+									final List<CrossValidator.IterationResult> testResults = crossValidator
+											.apply(input.allSessions);
 									final BatchJobSummary batchSummary = new BatchJobSummary(testTimestamp, testParams,
 											testResults);
 									batchJobResultHandler.accept(batchSummary);
@@ -985,19 +985,16 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 		}
 		final String[] testParamRowCellValues = TestParameterReporting.createTestParamRowCellValues(summary)
 				.toArray(String[]::new);
-		final CrossValidator.Result testResults = summary.getTestResults();
-		for (final Entry<Path, List<CrossValidationTestSummary>> infileSessionResults : testResults.getSessionResults()
-				.entrySet()) {
-			final Path inpath = infileSessionResults.getKey();
-			final List<CrossValidationTestSummary> sessionResultList = infileSessionResults.getValue();
-			for (final ListIterator<CrossValidationTestSummary> sessionResultIter = sessionResultList
-					.listIterator(); sessionResultIter.hasNext();) {
-				final CrossValidationTestSummary cvTestSummary = sessionResultIter.next();
+		final List<CrossValidator.IterationResult> testResults = summary.getTestResults();
+		for (final CrossValidator.IterationResult iterResult : testResults) {
+			final int iterNo = iterResult.getIterNo();
+			iterResult.getCvTestResults().forEach(infileSessionResults -> {
+				final Path inpath = infileSessionResults.getKey();
+				final CrossValidationTestSummary cvTestSummary = infileSessionResults.getValue();
 				final String[] trainingRowCellVals = TestParameterReporting
 						.createTrainingDataRowCellValues(cvTestSummary).map(Object::toString).toArray(String[]::new);
 				// NOTE: This should remain here, after "Iterator.next()", so
 				// that the printed first iteration is "1" rather than "0"
-				final int iterNo = sessionResultIter.nextIndex();
 				int sessionDialogueOrder = 1;
 				for (final Entry<EventDialogue, EventDialogueTestResults> diagTestResults : cvTestSummary
 						.getTestResults().getDialogueTestResults()) {
@@ -1014,8 +1011,9 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 					final String row = rowCellValBuilder.build().collect(ROW_CELL_JOINER);
 					out.println(row);
 				}
-			}
+			});
 		}
+
 	}
 
 	public void writeError(final CombiningBatchJobTester.IncompleteResults incompleteResults, final Throwable thrown) {

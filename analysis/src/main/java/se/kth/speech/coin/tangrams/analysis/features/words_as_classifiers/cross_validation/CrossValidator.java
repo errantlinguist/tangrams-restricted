@@ -17,19 +17,16 @@
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Iterator;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.OptionalInt;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -40,8 +37,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.BeanFactory;
-
-import com.google.common.collect.Maps;
 
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import se.kth.speech.coin.tangrams.analysis.GameContext;
@@ -127,36 +122,89 @@ public final class CrossValidator {
 		}
 	}
 
-	public static final class Result {
+	public static final class IterationResult {
 
-		private final int iterCount;
+		private final Stream<Entry<Path, CrossValidationTestSummary>> cvTestResults;
 
-		private final ConcurrentMap<Path, List<CrossValidationTestSummary>> sessionResults;
+		private final int iterNo;
 
-		private Result(final int expectedSessionCount, final int iterCount) {
-			sessionResults = new ConcurrentHashMap<>(expectedSessionCount);
-			this.iterCount = iterCount;
+		private IterationResult(final int iterNo, final Stream<Entry<Path, CrossValidationTestSummary>> cvTestResults) {
+			this.iterNo = iterNo;
+			this.cvTestResults = cvTestResults;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see java.lang.Object#equals(java.lang.Object)
+		 */
+		@Override
+		public boolean equals(final Object obj) {
+			if (this == obj) {
+				return true;
+			}
+			if (obj == null) {
+				return false;
+			}
+			if (!(obj instanceof IterationResult)) {
+				return false;
+			}
+			final IterationResult other = (IterationResult) obj;
+			if (cvTestResults == null) {
+				if (other.cvTestResults != null) {
+					return false;
+				}
+			} else if (!cvTestResults.equals(other.cvTestResults)) {
+				return false;
+			}
+			if (iterNo != other.iterNo) {
+				return false;
+			}
+			return true;
 		}
 
 		/**
-		 * @return the sessionResults
+		 * @return the cvTestResults
 		 */
-		public Map<Path, List<CrossValidationTestSummary>> getSessionResults() {
-			return Collections.unmodifiableMap(sessionResults);
+		public Stream<Entry<Path, CrossValidationTestSummary>> getCvTestResults() {
+			return cvTestResults;
 		}
 
-		public void put(final Path infilePath, final int iterNo, final CrossValidationTestSummary cvTestSummary) {
-			sessionResults.compute(infilePath, (key, oldVal) -> {
-				final List<CrossValidationTestSummary> newVal;
-				if (oldVal == null) {
-					newVal = Arrays.asList(new CrossValidationTestSummary[iterCount]);
-				} else {
-					newVal = oldVal;
-				}
-				final CrossValidationTestSummary oldResults = newVal.set(iterNo - 1, cvTestSummary);
-				assert oldResults == null;
-				return newVal;
-			});
+		/**
+		 * @return the iterNo
+		 */
+		public int getIterNo() {
+			return iterNo;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see java.lang.Object#hashCode()
+		 */
+		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + (cvTestResults == null ? 0 : cvTestResults.hashCode());
+			result = prime * result + iterNo;
+			return result;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see java.lang.Object#toString()
+		 */
+		@Override
+		public String toString() {
+			final StringBuilder builder = new StringBuilder();
+			builder.append("IterationResult [iterNo=");
+			builder.append(iterNo);
+			builder.append(", cvTestResults=");
+			builder.append(cvTestResults);
+			builder.append("]");
+			return builder.toString();
 		}
 
 	}
@@ -217,19 +265,18 @@ public final class CrossValidator {
 		this.backgroundJobExecutor = backgroundJobExecutor;
 	}
 
-	public Result apply(final Map<SessionDataManager, Path> allSessions) throws ClassificationException, IOException {
-		final Result result = new Result(allSessions.size(), iterCount);
+	public List<IterationResult> apply(final Map<SessionDataManager, Path> allSessions) {
+		final List<IterationResult> result = new ArrayList<>(iterCount);
 		LOGGER.info(
 				"Starting cross-validation test using data from {} session(s), doing {} iteration(s) on each dataset.",
 				allSessions.size(), iterCount);
+
 		for (int iterNo = 1; iterNo <= iterCount; ++iterNo) {
 			LOGGER.info("Training/testing iteration no. {}.", iterNo);
-			final Map<Path, CrossValidationTestSummary> iterResults = crossValidate(allSessions);
-			for (final Entry<Path, CrossValidationTestSummary> iterResult : iterResults.entrySet()) {
-				result.put(iterResult.getKey(), iterNo, iterResult.getValue());
-			}
+			final Stream<Entry<Path, CrossValidationTestSummary>> iterResults = crossValidate(allSessions);
+			result.add(new IterationResult(iterNo, iterResults));
 		}
-		LOGGER.info("Finished testing {} cross-validation dataset(s).", result.sessionResults.size());
+		LOGGER.info("Finished testing {} cross-validation dataset(s).", result.size());
 		return result;
 	}
 
@@ -260,27 +307,29 @@ public final class CrossValidator {
 				.apply(new ClassificationContext(trainingData, backgroundJobExecutor, referentConfidenceMapFactory));
 	}
 
-	private Map<Path, CrossValidationTestSummary> crossValidate(final Map<SessionDataManager, Path> allSessions)
-			throws IOException, ClassificationException {
-		final Map<Path, CrossValidationTestSummary> result = Maps.newHashMapWithExpectedSize(allSessions.size());
+	private Stream<Entry<Path, CrossValidationTestSummary>> crossValidate(
+			final Map<SessionDataManager, Path> allSessions) {
 		final Stream<Entry<SessionDataManager, WordClassificationData>> testSets = testSetFactory.apply(allSessions);
-		for (final Iterator<Entry<SessionDataManager, WordClassificationData>> testSetIter = testSets
-				.iterator(); testSetIter.hasNext();) {
-			final Entry<SessionDataManager, WordClassificationData> testSet = testSetIter.next();
+		return testSets.map(testSet -> {
 			final SessionDataManager testSessionData = testSet.getKey();
 			final Path infilePath = allSessions.get(testSessionData);
 			LOGGER.info("Running cross-validation test on data from \"{}\".", infilePath);
 
 			final WordClassificationData trainingData = testSet.getValue();
-			final EventDialogueClassifier diagClassifier = createDialogueClassifier(trainingData, testSessionData);
-			final SessionGameManager sessionGameMgr = sessionDiagMgrCacheSupplier.get().getUnchecked(testSessionData);
-			final SessionGame sessionGame = sessionGameMgr.getCanonicalGame();
-			final SessionTestResults testResults = testSession(sessionGame, diagClassifier);
-			final CrossValidationTestSummary cvTestSummary = new CrossValidationTestSummary(testResults,
-					trainingData.getTrainingInstanceCounts(), sessionGame.getHistory().getStartTime());
-			result.put(infilePath, cvTestSummary);
-		}
-		return result;
+			try {
+				final EventDialogueClassifier diagClassifier = createDialogueClassifier(trainingData, testSessionData);
+				final SessionGameManager sessionGameMgr = sessionDiagMgrCacheSupplier.get()
+						.getUnchecked(testSessionData);
+				final SessionGame sessionGame = sessionGameMgr.getCanonicalGame();
+				final SessionTestResults testResults = testSession(sessionGame, diagClassifier);
+				final CrossValidationTestSummary cvTestSummary = new CrossValidationTestSummary(testResults,
+						trainingData.getTrainingInstanceCounts(), sessionGame.getHistory().getStartTime());
+				return Pair.of(infilePath, cvTestSummary);
+
+			} catch (final IOException e) {
+				throw new UncheckedIOException(e);
+			}
+		});
 	}
 
 	private Optional<EventDialogueTestResults> testDialogue(final EventDialogue uttDiag, final GameHistory history,
