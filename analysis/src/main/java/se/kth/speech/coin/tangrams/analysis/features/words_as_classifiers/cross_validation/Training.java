@@ -51,12 +51,12 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialog
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.IsolatedUtteranceEventDialogueClassifier;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.AbstractInstanceExtractor;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.DialogicInstanceExtractor;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.UpdatingWordLogisticClassifierTrainer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.OnePositiveMaximumNegativeInstanceExtractor;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.OnePositiveOneNegativeInstanceExtractor;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.ParallelizedWordLogisticClassifierTrainer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.SizeEstimatingInstancesMapFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.TrainingInstancesFactory;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.UpdatingWordLogisticClassifierTrainer;
 import se.kth.speech.nlp.PatternMatchingUtteranceAcceptanceRanker;
 import weka.classifiers.Classifier;
 import weka.classifiers.functions.Logistic;
@@ -158,7 +158,10 @@ enum Training {
 		public Function<ClassificationContext, DialogicEventDialogueClassifier> getClassifierFactory(
 				final TrainingContext trainingCtx) {
 			final ApplicationContext appCtx = trainingCtx.getAppCtx();
-			final WordClassDiscountingSmoother smoother = appCtx.getBean(WordClassDiscountingSmoother.class);
+			final Integer smoothingMinCount = (Integer) trainingCtx.getTrainingParams()
+					.get(WordClassifierTrainingParameter.SMOOTHING_MIN_COUNT);
+			final WordClassDiscountingSmoother smoother = appCtx.getBean(WordClassDiscountingSmoother.class,
+					smoothingMinCount);
 			return classificationContext -> {
 				final ParallelizedWordLogisticClassifierTrainer trainer = new ParallelizedWordLogisticClassifierTrainer(
 						classificationContext.getBackgroundJobExecutor(), smoother);
@@ -208,7 +211,6 @@ enum Training {
 		public Function<ClassificationContext, DialogicEventDialogueClassifier> getClassifierFactory(
 				final TrainingContext trainingCtx) {
 			final ApplicationContext appCtx = trainingCtx.getAppCtx();
-			final WordClassDiscountingSmoother smoother = appCtx.getBean(WordClassDiscountingSmoother.class);
 			final EntityInstanceAttributeContext entityInstAttrCtx = appCtx
 					.getBean(EntityInstanceAttributeContext.class);
 			final EntityFeatureExtractionContextFactory extCtxFactory = appCtx
@@ -217,6 +219,10 @@ enum Training {
 				final AbstractInstanceExtractor instExtractor = new OnePositiveMaximumNegativeInstanceExtractor(
 						entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory);
 				final Map<WordClassifierTrainingParameter, Object> trainingParams = trainingCtx.getTrainingParams();
+				final Integer smoothingMinCount = (Integer) trainingCtx.getTrainingParams()
+						.get(WordClassifierTrainingParameter.SMOOTHING_MIN_COUNT);
+				final WordClassDiscountingSmoother smoother = appCtx.getBean(WordClassDiscountingSmoother.class,
+						smoothingMinCount);
 				final UpdatingWordLogisticClassifierTrainer iterativeTrainer = new UpdatingWordLogisticClassifierTrainer(
 						classificationContext.getBackgroundJobExecutor(), smoother,
 						classificationContext.getTrainingData(), instExtractor,
@@ -316,7 +322,10 @@ enum Training {
 		@Override
 		public IsolatedUtteranceEventDialogueClassifier apply(final ClassificationContext classificationContext) {
 			final ApplicationContext appCtx = trainingCtx.getAppCtx();
-			final WordClassDiscountingSmoother smoother = appCtx.getBean(WordClassDiscountingSmoother.class);
+			final Integer smoothingMinCount = (Integer) trainingCtx.getTrainingParams()
+					.get(WordClassifierTrainingParameter.SMOOTHING_MIN_COUNT);
+			final WordClassDiscountingSmoother smoother = appCtx.getBean(WordClassDiscountingSmoother.class,
+					smoothingMinCount);
 			final ParallelizedWordLogisticClassifierTrainer trainer = new ParallelizedWordLogisticClassifierTrainer(
 					classificationContext.getBackgroundJobExecutor(), smoother);
 			// This classifier is statically-trained, i.e. the word models
@@ -348,7 +357,10 @@ enum Training {
 		@Override
 		public IsolatedUtteranceEventDialogueClassifier apply(final ClassificationContext classificationContext) {
 			final ApplicationContext appCtx = trainingCtx.getAppCtx();
-			final WordClassDiscountingSmoother smoother = appCtx.getBean(WordClassDiscountingSmoother.class);
+			final Integer smoothingMinCount = (Integer) trainingCtx.getTrainingParams()
+					.get(WordClassifierTrainingParameter.SMOOTHING_MIN_COUNT);
+			final WordClassDiscountingSmoother smoother = appCtx.getBean(WordClassDiscountingSmoother.class,
+					smoothingMinCount);
 			final EntityInstanceAttributeContext entityInstAttrCtx = appCtx
 					.getBean(EntityInstanceAttributeContext.class);
 			final EntityFeatureExtractionContextFactory extCtxFactory = appCtx

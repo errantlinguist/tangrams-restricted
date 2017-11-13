@@ -62,6 +62,7 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.Refere
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.SessionTestResults;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.SessionTestStatistics;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.UtteranceGameContexts;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordClassDiscountingSmoother;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.ClassificationContext;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.EventDialogueClassifier;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.EventDialogueTransformer;
@@ -335,6 +336,8 @@ public final class CrossValidator {
 	@Inject
 	private SessionGameManagerCacheSupplier sessionDiagMgrCacheSupplier;
 
+	private final WordClassDiscountingSmoother smoother;
+
 	@Inject
 	private WordClassInstancesFactory testInstsFactory;
 
@@ -344,10 +347,11 @@ public final class CrossValidator {
 			final Function<Map<SessionDataManager, Path>, Stream<Entry<SessionDataManager, WordClassificationData>>> testSetFactory,
 			final EventDialogueTransformer diagTransformer,
 			final Function<? super ClassificationContext, ? extends EventDialogueClassifier> classifierFactory,
-			final Executor backgroundJobExecutor) {
+			final WordClassDiscountingSmoother smoother, final Executor backgroundJobExecutor) {
 		this.testSetFactory = testSetFactory;
 		this.diagTransformer = diagTransformer;
 		this.classifierFactory = classifierFactory;
+		this.smoother = smoother;
 		this.backgroundJobExecutor = backgroundJobExecutor;
 	}
 
@@ -389,7 +393,7 @@ public final class CrossValidator {
 		final Function<EntityFeature.Extractor.Context, Instance> testInstFactory = entInstAttrCtx
 				.createInstFactory(testInsts);
 		final ReferentConfidenceMapFactory referentConfidenceMapFactory = beanFactory
-				.getBean(ReferentConfidenceMapFactory.class, testInstFactory);
+				.getBean(ReferentConfidenceMapFactory.class, testInstFactory, smoother);
 		return classifierFactory
 				.apply(new ClassificationContext(trainingData, backgroundJobExecutor, referentConfidenceMapFactory));
 	}
@@ -434,7 +438,8 @@ public final class CrossValidator {
 			final GameContext uttCtx = UtteranceGameContexts.createSingleContext(firstUtt, history);
 			final OptionalInt optLastSelectedEntityId = uttCtx.findLastSelectedEntityId();
 			if (optLastSelectedEntityId.isPresent()) {
-				final Optional<ReferentConfidenceData> optReferentConfidenceData = diagClassifier.apply(transformedDiag, uttCtx);
+				final Optional<ReferentConfidenceData> optReferentConfidenceData = diagClassifier.apply(transformedDiag,
+						uttCtx);
 				if (optReferentConfidenceData.isPresent()) {
 					final ReferentConfidenceData referentConfidenceData = optReferentConfidenceData.get();
 					final int goldStandardEntityId = optLastSelectedEntityId.getAsInt();

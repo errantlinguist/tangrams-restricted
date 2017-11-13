@@ -80,6 +80,7 @@ import se.kth.speech.coin.tangrams.analysis.dialogues.UtteranceDialogueRepresent
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
 import se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttributeContext;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.EventDialogueTestResults;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordClassDiscountingSmoother;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.CrossValidator.CrossValidationTestSummary;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.CachingEventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.EventDialogueTransformer;
@@ -289,9 +290,12 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 										.createTrainingInstsFactory(trainingCtx);
 								final Function<Map<SessionDataManager, Path>, Stream<Entry<SessionDataManager, WordClassificationData>>> testSetFactory = testSetFactoryFactory
 										.apply(trainingInstsFactory, sessionGameMgrs);
+								final Integer smoothingMinCount = (Integer) trainingCtx.getTrainingParams()
+										.get(WordClassifierTrainingParameter.SMOOTHING_MIN_COUNT);
+								final WordClassDiscountingSmoother smoother = appCtx.getBean(WordClassDiscountingSmoother.class, smoothingMinCount);
 								final CrossValidator crossValidator = appCtx.getBean(CrossValidator.class,
 										testSetFactory, symmetricalDiagTransformer,
-										trainingMethod.getClassifierFactory(trainingCtx), backgroundJobExecutor);
+										trainingMethod.getClassifierFactory(trainingCtx), smoother, backgroundJobExecutor);
 								crossValidator.setIterCount(trainingMethod.getIterCount());
 								testerConfigurator.accept(crossValidator);
 								final TestParameters testParams = new TestParameters(cleaningMethodSet,

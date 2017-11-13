@@ -8,12 +8,10 @@
 
 	<import
 		resource="classpath:/se/kth/speech/coin/tangrams/analysis/features/words_as_classifiers/context.xml" />
-
+		
 	<bean id="smoother"
-		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordClassDiscountingSmoother">
-		<constructor-arg value="3" />
-		<constructor-arg value="__OUT_OF_VOCAB__" />
-	</bean>
+		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordClassDiscountingSmoother"
+		scope="prototype" />
 
 	<bean id="dialogue-classifier"
 		class="se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.IsolatedUtteranceEventDialogueClassifier"

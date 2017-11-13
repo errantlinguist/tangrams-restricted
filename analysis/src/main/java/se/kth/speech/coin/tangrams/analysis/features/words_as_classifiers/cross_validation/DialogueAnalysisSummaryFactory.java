@@ -340,6 +340,15 @@ final class DialogueAnalysisSummaryFactory implements
 				return input.sequenceOrder;
 			}
 		},
+		SMOOTHING_MIN_COUNT {
+
+			@Override
+			public Object apply(Input input, Function<? super Iterator<Utterance>, String> uttDiagReprFactory) {
+				return input.trainingParams
+						.get(WordClassifierTrainingParameter.SMOOTHING_MIN_COUNT);
+			}
+			
+		},
 		TEST_ITER {
 			/*
 			 * (non-Javadoc)
@@ -448,6 +457,7 @@ final class DialogueAnalysisSummaryFactory implements
 				DialogueAnalysisSummaryFactory.SummaryDatum.OBSERVED_VOCAB,
 				DialogueAnalysisSummaryFactory.SummaryDatum.OBSERVED_VOCAB_SIZE,
 				DialogueAnalysisSummaryFactory.SummaryDatum.OOV_OBSERVATION_COUNT,
+				DialogueAnalysisSummaryFactory.SummaryDatum.SMOOTHING_MIN_COUNT,
 				DialogueAnalysisSummaryFactory.SummaryDatum.BACKGROUND_DATA_POSITIVE_EXAMPLE_WEIGHT_FACTOR,
 				DialogueAnalysisSummaryFactory.SummaryDatum.BACKGROUND_DATA_NEGATIVE_EXAMPLE_WEIGHT_FACTOR,
 				DialogueAnalysisSummaryFactory.SummaryDatum.INTERACTION_DATA_POSITIVE_EXAMPLE_WEIGHT_FACTOR,

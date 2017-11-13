@@ -51,14 +51,14 @@ public final class ReferentConfidenceMapFactory {
 	@Inject
 	private EntityFeatureExtractionContextFactory extCtxFactory;
 
-	@Inject
-	private WordClassDiscountingSmoother smoother;
+	private final WordClassDiscountingSmoother smoother;
 
 	private final Function<? super EntityFeature.Extractor.Context, ? extends Instance> testInstFactory;
 
 	public ReferentConfidenceMapFactory( // NO_UCD (unused code)
-			final Function<? super EntityFeature.Extractor.Context, ? extends Instance> testInstFactory) {
+			final Function<? super EntityFeature.Extractor.Context, ? extends Instance> testInstFactory, final WordClassDiscountingSmoother smoother) {
 		this.testInstFactory = testInstFactory;
+		this.smoother = smoother;
 	}
 
 	public ReferentConfidenceData apply(final Object2DoubleMap<String> tokens, final GameContext uttCtx,

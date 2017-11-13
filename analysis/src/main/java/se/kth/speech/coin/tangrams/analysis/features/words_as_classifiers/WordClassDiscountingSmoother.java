@@ -218,6 +218,8 @@ public final class WordClassDiscountingSmoother {
 
 	}
 
+	private static final String DEFAULT_OOV_CLASS = "__OUT_OF_VOCAB__";
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(WordClassDiscountingSmoother.class);
 
 	@Inject
@@ -226,69 +228,14 @@ public final class WordClassDiscountingSmoother {
 	private final int minCount;
 
 	private final String oovClassName;
+	
+	public WordClassDiscountingSmoother(final int minCount) {
+		this(minCount, DEFAULT_OOV_CLASS);
+	}
 
-	public WordClassDiscountingSmoother(final int minCount, final String oovClassName) { // NO_UCD
-																							// (use
-																							// private)
-		this.oovClassName = oovClassName;
+	public WordClassDiscountingSmoother(final int minCount, final String oovClassName) {
 		this.minCount = minCount;
-	}
-
-	private void addSmoothedClassifierWeighting(String wordClass, double addendWeight, Map<String, WeightedClassifier> alreadyObservedWordClassifiers, final Function<? super String, ? extends Classifier> wordClassifiers) {
-		final WeightedClassifier alreadyObservedClassifier = alreadyObservedWordClassifiers.get(wordClass);
-		if (alreadyObservedClassifier == null) {
-			// The given word class hasn't yet been used
-			final Classifier wordClassifier = wordClassifiers.apply(wordClass);
-			if (wordClassifier == null) {
-				// This word class was not seen in the training data; Use the OOV class instead
-				LOGGER.debug("Getting distribution for OOV class (\"{}\").", oovClassName);
-				final Classifier oovClassifier = wordClassifiers.apply(oovClassName);
-				final WeightedClassifier newWeightedClassifier = new WeightedClassifier(oovClassifier, addendWeight);
-				alreadyObservedWordClassifiers.put(oovClassName, newWeightedClassifier);
-			} else {
-				// There is a classifier trained for the word class even though it hasn't yet been used in this sequence
-				final WeightedClassifier newWeightedClassifier = new WeightedClassifier(wordClassifier, addendWeight);
-				alreadyObservedWordClassifiers.put(wordClass, newWeightedClassifier);
-			}
-		} else {
-			alreadyObservedClassifier.setWeight(alreadyObservedClassifier.getWeight() + addendWeight);
-		}		
-	}
-
-	Map<String, WeightedClassifier> createWeightedClassifierMap(final Collection<Object2DoubleMap.Entry<String>> wordClassWeights,
-			final Function<? super String, ? extends Classifier> wordClassifiers) {
-		// There are likely fewer result classifiers than the input size because some classes will likely be OOV
-		final Map<String, WeightedClassifier> result = new HashMap<>(wordClassWeights.size() + 1, 1.0f);
-		for (Object2DoubleMap.Entry<String> wordClassWeight : wordClassWeights) {
-			final String wordClass = wordClassWeight.getKey();
-			LOGGER.debug("Getting classifier for class \"{}\".", wordClass);
-			final double weight = wordClassWeight.getDoubleValue();
-			addSmoothedClassifierWeighting(wordClass, weight, result, wordClassifiers);
-		}
-		return result;
-	}
-
-	private Map<String, WordClassificationData.Datum> createdAddendClassInstsMap(
-			final WordClassificationData trainingData) {
-		final Map<String, WordClassificationData.Datum> classInsts = trainingData.getClassData();
-		final List<Entry<String, WordClassificationData.Datum>> wordClassesToDiscount = findClassesToDiscount(
-				classInsts.entrySet()).collect(Collectors.toCollection(() -> new ArrayList<>(classInsts.size())));
-		final Map<String, WordClassificationData.Datum> result = Maps
-				.newHashMapWithExpectedSize(wordClassesToDiscount.size());
-
-		for (final Entry<String, WordClassificationData.Datum> wordClassToDiscount : wordClassesToDiscount) {
-			final String className = wordClassToDiscount.getKey();
-			LOGGER.debug("Class \"{}\" has fewer than {} instances; Will redistribute to \"{}\".", className, minCount,
-					oovClassName);
-			result.put(className, classInsts.remove(className));
-		}
-		return result;
-	}
-
-	private Stream<Entry<String, WordClassificationData.Datum>> findClassesToDiscount(
-			final Collection<Entry<String, WordClassificationData.Datum>> wordClassData) {
-		return wordClassData.stream()
-				.filter(observationCount -> observationCount.getValue().getObservationCount() < minCount);
+		this.oovClassName = oovClassName;
 	}
 
 	/**
@@ -304,7 +251,7 @@ public final class WordClassDiscountingSmoother {
 	public String getOovClassName() {
 		return oovClassName;
 	}
-	
+
 	/**
 	 * Calculates which {@link Instances} objects for each unique word class
 	 * (i.e.&nbsp;token type) should be discounted, removes them from the given
@@ -336,7 +283,55 @@ public final class WordClassDiscountingSmoother {
 						MapCollectors.throwingMerger(), () -> new HashMap<>(wordClassesToDiscount.size() + 1, 1.0f)));
 		return new DiscountedWordClasses(discountedWordClassData, new DiscountedWordClasses.Datum(oovClassDatum));
 	}
-	
+
+	private void addSmoothedClassifierWeighting(String wordClass, double addendWeight,
+			Map<String, WeightedClassifier> alreadyObservedWordClassifiers,
+			final Function<? super String, ? extends Classifier> wordClassifiers) {
+		final WeightedClassifier alreadyObservedClassifier = alreadyObservedWordClassifiers.get(wordClass);
+		if (alreadyObservedClassifier == null) {
+			// The given word class hasn't yet been used
+			final Classifier wordClassifier = wordClassifiers.apply(wordClass);
+			if (wordClassifier == null) {
+				// This word class was not seen in the training data; Use the
+				// OOV class instead
+				LOGGER.debug("Getting distribution for OOV class (\"{}\").", oovClassName);
+				final Classifier oovClassifier = wordClassifiers.apply(oovClassName);
+				final WeightedClassifier newWeightedClassifier = new WeightedClassifier(oovClassifier, addendWeight);
+				alreadyObservedWordClassifiers.put(oovClassName, newWeightedClassifier);
+			} else {
+				// There is a classifier trained for the word class even though
+				// it hasn't yet been used in this sequence
+				final WeightedClassifier newWeightedClassifier = new WeightedClassifier(wordClassifier, addendWeight);
+				alreadyObservedWordClassifiers.put(wordClass, newWeightedClassifier);
+			}
+		} else {
+			alreadyObservedClassifier.setWeight(alreadyObservedClassifier.getWeight() + addendWeight);
+		}
+	}
+
+	private Map<String, WordClassificationData.Datum> createdAddendClassInstsMap(
+			final WordClassificationData trainingData) {
+		final Map<String, WordClassificationData.Datum> classInsts = trainingData.getClassData();
+		final List<Entry<String, WordClassificationData.Datum>> wordClassesToDiscount = findClassesToDiscount(
+				classInsts.entrySet()).collect(Collectors.toCollection(() -> new ArrayList<>(classInsts.size())));
+		final Map<String, WordClassificationData.Datum> result = Maps
+				.newHashMapWithExpectedSize(wordClassesToDiscount.size());
+
+		for (final Entry<String, WordClassificationData.Datum> wordClassToDiscount : wordClassesToDiscount) {
+			final String className = wordClassToDiscount.getKey();
+			LOGGER.debug("Class \"{}\" has fewer than {} instances; Will redistribute to \"{}\".", className, minCount,
+					oovClassName);
+			result.put(className, classInsts.remove(className));
+		}
+		return result;
+	}
+
+	private Stream<Entry<String, WordClassificationData.Datum>> findClassesToDiscount(
+			final Collection<Entry<String, WordClassificationData.Datum>> wordClassData) {
+		return wordClassData.stream()
+				.filter(observationCount -> observationCount.getValue().getObservationCount() < minCount);
+	}
+
 	private WordClassificationData.Datum redistributeMassToOovClass(final WordClassificationData trainingData,
 			final Collection<Entry<String, WordClassificationData.Datum>> addendWordClassData) {
 		final WordClassificationData.Datum result = trainingData.getClassData().computeIfAbsent(oovClassName, k -> {
@@ -346,6 +341,21 @@ public final class WordClassDiscountingSmoother {
 			return new WordClassificationData.Datum(oovClassDatum);
 		});
 		addendWordClassData.stream().map(Entry::getValue).forEach(result::add);
+		return result;
+	}
+
+	Map<String, WeightedClassifier> createWeightedClassifierMap(
+			final Collection<Object2DoubleMap.Entry<String>> wordClassWeights,
+			final Function<? super String, ? extends Classifier> wordClassifiers) {
+		// There are likely fewer result classifiers than the input size because
+		// some classes will likely be OOV
+		final Map<String, WeightedClassifier> result = new HashMap<>(wordClassWeights.size() + 1, 1.0f);
+		for (Object2DoubleMap.Entry<String> wordClassWeight : wordClassWeights) {
+			final String wordClass = wordClassWeight.getKey();
+			LOGGER.debug("Getting classifier for class \"{}\".", wordClass);
+			final double weight = wordClassWeight.getDoubleValue();
+			addSmoothedClassifierWeighting(wordClass, weight, result, wordClassifiers);
+		}
 		return result;
 	}
 
