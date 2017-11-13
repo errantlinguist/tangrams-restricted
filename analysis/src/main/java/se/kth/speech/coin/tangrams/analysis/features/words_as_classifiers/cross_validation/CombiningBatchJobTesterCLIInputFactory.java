@@ -31,12 +31,12 @@ import org.apache.commons.cli.MissingOptionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import se.kth.speech.coin.tangrams.analysis.Cleaning;
-import se.kth.speech.coin.tangrams.analysis.TokenFiltering;
-import se.kth.speech.coin.tangrams.analysis.TokenType;
-import se.kth.speech.coin.tangrams.analysis.Tokenization;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.CombiningBatchJobTester.Input;
 import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
+import se.kth.speech.coin.tangrams.analysis.tokenization.Cleaning;
+import se.kth.speech.coin.tangrams.analysis.tokenization.TokenFiltering;
+import se.kth.speech.coin.tangrams.analysis.tokenization.TokenType;
+import se.kth.speech.coin.tangrams.analysis.tokenization.Tokenization;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>

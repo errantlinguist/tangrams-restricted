@@ -19,10 +19,10 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross
 import java.util.Map;
 import java.util.Set;
 
-import se.kth.speech.coin.tangrams.analysis.Cleaning;
-import se.kth.speech.coin.tangrams.analysis.TokenFiltering;
-import se.kth.speech.coin.tangrams.analysis.TokenType;
-import se.kth.speech.coin.tangrams.analysis.Tokenization;
+import se.kth.speech.coin.tangrams.analysis.tokenization.Cleaning;
+import se.kth.speech.coin.tangrams.analysis.tokenization.TokenFiltering;
+import se.kth.speech.coin.tangrams.analysis.tokenization.TokenType;
+import se.kth.speech.coin.tangrams.analysis.tokenization.Tokenization;
 
 final class TestParameters {
 

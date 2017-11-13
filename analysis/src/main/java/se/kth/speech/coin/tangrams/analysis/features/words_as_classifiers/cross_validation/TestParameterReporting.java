@@ -26,12 +26,12 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
-import se.kth.speech.coin.tangrams.analysis.Cleaning;
-import se.kth.speech.coin.tangrams.analysis.TokenFiltering;
-import se.kth.speech.coin.tangrams.analysis.TokenType;
-import se.kth.speech.coin.tangrams.analysis.Tokenization;
 import se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttributeContext;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.CrossValidator.CrossValidationTestSummary;
+import se.kth.speech.coin.tangrams.analysis.tokenization.Cleaning;
+import se.kth.speech.coin.tangrams.analysis.tokenization.TokenFiltering;
+import se.kth.speech.coin.tangrams.analysis.tokenization.TokenType;
+import se.kth.speech.coin.tangrams.analysis.tokenization.Tokenization;
 import se.kth.speech.coin.tangrams.iristk.EventTimes;
 
 /**

@@ -39,12 +39,8 @@ import com.google.common.cache.LoadingCache;
 
 import edu.stanford.nlp.trees.Tree;
 import edu.stanford.nlp.util.CoreMap;
-import se.kth.speech.coin.tangrams.analysis.Cleaning;
 import se.kth.speech.coin.tangrams.analysis.SessionGameManager;
 import se.kth.speech.coin.tangrams.analysis.SessionGameManagerCacheSupplier;
-import se.kth.speech.coin.tangrams.analysis.TokenFiltering;
-import se.kth.speech.coin.tangrams.analysis.TokenType;
-import se.kth.speech.coin.tangrams.analysis.Tokenization;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.CachingEventDialogueTransformer;
@@ -53,6 +49,10 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialog
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.TrainingInstancesFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.WordClassificationData;
 import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
+import se.kth.speech.coin.tangrams.analysis.tokenization.Cleaning;
+import se.kth.speech.coin.tangrams.analysis.tokenization.TokenFiltering;
+import se.kth.speech.coin.tangrams.analysis.tokenization.TokenType;
+import se.kth.speech.coin.tangrams.analysis.tokenization.Tokenization;
 import se.kth.speech.nlp.stanford.AnnotationCacheFactory;
 
 /**
