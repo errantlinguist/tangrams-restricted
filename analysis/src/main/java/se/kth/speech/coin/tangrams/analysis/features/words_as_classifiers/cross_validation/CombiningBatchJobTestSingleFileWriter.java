@@ -621,7 +621,7 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 						try (BufferedWriter uttRelLogOut = createUttRelFileWriter(outFile)) {
 
 							try (final ClassPathXmlApplicationContext appCtx = new ClassPathXmlApplicationContext(
-									"combining-batch-tester.xml", CombiningBatchJobTestSingleFileWriter.class)) {
+									"cross-validation.xml", CombiningBatchJobTestSingleFileWriter.class)) {
 								final Map<WordClassifierTrainingParameter, Object> trainingParams = WordClassifierTrainingParameter
 										.createDefaultMap();
 								final CombiningBatchJobTester tester = new CombiningBatchJobTester(
