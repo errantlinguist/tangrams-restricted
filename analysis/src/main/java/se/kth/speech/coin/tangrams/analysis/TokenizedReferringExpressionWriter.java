@@ -14,7 +14,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation;
+package se.kth.speech.coin.tangrams.analysis;
 
 import java.io.File;
 import java.io.IOException;
@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
@@ -61,9 +62,6 @@ import edu.stanford.nlp.trees.Tree;
 import edu.stanford.nlp.util.CoreMap;
 import se.kth.speech.CommonPaths;
 import se.kth.speech.MapCollectors;
-import se.kth.speech.coin.tangrams.analysis.SessionGame;
-import se.kth.speech.coin.tangrams.analysis.SessionGameManager;
-import se.kth.speech.coin.tangrams.analysis.UtteranceSpeakerParticipantIdMapFactory;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.ChainedEventDialogueTransformer;
@@ -96,19 +94,19 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 				return Option.builder(optName).longOpt("help").desc("Prints this message.").build();
 			}
 		},
-		OUTPATH("o") {
-			@Override
-			public Option get() {
-				return Option.builder(optName).longOpt("outpath").desc("The directory to write the extracted data to.")
-						.hasArg().argName("path").type(File.class).required().build();
-			}
-		},
 		OUTFILE_NAME("n") {
 			@Override
 			public Option get() {
 				return Option.builder(optName).longOpt("outfile-name")
 						.desc("The filename to write the extracted data to for each input session.").hasArg()
 						.argName("name").build();
+			}
+		},
+		OUTPATH("o") {
+			@Override
+			public Option get() {
+				return Option.builder(optName).longOpt("outpath").desc("The directory to write the extracted data to.")
+						.hasArg().argName("path").type(File.class).required().build();
 			}
 		},
 		TOKEN_FILTER("tf") {
@@ -167,12 +165,12 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 			.unmodifiableList(createDefaultPlayerRoleOrderingList());
 
 	/**
-	 * Parsing can take up huge amounts of memory, so it's single-threaded and thus
-	 * the caches are created designed for single-threaded operation.
+	 * Parsing can take up huge amounts of memory, so it's single-threaded and
+	 * thus the caches are created designed for single-threaded operation.
 	 */
 	private static final AnnotationCacheFactory ANNOTATION_CACHE_FACTORY = new AnnotationCacheFactory(1);
 
-	private static final String OUTFILE_HEADER;
+	private static final String DEFAULT_OUTFILE_NAME = "extracted-referring-tokens.tsv";
 
 	private static final BiConsumer<CoreMap, List<Tree>> EXTRACTED_PHRASE_HANDLER = (sent, extractedPhrases) -> {
 		// Do nothing
@@ -182,11 +180,15 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 
 	private static final Options OPTIONS = createOptions();
 
+	private static final String OUTFILE_HEADER;
+
 	private static final Charset OUTPUT_ENCODING = StandardCharsets.UTF_8;
 
 	private static final UtteranceSpeakerParticipantIdMapFactory PLAYER_PARTICIPANT_ID_MAPPER = new UtteranceSpeakerParticipantIdMapFactory();
 
 	private static final Collector<CharSequence, ?, String> ROW_CELL_JOINER;
+
+	private static final Collector<CharSequence, ?, String> TOKEN_JOINER = Collectors.joining(" ");
 
 	static {
 		ROW_CELL_JOINER = Collectors.joining("\t");
@@ -195,11 +197,7 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 		OUTFILE_HEADER = colHeaders.stream().collect(ROW_CELL_JOINER);
 	}
 
-	private static final Collector<CharSequence, ?, String> TOKEN_JOINER = Collectors.joining(" ");
-
-	private static final String DEFAULT_OUTFILE_NAME = "extracted-referring-tokens.tsv";
-
-	public static void main(final String[] args) throws BatchJobTestException, IOException, JAXBException {
+	public static void main(final String[] args) throws IOException, JAXBException {
 		final CommandLineParser parser = new DefaultParser();
 		try {
 			final CommandLine cl = parser.parse(OPTIONS, args);
@@ -232,8 +230,7 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 		return result;
 	}
 
-	private static void main(final CommandLine cl)
-			throws BatchJobTestException, ParseException, IOException, JAXBException {
+	private static void main(final CommandLine cl) throws ParseException, IOException, JAXBException {
 		if (cl.hasOption(Parameter.HELP.optName)) {
 			printHelp();
 		} else {
@@ -242,7 +239,7 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 			if (inpaths.isEmpty()) {
 				throw new MissingOptionException("No input path(s) specified.");
 			} else {
-				final Map<SessionDataManager, Path> allSessionData = TestSessionData.readTestSessionData(inpaths);
+				final Map<SessionDataManager, Path> allSessionData = readTestSessionData(inpaths);
 				final LoggedEventReader eventReader = new LoggedEventReader(allSessionData.size(),
 						allSessionData.size() * 10);
 
@@ -274,7 +271,7 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 					final Path relativeSessionDir = sessionPrefixPath.relativize(sessionDir);
 					final Path sessionOutputDir = Files.createDirectories(outDir.resolve(relativeSessionDir));
 
-					final TokenizationContext tokenizationContext = new TokenizationContext(cleaningMethodSet,
+					final Tokenization.Context tokenizationContext = new Tokenization.Context(cleaningMethodSet,
 							TokenType.INFLECTED, EXTRACTED_PHRASE_HANDLER, ANNOTATION_CACHE_FACTORY);
 					final ChainedEventDialogueTransformer diagTransformer = new ChainedEventDialogueTransformer(
 							Arrays.asList(tokenizationMethod.apply(tokenizationContext), tokenFilter));
@@ -328,6 +325,15 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 	private static void printHelp() {
 		final HelpFormatter formatter = new HelpFormatter();
 		formatter.printHelp(TokenizedReferringExpressionWriter.class.getSimpleName() + " INPATHS...", OPTIONS);
+	}
+
+	private static Map<SessionDataManager, Path> readTestSessionData(final Iterable<Path> inpaths) throws IOException {
+		final Map<Path, SessionDataManager> infileSessionData = SessionDataManager.createFileSessionDataMap(inpaths);
+		final Map<SessionDataManager, Path> result = infileSessionData.entrySet().stream()
+				.collect(Collectors.toMap(Entry::getValue, Entry::getKey, MapCollectors.throwingMerger(),
+						() -> new HashMap<>(infileSessionData.size() + 1, 1.0f)));
+		infileSessionData.forEach((infile, sessionData) -> result.put(sessionData, infile));
+		return result;
 	}
 
 	private TokenizedReferringExpressionWriter() {

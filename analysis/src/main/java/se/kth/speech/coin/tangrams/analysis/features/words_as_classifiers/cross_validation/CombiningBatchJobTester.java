@@ -39,8 +39,12 @@ import com.google.common.cache.LoadingCache;
 
 import edu.stanford.nlp.trees.Tree;
 import edu.stanford.nlp.util.CoreMap;
+import se.kth.speech.coin.tangrams.analysis.Cleaning;
 import se.kth.speech.coin.tangrams.analysis.SessionGameManager;
 import se.kth.speech.coin.tangrams.analysis.SessionGameManagerCacheSupplier;
+import se.kth.speech.coin.tangrams.analysis.TokenFiltering;
+import se.kth.speech.coin.tangrams.analysis.TokenType;
+import se.kth.speech.coin.tangrams.analysis.Tokenization;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.CachingEventDialogueTransformer;
@@ -207,7 +211,7 @@ final class CombiningBatchJobTester {
 			for (final Training trainingMethod : input.trainingMethods) {
 				for (final Tokenization tokenizationMethod : input.tokenizationMethods) {
 					for (final TokenType tokenType : input.tokenTypes) {
-						final TokenizationContext tokenizationContext = new TokenizationContext(cleaningMethodSet,
+						final Tokenization.Context tokenizationContext = new Tokenization.Context(cleaningMethodSet,
 								tokenType, extractionResultsHook, ANNOTATION_CACHE_FACTORY);
 						final EventDialogueTransformer tokenizer = tokenizationMethod.apply(tokenizationContext);
 

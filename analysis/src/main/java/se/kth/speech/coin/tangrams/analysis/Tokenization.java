@@ -14,7 +14,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation;
+package se.kth.speech.coin.tangrams.analysis;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -24,16 +24,21 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import org.apache.commons.lang3.tuple.Pair;
 
+import com.google.common.cache.LoadingCache;
+
 import edu.stanford.nlp.ling.CoreLabel;
 import edu.stanford.nlp.ling.Label;
+import edu.stanford.nlp.pipeline.Annotation;
 import edu.stanford.nlp.trees.CollinsHeadFinder;
 import edu.stanford.nlp.trees.Tree;
+import edu.stanford.nlp.util.CoreMap;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.ChainedEventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.DuplicateTokenFilteringEventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.EventDialogueTransformer;
@@ -49,11 +54,11 @@ import se.kth.speech.nlp.stanford.PhraseExtractingParsingTokenizer;
 import se.kth.speech.nlp.stanford.StanfordCoreNLPConfigurationVariant;
 import se.kth.speech.nlp.stanford.Tokenizer;
 
-enum Tokenization implements Function<TokenizationContext, EventDialogueTransformer> {
+public enum Tokenization implements Function<Tokenization.Context, EventDialogueTransformer> {
 	STANFORD_BASIC {
 
 		@Override
-		protected TokenizingEventDialogueTransformer createMainTransformer(final TokenizationContext context) {
+		protected TokenizingEventDialogueTransformer createMainTransformer(final Context context) {
 			final Function<String, List<String>> tokenizer;
 			switch (context.getTokenType()) {
 			case INFLECTED:
@@ -73,7 +78,7 @@ enum Tokenization implements Function<TokenizationContext, EventDialogueTransfor
 	STANFORD_NPS_ONLY {
 
 		@Override
-		protected TokenizingEventDialogueTransformer createMainTransformer(final TokenizationContext context) {
+		protected TokenizingEventDialogueTransformer createMainTransformer(final Context context) {
 			final Entry<Function<CoreLabel, String>, StanfordCoreNLPConfigurationVariant> tokenExtractor = TOKEN_TYPE_EXTRACTORS
 					.get(context.getTokenType());
 			return new TokenizingEventDialogueTransformer(new PhraseExtractingParsingTokenizer(
@@ -84,7 +89,7 @@ enum Tokenization implements Function<TokenizationContext, EventDialogueTransfor
 	STANFORD_NPS_WITHOUT_PPS {
 
 		@Override
-		protected TokenizingEventDialogueTransformer createMainTransformer(final TokenizationContext context) {
+		protected TokenizingEventDialogueTransformer createMainTransformer(final Context context) {
 			final Entry<Function<CoreLabel, String>, StanfordCoreNLPConfigurationVariant> tokenExtractor = TOKEN_TYPE_EXTRACTORS
 					.get(context.getTokenType());
 			return new TokenizingEventDialogueTransformer(new PhraseExtractingParsingTokenizer(
@@ -95,7 +100,7 @@ enum Tokenization implements Function<TokenizationContext, EventDialogueTransfor
 	STANFORD_PP_REMOVER {
 
 		@Override
-		protected TokenizingEventDialogueTransformer createMainTransformer(final TokenizationContext context) {
+		protected TokenizingEventDialogueTransformer createMainTransformer(final Context context) {
 			final Entry<Function<CoreLabel, String>, StanfordCoreNLPConfigurationVariant> tokenExtractor = TOKEN_TYPE_EXTRACTORS
 					.get(context.getTokenType());
 			return new TokenizingEventDialogueTransformer(
@@ -103,6 +108,54 @@ enum Tokenization implements Function<TokenizationContext, EventDialogueTransfor
 							LOCATIONAL_PP_PRUNING_MATCHER, tokenExtractor.getKey()));
 		}
 	};
+
+	public static final class Context {
+
+		private final Function<? super StanfordCoreNLPConfigurationVariant, LoadingCache<String, Annotation>> annotationCacheFactory;
+
+		private final Set<Cleaning> cleaning;
+
+		private final BiConsumer<? super CoreMap, ? super List<Tree>> extractionResultsHook;
+
+		private final TokenType tokenType;
+
+		public Context(final Set<Cleaning> cleaning, final TokenType tokenType,
+				final BiConsumer<? super CoreMap, ? super List<Tree>> extractionResultsHook,
+				final Function<? super StanfordCoreNLPConfigurationVariant, LoadingCache<String, Annotation>> annotationCacheFactory) {
+			this.cleaning = cleaning;
+			this.tokenType = tokenType;
+			this.extractionResultsHook = extractionResultsHook;
+			this.annotationCacheFactory = annotationCacheFactory;
+		}
+
+		/**
+		 * @return the annotationCacheFactory
+		 */
+		Function<? super StanfordCoreNLPConfigurationVariant, LoadingCache<String, Annotation>> getAnnotationCacheFactory() {
+			return annotationCacheFactory;
+		}
+
+		/**
+		 * @return the cleaning
+		 */
+		Set<Cleaning> getCleaning() {
+			return cleaning;
+		}
+
+		/**
+		 * @return the extractionResultsHook
+		 */
+		BiConsumer<? super CoreMap, ? super List<Tree>> getExtractionResultsHook() {
+			return extractionResultsHook;
+		}
+
+		/**
+		 * @return the tokenType
+		 */
+		TokenType getTokenType() {
+			return tokenType;
+		}
+	}
 
 	private static final List<Cleaning> CLEANING_ORDERING = createCleaningOrderingList();
 
@@ -149,7 +202,7 @@ enum Tokenization implements Function<TokenizationContext, EventDialogueTransfor
 	}
 
 	@Override
-	public EventDialogueTransformer apply(final TokenizationContext context) {
+	public EventDialogueTransformer apply(final Context context) {
 		final List<EventDialogueTransformer> chain = new ArrayList<>(CLEANING_ORDERING.size() + 1);
 		final Set<Cleaning> cleaning = context.getCleaning();
 		CLEANING_ORDERING.stream().filter(cleaning::contains).map(CLEANING_TRANSFORMERS::get).map(Supplier::get)
@@ -157,7 +210,7 @@ enum Tokenization implements Function<TokenizationContext, EventDialogueTransfor
 		chain.add(createMainTransformer(context));
 		return new ChainedEventDialogueTransformer(chain);
 	}
-
-	protected abstract EventDialogueTransformer createMainTransformer(final TokenizationContext context);
+	
+	protected abstract EventDialogueTransformer createMainTransformer(final Context context);
 
 }

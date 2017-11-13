@@ -14,13 +14,13 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation;
+package se.kth.speech.coin.tangrams.analysis;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
  * @since Jun 2, 2017
  *
  */
-enum Cleaning {
+public enum Cleaning {
 	DISFLUENCIES, DUPLICATES, FILLERS;
 }

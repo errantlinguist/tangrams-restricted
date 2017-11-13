@@ -14,7 +14,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation;
+package se.kth.speech.coin.tangrams.analysis;
 
 import java.util.function.Supplier;
 
@@ -23,7 +23,7 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialog
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.TokenFilteringEventDialogueTransformer;
 import se.kth.speech.nlp.SnowballPorter2EnglishStopwords;
 
-enum TokenFiltering implements Supplier<EventDialogueTransformer> {
+public enum TokenFiltering implements Supplier<EventDialogueTransformer> {
 	NO_FILTER(new DummyEventDialogueTransformer()), STOPWORDS(
 			new TokenFilteringEventDialogueTransformer(SnowballPorter2EnglishStopwords.Variant.CANONICAL.get()));
 
