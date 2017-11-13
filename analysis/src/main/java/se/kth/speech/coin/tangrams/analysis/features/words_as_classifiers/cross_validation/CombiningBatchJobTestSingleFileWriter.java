@@ -80,7 +80,6 @@ import se.kth.speech.coin.tangrams.analysis.SessionGameManagerCacheSupplier;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.coin.tangrams.analysis.dialogues.UtteranceDialogueRepresentationStringFactory;
-import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
 import se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttributeContext;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.EventDialogueTestResults;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordClassDiscountingSmoother;
@@ -222,7 +221,7 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 	 * @since 24 May 2017
 	 *
 	 */
-	private static class CombiningBatchJobTester {
+	private static class CombiningBatchJobTester implements Consumer<CombiningBatchJobTester.Input> {
 
 		private static class IncompleteResults {
 
@@ -322,7 +321,8 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 			this.testSetFactoryFactory = testSetFactoryFactory;
 		}
 
-		void accept(final Input input) throws ClassificationException, IOException {
+		@Override
+		public void accept(final Input input) {
 			LOGGER.debug("Bean names: {}", Arrays.toString(appCtx.getBeanDefinitionNames()));
 			final SessionGameManagerCacheSupplier sessionDiagMgrCacheSupplier = appCtx
 					.getBean(SessionGameManagerCacheSupplier.class);
