@@ -83,7 +83,8 @@ import weka.core.Instances;
  *      </ul>
  *
  */
-public final class CrossValidator {
+public final class CrossValidator
+		implements Function<Map<SessionDataManager, Path>, List<CrossValidator.IterationResult>> {
 
 	public static final class CrossValidationTestSummary {
 
@@ -102,7 +103,7 @@ public final class CrossValidator {
 
 		/*
 		 * (non-Javadoc)
-		 * 
+		 *
 		 * @see java.lang.Object#equals(java.lang.Object)
 		 */
 		@Override
@@ -164,7 +165,7 @@ public final class CrossValidator {
 
 		/*
 		 * (non-Javadoc)
-		 * 
+		 *
 		 * @see java.lang.Object#hashCode()
 		 */
 		@Override
@@ -179,7 +180,7 @@ public final class CrossValidator {
 
 		/*
 		 * (non-Javadoc)
-		 * 
+		 *
 		 * @see java.lang.Object#toString()
 		 */
 		@Override
@@ -339,6 +340,7 @@ public final class CrossValidator {
 		this.backgroundJobExecutor = backgroundJobExecutor;
 	}
 
+	@Override
 	public List<IterationResult> apply(final Map<SessionDataManager, Path> allSessions) {
 		final List<IterationResult> result = new ArrayList<>(iterCount);
 		LOGGER.info(
