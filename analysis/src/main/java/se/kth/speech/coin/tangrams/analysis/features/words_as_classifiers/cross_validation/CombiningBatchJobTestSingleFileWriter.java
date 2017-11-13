@@ -106,59 +106,6 @@ import se.kth.speech.nlp.stanford.AnnotationCacheFactory;
  */
 final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 
-	/**
-	 * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
-	 * @since 11 Oct 2017
-	 *
-	 */
-	public static final class BatchJobTestException extends Exception {
-
-		/**
-		 *
-		 */
-		private static final long serialVersionUID = 235704134516220160L;
-
-		/**
-		 *
-		 */
-		public BatchJobTestException() {
-		}
-
-		/**
-		 * @param message
-		 */
-		public BatchJobTestException(final String message) {
-			super(message);
-		}
-
-		/**
-		 * @param message
-		 * @param cause
-		 */
-		public BatchJobTestException(final String message, final Throwable cause) {
-			super(message, cause);
-		}
-
-		/**
-		 * @param message
-		 * @param cause
-		 * @param enableSuppression
-		 * @param writableStackTrace
-		 */
-		public BatchJobTestException(final String message, final Throwable cause, final boolean enableSuppression,
-				final boolean writableStackTrace) {
-			super(message, cause, enableSuppression, writableStackTrace);
-		}
-
-		/**
-		 * @param cause
-		 */
-		public BatchJobTestException(final Throwable cause) {
-			super(cause);
-		}
-
-	}
-
 	private static class BatchJobSummary {
 
 		private final TestParameters testParams;
@@ -730,7 +677,7 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 
 	private static final String UTT_REL_LOG_FILE_SUFFIX = ".uttrels.tsv";
 
-	public static void main(final String[] args) throws BatchJobTestException {
+	public static void main(final String[] args) throws CrossValidationTestException {
 		final CommandLineParser parser = new DefaultParser();
 		try {
 			final CommandLine cl = parser.parse(OPTIONS, args);
@@ -787,7 +734,7 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 				StandardOpenOption.TRUNCATE_EXISTING);
 	}
 
-	private static void main(final CommandLine cl) throws BatchJobTestException {
+	private static void main(final CommandLine cl) throws CrossValidationTestException {
 		if (cl.hasOption(Parameter.HELP.optName)) {
 			printHelp();
 		} else {
@@ -837,7 +784,7 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 				}
 			} catch (final Exception e) {
 				shutdownExceptionally(backgroundJobExecutor);
-				throw new BatchJobTestException(e);
+				throw new CrossValidationTestException(e);
 			}
 		}
 	}
