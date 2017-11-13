@@ -27,7 +27,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.EnumSet;
@@ -49,6 +51,7 @@ import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.apache.commons.cli.CommandLine;
@@ -69,6 +72,7 @@ import com.google.common.cache.LoadingCache;
 import edu.stanford.nlp.trees.Tree;
 import edu.stanford.nlp.util.CoreMap;
 import edu.stanford.nlp.util.Sets;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import se.kth.speech.coin.tangrams.CLIParameters;
 import se.kth.speech.coin.tangrams.analysis.BackgroundJobs;
 import se.kth.speech.coin.tangrams.analysis.DataLanguageDefaults;
@@ -92,6 +96,7 @@ import se.kth.speech.coin.tangrams.analysis.tokenization.Cleaning;
 import se.kth.speech.coin.tangrams.analysis.tokenization.TokenFiltering;
 import se.kth.speech.coin.tangrams.analysis.tokenization.TokenType;
 import se.kth.speech.coin.tangrams.analysis.tokenization.Tokenization;
+import se.kth.speech.coin.tangrams.iristk.EventTimes;
 import se.kth.speech.nlp.stanford.AnnotationCacheFactory;
 
 /**
@@ -100,6 +105,114 @@ import se.kth.speech.nlp.stanford.AnnotationCacheFactory;
  *
  */
 final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
+
+	/**
+	 * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
+	 * @since 11 Oct 2017
+	 *
+	 */
+	public static final class BatchJobTestException extends Exception {
+
+		/**
+		 *
+		 */
+		private static final long serialVersionUID = 235704134516220160L;
+
+		/**
+		 *
+		 */
+		public BatchJobTestException() {
+		}
+
+		/**
+		 * @param message
+		 */
+		public BatchJobTestException(final String message) {
+			super(message);
+		}
+
+		/**
+		 * @param message
+		 * @param cause
+		 */
+		public BatchJobTestException(final String message, final Throwable cause) {
+			super(message, cause);
+		}
+
+		/**
+		 * @param message
+		 * @param cause
+		 * @param enableSuppression
+		 * @param writableStackTrace
+		 */
+		public BatchJobTestException(final String message, final Throwable cause, final boolean enableSuppression,
+				final boolean writableStackTrace) {
+			super(message, cause, enableSuppression, writableStackTrace);
+		}
+
+		/**
+		 * @param cause
+		 */
+		public BatchJobTestException(final Throwable cause) {
+			super(cause);
+		}
+
+	}
+
+	private static class BatchJobSummary {
+
+		private final TestParameters testParams;
+
+		private final CrossValidator.Result testResults;
+
+		private final LocalDateTime testTimestamp;
+
+		BatchJobSummary(final LocalDateTime testTimestamp, final TestParameters testParams,
+				final CrossValidator.Result testResults) {
+			this.testTimestamp = testTimestamp;
+			this.testParams = testParams;
+			this.testResults = testResults;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see java.lang.Object#toString()
+		 */
+		@Override
+		public String toString() {
+			final StringBuilder builder = new StringBuilder(128);
+			builder.append("BatchJobSummary [testParams=");
+			builder.append(testParams);
+			builder.append(", testResults=");
+			builder.append(testResults);
+			builder.append(", testTimestamp=");
+			builder.append(testTimestamp);
+			builder.append(']');
+			return builder.toString();
+		}
+
+		/**
+		 * @return the testParams
+		 */
+		TestParameters getTestParams() {
+			return testParams;
+		}
+
+		/**
+		 * @return the testResults
+		 */
+		CrossValidator.Result getTestResults() {
+			return testResults;
+		}
+
+		/**
+		 * @return the testTimestamp
+		 */
+		LocalDateTime getTestTimestamp() {
+			return testTimestamp;
+		}
+	}
 
 	/**
 	 * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -292,10 +405,12 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 										.apply(trainingInstsFactory, sessionGameMgrs);
 								final Integer smoothingMinCount = (Integer) trainingCtx.getTrainingParams()
 										.get(WordClassifierTrainingParameter.SMOOTHING_MIN_COUNT);
-								final WordClassDiscountingSmoother smoother = appCtx.getBean(WordClassDiscountingSmoother.class, smoothingMinCount);
+								final WordClassDiscountingSmoother smoother = appCtx
+										.getBean(WordClassDiscountingSmoother.class, smoothingMinCount);
 								final CrossValidator crossValidator = appCtx.getBean(CrossValidator.class,
 										testSetFactory, symmetricalDiagTransformer,
-										trainingMethod.getClassifierFactory(trainingCtx), smoother, backgroundJobExecutor);
+										trainingMethod.getClassifierFactory(trainingCtx), smoother,
+										backgroundJobExecutor);
 								crossValidator.setIterCount(trainingMethod.getIterCount());
 								testerConfigurator.accept(crossValidator);
 								final TestParameters testParams = new TestParameters(cleaningMethodSet,
@@ -499,6 +614,88 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 		private Parameter(final String optName) {
 			this.optName = optName;
 		}
+	}
+
+	/**
+	 * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
+	 * @since 5 Jun 2017
+	 *
+	 */
+	private static class TestParameterReporting {
+
+		/**
+		 * <strong>NOTE:</strong> This is for SPSS compatibility, which does not
+		 * allow e.g.&nbsp;<code>"-"</code> as part of a variable name.
+		 *
+		 * @see <a href=
+		 *      "https://www.ibm.com/support/knowledgecenter/en/SSLVMB_21.0.0/com.ibm.spss.statistics.help/syn_variables_variable_names.htm">SPSS
+		 *      documentation</a>
+		 */
+		private static final String SUBCOL_NAME_DELIM = ".";
+
+		static final DateTimeFormatter TIMESTAMP_FORMATTER = EventTimes.FORMATTER;
+
+		private static Stream<String> createTrainingDataColHeaders() {
+			return EntityInstanceAttributeContext.getClassValues().stream()
+					.map(classVal -> "TRAIN_INSTS" + SUBCOL_NAME_DELIM + classVal);
+		}
+
+		static Stream<String> createCleaningMethodBooleanValues(final Collection<? super Cleaning> cleaningMethods) {
+			final IntStream vals = Arrays.stream(Cleaning.values()).map(cleaningMethods::contains)
+					.mapToInt(boolVal -> boolVal ? 1 : 0);
+			return vals.mapToObj(Integer::toString);
+		}
+
+		static Stream<String> createColHeaders(
+				final List<DialogueAnalysisSummaryFactory.SummaryDatum> summaryDataToWrite) {
+			final Stream.Builder<String> resultBuilder = Stream.builder();
+			resultBuilder.add("TIME");
+			createTestMethodColumnHeaders().forEachOrdered(resultBuilder);
+			createTrainingDataColHeaders().forEachOrdered(resultBuilder);
+			summaryDataToWrite.stream().map(DialogueAnalysisSummaryFactory.SummaryDatum::toString)
+					.forEachOrdered(resultBuilder);
+			return resultBuilder.build();
+		}
+
+		static Stream<String> createTestMethodColumnHeaders() {
+			final Stream.Builder<String> resultBuilder = Stream.builder();
+			final String cleaningMethodPrefix = Cleaning.class.getSimpleName() + SUBCOL_NAME_DELIM;
+			Arrays.stream(Cleaning.values()).map(method -> cleaningMethodPrefix + method).forEachOrdered(resultBuilder);
+			resultBuilder.add(Tokenization.class.getSimpleName().toString());
+			resultBuilder.add(TokenType.class.getSimpleName());
+			resultBuilder.add(TokenFiltering.class.getSimpleName());
+			resultBuilder.add(Training.class.getSimpleName());
+			return resultBuilder.build();
+		}
+
+		static Stream<String> createTestMethodRowCellValues(final TestParameters testParams,
+				final Function<? super Set<Cleaning>, Stream<String>> cleaningMethodReprFactory) {
+			final Stream.Builder<String> resultBuilder = Stream.builder();
+			final Set<Cleaning> cleaningMethods = testParams.getCleaning();
+			cleaningMethodReprFactory.apply(cleaningMethods).forEachOrdered(resultBuilder);
+			resultBuilder.add(testParams.getTokenization().toString());
+			resultBuilder.add(testParams.getTokenType().toString());
+			resultBuilder.add(testParams.getTokenFiltering().toString());
+			resultBuilder.add(testParams.getTrainingMethod().toString());
+			return resultBuilder.build();
+		}
+
+		static Stream<String> createTestParamRowCellValues(final BatchJobSummary summary) {
+			final Stream.Builder<String> resultBuilder = Stream.builder();
+			resultBuilder.add(TIMESTAMP_FORMATTER.format(summary.getTestTimestamp()));
+			createTestMethodRowCellValues(summary.getTestParams(),
+					TestParameterReporting::createCleaningMethodBooleanValues).forEachOrdered(resultBuilder);
+			return resultBuilder.build();
+		}
+
+		static Stream<Object> createTrainingDataRowCellValues(final CrossValidationTestSummary cvTestSummary) {
+			final Object2IntMap<String> trainingInstCounts = cvTestSummary.getTrainingInstanceCounts();
+			return EntityInstanceAttributeContext.getClassValues().stream().map(trainingInstCounts::getInt);
+		}
+
+		private TestParameterReporting() {
+		}
+
 	}
 
 	static final class TestException extends RuntimeException {
