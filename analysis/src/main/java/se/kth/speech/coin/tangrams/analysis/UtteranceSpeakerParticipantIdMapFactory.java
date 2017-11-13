@@ -75,8 +75,8 @@ public final class UtteranceSpeakerParticipantIdMapFactory
 
 	/**
 	 * @param playerRoles
-	 *            A {@link Map} mapping roles occupied by a particular player at the
-	 *            beginning of the game to the respective player's username.
+	 *            A {@link Map} mapping roles occupied by a particular player at
+	 *            the beginning of the game to the respective player's username.
 	 * @return A new {@link BiMap} mapping player usernames to anonymized
 	 *         participant IDs representing the respective player.
 	 */
@@ -101,6 +101,20 @@ public final class UtteranceSpeakerParticipantIdMapFactory
 			}
 		}
 		return result;
+	}
+
+	/**
+	 * @return the playerRoleOrdering
+	 */
+	public List<PlayerRole> getPlayerRoleOrdering() {
+		return playerRoleOrdering;
+	}
+
+	/**
+	 * @return the validParticipantIds
+	 */
+	public List<String> getValidParticipantIds() {
+		return validParticipantIds;
 	}
 
 }
