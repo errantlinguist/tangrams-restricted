@@ -17,6 +17,7 @@
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues;
 
 import java.util.Optional;
+import java.util.function.BiFunction;
 
 import se.kth.speech.coin.tangrams.analysis.GameContext;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
@@ -28,7 +29,8 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.Refere
  * @since 23 May 2017
  *
  */
-public interface EventDialogueClassifier {
+public interface EventDialogueClassifier
+		extends BiFunction<EventDialogue, GameContext, Optional<ReferentConfidenceData>> {
 
 	/**
 	 * Calculates the confidence of an {@ink EventDialogue} referring to each
@@ -48,6 +50,7 @@ public interface EventDialogueClassifier {
 	 * @throws ClassificationException
 	 *             If an error occurs while classifying any individual entity.
 	 */
+	@Override
 	Optional<ReferentConfidenceData> apply(EventDialogue diag, final GameContext ctx) throws ClassificationException;
 
 }
