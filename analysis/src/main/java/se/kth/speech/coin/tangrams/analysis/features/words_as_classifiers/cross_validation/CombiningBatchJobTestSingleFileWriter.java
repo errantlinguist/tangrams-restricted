@@ -26,7 +26,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.Iterator;
@@ -36,10 +38,15 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.OptionalInt;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.Future;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.regex.Pattern;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -48,28 +55,43 @@ import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
 import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.MissingOptionException;
+import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import com.google.common.cache.LoadingCache;
 
+import edu.stanford.nlp.trees.Tree;
+import edu.stanford.nlp.util.CoreMap;
+import edu.stanford.nlp.util.Sets;
 import se.kth.speech.coin.tangrams.CLIParameters;
 import se.kth.speech.coin.tangrams.analysis.BackgroundJobs;
 import se.kth.speech.coin.tangrams.analysis.DataLanguageDefaults;
 import se.kth.speech.coin.tangrams.analysis.SessionGameManager;
+import se.kth.speech.coin.tangrams.analysis.SessionGameManagerCacheSupplier;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.coin.tangrams.analysis.dialogues.UtteranceDialogueRepresentationStringFactory;
+import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
 import se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttributeContext;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.EventDialogueTestResults;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.CombiningBatchJobTester.IncompleteResults;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.CrossValidator.CrossValidationTestSummary;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.CachingEventDialogueTransformer;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.EventDialogueTransformer;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.UtteranceRelation;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.TrainingInstancesFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.WordClassificationData;
 import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
+import se.kth.speech.coin.tangrams.analysis.tokenization.Cleaning;
+import se.kth.speech.coin.tangrams.analysis.tokenization.TokenFiltering;
+import se.kth.speech.coin.tangrams.analysis.tokenization.TokenType;
+import se.kth.speech.coin.tangrams.analysis.tokenization.Tokenization;
+import se.kth.speech.nlp.stanford.AnnotationCacheFactory;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -77,6 +99,223 @@ import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
  *
  */
 final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
+
+	/**
+	 * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
+	 * @since 5 Jun 2017
+	 *
+	 */
+	private static class CLIInputFactory {
+
+		private static final Logger LOGGER = LoggerFactory.getLogger(CLIInputFactory.class);
+
+		private final ExecutorService backgroundJobExecutor;
+
+		public CLIInputFactory(final ExecutorService backgroundJobExecutor) {
+			this.backgroundJobExecutor = backgroundJobExecutor;
+		}
+
+		public CombiningBatchJobTester.Input apply(final CommandLine cl)
+				throws MissingOptionException, InterruptedException, ExecutionException {
+			final List<Path> inpaths = Arrays.asList(cl.getArgList().stream().map(String::trim)
+					.filter(path -> !path.isEmpty()).map(Paths::get).toArray(Path[]::new));
+			if (inpaths.isEmpty()) {
+				throw new MissingOptionException("No input path(s) specified.");
+			} else {
+				final Future<Map<SessionDataManager, Path>> allSessionDataFuture = backgroundJobExecutor
+						.submit(() -> TestSessionData.readTestSessionData(inpaths));
+				final Set<Set<Cleaning>> cleaningMethodSets = Parameter.parseCleaningMethodSets(cl);
+				if (cleaningMethodSets.isEmpty()) {
+					throw new IllegalArgumentException("No cleaning method set(s) specified.");
+				}
+				LOGGER.info("Cleaning method sets: {}", cleaningMethodSets);
+				final Set<Tokenization> tokenizationMethods = Parameter.parseTokenizationMethods(cl);
+				if (tokenizationMethods.isEmpty()) {
+					throw new IllegalArgumentException("No tokenization method(s) specified.");
+				}
+				LOGGER.info("Tokenization methods: {}", tokenizationMethods);
+				final Set<TokenType> tokenTypes = Parameter.parseTokenTypes(cl);
+				if (tokenTypes.isEmpty()) {
+					throw new IllegalArgumentException("No token type(s) specified.");
+				}
+				LOGGER.info("Token types: {}", tokenTypes);
+				final Set<TokenFiltering> tokenFilteringMethods = Parameter.parseTokenFilteringMethods(cl);
+				if (tokenFilteringMethods.isEmpty()) {
+					throw new IllegalArgumentException("No token filtering method(s) specified.");
+				}
+				LOGGER.info("Token filtering methods: {}", tokenFilteringMethods);
+				final Set<Training> trainingMethods = Parameter.parseTrainingMethods(cl);
+				if (trainingMethods.isEmpty()) {
+					throw new IllegalArgumentException("No training method(s) specified.");
+				}
+				LOGGER.info("Training methods: {}", trainingMethods);
+
+				return new CombiningBatchJobTester.Input(cleaningMethodSets, tokenizationMethods, tokenTypes,
+						tokenFilteringMethods, trainingMethods, allSessionDataFuture.get());
+			}
+		}
+
+	}
+
+	/**
+	 * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
+	 * @since 24 May 2017
+	 *
+	 */
+	private static class CombiningBatchJobTester {
+
+		private static class IncompleteResults {
+
+			private final TestParameters testParams;
+
+			private final LocalDateTime testStartTime;
+
+			private IncompleteResults(final TestParameters testParams, final LocalDateTime testStartTime) {
+				this.testParams = testParams;
+				this.testStartTime = testStartTime;
+			}
+
+			/**
+			 * @return the testParams
+			 */
+			public TestParameters getTestParams() {
+				return testParams;
+			}
+
+			/**
+			 * @return the testStartTime
+			 */
+			public LocalDateTime getTestStartTime() {
+				return testStartTime;
+			}
+		}
+
+		private static class Input {
+
+			private final Map<SessionDataManager, Path> allSessions;
+
+			private final Iterable<Set<Cleaning>> cleaningMethods;
+
+			private final Iterable<TokenFiltering> tokenFilteringMethods;
+
+			private final Iterable<Tokenization> tokenizationMethods;
+
+			private final Iterable<TokenType> tokenTypes;
+
+			private final Iterable<Training> trainingMethods;
+
+			Input(final Iterable<Set<Cleaning>> cleaningMethods, final Iterable<Tokenization> tokenizationMethods,
+					final Iterable<TokenType> tokenTypes, final Iterable<TokenFiltering> tokenFilteringMethods,
+					final Iterable<Training> trainingMethods, final Map<SessionDataManager, Path> allSessions) {
+				this.cleaningMethods = cleaningMethods;
+				this.tokenizationMethods = tokenizationMethods;
+				this.tokenTypes = tokenTypes;
+				this.tokenFilteringMethods = tokenFilteringMethods;
+				this.trainingMethods = trainingMethods;
+				this.allSessions = Collections.unmodifiableMap(allSessions);
+			}
+		}
+
+		/**
+		 * Parsing can take up huge amounts of memory, so it's single-threaded
+		 * and thus the caches are created designed for single-threaded
+		 * operation.
+		 */
+		private static final AnnotationCacheFactory ANNOTATION_CACHE_FACTORY = new AnnotationCacheFactory(1);
+
+		private static final Logger LOGGER = LoggerFactory.getLogger(CombiningBatchJobTester.class);
+
+		private final ApplicationContext appCtx;
+
+		private final ExecutorService backgroundJobExecutor;
+
+		private final Consumer<? super BatchJobSummary> batchJobResultHandler;
+
+		private final BiConsumer<? super IncompleteResults, ? super Throwable> errorHandler;
+
+		private final BiConsumer<? super CoreMap, ? super List<Tree>> extractionResultsHook;
+
+		private final Consumer<? super CrossValidator> testerConfigurator;
+
+		private final TestSetFactoryFactory testSetFactoryFactory;
+
+		private final Map<WordClassifierTrainingParameter, Object> trainingParams;
+
+		private final BiConsumer<? super EventDialogue, ? super List<UtteranceRelation>> uttRelHandler;
+
+		CombiningBatchJobTester(final ExecutorService backgroundJobExecutor, final ApplicationContext appCtx,
+				final Consumer<? super BatchJobSummary> batchJobResultHandler,
+				final BiConsumer<? super IncompleteResults, ? super Throwable> errorHandler,
+				final Consumer<? super CrossValidator> testerConfigurator,
+				final BiConsumer<? super CoreMap, ? super List<Tree>> extractionResultsHook,
+				final BiConsumer<? super EventDialogue, ? super List<UtteranceRelation>> uttRelHandler,
+				final Map<WordClassifierTrainingParameter, Object> trainingParams,
+				final TestSetFactoryFactory testSetFactoryFactory) {
+			this.backgroundJobExecutor = backgroundJobExecutor;
+			this.appCtx = appCtx;
+			this.batchJobResultHandler = batchJobResultHandler;
+			this.errorHandler = errorHandler;
+			this.testerConfigurator = testerConfigurator;
+			this.extractionResultsHook = extractionResultsHook;
+			this.uttRelHandler = uttRelHandler;
+			this.trainingParams = trainingParams;
+			this.testSetFactoryFactory = testSetFactoryFactory;
+		}
+
+		void accept(final Input input) throws ClassificationException, IOException {
+			LOGGER.debug("Bean names: {}", Arrays.toString(appCtx.getBeanDefinitionNames()));
+			final SessionGameManagerCacheSupplier sessionDiagMgrCacheSupplier = appCtx
+					.getBean(SessionGameManagerCacheSupplier.class);
+			final LoadingCache<SessionDataManager, SessionGameManager> sessionGameMgrs = sessionDiagMgrCacheSupplier
+					.get();
+
+			for (final Set<Cleaning> cleaningMethodSet : input.cleaningMethods) {
+				for (final Training trainingMethod : input.trainingMethods) {
+					for (final Tokenization tokenizationMethod : input.tokenizationMethods) {
+						for (final TokenType tokenType : input.tokenTypes) {
+							final Tokenization.Context tokenizationContext = new Tokenization.Context(cleaningMethodSet,
+									tokenType, extractionResultsHook, ANNOTATION_CACHE_FACTORY);
+							final EventDialogueTransformer tokenizer = tokenizationMethod.apply(tokenizationContext);
+
+							for (final TokenFiltering tokenFilteringMethod : input.tokenFilteringMethods) {
+								final EventDialogueTransformer tokenFilter = tokenFilteringMethod.get();
+
+								final CachingEventDialogueTransformer symmetricalDiagTransformer = trainingMethod
+										.createSymmetricalTrainingTestingEventDiagTransformer(
+												Arrays.asList(tokenizer, tokenFilter));
+								final TrainingContext trainingCtx = new TrainingContext(symmetricalDiagTransformer,
+										appCtx, uttRelHandler, trainingParams);
+								final TrainingInstancesFactory trainingInstsFactory = trainingMethod
+										.createTrainingInstsFactory(trainingCtx);
+								final Function<Map<SessionDataManager, Path>, Stream<Entry<SessionDataManager, WordClassificationData>>> testSetFactory = testSetFactoryFactory
+										.apply(trainingInstsFactory, sessionGameMgrs);
+								final CrossValidator crossValidator = appCtx.getBean(CrossValidator.class,
+										testSetFactory, symmetricalDiagTransformer,
+										trainingMethod.getClassifierFactory(trainingCtx), backgroundJobExecutor);
+								crossValidator.setIterCount(trainingMethod.getIterCount());
+								testerConfigurator.accept(crossValidator);
+								final TestParameters testParams = new TestParameters(cleaningMethodSet,
+										tokenizationMethod, tokenType, tokenFilteringMethod, trainingMethod,
+										trainingParams);
+								LOGGER.info("Testing {}.", testParams);
+
+								final LocalDateTime testTimestamp = LocalDateTime.now();
+								try {
+									final CrossValidator.Result testResults = crossValidator.apply(input.allSessions);
+									final BatchJobSummary batchSummary = new BatchJobSummary(testTimestamp, testParams,
+											testResults);
+									batchJobResultHandler.accept(batchSummary);
+								} catch (final Throwable thrown) {
+									errorHandler.accept(new IncompleteResults(testParams, testTimestamp), thrown);
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
+	}
 
 	private static class NonDiscountingTestSetFactoryFactory implements TestSetFactoryFactory {
 
@@ -107,6 +346,155 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 			return result;
 		}
 
+	}
+
+	/**
+	 * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
+	 * @since 5 Jun 2017
+	 *
+	 */
+	private enum Parameter implements Supplier<Option> {
+		CLEANING("c") {
+			@Override
+			public Option get() {
+				final Cleaning[] possibleVals = Cleaning.values();
+				return Option.builder(optName).longOpt("cleaning")
+						.desc("A list of cleaning method(s) to use. Possible values: " + Arrays.toString(possibleVals))
+						.hasArg().argName("names").required().build();
+			}
+		},
+		HELP("?") {
+			@Override
+			public Option get() {
+				return Option.builder(optName).longOpt("help").desc("Prints this message.").build();
+			}
+		},
+		ITER_COUNT("i") {
+			@Override
+			public Option get() {
+				return Option.builder(optName).longOpt("iter-count")
+						.desc("The number of training/testing iterations to run for each cross-validation dataset.")
+						.hasArg().argName("count").type(Number.class).build();
+			}
+		},
+		OUTPATH("o") {
+			@Override
+			public Option get() {
+				return Option.builder(optName).longOpt("outpath").desc("The path to write the data to.").hasArg()
+						.argName("path").type(File.class).required().build();
+			}
+		},
+		TEST_CLEANING_POWERSET("cp") {
+			@Override
+			public Option get() {
+				return Option.builder(optName).longOpt("cleaning-powerset")
+						.desc("If this flag is present, the powerset of the supplied cleaning methods is tested rather than the set itself.")
+						.build();
+			}
+		},
+		TOKEN_FILTERS("tf") {
+			@Override
+			public Option get() {
+				final TokenFiltering[] possibleVals = TokenFiltering.values();
+				return Option.builder(optName).longOpt("token-filters").desc(
+						"A list of token filtering method(s) to use. Possible values: " + Arrays.toString(possibleVals))
+						.hasArg().argName("names").required().build();
+			}
+		},
+		TOKEN_TYPES("tt") {
+			@Override
+			public Option get() {
+				final TokenType[] possibleVals = TokenType.values();
+				return Option.builder(optName).longOpt("token-types")
+						.desc("A list of token type(s) to use. Possible values: " + Arrays.toString(possibleVals))
+						.hasArg().argName("names").required().build();
+			}
+		},
+		TOKENIZERS("tok") {
+			@Override
+			public Option get() {
+				final Tokenization[] possibleVals = Tokenization.values();
+				return Option.builder(optName).longOpt("tokenizers").desc(
+						"A list of tokenization method(s) to use. Possible values: " + Arrays.toString(possibleVals))
+						.hasArg().argName("names").required().build();
+			}
+		},
+		TRAINING("tr") {
+			@Override
+			public Option get() {
+				final Training[] possibleVals = Training.values();
+				return Option.builder(optName).longOpt("training")
+						.desc("A list of training method(s) to use. Possible values: " + Arrays.toString(possibleVals))
+						.hasArg().argName("names").required().build();
+			}
+		};
+
+		private static final Logger LOGGER = LoggerFactory.getLogger(Parameter.class);
+
+		private static final Pattern MULTI_OPT_VALUE_DELIMITER = Pattern.compile("\\s+");
+
+		private static Set<Cleaning> parseCleaningMethods(final CommandLine cl) {
+			final String[] names = parseOptEnumValueNames(cl, Parameter.CLEANING.optName);
+			final Stream<Cleaning> insts = names == null ? Stream.empty()
+					: Arrays.stream(names).map(String::trim).filter(str -> !str.isEmpty()).map(Cleaning::valueOf);
+			final EnumSet<Cleaning> result = EnumSet.noneOf(Cleaning.class);
+			insts.forEach(result::add);
+			return result;
+		}
+
+		private static String[] parseOptEnumValueNames(final CommandLine cl, final String optName) {
+			final String val = cl.getOptionValue(optName);
+			return val == null ? null : MULTI_OPT_VALUE_DELIMITER.split(val);
+		}
+
+		static Set<Set<Cleaning>> parseCleaningMethodSets(final CommandLine cl) {
+			final Set<Cleaning> cleaningMethods = parseCleaningMethods(cl);
+			LOGGER.info("Cleaning methods: {}", cleaningMethods);
+			return cl.hasOption(Parameter.TEST_CLEANING_POWERSET.optName) ? Sets.powerSet(cleaningMethods)
+					: Collections.singleton(cleaningMethods);
+		}
+
+		static Set<TokenFiltering> parseTokenFilteringMethods(final CommandLine cl) {
+			final String[] names = parseOptEnumValueNames(cl, Parameter.TOKEN_FILTERS.optName);
+			final Stream<TokenFiltering> insts = names == null ? Stream.empty()
+					: Arrays.stream(names).map(String::trim).filter(str -> !str.isEmpty()).map(TokenFiltering::valueOf);
+			final EnumSet<TokenFiltering> result = EnumSet.noneOf(TokenFiltering.class);
+			insts.forEach(result::add);
+			return result;
+		}
+
+		static Set<Tokenization> parseTokenizationMethods(final CommandLine cl) {
+			final String[] names = parseOptEnumValueNames(cl, Parameter.TOKENIZERS.optName);
+			final Stream<Tokenization> insts = names == null ? Stream.empty()
+					: Arrays.stream(names).map(String::trim).filter(str -> !str.isEmpty()).map(Tokenization::valueOf);
+			final EnumSet<Tokenization> result = EnumSet.noneOf(Tokenization.class);
+			insts.forEach(result::add);
+			return result;
+		}
+
+		static Set<TokenType> parseTokenTypes(final CommandLine cl) {
+			final String[] names = parseOptEnumValueNames(cl, Parameter.TOKEN_TYPES.optName);
+			final Stream<TokenType> insts = names == null ? Stream.empty()
+					: Arrays.stream(names).map(String::trim).filter(str -> !str.isEmpty()).map(TokenType::valueOf);
+			final EnumSet<TokenType> result = EnumSet.noneOf(TokenType.class);
+			insts.forEach(result::add);
+			return result;
+		}
+
+		static Set<Training> parseTrainingMethods(final CommandLine cl) {
+			final String[] names = parseOptEnumValueNames(cl, Parameter.TRAINING.optName);
+			final Stream<Training> insts = names == null ? Stream.empty()
+					: Arrays.stream(names).map(String::trim).filter(str -> !str.isEmpty()).map(Training::valueOf);
+			final EnumSet<Training> result = EnumSet.noneOf(Training.class);
+			insts.forEach(result::add);
+			return result;
+		}
+
+		protected final String optName;
+
+		private Parameter(final String optName) {
+			this.optName = optName;
+		}
 	}
 
 	static final class TestException extends RuntimeException {
@@ -179,7 +567,7 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 
 	private static Options createOptions() {
 		final Options result = new Options();
-		Arrays.stream(CLITestParameter.values()).map(CLITestParameter::get).forEach(result::addOption);
+		Arrays.stream(Parameter.values()).map(Parameter::get).forEach(result::addOption);
 		return result;
 	}
 
@@ -199,18 +587,17 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 	}
 
 	private static void main(final CommandLine cl) throws BatchJobTestException {
-		if (cl.hasOption(CLITestParameter.HELP.optName)) {
+		if (cl.hasOption(Parameter.HELP.optName)) {
 			printHelp();
 		} else {
 			final ForkJoinPool backgroundJobExecutor = BackgroundJobs.getBackgroundJobExecutor();
-			final CombiningBatchJobTesterCLIInputFactory inputFactory = new CombiningBatchJobTesterCLIInputFactory(
-					backgroundJobExecutor);
+			final CLIInputFactory inputFactory = new CLIInputFactory(backgroundJobExecutor);
 			try {
 				final CombiningBatchJobTester.Input input = inputFactory.apply(cl);
 				final Consumer<CrossValidator> testerConfigurator;
 				{
 					final OptionalInt optIterCount = CLIParameters
-							.parseIterCount((Number) cl.getParsedOptionValue(CLITestParameter.ITER_COUNT.optName));
+							.parseIterCount((Number) cl.getParsedOptionValue(Parameter.ITER_COUNT.optName));
 					if (optIterCount.isPresent()) {
 						final int iterCount = optIterCount.getAsInt();
 						LOGGER.info("Will run {} training/testing iteration(s).", iterCount);
@@ -222,7 +609,7 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 					}
 				}
 
-				final File outFile = (File) cl.getParsedOptionValue(CLITestParameter.OUTPATH.optName);
+				final File outFile = (File) cl.getParsedOptionValue(Parameter.OUTPATH.optName);
 				try (PrintWriter out = CLIParameters.parseOutpath(outFile, OUTPUT_ENCODING)) {
 					final CombiningBatchJobTestSingleFileWriter writer = new CombiningBatchJobTestSingleFileWriter(out,
 							true);
@@ -327,7 +714,7 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 		}
 	}
 
-	public void writeError(final IncompleteResults incompleteResults, final Throwable thrown) {
+	public void writeError(final CombiningBatchJobTester.IncompleteResults incompleteResults, final Throwable thrown) {
 		LOGGER.error(
 				String.format("An error occurred while running test which was started at \"%s\".",
 						TestParameterReporting.TIMESTAMP_FORMATTER.format(incompleteResults.getTestStartTime())),
