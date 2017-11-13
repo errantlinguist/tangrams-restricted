@@ -100,6 +100,47 @@ public final class CrossValidator {
 			this.trainingInstanceCounts = trainingInstanceCounts;
 		}
 
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see java.lang.Object#equals(java.lang.Object)
+		 */
+		@Override
+		public boolean equals(final Object obj) {
+			if (this == obj) {
+				return true;
+			}
+			if (obj == null) {
+				return false;
+			}
+			if (!(obj instanceof CrossValidationTestSummary)) {
+				return false;
+			}
+			final CrossValidationTestSummary other = (CrossValidationTestSummary) obj;
+			if (sessionStartTime == null) {
+				if (other.sessionStartTime != null) {
+					return false;
+				}
+			} else if (!sessionStartTime.equals(other.sessionStartTime)) {
+				return false;
+			}
+			if (testResults == null) {
+				if (other.testResults != null) {
+					return false;
+				}
+			} else if (!testResults.equals(other.testResults)) {
+				return false;
+			}
+			if (trainingInstanceCounts == null) {
+				if (other.trainingInstanceCounts != null) {
+					return false;
+				}
+			} else if (!trainingInstanceCounts.equals(other.trainingInstanceCounts)) {
+				return false;
+			}
+			return true;
+		}
+
 		/**
 		 * @return the sessionStartTime
 		 */
@@ -120,6 +161,39 @@ public final class CrossValidator {
 		public Object2IntMap<String> getTrainingInstanceCounts() {
 			return trainingInstanceCounts;
 		}
+
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see java.lang.Object#hashCode()
+		 */
+		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + (sessionStartTime == null ? 0 : sessionStartTime.hashCode());
+			result = prime * result + (testResults == null ? 0 : testResults.hashCode());
+			result = prime * result + (trainingInstanceCounts == null ? 0 : trainingInstanceCounts.hashCode());
+			return result;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see java.lang.Object#toString()
+		 */
+		@Override
+		public String toString() {
+			final StringBuilder builder = new StringBuilder(1024);
+			builder.append("CrossValidationTestSummary [sessionStartTime=");
+			builder.append(sessionStartTime);
+			builder.append(", testResults=");
+			builder.append(testResults);
+			builder.append(", trainingInstanceCounts=");
+			builder.append(trainingInstanceCounts);
+			builder.append("]");
+			return builder.toString();
+		}
 	}
 
 	public static final class IterationResult {
@@ -135,7 +209,7 @@ public final class CrossValidator {
 
 		/*
 		 * (non-Javadoc)
-		 * 
+		 *
 		 * @see java.lang.Object#equals(java.lang.Object)
 		 */
 		@Override
@@ -179,7 +253,7 @@ public final class CrossValidator {
 
 		/*
 		 * (non-Javadoc)
-		 * 
+		 *
 		 * @see java.lang.Object#hashCode()
 		 */
 		@Override
@@ -193,7 +267,7 @@ public final class CrossValidator {
 
 		/*
 		 * (non-Javadoc)
-		 * 
+		 *
 		 * @see java.lang.Object#toString()
 		 */
 		@Override

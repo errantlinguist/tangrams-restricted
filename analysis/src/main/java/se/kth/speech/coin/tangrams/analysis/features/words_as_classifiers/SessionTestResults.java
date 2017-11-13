@@ -19,18 +19,13 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.function.Function;
-import java.util.stream.Stream;
 
 import it.unimi.dsi.fastutil.ints.Int2IntMap;
 import it.unimi.dsi.fastutil.ints.Int2IntMaps;
 import it.unimi.dsi.fastutil.ints.Int2IntOpenHashMap;
-import it.unimi.dsi.fastutil.ints.IntSet;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
-import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
-import se.kth.speech.fastutil.IntMaps;
 
-public final class SessionTestResults implements SessionTestStatistics {
+public final class SessionTestResults {
 
 	private final List<Entry<EventDialogue, EventDialogueTestResults>> diagTestResults;
 
@@ -53,6 +48,40 @@ public final class SessionTestResults implements SessionTestStatistics {
 		diagTestResults.addAll(other.diagTestResults);
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(final Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (!(obj instanceof SessionTestResults)) {
+			return false;
+		}
+		final SessionTestResults other = (SessionTestResults) obj;
+		if (diagTestResults == null) {
+			if (other.diagTestResults != null) {
+				return false;
+			}
+		} else if (!diagTestResults.equals(other.diagTestResults)) {
+			return false;
+		}
+		if (goldStdReferentIdCounts == null) {
+			if (other.goldStdReferentIdCounts != null) {
+				return false;
+			}
+		} else if (!goldStdReferentIdCounts.equals(other.goldStdReferentIdCounts)) {
+			return false;
+		}
+		return true;
+	}
+
 	/**
 	 * @return the diagResults
 	 */
@@ -73,91 +102,32 @@ public final class SessionTestResults implements SessionTestStatistics {
 
 	/*
 	 * (non-Javadoc)
-	 *
-	 * @see se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.
-	 * SessionTestStatistics#meanRank()
+	 * 
+	 * @see java.lang.Object#hashCode()
 	 */
 	@Override
-	public double meanRank() {
-		return sumRank() / totalDialoguesTested();
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + (diagTestResults == null ? 0 : diagTestResults.hashCode());
+		result = prime * result + (goldStdReferentIdCounts == null ? 0 : goldStdReferentIdCounts.hashCode());
+		return result;
 	}
 
 	/*
 	 * (non-Javadoc)
-	 *
-	 * @see se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.
-	 * SessionTestStatistics#modeReferentIds()
+	 * 
+	 * @see java.lang.Object#toString()
 	 */
 	@Override
-	public IntSet modeReferentIds() {
-		return IntMaps.createMaxValueKeySet(goldStdReferentIdCounts);
-	}
-
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.
-	 * EventDialogueStatistics#totalTokensTested()
-	 */
-	@Override
-	public int testedTokenCount() {
-		return diagTestResults.stream().map(Entry::getValue).mapToInt(EventDialogueTestResults::testedTokenCount).sum();
-	}
-
-	@Override
-	public int testedUtteranceCount() {
-		return diagTestResults.stream().map(Entry::getValue).mapToInt(EventDialogueTestResults::testedUtteranceCount)
-				.sum();
-	}
-
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.
-	 * EventDialogueTestStatistics#utterancesTested()
-	 */
-	@Override
-	public Stream<Utterance> testedUtterances() {
-		return diagTestResults.stream().map(Entry::getValue).map(EventDialogueTestStatistics::testedUtterances)
-				.flatMap(Function.identity());
-	}
-
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.
-	 * SessionTestStatistics#totalDialoguesTested()
-	 */
-	@Override
-	public int totalDialoguesTested() {
-		return diagTestResults.size();
-	}
-
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.
-	 * EventDialogueStatistics#totalUtteranceCount()
-	 */
-	@Override
-	public int totalUtteranceCount() {
-		return diagTestResults.stream().map(Entry::getValue).mapToInt(EventDialogueTestResults::totalUtteranceCount)
-				.sum();
-	}
-
-	/*
-	 * (non-Javadoc)
-	 *
-	 * @see se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.
-	 * SessionTestStatistics#uniqueRefIdCount()
-	 */
-	@Override
-	public int uniqueGoldStandardReferentIdCount() {
-		return goldStdReferentIdCounts.size();
-	}
-
-	private double sumRank() {
-		return diagTestResults.parallelStream().map(Entry::getValue).mapToDouble(EventDialogueTestResults::rank).sum();
+	public String toString() {
+		final StringBuilder builder = new StringBuilder(1024);
+		builder.append("SessionTestResults [diagTestResults=");
+		builder.append(diagTestResults);
+		builder.append(", goldStdReferentIdCounts=");
+		builder.append(goldStdReferentIdCounts);
+		builder.append("]");
+		return builder.toString();
 	}
 
 }
