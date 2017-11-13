@@ -88,7 +88,7 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 				final Cleaning[] possibleVals = Cleaning.values();
 				return Option.builder(optName).longOpt("cleaning")
 						.desc("A list of cleaning method(s) to use. Possible values: " + Arrays.toString(possibleVals))
-						.hasArg().argName("name").build();
+						.hasArg().argName("names").required().build();
 			}
 		},
 		HELP("?") {
@@ -118,7 +118,16 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 				final TokenFiltering[] possibleVals = TokenFiltering.values();
 				return Option.builder(optName).longOpt("token-filters")
 						.desc("The filtering method to use. Possible values: " + Arrays.toString(possibleVals)).hasArg()
-						.argName("name").build();
+						.argName("name").required().build();
+			}
+		},
+		TOKEN_TYPE("tt") {
+			@Override
+			public Option get() {
+				final TokenType[] possibleVals = TokenType.values();
+				return Option.builder(optName).longOpt("token-types")
+						.desc("The token type to use. Possible values: " + Arrays.toString(possibleVals)).hasArg()
+						.argName("name").required().build();
 			}
 		},
 		TOKENIZER("tok") {
@@ -127,7 +136,7 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 				final Tokenization[] possibleVals = Tokenization.values();
 				return Option.builder(optName).longOpt("tokenizers")
 						.desc("The tokenization method to use. Possible values: " + Arrays.toString(possibleVals))
-						.hasArg().argName("name").build();
+						.hasArg().argName("name").required().build();
 			}
 		};
 
@@ -147,14 +156,19 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 			return val == null ? null : MULTI_OPT_VALUE_DELIMITER.split(val);
 		}
 
-		static TokenFiltering parseTokenFilteringMethod(final CommandLine cl) {
+		private static TokenFiltering parseTokenFilteringMethod(final CommandLine cl) {
 			final String name = cl.getOptionValue(Parameter.TOKEN_FILTER.optName);
 			return TokenFiltering.valueOf(name);
 		}
 
-		static Tokenization parseTokenizationMethod(final CommandLine cl) {
+		private static Tokenization parseTokenizationMethod(final CommandLine cl) {
 			final String name = cl.getOptionValue(Parameter.TOKENIZER.optName);
 			return Tokenization.valueOf(name);
+		}
+
+		private static TokenType parseTokenType(final CommandLine cl) {
+			final String name = cl.getOptionValue(Parameter.TOKEN_TYPE.optName);
+			return TokenType.valueOf(name);
 		}
 
 		protected final String optName;
@@ -227,9 +241,7 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 
 	private static Options createOptions() {
 		final Options result = new Options();
-		final Set<Parameter> params = EnumSet.of(Parameter.CLEANING, Parameter.HELP, Parameter.OUTPATH,
-				Parameter.TOKEN_FILTER, Parameter.TOKENIZER);
-		params.stream().map(Parameter::get).forEach(result::addOption);
+		Arrays.stream(Parameter.values()).map(Parameter::get).forEach(result::addOption);
 		return result;
 	}
 
@@ -255,8 +267,10 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 				LOGGER.info("Token filtering method: {}", tokenFilteringMethod);
 				final Tokenization tokenizationMethod = Parameter.parseTokenizationMethod(cl);
 				LOGGER.info("Tokenization method: {}", tokenizationMethod);
-				final EventDialogueTransformer tokenFilter = tokenFilteringMethod.get();
+				final TokenType tokenType = Parameter.parseTokenType(cl);
+				LOGGER.info("Token type: {}", tokenType);
 
+				final EventDialogueTransformer tokenFilter = tokenFilteringMethod.get();
 				final Path outDir = ((File) cl.getParsedOptionValue(Parameter.OUTPATH.optName)).toPath()
 						.toAbsolutePath();
 				LOGGER.info("Will write output underneath directory \"{}\".", outDir);
@@ -275,7 +289,7 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 					final Path sessionOutputDir = Files.createDirectories(outDir.resolve(relativeSessionDir));
 
 					final Tokenization.Context tokenizationContext = new Tokenization.Context(cleaningMethodSet,
-							TokenType.INFLECTED, EXTRACTED_PHRASE_HANDLER, ANNOTATION_CACHE_FACTORY);
+							tokenType, EXTRACTED_PHRASE_HANDLER, ANNOTATION_CACHE_FACTORY);
 					final ChainedEventDialogueTransformer diagTransformer = new ChainedEventDialogueTransformer(
 							Arrays.asList(tokenizationMethod.apply(tokenizationContext), tokenFilter));
 
