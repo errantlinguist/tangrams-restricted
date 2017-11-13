@@ -277,7 +277,7 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 				final String outfileName = cl.getOptionValue(Parameter.OUTFILE_NAME.optName, DEFAULT_OUTFILE_NAME);
 				LOGGER.info("Will name output files \"{}\".", outfileName);
 
-				final Path sessionPrefixPath = CommonPaths.findCommonPrefixPath(allSessionData.values());
+				final Path sessionPrefixPath = CommonPaths.findCommonPrefixPath(allSessionData.values().stream());
 				LOGGER.info("Found a common path of \"{}\" for all input sessions.", sessionPrefixPath);
 
 				for (final Entry<SessionDataManager, Path> sessionDataPath : allSessionData.entrySet()) {
