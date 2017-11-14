@@ -65,7 +65,7 @@ final class UtteranceReferringLanguageMapReader {
 	private Object2ObjectMap<List<String>, List<String>> apply(final Iterator<String> lines,
 			final int expectedUniqueTokenSeqCount) {
 		final Object2ObjectOpenHashMap<List<String>, List<String>> result = new Object2ObjectOpenHashMap<>(
-				expectedUniqueTokenSeqCount, 1.0f);
+				expectedUniqueTokenSeqCount + 1, 1.0f);
 
 		final String headerStr = lines.next();
 		final Object2IntMap<String> colIdxs = createIndexMap(Arrays.asList(headerStr.split(COL_SEP)));
