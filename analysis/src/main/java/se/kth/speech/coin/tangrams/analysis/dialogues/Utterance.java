@@ -40,9 +40,10 @@ public final class Utterance implements Comparable<Utterance> {
 
 	public Utterance(final String segmentId, final String speakerId, final List<String> tokens, final float startTime,
 			final float endTime) {
-		if (startTime > endTime) {
-			throw new IllegalArgumentException("Start time is greater than end time.");
-		}
+		assert startTime <= endTime;
+//		if (startTime > endTime) {
+//			throw new IllegalArgumentException("Start time is greater than end time.");
+//		}
 		this.segmentId = segmentId;
 		this.speakerId = speakerId;
 		this.tokens = tokens;
