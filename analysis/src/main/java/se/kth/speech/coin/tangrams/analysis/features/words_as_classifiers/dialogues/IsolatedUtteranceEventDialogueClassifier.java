@@ -16,15 +16,16 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues;
 
-import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
 import se.kth.speech.coin.tangrams.analysis.GameContext;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
+import se.kth.speech.coin.tangrams.analysis.dialogues.WeightedUtterance;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.ReferentConfidenceData;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.ReferentConfidenceMapFactory;
@@ -38,32 +39,32 @@ import weka.classifiers.Classifier;
  */
 public final class IsolatedUtteranceEventDialogueClassifier implements EventDialogueClassifier {
 
+	private final Function<? super EventDialogue, Stream<WeightedUtterance>> diagUttWeighter;
+
 	private final EventDialogueContextWordClassifierTrainer<?> diagWordClassifierFactory;
 
 	private final ReferentConfidenceMapFactory referentConfidenceMapFactory;
 
 	public IsolatedUtteranceEventDialogueClassifier(
 			final EventDialogueContextWordClassifierTrainer<?> diagWordClassifierFactory,
-			final ReferentConfidenceMapFactory referentConfidenceMapFactory) {
+			final ReferentConfidenceMapFactory referentConfidenceMapFactory,
+			final Function<? super EventDialogue, Stream<WeightedUtterance>> diagUttWeighter) {
 		this.diagWordClassifierFactory = diagWordClassifierFactory;
 		this.referentConfidenceMapFactory = referentConfidenceMapFactory;
+		this.diagUttWeighter = diagUttWeighter;
 	}
 
 	@Override
 	public Optional<ReferentConfidenceData> apply(final EventDialogue diag, final GameContext ctx)
 			throws ClassificationException {
-		final Optional<ReferentConfidenceData> result;
-		final List<Utterance> uttsToClassify = diag.getUtterances();
-		if (uttsToClassify.isEmpty()) {
-			result = Optional.empty();
-		} else {
-			final Function<? super String, ? extends Classifier> wordClassifierGetter = diagWordClassifierFactory
-					.apply(diag, ctx);
-			final ReferentConfidenceData referentConfidenceData = createReferentConfidenceMap(uttsToClassify, ctx,
-					wordClassifierGetter);
-			result = Optional.of(referentConfidenceData);
-		}
-		return result;
+		final Function<? super String, ? extends Classifier> wordClassifierGetter = diagWordClassifierFactory
+				.apply(diag, ctx);
+		final Stream<WeightedUtterance> weightedUtts = diagUttWeighter.apply(diag);
+		// Filter out zero-weighted utterances because Weka can't handle weights
+		// of zero (or less)
+		final Stream<WeightedUtterance> nonzeroWeightedUtts = weightedUtts.filter(utt -> utt.getWeight() != 0);
+		final int estimatedTokenCount = diag.getUtterances().size() * 4;
+		return createReferentConfidenceMap(nonzeroWeightedUtts, estimatedTokenCount, ctx, wordClassifierGetter);
 	}
 
 	/**
@@ -73,6 +74,9 @@ public final class IsolatedUtteranceEventDialogueClassifier implements EventDial
 	 *
 	 * @param dialogueUtts
 	 *            The sequence of utterances to classify.
+	 * @param expectedTokenCount
+	 *            The expected number of token observations for the given
+	 *            {@link Stream} of dialogue {@link Utterance} instances.
 	 * @param uttCtx
 	 *            The {@link GameContext} instance representing the state of the
 	 *            game at the time the given utterances were made.
@@ -83,17 +87,19 @@ public final class IsolatedUtteranceEventDialogueClassifier implements EventDial
 	 *         confidence measure of the entity with the given ID being referred
 	 *         to by the given utterances.
 	 * @throws ClassificationException
-	 *             If an error occurs while classifying any individual entity.
+	 *             If an error occurs while
+	 *             {@link ReferentConfidenceMapFactory#apply(Object2DoubleMap, GameContext, Function)
+	 *             classifying} any individual entity.
 	 */
-	private ReferentConfidenceData createReferentConfidenceMap(final List<Utterance> dialogueUtts,
-			final GameContext uttCtx, final Function<? super String, ? extends Classifier> wordClassifierGetter)
-			throws ClassificationException {
-		final Object2DoubleMap<String> diagTokens = new Object2DoubleOpenHashMap<>(dialogueUtts.size() * 4);
-		for (final Utterance dialogUtt : dialogueUtts) {
-			for (final String token : dialogUtt.getTokens()) {
-				diagTokens.put(token, diagTokens.getDouble(token) + 1.0);
-			}
-		}
+	private Optional<ReferentConfidenceData> createReferentConfidenceMap(final Stream<WeightedUtterance> dialogueUtts,
+			final int expectedTokenCount, final GameContext uttCtx,
+			final Function<? super String, ? extends Classifier> wordClassifierGetter) throws ClassificationException {
+		final Object2DoubleMap<String> diagTokens = new Object2DoubleOpenHashMap<>(expectedTokenCount, 1.0f);
+		dialogueUtts.forEach(dialogueUtt -> {
+			final double weight = dialogueUtt.getWeight();
+			dialogueUtt.getUtterance().getTokens()
+					.forEach(token -> diagTokens.put(token, diagTokens.getDouble(token) + weight));
+		});
 		return referentConfidenceMapFactory.apply(diagTokens, uttCtx, wordClassifierGetter);
 	}
 

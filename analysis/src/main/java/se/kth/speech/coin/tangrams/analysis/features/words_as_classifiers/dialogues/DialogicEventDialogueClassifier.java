@@ -46,6 +46,8 @@ public final class DialogicEventDialogueClassifier implements EventDialogueClass
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(DialogicEventDialogueClassifier.class);
 
+	private static final Optional<ReferentConfidenceData> NULL_RESULT = Optional.empty();
+
 	private final EventDialogueContextWordClassifierTrainer<?> diagWordClassifierFactory;
 
 	private final Function<? super Collection<UtteranceRelation>, EntityReferringLanguageWordClasses> entityRefLangExFactory;
@@ -83,7 +85,7 @@ public final class DialogicEventDialogueClassifier implements EventDialogueClass
 			final List<Utterance> allUtts = diag.getUtterances();
 			if (allUtts.isEmpty()) {
 				LOGGER.debug("No utterances to classify for {}.", diag);
-				result = Optional.empty();
+				result = NULL_RESULT;
 			} else {
 				final Function<? super String, ? extends Classifier> wordClassifierGetter = diagWordClassifierFactory
 						.apply(diag, ctx);
@@ -99,10 +101,10 @@ public final class DialogicEventDialogueClassifier implements EventDialogueClass
 						.forEach(entry -> refExs.put(entry.getKey(), entry.getDoubleValue()));
 				refNegExs.object2DoubleEntrySet().stream()
 						.forEach(entry -> refExs.put(entry.getKey(), -entry.getDoubleValue()));
-				result = Optional.of(referentConfidenceMapFactory.apply(refExs, ctx, wordClassifierGetter));
+				result = referentConfidenceMapFactory.apply(refExs, ctx, wordClassifierGetter);
 			}
 		} else {
-			result = Optional.empty();
+			result = NULL_RESULT;
 		}
 		return result;
 	}

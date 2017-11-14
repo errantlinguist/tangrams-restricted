@@ -19,7 +19,6 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -48,10 +47,11 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialog
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.DialogicWeightedWordClassFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.EventDialogueClassifier;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.EventDialogueTransformer;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.InstructorUtteranceFilteringEventDialogueTransformer;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.InstructorUtteranceWeighter;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.IsolatedUtteranceEventDialogueClassifier;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.AbstractInstanceExtractor;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.DialogicInstanceExtractor;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.EventDialogueContextWordClassifierTrainer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.OnePositiveMaximumNegativeInstanceExtractor;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.OnePositiveOneNegativeInstanceExtractor;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.ParallelizedWordLogisticClassifierTrainer;
@@ -169,10 +169,14 @@ enum Training {
 				// This classifier is statically-trained, i.e. the word models
 				// used for classification are the same no matter what dialogue
 				// is being classified
-				final ConcurrentMap<String, Logistic> wordClassifiers = trainer
-						.apply(classificationContext.getTrainingData());
-				final Function<String, Classifier> wordClassifierGetter = wordClassifiers::get;
-				return new DialogicEventDialogueClassifier((diagToClassify, ctx) -> wordClassifierGetter,
+				final EventDialogueContextWordClassifierTrainer<?> diagWordClassifierFactory;
+				{
+					final ConcurrentMap<String, Logistic> wordClassifiers = trainer
+							.apply(classificationContext.getTrainingData());
+					final Function<String, Classifier> wordClassifierGetter = wordClassifiers::get;
+					diagWordClassifierFactory = (diagToClassify, ctx) -> wordClassifierGetter;
+				}
+				return new DialogicEventDialogueClassifier(diagWordClassifierFactory,
 						fetchCachingUttAcceptanceRanker(trainingCtx), fetchDialogicWordClassFactory(trainingCtx),
 						classificationContext.getReferentConfidenceMapFactory());
 			};
@@ -323,20 +327,33 @@ enum Training {
 		@Override
 		public IsolatedUtteranceEventDialogueClassifier apply(final ClassificationContext classificationContext) {
 			final ApplicationContext appCtx = trainingCtx.getAppCtx();
-			final Integer smoothingMinCount = (Integer) trainingCtx.getTrainingParams()
+			final Map<WordClassifierTrainingParameter, Object> trainingParams = trainingCtx.getTrainingParams();
+			final Integer smoothingMinCount = (Integer) trainingParams
 					.get(WordClassifierTrainingParameter.SMOOTHING_MIN_COUNT);
 			final WordClassDiscountingSmoother smoother = appCtx.getBean(WordClassDiscountingSmoother.class,
 					smoothingMinCount);
 			final ParallelizedWordLogisticClassifierTrainer trainer = new ParallelizedWordLogisticClassifierTrainer(
 					classificationContext.getBackgroundJobExecutor(), smoother);
+
 			// This classifier is statically-trained, i.e. the word models
 			// used for classification are the same no matter what dialogue
 			// is being classified
-			final ConcurrentMap<String, Logistic> wordClassifiers = trainer
-					.apply(classificationContext.getTrainingData());
-			final Function<String, Classifier> wordClassifierGetter = wordClassifiers::get;
-			return new IsolatedUtteranceEventDialogueClassifier((diagToClassify, ctx) -> wordClassifierGetter,
-					classificationContext.getReferentConfidenceMapFactory());
+			final EventDialogueContextWordClassifierTrainer<?> diagWordClassifierFactory;
+			{
+				final ConcurrentMap<String, Logistic> wordClassifiers = trainer
+						.apply(classificationContext.getTrainingData());
+				final Function<String, Classifier> wordClassifierGetter = wordClassifiers::get;
+				diagWordClassifierFactory = (diagToClassify, ctx) -> wordClassifierGetter;
+			}
+
+			final BigDecimal instrUttObsWeight = (BigDecimal) trainingParams
+					.get(WordClassifierTrainingParameter.INSTRUCTOR_UTTERANCE_OBSERVATION_WEIGHT);
+			final BigDecimal otherUttObsWeight = (BigDecimal) trainingParams
+					.get(WordClassifierTrainingParameter.OTHER_UTTERANCE_OBSERVATION_WEIGHT);
+			final InstructorUtteranceWeighter instrUttWeighter = new InstructorUtteranceWeighter(
+					instrUttObsWeight.doubleValue(), otherUttObsWeight.doubleValue());
+			return new IsolatedUtteranceEventDialogueClassifier(diagWordClassifierFactory,
+					classificationContext.getReferentConfidenceMapFactory(), instrUttWeighter);
 		}
 
 	}
@@ -358,7 +375,8 @@ enum Training {
 		@Override
 		public IsolatedUtteranceEventDialogueClassifier apply(final ClassificationContext classificationContext) {
 			final ApplicationContext appCtx = trainingCtx.getAppCtx();
-			final Integer smoothingMinCount = (Integer) trainingCtx.getTrainingParams()
+			final Map<WordClassifierTrainingParameter, Object> trainingParams = trainingCtx.getTrainingParams();
+			final Integer smoothingMinCount = (Integer) trainingParams
 					.get(WordClassifierTrainingParameter.SMOOTHING_MIN_COUNT);
 			final WordClassDiscountingSmoother smoother = appCtx.getBean(WordClassDiscountingSmoother.class,
 					smoothingMinCount);
@@ -369,7 +387,6 @@ enum Training {
 
 			final AbstractInstanceExtractor instExtractor = new OnePositiveMaximumNegativeInstanceExtractor(
 					entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory);
-			final Map<WordClassifierTrainingParameter, Object> trainingParams = trainingCtx.getTrainingParams();
 			final UpdatingWordLogisticClassifierTrainer iterativeTrainer = new UpdatingWordLogisticClassifierTrainer(
 					classificationContext.getBackgroundJobExecutor(), smoother, classificationContext.getTrainingData(),
 					instExtractor,
@@ -377,8 +394,15 @@ enum Training {
 							.get(WordClassifierTrainingParameter.INTERACTION_DATA_POSITIVE_EXAMPLE_WEIGHT_FACTOR),
 					(Double) trainingParams
 							.get(WordClassifierTrainingParameter.INTERACTION_DATA_NEGATIVE_EXAMPLE_WEIGHT_FACTOR));
+
+			final BigDecimal instrUttObsWeight = (BigDecimal) trainingParams
+					.get(WordClassifierTrainingParameter.INSTRUCTOR_UTTERANCE_OBSERVATION_WEIGHT);
+			final BigDecimal otherUttObsWeight = (BigDecimal) trainingParams
+					.get(WordClassifierTrainingParameter.OTHER_UTTERANCE_OBSERVATION_WEIGHT);
+			final InstructorUtteranceWeighter instrUttWeighter = new InstructorUtteranceWeighter(
+					instrUttObsWeight.doubleValue(), otherUttObsWeight.doubleValue());
 			return new IsolatedUtteranceEventDialogueClassifier(iterativeTrainer,
-					classificationContext.getReferentConfidenceMapFactory());
+					classificationContext.getReferentConfidenceMapFactory(), instrUttWeighter);
 		}
 
 	}
@@ -402,8 +426,6 @@ enum Training {
 	private static final int ESTIMATED_MIN_SESSION_DIALOGUE_COUNT = 50;
 
 	private static final int EVENT_DIALOGUE_PROCESSING_CONCURRENCY = 1;
-
-	private static final InstructorUtteranceFilteringEventDialogueTransformer INSTR_UTT_FILTER = new InstructorUtteranceFilteringEventDialogueTransformer();
 
 	private static final long MAXIMUM_TRANSFORMED_DIAG_CACHE_SIZE = 1000;
 
@@ -430,10 +452,8 @@ enum Training {
 
 	private static CachingEventDialogueTransformer createInstrUttFilteringTransformer(
 			final List<EventDialogueTransformer> diagTransformers) {
-		final List<EventDialogueTransformer> chain = new ArrayList<>(diagTransformers.size() + 1);
-		chain.add(INSTR_UTT_FILTER);
-		chain.addAll(diagTransformers);
-		final ChainedEventDialogueTransformer chainedTransformer = new ChainedEventDialogueTransformer(chain);
+		final ChainedEventDialogueTransformer chainedTransformer = new ChainedEventDialogueTransformer(
+				diagTransformers);
 		return new CachingEventDialogueTransformer(createTransformedDialogueCache(chainedTransformer));
 	}
 
@@ -461,11 +481,12 @@ enum Training {
 			final Reference<DialogicWeightedWordClassFactory> newRef;
 			if (oldRef == null || oldRef.get() == null) {
 				final Map<WordClassifierTrainingParameter, Object> trainingParams = key.getTrainingParams();
-				final DialogicWeightedWordClassFactory newInst = new DialogicWeightedWordClassFactory(
-						(BigDecimal) trainingParams
-								.get(WordClassifierTrainingParameter.INSTRUCTOR_UTTERANCE_OBSERVATION_WEIGHT),
-						(BigDecimal) trainingParams
-								.get(WordClassifierTrainingParameter.OTHER_UTTERANCE_OBSERVATION_WEIGHT));
+				final BigDecimal instrUttObsWeight = (BigDecimal) trainingParams
+						.get(WordClassifierTrainingParameter.INSTRUCTOR_UTTERANCE_OBSERVATION_WEIGHT);
+				final BigDecimal otherUttObsWeight = (BigDecimal) trainingParams
+						.get(WordClassifierTrainingParameter.OTHER_UTTERANCE_OBSERVATION_WEIGHT);
+				final DialogicWeightedWordClassFactory newInst = new DialogicWeightedWordClassFactory(instrUttObsWeight,
+						otherUttObsWeight);
 				newRef = new SoftReference<>(newInst);
 			} else {
 				newRef = oldRef;
