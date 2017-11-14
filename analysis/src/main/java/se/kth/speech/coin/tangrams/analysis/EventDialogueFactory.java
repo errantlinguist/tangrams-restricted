@@ -46,6 +46,8 @@ import se.kth.speech.coin.tangrams.iristk.GameEvent;
 final class EventDialogueFactory // NO_UCD (use default)
 		implements BiFunction<ListIterator<Utterance>, GameHistory, Stream<EventDialogue>> {
 
+	private static final List<GameEvent> EMPTY_EVENT_LIST = Collections.emptyList();
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(EventDialogueFactory.class);
 
 	private static List<Utterance> createPreEventUtteranceList(final ListIterator<Utterance> utts,
@@ -118,8 +120,8 @@ final class EventDialogueFactory // NO_UCD (use default)
 				// NOTE: This list must be created before "currentEvent" is
 				// reassigned
 				assert currentEvent != null;
-				final List<GameEvent> currentDialogueEvents = Arrays.asList(Stream
-						.concat(Stream.of(currentEvent), nextDialogueEvents.getKey()).toArray(GameEvent[]::new));
+				final List<GameEvent> currentDialogueEvents = Arrays.asList(
+						Stream.concat(Stream.of(currentEvent), nextDialogueEvents.getKey()).toArray(GameEvent[]::new));
 
 				final List<Utterance> currentDialogueUttList;
 				final Optional<GameEvent> optNextDialogueDelimitingEvent = nextDialogueEvents.getValue();
@@ -146,7 +148,7 @@ final class EventDialogueFactory // NO_UCD (use default)
 			final List<GameEvent> lastDiagEvents;
 			if (currentEvent == null) {
 				LOGGER.debug("No trailing event.");
-				lastDiagEvents = Collections.emptyList();
+				lastDiagEvents = EMPTY_EVENT_LIST;
 			} else {
 				LOGGER.debug("Last event is named \"{}\".", currentEvent.getName());
 				lastDiagEvents = Collections.singletonList(currentEvent);
@@ -158,7 +160,7 @@ final class EventDialogueFactory // NO_UCD (use default)
 			LOGGER.warn("No delimiting events found; Creating a single {} instance.",
 					EventDialogue.class.getSimpleName());
 			final List<Utterance> allRemainingUtts = Iterators.createRemainingElementList(utts);
-			resultBuilder.accept(new EventDialogue(Collections.emptyList(), allRemainingUtts));
+			resultBuilder.accept(new EventDialogue(EMPTY_EVENT_LIST, allRemainingUtts));
 		}
 
 		return resultBuilder.build();
