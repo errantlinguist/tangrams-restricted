@@ -36,6 +36,7 @@ import com.google.common.cache.LoadingCache;
 import se.kth.speech.coin.tangrams.analysis.SessionGameManager;
 import se.kth.speech.coin.tangrams.analysis.SessionGameManagerCacheSupplier;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordClassDiscountingSmoother;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.CachingEventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.EventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.UtteranceRelation;
@@ -50,46 +51,50 @@ import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
  */
 final class UtteranceMappingBatchJobTester implements Consumer<UtteranceMappingBatchJobTester.Input> {
 
-	static final class IncompleteResults {
+	public static final class BatchJobSummary {
 
-		/* (non-Javadoc)
-		 * @see java.lang.Object#toString()
-		 */
-		@Override
-		public String toString() {
-			StringBuilder builder = new StringBuilder(512);
-			builder.append("IncompleteResults [testParams=");
-			builder.append(testParams);
-			builder.append(", testStartTime=");
-			builder.append(testStartTime);
-			builder.append("]");
-			return builder.toString();
-		}
+		private BatchJobSummary() {
 
-		/**
-		 * @return the testParams
-		 */
-		public TestParameters getTestParams() {
-			return testParams;
-		}
-
-		private final TestParameters testParams;
-
-		private final LocalDateTime testStartTime;
-
-		private IncompleteResults(final TestParameters testParams, final LocalDateTime testStartTime) {
-			this.testParams = testParams;
-			this.testStartTime = testStartTime;
-		}
-
-		/**
-		 * @return the testStartTime
-		 */
-		public LocalDateTime getTestStartTime() {
-			return testStartTime;
 		}
 	}
-	
+
+	public static class Input {
+
+		private final Map<SessionDataManager, Path> allSessionData;
+
+		private final EventDialogueTransformer diagTransformer;
+
+		private final Training trainingMethod;
+
+		public Input(final Map<SessionDataManager, Path> allSessionData, final Training trainingMethod,
+				final EventDialogueTransformer diagTransformer) {
+			this.allSessionData = allSessionData;
+			this.trainingMethod = trainingMethod;
+			this.diagTransformer = diagTransformer;
+		}
+
+		/**
+		 * @return the allSessionData
+		 */
+		public Map<SessionDataManager, Path> getAllSessionData() {
+			return allSessionData;
+		}
+
+		/**
+		 * @return the diagTransformer
+		 */
+		public EventDialogueTransformer getDiagTransformer() {
+			return diagTransformer;
+		}
+
+		/**
+		 * @return the trainingMethod
+		 */
+		public Training getTrainingMethod() {
+			return trainingMethod;
+		}
+	}
+
 	private static class TestParameters {
 
 		private final Training trainingMethod;
@@ -177,49 +182,47 @@ final class UtteranceMappingBatchJobTester implements Consumer<UtteranceMappingB
 		}
 	}
 
-	public static class Input {
+	static final class IncompleteResults {
 
-		private final Training trainingMethod;
-		
-		/**
-		 * @return the diagTransformer
-		 */
-		public EventDialogueTransformer getDiagTransformer() {
-			return diagTransformer;
-		}
+		private final TestParameters testParams;
 
-		private final EventDialogueTransformer diagTransformer;
+		private final LocalDateTime testStartTime;
 
-		/**
-		 * @return the trainingMethod
-		 */
-		public Training getTrainingMethod() {
-			return trainingMethod;
+		private IncompleteResults(final TestParameters testParams, final LocalDateTime testStartTime) {
+			this.testParams = testParams;
+			this.testStartTime = testStartTime;
 		}
 
 		/**
-		 * @return the allSessionData
+		 * @return the testParams
 		 */
-		public Map<SessionDataManager, Path> getAllSessionData() {
-			return allSessionData;
+		public TestParameters getTestParams() {
+			return testParams;
 		}
 
-		private final Map<SessionDataManager, Path> allSessionData;
+		/**
+		 * @return the testStartTime
+		 */
+		public LocalDateTime getTestStartTime() {
+			return testStartTime;
+		}
 
-		public Input(final Map<SessionDataManager, Path> allSessionData, final Training trainingMethod, final EventDialogueTransformer diagTransformer) {
-			this.allSessionData = allSessionData;
-			this.trainingMethod = trainingMethod;
-			this.diagTransformer = diagTransformer;
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see java.lang.Object#toString()
+		 */
+		@Override
+		public String toString() {
+			final StringBuilder builder = new StringBuilder(512);
+			builder.append("IncompleteResults [testParams=");
+			builder.append(testParams);
+			builder.append(", testStartTime=");
+			builder.append(testStartTime);
+			builder.append("]");
+			return builder.toString();
 		}
 	}
-	
-	public static final class BatchJobSummary {
-
-		private BatchJobSummary() {
-
-		}
-	}
-
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(UtteranceMappingBatchJobTester.class);
 
@@ -270,18 +273,24 @@ final class UtteranceMappingBatchJobTester implements Consumer<UtteranceMappingB
 		final TrainingInstancesFactory trainingInstsFactory = trainingMethod.createTrainingInstsFactory(trainingCtx);
 		final Function<Map<SessionDataManager, Path>, Stream<Entry<SessionDataManager, WordClassificationData>>> testSetFactory = testSetFactoryFactory
 				.apply(trainingInstsFactory, sessionGameMgrs);
+		final Integer smoothingMinCount = (Integer) trainingCtx.getTrainingParams()
+				.get(WordClassifierTrainingParameter.SMOOTHING_MIN_COUNT);
+		final WordClassDiscountingSmoother smoother = appCtx.getBean(WordClassDiscountingSmoother.class,
+				smoothingMinCount);
 		final CrossValidator crossValidator = appCtx.getBean(CrossValidator.class, testSetFactory,
-				symmetricalDiagTransformer, trainingMethod.getClassifierFactory(trainingCtx), backgroundJobExecutor);
+				symmetricalDiagTransformer, trainingMethod.getClassifierFactory(trainingCtx), smoother,
+				backgroundJobExecutor);
 		crossValidator.setIterCount(trainingMethod.getIterCount());
 		testerConfigurator.accept(crossValidator);
 		final TestParameters testParams = new TestParameters(trainingMethod, trainingParams);
 		LOGGER.info("Testing {}.", testParams);
-//
+		//
 		final LocalDateTime testTimestamp = LocalDateTime.now();
 		try {
 			final List<CrossValidator.IterationResult> testResults = crossValidator.apply(input.getAllSessionData());
-//			final BatchJobSummary batchSummary = new BatchJobSummary(testTimestamp, testParams, testResults);
-//			batchJobResultHandler.accept(batchSummary);
+			// final BatchJobSummary batchSummary = new
+			// BatchJobSummary(testTimestamp, testParams, testResults);
+			// batchJobResultHandler.accept(batchSummary);
 		} catch (final Throwable thrown) {
 			errorHandler.accept(new IncompleteResults(testParams, testTimestamp), thrown);
 		}

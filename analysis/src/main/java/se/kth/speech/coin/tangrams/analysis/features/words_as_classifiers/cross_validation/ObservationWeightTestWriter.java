@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -62,6 +63,7 @@ import se.kth.speech.coin.tangrams.analysis.DataLanguageDefaults;
 import se.kth.speech.coin.tangrams.analysis.SessionGameManager;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.coin.tangrams.analysis.dialogues.UtteranceDialogueRepresentationStringFactory;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.MappingEventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.TrainingInstancesFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.WordClassificationData;
 import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
@@ -191,6 +193,8 @@ final class ObservationWeightTestWriter { // NO_UCD (unused code)
 
 	private static final Collector<CharSequence, ?, String> ROW_CELL_JOINER = Collectors.joining("\t");
 
+	private static final Charset TOKENIZATION_FILE_ENCODING = StandardCharsets.UTF_8;
+
 	private static final BiConsumer<Object, Object> UTT_REL_HANDLER = (evtDiag, uttRels) -> {
 		// Do nothing
 	};
@@ -217,7 +221,7 @@ final class ObservationWeightTestWriter { // NO_UCD (unused code)
 	}
 
 	private static UtteranceMappingBatchJobTester.Input createInput(final CommandLine cl)
-			throws MissingOptionException, IOException {
+			throws IOException, ParseException {
 		final List<Path> inpaths = Arrays.asList(cl.getArgList().stream().map(String::trim)
 				.filter(path -> !path.isEmpty()).map(Paths::get).toArray(Path[]::new));
 		if (inpaths.isEmpty()) {
@@ -226,7 +230,15 @@ final class ObservationWeightTestWriter { // NO_UCD (unused code)
 			final Map<SessionDataManager, Path> allSessionData = TestSessionData.readTestSessionData(inpaths);
 			final Training trainingMethod = Parameter.parseTrainingMethod(cl);
 			LOGGER.info("Training method: {}", trainingMethod);
-			return new UtteranceMappingBatchJobTester.Input(allSessionData, trainingMethod);
+
+			final Path tokFilePath = ((File) cl.getParsedOptionValue(Parameter.TOKENIZATION_FILE_PATH.optName))
+					.toPath();
+			LOGGER.info("Reading tokenization data from \"{}\".", tokFilePath);
+			final Map<List<String>, List<String>> tokenSeqTransformations = new UtteranceReferringLanguageMapReader(
+					"UTTERANCE", "REFERRING_TOKENS").apply(Files.readAllLines(tokFilePath, TOKENIZATION_FILE_ENCODING));
+			final MappingEventDialogueTransformer diagTransformer = new MappingEventDialogueTransformer(
+					tokenSeqTransformations);
+			return new UtteranceMappingBatchJobTester.Input(allSessionData, trainingMethod, diagTransformer);
 		}
 	}
 
@@ -236,8 +248,7 @@ final class ObservationWeightTestWriter { // NO_UCD (unused code)
 		return result;
 	}
 
-	private static void main(final CommandLine cl)
-			throws MissingOptionException, IOException, CrossValidationTestException {
+	private static void main(final CommandLine cl) throws IOException, CrossValidationTestException, ParseException {
 		if (cl.hasOption(Parameter.HELP.optName)) {
 			printHelp();
 		} else {
