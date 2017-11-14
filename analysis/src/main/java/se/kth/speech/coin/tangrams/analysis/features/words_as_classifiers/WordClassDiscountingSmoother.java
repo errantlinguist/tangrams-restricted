@@ -138,6 +138,24 @@ public final class WordClassDiscountingSmoother {
 				return result;
 			}
 
+			/*
+			 * (non-Javadoc)
+			 * 
+			 * @see java.lang.Object#toString()
+			 */
+			@Override
+			public String toString() {
+				final StringBuilder builder = new StringBuilder(128);
+				builder.append("Datum [observationCount=");
+				builder.append(observationCount);
+				builder.append(", trainingInstancesChangeCount=");
+				builder.append(trainingInstancesChangeCount);
+				builder.append(", trainingInstCount=");
+				builder.append(trainingInstCount);
+				builder.append("]");
+				return builder.toString();
+			}
+
 		}
 
 		private final Object2ObjectMap<String, DiscountedWordClasses.Datum> discountedClassData;
@@ -210,6 +228,22 @@ public final class WordClassDiscountingSmoother {
 			result = prime * result + (oovClassDatum == null ? 0 : oovClassDatum.hashCode());
 			result = prime * result + (discountedClassData == null ? 0 : discountedClassData.hashCode());
 			return result;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see java.lang.Object#toString()
+		 */
+		@Override
+		public String toString() {
+			final StringBuilder builder = new StringBuilder(256);
+			builder.append("DiscountedWordClasses [discountedClassData=");
+			builder.append(discountedClassData);
+			builder.append(", oovClassDatum=");
+			builder.append(oovClassDatum);
+			builder.append("]");
+			return builder.toString();
 		}
 
 	}
