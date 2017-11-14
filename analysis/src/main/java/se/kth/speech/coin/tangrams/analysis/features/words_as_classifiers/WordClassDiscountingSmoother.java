@@ -17,11 +17,7 @@
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -31,10 +27,10 @@ import javax.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.Maps;
-
 import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
-import se.kth.speech.MapCollectors;
+import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ObjectCollection;
 import se.kth.speech.coin.tangrams.analysis.features.weka.WordClassInstancesFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.WordClassificationData;
 import weka.classifiers.Classifier;
@@ -144,11 +140,11 @@ public final class WordClassDiscountingSmoother {
 
 		}
 
-		private final Map<String, DiscountedWordClasses.Datum> discountedClassData;
+		private final Object2ObjectMap<String, DiscountedWordClasses.Datum> discountedClassData;
 
 		private final DiscountedWordClasses.Datum oovClassDatum;
 
-		private DiscountedWordClasses(final Map<String, DiscountedWordClasses.Datum> discountedClassData,
+		private DiscountedWordClasses(final Object2ObjectMap<String, DiscountedWordClasses.Datum> discountedClassData,
 				final DiscountedWordClasses.Datum oovClassDatum) {
 			this.discountedClassData = discountedClassData;
 			this.oovClassDatum = oovClassDatum;
@@ -191,7 +187,7 @@ public final class WordClassDiscountingSmoother {
 		/**
 		 * @return the discountedClassData
 		 */
-		public Map<String, DiscountedWordClasses.Datum> getDiscountedClassData() {
+		public Object2ObjectMap<String, DiscountedWordClasses.Datum> getDiscountedClassData() {
 			return discountedClassData;
 		}
 
@@ -228,7 +224,7 @@ public final class WordClassDiscountingSmoother {
 	private final int minCount;
 
 	private final String oovClassName;
-	
+
 	public WordClassDiscountingSmoother(final int minCount) {
 		this(minCount, DEFAULT_OOV_CLASS);
 	}
@@ -265,7 +261,7 @@ public final class WordClassDiscountingSmoother {
 	 *         {@link Instances} objects for each.
 	 */
 	public DiscountedWordClasses redistributeMass(final WordClassificationData trainingData) {
-		final Map<String, WordClassificationData.Datum> wordClassesToDiscount = createdAddendClassInstsMap(
+		final Object2ObjectMap<String, WordClassificationData.Datum> wordClassesToDiscount = createdAddendClassInstsMap(
 				trainingData);
 		if (wordClassesToDiscount.isEmpty()) {
 			throw new IllegalArgumentException(
@@ -275,17 +271,20 @@ public final class WordClassDiscountingSmoother {
 		// The new set of word classes is different from the previous one;
 		// Re-redistribute instances to the OOV class
 		final WordClassificationData.Datum oovClassDatum = redistributeMassToOovClass(trainingData,
-				wordClassesToDiscount.entrySet());
-		final Map<String, DiscountedWordClasses.Datum> discountedWordClassData = wordClassesToDiscount.entrySet()
-				.stream()
-				.collect(Collectors.toMap(Entry::getKey,
-						discountedWordClass -> new DiscountedWordClasses.Datum(discountedWordClass.getValue()),
-						MapCollectors.throwingMerger(), () -> new HashMap<>(wordClassesToDiscount.size() + 1, 1.0f)));
+				wordClassesToDiscount.object2ObjectEntrySet());
+		final Object2ObjectMap<String, DiscountedWordClasses.Datum> discountedWordClassData = new Object2ObjectOpenHashMap<>(
+				wordClassesToDiscount.size() + 1, 1.0f);
+		for (final Object2ObjectMap.Entry<String, WordClassificationData.Datum> discountedWordClass : wordClassesToDiscount
+				.object2ObjectEntrySet()) {
+			discountedWordClassData.put(discountedWordClass.getKey(),
+					new DiscountedWordClasses.Datum(discountedWordClass.getValue()));
+		}
+		assert discountedWordClassData.size() == wordClassesToDiscount.size();
 		return new DiscountedWordClasses(discountedWordClassData, new DiscountedWordClasses.Datum(oovClassDatum));
 	}
 
-	private void addSmoothedClassifierWeighting(String wordClass, double addendWeight,
-			Map<String, WeightedClassifier> alreadyObservedWordClassifiers,
+	private void addSmoothedClassifierWeighting(final String wordClass, final double addendWeight,
+			final Object2ObjectMap<String, WeightedClassifier> alreadyObservedWordClassifiers,
 			final Function<? super String, ? extends Classifier> wordClassifiers) {
 		final WeightedClassifier alreadyObservedClassifier = alreadyObservedWordClassifiers.get(wordClass);
 		if (alreadyObservedClassifier == null) {
@@ -309,15 +308,16 @@ public final class WordClassDiscountingSmoother {
 		}
 	}
 
-	private Map<String, WordClassificationData.Datum> createdAddendClassInstsMap(
+	private Object2ObjectMap<String, WordClassificationData.Datum> createdAddendClassInstsMap(
 			final WordClassificationData trainingData) {
-		final Map<String, WordClassificationData.Datum> classInsts = trainingData.getClassData();
-		final List<Entry<String, WordClassificationData.Datum>> wordClassesToDiscount = findClassesToDiscount(
-				classInsts.entrySet()).collect(Collectors.toCollection(() -> new ArrayList<>(classInsts.size())));
-		final Map<String, WordClassificationData.Datum> result = Maps
-				.newHashMapWithExpectedSize(wordClassesToDiscount.size());
+		final Object2ObjectMap<String, WordClassificationData.Datum> classInsts = trainingData.getClassData();
+		final List<Object2ObjectMap.Entry<String, WordClassificationData.Datum>> wordClassesToDiscount = findClassesToDiscount(
+				classInsts.object2ObjectEntrySet())
+						.collect(Collectors.toCollection(() -> new ArrayList<>(classInsts.size())));
+		final Object2ObjectMap<String, WordClassificationData.Datum> result = new Object2ObjectOpenHashMap<>(
+				wordClassesToDiscount.size() + 1, 1.0f);
 
-		for (final Entry<String, WordClassificationData.Datum> wordClassToDiscount : wordClassesToDiscount) {
+		for (final Object2ObjectMap.Entry<String, WordClassificationData.Datum> wordClassToDiscount : wordClassesToDiscount) {
 			final String className = wordClassToDiscount.getKey();
 			LOGGER.debug("Class \"{}\" has fewer than {} instances; Will redistribute to \"{}\".", className, minCount,
 					oovClassName);
@@ -326,31 +326,32 @@ public final class WordClassDiscountingSmoother {
 		return result;
 	}
 
-	private Stream<Entry<String, WordClassificationData.Datum>> findClassesToDiscount(
-			final Collection<Entry<String, WordClassificationData.Datum>> wordClassData) {
+	private Stream<Object2ObjectMap.Entry<String, WordClassificationData.Datum>> findClassesToDiscount(
+			final ObjectCollection<Object2ObjectMap.Entry<String, WordClassificationData.Datum>> wordClassData) {
 		return wordClassData.stream()
 				.filter(observationCount -> observationCount.getValue().getObservationCount() < minCount);
 	}
 
 	private WordClassificationData.Datum redistributeMassToOovClass(final WordClassificationData trainingData,
-			final Collection<Entry<String, WordClassificationData.Datum>> addendWordClassData) {
+			final ObjectCollection<Object2ObjectMap.Entry<String, WordClassificationData.Datum>> addendWordClassData) {
 		final WordClassificationData.Datum result = trainingData.getClassData().computeIfAbsent(oovClassName, k -> {
-			final int totalInstCount = addendWordClassData.stream().map(Entry::getValue)
+			final int totalInstCount = addendWordClassData.stream().map(Object2ObjectMap.Entry::getValue)
 					.map(WordClassificationData.Datum::getTrainingInsts).mapToInt(Instances::size).sum();
 			final Instances oovClassDatum = classInstsFactory.apply(WordClasses.createRelationName(k), totalInstCount);
 			return new WordClassificationData.Datum(oovClassDatum);
 		});
-		addendWordClassData.stream().map(Entry::getValue).forEach(result::add);
+		addendWordClassData.stream().map(Object2ObjectMap.Entry::getValue).forEach(result::add);
 		return result;
 	}
 
-	Map<String, WeightedClassifier> createWeightedClassifierMap(
-			final Collection<Object2DoubleMap.Entry<String>> wordClassWeights,
+	Object2ObjectMap<String, WeightedClassifier> createWeightedClassifierMap(
+			final ObjectCollection<Object2DoubleMap.Entry<String>> wordClassWeights,
 			final Function<? super String, ? extends Classifier> wordClassifiers) {
 		// There are likely fewer result classifiers than the input size because
 		// some classes will likely be OOV
-		final Map<String, WeightedClassifier> result = new HashMap<>(wordClassWeights.size() + 1, 1.0f);
-		for (Object2DoubleMap.Entry<String> wordClassWeight : wordClassWeights) {
+		final Object2ObjectMap<String, WeightedClassifier> result = new Object2ObjectOpenHashMap<>(
+				wordClassWeights.size() + 1, 1.0f);
+		for (final Object2DoubleMap.Entry<String> wordClassWeight : wordClassWeights) {
 			final String wordClass = wordClassWeight.getKey();
 			LOGGER.debug("Getting classifier for class \"{}\".", wordClass);
 			final double weight = wordClassWeight.getDoubleValue();

@@ -16,8 +16,6 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers;
 
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -29,6 +27,7 @@ import org.slf4j.LoggerFactory;
 
 import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import se.kth.speech.coin.tangrams.analysis.GameContext;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
@@ -94,7 +93,7 @@ public final class ReferentConfidenceMapFactory {
 		if (tokens.isEmpty()) {
 			result = NULL_RESULT;
 		} else {
-			final Map<String, WeightedClassifier> weightedClassifiers = smoother
+			final Object2ObjectMap<String, WeightedClassifier> weightedClassifiers = smoother
 					.createWeightedClassifierMap(tokens.object2DoubleEntrySet(), wordClassifiers);
 
 			final int entityCount = uttCtx.getEntityCount();
@@ -111,7 +110,8 @@ public final class ReferentConfidenceMapFactory {
 				final EntityFeature.Extractor.Context extContext = extCtxFactory.apply(uttCtx, entityId);
 				final Instance testInst = testInstFactory.apply(extContext);
 				double confidenceSum = 0.0;
-				for (final Entry<String, WeightedClassifier> entry : weightedClassifiers.entrySet()) {
+				for (final Object2ObjectMap.Entry<String, WeightedClassifier> entry : weightedClassifiers
+						.object2ObjectEntrySet()) {
 					final String wordClass = entry.getKey();
 					final WeightedClassifier weightedClassifier = entry.getValue();
 					final Classifier classifier = weightedClassifier.getClassifier();
@@ -134,7 +134,7 @@ public final class ReferentConfidenceMapFactory {
 			final String oovClassName = smoother.getOovClassName();
 			result = Optional.of(new ReferentConfidenceData(referentConfidenceVals, wordClassWeights, oovClassName));
 		}
-		
+
 		return result;
 	}
 

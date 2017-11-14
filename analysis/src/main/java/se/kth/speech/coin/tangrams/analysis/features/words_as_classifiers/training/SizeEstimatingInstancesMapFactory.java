@@ -18,13 +18,12 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.train
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.Maps;
-
+import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import se.kth.speech.coin.tangrams.analysis.GameHistory;
 import se.kth.speech.coin.tangrams.analysis.SessionGame;
 import se.kth.speech.coin.tangrams.analysis.SessionGameManager;
@@ -86,7 +85,8 @@ public final class SizeEstimatingInstancesMapFactory implements TrainingInstance
 	@Override
 	public WordClassificationData apply(final Collection<SessionGameManager> sessionEventDiagMgrs) {
 		final int estClassCount = estimateVocabTypeCount(sessionEventDiagMgrs);
-		final Map<String, WordClassificationData.Datum> classInstances = Maps.newHashMapWithExpectedSize(estClassCount);
+		final Object2ObjectMap<String, WordClassificationData.Datum> classInstances = new Object2ObjectOpenHashMap<>(
+				estClassCount);
 		final WordClassInstancesFetcher wordClassFetcher = new WordClassInstancesFetcher(classInstances,
 				entityInstAttrCtx, estimateVocabTypeTokenCount(sessionEventDiagMgrs));
 		final WordClassificationData result = new WordClassificationData(classInstances, wordClassFetcher);

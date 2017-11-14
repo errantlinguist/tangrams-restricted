@@ -16,15 +16,13 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training;
 
-import java.util.HashMap;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
-import se.kth.speech.MapCollectors;
+import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import weka.core.Instance;
 import weka.core.Instances;
 
@@ -133,7 +131,17 @@ public final class WordClassificationData {
 		}
 	}
 
-	private final Map<String, Datum> classData;
+	private static Object2ObjectMap<String, Datum> createClassDataMapDeepCopy(
+			final Object2ObjectMap<String, Datum> copyeeClassData) {
+		final Object2ObjectOpenHashMap<String, Datum> result = new Object2ObjectOpenHashMap<>(
+				copyeeClassData.size() + 1, 1.0f);
+		for (final Object2ObjectMap.Entry<String, Datum> entry : copyeeClassData.object2ObjectEntrySet()) {
+			result.put(entry.getKey(), new Datum(entry.getValue()));
+		}
+		return result;
+	}
+
+	private final Object2ObjectMap<String, Datum> classData;
 
 	private final WordClassInstancesFetcher classInstancesFetcher;
 
@@ -143,7 +151,8 @@ public final class WordClassificationData {
 	 */
 	private final Object2IntMap<String> trainingInstanceCounts;
 
-	WordClassificationData(final Map<String, Datum> classData, final WordClassInstancesFetcher classInstancesFetcher) {
+	WordClassificationData(final Object2ObjectMap<String, Datum> classData,
+			final WordClassInstancesFetcher classInstancesFetcher) {
 		this.classData = classData;
 		this.classInstancesFetcher = classInstancesFetcher;
 
@@ -152,10 +161,7 @@ public final class WordClassificationData {
 	}
 
 	WordClassificationData(final WordClassificationData copyee) {
-		final Map<String, Datum> copyeeClassData = copyee.getClassData();
-		classData = copyeeClassData.entrySet().stream()
-				.collect(Collectors.toMap(Entry::getKey, entry -> new Datum(entry.getValue()),
-						MapCollectors.throwingMerger(), () -> new HashMap<>(copyeeClassData.size() + 1, 1.0f)));
+		classData = createClassDataMapDeepCopy(copyee.getClassData());
 
 		final WordClassInstancesFetcher copyeeFetcher = copyee.getClassInstancesFetcher();
 		classInstancesFetcher = new WordClassInstancesFetcher(classData, copyeeFetcher.getEntityInstAttrCtx(),
@@ -210,7 +216,7 @@ public final class WordClassificationData {
 	/**
 	 * @return the classData
 	 */
-	public Map<String, Datum> getClassData() {
+	public Object2ObjectMap<String, Datum> getClassData() {
 		return classData;
 	}
 
@@ -243,7 +249,8 @@ public final class WordClassificationData {
 		return classInstancesFetcher;
 	}
 
-	void addWordClassExamples(final String wordClass, final Stream<Entry<Instance, String>> instClassValues) {
+	void addWordClassExamples(final String wordClass,
+			final Stream<? extends Map.Entry<? extends Instance, String>> instClassValues) {
 		final Instances classInstances = fetchWordInstances(wordClass);
 		instClassValues.forEach(instClassValue -> {
 			final Instance inst = instClassValue.getKey();

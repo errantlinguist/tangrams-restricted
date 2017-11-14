@@ -16,8 +16,6 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training;
 
-import java.util.Map.Entry;
-import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -28,6 +26,8 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
+import it.unimi.dsi.fastutil.objects.ObjectSet;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordClassDiscountingSmoother;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordClassDiscountingSmoother.DiscountedWordClasses;
 import weka.classifiers.functions.Logistic;
@@ -59,14 +59,14 @@ public final class ParallelizedWordLogisticClassifierTrainer
 		final DiscountedWordClasses discountedWordClasses = smoother.redistributeMass(smoothedTrainingData);
 		LOGGER.info("{} instance(s) for out-of-vocabulary class.",
 				discountedWordClasses.getOovClassDatum().getTrainingInstCount());
-		return createWordClassifierMap(smoothedTrainingData.getClassData().entrySet());
+		return createWordClassifierMap(smoothedTrainingData.getClassData().object2ObjectEntrySet());
 	}
 
 	private ConcurrentMap<String, Logistic> createWordClassifierMap(
-			final Set<Entry<String, WordClassificationData.Datum>> classData) {
+			final ObjectSet<Object2ObjectMap.Entry<String, WordClassificationData.Datum>> classData) {
 		final ConcurrentMap<String, Logistic> result = new ConcurrentHashMap<>(classData.size());
 		final Stream.Builder<CompletableFuture<Void>> trainingJobs = Stream.builder();
-		for (final Entry<String, WordClassificationData.Datum> classDatum : classData) {
+		for (final Object2ObjectMap.Entry<String, WordClassificationData.Datum> classDatum : classData) {
 			final String className = classDatum.getKey();
 			LOGGER.debug("Training classifier for class \"{}\".", className);
 			final WordClassificationData.Datum datum = classDatum.getValue();

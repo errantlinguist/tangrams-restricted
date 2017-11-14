@@ -16,9 +16,9 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training;
 
-import java.util.Map;
 import java.util.function.Function;
 
+import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttributeContext;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordClasses;
 import weka.core.Instances;
@@ -30,13 +30,13 @@ import weka.core.Instances;
  */
 final class WordClassInstancesFetcher implements Function<String, Instances> {
 
-	private final Map<String, WordClassificationData.Datum> classInstances;
+	private final Object2ObjectMap<String, WordClassificationData.Datum> classInstances;
 
 	private final EntityInstanceAttributeContext entityInstAttrCtx;
 
 	private final int estimatedVocabTypeTokenCount;
 
-	WordClassInstancesFetcher(final Map<String, WordClassificationData.Datum> classInstances,
+	WordClassInstancesFetcher(final Object2ObjectMap<String, WordClassificationData.Datum> classInstances,
 			final EntityInstanceAttributeContext entityInstAttrCtx, final int estimatedVocabTypeTokenCount) {
 		this.classInstances = classInstances;
 		this.entityInstAttrCtx = entityInstAttrCtx;
@@ -61,7 +61,7 @@ final class WordClassInstancesFetcher implements Function<String, Instances> {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#equals(java.lang.Object)
 	 */
 	@Override
@@ -98,7 +98,7 @@ final class WordClassInstancesFetcher implements Function<String, Instances> {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#hashCode()
 	 */
 	@Override
