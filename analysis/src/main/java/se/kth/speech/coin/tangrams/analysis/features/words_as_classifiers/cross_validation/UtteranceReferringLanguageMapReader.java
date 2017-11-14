@@ -82,6 +82,7 @@ final class UtteranceReferringLanguageMapReader {
 			result.put(uttTokSeq, refLangTokens);
 		}
 
+		result.trim();
 		return result;
 	}
 
