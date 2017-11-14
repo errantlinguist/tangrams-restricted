@@ -68,7 +68,7 @@ enum Training {
 		@Override
 		public CachingEventDialogueTransformer createSymmetricalTrainingTestingEventDiagTransformer(
 				final List<EventDialogueTransformer> diagTransformers) {
-			return createCachedChainedTransformer(diagTransformers);
+			return createCachingChainedTransformer(diagTransformers);
 		}
 
 		@Override
@@ -99,7 +99,7 @@ enum Training {
 		@Override
 		public CachingEventDialogueTransformer createSymmetricalTrainingTestingEventDiagTransformer(
 				final List<EventDialogueTransformer> diagTransformers) {
-			return createCachedChainedTransformer(diagTransformers);
+			return createCachingChainedTransformer(diagTransformers);
 		}
 
 		@Override
@@ -247,7 +247,7 @@ enum Training {
 		@Override
 		public CachingEventDialogueTransformer createSymmetricalTrainingTestingEventDiagTransformer(
 				final List<EventDialogueTransformer> diagTransformers) {
-			return createCachedChainedTransformer(diagTransformers);
+			return createCachingChainedTransformer(diagTransformers);
 		}
 
 		@Override
@@ -280,7 +280,7 @@ enum Training {
 		@Override
 		public CachingEventDialogueTransformer createSymmetricalTrainingTestingEventDiagTransformer(
 				final List<EventDialogueTransformer> diagTransformers) {
-			return createCachedChainedTransformer(diagTransformers);
+			return createCachingChainedTransformer(diagTransformers);
 		}
 
 		@Override
@@ -429,7 +429,7 @@ enum Training {
 
 	private static final long MAXIMUM_TRANSFORMED_DIAG_CACHE_SIZE = 1000;
 
-	private static CachingEventDialogueTransformer createCachedChainedTransformer(
+	private static CachingEventDialogueTransformer createCachingChainedTransformer(
 			final List<EventDialogueTransformer> diagTransformers) {
 		final ChainedEventDialogueTransformer chainedTransformer = new ChainedEventDialogueTransformer(
 				diagTransformers);
