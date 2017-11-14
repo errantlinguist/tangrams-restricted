@@ -32,6 +32,7 @@ import org.springframework.context.ApplicationContext;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import com.google.common.collect.Lists;
 
 import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
@@ -503,6 +504,13 @@ enum Training {
 
 	private Training(final int iterCount) {
 		this.iterCount = iterCount;
+	}
+
+	public final CachingEventDialogueTransformer createSymmetricalTrainingTestingEventDiagTransformer(
+			final EventDialogueTransformer firstDiagTransformer,
+			final EventDialogueTransformer... nextDiagTransformers) {
+		return createSymmetricalTrainingTestingEventDiagTransformer(
+				Lists.asList(firstDiagTransformer, nextDiagTransformers));
 	}
 
 	public abstract CachingEventDialogueTransformer createSymmetricalTrainingTestingEventDiagTransformer(

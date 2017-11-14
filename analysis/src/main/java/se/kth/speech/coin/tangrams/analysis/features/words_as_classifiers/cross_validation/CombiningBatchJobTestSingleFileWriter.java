@@ -341,8 +341,7 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 								final EventDialogueTransformer tokenFilter = tokenFilteringMethod.get();
 
 								final CachingEventDialogueTransformer symmetricalDiagTransformer = trainingMethod
-										.createSymmetricalTrainingTestingEventDiagTransformer(
-												Arrays.asList(tokenizer, tokenFilter));
+										.createSymmetricalTrainingTestingEventDiagTransformer(tokenizer, tokenFilter);
 								final TrainingContext trainingCtx = new TrainingContext(symmetricalDiagTransformer,
 										appCtx, uttRelHandler, trainingParams);
 								final TrainingInstancesFactory trainingInstsFactory = trainingMethod
