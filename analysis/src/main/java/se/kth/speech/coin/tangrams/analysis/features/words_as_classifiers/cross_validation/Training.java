@@ -431,9 +431,13 @@ enum Training {
 
 	private static CachingEventDialogueTransformer createCachingChainedTransformer(
 			final List<EventDialogueTransformer> diagTransformers) {
-		final ChainedEventDialogueTransformer chainedTransformer = new ChainedEventDialogueTransformer(
-				diagTransformers);
-		return new CachingEventDialogueTransformer(createTransformedDialogueCache(chainedTransformer));
+		final EventDialogueTransformer decorated;
+		if (diagTransformers.size() == 1) {
+			decorated = diagTransformers.get(0);
+		} else {
+			decorated = new ChainedEventDialogueTransformer(diagTransformers);
+		}
+		return new CachingEventDialogueTransformer(createTransformedDialogueCache(decorated));
 	}
 
 	private static ToDoubleFunction<Utterance> createCachingUttAcceptanceRanker(
