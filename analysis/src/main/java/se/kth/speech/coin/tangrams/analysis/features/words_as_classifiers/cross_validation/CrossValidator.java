@@ -286,6 +286,8 @@ public final class CrossValidator
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(CrossValidator.class);
 
+	private static final Optional<EventDialogueTestResults> NULL_DIAG_TEST_RESULT = Optional.empty();
+
 	private static final String TEST_INSTS_REL_NAME = "tested_entites";
 
 	private static int estimateTestInstanceCount(final SessionDataManager sessionData) throws IOException {
@@ -417,7 +419,7 @@ public final class CrossValidator
 
 		final List<Utterance> allUtts = transformedDiag.getUtterances();
 		if (allUtts.isEmpty()) {
-			result = Optional.empty();
+			result = NULL_DIAG_TEST_RESULT;
 		} else {
 			// Just use the game context for the first utterance for all
 			// utterances processed for the given dialogue
@@ -434,10 +436,10 @@ public final class CrossValidator
 							transformedDiag, uttDiag.getUtterances().size()));
 
 				} else {
-					result = Optional.empty();
+					result = NULL_DIAG_TEST_RESULT;
 				}
 			} else {
-				result = Optional.empty();
+				result = NULL_DIAG_TEST_RESULT;
 			}
 		}
 
