@@ -18,6 +18,7 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross
 
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -461,9 +462,9 @@ enum Training {
 			if (oldRef == null || oldRef.get() == null) {
 				final Map<WordClassifierTrainingParameter, Object> trainingParams = key.getTrainingParams();
 				final DialogicWeightedWordClassFactory newInst = new DialogicWeightedWordClassFactory(
-						(Double) trainingParams
+						(BigDecimal) trainingParams
 								.get(WordClassifierTrainingParameter.INSTRUCTOR_UTTERANCE_OBSERVATION_WEIGHT),
-						(Double) trainingParams
+						(BigDecimal) trainingParams
 								.get(WordClassifierTrainingParameter.OTHER_UTTERANCE_OBSERVATION_WEIGHT));
 				newRef = new SoftReference<>(newInst);
 			} else {

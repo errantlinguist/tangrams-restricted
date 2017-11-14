@@ -16,6 +16,7 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation;
 
+import java.math.BigDecimal;
 import java.util.EnumMap;
 import java.util.Map;
 
@@ -35,8 +36,8 @@ public enum WordClassifierTrainingParameter {
 		result.put(BACKGROUND_DATA_NEGATIVE_EXAMPLE_WEIGHT_FACTOR, 1.0);
 		result.put(INTERACTION_DATA_POSITIVE_EXAMPLE_WEIGHT_FACTOR, 1.0);
 		result.put(INTERACTION_DATA_NEGATIVE_EXAMPLE_WEIGHT_FACTOR, 1.0);
-		result.put(INSTRUCTOR_UTTERANCE_OBSERVATION_WEIGHT, 1.0);
-		result.put(OTHER_UTTERANCE_OBSERVATION_WEIGHT, 1.0);
+		result.put(INSTRUCTOR_UTTERANCE_OBSERVATION_WEIGHT, BigDecimal.ONE);
+		result.put(OTHER_UTTERANCE_OBSERVATION_WEIGHT, BigDecimal.ONE);
 		result.put(EXPECTED_UNIQUE_UTTERANCE_COUNT, 2000);
 		result.put(RANDOM_SEED, 1L);
 		result.put(SMOOTHING_MIN_COUNT, 3);
