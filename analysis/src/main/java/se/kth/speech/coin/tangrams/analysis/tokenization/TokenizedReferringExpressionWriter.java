@@ -281,10 +281,12 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 							.getPlayerRoles();
 					final BiMap<String, String> playerParticipantIds = PLAYER_PARTICIPANT_ID_MAPPER.apply(playerRoles);
 					final List<EventDialogue> evtDiags = sessionGame.getEventDialogues();
+					// Trim initial pre-game dialogue if present
+					final List<EventDialogue> evtDiagsToPrint = evtDiags.get(0).getFirstEvent().isPresent() ? evtDiags : evtDiags.subList(1, evtDiags.size());
 
-					final List<String> rows = new ArrayList<>(evtDiags.size() * 4 + 1);
+					final List<String> rows = new ArrayList<>(evtDiagsToPrint.size() * 4 + 1);
 					rows.add(OUTFILE_HEADER);
-					for (final ListIterator<EventDialogue> evtDiagIter = evtDiags.listIterator(); evtDiagIter
+					for (final ListIterator<EventDialogue> evtDiagIter = evtDiagsToPrint.listIterator(); evtDiagIter
 							.hasNext();) {
 						final EventDialogue evtDiag = evtDiagIter.next();
 						final List<Utterance> origUtts = evtDiag.getUtterances();
