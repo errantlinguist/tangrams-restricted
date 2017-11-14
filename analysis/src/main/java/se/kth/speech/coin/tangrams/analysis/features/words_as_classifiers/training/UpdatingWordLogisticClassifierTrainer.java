@@ -212,9 +212,7 @@ public final class UpdatingWordLogisticClassifierTrainer
 
 		// For each word class observed in the newly-added training data, check
 		// if the corresponding classifier needs to be retrained
-		for (final Object2IntMap.Entry<String> updatedDialogueWordObservationCount : updatedDialogueWordObservationCounts
-				.object2IntEntrySet()) {
-			final String updatedWordClass = updatedDialogueWordObservationCount.getKey();
+		for (final String updatedWordClass : updatedDialogueWordObservationCounts.keySet()) {
 			final DiscountedWordClasses.Datum updatedDiscountedWordClassDatum = updatedDiscountedWordClassData
 					.get(updatedWordClass);
 			// The word class data for the given word class as it was when
