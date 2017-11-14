@@ -48,6 +48,8 @@ public final class PatternMoveFactory
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(PatternMoveFactory.class);
 
+	private static final Optional<MapEntryRemapping<Integer, SpatialRegion>> NULL_MOVE = Optional.empty();
+
 	private static final int PIECE_ID_LAST_SEEN_TURN_COUNT_OFFSET = 1;
 
 	private final List<Integer> history;
@@ -253,7 +255,7 @@ public final class PatternMoveFactory
 		final LinkedList<Integer> idsToTry = new LinkedList<>(pieceIds);
 		Collections.shuffle(idsToTry, rnd);
 
-		Optional<MapEntryRemapping<Integer, SpatialRegion>> result = Optional.empty();
+		Optional<MapEntryRemapping<Integer, SpatialRegion>> result = NULL_MOVE;
 		do {
 			final Integer idToTry = idsToTry.pop();
 			if (pieceIdFilter.test(idToTry)) {
@@ -279,7 +281,7 @@ public final class PatternMoveFactory
 		final Optional<MapEntryRemapping<Integer, SpatialRegion>> result;
 		if (possibleTargetRegions.isEmpty()) {
 			LOGGER.debug("No valid moves for piece \"{}\", at {}.", pieceId, sourceRegion);
-			result = Optional.empty();
+			result = NULL_MOVE;
 		} else {
 			final SpatialRegion targetRegion = RandomCollections.getRandomElement(possibleTargetRegions, rnd);
 			result = Optional.of(new MapEntryRemapping<>(pieceId, sourceRegion, targetRegion));
@@ -310,7 +312,7 @@ public final class PatternMoveFactory
 		final Optional<MapEntryRemapping<Integer, SpatialRegion>> result;
 		if (seenPieceIds.containsAll(pieceIds)) {
 			LOGGER.info("All pieces have been moved at least once: {}", pieceIds);
-			result = Optional.empty();
+			result = NULL_MOVE;
 		} else {
 			result = createRandomMove(pieceIds, pieceId -> !seenPieceIds.contains(pieceId));
 		}
