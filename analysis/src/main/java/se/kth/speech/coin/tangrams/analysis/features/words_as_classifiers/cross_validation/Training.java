@@ -68,7 +68,7 @@ enum Training {
 		@Override
 		public CachingEventDialogueTransformer createSymmetricalTrainingTestingEventDiagTransformer(
 				final List<EventDialogueTransformer> diagTransformers) {
-			return createInstrUttFilteringTransformer(diagTransformers);
+			return createCachedChainedTransformer(diagTransformers);
 		}
 
 		@Override
@@ -99,7 +99,7 @@ enum Training {
 		@Override
 		public CachingEventDialogueTransformer createSymmetricalTrainingTestingEventDiagTransformer(
 				final List<EventDialogueTransformer> diagTransformers) {
-			return createInstrUttFilteringTransformer(diagTransformers);
+			return createCachedChainedTransformer(diagTransformers);
 		}
 
 		@Override
@@ -247,7 +247,7 @@ enum Training {
 		@Override
 		public CachingEventDialogueTransformer createSymmetricalTrainingTestingEventDiagTransformer(
 				final List<EventDialogueTransformer> diagTransformers) {
-			return createInstrUttFilteringTransformer(diagTransformers);
+			return createCachedChainedTransformer(diagTransformers);
 		}
 
 		@Override
@@ -280,7 +280,7 @@ enum Training {
 		@Override
 		public CachingEventDialogueTransformer createSymmetricalTrainingTestingEventDiagTransformer(
 				final List<EventDialogueTransformer> diagTransformers) {
-			return createInstrUttFilteringTransformer(diagTransformers);
+			return createCachedChainedTransformer(diagTransformers);
 		}
 
 		@Override
@@ -429,6 +429,13 @@ enum Training {
 
 	private static final long MAXIMUM_TRANSFORMED_DIAG_CACHE_SIZE = 1000;
 
+	private static CachingEventDialogueTransformer createCachedChainedTransformer(
+			final List<EventDialogueTransformer> diagTransformers) {
+		final ChainedEventDialogueTransformer chainedTransformer = new ChainedEventDialogueTransformer(
+				diagTransformers);
+		return new CachingEventDialogueTransformer(createTransformedDialogueCache(chainedTransformer));
+	}
+
 	private static ToDoubleFunction<Utterance> createCachingUttAcceptanceRanker(
 			final Map<WordClassifierTrainingParameter, Object> trainingParams) {
 		final Object2DoubleMap<Utterance> cache = new Object2DoubleOpenHashMap<>(
@@ -448,13 +455,6 @@ enum Training {
 			}
 			return result;
 		};
-	}
-
-	private static CachingEventDialogueTransformer createInstrUttFilteringTransformer(
-			final List<EventDialogueTransformer> diagTransformers) {
-		final ChainedEventDialogueTransformer chainedTransformer = new ChainedEventDialogueTransformer(
-				diagTransformers);
-		return new CachingEventDialogueTransformer(createTransformedDialogueCache(chainedTransformer));
 	}
 
 	private static LoadingCache<EventDialogue, EventDialogue> createTransformedDialogueCache(
