@@ -76,6 +76,8 @@ final class SegmentUtteranceFactory {
 
 	}
 
+	private static final List<T> EMPTY_TOKEN_LIST = Collections.emptyList();
+
 	private static final int EXPECTED_UNIQUE_TOKEN_SEQUENCES = 2048;
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SegmentUtteranceFactory.class);
@@ -119,7 +121,7 @@ final class SegmentUtteranceFactory {
 			addSegmentTokens(tokens, transcription.getSegmentOrT());
 		}
 	}
-
+	
 	private static int estimateTokenCount(final List<Object> children) {
 		return Math.max(children.size(), 16);
 	}
@@ -129,7 +131,7 @@ final class SegmentUtteranceFactory {
 		final List<T> result;
 		if (transcription == null) {
 			LOGGER.warn("Segment ID \"{}\" has no {} element.", segment.getId(), Transcription.class.getSimpleName());
-			result = Collections.emptyList();
+			result = EMPTY_TOKEN_LIST;
 		} else {
 			final List<Object> children = transcription.getSegmentOrT();
 			final ArrayList<T> resultImpl = new ArrayList<>(estimateTokenCount(children));
