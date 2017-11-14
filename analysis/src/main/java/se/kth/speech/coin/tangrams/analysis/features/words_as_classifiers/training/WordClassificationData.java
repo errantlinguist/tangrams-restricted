@@ -118,6 +118,22 @@ public final class WordClassificationData {
 			return result;
 		}
 
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see java.lang.Object#toString()
+		 */
+		@Override
+		public String toString() {
+			final StringBuilder builder = new StringBuilder(96);
+			builder.append("Datum [observationCount=");
+			builder.append(observationCount);
+			builder.append(", trainingInstancesChangeCount=");
+			builder.append(trainingInstancesChangeCount);
+			builder.append("]");
+			return builder.toString();
+		}
+
 		private void incrementTrainingInstancesChangeCount() {
 			trainingInstancesChangeCount += 1;
 		}
@@ -240,6 +256,24 @@ public final class WordClassificationData {
 		result = prime * result + (classData == null ? 0 : classData.hashCode());
 		result = prime * result + (trainingInstanceCounts == null ? 0 : trainingInstanceCounts.hashCode());
 		return result;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		final StringBuilder builder = new StringBuilder(256);
+		builder.append("WordClassificationData [classData=");
+		builder.append(classData);
+		builder.append(", classInstancesFetcher=");
+		builder.append(classInstancesFetcher);
+		builder.append(", trainingInstanceCounts=");
+		builder.append(trainingInstanceCounts);
+		builder.append("]");
+		return builder.toString();
 	}
 
 	/**
