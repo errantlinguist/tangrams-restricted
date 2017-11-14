@@ -121,6 +121,62 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 
 		/*
 		 * (non-Javadoc)
+		 * 
+		 * @see java.lang.Object#equals(java.lang.Object)
+		 */
+		@Override
+		public boolean equals(final Object obj) {
+			if (this == obj) {
+				return true;
+			}
+			if (obj == null) {
+				return false;
+			}
+			if (!(obj instanceof BatchJobSummary)) {
+				return false;
+			}
+			final BatchJobSummary other = (BatchJobSummary) obj;
+			if (testParams == null) {
+				if (other.testParams != null) {
+					return false;
+				}
+			} else if (!testParams.equals(other.testParams)) {
+				return false;
+			}
+			if (testResults == null) {
+				if (other.testResults != null) {
+					return false;
+				}
+			} else if (!testResults.equals(other.testResults)) {
+				return false;
+			}
+			if (testTimestamp == null) {
+				if (other.testTimestamp != null) {
+					return false;
+				}
+			} else if (!testTimestamp.equals(other.testTimestamp)) {
+				return false;
+			}
+			return true;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see java.lang.Object#hashCode()
+		 */
+		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + (testParams == null ? 0 : testParams.hashCode());
+			result = prime * result + (testResults == null ? 0 : testResults.hashCode());
+			result = prime * result + (testTimestamp == null ? 0 : testTimestamp.hashCode());
+			return result;
+		}
+
+		/*
+		 * (non-Javadoc)
 		 *
 		 * @see java.lang.Object#toString()
 		 */
@@ -234,6 +290,40 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 				this.testStartTime = testStartTime;
 			}
 
+			/*
+			 * (non-Javadoc)
+			 *
+			 * @see java.lang.Object#equals(java.lang.Object)
+			 */
+			@Override
+			public boolean equals(final Object obj) {
+				if (this == obj) {
+					return true;
+				}
+				if (obj == null) {
+					return false;
+				}
+				if (!(obj instanceof IncompleteResults)) {
+					return false;
+				}
+				final IncompleteResults other = (IncompleteResults) obj;
+				if (testParams == null) {
+					if (other.testParams != null) {
+						return false;
+					}
+				} else if (!testParams.equals(other.testParams)) {
+					return false;
+				}
+				if (testStartTime == null) {
+					if (other.testStartTime != null) {
+						return false;
+					}
+				} else if (!testStartTime.equals(other.testStartTime)) {
+					return false;
+				}
+				return true;
+			}
+
 			/**
 			 * @return the testParams
 			 */
@@ -246,6 +336,36 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 			 */
 			public LocalDateTime getTestStartTime() {
 				return testStartTime;
+			}
+
+			/*
+			 * (non-Javadoc)
+			 *
+			 * @see java.lang.Object#hashCode()
+			 */
+			@Override
+			public int hashCode() {
+				final int prime = 31;
+				int result = 1;
+				result = prime * result + (testParams == null ? 0 : testParams.hashCode());
+				result = prime * result + (testStartTime == null ? 0 : testStartTime.hashCode());
+				return result;
+			}
+
+			/*
+			 * (non-Javadoc)
+			 *
+			 * @see java.lang.Object#toString()
+			 */
+			@Override
+			public String toString() {
+				final StringBuilder builder = new StringBuilder(512);
+				builder.append("IncompleteResults [testParams=");
+				builder.append(testParams);
+				builder.append(", testStartTime=");
+				builder.append(testStartTime);
+				builder.append("]");
+				return builder.toString();
 			}
 		}
 
@@ -272,6 +392,110 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 				this.tokenFilteringMethods = tokenFilteringMethods;
 				this.trainingMethods = trainingMethods;
 				this.allSessions = Collections.unmodifiableMap(allSessions);
+			}
+
+			/*
+			 * (non-Javadoc)
+			 *
+			 * @see java.lang.Object#equals(java.lang.Object)
+			 */
+			@Override
+			public boolean equals(final Object obj) {
+				if (this == obj) {
+					return true;
+				}
+				if (obj == null) {
+					return false;
+				}
+				if (!(obj instanceof Input)) {
+					return false;
+				}
+				final Input other = (Input) obj;
+				if (allSessions == null) {
+					if (other.allSessions != null) {
+						return false;
+					}
+				} else if (!allSessions.equals(other.allSessions)) {
+					return false;
+				}
+				if (cleaningMethods == null) {
+					if (other.cleaningMethods != null) {
+						return false;
+					}
+				} else if (!cleaningMethods.equals(other.cleaningMethods)) {
+					return false;
+				}
+				if (tokenFilteringMethods == null) {
+					if (other.tokenFilteringMethods != null) {
+						return false;
+					}
+				} else if (!tokenFilteringMethods.equals(other.tokenFilteringMethods)) {
+					return false;
+				}
+				if (tokenTypes == null) {
+					if (other.tokenTypes != null) {
+						return false;
+					}
+				} else if (!tokenTypes.equals(other.tokenTypes)) {
+					return false;
+				}
+				if (tokenizationMethods == null) {
+					if (other.tokenizationMethods != null) {
+						return false;
+					}
+				} else if (!tokenizationMethods.equals(other.tokenizationMethods)) {
+					return false;
+				}
+				if (trainingMethods == null) {
+					if (other.trainingMethods != null) {
+						return false;
+					}
+				} else if (!trainingMethods.equals(other.trainingMethods)) {
+					return false;
+				}
+				return true;
+			}
+
+			/*
+			 * (non-Javadoc)
+			 *
+			 * @see java.lang.Object#hashCode()
+			 */
+			@Override
+			public int hashCode() {
+				final int prime = 31;
+				int result = 1;
+				result = prime * result + (allSessions == null ? 0 : allSessions.hashCode());
+				result = prime * result + (cleaningMethods == null ? 0 : cleaningMethods.hashCode());
+				result = prime * result + (tokenFilteringMethods == null ? 0 : tokenFilteringMethods.hashCode());
+				result = prime * result + (tokenTypes == null ? 0 : tokenTypes.hashCode());
+				result = prime * result + (tokenizationMethods == null ? 0 : tokenizationMethods.hashCode());
+				result = prime * result + (trainingMethods == null ? 0 : trainingMethods.hashCode());
+				return result;
+			}
+
+			/*
+			 * (non-Javadoc)
+			 *
+			 * @see java.lang.Object#toString()
+			 */
+			@Override
+			public String toString() {
+				final StringBuilder builder = new StringBuilder(2048);
+				builder.append("Input [allSessions=");
+				builder.append(allSessions);
+				builder.append(", cleaningMethods=");
+				builder.append(cleaningMethods);
+				builder.append(", tokenFilteringMethods=");
+				builder.append(tokenFilteringMethods);
+				builder.append(", tokenizationMethods=");
+				builder.append(tokenizationMethods);
+				builder.append(", tokenTypes=");
+				builder.append(tokenTypes);
+				builder.append(", trainingMethods=");
+				builder.append(trainingMethods);
+				builder.append("]");
+				return builder.toString();
 			}
 		}
 
