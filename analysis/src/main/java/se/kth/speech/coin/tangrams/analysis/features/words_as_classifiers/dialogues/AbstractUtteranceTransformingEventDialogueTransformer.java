@@ -36,7 +36,7 @@ abstract class AbstractUtteranceTransformingEventDialogueTransformer implements 
 	 * @see java.util.function.Function#apply(java.lang.Object)
 	 */
 	@Override
-	public EventDialogue apply(final EventDialogue diag) {
+	public final EventDialogue apply(final EventDialogue diag) {
 		final List<Utterance> newUtts = Arrays
 				.asList(diag.getUtterances().stream().flatMap(this::transformUtt).toArray(Utterance[]::new));
 		return new EventDialogue(diag.getEvents(), newUtts);
