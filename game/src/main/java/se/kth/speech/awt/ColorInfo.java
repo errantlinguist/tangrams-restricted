@@ -35,9 +35,11 @@ public enum ColorInfo {
 
 	private static final List<ColorInfo> CANONICAL_ORDERING;
 
+	private static final Set<String> EMPTY_COLOR_NAME_SET = Collections.emptySet();
+
 	private static final Map<Integer, Set<String>> RGB_COLOR_NAMES = Colors.createRGBColorNameMap(String::toUpperCase,
 			TreeSet::new);
-
+	
 	static {
 		Collections.unmodifiableList(CANONICAL_ORDERING = Arrays.asList(ColorInfo.RED, ColorInfo.GREEN, ColorInfo.BLUE,
 				ColorInfo.ALPHA, ColorInfo.HUE, ColorInfo.SATURATION, ColorInfo.BRIGHTNESS, ColorInfo.JAVA_NAME));
@@ -61,7 +63,7 @@ public enum ColorInfo {
 			result.put(ColorInfo.SATURATION, hsbVals[1]);
 			result.put(ColorInfo.BRIGHTNESS, hsbVals[2]);
 		}
-		final Set<String> colorNames = RGB_COLOR_NAMES.getOrDefault(color.getRGB(), Collections.emptySet());
+		final Set<String> colorNames = RGB_COLOR_NAMES.getOrDefault(color.getRGB(), EMPTY_COLOR_NAME_SET);
 		result.put(ColorInfo.JAVA_NAME, colorNames);
 		assert result.size() == ColorInfo.values().length;
 		return result;
