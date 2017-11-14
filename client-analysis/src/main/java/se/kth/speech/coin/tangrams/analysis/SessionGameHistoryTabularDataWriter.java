@@ -364,11 +364,8 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 
 	private static final String TABLE_STR_REPR_COL_DELIM;
 
-	private static final Pattern TABLE_STRING_REPR_COL_DELIMITER_PATTERN;
-
 	static {
 		TABLE_STR_REPR_COL_DELIM = "\t";
-		TABLE_STRING_REPR_COL_DELIMITER_PATTERN = Pattern.compile(TABLE_STR_REPR_COL_DELIM);
 		TABLE_ROW_CELL_JOINER = Collectors.joining(TABLE_STR_REPR_COL_DELIM);
 	}
 
@@ -522,7 +519,7 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 		final NavigableMap<String, String> result = new TreeMap<>(metadatumNameComparator);
 		try (BufferedReader metadataRowReader = Files.newBufferedReader(infilePath, OUTPUT_CHARSET)) {
 			for (String row = metadataRowReader.readLine(); row != null; row = metadataRowReader.readLine()) {
-				final String[] rowCells = TABLE_STRING_REPR_COL_DELIMITER_PATTERN.split(row);
+				final String[] rowCells = row.split(TABLE_STR_REPR_COL_DELIM);
 				if (rowCells.length != 2) {
 					throw new IllegalArgumentException(
 							String.format("Row is not a valid metadatum-value pair: %s", Arrays.toString(rowCells)));

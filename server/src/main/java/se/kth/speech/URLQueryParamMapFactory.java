@@ -18,7 +18,6 @@ package se.kth.speech;
 
 import java.util.Map;
 import java.util.function.Function;
-import java.util.regex.Pattern;
 
 import com.google.common.collect.Maps;
 
@@ -30,7 +29,7 @@ import com.google.common.collect.Maps;
  */
 public final class URLQueryParamMapFactory implements Function<String, Map<String, String>> {
 
-	private static final Pattern PARAM_DELIMITER = Pattern.compile("&");
+	private static final String PARAM_DELIMITER = "&";
 
 	private final Function<? super String, String> encodedQueryStrTransformer;
 
@@ -40,7 +39,7 @@ public final class URLQueryParamMapFactory implements Function<String, Map<Strin
 
 	@Override
 	public Map<String, String> apply(final String query) {
-		final String[] pairs = PARAM_DELIMITER.split(query);
+		final String[] pairs = query.split(PARAM_DELIMITER);
 		final Map<String, String> result = Maps.newHashMapWithExpectedSize(pairs.length);
 
 		for (final String pair : pairs) {

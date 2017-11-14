@@ -31,7 +31,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
-import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -90,9 +89,8 @@ final class SegmentUtteranceFactory {
 	static {
 		try {
 			final Properties props = ClassProperties.load(SegmentUtteranceFactory.class);
-			final Pattern metaLangTokenDelimPattern = Pattern.compile(",");
 			final String metaLangTokenStr = props.getProperty("metaLanguageTokens");
-			final String[] metaLangTokenArr = metaLangTokenDelimPattern.split(metaLangTokenStr);
+			final String[] metaLangTokenArr = metaLangTokenStr.split(",");
 			META_LANGUAGE_TOKENS = Sets.newHashSetWithExpectedSize(metaLangTokenArr.length);
 			for (final String token : metaLangTokenArr) {
 				META_LANGUAGE_TOKENS.add(token);
@@ -121,7 +119,7 @@ final class SegmentUtteranceFactory {
 			addSegmentTokens(tokens, transcription.getSegmentOrT());
 		}
 	}
-	
+
 	private static int estimateTokenCount(final List<Object> children) {
 		return Math.max(children.size(), 16);
 	}

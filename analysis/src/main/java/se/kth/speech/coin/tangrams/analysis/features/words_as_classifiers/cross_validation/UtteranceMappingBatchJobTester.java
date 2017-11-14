@@ -16,15 +16,11 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation;
 
-import java.io.IOException;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -37,23 +33,15 @@ import org.springframework.context.ApplicationContext;
 
 import com.google.common.cache.LoadingCache;
 
-import edu.stanford.nlp.trees.Tree;
-import edu.stanford.nlp.util.CoreMap;
 import se.kth.speech.coin.tangrams.analysis.SessionGameManager;
 import se.kth.speech.coin.tangrams.analysis.SessionGameManagerCacheSupplier;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
-import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.CachingEventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.EventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.UtteranceRelation;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.TrainingInstancesFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.WordClassificationData;
 import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
-import se.kth.speech.coin.tangrams.analysis.tokenization.Cleaning;
-import se.kth.speech.coin.tangrams.analysis.tokenization.TokenFiltering;
-import se.kth.speech.coin.tangrams.analysis.tokenization.TokenType;
-import se.kth.speech.coin.tangrams.analysis.tokenization.Tokenization;
-import se.kth.speech.nlp.stanford.AnnotationCacheFactory;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -64,10 +52,33 @@ final class UtteranceMappingBatchJobTester implements Consumer<UtteranceMappingB
 
 	static final class IncompleteResults {
 
+		/* (non-Javadoc)
+		 * @see java.lang.Object#toString()
+		 */
+		@Override
+		public String toString() {
+			StringBuilder builder = new StringBuilder(512);
+			builder.append("IncompleteResults [testParams=");
+			builder.append(testParams);
+			builder.append(", testStartTime=");
+			builder.append(testStartTime);
+			builder.append("]");
+			return builder.toString();
+		}
+
+		/**
+		 * @return the testParams
+		 */
+		public TestParameters getTestParams() {
+			return testParams;
+		}
+
+		private final TestParameters testParams;
 
 		private final LocalDateTime testStartTime;
 
-		private IncompleteResults(final LocalDateTime testStartTime) {
+		private IncompleteResults(final TestParameters testParams, final LocalDateTime testStartTime) {
+			this.testParams = testParams;
 			this.testStartTime = testStartTime;
 		}
 
@@ -78,10 +89,106 @@ final class UtteranceMappingBatchJobTester implements Consumer<UtteranceMappingB
 			return testStartTime;
 		}
 	}
+	
+	private static class TestParameters {
+
+		private final Training trainingMethod;
+
+		private final Map<WordClassifierTrainingParameter, Object> trainingParams;
+
+		TestParameters(final Training trainingMethod,
+				final Map<WordClassifierTrainingParameter, Object> trainingParams) {
+			this.trainingMethod = trainingMethod;
+			this.trainingParams = trainingParams;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see java.lang.Object#equals(java.lang.Object)
+		 */
+		@Override
+		public boolean equals(final Object obj) {
+			if (this == obj) {
+				return true;
+			}
+			if (obj == null) {
+				return false;
+			}
+			if (!(obj instanceof TestParameters)) {
+				return false;
+			}
+			final TestParameters other = (TestParameters) obj;
+			if (trainingMethod != other.trainingMethod) {
+				return false;
+			}
+			if (trainingParams == null) {
+				if (other.trainingParams != null) {
+					return false;
+				}
+			} else if (!trainingParams.equals(other.trainingParams)) {
+				return false;
+			}
+			return true;
+		}
+
+		/**
+		 * @return the trainingMethod
+		 */
+		public Training getTrainingMethod() {
+			return trainingMethod;
+		}
+
+		/**
+		 * @return the trainingParams
+		 */
+		public Map<WordClassifierTrainingParameter, Object> getTrainingParams() {
+			return trainingParams;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see java.lang.Object#hashCode()
+		 */
+		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + (trainingMethod == null ? 0 : trainingMethod.hashCode());
+			result = prime * result + (trainingParams == null ? 0 : trainingParams.hashCode());
+			return result;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see java.lang.Object#toString()
+		 */
+		@Override
+		public String toString() {
+			final StringBuilder builder = new StringBuilder(512);
+			builder.append("TestParameters [trainingMethod=");
+			builder.append(trainingMethod);
+			builder.append(", trainingParams=");
+			builder.append(trainingParams);
+			builder.append("]");
+			return builder.toString();
+		}
+	}
 
 	public static class Input {
 
 		private final Training trainingMethod;
+		
+		/**
+		 * @return the diagTransformer
+		 */
+		public EventDialogueTransformer getDiagTransformer() {
+			return diagTransformer;
+		}
+
+		private final EventDialogueTransformer diagTransformer;
 
 		/**
 		 * @return the trainingMethod
@@ -99,9 +206,10 @@ final class UtteranceMappingBatchJobTester implements Consumer<UtteranceMappingB
 
 		private final Map<SessionDataManager, Path> allSessionData;
 
-		public Input(final Map<SessionDataManager, Path> allSessionData, final Training trainingMethod) {
+		public Input(final Map<SessionDataManager, Path> allSessionData, final Training trainingMethod, final EventDialogueTransformer diagTransformer) {
 			this.allSessionData = allSessionData;
 			this.trainingMethod = trainingMethod;
+			this.diagTransformer = diagTransformer;
 		}
 	}
 	
@@ -155,29 +263,28 @@ final class UtteranceMappingBatchJobTester implements Consumer<UtteranceMappingB
 		final LoadingCache<SessionDataManager, SessionGameManager> sessionGameMgrs = sessionDiagMgrCacheSupplier.get();
 
 		final Training trainingMethod = input.getTrainingMethod();
-//		final CachingEventDialogueTransformer symmetricalDiagTransformer = trainingMethod
-//				.createSymmetricalTrainingTestingEventDiagTransformer(Arrays.asList(tokenizer, tokenFilter));
-//		final TrainingContext trainingCtx = new TrainingContext(symmetricalDiagTransformer, appCtx, uttRelHandler,
-//				trainingParams);
-//		final TrainingInstancesFactory trainingInstsFactory = trainingMethod.createTrainingInstsFactory(trainingCtx);
-//		final Function<Map<SessionDataManager, Path>, Stream<Entry<SessionDataManager, WordClassificationData>>> testSetFactory = testSetFactoryFactory
-//				.apply(trainingInstsFactory, sessionGameMgrs);
-//		final CrossValidator crossValidator = appCtx.getBean(CrossValidator.class, testSetFactory,
-//				symmetricalDiagTransformer, trainingMethod.getClassifierFactory(trainingCtx), backgroundJobExecutor);
-//		crossValidator.setIterCount(trainingMethod.getIterCount());
-//		testerConfigurator.accept(crossValidator);
-//		final TestParameters testParams = new TestParameters(cleaningMethodSet, tokenizationMethod, tokenType,
-//				tokenFilteringMethod, trainingMethod, trainingParams);
-//		LOGGER.info("Testing {}.", testParams);
+		final CachingEventDialogueTransformer symmetricalDiagTransformer = trainingMethod
+				.createSymmetricalTrainingTestingEventDiagTransformer(input.getDiagTransformer());
+		final TrainingContext trainingCtx = new TrainingContext(symmetricalDiagTransformer, appCtx, uttRelHandler,
+				trainingParams);
+		final TrainingInstancesFactory trainingInstsFactory = trainingMethod.createTrainingInstsFactory(trainingCtx);
+		final Function<Map<SessionDataManager, Path>, Stream<Entry<SessionDataManager, WordClassificationData>>> testSetFactory = testSetFactoryFactory
+				.apply(trainingInstsFactory, sessionGameMgrs);
+		final CrossValidator crossValidator = appCtx.getBean(CrossValidator.class, testSetFactory,
+				symmetricalDiagTransformer, trainingMethod.getClassifierFactory(trainingCtx), backgroundJobExecutor);
+		crossValidator.setIterCount(trainingMethod.getIterCount());
+		testerConfigurator.accept(crossValidator);
+		final TestParameters testParams = new TestParameters(trainingMethod, trainingParams);
+		LOGGER.info("Testing {}.", testParams);
 //
-//		final LocalDateTime testTimestamp = LocalDateTime.now();
-//		try {
-//			final List<CrossValidator.IterationResult> testResults = crossValidator.apply(input.getAllSessionData());
+		final LocalDateTime testTimestamp = LocalDateTime.now();
+		try {
+			final List<CrossValidator.IterationResult> testResults = crossValidator.apply(input.getAllSessionData());
 //			final BatchJobSummary batchSummary = new BatchJobSummary(testTimestamp, testParams, testResults);
 //			batchJobResultHandler.accept(batchSummary);
-//		} catch (final Throwable thrown) {
-//			errorHandler.accept(new IncompleteResults(testParams, testTimestamp), thrown);
-//		}
+		} catch (final Throwable thrown) {
+			errorHandler.accept(new IncompleteResults(testParams, testTimestamp), thrown);
+		}
 		// TODO: Finish
 	}
 

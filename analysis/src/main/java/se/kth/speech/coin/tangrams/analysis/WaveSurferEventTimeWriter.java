@@ -62,7 +62,7 @@ final class WaveSurferEventTimeWriter { // NO_UCD (use default)
 
 	private static final long HEADER_ROW_COUNT = 2;
 
-	private static final Pattern IMG_INFO_COL_DELIMITER_PATTERN = Pattern.compile("\t");
+	private static final String IMG_INFO_COL_DELIMITER = "\t";
 
 	private static final Pattern IMG_INFO_FILENAME_PATTERN = Pattern.compile(".*?img-info-(.+)\\.txt");
 
@@ -153,7 +153,7 @@ final class WaveSurferEventTimeWriter { // NO_UCD (use default)
 		final Map<String, String> result;
 		try (Stream<String> lines = Files.lines(infile)) {
 			final String[][] rows = lines.map(String::trim).filter(str -> !str.isEmpty())
-					.map(IMG_INFO_COL_DELIMITER_PATTERN::split).skip(HEADER_ROW_COUNT).toArray(String[][]::new);
+					.map(str -> str.split(IMG_INFO_COL_DELIMITER)).skip(HEADER_ROW_COUNT).toArray(String[][]::new);
 			result = Arrays.stream(rows)
 					.collect(Collectors.toMap(row -> row[ENTITY_ID_COL_IDX], row -> row[SHAPE_COL_IDX]));
 

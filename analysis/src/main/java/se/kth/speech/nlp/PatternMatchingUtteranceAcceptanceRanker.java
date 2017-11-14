@@ -45,7 +45,7 @@ import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
  */
 public final class PatternMatchingUtteranceAcceptanceRanker implements ToDoubleFunction<Utterance> {
 
-	private static final Pattern COLUMN_DELIMITER_PATTERN = Pattern.compile("\\t");
+	private static final String COLUMN_DELIMITER = "\\t";
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(PatternMatchingUtteranceAcceptanceRanker.class);
 
@@ -97,7 +97,7 @@ public final class PatternMatchingUtteranceAcceptanceRanker implements ToDoubleF
 		try (final BufferedReader reader = new BufferedReader(new InputStreamReader(
 				PatternMatchingUtteranceAcceptanceRanker.class.getResourceAsStream("acceptance-patterns.tsv")))) {
 			for (String line = reader.readLine(); line != null; line = reader.readLine()) {
-				final String[] row = COLUMN_DELIMITER_PATTERN.split(line);
+				final String[] row = line.split(COLUMN_DELIMITER);
 				final double acceptanceRank = Double.parseDouble(row[0]);
 				final List<String> tokens = Arrays.asList(WHITESPACE_PATTERN.split(row[1]));
 				result.put(tokens, acceptanceRank);
