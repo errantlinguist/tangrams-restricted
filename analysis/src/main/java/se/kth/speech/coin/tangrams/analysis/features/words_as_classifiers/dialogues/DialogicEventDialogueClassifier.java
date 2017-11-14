@@ -73,20 +73,20 @@ public final class DialogicEventDialogueClassifier implements EventDialogueClass
 	 * EventDialogue, se.kth.speech.coin.tangrams.analysis.GameContext)
 	 */
 	@Override
-	public Optional<ReferentConfidenceData> apply(final EventDialogue transformedDiag, final GameContext ctx)
+	public Optional<ReferentConfidenceData> apply(final EventDialogue diag, final GameContext ctx)
 			throws ClassificationException {
 		final Optional<ReferentConfidenceData> result;
-		final Optional<GameEvent> optFirstEvent = transformedDiag.getFirstEvent();
+		final Optional<GameEvent> optFirstEvent = diag.getFirstEvent();
 		if (optFirstEvent.isPresent()) {
 			final GameEvent event = optFirstEvent.get();
 			LOGGER.debug("Classifying utterances for event: {}", event);
-			final List<Utterance> allUtts = transformedDiag.getUtterances();
+			final List<Utterance> allUtts = diag.getUtterances();
 			if (allUtts.isEmpty()) {
-				LOGGER.debug("No utterances to classify for {}.", transformedDiag);
+				LOGGER.debug("No utterances to classify for {}.", diag);
 				result = Optional.empty();
 			} else {
 				final Function<? super String, ? extends Classifier> wordClassifierGetter = diagWordClassifierFactory
-						.apply(transformedDiag, ctx);
+						.apply(diag, ctx);
 				final DialogicEventDialogueUtteranceSorter uttSorter = new DialogicEventDialogueUtteranceSorter(
 						uttAcceptanceRanker);
 				final List<UtteranceRelation> uttRels = uttSorter.apply(allUtts, event);
