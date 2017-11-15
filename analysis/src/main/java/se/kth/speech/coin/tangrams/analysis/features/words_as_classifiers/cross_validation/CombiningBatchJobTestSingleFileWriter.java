@@ -1237,7 +1237,6 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 				}
 			});
 		}
-
 	}
 
 	public void writeError(final CombiningBatchJobTester.IncompleteResults incompleteResults, final Throwable thrown) {
