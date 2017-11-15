@@ -282,7 +282,8 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 					final BiMap<String, String> playerParticipantIds = PLAYER_PARTICIPANT_ID_MAPPER.apply(playerRoles);
 					final List<EventDialogue> evtDiags = sessionGame.getEventDialogues();
 					// Trim initial pre-game dialogue if present
-					final List<EventDialogue> evtDiagsToPrint = evtDiags.get(0).getFirstEvent().isPresent() ? evtDiags : evtDiags.subList(1, evtDiags.size());
+					final List<EventDialogue> evtDiagsToPrint = evtDiags.get(0).getFirstEvent().isPresent() ? evtDiags
+							: evtDiags.subList(1, evtDiags.size());
 
 					final List<String> rows = new ArrayList<>(evtDiagsToPrint.size() * 4 + 1);
 					rows.add(OUTFILE_HEADER);
@@ -290,25 +291,40 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 							.hasNext();) {
 						final EventDialogue evtDiag = evtDiagIter.next();
 						final List<Utterance> origUtts = evtDiag.getUtterances();
-						final Map<String, Utterance> origUttsById = origUtts.stream()
-								.collect(Collectors.toMap(Utterance::getSegmentId, Function.identity(),
-										MapCollectors.throwingMerger(),
-										() -> Maps.newHashMapWithExpectedSize(origUtts.size())));
 						// Round ID is 1-indexed
 						final int roundId = evtDiagIter.nextIndex();
 						final EventDialogue transformedDiag = diagTransformer.apply(evtDiag);
-						for (final Utterance utterance : transformedDiag.getUtterances()) {
-							final String segId = utterance.getSegmentId();
-							final Utterance origUtt = origUttsById.get(segId);
-							final String speakerId = utterance.getSpeakerId();
-							assert origUtt.getSpeakerId().equals(speakerId);
+						final List<Utterance> tranformedUtts = transformedDiag.getUtterances();
+						final Map<String, Utterance> transformedUttsById = tranformedUtts.stream()
+								.collect(Collectors.toMap(Utterance::getSegmentId, Function.identity(),
+										MapCollectors.throwingMerger(),
+										() -> Maps.newHashMapWithExpectedSize(origUtts.size())));
+						for (final Utterance origUtt : origUtts) {
+							final List<Object> rowCells = new ArrayList<>(6);
+							rowCells.add(roundId);
+
+							final String segId = origUtt.getSegmentId();
+							final String speakerId = origUtt.getSpeakerId();
 							final String participantId = playerParticipantIds.get(speakerId);
-							assert origUtt.getStartTime() == utterance.getStartTime();
-							assert origUtt.getEndTime() == utterance.getEndTime();
-							final List<Object> rowCells = Arrays.asList(roundId, participantId,
-									utterance.getStartTime(), utterance.getEndTime(),
-									origUtt.getTokens().stream().collect(TOKEN_JOINER),
-									utterance.getTokens().stream().collect(TOKEN_JOINER));
+							rowCells.add(participantId);
+							final float startTime = origUtt.getStartTime();
+							rowCells.add(startTime);
+							final float endTime = origUtt.getEndTime();
+							rowCells.add(endTime);
+							rowCells.add(origUtt.getTokens().stream().collect(TOKEN_JOINER));
+
+							final Utterance transformedUtt = transformedUttsById.get(segId);
+							final String refLangStr;
+							if (transformedUtt == null) {
+								refLangStr = "";
+							} else {
+								assert transformedUtt.getSpeakerId().equals(speakerId);
+								assert transformedUtt.getStartTime() == startTime;
+								assert transformedUtt.getEndTime() == endTime;
+								refLangStr = transformedUtt.getTokens().stream().collect(TOKEN_JOINER);
+							}
+							rowCells.add(refLangStr);
+
 							rows.add(rowCells.stream().map(Object::toString).collect(ROW_CELL_JOINER));
 						}
 					}
