@@ -76,9 +76,18 @@ final class UtteranceReferringLanguageMapReader {
 			final String line = lines.next();
 			final String[] rowCells = line.split(COL_SEP);
 			final String uttStr = rowCells[uttColIdx];
-			final List<String> uttTokSeq = Arrays.asList(WHITESPACE_PATTERN.split(uttStr));
+			// Intern the map key because the individual strings will definitely
+			// be used anyway (e.g. by Utterance instances created by
+			// SegmentUtteranceFactory) and it speeds up equivalence comparison
+			// in cases of
+			// hash collisions
+			final List<String> uttTokSeq = Arrays
+					.asList(WHITESPACE_PATTERN.splitAsStream(uttStr).map(String::intern).toArray(String[]::new));
 			final String refLangStr = rowCells[refLangIdx];
-			final List<String> refLangTokens = Arrays.asList(WHITESPACE_PATTERN.split(refLangStr));
+			// Intern values because many of the individual tokens in each list
+			// will be seen in other lists
+			final List<String> refLangTokens = Arrays
+					.asList(WHITESPACE_PATTERN.splitAsStream(refLangStr).map(String::intern).toArray(String[]::new));
 			result.put(uttTokSeq, refLangTokens);
 		}
 
