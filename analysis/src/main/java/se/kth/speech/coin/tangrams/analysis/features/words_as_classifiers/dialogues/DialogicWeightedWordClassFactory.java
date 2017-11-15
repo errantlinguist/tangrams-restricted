@@ -157,7 +157,7 @@ public final class DialogicWeightedWordClassFactory
 
 	private static InstructorUtteranceObservationPutter createInstructorObservationPutter(final BigDecimal weight) {
 		final InstructorUtteranceObservationPutter result;
-		final double doubleWeight = NumberTypeConversions.nonInfiniteDoubleValueExact(weight);
+		final double doubleWeight = NumberTypeConversions.nonInfiniteDoubleValue(weight);
 		final int cmp = weight.compareTo(BigDecimal.ZERO);
 		if (cmp > 0) {
 			result = new LinearWeightCombiningInstructorUtteranceObservationPutter(doubleWeight);
@@ -173,7 +173,7 @@ public final class DialogicWeightedWordClassFactory
 
 	private static OtherUtteranceObservationPutter createNonInstructorObservationPutter(final BigDecimal weight) {
 		final OtherUtteranceObservationPutter result;
-		final double doubleWeight = NumberTypeConversions.nonInfiniteDoubleValueExact(weight);
+		final double doubleWeight = NumberTypeConversions.nonInfiniteDoubleValue(weight);
 		final int cmp = weight.compareTo(BigDecimal.ZERO);
 		if (cmp > 0) {
 			result = new LinearWeightCombiningOtherUtteranceObservationPutter(doubleWeight);

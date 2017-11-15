@@ -117,7 +117,7 @@ final class InstructorUtteranceWeighter implements Function<EventDialogue, Strea
 
 	private static Function<Utterance, WeightedUtterance> createWeightedUtteranceFactory(final BigDecimal weight) {
 		final Function<Utterance, WeightedUtterance> result;
-		final double doubleWeight = NumberTypeConversions.nonInfiniteDoubleValueExact(weight);
+		final double doubleWeight = NumberTypeConversions.nonInfiniteDoubleValue(weight);
 		final int cmp = weight.compareTo(BigDecimal.ZERO);
 		if (cmp > 0) {
 			result = new ConstantWeightedUtteranceFactory(doubleWeight);

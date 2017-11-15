@@ -43,7 +43,7 @@ public final class NumberTypeConversions {
 	 *             even if the given {@code Number} instance actually does
 	 *             represent an infinite number.
 	 */
-	public static double nonInfiniteDoubleValueExact(final Number value) {
+	public static double nonInfiniteDoubleValue(final Number value) {
 		final double result = value.doubleValue();
 		if (Double.isInfinite(result)) {
 			throw new IllegalArgumentException("BigDecimal was converted to floating-point infinity: " + value);
