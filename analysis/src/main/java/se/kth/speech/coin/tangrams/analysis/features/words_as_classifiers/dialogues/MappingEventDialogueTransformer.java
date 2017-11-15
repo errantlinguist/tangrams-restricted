@@ -21,6 +21,9 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 
 /**
@@ -29,6 +32,8 @@ import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
  *
  */
 public final class MappingEventDialogueTransformer extends AbstractUtteranceTransformingEventDialogueTransformer {
+	
+	private static final Logger LOGGER = LoggerFactory.getLogger(MappingEventDialogueTransformer.class);
 
 	private final Map<? super List<String>, ? extends List<String>> tokenSeqTransformations;
 
@@ -47,7 +52,16 @@ public final class MappingEventDialogueTransformer extends AbstractUtteranceTran
 	@Override
 	protected Stream<Utterance> transformUtt(final Utterance utt) {
 		final List<String> origTokenSeq = utt.getTokens();
+		LOGGER.info("Original token sequence: {}", origTokenSeq);
+//		String origStr = origTokenSeq.stream().collect(Collectors.joining(" "));
+//		if ("right I'm selecting the piece tell me which one".equals(origStr)){
+			// FIXME: Remove debug statement
+//			throw new AssertionError("The bad utterance does exist!");
+//		}
+		
+		
 		final List<String> transformedTokenSeq = tokenSeqTransformations.get(origTokenSeq);
+		LOGGER.info("Transformed token sequence: {}", transformedTokenSeq);
 		if (transformedTokenSeq == null) {
 			throw new IllegalArgumentException(
 					String.format("No mapping for token sequence: \"%s\"; segment ID \"%s\"; start time: %f, end time: %f",
