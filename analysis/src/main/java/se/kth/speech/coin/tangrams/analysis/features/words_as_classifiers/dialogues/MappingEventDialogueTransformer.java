@@ -50,7 +50,7 @@ public final class MappingEventDialogueTransformer extends AbstractUtteranceTran
 		final List<String> transformedTokenSeq = tokenSeqTransformations.get(origTokenSeq);
 		if (transformedTokenSeq == null) {
 			throw new IllegalArgumentException(
-					String.format("No mapping for token sequence: %s; segment ID \"%s\"; start time: %f, end time: %f",
+					String.format("No mapping for token sequence: \"%s\"; segment ID \"%s\"; start time: %f, end time: %f",
 							origTokenSeq.stream().collect(Collectors.joining(" ")), utt.getSegmentId(),
 							utt.getStartTime(), utt.getEndTime()));
 		} else {
