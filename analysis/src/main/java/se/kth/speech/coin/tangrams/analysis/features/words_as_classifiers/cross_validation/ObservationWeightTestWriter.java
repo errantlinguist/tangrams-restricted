@@ -24,6 +24,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.EnumSet;
@@ -57,16 +58,22 @@ import org.springframework.context.support.ClassPathXmlApplicationContext;
 
 import com.google.common.cache.LoadingCache;
 
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import se.kth.speech.coin.tangrams.CLIParameters;
 import se.kth.speech.coin.tangrams.analysis.BackgroundJobs;
 import se.kth.speech.coin.tangrams.analysis.DataLanguageDefaults;
 import se.kth.speech.coin.tangrams.analysis.SessionGameManager;
+import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.coin.tangrams.analysis.dialogues.UtteranceDialogueRepresentationStringFactory;
+import se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttributeContext;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.EventDialogueTestResults;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.CrossValidator.CrossValidationTestSummary;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.MappingEventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.TrainingInstancesFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.WordClassificationData;
 import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
+import se.kth.speech.coin.tangrams.iristk.EventTimes;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -193,11 +200,23 @@ final class ObservationWeightTestWriter { // NO_UCD (unused code)
 
 	private static final Collector<CharSequence, ?, String> ROW_CELL_JOINER = Collectors.joining("\t");
 
+	/**
+	 * <strong>NOTE:</strong> This is for SPSS compatibility, which does not
+	 * allow e.g.&nbsp;<code>"-"</code> as part of a variable name.
+	 *
+	 * @see <a href=
+	 *      "https://www.ibm.com/support/knowledgecenter/en/SSLVMB_21.0.0/com.ibm.spss.statistics.help/syn_variables_variable_names.htm">SPSS
+	 *      documentation</a>
+	 */
+	private static final String SUBCOL_NAME_DELIM = ".";
+
 	private static final Charset TOKENIZATION_FILE_ENCODING = StandardCharsets.UTF_8;
 
 	private static final BiConsumer<Object, Object> UTT_REL_HANDLER = (evtDiag, uttRels) -> {
 		// Do nothing
 	};
+
+	static final DateTimeFormatter TIMESTAMP_FORMATTER = EventTimes.FORMATTER;
 
 	public static void main(final String[] args) throws IOException, CrossValidationTestException {
 		final CommandLineParser parser = new DefaultParser();
@@ -208,6 +227,17 @@ final class ObservationWeightTestWriter { // NO_UCD (unused code)
 			System.out.println(String.format("An error occured while parsing the command-line arguments: %s", e));
 			printHelp();
 		}
+	}
+
+	private static Stream<String> createColHeaders(
+			final List<DialogueAnalysisSummaryFactory.SummaryDatum> summaryDataToWrite) {
+		final Stream.Builder<String> resultBuilder = Stream.builder();
+		resultBuilder.add("TIME");
+		createTestMethodColumnHeaders().forEachOrdered(resultBuilder);
+		createTrainingDataColHeaders().forEachOrdered(resultBuilder);
+		summaryDataToWrite.stream().map(DialogueAnalysisSummaryFactory.SummaryDatum::toString)
+				.forEachOrdered(resultBuilder);
+		return resultBuilder.build();
 	}
 
 	private static List<DialogueAnalysisSummaryFactory.SummaryDatum> createDefaultDatumOrderingList() {
@@ -246,6 +276,37 @@ final class ObservationWeightTestWriter { // NO_UCD (unused code)
 		final Options result = new Options();
 		Arrays.stream(Parameter.values()).map(Parameter::get).forEach(result::addOption);
 		return result;
+	}
+
+	private static Stream<String> createTestMethodColumnHeaders() {
+		final Stream.Builder<String> resultBuilder = Stream.builder();
+		resultBuilder.add(Training.class.getSimpleName());
+		return resultBuilder.build();
+	}
+
+	private static Stream<String> createTestMethodRowCellValues(
+			final UtteranceMappingBatchJobTester.TestParameters testParams) {
+		final Stream.Builder<String> resultBuilder = Stream.builder();
+		resultBuilder.add(testParams.getTrainingMethod().toString());
+		return resultBuilder.build();
+	}
+
+	private static Stream<String> createTestParamRowCellValues(
+			final UtteranceMappingBatchJobTester.BatchJobSummary summary) {
+		final Stream.Builder<String> resultBuilder = Stream.builder();
+		resultBuilder.add(TIMESTAMP_FORMATTER.format(summary.getTestTimestamp()));
+		createTestMethodRowCellValues(summary.getTestParams()).forEachOrdered(resultBuilder);
+		return resultBuilder.build();
+	}
+
+	private static Stream<String> createTrainingDataColHeaders() {
+		return EntityInstanceAttributeContext.getClassValues().stream()
+				.map(classVal -> "TRAIN_INSTS" + SUBCOL_NAME_DELIM + classVal);
+	}
+
+	private static Stream<Object> createTrainingDataRowCellValues(final CrossValidationTestSummary cvTestSummary) {
+		final Object2IntMap<String> trainingInstCounts = cvTestSummary.getTrainingInstanceCounts();
+		return EntityInstanceAttributeContext.getClassValues().stream().map(trainingInstCounts::getInt);
 	}
 
 	private static void main(final CommandLine cl) throws IOException, CrossValidationTestException, ParseException {
@@ -328,7 +389,7 @@ final class ObservationWeightTestWriter { // NO_UCD (unused code)
 
 	private int sessionTestIterFactor;
 
-	private final boolean writeHeader;
+	private boolean writeHeader;
 
 	private ObservationWeightTestWriter(final PrintWriter out, final boolean writeHeader,
 			final int sessionTestIterFactor) {
@@ -349,89 +410,61 @@ final class ObservationWeightTestWriter { // NO_UCD (unused code)
 	}
 
 	public void write(final UtteranceMappingBatchJobTester.BatchJobSummary summary) {
-		// if (writeHeader) {
-		// out.println(TestParameterReporting.createColHeaders(dataToWrite).collect(ROW_CELL_JOINER));
-		// writeHeader = false;
-		// }
-		// final String[] testParamRowCellValues =
-		// TestParameterReporting.createTestParamRowCellValues(summary)
-		// .toArray(String[]::new);
-		// final CrossValidator.Result testResults = summary.getTestResults();
-		// for (final Entry<Path, List<CrossValidationTestSummary>>
-		// infileSessionResults : testResults.getSessionResults()
-		// .entrySet()) {
-		// final Path inpath = infileSessionResults.getKey();
-		// final List<CrossValidationTestSummary> sessionResultList =
-		// infileSessionResults.getValue();
-		// for (final ListIterator<CrossValidationTestSummary> sessionResultIter
-		// = sessionResultList
-		// .listIterator(); sessionResultIter.hasNext();) {
-		// final CrossValidationTestSummary cvTestSummary =
-		// sessionResultIter.next();
-		// final String[] trainingRowCellVals = TestParameterReporting
-		// .createTrainingDataRowCellValues(cvTestSummary).map(Object::toString).toArray(String[]::new);
-		// // NOTE: This should remain here, after "Iterator.next()", so
-		// // that the printed first iteration is "1" rather than "0"
-		// final int iterNo = sessionResultIter.nextIndex() *
-		// sessionTestIterFactor;
-		// int sessionDialogueOrder = 1;
-		// final LocalDateTime sessionStartTime =
-		// cvTestSummary.getSessionStartTime();
-		// for (final Entry<EventDialogue, EventDialogueTestResults>
-		// diagTestResults : cvTestSummary
-		// .getTestResults().getDialogueTestResults()) {
-		// final Map<DialogueAnalysisSummaryFactory.SummaryDatum, Object>
-		// rowData = rowDataFactory.apply(
-		// new DialogueAnalysisSummaryFactory.Input(inpath, "Success", iterNo,
-		// sessionDialogueOrder++,
-		// diagTestResults, summary.getTestParams().getTrainingParams(),
-		// sessionStartTime));
-		// final Stream<String> diagAnalysisRowCellVals =
-		// dataToWrite.stream().map(rowData::get)
-		// .map(Object::toString);
-		// final Stream.Builder<String> rowCellValBuilder = Stream.builder();
-		// Arrays.stream(testParamRowCellValues).forEachOrdered(rowCellValBuilder);
-		// Arrays.stream(trainingRowCellVals).forEachOrdered(rowCellValBuilder);
-		// diagAnalysisRowCellVals.forEachOrdered(rowCellValBuilder);
-		// final String row =
-		// rowCellValBuilder.build().collect(ROW_CELL_JOINER);
-		// out.println(row);
-		// }
-		// }
-		// }
+		if (writeHeader) {
+			out.println(createColHeaders(dataToWrite).collect(ROW_CELL_JOINER));
+			writeHeader = false;
+		}
+		final String[] testParamRowCellValues = createTestParamRowCellValues(summary).toArray(String[]::new);
+		final List<CrossValidator.IterationResult> testResults = summary.getTestResults();
+		for (final CrossValidator.IterationResult iterResult : testResults) {
+			final int iterNo = iterResult.getIterNo();
+			iterResult.getCvTestResults().forEach(infileSessionResults -> {
+				final Path inpath = infileSessionResults.getKey();
+				final CrossValidationTestSummary cvTestSummary = infileSessionResults.getValue();
+				final String[] trainingRowCellVals = createTrainingDataRowCellValues(cvTestSummary)
+						.map(Object::toString).toArray(String[]::new);
+				// NOTE: This should remain here, after "Iterator.next()", so
+				// that the printed first iteration is "1" rather than "0"
+				int sessionDialogueOrder = 1;
+				for (final Entry<EventDialogue, EventDialogueTestResults> diagTestResults : cvTestSummary
+						.getTestResults().getDialogueTestResults()) {
+					final Map<DialogueAnalysisSummaryFactory.SummaryDatum, Object> rowData = rowDataFactory
+							.apply(new DialogueAnalysisSummaryFactory.Input(inpath, "Success", iterNo,
+									sessionDialogueOrder++, diagTestResults,
+									summary.getTestParams().getTrainingParams(), cvTestSummary.getSessionStartTime()));
+					final Stream<String> diagAnalysisRowCellVals = dataToWrite.stream().map(rowData::get)
+							.map(Object::toString);
+					final Stream.Builder<String> rowCellValBuilder = Stream.builder();
+					Arrays.stream(testParamRowCellValues).forEachOrdered(rowCellValBuilder);
+					Arrays.stream(trainingRowCellVals).forEachOrdered(rowCellValBuilder);
+					diagAnalysisRowCellVals.forEachOrdered(rowCellValBuilder);
+					final String row = rowCellValBuilder.build().collect(ROW_CELL_JOINER);
+					out.println(row);
+				}
+			});
+		}
 	}
 
 	public void writeError(final UtteranceMappingBatchJobTester.IncompleteResults incompleteResults,
 			final Throwable thrown) {
-		// LOGGER.error(
-		// String.format("An error occurred while running test which was started
-		// at \"%s\".",
-		// TestParameterReporting.TIMESTAMP_FORMATTER.format(incompleteResults.getTestStartTime())),
-		// thrown);
-		// final String errorDesc = String.format("%s: %s",
-		// thrown.getClass().getName(), thrown.getLocalizedMessage());
-		//
-		// final Stream.Builder<String> rowCellValBuilder = Stream.builder();
-		// rowCellValBuilder.add(TestParameterReporting.TIMESTAMP_FORMATTER.format(incompleteResults.getTestStartTime()));
-		// TestParameterReporting.createTestMethodRowCellValues(incompleteResults.getTestParams(),
-		// TestParameterReporting::createCleaningMethodBooleanValues).forEachOrdered(rowCellValBuilder);
-		// EntityInstanceAttributeContext.getClassValues().stream().map(val ->
-		// NULL_CELL_VALUE_REPR)
-		// .forEach(rowCellValBuilder);
-		// final Map<DialogueAnalysisSummaryFactory.SummaryDatum, Object>
-		// rowData = new EnumMap<>(
-		// DialogueAnalysisSummaryFactory.SummaryDatum.class);
-		// dataToWrite.forEach(datum -> rowData.put(datum,
-		// NULL_CELL_VALUE_REPR));
-		// rowData.put(DialogueAnalysisSummaryFactory.SummaryDatum.DESCRIPTION,
-		// errorDesc);
-		// final Stream<String> diagAnalysisRowCellVals =
-		// dataToWrite.stream().map(rowData::get).map(Object::toString);
-		// diagAnalysisRowCellVals.forEachOrdered(rowCellValBuilder);
-		// final String row =
-		// rowCellValBuilder.build().collect(ROW_CELL_JOINER);
-		// out.println(row);
-		// throw new TestException(thrown);
+		LOGGER.error(String.format("An error occurred while running test which was started at \"%s\".",
+				TIMESTAMP_FORMATTER.format(incompleteResults.getTestStartTime())), thrown);
+		final String errorDesc = String.format("%s: %s", thrown.getClass().getName(), thrown.getLocalizedMessage());
+
+		final Stream.Builder<String> rowCellValBuilder = Stream.builder();
+		rowCellValBuilder.add(TIMESTAMP_FORMATTER.format(incompleteResults.getTestStartTime()));
+		createTestMethodRowCellValues(incompleteResults.getTestParams()).forEachOrdered(rowCellValBuilder);
+		EntityInstanceAttributeContext.getClassValues().stream().map(val -> NULL_CELL_VALUE_REPR)
+				.forEach(rowCellValBuilder);
+		final Map<DialogueAnalysisSummaryFactory.SummaryDatum, Object> rowData = new EnumMap<>(
+				DialogueAnalysisSummaryFactory.SummaryDatum.class);
+		dataToWrite.forEach(datum -> rowData.put(datum, NULL_CELL_VALUE_REPR));
+		rowData.put(DialogueAnalysisSummaryFactory.SummaryDatum.DESCRIPTION, errorDesc);
+		final Stream<String> diagAnalysisRowCellVals = dataToWrite.stream().map(rowData::get).map(Object::toString);
+		diagAnalysisRowCellVals.forEachOrdered(rowCellValBuilder);
+		final String row = rowCellValBuilder.build().collect(ROW_CELL_JOINER);
+		out.println(row);
+		throw new TestException(thrown);
 	}
 
 	/**
