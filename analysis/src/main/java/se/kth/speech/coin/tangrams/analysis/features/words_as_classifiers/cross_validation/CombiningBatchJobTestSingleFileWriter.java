@@ -112,7 +112,7 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 
 		private final LocalDateTime testTimestamp;
 
-		BatchJobSummary(final LocalDateTime testTimestamp, final TestParameters testParams,
+		private BatchJobSummary(final LocalDateTime testTimestamp, final TestParameters testParams,
 				final List<CrossValidator.IterationResult> testResults) {
 			this.testTimestamp = testTimestamp;
 			this.testParams = testParams;
@@ -226,7 +226,7 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 
 		private final ExecutorService backgroundJobExecutor;
 
-		public CLIInputFactory(final ExecutorService backgroundJobExecutor) {
+		private  CLIInputFactory(final ExecutorService backgroundJobExecutor) {
 			this.backgroundJobExecutor = backgroundJobExecutor;
 		}
 
@@ -882,7 +882,7 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 
 		private final Map<WordClassifierTrainingParameter, Object> trainingParams;
 
-		TestParameters(final Set<Cleaning> cleaning, final Tokenization tokenization, final TokenType tokenType,
+		private TestParameters(final Set<Cleaning> cleaning, final Tokenization tokenization, final TokenType tokenType,
 				final TokenFiltering tokenFiltering, final Training trainingMethod,
 				final Map<WordClassifierTrainingParameter, Object> trainingParams) {
 			this.cleaning = cleaning;
@@ -1034,7 +1034,7 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 		/**
 		 * @param cause
 		 */
-		public TestException(final Throwable cause) {
+		private TestException(final Throwable cause) {
 			super(cause);
 		}
 
