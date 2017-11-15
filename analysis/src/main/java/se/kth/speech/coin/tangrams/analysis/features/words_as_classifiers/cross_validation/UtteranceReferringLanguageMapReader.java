@@ -21,6 +21,10 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
@@ -35,6 +39,8 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 final class UtteranceReferringLanguageMapReader {
 
 	private static final String COL_SEP = "\t";
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(UtteranceReferringLanguageMapReader.class);
 
 	private static final Pattern WHITESPACE_PATTERN = Pattern.compile("\\s+");
 
@@ -83,11 +89,19 @@ final class UtteranceReferringLanguageMapReader {
 			// hash collisions
 			final List<String> uttTokSeq = Arrays
 					.asList(WHITESPACE_PATTERN.splitAsStream(uttStr).map(String::intern).toArray(String[]::new));
-			final String refLangStr = rowCells[refLangIdx];
+
+			Stream<String> parsedRefLangTokens = Stream.empty();
+			try {
+				final String refLangStr = rowCells[refLangIdx];
+				parsedRefLangTokens = WHITESPACE_PATTERN.splitAsStream(refLangStr);
+			} catch (final ArrayIndexOutOfBoundsException e) {
+				LOGGER.info(
+						"Missing referring language column for utterance string \"{}\"; Treating it as \"no referring language\".");
+			}
 			// Intern values because many of the individual tokens in each list
 			// will be seen in other lists
 			final List<String> refLangTokens = Arrays
-					.asList(WHITESPACE_PATTERN.splitAsStream(refLangStr).map(String::intern).toArray(String[]::new));
+					.asList(parsedRefLangTokens.map(String::intern).toArray(String[]::new));
 			result.put(uttTokSeq, refLangTokens);
 		}
 
