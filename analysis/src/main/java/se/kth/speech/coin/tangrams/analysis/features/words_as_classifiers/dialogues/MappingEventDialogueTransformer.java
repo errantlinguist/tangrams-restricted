@@ -18,6 +18,7 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialo
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
@@ -38,7 +39,7 @@ public final class MappingEventDialogueTransformer extends AbstractUtteranceTran
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.
 	 * dialogues.AbstractUtteranceTransformingEventDialogueTransformer#
 	 * transformUtt(se.kth.speech.coin.tangrams.analysis.dialogues.Utterance)
@@ -48,7 +49,10 @@ public final class MappingEventDialogueTransformer extends AbstractUtteranceTran
 		final List<String> origTokenSeq = utt.getTokens();
 		final List<String> transformedTokenSeq = tokenSeqTransformations.get(origTokenSeq);
 		if (transformedTokenSeq == null) {
-			throw new IllegalArgumentException("No mapping for token sequence: " + origTokenSeq);
+			throw new IllegalArgumentException(
+					String.format("No mapping for token sequence: %s; segment ID \"%s\"; start time: %f, end time: %f",
+							origTokenSeq.stream().collect(Collectors.joining(" ")), utt.getSegmentId(),
+							utt.getStartTime(), utt.getEndTime()));
 		} else {
 			return Stream.of(new Utterance(utt.getSegmentId(), utt.getSpeakerId(), transformedTokenSeq,
 					utt.getStartTime(), utt.getEndTime()));
