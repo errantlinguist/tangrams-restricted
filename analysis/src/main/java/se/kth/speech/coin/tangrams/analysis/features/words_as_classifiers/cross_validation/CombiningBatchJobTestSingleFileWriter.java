@@ -121,7 +121,7 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 
 		/*
 		 * (non-Javadoc)
-		 * 
+		 *
 		 * @see java.lang.Object#equals(java.lang.Object)
 		 */
 		@Override
@@ -162,7 +162,7 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 
 		/*
 		 * (non-Javadoc)
-		 * 
+		 *
 		 * @see java.lang.Object#hashCode()
 		 */
 		@Override
@@ -196,21 +196,21 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 		/**
 		 * @return the testParams
 		 */
-		TestParameters getTestParams() {
+		private TestParameters getTestParams() {
 			return testParams;
 		}
 
 		/**
 		 * @return the testResults
 		 */
-		List<CrossValidator.IterationResult> getTestResults() {
+		private List<CrossValidator.IterationResult> getTestResults() {
 			return testResults;
 		}
 
 		/**
 		 * @return the testTimestamp
 		 */
-		LocalDateTime getTestTimestamp() {
+		private LocalDateTime getTestTimestamp() {
 			return testTimestamp;
 		}
 	}
@@ -226,7 +226,7 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 
 		private final ExecutorService backgroundJobExecutor;
 
-		private  CLIInputFactory(final ExecutorService backgroundJobExecutor) {
+		private CLIInputFactory(final ExecutorService backgroundJobExecutor) {
 			this.backgroundJobExecutor = backgroundJobExecutor;
 		}
 
@@ -324,20 +324,6 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 				return true;
 			}
 
-			/**
-			 * @return the testParams
-			 */
-			public TestParameters getTestParams() {
-				return testParams;
-			}
-
-			/**
-			 * @return the testStartTime
-			 */
-			public LocalDateTime getTestStartTime() {
-				return testStartTime;
-			}
-
 			/*
 			 * (non-Javadoc)
 			 *
@@ -366,6 +352,20 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 				builder.append(testStartTime);
 				builder.append("]");
 				return builder.toString();
+			}
+
+			/**
+			 * @return the testParams
+			 */
+			private TestParameters getTestParams() {
+				return testParams;
+			}
+
+			/**
+			 * @return the testStartTime
+			 */
+			private LocalDateTime getTestStartTime() {
+				return testStartTime;
 			}
 		}
 
@@ -805,18 +805,14 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 
 		static final DateTimeFormatter TIMESTAMP_FORMATTER = EventTimes.FORMATTER;
 
-		private static Stream<String> createTrainingDataColHeaders() {
-			return EntityInstanceAttributeContext.getClassValues().stream()
-					.map(classVal -> "TRAIN_INSTS" + SUBCOL_NAME_DELIM + classVal);
-		}
-
-		static Stream<String> createCleaningMethodBooleanValues(final Collection<? super Cleaning> cleaningMethods) {
+		private static Stream<String> createCleaningMethodBooleanValues(
+				final Collection<? super Cleaning> cleaningMethods) {
 			final IntStream vals = Arrays.stream(Cleaning.values()).map(cleaningMethods::contains)
 					.mapToInt(boolVal -> boolVal ? 1 : 0);
 			return vals.mapToObj(Integer::toString);
 		}
 
-		static Stream<String> createColHeaders(
+		private static Stream<String> createColHeaders(
 				final List<DialogueAnalysisSummaryFactory.SummaryDatum> summaryDataToWrite) {
 			final Stream.Builder<String> resultBuilder = Stream.builder();
 			resultBuilder.add("TIME");
@@ -827,7 +823,7 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 			return resultBuilder.build();
 		}
 
-		static Stream<String> createTestMethodColumnHeaders() {
+		private static Stream<String> createTestMethodColumnHeaders() {
 			final Stream.Builder<String> resultBuilder = Stream.builder();
 			final String cleaningMethodPrefix = Cleaning.class.getSimpleName() + SUBCOL_NAME_DELIM;
 			Arrays.stream(Cleaning.values()).map(method -> cleaningMethodPrefix + method).forEachOrdered(resultBuilder);
@@ -838,7 +834,7 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 			return resultBuilder.build();
 		}
 
-		static Stream<String> createTestMethodRowCellValues(final TestParameters testParams,
+		private static Stream<String> createTestMethodRowCellValues(final TestParameters testParams,
 				final Function<? super Set<Cleaning>, Stream<String>> cleaningMethodReprFactory) {
 			final Stream.Builder<String> resultBuilder = Stream.builder();
 			final Set<Cleaning> cleaningMethods = testParams.getCleaning();
@@ -850,7 +846,7 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 			return resultBuilder.build();
 		}
 
-		static Stream<String> createTestParamRowCellValues(final BatchJobSummary summary) {
+		private static Stream<String> createTestParamRowCellValues(final BatchJobSummary summary) {
 			final Stream.Builder<String> resultBuilder = Stream.builder();
 			resultBuilder.add(TIMESTAMP_FORMATTER.format(summary.getTestTimestamp()));
 			createTestMethodRowCellValues(summary.getTestParams(),
@@ -858,7 +854,12 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 			return resultBuilder.build();
 		}
 
-		static Stream<Object> createTrainingDataRowCellValues(final CrossValidationTestSummary cvTestSummary) {
+		private static Stream<String> createTrainingDataColHeaders() {
+			return EntityInstanceAttributeContext.getClassValues().stream()
+					.map(classVal -> "TRAIN_INSTS" + SUBCOL_NAME_DELIM + classVal);
+		}
+
+		private static Stream<Object> createTrainingDataRowCellValues(final CrossValidationTestSummary cvTestSummary) {
 			final Object2IntMap<String> trainingInstCounts = cvTestSummary.getTrainingInstanceCounts();
 			return EntityInstanceAttributeContext.getClassValues().stream().map(trainingInstCounts::getInt);
 		}
@@ -939,48 +940,6 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 			return true;
 		}
 
-		/**
-		 * @return the cleaning
-		 */
-		public Set<Cleaning> getCleaning() {
-			return cleaning;
-		}
-
-		/**
-		 * @return the tokenFiltering
-		 */
-		public TokenFiltering getTokenFiltering() {
-			return tokenFiltering;
-		}
-
-		/**
-		 * @return the tokenization
-		 */
-		public Tokenization getTokenization() {
-			return tokenization;
-		}
-
-		/**
-		 * @return the tokenType
-		 */
-		public TokenType getTokenType() {
-			return tokenType;
-		}
-
-		/**
-		 * @return the trainingMethod
-		 */
-		public Training getTrainingMethod() {
-			return trainingMethod;
-		}
-
-		/**
-		 * @return the trainingParams
-		 */
-		public Map<WordClassifierTrainingParameter, Object> getTrainingParams() {
-			return trainingParams;
-		}
-
 		/*
 		 * (non-Javadoc)
 		 *
@@ -1021,6 +980,48 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 			builder.append(trainingParams);
 			builder.append("]");
 			return builder.toString();
+		}
+
+		/**
+		 * @return the cleaning
+		 */
+		private Set<Cleaning> getCleaning() {
+			return cleaning;
+		}
+
+		/**
+		 * @return the tokenFiltering
+		 */
+		private TokenFiltering getTokenFiltering() {
+			return tokenFiltering;
+		}
+
+		/**
+		 * @return the tokenization
+		 */
+		private Tokenization getTokenization() {
+			return tokenization;
+		}
+
+		/**
+		 * @return the tokenType
+		 */
+		private TokenType getTokenType() {
+			return tokenType;
+		}
+
+		/**
+		 * @return the trainingMethod
+		 */
+		private Training getTrainingMethod() {
+			return trainingMethod;
+		}
+
+		/**
+		 * @return the trainingParams
+		 */
+		private Map<WordClassifierTrainingParameter, Object> getTrainingParams() {
+			return trainingParams;
 		}
 	}
 
