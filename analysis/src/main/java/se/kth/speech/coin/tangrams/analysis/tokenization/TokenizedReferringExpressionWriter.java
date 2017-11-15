@@ -26,10 +26,11 @@ import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.EnumSet;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -177,6 +178,83 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 		}
 	}
 
+	private static class TabularDataFactory {
+
+		private final EventDialogueTransformer diagTransformer;
+
+		private final Map<? super String, String> playerParticipantIds;
+
+		private TabularDataFactory(final EventDialogueTransformer diagTransformer,
+				final Map<? super String, String> playerParticipantIds) {
+			this.diagTransformer = diagTransformer;
+			this.playerParticipantIds = playerParticipantIds;
+		}
+
+		private void addUtteranceDataRows(final int roundId, final EventDialogue evtDiag,
+				final Collection<? super String> uttRows) {
+			final List<Utterance> origUtts = evtDiag.getUtterances();
+			final EventDialogue transformedDiag = diagTransformer.apply(evtDiag);
+			final List<Utterance> tranformedUtts = transformedDiag.getUtterances();
+			final Map<String, Utterance> transformedUttsById = tranformedUtts.stream()
+					.collect(Collectors.toMap(Utterance::getSegmentId, Function.identity(),
+							MapCollectors.throwingMerger(), () -> Maps.newHashMapWithExpectedSize(origUtts.size())));
+			for (final Utterance origUtt : origUtts) {
+				final List<Object> rowCells = new ArrayList<>(6);
+				rowCells.add(roundId);
+
+				final String segId = origUtt.getSegmentId();
+				final String speakerId = origUtt.getSpeakerId();
+				final String participantId = playerParticipantIds.get(speakerId);
+				rowCells.add(participantId);
+				final float startTime = origUtt.getStartTime();
+				rowCells.add(startTime);
+				final float endTime = origUtt.getEndTime();
+				rowCells.add(endTime);
+				rowCells.add(origUtt.getTokens().stream().collect(TOKEN_JOINER));
+
+				final Utterance transformedUtt = transformedUttsById.get(segId);
+				final String refLangStr;
+				if (transformedUtt == null) {
+					refLangStr = "";
+				} else {
+					assert transformedUtt.getSpeakerId().equals(speakerId);
+					assert transformedUtt.getStartTime() == startTime;
+					assert transformedUtt.getEndTime() == endTime;
+					refLangStr = transformedUtt.getTokens().stream().collect(TOKEN_JOINER);
+				}
+				rowCells.add(refLangStr);
+
+				uttRows.add(rowCells.stream().map(Object::toString).collect(ROW_CELL_JOINER));
+			}
+		}
+
+		private List<String> apply(final Iterator<EventDialogue> evtDiagsToPrint, final int expectedUtteranceCount) {
+			final List<String> result = new ArrayList<>(expectedUtteranceCount);
+			result.add(OUTFILE_HEADER);
+
+			final EventDialogue firstDiag = evtDiagsToPrint.next();
+
+			int roundId = 0;
+			if (firstDiag.getFirstEvent().isPresent()) {
+				// Round ID is 1-indexed
+				addUtteranceDataRows(++roundId, firstDiag, result);
+			} else {
+				// Use 0 index for pre-game dialogue
+				addUtteranceDataRows(roundId++, firstDiag, result);
+			}
+
+			while (evtDiagsToPrint.hasNext()) {
+				final EventDialogue evtDiag = evtDiagsToPrint.next();
+				addUtteranceDataRows(roundId, evtDiag, result);
+			}
+			return result;
+		}
+
+		private List<String> apply(final List<EventDialogue> evtDiagsToPrint) {
+			return apply(evtDiagsToPrint.iterator(), evtDiagsToPrint.size() * 4 + 1);
+		}
+	}
+
 	/**
 	 * Parsing can take up huge amounts of memory, so it's single-threaded and
 	 * thus the caches are created designed for single-threaded operation.
@@ -281,54 +359,8 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 							.getPlayerRoles();
 					final BiMap<String, String> playerParticipantIds = PLAYER_PARTICIPANT_ID_MAPPER.apply(playerRoles);
 					final List<EventDialogue> evtDiags = sessionGame.getEventDialogues();
-					// Trim initial pre-game dialogue if present
-					final List<EventDialogue> evtDiagsToPrint = evtDiags.get(0).getFirstEvent().isPresent() ? evtDiags
-							: evtDiags.subList(1, evtDiags.size());
-
-					final List<String> rows = new ArrayList<>(evtDiagsToPrint.size() * 4 + 1);
-					rows.add(OUTFILE_HEADER);
-					for (final ListIterator<EventDialogue> evtDiagIter = evtDiagsToPrint.listIterator(); evtDiagIter
-							.hasNext();) {
-						final EventDialogue evtDiag = evtDiagIter.next();
-						final List<Utterance> origUtts = evtDiag.getUtterances();
-						// Round ID is 1-indexed
-						final int roundId = evtDiagIter.nextIndex();
-						final EventDialogue transformedDiag = diagTransformer.apply(evtDiag);
-						final List<Utterance> tranformedUtts = transformedDiag.getUtterances();
-						final Map<String, Utterance> transformedUttsById = tranformedUtts.stream()
-								.collect(Collectors.toMap(Utterance::getSegmentId, Function.identity(),
-										MapCollectors.throwingMerger(),
-										() -> Maps.newHashMapWithExpectedSize(origUtts.size())));
-						for (final Utterance origUtt : origUtts) {
-							final List<Object> rowCells = new ArrayList<>(6);
-							rowCells.add(roundId);
-
-							final String segId = origUtt.getSegmentId();
-							final String speakerId = origUtt.getSpeakerId();
-							final String participantId = playerParticipantIds.get(speakerId);
-							rowCells.add(participantId);
-							final float startTime = origUtt.getStartTime();
-							rowCells.add(startTime);
-							final float endTime = origUtt.getEndTime();
-							rowCells.add(endTime);
-							rowCells.add(origUtt.getTokens().stream().collect(TOKEN_JOINER));
-
-							final Utterance transformedUtt = transformedUttsById.get(segId);
-							final String refLangStr;
-							if (transformedUtt == null) {
-								refLangStr = "";
-							} else {
-								assert transformedUtt.getSpeakerId().equals(speakerId);
-								assert transformedUtt.getStartTime() == startTime;
-								assert transformedUtt.getEndTime() == endTime;
-								refLangStr = transformedUtt.getTokens().stream().collect(TOKEN_JOINER);
-							}
-							rowCells.add(refLangStr);
-
-							rows.add(rowCells.stream().map(Object::toString).collect(ROW_CELL_JOINER));
-						}
-					}
-
+					final List<String> rows = new TabularDataFactory(diagTransformer, playerParticipantIds)
+							.apply(evtDiags);
 					final Path outfile = sessionOutputDir.resolve(outfileName);
 					LOGGER.info("Writing data extracted from \"{}\" to \"{}\".", sessionPropsFilePath, outfile);
 					Files.write(outfile, rows, OUTPUT_ENCODING, StandardOpenOption.CREATE,
