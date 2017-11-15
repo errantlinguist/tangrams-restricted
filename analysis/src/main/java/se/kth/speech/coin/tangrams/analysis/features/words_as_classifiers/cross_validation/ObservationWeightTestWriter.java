@@ -63,7 +63,6 @@ import se.kth.speech.coin.tangrams.analysis.DataLanguageDefaults;
 import se.kth.speech.coin.tangrams.analysis.SessionGameManager;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.coin.tangrams.analysis.dialogues.UtteranceDialogueRepresentationStringFactory;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.UtteranceMappingBatchJobTester.TestParameters;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.MappingEventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.TrainingInstancesFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.WordClassificationData;
@@ -174,7 +173,7 @@ final class ObservationWeightTestWriter { // NO_UCD (unused code)
 		/**
 		 * @param cause
 		 */
-		public TestException(final Throwable cause) {
+		private TestException(final Throwable cause) {
 			super(cause);
 		}
 
@@ -350,43 +349,56 @@ final class ObservationWeightTestWriter { // NO_UCD (unused code)
 	}
 
 	public void write(final UtteranceMappingBatchJobTester.BatchJobSummary summary) {
-//		if (writeHeader) {
-//			out.println(TestParameterReporting.createColHeaders(dataToWrite).collect(ROW_CELL_JOINER));
-//			writeHeader = false;
-//		}
-//		final String[] testParamRowCellValues = TestParameterReporting.createTestParamRowCellValues(summary)
-//				.toArray(String[]::new);
-//		final CrossValidator.Result testResults = summary.getTestResults();
-//		for (final Entry<Path, List<CrossValidationTestSummary>> infileSessionResults : testResults.getSessionResults()
-//				.entrySet()) {
-//			final Path inpath = infileSessionResults.getKey();
-//			final List<CrossValidationTestSummary> sessionResultList = infileSessionResults.getValue();
-//			for (final ListIterator<CrossValidationTestSummary> sessionResultIter = sessionResultList
-//					.listIterator(); sessionResultIter.hasNext();) {
-//				final CrossValidationTestSummary cvTestSummary = sessionResultIter.next();
-//				final String[] trainingRowCellVals = TestParameterReporting
-//						.createTrainingDataRowCellValues(cvTestSummary).map(Object::toString).toArray(String[]::new);
-//				// NOTE: This should remain here, after "Iterator.next()", so
-//				// that the printed first iteration is "1" rather than "0"
-//				final int iterNo = sessionResultIter.nextIndex() * sessionTestIterFactor;
-//				int sessionDialogueOrder = 1;
-//				final LocalDateTime sessionStartTime = cvTestSummary.getSessionStartTime();
-//				for (final Entry<EventDialogue, EventDialogueTestResults> diagTestResults : cvTestSummary
-//						.getTestResults().getDialogueTestResults()) {
-//					final Map<DialogueAnalysisSummaryFactory.SummaryDatum, Object> rowData = rowDataFactory.apply(
-//							new DialogueAnalysisSummaryFactory.Input(inpath, "Success", iterNo, sessionDialogueOrder++,
-//									diagTestResults, summary.getTestParams().getTrainingParams(), sessionStartTime));
-//					final Stream<String> diagAnalysisRowCellVals = dataToWrite.stream().map(rowData::get)
-//							.map(Object::toString);
-//					final Stream.Builder<String> rowCellValBuilder = Stream.builder();
-//					Arrays.stream(testParamRowCellValues).forEachOrdered(rowCellValBuilder);
-//					Arrays.stream(trainingRowCellVals).forEachOrdered(rowCellValBuilder);
-//					diagAnalysisRowCellVals.forEachOrdered(rowCellValBuilder);
-//					final String row = rowCellValBuilder.build().collect(ROW_CELL_JOINER);
-//					out.println(row);
-//				}
-//			}
-//		}
+		// if (writeHeader) {
+		// out.println(TestParameterReporting.createColHeaders(dataToWrite).collect(ROW_CELL_JOINER));
+		// writeHeader = false;
+		// }
+		// final String[] testParamRowCellValues =
+		// TestParameterReporting.createTestParamRowCellValues(summary)
+		// .toArray(String[]::new);
+		// final CrossValidator.Result testResults = summary.getTestResults();
+		// for (final Entry<Path, List<CrossValidationTestSummary>>
+		// infileSessionResults : testResults.getSessionResults()
+		// .entrySet()) {
+		// final Path inpath = infileSessionResults.getKey();
+		// final List<CrossValidationTestSummary> sessionResultList =
+		// infileSessionResults.getValue();
+		// for (final ListIterator<CrossValidationTestSummary> sessionResultIter
+		// = sessionResultList
+		// .listIterator(); sessionResultIter.hasNext();) {
+		// final CrossValidationTestSummary cvTestSummary =
+		// sessionResultIter.next();
+		// final String[] trainingRowCellVals = TestParameterReporting
+		// .createTrainingDataRowCellValues(cvTestSummary).map(Object::toString).toArray(String[]::new);
+		// // NOTE: This should remain here, after "Iterator.next()", so
+		// // that the printed first iteration is "1" rather than "0"
+		// final int iterNo = sessionResultIter.nextIndex() *
+		// sessionTestIterFactor;
+		// int sessionDialogueOrder = 1;
+		// final LocalDateTime sessionStartTime =
+		// cvTestSummary.getSessionStartTime();
+		// for (final Entry<EventDialogue, EventDialogueTestResults>
+		// diagTestResults : cvTestSummary
+		// .getTestResults().getDialogueTestResults()) {
+		// final Map<DialogueAnalysisSummaryFactory.SummaryDatum, Object>
+		// rowData = rowDataFactory.apply(
+		// new DialogueAnalysisSummaryFactory.Input(inpath, "Success", iterNo,
+		// sessionDialogueOrder++,
+		// diagTestResults, summary.getTestParams().getTrainingParams(),
+		// sessionStartTime));
+		// final Stream<String> diagAnalysisRowCellVals =
+		// dataToWrite.stream().map(rowData::get)
+		// .map(Object::toString);
+		// final Stream.Builder<String> rowCellValBuilder = Stream.builder();
+		// Arrays.stream(testParamRowCellValues).forEachOrdered(rowCellValBuilder);
+		// Arrays.stream(trainingRowCellVals).forEachOrdered(rowCellValBuilder);
+		// diagAnalysisRowCellVals.forEachOrdered(rowCellValBuilder);
+		// final String row =
+		// rowCellValBuilder.build().collect(ROW_CELL_JOINER);
+		// out.println(row);
+		// }
+		// }
+		// }
 	}
 
 	public void writeError(final UtteranceMappingBatchJobTester.IncompleteResults incompleteResults,
