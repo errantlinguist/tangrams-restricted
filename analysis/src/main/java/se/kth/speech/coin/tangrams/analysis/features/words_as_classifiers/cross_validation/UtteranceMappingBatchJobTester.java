@@ -51,13 +51,6 @@ import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
  */
 final class UtteranceMappingBatchJobTester implements Consumer<UtteranceMappingBatchJobTester.Input> {
 
-	public static final class BatchJobSummary {
-
-		private BatchJobSummary() {
-
-		}
-	}
-
 	public static class Input {
 
 		private final Map<SessionDataManager, Path> allSessionData;
@@ -95,7 +88,160 @@ final class UtteranceMappingBatchJobTester implements Consumer<UtteranceMappingB
 		}
 	}
 
-	private static class TestParameters {
+	final static class BatchJobSummary {
+
+		private final TestParameters testParams;
+
+		private final List<CrossValidator.IterationResult> testResults;
+
+		private final LocalDateTime testTimestamp;
+
+		BatchJobSummary(final LocalDateTime testTimestamp, final TestParameters testParams,
+				final List<CrossValidator.IterationResult> testResults) {
+			this.testTimestamp = testTimestamp;
+			this.testParams = testParams;
+			this.testResults = testResults;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see java.lang.Object#equals(java.lang.Object)
+		 */
+		@Override
+		public boolean equals(final Object obj) {
+			if (this == obj) {
+				return true;
+			}
+			if (obj == null) {
+				return false;
+			}
+			if (!(obj instanceof BatchJobSummary)) {
+				return false;
+			}
+			final BatchJobSummary other = (BatchJobSummary) obj;
+			if (testParams == null) {
+				if (other.testParams != null) {
+					return false;
+				}
+			} else if (!testParams.equals(other.testParams)) {
+				return false;
+			}
+			if (testResults == null) {
+				if (other.testResults != null) {
+					return false;
+				}
+			} else if (!testResults.equals(other.testResults)) {
+				return false;
+			}
+			if (testTimestamp == null) {
+				if (other.testTimestamp != null) {
+					return false;
+				}
+			} else if (!testTimestamp.equals(other.testTimestamp)) {
+				return false;
+			}
+			return true;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see java.lang.Object#hashCode()
+		 */
+		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			result = prime * result + (testParams == null ? 0 : testParams.hashCode());
+			result = prime * result + (testResults == null ? 0 : testResults.hashCode());
+			result = prime * result + (testTimestamp == null ? 0 : testTimestamp.hashCode());
+			return result;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see java.lang.Object#toString()
+		 */
+		@Override
+		public String toString() {
+			final StringBuilder builder = new StringBuilder(128);
+			builder.append("BatchJobSummary [testParams=");
+			builder.append(testParams);
+			builder.append(", testResults=");
+			builder.append(testResults);
+			builder.append(", testTimestamp=");
+			builder.append(testTimestamp);
+			builder.append(']');
+			return builder.toString();
+		}
+
+		/**
+		 * @return the testParams
+		 */
+		TestParameters getTestParams() {
+			return testParams;
+		}
+
+		/**
+		 * @return the testResults
+		 */
+		List<CrossValidator.IterationResult> getTestResults() {
+			return testResults;
+		}
+
+		/**
+		 * @return the testTimestamp
+		 */
+		LocalDateTime getTestTimestamp() {
+			return testTimestamp;
+		}
+	}
+
+	static final class IncompleteResults {
+
+		private final TestParameters testParams;
+
+		private final LocalDateTime testStartTime;
+
+		private IncompleteResults(final TestParameters testParams, final LocalDateTime testStartTime) {
+			this.testParams = testParams;
+			this.testStartTime = testStartTime;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see java.lang.Object#toString()
+		 */
+		@Override
+		public String toString() {
+			final StringBuilder builder = new StringBuilder(512);
+			builder.append("IncompleteResults [testParams=");
+			builder.append(testParams);
+			builder.append(", testStartTime=");
+			builder.append(testStartTime);
+			builder.append("]");
+			return builder.toString();
+		}
+
+		/**
+		 * @return the testParams
+		 */
+		TestParameters getTestParams() {
+			return testParams;
+		}
+
+		/**
+		 * @return the testStartTime
+		 */
+		LocalDateTime getTestStartTime() {
+			return testStartTime;
+		}
+	}
+
+	static final class TestParameters {
 
 		private final Training trainingMethod;
 
@@ -137,20 +283,6 @@ final class UtteranceMappingBatchJobTester implements Consumer<UtteranceMappingB
 			return true;
 		}
 
-		/**
-		 * @return the trainingMethod
-		 */
-		public Training getTrainingMethod() {
-			return trainingMethod;
-		}
-
-		/**
-		 * @return the trainingParams
-		 */
-		public Map<WordClassifierTrainingParameter, Object> getTrainingParams() {
-			return trainingParams;
-		}
-
 		/*
 		 * (non-Javadoc)
 		 *
@@ -180,47 +312,19 @@ final class UtteranceMappingBatchJobTester implements Consumer<UtteranceMappingB
 			builder.append("]");
 			return builder.toString();
 		}
-	}
 
-	static final class IncompleteResults {
-
-		private final TestParameters testParams;
-
-		private final LocalDateTime testStartTime;
-
-		private IncompleteResults(final TestParameters testParams, final LocalDateTime testStartTime) {
-			this.testParams = testParams;
-			this.testStartTime = testStartTime;
+		/**
+		 * @return the trainingMethod
+		 */
+		Training getTrainingMethod() {
+			return trainingMethod;
 		}
 
 		/**
-		 * @return the testParams
+		 * @return the trainingParams
 		 */
-		public TestParameters getTestParams() {
-			return testParams;
-		}
-
-		/**
-		 * @return the testStartTime
-		 */
-		public LocalDateTime getTestStartTime() {
-			return testStartTime;
-		}
-
-		/*
-		 * (non-Javadoc)
-		 *
-		 * @see java.lang.Object#toString()
-		 */
-		@Override
-		public String toString() {
-			final StringBuilder builder = new StringBuilder(512);
-			builder.append("IncompleteResults [testParams=");
-			builder.append(testParams);
-			builder.append(", testStartTime=");
-			builder.append(testStartTime);
-			builder.append("]");
-			return builder.toString();
+		Map<WordClassifierTrainingParameter, Object> getTrainingParams() {
+			return trainingParams;
 		}
 	}
 
@@ -284,17 +388,14 @@ final class UtteranceMappingBatchJobTester implements Consumer<UtteranceMappingB
 		testerConfigurator.accept(crossValidator);
 		final TestParameters testParams = new TestParameters(trainingMethod, trainingParams);
 		LOGGER.info("Testing {}.", testParams);
-		//
 		final LocalDateTime testTimestamp = LocalDateTime.now();
 		try {
 			final List<CrossValidator.IterationResult> testResults = crossValidator.apply(input.getAllSessionData());
-			// final BatchJobSummary batchSummary = new
-			// BatchJobSummary(testTimestamp, testParams, testResults);
-			// batchJobResultHandler.accept(batchSummary);
+			final BatchJobSummary batchSummary = new BatchJobSummary(testTimestamp, testParams, testResults);
+			batchJobResultHandler.accept(batchSummary);
 		} catch (final Throwable thrown) {
 			errorHandler.accept(new IncompleteResults(testParams, testTimestamp), thrown);
 		}
-		// TODO: Finish
 	}
 
 }
