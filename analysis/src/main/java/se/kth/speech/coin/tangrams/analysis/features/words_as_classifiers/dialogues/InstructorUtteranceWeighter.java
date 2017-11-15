@@ -148,16 +148,16 @@ final class InstructorUtteranceWeighter implements Function<EventDialogue, Strea
 		return diag.getFirstEvent().map(event -> {
 			final Predicate<Utterance> instrUttMatcher = UtteranceMatchers.createEventSubmitterUtteranceMatcher(event);
 			final List<Utterance> utts = diag.getUtterances();
-			final List<WeightedUtterance> weightedDiags = new ArrayList<>(utts.size());
+			final List<WeightedUtterance> weightedUtts = new ArrayList<>(utts.size());
 			for (final Utterance utt : utts) {
 				final Function<? super Utterance, WeightedUtterance> weightedUttFactory = instrUttMatcher.test(utt)
 						? weightedInstrUttFactory : weightedOtherUttFactory;
 				final WeightedUtterance weightedUtt = weightedUttFactory.apply(utt);
 				if (weightedUtt != null) {
-					weightedDiags.add(weightedUtt);
+					weightedUtts.add(weightedUtt);
 				}
 			}
-			return weightedDiags.stream();
+			return weightedUtts.stream();
 		}).orElseGet(Stream::empty);
 	}
 
