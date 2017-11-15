@@ -209,7 +209,7 @@ final class UtteranceMappingBatchJobTester implements Consumer<UtteranceMappingB
 
 		/*
 		 * (non-Javadoc)
-		 * 
+		 *
 		 * @see java.lang.Object#toString()
 		 */
 		@Override
