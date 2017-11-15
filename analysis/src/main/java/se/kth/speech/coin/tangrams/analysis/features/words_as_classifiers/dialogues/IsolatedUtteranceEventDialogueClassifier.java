@@ -16,6 +16,7 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues;
 
+import java.math.BigDecimal;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -47,11 +48,11 @@ public final class IsolatedUtteranceEventDialogueClassifier implements EventDial
 
 	public IsolatedUtteranceEventDialogueClassifier(
 			final EventDialogueContextWordClassifierTrainer<?> diagWordClassifierFactory,
-			final ReferentConfidenceMapFactory referentConfidenceMapFactory,
-			final Function<? super EventDialogue, Stream<WeightedUtterance>> diagUttWeighter) {
+			final ReferentConfidenceMapFactory referentConfidenceMapFactory, final BigDecimal instrUttObservationWeight,
+			final BigDecimal otherUttObsevationWeight) {
 		this.diagWordClassifierFactory = diagWordClassifierFactory;
 		this.referentConfidenceMapFactory = referentConfidenceMapFactory;
-		this.diagUttWeighter = diagUttWeighter;
+		diagUttWeighter = new InstructorUtteranceWeighter(instrUttObservationWeight, otherUttObsevationWeight);
 	}
 
 	@Override
@@ -60,11 +61,8 @@ public final class IsolatedUtteranceEventDialogueClassifier implements EventDial
 		final Function<? super String, ? extends Classifier> wordClassifierGetter = diagWordClassifierFactory
 				.apply(diag, ctx);
 		final Stream<WeightedUtterance> weightedUtts = diagUttWeighter.apply(diag);
-		// Filter out zero-weighted utterances because Weka can't handle weights
-		// of zero (or less)
-		final Stream<WeightedUtterance> nonzeroWeightedUtts = weightedUtts.filter(utt -> utt.getWeight() != 0);
 		final int estimatedTokenCount = diag.getUtterances().size() * 4;
-		return createReferentConfidenceMap(nonzeroWeightedUtts, estimatedTokenCount, ctx, wordClassifierGetter);
+		return createReferentConfidenceMap(weightedUtts, estimatedTokenCount, ctx, wordClassifierGetter);
 	}
 
 	/**

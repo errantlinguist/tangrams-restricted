@@ -16,31 +16,126 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues;
 
+import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
+import javax.annotation.Nonnull;
+
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.coin.tangrams.analysis.dialogues.WeightedUtterance;
+import se.kth.speech.math.NumberTypeConversions;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
  * @since 14 Nov 2017
  *
  */
-public final class InstructorUtteranceWeighter implements Function<EventDialogue, Stream<WeightedUtterance>> {
+final class InstructorUtteranceWeighter implements Function<EventDialogue, Stream<WeightedUtterance>> {
 
-	private final double instrUttObservationWeight;
+	private static class ConstantWeightedUtteranceFactory implements Function<Utterance, WeightedUtterance> {
 
-	private final double otherUttObsevationWeight;
+		private final double weight;
 
-	public InstructorUtteranceWeighter(final double instrUttObservationWeight, final double otherUttObsevationWeight) {
-		assert instrUttObservationWeight >= 0;
-		this.instrUttObservationWeight = instrUttObservationWeight;
-		assert otherUttObsevationWeight >= 0;
-		this.otherUttObsevationWeight = otherUttObsevationWeight;
+		private ConstantWeightedUtteranceFactory(final double weight) {
+			this.weight = weight;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see java.util.function.Function#apply(java.lang.Object)
+		 */
+		@Override
+		@Nonnull
+		public WeightedUtterance apply(final Utterance utt) {
+			return new WeightedUtterance(utt, weight);
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see java.lang.Object#equals(java.lang.Object)
+		 */
+		@Override
+		public boolean equals(final Object obj) {
+			if (this == obj) {
+				return true;
+			}
+			if (obj == null) {
+				return false;
+			}
+			if (!(obj instanceof ConstantWeightedUtteranceFactory)) {
+				return false;
+			}
+			final ConstantWeightedUtteranceFactory other = (ConstantWeightedUtteranceFactory) obj;
+			if (Double.doubleToLongBits(weight) != Double.doubleToLongBits(other.weight)) {
+				return false;
+			}
+			return true;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see java.lang.Object#hashCode()
+		 */
+		@Override
+		public int hashCode() {
+			final int prime = 31;
+			int result = 1;
+			long temp;
+			temp = Double.doubleToLongBits(weight);
+			result = prime * result + (int) (temp ^ temp >>> 32);
+			return result;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * 
+		 * @see java.lang.Object#toString()
+		 */
+		@Override
+		public String toString() {
+			final StringBuilder builder = new StringBuilder(64);
+			builder.append("ConstantWeightedUtteranceFactory [weight=");
+			builder.append(weight);
+			builder.append("]");
+			return builder.toString();
+		}
+
+	}
+
+	/**
+	 * Always returns {@code null}.
+	 */
+	private static final Function<Utterance, WeightedUtterance> NULL_WEIGHTED_UTT_FACTORY = utt -> null;
+
+	private static Function<Utterance, WeightedUtterance> createWeightedUtteranceFactory(final BigDecimal weight) {
+		final Function<Utterance, WeightedUtterance> result;
+		final double doubleWeight = NumberTypeConversions.nonInfiniteDoubleValueExact(weight);
+		final int cmp = weight.compareTo(BigDecimal.ZERO);
+		if (cmp > 0) {
+			result = new ConstantWeightedUtteranceFactory(doubleWeight);
+		} else if (cmp == 0) {
+			result = NULL_WEIGHTED_UTT_FACTORY;
+		} else {
+			throw new IllegalArgumentException(String.format("Weight was %s but must be non-negative.", weight));
+		}
+		return result;
+	}
+
+	private final Function<? super Utterance, WeightedUtterance> weightedInstrUttFactory;
+
+	private final Function<? super Utterance, WeightedUtterance> weightedOtherUttFactory;
+
+	InstructorUtteranceWeighter(final BigDecimal instrUttObservationWeight, final BigDecimal otherUttObsevationWeight) {
+		weightedInstrUttFactory = createWeightedUtteranceFactory(instrUttObservationWeight);
+		weightedOtherUttFactory = createWeightedUtteranceFactory(otherUttObsevationWeight);
 	}
 
 	/*
@@ -52,11 +147,17 @@ public final class InstructorUtteranceWeighter implements Function<EventDialogue
 	public Stream<WeightedUtterance> apply(final EventDialogue diag) {
 		return diag.getFirstEvent().map(event -> {
 			final Predicate<Utterance> instrUttMatcher = UtteranceMatchers.createEventSubmitterUtteranceMatcher(event);
-			final List<Utterance> uttsToClassify = diag.getUtterances();
-			return uttsToClassify.stream().map(utt -> {
-				final double weight = instrUttMatcher.test(utt) ? instrUttObservationWeight : otherUttObsevationWeight;
-				return new WeightedUtterance(utt, weight);
-			});
+			final List<Utterance> utts = diag.getUtterances();
+			final List<WeightedUtterance> weightedDiags = new ArrayList<>(utts.size());
+			for (final Utterance utt : utts) {
+				final Function<? super Utterance, WeightedUtterance> weightedUttFactory = instrUttMatcher.test(utt)
+						? weightedInstrUttFactory : weightedOtherUttFactory;
+				final WeightedUtterance weightedUtt = weightedUttFactory.apply(utt);
+				if (weightedUtt != null) {
+					weightedDiags.add(weightedUtt);
+				}
+			}
+			return weightedDiags.stream();
 		}).orElseGet(Stream::empty);
 	}
 
@@ -77,12 +178,18 @@ public final class InstructorUtteranceWeighter implements Function<EventDialogue
 			return false;
 		}
 		final InstructorUtteranceWeighter other = (InstructorUtteranceWeighter) obj;
-		if (Double.doubleToLongBits(instrUttObservationWeight) != Double
-				.doubleToLongBits(other.instrUttObservationWeight)) {
+		if (weightedInstrUttFactory == null) {
+			if (other.weightedInstrUttFactory != null) {
+				return false;
+			}
+		} else if (!weightedInstrUttFactory.equals(other.weightedInstrUttFactory)) {
 			return false;
 		}
-		if (Double.doubleToLongBits(otherUttObsevationWeight) != Double
-				.doubleToLongBits(other.otherUttObsevationWeight)) {
+		if (weightedOtherUttFactory == null) {
+			if (other.weightedOtherUttFactory != null) {
+				return false;
+			}
+		} else if (!weightedOtherUttFactory.equals(other.weightedOtherUttFactory)) {
 			return false;
 		}
 		return true;
@@ -97,11 +204,8 @@ public final class InstructorUtteranceWeighter implements Function<EventDialogue
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		long temp;
-		temp = Double.doubleToLongBits(instrUttObservationWeight);
-		result = prime * result + (int) (temp ^ temp >>> 32);
-		temp = Double.doubleToLongBits(otherUttObsevationWeight);
-		result = prime * result + (int) (temp ^ temp >>> 32);
+		result = prime * result + (weightedInstrUttFactory == null ? 0 : weightedInstrUttFactory.hashCode());
+		result = prime * result + (weightedOtherUttFactory == null ? 0 : weightedOtherUttFactory.hashCode());
 		return result;
 	}
 
@@ -113,10 +217,10 @@ public final class InstructorUtteranceWeighter implements Function<EventDialogue
 	@Override
 	public String toString() {
 		final StringBuilder builder = new StringBuilder(128);
-		builder.append("InstructorUtteranceWeighter [instrUttObservationWeight=");
-		builder.append(instrUttObservationWeight);
-		builder.append(", otherUttObsevationWeight=");
-		builder.append(otherUttObsevationWeight);
+		builder.append("InstructorUtteranceWeighter [weightedInstrUttFactory=");
+		builder.append(weightedInstrUttFactory);
+		builder.append(", weightedOtherUttFactory=");
+		builder.append(weightedOtherUttFactory);
 		builder.append("]");
 		return builder.toString();
 	}

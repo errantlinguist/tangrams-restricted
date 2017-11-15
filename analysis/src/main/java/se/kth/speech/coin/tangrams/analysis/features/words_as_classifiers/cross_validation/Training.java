@@ -48,7 +48,6 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialog
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.DialogicWeightedWordClassFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.EventDialogueClassifier;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.EventDialogueTransformer;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.InstructorUtteranceWeighter;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.IsolatedUtteranceEventDialogueClassifier;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.AbstractInstanceExtractor;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.DialogicInstanceExtractor;
@@ -351,10 +350,8 @@ enum Training {
 					.get(WordClassifierTrainingParameter.INSTRUCTOR_UTTERANCE_OBSERVATION_WEIGHT);
 			final BigDecimal otherUttObsWeight = (BigDecimal) trainingParams
 					.get(WordClassifierTrainingParameter.OTHER_UTTERANCE_OBSERVATION_WEIGHT);
-			final InstructorUtteranceWeighter instrUttWeighter = new InstructorUtteranceWeighter(
-					instrUttObsWeight.doubleValue(), otherUttObsWeight.doubleValue());
 			return new IsolatedUtteranceEventDialogueClassifier(diagWordClassifierFactory,
-					classificationContext.getReferentConfidenceMapFactory(), instrUttWeighter);
+					classificationContext.getReferentConfidenceMapFactory(), instrUttObsWeight, otherUttObsWeight);
 		}
 
 	}
@@ -400,10 +397,8 @@ enum Training {
 					.get(WordClassifierTrainingParameter.INSTRUCTOR_UTTERANCE_OBSERVATION_WEIGHT);
 			final BigDecimal otherUttObsWeight = (BigDecimal) trainingParams
 					.get(WordClassifierTrainingParameter.OTHER_UTTERANCE_OBSERVATION_WEIGHT);
-			final InstructorUtteranceWeighter instrUttWeighter = new InstructorUtteranceWeighter(
-					instrUttObsWeight.doubleValue(), otherUttObsWeight.doubleValue());
 			return new IsolatedUtteranceEventDialogueClassifier(iterativeTrainer,
-					classificationContext.getReferentConfidenceMapFactory(), instrUttWeighter);
+					classificationContext.getReferentConfidenceMapFactory(), instrUttObsWeight, otherUttObsWeight);
 		}
 
 	}
