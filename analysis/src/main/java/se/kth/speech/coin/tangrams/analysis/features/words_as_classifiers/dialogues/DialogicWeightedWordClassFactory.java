@@ -27,6 +27,7 @@ import it.unimi.dsi.fastutil.objects.Object2DoubleOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
+import se.kth.speech.math.NumberTypeConversions;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -156,7 +157,7 @@ public final class DialogicWeightedWordClassFactory
 
 	private static InstructorUtteranceObservationPutter createInstructorObservationPutter(final BigDecimal weight) {
 		final InstructorUtteranceObservationPutter result;
-		final double doubleWeight = doubleValueExact(weight);
+		final double doubleWeight = NumberTypeConversions.nonInfiniteDoubleValueExact(weight);
 		final int cmp = weight.compareTo(BigDecimal.ZERO);
 		if (cmp > 0) {
 			result = new LinearWeightCombiningInstructorUtteranceObservationPutter(doubleWeight);
@@ -165,14 +166,14 @@ public final class DialogicWeightedWordClassFactory
 				// Do nothing because Weka cannot handle weights of "0"
 			};
 		} else {
-			throw new IllegalArgumentException(String.format("Weight was %d but must be non-negative.", weight));
+			throw new IllegalArgumentException(String.format("Weight was %s but must be non-negative.", weight));
 		}
 		return result;
 	}
 
 	private static OtherUtteranceObservationPutter createNonInstructorObservationPutter(final BigDecimal weight) {
 		final OtherUtteranceObservationPutter result;
-		final double doubleWeight = doubleValueExact(weight);
+		final double doubleWeight = NumberTypeConversions.nonInfiniteDoubleValueExact(weight);
 		final int cmp = weight.compareTo(BigDecimal.ZERO);
 		if (cmp > 0) {
 			result = new LinearWeightCombiningOtherUtteranceObservationPutter(doubleWeight);
@@ -182,18 +183,9 @@ public final class DialogicWeightedWordClassFactory
 				// Do nothing because Weka cannot handle weights of "0"
 			};
 		} else {
-			throw new IllegalArgumentException(String.format("Weight was %d but must be non-negative.", weight));
+			throw new IllegalArgumentException(String.format("Weight was %s but must be non-negative.", weight));
 		}
 		return result;
-	}
-
-	private static double doubleValueExact(final BigDecimal value) {
-		final double result = value.doubleValue();
-		if (Double.isInfinite(result)) {
-			throw new IllegalArgumentException("BigDecimal was converted to floating-point infinity: " + value);
-		} else {
-			return result;
-		}
 	}
 
 	private static Stream<String> getWordClasses(final List<Utterance> utts) {
