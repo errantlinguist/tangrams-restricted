@@ -319,9 +319,6 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 						allSessionData.size() * 10);
 
 				final Set<Cleaning> cleaningMethodSet = Parameter.parseCleaningMethods(cl);
-				if (cleaningMethodSet.isEmpty()) {
-					throw new IllegalArgumentException("No cleaning method set(s) specified.");
-				}
 				LOGGER.info("Cleaning method set: {}", cleaningMethodSet);
 				final TokenFiltering tokenFilteringMethod = Parameter.parseTokenFilteringMethod(cl);
 				LOGGER.info("Token filtering method: {}", tokenFilteringMethod);
