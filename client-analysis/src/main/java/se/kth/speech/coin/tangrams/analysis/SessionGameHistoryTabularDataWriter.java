@@ -489,9 +489,9 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 				}
 
 				final SessionGameManager.Factory sessionGameMgrFactory = new SessionGameManager.Factory(
-						new LoggedEventReader(infiles.size(), infiles.size() * 0), tok -> true, 2000);
+						new LoggedEventReader(infiles.size(), infiles.size() * 20), 2000);
 				for (final Path infile : infiles) {
-					writer.accept(infile, eventReader);
+					writer.accept(infile, sessionGameMgrFactory);
 				}
 			}
 		}
@@ -619,9 +619,10 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 				});
 	}
 
-	private void accept(final Path infile, final LoggedEventReader eventReader) throws IOException, JAXBException {
+	private void accept(final Path infile, final SessionGameManager.Factory sessionGameMgrFactory)
+			throws IOException, JAXBException {
 		final SessionDataManager infileSessionData = SessionDataManager.create(infile);
-		final SessionGameManager sessionDiagMgr = new SessionGameManager(infileSessionData, eventReader);
+		final SessionGameManager sessionDiagMgr = sessionGameMgrFactory.apply(infileSessionData);
 		final SessionGame canonicalGame = sessionDiagMgr.getCanonicalGame();
 
 		final Path infileParentDir = infile.getParent();

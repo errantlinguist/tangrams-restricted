@@ -28,7 +28,6 @@ import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 
 import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
-import se.kth.speech.coin.tangrams.iristk.io.LoggedEventReader;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -50,13 +49,13 @@ public final class SessionGameManagerCacheSupplier
 
 				@Override
 				public SessionGameManager load(final SessionDataManager key) throws IOException, JAXBException {
-					final LoggedEventReader eventReader = getEventReader();
-					return new SessionGameManager(key, eventReader);
+					final SessionGameManager.Factory sessionGameMgrFactory = fetchSessionGameMgrFactory();
+					return sessionGameMgrFactory.apply(key);
 				}
 
 			});
 
-	private volatile SoftReference<LoggedEventReader> readerRef = new SoftReference<>(null);
+	private volatile SoftReference<SessionGameManager.Factory> sessionGameMgrFactoryRef = new SoftReference<>(null);
 
 	/*
 	 * (non-Javadoc)
@@ -68,14 +67,14 @@ public final class SessionGameManagerCacheSupplier
 		return instances;
 	}
 
-	private LoggedEventReader getEventReader() {
-		LoggedEventReader result = readerRef.get();
+	private SessionGameManager.Factory fetchSessionGameMgrFactory() {
+		SessionGameManager.Factory result = sessionGameMgrFactoryRef.get();
 		if (result == null) {
 			synchronized (this) {
-				result = readerRef.get();
+				result = sessionGameMgrFactoryRef.get();
 				if (result == null) {
-					result = new LoggedEventReader(ESTIMATED_UNIQUE_SESSION_COUNT, ESTIMATED_UNIQUE_SESSION_COUNT * 10);
-					readerRef = new SoftReference<>(result);
+					result = new SessionGameManager.Factory();
+					sessionGameMgrFactoryRef = new SoftReference<>(result);
 				}
 			}
 		}

@@ -143,6 +143,11 @@ public final class SegmentUtteranceFactory {
 	}
 
 	public SegmentUtteranceFactory(final Function<? super Segment, String> segmentSpeakerIdFactory,
+			final Function<? super String[], List<String>> tokenListSingletonFactory) {
+		this(segmentSpeakerIdFactory, DEFAULT_TOKEN_FILTER, tokenListSingletonFactory);
+	}
+
+	public SegmentUtteranceFactory(final Function<? super Segment, String> segmentSpeakerIdFactory,
 			final Predicate<? super String> tokenFilter) {
 		this(segmentSpeakerIdFactory, tokenFilter, new TokenListSingletonFactory(EXPECTED_UNIQUE_TOKEN_SEQUENCES));
 	}
@@ -157,6 +162,11 @@ public final class SegmentUtteranceFactory {
 
 	public SegmentUtteranceFactory(final Predicate<? super String> tokenFilter) {
 		this(DEFAULT_SEG_SPEAKER_ID_FACTORY, tokenFilter);
+	}
+
+	public SegmentUtteranceFactory(final Predicate<? super String> tokenFilter,
+			final Function<? super String[], List<String>> tokenListSingletonFactory) {
+		this(DEFAULT_SEG_SPEAKER_ID_FACTORY, tokenFilter, tokenListSingletonFactory);
 	}
 
 	public List<Utterance> create(final Segment segment) {

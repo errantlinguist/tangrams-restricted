@@ -50,16 +50,32 @@ public final class SessionGameManager {
 
 	public static final class Factory {
 
+		private static final int ESTIMATED_UNIQUE_SESSION_COUNT = 50;
+
+		private static final int ESTIMATED_UNIQUE_TOKEN_SEQ_COUNT = 6000;
+
 		private final LoggedEventReader eventReader;
 
 		private final Function<Function<Segment, String>, SegmentUtteranceFactory> segUttFactoryFactory;
 
-		private final TokenListSingletonFactory tokenListFactory;
+		public Factory() {
+			this(new LoggedEventReader(ESTIMATED_UNIQUE_SESSION_COUNT, ESTIMATED_UNIQUE_SESSION_COUNT * 10),
+					ESTIMATED_UNIQUE_TOKEN_SEQ_COUNT);
+		}
+
+		public Factory(final LoggedEventReader eventReader, final int expectedUniqueTokenSeqCount) {
+			this.eventReader = eventReader;
+			final TokenListSingletonFactory tokenListFactory = new TokenListSingletonFactory(
+					expectedUniqueTokenSeqCount);
+			segUttFactoryFactory = uttSpeakerIdFactory -> new SegmentUtteranceFactory(uttSpeakerIdFactory,
+					tokenListFactory);
+		}
 
 		public Factory(final LoggedEventReader eventReader, final Predicate<? super String> uttTokenFilter,
 				final int expectedUniqueTokenSeqCount) {
 			this.eventReader = eventReader;
-			tokenListFactory = new TokenListSingletonFactory(expectedUniqueTokenSeqCount);
+			final TokenListSingletonFactory tokenListFactory = new TokenListSingletonFactory(
+					expectedUniqueTokenSeqCount);
 			segUttFactoryFactory = uttSpeakerIdFactory -> new SegmentUtteranceFactory(uttSpeakerIdFactory,
 					uttTokenFilter, tokenListFactory);
 		}
@@ -87,6 +103,10 @@ public final class SessionGameManager {
 			final Annotation uttAnnots = HatIO.readAnnotation(hatInfilePath);
 			final List<Segment> segs = uttAnnots.getSegments().getSegment();
 			return Arrays.asList(segUttFactory.create(segs.stream()).flatMap(List::stream).toArray(Utterance[]::new));
+		}
+
+		LoggedEventReader getEventReader() {
+			return eventReader;
 		}
 	}
 

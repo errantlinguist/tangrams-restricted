@@ -71,7 +71,6 @@ import com.google.common.cache.LoadingCache;
 import se.kth.speech.TimestampArithmetic;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
-import se.kth.speech.coin.tangrams.iristk.io.LoggedEventReader;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -79,7 +78,7 @@ import se.kth.speech.coin.tangrams.iristk.io.LoggedEventReader;
  *
  */
 final class SessionStatisticsWriter // NO_UCD (unused code)
-		implements Consumer<Collection<? extends Entry<Path, ? extends Map<String, GameSummary>>>> { 
+		implements Consumer<Collection<? extends Entry<Path, ? extends Map<String, GameSummary>>>> {
 
 	private enum Parameter implements Supplier<Option> {
 		HELP("?") {
@@ -91,8 +90,8 @@ final class SessionStatisticsWriter // NO_UCD (unused code)
 		HOURS(HOURS_OPT_NAME) {
 			@Override
 			public Option get() {
-				return Option.builder(optName).longOpt("hours")
-						.desc("Prints statistics in \"HH:mm:ss.SSS\" notation rather than in seconds as decimal fractions.")
+				return Option.builder(optName).longOpt("hours").desc(
+						"Prints statistics in \"HH:mm:ss.SSS\" notation rather than in seconds as decimal fractions.")
 						.build();
 			};
 		},
@@ -106,8 +105,8 @@ final class SessionStatisticsWriter // NO_UCD (unused code)
 		MINUTES(MINUTES_OPT_NAME) {
 			@Override
 			public Option get() {
-				return Option.builder(optName).longOpt("mintes")
-						.desc("Prints statistics in \"mm:ss.SSS\" notation rather than in seconds as decimal fractions.")
+				return Option.builder(optName).longOpt("mintes").desc(
+						"Prints statistics in \"mm:ss.SSS\" notation rather than in seconds as decimal fractions.")
 						.build();
 			};
 		};
@@ -169,8 +168,8 @@ final class SessionStatisticsWriter // NO_UCD (unused code)
 	}
 
 	private static NavigableMap<String, GameSummary> createSessionGameSummaries(final SessionDataManager sessionData,
-			final LoggedEventReader eventReader) throws JAXBException, IOException {
-		final SessionGameManager sessionDiagMgr = new SessionGameManager(sessionData, eventReader);
+			final SessionGameManager.Factory sessionGameMgrFactory) throws JAXBException, IOException {
+		final SessionGameManager sessionDiagMgr = sessionGameMgrFactory.apply(sessionData);
 		final SessionGame canonicalGame = sessionDiagMgr.getCanonicalGame();
 		final GameSummary summary = new GameSummary(canonicalGame.getHistory(), canonicalGame.getEventDialogues());
 		final NavigableMap<String, GameSummary> result = new TreeMap<>();
@@ -199,15 +198,16 @@ final class SessionStatisticsWriter // NO_UCD (unused code)
 						String.format("Usage: %s INPATHS...", SessionStatisticsWriter.class.getSimpleName()));
 			} else {
 				final NavigableMap<Path, NavigableMap<String, GameSummary>> sessionSummaries = new TreeMap<>();
-				final LoggedEventReader eventReader = new LoggedEventReader(inpaths.length, inpaths.length * 10);
+				final SessionGameManager.Factory sessionGameMgrFactory = new SessionGameManager.Factory();
 				for (final Path inpath : inpaths) {
 					LOGGER.info("Will read batch job data from \"{}\".", inpath);
-					putSessionSummaries(inpath, sessionSummaries, eventReader);
+					putSessionSummaries(inpath, sessionSummaries, sessionGameMgrFactory);
 				}
 
 				final Function<Duration, String> durationFormatter = parseDurationFormatter();
 				final Collector<CharSequence, ?, String> rowCellJoiner = cl.hasOption(Parameter.LATEX.optName)
-						? LATEX_ROW_CELL_JOINER : TAB_ROW_CELL_JOINER;
+						? LATEX_ROW_CELL_JOINER
+						: TAB_ROW_CELL_JOINER;
 				try (PrintWriter outputWriter = new PrintWriter(new OutputStreamWriter(System.out, OUTPUT_ENCODING))) {
 					final SessionStatisticsWriter writer = new SessionStatisticsWriter(outputWriter, durationFormatter,
 							rowCellJoiner, sessionSummaries.size());
@@ -242,7 +242,7 @@ final class SessionStatisticsWriter // NO_UCD (unused code)
 
 	private static void putSessionSummaries(final Path inpath,
 			final Map<? super Path, ? super NavigableMap<String, GameSummary>> sessionSummaries,
-			final LoggedEventReader eventReader) throws JAXBException, IOException {
+			final SessionGameManager.Factory sessionGameMgrFactory) throws JAXBException, IOException {
 		final Iterable<Path> infilePaths = Files.walk(inpath, FileVisitOption.FOLLOW_LINKS).filter(Files::isRegularFile)
 				.filter(filePath -> filePath.getFileName().toString().endsWith(".properties"))::iterator;
 		for (final Path infilePath : infilePaths) {
@@ -253,7 +253,7 @@ final class SessionStatisticsWriter // NO_UCD (unused code)
 			}
 			final SessionDataManager sessionData = SessionDataManager.create(infilePath);
 			final NavigableMap<String, GameSummary> sessionSummary = createSessionGameSummaries(sessionData,
-					eventReader);
+					sessionGameMgrFactory);
 			sessionSummaries.put(infilePath, sessionSummary);
 		}
 	}

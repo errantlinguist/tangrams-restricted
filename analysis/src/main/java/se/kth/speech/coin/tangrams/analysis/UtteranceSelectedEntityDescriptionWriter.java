@@ -61,7 +61,6 @@ import se.kth.speech.coin.tangrams.analysis.dialogues.UtteranceDialogueRepresent
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionContextFactory;
 import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
-import se.kth.speech.coin.tangrams.iristk.io.LoggedEventReader;
 import se.kth.speech.coin.tangrams.view.UserPrompts;
 import se.kth.speech.io.FileNames;
 import se.kth.speech.io.RuntimeJAXBException;
@@ -272,6 +271,7 @@ final class UtteranceSelectedEntityDescriptionWriter { // NO_UCD (use default)
 				final Path outpath = ((File) cl.getParsedOptionValue(Parameter.OUTPATH.optName)).toPath();
 				LOGGER.info("Will write data to \"{}\".", outpath);
 				final boolean strict = cl.hasOption(Parameter.STRICT.optName);
+				final SessionGameManager.Factory sessionGameMgrFactory = new SessionGameManager.Factory();
 				for (final Path inpath : inpaths) {
 					LOGGER.info("Will read batch job data from \"{}\".", inpath);
 					final String outfileNamePrefix = Parameter.parseOutfilePrefix(cl, inpath);
@@ -279,7 +279,7 @@ final class UtteranceSelectedEntityDescriptionWriter { // NO_UCD (use default)
 							outfileNamePrefix);
 					final UtteranceSelectedEntityDescriptionWriter writer = createWriter(outpath, outfileNamePrefix,
 							strict);
-					writer.accept(inpath);
+					writer.accept(inpath, sessionGameMgrFactory);
 				}
 			}
 
@@ -308,10 +308,11 @@ final class UtteranceSelectedEntityDescriptionWriter { // NO_UCD (use default)
 				UserPrompts.promptNonBlankString("Enter output filename prefix.", DEFAULT_OUTFILE_PREFIX)
 						.ifPresent(outfileNamePrefix -> {
 							LOGGER.info("Will prefix each output file with \"{}\".", outfileNamePrefix);
+							final SessionGameManager.Factory sessionGameMgrFactory = new SessionGameManager.Factory();
 							final UtteranceSelectedEntityDescriptionWriter writer = createWriter(outpath,
 									outfileNamePrefix, false);
 							try {
-								writer.accept(inpath);
+								writer.accept(inpath, sessionGameMgrFactory);
 							} catch (final JAXBException e) {
 								throw new RuntimeJAXBException(e);
 							} catch (final IOException e) {
@@ -354,21 +355,21 @@ final class UtteranceSelectedEntityDescriptionWriter { // NO_UCD (use default)
 		this.strict = strict;
 	}
 
-	public void accept(final Path inpath) throws JAXBException, IOException {
+	public void accept(final Path inpath, final SessionGameManager.Factory sessionGameMgrFactory)
+			throws JAXBException, IOException {
 		final Path[] infilePaths = Files.walk(inpath, FileVisitOption.FOLLOW_LINKS).filter(Files::isRegularFile)
 				.filter(filePath -> filePath.getFileName().toString().endsWith(".properties")).toArray(Path[]::new);
-		final LoggedEventReader eventReader = new LoggedEventReader(infilePaths.length, infilePaths.length * 10);
 		for (final Path infilePath : infilePaths) {
 			LOGGER.info("Reading batch job properties from \"{}\".", infilePath);
 			final String outfileInfix = createOutfileInfix(infilePath);
 			final SessionDataManager sessionData = SessionDataManager.create(infilePath);
-			accept(sessionData, outfileNamePrefix + outfileInfix, eventReader);
+			accept(sessionData, outfileNamePrefix + outfileInfix, sessionGameMgrFactory);
 		}
 	}
 
 	private void accept(final SessionDataManager sessionData, final String outfileNamePrefix,
-			final LoggedEventReader eventReader) throws JAXBException, IOException {
-		final SessionGameManager sessionEvtDiagMgr = new SessionGameManager(sessionData, eventReader);
+			final SessionGameManager.Factory sessionGameMgrFactory) throws JAXBException, IOException {
+		final SessionGameManager sessionEvtDiagMgr = sessionGameMgrFactory.apply(sessionData);
 		final EntityFeatureExtractionContextFactory extractionContextFactory = new EntityFeatureExtractionContextFactory();
 		final EntityFeatureVectorDescriptionFactory entityFeatureVectorDescFactory = new EntityFeatureVectorDescriptionFactory(
 				extractor, featuresToDescribe, extractionContextFactory, NULL_VALUE_REPR);
@@ -377,7 +378,7 @@ final class UtteranceSelectedEntityDescriptionWriter { // NO_UCD (use default)
 
 		final Path extantOutdir = ensureExtantOutdir();
 		for (final Entry<String, SessionGame> playerPerspectiveGame : sessionEvtDiagMgr
-				.createPlayerPerspectiveGameMap(eventReader).entrySet()) {
+				.createPlayerPerspectiveGameMap(sessionGameMgrFactory.getEventReader()).entrySet()) {
 			final SessionGame sessionGame = playerPerspectiveGame.getValue();
 			final String playerId = playerPerspectiveGame.getKey();
 			final String gameId = sessionGame.getGameId();
