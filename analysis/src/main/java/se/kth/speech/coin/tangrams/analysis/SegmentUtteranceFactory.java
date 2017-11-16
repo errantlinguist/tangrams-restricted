@@ -38,8 +38,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.github.errantlinguist.ClassProperties;
-import com.google.common.collect.Sets;
 
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
+import it.unimi.dsi.fastutil.objects.ObjectSet;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
 import se.kth.speech.hat.xsd.Transcription;
@@ -86,20 +87,14 @@ public final class SegmentUtteranceFactory {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SegmentUtteranceFactory.class);
 
-	private static final Set<String> META_LANGUAGE_TOKENS;
+	private static final ObjectSet<String> META_LANGUAGE_TOKENS;
 
 	private static final Comparator<Segment> TEMPORAL_SEGMENT_COMPARATOR = Comparator.comparingDouble(Segment::getStart)
 			.thenComparingDouble(Segment::getEnd).thenComparing(Segment::getId);
 
 	static {
 		try {
-			final Properties props = ClassProperties.load(SegmentUtteranceFactory.class);
-			final String metaLangTokenStr = props.getProperty("metaLanguageTokens");
-			final String[] metaLangTokenArr = metaLangTokenStr.split(",");
-			META_LANGUAGE_TOKENS = Sets.newHashSetWithExpectedSize(metaLangTokenArr.length);
-			for (final String token : metaLangTokenArr) {
-				META_LANGUAGE_TOKENS.add(token);
-			}
+			META_LANGUAGE_TOKENS = readMetaLanguageTokenSet();
 		} catch (final IOException e) {
 			throw new UncheckedIOException(e);
 		}
@@ -131,6 +126,18 @@ public final class SegmentUtteranceFactory {
 
 	private static int estimateTokenCount(final List<Object> children) {
 		return Math.max(children.size(), 16);
+	}
+
+	private static ObjectSet<String> readMetaLanguageTokenSet() throws IOException {
+		final Properties props = ClassProperties.load(SegmentUtteranceFactory.class);
+		final String metaLangTokenStr = props.getProperty("metaLanguageTokens");
+		final String[] metaLangTokenArr = metaLangTokenStr.split(",");
+		final ObjectOpenHashSet<String> result = new ObjectOpenHashSet<>(metaLangTokenArr.length, 1.0f);
+		for (final String token : metaLangTokenArr) {
+			result.add(token);
+		}
+		result.trim();
+		return result;
 	}
 
 	static List<T> createSegmentTokenList(final Segment segment) {
