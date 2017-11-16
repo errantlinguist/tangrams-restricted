@@ -18,10 +18,12 @@ package se.kth.speech.coin.tangrams.analysis;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.Function;
 
 import javax.xml.bind.JAXBException;
 
@@ -31,8 +33,12 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.Maps;
 
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
+import se.kth.speech.coin.tangrams.analysis.io.PlayerDataManager;
 import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
+import se.kth.speech.coin.tangrams.iristk.io.HatIO;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEventReader;
+import se.kth.speech.hat.xsd.Annotation;
+import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -56,6 +62,22 @@ public final class SessionGameManager {
 		return result;
 	}
 
+	private static List<Utterance> createUtteranceList(final SessionDataManager sessionData)
+			throws JAXBException, IOException {
+		final PlayerDataManager playerData = sessionData.getPlayerData();
+		final Map<String, String> sourcePlayerIds = playerData.getPlayerSourceIds().inverse();
+		final Function<Segment, String> uttSpeakerIdFactory = seg -> {
+			final String sourceId = seg.getSource();
+			return sourcePlayerIds.get(sourceId);
+		};
+		final SegmentUtteranceFactory segUttFactory = new SegmentUtteranceFactory(uttSpeakerIdFactory);
+		final Path hatInfilePath = sessionData.getHATFilePath();
+		LOGGER.debug("Reading HAT annotations at \"{}\".", hatInfilePath);
+		final Annotation uttAnnots = HatIO.readAnnotation(hatInfilePath);
+		final List<Segment> segs = uttAnnots.getSegments().getSegment();
+		return Arrays.asList(segUttFactory.create(segs.stream()).flatMap(List::stream).toArray(Utterance[]::new));
+	}
+
 	private final SessionGame canonicalGame;
 
 	private final Map<String, Path> playerEventLogs;
@@ -64,7 +86,7 @@ public final class SessionGameManager {
 
 	public SessionGameManager(final SessionDataManager sessionData, final LoggedEventReader eventReader)
 			throws IOException, JAXBException {
-		utts = SessionUtterances.createUtteranceList(sessionData);
+		utts = createUtteranceList(sessionData);
 		LOGGER.debug("Creating dialogues for {} annotated utterance(s).", utts.size());
 
 		canonicalGame = SessionGame.create(sessionData.getCanonicalEventLogPath(), utts, eventReader);
@@ -79,7 +101,7 @@ public final class SessionGameManager {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#equals(java.lang.Object)
 	 */
 	@Override
@@ -124,7 +146,7 @@ public final class SessionGameManager {
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#hashCode()
 	 */
 	@Override
