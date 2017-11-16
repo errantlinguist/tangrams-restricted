@@ -45,7 +45,7 @@ import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
 import se.kth.speech.hat.xsd.Transcription;
 import se.kth.speech.hat.xsd.Transcription.T;
 
-final class SegmentUtteranceFactory {
+public final class SegmentUtteranceFactory {
 
 	private static class TokenListSingletonFactory implements Function<String[], List<String>> {
 
@@ -161,7 +161,20 @@ final class SegmentUtteranceFactory {
 
 	private final Function<? super String[], List<String>> tokenListSingletonFactory;
 
-	private SegmentUtteranceFactory(final Function<? super Segment, String> segmentSpeakerIdFactory,
+	public SegmentUtteranceFactory() {
+		this(DEFAULT_SEG_SPEAKER_ID_FACTORY);
+	}
+
+	public SegmentUtteranceFactory(final Function<? super Segment, String> segmentSpeakerIdFactory) {
+		this(segmentSpeakerIdFactory, DEFAULT_TOKEN_FILTER);
+	}
+
+	public SegmentUtteranceFactory(final Function<? super Segment, String> segmentSpeakerIdFactory,
+			final Predicate<? super String> tokenFilter) {
+		this(segmentSpeakerIdFactory, tokenFilter, new TokenListSingletonFactory(EXPECTED_UNIQUE_TOKEN_SEQUENCES));
+	}
+
+	public SegmentUtteranceFactory(final Function<? super Segment, String> segmentSpeakerIdFactory,
 			final Predicate<? super String> tokenFilter,
 			final Function<? super String[], List<String>> tokenListSingletonFactory) {
 		this.segmentSpeakerIdFactory = segmentSpeakerIdFactory;
@@ -169,24 +182,11 @@ final class SegmentUtteranceFactory {
 		this.tokenListSingletonFactory = tokenListSingletonFactory;
 	}
 
-	SegmentUtteranceFactory() {
-		this(DEFAULT_SEG_SPEAKER_ID_FACTORY);
-	}
-
-	SegmentUtteranceFactory(final Function<? super Segment, String> segmentSpeakerIdFactory) {
-		this(segmentSpeakerIdFactory, DEFAULT_TOKEN_FILTER);
-	}
-
-	SegmentUtteranceFactory(final Function<? super Segment, String> segmentSpeakerIdFactory,
-			final Predicate<? super String> tokenFilter) {
-		this(segmentSpeakerIdFactory, tokenFilter, new TokenListSingletonFactory(EXPECTED_UNIQUE_TOKEN_SEQUENCES));
-	}
-
-	SegmentUtteranceFactory(final Predicate<? super String> tokenFilter) {
+	public SegmentUtteranceFactory(final Predicate<? super String> tokenFilter) {
 		this(DEFAULT_SEG_SPEAKER_ID_FACTORY, tokenFilter);
 	}
 
-	List<Utterance> create(final Segment segment) {
+	public List<Utterance> create(final Segment segment) {
 		final List<Utterance> result = new ArrayList<>(1);
 		final Transcription transcription = segment.getTranscription();
 		if (transcription == null) {
@@ -229,7 +229,7 @@ final class SegmentUtteranceFactory {
 		return result;
 	}
 
-	Stream<List<Utterance>> create(final Stream<Segment> segments) {
+	public Stream<List<Utterance>> create(final Stream<Segment> segments) {
 		return segments.sorted(TEMPORAL_SEGMENT_COMPARATOR).map(this::create);
 	}
 
