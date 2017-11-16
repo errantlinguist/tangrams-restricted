@@ -18,17 +18,12 @@ package se.kth.speech.coin.tangrams.analysis;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.lang.ref.Reference;
-import java.lang.ref.SoftReference;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Properties;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -47,35 +42,6 @@ import se.kth.speech.hat.xsd.Transcription;
 import se.kth.speech.hat.xsd.Transcription.T;
 
 public final class SegmentUtteranceFactory {
-
-	private static class TokenListSingletonFactory implements Function<String[], List<String>> {
-
-		private final ConcurrentMap<List<String>, Reference<List<String>>> singletonInstances;
-
-		private TokenListSingletonFactory(final int expectedUniqueTokenSequenceCount) {
-			singletonInstances = new ConcurrentHashMap<>(expectedUniqueTokenSequenceCount);
-		}
-
-		@Override
-		public List<String> apply(final String[] tokens) {
-			return apply(Arrays.asList(tokens));
-		}
-
-		private List<String> apply(final List<String> tokens) {
-			return singletonInstances.compute(tokens, (key, oldValue) -> {
-				final Reference<List<String>> newValue;
-				if (oldValue == null || oldValue.get() == null) {
-					final List<String> internedTokens = Arrays
-							.asList(key.stream().map(String::intern).toArray(String[]::new));
-					newValue = new SoftReference<>(Collections.unmodifiableList(internedTokens));
-				} else {
-					newValue = oldValue;
-				}
-				return newValue;
-			}).get();
-		}
-
-	}
 
 	private static final Function<Segment, String> DEFAULT_SEG_SPEAKER_ID_FACTORY = seg -> seg.getSource().intern();
 

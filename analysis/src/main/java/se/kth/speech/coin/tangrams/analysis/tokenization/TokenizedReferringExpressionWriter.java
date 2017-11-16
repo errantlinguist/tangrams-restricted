@@ -36,6 +36,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collector;
@@ -62,6 +63,7 @@ import edu.stanford.nlp.trees.Tree;
 import edu.stanford.nlp.util.CoreMap;
 import se.kth.speech.CommonPaths;
 import se.kth.speech.MapCollectors;
+import se.kth.speech.coin.tangrams.analysis.SegmentUtteranceFactory;
 import se.kth.speech.coin.tangrams.analysis.SessionGame;
 import se.kth.speech.coin.tangrams.analysis.SessionGameManager;
 import se.kth.speech.coin.tangrams.analysis.UtteranceSpeakerParticipantIdMapFactory;
@@ -71,7 +73,10 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialog
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.EventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
 import se.kth.speech.coin.tangrams.game.PlayerRole;
+import se.kth.speech.coin.tangrams.iristk.io.HatIO;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEventReader;
+import se.kth.speech.hat.xsd.Annotation;
+import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
 import se.kth.speech.nlp.stanford.AnnotationCacheFactory;
 
 /**
@@ -182,12 +187,16 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 
 		private final EventDialogueTransformer diagTransformer;
 
+		private final Map<String, Utterance> origUttsBySegmentId;
+
 		private final Map<? super String, String> playerParticipantIds;
 
 		private TabularDataFactory(final EventDialogueTransformer diagTransformer,
-				final Map<? super String, String> playerParticipantIds) {
+				final Map<? super String, String> playerParticipantIds,
+				final Map<String, Utterance> origUttsBySegmentId) {
 			this.diagTransformer = diagTransformer;
 			this.playerParticipantIds = playerParticipantIds;
+			this.origUttsBySegmentId = origUttsBySegmentId;
 		}
 
 		private void addUtteranceDataRows(final int roundId, final EventDialogue evtDiag,
@@ -206,11 +215,15 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 				final String speakerId = origUtt.getSpeakerId();
 				final String participantId = playerParticipantIds.get(speakerId);
 				rowCells.add(participantId);
+
 				final float startTime = origUtt.getStartTime();
 				rowCells.add(startTime);
 				final float endTime = origUtt.getEndTime();
 				rowCells.add(endTime);
-				rowCells.add(origUtt.getTokens().stream().collect(TOKEN_JOINER));
+
+				final Utterance rawUtt = origUttsBySegmentId.get(segId);
+				final String rawUttRepr = rawUtt.getTokens().stream().collect(TOKEN_JOINER);
+				rowCells.add(rawUttRepr);
 
 				final Utterance transformedUtt = transformedUttsById.get(segId);
 				final String refLangStr;
@@ -223,7 +236,8 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 					refLangStr = transformedUtt.getTokens().stream().collect(TOKEN_JOINER);
 				}
 				rowCells.add(refLangStr);
-
+				LOGGER.debug("Raw utt: \"{}\"; Orig utt: \"{}\"; Transformed utt: \"{}\"", rawUttRepr,
+						origUtt.getTokens().stream().collect(TOKEN_JOINER), refLangStr);
 				uttRows.add(rowCells.stream().map(Object::toString).collect(ROW_CELL_JOINER));
 			}
 		}
@@ -279,6 +293,13 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 
 	private static final Collector<CharSequence, ?, String> ROW_CELL_JOINER;
 
+	/**
+	 * A factory for creating unfiltered {@link Utterance} instances,
+	 * i.e.&nbsp;still containing possible metalanguage tokens.
+	 */
+	private static final SegmentUtteranceFactory SEG_UTT_FACTORY = new SegmentUtteranceFactory(
+			(Predicate<String>) token -> true);
+
 	private static final Collector<CharSequence, ?, String> TOKEN_JOINER = Collectors.joining(" ");
 
 	static {
@@ -315,8 +336,6 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 				throw new MissingOptionException("No input path(s) specified.");
 			} else {
 				final Map<SessionDataManager, Path> allSessionData = readTestSessionData(inpaths);
-				final LoggedEventReader eventReader = new LoggedEventReader(allSessionData.size(),
-						allSessionData.size() * 10);
 
 				final Set<Cleaning> cleaningMethodSet = Parameter.parseCleaningMethods(cl);
 				LOGGER.info("Cleaning method set: {}", cleaningMethodSet);
@@ -337,6 +356,8 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 				final Path sessionPrefixPath = CommonPaths.findCommonPrefixPath(allSessionData.values().stream());
 				LOGGER.info("Found a common path of \"{}\" for all input sessions.", sessionPrefixPath);
 
+				final SessionGameManager.Factory sessionGameMgrFactory = new SessionGameManager.Factory(
+						new LoggedEventReader(allSessionData.size(), allSessionData.size() * 10), tok -> true, 2000);
 				for (final Entry<SessionDataManager, Path> sessionDataPath : allSessionData.entrySet()) {
 					final SessionDataManager sessionDataMgr = sessionDataPath.getKey();
 					final Path sessionPropsFilePath = sessionDataPath.getValue().toAbsolutePath();
@@ -350,14 +371,18 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 					final ChainedEventDialogueTransformer diagTransformer = new ChainedEventDialogueTransformer(
 							Arrays.asList(tokenizationMethod.apply(tokenizationContext), tokenFilter));
 
-					final SessionGameManager sessionGameMgr = new SessionGameManager(sessionDataMgr, eventReader);
+					final Stream<Utterance> utts = readUtterances(sessionDataMgr);
+					final Map<String, Utterance> uttsBySegmentId = utts
+							.collect(Collectors.toMap(Utterance::getSegmentId, Function.identity()));
+
+					final SessionGameManager sessionGameMgr = sessionGameMgrFactory.apply(sessionDataMgr);
 					final SessionGame sessionGame = sessionGameMgr.getCanonicalGame();
 					final BiMap<PlayerRole, String> playerRoles = sessionGame.getHistory().getInitialState()
 							.getPlayerRoles();
 					final BiMap<String, String> playerParticipantIds = PLAYER_PARTICIPANT_ID_MAPPER.apply(playerRoles);
 					final List<EventDialogue> evtDiags = sessionGame.getEventDialogues();
-					final List<String> rows = new TabularDataFactory(diagTransformer, playerParticipantIds)
-							.apply(evtDiags);
+					final List<String> rows = new TabularDataFactory(diagTransformer, playerParticipantIds,
+							uttsBySegmentId).apply(evtDiags);
 					final Path outfile = sessionOutputDir.resolve(outfileName);
 					LOGGER.info("Writing data extracted from \"{}\" to \"{}\".", sessionPropsFilePath, outfile);
 					Files.write(outfile, rows, OUTPUT_ENCODING, StandardOpenOption.CREATE,
@@ -380,6 +405,14 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 						() -> new HashMap<>(infileSessionData.size() + 1, 1.0f)));
 		infileSessionData.forEach((infile, sessionData) -> result.put(sessionData, infile));
 		return result;
+	}
+
+	private static Stream<Utterance> readUtterances(final SessionDataManager sessionDataMgr)
+			throws JAXBException, IOException {
+		final Path hatInfilePath = sessionDataMgr.getHATFilePath();
+		final Annotation uttAnnots = HatIO.readAnnotation(hatInfilePath);
+		final List<Segment> segs = uttAnnots.getSegments().getSegment();
+		return segs.stream().flatMap(seg -> SEG_UTT_FACTORY.create(seg).stream());
 	}
 
 	private TokenizedReferringExpressionWriter() {

@@ -488,7 +488,8 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 							.forEach(infiles::add);
 				}
 
-				final LoggedEventReader eventReader = new LoggedEventReader(infiles.size(), infiles.size() * 0);
+				final SessionGameManager.Factory sessionGameMgrFactory = new SessionGameManager.Factory(
+						new LoggedEventReader(infiles.size(), infiles.size() * 0), tok -> true, 2000);
 				for (final Path infile : infiles) {
 					writer.accept(infile, eventReader);
 				}

@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import javax.xml.bind.JAXBException;
 
@@ -47,6 +48,48 @@ import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
  */
 public final class SessionGameManager {
 
+	public static final class Factory {
+
+		private final LoggedEventReader eventReader;
+
+		private final Function<Function<Segment, String>, SegmentUtteranceFactory> segUttFactoryFactory;
+
+		private final TokenListSingletonFactory tokenListFactory;
+
+		public Factory(final LoggedEventReader eventReader, final Predicate<? super String> uttTokenFilter,
+				final int expectedUniqueTokenSeqCount) {
+			this.eventReader = eventReader;
+			tokenListFactory = new TokenListSingletonFactory(expectedUniqueTokenSeqCount);
+			segUttFactoryFactory = uttSpeakerIdFactory -> new SegmentUtteranceFactory(uttSpeakerIdFactory,
+					uttTokenFilter, tokenListFactory);
+		}
+
+		public SessionGameManager apply(final SessionDataManager sessionData) throws JAXBException, IOException {
+			final List<Utterance> utts = createUtteranceList(sessionData);
+			LOGGER.debug("Creating dialogues for {} annotated utterance(s).", utts.size());
+			final SessionGame canonicalGame = SessionGame.create(sessionData.getCanonicalEventLogPath(), utts,
+					eventReader);
+			final Map<String, Path> playerEventLogs = sessionData.getPlayerData().getPlayerEventLogs();
+			return new SessionGameManager(utts, canonicalGame, playerEventLogs);
+		}
+
+		private List<Utterance> createUtteranceList(final SessionDataManager sessionData)
+				throws JAXBException, IOException {
+			final PlayerDataManager playerData = sessionData.getPlayerData();
+			final Map<String, String> sourcePlayerIds = playerData.getPlayerSourceIds().inverse();
+			final Function<Segment, String> uttSpeakerIdFactory = seg -> {
+				final String sourceId = seg.getSource();
+				return sourcePlayerIds.get(sourceId);
+			};
+			final SegmentUtteranceFactory segUttFactory = segUttFactoryFactory.apply(uttSpeakerIdFactory);
+			final Path hatInfilePath = sessionData.getHATFilePath();
+			LOGGER.debug("Reading HAT annotations at \"{}\".", hatInfilePath);
+			final Annotation uttAnnots = HatIO.readAnnotation(hatInfilePath);
+			final List<Segment> segs = uttAnnots.getSegments().getSegment();
+			return Arrays.asList(segUttFactory.create(segs.stream()).flatMap(List::stream).toArray(Utterance[]::new));
+		}
+	}
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(SessionGameManager.class);
 
 	private static Map<String, SessionGame> createPlayerPerspectiveGameMap(
@@ -62,35 +105,17 @@ public final class SessionGameManager {
 		return result;
 	}
 
-	private static List<Utterance> createUtteranceList(final SessionDataManager sessionData)
-			throws JAXBException, IOException {
-		final PlayerDataManager playerData = sessionData.getPlayerData();
-		final Map<String, String> sourcePlayerIds = playerData.getPlayerSourceIds().inverse();
-		final Function<Segment, String> uttSpeakerIdFactory = seg -> {
-			final String sourceId = seg.getSource();
-			return sourcePlayerIds.get(sourceId);
-		};
-		final SegmentUtteranceFactory segUttFactory = new SegmentUtteranceFactory(uttSpeakerIdFactory);
-		final Path hatInfilePath = sessionData.getHATFilePath();
-		LOGGER.debug("Reading HAT annotations at \"{}\".", hatInfilePath);
-		final Annotation uttAnnots = HatIO.readAnnotation(hatInfilePath);
-		final List<Segment> segs = uttAnnots.getSegments().getSegment();
-		return Arrays.asList(segUttFactory.create(segs.stream()).flatMap(List::stream).toArray(Utterance[]::new));
-	}
-
 	private final SessionGame canonicalGame;
 
 	private final Map<String, Path> playerEventLogs;
 
 	private final List<Utterance> utts;
 
-	public SessionGameManager(final SessionDataManager sessionData, final LoggedEventReader eventReader)
-			throws IOException, JAXBException {
-		utts = createUtteranceList(sessionData);
-		LOGGER.debug("Creating dialogues for {} annotated utterance(s).", utts.size());
-
-		canonicalGame = SessionGame.create(sessionData.getCanonicalEventLogPath(), utts, eventReader);
-		playerEventLogs = sessionData.getPlayerData().getPlayerEventLogs();
+	private SessionGameManager(final List<Utterance> utts, final SessionGame canonicalGame,
+			final Map<String, Path> playerEventLogs) throws IOException, JAXBException {
+		this.utts = utts;
+		this.canonicalGame = canonicalGame;
+		this.playerEventLogs = playerEventLogs;
 	}
 
 	public Map<String, SessionGame> createPlayerPerspectiveGameMap(final LoggedEventReader eventReader)
