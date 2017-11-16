@@ -71,6 +71,10 @@ public final class SessionGameManager {
 					tokenListFactory);
 		}
 
+		public Factory(final LoggedEventReader eventReader, final Predicate<? super String> uttTokenFilter) {
+			this(eventReader, uttTokenFilter, ESTIMATED_UNIQUE_TOKEN_SEQ_COUNT);
+		}
+		
 		public Factory(final LoggedEventReader eventReader, final Predicate<? super String> uttTokenFilter,
 				final int expectedUniqueTokenSeqCount) {
 			this.eventReader = eventReader;

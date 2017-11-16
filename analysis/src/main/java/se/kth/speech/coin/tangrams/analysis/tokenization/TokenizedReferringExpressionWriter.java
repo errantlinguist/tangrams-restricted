@@ -357,7 +357,7 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 				LOGGER.info("Found a common path of \"{}\" for all input sessions.", sessionPrefixPath);
 
 				final SessionGameManager.Factory sessionGameMgrFactory = new SessionGameManager.Factory(
-						new LoggedEventReader(allSessionData.size(), allSessionData.size() * 10), tok -> true, 2000);
+						new LoggedEventReader(allSessionData.size(), allSessionData.size() * 10), tok -> true);
 				for (final Entry<SessionDataManager, Path> sessionDataPath : allSessionData.entrySet()) {
 					final SessionDataManager sessionDataMgr = sessionDataPath.getKey();
 					final Path sessionPropsFilePath = sessionDataPath.getValue().toAbsolutePath();
