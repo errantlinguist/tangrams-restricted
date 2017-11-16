@@ -31,6 +31,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -77,6 +78,8 @@ final class SegmentUtteranceFactory {
 
 	private static final Function<Segment, String> DEFAULT_SEG_SPEAKER_ID_FACTORY = seg -> seg.getSource().intern();
 
+	private static final Predicate<String> DEFAULT_TOKEN_FILTER = token -> !isMetaLanguageToken(token);
+
 	private static final List<T> EMPTY_TOKEN_LIST = Collections.emptyList();
 
 	private static final int EXPECTED_UNIQUE_TOKEN_SEQUENCES = 2048;
@@ -100,6 +103,10 @@ final class SegmentUtteranceFactory {
 		} catch (final IOException e) {
 			throw new UncheckedIOException(e);
 		}
+	}
+
+	public static boolean isMetaLanguageToken(final String token) {
+		return META_LANGUAGE_TOKENS.contains(token);
 	}
 
 	private static void addSegmentTokens(final ArrayList<? super T> tokens, final Collection<Object> children) {
@@ -150,11 +157,15 @@ final class SegmentUtteranceFactory {
 
 	private final Function<? super Segment, String> segmentSpeakerIdFactory;
 
+	private final Predicate<? super String> tokenFilter;
+
 	private final Function<? super String[], List<String>> tokenListSingletonFactory;
 
 	private SegmentUtteranceFactory(final Function<? super Segment, String> segmentSpeakerIdFactory,
+			final Predicate<? super String> tokenFilter,
 			final Function<? super String[], List<String>> tokenListSingletonFactory) {
 		this.segmentSpeakerIdFactory = segmentSpeakerIdFactory;
+		this.tokenFilter = tokenFilter;
 		this.tokenListSingletonFactory = tokenListSingletonFactory;
 	}
 
@@ -163,7 +174,16 @@ final class SegmentUtteranceFactory {
 	}
 
 	SegmentUtteranceFactory(final Function<? super Segment, String> segmentSpeakerIdFactory) {
-		this(segmentSpeakerIdFactory, new TokenListSingletonFactory(EXPECTED_UNIQUE_TOKEN_SEQUENCES));
+		this(segmentSpeakerIdFactory, DEFAULT_TOKEN_FILTER);
+	}
+
+	SegmentUtteranceFactory(final Function<? super Segment, String> segmentSpeakerIdFactory,
+			final Predicate<? super String> tokenFilter) {
+		this(segmentSpeakerIdFactory, tokenFilter, new TokenListSingletonFactory(EXPECTED_UNIQUE_TOKEN_SEQUENCES));
+	}
+
+	SegmentUtteranceFactory(final Predicate<? super String> tokenFilter) {
+		this(DEFAULT_SEG_SPEAKER_ID_FACTORY, tokenFilter);
 	}
 
 	List<Utterance> create(final Segment segment) {
@@ -195,8 +215,7 @@ final class SegmentUtteranceFactory {
 					}
 				}
 				final String[] contentTokens = tokens.stream().map(T::getContent).map(String::trim)
-						.filter(token -> !token.isEmpty()).filter(token -> !META_LANGUAGE_TOKENS.contains(token))
-						.toArray(String[]::new);
+						.filter(token -> !token.isEmpty()).filter(tokenFilter).toArray(String[]::new);
 				if (contentTokens.length < 1) {
 					LOGGER.debug("Segment ID \"{}\" does not have any content tokens; Ignoring.", segment.getId());
 				} else {
