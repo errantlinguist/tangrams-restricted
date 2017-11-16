@@ -17,7 +17,6 @@
 package se.kth.speech.coin.tangrams.analysis;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -30,7 +29,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.xml.bind.JAXBException;
-import javax.xml.bind.Unmarshaller;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
@@ -48,7 +46,6 @@ import se.kth.speech.coin.tangrams.iristk.io.HatIO;
 import se.kth.speech.hat.xsd.Annotation;
 import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
 import se.kth.speech.hat.xsd.Transcription.T;
-import se.kth.speech.io.RuntimeJAXBException;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -57,21 +54,11 @@ import se.kth.speech.io.RuntimeJAXBException;
  */
 public final class RNNParseAnnotationSegmentWriter { // NO_UCD (unused code)
 
-	private static final Unmarshaller HAT_UNMARSHALLER;
-
-	static {
-		try {
-			HAT_UNMARSHALLER = HatIO.fetchContext().createUnmarshaller();
-		} catch (final JAXBException e) {
-			throw new RuntimeJAXBException(e);
-		}
-	}
-
-	private static final Collector<CharSequence, ?, String> TOKEN_JOINER = Collectors.joining(" ");
+	private static final Collector<CharSequence, ?, String> LIST_VALUE_JOINER = Collectors.joining(",");
 
 	private static final Collector<CharSequence, ?, String> ROW_CELL_JOINER = Collectors.joining("\t");
 
-	private static final Collector<CharSequence, ?, String> LIST_VALUE_JOINER = Collectors.joining(",");
+	private static final Collector<CharSequence, ?, String> TOKEN_JOINER = Collectors.joining(" ");
 
 	public static void main(final String[] args) throws IOException, JAXBException {
 		final Path[] inpaths = Arrays.stream(args).map(String::trim).filter(path -> !path.isEmpty()).map(Paths::get)
@@ -89,7 +76,7 @@ public final class RNNParseAnnotationSegmentWriter { // NO_UCD (unused code)
 						.filter(Files::isRegularFile)
 						.filter(filePath -> filePath.getFileName().toString().endsWith(".xml"))::iterator;
 				for (final Path infile : infiles) {
-					final Annotation annot = readAnnotations(infile);
+					final Annotation annot = HatIO.readAnnotation(infile);
 					for (final Segment seg : annot.getSegments().getSegment()) {
 						final String segStr = createSegmentString(seg);
 						final List<String> parseLeafNodes = parses.getUnchecked(segStr);
@@ -133,12 +120,6 @@ public final class RNNParseAnnotationSegmentWriter { // NO_UCD (unused code)
 			tokenStrs.add(token.getContent());
 		}
 		return tokenStrs.stream().collect(TOKEN_JOINER);
-	}
-
-	private static Annotation readAnnotations(final Path hatInfilePath) throws JAXBException, IOException {
-		try (InputStream instream = Files.newInputStream(hatInfilePath)) {
-			return (Annotation) HAT_UNMARSHALLER.unmarshal(instream);
-		}
 	}
 
 	private RNNParseAnnotationSegmentWriter() {

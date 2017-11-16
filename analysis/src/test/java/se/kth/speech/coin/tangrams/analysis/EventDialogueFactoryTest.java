@@ -19,7 +19,6 @@ package se.kth.speech.coin.tangrams.analysis;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Arrays;
 import java.util.Collections;
@@ -29,7 +28,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 
 import org.junit.Assert;
@@ -52,8 +50,6 @@ import se.kth.speech.hat.xsd.Annotation;
  */
 public final class EventDialogueFactoryTest {
 
-	private static final JAXBContext JC = HatIO.fetchContext();
-
 	private static final Logger LOGGER = LoggerFactory.getLogger(EventDialogueFactoryTest.class);
 
 	private static final SegmentUtteranceFactory SEG_UTT_FACTORY = new SegmentUtteranceFactory(
@@ -63,12 +59,11 @@ public final class EventDialogueFactoryTest {
 	 * Test method for
 	 * {@link se.kth.speech.coin.tangrams.analysis.EventDialogueFactory#apply(java.util.ListIterator, se.kth.speech.coin.tangrams.analysis.GameHistory)}.
 	 *
-	 * @throws URISyntaxException
 	 * @throws IOException
 	 * @throws JAXBException
 	 */
 	@Test
-	public void testApply() throws URISyntaxException, IOException, JAXBException {
+	public void testApply() throws IOException, JAXBException {
 		final String singleMoveSessionDataResLocStr = TestDataResources.SESSION_DATA_DIR
 				+ "/karey-tangram_Jutta-ONEMOVE";
 
@@ -87,7 +82,7 @@ public final class EventDialogueFactoryTest {
 		// Utts
 		final URL hatInfileUrl = TestDataResources.class.getResource(singleMoveSessionDataResLocStr + "/utts.xml");
 		LOGGER.info("Reading annotations from \"{}\".", hatInfileUrl);
-		final Annotation uttAnnots = (Annotation) JC.createUnmarshaller().unmarshal(hatInfileUrl);
+		final Annotation uttAnnots = (Annotation) HatIO.fetchUnmarshaller().unmarshal(hatInfileUrl);
 		final List<Utterance> utts = Arrays.asList(SEG_UTT_FACTORY.create(uttAnnots.getSegments().getSegment().stream())
 				.flatMap(List::stream).toArray(Utterance[]::new));
 

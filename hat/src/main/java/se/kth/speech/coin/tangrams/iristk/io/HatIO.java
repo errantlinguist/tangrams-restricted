@@ -21,11 +21,15 @@ import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Properties;
 
 import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
+import javax.xml.bind.Unmarshaller;
 
+import se.kth.speech.hat.xsd.Annotation;
 import se.kth.speech.io.RuntimeJAXBException;
 
 /**
@@ -36,6 +40,24 @@ import se.kth.speech.io.RuntimeJAXBException;
 public final class HatIO {
 
 	private static final String ANNOT_CONTEXT;
+
+	private static final ThreadLocal<Unmarshaller> HAT_UNMARSHALLER = new ThreadLocal<Unmarshaller>() {
+
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see java.lang.ThreadLocal#initialValue()
+		 */
+		@Override
+		protected Unmarshaller initialValue() {
+			try {
+				return HatIO.fetchContext().createUnmarshaller();
+			} catch (final JAXBException e) {
+				throw new RuntimeJAXBException(e);
+			}
+		}
+
+	};
 
 	private static volatile Reference<JAXBContext> jc = new SoftReference<>(null);
 
@@ -65,6 +87,16 @@ public final class HatIO {
 			}
 		}
 		return result;
+	}
+
+	public static Unmarshaller fetchUnmarshaller() {
+		return HAT_UNMARSHALLER.get();
+	}
+
+	public static Annotation readAnnotation(final Path hatInfilePath) throws JAXBException, IOException {
+		try (InputStream instream = Files.newInputStream(hatInfilePath)) {
+			return (Annotation) fetchUnmarshaller().unmarshal(instream);
+		}
 	}
 
 	private HatIO() {

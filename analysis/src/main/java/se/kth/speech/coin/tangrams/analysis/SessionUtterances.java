@@ -17,15 +17,12 @@
 package se.kth.speech.coin.tangrams.analysis;
 
 import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
 import javax.xml.bind.JAXBException;
-import javax.xml.bind.Unmarshaller;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,7 +33,6 @@ import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
 import se.kth.speech.coin.tangrams.iristk.io.HatIO;
 import se.kth.speech.hat.xsd.Annotation;
 import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
-import se.kth.speech.io.RuntimeJAXBException;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -45,28 +41,9 @@ import se.kth.speech.io.RuntimeJAXBException;
  */
 final class SessionUtterances {
 
-	private static final ThreadLocal<Unmarshaller> HAT_UNMARSHALLER = new ThreadLocal<Unmarshaller>() {
-
-		/*
-		 * (non-Javadoc)
-		 *
-		 * @see java.lang.ThreadLocal#initialValue()
-		 */
-		@Override
-		protected Unmarshaller initialValue() {
-			try {
-				return HatIO.fetchContext().createUnmarshaller();
-			} catch (final JAXBException e) {
-				throw new RuntimeJAXBException(e);
-			}
-		}
-
-	};
-
 	private static final Logger LOGGER = LoggerFactory.getLogger(SessionUtterances.class);
 
-	static List<Utterance> createUtteranceList(final SessionDataManager sessionData)
-			throws JAXBException, IOException {
+	static List<Utterance> createUtteranceList(final SessionDataManager sessionData) throws JAXBException, IOException {
 		final PlayerDataManager playerData = sessionData.getPlayerData();
 		final Map<String, String> sourcePlayerIds = playerData.getPlayerSourceIds().inverse();
 		final SegmentUtteranceFactory segUttFactory = new SegmentUtteranceFactory(seg -> {
@@ -75,15 +52,9 @@ final class SessionUtterances {
 		});
 		final Path hatInfilePath = sessionData.getHATFilePath();
 		LOGGER.debug("Reading HAT annotations at \"{}\".", hatInfilePath);
-		final Annotation uttAnnots = readAnnotations(hatInfilePath);
+		final Annotation uttAnnots = HatIO.readAnnotation(hatInfilePath);
 		final List<Segment> segs = uttAnnots.getSegments().getSegment();
 		return Arrays.asList(segUttFactory.create(segs.stream()).flatMap(List::stream).toArray(Utterance[]::new));
-	}
-
-	private static Annotation readAnnotations(final Path hatInfilePath) throws JAXBException, IOException {
-		try (InputStream instream = Files.newInputStream(hatInfilePath)) {
-			return (Annotation) HAT_UNMARSHALLER.get().unmarshal(instream);
-		}
 	}
 
 	private SessionUtterances() {

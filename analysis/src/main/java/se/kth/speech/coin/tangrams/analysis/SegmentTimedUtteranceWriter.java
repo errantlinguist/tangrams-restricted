@@ -32,7 +32,6 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import javax.xml.bind.JAXBException;
-import javax.xml.bind.Unmarshaller;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -167,12 +166,11 @@ final class SegmentTimedUtteranceWriter { // NO_UCD (use default)
 					}
 					LOGGER.info("Initial timestamp is \"{}\".", EventTimes.FORMATTER.format(initialTime));
 
-					final Unmarshaller unmarshaller = HatIO.fetchContext().createUnmarshaller();
 					try (PrintWriter outputWriter = new PrintWriter(
 							new OutputStreamWriter(System.out, OUTPUT_ENCODING))) {
 						for (final File infile : infiles) {
 							LOGGER.info("Reading annotations from \"{}\".", infile);
-							final Annotation uttAnnots = (Annotation) unmarshaller.unmarshal(infile);
+							final Annotation uttAnnots = (Annotation) HatIO.fetchUnmarshaller().unmarshal(infile);
 							final List<Segment> segments = uttAnnots.getSegments().getSegment();
 							final Stream<Utterance> utts = SEG_UTT_FACTORY.create(segments.stream())
 									.flatMap(List::stream);

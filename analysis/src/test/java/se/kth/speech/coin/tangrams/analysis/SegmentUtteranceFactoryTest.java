@@ -16,7 +16,6 @@
 */
 package se.kth.speech.coin.tangrams.analysis;
 
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Collection;
 import java.util.Collections;
@@ -54,7 +53,7 @@ import se.kth.speech.hat.xsd.Transcription.T;
 @RunWith(Theories.class)
 public final class SegmentUtteranceFactoryTest {
 
-	private static Annotation annots;
+	private static Annotation annot;
 
 	private static final double DOUBLE_DELTA = 0.01;
 
@@ -62,33 +61,34 @@ public final class SegmentUtteranceFactoryTest {
 
 	private static final Collector<CharSequence, ?, String> SEG_CONTENT_JOINER = Collectors.joining(" ");
 
-	private static final SegmentUtteranceFactory TEST_INST = new SegmentUtteranceFactory(seg -> seg.getSource().intern());
+	private static final SegmentUtteranceFactory TEST_INST = new SegmentUtteranceFactory(
+			seg -> seg.getSource().intern());
 
 	private static final Collector<CharSequence, ?, String> TOKEN_JOINING_COLLECTOR = Collectors.joining(" ");
 
 	private static final Pattern WHITESPACE_PATTERN = Pattern.compile("\\s+");
 
 	@BeforeClass
-	public static void loadAnnotations() throws URISyntaxException, JAXBException {
-		annots = readAnnotations();
+	public static void loadAnnotation() throws JAXBException {
+		annot = readAnnotation();
 	}
 
 	@DataPoints("segments")
 	public static List<Segment> segments() {
-		return annots.getSegments().getSegment();
+		return annot.getSegments().getSegment();
 	}
 
 	@DataPoints("segmentSets")
 	public static Collection<Segments> segmentSets() {
-		return Collections.singleton(annots.getSegments());
+		return Collections.singleton(annot.getSegments());
 	}
 
-	private static Annotation readAnnotations() throws URISyntaxException, JAXBException {
+	private static Annotation readAnnotation() throws JAXBException {
 		final String resLoc = TestDataResources.createResourceLocator("test-hat.xml");
 		LOGGER.debug("Reading test annotations from resource locator \"{}\".", resLoc);
 		final URL testAnnotFileUrl = TestDataResources.class.getResource(resLoc);
 		LOGGER.info("Reading test annotations from URL \"{}\".", testAnnotFileUrl);
-		return (Annotation) HatIO.fetchContext().createUnmarshaller().unmarshal(testAnnotFileUrl);
+		return (Annotation) HatIO.fetchUnmarshaller().unmarshal(testAnnotFileUrl);
 	}
 
 	private static boolean shouldHaveUtts(final Segment seg) {
