@@ -21,6 +21,7 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 import javax.xml.bind.JAXBException;
 
@@ -46,10 +47,11 @@ final class SessionUtterances {
 	static List<Utterance> createUtteranceList(final SessionDataManager sessionData) throws JAXBException, IOException {
 		final PlayerDataManager playerData = sessionData.getPlayerData();
 		final Map<String, String> sourcePlayerIds = playerData.getPlayerSourceIds().inverse();
-		final SegmentUtteranceFactory segUttFactory = new SegmentUtteranceFactory(seg -> {
+		final Function<Segment, String> uttSpeakerIdFactory = seg -> {
 			final String sourceId = seg.getSource();
 			return sourcePlayerIds.get(sourceId);
-		});
+		};
+		final SegmentUtteranceFactory segUttFactory = new SegmentUtteranceFactory(uttSpeakerIdFactory);
 		final Path hatInfilePath = sessionData.getHATFilePath();
 		LOGGER.debug("Reading HAT annotations at \"{}\".", hatInfilePath);
 		final Annotation uttAnnots = HatIO.readAnnotation(hatInfilePath);
