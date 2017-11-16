@@ -61,8 +61,7 @@ public final class SegmentUtteranceFactoryTest {
 
 	private static final Collector<CharSequence, ?, String> SEG_CONTENT_JOINER = Collectors.joining(" ");
 
-	private static final SegmentUtteranceFactory TEST_INST = new SegmentUtteranceFactory(
-			seg -> seg.getSource().intern());
+	private static final SegmentUtteranceFactory TEST_INST = new SegmentUtteranceFactory();
 
 	private static final Collector<CharSequence, ?, String> TOKEN_JOINING_COLLECTOR = Collectors.joining(" ");
 

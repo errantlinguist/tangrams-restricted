@@ -75,6 +75,8 @@ final class SegmentUtteranceFactory {
 
 	}
 
+	private static final Function<Segment, String> DEFAULT_SEG_SPEAKER_ID_FACTORY = seg -> seg.getSource().intern();
+
 	private static final List<T> EMPTY_TOKEN_LIST = Collections.emptyList();
 
 	private static final int EXPECTED_UNIQUE_TOKEN_SEQUENCES = 2048;
@@ -154,6 +156,10 @@ final class SegmentUtteranceFactory {
 			final Function<? super String[], List<String>> tokenListSingletonFactory) {
 		this.segmentSpeakerIdFactory = segmentSpeakerIdFactory;
 		this.tokenListSingletonFactory = tokenListSingletonFactory;
+	}
+
+	SegmentUtteranceFactory() {
+		this(DEFAULT_SEG_SPEAKER_ID_FACTORY);
 	}
 
 	SegmentUtteranceFactory(final Function<? super Segment, String> segmentSpeakerIdFactory) {
