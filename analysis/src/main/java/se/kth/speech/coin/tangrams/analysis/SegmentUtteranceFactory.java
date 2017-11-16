@@ -27,7 +27,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Properties;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Function;
@@ -41,6 +40,7 @@ import com.github.errantlinguist.ClassProperties;
 
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import it.unimi.dsi.fastutil.objects.ObjectSet;
+import it.unimi.dsi.fastutil.objects.ObjectSets;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
 import se.kth.speech.hat.xsd.Transcription;
@@ -94,7 +94,7 @@ public final class SegmentUtteranceFactory {
 
 	static {
 		try {
-			META_LANGUAGE_TOKENS = readMetaLanguageTokenSet();
+			META_LANGUAGE_TOKENS = ObjectSets.unmodifiable(readMetaLanguageTokenSet());
 		} catch (final IOException e) {
 			throw new UncheckedIOException(e);
 		}
@@ -158,7 +158,7 @@ public final class SegmentUtteranceFactory {
 	/**
 	 * @return the metaLanguageTokens
 	 */
-	static Set<String> getMetaLanguageTokens() {
+	static ObjectSet<String> getMetaLanguageTokens() {
 		return META_LANGUAGE_TOKENS;
 	}
 
