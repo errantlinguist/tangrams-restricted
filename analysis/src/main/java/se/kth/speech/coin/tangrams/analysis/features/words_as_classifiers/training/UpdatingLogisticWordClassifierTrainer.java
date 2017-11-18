@@ -154,13 +154,12 @@ public final class UpdatingLogisticWordClassifierTrainer
 				ctx.getHistory(), totalTrainingData, positiveExampleWeightFactor, negativeExampleWeightFactor);
 		// Create a new WordClassificationData instance in order to be able to re-apply
 		// smoothing to the original data again
-		final WordClassificationData smoothedUpdatedTrainingData = new WordClassificationData(totalTrainingData);
+		final Object2ObjectMap<String, WordClassificationData.Datum> smoothedUpdatedClassData = new WordClassificationData(totalTrainingData)
+				.getClassData();
+		assert !smoothedUpdatedClassData.containsKey(null);
 		// Smoother calculates which word class Instances objects should be
 		// discounted, removes them from the classification data object and puts
 		// it into the OOV label Instances object
-		final Object2ObjectMap<String, WordClassificationData.Datum> smoothedUpdatedClassData = smoothedUpdatedTrainingData
-				.getClassData();
-		assert !smoothedUpdatedClassData.containsKey(null);
 		final DiscountedWordClasses smoothingResults = smoother.redistributeMass(smoothedUpdatedClassData);
 		LOGGER.debug("{} instance(s) for out-of-vocabulary class.",
 				smoothingResults.getOovClassDatum().getTrainingInstCount());
