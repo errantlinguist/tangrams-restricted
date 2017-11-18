@@ -163,6 +163,11 @@ public final class TrimmableObject2ObjectMap<K, V> implements Object2ObjectMap<K
 		return decorated.size();
 	}
 
+	/**
+	 * Trims the decorated {@link Object2ObjectMap}.
+	 *
+	 * @return <code>true</code> iff the trimming was successful.
+	 */
 	public boolean trim() {
 		return trimmer.call();
 	}
