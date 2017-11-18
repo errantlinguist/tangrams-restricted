@@ -61,7 +61,7 @@ final class RandomPopulatedModelFactory implements Function<Random, SpatialMatri
 	@Override
 	public SpatialMatrix<Integer> apply(final Random rnd) {
 		final int piecePlacementCount = imgVisualizationInfo.getData().size();
-		final SpatialMatrix<Integer> result = SpatialMatrix.Factory.STABLE_ITER_ORDER.create(gridSize,
+		final SpatialMatrix<Integer> result = SpatialMatrix.Factory.STABLE_ITER_ORDER.apply(gridSize,
 				SpatialMap.Factory.STABLE_ITER_ORDER.apply(piecePlacementCount));
 		final ImageLoadingImageViewInfoFactory imgViewInfoFactory = new ImageLoadingImageViewInfoFactory(toolkit,
 				postColoringImgTransformer, imgVisualizationInfo.getUniqueImageResourceCount());
