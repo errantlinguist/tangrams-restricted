@@ -1118,7 +1118,7 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 		if (cl.hasOption(Parameter.HELP.optName)) {
 			printHelp();
 		} else {
-			final ForkJoinPool backgroundJobExecutor = BackgroundJobs.getBackgroundJobExecutor();
+			final ForkJoinPool backgroundJobExecutor = BackgroundJobs.fetchBackgroundJobExecutor();
 			final CLIInputFactory inputFactory = new CLIInputFactory(backgroundJobExecutor);
 			try {
 				final CombiningBatchJobTester.Input input = inputFactory.apply(cl);

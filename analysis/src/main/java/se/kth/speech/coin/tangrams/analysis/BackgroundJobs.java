@@ -25,12 +25,12 @@ import java.util.concurrent.ForkJoinPool;
  */
 public final class BackgroundJobs {
 
-	public static ForkJoinPool getBackgroundJobExecutor() {
+	public static ForkJoinPool fetchBackgroundJobExecutor() {
 		return ForkJoinPool.commonPool();
 	}
 
 	public static int getConcurrencyLevel() {
-		final ForkJoinPool executor = getBackgroundJobExecutor();
+		final ForkJoinPool executor = fetchBackgroundJobExecutor();
 		return executor.getParallelism();
 	}
 

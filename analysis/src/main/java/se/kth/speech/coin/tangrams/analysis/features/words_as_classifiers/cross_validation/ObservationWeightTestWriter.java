@@ -313,7 +313,7 @@ final class ObservationWeightTestWriter { // NO_UCD (unused code)
 		if (cl.hasOption(Parameter.HELP.optName)) {
 			printHelp();
 		} else {
-			final ForkJoinPool backgroundJobExecutor = BackgroundJobs.getBackgroundJobExecutor();
+			final ForkJoinPool backgroundJobExecutor = BackgroundJobs.fetchBackgroundJobExecutor();
 			final UtteranceMappingBatchJobTester.Input input = createInput(cl);
 
 			final Consumer<CrossValidator> testerConfigurator = crossValidator -> {
