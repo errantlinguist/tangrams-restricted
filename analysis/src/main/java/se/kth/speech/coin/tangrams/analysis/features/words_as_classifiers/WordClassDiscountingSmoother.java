@@ -17,6 +17,7 @@
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.function.Function;
@@ -358,7 +359,7 @@ public final class WordClassDiscountingSmoother {
 			final WordClassificationData trainingData) {
 		final Object2ObjectMap<String, WordClassificationData.Datum> classInsts = trainingData.getClassData();
 		assert classInsts.get(null) == null;
-		final List<Entry<String, WordClassificationData.Datum>> wordClassesToDiscount = findClassesToDiscount(
+		final Collection<Entry<String, WordClassificationData.Datum>> wordClassesToDiscount = findClassesToDiscount(
 				classInsts.object2ObjectEntrySet());
 		assert wordClassesToDiscount.stream().map(Entry::getKey).distinct().count() == wordClassesToDiscount.size();
 		assert !containsNullKey(wordClassesToDiscount);
@@ -374,7 +375,7 @@ public final class WordClassDiscountingSmoother {
 		return result;
 	}
 
-	private List<Entry<String, WordClassificationData.Datum>> findClassesToDiscount(
+	private Collection<Entry<String, WordClassificationData.Datum>> findClassesToDiscount(
 			final ObjectCollection<Object2ObjectMap.Entry<String, WordClassificationData.Datum>> wordClassData) {
 		final List<Entry<String, WordClassificationData.Datum>> result = new ArrayList<>();
 		for (final Object2ObjectMap.Entry<String, WordClassificationData.Datum> wordClassDatum : wordClassData) {
