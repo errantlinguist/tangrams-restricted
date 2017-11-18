@@ -60,10 +60,6 @@ public final class WordClassDiscountingSmoother {
 
 			private final int trainingInstCount;
 
-			private Datum() {
-				this(0, 0, 0);
-			}
-
 			private Datum(final Datum copyee) {
 				this(copyee.getObservationCount(), copyee.getTrainingInstCount(),
 						copyee.getTrainingInstancesChangeCount());
