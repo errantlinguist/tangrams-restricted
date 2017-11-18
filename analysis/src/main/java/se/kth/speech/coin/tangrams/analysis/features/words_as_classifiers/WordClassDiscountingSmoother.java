@@ -334,9 +334,9 @@ public final class WordClassDiscountingSmoother {
 	 */
 	public DiscountedWordClasses redistributeMass(
 			final Object2ObjectMap<String, WordClassificationData.Datum> wordClassData) {
-		final Object2ObjectMap<String, WordClassificationData.Datum> wordClassesToDiscount = createdDiscountedClassDataMap(
+		final Object2ObjectMap<String, WordClassificationData.Datum> discountedWordClassTrainingData = discountWordClasses(
 				wordClassData);
-		if (wordClassesToDiscount.isEmpty()) {
+		if (discountedWordClassTrainingData.isEmpty()) {
 			throw new IllegalArgumentException(
 					String.format("Could not find any word classes with fewer than %s instance(s).", minCount));
 		}
@@ -344,9 +344,9 @@ public final class WordClassDiscountingSmoother {
 		// The new set of word classes is different from the previous one;
 		// Re-redistribute instances to the OOV class
 		final WordClassificationData.Datum oovClassDatum = redistributeMassToOovClass(wordClassData,
-				wordClassesToDiscount);
+				discountedWordClassTrainingData);
 		final Object2ObjectMap<String, DiscountedWordClasses.Datum> discountedWordClassData = createDiscountedWordClassDataMap(
-				wordClassesToDiscount);
+				discountedWordClassTrainingData);
 		return new DiscountedWordClasses(discountedWordClassData, new DiscountedWordClasses.Datum(oovClassDatum));
 	}
 
@@ -383,7 +383,7 @@ public final class WordClassDiscountingSmoother {
 	 * @return A new {@code Object2ObjectMap} of {@code WordClassificationData} for
 	 *         each word class which was discounted.
 	 */
-	private Object2ObjectMap<String, WordClassificationData.Datum> createdDiscountedClassDataMap(
+	private Object2ObjectMap<String, WordClassificationData.Datum> discountWordClasses(
 			final Object2ObjectMap<String, WordClassificationData.Datum> wordClassData) {
 		final Collection<Entry<String, WordClassificationData.Datum>> wordClassesToDiscount = findClassesToDiscount(
 				wordClassData);
