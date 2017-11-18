@@ -70,7 +70,7 @@ final class MatrixSpatialMapFactory<E> implements Function<Matrix<? extends E>, 
 	@Override
 	public SpatialMap<E> apply(final Matrix<? extends E> posMatrix) {
 		final Map<E, int[]> elemIdxs = createElementMatrixIndexMap(posMatrix);
-		final SpatialMap<E> result = SpatialMap.createStableIterationOrder(elemIdxs.size());
+		final SpatialMap<E> result = SpatialMap.Factory.STABLE_ITER_ORDER.apply(elemIdxs.size());
 		elemIdxs.forEach((elem, idxs) -> {
 			final SpatialRegion region = createRegion(idxs);
 			result.put(elem, region);

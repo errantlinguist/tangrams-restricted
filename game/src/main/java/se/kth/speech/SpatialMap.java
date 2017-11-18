@@ -20,16 +20,19 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.LinkedHashMultimap;
-import com.google.common.collect.Maps;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
+
+import it.unimi.dsi.fastutil.objects.Object2ObjectLinkedOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectMaps;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 /**
  * A very rudimentary data structure for searching a two-dimensional space.
@@ -40,23 +43,34 @@ import com.google.common.collect.Multimaps;
  */
 public final class SpatialMap<E> {
 
+	public enum Factory {
+		STABLE_ITER_ORDER {
+			public <E> SpatialMap<E> apply(final int expectedElementCount) {
+				final Multimap<SpatialRegion, E> regionElements = LinkedHashMultimap
+						.create(estimateRegionCount(expectedElementCount), expectedElementCount);
+				final Object2ObjectLinkedOpenHashMap<E, SpatialRegion> elementRegions = new Object2ObjectLinkedOpenHashMap<>(
+						expectedElementCount);
+				return new SpatialMap<>(regionElements, elementRegions,
+						new ArrayList<>(Math.max(regionElements.size(), 16)));
+			}
+		},
+		UNSTABLE_ITER_ORDER {
+			public <E> SpatialMap<E> apply(final int expectedElementCount) {
+				final Multimap<SpatialRegion, E> regionElements = HashMultimap
+						.create(estimateRegionCount(expectedElementCount), expectedElementCount);
+				final Object2ObjectOpenHashMap<E, SpatialRegion> elementRegions = new Object2ObjectOpenHashMap<>(
+						expectedElementCount);
+				return new SpatialMap<>(regionElements, elementRegions,
+						new ArrayList<>(Math.max(regionElements.size(), 16)));
+			}
+		};
+		
+		public abstract <E> SpatialMap<E> apply(final int expectedElementCount);
+	}
+
 	private static final String TABLE_STRING_REPR_COL_DELIMITER = "\t";
 
 	private static final String TABLE_STRING_REPR_ROW_DELIMITER = System.lineSeparator();
-
-	public static <E> SpatialMap<E> create(final int expectedElementCount) {
-		final Multimap<SpatialRegion, E> regionElements = HashMultimap.create(estimateRegionCount(expectedElementCount),
-				expectedElementCount);
-		return new SpatialMap<>(regionElements, Maps.newHashMapWithExpectedSize(expectedElementCount),
-				new ArrayList<>(Math.max(regionElements.size(), 16)));
-	}
-
-	public static <E> SpatialMap<E> createStableIterationOrder(final int expectedElementCount) {
-		final Multimap<SpatialRegion, E> regionElements = LinkedHashMultimap
-				.create(estimateRegionCount(expectedElementCount), expectedElementCount);
-		return new SpatialMap<>(regionElements, Maps.newLinkedHashMapWithExpectedSize(expectedElementCount),
-				new ArrayList<>(Math.max(regionElements.size(), 16)));
-	}
 
 	private static void appendOccupiedRegionRepr(final StringBuilder sb,
 			final Entry<SpatialRegion, ? extends Iterable<?>> minimalRegionOccupyingElementSet) {
@@ -72,11 +86,11 @@ public final class SpatialMap<E> {
 		return expectedElementCount;
 	}
 
-	private final Map<E, SpatialRegion> elementRegions;
+	private final Object2ObjectMap<E, SpatialRegion> elementRegions;
 
 	/**
-	 * <strong>TODO:</strong> Reverse this so that the region is the key
-	 * pointing to another {@link SpatialMap} of sub-regions.
+	 * <strong>TODO:</strong> Reverse this so that the region is the key pointing to
+	 * another {@link SpatialMap} of sub-regions.
 	 */
 	private final Multimap<SpatialRegion, E> regionElements;
 
@@ -86,8 +100,8 @@ public final class SpatialMap<E> {
 	 */
 	private final List<SpatialRegion> regions;
 
-	private SpatialMap(final Multimap<SpatialRegion, E> regionElements, final Map<E, SpatialRegion> elementRegions,
-			final List<SpatialRegion> regions) {
+	private SpatialMap(final Multimap<SpatialRegion, E> regionElements,
+			final Object2ObjectMap<E, SpatialRegion> elementRegions, final List<SpatialRegion> regions) {
 		this.regionElements = regionElements;
 		this.elementRegions = elementRegions;
 		this.regions = regions;
@@ -132,8 +146,8 @@ public final class SpatialMap<E> {
 		return Collections.unmodifiableCollection(regionElements.values());
 	}
 
-	public Map<E, SpatialRegion> getElementMinimalRegions() {
-		return Collections.unmodifiableMap(elementRegions);
+	public Object2ObjectMap<E, SpatialRegion> getElementMinimalRegions() {
+		return Object2ObjectMaps.unmodifiable(elementRegions);
 	}
 
 	public Stream<Entry<SpatialRegion, E>> getIntersectedElements(final SpatialRegion intersectingRegion) {

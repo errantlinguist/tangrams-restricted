@@ -51,7 +51,7 @@ public final class RandomMatrixPositionFillerTest {
 		private SpatialMatrixConstructionData(final int[] gridSize) {
 			final Matrix<Integer> backingPosMatrix = new Matrix<>(new Integer[IntArrays.product(gridSize)],
 					gridSize[1]);
-			final SpatialMap<Integer> posMap = SpatialMap.createStableIterationOrder(TEST_PIECE_IDS.size());
+			final SpatialMap<Integer> posMap = SpatialMap.Factory.STABLE_ITER_ORDER.apply(TEST_PIECE_IDS.size());
 			matrix = SpatialMatrix.Factory.STABLE_ITER_ORDER.create(backingPosMatrix, posMap);
 		}
 	}
