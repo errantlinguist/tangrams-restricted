@@ -368,7 +368,7 @@ public final class WordClassDiscountingSmoother {
 		for (final Entry<String, WordClassificationData.Datum> wordClassToDiscount : wordClassesToDiscount) {
 			final String className = wordClassToDiscount.getKey();
 			assert className != null;
-			LOGGER.info("Class \"{}\" has fewer than {} instances; Will redistribute to \"{}\".", className, minCount,
+			LOGGER.debug("Class \"{}\" has fewer than {} instances; Will redistribute to \"{}\".", className, minCount,
 					oovClassName);
 			result.put(className, classInsts.remove(className));
 		}
