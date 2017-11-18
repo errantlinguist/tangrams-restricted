@@ -166,6 +166,7 @@ public final class UpdatingWordLogisticClassifierTrainer
 		final WordClassificationData.Datum oovClassDatum = smoothedUpdatedClassData.get(oovClassName);
 		final Instances trainingInsts = oovClassDatum.getTrainingInsts();
 		LOGGER.debug("Re-training OOV class, with {} instance(s).", trainingInsts.size());
+		assert !trainingInsts.isEmpty();
 		final CompletableFuture<Void> result = CompletableFuture.runAsync(
 				new TrainedClassifierPutter(oovClassName, trainingInsts, currentWordClassifiers),
 				backgroundJobExecutor);
@@ -177,13 +178,13 @@ public final class UpdatingWordLogisticClassifierTrainer
 		// Create a new WordClassificationData instance in order to be able to re-apply
 		// smoothing to the original data again
 		final WordClassificationData smoothedTrainingData = new WordClassificationData(unsmoothedTrainingData);
-		final Object2ObjectMap<String, WordClassificationData.Datum> classInsts = smoothedTrainingData.getClassData();
-		assert !classInsts.containsKey(null);
+		final Object2ObjectMap<String, WordClassificationData.Datum> wordClassData = smoothedTrainingData.getClassData();
+		assert !wordClassData.containsKey(null);
 
-		final DiscountedWordClasses discountedWordClasses = smoother.redistributeMass(classInsts);
+		final DiscountedWordClasses discountedWordClasses = smoother.redistributeMass(wordClassData);
 		final DiscountedWordClasses.Datum oovClassDatum = discountedWordClasses.getOovClassDatum();
 		LOGGER.debug("{} instance(s) for out-of-vocabulary class.", oovClassDatum.getTrainingInstCount());
-		return Pair.of(createWordClassifierMap(classInsts.object2ObjectEntrySet()),
+		return Pair.of(createWordClassifierMap(wordClassData.object2ObjectEntrySet()),
 				discountedWordClasses.getDiscountedClassData());
 	}
 
