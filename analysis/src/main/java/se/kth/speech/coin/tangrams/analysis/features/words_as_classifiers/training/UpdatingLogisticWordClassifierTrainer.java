@@ -180,15 +180,17 @@ public final class UpdatingLogisticWordClassifierTrainer
 		// For each word class observed in the newly-added training data, check
 		// if the corresponding classifier needs to be retrained
 		for (final String updatedWordClass : updatedDialogueWordObservationCounts.keySet()) {
-			LOGGER.info("Updating classifier for updated set of instances for word class \"{}\".", updatedWordClass);
 			final DiscountedWordClasses.Datum updatedDiscountedWordClassDatum = updatedDiscountedWordClassData
 					.get(updatedWordClass);
+			final boolean wasCurrentlyDiscounted = updatedDiscountedWordClassDatum != null;
 			// The word class data for the given word class as it was when
 			// classifying the previous dialogue, given that it was discounted;
 			// This will be null reference if not discounted in last
 			// classification.
 			final DiscountedWordClasses.Datum lastDiscountedWordClassDatum = lastWordClassifierTrainingResults
 					.getDiscountedWordClasses().getDiscountedClassData().get(updatedWordClass);
+			final boolean wasPreviouslyDiscounted = lastDiscountedWordClassDatum != null;
+			LOGGER.info("Updating classifier for updated set of instances for word class \"{}\". Used currently for discounting? {}; Used previously for discounting? {}", updatedWordClass, wasCurrentlyDiscounted, wasPreviouslyDiscounted);
 			// If there is already a classifier trained for the given word
 			// class, it cannot
 			// have been discounted in the current training iteration
@@ -197,9 +199,9 @@ public final class UpdatingLogisticWordClassifierTrainer
 			// discounted word set for the last training iteration, there cannot
 			// be a
 			// classifier for it in the map
-			assert currentWordClassifiers.containsKey(updatedWordClass) == (lastDiscountedWordClassDatum != null);
+			assert currentWordClassifiers.containsKey(updatedWordClass) == !wasPreviouslyDiscounted : String.format("Classifier for word class \"%s\" already in map? %b; Was previously discounted? %b", updatedWordClass, currentWordClassifiers.containsKey(updatedWordClass), wasPreviouslyDiscounted);
 
-			if (updatedDiscountedWordClassDatum == null) {
+			if (!wasCurrentlyDiscounted) {
 				// Either more training instances have been added for the given,
 				// non-discounted word class in the case that it has been
 				// observed before, or
