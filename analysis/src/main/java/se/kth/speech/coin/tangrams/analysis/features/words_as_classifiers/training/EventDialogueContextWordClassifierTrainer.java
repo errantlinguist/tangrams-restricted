@@ -16,8 +16,8 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training;
 
+import java.util.Map;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 
 import se.kth.speech.coin.tangrams.analysis.GameContext;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
@@ -29,8 +29,8 @@ import weka.classifiers.Classifier;
  *
  */
 public interface EventDialogueContextWordClassifierTrainer<C extends Classifier>
-		extends BiFunction<EventDialogue, GameContext, Function<String, C>> {
+		extends BiFunction<EventDialogue, GameContext, Map<String, C>> {
 
 	@Override
-	Function<String, C> apply(final EventDialogue diagToClassify, final GameContext ctx);
+	Map<String, C> apply(final EventDialogue diagToClassify, final GameContext ctx);
 }

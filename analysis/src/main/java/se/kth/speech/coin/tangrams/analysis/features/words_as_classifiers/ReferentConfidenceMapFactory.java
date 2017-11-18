@@ -16,6 +16,7 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers;
 
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -86,7 +87,7 @@ public final class ReferentConfidenceMapFactory {
 	 *             classification} for any individual entity.
 	 */
 	public Optional<ReferentConfidenceData> apply(final Object2DoubleMap<String> tokens, final GameContext uttCtx,
-			final Function<? super String, ? extends Classifier> wordClassifiers) throws ClassificationException {
+			final Map<? super String, ? extends Classifier> wordClassifiers) throws ClassificationException {
 		final Optional<ReferentConfidenceData> result;
 
 		LOGGER.debug("Getting entity reference confidence measures for linguistic tokens: {}.", tokens);

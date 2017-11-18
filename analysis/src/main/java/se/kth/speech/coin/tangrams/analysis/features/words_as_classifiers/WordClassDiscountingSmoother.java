@@ -19,8 +19,8 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
-import java.util.function.Function;
 
 import javax.inject.Inject;
 
@@ -352,16 +352,16 @@ public final class WordClassDiscountingSmoother {
 
 	private void addSmoothedClassifierWeighting(final String wordClass, final double addendWeight,
 			final Object2ObjectMap<String, WeightedClassifier> alreadyObservedWordClassifiers,
-			final Function<? super String, ? extends Classifier> wordClassifiers) {
+			final Map<? super String, ? extends Classifier> wordClassifiers) {
 		final WeightedClassifier alreadyObservedClassifier = alreadyObservedWordClassifiers.get(wordClass);
 		if (alreadyObservedClassifier == null) {
 			// The given word class hasn't yet been used
-			final Classifier wordClassifier = wordClassifiers.apply(wordClass);
+			final Classifier wordClassifier = wordClassifiers.get(wordClass);
 			if (wordClassifier == null) {
 				// This word class was not seen in the training data; Use the
 				// OOV class instead
 				LOGGER.debug("Getting distribution for OOV class (\"{}\").", oovClassName);
-				final Classifier oovClassifier = wordClassifiers.apply(oovClassName);
+				final Classifier oovClassifier = wordClassifiers.get(oovClassName);
 				final WeightedClassifier newWeightedClassifier = new WeightedClassifier(oovClassifier, addendWeight);
 				alreadyObservedWordClassifiers.put(oovClassName, newWeightedClassifier);
 			} else {
@@ -423,7 +423,7 @@ public final class WordClassDiscountingSmoother {
 
 	Object2ObjectMap<String, WeightedClassifier> createWeightedClassifierMap(
 			final ObjectCollection<Object2DoubleMap.Entry<String>> wordClassWeights,
-			final Function<? super String, ? extends Classifier> wordClassifiers) {
+			final Map<? super String, ? extends Classifier> wordClassifiers) {
 		// There are likely fewer result classifiers than the input size because
 		// some classes will likely be OOV
 		final Object2ObjectMap<String, WeightedClassifier> result = new Object2ObjectOpenHashMap<>(

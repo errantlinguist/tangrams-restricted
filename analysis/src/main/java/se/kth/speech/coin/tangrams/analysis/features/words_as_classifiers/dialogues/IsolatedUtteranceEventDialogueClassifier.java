@@ -17,6 +17,7 @@
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues;
 
 import java.math.BigDecimal;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -58,16 +59,15 @@ public final class IsolatedUtteranceEventDialogueClassifier implements EventDial
 	@Override
 	public Optional<ReferentConfidenceData> apply(final EventDialogue diag, final GameContext ctx)
 			throws ClassificationException {
-		final Function<? super String, ? extends Classifier> wordClassifierGetter = diagWordClassifierFactory
-				.apply(diag, ctx);
+		final Map<? super String, ? extends Classifier> wordClassifiers = diagWordClassifierFactory.apply(diag, ctx);
 		final Stream<WeightedUtterance> weightedUtts = diagUttWeighter.apply(diag);
 		final int estimatedTokenCount = diag.getUtterances().size() * 4;
-		return createReferentConfidenceMap(weightedUtts, estimatedTokenCount, ctx, wordClassifierGetter);
+		return createReferentConfidenceMap(weightedUtts, estimatedTokenCount, ctx, wordClassifiers);
 	}
 
 	/**
-	 * Calculates the confidence of a given sequence of {@link Utterance
-	 * utterances} referring to each referenceable entity given a particular
+	 * Calculates the confidence of a given sequence of {@link Utterance utterances}
+	 * referring to each referenceable entity given a particular
 	 * {@link GameContext}.
 	 *
 	 * @param dialogueUtts
@@ -79,19 +79,19 @@ public final class IsolatedUtteranceEventDialogueClassifier implements EventDial
 	 *            The {@link GameContext} instance representing the state of the
 	 *            game at the time the given utterances were made.
 	 * @param wordClassifierGetter
-	 *            A {@link Function} returning the {@link Classifier} instance
-	 *            to use for a particular token type encountered.
+	 *            A {@link Map} returning the {@link Classifier} instance to use for
+	 *            a particular token type encountered.
 	 * @return A new {@link ReferentConfidenceData} mapping entity IDs to the
-	 *         confidence measure of the entity with the given ID being referred
-	 *         to by the given utterances.
+	 *         confidence measure of the entity with the given ID being referred to
+	 *         by the given utterances.
 	 * @throws ClassificationException
 	 *             If an error occurs while
-	 *             {@link ReferentConfidenceMapFactory#apply(Object2DoubleMap, GameContext, Function)
+	 *             {@link ReferentConfidenceMapFactory#apply(Object2DoubleMap, GameContext, Map)
 	 *             classifying} any individual entity.
 	 */
 	private Optional<ReferentConfidenceData> createReferentConfidenceMap(final Stream<WeightedUtterance> dialogueUtts,
 			final int expectedTokenCount, final GameContext uttCtx,
-			final Function<? super String, ? extends Classifier> wordClassifierGetter) throws ClassificationException {
+			final Map<? super String, ? extends Classifier> wordClassifierGetter) throws ClassificationException {
 		final Object2DoubleMap<String> diagTokens = new Object2DoubleOpenHashMap<>(expectedTokenCount, 1.0f);
 		dialogueUtts.forEach(dialogueUtt -> {
 			final double weight = dialogueUtt.getWeight();

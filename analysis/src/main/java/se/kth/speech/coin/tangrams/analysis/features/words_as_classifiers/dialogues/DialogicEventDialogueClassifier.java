@@ -18,6 +18,7 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialo
 
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.ToDoubleFunction;
@@ -87,7 +88,7 @@ public final class DialogicEventDialogueClassifier implements EventDialogueClass
 				LOGGER.debug("No utterances to classify for {}.", diag);
 				result = NULL_RESULT;
 			} else {
-				final Function<? super String, ? extends Classifier> wordClassifierGetter = diagWordClassifierFactory
+				final Map<String, ? extends Classifier> wordClassifiers = diagWordClassifierFactory
 						.apply(diag, ctx);
 				final DialogicEventDialogueUtteranceSorter uttSorter = new DialogicEventDialogueUtteranceSorter(
 						uttAcceptanceRanker);
@@ -101,7 +102,7 @@ public final class DialogicEventDialogueClassifier implements EventDialogueClass
 						.forEach(entry -> refExs.put(entry.getKey(), entry.getDoubleValue()));
 				refNegExs.object2DoubleEntrySet().stream()
 						.forEach(entry -> refExs.put(entry.getKey(), -entry.getDoubleValue()));
-				result = referentConfidenceMapFactory.apply(refExs, ctx, wordClassifierGetter);
+				result = referentConfidenceMapFactory.apply(refExs, ctx, wordClassifiers);
 			}
 		} else {
 			result = NULL_RESULT;

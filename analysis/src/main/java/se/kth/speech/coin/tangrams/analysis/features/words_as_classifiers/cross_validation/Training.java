@@ -59,7 +59,6 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.traini
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.TrainingInstancesFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.UpdatingWordLogisticClassifierTrainer;
 import se.kth.speech.nlp.PatternMatchingUtteranceAcceptanceRanker;
-import weka.classifiers.Classifier;
 import weka.classifiers.functions.Logistic;
 
 enum Training {
@@ -145,9 +144,11 @@ enum Training {
 					.getBean(EntityFeatureExtractionContextFactory.class);
 			final Map<WordClassifierTrainingParameter, Object> trainingParams = trainingCtx.getTrainingParams();
 			return new SizeEstimatingInstancesMapFactory(
-					new DialogicInstanceExtractor(entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory,
-							fetchCachingUttAcceptanceRanker(trainingCtx), fetchDialogicWordClassFactory(trainingCtx),
-							trainingCtx.getUttRelHandler()),
+					new DialogicInstanceExtractor(
+							entityInstAttrCtx, trainingCtx
+									.getDiagTransformer(),
+							extCtxFactory, fetchCachingUttAcceptanceRanker(trainingCtx),
+							fetchDialogicWordClassFactory(trainingCtx), trainingCtx.getUttRelHandler()),
 					entityInstAttrCtx,
 					(Double) trainingParams
 							.get(WordClassifierTrainingParameter.BACKGROUND_DATA_POSITIVE_EXAMPLE_WEIGHT_FACTOR),
@@ -169,12 +170,13 @@ enum Training {
 				// This classifier is statically-trained, i.e. the word models
 				// used for classification are the same no matter what dialogue
 				// is being classified
-				final EventDialogueContextWordClassifierTrainer<?> diagWordClassifierFactory;
+				final EventDialogueContextWordClassifierTrainer<Logistic> diagWordClassifierFactory;
 				{
-					final ConcurrentMap<String, Logistic> wordClassifiers = trainer
+					final Map<String, Logistic> wordClassifiers = trainer
 							.apply(classificationContext.getTrainingData());
-					final Function<String, Classifier> wordClassifierGetter = wordClassifiers::get;
-					diagWordClassifierFactory = (diagToClassify, ctx) -> wordClassifierGetter;
+					// final Function<String, Classifier> wordClassifierGetter =
+					// wordClassifiers::get;
+					diagWordClassifierFactory = (diagToClassify, ctx) -> wordClassifiers;
 				}
 				return new DialogicEventDialogueClassifier(diagWordClassifierFactory,
 						fetchCachingUttAcceptanceRanker(trainingCtx), fetchDialogicWordClassFactory(trainingCtx),
@@ -202,9 +204,11 @@ enum Training {
 					.getBean(EntityFeatureExtractionContextFactory.class);
 			final Map<WordClassifierTrainingParameter, Object> trainingParams = trainingCtx.getTrainingParams();
 			return new SizeEstimatingInstancesMapFactory(
-					new DialogicInstanceExtractor(entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory,
-							fetchCachingUttAcceptanceRanker(trainingCtx), fetchDialogicWordClassFactory(trainingCtx),
-							trainingCtx.getUttRelHandler()),
+					new DialogicInstanceExtractor(
+							entityInstAttrCtx, trainingCtx
+									.getDiagTransformer(),
+							extCtxFactory, fetchCachingUttAcceptanceRanker(trainingCtx),
+							fetchDialogicWordClassFactory(trainingCtx), trainingCtx.getUttRelHandler()),
 					entityInstAttrCtx,
 					(Double) trainingParams
 							.get(WordClassifierTrainingParameter.BACKGROUND_DATA_POSITIVE_EXAMPLE_WEIGHT_FACTOR),
@@ -338,12 +342,12 @@ enum Training {
 			// This classifier is statically-trained, i.e. the word models
 			// used for classification are the same no matter what dialogue
 			// is being classified
-			final EventDialogueContextWordClassifierTrainer<?> diagWordClassifierFactory;
+			final EventDialogueContextWordClassifierTrainer<Logistic> diagWordClassifierFactory;
 			{
-				final ConcurrentMap<String, Logistic> wordClassifiers = trainer
-						.apply(classificationContext.getTrainingData());
-				final Function<String, Classifier> wordClassifierGetter = wordClassifiers::get;
-				diagWordClassifierFactory = (diagToClassify, ctx) -> wordClassifierGetter;
+				final Map<String, Logistic> wordClassifiers = trainer.apply(classificationContext.getTrainingData());
+				// final Function<String, Classifier> wordClassifierGetter =
+				// wordClassifiers::get;
+				diagWordClassifierFactory = (diagToClassify, ctx) -> wordClassifiers;
 			}
 
 			final BigDecimal instrUttObsWeight = (BigDecimal) trainingParams

@@ -22,7 +22,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
-import java.util.function.Function;
 import java.util.stream.Stream;
 
 import org.apache.commons.lang3.tuple.Pair;
@@ -119,24 +118,22 @@ public final class UpdatingWordLogisticClassifierTrainer
 	}
 
 	@Override
-	public Function<String, Logistic> apply(final EventDialogue diagToClassify, final GameContext ctx) {
-		final Function<String, Logistic> result;
+	public ConcurrentMap<String, Logistic> apply(final EventDialogue diagToClassify, final GameContext ctx) {
+		final ConcurrentMap<String, Logistic> result;
 
 		synchronized (lastWordClassifierTrainingResults) {
 			final CompletableFuture<ConcurrentMap<String, Logistic>> updatedClassifierMapFuture = lastWordClassifierTrainingResults
 					.getKey();
-			ConcurrentMap<String, Logistic> wordClassifiers = null;
 			try {
 				// Return the completed map of all classifiers to the caller of
 				// this
 				// method so that the given dialogue can be classified
-				wordClassifiers = updatedClassifierMapFuture.get();
+				result = updatedClassifierMapFuture.get();
 			} catch (InterruptedException | ExecutionException e) {
 				throw new TrainingException(e);
 			}
 
-			result = wordClassifiers::get;
-			lastWordClassifierTrainingResults = updateWordClassifierMap(wordClassifiers, diagToClassify, ctx);
+			lastWordClassifierTrainingResults = updateWordClassifierMap(result, diagToClassify, ctx);
 		}
 		return result;
 	}
@@ -178,7 +175,8 @@ public final class UpdatingWordLogisticClassifierTrainer
 		// Create a new WordClassificationData instance in order to be able to re-apply
 		// smoothing to the original data again
 		final WordClassificationData smoothedTrainingData = new WordClassificationData(unsmoothedTrainingData);
-		final Object2ObjectMap<String, WordClassificationData.Datum> wordClassData = smoothedTrainingData.getClassData();
+		final Object2ObjectMap<String, WordClassificationData.Datum> wordClassData = smoothedTrainingData
+				.getClassData();
 		assert !wordClassData.containsKey(null);
 
 		final DiscountedWordClasses discountedWordClasses = smoother.redistributeMass(wordClassData);
@@ -221,6 +219,7 @@ public final class UpdatingWordLogisticClassifierTrainer
 		// For each word class observed in the newly-added training data, check
 		// if the corresponding classifier needs to be retrained
 		for (final String updatedWordClass : updatedDialogueWordObservationCounts.keySet()) {
+			LOGGER.info("Updating classifier for updated set of instances for word class \"{}\".", updatedWordClass);
 			final DiscountedWordClasses.Datum updatedDiscountedWordClassDatum = updatedDiscountedWordClassData
 					.get(updatedWordClass);
 			// The word class data for the given word class as it was when
