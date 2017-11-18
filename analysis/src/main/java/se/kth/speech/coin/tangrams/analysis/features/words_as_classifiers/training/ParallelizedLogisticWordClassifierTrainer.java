@@ -43,6 +43,12 @@ public final class ParallelizedLogisticWordClassifierTrainer
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(ParallelizedLogisticWordClassifierTrainer.class);
 
+	private static ConcurrentMap<String, Logistic> createInitialMap(
+			final ObjectSet<Object2ObjectMap.Entry<String, WordClassificationData.Datum>> classData) {
+		// TODO: optimize
+		return new ConcurrentHashMap<>(classData.size() + 1, 1.0f);
+	}
+
 	private final Executor backgroundJobExecutor;
 
 	private final WordClassDiscountingSmoother smoother;
@@ -60,13 +66,14 @@ public final class ParallelizedLogisticWordClassifierTrainer
 				.redistributeMass(smoothedTrainingData.getClassData());
 		LOGGER.info("{} instance(s) for out-of-vocabulary class.",
 				discountedWordClasses.getOovClassDatum().getTrainingInstCount());
-		 CompletableFuture<ConcurrentMap<String, Logistic>> futureWordClassifiers = createWordClassifierMap(smoothedTrainingData.getClassData().object2ObjectEntrySet());
-		 return new TrainingResults<Logistic>(futureWordClassifiers, discountedWordClasses);
+		final CompletableFuture<ConcurrentMap<String, Logistic>> futureWordClassifiers = createWordClassifierMap(
+				smoothedTrainingData.getClassData().object2ObjectEntrySet());
+		return new TrainingResults<>(futureWordClassifiers, discountedWordClasses);
 	}
 
 	private CompletableFuture<ConcurrentMap<String, Logistic>> createWordClassifierMap(
 			final ObjectSet<Object2ObjectMap.Entry<String, WordClassificationData.Datum>> classData) {
-		final ConcurrentMap<String, Logistic> wordClassifiers = new ConcurrentHashMap<>(classData.size() + 1, 1.0f);
+		final ConcurrentMap<String, Logistic> wordClassifiers = createInitialMap(classData);
 		final Stream.Builder<CompletableFuture<Void>> trainingJobs = Stream.builder();
 		for (final Object2ObjectMap.Entry<String, WordClassificationData.Datum> classDatum : classData) {
 			final String className = classDatum.getKey();
@@ -86,8 +93,7 @@ public final class ParallelizedLogisticWordClassifierTrainer
 			}, backgroundJobExecutor);
 			trainingJobs.add(trainingJob);
 		}
-		return CompletableFuture
-				.allOf(trainingJobs.build().toArray(CompletableFuture[]::new))
+		return CompletableFuture.allOf(trainingJobs.build().toArray(CompletableFuture[]::new))
 				.thenApply(voidArg -> wordClassifiers);
 	}
 
