@@ -319,9 +319,7 @@ public final class WordClassDiscountingSmoother {
 	 *         about the word classes used for discounting and the {@link Instances}
 	 *         objects for each.
 	 */
-	public DiscountedWordClasses redistributeMass(final WordClassificationData trainingData) {
-		final Object2ObjectMap<String, WordClassificationData.Datum> classInsts = trainingData.getClassData();
-		assert classInsts.get(null) == null;
+	public DiscountedWordClasses redistributeMass(final Object2ObjectMap<String, WordClassificationData.Datum> classInsts) {
 		final Object2ObjectMap<String, WordClassificationData.Datum> wordClassesToDiscount = createdAddendClassInstsMap(
 				classInsts);
 		if (wordClassesToDiscount.isEmpty()) {

@@ -56,7 +56,7 @@ public final class ParallelizedWordLogisticClassifierTrainer
 	@Override
 	public ConcurrentMap<String, Logistic> apply(final WordClassificationData trainingData) {
 		final WordClassificationData smoothedTrainingData = new WordClassificationData(trainingData);
-		final DiscountedWordClasses discountedWordClasses = smoother.redistributeMass(smoothedTrainingData);
+		final DiscountedWordClasses discountedWordClasses = smoother.redistributeMass(smoothedTrainingData.getClassData());
 		LOGGER.info("{} instance(s) for out-of-vocabulary class.",
 				discountedWordClasses.getOovClassDatum().getTrainingInstCount());
 		return createWordClassifierMap(smoothedTrainingData.getClassData().object2ObjectEntrySet());

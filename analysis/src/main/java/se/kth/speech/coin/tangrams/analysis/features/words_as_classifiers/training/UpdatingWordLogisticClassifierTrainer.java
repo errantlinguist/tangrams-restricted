@@ -90,9 +90,8 @@ public final class UpdatingWordLogisticClassifierTrainer
 	/**
 	 * A pair including the {@link CompletableFuture future} of the
 	 * {@link Object2ObjectMap} of word classifiers to use for the next dialogue
-	 * being classified and a mapping of each word class used for discounting
-	 * during smoothing to its corresponding
-	 * {@link DiscountedWordClasses.Datum}.
+	 * being classified and a mapping of each word class used for discounting during
+	 * smoothing to its corresponding {@link DiscountedWordClasses.Datum}.
 	 */
 	private Map.Entry<CompletableFuture<ConcurrentMap<String, Logistic>>, Object2ObjectMap<String, DiscountedWordClasses.Datum>> lastWordClassifierTrainingResults;
 
@@ -175,11 +174,16 @@ public final class UpdatingWordLogisticClassifierTrainer
 
 	private Map.Entry<CompletableFuture<ConcurrentMap<String, Logistic>>, Object2ObjectMap<String, DiscountedWordClasses.Datum>> trainWordClassifiers(
 			final WordClassificationData unsmoothedTrainingData) {
+		// Create a new WordClassificationData instance in order to be able to re-apply
+		// smoothing to the original data again
 		final WordClassificationData smoothedTrainingData = new WordClassificationData(unsmoothedTrainingData);
-		final DiscountedWordClasses discountedWordClasses = smoother.redistributeMass(smoothedTrainingData);
+		final Object2ObjectMap<String, WordClassificationData.Datum> classInsts = smoothedTrainingData.getClassData();
+		assert !classInsts.containsKey(null);
+
+		final DiscountedWordClasses discountedWordClasses = smoother.redistributeMass(classInsts);
 		final DiscountedWordClasses.Datum oovClassDatum = discountedWordClasses.getOovClassDatum();
 		LOGGER.debug("{} instance(s) for out-of-vocabulary class.", oovClassDatum.getTrainingInstCount());
-		return Pair.of(createWordClassifierMap(smoothedTrainingData.getClassData().object2ObjectEntrySet()),
+		return Pair.of(createWordClassifierMap(classInsts.object2ObjectEntrySet()),
 				discountedWordClasses.getDiscountedClassData());
 	}
 
@@ -188,17 +192,20 @@ public final class UpdatingWordLogisticClassifierTrainer
 			final GameContext ctx) {
 		final Object2IntMap<String> updatedDialogueWordObservationCounts = instExtractor.addTrainingData(diagToClassify,
 				ctx.getHistory(), totalTrainingData, positiveExampleWeightFactor, negativeExampleWeightFactor);
+		// Create a new WordClassificationData instance in order to be able to re-apply
+		// smoothing to the original data again
 		final WordClassificationData smoothedUpdatedTrainingData = new WordClassificationData(totalTrainingData);
 		// Smoother calculates which word class Instances objects should be
 		// discounted, removes them from the classification data object and puts
 		// it into the OOV label Instances object
-		final DiscountedWordClasses smoothingResults = smoother.redistributeMass(smoothedUpdatedTrainingData);
+		final Object2ObjectMap<String, WordClassificationData.Datum> smoothedUpdatedClassData = smoothedUpdatedTrainingData
+				.getClassData();
+		assert !smoothedUpdatedClassData.containsKey(null);
+		final DiscountedWordClasses smoothingResults = smoother.redistributeMass(smoothedUpdatedClassData);
 		LOGGER.debug("{} instance(s) for out-of-vocabulary class.",
 				smoothingResults.getOovClassDatum().getTrainingInstCount());
 		final Object2ObjectMap<String, DiscountedWordClasses.Datum> updatedDiscountedWordClassData = smoothingResults
 				.getDiscountedClassData();
-		final Object2ObjectMap<String, WordClassificationData.Datum> smoothedUpdatedClassData = smoothedUpdatedTrainingData
-				.getClassData();
 		final Stream.Builder<CompletableFuture<Void>> wordClassTrainingJobs = Stream.builder();
 
 		// Always re-train the OOV class because it's easier and likely not much
