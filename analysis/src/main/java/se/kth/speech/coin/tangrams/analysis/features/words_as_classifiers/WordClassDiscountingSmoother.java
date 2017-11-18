@@ -320,8 +320,10 @@ public final class WordClassDiscountingSmoother {
 	 *         objects for each.
 	 */
 	public DiscountedWordClasses redistributeMass(final WordClassificationData trainingData) {
+		final Object2ObjectMap<String, WordClassificationData.Datum> classInsts = trainingData.getClassData();
+		assert classInsts.get(null) == null;
 		final Object2ObjectMap<String, WordClassificationData.Datum> wordClassesToDiscount = createdAddendClassInstsMap(
-				trainingData);
+				classInsts);
 		if (wordClassesToDiscount.isEmpty()) {
 			throw new IllegalArgumentException(
 					String.format("Could not find any word classes with fewer than %s instance(s).", minCount));
@@ -362,9 +364,7 @@ public final class WordClassDiscountingSmoother {
 	}
 
 	private Object2ObjectMap<String, WordClassificationData.Datum> createdAddendClassInstsMap(
-			final WordClassificationData trainingData) {
-		final Object2ObjectMap<String, WordClassificationData.Datum> classInsts = trainingData.getClassData();
-		assert classInsts.get(null) == null;
+			final Object2ObjectMap<String, WordClassificationData.Datum> classInsts) {
 		final Collection<Entry<String, WordClassificationData.Datum>> wordClassesToDiscount = findClassesToDiscount(
 				classInsts.object2ObjectEntrySet());
 		assert wordClassesToDiscount.stream().map(Entry::getKey).distinct().count() == wordClassesToDiscount.size();
