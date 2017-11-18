@@ -22,7 +22,7 @@ public final class TrimmableObject2ObjectMap<K, V> implements Object2ObjectMap<K
 
 	/**
 	 * A closure class for trimming objects implementing the
-	 * {@link Object2ObjectMap} interface, i.e.&bnsp;for use with a method reference
+	 * {@link Object2ObjectMap} interface, i.e.&nbsp;for use with a method reference
 	 * to {@link Object2ObjectOpenHashMap#trim()}.
 	 *
 	 * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
