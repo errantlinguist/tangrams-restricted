@@ -49,7 +49,7 @@ public final class Iterators {
 	 * Finds the next element returned by a given {@link Iterator} which matches a
 	 * given {@link Predicate} along with all elements iterated through before
 	 * matching.
-	 * 
+	 *
 	 * @param iter
 	 *            The {@code Iterator} to retrieve elements from.
 	 * @param delimiterMatcher
