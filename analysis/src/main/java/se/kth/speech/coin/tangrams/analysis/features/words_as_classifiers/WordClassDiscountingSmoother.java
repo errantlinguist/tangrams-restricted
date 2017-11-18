@@ -334,7 +334,7 @@ public final class WordClassDiscountingSmoother {
 	 */
 	public DiscountedWordClasses redistributeMass(
 			final Object2ObjectMap<String, WordClassificationData.Datum> wordClassData) {
-		final Object2ObjectMap<String, WordClassificationData.Datum> wordClassesToDiscount = createdAddendClassInstsMap(
+		final Object2ObjectMap<String, WordClassificationData.Datum> wordClassesToDiscount = createdDiscountedClassInstsMap(
 				wordClassData);
 		if (wordClassesToDiscount.isEmpty()) {
 			throw new IllegalArgumentException(
@@ -375,7 +375,7 @@ public final class WordClassDiscountingSmoother {
 		}
 	}
 
-	private Object2ObjectMap<String, WordClassificationData.Datum> createdAddendClassInstsMap(
+	private Object2ObjectMap<String, WordClassificationData.Datum> createdDiscountedClassInstsMap(
 			final Object2ObjectMap<String, WordClassificationData.Datum> wordClassData) {
 		final Collection<Entry<String, WordClassificationData.Datum>> wordClassesToDiscount = findClassesToDiscount(
 				wordClassData);
