@@ -45,6 +45,18 @@ public final class Iterators {
 		return result;
 	}
 
+	/**
+	 * Finds the next element returned by a given {@link Iterator} which matches a
+	 * given {@link Predicate} along with all elements iterated through before
+	 * matching.
+	 * 
+	 * @param iter
+	 *            The {@code Iterator} to retrieve elements from.
+	 * @param delimiterMatcher
+	 *            A {@link Predicate} matching the delimiting element.
+	 * @return A pair comprising a {@link Stream} of elements encountered before the
+	 *         delimiting element as well as the element itself.
+	 */
 	public static <T> Entry<Stream<T>, Optional<T>> findElementsBeforeDelimiter(final Iterator<? extends T> iter,
 			final Predicate<? super T> delimiterMatcher) {
 		final Entry<Stream<T>, Optional<T>> result;
