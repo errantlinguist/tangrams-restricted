@@ -152,7 +152,9 @@ public final class WordClassificationData {
 		final Object2ObjectOpenHashMap<String, Datum> result = new Object2ObjectOpenHashMap<>(
 				copyeeClassData.size() + 1, 1.0f);
 		for (final Object2ObjectMap.Entry<String, Datum> entry : copyeeClassData.object2ObjectEntrySet()) {
-			result.put(entry.getKey(), new Datum(entry.getValue()));
+			final String wordClass = entry.getKey();
+			assert wordClass != null;
+			result.put(wordClass, new Datum(entry.getValue()));
 		}
 		return result;
 	}
