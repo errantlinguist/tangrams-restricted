@@ -265,11 +265,11 @@ public final class WordClassDiscountingSmoother {
 		return result;
 	}
 
-	private static Object2ObjectMap<String, DiscountedWordClasses.Datum> createDiscountedWordClassDataMap(
-			final Object2ObjectMap<String, WordClassificationData.Datum> discountedWordClasses) {
-		final Object2ObjectMap<String, DiscountedWordClasses.Datum> result = new Object2ObjectOpenHashMap<>(
+	private static <T> Object2ObjectMap<T, DiscountedWordClasses.Datum> createDiscountedWordClassDataMap(
+			final Object2ObjectMap<T, WordClassificationData.Datum> discountedWordClasses) {
+		final Object2ObjectMap<T, DiscountedWordClasses.Datum> result = new Object2ObjectOpenHashMap<>(
 				discountedWordClasses.size() + 1, 1.0f);
-		for (final Object2ObjectMap.Entry<String, WordClassificationData.Datum> discountedWordClass : discountedWordClasses
+		for (final Object2ObjectMap.Entry<T, WordClassificationData.Datum> discountedWordClass : discountedWordClasses
 				.object2ObjectEntrySet()) {
 			result.put(discountedWordClass.getKey(), new DiscountedWordClasses.Datum(discountedWordClass.getValue()));
 		}
