@@ -376,9 +376,11 @@ public final class WordClassDiscountingSmoother {
 	}
 
 	/**
+	 * Finds word classes in a given {@link Object2ObjectMap} which should be
+	 * discounted and then removes them from the given map.
 	 *
 	 * @param wordClassData
-	 *            The {@link Object2ObjectMap} of {@link WordClassificationData} to
+	 *            The {@code Object2ObjectMap} of {@link WordClassificationData} to
 	 *            modify.
 	 * @return A new {@code Object2ObjectMap} of {@code WordClassificationData} for
 	 *         each word class which was discounted.
