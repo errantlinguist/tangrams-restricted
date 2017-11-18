@@ -344,7 +344,7 @@ public final class WordClassDiscountingSmoother {
 		// The new set of word classes is different from the previous one;
 		// Re-redistribute instances to the OOV class
 		final WordClassificationData.Datum oovClassDatum = redistributeMassToOovClass(wordClassData,
-				wordClassesToDiscount.object2ObjectEntrySet());
+				wordClassesToDiscount);
 		final Object2ObjectMap<String, DiscountedWordClasses.Datum> discountedWordClassData = createDiscountedWordClassDataMap(
 				wordClassesToDiscount);
 		return new DiscountedWordClasses(discountedWordClassData, new DiscountedWordClasses.Datum(oovClassDatum));
@@ -392,6 +392,12 @@ public final class WordClassDiscountingSmoother {
 			result.put(className, wordClassData.remove(className));
 		}
 		return result;
+	}
+
+	private WordClassificationData.Datum redistributeMassToOovClass(
+			final Object2ObjectMap<String, WordClassificationData.Datum> wordClassData,
+			final Object2ObjectMap<String, WordClassificationData.Datum> addendWordClassData) {
+		return redistributeMassToOovClass(wordClassData, addendWordClassData.object2ObjectEntrySet());
 	}
 
 	private WordClassificationData.Datum redistributeMassToOovClass(
