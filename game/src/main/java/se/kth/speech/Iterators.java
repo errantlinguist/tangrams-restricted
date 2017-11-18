@@ -35,10 +35,12 @@ public final class Iterators {
 	public static <T> List<T> createRemainingElementList(final Iterator<? extends T> iter) {
 		final List<T> result;
 		if (iter.hasNext()) {
-			result = new ArrayList<>();
+			final ArrayList<T> mutableResult = new ArrayList<>();
 			do {
-				result.add(iter.next());
+				mutableResult.add(iter.next());
 			} while (iter.hasNext());
+			mutableResult.trimToSize();
+			result = mutableResult;
 		} else {
 			result = Collections.emptyList();
 		}
