@@ -375,6 +375,14 @@ public final class WordClassDiscountingSmoother {
 		}
 	}
 
+	/**
+	 *
+	 * @param wordClassData
+	 *            The {@link Object2ObjectMap} of {@link WordClassificationData} to
+	 *            modify.
+	 * @return A new {@code Object2ObjectMap} of {@code WordClassificationData} for
+	 *         each word class which was discounted.
+	 */
 	private Object2ObjectMap<String, WordClassificationData.Datum> createdDiscountedClassDataMap(
 			final Object2ObjectMap<String, WordClassificationData.Datum> wordClassData) {
 		final Collection<Entry<String, WordClassificationData.Datum>> wordClassesToDiscount = findClassesToDiscount(
