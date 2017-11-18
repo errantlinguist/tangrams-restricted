@@ -400,6 +400,9 @@ public final class WordClassDiscountingSmoother {
 			return new WordClassificationData.Datum(oovClassDatum);
 		});
 		addendWordClassData.stream().map(Object2ObjectMap.Entry::getValue).forEach(result::add);
+		
+		assert addendWordClassData.stream().map(Object2ObjectMap.Entry::getValue).mapToInt(WordClassificationData.Datum::getObservationCount).sum() == result.getObservationCount();
+		assert addendWordClassData.stream().map(Object2ObjectMap.Entry::getValue).map(WordClassificationData.Datum::getTrainingInsts).mapToInt(Instances::size).sum() == result.getTrainingInsts().size();
 		return result;
 	}
 
