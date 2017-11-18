@@ -56,7 +56,8 @@ public final class ParallelizedWordLogisticClassifierTrainer
 	@Override
 	public ConcurrentMap<String, Logistic> apply(final WordClassificationData trainingData) {
 		final WordClassificationData smoothedTrainingData = new WordClassificationData(trainingData);
-		final DiscountedWordClasses discountedWordClasses = smoother.redistributeMass(smoothedTrainingData.getClassData());
+		final DiscountedWordClasses discountedWordClasses = smoother
+				.redistributeMass(smoothedTrainingData.getClassData());
 		LOGGER.info("{} instance(s) for out-of-vocabulary class.",
 				discountedWordClasses.getOovClassDatum().getTrainingInstCount());
 		return createWordClassifierMap(smoothedTrainingData.getClassData().object2ObjectEntrySet());
@@ -81,12 +82,6 @@ public final class ParallelizedWordLogisticClassifierTrainer
 				}
 				final Logistic oldClassifier = result.put(className, classifier);
 				assert oldClassifier == null;
-				// if (oldClassifier != null) {
-				// throw new IllegalArgumentException(
-				// String.format("More than one file for word class \"%s\".",
-				// className));
-				// }
-
 			}, backgroundJobExecutor);
 			trainingJobs.add(trainingJob);
 		}
