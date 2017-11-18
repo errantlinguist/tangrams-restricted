@@ -40,7 +40,7 @@ import weka.core.Instances;
  * @since 20 Oct 2017
  *
  */
-public final class UpdatingWordLogisticClassifierTrainer
+public final class UpdatingLogisticWordClassifierTrainer
 		implements EventDialogueContextWordClassifierTrainer<Logistic> {
 
 	private static class TrainedClassifierPutter implements Runnable {
@@ -66,7 +66,7 @@ public final class UpdatingWordLogisticClassifierTrainer
 
 	}
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(UpdatingWordLogisticClassifierTrainer.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(UpdatingLogisticWordClassifierTrainer.class);
 
 	private static Logistic createTrainedClassifier(final String wordClass, final Instances trainingInsts)
 			throws WordClassifierTrainingException {
@@ -96,7 +96,7 @@ public final class UpdatingWordLogisticClassifierTrainer
 
 	private final WordClassificationData totalTrainingData;
 
-	public UpdatingWordLogisticClassifierTrainer(final Executor backgroundJobExecutor,
+	public UpdatingLogisticWordClassifierTrainer(final Executor backgroundJobExecutor,
 			final WordClassDiscountingSmoother smoother, final WordClassificationData initialTrainingData,
 			final AbstractInstanceExtractor instExtractor, final double positiveExampleWeightFactor,
 			final double negativeExampleWeightFactor) {
@@ -104,7 +104,7 @@ public final class UpdatingWordLogisticClassifierTrainer
 		this.smoother = smoother;
 		totalTrainingData = initialTrainingData;
 
-		lastWordClassifierTrainingResults = new ParallelizedWordLogisticClassifierTrainer(backgroundJobExecutor,
+		lastWordClassifierTrainingResults = new ParallelizedLogisticWordClassifierTrainer(backgroundJobExecutor,
 				smoother).apply(initialTrainingData);
 
 		this.instExtractor = instExtractor;

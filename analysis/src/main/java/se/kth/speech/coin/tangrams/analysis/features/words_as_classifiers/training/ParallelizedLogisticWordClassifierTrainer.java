@@ -38,16 +38,16 @@ import weka.core.Instances;
  * @since 20 Oct 2017
  *
  */
-public final class ParallelizedWordLogisticClassifierTrainer
+public final class ParallelizedLogisticWordClassifierTrainer
 		implements Function<WordClassificationData, TrainingResults<Logistic>> {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(ParallelizedWordLogisticClassifierTrainer.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(ParallelizedLogisticWordClassifierTrainer.class);
 
 	private final Executor backgroundJobExecutor;
 
 	private final WordClassDiscountingSmoother smoother;
 
-	public ParallelizedWordLogisticClassifierTrainer(final Executor backgroundJobExecutor,
+	public ParallelizedLogisticWordClassifierTrainer(final Executor backgroundJobExecutor,
 			final WordClassDiscountingSmoother smoother) {
 		this.backgroundJobExecutor = backgroundJobExecutor;
 		this.smoother = smoother;

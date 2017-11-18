@@ -58,11 +58,11 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.traini
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.EventDialogueContextWordClassifierTrainer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.OnePositiveMaximumNegativeInstanceExtractor;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.OnePositiveOneNegativeInstanceExtractor;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.ParallelizedWordLogisticClassifierTrainer;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.ParallelizedLogisticWordClassifierTrainer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.SizeEstimatingInstancesMapFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.TrainingException;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.TrainingInstancesFactory;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.UpdatingWordLogisticClassifierTrainer;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.UpdatingLogisticWordClassifierTrainer;
 import se.kth.speech.nlp.PatternMatchingUtteranceAcceptanceRanker;
 import weka.classifiers.Classifier;
 import weka.classifiers.functions.Logistic;
@@ -171,7 +171,7 @@ enum Training {
 			final WordClassDiscountingSmoother smoother = appCtx.getBean(WordClassDiscountingSmoother.class,
 					smoothingMinCount);
 			return classificationContext -> {
-				final ParallelizedWordLogisticClassifierTrainer trainer = new ParallelizedWordLogisticClassifierTrainer(
+				final ParallelizedLogisticWordClassifierTrainer trainer = new ParallelizedLogisticWordClassifierTrainer(
 						classificationContext.getBackgroundJobExecutor(), smoother);
 				// This classifier is statically-trained, i.e. the word models
 				// used for classification are the same no matter what dialogue
@@ -238,7 +238,7 @@ enum Training {
 						.get(WordClassifierTrainingParameter.SMOOTHING_MIN_COUNT);
 				final WordClassDiscountingSmoother smoother = appCtx.getBean(WordClassDiscountingSmoother.class,
 						smoothingMinCount);
-				final UpdatingWordLogisticClassifierTrainer iterativeTrainer = new UpdatingWordLogisticClassifierTrainer(
+				final UpdatingLogisticWordClassifierTrainer iterativeTrainer = new UpdatingLogisticWordClassifierTrainer(
 						classificationContext.getBackgroundJobExecutor(), smoother,
 						classificationContext.getTrainingData(), instExtractor,
 						(Double) trainingParams
@@ -368,7 +368,7 @@ enum Training {
 					.get(WordClassifierTrainingParameter.SMOOTHING_MIN_COUNT);
 			final WordClassDiscountingSmoother smoother = appCtx.getBean(WordClassDiscountingSmoother.class,
 					smoothingMinCount);
-			final ParallelizedWordLogisticClassifierTrainer trainer = new ParallelizedWordLogisticClassifierTrainer(
+			final ParallelizedLogisticWordClassifierTrainer trainer = new ParallelizedLogisticWordClassifierTrainer(
 					classificationContext.getBackgroundJobExecutor(), smoother);
 
 			// This classifier is statically-trained, i.e. the word models
@@ -421,7 +421,7 @@ enum Training {
 
 			final AbstractInstanceExtractor instExtractor = new OnePositiveMaximumNegativeInstanceExtractor(
 					entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory);
-			final UpdatingWordLogisticClassifierTrainer iterativeTrainer = new UpdatingWordLogisticClassifierTrainer(
+			final UpdatingLogisticWordClassifierTrainer iterativeTrainer = new UpdatingLogisticWordClassifierTrainer(
 					classificationContext.getBackgroundJobExecutor(), smoother, classificationContext.getTrainingData(),
 					instExtractor,
 					(Double) trainingParams
