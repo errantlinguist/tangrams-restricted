@@ -156,6 +156,7 @@ public final class WordClassificationData {
 			assert wordClass != null;
 			result.put(wordClass, new Datum(entry.getValue()));
 		}
+		assert result.size() == copyeeClassData.size();
 		return result;
 	}
 
@@ -188,6 +189,7 @@ public final class WordClassificationData {
 		final Object2IntMap<String> copyeeTrainingInstanceCounts = copyee.getTrainingInstanceCounts();
 		trainingInstanceCounts = new Object2IntOpenHashMap<>(copyeeTrainingInstanceCounts);
 		trainingInstanceCounts.defaultReturnValue(copyeeTrainingInstanceCounts.defaultReturnValue());
+		assert trainingInstanceCounts.size() == copyeeTrainingInstanceCounts.size(); 
 	}
 
 	/*
