@@ -339,7 +339,7 @@ public final class WordClassDiscountingSmoother {
 	 * {@link #oovClassName out-of-vocabulary label} {@code Instances} object.
 	 *
 	 * @param wordClassData
-	 *            The unsmoothed training data.
+	 *            The as-yet-unsmoothed training data.
 	 * @return A new {@link DiscountedWordClasses} instance representing information
 	 *         about the word classes used for discounting and the {@link Instances}
 	 *         objects for each.
