@@ -157,6 +157,7 @@ public final class UpdatingLogisticWordClassifierTrainer
 		final Object2ObjectMap<String, WordClassificationData.Datum> smoothedUpdatedClassData = new WordClassificationData(totalTrainingData)
 				.getClassData();
 		assert !smoothedUpdatedClassData.containsKey(null);
+		
 		// Smoother calculates which word class Instances objects should be
 		// discounted, removes them from the classification data object and puts
 		// it into the OOV label Instances object
