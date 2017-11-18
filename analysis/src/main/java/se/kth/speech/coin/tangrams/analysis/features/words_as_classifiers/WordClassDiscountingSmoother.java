@@ -16,12 +16,18 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers;
 
+import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
+import javax.annotation.concurrent.ThreadSafe;
 import javax.inject.Inject;
 
 import org.apache.commons.lang3.tuple.Pair;
@@ -32,6 +38,7 @@ import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectCollection;
+import se.kth.speech.IdentityKey;
 import se.kth.speech.coin.tangrams.analysis.features.weka.WordClassInstancesFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.WordClassificationData;
 import weka.classifiers.Classifier;
@@ -48,6 +55,7 @@ import weka.core.Instances;
  *      7<sup>th</sup> International Joint Conference on Natural Language
  *      Processing</em>.</a>
  */
+@ThreadSafe
 public final class WordClassDiscountingSmoother {
 
 	public static final class DiscountedWordClasses {
@@ -297,6 +305,8 @@ public final class WordClassDiscountingSmoother {
 	@Inject
 	private WordClassInstancesFactory wordClassDataFactory;
 
+	private final ConcurrentMap<IdentityKey<Object2ObjectMap<String, WordClassificationData.Datum>>, SoftReference<Lock>> wordClassDataMapLocks;
+
 	public WordClassDiscountingSmoother(final int minCount) {
 		this(minCount, DEFAULT_OOV_CLASS);
 	}
@@ -304,6 +314,8 @@ public final class WordClassDiscountingSmoother {
 	public WordClassDiscountingSmoother(final int minCount, final String oovClassName) {
 		this.minCount = minCount;
 		this.oovClassName = oovClassName;
+
+		wordClassDataMapLocks = new ConcurrentHashMap<>(4, 1.0f);
 	}
 
 	/**
@@ -334,22 +346,36 @@ public final class WordClassDiscountingSmoother {
 	 */
 	public DiscountedWordClasses redistributeMass(
 			final Object2ObjectMap<String, WordClassificationData.Datum> wordClassData) {
+		final DiscountedWordClasses result;
+
 		if (wordClassData.containsKey(oovClassName)) {
 			throw new IllegalArgumentException(String
 					.format("The map provided already has a key equalling the OOV class name \"%s\".", oovClassName));
-		}
-		final Object2ObjectMap<String, WordClassificationData.Datum> discountedWordClassTrainingData = discountWordClasses(
-				wordClassData);
-		if (discountedWordClassTrainingData.isEmpty()) {
-			throw new IllegalArgumentException(
-					String.format("Could not find any word classes with fewer than %s instance(s).", minCount));
+		} else {
+			final Lock lock = fetchLock(wordClassData);
+			lock.lock();
+			try {
+				final Object2ObjectMap<String, WordClassificationData.Datum> discountedWordClassTrainingData = discountWordClasses(
+						wordClassData);
+				if (discountedWordClassTrainingData.isEmpty()) {
+					throw new IllegalArgumentException(
+							String.format("Could not find any word classes with fewer than %s instance(s).", minCount));
+				} else {
+					final WordClassificationData.Datum oovClassDatum = createOovClassDatum(
+							discountedWordClassTrainingData);
+					wordClassData.put(oovClassName, oovClassDatum);
+					final Object2ObjectMap<String, DiscountedWordClasses.Datum> discountedWordClassData = createDiscountedWordClassDataMap(
+							discountedWordClassTrainingData);
+					result = new DiscountedWordClasses(discountedWordClassData,
+							new DiscountedWordClasses.Datum(oovClassDatum));
+				}
+			} finally {
+				lock.unlock();
+			}
+
 		}
 
-		final WordClassificationData.Datum oovClassDatum = createOovClassDatum(discountedWordClassTrainingData);
-		wordClassData.put(oovClassName, oovClassDatum);
-		final Object2ObjectMap<String, DiscountedWordClasses.Datum> discountedWordClassData = createDiscountedWordClassDataMap(
-				discountedWordClassTrainingData);
-		return new DiscountedWordClasses(discountedWordClassData, new DiscountedWordClasses.Datum(oovClassDatum));
+		return result;
 	}
 
 	private void addSmoothedClassifierWeighting(final String wordClass, final double addendWeight,
@@ -428,6 +454,21 @@ public final class WordClassDiscountingSmoother {
 			result.put(className, wordClassData.remove(className));
 		}
 		return result;
+	}
+
+	private Lock fetchLock(final Object2ObjectMap<String, WordClassificationData.Datum> wordClassData) {
+		final SoftReference<Lock> resultRef = wordClassDataMapLocks.compute(new IdentityKey<>(wordClassData),
+				(k, oldValue) -> {
+					final SoftReference<Lock> newValue;
+					if (oldValue == null || oldValue.get() == null) {
+						final Lock lock = new ReentrantLock();
+						newValue = new SoftReference<>(lock);
+					} else {
+						newValue = oldValue;
+					}
+					return newValue;
+				});
+		return resultRef.get();
 	}
 
 	Object2ObjectMap<String, WeightedClassifier> createWeightedClassifierMap(
