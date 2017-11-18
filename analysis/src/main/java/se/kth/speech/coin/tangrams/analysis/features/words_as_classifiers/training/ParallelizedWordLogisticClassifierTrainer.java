@@ -39,7 +39,7 @@ import weka.core.Instances;
  *
  */
 public final class ParallelizedWordLogisticClassifierTrainer
-		implements Function<WordClassificationData, ConcurrentMap<String, Logistic>> {
+		implements Function<WordClassificationData, TrainingResults<Logistic>> {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(ParallelizedWordLogisticClassifierTrainer.class);
 
@@ -54,18 +54,19 @@ public final class ParallelizedWordLogisticClassifierTrainer
 	}
 
 	@Override
-	public ConcurrentMap<String, Logistic> apply(final WordClassificationData trainingData) {
+	public TrainingResults<Logistic> apply(final WordClassificationData trainingData) {
 		final WordClassificationData smoothedTrainingData = new WordClassificationData(trainingData);
 		final DiscountedWordClasses discountedWordClasses = smoother
 				.redistributeMass(smoothedTrainingData.getClassData());
 		LOGGER.info("{} instance(s) for out-of-vocabulary class.",
 				discountedWordClasses.getOovClassDatum().getTrainingInstCount());
-		return createWordClassifierMap(smoothedTrainingData.getClassData().object2ObjectEntrySet());
+		 CompletableFuture<ConcurrentMap<String, Logistic>> futureWordClassifiers = createWordClassifierMap(smoothedTrainingData.getClassData().object2ObjectEntrySet());
+		 return new TrainingResults<Logistic>(futureWordClassifiers, discountedWordClasses);
 	}
 
-	private ConcurrentMap<String, Logistic> createWordClassifierMap(
+	private CompletableFuture<ConcurrentMap<String, Logistic>> createWordClassifierMap(
 			final ObjectSet<Object2ObjectMap.Entry<String, WordClassificationData.Datum>> classData) {
-		final ConcurrentMap<String, Logistic> result = new ConcurrentHashMap<>(classData.size() + 1, 1.0f);
+		final ConcurrentMap<String, Logistic> wordClassifiers = new ConcurrentHashMap<>(classData.size() + 1, 1.0f);
 		final Stream.Builder<CompletableFuture<Void>> trainingJobs = Stream.builder();
 		for (final Object2ObjectMap.Entry<String, WordClassificationData.Datum> classDatum : classData) {
 			final String className = classDatum.getKey();
@@ -80,13 +81,14 @@ public final class ParallelizedWordLogisticClassifierTrainer
 				} catch (final Exception e) {
 					throw new WordClassifierTrainingException(className, e);
 				}
-				final Logistic oldClassifier = result.put(className, classifier);
+				final Logistic oldClassifier = wordClassifiers.put(className, classifier);
 				assert oldClassifier == null;
 			}, backgroundJobExecutor);
 			trainingJobs.add(trainingJob);
 		}
-		CompletableFuture.allOf(trainingJobs.build().toArray(CompletableFuture[]::new)).join();
-		return result;
+		return CompletableFuture
+				.allOf(trainingJobs.build().toArray(CompletableFuture[]::new))
+				.thenApply(voidArg -> wordClassifiers);
 	}
 
 }

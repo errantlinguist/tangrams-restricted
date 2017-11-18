@@ -22,9 +22,13 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.function.ToDoubleFunction;
 
 import org.springframework.context.ApplicationContext;
@@ -56,9 +60,11 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.traini
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.OnePositiveOneNegativeInstanceExtractor;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.ParallelizedWordLogisticClassifierTrainer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.SizeEstimatingInstancesMapFactory;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.TrainingException;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.TrainingInstancesFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.UpdatingWordLogisticClassifierTrainer;
 import se.kth.speech.nlp.PatternMatchingUtteranceAcceptanceRanker;
+import weka.classifiers.Classifier;
 import weka.classifiers.functions.Logistic;
 
 enum Training {
@@ -172,11 +178,11 @@ enum Training {
 				// is being classified
 				final EventDialogueContextWordClassifierTrainer<Logistic> diagWordClassifierFactory;
 				{
-					final Map<String, Logistic> wordClassifiers = trainer
-							.apply(classificationContext.getTrainingData());
-					// final Function<String, Classifier> wordClassifierGetter =
-					// wordClassifiers::get;
-					diagWordClassifierFactory = (diagToClassify, ctx) -> wordClassifiers;
+					final Future<ConcurrentMap<String, Logistic>> futureWordClassifiers = trainer
+							.apply(classificationContext.getTrainingData()).getFutureWordClassifiers();
+					diagWordClassifierFactory = (diagToClassify,
+							ctx) -> new FutureWordClassifierTrainingResultsGetter<>(futureWordClassifiers)
+									.get();
 				}
 				return new DialogicEventDialogueClassifier(diagWordClassifierFactory,
 						fetchCachingUttAcceptanceRanker(trainingCtx), fetchDialogicWordClassFactory(trainingCtx),
@@ -314,6 +320,32 @@ enum Training {
 
 	};
 
+	private static class FutureWordClassifierTrainingResultsGetter<C extends Classifier>
+			implements Supplier<ConcurrentMap<String, ? extends Classifier>> {
+
+		/**
+		 * A {@link CompletableFuture future} of the {@link ConcurrentMap} of word
+		 * classifiers to use for the next dialogue being classified.
+		 */
+		private final Future<? extends ConcurrentMap<String, C>> futureWordClassifiers;
+
+		private FutureWordClassifierTrainingResultsGetter(
+				final Future<ConcurrentMap<String, C>> futureWordClassifiers) {
+			this.futureWordClassifiers = futureWordClassifiers;
+		}
+
+		@Override
+		public ConcurrentMap<String, C> get() {
+			ConcurrentMap<String, C> result;
+			try {
+				result = futureWordClassifiers.get();
+			} catch (final ExecutionException | InterruptedException e) {
+				throw new TrainingException(e);
+			}
+			return result;
+		}
+	}
+
 	private static class SimpleClassifierFactory
 			implements Function<ClassificationContext, IsolatedUtteranceEventDialogueClassifier> {
 
@@ -344,10 +376,10 @@ enum Training {
 			// is being classified
 			final EventDialogueContextWordClassifierTrainer<Logistic> diagWordClassifierFactory;
 			{
-				final Map<String, Logistic> wordClassifiers = trainer.apply(classificationContext.getTrainingData());
-				// final Function<String, Classifier> wordClassifierGetter =
-				// wordClassifiers::get;
-				diagWordClassifierFactory = (diagToClassify, ctx) -> wordClassifiers;
+				final Future<ConcurrentMap<String, Logistic>> futureWordClassifiers = trainer
+						.apply(classificationContext.getTrainingData()).getFutureWordClassifiers();
+				diagWordClassifierFactory = (diagToClassify,
+						ctx) -> new FutureWordClassifierTrainingResultsGetter<>(futureWordClassifiers).get();
 			}
 
 			final BigDecimal instrUttObsWeight = (BigDecimal) trainingParams

@@ -16,15 +16,14 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training;
 
-import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Future;
 import java.util.stream.Stream;
 
-import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -87,12 +86,9 @@ public final class UpdatingWordLogisticClassifierTrainer
 	private final AbstractInstanceExtractor instExtractor;
 
 	/**
-	 * A pair including the {@link CompletableFuture future} of the
-	 * {@link Object2ObjectMap} of word classifiers to use for the next dialogue
-	 * being classified and a mapping of each word class used for discounting during
-	 * smoothing to its corresponding {@link DiscountedWordClasses.Datum}.
+	 * The {@link TrainingResults} of the last training iteration run.
 	 */
-	private Map.Entry<CompletableFuture<ConcurrentMap<String, Logistic>>, Object2ObjectMap<String, DiscountedWordClasses.Datum>> lastWordClassifierTrainingResults;
+	private TrainingResults<Logistic> lastWordClassifierTrainingResults;
 
 	private final double negativeExampleWeightFactor;
 
@@ -122,8 +118,8 @@ public final class UpdatingWordLogisticClassifierTrainer
 		final ConcurrentMap<String, Logistic> result;
 
 		synchronized (lastWordClassifierTrainingResults) {
-			final CompletableFuture<ConcurrentMap<String, Logistic>> updatedClassifierMapFuture = lastWordClassifierTrainingResults
-					.getKey();
+			final Future<? extends ConcurrentMap<String, Logistic>> updatedClassifierMapFuture = lastWordClassifierTrainingResults
+					.getFutureWordClassifiers();
 			try {
 				// Return the completed map of all classifiers to the caller of
 				// this
@@ -170,8 +166,7 @@ public final class UpdatingWordLogisticClassifierTrainer
 		return result;
 	}
 
-	private Map.Entry<CompletableFuture<ConcurrentMap<String, Logistic>>, Object2ObjectMap<String, DiscountedWordClasses.Datum>> trainWordClassifiers(
-			final WordClassificationData unsmoothedTrainingData) {
+	private TrainingResults<Logistic> trainWordClassifiers(final WordClassificationData unsmoothedTrainingData) {
 		// Create a new WordClassificationData instance in order to be able to re-apply
 		// smoothing to the original data again
 		final WordClassificationData smoothedTrainingData = new WordClassificationData(unsmoothedTrainingData);
@@ -182,11 +177,10 @@ public final class UpdatingWordLogisticClassifierTrainer
 		final DiscountedWordClasses discountedWordClasses = smoother.redistributeMass(wordClassData);
 		final DiscountedWordClasses.Datum oovClassDatum = discountedWordClasses.getOovClassDatum();
 		LOGGER.debug("{} instance(s) for out-of-vocabulary class.", oovClassDatum.getTrainingInstCount());
-		return Pair.of(createWordClassifierMap(wordClassData.object2ObjectEntrySet()),
-				discountedWordClasses.getDiscountedClassData());
+		return new TrainingResults<>(createWordClassifierMap(wordClassData.object2ObjectEntrySet()), discountedWordClasses);
 	}
 
-	private Map.Entry<CompletableFuture<ConcurrentMap<String, Logistic>>, Object2ObjectMap<String, DiscountedWordClasses.Datum>> updateWordClassifierMap(
+	private TrainingResults<Logistic> updateWordClassifierMap(
 			final ConcurrentMap<String, Logistic> currentWordClassifiers, final EventDialogue diagToClassify,
 			final GameContext ctx) {
 		final Object2IntMap<String> updatedDialogueWordObservationCounts = instExtractor.addTrainingData(diagToClassify,
@@ -227,7 +221,7 @@ public final class UpdatingWordLogisticClassifierTrainer
 			// This will be null reference if not discounted in last
 			// classification.
 			final DiscountedWordClasses.Datum lastDiscountedWordClassDatum = lastWordClassifierTrainingResults
-					.getValue().get(updatedWordClass);
+					.getDiscountedWordClasses().getDiscountedClassData().get(updatedWordClass);
 			// If there is already a classifier trained for the given word
 			// class, it cannot
 			// have been discounted in the current training iteration
@@ -273,7 +267,7 @@ public final class UpdatingWordLogisticClassifierTrainer
 		final CompletableFuture<ConcurrentMap<String, Logistic>> updatedMapFuture = CompletableFuture
 				.allOf(wordClassTrainingJobs.build().toArray(CompletableFuture[]::new))
 				.thenApply(voidArg -> currentWordClassifiers);
-		return Pair.of(updatedMapFuture, smoothingResults.getDiscountedClassData());
+		return new TrainingResults<>(updatedMapFuture, smoothingResults);
 	}
 
 }
