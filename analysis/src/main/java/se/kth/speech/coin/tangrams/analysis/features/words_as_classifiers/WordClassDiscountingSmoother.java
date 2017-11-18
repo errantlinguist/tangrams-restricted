@@ -339,6 +339,9 @@ public final class WordClassDiscountingSmoother {
 		if (discountedWordClassTrainingData.isEmpty()) {
 			throw new IllegalArgumentException(
 					String.format("Could not find any word classes with fewer than %s instance(s).", minCount));
+		} else if (discountedWordClassTrainingData.containsKey(oovClassName)) {
+			throw new IllegalArgumentException(
+					String.format("The map provided already has a key equalling the OOV class name \"%s\".", oovClassName));
 		}
 
 		// The new set of word classes is different from the previous one;
