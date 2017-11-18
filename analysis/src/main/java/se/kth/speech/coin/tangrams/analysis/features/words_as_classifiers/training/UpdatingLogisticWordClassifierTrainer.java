@@ -190,7 +190,7 @@ public final class UpdatingLogisticWordClassifierTrainer
 			final DiscountedWordClasses.Datum lastDiscountedWordClassDatum = lastWordClassifierTrainingResults
 					.getDiscountedWordClasses().getDiscountedClassData().get(updatedWordClass);
 			final boolean wasPreviouslyDiscounted = lastDiscountedWordClassDatum != null;
-			LOGGER.info("Updating classifier for updated set of instances for word class \"{}\". Used currently for discounting? {}; Used previously for discounting? {}", updatedWordClass, wasCurrentlyDiscounted, wasPreviouslyDiscounted);
+			LOGGER.debug("Updating classifier for updated set of instances for word class \"{}\". Used currently for discounting? {}; Used previously for discounting? {}", updatedWordClass, wasCurrentlyDiscounted, wasPreviouslyDiscounted);
 			// If there is already a classifier trained for the given word
 			// class, it cannot
 			// have been discounted in the current training iteration
