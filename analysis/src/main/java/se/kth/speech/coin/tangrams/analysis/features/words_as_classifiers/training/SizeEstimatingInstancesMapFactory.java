@@ -19,6 +19,8 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.train
 import java.util.Collection;
 import java.util.List;
 
+import javax.annotation.Nonnegative;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -74,8 +76,9 @@ public final class SizeEstimatingInstancesMapFactory implements TrainingInstance
 	private final double positiveExampleWeightFactor;
 
 	public SizeEstimatingInstancesMapFactory(final AbstractInstanceExtractor instExtractor,
-			final EntityInstanceAttributeContext entityInstAttrCtx, final double positiveExampleWeightFactor,
-			final double negativeExampleWeightFactor) {
+			final EntityInstanceAttributeContext entityInstAttrCtx,
+			@Nonnegative final double positiveExampleWeightFactor,
+			@Nonnegative final double negativeExampleWeightFactor) {
 		this.instExtractor = instExtractor;
 		this.entityInstAttrCtx = entityInstAttrCtx;
 		this.positiveExampleWeightFactor = positiveExampleWeightFactor;

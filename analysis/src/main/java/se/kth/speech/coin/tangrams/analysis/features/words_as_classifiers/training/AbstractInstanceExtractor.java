@@ -16,6 +16,8 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training;
 
+import javax.annotation.Nonnegative;
+
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import se.kth.speech.coin.tangrams.analysis.GameHistory;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
@@ -46,8 +48,7 @@ public abstract class AbstractInstanceExtractor {
 	 *            The {@link GameHistory} providing context for the given
 	 *            {@code EventDialogue}.
 	 * @param trainingData
-	 *            The {@link WordClassificationData} to add the training data
-	 *            to.
+	 *            The {@link WordClassificationData} to add the training data to.
 	 * @param positiveExampleWeightFactor
 	 *            A factor multiplying the weight of each positive training
 	 *            instance.
@@ -55,12 +56,12 @@ public abstract class AbstractInstanceExtractor {
 	 *            A factor multiplying the weight of each negative training
 	 *            instance.
 	 * @return An {@link Object2IntMap} of word classes (i.e.&nbsp;token types)
-	 *         added to the training data mapped to the number of times each
-	 *         class was observed in the added training data.
+	 *         added to the training data mapped to the number of times each class
+	 *         was observed in the added training data.
 	 */
 	protected abstract Object2IntMap<String> addTrainingData(final EventDialogue uttDialogue, final GameHistory history,
-			final WordClassificationData trainingData, double positiveExampleWeightFactor,
-			double negativeExampleWeightFactor);
+			final WordClassificationData trainingData, @Nonnegative double positiveExampleWeightFactor,
+			@Nonnegative double negativeExampleWeightFactor);
 
 	protected final Instance createTokenInstance(final Instances classInsts,
 			final EntityFeature.Extractor.Context extractionContext, final String classValue) {

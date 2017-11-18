@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.stream.Stream;
 
+import javax.annotation.Nonnegative;
+
 import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -91,7 +93,7 @@ public final class OnePositiveMaximumNegativeInstanceExtractor extends AbstractI
 	}
 
 	private void addWeightedExamples(final String wordClass, final WordClassificationData trainingData,
-			final List<Context> trainingContexts, final double weight, final String classValue) {
+			final List<Context> trainingContexts, @Nonnegative final double weight, final String classValue) {
 		assert weight > 0.0;
 		final Instances classInsts = trainingData.fetchWordInstances(wordClass);
 		final List<Entry<Instance, String>> trainingInsts = new ArrayList<>(trainingContexts.size());
@@ -106,8 +108,8 @@ public final class OnePositiveMaximumNegativeInstanceExtractor extends AbstractI
 
 	@Override
 	protected Object2IntMap<String> addTrainingData(final EventDialogue uttDialogue, final GameHistory history,
-			final WordClassificationData trainingData, final double positiveExampleWeightFactor,
-			final double negativeExampleWeightFactor) {
+			final WordClassificationData trainingData, @Nonnegative final double positiveExampleWeightFactor,
+			@Nonnegative final double negativeExampleWeightFactor) {
 		return uttDialogue.getFirstEvent().map(event -> {
 			LOGGER.debug("Extracting features for utterances for event: {}", event);
 			final EventDialogue transformedDiag = diagTransformer.apply(uttDialogue);
