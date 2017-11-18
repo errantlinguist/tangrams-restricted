@@ -126,8 +126,8 @@ public final class RandomModelPopulatorTest {
 		// Sanity check to ensure that the test hasn't been constructed wrong
 		Assert.assertTrue(piecePlacementCount <= maxImgVisualizationInfoDatumCount);
 		final int[] gridSize = new int[] { 20, 20 };
-		final SpatialMatrix<Integer> result = SpatialMatrix.Factory.STABLE_ITER_ORDER.apply(gridSize,
-				SpatialMap.Factory.STABLE_ITER_ORDER.apply(piecePlacementCount));
+		final SpatialMatrix<Integer> result = SpatialMatrix.Factory.STABLE_ITER_ORDER.create(gridSize,
+				SpatialMap.Factory.STABLE_ITER_ORDER.create(piecePlacementCount));
 
 		final ImageLoadingImageViewInfoFactory imgViewInfoFactory = new ImageLoadingImageViewInfoFactory(
 				Toolkit.getDefaultToolkit(), DEFAULT_POST_COLORING_IMG_TRANSFORMER, piecePlacementCount);

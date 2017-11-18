@@ -44,7 +44,7 @@ public final class SpatialMapTest {
 	 */
 	@Test
 	public void testIsOccupiedIntersecting() {
-		final SpatialMap<Object> testMap = SpatialMap.Factory.UNSTABLE_ITER_ORDER.apply(2);
+		final SpatialMap<Object> testMap = SpatialMap.Factory.UNSTABLE_ITER_ORDER.create(2);
 		final SpatialRegion r1 = new SpatialRegion(0, 9, 0, 2);
 		Assert.assertNull(testMap.put("r1", r1));
 		final SpatialRegion r2 = new SpatialRegion(8, 12, 0, 3);
@@ -59,7 +59,7 @@ public final class SpatialMapTest {
 	 */
 	@Test
 	public void testIsOccupiedNegative() {
-		final SpatialMap<Object> testMap = SpatialMap.Factory.UNSTABLE_ITER_ORDER.apply(2);
+		final SpatialMap<Object> testMap = SpatialMap.Factory.UNSTABLE_ITER_ORDER.create(2);
 		final SpatialRegion superRegion = new SpatialRegion(0, 1, 2, 3);
 		Assert.assertNull(testMap.put("region", superRegion));
 		final SpatialRegion subRegion = new SpatialRegion(0, 1, 4, 5);
@@ -72,7 +72,7 @@ public final class SpatialMapTest {
 	 */
 	@Test
 	public void testIsOccupiedSubregion() {
-		final SpatialMap<Object> testMap = SpatialMap.Factory.UNSTABLE_ITER_ORDER.apply(2);
+		final SpatialMap<Object> testMap = SpatialMap.Factory.UNSTABLE_ITER_ORDER.create(2);
 		final SpatialRegion superRegion = new SpatialRegion(0, 20, 10, 30);
 		testMap.put("superRegion", superRegion);
 		final SpatialRegion subRegion = new SpatialRegion(5, 6, 15, 26);
@@ -85,7 +85,7 @@ public final class SpatialMapTest {
 	 */
 	@Test
 	public void testPutExistingElement() {
-		final SpatialMap<Object> testMap = SpatialMap.Factory.UNSTABLE_ITER_ORDER.apply(2);
+		final SpatialMap<Object> testMap = SpatialMap.Factory.UNSTABLE_ITER_ORDER.create(2);
 		final SpatialRegion r1 = new SpatialRegion(0, 1, 2, 3);
 		final String elem = "foo";
 		final SpatialRegion oldRegion1 = testMap.put(elem, r1);
@@ -108,7 +108,7 @@ public final class SpatialMapTest {
 	 */
 	@Test
 	public void testPutNewElement() {
-		final SpatialMap<Object> testMap = SpatialMap.Factory.UNSTABLE_ITER_ORDER.apply(2);
+		final SpatialMap<Object> testMap = SpatialMap.Factory.UNSTABLE_ITER_ORDER.create(2);
 		assertPutNewElement(testMap, "foo", new SpatialRegion(0, 1, 2, 3));
 		assertPutNewElement(testMap, new int[] { 3, 3 }, new SpatialRegion(2, 3, 4, 5));
 	}

@@ -59,7 +59,7 @@ public final class SpatialMatrix<E> {
 			this.regionMapFactory = regionMapFactory;
 		}
 
-		public <E> SpatialMatrix<E> apply(final int[] gridSize, final SpatialMap<E> posMap) {
+		public <E> SpatialMatrix<E> create(final int[] gridSize, final SpatialMap<E> posMap) {
 			final Matrix<E> backingMatrix = new Matrix<>(createMatrixBackingList(gridSize), gridSize[1]);
 			return create(backingMatrix, posMap);
 		}

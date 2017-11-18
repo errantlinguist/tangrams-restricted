@@ -54,7 +54,7 @@ public final class SpatialMap<E> {
 	public enum Factory {
 		STABLE_ITER_ORDER {
 			@Override
-			public <E> SpatialMap<E> apply(final int expectedElementCount) {
+			public <E> SpatialMap<E> create(final int expectedElementCount) {
 				final Multimap<SpatialRegion, E> regionElements = LinkedHashMultimap
 						.create(estimateRegionCount(expectedElementCount), expectedElementCount);
 				final Object2ObjectLinkedOpenHashMap<E, SpatialRegion> elementRegions = new Object2ObjectLinkedOpenHashMap<>(
@@ -65,7 +65,7 @@ public final class SpatialMap<E> {
 		},
 		UNSTABLE_ITER_ORDER {
 			@Override
-			public <E> SpatialMap<E> apply(final int expectedElementCount) {
+			public <E> SpatialMap<E> create(final int expectedElementCount) {
 				final Multimap<SpatialRegion, E> regionElements = HashMultimap
 						.create(estimateRegionCount(expectedElementCount), expectedElementCount);
 				final Object2ObjectOpenHashMap<E, SpatialRegion> elementRegions = new Object2ObjectOpenHashMap<>(
@@ -75,7 +75,7 @@ public final class SpatialMap<E> {
 			}
 		};
 
-		public abstract <E> SpatialMap<E> apply(final int expectedElementCount);
+		public abstract <E> SpatialMap<E> create(final int expectedElementCount);
 	}
 
 	private static final String TABLE_STRING_REPR_COL_DELIMITER = "\t";
