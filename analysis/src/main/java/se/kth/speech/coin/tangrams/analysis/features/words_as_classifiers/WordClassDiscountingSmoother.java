@@ -384,7 +384,7 @@ public final class WordClassDiscountingSmoother {
 		assert !containsNullKey(wordClassesToDiscount);
 		final Object2ObjectMap<String, WordClassificationData.Datum> result = new Object2ObjectOpenHashMap<>(
 				wordClassesToDiscount.size() + 1, 1.0f);
-		// Remove the classes from the map to discount them
+		// Remove the classes from the original, supplied map to discount them
 		for (final Entry<String, WordClassificationData.Datum> wordClassToDiscount : wordClassesToDiscount) {
 			final String className = wordClassToDiscount.getKey();
 			assert className != null;
