@@ -199,7 +199,7 @@ public final class UpdatingLogisticWordClassifierTrainer
 			// discounted word set for the last training iteration, there cannot
 			// be a
 			// classifier for it in the map
-			assert currentWordClassifiers.containsKey(updatedWordClass) == !wasPreviouslyDiscounted : String.format("Classifier for word class \"%s\" already in map? %b; Was previously discounted? %b", updatedWordClass, currentWordClassifiers.containsKey(updatedWordClass), wasPreviouslyDiscounted);
+			assert currentWordClassifiers.containsKey(updatedWordClass) ? !wasPreviouslyDiscounted : true : String.format("Classifier for word class \"%s\" already in map? %b; Was previously discounted? %b", updatedWordClass, currentWordClassifiers.containsKey(updatedWordClass), wasPreviouslyDiscounted);
 
 			if (!wasCurrentlyDiscounted) {
 				// Either more training instances have been added for the given,
