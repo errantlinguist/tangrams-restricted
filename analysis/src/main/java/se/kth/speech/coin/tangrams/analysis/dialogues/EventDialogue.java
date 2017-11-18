@@ -16,6 +16,7 @@
 */
 package se.kth.speech.coin.tangrams.analysis.dialogues;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -34,8 +35,8 @@ public final class EventDialogue {
 	private final List<Utterance> utts;
 
 	public EventDialogue(final List<GameEvent> events, final List<Utterance> utts) {
-		this.events = events;
-		this.utts = utts;
+		this.events = Collections.unmodifiableList(events);
+		this.utts = Collections.unmodifiableList(utts);
 	}
 
 	/*
