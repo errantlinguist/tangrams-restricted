@@ -50,6 +50,7 @@ final class WordClassInstancesFetcher implements Function<String, Instances> {
 	 */
 	@Override
 	public Instances apply(final String className) {
+		assert className != null;
 		final WordClassificationData.Datum wordClassDatum = classInstances.computeIfAbsent(className, key -> {
 			final Instances instances = new Instances(WordClasses.createRelationName(key), entityInstAttrCtx.getAttrs(),
 					estimatedVocabTypeTokenCount);
