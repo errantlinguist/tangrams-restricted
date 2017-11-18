@@ -32,6 +32,14 @@ import java.util.stream.Stream;
  */
 public final class Iterators {
 
+	/**
+	 * Returns a {@link List} of the remaining elements of an {@link Iterator}.
+	 *
+	 * @param iter
+	 *            The {@code Iterator} to get the remaining elements of.
+	 * @return A {@code List} of the remaining elements which is not guaranteed to
+	 *         be mutable.
+	 */
 	public static <T> List<T> createRemainingElementList(final Iterator<? extends T> iter) {
 		final List<T> result;
 		if (iter.hasNext()) {
