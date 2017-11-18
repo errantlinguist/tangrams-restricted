@@ -28,6 +28,8 @@ import java.util.stream.Collectors;
 
 import org.apache.commons.lang3.tuple.Pair;
 
+import se.kth.speech.coin.tangrams.analysis.DataLanguageDefaults;
+
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
  * @since 19 May 2017
@@ -57,6 +59,10 @@ public final class UtteranceDialogueRepresentationStringFactory implements Funct
 	private final Locale uttLocale;
 
 	private final Collector<? super CharSequence, ?, String> wordJoiner;
+
+	public UtteranceDialogueRepresentationStringFactory() {
+		this(DataLanguageDefaults.getLocale(), DEFAULT_WORD_JOINER, DEFAULT_SENTENCE_JOINER);
+	}
 
 	public UtteranceDialogueRepresentationStringFactory(final Locale uttLocale) {
 		this(uttLocale, DEFAULT_WORD_JOINER, DEFAULT_SENTENCE_JOINER);

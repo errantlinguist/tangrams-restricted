@@ -233,8 +233,7 @@ final class UtteranceSelectedEntityDescriptionWriter { // NO_UCD (use default)
 				EntityFeature.POSITION_Y);
 		final List<EntityFeature> orderedFeaturesToDescribe = Arrays.asList(EntityFeature.getCanonicalOrdering()
 				.stream().filter(featuresToDescribe::contains).toArray(EntityFeature[]::new));
-		final UtteranceDialogueRepresentationStringFactory uttDiagReprFactory = new UtteranceDialogueRepresentationStringFactory(
-				DataLanguageDefaults.getLocale());
+		final UtteranceDialogueRepresentationStringFactory uttDiagReprFactory = new UtteranceDialogueRepresentationStringFactory();
 		return new UtteranceSelectedEntityDescriptionWriter(new EntityFeature.Extractor(), orderedFeaturesToDescribe,
 				uttDiagReprFactory, outpath, outfileNamePrefix, strict);
 	}
