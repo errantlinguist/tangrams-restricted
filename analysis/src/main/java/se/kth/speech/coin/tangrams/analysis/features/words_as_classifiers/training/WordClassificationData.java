@@ -175,7 +175,7 @@ public final class WordClassificationData {
 		this.classData = classData;
 		this.classInstancesFetcher = classInstancesFetcher;
 
-		trainingInstanceCounts = new Object2IntOpenHashMap<>(2);
+		trainingInstanceCounts = new Object2IntOpenHashMap<>(2, 1.0f);
 		trainingInstanceCounts.defaultReturnValue(0);
 	}
 
