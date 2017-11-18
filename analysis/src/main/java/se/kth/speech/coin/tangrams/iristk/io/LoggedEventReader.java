@@ -105,8 +105,7 @@ public final class LoggedEventReader {
 	/**
 	 *
 	 * @param eventLogPath
-	 *            A {@link Path} to the logged events to parse, one on each
-	 *            line.
+	 *            A {@link Path} to the logged events to parse, one on each line.
 	 * @return The successfully-parsed {@link Event} instances.
 	 * @throws IOException
 	 *             If an I/O error occurs while opening the file.
@@ -149,7 +148,9 @@ public final class LoggedEventReader {
 				LOGGER.debug("Creating model with coord occupant vector: {}", coordOccupants);
 				final int colCount = modelDesc.getColCount();
 				final Matrix<Integer> backingMatrix = new Matrix<>(coordOccupants, colCount);
-				return SpatialMatrix.Factory.STABLE_ITER_ORDER.create(backingMatrix);
+				final SpatialMatrix<Integer> result = SpatialMatrix.Factory.STABLE_ITER_ORDER.create(backingMatrix);
+				result.compact();
+				return result;
 			}
 
 		};
@@ -225,8 +226,8 @@ public final class LoggedEventReader {
 	 *
 	 * @param loggedEvents
 	 *            The logged events to process.
-	 * @return A new {@link Map} of game IDs to their respective
-	 *         {@link GameHistory histories}.
+	 * @return A new {@link Map} of game IDs to their respective {@link GameHistory
+	 *         histories}.
 	 */
 	public Map<String, GameHistory> createGameHistoryMap(final Stream<Event> loggedEvents) {
 		final Event[] loggedEventArray = loggedEvents.toArray(Event[]::new);
@@ -241,12 +242,12 @@ public final class LoggedEventReader {
 	 *            A {@link Path} denoting the session log directory to process.
 	 * @param expectedEventLogFileCount
 	 *            The expected number of event logs in the directory to process.
-	 * @return A new {@link Map} of player IDs mapped to a {@link Path} pointing
-	 *         to the player's respective event log.
+	 * @return A new {@link Map} of player IDs mapped to a {@link Path} pointing to
+	 *         the player's respective event log.
 	 * @throws IOException
 	 *             If an error occurs while
-	 *             {@link Files#walk(Path, FileVisitOption...) walking} through
-	 *             the given directory.
+	 *             {@link Files#walk(Path, FileVisitOption...) walking} through the
+	 *             given directory.
 	 */
 	public Map<String, Path> createPlayerEventLogFileMap(final Path sessionLogDir, final int expectedEventLogFileCount)
 			throws IOException {
@@ -272,15 +273,14 @@ public final class LoggedEventReader {
 	/**
 	 *
 	 * @param playerEventLogFilePaths
-	 *            A mapping of log {@link Path paths} to read for each player
-	 *            ID.
-	 * @return A new {@link Table}, with game ID as the row key and player ID as
-	 *         the column key, mapping to the relevant {@link GameHistory}
-	 *         representing the logged event history for a given game from the
-	 *         perspective of a given player.
+	 *            A mapping of log {@link Path paths} to read for each player ID.
+	 * @return A new {@link Table}, with game ID as the row key and player ID as the
+	 *         column key, mapping to the relevant {@link GameHistory} representing
+	 *         the logged event history for a given game from the perspective of a
+	 *         given player.
 	 * @throws IOException
-	 *             If an error occurs while reading one of the provided event
-	 *             log file paths.
+	 *             If an error occurs while reading one of the provided event log
+	 *             file paths.
 	 */
 	public Table<String, String, GameHistory> createPlayerGameHistoryTable(
 			final Collection<Entry<String, Path>> playerEventLogFilePaths) throws IOException {
@@ -290,18 +290,16 @@ public final class LoggedEventReader {
 	/**
 	 *
 	 * @param playerEventLogFilePaths
-	 *            A mapping of log {@link Path paths} to read for each player
-	 *            ID.
+	 *            A mapping of log {@link Path paths} to read for each player ID.
 	 * @param expectedUniqueGameCount
-	 *            The number of unique games represented in the file(s) to
-	 *            parse.
-	 * @return A new {@link Table}, with game ID as the row key and player ID as
-	 *         the column key, mapping to the relevant {@link GameHistory}
-	 *         representing the logged event history for a given game from the
-	 *         perspective of a given player.
+	 *            The number of unique games represented in the file(s) to parse.
+	 * @return A new {@link Table}, with game ID as the row key and player ID as the
+	 *         column key, mapping to the relevant {@link GameHistory} representing
+	 *         the logged event history for a given game from the perspective of a
+	 *         given player.
 	 * @throws IOException
-	 *             If an error occurs while reading one of the provided event
-	 *             log file paths.
+	 *             If an error occurs while reading one of the provided event log
+	 *             file paths.
 	 */
 	public Table<String, String, GameHistory> createPlayerGameHistoryTable(
 			final Collection<Entry<String, Path>> playerEventLogFilePaths, final int expectedUniqueGameCount)
@@ -312,21 +310,19 @@ public final class LoggedEventReader {
 	/**
 	 *
 	 * @param playerEventLogFilePaths
-	 *            A mapping of log {@link Path paths} to read for each player
-	 *            ID.
+	 *            A mapping of log {@link Path paths} to read for each player ID.
 	 * @param expectedUniqueGameCount
-	 *            The number of unique games represented in the file(s) to
-	 *            parse.
+	 *            The number of unique games represented in the file(s) to parse.
 	 * @param eventFilter
-	 *            A positive (i.e.&nbsp;whitelisting) filter for the
-	 *            {@link Event events} to include.
-	 * @return A new {@link Table}, with game ID as the row key and player ID as
-	 *         the column key, mapping to the relevant {@link GameHistory}
-	 *         representing the logged event history for a given game from the
-	 *         perspective of a given player.
+	 *            A positive (i.e.&nbsp;whitelisting) filter for the {@link Event
+	 *            events} to include.
+	 * @return A new {@link Table}, with game ID as the row key and player ID as the
+	 *         column key, mapping to the relevant {@link GameHistory} representing
+	 *         the logged event history for a given game from the perspective of a
+	 *         given player.
 	 * @throws IOException
-	 *             If an error occurs while reading one of the provided event
-	 *             log file paths.
+	 *             If an error occurs while reading one of the provided event log
+	 *             file paths.
 	 */
 	public Table<String, String, GameHistory> createPlayerGameHistoryTable(
 			final Collection<Entry<String, Path>> playerEventLogFilePaths, final int expectedUniqueGameCount,
@@ -340,18 +336,17 @@ public final class LoggedEventReader {
 	/**
 	 *
 	 * @param playerEventLogFilePaths
-	 *            A mapping of log {@link Path paths} to read for each player
-	 *            ID.
+	 *            A mapping of log {@link Path paths} to read for each player ID.
 	 * @param eventFilter
-	 *            A positive (i.e.&nbsp;whitelisting) filter for the
-	 *            {@link Event events} to include.
-	 * @return A new {@link Table}, with game ID as the row key and player ID as
-	 *         the column key, mapping to the relevant {@link GameHistory}
-	 *         representing the logged event history for a given game from the
-	 *         perspective of a given player.
+	 *            A positive (i.e.&nbsp;whitelisting) filter for the {@link Event
+	 *            events} to include.
+	 * @return A new {@link Table}, with game ID as the row key and player ID as the
+	 *         column key, mapping to the relevant {@link GameHistory} representing
+	 *         the logged event history for a given game from the perspective of a
+	 *         given player.
 	 * @throws IOException
-	 *             If an error occurs while reading one of the provided event
-	 *             log file paths.
+	 *             If an error occurs while reading one of the provided event log
+	 *             file paths.
 	 */
 	public Table<String, String, GameHistory> createPlayerGameHistoryTable(
 			final Collection<Entry<String, Path>> playerEventLogFilePaths, final Predicate<? super Event> eventFilter)
@@ -365,8 +360,8 @@ public final class LoggedEventReader {
 	 *
 	 * @param lines
 	 *            The logged events to parse, one on each line.
-	 * @return A new {@link Map} of game IDs to their respective
-	 *         {@link GameHistory histories}.
+	 * @return A new {@link Map} of game IDs to their respective {@link GameHistory
+	 *         histories}.
 	 */
 	public Map<String, GameHistory> parseGameHistories(final Stream<String> lines) {
 		return parseGameHistories(lines, DEFAULT_EVENT_FILTER);
@@ -377,10 +372,10 @@ public final class LoggedEventReader {
 	 * @param lines
 	 *            The logged events to parse, one on each line.
 	 * @param eventFilter
-	 *            A positive (i.e.&nbsp;whitelisting) filter for the
-	 *            {@link Event events} to include.
-	 * @return A new {@link Map} of game IDs to their respective
-	 *         {@link GameHistory histories}.
+	 *            A positive (i.e.&nbsp;whitelisting) filter for the {@link Event
+	 *            events} to include.
+	 * @return A new {@link Map} of game IDs to their respective {@link GameHistory
+	 *         histories}.
 	 */
 	public Map<String, GameHistory> parseGameHistories(final Stream<String> lines,
 			final Predicate<? super Event> eventFilter) {
@@ -391,10 +386,9 @@ public final class LoggedEventReader {
 	/**
 	 *
 	 * @param eventLogPath
-	 *            A {@link Path} to the logged events to parse, one on each
-	 *            line.
-	 * @return A new {@link Map} of game IDs to their respective
-	 *         {@link GameHistory histories}.
+	 *            A {@link Path} to the logged events to parse, one on each line.
+	 * @return A new {@link Map} of game IDs to their respective {@link GameHistory
+	 *         histories}.
 	 * @throws IOException
 	 *             If an I/O error occurs while opening the file.
 	 */
@@ -405,13 +399,12 @@ public final class LoggedEventReader {
 	/**
 	 *
 	 * @param eventLogPath
-	 *            A {@link Path} to the logged events to parse, one on each
-	 *            line.
+	 *            A {@link Path} to the logged events to parse, one on each line.
 	 * @param eventFilter
-	 *            A positive (i.e.&nbsp;whitelisting) filter for the
-	 *            {@link Event events} to include.
-	 * @return A new {@link Map} of game IDs to their respective
-	 *         {@link GameHistory histories}.
+	 *            A positive (i.e.&nbsp;whitelisting) filter for the {@link Event
+	 *            events} to include.
+	 * @return A new {@link Map} of game IDs to their respective {@link GameHistory
+	 *         histories}.
 	 * @throws IOException
 	 *             IOException If an I/O error occurs while opening the file.
 	 */
@@ -476,19 +469,18 @@ public final class LoggedEventReader {
 	/**
 	 *
 	 * @param playerGameHistories
-	 *            A {@link Table}, with game ID as the row key and player ID as
-	 *            the column key, mapping to the relevant {@link GameHistory}
-	 *            representing the logged event history for a given game from
-	 *            the perspective of a given player.
+	 *            A {@link Table}, with game ID as the row key and player ID as the
+	 *            column key, mapping to the relevant {@link GameHistory}
+	 *            representing the logged event history for a given game from the
+	 *            perspective of a given player.
 	 * @param playerEventLogFilePaths
-	 *            A mapping of log {@link Path paths} to read for each player
-	 *            ID.
+	 *            A mapping of log {@link Path paths} to read for each player ID.
 	 * @param eventFilter
-	 *            A positive (i.e.&nbsp;whitelisting) filter for the
-	 *            {@link Event events} to include.
+	 *            A positive (i.e.&nbsp;whitelisting) filter for the {@link Event
+	 *            events} to include.
 	 * @throws IOException
-	 *             If an error occurs while reading one of the provided event
-	 *             log file paths.
+	 *             If an error occurs while reading one of the provided event log
+	 *             file paths.
 	 */
 	private void putPlayerGameHistories(final Table<String, String, GameHistory> playerGameHistories,
 			final Collection<Entry<String, Path>> playerEventLogFilePaths, final Predicate<? super Event> eventFilter)

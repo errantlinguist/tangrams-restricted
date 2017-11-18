@@ -68,6 +68,7 @@ final class RandomPopulatedModelFactory implements Function<Random, SpatialMatri
 		final RandomModelPopulator modelPopulator = new RandomModelPopulator(result, imgVisualizationInfo,
 				occupiedGridArea, allowFailedPlacements, imgViewInfoFactory);
 		modelPopulator.accept(rnd);
+		result.compact();
 		return result;
 	}
 

@@ -65,9 +65,9 @@ public final class SpatialMatrix<E> {
 		}
 
 		/**
-		 * <strong>NOTE:</strong> This factory method entails iterating through
-		 * the entire backing matrix, so it could be extremely costly given a
-		 * matrix of great enough size.
+		 * <strong>NOTE:</strong> This factory method entails iterating through the
+		 * entire backing matrix, so it could be extremely costly given a matrix of
+		 * great enough size.
 		 *
 		 * @param posMatrix
 		 *            The {@link Matrix} of values to create a corresponding
@@ -182,6 +182,23 @@ public final class SpatialMatrix<E> {
 	// return m * (m + 1) * n * (n + 1) / 4;
 	// }
 
+	public boolean compact() {
+		return elementPlacements.compact();
+	}
+
+	// public Set<SpatialMap.Region> createRegionPowerSet() {
+	// return createRegionPowerSet(Sets::newHashSetWithExpectedSize);
+	// }
+	//
+	// public <C extends Collection<? super SpatialMap.Region>> C
+	// createRegionPowerSet(
+	// final IntFunction<? extends C> collFactory) {
+	// final int subRegionCount = calculateRegionPowerSetSize();
+	// final C result = collFactory.apply(subRegionCount);
+	// addRegionPowerSet(result);
+	// return result;
+	// }
+
 	public <C extends Collection<? super SpatialRegion>> Table<Integer, Integer, C> createSizeIndexedRegionTable(
 			final IntFunction<? extends C> regionSetFactory) {
 		final int dims[] = positionMatrix.getDimensions();
@@ -212,19 +229,6 @@ public final class SpatialMatrix<E> {
 		}
 		return result;
 	}
-
-	// public Set<SpatialMap.Region> createRegionPowerSet() {
-	// return createRegionPowerSet(Sets::newHashSetWithExpectedSize);
-	// }
-	//
-	// public <C extends Collection<? super SpatialMap.Region>> C
-	// createRegionPowerSet(
-	// final IntFunction<? extends C> collFactory) {
-	// final int subRegionCount = calculateRegionPowerSetSize();
-	// final C result = collFactory.apply(subRegionCount);
-	// addRegionPowerSet(result);
-	// return result;
-	// }
 
 	public Map<SpatialRegion, Set<SpatialRegion>> createValidMoveMap() {
 		final Set<SpatialRegion> regionElements = elementPlacements.getMinimalRegionElements().keySet();
