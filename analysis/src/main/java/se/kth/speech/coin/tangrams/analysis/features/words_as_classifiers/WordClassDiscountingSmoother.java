@@ -334,7 +334,7 @@ public final class WordClassDiscountingSmoother {
 	 */
 	public DiscountedWordClasses redistributeMass(
 			final Object2ObjectMap<String, WordClassificationData.Datum> wordClassData) {
-		final Object2ObjectMap<String, WordClassificationData.Datum> wordClassesToDiscount = createdDiscountedClassInstsMap(
+		final Object2ObjectMap<String, WordClassificationData.Datum> wordClassesToDiscount = createdDiscountedClassDataMap(
 				wordClassData);
 		if (wordClassesToDiscount.isEmpty()) {
 			throw new IllegalArgumentException(
@@ -375,7 +375,7 @@ public final class WordClassDiscountingSmoother {
 		}
 	}
 
-	private Object2ObjectMap<String, WordClassificationData.Datum> createdDiscountedClassInstsMap(
+	private Object2ObjectMap<String, WordClassificationData.Datum> createdDiscountedClassDataMap(
 			final Object2ObjectMap<String, WordClassificationData.Datum> wordClassData) {
 		final Collection<Entry<String, WordClassificationData.Datum>> wordClassesToDiscount = findClassesToDiscount(
 				wordClassData);
@@ -384,6 +384,7 @@ public final class WordClassDiscountingSmoother {
 		assert !containsNullKey(wordClassesToDiscount);
 		final Object2ObjectMap<String, WordClassificationData.Datum> result = new Object2ObjectOpenHashMap<>(
 				wordClassesToDiscount.size() + 1, 1.0f);
+		// Remove the classes from the map to discount them
 		for (final Entry<String, WordClassificationData.Datum> wordClassToDiscount : wordClassesToDiscount) {
 			final String className = wordClassToDiscount.getKey();
 			assert className != null;
