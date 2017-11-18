@@ -127,14 +127,14 @@ public final class UpdatingWordLogisticClassifierTrainer
 					.getKey();
 			ConcurrentMap<String, Logistic> wordClassifiers = null;
 			try {
+				// Return the completed map of all classifiers to the caller of
+				// this
+				// method so that the given dialogue can be classified
 				wordClassifiers = updatedClassifierMapFuture.get();
 			} catch (InterruptedException | ExecutionException e) {
 				throw new TrainingException(e);
 			}
 
-			// Return the completed map of all classifiers to the caller of
-			// this
-			// method so that the given dialogue can be classified
 			result = wordClassifiers::get;
 			lastWordClassifierTrainingResults = updateWordClassifierMap(wordClassifiers, diagToClassify, ctx);
 		}
