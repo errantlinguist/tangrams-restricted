@@ -266,10 +266,10 @@ public final class WordClassDiscountingSmoother {
 	}
 
 	private static <T> Object2ObjectMap<T, DiscountedWordClasses.Datum> createDiscountedWordClassDataMap(
-			final Object2ObjectMap<T, WordClassificationData.Datum> discountedWordClasses) {
+			final Object2ObjectMap<? extends T, WordClassificationData.Datum> discountedWordClasses) {
 		final Object2ObjectMap<T, DiscountedWordClasses.Datum> result = new Object2ObjectOpenHashMap<>(
 				discountedWordClasses.size() + 1, 1.0f);
-		for (final Object2ObjectMap.Entry<T, WordClassificationData.Datum> discountedWordClass : discountedWordClasses
+		for (final Object2ObjectMap.Entry<? extends T, WordClassificationData.Datum> discountedWordClass : discountedWordClasses
 				.object2ObjectEntrySet()) {
 			result.put(discountedWordClass.getKey(), new DiscountedWordClasses.Datum(discountedWordClass.getValue()));
 		}
