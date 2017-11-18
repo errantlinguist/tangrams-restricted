@@ -60,6 +60,8 @@ public final class Iterators {
 	 * given {@link Predicate} along with all elements iterated through before
 	 * matching.
 	 *
+	 * @param <T>
+	 *            The element type.
 	 * @param iter
 	 *            The {@code Iterator} to retrieve elements from.
 	 * @param delimiterMatcher
