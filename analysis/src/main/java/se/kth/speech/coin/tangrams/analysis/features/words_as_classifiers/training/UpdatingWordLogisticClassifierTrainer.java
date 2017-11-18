@@ -17,7 +17,6 @@
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
@@ -29,7 +28,6 @@ import org.slf4j.LoggerFactory;
 
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
-import it.unimi.dsi.fastutil.objects.ObjectSet;
 import se.kth.speech.coin.tangrams.analysis.GameContext;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordClassDiscountingSmoother;
@@ -106,7 +104,8 @@ public final class UpdatingWordLogisticClassifierTrainer
 		this.smoother = smoother;
 		totalTrainingData = initialTrainingData;
 
-		lastWordClassifierTrainingResults = trainWordClassifiers(totalTrainingData);
+		lastWordClassifierTrainingResults = new ParallelizedWordLogisticClassifierTrainer(backgroundJobExecutor,
+				smoother).apply(initialTrainingData);
 
 		this.instExtractor = instExtractor;
 		this.positiveExampleWeightFactor = positiveExampleWeightFactor;
@@ -134,24 +133,6 @@ public final class UpdatingWordLogisticClassifierTrainer
 		return result;
 	}
 
-	private CompletableFuture<ConcurrentMap<String, Logistic>> createWordClassifierMap(
-			final ObjectSet<Object2ObjectMap.Entry<String, WordClassificationData.Datum>> classData) {
-		final ConcurrentMap<String, Logistic> wordClassifiers = new ConcurrentHashMap<>(classData.size() + 1, 1.0f);
-		final Stream.Builder<CompletableFuture<Void>> trainingJobs = Stream.builder();
-		for (final Object2ObjectMap.Entry<String, WordClassificationData.Datum> classInstancesEntry : classData) {
-			final String wordClass = classInstancesEntry.getKey();
-			LOGGER.debug("Training classifier for class \"{}\".", wordClass);
-			final WordClassificationData.Datum datum = classInstancesEntry.getValue();
-			final Instances trainingInsts = datum.getTrainingInsts();
-			LOGGER.debug("{} instance(s) for class \"{}\".", trainingInsts.size(), wordClass);
-			final CompletableFuture<Void> trainingJob = CompletableFuture.runAsync(
-					new TrainedClassifierPutter(wordClass, trainingInsts, wordClassifiers), backgroundJobExecutor);
-			trainingJobs.add(trainingJob);
-		}
-		return CompletableFuture.allOf(trainingJobs.build().toArray(CompletableFuture[]::new))
-				.thenApply(voidArg -> wordClassifiers);
-	}
-
 	private CompletableFuture<Void> retrainOovClass(
 			final Object2ObjectMap<String, WordClassificationData.Datum> smoothedUpdatedClassData,
 			final ConcurrentMap<String, Logistic> currentWordClassifiers) {
@@ -164,20 +145,6 @@ public final class UpdatingWordLogisticClassifierTrainer
 				new TrainedClassifierPutter(oovClassName, trainingInsts, currentWordClassifiers),
 				backgroundJobExecutor);
 		return result;
-	}
-
-	private TrainingResults<Logistic> trainWordClassifiers(final WordClassificationData unsmoothedTrainingData) {
-		// Create a new WordClassificationData instance in order to be able to re-apply
-		// smoothing to the original data again
-		final WordClassificationData smoothedTrainingData = new WordClassificationData(unsmoothedTrainingData);
-		final Object2ObjectMap<String, WordClassificationData.Datum> wordClassData = smoothedTrainingData
-				.getClassData();
-		assert !wordClassData.containsKey(null);
-
-		final DiscountedWordClasses discountedWordClasses = smoother.redistributeMass(wordClassData);
-		final DiscountedWordClasses.Datum oovClassDatum = discountedWordClasses.getOovClassDatum();
-		LOGGER.debug("{} instance(s) for out-of-vocabulary class.", oovClassDatum.getTrainingInstCount());
-		return new TrainingResults<>(createWordClassifierMap(wordClassData.object2ObjectEntrySet()), discountedWordClasses);
 	}
 
 	private TrainingResults<Logistic> updateWordClassifierMap(
