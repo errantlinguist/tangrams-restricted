@@ -761,8 +761,6 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 
 	private Stream<String> createRowCellValues(
 			final EntityFeatureVectorDescriptionFactory entityFeatureVectorDescFactory, final EventContext eventCtx) {
-		// final HashableEvent event = eventCtx.getEvent();
-		// LOGGER.debug("Processing event with name \"{}\".", event.getName());
 		final Stream.Builder<String> resultBuilder = Stream.builder();
 		Arrays.stream(eventDataRowCellValues.getUnchecked(eventCtx)).forEachOrdered(resultBuilder);
 
