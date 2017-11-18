@@ -6,6 +6,8 @@ package se.kth.speech;
 import java.util.Map;
 import java.util.function.Supplier;
 
+import javax.annotation.concurrent.ThreadSafe;
+
 /**
  * A wrapper for objects used as keys in a {@link Map} so that they are compared
  * for equality only according to their identity, i.e.&nbsp;so that two objects
@@ -18,6 +20,7 @@ import java.util.function.Supplier;
  * @since 18 Nov 2017
  *
  */
+@ThreadSafe
 public final class IdentityKey<T> implements Supplier<T> {
 
 	/**
