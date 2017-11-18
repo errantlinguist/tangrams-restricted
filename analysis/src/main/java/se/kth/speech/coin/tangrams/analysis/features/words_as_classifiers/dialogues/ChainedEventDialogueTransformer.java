@@ -16,9 +16,7 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues;
 
-import java.util.Iterator;
 import java.util.List;
-import java.util.function.Function;
 
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 
@@ -29,25 +27,10 @@ import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
  */
 public class ChainedEventDialogueTransformer implements EventDialogueTransformer {
 
-	private static Function<? super EventDialogue, EventDialogue> createDecorated(
-			final Iterable<? extends Function<? super EventDialogue, EventDialogue>> diagTransformers) {
-		final Iterator<? extends Function<? super EventDialogue, EventDialogue>> transformerIter = diagTransformers
-				.iterator();
-		Function<? super EventDialogue, EventDialogue> result = transformerIter.next();
-		while (transformerIter.hasNext()) {
-			result = result.andThen(transformerIter.next());
-		}
-		return result;
-	}
-
-	private final Function<? super EventDialogue, EventDialogue> decorated;
+	private final List<? extends EventDialogueTransformer> diagTransformers;
 
 	public ChainedEventDialogueTransformer(final List<? extends EventDialogueTransformer> diagTransformers) {
-		this(createDecorated(diagTransformers));
-	}
-
-	private ChainedEventDialogueTransformer(final Function<? super EventDialogue, EventDialogue> decorated) {
-		this.decorated = decorated;
+		this.diagTransformers = diagTransformers;
 	}
 
 	/*
@@ -57,7 +40,11 @@ public class ChainedEventDialogueTransformer implements EventDialogueTransformer
 	 */
 	@Override
 	public EventDialogue apply(final EventDialogue diag) {
-		return decorated.apply(diag);
+		EventDialogue result = diag;
+		for (final EventDialogueTransformer diagTransformer : diagTransformers) {
+			result = diagTransformer.apply(result);
+		}
+		return result;
 	}
 
 	/*
@@ -77,11 +64,11 @@ public class ChainedEventDialogueTransformer implements EventDialogueTransformer
 			return false;
 		}
 		final ChainedEventDialogueTransformer other = (ChainedEventDialogueTransformer) obj;
-		if (decorated == null) {
-			if (other.decorated != null) {
+		if (diagTransformers == null) {
+			if (other.diagTransformers != null) {
 				return false;
 			}
-		} else if (!decorated.equals(other.decorated)) {
+		} else if (!diagTransformers.equals(other.diagTransformers)) {
 			return false;
 		}
 		return true;
@@ -96,7 +83,7 @@ public class ChainedEventDialogueTransformer implements EventDialogueTransformer
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + (decorated == null ? 0 : decorated.hashCode());
+		result = prime * result + (diagTransformers == null ? 0 : diagTransformers.hashCode());
 		return result;
 	}
 
@@ -108,8 +95,8 @@ public class ChainedEventDialogueTransformer implements EventDialogueTransformer
 	@Override
 	public String toString() {
 		final StringBuilder builder = new StringBuilder(128);
-		builder.append("ChainedEventDialogueTransformer [decorated=");
-		builder.append(decorated);
+		builder.append("ChainedEventDialogueTransformer [diagTransformers=");
+		builder.append(diagTransformers);
 		builder.append(']');
 		return builder.toString();
 	}
