@@ -75,7 +75,7 @@ public final class GameContextModelFactory implements Function<GameContext, Spat
 	private static void updateToTime(final SpatialMatrix<Integer> model,
 			final NavigableMap<LocalDateTime, List<GameEvent>> timestampedEvents, final LocalDateTime time) {
 		final NavigableMap<LocalDateTime, List<GameEvent>> timestampedEventsToApply = timestampedEvents.headMap(time,
-				true);
+				false);
 		final Stream<GameEvent> eventsToApply = timestampedEventsToApply.values().stream().flatMap(List::stream);
 		eventsToApply.forEachOrdered(event -> applyEvent(model, event));
 	}
