@@ -19,6 +19,8 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.train
 import java.util.Map;
 import java.util.stream.Stream;
 
+import javax.annotation.Nonnull;
+
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
@@ -120,7 +122,7 @@ public final class WordClassificationData {
 
 		/*
 		 * (non-Javadoc)
-		 * 
+		 *
 		 * @see java.lang.Object#toString()
 		 */
 		@Override
@@ -170,8 +172,8 @@ public final class WordClassificationData {
 	 */
 	private final Object2IntMap<String> trainingInstanceCounts;
 
-	WordClassificationData(final Object2ObjectMap<String, Datum> classData,
-			final WordClassInstancesFetcher classInstancesFetcher) {
+	WordClassificationData(@Nonnull final Object2ObjectMap<String, Datum> classData,
+			@Nonnull final WordClassInstancesFetcher classInstancesFetcher) {
 		this.classData = classData;
 		this.classInstancesFetcher = classInstancesFetcher;
 
@@ -179,7 +181,7 @@ public final class WordClassificationData {
 		trainingInstanceCounts.defaultReturnValue(0);
 	}
 
-	WordClassificationData(final WordClassificationData copyee) {
+	WordClassificationData(@Nonnull final WordClassificationData copyee) {
 		classData = createClassDataMapDeepCopy(copyee.getClassData());
 
 		final WordClassInstancesFetcher copyeeFetcher = copyee.getClassInstancesFetcher();
@@ -189,12 +191,12 @@ public final class WordClassificationData {
 		final Object2IntMap<String> copyeeTrainingInstanceCounts = copyee.getTrainingInstanceCounts();
 		trainingInstanceCounts = new Object2IntOpenHashMap<>(copyeeTrainingInstanceCounts, 1.0f);
 		trainingInstanceCounts.defaultReturnValue(copyeeTrainingInstanceCounts.defaultReturnValue());
-		assert trainingInstanceCounts.size() == copyeeTrainingInstanceCounts.size(); 
+		assert trainingInstanceCounts.size() == copyeeTrainingInstanceCounts.size();
 	}
 
 	/*
 	 * (non-Javadoc)
-	 *
+	 * 
 	 * @see java.lang.Object#equals(java.lang.Object)
 	 */
 	@Override
@@ -209,18 +211,18 @@ public final class WordClassificationData {
 			return false;
 		}
 		final WordClassificationData other = (WordClassificationData) obj;
-		if (classInstancesFetcher == null) {
-			if (other.classInstancesFetcher != null) {
-				return false;
-			}
-		} else if (!classInstancesFetcher.equals(other.classInstancesFetcher)) {
-			return false;
-		}
 		if (classData == null) {
 			if (other.classData != null) {
 				return false;
 			}
 		} else if (!classData.equals(other.classData)) {
+			return false;
+		}
+		if (classInstancesFetcher == null) {
+			if (other.classInstancesFetcher != null) {
+				return false;
+			}
+		} else if (!classInstancesFetcher.equals(other.classInstancesFetcher)) {
 			return false;
 		}
 		if (trainingInstanceCounts == null) {
@@ -249,22 +251,22 @@ public final class WordClassificationData {
 
 	/*
 	 * (non-Javadoc)
-	 *
+	 * 
 	 * @see java.lang.Object#hashCode()
 	 */
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + (classInstancesFetcher == null ? 0 : classInstancesFetcher.hashCode());
 		result = prime * result + (classData == null ? 0 : classData.hashCode());
+		result = prime * result + (classInstancesFetcher == null ? 0 : classInstancesFetcher.hashCode());
 		result = prime * result + (trainingInstanceCounts == null ? 0 : trainingInstanceCounts.hashCode());
 		return result;
 	}
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#toString()
 	 */
 	@Override
