@@ -35,7 +35,6 @@ import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ForkJoinPool;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -97,8 +96,7 @@ final class ObservationWeightTestWriter { // NO_UCD (unused code)
 		/*
 		 * (non-Javadoc)
 		 *
-		 * @see java.util.function.BiFunction#apply(java.lang.Object,
-		 * java.lang.Object)
+		 * @see java.util.function.BiFunction#apply(java.lang.Object, java.lang.Object)
 		 */
 		@Override
 		public Function<Map<SessionDataManager, Path>, Stream<Entry<SessionDataManager, WordClassificationData>>> apply(
@@ -143,8 +141,8 @@ final class ObservationWeightTestWriter { // NO_UCD (unused code)
 		TOKENIZATION_FILE_PATH("tok") {
 			@Override
 			public Option get() {
-				return Option.builder(optName).longOpt("tokenization-file")
-						.desc("A path to the file mapping token sequences to the relevant referring-language tokens each represent.")
+				return Option.builder(optName).longOpt("tokenization-file").desc(
+						"A path to the file mapping token sequences to the relevant referring-language tokens each represent.")
 						.hasArg().argName("path").type(File.class).required().build();
 			}
 		},
@@ -201,8 +199,8 @@ final class ObservationWeightTestWriter { // NO_UCD (unused code)
 	private static final Collector<CharSequence, ?, String> ROW_CELL_JOINER = Collectors.joining("\t");
 
 	/**
-	 * <strong>NOTE:</strong> This is for SPSS compatibility, which does not
-	 * allow e.g.&nbsp;<code>"-"</code> as part of a variable name.
+	 * <strong>NOTE:</strong> This is for SPSS compatibility, which does not allow
+	 * e.g.&nbsp;<code>"-"</code> as part of a variable name.
 	 *
 	 * @see <a href=
 	 *      "https://www.ibm.com/support/knowledgecenter/en/SSLVMB_21.0.0/com.ibm.spss.statistics.help/syn_variables_variable_names.htm">SPSS
@@ -313,7 +311,7 @@ final class ObservationWeightTestWriter { // NO_UCD (unused code)
 		if (cl.hasOption(Parameter.HELP.optName)) {
 			printHelp();
 		} else {
-			final ForkJoinPool backgroundJobExecutor = BackgroundJobs.fetchBackgroundJobExecutor();
+			final ExecutorService backgroundJobExecutor = BackgroundJobs.fetchBackgroundJobExecutor();
 			final UtteranceMappingBatchJobTester.Input input = createInput(cl);
 
 			final Consumer<CrossValidator> testerConfigurator = crossValidator -> {

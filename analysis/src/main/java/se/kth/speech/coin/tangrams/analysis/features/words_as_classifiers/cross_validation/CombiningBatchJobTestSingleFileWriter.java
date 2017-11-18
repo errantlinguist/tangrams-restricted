@@ -41,7 +41,6 @@ import java.util.OptionalInt;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -500,9 +499,8 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 		}
 
 		/**
-		 * Parsing can take up huge amounts of memory, so it's single-threaded
-		 * and thus the caches are created designed for single-threaded
-		 * operation.
+		 * Parsing can take up huge amounts of memory, so it's single-threaded and thus
+		 * the caches are created designed for single-threaded operation.
 		 */
 		private static final AnnotationCacheFactory ANNOTATION_CACHE_FACTORY = new AnnotationCacheFactory(1);
 
@@ -617,8 +615,7 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 		/*
 		 * (non-Javadoc)
 		 *
-		 * @see java.util.function.BiFunction#apply(java.lang.Object,
-		 * java.lang.Object)
+		 * @see java.util.function.BiFunction#apply(java.lang.Object, java.lang.Object)
 		 */
 		@Override
 		public Function<Map<SessionDataManager, Path>, Stream<Entry<SessionDataManager, WordClassificationData>>> apply(
@@ -676,8 +673,8 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 		TEST_CLEANING_POWERSET("cp") {
 			@Override
 			public Option get() {
-				return Option.builder(optName).longOpt("cleaning-powerset")
-						.desc("If this flag is present, the powerset of the supplied cleaning methods is tested rather than the set itself.")
+				return Option.builder(optName).longOpt("cleaning-powerset").desc(
+						"If this flag is present, the powerset of the supplied cleaning methods is tested rather than the set itself.")
 						.build();
 			}
 		},
@@ -794,8 +791,8 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 	private static class TestParameterReporting {
 
 		/**
-		 * <strong>NOTE:</strong> This is for SPSS compatibility, which does not
-		 * allow e.g.&nbsp;<code>"-"</code> as part of a variable name.
+		 * <strong>NOTE:</strong> This is for SPSS compatibility, which does not allow
+		 * e.g.&nbsp;<code>"-"</code> as part of a variable name.
 		 *
 		 * @see <a href=
 		 *      "https://www.ibm.com/support/knowledgecenter/en/SSLVMB_21.0.0/com.ibm.spss.statistics.help/syn_variables_variable_names.htm">SPSS
@@ -1118,7 +1115,7 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 		if (cl.hasOption(Parameter.HELP.optName)) {
 			printHelp();
 		} else {
-			final ForkJoinPool backgroundJobExecutor = BackgroundJobs.fetchBackgroundJobExecutor();
+			final ExecutorService backgroundJobExecutor = BackgroundJobs.fetchBackgroundJobExecutor();
 			final CLIInputFactory inputFactory = new CLIInputFactory(backgroundJobExecutor);
 			try {
 				final CombiningBatchJobTester.Input input = inputFactory.apply(cl);
