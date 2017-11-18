@@ -335,8 +335,8 @@ public final class WordClassDiscountingSmoother {
 	public DiscountedWordClasses redistributeMass(
 			final Object2ObjectMap<String, WordClassificationData.Datum> wordClassData) {
 		if (wordClassData.containsKey(oovClassName)) {
-			throw new IllegalArgumentException(
-					String.format("The map provided already has a key equalling the OOV class name \"%s\".", oovClassName));
+			throw new IllegalArgumentException(String
+					.format("The map provided already has a key equalling the OOV class name \"%s\".", oovClassName));
 		}
 		final Object2ObjectMap<String, WordClassificationData.Datum> discountedWordClassTrainingData = discountWordClasses(
 				wordClassData);
@@ -345,10 +345,8 @@ public final class WordClassDiscountingSmoother {
 					String.format("Could not find any word classes with fewer than %s instance(s).", minCount));
 		}
 
-		// The new set of word classes is different from the previous one;
-		// Re-redistribute instances to the OOV class
-		final WordClassificationData.Datum oovClassDatum = redistributeMassToOovClass(wordClassData,
-				discountedWordClassTrainingData);
+		final WordClassificationData.Datum oovClassDatum = createOovClassDatum(discountedWordClassTrainingData);
+		wordClassData.put(oovClassName, oovClassDatum);
 		final Object2ObjectMap<String, DiscountedWordClasses.Datum> discountedWordClassData = createDiscountedWordClassDataMap(
 				discountedWordClassTrainingData);
 		return new DiscountedWordClasses(discountedWordClassData, new DiscountedWordClasses.Datum(oovClassDatum));
@@ -379,6 +377,29 @@ public final class WordClassDiscountingSmoother {
 		}
 	}
 
+	private WordClassificationData.Datum createOovClassDatum(
+			final Object2ObjectMap<String, WordClassificationData.Datum> addendWordClassData) {
+		return createOovClassDatum(addendWordClassData.object2ObjectEntrySet());
+	}
+
+	private WordClassificationData.Datum createOovClassDatum(
+			final ObjectCollection<Object2ObjectMap.Entry<String, WordClassificationData.Datum>> addendWordClassData) {
+		final int totalInstCount = addendWordClassData.stream().map(Object2ObjectMap.Entry::getValue)
+				.map(WordClassificationData.Datum::getTrainingInsts).mapToInt(Instances::size).sum();
+		final Instances oovClassDatum = wordClassDataFactory.apply(WordClasses.createRelationName(oovClassName),
+				totalInstCount);
+		final WordClassificationData.Datum result = new WordClassificationData.Datum(oovClassDatum);
+		addendWordClassData.stream().map(Object2ObjectMap.Entry::getValue).forEach(result::add);
+
+		assert !result.getTrainingInsts().isEmpty();
+		assert addendWordClassData.stream().map(Object2ObjectMap.Entry::getValue)
+				.mapToInt(WordClassificationData.Datum::getObservationCount).sum() == result.getObservationCount();
+		assert addendWordClassData.stream().map(Object2ObjectMap.Entry::getValue)
+				.map(WordClassificationData.Datum::getTrainingInsts).mapToInt(Instances::size)
+				.sum() == result.getTrainingInsts().size();
+		return result;
+	}
+
 	/**
 	 * Finds word classes in a given {@link Object2ObjectMap} which should be
 	 * discounted and then removes them from the given map.
@@ -406,33 +427,6 @@ public final class WordClassDiscountingSmoother {
 					oovClassName);
 			result.put(className, wordClassData.remove(className));
 		}
-		return result;
-	}
-
-	private WordClassificationData.Datum redistributeMassToOovClass(
-			final Object2ObjectMap<String, WordClassificationData.Datum> wordClassData,
-			final Object2ObjectMap<String, WordClassificationData.Datum> addendWordClassData) {
-		return redistributeMassToOovClass(wordClassData, addendWordClassData.object2ObjectEntrySet());
-	}
-
-	private WordClassificationData.Datum redistributeMassToOovClass(
-			final Object2ObjectMap<String, WordClassificationData.Datum> wordClassData,
-			final ObjectCollection<Object2ObjectMap.Entry<String, WordClassificationData.Datum>> addendWordClassData) {
-		final WordClassificationData.Datum result = wordClassData.computeIfAbsent(oovClassName, k -> {
-			final int totalInstCount = addendWordClassData.stream().map(Object2ObjectMap.Entry::getValue)
-					.map(WordClassificationData.Datum::getTrainingInsts).mapToInt(Instances::size).sum();
-			final Instances oovClassDatum = wordClassDataFactory.apply(WordClasses.createRelationName(k),
-					totalInstCount);
-			return new WordClassificationData.Datum(oovClassDatum);
-		});
-		addendWordClassData.stream().map(Object2ObjectMap.Entry::getValue).forEach(result::add);
-
-		assert !result.getTrainingInsts().isEmpty();
-		assert addendWordClassData.stream().map(Object2ObjectMap.Entry::getValue)
-				.mapToInt(WordClassificationData.Datum::getObservationCount).sum() == result.getObservationCount();
-		assert addendWordClassData.stream().map(Object2ObjectMap.Entry::getValue)
-				.map(WordClassificationData.Datum::getTrainingInsts).mapToInt(Instances::size)
-				.sum() == result.getTrainingInsts().size();
 		return result;
 	}
 
