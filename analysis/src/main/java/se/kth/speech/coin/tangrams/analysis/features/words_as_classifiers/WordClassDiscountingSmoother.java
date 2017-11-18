@@ -265,6 +265,18 @@ public final class WordClassDiscountingSmoother {
 		return result;
 	}
 
+	private static Object2ObjectMap<String, DiscountedWordClasses.Datum> createDiscountedWordClassDataMap(
+			final Object2ObjectMap<String, WordClassificationData.Datum> discountedWordClasses) {
+		final Object2ObjectMap<String, DiscountedWordClasses.Datum> result = new Object2ObjectOpenHashMap<>(
+				discountedWordClasses.size() + 1, 1.0f);
+		for (final Object2ObjectMap.Entry<String, WordClassificationData.Datum> discountedWordClass : discountedWordClasses
+				.object2ObjectEntrySet()) {
+			result.put(discountedWordClass.getKey(), new DiscountedWordClasses.Datum(discountedWordClass.getValue()));
+		}
+		assert result.size() == discountedWordClasses.size();
+		return result;
+	}
+
 	@Inject
 	private WordClassInstancesFactory classInstsFactory;
 
@@ -319,14 +331,8 @@ public final class WordClassDiscountingSmoother {
 		// Re-redistribute instances to the OOV class
 		final WordClassificationData.Datum oovClassDatum = redistributeMassToOovClass(trainingData,
 				wordClassesToDiscount.object2ObjectEntrySet());
-		final Object2ObjectMap<String, DiscountedWordClasses.Datum> discountedWordClassData = new Object2ObjectOpenHashMap<>(
-				wordClassesToDiscount.size() + 1, 1.0f);
-		for (final Object2ObjectMap.Entry<String, WordClassificationData.Datum> discountedWordClass : wordClassesToDiscount
-				.object2ObjectEntrySet()) {
-			discountedWordClassData.put(discountedWordClass.getKey(),
-					new DiscountedWordClasses.Datum(discountedWordClass.getValue()));
-		}
-		assert discountedWordClassData.size() == wordClassesToDiscount.size();
+		final Object2ObjectMap<String, DiscountedWordClasses.Datum> discountedWordClassData = createDiscountedWordClassDataMap(
+				wordClassesToDiscount);
 		return new DiscountedWordClasses(discountedWordClassData, new DiscountedWordClasses.Datum(oovClassDatum));
 	}
 
@@ -400,9 +406,12 @@ public final class WordClassDiscountingSmoother {
 			return new WordClassificationData.Datum(oovClassDatum);
 		});
 		addendWordClassData.stream().map(Object2ObjectMap.Entry::getValue).forEach(result::add);
-		
-		assert addendWordClassData.stream().map(Object2ObjectMap.Entry::getValue).mapToInt(WordClassificationData.Datum::getObservationCount).sum() == result.getObservationCount();
-		assert addendWordClassData.stream().map(Object2ObjectMap.Entry::getValue).map(WordClassificationData.Datum::getTrainingInsts).mapToInt(Instances::size).sum() == result.getTrainingInsts().size();
+
+		assert addendWordClassData.stream().map(Object2ObjectMap.Entry::getValue)
+				.mapToInt(WordClassificationData.Datum::getObservationCount).sum() == result.getObservationCount();
+		assert addendWordClassData.stream().map(Object2ObjectMap.Entry::getValue)
+				.map(WordClassificationData.Datum::getTrainingInsts).mapToInt(Instances::size)
+				.sum() == result.getTrainingInsts().size();
 		return result;
 	}
 
