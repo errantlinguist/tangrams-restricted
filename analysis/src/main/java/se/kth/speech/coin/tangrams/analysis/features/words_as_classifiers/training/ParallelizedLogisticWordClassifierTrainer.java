@@ -23,6 +23,8 @@ import java.util.concurrent.Executor;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import javax.annotation.concurrent.ThreadSafe;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,6 +40,7 @@ import weka.core.Instances;
  * @since 20 Oct 2017
  *
  */
+@ThreadSafe
 public final class ParallelizedLogisticWordClassifierTrainer
 		implements Function<WordClassificationData, TrainingResults<Logistic>> {
 
