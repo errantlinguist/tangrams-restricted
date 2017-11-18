@@ -401,6 +401,7 @@ public final class WordClassDiscountingSmoother {
 		});
 		addendWordClassData.stream().map(Object2ObjectMap.Entry::getValue).forEach(result::add);
 
+		assert !result.getTrainingInsts().isEmpty();
 		assert addendWordClassData.stream().map(Object2ObjectMap.Entry::getValue)
 				.mapToInt(WordClassificationData.Datum::getObservationCount).sum() == result.getObservationCount();
 		assert addendWordClassData.stream().map(Object2ObjectMap.Entry::getValue)
