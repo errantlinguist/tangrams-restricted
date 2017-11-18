@@ -32,7 +32,7 @@ import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
  *
  */
 public final class MappingEventDialogueTransformer extends AbstractUtteranceTransformingEventDialogueTransformer {
-	
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(MappingEventDialogueTransformer.class);
 
 	private final Map<? super List<String>, ? extends List<String>> tokenSeqTransformations;
@@ -52,21 +52,13 @@ public final class MappingEventDialogueTransformer extends AbstractUtteranceTran
 	@Override
 	protected Stream<Utterance> transformUtt(final Utterance utt) {
 		final List<String> origTokenSeq = utt.getTokens();
-		LOGGER.info("Original token sequence: {}", origTokenSeq);
-//		String origStr = origTokenSeq.stream().collect(Collectors.joining(" "));
-//		if ("right I'm selecting the piece tell me which one".equals(origStr)){
-			// FIXME: Remove debug statement
-//			throw new AssertionError("The bad utterance does exist!");
-//		}
-		
-		
 		final List<String> transformedTokenSeq = tokenSeqTransformations.get(origTokenSeq);
-		LOGGER.info("Transformed token sequence: {}", transformedTokenSeq);
+		LOGGER.debug("Original token sequence: {}; Transformed token sequence: {}", origTokenSeq, transformedTokenSeq);
 		if (transformedTokenSeq == null) {
-			throw new IllegalArgumentException(
-					String.format("No mapping for token sequence: \"%s\"; segment ID \"%s\"; start time: %f, end time: %f",
-							origTokenSeq.stream().collect(Collectors.joining(" ")), utt.getSegmentId(),
-							utt.getStartTime(), utt.getEndTime()));
+			throw new IllegalArgumentException(String.format(
+					"No mapping for token sequence: \"%s\"; segment ID \"%s\"; start time: %f, end time: %f",
+					origTokenSeq.stream().collect(Collectors.joining(" ")), utt.getSegmentId(), utt.getStartTime(),
+					utt.getEndTime()));
 		} else {
 			return Stream.of(new Utterance(utt.getSegmentId(), utt.getSpeakerId(), transformedTokenSeq,
 					utt.getStartTime(), utt.getEndTime()));
