@@ -123,9 +123,57 @@ public final class TrimmableObject2ObjectMap<K, V> implements Object2ObjectMap<K
 		return decorated.entrySet();
 	}
 
+	/*
+	 * (non-Javadoc)
+	 *
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(final Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (!(obj instanceof TrimmableObject2ObjectMap)) {
+			return false;
+		}
+		final TrimmableObject2ObjectMap<?, ?> other = (TrimmableObject2ObjectMap<?, ?>) obj;
+		if (decorated == null) {
+			if (other.decorated != null) {
+				return false;
+			}
+		} else if (!decorated.equals(other.decorated)) {
+			return false;
+		}
+		if (trimmer == null) {
+			if (other.trimmer != null) {
+				return false;
+			}
+		} else if (!trimmer.equals(other.trimmer)) {
+			return false;
+		}
+		return true;
+	}
+
 	@Override
 	public V get(final Object key) {
 		return decorated.get(key);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 *
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + (decorated == null ? 0 : decorated.hashCode());
+		result = prime * result + (trimmer == null ? 0 : trimmer.hashCode());
+		return result;
 	}
 
 	@Override
@@ -161,6 +209,17 @@ public final class TrimmableObject2ObjectMap<K, V> implements Object2ObjectMap<K
 	@Override
 	public int size() {
 		return decorated.size();
+	}
+
+	@Override
+	public String toString() {
+		final StringBuilder builder = new StringBuilder((decorated.size() + 1) * 32);
+		builder.append("TrimmableObject2ObjectMap [decorated=");
+		builder.append(decorated);
+		builder.append(", trimmer=");
+		builder.append(trimmer);
+		builder.append("]");
+		return builder.toString();
 	}
 
 	/**
