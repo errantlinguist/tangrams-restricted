@@ -331,7 +331,7 @@ public final class WordClassDiscountingSmoother {
 
 		// The new set of word classes is different from the previous one;
 		// Re-redistribute instances to the OOV class
-		final WordClassificationData.Datum oovClassDatum = redistributeMassToOovClass(trainingData,
+		final WordClassificationData.Datum oovClassDatum = redistributeMassToOovClass(classInsts,
 				wordClassesToDiscount.object2ObjectEntrySet());
 		final Object2ObjectMap<String, DiscountedWordClasses.Datum> discountedWordClassData = createDiscountedWordClassDataMap(
 				wordClassesToDiscount);
@@ -397,9 +397,9 @@ public final class WordClassDiscountingSmoother {
 		return result;
 	}
 
-	private WordClassificationData.Datum redistributeMassToOovClass(final WordClassificationData trainingData,
+	private WordClassificationData.Datum redistributeMassToOovClass(final Object2ObjectMap<String, WordClassificationData.Datum> classInsts,
 			final ObjectCollection<Object2ObjectMap.Entry<String, WordClassificationData.Datum>> addendWordClassData) {
-		final WordClassificationData.Datum result = trainingData.getClassData().computeIfAbsent(oovClassName, k -> {
+		final WordClassificationData.Datum result = classInsts.computeIfAbsent(oovClassName, k -> {
 			final int totalInstCount = addendWordClassData.stream().map(Object2ObjectMap.Entry::getValue)
 					.map(WordClassificationData.Datum::getTrainingInsts).mapToInt(Instances::size).sum();
 			final Instances oovClassDatum = classInstsFactory.apply(WordClasses.createRelationName(k), totalInstCount);
