@@ -34,6 +34,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.Future;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -270,8 +273,8 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 	}
 
 	/**
-	 * Parsing can take up huge amounts of memory, so it's single-threaded and
-	 * thus the caches are created designed for single-threaded operation.
+	 * Parsing can take up huge amounts of memory, so it's single-threaded and thus
+	 * the caches are created designed for single-threaded operation.
 	 */
 	private static final AnnotationCacheFactory ANNOTATION_CACHE_FACTORY = new AnnotationCacheFactory(1);
 
@@ -309,7 +312,7 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 		OUTFILE_HEADER = colHeaders.stream().collect(ROW_CELL_JOINER);
 	}
 
-	public static void main(final String[] args) throws IOException, JAXBException {
+	public static void main(final String[] args) throws IOException, JAXBException, InterruptedException, ExecutionException {
 		final CommandLineParser parser = new DefaultParser();
 		try {
 			final CommandLine cl = parser.parse(OPTIONS, args);
@@ -326,7 +329,7 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 		return result;
 	}
 
-	private static void main(final CommandLine cl) throws ParseException, IOException, JAXBException {
+	private static void main(final CommandLine cl) throws ParseException, IOException, JAXBException, InterruptedException, ExecutionException {
 		if (cl.hasOption(Parameter.HELP.optName)) {
 			printHelp();
 		} else {
@@ -335,8 +338,8 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 			if (inpaths.isEmpty()) {
 				throw new MissingOptionException("No input path(s) specified.");
 			} else {
-				final Map<SessionDataManager, Path> allSessionData = readTestSessionData(inpaths);
-
+				final Future<Map<SessionDataManager, Path>> allSessionDataFuture = ForkJoinPool.commonPool()
+						.submit(() -> readTestSessionData(inpaths));
 				final Set<Cleaning> cleaningMethodSet = Parameter.parseCleaningMethods(cl);
 				LOGGER.info("Cleaning method set: {}", cleaningMethodSet);
 				final TokenFiltering tokenFilteringMethod = Parameter.parseTokenFilteringMethod(cl);
@@ -353,6 +356,7 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 				final String outfileName = cl.getOptionValue(Parameter.OUTFILE_NAME.optName, DEFAULT_OUTFILE_NAME);
 				LOGGER.info("Will name output files \"{}\".", outfileName);
 
+				final Map<SessionDataManager, Path> allSessionData = allSessionDataFuture.get();
 				final Path sessionPrefixPath = CommonPaths.findCommonPrefixPath(allSessionData.values().stream());
 				LOGGER.info("Found a common path of \"{}\" for all input sessions.", sessionPrefixPath);
 
