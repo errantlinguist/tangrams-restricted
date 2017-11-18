@@ -18,12 +18,12 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javax.inject.Inject;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -140,7 +140,7 @@ public final class WordClassDiscountingSmoother {
 
 			/*
 			 * (non-Javadoc)
-			 * 
+			 *
 			 * @see java.lang.Object#toString()
 			 */
 			@Override
@@ -232,7 +232,7 @@ public final class WordClassDiscountingSmoother {
 
 		/*
 		 * (non-Javadoc)
-		 * 
+		 *
 		 * @see java.lang.Object#toString()
 		 */
 		@Override
@@ -251,6 +251,18 @@ public final class WordClassDiscountingSmoother {
 	private static final String DEFAULT_OOV_CLASS = "__OUT_OF_VOCAB__";
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(WordClassDiscountingSmoother.class);
+
+	private static boolean containsNullKey(final Iterable<? extends Entry<String, ?>> entries) {
+		boolean result = false;
+		for (final Entry<String, ?> entry : entries) {
+			final String key = entry.getKey();
+			if (key == null) {
+				result = true;
+				break;
+			}
+		}
+		return result;
+	}
 
 	@Inject
 	private WordClassInstancesFactory classInstsFactory;
@@ -290,9 +302,9 @@ public final class WordClassDiscountingSmoother {
 	 *
 	 * @param trainingData
 	 *            The unsmoothed training data.
-	 * @return A new {@link DiscountedWordClasses} instance representing
-	 *         information about the word classes used for discounting and the
-	 *         {@link Instances} objects for each.
+	 * @return A new {@link DiscountedWordClasses} instance representing information
+	 *         about the word classes used for discounting and the {@link Instances}
+	 *         objects for each.
 	 */
 	public DiscountedWordClasses redistributeMass(final WordClassificationData trainingData) {
 		final Object2ObjectMap<String, WordClassificationData.Datum> wordClassesToDiscount = createdAddendClassInstsMap(
@@ -345,25 +357,37 @@ public final class WordClassDiscountingSmoother {
 	private Object2ObjectMap<String, WordClassificationData.Datum> createdAddendClassInstsMap(
 			final WordClassificationData trainingData) {
 		final Object2ObjectMap<String, WordClassificationData.Datum> classInsts = trainingData.getClassData();
-		final List<Object2ObjectMap.Entry<String, WordClassificationData.Datum>> wordClassesToDiscount = findClassesToDiscount(
-				classInsts.object2ObjectEntrySet())
-						.collect(Collectors.toCollection(() -> new ArrayList<>(classInsts.size())));
+		assert classInsts.get(null) == null;
+		final List<Entry<String, WordClassificationData.Datum>> wordClassesToDiscount = findClassesToDiscount(
+				classInsts.object2ObjectEntrySet());
+		assert wordClassesToDiscount.stream().map(Entry::getKey).distinct().count() == wordClassesToDiscount.size();
+		assert !containsNullKey(wordClassesToDiscount);
 		final Object2ObjectMap<String, WordClassificationData.Datum> result = new Object2ObjectOpenHashMap<>(
 				wordClassesToDiscount.size() + 1, 1.0f);
-
-		for (final Object2ObjectMap.Entry<String, WordClassificationData.Datum> wordClassToDiscount : wordClassesToDiscount) {
+		for (final Entry<String, WordClassificationData.Datum> wordClassToDiscount : wordClassesToDiscount) {
 			final String className = wordClassToDiscount.getKey();
-			LOGGER.debug("Class \"{}\" has fewer than {} instances; Will redistribute to \"{}\".", className, minCount,
+			assert className != null;
+			LOGGER.info("Class \"{}\" has fewer than {} instances; Will redistribute to \"{}\".", className, minCount,
 					oovClassName);
 			result.put(className, classInsts.remove(className));
 		}
 		return result;
 	}
 
-	private Stream<Object2ObjectMap.Entry<String, WordClassificationData.Datum>> findClassesToDiscount(
+	private List<Entry<String, WordClassificationData.Datum>> findClassesToDiscount(
 			final ObjectCollection<Object2ObjectMap.Entry<String, WordClassificationData.Datum>> wordClassData) {
-		return wordClassData.stream()
-				.filter(observationCount -> observationCount.getValue().getObservationCount() < minCount);
+		final List<Entry<String, WordClassificationData.Datum>> result = new ArrayList<>();
+		for (final Object2ObjectMap.Entry<String, WordClassificationData.Datum> wordClassDatum : wordClassData) {
+			final String className = wordClassDatum.getKey();
+			assert className != null;
+			final WordClassificationData.Datum datum = wordClassDatum.getValue();
+			assert datum != null;
+			// Create a new Pair instance because it's possible that the original
+			// Object2ObjectMap.Entry instances no longer point to valid data after the map
+			// which contains them is modified
+			result.add(Pair.of(className, datum));
+		}
+		return result;
 	}
 
 	private WordClassificationData.Datum redistributeMassToOovClass(final WordClassificationData trainingData,
