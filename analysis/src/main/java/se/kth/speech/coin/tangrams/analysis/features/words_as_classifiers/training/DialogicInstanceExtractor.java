@@ -153,6 +153,8 @@ public final class DialogicInstanceExtractor extends AbstractInstanceExtractor {
 				trainingData.addWordClassObservationCounts(wordClassObservationCounts);
 				trainingData.incrementTrainingInstancesChangeCounts(wordClassObservationCounts.keySet());
 			}
+			assert wordClassObservationCounts.object2IntEntrySet().stream().mapToInt(Object2IntMap.Entry::getIntValue)
+					.allMatch(count -> count > 0);
 			return wordClassObservationCounts;
 		}).orElse(EMPTY_WORD_CLASS_OBSERVATION_MAP);
 	}
