@@ -65,7 +65,7 @@ public final class ParallelizedWordLogisticClassifierTrainer
 
 	private ConcurrentMap<String, Logistic> createWordClassifierMap(
 			final ObjectSet<Object2ObjectMap.Entry<String, WordClassificationData.Datum>> classData) {
-		final ConcurrentMap<String, Logistic> result = new ConcurrentHashMap<>(classData.size());
+		final ConcurrentMap<String, Logistic> result = new ConcurrentHashMap<>(classData.size() + 1, 1.0f);
 		final Stream.Builder<CompletableFuture<Void>> trainingJobs = Stream.builder();
 		for (final Object2ObjectMap.Entry<String, WordClassificationData.Datum> classDatum : classData) {
 			final String className = classDatum.getKey();

@@ -139,10 +139,10 @@ public final class UpdatingWordLogisticClassifierTrainer
 	}
 
 	private CompletableFuture<ConcurrentMap<String, Logistic>> createWordClassifierMap(
-			final ObjectSet<Object2ObjectMap.Entry<String, WordClassificationData.Datum>> classInstances) {
-		final ConcurrentMap<String, Logistic> wordClassifiers = new ConcurrentHashMap<>(classInstances.size());
+			final ObjectSet<Object2ObjectMap.Entry<String, WordClassificationData.Datum>> classData) {
+		final ConcurrentMap<String, Logistic> wordClassifiers = new ConcurrentHashMap<>(classData.size() + 1, 1.0f);
 		final Stream.Builder<CompletableFuture<Void>> trainingJobs = Stream.builder();
-		for (final Object2ObjectMap.Entry<String, WordClassificationData.Datum> classInstancesEntry : classInstances) {
+		for (final Object2ObjectMap.Entry<String, WordClassificationData.Datum> classInstancesEntry : classData) {
 			final String wordClass = classInstancesEntry.getKey();
 			LOGGER.debug("Training classifier for class \"{}\".", wordClass);
 			final WordClassificationData.Datum datum = classInstancesEntry.getValue();
