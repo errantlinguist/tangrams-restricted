@@ -16,6 +16,7 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.weka;
 
+import javax.annotation.concurrent.ThreadSafe;
 import javax.inject.Inject;
 import javax.inject.Named;
 
@@ -27,6 +28,7 @@ import weka.core.Instances;
  *
  */
 @Named
+@ThreadSafe
 public final class WordClassInstancesFactory {
 
 	@Inject
