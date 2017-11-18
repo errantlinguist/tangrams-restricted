@@ -187,7 +187,7 @@ public final class WordClassificationData {
 				copyeeFetcher.getEstimatedVocabTypeTokenCount());
 
 		final Object2IntMap<String> copyeeTrainingInstanceCounts = copyee.getTrainingInstanceCounts();
-		trainingInstanceCounts = new Object2IntOpenHashMap<>(copyeeTrainingInstanceCounts);
+		trainingInstanceCounts = new Object2IntOpenHashMap<>(copyeeTrainingInstanceCounts, 1.0f);
 		trainingInstanceCounts.defaultReturnValue(copyeeTrainingInstanceCounts.defaultReturnValue());
 		assert trainingInstanceCounts.size() == copyeeTrainingInstanceCounts.size(); 
 	}
