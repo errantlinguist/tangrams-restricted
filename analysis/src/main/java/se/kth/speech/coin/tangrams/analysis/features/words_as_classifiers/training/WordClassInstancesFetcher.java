@@ -18,6 +18,8 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.train
 
 import java.util.function.Function;
 
+import javax.annotation.Nonnull;
+
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttributeContext;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordClasses;
@@ -49,7 +51,8 @@ final class WordClassInstancesFetcher implements Function<String, Instances> {
 	 * @see java.util.function.Function#apply(java.lang.Object)
 	 */
 	@Override
-	public Instances apply(final String className) {
+	@Nonnull
+	public Instances apply(final @Nonnull String className) {
 		assert className != null;
 		final WordClassificationData.Datum wordClassDatum = classInstances.computeIfAbsent(className, key -> {
 			final Instances instances = new Instances(WordClasses.createRelationName(key), entityInstAttrCtx.getAttrs(),
