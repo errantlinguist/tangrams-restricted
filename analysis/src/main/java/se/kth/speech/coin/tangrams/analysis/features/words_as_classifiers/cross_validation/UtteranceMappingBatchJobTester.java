@@ -21,12 +21,11 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
-import java.util.concurrent.Future;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -47,7 +46,7 @@ import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
  * @since 13 Nov 2017
  *
  */
-final class UtteranceMappingBatchJobTester {
+final class UtteranceMappingBatchJobTester implements Consumer<UtteranceMappingBatchJobTester.Input> {
 
 	public static class Input {
 
@@ -55,15 +54,15 @@ final class UtteranceMappingBatchJobTester {
 
 		private final EventDialogueTransformer diagTransformer;
 
-		private final Future<Map<SessionDataManager, SessionGameManager>> futureSessionGameMgrs;
+		private final Supplier<? extends Map<SessionDataManager, SessionGameManager>> sessionGameMgrMapSupplier;
 
 		private final Training trainingMethod;
 
 		public Input(final Map<SessionDataManager, Path> allSessionData,
-				final Future<Map<SessionDataManager, SessionGameManager>> futureSessionGameMgrs,
+				final Supplier<? extends Map<SessionDataManager, SessionGameManager>> sessionGameMgrMapSupplier,
 				final Training trainingMethod, final EventDialogueTransformer diagTransformer) {
 			this.allSessionData = allSessionData;
-			this.futureSessionGameMgrs = futureSessionGameMgrs;
+			this.sessionGameMgrMapSupplier = sessionGameMgrMapSupplier;
 			this.trainingMethod = trainingMethod;
 			this.diagTransformer = diagTransformer;
 		}
@@ -83,10 +82,10 @@ final class UtteranceMappingBatchJobTester {
 		}
 
 		/**
-		 * @return the futureSessionGameMgrs
+		 * @return the sessionGameMgrMapSupplier
 		 */
-		public Future<Map<SessionDataManager, SessionGameManager>> getFutureSessionGameMgrs() {
-			return futureSessionGameMgrs;
+		public Supplier<? extends Map<SessionDataManager, SessionGameManager>> getSessionGameMgrMapSupplier() {
+			return sessionGameMgrMapSupplier;
 		}
 
 		/**
@@ -347,8 +346,6 @@ final class UtteranceMappingBatchJobTester {
 
 	private final BiConsumer<? super IncompleteResults, ? super Throwable> errorHandler;
 
-	private final Map<SessionDataManager, SessionGameManager> sessionGameMgrs;
-
 	private final TestSetFactoryFactory testSetFactoryFactory;
 
 	private final Map<WordClassifierTrainingParameter, Object> trainingParams;
@@ -356,13 +353,11 @@ final class UtteranceMappingBatchJobTester {
 	private final BiConsumer<? super EventDialogue, ? super List<UtteranceRelation>> uttRelHandler;
 
 	UtteranceMappingBatchJobTester(final Executor backgroundJobExecutor, final ApplicationContext appCtx,
-			final Map<SessionDataManager, SessionGameManager> sessionGameMgrs,
 			final Consumer<? super BatchJobSummary> batchJobResultHandler,
 			final BiConsumer<? super IncompleteResults, ? super Throwable> errorHandler,
 			final BiConsumer<? super EventDialogue, ? super List<UtteranceRelation>> uttRelHandler,
 			final Map<WordClassifierTrainingParameter, Object> trainingParams,
 			final TestSetFactoryFactory testSetFactoryFactory) {
-		this.sessionGameMgrs = sessionGameMgrs;
 		this.backgroundJobExecutor = backgroundJobExecutor;
 		this.appCtx = appCtx;
 		this.batchJobResultHandler = batchJobResultHandler;
@@ -372,23 +367,22 @@ final class UtteranceMappingBatchJobTester {
 		this.testSetFactoryFactory = testSetFactoryFactory;
 	}
 
-	public void accept(final Input input) throws InterruptedException, ExecutionException {
+	@Override
+	public void accept(final Input input) {
 		final Training trainingMethod = input.getTrainingMethod();
 		final EventDialogueTransformer diagTransformer = trainingMethod
 				.createSymmetricalTrainingTestingEventDiagTransformer(input.getDiagTransformer());
-		final TrainingContext trainingCtx = new TrainingContext(diagTransformer, appCtx, uttRelHandler,
-				trainingParams);
+		final TrainingContext trainingCtx = new TrainingContext(diagTransformer, appCtx, uttRelHandler, trainingParams);
 		final TrainingInstancesFactory trainingInstsFactory = trainingMethod.createTrainingInstsFactory(trainingCtx);
+		final Map<SessionDataManager, SessionGameManager> sessionGameMgrs = input.getSessionGameMgrMapSupplier().get();
 		final Function<Map<SessionDataManager, Path>, Stream<Entry<SessionDataManager, WordClassificationData>>> testSetFactory = testSetFactoryFactory
 				.apply(trainingInstsFactory, sessionGameMgrs);
 		final Integer smoothingMinCount = (Integer) trainingCtx.getTrainingParams()
 				.get(WordClassifierTrainingParameter.SMOOTHING_MIN_COUNT);
 		final WordClassDiscountingSmoother smoother = appCtx.getBean(WordClassDiscountingSmoother.class,
 				smoothingMinCount);
-		final Map<SessionDataManager, SessionGameManager> sessionGameMgrs = input.getFutureSessionGameMgrs().get();
 		final CrossValidator crossValidator = appCtx.getBean(CrossValidator.class, sessionGameMgrs, testSetFactory,
-				trainingMethod.getClassifierFactory(trainingCtx), smoother,
-				backgroundJobExecutor);
+				trainingMethod.getClassifierFactory(trainingCtx), smoother, backgroundJobExecutor);
 		crossValidator.setIterCount(trainingMethod.getIterCount());
 		final TestParameters testParams = new TestParameters(trainingMethod, trainingParams);
 		LOGGER.info("Testing {}.", testParams);
