@@ -162,7 +162,7 @@ final class ParameterFileReadingTestWriter { // NO_UCD (unused code)
 
 			@Override
 			public Option get() {
-				return Option.builder(optName).longOpt("tokenization-file").desc(String.format(
+				return Option.builder(optName).longOpt("param-file").desc(String.format(
 						"A path to the tabular file containing the different combinations of %s values to use for cross-validation.",
 						WordClassifierTrainingParameter.class.getSimpleName())).hasArg().argName("path")
 						.type(File.class).required().build();
