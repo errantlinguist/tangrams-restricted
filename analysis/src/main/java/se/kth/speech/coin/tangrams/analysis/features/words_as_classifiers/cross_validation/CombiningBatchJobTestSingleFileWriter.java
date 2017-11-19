@@ -1162,9 +1162,9 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 
 	private final PrintWriter out;
 
-	private final DialogueAnalysisSummaryFactory rowDataFactory;
+	private Consumer<BatchJobSummary> resultsWriter;
 
-	private boolean writeHeader;
+	private final DialogueAnalysisSummaryFactory rowDataFactory;
 
 	private CombiningBatchJobTestSingleFileWriter(final PrintWriter out) {
 		this(out, new UtteranceDialogueRepresentationStringFactory(DataLanguageDefaults.getLocale()),
@@ -1177,14 +1177,46 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 		this.out = out;
 		this.dataToWrite = dataToWrite;
 		rowDataFactory = new DialogueAnalysisSummaryFactory(uttDiagReprFactory, dataToWrite);
-		writeHeader = true;
+
+		resultsWriter = this::writeInitialResults;
 	}
 
 	public void write(final BatchJobSummary summary) {
-		if (writeHeader) {
-			out.println(TestParameterReporting.createColHeaders(dataToWrite).collect(ROW_CELL_JOINER));
-			writeHeader = false;
-		}
+		resultsWriter.accept(summary);
+	}
+
+	public void writeError(final CombiningBatchJobTester.IncompleteResults incompleteResults, final Throwable thrown) {
+		LOGGER.error(
+				String.format("An error occurred while running test which was started at \"%s\".",
+						TestParameterReporting.TIMESTAMP_FORMATTER.format(incompleteResults.getTestStartTime())),
+				thrown);
+		final String errorDesc = String.format("%s: %s", thrown.getClass().getName(), thrown.getLocalizedMessage());
+
+		final Stream.Builder<String> rowCellValBuilder = Stream.builder();
+		rowCellValBuilder.add(TestParameterReporting.TIMESTAMP_FORMATTER.format(incompleteResults.getTestStartTime()));
+		TestParameterReporting.createTestMethodRowCellValues(incompleteResults.getTestParams(),
+				TestParameterReporting::createCleaningMethodBooleanValues).forEachOrdered(rowCellValBuilder);
+		EntityInstanceAttributeContext.getClassValues().stream().map(val -> NULL_CELL_VALUE_REPR)
+				.forEach(rowCellValBuilder);
+		final Map<DialogueAnalysisSummaryFactory.SummaryDatum, Object> rowData = new EnumMap<>(
+				DialogueAnalysisSummaryFactory.SummaryDatum.class);
+		dataToWrite.forEach(datum -> rowData.put(datum, NULL_CELL_VALUE_REPR));
+		rowData.put(DialogueAnalysisSummaryFactory.SummaryDatum.DESCRIPTION, errorDesc);
+		final Stream<String> diagAnalysisRowCellVals = dataToWrite.stream().map(rowData::get).map(Object::toString);
+		diagAnalysisRowCellVals.forEachOrdered(rowCellValBuilder);
+		final String row = rowCellValBuilder.build().collect(ROW_CELL_JOINER);
+		out.println(row);
+		throw new TestException(thrown);
+	}
+
+	private void writeInitialResults(final BatchJobSummary summary) {
+		out.println(TestParameterReporting.createColHeaders(dataToWrite).collect(ROW_CELL_JOINER));
+		writeResults(summary);
+		// No longer write the header after calling this method once
+		resultsWriter = this::writeResults;
+	}
+
+	private void writeResults(final BatchJobSummary summary) {
 		final String[] testParamRowCellValues = TestParameterReporting.createTestParamRowCellValues(summary)
 				.toArray(String[]::new);
 		final List<CrossValidator.IterationResult> testResults = summary.getTestResults();
@@ -1215,30 +1247,6 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 				}
 			});
 		}
-	}
-
-	public void writeError(final CombiningBatchJobTester.IncompleteResults incompleteResults, final Throwable thrown) {
-		LOGGER.error(
-				String.format("An error occurred while running test which was started at \"%s\".",
-						TestParameterReporting.TIMESTAMP_FORMATTER.format(incompleteResults.getTestStartTime())),
-				thrown);
-		final String errorDesc = String.format("%s: %s", thrown.getClass().getName(), thrown.getLocalizedMessage());
-
-		final Stream.Builder<String> rowCellValBuilder = Stream.builder();
-		rowCellValBuilder.add(TestParameterReporting.TIMESTAMP_FORMATTER.format(incompleteResults.getTestStartTime()));
-		TestParameterReporting.createTestMethodRowCellValues(incompleteResults.getTestParams(),
-				TestParameterReporting::createCleaningMethodBooleanValues).forEachOrdered(rowCellValBuilder);
-		EntityInstanceAttributeContext.getClassValues().stream().map(val -> NULL_CELL_VALUE_REPR)
-				.forEach(rowCellValBuilder);
-		final Map<DialogueAnalysisSummaryFactory.SummaryDatum, Object> rowData = new EnumMap<>(
-				DialogueAnalysisSummaryFactory.SummaryDatum.class);
-		dataToWrite.forEach(datum -> rowData.put(datum, NULL_CELL_VALUE_REPR));
-		rowData.put(DialogueAnalysisSummaryFactory.SummaryDatum.DESCRIPTION, errorDesc);
-		final Stream<String> diagAnalysisRowCellVals = dataToWrite.stream().map(rowData::get).map(Object::toString);
-		diagAnalysisRowCellVals.forEachOrdered(rowCellValBuilder);
-		final String row = rowCellValBuilder.build().collect(ROW_CELL_JOINER);
-		out.println(row);
-		throw new TestException(thrown);
 	}
 
 }
