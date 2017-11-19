@@ -61,8 +61,7 @@ final class UtteranceReferringLanguageMapParser {
 		final Object2ObjectOpenHashMap<List<String>, List<String>> result = new Object2ObjectOpenHashMap<>(
 				expectedUniqueTokenSeqCount + 1, 1.0f);
 
-		final String headerStr = lines.next();
-		final Map<String, Integer> colIdxs = Lists.createIndexMap(Arrays.asList(headerStr.split(COL_SEP)));
+		final Map<String, Integer> colIdxs = Lists.createIndexMap(Arrays.asList(lines.next().split(COL_SEP)));
 		final int uttColIdx = colIdxs.get(uttColName);
 		final int refLangIdx = colIdxs.get(refLangCol);
 
