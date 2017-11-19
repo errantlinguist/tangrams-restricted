@@ -29,7 +29,6 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.concurrent.Executor;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.inject.Inject;
@@ -408,18 +407,6 @@ public final class CrossValidator
 	private Optional<EventDialogueTestResults> testDialogue(final EventDialogue uttDiag, final GameHistory history,
 			final EventDialogueClassifier diagClassifier) throws ClassificationException {
 		final Optional<EventDialogueTestResults> result;
-		for (final Utterance origUtt : uttDiag.getUtterances()) {
-			if (origUtt.getSegmentId().equals("segment5") && "right I'm selecting the piece tell me which one"
-					.equals(origUtt.getTokens().stream().collect(Collectors.joining(" ")))) {
-				// throw new AssertionError("Found weird token seq!");
-				LOGGER.warn("Bad utt found!: {}", origUtt.getTokens().stream().collect(Collectors.joining(" ")));
-			}
-		}
-
-		// TODO: Extract this from the method so that dialogue testing can be
-		// parallelized
-		// final EventDialogue transformedDiag = diagTransformer.apply(uttDiag);
-
 		final List<Utterance> allUtts = uttDiag.getUtterances();
 		if (allUtts.isEmpty()) {
 			result = NULL_DIAG_TEST_RESULT;
