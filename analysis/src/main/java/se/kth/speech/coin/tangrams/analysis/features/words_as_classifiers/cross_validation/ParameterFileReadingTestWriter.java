@@ -263,6 +263,8 @@ final class ParameterFileReadingTestWriter { // NO_UCD (unused code)
 	 */
 	private static final String SUBCOL_NAME_DELIM = ".";
 
+	private static final DateTimeFormatter TIMESTAMP_FORMATTER = EventTimes.FORMATTER;
+
 	private static final Charset TOKENIZATION_FILE_ENCODING = StandardCharsets.UTF_8;
 
 	private static final Charset TRAINING_PARAM_INFILE_ENCODING = StandardCharsets.UTF_8;
@@ -270,8 +272,6 @@ final class ParameterFileReadingTestWriter { // NO_UCD (unused code)
 	private static final BiConsumer<Object, Object> UTT_REL_HANDLER = (evtDiag, uttRels) -> {
 		// Do nothing
 	};
-
-	private static final DateTimeFormatter TIMESTAMP_FORMATTER = EventTimes.FORMATTER;
 
 	public static void main(final String[] args) throws IOException, CrossValidationTestException {
 		final CommandLineParser parser = new DefaultParser();
@@ -464,9 +464,9 @@ final class ParameterFileReadingTestWriter { // NO_UCD (unused code)
 
 	private final List<DialogueAnalysisSummaryFactory.SummaryDatum> dataToWrite;
 
-	private final DialogueAnalysisSummaryFactory rowDataFactory;
-
 	private Consumer<UtteranceMappingBatchJobTester.BatchJobSummary> resultsWriter;
+
+	private final DialogueAnalysisSummaryFactory rowDataFactory;
 
 	private final Lock writeLock = new ReentrantLock();
 
@@ -517,6 +517,14 @@ final class ParameterFileReadingTestWriter { // NO_UCD (unused code)
 			writeLock.unlock();
 		}
 		throw new TestException(thrown);
+	}
+
+	/**
+	 * @param crossValidationIterId
+	 *            the crossValidationIterId to set
+	 */
+	private void setCrossValidationIterId(final String crossValidationIterId) {
+		this.crossValidationIterId = crossValidationIterId;
 	}
 
 	private void writeInitialResults(final UtteranceMappingBatchJobTester.BatchJobSummary summary) {
@@ -583,14 +591,6 @@ final class ParameterFileReadingTestWriter { // NO_UCD (unused code)
 				}
 			});
 		}
-	}
-
-	/**
-	 * @param crossValidationIterId
-	 *            the crossValidationIterId to set
-	 */
-	private void setCrossValidationIterId(final String crossValidationIterId) {
-		this.crossValidationIterId = crossValidationIterId;
 	}
 
 }
