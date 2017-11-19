@@ -37,7 +37,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.OptionalInt;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -52,6 +51,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import javax.xml.bind.JAXBException;
+
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -65,7 +66,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
-import com.google.common.cache.LoadingCache;
+import com.google.common.collect.Maps;
 
 import edu.stanford.nlp.trees.Tree;
 import edu.stanford.nlp.util.CoreMap;
@@ -75,7 +76,6 @@ import se.kth.speech.coin.tangrams.CLIParameters;
 import se.kth.speech.coin.tangrams.analysis.BackgroundJobs;
 import se.kth.speech.coin.tangrams.analysis.DataLanguageDefaults;
 import se.kth.speech.coin.tangrams.analysis.SessionGameManager;
-import se.kth.speech.coin.tangrams.analysis.SessionGameManagerCacheSupplier;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.coin.tangrams.analysis.dialogues.UtteranceDialogueRepresentationStringFactory;
@@ -94,6 +94,7 @@ import se.kth.speech.coin.tangrams.analysis.tokenization.TokenFiltering;
 import se.kth.speech.coin.tangrams.analysis.tokenization.TokenType;
 import se.kth.speech.coin.tangrams.analysis.tokenization.Tokenization;
 import se.kth.speech.coin.tangrams.iristk.EventTimes;
+import se.kth.speech.coin.tangrams.iristk.io.LoggedEventReader;
 import se.kth.speech.nlp.stanford.AnnotationCacheFactory;
 
 /**
@@ -276,7 +277,7 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 	 * @since 24 May 2017
 	 *
 	 */
-	private static class CombiningBatchJobTester implements Consumer<CombiningBatchJobTester.Input> {
+	private static class CombiningBatchJobTester {
 
 		private static class IncompleteResults {
 
@@ -506,6 +507,19 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 
 		private static final Logger LOGGER = LoggerFactory.getLogger(CombiningBatchJobTester.class);
 
+		private static Map<SessionDataManager, SessionGameManager> createSessionGameMgrMap(
+				final Map<SessionDataManager, Path> allSessions) throws JAXBException, IOException {
+			final Map<SessionDataManager, SessionGameManager> result = Maps
+					.newHashMapWithExpectedSize(allSessions.size());
+			final SessionGameManager.Factory sessionGameMgrFactory = new SessionGameManager.Factory(
+					new LoggedEventReader(allSessions.size(), allSessions.size() * 10));
+			for (final SessionDataManager sessionDataMgr : allSessions.keySet()) {
+				final SessionGameManager sessionGameMgr = sessionGameMgrFactory.apply(sessionDataMgr);
+				result.put(sessionDataMgr, sessionGameMgr);
+			}
+			return result;
+		}
+
 		private final ApplicationContext appCtx;
 
 		private final ExecutorService backgroundJobExecutor;
@@ -516,8 +530,6 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 
 		private final BiConsumer<? super CoreMap, ? super List<Tree>> extractionResultsHook;
 
-		private final Consumer<? super CrossValidator> testerConfigurator;
-
 		private final TestSetFactoryFactory testSetFactoryFactory;
 
 		private final Map<WordClassifierTrainingParameter, Object> trainingParams;
@@ -527,7 +539,6 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 		CombiningBatchJobTester(final ExecutorService backgroundJobExecutor, final ApplicationContext appCtx,
 				final Consumer<? super BatchJobSummary> batchJobResultHandler,
 				final BiConsumer<? super IncompleteResults, ? super Throwable> errorHandler,
-				final Consumer<? super CrossValidator> testerConfigurator,
 				final BiConsumer<? super CoreMap, ? super List<Tree>> extractionResultsHook,
 				final BiConsumer<? super EventDialogue, ? super List<UtteranceRelation>> uttRelHandler,
 				final Map<WordClassifierTrainingParameter, Object> trainingParams,
@@ -536,20 +547,15 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 			this.appCtx = appCtx;
 			this.batchJobResultHandler = batchJobResultHandler;
 			this.errorHandler = errorHandler;
-			this.testerConfigurator = testerConfigurator;
 			this.extractionResultsHook = extractionResultsHook;
 			this.uttRelHandler = uttRelHandler;
 			this.trainingParams = trainingParams;
 			this.testSetFactoryFactory = testSetFactoryFactory;
 		}
 
-		@Override
-		public void accept(final Input input) {
-			LOGGER.debug("Bean names: {}", Arrays.toString(appCtx.getBeanDefinitionNames()));
-			final SessionGameManagerCacheSupplier sessionDiagMgrCacheSupplier = appCtx
-					.getBean(SessionGameManagerCacheSupplier.class);
-			final LoadingCache<SessionDataManager, SessionGameManager> sessionGameMgrs = sessionDiagMgrCacheSupplier
-					.get();
+		public void accept(final Input input) throws InterruptedException, ExecutionException {
+			final Future<Map<SessionDataManager, SessionGameManager>> futureSessionGameMgrs = backgroundJobExecutor
+					.submit(() -> createSessionGameMgrMap(input.allSessions));
 
 			for (final Set<Cleaning> cleaningMethodSet : input.cleaningMethods) {
 				for (final Training trainingMethod : input.trainingMethods) {
@@ -568,6 +574,8 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 										appCtx, uttRelHandler, trainingParams);
 								final TrainingInstancesFactory trainingInstsFactory = trainingMethod
 										.createTrainingInstsFactory(trainingCtx);
+								final Map<SessionDataManager, SessionGameManager> sessionGameMgrs = futureSessionGameMgrs
+										.get();
 								final Function<Map<SessionDataManager, Path>, Stream<Entry<SessionDataManager, WordClassificationData>>> testSetFactory = testSetFactoryFactory
 										.apply(trainingInstsFactory, sessionGameMgrs);
 								final Integer smoothingMinCount = (Integer) trainingCtx.getTrainingParams()
@@ -575,11 +583,10 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 								final WordClassDiscountingSmoother smoother = appCtx
 										.getBean(WordClassDiscountingSmoother.class, smoothingMinCount);
 								final CrossValidator crossValidator = appCtx.getBean(CrossValidator.class,
-										testSetFactory, symmetricalDiagTransformer,
+										sessionGameMgrs, testSetFactory, symmetricalDiagTransformer,
 										trainingMethod.getClassifierFactory(trainingCtx), smoother,
 										backgroundJobExecutor);
 								crossValidator.setIterCount(trainingMethod.getIterCount());
-								testerConfigurator.accept(crossValidator);
 								final TestParameters testParams = new TestParameters(cleaningMethodSet,
 										tokenizationMethod, tokenType, tokenFilteringMethod, trainingMethod,
 										trainingParams);
@@ -620,7 +627,7 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 		@Override
 		public Function<Map<SessionDataManager, Path>, Stream<Entry<SessionDataManager, WordClassificationData>>> apply(
 				final TrainingInstancesFactory trainingInstsFactory,
-				final LoadingCache<SessionDataManager, SessionGameManager> sessionGameMgrs) {
+				final Map<SessionDataManager, SessionGameManager> sessionGameMgrs) {
 			final Function<Map<SessionDataManager, Path>, Stream<Entry<SessionDataManager, WordClassificationData>>> result;
 			final int trainingSetSizeDiscountingConstant = (Integer) trainingParams
 					.get(WordClassifierTrainingParameter.TRAINING_SET_SIZE_DISCOUNTING_CONSTANT);
@@ -653,14 +660,6 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 			@Override
 			public Option get() {
 				return Option.builder(optName).longOpt("help").desc("Prints this message.").build();
-			}
-		},
-		ITER_COUNT("i") {
-			@Override
-			public Option get() {
-				return Option.builder(optName).longOpt("iter-count")
-						.desc("The number of training/testing iterations to run for each cross-validation dataset.")
-						.hasArg().argName("count").type(Number.class).build();
 			}
 		},
 		OUTPATH("o") {
@@ -1119,21 +1118,6 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 			final CLIInputFactory inputFactory = new CLIInputFactory(backgroundJobExecutor);
 			try {
 				final CombiningBatchJobTester.Input input = inputFactory.apply(cl);
-				final Consumer<CrossValidator> testerConfigurator;
-				{
-					final OptionalInt optIterCount = CLIParameters
-							.parseIterCount((Number) cl.getParsedOptionValue(Parameter.ITER_COUNT.optName));
-					if (optIterCount.isPresent()) {
-						final int iterCount = optIterCount.getAsInt();
-						LOGGER.info("Will run {} training/testing iteration(s).", iterCount);
-						testerConfigurator = tester -> tester.setIterCount(iterCount);
-					} else {
-						testerConfigurator = tester -> {
-							// Do nothing
-						};
-					}
-				}
-
 				final File outFile = (File) cl.getParsedOptionValue(Parameter.OUTPATH.optName);
 				try (PrintWriter out = CLIParameters.parseOutpath(outFile, OUTPUT_ENCODING)) {
 					final CombiningBatchJobTestSingleFileWriter writer = new CombiningBatchJobTestSingleFileWriter(out,
@@ -1147,7 +1131,7 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 										.createDefaultMap();
 								final CombiningBatchJobTester tester = new CombiningBatchJobTester(
 										backgroundJobExecutor, appCtx, writer::write, writer::writeError,
-										testerConfigurator, new ExtractionLogWriter(extrLogOut),
+										new ExtractionLogWriter(extrLogOut),
 										new UtteranceRelationLogWriter(uttRelLogOut, NULL_CELL_VALUE_REPR),
 										trainingParams, new NonDiscountingTestSetFactoryFactory(trainingParams));
 								tester.accept(input);

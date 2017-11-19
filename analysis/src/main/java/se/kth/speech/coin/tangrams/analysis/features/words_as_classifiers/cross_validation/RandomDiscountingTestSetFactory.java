@@ -30,8 +30,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.cache.LoadingCache;
-
 import se.kth.speech.coin.tangrams.analysis.SessionGameManager;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.TrainingInstancesFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.WordClassificationData;
@@ -67,15 +65,15 @@ public final class RandomDiscountingTestSetFactory
 
 	private final TrainingInstancesFactory instancesFactory;
 
-	private final LoadingCache<? super SessionDataManager, SessionGameManager> sessionGameMgrs;
+	private final Function<? super SessionDataManager, SessionGameManager> sessionGameMgrFactory;
 
 	private final RandomTrainingComplementSetFactory trainingSetFactory;
 
 	public RandomDiscountingTestSetFactory(final TrainingInstancesFactory instancesFactory,
-			final LoadingCache<? super SessionDataManager, SessionGameManager> sessionGameMgrs, final Random random,
+			final Function<? super SessionDataManager, SessionGameManager> sessionGameMgrFactory, final Random random,
 			final int trainingSetSizeDiscountingConstant) {
 		this.instancesFactory = instancesFactory;
-		this.sessionGameMgrs = sessionGameMgrs;
+		this.sessionGameMgrFactory = sessionGameMgrFactory;
 		trainingSetFactory = new RandomTrainingComplementSetFactory(random, trainingSetSizeDiscountingConstant);
 	}
 
@@ -105,8 +103,8 @@ public final class RandomDiscountingTestSetFactory
 		final Set<Set<SessionDataManager>> discountedTrainingSets = trainingSetFactory
 				.apply(allTrainingSessionDataMgrs);
 		return discountedTrainingSets.stream().map(discountedTrainingSet -> {
-			final List<SessionGameManager> trainingSessionEvtDiagMgrs = Arrays.asList(discountedTrainingSet.stream()
-					.map(sessionGameMgrs::getUnchecked).toArray(SessionGameManager[]::new));
+			final List<SessionGameManager> trainingSessionEvtDiagMgrs = Arrays.asList(
+					discountedTrainingSet.stream().map(sessionGameMgrFactory).toArray(SessionGameManager[]::new));
 			final WordClassificationData trainingData = instancesFactory.apply(trainingSessionEvtDiagMgrs);
 			LOGGER.info("Created training data for {} class(es).", trainingData.getClassData().size());
 			return Pair.of(testSessionDataMgr, trainingData);

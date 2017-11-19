@@ -39,7 +39,6 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collector;
@@ -300,8 +299,7 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 	 * A factory for creating unfiltered {@link Utterance} instances,
 	 * i.e.&nbsp;still containing possible metalanguage tokens.
 	 */
-	private static final SegmentUtteranceFactory SEG_UTT_FACTORY = new SegmentUtteranceFactory(
-			(Predicate<String>) token -> true);
+	private static final SegmentUtteranceFactory SEG_UTT_FACTORY = new SegmentUtteranceFactory();
 
 	private static final Collector<CharSequence, ?, String> TOKEN_JOINER = Collectors.joining(" ");
 
@@ -312,7 +310,8 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 		OUTFILE_HEADER = colHeaders.stream().collect(ROW_CELL_JOINER);
 	}
 
-	public static void main(final String[] args) throws IOException, JAXBException, InterruptedException, ExecutionException {
+	public static void main(final String[] args)
+			throws IOException, JAXBException, InterruptedException, ExecutionException {
 		final CommandLineParser parser = new DefaultParser();
 		try {
 			final CommandLine cl = parser.parse(OPTIONS, args);
@@ -329,7 +328,8 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 		return result;
 	}
 
-	private static void main(final CommandLine cl) throws ParseException, IOException, JAXBException, InterruptedException, ExecutionException {
+	private static void main(final CommandLine cl)
+			throws ParseException, IOException, JAXBException, InterruptedException, ExecutionException {
 		if (cl.hasOption(Parameter.HELP.optName)) {
 			printHelp();
 		} else {
@@ -361,7 +361,7 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 				LOGGER.info("Found a common path of \"{}\" for all input sessions.", sessionPrefixPath);
 
 				final SessionGameManager.Factory sessionGameMgrFactory = new SessionGameManager.Factory(
-						new LoggedEventReader(allSessionData.size(), allSessionData.size() * 10), tok -> true);
+						new LoggedEventReader(allSessionData.size(), allSessionData.size() * 10));
 				for (final Entry<SessionDataManager, Path> sessionDataPath : allSessionData.entrySet()) {
 					final SessionDataManager sessionDataMgr = sessionDataPath.getKey();
 					final Path sessionPropsFilePath = sessionDataPath.getValue().toAbsolutePath();

@@ -20,7 +20,6 @@ import java.net.URL;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
@@ -91,11 +90,10 @@ public final class SegmentUtteranceFactoryTest {
 	}
 
 	private static boolean shouldHaveUtts(final Segment seg) {
-		final Set<String> metaLangTokens = SegmentUtteranceFactory.getMetaLanguageTokens();
 		final Stream<String> segTokenContents = seg.getTranscription().getSegmentOrT().stream().map(T.class::cast)
 				.map(T::getContent).map(String::trim);
 		final Stream<String> tokenizedSegTokenContents = segTokenContents.flatMap(WHITESPACE_PATTERN::splitAsStream);
-		return tokenizedSegTokenContents.anyMatch(token -> !metaLangTokens.contains(token));
+		return tokenizedSegTokenContents.findAny().isPresent();
 	}
 
 	/**

@@ -35,13 +35,15 @@ import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import javax.xml.bind.JAXBException;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -55,7 +57,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.support.ClassPathXmlApplicationContext;
 
-import com.google.common.cache.LoadingCache;
+import com.google.common.collect.Maps;
 
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import se.kth.speech.coin.tangrams.CLIParameters;
@@ -73,6 +75,7 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.traini
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.WordClassificationData;
 import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
 import se.kth.speech.coin.tangrams.iristk.EventTimes;
+import se.kth.speech.coin.tangrams.iristk.io.LoggedEventReader;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -101,14 +104,14 @@ final class ObservationWeightTestWriter { // NO_UCD (unused code)
 		@Override
 		public Function<Map<SessionDataManager, Path>, Stream<Entry<SessionDataManager, WordClassificationData>>> apply(
 				final TrainingInstancesFactory trainingInstsFactory,
-				final LoadingCache<SessionDataManager, SessionGameManager> sessionGameMgrs) {
+				final Map<SessionDataManager, SessionGameManager> sessionGameMgrs) {
 			final Function<Map<SessionDataManager, Path>, Stream<Entry<SessionDataManager, WordClassificationData>>> result;
 			final int trainingSetSizeDiscountingConstant = (Integer) trainingParams
 					.get(WordClassifierTrainingParameter.TRAINING_SET_SIZE_DISCOUNTING_CONSTANT);
 			if (trainingSetSizeDiscountingConstant == 0) {
 				result = new TestSetFactory(trainingInstsFactory, sessionGameMgrs);
 			} else {
-				result = new RandomDiscountingTestSetFactory(trainingInstsFactory, sessionGameMgrs, random,
+				result = new RandomDiscountingTestSetFactory(trainingInstsFactory, sessionGameMgrs::get, random,
 						trainingSetSizeDiscountingConstant);
 			}
 			return result;
@@ -248,8 +251,8 @@ final class ObservationWeightTestWriter { // NO_UCD (unused code)
 				.toArray(DialogueAnalysisSummaryFactory.SummaryDatum[]::new));
 	}
 
-	private static UtteranceMappingBatchJobTester.Input createInput(final CommandLine cl)
-			throws IOException, ParseException {
+	private static UtteranceMappingBatchJobTester.Input createInput(final CommandLine cl,
+			final ExecutorService backgroundJobExecutor) throws IOException, ParseException {
 		final List<Path> inpaths = Arrays.asList(cl.getArgList().stream().map(String::trim)
 				.filter(path -> !path.isEmpty()).map(Paths::get).toArray(Path[]::new));
 		if (inpaths.isEmpty()) {
@@ -266,13 +269,28 @@ final class ObservationWeightTestWriter { // NO_UCD (unused code)
 					"UTTERANCE", "REFERRING_TOKENS").apply(Files.readAllLines(tokFilePath, TOKENIZATION_FILE_ENCODING));
 			final MappingEventDialogueTransformer diagTransformer = new MappingEventDialogueTransformer(
 					tokenSeqTransformations);
-			return new UtteranceMappingBatchJobTester.Input(allSessionData, trainingMethod, diagTransformer);
+			final Future<Map<SessionDataManager, SessionGameManager>> futureSessionGameMgrs = backgroundJobExecutor
+					.submit(() -> createSessionGameMgrMap(allSessionData));
+			return new UtteranceMappingBatchJobTester.Input(allSessionData, futureSessionGameMgrs, trainingMethod,
+					diagTransformer);
 		}
 	}
 
 	private static Options createOptions() {
 		final Options result = new Options();
 		Arrays.stream(Parameter.values()).map(Parameter::get).forEach(result::addOption);
+		return result;
+	}
+
+	private static Map<SessionDataManager, SessionGameManager> createSessionGameMgrMap(
+			final Map<SessionDataManager, Path> allSessions) throws JAXBException, IOException {
+		final Map<SessionDataManager, SessionGameManager> result = Maps.newHashMapWithExpectedSize(allSessions.size());
+		final SessionGameManager.Factory sessionGameMgrFactory = new SessionGameManager.Factory(
+				new LoggedEventReader(allSessions.size(), allSessions.size() * 10));
+		for (final SessionDataManager sessionDataMgr : allSessions.keySet()) {
+			final SessionGameManager sessionGameMgr = sessionGameMgrFactory.apply(sessionDataMgr);
+			result.put(sessionDataMgr, sessionGameMgr);
+		}
 		return result;
 	}
 
@@ -312,13 +330,12 @@ final class ObservationWeightTestWriter { // NO_UCD (unused code)
 			printHelp();
 		} else {
 			final ExecutorService backgroundJobExecutor = BackgroundJobs.fetchBackgroundJobExecutor();
-			final UtteranceMappingBatchJobTester.Input input = createInput(cl);
-
-			final Consumer<CrossValidator> testerConfigurator = crossValidator -> {
-				// Do nothing
-			};
+			final UtteranceMappingBatchJobTester.Input input = createInput(cl, backgroundJobExecutor);
 
 			try {
+				final Future<Map<SessionDataManager, SessionGameManager>> futureSessionGameMgrs = backgroundJobExecutor
+						.submit(() -> createSessionGameMgrMap(input.getAllSessionData()));
+
 				final File outFile = (File) cl.getParsedOptionValue(Parameter.OUTPATH.optName);
 				try (PrintWriter out = CLIParameters.parseOutpath(outFile, OUTPUT_ENCODING)) {
 					final ObservationWeightTestWriter writer = new ObservationWeightTestWriter(out, true, 1);
@@ -328,6 +345,7 @@ final class ObservationWeightTestWriter { // NO_UCD (unused code)
 						final Map<WordClassifierTrainingParameter, Object> defaultTrainingParams = WordClassifierTrainingParameter
 								.createDefaultMap();
 
+						final Map<SessionDataManager, SessionGameManager> sessionGameMgrs = futureSessionGameMgrs.get();
 						// One session for testing, one for training
 						final int maxTrainingSetSizeDiscountingFactor = input.getAllSessionData().size() - 2;
 						for (int trainingSetSizeDiscountingConstant = 1; trainingSetSizeDiscountingConstant < maxTrainingSetSizeDiscountingFactor; ++trainingSetSizeDiscountingConstant) {
@@ -344,8 +362,8 @@ final class ObservationWeightTestWriter { // NO_UCD (unused code)
 									(Long) trainingParams.get(WordClassifierTrainingParameter.RANDOM_SEED));
 							for (int randomDiscountingIter = 1; randomDiscountingIter <= RANDOM_SESSION_DISCOUNTING_ITERS; ++randomDiscountingIter) {
 								final UtteranceMappingBatchJobTester tester = new UtteranceMappingBatchJobTester(
-										backgroundJobExecutor, appCtx, writer::write, writer::writeError,
-										testerConfigurator, UTT_REL_HANDLER, trainingParams,
+										backgroundJobExecutor, appCtx, sessionGameMgrs, writer::write,
+										writer::writeError, UTT_REL_HANDLER, trainingParams,
 										new DiscountingTestSetFactoryFactory(trainingParams, random));
 								tester.accept(input);
 								writer.setSessionTestIterFactor(randomDiscountingIter);

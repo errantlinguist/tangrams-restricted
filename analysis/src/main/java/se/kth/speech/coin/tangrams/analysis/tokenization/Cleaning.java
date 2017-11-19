@@ -22,5 +22,5 @@ package se.kth.speech.coin.tangrams.analysis.tokenization;
  *
  */
 public enum Cleaning {
-	DISFLUENCIES, DUPLICATES, FILLERS;
+	DISFLUENCIES, DUPLICATES, FILLERS, METALANGUAGE;
 }

@@ -46,6 +46,7 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialog
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.TokenizingEventDialogueTransformer;
 import se.kth.speech.nlp.Disfluencies;
 import se.kth.speech.nlp.EnglishLocationalPrepositions;
+import se.kth.speech.nlp.MetaLanguage;
 import se.kth.speech.nlp.SnowballPorter2EnglishStopwords;
 import se.kth.speech.nlp.stanford.Lemmatizer;
 import se.kth.speech.nlp.stanford.ParsingTokenizer;
@@ -172,7 +173,8 @@ public enum Tokenization implements Function<Tokenization.Context, EventDialogue
 	private static final Map<TokenType, Entry<Function<CoreLabel, String>, StanfordCoreNLPConfigurationVariant>> TOKEN_TYPE_EXTRACTORS = createTokenTypeExtractorMap();
 
 	private static List<Cleaning> createCleaningOrderingList() {
-		final List<Cleaning> result = Arrays.asList(Cleaning.DISFLUENCIES, Cleaning.FILLERS, Cleaning.DUPLICATES);
+		final List<Cleaning> result = Arrays.asList(Cleaning.METALANGUAGE, Cleaning.DISFLUENCIES, Cleaning.FILLERS,
+				Cleaning.DUPLICATES);
 		assert result.size() == Cleaning.values().length;
 		return result;
 	}
@@ -186,6 +188,8 @@ public enum Tokenization implements Function<Tokenization.Context, EventDialogue
 			final Set<String> fillerWords = SnowballPorter2EnglishStopwords.Variant.FILLERS.get();
 			return new TokenFilteringEventDialogueTransformer(fillerWords);
 		});
+		result.put(Cleaning.METALANGUAGE,
+				() -> new TokenFilteringEventDialogueTransformer(token -> !MetaLanguage.isMetaLanguageToken(token)));
 		assert result.size() == Cleaning.values().length;
 		return result;
 	}
@@ -210,7 +214,7 @@ public enum Tokenization implements Function<Tokenization.Context, EventDialogue
 		chain.add(createMainTransformer(context));
 		return new ChainedEventDialogueTransformer(chain);
 	}
-	
+
 	protected abstract EventDialogueTransformer createMainTransformer(final Context context);
 
 }

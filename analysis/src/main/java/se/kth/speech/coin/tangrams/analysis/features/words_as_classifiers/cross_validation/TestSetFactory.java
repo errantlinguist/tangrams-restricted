@@ -29,8 +29,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.cache.LoadingCache;
-
 import se.kth.speech.coin.tangrams.analysis.SessionGameManager;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.TrainingInstancesFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.WordClassificationData;
@@ -66,10 +64,10 @@ public final class TestSetFactory
 
 	private final TrainingInstancesFactory instancesFactory;
 
-	private final LoadingCache<? super SessionDataManager, SessionGameManager> sessionGameMgrs;
+	private final Map<SessionDataManager, SessionGameManager> sessionGameMgrs;
 
 	public TestSetFactory(final TrainingInstancesFactory instancesFactory,
-			final LoadingCache<? super SessionDataManager, SessionGameManager> sessionGameMgrs) {
+			final Map<SessionDataManager, SessionGameManager> sessionGameMgrs) {
 		this.instancesFactory = instancesFactory;
 		this.sessionGameMgrs = sessionGameMgrs;
 	}
@@ -99,7 +97,7 @@ public final class TestSetFactory
 		{
 			final List<SessionGameManager> trainingSessionEvtDiagMgrs = Arrays
 					.asList(allSessions.stream().filter(sessionData -> !sessionData.equals(testSessionDataMgr))
-							.map(sessionGameMgrs::getUnchecked).toArray(SessionGameManager[]::new));
+							.map(sessionGameMgrs::get).toArray(SessionGameManager[]::new));
 			trainingData = instancesFactory.apply(trainingSessionEvtDiagMgrs);
 		}
 		LOGGER.info("Created training data for {} class(es).", trainingData.getClassData().size());

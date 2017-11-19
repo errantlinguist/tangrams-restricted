@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Function;
-import java.util.function.Predicate;
 
 import javax.xml.bind.JAXBException;
 
@@ -54,13 +53,20 @@ public final class SessionGameManager {
 
 		private static final int ESTIMATED_UNIQUE_TOKEN_SEQ_COUNT = 6000;
 
+		private static LoggedEventReader createDefaultLoggedEventReader() {
+			return new LoggedEventReader(ESTIMATED_UNIQUE_SESSION_COUNT, ESTIMATED_UNIQUE_SESSION_COUNT * 10);
+		}
+
 		private final LoggedEventReader eventReader;
 
 		private final Function<Function<Segment, String>, SegmentUtteranceFactory> segUttFactoryFactory;
 
 		public Factory() {
-			this(new LoggedEventReader(ESTIMATED_UNIQUE_SESSION_COUNT, ESTIMATED_UNIQUE_SESSION_COUNT * 10),
-					ESTIMATED_UNIQUE_TOKEN_SEQ_COUNT);
+			this(createDefaultLoggedEventReader());
+		}
+
+		public Factory(final LoggedEventReader eventReader) {
+			this(eventReader, ESTIMATED_UNIQUE_TOKEN_SEQ_COUNT);
 		}
 
 		public Factory(final LoggedEventReader eventReader, final int expectedUniqueTokenSeqCount) {
@@ -69,19 +75,6 @@ public final class SessionGameManager {
 					expectedUniqueTokenSeqCount);
 			segUttFactoryFactory = uttSpeakerIdFactory -> new SegmentUtteranceFactory(uttSpeakerIdFactory,
 					tokenListFactory);
-		}
-
-		public Factory(final LoggedEventReader eventReader, final Predicate<? super String> uttTokenFilter) {
-			this(eventReader, uttTokenFilter, ESTIMATED_UNIQUE_TOKEN_SEQ_COUNT);
-		}
-		
-		public Factory(final LoggedEventReader eventReader, final Predicate<? super String> uttTokenFilter,
-				final int expectedUniqueTokenSeqCount) {
-			this.eventReader = eventReader;
-			final TokenListSingletonFactory tokenListFactory = new TokenListSingletonFactory(
-					expectedUniqueTokenSeqCount);
-			segUttFactoryFactory = uttSpeakerIdFactory -> new SegmentUtteranceFactory(uttSpeakerIdFactory,
-					uttTokenFilter, tokenListFactory);
 		}
 
 		public SessionGameManager apply(final SessionDataManager sessionData) throws JAXBException, IOException {

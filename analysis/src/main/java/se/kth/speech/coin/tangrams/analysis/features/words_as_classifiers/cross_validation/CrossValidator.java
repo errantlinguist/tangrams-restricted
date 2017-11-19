@@ -43,7 +43,6 @@ import se.kth.speech.coin.tangrams.analysis.GameContext;
 import se.kth.speech.coin.tangrams.analysis.GameHistory;
 import se.kth.speech.coin.tangrams.analysis.SessionGame;
 import se.kth.speech.coin.tangrams.analysis.SessionGameManager;
-import se.kth.speech.coin.tangrams.analysis.SessionGameManagerCacheSupplier;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.coin.tangrams.analysis.features.ClassificationException;
@@ -320,9 +319,6 @@ public final class CrossValidator
 
 	private int iterCount = 1;
 
-	@Inject
-	private SessionGameManagerCacheSupplier sessionDiagMgrCacheSupplier;
-
 	private final WordClassDiscountingSmoother smoother;
 
 	@Inject
@@ -330,11 +326,15 @@ public final class CrossValidator
 
 	private final Function<Map<SessionDataManager, Path>, Stream<Entry<SessionDataManager, WordClassificationData>>> testSetFactory;
 
+	private final Map<SessionDataManager, SessionGameManager> sessionGameMgrs;
+
 	public CrossValidator( // NO_UCD (unused code)
+			final Map<SessionDataManager, SessionGameManager> sessionGameMgrs,
 			final Function<Map<SessionDataManager, Path>, Stream<Entry<SessionDataManager, WordClassificationData>>> testSetFactory,
 			final EventDialogueTransformer diagTransformer,
 			final Function<? super ClassificationContext, ? extends EventDialogueClassifier> classifierFactory,
 			final WordClassDiscountingSmoother smoother, final Executor backgroundJobExecutor) {
+		this.sessionGameMgrs = sessionGameMgrs;
 		this.testSetFactory = testSetFactory;
 		this.diagTransformer = diagTransformer;
 		this.classifierFactory = classifierFactory;
@@ -396,8 +396,7 @@ public final class CrossValidator
 			final WordClassificationData trainingData = testSet.getValue();
 			try {
 				final EventDialogueClassifier diagClassifier = createDialogueClassifier(trainingData, testSessionData);
-				final SessionGameManager sessionGameMgr = sessionDiagMgrCacheSupplier.get()
-						.getUnchecked(testSessionData);
+				final SessionGameManager sessionGameMgr = sessionGameMgrs.get(testSessionData);
 				final SessionGame sessionGame = sessionGameMgr.getCanonicalGame();
 				final SessionTestResults testResults = testSession(sessionGame, diagClassifier);
 				final CrossValidationTestSummary cvTestSummary = new CrossValidationTestSummary(testResults,
