@@ -219,6 +219,7 @@ final class ParameterFileReadingTestWriter { // NO_UCD (unused code)
 			final int crossValidationIterCount = (Integer) trainingParams
 					.get(WordClassifierTrainingParameter.CROSS_VALIDATION_ITERATION_COUNT);
 			LOGGER.info("Will run {} cross-validation iteration(s).", crossValidationIterCount);
+			writer.setCrossValidationIterId(Integer.toString(1));
 			for (int crossValidationIter = 1; crossValidationIter <= crossValidationIterCount; ++crossValidationIter) {
 				final UtteranceMappingBatchJobTester tester = new UtteranceMappingBatchJobTester(backgroundJobExecutor,
 						appCtx, writer::write, writer::writeError, UTT_REL_HANDLER, trainingParams,
