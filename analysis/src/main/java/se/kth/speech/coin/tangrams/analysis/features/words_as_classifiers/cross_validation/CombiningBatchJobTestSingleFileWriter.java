@@ -1211,12 +1211,12 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 
 	private void writeInitialResults(final BatchJobSummary summary) {
 		out.println(TestParameterReporting.createColHeaders(dataToWrite).collect(ROW_CELL_JOINER));
-		writeResults(summary);
+		writeNextResults(summary);
 		// No longer write the header after calling this method once
-		resultsWriter = this::writeResults;
+		resultsWriter = this::writeNextResults;
 	}
 
-	private void writeResults(final BatchJobSummary summary) {
+	private void writeNextResults(final BatchJobSummary summary) {
 		final String[] testParamRowCellValues = TestParameterReporting.createTestParamRowCellValues(summary)
 				.toArray(String[]::new);
 		final List<CrossValidator.IterationResult> testResults = summary.getTestResults();
