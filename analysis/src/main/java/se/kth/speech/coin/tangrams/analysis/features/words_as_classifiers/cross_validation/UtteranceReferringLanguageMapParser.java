@@ -19,17 +19,16 @@ package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import java.util.ListIterator;
+import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import it.unimi.dsi.fastutil.objects.Object2IntMap;
-import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+import se.kth.speech.Lists;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -43,17 +42,6 @@ final class UtteranceReferringLanguageMapParser {
 	private static final Logger LOGGER = LoggerFactory.getLogger(UtteranceReferringLanguageMapParser.class);
 
 	private static final Pattern WHITESPACE_PATTERN = Pattern.compile("\\s+");
-
-	private static <T> Object2IntMap<T> createIndexMap(final List<? extends T> list) {
-		final Object2IntMap<T> result = new Object2IntOpenHashMap<>(list.size());
-		final ListIterator<? extends T> iter = list.listIterator();
-		while (iter.hasNext()) {
-			final int idx = iter.nextIndex();
-			final T next = iter.next();
-			result.put(next, idx);
-		}
-		return result;
-	}
 
 	private final String refLangCol;
 
@@ -74,9 +62,9 @@ final class UtteranceReferringLanguageMapParser {
 				expectedUniqueTokenSeqCount + 1, 1.0f);
 
 		final String headerStr = lines.next();
-		final Object2IntMap<String> colIdxs = createIndexMap(Arrays.asList(headerStr.split(COL_SEP)));
-		final int uttColIdx = colIdxs.getInt(uttColName);
-		final int refLangIdx = colIdxs.getInt(refLangCol);
+		final Map<String, Integer> colIdxs = Lists.createIndexMap(Arrays.asList(headerStr.split(COL_SEP)));
+		final int uttColIdx = colIdxs.get(uttColName);
+		final int refLangIdx = colIdxs.get(refLangCol);
 
 		while (lines.hasNext()) {
 			final String line = lines.next();
@@ -96,7 +84,8 @@ final class UtteranceReferringLanguageMapParser {
 				parsedRefLangTokens = WHITESPACE_PATTERN.splitAsStream(refLangStr);
 			} catch (final ArrayIndexOutOfBoundsException e) {
 				LOGGER.debug(
-						"Missing referring language column for utterance string \"{}\"; Treating it as \"no referring language\".", uttStr);
+						"Missing referring language column for utterance string \"{}\"; Treating it as \"no referring language\".",
+						uttStr);
 			}
 			// Intern values because many of the individual tokens in each list
 			// will be seen in other lists
