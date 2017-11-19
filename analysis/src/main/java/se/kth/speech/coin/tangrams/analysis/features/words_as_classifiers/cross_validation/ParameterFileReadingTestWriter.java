@@ -38,6 +38,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -392,7 +393,8 @@ final class ParameterFileReadingTestWriter { // NO_UCD (unused code)
 		if (cl.hasOption(Parameter.HELP.optName)) {
 			printHelp();
 		} else {
-			final ExecutorService backgroundJobExecutor = BackgroundJobs.fetchBackgroundJobExecutor();
+			final ForkJoinPool backgroundJobExecutor = BackgroundJobs.fetchBackgroundJobExecutor();
+			LOGGER.info("Parallelism level: {}", backgroundJobExecutor.getParallelism());
 			final UtteranceMappingBatchJobTester.Input input = createInput(cl, backgroundJobExecutor);
 
 			try {
