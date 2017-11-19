@@ -26,16 +26,54 @@ import java.util.Map;
  *
  */
 public enum WordClassifierTrainingParameter {
+	/**
+	 * Valid values should be a non-negative {@link BigDecimal}.
+	 */
 	BACKGROUND_DATA_NEGATIVE_EXAMPLE_WEIGHT_FACTOR,
-	BACKGROUND_DATA_POSITIVE_EXAMPLE_WEIGHT_FACTOR, EXPECTED_UNIQUE_UTTERANCE_COUNT, INSTRUCTOR_UTTERANCE_OBSERVATION_WEIGHT, INTERACTION_DATA_NEGATIVE_EXAMPLE_WEIGHT_FACTOR, INTERACTION_DATA_POSITIVE_EXAMPLE_WEIGHT_FACTOR, OTHER_UTTERANCE_OBSERVATION_WEIGHT, RANDOM_SEED, SMOOTHING_MIN_COUNT, TRAINING_SET_SIZE_DISCOUNTING_CONSTANT;
+	/**
+	 * Valid values should be a non-negative {@link BigDecimal}.
+	 */
+	BACKGROUND_DATA_POSITIVE_EXAMPLE_WEIGHT_FACTOR,
+	/**
+	 * Valid values should be a positive {@link Integer}.
+	 */
+	EXPECTED_UNIQUE_UTTERANCE_COUNT,
+	/**
+	 * Valid values should be a non-negative {@link BigDecimal}.
+	 */
+	INSTRUCTOR_UTTERANCE_OBSERVATION_WEIGHT,
+	/**
+	 * Valid values should be a non-negative {@link BigDecimal}.
+	 */
+	INTERACTION_DATA_NEGATIVE_EXAMPLE_WEIGHT_FACTOR,
+	/**
+	 * Valid values should be a non-negative {@link BigDecimal}.
+	 */
+	INTERACTION_DATA_POSITIVE_EXAMPLE_WEIGHT_FACTOR,
+	/**
+	 * Valid values should be a non-negative {@link BigDecimal}.
+	 */
+	OTHER_UTTERANCE_OBSERVATION_WEIGHT,
+	/**
+	 * Valid values should be a {@link Long}.
+	 */
+	RANDOM_SEED,
+	/**
+	 * Valid values should be a positive {@link Integer}.
+	 */
+	SMOOTHING_MIN_COUNT,
+	/**
+	 * Valid values should be a non-negative {@link Integer}.
+	 */
+	TRAINING_SET_SIZE_DISCOUNTING_CONSTANT;
 
 	public static Map<WordClassifierTrainingParameter, Object> createDefaultMap() {
 		final Map<WordClassifierTrainingParameter, Object> result = new EnumMap<>(
 				WordClassifierTrainingParameter.class);
-		result.put(BACKGROUND_DATA_POSITIVE_EXAMPLE_WEIGHT_FACTOR, 1.0);
-		result.put(BACKGROUND_DATA_NEGATIVE_EXAMPLE_WEIGHT_FACTOR, 1.0);
-		result.put(INTERACTION_DATA_POSITIVE_EXAMPLE_WEIGHT_FACTOR, 1.0);
-		result.put(INTERACTION_DATA_NEGATIVE_EXAMPLE_WEIGHT_FACTOR, 1.0);
+		result.put(BACKGROUND_DATA_POSITIVE_EXAMPLE_WEIGHT_FACTOR, BigDecimal.ONE);
+		result.put(BACKGROUND_DATA_NEGATIVE_EXAMPLE_WEIGHT_FACTOR, BigDecimal.ONE);
+		result.put(INTERACTION_DATA_POSITIVE_EXAMPLE_WEIGHT_FACTOR, BigDecimal.ONE);
+		result.put(INTERACTION_DATA_NEGATIVE_EXAMPLE_WEIGHT_FACTOR, BigDecimal.ONE);
 		result.put(INSTRUCTOR_UTTERANCE_OBSERVATION_WEIGHT, BigDecimal.ONE);
 		result.put(OTHER_UTTERANCE_OBSERVATION_WEIGHT, BigDecimal.ZERO);
 		result.put(EXPECTED_UNIQUE_UTTERANCE_COUNT, 2000);

@@ -35,6 +35,8 @@ import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import javax.annotation.Nonnull;
+
 import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 import se.kth.speech.TimestampArithmetic;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
@@ -87,8 +89,8 @@ final class DialogueAnalysisSummaryFactory implements
 			@Override
 			public Object apply(final Input input,
 					final Function<? super Iterator<Utterance>, String> uttDiagReprFactory) {
-				return input.trainingParams
-						.get(WordClassifierTrainingParameter.BACKGROUND_DATA_NEGATIVE_EXAMPLE_WEIGHT_FACTOR);
+				return formatTrainingParamNumericValue(input.trainingParams
+						.get(WordClassifierTrainingParameter.BACKGROUND_DATA_NEGATIVE_EXAMPLE_WEIGHT_FACTOR));
 			}
 
 		},
@@ -97,8 +99,8 @@ final class DialogueAnalysisSummaryFactory implements
 			@Override
 			public Object apply(final Input input,
 					final Function<? super Iterator<Utterance>, String> uttDiagReprFactory) {
-				return input.trainingParams
-						.get(WordClassifierTrainingParameter.BACKGROUND_DATA_POSITIVE_EXAMPLE_WEIGHT_FACTOR);
+				return formatTrainingParamNumericValue(input.trainingParams
+						.get(WordClassifierTrainingParameter.BACKGROUND_DATA_POSITIVE_EXAMPLE_WEIGHT_FACTOR));
 			}
 
 		},
@@ -187,8 +189,8 @@ final class DialogueAnalysisSummaryFactory implements
 			@Override
 			public Object apply(final Input input,
 					final Function<? super Iterator<Utterance>, String> uttDiagReprFactory) {
-				return input.trainingParams
-						.get(WordClassifierTrainingParameter.INSTRUCTOR_UTTERANCE_OBSERVATION_WEIGHT);
+				return formatTrainingParamNumericValue(input.trainingParams
+						.get(WordClassifierTrainingParameter.INSTRUCTOR_UTTERANCE_OBSERVATION_WEIGHT));
 			}
 
 		},
@@ -197,8 +199,8 @@ final class DialogueAnalysisSummaryFactory implements
 			@Override
 			public Object apply(final Input input,
 					final Function<? super Iterator<Utterance>, String> uttDiagReprFactory) {
-				return input.trainingParams
-						.get(WordClassifierTrainingParameter.INTERACTION_DATA_NEGATIVE_EXAMPLE_WEIGHT_FACTOR);
+				return formatTrainingParamNumericValue(input.trainingParams
+						.get(WordClassifierTrainingParameter.INTERACTION_DATA_NEGATIVE_EXAMPLE_WEIGHT_FACTOR));
 			}
 
 		},
@@ -207,8 +209,8 @@ final class DialogueAnalysisSummaryFactory implements
 			@Override
 			public Object apply(final Input input,
 					final Function<? super Iterator<Utterance>, String> uttDiagReprFactory) {
-				return input.trainingParams
-						.get(WordClassifierTrainingParameter.INTERACTION_DATA_POSITIVE_EXAMPLE_WEIGHT_FACTOR);
+				return formatTrainingParamNumericValue(input.trainingParams
+						.get(WordClassifierTrainingParameter.INTERACTION_DATA_POSITIVE_EXAMPLE_WEIGHT_FACTOR));
 			}
 
 		},
@@ -262,7 +264,8 @@ final class DialogueAnalysisSummaryFactory implements
 			@Override
 			public Object apply(final Input input,
 					final Function<? super Iterator<Utterance>, String> uttDiagReprFactory) {
-				return input.trainingParams.get(WordClassifierTrainingParameter.OTHER_UTTERANCE_OBSERVATION_WEIGHT);
+				return formatTrainingParamNumericValue(
+						input.trainingParams.get(WordClassifierTrainingParameter.OTHER_UTTERANCE_OBSERVATION_WEIGHT));
 			}
 
 		},
@@ -275,7 +278,7 @@ final class DialogueAnalysisSummaryFactory implements
 			@Override
 			public Object apply(final Input input,
 					final Function<? super Iterator<Utterance>, String> uttDiagReprFactory) {
-				return input.trainingParams.get(WordClassifierTrainingParameter.RANDOM_SEED);
+				return formatTrainingParamNumericValue(input.trainingParams.get(WordClassifierTrainingParameter.RANDOM_SEED));
 			}
 		},
 		RANK {
@@ -307,7 +310,7 @@ final class DialogueAnalysisSummaryFactory implements
 			@Override
 			public Object apply(final Input input,
 					final Function<? super Iterator<Utterance>, String> uttDiagReprFactory) {
-				return input.trainingParams.get(WordClassifierTrainingParameter.SMOOTHING_MIN_COUNT);
+				return formatTrainingParamNumericValue(input.trainingParams.get(WordClassifierTrainingParameter.SMOOTHING_MIN_COUNT));
 			}
 
 		},
@@ -356,7 +359,7 @@ final class DialogueAnalysisSummaryFactory implements
 			@Override
 			public Object apply(final Input input,
 					final Function<? super Iterator<Utterance>, String> uttDiagReprFactory) {
-				return input.trainingParams.get(WordClassifierTrainingParameter.TRAINING_SET_SIZE_DISCOUNTING_CONSTANT);
+				return formatTrainingParamNumericValue(input.trainingParams.get(WordClassifierTrainingParameter.TRAINING_SET_SIZE_DISCOUNTING_CONSTANT));
 			}
 		};
 
@@ -411,6 +414,12 @@ final class DialogueAnalysisSummaryFactory implements
 		assert result.size() == DialogueAnalysisSummaryFactory.SummaryDatum.values().length;
 		assert result.stream().distinct().count() == result.size();
 		return result;
+	}
+
+	private static String formatTrainingParamNumericValue(@Nonnull final Object param) {
+		// This method can be expanded to implement particular formats for e.g.
+		// BigDecimal instances
+		return param.toString();
 	}
 
 	private final Collection<SummaryDatum> dataToCreate;
