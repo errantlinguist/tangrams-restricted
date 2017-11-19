@@ -60,10 +60,9 @@ public final class EventDialogueTestResultsTest {
 		final EventDialogue transformedDiag = new EventDialogue(
 				Arrays.asList(new GameEvent("", "", "", "", LocalDateTime.now(), Collections.emptyMap())),
 				Arrays.asList(testUtt));
-		final int totalDiagUttCount = 1;
 		return new EventDialogueTestResults(
 				new ReferentConfidenceData(REF_CONF_VALS, Object2DoubleMaps.emptyMap(), "__OUT_OF_VOCABULARY__"),
-				goldStandardReferentId, transformedDiag, totalDiagUttCount);
+				goldStandardReferentId, transformedDiag);
 	}
 
 	@Theory
