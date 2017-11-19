@@ -1,5 +1,5 @@
 /*
- *  This file is part of server.
+ *  This file is part of se.kth.speech.coin.tangrams-restricted.server.
  *
  *  server is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by

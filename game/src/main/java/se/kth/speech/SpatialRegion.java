@@ -1,5 +1,5 @@
 /*
- *  This file is part of client.
+ *  This file is part of se.kth.speech.coin.tangrams-restricted.client.
  *
  *  client is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
