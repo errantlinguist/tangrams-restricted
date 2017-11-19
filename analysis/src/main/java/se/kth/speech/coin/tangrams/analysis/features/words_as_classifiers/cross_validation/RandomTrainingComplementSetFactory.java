@@ -42,8 +42,6 @@ final class RandomTrainingComplementSetFactory
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(RandomTrainingComplementSetFactory.class);
 
-//	private final int maxUniqueLeftOutSessionCount;
-
 	private final int minValidTrainingSetSize;
 
 	private final Random random;
@@ -57,7 +55,6 @@ final class RandomTrainingComplementSetFactory
 		this.random = random;
 		this.trainingSetSizeDiscountingConstant = trainingSetSizeDiscountingConstant;
 		minValidTrainingSetSize = Math.addExact(trainingSetSizeDiscountingConstant, 1);
-//		maxUniqueLeftOutSessionCount = randomIters * trainingSetSizeDiscountingConstant;
 	}
 
 	@Override
@@ -73,49 +70,12 @@ final class RandomTrainingComplementSetFactory
 			result = createUniqueTrainingComplementSets(allTrainingSessionDataMgrs);
 			LOGGER.debug("Created {} entirely-unique complement set(s).", result.size());
 		} else {
-			// result =
-			// createInitialUniqueTrainingComplementSets(allTrainingSessionDataMgrs);
-			// final int resultSetDeficit = randomIters - result.size();
-			// LOGGER.info("Created {} initial entirely-unique complement
-			// set(s); Still need to create {} more.", result.size(),
-			// resultSetDeficit);
 			// TODO: Finish
 			throw new IllegalArgumentException("Creating non-unique training sets not yet implemented.");
 		}
 
 		return result;
 	}
-
-	// private Set<Set<SessionDataManager>>
-	// createInitialUniqueTrainingComplementSets(
-	// final Collection<SessionDataManager> allTrainingSessionDataMgrs) {
-	// final Set<Set<SessionDataManager>> result =
-	// Sets.newHashSetWithExpectedSize(allTrainingSessionDataMgrs.size());
-	// final Queue<SessionDataManager> sessionsToDiscount =
-	// createShuffledQueue(allTrainingSessionDataMgrs);
-	//
-	// while (result.size() < randomIters && !sessionsToDiscount.isEmpty()) {
-	// final Set<SessionDataManager> currentComplementSet = Sets
-	// .newHashSetWithExpectedSize(trainingSetSizeDiscountingConstant);
-	// do {
-	// final SessionDataManager leftOutTrainingSessionDataMgr =
-	// sessionsToDiscount.remove();
-	// final boolean wasAddedToCurrentComplementSet =
-	// currentComplementSet.add(leftOutTrainingSessionDataMgr);
-	// // Since the given session has never been left out before, it
-	// // should also have not been used for the current set being
-	// // built
-	// assert wasAddedToCurrentComplementSet;
-	// } while (currentComplementSet.size() < trainingSetSizeDiscountingConstant
-	// && !sessionsToDiscount.isEmpty());
-	// result.add(currentComplementSet);
-	// }
-	// LOGGER.info(
-	// "{} sessions which could have still been left out were not because enough
-	// complement sets had already been made.",
-	// sessionsToDiscount.size());
-	// return result;
-	// }
 
 	private <T> Queue<T> createShuffledQueue(final Collection<? extends T> elems) {
 		final LinkedList<T> result = new LinkedList<>(elems);
