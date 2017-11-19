@@ -17,8 +17,13 @@
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues;
 
 import java.util.List;
+import java.util.function.Function;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
+import se.kth.speech.coin.tangrams.analysis.dialogues.UtteranceDialogueRepresentationStringFactory;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -27,10 +32,28 @@ import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
  */
 public class ChainedEventDialogueTransformer implements EventDialogueTransformer {
 
+	private static final Logger LOGGER = LoggerFactory.getLogger(ChainedEventDialogueTransformer.class);
+
+	private static boolean isLoggingEnabled() {
+		return LOGGER.isDebugEnabled();
+	}
+
+	private static void logTransformation(final Object diagRepr, final Object transformedDiagRepr) {
+		LOGGER.debug("Diag transformation: \"{}\" -> \"{}\"", diagRepr, transformedDiagRepr);
+	}
+
 	private final List<? extends EventDialogueTransformer> diagTransformers;
+
+	private Function<EventDialogue, EventDialogue> transformationImpl;
 
 	public ChainedEventDialogueTransformer(final List<? extends EventDialogueTransformer> diagTransformers) {
 		this.diagTransformers = diagTransformers;
+		if (isLoggingEnabled()) {
+			transformationImpl = this::transformLogged;
+		} else {
+			transformationImpl = this::transform;
+		}
+
 	}
 
 	/*
@@ -40,11 +63,7 @@ public class ChainedEventDialogueTransformer implements EventDialogueTransformer
 	 */
 	@Override
 	public EventDialogue apply(final EventDialogue diag) {
-		EventDialogue result = diag;
-		for (final EventDialogueTransformer diagTransformer : diagTransformers) {
-			result = diagTransformer.apply(result);
-		}
-		return result;
+		return transformationImpl.apply(diag);
 	}
 
 	/*
@@ -99,6 +118,26 @@ public class ChainedEventDialogueTransformer implements EventDialogueTransformer
 		builder.append(diagTransformers);
 		builder.append(']');
 		return builder.toString();
+	}
+
+	private EventDialogue transform(final EventDialogue diag) {
+		EventDialogue result = diag;
+		for (final EventDialogueTransformer diagTransformer : diagTransformers) {
+			result = diagTransformer.apply(result);
+		}
+		return result;
+	}
+
+	private EventDialogue transformLogged(final EventDialogue diag) {
+		final UtteranceDialogueRepresentationStringFactory diagReprFactory = new UtteranceDialogueRepresentationStringFactory();
+		EventDialogue result = diag;
+		for (final EventDialogueTransformer diagTransformer : diagTransformers) {
+			final String diagRepr = diagReprFactory.apply(result.getUtterances().iterator());
+			result = diagTransformer.apply(result);
+			final String transformedDiagRepr = diagReprFactory.apply(result.getUtterances().iterator());
+			logTransformation(diagRepr, transformedDiagRepr);
+		}
+		return result;
 	}
 
 }
