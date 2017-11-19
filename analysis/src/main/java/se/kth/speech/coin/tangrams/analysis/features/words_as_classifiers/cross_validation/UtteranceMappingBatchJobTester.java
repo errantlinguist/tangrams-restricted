@@ -355,14 +355,13 @@ final class UtteranceMappingBatchJobTester implements Consumer<UtteranceMappingB
 	private final BiConsumer<? super EventDialogue, ? super List<UtteranceRelation>> uttRelHandler;
 
 	private final int parallelismLevel;
-	
+
 	UtteranceMappingBatchJobTester(final Executor backgroundJobExecutor, final ApplicationContext appCtx,
 			final Consumer<? super BatchJobSummary> batchJobResultHandler,
 			final BiConsumer<? super IncompleteResults, ? super Throwable> errorHandler,
 			final BiConsumer<? super EventDialogue, ? super List<UtteranceRelation>> uttRelHandler,
 			final Map<WordClassifierTrainingParameter, Object> trainingParams,
-			final TestSetFactoryFactory testSetFactoryFactory,
-			int parallelismLevel) {
+			final TestSetFactoryFactory testSetFactoryFactory, final int parallelismLevel) {
 		this.backgroundJobExecutor = backgroundJobExecutor;
 		this.appCtx = appCtx;
 		this.batchJobResultHandler = batchJobResultHandler;
