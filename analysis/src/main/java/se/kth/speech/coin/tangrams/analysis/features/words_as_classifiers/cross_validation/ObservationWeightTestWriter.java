@@ -234,6 +234,7 @@ final class ObservationWeightTestWriter { // NO_UCD (unused code)
 			final List<DialogueAnalysisSummaryFactory.SummaryDatum> summaryDataToWrite) {
 		final Stream.Builder<String> resultBuilder = Stream.builder();
 		resultBuilder.add("TIME");
+		resultBuilder.add("CROSS_VALID_ITER");
 		createTestMethodColumnHeaders().forEachOrdered(resultBuilder);
 		createTrainingDataColHeaders().forEachOrdered(resultBuilder);
 		summaryDataToWrite.stream().map(DialogueAnalysisSummaryFactory.SummaryDatum::toString)
@@ -307,9 +308,10 @@ final class ObservationWeightTestWriter { // NO_UCD (unused code)
 	}
 
 	private static Stream<String> createTestParamRowCellValues(
-			final UtteranceMappingBatchJobTester.BatchJobSummary summary) {
+			final UtteranceMappingBatchJobTester.BatchJobSummary summary, final String crossValidationIterId) {
 		final Stream.Builder<String> resultBuilder = Stream.builder();
 		resultBuilder.add(TIMESTAMP_FORMATTER.format(summary.getTestTimestamp()));
+		resultBuilder.add(crossValidationIterId);
 		createTestMethodRowCellValues(summary.getTestParams()).forEachOrdered(resultBuilder);
 		return resultBuilder.build();
 	}
@@ -337,7 +339,8 @@ final class ObservationWeightTestWriter { // NO_UCD (unused code)
 
 				final File outFile = (File) cl.getParsedOptionValue(Parameter.OUTPATH.optName);
 				try (PrintWriter out = CLIParameters.parseOutpath(outFile, OUTPUT_ENCODING)) {
-					final ObservationWeightTestWriter writer = new ObservationWeightTestWriter(out, true, 1);
+					final ObservationWeightTestWriter writer = new ObservationWeightTestWriter(out, true,
+							Integer.toString(1));
 
 					try (final ClassPathXmlApplicationContext appCtx = new ClassPathXmlApplicationContext(
 							"cross-validation.xml", ObservationWeightTestWriter.class)) {
@@ -365,7 +368,7 @@ final class ObservationWeightTestWriter { // NO_UCD (unused code)
 										writer::writeError, UTT_REL_HANDLER, trainingParams,
 										new DiscountingTestSetFactoryFactory(trainingParams, random));
 								tester.accept(input);
-								writer.setSessionTestIterFactor(randomDiscountingIter);
+								writer.setCrossValidationIterId(Integer.toString(randomDiscountingIter));
 							}
 							LOGGER.info(
 									"Finished performing cross-validation for training set size discounting constant {}.",
@@ -402,23 +405,23 @@ final class ObservationWeightTestWriter { // NO_UCD (unused code)
 
 	private final DialogueAnalysisSummaryFactory rowDataFactory;
 
-	private int sessionTestIterFactor;
+	private String crossValidationIterId;
 
 	private boolean writeHeader;
 
 	private ObservationWeightTestWriter(final PrintWriter out, final boolean writeHeader,
-			final int sessionTestIterFactor) {
-		this(out, writeHeader, sessionTestIterFactor,
+			final String crossValidationIterId) {
+		this(out, writeHeader, crossValidationIterId,
 				new UtteranceDialogueRepresentationStringFactory(DataLanguageDefaults.getLocale()),
 				DEFAULT_DATA_TO_WRITE);
 	}
 
 	private ObservationWeightTestWriter(final PrintWriter out, final boolean writeHeader,
-			final int sessionTestIterFactor, final Function<? super Iterator<Utterance>, String> uttDiagReprFactory,
+			final String crossValidationIterId, final Function<? super Iterator<Utterance>, String> uttDiagReprFactory,
 			final List<DialogueAnalysisSummaryFactory.SummaryDatum> dataToWrite) {
 		this.out = out;
 		this.writeHeader = writeHeader;
-		this.sessionTestIterFactor = sessionTestIterFactor;
+		this.crossValidationIterId = crossValidationIterId;
 		this.dataToWrite = dataToWrite;
 		rowDataFactory = new DialogueAnalysisSummaryFactory(uttDiagReprFactory, dataToWrite);
 
@@ -429,7 +432,8 @@ final class ObservationWeightTestWriter { // NO_UCD (unused code)
 			out.println(createColHeaders(dataToWrite).collect(ROW_CELL_JOINER));
 			writeHeader = false;
 		}
-		final String[] testParamRowCellValues = createTestParamRowCellValues(summary).toArray(String[]::new);
+		final String[] testParamRowCellValues = createTestParamRowCellValues(summary, crossValidationIterId)
+				.toArray(String[]::new);
 		final List<CrossValidator.IterationResult> testResults = summary.getTestResults();
 		for (final CrossValidator.IterationResult iterResult : testResults) {
 			final int iterNo = iterResult.getIterNo();
@@ -483,11 +487,11 @@ final class ObservationWeightTestWriter { // NO_UCD (unused code)
 	}
 
 	/**
-	 * @param sessionTestIterFactor
-	 *            the sessionTestIterFactor to set
+	 * @param crossValidationIterId
+	 *            the crossValidationIterId to set
 	 */
-	void setSessionTestIterFactor(final int sessionTestIterFactor) {
-		this.sessionTestIterFactor = sessionTestIterFactor;
+	void setCrossValidationIterId(final String crossValidationIterId) {
+		this.crossValidationIterId = crossValidationIterId;
 	}
 
 }
