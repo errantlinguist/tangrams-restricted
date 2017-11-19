@@ -79,6 +79,7 @@ import se.kth.speech.coin.tangrams.analysis.SessionGameManager;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.coin.tangrams.analysis.dialogues.UtteranceDialogueRepresentationStringFactory;
+import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionContextFactory;
 import se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttributeContext;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.EventDialogueTestResults;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordClassDiscountingSmoother;
@@ -502,9 +503,16 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 		 * Parsing can take up huge amounts of memory, so it's single-threaded and thus
 		 * the caches are created designed for single-threaded operation.
 		 */
-		private static final AnnotationCacheFactory ANNOTATION_CACHE_FACTORY = new AnnotationCacheFactory(1);
+		private static final AnnotationCacheFactory ANNOTATION_CACHE_FACTORY;
 
 		private static final Logger LOGGER = LoggerFactory.getLogger(CombiningBatchJobTester.class);
+
+		private static final int PARALLELISM_LEVEL;
+
+		static {
+			PARALLELISM_LEVEL = 1;
+			ANNOTATION_CACHE_FACTORY = new AnnotationCacheFactory(PARALLELISM_LEVEL);
+		}
 
 		private static Map<SessionDataManager, SessionGameManager> createSessionGameMgrMap(
 				final Map<SessionDataManager, Path> allSessions) throws JAXBException, IOException {
@@ -555,6 +563,14 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 		public void accept(final Input input) throws InterruptedException, ExecutionException {
 			final Future<Map<SessionDataManager, SessionGameManager>> futureSessionGameMgrs = backgroundJobExecutor
 					.submit(() -> createSessionGameMgrMap(input.allSessions));
+			final EntityInstanceAttributeContext entityInstAttrCtx = appCtx
+					.getBean(EntityInstanceAttributeContext.class);
+			final EntityFeatureExtractionContextFactory extCtxFactory = appCtx
+					.getBean(EntityFeatureExtractionContextFactory.class);
+			final Integer smoothingMinCount = (Integer) trainingParams
+					.get(WordClassifierTrainingParameter.SMOOTHING_MIN_COUNT);
+			final WordClassDiscountingSmoother smoother = appCtx.getBean(WordClassDiscountingSmoother.class,
+					smoothingMinCount, PARALLELISM_LEVEL);
 
 			for (final Set<Cleaning> cleaningMethodSet : input.cleaningMethods) {
 				for (final Training trainingMethod : input.trainingMethods) {
@@ -566,21 +582,17 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 
 							for (final TokenFiltering tokenFilteringMethod : input.tokenFilteringMethods) {
 								final EventDialogueTransformer tokenFilter = tokenFilteringMethod.get();
-
 								final EventDialogueTransformer diagTransformer = trainingMethod
 										.createSymmetricalTrainingTestingEventDiagTransformer(tokenizer, tokenFilter);
-								final TrainingContext trainingCtx = new TrainingContext(diagTransformer, appCtx,
-										uttRelHandler, trainingParams);
+								final TrainingContext trainingCtx = new TrainingContext(diagTransformer, smoother,
+										entityInstAttrCtx, extCtxFactory, uttRelHandler, trainingParams);
 								final TrainingInstancesFactory trainingInstsFactory = trainingMethod
 										.createTrainingInstsFactory(trainingCtx);
 								final Map<SessionDataManager, SessionGameManager> sessionGameMgrs = futureSessionGameMgrs
 										.get();
 								final Function<Map<SessionDataManager, Path>, Stream<Entry<SessionDataManager, WordClassificationData>>> testSetFactory = testSetFactoryFactory
 										.apply(trainingInstsFactory, sessionGameMgrs);
-								final Integer smoothingMinCount = (Integer) trainingCtx.getTrainingParams()
-										.get(WordClassifierTrainingParameter.SMOOTHING_MIN_COUNT);
-								final WordClassDiscountingSmoother smoother = appCtx
-										.getBean(WordClassDiscountingSmoother.class, smoothingMinCount);
+
 								final CrossValidator crossValidator = appCtx.getBean(CrossValidator.class,
 										sessionGameMgrs, testSetFactory,
 										trainingMethod.getClassifierFactory(trainingCtx), smoother,

@@ -20,27 +20,36 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.BiConsumer;
 
-import org.springframework.context.ApplicationContext;
-
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
+import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionContextFactory;
+import se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttributeContext;
+import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordClassDiscountingSmoother;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.EventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.UtteranceRelation;
 
 final class TrainingContext {
 
-	private final ApplicationContext appCtx;
-
 	private final EventDialogueTransformer diagTransformer;
+
+	private final EntityInstanceAttributeContext entityInstAttrCtx;
+
+	private final EntityFeatureExtractionContextFactory extCtxFactory;
+
+	private final WordClassDiscountingSmoother smoother;
 
 	private final Map<WordClassifierTrainingParameter, Object> trainingParams;
 
 	private final BiConsumer<? super EventDialogue, ? super List<UtteranceRelation>> uttRelHandler;
 
-	TrainingContext(final EventDialogueTransformer diagTransformer, final ApplicationContext appCtx,
+	TrainingContext(final EventDialogueTransformer diagTransformer, final WordClassDiscountingSmoother smoother,
+			final EntityInstanceAttributeContext entityInstAttrCtx,
+			final EntityFeatureExtractionContextFactory extCtxFactory,
 			final BiConsumer<? super EventDialogue, ? super List<UtteranceRelation>> uttRelHandler,
 			final Map<WordClassifierTrainingParameter, Object> trainingParams) {
 		this.diagTransformer = diagTransformer;
-		this.appCtx = appCtx;
+		this.smoother = smoother;
+		this.entityInstAttrCtx = entityInstAttrCtx;
+		this.extCtxFactory = extCtxFactory;
 		this.uttRelHandler = uttRelHandler;
 		this.trainingParams = trainingParams;
 	}
@@ -62,18 +71,32 @@ final class TrainingContext {
 			return false;
 		}
 		final TrainingContext other = (TrainingContext) obj;
-		if (appCtx == null) {
-			if (other.appCtx != null) {
-				return false;
-			}
-		} else if (!appCtx.equals(other.appCtx)) {
-			return false;
-		}
 		if (diagTransformer == null) {
 			if (other.diagTransformer != null) {
 				return false;
 			}
 		} else if (!diagTransformer.equals(other.diagTransformer)) {
+			return false;
+		}
+		if (entityInstAttrCtx == null) {
+			if (other.entityInstAttrCtx != null) {
+				return false;
+			}
+		} else if (!entityInstAttrCtx.equals(other.entityInstAttrCtx)) {
+			return false;
+		}
+		if (extCtxFactory == null) {
+			if (other.extCtxFactory != null) {
+				return false;
+			}
+		} else if (!extCtxFactory.equals(other.extCtxFactory)) {
+			return false;
+		}
+		if (smoother == null) {
+			if (other.smoother != null) {
+				return false;
+			}
+		} else if (!smoother.equals(other.smoother)) {
 			return false;
 		}
 		if (trainingParams == null) {
@@ -102,8 +125,10 @@ final class TrainingContext {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + (appCtx == null ? 0 : appCtx.hashCode());
 		result = prime * result + (diagTransformer == null ? 0 : diagTransformer.hashCode());
+		result = prime * result + (entityInstAttrCtx == null ? 0 : entityInstAttrCtx.hashCode());
+		result = prime * result + (extCtxFactory == null ? 0 : extCtxFactory.hashCode());
+		result = prime * result + (smoother == null ? 0 : smoother.hashCode());
 		result = prime * result + (trainingParams == null ? 0 : trainingParams.hashCode());
 		result = prime * result + (uttRelHandler == null ? 0 : uttRelHandler.hashCode());
 		return result;
@@ -116,9 +141,13 @@ final class TrainingContext {
 	 */
 	@Override
 	public String toString() {
-		final StringBuilder builder = new StringBuilder(512);
-		builder.append("TrainingContext [appCtx=");
-		builder.append(appCtx);
+		final StringBuilder builder = new StringBuilder(256);
+		builder.append("TrainingContext [smoother=");
+		builder.append(smoother);
+		builder.append(", entityInstAttrCtx=");
+		builder.append(entityInstAttrCtx);
+		builder.append(", extCtxFactory=");
+		builder.append(extCtxFactory);
 		builder.append(", diagTransformer=");
 		builder.append(diagTransformer);
 		builder.append(", trainingParams=");
@@ -130,17 +159,31 @@ final class TrainingContext {
 	}
 
 	/**
-	 * @return the appCtx
-	 */
-	ApplicationContext getAppCtx() {
-		return appCtx;
-	}
-
-	/**
 	 * @return the diagTransformer
 	 */
 	EventDialogueTransformer getDiagTransformer() {
 		return diagTransformer;
+	}
+
+	/**
+	 * @return the entityInstAttrCtx
+	 */
+	EntityInstanceAttributeContext getEntityInstAttrCtx() {
+		return entityInstAttrCtx;
+	}
+
+	/**
+	 * @return the extCtxFactory
+	 */
+	EntityFeatureExtractionContextFactory getExtCtxFactory() {
+		return extCtxFactory;
+	}
+
+	/**
+	 * @return the smoother
+	 */
+	WordClassDiscountingSmoother getSmoother() {
+		return smoother;
 	}
 
 	/**

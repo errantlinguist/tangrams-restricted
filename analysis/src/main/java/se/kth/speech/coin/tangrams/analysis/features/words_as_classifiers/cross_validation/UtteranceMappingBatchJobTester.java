@@ -34,6 +34,8 @@ import org.springframework.context.ApplicationContext;
 
 import se.kth.speech.coin.tangrams.analysis.SessionGameManager;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
+import se.kth.speech.coin.tangrams.analysis.features.EntityFeatureExtractionContextFactory;
+import se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttributeContext;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordClassDiscountingSmoother;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.EventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.UtteranceRelation;
@@ -352,12 +354,15 @@ final class UtteranceMappingBatchJobTester implements Consumer<UtteranceMappingB
 
 	private final BiConsumer<? super EventDialogue, ? super List<UtteranceRelation>> uttRelHandler;
 
+	private final int parallelismLevel;
+	
 	UtteranceMappingBatchJobTester(final Executor backgroundJobExecutor, final ApplicationContext appCtx,
 			final Consumer<? super BatchJobSummary> batchJobResultHandler,
 			final BiConsumer<? super IncompleteResults, ? super Throwable> errorHandler,
 			final BiConsumer<? super EventDialogue, ? super List<UtteranceRelation>> uttRelHandler,
 			final Map<WordClassifierTrainingParameter, Object> trainingParams,
-			final TestSetFactoryFactory testSetFactoryFactory) {
+			final TestSetFactoryFactory testSetFactoryFactory,
+			int parallelismLevel) {
 		this.backgroundJobExecutor = backgroundJobExecutor;
 		this.appCtx = appCtx;
 		this.batchJobResultHandler = batchJobResultHandler;
@@ -365,6 +370,7 @@ final class UtteranceMappingBatchJobTester implements Consumer<UtteranceMappingB
 		this.uttRelHandler = uttRelHandler;
 		this.trainingParams = trainingParams;
 		this.testSetFactoryFactory = testSetFactoryFactory;
+		this.parallelismLevel = parallelismLevel;
 	}
 
 	@Override
@@ -372,15 +378,19 @@ final class UtteranceMappingBatchJobTester implements Consumer<UtteranceMappingB
 		final Training trainingMethod = input.getTrainingMethod();
 		final EventDialogueTransformer diagTransformer = trainingMethod
 				.createSymmetricalTrainingTestingEventDiagTransformer(input.getDiagTransformer());
-		final TrainingContext trainingCtx = new TrainingContext(diagTransformer, appCtx, uttRelHandler, trainingParams);
+		final EntityInstanceAttributeContext entityInstAttrCtx = appCtx.getBean(EntityInstanceAttributeContext.class);
+		final EntityFeatureExtractionContextFactory extCtxFactory = appCtx
+				.getBean(EntityFeatureExtractionContextFactory.class);
+		final Integer smoothingMinCount = (Integer) trainingParams
+				.get(WordClassifierTrainingParameter.SMOOTHING_MIN_COUNT);
+		final WordClassDiscountingSmoother smoother = appCtx.getBean(WordClassDiscountingSmoother.class,
+				smoothingMinCount, parallelismLevel);
+		final TrainingContext trainingCtx = new TrainingContext(diagTransformer, smoother, entityInstAttrCtx,
+				extCtxFactory, uttRelHandler, trainingParams);
 		final TrainingInstancesFactory trainingInstsFactory = trainingMethod.createTrainingInstsFactory(trainingCtx);
 		final Map<SessionDataManager, SessionGameManager> sessionGameMgrs = input.getSessionGameMgrMapSupplier().get();
 		final Function<Map<SessionDataManager, Path>, Stream<Entry<SessionDataManager, WordClassificationData>>> testSetFactory = testSetFactoryFactory
 				.apply(trainingInstsFactory, sessionGameMgrs);
-		final Integer smoothingMinCount = (Integer) trainingCtx.getTrainingParams()
-				.get(WordClassifierTrainingParameter.SMOOTHING_MIN_COUNT);
-		final WordClassDiscountingSmoother smoother = appCtx.getBean(WordClassDiscountingSmoother.class,
-				smoothingMinCount);
 		final CrossValidator crossValidator = appCtx.getBean(CrossValidator.class, sessionGameMgrs, testSetFactory,
 				trainingMethod.getClassifierFactory(trainingCtx), smoother, backgroundJobExecutor);
 		crossValidator.setIterCount(trainingMethod.getIterCount());

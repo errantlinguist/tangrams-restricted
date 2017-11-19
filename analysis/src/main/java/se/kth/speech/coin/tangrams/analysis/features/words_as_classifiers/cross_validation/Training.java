@@ -33,8 +33,6 @@ import java.util.function.ToDoubleFunction;
 
 import javax.annotation.Nonnull;
 
-import org.springframework.context.ApplicationContext;
-
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -81,11 +79,8 @@ enum Training {
 
 		@Override
 		public TrainingInstancesFactory createTrainingInstsFactory(final TrainingContext trainingCtx) {
-			final ApplicationContext appCtx = trainingCtx.getAppCtx();
-			final EntityInstanceAttributeContext entityInstAttrCtx = appCtx
-					.getBean(EntityInstanceAttributeContext.class);
-			final EntityFeatureExtractionContextFactory extCtxFactory = appCtx
-					.getBean(EntityFeatureExtractionContextFactory.class);
+			final EntityInstanceAttributeContext entityInstAttrCtx = trainingCtx.getEntityInstAttrCtx();
+			final EntityFeatureExtractionContextFactory extCtxFactory = trainingCtx.getExtCtxFactory();
 			final AbstractInstanceExtractor instExtractor = new OnePositiveMaximumNegativeInstanceExtractor(
 					entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory);
 			final Map<WordClassifierTrainingParameter, Object> trainingParams = trainingCtx.getTrainingParams();
@@ -112,11 +107,8 @@ enum Training {
 
 		@Override
 		public TrainingInstancesFactory createTrainingInstsFactory(final TrainingContext trainingCtx) {
-			final ApplicationContext appCtx = trainingCtx.getAppCtx();
-			final EntityInstanceAttributeContext entityInstAttrCtx = appCtx
-					.getBean(EntityInstanceAttributeContext.class);
-			final EntityFeatureExtractionContextFactory extCtxFactory = appCtx
-					.getBean(EntityFeatureExtractionContextFactory.class);
+			final EntityInstanceAttributeContext entityInstAttrCtx = trainingCtx.getEntityInstAttrCtx();
+			final EntityFeatureExtractionContextFactory extCtxFactory = trainingCtx.getExtCtxFactory();
 			final Map<WordClassifierTrainingParameter, Object> trainingParams = trainingCtx.getTrainingParams();
 			return new SizeEstimatingInstancesMapFactory(
 					new OnePositiveMaximumNegativeInstanceExtractor(entityInstAttrCtx, trainingCtx.getDiagTransformer(),
@@ -146,11 +138,8 @@ enum Training {
 
 		@Override
 		public TrainingInstancesFactory createTrainingInstsFactory(final TrainingContext trainingCtx) {
-			final ApplicationContext appCtx = trainingCtx.getAppCtx();
-			final EntityInstanceAttributeContext entityInstAttrCtx = appCtx
-					.getBean(EntityInstanceAttributeContext.class);
-			final EntityFeatureExtractionContextFactory extCtxFactory = appCtx
-					.getBean(EntityFeatureExtractionContextFactory.class);
+			final EntityInstanceAttributeContext entityInstAttrCtx = trainingCtx.getEntityInstAttrCtx();
+			final EntityFeatureExtractionContextFactory extCtxFactory = trainingCtx.getExtCtxFactory();
 			final Map<WordClassifierTrainingParameter, Object> trainingParams = trainingCtx.getTrainingParams();
 			return new SizeEstimatingInstancesMapFactory(
 					new DialogicInstanceExtractor(entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory,
@@ -166,11 +155,7 @@ enum Training {
 		@Override
 		public Function<ClassificationContext, DialogicEventDialogueClassifier> getClassifierFactory(
 				final TrainingContext trainingCtx) {
-			final ApplicationContext appCtx = trainingCtx.getAppCtx();
-			final Integer smoothingMinCount = (Integer) trainingCtx.getTrainingParams()
-					.get(WordClassifierTrainingParameter.SMOOTHING_MIN_COUNT);
-			final WordClassDiscountingSmoother smoother = appCtx.getBean(WordClassDiscountingSmoother.class,
-					smoothingMinCount);
+			final WordClassDiscountingSmoother smoother = trainingCtx.getSmoother();
 			return classificationContext -> {
 				final ParallelizedLogisticWordClassifierTrainer trainer = new ParallelizedLogisticWordClassifierTrainer(
 						classificationContext.getBackgroundJobExecutor(), smoother);
@@ -203,11 +188,8 @@ enum Training {
 
 		@Override
 		public TrainingInstancesFactory createTrainingInstsFactory(final TrainingContext trainingCtx) {
-			final ApplicationContext appCtx = trainingCtx.getAppCtx();
-			final EntityInstanceAttributeContext entityInstAttrCtx = appCtx
-					.getBean(EntityInstanceAttributeContext.class);
-			final EntityFeatureExtractionContextFactory extCtxFactory = appCtx
-					.getBean(EntityFeatureExtractionContextFactory.class);
+			final EntityInstanceAttributeContext entityInstAttrCtx = trainingCtx.getEntityInstAttrCtx();
+			final EntityFeatureExtractionContextFactory extCtxFactory = trainingCtx.getExtCtxFactory();
 			final Map<WordClassifierTrainingParameter, Object> trainingParams = trainingCtx.getTrainingParams();
 			return new SizeEstimatingInstancesMapFactory(
 					new DialogicInstanceExtractor(entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory,
@@ -223,19 +205,13 @@ enum Training {
 		@Override
 		public Function<ClassificationContext, DialogicEventDialogueClassifier> getClassifierFactory(
 				final TrainingContext trainingCtx) {
-			final ApplicationContext appCtx = trainingCtx.getAppCtx();
-			final EntityInstanceAttributeContext entityInstAttrCtx = appCtx
-					.getBean(EntityInstanceAttributeContext.class);
-			final EntityFeatureExtractionContextFactory extCtxFactory = appCtx
-					.getBean(EntityFeatureExtractionContextFactory.class);
+			final EntityInstanceAttributeContext entityInstAttrCtx = trainingCtx.getEntityInstAttrCtx();
+			final EntityFeatureExtractionContextFactory extCtxFactory = trainingCtx.getExtCtxFactory();
 			return classificationContext -> {
 				final AbstractInstanceExtractor instExtractor = new OnePositiveMaximumNegativeInstanceExtractor(
 						entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory);
 				final Map<WordClassifierTrainingParameter, Object> trainingParams = trainingCtx.getTrainingParams();
-				final Integer smoothingMinCount = (Integer) trainingCtx.getTrainingParams()
-						.get(WordClassifierTrainingParameter.SMOOTHING_MIN_COUNT);
-				final WordClassDiscountingSmoother smoother = appCtx.getBean(WordClassDiscountingSmoother.class,
-						smoothingMinCount);
+				final WordClassDiscountingSmoother smoother = trainingCtx.getSmoother();
 				final UpdatingLogisticWordClassifierTrainer iterativeTrainer = new UpdatingLogisticWordClassifierTrainer(
 						classificationContext.getBackgroundJobExecutor(), smoother,
 						classificationContext.getTrainingData(), instExtractor,
@@ -260,11 +236,8 @@ enum Training {
 
 		@Override
 		public TrainingInstancesFactory createTrainingInstsFactory(final TrainingContext trainingCtx) {
-			final ApplicationContext appCtx = trainingCtx.getAppCtx();
-			final EntityInstanceAttributeContext entityInstAttrCtx = appCtx
-					.getBean(EntityInstanceAttributeContext.class);
-			final EntityFeatureExtractionContextFactory extCtxFactory = appCtx
-					.getBean(EntityFeatureExtractionContextFactory.class);
+			final EntityInstanceAttributeContext entityInstAttrCtx = trainingCtx.getEntityInstAttrCtx();
+			final EntityFeatureExtractionContextFactory extCtxFactory = trainingCtx.getExtCtxFactory();
 			final Map<WordClassifierTrainingParameter, Object> trainingParams = trainingCtx.getTrainingParams();
 			final Random rnd = new Random((Long) trainingParams.get(WordClassifierTrainingParameter.RANDOM_SEED));
 			return new SizeEstimatingInstancesMapFactory(
@@ -293,11 +266,8 @@ enum Training {
 
 		@Override
 		public TrainingInstancesFactory createTrainingInstsFactory(final TrainingContext trainingCtx) {
-			final ApplicationContext appCtx = trainingCtx.getAppCtx();
-			final EntityInstanceAttributeContext entityInstAttrCtx = appCtx
-					.getBean(EntityInstanceAttributeContext.class);
-			final EntityFeatureExtractionContextFactory extCtxFactory = appCtx
-					.getBean(EntityFeatureExtractionContextFactory.class);
+			final EntityInstanceAttributeContext entityInstAttrCtx = trainingCtx.getEntityInstAttrCtx();
+			final EntityFeatureExtractionContextFactory extCtxFactory = trainingCtx.getExtCtxFactory();
 			final Map<WordClassifierTrainingParameter, Object> trainingParams = trainingCtx.getTrainingParams();
 			final Random rnd = new Random((Long) trainingParams.get(WordClassifierTrainingParameter.RANDOM_SEED));
 			return new SizeEstimatingInstancesMapFactory(
@@ -360,12 +330,8 @@ enum Training {
 		 */
 		@Override
 		public IsolatedUtteranceEventDialogueClassifier apply(final ClassificationContext classificationContext) {
-			final ApplicationContext appCtx = trainingCtx.getAppCtx();
 			final Map<WordClassifierTrainingParameter, Object> trainingParams = trainingCtx.getTrainingParams();
-			final Integer smoothingMinCount = (Integer) trainingParams
-					.get(WordClassifierTrainingParameter.SMOOTHING_MIN_COUNT);
-			final WordClassDiscountingSmoother smoother = appCtx.getBean(WordClassDiscountingSmoother.class,
-					smoothingMinCount);
+			final WordClassDiscountingSmoother smoother = trainingCtx.getSmoother();
 			final ParallelizedLogisticWordClassifierTrainer trainer = new ParallelizedLogisticWordClassifierTrainer(
 					classificationContext.getBackgroundJobExecutor(), smoother);
 
@@ -406,17 +372,10 @@ enum Training {
 		 */
 		@Override
 		public IsolatedUtteranceEventDialogueClassifier apply(final ClassificationContext classificationContext) {
-			final ApplicationContext appCtx = trainingCtx.getAppCtx();
 			final Map<WordClassifierTrainingParameter, Object> trainingParams = trainingCtx.getTrainingParams();
-			final Integer smoothingMinCount = (Integer) trainingParams
-					.get(WordClassifierTrainingParameter.SMOOTHING_MIN_COUNT);
-			final WordClassDiscountingSmoother smoother = appCtx.getBean(WordClassDiscountingSmoother.class,
-					smoothingMinCount);
-			final EntityInstanceAttributeContext entityInstAttrCtx = appCtx
-					.getBean(EntityInstanceAttributeContext.class);
-			final EntityFeatureExtractionContextFactory extCtxFactory = appCtx
-					.getBean(EntityFeatureExtractionContextFactory.class);
-
+			final EntityInstanceAttributeContext entityInstAttrCtx = trainingCtx.getEntityInstAttrCtx();
+			final EntityFeatureExtractionContextFactory extCtxFactory = trainingCtx.getExtCtxFactory();
+			final WordClassDiscountingSmoother smoother = trainingCtx.getSmoother();
 			final AbstractInstanceExtractor instExtractor = new OnePositiveMaximumNegativeInstanceExtractor(
 					entityInstAttrCtx, trainingCtx.getDiagTransformer(), extCtxFactory);
 			final UpdatingLogisticWordClassifierTrainer iterativeTrainer = new UpdatingLogisticWordClassifierTrainer(

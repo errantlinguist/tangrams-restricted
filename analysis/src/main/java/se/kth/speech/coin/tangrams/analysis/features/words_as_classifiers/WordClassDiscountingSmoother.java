@@ -307,15 +307,15 @@ public final class WordClassDiscountingSmoother {
 
 	private final ConcurrentMap<IdentityKey<Object2ObjectMap<String, WordClassificationData.Datum>>, SoftReference<Lock>> wordClassDataMapLocks;
 
-	public WordClassDiscountingSmoother(final int minCount) {
-		this(minCount, DEFAULT_OOV_CLASS);
+	public WordClassDiscountingSmoother(final int minCount, int parallelismLevel) {
+		this(minCount, parallelismLevel, DEFAULT_OOV_CLASS);
 	}
-
-	public WordClassDiscountingSmoother(final int minCount, final String oovClassName) {
+	
+	public WordClassDiscountingSmoother(final int minCount, int parallelismLevel, final String oovClassName) {
 		this.minCount = minCount;
 		this.oovClassName = oovClassName;
 
-		wordClassDataMapLocks = new ConcurrentHashMap<>(4, 1.0f);
+		wordClassDataMapLocks = new ConcurrentHashMap<>(parallelismLevel + 1, 1.0f);
 	}
 
 	/**

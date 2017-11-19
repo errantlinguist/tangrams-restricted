@@ -199,13 +199,16 @@ final class ParameterFileReadingTestWriter { // NO_UCD (unused code)
 
 		private final ParameterFileReadingTestWriter writer;
 
+		private final int parallelismLevel;
+
 		private ParameterCombinationTester(final ParameterFileReadingTestWriter writer,
 				final Map<WordClassifierTrainingParameter, Object> trainingParams, final ApplicationContext appCtx,
-				final Executor backgroundJobExecutor) {
+				final Executor backgroundJobExecutor, final int parallelismLevel) {
 			this.writer = writer;
 			this.trainingParams = trainingParams;
 			this.appCtx = appCtx;
 			this.backgroundJobExecutor = backgroundJobExecutor;
+			this.parallelismLevel = parallelismLevel;
 		}
 
 		void accept(final UtteranceMappingBatchJobTester.Input input) {
@@ -219,7 +222,7 @@ final class ParameterFileReadingTestWriter { // NO_UCD (unused code)
 			for (int crossValidationIter = 1; crossValidationIter <= crossValidationIterCount; ++crossValidationIter) {
 				final UtteranceMappingBatchJobTester tester = new UtteranceMappingBatchJobTester(backgroundJobExecutor,
 						appCtx, writer::write, writer::writeError, UTT_REL_HANDLER, trainingParams,
-						new DiscountingTestSetFactoryFactory(trainingParams, random));
+						new DiscountingTestSetFactoryFactory(trainingParams, random), parallelismLevel);
 				tester.accept(input);
 				writer.setCrossValidationIterId(Integer.toString(crossValidationIter));
 			}
@@ -394,7 +397,8 @@ final class ParameterFileReadingTestWriter { // NO_UCD (unused code)
 			printHelp();
 		} else {
 			final ForkJoinPool backgroundJobExecutor = BackgroundJobs.fetchBackgroundJobExecutor();
-			LOGGER.info("Parallelism level: {}", backgroundJobExecutor.getParallelism());
+			final int parallelismLevel = backgroundJobExecutor.getParallelism();
+			LOGGER.info("Parallelism level: {}", parallelismLevel);
 			final UtteranceMappingBatchJobTester.Input input = createInput(cl, backgroundJobExecutor);
 
 			try {
@@ -413,7 +417,8 @@ final class ParameterFileReadingTestWriter { // NO_UCD (unused code)
 						final ParameterFileReadingTestWriter testParamCombinationTestWriter = new ParameterFileReadingTestWriter(
 								testOutfilePath);
 						final ParameterCombinationTester testParamCombinationTester = new ParameterCombinationTester(
-								testParamCombinationTestWriter, trainingParamMap, appCtx, backgroundJobExecutor);
+								testParamCombinationTestWriter, trainingParamMap, appCtx, backgroundJobExecutor,
+								parallelismLevel);
 						parameterTestJobs
 								.add(CompletableFuture.runAsync(() -> testParamCombinationTester.accept(input)));
 					}
