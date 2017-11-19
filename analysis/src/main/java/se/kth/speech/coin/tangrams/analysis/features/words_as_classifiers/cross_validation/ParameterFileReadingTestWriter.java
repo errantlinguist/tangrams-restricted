@@ -395,7 +395,7 @@ final class ParameterFileReadingTestWriter { // NO_UCD (unused code)
 			final UtteranceMappingBatchJobTester.Input input = createInput(cl, backgroundJobExecutor);
 
 			try {
-				final Path baseOutDir = ((File) cl.getParsedOptionValue(Parameter.OUTDIR.optName)).toPath();
+				final Path baseOutDir = Files.createDirectories(((File) cl.getParsedOptionValue(Parameter.OUTDIR.optName)).toPath());
 				final List<Map<WordClassifierTrainingParameter, Object>> trainingParamMaps = readTrainingParamMaps(cl);
 
 				try (final ClassPathXmlApplicationContext appCtx = new ClassPathXmlApplicationContext(
