@@ -95,7 +95,7 @@ final class UtteranceReferringLanguageMapReader {
 				final String refLangStr = rowCells[refLangIdx];
 				parsedRefLangTokens = WHITESPACE_PATTERN.splitAsStream(refLangStr);
 			} catch (final ArrayIndexOutOfBoundsException e) {
-				LOGGER.info(
+				LOGGER.debug(
 						"Missing referring language column for utterance string \"{}\"; Treating it as \"no referring language\".", uttStr);
 			}
 			// Intern values because many of the individual tokens in each list
