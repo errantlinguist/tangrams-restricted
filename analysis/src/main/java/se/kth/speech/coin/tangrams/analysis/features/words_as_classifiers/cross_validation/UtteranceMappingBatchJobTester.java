@@ -36,7 +36,6 @@ import org.springframework.context.ApplicationContext;
 import se.kth.speech.coin.tangrams.analysis.SessionGameManager;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordClassDiscountingSmoother;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.CachingEventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.EventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.UtteranceRelation;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.TrainingInstancesFactory;
@@ -375,7 +374,7 @@ final class UtteranceMappingBatchJobTester {
 
 	public void accept(final Input input) throws InterruptedException, ExecutionException {
 		final Training trainingMethod = input.getTrainingMethod();
-		final CachingEventDialogueTransformer symmetricalDiagTransformer = trainingMethod
+		final EventDialogueTransformer symmetricalDiagTransformer = trainingMethod
 				.createSymmetricalTrainingTestingEventDiagTransformer(input.getDiagTransformer());
 		final TrainingContext trainingCtx = new TrainingContext(symmetricalDiagTransformer, appCtx, uttRelHandler,
 				trainingParams);

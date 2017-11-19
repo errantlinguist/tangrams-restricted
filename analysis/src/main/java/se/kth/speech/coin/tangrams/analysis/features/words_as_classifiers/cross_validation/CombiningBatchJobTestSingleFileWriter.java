@@ -83,7 +83,6 @@ import se.kth.speech.coin.tangrams.analysis.features.weka.EntityInstanceAttribut
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.EventDialogueTestResults;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordClassDiscountingSmoother;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.cross_validation.CrossValidator.CrossValidationTestSummary;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.CachingEventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.EventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.UtteranceRelation;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.TrainingInstancesFactory;
@@ -568,7 +567,7 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 							for (final TokenFiltering tokenFilteringMethod : input.tokenFilteringMethods) {
 								final EventDialogueTransformer tokenFilter = tokenFilteringMethod.get();
 
-								final CachingEventDialogueTransformer symmetricalDiagTransformer = trainingMethod
+								final EventDialogueTransformer symmetricalDiagTransformer = trainingMethod
 										.createSymmetricalTrainingTestingEventDiagTransformer(tokenizer, tokenFilter);
 								final TrainingContext trainingCtx = new TrainingContext(symmetricalDiagTransformer,
 										appCtx, uttRelHandler, trainingParams);
