@@ -52,8 +52,9 @@ public final class MappingEventDialogueTransformer extends AbstractUtteranceTran
 	@Override
 	protected Stream<Utterance> transformUtt(final Utterance utt) {
 		final List<String> origTokenSeq = utt.getTokens();
+		LOGGER.debug("Original token sequence: {}", origTokenSeq);
 		final List<String> transformedTokenSeq = tokenSeqTransformations.get(origTokenSeq);
-		LOGGER.debug("Original token sequence: {}; Transformed token sequence: {}", origTokenSeq, transformedTokenSeq);
+		LOGGER.debug("Transformed token sequence: {}", transformedTokenSeq);
 		if (transformedTokenSeq == null) {
 			throw new IllegalArgumentException(String.format(
 					"No mapping for token sequence: \"%s\"; segment ID \"%s\"; start time: %f, end time: %f",
