@@ -106,6 +106,7 @@ final class UtteranceReferringLanguageMapReader {
 		}
 
 		result.trim();
+		assert result.size() == expectedUniqueTokenSeqCount;
 		return result;
 	}
 
