@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
@@ -395,11 +396,13 @@ final class ParameterFileReadingTestWriter { // NO_UCD (unused code)
 			final UtteranceMappingBatchJobTester.Input input = createInput(cl, backgroundJobExecutor);
 
 			try {
-				final Path baseOutDir = Files.createDirectories(((File) cl.getParsedOptionValue(Parameter.OUTDIR.optName)).toPath());
+				final Path baseOutDir = Files
+						.createDirectories(((File) cl.getParsedOptionValue(Parameter.OUTDIR.optName)).toPath());
 				final List<Map<WordClassifierTrainingParameter, Object>> trainingParamMaps = readTrainingParamMaps(cl);
 
 				try (final ClassPathXmlApplicationContext appCtx = new ClassPathXmlApplicationContext(
 						"cross-validation.xml", ParameterFileReadingTestWriter.class)) {
+					final Stream.Builder<CompletableFuture<Void>> parameterTestJobs = Stream.builder();
 					for (final Map<WordClassifierTrainingParameter, Object> trainingParamMap : trainingParamMaps) {
 						final String description = (String) trainingParamMap
 								.get(WordClassifierTrainingParameter.DESCRIPTION);
@@ -409,13 +412,17 @@ final class ParameterFileReadingTestWriter { // NO_UCD (unused code)
 								testOutfilePath);
 						final ParameterCombinationTester testParamCombinationTester = new ParameterCombinationTester(
 								testParamCombinationTestWriter, trainingParamMap, appCtx, backgroundJobExecutor);
-						testParamCombinationTester.accept(input);
+						parameterTestJobs
+								.add(CompletableFuture.runAsync(() -> testParamCombinationTester.accept(input)));
 					}
-
+					final CompletableFuture<Void> parameterJobBatchCompletionFuture = CompletableFuture
+							.allOf(parameterTestJobs.build().toArray(CompletableFuture[]::new));
+					parameterJobBatchCompletionFuture.join();
+					LOGGER.info("Successfully completed {} cross-validation test job(s) asynchronously.",
+							trainingParamMaps.size());
 					LOGGER.info("Shutting down executor service.");
 					backgroundJobExecutor.shutdown();
 					LOGGER.info("Successfully shut down executor service.");
-
 				}
 			} catch (final Exception e) {
 				shutdownExceptionally(backgroundJobExecutor);
