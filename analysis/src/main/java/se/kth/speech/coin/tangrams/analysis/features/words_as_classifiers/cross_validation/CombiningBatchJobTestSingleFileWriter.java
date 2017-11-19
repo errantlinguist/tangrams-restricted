@@ -569,8 +569,8 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 
 								final EventDialogueTransformer diagTransformer = trainingMethod
 										.createSymmetricalTrainingTestingEventDiagTransformer(tokenizer, tokenFilter);
-								final TrainingContext trainingCtx = new TrainingContext(diagTransformer,
-										appCtx, uttRelHandler, trainingParams);
+								final TrainingContext trainingCtx = new TrainingContext(diagTransformer, appCtx,
+										uttRelHandler, trainingParams);
 								final TrainingInstancesFactory trainingInstsFactory = trainingMethod
 										.createTrainingInstsFactory(trainingCtx);
 								final Map<SessionDataManager, SessionGameManager> sessionGameMgrs = futureSessionGameMgrs
