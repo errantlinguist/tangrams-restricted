@@ -567,9 +567,9 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 							for (final TokenFiltering tokenFilteringMethod : input.tokenFilteringMethods) {
 								final EventDialogueTransformer tokenFilter = tokenFilteringMethod.get();
 
-								final EventDialogueTransformer symmetricalDiagTransformer = trainingMethod
+								final EventDialogueTransformer diagTransformer = trainingMethod
 										.createSymmetricalTrainingTestingEventDiagTransformer(tokenizer, tokenFilter);
-								final TrainingContext trainingCtx = new TrainingContext(symmetricalDiagTransformer,
+								final TrainingContext trainingCtx = new TrainingContext(diagTransformer,
 										appCtx, uttRelHandler, trainingParams);
 								final TrainingInstancesFactory trainingInstsFactory = trainingMethod
 										.createTrainingInstsFactory(trainingCtx);
@@ -582,7 +582,7 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 								final WordClassDiscountingSmoother smoother = appCtx
 										.getBean(WordClassDiscountingSmoother.class, smoothingMinCount);
 								final CrossValidator crossValidator = appCtx.getBean(CrossValidator.class,
-										sessionGameMgrs, testSetFactory, symmetricalDiagTransformer,
+										sessionGameMgrs, testSetFactory,
 										trainingMethod.getClassifierFactory(trainingCtx), smoother,
 										backgroundJobExecutor);
 								crossValidator.setIterCount(trainingMethod.getIterCount());

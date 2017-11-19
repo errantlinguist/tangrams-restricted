@@ -29,6 +29,7 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.concurrent.Executor;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.inject.Inject;
@@ -57,7 +58,6 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.Uttera
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.WordClassDiscountingSmoother;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.ClassificationContext;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.EventDialogueClassifier;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.EventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.WordClassificationData;
 import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
 import weka.core.Instance;
@@ -312,8 +312,6 @@ public final class CrossValidator
 
 	private final Function<? super ClassificationContext, ? extends EventDialogueClassifier> classifierFactory;
 
-	private final EventDialogueTransformer diagTransformer;
-
 	@Inject
 	private EntityInstanceAttributeContext entInstAttrCtx;
 
@@ -331,12 +329,10 @@ public final class CrossValidator
 	public CrossValidator( // NO_UCD (unused code)
 			final Map<SessionDataManager, SessionGameManager> sessionGameMgrs,
 			final Function<Map<SessionDataManager, Path>, Stream<Entry<SessionDataManager, WordClassificationData>>> testSetFactory,
-			final EventDialogueTransformer diagTransformer,
 			final Function<? super ClassificationContext, ? extends EventDialogueClassifier> classifierFactory,
 			final WordClassDiscountingSmoother smoother, final Executor backgroundJobExecutor) {
 		this.sessionGameMgrs = sessionGameMgrs;
 		this.testSetFactory = testSetFactory;
-		this.diagTransformer = diagTransformer;
 		this.classifierFactory = classifierFactory;
 		this.smoother = smoother;
 		this.backgroundJobExecutor = backgroundJobExecutor;
@@ -412,11 +408,19 @@ public final class CrossValidator
 	private Optional<EventDialogueTestResults> testDialogue(final EventDialogue uttDiag, final GameHistory history,
 			final EventDialogueClassifier diagClassifier) throws ClassificationException {
 		final Optional<EventDialogueTestResults> result;
+		for (final Utterance origUtt : uttDiag.getUtterances()) {
+			if (origUtt.getSegmentId().equals("segment5") && "right I'm selecting the piece tell me which one"
+					.equals(origUtt.getTokens().stream().collect(Collectors.joining(" ")))) {
+				// throw new AssertionError("Found weird token seq!");
+				LOGGER.warn("Bad utt found!: {}", origUtt.getTokens().stream().collect(Collectors.joining(" ")));
+			}
+		}
+
 		// TODO: Extract this from the method so that dialogue testing can be
 		// parallelized
-		final EventDialogue transformedDiag = diagTransformer.apply(uttDiag);
+		// final EventDialogue transformedDiag = diagTransformer.apply(uttDiag);
 
-		final List<Utterance> allUtts = transformedDiag.getUtterances();
+		final List<Utterance> allUtts = uttDiag.getUtterances();
 		if (allUtts.isEmpty()) {
 			result = NULL_DIAG_TEST_RESULT;
 		} else {
@@ -426,13 +430,13 @@ public final class CrossValidator
 			final GameContext uttCtx = UtteranceGameContexts.createSingleContext(firstUtt, history);
 			final OptionalInt optLastSelectedEntityId = uttCtx.findLastSelectedEntityId();
 			if (optLastSelectedEntityId.isPresent()) {
-				final Optional<ReferentConfidenceData> optReferentConfidenceData = diagClassifier.apply(transformedDiag,
+				final Optional<ReferentConfidenceData> optReferentConfidenceData = diagClassifier.apply(uttDiag,
 						uttCtx);
 				if (optReferentConfidenceData.isPresent()) {
 					final ReferentConfidenceData referentConfidenceData = optReferentConfidenceData.get();
 					final int goldStandardEntityId = optLastSelectedEntityId.getAsInt();
 					result = Optional.of(new EventDialogueTestResults(referentConfidenceData, goldStandardEntityId,
-							transformedDiag, uttDiag.getUtterances().size()));
+							uttDiag, uttDiag.getUtterances().size()));
 
 				} else {
 					result = NULL_DIAG_TEST_RESULT;

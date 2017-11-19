@@ -374,9 +374,9 @@ final class UtteranceMappingBatchJobTester {
 
 	public void accept(final Input input) throws InterruptedException, ExecutionException {
 		final Training trainingMethod = input.getTrainingMethod();
-		final EventDialogueTransformer symmetricalDiagTransformer = trainingMethod
+		final EventDialogueTransformer diagTransformer = trainingMethod
 				.createSymmetricalTrainingTestingEventDiagTransformer(input.getDiagTransformer());
-		final TrainingContext trainingCtx = new TrainingContext(symmetricalDiagTransformer, appCtx, uttRelHandler,
+		final TrainingContext trainingCtx = new TrainingContext(diagTransformer, appCtx, uttRelHandler,
 				trainingParams);
 		final TrainingInstancesFactory trainingInstsFactory = trainingMethod.createTrainingInstsFactory(trainingCtx);
 		final Function<Map<SessionDataManager, Path>, Stream<Entry<SessionDataManager, WordClassificationData>>> testSetFactory = testSetFactoryFactory
@@ -387,7 +387,7 @@ final class UtteranceMappingBatchJobTester {
 				smoothingMinCount);
 		final Map<SessionDataManager, SessionGameManager> sessionGameMgrs = input.getFutureSessionGameMgrs().get();
 		final CrossValidator crossValidator = appCtx.getBean(CrossValidator.class, sessionGameMgrs, testSetFactory,
-				symmetricalDiagTransformer, trainingMethod.getClassifierFactory(trainingCtx), smoother,
+				trainingMethod.getClassifierFactory(trainingCtx), smoother,
 				backgroundJobExecutor);
 		crossValidator.setIterCount(trainingMethod.getIterCount());
 		final TestParameters testParams = new TestParameters(trainingMethod, trainingParams);
