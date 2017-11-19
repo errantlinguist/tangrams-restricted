@@ -44,12 +44,4 @@ interface EventDialogueTestStatistics {
 	 */
 	Stream<Utterance> testedUtterances();
 
-	/**
-	 *
-	 * @return The number of {@link Utterance utterances} for the given
-	 *         {@link EventDialogue dialogue} under test &mdash; including the
-	 *         individual {@code Utterance} instances which were <em>not</em>
-	 *         tested.
-	 */
-	int totalUtteranceCount();
 }

@@ -423,7 +423,7 @@ public final class CrossValidator
 					final ReferentConfidenceData referentConfidenceData = optReferentConfidenceData.get();
 					final int goldStandardEntityId = optLastSelectedEntityId.getAsInt();
 					result = Optional.of(new EventDialogueTestResults(referentConfidenceData, goldStandardEntityId,
-							uttDiag, uttDiag.getUtterances().size()));
+							uttDiag));
 
 				} else {
 					result = NULL_DIAG_TEST_RESULT;

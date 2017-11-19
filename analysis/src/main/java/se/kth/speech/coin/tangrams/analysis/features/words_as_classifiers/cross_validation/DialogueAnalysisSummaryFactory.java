@@ -106,8 +106,7 @@ final class DialogueAnalysisSummaryFactory implements
 			/*
 			 * (non-Javadoc)
 			 *
-			 * @see java.util.function.BiFunction#apply(java.lang.Object,
-			 * java.lang.Object)
+			 * @see java.util.function.BiFunction#apply(java.lang.Object, java.lang.Object)
 			 */
 			@Override
 			public Object apply(final Input input,
@@ -115,26 +114,11 @@ final class DialogueAnalysisSummaryFactory implements
 				return input.desc;
 			}
 		},
-		DIALOGUE {
-			/*
-			 * (non-Javadoc)
-			 *
-			 * @see java.util.function.BiFunction#apply(java.lang.Object,
-			 * java.lang.Object)
-			 */
-			@Override
-			public Object apply(final Input input,
-					final Function<? super Iterator<Utterance>, String> uttDiagReprFactory) {
-				final EventDialogue diag = input.diagTestResults.getKey();
-				return uttDiagReprFactory.apply(diag.getUtterances().iterator());
-			}
-		},
 		DIALOGUE_AS_TESTED {
 			/*
 			 * (non-Javadoc)
 			 *
-			 * @see java.util.function.BiFunction#apply(java.lang.Object,
-			 * java.lang.Object)
+			 * @see java.util.function.BiFunction#apply(java.lang.Object, java.lang.Object)
 			 */
 			@Override
 			public Object apply(final Input input,
@@ -149,8 +133,7 @@ final class DialogueAnalysisSummaryFactory implements
 			/*
 			 * (non-Javadoc)
 			 *
-			 * @see java.util.function.BiFunction#apply(java.lang.Object,
-			 * java.lang.Object)
+			 * @see java.util.function.BiFunction#apply(java.lang.Object, java.lang.Object)
 			 */
 			@Override
 			public Object apply(final Input input,
@@ -162,8 +145,7 @@ final class DialogueAnalysisSummaryFactory implements
 			/*
 			 * (non-Javadoc)
 			 *
-			 * @see java.util.function.BiFunction#apply(java.lang.Object,
-			 * java.lang.Object)
+			 * @see java.util.function.BiFunction#apply(java.lang.Object, java.lang.Object)
 			 */
 			@Override
 			public Object apply(final Input input,
@@ -180,8 +162,7 @@ final class DialogueAnalysisSummaryFactory implements
 			/*
 			 * (non-Javadoc)
 			 *
-			 * @see java.util.function.BiFunction#apply(java.lang.Object,
-			 * java.lang.Object)
+			 * @see java.util.function.BiFunction#apply(java.lang.Object, java.lang.Object)
 			 */
 			@Override
 			public Object apply(final Input input,
@@ -193,8 +174,7 @@ final class DialogueAnalysisSummaryFactory implements
 			/*
 			 * (non-Javadoc)
 			 *
-			 * @see java.util.function.BiFunction#apply(java.lang.Object,
-			 * java.lang.Object)
+			 * @see java.util.function.BiFunction#apply(java.lang.Object, java.lang.Object)
 			 */
 			@Override
 			public Object apply(final Input input,
@@ -232,27 +212,11 @@ final class DialogueAnalysisSummaryFactory implements
 			}
 
 		},
-		MEAN_DIAG_UTTS_TESTED {
-			/*
-			 * (non-Javadoc)
-			 *
-			 * @see java.util.function.BiFunction#apply(java.lang.Object,
-			 * java.lang.Object)
-			 */
-			@Override
-			public Object apply(final Input input,
-					final Function<? super Iterator<Utterance>, String> uttDiagReprFactory) {
-				final int tested = input.diagTestResults.getValue().testedUtteranceCount();
-				final int total = input.diagTestResults.getValue().totalUtteranceCount();
-				return tested / (double) total;
-			}
-		},
 		MEAN_TOKENS_PER_UTT {
 			/*
 			 * (non-Javadoc)
 			 *
-			 * @see java.util.function.BiFunction#apply(java.lang.Object,
-			 * java.lang.Object)
+			 * @see java.util.function.BiFunction#apply(java.lang.Object, java.lang.Object)
 			 */
 			@Override
 			public Object apply(final Input input,
@@ -278,7 +242,8 @@ final class DialogueAnalysisSummaryFactory implements
 					final Function<? super Iterator<Utterance>, String> uttDiagReprFactory) {
 				final ReferentConfidenceData refConfData = input.diagTestResults.getValue().getReferentConfidenceData();
 				final double oovObservationCount = refConfData.getOovClassWeight();
-				final double totalObsevationCount = refConfData.getWordClassWeights().object2DoubleEntrySet().stream().mapToDouble(Object2DoubleMap.Entry::getDoubleValue).sum();
+				final double totalObsevationCount = refConfData.getWordClassWeights().object2DoubleEntrySet().stream()
+						.mapToDouble(Object2DoubleMap.Entry::getDoubleValue).sum();
 				return totalObsevationCount - oovObservationCount;
 			}
 
@@ -305,8 +270,7 @@ final class DialogueAnalysisSummaryFactory implements
 			/*
 			 * (non-Javadoc)
 			 *
-			 * @see java.util.function.BiFunction#apply(java.lang.Object,
-			 * java.lang.Object)
+			 * @see java.util.function.BiFunction#apply(java.lang.Object, java.lang.Object)
 			 */
 			@Override
 			public Object apply(final Input input,
@@ -318,8 +282,7 @@ final class DialogueAnalysisSummaryFactory implements
 			/*
 			 * (non-Javadoc)
 			 *
-			 * @see java.util.function.BiFunction#apply(java.lang.Object,
-			 * java.lang.Object)
+			 * @see java.util.function.BiFunction#apply(java.lang.Object, java.lang.Object)
 			 */
 			@Override
 			public Object apply(final Input input,
@@ -331,8 +294,7 @@ final class DialogueAnalysisSummaryFactory implements
 			/*
 			 * (non-Javadoc)
 			 *
-			 * @see java.util.function.BiFunction#apply(java.lang.Object,
-			 * java.lang.Object)
+			 * @see java.util.function.BiFunction#apply(java.lang.Object, java.lang.Object)
 			 */
 			@Override
 			public Object apply(final Input input,
@@ -343,18 +305,17 @@ final class DialogueAnalysisSummaryFactory implements
 		SMOOTHING_MIN_COUNT {
 
 			@Override
-			public Object apply(Input input, Function<? super Iterator<Utterance>, String> uttDiagReprFactory) {
-				return input.trainingParams
-						.get(WordClassifierTrainingParameter.SMOOTHING_MIN_COUNT);
+			public Object apply(final Input input,
+					final Function<? super Iterator<Utterance>, String> uttDiagReprFactory) {
+				return input.trainingParams.get(WordClassifierTrainingParameter.SMOOTHING_MIN_COUNT);
 			}
-			
+
 		},
 		TEST_ITER {
 			/*
 			 * (non-Javadoc)
 			 *
-			 * @see java.util.function.BiFunction#apply(java.lang.Object,
-			 * java.lang.Object)
+			 * @see java.util.function.BiFunction#apply(java.lang.Object, java.lang.Object)
 			 */
 			@Override
 			public Object apply(final Input input,
@@ -366,8 +327,7 @@ final class DialogueAnalysisSummaryFactory implements
 			/*
 			 * (non-Javadoc)
 			 *
-			 * @see java.util.function.BiFunction#apply(java.lang.Object,
-			 * java.lang.Object)
+			 * @see java.util.function.BiFunction#apply(java.lang.Object, java.lang.Object)
 			 */
 			@Override
 			public Object apply(final Input input,
@@ -379,8 +339,7 @@ final class DialogueAnalysisSummaryFactory implements
 			/*
 			 * (non-Javadoc)
 			 *
-			 * @see java.util.function.BiFunction#apply(java.lang.Object,
-			 * java.lang.Object)
+			 * @see java.util.function.BiFunction#apply(java.lang.Object, java.lang.Object)
 			 */
 			@Override
 			public Object apply(final Input input,
@@ -388,25 +347,11 @@ final class DialogueAnalysisSummaryFactory implements
 				return input.diagTestResults.getValue().testedTokenCount();
 			}
 		},
-		TOTAL_UTT_COUNT {
-			/*
-			 * (non-Javadoc)
-			 *
-			 * @see java.util.function.BiFunction#apply(java.lang.Object,
-			 * java.lang.Object)
-			 */
-			@Override
-			public Object apply(final Input input,
-					final Function<? super Iterator<Utterance>, String> uttDiagReprFactory) {
-				return input.diagTestResults.getValue().totalUtteranceCount();
-			}
-		},
 		TRAINING_SET_SIZE_DISCOUNTING_CONSTANT {
 			/*
 			 * (non-Javadoc)
 			 *
-			 * @see java.util.function.BiFunction#apply(java.lang.Object,
-			 * java.lang.Object)
+			 * @see java.util.function.BiFunction#apply(java.lang.Object, java.lang.Object)
 			 */
 			@Override
 			public Object apply(final Input input,
@@ -427,8 +372,8 @@ final class DialogueAnalysisSummaryFactory implements
 			.unmodifiableList(createDefaultSummaryDatumOrderingList());
 
 	private static final Function<TemporalAccessor, String> TIMESTAMP_FORMATTER = EventTimes.FORMATTER::format;
-	
-	private static final Collector<CharSequence,?,String> WORD_CLASS_NAME_JOINER = Collectors.joining(", ");
+
+	private static final Collector<CharSequence, ?, String> WORD_CLASS_NAME_JOINER = Collectors.joining(", ");
 
 	/**
 	 * @return the defaultSummaryDatumOrdering
@@ -445,13 +390,10 @@ final class DialogueAnalysisSummaryFactory implements
 				DialogueAnalysisSummaryFactory.SummaryDatum.EVENT_TIME,
 				DialogueAnalysisSummaryFactory.SummaryDatum.EVENT_RELATIVE_TIME,
 				DialogueAnalysisSummaryFactory.SummaryDatum.TEST_ITER,
-				DialogueAnalysisSummaryFactory.SummaryDatum.DIALOGUE,
 				DialogueAnalysisSummaryFactory.SummaryDatum.DIALOGUE_AS_TESTED,
 				DialogueAnalysisSummaryFactory.SummaryDatum.GOLD_STD_ID,
 				DialogueAnalysisSummaryFactory.SummaryDatum.RANK,
 				DialogueAnalysisSummaryFactory.SummaryDatum.TESTED_UTT_COUNT,
-				DialogueAnalysisSummaryFactory.SummaryDatum.TOTAL_UTT_COUNT,
-				DialogueAnalysisSummaryFactory.SummaryDatum.MEAN_DIAG_UTTS_TESTED,
 				DialogueAnalysisSummaryFactory.SummaryDatum.TOKEN_COUNT,
 				DialogueAnalysisSummaryFactory.SummaryDatum.MEAN_TOKENS_PER_UTT,
 				DialogueAnalysisSummaryFactory.SummaryDatum.OBSERVED_VOCAB,

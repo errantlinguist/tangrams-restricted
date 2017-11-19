@@ -42,16 +42,13 @@ public final class EventDialogueTestResults implements EventDialogueTestStatisti
 
 	private final ReferentConfidenceData referentConfidenceData;
 
-	private final int totalUttCount;
-
 	private final EventDialogue transformedDiag;
 
 	public EventDialogueTestResults(final ReferentConfidenceData referentConfidenceData,
-			final int goldStandardReferentId, final EventDialogue transformedDiag, final int totalDiagUttCount) {
+			final int goldStandardReferentId, final EventDialogue transformedDiag) {
 		this.referentConfidenceData = referentConfidenceData;
 		this.goldStandardReferentId = goldStandardReferentId;
 		this.transformedDiag = transformedDiag;
-		totalUttCount = totalDiagUttCount;
 	}
 
 	/**
@@ -100,11 +97,6 @@ public final class EventDialogueTestResults implements EventDialogueTestStatisti
 	@Override
 	public Stream<Utterance> testedUtterances() {
 		return transformedDiag.getUtterances().stream();
-	}
-
-	@Override
-	public int totalUtteranceCount() {
-		return totalUttCount;
 	}
 
 }
