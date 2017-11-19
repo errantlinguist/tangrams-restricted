@@ -398,7 +398,6 @@ final class ParameterFileReadingTestWriter { // NO_UCD (unused code)
 				final Path baseOutDir = ((File) cl.getParsedOptionValue(Parameter.OUTDIR.optName)).toPath();
 				final List<Map<WordClassifierTrainingParameter, Object>> trainingParamMaps = readTrainingParamMaps(cl);
 
-				// try (PrintWriter out = CLIParameters.parseOutpath(outDir, OUTPUT_ENCODING)) {
 				try (final ClassPathXmlApplicationContext appCtx = new ClassPathXmlApplicationContext(
 						"cross-validation.xml", ParameterFileReadingTestWriter.class)) {
 					for (final Map<WordClassifierTrainingParameter, Object> trainingParamMap : trainingParamMaps) {
