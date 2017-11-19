@@ -1118,8 +1118,7 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 				final CombiningBatchJobTester.Input input = inputFactory.apply(cl);
 				final File outFile = (File) cl.getParsedOptionValue(Parameter.OUTPATH.optName);
 				try (PrintWriter out = CLIParameters.parseOutpath(outFile, OUTPUT_ENCODING)) {
-					final CombiningBatchJobTestSingleFileWriter writer = new CombiningBatchJobTestSingleFileWriter(out,
-							true);
+					final CombiningBatchJobTestSingleFileWriter writer = new CombiningBatchJobTestSingleFileWriter(out);
 					try (BufferedWriter extrLogOut = createExtrLogFileWriter(outFile)) {
 						try (BufferedWriter uttRelLogOut = createUttRelFileWriter(outFile)) {
 
@@ -1167,18 +1166,18 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 
 	private boolean writeHeader;
 
-	private CombiningBatchJobTestSingleFileWriter(final PrintWriter out, final boolean writeHeader) {
-		this(out, writeHeader, new UtteranceDialogueRepresentationStringFactory(DataLanguageDefaults.getLocale()),
+	private CombiningBatchJobTestSingleFileWriter(final PrintWriter out) {
+		this(out, new UtteranceDialogueRepresentationStringFactory(DataLanguageDefaults.getLocale()),
 				DEFAULT_DATA_TO_WRITE);
 	}
 
-	private CombiningBatchJobTestSingleFileWriter(final PrintWriter out, final boolean writeHeader,
+	private CombiningBatchJobTestSingleFileWriter(final PrintWriter out,
 			final Function<? super Iterator<Utterance>, String> uttDiagReprFactory,
 			final List<DialogueAnalysisSummaryFactory.SummaryDatum> dataToWrite) {
 		this.out = out;
-		this.writeHeader = writeHeader;
 		this.dataToWrite = dataToWrite;
 		rowDataFactory = new DialogueAnalysisSummaryFactory(uttDiagReprFactory, dataToWrite);
+		writeHeader = true;
 	}
 
 	public void write(final BatchJobSummary summary) {
