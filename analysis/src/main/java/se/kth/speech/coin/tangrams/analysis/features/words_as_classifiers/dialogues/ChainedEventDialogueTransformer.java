@@ -48,12 +48,7 @@ public class ChainedEventDialogueTransformer implements EventDialogueTransformer
 
 	public ChainedEventDialogueTransformer(final List<? extends EventDialogueTransformer> diagTransformers) {
 		this.diagTransformers = diagTransformers;
-		if (isLoggingEnabled()) {
-			transformationImpl = this::transformLogged;
-		} else {
-			transformationImpl = this::transform;
-		}
-
+		this.transformationImpl = isLoggingEnabled() ? this::transformLogged : this::transform;
 	}
 
 	/*
