@@ -265,7 +265,7 @@ final class ObservationWeightTestWriter { // NO_UCD (unused code)
 			final Path tokFilePath = ((File) cl.getParsedOptionValue(Parameter.TOKENIZATION_FILE_PATH.optName))
 					.toPath();
 			LOGGER.info("Reading tokenization data from \"{}\".", tokFilePath);
-			final Map<List<String>, List<String>> tokenSeqTransformations = new UtteranceReferringLanguageMapReader(
+			final Map<List<String>, List<String>> tokenSeqTransformations = new UtteranceReferringLanguageMapParser(
 					"UTTERANCE", "REFERRING_TOKENS").apply(Files.readAllLines(tokFilePath, TOKENIZATION_FILE_ENCODING));
 			final MappingEventDialogueTransformer diagTransformer = new MappingEventDialogueTransformer(
 					tokenSeqTransformations);

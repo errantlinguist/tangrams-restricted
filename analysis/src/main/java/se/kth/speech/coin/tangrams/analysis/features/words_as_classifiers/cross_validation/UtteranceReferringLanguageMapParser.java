@@ -36,11 +36,11 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
  * @since 14 Nov 2017
  *
  */
-final class UtteranceReferringLanguageMapReader {
+final class UtteranceReferringLanguageMapParser {
 
 	private static final String COL_SEP = "\t";
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(UtteranceReferringLanguageMapReader.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(UtteranceReferringLanguageMapParser.class);
 
 	private static final Pattern WHITESPACE_PATTERN = Pattern.compile("\\s+");
 
@@ -59,7 +59,7 @@ final class UtteranceReferringLanguageMapReader {
 
 	private final String uttColName;
 
-	public UtteranceReferringLanguageMapReader(final String uttColName, final String refLangCol) {
+	public UtteranceReferringLanguageMapParser(final String uttColName, final String refLangCol) {
 		this.uttColName = uttColName;
 		this.refLangCol = refLangCol;
 	}
