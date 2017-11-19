@@ -22,7 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executor;
 import java.util.concurrent.Future;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -341,7 +341,7 @@ final class UtteranceMappingBatchJobTester {
 
 	private final ApplicationContext appCtx;
 
-	private final ExecutorService backgroundJobExecutor;
+	private final Executor backgroundJobExecutor;
 
 	private final Consumer<? super BatchJobSummary> batchJobResultHandler;
 
@@ -355,7 +355,7 @@ final class UtteranceMappingBatchJobTester {
 
 	private final BiConsumer<? super EventDialogue, ? super List<UtteranceRelation>> uttRelHandler;
 
-	UtteranceMappingBatchJobTester(final ExecutorService backgroundJobExecutor, final ApplicationContext appCtx,
+	UtteranceMappingBatchJobTester(final Executor backgroundJobExecutor, final ApplicationContext appCtx,
 			final Map<SessionDataManager, SessionGameManager> sessionGameMgrs,
 			final Consumer<? super BatchJobSummary> batchJobResultHandler,
 			final BiConsumer<? super IncompleteResults, ? super Throwable> errorHandler,
