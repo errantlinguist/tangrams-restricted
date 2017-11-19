@@ -589,7 +589,7 @@ final class ParameterFileReadingTestWriter { // NO_UCD (unused code)
 	 * @param crossValidationIterId
 	 *            the crossValidationIterId to set
 	 */
-	void setCrossValidationIterId(final String crossValidationIterId) {
+	private void setCrossValidationIterId(final String crossValidationIterId) {
 		this.crossValidationIterId = crossValidationIterId;
 	}
 
