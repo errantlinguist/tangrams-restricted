@@ -354,14 +354,14 @@ final class UtteranceMappingBatchJobTester implements Consumer<UtteranceMappingB
 
 	private final BiConsumer<? super EventDialogue, ? super List<UtteranceRelation>> uttRelHandler;
 
-	private final int parallelismLevel;
+	private final int crossValidationParallelismLevel;
 
 	UtteranceMappingBatchJobTester(final Executor backgroundJobExecutor, final ApplicationContext appCtx,
 			final Consumer<? super BatchJobSummary> batchJobResultHandler,
 			final BiConsumer<? super IncompleteResults, ? super Throwable> errorHandler,
 			final BiConsumer<? super EventDialogue, ? super List<UtteranceRelation>> uttRelHandler,
 			final Map<WordClassifierTrainingParameter, Object> trainingParams,
-			final TestSetFactoryFactory testSetFactoryFactory, final int parallelismLevel) {
+			final TestSetFactoryFactory testSetFactoryFactory, final int crossValidationParallelismLevel) {
 		this.backgroundJobExecutor = backgroundJobExecutor;
 		this.appCtx = appCtx;
 		this.batchJobResultHandler = batchJobResultHandler;
@@ -369,7 +369,7 @@ final class UtteranceMappingBatchJobTester implements Consumer<UtteranceMappingB
 		this.uttRelHandler = uttRelHandler;
 		this.trainingParams = trainingParams;
 		this.testSetFactoryFactory = testSetFactoryFactory;
-		this.parallelismLevel = parallelismLevel;
+		this.crossValidationParallelismLevel = crossValidationParallelismLevel;
 	}
 
 	@Override
@@ -383,7 +383,7 @@ final class UtteranceMappingBatchJobTester implements Consumer<UtteranceMappingB
 		final Integer smoothingMinCount = (Integer) trainingParams
 				.get(WordClassifierTrainingParameter.SMOOTHING_MIN_COUNT);
 		final WordClassDiscountingSmoother smoother = appCtx.getBean(WordClassDiscountingSmoother.class,
-				smoothingMinCount, parallelismLevel);
+				smoothingMinCount, crossValidationParallelismLevel);
 		final TrainingContext trainingCtx = new TrainingContext(diagTransformer, smoother, entityInstAttrCtx,
 				extCtxFactory, uttRelHandler, trainingParams);
 		final TrainingInstancesFactory trainingInstsFactory = trainingMethod.createTrainingInstsFactory(trainingCtx);
@@ -391,7 +391,7 @@ final class UtteranceMappingBatchJobTester implements Consumer<UtteranceMappingB
 		final Function<Map<SessionDataManager, Path>, Stream<Entry<SessionDataManager, WordClassificationData>>> testSetFactory = testSetFactoryFactory
 				.apply(trainingInstsFactory, sessionGameMgrs);
 		final CrossValidator crossValidator = appCtx.getBean(CrossValidator.class, sessionGameMgrs, testSetFactory,
-				trainingMethod.getClassifierFactory(trainingCtx), smoother, backgroundJobExecutor);
+				trainingMethod.getClassifierFactory(trainingCtx), smoother, backgroundJobExecutor, crossValidationParallelismLevel);
 		crossValidator.setIterCount(trainingMethod.getIterCount());
 		final TestParameters testParams = new TestParameters(trainingMethod, trainingParams);
 		LOGGER.info("Testing {}.", testParams);

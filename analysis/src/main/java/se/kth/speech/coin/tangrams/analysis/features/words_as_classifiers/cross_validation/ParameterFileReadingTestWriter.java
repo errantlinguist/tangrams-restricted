@@ -199,16 +199,16 @@ final class ParameterFileReadingTestWriter { // NO_UCD (unused code)
 
 		private final ParameterFileReadingTestWriter writer;
 
-		private final int parallelismLevel;
+		private final int crossValidationParallelismLevel;
 
 		private ParameterCombinationTester(final ParameterFileReadingTestWriter writer,
 				final Map<WordClassifierTrainingParameter, Object> trainingParams, final ApplicationContext appCtx,
-				final Executor backgroundJobExecutor, final int parallelismLevel) {
+				final Executor backgroundJobExecutor, final int crossValidationParallelismLevel) {
 			this.writer = writer;
 			this.trainingParams = trainingParams;
 			this.appCtx = appCtx;
 			this.backgroundJobExecutor = backgroundJobExecutor;
-			this.parallelismLevel = parallelismLevel;
+			this.crossValidationParallelismLevel = crossValidationParallelismLevel;
 		}
 
 		void accept(final UtteranceMappingBatchJobTester.Input input) {
@@ -223,7 +223,7 @@ final class ParameterFileReadingTestWriter { // NO_UCD (unused code)
 			for (int crossValidationIter = 1; crossValidationIter <= crossValidationIterCount; ++crossValidationIter) {
 				final UtteranceMappingBatchJobTester tester = new UtteranceMappingBatchJobTester(backgroundJobExecutor,
 						appCtx, writer::write, writer::writeError, UTT_REL_HANDLER, trainingParams,
-						new DiscountingTestSetFactoryFactory(trainingParams, random), parallelismLevel);
+						new DiscountingTestSetFactoryFactory(trainingParams, random), crossValidationParallelismLevel);
 				tester.accept(input);
 				writer.setCrossValidationIterId(Integer.toString(crossValidationIter));
 			}
@@ -580,28 +580,35 @@ final class ParameterFileReadingTestWriter { // NO_UCD (unused code)
 		final List<CrossValidator.IterationResult> testResults = summary.getTestResults();
 		for (final CrossValidator.IterationResult iterResult : testResults) {
 			final int iterNo = iterResult.getIterNo();
-			iterResult.getCvTestResults().forEach(infileSessionResults -> {
-				final Path inpath = infileSessionResults.getKey();
-				final CrossValidationTestSummary cvTestSummary = infileSessionResults.getValue();
-				final String[] trainingRowCellVals = createTrainingDataRowCellValues(cvTestSummary)
-						.map(Object::toString).toArray(String[]::new);
-				// NOTE: This should remain here, after "Iterator.next()", so
-				// that the printed first iteration is "1" rather than "0"
-				int sessionDialogueOrder = 1;
-				for (final Entry<EventDialogue, EventDialogueTestResults> diagTestResults : cvTestSummary
-						.getTestResults().getDialogueTestResults()) {
-					final Map<DialogueAnalysisSummaryFactory.SummaryDatum, Object> rowData = rowDataFactory
-							.apply(new DialogueAnalysisSummaryFactory.Input(inpath, "Success", iterNo,
-									sessionDialogueOrder++, diagTestResults,
-									summary.getTestParams().getTrainingParams(), cvTestSummary.getSessionStartTime()));
-					final Stream<String> diagAnalysisRowCellVals = dataToWrite.stream().map(rowData::get)
-							.map(Object::toString);
-					final Stream.Builder<String> rowCellValBuilder = Stream.builder();
-					Arrays.stream(testParamRowCellValues).forEachOrdered(rowCellValBuilder);
-					Arrays.stream(trainingRowCellVals).forEachOrdered(rowCellValBuilder);
-					diagAnalysisRowCellVals.forEachOrdered(rowCellValBuilder);
-					final String row = rowCellValBuilder.build().collect(ROW_CELL_JOINER);
-					writer.println(row);
+			iterResult.getCvTestResults().forEach(futureInfileSessionResults -> {
+				try {
+					final Entry<Path, CrossValidationTestSummary> infileSessionResults = futureInfileSessionResults
+							.get();
+					final Path inpath = infileSessionResults.getKey();
+					final CrossValidationTestSummary cvTestSummary = infileSessionResults.getValue();
+					final String[] trainingRowCellVals = createTrainingDataRowCellValues(cvTestSummary)
+							.map(Object::toString).toArray(String[]::new);
+					// NOTE: This should remain here, after "Iterator.next()", so
+					// that the printed first iteration is "1" rather than "0"
+					int sessionDialogueOrder = 1;
+					for (final Entry<EventDialogue, EventDialogueTestResults> diagTestResults : cvTestSummary
+							.getTestResults().getDialogueTestResults()) {
+						final Map<DialogueAnalysisSummaryFactory.SummaryDatum, Object> rowData = rowDataFactory
+								.apply(new DialogueAnalysisSummaryFactory.Input(inpath, "Success", iterNo,
+										sessionDialogueOrder++, diagTestResults,
+										summary.getTestParams().getTrainingParams(),
+										cvTestSummary.getSessionStartTime()));
+						final Stream<String> diagAnalysisRowCellVals = dataToWrite.stream().map(rowData::get)
+								.map(Object::toString);
+						final Stream.Builder<String> rowCellValBuilder = Stream.builder();
+						Arrays.stream(testParamRowCellValues).forEachOrdered(rowCellValBuilder);
+						Arrays.stream(trainingRowCellVals).forEachOrdered(rowCellValBuilder);
+						diagAnalysisRowCellVals.forEachOrdered(rowCellValBuilder);
+						final String row = rowCellValBuilder.build().collect(ROW_CELL_JOINER);
+						writer.println(row);
+					}
+				} catch (InterruptedException | ExecutionException e) {
+					throw new TestException(e);
 				}
 			});
 		}

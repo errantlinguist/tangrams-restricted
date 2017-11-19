@@ -507,11 +507,11 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 
 		private static final Logger LOGGER = LoggerFactory.getLogger(CombiningBatchJobTester.class);
 
-		private static final int PARALLELISM_LEVEL;
+		private static final int CROSS_VALIDATION_PARALLELISM_LEVEL;
 
 		static {
-			PARALLELISM_LEVEL = 1;
-			ANNOTATION_CACHE_FACTORY = new AnnotationCacheFactory(PARALLELISM_LEVEL);
+			CROSS_VALIDATION_PARALLELISM_LEVEL = 1;
+			ANNOTATION_CACHE_FACTORY = new AnnotationCacheFactory(CROSS_VALIDATION_PARALLELISM_LEVEL);
 		}
 
 		private static Map<SessionDataManager, SessionGameManager> createSessionGameMgrMap(
@@ -570,7 +570,7 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 			final Integer smoothingMinCount = (Integer) trainingParams
 					.get(WordClassifierTrainingParameter.SMOOTHING_MIN_COUNT);
 			final WordClassDiscountingSmoother smoother = appCtx.getBean(WordClassDiscountingSmoother.class,
-					smoothingMinCount, PARALLELISM_LEVEL);
+					smoothingMinCount, CROSS_VALIDATION_PARALLELISM_LEVEL);
 
 			for (final Set<Cleaning> cleaningMethodSet : input.cleaningMethods) {
 				for (final Training trainingMethod : input.trainingMethods) {
@@ -596,7 +596,7 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 								final CrossValidator crossValidator = appCtx.getBean(CrossValidator.class,
 										sessionGameMgrs, testSetFactory,
 										trainingMethod.getClassifierFactory(trainingCtx), smoother,
-										backgroundJobExecutor);
+										backgroundJobExecutor, CROSS_VALIDATION_PARALLELISM_LEVEL);
 								crossValidator.setIterCount(trainingMethod.getIterCount());
 								final TestParameters testParams = new TestParameters(cleaningMethodSet,
 										tokenizationMethod, tokenType, tokenFilteringMethod, trainingMethod,
@@ -1234,28 +1234,36 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 		final List<CrossValidator.IterationResult> testResults = summary.getTestResults();
 		for (final CrossValidator.IterationResult iterResult : testResults) {
 			final int iterNo = iterResult.getIterNo();
-			iterResult.getCvTestResults().forEach(infileSessionResults -> {
-				final Path inpath = infileSessionResults.getKey();
-				final CrossValidationTestSummary cvTestSummary = infileSessionResults.getValue();
-				final String[] trainingRowCellVals = TestParameterReporting
-						.createTrainingDataRowCellValues(cvTestSummary).map(Object::toString).toArray(String[]::new);
-				// NOTE: This should remain here, after "Iterator.next()", so
-				// that the printed first iteration is "1" rather than "0"
-				int sessionDialogueOrder = 1;
-				for (final Entry<EventDialogue, EventDialogueTestResults> diagTestResults : cvTestSummary
-						.getTestResults().getDialogueTestResults()) {
-					final Map<DialogueAnalysisSummaryFactory.SummaryDatum, Object> rowData = rowDataFactory
-							.apply(new DialogueAnalysisSummaryFactory.Input(inpath, "Success", iterNo,
-									sessionDialogueOrder++, diagTestResults,
-									summary.getTestParams().getTrainingParams(), cvTestSummary.getSessionStartTime()));
-					final Stream<String> diagAnalysisRowCellVals = dataToWrite.stream().map(rowData::get)
-							.map(Object::toString);
-					final Stream.Builder<String> rowCellValBuilder = Stream.builder();
-					Arrays.stream(testParamRowCellValues).forEachOrdered(rowCellValBuilder);
-					Arrays.stream(trainingRowCellVals).forEachOrdered(rowCellValBuilder);
-					diagAnalysisRowCellVals.forEachOrdered(rowCellValBuilder);
-					final String row = rowCellValBuilder.build().collect(ROW_CELL_JOINER);
-					out.println(row);
+			iterResult.getCvTestResults().forEach(futureInfileSessionResults -> {
+				try {
+					final Entry<Path, CrossValidationTestSummary> infileSessionResults = futureInfileSessionResults
+							.get();
+					final Path inpath = infileSessionResults.getKey();
+					final CrossValidationTestSummary cvTestSummary = infileSessionResults.getValue();
+					final String[] trainingRowCellVals = TestParameterReporting
+							.createTrainingDataRowCellValues(cvTestSummary).map(Object::toString)
+							.toArray(String[]::new);
+					// NOTE: This should remain here, after "Iterator.next()", so
+					// that the printed first iteration is "1" rather than "0"
+					int sessionDialogueOrder = 1;
+					for (final Entry<EventDialogue, EventDialogueTestResults> diagTestResults : cvTestSummary
+							.getTestResults().getDialogueTestResults()) {
+						final Map<DialogueAnalysisSummaryFactory.SummaryDatum, Object> rowData = rowDataFactory
+								.apply(new DialogueAnalysisSummaryFactory.Input(inpath, "Success", iterNo,
+										sessionDialogueOrder++, diagTestResults,
+										summary.getTestParams().getTrainingParams(),
+										cvTestSummary.getSessionStartTime()));
+						final Stream<String> diagAnalysisRowCellVals = dataToWrite.stream().map(rowData::get)
+								.map(Object::toString);
+						final Stream.Builder<String> rowCellValBuilder = Stream.builder();
+						Arrays.stream(testParamRowCellValues).forEachOrdered(rowCellValBuilder);
+						Arrays.stream(trainingRowCellVals).forEachOrdered(rowCellValBuilder);
+						diagAnalysisRowCellVals.forEachOrdered(rowCellValBuilder);
+						final String row = rowCellValBuilder.build().collect(ROW_CELL_JOINER);
+						out.println(row);
+					}
+				} catch (InterruptedException | ExecutionException e) {
+					throw new TestException(e);
 				}
 			});
 		}

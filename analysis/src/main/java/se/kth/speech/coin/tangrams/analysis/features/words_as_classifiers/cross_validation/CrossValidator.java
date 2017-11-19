@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.OptionalInt;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.Function;
 import java.util.stream.Stream;
@@ -197,11 +198,12 @@ public final class CrossValidator
 
 	public static final class IterationResult {
 
-		private final Stream<Entry<Path, CrossValidationTestSummary>> cvTestResults;
+		private final Stream<CompletableFuture<Entry<Path, CrossValidationTestSummary>>> cvTestResults;
 
 		private final int iterNo;
 
-		private IterationResult(final int iterNo, final Stream<Entry<Path, CrossValidationTestSummary>> cvTestResults) {
+		private IterationResult(final int iterNo,
+				final Stream<CompletableFuture<Entry<Path, CrossValidationTestSummary>>> cvTestResults) {
 			this.iterNo = iterNo;
 			this.cvTestResults = cvTestResults;
 		}
@@ -239,7 +241,7 @@ public final class CrossValidator
 		/**
 		 * @return the cvTestResults
 		 */
-		public Stream<Entry<Path, CrossValidationTestSummary>> getCvTestResults() {
+		public Stream<CompletableFuture<Entry<Path, CrossValidationTestSummary>>> getCvTestResults() {
 			return cvTestResults;
 		}
 
@@ -325,16 +327,21 @@ public final class CrossValidator
 
 	private final Map<SessionDataManager, SessionGameManager> sessionGameMgrs;
 
+	private final int crossValidationParallelismLevel;
+
 	public CrossValidator( // NO_UCD (unused code)
 			final Map<SessionDataManager, SessionGameManager> sessionGameMgrs,
 			final Function<Map<SessionDataManager, Path>, Stream<Entry<SessionDataManager, WordClassificationData>>> testSetFactory,
 			final Function<? super ClassificationContext, ? extends EventDialogueClassifier> classifierFactory,
-			final WordClassDiscountingSmoother smoother, final Executor backgroundJobExecutor) {
+			final WordClassDiscountingSmoother smoother, final Executor backgroundJobExecutor,
+			final int crossValidationParallelismLevel) {
 		this.sessionGameMgrs = sessionGameMgrs;
 		this.testSetFactory = testSetFactory;
 		this.classifierFactory = classifierFactory;
 		this.smoother = smoother;
 		this.backgroundJobExecutor = backgroundJobExecutor;
+		this.crossValidationParallelismLevel = crossValidationParallelismLevel;
+
 	}
 
 	@Override
@@ -346,7 +353,8 @@ public final class CrossValidator
 
 		for (int iterNo = 1; iterNo <= iterCount; ++iterNo) {
 			LOGGER.info("Training/testing iteration no. {}.", iterNo);
-			final Stream<Entry<Path, CrossValidationTestSummary>> iterResults = crossValidate(allSessions);
+			final Stream<CompletableFuture<Entry<Path, CrossValidationTestSummary>>> iterResults = crossValidate(
+					allSessions);
 			result.add(new IterationResult(iterNo, iterResults));
 		}
 		LOGGER.info("Finished testing {} cross-validation dataset(s).", result.size());
@@ -380,9 +388,10 @@ public final class CrossValidator
 				.apply(new ClassificationContext(trainingData, backgroundJobExecutor, referentConfidenceMapFactory));
 	}
 
-	private Stream<Entry<Path, CrossValidationTestSummary>> crossValidate(
+	private Stream<CompletableFuture<Entry<Path, CrossValidationTestSummary>>> crossValidate(
 			final Map<SessionDataManager, Path> allSessions) {
 		final Stream<Entry<SessionDataManager, WordClassificationData>> testSets = testSetFactory.apply(allSessions);
+
 		return testSets.map(testSet -> {
 			final SessionDataManager testSessionData = testSet.getKey();
 			final Path infilePath = allSessions.get(testSessionData);
@@ -422,8 +431,8 @@ public final class CrossValidator
 				if (optReferentConfidenceData.isPresent()) {
 					final ReferentConfidenceData referentConfidenceData = optReferentConfidenceData.get();
 					final int goldStandardEntityId = optLastSelectedEntityId.getAsInt();
-					result = Optional.of(new EventDialogueTestResults(referentConfidenceData, goldStandardEntityId,
-							uttDiag));
+					result = Optional
+							.of(new EventDialogueTestResults(referentConfidenceData, goldStandardEntityId, uttDiag));
 
 				} else {
 					result = NULL_DIAG_TEST_RESULT;
