@@ -38,6 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
@@ -500,14 +501,15 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 		}
 
 		/**
-		 * Parsing can take up huge amounts of memory, so it's single-threaded and thus
-		 * the caches are created designed for single-threaded operation.
+		 * Parsing can take up huge amounts of memory, so it's single-threaded
+		 * and thus the caches are created designed for single-threaded
+		 * operation.
 		 */
 		private static final AnnotationCacheFactory ANNOTATION_CACHE_FACTORY;
 
-		private static final Logger LOGGER = LoggerFactory.getLogger(CombiningBatchJobTester.class);
-
 		private static final int CROSS_VALIDATION_PARALLELISM_LEVEL;
+
+		private static final Logger LOGGER = LoggerFactory.getLogger(CombiningBatchJobTester.class);
 
 		static {
 			CROSS_VALIDATION_PARALLELISM_LEVEL = 1;
@@ -633,7 +635,8 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 		/*
 		 * (non-Javadoc)
 		 *
-		 * @see java.util.function.BiFunction#apply(java.lang.Object, java.lang.Object)
+		 * @see java.util.function.BiFunction#apply(java.lang.Object,
+		 * java.lang.Object)
 		 */
 		@Override
 		public Function<Map<SessionDataManager, Path>, Stream<Entry<SessionDataManager, WordClassificationData>>> apply(
@@ -683,8 +686,8 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 		TEST_CLEANING_POWERSET("cp") {
 			@Override
 			public Option get() {
-				return Option.builder(optName).longOpt("cleaning-powerset").desc(
-						"If this flag is present, the powerset of the supplied cleaning methods is tested rather than the set itself.")
+				return Option.builder(optName).longOpt("cleaning-powerset")
+						.desc("If this flag is present, the powerset of the supplied cleaning methods is tested rather than the set itself.")
 						.build();
 			}
 		},
@@ -801,8 +804,8 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 	private static class TestParameterReporting {
 
 		/**
-		 * <strong>NOTE:</strong> This is for SPSS compatibility, which does not allow
-		 * e.g.&nbsp;<code>"-"</code> as part of a variable name.
+		 * <strong>NOTE:</strong> This is for SPSS compatibility, which does not
+		 * allow e.g.&nbsp;<code>"-"</code> as part of a variable name.
 		 *
 		 * @see <a href=
 		 *      "https://www.ibm.com/support/knowledgecenter/en/SSLVMB_21.0.0/com.ibm.spss.statistics.help/syn_variables_variable_names.htm">SPSS
@@ -1234,38 +1237,47 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 		final List<CrossValidator.IterationResult> testResults = summary.getTestResults();
 		for (final CrossValidator.IterationResult iterResult : testResults) {
 			final int iterNo = iterResult.getIterNo();
-			iterResult.getCvTestResults().forEach(futureInfileSessionResults -> {
-				try {
-					final Entry<Path, CrossValidationTestSummary> infileSessionResults = futureInfileSessionResults
-							.get();
-					final Path inpath = infileSessionResults.getKey();
-					final CrossValidationTestSummary cvTestSummary = infileSessionResults.getValue();
-					final String[] trainingRowCellVals = TestParameterReporting
-							.createTrainingDataRowCellValues(cvTestSummary).map(Object::toString)
-							.toArray(String[]::new);
-					// NOTE: This should remain here, after "Iterator.next()", so
-					// that the printed first iteration is "1" rather than "0"
-					int sessionDialogueOrder = 1;
-					for (final Entry<EventDialogue, EventDialogueTestResults> diagTestResults : cvTestSummary
-							.getTestResults().getDialogueTestResults()) {
-						final Map<DialogueAnalysisSummaryFactory.SummaryDatum, Object> rowData = rowDataFactory
-								.apply(new DialogueAnalysisSummaryFactory.Input(inpath, "Success", iterNo,
-										sessionDialogueOrder++, diagTestResults,
-										summary.getTestParams().getTrainingParams(),
-										cvTestSummary.getSessionStartTime()));
-						final Stream<String> diagAnalysisRowCellVals = dataToWrite.stream().map(rowData::get)
-								.map(Object::toString);
-						final Stream.Builder<String> rowCellValBuilder = Stream.builder();
-						Arrays.stream(testParamRowCellValues).forEachOrdered(rowCellValBuilder);
-						Arrays.stream(trainingRowCellVals).forEachOrdered(rowCellValBuilder);
-						diagAnalysisRowCellVals.forEachOrdered(rowCellValBuilder);
-						final String row = rowCellValBuilder.build().collect(ROW_CELL_JOINER);
-						out.println(row);
+
+			for (final Iterator<Stream<CompletableFuture<Entry<Path, CrossValidationTestSummary>>>> cvTestResultsIter = iterResult
+					.getCvTestResults(); cvTestResultsIter.hasNext();) {
+				final Stream<CompletableFuture<Entry<Path, CrossValidationTestSummary>>> cvTestResults = cvTestResultsIter
+						.next();
+				// CompletableFuture.allOf(cvTestResults.toArray(CompletableFuture[]::new));
+				cvTestResults.forEach(futureInfileSessionResults -> {
+					try {
+						final Entry<Path, CrossValidationTestSummary> infileSessionResults = futureInfileSessionResults
+								.get();
+						final Path inpath = infileSessionResults.getKey();
+						final CrossValidationTestSummary cvTestSummary = infileSessionResults.getValue();
+						final String[] trainingRowCellVals = TestParameterReporting
+								.createTrainingDataRowCellValues(cvTestSummary).map(Object::toString)
+								.toArray(String[]::new);
+						// NOTE: This should remain here, after
+						// "Iterator.next()", so
+						// that the printed first iteration is "1" rather than
+						// "0"
+						int sessionDialogueOrder = 1;
+						for (final Entry<EventDialogue, EventDialogueTestResults> diagTestResults : cvTestSummary
+								.getTestResults().getDialogueTestResults()) {
+							final Map<DialogueAnalysisSummaryFactory.SummaryDatum, Object> rowData = rowDataFactory
+									.apply(new DialogueAnalysisSummaryFactory.Input(inpath, "Success", iterNo,
+											sessionDialogueOrder++, diagTestResults,
+											summary.getTestParams().getTrainingParams(),
+											cvTestSummary.getSessionStartTime()));
+							final Stream<String> diagAnalysisRowCellVals = dataToWrite.stream().map(rowData::get)
+									.map(Object::toString);
+							final Stream.Builder<String> rowCellValBuilder = Stream.builder();
+							Arrays.stream(testParamRowCellValues).forEachOrdered(rowCellValBuilder);
+							Arrays.stream(trainingRowCellVals).forEachOrdered(rowCellValBuilder);
+							diagAnalysisRowCellVals.forEachOrdered(rowCellValBuilder);
+							final String row = rowCellValBuilder.build().collect(ROW_CELL_JOINER);
+							out.println(row);
+						}
+					} catch (InterruptedException | ExecutionException e) {
+						throw new TestException(e);
 					}
-				} catch (InterruptedException | ExecutionException e) {
-					throw new TestException(e);
-				}
-			});
+				});
+			}
 		}
 	}
 

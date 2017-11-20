@@ -22,6 +22,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -30,6 +31,7 @@ import java.util.OptionalInt;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import javax.inject.Inject;
@@ -198,12 +200,12 @@ public final class CrossValidator
 
 	public static final class IterationResult {
 
-		private final Stream<CompletableFuture<Entry<Path, CrossValidationTestSummary>>> cvTestResults;
+		private final Iterator<Stream<CompletableFuture<Entry<Path, CrossValidationTestSummary>>>> cvTestResults;
 
 		private final int iterNo;
 
 		private IterationResult(final int iterNo,
-				final Stream<CompletableFuture<Entry<Path, CrossValidationTestSummary>>> cvTestResults) {
+				final Iterator<Stream<CompletableFuture<Entry<Path, CrossValidationTestSummary>>>> cvTestResults) {
 			this.iterNo = iterNo;
 			this.cvTestResults = cvTestResults;
 		}
@@ -241,7 +243,7 @@ public final class CrossValidator
 		/**
 		 * @return the cvTestResults
 		 */
-		public Stream<CompletableFuture<Entry<Path, CrossValidationTestSummary>>> getCvTestResults() {
+		public Iterator<Stream<CompletableFuture<Entry<Path, CrossValidationTestSummary>>>> getCvTestResults() {
 			return cvTestResults;
 		}
 
@@ -284,6 +286,92 @@ public final class CrossValidator
 
 	}
 
+	private class JobPartitionIterator
+			implements Iterator<Stream<CompletableFuture<Entry<Path, CrossValidationTestSummary>>>> {
+
+		private final int maxPartitionSize;
+
+		private final Function<? super SessionDataManager, Path> sessionInfilePathGetter;
+
+		private final Iterator<Entry<SessionDataManager, WordClassificationData>> testSetIter;
+
+		private JobPartitionIterator(final Iterator<Entry<SessionDataManager, WordClassificationData>> testSetIter,
+				final Function<? super SessionDataManager, Path> sessionInfilePathGetter, final int maxPartitionSize) {
+			this.testSetIter = testSetIter;
+			this.sessionInfilePathGetter = sessionInfilePathGetter;
+			this.maxPartitionSize = maxPartitionSize;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see java.util.Iterator#hasNext()
+		 */
+		@Override
+		public boolean hasNext() {
+			return testSetIter.hasNext();
+		}
+
+		/*
+		 * (non-Javadoc)
+		 *
+		 * @see java.util.Iterator#next()
+		 */
+		@Override
+		public Stream<CompletableFuture<Entry<Path, CrossValidationTestSummary>>> next() {
+			final Stream.Builder<CompletableFuture<Entry<Path, CrossValidationTestSummary>>> resultBuilder = Stream
+					.builder();
+			final int addCount = 0;
+			while (addCount < maxPartitionSize && testSetIter.hasNext()) {
+				final Entry<SessionDataManager, WordClassificationData> testSet = testSetIter.next();
+				final SessionDataManager testSessionData = testSet.getKey();
+				final Path infilePath = sessionInfilePathGetter.apply(testSessionData);
+				final WordClassificationData trainingData = testSet.getValue();
+				final SessionCrossValidator sessionCrossValidator = new SessionCrossValidator(infilePath,
+						testSessionData, trainingData);
+				final CompletableFuture<Entry<Path, CrossValidationTestSummary>> futureCvTestResults = CompletableFuture
+						.supplyAsync(sessionCrossValidator, backgroundJobExecutor);
+				resultBuilder.add(futureCvTestResults);
+			}
+			return resultBuilder.build();
+		}
+
+	}
+
+	private class SessionCrossValidator implements Supplier<Entry<Path, CrossValidationTestSummary>> {
+
+		private final Path infilePath;
+
+		private final SessionDataManager testSessionData;
+
+		private final WordClassificationData trainingData;
+
+		private SessionCrossValidator(final Path infilePath, final SessionDataManager testSessionData,
+				final WordClassificationData trainingData) {
+			this.infilePath = infilePath;
+			this.testSessionData = testSessionData;
+			this.trainingData = trainingData;
+		}
+
+		@Override
+		public Entry<Path, CrossValidationTestSummary> get() {
+			LOGGER.info("Running cross-validation test on data from \"{}\".", infilePath);
+			try {
+				final EventDialogueClassifier diagClassifier = createDialogueClassifier(trainingData,
+						estimateTestInstanceCount(testSessionData));
+				final SessionGameManager sessionGameMgr = sessionGameMgrs.get(testSessionData);
+				final SessionGame sessionGame = sessionGameMgr.getCanonicalGame();
+				final SessionTestResults testResults = testSession(sessionGame, diagClassifier);
+				final CrossValidationTestSummary cvTestSummary = new CrossValidationTestSummary(testResults,
+						trainingData.getTrainingInstanceCounts(), sessionGame.getHistory().getStartTime());
+				return Pair.of(infilePath, cvTestSummary);
+
+			} catch (final IOException e) {
+				throw new UncheckedIOException(e);
+			}
+		}
+	}
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(CrossValidator.class);
 
 	private static final Optional<EventDialogueTestResults> NULL_DIAG_TEST_RESULT = Optional.empty();
@@ -313,10 +401,14 @@ public final class CrossValidator
 
 	private final Function<? super ClassificationContext, ? extends EventDialogueClassifier> classifierFactory;
 
+	private final int crossValidationParallelismLevel;
+
 	@Inject
 	private EntityInstanceAttributeContext entInstAttrCtx;
 
 	private int iterCount = 1;
+
+	private final Map<SessionDataManager, SessionGameManager> sessionGameMgrs;
 
 	private final WordClassDiscountingSmoother smoother;
 
@@ -324,10 +416,6 @@ public final class CrossValidator
 	private WordClassInstancesFactory testInstsFactory;
 
 	private final Function<Map<SessionDataManager, Path>, Stream<Entry<SessionDataManager, WordClassificationData>>> testSetFactory;
-
-	private final Map<SessionDataManager, SessionGameManager> sessionGameMgrs;
-
-	private final int crossValidationParallelismLevel;
 
 	public CrossValidator( // NO_UCD (unused code)
 			final Map<SessionDataManager, SessionGameManager> sessionGameMgrs,
@@ -353,9 +441,14 @@ public final class CrossValidator
 
 		for (int iterNo = 1; iterNo <= iterCount; ++iterNo) {
 			LOGGER.info("Training/testing iteration no. {}.", iterNo);
-			final Stream<CompletableFuture<Entry<Path, CrossValidationTestSummary>>> iterResults = crossValidate(
-					allSessions);
-			result.add(new IterationResult(iterNo, iterResults));
+			// Create a new test/training set for each iteration in order to
+			// ensure that any functionalities depending on random number
+			// generators behave differently
+			final Stream<Entry<SessionDataManager, WordClassificationData>> testSets = testSetFactory
+					.apply(allSessions);
+			final JobPartitionIterator cvTestBatchIter = new JobPartitionIterator(testSets.iterator(), allSessions::get,
+					crossValidationParallelismLevel);
+			result.add(new IterationResult(iterNo, cvTestBatchIter));
 		}
 		LOGGER.info("Finished testing {} cross-validation dataset(s).", result.size());
 		return result;
@@ -377,40 +470,14 @@ public final class CrossValidator
 	}
 
 	private EventDialogueClassifier createDialogueClassifier(final WordClassificationData trainingData,
-			final SessionDataManager testSessionData) throws IOException {
-		final Instances testInsts = testInstsFactory.apply(TEST_INSTS_REL_NAME,
-				estimateTestInstanceCount(testSessionData));
+			final int expectedTestInstanceCount) {
+		final Instances testInsts = testInstsFactory.apply(TEST_INSTS_REL_NAME, expectedTestInstanceCount);
 		final Function<EntityFeature.Extractor.Context, Instance> testInstFactory = entInstAttrCtx
 				.createInstFactory(testInsts);
 		final ReferentConfidenceMapFactory referentConfidenceMapFactory = beanFactory
 				.getBean(ReferentConfidenceMapFactory.class, testInstFactory, smoother);
 		return classifierFactory
 				.apply(new ClassificationContext(trainingData, backgroundJobExecutor, referentConfidenceMapFactory));
-	}
-
-	private Stream<CompletableFuture<Entry<Path, CrossValidationTestSummary>>> crossValidate(
-			final Map<SessionDataManager, Path> allSessions) {
-		final Stream<Entry<SessionDataManager, WordClassificationData>> testSets = testSetFactory.apply(allSessions);
-
-		return testSets.map(testSet -> {
-			final SessionDataManager testSessionData = testSet.getKey();
-			final Path infilePath = allSessions.get(testSessionData);
-			LOGGER.info("Running cross-validation test on data from \"{}\".", infilePath);
-
-			final WordClassificationData trainingData = testSet.getValue();
-			try {
-				final EventDialogueClassifier diagClassifier = createDialogueClassifier(trainingData, testSessionData);
-				final SessionGameManager sessionGameMgr = sessionGameMgrs.get(testSessionData);
-				final SessionGame sessionGame = sessionGameMgr.getCanonicalGame();
-				final SessionTestResults testResults = testSession(sessionGame, diagClassifier);
-				final CrossValidationTestSummary cvTestSummary = new CrossValidationTestSummary(testResults,
-						trainingData.getTrainingInstanceCounts(), sessionGame.getHistory().getStartTime());
-				return Pair.of(infilePath, cvTestSummary);
-
-			} catch (final IOException e) {
-				throw new UncheckedIOException(e);
-			}
-		});
 	}
 
 	private Optional<EventDialogueTestResults> testDialogue(final EventDialogue uttDiag, final GameHistory history,

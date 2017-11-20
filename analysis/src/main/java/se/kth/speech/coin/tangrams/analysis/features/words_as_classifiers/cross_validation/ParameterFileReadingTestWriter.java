@@ -109,7 +109,8 @@ final class ParameterFileReadingTestWriter { // NO_UCD (unused code)
 		/*
 		 * (non-Javadoc)
 		 *
-		 * @see java.util.function.BiFunction#apply(java.lang.Object, java.lang.Object)
+		 * @see java.util.function.BiFunction#apply(java.lang.Object,
+		 * java.lang.Object)
 		 */
 		@Override
 		public Function<Map<SessionDataManager, Path>, Stream<Entry<SessionDataManager, WordClassificationData>>> apply(
@@ -146,8 +147,8 @@ final class ParameterFileReadingTestWriter { // NO_UCD (unused code)
 		TOKENIZATION_FILE_PATH("tok") {
 			@Override
 			public Option get() {
-				return Option.builder(optName).longOpt("tokenization-file").desc(
-						"A path to the file mapping token sequences to the relevant referring-language tokens each represent.")
+				return Option.builder(optName).longOpt("tokenization-file")
+						.desc("A path to the file mapping token sequences to the relevant referring-language tokens each represent.")
 						.hasArg().argName("path").type(File.class).required().build();
 			}
 		},
@@ -164,10 +165,11 @@ final class ParameterFileReadingTestWriter { // NO_UCD (unused code)
 
 			@Override
 			public Option get() {
-				return Option.builder(optName).longOpt("param-file").desc(String.format(
-						"A path to the tabular file containing the different combinations of %s values to use for cross-validation.",
-						WordClassifierTrainingParameter.class.getSimpleName())).hasArg().argName("path")
-						.type(File.class).required().build();
+				return Option.builder(optName).longOpt("param-file")
+						.desc(String.format(
+								"A path to the tabular file containing the different combinations of %s values to use for cross-validation.",
+								WordClassifierTrainingParameter.class.getSimpleName()))
+						.hasArg().argName("path").type(File.class).required().build();
 			}
 
 		};
@@ -195,11 +197,11 @@ final class ParameterFileReadingTestWriter { // NO_UCD (unused code)
 
 		private final Executor backgroundJobExecutor;
 
+		private final int crossValidationParallelismLevel;
+
 		private final Map<WordClassifierTrainingParameter, Object> trainingParams;
 
 		private final ParameterFileReadingTestWriter writer;
-
-		private final int crossValidationParallelismLevel;
 
 		private ParameterCombinationTester(final ParameterFileReadingTestWriter writer,
 				final Map<WordClassifierTrainingParameter, Object> trainingParams, final ApplicationContext appCtx,
@@ -260,8 +262,8 @@ final class ParameterFileReadingTestWriter { // NO_UCD (unused code)
 	private static final Collector<CharSequence, ?, String> ROW_CELL_JOINER = Collectors.joining("\t");
 
 	/**
-	 * <strong>NOTE:</strong> This is for SPSS compatibility, which does not allow
-	 * e.g.&nbsp;<code>"-"</code> as part of a variable name.
+	 * <strong>NOTE:</strong> This is for SPSS compatibility, which does not
+	 * allow e.g.&nbsp;<code>"-"</code> as part of a variable name.
 	 *
 	 * @see <a href=
 	 *      "https://www.ibm.com/support/knowledgecenter/en/SSLVMB_21.0.0/com.ibm.spss.statistics.help/syn_variables_variable_names.htm">SPSS
@@ -565,8 +567,8 @@ final class ParameterFileReadingTestWriter { // NO_UCD (unused code)
 	}
 
 	/**
-	 * <strong>NOTE:</strong> This method needs external synchronization on order to
-	 * keep it from writing nonsense to the output file stream.
+	 * <strong>NOTE:</strong> This method needs external synchronization on
+	 * order to keep it from writing nonsense to the output file stream.
 	 *
 	 * @param summary
 	 *            The {@link UtteranceMappingBatchJobTester.BatchJobSummary}
@@ -580,37 +582,44 @@ final class ParameterFileReadingTestWriter { // NO_UCD (unused code)
 		final List<CrossValidator.IterationResult> testResults = summary.getTestResults();
 		for (final CrossValidator.IterationResult iterResult : testResults) {
 			final int iterNo = iterResult.getIterNo();
-			iterResult.getCvTestResults().forEach(futureInfileSessionResults -> {
-				try {
-					final Entry<Path, CrossValidationTestSummary> infileSessionResults = futureInfileSessionResults
-							.get();
-					final Path inpath = infileSessionResults.getKey();
-					final CrossValidationTestSummary cvTestSummary = infileSessionResults.getValue();
-					final String[] trainingRowCellVals = createTrainingDataRowCellValues(cvTestSummary)
-							.map(Object::toString).toArray(String[]::new);
-					// NOTE: This should remain here, after "Iterator.next()", so
-					// that the printed first iteration is "1" rather than "0"
-					int sessionDialogueOrder = 1;
-					for (final Entry<EventDialogue, EventDialogueTestResults> diagTestResults : cvTestSummary
-							.getTestResults().getDialogueTestResults()) {
-						final Map<DialogueAnalysisSummaryFactory.SummaryDatum, Object> rowData = rowDataFactory
-								.apply(new DialogueAnalysisSummaryFactory.Input(inpath, "Success", iterNo,
-										sessionDialogueOrder++, diagTestResults,
-										summary.getTestParams().getTrainingParams(),
-										cvTestSummary.getSessionStartTime()));
-						final Stream<String> diagAnalysisRowCellVals = dataToWrite.stream().map(rowData::get)
-								.map(Object::toString);
-						final Stream.Builder<String> rowCellValBuilder = Stream.builder();
-						Arrays.stream(testParamRowCellValues).forEachOrdered(rowCellValBuilder);
-						Arrays.stream(trainingRowCellVals).forEachOrdered(rowCellValBuilder);
-						diagAnalysisRowCellVals.forEachOrdered(rowCellValBuilder);
-						final String row = rowCellValBuilder.build().collect(ROW_CELL_JOINER);
-						writer.println(row);
+			for (final Iterator<Stream<CompletableFuture<Entry<Path, CrossValidationTestSummary>>>> cvTestResultsIter = iterResult
+					.getCvTestResults(); cvTestResultsIter.hasNext();) {
+				final Stream<CompletableFuture<Entry<Path, CrossValidationTestSummary>>> cvTestResults = cvTestResultsIter
+						.next();
+				cvTestResults.forEach(futureInfileSessionResults -> {
+					try {
+						final Entry<Path, CrossValidationTestSummary> infileSessionResults = futureInfileSessionResults
+								.get();
+						final Path inpath = infileSessionResults.getKey();
+						final CrossValidationTestSummary cvTestSummary = infileSessionResults.getValue();
+						final String[] trainingRowCellVals = createTrainingDataRowCellValues(cvTestSummary)
+								.map(Object::toString).toArray(String[]::new);
+						// NOTE: This should remain here, after
+						// "Iterator.next()", so
+						// that the printed first iteration is "1" rather than
+						// "0"
+						int sessionDialogueOrder = 1;
+						for (final Entry<EventDialogue, EventDialogueTestResults> diagTestResults : cvTestSummary
+								.getTestResults().getDialogueTestResults()) {
+							final Map<DialogueAnalysisSummaryFactory.SummaryDatum, Object> rowData = rowDataFactory
+									.apply(new DialogueAnalysisSummaryFactory.Input(inpath, "Success", iterNo,
+											sessionDialogueOrder++, diagTestResults,
+											summary.getTestParams().getTrainingParams(),
+											cvTestSummary.getSessionStartTime()));
+							final Stream<String> diagAnalysisRowCellVals = dataToWrite.stream().map(rowData::get)
+									.map(Object::toString);
+							final Stream.Builder<String> rowCellValBuilder = Stream.builder();
+							Arrays.stream(testParamRowCellValues).forEachOrdered(rowCellValBuilder);
+							Arrays.stream(trainingRowCellVals).forEachOrdered(rowCellValBuilder);
+							diagAnalysisRowCellVals.forEachOrdered(rowCellValBuilder);
+							final String row = rowCellValBuilder.build().collect(ROW_CELL_JOINER);
+							writer.println(row);
+						}
+					} catch (InterruptedException | ExecutionException e) {
+						throw new TestException(e);
 					}
-				} catch (InterruptedException | ExecutionException e) {
-					throw new TestException(e);
-				}
-			});
+				});
+			}
 		}
 	}
 
