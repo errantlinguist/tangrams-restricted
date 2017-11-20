@@ -16,14 +16,11 @@
 */
 package se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers;
 
-import java.lang.ref.SoftReference;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -34,11 +31,14 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
+
 import it.unimi.dsi.fastutil.objects.Object2DoubleMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectCollection;
-import se.kth.speech.IdentityKey;
 import se.kth.speech.coin.tangrams.analysis.features.weka.WordClassInstancesFactory;
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.training.WordClassificationData;
 import weka.classifiers.Classifier;
@@ -290,8 +290,10 @@ public final class WordClassDiscountingSmoother {
 			assert className != null;
 			final WordClassificationData.Datum datum = wordClassDatum.getValue();
 			assert datum != null;
-			// Create a new Pair instance because it's possible that the original
-			// Object2ObjectMap.Entry instances no longer point to valid data after the map
+			// Create a new Pair instance because it's possible that the
+			// original
+			// Object2ObjectMap.Entry instances no longer point to valid data
+			// after the map
 			// which contains them is modified
 			result.add(Pair.of(className, datum));
 		}
@@ -305,7 +307,14 @@ public final class WordClassDiscountingSmoother {
 	@Inject
 	private WordClassInstancesFactory wordClassDataFactory;
 
-	private final ConcurrentMap<IdentityKey<Object2ObjectMap<String, WordClassificationData.Datum>>, SoftReference<Lock>> wordClassDataMapLocks;
+	/**
+	 * This {@link LoadingCache} has {@link CacheBuilder#weakKeys() weak keys}
+	 * but strong values so that the same {@link Lock} instance is always
+	 * associated with a given {@link Object2ObjectMap} used as a key until that
+	 * map is garbage-collected, i.e.&nbsp;is no longer used anywhere else in
+	 * the application.
+	 */
+	private final LoadingCache<Object2ObjectMap<String, WordClassificationData.Datum>, Lock> wordClassDataMapLocks;
 
 	public WordClassDiscountingSmoother(final int minCount, final int parallelismLevel) {
 		this(minCount, parallelismLevel, DEFAULT_OOV_CLASS);
@@ -315,7 +324,8 @@ public final class WordClassDiscountingSmoother {
 		this.minCount = minCount;
 		this.oovClassName = oovClassName;
 
-		wordClassDataMapLocks = new ConcurrentHashMap<>(parallelismLevel + 1, 1.0f);
+		wordClassDataMapLocks = CacheBuilder.newBuilder().initialCapacity(parallelismLevel).weakKeys()
+				.build(CacheLoader.from(() -> new ReentrantLock()));
 	}
 
 	/**
@@ -340,9 +350,9 @@ public final class WordClassDiscountingSmoother {
 	 *
 	 * @param wordClassData
 	 *            The as-yet-unsmoothed training data.
-	 * @return A new {@link DiscountedWordClasses} instance representing information
-	 *         about the word classes used for discounting and the {@link Instances}
-	 *         objects for each.
+	 * @return A new {@link DiscountedWordClasses} instance representing
+	 *         information about the word classes used for discounting and the
+	 *         {@link Instances} objects for each.
 	 */
 	public DiscountedWordClasses redistributeMass(
 			final Object2ObjectMap<String, WordClassificationData.Datum> wordClassData) {
@@ -431,10 +441,10 @@ public final class WordClassDiscountingSmoother {
 	 * discounted and then removes them from the given map.
 	 *
 	 * @param wordClassData
-	 *            The {@code Object2ObjectMap} of {@link WordClassificationData} to
-	 *            modify.
-	 * @return A new {@code Object2ObjectMap} of {@code WordClassificationData} for
-	 *         each word class which was discounted.
+	 *            The {@code Object2ObjectMap} of {@link WordClassificationData}
+	 *            to modify.
+	 * @return A new {@code Object2ObjectMap} of {@code WordClassificationData}
+	 *         for each word class which was discounted.
 	 */
 	private Object2ObjectMap<String, WordClassificationData.Datum> discountWordClasses(
 			final Object2ObjectMap<String, WordClassificationData.Datum> wordClassData) {
@@ -457,18 +467,7 @@ public final class WordClassDiscountingSmoother {
 	}
 
 	private Lock fetchLock(final Object2ObjectMap<String, WordClassificationData.Datum> wordClassData) {
-		final SoftReference<Lock> resultRef = wordClassDataMapLocks.compute(new IdentityKey<>(wordClassData),
-				(k, oldValue) -> {
-					final SoftReference<Lock> newValue;
-					if (oldValue == null || oldValue.get() == null) {
-						final Lock lock = new ReentrantLock();
-						newValue = new SoftReference<>(lock);
-					} else {
-						newValue = oldValue;
-					}
-					return newValue;
-				});
-		return resultRef.get();
+		return wordClassDataMapLocks.getUnchecked(wordClassData);
 	}
 
 	Object2ObjectMap<String, WeightedClassifier> createWeightedClassifierMap(
