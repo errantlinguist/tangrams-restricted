@@ -22,6 +22,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
+import javax.annotation.concurrent.ThreadSafe;
+
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature;
 import se.kth.speech.coin.tangrams.analysis.features.EntityFeature.Extractor.Context;
 import weka.core.Attribute;
@@ -36,6 +38,7 @@ import weka.core.Instances;
  */
 public final class EntityInstanceAttributeContext {
 
+	@ThreadSafe
 	private class ContextInstanceFactory implements Function<EntityFeature.Extractor.Context, Instance> {
 
 		private final Instances insts;
