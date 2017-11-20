@@ -19,6 +19,8 @@ package se.kth.speech.coin.tangrams.analysis.features;
 import java.util.function.Function;
 import java.util.function.ToIntFunction;
 
+import javax.annotation.concurrent.ThreadSafe;
+
 import se.kth.speech.IntArrays;
 import se.kth.speech.SpatialMatrix;
 import se.kth.speech.SpatialRegion;
@@ -26,6 +28,7 @@ import se.kth.speech.coin.tangrams.analysis.GameContext;
 import se.kth.speech.coin.tangrams.analysis.GameContextModelFactory;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 
+@ThreadSafe
 public final class EntityFeatureExtractionContextFactory {
 
 	private final Function<? super GameContext, SpatialMatrix<Integer>> gameModelFactory;
@@ -36,7 +39,7 @@ public final class EntityFeatureExtractionContextFactory {
 		this(new GameContextModelFactory(), new ImageEdgeCounter());
 	}
 
-	public EntityFeatureExtractionContextFactory(
+	public EntityFeatureExtractionContextFactory( // NO_UCD (use private)
 			final Function<? super GameContext, SpatialMatrix<Integer>> gameModelFactory,
 			final ToIntFunction<? super String> namedResourceEdgeCountFactory) {
 		this.gameModelFactory = gameModelFactory;
