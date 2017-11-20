@@ -25,6 +25,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.EnumSet;
@@ -85,7 +86,6 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.traini
 import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
 import se.kth.speech.coin.tangrams.iristk.EventTimes;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEventReader;
-import se.kth.speech.io.PrintWriterFetcher;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -408,6 +408,7 @@ final class ParameterFileReadingTestWriter { // NO_UCD (unused code)
 				final Path baseOutDir = Files
 						.createDirectories(((File) cl.getParsedOptionValue(Parameter.OUTDIR.optName)).toPath());
 				final List<Map<WordClassifierTrainingParameter, Object>> trainingParamMaps = readTrainingParamMaps(cl);
+				final List<PrintWriter> fileWriters = new ArrayList<>(trainingParamMaps.size());
 
 				try (final ClassPathXmlApplicationContext appCtx = new ClassPathXmlApplicationContext(
 						"cross-validation.xml", ParameterFileReadingTestWriter.class)) {
@@ -417,8 +418,11 @@ final class ParameterFileReadingTestWriter { // NO_UCD (unused code)
 								.get(WordClassifierTrainingParameter.DESCRIPTION);
 						final Path testOutfilePath = baseOutDir.resolve(description + ".tsv");
 						LOGGER.info("Will write results of test \"{}\" to \"{}\".", description, testOutfilePath);
+						final PrintWriter fileWriter = new PrintWriter(
+								Files.newBufferedWriter(testOutfilePath, OUTPUT_ENCODING));
+						fileWriters.add(fileWriter);
 						final ParameterFileReadingTestWriter testParamCombinationTestWriter = new ParameterFileReadingTestWriter(
-								testOutfilePath);
+								fileWriter);
 						final ParameterCombinationTester testParamCombinationTester = new ParameterCombinationTester(
 								testParamCombinationTestWriter, trainingParamMap, appCtx, backgroundJobExecutor,
 								parallelismLevel);
@@ -433,6 +437,8 @@ final class ParameterFileReadingTestWriter { // NO_UCD (unused code)
 					LOGGER.info("Shutting down executor service.");
 					backgroundJobExecutor.shutdown();
 					LOGGER.info("Successfully shut down executor service.");
+				} finally {
+					fileWriters.forEach(PrintWriter::close);
 				}
 			} catch (final Exception e) {
 				shutdownExceptionally(backgroundJobExecutor);
@@ -486,17 +492,17 @@ final class ParameterFileReadingTestWriter { // NO_UCD (unused code)
 
 	private final Lock writeLock = new ReentrantLock();
 
-	private final PrintWriterFetcher writerFetcher;
+	private final PrintWriter writer;
 
-	private ParameterFileReadingTestWriter(final Path outPath) {
-		this(outPath, new UtteranceDialogueRepresentationStringFactory(DataLanguageDefaults.getLocale()),
+	private ParameterFileReadingTestWriter(final PrintWriter writer) {
+		this(writer, new UtteranceDialogueRepresentationStringFactory(DataLanguageDefaults.getLocale()),
 				DEFAULT_DATA_TO_WRITE);
 	}
 
-	private ParameterFileReadingTestWriter(final Path outPath,
+	private ParameterFileReadingTestWriter(final PrintWriter writer,
 			final Function<? super Iterator<Utterance>, String> uttDiagReprFactory,
 			final List<DialogueAnalysisSummaryFactory.SummaryDatum> dataToWrite) {
-		writerFetcher = new PrintWriterFetcher(outPath, OUTPUT_ENCODING);
+		this.writer = writer;
 		this.dataToWrite = dataToWrite;
 		rowDataFactory = new DialogueAnalysisSummaryFactory(uttDiagReprFactory, dataToWrite);
 
@@ -527,7 +533,6 @@ final class ParameterFileReadingTestWriter { // NO_UCD (unused code)
 		final String row = rowCellValBuilder.build().collect(ROW_CELL_JOINER);
 		writeLock.lock();
 		try {
-			final PrintWriter writer = writerFetcher.get();
 			writer.println(row);
 		} finally {
 			writeLock.unlock();
@@ -546,7 +551,6 @@ final class ParameterFileReadingTestWriter { // NO_UCD (unused code)
 	private void writeInitialResults(final UtteranceMappingBatchJobTester.BatchJobSummary summary) {
 		writeLock.lock();
 		try {
-			final PrintWriter writer = writerFetcher.get();
 			writer.println(createColHeaders(dataToWrite).collect(ROW_CELL_JOINER));
 			writeResults(summary, writer);
 			// No longer write the header after calling this method once
@@ -559,7 +563,6 @@ final class ParameterFileReadingTestWriter { // NO_UCD (unused code)
 	private void writeNextResults(final UtteranceMappingBatchJobTester.BatchJobSummary summary) {
 		writeLock.lock();
 		try {
-			final PrintWriter writer = writerFetcher.get();
 			writeResults(summary, writer);
 		} finally {
 			writeLock.unlock();
