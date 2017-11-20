@@ -281,25 +281,6 @@ public final class WordClassDiscountingSmoother {
 		return result;
 	}
 
-	private static <T> Collection<Entry<T, WordClassificationData.Datum>> findClassesToDiscount(
-			final Object2ObjectMap<? extends T, WordClassificationData.Datum> wordClassData) {
-		final List<Entry<T, WordClassificationData.Datum>> result = new ArrayList<>();
-		for (final Object2ObjectMap.Entry<? extends T, WordClassificationData.Datum> wordClassDatum : wordClassData
-				.object2ObjectEntrySet()) {
-			final T className = wordClassDatum.getKey();
-			assert className != null;
-			final WordClassificationData.Datum datum = wordClassDatum.getValue();
-			assert datum != null;
-			// Create a new Pair instance because it's possible that the
-			// original
-			// Object2ObjectMap.Entry instances no longer point to valid data
-			// after the map
-			// which contains them is modified
-			result.add(Pair.of(className, datum));
-		}
-		return result;
-	}
-
 	private final int minCount;
 
 	private final String oovClassName;
@@ -324,8 +305,8 @@ public final class WordClassDiscountingSmoother {
 		this.minCount = minCount;
 		this.oovClassName = oovClassName;
 
-		wordClassDataMapLocks = CacheBuilder.newBuilder().concurrencyLevel(parallelismLevel).initialCapacity(parallelismLevel + 1).weakKeys()
-				.build(CacheLoader.from(() -> new ReentrantLock()));
+		wordClassDataMapLocks = CacheBuilder.newBuilder().concurrencyLevel(parallelismLevel)
+				.initialCapacity(parallelismLevel + 1).weakKeys().build(CacheLoader.from(() -> new ReentrantLock()));
 	}
 
 	/**
@@ -468,6 +449,28 @@ public final class WordClassDiscountingSmoother {
 
 	private Lock fetchLock(final Object2ObjectMap<String, WordClassificationData.Datum> wordClassData) {
 		return wordClassDataMapLocks.getUnchecked(wordClassData);
+	}
+
+	private <T> Collection<Entry<T, WordClassificationData.Datum>> findClassesToDiscount(
+			final Object2ObjectMap<? extends T, WordClassificationData.Datum> wordClassData) {
+		final List<Entry<T, WordClassificationData.Datum>> result = new ArrayList<>();
+		for (final Object2ObjectMap.Entry<? extends T, WordClassificationData.Datum> wordClassDatum : wordClassData
+				.object2ObjectEntrySet()) {
+			final T className = wordClassDatum.getKey();
+			assert className != null;
+			final WordClassificationData.Datum datum = wordClassDatum.getValue();
+			assert datum != null;
+			if (datum.getObservationCount() < minCount) {
+				// Create a new Pair instance because it's possible that the
+				// original
+				// Object2ObjectMap.Entry instances no longer point to valid
+				// data
+				// after the map
+				// which contains them is modified
+				result.add(Pair.of(className, datum));
+			}
+		}
+		return result;
 	}
 
 	Object2ObjectMap<String, WeightedClassifier> createWeightedClassifierMap(
