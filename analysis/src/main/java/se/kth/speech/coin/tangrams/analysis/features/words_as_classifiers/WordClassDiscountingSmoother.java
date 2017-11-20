@@ -324,7 +324,7 @@ public final class WordClassDiscountingSmoother {
 		this.minCount = minCount;
 		this.oovClassName = oovClassName;
 
-		wordClassDataMapLocks = CacheBuilder.newBuilder().initialCapacity(parallelismLevel).weakKeys()
+		wordClassDataMapLocks = CacheBuilder.newBuilder().concurrencyLevel(parallelismLevel).initialCapacity(parallelismLevel + 1).weakKeys()
 				.build(CacheLoader.from(() -> new ReentrantLock()));
 	}
 
