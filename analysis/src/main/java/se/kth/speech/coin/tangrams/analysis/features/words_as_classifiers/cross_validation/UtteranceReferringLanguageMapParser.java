@@ -53,7 +53,7 @@ final class UtteranceReferringLanguageMapParser {
 	}
 
 	public Object2ObjectMap<List<String>, List<String>> apply(final List<String> lines) {
-		return apply(lines.iterator(), lines.size());
+		return apply(lines.iterator(), lines.size() - 1);
 	}
 
 	private Object2ObjectMap<List<String>, List<String>> apply(final Iterator<String> lines,

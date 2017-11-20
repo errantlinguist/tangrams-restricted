@@ -93,7 +93,7 @@ public final class WordClassifierTrainingParameterTableParser {
 	}
 
 	public List<Map<WordClassifierTrainingParameter, Object>> apply(final List<String> lines) {
-		return apply(lines.iterator(), lines.size());
+		return apply(lines.iterator(), lines.size() - 1);
 	}
 
 	private List<Map<WordClassifierTrainingParameter, Object>> apply(final Iterator<String> lines,
@@ -117,6 +117,7 @@ public final class WordClassifierTrainingParameterTableParser {
 			}
 		}
 
+		assert result.size() <= expectedResultSize;
 		return result;
 	}
 
