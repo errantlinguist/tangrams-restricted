@@ -383,6 +383,7 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 				Files.write(outfile, rows, OUTPUT_ENCODING, StandardOpenOption.CREATE,
 						StandardOpenOption.TRUNCATE_EXISTING);
 			}
+			LOGGER.info("Finished tokenizing {} session(s).", allSessionData.size());
 		}
 	}
 
