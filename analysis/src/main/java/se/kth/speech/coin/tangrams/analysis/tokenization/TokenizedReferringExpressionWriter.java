@@ -198,6 +198,7 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 		private void addUtteranceDataRows(final int roundId, final EventDialogue evtDiag,
 				final Collection<? super String> uttRows) {
 			final List<Utterance> origUtts = evtDiag.getUtterances();
+			LOGGER.info("Writing rows for round ID {}.", roundId);
 			final EventDialogue transformedDiag = diagTransformer.apply(evtDiag);
 			final List<Utterance> tranformedUtts = transformedDiag.getUtterances();
 			final Map<String, Utterance> transformedUttsById = tranformedUtts.stream()
@@ -255,7 +256,7 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 
 			while (evtDiagsToPrint.hasNext()) {
 				final EventDialogue evtDiag = evtDiagsToPrint.next();
-				addUtteranceDataRows(roundId, evtDiag, result);
+				addUtteranceDataRows(roundId++, evtDiag, result);
 			}
 			return result;
 		}
