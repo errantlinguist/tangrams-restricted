@@ -69,12 +69,6 @@ final class LoggedEventTimeLatencySummaryWriter { // NO_UCD (use default)
 						.argName("regex").required().build();
 			}
 		},
-		HELP("?") {
-			@Override
-			public Option get() {
-				return Option.builder(optName).longOpt("help").desc("Prints this message.").build();
-			}
-		},
 		OUTPATH("o") {
 			@Override
 			public Option get() {
@@ -153,34 +147,29 @@ final class LoggedEventTimeLatencySummaryWriter { // NO_UCD (use default)
 	}
 
 	private static void main(final CommandLine cl) throws IOException, ParseException {
-		if (cl.hasOption(Parameter.HELP.optName)) {
-			Parameter.printHelp();
-		} else {
-			final Path[] inpaths = cl.getArgList().stream().map(String::trim).filter(path -> !path.isEmpty())
-					.map(Paths::get).toArray(Path[]::new);
-			switch (inpaths.length) {
-			case 0: {
-				throw new MissingOptionException("No input path specified.");
+		final Path[] inpaths = cl.getArgList().stream().map(String::trim).filter(path -> !path.isEmpty())
+				.map(Paths::get).toArray(Path[]::new);
+		switch (inpaths.length) {
+		case 0: {
+			throw new MissingOptionException("No input path specified.");
+		}
+		case 1: {
+			final Path inpath = inpaths[0];
+			LOGGER.info("Will read event log data from \"{}\".", inpath);
+			final Pattern evtSenderPattern = Pattern.compile(cl.getOptionValue(Parameter.EVENT_SENDER_PATTERN.optName));
+			LOGGER.info("Using \"{}\" to match sender ID.", evtSenderPattern.pattern());
+			try (final PrintWriter out = CLIParameters
+					.parseOutpath((File) cl.getParsedOptionValue(Parameter.OUTPATH.optName))) {
+				run(inpath, evt -> {
+					final String playerId = evt.getString(GameManagementEvent.Attribute.PLAYER_ID.toString());
+					return playerId == null ? false : evtSenderPattern.matcher(playerId).matches();
+				}, out);
 			}
-			case 1: {
-				final Path inpath = inpaths[0];
-				LOGGER.info("Will read event log data from \"{}\".", inpath);
-				final Pattern evtSenderPattern = Pattern
-						.compile(cl.getOptionValue(Parameter.EVENT_SENDER_PATTERN.optName));
-				LOGGER.info("Using \"{}\" to match sender ID.", evtSenderPattern.pattern());
-				try (final PrintWriter out = CLIParameters
-						.parseOutpath((File) cl.getParsedOptionValue(Parameter.OUTPATH.optName))) {
-					run(inpath, evt -> {
-						final String playerId = evt.getString(GameManagementEvent.Attribute.PLAYER_ID.toString());
-						return playerId == null ? false : evtSenderPattern.matcher(playerId).matches();
-					}, out);
-				}
-				break;
-			}
-			default: {
-				throw new IllegalArgumentException("No support for multiple inpaths (yet).");
-			}
-			}
+			break;
+		}
+		default: {
+			throw new IllegalArgumentException("No support for multiple inpaths (yet).");
+		}
 		}
 	}
 

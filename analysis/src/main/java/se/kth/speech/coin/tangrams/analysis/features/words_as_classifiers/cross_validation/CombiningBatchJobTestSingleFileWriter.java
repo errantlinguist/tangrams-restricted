@@ -670,12 +670,6 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 						.hasArg().argName("names").required().build();
 			}
 		},
-		HELP("?") {
-			@Override
-			public Option get() {
-				return Option.builder(optName).longOpt("help").desc("Prints this message.").build();
-			}
-		},
 		OUTPATH("o") {
 			@Override
 			public Option get() {
@@ -1124,41 +1118,36 @@ final class CombiningBatchJobTestSingleFileWriter { // NO_UCD (unused code)
 	}
 
 	private static void main(final CommandLine cl) throws CrossValidationTestException {
-		if (cl.hasOption(Parameter.HELP.optName)) {
-			printHelp();
-		} else {
-			final ExecutorService backgroundJobExecutor = BackgroundJobs.fetchBackgroundJobExecutor();
-			final CLIInputFactory inputFactory = new CLIInputFactory(backgroundJobExecutor);
-			try {
-				final CombiningBatchJobTester.Input input = inputFactory.apply(cl);
-				final File outFile = (File) cl.getParsedOptionValue(Parameter.OUTPATH.optName);
-				try (PrintWriter out = CLIParameters.parseOutpath(outFile, OUTPUT_ENCODING)) {
-					final CombiningBatchJobTestSingleFileWriter writer = new CombiningBatchJobTestSingleFileWriter(out);
-					try (BufferedWriter extrLogOut = createExtrLogFileWriter(outFile)) {
-						try (BufferedWriter uttRelLogOut = createUttRelFileWriter(outFile)) {
+		final ExecutorService backgroundJobExecutor = BackgroundJobs.fetchBackgroundJobExecutor();
+		final CLIInputFactory inputFactory = new CLIInputFactory(backgroundJobExecutor);
+		try {
+			final CombiningBatchJobTester.Input input = inputFactory.apply(cl);
+			final File outFile = (File) cl.getParsedOptionValue(Parameter.OUTPATH.optName);
+			try (PrintWriter out = CLIParameters.parseOutpath(outFile, OUTPUT_ENCODING)) {
+				final CombiningBatchJobTestSingleFileWriter writer = new CombiningBatchJobTestSingleFileWriter(out);
+				try (BufferedWriter extrLogOut = createExtrLogFileWriter(outFile)) {
+					try (BufferedWriter uttRelLogOut = createUttRelFileWriter(outFile)) {
 
-							try (final ClassPathXmlApplicationContext appCtx = new ClassPathXmlApplicationContext(
-									"cross-validation.xml", CombiningBatchJobTestSingleFileWriter.class)) {
-								final Map<WordClassifierTrainingParameter, Object> trainingParams = WordClassifierTrainingParameter
-										.createDefaultMap();
-								final CombiningBatchJobTester tester = new CombiningBatchJobTester(
-										backgroundJobExecutor, appCtx, writer::write, writer::writeError,
-										new ExtractionLogWriter(extrLogOut),
-										new UtteranceRelationLogWriter(uttRelLogOut, NULL_CELL_VALUE_REPR),
-										trainingParams, new NonDiscountingTestSetFactoryFactory(trainingParams));
-								tester.accept(input);
-							}
-							LOGGER.info("Shutting down executor service.");
-							backgroundJobExecutor.shutdown();
-							LOGGER.info("Successfully shut down executor service.");
-
+						try (final ClassPathXmlApplicationContext appCtx = new ClassPathXmlApplicationContext(
+								"cross-validation.xml", CombiningBatchJobTestSingleFileWriter.class)) {
+							final Map<WordClassifierTrainingParameter, Object> trainingParams = WordClassifierTrainingParameter
+									.createDefaultMap();
+							final CombiningBatchJobTester tester = new CombiningBatchJobTester(backgroundJobExecutor,
+									appCtx, writer::write, writer::writeError, new ExtractionLogWriter(extrLogOut),
+									new UtteranceRelationLogWriter(uttRelLogOut, NULL_CELL_VALUE_REPR), trainingParams,
+									new NonDiscountingTestSetFactoryFactory(trainingParams));
+							tester.accept(input);
 						}
+						LOGGER.info("Shutting down executor service.");
+						backgroundJobExecutor.shutdown();
+						LOGGER.info("Successfully shut down executor service.");
+
 					}
 				}
-			} catch (final Exception e) {
-				shutdownExceptionally(backgroundJobExecutor);
-				throw new CrossValidationTestException(e);
 			}
+		} catch (final Exception e) {
+			shutdownExceptionally(backgroundJobExecutor);
+			throw new CrossValidationTestException(e);
 		}
 	}
 

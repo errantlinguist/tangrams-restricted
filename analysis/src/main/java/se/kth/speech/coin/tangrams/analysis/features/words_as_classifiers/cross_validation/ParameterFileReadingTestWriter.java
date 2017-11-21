@@ -131,12 +131,6 @@ final class ParameterFileReadingTestWriter { // NO_UCD (unused code)
 	}
 
 	private enum Parameter implements Supplier<Option> {
-		HELP("?") {
-			@Override
-			public Option get() {
-				return Option.builder(optName).longOpt("help").desc("Prints this message.").build();
-			}
-		},
 		OUTDIR("o") {
 			@Override
 			public Option get() {
@@ -396,54 +390,49 @@ final class ParameterFileReadingTestWriter { // NO_UCD (unused code)
 	}
 
 	private static void main(final CommandLine cl) throws IOException, CrossValidationTestException, ParseException {
-		if (cl.hasOption(Parameter.HELP.optName)) {
-			printHelp();
-		} else {
-			final ForkJoinPool backgroundJobExecutor = BackgroundJobs.fetchBackgroundJobExecutor();
-			final int parallelismLevel = backgroundJobExecutor.getParallelism();
-			LOGGER.info("Parallelism level: {}", parallelismLevel);
-			final UtteranceMappingBatchJobTester.Input input = createInput(cl, backgroundJobExecutor);
+		final ForkJoinPool backgroundJobExecutor = BackgroundJobs.fetchBackgroundJobExecutor();
+		final int parallelismLevel = backgroundJobExecutor.getParallelism();
+		LOGGER.info("Parallelism level: {}", parallelismLevel);
+		final UtteranceMappingBatchJobTester.Input input = createInput(cl, backgroundJobExecutor);
 
-			try {
-				final Path baseOutDir = Files
-						.createDirectories(((File) cl.getParsedOptionValue(Parameter.OUTDIR.optName)).toPath());
-				final List<Map<WordClassifierTrainingParameter, Object>> trainingParamMaps = readTrainingParamMaps(cl);
-				final List<PrintWriter> fileWriters = new ArrayList<>(trainingParamMaps.size());
+		try {
+			final Path baseOutDir = Files
+					.createDirectories(((File) cl.getParsedOptionValue(Parameter.OUTDIR.optName)).toPath());
+			final List<Map<WordClassifierTrainingParameter, Object>> trainingParamMaps = readTrainingParamMaps(cl);
+			final List<PrintWriter> fileWriters = new ArrayList<>(trainingParamMaps.size());
 
-				try (final ClassPathXmlApplicationContext appCtx = new ClassPathXmlApplicationContext(
-						"cross-validation.xml", ParameterFileReadingTestWriter.class)) {
-					final Stream.Builder<CompletableFuture<Void>> parameterTestJobs = Stream.builder();
-					for (final Map<WordClassifierTrainingParameter, Object> trainingParamMap : trainingParamMaps) {
-						final String description = (String) trainingParamMap
-								.get(WordClassifierTrainingParameter.DESCRIPTION);
-						final Path testOutfilePath = baseOutDir.resolve(description + ".tsv");
-						LOGGER.info("Will write results of test \"{}\" to \"{}\".", description, testOutfilePath);
-						final PrintWriter fileWriter = new PrintWriter(
-								Files.newBufferedWriter(testOutfilePath, OUTPUT_ENCODING));
-						fileWriters.add(fileWriter);
-						final ParameterFileReadingTestWriter testParamCombinationTestWriter = new ParameterFileReadingTestWriter(
-								fileWriter);
-						final ParameterCombinationTester testParamCombinationTester = new ParameterCombinationTester(
-								testParamCombinationTestWriter, trainingParamMap, appCtx, backgroundJobExecutor,
-								parallelismLevel);
-						parameterTestJobs
-								.add(CompletableFuture.runAsync(() -> testParamCombinationTester.accept(input)));
-					}
-					final CompletableFuture<Void> parameterJobBatchCompletionFuture = CompletableFuture
-							.allOf(parameterTestJobs.build().toArray(CompletableFuture[]::new));
-					parameterJobBatchCompletionFuture.join();
-					LOGGER.info("Successfully completed {} cross-validation test job(s) asynchronously.",
-							trainingParamMaps.size());
-					LOGGER.info("Shutting down executor service.");
-					backgroundJobExecutor.shutdown();
-					LOGGER.info("Successfully shut down executor service.");
-				} finally {
-					fileWriters.forEach(PrintWriter::close);
+			try (final ClassPathXmlApplicationContext appCtx = new ClassPathXmlApplicationContext(
+					"cross-validation.xml", ParameterFileReadingTestWriter.class)) {
+				final Stream.Builder<CompletableFuture<Void>> parameterTestJobs = Stream.builder();
+				for (final Map<WordClassifierTrainingParameter, Object> trainingParamMap : trainingParamMaps) {
+					final String description = (String) trainingParamMap
+							.get(WordClassifierTrainingParameter.DESCRIPTION);
+					final Path testOutfilePath = baseOutDir.resolve(description + ".tsv");
+					LOGGER.info("Will write results of test \"{}\" to \"{}\".", description, testOutfilePath);
+					final PrintWriter fileWriter = new PrintWriter(
+							Files.newBufferedWriter(testOutfilePath, OUTPUT_ENCODING));
+					fileWriters.add(fileWriter);
+					final ParameterFileReadingTestWriter testParamCombinationTestWriter = new ParameterFileReadingTestWriter(
+							fileWriter);
+					final ParameterCombinationTester testParamCombinationTester = new ParameterCombinationTester(
+							testParamCombinationTestWriter, trainingParamMap, appCtx, backgroundJobExecutor,
+							parallelismLevel);
+					parameterTestJobs.add(CompletableFuture.runAsync(() -> testParamCombinationTester.accept(input)));
 				}
-			} catch (final Exception e) {
-				shutdownExceptionally(backgroundJobExecutor);
-				throw new CrossValidationTestException(e);
+				final CompletableFuture<Void> parameterJobBatchCompletionFuture = CompletableFuture
+						.allOf(parameterTestJobs.build().toArray(CompletableFuture[]::new));
+				parameterJobBatchCompletionFuture.join();
+				LOGGER.info("Successfully completed {} cross-validation test job(s) asynchronously.",
+						trainingParamMaps.size());
+				LOGGER.info("Shutting down executor service.");
+				backgroundJobExecutor.shutdown();
+				LOGGER.info("Successfully shut down executor service.");
+			} finally {
+				fileWriters.forEach(PrintWriter::close);
 			}
+		} catch (final Exception e) {
+			shutdownExceptionally(backgroundJobExecutor);
+			throw new CrossValidationTestException(e);
 		}
 	}
 
